@@ -1,0 +1,263 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is COID/comm module.
+ *
+ * The Initial Developer of the Original Code is
+ * PosAm.
+ * Portions created by the Initial Developer are Copyright (C) 2003
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ * Brano Kemen
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
+
+#ifndef __COID_COMM_TXTCONV__HEADER_FILE__
+#define __COID_COMM_TXTCONV__HEADER_FILE__
+
+#include "namespace.h"
+#include "commtypes.h"
+#include "assert.h"
+
+COID_NAMESPACE_BEGIN
+
+////////////////////////////////////////////////////////////////////////////////
+class charstrconv
+{
+public:
+/*
+    ///converts chunk of text to specified type
+    static void strton (const char*& src, void* dst, binstream::type t, ulong num, char sep)
+    {
+        switch (t & binstream::type::xTYPE)
+        {
+        case binstream::type::tTYPE_BINARY:
+            {
+                //binary data are written as hexadecimal numbers tacked together by item size
+                // is=1:  00 56 fa 4e 57 ...
+                // is=2:  0045 faec c77b ...
+                // is=4:  fc29a4b5 84ac4fa3 ...
+                hex2bin (src, dst, t.get_size(num));
+            }
+        case binstream::type::tTYPE_INT:
+            {
+                //signed integers, can be in decimal form (123), hexadecimal (xfa34), octal (o712342)
+                // binary (b01010001)
+            }
+        case binstream::type::tTYPE_UINT:
+            {
+                //unsigned integers, can be in decimal form (123), hexadecimal (xfa34), octal (o712342)
+                // binary (b01010001)
+            }
+        case binstream::type::tTYPE_FLOAT:
+            {
+                //floating point numbers
+            }
+        case binstream::type::tTYPE_CHAR:
+            {
+                //string to string
+            }
+        }
+    }
+
+    ///converts specified type to chunk of text
+    static void ntostr (const void* src, char*& dst, binstream::type t, ulong num, char sep)
+    {
+        switch (t & binstream::type::xTYPE)
+        {
+        case binstream::type::tTYPE_BINARY:
+            {
+                //binary data are written as hexadecimal numbers tacked together by item size
+                // is=1:  00 56 fa 4e 57 ...
+                // is=2:  0045 faec c77b ...
+                // is=4:  fc29a4b5 84ac4fa3 ...
+                hex2bin (src, dst, t.get_size(num));
+            }
+        case binstream::type::tTYPE_INT:
+            {
+                //signed integers, can be in decimal form (123), hexadecimal (xfa34), octal (o712342)
+                // binary (b01010001)
+            }
+        case binstream::type::tTYPE_UINT:
+            {
+                //unsigned integers, can be in decimal form (123), hexadecimal (xfa34), octal (o712342)
+                // binary (b01010001)
+            }
+        case binstream::type::tTYPE_FLOAT:
+            {
+                //floating point numbers
+            }
+        case binstream::type::tTYPE_CHAR:
+            {
+                //string to string
+            }
+        }
+    }
+*/
+    static void hex2bin( const char*& src, void* dst, uints nb )
+    {
+        for (; *src != 0; ++src)
+        {
+            if (*src == ' ')  continue;
+            if (*src == '\t') continue;
+
+            char base;
+            if (*src >= '0'  &&  *src <= '9')       base = '0';
+            else if (*src >= 'a'  &&  *src <= 'f')  base = 'a';
+            else if (*src >= 'A'  &&  *src <= 'F')  base = 'A';
+            else throw ersSYNTAX_ERROR "invalid character";
+
+            *(uchar*)dst = (*src - base) << 4;
+
+            ++src;
+            if (*src >= '0'  &&  *src <= '9')       base = '0';
+            else if (*src >= 'a'  &&  *src <= 'f')  base = 'a';
+            else if (*src >= 'A'  &&  *src <= 'F')  base = 'A';
+            else throw ersSYNTAX_ERROR "invalid character";
+
+            *(uchar*)dst += (*src - base);
+            dst = (uchar*)dst + 1;
+
+            --nb;
+            if (!nb)  break;
+        }
+
+        if (nb)  throw ersNO_MORE "string terminated too early";
+    }
+
+    static void bin2hex( const void* src, char*& dst, uints nitems, uint itemsize, char sep=' ' )
+    {
+        if( nitems == 0 )  return;
+
+        static char tbl[] = "0123456789ABCDEF";
+        for( uints i=0;; )
+        {
+            if(sysIsLittleEndian)
+            {
+                for( uint j=itemsize; j>0; )
+                {
+                    --j;
+                    dst[0] = tbl[((uchar*)src)[j] >> 4];
+                    dst[1] = tbl[((uchar*)src)[j] & 0x0f];
+                    dst += 2;
+                }
+            }
+            else
+            {
+                for( uint j=0; j<itemsize; ++j )
+                {
+                    dst[0] = tbl[((uchar*)src)[j] >> 4];
+                    dst[1] = tbl[((uchar*)src)[j] & 0x0f];
+                    dst += 2;
+                }
+            }
+
+            src = (uchar*)src + itemsize;
+
+            ++i;
+            if( i>=nitems )  break;
+
+            if(sep)
+            {
+                dst[0] = sep;
+                ++dst;
+            }
+        }
+    }
+
+    static void txtint2bin (const char*& src, void* dst, ulong nitems, ulong itemsize)
+    {
+        // number {
+        //      [int] {?'+-'} {+ '0..9'}
+        //      [hex] {?"0"} "x" {+ '0..9a..fA..F'}
+        //      [oct] {?"0"} "o" {+ '0..7'}
+        //      [bin] {?"0"} "b" {+ '01'}
+        //      [flt] {?'+-'} number.int {?"." {? number.int}} {? 'eE' {?'+-'} number.int}
+        // }
+    }
+/*
+    ///convert text to integer of specified size
+    static void scanint (const char*& src, void* dst, ulong typesize)
+    {
+    	for (;;++src)
+    	{
+    		if (*src >= '0'  &&  *src <= '9')
+    	}
+    }
+*/
+    ////////////////////////////////////////////////////////////////////////////////
+    static uints write_intelhex_line( char* dst, ushort addr, uchar n, const void* data )
+    {
+        *dst++ = ':';
+
+        const char* dstb = dst;
+
+        charstrconv::bin2hex( &n, dst, 1, 1 );
+        charstrconv::bin2hex( &addr, dst, 1, 2 );
+
+        uchar t=0;
+        charstrconv::bin2hex( &t, dst, 1, 1 );
+
+        charstrconv::bin2hex( data, dst, n, 1, 0 );
+
+        uchar sum=0;
+        for( const char* dst1=dstb ; dst1<dst; )
+        {
+            char base;
+            if( *dst1 >= '0'  &&  *dst1 <= '9' )        base = '0';
+            else if( *dst1 >= 'a'  &&  *dst1 <= 'f' )   base = 'a'-10;
+            else if( *dst1 >= 'A'  &&  *dst1 <= 'F')    base = 'A'-10;
+
+            sum += (*dst1++ - base) << 4;        
+
+            if( *dst1 >= '0'  &&  *dst1 <= '9' )        base = '0';
+            else if( *dst1 >= 'a'  &&  *dst1 <= 'f' )   base = 'a'-10;
+            else if( *dst1 >= 'A'  &&  *dst1 <= 'F')    base = 'A'-10;
+
+            sum += *dst1++ - base;        
+        }
+
+        sum = -(schar)sum;
+        charstrconv::bin2hex( &sum, dst, 1, 1 );
+
+        *dst++ = '\r';
+        *dst++ = '\n';
+        *dst++ = 0;
+
+        return dst - dstb;
+    }
+
+    static token write_intelhex_terminator()
+    {
+        static token t = ":00000001FF\r\n";
+        return t;
+    }
+
+};
+
+COID_NAMESPACE_END
+
+#endif //__COID_COMM_TXTCONV__HEADER_FILE__

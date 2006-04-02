@@ -1,0 +1,259 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is COID/comm module.
+ *
+ * The Initial Developer of the Original Code is
+ * PosAm.
+ * Portions created by the Initial Developer are Copyright (C) 2003
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ * Brano Kemen
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
+
+#ifndef __COID_COMM_BINSTREAM_CONTAINER__HEADER_FILE__
+#define __COID_COMM_BINSTREAM_CONTAINER__HEADER_FILE__
+
+#include "../namespace.h"
+
+#include "bstype.h"
+
+COID_NAMESPACE_BEGIN
+
+class binstream;
+struct opcd;
+
+
+////////////////////////////////////////////////////////////////////////////////
+///Base class for writting and reading multiple objects to and from binstream
+/**
+    The container object provides pointers to objects that should be streamed to or
+    from the binstream, via the next() method. In order to be able to optimize
+    operations with the container, it provides also the is_continuous() method, that
+    says whether the storage is continuous so that the pointer returned first can
+    be used to address successive objects too.
+**/
+struct binstream_container
+{
+    virtual ~binstream_container() {}
+
+    ///Provide a pointer to next object that should be streamed
+    ///@param n number of objects to allocate the space for
+    virtual const void* extract( uints n ) = 0;
+    virtual void* insert( uints n ) = 0;
+
+    ///@return true if the storage is continuous in memory
+    virtual bool is_continuous() const = 0;
+
+    typedef opcd (*fnc_stream)(binstream&, void*);
+
+
+    binstream_container( uints n, bstype::type t, fnc_stream fout, fnc_stream fin )
+        : _stream_in(fin),_stream_out(fout),_type(t),_nelements(n)
+    {
+    }
+
+    ///Set flag in _type to inform binstream methods that the array didn't specify
+    /// its size in advance.
+    ///This is used in binary streams to write and read prefix marks before objects
+    /// to figure out where the array ends.
+    bstype::type set_array_needs_separators()
+    {
+        _type.set_array_unspecified_size();
+        return _type;
+    }
+
+    bool array_needs_separators() const
+    {
+        return _type.is_array_unspecified_size();
+    }
+
+
+    fnc_stream _stream_in;
+    fnc_stream _stream_out;
+
+    ///Type information about streamed object
+    bstype::type _type;
+
+    ///Number of objects to stream, UMAX if not known in advance
+    uints _nelements;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+///Templatized base container
+template<class T>
+struct binstream_containerT : binstream_container
+{
+    enum { ELEMSIZE = sizeof(T) };
+
+    binstream_containerT( uints n ) : binstream_container(n,bstype::t_type<T>(),&stream_out,&stream_in)
+    {}
+
+    static opcd stream_in( binstream& bin, void* p )
+    {
+        try { bin >> *(T*)p; }
+        catch( opcd e ) { return e; }
+        return 0;
+    }
+
+    static opcd stream_out( binstream& bin, void* p )
+    {
+        try { bin << *(const T*)p; }
+        catch( opcd e ) { return e; }
+        return 0;
+    }
+};
+
+template<>
+struct binstream_containerT<void> : binstream_container
+{
+    enum { ELEMSIZE = 1 };
+
+    binstream_containerT( uints n ) : binstream_container(n,bstype::type(bstype::type::T_BINARY,1),0,0)
+    {}
+};
+
+////////////////////////////////////////////////////////////////////////////////
+template<class T>
+struct binstream_dereferencing_containerT : binstream_containerT<T*>
+{
+    enum { ELEMSIZE = sizeof(T) };
+
+
+    virtual const void* extract( uints n )      { return *(T**)_bc.extract(n); }
+    virtual void* insert( uints n )
+    {
+        T** p = _bc.insert(n);
+        *p = new T;
+        return *p;
+    }
+
+    ///@return true if the storage is continuous in memory
+    virtual bool is_continuous() const          { return false; }
+
+
+    binstream_dereferencing_containerT( binstream_containerT<T*>& bc, uints n )
+        : binstream_containerT<T*>(n), _bc(bc)
+    {}
+
+    binstream_containerT<T*>& _bc;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+///Primitive abstract base container
+struct binstream_container_primitive : binstream_container
+{
+    binstream_container_primitive( uints n, bstype::type t ) : binstream_container(n,t,0,0)
+    {}
+
+};
+
+////////////////////////////////////////////////////////////////////////////////
+///Container for writting from a prepared array
+template<class T>
+struct binstream_container_fixed_array : binstream_containerT<T>
+{
+    const void* extract( uints n )
+    {
+        T* p=_ptr;
+        _ptr = ptr_byteshift(_ptr,n*binstream_containerT<T>::ELEMSIZE);
+        return p;
+    }
+
+    void* insert( uints n )
+    {
+        T* p=_ptr;
+        _ptr = ptr_byteshift(_ptr,n*binstream_containerT<T>::ELEMSIZE);
+        return p;
+    }
+
+    bool is_continuous() const      { return true; }
+
+    binstream_container_fixed_array( T* ptr, uints n ) : binstream_containerT<T>(n), _ptr(ptr) {}
+    binstream_container_fixed_array( const T* ptr, uints n ) : binstream_containerT<T>(n), _ptr((T*)ptr) {}
+
+    void set( const T* ptr, uints n )
+    {
+        this->_nelements = n;
+        _ptr = (T*)ptr;
+    }
+
+protected:
+    T* _ptr;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+///Container for r/w from fixed array, but using different type for streaming
+template<class WRAPPER, class CONTENT>
+struct binstream_typechanging_container : public binstream_container
+{
+    const void* extract( uints n )
+    {
+        return (const void*)_ptr++;
+    }
+
+    void* insert( uints n )
+    {
+        return (void*)_ptr++;
+    }
+
+    bool is_continuous() const      { return false; }
+
+    binstream_typechanging_container( const CONTENT* ptr, uints n )
+        : binstream_container(n,bstype::t_type<WRAPPER>(),&stream_out,&stream_in), _ptr(ptr) {}
+
+    void set( const CONTENT* ptr, uints n )
+    {
+        this->_nelements = n;
+        _ptr = (CONTENT*)ptr;
+    }
+
+protected:
+    static opcd stream_out( binstream& bin, void* p )
+    {
+        WRAPPER w( *(const CONTENT*)p );
+        try { bin << w; }
+        catch( opcd e ) { return e; }
+        return 0;
+    }
+
+    static opcd stream_in( binstream& bin, void* p )
+    {
+        WRAPPER w( *(CONTENT*)p );
+        try { bin >> w; }
+        catch( opcd e ) { return e; }
+        return 0;
+    }
+
+protected:
+    const CONTENT* _ptr;
+};
+
+
+COID_NAMESPACE_END
+
+#endif //__COID_COMM_BINSTREAM_CONTAINER__HEADER_FILE__
