@@ -1,0 +1,519 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is COID/comm module.
+ *
+ * The Initial Developer of the Original Code is
+ * PosAm.
+ * Portions created by the Initial Developer are Copyright (C) 2003
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ * Brano Kemen
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
+
+#ifndef __COMM_CACHESTREAM__HEADER_FILE__
+#define __COMM_CACHESTREAM__HEADER_FILE__
+
+#include "../namespace.h"
+
+#include "binstream.h"
+#include "../dynarray.h"
+#include "../str.h"
+
+COID_NAMESPACE_BEGIN
+
+////////////////////////////////////////////////////////////////////////////////
+///Caching stream adapter
+class cachestream : public binstream
+{
+    binstream* _bin;
+    uints _cinread;
+    dynarray<uchar> _cin;
+    dynarray<uchar> _cot;
+    uints _cotwritten;
+
+    enum {
+        CACHE_SIZE                  = 256,
+    };
+
+public:
+
+
+    void takeover( cachestream& other )
+    {
+        _bin = other._bin;
+        _cinread = other._cinread;
+        _cotwritten = other._cotwritten;
+        _cin.takeover( other._cin );
+        _cot.takeover( other._cot );
+
+        other._cinread = 0;
+        other._cotwritten = 0;
+        other._bin = 0;
+    }
+
+    void swap( cachestream& other )
+    {
+        binstream* bin = other._bin;            other._bin = _bin;                  _bin = bin;
+        uints cinread = other._cinread;         other._cinread = _cinread;          _cinread = cinread;
+        uints cotwritten = other._cotwritten;   other._cotwritten = _cotwritten;    _cotwritten = cotwritten;
+        _cin.swap(other._cin);
+        _cot.swap(other._cot);
+    }
+
+    virtual uint binstream_attributes( bool in0out1 ) const
+    {
+        return _bin->binstream_attributes(in0out1) | fATTR_READ_UNTIL;
+    }
+
+    void reserve_buffer_size( uints size )
+    {
+        _cin.reserve( nextpow2(size), false );
+        _cot.reserve( nextpow2(size), false );
+    }
+
+    uints len() const            { return _cotwritten + _cot.size(); }
+
+
+    ///Override this to handle the cache flushes
+    virtual opcd on_cache_flush( void* p, uints size, bool final )
+    {
+        return ersNOT_IMPLEMENTED;
+    }
+
+    ///Override this to handle the cache fills
+    virtual uints on_cache_fill( void* p, uints size )
+    {
+        return 0;
+    }
+
+
+
+    ///Get pointer to raw data in the buffer
+    void* get_raw_usable( uints pos, uints& len )
+    {
+        if( pos >= _cotwritten + _cot.size()  ||  pos < _cotwritten )
+            return 0;
+        if( pos+len > _cotwritten + _cot.size() )
+            len = _cotwritten + _cot.size() - pos;
+
+        return _cot.ptr() + pos - _cotwritten;
+    }
+
+    ///Get pointer to raw data in the buffer
+    void* get_raw( uints pos, uints len )
+    {
+        if( pos >= _cotwritten + _cot.size()  ||  pos < _cotwritten )
+            return 0;
+        if( pos+len > _cotwritten + _cot.size() )
+            return 0;
+
+        return _cot.ptr() + pos - _cotwritten;
+    }
+
+
+    virtual opcd write_raw( const void* p, uints& len )
+    {
+        if( _cot.reserved_total() == 0 )
+            _cot.reserve( CACHE_SIZE, false );
+
+        opcd e = 0;
+
+        uints rm = _cot.reserved_remaining();
+        if( rm >= len )
+        {
+            _cot.add_bin_from( (const uchar*)p, len );
+            len = 0;
+        }
+        else
+        {
+            _cot.add_bin_from( (const uchar*)p, rm );
+
+            p = (const uchar*)p + rm;
+            len -= rm;
+
+            e = on_cache_flush( _cot.ptr(), _cot.size(), false );
+            if( e == ersNOT_IMPLEMENTED )  e = 0;
+            if(e)
+            {
+                //enlarge the cache instead
+                _cot.reserve( _cot.size() + len, true );
+                return write_raw( p, len );
+            }
+
+            uints n = _cot.size();
+            e = _bin->write_raw( _cot.ptr(), n );
+
+            if(e)
+                return e;
+
+            _cotwritten += _cot.size();
+            _cot.reset();
+
+            return write_raw( p, len );
+        }
+
+        return e;
+    }
+
+    virtual opcd read_raw( void* p, uints& len )
+    {
+        opcd e;
+
+        uints rm = _cin.size() - _cinread;
+        if( rm >= len )
+        {
+            xmemcpy( p, _cin.ptr()+_cinread, len );
+            _cinread += len;
+            len = 0;
+            return 0;
+        }
+        else
+        {
+            if(rm)  //copy remaining stuff from cache
+            {
+                xmemcpy( p, _cin.ptr()+_cinread, rm );
+                p = (char*)p + rm;
+                len -= rm;
+                _cinread += rm;
+                return ersRETRY;
+            }
+
+            if( len >= _cin.reserved_total() )
+            {
+                uints rs = fill_cache_line( p, len );
+                len -= rs;
+                e = len ? ersNO_MORE : ersNOERR;
+            }
+            else
+            {
+                read_cache_line();
+
+                uints n;
+                if( _cin.size() < len ) {
+                    n = _cin.size();
+                    e = _cin.size() < CACHE_SIZE  ?  ersNO_MORE : ersRETRY;
+                }
+                else
+                    n = len, e = 0;
+
+                xmemcpy( p, _cin.ptr(), n );
+                _cinread = n;
+                len -= n;
+            }
+
+            return e;
+        }
+    }
+
+
+    virtual opcd open( const token& arg )
+    {
+        return _bin->open(arg);
+    }
+    virtual opcd close( bool linger=false )
+    {
+        return _bin->close(linger);
+    }
+    
+
+    virtual bool is_open() const        { return _bin->is_open(); }
+
+    virtual void flush()
+    {
+        on_cache_flush( _cot.ptr(), _cot.size(), true );
+        if(_cot.size())
+            _bin->xwrite_raw( _cot.ptr(), _cot.size() );     //throws
+
+        _cot.reset();
+        _cotwritten = 0;
+        _bin->flush();
+    }
+
+    virtual void acknowledge (bool eat=false)
+    {
+        if(!eat)
+        {
+            if( _cin.size() - _cinread > 0 )
+                throw ersIO_ERROR "data left in input buffer";
+        }
+        _bin->acknowledge(eat);
+        _cinread = 0;
+        _cin.reset();
+    }
+
+    virtual void reset()
+    {
+        _cot.reset();
+        _cotwritten = 0;
+        if(_bin) _bin->reset();
+    }
+
+    virtual opcd set_timeout( uint ms )
+    {
+        return _bin->set_timeout(ms);
+    }
+
+
+    cachestream()
+    {
+        _bin = 0;
+        _cinread = 0;
+        _cotwritten = 0;
+    }
+    cachestream( binstream* bin )
+    {
+        _bin = bin;
+        _cinread = 0;
+        _cotwritten = 0;
+    }
+    cachestream( binstream& bin )
+    {
+        _bin = &bin;
+        _cinread = 0;
+        _cotwritten = 0;
+    }
+
+    opcd bind( binstream& bin, int io=0 )
+    {
+        _bin = &bin;
+        return 0;
+    }
+
+    binstream* bound( int io=0 ) const          { return _bin; }
+
+	/// read until 'term' bytestring is read or 'max_size' bytes received
+	opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX )
+    {
+        int e = find_substring( ss, bout, max_size );
+        if(e>0) return 0;
+        if(e<0) return ersNO_MORE;
+        return ersNOT_FOUND;
+	}
+
+    ///Advance past substring, preceding part pushing to \a pout (if \a pout is nonzero)
+    /// @return >0 if found, 0 if not found, <0 if no input
+    int find_substring( const substring& sub, binstream* bout, uints limit=UMAX )
+    {
+        uints slen = sub.len();
+        if( slen == 1 )
+            return find_char( sub.ptr()[0], bout, limit );
+
+        uints ts=0;
+        while(1)
+        {
+            uints n = memcmpseg( sub.ptr(), sub.len() );
+            if( n == slen )
+            {
+                _cinread += n;
+                return 1;    //substring found and the current position is just behind it
+            }
+
+            //fetch byte (sub._len) away from current position
+            uints s1 = slen+1;
+            uints asl = fetch_forward(s1);
+            if( s1 > asl )
+            {
+                //end of input, substring cannot be there
+                if( bout )
+                    add_bin_limited( *bout, limit, _cin.ptr()+_cinread, _cin.size() - _cinread );
+                ts += _cin.size() - _cinread;
+                _cinread = _cin.size();
+                return ts ? 0 : -1;
+            }
+
+            uchar o = _cin[_cinread+slen];
+
+            // part to skip
+            uints sk = sub.get_shift(o);      //sk can be (sub._len+1) max
+            if( bout )
+                add_bin_limited( *bout, limit, _cin.ptr()+_cinread, sk );
+            ts += sk;
+            _cinread += sk;
+        }
+    }
+
+    int find_char( char k, binstream* bout, uints limit = UMAX )
+    {
+        uints ts=0;
+        token t( (const char*)_cin.ptr()+_cinread, _cin.size() - _cinread );
+
+        bool bexit=false;
+        while(1)
+        {
+            const char* pk = t.strchr(k);
+            if(pk)
+            {
+                if(bout)
+                    add_bin_limited( *bout, limit, t._ptr, pk - t._ptr );
+                _cinread += pk - t._ptr + 1;
+                return 1;
+            }
+
+            if(bout)
+                add_bin_limited( *bout, limit, t._ptr, t._len );
+            ts += t._len;
+
+            if(bexit) break;
+
+            uints cs = read_cache_line();
+            if( cs == 0 )
+                break;
+            if( cs < _cin.reserved_total() )
+                bexit = true;
+
+            t.set( (const char*)_cin.ptr(), cs );
+        }
+
+        _cinread = _cin.size();
+
+        return ts ? 0 : -1;
+    }
+
+private:
+
+    uints read_cache_line()
+    {
+        if( _cin.reserved_total() == 0 )
+            _cin.reserve( CACHE_SIZE, false );
+
+        uints cs = _cin.reserved_total();
+        _bin->read_raw_full( _cin.ptr(), cs );
+
+        _cin.set_size( _cin.reserved_total() - cs );
+        _cinread = 0;
+        return _cin.size();
+    }
+
+    void fill_cache_line()
+    {
+        uints cs = fill_cache_line( _cin.ptr()+_cin.size(), _cin.reserved_remaining() );
+        _cin.set_size( _cin.size() + cs );
+    }
+
+    uints fill_cache_line( void* p, uints size )
+    {
+        if(!_bin)
+            return on_cache_fill( p, size );
+        else {
+            _bin->read_raw_full( p, size );
+            return _cin.reserved_remaining() - size;
+        }
+    }
+
+    static uints add_bin_limited( binstream& bin, uints& lmax, const void* src, uints len )
+    {
+        uints sz=lmax;
+        if( lmax > len )
+            sz = len;
+        bin.write_raw( src, sz );
+        lmax -= sz;
+        return sz;
+    }
+
+    ///Fetch byte \a offs away from current position, without discarding any data
+    uints fetch_forward( uints offs )
+    {
+        if( _cin.reserved_total() == 0 )
+            _cin.reserve( CACHE_SIZE, false );
+
+        uints rm = _cin.size() - _cinread;
+        if( rm >= offs )
+            return rm;
+        else if( offs <= _cin.reserved_total() )
+        {
+            //compacting the cache would suffice
+            _cin.del( 0, _cinread );
+        }
+        else
+        {
+            //we have to enlarge the cache
+            dynarray<uchar> newcin;
+            newcin.reserve( rm+offs, false );
+
+            if(rm)
+                newcin.copy_bin_from( _cin.ptr()+_cinread, rm );
+            _cin.takeover(newcin);
+        }
+
+        _cinread = 0;
+        fill_cache_line();
+
+        return _cin.size();
+    }
+
+    ///Compare two strings and return length of matching byte string, refill cache
+    uints memcmpseg( const void* subs, uints len )
+    {
+        uints rm = _cin.size() - _cinread;
+        
+        if( rm >= len )
+            return memcmplen( subs, _cin.ptr()+_cinread, len );
+        else
+        {
+            //compare what's there remaining
+            uints n = memcmplen( subs, _cin.ptr()+_cinread, rm );
+            if( n < rm )
+                return n;
+            //load remaining data to cache
+            uints tl = fetch_forward(len);
+            return n + memcmplen( (const uchar*)subs+n, _cin.ptr()+_cinread+n, tl<len ? tl : len );
+        }
+    }
+
+    ///Compare two strings and return length of matching byte string
+    static uints memcmplen( const void* a, const void* b, uints n )
+    {
+        uints i;
+        for( i=0; i<n && ((uchar*)a)[i] == ((uchar*)b)[i]; ++i );
+            return i;
+    }
+
+private:
+/*
+    void QS(char *x, int m, char *y, int n)
+    {
+       int j, qsBc[ASIZE];
+
+       // Preprocessing
+       preQsBc(x, m, qsBc);
+ 
+       // Searching
+       j = 0;
+       while (j <= n - m) {
+          if (memcmp(x, y + j, m) == 0)
+             OUTPUT(j);
+          j += qsBc[y[j + m]];
+       }
+    }
+*/
+};
+
+COID_NAMESPACE_END
+
+#endif //__COMM_CACHESTREAM__HEADER_FILE__
+
