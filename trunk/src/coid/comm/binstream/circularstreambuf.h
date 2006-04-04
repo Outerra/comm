@@ -286,8 +286,12 @@ public:
         if( !eat && _sizerd > 0 )
             throw ersIO_ERROR "data left in received packet";
 
+        if( _begpck == _endpck )
+            throw ersIO_ERROR "no packet to acknowledge";
+
         uint npck = next_pck(_begpck);
         _size -= _lens[_begpck];
+        _lens[_begpck] = 0;
         _begpck = npck;
 
         _sizerd = _lens[npck];
@@ -309,6 +313,7 @@ public:
 
     uints bytes_to_read() const         { return _sizerd; }
     uints packets() const               { uint n = _endpck - _begpck;  return n>_offs.size() ? n+_offs.size() : n; }
+    bool has_packets() const            { return _endpck != _begpck; }
 
     opcd get_packet_data( uint pck, pckdata& a, pckdata& b, uint n=1 )
     {
