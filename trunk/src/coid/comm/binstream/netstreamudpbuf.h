@@ -99,7 +99,8 @@ public:
                 n = k;
         }
 
-        DASSERT( uint64(n) % _packetsize >= sizeof(udp_hdr) );
+        uint m = uint(n) % _packetsize;
+        DASSERT( m >= sizeof(udp_hdr) );
 
         if( n < (int64)_sendbuf.size() ) {
             _sendbuf.need((ints)n);
