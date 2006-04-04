@@ -173,8 +173,18 @@ public:
 
     virtual void reset()
     {
-        //implement this
-        throw ersNOT_IMPLEMENTED;
+        //clear send stuff
+        _spacketid = 0;
+        _sendbuf.reset();
+        _sstate = 0;
+        _sendsize = 0;
+        _flags &= ~fPACKED_READY;
+
+        //clear read stuff
+        _recvd = 0;
+        _roffs = 0;
+        _rpckid = _rpcknum = 0;
+        _rsize = _rtotsize = 0;
     }
 
     virtual void acknowledge( bool eat = false )
@@ -190,6 +200,7 @@ public:
         _recvd = 0;
         _roffs = 0;
         _rpcknum = 0;
+        _rpckid = 0;
     }
 
     bool data_available( uint timeout )
