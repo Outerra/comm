@@ -147,6 +147,11 @@ public:
         return 0;
     }
 
+    void* dbg_get_data( uints offs )
+    {
+        return &_sendbuf[offs];
+    }
+
 
 
     virtual opcd write_raw( const void* p, uints& len )
