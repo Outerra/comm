@@ -57,12 +57,12 @@ struct AssertLog
     bool is_open() const        { return _file.is_open(); }
 };
 
-int coid_assert_throws = 1;
+int assert_throws = 1;
 
 ////////////////////////////////////////////////////////////////////////////////
 opcd __rassert_check( opcd e )
 {
-    return coid_assert_throws ? e : opcd(0);
+    return assert_throws ? e : opcd(0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
