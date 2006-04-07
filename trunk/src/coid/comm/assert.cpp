@@ -57,6 +57,14 @@ struct AssertLog
     bool is_open() const        { return _file.is_open(); }
 };
 
+int coid_assert_throws = 1;
+
+////////////////////////////////////////////////////////////////////////////////
+opcd __rassert_check( opcd e )
+{
+    return coid_assert_throws ? e : 0;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 opcd __rassert( const char* txt, opcd exc, const char* file, int line, const char* expr )
 {
@@ -72,7 +80,7 @@ opcd __rassert( const char* txt, opcd exc, const char* file, int line, const cha
         asl._text.flush();
     }
 
-    return exc;
+    return __rassert_check(exc);
 }
 
 
