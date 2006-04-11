@@ -111,11 +111,11 @@ struct type_trait
 };
 
 #define TYPE_TRIVIAL(t) \
-template<> struct type_trait<t> { \
+template<> struct ::coid::type_trait<t> { \
     enum { trivial_constr = true, trivial_moving_constr = true, }; \
-    typedef type_select< trivial_moving_constr, \
-        type_moving_constructor_trivial<t>, \
-        type_moving_constructor<t> >::type  moving; \
+    typedef ::coid::type_select< trivial_moving_constr, \
+        ::coid::type_moving_constructor_trivial<t>, \
+        ::coid::type_moving_constructor<t> >::type  moving; \
 }
 
 
