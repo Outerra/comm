@@ -110,8 +110,6 @@ struct type_trait
         type_moving_constructor<T> >::type  moving;
 };
 
-#if defined(_MSC_VER)
-
 #define TYPE_TRIVIAL(t) \
 template<> struct type_trait<t> { \
     enum { trivial_constr = true, trivial_moving_constr = true, }; \
@@ -120,9 +118,7 @@ template<> struct type_trait<t> { \
         type_moving_constructor<t> >::type  moving; \
 }
 
-#else
-
-#define TYPE_TRIVIAL(t) namespace coid { \
+#define COID_TYPE_TRIVIAL(t) namespace coid { \
 template<> struct type_trait<t> { \
     enum { trivial_constr = true, trivial_moving_constr = true, }; \
     typedef type_select< trivial_moving_constr, \
@@ -130,7 +126,6 @@ template<> struct type_trait<t> { \
         type_moving_constructor<t> >::type  moving; \
 }; }
 
-#endif
 
 COID_NAMESPACE_END
 
