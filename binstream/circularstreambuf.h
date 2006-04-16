@@ -212,7 +212,7 @@ public:
         if( b.size )
             xmemcpy( b.ptr, (const uchar*)p+a.size, b.size );
 
-        DASSERT( cdcd_memcheck( a.ptr, a.ptr+a.size, b.ptr, b.ptr+b.size ) );
+        //DASSERT( cdcd_memcheck( a.ptr, a.ptr+a.size, b.ptr, b.ptr+b.size ) );
 
         len = 0;
         return 0;
