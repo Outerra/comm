@@ -601,7 +601,7 @@ protected:
 
             limit -= sz;
 
-            DASSERT( cdcd_memcheck( pd, pd+sz, 0, 0 ) );
+            //DASSERT( cdcd_memcheck( pd, pd+sz, 0, 0 ) );
 
             int n = _socket.sendto( pd, sz, 0, &_address );
             if( n == -1 )
