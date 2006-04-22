@@ -649,7 +649,7 @@ protected:
             return false;
         }
 
-        DASSERT( cdcd_memcheck( pck->ptr(), pck->ptr()+n, 0, 0 ) );
+        //DASSERT( cdcd_memcheck( pck->ptr(), pck->ptr()+n, 0, 0 ) );
 
         pck->resize(n);
         udp_hdr* hdr = (udp_hdr*)pck->ptr();
