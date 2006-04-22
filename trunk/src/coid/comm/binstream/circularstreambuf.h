@@ -255,7 +255,7 @@ public:
             npck = _endpck+1;
             _offs.ins(npck);
             _lens.ins(npck);
-            if( _begpck > _endpck )
+            if( _begpck >= npck )
                 ++_begpck;
         }
 
