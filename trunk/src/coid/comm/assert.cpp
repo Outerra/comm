@@ -38,6 +38,7 @@
 #include "assert.h"
 #include "binstream/filestream.h"
 #include "binstream/txtstream.h"
+#include "binstream/nullstream.h"
 
 COID_NAMESPACE_BEGIN
 
@@ -48,10 +49,18 @@ struct AssertLog
     txtstream _text;
     comm_mutex _mutex;
 
-    AssertLog()
+
+    binstream& get_file()
     {
-        if( 0 == _file.open("assert.log?a+b") )
+        if(!_file.is_open())
+        {
+            _file.open("assert.log?a+b");
             _text.bind(_file);
+        }
+
+        if( _file.is_open() )
+            return _text;
+        return nullstream;
     }
 
     bool is_open() const        { return _file.is_open(); }
@@ -72,12 +81,11 @@ opcd __rassert( const char* txt, opcd exc, const char* file, int line, const cha
     {
         comm_mutex_guard<comm_mutex> __guard( asl._mutex );
 
-        if( !asl.is_open() )
-            return ersIO_ERROR "can't open error log file";
+        binstream& bin = asl.get_file();
 
-	    asl._text << "Assertion failed in " << file << ":" << line << " expression:\n    "
+	    bin << "Assertion failed in " << file << ":" << line << " expression:\n    "
 		    << expr << "\n    " << (txt ? txt : "") << "\n\n";
-        asl._text.flush();
+        bin.flush();
     }
 
     return __rassert_check(exc);
