@@ -247,7 +247,7 @@ public:
         //_ptr = p._ptr;
         _ptr = 0;
         uints c = p.size();
-        need_new(c);
+        need(c);
         for( uints i=0; i<c; ++i ) {
             _ptr[i] = p._ptr[i];
         }
@@ -257,7 +257,7 @@ public:
     dynarray& operator = ( const dynarray& p )
     {
         uints c = p.size();
-        need_new(c);
+        need(c);
         for( uints i=0; i<c; ++i )
             _ptr[i] = p._ptr[i];
 
