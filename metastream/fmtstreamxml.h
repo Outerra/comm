@@ -84,7 +84,11 @@ public:
     fmtstreamxml( bool utf8=false ) : _tokenizer(utf8)  {init(0,0);}
     fmtstreamxml( binstream& b, bool utf8=false ) : _tokenizer(utf8)  {init( &b, &b );}
     fmtstreamxml( binstream* br, binstream* bw, bool utf8=false ) : _tokenizer(utf8)  {init( br, bw );}
-    ~fmtstreamxml() {}
+    ~fmtstreamxml()
+    {
+        if(_sesinit)
+            flush();
+    }
 
     void init( binstream* br, binstream* bw )
     {
@@ -218,7 +222,7 @@ public:
     {
         if(!_sesinit)
         {
-            _bufw << "<root>";
+            _bufw << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<root>";
             ++_indent;
             _sesinit = true;
         }
@@ -403,6 +407,13 @@ public:
         if(!_sesinit)
         {
             tag* tg = _tagstack.last();
+            if( tg->_tag == "?xml" )
+            {
+                e = read_tag(0);
+                if(e)  return e;
+                tg = _tagstack.last();
+            }
+
             if( tg->_tag != "root" )
                 return ersSYNTAX_ERROR "expecting root element";
             _sesinit = true;
