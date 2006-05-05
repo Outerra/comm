@@ -110,7 +110,6 @@ void *xmemcpy( void *dest, const void *src, size_t count ) {
 ////////////////////////////////////////////////////////////////////////////////
 bool cdcd_memcheck( const uchar* a, const uchar* ae, const uchar* b, const uchar* be )
 {
-    uint n=1;
     const uchar* p = (const uchar*)::memchr( a, 0xcd, ae-a );
     if(!p)
     {
