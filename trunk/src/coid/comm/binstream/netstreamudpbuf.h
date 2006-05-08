@@ -209,11 +209,11 @@ public:
         _rpckid = 0;
     }
 
-    bool data_available( uint timeout )
+    uints data_available( uint timeout )
     {
         if( _recvd )
         {
-            if( _rsize == _rtotsize )  return true;
+            if( _rsize == _rtotsize )  return _rsize;
             throw ersIMPROPER_STATE;
         }
 
@@ -579,8 +579,8 @@ protected:
             else if( should_pack() && sz > (uints)_packetsize/8 )
             {
                 uints dsz = (_packetsize*3)/2;
-                _packbuf.need_new(dsz);
-                _packwrkbuf.need_new(0x10000);
+                _packbuf.need(dsz);
+                _packwrkbuf.need(0x10000);
                 dsz -= sizeof(udp_hdr);
 
                 lzo1x_1_compress( pd+sizeof(udp_hdr), sz-sizeof(udp_hdr),
@@ -628,25 +628,25 @@ protected:
     }
 
     ///Receive an udp packet
-    ///@return true if message received
-    bool recvpack( uint timeout )
+    ///@return non-zero size if message received
+    uints recvpack( uint timeout )
     {
         if( timeout != 0 )
         {
             int ns = _socket.wait_read(timeout);
             if( ns <= 0 )
-                return false;
+                return 0;
         }
 
         //speculative load on the expected position, although actual packet id may differ
         packet* pck = &_recvbuf.get_or_add(_rpckid);
-        pck->need_new( _packetsize );
+        pck->need( _packetsize );
 
         int n = _socket.recvfrom( pck->ptr(), _packetsize, 0, &_address );
         if( n == -1 )
         {
             //_recvbuf.resize(-(int)_packetsize);
-            return false;
+            return 0;
         }
 
         //DASSERT( cdcd_memcheck( pck->ptr(), pck->ptr()+n, 0, 0 ) );
@@ -660,11 +660,11 @@ protected:
             pck = &_recvbuf[_rpckid];
 
             uints dsz = _packetsize + _packetsize/8;
-            unpck.need_new(dsz);
+            unpck.need(dsz);
             dsz -= sizeof(udp_hdr);
 
             if( 0 != lzo1x_decompress_safe( pck->ptr()+sizeof(udp_hdr), n-sizeof(udp_hdr), unpck.ptr()+sizeof(udp_hdr), &dsz, 0 ) )
-                return false;
+                return 0;
 
             dsz += sizeof(udp_hdr);
             unpck.resize(dsz);
@@ -735,7 +735,7 @@ protected:
         _rpckid = 0;
         _roffs = sizeof(udp_hdr);
 
-        return true;
+        return _rsize;
     }
 
     //
