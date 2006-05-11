@@ -1476,15 +1476,43 @@ struct token
         return val;
     }
 
-    opcd todate( timet& dst )
+    opcd todate_local( timet& dst )
+    {
+        struct tm tmm;
+
+        opcd e = todate( tmm, token::empty() );
+        if(e)  return e;
+
+    #ifdef SYSTYPE_MSVC8plus
+        dst = _mkgmtime( &tmm );
+    #else
+        dst = timegm( &tmm );
+    #endif
+        return 0;
+    }
+
+    opcd todate_gmt( timet& dst )
+    {
+        struct tm tmm;
+
+        opcd e = todate( tmm, "gmt" );
+        if(e)  return e;
+
+    #ifdef SYSTYPE_MSVC8plus
+        dst = _mkgmtime( &tmm );
+    #else
+        dst = timegm( &tmm );
+    #endif
+        return 0;
+    }
+
+    opcd todate( struct tm& tmm, const token& timezone )
     {
         //Tue, 15 Nov 1994 08:12:31 GMT
 
         //skip the day name
         cut_left(',', 1, true);
         cut_left(' ', 1, true);
-
-        struct tm tmm;
 
         tmm.tm_mday = touint_and_shift();
         if( tmm.tm_mday == 0 || tmm.tm_mday > 31 )  return ersINVALID_PARAMS;
@@ -1496,7 +1524,7 @@ struct token
         };
         uint mon;
         for( mon=0; mon<12; ++mon )  if( monstr.cmpeqi(mons[mon]) )  break;
-        if( mon >= 12 )  return ersINVALID_PARAMS;
+        if( mon >= 12 )  return ersINVALID_PARAMS "timefmt: month name";
         tmm.tm_mon = mon;
 
         tmm.tm_year = touint_and_shift() - 1900;
@@ -1504,28 +1532,22 @@ struct token
 
         token h = cut_left(':', 1, true);
         tmm.tm_hour = h.touint_and_shift();
-        if( !h.is_empty() || tmm.tm_hour > 23 )  return ersINVALID_PARAMS;
+        if( !h.is_empty() || tmm.tm_hour > 23 )  return ersINVALID_PARAMS "timefmt: hours";
 
         token m = cut_left(':', 1, true);
         tmm.tm_min = m.touint_and_shift();
-        if( !m.is_empty() || tmm.tm_min > 59 )  return ersINVALID_PARAMS;
+        if( !m.is_empty() || tmm.tm_min > 59 )  return ersINVALID_PARAMS "timefmt: minutes";
 
         token s = cut_left(' ', 1, true);
         tmm.tm_sec = s.touint_and_shift();
-        if( !s.is_empty() || tmm.tm_sec > 59 )  return ersINVALID_PARAMS;
-
-        if( !consume_icase("GMT") )  return ersINVALID_PARAMS;
-
+        if( !s.is_empty() || tmm.tm_sec > 59 )  return ersINVALID_PARAMS "timefmt: seconds";
 
         tmm.tm_isdst = 0;
 
-    #ifdef SYSTYPE_MSVC8plus
-        dst = _mkgmtime( &tmm );
-    #else
-        dst = timegm( &tmm );
-    #endif
+        if( !consume_icase(timezone) )  return ersINVALID_PARAMS "timefmt: time zone";
         return 0;
     }
+
 };
 
 ////////////////////////////////////////////////////////////////////////////////

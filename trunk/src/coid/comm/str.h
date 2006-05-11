@@ -678,7 +678,7 @@ public:
         DATE_TZ             = 0x40,
     };
 
-    void append_date_gmt( const timet t, uint flg=UMAX )
+    charstr& append_date_gmt( const timet t, uint flg=UMAX )
     {
 #ifdef SYSTYPE_MSVC8plus
         struct tm tm;
@@ -686,10 +686,10 @@ public:
 #else
         struct tm const& tm = *gmtime( (const time_t*)&t.t );
 #endif
-        append_time( tm, flg, "GMT" );
+        return append_time( tm, flg, "GMT" );
     }
 
-    void append_date_local( const timet t, uint flg=UMAX )
+    charstr& append_date_local( const timet t, uint flg=UMAX )
     {
 #ifdef SYSTYPE_MSVC8plus
         struct tm tm;
@@ -697,14 +697,14 @@ public:
         char tzbuf[8];
         uints sz;
         _get_tzname( &sz, tzbuf, 8, 0 );
-        append_time( tm, flg, tzbuf );
+        return append_time( tm, flg, tzbuf );
 #else
         struct tm const& tm = *localtime( (const time_t*)&t.t );
-        append_time( tm, flg, tzname[0] );
+        return append_time( tm, flg, tzname[0] );
 #endif
     }
 
-    void append_time( struct tm const& tm, uint flg, const token& tz )
+    charstr& append_time( struct tm const& tm, uint flg, const token& tz )
     {
         //Tue, 15 Nov 1994 08:12:31 GMT
         static const char* wday[] = { "Sun, ", "Mon, ", "Tue, ", "Wed, ", "Thu, ", "Fri, ", "Sat, " };
@@ -743,6 +743,8 @@ public:
             append(' ');
             append(tz);
         }
+
+        return *this;
     }
 
 
@@ -1519,6 +1521,18 @@ struct nchar_fmt
     }
 };
 */
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+inline charstr& opcd_formatter::text( charstr& dst ) const
+{
+    dst << _e.error_desc();
+
+    if( _e.text() && _e.text()[0] )
+        dst << " : " << _e.text();
+    return dst;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 /// This is lazy command tokenizer, expecting that no one will ever want him to
