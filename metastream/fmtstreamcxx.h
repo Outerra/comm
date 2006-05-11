@@ -495,7 +495,7 @@ public:
                     if( !_tokenizer.was_string() )
                         return ersSYNTAX_ERROR "expected time";
                     
-                    e = tok.todate( *(timet*)p );
+                    e = tok.todate_local( *(timet*)p );
                     if( !e && !tok.is_empty() )
                         e = ersSYNTAX_ERROR "unexpected trailing characters";
                 } break;

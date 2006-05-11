@@ -769,6 +769,8 @@ struct opcd_formatter
 
     opcd_formatter( opcd e ) : _e(e) { }
 
+    charstr& text( charstr& dst ) const;
+
     friend binstream& operator << (binstream& out, const opcd_formatter& f)
     {
         out << f._e.error_desc();

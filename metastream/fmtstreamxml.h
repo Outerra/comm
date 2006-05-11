@@ -69,7 +69,8 @@ protected:
 
     //bool _structend_on_stack;               ///< a struct end token was read during member reading phase
     bool _tag_read;                         ///< tag was read by previous key read (andnot yet consumed)
-    bool _sesinit;                          ///< session has been initiated (read or write block, cleared with flush/ack)
+    bool _sesinitr;                         ///< session has been initiated (read or write block, cleared with flush/ack)
+    bool _sesinitw;
 
 
     ///
@@ -86,7 +87,10 @@ public:
     fmtstreamxml( binstream* br, binstream* bw, bool utf8=false ) : _tokenizer(utf8)  {init( br, bw );}
     ~fmtstreamxml()
     {
-        if(_sesinit)
+        if(_sesinitr)
+            acknowledge();
+
+        if(_sesinitw)
             flush();
     }
 
@@ -99,7 +103,7 @@ public:
         _indent = 0;
         //_structend_on_stack = 0;
         _tag_read = 0;
-        _sesinit = 0;
+        _sesinitr = _sesinitw = 0;
         
         _tokenizer.add_to_group( 0, " \t\r\n" );
 
@@ -118,7 +122,7 @@ public:
         _tokenizer.add_to_group( GROUP_IDENTIFIERS, "/_:" );
 
         //characters that correspond to struct and array control tokens
-        _tokenizer.add_to_group( GROUP_CONTROL, "<>=", true );
+        _tokenizer.add_to_group( GROUP_CONTROL, "<>=?", true );
 
         //remaining stuff to group 3, single char output
         _tokenizer.add_remaining( 3, true );
@@ -169,10 +173,10 @@ public:
         if( _binw == NULL )
             return;
 
-        if(!_sesinit)
+        if(!_sesinitw)
             throw ersIMPROPER_STATE;
 
-        _sesinit = false;
+        _sesinitw = false;
         _indent = 0;
         _bufw << "\n</root>\n";
 
@@ -212,7 +216,7 @@ public:
         //_structend_on_stack = false;
         _tag_read = false;
         _tagstack.reset();
-        _sesinit = 0;
+        _sesinitr = _sesinitw = 0;
     }
 
 
@@ -220,11 +224,11 @@ public:
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     opcd write( const void* p, type t )
     {
-        if(!_sesinit)
+        if(!_sesinitw)
         {
             _bufw << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<root>";
             ++_indent;
-            _sesinit = true;
+            _sesinitw = true;
         }
 
         if( t.is_array_control_type() )
@@ -395,30 +399,30 @@ public:
         token tok;
 
         opcd e=0;
+
+        if(!_sesinitr)
+        {
+            e = read_hdr_tag();
+            if(e)  return e;
+
+            e = read_tag(0);
+            if(e)  return e;
+            tag* tg = _tagstack.last();
+
+            if( tg->_tag != "root" )
+                return ersSYNTAX_ERROR "expecting root element";
+            _sesinitr = true;
+
+            //read next tag
+            e = read_tag(0);
+            if(e)  return e;
+        }
+
         //if _tag_read is false at this point, it means that this is the first
         // object to read, and thus array_begin:key was not called
         // or, it can be an array element
         if( !_tag_read )
         {
-            e = read_tag(0);
-            if(e)  return e;
-        }
-
-        if(!_sesinit)
-        {
-            tag* tg = _tagstack.last();
-            if( tg->_tag == "?xml" )
-            {
-                e = read_tag(0);
-                if(e)  return e;
-                tg = _tagstack.last();
-            }
-
-            if( tg->_tag != "root" )
-                return ersSYNTAX_ERROR "expecting root element";
-            _sesinit = true;
-
-            //read next tag
             e = read_tag(0);
             if(e)  return e;
         }
@@ -564,7 +568,7 @@ public:
 
                 /////////////////////////////////////////////////////////////////////////////////////
                 case type::T_TIME: {
-                    e = tok.todate( *(timet*)p );
+                    e = tok.todate_local( *(timet*)p );
                     if( !e && !tok.is_empty() )
                         e = ersSYNTAX_ERROR "unexpected trailing characters";
                 } break;
@@ -762,6 +766,39 @@ protected:
     dynarray<tag> _tagstack;
     token _curname;
 
+
+    ///
+    opcd read_hdr_tag()
+    {
+        token tk1 = _tokenizer.next();
+        token tk2 = _tokenizer.next();
+        token xml = _tokenizer.next();
+
+        if( tk1 != char('<')  &&  tk2 != char('?')  &&  xml != "xml" )  return ersSYNTAX_ERROR "expected <?xml";
+
+        while(1)
+        {
+            token tok = _tokenizer.next();
+            if( tok == char('?') ) {
+                tok = _tokenizer.next();
+                if( tok != char('>') )  return ersSYNTAX_ERROR "expected ?>";
+                return 0;
+            }
+/*
+            charstr* pch=0;
+            if( tok == "version" )          pch = &dst->_name;
+            else if( tok == "encoding" )    pch = &dst->_type;
+            else return ersSYNTAX_ERROR "unknown attribute";
+*/
+            tok = _tokenizer.next();
+            if( tok != char('=') )  return ersSYNTAX_ERROR "expected =";
+
+            //_tokenizer.next(*pch);
+            _tokenizer.next();
+            if( _tokenizer.last_string_delimiter() != char('"') )
+                return ersSYNTAX_ERROR "expected \"";
+        }
+    }
 
     ///read whole tag (with optional attributes)
     opcd read_tag( tag** dstp )
