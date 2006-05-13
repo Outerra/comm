@@ -162,7 +162,7 @@ inline typename SIGNEDNESS<INT>::UNSIGNED int_abs( INT a )
 
 ///@return a<0 ? onminus : onplus
 template< class INT >
-inline typename INT int_select_by_sign( INT a, INT onplus, INT onminus )
+inline INT int_select_by_sign( INT a, INT onplus, INT onminus )
 {
     return ((a>>(sizeof(INT)*8-1))&(onminus-onplus)) + onplus;
 }
