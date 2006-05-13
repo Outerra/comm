@@ -135,9 +135,7 @@ inline INT int_min( INT a, INT b )
 template< class INT >
 inline INT uint_min( INT a, INT b )
 {
-    b = b-a;            // b>a => MSB(o)==1 => (o>>31) == UMAX
-    a += b & ((int)b>>(sizeof(INT)*8-1));
-    return a;
+    return  b + ((a - b) & -(a < b));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -152,9 +150,7 @@ inline INT int_max( INT a, INT b )
 template< class INT >
 inline INT uint_max( INT a, INT b )
 {
-    b = a-b;
-    a -= b & ((int)b>>(sizeof(INT)*8-1));
-    return a;
+    return  a - ((a - b) & -(a < b));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -162,6 +158,13 @@ template< class INT >
 inline typename SIGNEDNESS<INT>::UNSIGNED int_abs( INT a )
 {
     return typename SIGNEDNESS<INT>::UNSIGNED( a - ((a+a) & (a>>(sizeof(INT)*8-1))) );
+}
+
+///@return a<0 ? onminus : onplus
+template< class INT >
+inline typename INT int_select_by_sign( INT a, INT onplus, INT onminus )
+{
+    return ((a>>(sizeof(INT)*8-1))&(onminus-onplus)) + onplus;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
