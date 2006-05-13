@@ -174,7 +174,7 @@ template< class INT >
 inline typename SIGNEDNESS<INT>::UNSIGNED int_umod( INT v, INT m )
 {
     INT r = v%m;
-    return typename SIGNEDNESS<INT>::UNSIGNED( int_select_by_sign(r,m+r,r) );   // r<0 ? r : m+r
+    return typename SIGNEDNESS<INT>::UNSIGNED( int_select_by_sign(r,r,m+r) );   // r<0 ? m+r : r
 }
 
 ///Divide nearest lower multiple of \a m of given number \a v by \a m
