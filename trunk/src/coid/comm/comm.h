@@ -128,7 +128,7 @@ template< class INT >
 inline INT int_min( INT a, INT b )
 {
     b = b-a;            // b>a => MSB(o)==1 => (o>>31) == UMAX
-    a += b & (b>>(sizeof(INT)*8-1));
+    a += b & ((typename SIGNEDNESS<INT>::SIGNED)b>>(sizeof(INT)*8-1));
     return a;
 }
 
@@ -143,7 +143,7 @@ template< class INT >
 inline INT int_max( INT a, INT b )
 {
     b = a-b;
-    a -= b & (b>>(sizeof(INT)*8-1));
+    a -= b & ((typename SIGNEDNESS<INT>::SIGNED)b>>(sizeof(INT)*8-1));
     return a;
 }
 
@@ -157,14 +157,14 @@ inline INT uint_max( INT a, INT b )
 template< class INT >
 inline typename SIGNEDNESS<INT>::UNSIGNED int_abs( INT a )
 {
-    return typename SIGNEDNESS<INT>::UNSIGNED( a - ((a+a) & (a>>(sizeof(INT)*8-1))) );
+    return typename SIGNEDNESS<INT>::UNSIGNED( a - ((a+a) & ((typename SIGNEDNESS<INT>::SIGNED)a>>(sizeof(INT)*8-1))) );
 }
 
 ///@return a<0 ? onminus : onplus
 template< class INT >
 inline INT int_select_by_sign( INT a, INT onplus, INT onminus )
 {
-    return ((a>>(sizeof(INT)*8-1))&(onminus-onplus)) + onplus;
+    return (((typename SIGNEDNESS<INT>::SIGNED)a>>(sizeof(INT)*8-1))&(onminus-onplus)) + onplus;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -174,7 +174,7 @@ template< class INT >
 inline typename SIGNEDNESS<INT>::UNSIGNED int_umod( INT v, INT m )
 {
     INT r = v%m;
-    return typename SIGNEDNESS<INT>::UNSIGNED( r<0  ?  m+r  :  r );
+    return typename SIGNEDNESS<INT>::UNSIGNED( int_select_by_sign(r,m+r,r) );   // r<0 ? r : m+r
 }
 
 ///Divide nearest lower multiple of \a m of given number \a v by \a m
@@ -182,7 +182,7 @@ template< class INT >
 inline INT int_udiv( INT v, typename SIGNEDNESS<INT>::UNSIGNED m )
 {
     INT r = v/m;
-    return v<0  ?  r-1  :  r;
+    return int_select_by_sign( v,r,r-1 );   //v<0  ?  r-1  :  r;
 }
 
 COID_NAMESPACE_END
