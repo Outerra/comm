@@ -167,6 +167,13 @@ inline INT int_select_by_sign( INT a, INT onplus, INT onminus )
     return (((typename SIGNEDNESS<INT>::SIGNED)a>>(sizeof(INT)*8-1))&(onminus-onplus)) + onplus;
 }
 
+///change sign of val when pattern is negative
+template< class INT >
+inline INT int_change_sign( INT pattern, INT val )
+{
+    return val - (((typename SIGNEDNESS<INT>::SIGNED)pattern>>(sizeof(INT)*8-1)) & (val+val));
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 ///Always return unsigned modulo, a difference between the \a v number and its nearest
 /// lower multiple of \a m 
