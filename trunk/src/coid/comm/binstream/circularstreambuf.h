@@ -291,7 +291,7 @@ public:
 
         uint npck = next_pck(_begpck);
         _size -= _lens[_begpck];
-        _lens[_begpck] = 0;
+        //_lens[_begpck] = 0;
         _begpck = npck;
 
         _sizerd = _lens[npck];
