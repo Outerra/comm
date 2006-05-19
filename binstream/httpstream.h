@@ -240,7 +240,7 @@ public:
                 }
                 else if( h1.cmpeqi("If-Modified-Since") )
                 {
-                    h.todate(_if_mdf_since);
+                    h.todate_gmt(_if_mdf_since);
                 }
             }
 
