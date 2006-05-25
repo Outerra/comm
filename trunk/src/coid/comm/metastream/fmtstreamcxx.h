@@ -82,7 +82,6 @@ public:
 
         _indent = 0;
 
-        set_default_separators();
         _tokenizer.add_to_group( 0, " \t\r\n" );
 
         //_tokenizer.set_special_char( '\"', '\\' ); 
@@ -108,6 +107,8 @@ public:
         //_tokenizer.add_to_group( 2, "()~!@#$%^&*-+=|\\?/<>`'.,;:" );
 
         init_tokenizer();
+
+        set_default_separators();
     }
 
 
