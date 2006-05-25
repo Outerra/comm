@@ -1450,7 +1450,11 @@ struct token
     ///Convert the token to double
     double todouble_and_shift( uints offs=0 )
     {
-        double val = (double)toint_and_shift(offs);
+        bool invsign=false;
+        if( first_char() == '-' ) { ++_ptr; --_len; invsign=true; }
+        else if( first_char() == '+' ) { ++_ptr; --_len; }
+
+        double val = (double)touint_and_shift(offs);
 
         if( first_char() == '.' )
         {
@@ -1460,7 +1464,7 @@ struct token
             uints plen = len();
             uints dec = touint_and_shift();
             plen -= len();
-            if(plen)
+            if(plen && dec)
                 val += dec * pow( (double)10, -(int)plen );
         }
 
@@ -1473,7 +1477,7 @@ struct token
             val *= pow( (double)10, m );
         }
 
-        return val;
+        return invsign ? -val : val;
     }
 
     opcd todate_local( timet& dst )
