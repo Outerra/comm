@@ -191,7 +191,7 @@ private:
 
     void sortoned( const T* psrc )
     {
-        uints i, j, nit;
+        ints i, j, nit;
         uints audsti[256];
         INT_IDX* puidx = _puidxb;
 
@@ -213,7 +213,7 @@ private:
 
     void sorttwod( const T* psrc, INT_IDX* pusrcidx, INT_IDX *pudstidx, uints uoffs )
     {
-        uints i, j, nit;
+        ints i, j, nit;
         uints audsti[256];
 
         nit = _puidxa.size() >> 1;
