@@ -102,12 +102,18 @@ public:
     }
 
     ///Eject mutex out of guard, do not unlock
-    void eject() { _mut = NULL; }
+    void eject() { _mut = 0; }
+
+    void unlock()
+    {
+        if(_mut)
+            _mut->unlock();
+        _mut = 0;
+    }
 
     ~comm_mutex_guard ()
     {
-		if(_mut)
-            _mut->unlock();
+		unlock();
     }
 };
 

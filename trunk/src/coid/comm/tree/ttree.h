@@ -250,15 +250,16 @@ protected:
 
         ///Test if this node is hooked on to \a id_ref node
         ///@return -1 if not, position in the target list of hooked nodes otherwise
-        long is_hooked_to (COID id_ref) const   { return find_in_list (_ahookref, id_ref); }
+        int is_hooked_to (COID id_ref) const    { return find_in_list (_ahookref, id_ref); }
         ///Test if id_ref node is hooked on to this node
         ///@return -1 if not, position in the list of hooked nodes otherwise
-        long is_referred_by (COID id_node) const{ return find_in_list (_ahooked, id_node); }
+        int is_referred_by (COID id_node) const { return find_in_list (_ahooked, id_node); }
         ///Test if given node is child of this node
         ///@return -1 if not, position in the list of children nodes otherwise
-        long find_id (COID id) const            { return find_in_list (_asubnodes, id); }
+        int find_id (COID id) const             { return find_in_list (_asubnodes, id); }
 
         bool has_children() const               { return _asubnodes.size() > 0; }
+        bool has_dependants() const             { return _ahooked.size() > 0; }
 
         friend binstream& operator << (binstream& out, const NODE& n) {
             out << n._superior << n._asubnodes << n._class
@@ -363,6 +364,10 @@ public:
 
         ///Get level of the node
         uint get_level() const                  { return _tree->_nodes[_id].get_level(); }
+
+
+        bool has_children() const               { return _tree->_nodes[_id]._asubnodes.size() > 0; }
+        bool has_dependants() const             { return _tree->_nodes[_id]._ahooked.size() > 0; }
 
         ///Returns true if this and the given node reside in the same tree
         bool is_same_tree (COID id) const       { return id.get_tree_id() == _tree->_idinforest; }
