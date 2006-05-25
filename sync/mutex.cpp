@@ -51,8 +51,14 @@
 #endif
 
 
-
 namespace coid {
+
+
+static MsecTimer& get_msec_timer()
+{
+    static MsecTimer _mst;
+    return _mst;
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -81,7 +87,7 @@ comm_mutex::comm_mutex( NOINIT_t n ) : _comm_mutex(n)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-comm_mutex::~comm_mutex ()
+comm_mutex::~comm_mutex()
 {
 #ifdef _DEBUG
 	SINGLETON(MX_REGISTER).del( this );
@@ -89,17 +95,17 @@ comm_mutex::~comm_mutex ()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void comm_mutex::lock ()
+void comm_mutex::lock()
 {
     _comm_mutex::lock();
 
 #ifdef _DEBUG
-	_locktime = SINGLETON(MsecTimer).time();
+	_locktime = get_msec_timer().time();
 #endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void comm_mutex::unlock ()
+void comm_mutex::unlock()
 {
 #ifdef _DEBUG
 	_locktime = 0;
@@ -108,12 +114,12 @@ void comm_mutex::unlock ()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool comm_mutex::try_lock ()
+bool comm_mutex::try_lock()
 {
 #ifdef _DEBUG
 	bool r = _comm_mutex::try_lock();
     if(r)
-		_locktime = SINGLETON(MsecTimer).time();
+		_locktime = get_msec_timer().time();
     return r;
 #else
     return _comm_mutex::try_lock();
