@@ -68,7 +68,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\bin\comm.lib"
+				OutputFile="..\..\..\bin\commd.lib"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
