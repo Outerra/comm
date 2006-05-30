@@ -1218,11 +1218,11 @@ protected:
         {
             if(!alc)
                 alc = &SINGLETON(seg_allocator);
-            return set_dynarray_conforming_ptr( (T*) (alc->alloc( n, sizeof(T) ) + 1) );
+            return set_dynarray_conforming_ptr( (T*) (alc->alloc( n, sizeof(T) ) + 1) ).ptr();
         }
 
         hdr->_count = n;
-        return set_dynarray_conforming_ptr( (T*) (hdr+1) );
+        return set_dynarray_conforming_ptr( (T*) (hdr+1) ).ptr();
     }
 
     T* _pg_realloc( uints count, ssegpage* pg, seg_allocator* alc )
@@ -1239,7 +1239,7 @@ protected:
             dynarray<T> n;
             n._pg_alloc( count, pg, alc );
             _pg_copy( n._ptr, count );
-            return takeover(n);
+            return takeover(n).ptr();
         }
 
         _pg_predestroy( count );
@@ -1248,14 +1248,14 @@ protected:
         if(hdr)
         {
             hdr->_count = count;
-            return set_dynarray_conforming_ptr( (T*)(hdr+1) );
+            return set_dynarray_conforming_ptr( (T*)(hdr+1) ).ptr();
         }
         else
         {
             dynarray<T> n;
             n._pg_alloc( count, pg, alc );
             _pg_copy( n._ptr, count );
-            return takeover(n);
+            return takeover(n).ptr();
         }
     }
 

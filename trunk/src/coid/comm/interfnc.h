@@ -136,8 +136,24 @@ public:
             return false;
         }
 
-
         bool is_set() const                 { return eld != 0; }
+
+        friend binstream& operator << (binstream& bin, const element& e)
+        {
+            if (! e.is_set())  return bin << 0L;
+            return bin << e.get_class_name();
+        }
+
+        friend binstream& operator >> (binstream& bin, element& e)
+        {
+            charstr name;
+            bin >> name;
+            if( name.is_empty() ) return bin;
+            e = SINGLETON(ClassRegister<IFACE>).find_only(name);
+            if( !e.is_set() )
+                throw ersNOT_FOUND "class to stream object";
+            return bin;
+        }
     };
 
     struct Any
@@ -387,28 +403,6 @@ private:
 
 //    static element get_element( const element_data* e )     { element x;  x.eld = e;  return x; }
 };
-
-
-////////////////////////////////////////////////////////////////////////////////
-template<class IFACE>
-inline binstream& operator << (binstream& bin, const typename ClassRegister<IFACE>::NodeClass& e)
-{
-    if (! e.is_set())  return bin << 0L;
-    return bin << e.get_class_name();
-}
-
-
-template<class IFACE>
-inline binstream& operator >> (binstream& bin, typename ClassRegister<IFACE>::NodeClass& e)
-{
-    charstr name;
-    bin >> name;
-    if( name.is_empty() ) return bin;
-    e = SINGLETON(ClassRegister<IFACE>).find_only(name);
-    if( !e.is_set() )
-        throw ersNOT_FOUND "class to stream object";
-    return bin;
-}
 
 
 //////////////////////////////////////////////////////////////////////////
