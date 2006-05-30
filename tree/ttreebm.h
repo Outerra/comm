@@ -172,8 +172,8 @@ public:
         fSTREAM_BITMAP          = 2,
     };
 
-    typedef ttree<T, NCT, MAP_POLICY>    TYPE_TTREE;
-    typedef TYPE_TTREE::forest           TYPE_FOREST;
+    typedef ttree<T, NCT, MAP_POLICY>       TYPE_TTREE;
+    typedef typename TYPE_TTREE::forest     TYPE_FOREST;
 
     ttree_bitmap ()
     {
@@ -202,8 +202,8 @@ public:
     bool def_sel () const       { return (_flags & fDEFAULT_SELECTED) != 0; }
     bool stream_bmp () const    { return (_flags & fSTREAM_BITMAP) != 0; }
 
-    uint get_flags () const    { return _flags; }
-    uint set_flags (uint f)   { return _flags = f; }
+    uint get_flags () const     { return _flags; }
+    uint set_flags (uint f)     { return _flags = f; }
 
     uint adjust_size (ttree_bitmap& t)
     {
@@ -396,7 +396,7 @@ public:
     */
 #define LOWEST_LEVEL(x)						(x == UMAX-1)
 
-    uint set_liberating_rule (const TYPE_TTREE::ID& root, LNID to, uint fromdepth, uint todepth)
+    uint set_liberating_rule (const typename TYPE_TTREE::ID& root, LNID to, uint fromdepth, uint todepth)
     {
         TYPE_TTREE::ID id = root;
 
@@ -434,7 +434,7 @@ public:
         of the removed nodes. The method with two depth arguments can be broken to several calls to simpler method
         with one depth argument (todepth), with root computed from given key and the \a fromdepth argument.
     */
-    uint set_restricting_rule (const TYPE_TTREE::ID& root, LNID to, uint fromdepth, uint todepth)
+    uint set_restricting_rule (const typename TYPE_TTREE::ID& root, LNID to, uint fromdepth, uint todepth)
     {
         TYPE_TTREE::ID id = root;
 
@@ -485,7 +485,7 @@ public:
 protected:
     ////////////////////////////////////////////////////////////////////////////////
     ///Apply rule that adds accessible keys
-    void set_liberating_rule (const TYPE_TTREE::ID& root, LNID to, uint todepth)
+    void set_liberating_rule (const typename TYPE_TTREE::ID& root, LNID to, uint todepth)
     {
         TYPE_TTREE::ID id = root;
         TYPE_TTREE::ID rt = root;
@@ -513,7 +513,7 @@ protected:
 
     ////////////////////////////////////////////////////////////////////////////////
     ///Apply rule that removes accessible keys
-    void set_restricting_rule (const TYPE_TTREE::ID& root, LNID to, uint todepth)
+    void set_restricting_rule (const typename TYPE_TTREE::ID& root, LNID to, uint todepth)
     {
         TYPE_TTREE::ID id = root;
         TYPE_TTREE::ID rt = root;
@@ -545,7 +545,7 @@ protected:
         @param n gets number of nodes traversed
         @param a gets number of nodes accessible
     */
-    uint compute_flags (const TYPE_TTREE::ID& root, uint& full, uint& min, uint& max, LNID& vis)
+    uint compute_flags (const typename TYPE_TTREE::ID& root, uint& full, uint& min, uint& max, LNID& vis)
     {
         TYPE_TTREE::ID id = root;
 

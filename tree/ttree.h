@@ -836,12 +836,12 @@ public:
 
             if (toroot && k != UMAX)
             {
-                if (256-k < count)  count = 256-k;
+                if (256-k < (int)count)  count = 256-k;
                 xmemcpy (out, ac+k, count*sizeof(COID));
             }
             else
             {
-                if (256-u < count)  count = 256-u;
+                if (256-u < (int)count)  count = 256-u;
                 xmemcpy (out, ac+u, count*sizeof(COID));
             }
             return true;
@@ -874,12 +874,12 @@ public:
 
             if (toroot)
             {
-                if (256-k < count)  count = 256-k;
+                if (256-k < (int)count)  count = 256-k;
                 xmemcpy (out, ac+k, count*sizeof(LNID));
             }
             else
             {
-                if (256-u < count)  count = 256-u;
+                if (256-u < (int)count)  count = 256-u;
                 xmemcpy (out, ac+u, count*sizeof(LNID));
             }
             return true;
@@ -1032,6 +1032,31 @@ public:
         mutable comm_mutex  _mutex;
         dynarray< TREE* >   _forest;
         uint _nupd;
+
+
+        friend binstream& operator << (binstream& bin, const forest& p)
+        {
+            bin << p._forest.size();
+            uint lim = p._forest.size();
+            for (uint i=0; i<lim; ++i)
+            {
+                bin << *p._forest[i];
+            }
+            return bin;
+        }
+        friend binstream& operator >> (binstream& bin, forest& p)
+        {
+            uint lim;
+            bin >> lim;
+            //p._forest.need_new (lim);
+            for (uint i=0; i<lim; ++i)
+            {
+                ttree<T,NCT,MAP_POLICY>* t = p.add_tree();
+                bin >> *t;
+            }
+            return bin;
+        }
+
 
         forest() : _nupd(0) {_mutex.set_name( "forest" );}
 
@@ -1618,7 +1643,7 @@ public:
         {
             token k = tok.cut_left(separator,-1);
 
-            COID* pn = id->_asubnodes;
+            COID* pn = id->_asubnodes.ptr();
             uint i, lim = id->_asubnodes.size();
 
             for( i=0; i<lim; ++i )
@@ -1653,7 +1678,7 @@ public:
         {
             token k = tok.cut_left(separator,-1);
 
-            COID* pn = id->_asubnodes;
+            COID* pn = id->_asubnodes.ptr();
             uint i, lim = id->_asubnodes.size();
 
             for( i=0; i<lim; ++i )
@@ -1992,7 +2017,7 @@ protected:
         RASSERTX( idt < _forest->count(), "invalid tree id" );
         ttree<T,NCT,MAP_POLICY>* t = (*_forest)[idt];
         RASSERTX( t->check_key(id.get_node_id()), "invalid node id" );
-        return t->_nodes + id.get_node_id();
+        return t->_nodes.ptr() + id.get_node_id();
     }
 
 
@@ -2477,33 +2502,6 @@ template <class T, class NCT, class MAP_POLICY>
 inline void ttree<T,NCT,MAP_POLICY>::move_in_subordinated (const ID& node, uint pos)
 {
     node.move (pos);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-template <class T, class NCT, class MAP_POLICY>
-inline binstream& operator << (binstream& out, const typename ttree<T,NCT,MAP_POLICY>::forest& p)
-{
-    out << p._forest.size();
-    uint lim = p._forest.size();
-    for (uint i=0; i<lim; ++i)
-    {
-        out << *p._forest[i];
-    }
-    return out;
-}
-
-template <class T, class NCT, class MAP_POLICY>
-inline binstream& operator >> (binstream& in, typename ttree<T,NCT,MAP_POLICY>::forest& p)
-{
-    uint lim;
-    in >> lim;
-    //p._forest.need_new (lim);
-    for (uint i=0; i<lim; ++i)
-    {
-        ttree<T,NCT,MAP_POLICY>* t = p.add_tree();
-        in >> *t;
-    }
-    return in;
 }
 
 COID_NAMESPACE_END
