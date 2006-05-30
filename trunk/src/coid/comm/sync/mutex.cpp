@@ -54,12 +54,13 @@
 namespace coid {
 
 
+#ifdef _DEBUG
 static MsecTimer& get_msec_timer()
 {
     static MsecTimer _mst;
     return _mst;
 }
-
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 #ifdef _DEBUG
