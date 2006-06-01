@@ -232,7 +232,7 @@ public:
     T* _ptr;
 
     dynarray() {
-        //A::instance();
+        A::instance();
         _ptr = 0;
     }
 
