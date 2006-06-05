@@ -102,7 +102,7 @@ public:
             _rop = 0;
         }
 
-        len -= ::_write( _handle, p, len );
+        len -= ::_write( _handle, p, (uint)len );
         return 0;
     }
 
@@ -115,7 +115,7 @@ public:
             _rop = 1;
         }
 
-        len -= ::_read( _handle, p, len );
+        len -= ::_read( _handle, p, (uint)len );
         if( len > 0 )
             return ersNO_MORE "required more data than available";
         return 0;

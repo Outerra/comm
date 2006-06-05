@@ -127,6 +127,7 @@ public:
     ///After a successful call to next(), this function returns full path to the file
     const charstr& get_last_full_path() const   { return _curpath; }
     const char* get_last_file_name() const      { return _curpath.ptr() + _baselen; }
+    token get_last_file_name_token() const      { return token(_curpath.ptr()+_baselen,_curpath.len()-_baselen); }
 
 private:
     charstr     _curpath;
