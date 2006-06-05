@@ -85,6 +85,16 @@ inline UINT nextpow2( UINT x )
     return ++x;
 }
 
+template<>
+inline uints nextpow2<uints>( uints x )
+{
+    if(!x)  return 1;
+    --x;
+    for( uint n=1; n<sizeof(x)*8; n<<=1 )
+        x |= x>>n;
+    return ++x;
+}
+
 
 inline uchar getpow2( uints x )     { uchar i;  for( i=0; x; ++i,x>>=1 );  return i-1; }
 

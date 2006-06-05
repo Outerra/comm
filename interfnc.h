@@ -443,11 +443,11 @@ private:
 #define IMPLEMENTS_VIRTUAL_INTERFACE_END \
     };
 
-/*
 /// Registers interface for given class
-#define IMPLEMENTS_INTERFACE_REGISTER(classname,iface) \
-static const iface& __iface_initializer__##classname = INTERFACE_REGISTER(iface).add( #classname, classname::GET_INTERFACE() );
+#define IMPLEMENTS_INTERFACE_REGISTER(iface,classname) \
+static ClassRegister<iface>::NodeClass __iface_initializer__##classname = classname::GET_INTERFACE()
 
+/*
 /// Registers null interface for given class
 #define IMPLEMENTS_INTERFACE_REGISTER_NULL(classname,iface) \
 static const ClassRegister<iface>::Element& __iface_initializer__##classname = INTERFACE_REGISTER(iface).add( #classname, ClassRegister<iface>::Element(0,"0.0.0.0") );

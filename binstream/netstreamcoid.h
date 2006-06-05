@@ -302,7 +302,7 @@ private:
         int blk = 0;
         for(; len; )
         {
-            int n = _socket.send( p, len );
+            int n = _socket.send( p, (int)len );
             if( n == -1 )
             {
                 if( errno == EAGAIN )
@@ -339,7 +339,7 @@ private:
         int blk = 0;
         for (; len; )
         {
-            int n = _socket.recv( p, len );
+            int n = _socket.recv( p, (int)len );
             if( n == -1 )
             {
                 if( errno == EAGAIN )
