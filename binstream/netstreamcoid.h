@@ -342,7 +342,7 @@ private:
                 return ersDISCONNECTED;
         }
 
-        int blk = 0;
+        //int blk = 0;
         for (; len; )
         {
             int n = _socket.recv( p, (int)len );
