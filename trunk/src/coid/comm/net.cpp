@@ -471,12 +471,12 @@ netSocket::netSocket ()
 
 netSocket::~netSocket()
 {
-    close() ;
+    close();
 }
 
 void netSocket::setHandle( int _handle )
 {
-    close() ;
+    close();
     handle = _handle;
 }
 
@@ -489,7 +489,7 @@ void netSocket::setHandleInvalid()
 bool
 netSocket::open ( bool stream )
 {
-    close () ;
+    close();
     handle = ::socket ( AF_INET, (stream? SOCK_STREAM: SOCK_DGRAM), 0 ) ;
     return (handle != -1);
 }

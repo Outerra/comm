@@ -69,13 +69,18 @@ public:
 	netstreamtcp( int socket ) {
 		_timeout = 0;
 		_socket.setHandle( socket );
-		_socket.setBlocking( true ); _socket.setNoDelay( false );
+		_socket.setBlocking( true );
+        _socket.setNoDelay( false );
+        _socket.setReuseAddr( true );
 	}
 
     opcd connect( const netAddress& addr )
     {
         close();
         _socket.open(true);
+		_socket.setBlocking( true );
+        _socket.setNoDelay( false );
+        _socket.setReuseAddr( true );
         if( 0 == _socket.connect(addr) )  return 0;
         return ersFAILED;
     }
@@ -96,7 +101,9 @@ public:
 	void assign_socket( netSocket& s ) {
 		_socket.setHandle( s.getHandle() );
 		s.setHandleInvalid();
-		_socket.setBlocking( true ); _socket.setNoDelay( false );
+		_socket.setBlocking( true );
+        _socket.setNoDelay( false );
+        _socket.setReuseAddr( true );
 	}
 
 
@@ -209,7 +216,7 @@ public:
             return ersDISCONNECTED "socket error";
         }
         if( n == 0 ) {
-            _socket.setBlocking( true );
+            _socket.close();
 			return ersUNAVAILABLE "connection closed";
 		}
         
