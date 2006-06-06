@@ -153,6 +153,8 @@ public:
         _socket.setHandle( socket );
         _socket.setBlocking( true );
         _socket.setNoDelay( true );
+        _socket.setReuseAddr( true );
+
         set_packet_size (0);
         _size = 0;
         _flg = -1;
@@ -174,6 +176,9 @@ public:
     {
         close();
         _socket.open(true);
+        _socket.setBlocking( true );
+        _socket.setNoDelay( true );
+        _socket.setReuseAddr( true );
         if( 0 == _socket.connect(addr) )  return 0;
         return ersFAILED;
     }
@@ -208,6 +213,7 @@ public:
 
         _socket.setBlocking( true );
         _socket.setNoDelay( true );
+        _socket.setReuseAddr( true );
         set_packet_size (0);
         _size = 0;
         _flg = -1;
@@ -349,9 +355,10 @@ private:
             }
             if( n == 0 )
             {
-                if (blk++)  return ersUNAVAILABLE "connection closed";
+                _socket.close();
+                return ersUNAVAILABLE "connection closed";
                 // give m$ $hit a chance
-                _socket.setBlocking( true );
+                //_socket.setBlocking( true );
             }
             len -= n;
             p = (char*)p + n;
