@@ -593,13 +593,7 @@ protected:
 
         static token _SSID( "Set-Cookie: sessioncoid=" );
         if( _flags & fSETSESSION ) {
-            token rp = _hdr->_relpath;
-            if( !_hdr->_isdir )
-                rp.cut_right_back('/',1);
-
             _tcache << _SSID << _hdr->_ssid;
-            if( !rp.is_empty() )
-                _tcache << "; Path=/" << rp;
             _tcache << "\r\n";
             _flags &= ~fSETSESSION;
         }
