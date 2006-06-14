@@ -46,6 +46,9 @@ COID_NAMESPACE_BEGIN
 
 
 ////////////////////////////////////////////////////////////////////////////////
+///Allocator class that manages memory blocks of fixed size within one memory page.
+/// The items are referenced by void pointers. Each item has an unique id and is
+/// obtainable through it.
 class chunkalloc
 {
     uints _first;

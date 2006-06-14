@@ -113,7 +113,7 @@ public:
 
     charstr( const char* czstr )                { set (czstr); }
     charstr( const char* czstr, uints len )      { set_from (czstr, len); }
-    charstr(const token& tok)
+    charstr( const token& tok )
     {
         if( tok._len == 0 ) return;
 		assign( tok._ptr, tok._len+1 );

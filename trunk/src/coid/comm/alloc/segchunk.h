@@ -49,6 +49,14 @@ COID_NAMESPACE_BEGIN
 
 
 ////////////////////////////////////////////////////////////////////////////////
+///Memory page that manages memory blocks of fixed size of 2^n bytes.
+/// For every block allocated within the page, if you take a pointer somewhere
+/// into the block, and unmask its lowest rPAGESIZE bits, you'll get the address
+/// of the \a segchunk structure itself. At the start of the memory at that address
+/// is always stored the address of the page again. This is used to verify that
+/// the block is valid, and to fix pointers to memory blocks after a load from
+/// a persistent stream
+///The access to blocks is multi-thread safe.
 class segchunk
 {
     segchunk* _me;
@@ -87,6 +95,7 @@ public:
 
 
 ////////////////////////////////////////////////////////////////////////////////
+///Allocator of raw chunks. Size of blocks to be managed is given in the constructor.
 class segchunker_raw
 {
     struct page
@@ -104,7 +113,7 @@ public:
 
     segchunker_raw( uint size )
     {
-        uint as = nextpow2(size);
+        uint as = (uint)nextpow2(size);
         for( _rsize=0; as>1; ++_rsize,as>>=1 );
         _last = 0;
 		_mutex.set_name( "segchunker_raw" );
@@ -145,6 +154,7 @@ public:
 
 
 ////////////////////////////////////////////////////////////////////////////////
+///Allocator of typed chunks. Size of blocks to be managed is obtained from sizeof(T)
 template <class T>
 class segchunker
 {
@@ -163,7 +173,7 @@ public:
 
     segchunker()
     {
-        uint as = nextpow2( sizeof(T) );
+        uint as = (uint)nextpow2( sizeof(T) );
         for( _rsize=0; as>1; ++_rsize,as>>=1 );
         _last = 0;
 		_mutex.set_name( "segchunker" );

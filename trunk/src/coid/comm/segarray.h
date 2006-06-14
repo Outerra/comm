@@ -624,20 +624,20 @@ private:
 
     typedef radixi< local<segment>, uints, uints, GET_INT_FROM_SEG >  t_radix;
 
-    mutable uints        _usg_iter;      ///<usage iteration number
+    mutable uints       _usg_iter;      ///<usage iteration number
     t_radix             _radix;
-    uints                _nsegmapped;    ///<number of segments mapped
-    uints                _nsegmapmax;    ///<max.number of segments to map
-    uints                _swapsegcount;  ///<number of swapped segments
+    uints               _nsegmapped;    ///<number of segments mapped
+    uints               _nsegmapmax;    ///<max.number of segments to map
+    uints               _swapsegcount;  ///<number of swapped segments
 
-    chunkalloc          _segmem;
+    chunkalloc          _segmem;        ///< allocator used to allocate segment structures
     
     void*               _stream_context;///<context value to pass to the streaming functions
     fnc_stream          _fnc_stream_out;///<function for streaming out a segment
     fnc_stream          _fnc_stream_in; ///<function for streaming in a segment
 
-    uints                _usg_iter_last;
-    dynarray<uints>      _pages_to_swap;
+    uints               _usg_iter_last;
+    dynarray<uints>     _pages_to_swap;
 
 
     void* seg_alloc()
@@ -1658,10 +1658,10 @@ public:
     size_t sizeof_T () const            { return (_flags & fSIZE_ZERO) ? 0 : sizeof(T); }
 
 
-    uints item_size() const              { return sizeof_T() + _ntail*sizeof(TAIL); }
-    uints size() const                   { return _lastidx; }        ///<size of whole array in items
-    uints items_in_seg() const           { return _segitems; }       ///<size of segment in items
-    uints tail_element_count() const     { return _ntail; }
+    uints item_size() const             { return sizeof_T() + _ntail*sizeof(TAIL); }
+    uints size() const                  { return _lastidx; }        ///<size of whole array in items
+    uints items_in_seg() const          { return _segitems; }       ///<size of segment in items
+    uints tail_element_count() const    { return _ntail; }
 
     bool is_trivial_destructor() const  { return (_flags & fTRIVIAL_DESTRUCTOR) != 0; }
     bool is_trivial_constructor() const { return (_flags & fTRIVIAL_CONSTRUCTOR) != 0; }

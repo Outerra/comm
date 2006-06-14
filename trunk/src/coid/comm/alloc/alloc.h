@@ -56,6 +56,14 @@
 COID_NAMESPACE_BEGIN
 
 ////////////////////////////////////////////////////////////////////////////////
+///Memory allocator. Used to allocate arrays of items, stores the number of items
+/// to (uint) directly preceding the address of returned memory block. This is used
+/// by the dynarray class and derived stuff.
+///The allocator uses two other allocator classes: segchunker<page> for allocating
+/// memory pages, and ssegpage allocator for managing blocks within the memory page.
+///Another property of the allocator is that blocks allocated by the allocator would be
+/// resized and deleted by the same allocator even if the block is manipulated by
+/// a different dynamically loaded library.
 class seg_allocator
 {
 public:

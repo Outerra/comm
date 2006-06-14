@@ -49,6 +49,9 @@
 COID_NAMESPACE_BEGIN
 
 ////////////////////////////////////////////////////////////////////////////////
+///Memory allocator for blocks of varying sizes.
+/// Memory overhead is one uint per used block. Free blocks form double-linked list
+/// sorted by size.
 class ssegpage
 {
 public:
@@ -59,12 +62,15 @@ public:
     struct block
     {
         /**
-            1 bit 0, 5 bits shift, 13b offset and 13b size
+            Shift to base and size of the block.
+            Kind of 'floating point' format for holding position and size of 
+            wide range of block sizes (with adjusted granularities).
+             1 bit 0, 5 bits shift, 13b offset and 13b size
             shift=0   =>    offset=13b<<3   size=13b<<3
             shift=1   =>    offset=13b<<4   size=13b<<4
             shift=9   =>    offset=13b<<12  size=13b<<12    (4k -> malloc)
         **/
-        uint _shftsize;             ///< shift to base and size of the block in bytes
+        uint _shftsize;
 
         struct tail
         {
@@ -124,7 +130,7 @@ public:
 
         static uchar get_granularity_shift_from_pagesize( uint pgs )
         {
-            pgs = nextpow2(pgs);
+            pgs = (uint)nextpow2(pgs);
 
             uchar i;
             for( i=0; pgs; ++i,pgs>>=1 );

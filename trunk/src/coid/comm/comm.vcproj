@@ -416,14 +416,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\alloc\seg.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\alloc\seg.h"
-				>
-			</File>
-			<File
 				RelativePath=".\alloc\segchunk.cpp"
 				>
 			</File>
