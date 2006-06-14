@@ -393,7 +393,7 @@ public:
         if(!cn)  return 0;
         uints h = bucket( _GETKEYFUNC(cn->_val) );
         uints n = _table.size();
-        RASSERTX( _table[h] != 0, "probably mixed keys and different hash functions used" );
+        DASSERTX( _table[h] != 0, "probably mixed keys and different hash functions used" );
         for( ++h; h<n; ++h )
         {
             if( _table[h] )
