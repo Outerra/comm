@@ -137,7 +137,10 @@ public:
         }
         else {
             e = _fmtstream->read_separator();
-            if(e) return e;
+            if(e) {
+                _err << "error reading separator";
+                return e;
+            }
         }
 
         _arraynm = 0;
@@ -150,14 +153,19 @@ public:
         if( !name.is_empty() ) {
             charstr tn;
             e = binstream_read_key( *_fmtstream, tn );
-            if(!e && tn != name )
+            if(!e && tn != name ) {
+                _err << "expected variable '" << name << "', found " << tn;
                 e = ersMISMATCHED "key name";
-            if(e)  return e;
+            }
+            if(e) {
+                _err << "expected variable '" << name << "', error: " << opcd_formatter(e);
+                return e;
+            }
         }
 
-        return _cur_var->is_compound()
-            ? moveto_expected_targetr()
-            : e;
+        if( _cur_var->is_compound() )
+            e = moveto_expected_targetr();
+        return e;
     }
 
     template<class T>
@@ -213,7 +221,10 @@ public:
         }
         else {
             e = _fmtstream->read_separator();
-            if(e) return e;
+            if(e) {
+                _err << "error reading separator";
+                return e;
+            }
         }
 
         meta_array(n);
@@ -222,8 +233,12 @@ public:
         if( !name.is_empty() ) {
             charstr tn;
             e = binstream_read_key( *_fmtstream, tn );
-            if(!e && tn != name )
+            if(!e && tn != name ) {
+                _err << "expected variable '" << name << "', found: " << tn;
                 e = ersMISMATCHED "key name";
+            }
+            else if(e)
+                _err << "expected variable '" << name << "', error: " << opcd_formatter(e);
             if(e)  return e;
         }
 
@@ -474,7 +489,6 @@ public:
             DESC* _desc;                ///< ptr to descriptor for the type of the variable
             charstr _varname;           ///< name of the variable
 
-            //dynarray<uints> _array;
             uints _array_size;          ///< array size, UMAX for unknown
             bool _is_array;             ///<
             bool _is_hidden;            ///< hidden, implicit variable
@@ -483,8 +497,20 @@ public:
             bool is_compound() const    { return !_desc->_btype.is_primitive() && !_is_array; }//_array.size()==0; }
             bool is_hidden() const      { return _is_hidden; }
 
-            //void nest( bool in )        { if(in) ++_depth; else --_depth; }
-            //bool last() const           { return _array.size() <= _depth; }
+
+            charstr& dump( charstr& dst ) const
+            {
+                if( !_desc->_btype.is_primitive() )
+                    dst << "class ";
+                dst << _desc->_typename << _varname;
+                if( is_array() ) {
+                    if( _array_size == UMAX )
+                        dst << "[]";
+                    else
+                        dst << char('"') << _array_size << char('"');
+                }
+                return dst;
+            }
         };
 
         dynarray<VAR> _children;        ///< member variables
@@ -606,6 +632,8 @@ private:
     ////////////////////////////////////////////////////////////////////////////////
 
     StructureMap _map;
+
+    charstr _err;
     
     // description parsing:
     DESC_VAR _root;
@@ -787,6 +815,30 @@ private:
         return v ? *v : 0;//&_root;
     }
 
+    charstr& dump_stack( charstr& dst, int depth, DESC_VAR* var=0 ) const
+    {
+        if(!dst.is_empty())
+            dst << char('\n');
+
+        if( depth <= 0 )
+            depth = (int)_stack.size() - depth;
+
+        if( depth > (int)_stack.size() )
+            depth = (int)_stack.size();
+
+        for( int i=0; i<depth; ++i )
+        {
+            dst << char('/');
+            _stack[i]->dump(dst);
+        }
+
+        if(var) {
+            dst << char('/');
+            var->dump(dst);
+        }
+        return dst;
+    }
+
     ////////////////////////////////////////////////////////////////////////////////
 protected:
 
@@ -894,7 +946,11 @@ protected:
             {
                 //a compound type, pull in
                 e = movein_struct(MODE_R);
-                if(e) return e;
+                if(e) {
+                    dump_stack(_err,0);
+                    _err << " - error reading struct open token";
+                    return e;
+                }
                 //_cur_var is now the expected variable to read
 
                 inarray = 0;
@@ -923,7 +979,11 @@ protected:
                     }
 
                     e = moveout_struct(MODE_R);
-                    if(e)  return e;
+                    if(e) {
+                        dump_stack(_err,0);
+                        _err << " - error reading struct close token";
+                        return e;
+                    }
 
                     if( _cur_var == &_root ) {
                         _tmetafnc = 0;
@@ -942,7 +1002,11 @@ protected:
             }
 
             e = fmts_or_cache_read_key();
-            if(e)  return e;
+            if(e) {
+                dump_stack(_err,0);
+                _err << " - error reading variable '" << _rvarname << "', error: " << opcd_formatter(e);
+                return e;
+            }
         }
         while( _cur_var->is_compound() );
 
@@ -1015,7 +1079,11 @@ protected:
         {
             if( _sesopen && !(t._ctrl & type::fARRAY_END) && !_arraynm ) {
                 opcd e = _fmtstream->read_separator();
-                if(e) return e;
+                if(e) {
+                    dump_stack(_err,0);
+                    _err << " - error reading separator: " << opcd_formatter(e);
+                    return e;
+                }
             }
             else
                 _sesopen = -1;
@@ -1038,7 +1106,11 @@ protected:
         //read value
         //opcd e = _fmtstream->read( p, t );
         opcd e = fmts_or_cache_read( p, t );
-        if(e) return e;
+        if(e) {
+            dump_stack(_err,0);
+            _err << " - error reading variable '" << _rvarname << "', error: " << opcd_formatter(e);
+            return e;
+        }
 
         if( t.is_array_control_type() )
         {
@@ -1196,7 +1268,11 @@ protected:
         }
 
         e = _fmtstream->read_array_separator(t);
-        if(e)  return e;
+        if(e) {
+            dump_stack(_err,0);
+            _err << " - error reading array separator: " << opcd_formatter(e);
+            return e;
+        }
 
         if( _cur_var->is_hidden() )
         {
@@ -1246,8 +1322,9 @@ protected:
                 }
                 else
                 {
-                    if( _cache_arysize > 0 )
+                    if( _cache_arysize > 0 ) {
                         return ersMISMATCHED "elements left in cached array";
+                    }
 
                     _cachetbl.pop(_cachetbloffs);
                     _cachetbl.pop(_cache_arysize);
@@ -1296,11 +1373,19 @@ protected:
             {
                 opcd e;
                 e = binstream_read_key( *_fmtstream, _rvarname );
-                if(e)  return e;
+                if(e) {
+                    dump_stack(_err,0);
+                    _err << " - error reading variable '" << _rvarname << "', error: " << opcd_formatter(e);
+                    return e;
+                }
 
                 if( _rvarname != _cur_var->_varname ) {
                     e = cache_fill_member();
-                    if(e)  return e;    //probably the element was not found
+                    if(e) {
+                        dump_stack(_err,0);
+                        _err << " - error reading variable '" << _rvarname << "', probably not found, error: " << opcd_formatter(e);
+                        return e;    //probably the element was not found
+                    }
                 }
             }
         }
@@ -1361,22 +1446,36 @@ protected:
 
         do {
             DESC_VAR* crv = par->find_child(_rvarname);
-            if(!crv)
+            if(!crv) {
+                dump_stack(_err,-1);
+                _err << " - member variable: " << _rvarname << " not defined";
                 return ersNOT_FOUND "no such member variable";
+            }
 
             uints k = par->get_child_pos(crv);
-            if( ((uints*)_data.ptr())[k] != UMAX )
+            if( ((uints*)_data.ptr())[k] != UMAX ) {
+                dump_stack(_err,-1);
+                _err << " - data for member: " << _rvarname << " specified more than once";
                 return ersMISMATCHED "redundant member data";
+            }
 
             ((uints*)_data.ptr())[k] = _data.size();
 
             opcd e = cache_member(crv);
-            if(e)  return e;
+            if(e) {
+                dump_stack(_err,0,crv);
+                _err << " - error reading the variable: " << opcd_formatter(e);
+                return e;
+            }
 
             ++_cacherootentries;
 
             e = binstream_read_key( *_fmtstream, _rvarname );
-            if(e)  return e;
+            if(e) {
+                dump_stack(_err,0);
+                _err << " - error reading variable '" << _rvarname << "', error: " << opcd_formatter(e);
+                return e;
+            }
         }
         while( _rvarname != _cur_var->_varname );
 
@@ -1423,10 +1522,17 @@ protected:
                 uints n = var->_array_size;
 
                 e = _fmtstream->read( &na, t.get_array_begin() );
-                if(e)  return e;
+                if(e) {
+                    dump_stack(_err,0,var);
+                    _err << " - expecting array start";
+                    return e;
+                }
 
-                if( na != UMAX  &&  n != UMAX  &&  n != na )
+                if( na != UMAX  &&  n != UMAX  &&  n != na ) {
+                    dump_stack(_err,0);
+                    _err << " - array definition expects " << n << " items but found " << na << " items";
                     return ersMISMATCHED "requested and stored count";
+                }
                 if( na != UMAX )
                     n = na;
 
@@ -1447,8 +1553,11 @@ protected:
                         break;
 
                     e = cache_member(&v);
-                    if(e)
+                    if(e) {
+                        dump_stack(_err,0,&v);
+                        _err << " - error reading the variable: " << opcd_formatter(e);
                         return e;
+                    }
 
                     ++k;
 
@@ -1457,6 +1566,10 @@ protected:
 
                 //read trailing mark only for arrays with specified size
                 e = _fmtstream->read( 0, t.get_array_end() );
+                if(e) {
+                    dump_stack(_err,0,var);
+                    _err << " - error reading array end, error: " << opcd_formatter(e);
+                }
                 *(uints*)(_data.ptr()+ona) = k;
 
                 return e;
@@ -1474,30 +1587,49 @@ protected:
 
             //_rstructname.reset();
             e = _fmtstream->read_struct_open( &var->_desc->_typename );
-            if(e)  return e;
+            if(e) {
+                dump_stack(_err,0,var);
+                _err << " - expected struct open token, error: " << opcd_formatter(e);
+                return e;
+            }
 
             for( uints i=0; i<n; ++i )
             {
                 //read next key
                 e = binstream_read_key( *_fmtstream, _rvarname );
-                if(e)  return e;
+                if(e) {
+                    dump_stack(_err,0);
+                    _err << " - error reading variable '" << _rvarname << "', error: " << opcd_formatter(e);
+                    return e;
+                }
 
                 DESC_VAR* crv = var->_desc->find_child(_rvarname);
-                if(!crv)
+                if(!crv) {
+                    dump_stack(_err,0,var);
+                    _err << " - member variable '" << _rvarname << "' not defined";
                     return ersNOT_FOUND "no such member variable";
+                }
 
                 uints k = var->_desc->get_child_pos(crv);
                 ((uints*)(_data.ptr()+odof))[k] = _data.size();
 
                 e = cache_member(crv);
-                if(e)  return e;
+                if(e) {
+                    dump_stack(_err,0,crv);
+                    _err << " - error reading the variable: " << opcd_formatter(e);
+                    return e;
+                }
             }
 
             if(isarrayelem)
                 ((uints*)(_data.ptr()+odof))[n] = _data.size();
 
             e = _fmtstream->read_struct_close( &var->_desc->_typename );
-            if(e)  return e;
+            if(e) {
+                dump_stack(_err,0,var);
+                _err << " - expected struct close token, error: " << opcd_formatter(e);
+                return e;
+            }
         }
         else
         {

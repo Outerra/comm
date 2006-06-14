@@ -568,7 +568,7 @@ public:
             //no utf8 mode
             for( ; p<pe; ++p )
             {
-                char c = *p;
+                uchar c = *p;
                 if( _abmap[c] & fGROUP_BACKSCAPE )
                 {
                     dst.add_from_range( copied, p );
@@ -583,7 +583,7 @@ public:
             //utf8 mode
             for( ; p<pe; )
             {
-                char c = *p;
+                uchar c = *p;
                 if( ( (uchar)c < _abmap.size()  && (_abmap[c] & fGROUP_BACKSCAPE) ) )
                 {
                     dst.add_from_range( copied, p );
@@ -804,8 +804,10 @@ protected:
         const escpair* const* pp = _backmap.find_value(k);
         if(!pp)
             dst.append_utf8(k);
-        else
+        else {
+            dst.append(_escchar);
             dst.append( (char)(*pp)->_first );
+        }
     }
 
 

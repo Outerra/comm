@@ -195,16 +195,20 @@ template<> struct SIGNEDNESS<unsigned T> { typedef T SIGNED; typedef unsigned T 
 
 SIGNEDNESS_MACRO(char);
 SIGNEDNESS_MACRO(short);
-SIGNEDNESS_MACRO(int);
 SIGNEDNESS_MACRO(long);
 
 #ifdef _MSC_VER
     //SIGNEDNESS_MACRO(__int64);
+    template<> struct SIGNEDNESS<ints> { typedef ints SIGNED; typedef uints UNSIGNED; };
+    template<> struct SIGNEDNESS<uints> { typedef ints SIGNED; typedef uints UNSIGNED; };
     template<> struct SIGNEDNESS<int64> { typedef int64 SIGNED; typedef uint64 UNSIGNED; };
     template<> struct SIGNEDNESS<uint64> { typedef int64 SIGNED; typedef uint64 UNSIGNED; };
-#elif (__WORDSIZE==32)
+#else
+    SIGNEDNESS_MACRO(int);
+# if (__WORDSIZE==32)
     template<> struct SIGNEDNESS<__S64_TYPE> { typedef __S64_TYPE SIGNED; typedef __U64_TYPE UNSIGNED; };
     template<> struct SIGNEDNESS<__U64_TYPE> { typedef __S64_TYPE SIGNED; typedef __U64_TYPE UNSIGNED; };
+# endif
 #endif //_MSC_VER
 
 

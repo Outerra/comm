@@ -104,6 +104,7 @@ public:
 
     static opcd copy_file( const token& src, const token& dst );
     static opcd move_file( const charstr& src, const charstr& dst );
+    static opcd delete_file( const charstr& src );
 
     ///copy file to open directory
     opcd copy_file_from( const token& src, const token& name=token::empty() );
@@ -121,7 +122,9 @@ public:
 
     static charstr& get_cwd( charstr& buf );
 
+    ///Get next entry in the directory
 	const struct stat* next();
+
     const struct stat* get_stat() { return &_st; }
 
     ///After a successful call to next(), this function returns full path to the file

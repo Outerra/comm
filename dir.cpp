@@ -168,4 +168,11 @@ opcd directory::move_file( const charstr& src, const charstr& dst )
     return ersIO_ERROR;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+opcd directory::delete_file( const charstr& src )
+{
+    return 0 == _unlink( src.ptr() )  ?  opcd(0) : ersIO_ERROR;
+}
+
+
 COID_NAMESPACE_END

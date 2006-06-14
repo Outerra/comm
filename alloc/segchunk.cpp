@@ -37,7 +37,7 @@
 
 #include "segchunk.h"
 #include "../retcodes.h"
-#include "seg.h"
+//#include "seg.h"
 
 namespace coid {
 
