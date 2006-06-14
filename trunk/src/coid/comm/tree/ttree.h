@@ -280,17 +280,17 @@ protected:
         }
 
     protected:
-        static long find_in_list (const dynarray<COID>& list, COID id_ref)
+        static ints find_in_list (const dynarray<COID>& list, COID id_ref)
         {
             uints lim = list.size();
             if (!id_ref.can_match_any_tree()) {
-                for (uint i=0; i<lim; ++i)  {
+                for (uints i=0; i<lim; ++i)  {
                     if (list[i] == id_ref)  return i;
                 }
             }
             else {
                 uint id = id_ref._id & 0x00ffffff;
-                for (uint i=0; i<lim; ++i)  {
+                for (uints i=0; i<lim; ++i)  {
                     if ((list[i]._id & 0x00ffffff) == id)  return i;
                 }
             }
@@ -1036,9 +1036,9 @@ public:
 
         friend binstream& operator << (binstream& bin, const forest& p)
         {
-            bin << p._forest.size();
-            uint lim = p._forest.size();
-            for (uint i=0; i<lim; ++i)
+            bin << (uint)p._forest.size();
+            uint lim = (uint)p._forest.size();
+            for( uint i=0; i<lim; ++i )
             {
                 bin << *p._forest[i];
             }
@@ -1049,7 +1049,7 @@ public:
             uint lim;
             bin >> lim;
             //p._forest.need_new (lim);
-            for (uint i=0; i<lim; ++i)
+            for( uint i=0; i<lim; ++i )
             {
                 ttree<T,NCT,MAP_POLICY>* t = p.add_tree();
                 bin >> *t;
@@ -1865,7 +1865,7 @@ public:
             dynarray<uint> lev;
             in >> t._nodes >> t._idinforest >> t._foreign >> lev >> t._name;
             t._levels.need_new (lev.size());
-            for (uint i=0; i<lev.size(); ++i)
+            for (uints i=0; i<lev.size(); ++i)
                 t._levels[i]._nitems = lev[i];
             t._depth = lev.size();
         }
@@ -1873,8 +1873,10 @@ public:
         {
             in >> t._nodes >> t._idinforest >> t._foreign >> t._levels >> t._depth >> t._name;
             //must correct the depth that can be in 06 version one less than the actual one
-            for (long i=t._levels.size(); i>0; --i)
+            for (uints i=t._levels.size(); i>0; ) {
+                --i;
                 if (t._levels[i]._nitems)   { t._depth = i+1; break; }
+            }
         }
         else if (v != TTREE_STREAM_VERSION)
             throw ersINVALID_TYPE "invalid ttree stream version or damaged";
