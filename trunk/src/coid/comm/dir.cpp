@@ -171,7 +171,11 @@ opcd directory::move_file( const charstr& src, const charstr& dst )
 ////////////////////////////////////////////////////////////////////////////////
 opcd directory::delete_file( const charstr& src )
 {
+#ifdef SYSTYPE_MSVC
     return 0 == _unlink( src.ptr() )  ?  opcd(0) : ersIO_ERROR;
+#else
+    return 0 == unlink( src.ptr() ) ? opcd(0) : ersIO_ERROR;
+#endif
 }
 
 
