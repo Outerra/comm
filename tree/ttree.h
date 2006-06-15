@@ -1178,10 +1178,11 @@ public:
         ID get_node_ref (COID id) const				{ return ID (*_forest[id.get_tree_id()], id.get_node_id()); }
         bool get_node (COID id, ID& node) const     { return _forest[id.get_tree_id()] ? _forest[id.get_tree_id()]->get_node(id, node) : false;}
         ///Get ID reference from tree id and a node id
-        bool get_node (uint tid, LNID id, ID& node) const      { return _forest[tid] ? _forest[tid]->get_node(id, node) : false; }
+        bool get_node (uint tid, LNID id, ID& node) const   { return _forest[tid] ? _forest[tid]->get_node(id, node) : false; }
 
         ///Return ptr to node, given a node number
-        T* get_node (COID id) const                 { return _forest[id.get_tree_id()]->get_node ((LNID)id); }
+        T* get_node(COID id) const                  { return _forest[id.get_tree_id()]->get_node((LNID)id); }
+        T* get_node( uint tid, LNID id ) const      { return _forest[tid]->get_node(id); }
 
         ///Return count of trees in the forest
         uint count() const            { return _forest.size(); }

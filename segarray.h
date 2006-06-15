@@ -844,7 +844,7 @@ private:
         return i;
     }
     
-    segment* get_segment( uints sid )
+    segment* get_segment( uints sid ) const
     {
         DASSERT( sid < _segments.size() );
 
@@ -852,33 +852,16 @@ private:
         if( !sg->is_allocated() )
         {
             //mapped out
-            map( sid );
+            ((segarray*)(this))->map( sid );
         }
         else
             sg->lrui_upd(_usg_iter);
         return sg;
     }
 
-    segment* get_segment_const( uints sid ) const
-    {
-        DASSERT( sid < _segments.size() );
-
-        segment* sg = _segments[sid];
-        if( !sg->is_allocated() )
-            throw ersIMPROPER_STATE;
-
-        sg->lrui_upd(_usg_iter);
-        return sg;
-    }
-
-    segment* get_last_segment()
+    segment* get_last_segment() const
     {
         return _segments.size() ? get_segment(_segments.size()-1) : 0;
-    }
-
-    segment* get_last_segment_const() const
-    {
-        return _segments.size() ? get_segment_const(_segments.size()-1) : 0;
     }
 
     //look for the segment above the one given
@@ -1344,19 +1327,7 @@ public:
     const ptr end() const           { ptr x;  get_ptr( _lastidx, x );  return x; }
 
     ///Get pointer to specified item
-    ptr& get_ptr_const( uints a, ptr& p ) const
-    {
-        if(a >= _lastidx)
-        {
-            p.set(this);
-            return p;
-        }
-
-        _get_at_safe_const( a, p );
-        return p;
-    }
-
-    ptr& get_ptr( uints a, ptr& p )
+    ptr& get_ptr( uints a, ptr& p ) const
     {
         if(a >= _lastidx)
         {
@@ -1477,7 +1448,7 @@ public:
         return get_ptr( 0, p );
     }
 
-    void last( ptr &p )
+    void last( ptr &p ) const
     {
         if(_lastidx)
         {
@@ -1490,40 +1461,15 @@ public:
         }
     }
 
-    void last_const( ptr &p ) const
-    {
-        if(_lastidx)
-        {
-            segment* seg = get_last_segment_const();
-            p.set( seg, seg->get_last() );
-        }
-        else
-        {
-            p.set(this);
-        }
-    }
-
-    T* last()
+    T* last() const
     {
         return _lastidx ? get_last_segment()->get_last() : 0;
-    }
-
-    T* last_const() const
-    {
-        return _lastidx ? get_last_segment_const()->get_last() : 0;
     }
 
     bool exists( uints idx ) const            { return idx < size(); }
 
 
-    T* _get_at_const( uints i ) const
-    {
-        uints segn = get_segment_id(i);
-        DASSERT( segn < _segments.size() );
-        return get_segment_const(segn)->get_at(i);
-    }
-
-    T* _get_at( uints i )
+    T* _get_at( uints i ) const
     {
         uints segn = get_segment_id(i);
         DASSERT( segn < _segments.size() );
@@ -1531,22 +1477,7 @@ public:
     }
 
     ///Get item ptr, do not throw when index equals array size
-    void _get_at_safe_const( uints i, ptr& p ) const
-    {
-        if( i == _lastidx  ||  i == UMAX )
-        {
-            p.set(this);
-            return;
-        }
-        
-        uints segn = get_segment_id(i);
-        DASSERT( segn < _segments.size() );
-        segment* sg = get_segment_const(segn);
-        p.set( sg, sg->get_at(i) );
-    }
-
-    ///Get item ptr, do not throw when index equals array size
-    ptr& _get_at_safe( uints i, ptr& p )
+    ptr& _get_at_safe( uints i, ptr& p ) const
     {
         if( i == _lastidx  ||  i == UMAX )
         {
@@ -1562,10 +1493,7 @@ public:
         return p;
     }
 
-    const T* get_at_const( uints i ) const      { return _get_at_const(i); }
-    T* get_at_const( uints i)                   { return _get_at_const(i); }
-
-    T* get_at(uints i)                          { return _get_at(i); }
+    T* get_at(uints i) const                    { return _get_at(i); }
 
     T* get_at_create( uints a )
     {
@@ -1606,8 +1534,8 @@ public:
     }
 
 
-    const T& operator [] (ints i) const      { return *_get_at_const(i); }
-    T& operator [] (ints i)                  { return *_get_at_const(i); }
+    const T& operator [] (ints i) const      { return *_get_at(i); }
+    T& operator [] (ints i)                  { return *_get_at(i); }
 
     T* operator () (ints i)                  { return _get_at(i); }
 
@@ -1691,7 +1619,7 @@ public:
     {
         if( _nsegmapmax == UMAX )  return UMAX;
 
-        segment* sg = get_segment_const(sid);
+        segment* sg = get_segment(sid);
         if(!sg) return UMAX;
 
         return _segmem.get_item_id( sg->ptr_mem() );
