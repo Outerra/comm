@@ -70,7 +70,7 @@ public:
 		_timeout = 0;
 		_socket.setHandle( socket );
 		_socket.setBlocking( true );
-        _socket.setNoDelay( false );
+        _socket.setNoDelay( true );
         _socket.setReuseAddr( true );
 	}
 
@@ -79,7 +79,7 @@ public:
         close();
         _socket.open(true);
 		_socket.setBlocking( true );
-        _socket.setNoDelay( false );
+        _socket.setNoDelay( true );
         _socket.setReuseAddr( true );
         if( 0 == _socket.connect(addr) )  return 0;
         return ersFAILED;
@@ -102,7 +102,7 @@ public:
 		_socket.setHandle( s.getHandle() );
 		s.setHandleInvalid();
 		_socket.setBlocking( true );
-        _socket.setNoDelay( false );
+        _socket.setNoDelay( true );
         _socket.setReuseAddr( true );
 	}
 
