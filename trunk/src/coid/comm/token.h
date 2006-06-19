@@ -1333,6 +1333,7 @@ struct token
 
         static T toint( token& t, uints offs, uint BaseN )
         {
+            if(t.is_empty())  return 0;
             char c = t[offs];
             if(c == '-')  return -(T)touint(t,offs+1,BaseN);
             if(c == '+')  return (T)touint(t,offs+1,BaseN);
