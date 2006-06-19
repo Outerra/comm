@@ -45,35 +45,39 @@
 #include "dynarray.h"
 #include "hash/hashkeyset.h"
 
-/* requirements for new version:
-
-    - non-overlapping groups with mask allowing subsequent character groups
-    - return token to given string or to internal charstr for escape-processed strings
-    - full escape char processing (registering, etc.)
-    - special mode with optionally different starting and terminating characters,
-      processed in one step, returning token from an internal charstr
-    - utf8 support? with additional hash map
-*/
-
 COID_NAMESPACE_BEGIN
 
 
 ////////////////////////////////////////////////////////////////////////////////
-///Fast detection if character belongs to a character set
+///Class used to partition input string or stream to groups of similar characters
 /**
-    Assign character to different non-overlapping groups. Tokenizer works through
-    the string and outputs tokens for different groups.
-    The tokenizer reserves some groups for predefined usage. These are the:
-    - ignore group, this is skipped and not returned while tokenizing (0)
+    A tokenizer object must be initially configured by specifying character groups
+    and sequence delimiters. The tokenizer then outputs tokens of characters
+    from the input, with all characters in the token belonging to the same group.
+    Group 0 is used as the ignore group; tokens of characters belonging there are
+    not returned by default, just skipped.
+    Additionally, tokenizer can analyze sequences of characters enclosed in custom
+    delimiters, substitute escape sequences and output the strings as one token.
+    Tokenizer can be used as a lexer with parser.
+    
+    It's possible to bind the tokenizer to a token (a string) or to a binstream
+    source, in which case the tokenizer also performs caching.
+    
+    The method next() is used to read subsequent tokens of input data. The last token
+    read can be pushed back, to be returned again next time.
+    
+    The tokenizer reserves some groups for internal usage. These are the:
+    - the ignore group, this is skipped and not returned while tokenizing (0)
     - string delimiting group (6)
     - escape source character (7)
 
-    The string delimiting group is used to mark characters that switch the tokenizer
-    to string-scanning mode, i.e. leading characters of strings.
+    The string delimiting group is used to mark characters that should switch
+    the tokenizer into the string-scanning mode. This group is used for seeking
+    the leading characters of strings. Once in the string-scanning mode, the normal
+    grouping doesn't apply - escape sequence processing is performed instead.
 
     The escape character group contains leading character of escape sequence, and
-    the trailing characters of string sequences.
-
+    trailing characters of string sequences (to detect the string terminator).
 **/
 class tokenizer
 {
@@ -397,7 +401,7 @@ public:
     ///return next token
     /**
         Returns token of characters belonging to the same group.
-        Input token is appropriately truncated from left side.
+        Input token is appropriately truncated from the left side.
         On error no truncation occurs, and an empty token is returned.
     **/
     token next()
@@ -1033,10 +1037,10 @@ public:
         
         tok._ptr += tok._len;
 
-        if (!_specmode)
+        if(!_specmode)
             tok._ptr += span_group (tok._ptr, ignoregrp);       //skip void characters at the beginning
 
-        if (*tok._ptr == 0)
+        if( *tok._ptr == 0 )
         {
             tok._len = 0;
             _specmode = 0;
@@ -1052,7 +1056,7 @@ public:
             return tok._ptr;
         }*/
 
-        if (_specmode)
+        if(_specmode)
         {
             if (x & _specf)  //if the character belongs to a special group
                 _specmode = 0;
@@ -1062,7 +1066,7 @@ public:
                 return tok._ptr;
             }
         }
-        else if (x & _specf)
+        else if( x & _specf )
             _specmode = x;
 
         tok._len = span_groups (tok._ptr, x);
