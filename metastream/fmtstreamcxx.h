@@ -324,6 +324,8 @@ public:
     opcd read( void* p, type t )
     {
         token tok = _tokenizer.next();
+        if( tok.is_empty()  &&  !_tokenizer.was_string() )
+            return ersSYNTAX_ERROR "empty token read";
 
         opcd e=0;
         if( t.is_array_control_type() )
