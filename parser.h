@@ -12,3 +12,14 @@
 
 
 ///Recursive-descent parser
+
+//ultimately we want the parser to be able to bootstrap itself
+// for this we need the parser grammar
+//definitions for the lexer will be contained there too
+
+//
+// String terminals are surrounded with single quotes:
+//      keyword: 'if' | 'else'
+//
+// All characters within a string terminal must belong to the same
+// tokenizer group.                        
