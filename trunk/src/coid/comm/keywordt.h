@@ -70,6 +70,7 @@ template <class KEY, class VAL, class HASH = hash<KEY> >
 class keywordmap
 {
 public:
+    typedef typename HASH::type_key                     t_lookup;
     typedef hash_map<KEY, VAL, HASH>                    t_hash;
     typedef typename t_hash::const_iterator             const_iterator;
     typedef typename t_hash::iterator                   iterator;
@@ -81,18 +82,18 @@ public:
     explicit keywordmap (uints nkey) : _hash(nkey) {
     }
 
-    bool insert( const KEY& key, const VAL& val )
+    bool insert( const t_lookup& key, const VAL& val )
     {
         return 0 != _hash.insert_value( std::make_pair(key,val) );
     }
 
-    bool erase( const KEY& key )
+    bool erase( const t_lookup& key )
     {
         size_t v = _hash.erase(key);
         return v>0;
     }
 
-    VAL* find( const KEY& key ) const
+    VAL* find( const t_lookup& key ) const
     {
         return _hash.find_value(key);
     }

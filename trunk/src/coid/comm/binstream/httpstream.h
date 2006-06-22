@@ -103,7 +103,8 @@ public:
             for(;;)
             {
                 e = bin.read_until( substring_rn(), &buf );
-                if(e) return e;
+                if(e)
+                    return e;
 
                 token t = buf;
 
@@ -614,7 +615,7 @@ protected:
         if( _flags & fRSTATUS )
             return ersUNAVAILABLE;
 
-        _cache.set_timeout(16000);
+        _cache.set_timeout(4000);
         _flags |= fRSTATUS;
 
         opcd e;
