@@ -304,6 +304,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\tree\treenode.h"
+				>
+			</File>
+			<File
 				RelativePath="tree\ttree.h"
 				>
 			</File>

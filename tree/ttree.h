@@ -54,13 +54,13 @@ template <class T>
 class TTREE_NOMAP
 {
 public:
-    uint find_code (const charstr& code) const      { return UMAX; }
+    uint find_code (const token& code) const        { return UMAX; }
     uint find_code (const T* node) const            { return UMAX; }
     bool insert_code (const T* node, uint id)       { return true; }
     bool exists_code (const T* node) const          { return false; }
-    bool change_code (const T* node, const char* __oldcode) { return true; }
-    bool change_code (const T* node, const char* __oldcode, uint __id) { return true; }
-    const char* get_code (const T* node) const      { return 0; }
+    bool change_code (const T* node, token __oldcode) { return true; }
+    bool change_code (const T* node, token __oldcode, uint __id) { return true; }
+    token get_code (const T* node) const      { return 0; }
 
     bool is_enabled() const    { return false; }
     void enable (bool en=true)  { }
@@ -71,12 +71,12 @@ public:
 template <class T>
 class TTREE_MAP
 {
-    keywordmap<charstr, uint> _map;      ///< keyword (hash) table
-    bool    _en;                        ///< enable/disable flag
+    keywordmap<charstr, uint, hash<token> > _map;         ///< keyword (hash) table
+    bool    _en;                            ///< enable/disable flag
 public:
 
     ///Find node id by \a code
-    uint find_code (const charstr& code) const      { uint* m = _map.find (code);  if (!m)  return UMAX;  return *m; }
+    uint find_code (const token& code) const        { uint* m = _map.find (code);  if (!m)  return UMAX;  return *m; }
     ///Find node id by node class
     uint find_code (const T* node) const            { uint* m = _map.find (node->get_code());  if (!m)  return UMAX;  return *m; }
 
@@ -86,10 +86,10 @@ public:
     bool exists_code (const T* node) const          { return find_code(node->get_code()) != UMAX; }
 
     ///Remove old code and insert new node
-    bool change_code (const T* node, const charstr& __oldcode)
+    bool change_code (const T* node, const token& __oldcode)
     {
         if (!node) return false;
-        uint* m = _map.find (__oldcode);
+        uint* m = _map.find(__oldcode);
         if (!m)  return false;
 
         uint v = *m;
@@ -99,23 +99,17 @@ public:
     }
 
     ///Remove old code and insert new node
-    bool change_code (const T* node, const charstr& __oldcode, uint __id)
+    bool change_code (const T* node, const token& __oldcode, uint __id)
     {
         if (!node) return false;
-        const char* oldc= (const char*) __oldcode;
-        const char* newc= (const char*) node->get_code();
+        token oldc = __oldcode;
+        token newc = node->get_code();
 
-        if (oldc && newc && !strcmp (oldc, newc)) 
+        if( oldc == newc )
             return true;
 
-        uint* m = _map.find (__oldcode);
-        uint* n = _map.find (node->get_code());
-        //if (m == n && m) {
-        //    _map.erase (node->get_code());
-        //    m = _map.find (__oldcode);
-        //}
-        //else if (n) 
-        //    return false;
+        uint* m = _map.find(oldc);
+        uint* n = _map.find(newc);
         
         //if already exists
         if( n && (n != m) )
@@ -126,18 +120,17 @@ public:
             if (__id == UMAX) 
                 return false;
             else 
-                return insert_code (node, __id);
+                return insert_code( node, __id );
         }
 
-        // Urob vymenu
         uint v = *m;
-        _map.erase (__oldcode);
-        return _map.insert (node->get_code(), v);
+        _map.erase(oldc);
+        return _map.insert( newc, v );
         //return true;
     }
 
     ///Retrieve code from node
-    const char* get_code (const T* node) const      { return node->get_code(); }
+    token get_code (const T* node) const        { return node->get_code(); }
 
     ///Return true if hash table is enabled
     bool is_enabled() const    { return _en; }
@@ -150,7 +143,7 @@ public:
     }
 
     bool erase (const T* node) {
-        return _map.erase (node->get_code());
+        return _map.erase( node->get_code() );
     }
 
     TTREE_MAP()
@@ -360,7 +353,7 @@ public:
         ///Get ptr to node
         NODE* get_node() const                  { return (NODE*)&_tree->_nodes[_id]; }
 
-        const char* get_code() const            { return _tree->_codemap.get_code (get_node()->_node); }
+        token get_code() const                  { return _tree->_codemap.get_code( get_node()->_node ); }
 
         ///Get level of the node
         uint get_level() const                  { return _tree->_nodes[_id].get_level(); }
@@ -1234,9 +1227,9 @@ public:
     }
 
     ///Set tree name
-    void set_name (charstr name)        { _name.takeover (name); }
+    void set_name( const token& name )  { _name = name; }
     ///Get tree name
-    const charstr& get_name() const    { return _name; }
+    token get_name() const       { return _name; }
 
     ///Get count of levels in the tree
     uint get_level_count() {
@@ -1244,14 +1237,14 @@ public:
     }
 
     ///Set name for given level
-    void set_level_name (uint level, charstr name)  {
+    void set_level_name (uint level, const token& name)  {
         if (level >= _levels.size())
-            _levels.add (level+1-_levels.size());
-        _levels[level]._name.takeover (name);
+            _levels.add( level+1-_levels.size() );
+        _levels[level]._name = name;
     }
 
     ///Get level name
-    const char* get_level_name (uint level) const
+    token get_level_name (uint level) const
     {
         if (level >= _levels.size())  return 0;
         return _levels[level]._name;
@@ -1915,7 +1908,7 @@ friend class forest;
     }
 
     ///Find node by code, -1 if failed
-    LNID find_code (const charstr& code) const
+    LNID find_code( const token& code ) const
     {
         if (!is_hash()) return UMAX;
         return _codemap.find_code(code);
@@ -1924,24 +1917,21 @@ friend class forest;
     ///Insert code to index
     opcd insert_code (const T* node, LNID id)
     {
-        if (!_codemap.is_enabled()) return ersUNAVAILABLE "hash not running";
+        if(!_codemap.is_enabled()) return ersUNAVAILABLE "hash not running";
 
-        //@stanley
-        //if (!_codemap.insert_code (node, id))  return ersOBJECT_ALREADY_EXISTS "same key inserted before";
-        if (node && !_codemap.insert_code (node, id))  return ersALREADY_EXISTS "same key inserted before";
-        //@ :-)
+        if(node && !_codemap.insert_code(node, id))  return ersALREADY_EXISTS "same key inserted before";
         return NOERR;
     }
 
     ///Replace code in index
-    opcd change_code (const T* node, const charstr& oldcode)
+    opcd change_code (const T* node, const token& oldcode)
     {
         if (!_codemap.is_enabled()) return ersUNAVAILABLE "hash not running";
 
         return _codemap.change_code( node, oldcode )  ?  0  :  ersFAILED;
     }
 
-    opcd change_code (const T* node, const charstr& oldcode, uint __id)
+    opcd change_code (const T* node, const token& oldcode, uint __id)
     {
         if (!_codemap.is_enabled()) return ersUNAVAILABLE "hash not running";
 
