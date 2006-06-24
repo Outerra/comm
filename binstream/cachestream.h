@@ -402,7 +402,7 @@ private:
             _cin.reserve( CACHE_SIZE, false );
 
         uints cs = _cin.reserved_total();
-        _bin->read_raw_full( _cin.ptr(), cs );
+        _bin->read_raw( _cin.ptr(), cs );
 
         _cin.set_size( _cin.reserved_total() - cs );
         _cinread = 0;
@@ -420,7 +420,7 @@ private:
         if(!_bin)
             return on_cache_fill( p, size );
         else {
-            _bin->read_raw_full( p, size );
+            _bin->read_raw( p, size );
             return _cin.reserved_remaining() - size;
         }
     }
