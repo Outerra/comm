@@ -55,7 +55,6 @@ COID_NAMESPACE_BEGIN
 /// class similar to netstream, but does not use any header info
 class netstreamtcp : public netstream
 {
-	uint			_timeout;
     netSocket       _socket;
 
 public:
@@ -208,20 +207,21 @@ public:
         }
 
         int n = _socket.recv( p, (int)len );
-        if( n == -1 ) {
+        if( n < 0 ) {
             if( errno == EAGAIN )
                 return ersRETRY;
 
             close();
-            return ersDISCONNECTED "socket error";
+            return ersDISCONNECTED;
         }
         if( n == 0 ) {
-            _socket.close();
-			return ersUNAVAILABLE "connection closed";
+            //'gracefully' closed by remote host
+            close();
+			return ersDISCONNECTED;
 		}
         
         len -= n;
-        return len ? ersNO_MORE : opcd(0);
+        return len ? ersRETRY : opcd(0);
 	}
 
 	virtual bool is_open() const                { return _socket.getHandle() != -1; }
