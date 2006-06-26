@@ -47,7 +47,7 @@ COID_NAMESPACE_BEGIN
 
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class VAL, class HASHFUNC=hash<VAL>, class EQFUNC=std::equal_to<VAL>, class ALLOC=comm_allocator<VAL> >
+template <class VAL, class HASHFUNC=hash<VAL>, class EQFUNC=equal_to<VAL,typename HASHFUNC::type_key>, class ALLOC=comm_allocator<VAL> >
 class hash_set : public hashtable<VAL,VAL,HASHFUNC,EQFUNC,_Select_Itself<VAL>,ALLOC>
 {
     typedef hashtable<VAL,VAL,HASHFUNC,EQFUNC,_Select_Itself<VAL>,ALLOC>   _HT;
@@ -55,7 +55,7 @@ class hash_set : public hashtable<VAL,VAL,HASHFUNC,EQFUNC,_Select_Itself<VAL>,AL
 
 public:
 
-    typedef VAL                                     key_type;
+    typedef typename _HT::LOOKUP_KEY                key_type;
     typedef VAL                                     value_type;
     typedef HASHFUNC                                hasher;
     typedef EQFUNC                                  key_equal;
@@ -86,7 +86,7 @@ public:
     }
 
 
-    const VAL* find_value( const VAL& k ) const
+    const VAL* find_value( const key_type& k ) const
     {
         const typename _HT::Node* v = find_node(k);
         return v ? &v->_val : 0;
@@ -159,7 +159,7 @@ public:
 
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class VAL, class HASHFUNC=hash<VAL>, class EQFUNC=std::equal_to<VAL>, class ALLOC=comm_allocator<VAL> >
+template <class VAL, class HASHFUNC=hash<VAL>, class EQFUNC=equal_to<VAL,typename HASHFUNC::type_key>, class ALLOC=comm_allocator<VAL> >
 class hash_multiset : public hashtable<VAL,VAL,HASHFUNC,EQFUNC,_Select_Itself<VAL>,ALLOC>
 {
     typedef hashtable<VAL,VAL,HASHFUNC,EQFUNC,_Select_Itself<VAL>,ALLOC>   _HT;
@@ -167,7 +167,7 @@ class hash_multiset : public hashtable<VAL,VAL,HASHFUNC,EQFUNC,_Select_Itself<VA
 
 public:
 
-    typedef VAL                                     key_type;
+    typedef typename _HT::LOOKUP_KEY                key_type;
     typedef VAL                                     value_type;
     typedef HASHFUNC                                hasher;
     typedef EQFUNC                                  key_equal;
@@ -198,7 +198,7 @@ public:
     }
     
 
-    const VAL* find_value( const VAL& k ) const
+    const VAL* find_value( const key_type& k ) const
     {
         const typename _HT::Node* v = find_node(k);
         return v ? &v->_val : 0;

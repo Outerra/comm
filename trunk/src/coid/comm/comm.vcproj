@@ -831,6 +831,10 @@
 			>
 		</File>
 		<File
+			RelativePath=".\parser.h"
+			>
+		</File>
+		<File
 			RelativePath="password.h"
 			>
 		</File>

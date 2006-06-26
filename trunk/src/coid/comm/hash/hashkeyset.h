@@ -88,14 +88,14 @@ struct _Select_GetRefPtr
 //@} EXTRACTKEY templates
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class KEY, class VAL, class EXTRACTKEY, class HASHFUNC=hash<KEY>, class EQFUNC=std::equal_to<KEY>, class ALLOC=comm_allocator<VAL> >
+template <class KEY, class VAL, class EXTRACTKEY, class HASHFUNC=hash<KEY>, class EQFUNC=equal_to<KEY,typename HASHFUNC::type_key>, class ALLOC=comm_allocator<VAL> >
 class hash_keyset : public hashtable<VAL,KEY,HASHFUNC,EQFUNC,EXTRACTKEY,ALLOC>
 {
     typedef hashtable<VAL,KEY,HASHFUNC,EQFUNC,EXTRACTKEY,ALLOC>  _HT;
 
 public:
 
-    typedef KEY                                     key_type;
+    typedef typename _HT::LOOKUP_KEY                key_type;
     typedef VAL                                     value_type;
     typedef EXTRACTKEY                              extractor;
     typedef HASHFUNC                                hasher;
@@ -133,14 +133,14 @@ public:
     }
 
 
-    VAL* insert_value_slot( const KEY& key )
+    VAL* insert_value_slot( const key_type& key )
     {
         typename _HT::Node** v = _insert_unique_slot(key);
         return v  ?  &(*v)->_val  :  0;
     }
 
 
-    const VAL* find_value( const KEY& k ) const
+    const VAL* find_value( const key_type& k ) const
     {
         const typename _HT::Node* v = find_node(k);
         return v ? &v->_val : 0;
@@ -223,14 +223,14 @@ public:
 
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class KEY, class VAL, class EXTRACTKEY, class HASHFUNC=hash<KEY>, class EQFUNC=std::equal_to<KEY>, class ALLOC=comm_allocator<VAL> >
+template <class KEY, class VAL, class EXTRACTKEY, class HASHFUNC=hash<KEY>, class EQFUNC=equal_to<KEY,typename HASHFUNC::type_key>, class ALLOC=comm_allocator<VAL> >
 class hash_multikeyset : public hashtable<VAL,KEY,HASHFUNC,EQFUNC,EXTRACTKEY,ALLOC>
 {
     typedef hashtable<VAL,KEY,HASHFUNC,EQFUNC,EXTRACTKEY,ALLOC>  _HT;
 
 public:
 
-    typedef KEY                                     key_type;
+    typedef typename _HT::LOOKUP_KEY                key_type;
     typedef VAL                                     value_type;
     typedef EXTRACTKEY                              extractor;
     typedef HASHFUNC                                hasher;
@@ -261,14 +261,14 @@ public:
         return v  ?  &(*v)->_val  :  0;
     }
 
-    VAL* insert_value_slot( const KEY& key )
+    VAL* insert_value_slot( const key_type& key )
     {
         typename _HT::Node** v = _insert_equal_slot(key);
         return v  ?  &(*v)->_val  :  0;
     }
 
 
-    const VAL* find_value( const KEY& k ) const
+    const VAL* find_value( const key_type& k ) const
     {
         const typename _HT::Node* v = find_node(k);
         return v ? &v->_val : 0;

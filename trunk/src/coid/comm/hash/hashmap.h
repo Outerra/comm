@@ -48,7 +48,7 @@ COID_NAMESPACE_BEGIN
 
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class KEY, class VAL, class HASHFUNC=hash<KEY>, class EQFUNC=std::equal_to<KEY>, class ALLOC=comm_allocator<VAL> >
+template <class KEY, class VAL, class HASHFUNC=hash<KEY>, class EQFUNC=equal_to<KEY,typename HASHFUNC::type_key>, class ALLOC=comm_allocator<VAL> >
 class hash_map : public hashtable<std::pair<KEY,VAL>,KEY,HASHFUNC,EQFUNC,_Select_pair1st<std::pair<KEY,VAL>,KEY>,ALLOC>
 {
     typedef hashtable<std::pair<KEY,VAL>,KEY,HASHFUNC,EQFUNC,_Select_pair1st<std::pair<KEY,VAL>,KEY>,ALLOC>   _HT;
@@ -56,7 +56,7 @@ class hash_map : public hashtable<std::pair<KEY,VAL>,KEY,HASHFUNC,EQFUNC,_Select
 
 public:
 
-    typedef KEY                                     key_type;
+    typedef typename _HT::LOOKUP_KEY                key_type;
     typedef std::pair<KEY,VAL>                      value_type;
     typedef HASHFUNC                                hasher;
     typedef EQFUNC                                  key_equal;
@@ -87,7 +87,7 @@ public:
         return v  ?  &(*v)->_val.second  :  0;
     }
 
-    const VAL* insert_key_value( const KEY& k, const VAL& v )
+    const VAL* insert_key_value( const key_type& k, const VAL& v )
     {
         std::pair<KEY,VAL> val(k,v);
         typename _HT::Node** n = _insert_unique(val);
@@ -95,7 +95,7 @@ public:
     }
 
 
-    VAL* find_value( const KEY& k ) const
+    VAL* find_value( const key_type& k ) const
     {
         typename _HT::Node* v = find_node(k);
         return v ? &v->_val.second : 0;
@@ -167,7 +167,7 @@ public:
 
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class KEY, class VAL, class HASHFUNC=hash<KEY>, class EQFUNC=std::equal_to<KEY>, class ALLOC=comm_allocator<VAL> >
+template <class KEY, class VAL, class HASHFUNC=hash<KEY>, class EQFUNC=equal_to<KEY,typename HASHFUNC::type_key>, class ALLOC=comm_allocator<VAL> >
 class hash_multimap : public hashtable<std::pair<KEY,VAL>,KEY,HASHFUNC,EQFUNC,_Select_pair1st<std::pair<KEY,VAL>,KEY>,ALLOC>
 {
     typedef hashtable<std::pair<KEY,VAL>,KEY,HASHFUNC,EQFUNC,_Select_pair1st<std::pair<KEY,VAL>,KEY>,ALLOC>   _HT;
@@ -175,7 +175,7 @@ class hash_multimap : public hashtable<std::pair<KEY,VAL>,KEY,HASHFUNC,EQFUNC,_S
 
 public:
 
-    typedef KEY                                     key_type;
+    typedef typename _HT::LOOKUP_KEY                key_type;
     typedef std::pair<KEY,VAL>                      value_type;
     typedef HASHFUNC                                hasher;
     typedef EQFUNC                                  key_equal;
@@ -205,7 +205,7 @@ public:
         return v  ?  &(*v)->_val.second  :  0;
     }
 
-    const VAL* insert_key_value( const KEY& k, const VAL& v )
+    const VAL* insert_key_value( const key_type& k, const VAL& v )
     {
         std::pair<KEY,VAL> val(k,v);
         typename _HT::Node** n = _insert_unique(val);
@@ -213,7 +213,7 @@ public:
     }
 
     
-    VAL* find_value( const KEY& k ) const
+    VAL* find_value( const key_type& k ) const
     {
         typename _HT::Node* v = find_node(k);
         return v ? &v->_val.second : 0;
