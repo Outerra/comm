@@ -1,4 +1,7 @@
 
+#ifndef __COID_COMM_PARSER__HEADER_FILE__
+#define __COID_COMM_PARSER__HEADER_FILE__
+
 #include "tokenizer.h"
 
 ///Recursive-descent parser
@@ -45,12 +48,12 @@
 //block - leading seq, trailing seq, escape, nested blocks
 /*
 identifier: 'a..zA..Z_0..9';
-escape:     escape { '\\', ['\\'->'\\', 'n'->'\n'] };
+escape:     escape { '\\', ['\\'->'\\', 'n'->'\n', '\n'->''] };
 sqstring:   string { '\'', '\'', escape };
 dqstring:   string { '"', '"', escape };
 code:       block { '{', '}',, [code,comment] };
-comment:    block { '//', '\n' '\r\n' '\r' };
-comment:    block { '/*', '*/',, comment  };
+comment:    string { '//', ['\n','\r\n','\r'] };
+comment:    block { '/*', '* /',, comment  };
 */
 
 //Grammar for the parser grammar.
@@ -76,3 +79,31 @@ regexp:     %dqstring;
 lexrule:    '%' %identifier;
 code:       %code;
 */
+
+////////////////////////////////////////////////////////////////////////////////
+class parser
+{
+    tokenizer _tkz_lexer;
+
+public:
+
+    parser()
+    {
+        _tkz_lexer.add_to_group( "ignore", " \t\n\r" );
+        _tkz_lexer.add_to_group( "identifier", 'a', 'z' );
+        _tkz_lexer.add_to_group( "identifier", 'A', 'Z' );
+        _tkz_lexer.add_to_group( "identifier", '0', '9' );
+        _tkz_lexer.add_to_group( "identifier", "_" );
+
+        _tkz_lexer.add_escape_pair( "escape", '\\', '\\' );
+
+        _tkz_lexer.add_string( "comment", "//", "\n", '\\', "escape" );
+        _tkz_lexer.add_string( "comment", "//", "\r\n", '\\', "escape" );
+        _tkz_lexer.add_string( "comment", "//", "\r", '\\', "escape" );
+        _tkz_lexer.add_block( "comment", "/*", "*/", '\\', "escape" );
+
+        _tkz_lexer.add_block( "code", "{", "}", 0, 0, "code,comment" );
+    }
+};
+
+#endif //__COID_COMM_PARSER__HEADER_FILE__
