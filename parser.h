@@ -39,6 +39,20 @@
 //  keyword: 'if' | 'else';
 //
 
+//Scanner config
+//escape - escape char, char mappings
+//string - leading seq, trailing seq, escape
+//block - leading seq, trailing seq, escape, nested blocks
+/*
+identifier: 'a..zA..Z_0..9';
+escape:     escape { '\\', ['\\'->'\\', 'n'->'\n'] };
+sqstring:   string { '\'', '\'', escape };
+dqstring:   string { '"', '"', escape };
+code:       block { '{', '}',, [code,comment] };
+comment:    block { '//', '\n' '\r\n' '\r' };
+comment:    block { '/*', '*/',, comment  };
+*/
+
 //Grammar for the parser grammar.
 /*
 //lexer rules: identifier sqstring dqstring code
