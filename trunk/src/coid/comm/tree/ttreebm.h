@@ -295,7 +295,7 @@ public:
     ///Compute sub flags
     void compute_flags (const TYPE_FOREST& f, uint tid, dim_access& minacc)
     {
-        TYPE_TTREE::ID root (*f.get_tree (tid), 0);
+        typename TYPE_TTREE::ID root (*f.get_tree (tid), 0);
         uint full=1, min=UMAX, max=0;
         LNID vis=UMAX;
 
@@ -398,7 +398,7 @@ public:
 
     uint set_liberating_rule (const typename TYPE_TTREE::ID& root, LNID to, uint fromdepth, uint todepth)
     {
-        TYPE_TTREE::ID id = root;
+        typename TYPE_TTREE::ID id = root;
 
 		if( fromdepth >= id.tree_depth() && ! LOWEST_LEVEL(fromdepth) )
 			fromdepth = id.tree_depth();
@@ -436,7 +436,7 @@ public:
     */
     uint set_restricting_rule (const typename TYPE_TTREE::ID& root, LNID to, uint fromdepth, uint todepth)
     {
-        TYPE_TTREE::ID id = root;
+        typename TYPE_TTREE::ID id = root;
 
 		if( fromdepth >= id.tree_depth() && ! LOWEST_LEVEL(fromdepth) )
 			fromdepth = id.tree_depth();
@@ -487,8 +487,8 @@ protected:
     ///Apply rule that adds accessible keys
     void set_liberating_rule (const typename TYPE_TTREE::ID& root, LNID to, uint todepth)
     {
-        TYPE_TTREE::ID id = root;
-        TYPE_TTREE::ID rt = root;
+        typename TYPE_TTREE::ID id = root;
+        typename TYPE_TTREE::ID rt = root;
 
         uint lev = root.get_level() + todepth;
 
@@ -515,8 +515,8 @@ protected:
     ///Apply rule that removes accessible keys
     void set_restricting_rule (const typename TYPE_TTREE::ID& root, LNID to, uint todepth)
     {
-        TYPE_TTREE::ID id = root;
-        TYPE_TTREE::ID rt = root;
+        typename TYPE_TTREE::ID id = root;
+        typename TYPE_TTREE::ID rt = root;
 
         uint lev = root.get_level() + todepth;
 
@@ -547,7 +547,7 @@ protected:
     */
     uint compute_flags (const typename TYPE_TTREE::ID& root, uint& full, uint& min, uint& max, LNID& vis)
     {
-        TYPE_TTREE::ID id = root;
+        typename TYPE_TTREE::ID id = root;
 
         if (id.goto_first())
         {
