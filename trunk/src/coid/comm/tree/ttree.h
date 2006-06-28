@@ -218,7 +218,8 @@ protected:
         }
 
         ///Add specified node as child on given position in the list of children nodes
-        void add (COID id, uint pos)       {
+        void add (COID id, uint pos)
+        {
             if (pos >= _asubnodes.size())  *_asubnodes.add(1) = id;
             else  *_asubnodes.ins(pos) = id;
         }
@@ -885,21 +886,21 @@ public:
             uint dpt = sc.get_level();
             uint lev = dpt++;
 
-            for (;;--lev)
+            for( ; ; --lev )
             {
-                if (count > lev)
+                if( count > lev )
                     out[lev] = sc;
 
-                if (sc == root)
+                if( sc == root )
                 {
                     *rootoffs = lev;
-                    if (toroot)
+                    if(toroot)
                     {
-                        for (--lev;;--lev)
+                        for( --lev;; --lev )
                         {
-                            if (!sc.goto_superior_local())
+                            if( !sc.goto_superior_local() )
                                 break;
-                            if (count > lev)
+                            if( count > lev )
                                 out[lev] = sc;
                         }
                     }
@@ -907,7 +908,7 @@ public:
                     return true;
                 }
 
-                if (!sc.goto_superior_local())
+                if( !sc.goto_superior_local() )
                     return false;
             }
         }
@@ -1113,8 +1114,8 @@ public:
         TREE* add_tree()
         {
             _mutex.lock();
-            uint id = _forest.size();
-            ttree<T,NCT,MAP_POLICY>** p = _forest.add (1);
+            uint id = (uint)_forest.size();
+            ttree<T,NCT,MAP_POLICY>** p = _forest.add(1);
             *p = new ttree<T,NCT,MAP_POLICY> (*this, id);
             _mutex.unlock();
             return _forest[id];
@@ -1178,7 +1179,7 @@ public:
         T* get_node( uint tid, LNID id ) const      { return _forest[tid]->get_node(id); }
 
         ///Return count of trees in the forest
-        uint count() const            { return _forest.size(); }
+        uints count() const                         { return _forest.size(); }
     };
 
     //explicit ttree (FOREST& forest) : _forest (&forest)
@@ -1502,17 +1503,17 @@ public:
         ID n;
         _get_node(key, n);
 
-        long lev = n->get_level();
+        uint lev = n->get_level();
 
-        long count = sup.size();
-        if (lev >= count)
-            sup.need (lev+1);
+        uint count = (uint)sup.size();
+        if( lev >= count )
+            sup.need(lev+1);
 
-        for (;;--lev)
+        for(;;--lev)
         {
-            if (lev >= count)
+            if((int)lev >= (int)count)
                 sup[lev] = n;
-            else if (n == sup[lev])
+            else if( n == sup[lev] )
                 return lev;
 
             if (!n.goto_superior_local())
@@ -1858,10 +1859,10 @@ public:
             //convert from version 5
             dynarray<uint> lev;
             in >> t._nodes >> t._idinforest >> t._foreign >> lev >> t._name;
-            t._levels.need_new (lev.size());
-            for (uints i=0; i<lev.size(); ++i)
+            t._levels.need_new(lev.size());
+            for( uints i=0; i<lev.size(); ++i )
                 t._levels[i]._nitems = lev[i];
-            t._depth = lev.size();
+            t._depth = (uint)lev.size();
         }
         else if (v == TTREE_STREAM_VERSION_06)
         {
@@ -1869,7 +1870,7 @@ public:
             //must correct the depth that can be in 06 version one less than the actual one
             for (uints i=t._levels.size(); i>0; ) {
                 --i;
-                if (t._levels[i]._nitems)   { t._depth = i+1; break; }
+                if( t._levels[i]._nitems )   { t._depth = uint(i+1); break; }
             }
         }
         else if (v != TTREE_STREAM_VERSION)
@@ -1882,7 +1883,7 @@ public:
     }
 
     ///Return count of nodes in the tree
-    uint count() const                { return _nodes.size(); }
+    uint count() const                { return (uint)_nodes.size(); }
 
 
 friend class ID;
@@ -2147,7 +2148,7 @@ inline typename ttree<T,NCT,MAP_POLICY>::ID ttree<T,NCT,MAP_POLICY>::attach
     if (!node_exists(superior))  return ID(0);          //invalid parent node
     if (this != superior._tree)  return superior._tree->attach (superior, node, node_class, pos);
 
-    ID id (*this, _nodes.size());
+    ID id (*this, (uint)_nodes.size());
 
     //test hash
     if (exists_code (node))  return ID(0);
@@ -2170,6 +2171,16 @@ inline typename ttree<T,NCT,MAP_POLICY>::ID ttree<T,NCT,MAP_POLICY>::attach
 template <class T, class NCT, class MAP_POLICY>
 inline void ttree<T,NCT,MAP_POLICY>::hook_to_hr( ID& superior, ID& id, uint pos )
 {
+    if( pos == UMAX && is_hash() )
+    {
+        token key = id.get_code();
+        const dynarray<COID>& sub = superior->_asubnodes;
+        for( uint i=0; i<sub.size(); ++i )
+        {
+            ID ch( *this, sub[i] );
+            if( key < ch.get_code() ) { pos = i; break; }
+        }
+    }
     superior->add( id, pos );
 
     NODE* no = id;

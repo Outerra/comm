@@ -43,17 +43,22 @@
 //
 
 //Scanner config
-//escape - escape char, char mappings
-//string - leading seq, trailing seq, escape
-//block - leading seq, trailing seq, escape, nested blocks
+// a group - characters to include, optional names of groups to include when
+//           scanning subsequent characters or a different character set
+// escape - escape char, char mappings
+// string - leading seq, trailing seq, escape
+// block - leading seq, trailing seq, escape, nested blocks
 /*
-identifier: 'a..zA..Z_0..9';
-escape:     escape { '\\', ['\\'->'\\', 'n'->'\n', '\n'->''] };
-sqstring:   string { '\'', '\'', escape };
-dqstring:   string { '"', '"', escape };
-code:       block { '{', '}',, [code,comment] };
-comment:    string { '//', ['\n','\r\n','\r'] };
-comment:    block { '/*', '* /',, comment  };
+ignore:     ' \t\n\r';
+identifier: 'a..zA..Z', 'a..zA..Z_0..9';
+operator:   '->';
+separator:  single ':;,{}[]';
+escape:     escape '\\', ['\\'->'\\', 'n'->'\n', '\n'->''];
+sqstring:   string '\'', '\'', escape;
+dqstring:   string '"', '"', escape;
+code:       block '{', '}',, [code,comment];
+comment:    string '//', ['\n','\r\n','\r'];
+comment:    block '/*', '*' '/',, comment;
 */
 
 //Grammar for the parser grammar.
@@ -80,29 +85,48 @@ lexrule:    '%' %identifier;
 code:       %code;
 */
 
+///Specialization of tokenizer class; used for lexical analysis of grammar specification
+/// itself. This one lexer is used for both lexer and parser grammars.
+class lexer_tokenizer : public tokenizer
+{
+    lexer_tokenizer()
+    {
+        add_to_group( "ignore", " \t\n\r" );
+        add_to_group( "identifier", 'a', 'z' );
+        add_to_group( "identifier", 'A', 'Z' );
+        add_to_group( "identifier$", 'a', 'z' );
+        add_to_group( "identifier$", 'A', 'Z' );
+        add_to_group( "identifier$", '0', '9' );
+        add_to_group( "identifier$", "_" );
+        add_to_group( "operator", "->" );
+        add_to_group( "separator", ":;,{}[]" );
+
+        add_escape_char( "escape", '\\' );
+        add_escape_pair( "escape", '\\', '\\' );
+        add_escape_pair( "escape", 'n', '\n' );
+        add_escape_pair( "escape", '\n', 0 );
+
+        add_string( "sqstring", "'", "'", "escape" );
+        add_string( "dqstring", "\"", "\"", "escape" );
+
+        add_string( "comment", "//", "\n", "escape" );
+        add_string( "comment", "//", "\r\n", "escape" );
+        add_string( "comment", "//", "\r", "escape" );
+        add_block( "comment", "/*", "*/", "comment sqstring dqstring" );
+
+        add_block( "code", "{", "}", "code comment" );
+    }
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 class parser
 {
-    tokenizer _tkz_lexer;
+    lexer_tokenizer _tkz_lexer;
 
 public:
 
     parser()
     {
-        _tkz_lexer.add_to_group( "ignore", " \t\n\r" );
-        _tkz_lexer.add_to_group( "identifier", 'a', 'z' );
-        _tkz_lexer.add_to_group( "identifier", 'A', 'Z' );
-        _tkz_lexer.add_to_group( "identifier", '0', '9' );
-        _tkz_lexer.add_to_group( "identifier", "_" );
-
-        _tkz_lexer.add_escape_pair( "escape", '\\', '\\' );
-
-        _tkz_lexer.add_string( "comment", "//", "\n", '\\', "escape" );
-        _tkz_lexer.add_string( "comment", "//", "\r\n", '\\', "escape" );
-        _tkz_lexer.add_string( "comment", "//", "\r", '\\', "escape" );
-        _tkz_lexer.add_block( "comment", "/*", "*/", '\\', "escape" );
-
-        _tkz_lexer.add_block( "code", "{", "}", 0, 0, "code,comment" );
     }
 };
 
