@@ -44,6 +44,7 @@
 #include "../dynarray.h"
 #include "../metastream/metastream.h"
 #include <algorithm>
+#include <functional>
 
 #include "hashfunc.h"
 
