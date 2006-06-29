@@ -71,6 +71,15 @@ public:
 
     static char separator();
     static const char* separator_str();
+    static charstr& treat_trailing_separator( charstr& path, bool shouldbe )
+    {
+        if( path.last_char() == separator() ) {
+            if(!shouldbe)  path.trim_to_length(-1);
+        }
+        else if(shouldbe)
+            path.append( separator() );
+        return path;
+    }
 
     bool is_entry_open() const;
     bool is_entry_directory() const;
