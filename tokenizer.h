@@ -108,9 +108,10 @@ class tokenizer
         USABLE_GROUPS               = 5,
 
         fGROUP_IGNORE               = 0x01,
+        fGROUP_SINGLE               = 0x10, ///< the group of characters that are returned as single-letter tokens
         fGROUP_STRING               = 0x20, ///< the group with leading string delimiters
         fGROUP_ESCAPE               = 0x40, ///< the group with escape characters and trailing string delimiters
-        fGROUP_BACKSCAPE            = 0x80, ///< the group that should be made to escape seq when synthetizing string
+        fGROUP_BACKSCAPE            = 0x80, ///< the group that should be made to escape seq when synthesizing string
 
         BINSTREAM_BUFFER_SIZE       = 256,
     };
@@ -130,12 +131,13 @@ class tokenizer
     ucs4 _last_strdel;              ///< last leading string delimiter
 
     binstream* _bin;                ///< source stream
-    dynarray<char> _binbuf;         ///< stream buffer
-    token _tok;                     ///< token to process, can point to an external source or into the _strbuf
+    dynarray<char> _binbuf;         ///< source stream cache buffer
+    token _tok;                     ///< source string to process, can point to an external source or into the _strbuf
 
-    token _result;                  ///< token from previous processing
-    int _pushback;                  ///< true if the tokenizer should return the previous token again (pushed back)
+    token _result;                  ///< last returned token
+    int _pushback;                  ///< true if the tokenizer should return the previous token again (was pushed back)
 
+    ///Reverted mapping of escaped symbols for synthesizer
     hash_keyset< ucs4,const escpair*,_Select_CopyPtr<escpair,ucs4> >
         _backmap;
 
@@ -936,7 +938,6 @@ protected:
 
 
 
-
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -1047,14 +1048,6 @@ public:
             return 0;
         }
         uchar x = _abmap[(uchar)*tok._ptr];
-
-        /*if( x & (1<<ignoregrp) )
-        {
-            //this means that the ignore group is in single-character mode
-            //so return an empty token
-            tok._len = 0;
-            return tok._ptr;
-        }*/
 
         if(_specmode)
         {
@@ -1366,7 +1359,7 @@ public:
         add_group (2, '0', '9');
         add_group (2, 'a', 'z');
         add_group (2, 'A', 'Z');
-        add_group (2, "?*/.");
+        add_group (2, "*?/.");
 
         add_group (3, ":`',", true);
 

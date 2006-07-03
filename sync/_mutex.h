@@ -113,9 +113,9 @@ private:
 
     int                 _init;
 
-#ifdef _DEBUG
+//#ifdef _DEBUG
     thread_t            _owner_thread;
-#endif
+//#endif
 
 
 public:
@@ -153,9 +153,9 @@ public:
         out->tv_nsec = (delaymsec%1000 + tb.millitm) * 1000000;
     }
 
-#ifdef _DEBUG
+//#ifdef _DEBUG
     thread_t get_owner() const          { return _owner_thread; }
-#endif
+//#endif
 };
 
 
