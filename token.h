@@ -349,13 +349,13 @@ struct token
 
     char char_is_alpha( uint n ) const
     {
-        char c = get_char(n);
+        char c = nth_char(n);
         return (c >= 'a' && c <= 'z') || (c >='A' && c <= 'Z') ? c : 0;
     }
 
     char char_is_number( uint n ) const
     {
-        char c = get_char(n);
+        char c = nth_char(n);
         return (c >= '0' && c <= '9') ? c : 0;
     }
 
@@ -427,11 +427,13 @@ struct token
     }
 
     bool is_empty() const               { return _len == 0; }
+    bool is_null() const                { return _ptr == 0; }
     void set_empty()                    { _len = 0; }
+    void set_null()                     { _ptr = 0; _len = 0; }
 
     char last_char() const              { return _len > 0  ?  _ptr[_len-1]  :  0; }
     char first_char() const             { return _len > 0  ?  _ptr[0]  :  0; }
-    char get_char( uints n ) const      { return n < _len  ?  _ptr[n] : 0; }
+    char nth_char( uints n ) const      { return n < _len  ?  _ptr[n] : 0; }
 
 
     token& operator = ( const char *czstr ) {
@@ -1190,11 +1192,11 @@ struct token
         return false;
     }
 
-    bool begins_with( const token& tok ) const
+    bool begins_with( const token& tok, uints off=0 ) const
     {
-        if( tok._len > _len )
+        if( tok._len+off > _len )
             return false;
-        for( uints i=0; i<tok._len; ++i )
+        for( uints i=off; i<tok._len; ++i )
         {
             if( tok._ptr[i] != _ptr[i] )
                 return false;
@@ -1216,11 +1218,11 @@ struct token
         return str[i] == 0;
     }
 
-    bool begins_with_icase( const token& tok ) const
+    bool begins_with_icase( const token& tok, uints off=0 ) const
     {
-        if( tok._len > _len )
+        if( tok._len+off > _len )
             return false;
-        for( uints i=0; i<tok._len; ++i )
+        for( uints i=off; i<tok._len; ++i )
         {
             if( tolower(tok._ptr[i]) != tolower(_ptr[i]) )
                 return false;

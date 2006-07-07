@@ -816,6 +816,10 @@
 			>
 		</File>
 		<File
+			RelativePath=".\lexer.h"
+			>
+		</File>
+		<File
 			RelativePath="local.h"
 			>
 		</File>
