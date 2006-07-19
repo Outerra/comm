@@ -152,12 +152,18 @@ public:
     /// set was found. This can be used to allow different characters after first letter of token
     int def_group( const token& name, const token& set, const token& trailset = token::empty() )
     {
-        uint g = _grpary.size();
+        uint g = (uint)_grpary.size();
 
-        group_rule* gr = new group_rule( name, (ushort)g );
-        if( !_entmap.insert_value(gr) )  { _err=ERR_ENTITY_EXISTS; return -1; }
+        if( _entmap.find_value(name) )  { _err=ERR_ENTITY_EXISTS; return -1; }
 
-        if( !process_set( set, (uchar)g, &lexer::fn_group ) )  return -1;
+        group_rule* gr = new group_rule( name, (ushort)g, false );
+        _entmap.insert_value(gr);
+
+        uchar msk = (uchar)g;
+        if( !trailset.is_empty() )
+            msk |= fGROUP_TRAILSET;
+
+        if( !process_set( set, msk, &lexer::fn_group ) )  return -1;
         if( !trailset.is_empty() )
         {
             gr->bitmap = _ntrails;
@@ -169,6 +175,25 @@ public:
         return g;
     }
 
+    ///Create new group named \a name with characters from \a set that will be returned as single
+    /// character tokens
+    ///@return group id or -1 on error, error id is stored in the _err variable
+    ///@param name group name
+    ///@param set characters to include in the group, recognizes ranges when .. is found
+    int def_group_single( const token& name, const token& set )
+    {
+        uint g = (uint)_grpary.size();
+
+        if( _entmap.find_value(name) )  { _err=ERR_ENTITY_EXISTS; return -1; }
+
+        group_rule* gr = new group_rule( name, (ushort)g, true );
+        _entmap.insert_value(gr);
+
+        if( !process_set( set, (uchar)g | fGROUP_SINGLE, &lexer::fn_group ) )  return -1;
+
+        *_grpary.add() = gr;
+        return g;
+    }
 
     ///Escape sequence processor function prototype.
     ///Used to consume input after escape character and append translated characters to dst
@@ -183,9 +208,13 @@ public:
     ///@param fn_replace pointer to function that should perform the replacement
     int def_escape( const token& name, char escapechar, fn_replace_esc_seq fn_replace = 0 )
     {
-        uint g = _escary.size();
+        uint g = (uint)_escary.size();
+
+        //only one escape rule of given name
+        if( _entmap.find_value(name) )  { _err=ERR_ENTITY_EXISTS; return -1; }
+
         escape_rule* er = new escape_rule( name, (ushort)g );
-        if( !_entmap.insert_value(er) )  { _err=ERR_ENTITY_EXISTS; return -1; }
+        _entmap.insert_value(er);
 
         er->esc = escapechar;
         er->replfn = fn_replace;
@@ -222,13 +251,18 @@ public:
     ///@param escape name of the escape rule to use for processing of escape sequences within strings
     int def_string( const token& name, const token& leading, const token& trailing, const token& escape )
     {
-        uint g = _stbary.size();
+        uint g = (uint)_stbary.size();
+
+        entity* const* ens = _entmap.find_value(name);
+        if( ens && (*ens)->type != entity::STRING )  { _err=ERR_DIFFERENT_ENTITY_EXISTS; return -1; }
+
         string_rule* sr = new string_rule( name, (ushort)g );
-        if( !_entmap.insert_value(sr) )  { _err=ERR_ENTITY_EXISTS; return -1; }
+        _entmap.insert_value(sr);
 
         if( !escape.is_empty() )
         {
-            sr->escrule = (escape_rule*)_entmap.find_value(escape);
+            entity* const* en = _entmap.find_value(escape);
+            sr->escrule = en ? reinterpret_cast<escape_rule*>(*en) : 0;
             if( !sr->escrule )  { _err=ERR_ENTITY_DOESNT_EXIST; return -1; }
             if( sr->escrule->type != entity::ESCAPE )  { _err=ERR_ENTITY_BAD_TYPE; return -1; }
         }
@@ -253,9 +287,13 @@ public:
     ///@param nested names of possibly nested blocks and strings to look and account for
     int def_block( const token& name, const token& leading, const token& trailing, token nested )
     {
-        uint g = _stbary.size();
+        uint g = (uint)_stbary.size();
+
+        entity* const* ens = _entmap.find_value(name);
+        if( ens && (*ens)->type != entity::BLOCK )  { _err=ERR_DIFFERENT_ENTITY_EXISTS; return -1; }
+
         block_rule* br = new block_rule( name, (ushort)g );
-        if( !_entmap.insert_value(br) )  { _err=ERR_ENTITY_EXISTS; return -1; }
+        _entmap.insert_value(br);
 
         for(;;)
         {
@@ -271,7 +309,8 @@ public:
             }
             else
             {
-                stringorblock* sob = (stringorblock*)_entmap.find_value(ne);
+                entity* const* en = _entmap.find_value(ne);
+                stringorblock* sob = en ? reinterpret_cast<stringorblock*>(*en) : 0;
                 if(!sob)  { _err=ERR_ENTITY_DOESNT_EXIST; return -1; }
                 if( sob->type != entity::BLOCK  &&  sob->type != entity::STRING )  { _err=ERR_ENTITY_BAD_TYPE; return -1; }
 
@@ -343,7 +382,7 @@ public:
         if( x & fGROUP_STRING )
         {
             //this could be a leading string/block delimiter, if we find it in the register
-            uint i, n=_stbary.size();
+            uint i, n = (uint)_stbary.size();
             for( i=0; i<n; ++i )
                 if( match(_stbary[i]->leading) )  break;
 
@@ -356,10 +395,14 @@ public:
 
                 //this is a leading string or block delimiter
                 uints off=0;
+                bool st;
                 if( _stbary[i]->type == entity::BLOCK )
-                    next_read_block( *(const block_rule*)_stbary[i], off, true );
+                    st = next_read_block( *(const block_rule*)_stbary[i], off, true );
                 else
-                    next_read_string( *(const string_rule*)_stbary[i], off, true );
+                    st = next_read_string( *(const string_rule*)_stbary[i], off, true );
+
+                if( st && _stbary[i]->name.first_char() == '.' )    //ignored rule
+                    return next(ignoregrp);
 
                 return _result;
             }
@@ -369,7 +412,7 @@ public:
 
         //normal token, get all characters belonging to the same group, unless this is
         // a single-char group
-        if( _last == GROUP_SINGLE )
+        if( x & fGROUP_SINGLE )
         {
             if(_utf8) {
                 //return whole utf8 characters
@@ -381,9 +424,9 @@ public:
         }
 
         if( x & fGROUP_TRAILSET )
-            _result = scan_mask( 1<<_grpary[_last]->bitmap, false );
+            _result = scan_mask( 1<<_grpary[_last]->bitmap, false, 1 );
         else
-            _result = scan_group( _last, false );
+            _result = scan_group( _last, false, 1 );
         return _result;
     }
 
@@ -442,18 +485,22 @@ protected:
 
         entity( const token& name_, ushort type_, ushort id_ ) : name(name_), type(type_), id(id_) {}
 
-        operator token () const      { return name; }
+        operator token () const         { return name; }
     };
 
     ///Group descriptor
     struct group_rule : entity
     {
-        int bitmap;                         ///< trailing bit map id, or -1
+        short bitmap;                       ///< trailing bit map id, or -1
+        bool single;
 
-        group_rule( const token& name, ushort id ) : entity(name,entity::GROUP,id)
+        group_rule( const token& name, ushort id, bool bsingle ) : entity(name,entity::GROUP,id)
         {
             bitmap = -1;
+            single = bsingle;
         }
+
+        bool has_trailset() const       { return bitmap >= 0; }
     };
 
     struct escpair
@@ -508,12 +555,10 @@ protected:
         xGROUP                      = 0x0f, ///< mask for primary character group id
         fGROUP_STRING               = 0x10, ///< the group with leading string delimiters
         fGROUP_ESCAPE               = 0x20, ///< the group with escape characters and trailing string delimiters
-        fGROUP_TRAILSET             = 0x40, ///< set if the group has different trailing set
-        fGROUP_BACKSCAPE            = 0x80, ///< the group used for synthesizing strings with correct escape sequences
+        fGROUP_SINGLE               = 0x40, ///< single-character token emitting group
+        fGROUP_TRAILSET             = 0x80,
 
         GROUP_IGNORE                = 0,    ///< character group that is ignored by default
-        GROUP_SINGLE                = 1,    ///< the group for characters that are returned as single-letter tokens
-        GROUP_CUSTOM                = 2,    ///< first customizable group
         GROUP_UNASSIGNED            = xGROUP,
 
         //default sizes
@@ -529,6 +574,7 @@ protected:
         ERR_STRING_TERMINATED_EARLY = 6,
         ERR_UNRECOGNIZED_ESCAPE_SEQ = 7,
         ERR_BLOCK_TERMINATED_EARLY  = 8,
+        ERR_DIFFERENT_ENTITY_EXISTS = 9,
     };
 
 
@@ -632,7 +678,7 @@ protected:
 
                 if(!norepl)
                 {
-                    uint i, n = er.pairs.size();
+                    uint i, n = (uint)er.pairs.size();
                     for( i=0; i<n; ++i )
                         if( match( er.pairs[i].code ) )  break;
                     if( i >= n )
@@ -833,7 +879,7 @@ protected:
         for( ; off<tok._len; ++off )
         {
             uchar c = pc[off];
-            if( (_trail[c] & msk) != 0 )  break;
+            if( (_trail[c] & msk) == 0 )  break;
         }
         return off;
     }
@@ -918,6 +964,8 @@ protected:
 
     uints fetch_page( uints nkeep, bool ignore )
     {
+        if(!_bin)  return 0;
+
         //save skipped data to buffer if there is already something or if instructed to do so
         if( _strbuf.len() > 0  ||  !ignore )
             _strbuf.add_from( _tok.ptr(), _tok.len()-nkeep );
@@ -961,11 +1009,11 @@ protected:
     int _pushback;                  ///< true if the lexer should return the previous token again (was pushed back)
 
     ///Reverted mapping of escaped symbols for the synthesizer
-    hash_keyset< ucs4,const escpair*,_Select_CopyPtr<escpair,ucs4> >
-        _backmap;
+    //hash_keyset< ucs4,const escpair*,_Select_CopyPtr<escpair,ucs4> >
+    //    _backmap;
 
     ///Entity map, maps names to groups and strings
-    hash_keyset< token, entity*, _Select_CopyPtr<entity,token> >
+    hash_multikeyset< token, entity*, _Select_CopyPtr<entity,token> >
         _entmap;
 
 };

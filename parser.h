@@ -130,7 +130,7 @@ public:
         def_group( "ignore", " \t\n\r" );
         def_group( "identifier", "a..zA..Z", "a..zA..Z_0..9" );
         def_group( "operator", "->" );
-        def_group( "separator", ":;,{}[]" );
+        def_group( "separator", ":;,[]" );
 
         int ie = def_escape( "escape", '\\', 0 );
         def_escape_pair( ie, "\\", "\\" );
@@ -140,12 +140,12 @@ public:
         def_string( "sqstring", "'", "'", "escape" );
         def_string( "dqstring", "\"", "\"", "escape" );
 
-        def_string( "comment", "//", "\n", "escape" );
-        def_string( "comment", "//", "\r\n", "escape" );
-        def_string( "comment", "//", "\r", "escape" );
-        def_block( "comment", "/*", "*/", "comment sqstring dqstring" );
+        def_string( ".comment", "//", "\n", "escape" );
+        def_string( ".comment", "//", "\r\n", "escape" );
+        def_string( ".comment", "//", "\r", "escape" );
+        def_block( ".blkcomment", "/*", "*/", ".comment sqstring dqstring" );
 
-        def_block( "code", "{", "}", "code comment" );
+        def_block( "code", "{", "}", "code sqstring dqstring .blkcomment .comment" );
     }
 };
 
@@ -159,6 +159,51 @@ public:
     parser()
     {
     }
+
+protected:
+
+
+    ///Grammar symbol representation
+    /**
+        Symbol struct instances can represent a non-terminal or a terminal symbol.
+        The terminal symbol can be a string literal to match or a token type to read.
+        Non-terminal is composed of sequence of non-terminals and/or terminals.
+        There can exist multiple non-terminals with the same name, in which case they
+        represent possible parallel paths to take.
+    **/
+    struct symbol
+    {
+        charstr name;                   ///< non-terminal name or literal string
+
+        virtual bool match( lexer& lex )
+        {
+            //literal string
+            return lex.match(name);
+        }
+    };
+
+    ///
+    struct symval
+    {
+        symbol* sym;                    ///< symbol matched
+        charstr val;                    ///< value read, unless the symbol was a literal string
+    };
+
+    ///Nonterminal definition
+    /**
+        There may be multiple definitions of the same non-terminal symbol, these are
+        treated as parallel. Optional inline subrules are first split into separate
+        rules.
+    **/
+    struct rule : symbol
+    {
+        dynarray<symval> seq;
+
+        virtual bool match( lexer& lex )
+        {
+
+        }
+    };
 };
 
 #endif //__COID_COMM_PARSER__HEADER_FILE__

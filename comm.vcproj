@@ -816,10 +816,6 @@
 			>
 		</File>
 		<File
-			RelativePath=".\lexer.h"
-			>
-		</File>
-		<File
 			RelativePath="local.h"
 			>
 		</File>
@@ -833,10 +829,6 @@
 		</File>
 		<File
 			RelativePath="net_ul.h"
-			>
-		</File>
-		<File
-			RelativePath=".\parser.h"
 			>
 		</File>
 		<File
