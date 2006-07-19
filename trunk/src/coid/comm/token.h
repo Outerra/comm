@@ -42,6 +42,7 @@
 #include "namespace.h"
 
 #include "tutf8.h"
+#include "time.h"
 #include <stdlib.h>
 #include <ctype.h>
 #include <math.h>
@@ -1196,9 +1197,10 @@ struct token
     {
         if( tok._len+off > _len )
             return false;
-        for( uints i=off; i<tok._len; ++i )
+        const char* p = _ptr+off;
+        for( uints i=0; i<tok._len; ++i )
         {
-            if( tok._ptr[i] != _ptr[i] )
+            if( tok._ptr[i] != p[i] )
                 return false;
         }
         return true;
@@ -1222,9 +1224,10 @@ struct token
     {
         if( tok._len+off > _len )
             return false;
-        for( uints i=off; i<tok._len; ++i )
+        const char* p = _ptr+off;
+        for( uints i=0; i<tok._len; ++i )
         {
-            if( tolower(tok._ptr[i]) != tolower(_ptr[i]) )
+            if( tolower(tok._ptr[i]) != tolower(p[i]) )
                 return false;
         }
         return true;
