@@ -388,7 +388,7 @@ public:
 
             if(i<n)
             {
-                _last = -2;
+                _last = -2 - i;
                 _last_string = i;
 
                 _tok += _stbary[i]->leading.len();
@@ -447,6 +447,8 @@ public:
     {
         _pushback = 1;
     }
+
+    int last() const                { return _last; }
 
 
     ///Strip leading and trailing characters belonging to the given group
