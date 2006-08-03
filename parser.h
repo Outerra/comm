@@ -84,16 +84,15 @@
 // string - leading seq, trailing seq, escape
 // block - leading seq, trailing seq, escape, nested blocks
 /*
-ignore:     ' \t\n\r';
+.ignore:    ' \t\n\r';
 identifier: 'a..zA..Z', 'a..zA..Z_0..9';
-operator:   '->';
-separator:  single ':;,{}[]';
-escape:     escape '\\', ['\\'->'\\', 'n'->'\n', '\n'->''];
+separator:  single ':;,{}';
+escape:     escape '\\', '\\' '\\', 'n' '\n', '\n' '';
 sqstring:   string '\'', '\'', escape;
 dqstring:   string '"', '"', escape;
-code:       block '{', '}',, [code,comment];
-comment:    string '//', ['\n','\r\n','\r'];
-comment:    block '/*', '*' '/',, comment;
+.comment:   string '//', '\n' '\r\n' '\r', escape;
+.blkcomment:block '/*', '*' '/', .comment sqstring dqstring;
+code:       block '{', '}', code sqstring dqstring .blkcomment .comment;
 */
 
 //Grammar for the parser grammar.
@@ -152,6 +151,40 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 class parser
 {
+    struct reader
+    {
+        lexer& lex;
+        uint nconsumed;
+        dynarray<charstr> tokenqueue;
+        dynarray<uints> symbolqueue;
+
+        token next()
+        {
+            if( nconsumed < tokenqueue.size() )
+                return tokenqueue[nconsumed++];
+            token t = lexer.next( *tokenqueue.add() );
+            ++nconsumed;
+            return t;
+        }
+
+        int nextid()
+        {
+            if( nconsumed < tokenqueue.size() )
+                return tokenqueue[nconsumed++];
+            lexer.next( *tokenqueue.add() );
+            return lexer.last();
+        }
+
+        bool push_token()               { *symbolqueue.add() = tokenqueue.size() - 1;  return true; }
+        uint push_mark()                { *symbolqueue.add() = tokenqueue.size();  return (uint)symbolqueue.size() - 1; }
+        bool revert( uint n )           { nconsumed=symbolqueue[n]; symbolqueue.need(n);  return false; }
+
+        uint symbols() const            { return (uint)symbolqueue.size(); }
+
+        reader( lexer& lex_ ) : lexer(lex_)
+        { nconsumed = 0; }
+    }
+
     grammar_lexer _lexer;
 
 public:
@@ -165,8 +198,8 @@ protected:
 
     ///Grammar symbol representation
     /**
-        Symbol struct instances can represent a non-terminal or a terminal symbol.
-        The terminal symbol can be a string literal to match or a token type to read.
+        Symbol struct instances can represent a non-terminal (N) or a terminal symbol (T).
+        The terminal symbol can be a string literal (L) to match or a token type to read.
         Non-terminal is composed of sequence of non-terminals and/or terminals.
         There can exist multiple non-terminals with the same name, in which case they
         represent possible parallel paths to take.
@@ -175,18 +208,13 @@ protected:
     {
         charstr name;                   ///< non-terminal name or literal string
 
-        virtual bool match( lexer& lex )
+        //Default type: match a literal string
+        virtual bool match( reader& lex ) const
         {
-            //literal string
-            return lex.match(name);
+            if( name == lex.next() )
+                return lex.push_token();
+            return false;
         }
-    };
-
-    ///
-    struct symval
-    {
-        symbol* sym;                    ///< symbol matched
-        charstr val;                    ///< value read, unless the symbol was a literal string
     };
 
     ///Nonterminal definition
@@ -197,13 +225,42 @@ protected:
     **/
     struct rule : symbol
     {
-        dynarray<symval> seq;
+        dynarray<symbol> seq;           ///< sequence of N,T or L symbols
 
-        virtual bool match( lexer& lex )
+        virtual bool match( reader& lex ) const
         {
+            uint n = lex.push_symbol();
 
+            const symbol* pb = seq.ptr();
+            const symbol* pe = seq.ptre();
+            for( ; pb<pe; ++pb )  if(!pb->match(lex))  return lex.revert(n);
+            return true;
         }
     };
+
+    ///Terminal symbol
+    struct term : symbol
+    {
+        int lexid;                      ///< id of lexical rule to match
+
+        ///Match a lexical symbol
+        virtual bool match( reader& lex )
+        {
+            if( lexid == lex.nextid() )
+                return lex.push_token();
+            return false;
+        }
+    };
+
+
+    ///var squeue
+    ///Symbol queue keeps the matched symbol tree in stack in reverse order. For every
+    /// nonterminal symbol matched there's an entry that specifies what symbol has been
+    /// matched, and indices of inner symbol matches. So for the rule:
+    ///     S: A B
+    /// the squeue would contain index to squeue where data for matched A symbol are to
+    /// be found, an entry for B symbol, and a pointer to the S rule matched at the end.
+    /// For terminals and literals the indices point to the tqueue stack instead.
 };
 
 #endif //__COID_COMM_PARSER__HEADER_FILE__
