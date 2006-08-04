@@ -130,7 +130,7 @@ struct MX_REGISTER
 	}
 	void del( const comm_mutex * m ) {
 		comm_mutex_guard<_comm_mutex> mxg( _mx );
-		_reg.remove( (const void *) m );
+        _reg.remove( (const void *) m );
 	}
 };
 
