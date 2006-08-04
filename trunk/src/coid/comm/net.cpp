@@ -687,6 +687,7 @@ void netSocket::lingering_close()
     if( handle != -1 )
     {
         ::shutdown( handle, 1/*SD_SEND*/ );
+        setBlocking(false);
         for(;;)
         {
             char buf[32];
