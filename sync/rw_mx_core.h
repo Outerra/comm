@@ -64,7 +64,7 @@ protected:
 
 	critical_section		_mxIN;              /// in mutex
 	critical_section		_mxOUT;             /// out mutex
-	uint					_cndAccess;			/// used when W locking to be sure that #R-locks is zero
+	uints					_cndAccess;			/// used when W locking to be sure that #R-locks is zero
 #else
 	pthread_mutex_t			_mxIN;              /// in mutex
 	pthread_mutex_t			_mxOUT;             /// out mutex
