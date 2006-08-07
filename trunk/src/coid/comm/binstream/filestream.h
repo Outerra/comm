@@ -102,7 +102,9 @@ public:
             _rop = 0;
         }
 
-        len -= ::_write( _handle, p, (uint)len );
+        uint k = ::_write( _handle, p, (uint)len );
+        _wpos += k;
+        len -= k;
         return 0;
     }
 
@@ -115,7 +117,9 @@ public:
             _rop = 1;
         }
 
-        len -= ::_read( _handle, p, (uint)len );
+        uint k = ::_read( _handle, p, (uint)len );
+        _rpos += k;
+        len -= k;
         if( len > 0 )
             return ersNO_MORE "required more data than available";
         return 0;
@@ -134,27 +138,30 @@ public:
 
     virtual opcd open( const token& arg )
     {
-        charstr name;
         token m = arg;
         token n = m.cut_left( '?', 1 );
-        name = n;
+        return open( n, m );
+    }
+
+    opcd open( const charstr& name, token attr )
+    {
         int flg=0;
         int rw=0,sh=0;
         
-        while( !m.is_empty() )
+        while( !attr.is_empty() )
         {
-            if( m[0] == 'r' )       rw |= 1;
-            else if( m[0] == 'w' )  rw |= 2;
-            else if( m[0] == 'l' )  sh |= 1;
-            else if( m[0] == 'e' )  flg |= O_EXCL;
-            else if( m[0] == 'c' )  flg |= O_CREAT;
-            else if( m[0] == 't' )  flg |= O_TRUNC;
-            else if( m[0] == 'a' )  flg |= O_APPEND;
+            if( attr[0] == 'r' )       rw |= 1;
+            else if( attr[0] == 'w' )  rw |= 2;
+            else if( attr[0] == 'l' )  sh |= 1;
+            else if( attr[0] == 'e' )  flg |= O_EXCL;
+            else if( attr[0] == 'c' )  flg |= O_CREAT;
+            else if( attr[0] == 't' )  flg |= O_TRUNC;
+            else if( attr[0] == 'a' )  flg |= O_APPEND;
             //else if( m[0] == 'n' )  flg |= O_NONBLOCK;
-            else if( m[0] != ' ' )
+            else if( attr[0] != ' ' )
                 throw ersINVALID_PARAMS;
 
-            ++m;
+            ++attr;
         }
 
 #ifdef SYSTYPE_WIN32
@@ -223,6 +230,13 @@ public:
         return e;
     }
 
+    uint64 size() const
+	{
+		struct stat s;
+        if( 0 == ::fstat( _handle, &s ) )
+            return s.st_size;
+		return 0;
+	}
 
     fileiostream() { _handle = -1; _wpos = _rpos = 0; _rop = 1; }
     explicit fileiostream( const token& s )
@@ -236,9 +250,8 @@ public:
 
 
 ////////////////////////////////////////////////////////////////////////////////
-class bofstream : public binstream
+class bofstream : public fileiostream
 {
-    FILE* _str;
 public:
 
     virtual uint binstream_attributes( bool in0out1 ) const
@@ -246,176 +259,41 @@ public:
         return in0out1 ? 0 : fATTR_NO_INPUT_FUNCTION;
     }
 
-    virtual opcd write_raw( const void* p, uints& len )
-    {
-        len -= ::fwrite( p, 1, len, _str );
-        return 0;
-    }
-
-    virtual opcd read_raw( void* p, uints& len )
-    {
-        return ersNO_MORE;
-    }
-
-    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX ) { return ersUNAVAILABLE; }
-
-    virtual bool is_open() const                { return _str != 0; }
-    virtual void flush()                        { ::fflush (_str); }
-    virtual void acknowledge( bool eat=false )  { }
-
-    virtual void reset()
-    {
-        //implement
-    }
-
     virtual opcd open( const token& arg )
     {
-        charstr name;
-        charstr mode;
-        token m = arg;
-        token n = m.cut_left( '?', 1 );
-        name = n;
-        mode = m;
-        if( m.is_empty() )
-            mode = "wb";
-#ifdef SYSTYPE_MSVC8plus
-        return fopen_s( &_str, name.ptr(), mode.ptr() ) ? ersIO_ERROR : opcd(0);
-#else
-        _str = fopen( name.ptr(), mode.ptr() );
-        return _str != 0  ?  opcd(0)  :  ersIO_ERROR;
-#endif
+        return fileiostream::open( arg, "wct" );
     }
 
-    virtual opcd close( bool linger=false )
-    {
-        if(_str)
-            fclose(_str);
-        _str = 0;
-        return 0;
-    }
-
-    virtual opcd seek( int type, int64 pos )
-    {
-        if( type & fSEEK_WRITE )
-        {
-#ifdef SYSTYPE_MSVC
-            return -1 != ::_lseeki64( _fileno(_str), pos, (type & fSEEK_CURRENT) ? SEEK_CUR : SEEK_SET )
-                ?  opcd(0)
-                :  ersFAILED;
-#else
-            return 0 == ::fseeko64( _str, pos, (type & fSEEK_CURRENT) ? SEEK_CUR : SEEK_SET )
-                ?  opcd(0)
-                :  ersFAILED;
-#endif
-        }
-        return ersINVALID_PARAMS;
-    }
-
-
-    bofstream() { _str = 0; }
+    bofstream() { }
     explicit bofstream( const token& s )
     {
         open(s);
     }
 
-    ~bofstream() { close(); }
+    ~bofstream() { }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-class bifstream : public binstream
+class bifstream : public fileiostream
 {
-    FILE* _str;
 public:
-
     virtual uint binstream_attributes( bool in0out1 ) const
     {
-        return in0out1 ? fATTR_NO_OUTPUT_FUNCTION : 0;
+        return in0out1 ? 0 : fATTR_NO_OUTPUT_FUNCTION;
     }
 
-    virtual opcd read_raw( void* p, uints& len )
-    {
-        len -= ::fread( p, 1, len, _str );
-        if( len > 0 )
-            return ersNO_MORE "required more data than available";
-        return 0;
-    }
-
-    virtual opcd write_raw( const void* p, uints& len )
-    {
-        return ersUNAVAILABLE "input file stream doesn't support writting";
-    }
-
-    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX ) { return ersUNAVAILABLE; }
-
-    virtual bool is_open() const                { return _str != 0; }
-    virtual void flush()                        { }
-    virtual void acknowledge (bool eat=false)   { }
-
-    virtual void reset()                        { }
-
-    off_t size() const
-	{
-		struct stat s;
-        if( 0 == ::fstat( _fileno(_str), &s ) )
-            return s.st_size;
-		return 0;
-	}
-    
-    
     virtual opcd open( const token& arg )
     {
-        close();
-
-        charstr name;
-        charstr mode;
-        token m = arg;
-        token n = m.cut_left( '?', 1 );
-        name = n;
-        mode = m;
-        if( m.is_empty() )
-            mode = "rb";
-#ifdef SYSTYPE_MSVC8plus
-        return ::fopen_s( &_str, name.ptr(), mode.ptr() ) ? ersIO_ERROR : opcd(0);
-#else
-        _str = ::fopen( name.ptr(), mode.ptr() );
-        return _str != 0  ?  opcd(0)  :  ersIO_ERROR;
-#endif
+        return fileiostream::open( arg, "r" );
     }
 
-    virtual opcd close( bool linger=false )
-    {
-        if(_str)
-            fclose(_str);
-        _str = 0;
-        return 0;
-    }
-
-    virtual opcd seek( int type, int64 pos )
-    {
-        if( type & fSEEK_READ )
-        {
-#ifdef SYSTYPE_MSVC
-            return -1 != ::_lseeki64( _fileno(_str), pos, (type & fSEEK_CURRENT) ? SEEK_CUR : SEEK_SET )
-                ?  opcd(0)
-                :  ersFAILED;
-#else
-            return 0 == ::fseeko64( _str, pos, (type & fSEEK_CURRENT) ? SEEK_CUR : SEEK_SET )
-                ?  opcd(0)
-                :  ersFAILED;
-#endif
-        }
-        return ersINVALID_PARAMS;
-    }
-
-
-    bifstream() { _str = 0; }
+    bifstream() { }
     explicit bifstream( const token& s )
     {
-        _str = 0;
         open(s);
     }
 
-    ~bifstream() { close(); }
+    ~bifstream() { }
 };
 
 COID_NAMESPACE_END
