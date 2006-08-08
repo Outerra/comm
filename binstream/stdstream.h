@@ -40,6 +40,7 @@
 
 #include "../namespace.h"
 
+#include "stlstream.h"
 #include "txtstream.h"
 
 COID_NAMESPACE_BEGIN
