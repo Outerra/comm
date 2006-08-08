@@ -76,7 +76,7 @@ struct binstream_container_stl_input_iterator : binstream_containerT<typename St
 
 
     binstream_container_stl_input_iterator( const StlContainer& cont, uints n )
-        : binstream_containerT(n), inpi(cont.begin()) {}
+        : binstream_containerT<T>(n), inpi(cont.begin()) {}
 
     void set( const StlContainer& cont, uints n )
     {
@@ -176,7 +176,7 @@ struct std_vector_binstream_container : public binstream_containerT<T>
     virtual bool is_continuous() const      { return true; }
 
     std_vector_binstream_container( std::vector<T,A>& v )
-        : binstream_containerT(v.size()), _v(v)
+        : binstream_containerT<T>(v.size()), _v(v)
     {
         _pos = 0;
     }
