@@ -42,117 +42,120 @@
 
 #include <string>
 #include <vector>
+#include <list>
+#include <deque>
+#include <set>
+#include <map>
+
+#include <iterator>
 #include "binstream.h"
 #include "../str.h"
 
 COID_NAMESPACE_BEGIN
 
-////////////////////////////////////////////////////////////////////////////////
-inline binstream& operator << (binstream& out, const std::string& p)
-{
-    binstream_container_fixed_array<char> c((char*)p.c_str(), p.size());
-    out.xwrite_array(c);
-	return out;
-}
 
 ////////////////////////////////////////////////////////////////////////////////
-inline binstream& operator >> (binstream& in, std::string& p)
+///Container for reading from a stl container
+template<class StlContainer>
+struct binstream_container_stl_input_iterator : binstream_containerT<typename StlContainer::value_type>
 {
-	charstr t;
-	in >> t;
-	p = t.ptr();
-	return in;
-}
+    typedef typename StlContainer::value_type       T;
 
-////////////////////////////////////////////////////////////////////////////////
-template <class T>
-inline binstream& operator << (binstream& out, const std::vector<T>& v)
-{
-    binstream_container_fixed_array<T> c( &v[0], v.size() );
-    out.xwrite_array(c);
-	return out;
-}
-/*
-////////////////////////////////////////////////////////////////////////////////
-template<class Container>
-struct stl_container : public binstream_container
-{
-    virtual const void* extract( uints n )
+    const void* extract( uints n )
     {
-        DASSERT( n == 1 );
-        DASSERT( _begin != _end );
-        value_type* v = &(*_begin);
-        ++_begin;
-        return v;
+        const T* p = &(*inpi++);
+        return p;
     }
 
-    virtual void* insert( uints n )
+    void* insert( uints n )
     {
-        DASSERT(0);
-        return 0;
+        DASSERT(0); //not defined for input
     }
 
-    virtual bool is_continuous() const      { return false; }
+    bool is_continuous() const      { return false; }
 
 
-    typedef Container::const_iterator       const_iterator;
-    typedef Container::value_type           value_type;
+    binstream_container_stl_input_iterator( const StlContainer& cont, uints n )
+        : binstream_containerT(n), inpi(cont.begin()) {}
 
-    stl_container( Container& co )
-        : binstream_container(UMAX,bstype::t_type<value_type>()), _co(co)
+    void set( const StlContainer& cont, uints n )
     {
-        _begin = _co.begin();
-        _end = _co.end();
+        inpi = cont.begin();
+        this->_nelements = n;
     }
 
 protected:
-    Container& _co;
-    const_iterator _begin, _end;
-}
+    typename StlContainer::const_iterator inpi;
+};
 
-////////////////////////////////////////////////////////////////////////////////
-template<class StlSequence>
-struct stl_sequence : public binstream_container
+///Container for writing to a stl container
+template<class StlContainer>
+struct binstream_container_stl_output_iterator : binstream_containerT<typename StlContainer::value_type>
 {
-    virtual const void* extract( uints n )
+    typedef typename StlContainer::value_type       T;
+
+    const void* extract( uints n )
     {
-        DASSERT( n == 1 );
-        DASSERT( _begin != _end );
-        value_type* v = &(*_begin);
-        ++_begin;
-        return v;
+        DASSERT(0); //not defined for output
     }
 
-    virtual void* insert( uints n )
+    void* insert( uints n )
     {
-        DASSERT( n == 1 );
-        _co.insert( _begin, value_type() );
-        value_type* v = &(*_begin);
-        ++_begin;
-        return v;
+        T* p = &(*outpi);
+        return p;
     }
 
-    virtual bool is_continuous() const      { return false; }
+    bool is_continuous() const      { return false; }
 
 
-    typedef Container::const_iterator       const_iterator;
-    typedef Container::value_type           value_type;
-
-    stl_sequence( Container& co )
-        : binstream_container(UMAX,bstype::t_type<value_type>()), _co(co)
+    binstream_container_stl_output_iterator( StlContainer& cont, uints n )
+        : binstream_containerT<T>(n)
     {
-        _begin = _co.begin();
-        _end = _co.end();
+        cont.clear();
+        outpi = cont.end();
+        this->_nelements = n;
+    }
+
+    void set( StlContainer& cont, uints n )
+    {
+        cont.clear();
+        outpi = cont.end();
+        this->_nelements = n;
     }
 
 protected:
-    Container& _co;
-    const_iterator _begin, _end;
-}
-*/
+    typename StlContainer::iterator outpi;
+};
+
 ////////////////////////////////////////////////////////////////////////////////
-template<class T>
-struct std_vector_binstream_container : public binstream_container
+#define STD_BINSTREAM(CONT) \
+template<class T, class A> \
+inline binstream& operator << (binstream& out, const CONT<T,A>& v) \
+{   binstream_container_stl_input_iterator< CONT<T,A> > c( v, UMAX ); \
+    out.xwrite_array(c); \
+	return out; \
+} \
+template<class T, class A> \
+inline binstream& operator >> (binstream& out, CONT<T,A>& v) \
+{   v.clear(); \
+    binstream_container_stl_output_iterator<T> c( v, UMAX ); \
+    out.xwrite_array(c); \
+	return out; \
+}
+
+STD_BINSTREAM(std::list)
+STD_BINSTREAM(std::deque)
+
+STD_BINSTREAM(std::set)
+STD_BINSTREAM(std::multiset)
+STD_BINSTREAM(std::map)
+STD_BINSTREAM(std::multimap)
+
+
+////////////////////////////////////////////////////////////////////////////////
+///Binstream container for vector, this one can be optimized more
+template<class T, class A>
+struct std_vector_binstream_container : public binstream_containerT<T>
 {
     virtual const void* extract( uints n )
     {
@@ -172,23 +175,50 @@ struct std_vector_binstream_container : public binstream_container
 
     virtual bool is_continuous() const      { return true; }
 
-    std_vector_binstream_container( std::vector<T>& v )
-        : binstream_container(v.size(),bstype::t_type<T>()), _v(v)
+    std_vector_binstream_container( std::vector<T,A>& v )
+        : binstream_containerT(v.size()), _v(v)
     {
         _pos = 0;
     }
 
 protected:
     uints _pos;
-    std::vector<T>& _v;
+    std::vector<T,A>& _v;
 };
 
-template<class T>
-inline binstream& operator >> (binstream& in, std::vector<T>& v)
+
+template<class T, class A>
+inline binstream& operator << (binstream& out, const std::vector<T,A>& v)
 {
-    std_vector_binstream_container<T> c(v);
+    binstream_container_fixed_array<T> c( &v[0], v.size() );
+    out.xwrite_array(c);
+	return out;
+}
+
+template<class T, class A>
+inline binstream& operator >> (binstream& in, std::vector<T,A>& v)
+{
+    std_vector_binstream_container<T,A> c(v);
     in.xread_array(c);
     return in;
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+inline binstream& operator << (binstream& out, const std::string& p)
+{
+    binstream_container_fixed_array<char> c((char*)p.c_str(), p.size());
+    out.xwrite_array(c);
+	return out;
+}
+
+inline binstream& operator >> (binstream& in, std::string& p)
+{
+	charstr t;
+	in >> t;
+	p = t.ptr();
+	return in;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
