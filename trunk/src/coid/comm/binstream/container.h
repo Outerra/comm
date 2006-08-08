@@ -69,7 +69,7 @@ struct binstream_container
     ///@return true if the storage is continuous in memory
     virtual bool is_continuous() const = 0;
 
-    typedef opcd (*fnc_stream)(binstream&, void*);
+    typedef opcd (*fnc_stream)(binstream&, void*,binstream_container&);
 
 
     binstream_container( uints n, bstype::type t, fnc_stream fout, fnc_stream fin )
@@ -113,14 +113,14 @@ struct binstream_containerT : binstream_container
     binstream_containerT( uints n ) : binstream_container(n,bstype::t_type<T>(),&stream_out,&stream_in)
     {}
 
-    static opcd stream_in( binstream& bin, void* p )
+    static opcd stream_in( binstream& bin, void* p, binstream_container& )
     {
         try { bin >> *(T*)p; }
         catch( opcd e ) { return e; }
         return 0;
     }
 
-    static opcd stream_out( binstream& bin, void* p )
+    static opcd stream_out( binstream& bin, void* p, binstream_container& )
     {
         try { bin << *(const T*)p; }
         catch( opcd e ) { return e; }
@@ -233,7 +233,7 @@ struct binstream_typechanging_container : public binstream_container
     }
 
 protected:
-    static opcd stream_out( binstream& bin, void* p )
+    static opcd stream_out( binstream& bin, void* p, binstream_container& )
     {
         WRAPPER w( *(const CONTENT*)p );
         try { bin << w; }
@@ -241,7 +241,7 @@ protected:
         return 0;
     }
 
-    static opcd stream_in( binstream& bin, void* p )
+    static opcd stream_in( binstream& bin, void* p, binstream_container& )
     {
         WRAPPER w( *(CONTENT*)p );
         try { bin >> w; }

@@ -1178,7 +1178,7 @@ protected:
                     if(!p)
                         return ersNOT_ENOUGH_MEM;
                     
-                    opcd e = c._stream_in( _hook, p );
+                    opcd e = c._stream_in( _hook, p, c );
                     if(e)  return e;
 
                     --_cache_arysize;
