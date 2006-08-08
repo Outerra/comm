@@ -140,7 +140,7 @@ struct thread_semaphore
 #ifdef SYSTYPE_WIN32
     uint _handle;
 #else
-    sem_t _handle;
+    sem_t* _handle;
     int _init;
 #endif
 
