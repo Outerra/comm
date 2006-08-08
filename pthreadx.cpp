@@ -246,7 +246,8 @@ thread_semaphore::thread_semaphore( uint initial )
 #ifdef SYSTYPE_WIN32
     _handle = (uint)CreateSemaphore( 0, initial, initial, 0 );
 #else
-    RASSERT( 0 == sem_init( &_handle, false, initial ) );
+    _handle = new sem_t;
+    RASSERT( 0 == sem_init( _handle, false, initial ) );
     _init = 1;
 #endif
 }
@@ -269,7 +270,8 @@ thread_semaphore::~thread_semaphore()
         CloseHandle( (HANDLE)_handle );
 #else
     if(_init)
-        sem_destroy( &_handle );
+        sem_destroy( _handle );
+    delete _handle;
 #endif
 }
 
@@ -283,7 +285,8 @@ bool thread_semaphore::init( uint initial )
 #else
     if(_init)
         return false;
-    RASSERT( 0 == sem_init( &_handle, false, initial ) );
+    _handle = new sem_t;
+    RASSERT( 0 == sem_init( _handle, false, initial ) );
     _init = 1;
 #endif
     return true;
@@ -296,7 +299,7 @@ bool thread_semaphore::acquire()
 #ifdef SYSTYPE_WIN32
     return WAIT_OBJECT_0 == WaitForSingleObject( (HANDLE)_handle, INFINITE );
 #else
-    return 0 == sem_wait( &_handle );
+    return 0 == sem_wait( _handle );
 #endif
 }
 
@@ -306,7 +309,7 @@ void thread_semaphore::release()
 #ifdef SYSTYPE_WIN32
     ReleaseSemaphore( (HANDLE)_handle, 1, 0 );
 #else
-    sem_post( &_handle );
+    sem_post( _handle );
 #endif
 }
 
