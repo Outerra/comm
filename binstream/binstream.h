@@ -562,7 +562,7 @@ public:
                 break;
 
             if(complextype)
-                e = c._stream_out( *this, (void*)p );
+                e = c._stream_out( *this, (void*)p, c );
             else
                 e = write( p, tae );
 
@@ -602,7 +602,7 @@ public:
                 return ersNOT_ENOUGH_MEM;
 
             if(complextype)
-                e = c._stream_in( *this, p );
+                e = c._stream_in( *this, p, c );
             else
                 e = read( p, tae );
 

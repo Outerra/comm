@@ -49,6 +49,7 @@
 
 #include <iterator>
 #include "binstream.h"
+#include "../metastream/metastream.h"
 #include "../str.h"
 
 COID_NAMESPACE_BEGIN
@@ -88,68 +89,115 @@ protected:
     typename StlContainer::const_iterator inpi;
 };
 
-///Container for writing to a stl container
+///Container for inserting to stl containers 
 template<class StlContainer>
-struct binstream_container_stl_output_iterator : binstream_containerT<typename StlContainer::value_type>
+struct binstream_container_stl_insert_iterator : binstream_container
 {
     typedef typename StlContainer::value_type       T;
+    enum { ELEMSIZE = sizeof(T) };
 
-    const void* extract( uints n )
-    {
-        DASSERT(0); //not defined for output
-    }
+    virtual const void* extract( uints n )      { return 0; }
+    virtual void* insert( uints n )             { return &temp; }
 
-    void* insert( uints n )
-    {
-        T* p = &(*outpi);
-        return p;
-    }
-
-    bool is_continuous() const      { return false; }
+    virtual bool is_continuous() const          { return false; }
 
 
-    binstream_container_stl_output_iterator( StlContainer& cont, uints n )
-        : binstream_containerT<T>(n)
+    binstream_container_stl_insert_iterator( StlContainer& cont, uints n )
+        : binstream_container(n,bstype::t_type<T>(),0,&stream_in), outpi(std::back_inserter<StlContainer>(cont))
     {
         cont.clear();
-        outpi = cont.end();
-        this->_nelements = n;
-    }
-
-    void set( StlContainer& cont, uints n )
-    {
-        cont.clear();
-        outpi = cont.end();
-        this->_nelements = n;
+        outpi = std::back_inserter<StlContainer>(cont);
     }
 
 protected:
-    typename StlContainer::iterator outpi;
+    static opcd stream_in( binstream& bin, void* p, binstream_container& cont )
+    {
+        binstream_container_stl_insert_iterator<StlContainer>& contc =
+            (binstream_container_stl_insert_iterator<StlContainer>&)cont;
+        try {
+            bin >> contc.temp;
+            *contc.outpi++ = contc.temp;
+        }
+        catch( opcd e ) { return e; }
+        return 0;
+    }
+
+    T temp;
+    std::back_insert_iterator<StlContainer> outpi;
+};
+
+///Container for inserting to stl associative containers 
+template<class StlContainer>
+struct binstream_container_stl_assoc_iterator : binstream_container
+{
+    typedef typename StlContainer::value_type       T;
+    enum { ELEMSIZE = sizeof(T) };
+
+    virtual const void* extract( uints n )      { return 0; }
+    virtual void* insert( uints n )             { return &temp; }
+
+    virtual bool is_continuous() const          { return false; }
+
+
+    binstream_container_stl_assoc_iterator( StlContainer& cont, uints n )
+        : binstream_container(n,bstype::t_type<T>(),0,&stream_in), container(cont)
+    {
+        cont.clear();
+    }
+
+protected:
+    static opcd stream_in( binstream& bin, void* p, binstream_container& cont )
+    {
+        binstream_container_stl_assoc_iterator<StlContainer>& contc =
+            (binstream_container_stl_assoc_iterator<StlContainer>&)cont;
+        try {
+            bin >> contc.temp;
+            contc.container.insert( contc.temp );
+        }
+        catch( opcd e ) { return e; }
+        return 0;
+    }
+
+    T temp;
+    StlContainer& container;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 #define STD_BINSTREAM(CONT) \
-template<class T, class A> \
-inline binstream& operator << (binstream& out, const CONT<T,A>& v) \
+template<class T, class A> inline binstream& operator << (binstream& out, const CONT<T,A>& v) \
 {   binstream_container_stl_input_iterator< CONT<T,A> > c( v, UMAX ); \
     out.xwrite_array(c); \
-	return out; \
-} \
-template<class T, class A> \
-inline binstream& operator >> (binstream& out, CONT<T,A>& v) \
+    return out; } \
+template<class T, class A> inline binstream& operator >> (binstream& out, CONT<T,A>& v) \
 {   v.clear(); \
-    binstream_container_stl_output_iterator<T> c( v, UMAX ); \
+    binstream_container_stl_insert_iterator< CONT<T,A> > c( v, UMAX ); \
     out.xwrite_array(c); \
-	return out; \
-}
+	return out; } \
+template<class T, class A> inline metastream& operator << (metastream& m, const CONT<T,A>& ) \
+{   m.meta_array();  m<<*(typename CONT<T,A>::value_type*)0;  return m; }
+
+
+#define STD_ASSOC_BINSTREAM(CONT) \
+template<class T, class A> inline binstream& operator << (binstream& out, const CONT<T,A>& v) \
+{   binstream_container_stl_input_iterator< CONT<T,A> > c( v, UMAX ); \
+    out.xwrite_array(c); \
+	return out; } \
+template<class T, class A> inline binstream& operator >> (binstream& out, CONT<T,A>& v) \
+{   v.clear(); \
+    binstream_container_stl_assoc_iterator< CONT<T,A> > c( v, UMAX ); \
+    out.xwrite_array(c); \
+	return out; } \
+template<class T, class A> inline metastream& operator << (metastream& m, const CONT<T,A>& ) \
+{   m.meta_array();  m<<*(typename CONT<T,A>::value_type*)0;  return m; }
 
 STD_BINSTREAM(std::list)
 STD_BINSTREAM(std::deque)
 
-STD_BINSTREAM(std::set)
-STD_BINSTREAM(std::multiset)
-STD_BINSTREAM(std::map)
-STD_BINSTREAM(std::multimap)
+STD_ASSOC_BINSTREAM(std::set)
+STD_ASSOC_BINSTREAM(std::multiset)
+STD_ASSOC_BINSTREAM(std::map)
+STD_ASSOC_BINSTREAM(std::multimap)
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -187,24 +235,28 @@ protected:
 };
 
 
-template<class T, class A>
-inline binstream& operator << (binstream& out, const std::vector<T,A>& v)
+template<class T, class A> inline binstream& operator << (binstream& out, const std::vector<T,A>& v)
 {
     binstream_container_fixed_array<T> c( &v[0], v.size() );
     out.xwrite_array(c);
 	return out;
 }
 
-template<class T, class A>
-inline binstream& operator >> (binstream& in, std::vector<T,A>& v)
+template<class T, class A> inline binstream& operator >> (binstream& in, std::vector<T,A>& v)
 {
     std_vector_binstream_container<T,A> c(v);
     in.xread_array(c);
     return in;
 }
 
+template<class T, class A> inline metastream& operator << (metastream& m, const std::vector<T,A>& )
+{   m.meta_array();  m<<*(T*)0;  return m; }
 
 
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Other stl stuff
 ////////////////////////////////////////////////////////////////////////////////
 inline binstream& operator << (binstream& out, const std::string& p)
 {
@@ -221,19 +273,38 @@ inline binstream& operator >> (binstream& in, std::string& p)
 	return in;
 }
 
+inline metastream& operator << (metastream& meta, const std::string&)
+{
+    meta.meta_array();
+    meta.meta_primitive( "char", bstype::t_type<char>() );
+    return meta;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
-template <class F, class S>
-inline binstream& operator << (binstream& out, const std::pair<F,S>& p)
+template <class F, class S> inline binstream& operator << (binstream& out, const std::pair<F,S>& p)
 {
 	return out << p.first << p.second;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-template <class F, class S>
-inline binstream& operator >> (binstream& in, std::pair<F,S>& p)
+template <class F, class S> inline binstream& operator >> (binstream& in, std::pair<F,S>& p)
 {
 	return in >> p.first >> p.second;
 }
+
+//workaround for std::map
+template <class F, class S> inline binstream& operator >> (binstream& in, std::pair<const F,S>& p)
+{
+	return in >> (F&)p.first >> p.second;
+}
+
+template <class F, class S> inline metastream& operator << (metastream& m, const std::pair<F,S>& p)
+{
+    MSTRUCT_OPEN(m, "std::pair");
+    MM(m, "key", p.first );
+    MM(m, "value", p.second );
+    MSTRUCT_CLOSE(m);
+}
+
 
 COID_NAMESPACE_END
 
