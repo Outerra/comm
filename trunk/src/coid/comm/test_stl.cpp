@@ -8,26 +8,32 @@ namespace coid {
 
 static void test()
 {
+    //binstream out and in test
+
     bofstream bof("test_stl");
 
-    std::vector<charstr> x0;
-    std::list<charstr> x1;
-    std::deque<charstr> x2;
-    std::set<charstr> x3;
-    std::multiset<charstr> x4;
-    std::map<charstr,uint> x5;
-    std::multimap<charstr,uint> x6;
+    const char* t = "test";
+    std::vector<std::string> x0;
+    std::list<std::string> x1;
+    std::deque<std::string> x2;
+    std::set<std::string> x3;
+    std::multiset<std::string> x4;
+    std::map<std::string,uint> x5;
+    std::multimap<std::string,uint> x6;
 
-    bof << x0 << x1 << x2 << x3 << x4 << x5 << x6;
+    bof << t << x0 << x1 << x2 << x3 << x4 << x5 << x6;
     bof.close();
 
 
     bifstream bif("test_stl");
 
-    bif >> x1 >> x2 >> x3 >> x4 >> x5 >> x6;
+    bif >> t >> x1 >> x2 >> x3 >> x4 >> x5 >> x6;
     bif.close();
 
+    ::free((void*)t);
 
+    
+    //metastream out and in test
 
     bof.open("test_stl_meta");
     metastream meta;

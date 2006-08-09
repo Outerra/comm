@@ -186,14 +186,9 @@ public:
 
     binstream& operator << (const timet& x)             { return xwrite(&x, bstype::t_type<timet>() ); }
 
-/*
-    binstream& operator >> (const char*& x )            { return xread_array( container_fixed_array<char>(&x,UMAX) ); }
-    binstream& operator >> (const unsigned char*& x )   { return xread_array( container_fixed_array<char>(&x,UMAX) ); }
-    binstream& operator >> (const signed char*& x )     { return xread_array( container_fixed_array<char>(&x,UMAX) ); }
-    binstream& operator >> (char*& x )                  { return xread_array( container_fixed_array<char>(&x,UMAX) ); }
-    binstream& operator >> (unsigned char*& x )         { return xread_array( container_fixed_array<char>(&x,UMAX) ); }
-    binstream& operator >> (signed char*& x )           { return xread_array( container_fixed_array<char>(&x,UMAX) ); }
-*/
+    binstream& operator >> (const char*& x )            { binstream_container_char_array c(UMAX); xread_array(c); x=c.get(); return *this; }
+    binstream& operator >> (char*& x )                  { binstream_container_char_array c(UMAX); xread_array(c); x=(char*)c.get(); return *this; }
+
 
     binstream& operator >> (key x)                      { return xread(&x, bstype::t_type<key>() ); }
 
