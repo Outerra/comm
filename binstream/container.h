@@ -206,6 +206,58 @@ protected:
     T* _ptr;
 };
 
+
+////////////////////////////////////////////////////////////////////////////////
+///Container for writting from a prepared array
+struct binstream_container_char_array : binstream_containerT<char>
+{
+    const void* extract( uints n )
+    {
+        char* p = _ptr;
+        _ptr += n;
+        return p;
+    }
+
+    void* insert( uints n )
+    {
+        uints nres = align_value_to_power2( _size, 5 );   //32B blocks
+        if( n+_size > nres ) {
+            nres = align_value_to_power2(_size+n,5);
+            _ptr = (char*) realloc(_ptr,nres);
+        }
+        char* p = _ptr + _size-1;
+        p[n] = 0;
+        _size += n;
+        return p;
+    }
+
+    bool is_continuous() const      { return true; }
+
+    binstream_container_char_array( uints n ) : binstream_containerT<char>(n)
+    {
+        _ptr = (char*)malloc(1<<5);
+        _ptr[0] = 0;
+        _size = 1;
+    }
+    binstream_container_char_array( const char* ptr, uints n ) : binstream_containerT<char>(n), _ptr((char*)ptr)
+    {
+        _size = 0;
+    }
+
+    void set( const char* ptr, uints n )
+    {
+        this->_nelements = n;
+        _ptr = (char*)ptr;
+        _size = 0;
+    }
+
+    const char* get() const         { return _ptr; }
+
+protected:
+    char* _ptr;
+    uints _size;
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 ///Container for r/w from fixed array, but using different type for streaming
 template<class WRAPPER, class CONTENT>
