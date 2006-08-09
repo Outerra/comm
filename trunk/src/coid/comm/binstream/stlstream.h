@@ -224,8 +224,9 @@ struct std_vector_binstream_container : public binstream_containerT<T>
     virtual bool is_continuous() const      { return true; }
 
     std_vector_binstream_container( std::vector<T,A>& v )
-        : binstream_containerT<T>(v.size()), _v(v)
+        : binstream_containerT<T>(UMAX), _v(v)
     {
+        v.clear();
         _pos = 0;
     }
 
