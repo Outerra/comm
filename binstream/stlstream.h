@@ -213,7 +213,7 @@ struct std_vector_binstream_container : public binstream_containerT<T>
         return p;
     }
 
-    virtual const void* insert( uints n )
+    virtual void* insert( uints n )
     {
         _v.resize( _pos+n );
         T* p = &_v[_pos];
