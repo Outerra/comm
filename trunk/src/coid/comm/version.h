@@ -162,7 +162,7 @@ struct version
         if( ver.is_empty() )
         {
             //there's no internal version, fallback to default values
-            set( t, 0, 0, 0 );
+            set( t, 0, 0, UMAX );
             return 0;
         }
 
