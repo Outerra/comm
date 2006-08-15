@@ -58,6 +58,7 @@ public:
     struct header
     {
         uint64 _ssid;
+        uint _ssidpathlen;          ///< length of path string of sessioncoid cookie, pick the longer
 
         uints _content_length;
         int _errcode;
@@ -171,6 +172,7 @@ public:
                     return ersFE_UNKNOWN_ERROR;
             }
 
+            _ssidpathlen = 0;
             //read remaining headers
             for(;;)
             {
@@ -193,16 +195,35 @@ public:
 
                 if( h1.cmpeqi("Cookie") )
                 {
+                    uint64 ssid=0;
+                    bool bset=true;
                     for(;;)
                     {
-                        token k = h.cut_left('=',1,true);
+                        token par = h.cut_left("; ",-1);
+
+                        token k = par.cut_left('=',1,true);
                         if( k.is_empty() )  break;
 
-                        if( k.cmpeqi("sessioncoid") )
-                            _ssid = h.touint64();
-
-                        h.cut_left("; ",-1);
+                        if( k.begins_with_icase("sessioncoid") )
+                        {
+                            token id = par.cut_left(',',1);
+                            ssid = id.touint64();
+                            while(!par.is_empty())
+                            {
+                                token t = par.cut_left(',',1);
+                                t.skip_char(' ');
+                                if(t.begins_with_icase("path")) {
+                                    t.cut_left("= ",1);
+                                    if( _ssidpathlen > t.len() )
+                                        bset=false;
+                                    break;
+                                }
+                            }
+                        }
                     }
+
+                    if(bset && ssid!=0)
+                        _ssid = ssid;
                 }
                 else if( h1.cmpeqi("TE")  ||  h1.cmpeqi("Transfer-Encoding") )
                 {

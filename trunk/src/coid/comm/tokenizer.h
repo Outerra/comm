@@ -92,15 +92,15 @@ class tokenizer
 
     struct escpair
     {
-        ucs4 _first;
-        charstr _replace;
+        charstr _pattern;
+        ucs4 _replace;
 
         void (*_fnc_replace)( token& t, charstr& dest );
 
-        bool operator == ( const ucs4 k ) const         { return _first == k; }
-        bool operator <  ( const ucs4 k ) const         { return _first < k; }
+        bool operator == ( const token& k ) const       { return _pattern == k; }
+        bool operator <  ( const token& k ) const       { return _pattern < k; }
 
-        operator ucs4() const                           { return _first; }
+        operator ucs4() const                           { return _replace; }
     };
 
     enum {
@@ -314,20 +314,20 @@ public:
         add_to_synth_map(trailing);
     }
 
-    void add_escape_pair( ucs4 original, const token& replacement )
+    void add_escape_pair( const token& original, ucs4 replacement )
     {
         escpair* pep = dynarray_add_sort( _escary, original );
-        pep->_first = original;
+        pep->_pattern = original;
         pep->_replace = replacement;
         pep->_fnc_replace = 0;
 
         add_to_synth_map(replacement);
     }
 
-    void add_escape_pair( ucs4 original, void (*fnc_replace)(token&,charstr&) )
+    void add_escape_pair( const token& original, void (*fnc_replace)(token&,charstr&) )
     {
         escpair* pep = dynarray_add_sort( _escary, original );
-        pep->_first = original;
+        pep->_pattern = original;
         pep->_fnc_replace = fnc_replace;
     }
 
@@ -712,31 +712,25 @@ protected:
 
                 //get ucs4 code of following character
                 off = 0;
-                ucs4 k = get_code(off);
+                fetch_page( _tok.len(), false );
 
-                if( k == 0 )       //invalid
-                    throw ersSYNTAX_ERROR "empty escape sequence";
-                    //return token::empty();
+                uint i;
+                for( i=0; i<_escary.size(); ++i )
+                    if( _tok.begins_with(_escary[i]._pattern) )  break;
 
-                ints p = dynarray_contains_sorted( _escary, k );
-                if( p >= 0 )
+                if( i<_escary.size() )
                 {
-                    //valid escape pair found
-                    //append new stuff to the buffer
-                    if( _escary[p]._fnc_replace )
+                    if( _escary[i]._fnc_replace )
                     {
-                        //a function was provided for translation, we should prefetch as much data as possible
-                        fetch_page( _tok.len(), false );
-
-                        _escary[p]._fnc_replace( _tok, _escary[p]._replace );
+                        //a function was provided for translation
+                        _escary[i]._fnc_replace( _tok, _strbuf );
                     }
-
-                    _strbuf += _escary[p]._replace;
+                    else {
+                        _tok += _escary[i]._pattern.len();
+                        _strbuf.append_utf8( _escary[i]._replace );
+                    }
                 }
                 //else it wasn't recognized escape character, just continue
-                
-                _tok += off;
-                off = 0;
             }
             else
             {
@@ -794,13 +788,6 @@ protected:
         for( uint i=0; i<_escary.size(); ++i )
         {
             const escpair& ep = _escary[i];
-            token tok = ep._replace;
-            uints off=0;
-            
-            tok.get_utf8(off);
-            if( off < tok.len() )
-                continue;   //it's not a single char replacement
-
             _backmap.insert_value(&ep);
         }
     }
@@ -812,7 +799,7 @@ protected:
             dst.append_utf8(k);
         else {
             dst.append(_escchar);
-            dst.append( (char)(*pp)->_first );
+            dst += (*pp)->_pattern;
         }
     }
 
