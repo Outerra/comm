@@ -89,9 +89,9 @@ public:
         _tokenizer.add_delimiters( '\'', '\'' );
         _tokenizer.add_delimiters( '(', ')' );
         _tokenizer.set_escape_char('\\');
-        _tokenizer.add_escape_pair( '"', "\"" );
-        _tokenizer.add_escape_pair( '\'', "'" );
-        _tokenizer.add_escape_pair( '\\', "\\" );
+        _tokenizer.add_escape_pair( "\"", '"' );
+        _tokenizer.add_escape_pair( "'", '\'' );
+        _tokenizer.add_escape_pair( "\\", '\\' );
 
         //add anything that can be a part of identifier or value (strings are treated separately)
         _tokenizer.add_to_group( GROUP_IDENTIFIERS, '0', '9' );

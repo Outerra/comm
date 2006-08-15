@@ -112,8 +112,9 @@ public:
 
         //characters escaped in strings (xml-rpc)
         _tokenizer.set_escape_char('&');
-        _tokenizer.add_escape_pair( '<', "&lt;" );
-        _tokenizer.add_escape_pair( '&', "&amp;" );
+        _tokenizer.add_escape_pair( "lt;", '<' );
+        _tokenizer.add_escape_pair( "gt;", '>' );
+        _tokenizer.add_escape_pair( "amp;", '&' );
 
         //add anything that can be a part of identifier or value (strings are treated separately)
         _tokenizer.add_to_group( GROUP_IDENTIFIERS, '0', '9' );
