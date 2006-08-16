@@ -605,8 +605,6 @@ private:
 
     friend class binstreamhook;
 
-    typedef DESC::VAR           DESC_VAR;
-
 
     ////////////////////////////////////////////////////////////////////////////////
     ///Interface for holding built descriptors
@@ -636,7 +634,7 @@ private:
     charstr _err;
     
     // description parsing:
-    DESC_VAR _root;
+    DESC::VAR _root;
     DESC* _current_desc;
     const char* _cur_variable_name;
 
@@ -644,7 +642,7 @@ private:
     int _sesopen;                   ///< flush(>0) or ack(<0) session open
     int _arraynm;                   ///< first array element marker in non-meta mode
 
-    dynarray<DESC_VAR*> _stack;     ///< variable stack for data streaming
+    dynarray<DESC::VAR*> _stack;     ///< variable stack for data streaming
 
     //dynarray<uint> _array;          ///< array size stack, nonempty if under array during description building
 
@@ -673,7 +671,7 @@ private:
 
     charstr _rvarname;              ///< name of variable that follows in the input stream
 
-    DESC_VAR* _cur_var;             ///< currently processed variable (read/write)
+    DESC::VAR* _cur_var;             ///< currently processed variable (read/write)
     charstr _struct_name;           ///< used during the template name building step
 
 
@@ -805,17 +803,24 @@ private:
     }
 
     ////////////////////////////////////////////////////////////////////////////////
-    DESC_VAR* last_var() const              { return *_stack.last(); }
-    DESC_VAR* pop_var()                     { DESC_VAR* p;  return _stack.pop(p) ? p : 0; }
-    void push_var( DESC_VAR* d )            { _stack.push(d); }
+    DESC::VAR* last_var() const              { return *_stack.last(); }
+    DESC::VAR* pop_var()                     { DESC::VAR* p;  return _stack.pop(p) ? p : 0; }
+    void push_var( DESC::VAR* d )            { _stack.push(d); }
 
-    DESC_VAR* parent_var()
+    DESC::VAR* parent_var() const
     {
-        DESC_VAR** v = _stack.last();
+        DESC::VAR** v = _stack.last();
         return v ? *v : 0;//&_root;
     }
 
-    charstr& dump_stack( charstr& dst, int depth, DESC_VAR* var=0 ) const
+    bool is_first_var() const
+    {
+        DESC::VAR* p = last_var();
+        return _cur_var == p->_desc->_children.ptr();
+    }
+
+
+    charstr& dump_stack( charstr& dst, int depth, DESC::VAR* var=0 ) const
     {
         if(!dst.is_empty())
             dst << char('\n');
@@ -887,14 +892,14 @@ protected:
             else
             {
                 //get next var
-                DESC_VAR* par = parent_var();
+                DESC::VAR* par = parent_var();
                 if(!par) {
                     //!par should only happen here if the root type was a primitive type
                     _tmetafnc = 0;
                     return 0;
                 }
 
-                DESC_VAR* cvar = par->_desc->next_child(_cur_var);
+                DESC::VAR* cvar = par->_desc->next_child(_cur_var);
                 while( !cvar )
                 {
                     if( par->is_array() )
@@ -925,9 +930,12 @@ protected:
                 _cur_var = cvar;
             }
 
+            opcd e=0;
+            if( !is_first_var() )
+                e = _fmtstream->write_separator();
             //here just prefix the primitive value types and struct open token by the
             // variable name.
-            opcd e = _fmtstream->write_key( _cur_var->_varname );
+            if(!e) e = _fmtstream->write_key( _cur_var->_varname );
             if(e)  return e;
         }
         while( _cur_var->is_compound() );
@@ -958,14 +966,14 @@ protected:
             else
             {
                 //get next var
-                DESC_VAR* par = parent_var();
+                DESC::VAR* par = parent_var();
                 if(!par) {
                     //!par should only happen here if the root type was a primitive type
                     _tmetafnc = 0;
                     return 0;
                 }
 
-                DESC_VAR* cvar = par->_desc->next_child(_cur_var);
+                DESC::VAR* cvar = par->_desc->next_child(_cur_var);
                 while( !cvar )
                 {
                     if( par->is_array() )
@@ -1371,8 +1379,11 @@ protected:
         {
             if( !cache_lookup() )
             {
-                opcd e;
-                e = binstream_read_key( *_fmtstream, _rvarname );
+                opcd e=0;
+                if( !is_first_var() )
+                    e = _fmtstream->read_separator();
+
+                if(!e) e = binstream_read_key( *_fmtstream, _rvarname );
                 if(e) {
                     dump_stack(_err,0);
                     _err << " - error reading variable '" << _rvarname << "', error: " << opcd_formatter(e);
@@ -1445,7 +1456,7 @@ protected:
         }
 
         do {
-            DESC_VAR* crv = par->find_child(_rvarname);
+            DESC::VAR* crv = par->find_child(_rvarname);
             if(!crv) {
                 dump_stack(_err,-1);
                 _err << " - member variable: " << _rvarname << " not defined";
@@ -1470,7 +1481,9 @@ protected:
 
             ++_cacherootentries;
 
-            e = binstream_read_key( *_fmtstream, _rvarname );
+            e = _fmtstream->read_separator();
+
+            if(!e) e = binstream_read_key( *_fmtstream, _rvarname );
             if(e) {
                 dump_stack(_err,0);
                 _err << " - error reading variable '" << _rvarname << "', error: " << opcd_formatter(e);
@@ -1491,7 +1504,7 @@ protected:
         const uints* dof = (uints*)_data.ptr();
         DESC* par = parent_var()->_desc;
 
-        DESC_VAR* crv = par->find_child(_cur_var->_varname);
+        DESC::VAR* crv = par->find_child(_cur_var->_varname);
         DASSERT(crv);
 
         uints k = par->get_child_pos(crv);
@@ -1507,7 +1520,7 @@ protected:
     }
 
     ///Read structured data of variable var to the cache.
-    opcd cache_member( DESC_VAR* var )
+    opcd cache_member( DESC::VAR* var )
     {
         opcd e;
         if( !var->_desc->_btype.is_primitive() )
@@ -1537,7 +1550,7 @@ protected:
                     n = na;
 
                 //create a dummy element
-                DESC_VAR v;
+                DESC::VAR v;
                 //v.is_array = false;
                 v._desc = var->_desc;
 
@@ -1595,15 +1608,17 @@ protected:
 
             for( uints i=0; i<n; ++i )
             {
+                e = _fmtstream->read_separator();
+
                 //read next key
-                e = binstream_read_key( *_fmtstream, _rvarname );
+                if(!e) e = binstream_read_key( *_fmtstream, _rvarname );
                 if(e) {
                     dump_stack(_err,0);
                     _err << " - error reading variable '" << _rvarname << "', error: " << opcd_formatter(e);
                     return e;
                 }
 
-                DESC_VAR* crv = var->_desc->find_child(_rvarname);
+                DESC::VAR* crv = var->_desc->find_child(_rvarname);
                 if(!crv) {
                     dump_stack(_err,0,var);
                     _err << " - member variable '" << _rvarname << "' not defined";
