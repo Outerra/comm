@@ -112,6 +112,9 @@ struct binstream_containerT : binstream_container
 
     binstream_containerT( uints n ) : binstream_container(n,bstype::t_type<T>(),&stream_out,&stream_in)
     {}
+    binstream_containerT( uints n, fnc_stream fout, fnc_stream fin )
+        : binstream_container(n,bstype::t_type<T>(),fout,fin)
+    {}
 
     static opcd stream_in( binstream& bin, void* p, binstream_container& )
     {
@@ -261,7 +264,7 @@ protected:
 ////////////////////////////////////////////////////////////////////////////////
 ///Container for r/w from fixed array, but using different type for streaming
 template<class WRAPPER, class CONTENT>
-struct binstream_typechanging_container : public binstream_container
+struct binstream_typechanging_container : public binstream_containerT<WRAPPER>
 {
     const void* extract( uints n )
     {
@@ -276,7 +279,7 @@ struct binstream_typechanging_container : public binstream_container
     bool is_continuous() const      { return false; }
 
     binstream_typechanging_container( const CONTENT* ptr, uints n )
-        : binstream_container(n,bstype::t_type<WRAPPER>(),&stream_out,&stream_in), _ptr(ptr) {}
+        : binstream_containerT<WRAPPER>(n,&stream_out,&stream_in), _ptr(ptr) {}
 
     void set( const CONTENT* ptr, uints n )
     {
