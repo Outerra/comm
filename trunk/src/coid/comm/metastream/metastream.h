@@ -511,6 +511,17 @@ public:
                 }
                 return dst;
             }
+
+            charstr& type_name( charstr& dst ) const
+            {
+                if( is_array() ) {
+                    if( _desc->_btype._type == type::T_CHAR )
+                    { dst << "$string";  return dst; }
+                    else
+                        dst << char('@');
+                }
+                return _desc->type_name(dst);
+            }
         };
 
         dynarray<VAR> _children;        ///< member variables
@@ -548,6 +559,14 @@ public:
         uints get_child_pos( VAR* v ) const      { return uints(v-_children.ptr()); }
 
 
+        charstr& type_name( charstr& dst ) const
+        {
+            if( _typename.is_empty() )  return _children[0].type_name(dst);
+            dst << _typename;
+            if(_btype._size)
+                dst << (8*_btype._size);
+            return dst;
+        }
 
         operator token() const              { return _typename; }
         uints size() const                  { return _children.size(); }
@@ -568,6 +587,37 @@ public:
         }
 
     };
+
+    ///Get type descriptor for given type
+    template<class T>
+    const DESC::VAR* get_type_desc( const T* )
+    {
+        _root._desc = _current_desc = 0;
+
+        _arraynm = 0;
+        _is_array = false;
+        _array_size = UMAX;
+
+        *this << *(const T*)0;     // build description
+        return &_root;
+    }
+
+    template<class T>
+    struct TypeDesc {
+        static const DESC::VAR* get(metastream& meta)   { return meta.get_type_desc( (const T*)0 ); }
+        static charstr get_str(metastream& meta)
+        {
+            const DESC::VAR* var = meta.get_type_desc( (const T*)0 );
+            charstr res;
+            var->type_name(res);
+            return res;
+        }
+    };
+
+    const DESC* get_type_info( const token& type ) const
+    {
+        return _map.find(type);
+    }
 
 private:
 
