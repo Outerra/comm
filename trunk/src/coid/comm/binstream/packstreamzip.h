@@ -41,7 +41,7 @@
 #include "../namespace.h"
 
 #include "packstream.h"
-#include "zlib/zlib.h"
+#include "zlib.h"
 
 COID_NAMESPACE_BEGIN
 
@@ -66,6 +66,16 @@ public:
     virtual void flush()                { packed_flush(); }
     virtual void acknowledge (bool eat=false)   { packed_ack(eat); }
 
+    virtual opcd close( bool linger=false )
+    {
+        if( _rblockin.size() > 0 )
+            packed_ack(false);
+        if( _wblockout.size() > 0 )
+            packed_flush();
+        return 0;
+    }
+
+
     packstreamzip()
     {
         init_streams();
@@ -89,6 +99,7 @@ protected:
         BUFFER_SIZE             = 4096,
     };
 
+public:
     ///
     virtual opcd write_raw( const void* p, uints& len )
     {
@@ -130,8 +141,8 @@ protected:
         if( _rblockin.size() == 0 )
         {
             _rblockin.need_new(BUFFER_SIZE);
-            _strin.avail_out = BUFFER_SIZE;
-            _strin.next_out = _rblockin.ptr();
+            _strin.avail_in = 0;
+            //_strin.next_out = _rblockin.ptr();
         }
 
         _strin.next_out = (unsigned char*)p;
@@ -169,6 +180,7 @@ protected:
         return 0;
     }
 
+protected:
     void packed_flush()
     {
         while(1)
@@ -184,6 +196,7 @@ protected:
         }
         
         deflateReset( &_strout );
+        _wblockout.reset();
     }
 
     void packed_ack( bool eat )
@@ -194,6 +207,7 @@ protected:
             throw ersIO_ERROR "data left in input buffer";
         }
 
+        _rblockin.reset();
         inflateReset( &_strin );
     }
 
