@@ -661,19 +661,33 @@ private:
     struct StructureMap
     {
         DESC* find( const token& k ) const;
-        DESC* create( const token& n, type t );
-        DESC* find_or_create( const token& n, type t );
         DESC* create_hidden_desc();
 
+        DESC* create( const token& n, type t )
+        {
+            DESC d(n);
+            d._btype = t;
+            return insert(d);
+        }
+
+        DESC* find_or_create( const token& n, type t )
+        {
+            DESC* d = find(n);
+            return d ? d : create( n, t );
+        }
 
         DESC* last() const                      { DESC** p = _stack.last();  return p ? *p : 0; }
         DESC* pop()                             { DESC* p;  return _stack.pop(p) ? p : 0; }
         void push( DESC* d )                    { _stack.push(d); }
 
+        StructureMap();
+        ~StructureMap();
+
     protected:
         DESC* insert( const DESC& v );
 
         dynarray<DESC*> _stack;
+        void* pimpl;
     };
 
 

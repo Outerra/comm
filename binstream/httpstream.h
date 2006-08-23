@@ -615,7 +615,7 @@ protected:
 
 
         static token _SSID( "Set-Cookie: sessioncoid=" );
-        if( _flags & fSETSESSION ) {
+        if( (_flags & fSETSESSION) && _hdr->_ssid ) {
             _tcache << _SSID << _hdr->_ssid;
             _tcache << "\r\n";
             _flags &= ~fSETSESSION;

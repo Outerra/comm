@@ -44,15 +44,28 @@ COID_NAMESPACE_BEGIN
 struct SMReg {
     hash_keyset<token,metastream::DESC,_Select_Copy<metastream::DESC,token> > _map;
     dynarray< local<metastream::DESC> > _arrays;
-    comm_mutex _mutex;
+    //comm_mutex _mutex;
 };
 
+////////////////////////////////////////////////////////////////////////////////
+metastream::StructureMap::StructureMap()
+{
+    pimpl = new SMReg;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+metastream::StructureMap::~StructureMap()
+{
+    delete (SMReg*)pimpl;
+    pimpl = 0;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 metastream::DESC* metastream::StructureMap::insert( const metastream::DESC& v )
 {
-    SMReg& smr = SINGLETON(SMReg);
-    GUARDTHIS(smr._mutex);
+    //SMReg& smr = SINGLETON(SMReg);
+    //GUARDTHIS(smr._mutex);
+    SMReg& smr = *(SMReg*)pimpl;
 
     return (DESC*) smr._map.insert_value(v);
 }
@@ -60,32 +73,19 @@ metastream::DESC* metastream::StructureMap::insert( const metastream::DESC& v )
 ////////////////////////////////////////////////////////////////////////////////
 metastream::DESC* metastream::StructureMap::find( const token& k ) const
 {
-    SMReg& smr = SINGLETON(SMReg);
-    GUARDTHIS(smr._mutex);
+    //SMReg& smr = SINGLETON(SMReg);
+    //GUARDTHIS(smr._mutex);
+    const SMReg& smr = *(const SMReg*)pimpl;
 
     return (DESC*) smr._map.find_value(k);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-metastream::DESC* metastream::StructureMap::create( const token& n, type t )
-{
-    DESC d(n);
-    d._btype = t;
-    return insert(d);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-metastream::DESC* metastream::StructureMap::find_or_create( const token& n, type t )
-{
-    DESC* d = find(n);
-    return d ? d : create( n, t );
-}
-
-////////////////////////////////////////////////////////////////////////////////
 metastream::DESC* metastream::StructureMap::create_hidden_desc()
 {
-    SMReg& smr = SINGLETON(SMReg);
-    GUARDTHIS(smr._mutex);
+    //SMReg& smr = SINGLETON(SMReg);
+    //GUARDTHIS(smr._mutex);
+    SMReg& smr = *(SMReg*)pimpl;
 
     DESC* d = *smr._arrays.add() = new DESC;
     return d;
