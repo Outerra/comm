@@ -77,6 +77,8 @@ public:
     virtual void flush()                = 0;
     virtual void acknowledge (bool eat=false) = 0;
 
+    virtual opcd close( bool linger=false ) = 0;
+
     virtual void reset()                { _in->reset(); _out->reset(); }
 
     packstream() : _out(0),_in(0)       { }
