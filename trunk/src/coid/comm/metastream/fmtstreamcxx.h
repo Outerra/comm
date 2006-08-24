@@ -534,8 +534,8 @@ public:
                         _tokenizer.push_back();
                     else if( tok != trSep )
                         return ersSYNTAX_ERROR "missing separator";
-                    else
-                        _tokenizer.push_back();
+                    //else
+                    //    _tokenizer.push_back();
                     break;
 
                 case type::T_COMPOUND:
@@ -725,8 +725,10 @@ public:
     {
         tEol = eol;
         tTab = tab;
-        tSep = sep;
+        trSep = tSep = sep;
         tArraySep = arraysep;
+
+        _tokenizer.strip_group( trSep, 0 );
     }
 
     void set_default_separators()

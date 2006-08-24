@@ -52,7 +52,7 @@ class packstreamzip : public packstream
 public:
     virtual ~packstreamzip()
     {
-        packed_flush();
+        close();
         inflateEnd( &_strin );
         deflateEnd( &_strout );
     }
@@ -116,7 +116,8 @@ public:
         while(1)
         {
             int stt = deflate( &_strout, Z_NO_FLUSH );
-            RASSERTX( stt == Z_OK, "unexpected error" );
+            if( stt != Z_OK )
+                return ersIO_ERROR;
 
             // flush
             if( _strout.avail_out == 0 )
@@ -132,6 +133,7 @@ public:
                 break;
         }
 
+        len = 0;
         return 0;
     }
 
@@ -155,13 +157,14 @@ public:
             {
                 uints rl = BUFFER_SIZE;
                 opcd e = _in->read_raw( _rblockin.ptr(), rl );
-                if(e)  return e;
+                if( e && e!=ersNO_MORE )  return e;
                 _strin.avail_in = BUFFER_SIZE - rl;
                 _strin.next_in = _rblockin.ptr();
             }
 
             int stt = inflate( &_strin, Z_NO_FLUSH );
-            
+            len = _strin.avail_out;
+
             if( stt == Z_STREAM_END )
             {
                 if( _strin.avail_out != 0 )
@@ -174,7 +177,7 @@ public:
                     break;
             }
             else
-                throw ersEXCEPTION "unexpected error";
+                return ersIO_ERROR "stream error";
         }
 
         return 0;
@@ -186,11 +189,11 @@ protected:
         while(1)
         {
             int stt = deflate( &_strout, Z_FINISH );
+            RASSERTX( stt == Z_OK || stt == Z_STREAM_END, "unexpected error" );
+
+            _out->xwrite_raw( _wblockout.ptr(), BUFFER_SIZE-_strout.avail_out );
             if( stt == Z_STREAM_END )
                 break;
-            RASSERTX( stt == Z_OK, "unexpected error" );
-
-            _out->xwrite_raw( _wblockout.ptr(), BUFFER_SIZE );
             _strout.avail_out = BUFFER_SIZE;
             _strout.next_out = _wblockout.ptr();
         }
