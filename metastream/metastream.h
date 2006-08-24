@@ -562,6 +562,8 @@ public:
         charstr& type_name( charstr& dst ) const
         {
             if( _typename.is_empty() )  return _children[0].type_name(dst);
+            if( _btype.is_primitive() )
+                dst << char('$');
             dst << _typename;
             if(_btype._size)
                 dst << (8*_btype._size);
