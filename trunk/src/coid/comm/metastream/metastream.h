@@ -317,11 +317,6 @@ public:
         return _hook.write_array(C);
     }
 
-    opcd stream_out_struct_open( const charstr& name )      { return _fmtstream->write_struct_open( &name ); }
-    opcd stream_out_struct_close( const charstr& name )     { return _fmtstream->write_struct_close( &name ); }
-
-    opcd stream_in_struct_open( charstr& name )             { return _fmtstream->read_struct_open( &name ); }
-    opcd stream_in_struct_close( charstr& name )            { return _fmtstream->read_struct_close( &name ); }
 
     template<class T>
     void xstream_in( T& x, const token& name = token::empty() )
