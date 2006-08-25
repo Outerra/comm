@@ -42,10 +42,25 @@ COID_NAMESPACE_BEGIN
 
 
 struct SMReg {
-    hash_keyset<token,metastream::DESC,_Select_Copy<metastream::DESC,token> > _map;
+    typedef hash_keyset<token,metastream::DESC,_Select_Copy<metastream::DESC,token> >  MAP;
+    MAP _map;
     dynarray< local<metastream::DESC> > _arrays;
     //comm_mutex _mutex;
 };
+
+////////////////////////////////////////////////////////////////////////////////
+void metastream::StructureMap::get_all_types( dynarray<const metastream::DESC*>& dst ) const
+{
+    SMReg& smr = *(SMReg*)pimpl;
+
+    SMReg::MAP::const_iterator b,e;
+    b = smr._map.begin();
+    e = smr._map.end();
+
+    dst.reserve( smr._map.size(), false );
+    for(; b!=e; ++b )
+        *dst.add() = &(*b);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 metastream::StructureMap::StructureMap()

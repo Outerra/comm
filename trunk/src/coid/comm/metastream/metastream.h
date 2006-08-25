@@ -317,6 +317,11 @@ public:
         return _hook.write_array(C);
     }
 
+    opcd stream_out_struct_open( const charstr& name )      { return _fmtstream->write_struct_open( &name ); }
+    opcd stream_out_struct_close( const charstr& name )     { return _fmtstream->write_struct_close( &name ); }
+
+    opcd stream_in_struct_open( charstr& name )             { return _fmtstream->read_struct_open( &name ); }
+    opcd stream_in_struct_close( charstr& name )            { return _fmtstream->read_struct_close( &name ); }
 
     template<class T>
     void xstream_in( T& x, const token& name = token::empty() )
@@ -621,6 +626,11 @@ public:
         return _map.find(type);
     }
 
+    void get_type_info_all( dynarray<const metastream::DESC*>& dst )
+    {
+        return _map.get_all_types(dst);
+    }
+
 private:
 
     ///Internal binstream class that linearizes out-of-order input data for final
@@ -677,6 +687,8 @@ private:
             DESC* d = find(n);
             return d ? d : create( n, t );
         }
+
+        void get_all_types( dynarray<const DESC*>& dst ) const;
 
         DESC* last() const                      { DESC** p = _stack.last();  return p ? *p : 0; }
         DESC* pop()                             { DESC* p;  return _stack.pop(p) ? p : 0; }
