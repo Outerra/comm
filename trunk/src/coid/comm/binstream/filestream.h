@@ -138,9 +138,9 @@ public:
 
     virtual opcd open( const token& arg )
     {
-        token m = arg;
-        token n = m.cut_left( '?', 1 );
-        return open( n, m );
+        token name = arg;
+        token flg = name.cut_right_back( '?', 1, true );
+        return open( name, flg );
     }
 
     opcd open( const charstr& name, token attr )
@@ -261,7 +261,13 @@ public:
 
     virtual opcd open( const token& arg )
     {
-        return fileiostream::open( arg, "wct" );
+        token name = arg;
+        charstr flg = name.cut_right_back( '?', 1, true );
+        if( flg.is_empty() )
+            flg = "wct";
+        else
+            flg << char('w');
+        return fileiostream::open( name, flg );
     }
 
     bofstream() { }
@@ -284,7 +290,10 @@ public:
 
     virtual opcd open( const token& arg )
     {
-        return fileiostream::open( arg, "r" );
+        token name = arg;
+        charstr flg = name.cut_right_back( '?', 1, true );
+        flg << char('r');
+        return fileiostream::open( name, flg );
     }
 
     bifstream() { }

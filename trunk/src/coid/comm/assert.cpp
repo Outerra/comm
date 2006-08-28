@@ -54,7 +54,7 @@ struct AssertLog
     {
         if(!_file.is_open())
         {
-            _file.open("assert.log?a+b");
+            _file.open("assert.log");
             _text.bind(_file);
         }
 

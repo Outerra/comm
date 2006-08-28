@@ -96,6 +96,8 @@ struct thread
     static thread create_new( fnc_entry f, void* arg, void* context=0 );
     static void exit_self( uint code );
 
+    static bool exists( thread_t tid );
+
     opcd cancel();
     static void cancel_self();
 

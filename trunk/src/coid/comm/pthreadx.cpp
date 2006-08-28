@@ -138,7 +138,11 @@ void thread::join( thread_t tid )
     }
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
+bool thread::exists( thread_t tid )
+{
+    return SINGLETON(thread_manager).thread_exists(tid);
+}
 
 
 
