@@ -792,6 +792,10 @@
 			>
 		</File>
 		<File
+			RelativePath=".\commtime.h"
+			>
+		</File>
+		<File
 			RelativePath="commtypes.h"
 			>
 		</File>
@@ -869,10 +873,6 @@
 		</File>
 		<File
 			RelativePath="str.h"
-			>
-		</File>
-		<File
-			RelativePath=".\time.h"
 			>
 		</File>
 		<File

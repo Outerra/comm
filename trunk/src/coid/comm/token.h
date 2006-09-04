@@ -42,7 +42,7 @@
 #include "namespace.h"
 
 #include "tutf8.h"
-#include "time.h"
+#include "commtime.h"
 #include <stdlib.h>
 #include <ctype.h>
 #include <math.h>
