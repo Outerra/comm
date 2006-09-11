@@ -263,8 +263,7 @@ public:
 
     virtual opcd write_raw( const void* p, uints& len )
     {
-        throw ersUNAVAILABLE "can't write to binstreamconstbuf read-only stream";
-        return 0;
+        return ersUNAVAILABLE "can't write to binstreamconstbuf read-only stream";
     }
 
     virtual opcd read_raw( void* p, uints& len )
@@ -355,7 +354,7 @@ public:
 
 
 
-typedef binstreamconstbuf	binstreamptr;
+//typedef binstreamconstbuf	binstreamptr;
 
 
 
