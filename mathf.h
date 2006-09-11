@@ -1,3 +1,4 @@
+
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -14,8 +15,8 @@
  * The Original Code is COID/comm module.
  *
  * The Initial Developer of the Original Code is
- * PosAm.
- * Portions created by the Initial Developer are Copyright (C) 2003
+ * Brano Kemen
+ * Portions created by the Initial Developer are Copyright (C) 2006
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -35,45 +36,83 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef __COID_COMM_COMM__HEADER_FILE__
-#define __COID_COMM_COMM__HEADER_FILE__
+#ifndef __COID_COMM_MATHF__HEADER_FILE__
+#define __COID_COMM_MATHF__HEADER_FILE__
 
-//#include <new>
-#include "namespace.h"
 
-#include "commtypes.h"
-#include "mathi.h"
+#include <math.h>
+
+#ifndef M_LN2
+# define M_LN2      0.693147180559945309417
+#endif
+
+#ifndef M_PI
+#define M_PI        3.14159265358979323846
+#endif
 
 
 COID_NAMESPACE_BEGIN
 
-uints memaligned_used();
-void * memaligned_alloc( size_t size, size_t alignment );
-void * memaligned_realloc( void * memblock, size_t size, size_t alignment );
-void   memaligned_free( void * memblock );
-
-
-/*
-#ifdef _MSC_VER
-#define NEWTHROWTYPE
-#define DELTHROWTYPE
-#else
-#define NEWTHROWTYPE    throw (std::bad_alloc)
-#define DELTHROWTYPE    throw ()
-#endif
-
-
-void * operator new (size_t size) NEWTHROWTYPE;
-void operator delete (void * ptr) DELTHROWTYPE;
-void * operator new[] (size_t size) NEWTHROWTYPE;
-void operator delete[] (void *ptr) DELTHROWTYPE;
-*/
 
 ////////////////////////////////////////////////////////////////////////////////
-/// Check if all set bits of \a b are also set in \a a
-inline bool bits_set (long a, long b)          { return (a&b) == b; }
+inline float exp2f( float xx )
+{
+    return expf( xx * (float)M_LN2 );
+}
 
+////////////////////////////////////////////////////////////////////////////////
+inline double exp2( double xx )
+{
+    return exp( xx * M_LN2 );
+}
+
+////////////////////////////////////////////////////////////////////////////////
+inline float approx_fast_sqrt(float fx)
+{
+      float fret;
+      __asm {
+
+          mov eax,    fx
+          sub eax,    0x3F800000
+          sar eax,    1
+          add eax,    0x3F800000
+          mov [fret], eax
+      }
+      return fret;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+inline float approx_inv_sqrt (float x)
+{
+    float xhalf = 0.5f*x;
+    int i = *(int*)&x;
+    i = 0x5f3759df - (i >> 1); // This line hides a LOT of math!
+    x = *(float*)&i;
+    x = x*(1.5f - xhalf*x*x); // repeat this statement for a better approximation
+    return x;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+inline long fast_ftol(float f)
+{
+    long x;
+    float fx = floorf(f);
+	_asm fld fx
+	_asm fistp x
+    return x;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+inline long fast_ftol(double f)
+{
+    long x;
+    double fx = floor(f);
+	_asm fld fx
+	_asm fistp x
+    return x;
+}
 
 COID_NAMESPACE_END
 
-#endif // __COID_COMM_COMM__HEADER_FILE__
+
+#endif //__COID_COMM_MATHF__HEADER_FILE__

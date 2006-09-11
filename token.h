@@ -1344,6 +1344,19 @@ struct token
             if(c == '+')  return (T)touint(t,offs+1,BaseN);
             return (T)touint(t,offs,BaseN);
         }
+
+        static T touint( const char* s, uint BaseN )
+        {
+            token t(s, UMAX);
+            return touint( t, 0, BaseN );
+        }
+
+        static T toint( const char* s, uint BaseN )
+        {
+            if( *s == 0 )  return 0;
+            token t(s, UMAX);
+            return toint( t, 0, BaseN );
+        }
     };
 
     ///Convert the token to unsigned int using as much digits as possible
