@@ -41,6 +41,7 @@
 #include "coid/comm/namespace.h"
 #include "coid/comm/str.h"
 #include "coid/comm/rnd.h"
+#include "coid/comm/net.h"
 #include "coid/comm/txtconv.h"
 
 #include "coid/comm/binstream/cachestream.h"
@@ -52,6 +53,16 @@ COID_NAMESPACE_BEGIN
 
 ////////////////////////////////////////////////////////////////////////////////
 class httpstream : public binstream
+{
+public:
+    virtual void set_content_type( const char* ct )    {}
+
+    virtual uint64 get_session_id() const = 0;
+    virtual void set_session_id( uint64 ssid ) = 0;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+class httpstreamcoid : public httpstream
 {
 public:
     ///Http header
@@ -78,7 +89,6 @@ public:
 
         token _query;               ///< query part (after ?)
         token _relpath;             ///< relative path
-
 
 
         header()
@@ -389,7 +399,7 @@ public:
     }
 
 
-    httpstream()
+    httpstreamcoid()
     {
         _flags = fSETSESSION;
         _seqnum = _rnd.rand();
@@ -402,7 +412,7 @@ public:
         load_opthdr();
     }
 
-    httpstream( binstream& bin )
+    httpstreamcoid( binstream& bin )
     {
 //        _ssid = 0;
         _flags = fSETSESSION;
@@ -417,7 +427,7 @@ public:
         load_opthdr();
     }
 
-    httpstream( header& hdr, cachestream& cache )
+    httpstreamcoid( header& hdr, cachestream& cache )
     {
 //        _ssid = 0;
         _flags = fSKIP_HEADER | fSETSESSION;
@@ -484,7 +494,7 @@ public:
             _flags &= ~fRESPONSE;
     }
 
-    void set_content_type( const char* ct )
+    virtual void set_content_type( const char* ct )
     {
         if( _flags & fRESPONSE )
             _content_type_rsp = ct ? ct : "Content-Type: text/plain\r\n";
@@ -510,12 +520,12 @@ public:
     bool is_reading()                   { return (_flags & fRSTATUS) != 0; }
 
 
-    uint64 get_session_id() const
+    virtual uint64 get_session_id() const
     {
         return _hdr->_ssid;
     }
 
-    void set_session_id( uint64 sid )
+    virtual void set_session_id( uint64 sid )
     {
         set_response_type(true);    //setting session id implies that the caller is server
         _flags |= fSETSESSION;
