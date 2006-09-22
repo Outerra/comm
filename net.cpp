@@ -173,6 +173,11 @@ bool sysDynamicLibrary::close()
     return r;
 }
 
+const char* sysDynamicLibrary::error()
+{
+    return "Unknown error";
+}
+
 void *sysDynamicLibrary::getFuncAddress( const char *funcname )
 {
     return (void *) GetProcAddress( (HMODULE)handle, funcname ) ; //lint !e611
@@ -203,6 +208,11 @@ bool sysDynamicLibrary::close()
     if(r)
         handle = NULL;
     return r;
+}
+
+const char* sysDynamicLibrary::error() const
+{
+    return dlerror();
 }
 
 void *sysDynamicLibrary::getFuncAddress ( const char *funcname )

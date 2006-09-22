@@ -49,7 +49,7 @@
 COID_NAMESPACE_BEGIN
 
 ////////////////////////////////////////////////////////////////////////////////
-class httpstreamtunnel : public httpstream
+class httpstreamtunnel : public httpstreamcoid
 {
 public:
 /*
@@ -132,13 +132,13 @@ public:
     virtual void flush()
     {
         _c6.flush();
-        httpstream::flush();
+        httpstreamcoid::flush();
     }
 
     virtual void acknowledge( bool eat=false )
     {
         _c6.acknowledge(eat);
-        httpstream::acknowledge(eat);
+        httpstreamcoid::acknowledge(eat);
     }
 
     virtual bool is_open() const
@@ -148,7 +148,7 @@ public:
 
     virtual void reset()
     {
-        httpstream::reset();
+        httpstreamcoid::reset();
         _c6.reset();
     }
 
@@ -158,12 +158,12 @@ public:
         _c6.bind( _cache );
     }
 
-    httpstreamtunnel( binstream& bin ) : httpstream(bin)
+    httpstreamtunnel( binstream& bin ) : httpstreamcoid(bin)
     {
         _c6.bind( _cache );
     }
 
-    httpstreamtunnel( httpstream::header& hdr, cachestream& cache ) : httpstream(hdr,cache)
+    httpstreamtunnel( httpstreamcoid::header& hdr, cachestream& cache ) : httpstreamcoid(hdr,cache)
     {
         _c6.bind( _cache );
     }

@@ -219,6 +219,7 @@ public:
     
     bool open( const char* libname );
     bool close();
+    const char* error();
 
     void *getFuncAddress ( const char *funcname );
     
