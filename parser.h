@@ -151,39 +151,37 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 class parser
 {
+    typedef lexer::lextoken     lextoken;
+
     struct reader
     {
         lexer& lex;
-        uint nconsumed;
-        dynarray<charstr> tokenqueue;
-        dynarray<uints> symbolqueue;
+        uints nconsumed;                            ///< consumed tokens from tokenqueue
+        dynarray<lextoken> tokenqueue;              ///< tokens read
+        dynarray<uints> symbolqueue;                ///< symbol stack, contains offsets to the tokenqueue where symbol starts
 
-        token next()
+        lextoken* next()
         {
             if( nconsumed < tokenqueue.size() )
-                return tokenqueue[nconsumed++];
-            token t = lexer.next( *tokenqueue.add() );
+                return &tokenqueue[nconsumed++];
+            lextoken* v = tokenqueue.add();
+            lex.next(*v);
             ++nconsumed;
-            return t;
+            return v;
         }
 
-        int nextid()
-        {
-            if( nconsumed < tokenqueue.size() )
-                return tokenqueue[nconsumed++];
-            lexer.next( *tokenqueue.add() );
-            return lexer.last();
-        }
 
-        bool push_token()               { *symbolqueue.add() = tokenqueue.size() - 1;  return true; }
-        uint push_mark()                { *symbolqueue.add() = tokenqueue.size();  return (uint)symbolqueue.size() - 1; }
-        bool revert( uint n )           { nconsumed=symbolqueue[n]; symbolqueue.need(n);  return false; }
+        void push_symbol()              { *symbolqueue.add() = tokenqueue.size(); }
+        void pop_symbol()               { symbolqueue.pop(nconsumed); }
+
+        bool revert()                   { symbolqueue.pop(nconsumed);  return false; }
+        bool revertn( int k )           { nconsumed -= k;  return false; }
 
         uint symbols() const            { return (uint)symbolqueue.size(); }
 
-        reader( lexer& lex_ ) : lexer(lex_)
+        reader( lexer& lex_ ) : lex(lex_)
         { nconsumed = 0; }
-    }
+    };
 
     grammar_lexer _lexer;
 
@@ -206,13 +204,34 @@ protected:
     **/
     struct symbol
     {
-        charstr name;                   ///< non-terminal name or literal string
+        charstr name;                   ///< non-terminal name or literal string itself
 
-        //Default type: match a literal string
+        ///Match a rule using the lexer
+        virtual bool match( reader& lex ) const = 0;
+    };
+
+    ///Literal
+    struct literal : symbol
+    {
+        ///Match a literal string
         virtual bool match( reader& lex ) const
         {
-            if( name == lex.next() )
-                return lex.push_token();
+            if( name == lex.next()->tok )
+                return lex.revertn(1);
+            return false;
+        }
+    };
+
+    ///Terminal symbol
+    struct term : symbol
+    {
+        int lexid;                      ///< id of lexical rule to match
+
+        ///Match a lexical symbol
+        virtual bool match( reader& lex )
+        {
+            if( lexid == lex.next()->id )
+                return lex.revertn(1);
             return false;
         }
     };
@@ -225,30 +244,17 @@ protected:
     **/
     struct rule : symbol
     {
-        dynarray<symbol> seq;           ///< sequence of N,T or L symbols
+        typedef local<symbol>           Lsymbol;
+        dynarray<Lsymbol> seq;          ///< sequence of N,T or L symbols
 
         virtual bool match( reader& lex ) const
         {
-            uint n = lex.push_symbol();
+            lex.push_symbol();          //remember token queue position
 
-            const symbol* pb = seq.ptr();
-            const symbol* pe = seq.ptre();
-            for( ; pb<pe; ++pb )  if(!pb->match(lex))  return lex.revert(n);
+            const Lsymbol* pb = seq.ptr();
+            const Lsymbol* pe = seq.ptre();
+            for( ; pb<pe; ++pb )  if(!(*pb)->match(lex))  return lex.revert();
             return true;
-        }
-    };
-
-    ///Terminal symbol
-    struct term : symbol
-    {
-        int lexid;                      ///< id of lexical rule to match
-
-        ///Match a lexical symbol
-        virtual bool match( reader& lex )
-        {
-            if( lexid == lex.nextid() )
-                return lex.push_token();
-            return false;
         }
     };
 

@@ -79,6 +79,8 @@ opcd directory::open( const token& path, const token& filter )
     _curpath << '/';
     _baselen = _curpath.len();
     
+    stat( _curpath.ptr(), &_st );
+
     _pattern = filter;
     return 0;
 }

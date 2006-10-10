@@ -132,6 +132,7 @@ public:
         opcd e;
         DASSERT( _sesopen <= 0 );   //or else unflushed write
         if( _sesopen == 0 ) {
+            _err.reset();
             _fmtstream->reset();
             _sesopen = -1;
         }
@@ -179,6 +180,7 @@ public:
         opcd e;
         DASSERT( _sesopen >= 0 );   //or else unacked read
         if( _sesopen == 0 ) {
+            _err.reset();
             _fmtstream->reset();
             _sesopen = 1;
         }
@@ -216,6 +218,7 @@ public:
         opcd e;
         DASSERT( _sesopen <= 0 );   //or else unflushed write
         if( _sesopen == 0 ) {
+            _err.reset();
             _fmtstream->reset();
             _sesopen = -1;
         }
@@ -258,6 +261,7 @@ public:
         opcd e;
         DASSERT( _sesopen >= 0 );   //or else unacked read
         if( _sesopen == 0 ) {
+            _err.reset();
             _fmtstream->reset();
             _sesopen = 1;
         }
@@ -362,10 +366,13 @@ public:
         _tmetafnc = 0;
         _cur_var = 0;
 
+        _err.reset();
         _fmtstream->reset();
     }
 
     //@}
+
+    const charstr& error_string() const                     { return _err; }
 
     template<class T>
     static type get_type(const T&)                          { return bstype::t_type<T>(); }
@@ -1085,7 +1092,7 @@ protected:
             e = fmts_or_cache_read_key();
             if(e) {
                 dump_stack(_err,0);
-                _err << " - error reading variable '" << _rvarname << "', error: " << opcd_formatter(e);
+                _err << " - error reading variable name, error: " << opcd_formatter(e);
                 return e;
             }
         }
@@ -1454,12 +1461,19 @@ protected:
             {
                 opcd e=0;
                 if( !is_first_var() )
+                {
                     e = _fmtstream->read_separator();
+                    if(e) {
+                        dump_stack(_err,0);
+                        _err << " - error reading the variable separator, error: " << opcd_formatter(e);
+                        return e;
+                    }
+                }
 
-                if(!e) e = binstream_read_key( *_fmtstream, _rvarname );
+                e = binstream_read_key( *_fmtstream, _rvarname );
                 if(e) {
                     dump_stack(_err,0);
-                    _err << " - error reading variable '" << _rvarname << "', error: " << opcd_formatter(e);
+                    _err << " - error while seeking for variable '" << _cur_var->_varname << "', error: " << opcd_formatter(e);
                     return e;
                 }
 
@@ -1467,7 +1481,7 @@ protected:
                     e = cache_fill_member();
                     if(e) {
                         dump_stack(_err,0);
-                        _err << " - error reading variable '" << _rvarname << "', probably not found, error: " << opcd_formatter(e);
+                        _err << " - error while seeking for variable '" << _cur_var->_varname << "', probably not found, error: " << opcd_formatter(e);
                         return e;    //probably the element was not found
                     }
                 }
@@ -1548,18 +1562,23 @@ protected:
             opcd e = cache_member(crv);
             if(e) {
                 dump_stack(_err,0,crv);
-                _err << " - error reading the variable: " << opcd_formatter(e);
+                _err << " - error caching the variable: " << opcd_formatter(e);
                 return e;
             }
 
             ++_cacherootentries;
 
             e = _fmtstream->read_separator();
-
-            if(!e) e = binstream_read_key( *_fmtstream, _rvarname );
             if(e) {
                 dump_stack(_err,0);
-                _err << " - error reading variable '" << _rvarname << "', error: " << opcd_formatter(e);
+                _err << " - error reading separator, error: " << opcd_formatter(e);
+                return e;
+            }
+
+            e = binstream_read_key( *_fmtstream, _rvarname );
+            if(e) {
+                dump_stack(_err,0);
+                _err << " - variable not found '" << _cur_var->_varname << "', error: " << opcd_formatter(e);
                 return e;
             }
         }

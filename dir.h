@@ -131,10 +131,19 @@ public:
 
     static charstr& get_cwd( charstr& buf );
 
+
+    uint64 file_size() const                    { return _st.st_size; }
+    static uint64 file_size( const token& file )
+    {
+        directory d;
+        if( 0 != d.open( file, token::empty() ) )  return 0;
+        return d.file_size();
+    }
+
     ///Get next entry in the directory
 	const struct stat* next();
 
-    const struct stat* get_stat() { return &_st; }
+    const struct stat* get_stat() const         { return &_st; }
 
     ///After a successful call to next(), this function returns full path to the file
     const charstr& get_last_full_path() const   { return _curpath; }
