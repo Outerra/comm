@@ -84,6 +84,14 @@ class lexer
 
 public:
 
+    ///Lexer token
+    struct lextoken
+    {
+        token   tok;                        ///< value string token
+        int     id;                         ///< token id (group type or string type)
+        charstr tokbuf;                     ///< buffer that keeps processed string
+    };
+
     lexer( bool utf8 = true )
     {
         _ntrails = 0;
@@ -91,12 +99,12 @@ public:
         _tok.set_null();
 
         _utf8 = utf8;
-        _last = -1;
+        _last.id = 0;
+        _last.tok.set_null();
         _last_string = -1;
         _err = 0;
 
         _pushback = 0;
-        _result.set_null();
 
         _abmap.need_new(256);
         for( uint i=0; i<_abmap.size(); ++i )
@@ -136,11 +144,11 @@ public:
             _bin->reset();
         _tok.set_null();
         _binbuf.reset();
-        _last = -1;
+        _last.id = 0;
+        _last.tok.set_null();
         _last_string = -1;
         _err = 0;
         _pushback = 0;
-        _result.set_null();
         return 0;
     }
 
@@ -172,7 +180,7 @@ public:
         }
 
         *_grpary.add() = gr;
-        return g;
+        return g+1;
     }
 
     ///Create new group named \a name with characters from \a set that will be returned as single
@@ -192,7 +200,7 @@ public:
         if( !process_set( set, (uchar)g | fGROUP_SINGLE, &lexer::fn_group ) )  return -1;
 
         *_grpary.add() = gr;
-        return g;
+        return g+1;
     }
 
     ///Escape sequence processor function prototype.
@@ -244,7 +252,7 @@ public:
 
 
     ///Create new string sequence detector named \a name, using specified leading and trailing strings
-    ///@return string id or -1 on error, error id is stored in the _err variable
+    ///@return string id (a negative number) or 0 on error, error id is stored in the _err variable
     ///@param name string rule name
     ///@param leading the leading string delimiter
     ///@param trailing the trailing string delimiter
@@ -254,7 +262,7 @@ public:
         uint g = (uint)_stbary.size();
 
         entity* const* ens = _entmap.find_value(name);
-        if( ens && (*ens)->type != entity::STRING )  { _err=ERR_DIFFERENT_ENTITY_EXISTS; return -1; }
+        if( ens && (*ens)->type != entity::STRING )  { _err=ERR_DIFFERENT_ENTITY_EXISTS; return 0; }
 
         string_rule* sr = new string_rule( name, (ushort)g );
         _entmap.insert_value(sr);
@@ -263,8 +271,8 @@ public:
         {
             entity* const* en = _entmap.find_value(escape);
             sr->escrule = en ? reinterpret_cast<escape_rule*>(*en) : 0;
-            if( !sr->escrule )  { _err=ERR_ENTITY_DOESNT_EXIST; return -1; }
-            if( sr->escrule->type != entity::ESCAPE )  { _err=ERR_ENTITY_BAD_TYPE; return -1; }
+            if( !sr->escrule )  { _err=ERR_ENTITY_DOESNT_EXIST; return 0; }
+            if( sr->escrule->type != entity::ESCAPE )  { _err=ERR_ENTITY_BAD_TYPE; return 0; }
         }
 
         sr->leading = leading;
@@ -275,12 +283,12 @@ public:
         _abmap[(uchar)trailing.first_char()] |= fGROUP_ESCAPE;
 
         *_stbary.add() = sr;
-        return g;
+        return -1-g;
     }
 
 
     ///Create new block sequence detector named \a name, using specified leading and trailing strings
-    ///@return block id or -1 on error, error id is stored in the _err variable
+    ///@return block id (a negative number) or 0 on error, error id is stored in the _err variable
     ///@param name block rule name
     ///@param leading the leading block delimiter
     ///@param trailing the trailing block delimiter
@@ -290,7 +298,7 @@ public:
         uint g = (uint)_stbary.size();
 
         entity* const* ens = _entmap.find_value(name);
-        if( ens && (*ens)->type != entity::BLOCK )  { _err=ERR_DIFFERENT_ENTITY_EXISTS; return -1; }
+        if( ens && (*ens)->type != entity::BLOCK )  { _err=ERR_DIFFERENT_ENTITY_EXISTS; return 0; }
 
         block_rule* br = new block_rule( name, (ushort)g );
         _entmap.insert_value(br);
@@ -305,14 +313,14 @@ public:
             {
                 //special case for cross-linked blocks, id of future block rule instead of the name
                 rn = ne.touint_and_shift();
-                if( ne.len() )  { _err=ERR_ENTITY_DOESNT_EXIST; return -1; }
+                if( ne.len() )  { _err=ERR_ENTITY_DOESNT_EXIST; return 0; }
             }
             else
             {
                 entity* const* en = _entmap.find_value(ne);
                 stringorblock* sob = en ? reinterpret_cast<stringorblock*>(*en) : 0;
-                if(!sob)  { _err=ERR_ENTITY_DOESNT_EXIST; return -1; }
-                if( sob->type != entity::BLOCK  &&  sob->type != entity::STRING )  { _err=ERR_ENTITY_BAD_TYPE; return -1; }
+                if(!sob)  { _err=ERR_ENTITY_DOESNT_EXIST; return 0; }
+                if( sob->type != entity::BLOCK  &&  sob->type != entity::STRING )  { _err=ERR_ENTITY_BAD_TYPE; return 0; }
 
                 rn = sob->id;
             }
@@ -328,27 +336,26 @@ public:
         _abmap[(uchar)trailing.first_char()] |= fGROUP_ESCAPE;
 
         *_stbary.add() = br;
-        return g;
+        return -1-g;
     }
 
 
-    ///Return next token, reading it to the \a dst
-    charstr& next( charstr& dst )
+    ///Return next token, reading it to the \a val
+    int next( lextoken& val )
     {
-        token t = next();
-        if( !_strbuf.is_empty() )
-            dst.takeover(_strbuf);
-        else
-            dst = t;
-        return dst;
+        val.tok = next();
+        if( !_last.tokbuf.is_empty() )
+            val.tokbuf.takeover( _last.tokbuf );
+        val.id = _last.id;
+        return _last.id;
     }
 
     ///Return next token, appending it to the \a dst
     charstr& next_append( charstr& dst )
     {
         token t = next();
-        if( !_strbuf.is_empty() && dst.is_empty() )
-            dst.takeover(_strbuf);
+        if( !_last.tokbuf.is_empty() && dst.is_empty() )
+            dst.takeover(_last.tokbuf);
         else
             dst.append(t);
         return dst;
@@ -363,15 +370,15 @@ public:
     token next( uint ignoregrp = 0 )
     {
         //return last token if instructed
-        if( _pushback ) { _pushback = 0; return _result; }
+        if( _pushback ) { _pushback = 0; return _last.tok; }
 
-        _strbuf.reset();
+        _last.tokbuf.reset();
 
         //skip characters from the ignored group
-        _result = scan_group( ignoregrp, true );
-        if( _result.ptr() == 0 ) {
-            _last = -1;
-            return _result;       //no more input data
+        _last.tok = scan_group( ignoregrp, true );
+        if( _last.tok.ptr() == 0 ) {
+            _last.id = 0;
+            return _last.tok;       //no more input data
         }
 
         uchar code = _tok[0];
@@ -384,11 +391,11 @@ public:
             //this could be a leading string/block delimiter, if we find it in the register
             uint i, n = (uint)_stbary.size();
             for( i=0; i<n; ++i )
-                if( match(_stbary[i]->leading) )  break;
+                if( follows(_stbary[i]->leading) )  break;
 
             if(i<n)
             {
-                _last = -2 - i;
+                _last.id = -1 - i;
                 _last_string = i;
 
                 _tok += _stbary[i]->leading.len();
@@ -404,11 +411,12 @@ public:
                 if( st && _stbary[i]->name.first_char() == '.' )    //ignored rule
                     return next(ignoregrp);
 
-                return _result;
+                return _last.tok;
             }
         }
 
-        _last = x & xGROUP;
+        _last.id = x & xGROUP;
+        ++_last.id;
 
         //normal token, get all characters belonging to the same group, unless this is
         // a single-char group
@@ -416,22 +424,22 @@ public:
         {
             if(_utf8) {
                 //return whole utf8 characters
-                _result = _tok.cut_left_n( prefetch() );
+                _last.tok = _tok.cut_left_n( prefetch() );
             }
             else
-                _result = _tok.cut_left_n(1);
-            return _result;
+                _last.tok = _tok.cut_left_n(1);
+            return _last.tok;
         }
 
         if( x & fGROUP_TRAILSET )
-            _result = scan_mask( 1<<_grpary[_last]->bitmap, false, 1 );
+            _last.tok = scan_mask( 1<<_grpary[_last.id-1]->bitmap, false, 1 );
         else
-            _result = scan_group( _last, false, 1 );
-        return _result;
+            _last.tok = scan_group( _last.id-1, false, 1 );
+        return _last.tok;
     }
 
     ///Try to match a string
-    bool match( const token& tok )
+    bool follows( const token& tok )
     {
         if( tok.len() > _tok.len() )
         {
@@ -442,13 +450,31 @@ public:
         return _tok.begins_with(tok);
     }
 
+    bool match_literal( const token& val )
+    {
+        lextoken tok;
+        next(tok);
+        return val == tok.tok;
+    }
+
+    bool match( int grp, charstr& dst )
+    {
+        lextoken tok;
+        if( grp != next(tok) )  return false;
+        if( !tok.tokbuf.is_empty() )
+            dst.takeover( tok.tokbuf );
+        else
+            dst = tok.tok;
+        return true;
+    }
+
     ///Push the last token back to be retrieved again next time
     void push_back()
     {
         _pushback = 1;
     }
 
-    int last() const                { return _last; }
+    const lextoken& last() const                { return _last; }
 
 
     ///Strip leading and trailing characters belonging to the given group
@@ -643,7 +669,7 @@ protected:
                 if( 0 == fetch_page( 0, false ) )
                 {
                     _err=ERR_STRING_TERMINATED_EARLY;
-                    _result.set_null();
+                    _last.tok.set_null();
                     return false;
                 }
                 off = 0;
@@ -656,7 +682,7 @@ protected:
             {
                 //this is a syntax error, since the string wasn't properly terminated
                 _err=ERR_STRING_TERMINATED_EARLY;
-                _result.set_null();
+                _last.tok.set_null();
                 return false;
             }
 
@@ -666,7 +692,7 @@ protected:
             if( escc == er.esc )
             {
                 //a regular escape sequence, flush preceding data
-                _strbuf.add_from( _tok.ptr(), off );
+                _last.tokbuf.add_from( _tok.ptr(), off );
                 _tok += off+1;  //past the escape char
 
                 bool norepl=false;
@@ -675,22 +701,22 @@ protected:
                     //a function was provided for translation, we should prefetch as much data as possible
                     fetch_page( _tok.len(), false );
 
-                    norepl = er.replfn( _tok, _strbuf );
+                    norepl = er.replfn( _tok, _last.tokbuf );
                 }
 
                 if(!norepl)
                 {
                     uint i, n = (uint)er.pairs.size();
                     for( i=0; i<n; ++i )
-                        if( match( er.pairs[i].code ) )  break;
+                        if( follows( er.pairs[i].code ) )  break;
                     if( i >= n )
                     {
                         _err=ERR_UNRECOGNIZED_ESCAPE_SEQ;
-                        _result.set_null();
+                        _last.tok.set_null();
                         return false;
                     }
 
-                    _strbuf += er.pairs[i].replace;
+                    _last.tokbuf += er.pairs[i].replace;
                     _tok += er.pairs[i].code.len();
                 }
 
@@ -724,7 +750,7 @@ protected:
                 if( 0 == fetch_page( 0, false ) )
                 {
                     _err=ERR_BLOCK_TERMINATED_EARLY;
-                    _result.set_null();
+                    _last.tok.set_null();
                     return false;
                 }
                 off = 0;
@@ -773,17 +799,17 @@ protected:
             off += sb.trailing.len();
 
         //on the terminating string
-        if( _strbuf.len() > 0 )
+        if( _last.tokbuf.len() > 0 )
         {
             //if there's something in the buffer, append
-            _strbuf.add_from( _tok.ptr(), off );
+            _last.tokbuf.add_from( _tok.ptr(), off );
             _tok += off;
             off = 0;
             if(final)
-                _result = _strbuf;
+                _last.tok = _last.tokbuf;
         }
         else if(final)
-            _result.set( _tok.ptr(), off );
+            _last.tok.set( _tok.ptr(), off );
 
         if(final) {
             _tok += off + sb.trailing.len();
@@ -907,16 +933,16 @@ protected:
             //either there is no binstream source or it's already been drained
             // return special terminating token if we are in ignore mode
             // or there is nothing in the buffer and in input
-            if( ignore || (off==0 && _strbuf.len()>0) )
+            if( ignore || (off==0 && _last.tokbuf.len()>0) )
                 return token(0,0);
         }
 
         // if there was something in the buffer, append this to it
         token res;
-        if( _strbuf.len() > 0 )
+        if( _last.tokbuf.len() > 0 )
         {
-            _strbuf.add_from( _tok.ptr(), off );
-            res = _strbuf;
+            _last.tokbuf.add_from( _tok.ptr(), off );
+            res = _last.tokbuf;
         }
         else
             res.set( _tok.ptr(), off );
@@ -946,16 +972,16 @@ protected:
             //either there is no binstream source or it's already been drained
             // return special terminating token if we are in ignore mode
             // or there is nothing in the buffer and in input
-            if( ignore || (off==0 && _strbuf.len()>0) )
+            if( ignore || (off==0 && _last.tokbuf.len()>0) )
                 return token(0,0);
         }
 
         // if there was something in the buffer, append this to it
         token res;
-        if( _strbuf.len() > 0 )
+        if( _last.tokbuf.len() > 0 )
         {
-            _strbuf.add_from( _tok.ptr(), off );
-            res = _strbuf;
+            _last.tokbuf.add_from( _tok.ptr(), off );
+            res = _last.tokbuf;
         }
         else
             res.set( _tok.ptr(), off );
@@ -969,8 +995,8 @@ protected:
         if(!_bin)  return 0;
 
         //save skipped data to buffer if there is already something or if instructed to do so
-        if( _strbuf.len() > 0  ||  !ignore )
-            _strbuf.add_from( _tok.ptr(), _tok.len()-nkeep );
+        if( _last.tokbuf.len() > 0  ||  !ignore )
+            _last.tokbuf.add_from( _tok.ptr(), _tok.len()-nkeep );
 
         if(nkeep)
             xmemcpy( _binbuf.ptr(), _tok.ptr() + _tok.len() - nkeep, nkeep );
@@ -996,18 +1022,19 @@ protected:
     dynarray<escape_rule*> _escary; ///< escape character replacement pairs
     dynarray<stringorblock*> _stbary; ///< string or block delimiters
 
-    int _last;                      ///< group no. of the last read token
+    lextoken _last;
+    //int _last;                      ///< group no. of the last read token
     int _last_string;               ///< last string type read
     int _err;                       ///< last error code, see ERR_* enums
     bool _utf8;                     ///< utf8 mode
 
-    charstr _strbuf;                ///< buffer for preprocessed strings
+    //charstr _strbuf;                ///< buffer for preprocessed strings
 
-    token _tok;                     ///< source string to process, can point to an external source or into the _strbuf
+    token _tok;                     ///< source string to process, can point to an external source or into the _binbuf
     binstream* _bin;                ///< source stream
     dynarray<char> _binbuf;         ///< source stream cache buffer
 
-    token _result;                  ///< last returned token
+    //token _result;                  ///< last returned token
     int _pushback;                  ///< true if the lexer should return the previous token again (was pushed back)
 
     ///Reverted mapping of escaped symbols for the synthesizer

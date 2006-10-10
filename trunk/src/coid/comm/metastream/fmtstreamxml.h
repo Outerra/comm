@@ -60,6 +60,9 @@ protected:
     charstr _bufw;
     tokenizer _tokenizer;
 
+    token tkBoolTrue, tkBoolFalse;          ///< symbols for bool type for reading and writting
+    token tkrBoolTrue, tkrBoolFalse;        ///< additional symbols for bool type for reading
+
     int _indent;
 
     enum {
@@ -104,6 +107,11 @@ public:
         //_structend_on_stack = 0;
         _tag_read = 0;
         _sesinitr = _sesinitw = 0;
+
+        tkBoolTrue = "true";
+        tkBoolFalse = "false";
+        tkrBoolTrue = "1";
+        tkrBoolFalse = "0";
         
         _tokenizer.add_to_group( 0, " \t\r\n" );
 
@@ -130,6 +138,14 @@ public:
         //_tokenizer.add_to_group( 2, "()~!@#$%^&*-+=|\\?/<>`'.,;:" );
 
         init_tokenizer();
+    }
+
+    void set_bool_tokens( token boolTrue, token boolFalse, const token& boolTrueR="1", const token& boolFalseR="0" )
+    {
+        tkBoolTrue = boolTrue;
+        tkBoolFalse = boolFalse;
+        tkrBoolTrue = boolTrueR;
+        tkrBoolFalse = boolFalseR;
     }
 
 
@@ -341,8 +357,8 @@ public:
 
                     /////////////////////////////////////////////////////////////////////////////////////
                     case type::T_BOOL:
-                        if( *(bool*)p ) _bufw << "true";
-                        else            _bufw << "false";
+                        if( *(bool*)p ) _bufw << tkBoolTrue;
+                        else            _bufw << tkBoolFalse;
                     break;
 
                     /////////////////////////////////////////////////////////////////////////////////////
@@ -462,7 +478,10 @@ public:
             return 0;
         }
         else if( t._type == type::T_SEPARATOR )
+        {
+            _tag_read = true;
             return 0;
+        }
         else if( t._type == type::T_STRUCTBGN )
         {
             if( !match_type_leading(t) )
@@ -559,9 +578,9 @@ public:
 
                 /////////////////////////////////////////////////////////////////////////////////////
                 case type::T_BOOL: {
-                    if( tok.cmpeqi("true") )
+                    if( tok == tkrBoolTrue || tok.cmpeqi(tkBoolTrue) )
                         *(bool*)p = true;
-                    else if( tok.cmpeqi("false") )
+                    else if( tok == tkrBoolFalse || tok.cmpeqi(tkBoolFalse) )
                         *(bool*)p = false;
                     else
                         return ersSYNTAX_ERROR "unexpected char";
