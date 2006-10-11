@@ -56,6 +56,11 @@ public:
         set_newline_on_flush(true);
     }
 
+    virtual ~stdoutstream()
+    {
+        flush();
+    }
+
     virtual void flush()
     {
         txtstream::flush();
