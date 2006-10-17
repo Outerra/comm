@@ -1137,6 +1137,15 @@ struct token
 
     token& trim( bool newline=true, bool whitespace=true )
     {
+        if( whitespace ) 
+        {
+            for( uints i=_len; i>0; --i )
+            {
+                if( *_ptr == ' '  ||  *_ptr == '\t' )
+                    ++_ptr, --_len;
+            }
+        }
+
         for( uints i=_len; i>0; )
         {
             --i;

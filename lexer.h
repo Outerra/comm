@@ -567,7 +567,8 @@ protected:
     {
         escape_rule* escrule;               ///< escape rule to use within the string
 
-        string_rule( const token& name, ushort id ) : stringorblock(name,entity::STRING,id) { }
+        string_rule( const token& name, ushort id ) : stringorblock(name,entity::STRING,id)
+        { escrule = 0; }
     };
 
     struct block_rule : stringorblock
@@ -657,7 +658,7 @@ protected:
     ///Read next token as if it was string, with leading characters already read
     bool next_read_string( const string_rule& sr, uints& off, bool outermost )
     {
-        const escape_rule& er = *sr.escrule;
+        const escape_rule* er = sr.escrule;
 
         while(1)
         {
@@ -689,26 +690,26 @@ protected:
             //this can be either an escape character or the terminating character,
             // although possibly from another delimiter pair
 
-            if( escc == er.esc )
+            if( er && escc == er->esc )
             {
                 //a regular escape sequence, flush preceding data
                 _last.tokbuf.add_from( _tok.ptr(), off );
                 _tok += off+1;  //past the escape char
 
                 bool norepl=false;
-                if( er.replfn )
+                if( er->replfn )
                 {
                     //a function was provided for translation, we should prefetch as much data as possible
                     fetch_page( _tok.len(), false );
 
-                    norepl = er.replfn( _tok, _last.tokbuf );
+                    norepl = er->replfn( _tok, _last.tokbuf );
                 }
 
                 if(!norepl)
                 {
-                    uint i, n = (uint)er.pairs.size();
+                    uint i, n = (uint)er->pairs.size();
                     for( i=0; i<n; ++i )
-                        if( follows( er.pairs[i].code ) )  break;
+                        if( follows( er->pairs[i].code ) )  break;
                     if( i >= n )
                     {
                         _err=ERR_UNRECOGNIZED_ESCAPE_SEQ;
@@ -716,8 +717,8 @@ protected:
                         return false;
                     }
 
-                    _last.tokbuf += er.pairs[i].replace;
-                    _tok += er.pairs[i].code.len();
+                    _last.tokbuf += er->pairs[i].replace;
+                    _tok += er->pairs[i].code.len();
                 }
 
                 off = 0;
