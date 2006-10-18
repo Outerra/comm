@@ -468,6 +468,16 @@ public:
         return true;
     }
 
+    bool match_last( int grp, charstr& dst )
+    {
+        if( grp != _last.id )  return false;
+        if( !_last.tokbuf.is_empty() )
+            dst.takeover( _last.tokbuf );
+        else
+            dst = _last.tok;
+        return true;
+    }
+
     ///Push the last token back to be retrieved again next time
     void push_back()
     {

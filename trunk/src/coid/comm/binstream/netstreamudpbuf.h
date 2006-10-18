@@ -395,6 +395,18 @@ public:
         }
     }
 
+    bool get_raw_unread_data( const uchar*& pd, uint& len )
+    {
+        if( !_recvd || _rpcknum!=1 )  return false;
+
+        pd = _recvbuf[_rpckid].ptr() + _roffs;
+        len = _rsize;
+        _roffs += _rsize;
+        _rsize = 0;
+        return true;
+    }
+
+
 protected:
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -509,7 +521,6 @@ protected:
         }
     }
 
-    ///@return false if it's already closed
     void close_packet( bool final )
     {
         udp_hdr* hdr = (udp_hdr*) &_sendbuf[_spacketid*_packetsize];
@@ -638,7 +649,7 @@ protected:
                 return 0;
         }
 
-        //speculative load on the expected position, although actual packet id may differ
+        //speculative load on the expected position, although the actual packet id may differ
         packet* pck = &_recvbuf.get_or_add(_rpckid);
         pck->need( _packetsize );
 
