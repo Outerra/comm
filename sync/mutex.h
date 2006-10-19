@@ -122,7 +122,7 @@ struct MX_REGISTER
 {
 	_comm_mutex       _mx;
 	std::list<const void *> _reg;
-	std::list<const void *>::iterator _it;
+	//std::list<const void *>::iterator _it;
 
 	void add( const comm_mutex * m ) {
 		comm_mutex_guard<_comm_mutex> mxg( _mx );
