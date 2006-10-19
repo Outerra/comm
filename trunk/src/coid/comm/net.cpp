@@ -173,7 +173,7 @@ bool sysDynamicLibrary::close()
     return r;
 }
 
-const char* sysDynamicLibrary::error()
+const char* sysDynamicLibrary::error() const
 {
     return "Unknown error";
 }
