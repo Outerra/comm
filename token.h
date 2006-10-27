@@ -348,17 +348,24 @@ struct token
 
 
 
-    char char_is_alpha( uint n ) const
+    char char_is_alpha( ints n ) const
     {
         char c = nth_char(n);
         return (c >= 'a' && c <= 'z') || (c >='A' && c <= 'Z') ? c : 0;
     }
 
-    char char_is_number( uint n ) const
+    char char_is_number( ints n ) const
     {
         char c = nth_char(n);
         return (c >= '0' && c <= '9') ? c : 0;
     }
+
+    char char_is_alphanum( ints n ) const
+    {
+        char c = nth_char(n);
+        return (c >= 'a' && c <= 'z') || (c >='A' && c <= 'Z') || (c >= '0' && c <= '9') ? c : 0;
+    }
+
 
     ////////////////////////////////////////////////////////////////////////////////
     token& operator ++ ()
@@ -434,7 +441,7 @@ struct token
 
     char last_char() const              { return _len > 0  ?  _ptr[_len-1]  :  0; }
     char first_char() const             { return _len > 0  ?  _ptr[0]  :  0; }
-    char nth_char( uints n ) const      { return n < _len  ?  _ptr[n] : 0; }
+    char nth_char( ints n ) const       { return n<0 ? ((uints)-n<=_len  ?  _ptr[_len+n] : 0) : (n<_len  ?  _ptr[n] : 0); }
 
 
     token& operator = ( const char *czstr ) {
