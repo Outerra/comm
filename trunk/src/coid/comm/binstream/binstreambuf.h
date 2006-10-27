@@ -244,6 +244,17 @@ public:
         _bgi = 0;
     }
 
+    explicit binstreambuf( dynarray<uchar>& buf )
+    {
+        _buf.takeover( (dynarray<char>&)buf );
+        _bgi=0;
+    }
+
+    void swap( dynarray<uchar>& buf )
+    {
+        _buf.swap( (dynarray<char>&)buf );
+    }
+
     //binstreambuf (const token& str);
 };
 
