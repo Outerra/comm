@@ -301,7 +301,7 @@ public:
     ///return the last character
     char last_char() const                      { uints n = len();  return n ? _tstr[n-1] : 0; }
     char first_char() const                     { return _tstr.size() ? _tstr[0] : 0; }
-    char get_char( uints n ) const              { return n < _tstr.size()  ?  _tstr[n] : 0; }
+    char nth_char( ints n ) const               { uints s=_tstr.size(); return n<0 ? ((uints)-n<=s  ?  _tstr._ptr[s+n] : 0) : ((uints)n<s  ?  _tstr._ptr[n] : 0); } 
 
 
     static uints count_notingroup( const char* str, const char* sep )
@@ -1185,7 +1185,24 @@ public:
     int cmpc( const token& str, bool casecmp ) const      { return casecmp ? cmp(str) : cmpi(str); }
     int cmpc( const char* str, bool casecmp ) const       { return casecmp ? cmp(str) : cmpi(str); }
 
-    
+    char char_is_alpha( ints n ) const
+    {
+        char c = nth_char(n);
+        return (c >= 'a' && c <= 'z') || (c >='A' && c <= 'Z') ? c : 0;
+    }
+
+    char char_is_number( ints n ) const
+    {
+        char c = nth_char(n);
+        return (c >= '0' && c <= '9') ? c : 0;
+    }
+
+    char char_is_alphanum( ints n ) const
+    {
+        char c = nth_char(n);
+        return (c >= 'a' && c <= 'z') || (c >='A' && c <= 'Z') || (c >= '0' && c <= '9') ? c : 0;
+    }
+
     // extract from token
     charstr& set_left( token str, const char c, bool def_empty=false )     //up to, but without the character c
     {
