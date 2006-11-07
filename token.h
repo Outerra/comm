@@ -503,14 +503,30 @@ struct token
         return str;
     }
 
-
+    ///Retrieve UCS-4 code from UTF-8 encoded sequence at offset \a off
     ucs4 get_utf8( uints& off ) const
     {
         if( off >= _len )  return 0;
+        if( _len - off < get_utf8_char_expected_bytes(_ptr+off) )  return UMAX;
         return read_utf8_char( _ptr, off );
     }
 
-
+    ///Cut UTF-8 sequence from the token, returning its UCS-4 code
+    ucs4 cut_utf8()
+    {
+        if( _len == 0 )  return 0;
+        uints off = get_utf8_char_expected_bytes(_ptr);
+        if( _len < off ) {
+            //malformed UTF-8 character, but truncate it to make progress
+            _ptr += _len;
+            _len = 0;
+            return UMAX;
+        }
+        ucs4 ch = read_utf8_char(_ptr);
+        _ptr += off;
+        _len -= off;
+        return ch;
+    }
 
 
     token cut_left_n( uints n )
