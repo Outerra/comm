@@ -59,7 +59,9 @@ inline uint get_utf8_char_expected_bytes( const char* utf8 )
     if( cd < 128 )
         return 1;
 
-    RASSERT( cd >= 0xc0  &&  cd < 254 );
+    if( cd < 0xc0  ||  cd >= 254 )
+        return 1;       //actually an invalid utf8 character, but let's skip it
+
     cd -= 0xc0;
     return gUTF8_TB[cd>>2] + 1;
 }
@@ -68,6 +70,9 @@ inline uint get_utf8_char_expected_bytes( const char* utf8 )
 /// non-checking routine for conversion from an UTF-8 string to UCS-4 value
 inline ucs4 read_utf8_char( const char* utf8, uints& off )
 {
+    ucs4 cd = utf8[off++];
+    if( cd < 0x80 )  return cd;
+
     ////////////////////////////////////////////////////////////////////////////////
     /// to get the number of trailing bytes of UTF-8 sequence, use first
     /// byte - 0xc0 shifted right 2 bits as index to the following table 
@@ -84,10 +89,9 @@ inline ucs4 read_utf8_char( const char* utf8, uints& off )
     (0xfcUL<<30) + (0x80UL<<24) + (0x80UL<<18) + (0x80UL<<12) + (0x80UL<<6) + 0x80UL,
     };
 
-    ucs4 cd = utf8[off++];
-    if( cd <= 0x7f )  return cd;
-    
-    RASSERT( cd >= 0xc0  &&  cd < 254 );
+    if( cd < 0xc0  ||  cd >= 254 )
+        return UMAX;        //invalid utf8 character
+
     ucs4 ch = cd - 0xc0;
     int nb = gUTF8_TB[ch>>2];
 
@@ -95,6 +99,42 @@ inline ucs4 read_utf8_char( const char* utf8, uints& off )
 	{
         cd <<= 6;
 	    cd += (uchar)utf8[off++];
+	}
+
+	return cd - gUTF8_SV[nb];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/// non-checking routine for conversion from an UTF-8 string to UCS-4 value
+inline ucs4 read_utf8_char( const char* utf8 )
+{
+    ucs4 cd = *utf8++;
+    if( cd < 0x80 )  return cd;
+
+    /// to get the number of trailing bytes of UTF-8 sequence, use first
+    /// byte - 0xc0 shifted right 2 bits as index to the following table 
+    static const uchar gUTF8_TB[16] = { 1,1,1,1,1,1,1,1,2,2,2,2,3,3,4,5 };
+
+    /// values to substract from code to get rid of leading 10xxxxxx of trailing UTF-8 bytes
+    static const unsigned long gUTF8_SV[6] = {
+    0x00000000UL,
+    (0xc0UL<<6) + 0x80UL,
+    (0xe0UL<<12) + (0x80UL<<6) + 0x80UL,
+    (0xf0UL<<18) + (0x80UL<<12) + (0x80UL<<6) + 0x80UL,
+    (0xf8UL<<24) + (0x80UL<<18) + (0x80UL<<12) + (0x80UL<<6) + 0x80UL,
+    (0xfcUL<<30) + (0x80UL<<24) + (0x80UL<<18) + (0x80UL<<12) + (0x80UL<<6) + 0x80UL,
+    };
+
+    if( cd < 0xc0  ||  cd >= 254 )
+        return UMAX;        //invalid utf8 character
+
+    ucs4 ch = cd - 0xc0;
+    int nb = gUTF8_TB[ch>>2];
+
+	for( ; nb>0; --nb )
+	{
+        cd <<= 6;
+	    cd += (uchar)*utf8++;
 	}
 
 	return cd - gUTF8_SV[nb];
@@ -222,8 +262,3 @@ inline void write_utf8_char( ucs4 ch, char*& utf8 )
 COID_NAMESPACE_END
 
 #endif //__COID_COMM_TUTF8__HEADER_FILE__
-
-
-
-
-
