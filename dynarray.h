@@ -341,35 +341,8 @@ public:
             _pos = 0;
         }
 
-    protected:
-        dynarray<T>& _v;
-        uints _pos;
-    };
-
-
-    ////////////////////////////////////////////////////////////////////////////////
-    struct binstream_dereferencing_container : public binstream_containerT< typename type_dereference<T>::type >
-    {
-        typedef typename type_dereference<T>::type         DerefT;
-
-        virtual const void* extract( uints n )
-        {
-            const T* p = &_v[_pos];
-            _pos += n;
-            return *p;
-        }
-
-        virtual void* insert( uints n )
-        {
-            T* p = _v.add(n);
-            *p = new DerefT;
-            return *p;
-        }
-
-        virtual bool is_continuous() const      { return false; }
-
-        binstream_dereferencing_container( dynarray<T>& v, uints n=UMAX )
-            : binstream_containerT<DerefT>(n), _v(v)
+        binstream_container( dynarray<T>& v, uints n, fnc_stream fout, fnc_stream fin )
+            : binstream_containerT<T>(n,fout,fin), _v(v)
         {
             _pos = 0;
         }
@@ -378,6 +351,7 @@ public:
         dynarray<T>& _v;
         uints _pos;
     };
+
     
     //operator T*(void) { return _ptr; }
     //operator const T*(void) const { return _ptr; }
@@ -1550,6 +1524,24 @@ inline binstream& operator >> ( binstream &in, dynarray<T>& dyna )
     typename dynarray<T>::binstream_container c(dyna);
 
     return in.xread_array(c);
+}
+
+template <class T>
+inline binstream& operator << ( binstream &out, const dynarray<T*>& dyna )
+{
+    binstream_container_fixed_array<T*> c( dyna.ptr(), dyna.size(), 0, 0 );
+    binstream_dereferencing_containerT<T> dc(c);
+    return out.xwrite_array(dc);
+}
+
+template <class T>
+inline binstream& operator >> ( binstream &in, dynarray<T*>& dyna )
+{
+    dyna.reset();
+    typename dynarray<T*>::binstream_container c( dyna, UMAX, 0, 0 );
+    binstream_dereferencing_containerT<T> dc(c);
+
+    return in.xread_array(dc);
 }
 
 COID_NAMESPACE_END
