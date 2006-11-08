@@ -103,19 +103,11 @@ struct binstream_container
     uints _nelements;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-///Templatized base container
+
+///Structure with streaming functions for abstract type
 template<class T>
-struct binstream_containerT : binstream_container
+struct binstream_streamfunc
 {
-    enum { ELEMSIZE = sizeof(T) };
-
-    binstream_containerT( uints n ) : binstream_container(n,bstype::t_type<T>(),&stream_out,&stream_in)
-    {}
-    binstream_containerT( uints n, fnc_stream fout, fnc_stream fin )
-        : binstream_container(n,bstype::t_type<T>(),fout,fin)
-    {}
-
     static opcd stream_in( binstream& bin, void* p, binstream_container& )
     {
         try { bin >> *(T*)p; }
@@ -131,18 +123,40 @@ struct binstream_containerT : binstream_container
     }
 };
 
+////////////////////////////////////////////////////////////////////////////////
+///Templatized base container
+///@param T type held by the container
+template<class T>
+struct binstream_containerT : binstream_container
+{
+    enum { ELEMSIZE = sizeof(T) };
+    typedef T       TData;
+
+    binstream_containerT( uints n ) : binstream_container(n,bstype::t_type<T>(),
+        &binstream_streamfunc<T>::stream_out,
+        &binstream_streamfunc<T>::stream_in)
+    {}
+    binstream_containerT( uints n, fnc_stream fout, fnc_stream fin )
+        : binstream_container(n,bstype::t_type<T>(),fout,fin)
+    {}
+};
+
+///
 template<>
 struct binstream_containerT<void> : binstream_container
 {
     enum { ELEMSIZE = 1 };
+    typedef void    TData;
 
     binstream_containerT( uints n ) : binstream_container(n,bstype::type(bstype::type::T_BINARY,1),0,0)
     {}
 };
 
+
 ////////////////////////////////////////////////////////////////////////////////
+///Generic dereferencing container for containers holding pointers
 template<class T>
-struct binstream_dereferencing_containerT : binstream_containerT<T*>
+struct binstream_dereferencing_containerT : binstream_container
 {
     enum { ELEMSIZE = sizeof(T) };
 
@@ -150,7 +164,7 @@ struct binstream_dereferencing_containerT : binstream_containerT<T*>
     virtual const void* extract( uints n )      { return *(T**)_bc.extract(n); }
     virtual void* insert( uints n )
     {
-        T** p = _bc.insert(n);
+        T** p = (T**)_bc.insert(n);
         *p = new T;
         return *p;
     }
@@ -159,12 +173,44 @@ struct binstream_dereferencing_containerT : binstream_containerT<T*>
     virtual bool is_continuous() const          { return false; }
 
 
-    binstream_dereferencing_containerT( binstream_containerT<T*>& bc, uints n )
-        : binstream_containerT<T*>(n), _bc(bc)
+    binstream_dereferencing_containerT( binstream_container& bc )
+        : binstream_container( bc._nelements, bstype::t_type<T>(),
+        &binstream_streamfunc<T>::stream_out,
+        &binstream_streamfunc<T>::stream_in),
+        _bc(bc)
     {}
 
-    binstream_containerT<T*>& _bc;
+    binstream_dereferencing_containerT( binstream_container& bc, fnc_stream fout, fnc_stream fin )
+        : binstream_container( bc._nelements, bstype::t_type<T>(), fout, fin ), _bc(bc)
+    {}
+
+protected:
+    binstream_container& _bc;
 };
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+template<class T>
+struct container_type_base
+{
+    typedef T type;
+    static bool dereference() { return false; }
+};
+
+template<class K>
+struct container_type_base<K*> {
+    typedef K type;
+    static bool dereference() { return true; }
+};
+
+template<>
+struct container_type_base<const char*> {
+    typedef const char* type;
+    static bool dereference() { return false; }
+};
+
+
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Primitive abstract base container
@@ -198,6 +244,8 @@ struct binstream_container_fixed_array : binstream_containerT<T>
 
     binstream_container_fixed_array( T* ptr, uints n ) : binstream_containerT<T>(n), _ptr(ptr) {}
     binstream_container_fixed_array( const T* ptr, uints n ) : binstream_containerT<T>(n), _ptr((T*)ptr) {}
+    binstream_container_fixed_array( T* ptr, uints n, fnc_stream fout, fnc_stream fin ) : binstream_containerT<T>(n,fout,fin), _ptr(ptr) {}
+    binstream_container_fixed_array( const T* ptr, uints n, fnc_stream fout, fnc_stream fin ) : binstream_containerT<T>(n,fout,fin), _ptr((T*)ptr) {}
 
     void set( const T* ptr, uints n )
     {
@@ -260,7 +308,7 @@ protected:
     char* _ptr;
     uints _size;
 };
-
+/*
 ////////////////////////////////////////////////////////////////////////////////
 ///Container for r/w from fixed array, but using different type for streaming
 template<class WRAPPER, class CONTENT>
@@ -307,7 +355,7 @@ protected:
 protected:
     const CONTENT* _ptr;
 };
-
+*/
 
 COID_NAMESPACE_END
 

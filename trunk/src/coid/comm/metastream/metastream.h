@@ -321,6 +321,23 @@ public:
         return _hook.write_array(C);
     }
 
+    template<class T>
+    opcd stream_in_array( binstream_dereferencing_containerT<T>& C, const token& name = token::empty() )
+    {
+        opcd e = prepare_type_read_array( *(const T*)0, C._nelements, name );
+        if(e) return e;
+
+        return _hook.read_array(C);
+    }
+
+    template<class T>
+    opcd stream_out_array( binstream_dereferencing_containerT<T>& C, const token& name = token::empty() )
+    {
+        opcd e = prepare_type_write_array( *(const T*)0, C._nelements, name );
+        if(e) return e;
+
+        return _hook.write_array(C);
+    }
 
     template<class T>
     void xstream_in( T& x, const token& name = token::empty() )

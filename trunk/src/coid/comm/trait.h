@@ -75,12 +75,29 @@ struct type_select<false,ttA,ttB>
 
 #endif
 
+
 ////////////////////////////////////////////////////////////////////////////////
 template<class T>
 struct type_dereference {typedef void type;};
 
 template<class K>
 struct type_dereference<K*> {typedef K type;};
+
+
+////////////////////////////////////////////////////////////////////////////////
+template<class T>
+struct type_base
+{
+    typedef T type;
+    static bool dereference() { return false; }
+};
+
+template<class K>
+struct type_base<K*> {
+    typedef K type;
+    static bool dereference() { return true; }
+};
+
 
 ////////////////////////////////////////////////////////////////////////////////
 template <class T>
