@@ -318,6 +318,8 @@ public:
     friend binstream& operator >> TEMPLFRIEND (binstream &in, dynarray<T,A> &dyna);
 #endif
 
+    typedef binstream_container::fnc_stream	fnc_stream;
+
     ////////////////////////////////////////////////////////////////////////////////
     struct binstream_container : public binstream_containerT<T>
     {

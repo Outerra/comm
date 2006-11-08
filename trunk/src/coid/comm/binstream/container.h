@@ -242,6 +242,8 @@ struct binstream_container_fixed_array : binstream_containerT<T>
 
     bool is_continuous() const      { return true; }
 
+    typedef binstream_container::fnc_stream    fnc_stream;
+
     binstream_container_fixed_array( T* ptr, uints n ) : binstream_containerT<T>(n), _ptr(ptr) {}
     binstream_container_fixed_array( const T* ptr, uints n ) : binstream_containerT<T>(n), _ptr((T*)ptr) {}
     binstream_container_fixed_array( T* ptr, uints n, fnc_stream fout, fnc_stream fin ) : binstream_containerT<T>(n,fout,fin), _ptr(ptr) {}
