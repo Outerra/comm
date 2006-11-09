@@ -106,6 +106,12 @@ public:
         _tokenizer.add_escape_pair( "r", '\r' );
         _tokenizer.add_escape_pair( "t", '\t' );
 
+        //add anything that can be a part of identifier or value (strings are treated separately)
+        _tokenizer.add_to_group( GROUP_IDENTIFIERS, '0', '9' );
+        _tokenizer.add_to_group( GROUP_IDENTIFIERS, 'a', 'z' );
+        _tokenizer.add_to_group( GROUP_IDENTIFIERS, 'A', 'Z' );
+        _tokenizer.add_to_group( GROUP_IDENTIFIERS, "_.:+-" );
+
         //characters that correspond to struct and array control tokens
         _tokenizer.add_to_group( GROUP_CONTROL, "{}[],:", true );
 
