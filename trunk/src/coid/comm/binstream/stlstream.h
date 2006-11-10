@@ -270,7 +270,7 @@ inline binstream& operator >> (binstream& in, std::string& p)
 {
 	charstr t;
 	in >> t;
-	p = t.ptr();
+    p = t.ptr() ? t.ptr() : "";
 	return in;
 }
 
