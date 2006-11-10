@@ -36,6 +36,9 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+/** @file */
+
+
 #ifndef __COID_COMM_METASTREAM__HEADER_FILE__
 #define __COID_COMM_METASTREAM__HEADER_FILE__
 
@@ -45,8 +48,6 @@
 #include "../binstream/binstream.h"
 
 //#include "fmtstreamcxx.h"
-
-
 
 COID_NAMESPACE_BEGIN
 
@@ -59,8 +60,6 @@ COID_NAMESPACE_BEGIN
 class metastream
 {
 public:
-    //metastream( binstream* b=0 ) :  _txtfmt(0, 0)  {init(); bind(b);}
-    //metastream( binstream& b )   :  _txtfmt(0, 0)  {init(); bind(b);}
     metastream() { init(); }
     virtual ~metastream()    {}
 
@@ -86,24 +85,22 @@ public:
         _current_desc = 0;
         _cur_var = 0;
         _cur_variable_name = 0;
-        //_cur_varnum = 0;
+        _cur_variable_default = 0;
+        _cur_variable_size = 0;
 
         _disable_meta_write = _disable_meta_read = false;
         _templ_arg_rdy = false;
-        //_hidarray_id = 0;
-        //_is_array = false;
-        //_array_size = UMAX;
+
         _hook.set_meta( *this );
 
         _tmetafnc = 0;
-        _fmtstream = 0;//&_txtfmt;
+        _fmtstream = 0;
     }
 
     void bind_formatting_stream( binstream& b )
     {
         _fmtstream = &b;
         stream_reset();
-        //_cur_varnum = 0;
     }
 
     binstream& get_formatting_stream() const    { return *_fmtstream; }
@@ -367,21 +364,24 @@ public:
             _arraynm = 0;
             _fmtstream->flush();
         }
-        //_cur_varnum = 0;
     }
 
     void stream_reset()
     {
         _sesopen = 0;
         _arraynm = 0;
-        //_cur_varnum = 0;
+
         _stack.reset();
-        //_array.reset();
+
         _is_array = false;
         _data.reset();
         _cachetbl.reset();
         _tmetafnc = 0;
         _cur_var = 0;
+        _cur_variable_name = 0;
+        _cur_variable_default = 0;
+        _cur_variable_size = 0;
+        _defval = 0;
 
         _err.reset();
         _fmtstream->reset();
@@ -439,9 +439,11 @@ public:
     //@{ meta_* functions deal with building the description tree
 
     ///Called before metastream << on member variable
-    void meta_variable( const char* varname )
+    void meta_variable( const char* varname, uints valsize=0, const void* valdefault=0 )
     {
         _cur_variable_name = varname;
+        _cur_variable_size = valsize;
+        _cur_variable_default = valdefault;
     }
 
     bool meta_struct_open( const char* name )
@@ -514,11 +516,13 @@ public:
             charstr _varname;           ///< name of the variable
 
             uints _array_size;          ///< array size, UMAX for unknown
+            dynarray<uchar> _defval;    ///< default value for reading if not found in input stream
+
             bool _is_array;             ///<
             bool _is_hidden;            ///< hidden, implicit variable
 
-            bool is_array() const       { return _is_array; }//_array.size() > 0; }
-            bool is_compound() const    { return !_desc->_btype.is_primitive() && !_is_array; }//_array.size()==0; }
+            bool is_array() const       { return _is_array; }
+            bool is_compound() const    { return !_desc->_btype.is_primitive() && !_is_array; }
             bool is_hidden() const      { return _is_hidden; }
 
 
@@ -601,15 +605,17 @@ public:
         DESC() {}
         DESC( const token& n ) : _typename(n) {}
 
-        void add_desc_var( DESC* d, const token& n, bool is_array, uints array_size, bool is_hidden )
+        void add_desc_var( DESC* d, const token& n, uints valsize, const void* valdefault, bool is_array, uints array_size, bool is_hidden )
         {
             VAR* c = _children.add();
             c->_desc = d;
             c->_varname = n;
-            //c->_array.takeover(ar);
             c->_is_array = is_array;
             c->_array_size = array_size;
             c->_is_hidden = is_hidden;
+
+            if(valdefault)
+                c->_defval.copy_bin_from( (const uchar*)valdefault, valsize );
         }
 
     };
@@ -734,14 +740,13 @@ private:
     DESC::VAR _root;
     DESC* _current_desc;
     const char* _cur_variable_name;
+    uints _cur_variable_size;
+    const void* _cur_variable_default;
 
-    //int _cur_varnum;                ///< variable sequential number used for separating non-metadata entries
     int _sesopen;                   ///< flush(>0) or ack(<0) session open
     int _arraynm;                   ///< first array element marker in non-meta mode
 
-    dynarray<DESC::VAR*> _stack;     ///< variable stack for data streaming
-
-    //dynarray<uint> _array;          ///< array size stack, nonempty if under array during description building
+    dynarray<DESC::VAR*> _stack;    ///< variable stack for data streaming
 
     dynarray<charstr> _templ_name_stack;
     bool _templ_arg_rdy;
@@ -754,7 +759,6 @@ private:
 
     binstream* _fmtstream;          ///< bound formatting front-end binstream
 
-    //fmtstreamcxx _txtfmt;           ///< formatter stream (default)
     binstreamhook _hook;            ///< internal data binstream
 
     dynarray<uchar> _data;          ///< cache for unordered input data
@@ -765,6 +769,8 @@ private:
     uints _cache_aryoffs;           ///< offset to current array element
     uints _cachelevel;              ///< level where the cache was initialized
     uints _cacherootentries;        ///< no.of valid root level members in cache
+
+    const dynarray<uchar>* _defval; ///< default value of object provided by cache
 
     charstr _rvarname;              ///< name of variable that follows in the input stream
 
@@ -847,7 +853,8 @@ private:
         {
             //DASSERT( _cur_variable_name  ||  _cur_var->is_hidden() );
 
-            _current_desc->add_desc_var( d, _cur_variable_name, _is_array, _array_size, is_hidden );
+            _current_desc->add_desc_var( d, _cur_variable_name, _cur_variable_size, _cur_variable_default,
+                _is_array, _array_size, is_hidden );
 
             while( !is_hidden && _current_desc && _current_desc->_typename.is_empty() )
                 _current_desc = _map.pop();
@@ -856,6 +863,7 @@ private:
         _is_array = false;
         _array_size = UMAX;
         _cur_variable_name = 0;
+        _cur_variable_default = 0;
     }
     
     //@} meta_* functions
@@ -1397,6 +1405,7 @@ protected:
     }
 
 
+    bool default_prepared() const       { return _defval != 0; }
     bool cache_prepared() const         { return _cachetbloffs != UMAX; }
 
     void invalidate_cache_entry()
@@ -1409,7 +1418,16 @@ protected:
     ///Read data from formatstream or cache
     opcd fmts_or_cache_read( void* p, bstype::type t )
     {
-        if( cache_prepared() )
+        if( default_prepared() )
+        {
+            if( !t.is_no_size()  &&  t.get_size() != _defval->size() )
+                return ersMISMATCHED "size of element and the size of provided default value";
+
+            _defval->copy_bin_to( (uchar*)p, _defval->size() );
+            _defval = 0;
+            return 0;
+        }
+        else if( cache_prepared() )
         {
             if( t.is_array_control_type() )
             {
@@ -1594,6 +1612,12 @@ protected:
 
             e = binstream_read_key( *_fmtstream, _rvarname );
             if(e) {
+                if( e == ersNO_MORE  &&  _cur_var->_defval.size() > 0 )
+                {
+                    _defval = &_cur_var->_defval;
+                    return 0;
+                }
+
                 dump_stack(_err,0);
                 _err << " - variable not found '" << _cur_var->_varname << "', error: " << opcd_formatter(e);
                 return e;
@@ -1781,9 +1805,16 @@ protected:
 
 ////////////////////////////////////////////////////////////////////////////////
 /// struct-related defines:
+/**
+    @def MM(meta,n,v)   specify member metadata providing member name
+    @def MMT(meta,n,t)  specify member metadata providing member type
+    @def MMD(meta,n,d)  specify member metadata providing a default value of member type
+    @def MMAT(meta,n,t) specify that member is an array of type \a t
+**/
 #define MSTRUCT_OPEN(meta, n)       if( !meta.meta_struct_open(n) ) {
 #define MM(meta, n, v)              meta.meta_variable(n);  meta << v
 #define MMT(meta, n, t)             meta.meta_variable(n);  meta << *(t*)0
+#define MMD(meta, n, d)             meta.meta_variable(n,sizeof(d),&d);  meta << d
 #define MMAT(meta, n, t)            meta.meta_array(); meta.meta_variable(n);  meta << *(t*)0
 #define MSTRUCT_CLOSE(meta)         meta.meta_struct_close(); }  return meta;
 
