@@ -580,8 +580,8 @@ public:
                         _tokenizer.push_back();
                     else if( tok != trSep )
                         return ersSYNTAX_ERROR "missing separator";
-                    else
-                        _tokenizer.push_back();
+                    //else
+                    //    _tokenizer.push_back();
                     break;
 
                 case type::T_COMPOUND:
