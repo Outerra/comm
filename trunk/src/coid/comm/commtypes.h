@@ -287,11 +287,14 @@ T* ptr_byteshift( T* p, ints b )
 
 
 ////////////////////////////////////////////////////////////////////////////////
+
+void *_xmemcpy( void *dest, const void *src, size_t count );
 #ifdef _DEBUG
-void *xmemcpy( void *dest, const void *src, size_t count );
+#define xmemcpy     _xmemcpy
 #else
 #define xmemcpy     ::memcpy
 #endif
+
 
 ///Find occurence of 0xcdcd in a two-part buffer
 ///@return true if not found (use with ASSERT)
