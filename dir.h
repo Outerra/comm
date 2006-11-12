@@ -157,7 +157,7 @@ private:
     charstr     _pattern;
 
 #ifdef SYSTYPE_MSVC
-    long        _handle;
+    ints        _handle;
 #else
 	DIR*        _dir;
 #endif

@@ -132,7 +132,7 @@ opcd directory::mkdir( const charstr& name, uint mode )
 ////////////////////////////////////////////////////////////////////////////////
 charstr& directory::get_cwd( charstr& buf )
 {
-    uints size = 64;
+    uint size = 64;
 
     while( !::_getcwd( buf.get_append_buf(size-1), size )  &&  size < 1024 )
     {
