@@ -101,11 +101,9 @@ uints _Gmemused = 0;
 
 
 ////////////////////////////////////////////////////////////////////////////////
-#ifdef _DEBUG
-void *xmemcpy( void *dest, const void *src, size_t count ) {
+void *_xmemcpy( void *dest, const void *src, size_t count ) {
     return ::memcpy( dest, src, count );
 }
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 bool cdcd_memcheck( const uchar* a, const uchar* ae, const uchar* b, const uchar* be )
