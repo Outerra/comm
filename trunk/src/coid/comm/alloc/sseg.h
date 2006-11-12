@@ -462,7 +462,7 @@ protected:
     void sortf_down(fblock* p);
     void sortf_up(fblock* p);
 
-    uint align_size(uint s) const         { return align_value_to_power2(s,_ralign); }
+    uints align_size(uints s) const         { return align_value_to_power2(s,(uchar)_ralign); }
 };
 
 COID_NAMESPACE_END

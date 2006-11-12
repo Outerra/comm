@@ -140,8 +140,8 @@ typedef unsigned char       uchar;
 typedef signed char         schar;
 
 ///Integer types with the same size as pointer on the platform
-typedef	size_t              uints;
-typedef ptrdiff_t           ints;
+typedef uintptr_t           uints;
+typedef intptr_t            ints;
 
 
 TYPE_TRIVIAL(bool);

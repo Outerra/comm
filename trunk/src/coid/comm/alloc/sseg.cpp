@@ -66,7 +66,7 @@ namespace coid {
 ////////////////////////////////////////////////////////////////////////////////
 void* ssegpage::operator new ( size_t, uint segsize )
 {
-    segsize = nextpow2(segsize);
+    segsize = (uint)nextpow2(segsize);
     uchar r = ssegpage::block::get_granularity_shift_from_pagesize(segsize);
     return memaligned_alloc( segsize, 1<<r );
 }
@@ -83,7 +83,7 @@ ssegpage::ssegpage( bool mutex, uint segsize )
     _me = this;
     _used = 0;
 
-    segsize = nextpow2(segsize);
+    segsize = (uint)nextpow2(segsize);
     _rsegsize = getpow2( segsize );
     _ralign = ssegpage::block::get_granularity_shift_from_rpagesize((uchar)_rsegsize);
 
@@ -97,7 +97,7 @@ ssegpage::ssegpage( bool mutex, uint segsize )
 void ssegpage::reset()
 {
     fblock* pf = (fblock*) get_first_ptr();
-    pf->set( (1<<_rsegsize) - align_size(sizeof(*this)), this, pf );
+    pf->set( (1<<_rsegsize) - (uint)align_size(sizeof(*this)), this, pf );
     pf->set_base(0);
     pf->_bigger = 0;
     pf->_smaller = 0;
@@ -143,8 +143,8 @@ opcd ssegpage::read_from_stream( binstream& bin, void** pbase, int* diffaddr )
     _me = this;
 
     //rebase the used block address
-    int diff = (char*)this - (char*)*pbase;
-    *diffaddr = diff;
+    ints diff = (char*)this - (char*)*pbase;
+    *diffaddr = (int)diff;
 
     if( diff == 0  ||  _freesm == 0 )  return 0;
 
@@ -168,7 +168,7 @@ opcd ssegpage::read_from_stream( binstream& bin, void** pbase, int* diffaddr )
 ////////////////////////////////////////////////////////////////////////////////
 ssegpage::block* ssegpage::alloc_big( uint size )
 {
-    size = align_value_to_power2( size + sizeof(fblock), 12 );
+    size = (uint)align_value_to_power2( size + sizeof(fblock), 12 );
 
     void* base = memaligned_alloc( size, 4096 );
     if(!base)  return 0;
