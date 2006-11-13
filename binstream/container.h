@@ -156,7 +156,7 @@ struct binstream_containerT<void> : binstream_container
 ////////////////////////////////////////////////////////////////////////////////
 ///Generic dereferencing container for containers holding pointers
 template<class T>
-struct binstream_dereferencing_containerT : binstream_container
+struct binstream_dereferencing_containerT : binstream_containerT<T>
 {
     enum { ELEMSIZE = sizeof(T) };
 
@@ -174,21 +174,53 @@ struct binstream_dereferencing_containerT : binstream_container
 
 
     binstream_dereferencing_containerT( binstream_container& bc )
-        : binstream_container( bc._nelements, bstype::t_type<T>(),
+        : binstream_containerT<T>( bc._nelements,
         &binstream_streamfunc<T>::stream_out,
         &binstream_streamfunc<T>::stream_in),
         _bc(bc)
     {}
 
     binstream_dereferencing_containerT( binstream_container& bc, fnc_stream fout, fnc_stream fin )
-        : binstream_container( bc._nelements, bstype::t_type<T>(), fout, fin ), _bc(bc)
+        : binstream_containerT<T>( bc._nelements, fout, fin ), _bc(bc)
     {}
 
 protected:
     binstream_container& _bc;
 };
 
+///Dereferencing container for containers holding pointers, source container embedded here
+template<class T,class CONT>
+struct binstream_dereferencing_containerTC : binstream_containerT<T>
+{
+    enum { ELEMSIZE = sizeof(T) };
 
+
+    virtual const void* extract( uints n )      { return *(T**)_bc.extract(n); }
+    virtual void* insert( uints n )
+    {
+        T** p = (T**)_bc.insert(n);
+        *p = new T;
+        return *p;
+    }
+
+    ///@return true if the storage is continuous in memory
+    virtual bool is_continuous() const          { return false; }
+
+
+    binstream_dereferencing_containerTC( const CONT& bc )
+        : binstream_containerT<T>( bc._nelements,
+        &binstream_streamfunc<T>::stream_out,
+        &binstream_streamfunc<T>::stream_in),
+        _bc(bc)
+    {}
+
+    binstream_dereferencing_containerTC( const CONT& bc, fnc_stream fout, fnc_stream fin )
+        : binstream_containerT<T>( bc._nelements, fout, fin ), _bc(bc)
+    {}
+
+protected:
+    CONT _bc;
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 template<class T>

@@ -48,14 +48,29 @@
 #include "../net.h"
 #include "../pthreadx.h"
 
+extern "C"
+{
+int lzo1x_1_compress( const unsigned char* src, unsigned int  src_len,
+                            unsigned char* dst, unsigned int* dst_len,
+                            void* wrkmem );
+
+int lzo1x_decompress( const unsigned char* src, unsigned int  src_len,
+                            unsigned char* dst, unsigned int* dst_len,
+                            void* wrkmem );
+
+int lzo1x_decompress_safe( const unsigned char* src, unsigned int  src_len,
+                            unsigned char* dst, unsigned int* dst_len,
+                            void* wrkmem );
+}
+
+
 COID_NAMESPACE_BEGIN
 
+////////////////////////////////////////////////////////////////////////////////
 /**
-    Divided into packets of max 8192 bytes, with 4B header.
-    Header contains two bytes "Bs" followed by 2B actual size of packet.
-    When the size is 0xffff, this means a full packet (8192-4 bytes) followed by more packets.
+    Simple UDP binstream wrapper with flush/acknowledge handshaking.
+    @note requires linking with minilzo library when using the pack() and unpack() methods.
 */
-
 class netstreamudp : public binstream
 {
 public:
@@ -71,7 +86,7 @@ public:
     virtual opcd write_raw( const void* p, uints& len )
     {
         if(len)
-            add_to_packet ((const uchar*)p, len);
+            add_to_packet( (const uchar*)p, len );
         return 0;
     }
 
@@ -85,355 +100,281 @@ public:
 
     virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX ) { return ersUNAVAILABLE; }
 
+
+    virtual uint64 get_size() const                 { return _sendbuf.size(); }
+    virtual uint64 set_size( int64 n )
+    {
+        if( n < 0 )
+        {
+            ints k = _sendbuf.size() - (ints)int_abs(n);
+            if( k <= 0 )
+                n = 0;
+            else
+                n = k;
+        }
+
+        if( n < (int64)_sendbuf.size() )
+            _sendbuf.need((ints)n);
+
+        return _sendbuf.size();
+    }
+
+
     virtual bool is_open() const                    { return true; }
     virtual void flush()
     {
-        if (_tpckid != 0xff)
-        {
+        if( _sendbuf.size() > 0 )
             send();
-        }
     }
 
-    virtual void reset ()
+    virtual void reset()
     {
-        //implement this
-        throw ersNOT_IMPLEMENTED;
+        _recvbuf.reset();
+        _roffs = 0;
+        _sendbuf.reset();
     }
 
     virtual void acknowledge( bool eat = false )
     {
-        if (_rpckid+1 < _rnseg  ||  _roffs < _rsize)
+        if( _roffs < _recvbuf.size() )
         {
-            if (eat)  eat_input ();
-            else  throw ersIO_ERROR "data left in received packet";
+            if(!eat)
+                throw ersIO_ERROR "data left in received packet";
         }
-        _rpckid = 0;
         _recvbuf.reset();
-        _flg = 0;
+        _roffs = 0;
     }
+
+    virtual opcd close( bool linger=false )
+    {
+        if(!_foreign)
+            _socket.close();
+        else
+            _socket.setHandleInvalid();
+        _foreign = false;
+        return 0;
+    }
+
 
     bool data_available( uint timeout )
     {
-        if (_rpckid == 0xff)
+        if( _recvbuf.size() > 0 )
             return true;
 
-        return recvpack(timeout);
+        return recv(timeout);
     }
+
+    bool get_raw_unread_data( const uchar*& pd, uint& len )
+    {
+        uint rsize = (uint)_recvbuf.size();
+        if(!rsize)  return false;
+
+        pd = _recvbuf.ptr() + _roffs;
+        len = rsize - _roffs;
+        _roffs += rsize;
+        return true;
+    }
+
+
+    dynarray<uchar>& get_send_buffer()      { return _sendbuf; }
+
 
     netAddress* get_local_address (netAddress* addr) const
     {
         return netAddress::getLocalHost( addr );
     }
 
-protected:
-
-    struct udp_hdr
+    ///Pack outgoing packet before send()
+    ///@param nocompressoffs size at the beginning of the packet to left uncompressed
+    void pack( uint nocompressoffs )
     {
-        ushort  _pckid;     ///< packet id - size
-        ushort  _trsmid;    ///< transmission id
+        uint ss = (uint)_sendbuf.size();
+        if( nocompressoffs < ss )
+        {
+            uchar tmpbuf[0x10000];
+            uint dsz = ss + (ss / 16) + 64 + 3;
+            _wrkbuf.need(dsz);
+            int sz = lzo1x_1_compress( _sendbuf.ptr() + nocompressoffs, _sendbuf.size() - nocompressoffs,
+                _wrkbuf.ptr() + nocompressoffs + sizeof(ushort), &dsz, tmpbuf );
+            ::memcpy( _wrkbuf.ptr(), _sendbuf.ptr(), nocompressoffs );
+            *(ushort*)(_wrkbuf.ptr()+nocompressoffs) = (ushort)sz;
 
-        enum {
-            PASSING_PACKET          = 0xa2c0,
-            TRAILING_PACKET         = 0x8640,
-            xPACKET_TYPE            = 0xffe0,
-
-            xVALUE                  = 0x001f,
-        };
-
-        void set_trailing_packet (uchar i)  { _pckid = TRAILING_PACKET | i; }
-        void set_passing_packet (uchar i)   { _pckid = PASSING_PACKET | i; }
-
-        bool is_valid_packet () const       { return (_pckid & xPACKET_TYPE) == TRAILING_PACKET  ||  (_pckid & xPACKET_TYPE) == PASSING_PACKET; }
-        bool is_trailing_packet () const    { return (_pckid & xPACKET_TYPE) == TRAILING_PACKET; }
-
-        uchar get_packet_id () const        { return (uchar)_pckid & xVALUE; }
-
-        uchar get_next_seg () const         { return (uchar)_trsmid; }
-        void set_next_seg (uchar i)         { _trsmid = i; }
-
-        void set_transmission_id (ushort t) { _trsmid = t; }
-    };
-
-    struct udp_seg : udp_hdr
-    {
-        enum {
-            PACKET_LENGTH           = 8192,
-            DATA_SIZE               = PACKET_LENGTH - sizeof(udp_hdr),
-        };
-
-        uchar   _data[DATA_SIZE];
-    };
-
-    void eat_input ()
-    {
+            _sendbuf.swap( _wrkbuf );
+        }
     }
 
-    void add_to_packet (const uchar* p, uints& size)
+    ///Unpack received packet before reading further data
+    ///@param nocompressoffs size at the beginning of the packet to left uncompressed
+    ///@note [nocompressoffs] bytes of input can be read from compressed packet before uncompressing
+    bool unpack( uint nocompressoffs )
     {
-        if(!size)  return;
-
-        if(_tpckid == 0xff)
+        uint ss = (uint)_recvbuf.size();
+        if( nocompressoffs < ss )
         {
-            _tpckid = 0;
-            _toffs = 0;
-        }
+            uint dsz = *(const ushort*)(_recvbuf.ptr()+nocompressoffs);
+            _wrkbuf.need(dsz);
+            int sz = lzo1x_decompress_safe( _recvbuf.ptr() + nocompressoffs + sizeof(ushort), _recvbuf.size() - nocompressoffs - sizeof(ushort),
+                _wrkbuf.ptr() + nocompressoffs, &dsz, 0 );
+            if( dsz != sz )  return false;
 
-        uints s = _toffs;
-        if (s + size > udp_seg::DATA_SIZE)
-        {
-            xmemcpy (_sendbuf._data+s, p, udp_seg::DATA_SIZE - s);
-            p += udp_seg::DATA_SIZE - s;
-            size -= udp_seg::DATA_SIZE - s;
-            _toffs = udp_seg::DATA_SIZE;
+            ::memcpy( _wrkbuf.ptr(), _recvbuf.ptr(), nocompressoffs );
 
-            send();
-            add_to_packet (p, size);
+            _recvbuf.swap( _wrkbuf );
         }
-        else
-        {
-            xmemcpy (_sendbuf._data+s, p, size);
-            _toffs += (ushort)size;
-            size = 0;
-        }
+        return true;
+    }
+
+
+protected:
+
+    void add_to_packet( const uchar* p, uints& size )
+    {
+        _sendbuf.add_bin_from( p, size );
+        size = 0;
     }
 
     opcd get_from_packet( uchar* p, uints& size )
     {
-        if (_rpckid != 0xff)
-            throw ersUNAVAILABLE "data not received";
+        if( _roffs+size > _recvbuf.size() )
+            return ersNO_MORE;
 
-        if (_roffs+size > _rsize)
-        {
-            uints pa = udp_seg::DATA_SIZE - _roffs;
-            xmemcpy (p, _recvbuf[_rfseg]._data+_roffs, pa);
-            size -= pa;
-            p += pa;
-
-            _rfseg = _recvbuf[_rfseg].get_next_seg();
-            if (_rfseg == 0xff)
-                return ersNO_MORE "required more than sent";
-
-            _roffs = 0;
-            _rsize = _recvbuf[_rfseg].get_next_seg() != 0xff ? (ushort)udp_seg::DATA_SIZE : (ushort)_flg;
-
-            get_from_packet( p, size );
-        }
-        else
-        {
-            xmemcpy (p, _recvbuf[_rfseg]._data+_roffs, size);
-            _roffs += (ushort)size;
-            size = 0;
-        }
+        xmemcpy( p, _recvbuf.ptr()+_roffs, size );
+        _roffs += size;
+        size = 0;
 
         return 0;
     }
 
-    void send()
+
+    opcd send()
     {
-        if (_toffs < udp_seg::DATA_SIZE)
-            _sendbuf.set_trailing_packet(_tpckid);
-        else
-            _sendbuf.set_passing_packet(_tpckid);
+        int n = _socket.sendto( _sendbuf.ptr(), _sendbuf.size(), 0, &_address );
+        if( n == -1 )
+            return ersFAILED "while sending data";
 
-        _sendbuf._trsmid = _trsmid;
-
-        long n = _socket.sendto( &_sendbuf, sizeof(udp_hdr) + _toffs, 0, &_address );
-        if (n == -1)
-            throw ersFAILED "while sending data";
-
-        if (_toffs < udp_seg::DATA_SIZE)
-        {
-            _tpckid = 0xff;
-            ++_trsmid;
-        }
-        else
-            ++_tpckid;
-        _toffs = 0;
+        _sendbuf.reset();
+        return 0;
     }
 
     ///Receive an udp packet
     ///@return true if message received
-    bool recvpack (uint timeout)
+    bool recv( uint timeout )
     {
-        if (timeout != UMAX)
+        if( timeout != UMAX )
         {
             int ns = _socket.wait_read(timeout);
             if( ns <= 0 )
                 return false;
         }
 
-        if (_recvbuf.size() <= _rpckid)
-            _recvbuf.need (_rpckid+1);
+        //MSG_PEEK first
+        int n = _socket.recvfrom( 0, 0, 0x2, &_address );
 
-        long n = _socket.recvfrom( _recvbuf.ptr()+_rpckid, sizeof(udp_seg), 0, &_address );
-        if (n == -1)
+        n = _socket.recvfrom( _recvbuf.need(n), n, 0, &_address );
+        if( n == -1 )
             return false;
-
-        udp_hdr* hdr = _recvbuf.ptr() + _rpckid;
-
-        if (!hdr->is_valid_packet())
-            return recvpack(timeout);          //invalid packet
-
-        if (_flg == 0)                  //first packet of a chain
-            _trsmid = hdr->_trsmid;
-        else if (_trsmid != hdr->_trsmid)   //not a packet of current transmission
-        {
-            if ((short)(hdr->_trsmid - _trsmid) < 0)
-                return recvpack(timeout);   //discard an old packet
-
-            //this is newer packet than packets from the current transmission
-            // what means that a newer transmission has begun
-            //discard what we've already received
-            _flg = 0;   //no packet recvd
-            _rpckid = 0;  //expect first packet
-        }
-
-        uchar pck = hdr->get_packet_id();
-        if (_flg & (1<<pck))
-            return recvpack(timeout);     //the same packet hb already received
-        _flg |= 1<<pck;
-
-        //adjust _rpckid to point to the first empty packet
-        uint flg = _flg >> (++_rpckid);
-        for (; flg&1; ++_rpckid)  flg>>=1;
-
-        if (pck == 0)
-            _rfseg = pck;
-
-        //set status
-        if (hdr->is_trailing_packet())              //this was the last packet of the transmission
-        {
-            if (!pck || (_flg & ((1UL<<pck)-1)) == _flg)    //all packets received
-                _rpckid = 0xff;                     //msg complete
-            else
-                _flg |= ~((1UL<<pck)-1);            //prepare for later detection of completenes in 'U'
-            _rnseg = pck+1;
-            _roffs = (ushort) (n - sizeof(udp_hdr));
-        }
-        else if (_flg == UMAX)
-            _rpckid = 0xff;                         //all packets received
-
-        if (_rpckid != 0xff)
-            return recvpack(timeout);
-
-        if (_rnseg > 1)
-        {
-            //setup segment sequence
-            uint flg = _flg & ~(1UL << _rfseg);
-            uchar cur = _rfseg;
-            uchar min = _rfseg ? 0 : 1;
-
-            for (uchar j=min; j<_rnseg; ++j)
-            {
-                uint msk = 1 << j;
-                if (!(flg & msk))  continue;
-
-                if (_recvbuf[j].get_packet_id() == cur)
-                {
-                    _recvbuf[cur].set_next_seg(j);
-                    flg &= ~msk;
-                    cur = j;
-
-                    //check if there did remain some segments before this one
-                    --msk;
-                    if (flg & msk)
-                        j = min - 1;
-                }
-            }
-            _recvbuf[cur].set_next_seg (0xff);
-        }
-        else
-            _recvbuf[0].set_next_seg(0xff);
-
-        //setup for reading
-        _flg = _roffs;  //mark size of last segment here
-        _roffs = 0;
-        _rsize = _rnseg>1 ? (ushort)udp_seg::DATA_SIZE : (ushort)_flg;
 
         return true;
     }
 
-    void setup_socket ()
+    void set_socket_options()
     {
-        _rpckid = 0;
-        _tpckid = 0;
-        _trsmid = 0;
-        _flg = 0;
-        _toffs = 0;
-        _roffs = 0;
-        _rfseg = 0xff;
-        _rnseg = 0;
-        _socket.setBlocking( true );
+        _socket.setBlocking( false );
         _socket.setNoDelay( true );
         _socket.setReuseAddr( true );
+
+        _socket.setBuffers( 65536, 65536 );
+    }
+
+    void setup_socket( bool setoptions )
+    {
+        _roffs = 0;
+        _sendbuf.reset();
+        _recvbuf.reset();
+
+        if( setoptions && _socket.isValid() )
+            set_socket_options();
     }
 
 public:
     netstreamudp(ushort port)
     {
-        _socket.open( false );
-        setup_socket();
-        _socket.bind( "", port );
+        netSubsystem::instance();
+        _foreign = 0;
 
-        //netAddress addr;
-        //_socket.getAddress(&addr);
+        RASSERT( 0 == bind_port(port) );
     }
 
     netstreamudp()
     {
-        _socket.open( false );
-        setup_socket();
-        _socket.bind( "", 0 );
+        netSubsystem::instance();
+        _foreign = 0;
 
-        //netAddress addr;
-        //_socket.getAddress(&addr);
+        setup_socket(false);
     }
 
-    void set_socket (netSocket& s)
+    void set_socket( const netSocket& s, bool foreign )
     {
         _socket = s;
-        s.setHandleInvalid();
-        setup_socket();
+        s.getRemoteAddress(&_address);
+        setup_socket(false);
+        _foreign = foreign;
     }
 
-    void set_broadcast_addr (ushort port)
+    const netSocket& get_socket() const
+    {
+        return _socket;
+    }
+
+    opcd bind_port( ushort port )
+    {
+        close();
+
+        if( !_socket.open(false) )
+            return ersIO_ERROR "can't open socket";
+        
+        setup_socket(true);
+        if( 0 != _socket.bind( "", port ) )
+            return ersUNAVAILABLE "can't bind port";
+        return 0;
+    }
+
+
+    void set_remote_address( const token& addr, ushort port, bool portoverride )
+    {
+        netAddress a;
+        a.set( addr, port, portoverride );
+        set_remote_address(a);
+    }
+
+    void set_remote_address( const netAddress& addr )
+    {
+        _socket.setBroadcast( false );
+        _address = addr;
+    }
+
+    void set_broadcast_address( ushort port )
     {
         _socket.setBroadcast( true );
         _address.setBroadcast();
         _address.setPort( port );
     }
 
-    void set_addr( const netAddress& addr )
-    {
-        _socket.setBroadcast( false );
-        _address = addr;
-    }
 
-    virtual opcd close( bool linger=false )
-    {
-        _socket.close();
-        return 0;
-    }
-
-    const netAddress* get_address () const     { return &_address; }
+    const netAddress* get_address () const      { return &_address; }
+    ushort get_port() const                     { return _address.getPort(); }
+    void set_port( ushort port )                { _address.setPort(port); }
 
 private:
-    netSocket           _socket;
-    netAddress          _address;
-    uchar               _rpckid;    ///< expected packet id, def 0, 0xff when no more packets are expected
-    uchar               _tpckid;    ///< packet id of currently open packet for writting
-    ushort              _trsmid;    ///< transmission id
-    uint                _flg;       ///< every bit represents one packet, one's for received ones
-    uchar               _rfseg;     ///< id of the first or read segment (position in recvbuf)
-    uchar               _rnseg;     ///< count of recvd segments
-    ushort              _rsize;     ///< size of current segment data
-    dynarray<udp_seg>   _recvbuf;
-    ushort              _toffs;     ///< offset in the transmission packet buffer
-    ushort              _roffs;     ///< offset in the _recvbuf
-    udp_seg             _sendbuf;
+    netSocket       _socket;
+    netAddress      _address;
+    dynarray<uchar> _sendbuf;
+    dynarray<uchar> _recvbuf;
+    uints           _roffs;     ///< offset in the _recvbuf
+    dynarray<uchar> _wrkbuf;    ///< working buffer for compression
+    bool            _foreign;
 };
 
 COID_NAMESPACE_END
 
 #endif //__COID_COMM_NETSTREAMUDP__HEADER_FILE__
-
