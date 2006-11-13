@@ -160,6 +160,8 @@ struct binstream_dereferencing_containerT : binstream_containerT<T>
 {
     enum { ELEMSIZE = sizeof(T) };
 
+    typedef binstream_container::fnc_stream    fnc_stream;
+
 
     virtual const void* extract( uints n )      { return *(T**)_bc.extract(n); }
     virtual void* insert( uints n )
@@ -194,6 +196,8 @@ struct binstream_dereferencing_containerTC : binstream_containerT<T>
 {
     enum { ELEMSIZE = sizeof(T) };
 
+    typedef binstream_container::fnc_stream    fnc_stream;
+
 
     virtual const void* extract( uints n )      { return *(T**)_bc.extract(n); }
     virtual void* insert( uints n )
@@ -220,26 +224,6 @@ struct binstream_dereferencing_containerTC : binstream_containerT<T>
 
 protected:
     CONT _bc;
-};
-
-////////////////////////////////////////////////////////////////////////////////
-template<class T>
-struct container_type_base
-{
-    typedef T type;
-    static bool dereference() { return false; }
-};
-
-template<class K>
-struct container_type_base<K*> {
-    typedef K type;
-    static bool dereference() { return true; }
-};
-
-template<>
-struct container_type_base<const char*> {
-    typedef const char* type;
-    static bool dereference() { return false; }
 };
 
 
