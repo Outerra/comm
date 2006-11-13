@@ -63,17 +63,13 @@ int lzo1x_decompress_safe( const unsigned char* src, unsigned int  src_len,
                             void* wrkmem );
 }
 
-/*
-typedef ::coid::dynarray< ::coid::uchar >     t_dynarray_uchar;
-
-template<> inline
-void ::std::sort( t_dynarray_uchar& a, t_dynarray_uchar& b )
-{   a.swap(b);  }
-*/
-
 COID_NAMESPACE_BEGIN
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+    More complex UDP binstream class, partitioning stream to smaller packets
+    able to use compression on them.
+**/
 class netstreamudpbuf : public binstream
 {
 public:
@@ -282,7 +278,7 @@ public:
         _address = addr;
     }
 
-    void set_broadcast_addr( ushort port )
+    void set_broadcast_address( ushort port )
     {
         _socket.setBroadcast( true );
         _address.setBroadcast();

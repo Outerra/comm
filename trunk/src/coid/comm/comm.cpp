@@ -101,6 +101,7 @@ uints _Gmemused = 0;
 
 
 ////////////////////////////////////////////////////////////////////////////////
+///Only for concentrated debug point
 void *_xmemcpy( void *dest, const void *src, size_t count ) {
     return ::memcpy( dest, src, count );
 }
