@@ -215,7 +215,7 @@ public:
             _wrkbuf.need(dsz);
             int sz = lzo1x_decompress_safe( _recvbuf.ptr() + nocompressoffs + sizeof(ushort), _recvbuf.size() - nocompressoffs - sizeof(ushort),
                 _wrkbuf.ptr() + nocompressoffs, &dsz, 0 );
-            if( dsz != sz )  return false;
+            if( (int)dsz != sz )  return false;
 
             ::memcpy( _wrkbuf.ptr(), _recvbuf.ptr(), nocompressoffs );
 
