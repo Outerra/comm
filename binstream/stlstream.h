@@ -238,7 +238,7 @@ protected:
 
 template<class T, class A> inline binstream& operator << (binstream& out, const std::vector<T,A>& v)
 {
-    binstream_container_fixed_array<T> c( &v[0], v.size() );
+    binstream_container_fixed_array<T> c( v.empty() ? 0 : &v[0], v.size() );
     out.xwrite_array(c);
 	return out;
 }
