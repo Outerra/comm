@@ -44,7 +44,7 @@
 #include "dynarray.h"
 #include "radix.h"
 #include "assert.h"
-#include "alloc/chunkalloc.h"
+#include "alloc/chunkpage.h"
 #include "binstream/stlstream.h"
 //#include <malloc.h>
 #include <fstream>
@@ -630,7 +630,7 @@ private:
     uints               _nsegmapmax;    ///<max.number of segments to map
     uints               _swapsegcount;  ///<number of swapped segments
 
-    typedef chunk_allocator<void>       Tpage_allocator;
+    typedef chunkpage<void>             Tpage_allocator;
     Tpage_allocator     _segmem;        ///< allocator used to allocate segment structures
     
     void*               _stream_context;///<context value to pass to the streaming functions
