@@ -90,6 +90,20 @@
 #endif
 
 
+#ifdef SYSTYPE_MSVC
+# ifdef _WIN64
+#  define SYSTYPE_64
+# else
+#  define SYSTYPE_32
+# endif
+#else
+# ifdef __LP64__
+#  define SYSTYPE_64
+# else
+#  define SYSTYPE_32
+# endif
+#endif
+
 //#define _USE_32BIT_TIME_T
 #include <sys/types.h>
 #include <stddef.h>
@@ -143,6 +157,13 @@ typedef signed char         schar;
 typedef size_t              uints;
 typedef ptrdiff_t           ints;
 
+#ifdef SYSTYPE_64
+typedef uint64              uints_to;
+typedef int64               ints_to;
+#else
+typedef uint                uints_to;
+typedef int                 ints_to;
+#endif
 
 TYPE_TRIVIAL(bool);
 
@@ -220,12 +241,11 @@ struct INTBASE
     typedef uint    UNSIGNED;
 };
 
-template<>
-struct INTBASE<int64> { typedef int64   SIGNED;  typedef uint64  UNSIGNED; };
+template<> struct INTBASE<int64> { typedef int64   SIGNED;  typedef uint64  UNSIGNED; };
+template<> struct INTBASE<uint64> { typedef int64   SIGNED;  typedef uint64  UNSIGNED; };
 
-template<>
-struct INTBASE<uint64> { typedef int64   SIGNED;  typedef uint64  UNSIGNED; };
-
+template<> struct INTBASE<ints> { typedef ints_to   SIGNED;  typedef uints_to  UNSIGNED; };
+template<> struct INTBASE<uints> { typedef ints_to   SIGNED;  typedef uints_to  UNSIGNED; };
 
 ////////////////////////////////////////////////////////////////////////////////
 inline bool valid_int_range( int64 v, uint bytes )

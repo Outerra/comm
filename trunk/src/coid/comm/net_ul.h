@@ -207,7 +207,7 @@ inline float sysEndianBigFloat(float x) {
 class sysDynamicLibrary
 {
 #ifdef SYSTYPE_MSVC
-    int handle;
+    ints handle;
 #else
     void *handle ;
 #endif

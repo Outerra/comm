@@ -56,13 +56,13 @@ inline UINT nextpow2( UINT x )
 }
 
 template<>
-inline uints nextpow2<uints>( uints x )
+inline uints_to nextpow2<uints>( uints x )
 {
     if(!x)  return 1;
     --x;
     for( uint n=1; n<sizeof(x)*8; n<<=1 )
         x |= x>>n;
-    return ++x;
+    return (uints_to)++x;
 }
 
 
@@ -77,8 +77,8 @@ inline typename INTBASE<INT>::UNSIGNED align_value( INT uval, typename INTBASE<I
 
 
 /// Aligns value to given chunk size (enlarges to next chunk boundary)
-inline uints align_to_chunks( uints uval, uints usize )
-{ return (uval+usize-1)/usize; }
+inline uints_to align_to_chunks( uints uval, uints usize )
+{ return uints_to((uval+usize-1)/usize); }
 
 /// Aligns value to given chunk size (enlarges to next chunk boundary)
 inline uint64 align_to_chunks64( uint64 uval, uint64 usize )
@@ -86,8 +86,8 @@ inline uint64 align_to_chunks64( uint64 uval, uint64 usize )
 
 
 /// Aligns value to nearest multiplier of 2 pow rsize chunk size
-inline uints align_value_to_power2( uints uval, uchar rsize )
-{ return (uval+(1<<rsize)-1) &~ ((1UL<<rsize)-1); }
+inline uints_to align_value_to_power2( uints uval, uchar rsize )
+{ return uints_to((uval+(1<<rsize)-1) &~ ((1UL<<rsize)-1)); }
 
 /// Aligns value to nearest multiplier of 2 pow rsize chunk size
 inline uint64 align_value_to_power2_64( uint64 uval, uchar rsize )
@@ -95,8 +95,8 @@ inline uint64 align_value_to_power2_64( uint64 uval, uchar rsize )
 
 
 /// Aligns value to given chunk size (enlarges to next chunk boundary)
-inline uints align_to_chunks_pow2( uints uval, uchar rsize )
-{ return (uval+((1<<rsize)-1))>>rsize; }
+inline uints_to align_to_chunks_pow2( uints uval, uchar rsize )
+{ return uints_to((uval+((1<<rsize)-1))>>rsize); }
 
 /// Aligns value to given chunk size (enlarges to next chunk boundary)
 inline uint64 align_to_chunks_pow2_64( uint64 uval, uchar rsize )

@@ -42,54 +42,71 @@
 #include "retcodes.h"
 
 /** \file assert.h
-    This header defines following assert macros:
+    This header defines various assert macros. The assert macros normally log
+    the failed assertion to the assert.log file and throw exception
+    ersEXCEPTION afterwards.
 
+    DASSERT*    debug-build only assertions
+    EASSERT*    debug-build only assertion, but the expression alone gets evaluated in release build too
+    RASSERT*    release and debug assertions
 
-
+    *ASSERTX    provide additional text that will be logged upon failed assertion
+    *ASSERTE[X] provide custom exception value that will be thrown upon failed assertion
+    *ASSERTL[X] do not throw exceptions at all, only logs the failed assertion
+    ASSERT_RET  assert in debug build, log in release, on failed assertion causes return from function where used
 */
 COID_NAMESPACE_BEGIN
 
 
-#define LINESTR(L)  //#L
-
-
 ////////////////////////////////////////////////////////////////////////////////
-#define CLAIM(expr, ret)            if(!(expr)) return (ret)
-
 #define XASSERT_1(expr)             do{ if(expr) break;  opcd __assert_e =
 #define XASSERT_2                   if(__assert_e) throw __assert_e;
 
-#define RASSERT(expr)               XASSERT_1(expr) __rassert(0,ersEXCEPTION __FILE__ ":" LINESTR(__LINE__) " " #expr,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
-#define RASSERTX(expr,txt)          XASSERT_1(expr) __rassert(txt,ersEXCEPTION __FILE__ ":" LINESTR(__LINE__) " " #expr "\n" txt,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
+//@{ Runtime assertions
+#define RASSERT(expr)               XASSERT_1(expr) __rassert(0,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
+#define RASSERTX(expr,txt)          XASSERT_1(expr) __rassert(txt,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
 
-#define RASSERTE(expr,exc)          XASSERT_1(expr) __rassert(0,exc __FILE__ ":" LINESTR(__LINE__) " " #expr,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
-#define RASSERTXE(expr,txt,exc)     XASSERT_1(expr) __rassert(txt,exc __FILE__ ":" LINESTR(__LINE__) " " #expr "\n" txt,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
+#define RASSERTE(expr,exc)          XASSERT_1(expr) __rassert(0,exc,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
+#define RASSERTEX(expr,exc,txt)     XASSERT_1(expr) __rassert(txt,exc,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
+#define RASSERTXE(expr,exc,txt)     RASSERTEX(expr,exc,txt)
 
-#define RASSERTN(expr)              XASSERT_1(expr) __rassert(0,0,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
-#define RASSERTXN(expr,txt)         XASSERT_1(expr) __rassert(txt,0,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
-
+#define RASSERTL(expr)              XASSERT_1(expr) __rassert(0,0,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
+#define RASSERTLX(expr,txt)         XASSERT_1(expr) __rassert(txt,0,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
+#define RASSERTXL(expr,txt)         RASSERTLX(expr,txt)
+//@}
 
 ////////////////////////////////////////////////////////////////////////////////
 #ifdef _DEBUG
 
-#define DASSERT(expr)               XASSERT_1(expr) __rassert(0,ersEXCEPTION __FILE__ ":" LINESTR(__LINE__) " " #expr,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
-#define DASSERTX(expr,txt)          XASSERT_1(expr) __rassert(txt,ersEXCEPTION __FILE__ ":" LINESTR(__LINE__) " " #expr "\n" txt,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
+//@{ Debug-only assertions, release build doesn't see anything from it
+#define DASSERT(expr)               XASSERT_1(expr) __rassert(0,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
+#define DASSERTX(expr,txt)          XASSERT_1(expr) __rassert(txt,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
 
-#define DASSERTE(expr,exc)          XASSERT_1(expr) __rassert(0,exc __FILE__ ":" LINESTR(__LINE__) " " #expr,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
-#define DASSERTXE(expr,txt,exc)     XASSERT_1(expr) __rassert(txt,exc __FILE__ ":" LINESTR(__LINE__) " " #expr "\n" txt,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
+#define DASSERTE(expr,exc)          XASSERT_1(expr) __rassert(0,exc,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
+#define DASSERTEX(expr,exc,txt)     XASSERT_1(expr) __rassert(txt,exc,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
 
-#define DASSERTN(expr)              XASSERT_1(expr) __rassert(0,0,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
-#define DASSERTXN(expr,txt)         XASSERT_1(expr) __rassert(txt,0,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
+#define DASSERTL(expr)              XASSERT_1(expr) __rassert(0,0,__FILE__,__LINE__,#expr); } while(0)
+#define DASSERTLX(expr,txt)         XASSERT_1(expr) __rassert(txt,0,__FILE__,__LINE__,#expr); } while(0)
+//@}
 
+//@{ Debug assertion, but in release build the expression \a expr is still evaluated
+#define EASSERT(expr)               XASSERT_1(expr) __rassert(0,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
+#define EASSERTX(expr,txt)          XASSERT_1(expr) __rassert(txt,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
 
-#define EASSERT(expr)               XASSERT_1(expr) __rassert(0,ersEXCEPTION __FILE__ ":" LINESTR(__LINE__) " " #expr,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
-#define EASSERTX(expr,txt)          XASSERT_1(expr) __rassert(txt,ersEXCEPTION __FILE__ ":" LINESTR(__LINE__) " " #expr "\n" txt,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
+#define EASSERTE(expr,exc)          XASSERT_1(expr) __rassert(0,exc,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
+#define EASSERTEX(expr,exc,txt)     XASSERT_1(expr) __rassert(txt,exc,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
 
-#define EASSERTE(expr,exc)          XASSERT_1(expr) __rassert(0,exc __FILE__ ":" LINESTR(__LINE__) " " #expr,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
-#define EASSERTXE(expr,txt,exc)     XASSERT_1(expr) __rassert(txt,exc __FILE__ ":" LINESTR(__LINE__) " " #expr "\n" txt,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
+#define EASSERTL(expr)              XASSERT_1(expr) __rassert(0,0,__FILE__,__LINE__,#expr); } while(0)
+#define EASSERTLX(expr,txt)         XASSERT_1(expr) __rassert(txt,0,__FILE__,__LINE__,#expr); } while(0)
+//@}
 
-#define EASSERTN(expr)              XASSERT_1(expr) __rassert(0,0,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
-#define EASSERTXN(expr,txt)         XASSERT_1(expr) __rassert(txt,0,__FILE__,__LINE__,#expr); XASSERT_2 } while(0)
+//@{ Assert in debug, log in release, return \a ret on failed assertion
+#define ASSERT_RET(expr,ret)        XASSERT_1(expr) __rassert(0,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT_2 return ret; } while(0)
+#define ASSERT_RETVOID(expr)        XASSERT_1(expr) __rassert(0,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT_2 return; } while(0)
+
+#define DASSERT_RET(expr,ret)       ASSERT_RET(expr,ret)
+#define DASSERT_RETVOID(expr)       ASSERT_RETVOID(expr)
+//@}
 
 #else
 
@@ -97,21 +114,27 @@ COID_NAMESPACE_BEGIN
 #define DASSERTX(expr,txt)
 
 #define DASSERTE(expr,exc)
-#define DASSERTXE(expr,txt,exc)
+#define DASSERTEX(expr,exc,txt)
 
 #define DASSERTN(expr)
-#define DASSERTXN(expr,txt)
+#define DASSERTNX(expr,txt)
 
 
 #define EASSERT(expr)               expr
 #define EASSERTX(expr,txt)          expr
 
 #define EASSERTE(expr,exc)          expr
-#define EASSERTXE(expr,txt,exc)     expr
+#define EASSERTEX(expr,exc,txt)     expr
 
 #define EASSERTN(expr)              expr
-#define EASSERTXN(expr,txt)         expr
+#define EASSERTNX(expr,txt)         expr
 
+
+#define ASSERT_RET(expr,ret)        XASSERT_1(expr) __rassert(0,0,__FILE__,__LINE__,#expr); return ret; } while(0)
+#define ASSERT_RETVOID(expr)        XASSERT_1(expr) __rassert(0,0,__FILE__,__LINE__,#expr); return; } while(0)
+
+#define DASSERT_RET(expr,ret)
+#define DASSERT_RETVOID(expr)
 
 #endif //_DEBUG
 

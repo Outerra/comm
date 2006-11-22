@@ -256,14 +256,8 @@ public:
     const dynarray<uchar>& get_send_buffer() const  { return _sendbuf; }
 
 
-    netAddress& get_local_address( netAddress& addr ) const
-    {
-        return *_socket.getLocalAddress(&addr);
-        //return netAddress::getLocalHost( addr );
-    }
-
-
-    const netAddress& get_remote_address() const    { return _address; }
+    netAddress& get_local_address( netAddress* addr ) const { return *_socket.getLocalAddress(addr); }
+    const netAddress& get_remote_address() const            { return _address; }
 
     void set_remote_address( const token& addr, ushort port, bool portoverride )
     {

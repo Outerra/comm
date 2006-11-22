@@ -179,11 +179,6 @@ public:
     dynarray<uchar>& get_send_buffer()      { return _sendbuf; }
 
 
-    netAddress* get_local_address (netAddress* addr) const
-    {
-        return netAddress::getLocalHost( addr );
-    }
-
     ///Pack outgoing packet before send()
     ///@param nocompressoffs size at the beginning of the packet to left uncompressed
     void pack( uint nocompressoffs )
@@ -194,7 +189,7 @@ public:
             uchar tmpbuf[0x10000];
             uint dsz = ss + (ss / 16) + 64 + 3;
             _wrkbuf.need(dsz);
-            int sz = lzo1x_1_compress( _sendbuf.ptr() + nocompressoffs, _sendbuf.size() - nocompressoffs,
+            int sz = lzo1x_1_compress( _sendbuf.ptr() + nocompressoffs, (uint)_sendbuf.size() - nocompressoffs,
                 _wrkbuf.ptr() + nocompressoffs + sizeof(ushort), &dsz, tmpbuf );
             ::memcpy( _wrkbuf.ptr(), _sendbuf.ptr(), nocompressoffs );
             *(ushort*)(_wrkbuf.ptr()+nocompressoffs) = (ushort)sz;
@@ -213,7 +208,7 @@ public:
         {
             uint dsz = *(const ushort*)(_recvbuf.ptr()+nocompressoffs);
             _wrkbuf.need(dsz);
-            int sz = lzo1x_decompress_safe( _recvbuf.ptr() + nocompressoffs + sizeof(ushort), _recvbuf.size() - nocompressoffs - sizeof(ushort),
+            int sz = lzo1x_decompress_safe( _recvbuf.ptr() + nocompressoffs + sizeof(ushort), (uint)_recvbuf.size() - nocompressoffs - sizeof(ushort),
                 _wrkbuf.ptr() + nocompressoffs, &dsz, 0 );
             if( (int)dsz != sz )  return false;
 
@@ -248,7 +243,7 @@ protected:
 
     opcd send()
     {
-        int n = _socket.sendto( _sendbuf.ptr(), _sendbuf.size(), 0, &_address );
+        int n = _socket.sendto( _sendbuf.ptr(), (uint)_sendbuf.size(), 0, &_address );
         if( n == -1 )
             return ersFAILED "while sending data";
 
@@ -339,6 +334,9 @@ public:
         return 0;
     }
 
+
+    netAddress& get_local_address( netAddress* addr ) const { return *_socket.getLocalAddress(addr); }
+    const netAddress& get_remote_address() const            { return _address; }
 
     void set_remote_address( const token& addr, ushort port, bool portoverride )
     {
