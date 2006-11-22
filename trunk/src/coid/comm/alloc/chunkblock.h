@@ -158,7 +158,7 @@ public:
     {
         ints n = (char*)p-(char*)this;
         DASSERT( n >= (ints)sizeof(chunkblock)  &&  n < (ints)_totalsize );    //invalid pointer
-        ints m = (n<PAGESIZE) ? (n-sizeof(chunkblock)) : (n-sizeof(uints));
+        ints m = (n<(ints)PAGESIZE) ? (n-sizeof(chunkblock)) : (n-sizeof(uints));
         RASSERT( m%item.size == 0 );                                    //misaligned pointer
 
         *(uints*)p = _first;
