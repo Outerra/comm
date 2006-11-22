@@ -185,7 +185,7 @@ public:
 
     T* get_item( uints n ) const
     {
-        DASSERT( n*_itemsize < _pagesize );
+        DASSERT( n*item.size < _pagesize );
         return (T*)((char*)_mem + n*item.size);
     }
 
