@@ -389,15 +389,15 @@
 				>
 			</File>
 			<File
-				RelativePath="..\.\alloc\chunkalloc.h"
+				RelativePath="..\alloc\chunkalloc.h"
 				>
 			</File>
 			<File
-				RelativePath="..\.\alloc\segchunk.cpp"
+				RelativePath="..\alloc\chunkblock.h"
 				>
 			</File>
 			<File
-				RelativePath="..\.\alloc\segchunk.h"
+				RelativePath="..\alloc\chunkpage.h"
 				>
 			</File>
 			<File

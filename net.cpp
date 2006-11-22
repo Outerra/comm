@@ -161,7 +161,7 @@ sysDynamicLibrary::sysDynamicLibrary( const char* libname )
 
 bool sysDynamicLibrary::open( const char* libname )
 {
-    handle = (int) LoadLibrary( libname ) ;
+    handle = (ints) LoadLibrary( libname ) ;
     return handle != 0;
 }
 
@@ -484,7 +484,7 @@ netSocket::~netSocket()
     close();
 }
 
-void netSocket::setHandle( int _handle )
+void netSocket::setHandle( ints _handle )
 {
     close();
     handle = _handle;
@@ -500,14 +500,14 @@ bool
 netSocket::open ( bool stream )
 {
     close();
-    handle = ::socket ( AF_INET, (stream? SOCK_STREAM: SOCK_DGRAM), 0 ) ;
+    handle = ::socket( AF_INET, (stream? SOCK_STREAM: SOCK_DGRAM), 0 ) ;
     return (handle != -1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 void netSocket::setBlocking( bool blocking )
 {
-    DASSERTXE( handle != -1, "invalid handle", ersDISCONNECTED );
+    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
 
 #ifdef SYSTYPE_MSVC
 
@@ -529,7 +529,7 @@ void netSocket::setBlocking( bool blocking )
 ////////////////////////////////////////////////////////////////////////////////
 void netSocket::setBroadcast( bool broadcast )
 {
-    DASSERTXE( handle != -1, "invalid handle", ersDISCONNECTED );
+    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     int result;
     int one = 1;
 #ifdef SYSTYPE_WIN32
@@ -537,13 +537,13 @@ void netSocket::setBroadcast( bool broadcast )
 #else
     result = ::setsockopt( handle, SOL_SOCKET, SO_BROADCAST, &one, sizeof(one) );
 #endif
-    DASSERTXE ( result != -1, "failed", ersFE_EXCEPTION );
+    DASSERTE( result != -1, ersFAILED );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 void netSocket::setBuffers( uint rsize, uint wsize )
 {
-    DASSERTXE( handle != -1, "invalid handle", ersDISCONNECTED );
+    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     int result;
 #ifdef SYSTYPE_WIN32
     if(rsize)
@@ -556,13 +556,13 @@ void netSocket::setBuffers( uint rsize, uint wsize )
     if(wsize)
         result = ::setsockopt( handle, SOL_SOCKET, SO_SNDBUF, &wsize, sizeof(wsize) );
 #endif
-    DASSERTXE ( result != -1, "failed", ersFE_EXCEPTION );
+    DASSERTE( result != -1, ersFAILED );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 void netSocket::setNoDelay( bool nodelay )
 {
-    DASSERTXE( handle != -1, "invalid handle", ersDISCONNECTED );
+    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     int result;
 
     int one = nodelay;
@@ -576,7 +576,7 @@ void netSocket::setNoDelay( bool nodelay )
 ////////////////////////////////////////////////////////////////////////////////
 void netSocket::setReuseAddr( bool reuse )
 {
-    DASSERTXE( handle != -1, "invalid handle", ersDISCONNECTED );
+    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     int result;
 
     int one = reuse;
@@ -590,7 +590,7 @@ void netSocket::setReuseAddr( bool reuse )
 ////////////////////////////////////////////////////////////////////////////////
 void netSocket::setLinger( bool blinger, ushort sec )
 {
-    DASSERTXE( handle != -1, "invalid handle", ersDISCONNECTED );
+    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     int result;
 
     struct linger lg;
@@ -607,7 +607,7 @@ void netSocket::setLinger( bool blinger, ushort sec )
 ////////////////////////////////////////////////////////////////////////////////
 int netSocket::bind( const char* host, int port )
 {
-    DASSERTXE( handle != -1, "invalid handle", ersDISCONNECTED );
+    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     netAddress addr ( host, port, true ) ;
     return ::bind(handle,(const sockaddr*)&addr,sizeof(netAddress));
 }
@@ -615,14 +615,14 @@ int netSocket::bind( const char* host, int port )
 ////////////////////////////////////////////////////////////////////////////////
 int netSocket::listen( int backlog )
 {
-    DASSERTXE( handle != -1, "invalid handle", ersDISCONNECTED );
+    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     return ::listen(handle,backlog);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int netSocket::accept( netAddress* addr )
+ints netSocket::accept( netAddress* addr )
 {
-    DASSERTXE( handle != -1, "invalid handle", ersDISCONNECTED );
+    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     socklen_t addr_len = (socklen_t) sizeof(netAddress) ;
     return ::accept(handle,(sockaddr*)addr,&addr_len);
 }
@@ -630,7 +630,7 @@ int netSocket::accept( netAddress* addr )
 ////////////////////////////////////////////////////////////////////////////////
 int netSocket::connect( const char* host, int port )
 {
-    DASSERTXE( handle != -1, "invalid handle", ersDISCONNECTED );
+    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     netAddress addr ( host, port, false ) ;
     if ( addr.getBroadcast() ) {
         setBroadcast( true );
@@ -641,7 +641,7 @@ int netSocket::connect( const char* host, int port )
 ////////////////////////////////////////////////////////////////////////////////
 int netSocket::connect( const netAddress& addr )
 {
-    DASSERTXE( handle != -1, "invalid handle", ersDISCONNECTED );
+    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     if ( addr.getBroadcast() ) {
         setBroadcast( true );
     }
@@ -651,28 +651,28 @@ int netSocket::connect( const netAddress& addr )
 ////////////////////////////////////////////////////////////////////////////////
 int netSocket::send( const void * buffer, int size, int flags )
 {
-    DASSERTXE( handle != -1, "invalid handle", ersDISCONNECTED );
+    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     return ::send (handle, (const char*)buffer, size, flags);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 int netSocket::sendto( const void * buffer, int size, int flags, const netAddress* to )
 {
-    DASSERTXE( handle != -1, "invalid handle", ersDISCONNECTED );
+    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     return ::sendto(handle,(const char*)buffer,size,flags,(const sockaddr*)to,sizeof(netAddress));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 int netSocket::recv( void * buffer, int size, int flags )
 {
-    DASSERTXE( handle != -1, "invalid handle", ersDISCONNECTED );
+    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     return ::recv (handle, (char*)buffer, size, flags);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 int netSocket::recvfrom( void * buffer, int size, int flags, netAddress* from )
 {
-    DASSERTXE( handle != -1, "invalid handle", ersDISCONNECTED );
+    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     socklen_t fromlen = (socklen_t) sizeof(netAddress) ;
     return ::recvfrom(handle,(char*)buffer,size,flags,(sockaddr*)from,&fromlen);
 }
@@ -785,7 +785,7 @@ int netSocket::select( netSocket** reads, netSocket** writes, int timeout )
     if (reads)
         for ( i=0; reads[i]; i++ )
         {
-            int fd = reads[i]->getHandle();
+            ints fd = reads[i]->getHandle();
             DASSERT( fd != -1 );
             FD_SET (fd, &r);
             num++;
@@ -794,7 +794,7 @@ int netSocket::select( netSocket** reads, netSocket** writes, int timeout )
     if (writes)
         for ( i=0; writes[i]; i++ )
         {
-            int fd = writes[i]->getHandle();
+            ints fd = writes[i]->getHandle();
             DASSERT( fd != -1 );
             FD_SET (fd, &w);
             num++;
@@ -827,7 +827,7 @@ int netSocket::select( netSocket** reads, netSocket** writes, int timeout )
     {
         for ( k=i=0; reads[i]; i++ )
         {
-            int fd = reads[i]->getHandle();
+            ints fd = reads[i]->getHandle();
             if (FD_ISSET (fd, &r)) {
                 reads[k++] = reads[i];
                 num++;
@@ -840,7 +840,7 @@ int netSocket::select( netSocket** reads, netSocket** writes, int timeout )
     {
         for ( k=i=0; writes[i]; i++ )
         {
-            int fd = writes[i]->getHandle();
+            ints fd = writes[i]->getHandle();
             if (FD_ISSET (fd, &w)) {
                 writes[k++] = writes[i];
                 num++;

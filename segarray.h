@@ -630,7 +630,8 @@ private:
     uints               _nsegmapmax;    ///<max.number of segments to map
     uints               _swapsegcount;  ///<number of swapped segments
 
-    chunkalloc          _segmem;        ///< allocator used to allocate segment structures
+    typedef chunk_allocator<void>       Tpage_allocator;
+    Tpage_allocator     _segmem;        ///< allocator used to allocate segment structures
     
     void*               _stream_context;///<context value to pass to the streaming functions
     fnc_stream          _fnc_stream_out;///<function for streaming out a segment
@@ -1721,7 +1722,7 @@ public:
         if( _nsegmapped >= _nsegmapmax )
             unmap();
 
-        return _segmem.init( 1<<_rsegsize, size<<_rsegsize );
+        return _segmem.init( size<<_rsegsize, 1<<_rsegsize );
     }
 
     uints get_max_memory() const

@@ -38,7 +38,6 @@
 #include "alloc.h"
 #include "../sync/mutex.h"
 #include "../assert.h"
-#include "segchunk.h"
 
 #include "../dynarray.h"
 
@@ -93,7 +92,7 @@ void seg_allocator::discard()
         delete p->spage;
         page* pp = p;
         p = p->prev;
-        SINGLETON( segchunker<page> ).free(pp);
+        SINGLETON( chunk_allocator<page> ).free(pp);
     }
 
     _nseg = 0;
@@ -129,7 +128,7 @@ opcd seg_allocator::load( binstream& bin, void* dynarray_ald )
     page* p=0;
     for( ; ; )
     {
-        page* n = SINGLETON( segchunker<page> ).alloc();
+        page* n = SINGLETON( chunk_allocator<page> ).alloc();
         n->prev = p;
         n->spage = ssegpage::create( _pgcreatemutex.is_set(), _segsize );
 
@@ -223,7 +222,7 @@ seg_allocator::HEADER* seg_allocator::alloc( uints count, uints chunk )
             }
         }
 
-        page* pn = SINGLETON( segchunker<page> ).alloc();
+        page* pn = SINGLETON( chunk_allocator<page> ).alloc();
         pn->spage = ssegpage::create( _pgcreatemutex.is_set(), _segsize );
 
         // allocate the memory

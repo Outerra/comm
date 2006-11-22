@@ -624,8 +624,11 @@ protected:
         _tcache << "Date: " << date << "\r\n";
 
 
-        static token _SSID( "Set-Cookie: sessioncoid=" );
+        static token _SSID_COOKIE( "Set-Cookie: sessioncoid=" );
+        static token _SSID( "Session-Coid: " );
         if( (_flags & fSETSESSION) && _hdr->_ssid ) {
+            _tcache << _SSID_COOKIE << _hdr->_ssid;
+            _tcache << "\r\n";
             _tcache << _SSID << _hdr->_ssid;
             _tcache << "\r\n";
             _flags &= ~fSETSESSION;

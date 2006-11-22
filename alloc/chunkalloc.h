@@ -40,122 +40,74 @@
 
 #include "../namespace.h"
 
+#include "../sync/mutex.h"
 #include "../commtypes.h"
+#include "chunkblock.h"
 
 COID_NAMESPACE_BEGIN
 
 
-////////////////////////////////////////////////////////////////////////////////
-///Allocator class that manages memory blocks of fixed size within one memory page.
-/// The items are referenced by void pointers. Each item has an unique id and is
-/// obtainable through it.
-class chunkalloc
-{
-    uints _first;
-    uints _itemsize;
-    uints _pagesize;
-    uints _numfree;
 
-    void* _mem;
+////////////////////////////////////////////////////////////////////////////////
+///Allocator of typed chunks. Size of blocks to be managed is obtained from sizeof(T)
+template<class T, class CHPAGE=chunkblock<T> >
+class chunk_allocator
+{
+    struct page
+    {
+        CHPAGE* chunk;
+        page*   prev;
+    };
+
+    page* _last;
+
+    ElementSizeInfo<T> item;
+    mutable comm_mutex _mutex;
 
 public:
 
-    void reset()
+    chunk_allocator()
     {
-        _first = 0;
-        if(_itemsize)
-            _numfree = _pagesize/_itemsize;
-        else
-            _numfree = 0;
-
-		if( _mem ) {
-			uchar* p = (uchar*)_mem;
-			uints a;
-			for( a=0; a<_pagesize; a+=_itemsize )
-			{
-				uints* pn = (uints*)(p+a);
-				*pn = a + _itemsize;
-			}
-
-			a -= _itemsize;
-			*(uints*)(p+a) = UMAX;
-		}
+        _last = 0;
+		_mutex.set_name( "chunk_allocator" );
     }
 
-    chunkalloc()
+    T* alloc()
     {
-        _pagesize = _itemsize = 0;
-        _mem = 0;
-        _first = _numfree = 0;
+        GUARDME;
+
+        for( page* p=_last; p; p=p->prev )
+        {
+            void* pv = p->chunk->alloc();
+            if(pv)  return item.create(pv);
+        }
+
+        page* pn = new page;
+        pn->prev = _last;
+        pn->chunk = CHPAGE::create((uint)item.size);
+        _last = pn;
+
+        void* t = pn->chunk->alloc();
+        return item.create(t);
     }
 
-    ~chunkalloc()
+    static void free( T* p )
     {
-        if(_mem)
-            ::free(_mem);
+        RASSERT(p);
+        CHPAGE* seg = CHPAGE::get_segchunk(p);
+        p->~T();
+        seg->free(p);
     }
 
-    opcd init( uints itemsize, uints pagesize )
+    bool check( T* p ) const
     {
-        if(_mem)
-            ::free(_mem);
-
-        _mem = ::malloc(pagesize);
-        if(!_mem)
-            return ersNOT_ENOUGH_MEM;
-
-        _pagesize = pagesize;
-        _itemsize = itemsize;
-        _first = 0;
-
-        reset();
-        return 0;
+        CHPAGE* seg = CHPAGE::get_segchunk(p);
+        for( page* pg=_last; pg; pg=pg->prev )
+            if( pg->chunk == seg )  return true;
+        return false;
     }
-    
-
-    void* alloc()
-    {
-        if( _numfree == 0 )
-            return 0;
-
-        uints* pn = (uints*) ( (char*)_mem + _first );
-
-        _first = *pn;
-        --_numfree;
-
-        return pn;
-    }
-
-    void free( void* p )
-    {
-        uints n = (char*)p - (char*)_mem;
-        RASSERT( n < _pagesize );
-        RASSERTX( ( n % _itemsize ) == 0, "invalid pointer" );
-
-        *(uints*)p = _first;
-        _first = n;
-
-        ++_numfree;
-    }
-
-    void* get_item( uints n ) const
-    {
-        DASSERT( n*_itemsize < _pagesize );
-        return ((char*)_mem + n*_itemsize);
-    }
-
-    uints get_item_id( const void* p ) const
-    {
-        uints id = (char*)p - (char*)_mem;
-        DASSERT( id < _pagesize );
-        return id / _itemsize;
-    }
-
-    uints get_itemsize() const   { return _itemsize; }
 };
-
 
 COID_NAMESPACE_END
 
 #endif //#ifndef __COID_COMM_CHUNKALLOC__HEADER_FILE__
-

@@ -390,8 +390,8 @@ public:
     metastream& operator << (const char&a)                  {meta_primitive( "char", get_type(a) ); return *this;}
 
 #ifdef _MSC_VER
-    metastream& operator << (const int&a)                   {meta_primitive( "int", get_type(a) ); return *this;}
-    metastream& operator << (const uint&a)                  {meta_primitive( "uint", get_type(a) ); return *this;}
+    metastream& operator << (const ints&a)                  {meta_primitive( "int", get_type(a) ); return *this;}
+    metastream& operator << (const uints&a)                 {meta_primitive( "uint", get_type(a) ); return *this;}
 #else
     metastream& operator << (const long&a)                  {meta_primitive( "long", get_type(a) ); return *this;}
     metastream& operator << (const ulong&a)                 {meta_primitive( "ulong", get_type(a) ); return *this;}
