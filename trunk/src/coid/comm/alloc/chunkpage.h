@@ -174,7 +174,7 @@ public:
     void free( T* p )
     {
         ints n = (char*)p - (char*)_mem;
-        DASSERT( n>=0  &&  n < _pagesize ); //out of page range
+        DASSERT( n>=0  &&  n < (ints)_pagesize ); //out of page range
         DASSERT( n%item.size == 0 );        //misaligned pointer
 
         *(uints*)p = _first;

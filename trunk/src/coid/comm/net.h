@@ -232,7 +232,7 @@ public:
     ~netSocket();
 
     ints getHandle () const { return handle; }
-    void setHandle (int handle) ;
+    void setHandle (ints handle) ;
     void setHandleInvalid () ;
 
     bool isValid () const     { return handle != -1; }
