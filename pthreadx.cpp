@@ -248,7 +248,7 @@ void* thread_key::get() const
 thread_semaphore::thread_semaphore( uint initial )
 {
 #ifdef SYSTYPE_WIN32
-    _handle = (uint)CreateSemaphore( 0, initial, initial, 0 );
+    _handle = (uints)CreateSemaphore( 0, initial, initial, 0 );
 #else
     _handle = new sem_t;
     RASSERT( 0 == sem_init( _handle, false, initial ) );
@@ -260,7 +260,7 @@ thread_semaphore::thread_semaphore( uint initial )
 thread_semaphore::thread_semaphore( NOINIT_t )
 {
 #ifdef SYSTYPE_WIN32
-    _handle = (uint)INVALID_HANDLE_VALUE;
+    _handle = (uints)INVALID_HANDLE_VALUE;
 #else
     _init = 0;
 #endif
@@ -270,7 +270,7 @@ thread_semaphore::thread_semaphore( NOINIT_t )
 thread_semaphore::~thread_semaphore()
 {
 #ifdef SYSTYPE_WIN32
-    if( _handle != (uint)INVALID_HANDLE_VALUE )
+    if( _handle != (uints)INVALID_HANDLE_VALUE )
         CloseHandle( (HANDLE)_handle );
 #else
     if(_init)
@@ -283,9 +283,9 @@ thread_semaphore::~thread_semaphore()
 bool thread_semaphore::init( uint initial )
 {
 #ifdef SYSTYPE_WIN32
-    if( _handle != (uint)INVALID_HANDLE_VALUE )
+    if( _handle != (uints)INVALID_HANDLE_VALUE )
         return false;
-    _handle = (uint)CreateSemaphore( 0, initial, initial, 0 );
+    _handle = (uints)CreateSemaphore( 0, initial, initial, 0 );
 #else
     if(_init)
         return false;
