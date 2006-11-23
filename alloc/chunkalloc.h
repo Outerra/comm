@@ -50,12 +50,14 @@ COID_NAMESPACE_BEGIN
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Allocator of typed chunks. Size of blocks to be managed is obtained from sizeof(T)
-template<class T, class CHPAGE=chunkblock<T> >
+template<class T>
 class chunk_allocator
 {
+    typedef chunkblock<T,comm_mutex>    block;
+
     struct page
     {
-        CHPAGE* chunk;
+        block*  chunk;
         page*   prev;
     };
 
@@ -76,32 +78,35 @@ public:
     {
         GUARDME;
 
+        void* pv;
         for( page* p=_last; p; p=p->prev )
         {
-            void* pv = p->chunk->alloc();
+            {GUARDTHIS(p->chunk->ext.member); pv = p->chunk->alloc();}
             if(pv)  return item.create(pv);
         }
 
         page* pn = new page;
         pn->prev = _last;
-        pn->chunk = CHPAGE::create((uint)item.size);
+        pn->chunk = block::create((uint)item.size);
         _last = pn;
 
-        void* t = pn->chunk->alloc();
-        return item.create(t);
+        {GUARDTHIS(pn->chunk->ext.member); pv = pn->chunk->alloc();}
+        return item.create(pv);
     }
 
     static void free( T* p )
     {
-        RASSERT(p);
-        CHPAGE* seg = CHPAGE::get_segchunk(p);
+        ASSERT_RETVOID(p);
+        block* page = block::get_segchunk(p);
         p->~T();
-        seg->free(p);
+
+        GUARDTHIS(page->ext.member);
+        page->free(p);
     }
 
     bool check( T* p ) const
     {
-        CHPAGE* seg = CHPAGE::get_segchunk(p);
+        block* seg = block::get_segchunk(p);
         for( page* pg=_last; pg; pg=pg->prev )
             if( pg->chunk == seg )  return true;
         return false;

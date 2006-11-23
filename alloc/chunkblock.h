@@ -71,13 +71,10 @@ class chunkblock
     ints _mode;                 ///< contains either non-negative value pointing to the first free chunk or -1 when working as list
     uints _totalsize;           ///< total size of used memory, PAGESIZE * npages created
     ElementSizeInfo<T> item;    ///< item size info, takes no space for non-void T
-    ExtendClassMember<T> ext;   ///< space to reserve for extended member
-/*
-    enum {
-        rPAGESIZE               = 12,
-        PAGESIZE                = 1 << rPAGESIZE,
-    };
-*/
+public:
+    ExtendClassMember<EXTEND> ext;   ///< space to reserve for extended member
+
+private:
     chunkblock() {}
 
     void construct( uint size, uints totalmem )
@@ -94,7 +91,7 @@ class chunkblock
     {
         _me = this;
         _numfree = (PAGESIZE - _first) / item.size;
-        _mode = align_value( sizeof(chunkblock), (uint)item.size );
+        _mode = align_value( sizeof(chunkblock), sizeof(uint64) );
         _first = 0;
     }
 
@@ -105,12 +102,20 @@ public:
     {
         DASSERT( IS_2_POW_N(PAGESIZE) );    //keep PAGESIZE a power of 2
         uints totalmem = pages*PAGESIZE;
-        chunkblock* p = (chunkblock*)memaligned_alloc( totalmem, PAGESIZE );
+        chunkblock* p = new(totalmem) chunkblock;
         p->construct(itemsize,totalmem);
         return p;
     }
 
-    void operator delete(void *ptr)
+    void destroy()
+    {
+        delete(_totalsize) this;
+    }
+
+    void* operator new (uints size, uints total )
+    {   return memaligned_alloc( total, PAGESIZE ); }
+
+    void operator delete (void *ptr, uints )
     {   memaligned_free( ptr ); }
 
     ///Get chunkblock structure where the \a p pointer would lie
@@ -132,10 +137,11 @@ public:
             else
             {
                 //skip PAGESIZE boundaries if needed
-                uints m = (_mode+sizeof(uints))%PAGESIZE;
+                uints m = (_mode+item.size)%PAGESIZE;
                 if( m <= item.size ) {
+                    _mode += item.size;
                     uints pb = _mode & ~(PAGESIZE-1);
-                    _mode = pb + sizeof(uints);
+                    _mode = pb + sizeof(uint64);
                     *(uints*)((char*)this+pb) = (uints)this;    //point to structure header on the page boundaries
                 }
             }
@@ -157,9 +163,10 @@ public:
     void free( T* p )
     {
         ints n = (char*)p-(char*)this;
-        DASSERT( n >= (ints)sizeof(chunkblock)  &&  n < (ints)_totalsize );    //invalid pointer
-        ints m = (n<(ints)PAGESIZE) ? (n-sizeof(chunkblock)) : (n-sizeof(uints));
-        RASSERT( m%item.size == 0 );                                    //misaligned pointer
+        DASSERT_RETVOID( n >= (ints)sizeof(chunkblock)  &&  n < (ints)_totalsize );    //invalid pointer
+
+        ints m = (n<(ints)PAGESIZE) ? (n-align_value(sizeof(chunkblock),sizeof(uint64))) : (n-sizeof(uint64));
+        DASSERT_RETVOID( m%item.size == 0 );                                    //misaligned pointer
 
         *(uints*)p = _first;
         _first = n;
