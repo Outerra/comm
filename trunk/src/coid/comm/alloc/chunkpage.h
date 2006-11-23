@@ -67,7 +67,7 @@ struct ElementSizeInfo<void>
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Template allowing to extend allocator classes with additional members (for locking etc.)
-template<class T> struct ExtendClassMember { typedef T Type; T extend; };
+template<class T> struct ExtendClassMember { typedef T Type; T member; };
 
 ///Specialization for void that doesn't insert anything
 template<> struct ExtendClassMember<void>  { typedef void Type; };
