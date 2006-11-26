@@ -299,9 +299,9 @@ public:
 
 
     ///return the last character
-    char last_char() const                      { uints n = len();  return n ? _tstr[n-1] : 0; }
+    char last_char() const                      { uints n=len(); return n ? _tstr[n-1] : 0; }
     char first_char() const                     { return _tstr.size() ? _tstr[0] : 0; }
-    char nth_char( ints n ) const               { uints s=_tstr.size(); return n<0 ? ((uints)-n<=s  ?  _tstr._ptr[s+n] : 0) : ((uints)n<s  ?  _tstr._ptr[n] : 0); } 
+    char nth_char( ints n ) const               { uints s=len(); return n<0 ? ((uints)-n<=s  ?  _tstr._ptr[s+n] : 0) : ((uints)n<s  ?  _tstr._ptr[n] : 0); } 
 
 
     static uints count_notingroup( const char* str, const char* sep )
