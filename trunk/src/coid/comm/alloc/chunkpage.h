@@ -82,9 +82,9 @@ template<class T>
 class chunkpage
 {
     void* _mem;
-    uints _first;               ///< first free chunk offset or zero when none free
+    ints _first;                ///< first free chunk offset or zero when none free
     uint _numfree;              ///< number of free chunks
-    ints _mode;                 ///< contains either non-negative value pointing to the first free chunk or -1 when working as list
+    ints _used;                 ///< contains either non-negative value pointing to the first free chunk or -1 when working as list
     uints _pagesize;
 
     ElementSizeInfo<T> item;
@@ -97,13 +97,13 @@ public:
 
     void reset()
     {
-        _first = UMAX;
+        _first = -1;
         if(item.size)
             _numfree = _pagesize/item.size;
         else
             _numfree = 0;
 
-        _mode = 0;              //direct mode initially
+        _used = 0;              //direct mode initially
     }
 
     chunkpage()
@@ -153,12 +153,12 @@ public:
             return 0;
 
         T* p;
-        if( _mode >= 0 )    //working in direct mode
+        if( _first < 0 )    //working in direct mode
         {
-            p = (T*)((char*)_mem + _mode);
-            _mode += item.size;
-            if( (uints)_mode > _pagesize-item.size )    //out of direct memory, switch to the list mode
-                _mode = -1;
+            p = (T*)((char*)_mem + _used);
+            _used += item.size;
+            if( (uints)_used > _pagesize-item.size )    //out of direct memory, switch to the list mode
+                _used = -1;
         }
         else
         {

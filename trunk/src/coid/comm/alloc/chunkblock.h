@@ -65,10 +65,10 @@ COID_NAMESPACE_BEGIN
 template<class T, class EXTEND=void, unsigned PAGESIZE=8192>
 class chunkblock
 {
-    chunkblock* _me;       ///< copy of this pointer
+    chunkblock* _me;            ///< copy of this pointer
     uints _first;               ///< first free chunk offset or zero when none free
     uint _numfree;              ///< number of free chunks
-    ints _mode;                 ///< contains either non-negative value pointing to the first free chunk or -1 when working as list
+    ints _used;                 ///< first never used chunk number or -1 when all already used
     uints _totalsize;           ///< total size of used memory, PAGESIZE * npages created
     ElementSizeInfo<T> item;    ///< item size info, takes no space for non-void T
 public:
@@ -84,14 +84,13 @@ private:
         DASSERT( size*16 < PAGESIZE );      //too big element or ineffective for this page size
         item.set_size(size);
         reset();
-	    //_mx.set_name( "chunkblock" );
     }
 
     void reset()
     {
         _me = this;
         _numfree = (PAGESIZE - _first) / item.size;
-        _mode = align_value( sizeof(chunkblock), sizeof(uint64) );
+        _used = align_value( sizeof(chunkblock), sizeof(uint64) );
         _first = 0;
     }
 
@@ -128,20 +127,20 @@ public:
             return 0;
 
         T* p;
-        if( _mode >= 0 )    //working in direct mode
+        if(!_first)    //working in direct mode
         {
-            p = (T*)((char*)this + _mode);
-            _mode += item.size;
-            if( (uints)_mode > _totalsize-item.size )    //out of direct memory, switch to the list mode
-                _mode = -1;
+            p = (T*)((char*)this + _used);
+            _used += item.size;
+            if( (uints)_used > _totalsize-item.size )    //out of direct memory, switch to the list mode
+                _used = -1;
             else
             {
                 //skip PAGESIZE boundaries if needed
-                uints m = (_mode+item.size)%PAGESIZE;
+                uints m = (_used+item.size)%PAGESIZE;
                 if( m <= item.size ) {
-                    _mode += item.size;
-                    uints pb = _mode & ~(PAGESIZE-1);
-                    _mode = pb + sizeof(uint64);
+                    _used += item.size;
+                    uints pb = _used & ~(PAGESIZE-1);
+                    _used = pb + sizeof(uint64);
                     *(uints*)((char*)this+pb) = (uints)this;    //point to structure header on the page boundaries
                 }
             }
