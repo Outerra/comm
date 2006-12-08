@@ -202,7 +202,7 @@ public:
 
                 token h1 = h.cut_left(':',1);
                 h.skip_char(' ');
-
+/*
                 if( h1.cmpeqi("Cookie") )
                 {
                     uint64 ssid=0;
@@ -234,6 +234,11 @@ public:
 
                     if(bset && ssid!=0)
                         _ssid = ssid;
+                }
+                */
+                if( h1.cmpeqi("Session-Coid") )
+                {
+                    _ssid = h.touint64();
                 }
                 else if( h1.cmpeqi("TE")  ||  h1.cmpeqi("Transfer-Encoding") )
                 {
@@ -627,8 +632,8 @@ protected:
         static token _SSID_COOKIE( "Set-Cookie: sessioncoid=" );
         static token _SSID( "Session-Coid: " );
         if( (_flags & fSETSESSION) && _hdr->_ssid ) {
-            _tcache << _SSID_COOKIE << _hdr->_ssid;
-            _tcache << "\r\n";
+            //_tcache << _SSID_COOKIE << _hdr->_ssid;
+            //_tcache << "\r\n";
             _tcache << _SSID << _hdr->_ssid;
             _tcache << "\r\n";
             _flags &= ~fSETSESSION;
