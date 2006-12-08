@@ -64,9 +64,9 @@ namespace coid {
 //#define CHECK_OVERLAP
 
 ////////////////////////////////////////////////////////////////////////////////
-void* ssegpage::operator new ( size_t, uint segsize )
+void* ssegpage::operator new ( size_t, uints segsize )
 {
-    segsize = (uint)nextpow2(segsize);
+    segsize = nextpow2(segsize);
     uchar r = ssegpage::block::get_granularity_shift_from_pagesize(segsize);
     return memaligned_alloc( segsize, 1<<r );
 }
@@ -78,12 +78,12 @@ void ssegpage::operator delete (void * ptr, uint segsize )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-ssegpage::ssegpage( bool mutex, uint segsize )
+ssegpage::ssegpage( bool mutex, uints segsize )
 {
     _me = this;
     _used = 0;
 
-    segsize = (uint)nextpow2(segsize);
+    segsize = nextpow2(segsize);
     _rsegsize = getpow2( segsize );
     _ralign = ssegpage::block::get_granularity_shift_from_rpagesize((uchar)_rsegsize);
 
@@ -238,10 +238,10 @@ ssegpage::block* ssegpage::alloc (
     fblock* pblockf = _freesm;
     for( ; pblockf  &&  pblockf->get_size() < size; pblockf = pblockf->_bigger );
 
-    DASSERTX( pblockf, "internal structures damaged" );
+    DASSERTX( pblockf, "internal ssegpage structures damaged" );
     DASSERT( !pblockf->is_base_set() );
 
-    //exclude from free chain
+    //exclude from the free chain
     uint os = pblockf->get_size();
     bool split = os - size >= uint(MINBLOCKSIZEGRAN << _ralign);
     
@@ -307,7 +307,7 @@ ssegpage::block* ssegpage::realloc (
 ////////////////////////////////////////////////////////////////////////////////
 ssegpage::block* ssegpage::_realloc (
         block* bi,           ///<structure specifying offset and page of the block, gets new block's size
-        uint rqsize,
+        uints rqsize,
         bool keep_content
         )
 {
@@ -318,12 +318,12 @@ ssegpage::block* ssegpage::_realloc (
 
     IFGUARD;
 
-    uint size = align_size( rqsize + sizeof(fblock) );
+    uints size = align_size( rqsize + sizeof(fblock) );
     if( !_freebg  ||  size > _freebg->get_size() )
         return 0;
 
 
-    uint uoldbs = bi->get_size();
+    uints uoldbs = bi->get_size();
     if( uoldbs >= size )
     {
         if( uoldbs >= 2*size )
@@ -340,7 +340,7 @@ ssegpage::block* ssegpage::_realloc (
         return bi;
     }
 
-    uint unbs = uoldbs;
+    uints unbs = uoldbs;
 
     fblock *fl=0, *fu=0;
 

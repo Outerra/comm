@@ -75,40 +75,40 @@ class EmptyTail {
 //Fw
 #ifndef SYSTYPE_MSVC
 template<class T, class TAIL> class segarray;
-template<class T, class TAIL> binstream& operator << (binstream&, const segarray<T,TAIL>& );
-template<class T, class TAIL> binstream& operator >> (binstream&, segarray<T,TAIL>& );
+template<class T, class TAIL> binstream& operator << (binstream&, const segarray<T,TAIL,UIDX>& );
+template<class T, class TAIL> binstream& operator >> (binstream&, segarray<T,TAIL,UIDX>& );
 #endif //SYSTYPE_MSVC
 
 ///Segmented array
-template <class T, class TAIL = EmptyTail>
+template <class T, class TAIL = EmptyTail, class UIDX=uint>
 class segarray
 {
 public:
     struct segment;
 	struct ptr;
 
-    struct PERSIST
+    struct Persist
     {
-        segarray<T,TAIL>* array;
+        segarray<T,TAIL,UIDX>* array;
 
         void* context;                  ///< context pointer
         void* segdata;                  ///< pointer to raw segment start
-        uints segsize;                  ///< raw segment size
+        uint segsize;                   ///< raw segment size
 
         T*   data;                      ///< ptr to useful data in the segment
-        uints chunksize;                ///< size of one element in bytes (for dynamic TAILs)
-        uints first;                     ///< index of the first element in the segment
-        uints count;                     ///< number of useful elements in the segment
+        uint chunksize;                 ///< size of one element in bytes (for dynamic TAILs)
+        UIDX first;                     ///< index of the first element in the segment
+        uint count;                     ///< number of useful elements in the segment
 
-        uints segmentno;                 ///< segment ordinal
-        uints fileblock;                 ///< file block number the segment should be persisted to
+        uint segmentno;                 ///< segment ordinal
+        uint fileblock;                 ///< file block number the segment should be persisted to
 
         bool bdestroy;                  ///< set if the segment is going to be destroyed after saving
         bool bprimeload;                ///< set if the segment is to be loaded from persistent storage (1st time load)
     };
 
     ///stream function prototype
-    typedef opcd (*fnc_stream)( const PERSIST& arg );
+    typedef opcd (*fnc_stream)( const Persist& arg );
 
     COIDNEWDELETE
 
@@ -135,19 +135,19 @@ public:
         friend class segarray;
 		friend struct ptr;
     private:
-        char*       _pseg;                      ///<segment start
-        uints        _usdpos;                   ///<used block position
-        uints        _begidx;                   ///<first item global index
-        uints        _nitems;                   ///<no.of items present
-        uints        _segitems;                 ///<number of items in segment
         segarray*   _array;                     ///<shared segment array
-        ushort      _chunksize;                 ///<item byte size
-        ushort      _ntail;                     ///<tail element count per record
+        char*       _pseg;                      ///<segment start
+        uint        _usdpos;                    ///<used block position
+        UIDX        _begidx;                    ///<first item global index
+        uint        _nitems;                    ///<no.of items present
+        uint        _segitems;                  ///<number of items in segment
+        uint        _chunksize;                 ///<item byte size
+        uint        _ntail;                     ///<tail element count per record
         uint        _flags;                     ///<flags from segarray::_flags
 
-        mutable uints _lrui;                    ///<last recently used iteration
-        uints        _nref;                     ///<no.of references to the segment
-        uints        _swapid;                   ///<id of corresponding swap segemnt
+        mutable uint _lrui;                     ///<last recently used iteration
+        uint        _nref;                      ///<no.of references to the segment
+        uint        _swapid;                    ///<id of corresponding swap segemnt
 
         size_t sizeof_T() const                 { return (_flags & fSIZE_ZERO) ? 0 : sizeof(T); }
         
@@ -173,44 +173,44 @@ public:
 
         COIDNEWDELETE
 
-        uints   used_size() const                { return _nitems*_chunksize; }
-        uints   free_size() const                { return (_segitems - _nitems)*_chunksize; }
-        uints   free_size_before() const         { return _usdpos*_chunksize; }
-        uints   free_size_after() const          { return (_segitems - _nitems - _usdpos)*_chunksize; }
-        uints   used_size_before(uints a) const   { return a*_chunksize; }
-        uints   used_size_after(uints a) const    { return (_nitems-a)*_chunksize; }
+        uint   used_size() const                { return _nitems*_chunksize; }
+        uint   free_size() const                { return (_segitems - _nitems)*_chunksize; }
+        uint   free_size_before() const         { return _usdpos*_chunksize; }
+        uint   free_size_after() const          { return (_segitems - _nitems - _usdpos)*_chunksize; }
+        uint   used_size_before(uint a) const   { return a*_chunksize; }
+        uint   used_size_after(uint a) const    { return (_nitems-a)*_chunksize; }
 
-        uints   used_count() const               { return _nitems; }
-        uints   free_count() const               { return _segitems - _nitems; }
-        uints   free_count_before() const        { return _usdpos; }
-        uints   free_count_after() const         { return _segitems - _nitems - _usdpos; }
+        uint   used_count() const               { return _nitems; }
+        uint   free_count() const               { return _segitems - _nitems; }
+        uint   free_count_before() const        { return _usdpos; }
+        uint   free_count_after() const         { return _segitems - _nitems - _usdpos; }
         
-        uints   used_count_before(uints a) const  { return a - _begidx; }
-        uints   used_count_after(uints a) const   { return _nitems - a + _begidx; }
+        uint   used_count_before(UIDX a) const  { return uint(a - _begidx); }
+        uint   used_count_after(UIDX a) const   { return uint(_begidx + _nitems - a); }
 
-        uints   bgi_index() const                { return _begidx; }
+        UIDX   bgi_index() const                { return _begidx; }
 
-		uints   get_chunksize() const			{ return _chunksize; }
-        uints   tail_element_count() const       { return _ntail; }
+		uint   get_chunksize() const			{ return _chunksize; }
+        uint   tail_element_count() const       { return _ntail; }
 
         void   refcnt_inc()                     { ++_nref; }
         void   refcnt_dec()                     { --_nref; }
         bool   is_locked() const                { return _nref > 0; }
 
-        void   lrui_upd( uints& lrui ) const     { _lrui = ++lrui; }
-        uints   get_lrui() const                 { return _lrui; }
+        void   lrui_upd( uint& lrui ) const     { _lrui = ++lrui; }
+        uint   get_lrui() const                 { return _lrui; }
 
 
-        uints  getset_swapid( uints& heap )
+        uint   getset_swapid( uint& heap )
         {
             if( _swapid != UMAX )
                 return _swapid;
             return _swapid = heap++;
         }
 
-		bool   is_valid_ptr( const void* p ) const	{ return p<end_ptr() && p>=bgi_ptr(); }
+		bool   is_valid_ptr( const void* p ) const      { return p<end_ptr() && p>=bgi_ptr(); }
 
-        opcd   get_info( uints* first, uints* nitems, uints* offs ) const
+        opcd   get_info( UIDX* first, uint* nitems, uint* offs ) const
         {
             if(first)   *first = _begidx;
             if(nitems)  *nitems = _nitems;
@@ -233,28 +233,28 @@ public:
             out << _usdpos << _nitems << _begidx << get_raw_segsize() << tail_element_count();
             //out.write(bgi_ptr(), _nitems*_chunksize);
             T* p = (T*) bgi_ptr();
-            for( uints i=0; i<_nitems; ++i, p=(T*)((char*)p+_chunksize) )
+            for( uint i=0; i<_nitems; ++i, p=(T*)((char*)p+_chunksize) )
             {
                 out << *p;
                 TAIL* t = ptr_tail(p);
-                for( uints j=0; j<tail_element_count(); ++j )
+                for( uint j=0; j<tail_element_count(); ++j )
                     out << t[j];
             }
             return out;
         }
         binstream& stream_in ( binstream& in )
         {
-            uints segsize, ntail;
+            uint segsize, ntail;
 
             in >> _usdpos >> _nitems >> _begidx >> segsize >> ntail;
 
             T* p = get_first();
-            for( uints i=0; i<_nitems; ++i, p=(T*)((char*)p+_chunksize) )
+            for( uint i=0; i<_nitems; ++i, p=(T*)((char*)p+_chunksize) )
             {
                 new(p) T;
                 in >> *p;
                 TAIL* t = ptr_tail (p);
-                for (uints j=0; j<ntail; ++j)
+                for( uint j=0; j<ntail; ++j )
                 {
                     new(t+j) TAIL;
                     in >> t[j];
@@ -267,17 +267,17 @@ public:
         char*  end_ptr() const                  { return _pseg + (_usdpos+_nitems)*_chunksize; }
         char*  bgi_ptr() const                  { return _pseg + _usdpos*_chunksize; }
 
-        char*  end_ptr(ints idx) const          { return _pseg + (_usdpos+_nitems-idx)*_chunksize; }
-        char*  bgi_ptr(ints idx) const          { return _pseg + (_usdpos+idx)*_chunksize; }
+        char*  end_ptr(int idx) const           { return _pseg + (_usdpos+_nitems-idx)*_chunksize; }
+        char*  bgi_ptr(int idx) const           { return _pseg + (_usdpos+idx)*_chunksize; }
 
     public:
-        uints   index_behind() const            { return _begidx + _nitems; }
-        uints   index_before() const            { return _begidx - 1; }
+        UIDX   index_behind() const             { return _begidx + _nitems; }
+        UIDX   index_before() const             { return _begidx - 1; }
 
         void   adjust( const segment& seg )     { _begidx = seg._begidx + seg._nitems; }
-        void   set_index( uints i )             { _begidx = i; }
+        void   set_index( UIDX i )              { _begidx = i; }
 
-        uints get_index( const T* p ) const     { return _begidx + ((char*)p - bgi_ptr())/_chunksize; }
+        UIDX   get_index( const T* p ) const    { return _begidx + ((char*)p - bgi_ptr())/_chunksize; }
 
         bool inc_ptr( T*& p ) const
         { 
@@ -294,15 +294,15 @@ public:
         T* get_first() const                    { return (T*) bgi_ptr(); }
         T* get_last() const                     { return (T*) end_ptr(1); }
 
-        T* get_at(uints a) const                { RASSERTX(a-_begidx < _nitems, "segment not containg the item"); return (T*) bgi_ptr(a-_begidx); }
-        bool is_at(uints a) const               { return (a-_begidx >= _nitems)  ?  false  :  true; }
+        T* get_at(UIDX a) const                 { RASSERTX(a-_begidx < _nitems, "segment not containg the item"); return (T*) bgi_ptr(int(a-_begidx)); }
+        bool is_at(UIDX a) const                { return (a-_begidx >= _nitems)  ?  false  :  true; }
 
-        uints get_raw_segsize() const           { return 1<<_array->_rsegsize; }
+        uint get_raw_segsize() const            { return 1<<_array->_rsegsize; }
 
-        T* ins( uints pos, bool forward, uints n=1 )
+        T* ins( uint pos, bool forward, uint n=1 )
         {
-            uints m = n*_chunksize;
-            uints nt = tail_element_count();
+            uint m = n*_chunksize;
+            uint nt = tail_element_count();
             char* p = bgi_ptr(pos);
 
             if(forward)
@@ -310,50 +310,50 @@ public:
                 DASSERTX( n <= free_count_after(), "invalid params" );
                 memmove( p+m, p, used_size_after(pos) );
                 _nitems += n;
-                for( uints i=0; i<m; i+=_chunksize )
+                for( uint i=0; i<m; i+=_chunksize )
                 {
                     new (p+i) T;
                     TAIL* t = ptr_tail(p+i);
-                    for (uints j=0; j<nt; ++j)  new(t+j) TAIL;
+                    for( uint j=0; j<nt; ++j )  new(t+j) TAIL;
                 }
             }
             else
             {
                 DASSERTX( n <= free_count_before(), "invalid params" );
-                uints bf = pos * _chunksize;
+                uint bf = pos * _chunksize;
 				if(bf)
 					memmove( bgi_ptr()-m, bgi_ptr(), bf );
                 //_pusd -= m;
                 _usdpos -= n;
                 _nitems += n;
                 p -= m;
-                for( uints i=0; i<m; i+=_chunksize)
+                for( uint i=0; i<m; i+=_chunksize)
                 {
                     new (p+i) T;
                     TAIL* t = ptr_tail(p+i);
-                    for (uints j=0; j<nt; ++j)  new(t+j) TAIL;
+                    for( uint j=0; j<nt; ++j )  new(t+j) TAIL;
                 }
             }
             return (T*)p;
         }
 
-        void del( uints pos, uints n=1 )
+        void del( uint pos, uint n=1 )
         {
-            uints m = n*_chunksize;
-            uints nt = tail_element_count();
+            uint m = n*_chunksize;
+            uint nt = tail_element_count();
             char* p = bgi_ptr(pos);
 
             if( !(_flags & fTRIVIAL_DESTRUCTOR) )
             {
-                for( uints i=0; i<m; i+=_chunksize )
+                for( uint i=0; i<m; i+=_chunksize )
                 {
                     ((T*)(p+i))->~T();
                     TAIL* t = ptr_tail(p+i);
-                    for( uints j=0; j<nt; ++j )  t[j].~TAIL();
+                    for( uint j=0; j<nt; ++j )  t[j].~TAIL();
                 }
             }
 
-            uints af = _nitems - n - pos;
+            uint af = _nitems - n - pos;
             if( pos >= af )
             {
                 if(af)
@@ -364,7 +364,7 @@ public:
                 _usdpos += n;
                 if(pos)
                 {
-                    uints bf = pos * _chunksize;
+                    uint bf = pos * _chunksize;
                     memmove( p+m-bf, p-bf, bf );
                 }
             }
@@ -372,7 +372,7 @@ public:
             _nitems -= n;
         }
 
-        T*  insm( uints pos, uints n=1 )
+        T*  insm( uint pos, uint n=1 )
         {
             if( free_count_after() >= n )
             {
@@ -390,8 +390,8 @@ public:
                 return ins( pos, false, n );
             else
             {
-                uints fwd = n >> 1;
-                uints bkw = n - fwd;
+                uint fwd = n >> 1;
+                uint bkw = n - fwd;
                 if( fwd > free_count_after() )          { fwd = free_count_after(); bkw = n - fwd; }
                 else if( bkw > free_count_before() )    { bkw = free_count_before(); fwd = n - bkw; }
                 ins( pos, true, fwd );
@@ -399,9 +399,9 @@ public:
             }
         }
 
-        void move( segment &seg, bool forward, uints n )
+        void move( segment &seg, bool forward, uint n )
         {
-            uints m = n*_chunksize;
+            uint m = n*_chunksize;
             if(forward)
             {
                 xmemcpy( seg.insm( 0, n ), end_ptr()-m, m );
@@ -486,12 +486,12 @@ public:
             _segments.share( syn );
         }
 */
-        segment* alloc( uints idx, segarray<T,TAIL>* a )
+        segment* alloc( UIDX idx, segarray* a )
         {
             if( idx == UMAX )
                 idx = 0;
-            _chunksize = (ushort)a->item_size();
-            _ntail = (ushort)a->tail_element_count();
+            _chunksize = a->item_size();
+            _ntail = a->tail_element_count();
             _segitems = a->_segitems;
             _begidx = idx;
             _flags = a->_flags;
@@ -511,7 +511,7 @@ public:
             return this;
         }
 
-        segment* init( segarray<T,TAIL>* a )
+        segment* init( segarray* a )
         {
             _chunksize = a->item_size();
             _ntail = a->tail_element_count();
@@ -553,7 +553,7 @@ public:
         {
             //_segments.unshare();
 
-            uints i;
+            uint i;
             T* p;
             if( _pseg  &&  !(_flags & fTRIVIAL_DESTRUCTOR) )
             {
@@ -573,7 +573,7 @@ public:
 
         segment* next_segment()
         {
-            uints sid = _array->get_segment_id( index_behind() );
+            uint sid = _array->get_segment_id( index_behind() );
             if( sid == UMAX )
                 return 0;
 
@@ -583,7 +583,7 @@ public:
         segment* prev_segment()
         {
             if( _begidx == 0 )  return 0;
-            uints sid = _array->get_segment_id( _begidx-1 );
+            uint sid = _array->get_segment_id( _begidx-1 );
 
             return _array->get_segment(sid);
         }
@@ -593,42 +593,42 @@ public:
 
 private:
     dynarray< local<segment> >  _segments;  ///<segment array
-    uints               _segitems;      ///<number of items per page
-    //uint                _segsize;       ///<segment size in bytes
-    uint                _rsegsize;      ///<segment size in bytes, two's exponent
-    uint                _flags;
-    uints               _lastidx;       ///<number of items total
-    uints               _ntail;         ///<number of tail TAIL-type elements per record
+    uint  _segitems;                        ///<number of items per page
+    uint  _rsegsize;                        ///<segment size in bytes, two's exponent
+    uint  _flags;
+    UIDX  _lastidx;                         ///<number of items total
+    uint  _ntail;                           ///<number of tail TAIL-type elements per record
 
 
     //swapping
 
+    ///Helper object that returns how old the segment is
     struct GET_INT_FROM_SEG
     {
-        uints operator() (const void* p) const
+        uint operator() (const void* p) const
         {
             segment* ps = *(local<segment>*)p;
             if( !ps->is_allocated() )
                 return 0;
             if( ps->is_locked() )
                 return 0;
-            uints k = _ref - ps->get_lrui();
+            uint k = _ref - ps->get_lrui();
             return ++k;
         }
 
-        uints _ref;
+        uint _ref;
 
         GET_INT_FROM_SEG() : _ref(0)            { }
-        GET_INT_FROM_SEG( uints k ) : _ref(k)    { }
+        GET_INT_FROM_SEG( uint k ) : _ref(k)    { }
     };
 
-    typedef radixi< local<segment>, uints, uints, GET_INT_FROM_SEG >  t_radix;
+    typedef radixi< local<segment>, uint, uint, GET_INT_FROM_SEG >  t_radix;
 
-    mutable uints       _usg_iter;      ///<usage iteration number
+    mutable uint        _usg_iter;      ///<usage iteration number
     t_radix             _radix;
-    uints               _nsegmapped;    ///<number of segments mapped
-    uints               _nsegmapmax;    ///<max.number of segments to map
-    uints               _swapsegcount;  ///<number of swapped segments
+    uint                _nsegmapped;    ///<number of segments mapped
+    uint                _nsegmapmax;    ///<max.number of segments to map
+    uint                _swapsegcount;  ///<number of swapped segments
 
     typedef chunkpage<void>             Tpage_allocator;
     Tpage_allocator     _segmem;        ///< allocator used to allocate segment structures
@@ -637,8 +637,8 @@ private:
     fnc_stream          _fnc_stream_out;///<function for streaming out a segment
     fnc_stream          _fnc_stream_in; ///<function for streaming in a segment
 
-    uints               _usg_iter_last;
-    dynarray<uints>     _pages_to_swap;
+    uint                _usg_iter_last;
+    dynarray<uint>      _pages_to_swap;
 
 
     void* seg_alloc()
@@ -661,10 +661,10 @@ private:
     }
 
     ///Unmap old segments to make space
-    uints make_unmap_list()
+    uint make_unmap_list()
     {
         // 1/8th to free, but at least one
-        uints n = _nsegmapmax >> 5;
+        uint n = _nsegmapmax >> 5;
         if(!n) n=1;
 
         DASSERT( _nsegmapped + n >= _nsegmapmax );
@@ -672,7 +672,7 @@ private:
         GET_INT_FROM_SEG gi(_usg_iter);
         _radix.set_getint(gi);
         _radix.sortdsc( _segments.ptr(), _segments.size() );
-        const uints* idx = _radix.ret_index();
+        const uint* idx = _radix.ret_index();
 
         for( ; n>0; )
         {
@@ -686,7 +686,7 @@ private:
             throw ersUNAVAILABLE "cannot free enough pages due to locked segments";
 
         _pages_to_swap.need_new(n);
-        for( uints i=n; i>0; )
+        for( uint i=n; i>0; )
         {
             --i;
             _pages_to_swap[i] = idx[i];
@@ -698,15 +698,15 @@ private:
 
     void unmap()
     {
-        uints n = _pages_to_swap.size();
+        uint n = (uint)_pages_to_swap.size();
         if( n == 0 )
             n = make_unmap_list();
 
-        for( uints i=n; i>0; )
+        for( uint i=n; i>0; )
         {
             --i;
             segment* sg =  _segments[ _pages_to_swap[i] ];
-            if( sg->is_allocated()  &&  !sg->is_locked()  &&  ints( sg->get_lrui() - _usg_iter_last ) <= 0 )
+            if( sg->is_allocated()  &&  !sg->is_locked()  &&  int( sg->get_lrui() - _usg_iter_last ) <= 0 )
             {
                 unmap_segment( sg, _pages_to_swap[i] );
                 _pages_to_swap.need(i);
@@ -720,7 +720,7 @@ private:
         unmap();
     }
 
-    void unmap_segment( segment* sg, uints id )
+    void unmap_segment( segment* sg, uint id )
     {
         opcd e = save_segment( sg, id, true );
         if(e)
@@ -730,7 +730,7 @@ private:
     }
 
     ///Map segment
-    segment* map( uints sid )
+    segment* map( uint sid )
     {
         if( _nsegmapped >= _nsegmapmax )
             unmap();
@@ -747,14 +747,14 @@ private:
         return sg;
     }
 
-    segment* create_segment( uints sid, uints n=1 )
+    segment* create_segment( uint sid, uint n=1 )
     {
         if( sid == UMAX )
-            sid = _segments.size();
+            sid = (uint)_segments.size();
 
-        uints off = sid>0 ? _segments[sid-1]->index_behind() : 0;
+        UIDX off = sid>0 ? _segments[sid-1]->index_behind() : 0;
 
-        for( uints i=0; i<n; ++i )
+        for( uint i=0; i<n; ++i )
         {
             if( _nsegmapped >= _nsegmapmax )
                 unmap();
@@ -765,7 +765,7 @@ private:
 
             if(_fnc_stream_in)
             {
-                PERSIST p;
+                Persist p;
                 p.context = _stream_context;
                 p.array = this;
                 p.segdata = sg->ptr_mem();
@@ -787,9 +787,9 @@ private:
         return get_segment(sid);
     }
 
-    opcd save_segment( segment* sg, uints id, bool todestroy )
+    opcd save_segment( segment* sg, uint id, bool todestroy )
     {
-        PERSIST p;
+        Persist p;
         p.context = _stream_context;
         p.array = this;
         p.segdata = sg->ptr_mem();
@@ -806,9 +806,9 @@ private:
         return _fnc_stream_out(p);
     }
 
-    opcd load_segment( segment* sg, uints id )
+    opcd load_segment( segment* sg, uint id )
     {
-        PERSIST p;
+        Persist p;
         p.context = _stream_context;
         p.array = this;
         p.segdata = sg->alloc_mem();
@@ -827,15 +827,15 @@ private:
 
 
 
-    uints get_segment_id( uints a ) const
+    uint get_segment_id( UIDX a ) const
     {
         if( _segments.size() == 0  ||  a >= _lastidx )
             return UMAX;
 
-        uints i=0, j=_segments.size();
+        uint i=0, j=(uint)_segments.size();
         for( ;j-i>1; )
         {
-            uints m = (j+i)/2;
+            uint m = (j+i)/2;
             if( _segments[m]->bgi_index() > a )
                 j=m;
             else
@@ -845,7 +845,7 @@ private:
         return i;
     }
     
-    segment* get_segment( uints sid ) const
+    segment* get_segment( uint sid ) const
     {
         DASSERT( sid < _segments.size() );
 
@@ -866,9 +866,9 @@ private:
     }
 
     //look for the segment above the one given
-    uints get_segment_behind( uints a, uints sid ) const
+    uint get_segment_behind( UIDX a, uint sid ) const
     {
-        uints offseg = _segments.size();
+        uint offseg = (uint)_segments.size();
         for(; sid < offseg; ++sid) {
             if( _segments[sid]->is_at(a) )  return sid;
         }
@@ -876,9 +876,9 @@ private:
     }
 
     //look for the segment below the one given
-    uints get_segment_before( uints a, uints sid ) const
+    uint get_segment_before( UIDX a, uint sid ) const
     {
-        for(; (ints)sid >= 0; --sid) {
+        for(; sid != UMAX; --sid) {
             if( _segments[sid]->is_at(a) )  return sid;
         }
         return 0;
@@ -886,13 +886,13 @@ private:
 
 public:
 
-    static uints get_sizeof_segment_desc()                { return sizeof(segment); }
+    static uint get_sizeof_segment_desc()                { return sizeof(segment); }
 
-    uints get_last_segment_id() const
+    uint get_last_segment_id() const
     {
         if( 0 == _segments.size() )  return UMAX;
 
-        return _segments.size()-1;
+        return (uint)_segments.size() - 1;
     }
     
 
@@ -1060,10 +1060,10 @@ public:
         T* copy_to( T* dest ) const
         {
             *dest = *_p;
-            uints len = _seg->tail_element_count();
+            uint len = _seg->tail_element_count();
             const TAIL* t = ptr_tail ();
             TAIL* d = _seg->ptr_tail(dest);
-            for (uints i=0; i<len; ++i)
+            for( uint i=0; i<len; ++i )
                 d[i] = t[i];
             return dest;
         }
@@ -1071,19 +1071,19 @@ public:
         T* copy_from( const T* src )
         {
             *_p = *src;
-            uints len = _seg->tail_element_count();
+            uint len = _seg->tail_element_count();
             TAIL* t = ptr_tail ();
             const TAIL* s = _seg->ptr_tail(src);
-            for (uints i=0; i<len; ++i)
+            for( uint i=0; i<len; ++i )
                 t[i] = s[i];
             return _p;
         }
 
-        uints copy_raw_to( T* dest, uints n )
+        uint copy_raw_to( T* dest, uint n )
         {
-            uints initn = n;
-            uints chs = _seg->get_chunksize();
-            uints usc = _seg->used_count_after( index() );
+            uint initn = n;
+            uint chs = _seg->get_chunksize();
+            uint usc = _seg->used_count_after( index() );
             ptr x = *this;
             while( n > 0 )
             {
@@ -1102,11 +1102,11 @@ public:
             return initn - n;
         }
 
-        uints copy_raw_from( const T* src, uints n )
+        uint copy_raw_from( const T* src, uint n )
         {
-            uints initn = n;
-            uints chs = _seg->get_chunksize();
-            uints usc = _seg->used_count_after( index() );
+            uint initn = n;
+            uint chs = _seg->get_chunksize();
+            uint usc = _seg->used_count_after( index() );
             ptr x = *this;
             while( n > 0 )
             {
@@ -1127,50 +1127,32 @@ public:
 
 
         ///Insert n items behind the ptr
-        ptr& ins( uints n=1 ) {
+        ptr& ins( uint n=1 ) {
             if(!_p)
                 return _array->push( *this, n );
             return _seg->_array->ins( index(), *this, n );
         }
 
         ///Delete n items following the ptr
-        ptr& del( uints n=1 ) {
+        ptr& del( uint n=1 ) {
             if(!_p)
                 throw ersUNAVAILABLE "the iterator points past the last element";
             return _seg->_array->del( index(), *this, n );
         }
 
-        ptr& del_before_after( uints bef, uints aft )
+        ptr& del_before_after( UIDX bef, UIDX aft )
         {
             return _seg->_array->del( index()-bef, *this, bef+aft );
         }
-/*
-        friend binstream& operator << TEMPLFRIEND (binstream& out, const ptr& p)
-        {
-            out << *p;
-        //    uint len = _seg->_ntail;
-        //    for (uint i=0; i<len; ++i)
-        //        out << ((TAIL*)(_p+1))[i];
-            return out;
-        }
 
-        friend binstream& operator >> TEMPLFRIEND (binstream& in, ptr& p)
-        {
-            in >> *p;
-        //    uint len = _seg->_ntail;
-        //    for (uint i=0; i<len; ++i)
-        //        in >> ((TAIL*)(_p+1))[i];
-            return in;
-        }
-*/
         ///Return index of the item this ptr points to
-        uints index() const
+        UIDX index() const
         {
             return  _p  ?  _seg->get_index(_p)  :  _array->_lastidx;
         }
 
         ///Check if the ptr is valid
-        bool is_valid() const           { return _p != 0; }
+        bool is_valid() const                   { return _p != 0; }
 
         ptr( const segment* seg, T* p )
         {
@@ -1295,7 +1277,7 @@ public:
         bin << _ntail << _flags << _lastidx << _rsegsize << _segitems;
 
         bin << _segments.size();
-        for( uints i=0; i<_segments.size(); ++i )
+        for( uint i=0; i<_segments.size(); ++i )
             _segments[i]->stream_out( bin );
 
         return bin;
@@ -1305,11 +1287,11 @@ public:
     {
         bin >> _ntail >> _flags >> _lastidx >> _rsegsize >> _segitems;
 
-        uints n;
+        uint n;
         bin >> n;
 
         _segments.reserve(n,true);
-        for( uints k=0; k<n; ++k )
+        for( uint k=0; k<n; ++k )
         {
             typename segarray<T, TAIL>::segment* sg = create_segment(k);//new typename segarray<T, TAIL>::segment(sega.item_size());
             sg->stream_in( bin );
@@ -1328,9 +1310,9 @@ public:
     const ptr end() const           { ptr x;  get_ptr( _lastidx, x );  return x; }
 
     ///Get pointer to specified item
-    ptr& get_ptr( uints a, ptr& p ) const
+    ptr& get_ptr( UIDX a, ptr& p ) const
     {
-        if(a >= _lastidx)
+        if( a >= _lastidx )
         {
             p.set(this);
             return p;
@@ -1340,7 +1322,7 @@ public:
         return p;
     }
 
-    ptr& get_ptr_create( uints a, ptr& p )
+    ptr& get_ptr_create( UIDX a, ptr& p )
     {
         if( a >= _lastidx )
         {
@@ -1354,33 +1336,33 @@ public:
     }
 
     ///Insert n items on a-th item
-    void ins( uints a, uints n=1 )
+    void ins( UIDX a, uint n=1 )
     {
         if( n==0 )  return;
         _ins(a, n);
     }
 
     ///Delete n items starting at the a-th item
-    void del( uints a, uints n=1 )
+    void del( UIDX a, uint n=1 )
     {
         _del(a, n);
     }
 
     ///Insert n items on a-th item
-    void ins( ptr& a, uints n=1 )
+    void ins( ptr& a, uint n=1 )
     {
         if( n==0 )  return;
         _ins( a.index(), n );
     }
 
     ///Delete n items starting at the a-th item
-    void del( ptr& a, uints n=1 )
+    void del( ptr& a, uint n=1 )
     {
         _del( a.index(), n );
     }
 
 
-    ptr& ins( uints a, ptr& p, uints n=1 )
+    ptr& ins( UIDX a, ptr& p, uint n=1 )
     {
         segment* segid = _ins(a,n);
         if( segid->is_at(a) )
@@ -1393,19 +1375,19 @@ public:
         return p;
     }
 
-    T* ins_item( uints a )
+    T* ins_item( UIDX a )
     {
         segment* segid = _ins(a, 1);
         return segid->get_at(a);
     }
 
-    ptr& del( uints a, ptr &p, uints n=1 )
+    ptr& del( UIDX a, ptr &p, uint n=1 )
     {
         _del(a, n);
         return get_ptr(a, p);
     }
 
-    ptr& push( ptr &p, uints n=1 )
+    ptr& push( ptr &p, uint n=1 )
     {
         if(!n)
             return p;
@@ -1414,7 +1396,7 @@ public:
         return p;
     }
 
-    ptr& push_set_to_last( ptr &p, uints n=1 )
+    ptr& push_set_to_last( ptr &p, uint n=1 )
     {
         if(!n)
             return p;
@@ -1437,7 +1419,7 @@ public:
         return segid->get_last();
     }
 
-    bool pop( uints n=1 )
+    bool pop( uint n=1 )
     {
         if(_lastidx == 0)  return false;
         _del( _lastidx, n );
@@ -1467,18 +1449,18 @@ public:
         return _lastidx ? get_last_segment()->get_last() : 0;
     }
 
-    bool exists( uints idx ) const            { return idx < size(); }
+    bool exists( UIDX idx ) const                   { return idx < size(); }
 
 
-    T* _get_at( uints i ) const
+    T* _get_at( UIDX i ) const
     {
-        uints segn = get_segment_id(i);
+        uint segn = get_segment_id(i);
         DASSERT( segn < _segments.size() );
         return get_segment(segn)->get_at(i);
     }
 
     ///Get item ptr, do not throw when index equals array size
-    ptr& _get_at_safe( uints i, ptr& p ) const
+    ptr& _get_at_safe( UIDX i, ptr& p ) const
     {
         if( i == _lastidx  ||  i == UMAX )
         {
@@ -1486,7 +1468,7 @@ public:
             return p;
         }
         
-        uints segn = get_segment_id(i);
+        uint segn = get_segment_id(i);
         DASSERT( segn < _segments.size() );
         segment* sg = get_segment(segn);
         p.set( sg, sg->get_at(i) );
@@ -1494,9 +1476,9 @@ public:
         return p;
     }
 
-    T* get_at(uints i) const                    { return _get_at(i); }
+    T* get_at( UIDX i ) const                       { return _get_at(i); }
 
-    T* get_at_create( uints a )
+    T* get_at_create( UIDX a )
     {
         if(a >= _lastidx)
         {
@@ -1513,7 +1495,7 @@ public:
     }
 
 
-    opcd get_segment_info( uints sg, uints* first, uints* nitems, uints* offs ) const
+    opcd get_segment_info( uint sg, UIDX* first, uint* nitems, uint* offs ) const
     {
         if( sg >= _segments.size() )
             return ersOUT_OF_RANGE;
@@ -1522,26 +1504,26 @@ public:
         return csg.get_info( first, nitems, offs );
     }
 
-    uints get_segment_size() const
+    uint get_segment_size() const
     {
         return 1<<_rsegsize;
     }
 
 
-    bool is_segment_mapped( uints sg ) const
+    bool is_segment_mapped( uint sg ) const
     {
         DASSERT( sg < _segments.size() );
         return _segments[sg]->is_allocated();
     }
 
 
-    const T& operator [] (ints i) const      { return *_get_at(i); }
-    T& operator [] (ints i)                  { return *_get_at(i); }
+    const T& operator [] (UIDX i) const      { return *_get_at(i); }
+    T& operator [] (UIDX i)                  { return *_get_at(i); }
 
-    T* operator () (ints i)                  { return _get_at(i); }
+    T* operator () (UIDX i)                  { return _get_at(i); }
 
     ///set up ptr object to point at specified item index
-    ptr& operator () (ints i, ptr& x)        { _get_at_safe( i, x );  return x; }
+    ptr& operator () (UIDX i, ptr& x)        { _get_at_safe( i, x );  return x; }
 
     segarray& operator = (const segarray& in)
     {
@@ -1551,7 +1533,7 @@ public:
         _rsegsize = in._rsegsize;
         _segitems = in._segitems;
         _segments.need_newc( in._segments.size() );
-        for( uints i=0; i<in._segments.size(); ++i )
+        for( uint i=0; i<(uint)in._segments.size(); ++i )
             create_segment(i);
 
         _swapsegcount = 0;
@@ -1570,7 +1552,7 @@ public:
         _segitems = in._segitems;
         
         _segments.takeover( in._segments );
-        for( uints i=0; i<_segments.size(); ++i )
+        for( uint i=0; i<(uint)_segments.size(); ++i )
             _segments[i]->set_array(this);
 
         //_segsize = in._segsize;
@@ -1587,10 +1569,10 @@ public:
     size_t sizeof_T () const            { return (_flags & fSIZE_ZERO) ? 0 : sizeof(T); }
 
 
-    uints item_size() const             { return sizeof_T() + _ntail*sizeof(TAIL); }
-    uints size() const                  { return _lastidx; }        ///<size of whole array in items
-    uints items_in_seg() const          { return _segitems; }       ///<size of segment in items
-    uints tail_element_count() const    { return _ntail; }
+    uint item_size() const              { return uint( sizeof_T() + _ntail*sizeof(TAIL) ); }
+    UIDX size() const                   { return _lastidx; }        ///<size of whole array in items
+    uint items_in_seg() const           { return _segitems; }       ///<size of segment in items
+    uint tail_element_count() const     { return _ntail; }
 
     bool is_trivial_destructor() const  { return (_flags & fTRIVIAL_DESTRUCTOR) != 0; }
     bool is_trivial_constructor() const { return (_flags & fTRIVIAL_CONSTRUCTOR) != 0; }
@@ -1616,14 +1598,14 @@ public:
     }
 
 
-    uints get_mapped_segment_id( uints sid ) const
+    uint get_mapped_segment_id( uint sid ) const
     {
         if( _nsegmapmax == UMAX )  return UMAX;
 
         segment* sg = get_segment(sid);
         if(!sg) return UMAX;
 
-        return _segmem.get_item_id( sg->ptr_mem() );
+        return (uint)_segmem.get_item_id( sg->ptr_mem() );
     }
 
     void set_fnc_stream( void* context, fnc_stream streamout, fnc_stream streamin )
@@ -1637,7 +1619,7 @@ public:
     opcd flush_swap()
     {
         opcd e;
-        for( uints i=0; i<_segments.size(); ++i )
+        for( uint i=0; i<(uint)_segments.size(); ++i )
         {
             segment* sg = _segments[i];
             if( sg->is_allocated() )
@@ -1654,11 +1636,11 @@ public:
     {
         try {
             bin << _rsegsize << _segitems << _flags << _lastidx << _ntail << _nsegmapmax;
-            uints n = _segments.size();
+            uint n = (uint)_segments.size();
             bin << n;
 
             opcd e;
-            for( uints i=0; i<n; ++i )
+            for( uint i=0; i<n; ++i )
             {
                 e = _segments[i]->save_descriptor(bin);
                 if(e)  return e;
@@ -1678,12 +1660,12 @@ public:
 
         try {
             bin >> _rsegsize >> _segitems >> _flags >> _lastidx >> _ntail >> _nsegmapmax;
-            uints n;
+            uint n;
             bin >> n;
             _segments.need_new(n);
 
             opcd e;
-            for( uints i=0; i<n; ++i )
+            for( uint i=0; i<n; ++i )
             {
                 _segments[i] = new segment;
                 _segments[i]->init(this);
@@ -1697,7 +1679,7 @@ public:
             return e;
         }
 
-        _swapsegcount = _segments.size();
+        _swapsegcount = (uint)_segments.size();
 
         return 0;
     }
@@ -1712,12 +1694,13 @@ public:
             return 0;
         }
 
+        uint nseg;
         if( size < (2UL<<_rsegsize) )
-            size = 2;
+            nseg = 2;
         else
-            size = align_to_chunks_pow2( size, _rsegsize );
+            nseg = (uint)align_to_chunks_pow2( size, _rsegsize );
 
-        _nsegmapmax = size;
+        _nsegmapmax = nseg;
 
         if( _nsegmapped >= _nsegmapmax )
             unmap();
@@ -1731,7 +1714,7 @@ public:
     }
 
     ///Set actual item size
-    uints set_tail_element_count( uints n, bool sizeofTzero = false )
+    uint set_tail_element_count( uint n, bool sizeofTzero = false )
     {
         if(_lastidx)  return _ntail;        //if anything already pushed in, return the old size
         if(sizeofTzero)
@@ -1744,12 +1727,12 @@ public:
         return true;
     }
 
-    uints set_segsize( uints segsize )
+    uint set_segsize( uint segsize )
     {
         if(_lastidx)
             return 1<<_rsegsize;        //if anything already pushed in, return the old size
 
-        uints rs = segsize;
+        uint rs = segsize;
         uchar i;
         for( i=0; rs; ++i, rs>>=1 );
         if( i-- == 0 )
@@ -1760,12 +1743,12 @@ public:
                 ++i;
             _rsegsize = i;
         }
-        _segitems = (uints) ((1<<_rsegsize)/item_size());
+        _segitems = (uint) ((1<<_rsegsize)/item_size());
         //_segsize = _segitems*item_size();
         return 1<<_rsegsize;
     }
 
-    uints get_raw_segsize() const                { return 1<<_rsegsize; }
+    uint get_raw_segsize() const                { return 1<<_rsegsize; }
 
     void set_trivial_destructor( bool trivial=true )
     {
@@ -1785,10 +1768,10 @@ public:
 
     TAIL* ptr_tail( const T* p ) const      { return (TAIL*)((char*)p + sizeof_T()); }
 
-    segarray( uint flags = fSEQ_INSERT, uints segsize = 0, uints ntail = 0 )
+    segarray( uint flags = fSEQ_INSERT, uint segsize = 0, uint ntail = 0 )
     {
         uchar i;
-        uints rs = segsize;
+        uint rs = segsize;
         for(i=0; rs; ++i, rs>>=1);
         if(i--==0)  _rsegsize = DEF_RSEGSIZE;
         else
@@ -1799,7 +1782,7 @@ public:
         _flags = flags;
         _lastidx = 0;
         _ntail = ntail;
-        _segitems = uints( (1<<_rsegsize)/item_size() );
+        _segitems = uint( (1<<_rsegsize)/item_size() );
         //_segsize = _segitems*item_size();
 
         _fnc_stream_in = _fnc_stream_out = 0;
@@ -1814,22 +1797,22 @@ public:
     friend struct ptr;
 
 protected:
-    segment* _ins( uints a, uints n )
+    segment* _ins( UIDX a, UIDX n )
     {
-        uints sid = get_segment_id(a);
+        uint sid = get_segment_id(a);
         if( sid >= _segments.size() )
         {
             //required item is behind currently allocated array
-            uints nc = a - _lastidx;    //to construct
-            uints nt = n + nc;          //to tal    :)
+            UIDX nc = a - _lastidx;    //to construct
+            UIDX nt = nc + n;          //to tal    :)
             sid = get_last_segment_id();
             if( sid != UMAX )
             {
                 segment* segid = get_segment(sid);
                 //if (segid->_segarray != this)
                 //    throw ersFAILED "object damaged";
-                uints tin = nt>segid->free_count_after() ? segid->free_count_after() : nt;
-                uints tco = nc>segid->free_count_after() ? segid->free_count_after() : nc;
+                uint tin = nt>segid->free_count_after() ? segid->free_count_after() : (uint)nt;
+                uint tco = nc>segid->free_count_after() ? segid->free_count_after() : (uint)nc;
                 construct(
                     segid->ins( segid->used_count(), true, tin ),
                     tco
@@ -1846,8 +1829,8 @@ protected:
                 //segment* segid = *_segments.add(1) = new segment;
                 //segid->alloc( _lastidx, *this, _usg_iter );
 
-                uints tin = nt>_segitems ? _segitems : nt;
-                uints tco = nc>_segitems ? _segitems : nc;
+                uint tin = nt>_segitems ? _segitems : (uint)nt;
+                uint tco = nc>_segitems ? _segitems : (uint)nc;
                 //construct items created by the way but not required by the arguments
                 construct(
                     segid->ins( 0, true, tin ),
@@ -1865,16 +1848,17 @@ protected:
             //if (segid->_segarray != this)
             //    throw ersFAILED "object damaged";
             //current page does not have enough of free space to hold new data, check next and previous page
-            if(sid+1 < _segments.size()  &&  (segid->free_count() + _segments[sid+1]->free_count() >= n))
+            if( sid+1 < _segments.size()
+                &&  UIDX(segid->free_count() + _segments[sid+1]->free_count()) >= n )
             {
                 //distribute to the two segments
-                uints n1 = segid->free_count();
-                uints n2 = _segments[sid+1]->free_count();
-                uints nm = segid->used_count_after(a);
-                distrib(n1, n2, n);
+                uint n1 = segid->free_count();
+                uint n2 = _segments[sid+1]->free_count();
+                uint nm = segid->used_count_after(a);
+                distrib(n1, n2, (uint)n);
                 segment& s1 = *get_segment(sid+1);
 
-                if (nm <= n2)
+                if(nm <= n2)
                 {
                     segid->move( s1, true, nm );
                     s1.insm( 0, n2-nm );
@@ -1891,16 +1875,17 @@ protected:
                 segid->insm( segid->used_count()-nm, n1 );
                 return get_segment( adjust(sid,a) );
             }
-            else if( segid->bgi_index() > 0  &&  (segid->free_count() + _segments[sid-1]->free_count() >= n) )
+            else if( segid->bgi_index() > 0
+                &&  UIDX(segid->free_count() + _segments[sid-1]->free_count()) >= n )
             {
                 //distribute to the two segments
-                uints n1 = segid->free_count();
-                uints n2 = _segments[sid-1]->free_count();
-                uints nm = a - segid->bgi_index();
-                distrib(n1, n2, n);
+                uint n1 = segid->free_count();
+                uint n2 = _segments[sid-1]->free_count();
+                uint nm = uint(a - segid->bgi_index());
+                distrib(n1, n2, (uint)n);
                 segment& s1 = *get_segment(sid-1);
 
-                if (nm <= n2)
+                if(nm <= n2)
                 {
                     segid->move( s1, false, nm );
                     s1.insm( s1.used_count(), n2-nm );
@@ -1920,36 +1905,36 @@ protected:
             else
             {
                 //create new segments
-                uints nseg = (n+_segitems-1)/_segitems;
+                uint nseg = uint( (n+_segitems-1)/_segitems );
 
-                if (a - segid->bgi_index() < (_segitems>>1))
+                if( a - segid->bgi_index() < (_segitems>>1) )
                 {
                     // insert to the front
                     segment* segidnew = create_segment( sid, nseg );
                     //segidnew->alloc( 0, *this, _usg_iter );
 
-                    uints nm = a - segid->bgi_index();
+                    uint nm = uint(a - segid->bgi_index());
                     segid->move( *segidnew, false, nm );
 
-                    uints fc = segidnew->free_count();
-                    if (n > fc)
+                    uint fc = segidnew->free_count();
+                    if( n > (UIDX)fc )
                     {
                         segidnew->insm( segidnew->used_count(), fc );
                         n -= fc;
 
-                        for (uints i=1; i<nseg; ++i)
+                        for( uint i=1; i<nseg; ++i )
                         {
                             //_segments[sid+i] = new segment;
                             //_segments[sid+i]->alloc( 0, *this, _usg_iter );
 
                             segment* s = get_segment(sid+i);
-                            s->insm( 0, n>_segitems ? _segitems : n);
+                            s->insm( 0, n>_segitems ? _segitems : (uint)n);
                             if(n>_segitems)  n -= _segitems;  else  n = 0;
                         }
                     }
                     else
                     {
-                        segidnew->insm( segidnew->used_count(), n );
+                        segidnew->insm( segidnew->used_count(), (uint)n );
                     }
                 }
                 else
@@ -1961,16 +1946,16 @@ protected:
                     //segment* segidnew = (_segments[sid+nseg] = new segment);
                     //segidnew->alloc( 0, *this, _usg_iter );
 
-                    uints nm = segid->index_behind() - a;
+                    uint nm = uint( segid->index_behind() - a );
                     segid->move( *segidnew, true, nm );
 
-                    uints fc = segid->free_count();
-                    if (n > fc)
+                    uint fc = segid->free_count();
+                    if( n > (UIDX)fc )
                     {
                         segid->insm( segid->used_count(), fc );
                         n -= fc;
 
-                        for( uints i=1; i<=nseg; ++i )
+                        for( uint i=1; i<=nseg; ++i )
                         {
                             //if( i != nseg )
                             //{
@@ -1981,14 +1966,14 @@ protected:
                             if(n)
                             {
                                 segment* si = get_segment(sid+i);
-                                si->insm( 0, n>_segitems ? _segitems : n);
+                                si->insm( 0, n>_segitems ? _segitems : (uint)n );
                                 if( n>_segitems )  n -= _segitems;  else  n = 0;
                             }
                         }
                     }
                     else
                     {
-                        segid->insm( segid->used_count(), n );
+                        segid->insm( segid->used_count(), (uint)n );
                     }
                 }
 
@@ -2000,31 +1985,29 @@ protected:
             segment* segid = get_segment(sid);
             //if (segid->_segarray != this)
             //    throw ersFAILED "object damaged";
-            segid->insm( a - segid->bgi_index(), n );
+            segid->insm( uint(a - segid->bgi_index()), (uint)n );
             adjust(sid);
             return segid;
         }
     }
 
-    segment* _del(uints a, uints n)
+    segment* _del( UIDX a, UIDX n )
     {
-        uints sid = get_segment_id(a);
+        uint sid = get_segment_id(a);
         RASSERTX( sid < _segments.size(), "out of range" );
 
         segment* segid;
         segid = get_segment(sid);
 
-        //uints m = n*_chunksize;
-        //T* p = segid->get_at(a);
-		uints rp = a - segid->bgi_index();
+		UIDX rp = a - segid->bgi_index();
 
-        if(n > segid->used_count_after(a))
+        if( n > segid->used_count_after(a) )
         {
             n -= segid->used_count_after(a);
             segid->del( rp, segid->used_count_after(a) );
-            uints i;
+            uint i;
 
-            for (i=1;;++i)
+            for( i=1; ; ++i )
             {
                 segment& si = *get_segment(sid+i);
                 if(n < si.used_count())
@@ -2065,7 +2048,7 @@ protected:
         return get_segment(sid);
     }
 
-    static void distrib( uints &n1, uints &n2, uints n )
+    static void distrib( uint &n1, uint &n2, uint n )
     {
         // n1+n2 >= n  &&  n\chunk  &&  n1\chunk  &&  n2\chunk
         // n2-n + n1-n
@@ -2073,7 +2056,7 @@ protected:
         else        { n1 = n - n2; }        //this keeps as much on the n1 as possible
     }
 
-    void adjust( uints sid )
+    void adjust( uint sid )
     {
         for( ++sid; sid<_segments.size(); ++sid )
             _segments[sid]->adjust( *_segments[sid-1] );
@@ -2081,16 +2064,16 @@ protected:
         _lastidx = _segments[sid-1]->index_behind();
     }
 
-    uints adjust( uints sid, uints id )
+    uint adjust( uint sid, UIDX id )
     {
-        uints ssi = UMAX;
+        uint ssi = UMAX;
         for( ++sid; sid<_segments.size(); ++sid )
         {
             _segments[sid]->adjust( *_segments[sid-1] );
             if( id < _segments[sid]->bgi_index() )
             {
                 ssi = sid-1;
-                id = UMAX;
+                id = (UIDX)-1;//UMAX;
             }
         }
 
@@ -2100,34 +2083,34 @@ protected:
         return ssi;
     }
 
-    void construct( T* p, uints n ) const {
+    void construct( T* p, uint n ) const {
         //for(; n>0; --n, p=(T*)((char*)p+_chunksize))
         //  new(p) T;
-        memset (p, 0, n*item_size());
+        memset( p, 0, n*item_size() );
     }
 
 
 public:
-	friend binstream& operator << TEMPLFRIEND(binstream &out, const segarray<T,TAIL> &sega);
-	friend binstream& operator >> TEMPLFRIEND(binstream &in, segarray<T,TAIL> &sega);
+	friend binstream& operator << TEMPLFRIEND(binstream &out, const segarray<T,TAIL,UIDX> &sega);
+	friend binstream& operator >> TEMPLFRIEND(binstream &in, segarray<T,TAIL,UIDX> &sega);
 };
 
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class T, class TAIL>
-inline typename segarray<T,TAIL>::ptr::difference_type operator - (const typename segarray<T,TAIL>::ptr& a, const typename segarray<T,TAIL>::ptr& b)
+template<class T, class TAIL, class UIDX>
+inline typename segarray<T,TAIL,UIDX>::ptr::difference_type operator - (const typename segarray<T,TAIL,UIDX>::ptr& a, const typename segarray<T,TAIL,UIDX>::ptr& b)
 {
     return a.index() - b.index();
 }
 
 
-template <class T, class TAIL>
-inline binstream& operator << (binstream &out, const segarray<T,TAIL> &sega)
+template<class T, class TAIL, class UIDX>
+inline binstream& operator << (binstream &out, const segarray<T,TAIL,UIDX> &sega)
 {
     return sega.stream_out(out);
 }
 
-template <class T, class TAIL>
+template<class T, class TAIL, class UIDX>
 inline binstream& operator >> (binstream &in, segarray<T, TAIL> &sega)
 {
     return sega.stream_in(in);
@@ -2136,8 +2119,8 @@ inline binstream& operator >> (binstream &in, segarray<T, TAIL> &sega)
 /*
 ///These streamizing operators need from the managed class the methods out and in, which take a stream to persist
 /// to or from, and an actual byte size of the structure as it is managed within the segarray
-template <class T, class TAIL>
-inline binstream& operator << (binstream &out, const typename segarray<T,TAIL>::segment &sega)
+template<class T, class TAIL, class UIDX>
+inline binstream& operator << (binstream &out, const typename segarray<T,TAIL,UIDX>::segment &sega)
 {
     out << sega._usdpos << sega._nitems << sega._begidx << sega.get_raw_segsize() << sega.tail_element_count();
     //out.write(sega.bgi_ptr(), sega._nitems*sega._chunksize);
@@ -2152,8 +2135,8 @@ inline binstream& operator << (binstream &out, const typename segarray<T,TAIL>::
     return out;
 }
 
-template <class T, class TAIL>
-inline binstream& operator >> (binstream &in, typename segarray<T,TAIL>::segment &sega)
+template<class T, class TAIL, class UIDX>
+inline binstream& operator >> (binstream &in, typename segarray<T,TAIL,UIDX>::segment &sega)
 {
     uint segsize, ntail;
 

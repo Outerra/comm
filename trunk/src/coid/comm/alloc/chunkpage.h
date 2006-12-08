@@ -54,6 +54,7 @@ struct ElementSizeInfo
     static const uints size = sizeof(T);
     void set_size( uints bytes ) {}
     static T* create( void* p )  { return new(p) T; }
+    static void destroy( void* p )  { delete (T*)p; }
 };
 
 ///Specialization for void allowing custom byte size
@@ -63,6 +64,7 @@ struct ElementSizeInfo<void>
     uints size;
     void set_size( uints bytes ) { size = bytes; }
     static void* create( void* p )  { return p; }
+    static void destroy( void* p )  { }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -84,7 +86,7 @@ class chunkpage
     void* _mem;
     ints _first;                ///< first free chunk offset or zero when none free
     uint _numfree;              ///< number of free chunks
-    ints _used;                 ///< contains either non-negative value pointing to the first free chunk or -1 when working as list
+    uints _used;                ///< contains either non-negative value pointing to the first free chunk or -1 when working as list
     uints _pagesize;
 
     ElementSizeInfo<T> item;
@@ -99,7 +101,7 @@ public:
     {
         _first = -1;
         if(item.size)
-            _numfree = _pagesize/item.size;
+            _numfree = uint(_pagesize/item.size);
         else
             _numfree = 0;
 
@@ -157,8 +159,6 @@ public:
         {
             p = (T*)((char*)_mem + _used);
             _used += item.size;
-            if( (uints)_used > _pagesize-item.size )    //out of direct memory, switch to the list mode
-                _used = -1;
         }
         else
         {
@@ -168,7 +168,7 @@ public:
         }
 
         --_numfree;
-        return p;
+        return item.create(p);
     }
 
     void free( T* p )
@@ -176,6 +176,8 @@ public:
         ints n = (char*)p - (char*)_mem;
         DASSERT( n>=0  &&  n < (ints)_pagesize ); //out of page range
         DASSERT( n%item.size == 0 );        //misaligned pointer
+
+        item.destroy(p);
 
         *(uints*)p = _first;
         _first = n;
@@ -185,7 +187,16 @@ public:
 
     T* get_item( uints n ) const
     {
-        DASSERT( n*item.size < _pagesize );
+        DASSERT( n < _used );
+        return (T*)((char*)_mem + n*item.size);
+    }
+
+    ///Return item pointer or NULL if it never was used
+    ///@note the method doesn't check if the item wasn't freed already, it returns the item only if
+    /// it was allocated some time from last reset()
+    T* get_item_safe( uints n ) const
+    {
+        if( n >= _used )  return 0;
         return (T*)((char*)_mem + n*item.size);
     }
 
@@ -197,6 +208,74 @@ public:
     }
 
     uints get_itemsize() const   { return item.size; }
+};
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+template<class T>
+class chunklist
+{
+    struct element
+    {
+        T value;
+        element* next;
+    };
+
+    chunkpage<element>  page;
+    element* first;
+    element* last;
+
+public:
+
+    void push_back( const T& v )
+    {
+        element* el = page.alloc();
+        el->value = v;
+        el->next = 0;
+        if(last)
+            last->next = el;
+        else
+            first = el;
+        last = el;
+    }
+
+    void push_front( const T& v )
+    {
+        element* el = page.alloc();
+        el->value = v;
+        el->next = 0;
+        if(first)
+            el->next = first;
+        else
+            last = el;
+        first = el;
+    }
+
+    bool pop_front()
+    {
+        if(!first)  return false;
+
+        element* el = first->next;
+        page.free(first);
+        first = el;
+        if(!first)
+            last = first;
+        return true;
+    }
+
+
+    T* get_item( uints n ) const
+    {
+        const element* el = page.get_item(n);
+        return &el->value;
+    }
+
+    uints get_item_id( const T* p ) const
+    {
+        return page.get_item_id( (const element*)p );
+    }
+
 };
 
 

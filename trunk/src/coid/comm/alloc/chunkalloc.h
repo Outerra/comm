@@ -81,7 +81,7 @@ public:
         void* pv;
         for( page* p=_last; p; p=p->prev )
         {
-            {GUARDTHIS(p->chunk->ext.member); pv = p->chunk->alloc();}
+            {GUARDTHIS(p->chunk->ext.member); pv = p->chunk->alloc_nocreate();}
             if(pv)  return item.create(pv);
         }
 
@@ -90,7 +90,7 @@ public:
         pn->chunk = block::create((uint)item.size);
         _last = pn;
 
-        {GUARDTHIS(pn->chunk->ext.member); pv = pn->chunk->alloc();}
+        {GUARDTHIS(pn->chunk->ext.member); pv = pn->chunk->alloc_nocreate();}
         return item.create(pv);
     }
 
@@ -101,7 +101,7 @@ public:
         p->~T();
 
         GUARDTHIS(page->ext.member);
-        page->free(p);
+        page->free_nodestroy(p);
     }
 
     bool check( T* p ) const
