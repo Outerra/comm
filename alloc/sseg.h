@@ -62,12 +62,13 @@ public:
     struct block
     {
         /**
-            Shift to base and size of the block.
+            Contains shift to base and size of the block.
             Kind of 'floating point' format for holding position and size of 
             wide range of block sizes (with adjusted granularities).
              1 bit 0, 5 bits shift, 13b offset and 13b size
             shift=0   =>    offset=13b<<3   size=13b<<3
             shift=1   =>    offset=13b<<4   size=13b<<4
+            ...
             shift=9   =>    offset=13b<<12  size=13b<<12    (4k -> malloc)
         **/
         uint _shftsize;
@@ -128,9 +129,9 @@ public:
             return 3+s;
         }
 
-        static uchar get_granularity_shift_from_pagesize( uint pgs )
+        static uchar get_granularity_shift_from_pagesize( uints pgs )
         {
-            pgs = (uint)nextpow2(pgs);
+            pgs = nextpow2(pgs);
 
             uchar i;
             for( i=0; pgs; ++i,pgs>>=1 );
@@ -232,7 +233,7 @@ protected:
     };
 
     ssegpage* _me;
-    uint _used;
+    uints _used;
 
     fblock* _freebg;
     fblock* _freesm;
@@ -287,23 +288,23 @@ public:
     opcd write_to_stream( binstream& bin );
     opcd read_from_stream( binstream& bin, void** pbase, int* diffaddr );
 
-    uint get_segsize() const                { return 1<<_rsegsize; }
-    uint get_used_size() const              { return _used; }
+    uints get_segsize() const               { return 1<<_rsegsize; }
+    uints get_used_size() const             { return _used; }
 
-    static ssegpage* create( bool mutex, uint segsize = 65536 )
+    static ssegpage* create( bool mutex, uints segsize = 65536 )
     {
         return new(segsize) ssegpage( mutex, segsize );
     }
 
-    static ssegpage* create( void* addr, bool mutex, uint segsize )
+    static ssegpage* create( void* addr, bool mutex, uints segsize )
     {
         return ::new(addr) ssegpage( mutex, segsize );
     }
 
     
 
-    void* operator new (size_t size, uint segsize );
-    void operator delete (void * ptr, uint segsize );
+    void* operator new (size_t size, uints segsize );
+    void operator delete (void * ptr, uints segsize );
 
     uints usable_size() const
     {
@@ -321,11 +322,11 @@ public:
 
     //opcd get_remaining_block_size(CHUNK& block) const;
 
-    block* alloc( uint s )                  { return alloc( s, true); }
-    static block* realloc( block* b, uint size, bool keep_content = true );
+    block* alloc( uints s )                 { return alloc( s, true); }
+    static block* realloc( block* b, uints size, bool keep_content = true );
 
-    static block* alloc_big( uint s );
-    static block* realloc_big( block* b, uint size, bool keep_content = true );
+    static block* alloc_big( uints s );
+    static block* realloc_big( block* b, uints size, bool keep_content = true );
 
     static opcd free( block* b );
 
@@ -383,19 +384,19 @@ public:
 
     
 
-    void check_state (uint used = 0) const;
+    void check_state( uints used = 0 ) const;
 
 private:
-    ssegpage( bool mutex, uint segsize );
+    ssegpage( bool mutex, uints segsize );
 
     friend struct SEGLOCK;
 protected:
 
 
     opcd _free( block* b );
-    block* _realloc( block* b, uint size, bool keep_content = true );
+    block* _realloc( block* b, uints size, bool keep_content = true );
     
-    block* alloc( uint size, bool adj );
+    block* alloc( uints size, bool adj );
 
     bool test_offs( block* b ) const        { return b >= get_first_ptr()  &&  (char*)b < (char*)this + (1<<_rsegsize); }
 
@@ -456,9 +457,9 @@ protected:
         insert(dest, src);
     }
 
-    opcd reduce( block* bi, uint size );
+    opcd reduce( block* bi, uints size );
 
-    void sortf( void* b, uint size, fblock* fl, fblock* fu);
+    void sortf( void* b, uints size, fblock* fl, fblock* fu);
     void sortf_down(fblock* p);
     void sortf_up(fblock* p);
 

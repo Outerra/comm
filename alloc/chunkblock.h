@@ -121,15 +121,22 @@ public:
     static chunkblock* get_segchunk( void* p )
     {   return (chunkblock*) ((uints)p &~ (uints)(PAGESIZE-1)); }
 
+
     T* alloc()
+    {
+        void* p = alloc_nocreate();
+        return p ? item.create(p) : 0;
+    }
+
+    void* alloc_nocreate()
     {
         if( _numfree == 0 )
             return 0;
 
-        T* p;
+        void* p;
         if(!_first)    //working in direct mode
         {
-            p = (T*)((char*)this + _used);
+            p = ((char*)this + _used);
             _used += item.size;
             if( (uints)_used > _totalsize-item.size )    //out of direct memory, switch to the list mode
                 _used = -1;
@@ -148,11 +155,11 @@ public:
         else                //working in list mode
         {
             uint* pn = (uint*) ( (char*)this + _first );
-            DASSERT( *pn >= PAGESIZE || (*pn > sizeof(chunkblock) && (*pn-sizeof(chunkblock))%item.size == 0) );
+            DASSERT( *pn >= PAGESIZE || *pn==0 || (*pn > sizeof(chunkblock) && (*pn-sizeof(chunkblock))%item.size == 0) );
             DASSERT( *pn < PAGESIZE || (*pn > sizeof(uints) && *pn < _totalsize && ((*pn%PAGESIZE)-sizeof(uints))%item.size == 0) );
 
             _first = *pn;
-            p = (T*)pn;
+            p = pn;
         }
 
         --_numfree;
@@ -161,16 +168,37 @@ public:
 
     void free( T* p )
     {
-        ints n = (char*)p-(char*)this;
-        DASSERT_RETVOID( n >= (ints)sizeof(chunkblock)  &&  n < (ints)_totalsize );    //invalid pointer
+        ints n = check_chunk(p);
+        if(n<0)  return;
 
-        ints m = (n<(ints)PAGESIZE) ? (n-align_value(sizeof(chunkblock),sizeof(uint64))) : (n-sizeof(uint64));
-        DASSERT_RETVOID( m%item.size == 0 );                                    //misaligned pointer
+        item.destroy(p);
 
         *(uints*)p = _first;
         _first = n;
 
         ++_numfree;
+    }
+
+    void free_nodestroy( void* p )
+    {
+        ints n = check_chunk(p);
+        if(n<0)  return;
+
+        *(uints*)p = _first;
+        _first = n;
+
+        ++_numfree;
+    }
+
+private:
+    ints check_chunk( void* p ) const
+    {
+        ints n = (char*)p-(char*)this;
+        DASSERT_RET( n >= (ints)sizeof(chunkblock)  &&  n < (ints)_totalsize, -1 );    //invalid pointer
+
+        ints m = (n<(ints)PAGESIZE) ? (n-align_value(sizeof(chunkblock),sizeof(uint64))) : (n-sizeof(uint64));
+        DASSERT_RET( m%item.size == 0, -1 );                                    //misaligned pointer
+        return n;
     }
 };
 
