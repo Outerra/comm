@@ -955,7 +955,7 @@ public:
         return p;
     }
 
-    void ins( uints pos, const T& v )
+    void ins_value( uints pos, const T& v )
     {
         DASSERT( pos != UMAX );
         T* p;
