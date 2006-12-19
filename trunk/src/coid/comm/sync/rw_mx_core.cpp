@@ -69,7 +69,7 @@ comm_mutex_rw::comm_mutex_rw()
 
     InitializeCriticalSection( (CRITICAL_SECTION*)&_mxIN );
 	InitializeCriticalSection( (CRITICAL_SECTION*)&_mxOUT );
-	_cndAccess = (uint)CreateEvent( NULL, true, true, NULL );
+	_cndAccess = (uints)CreateEvent( NULL, true, true, NULL );
 }
 
 ///////////////////////////////////////////////////////////////////////////////////

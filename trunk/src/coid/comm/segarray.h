@@ -46,8 +46,10 @@
 #include "assert.h"
 #include "alloc/chunkpage.h"
 #include "binstream/stlstream.h"
+
 //#include <malloc.h>
-#include <fstream>
+//#include <fstream>
+
 
 COID_NAMESPACE_BEGIN
 
@@ -862,7 +864,7 @@ private:
 
     segment* get_last_segment() const
     {
-        return _segments.size() ? get_segment(_segments.size()-1) : 0;
+        return _segments.size() ? get_segment((uint)_segments.size()-1) : 0;
     }
 
     //look for the segment above the one given
