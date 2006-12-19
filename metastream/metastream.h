@@ -745,6 +745,10 @@ private:
     binstreamhook _hook;            ///< internal data binstream
 
     dynarray<uchar> _data;          ///< cache for unordered input data
+
+    //workaround for M$ compiler, instantiate dynarray<uint> first so it doesn't think these are the same
+    typedef dynarray<uint>          __Tdummy;
+
     dynarray<uints> _cachetbl;      ///< cache table stack
     uints _cachetbloffs;            ///< offset to the current entry in stored class table
     uints _cachetbloffsquit;        ///< when unwinding back, an offset where to stop reading from cache

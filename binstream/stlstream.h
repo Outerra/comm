@@ -48,9 +48,11 @@
 #include <map>
 
 #include <iterator>
+
 #include "binstream.h"
 #include "../metastream/metastream.h"
 #include "../str.h"
+
 
 COID_NAMESPACE_BEGIN
 

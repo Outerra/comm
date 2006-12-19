@@ -83,6 +83,13 @@ struct type_dereference {typedef void type;};
 template<class K>
 struct type_dereference<K*> {typedef K type;};
 
+////////////////////////////////////////////////////////////////////////////////
+template<class T>
+struct type_deconst {typedef T type;};
+
+template<class K>
+struct type_deconst<const K> {typedef K type;};
+
 
 ////////////////////////////////////////////////////////////////////////////////
 template<class T>

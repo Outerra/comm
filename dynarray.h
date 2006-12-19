@@ -88,23 +88,6 @@ inline ints get_aligned_size( ints size, uints ralign )
     return (size + align) &~align;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-/*
-template <class T>
-struct REBASE
-{
-    T& ref;
-
-    T* operator ->()                { return &ref; }
-    const T* operator ->() const    { return &ref; }
-    
-    T& operator *()                 { return ref; }
-    const T& operator *() const     { return ref; }
-
-    operator T& ()                  { return ref; }
-    operator const T& ()            { return ref; }
-};
-*/
 
 ////////////////////////////////////////////////////////////////////////////////
 template<class T>
@@ -226,6 +209,8 @@ class dynarray
     void _set_count(uints n)    { A::set_count( _ptr, n ); }
 
 public:
+
+    typedef T                   value_type;
 
     COIDNEWDELETE
 
@@ -355,12 +340,8 @@ public:
     };
 
     
-    //operator T*(void) { return _ptr; }
-    //operator const T*(void) const { return _ptr; }
-    //T& operator * (void) const { return *_ptr; }
-
     ///Debug checks
-#ifdef _DEBUG
+#ifdef _DEBUG1
 # define DYNARRAY_CHECK_BOUNDS_S(k)          _check_bounds((ints)k);
 # define DYNARRAY_CHECK_BOUNDS_U(k)          _check_bounds((uints)k);
 #else
@@ -371,8 +352,8 @@ public:
     void _check_bounds(ints k) const         { DASSERTE( k>=0 && (uints)k<_count(), ersOUT_OF_RANGE ); }
     void _check_bounds(uints k) const        { DASSERTE( k<_count(), ersOUT_OF_RANGE ); }
 
-    const T& operator [] (uints k) const     { DYNARRAY_CHECK_BOUNDS_U(k)  return _ptr[k]; }
-    T& operator [] (uints k)                 { DYNARRAY_CHECK_BOUNDS_U(k)  return _ptr[k]; }
+    const T& operator [] (uints k) const     { DYNARRAY_CHECK_BOUNDS_U(k)  return *(_ptr+k); }
+    T& operator [] (uints k)                 { DYNARRAY_CHECK_BOUNDS_U(k)  return *(_ptr+k); }
 
 
     bool operator == ( const dynarray<T>& a ) const
@@ -387,15 +368,6 @@ public:
     {
         return !operator == (a);
     }
-
-    // T*const* operator & (void) const { return &_ptr; }
-#ifdef SYSTYPE_MSVC6
-#pragma warning (disable : 4284)
-#endif //SYSTYPE_MSVC6
-    T* operator -> (void) const             { return _ptr; }
-#ifdef SYSTYPE_MSVC6
-#pragma warning (default : 4284)
-#endif //SYSTYPE_MSVC6
 
     ///Get fresh array with \a nitems of elements
     /** Destroys all elements of array and adjusts the array to the required size

@@ -197,7 +197,7 @@ sha1_pad( struct sha1_ctxt *ctxt )
 	if (padlen < 8) {
 		//bzero(&ctxt->m.b8[padstart], padlen);
         memset( &ctxt->m.b8[padstart], 0, padlen);
-		COUNT += padlen;
+		COUNT += (uint8)padlen;
 		COUNT %= 64;
 		sha1_step(ctxt);
 		padstart = COUNT % 64;	/* should be 0 */
@@ -205,7 +205,7 @@ sha1_pad( struct sha1_ctxt *ctxt )
 	}
 	//bzero(&ctxt->m.b8[padstart], padlen - 8);
     memset( &ctxt->m.b8[padstart], 0, padlen - 8 );
-	COUNT += (padlen - 8);
+	COUNT += (uint8)(padlen - 8);
 	COUNT %= 64;
 
     if( sysIsBigEndian )
@@ -245,7 +245,7 @@ sha1_loop(
 		copysiz = (gaplen < len - off) ? gaplen : len - off;
 		//bcopy(&input[off], &ctxt->m.b8[gapstart], copysiz);
         xmemcpy( &ctxt->m.b8[gapstart], &input[off], copysiz );
-		COUNT += copysiz;
+		COUNT += (uint8)copysiz;
 		COUNT %= 64;
 		ctxt->c.b64[0] += copysiz * 8;
 		if (COUNT % 64 == 0)
