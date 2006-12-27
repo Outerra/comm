@@ -73,7 +73,9 @@ public:
     static const char* separator_str();
     static charstr& treat_trailing_separator( charstr& path, bool shouldbe )
     {
-        if( path.last_char() == separator() ) {
+        char c = path.last_char();
+        char s = separator();
+        if( (s == '\\' && (c == '\\' || c == '/'))  ||  s == c ) {
             if(!shouldbe)  path.trim_to_length(-1);
         }
         else if(shouldbe)
