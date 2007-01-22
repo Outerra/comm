@@ -83,8 +83,8 @@ ssegpage::ssegpage( bool mutex, uints segsize )
     _me = this;
     _used = 0;
 
-    segsize = nextpow2(segsize);
-    _rsegsize = getpow2( segsize );
+    //segsize = nextpow2(segsize);
+    _rsegsize = int_high_pow2( segsize );
     _ralign = ssegpage::block::get_granularity_shift_from_rpagesize((uchar)_rsegsize);
 
     if(mutex)
