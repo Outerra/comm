@@ -389,7 +389,11 @@
 				>
 			</File>
 			<File
-				RelativePath="metastream\fmtstreamxml.h"
+				RelativePath=".\metastream\fmtstreamxml.h"
+				>
+			</File>
+			<File
+				RelativePath=".\metastream\fmtstreamxml2.h"
 				>
 			</File>
 			<File

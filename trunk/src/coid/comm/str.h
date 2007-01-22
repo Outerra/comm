@@ -694,9 +694,13 @@ public:
 #ifdef SYSTYPE_MSVC8plus
         struct tm tm;
         localtime_s( &tm, &t.t );
-        char tzbuf[8];
-        uints sz;
-        _get_tzname( &sz, tzbuf, 8, 0 );
+        char tzbuf[32];
+        if( flg & DATE_TZ ) {
+            uints sz;
+            _get_tzname( &sz, tzbuf, 32, 0 );
+        }
+        else
+            tzbuf[0] = 0;
         return append_time( tm, flg, tzbuf );
 #else
         struct tm const& tm = *localtime( (const time_t*)&t.t );
@@ -1126,32 +1130,32 @@ public:
 
 
     ////////////////////////////////////////////////////////////////////////////////
-    int cmpeq( const token& str ) const
+    bool cmpeq( const token& str ) const
     {
         if( _tstr.size() != str.len() )
             return 0;
         return 0 == memcmp( _tstr.ptr(), str.ptr(), str.len() );
     }
-    int cmpeq( const char* str ) const
+    bool cmpeq( const char* str ) const
     {
         if( _tstr.size() == 0 )  return str == 0  ||  str[0] == 0;
         return 0 == strcmp( _tstr.ptr(), str );
     }
 
-    int cmpeqi( const token& str ) const
+    bool cmpeqi( const token& str ) const
     {
         if( _tstr.size() != str.len() )
             return 0;
         return 0 == strncasecmp( _tstr.ptr(), str.ptr(), str.len() );
     }
-    int cmpeqi( const char* str ) const
+    bool cmpeqi( const char* str ) const
     {
         if( _tstr.size() == 0 )  return str == 0  ||  str[0] == 0;
         return 0 == strcasecmp( _tstr.ptr(), str );
     }
 
-    int cmpeqc( const token& str, bool casecmp ) const      { return casecmp ? cmpeq(str) : cmpeqi(str); }
-    int cmpeqc( const char* str, bool casecmp ) const       { return casecmp ? cmpeq(str) : cmpeqi(str); }
+    bool cmpeqc( const token& str, bool casecmp ) const      { return casecmp ? cmpeq(str) : cmpeqi(str); }
+    bool cmpeqc( const char* str, bool casecmp ) const       { return casecmp ? cmpeq(str) : cmpeqi(str); }
 
     ////////////////////////////////////////////////////////////////////////////////
     int cmp( const token& str ) const

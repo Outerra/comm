@@ -48,15 +48,18 @@ struct timet
 {
     int64  t;
 
-    timet()                     { t = -1; }
-    timet( time_t tx )          { t = tx; }
+    timet()                         { now(); }
+    timet( time_t tx )              { t = tx; }
 
-    operator time_t () const    { return (time_t)t; }
+    operator time_t () const        { return (time_t)t; }
+
+    int64 diff( time_t tx ) const   { return t - tx; }
 
 
-    void now()
+    timet& now()
     {
         t = (int64) ::time(0);
+        return *this;
     }
 };
 

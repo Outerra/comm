@@ -297,21 +297,21 @@ struct token
     }
 
     ////////////////////////////////////////////////////////////////////////////////
-    int cmpeq( const token& str ) const
+    bool cmpeq( const token& str ) const
     {
         if( len() != str.len() )
             return 0;
         return 0 == memcmp( ptr(), str.ptr(), len() );
     }
 
-    int cmpeqi( const token& str ) const
+    bool cmpeqi( const token& str ) const
     {
         if( len() != str.len() )
             return 0;
         return 0 == strncasecmp( ptr(), str.ptr(), len() );
     }
 
-    int cmpeqc( const token& str, bool casecmp ) const
+    bool cmpeqc( const token& str, bool casecmp ) const
     {
         return casecmp ? cmpeq(str) : cmpeqi(str);
     }
@@ -1593,11 +1593,11 @@ struct token
         tmm.tm_min = m.touint_and_shift();
         if( !m.is_empty() || tmm.tm_min > 59 )  return ersINVALID_PARAMS "timefmt: minutes";
 
-        token s = cut_left(' ', 1, true);
+        token s = cut_left(' ', 1, !timezone.is_empty() );
         tmm.tm_sec = s.touint_and_shift();
         if( !s.is_empty() || tmm.tm_sec > 59 )  return ersINVALID_PARAMS "timefmt: seconds";
 
-        tmm.tm_isdst = 0;
+        tmm.tm_isdst = 0;//-(int)timezone.is_empty();
 
         if( !consume_icase(timezone) )  return ersINVALID_PARAMS "timefmt: time zone";
         return 0;
