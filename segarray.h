@@ -296,7 +296,7 @@ public:
         T* get_first() const                    { return (T*) bgi_ptr(); }
         T* get_last() const                     { return (T*) end_ptr(1); }
 
-        T* get_at(UIDX a) const                 { RASSERTX(a-_begidx < _nitems, "segment not containg the item"); return (T*) bgi_ptr(int(a-_begidx)); }
+        T* get_at(UIDX a) const                 { DASSERTX(a-_begidx < _nitems, "segment not containg the item"); return (T*) bgi_ptr(int(a-_begidx)); }
         bool is_at(UIDX a) const                { return (a-_begidx >= _nitems)  ?  false  :  true; }
 
         uint get_raw_segsize() const            { return 1<<_array->_rsegsize; }
@@ -1479,6 +1479,7 @@ public:
     }
 
     T* get_at( UIDX i ) const                       { return _get_at(i); }
+    TAIL* get_tail_at( UIDX i ) const               { return (TAIL*)((char*)_get_at(i)+sizeof_T()); }
 
     T* get_at_create( UIDX a )
     {
@@ -1495,6 +1496,7 @@ public:
         }
         return get_at(a);
     }
+    TAIL* get_tail_at_create( UIDX a )              { return (TAIL*)((char*)get_at_create(a)+sizeof_T()); }
 
 
     opcd get_segment_info( uint sg, UIDX* first, uint* nitems, uint* offs ) const
