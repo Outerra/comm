@@ -296,7 +296,7 @@ public:
 
     void add_delimiters( ucs4 leading, ucs4 trailing )
     {
-        charpair* pcp = dynarray_add_sort( _strdel, leading );
+        charpair* pcp = _strdel.add_sortT(leading);
         pcp->_first = leading;
         pcp->_second = trailing;
 
@@ -316,7 +316,7 @@ public:
 
     void add_escape_pair( const token& original, ucs4 replacement )
     {
-        escpair* pep = dynarray_add_sort( _escary, original );
+        escpair* pep = _escary.add_sortT(original);
         pep->_pattern = original;
         pep->_replace = replacement;
         pep->_fnc_replace = 0;
@@ -326,7 +326,7 @@ public:
 
     void add_escape_pair( const token& original, void (*fnc_replace)(token&,charstr&) )
     {
-        escpair* pep = dynarray_add_sort( _escary, original );
+        escpair* pep = _escary.add_sortT(original);
         pep->_pattern = original;
         pep->_fnc_replace = fnc_replace;
     }
@@ -434,7 +434,7 @@ public:
             //delimiters can be utf8 characters
             uints off = 0;
             ucs4 k = get_code(off);
-            ints ep = dynarray_contains_sorted( _strdel, k );
+            ints ep = _strdel.contains_sortedT(k);
 
             if( ep >= 0 )
             {
@@ -727,7 +727,7 @@ protected:
                     }
                     else {
                         _tok += _escary[i]._pattern.len();
-                        _strbuf.append_utf8( _escary[i]._replace );
+                        _strbuf.append_ucs4( _escary[i]._replace );
                     }
                 }
                 //else it wasn't recognized escape character, just continue
@@ -796,7 +796,7 @@ protected:
     {
         const escpair* const* pp = _backmap.find_value(k);
         if(!pp)
-            dst.append_utf8(k);
+            dst.append_ucs4(k);
         else {
             dst.append(_escchar);
             dst += (*pp)->_pattern;
@@ -823,7 +823,7 @@ protected:
         if( k < _abmap.size() )
             return 1;
 
-        uint nb = get_utf8_char_expected_bytes( _tok.ptr()+offs );
+        uint nb = get_utf8_seq_expected_bytes( _tok.ptr()+offs );
 
         uints ab = _tok.len() - offs;
         if( nb > ab )
@@ -840,7 +840,7 @@ protected:
     /// preceeding it to the buffer and fetch next buffer page
     ucs4 get_utf8_code( uints& offs )
     {
-        uint nb = get_utf8_char_expected_bytes( _tok.ptr()+offs );
+        uint nb = get_utf8_seq_expected_bytes( _tok.ptr()+offs );
 
         uints ab = _tok.len() - offs;
         if( nb > ab )
@@ -852,7 +852,7 @@ protected:
             offs = 0;
         }
 
-        return read_utf8_char( _tok.ptr(), offs );
+        return read_utf8_seq( _tok.ptr(), offs );
     }
     
     ///Scan input for characters of multiple groups

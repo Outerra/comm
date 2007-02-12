@@ -73,6 +73,7 @@ inline void xstrncpy( char* dst, const char* src, uints n )
 
 class charstr;
 struct token;
+template<class T, class A> class dynarray;
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Preprocessed substring for fast substring searches
@@ -507,22 +508,22 @@ struct token
     ucs4 get_utf8( uints& off ) const
     {
         if( off >= _len )  return 0;
-        if( _len - off < get_utf8_char_expected_bytes(_ptr+off) )  return UMAX;
-        return read_utf8_char( _ptr, off );
+        if( _len - off < get_utf8_seq_expected_bytes(_ptr+off) )  return UMAX;
+        return read_utf8_seq( _ptr, off );
     }
 
     ///Cut UTF-8 sequence from the token, returning its UCS-4 code
     ucs4 cut_utf8()
     {
         if( _len == 0 )  return 0;
-        uints off = get_utf8_char_expected_bytes(_ptr);
+        uints off = get_utf8_seq_expected_bytes(_ptr);
         if( _len < off ) {
             //malformed UTF-8 character, but truncate it to make progress
             _ptr += _len;
             _len = 0;
             return UMAX;
         }
-        ucs4 ch = read_utf8_char(_ptr);
+        ucs4 ch = read_utf8_seq(_ptr);
         _ptr += off;
         _len -= off;
         return ch;
@@ -1603,6 +1604,8 @@ struct token
         return 0;
     }
 
+    template<class A>
+    bool to_wchar( dynarray<ushort,A>& dst ) const;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -264,7 +264,7 @@ public:
         if( escrule < 0  &&  escrule >= (int)_escary.size() )  return false;
 
         //add escape pairs, longest codes first
-        escpair* ep = dynarray_add_sort( _escary[escrule]->pairs, code );
+        escpair* ep = _escary[escrule]->pairs.add_sortT(code);
         ep->code = code;
         ep->replace = replacewith;
 
@@ -924,7 +924,7 @@ protected:
         if( k < _abmap.size() )
             return 1;
 
-        uint nb = get_utf8_char_expected_bytes( _tok.ptr()+offs );
+        uint nb = get_utf8_seq_expected_bytes( _tok.ptr()+offs );
 
         uints ab = _tok.len() - offs;
         if( nb > ab )
@@ -941,7 +941,7 @@ protected:
     /// preceeding it to the buffer and fetch next buffer page
     ucs4 get_utf8_code( uints& offs )
     {
-        uint nb = get_utf8_char_expected_bytes( _tok.ptr()+offs );
+        uint nb = get_utf8_seq_expected_bytes( _tok.ptr()+offs );
 
         uints ab = _tok.len() - offs;
         if( nb > ab )
@@ -953,7 +953,7 @@ protected:
             offs = 0;
         }
 
-        return read_utf8_char( _tok.ptr(), offs );
+        return read_utf8_seq( _tok.ptr(), offs );
     }
 
     uints count_notescape( uints off ) const

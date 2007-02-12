@@ -51,11 +51,11 @@ COID_NAMESPACE_BEGIN
 typedef uint32      ucs4;
 
 ////////////////////////////////////////////////////////////////////////////////
-inline uint get_utf8_char_expected_bytes( const char* utf8 )
+inline uint get_utf8_seq_expected_bytes( const char* utf8 )
 {
     static const uchar gUTF8_TB[16] = { 1,1,1,1,1,1,1,1,2,2,2,2,3,3,4,5 };
 
-    ucs4 cd = utf8[0];
+    ucs4 cd = (uchar)utf8[0];
     if( cd < 128 )
         return 1;
 
@@ -68,9 +68,9 @@ inline uint get_utf8_char_expected_bytes( const char* utf8 )
 
 ////////////////////////////////////////////////////////////////////////////////
 /// non-checking routine for conversion from an UTF-8 string to UCS-4 value
-inline ucs4 read_utf8_char( const char* utf8, uints& off )
+inline ucs4 read_utf8_seq( const char* utf8, uints& off )
 {
-    ucs4 cd = utf8[off++];
+    ucs4 cd = (uchar)utf8[off++];
     if( cd < 0x80 )  return cd;
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -95,7 +95,7 @@ inline ucs4 read_utf8_char( const char* utf8, uints& off )
     ucs4 ch = cd - 0xc0;
     int nb = gUTF8_TB[ch>>2];
 
-	for( ; nb>0; --nb )
+	for( int i=nb; i>0; --i )
 	{
         cd <<= 6;
 	    cd += (uchar)utf8[off++];
@@ -106,9 +106,9 @@ inline ucs4 read_utf8_char( const char* utf8, uints& off )
 
 ////////////////////////////////////////////////////////////////////////////////
 /// non-checking routine for conversion from an UTF-8 string to UCS-4 value
-inline ucs4 read_utf8_char( const char* utf8 )
+inline ucs4 read_utf8_seq( const char* utf8 )
 {
-    ucs4 cd = *utf8++;
+    ucs4 cd = (uchar)*utf8++;
     if( cd < 0x80 )  return cd;
 
     /// to get the number of trailing bytes of UTF-8 sequence, use first
@@ -131,7 +131,7 @@ inline ucs4 read_utf8_char( const char* utf8 )
     ucs4 ch = cd - 0xc0;
     int nb = gUTF8_TB[ch>>2];
 
-	for( ; nb>0; --nb )
+	for( int i=nb; i>0; --i )
 	{
         cd <<= 6;
 	    cd += (uchar)*utf8++;
@@ -141,7 +141,7 @@ inline ucs4 read_utf8_char( const char* utf8 )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-inline ucs4 read_utf8_char_partial( const char* utf8, uint len, char* buf6, uints& off )
+inline ucs4 read_utf8_seq_partial( const char* utf8, uint len, char* buf6, uints& off )
 {
     ////////////////////////////////////////////////////////////////////////////////
     /// to get the number of trailing bytes of UTF-8 sequence, use first
@@ -167,7 +167,7 @@ inline ucs4 read_utf8_char_partial( const char* utf8, uint len, char* buf6, uint
 
     if( *buf6 == 0 )
     {
-        cd = utf8[off++];
+        cd = (uchar)utf8[off++];
         if( cd <= 0x7f )  return cd;
 
         RASSERT( cd >= 0xc0  &&  cd < 254 );
@@ -204,7 +204,7 @@ inline ucs4 read_utf8_char_partial( const char* utf8, uint len, char* buf6, uint
 
     off += nb-1-sh;
 
-	for( ; nb>0; --nb )
+	for( int i=nb; i>0; --i )
 	{
         cd <<= 6;
 	    cd += (uchar)*utf8++;
@@ -215,22 +215,25 @@ inline ucs4 read_utf8_char_partial( const char* utf8, uint len, char* buf6, uint
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-inline void write_utf8_char( ucs4 ch, char*& utf8 )
+inline uchar write_utf8_seq( ucs4 ch, char* utf8 )
 {
     if( ch <= 0x7f )
     {
         *utf8++ = (char)ch;
+        return 1;
     }
     else if( ch <= 0x7ff )
     {
         *utf8++ = 0xc0 + uchar(ch / 0x40);
         *utf8++ = 0x80 + uchar(ch & 0x3f);
+        return 2;
     }
     else if( ch <= 0xffff )
     {
         *utf8++ = 0xe0 + uchar(ch / 0x1000);
         *utf8++ = 0x80 + uchar(ch / 0x40 & 0x3f);
         *utf8++ = 0x80 + uchar(ch & 0x3f);
+        return 3;
     }
     else if( ch <= 0x1fffff )
     {
@@ -238,6 +241,7 @@ inline void write_utf8_char( ucs4 ch, char*& utf8 )
         *utf8++ = 0x80 + uchar(ch / 0x1000 & 0x3f);
         *utf8++ = 0x80 + uchar(ch / 0x40 & 0x3f);
         *utf8++ = 0x80 + uchar(ch & 0x3f);
+        return 4;
     }
     else if( ch <= 0x3ffffff )
     {
@@ -246,6 +250,7 @@ inline void write_utf8_char( ucs4 ch, char*& utf8 )
         *utf8++ = 0x80 + uchar(ch / 0x1000 & 0x3f);
         *utf8++ = 0x80 + uchar(ch / 0x40 & 0x3f);
         *utf8++ = 0x80 + uchar(ch & 0x3f);
+        return 5;
     }
     else if( ch <= 0x7fffffff )
     {
@@ -255,7 +260,9 @@ inline void write_utf8_char( ucs4 ch, char*& utf8 )
         *utf8++ = 0x80 + uchar(ch / 0x1000 & 0x3f);
         *utf8++ = 0x80 + uchar(ch / 0x40 & 0x3f);
         *utf8++ = 0x80 + uchar(ch & 0x3f);
+        return 6;
     }
+    return 0;
 }
 
 

@@ -868,6 +868,10 @@
 			>
 		</File>
 		<File
+			RelativePath=".\strgen.h"
+			>
+		</File>
+		<File
 			RelativePath="token.h"
 			>
 		</File>

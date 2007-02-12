@@ -621,15 +621,33 @@ public:
         return _ptr + _count() - nitems;
     };
 
-    /// add n new elements on position where key would be inserted
-    /** this uses the \a key just to find the position, doesn't insert the key
-        @see push_sort()
-    */
-    T* add_sort( const T& key, uints n=1 )
+    ///Add n new elements on position where key would be inserted.
+    /// Uses either operator T<T or a functor(T,T)
+    /// add_sortT() can use a different key type than T, provided an operator T<K exists, or functor(T,K) was provided.
+    ///@param key key to use to find the element position in sorted array
+    ///@param n number of elements to insert
+    /** this uses the provided \a key just to find the position, doesn't insert the key
+        @see push_sort() **/
+    //@{
+    T* add_sort( const T& key, uints n=1 )                  { return add_sortT<T>(key,n); }
+
+    template<class FUNC>
+    T* add_sort( const T& key, const FUNC& fn, uints n=1 )  { return add_sortT<T,FUNC>(key,fn,n); }
+
+    template<class K>
+    T* add_sortT( const K& key, uints n=1 )
     {
-        uints i = lower_bound(key);
+        uints i = lower_boundT<K>(key);
         return ins( i, n );
     }
+
+    template<class K, class FUNC>
+    T* add_sortT( const K& key, const FUNC& fn, uints n=1 )
+    {
+        uints i = lower_boundT<K,FUNC>(key,fn);
+        return ins( i, n );
+    }
+    //@}
 
     ///Append element to the array through copy constructor
     T* push( const T& v )
@@ -832,17 +850,28 @@ public:
     }
 
 
-    ///Test whether array contains given element \a key
-    ints contains( const T& key ) const
+    ///Linear search whether array contains element comparable with \a key
+    ///@return -1 if not contained, otherwise index to the key
+    //@{
+    ints contains( const T& key ) const             { return containsT<T>(key); }
+
+    template<class K>
+    ints containsT( const K& key ) const
     {
         uints c = _count();
         for( uints i=0; i<c; ++i )
             if( _ptr[i] == key )  return i;
         return -1;
     }
+    //@}
 
-    ///Test whether array contains given element \a key
-    ints contains_back( const T& key ) const
+    ///Linear search (backwards) whether array contains element comparable with \a key
+    ///@return -1 if not contained, otherwise index to the key
+    //@{
+    ints contains_back( const T& key ) const        { return contains_backT<T>(key); }
+
+    template<class K>
+    ints contains_backT( const K& key ) const
     {
         uints c = _count();
         for(; c>0; )
@@ -852,19 +881,47 @@ public:
         }
         return -1;
     }
+    //@}
 
-    ///Test whether sorted array contains given element \a key
-    ints contains_sorted( const T& key ) const
+    ///Binary search whether sorted array contains element comparable to \a key
+    /// Uses operator T<K or functor(T,K) to search for the element, and operator T==K for equality comparison
+    //@{
+    ints contains_sorted( const T& key ) const                  { return contains_sortedT<T>(key); }
+
+    template<class FUNC>
+    ints contains_sorted( const T& key, const FUNC& fn ) const  { return contains_sortedT<T,FUNC>(key,fn); }
+
+    template<class K>
+    ints contains_sortedT( const K& key ) const
     {
-        uints lb = lower_bound(key);
+        uints lb = lower_boundT<K>(key);
         if( lb >= size()
             || !(_ptr[lb] == key) )  return -1;
         return lb;
     }
 
+    template<class K, class FUNC>
+    ints contains_sortedT( const K& key, const FUNC& fn ) const
+    {
+        uints lb = lower_boundT<K,FUNC>(key,fn);
+        if( lb >= size()
+            || !(_ptr[lb] == key) )  return -1;
+        return lb;
+    }
+    //@}
 
-    /// search sorted array (<)
-    uints lower_bound( const T& key ) const
+
+    ///Binary search sorted array using < operator (comparing T<T)
+    uints lower_bound( const T& key ) const                     { return lower_boundT<T>(key); }
+
+    ///Binary search sorted array using function object f(T,T) for comparing T<T
+    template<class FUNC>
+    uints lower_bound( const T& key, const FUNC& fn ) const     { return lower_boundT<T,FUNC>(key,fn); }
+
+    ///Binary search sorted array using different type of key
+    ///@note there must exist < operator able to do (T < K) comparison
+    template<class K>
+    uints lower_boundT( const K& key ) const
     {
         // k<m -> top = m
         // k>m -> bot = m+1
@@ -876,6 +933,27 @@ public:
         {
             m = (i+j)>>1;
             if( _ptr[m] < key )
+                i = m+1;
+            else
+                j = m;
+        }
+        return i;
+    }
+
+    ///Binary search sorted array using function object f(T,K) for comparing T<K
+    template<class K, class FUNC>
+    uints lower_boundT( const K& key, const FUNC& fn ) const
+    {
+        // k<m -> top = m
+        // k>m -> bot = m+1
+        // k==m -> top = m
+        uints i, j, m;
+        i = 0;
+        j = _count();
+        for( ; j>i; )
+        {
+            m = (i+j)>>1;
+            if( fn(_ptr[m], key) )
                 i = m+1;
             else
                 j = m;
@@ -982,11 +1060,21 @@ public:
         return m;
     }
 
-    ///delete key in sorted array
-    /// @return number of deleted items
-    uints del_sort( const T& key, uints n=1 )
+    ///Delete element in sorted array
+    /// Uses either operator T<K or a functor(T,K) for binary search, and operator T==K for equality comparison
+    ///@return number of deleted items
+    ///@param key key to localize the first item to delete
+    ///@param n maximum number of items to delete
+    //@{
+    uints del_sort( const T& key, uints n=1 )                   { return del_sortT<T>(key,n); }
+
+    template<class FUNC>
+    uints del_sort( const T& key, const FUNC& fn, uints n=1 )   { return del_sortT<T,FUNC>(key,fn,n); }
+
+    template<class K>
+    uints del_sortT( const K& key, uints n=1 )
     {
-        uints c = lower_bound(key);
+        uints c = lower_boundT<K>(key);
         uints i, m = _count();
         for( i=c; i<m && n>0; ++i,--n ) {
             if( !(_ptr[i] == key) )
@@ -996,6 +1084,21 @@ public:
             del( c, i-c );
         return i-c;
     }
+
+    template<class K, class FUNC>
+    uints del_sortT( const K& key, const FUNC& fn, uints n=1 )
+    {
+        uints c = lower_boundT<K,FUNC>(key,fn);
+        uints i, m = _count();
+        for( i=c; i<m && n>0; ++i,--n ) {
+            if( !(_ptr[i] == key) )
+                break;
+        }
+        if( i>c )
+            del( c, i-c );
+        return i-c;
+    }
+    //@}
 
     T* move_temp (uints from, uints to, uints num, void* buf)
     {
@@ -1328,129 +1431,6 @@ public:
     
 };
 
-
-////////////////////////////////////////////////////////////////////////////////
-/// outside because M$VC goes banana with nested templates
-template <class T, class KEY>
-uints dynarray_lower_bound( const dynarray<T>& a, const KEY& k )
-{
-    // k<m -> top = m
-    // k>m -> bot = m+1
-    // k==m -> top = m
-    uints i, j, m;
-    i = 0;
-    j = a.size();
-    for( ; j>i; )
-    {
-        m = (i+j)>>1;
-        if( a._ptr[m] < k )
-            i = m+1;
-        else
-            j = m;
-    }
-    return i;
-}
-
-template <class T, class KEY, class FUNC>
-uints dynarray_lower_bound( const dynarray<T>& a, const KEY& k, FUNC& f )
-{
-    // k<m -> top = m
-    // k>m -> bot = m+1
-    // k==m -> top = m
-    uints i, j, m;
-    i = 0;
-    j = a.size();
-    for( ; j>i; )
-    {
-        m = (i+j)>>1;
-        if( f( a._ptr[m], k ) )
-            i = m+1;
-        else
-            j = m;
-    }
-    return i;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-template <class T, class KEY>
-T* dynarray_add_sort( dynarray<T>& a, const KEY& key, uints n=1 )
-{
-    uints i = dynarray_lower_bound( a, key );
-    return a.ins( i, n );
-}
-
-template <class T, class KEY, class FUNC>
-T* dynarray_add_sort( dynarray<T>& a, const KEY& key, FUNC& f, uints n=1 )
-{
-    uints i = dynarray_lower_bound( a, key, f );
-    return a.ins( i, n );
-}
-
-///delete key in sorted array
-/// @return number of deleted items
-template <class T, class KEY>
-uints dynarray_del_sort( dynarray<T>& a, const KEY& key, uints n=1 )
-{
-    uints c = dynarray_lower_bound(a, key);
-    uints i, m = a.size();
-    for( i=c; i<m && n>0; ++i,--n ) {
-        if( !(a._ptr[i] == key) )
-            break;
-    }
-    if( i>c )
-        a.del( c, i-c );
-    return i-c;
-}
-
-///delete key in sorted array
-/// @return number of deleted items
-template <class T, class KEY, class FUNC>
-uints dynarray_del_sort( dynarray<T>& a, const KEY& key, FUNC& f, uints n=1 )
-{
-    uints c = dynarray_lower_bound(a, key, f);
-    uints i, m = a.size();
-    for( i=c; i<m && n>0; ++i,--n ) {
-        if( !(a._ptr[i] == key) )
-            break;
-    }
-    if( i>c )
-        a.del( c, i-c );
-    return i-c;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-///Test whether array contains given element \a key
-template <class T, class KEY>
-ints dynarray_contains( const dynarray<T>& a, const KEY& key )
-{
-    uints c = a.size();
-    for( uints i=0; i<c; ++i )
-        if( a._ptr[i] == key )  return i;
-    return -1;
-}
-
-///Test whether array contains given element \a key
-template <class T, class KEY>
-ints dynarray_contains_back( const dynarray<T>& a, const KEY& key )
-{
-    uints c = a.size();
-    for(; c>0; )
-    {
-        --c;
-        if( a._ptr[c] == key )  return c;
-    }
-    return -1;
-}
-
-///Test whether sorted array contains given element \a key
-template <class T, class KEY>
-ints dynarray_contains_sorted( const dynarray<T>& a, const KEY& key )
-{
-    uints lb = dynarray_lower_bound(a,key);
-    if( lb >= a.size()
-        || !(a._ptr[lb] == key) )  return -1;
-    return lb;
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 ///take control over buffer controlled by \a dest dynarray, \a dest ptr will be set to zero
