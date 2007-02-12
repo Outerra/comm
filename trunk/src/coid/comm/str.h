@@ -660,12 +660,65 @@ public:
         *p = c;
     }
 
-    void append_utf8( ucs4 c )
+    void append( const token& tok, uints filllen = 0, char fillchar=' ' )
     {
-        char* p = get_append_buf(6);
-        write_utf8_char( c, p );
+        if( filllen == 0 )
+            filllen = tok._len;
+        
+        char* p = alloc_append_buf( filllen );
+        uints n = tok._len > filllen ? filllen : tok._len;
+        xmemcpy( p, tok._ptr, n );
+        memset( p+n, fillchar, filllen - n );
+    }
 
-        trim_to_length( uints(p - ptr()) );
+    void append_ucs4( ucs4 c )
+    {
+        if( c <= 0x7f )  append((char)c);
+        else {
+            char* p = get_append_buf(6);
+            uchar n = write_utf8_seq( c, p );
+
+            trim_to_length( n + uints(p - ptr()) );
+        }
+    }
+
+    void append_wchar_buf( const ushort* src, uint nchars )
+    {
+        reserve( len() + nchars + 1 );
+        _tstr.set_size( len() );
+        for( ; nchars>0; --nchars,++src )
+        {
+            if( *src <= 0x7f )
+                *_tstr.add() = (char)*src;
+            else
+            {
+                uints old = _tstr.size();
+                char* p = _tstr.add(6);
+                uint n = write_utf8_seq( *src, p );
+                _tstr.set_size( old + n );
+            }
+        }
+        if( _tstr.size() )
+            *_tstr.add() = 0;
+    }
+
+    void append_wchar_buf( const ushort* src )
+    {
+        _tstr.set_size( len() );
+        for( ; *src!=0; ++src )
+        {
+            if( *src <= 0x7f )
+                *_tstr.add() = (char)*src;
+            else
+            {
+                uints old = _tstr.size();
+                char* p = _tstr.add(6);
+                uint n = write_utf8_seq( *src, p );
+                _tstr.set_size( old + n );
+            }
+        }
+        if( _tstr.size() )
+            *_tstr.add() = 0;
     }
 
     enum {
@@ -1111,23 +1164,15 @@ public:
     }
 
 
-    void append( const token& tok, uints filllen = 0, char fillchar=' ' )
-    {
-        if( filllen == 0 )
-            filllen = tok._len;
-        
-        char* p = alloc_append_buf( filllen );
-        uints n = tok._len > filllen ? filllen : tok._len;
-        xmemcpy( p, tok._ptr, n );
-        memset( p+n, fillchar, filllen - n );
-    }
-
 
     uints touint( uints offs=0 ) const       { return token(*this).touint(offs); }
     ints toint (uints offs=0) const          { return token(*this).toint(offs); }
     double todouble (uints offs=0) const     { return token(*this).todouble(offs); }
 
-
+    bool to_wchar( dynarray<ushort>& dst )
+    {
+        return token(*this).to_wchar(dst);
+    }
 
     ////////////////////////////////////////////////////////////////////////////////
     bool cmpeq( const token& str ) const
@@ -1375,8 +1420,31 @@ inline void token::assign( const charstr& str )
     _len = 0;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-//typedef charstr::token          token;
+template<class A>
+inline bool token::to_wchar( dynarray<ushort,A>& dst ) const
+{
+    dst.reset();
+    uints n = len();
+    const char* p = ptr();
+    for( ; n>0; )
+    {
+        if( (uchar)*p <= 0x7f ) {
+            *dst.add() = *p++;
+            --n;
+        }
+        else
+        {
+            uint ne = get_utf8_seq_expected_bytes(p);
+            if( ne > n )  return false;
+
+            *dst.add() = (ushort)read_utf8_seq(p);
+            p += ne;
+            n -= ne;
+        }
+    }
+    *dst.add() = 0;
+    return true;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 inline binstream& operator >> (binstream &in, charstr& x)
@@ -1608,6 +1676,7 @@ struct command_tokens
         _ctok.set_empty();
     }
 };
+
 
 
 COID_NAMESPACE_END
