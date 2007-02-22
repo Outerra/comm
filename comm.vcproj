@@ -47,6 +47,7 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
+				BufferSecurityCheck="false"
 				PrecompiledHeaderFile=".\Debug/comm.pch"
 				AssemblerListingLocation=".\Debug/"
 				ObjectFile=".\Debug/"
@@ -430,6 +431,10 @@
 			</File>
 			<File
 				RelativePath=".\alloc\chunkpage.h"
+				>
+			</File>
+			<File
+				RelativePath=".\alloc\chunkpool.h"
 				>
 			</File>
 			<File

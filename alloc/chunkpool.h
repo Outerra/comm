@@ -35,56 +35,46 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include "assert.h"
-#include "binstream/filestream.h"
-#include "binstream/txtstream.h"
-#include "binstream/nullstream.h"
+#ifndef __COID_COMM_CHUNKPOOL__HEADER_FILE__
+#define __COID_COMM_CHUNKPOOL__HEADER_FILE__
+
+
+#include "chunkpage.h"
 
 COID_NAMESPACE_BEGIN
 
 
-struct AssertLog
+////////////////////////////////////////////////////////////////////////////////
+///Creator template that allows reusing of the elements
+template<class T>
+struct ReusingElementCreator
 {
-    bofstream _file;
-    txtstream _text;
-    comm_mutex _mutex;
+    static const uints size = sizeof(T);
 
-
-    binstream& get_file()
-    {
-        if(!_file.is_open())
-        {
-            _file.open("assert.log");
-            _text.bind(_file);
-        }
-
-        if( _file.is_open() )
-            return _text;
-        return nullstream;
-    }
-
-    bool is_open() const        { return _file.is_open(); }
+    void set_size( uints bytes )                    { }
+    static T* create( void* p, bool firsttime )     { return firsttime ? new(p) T : (T*)p; }
+    static void destroy( void* p, bool final )      { if(final)  delete (T*)p; }
 };
 
-static int __assert_throws = 1;
-
 ////////////////////////////////////////////////////////////////////////////////
-opcd __rassert( const char* txt, opcd exc, const char* file, int line, const char* expr )
+template<class T>
+class chunkpool : public chunkpage<T, ReusingElementCreator<T> >
 {
-    AssertLog& asl = SINGLETON(AssertLog);
+public:
+    typedef chunkpage<T, ReusingElementCreator<T> >     TBase;
+
+    chunkpool()
     {
-        comm_mutex_guard<comm_mutex> _guard( asl._mutex );
-        binstream& bin = asl.get_file();
-
-	    bin << "Assertion failed in " << file << ":" << line << " expression:\n    "
-		    << expr << "\n    " << (txt ? txt : "") << "\n\n";
-        bin.flush();
-
-        _guard.unlock();
     }
 
-    return __assert_throws ? exc : opcd(0);
-}
+    chunkpool( uints pagesize ) : TBase(pagesize)
+    {
+    }
+};
+
 
 
 COID_NAMESPACE_END
+
+#endif //#ifndef __COID_COMM_CHUNKPOOL__HEADER_FILE__
+

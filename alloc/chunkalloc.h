@@ -63,7 +63,7 @@ class chunk_allocator
 
     page* _last;
 
-    ElementSizeInfo<T> item;
+    ElementCreator<T> item;
     mutable comm_mutex _mutex;
 
 public:
@@ -82,7 +82,7 @@ public:
         for( page* p=_last; p; p=p->prev )
         {
             {GUARDTHIS(p->chunk->ext.member); pv = p->chunk->alloc_nocreate();}
-            if(pv)  return item.create(pv);
+            if(pv)  return item.create(pv,true);
         }
 
         page* pn = new page;
@@ -91,7 +91,7 @@ public:
         _last = pn;
 
         {GUARDTHIS(pn->chunk->ext.member); pv = pn->chunk->alloc_nocreate();}
-        return item.create(pv);
+        return item.create(pv,true);
     }
 
     static void free( T* p )

@@ -41,6 +41,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
+				StringPooling="true"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -398,6 +399,10 @@
 			</File>
 			<File
 				RelativePath="..\alloc\chunkpage.h"
+				>
+			</File>
+			<File
+				RelativePath="..\alloc\chunkpool.h"
 				>
 			</File>
 			<File
