@@ -70,7 +70,7 @@ class chunkblock
     uint _numfree;              ///< number of free chunks
     ints _used;                 ///< first never used chunk number or -1 when all already used
     uints _totalsize;           ///< total size of used memory, PAGESIZE * npages created
-    ElementSizeInfo<T> item;    ///< item size info, takes no space for non-void T
+    ElementCreator<T> item;     ///< item size info, takes no space for non-void T
 public:
     ExtendClassMember<EXTEND> ext;   ///< space to reserve for extended member
 

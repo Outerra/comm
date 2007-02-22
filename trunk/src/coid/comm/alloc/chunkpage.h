@@ -42,29 +42,33 @@
 #include "../namespace.h"
 
 #include "../commtypes.h"
+#include "../retcodes.h"
+#include "../assert.h"
 
 COID_NAMESPACE_BEGIN
 
 ////////////////////////////////////////////////////////////////////////////////
-///Helper template that provides element_size() function for all types,
+///Helper template that provides size info for all types,
 /// but for void type it actually allows setting custom size in bytes
 template<class T>
-struct ElementSizeInfo
+struct ElementCreator
 {
     static const uints size = sizeof(T);
-    void set_size( uints bytes ) {}
-    static T* create( void* p )  { return new(p) T; }
-    static void destroy( void* p )  { delete (T*)p; }
+
+    void set_size( uints bytes )                    { }
+    static T* create( void* p, bool firsttime )     { return new(p) T; }
+    static void destroy( void* p, bool final )      { delete (T*)p; }
 };
 
 ///Specialization for void allowing custom byte size
 template<>
-struct ElementSizeInfo<void>
+struct ElementCreator<void>
 {
     uints size;
-    void set_size( uints bytes ) { size = bytes; }
-    static void* create( void* p )  { return p; }
-    static void destroy( void* p )  { }
+
+    void set_size( uints bytes )                    { size = bytes; }
+    static void* create( void* p, bool firsttime )  { return p; }
+    static void destroy( void* p, bool final )      { }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -80,7 +84,7 @@ template<> struct ExtendClassMember<void>  { typedef void Type; };
 /// memory page.
 /// The items are referenced by void pointers. Each item has an unique id and is
 /// obtainable through it.
-template<class T>
+template<class T, class E = ElementCreator<T> >
 class chunkpage
 {
     void* _mem;
@@ -89,7 +93,7 @@ class chunkpage
     uints _used;                ///< contains either non-negative value pointing to the first free chunk or -1 when working as list
     uints _pagesize;
 
-    ElementSizeInfo<T> item;
+    E item;
 
 public:
 
@@ -114,6 +118,12 @@ public:
         _mem = 0;
         _numfree = 0;
         _first = UMAX;
+    }
+
+    chunkpage( uints pagesize, uints itemsize = sizeof(T) )
+    {
+        opcd e = init( pagesize, itemsize );
+        if(e)  throw e;
     }
 
     ~chunkpage()
@@ -155,7 +165,8 @@ public:
             return 0;
 
         T* p;
-        if( _first < 0 )    //working in direct mode
+        bool firsttime = _first < 0;
+        if(firsttime)    //working in direct mode
         {
             p = (T*)((char*)_mem + _used);
             _used += item.size;
@@ -168,7 +179,7 @@ public:
         }
 
         --_numfree;
-        return item.create(p);
+        return item.create(p,firsttime);
     }
 
     void free( T* p )
@@ -177,7 +188,7 @@ public:
         DASSERT( n>=0  &&  n < (ints)_pagesize ); //out of page range
         DASSERT( n%item.size == 0 );        //misaligned pointer
 
-        item.destroy(p);
+        item.destroy(p,false);
 
         *(uints*)p = _first;
         _first = n;
@@ -209,6 +220,7 @@ public:
 
     uints get_itemsize() const   { return item.size; }
 };
+
 
 
 
