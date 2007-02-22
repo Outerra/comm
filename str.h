@@ -763,6 +763,7 @@ public:
 
     charstr& append_time( struct tm const& tm, uint flg, const token& tz )
     {
+        //RFC 822, updated by RFC 1123
         //Tue, 15 Nov 1994 08:12:31 GMT
         static const char* wday[] = { "Sun, ", "Mon, ", "Tue, ", "Wed, ", "Thu, ", "Fri, ", "Sat, " };
         
