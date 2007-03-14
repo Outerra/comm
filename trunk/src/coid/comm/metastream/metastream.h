@@ -85,8 +85,8 @@ public:
         _current_desc = 0;
         _cur_var = 0;
         _cur_variable_name = 0;
-        _cur_variable_default = 0;
-        _cur_variable_size = 0;
+        _cur_variable_default.reset();
+        //_cur_variable_size = 0;
 
         _disable_meta_write = _disable_meta_read = false;
         _templ_arg_rdy = false;
@@ -361,8 +361,8 @@ public:
         _tmetafnc = 0;
         _cur_var = 0;
         _cur_variable_name = 0;
-        _cur_variable_default = 0;
-        _cur_variable_size = 0;
+        _cur_variable_default.reset();
+        //_cur_variable_size = 0;
         _defval = 0;
 
         _err.reset();
@@ -422,11 +422,19 @@ public:
     //@{ meta_* functions deal with building the description tree
 
     ///Called before metastream << on member variable
-    void meta_variable( const char* varname, uints valsize=0, const void* valdefault=0 )
+    void meta_variable( const char* varname )
     {
         _cur_variable_name = varname;
-        _cur_variable_size = valsize;
-        _cur_variable_default = valdefault;
+        _cur_variable_default.reset();
+    }
+
+    template<class T>
+    void meta_variable_with_default( const char* varname, const T& defval )
+    {
+        _cur_variable_name = varname;
+
+        _cur_variable_default.need_new( sizeof(T) );
+        T* tmp = new( _cur_variable_default.ptr() ) T(defval);
     }
 
     bool meta_struct_open( const char* name )
@@ -588,7 +596,7 @@ public:
         DESC() {}
         DESC( const token& n ) : _typename(n) {}
 
-        void add_desc_var( DESC* d, const token& n, uints valsize, const void* valdefault, bool is_array, uints array_size, bool is_hidden )
+        void add_desc_var( DESC* d, const token& n, dynarray<uchar>& valdefault, bool is_array, uints array_size, bool is_hidden )
         {
             VAR* c = _children.add();
             c->_desc = d;
@@ -597,8 +605,8 @@ public:
             c->_array_size = array_size;
             c->_is_hidden = is_hidden;
 
-            if(valdefault)
-                c->_defval.copy_bin_from( (const uchar*)valdefault, valsize );
+            if( valdefault.size() )
+                c->_defval.swap( valdefault );
         }
 
     };
@@ -723,8 +731,8 @@ private:
     DESC::VAR _root;
     DESC* _current_desc;
     const char* _cur_variable_name;
-    uints _cur_variable_size;
-    const void* _cur_variable_default;
+    //uints _cur_variable_size;
+    dynarray<uchar> _cur_variable_default;
 
     int _sesopen;                   ///< flush(>0) or ack(<0) session open
     int _arraynm;                   ///< first array element marker in non-meta mode
@@ -840,7 +848,7 @@ private:
         {
             //DASSERT( _cur_variable_name  ||  _cur_var->is_hidden() );
 
-            _current_desc->add_desc_var( d, _cur_variable_name, _cur_variable_size, _cur_variable_default,
+            _current_desc->add_desc_var( d, _cur_variable_name, _cur_variable_default,
                 _is_array, _array_size, is_hidden );
 
             while( !is_hidden && _current_desc && _current_desc->_typename.is_empty() )
@@ -850,7 +858,7 @@ private:
         _is_array = false;
         _array_size = UMAX;
         _cur_variable_name = 0;
-        _cur_variable_default = 0;
+        _cur_variable_default.reset();
     }
     
     //@} meta_* functions
@@ -1799,16 +1807,16 @@ protected:
     @def MMAT(meta,n,t) specify that member is an array of type \a t
 **/
 #define MSTRUCT_OPEN(meta, n)       if( !meta.meta_struct_open(n) ) {
-#define MM(meta, n, v)              meta.meta_variable(n);  meta << v
-#define MMT(meta, n, t)             meta.meta_variable(n);  meta << *(t*)0
-#define MMD(meta, n, d)             meta.meta_variable(n,sizeof(d),&d);  meta << d
-#define MMAT(meta, n, t)            meta.meta_array(); meta.meta_variable(n);  meta << *(t*)0
+#define MM(meta, n, v)              meta.meta_variable(n);  meta << v;
+#define MMT(meta, n, t)             meta.meta_variable(n);  meta << *(t*)0;
+#define MMD(meta, n, d)             meta.meta_variable_with_default(n,d);  meta << d;
+#define MMAT(meta, n, t)            meta.meta_array(); meta.meta_variable(n);  meta << *(t*)0;
 #define MSTRUCT_CLOSE(meta)         meta.meta_struct_close(); }  return meta;
 
 /// building template name:
-#define MTEMPL_OPEN(meta)           meta.meta_template_open()
-#define MT(meta, T)                 meta << (*(T*)0)
-#define MTEMPL_CLOSE(meta)          meta.meta_template_close()
+#define MTEMPL_OPEN(meta)           meta.meta_template_open();
+#define MT(meta, T)                 meta << (*(T*)0);
+#define MTEMPL_CLOSE(meta)          meta.meta_template_close();
 
 
 
