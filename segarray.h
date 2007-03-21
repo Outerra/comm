@@ -76,9 +76,9 @@ class EmptyTail {
 ////////////////////////////////////////////////////////////////////////////////
 //Fw
 #ifndef SYSTYPE_MSVC
-template<class T, class TAIL> class segarray;
-template<class T, class TAIL> binstream& operator << (binstream&, const segarray<T,TAIL,UIDX>& );
-template<class T, class TAIL> binstream& operator >> (binstream&, segarray<T,TAIL,UIDX>& );
+template<class T, class TAIL, class UIDX> class segarray;
+template<class T, class TAIL, class UIDX> binstream& operator << (binstream&, const segarray<T,TAIL,UIDX>& );
+template<class T, class TAIL, class UIDX> binstream& operator >> (binstream&, segarray<T,TAIL,UIDX>& );
 #endif //SYSTYPE_MSVC
 
 ///Segmented array
