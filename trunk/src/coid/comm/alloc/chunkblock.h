@@ -94,6 +94,13 @@ private:
         _first = 0;
     }
 
+    void* operator new (uints size, uints total )
+    {   return memaligned_alloc( total, PAGESIZE ); }
+
+    void operator delete (void *ptr, uints )
+    {   memaligned_free( ptr ); }
+
+
 public:
 
     ///Create chunkblock pages for items of size \a itemsize
@@ -108,14 +115,8 @@ public:
 
     void destroy()
     {
-        delete(_totalsize) this;
+        delete this;
     }
-
-    void* operator new (uints size, uints total )
-    {   return memaligned_alloc( total, PAGESIZE ); }
-
-    void operator delete (void *ptr, uints )
-    {   memaligned_free( ptr ); }
 
     ///Get chunkblock structure where the \a p pointer would lie
     static chunkblock* get_segchunk( void* p )
