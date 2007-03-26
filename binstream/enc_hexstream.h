@@ -47,7 +47,7 @@ COID_NAMESPACE_BEGIN
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Binary streaming class working over a memory buffer
-class hexstream : public binstream
+class enc_hexstream : public binstream
 {
 public:
 
@@ -297,12 +297,12 @@ public:
         setup(_line);
     }
 
-    hexstream() : _in(0), _out(0)
+    enc_hexstream() : _in(0), _out(0)
     {
         setup(48);
     }
 
-    hexstream( binstream* bin, binstream* bout )
+    enc_hexstream( binstream* bin, binstream* bout )
     {
         _in = bin;
         _out = bout;

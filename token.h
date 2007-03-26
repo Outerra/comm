@@ -369,22 +369,26 @@ struct token
 
 
     ////////////////////////////////////////////////////////////////////////////////
-    token& operator ++ ()
+    ///Eat the first character from token, returning it
+    char operator ++ ()
     {
         if(_len)
         {
             --_len;
             ++_ptr;
+            return _ptr[-1];
         }
-        return *this;
+        return 0;
     }
 
+    ///Extend token to include one more character to the right
     token& operator ++ (int)
     {
         ++_len;
         return *this;
     }
 
+    ///Extend token to include one more character to the left
     token& operator -- ()
     {
         ++_len;
@@ -392,10 +396,14 @@ struct token
         return *this;
     }
 
-    token& operator -- (int)
+    ///Eat the last character from token, returning it
+    char operator -- (int)
     {
-        --_len;
-        return *this;
+        if(_len) {
+            --_len;
+            return _ptr[_len];
+        }
+        return 0;
     }
 
     ///Positive value moves the pointer forward, a negative one cuts from end

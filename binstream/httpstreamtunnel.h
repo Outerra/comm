@@ -42,7 +42,7 @@
 #include "../rnd.h"
 #include "../str.h"
 
-#include "code6stream.h"
+#include "enc_base64stream.h"
 #include "httpstream.h"
 
 
@@ -72,7 +72,7 @@ public:
     }
 
     ///
-    struct code6stream_ex : public code6stream
+    struct code6stream_ex : public enc_base64stream
     {
         virtual void flush()                        { flush_local(); }
         virtual void acknowledge( bool eat=false )  { acknowledge_local(eat); }

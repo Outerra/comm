@@ -198,15 +198,19 @@
 				>
 			</File>
 			<File
-				RelativePath="binstream\code6stream.h"
-				>
-			</File>
-			<File
 				RelativePath=".\binstream\container.h"
 				>
 			</File>
 			<File
 				RelativePath=".\binstream\container_linear.h"
+				>
+			</File>
+			<File
+				RelativePath=".\binstream\enc_base64stream.h"
+				>
+			</File>
+			<File
+				RelativePath=".\binstream\enc_hexstream.h"
 				>
 			</File>
 			<File
@@ -219,10 +223,6 @@
 			</File>
 			<File
 				RelativePath="binstream\forkstream.h"
-				>
-			</File>
-			<File
-				RelativePath="binstream\hexstream.h"
 				>
 			</File>
 			<File

@@ -102,6 +102,14 @@ public:
         token   tok;                        ///< value string token
         int     id;                         ///< token id (group type or string type)
         charstr tokbuf;                     ///< buffer that keeps processed string
+
+        bool operator == (int i) const              { return i == id; }
+        bool operator == (const token& t) const     { return tok == t; }
+        bool operator == (char c) const             { return tok == c; }
+
+        bool operator != (int i) const              { return i != id; }
+        bool operator != (const token& t) const     { return tok != t; }
+        bool operator != (char c) const             { return tok != c; }
     };
 
     lexer( bool utf8 = true )
@@ -383,9 +391,9 @@ public:
     }
 
     ///Return next token, reading it to the \a val
-    int next( lextoken& val )
+    int next( lextoken& val, uint ignoregrp=1 )
     {
-        val.tok = next();
+        val.tok = next( ignoregrp );
         if( !_last.tokbuf.is_empty() )
             val.tokbuf.takeover( _last.tokbuf );
         val.id = _last.id;
@@ -411,7 +419,7 @@ public:
 
         @param ignoregrp id of the group to ignore if found at the beginning, 0 for none
     **/
-    token next( uint ignoregrp = 1 )
+    token next( uint ignoregrp=1 )
     {
         //return last token if instructed
         if( _pushback ) { _pushback = 0; return _last.tok; }
@@ -530,6 +538,8 @@ public:
     {
         _pushback = 1;
     }
+
+    bool end() const                            { return _last.id == 0; }
 
     const lextoken& last() const                { return _last; }
 
