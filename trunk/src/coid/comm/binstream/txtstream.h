@@ -360,9 +360,9 @@ public:
         _binw = bw ? bw : _binr;
     }
 
-    txtstream (const charstr& str, binstream* bw = 0)
+    txtstream (const token& str, binstream* bw = 0)
     {
-        _readbuf = new binstreambuf( charstr(str) );
+        _readbuf = new binstreambuf(str);
         _binr = _readbuf;
         _binw = bw ? bw : _binr;
     }

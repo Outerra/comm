@@ -104,12 +104,18 @@ public:
 
     bool is_empty() const       { return _buf.size() - _bgi == 0; }
 
-    void swap_to_string( charstr& str )
+
+    void swap( charstr& str )
     {
         str.takeover(_buf);
         _bgi = 0;
     }
 
+    void swap( dynarray<uchar>& buf )
+    {
+        _buf.swap( (dynarray<char>&)buf );
+        _bgi = 0;
+    }
 
     ///Reserve raw space in the buffer
     void* add_raw( uints len )
@@ -248,11 +254,6 @@ public:
     {
         _buf.takeover( (dynarray<char>&)buf );
         _bgi=0;
-    }
-
-    void swap( dynarray<uchar>& buf )
-    {
-        _buf.swap( (dynarray<char>&)buf );
     }
 
     //binstreambuf (const token& str);
