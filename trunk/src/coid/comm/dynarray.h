@@ -553,14 +553,15 @@ public:
     {
         if (!nitems)  return _ptr + _count();
         uints nalloc, nto = nitems + _count();
-        if (ralign > 0) {
+
+        if( ralign > 0 ) {
             nalloc = get_aligned_size( nto, ralign );
         }
         else
             nalloc = nto;
 
-        if (nalloc*sizeof(T) > _size()) {
-            if (nalloc < 2*_count())
+        if( nalloc*sizeof(T) > _size() ) {
+            if( nalloc < 2*_count() )
                 nalloc = 2*_count();
             T* op = _ptr;
             _ptr = A::reserve( _ptr, nalloc, true );
@@ -649,6 +650,14 @@ public:
     }
     //@}
 
+
+    ///Append an empty element to the end
+    //@return pointer to the last element (the one appended)
+    T* push()
+    {
+        return add();
+    }
+
     ///Append element to the array through copy constructor
     T* push( const T& v )
     {
@@ -670,7 +679,7 @@ public:
     T* pusha( uints n, const T* p )
     {
         T* ptr = add(n);
-		for (uints i=0; i<n; ++i)  ptr[i] = p[i];
+		for( uints i=0; i<n; ++i )  ptr[i] = p[i];
         return ptr;
     };
 
@@ -681,6 +690,8 @@ public:
         return _ptr+i;
     }
 
+    ///Pop the last element, copying it to the \a dest
+    //@return true if the array wasn't empty and the element was copied
     bool pop( T& dest )
     {
         uints n = _count();
@@ -690,6 +701,14 @@ public:
             return true;
         }
         return false;
+    }
+
+    ///Pop the last element from the array
+    //@return pointer to the new last element or null if there's nothing left
+    T* pop()
+    {
+        need( _count() - 1 );
+        return last();
     }
 
     void popn( uints n )

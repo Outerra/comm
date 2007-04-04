@@ -49,7 +49,9 @@
 
 #define COIDNEWDELETE \
     void* operator new( size_t size )  { return comm_allocator<uchar>::alloc(size); } \
-    void operator delete(void* ptr)    { if(ptr) comm_allocator<uchar>::free((uchar*)ptr); }
+    void* operator new( size_t, void* p ) { return p; } \
+    void operator delete(void* ptr)    { if(ptr) comm_allocator<uchar>::free((uchar*)ptr); } \
+    void operator delete(void*, void*) { }
 
 
 

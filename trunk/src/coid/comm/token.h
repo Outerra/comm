@@ -437,12 +437,12 @@ struct token
         }
         return *this;
     }
-
+/*
     const char* operator + (ints i)
     {
         return _ptr + i;
     }
-
+*/
     bool is_empty() const               { return _len == 0; }
     bool is_null() const                { return _ptr == 0; }
     void set_empty()                    { _len = 0; }

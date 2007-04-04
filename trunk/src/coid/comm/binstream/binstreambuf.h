@@ -263,8 +263,9 @@ public:
 ///Binary streaming class working over an existing buffer, nondestructive read, optional size (in bytes)
 class binstreamconstbuf : public binstream
 {
-    const uchar *  _source;
-    uints          _len;
+    const uchar* _source;
+    const uchar* _base;
+    uints        _len;
 
 public:
 
@@ -321,15 +322,18 @@ public:
     {
         if( _len > 0 )
         {
-            if(eat) { _source += _len;  _len=0;  return; }
-            throw ersIO_ERROR "data left in input buffer";
+            if(!eat)
+                throw ersIO_ERROR "data left in input buffer";
         }
+
+        _len += _source - _base;
+        _source = _base;
     }
 
     virtual void reset()
     {
-        _source = 0;
-        _len = 0;
+        _len += _source - _base;
+        _source = _base;
     }
 
     friend inline binstream& operator << (binstream& out, const binstreamconstbuf& buf)
@@ -339,14 +343,17 @@ public:
         return out;
     }
 
-    binstreamconstbuf() : _source(0), _len(0) { }
-    binstreamconstbuf( const void* source, uints len ) : _source((const uchar *) source), _len(len) { }
-    binstreamconstbuf( const token& t ) : _source((const uchar *)t._ptr), _len(t._len) { }
+    binstreamconstbuf() : _source(0), _base(0), _len(0) { }
+    binstreamconstbuf( const void* source, uints len )
+        : _source((const uchar*)source), _base((const uchar*)source), _len(len) { }
+    binstreamconstbuf( const token& t )
+        : _source((const uchar *)t._ptr), _base((const uchar *)t._ptr), _len(t._len) { }
     
     explicit binstreamconstbuf( const binstreambuf& str )
     {
         token t = str;
         _source = (const uchar*)t.ptr();
+        _base = _source;
         _len = t.len();
     }
 
@@ -354,12 +361,14 @@ public:
     void set( const void* source, uints len )
     {
         _source = (const uchar*)source;
+        _base = _source;
         _len = len;
     }
 
     void set( const token& t )
     {
         _source = (const uchar*)t.ptr();
+        _base = _source;
         _len = t.len();
     }
 };
