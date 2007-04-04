@@ -52,9 +52,10 @@ class string_maker
     struct subst
     {
         charstr key;                ///< name of the substitution variable
-        token value;                ///< currently bound key value
 
+        token value;                ///< currently bound key value
         charstr buf;                ///< owned value content for converted values
+
 
         subst(){}
         subst( const token& k )

@@ -366,11 +366,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\metastream\metagen.h"
+				>
+			</File>
+			<File
 				RelativePath="..\.\metastream\metastream.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\metastream\metastream.h"
+				>
+			</File>
+			<File
+				RelativePath="..\metastream\test_meta.cpp"
 				>
 			</File>
 		</Filter>
