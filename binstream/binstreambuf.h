@@ -78,7 +78,7 @@ public:
     {
         if( n < 0 )
         {
-            ints k = (uints)_buf.size() - _bgi - int_abs((ints)n);
+            ints k = (uints)_buf.size() - _bgi - (uints)int_abs((ints)n);
             if( k <= 0 )
                 _buf.reset();
             else

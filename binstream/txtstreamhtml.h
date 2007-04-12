@@ -93,7 +93,7 @@ public:
 
                 if(o>a) {
                     uints oa = o-a;
-                    txtstream::write_raw(tok+a, oa);
+                    txtstream::write_raw( tok.ptr()+a, oa );
                 }
 
                 static token _Ttab = "&nbsp;&nbsp;&nbsp;&nbsp;";
