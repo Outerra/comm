@@ -111,11 +111,8 @@ struct type
         fARRAY_ELEMENT_NEXT         = 0x02,         ///< always in addition to fARRAY_ELEMENT, all after first
         fARRAY_UNSPECIFIED_SIZE     = 0x04,         ///< size of the array is not specified in advance
 
-        //xCONTROL_TYPE               = 0xf0,
         fARRAY_BEGIN                = 0x10,         ///< array start mark
         fARRAY_END                  = 0x20,         ///< array end mark
-        //ARRAY_BEGIN                 = 0x10,         ///< array start mark
-        //ARRAY_END                   = 0x20,         ///< array end mark
     };
 
     type() : _size(0), _type(T_COMPOUND), _ctrl(0) {}

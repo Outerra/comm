@@ -41,6 +41,9 @@
 #include "../namespace.h"
 #include "../str.h"
 #include "../binstream/binstream.h"
+#include "../local.h"
+
+#include "metavar.h"
 
 
 COID_NAMESPACE_BEGIN
@@ -51,213 +54,259 @@ COID_NAMESPACE_BEGIN
     It serves as a formatting stream for the metastream class too, so it should
     inherit from binstream base class
 
-    Parsed data layout:
-    - all <len> marks are 4b containing actual length of consequent string
-    - all strings are padded with space to nearest 4b boundary
-    - varname's first character describes the variable type - assoc,array,simple
-
-    primitive:          <len>varname<len>value
-    primitive array:    <size><len>value0<len>value1...
-    assoc:              <size>[]
+    
 **/
 class metagen : public binstream
 {
+    struct Tag;
+    typedef local<Tag>      Ltag;
+    typedef MetaDesc::Var   Var;
+
+    charstr buf;
+    binstream* bin;
 
 
-    ///Base class for managed objects
-    struct Node
+    ///Variable from cache
+    struct Varx
     {
-    private:
+        Var* var;
+        const uchar* data;
 
-    public:
+        Varx() { var=0; data=0; }
+        Varx( Var* v, const uchar* d ) : var(v), data(d) {}
 
-        ///Name (key) of the object stored.
-        /** One more character is appended to the name and used also to
-            determine the node type (CODE_* enum values).
-        **/
-        charstr name;
-
-        ///Value placeholder
-        void* place;
-
-
-        bool operator < (const token& k) const  { return name < k; }
-
-
-        Node() {}
-        ~Node() { destroy(); }
-
-        ///Return value if the node contains a string value
-        /// (an empty token otherwise)
-        token value() const
+        ///Find member variable and its position in the cache
+        bool find_child( const token& name, Varx& ch ) const
         {
-            char c = name.last_char();
-            if( c == CODE_STRING )      return token(*(const charstr*)&place);
-            else if( c == CODE_VALUE ) {
-                const charstr& s = *(const charstr*)&place;
-                return token( s.ptr(), s.len()-1 );
-            }
-            return token::empty();
+            int i = var->desc->find_child_pos(name);
+            if(i<0)  return false;
+
+            ch.var = &var->desc->children[i];
+            ch.data = data + *(const int*)data;
+
+            return true;
         }
 
-        ///Return true if the node has a simple string value
-        bool is_string() const          { return name.last_char() == CODE_STRING; }
-
-        ///Return true if this node is either an array or an associative
-        /// container
-        ///@note both NodeArray and NodeAssoc qualify as arrays, to determine
-        /// whether node is array but not an associative array, additional
-        /// !is_assoc() check must be used.
-        bool is_array() const           { return name.last_char() <= CODE_ARRAY; }
-
-        ///Return true if this node is an associative container
-        bool is_assoc() const           { return name.last_char() == CODE_ASSOC; }
-
-
-        ///Set up node to contain a named value
-        void set( const token& key, const token& value )
+        ///Find descendant variable and its position in the cache
+        bool find_descendant( token name, Varx& ch ) const
         {
-            name = key;
-            name.append(CODE_STRING);
+            ch = *this;
 
-            charstr& v = reset_to_string();
-            v = value;
-        }
-
-        ///Setup node to contain a simple unnamed value
-        void set( const token& value )
-        {
-            name = value;
-            name.append(CODE_VALUE);
-
-            destroy();
-        }
-
-        ///Setup node to contain an array
-        void set_array( const token& key )
-        {
-            name = key;
-            name.append(CODE_ARRAY);
-
-            reset_to_array();
-        }
-
-        ///Setup node to contain an associative array
-        void set_assoc( const token& key )
-        {
-            name = key;
-            name.append(CODE_ASSOC);
-
-            reset_to_array();
-        }
-
-        ///Append simple value to an array
-        void append( const token& value )
-        {
-            TANodes& a = array();
-
-            a.add()->set(value);
-        }
-
-        ///Insert simple node to an associative array
-        Node& insert( const token& key, const token& value )
-        {
-            TANodes& a = assoc();
-
-            Node* n = a.add_sortT(key);
-            n->set( key, value );
-            
-            return *n;
-        }
-
-        ///Insert array node to an associative array
-        Node& insert_array( const token& key )
-        {
-            TANodes& a = assoc();
-
-            Node* n = a.add_sortT(key);
-            n->set_array(key);
-            
-            return *n;
-        }
-
-        ///Insert associative node to an associative array
-        Node& insert_assoc( const token& key )
-        {
-            TANodes& a = assoc();
-
-            Node* n = a.add_sortT(key);
-            n->set_assoc(key);
-            
-            return *n;
-        }
-
-
-    private:
-        typedef dynarray<Node>          TANodes;
-
-        void destroy()
-        {
-            char c = name.last_char();
-            if( c == 0 )
-                return;     //unused
-            if( c <= CODE_ARRAY )
-                array().~TANodes();
-            else if( c == CODE_STRING )
-                string().~charstr();
-        }
-
-        TANodes& reset_to_array()
-        {
-            char c = name.last_char();
-            if( c == CODE_STRING ) {
-                string().~charstr();
-                c = 0;
+            for( token part; !name.is_empty(); )
+            {
+                part = name.cut_left('.',1);
+                if( !ch.find_child( part, ch ) )
+                    return false;
             }
 
-            if(!c)
-                new((void*)&place) TANodes;
+            return true;
+        }
+
+        uint array_size() const
+        {
+            DASSERT( var->is_array() );
+            return *(uint*)data;
+        }
+
+        ///First array element, return size
+        uint first( Varx& ch )
+        {
+            DASSERT( var->is_array() );
+            ch.var = var->element();
+            ch.data = data + sizeof(uint);
+            return *(uint*)data;
+        }
+
+        void next( Varx& ch )
+        {
+            ch.data += ch.element_size();
+        }
+
+        ///Return size of the variable in cache
+        int element_size() const
+        {
+            if( var->is_primitive() )
+                return var->is_array()
+                    ? sizeof(uint) + *(uint*)data * var->get_size()
+                    : var->get_size();
             else
-                array().reset();
-    
-            return array();
+                return *(int*)data;
         }
 
-        charstr& reset_to_string()
-        {
-            char c = name.last_char();
-            if( c <= CODE_ARRAY ) {
-                array().~TANodes();
-                c = 0;
-            }
-
-            if(!c)
-                new((void*)&place) charstr;
-            else
-                string().reset();
-
-            return string();
-        }
-
-        ///Cast value to dynarray<Node> type
-        ///@note only in the debug mode checks whether the node can be cast
-        TANodes& array()                { DASSERT(is_array());  return *(TANodes*)&place; }
-        const TANodes& array() const    { DASSERT(is_array());  return *(const TANodes*)&place; }
-
-        ///Cast value to dynarray<Node> type
-        ///@note only in the debug mode checks whether the node can be cast
-        TANodes& assoc()                { DASSERT(is_assoc());  return *(TANodes*)&place; }
-        const TANodes& assoc() const    { DASSERT(is_assoc());  return *(const TANodes*)&place; }
-
-        ///Cast value to charstr type
-        ///@note only in the debug mode checks whether the node can be cast
-        charstr& string()               { DASSERT(is_string());  return *(charstr*)&place; }
-        const charstr& string() const   { DASSERT(is_string());  return *(const charstr*)&place; }
+        void write_var( metagen& mg ) const;
     };
 
+    ///Basic tag definition
+    struct Tag
+    {
+        token varname;              ///< variable name
+        token defval;               ///< default value if the variable doesn't exist
 
+        virtual ~Tag() {}
+        virtual void process( metagen& mg, const Varx& var ) const
+        {
+            Varx v;
+            if( var.find_child( varname, v ) )
+                v.write_var(mg);
+            else if( !defval.is_empty() )
+                mg.bin->write_token( defval );
+        }
+    };
+
+    ///
+    struct Chunk
+    {
+        token stext;                ///< static text before a tag
+        Ltag ptag;                  ///< subsequent Tag object
+
+        void process( metagen& mg, const Varx& var ) const
+        {
+            if( !stext.is_empty() )
+                mg.bin->write_token(stext);
+
+            ptag->process( mg, var );
+        }
+    };
+
+    ///Linear sequence of chunks to process
+    struct TagRange
+    {
+        dynarray<Chunk> sequence;
+
+        void process( metagen& mg, const Varx& var ) const
+        {
+            const Chunk* ch = sequence.ptr();
+            for( uints n=sequence.size(); n>0; --n,++ch )
+                ch->process( mg, var );
+        }
+    };
+
+    ///Tag operating with array-type variables
+    struct TagArray : Tag
+    {
+        TagRange atr_before, atr_after;
+        TagRange atr_first, atr_rest;
+
+        void process( metagen& mg, const Varx& var ) const
+        {
+            Varx v;
+            if( var.find_child( varname, v ) )
+            {
+                if( !v.var->is_array() )
+                    return;
+
+                uint n = v.array_size();
+                if(!n)
+                    return;
+
+                atr_first.process( mg, v );
+
+                for( uint i=0; i<n; ++i )
+                {
+                    
+                }
+            }
+        }
+    };
+
+    ///Structure tag changes the current variable to some descendant
+    struct TagStruct : Tag
+    {
+        int depth;              ///< nesting depth (1 immediate member)
+        TagRange seq;
+
+        void process( metagen& mg, const Varx& var ) const
+        {
+            Varx v;
+            bool valid = depth>1
+                ? var.find_child( varname, v )
+                : var.find_descendant( varname, v );
+
+            if(valid)
+                seq.process( mg, v );
+        }
+    };
 
 };
+
+////
+void metagen::Varx::write_var( metagen& mg ) const
+{
+    typedef bstype::type    type;
+
+    const uchar* p = data;
+    type t = var->desc->btype;
+
+    if( var->is_array() )
+    {
+        token str( (const char*)p+sizeof(uint), *(uint*)p );
+
+        mg.bin->write_token(str);
+        return;
+    }
+
+    charstr& buf = mg.buf;
+    buf.reset();
+
+    switch(t._type)
+    {
+        case type::T_INT:
+            buf.append_num_int( 10, p, t.get_size() );
+            break;
+
+        case type::T_UINT:
+            buf.append_num_uint( 10, p, t.get_size() );
+            break;
+
+        case type::T_FLOAT:
+            switch( t.get_size() ) {
+            case 4:
+                buf += *(const float*)p;
+                break;
+            case 8:
+                buf += *(const double*)p;
+                break;
+            case 16:
+                buf += *(const long double*)p;
+                break;
+            }
+        break;
+
+        case type::T_BOOL:
+            if( *(bool*)p ) buf << "true";
+            else            buf << "false";
+        break;
+
+        case type::T_TIME: {
+            buf.append('"');
+            buf.append_date_local( *(const timet*)p );
+            buf.append('"');
+        } break;
+
+        case type::T_ERRCODE:
+            {
+                opcd e = (const opcd::errcode*)p;
+                token t;
+                t.set( e.error_code(), token::strnlen( e.error_code(), 5 ) );
+
+                buf << "\"[" << t;
+                if(!e)  buf << "]\"";
+                else {
+                    buf << "] " << e.error_desc();
+                    const char* text = e.text();
+                    if(text[0])
+                        buf << ": " << e.text() << "\"";
+                    else
+                        buf << char('"');
+                }
+            }
+        break;
+    }
+
+    if( !buf.is_empty() )
+        mg.bin->write_token(buf);
+}
+
 
 COID_NAMESPACE_END
 
