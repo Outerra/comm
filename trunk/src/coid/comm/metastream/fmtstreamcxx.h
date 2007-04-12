@@ -188,9 +188,8 @@ public:
                     write_tabs( _indent );
                 else if( t._type == type::T_CHAR  ||  t._type == type::T_BINARY )
                     _bufw << char('\"');
-                else {
+                else
                     _bufw << char('[');
-                }
             }
             else
             {
@@ -204,16 +203,23 @@ public:
         }
         else if( t._type == type::T_STRUCTEND )
         {
+            _bufw << tEol;
             write_tabs_check( --_indent );
             _bufw << char('}');
         }
         else if( t._type == type::T_STRUCTBGN )
         {
-            write_tabs( _indent++ );
+            if( t.is_array_element() )
+                write_tabs( _indent++ );
+            else {
+                _bufw << char(' ');
+                ++_indent;
+            }
             
             if(p)
                 _bufw << char('(') << *(const charstr*)p << ") ";
             _bufw << char('{');
+            _bufw << tEol;
         }
         else
         {
@@ -750,14 +756,12 @@ protected:
 
     void write_tabs( int indent )
     {
-        _bufw << tEol;
         for( int i=0; i<indent; i++ )
             _bufw << tTab;
     }
 
     void write_tabs_check( int indent )
     {
-        _bufw << tEol;
         if( indent < 0 )
             throw ersSYNTAX_ERROR "unexpected end of struct";
         for( int i=0; i<indent; i++ )

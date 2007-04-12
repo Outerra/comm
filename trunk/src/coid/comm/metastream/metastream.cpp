@@ -96,13 +96,14 @@ metastream::DESC* metastream::StructureMap::find( const token& k ) const
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-metastream::DESC* metastream::StructureMap::create_hidden_desc()
+metastream::DESC* metastream::StructureMap::create_array_desc( uints size )
 {
     //SMReg& smr = SINGLETON(SMReg);
     //GUARDTHIS(smr._mutex);
     SMReg& smr = *(SMReg*)pimpl;
 
     DESC* d = *smr._arrays.add() = new DESC;
+    d->array_size = size;
     return d;
 }
 

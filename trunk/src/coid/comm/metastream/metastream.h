@@ -47,7 +47,7 @@
 #include "../str.h"
 #include "../binstream/binstream.h"
 
-//#include "fmtstreamcxx.h"
+#include "metavar.h"
 
 COID_NAMESPACE_BEGIN
 
@@ -64,24 +64,22 @@ public:
     virtual ~metastream()    {}
 
 
-    typedef bstype::type                type;
-
+    typedef bstype::type            type;
+    typedef MetaDesc                DESC;
+    typedef MetaDesc::Var           VAR;
 
     void init()
     {
-        _root._desc = 0;
-        _root._is_array = false;
-        _root._array_size = UMAX;
+        _root.desc = 0;
+        //_root._is_array = false;
+        //_root._array_size = UMAX;
 
         _current = _cachestack.push();
         _current->offs = UMAX;
         _current->size = 0;
-        //_current->aoff = UMAX;
 
-        //_cachetbloffs = UMAX;
-        _cachetbloffsquit = 0;
-        //_cache_arysize = 0;
-        //_cache_aryoffs = UMAX;
+        //_cachetbloffsquit = 0;
+        _cachequit = 0;
         _cacherootentries = 0;
         _cachelevel = UMAX;
 
@@ -128,9 +126,9 @@ public:
     {
         if(_disable_meta_read) { _tmetafnc = 0;  return 0; }
         _tmetafnc = &metacall<T>::stream;
-        _root._desc = 0;
+        _root.desc = 0;
         _current_var = 0;
-        //_root._varname = name;
+        //_root.varname = name;
 
         opcd e;
         DASSERT( _sesopen <= 0 );   //or else unflushed write
@@ -148,28 +146,16 @@ public:
         }
 
         _arraynm = 0;
-        _is_array = false;
-        _array_size = UMAX;
+        //_is_array = false;
+        //_array_size = UMAX;
 
-        *this << *(const T*)0;     // build description
+        *this << *(const T*)0;     // build description tree
+
         _cur_var = &_root;
+        _cur_var->varname = name;
+        //_cur_var->_is_array_element = name.is_empty();
 
-        if( !name.is_empty() ) {
-            charstr tn;
-            e = binstream_read_key( *_fmtstream, tn );
-            if(!e && tn != name ) {
-                _err << "expected variable '" << name << "', found " << tn;
-                e = ersMISMATCHED "key name";
-            }
-            if(e) {
-                _err << "expected variable '" << name << "', error: " << opcd_formatter(e);
-                return e;
-            }
-        }
-
-        if( _cur_var->is_compound() )
-            e = moveto_expected_targetr();
-        return e;
+        return movein_current<READ_MODE>( !name.is_empty() );
     }
 
     template<class T>
@@ -177,9 +163,9 @@ public:
     {
         if(_disable_meta_write) { _tmetafnc = 0;  return 0; }
         _tmetafnc = &metacall<T>::stream;
-        _root._desc = 0;
+        _root.desc = 0;
         _current_var = 0;
-        //_root._varname = name;
+        //_root.varname = name;
 
         opcd e;
         DASSERT( _sesopen >= 0 );   //or else unacked read
@@ -194,20 +180,16 @@ public:
         }
 
         _arraynm = 0;
-        _is_array = false;
-        _array_size = UMAX;
+        //_is_array = false;
+        //_array_size = UMAX;
 
         *this << *(const T*)0;     // build description
+
         _cur_var = &_root;
+        _cur_var->varname = name;
+        //_cur_var->_is_array_element = name.is_empty();
 
-        if( !name.is_empty() ) {
-            e = _fmtstream->write_key( name );
-            if(e) return e;
-        }
-
-        return _cur_var->is_compound()
-            ? moveto_expected_targetw()
-            : e;
+        return movein_current<WRITE_MODE>( !name.is_empty() );
     }
 
     template<class T>
@@ -215,10 +197,10 @@ public:
     {
         if(_disable_meta_read) { _tmetafnc = 0;  return 0; }
         _tmetafnc = &metacall<T>::stream;
-        _root._desc = 0;
+        _root.desc = 0;
         _current_var = 0;
         _root._is_hidden = false;
-        //_root._varname = name;
+        //_root.varname = name;
 
         opcd e;
         DASSERT( _sesopen <= 0 );   //or else unflushed write
@@ -238,20 +220,11 @@ public:
         meta_array(n);
         *this << *(const T*)0;     // build description
 
-        if( !name.is_empty() ) {
-            charstr tn;
-            e = binstream_read_key( *_fmtstream, tn );
-            if(!e && tn != name ) {
-                _err << "expected variable '" << name << "', found: " << tn;
-                e = ersMISMATCHED "key name";
-            }
-            else if(e)
-                _err << "expected variable '" << name << "', error: " << opcd_formatter(e);
-            if(e)  return e;
-        }
-
         _cur_var = &_root;
-        return 0;
+        _cur_var->varname = name;
+        //_cur_var->_is_array_element = name.is_empty();
+
+        return movein_current<READ_MODE>( !name.is_empty() );
     }
 
     template<class T>
@@ -259,10 +232,10 @@ public:
     {
         if(_disable_meta_write) { _tmetafnc = 0;  return 0; }
         _tmetafnc = &metacall<T>::stream;
-        _root._desc = 0;
+        _root.desc = 0;
         _current_var = 0;
         _root._is_hidden = false;
-        //_root._varname = name;
+        //_root.varname = name;
 
         opcd e;
         DASSERT( _sesopen >= 0 );   //or else unacked read
@@ -279,13 +252,11 @@ public:
         meta_array(n);
         *this << *(const T*)0;     // build description
 
-        if( !name.is_empty() ) {
-            e = _fmtstream->write_key( name );
-            if(e)  return e;
-        }
-
         _cur_var = &_root;
-        return e;
+        _cur_var->varname = name;
+        //_cur_var->_is_array_element = name.is_empty();
+
+        return movein_current<WRITE_MODE>( name.is_empty() );
     }
 
 
@@ -364,7 +335,7 @@ public:
 
         _stack.reset();
 
-        _is_array = false;
+        //_is_array = false;
         _data.reset();
         _cachestack.need(1);
         _tmetafnc = 0;
@@ -372,7 +343,7 @@ public:
         _cur_variable_name = 0;
         _cur_variable_default.reset();
         //_cur_variable_size = 0;
-        _defval = 0;
+        defval = 0;
 
         _err.reset();
         if(fmts_reset)
@@ -458,7 +429,7 @@ public:
     void meta_struct_close()
     {
         do { _current_var = _map.pop(); }
-        while( _current_var && _current_var->_desc->_typename.is_empty() );
+        while( _current_var && _current_var->desc->type_name.is_empty() );
     }
 
     void meta_template_open()
@@ -479,12 +450,7 @@ public:
     ///@param n array element count, UMAX if unknown or varying
     void meta_array( uints n = UMAX )
     {
-        if(_is_array)       //array within array, push the outer array as hidden
-            meta_insert_array();
-
-        //*_array.add() = n;
-        _is_array = true;
-        _array_size = n;
+        meta_insert_array(n);
     }
 
     ///Only for primitive types
@@ -505,159 +471,16 @@ public:
 
     //@} meta_*
 
-
-    ////////////////////////////////////////////////////////////////////////////////
-    ///Descriptor structure for type
-    struct DESC
-    {
-        ///Member variable descriptor
-        struct VAR
-        {
-            DESC* _desc;                ///< ptr to descriptor for the type of the variable
-            charstr _varname;           ///< name of the variable
-
-            uints _array_size;          ///< array size, UMAX for unknown
-            dynarray<uchar> _defval;    ///< default value for reading if not found in input stream
-
-            bool _is_array;             ///< the variable is an array
-            bool _is_array_element;     ///< the variable is array element
-            bool _is_hidden;            ///< hidden, implicit variable (array as an element of an array)
-
-            bool is_array() const       { return _is_array; }
-            bool is_array_element() const { return _is_array_element; }
-            bool is_compound() const    { return !_desc->_btype.is_primitive() && !_is_array; }
-            bool is_hidden() const      { return _is_hidden; }
-
-
-            charstr& dump( charstr& dst ) const
-            {
-                if( !_desc->_btype.is_primitive() )
-                    dst << "class ";
-                dst << _desc->_typename << _varname;
-                if( is_array() ) {
-                    if( _array_size == UMAX )
-                        dst << "[]";
-                    else
-                        dst << char('"') << _array_size << char('"');
-                }
-                return dst;
-            }
-
-            charstr& type_name( charstr& dst ) const
-            {
-                if( is_array() ) {
-                    if( _desc->_btype._type == type::T_CHAR )
-                    { dst << "$string";  return dst; }
-                    else
-                        dst << char('@');
-                }
-                return _desc->type_name(dst);
-            }
-
-            VAR* make_element( const VAR& varray )
-            {
-                if( varray.is_hidden() )
-                    return varray._desc->first_child();
-
-                _desc = varray._desc;
-                _is_array = false;
-                _is_hidden = false;
-                _array_size = UMAX;
-                return this;
-            }
-
-            VAR* add_child( DESC* d, const token& n, dynarray<uchar>& valdefault, bool is_array, uints array_size, bool is_hidden )
-            {
-                return _desc->add_desc_var( d, n, valdefault, is_array, array_size, is_hidden, is_array && this->is_array() );
-            }
-        };
-
-        dynarray<VAR> _children;        ///< member variables
-
-        charstr _typename;              ///< type name (name of a structure)
-        type _btype;                    ///< basic type id
-
-        
-
-        uints num_children() const      { return _children.size(); }
-
-        ///Get first member
-        VAR* first_child() const
-        {
-            DASSERT( _children.size() > 0 );
-            return (VAR*)_children.ptr();
-        }
-
-        ///Get next member from given one
-        VAR* next_child( VAR* c ) const
-        {
-            if( !c || c >= _children.last() )  return 0;
-            return c+1;
-        }
-
-        ///Linear search for specified member
-        VAR* find_child( const token& name ) const
-        {
-            uints n = _children.size();
-            for( uints i=0; i<n; ++i )
-                if( _children[i]._varname == name )  return (VAR*)&_children[i];
-            return 0;
-        }
-
-        uints get_child_pos( VAR* v ) const      { return uints(v-_children.ptr()); }
-
-
-        charstr& type_name( charstr& dst ) const
-        {
-            if( _typename.is_empty() )  return _children[0].type_name(dst);
-            if( _btype.is_primitive() )
-                dst << char('$');
-            dst << _typename;
-            if(_btype._size)
-                dst << (8*_btype._size);
-            return dst;
-        }
-
-        operator token() const              { return _typename; }
-        uints size() const                  { return _children.size(); }
-
-
-        DESC() {}
-        DESC( const token& n ) : _typename(n) {}
-
-        VAR* add_desc_var( DESC* d, const token& n, dynarray<uchar>& valdefault, bool is_array, uints array_size, bool is_hidden, bool is_element )
-        {
-            VAR* c = _children.add();
-            c->_desc = d;
-            c->_varname = n;
-            c->_is_array = is_array;
-            c->_array_size = array_size;
-            c->_is_hidden = is_hidden;
-            c->_is_array_element = is_element;
-
-            if( valdefault.size() )
-                c->_defval.swap( valdefault );
-
-            return c;
-        }
-/*
-        VAR* VAR::add_child( DESC* d, const token& n, dynarray<uchar>& valdefault, bool is_array, uints array_size, bool is_hidden )
-        {
-            return _desc->add_desc_var( d, n, valdefault, is_array, array_size, is_hidden );
-        }
-*/
-    };
-
     ///Get type descriptor for given type
     template<class T>
-    const DESC::VAR* get_type_desc( const T* )
+    const VAR* get_type_desc( const T* )
     {
-        _root._desc = 0;
+        _root.desc = 0;
         _current_var = 0;
 
         _arraynm = 0;
-        _is_array = false;
-        _array_size = UMAX;
+        //_is_array = false;
+        //_array_size = UMAX;
 
         *this << *(const T*)0;     // build description
         return &_root;
@@ -665,10 +488,10 @@ public:
 
     template<class T>
     struct TypeDesc {
-        static const DESC::VAR* get(metastream& meta)   { return meta.get_type_desc( (const T*)0 ); }
+        static const VAR* get(metastream& meta)   { return meta.get_type_desc( (const T*)0 ); }
         static charstr get_str(metastream& meta)
         {
-            const DESC::VAR* var = meta.get_type_desc( (const T*)0 );
+            const VAR* var = meta.get_type_desc( (const T*)0 );
             charstr res;
             var->type_name(res);
             return res;
@@ -727,12 +550,12 @@ private:
     struct StructureMap
     {
         DESC* find( const token& k ) const;
-        DESC* create_hidden_desc();
+        DESC* create_array_desc( uints n );
 
         DESC* create( const token& n, type t )
         {
             DESC d(n);
-            d._btype = t;
+            d.btype = t;
             return insert(d);
         }
 
@@ -744,9 +567,9 @@ private:
 
         void get_all_types( dynarray<const DESC*>& dst ) const;
 
-        DESC::VAR* last() const         { DESC::VAR** p = _stack.last();  return p ? *p : 0; }
-        DESC::VAR* pop()                { DESC::VAR* p;  return _stack.pop(p) ? p : 0; }
-        void push( DESC::VAR* v )       { _stack.push(v); }
+        VAR* last() const         { VAR** p = _stack.last();  return p ? *p : 0; }
+        VAR* pop()                { VAR* p;  return _stack.pop(p) ? p : 0; }
+        void push( VAR* v )       { _stack.push(v); }
 
         StructureMap();
         ~StructureMap();
@@ -754,7 +577,7 @@ private:
     protected:
         DESC* insert( const DESC& v );
 
-        dynarray<DESC::VAR*> _stack;
+        dynarray<VAR*> _stack;
         void* pimpl;
     };
 
@@ -766,8 +589,8 @@ private:
     charstr _err;
     
     // description parsing:
-    DESC::VAR _root;
-    DESC::VAR* _current_var;
+    VAR _root;
+    VAR* _current_var;
     const char* _cur_variable_name;
     //uints _cur_variable_size;
     dynarray<uchar> _cur_variable_default;
@@ -775,7 +598,7 @@ private:
     int _sesopen;                   ///< flush(>0) or ack(<0) session currently open
     int _arraynm;                   ///< first array element marker in non-meta mode
 
-    dynarray<DESC::VAR*> _stack;    ///< stack for current variable
+    dynarray<VAR*> _stack;    ///< stack for current variable
 
     dynarray<charstr> _templ_name_stack;
     bool _templ_arg_rdy;
@@ -783,8 +606,8 @@ private:
     bool _disable_meta_write;       ///< disable meta functionality for writting
     bool _disable_meta_read;        ///< disable meta functionality for reading
 
-    bool _is_array;                 ///< array to be defined
-    uints _array_size;              ///< size info about defined array, variable if UMAX
+    //bool _is_array;                 ///< array to be defined
+    //uints _array_size;              ///< size info about defined array, variable if UMAX
 
     binstream* _fmtstream;          ///< bound formatting front-end binstream
     binstreamhook _hook;            ///< internal data binstream
@@ -797,26 +620,23 @@ private:
     struct CacheEntry
     {
         uints offs;                 ///< offset to the current entry in stored class table
-        //uints aoff;                 ///< offset to current array element
         uints size;                 ///< remaining array size when reading an array from cache
     };
 
     dynarray<CacheEntry> _cachestack; ///< cache table stack
     CacheEntry* _current;
-    //uints _cachetbloffs;            
-    //uints _cache_arysize;           
-    //uints _cache_aryoffs;           
 
-    uints _cachetbloffsquit;        ///< when unwinding back, an offset where to stop reading from cache
+    //uints _cachetbloffsquit;        ///< when unwinding back, an offset where to stop reading from cache
+    VAR* _cachequit;                ///< root variable read from cache
 
     uints _cachelevel;              ///< level where the cache was initialized
     uints _cacherootentries;        ///< no.of valid root level members in cache (for fast discarding of cache when everything was read)
 
-    const dynarray<uchar>* _defval; ///< default value of object provided by cache
+    const dynarray<uchar>* defval;  ///< default value of object provided by cache
 
     charstr _rvarname;              ///< name of variable that follows in the input stream
 
-    DESC::VAR* _cur_var;             ///< currently processed variable (read/write)
+    VAR* _cur_var;                  ///< currently processed variable (read/write)
     charstr _struct_name;           ///< used during the template name building step
 
 
@@ -837,8 +657,18 @@ private:
 
     uints read_cache_uint( uints& offs )
     {
+        DASSERT( offs < _data.size() );
         uints v = *(const uints*)(_data.ptr() + offs);
         offs += sizeof(uints);
+        return v;
+    }
+
+    uints read_cache_offset( uints& offs )
+    {
+        DASSERT( offs < _data.size() );
+        uints v = offs + *(const uints*)(_data.ptr() + offs);
+        offs += sizeof(uints);
+        DASSERT( v <= _data.size() );
         return v;
     }
 
@@ -847,7 +677,7 @@ private:
 
     bool meta_find( const token& name )
     {
-        DESC* d = _map.find( name );
+        DESC* d = _map.find(name);
         if(!d)
             return false;
 
@@ -861,7 +691,7 @@ private:
             return true;
 
         DESC* d = _map.create( name, type() );
-        DESC::VAR* v = meta_fill_parent_variable(d);
+        VAR* v = meta_fill_parent_variable(d);
 
         _map.push( _current_var );
         _current_var = v;
@@ -869,46 +699,41 @@ private:
     }
 
     ///Insert array when its elements are arrays too
-    void meta_insert_array()
+    void meta_insert_array( uints n )
     {
-        DESC* d = _map.create_hidden_desc();
-        DESC::VAR* v = meta_fill_parent_variable(d,true);
+        DESC* d = _map.create_array_desc(n);
+        VAR* v = meta_fill_parent_variable(d);
 
         _map.push( _current_var );
         _current_var = v;
-
-        _is_array = false;
-        _array_size = UMAX;
     }
 
-    DESC::VAR* meta_fill_parent_variable( DESC* d, bool is_hidden=false )
+    VAR* meta_fill_parent_variable( DESC* d, bool is_hidden=false )
     {
-        DESC::VAR* var;
+        VAR* var;
 
         //remember the first descriptor, it's the root type requested for streaming
-        if(!_root._desc)
+        if(!_root.desc)
         {
-            _root._desc = d;
-            _root._is_array = _is_array;
-            _root._array_size = _array_size;
-            _root._is_hidden = is_hidden;
-            _root._is_array_element = false;
+            _root.desc = d;
+            //_root._is_array = _is_array;
+            //_root._array_size = _array_size;
+            //_root._is_hidden = is_hidden;
+            //_root._is_array_element = false;
             var = &_root;
         }
         else
         {
             //DASSERT( _cur_variable_name  ||  _cur_var->is_hidden() );
 
-            var = _current_var->add_child(
-                d, _cur_variable_name, _cur_variable_default, _is_array, _array_size, is_hidden );
+            var = _current_var->add_child( d, _cur_variable_name, _cur_variable_default );
 
             //get back from multiple array decl around this type
-            while( !is_hidden && _current_var && _current_var->_desc->_typename.is_empty() )
-                _current_var = _map.pop();
+            if( !d->is_array() )
+                while( _current_var && _current_var->is_array() )
+                    _current_var = _map.pop();
         }
 
-        _is_array = false;
-        _array_size = UMAX;
         _cur_variable_name = 0;
         _cur_variable_default.reset();
 
@@ -917,7 +742,7 @@ private:
     
     //@} meta_* functions
 
-    bool is_template_name_mode()        { return _templ_name_stack.size() > 0; }
+    bool is_template_name_mode()            { return _templ_name_stack.size() > 0; }
     
     bool handle_template_name_mode( const char* name )
     {
@@ -957,30 +782,30 @@ private:
     }
 
     ////////////////////////////////////////////////////////////////////////////////
-    DESC::VAR* last_var() const         { return *_stack.last(); }
-    void pop_var()                      { EASSERT( _stack.pop(_cur_var) ); }
-    void push_var()                     { _stack.push(_cur_var);  _cur_var = _cur_var->_desc->first_child(); }
+    VAR* last_var() const           { return *_stack.last(); }
+    void pop_var()                  { EASSERT( _stack.pop(_cur_var) ); }
+    void push_var()                 { _stack.push(_cur_var);  _cur_var = _cur_var->desc->first_child(); }
 
-    DESC::VAR* parent_var() const
+    VAR* parent_var() const
     {
-        DESC::VAR** v = _stack.last();
+        VAR** v = _stack.last();
         return v ? *v : 0;//&_root;
     }
 
     bool is_first_var() const
     {
-        DESC::VAR* p = last_var();
-        return _cur_var == p->_desc->_children.ptr();
+        VAR* p = last_var();
+        return _cur_var == p->desc->children.ptr();
     }
 
 
-    charstr& dump_stack( charstr& dst, int depth, DESC::VAR* var=0 ) const
+    charstr& dump_stack( charstr& dst, int depth, VAR* var=0 ) const
     {
         if(!dst.is_empty())
             dst << char('\n');
 
         if( depth <= 0 )
-            depth = (int)_stack.size() - depth;
+            depth = (int)_stack.size() + depth;
 
         if( depth > (int)_stack.size() )
             depth = (int)_stack.size();
@@ -1001,182 +826,160 @@ private:
     ////////////////////////////////////////////////////////////////////////////////
 protected:
 
-    enum { MODE_R=0, MODE_W=1, };
+    enum { WRITE_MODE=0, READ_MODE=1 };
 
-    opcd movein_struct( int w )
+    template<int R>
+    opcd movein_struct()
     {
         if( !cache_prepared() )
         {
-            opcd e = w
-                ? _fmtstream->write_struct_open( &_cur_var->_desc->_typename )
-                : _fmtstream->read_struct_open( &_cur_var->_desc->_typename );
-            if(e)  return e;
+            opcd e = R
+                ? _fmtstream->read_struct_open( &_cur_var->desc->type_name )
+                : _fmtstream->write_struct_open( &_cur_var->desc->type_name );
+
+            if(e) {
+                dump_stack(_err,0);
+                _err << " - error " << (R?"reading":"writing") << " struct opening token";
+                throw e;
+                return e;
+            }
+        }
+        else {
+            CacheEntry* ce = _cachestack.push();
+            _current = ce-1;
+
+            if( _cur_var->is_array_element() )
+                ce->offs = _current->offs;
+            else
+                ce->offs = read_cache_offset( _current->offs );
+
+            _current = ce;
         }
 
         push_var();
         return 0;
     }
 
-    opcd moveout_struct( int w )
+    template<int R>
+    opcd moveout_struct()
     {
         pop_var();
 
         if( !cache_prepared() )
         {
-            return w
-                ? _fmtstream->write_struct_close( &_cur_var->_desc->_typename )
-                : _fmtstream->read_struct_close( &_cur_var->_desc->_typename );
-        }
+            opcd e = R
+                ? _fmtstream->read_struct_close( &_cur_var->desc->type_name )
+                : _fmtstream->write_struct_close( &_cur_var->desc->type_name );
 
-        return 0;
-    }
-
-    ///Traverse the tree and set up the next primitive target for output streaming
-    opcd moveto_expected_targetw( int inarray=0 )
-    {
-        //find what should come next
-        // _cur_var was a primitive type, no need to check its children
-        opcd e;
-        do
-        {
-            if( inarray>0 || (inarray == 0 && _cur_var->is_compound()) )
-            {
-                //a compound type, pull in
-                e = movein_struct(MODE_W);
-                if(e)  return e;
-
-                inarray = 0;
-            }
-            else
-            {
-                //get next var
-                DESC::VAR* par = parent_var();
-                if(!par) {
-                    //!par should only happen here if the root type was a primitive type
-                    _tmetafnc = 0;
-                    return 0;
-                }
-
-                DESC::VAR* cvar = par->_desc->next_child(_cur_var);
-                while( !cvar )
-                {
-                    if( par->is_array() )
-                    {
-                        //_cur_var = 0;
-
-                        if( inarray<0 )
-                            moveout_struct(MODE_W);
-
-                        return 0;
-                    }
-
-                    //pull out
-                    e = moveout_struct(MODE_W);
-                    if(e)  return e;
-                    
-                    if( _cur_var == &_root ) {
-                        _tmetafnc = 0;
-                        return 0;
-                    }
-
-                    DASSERT( par == _cur_var );
-
-                    par = parent_var();
-                    cvar = par->_desc->next_child(_cur_var);
-                }
-
-                _cur_var = cvar;
-            }
-
-            opcd e=0;
-            if( !is_first_var() )
-                e = _fmtstream->write_separator();
-            //here just prefix the primitive value types and struct open token by the
-            // variable name.
-            if(!e) e = _fmtstream->write_key( _cur_var->_varname );
-            if(e)  return e;
-        }
-        while( _cur_var->is_compound() );
-
-        return 0;
-    }
-
-    ///Traverse the tree and set up the next target for input streaming
-    opcd moveto_expected_targetr( int inarray=0 )
-    {
-        //find what should come next
-        opcd e;
-        do
-        {
-            if( inarray>0 || (inarray == 0 && _cur_var->is_compound()) )
-            {
-                //a compound type, pull in
-                e = movein_struct(MODE_R);
-                if(e) {
-                    dump_stack(_err,0);
-                    _err << " - error reading struct open token";
-                    return e;
-                }
-                //_cur_var is now the expected variable to read
-
-                inarray = 0;
-            }
-            else
-            {
-                //get next var
-                DESC::VAR* par = parent_var();
-                if(!par) {
-                    //!par should only happen here if the root type was a primitive type
-                    _tmetafnc = 0;
-                    return 0;
-                }
-
-                DESC::VAR* cvar = par->_desc->next_child(_cur_var);
-                while( !cvar )
-                {
-                    if( par->is_array() )
-                    {
-                        //_cur_var = 0;
-
-                        if( inarray<0 )
-                            return moveout_struct(MODE_R);
-
-                        return 0;
-                    }
-
-                    e = moveout_struct(MODE_R);
-                    if(e) {
-                        dump_stack(_err,0);
-                        _err << " - error reading struct close token";
-                        return e;
-                    }
-
-                    if( _cur_var == &_root ) {
-                        _tmetafnc = 0;
-                        return 0;
-                    }
-
-                    DASSERT( par == _cur_var );
-
-                    par = parent_var();
-                    cvar = par->_desc->next_child(_cur_var);
-
-                    continue;
-                }
-
-                _cur_var = cvar;
-            }
-
-            e = fmts_or_cache_read_key();
             if(e) {
                 dump_stack(_err,0);
-                _err << " - error reading variable name, error: " << opcd_formatter(e);
+                _err << " - error " << (R?"reading":"writing") << " struct closing token";
+                throw e;
                 return e;
             }
         }
-        while( _cur_var->is_compound() );
+        else
+        {
+            uints ooff = _current->offs;
+
+            _current = _cachestack.pop();
+            if( _cur_var->is_array_element() )
+                _current->offs = ooff;
+        }
 
         return 0;
+    }
+
+
+    template<int R>
+    opcd movein_process_key()
+    {
+        bool ary = _cur_var->is_array_element();
+        if(ary)  return 0;
+
+        //this is first member so no member separator
+
+        return R
+            ? fmts_or_cache_read_key()
+            : fmts_or_cache_write_key();
+    }
+
+    ///Move onto the nearest primitive or array member
+    //@param R read(1) or write(0) mode
+    //@param key the data should start with a variable name (true), or directly with data
+    template<int R>
+    opcd movein_current( bool key )
+    {
+        opcd e;
+
+        if(key)
+            movein_process_key<R>();
+
+        while( _cur_var->is_compound() )
+        {
+            movein_struct<R>();
+            movein_process_key<R>();
+        }
+
+        return 0;
+    }
+
+    template<int R>
+    opcd movein_array()
+    {
+        opcd e;
+
+        push_var();
+        return movein_current<R>(false);
+    }
+
+    ///Traverse the tree and set up the next target for input streaming
+    //@param R reading(1) or writing(0) mode
+    template<int R>
+    opcd moveto_expected_target()
+    {
+        //find what should come next
+        opcd e;
+
+        //get next var
+        VAR* par = parent_var();
+        if(!par) {
+            //!par should only happen here if the root type was a primitive type
+            _tmetafnc = 0;
+            return 0;
+        }
+        if( _cur_var == _cachequit )    invalidate_cache_entry();
+
+        VAR* cvar = par->desc->next_child(_cur_var);
+        while( !cvar )
+        {
+            //we are in the (last) child variable, the parent could have been only
+            // a compound or an array.
+            //arrays have their terminating tokens read elsewhere, but for the
+            // structs we have to read the closing token here
+            if( par->is_compound() )
+                moveout_struct<R>();
+            else
+                pop_var();
+
+            //exit from arrays 
+            if( par->is_array() )
+                return 0;
+
+            //if( _current->offs == _cachetbloffsquit  &&  (t._ctrl == 0 || (t._ctrl & type::fARRAY_END)) )
+            //    invalidate_cache_entry();
+
+            if( _cur_var == _cachequit )    invalidate_cache_entry();
+            if( _cur_var == &_root )        { _tmetafnc = 0;  return 0; }
+
+            DASSERT( par == _cur_var );
+
+            par = parent_var();
+            cvar = par->desc->next_child(_cur_var);
+        }
+
+        _cur_var = cvar;
+        return movein_current<R>(true);
     }
 
 
@@ -1220,19 +1023,19 @@ protected:
             {
                 //push_var( _cur_var );
                 //if( _cur_var->is_hidden() )
-                //    _cur_var = _cur_var->_desc->first_child();
-                DASSERT( _cur_var->_desc->_btype._type == t._type );
+                //    _cur_var = _cur_var->desc->first_child();
+                //DASSERT( _cur_var->desc->btype._type == t._type );
 
                 return 0;
             }
             else
             {
                 //_cur_var = pop_var();
-                DASSERT( _cur_var->_desc->_btype._type == t._type );
+                //DASSERT( _cur_var->desc->btype._type == t._type );
             }
         }
 
-        return moveto_expected_targetw();
+        return moveto_expected_target<WRITE_MODE>();
     }
 
     ///This is called from internal binstream when a primitive data or control token is
@@ -1243,11 +1046,14 @@ protected:
 
         if(!_tmetafnc)
         {
-            if( _sesopen && !(t._ctrl & type::fARRAY_END) && !_arraynm ) {
+            if( _sesopen && !(t._ctrl & type::fARRAY_END) && !_arraynm )
+            {
                 opcd e = _fmtstream->read_separator();
                 if(e) {
                     dump_stack(_err,0);
                     _err << " - error reading separator: " << opcd_formatter(e);
+
+                    throw e;
                     return e;
                 }
             }
@@ -1284,19 +1090,22 @@ protected:
             {
                 //push_var( _cur_var );
                 //if( _cur_var->is_hidden() )
-                //    _cur_var = _cur_var->_desc->first_child();
-                DASSERT( _cur_var->_desc->_btype._type == t._type );
+                //    _cur_var = _cur_var->desc->first_child();
+                //DASSERT( _cur_var->desc->btype._type == t._type );
 
                 return 0;
             }
             else
             {
                 //_cur_var = pop_var();
-                DASSERT( _cur_var->_desc->_btype._type == t._type );
+                //DASSERT( _cur_var->desc->btype._type == t._type );
+
+                if( _cur_var == _cachequit )    invalidate_cache_entry();
+                if( _cur_var == &_root )        { _tmetafnc = 0;  return 0; }
             }
         }
 
-        return moveto_expected_targetr();
+        return moveto_expected_target<READ_MODE>();
     }
 
     opcd data_write_raw( const void* p, uints& len )
@@ -1337,13 +1146,14 @@ protected:
         {
             if( cache_prepared() )
             {
+                //reading from cache
                 opcd e;
                 DASSERT( n != UMAX );
 
-                bool hidden = _cur_var->is_hidden();
+                bool cmpnd = !_cur_var->is_primitive();
 
-                push_var();
-                DESC::VAR* cold = _cur_var;
+                //push_var();
+                //VAR* cold = _cur_var;
 
                 for( uints i=0; i<n; ++i )
                 {
@@ -1351,20 +1161,23 @@ protected:
                     if(!p)
                         return ersNOT_ENOUGH_MEM;
 
+                    movein_array<READ_MODE>();
+
+                    uints off;
+                    if(cmpnd)
+                        off = read_cache_offset( _current->offs );
+
                     e = c._stream_in( _hook, p, c );
                     if(e)  return e;
 
-                    //--_cache_arysize;
                     --_current->size;
-                    if(!hidden)
-                        _current->offs = read_cache_uint( _current->offs );
-                    //_cachetbloffs = read_cache_uint(_cachetbloffs);
-                    //_current->offs = read_cache_uint( _current->offs );
+                    //_cur_var = cold;
 
-                    _cur_var = cold;
+                    if(cmpnd)
+                        _current->offs = off;
                 }
 
-                pop_var();
+                //pop_var();
 
                 return 0;
             }
@@ -1399,34 +1212,15 @@ protected:
             return _fmtstream->write_array_separator(t,end);
         }
 
-        opcd e;
-        if( t.is_next_array_element() && last_var()->is_hidden() )
-            pop_var();
-        else if( t.is_next_array_element() && !t.is_primitive() )
-        {
-            //e = moveout_struct(MODE_W);
-            e = moveto_expected_targetw(-1);
-            if(e)  return e;
-        }
-
-        e = _fmtstream->write_array_separator(t,end);
+        opcd e = _fmtstream->write_array_separator(t,end);
         if(e)  return e;
 
-        if( !end && _cur_var->is_hidden() )
-            push_var();
-        else if( !end && !t.is_primitive() )
-        {
-            //e = movein_struct(MODE_W);
-            //if(e)  return e;
-
-            //e = _fmtstream->write_key( _cur_var->_varname );
-
-            e = moveto_expected_targetw(+1);
-        }
-
-        return e;
+        return end ? e : movein_array<WRITE_MODE>();
     }
 
+    ///Called from binstream to read array separator or detect an array end
+    ///This method is called only for uncached data; reads from the cache
+    /// use the data_read_array_content() method.
     opcd data_read_array_separator( type t )
     {
         if(!_tmetafnc) {
@@ -1435,40 +1229,39 @@ protected:
         }
 
         opcd e;
-        if( t.is_next_array_element() && last_var()->is_hidden() )
-            pop_var();
-        else if( t.is_next_array_element() && !t.is_primitive() )
+/*
+        if( t.is_next_array_element() )     //if there was an element before, close it
         {
-            //e = moveout_struct(MODE_R);
-            e = moveto_expected_targetr(-1);
-            if(e)  return e;
+            if( last_var()->is_hidden() )   //if the elements are arrays too
+                pop_var();
+            else if( !t.is_primitive() )
+            {
+                e = moveto_expected_targetr(-1);
+                if(e)  return e;
+            }
         }
-
+*/
         e = _fmtstream->read_array_separator(t);
         if( e == ersNO_MORE )
             return e;
         if(e) {
             dump_stack(_err,0);
             _err << " - error reading array separator: " << opcd_formatter(e);
+
+            throw e;
             return e;
         }
-
+/*
         if( _cur_var->is_hidden() )
             push_var();
         else if( !t.is_primitive() )
-        {
-            //e = movein_struct(MODE_R);
-            //if(e)  return e;
-
-            //e = fmts_or_cache_read_key();
             e = moveto_expected_targetr(+1);
-        }
-
-        return e;
+*/
+        return movein_array<READ_MODE>();
     }
 
 
-    bool default_prepared() const       { return _defval != 0; }
+    bool default_prepared() const       { return defval != 0; }
     bool cache_prepared() const         { return _current->offs != UMAX; }
 
     void invalidate_cache_entry()
@@ -1476,6 +1269,7 @@ protected:
         if( --_cacherootentries == 0 )
             _data.reset();
         _current->offs = UMAX;
+        _cachequit = 0;
     }
 
     ///Read data from formatstream or cache
@@ -1483,11 +1277,11 @@ protected:
     {
         if( default_prepared() )
         {
-            if( !t.is_no_size()  &&  t.get_size() != _defval->size() )
+            if( !t.is_no_size()  &&  t.get_size() != defval->size() )
                 return ersMISMATCHED "size of element and the size of provided default value";
 
-            _defval->copy_bin_to( (uchar*)p, _defval->size() );
-            _defval = 0;
+            defval->copy_bin_to( (uchar*)p, defval->size() );
+            defval = 0;
             return 0;
         }
         else if( cache_prepared() )
@@ -1500,21 +1294,13 @@ protected:
                     CacheEntry* ce = _cachestack.push();
                     _current = ce-1;
 
-                    if( !_cur_var->is_array_element() )
-                        ce->offs = read_cache_uint( _current->offs );
-                    else
+                    if( _cur_var->is_array_element() )
                         ce->offs = _current->offs;
+                    else
+                        ce->offs = read_cache_offset( _current->offs );
 
                     ce->size = read_cache_uint( ce->offs );
-                    //ce->offs = ce->aoff;
-/*
-                    _cachestack.push(_cache_aryoffs);
-                    _cachestack.push(_cache_arysize);
-                    _cache_aryoffs = read_cache_uint(_cachetbloffs);
-                    _cache_arysize = read_cache_uint(_cache_aryoffs);
-                    _cachestack.push(_cachetbloffs);
-                    _cachetbloffs = _cache_aryoffs;
-*/
+
                     *(uints*)p = ce->size;//_cache_arysize;
                     _current = ce;
                 }
@@ -1523,10 +1309,7 @@ protected:
                     if( _current->size > 0 ) {
                         return ersMISMATCHED "elements left in cached array";
                     }
-/*
-                    _cachestack.pop(_cachetbloffs);
-                    _cachestack.pop(_cache_arysize);
-                    _cachestack.pop(_cache_aryoffs);*/
+
                     uints ooff = _current->offs;
 
                     _current = _cachestack.pop();
@@ -1541,12 +1324,9 @@ protected:
                 DASSERT( t._type != type::T_STRUCTBGN  &&  t._type != type::T_STRUCTEND );
                 DASSERT( !_cur_var->is_array_element() );
 
-                uints cio = read_cache_uint( _current->offs );
+                uints cio = read_cache_offset( _current->offs );
                 xmemcpy( p, _data.ptr()+cio, t.get_size() );
             }
-
-            if( _current->offs == _cachetbloffsquit  &&  (t._ctrl == 0 || (t._ctrl & type::fARRAY_END)) )
-                invalidate_cache_entry();
 
             return 0;
         }
@@ -1566,7 +1346,9 @@ protected:
                     e = _fmtstream->read_separator();
                     if(e) {
                         dump_stack(_err,0);
-                        _err << " - error reading the variable separator, error: " << opcd_formatter(e);
+                        _err << " - error reading the variable separator: " << opcd_formatter(e);
+
+                        throw e;
                         return e;
                     }
                 }
@@ -1574,19 +1356,51 @@ protected:
                 e = binstream_read_key( *_fmtstream, _rvarname );
                 if(e) {
                     dump_stack(_err,0);
-                    _err << " - error while seeking for variable '" << _cur_var->_varname << "', error: " << opcd_formatter(e);
+                    _err << " - error while seeking for variable '" << _cur_var->varname << "': " << opcd_formatter(e);
+
+                    throw e;
                     return e;
                 }
 
-                if( _rvarname != _cur_var->_varname ) {
+                if( _rvarname != _cur_var->varname ) {
                     e = cache_fill_member();
                     if(e) {
                         dump_stack(_err,0);
-                        _err << " - error while seeking for variable '" << _cur_var->_varname << "', probably not found, error: " << opcd_formatter(e);
-                        return e;    //probably the element was not found
+                        _err << " - error while seeking for variable '" << _cur_var->varname << "', probably not found: " << opcd_formatter(e);
+
+                        //probably the element was not found
+                        throw e;
+                        return e;
                     }
                 }
             }
+        }
+
+        return 0;
+    }
+
+    opcd fmts_or_cache_write_key()
+    {
+        opcd e;
+        if( !is_first_var() )
+        {
+            e = _fmtstream->write_separator();
+            if(e) {
+                dump_stack(_err,0);
+                _err << " - error writing the variable separator: " << opcd_formatter(e);
+
+                throw e;
+                return e;
+            }
+        }
+
+        e = _fmtstream->write_key( _cur_var->varname );
+        if(e) {
+            dump_stack(_err,0);
+            _err << " - error while writing the variable name '" << _cur_var->varname << "': " << opcd_formatter(e);
+
+            throw e;
+            return e;
         }
 
         return 0;
@@ -1628,13 +1442,14 @@ protected:
 
 
     ///Fill intermediate cache, _rvarname contains the key read, and
-    /// _cur_var->_varname the key requested
+    /// _cur_var->varname the key requested
     opcd cache_fill_member()
     {
+        opcd e;
         //here _rvarname can only be another member of _cur_var's parent
         // we should find it and cache its whole structure, as well as any other
         // members until the one pointed to by _cur_var is found
-        DESC* par = parent_var()->_desc;
+        DESC* par = parent_var()->desc;
 
         if( _data.size() > 0 ) {
             DASSERT( _cachelevel == _stack.size() );
@@ -1646,29 +1461,32 @@ protected:
         }
 
         do {
-            DESC::VAR* crv = par->find_child(_rvarname);
+            VAR* crv = par->find_child(_rvarname);
             if(!crv) {
-                dump_stack(_err,-1);
+                dump_stack(_err,0);
                 _err << " - member variable: " << _rvarname << " not defined";
-                return ersNOT_FOUND "no such member variable";
+                
+                e = ersNOT_FOUND "no such member variable";
+                throw e;
+                return e;
             }
 
             uints k = par->get_child_pos(crv);
             if( ((uints*)_data.ptr())[k] != UMAX ) {
-                dump_stack(_err,-1);
+                dump_stack(_err,0);
                 _err << " - data for member: " << _rvarname << " specified more than once";
-                return ersMISMATCHED "redundant member data";
+                
+                e = ersMISMATCHED "redundant member data";
+                throw e;
+                return e;
             }
 
             //mark the position of cached data block for this member into parent's table
-            ((uints*)_data.ptr())[k] = _data.size();
+            k *= sizeof(uints);
+            *(uints*)(_data.ptr()+k) = _data.size() - k;
 
             opcd e = cache_member(crv);
-            if(e) {
-                dump_stack(_err,0,crv);
-                _err << " - error caching the variable: " << opcd_formatter(e);
-                return e;
-            }
+            if(e)  return e;
 
             ++_cacherootentries;
 
@@ -1681,33 +1499,33 @@ protected:
 
             e = binstream_read_key( *_fmtstream, _rvarname );
             if(e) {
-                if( e == ersNO_MORE  &&  _cur_var->_defval.size() > 0 )
+                if( e == ersNO_MORE  &&  _cur_var->defval.size() > 0 )
                 {
-                    _defval = &_cur_var->_defval;
+                    defval = &_cur_var->defval;
                     return 0;
                 }
 
                 dump_stack(_err,0);
-                _err << " - variable not found '" << _cur_var->_varname << "', error: " << opcd_formatter(e);
+                _err << " - variable not found '" << _cur_var->varname << "', error: " << opcd_formatter(e);
                 return e;
             }
         }
-        while( _rvarname != _cur_var->_varname );
+        while( _rvarname != _cur_var->varname );
 
         return 0;
     }
 
-    ///Find _cur_var->_varname in cache
+    ///Find _cur_var->varname in cache
     bool cache_lookup()
     {
         if( _data.size() == 0  ||  _cachelevel < _stack.size() )
             return false;
 
         //get child map
-        const uints* dof = (uints*)_data.ptr();
-        DESC* par = parent_var()->_desc;
+        const uints* dof = (const uints*)_data.ptr();
+        DESC* par = parent_var()->desc;
 
-        DESC::VAR* crv = par->find_child( _cur_var->_varname );
+        VAR* crv = par->find_child( _cur_var->varname );
         DASSERT(crv);
 
         uints k = par->get_child_pos(crv);
@@ -1715,7 +1533,8 @@ protected:
         {
             //found in cache, set up a cache read
             _current->offs = k * sizeof(uints);
-            _cachetbloffsquit = _current->offs + sizeof(uints);
+            _cachequit = crv;
+            //_cachetbloffsquit = _current->offs + sizeof(uints);
             return true;
         }
 
@@ -1723,64 +1542,92 @@ protected:
     }
 
     ///Read structured data of variable var to the cache.
-    opcd cache_member( DESC::VAR* var )
+    opcd cache_member( VAR* var )
     {
         opcd e;
-        if( !var->_desc->_btype.is_primitive() )
-            e = var->is_array()
-                ? cache_compound_member_array(var)  //array of compound types
-                : cache_compound_member(var);
-        else if( var->is_array() )
-        {
-            //mark the array size first
-            uints ona = _data.size();
-            _data.add( sizeof(uints) );
 
-            cache_container cc( _data, var->_desc->_btype, var->_array_size );
-            e = _fmtstream->read_array(cc);
-            *(uints*)(_data.ptr()+ona) = cc._nactual;
+        if( var->is_primitive() && !var->is_array() )
+        {
+            e = _fmtstream->read( _data.add( var->desc->btype.get_size() ), var->desc->btype );
+            if(e) {
+                dump_stack(_err,0);
+                _err << " - error reading value of variable " << var->varname << ": " << opcd_formatter(e);
+
+                throw e;
+                return e;
+            }
         }
         else
         {
-            e = _fmtstream->read( _data.add( var->_desc->_btype.get_size() ), var->_desc->_btype );
+            bool are = var->is_array_element();
+
+            uints odof;
+            if(are) {
+                odof = _data.size();
+                _data.add( sizeof(uints) );
+            }
+
+            if( !var->is_primitive() )
+            {
+                // If this is an array element (compound) object, its preceded with one 
+                // uint containing the offset past the element data for skipping.
+                e = var->is_array()
+                    ? cache_compound_member_array(var)  //array of compound types
+                    : cache_compound_member(var);
+            }
+            else
+            {
+                DASSERT( var->is_array() );
+
+                //mark the array size first
+                uints ona = _data.size();
+                _data.add( sizeof(uints) );
+
+                cache_container cc( _data, var->desc->btype, var->desc->array_size );
+                e = _fmtstream->read_array(cc);
+                *(uints*)(_data.ptr()+ona) = cc._nactual;
+            }
+
+            if(are)
+                *(uints*)(_data.ptr()+odof) = _data.size() - odof;
         }
 
         return e;
     }
 
     ///Cache compound array
-    opcd cache_compound_member_array( DESC::VAR* var )
+    opcd cache_compound_member_array( VAR* var )
     {
-        type t = var->_desc->_btype;
+        type t = var->desc->btype;
 
         //mark the array size first
         uints ona = _data.size();
         _data.add( sizeof(uints) );
         uints na = UMAX;
-        uints n = var->_array_size;
+        uints n = var->desc->array_size;
 
         opcd e = _fmtstream->read( &na, t.get_array_begin() );
         if(e) {
             dump_stack(_err,0,var);
             _err << " - expecting array start";
+            
+            throw e;
             return e;
         }
 
         if( na != UMAX  &&  n != UMAX  &&  n != na ) {
             dump_stack(_err,0);
             _err << " - array definition expects " << n << " items but found " << na << " items";
-            return ersMISMATCHED "requested and stored count";
+
+            e = ersMISMATCHED "requested and stored count";
+            throw e;
+            return e;
         }
         if( na != UMAX )
             n = na;
 
-        //create a dummy variable, for array elements reading
-        DESC::VAR tmp;
-        DESC::VAR* element = tmp.make_element(*var);
-        //v.is_array = false;
-        //v._desc = var->_desc;
-
-        type tae = t.get_array_element();
+        VAR* element = var->element();;
+        type tae = element->get_type(); //t.get_array_element();
 
         uints k=0;
         while( n>0 )
@@ -1792,14 +1639,9 @@ protected:
                 break;
 
             e = cache_member(element);
-            if(e) {
-                dump_stack(_err,0,element);
-                _err << " - error reading the variable: " << opcd_formatter(e);
-                return e;
-            }
+            if(e)  return e;
 
             ++k;
-
             type::mask_array_element_first_flag(tae);
         }
 
@@ -1817,26 +1659,20 @@ protected:
     }
 
     ///Cache compound non-array object
-    opcd cache_compound_member( DESC::VAR* var )
+    opcd cache_compound_member( VAR* var )
     {
-        bool isarrayelem = var->_varname.is_empty();
-
         //a compound type, pull in
         // Write children offset table.
-        // If this is an array element (compound) object, directly after the table
-        // would be written an offset past the end of the cache block consumed by
-        // this object. This is used for fast skipping when some cached variables
-        // have to be read before the others that were cached first.
-        uints n = var->_desc->num_children();
+        uints n = var->desc->num_children();
         uints odof = _data.size();
-        uints m = isarrayelem ? n+1 : n;
-        _data.addc( m * sizeof(uints), true );
+        _data.addc( n * sizeof(uints), true );
 
-        //_rstructname.reset();
-        opcd e = _fmtstream->read_struct_open( &var->_desc->_typename );
+        opcd e = _fmtstream->read_struct_open( &var->desc->type_name );
         if(e) {
             dump_stack(_err,0,var);
             _err << " - expected struct open token, error: " << opcd_formatter(e);
+
+            throw e;
             return e;
         }
 
@@ -1849,31 +1685,29 @@ protected:
             if(e) {
                 dump_stack(_err,0);
                 _err << " - error reading variable '" << _rvarname << "', error: " << opcd_formatter(e);
+
+                throw e;
                 return e;
             }
 
-            DESC::VAR* crv = var->_desc->find_child(_rvarname);
+            VAR* crv = var->desc->find_child(_rvarname);
             if(!crv) {
                 dump_stack(_err,0,var);
                 _err << " - member variable '" << _rvarname << "' not defined";
-                return ersNOT_FOUND "no such member variable";
-            }
-
-            uints k = var->_desc->get_child_pos(crv);
-            ((uints*)(_data.ptr()+odof))[k] = _data.size();
-
-            e = cache_member(crv);
-            if(e) {
-                dump_stack(_err,0,crv);
-                _err << " - error reading the variable: " << opcd_formatter(e);
+                
+                e = ersNOT_FOUND "no such member variable";
+                throw e;
                 return e;
             }
+
+            uints k = var->desc->get_child_pos(crv) * sizeof(uints) + odof;
+            *(uints*)(_data.ptr()+k) = _data.size() - k;
+
+            e = cache_member(crv);
+            if(e)  return e;
         }
 
-        if(isarrayelem)
-            ((uints*)(_data.ptr()+odof))[n] = _data.size();
-
-        e = _fmtstream->read_struct_close( &var->_desc->_typename );
+        e = _fmtstream->read_struct_close( &var->desc->type_name );
         if(e) {
             dump_stack(_err,0,var);
             _err << " - expected struct close token, error: " << opcd_formatter(e);
@@ -1897,7 +1731,7 @@ protected:
 #define MM(meta, n, v)              meta.meta_variable(n);  meta << v;
 #define MMT(meta, n, t)             meta.meta_variable(n);  meta << *(t*)0;
 #define MMD(meta, n, d)             meta.meta_variable_with_default(n,d);  meta << d;
-#define MMAT(meta, n, t)            meta.meta_array(); meta.meta_variable(n);  meta << *(t*)0;
+#define MMAT(meta, n, t)            meta.meta_variable(n);  meta.meta_array();  meta << *(t*)0;
 #define MSTRUCT_CLOSE(meta)         meta.meta_struct_close(); }  return meta;
 
 /// building template name:
