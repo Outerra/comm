@@ -92,6 +92,7 @@ public:
         try { encode( (const uint8*)p, len ); }
         catch(opcd e) { return e; }
 
+        len = 0;
         return (opcd)0;
     }
 
@@ -100,10 +101,13 @@ public:
         if( len == 0 )
             return 0;
 
-        try { decode( (uint8*)p, len ); }
-        catch(opcd e) { return e; }
+        opcd e;
+        try { e = decode( (uint8*)p, len ); }
+        catch(opcd xe) { return xe; }
 
-        return (opcd)0;
+        if(!e)
+            len = 0;
+        return e;
     }
 
     virtual void flush()
@@ -136,7 +140,7 @@ public:
         _wptr = _wbuf;
 
         _ndec = 0;
-        _rptr = _rbuf;
+        _rptr = _rbuf + RBUFFER_SIZE;
         _rrem = UMAX;
 
         _bin->reset();
@@ -148,7 +152,7 @@ public:
         _wptr = _wbuf;
 
         _ndec = 0;
-        _rptr = _rbuf;
+        _rptr = _rbuf + RBUFFER_SIZE;
         _rrem = UMAX;
     }
 
@@ -158,7 +162,7 @@ public:
         _wptr = _wbuf;
 
         _ndec = 0;
-        _rptr = _rbuf;
+        _rptr = _rbuf + RBUFFER_SIZE;
         _rrem = UMAX;
 
         bind(bin);
@@ -166,7 +170,7 @@ public:
 
     virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX )
     {
-        return _bin->read_until( ss, bout, max_size );
+        return ersNOT_IMPLEMENTED; //_bin->read_until( ss, bout, max_size );
     }
 
     virtual opcd bind( binstream& bin, int io=0 )
@@ -194,6 +198,7 @@ protected:
         }
         
         _rrem = UMAX;
+        _rptr = _rbuf + RBUFFER_SIZE;
         _ndec = 0;
     }
 
@@ -285,10 +290,12 @@ private:
     }
 
 
-    void decode( uint8* p, uints len )
+    opcd decode( uint8* p, uints len )
     {
         if( len > _rrem )
-            throw ersNO_MORE;
+            return ersNO_MORE;
+
+        _rrem -= (uint)len;
 
         for( ; _ndec>0 && len>0; --len )
         {
@@ -296,7 +303,7 @@ private:
             *p++ = _rtar[_ndec];
         }
 
-        if(_ndec)  return;
+        if(_ndec)  return 0;
 
         while( len >= 3 )
         {
@@ -320,6 +327,7 @@ private:
             }
         }
 
+        return 0;
     }
 
     void decode3()
@@ -340,15 +348,22 @@ private:
     ///@return remaining bytes
     int decode_prefetch( uint n=4 )
     {
-        if( _rptr >= _rbuf + RBUFFER_SIZE ) {
+        if( _rptr >= _rbuf + RBUFFER_SIZE )
+        {
+            if( _rrem < RBUFFER_SIZE )
+                throw ersNO_MORE;
             _rptr = _rbuf;
-            _bin->xread_raw( _rbuf, RBUFFER_SIZE );
+
+            uint n = RBUFFER_SIZE;
+            if( _bin->read_raw_full( _rbuf, n ) )
+                _rrem = ((RBUFFER_SIZE-n)/4)*3;
         }
 
         _rval = 0;
 
         for( ; n>0 && _rptr<_rbuf+RBUFFER_SIZE; )
         {
+            --n;
             char c = *_rptr++;
 
             if( c >= 'A' && c <= 'Z' )      _rval |= (c-'A')<<(n*6);
@@ -357,11 +372,9 @@ private:
             else if( c == '+' ) _rval |= 62<<(n*6);
             else if( c == '/' ) _rval |= 63<<(n*6);
             else if( c == '=' )
-                return decode_end(--n);
+                return decode_end(n);
             else
-                continue;
-
-            --n;
+                ++n;
         }
 
         if(n)

@@ -71,14 +71,11 @@ public:
     void init()
     {
         _root.desc = 0;
-        //_root._is_array = false;
-        //_root._array_size = UMAX;
 
         _current = _cachestack.push();
         _current->offs = UMAX;
         _current->size = 0;
 
-        //_cachetbloffsquit = 0;
         _cachequit = 0;
         _cacherootentries = 0;
         _cachelevel = UMAX;
@@ -89,7 +86,6 @@ public:
         _cur_var = 0;
         _cur_variable_name = 0;
         _cur_variable_default.reset();
-        //_cur_variable_size = 0;
 
         _disable_meta_write = _disable_meta_read = false;
         _templ_arg_rdy = false;
@@ -128,7 +124,6 @@ public:
         _tmetafnc = &metacall<T>::stream;
         _root.desc = 0;
         _current_var = 0;
-        //_root.varname = name;
 
         opcd e;
         DASSERT( _sesopen <= 0 );   //or else unflushed write
@@ -146,14 +141,11 @@ public:
         }
 
         _arraynm = 0;
-        //_is_array = false;
-        //_array_size = UMAX;
 
         *this << *(const T*)0;     // build description tree
 
         _cur_var = &_root;
         _cur_var->varname = name;
-        //_cur_var->_is_array_element = name.is_empty();
 
         return movein_current<READ_MODE>( !name.is_empty() );
     }
@@ -165,7 +157,6 @@ public:
         _tmetafnc = &metacall<T>::stream;
         _root.desc = 0;
         _current_var = 0;
-        //_root.varname = name;
 
         opcd e;
         DASSERT( _sesopen >= 0 );   //or else unacked read
@@ -180,14 +171,11 @@ public:
         }
 
         _arraynm = 0;
-        //_is_array = false;
-        //_array_size = UMAX;
 
         *this << *(const T*)0;     // build description
 
         _cur_var = &_root;
         _cur_var->varname = name;
-        //_cur_var->_is_array_element = name.is_empty();
 
         return movein_current<WRITE_MODE>( !name.is_empty() );
     }
@@ -199,8 +187,6 @@ public:
         _tmetafnc = &metacall<T>::stream;
         _root.desc = 0;
         _current_var = 0;
-        _root._is_hidden = false;
-        //_root.varname = name;
 
         opcd e;
         DASSERT( _sesopen <= 0 );   //or else unflushed write
@@ -222,7 +208,6 @@ public:
 
         _cur_var = &_root;
         _cur_var->varname = name;
-        //_cur_var->_is_array_element = name.is_empty();
 
         return movein_current<READ_MODE>( !name.is_empty() );
     }
@@ -234,8 +219,6 @@ public:
         _tmetafnc = &metacall<T>::stream;
         _root.desc = 0;
         _current_var = 0;
-        _root._is_hidden = false;
-        //_root.varname = name;
 
         opcd e;
         DASSERT( _sesopen >= 0 );   //or else unacked read
@@ -254,7 +237,6 @@ public:
 
         _cur_var = &_root;
         _cur_var->varname = name;
-        //_cur_var->_is_array_element = name.is_empty();
 
         return movein_current<WRITE_MODE>( name.is_empty() );
     }
@@ -315,7 +297,6 @@ public:
             _arraynm = 0;
             _fmtstream->acknowledge(eat);
         }
-        //_cur_varnum = 0;
     }
 
     void stream_flush()
@@ -335,14 +316,12 @@ public:
 
         _stack.reset();
 
-        //_is_array = false;
         _data.reset();
         _cachestack.need(1);
         _tmetafnc = 0;
         _cur_var = 0;
         _cur_variable_name = 0;
         _cur_variable_default.reset();
-        //_cur_variable_size = 0;
         defval = 0;
 
         _err.reset();
@@ -479,8 +458,6 @@ public:
         _current_var = 0;
 
         _arraynm = 0;
-        //_is_array = false;
-        //_array_size = UMAX;
 
         *this << *(const T*)0;     // build description
         return &_root;
@@ -493,7 +470,7 @@ public:
         {
             const VAR* var = meta.get_type_desc( (const T*)0 );
             charstr res;
-            var->type_name(res);
+            var->type_string(res);
             return res;
         }
     };
@@ -592,7 +569,6 @@ private:
     VAR _root;
     VAR* _current_var;
     const char* _cur_variable_name;
-    //uints _cur_variable_size;
     dynarray<uchar> _cur_variable_default;
 
     int _sesopen;                   ///< flush(>0) or ack(<0) session currently open
@@ -605,9 +581,6 @@ private:
 
     bool _disable_meta_write;       ///< disable meta functionality for writting
     bool _disable_meta_read;        ///< disable meta functionality for reading
-
-    //bool _is_array;                 ///< array to be defined
-    //uints _array_size;              ///< size info about defined array, variable if UMAX
 
     binstream* _fmtstream;          ///< bound formatting front-end binstream
     binstreamhook _hook;            ///< internal data binstream
@@ -626,7 +599,6 @@ private:
     dynarray<CacheEntry> _cachestack; ///< cache table stack
     CacheEntry* _current;
 
-    //uints _cachetbloffsquit;        ///< when unwinding back, an offset where to stop reading from cache
     VAR* _cachequit;                ///< root variable read from cache
 
     uints _cachelevel;              ///< level where the cache was initialized
@@ -716,16 +688,10 @@ private:
         if(!_root.desc)
         {
             _root.desc = d;
-            //_root._is_array = _is_array;
-            //_root._array_size = _array_size;
-            //_root._is_hidden = is_hidden;
-            //_root._is_array_element = false;
             var = &_root;
         }
         else
         {
-            //DASSERT( _cur_variable_name  ||  _cur_var->is_hidden() );
-
             var = _current_var->add_child( d, _cur_variable_name, _cur_variable_default );
 
             //get back from multiple array decl around this type
@@ -789,7 +755,7 @@ private:
     VAR* parent_var() const
     {
         VAR** v = _stack.last();
-        return v ? *v : 0;//&_root;
+        return v ? *v : 0;
     }
 
     bool is_first_var() const
@@ -897,8 +863,7 @@ protected:
         bool ary = _cur_var->is_array_element();
         if(ary)  return 0;
 
-        //this is first member so no member separator
-
+        //this is the first member so no member separator
         return R
             ? fmts_or_cache_read_key()
             : fmts_or_cache_write_key();
@@ -966,9 +931,6 @@ protected:
             if( par->is_array() )
                 return 0;
 
-            //if( _current->offs == _cachetbloffsquit  &&  (t._ctrl == 0 || (t._ctrl & type::fARRAY_END)) )
-            //    invalidate_cache_entry();
-
             if( _cur_var == _cachequit )    invalidate_cache_entry();
             if( _cur_var == &_root )        { _tmetafnc = 0;  return 0; }
 
@@ -1020,19 +982,7 @@ protected:
         if( t.is_array_control_type() )
         {
             if( t._ctrl & type::fARRAY_BEGIN )
-            {
-                //push_var( _cur_var );
-                //if( _cur_var->is_hidden() )
-                //    _cur_var = _cur_var->desc->first_child();
-                //DASSERT( _cur_var->desc->btype._type == t._type );
-
                 return 0;
-            }
-            else
-            {
-                //_cur_var = pop_var();
-                //DASSERT( _cur_var->desc->btype._type == t._type );
-            }
         }
 
         return moveto_expected_target<WRITE_MODE>();
@@ -1076,7 +1026,6 @@ protected:
             return 0;
 
         //read value
-        //opcd e = _fmtstream->read( p, t );
         opcd e = fmts_or_cache_read( p, t );
         if(e) {
             dump_stack(_err,0);
@@ -1087,19 +1036,9 @@ protected:
         if( t.is_array_control_type() )
         {
             if( t._ctrl & type::fARRAY_BEGIN )
-            {
-                //push_var( _cur_var );
-                //if( _cur_var->is_hidden() )
-                //    _cur_var = _cur_var->desc->first_child();
-                //DASSERT( _cur_var->desc->btype._type == t._type );
-
                 return 0;
-            }
             else
             {
-                //_cur_var = pop_var();
-                //DASSERT( _cur_var->desc->btype._type == t._type );
-
                 if( _cur_var == _cachequit )    invalidate_cache_entry();
                 if( _cur_var == &_root )        { _tmetafnc = 0;  return 0; }
             }
@@ -1120,12 +1059,6 @@ protected:
 
     opcd data_write_array_content( binstream_container& c )
     {
-/*        if(!_tmetafnc) {
-            if( !t.is_primitive() )
-                return _hook.write_compound_array_content(c);
-            return _fmtstream->write_array_content(c);
-        }
-*/
         c.set_array_needs_separators();
         type t = c._type;
 
@@ -1137,8 +1070,6 @@ protected:
 
     opcd data_read_array_content( binstream_container& c, uints n )
     {
-        //if(!_tmetafnc)  return _fmtstream->read_array_content(c,n);
-
         c.set_array_needs_separators();
         type t = c._type;
 
@@ -1151,9 +1082,6 @@ protected:
                 DASSERT( n != UMAX );
 
                 bool cmpnd = !_cur_var->is_primitive();
-
-                //push_var();
-                //VAR* cold = _cur_var;
 
                 for( uints i=0; i<n; ++i )
                 {
@@ -1171,13 +1099,10 @@ protected:
                     if(e)  return e;
 
                     --_current->size;
-                    //_cur_var = cold;
 
                     if(cmpnd)
                         _current->offs = off;
                 }
-
-                //pop_var();
 
                 return 0;
             }
@@ -1192,8 +1117,7 @@ protected:
             {
                 uints na = n * t.get_size();
                 xmemcpy( c.insert(n), _data.ptr()+_current->offs, na );
-                //_cache_arysize -= n;
-                //_cache_aryoffs += na;
+
                 _current->size -= n;
                 _current->offs += na;
                 return 0;
@@ -1228,20 +1152,7 @@ protected:
             return _fmtstream->read_array_separator(t);
         }
 
-        opcd e;
-/*
-        if( t.is_next_array_element() )     //if there was an element before, close it
-        {
-            if( last_var()->is_hidden() )   //if the elements are arrays too
-                pop_var();
-            else if( !t.is_primitive() )
-            {
-                e = moveto_expected_targetr(-1);
-                if(e)  return e;
-            }
-        }
-*/
-        e = _fmtstream->read_array_separator(t);
+        opcd e = _fmtstream->read_array_separator(t);
         if( e == ersNO_MORE )
             return e;
         if(e) {
@@ -1251,12 +1162,7 @@ protected:
             throw e;
             return e;
         }
-/*
-        if( _cur_var->is_hidden() )
-            push_var();
-        else if( !t.is_primitive() )
-            e = moveto_expected_targetr(+1);
-*/
+
         return movein_array<READ_MODE>();
     }
 
@@ -1290,7 +1196,6 @@ protected:
             {
                 if( t._ctrl & type::fARRAY_BEGIN )
                 {
-                    //push previous values of _cache_aryoffs and _cache_arysize
                     CacheEntry* ce = _cachestack.push();
                     _current = ce-1;
 
@@ -1301,7 +1206,7 @@ protected:
 
                     ce->size = read_cache_uint( ce->offs );
 
-                    *(uints*)p = ce->size;//_cache_arysize;
+                    *(uints*)p = ce->size;
                     _current = ce;
                 }
                 else
@@ -1534,7 +1439,7 @@ protected:
             //found in cache, set up a cache read
             _current->offs = k * sizeof(uints);
             _cachequit = crv;
-            //_cachetbloffsquit = _current->offs + sizeof(uints);
+
             return true;
         }
 
@@ -1627,7 +1532,7 @@ protected:
             n = na;
 
         VAR* element = var->element();;
-        type tae = element->get_type(); //t.get_array_element();
+        type tae = element->get_type();
 
         uints k=0;
         while( n>0 )

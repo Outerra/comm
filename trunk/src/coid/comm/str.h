@@ -664,13 +664,58 @@ public:
         }
     }
 
+    ///Append floating point number
+    ///@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
+    void append( float d, int nfrac )
+    {
+        float f = floorf(d);
+        append_num( 10, (int)f );
+        append('.');
+        append_fraction( d-f, nfrac );
+    }
+
+    ///@param ndig number of decimal places: >0 maximum, <0 precisely -ndig places
+    void append_fraction( float n, int ndig )
+    {
+        uint ndiga = (uint)int_abs(ndig);
+        uint size = (uint)len();
+        char* p = get_append_buf(ndiga);
+
+        int lastnzero=1;
+        for( uint i=0; i<ndiga; ++i )
+        {
+            n *= 10;
+            float f = floorf(n);
+            n -= f;
+            int v = (int)f;
+            *p++ = '0' + v;
+
+            if( ndig >= 0  &&  v != 0 )
+                lastnzero = i+1;
+        }
+
+        if( lastnzero < ndig )
+            trim_to_length( size + lastnzero );
+    }
+
     void append( char c )
     {
         uints i = _tstr.size();
-        char *p = _tstr.addc (i ? 1 : 2, 0, 2);
+        char *p = _tstr.addc( i ? 1 : 2, 0 );
         if(i)
             --p;
         *p = c;
+    }
+
+    ///Append n characters 
+    void appendn( uint n, char c )
+    {
+        uints i = _tstr.size();
+        char *p = _tstr.add( i ? n : n+1 );
+        if(i)
+            --p;
+        for( ; n>0; --n )
+            *p++ = c;
     }
 
     void append( const token& tok, uints filllen = 0, char fillchar=' ' )
@@ -1002,7 +1047,7 @@ public:
     dynarray<char>& dynarray_ref()      { return _tstr; }
 
     const char* ptr() const             { return _tstr.ptr(); }
-    const char* c_str() const           { return _tstr.ptr(); }
+    const char* c_str() const           { return _tstr.size() ? _tstr.ptr() : ""; }
 
     ///<String length excluding terminating zero
     uints len() const                   { return _tstr.size() ? (_tstr.size() - 1) : 0; }

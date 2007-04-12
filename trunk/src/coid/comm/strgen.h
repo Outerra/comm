@@ -150,6 +150,16 @@ public:
         return true;
     }
 
+    bool bind_swap( const token& key, charstr& value )
+    {
+        uints i = keys.lower_boundT( key, sorter );
+        if( i>=keys.size() )  return false;
+
+        keys[i]->buf.swap(value);
+        keys[i]->value = keys[i]->buf;
+        return true;
+    }
+
     ///Write substituted text to a binstream
     void write( binstream& bin )
     {
