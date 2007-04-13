@@ -256,8 +256,6 @@ private:
 
     void encode_final()
     {
-        uint n = 3 - _nreq;
-
         if( _nreq == 2 )    //2 bytes missing
         {
             _wtar[1] = 0;

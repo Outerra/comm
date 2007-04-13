@@ -760,6 +760,8 @@ private:
 
     bool is_first_var() const
     {
+        if( _stack.size() == 0 )
+            return true;            //lets treat all top-level variables as first
         VAR* p = last_var();
         return _cur_var == p->desc->children.ptr();
     }
