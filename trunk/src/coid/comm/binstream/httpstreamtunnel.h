@@ -146,12 +146,17 @@ public:
         return _cache.is_open();
     }
 
-    virtual void reset()
+    virtual void reset_read()
     {
-        httpstreamcoid::reset();
-        _c6.reset();
+        httpstreamcoid::reset_read();
+        _c6.reset_read();
     }
 
+    virtual void reset_write()
+    {
+        httpstreamcoid::reset_write();
+        _c6.reset_write();
+    }
 
     httpstreamtunnel()
     {

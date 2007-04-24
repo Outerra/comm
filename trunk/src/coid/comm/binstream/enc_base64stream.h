@@ -134,16 +134,21 @@ public:
         return _bin->is_open();
     }
 
-    virtual void reset()
+    virtual void reset_read()
     {
-        _nreq = 3;
-        _wptr = _wbuf;
-
         _ndec = 0;
         _rptr = _rbuf + RBUFFER_SIZE;
         _rrem = UMAX;
 
-        _bin->reset();
+        if(_bin) _bin->reset_read()
+    }
+
+    virtual void reset_write()
+    {
+        _nreq = 3;
+        _wptr = _wbuf;
+
+        if(_bin) _bin->reset_write();
     }
 
     enc_base64stream()

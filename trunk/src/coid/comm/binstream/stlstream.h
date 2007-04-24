@@ -128,6 +128,7 @@ protected:
     std::back_insert_iterator<StlContainer> outpi;
 };
 
+////////////////////////////////////////////////////////////////////////////////
 ///Container for inserting to stl associative containers 
 template<class StlContainer>
 struct binstream_container_stl_assoc_iterator : binstream_container
@@ -164,6 +165,7 @@ protected:
     StlContainer& container;
 };
 
+
 ////////////////////////////////////////////////////////////////////////////////
 #define STD_BINSTREAM(CONT) \
 template<class T, class A> inline binstream& operator << (binstream& out, const CONT<T,A>& v) \
@@ -176,7 +178,9 @@ template<class T, class A> inline binstream& operator >> (binstream& out, CONT<T
     out.xwrite_array(c); \
 	return out; } \
 template<class T, class A> inline metastream& operator << (metastream& m, const CONT<T,A>& ) \
-{   m.meta_array();  m<<*(typename CONT<T,A>::value_type*)0;  return m; }
+{   m.meta_array();  m<<*(typename CONT<T,A>::value_type*)0;  return m; } \
+PAIRUP_CONTAINERS_WRITABLE2( CONT, binstream_container_stl_insert_iterator ) \
+PAIRUP_CONTAINERS_READABLE2( CONT, binstream_container_stl_input_iterator )
 
 
 #define STD_ASSOC_BINSTREAM(CONT) \
@@ -190,7 +194,10 @@ template<class T, class A> inline binstream& operator >> (binstream& out, CONT<T
     out.xwrite_array(c); \
 	return out; } \
 template<class T, class A> inline metastream& operator << (metastream& m, const CONT<T,A>& ) \
-{   m.meta_array();  m<<*(typename CONT<T,A>::value_type*)0;  return m; }
+{   m.meta_array();  m<<*(typename CONT<T,A>::value_type*)0;  return m; } \
+PAIRUP_CONTAINERS_WRITABLE2( CONT, binstream_container_stl_assoc_iterator ) \
+PAIRUP_CONTAINERS_READABLE2( CONT, binstream_container_stl_input_iterator )
+
 
 STD_BINSTREAM(std::list)
 STD_BINSTREAM(std::deque)

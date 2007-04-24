@@ -65,15 +65,15 @@ COID_NAMESPACE_BEGIN
 class fileiostream : public binstream
 {
     int   _handle;
-    int   _rop;
+    int   _op;                  ///< >0 reading, <0 writing
     int64 _rpos, _wpos;
 
-    void setpos( int64 pos )
+    bool setpos( int64 pos )
     {
 #ifdef SYSTYPE_MSVC
-        RASSERT( -1 != _lseeki64( _handle, pos, SEEK_SET ) );
+        return -1 != _lseeki64( _handle, pos, SEEK_SET );
 #else
-        RASSERT( pos == lseek64( _handle, pos, SEEK_SET ) );
+        return pos == lseek64( _handle, pos, SEEK_SET );
 #endif
     }
 
@@ -95,11 +95,11 @@ public:
 
     virtual opcd write_raw( const void* p, uints& len )
     {
-        if(_rop)
+        if(_op>0 )
         {
             _rpos = getpos();
             setpos( _wpos );
-            _rop = 0;
+            _op = -1;
         }
 
         uint k = ::_write( _handle, p, (uint)len );
@@ -110,11 +110,11 @@ public:
 
     virtual opcd read_raw( void* p, uints& len )
     {
-        if(!_rop)
+        if(_op<0)
         {
             _wpos = getpos();
             setpos( _rpos );
-            _rop = 1;
+            _op = 1;
         }
 
         uint k = ::_read( _handle, p, (uint)len );
@@ -131,9 +131,18 @@ public:
     virtual void flush()                { }
     virtual void acknowledge( bool eat=false )  { }
 
-    virtual void reset()
+    virtual void reset_read()
     {
-        //implement
+        _rpos = 0;
+        if(_op>0)
+            setpos(_rpos);
+    }
+
+    virtual void reset_write()
+    {
+        _wpos = 0;
+        if(_op<0)
+            setpos(_wpos);
     }
 
     virtual opcd open( const token& arg )
@@ -212,22 +221,17 @@ public:
         if( type & fSEEK_CURRENT )
             pos += (type & fSEEK_READ) ? _rpos : _wpos;
 
-        flush();
-#ifdef SYSTYPE_MSVC
-        opcd e = -1 != _lseeki64( _handle, pos, SEEK_SET )
-            ?  opcd(0)
-            :  ersFAILED;
-#else
-        opcd e = pos == lseek64( _handle, pos, SEEK_SET )
-            ?  opcd(0)
-            :  ersFAILED;
-#endif
-        if(!e)
-        {
-            if( type & fSEEK_READ )  _rpos = pos;
-            if( type & fSEEK_WRITE ) _wpos = pos;
-        }
-        return e;
+        int op = (type&fSEEK_READ) ? 1 : -1;
+
+        if( op == _op  &&  !setpos(pos) )
+            return ersFAILED;
+
+        if(op<0)
+            _wpos = pos;
+        else
+            _rpos = pos;
+
+        return 0;
     }
 
     uint64 size() const
@@ -238,7 +242,7 @@ public:
 		return 0;
 	}
 
-    fileiostream() { _handle = -1; _wpos = _rpos = 0; _rop = 1; }
+    fileiostream() { _handle = -1; _wpos = _rpos = 0; _op = 1; }
     explicit fileiostream( const token& s )
     {
         _handle = -1;

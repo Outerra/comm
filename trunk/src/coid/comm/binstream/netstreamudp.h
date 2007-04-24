@@ -127,12 +127,17 @@ public:
             send();
     }
 
-    virtual void reset()
+    virtual void reset_read()
     {
         _recvbuf.reset();
         _roffs = 0;
+    }
+
+    virtual void reset_write()
+    {
         _sendbuf.reset();
     }
+
 
     virtual void acknowledge( bool eat = false )
     {

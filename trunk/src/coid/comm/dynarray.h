@@ -106,31 +106,33 @@ struct _dynarray_eptr : std::iterator<std::random_access_iterator_tag, T>
     bool operator < (const _dynarray_eptr& p) const    { return _p < p._p; }
     bool operator <= (const _dynarray_eptr& p) const   { return _p <= p._p; }
 
-    int operator == (const T* p) const       { return p == _p; }
+    int operator == (const T* p) const  { return p == _p; }
 
     int operator == (const _dynarray_eptr& p) const    { return p._p == _p; }
     int operator != (const _dynarray_eptr& p) const    { return p._p != _p; }
 
-    T& operator *(void) const       { return *_p; }
+    T& operator *(void) const           { return *_p; }
 
 #ifdef SYSTYPE_MSVC
 #pragma warning( disable : 4284 )
 #endif //SYSTYPE_MSVC
-    T* operator ->(void) const      { return _p; }
+    T* operator ->(void) const          { return _p; }
 
-    _dynarray_eptr& operator ++()             { ++_p;  return *this; }
-    _dynarray_eptr& operator --()             { --_p;  return *this; }
+    _dynarray_eptr& operator ++()       { ++_p;  return *this; }
+    _dynarray_eptr& operator --()       { --_p;  return *this; }
 
-    _dynarray_eptr  operator ++(ints)         { _dynarray_eptr x(_p);  ++_p;  return x; }
-    _dynarray_eptr  operator --(ints)         { _dynarray_eptr x(_p);  --_p;  return x; }
+    _dynarray_eptr  operator ++(ints)   { _dynarray_eptr x(_p);  ++_p;  return x; }
+    _dynarray_eptr  operator --(ints)   { _dynarray_eptr x(_p);  --_p;  return x; }
 
-    _dynarray_eptr& operator += (ints n)      { _p += n;  return *this; }
+    _dynarray_eptr& operator += (ints n){ _p += n;  return *this; }
 
-    _dynarray_eptr  operator + (ints n)       { return _dynarray_eptr(_p+n); }
-    _dynarray_eptr  operator - (ints n)       { return _dynarray_eptr(_p-n); }
+    _dynarray_eptr  operator + (ints n) { return _dynarray_eptr(_p+n); }
+    _dynarray_eptr  operator - (ints n) { return _dynarray_eptr(_p-n); }
 
-    const T& operator [] (ints i) const  { return _p[i]; }
-    T& operator [] (ints i)              { return _p[i]; }
+    const T& operator [] (ints i) const { return _p[i]; }
+    T& operator [] (ints i)             { return _p[i]; }
+
+    T* ptr() const                      { return _p; }
 
     _dynarray_eptr() { _p = 0; }
     _dynarray_eptr( T* p ) : _p(p)  { }
@@ -153,30 +155,32 @@ struct _dynarray_const_eptr : std::iterator<std::random_access_iterator_tag, T>
     bool operator < (const _dynarray_const_eptr& p) const    { return _p < p._p; }
     bool operator <= (const _dynarray_const_eptr& p) const   { return _p <= p._p; }
 
-    int operator == (const T* p) const       { return p == _p; }
+    int operator == (const T* p) const  { return p == _p; }
 
     int operator == (const _dynarray_const_eptr& p) const    { return p._p == _p; }
     int operator != (const _dynarray_const_eptr& p) const    { return p._p != _p; }
 
-    const T& operator *(void) const       { return *_p; }
+    const T& operator *(void) const     { return *_p; }
 
 #ifdef SYSTYPE_MSVC
 #pragma warning( disable : 4284 )
 #endif //SYSTYPE_MSVC
-    const T* operator ->(void) const      { return _p; }
+    const T* operator ->(void) const    { return _p; }
 
-    _dynarray_const_eptr& operator ++()             { ++_p;  return *this; }
-    _dynarray_const_eptr& operator --()             { --_p;  return *this; }
+    _dynarray_const_eptr& operator ++()         { ++_p;  return *this; }
+    _dynarray_const_eptr& operator --()         { --_p;  return *this; }
 
-    _dynarray_const_eptr  operator ++(int)          { _dynarray_const_eptr x(_p);  ++_p;  return x; }
-    _dynarray_const_eptr  operator --(int)          { _dynarray_const_eptr x(_p);  --_p;  return x; }
+    _dynarray_const_eptr  operator ++(int)      { _dynarray_const_eptr x(_p);  ++_p;  return x; }
+    _dynarray_const_eptr  operator --(int)      { _dynarray_const_eptr x(_p);  --_p;  return x; }
 
-    _dynarray_const_eptr& operator += (ints n)      { _p += n;  return *this; }
+    _dynarray_const_eptr& operator += (ints n)  { _p += n;  return *this; }
 
-    _dynarray_const_eptr  operator + (ints n)       { return _dynarray_const_eptr(_p+n); }
-    _dynarray_const_eptr  operator - (ints n)       { return _dynarray_const_eptr(_p-n); }
+    _dynarray_const_eptr  operator + (ints n)   { return _dynarray_const_eptr(_p+n); }
+    _dynarray_const_eptr  operator - (ints n)   { return _dynarray_const_eptr(_p-n); }
 
-    const T& operator [] (ints i) const  { return _p[i]; }
+    const T& operator [] (ints i) const { return _p[i]; }
+
+    const T* ptr() const                        { return _p; }
 
     _dynarray_const_eptr() { _p = 0; }
     _dynarray_const_eptr( T* p ) : _p(p)  { }
@@ -341,7 +345,7 @@ public:
 
     
     ///Debug checks
-#ifdef _DEBUG1
+#ifdef _DEBUG
 # define DYNARRAY_CHECK_BOUNDS_S(k)          _check_bounds((ints)k);
 # define DYNARRAY_CHECK_BOUNDS_U(k)          _check_bounds((uints)k);
 #else
@@ -1218,12 +1222,15 @@ public:
     const_iterator end() const      { return _dynarray_const_eptr<T>(_ptr+_count()); }
 
 
-    binstream_container get_container( uints n=UMAX )
+    binstream_container get_container_to_write( uints n=UMAX )
     {
-        binstream_container c( *this, n );
-        return c;
+        return binstream_container( *this, n );
     }
 
+    binstream_container get_container_to_read()
+    {
+        return binstream_container( *this, size() );
+    }
 
 private:
     void _destroy() {
@@ -1517,17 +1524,21 @@ inline binstream& operator >> ( binstream &in, dynarray<T*>& dyna )
     return in.xread_array(dc);
 }
 
-COID_NAMESPACE_END
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
-/*
-template<class T> inline
-void std::swap( coid::dynarray<T>& a, coid::dynarray<T>& b )
-{
-    a.swap(b);
-}
-*/
+template<class T, class A>
+struct binstream_adapter_writable< dynarray<T,A> > {
+    typedef dynarray<T,A>   TContainer;
+    typedef typename dynarray<T,A>::binstream_container TBinstreamContainer;
+};
+
+template<class T, class A>
+struct binstream_adapter_readable< dynarray<T,A> > {
+    typedef dynarray<T,A>   TContainer;
+    typedef typename dynarray<T,A>::binstream_container TBinstreamContainer;
+};
+
+COID_NAMESPACE_END
+
 
 #endif // __COID_COMM_DYNARRAY__HEADER_FILE__

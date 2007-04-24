@@ -266,12 +266,20 @@ public:
         _cin.reset();
     }
 
-    virtual void reset()
+    virtual void reset_read()
+    {
+        _cinread = 0;
+        _cinread.reset();
+        if(_bin) _bin->reset_read();
+    }
+
+    virtual void reset_write()
     {
         _cot.reset();
         _cotwritten = 0;
-        if(_bin) _bin->reset();
+        if(_bin) _bin->reset_write();
     }
+
 
     virtual opcd set_timeout( uint ms )
     {

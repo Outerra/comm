@@ -150,7 +150,17 @@ public:
 
 	virtual void flush()                        { _outa->flush();  _outb->flush(); }
 	virtual void acknowledge( bool eat )        { _in->acknowledge(eat); }
-    virtual void reset()				        { _in->reset(); _outa->reset(); _outb->reset(); }
+
+    virtual void reset_read()
+    {
+        _in->reset_read();
+    }
+
+    virtual void reset_write()
+    {
+        _outa->reset_write();
+        _outb->reset_write();
+    }
 
     virtual opcd set_timeout( uint ms )         { return _in->set_timeout(ms); }
 

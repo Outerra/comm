@@ -68,7 +68,7 @@ public:
         token t = *get_read_buffer();
 
         fwrite( t._ptr, 1, t._len, stdout );
-        reset();
+        reset_write();
     }
 };
 

@@ -685,11 +685,18 @@ public:
     ///@param eat forces the binstream to eat all remaining data from the packet
     virtual void acknowledge( bool eat=false ) = 0;
 
-
-    ///Reset the binstream to the initial state. Does nothing on stateless binstreams.
-    virtual void reset()
+    ///Completely reset the binstream. By default resets both reading and writing pipe, but can do more.
+    virtual void reset_all()
     {
+        reset_write();
+        reset_read();
     }
+
+    ///Reset the binstream to the initial state for reading. Does nothing on stateless binstreams.
+    virtual void reset_read() = 0;
+
+    ///Reset the binstream to the initial state for writing. Does nothing on stateless binstreams.
+    virtual void reset_write() = 0;
 
     ///Set read and write operation timeout value. Various, mainly network binstreams use it to return 
     /// ersTIMEOUT error or throw the ersTIMEOUT opcd object
@@ -783,7 +790,7 @@ inline binstream& operator >> (binstream& from, binstream& to)
     for (;;)
     {
         uints len = 4096;
-        from.read_raw( buf, len );
+        from.read_raw_full( buf, len );
         to.xwrite_raw( buf, 4096 - len );
         if( len > 0 )
             break;

@@ -104,7 +104,15 @@ public:
     virtual void flush()                { _out->flush(); }
     virtual void acknowledge (bool eat=false)   { _in->acknowledge(eat); }
 
-    virtual void reset()                { _in->reset(); _out->reset(); }
+    virtual void reset_read()
+    {
+        _in->reset_read();
+    }
+
+    virtual void reset_write()
+    {
+        _out->reset_write();
+    }
 
     inoutstream() : _in(0),_out(0)      { }
     inoutstream( binstream* bin, binstream* bout )

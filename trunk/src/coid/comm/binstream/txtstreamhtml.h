@@ -135,24 +135,6 @@ public:
     {
         return txtstream::read_until( ss, bout, max_size );
     }
-
-/*
-    virtual bool is_open() const    { return txtstream::is_open (); }
-
-    virtual void flush()
-    {
-        txtstream::flush();
-    }
-    virtual void acknowledge (bool eat=false)
-    {
-        txtstream::acknowledge(eat);
-    }
-
-    virtual void reset()
-    {
-        txtstream::reset();
-    }
-*/
 };
 
 namespace HTML

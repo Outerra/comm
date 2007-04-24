@@ -194,10 +194,14 @@ public:
 
     opcd reset()
     {
-        if(_bin)
-            _bin->reset();
+        if(_bin) {
+            _bin->reset_read();
+            _binbuf.need_new(BINSTREAM_BUFFER_SIZE);
+        }
+        else
+            _binbuf.reset();
+
         _tok.set_empty();
-        _binbuf.reset();
         _last_mask = 0;
         _last_strdel = 0;
         _pushback = 0;

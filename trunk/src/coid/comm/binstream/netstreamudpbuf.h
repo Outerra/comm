@@ -173,7 +173,16 @@ public:
         send(UMAX);
     }
 
-    virtual void reset()
+    virtual void reset_read()
+    {
+        //clear read stuff
+        _recvd = 0;
+        _roffs = 0;
+        _rpckid = _rpcknum = 0;
+        _rsize = _rtotsize = 0;
+    }
+
+    virtual void reset_write()
     {
         //clear send stuff
         _spacketid = 0;
@@ -181,12 +190,6 @@ public:
         _sstate = 0;
         _sendsize = 0;
         _flags &= ~fPACKED_READY;
-
-        //clear read stuff
-        _recvd = 0;
-        _roffs = 0;
-        _rpckid = _rpcknum = 0;
-        _rsize = _rtotsize = 0;
     }
 
     virtual void acknowledge( bool eat = false )

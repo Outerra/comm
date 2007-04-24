@@ -183,6 +183,19 @@ public:
         return 0;
     }
 
+
+    virtual void reset_read()
+    {
+        _rblockin.reset();
+        inflateReset( &_strin );
+    }
+
+    virtual void reset_write()
+    {
+        _wblockout.reset();
+        deflateReset( &_strout );
+    }
+
 protected:
     void packed_flush()
     {

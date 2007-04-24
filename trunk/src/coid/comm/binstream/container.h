@@ -152,6 +152,72 @@ struct binstream_containerT<void> : binstream_container
     {}
 };
 
+////////////////////////////////////////////////////////////////////////////////
+///Adapter class used to retrieve appropriate binstream container type for 
+/// specific container, for writing to the data container
+///@param CONT data container
+///@param BINCONT corresponding binstream container
+template<class CONT, class BINCONT>
+struct binstream_container_writable
+{
+    ///Define following methods when specializing, changing container-type to 
+    /// something appropriate
+    typedef BINCONT     TBinstreamContainer;
+
+    static TBinstreamContainer create( CONT& a, uints n = UMAX )
+    {   return TBinstreamContainer(a,n);    }
+};
+
+///Adapter class used to retrieve appropriate binstream container type for 
+/// specific container, for reading from the data container
+///@param CONT data container
+///@param BINCONT corresponding binstream container
+template<class CONT, class BINCONT>
+struct binstream_container_readable
+{
+    ///Define following methods when specializing, changing container-type to 
+    /// something appropriate
+    typedef BINCONT     TBinstreamContainer;
+
+    static TBinstreamContainer create( CONT& a )
+    {   return TBinstreamContainer(a);      }
+};
+
+///this would be declared using the macros below
+template<class CONT>
+struct binstream_adapter_writable
+{
+    typedef CONT        TContainer;
+    //typedef BINCONT     TBinstreamContainer;    ///< Override BINCONT here
+};
+
+template<class CONT>
+struct binstream_adapter_readable
+{
+    typedef CONT        TContainer;
+    //typedef BINCONT     TBinstreamContainer;    ///< Override BINCONT here
+};
+
+
+#define PAIRUP_CONTAINERS_WRITABLE(CONT) \
+    template<class T, class A> struct binstream_adapter_writable< CONT<T,A> > { \
+    typedef CONT<T,A>   TContainer; \
+    typedef typename CONT<T,A>::binstream_container TBinstreamContainer; };
+
+#define PAIRUP_CONTAINERS_READABLE(CONT) \
+    template<class T> struct binstream_adapter_readable< CONT<T> > { \
+    typedef CONT<T,A>   TContainer; \
+    typedef typename CONT<T,A>::binstream_container TBinstreamContainer; };
+
+#define PAIRUP_CONTAINERS_WRITABLE2(CONT,BINCONT) \
+    template<class T, class A> struct binstream_adapter_writable< CONT<T,A> > { \
+    typedef CONT<T,A>       TContainer; \
+    typedef BINCONT<TContainer>    TBinstreamContainer; };
+
+#define PAIRUP_CONTAINERS_READABLE2(CONT,BINCONT) \
+    template<class T, class A> struct binstream_adapter_readable< CONT<T,A> > { \
+    typedef CONT<T,A>       TContainer; \
+    typedef BINCONT<TContainer>    TBinstreamContainer; };
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Generic dereferencing container for containers holding pointers

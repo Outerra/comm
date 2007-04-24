@@ -80,6 +80,8 @@ public:
         _cacherootentries = 0;
         _cachelevel = UMAX;
 
+        _read_to_cache = false;
+
         _sesopen = 0;
         _arraynm = 0;
         _current_var = 0;
@@ -99,7 +101,7 @@ public:
     void bind_formatting_stream( binstream& b )
     {
         _fmtstream = &b;
-        stream_reset(false);
+        stream_reset(0);
     }
 
     binstream& get_formatting_stream() const    { return *_fmtstream; }
@@ -112,7 +114,6 @@ public:
 
     void enable_meta_write( bool en )           { _disable_meta_write = !en; }
     void enable_meta_read( bool en )            { _disable_meta_read = !en; }
-
 
     ////////////////////////////////////////////////////////////////////////////////
     //@{ methods to physically stream the data utilizing the metastream
@@ -129,7 +130,7 @@ public:
         DASSERT( _sesopen <= 0 );   //or else unflushed write
         if( _sesopen == 0 ) {
             _err.reset();
-            _fmtstream->reset();
+            _fmtstream->reset_read();
             _sesopen = -1;
         }
         else {
@@ -162,7 +163,7 @@ public:
         DASSERT( _sesopen >= 0 );   //or else unacked read
         if( _sesopen == 0 ) {
             _err.reset();
-            _fmtstream->reset();
+            _fmtstream->reset_write();
             _sesopen = 1;
         }
         else {
@@ -192,7 +193,7 @@ public:
         DASSERT( _sesopen <= 0 );   //or else unflushed write
         if( _sesopen == 0 ) {
             _err.reset();
-            _fmtstream->reset();
+            _fmtstream->reset_read();
             _sesopen = -1;
         }
         else {
@@ -224,7 +225,7 @@ public:
         DASSERT( _sesopen >= 0 );   //or else unacked read
         if( _sesopen == 0 ) {
             _err.reset();
-            _fmtstream->reset();
+            _fmtstream->reset_write();
             _sesopen = 1;
         }
         else {
@@ -238,47 +239,126 @@ public:
         _cur_var = &_root;
         _cur_var->varname = name;
 
-        return movein_current<WRITE_MODE>( name.is_empty() );
+        return movein_current<WRITE_MODE>( !name.is_empty() );
     }
 
 
     template<class T>
     opcd stream_in( T& x, const token& name = token::empty() )
     {
-        opcd e = prepare_type_read(x,name);
-        if(e) return e;
+        _read_to_cache = false;
+        stream_reset(false);
 
-        _hook >> x;
-        return 0;
+        opcd e;
+        try {
+            e = prepare_type_read(x,name);
+            if(e) return e;
+
+            _hook >> x;
+        }
+        catch(opcd ee) {e=ee;}
+        return e;
     }
 
     template<class T>
-    opcd stream_out( const T& x, const token& name = token::empty() )
+    opcd stream_in_cache( const token& name = token::empty() )
     {
-        opcd e = prepare_type_write(x,name);
-        if(e) return e;
+        _read_to_cache = true;
+        stream_reset(false);
 
-        _hook << x;
-        return 0;
+        opcd e;
+        try {
+            e = prepare_type_read( *(const T*)0, name );
+        }
+        catch(opcd ee) {e=ee;}
+        return e;
     }
 
     template<class T>
-    opcd stream_in_array( binstream_containerT<T>& C, const token& name = token::empty() )
+    opcd stream_out( const T& x, const token& name = token::empty(), bool tocache=false )
     {
-        opcd e = prepare_type_read_array( *(const T*)0, C._nelements, name );
-        if(e) return e;
+        _write_to_cache = tocache;
+        stream_reset(false);
 
-        return _hook.read_array(C);
+        opcd e;
+        try {
+            e = prepare_type_write(x,name);
+            if(e) return e;
+
+            if(!tocache)
+                _hook << x;
+        }
+        catch(opcd ee) {e=ee;}
+        return e;
     }
 
     template<class T>
-    opcd stream_out_array( binstream_containerT<T>& C, const token& name = token::empty() )
+    opcd stream_array_in( binstream_containerT<T>& C, const token& name = token::empty() )
     {
-        opcd e = prepare_type_write_array( *(const T*)0, C._nelements, name );
-        if(e) return e;
+        _read_to_cache = false;
+        stream_reset(false);
 
-        return _hook.write_array(C);
+        opcd e;
+        try {
+            e = prepare_type_read_array( *(const T*)0, C._nelements, name );
+            if(e) return e;
+
+            return _hook.read_array(C);
+        }
+        catch(opcd ee) {e=ee;}
+        return e;
     }
+
+    template<class T>
+    opcd stream_array_in_cache( const token& name = token::empty(), uints n=UMAX )
+    {
+        _read_to_cache = true;
+        stream_reset(false);
+
+        opcd e;
+        try {
+            e = prepare_type_read_array( *(const T*)0, n, name );
+        }
+        catch(opcd ee) {e=ee;}
+        return e;
+    }
+
+    template<class T>
+    opcd stream_array_out( binstream_containerT<T>& C, const token& name = token::empty(), bool tocache=false )
+    {
+        _read_to_cache = tocache;
+        stream_reset(false);
+
+        opcd e;
+        try {
+            e = prepare_type_write_array( *(const T*)0, C._nelements, name );
+            if(e) return e;
+
+            if(!tocache)
+                return _hook.write_array(C);
+        }
+        catch(opcd ee) {e=ee;}
+        return e;
+    }
+
+    template<class CONT>
+    opcd stream_container_in( CONT& C, const token& name = token::empty() )
+    {
+        typedef typename binstream_adapter_writable<CONT>::TBinstreamContainer     BC;
+
+        BC bc = binstream_container_writable<CONT,BC>::create(C);
+        return stream_array_in( bc, name );
+    }
+
+    template<class CONT>
+    opcd stream_container_out( CONT& C, const token& name = token::empty() )
+    {
+        typedef typename binstream_adapter_readable<CONT>::TBinstreamContainer     BC;
+
+        BC bc = binstream_container_readable<CONT,BC>::create(C);
+        return stream_array_out( bc, name );
+    }
+
 
     template<class T>
     void xstream_in( T& x, const token& name = token::empty() )
@@ -309,15 +389,14 @@ public:
         }
     }
 
-    void stream_reset( bool fmts_reset )
+    void stream_reset( int fmts_reset )
     {
         _sesopen = 0;
         _arraynm = 0;
 
         _stack.reset();
+        cache_reset();
 
-        _data.reset();
-        _cachestack.need(1);
         _tmetafnc = 0;
         _cur_var = 0;
         _cur_variable_name = 0;
@@ -325,11 +404,22 @@ public:
         defval = 0;
 
         _err.reset();
-        if(fmts_reset)
-            _fmtstream->reset();
+        if( fmts_reset>0 )
+            _fmtstream->reset_read();
+        else if( fmts_reset<0 )
+            _fmtstream->reset_write();
     }
 
-    //@}
+//@}
+
+    void cache_reset()
+    {
+        _data.reset();
+        _cachestack.need(1);
+    }
+
+    const VAR& get_root_var() const                         { return _root; }
+    const uchar* get_cache() const                          { return _data.ptr(); }
 
     const charstr& error_string() const                     { return _err; }
 
@@ -515,7 +605,10 @@ private:
         virtual bool is_open() const                            { return _meta != 0; }
         virtual void flush()                                    { _meta->stream_flush(); }
         virtual void acknowledge( bool eat=false )              { _meta->stream_acknowledge(eat); }
-        virtual void reset()                                    { _meta->stream_reset(true);}
+
+        virtual void reset_read()                               { _meta->stream_reset(1); }
+        virtual void reset_write()                              { _meta->stream_reset(-1); }
+
         virtual uint binstream_attributes( bool in0out1 ) const {return 0;} //fATTR_SIMPLEX
     };
 
@@ -560,7 +653,6 @@ private:
 
 
     ////////////////////////////////////////////////////////////////////////////////
-
     StructureMap _map;
 
     charstr _err;
@@ -578,6 +670,9 @@ private:
 
     dynarray<charstr> _templ_name_stack;
     bool _templ_arg_rdy;
+
+    bool _read_to_cache;
+    bool _write_to_cache;
 
     bool _disable_meta_write;       ///< disable meta functionality for writting
     bool _disable_meta_read;        ///< disable meta functionality for reading
@@ -1269,8 +1364,13 @@ protected:
                     return e;
                 }
 
-                if( _rvarname != _cur_var->varname ) {
-                    e = cache_fill_member();
+                if( _read_to_cache  ||  _rvarname != _cur_var->varname )
+                {
+                    if( _cur_var == &_root )
+                        e = cache_fill_root();
+                    else
+                        e = cache_fill_member();
+
                     if(e) {
                         dump_stack(_err,0);
                         _err << " - error while seeking for variable '" << _cur_var->varname << "', probably not found: " << opcd_formatter(e);
@@ -1392,7 +1492,7 @@ protected:
             k *= sizeof(uints);
             *(uints*)(_data.ptr()+k) = _data.size() - k;
 
-            opcd e = cache_member(crv);
+            e = cache_member(crv);
             if(e)  return e;
 
             ++_cacherootentries;
@@ -1406,10 +1506,15 @@ protected:
 
             e = binstream_read_key( *_fmtstream, _rvarname );
             if(e) {
-                if( e == ersNO_MORE  &&  _cur_var->defval.size() > 0 )
+                if( e == ersNO_MORE )
                 {
-                    defval = &_cur_var->defval;
-                    return 0;
+                    if( _cur_var->defval.size() > 0 )
+                    {
+                        defval = &_cur_var->defval;
+                        return 0;
+                    }
+                    else if( _read_to_cache  &&  _cacherootentries == _root.desc->num_children() )
+                        return 0;
                 }
 
                 dump_stack(_err,0);
@@ -1421,6 +1526,19 @@ protected:
 
         return 0;
     }
+
+    ///Fill intermediate cache
+    opcd cache_fill_root()
+    {
+        opcd e;
+
+        DASSERT( _data.size() == 0 );
+        _cachelevel = _stack.size();
+
+        ++_cacherootentries;
+        return cache_member(&_root);
+    }
+
 
     ///Find _cur_var->varname in cache
     bool cache_lookup()
@@ -1453,7 +1571,7 @@ protected:
     {
         opcd e;
 
-        if( var->is_primitive() && !var->is_array() )
+        if( var->is_primitive() )
         {
             e = _fmtstream->read( _data.add( var->desc->btype.get_size() ), var->desc->btype );
             if(e) {
@@ -1474,25 +1592,25 @@ protected:
                 _data.add( sizeof(uints) );
             }
 
-            if( !var->is_primitive() )
-            {
-                // If this is an array element (compound) object, its preceded with one 
-                // uint containing the offset past the element data for skipping.
-                e = var->is_array()
-                    ? cache_compound_member_array(var)  //array of compound types
-                    : cache_compound_member(var);
-            }
+            if( !var->is_array() )
+                e = cache_compound_member(var);
             else
             {
-                DASSERT( var->is_array() );
+                VAR* element = var->element();;
 
-                //mark the array size first
-                uints ona = _data.size();
-                _data.add( sizeof(uints) );
+                if( !element->is_primitive() )
+                    e = cache_compound_member_array(var);
+                else
+                {
+                    //mark the array size first
+                    uints ona = _data.size();
+                    _data.add( sizeof(uints) );
 
-                cache_container cc( _data, var->desc->btype, var->desc->array_size );
-                e = _fmtstream->read_array(cc);
-                *(uints*)(_data.ptr()+ona) = cc._nactual;
+                    cache_container cc( _data, element->desc->btype, var->desc->array_size );
+                    e = _fmtstream->read_array(cc);
+                    
+                    *(uints*)(_data.ptr()+ona) = cc._nactual;
+                }
             }
 
             if(are)

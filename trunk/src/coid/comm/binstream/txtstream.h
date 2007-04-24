@@ -210,7 +210,7 @@ public:
 
     virtual opcd read( void* p, type t )
     {
-        if (!_binr)
+        if(!_binr)
             throw ersUNAVAILABLE "underlying binstream not set";
 
         //does no special formatting of arrays
@@ -315,9 +315,15 @@ public:
             _binr->acknowledge(eat);
     }
 
-    virtual void reset()
+    virtual void reset_read()
     {
-        _binr->reset();
+        _binr->reset_read();
+    }
+
+    virtual void reset_write()
+    {
+        _buf.reset();
+        _binw->reset_write();
     }
 
     void assign (binstream* br, binstream* bw=0)

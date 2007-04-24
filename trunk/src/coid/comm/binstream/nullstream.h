@@ -72,7 +72,8 @@ public:
     virtual void flush()                            { }
     virtual void acknowledge( bool eat=false )      { }
 
-    virtual void reset()                            { }
+    virtual void reset_read()                       { }
+    virtual void reset_write()                      { }
 };
 
 static class nullstream_t     nullstream;

@@ -244,8 +244,11 @@ public:
         } 
     };
 
-    typedef Ptr                                 iterator;
-    typedef CPtr                                const_iterator;
+    typedef Ptr                         iterator;
+    typedef CPtr                        const_iterator;
+
+    typedef std::pair<CPtr, CPtr>       range_const_iterator;
+    typedef std::pair<Ptr, Ptr>         range_iterator;
 
 protected:
 
@@ -306,6 +309,20 @@ protected:
     {
         uints h = bucket(k);
         Node* n = (Node*)_table[h];
+        while(n)
+        {
+            if( _EQFUNC( _GETKEYFUNC(n->_val), k ) )
+                return n;
+            n = n->_next;
+        }
+        return 0;
+    }
+
+    ///Find first node that matches the key
+    Node* find_node( const LOOKUP_KEY& k, uints& slot ) const
+    {
+        slot = bucket(k);
+        Node* n = (Node*)_table[slot];
         while(n)
         {
             if( _EQFUNC( _GETKEYFUNC(n->_val), k ) )
@@ -405,13 +422,20 @@ public:
     Node* get_next( const Node* cn ) const
     {
         if(!cn)  return 0;
+        
         uints h = bucket( _GETKEYFUNC(cn->_val) );
-        uints n = _table.size();
         DASSERTX( _table[h] != 0, "probably mixed keys and different hash functions used" );
-        for( ++h; h<n; ++h )
+
+        return get_nonempty(++h);
+    }
+
+    Node* get_nonempty( uints slot ) const
+    {
+        uints n = _table.size();
+        for( ; slot<n; ++slot )
         {
-            if( _table[h] )
-                return (Node*)_table[h];
+            if( _table[slot] )
+                return (Node*)_table[slot];
         }
         return 0;
     }
@@ -501,7 +525,8 @@ public:
 
     std::pair<iterator, iterator> equal_range( const LOOKUP_KEY& k )
     {
-        Node* f = find_node(k);
+        uint slot;
+        Node* f = find_node(k,slot);
         if(!f)
             return std::pair<iterator,iterator>( end(), end() );
         
@@ -509,8 +534,7 @@ public:
         while( l  &&  _EQFUNC( _GETKEYFUNC(l->_val), k ) )
             l = l->_next;
 
-        if(!l)
-            l = get_next(l);
+        if(!l)  l = get_nonempty(++slot);
         return std::pair<iterator,iterator>( iterator(f,*this), iterator(l,*this) );
     }
 
@@ -524,8 +548,7 @@ public:
         while( l  &&  _EQFUNC( _GETKEYFUNC(l->_val), k ) )
             l = l->_next;
 
-        if(!l)
-            l = get_next(l);
+        if(!l)  l = get_nonempty(++slot);
         return std::pair<const_iterator,const_iterator>( const_iterator(f,*this), const_iterator(l,*this) );
     }
 
