@@ -237,7 +237,14 @@ public:
 
 	virtual void flush()                        { }
 	virtual void acknowledge( bool eat=false )  { }
-    virtual void reset()		                { }
+
+    virtual void reset_read()
+    {
+    }
+
+    virtual void reset_write()
+    {
+    }
 
     virtual netAddress* get_remote_address( netAddress* addr ) const
     {

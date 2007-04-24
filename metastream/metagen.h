@@ -40,8 +40,9 @@
 
 #include "../namespace.h"
 #include "../str.h"
-#include "../binstream/binstream.h"
+#include "../binstream.h"
 #include "../local.h"
+#include "../lexer.h"
 
 #include "metavar.h"
 
@@ -56,24 +57,61 @@ COID_NAMESPACE_BEGIN
 
     
 **/
-class metagen : public binstream
+class metagen //: public binstream
 {
     struct Tag;
     typedef local<Tag>      Ltag;
     typedef MetaDesc::Var   Var;
 
-    charstr buf;
-    binstream* bin;
+    ///Lexer for tokenizing tags
+    struct MtgLexer : lexer
+    {
+        int IDENT,NUM,PREFIX,DQSTRING,STEXT;
+
+        struct Exception {
+            const char* errtext;
+            Exception(const char* t) : errtext(t) {}
+        };
+
+        MtgLexer()
+        {
+            def_group( "ignore", " \t\n\r" );
+            IDENT   = def_group( "identifier", "a..zA..Z_", ".a..zA..Z_0..9" );
+            NUM     = def_group( "number", "0..9" );
+            def_group_single( "separator", "?!=()[]{}/$" );
+            PREFIX  = def_group( "prefix", "+" );
+
+            int ie = def_escape( "escape", '\\', 0 );
+            def_escape_pair( ie, "\\", "\\" );
+            def_escape_pair( ie, "n", "\n" );
+            def_escape_pair( ie, "\n", 0 );
+
+            DQSTRING = def_string( "dqstring", "\"", "\"", "escape" );
+
+            //static text between tags
+            STEXT = def_string( "stext", "$", "$", "" );
+            enable( STEXT, false );
+        }
+
+        void throw_error( const char* text )
+        {
+            throw Exception(text);
+        }
+    };
+
+    typedef lexer::lextoken         lextoken;
 
 
     ///Variable from cache
     struct Varx
     {
-        Var* var;
-        const uchar* data;
+        const Var* var;             ///< associated variable
+        Varx* varparent;
+        const uchar* data;          ///< cache position
 
-        Varx() { var=0; data=0; }
-        Varx( Var* v, const uchar* d ) : var(v), data(d) {}
+
+        Varx() { var=0; varparent=0; data=0; }
+        Varx( const Var* v, const uchar* d ) : var(v), varparent(0), data(d) {}
 
         ///Find member variable and its position in the cache
         bool find_child( const token& name, Varx& ch ) const
@@ -82,12 +120,14 @@ class metagen : public binstream
             if(i<0)  return false;
 
             ch.var = &var->desc->children[i];
-            ch.data = data + *(const int*)data;
+            ch.data = data + i*sizeof(uints);
+            ch.data += *(int*)ch.data;
+            ch.varparent = (Varx*)this;
 
             return true;
         }
 
-        ///Find descendant variable and its position in the cache
+        ///Find a descendant variable and its position in the cache
         bool find_descendant( token name, Varx& ch ) const
         {
             ch = *this;
@@ -108,86 +148,428 @@ class metagen : public binstream
             return *(uint*)data;
         }
 
-        ///First array element, return size
-        uint first( Varx& ch )
-        {
-            DASSERT( var->is_array() );
-            ch.var = var->element();
-            ch.data = data + sizeof(uint);
-            return *(uint*)data;
-        }
-
-        void next( Varx& ch )
-        {
-            ch.data += ch.element_size();
-        }
-
-        ///Return size of the variable in cache
-        int element_size() const
-        {
-            if( var->is_primitive() )
-                return var->is_array()
-                    ? sizeof(uint) + *(uint*)data * var->get_size()
-                    : var->get_size();
-            else
-                return *(int*)data;
-        }
-
         void write_var( metagen& mg ) const;
+    };
+
+    ///Array element variable from cache
+    struct VarxElement : Varx
+    {
+        uint size;                  ///< element byte size
+
+
+        ///First array element, return count
+        uint first( Varx& ary )
+        {
+            DASSERT( ary.var->is_array() );
+            var = ary.var->element();
+            data = ary.data + sizeof(uint);
+            prepare();
+
+            return *(uint*)ary.data;
+        }
+
+        VarxElement& next()
+        {
+            data += size - sizeof(uints);
+            prepare();
+            return *this;
+        }
+
+    private:
+        void prepare()
+        {
+            if( var->is_primitive() && !var->is_array_element() )
+                size = var->get_size();
+            else
+                size = *(int*)data;
+            
+            data += sizeof(uints);
+        }
+    };
+
+    struct Attribute
+    {
+        struct Value {
+            charstr valuebuf;           ///< buffer for value if needed
+            token value;                ///< value pointer
+
+            void swap( Value& other )
+            {
+                valuebuf.swap( other.valuebuf );
+                std::swap( value, other.value );
+            }
+
+            Value() { value.set_empty(); }
+        };
+
+        token name;
+        enum { DEFAULT, INLINE, OPEN, COND_POS, COND_NEG } cond;
+        Value value;
+
+
+        bool is_condition() const       { return cond >= COND_POS; }
+        bool is_open() const            { return cond == OPEN; }
+
+        bool parse( MtgLexer& lex )
+        {
+            //attribute can be
+            // <name> [?!] [= "value"]
+            const lextoken& tok = lex.last();
+            
+            if( tok.id != lex.IDENT )  return false;
+            name = tok.tok;
+
+            lex.next();
+            if( tok.tok == '?' )        cond = COND_POS;
+            else if( tok.tok == '!' )   cond = COND_NEG;
+            else lex.push_back();
+
+            lex.next();
+            if( tok == '=' )
+            {
+                lex.next();
+                if( tok.id != lex.DQSTRING )
+                    lex.throw_error("expected attribute value string");
+
+                const_cast<lextoken&>(tok).swap_to_token_or_string( value.value, value.valuebuf );
+                cond = INLINE;
+
+                lex.next();
+            }
+            else
+                cond = OPEN;
+
+            if( name == "default" )
+            {
+                if( cond == INLINE )  cond = DEFAULT;
+                else if( cond != OPEN )
+                    lex.throw_error("'default' attribute can only be open or inline");
+            }
+
+            return true;
+        }
+
+        void swap( Attribute& attr )
+        {
+            std::swap( name, attr.name );
+            std::swap( cond, attr.cond );
+            value.swap( attr.value );
+        }
+    };
+
+    ///
+    struct ParsedTag
+    {
+        token varname;
+        dynarray<Attribute> attr;
+        char brace;
+        char flags;
+        int8 prefixlen;
+        int8 depth;
+
+        enum { fTRAILING = 1, fEAT_LEFT = 2, fEAT_RIGHT = 4, };
+
+
+        void parse( MtgLexer& lex )
+        {
+            //tag content
+            // <name> (attribute)*
+            lex.next(0);
+            const lextoken& tok = lex.last();
+
+            flags = 0;
+            if( tok.tok == '-' ) {
+                flags |= fEAT_LEFT;
+                lex.next(0);
+            }
+
+            if( tok.tok != '{'  &&  tok.tok != '['  &&  tok.tok != '(' ) {
+                brace = 0;
+                lex.push_back();
+            }
+            else
+                brace = tok.tok[0];
+
+            lex.next();
+
+            if( tok.tok == '/' ) {
+                flags |= fTRAILING;
+                lex.next();
+            }
+
+            if( tok.id != lex.PREFIX )
+                prefixlen = 0;
+            else {
+                prefixlen = (int8)tok.tok.len();
+                lex.next();
+            }
+
+            if( tok.id != lex.IDENT )
+                lex.throw_error("Expected identifier");
+            varname = tok.tok;
+
+            depth = 1;
+            const char* p = tok.tok.ptr();
+            const char* pe = tok.tok.ptre();
+            for( ; p<pe; ++p )
+                if( *p == '.' )  ++depth;
+
+            lex.next();
+
+            int def = -1;
+            bool lastopen = false;
+
+            Attribute at;
+            while( at.parse(lex) )
+            {
+                if( lastopen )
+                    lex.throw_error("An open attribute followed by another");
+
+                lastopen = at.is_open();
+
+                //place default attribute on the beginning
+                if( at.cond == Attribute::DEFAULT )
+                    attr.ins(0)->swap(at);
+                else
+                    attr.add()->swap(at);
+            }
+
+            if(brace)
+            {
+                if( brace == '('  &&  tok.tok != ')' )
+                    lex.throw_error("Expecting )");
+                if( brace == '{'  &&  tok.tok != '}' )
+                    lex.throw_error("Expecting }");
+                if( brace == '['  &&  tok.tok != ']' )
+                    lex.throw_error("Expecting ]");
+                lex.next(0);
+            }
+
+            if( tok.tok == '-' ) {
+                flags |= fEAT_RIGHT;
+                lex.next(0);
+            }
+
+            if( tok.tok != '$' )
+                lex.throw_error("Expecting end of tag $");
+        }
     };
 
     ///Basic tag definition
     struct Tag
     {
         token varname;              ///< variable name
-        token defval;               ///< default value if the variable doesn't exist
+        int depth;                  ///< variable depth from parent
+        token stext;                ///< static text after the tag
+
 
         virtual ~Tag() {}
-        virtual void process( metagen& mg, const Varx& var ) const
+
+        bool find_var( const Varx& par, Varx& var ) const
+        {
+            return depth>1
+                ? par.find_child( varname, var )
+                : par.find_descendant( varname, var );
+        }
+
+        void process( metagen& mg, const Varx& var ) const
+        {
+            if( !varname.is_empty() )
+                process_content( mg, var );
+
+            if( !stext.is_empty() )
+                mg.bin->write_token(stext);
+        }
+
+        bool parse( MtgLexer& lex, ParsedTag& hdr )
+        {
+            varname = hdr.varname;
+            depth = hdr.depth;
+
+            parse_content( lex, hdr );
+
+            bool succ = lex.next_string_or_block( lex.STEXT );
+            stext = lex.last().tok;
+
+            if( hdr.flags & ParsedTag::fEAT_RIGHT )
+                stext.skip_newline();
+
+            return succ;
+        }
+
+        ///Write inline default attribute if there's one
+        static void write_default( metagen& mg, const dynarray<Attribute>& attr )
+        {
+            if( attr.size()>0  &&  attr[0].cond == Attribute::DEFAULT )
+                mg.bin->write_token( attr[0].value.value );
+        }
+
+        virtual void process_content( metagen& mg, const Varx& var ) const = 0;
+        virtual void parse_content( MtgLexer& lex, ParsedTag& hdr ) = 0;
+    };
+
+    ///Empty tag for tagless leading static text 
+    struct TagEmpty : Tag
+    {
+        virtual void process_content( metagen& mg, const Varx& var ) const  {}
+        virtual void parse_content( MtgLexer& lex, ParsedTag& hdr ) {}
+
+        bool parse( MtgLexer& lex, bool skip_newline )
+        {
+            varname.set_empty();
+            depth = 0;
+
+            bool succ = lex.next_string_or_block( lex.STEXT );
+            stext = lex.last().tok;
+
+            if(skip_newline)
+                stext.skip_newline();
+
+            return succ;
+        }
+    };
+
+    ///Simple substitution tag
+    struct TagSimple : Tag
+    {
+        dynarray<Attribute> attr;       ///< conditions and attributes
+
+        ///Process the variable, default code does simple substitution
+        virtual void process_content( metagen& mg, const Varx& var ) const
         {
             Varx v;
             if( var.find_child( varname, v ) )
                 v.write_var(mg);
-            else if( !defval.is_empty() )
-                mg.bin->write_token( defval );
+            else
+                write_default( mg, attr );
         }
-    };
 
-    ///
-    struct Chunk
-    {
-        token stext;                ///< static text before a tag
-        Ltag ptag;                  ///< subsequent Tag object
-
-        void process( metagen& mg, const Varx& var ) const
+        virtual void parse_content( MtgLexer& lex, ParsedTag& hdr )
         {
-            if( !stext.is_empty() )
-                mg.bin->write_token(stext);
+            attr.swap( hdr.attr );
 
-            ptag->process( mg, var );
+            if( attr.size()>0 && attr.last()->is_open() )
+                lex.throw_error("Simple tags cannot contain open attribute");
         }
     };
 
     ///Linear sequence of chunks to process
     struct TagRange
     {
-        dynarray<Chunk> sequence;
+        typedef local<Tag>              LTag;
+        dynarray<LTag> sequence;        ///< either a tag sequence to apply
+        Attribute::Value value;         ///< or an attribute string
+
+
+        void set_attribute( Attribute& at )
+        {
+            value.swap( at.value );
+        }
+
+        bool is_set() const
+        {
+            return !value.value.is_empty()  ||  sequence.size()>0;
+        }
 
         void process( metagen& mg, const Varx& var ) const
         {
-            const Chunk* ch = sequence.ptr();
+            if( !value.value.is_empty() )
+                mg.bin->write_token( value.value );
+
+            const LTag* ch = sequence.ptr();
             for( uints n=sequence.size(); n>0; --n,++ch )
-                ch->process( mg, var );
+                (*ch)->process( mg, var );
+        }
+
+        bool parse( MtgLexer& lex, ParsedTag& tout, const token& texit )
+        {
+            TagEmpty* etag = new TagEmpty;
+            *sequence.add() = etag;
+
+            bool succ = etag->parse( lex, tout.flags & ParsedTag::fEAT_RIGHT );
+            if(!succ) return succ;
+
+            do {
+                tout.parse(lex);
+
+                if( (tout.flags & ParsedTag::fEAT_LEFT) )
+                    (*sequence.last())->stext.trim_newline();
+
+                if( tout.flags & ParsedTag::fTRAILING ) {
+                    if( tout.varname != texit )
+                        lex.throw_error("Mismatched closing tag");
+                    return succ;
+                }
+                if( tout.varname == texit )
+                    return succ;
+
+                //we have a new tag here
+                Tag* ptag;
+                if( tout.brace == '(' )
+                    ptag = new TagCondition;
+                else if( tout.brace == '{' )
+                    ptag = new TagStruct;
+                else if( tout.brace == '[' )
+                    ptag = new TagArray;
+                else
+                    ptag = new TagSimple;
+
+                *sequence.add() = ptag;
+                succ = ptag->parse( lex, tout );
+            }
+            while(succ);
+
+            if( !texit.is_empty() )
+                lex.throw_error("End of file before the closing tag");
+            return succ;
+        }
+
+        void swap( TagRange& other )        { sequence.swap(other.sequence); }
+    };
+
+    ///Conditional tag
+    struct TagCondition : Tag
+    {
+        ///Conditional clause
+        struct Clause {
+            dynarray<Attribute> attr;
+            TagRange rng;
+        };
+
+        dynarray<Clause> clause;        ///< conditional sections
+
+
+        virtual void process_content( metagen& mg, const Varx& var ) const
+        {
+        }
+
+        virtual void parse_content( MtgLexer& lex, ParsedTag& hdr )
+        {
+            ParsedTag tmp;
+            tmp.attr.swap( hdr.attr );
+            tmp.flags = hdr.flags;
+
+            do {
+                Clause* c = clause.add();
+                c->attr.swap( tmp.attr );
+
+                c->rng.parse( lex, tmp, varname );
+
+                if( tmp.flags & ParsedTag::fTRAILING )
+                    break;
+            }
+            while(1);
         }
     };
 
     ///Tag operating with array-type variables
     struct TagArray : Tag
     {
-        TagRange atr_before, atr_after;
         TagRange atr_first, atr_rest;
+        TagRange atr_body;
+        TagRange atr_after;
 
-        void process( metagen& mg, const Varx& var ) const
+        void process_content( metagen& mg, const Varx& var ) const
         {
             Varx v;
             if( var.find_child( varname, v ) )
@@ -195,41 +577,147 @@ class metagen : public binstream
                 if( !v.var->is_array() )
                     return;
 
-                uint n = v.array_size();
+                VarxElement ve;
+                uint n = ve.first(v);
                 if(!n)
                     return;
 
-                atr_first.process( mg, v );
+                atr_first.process( mg, ve );
+                atr_body.process( mg, ve );
 
-                for( uint i=0; i<n; ++i )
-                {
-                    
+                for( ; n>1; --n ) {
+                    atr_rest.process( mg, ve.next() );
+                    atr_body.process( mg, ve );
                 }
+
+                atr_after.process( mg, v );
             }
+        }
+
+        virtual void parse_content( MtgLexer& lex, ParsedTag& hdr )
+        {
+            ParsedTag tmp;
+            tmp.attr.swap( hdr.attr );
+            tmp.flags = hdr.flags;
+
+            do {
+                TagRange& rng = bind_attributes( lex, tmp.attr );
+
+                rng.parse( lex, tmp, varname );
+                if( tmp.flags & ParsedTag::fTRAILING )
+                    break;
+            }
+            while(1);
+        }
+
+    private:
+        TagRange* section( const token& name )
+        {
+            if( name == "first" )  return &atr_first;
+            if( name == "rest" )   return &atr_rest;
+            if( name == "body" )   return &atr_body;
+            if( name == "after" )  return &atr_after;
+            return 0;
+        }
+
+        TagRange& bind_attributes( MtgLexer& lex, dynarray<Attribute>& attr )
+        {
+            TagRange* sec = 0;
+
+            Attribute* p = attr.ptr();
+            Attribute* pe = attr.ptre();
+            for( ; p<pe; ++p )
+            {
+                TagRange* tr = section( p->name );
+
+                if(!tr)
+                    lex.throw_error("Unknown attribute of an array tag");
+
+                if( tr->is_set() )
+                    lex.throw_error("Section already assigned");
+
+                if( p->cond == Attribute::INLINE )
+                    tr->set_attribute(*p);
+                else if( p->cond == Attribute::OPEN )
+                    sec = tr;
+                else
+                    lex.throw_error("Array attribute can be only inline or open");
+            }
+
+            if(!sec) {
+                if( atr_body.is_set() )
+                    lex.throw_error("Section already assigned");
+                sec = &atr_body;
+            }
+
+            return *sec;
         }
     };
 
-    ///Structure tag changes the current variable to some descendant
+    ///Structure tag changes the current variable scope to some descendant
     struct TagStruct : Tag
     {
-        int depth;              ///< nesting depth (1 immediate member)
         TagRange seq;
 
-        void process( metagen& mg, const Varx& var ) const
+        void process_content( metagen& mg, const Varx& var ) const
         {
             Varx v;
-            bool valid = depth>1
-                ? var.find_child( varname, v )
-                : var.find_descendant( varname, v );
+            bool valid = find_var(var,v);
 
             if(valid)
                 seq.process( mg, v );
         }
+
+        virtual void parse_content( MtgLexer& lex, ParsedTag& hdr )
+        {
+            ParsedTag tmp;
+            tmp.attr.swap( hdr.attr );
+            tmp.flags = hdr.flags;
+
+            do {
+                if( tmp.attr.size() > 0 )
+                    lex.throw_error("Unknown attribute for structural tag");
+
+                TagRange rng;
+                rng.parse( lex, tmp, varname );
+                if( tmp.flags & ParsedTag::fTRAILING )
+                    break;
+            }
+            while(1);
+        }
     };
 
+public:
+    metagen()
+    {
+        bin = 0;
+    }
+
+    void parse( const token& tok )
+    {
+        lex.bind(tok);
+
+        ParsedTag tmp;
+        tags.parse( lex, tmp, token::empty() );
+    }
+
+    void generate( binstream& bin, const Var& var, const uchar* data )
+    {
+        this->bin = &bin;
+
+        Varx v( &var, data );
+        tags.process( *this, v );
+    }
+
+private:
+    charstr buf;                    ///< helper buffer
+    binstream* bin;                 ///< output stream
+
+    MtgLexer lex;                   ///< lexer used to parse the template file
+    TagRange tags;                  ///< top level tag array
 };
 
-////
+////////////////////////////////////////////////////////////////////////////////
 void metagen::Varx::write_var( metagen& mg ) const
 {
     typedef bstype::type    type;

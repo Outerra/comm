@@ -53,18 +53,6 @@ class binstreambuf : public binstream
     dynarray<char>  _buf;                   ///<memory buffer
     uints           _bgi;                   ///<beginning of data
 
-    ///Compact the memory buffer
-    void compact () {
-        if( _bgi == _buf.size() )
-            reset();
-/*
-        uints sz = _buf.size();
-        if (_bgi >= (sz>>1) && sz > 0x100 ) {
-            _buf.del (0, _bgi);
-            _bgi = 0;
-        }*/
-    }
-
 public:
 
     virtual uint binstream_attributes( bool in0out1 ) const
@@ -183,7 +171,7 @@ public:
         xmemcpy( p, _buf.ptr()+_bgi, len );
         _bgi += len;
         len = 0;
-        compact();
+        //compact();
         return 0;
     }
 
@@ -201,18 +189,26 @@ public:
         return n<t.len() ? opcd(0) : ersNOT_FOUND;
 	}
 
-    virtual bool is_open () const       { return true; }//_buf.size() > 0; }
-    virtual void flush ()               { }
-    virtual void acknowledge (bool eat=false)
+    virtual bool is_open() const        { return true; }//_buf.size() > 0; }
+    virtual void flush()                { }
+    virtual void acknowledge( bool eat=false )
     {
         if( _bgi < _buf.size() )
         {
-            if(eat) { reset(); }
+            if(eat) { reset_read(); }
             throw ersIO_ERROR "data left in input buffer";
         }
     }
 
-    virtual void reset ()               { _buf.reset();  _bgi = 0; }
+    virtual void reset_read()
+    {
+        _bgi = 0;
+    }
+
+    virtual void reset_write()
+    {
+        _buf.reset();  _bgi = 0;
+    }
 
     bool restore()
     {
@@ -241,6 +237,20 @@ public:
         in >> buf._buf;
         buf._bgi = 0;
         return in;
+    }
+
+
+    void read_from( binstream& bin )
+    {
+        uchar buf[256];
+        for (;;)
+        {
+            uints len = 256;
+            bin.read_raw_full( buf, len );
+            xwrite_raw( buf, 256 - len );
+            if( len > 0 )
+                break;
+        }
     }
 
     binstreambuf() : _bgi(0)     { }
@@ -330,11 +340,16 @@ public:
         _source = _base;
     }
 
-    virtual void reset()
+    virtual void reset_read()
     {
         _len += _source - _base;
         _source = _base;
     }
+
+    virtual void reset_write()
+    {
+    }
+
 
     friend inline binstream& operator << (binstream& out, const binstreamconstbuf& buf)
     {

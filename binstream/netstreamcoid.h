@@ -97,22 +97,28 @@ public:
     virtual bool is_open() const        { return _socket.getHandle() != -1; }
     virtual void flush()
     {
-        send (4 + get_packet_size ());
+        send(4 + get_packet_size());
     }
 
     virtual void acknowledge( bool eat = false )
     {
-        if (_size != 0  ||  _flg != 0)
+        if( _size != 0  ||  _flg != 0 )
         {
-            if (eat)  eat_input();
+            if(eat)  eat_input();
             else  throw ersIO_ERROR "data left in received packet";
         }
         _size = 0;
         _flg = -1;
     }
 
-    virtual void reset ()
+    virtual void reset_read()
     {
+        //todo
+    }
+
+    virtual void reset_write()
+    {
+        //todo
     }
 
     virtual netAddress* get_remote_address( netAddress* addr ) const
@@ -232,24 +238,24 @@ private:
 
     void add_to_packet( const uchar* p, uints& size )
     {
-        if (!size)  return;
+        if(!size)  return;
         uints s = get_packet_size ();
-        if (s + size > MAX_DATA_SIZE)
+        if( s + size > MAX_DATA_SIZE )
         {
-            if (s <= MAX_DATA_SIZE)
+            if( s <= MAX_DATA_SIZE )
             {
-                xmemcpy (_outbuf+4+s, p, MAX_DATA_SIZE - s);
+                xmemcpy( _outbuf+4+s, p, MAX_DATA_SIZE - s );
                 p += MAX_DATA_SIZE - s;
                 size -= MAX_DATA_SIZE - s;
             }
-            set_packet_size (0xffff);
-            send (PACKET_LENGTH);
-            add_to_packet (p, size);
+            set_packet_size(0xffff);
+            send(PACKET_LENGTH);
+            add_to_packet( p, size );
         }
         else
         {
-            xmemcpy (_outbuf+4+s, p, size);
-            set_packet_size ((ushort)(s+size));
+            xmemcpy( _outbuf+4+s, p, size );
+            set_packet_size( (ushort)(s+size) );
             size = 0;
         }
     }
@@ -257,20 +263,20 @@ private:
     /// @return 0 if disconnected
     opcd get_from_packet( uchar* p, uints& size )
     {
-        if (_size == 0)    //new communication or packet
+        if(_size == 0)    //new communication or packet
         {
-            if (_flg == 0)
+            if(_flg == 0)
                 return ersNO_MORE "required more data than the amount sent";
 
             char buf[4];
-            opcd e = recv (buf, 4);
+            opcd e = recv( buf, 4 );
             if(e)  { _size = 0;  _flg = 0;  return e; }
             
-            if (buf[0] != 'B'  ||  buf[1] != 's')
+            if( buf[0] != 'B'  ||  buf[1] != 's' )
                 throw ersMISMATCHED "invalid packet header";
             _size = *(ushort*)(buf+2);
 
-            if (_size == 0xffff) {
+            if( _size == 0xffff ) {
                 _size = MAX_DATA_SIZE;
                 _flg = 1;       //more packets to come
             }
@@ -280,9 +286,9 @@ private:
 
             return get_from_packet( p, size );
         }
-        else if ((uints)_size < size)
+        else if( (uints)_size < size )
         {
-            opcd e = recv (p, _size);
+            opcd e = recv( p, _size );
             if(e)  { _size = 0;  _flg = 0;  return e; }
             p += _size;
             size -= _size;
@@ -299,8 +305,8 @@ private:
         }
     }
 
-    void   set_packet_size (ushort s)   { *(ushort*)(_outbuf+2) = s; }
-    ushort get_packet_size () const     { return *(ushort*)(_outbuf+2); }
+    void   set_packet_size(ushort s)    { *(ushort*)(_outbuf+2) = s; }
+    ushort get_packet_size() const      { return *(ushort*)(_outbuf+2); }
 
     void send( uints len )
     {
@@ -328,12 +334,12 @@ private:
             len -= n;
             p = p + n;
         }
-        set_packet_size (0);
+        set_packet_size(0);
     }
 
     opcd recv( void* p, uints len )
     {
-        if (_timeout)
+        if(_timeout)
         {
             int ns = _socket.wait_read(_timeout);
             if( ns == 0 )
@@ -343,7 +349,7 @@ private:
         }
 
         //int blk = 0;
-        for (; len; )
+        for(; len; )
         {
             int n = _socket.recv( p, (int)len );
             if( n == -1 )

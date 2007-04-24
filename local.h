@@ -182,6 +182,13 @@ public:
             delete _p;
         _p = 0;
     }
+
+    void swap( local<T>& other )
+    {
+        T* t = _p;
+        _p = other._p;
+        _other.p = t;
+    }
 };
 
 template <class T>

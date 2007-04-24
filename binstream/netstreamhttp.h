@@ -96,12 +96,16 @@ public:
         return _tcps.is_open();
     }
 
-    virtual void reset()
+    virtual void reset_read()
     {
-        _tunh.reset();
+        _tunh.reset_read();
     }
 
-    
+    virtual void reset_write()
+    {
+        _tunh.reset_write();
+    }
+
 
     virtual opcd connect( const token& addr, int port=0, bool portoverride=false )
     {

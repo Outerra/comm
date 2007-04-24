@@ -113,7 +113,15 @@ public:
     virtual void flush ()                           { }
     virtual void acknowledge (bool eat=false)       { }
 
-    virtual void reset ()                           { _buf.reset(); }
+    virtual void reset_read()
+    {
+    }
+
+    virtual void reset_write()
+    {
+        _buf.reset();
+    }
+
 
     binstreamsegbuf& operator = (const binstreamsegbuf& src)
     {

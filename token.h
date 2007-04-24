@@ -1060,6 +1060,35 @@ struct token
         }
     }
 
+    ///Trims trailing \r\n, \r or \n sequence
+    token& trim_newline()
+    {
+        char c = last_char();
+        if( c == '\n' ) {
+            --_len;
+            c = last_char();
+        }
+        if( c == '\n' )
+            --_len;
+
+        return *this;
+    }
+
+    ///Skips leading \r\n, \r or \n sequence
+    token& skip_newline()
+    {
+        char c = first_char();
+        if( c == '\r' ) {
+            ++_ptr;
+            --_len;
+            c = first_char();
+        }
+        if( c == '\n' ) {
+            ++_ptr;
+            --_len;
+        }
+        return *this;
+    }
 
     token& skip_ingroup( const token& sep, uints off=0 )
     {

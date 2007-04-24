@@ -298,7 +298,20 @@ public:
         _ptrrd = _buf.ptr() + _offs[npck];
     }
 
-    virtual void reset()
+    ///Reset reading of the current packet
+    virtual void reset_read()
+    {
+        _sizerd = _lens[_begpck];
+        _ptrrd = _buf.ptr() + _offs[_begpck];
+    }
+
+    ///Reset writing of the current packet
+    virtual void reset_write()
+    {
+        _sizewr = 0;
+    }
+
+    virtual void reset_all()
     {
         _size = 0;
         _sizewr = _sizerd = 0;

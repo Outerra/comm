@@ -394,13 +394,18 @@ public:
         return _cache.is_open();
     }
 
-    virtual void reset()
+    virtual void reset_read()
     {
-        _flags &= ~(fWSTATUS | fRSTATUS);
-        _cache.reset();
-//        _ssid = 0;
+        _flags &= ~fRSTATUS;
+        _cache.reset_read();
+    }
 
-        _seqnum = _rnd.rand();
+    virtual void reset_write()
+    {
+        _flags &= ~fWSTATUS;
+        _cache.reset_write();
+
+        _segnum = _rnd.rand();
     }
 
 

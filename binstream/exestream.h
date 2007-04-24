@@ -75,7 +75,16 @@ public:
 		return _buf.read_until( ss, bout, max_size );
 	}
     virtual bool is_open() const                        { return _buf.is_open(); }
-    virtual void reset()                                { _buf.reset(); }
+
+    virtual void reset_read()
+    {
+        _buf.reset_read();
+    }
+
+    virtual void reset_write()
+    {
+        _buf.reset_write();
+    }
 
     virtual void acknowledge (bool eat=false)           { _buf.acknowledge(eat); }
     virtual void flush() {
@@ -153,7 +162,16 @@ public:
 	}
 
     virtual bool is_open() const                        { return _buf.is_open(); }
-    virtual void reset()                                { _buf.reset(); }
+
+    virtual void reset_read()
+    {
+        _buf.reset_read();
+    }
+
+    virtual void reset_write()
+    {
+        _buf.reset_write();
+    }
 
     virtual void acknowledge (bool eat=false)           { _buf.acknowledge( eat ); }
 

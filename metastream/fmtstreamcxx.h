@@ -173,8 +173,16 @@ public:
             _tokenizer.reset();
     }
 
-    virtual void reset()    { if(_binw) _binw->reset(); }
+    virtual void reset_read()
+    {
+        _tokenizer.reset();
+    }
 
+    virtual void reset_write()
+    {
+        _binw->reset_write();
+        _bufw.reset();
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////

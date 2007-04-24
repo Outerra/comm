@@ -863,6 +863,27 @@ public:
         return *this;
     }
 
+    void replace( char from, char to )
+    {
+        char* pe = (char*)ptre();
+        for( char* p = (char*)ptr(); p<pe; ++p )
+            if( *p == from )  *p = to;
+    }
+
+    void tolower()
+    {
+        char* pe = (char*)ptre();
+        for( char* p = (char*)ptr(); p<pe; ++p )
+            *p = ::tolower(*p);
+    }
+
+    void toupper()
+    {
+        char* pe = (char*)ptre();
+        for( char* p = (char*)ptr(); p<pe; ++p )
+            *p = ::toupper(*p);
+    }
+
 
     bool ins( uints pos, char c )
     {
@@ -1047,6 +1068,8 @@ public:
     dynarray<char>& dynarray_ref()      { return _tstr; }
 
     const char* ptr() const             { return _tstr.ptr(); }
+    const char* ptre() const            { return _tstr.ptr() + len(); }
+
     const char* c_str() const           { return _tstr.size() ? _tstr.ptr() : ""; }
 
     ///<String length excluding terminating zero
@@ -1178,7 +1201,7 @@ public:
         {
             if( str[i] == 0 )
                 return true;
-            if( tolower(str[i]) != tolower(_tstr[i]) )
+            if( ::tolower(str[i]) != ::tolower(_tstr[i]) )
                 return false;
         }
         return str[i] == 0;
@@ -1190,7 +1213,7 @@ public:
             return false;
         for( uints i=0; i<tok._len; ++i )
         {
-            if( tolower(tok._ptr[i]) != tolower(_tstr[i]) )
+            if( ::tolower(tok._ptr[i]) != ::tolower(_tstr[i]) )
                 return false;
         }
         return true;
@@ -1216,7 +1239,7 @@ public:
         const char* p = _tstr.ptr() + len() - tok.len();
         for( uints i=0; i<tok._len; ++i )
         {
-            if( tolower(tok._ptr[i]) != tolower(p[i]) )
+            if( ::tolower(tok._ptr[i]) != ::tolower(p[i]) )
                 return false;
         }
         return true;
