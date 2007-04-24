@@ -131,13 +131,13 @@ public:
     virtual opcd close( bool linger=false )
     {
         if(linger)  return lingering_close(1000);
-        _tunh.reset();
+        _tunh.reset_all();
         _tcps.close();
         return 0;
     }
     virtual opcd lingering_close( uint mstimeout=0 )
     {
-        _tunh.reset();
+        _tunh.reset_all();
         _tcps.lingering_close(mstimeout);
         return 0;
     }

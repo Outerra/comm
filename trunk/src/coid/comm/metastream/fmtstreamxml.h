@@ -225,15 +225,22 @@ public:
         }
     }
 
-    virtual void reset()
+    virtual void reset_read()
     {
         _tokenizer.reset();
-        _bufw.reset();
-        _indent = 0;
-        //_structend_on_stack = false;
         _tag_read = false;
         _tagstack.reset();
-        _sesinitr = _sesinitw = 0;
+
+        _sesinitr = 0;
+    }
+
+    ///Reset the binstream to the initial state for writing. Does nothing on stateless binstreams.
+    virtual void reset_write()
+    {
+        _bufw.reset();
+        _indent = 0;
+
+        _sesinitw = 0;
     }
 
 

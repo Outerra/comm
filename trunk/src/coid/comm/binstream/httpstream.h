@@ -405,7 +405,7 @@ public:
         _flags &= ~fWSTATUS;
         _cache.reset_write();
 
-        _segnum = _rnd.rand();
+        _seqnum = _rnd.rand();
     }
 
 

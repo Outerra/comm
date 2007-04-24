@@ -140,7 +140,7 @@ public:
         _rptr = _rbuf + RBUFFER_SIZE;
         _rrem = UMAX;
 
-        if(_bin) _bin->reset_read()
+        if(_bin) _bin->reset_read();
     }
 
     virtual void reset_write()
