@@ -124,7 +124,7 @@ public:
 
                 if( breq  ||  t.begins_with_icase("http/") ) break;
 
-                buf.reset();
+                buf.reset_write();
             }
              
             token n, tok = buf;
@@ -186,7 +186,7 @@ public:
             //read remaining headers
             for(;;)
             {
-                buf.reset();
+                buf.reset_write();
 
                 e = bin.read_until( substring_rn(), &buf );
                 if(e)

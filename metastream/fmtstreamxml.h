@@ -207,7 +207,7 @@ public:
     virtual void acknowledge( bool eat = false )
     {
         if( eat )
-            reset();
+            reset_read();
         else
         {
             if( !_tag_read ) {
@@ -221,7 +221,7 @@ public:
             if( !_tokenizer.empty_buffer() )
                 throw ersIO_ERROR "data left in received block";
 
-            reset();
+            reset_read();
         }
     }
 

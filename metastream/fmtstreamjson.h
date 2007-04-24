@@ -191,7 +191,7 @@ public:
             if( !_tokenizer.empty_buffer() )
                 throw ersIO_ERROR "data left in received block";
         }
-        reset();
+        reset_read();
     }
 
     virtual void reset_read()
