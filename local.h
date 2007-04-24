@@ -187,7 +187,7 @@ public:
     {
         T* t = _p;
         _p = other._p;
-        _other.p = t;
+        other.p = t;
     }
 };
 
