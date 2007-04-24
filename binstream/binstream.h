@@ -692,6 +692,8 @@ public:
         reset_read();
     }
 
+    void reset() {}
+
     ///Reset the binstream to the initial state for reading. Does nothing on stateless binstreams.
     virtual void reset_read() = 0;
 

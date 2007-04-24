@@ -269,7 +269,7 @@ public:
     virtual void reset_read()
     {
         _cinread = 0;
-        _cinread.reset();
+        _cin.reset();
         if(_bin) _bin->reset_read();
     }
 

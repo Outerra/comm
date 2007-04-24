@@ -194,12 +194,18 @@ public:
         reset();
     }
 
-    virtual void reset()
+    virtual void reset_read()
     {
         _tokenizer.reset();
+        _sesinitr = 0;
+    }
+
+    virtual void reset_write()
+    {
         _bufw.reset();
-        if(_binw) _binw->reset();
-        _sesinitr = _sesinitw = 0;
+        if(_binw) _binw->reset_write();
+
+        _sesinitw = 0;
     }
 
 
