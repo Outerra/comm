@@ -540,7 +540,8 @@ public:
 
     std::pair<const_iterator, const_iterator> equal_range( const LOOKUP_KEY& k ) const
     {
-        const Node* f = find_node(k);
+        uint slot;
+        const Node* f = find_node(k,slot);
         if(!f)
             return std::pair<const_iterator,const_iterator>( end(), end() );
         
