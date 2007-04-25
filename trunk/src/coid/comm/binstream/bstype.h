@@ -148,6 +148,41 @@ struct type
 
     ///Get byte size of primitive element
     ushort get_size() const                 { return _size; }
+
+    int64 value_int( const void* data ) const
+    {
+        int64 val = 0;
+        switch( _type )
+        {
+            case T_INT:
+            case T_UINT:
+            case T_CHAR: {
+                    switch( get_size() ) {
+                    case 1: val = *(int8*)data;  break;
+                    case 2: val = *(int16*)data;  break;
+                    case 4: val = *(int32*)data;  break;
+                    case 8: val = *(int64*)data;  break;
+                    }
+                }
+                break;
+            
+            case T_FLOAT: {
+                    switch( get_size() ) {
+                    case 4: val = (int64)*(float*)data;  break;
+                    case 8: val = (int64)*(double*)data;  break;
+                    case 16: val = (int64)*(long double*)data;  break;
+                    }
+                }
+                break;
+
+            case T_BOOL:
+                val = *(bool*)data; break;
+
+            case T_TIME:
+                val = *(timet*)data; break;
+        }
+        return val;
+    }
 };
 
 
