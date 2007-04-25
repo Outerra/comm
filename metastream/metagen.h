@@ -45,7 +45,7 @@
 #include "../lexer.h"
 
 #include "metavar.h"
-
+#include "fmtstreamcxx.h"   //temporary
 
 COID_NAMESPACE_BEGIN
 
@@ -149,6 +149,15 @@ class metagen //: public binstream
         }
 
         void write_var( metagen& mg ) const;
+
+        bool is_nonzero() const
+        {
+            if( var->is_array() )  return array_size()>0;
+            if( var->is_compound() )  return true;
+            return var->desc->btype.value_int(data) != 0;
+        }
+
+        bool is_array() const      { return var->is_array(); }
     };
 
     ///Array element variable from cache
@@ -203,7 +212,7 @@ class metagen //: public binstream
         };
 
         token name;
-        enum { DEFAULT, INLINE, OPEN, COND_POS, COND_NEG } cond;
+        enum { UNKNOWN, DEFAULT, INLINE, OPEN, COND_POS, COND_NEG } cond;
         Value value;
 
 
@@ -219,6 +228,8 @@ class metagen //: public binstream
             if( tok.id != lex.IDENT )  return false;
             name = tok.tok;
 
+
+            cond = UNKNOWN;
             lex.next();
             if( tok.tok == '?' )        cond = COND_POS;
             else if( tok.tok == '!' )   cond = COND_NEG;
@@ -232,11 +243,12 @@ class metagen //: public binstream
                     lex.throw_error("expected attribute value string");
 
                 const_cast<lextoken&>(tok).swap_to_token_or_string( value.value, value.valuebuf );
-                cond = INLINE;
+                if(!cond)
+                    cond = INLINE;
 
                 lex.next();
             }
-            else
+            else if(!cond)
                 cond = OPEN;
 
             if( name == "default" )
@@ -247,6 +259,27 @@ class metagen //: public binstream
             }
 
             return true;
+        }
+
+        bool eval( const Varx& var, bool defined ) const
+        {
+            bool inv;
+            if( cond == COND_POS )       inv = false;
+            else if( cond == COND_NEG ) inv = true;
+            else return true;
+
+            bool val;
+
+            if( name == "defined" )
+                val = defined;
+            else if( name == "nonzero" )
+                val = defined && var.is_nonzero();
+            else if( name == "always" )
+                val = true;
+            else
+                val = false;
+
+            return val ^ inv;
         }
 
         void swap( Attribute& attr )
@@ -269,6 +302,15 @@ class metagen //: public binstream
 
         enum { fTRAILING = 1, fEAT_LEFT = 2, fEAT_RIGHT = 4, };
 
+
+        bool same_group( const ParsedTag& p ) const
+        {
+            return brace == p.brace
+                && prefixlen == p.prefixlen
+                && varname == p.varname;
+        }
+
+        void set_empty()    { varname.set_empty(); }
 
         void parse( MtgLexer& lex )
         {
@@ -318,6 +360,8 @@ class metagen //: public binstream
 
             int def = -1;
             bool lastopen = false;
+
+            attr.reset();
 
             Attribute at;
             while( at.parse(lex) )
@@ -378,7 +422,7 @@ class metagen //: public binstream
                 process_content( mg, var );
 
             if( !stext.is_empty() )
-                mg.bin->write_token(stext);
+                mg.bin->xwrite_raw( stext.ptr(), stext.len() );
         }
 
         bool parse( MtgLexer& lex, ParsedTag& hdr )
@@ -401,7 +445,7 @@ class metagen //: public binstream
         static void write_default( metagen& mg, const dynarray<Attribute>& attr )
         {
             if( attr.size()>0  &&  attr[0].cond == Attribute::DEFAULT )
-                mg.bin->write_token( attr[0].value.value );
+                mg.bin->xwrite_raw( attr[0].value.value.ptr(), attr[0].value.value.len() );
         }
 
         virtual void process_content( metagen& mg, const Varx& var ) const = 0;
@@ -438,7 +482,7 @@ class metagen //: public binstream
         virtual void process_content( metagen& mg, const Varx& var ) const
         {
             Varx v;
-            if( var.find_child( varname, v ) )
+            if( find_var(var,v) )
                 v.write_var(mg);
             else
                 write_default( mg, attr );
@@ -474,19 +518,19 @@ class metagen //: public binstream
         void process( metagen& mg, const Varx& var ) const
         {
             if( !value.value.is_empty() )
-                mg.bin->write_token( value.value );
+                mg.bin->xwrite_raw( value.value.ptr(), value.value.len() );
 
             const LTag* ch = sequence.ptr();
             for( uints n=sequence.size(); n>0; --n,++ch )
                 (*ch)->process( mg, var );
         }
 
-        bool parse( MtgLexer& lex, ParsedTag& tout, const token& texit )
+        bool parse( MtgLexer& lex, ParsedTag& tout, const ParsedTag& par )
         {
             TagEmpty* etag = new TagEmpty;
             *sequence.add() = etag;
 
-            bool succ = etag->parse( lex, tout.flags & ParsedTag::fEAT_RIGHT );
+            bool succ = etag->parse( lex, (tout.flags & ParsedTag::fEAT_RIGHT)!=0 );
             if(!succ) return succ;
 
             do {
@@ -496,11 +540,11 @@ class metagen //: public binstream
                     (*sequence.last())->stext.trim_newline();
 
                 if( tout.flags & ParsedTag::fTRAILING ) {
-                    if( tout.varname != texit )
+                    if( !tout.same_group(par) )
                         lex.throw_error("Mismatched closing tag");
                     return succ;
                 }
-                if( tout.varname == texit )
+                if( tout.same_group(par) )
                     return succ;
 
                 //we have a new tag here
@@ -519,7 +563,7 @@ class metagen //: public binstream
             }
             while(succ);
 
-            if( !texit.is_empty() )
+            if( !par.varname.is_empty() )
                 lex.throw_error("End of file before the closing tag");
             return succ;
         }
@@ -534,6 +578,21 @@ class metagen //: public binstream
         struct Clause {
             dynarray<Attribute> attr;
             TagRange rng;
+
+            bool eval( metagen& mg, const Varx& par, const Varx& var, bool defined ) const
+            {
+                const Attribute* p = attr.ptr();
+                const Attribute* pe = attr.ptre();
+
+                if( p == pe  &&  !defined )
+                    return defined;
+
+                for( ; p<pe; ++p )
+                    if( !p->eval(var,defined) )  return false;
+
+                rng.process( mg, par );
+                return true;
+            }
         };
 
         dynarray<Clause> clause;        ///< conditional sections
@@ -541,6 +600,14 @@ class metagen //: public binstream
 
         virtual void process_content( metagen& mg, const Varx& var ) const
         {
+            Varx v;
+            bool found = find_var(var,v);
+
+            const Clause* p = clause.ptr();
+            const Clause* pe = clause.ptre();
+
+            for( ; p<pe; ++p )
+                if( p->eval(mg,var,v,found) )  return;
         }
 
         virtual void parse_content( MtgLexer& lex, ParsedTag& hdr )
@@ -553,7 +620,7 @@ class metagen //: public binstream
                 Clause* c = clause.add();
                 c->attr.swap( tmp.attr );
 
-                c->rng.parse( lex, tmp, varname );
+                c->rng.parse( lex, tmp, hdr );
 
                 if( tmp.flags & ParsedTag::fTRAILING )
                     break;
@@ -572,7 +639,7 @@ class metagen //: public binstream
         void process_content( metagen& mg, const Varx& var ) const
         {
             Varx v;
-            if( var.find_child( varname, v ) )
+            if( find_var(var,v) )
             {
                 if( !v.var->is_array() )
                     return;
@@ -603,7 +670,7 @@ class metagen //: public binstream
             do {
                 TagRange& rng = bind_attributes( lex, tmp.attr );
 
-                rng.parse( lex, tmp, varname );
+                rng.parse( lex, tmp, hdr );
                 if( tmp.flags & ParsedTag::fTRAILING )
                     break;
             }
@@ -679,7 +746,7 @@ class metagen //: public binstream
                     lex.throw_error("Unknown attribute for structural tag");
 
                 TagRange rng;
-                rng.parse( lex, tmp, varname );
+                rng.parse( lex, tmp, hdr );
                 if( tmp.flags & ParsedTag::fTRAILING )
                     break;
             }
@@ -693,12 +760,43 @@ public:
         bin = 0;
     }
 
-    void parse( const token& tok )
+    bool parse( binstream& bin )
     {
+        patbuf.read_from(bin);
+        const token& tok = patbuf;
+
         lex.bind(tok);
+        err_lex = 0;
 
         ParsedTag tmp;
-        tags.parse( lex, tmp, token::empty() );
+        try {
+            ParsedTag empty;
+            empty.set_empty();
+
+            tags.parse( lex, tmp, empty );
+            return true;
+        }
+        catch(MtgLexer::Exception e) {
+            err_lex = e.errtext;
+            return false;
+        }
+    }
+
+    template<class T>
+    void generate( const T& obj, binstream& bot )
+    {
+        tmpx.reset_all();
+        fmtx.bind(tmpx);
+
+        meta.bind_formatting_stream(fmtx);
+
+        meta.stream_out(obj);
+        meta.stream_flush();
+
+        meta.stream_in_cache<T>();
+        meta.stream_acknowledge();
+
+        generate( bot, meta.get_root_var(), meta.get_cache() );
     }
 
     void generate( binstream& bin, const Var& var, const uchar* data )
@@ -709,9 +807,19 @@ public:
         tags.process( *this, v );
     }
 
+    const char* error_text() const  { return err_lex; }
+
 private:
     charstr buf;                    ///< helper buffer
     binstream* bin;                 ///< output stream
+
+    binstreambuf patbuf;            ///< buffered pattern file
+
+    metastream meta;
+    binstreambuf tmpx;
+    fmtstreamcxx fmtx;
+
+    const char* err_lex;
 
     MtgLexer lex;                   ///< lexer used to parse the template file
     TagRange tags;                  ///< top level tag array
@@ -727,9 +835,7 @@ void metagen::Varx::write_var( metagen& mg ) const
 
     if( var->is_array() )
     {
-        token str( (const char*)p+sizeof(uint), *(uint*)p );
-
-        mg.bin->write_token(str);
+        mg.bin->xwrite_raw( (const char*)p+sizeof(uint), *(uint*)p );
         return;
     }
 
@@ -792,7 +898,7 @@ void metagen::Varx::write_var( metagen& mg ) const
     }
 
     if( !buf.is_empty() )
-        mg.bin->write_token(buf);
+        mg.bin->xwrite_raw( buf.ptr(), buf.len() );
 }
 
 
