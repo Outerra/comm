@@ -76,9 +76,9 @@ class metagen //: public binstream
         MtgLexer()
         {
             def_group( "ignore", " \t\n\r" );
-            IDENT   = def_group( "identifier", "a..zA..Z_", ".a..zA..Z_0..9" );
+            IDENT   = def_group( "identifier", ".a..zA..Z_", ".a..zA..Z_0..9" );
             NUM     = def_group( "number", "0..9" );
-            def_group_single( "separator", "?!=()[]{}/$" );
+            def_group_single( "separator", "?!=()[]{}/$-" );
             PREFIX  = def_group( "prefix", "+" );
 
             int ie = def_escape( "escape", '\\', 0 );
@@ -130,14 +130,33 @@ class metagen //: public binstream
         ///Find a descendant variable and its position in the cache
         bool find_descendant( token name, Varx& ch ) const
         {
-            ch = *this;
+            const Varx* v = this;
+            token part;
 
-            for( token part; !name.is_empty(); )
-            {
+            if( name.is_empty() )  return false;
+
+            //leading dots address ancestors
+            do {
                 part = name.cut_left('.',1);
+                if( !part.is_empty() )  break;
+
+                if( !v->varparent )  return false;
+                v = v->varparent;
+            }
+            while( !name.is_empty() );
+
+            ch = *v;
+            if( part.is_empty() )
+                return true;
+
+            //find descendant
+            do {
                 if( !ch.find_child( part, ch ) )
                     return false;
+
+                part = name.cut_left('.',1);
             }
+            while( !name.is_empty() );
 
             return true;
         }
@@ -172,8 +191,9 @@ class metagen //: public binstream
             DASSERT( ary.var->is_array() );
             var = ary.var->element();
             data = ary.data + sizeof(uint);
-            prepare();
+            varparent = &ary;
 
+            prepare();
             return *(uint*)ary.data;
         }
 
@@ -350,7 +370,7 @@ class metagen //: public binstream
                 lex.throw_error("Expected identifier");
             varname = tok.tok;
 
-            depth = 1;
+            depth = 0;
             const char* p = tok.tok.ptr();
             const char* pe = tok.tok.ptre();
             for( ; p<pe; ++p )
@@ -411,7 +431,7 @@ class metagen //: public binstream
 
         bool find_var( const Varx& par, Varx& var ) const
         {
-            return depth>1
+            return depth<1
                 ? par.find_child( varname, var )
                 : par.find_descendant( varname, var );
         }
