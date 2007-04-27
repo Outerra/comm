@@ -66,7 +66,7 @@ class metagen //: public binstream
     ///Lexer for tokenizing tags
     struct MtgLexer : lexer
     {
-        int IDENT,NUM,PREFIX,DQSTRING,STEXT;
+        int IDENT,NUM,DQSTRING,STEXT;
 
         struct Exception {
             const char* errtext;
@@ -79,7 +79,6 @@ class metagen //: public binstream
             IDENT   = def_group( "identifier", ".a..zA..Z_", ".a..zA..Z_0..9" );
             NUM     = def_group( "number", "0..9" );
             def_group_single( "separator", "?!=()[]{}/$-" );
-            PREFIX  = def_group( "prefix", "+" );
 
             int ie = def_escape( "escape", '\\', 0 );
             def_escape_pair( ie, "\\", "\\" );
@@ -219,8 +218,8 @@ class metagen //: public binstream
     struct Attribute
     {
         struct Value {
-            charstr valuebuf;           ///< buffer for value if needed
             token value;                ///< value pointer
+            charstr valuebuf;           ///< buffer for value if needed
 
             void swap( Value& other )
             {
@@ -234,6 +233,7 @@ class metagen //: public binstream
         token name;
         enum { UNKNOWN, DEFAULT, INLINE, OPEN, COND_POS, COND_NEG } cond;
         Value value;
+        int depth;
 
 
         bool is_condition() const       { return cond >= COND_POS; }
@@ -248,6 +248,11 @@ class metagen //: public binstream
             if( tok.id != lex.IDENT )  return false;
             name = tok.tok;
 
+            depth = 0;
+            const char* pc = name.ptr();
+            const char* pce = name.ptre();
+            for( ; pc<pce; ++pc )
+                if( *pc == '.' )  ++depth;
 
             cond = UNKNOWN;
             lex.next();
@@ -281,20 +286,37 @@ class metagen //: public binstream
             return true;
         }
 
-        bool eval( const Varx& var, bool defined ) const
+        bool eval( const Varx& var ) const
         {
+            //if the depth is set, the attribute reffers to a descendant
+            token n = name;
+            Varx v = var;
+            bool defined = true;
+
+            if(depth) {
+                for( int d=depth; d>0; --d ) {
+                    token part = n.cut_left('.',1);
+                    if( !v.find_child( part, v ) ) {
+                        defined = false;
+                        break;
+                    }
+                }
+            }
+
             bool inv;
-            if( cond == COND_POS )       inv = false;
+            if( cond == COND_POS )      inv = false;
             else if( cond == COND_NEG ) inv = true;
             else return true;
 
             bool val;
 
-            if( name == "defined" )
+            if( n == "defined" )
                 val = defined;
-            else if( name == "nonzero" )
-                val = defined && var.is_nonzero();
-            else if( name == "always" )
+            else if( n == "nonzero"  ||  n == "true" )
+                val = defined && v.is_nonzero();
+            else if( n == "false" )
+                val = !(defined && v.is_nonzero());
+            else if( n == "always" )
                 val = true;
             else
                 val = false;
@@ -307,6 +329,7 @@ class metagen //: public binstream
             std::swap( name, attr.name );
             std::swap( cond, attr.cond );
             value.swap( attr.value );
+            std::swap( depth, attr.depth );
         }
     };
 
@@ -317,7 +340,6 @@ class metagen //: public binstream
         dynarray<Attribute> attr;
         char brace;
         char flags;
-        int8 prefixlen;
         int8 depth;
 
         enum { fTRAILING = 1, fEAT_LEFT = 2, fEAT_RIGHT = 4, };
@@ -325,8 +347,12 @@ class metagen //: public binstream
 
         bool same_group( const ParsedTag& p ) const
         {
+            if( p.brace == '(' ) {
+                return brace == p.brace
+                    && (((flags&fTRAILING) && varname == "if") || varname == "elif");
+            }
+
             return brace == p.brace
-                && prefixlen == p.prefixlen
                 && varname == p.varname;
         }
 
@@ -356,13 +382,6 @@ class metagen //: public binstream
 
             if( tok.tok == '/' ) {
                 flags |= fTRAILING;
-                lex.next();
-            }
-
-            if( tok.id != lex.PREFIX )
-                prefixlen = 0;
-            else {
-                prefixlen = (int8)tok.tok.len();
                 lex.next();
             }
 
@@ -599,18 +618,15 @@ class metagen //: public binstream
             dynarray<Attribute> attr;
             TagRange rng;
 
-            bool eval( metagen& mg, const Varx& par, const Varx& var, bool defined ) const
+            bool eval( metagen& mg, const Varx& var ) const
             {
                 const Attribute* p = attr.ptr();
                 const Attribute* pe = attr.ptre();
 
-                if( p == pe  &&  !defined )
-                    return defined;
-
                 for( ; p<pe; ++p )
-                    if( !p->eval(var,defined) )  return false;
+                    if( !p->eval(var) )  return false;
 
-                rng.process( mg, par );
+                rng.process( mg, var );
                 return true;
             }
         };
@@ -620,18 +636,18 @@ class metagen //: public binstream
 
         virtual void process_content( metagen& mg, const Varx& var ) const
         {
-            Varx v;
-            bool found = find_var(var,v);
-
             const Clause* p = clause.ptr();
             const Clause* pe = clause.ptre();
 
             for( ; p<pe; ++p )
-                if( p->eval(mg,var,v,found) )  return;
+                if( p->eval(mg,var) )  return;
         }
 
         virtual void parse_content( MtgLexer& lex, ParsedTag& hdr )
         {
+            if( hdr.varname != "if" )
+                lex.throw_error("Unknown code block");
+
             ParsedTag tmp;
             tmp.attr.swap( hdr.attr );
             tmp.flags = hdr.flags;
@@ -656,6 +672,17 @@ class metagen //: public binstream
         TagRange atr_body;
         TagRange atr_after;
 
+        dynarray<Attribute> cond;
+
+        bool eval_cond( const Varx& var ) const
+        {
+            const Attribute* p = cond.ptr();
+            const Attribute* pe = cond.ptre();
+            for( ; p<pe; ++p )
+                if( !p->eval(var) )  return false;
+            return true;
+        }
+
         void process_content( metagen& mg, const Varx& var ) const
         {
             Varx v;
@@ -669,12 +696,19 @@ class metagen //: public binstream
                 if(!n)
                     return;
 
-                atr_first.process( mg, ve );
-                atr_body.process( mg, ve );
+                bool evalcond = cond.size()>0;
 
-                for( ; n>1; --n ) {
-                    atr_rest.process( mg, ve.next() );
+                int i=0;
+                for( ; n>0; --n,ve.next() )
+                {
+                    if( evalcond && !eval_cond(ve) )
+                        continue;
+
+                    if(i==0)  atr_first.process( mg, ve );
+                    else      atr_rest.process( mg, ve );
+
                     atr_body.process( mg, ve );
+                    ++i;
                 }
 
                 atr_after.process( mg, v );
@@ -715,6 +749,11 @@ class metagen //: public binstream
             Attribute* pe = attr.ptre();
             for( ; p<pe; ++p )
             {
+                if( p->is_condition() ) {
+                    cond.add()->swap(*p);
+                    continue;
+                }
+
                 TagRange* tr = section( p->name );
 
                 if(!tr)
