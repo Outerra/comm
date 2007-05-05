@@ -154,6 +154,13 @@ public:
         return v ? &v->_val : 0;
     }
 
+    ///Find value object corresponding to given key
+    const VAL* find_value( uint hash, const key_type& k ) const
+    {
+        const typename _HT::Node* v = find_node(hash,k);
+        return v ? &v->_val : 0;
+    }
+
 
     hash_keyset()
         : _HT( 128, hasher(), key_equal(), extractor() ) {}

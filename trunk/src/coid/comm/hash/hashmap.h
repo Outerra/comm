@@ -101,6 +101,12 @@ public:
         return v ? &v->_val.second : 0;
     }
 
+    VAL* find_value( uint hash, const key_type& k ) const
+    {
+        typename _HT::Node* v = find_node(hash,k);
+        return v ? &v->_val.second : 0;
+    }
+
     hash_map()
         : _HT( 128, hasher(), key_equal(), _SEL()) {}
 

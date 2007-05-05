@@ -141,6 +141,11 @@ inline typename SIGNEDNESS<INT>::UNSIGNED int_abs( INT a )
     return typename SIGNEDNESS<INT>::UNSIGNED( a - ((a+a) & ((typename SIGNEDNESS<INT>::SIGNED)a>>(sizeof(INT)*8-1))) );
 }
 
+inline uints ints_abs( ints a )
+{
+    return uints( a - ((a+a) & ((ints)a>>(sizeof(ints)*8-1))) );
+}
+
 ///@return a<0 ? onminus : onplus
 template< class INT >
 inline INT int_select_by_sign( INT a, INT onplus, INT onminus )
