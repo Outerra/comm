@@ -15,7 +15,7 @@
  *
  * The Initial Developer of the Original Code is
  * Brano Kemen
- * Portions created by the Initial Developer are Copyright (C) 2006
+ * Portions created by the Initial Developer are Copyright (C) 2006,2007
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -44,6 +44,7 @@
 #include "dynarray.h"
 #include "hash/hashkeyset.h"
 #include "hash/hashmap.h"
+#include "hash/hashset.h"
 
 COID_NAMESPACE_BEGIN
 
@@ -56,6 +57,13 @@ COID_NAMESPACE_BEGIN
     from the input, with all characters in the token belonging to the same group.
     Group 0 is used as the ignore group; tokens of characters belonging there are
     not returned by default, just skipped.
+
+        It's possible to define keywords that are returned as a different entity
+    when encountered. As a token of some group is being read, a hash value is
+    computed along the scanning. If any keywords are defined, an additional
+    check is performed to see whether the token read has been a keyword or not.
+    The token is then returned as of type ID_KEYWORDS instead of the original
+    group id.
 
         Lexer can also detect sequences of characters that have higher priority
     than a simple grouping. It also processes strings and blocks, that are
@@ -82,29 +90,51 @@ COID_NAMESPACE_BEGIN
     The lexer uses first group as the one containing ignored whitespace characters,
     unless you provide the next() method with different group id (or none) to ignore.
 
-    (TODO) Internal line and character position counting for error reporting.
+    (TODBG) Internal line and character position counting for error reporting.
 
-    (TODO) Reserved words are specific character sequences belonging to a specific
-    lexical group, which are detected and returned as tokens of different group type.
-        They should be matched only by literals in the parser.
-        For this to work fast, lexer computes a hash value as it scans the characters
-    for the end of the group, performing lookup afterwards into a hash table that
-    indexes the keywords. The hash value is stored also with the lextoken returned
-    object.
-
-    (TODO) Nestable tokenization of blocks. A mode when upon encountering special
-    block type, the lexer returns immediatelly without processing the input further.
-    A method that pushes the lexer state to an internal stack is called. After that
-    the lexer would be able to continue processing of the pushed block until its
-    proper ending. After popping the stored state back from the stack, lexing can
-    continue.
-    This functionality would be used by the parser.
-
+    (TODO) Nestable tokenization of blocks. A mode when upon encountering an opening
+    block sequence, the lexer pushes its previous context to stack and returns stating
+    that block is about to be read. Subsequent calls to lexer then return tokens
+    from inside the block. At last the closing sequence is read and the stack is
+    popped.
+        Note that blocks can declare what other block and string types are enabled
+    when processing their content, so the lexer can use slightly different rules
+    for processing text inside the block than outside of it.
+    
+    This functionality will be used by the parser.
 **/
 class lexer
 {
+    ///
+    struct token_hash
+    {
+        uint    hash;
+        typedef token type_key;
+
+        ///Compute hash of token
+        uint operator() (const token& s) const
+        {
+            uint h = 0;
+            const char* p = s.ptr();
+            const char* pe = s.ptre();
+
+            for( ; p<pe; ++p )
+                h = (h ^ (uint)*p) + (h<<26) + (h>>6);
+            return h;
+        }
+
+        ///Incremental hash value computation
+        void inc_char( char c )
+        {
+            hash = (hash ^ (uint)c) + (hash<<26) + (hash>>6);
+        }
+
+        void reset()    { hash = 0; }
+    };
 
 public:
+
+    enum { ID_KEYWORDS = 0x8000 };
 
     ///Lexer token
     struct lextoken
@@ -112,6 +142,10 @@ public:
         token   tok;                        ///< value string token
         int     id;                         ///< token id (group type or string type)
         charstr tokbuf;                     ///< buffer that keeps processed string
+        token_hash hash;                    ///< hash value computed for tokens (but not for strings or blocks)
+        uint    line;                       ///< current line number
+        const char* start;                  ///< current line start
+        char ch;                            ///< last read character
 
         bool operator == (int i) const              { return i == id; }
         bool operator == (const token& t) const     { return tok == t; }
@@ -136,6 +170,12 @@ public:
             if( !tokbuf.is_empty() )
                 dstr.swap(tokbuf);
             dst = tok;
+        }
+
+        void reset()
+        {
+            tokbuf.reset();
+            hash.reset();
         }
     };
 
@@ -164,6 +204,7 @@ public:
     }
 
 
+    ///Bind input binstream used to read input data
     opcd bind( binstream& bin )
     {
         _bin = 0;
@@ -174,6 +215,7 @@ public:
         return 0;
     }
 
+    ///Bind input string to read from
     opcd bind( const token& tok )
     {
         _bin = 0;
@@ -183,6 +225,7 @@ public:
     }
 
 
+    ///@return true if the lexer is set up to interpret input as utf-8 characters
     bool is_utf8() const            { return _abmap.size() == BASIC_UTF8_CHARS; }
 
     opcd reset()
@@ -193,6 +236,9 @@ public:
         _binbuf.reset();
         _last.id = 0;
         _last.tok.set_null();
+        _last.line = 0;
+        _last.start = 0;
+        _last.ch = 0;
         _last_string = -1;
         _err = 0;
         _pushback = 0;
@@ -251,12 +297,25 @@ public:
     }
 
     ///Define specific keywords that should be returned as a separate token type.
-    ///If the characters of specific keyword fit into one character group, they are implemented
-    /// as lookups into the keyword hash table after the scanner computes the hash value for the token it processed.
+    ///If the characters of specific keyword fit into one character group, they are
+    /// implemented as lookups into the keyword hash table after the scanner computes
+    /// the hash value for the token it processed.
     ///Otherwise (when they are heterogenous) they have to be set up as sequences.
-    ///@param keywordlist list of keywords (separated with spaces)
-    int def_keywords( const token& keywordlist )
+    ///@param kwd keyword to add
+    ///@return ID_KEYWORDS if the keyword consists of homogenous characters from
+    /// one character group, or id of a sequence created, or 0 if already defined.
+    int def_keyword( const token& kwd )
     {
+        if( !homogenous(kwd) )
+            return def_sequence( "keywords", kwd );
+
+        if( _kwds.add(kwd) ) {
+            _abmap[(uchar)kwd.first_char()] |= fGROUP_KEYWORDS;
+            return ID_KEYWORDS;
+        }
+
+        _err = ERR_KEYWORD_ALREADY_DEFINED;
+        return 0;
     }
 
     ///Escape sequence processor function prototype.
@@ -301,8 +360,7 @@ public:
 
         //add escape pairs, longest codes first
         escpair* ep = _escary[escrule]->pairs.add_sortT(code);
-        ep->code = code;
-        ep->replace = replacewith;
+        ep->assign( code, replacewith );
 
         return true;
     }
@@ -491,24 +549,25 @@ public:
 
     ///Return next token from the input
     /**
-        Returns token of characters belonging to the same group.
-        Input token is appropriately truncated from the left side.
-        On error no truncation occurs, and an empty token is returned.
+        Returns token of characters identified by a lexer rule.
+        Tokens of rules that are currently set to ignored are skipped.
+        On error an empty token is returned and _err contains the error.
 
-        @param ignoregrp id of the group to ignore if found at the beginning, 0 for none
+        @param ignoregrp id of the group to ignore if found at the beginning, 0 for none.
+        This is used mainly to omit whitespace (group 0), or explicitly not skip it.
     **/
     const lextoken& next( uint ignoregrp=1 )
     {
         //return last token if instructed
         if( _pushback ) { _pushback = 0; return _last; }
 
-        _last.tokbuf.reset();
+        _last.reset();
 
         //skip characters from the ignored group
         if(ignoregrp) {
             _last.tok = scan_group( ignoregrp-1, true );
             if( _last.tok.ptr() == 0 )
-                return end();
+                return set_end();
         }
         else if( _tok.len() == 0 )
         {
@@ -516,13 +575,13 @@ public:
             // if there's a source binstream connected, try to suck more data from it
             if(_bin) {
                 if( fetch_page(0,0) == 0 )
-                    return end();
+                    return set_end();
             }
             else
-                return end();
+                return set_end();
         }
 
-        uchar code = _tok[0];
+        uchar code = upd_newline( _tok.ptr() );
         ushort x = _abmap[code];        //get mask for the leading character
 
         if(x & xSEQ)
@@ -569,17 +628,23 @@ public:
         {
             if(_utf8) {
                 //return whole utf8 characters
-                _last.tok = _tok.cut_left_n( prefetch() );
+                _last.tok = _tok.cut_left_n( prefetch_utf8() );
             }
             else
                 _last.tok = _tok.cut_left_n(1);
             return _last;
         }
 
+        //consume remaining
         if( x & fGROUP_TRAILSET )
             _last.tok = scan_mask( 1<<_grpary[_last.id-1]->bitmap, false, 1 );
         else
             _last.tok = scan_group( _last.id-1, false, 1 );
+
+        //check if it's a keyword
+        if( (x & fGROUP_KEYWORDS)  &&  _kwds.valid( _last.hash.hash, _last.tok ) )
+            _last.id = ID_KEYWORDS;
+
         return _last;
     }
 
@@ -619,12 +684,12 @@ public:
 
     bool match( int grp, charstr& dst )
     {
-        const lextoken& tok = next();
-        if( tok != grp )  return false;
-        if( !tok.tokbuf.is_empty() )
-            dst.takeover( const_cast<charstr&>(tok.tokbuf) );
+        next();
+        if( _last != grp )  return false;
+        if( !_last.tokbuf.is_empty() )
+            dst.takeover( _last.tokbuf );
         else
-            dst = tok.tok;
+            dst = _last.tok;
         return true;
     }
 
@@ -644,18 +709,34 @@ public:
         _pushback = 1;
     }
 
+    ///@return true if whole input was consumed
     bool end() const                            { return _last.id == 0; }
 
+    ///@return last token
     const lextoken& last() const                { return _last; }
 
 
-    ///Signal an external error
-    void set_external_error( bool set )
+    ///Test if whole token consists of characters from one group
+    ///@return 0 if not, or else the the character group (>0)
+    int homogenous( token t ) const
     {
-        if(set)
-            _err = ERR_EXTERNAL_ERROR;
+        uchar code = t[0];
+        ushort x = _abmap[code];        //get mask for the leading character
+
+        int gid = x & xGROUP;
+        ++gid;
+
+        //normal token, get all characters belonging to the same group, unless this is
+        // a single-char group
+        uint n;
+        if( x & fGROUP_SINGLE )
+            n = _utf8  ?  prefetch_utf8(t)  :  1;
+        else if( x & fGROUP_TRAILSET )
+            n = (uint)count_inmask_nohash( t, 1<<_grpary[gid-1]->bitmap, 1 );
         else
-            _err = 0;
+            n = (uint)count_intable_nohash( t, gid-1, 1 );
+        
+        return n<t.len()  ?  0  :  gid;
     }
 
     ///Strip leading and trailing characters belonging to the given group
@@ -676,29 +757,42 @@ public:
         return tok;
     }
 
+    ///Signal an external error (for derived classes that provide additional syntax checking)
+    void set_external_error( bool set )
+    {
+        if(set)
+            _err = ERR_EXTERNAL_ERROR;
+        else
+            _err = 0;
+    }
+
+
 ////////////////////////////////////////////////////////////////////////////////
 protected:
 
     ///Lexer entity base class
     struct entity
     {
+        ///Known enity types
         enum EType {
             GROUP = 1,
             ESCAPE,
+            KEYWORDLIST,
             SEQUENCE,
             STRING,
             BLOCK,
         };
 
+        ///Entity states
         enum EState {
             ENABLED         = 1,
             IGNORED         = 2,
         };
 
-        charstr name;
+        charstr name;                   ///< entity name
         uchar type;                     ///< EType values
         uchar status;                   ///< EState or-ed values
-        ushort id;
+        ushort id;                      ///< entity id, index to containers by entity type
 
 
         entity( const token& name_, uchar type_, ushort id_ ) : name(name_), type(type_), id(id_)
@@ -717,8 +811,9 @@ protected:
         bool is_block() const           { return type == BLOCK; }
         bool is_string() const          { return type == STRING; }
         bool is_sequence() const        { return type == SEQUENCE; }
+        bool is_keywordlist() const     { return type == KEYWORDLIST; }
 
-        operator token () const         { return name; }
+        operator token() const          { return name; }
     };
 
     ///Character group descriptor
@@ -741,11 +836,37 @@ protected:
     {
         charstr code;
         charstr replace;
+        int newlines;                   ///< number of newlines contained within code
+        uint nlpast;                    ///< offset past the last newline
 
         //bool operator == ( const ucs4 k ) const         { return _first == k; }
         bool operator <  ( const token& k ) const   { return code.len() > k.len(); }
 
         //operator ucs4() const                           { return _first; }
+
+        void assign( const token& code, const token& replace )
+        {
+            this->code = code;
+            this->replace = replace;
+            newlines = 0;
+            nlpast = 0;
+
+            char oc=0;
+            const char* p = code.ptr();
+            const char* pe = code.ptre();
+
+            for( ; p<pe; ++p ) {
+                char c = *p;
+                if( c == '\r' )
+                {   nlpast = uint(p+1-code.ptr());  ++newlines; }
+                else if( c == '\n' )
+                {   nlpast = uint(p+1-code.ptr());  if(oc!='\r') ++newlines; }
+
+                oc = c;
+            }
+        }
+
+        escpair() { newlines = 0;  nlpast = 0; }
     };
 
     ///Escape sequence translator descriptor 
@@ -757,6 +878,30 @@ protected:
         dynarray<escpair> pairs;            ///< replacement pairs
 
         escape_rule( const token& name, ushort id ) : entity(name,entity::ESCAPE,id) { }
+    };
+
+    ///Keyword map for detection of whether token is a reserved word
+    struct keywords
+    {
+        hash_set<charstr, token_hash> set;  ///< hash_set for fast detection if the string is in the list
+        int nkwd;
+
+
+        bool has_keywords() const           { return nkwd > 0; }
+
+        bool add( const token& kwd )
+        {
+            bool succ;
+            if( succ = (0 != set.insert_value(kwd)) )
+                ++nkwd;
+
+            return succ;
+        }
+
+        bool valid( uint hash, const token& kwd ) const
+        {
+            return set.find_value( hash, kwd ) != 0;
+        }
     };
 
     ///Character sequence descriptor
@@ -806,11 +951,11 @@ protected:
     ///Character flags
     enum {
         xGROUP                      = 0x000f,   ///< mask for primary character group id
+        fGROUP_KEYWORDS             = 0x0010,   ///< set if there are any keywords defined for the group and this leading character
         fGROUP_ESCAPE               = 0x0020,   ///< set if the character is either an escape character or a trailing sequence
         fGROUP_SINGLE               = 0x0040,   ///< set if this is a single-character token emitting group
-        fGROUP_TRAILSET             = 0x0080,   ///< set if the group has specific trailing set defined
+        fGROUP_TRAILSET             = 0x0080,   ///< set if the group the char belongs to has a specific trailing set defined
 
-        GROUP_IGNORE                = 0,        ///< character group that is ignored by default
         GROUP_UNASSIGNED            = xGROUP,   ///< character group with characters that weren't assigned
 
         xSEQ                        = 0xff00,   ///< mask for id of group of sequences that can start with this character (zero if none)
@@ -830,7 +975,8 @@ protected:
         ERR_UNRECOGNIZED_ESCAPE_SEQ = 7,
         ERR_BLOCK_TERMINATED_EARLY  = 8,
         ERR_DIFFERENT_ENTITY_EXISTS = 9,
-        ERR_EXTERNAL_ERROR          = 10,       ///< the error was set from outside 
+        ERR_EXTERNAL_ERROR          = 10,       ///< the error was set from outside
+        ERR_KEYWORD_ALREADY_DEFINED = 11,
     };
 
 
@@ -841,16 +987,15 @@ protected:
         uchar k, kprev=0;
         for( ; !s.is_empty(); ++s, kprev=k )
         {
-            k = s.first_char();
-            if( k == '.'  &&  s.nth_char(1) == '.' )
+            k = ++s;
+            if( k == '.'  &&  s.first_char() == '.' )
             {
-                k = s.nth_char(2);
+                k = s.nth_char(1);
                 if(!k || !kprev)  { _err=ERR_ILL_FORMED_RANGE; return false; }
 
                 if( kprev > k ) { uchar kt=k; k=kprev; kprev=kt; }
                 for( int i=kprev; i<=(int)k; ++i )  (this->*fn)(i,fnval);
                 s += 2;
-                k = 0;
             }
             else
                 (this->*fn)(k,fnval);
@@ -954,7 +1099,8 @@ protected:
                     fetch_page( _tok.len(), false );
 
                     norepl = er->replfn( _tok, _last.tokbuf );
-                    if(!outermost)
+
+                    if(!outermost)  //a part of block, do not actually build the buffer
                         _last.tokbuf.reset();
                 }
 
@@ -970,9 +1116,17 @@ protected:
                         return false;
                     }
 
+                    //found, update newline info
+                    const escpair& ep = er->pairs[i];
+                    if( ep.newlines ) {
+                        _last.line += ep.newlines;
+                        _last.start = _tok.ptr() + ep.nlpast;
+                        _last.ch = ep.code.last_char();
+                    }
+
                     if(outermost)
-                        _last.tokbuf += er->pairs[i].replace;
-                    _tok += er->pairs[i].code.len();
+                        _last.tokbuf += ep.replace;
+                    _tok += ep.code.len();
                 }
 
                 off = 0;
@@ -1031,6 +1185,7 @@ protected:
                 uint i, n = (uint)dseq.size();
                 for( i=0; i<n; ++i ) {
                     if(!dseq[i]->enabled())  continue;
+
                     uint k = dseq[i]->id;
                     if( (br.stballowed & (1ULL<<k))  &&  match(dseq[i]->leading,off) )  break;
                 }
@@ -1098,7 +1253,7 @@ protected:
         return get_utf8_code(offs);
     }
 
-    uints prefetch( uints offs=0 )
+    uint prefetch_utf8( uints offs=0 )
     {
         uchar k = _tok._ptr[offs];
         if( k < _abmap.size() )
@@ -1114,7 +1269,21 @@ protected:
                 throw ersSYNTAX_ERROR "invalid utf8 character";
         }
 
-        return ab;
+        return nb;
+    }
+
+    uint prefetch_utf8( const token& t ) const
+    {
+        uchar k = t.first_char();
+        if( k < _abmap.size() )
+            return 1;
+
+        uint nb = get_utf8_seq_expected_bytes( t.ptr() );
+
+        if( t.len() < nb )
+            throw ersSYNTAX_ERROR "invalid utf8 character";
+
+        return nb;
     }
 
     ///Get utf8 code from input data. If the code crosses the buffer boundary, put anything
@@ -1136,29 +1305,67 @@ protected:
         return read_utf8_seq( _tok.ptr(), offs );
     }
 
-    uints count_notescape( uints off ) const
+    uchar upd_newline( const char* p )
+    {
+        uchar c = (uchar)*p;
+
+        if( c == '\r' )         { _last.start = p+1;  ++_last.line; }
+        else if( c == '\n' )    { _last.start = p+1;  if(_last.ch != '\r') ++_last.line; }
+
+        _last.ch = c;
+        return c;
+    }
+
+    uints count_notescape( uints off )
     {
         const uchar* pc = (const uchar*)_tok.ptr();
         for( ; off<_tok._len; ++off )
         {
-            uchar c = pc[off];
+            uchar c = upd_newline( (const char*)pc+off );
             if( (_abmap[c] & fGROUP_ESCAPE) != 0 )  break;
         }
         return off;
     }
 
-    uints count_notleading( uints off ) const
+    uints count_notleading( uints off )
     {
         const uchar* pc = (const uchar*)_tok.ptr();
         for( ; off<_tok._len; ++off )
         {
-            uchar c = pc[off];
+            uchar c = upd_newline( (const char*)pc+off );
             if( (_abmap[c] & (xSEQ|fGROUP_ESCAPE)) != 0 )  break;
         }
         return off;
     }
 
-    uints count_intable( const token& tok, uchar grp, uints off ) const
+    uints count_intable( const token& tok, uchar grp, uints off )
+    {
+        const uchar* pc = (const uchar*)tok.ptr();
+        for( ; off<tok._len; ++off )
+        {
+            uchar c = upd_newline( (const char*)pc+off );
+            if( c == '\n' || c == '\r' )
+            if( (_abmap[c] & xGROUP) != grp )  break;
+
+            _last.hash.inc_char(c);
+        }
+        return off;
+    }
+
+    uints count_inmask( const token& tok, uchar msk, uints off )
+    {
+        const uchar* pc = (const uchar*)tok.ptr();
+        for( ; off<tok._len; ++off )
+        {
+            uchar c = upd_newline( (const char*)pc+off );
+            if( (_trail[c] & msk) == 0 )  break;
+
+            _last.hash.inc_char(c);
+        }
+        return off;
+    }
+
+    uints count_intable_nohash( const token& tok, uchar grp, uints off ) const
     {
         const uchar* pc = (const uchar*)tok.ptr();
         for( ; off<tok._len; ++off )
@@ -1169,7 +1376,7 @@ protected:
         return off;
     }
 
-    uints count_inmask( const token& tok, uchar msk, uints off ) const
+    uints count_inmask_nohash( const token& tok, uchar msk, uints off ) const
     {
         const uchar* pc = (const uchar*)tok.ptr();
         for( ; off<tok._len; ++off )
@@ -1259,16 +1466,24 @@ protected:
         return res;
     }
 
+    ///Fetch more data from input
+    ///@param nkeep bytes to keep in buffer
+    ///@param ignore true if data before last nkeep bytes should be discarded.
+    /// If false, these are copied to the token buffer
     uints fetch_page( uints nkeep, bool ignore )
     {
         if(!_bin)  return 0;
 
         //save skipped data to buffer if there is already something or if instructed to do so
+        uints old = _tok.len() - nkeep;
         if( _last.tokbuf.len() > 0  ||  !ignore )
-            _last.tokbuf.add_from( _tok.ptr(), _tok.len()-nkeep );
+            _last.tokbuf.add_from( _tok.ptr(), old );
 
         if(nkeep)
-            xmemcpy( _binbuf.ptr(), _tok.ptr() + _tok.len() - nkeep, nkeep );
+            xmemcpy( _binbuf.ptr(), _tok.ptr() + old, nkeep );
+
+        //adjust last line pointer
+        _last.start -= old;
 
         uints rl = BINSTREAM_BUFFER_SIZE - nkeep;
         if( !_binbuf.size() )
@@ -1316,7 +1531,7 @@ protected:
         return sob->id;
     }
 
-    const lextoken& end()
+    const lextoken& set_end()
     {
         _last.id = 0;
         _last.tok.set_empty();
@@ -1325,16 +1540,19 @@ protected:
 
 protected:
 
-    dynarray<ushort> _abmap;        ///< group flag array
+    dynarray<ushort> _abmap;        ///< group flag array, fGROUP_xxx
     dynarray<uchar> _trail;         ///< mask arrays for customized group's trailing set
-    uint _ntrails;
-    dynarray< dynarray<sequence*> > _seqary;    ///< sequence (or string or block) groups with common leading character
+    uint _ntrails;                  ///< number of trailing sets defined
+
+    typedef dynarray<sequence*> TAsequence;
+    dynarray<TAsequence> _seqary;   ///< sequence (or string or block) groups with common leading character
 
     dynarray<group_rule*> _grpary;  ///< character groups
     dynarray<escape_rule*> _escary; ///< escape character replacement pairs
     dynarray<sequence*> _stbary;    ///< string or block delimiters
+    keywords _kwds;
 
-    lextoken _last;
+    lextoken _last;                 ///< last token read
     int _last_string;               ///< last string type read
     int _err;                       ///< last error code, see ERR_* enums
     bool _utf8;                     ///< utf8 mode
@@ -1345,16 +1563,10 @@ protected:
 
     int _pushback;                  ///< true if the lexer should return the previous token again (was pushed back)
 
-    ///Reverted mapping of escaped symbols for the synthesizer
-    //hash_keyset< ucs4,const escpair*,_Select_CopyPtr<escpair,ucs4> >
-    //    _backmap;
-
-    ///Entity map, maps names to groups and strings
     typedef hash_multikeyset< token, entity*, _Select_CopyPtr<entity,token> >
         Tentmap;
 
-    Tentmap _entmap;
-
+    Tentmap _entmap;                ///< entity map, maps names to groups, strings, blocks etc.
 };
 
 

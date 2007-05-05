@@ -303,6 +303,19 @@ protected:
         dynarray<Node*> _newnode;
     };
 
+    ///Find first node that matches the key, provided hash value is given
+    Node* find_node( uint hash, const LOOKUP_KEY& k ) const
+    {
+        uints h = hash % _table.size();
+        Node* n = (Node*)_table[h];
+        while(n)
+        {
+            if( _EQFUNC( _GETKEYFUNC(n->_val), k ) )
+                return n;
+            n = n->_next;
+        }
+        return 0;
+    }
 
     ///Find first node that matches the key
     Node* find_node( const LOOKUP_KEY& k ) const

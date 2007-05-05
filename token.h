@@ -1060,6 +1060,25 @@ struct token
         }
     }
 
+    ///Returns number of newline sequences found, detects \r \n and \r\n
+    uints count_newlines() const
+    {
+        uints n=0;
+        char oc=0;
+        const char* p = ptr();
+        const char* pe = ptre();
+
+        for( ; p<pe; ++p ) {
+            char c = *p;
+            if( c == '\r' ) ++n;
+            else if( c == '\n' && oc != '\r' ) ++n;
+
+            oc = c;
+        }
+
+        return n;
+    }
+
     ///Trims trailing \r\n, \r or \n sequence
     token& trim_newline()
     {

@@ -92,6 +92,11 @@ public:
         return v ? &v->_val : 0;
     }
 
+    const VAL* find_value( uint hash, const key_type& k ) const
+    {
+        const typename _HT::Node* v = find_node(hash,k);
+        return v ? &v->_val : 0;
+    }
 
     hash_set()
         : _HT( 128, hasher(), key_equal(), _SEL() ) {}
