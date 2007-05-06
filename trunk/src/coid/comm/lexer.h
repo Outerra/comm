@@ -985,7 +985,7 @@ protected:
     bool process_set( token s, uchar fnval, void (lexer::*fn)(uchar,uchar) )
     {
         uchar k, kprev=0;
-        for( ; !s.is_empty(); ++s, kprev=k )
+        for( ; !s.is_empty(); kprev=k )
         {
             k = ++s;
             if( k == '.'  &&  s.first_char() == '.' )
@@ -1344,8 +1344,9 @@ protected:
         for( ; off<tok._len; ++off )
         {
             uchar c = upd_newline( (const char*)pc+off );
-            if( c == '\n' || c == '\r' )
-            if( (_abmap[c] & xGROUP) != grp )  break;
+
+            if( (_abmap[c] & xGROUP) != grp )
+                break;
 
             _last.hash.inc_char(c);
         }
