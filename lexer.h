@@ -132,6 +132,34 @@ class lexer
         void reset()    { hash = 0; }
     };
 
+    ///
+    struct newline
+    {
+        int newlines;                   ///< number of newlines contained within string
+        uint nlpast;                    ///< offset past the last newline
+
+        void process( const token& str )
+        {
+            newlines = 0;
+            nlpast = 0;
+
+            const char* p = str.ptr();
+            const char* pe = str.ptre();
+
+            for( char oc=0; p<pe; ++p ) {
+                char c = *p;
+                if( c == '\r' )
+                {   nlpast = uint(p+1-str.ptr());  ++newlines; }
+                else if( c == '\n' )
+                {   nlpast = uint(p+1-str.ptr());  if(oc!='\r') ++newlines; }
+
+                oc = c;
+            }
+        }
+
+        newline() : newlines(0), nlpast(0) {}
+    };
+
 public:
 
     enum { ID_KEYWORDS = 0x8000 };
@@ -170,6 +198,31 @@ public:
             if( !tokbuf.is_empty() )
                 dstr.swap(tokbuf);
             dst = tok;
+        }
+
+        void upd_hash( const char* p )
+        {
+            hash.inc_char(*p);
+            upd_newline(p);
+        }
+
+        void upd_newline( const char* p )
+        {
+            uchar c = *p;
+
+            if( c == '\r' )         { start = p+1;  ++line; }
+            else if( c == '\n' )    { start = p+1;  if(ch != '\r') ++line; }
+
+            ch = c;
+        }
+
+        void adjust( const newline& nwl, const token& tok )
+        {
+            if( nwl.newlines ) {
+                line += nwl.newlines;
+                start = tok.ptr() + nwl.nlpast;
+                ch = tok.last_char();
+            }
         }
 
         void reset()
@@ -581,7 +634,7 @@ public:
                 return set_end();
         }
 
-        uchar code = upd_newline( _tok.ptr() );
+        uchar code = *_tok.ptr();
         ushort x = _abmap[code];        //get mask for the leading character
 
         if(x & xSEQ)
@@ -621,6 +674,8 @@ public:
 
         _last.id = x & xGROUP;
         ++_last.id;
+
+        _last.upd_hash( _tok.ptr() );
 
         //normal token, get all characters belonging to the same group, unless this is
         // a single-char group
@@ -715,6 +770,8 @@ public:
     ///@return last token
     const lextoken& last() const                { return _last; }
 
+    ///@return current line number
+    uint current_line() const                   { return _last.line+1; }
 
     ///Test if whole token consists of characters from one group
     ///@return 0 if not, or else the the character group (>0)
@@ -836,8 +893,7 @@ protected:
     {
         charstr code;
         charstr replace;
-        int newlines;                   ///< number of newlines contained within code
-        uint nlpast;                    ///< offset past the last newline
+        newline nwl;
 
         //bool operator == ( const ucs4 k ) const         { return _first == k; }
         bool operator <  ( const token& k ) const   { return code.len() > k.len(); }
@@ -848,25 +904,8 @@ protected:
         {
             this->code = code;
             this->replace = replace;
-            newlines = 0;
-            nlpast = 0;
-
-            char oc=0;
-            const char* p = code.ptr();
-            const char* pe = code.ptre();
-
-            for( ; p<pe; ++p ) {
-                char c = *p;
-                if( c == '\r' )
-                {   nlpast = uint(p+1-code.ptr());  ++newlines; }
-                else if( c == '\n' )
-                {   nlpast = uint(p+1-code.ptr());  if(oc!='\r') ++newlines; }
-
-                oc = c;
-            }
+            nwl.process(code);
         }
-
-        escpair() { newlines = 0;  nlpast = 0; }
     };
 
     ///Escape sequence translator descriptor 
@@ -915,16 +954,26 @@ protected:
     ///String and block base entity
     struct stringorblock : sequence
     {
-        dynarray<charstr> trailing;         ///< at least one trailing string/block delimiter
+        struct trail {
+            charstr seq;
+            newline nwl;
+
+            void set( const token& s ) {
+                seq = s;
+                nwl.process(s);
+            }
+        };
+
+        dynarray<trail> trailing;           ///< at least one trailing string/block delimiter
 
         void add_trailing( const charstr& t )
         {
             uints len = t.len();
             uints i=0;
             for( uints n=trailing.size(); i<n; ++i )
-                if( len > trailing[i].len() )  break;
+                if( len > trailing[i].seq.len() )  break;
 
-            *trailing.ins(i) = t;
+            trailing.ins(i)->set(t);
         }
 
         stringorblock( const token& name, ushort id, uchar type ) : sequence(name,id,type) { }
@@ -1017,19 +1066,19 @@ protected:
     ///Try to match a set of strings at offset
     ///@return position of the trailing string matched or -1
     ///@note strings are expected to be sorted by size (longest first)
-    int match( const dynarray<charstr>& str, uints& off )
+    int match( const dynarray<stringorblock::trail>& str, uints& off )
     {
-        if( str[0].len()+off > _tok.len() )
+        if( str[0].seq.len()+off > _tok.len() )
         {
             uints n = fetch_page( _tok.len()-off, false );
-            if( n < str.last()->len() )  return false;
+            if( n < str.last()->seq.len() )  return false;
             off = 0;
         }
 
-        const charstr* p = str.ptr();
-        const charstr* pe = str.ptre();
+        const stringorblock::trail* p = str.ptr();
+        const stringorblock::trail* pe = str.ptre();
         for( int i=0; p<pe; ++p,++i )
-            if( _tok.begins_with(*p,off) )  return i;
+            if( _tok.begins_with(p->seq,off) )  return i;
 
         return -1;
     }
@@ -1118,11 +1167,7 @@ protected:
 
                     //found, update newline info
                     const escpair& ep = er->pairs[i];
-                    if( ep.newlines ) {
-                        _last.line += ep.newlines;
-                        _last.start = _tok.ptr() + ep.nlpast;
-                        _last.ch = ep.code.last_char();
-                    }
+                    _last.adjust( ep.nwl, _tok.ptr() );
 
                     if(outermost)
                         _last.tokbuf += ep.replace;
@@ -1136,11 +1181,13 @@ protected:
                 int k = match( sr.trailing, off );
                 if(k>=0)
                 {
+                    _last.adjust( sr.trailing[k].nwl, _tok.ptr()+off );
                     add_stb_segment( sr, k, off, outermost );
                     return true;
                 }
 
                 //this wasn't our terminator, passing by
+                _last.upd_newline( _tok.ptr()+off );
                 ++off;
             }
         }
@@ -1175,6 +1222,7 @@ protected:
             if( (x & fGROUP_ESCAPE)  &&  (k = match(br.trailing, off)) >= 0 )
             {
                 //trailing string found
+                _last.adjust( br.trailing[k].nwl, _tok.ptr()+off );
                 add_stb_segment( br, k, off, outermost );
                 return true;
             }
@@ -1196,7 +1244,6 @@ protected:
                     sequence* sob = dseq[i];
                     off += sob->leading.len();
 
-
                     bool nest;
                     if( sob->type == entity::BLOCK )
                         nest = next_read_block( *(const block_rule*)sob, off, false );
@@ -1205,19 +1252,20 @@ protected:
                     else
                         nest = true;
                     if(!nest)  return false;
+                    
+                    continue;
                 }
-                else
-                    ++off;
             }
-            else
-                ++off;
+
+            _last.upd_newline( _tok.ptr()+off );
+            ++off;
         }
     }
 
     ///Add string or block segment
     void add_stb_segment( const stringorblock& sb, int trailid, uints& off, bool final )
     {
-        uints len = trailid<0  ?  0  :  sb.trailing[trailid].len(); 
+        uints len = trailid<0  ?  0  :  sb.trailing[trailid].seq.len(); 
         if(!final)
             off += len;
 
@@ -1305,24 +1353,15 @@ protected:
         return read_utf8_seq( _tok.ptr(), offs );
     }
 
-    uchar upd_newline( const char* p )
-    {
-        uchar c = (uchar)*p;
-
-        if( c == '\r' )         { _last.start = p+1;  ++_last.line; }
-        else if( c == '\n' )    { _last.start = p+1;  if(_last.ch != '\r') ++_last.line; }
-
-        _last.ch = c;
-        return c;
-    }
-
     uints count_notescape( uints off )
     {
         const uchar* pc = (const uchar*)_tok.ptr();
         for( ; off<_tok._len; ++off )
         {
-            uchar c = upd_newline( (const char*)pc+off );
-            if( (_abmap[c] & fGROUP_ESCAPE) != 0 )  break;
+            const char* p = (const char*)pc+off;
+            if( (_abmap[*p] & fGROUP_ESCAPE) != 0 )  break;
+
+            _last.upd_newline(p);
         }
         return off;
     }
@@ -1332,8 +1371,10 @@ protected:
         const uchar* pc = (const uchar*)_tok.ptr();
         for( ; off<_tok._len; ++off )
         {
-            uchar c = upd_newline( (const char*)pc+off );
-            if( (_abmap[c] & (xSEQ|fGROUP_ESCAPE)) != 0 )  break;
+            const char* p = (const char*)pc+off;
+            if( (_abmap[*p] & (xSEQ|fGROUP_ESCAPE)) != 0 )  break;
+
+            _last.upd_newline(p);
         }
         return off;
     }
@@ -1343,12 +1384,11 @@ protected:
         const uchar* pc = (const uchar*)tok.ptr();
         for( ; off<tok._len; ++off )
         {
-            uchar c = upd_newline( (const char*)pc+off );
-
-            if( (_abmap[c] & xGROUP) != grp )
+            const char* p = (const char*)pc+off;
+            if( (_abmap[*p] & xGROUP) != grp )
                 break;
 
-            _last.hash.inc_char(c);
+            _last.upd_hash(p);
         }
         return off;
     }
@@ -1358,10 +1398,10 @@ protected:
         const uchar* pc = (const uchar*)tok.ptr();
         for( ; off<tok._len; ++off )
         {
-            uchar c = upd_newline( (const char*)pc+off );
-            if( (_trail[c] & msk) == 0 )  break;
+            const char* p = (const char*)pc+off;
+            if( (_trail[*p] & msk) == 0 )  break;
 
-            _last.hash.inc_char(c);
+            _last.upd_hash(p);
         }
         return off;
     }
