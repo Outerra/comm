@@ -79,11 +79,10 @@ opcd __rassert( const char* txt, opcd exc, const char* file, int line, const cha
 	    bin << "Assertion failed in " << file << ":" << line << " expression:\n    "
 		    << expr << "\n    " << (txt ? txt : "") << "\n\n";
         bin.flush();
-
-        _guard.unlock();
     }
 
-    return __assert_throws ? exc : opcd(0);
+    opcd e = __assert_throws ? exc : opcd(0);
+    return e;
 }
 
 
