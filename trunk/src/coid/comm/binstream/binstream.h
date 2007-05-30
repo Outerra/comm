@@ -424,6 +424,21 @@ public:
         return len;
     }
 
+    ///Read raw data from another binstream
+    void read_from( binstream& bin )
+    {
+        uchar buf[256];
+        for (;;)
+        {
+            uints len = 256;
+            bin.read_raw_full( buf, len );
+            xwrite_raw( buf, 256 - len );
+            if( len > 0 )
+                break;
+        }
+    }
+
+
     //@{ Array manipulating methods.
     /**
         Methods to write and read arrays of objects. The write_array() and read_array()

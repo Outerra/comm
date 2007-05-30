@@ -231,6 +231,12 @@ sysDynamicLibrary::~sysDynamicLibrary()
 
 
 
+
+
+
+
+
+
 ////////////////////////////////////////////////////////////////////////////////
 void netaddr::set_port( ushort p )
 {
@@ -240,9 +246,10 @@ void netaddr::set_port( ushort p )
 
 
 
+substring netAddress::protocol = "://";
 
 ////////////////////////////////////////////////////////////////////////////////
-netAddress::netAddress ( const char* host, int port, bool portoverride )
+netAddress::netAddress( const token& host, int port, bool portoverride )
 {
     set( host, port, portoverride ) ;
 }
@@ -299,12 +306,18 @@ void netAddress::set( const token& host, int port, bool portoverride )
     else
     {
         token hostx = host;
-        token name = hostx.cut_left( ':', 1 );
 
-        if( !portoverride )
-        {
-            int p = hostx.touint();
-            if( p != 0 )
+        //skip the protocol part if any
+        hostx.cut_left( protocol, 1, true );
+
+        token name = hostx.cut_left( ":/", 0 );
+
+        int p = 0;
+        if( hostx.first_char() == ':' ) {
+            ++hostx;
+            p = hostx.toint_and_shift();
+
+            if( !port || !portoverride )
                 port = p;
         }
 
@@ -628,14 +641,15 @@ ints netSocket::accept( netAddress* addr )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int netSocket::connect( const char* host, int port )
+int netSocket::connect( const token& host, int port, bool portoverride )
 {
     DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
-    netAddress addr ( host, port, false ) ;
-    if ( addr.getBroadcast() ) {
+    netAddress addr( host, port, portoverride );
+
+    if( addr.getBroadcast() )
         setBroadcast( true );
-    }
-    return ::connect(handle,(const sockaddr*)&addr,sizeof(netAddress));
+
+    return ::connect( handle, (const sockaddr*)&addr, sizeof(netAddress) );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -645,7 +659,7 @@ int netSocket::connect( const netAddress& addr )
     if ( addr.getBroadcast() ) {
         setBroadcast( true );
     }
-    return ::connect(handle, (const sockaddr*)&addr, sizeof(netAddress));
+    return ::connect( handle, (const sockaddr*)&addr, sizeof(netAddress) );
 }
 
 ////////////////////////////////////////////////////////////////////////////////

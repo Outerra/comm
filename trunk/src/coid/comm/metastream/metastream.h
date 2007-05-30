@@ -1751,12 +1751,14 @@ protected:
     @def MMT(meta,n,t)  specify member metadata providing member type
     @def MMD(meta,n,d)  specify member metadata providing a default value of member type
     @def MMAT(meta,n,t) specify that member is an array of type \a t
+    @def MMAF(meta,n,t,s) specify that member is a fixed size array of type \a t
 **/
 #define MSTRUCT_OPEN(meta, n)       if( !meta.meta_struct_open(n) ) {
 #define MM(meta, n, v)              meta.meta_variable(n);  meta << v;
 #define MMT(meta, n, t)             meta.meta_variable(n);  meta << *(t*)0;
 #define MMD(meta, n, d)             meta.meta_variable_with_default(n,d);  meta << d;
 #define MMAT(meta, n, t)            meta.meta_variable(n);  meta.meta_array();  meta << *(t*)0;
+#define MMAF(meta, n, t, s)         meta.meta_variable(n);  meta.meta_array(s);  meta << *(t*)0;
 #define MSTRUCT_CLOSE(meta)         meta.meta_struct_close(); }  return meta;
 
 /// building template name:

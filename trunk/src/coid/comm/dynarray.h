@@ -761,6 +761,27 @@ public:
         return pout;
     }
 
+    ///Normal memcpy but with debug check if the source lies within the array
+    void* memcpy_from( void* dst, const void* src, uints size )
+    {
+        DASSERT( src >= (const void*)ptr()  &&  (char*)src+size <= (char*)ptre() );
+        return ::memcpy( dst, src, size );
+    }
+
+    ///Normal memcpy but with debug check if the destination lies within the array
+    void* memcpy_to( void* dst, const void* src, uints size )
+    {
+        DASSERT( dst >= (void*)ptr()  &&  (char*)dst+size <= (char*)ptre() );
+        return ::memcpy( dst, src, size );
+    }
+
+    ///Normal memset but with debug check if the destination lies within the array
+    void* memset( void* dst, int v, uints size )
+    {
+        DASSERT( dst >= (void*)ptr()  &&  (char*)dst+size <= (char*)ptre() );
+        return ::memset( dst, v, size );
+    }
+
 /*
     void clear( uints nitems=UMAX, uints ufrm=0 )
     {

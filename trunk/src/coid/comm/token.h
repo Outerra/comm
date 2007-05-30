@@ -95,9 +95,8 @@ public:
 
     substring( const char* subs, uints len )        { set(subs,len); }
 
-    explicit substring( const char* tok )           { set(tok); }
-    explicit substring( const token& tok )          { set(tok); }
-    explicit substring( char k )                    { set(k); }
+    substring( const token& tok )   { set(tok); }
+    explicit substring( char k )    { set(k); }
 
 
     void set( const char* subs, uints len )
@@ -114,11 +113,6 @@ public:
         _tmpbuf[0] = k;
         _subs = _tmpbuf;
         _len = 1;
-    }
-
-    void set( const char* tok )
-    {
-        set( tok, ::strlen(tok) );
     }
 
     void set( const token& tok );

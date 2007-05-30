@@ -84,6 +84,25 @@ public:
         return ersFAILED;
     }
 
+    ///Connect to host
+    ///@param host address in the format [proto://]server[:port]
+    ///@param port port number to use
+    ///@param portoverride If false, the port parameter is used as a default
+    ///       value when it's not specified in the \a host argument.
+    ///       If true, the port number specified in the \a port argument 
+    ///       overrides any potential port number specified in the \a host.
+    opcd connect( const token& host, int port=0, bool portoverride=false )
+    {
+        close();
+        _socket.open(true);
+		_socket.setBlocking( true );
+        _socket.setNoDelay( true );
+        _socket.setReuseAddr( true );
+        if( 0 == _socket.connect(host,port,portoverride) )  return 0;
+        return ersFAILED;
+    }
+
+
     virtual opcd set_timeout( uint ms )
     {
         _timeout = ms;
@@ -133,7 +152,7 @@ public:
 	}
 
 	 /// continue reading until 'term' character is read or 'max_size' bytes received
-	opcd read_until( charstr & buf, char term, uints max_size=UMAX )
+	opcd read_until( charstr& buf, char term, uints max_size=UMAX )
     {
 		uints buf_len = max_size < 512 ? max_size : 512;
 		char * p = buf.get_append_buf( buf_len );
