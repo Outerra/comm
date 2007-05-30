@@ -240,19 +240,6 @@ public:
     }
 
 
-    void read_from( binstream& bin )
-    {
-        uchar buf[256];
-        for (;;)
-        {
-            uints len = 256;
-            bin.read_raw_full( buf, len );
-            xwrite_raw( buf, 256 - len );
-            if( len > 0 )
-                break;
-        }
-    }
-
     binstreambuf() : _bgi(0)     { }
     binstreambuf( const token& str )
     {

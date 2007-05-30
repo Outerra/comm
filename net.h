@@ -92,54 +92,63 @@ public:
   	uint32  sin_addr;
 	char 	__pad[8];
 
+    static substring protocol;
+
 public:
-  netAddress() ;
-  netAddress( const char* host, int port, bool portoverride ) ;
+    netAddress() ;
+    netAddress( const token& host, int port, bool portoverride ) ;
 /*
-  static uint16 ntohs( uint16 );
-  static uint16 htons( uint16 );
-  static uint32 ntohl( uint32 );
-  static uint32 htonl( uint32 );
+    static uint16 ntohs( uint16 );
+    static uint16 htons( uint16 );
+    static uint32 ntohl( uint32 );
+    static uint32 htonl( uint32 );
 */
-  void set( const token& host, int port, bool portoverride ) ;
+    ///Set up the network address from string
+    ///@param host address in the format [proto://]server[:port]
+    ///@param port port number to use
+    ///@param portoverride If false, the port parameter is used as a default
+    ///       value when it's not specified in the \a host argument.
+    ///       If true, the port number specified in the \a port argument 
+    ///       overrides any potential port number specified in the \a host.
+    void set( const token& host, int port, bool portoverride ) ;
 
-  bool isLocalHost() const;
-  bool isAddrAny() const;
+    bool isLocalHost() const;
+    bool isAddrAny() const;
 
-  void setAddrAny();
+    void setAddrAny();
 
-  int operator == (const netAddress& addr) const
-  {
+    int operator == (const netAddress& addr) const
+    {
       return sin_family == addr.sin_family
           && sin_port == addr.sin_port
           && sin_addr == addr.sin_addr;
-  }
+    }
 
-  int operator != (const netAddress& addr) const
-  {
+    int operator != (const netAddress& addr) const
+    {
       return sin_family != addr.sin_family
           || sin_port != addr.sin_port
           || sin_addr != addr.sin_addr;
-  }
+    }
 
-  bool equal( const netAddress& addr ) const
-  {
+    bool equal( const netAddress& addr ) const
+    {
       return sin_family == addr.sin_family
           && sin_addr == addr.sin_addr;
-  }
+    }
 
-  charstr& getHost (charstr& buf, bool useport) const;
-  charstr& getHostName (charstr& buf, bool useport) const ;
+    charstr& getHost (charstr& buf, bool useport) const;
+    charstr& getHostName (charstr& buf, bool useport) const ;
 
-  int getPort() const ;
-  void setPort( int port ) ;
+    int getPort() const ;
+    void setPort( int port ) ;
 
-  static const char* getLocalHost();
-  static netAddress* getLocalHost( netAddress* adrto );
-  static charstr& getLocalHostName( charstr& buf );
+    static const char* getLocalHost();
+    static netAddress* getLocalHost( netAddress* adrto );
+    static charstr& getLocalHostName( charstr& buf );
 
-  void setBroadcast () ;
-  bool getBroadcast () const ;
+    void setBroadcast () ;
+    bool getBroadcast () const ;
 };
 
 inline binstream& operator << ( binstream& bin, const netAddress& a )
@@ -243,12 +252,12 @@ public:
     int   bind        ( const char* host, int port ) ;
     int   listen      ( int backlog ) ;
     ints  accept      ( netAddress* addr ) ;
-    int   connect     ( const char* host, int port ) ;
+    int   connect     ( const token& host, int port, bool portoverride ) ;
     int   connect     ( const netAddress& addr ) ;
-    int   send        ( const void * buffer, int size, int flags = 0 ) ;
-    int   sendto      ( const void * buffer, int size, int flags, const netAddress* to ) ;
-    int   recv        ( void * buffer, int size, int flags = 0 ) ;
-    int   recvfrom    ( void * buffer, int size, int flags, netAddress* from ) ;
+    int   send        ( const void* buffer, int size, int flags = 0 ) ;
+    int   sendto      ( const void* buffer, int size, int flags, const netAddress* to ) ;
+    int   recv        ( void* buffer, int size, int flags = 0 ) ;
+    int   recvfrom    ( void* buffer, int size, int flags, netAddress* from ) ;
 
     netAddress* getLocalAddress (netAddress* adrrto) const;	/// local IP
     netAddress* getRemoteAddress (netAddress* adrrto) const;	/// remote IP

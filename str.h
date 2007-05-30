@@ -474,6 +474,14 @@ public:
 
 
 
+    ///Number alignment
+    enum EAlignNum {
+        ALIGN_NUM_LEFT_PAD_0            = -2,       ///< align left, pad with the '\0' character
+        ALIGN_NUM_LEFT                  = -1,       ///< align left, pad with space
+        ALIGN_NUM_CENTER                = 0,        ///< align center, pad with space
+        ALIGN_NUM_RIGHT                 = 1,        ///< align right, fill with space
+        ALIGN_NUM_RIGHT_FILL_ZEROS      = 2,        ///< align right, fill with '0' characters
+    };
 
     ////////////////////////////////////////////////////////////////////////////////
     ///append number in baseN
@@ -491,25 +499,25 @@ public:
             return a - ((a+a) & (SINT(a)>>(8*sizeof(INT)-1)));
         }
 
-        static token insert_signed( char* dst, uints dstsize, SINT n, int BaseN, uints minsize=0, int align=ALIGN_NUM_RIGHT )
+        static token insert_signed( char* dst, uints dstsize, SINT n, int BaseN, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
         {
             if( n < 0 ) return insert( dst, dstsize, int_abs(n), BaseN, -1, minsize, align );
             else        return insert( dst, dstsize, n, BaseN, 0, minsize, align );
         }
 
-        static token insert_signed_zt( char* dst, uints dstsize, SINT n, int BaseN, uints minsize=0, int align=ALIGN_NUM_RIGHT )
+        static token insert_signed_zt( char* dst, uints dstsize, SINT n, int BaseN, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
         {
             if( n < 0 ) return insert_zt( dst, dstsize, int_abs(n), BaseN, -1, minsize, align );
             else        return insert_zt( dst, dstsize, n, BaseN, 0, minsize, align );
         }
 
-        static void append_signed( charstr& str, SINT n, int BaseN, uints minsize=0, int align=ALIGN_NUM_RIGHT )
+        static void append_signed( charstr& str, SINT n, int BaseN, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
         {
             if( n < 0 ) append( str, int_abs(n), BaseN, -1, minsize, align );
             else        append( str, n, BaseN, 0, minsize, align );
         }
 
-        static token insert_zt( char* dst, uints dstsize, UINT n, int BaseN, int sgn=0, uints minsize=0, int align=ALIGN_NUM_RIGHT )
+        static token insert_zt( char* dst, uints dstsize, UINT n, int BaseN, int sgn=0, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
         {
             char buf[128];
             uints i = precompute( buf, n, BaseN, sgn );
@@ -526,7 +534,7 @@ public:
             return token(dst, i+fc);
         }
 
-        static token insert( char* dst, uints dstsize, UINT n, int BaseN, int sgn=0, uints minsize=0, int align=ALIGN_NUM_RIGHT )
+        static token insert( char* dst, uints dstsize, UINT n, int BaseN, int sgn=0, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
         {
             char buf[128];
             uints i = precompute( buf, n, BaseN, sgn );
@@ -542,7 +550,7 @@ public:
             return token(dst, i+fc);
         }
 
-        static void append( charstr& str, UINT n, int BaseN, int sgn=0, uints minsize=0, int align=ALIGN_NUM_RIGHT )
+        static void append( charstr& str, UINT n, int BaseN, int sgn=0, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
         {
             char buf[128];
             uints i = precompute( buf, n, BaseN, sgn );
@@ -583,7 +591,7 @@ public:
             return i;
         }
 
-        static char* produce( char* p, const char* buf, uints i, uints fillcnt, int sgn, int align )
+        static char* produce( char* p, const char* buf, uints i, uints fillcnt, int sgn, EAlignNum align )
         {
             if( align == ALIGN_NUM_RIGHT )
             {
@@ -603,7 +611,7 @@ public:
             else if( sgn > 0 )
                 --i,*p++ = '+';
 
-            if( fillcnt  &&  align == ALIGN_NUM_FILL_WITH_ZEROS )
+            if( fillcnt  &&  align == ALIGN_NUM_RIGHT_FILL_ZEROS )
             {
                 for( ; fillcnt>0; --fillcnt )
                     *p++ = '0';
@@ -617,28 +625,29 @@ public:
 
             if(fillcnt)
             {
+                char fc = (align==ALIGN_NUM_LEFT_PAD_0)  ?  0 : ' ';
+                
                 for( ; fillcnt>0; --fillcnt )
-                    *p++ = ' ';
+                    *p++ = fc;
             }
             return p;
         }
     };
 
-    enum{
-        ALIGN_NUM_FILL_WITH_ZEROS       = -2,
-        ALIGN_NUM_LEFT                  = -1,
-        ALIGN_NUM_CENTER                = 0,
-        ALIGN_NUM_RIGHT                 = 1,
-    };
+    void append_num( int base, uint n, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
+    {   num<uint>::append( *this, n, base, 0, minsize, align ); }
 
-    void append_num( int base, uint n, uints minsize=0, int align=1 )   { num<uint>::append( *this, n, base, 0, minsize, align ); }
-    void append_num( int base, int n, uints minsize=0, int align=1 )    { num<uint>::append_signed( *this, n, base, minsize, align ); }
+    void append_num( int base, int n, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
+    {   num<uint>::append_signed( *this, n, base, minsize, align ); }
 
-    void append_num( int base, uint64 n, uints minsize=0, int align=1 ) { num<uint64>::append( *this, n, base, 0, minsize, align ); }
-    void append_num( int base, int64 n, uints minsize=0, int align=1 )  { num<uint64>::append_signed( *this, n, base, minsize, align ); }
+    void append_num( int base, uint64 n, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
+    {   num<uint64>::append( *this, n, base, 0, minsize, align ); }
+
+    void append_num( int base, int64 n, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
+    {   num<uint64>::append_signed( *this, n, base, minsize, align ); }
 
 
-    void append_num_int( int base, const void* p, uints bytes, uints minsize=0, int align=1 )
+    void append_num_int( int base, const void* p, uints bytes, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
     {
         switch( bytes )
         {
@@ -651,7 +660,7 @@ public:
         }
     }
 
-    void append_num_uint( int base, const void* p, uints bytes, uints minsize=0, int align=1 )
+    void append_num_uint( int base, const void* p, uints bytes, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
     {
         switch( bytes )
         {
@@ -729,6 +738,7 @@ public:
         memset( p+n, fillchar, filllen - n );
     }
 
+    ///Append UCS-4 character
     void append_ucs4( ucs4 c )
     {
         if( c <= 0x7f )  append((char)c);
@@ -740,6 +750,7 @@ public:
         }
     }
 
+    ///Append wchar (UCS-2) buffer, converting it to the UTF-8 on the fly
     void append_wchar_buf( const ushort* src, uint nchars )
     {
         reserve( len() + nchars + 1 );
@@ -760,6 +771,7 @@ public:
             *_tstr.add() = 0;
     }
 
+    ///Append wchar (UCS-2) buffer, converting it to the UTF-8 on the fly
     void append_wchar_buf( const ushort* src )
     {
         _tstr.set_size( len() );
@@ -778,6 +790,7 @@ public:
         if( _tstr.size() )
             *_tstr.add() = 0;
     }
+
 
     enum {
         DATE_WDAY           = 0x01,
@@ -845,14 +858,14 @@ public:
         }
 
         if( flg & (DATE_HHMM|DATE_HHMMSS) ) {
-            append_num(10,tm.tm_hour,2,charstr::ALIGN_NUM_FILL_WITH_ZEROS);
+            append_num(10,tm.tm_hour,2,charstr::ALIGN_NUM_RIGHT_FILL_ZEROS);
             append(':');
-            append_num(10,tm.tm_min,2,charstr::ALIGN_NUM_FILL_WITH_ZEROS);
+            append_num(10,tm.tm_min,2,charstr::ALIGN_NUM_RIGHT_FILL_ZEROS);
         }
 
         if( flg & DATE_HHMMSS ) {
             append(':');
-            append_num(10,tm.tm_sec,2,charstr::ALIGN_NUM_FILL_WITH_ZEROS);
+            append_num(10,tm.tm_sec,2,charstr::ALIGN_NUM_RIGHT_FILL_ZEROS);
         }
 
         if( flg & DATE_TZ ) {
@@ -862,6 +875,60 @@ public:
 
         return *this;
     }
+
+    ///Append string while encoding characters as specified for URL encoding
+    charstr& append_encode_url( const token& str )
+    {
+        static char charmap[256][4];
+        static bool charmaprdy = false;
+
+        if( !charmaprdy ) {
+            ::memset( charmap, 0, sizeof(charmap) );
+
+            for( uchar i='0'; i<'9'; ++i )  charmap[i][0] = 1;
+            for( uchar i='a'; i<'z'; ++i )  charmap[i][0] = 1;
+            for( uchar i='A'; i<'Z'; ++i )  charmap[i][0] = 1;
+            const char* spec = "$-_.+!*'(),";
+            for( ; *spec; ++spec ) charmap[(uchar)*spec][0] = 1;
+
+            for( uint i=0; i<=255; ++i )
+            {
+                if( charmap[i][0] )  continue;
+
+                token t = num<uchar>::insert( charmap[i]+1, 3, i, 10, 0, 0, ALIGN_NUM_LEFT );
+                charmap[i][0] = (uchar)t.len()+1;
+            }
+
+            charmaprdy = true;
+        }
+
+        const char* p = str.ptr();
+        const char* pe = str.ptre();
+        const char* ps = p;
+
+        for( ; p<pe; ++p ) {
+            uchar c = *p;
+            uchar n = charmap[c][0];
+
+            if(n>1)
+            {
+                if(p-ps)
+                    add_from( ps, p-ps );
+
+                append('%');
+                add_from( charmap[c]+1, n-1 );
+
+                ps = p+1;
+            }
+        }
+
+        if(p-ps)
+            add_from( ps, p-ps );
+
+        return *this;
+    }
+
+
 
     void replace( char from, char to )
     {
@@ -1652,10 +1719,11 @@ template<> struct hash<token>
 struct ndigit_fmt
 {
     ints _i;
-    int _align;
     uint _numc;
+    charstr::EAlignNum _align;
     
-    explicit ndigit_fmt( ints i, uint numc, int align = charstr::ALIGN_NUM_RIGHT ) : _i(i),_align(align),_numc(numc) { }
+    explicit ndigit_fmt( ints i, uint numc, charstr::EAlignNum align = charstr::ALIGN_NUM_RIGHT )
+        : _i(i),_align(align),_numc(numc) { }
 
     friend binstream& operator << (binstream& out, const ndigit_fmt& d)
     {

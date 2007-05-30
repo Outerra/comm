@@ -101,13 +101,8 @@ public:
         if( len == 0 )
             return 0;
 
-        opcd e;
-        try { e = decode( (uint8*)p, len ); }
-        catch(opcd xe) { return xe; }
-
-        if(!e)
-            len = 0;
-        return e;
+        len = decode( (uint8*)p, len );
+        return len ? ersNO_MORE : opcd(0);
     }
 
     virtual void flush()
@@ -284,67 +279,67 @@ private:
         }
         _nreq = 3;
     }
-
+/*
     bool encode_write( char* buf )
     {
         uints n=4;
         _bin->write_raw( buf, n );
         return n>0;
     }
-
-
-    opcd decode( uint8* p, uints len )
+*/
+    ///@return bytes not read
+    uints decode( uint8* p, uints len )
     {
         if( len > _rrem )
-            return ersNO_MORE;
+            len = _rrem;
 
-        _rrem -= (uint)len;
-
-        for( ; _ndec>0 && len>0; --len )
+        for( ; _ndec>0 && len>0 && _rrem>0; --len, --_rrem )
         {
             --_ndec;
             *p++ = _rtar[_ndec];
         }
 
-        if(_ndec)  return 0;
+        if(_ndec)  return len;
 
         while( len >= 3 )
         {
-            decode3();
+            if( !decode3() )
+                break;
 
             *p++ = _rtar[2];
             *p++ = _rtar[1];
             *p++ = _rtar[0];
             len -= 3;
+            _rrem -= 3;
         }
 
         if(len)
         {
-            decode_final( (uint)len );
+            if( len < 3 )
+                decode_prefetch();
+
             _ndec = 3;
 
             //here there is less than 3 bytes required
-            switch(len) {
-                case 2: *p++ = _rtar[--_ndec];
-                case 1: *p++ = _rtar[--_ndec];
+            switch( uint_min(len,_rrem) ) {
+                case 2: *p++ = _rtar[--_ndec];  --len;  --_rrem;
+                case 1: *p++ = _rtar[--_ndec];  --len;  --_rrem;
             }
         }
 
-        return 0;
+        return len;
     }
 
-    void decode3()
+    bool decode3()
     {
-        decode_prefetch();
-        if( _rrem < 3 )
-            throw ersNO_MORE;
+        if(_rrem)  decode_prefetch();
+        return _rrem >= 3;
     }
 
-    void decode_final( uint len )
+    bool decode_final( uint len )
     {
-        decode_prefetch();
-        if( _rrem < len )
-            throw ersNO_MORE;
+        if(_rrem)  decode_prefetch();
+        return _rrem >= len;
     }
 
 
@@ -354,12 +349,15 @@ private:
         if( _rptr >= _rbuf + RBUFFER_SIZE )
         {
             if( _rrem < RBUFFER_SIZE )
-                throw ersNO_MORE;
+                return _rrem;
             _rptr = _rbuf;
 
-            uint n = RBUFFER_SIZE;
-            if( _bin->read_raw_full( _rbuf, n ) )
-                _rrem = ((RBUFFER_SIZE-n)/4)*3;
+            uint np = RBUFFER_SIZE;
+            if( _bin->read_raw_full( _rbuf, np ) ) {
+                _rrem = ((RBUFFER_SIZE-np)/4)*3;
+                if( _rrem == 0 )
+                    return _rrem;
+            }
         }
 
         _rval = 0;

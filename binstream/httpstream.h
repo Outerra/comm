@@ -69,7 +69,7 @@ public:
     struct header
     {
         uint64 _ssid;
-        uint _ssidpathlen;          ///< length of path string of sessioncoid cookie, pick the longer
+        //uint _ssidpathlen;          ///< length of path string of sessioncoid cookie, pick the longer
 
         uints _content_length;
         int _errcode;
@@ -182,7 +182,7 @@ public:
                     return ersFE_UNKNOWN_ERROR;
             }
 
-            _ssidpathlen = 0;
+            //_ssidpathlen = 0;
             //read remaining headers
             for(;;)
             {
