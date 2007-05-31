@@ -165,7 +165,7 @@ public:
             else if( attr[0] == 'e' )  flg |= O_EXCL;
             else if( attr[0] == 'c' )  flg |= O_CREAT;
             else if( attr[0] == 't' )  flg |= O_TRUNC;
-            else if( attr[0] == 'a' )  flg |= O_APPEND;
+            else if( attr[0] == 'a' || attr[0] == '+' )  flg |= O_APPEND;
             //else if( m[0] == 'n' )  flg |= O_NONBLOCK;
             else if( attr[0] != ' ' )
                 throw ersINVALID_PARAMS;

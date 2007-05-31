@@ -59,8 +59,15 @@ public:
     struct block;
     friend struct block;
 
+    ///
     struct block
     {
+        enum {
+            fBIG_CHUNK          = 0x80000000,   ///< a big block, containing just the size shifted
+            xBIG_SIZE_SHIFTED   = ~fBIG_CHUNK,
+            MAXPAGESHIFT        = 12
+        };
+
         /**
             Contains shift to base and size of the block.
             Kind of 'floating point' format for holding position and size of 
@@ -73,6 +80,7 @@ public:
         **/
         uint _shftsize;
 
+        ///
         struct tail
         {
             uint _offbase;
@@ -81,6 +89,8 @@ public:
         ssegpage* get_base() const  { return (ssegpage*) ((char*)this - ((tail*)this)[-1]._offbase); }
         bool is_base_set() const    { return ((tail*)this)[-1]._offbase != 0; }
 
+        bool is_big_chunk() const   { return (_shftsize & fBIG_CHUNK) != 0; }
+
         bool operator == (const block b) const      { return _shftsize == b._shftsize; }
         //bool operator > (const block b) const       { return (_shftsize & 0x03ffe000) > (b._shftsize & 0x03ffe000); }
         //bool operator < (const block b) const       { return (_shftsize & 0x03ffe000) < (b._shftsize & 0x03ffe000); }
@@ -88,14 +98,18 @@ public:
 
         uchar get_ralign() const    { return 3 + (_shftsize >> (32-6)); }
 
-        uint get_size() const
+        uints get_size() const
         {
+            if( _shftsize & fBIG_CHUNK )
+                return uints(_shftsize & xBIG_SIZE_SHIFTED) << MAXPAGESHIFT;
+
             uchar s = _shftsize >> (32-6);
             return (_shftsize << (6+13)) >> (6+13-3-s);
         }
 
-        uint get_size( uint* prev ) const
+        uints get_size( uint* prev ) const
         {
+            DASSERT( !is_big_chunk() );
             uchar s = _shftsize >> (32-6);
             *prev = ((_shftsize<<6) & 0xfff80000) >> (13+6-3-s);
             return (_shftsize << (6+13)) >> (6+13-3-s);
@@ -103,15 +117,12 @@ public:
 
 
 
-        uint get_usable_size() const
-        {
-            uchar s = _shftsize >> (32-6);
-            return ((_shftsize << (6+13)) >> (6+13-3-s)) - sizeof(fblock);
-        }
+        uints get_usable_size() const   { return get_size() - sizeof(fblock); }
 
         block* get_next() const         { return (block*) ((char*)this + get_size()); }
         void get_next_prev( block*& prev, block*& next ) const
         {
+            DASSERT( !is_big_chunk() );
             uchar s = _shftsize >> (32-6);
             prev = (block*) ((char*)this - (((_shftsize<<6) & 0xfff80000) >> (13+6-3-s)));
             next = (block*) ((char*)this + ((_shftsize << (6+13)) >> (6+13-3-s)));
@@ -119,12 +130,14 @@ public:
 
         uint get_granularity() const
         {
+            DASSERT( !is_big_chunk() );
             uchar s = _shftsize >> (32-6);
             return 1<<(3+s);
         }
 
         uchar get_granularity_shift() const
         {
+            DASSERT( !is_big_chunk() );
             uchar s = _shftsize >> (32-6);
             return 3+s;
         }
@@ -145,59 +158,58 @@ public:
             return 3 + rpgs-16;
         }
 
-        void set_size( uint size, ssegpage* base )
+        void set_size( uints size, ssegpage* base )
         {
             uchar rgran = (uchar)base->_ralign;
             DASSERT( (size & ((1<<rgran)-1)) == 0 );
             _shftsize &= ~0xfc001fff;
             _shftsize |= (rgran-3) << (32-6);
-            _shftsize |= size >> rgran;
+            _shftsize |= uint(size>>rgran);
 
             if( (char*)this + size < (char*)base + (1<<base->_rsegsize) )
             {
                 block* nx = (block*) ((char*)this + size);
                 nx->_shftsize &= ~0x03ffe000;
-                nx->_shftsize |= (size>>rgran) << 13;
+                nx->_shftsize |= uint(size>>rgran) << 13;
             }
         }
 
-        void set( uint size, ssegpage* base, block* prev )
+        void set( uints size, ssegpage* base, block* prev )
         {
             uchar rgran = (uchar)base->_ralign;
             DASSERT( (size & ((1<<rgran)-1)) == 0 );
             int poff = int((char*)this - (char*)prev);
             _shftsize = (rgran-3) << (32-6);
             _shftsize += poff << (13-rgran);
-            _shftsize += size >> rgran;
+            _shftsize += uint(size>>rgran);
 
             if( !base->is_last(this) )
             {
                 block* nx = (block*) ((char*)this + size);
                 nx->_shftsize &= ~0x03ffe000;
-                nx->_shftsize |= (size>>rgran) << 13;
+                nx->_shftsize |= uint(size>>rgran) << 13;
             }
         }
 
-        void set( uint size, ssegpage* base, block prev )
+        void set( uints size, ssegpage* base, block prev )
         {
             uchar rgran = (uchar)base->_ralign;
             DASSERT( (size & ((1<<rgran)-1)) == 0 );
             _shftsize = (rgran-3) << (32-6);
             _shftsize += prev._shftsize & 0x03ffe000;
-            _shftsize += size >> rgran;
+            _shftsize += uint(size>>rgran);
 
             if( !base->is_last(this) )
             {
                 block* nx = (block*) ((char*)this + size);
                 nx->_shftsize &= ~0x03ffe000;
-                nx->_shftsize |= (size>>rgran) << 13;
+                nx->_shftsize |= uint(size>>rgran) << 13;
             }
         }
 
-        void set_big( uint size, uchar rgran, void* base )
+        void set_big( uints size, uchar rgran, void* base )
         {
-            _shftsize = (rgran-3) << (32-6);
-            _shftsize += size >> rgran;
+            _shftsize = fBIG_CHUNK | uint(size>>MAXPAGESHIFT);
 
             ((tail*)this)[-1]._offbase = uint((char*)this - (char*)base);
         }
@@ -343,7 +355,7 @@ public:
         ~SEGLOCK()                          { unlock(); }
 
 
-        SEGLOCK( ssegpage& seg, bool trylock, uint* size ) : _seg(&seg)
+        SEGLOCK( ssegpage& seg, bool trylock, uints* size ) : _seg(&seg)
         {
             if(trylock)
             {
