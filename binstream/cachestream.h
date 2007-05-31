@@ -90,10 +90,10 @@ public:
         return _bin->binstream_attributes(in0out1) | fATTR_READ_UNTIL;
     }
 
-    void reserve_buffer_size( uints size )
+    void reserve_buffer_size( uints sizer, uints sizew=0 )
     {
-        _cin.reserve( nextpow2(size), false );
-        _cot.reserve( nextpow2(size), false );
+        _cin.reserve( nextpow2(sizer), false );
+        _cot.reserve( nextpow2(sizew?sizew:sizer), false );
     }
 
     uints len() const            { return _cotwritten + _cot.size(); }

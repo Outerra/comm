@@ -198,7 +198,7 @@ ssegpage::block* ssegpage::realloc_big( block* b, uint size, bool keep_content )
     else
     {
         ssegpage* sseg = b->get_base();
-        uint os = b->get_usable_size();
+        uints os = b->get_usable_size();
         
         if( !keep_content )
             sseg->_free(b);
@@ -222,7 +222,7 @@ ssegpage::block* ssegpage::realloc_big( block* b, uint size, bool keep_content )
 ////////////////////////////////////////////////////////////////////////////////
 ///Alloc block of required size.
 ssegpage::block* ssegpage::alloc (
-        uint size,        ///<structure specifying requred size, gets the offset and actual size
+        uints size,
         bool dbgfill
         )
 {
@@ -242,7 +242,7 @@ ssegpage::block* ssegpage::alloc (
     DASSERT( !pblockf->is_base_set() );
 
     //exclude from the free chain
-    uint os = pblockf->get_size();
+    uints os = pblockf->get_size();
     bool split = os - size >= uint(MINBLOCKSIZEGRAN << _ralign);
     
     if(split)
@@ -344,7 +344,7 @@ ssegpage::block* ssegpage::_realloc (
 
     fblock *fl=0, *fu=0;
 
-    uint sn, sp;
+    uints sn, sp;
     sn = bi->get_size( &sp );
 
     if( sn  &&  (char*)bi + sn < (char*)this + (1<<_rsegsize) )
@@ -377,7 +377,7 @@ ssegpage::block* ssegpage::_realloc (
 
         if(keep_content)
         {
-            uint os = uoldbs - sizeof(block) - sizeof(block::tail);
+            uints os = uoldbs - sizeof(block) - sizeof(block::tail);
             xmemcpy( pa+1, bi+1, os );
             _free(bi);
 #ifdef _DEBUG
@@ -495,7 +495,7 @@ opcd ssegpage::_free(
     //exclude from used chain
     fblock *fl=0, *fu=0;
 
-    uint sn, sp;
+    uints sn, sp;
     sn = bi->get_size( &sp );
     _used -= sn;
 
@@ -623,7 +623,7 @@ void ssegpage::sortf_up (
 opcd ssegpage::reduce( block* bi, uint size )
 {
     fblock* fu=0;
-    uint sn = bi->get_size();
+    uints sn = bi->get_size();
 
     _used -= sn;
 
