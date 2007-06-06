@@ -61,12 +61,12 @@ public:
     virtual ~netstreamtcp()     { close(); }
 
 	netstreamtcp() {
-		_timeout = 0;
+		_timeout = UMAX;
 		_socket.setHandleInvalid();
 	}
-	netstreamtcp( netSocket& s ) {_timeout = 0; assign_socket( s );}
+	netstreamtcp( netSocket& s ) {_timeout = UMAX; assign_socket( s );}
 	netstreamtcp( int socket ) {
-		_timeout = 0;
+		_timeout = UMAX;
 		_socket.setHandle( socket );
 		_socket.setBlocking( true );
         _socket.setNoDelay( true );
@@ -102,12 +102,6 @@ public:
         return ersFAILED;
     }
 
-
-    virtual opcd set_timeout( uint ms )
-    {
-        _timeout = ms;
-        return 0;
-    }
 
     opcd wait_read( uint mstimeout )
     {
@@ -225,7 +219,7 @@ public:
 	{
         if( !_socket.isValid() )  return ersDISCONNECTED;
 
-        if(_timeout)
+        if(_timeout>=0)
         {
             int ns = _socket.wait_read(_timeout);
             if( ns == 0 )
@@ -255,7 +249,15 @@ public:
 	virtual bool is_open() const                { return _socket.getHandle() != -1; }
 
 	virtual void flush()                        { }
-	virtual void acknowledge( bool eat=false )  { }
+	virtual void acknowledge( bool eat=false )
+    {
+        char buf[256];
+        if(eat) while( _socket.wait_read(0) )
+        {
+            if( !_socket.isValid() )  break;
+            _socket.recv( buf, 256 );
+        }
+    }
 
     virtual void reset_read()
     {

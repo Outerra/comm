@@ -58,6 +58,10 @@ protected:
 
 public:
 
+    netstream()
+    {
+        _timeout = UMAX;
+    }
 
     virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX ) { return ersUNAVAILABLE; }
 

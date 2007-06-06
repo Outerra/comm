@@ -61,6 +61,13 @@ struct timet
         t = (int64) ::time(0);
         return *this;
     }
+
+    static timet current()
+    {
+        timet t;
+        t.now();
+        return t;
+    }
 };
 
 

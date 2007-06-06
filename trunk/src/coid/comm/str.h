@@ -709,22 +709,21 @@ public:
 
     void append( char c )
     {
-        uints i = _tstr.size();
-        char *p = _tstr.addc( i ? 1 : 2, 0 );
-        if(i)
-            --p;
-        *p = c;
+        *uniadd(1) = c;
     }
 
     ///Append n characters 
     void appendn( uint n, char c )
     {
-        uints i = _tstr.size();
-        char *p = _tstr.add( i ? n : n+1 );
-        if(i)
-            --p;
+        char *p = uniadd(n);
         for( ; n>0; --n )
             *p++ = c;
+    }
+
+    ///Append n uninitialized characters
+    char* appendn_uninitialized( uint n )
+    {
+        return uniadd(n);
     }
 
     void append( const token& tok, uints filllen = 0, char fillchar=' ' )
@@ -739,23 +738,32 @@ public:
     }
 
     ///Append UCS-4 character
-    void append_ucs4( ucs4 c )
+    ///@return number of bytes written
+    uint append_ucs4( ucs4 c )
     {
-        if( c <= 0x7f )  append((char)c);
+        if( c <= 0x7f ) {
+            append((char)c);
+            return 1;
+        }
         else {
             char* p = get_append_buf(6);
             uchar n = write_utf8_seq( c, p );
 
             trim_to_length( n + uints(p - ptr()) );
+            return n;
         }
     }
 
     ///Append wchar (UCS-2) buffer, converting it to the UTF-8 on the fly
-    void append_wchar_buf( const ushort* src, uint nchars )
+    ///@param src pointer to the source buffer
+    ///@param nchars number of characters in the source buffer, -1 if zero terminated
+    ///@return number of bytes appended
+    uints append_wchar_buf( const ushort* src, uints nchars )
     {
-        reserve( len() + nchars + 1 );
-        _tstr.set_size( len() );
-        for( ; nchars>0; --nchars,++src )
+        uints nold = len();
+        _tstr.set_size(nold);
+
+        for( ; *src!=0 && nchars>0; ++src,--nchars )
         {
             if( *src <= 0x7f )
                 *_tstr.add() = (char)*src;
@@ -769,29 +777,18 @@ public:
         }
         if( _tstr.size() )
             *_tstr.add() = 0;
+
+        return len() - nold;
     }
 
-    ///Append wchar (UCS-2) buffer, converting it to the UTF-8 on the fly
-    void append_wchar_buf( const ushort* src )
-    {
-        _tstr.set_size( len() );
-        for( ; *src!=0; ++src )
-        {
-            if( *src <= 0x7f )
-                *_tstr.add() = (char)*src;
-            else
-            {
-                uints old = _tstr.size();
-                char* p = _tstr.add(6);
-                uint n = write_utf8_seq( *src, p );
-                _tstr.set_size( old + n );
-            }
-        }
-        if( _tstr.size() )
-            *_tstr.add() = 0;
-    }
+#ifdef SYSTYPE_WIN32
+    ///Append wchar (UCS-2) buffer, converting it to the ANSI on the fly
+    ///@param src pointer to the source buffer
+    ///@param nchars number of characters in the source buffer, -1 if zero terminated
+    uints append_wchar_buf_ansi( const ushort* src, uints nchars );
+#endif
 
-
+    ///Date element codes
     enum {
         DATE_WDAY           = 0x01,
         DATE_MDAY           = 0x02,
@@ -802,6 +799,7 @@ public:
         DATE_TZ             = 0x40,
     };
 
+    ///Append GMT date string constructed by the flags set
     charstr& append_date_gmt( const timet t, uint flg=UMAX )
     {
 #ifdef SYSTYPE_MSVC8plus
@@ -879,27 +877,19 @@ public:
     ///Append string while encoding characters as specified for URL encoding
     charstr& append_encode_url( const token& str )
     {
-        static char charmap[256][4];
-        static bool charmaprdy = false;
+        static char charmap[256];
+        static const char* hexmap = 0;
 
-        if( !charmaprdy ) {
+        if( !hexmap ) {
             ::memset( charmap, 0, sizeof(charmap) );
 
-            for( uchar i='0'; i<'9'; ++i )  charmap[i][0] = 1;
-            for( uchar i='a'; i<'z'; ++i )  charmap[i][0] = 1;
-            for( uchar i='A'; i<'Z'; ++i )  charmap[i][0] = 1;
+            for( uchar i='0'; i<='9'; ++i )  charmap[i] = 1;
+            for( uchar i='a'; i<='z'; ++i )  charmap[i] = 1;
+            for( uchar i='A'; i<='Z'; ++i )  charmap[i] = 1;
             const char* spec = "$-_.+!*'(),";
-            for( ; *spec; ++spec ) charmap[(uchar)*spec][0] = 1;
+            for( ; *spec; ++spec ) charmap[(uchar)*spec] = 1;
 
-            for( uint i=0; i<=255; ++i )
-            {
-                if( charmap[i][0] )  continue;
-
-                token t = num<uchar>::insert( charmap[i]+1, 3, i, 10, 0, 0, ALIGN_NUM_LEFT );
-                charmap[i][0] = (uchar)t.len()+1;
-            }
-
-            charmaprdy = true;
+            hexmap = "0123456789abcdef";
         }
 
         const char* p = str.ptr();
@@ -908,15 +898,16 @@ public:
 
         for( ; p<pe; ++p ) {
             uchar c = *p;
-            uchar n = charmap[c][0];
 
-            if(n>1)
+            if( !charmap[c] )
             {
                 if(p-ps)
                     add_from( ps, p-ps );
 
-                append('%');
-                add_from( charmap[c]+1, n-1 );
+                char* h = uniadd(3);
+                h[0] = '%';
+                h[1] = hexmap[c>>4];
+                h[2] = hexmap[c&0x0f];
 
                 ps = p+1;
             }
@@ -1199,19 +1190,7 @@ protected:
     char* alloc_append_buf( uints len )
     {
         if(!len) return 0;
-
-        uints i = _tstr.size();
-        int adz;
-        if( i==0 )
-            adz = 1;
-        else if( _tstr[i-1] )   //not term.by zero
-            adz = 1;
-        else
-            adz = 0;
-        char* p = _tstr.add( len+adz, 2 );
-        
-        termzero();
-        return p-1+adz;
+        return uniadd(len);
     }
 
     /*void fill_align()
@@ -1531,6 +1510,18 @@ public:
     }
 
 
+protected:
+
+    ///Add n uninitialized characters, plus one character for the terminating zero if it's not there already 
+    char* uniadd( uints n )
+    {
+        char* p = (_tstr.size() == 0)
+            ? _tstr.add(n+1)
+            : _tstr.add(n)-1;
+        p[n] = 0;
+
+        return p;
+    }
 };
 
 
