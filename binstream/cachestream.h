@@ -161,7 +161,11 @@ public:
             if(e)
             {
                 //enlarge the cache instead
-                _cot.reserve( _cot.size() + len, true );
+                uints newsize = _cot.reserved_total() * 2;
+                if( newsize < _cot.size() + len )
+                    newsize = _cot.size() + len;
+
+                _cot.reserve( newsize, true );
                 return write_raw( p, len );
             }
 

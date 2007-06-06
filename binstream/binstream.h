@@ -425,17 +425,25 @@ public:
     }
 
     ///Read raw data from another binstream
-    void read_from( binstream& bin )
+    ///@return number of bytes written
+    uints read_from( binstream& bin )
     {
+        uints n=0;
         uchar buf[256];
         for (;;)
         {
             uints len = 256;
             bin.read_raw_full( buf, len );
-            xwrite_raw( buf, 256 - len );
-            if( len > 0 )
+
+            uints alen = 256-len;
+            write_raw( buf, alen );
+
+            n += 256-len-alen;
+            if( len>0  ||  alen>0 )
                 break;
         }
+
+        return n;
     }
 
 

@@ -761,11 +761,13 @@ int netSocket::wait_read( int timeout )
     FD_ZERO(&fdsr);
     FD_SET( handle, &fdsr );
 
-    struct timeval tv ;
-    tv.tv_sec = timeout/1000;
-    tv.tv_usec = (timeout%1000)*1000;
+    struct timeval tv;
+    if( timeout>=0 ) {
+        tv.tv_sec = timeout/1000;
+        tv.tv_usec = (timeout%1000)*1000;
+    }
 
-    return ::select( FD_SETSIZE, &fdsr, 0, 0, &tv );
+    return ::select( FD_SETSIZE, &fdsr, 0, 0, timeout<0 ? 0 : &tv );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -778,11 +780,13 @@ int netSocket::wait_write( int timeout )
     FD_ZERO(&fdsr);
     FD_SET( handle, &fdsr );
 
-    struct timeval tv ;
-    tv.tv_sec = timeout/1000;
-    tv.tv_usec = (timeout%1000)*1000;
+    struct timeval tv;
+    if( timeout>=0 ) {
+        tv.tv_sec = timeout/1000;
+        tv.tv_usec = (timeout%1000)*1000;
+    }
 
-    return ::select( FD_SETSIZE, 0, &fdsr, 0, &tv );
+    return ::select( FD_SETSIZE, 0, &fdsr, 0, timeout<0 ? 0 : &tv );
 }
 
 ////////////////////////////////////////////////////////////////////////////////

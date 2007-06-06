@@ -666,6 +666,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\str-win.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\test_stl.cpp"
 				>
 			</File>
