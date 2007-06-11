@@ -755,7 +755,7 @@ bool netSocket::isNonBlockingError()
 int netSocket::wait_read( int timeout )
 {
     if( handle == -1 )
-        return -1;
+        return 0;
 
     ::fd_set fdsr;
     FD_ZERO(&fdsr);
@@ -774,7 +774,7 @@ int netSocket::wait_read( int timeout )
 int netSocket::wait_write( int timeout )
 {
     if( handle == -1 )
-        return -1;
+        return 0;
 
     ::fd_set fdsr;
     FD_ZERO(&fdsr);

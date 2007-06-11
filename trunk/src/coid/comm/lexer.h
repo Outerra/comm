@@ -93,10 +93,10 @@ COID_NAMESPACE_BEGIN
     (TODBG) Internal line and character position counting for error reporting.
 
     (TODO) Nestable tokenization of blocks. A mode when upon encountering an opening
-    block sequence, the lexer pushes its previous context to stack and returns stating
-    that block is about to be read. Subsequent calls to lexer then return tokens
-    from inside the block. At last the closing sequence is read and the stack is
-    popped.
+    block sequence, the lexer pushes its previous context to stack and returns,
+    stating that block is about to be read. Subsequent calls to lexer then return
+    tokens from inside the block. At last the closing sequence is read and the stack
+    is popped.
         Note that blocks can declare what other block and string types are enabled
     when processing their content, so the lexer can use slightly different rules
     for processing text inside the block than outside of it.
@@ -243,6 +243,8 @@ public:
         _last.tok.set_null();
         _last_string = -1;
         _err = 0;
+
+        _stack.push(&_root);
 
         _pushback = 0;
 
@@ -537,7 +539,7 @@ public:
         return -1-g;
     }
 
-    ///Enable or disable the specified sequence, string or block
+    ///Enable or disable specified sequence, string or block
     ///@note for s/s/b with same name, this applies only to the specific one
     void enable( int seqid, bool en )
     {
@@ -547,7 +549,7 @@ public:
         seq->enable(en);
     }
 
-    ///Make sequence, string or block ignored or not
+    ///Make sequence, string or block ignored or not. Ignored constructs are skipped.
     ///@note for s/s/b with same name, this applies only to the specific one
     void ignore( int seqid, bool ig )
     {
@@ -876,7 +878,7 @@ protected:
     ///Character group descriptor
     struct group_rule : entity
     {
-        short bitmap;                       ///< trailing bit map id, or -1
+        short bitmap;                   ///< trailing bit map id, or -1
         bool single;
 
         group_rule( const token& name, ushort id, bool bsingle ) : entity(name,entity::GROUP,id)
@@ -895,10 +897,7 @@ protected:
         charstr replace;
         newline nwl;
 
-        //bool operator == ( const ucs4 k ) const         { return _first == k; }
         bool operator <  ( const token& k ) const   { return code.len() > k.len(); }
-
-        //operator ucs4() const                           { return _first; }
 
         void assign( const token& code, const token& replace )
         {
@@ -911,10 +910,10 @@ protected:
     ///Escape sequence translator descriptor 
     struct escape_rule : entity
     {
-        char esc;                           ///< escape character
-        fn_replace_esc_seq  replfn;         ///< custom replacement function
+        char esc;                               ///< escape character
+        fn_replace_esc_seq  replfn;             ///< custom replacement function
 
-        dynarray<escpair> pairs;            ///< replacement pairs
+        dynarray<escpair> pairs;                ///< replacement pairs
 
         escape_rule( const token& name, ushort id ) : entity(name,entity::ESCAPE,id) { }
     };
@@ -922,11 +921,11 @@ protected:
     ///Keyword map for detection of whether token is a reserved word
     struct keywords
     {
-        hash_set<charstr, token_hash> set;  ///< hash_set for fast detection if the string is in the list
+        hash_set<charstr, token_hash> set;      ///< hash_set for fast detection if the string is in the list
         int nkwd;
 
 
-        bool has_keywords() const           { return nkwd > 0; }
+        bool has_keywords() const       { return nkwd > 0; }
 
         bool add( const token& kwd )
         {
@@ -946,7 +945,7 @@ protected:
     ///Character sequence descriptor
     struct sequence : entity
     {
-        charstr leading;                    ///< sequence of characters to be detected
+        charstr leading;                        ///< sequence of characters to be detected
 
         sequence( const token& name, ushort id, uchar type=entity::SEQUENCE ) : entity(name,type,id) { }
     };
@@ -954,6 +953,7 @@ protected:
     ///String and block base entity
     struct stringorblock : sequence
     {
+        ///Possible trailing sequences
         struct trail {
             charstr seq;
             newline nwl;
@@ -964,7 +964,8 @@ protected:
             }
         };
 
-        dynarray<trail> trailing;           ///< at least one trailing string/block delimiter
+        dynarray<trail> trailing;               ///< at least one trailing string/block delimiter
+
 
         void add_trailing( const charstr& t )
         {
@@ -982,7 +983,7 @@ protected:
     ///String descriptor
     struct string_rule : stringorblock
     {
-        escape_rule* escrule;               ///< escape rule to use within the string
+        escape_rule* escrule;                   ///< escape rule to use within the string
 
         string_rule( const token& name, ushort id ) : stringorblock(name,id,entity::STRING)
         { escrule = 0; }
@@ -991,10 +992,16 @@ protected:
     ///Block descriptor
     struct block_rule : stringorblock
     {
-        uint64 stballowed;                  ///< string and/or block rules allowed to nest
+        uint64 stballowed;                      ///< bit map with string and/or block rules allowed to nest
 
         block_rule( const token& name, ushort id ) : stringorblock(name,id,entity::BLOCK)
-        { stballowed = 0; }
+        {   stballowed = 0; }
+    };
+
+    struct root_block : block_rule
+    {
+        root_block() : block_rule(token::empty(),WMAX)
+        {   stballowed = -1ULL; }
     };
 
     ///Character flags
@@ -1592,6 +1599,9 @@ protected:
     dynarray<escape_rule*> _escary; ///< escape character replacement pairs
     dynarray<sequence*> _stbary;    ///< string or block delimiters
     keywords _kwds;
+
+    root_block _root;               ///< root block rule containing initial enable flags
+    dynarray<block_rule*> _stack;   ///< stack with open block rules, initially contains &_root
 
     lextoken _last;                 ///< last token read
     int _last_string;               ///< last string type read

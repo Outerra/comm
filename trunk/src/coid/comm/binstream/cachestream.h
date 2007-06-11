@@ -60,6 +60,8 @@ class cachestream : public binstream
         CACHE_SIZE                  = 256,
     };
 
+    bool eois;                      ///< end of input stream already read
+
 public:
 
 
@@ -70,19 +72,22 @@ public:
         _cotwritten = other._cotwritten;
         _cin.takeover( other._cin );
         _cot.takeover( other._cot );
+        eois = other.eois;
 
         other._cinread = 0;
         other._cotwritten = 0;
         other._bin = 0;
+        other.eois = false;
     }
 
     void swap( cachestream& other )
     {
-        binstream* bin = other._bin;            other._bin = _bin;                  _bin = bin;
-        uints cinread = other._cinread;         other._cinread = _cinread;          _cinread = cinread;
-        uints cotwritten = other._cotwritten;   other._cotwritten = _cotwritten;    _cotwritten = cotwritten;
+        std::swap( _bin, other._bin );
+        std::swap( _cinread, other._cinread );
+        std::swap( _cotwritten, other._cotwritten );
         _cin.swap(other._cin);
         _cot.swap(other._cot);
+        std::swap( eois, other.eois );
     }
 
     virtual uint binstream_attributes( bool in0out1 ) const
@@ -106,9 +111,9 @@ public:
     }
 
     ///Override this to handle the cache fills
-    virtual uints on_cache_fill( void* p, uints size )
+    virtual opcd on_cache_fill( void* p, uints& size )
     {
-        return 0;
+        return ersNO_MORE;
     }
 
 
@@ -194,7 +199,7 @@ public:
             xmemcpy( p, _cin.ptr()+_cinread, len );
             _cinread += len;
             len = 0;
-            return 0;
+            e = 0;
         }
         else
         {
@@ -204,34 +209,37 @@ public:
                 p = (char*)p + rm;
                 len -= rm;
                 _cinread += rm;
-                return ersRETRY;
+
+                //there would be something still
+                return eois ? ersNO_MORE : ersRETRY;
             }
+
+            if( eois )
+                return ersNO_MORE;
 
             if( len >= _cin.reserved_total() )
             {
-                uints rs = fill_cache_line( p, len );
-                len -= rs;
-                e = len ? ersNO_MORE : ersNOERR;
+                //direct read
+                e = fill_cache_line( p, len );
             }
             else
             {
-                read_cache_line();
+                e = read_cache_line();
+                uints n = _cin.size();
 
-                uints n;
-                if( _cin.size() < len ) {
-                    n = _cin.size();
-                    e = _cin.size() < CACHE_SIZE  ?  ersNO_MORE : ersRETRY;
-                }
-                else
-                    n = len, e = 0;
+                if( n > len )
+                    n = len;
 
                 xmemcpy( p, _cin.ptr(), n );
                 _cinread = n;
                 len -= n;
             }
 
-            return e;
+            if(!len)
+                e = 0;  //from the caller's viewpoint it's ok since everything requested was actually read
         }
+
+        return e;
     }
 
 
@@ -265,15 +273,19 @@ public:
             if( _cin.size() - _cinread > 0 )
                 throw ersIO_ERROR "data left in input buffer";
         }
+
         _bin->acknowledge(eat);
         _cinread = 0;
         _cin.reset();
+        eois = false;
     }
 
     virtual void reset_read()
     {
         _cinread = 0;
         _cin.reset();
+        eois = false;
+
         if(_bin) _bin->reset_read();
     }
 
@@ -296,23 +308,27 @@ public:
         _bin = 0;
         _cinread = 0;
         _cotwritten = 0;
+        eois = false;
     }
     cachestream( binstream* bin )
     {
         _bin = bin;
         _cinread = 0;
         _cotwritten = 0;
+        eois = false;
     }
     cachestream( binstream& bin )
     {
         _bin = &bin;
         _cinread = 0;
         _cotwritten = 0;
+        eois = false;
     }
 
     opcd bind( binstream& bin, int io=0 )
     {
         _bin = &bin;
+        reset_all();
         return 0;
     }
 
@@ -392,7 +408,9 @@ public:
 
             if(bexit) break;
 
-            uints cs = read_cache_line();
+            read_cache_line();
+            uints cs = _cin.size();
+
             if( cs == 0 )
                 break;
             if( cs < _cin.reserved_total() )
@@ -408,33 +426,33 @@ public:
 
 private:
 
-    uints read_cache_line()
+    opcd read_cache_line()
     {
         if( _cin.reserved_total() == 0 )
             _cin.reserve( CACHE_SIZE, false );
 
         uints cs = _cin.reserved_total();
-        _bin->read_raw( _cin.ptr(), cs );
+        opcd e = _bin->read_raw_full( _cin.ptr(), cs );
 
         _cin.set_size( _cin.reserved_total() - cs );
         _cinread = 0;
-        return _cin.size();
+
+        if(e)
+            eois = true;
+
+        return e;
     }
 
-    void fill_cache_line()
+    opcd fill_cache_line( void* p, uints& size )
     {
-        uints cs = fill_cache_line( _cin.ptr()+_cin.size(), _cin.reserved_remaining() );
-        _cin.set_size( _cin.size() + cs );
-    }
+        opcd e = _bin
+            ? _bin->read_raw_full( p, size )
+            : on_cache_fill( p, size );
 
-    uints fill_cache_line( void* p, uints size )
-    {
-        if(!_bin)
-            return on_cache_fill( p, size );
-        else {
-            _bin->read_raw( p, size );
-            return _cin.reserved_remaining() - size;
-        }
+        if(e)
+            eois = true;
+
+        return e;
     }
 
     static uints add_bin_limited( binstream& bin, uints& lmax, const void* src, uints len )
@@ -473,9 +491,14 @@ private:
         }
 
         _cinread = 0;
-        fill_cache_line();
 
-        return _cin.size();
+        uints ts = _cin.reserved_remaining();
+        opcd e = fill_cache_line( _cin.ptr()+_cin.size(), ts );
+
+        uints n = _cin.size() + _cin.reserved_remaining() - ts;
+        _cin.set_size(n);
+
+        return n;
     }
 
     ///Compare two strings and return length of matching byte string, refill cache

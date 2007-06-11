@@ -254,9 +254,13 @@ public:
         char buf[256];
         if(eat) while( _socket.wait_read(0) )
         {
-            if( !_socket.isValid() )  break;
-            _socket.recv( buf, 256 );
+            if( !_socket.isValid() )
+                break;
+            if( _socket.recv(buf,256)<=0 )
+                break;
         }
+        else if( _socket.wait_read(0)  &&  !_socket.isValid()  &&  _socket.recv(buf,1)>0 )
+            throw ersIO_ERROR "data left in input buffer";
     }
 
     virtual void reset_read()
