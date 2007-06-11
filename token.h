@@ -93,10 +93,23 @@ public:
         _state = 0;
     }
 
-    substring( const char* subs, uints len )        { set(subs,len); }
+    substring( const char* subs, uints len )    { set(subs,len); }
 
-    substring( const token& tok )   { set(tok); }
-    explicit substring( char k )    { set(k); }
+    substring( const token& tok )               { set(tok); }
+    explicit substring( char k )                { set(k); }
+
+
+    static substring& crlf()
+    {
+        static substring _S("\r\n",2);
+        return _S;
+    }
+
+    static substring& null()
+    {
+        static substring _S("",1);
+        return _S;
+    }
 
 
     void set( const char* subs, uints len )
@@ -1516,6 +1529,18 @@ struct token
     uint64 xtouint64_and_shift( uints offs=0 )
     {
         uint base = get_num_base(offs);
+        return tonum<uint64>::touint( *this, offs, base );
+    }
+
+    ///Convert a hexadecimal, decimal, octal or binary token to unsigned int using as much digits as possible
+    uint touint_and_shift_base( uint base, uints offs=0 )
+    {
+        return tonum<uint>::touint( *this, offs, base );
+    }
+
+    ///Convert a hexadecimal, decimal, octal or binary token to unsigned int using as much digits as possible
+    uint64 touint64_and_shift_base( uint base, uints offs=0 )
+    {
         return tonum<uint64>::touint( *this, offs, base );
     }
 

@@ -102,6 +102,8 @@ public:
     {
         _fmtstream = &b;
         stream_reset(0);
+        _sesopen = 0;
+        _arraynm = 0;
     }
 
     binstream& get_formatting_stream() const    { return *_fmtstream; }
@@ -247,7 +249,7 @@ public:
     opcd stream_in( T& x, const token& name = token::empty() )
     {
         _read_to_cache = false;
-        stream_reset(false);
+        stream_reset(0);
 
         opcd e;
         try {
@@ -264,7 +266,7 @@ public:
     opcd stream_in_cache( const token& name = token::empty() )
     {
         _read_to_cache = true;
-        stream_reset(false);
+        stream_reset(0);
 
         opcd e;
         try {
@@ -278,7 +280,7 @@ public:
     opcd stream_out( const T& x, const token& name = token::empty(), bool tocache=false )
     {
         _write_to_cache = tocache;
-        stream_reset(false);
+        stream_reset(0);
 
         opcd e;
         try {
@@ -296,7 +298,7 @@ public:
     opcd stream_array_in( binstream_containerT<T>& C, const token& name = token::empty() )
     {
         _read_to_cache = false;
-        stream_reset(false);
+        stream_reset(0);
 
         opcd e;
         try {
@@ -313,7 +315,7 @@ public:
     opcd stream_array_in_cache( const token& name = token::empty(), uints n=UMAX )
     {
         _read_to_cache = true;
-        stream_reset(false);
+        stream_reset(0);
 
         opcd e;
         try {
@@ -327,7 +329,7 @@ public:
     opcd stream_array_out( binstream_containerT<T>& C, const token& name = token::empty(), bool tocache=false )
     {
         _read_to_cache = tocache;
-        stream_reset(false);
+        stream_reset(0);
 
         opcd e;
         try {
@@ -389,10 +391,13 @@ public:
         }
     }
 
+    ///@param fmts_reset >0 reset reading pipe, <0 reset writing pipe
     void stream_reset( int fmts_reset )
     {
-        _sesopen = 0;
-        _arraynm = 0;
+        if(fmts_reset) {
+            _sesopen = 0;
+            _arraynm = 0;
+        }
 
         _stack.reset();
         cache_reset();

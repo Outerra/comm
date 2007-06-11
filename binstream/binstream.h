@@ -424,22 +424,25 @@ public:
         return len;
     }
 
-    ///Read raw data from another binstream
+    ///Write raw data to another binstream. Overloadable to avoid excesive copying when not neccessary.
     ///@return number of bytes written
-    uints read_from( binstream& bin )
+    virtual uints write_to( binstream& bin )
     {
+        opcd e;
         uints n=0;
         uchar buf[256];
         for (;;)
         {
             uints len = 256;
-            bin.read_raw_full( buf, len );
+            e = read_raw( buf, len );
+            if( e == ersRETRY )
+                e = 0;
 
             uints alen = 256-len;
-            write_raw( buf, alen );
+            bin.write_raw( buf, alen );
 
             n += 256-len-alen;
-            if( len>0  ||  alen>0 )
+            if( e || alen>0 )
                 break;
         }
 
