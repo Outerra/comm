@@ -821,7 +821,7 @@ public:
 
     bool parse( binstream& bin )
     {
-        patbuf.read_from(bin);
+        bin.write_to(patbuf);
         const token& tok = patbuf;
 
         lex.bind(tok);
