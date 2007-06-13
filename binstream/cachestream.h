@@ -432,12 +432,12 @@ private:
             _cin.reserve( CACHE_SIZE, false );
 
         uints cs = _cin.reserved_total();
-        opcd e = _bin->read_raw_full( _cin.ptr(), cs );
+        opcd e = _bin->read_raw_any( _cin.ptr(), cs );
 
         _cin.set_size( _cin.reserved_total() - cs );
         _cinread = 0;
 
-        if(e)
+        if( e && e!=ersRETRY )
             eois = true;
 
         return e;
@@ -446,10 +446,10 @@ private:
     opcd fill_cache_line( void* p, uints& size )
     {
         opcd e = _bin
-            ? _bin->read_raw_full( p, size )
+            ? _bin->read_raw_any( p, size )
             : on_cache_fill( p, size );
 
-        if(e)
+        if( e && e!=ersRETRY )
             eois = true;
 
         return e;

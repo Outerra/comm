@@ -373,6 +373,7 @@ public:
     }
 
     ///Read raw data repeatedly while ersRETRY is returned from read_raw
+    ///@note tries to read complete buffer as requested, thus cannot return with ersRETRY
     opcd read_raw_full( void* p, uints& len )
     {
         for(;;) {
@@ -382,6 +383,19 @@ public:
 
             p = (char*)p + (olen - len);
         }
+    }
+
+    ///Read raw data until at least something is returned from read_raw
+    ///@note read_raw() can return ersRETRY while not reading anything, whereas this method either returns a different error than
+    /// ersRETRY or it has read something
+    opcd read_raw_any( void* p, uints& len )
+    {
+        uints olen = len;
+
+        opcd e;
+        while( (e=read_raw(p,len)) == ersRETRY  &&  olen==len );
+
+        return e;
     }
 
     ///A write_raw() wrapper throwing exception on error
