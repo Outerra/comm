@@ -192,12 +192,8 @@ TYPE_TRIVIAL(long double);
 
 
 
-#ifndef SYSTYPE_MSVC6
-# define UMAX                ((uints)0xffffffffffffffffULL)
-#else
-# define UMAX                ((uints)0xffffffffUL)
-#endif
-
+#define UMAX                ((uints)0xffffffffffffffffULL)
+#define UMAX64              0xffffffffffffffffULL
 #define WMAX                0xffff
 
 

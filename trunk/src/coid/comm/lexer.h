@@ -508,7 +508,7 @@ public:
                 rn = sob->id;
             }
 
-            br->stballowed |= 1ULL<<rn;
+            br->stbenabled |= 1ULL<<rn;
         }
 
         br->leading = leading;
@@ -546,7 +546,7 @@ public:
         uint sid = -1 - seqid;
         const sequence* seq = _stbary[sid];
 
-        _stack.last()->enable( *seq, en );
+        (*_stack.last())->enable( *seq, en );
     }
 
     ///Make sequence, string or block ignored or not. Ignored constructs are skipped.
@@ -556,27 +556,33 @@ public:
         uint sid = -1 - seqid;
         const sequence* seq = _stbary[sid];
 
-        _stack.last()->ignore( *seq, ig );
+        (*_stack.last())->ignore( *seq, ig );
     }
 
     ///Enable/disable all entities under the same name
     void enable( const token& name, bool en )
     {
         Tentmap::range_const_iterator r = _entmap.equal_range(name);
-        block_rule* br = _stack.last();
+        block_rule* br = *_stack.last();
 
-        for( ; r.first!=r.second; ++r.first )
-            br->enable( *(*r.first), en );
+        for( ; r.first!=r.second; ++r.first ) {
+            const entity* ent = *r.first;
+            if( ent->is_ssb() )
+                br->enable( *(const sequence*)ent, en );
+        }
     }
 
     ///Ignore/don't ignore all entities under the same name
     void ignore( const token& name, bool ig )
     {
         Tentmap::range_const_iterator r = _entmap.equal_range(name);
-        block_rule* br = _stack.last();
+        block_rule* br = *_stack.last();
 
-        for( ; r.first!=r.second; ++r.first )
-            br->ignore( *(*r.first), ig );
+        for( ; r.first!=r.second; ++r.first ) {
+            const entity* ent = *r.first;
+            if( ent->is_ssb() )
+                br->ignore( *(const sequence*)ent, ig );
+        }
     }
 
     ///Return next token as if the block/string opening sequence was already read
@@ -668,7 +674,7 @@ public:
                 else if( seq->type == entity::STRING )
                     st = next_read_string( *(const string_rule*)seq, off, true );
 
-                if( st && seq->ignored() )    //ignored rule
+                if( st && ignored(*seq) )    //ignored rule
                     return next(ignoregrp);
 
                 if(!st)
@@ -860,12 +866,16 @@ protected:
 
         entity( const token& name_, uchar type_, ushort id_ ) : name(name_), type(type_), id(id_)
         {
-            status = ENABLED;
+            status = 0;
         }
 
+        bool is_sequence() const        { return type == SEQUENCE; }
         bool is_block() const           { return type == BLOCK; }
         bool is_string() const          { return type == STRING; }
-        bool is_sequence() const        { return type == SEQUENCE; }
+
+        ///Is a sequence, string or block
+        bool is_ssb() const             { return type >= SEQUENCE; }
+
         bool is_keywordlist() const     { return type == KEYWORDLIST; }
 
         operator token() const          { return name; }
@@ -1018,18 +1028,18 @@ protected:
 
 
         block_rule( const token& name, ushort id ) : stringorblock(name,id,entity::BLOCK)
-        {   stballowed = 0;  stbignored = 0; }
+        {   stbenabled = 0;  stbignored = 0; }
     };
 
     struct root_block : block_rule
     {
         root_block() : block_rule(token::empty(),WMAX)
-        {   stballowed = -1ULL; }
+        {   stbenabled = UMAX64; }
     };
 
 
-    bool enabled( const sequence& seq ) const   { return _stack.last()->enabled(seq); }
-    bool ignored( const sequence& seq ) const   { return _stack.last()->ignored(seq); }
+    bool enabled( const sequence& seq ) const   { return (*_stack.last())->enabled(seq); }
+    bool ignored( const sequence& seq ) const   { return (*_stack.last())->ignored(seq); }
 
 
     ///Character flags
@@ -1229,6 +1239,11 @@ protected:
     }
 
 
+    ///Read a block that should be discarded (ignored)
+    bool read_ignored_block( const block_rule& br, uints& off )
+    {
+    }
+
     ///Read next token as block
     bool next_read_block( const block_rule& br, uints& off, bool outermost )
     {
@@ -1270,7 +1285,7 @@ protected:
                     if(!enabled(*dseq[i]))  continue;
 
                     uint k = dseq[i]->id;
-                    if( (br.stballowed & (1ULL<<k))  &&  match(dseq[i]->leading,off) )  break;
+                    if( (br.stbenabled & (1ULL<<k))  &&  match(dseq[i]->leading,off) )  break;
                 }
 
                 if(i<n)
@@ -1585,7 +1600,7 @@ protected:
         *dseq.ins(i) = seq;
 
         if( seq->name.first_char() == '.' )
-            _stack[0].ignore( seq, true );
+            _stack[0]->ignore( *seq, true );
     }
 
     dynarray<sequence*>& set_seqgroup( uchar c )

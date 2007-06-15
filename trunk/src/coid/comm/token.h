@@ -99,6 +99,9 @@ public:
     explicit substring( char k )                { set(k); }
 
 
+    substring& operator = ( const token& tok )  { set(tok);  return *this; }
+
+
     static substring& crlf()
     {
         static substring _S("\r\n",2);
