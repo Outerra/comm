@@ -246,7 +246,7 @@ void netaddr::set_port( ushort p )
 
 
 
-substring netAddress::protocol = "://";
+substring netAddress::protocol = token("://");
 
 ////////////////////////////////////////////////////////////////////////////////
 netAddress::netAddress( const token& host, int port, bool portoverride )

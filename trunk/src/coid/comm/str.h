@@ -1714,7 +1714,7 @@ struct ndigit_fmt
     charstr::EAlignNum _align;
     
     explicit ndigit_fmt( ints i, uint numc, charstr::EAlignNum align = charstr::ALIGN_NUM_RIGHT )
-        : _i(i),_align(align),_numc(numc) { }
+        : _i(i),_numc(numc),_align(align) { }
 
     friend binstream& operator << (binstream& out, const ndigit_fmt& d)
     {
