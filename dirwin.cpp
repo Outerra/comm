@@ -122,9 +122,9 @@ bool directory::is_regular( ushort mode )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::mkdir( const charstr& name, uint mode )
+opcd directory::mkdir( const char* name, uint mode )
 {
-    if(!::_mkdir( name.ptr() ))  return 0;
+    if(!::_mkdir(name))  return 0;
     if( errno == EEXIST )  return 0;
     return ersFAILED;
 }
@@ -146,9 +146,9 @@ charstr& directory::get_cwd( charstr& buf )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int directory::chdir( const charstr& name )
+int directory::chdir( const char* name )
 {
-    return ::_chdir( name.ptr() );
+    return ::_chdir(name);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

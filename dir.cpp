@@ -161,20 +161,20 @@ opcd directory::move_current_file_to( const token& dst )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::move_file( const charstr& src, const charstr& dst )
+opcd directory::move_file( const char* src, const char* dst )
 {
-    if( 0 == rename( src.ptr(), dst.ptr() ) )
+    if( 0 == rename(src,dst) )
         return 0;
     return ersIO_ERROR;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::delete_file( const charstr& src )
+opcd directory::delete_file( const char* src )
 {
 #ifdef SYSTYPE_MSVC
-    return 0 == _unlink( src.ptr() )  ?  opcd(0) : ersIO_ERROR;
+    return 0 == _unlink(src)  ?  opcd(0) : ersIO_ERROR;
 #else
-    return 0 == unlink( src.ptr() ) ? opcd(0) : ersIO_ERROR;
+    return 0 == unlink(src) ? opcd(0) : ersIO_ERROR;
 #endif
 }
 
