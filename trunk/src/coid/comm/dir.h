@@ -110,12 +110,21 @@ public:
 
     static bool is_directory( ushort mode );
     static bool is_regular( ushort mode );
-    static opcd mkdir( const charstr& name, uint mode=0750 );
-	static int chdir( const charstr& name );
+    
+    static opcd mkdir( const char* name, uint mode=0750 );
+    static opcd mkdir( const charstr& name, uint mode=0750 ){ return mkdir( name.c_str(), mode ); }
+    
+    static int chdir( const char* name );
+    static int chdir( const charstr& name )                 { return chdir(name.c_str()); }
 
     static opcd copy_file( const token& src, const token& dst );
-    static opcd move_file( const charstr& src, const charstr& dst );
-    static opcd delete_file( const charstr& src );
+
+    static opcd move_file( const char* src, const char* dst );
+    static opcd move_file( const charstr& src, const charstr& dst )
+    {   return move_file( src.c_str(), dst.c_str() ); }
+
+    static opcd delete_file( const char* src );
+    static opcd delete_file( const charstr& src )           { return delete_file(src.c_str()); }
 
     ///copy file to open directory
     opcd copy_file_from( const token& src, const token& name=token::empty() );
