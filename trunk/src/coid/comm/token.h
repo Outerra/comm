@@ -547,7 +547,7 @@ struct token
         return ch;
     }
 
-
+    ///Cut maximum of \a n characters from the token from the left side
     token cut_left_n( uints n )
     {
         if( n > _len )
@@ -561,7 +561,8 @@ struct token
         _len -= n;
         return r;
     }
-    
+
+    ///Cut maximum of \a n characters from the token from the right side
     token cut_right_n( uints n )
     {
         if( n > _len )
@@ -578,6 +579,7 @@ struct token
 
 
     ///Cut a token off, using single character as the delimiter
+    ///@param skipsep zero if separator should remain with the original token, nonzero if it's discarded
     token cut_left( char c, int skipsep, bool def_empty=false )     //up to, but without the character c
     {
         token r;
@@ -604,6 +606,8 @@ struct token
     }
 
     ///Cut a token off, using group of single characters as delimiters
+    ///@param skipsep zero if separator should remain with the original token,
+    /// >0 if single separator character is discarded, <0 if all consequent separators should be discarded
     token cut_left( const token& separators, int skipsep, bool def_empty=false )
     {
         token r;
@@ -634,6 +638,7 @@ struct token
     }
 
     ///Cut left substring
+    ///@param skipsep zero if the separator should remain with the original token, nonzero if it's discarded
     token cut_left( const substring& ss, int skipsep, bool def_empty=false )
     {
         token r;
@@ -664,6 +669,7 @@ struct token
 
 
     ///Cut left substring, searching for separator backwards
+    ///@param skipsep zero if the separator should remain with the original token, nonzero if it's discarded
     token cut_left_back( const char c, int skipsep, bool def_empty=true )     //up to, but without the character c
     {
         token r;

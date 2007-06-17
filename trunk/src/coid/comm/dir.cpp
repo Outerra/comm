@@ -40,6 +40,47 @@
 
 COID_NAMESPACE_BEGIN
 
+
+////////////////////////////////////////////////////////////////////////////////
+bool directory::append_path( charstr& dst, token path )
+{
+    if( path.first_char() == '/'  ||  path.nth_char(1) == ':' )
+        dst = path;
+    else
+    {
+        token tdst = dst;
+        while( path.begins_with("..") )
+        {
+            path += 2;
+            char c = path.first_char();
+
+            if( c!=0 && !is_separator(c) )
+                return false;       //bad path, .. not followed by separator
+
+            if( tdst.is_empty() )
+                return false;       //too many .. in path
+
+            tdst.cut_right_back( separator(), 1 );
+
+            if( c == 0 ) {
+                dst.trim_to_length( tdst.len() );
+                return true;
+            }
+
+            ++path;
+        }
+
+        dst.trim_to_length( tdst.len() );
+
+        if( !is_separator( dst.last_char() ) )
+            dst << separator();
+
+        dst << path;
+    }
+
+    return true;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 opcd directory::copy_file_from( const token& src, const token& name )
 {

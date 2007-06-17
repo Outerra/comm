@@ -60,7 +60,13 @@ public:
     ~directory();
     directory();
 
-	opcd open( const token& path, const token& filter );
+
+    ///Append \a path to destination buffer. If the path is absolute, previous
+    /// content of \a dst is dicarded.
+    static bool append_path( charstr& dst, token path );
+
+
+    opcd open( const token& path, const token& filter );
     opcd open_cwd( const token& filter )
     {
         charstr path;
@@ -68,14 +74,14 @@ public:
     }
     void close();
 
+    static bool is_separator( char c )      { return c == '/'  ||  c == separator(); }
 
     static char separator();
     static const char* separator_str();
     static charstr& treat_trailing_separator( charstr& path, bool shouldbe )
     {
         char c = path.last_char();
-        char s = separator();
-        if( (s == '\\' && (c == '\\' || c == '/'))  ||  s == c ) {
+        if( is_separator(c) ) {
             if(!shouldbe)  path.trim_to_length(-1);
         }
         else if(shouldbe)
