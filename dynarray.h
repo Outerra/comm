@@ -225,6 +225,13 @@ public:
         _ptr = 0;
     }
 
+    ///Reserve specified number of items in constructor
+    explicit dynarray( uints reserve_count ) {
+        A::instance();
+        _ptr = 0;
+        reserve( reserve_count, false );
+    }
+
     ~dynarray() {
         discard();
     }
@@ -253,6 +260,8 @@ public:
         return *this;
     }
 
+    ///Assign a pointer that fulfills dynarray ptr requirements.
+    ///If you don't know what it means, do not use it.
     dynarray& set_dynarray_conforming_ptr( T* ptr )
     {
         _ptr = ptr;
@@ -268,6 +277,7 @@ public:
         return *this;
     }
 
+    ///Swap content with another dynarray
     dynarray& swap( dynarray& dest )
     {
         T* t = dest._ptr;
@@ -275,8 +285,8 @@ public:
         _ptr = t;
         return *this;
     }
-
-    ///share control over buffer controlled by \a dest dynarray
+/*
+    ///Share control over buffer controlled by \a dest dynarray.
     dynarray& share( dynarray& dest )
     {
         discard();
@@ -290,7 +300,7 @@ public:
         _ptr = 0;
         return *this;
     }
-
+*/
     T* ptr()                    { return _ptr; }
     T* ptre()                   { return _ptr + _count(); }
 
@@ -670,7 +680,7 @@ public:
         return ptr;
     };
 
-    ///Append element to the array through copy constructor
+    ///Append the same element n-times to the array through copy constructor
     T* pushn( const T& v, uints n )
     {
         T* ptr = add(n);
@@ -679,7 +689,7 @@ public:
         return ptr;
     };
 
-    ///Append element to the array through copy constructor
+    ///Append elements to the array through copy constructor
     T* pusha( uints n, const T* p )
     {
         T* ptr = add(n);
@@ -687,6 +697,7 @@ public:
         return ptr;
     };
 
+    ///Insert an element to the array at sorted position (using < operator)
     T* push_sort( const T& v )
     {
         uints i = lower_bound(v);
@@ -715,6 +726,7 @@ public:
         return last();
     }
 
+    ///Pop n elements from the array
     void popn( uints n )
     {
         if( n > _count() )
@@ -723,6 +735,7 @@ public:
         del( _count()-n, n );
     }
 
+    ///Append copy of another array to the end
     dynarray<T,A>& append( const dynarray<T,A>& a )
     {
         uints c = a.size();
@@ -839,30 +852,36 @@ public:
     }
 
 
+    //{@ Bit-manipulating routines.
+    ///Append n bits to dynarray
     T* need_bits( uints n, uints ralign = 0 )
     {
         uints nit = align_to_chunks(n,sizeof(T)*8);
         return need( nit, ralign );
     }
 
+    ///Allocate n new bits in dynarray
     T* need_new_bits( uints n, uints ralign = 0 )
     {
         uints nit = align_to_chunks(n,sizeof(T)*8);
         return need_new( nit, ralign );
     }
 
+    ///Append n bits to dynarray while setting them to requested value
     T* needc_bits( uints n, bool toones = false, uints ralign = 0 )
     {
         uints nit = align_to_chunks(n,sizeof(T)*8);
         return needc( nit, toones, ralign );
     }
 
+    //Allocate n new bits in dynarray while setting them to requested value
     T* needc_new_bits( uints n, bool toones = false, uints ralign = 0 )
     {
         uints nit = align_to_chunks(n,sizeof(T)*8);
         return need_newc( nit, toones, ralign );
     }
 
+    ///Set i-th bit 
     void set_bit( uints i, char t )
     {
         uints n = i >> 3;
@@ -870,6 +889,7 @@ public:
         ((uchar*)_ptr)[n] ^= (-t ^ ((uchar*)_ptr)[n]) & (1<<b);
     }
 
+    ///Get i-th bit
     bool get_bit( uints i ) const
     {
         uints n = i >> 3;
@@ -877,6 +897,7 @@ public:
         return (((uchar*)_ptr)[n] & (1<<b)) != 0;
     }
 
+    ///Set i-th bit in array, resizing the array if out of bounds
     void set_bit_safe( uints i, char t )
     {
         uints n = i >> 3;
@@ -885,14 +906,15 @@ public:
         ((uchar*)_ptr)[n] ^= (-t ^ ((uchar*)_ptr)[n]) & (1<<b);
     }
 
-    bool get_bit_safe( uints i )
+    ///Get i-th bit or default value if out of bounds
+    bool get_bit_safe( uints i, bool def ) const
     {
         uints n = i >> 3;
         uints b = i & 0x07;
-        needc( (n+sizeof(T))/sizeof(T) );
+        if( n >= _count() )  return def;
         return (((uchar*)_ptr)[n] & (1<<b)) != 0;
     }
-
+    //@}
 
     ///Linear search whether array contains element comparable with \a key
     ///@return -1 if not contained, otherwise index to the key
@@ -1291,6 +1313,7 @@ protected:
 
 
     ////////////////////////////////////////////////////////////////////////////////
+    //@{ Functions for allocation within specific segment page
     bool pg_is_in( const ssegpage* pg ) const
     {
         return pg && pg->can_be_valid(_ptr);
@@ -1475,7 +1498,7 @@ public:
         }
         return *this;
     }
-    
+    //@}
 };
 
 
