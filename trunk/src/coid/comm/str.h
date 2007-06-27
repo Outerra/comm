@@ -103,14 +103,14 @@ public:
     {
         _tstr.swap( ref._tstr );
     }
-
+/*
     ///Share content with another string
     charstr& share( charstr& ref )
     {
         _tstr.share (ref._tstr);
         return *this;
     }
-
+*/
     charstr( const char* czstr )                { set (czstr); }
     charstr( const char* czstr, uints len )      { set_from (czstr, len); }
     charstr( const token& tok )
