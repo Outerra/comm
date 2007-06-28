@@ -90,19 +90,6 @@ public:
         return 0;
     }
 
-
-    opcd get_error()
-    {
-        opcd e;
-		try {
-			(*this) >> e;
-		}
-		catch( opcd ee ) {
-            return ee;
-		}
-        return e;
-    }
-
     
     static netAddress* get_local_address( netAddress* addr )
     {
