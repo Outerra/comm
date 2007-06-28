@@ -858,6 +858,10 @@
 			>
 		</File>
 		<File
+			RelativePath="..\substring.h"
+			>
+		</File>
+		<File
 			RelativePath="..\.\time.h"
 			>
 		</File>

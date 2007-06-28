@@ -113,7 +113,7 @@ public:
             opcd e;
             for(;;)
             {
-                e = bin.read_until( substring_rn(), &buf );
+                e = bin.read_until( substring::crlf(), &buf );
                 if(e)
                     return e;
 
@@ -188,7 +188,7 @@ public:
             {
                 buf.reset_write();
 
-                e = bin.read_until( substring_rn(), &buf );
+                e = bin.read_until( substring::crlf(), &buf );
                 if(e)
                     return e;
 
@@ -325,18 +325,6 @@ public:
     };
 
 
-
-    static const substring& substring_rn()
-    {
-        static substring _ss( "\r\n" );
-        return _ss;
-    }
-
-    static const substring& substring_0()
-    {
-        static substring _ss( "", 1 );
-        return _ss;
-    }
 
 public:
 
@@ -679,7 +667,7 @@ protected:
             if(e)
             {
                  //_cache.set_timeout(10);
-                 _cache.read_until( substring_0(), &buf );
+                 _cache.read_until( substring::zero(), &buf );
                  //_cache.set_timeout(0);
 
                  bofstream bf("tunnel-http.log.html?wb+");

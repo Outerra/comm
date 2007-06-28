@@ -697,8 +697,7 @@ public:
     ///A convenient function to read one line of input with binstreams that support read_until()
     opcd read_line( binstream* bout, uints max_size=UMAX )
     {
-        static substring ss_newline("\n");
-        return read_until( ss_newline, bout, max_size );
+        return read_until( substring::newline(), bout, max_size );
     }
     
 

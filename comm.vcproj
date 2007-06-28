@@ -897,6 +897,10 @@
 			>
 		</File>
 		<File
+			RelativePath=".\substring.h"
+			>
+		</File>
+		<File
 			RelativePath="token.h"
 			>
 		</File>

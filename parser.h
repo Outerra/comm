@@ -165,7 +165,7 @@ class parser
             if( nconsumed < tokenqueue.size() )
                 return &tokenqueue[nconsumed++];
             lextoken* v = tokenqueue.add();
-            lex.next(*v);
+            *v = lex.next();
             ++nconsumed;
             return v;
         }

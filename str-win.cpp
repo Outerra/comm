@@ -16,7 +16,7 @@ uints charstr::append_wchar_buf_ansi( const ushort* src, uints nchars )
         ? wcslen((const wchar_t*)src)
         : nchars;
 
-    return WideCharToMultiByte( 0, 0, (const wchar_t*)src, n, get_append_buf(n), n, 0, 0 );
+    return WideCharToMultiByte( 0, 0, (const wchar_t*)src, (int)n, get_append_buf(n), (int)n, 0, 0 );
 }
 
 COID_NAMESPACE_END
