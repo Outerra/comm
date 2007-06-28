@@ -132,7 +132,7 @@ class lexer
         void reset()    { hash = 0; }
     };
 
-    ///
+    ///Newline information helper struct for strings
     struct newline
     {
         int newlines;                   ///< number of newlines contained within string

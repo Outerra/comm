@@ -52,13 +52,6 @@ COID_NAMESPACE_BEGIN
 class httpstreamtunnel : public httpstreamcoid
 {
 public:
-/*
-    static const substring& substring_rnrn()
-    {
-        static substring _ss( "\r\n\r\n" );
-        return _ss;
-    }
-*/
     static const substring& substring_magic()
     {
         static substring _ss( "6enc" );

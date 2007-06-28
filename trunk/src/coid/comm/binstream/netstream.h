@@ -83,6 +83,7 @@ public:
 
     virtual opcd connect( const netAddress& addr ) = 0;
 
+    opcd get_error()    { return read_error(); }
 
     opcd set_timeout( uint ms )
     {

@@ -41,6 +41,7 @@
 
 #include "namespace.h"
 
+#include "substring.h"
 #include "tutf8.h"
 #include "commtime.h"
 #include <stdlib.h>
@@ -71,96 +72,8 @@ inline void xstrncpy( char* dst, const char* src, uints n )
 }
 
 
-class charstr;
-struct token;
 template<class T, class A> class dynarray;
-
-////////////////////////////////////////////////////////////////////////////////
-///Preprocessed substring for fast substring searches
-class substring
-{
-    mutable uchar _shf[256];
-    const uchar* _subs;
-    uints _len;
-    uchar _tmpbuf[4];
-    mutable int   _state;
-public:
-
-    substring()
-    {
-        _subs = 0;
-        _len = 0;
-        _state = 0;
-    }
-
-    substring( const char* subs, uints len )    { set(subs,len); }
-
-    substring( const token& tok )               { set(tok); }
-    explicit substring( char k )                { set(k); }
-
-
-    substring& operator = ( const token& tok )  { set(tok);  return *this; }
-
-
-    static substring& crlf()
-    {
-        static substring _S("\r\n",2);
-        return _S;
-    }
-
-    static substring& null()
-    {
-        static substring _S("",1);
-        return _S;
-    }
-
-
-    void set( const char* subs, uints len )
-    {
-        DASSERT( len < 255 );
-        _subs = (const uchar*)subs;
-        _len = len;
-        memset( _shf, (uchar)len+1, 256 );
-        for( uints i=0; i<len; ++i )  _shf[ _subs[i] ] = (uchar)(len-i);
-    }
-
-    void set( char k )
-    {
-        _tmpbuf[0] = k;
-        _subs = _tmpbuf;
-        _len = 1;
-    }
-
-    void set( const token& tok );
-
-
-    uints len() const               { return _len; }
-    const uchar* ptr() const        { return _subs; }
-
-    token get() const;
-
-    ///
-    uints get_shift( uchar k ) const
-    {
-        if(!_state) {
-            memset( _shf, (uchar)_len+1, 256 );
-            for( uints i=0; i<_len; ++i )  _shf[ _subs[i] ] = (uchar)(_len-i);
-            _state = 1;
-        }
-        return _shf[k];
-    }
-
-
-
-    ///Compare with string and return length of matching byte sequence
-    uints memcmplen( const char* a ) const
-    {
-        uints off=0;
-        for( ; off<_len && a[off] == _subs[off]; ++off );
-        return off;
-    }
-
-};
+class charstr;
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Token structure describing a part of a string.
@@ -1049,31 +962,9 @@ struct token
     ///Count characters up to specified substring
     uints count_until_substring( const substring& sub, uints off=0 ) const
     {
-        if( sub.len() == 1 )
-            return count_notchar( sub.ptr()[0], off );
+        if( off >= _len )  return _len;
 
-        uints slen = sub.len();
-        uints rlen = _len - off;
-        while(1)
-        {
-            if( rlen >= slen )
-            {
-                uints n = sub.memcmplen( _ptr+off );
-                if( n == slen )
-                    //substring found
-                    return off;
-            }
-            
-            if( slen >= rlen )
-                return _len;       //end of input, substring cannot be there
-
-            uchar o = _ptr[off+slen];
-
-            // part to skip
-            uints sk = sub.get_shift(o);      //sk can be (sub._len+1) max
-            off += sk;
-            rlen -= sk;
-        }
+        return sub.find( _ptr+off, _len-off );
     }
 
 

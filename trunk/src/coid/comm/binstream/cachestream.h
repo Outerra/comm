@@ -377,8 +377,8 @@ public:
             uchar o = _cin[_cinread+slen];
 
             // part to skip
-            uints sk = sub.get_shift(o);      //sk can be (sub._len+1) max
-            if( bout )
+            uints sk = sub.get_skip(o);      //sk can be (sub._len+1) max
+            if(bout)
                 add_bin_limited( *bout, limit, _cin.ptr()+_cinread, sk );
             ts += sk;
             _cinread += sk;
