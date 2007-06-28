@@ -228,6 +228,15 @@ public:
         return *this;
     }
 
+    opcd read_error()
+    {
+		ushort ec;
+        opcd e = read( &ec, bstype::t_type<opcd>() );
+        if(!e)
+            e.set(ec);
+        return e;
+    }
+
     ///Helper function used find the string lenght, but maximally inspect n characters
     static uints strnlen( const char* str, uints n )
     {
