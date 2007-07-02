@@ -72,7 +72,7 @@ opcd directory::open( const token& path, const token& filter )
     if( _pattern.last_char() == '\\' )
         _pattern.trim_to_length(-1);
 
-    if( 0 != stat( _pattern.ptr(), &_st ) )
+    if( !stat( _pattern.ptr(), &_st ) )
         return ersFAILED;
 
     _pattern << '\\';
@@ -170,7 +170,7 @@ const struct stat* directory::next()
 
     _curpath.trim_to_length( _baselen );
     _curpath << dir.name;
-    if( 0 == stat( _curpath.ptr(), &_st ) )
+    if( stat( _curpath.ptr(), &_st ) )
         return &_st;
 
     return next();

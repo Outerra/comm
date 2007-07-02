@@ -35,19 +35,21 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef __COID_COMM_HTTPSTREAM__HEADER_FILE__
-#define __COID_COMM_HTTPSTREAM__HEADER_FILE__
+#ifndef __COID_COMM_HTTPSTREAM2__HEADER_FILE__
+#define __COID_COMM_HTTPSTREAM2__HEADER_FILE__
 
 #include "coid/comm/namespace.h"
 #include "coid/comm/str.h"
 #include "coid/comm/rnd.h"
-#include "coid/comm/net.h"
-#include "coid/comm/txtconv.h"
+#include "coid/comm/dir.h"
+//#include "coid/comm/net.h"
+//#include "coid/comm/txtconv.h"
 
 #include "coid/comm/binstream/cachestream.h"
 #include "coid/comm/binstream/binstreambuf.h"
 #include "coid/comm/binstream/filestream.h"
 #include "coid/comm/binstream/txtstream.h"
+//#include "coid/comm/binstream/netstreamtcp.h"
 
 COID_NAMESPACE_BEGIN
 
@@ -55,22 +57,9 @@ COID_NAMESPACE_BEGIN
 class httpstream : public binstream
 {
 public:
-    virtual void set_content_type( const char* ct )    {}
-
-    virtual uint64 get_session_id() const = 0;
-    virtual void set_session_id( uint64 ssid ) = 0;
-};
-
-////////////////////////////////////////////////////////////////////////////////
-class httpstreamcoid : public httpstream
-{
-public:
     ///Http header
     struct header
     {
-        uint64 _ssid;
-        //uint _ssidpathlen;          ///< length of path string of sessioncoid cookie, pick the longer
-
         uints _content_length;
         int _errcode;
 
@@ -81,8 +70,8 @@ public:
 
         bool _bclose;
         bool _bhttp10;
-        bool _isdir;
-        bool _isfile;
+        //bool _isdir;
+        //bool _isfile;
 
         charstr _method;
         charstr _fullpath;
@@ -99,191 +88,9 @@ public:
             _te = 0;
         }
 
-        opcd decode( bool breq, cachestream& bin, binstream* log )
-        {
-            binstreambuf buf;
+        bool is_chunked() const     { return (_te & TE_CHUNKED) != 0; }
 
-            _ssid = 0;
-            _bclose = true;
-            _te = 0;
-            _content_length = UMAX;
-            _if_mdf_since = -1;
-
-            //skip any nonsense 
-            opcd e;
-            for(;;)
-            {
-                e = bin.read_until( substring::crlf(), &buf );
-                if(e)
-                    return e;
-
-                token t = buf;
-
-                if(log)
-                    *log << t << "\r\n";
-
-                if( breq  ||  t.begins_with_icase("http/") ) break;
-
-                buf.reset_write();
-            }
-             
-            token n, tok = buf;
-            tok.skip_char(' ');
-
-            if(breq)
-            {
-                token meth = tok.cut_left(' ',1);
-                _method = meth;
-
-                token path = tok.cut_left(' ',1);
-
-                static token _HTTP = "http://";
-
-                //check the path
-                if( path.begins_with_icase(_HTTP) )
-                {
-                    path += _HTTP._len;
-
-                    path.skip_notchar('/');
-                }
-
-                //skip leading /.
-                path.skip_ingroup("/.");
-
-                _fullpath = path;
-                path = _fullpath;
-
-                _relpath = path.cut_left('?',1);
-                _query = path;
-
-
-                token proto = tok.cut_left(' ',1);
-                if( proto.cmpeqi("http/1.0") )
-                    _bhttp10 = _bclose = true;
-                else if( proto.cmpeqi("http/1.1") )
-                    _bhttp10 = _bclose = false;
-                else
-                    return ersFE_UNRECG_REQUEST "unknown protocol";
-            }
-            else
-            {
-                token proto= tok.cut_left(' ',1);
-                if( proto.cmpeqi("http/1.0") )
-                    _bhttp10 = _bclose = true;
-                else if( proto.cmpeqi("http/1.1") )
-                    _bhttp10 = _bclose = false;
-                else
-                    return ersFE_UNRECG_REQUEST "unknown protocol";
-
-                token errcd = tok.cut_left(' ',1);
-                _errcode = errcd.toint();
-
-                if( _errcode != 200 )
-                    return ersFE_UNKNOWN_ERROR;
-            }
-
-            //_ssidpathlen = 0;
-            //read remaining headers
-            for(;;)
-            {
-                buf.reset_write();
-
-                e = bin.read_until( substring::crlf(), &buf );
-                if(e)
-                    return e;
-
-                if( buf.is_empty() )
-                    return 0;
-
-                token h = buf;
-
-                if(log)
-                    *log << h << "\r\n";
-
-                token h1 = h.cut_left(':',1);
-                h.skip_char(' ');
-/*
-                if( h1.cmpeqi("Cookie") )
-                {
-                    uint64 ssid=0;
-                    bool bset=true;
-                    for(;;)
-                    {
-                        token par = h.cut_left("; ",-1);
-
-                        token k = par.cut_left('=',1,true);
-                        if( k.is_empty() )  break;
-
-                        if( k.begins_with_icase("sessioncoid") )
-                        {
-                            token id = par.cut_left(',',1);
-                            ssid = id.touint64();
-                            while(!par.is_empty())
-                            {
-                                token t = par.cut_left(',',1);
-                                t.skip_char(' ');
-                                if(t.begins_with_icase("path")) {
-                                    t.cut_left("= ",1);
-                                    if( _ssidpathlen > t.len() )
-                                        bset=false;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    if(bset && ssid!=0)
-                        _ssid = ssid;
-                }
-                */
-                if( h1.cmpeqi("Session-Coid") )
-                {
-                    _ssid = h.touint64();
-                }
-                else if( h1.cmpeqi("TE")  ||  h1.cmpeqi("Transfer-Encoding") )
-                {
-                    for(;;)
-                    {
-                        token k = h.cut_left(", ",-1);
-                        if( k.is_empty() )  break;
-
-                        if( k.cmpeqi("deflate") )
-                            _te |= TE_DEFLATE;
-                        else if( k.cmpeqi("gzip") )
-                            _te |= TE_GZIP;
-                        else if( k.cmpeqi("chunked") )
-                            _te |= TE_CHUNKED;
-                        else if( k.cmpeqi("trailers") )
-                            _te |= TE_TRAILERS;
-                        else if( k.cmpeqi("identity") )
-                            _te |= TE_IDENTITY;
-                    }
-                }
-                else if( h1.cmpeqi("Connection") )
-                {
-                    for(;;)
-                    {
-                        token k = h.cut_left(", ",-1);
-                        if( k.is_empty() )  break;
-
-                        if( k.cmpeqi("close") )
-                            _bclose = true;
-                        else if( k.cmpeqi("keep-alive") )
-                            _bclose = false;
-                    }
-                }
-                else if( h1.cmpeqi("Content-Length") )
-                {
-                    _content_length = h.toint();
-                }
-                else if( h1.cmpeqi("If-Modified-Since") )
-                {
-                    h.todate_gmt(_if_mdf_since);
-                }
-            }
-
-            return e;
-        }
+        opcd decode( bool is_listener, httpstream& bin, binstream* log );
     };
 
 public:
@@ -291,20 +98,79 @@ public:
     class cachestreamex : public cachestream
     {
         uints _hdrpos;
+        uint rdchunk;
+        binstreambuf buf;
+        charstr _tmp;
+        bool final;
 
-        static const token& header()
-        { static token _T = "Content-Length:                     \r\n\r\n";  return _T; }
+        static const token& CLheader()
+        { static token _T = "Content-Length: 0                   \r\n\r\n";  return _T; }
 
     public:
 
-        cachestreamex() { _hdrpos = UMAX; }
+        cachestreamex() {
+            _hdrpos = UMAX;
+            _tmp = "Content-Length: ";  //length=16
+            rdchunk = 0;
+            final=false;
+        }
 
-        opcd set_hdr_pos()
+
+        opcd chunked_read_raw( void* p, uints& len )
         {
-            _hdrpos = len() + 16;   //skip "Content-Length: "
-            const token& t = header();
-            uints n;
-            return write_raw( t.ptr(), n=t.len() );
+            opcd e;
+            uints olen = len;
+
+            if(final)
+                return ersNO_MORE;
+
+            if( rdchunk == 0 ) {
+                do {
+                    buf.reset_write();
+                    e = read_until( substring::crlf(), &buf );
+                    if(e)
+                        return e;
+                } while( buf.is_empty() );
+
+                token chunk = buf;
+                rdchunk = chunk.touint_and_shift_base(16);
+
+                if( rdchunk>0 )
+                    e = ersRETRY;
+                else {
+                    final = true;
+                    e = ersNO_MORE;
+                }
+            }
+            else if( rdchunk < len ) {
+                uints tlen = rdchunk;
+                e = read_raw( p, tlen );
+
+                len = len - rdchunk + tlen;
+                if(!e)  e = ersRETRY;
+            }
+            else
+                e = read_raw( p, len );
+
+            rdchunk -= uint(olen-len);
+
+            return e;
+        }
+
+        opcd set_hdr_pos( uints content_len )
+        {
+            if( content_len == UMAX ) {
+                _hdrpos = len() + 16;   //skip "Content-Length: "
+
+                return write_token_raw( CLheader() );
+            }
+            else {
+                _hdrpos = 0;
+                _tmp.trim_to_length(16);
+                _tmp << content_len << "\r\n\r\n";
+
+                return write_token_raw(_tmp);
+            }
         }
 
         opcd on_cache_flush( void* p, uints size, bool final )
@@ -313,25 +179,61 @@ public:
                 return ersDENIED;   //no multiple packets supported
 
             DASSERT( _hdrpos != UMAX );
-            //write msg len
-            char* pc = (char*) get_raw( _hdrpos, 20 );
 
-            //write content length
-            charstr::num<int64>::insert( pc, 20, len() - _hdrpos - 20-4, 10, 0, 20, charstr::ALIGN_NUM_RIGHT );
+            if(_hdrpos) {
+                //write msg len
+                char* pc = (char*) get_raw( _hdrpos, 20 );
+
+                //write content length
+                uints csize = len() - _hdrpos - 20-4;
+                charstr::num<int64>::insert( pc, 20, csize, 10, 0, 20, charstr::ALIGN_NUM_RIGHT );
+            }
+
             _hdrpos = UMAX;
 
             return 0;
         }
+
+        void chunked_acknowledge( bool eat = false )
+        {
+            if(eat)
+                rdchunk = 0;
+            else {
+                if( rdchunk>0 )
+                    throw ersIO_ERROR "data left in input buffer";
+
+                if(!final) {
+                    uints len=0;
+                    opcd e = chunked_read_raw( 0, len );
+                    if( e != ersNO_MORE )
+                        throw ersIO_ERROR "data left in input buffer";
+                }
+            }
+
+            final = false;
+            acknowledge(eat);
+        }
     };
 
 
+    static const substring& substring_proto()
+    {
+        static substring _ss( "://" );
+        return _ss;
+    }
 
 public:
 
+    ///Called to decode the value of unknown http header
+    //@param name header
+    //@param value value string
+    virtual opcd on_extra_header( const token& name, token value )
+    {
+        return 0;
+    }
 
     virtual opcd on_new_read()          { return 0; }
     virtual opcd on_new_write()         { return 0; }
-
 
 
     virtual uint binstream_attributes( bool in0out1 ) const
@@ -352,26 +254,34 @@ public:
         opcd e = check_read();
         if(e) return e;
 
-        return _cache.read_raw( p, len );
+        return _hdr->is_chunked() 
+            ? _cache.chunked_read_raw( p, len )
+            : _cache.read_raw( p, len );
     }
 
     virtual void flush()
     {
+        check_write(0);
+
         _cache.flush();
         _flags &= ~fWSTATUS;
 
-        if( (_flags & fRESPONSE)  &&  _hdr->_bclose )
-        {
+        if( (_flags & fLISTENER)  &&  _hdr->_bclose )
             _cache.close(true);
-        }
     }
 
     virtual void acknowledge( bool eat=false )
     {
-        _cache.acknowledge(eat);
+        check_read();
+
+        if( _hdr->is_chunked() )
+            _cache.chunked_acknowledge(eat);
+        else
+            _cache.acknowledge(eat);
+
         _flags &= ~fRSTATUS;
 
-        if( !(_flags & fRESPONSE)  &&  _hdr->_bclose )
+        if( !(_flags & fLISTENER)  &&  _hdr->_bclose )
         {
             _cache.close(true);
         }
@@ -392,64 +302,103 @@ public:
     {
         _flags &= ~fWSTATUS;
         _cache.reset_write();
+    }
 
-        _seqnum = _rnd.rand();
+    opcd send_error( const token& errstr )
+    {
+        set_content_type( "text/plain" );
+        opcd e = new_write(0);
+        if(e) return e;
+
+        flush();
+        return 0;
+    }
+
+    ///Send file as a reply or query
+    /**
+        @return
+        ersUNAVAILABLE if another/previous write wasn't flushed still
+        ersNOT_FOUND if file wasn't found
+        ersINVALID_TYPE if the file isn't regular
+        ersIGNORE if the file wasn't modified since the time specified in _hdr->_if_mdf_since
+        ersDENIED if the file could not be opened for reading
+        or other opcd errors related to the transport stream
+    **/
+    opcd send_file( const charstr& file, const token& mime )
+    {
+        if( (_flags & fWSTATUS) != 0 )
+            return ersUNAVAILABLE;  //another write in progress
+
+        struct stat st;
+        if( !directory::stat(file,&st) )
+            return ersNOT_FOUND;
+
+        if( !directory::is_regular(st.st_mode) )
+            return ersINVALID_TYPE;
+
+        if( (_flags & fLISTENER)
+            && _hdr->_if_mdf_since!=0
+            && st.st_mtime <= _hdr->_if_mdf_since )
+        {   return ersIGNORE; }
+
+        bifstream bif(file);
+        if( !bif.is_open() )
+            return ersDENIED;
+
+        set_content_type(mime);
+        set_modified( st.st_mtime );
+
+        opcd e = new_write( st.st_size );
+        if(e) return e;
+
+        //now flush the headers
+        _cache.flush();
+
+        //and write the content
+        bif.write_to( *_cache.bound() );
+
+        _flags &= ~fWSTATUS;
+
+        if( (_flags & fLISTENER)  &&  _hdr->_bclose )
+            _cache.close(true);
+
+        return 0;
     }
 
 
-    httpstreamcoid()
+    httpstream()
     {
-        _flags = fSETSESSION;
-        _seqnum = _rnd.rand();
+        _flags = 0;
 
         _hdrx = new header;
         _hdr = _hdrx;
         _cache.reserve_buffer_size(1024);
+
+        //_cache.bind(net);
         _tcache.bind(_cache);
 
-        load_opthdr();
+        set_defaults();
     }
 
-    httpstreamcoid( binstream& bin )
+    httpstream( header& hdr, cachestream& cache )
     {
-//        _ssid = 0;
-        _flags = fSETSESSION;
-        _seqnum = _rnd.rand();
-
-        _hdrx = new header;
-        _hdr = _hdrx;
-        _cache.reserve_buffer_size(1024);
-        _cache.bind(bin);
-        _tcache.bind(_cache);
-
-        load_opthdr();
-    }
-
-    httpstreamcoid( header& hdr, cachestream& cache )
-    {
-//        _ssid = 0;
-        _flags = fSKIP_HEADER | fSETSESSION;
-        _seqnum = _rnd.rand();
+        _flags = fSKIP_HEADER;
 
         _hdr = &hdr;
         _cache.bind( *cache.bound() );
         _cache.swap(cache);
         _tcache.bind(_cache);
 
-        load_opthdr();
+        set_defaults();
     }
 
-    void load_opthdr()
+    void set_defaults()
     {
         _content_type_qry = "Content-Type: text/plain\r\n";
         _content_type_rsp = "Content-Type: text/plain\r\n";
+        _content_type_len = 14;
 
-        bifstream bif(".opthdr");
-        if(bif.is_open())
-        {
-            txtstream txt(bif);
-            txt >> _opthdr;
-        }
+        _errcode = "200 OK";
     }
 
     virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX )
@@ -472,40 +421,70 @@ public:
 
     void set_host( const token& tok )
     {
-        (_proxyreq = "Host: ") << tok << "\r\n";
-        (_urihdr = tok) << "/?.t";
-    }
+        token host = tok;
+        host.cut_left( substring_proto(), 1, true );
 
+        _urihdr = host;
+        (_proxyreq = "Host: ") << host.cut_left('/',1) << "\r\n";
+    }
+/*
     void set_host( const netAddress& addr )
     {
         charstr a;
 		addr.getHost(a, true);
         (_proxyreq = "Host: ") << a << "\r\n";
-        (_urihdr = a) << "/?.t";
+        _urihdr = a;
+    }
+*/
+    void set_listener( bool is_listener )
+    {
+        if(is_listener) {
+            _flags |= fLISTENER;
+            _errcode = "200 OK";
+        }
+        else
+            _flags &= ~fLISTENER;
     }
 
-    void set_response_type( bool resp=true )
+    ///Set response http error code (also indicates that the writing mode is response)
+    void set_response( const token& errcode )
     {
-        if( resp )
-            _flags |= fRESPONSE;
-        else
-            _flags &= ~fRESPONSE;
+        _flags |= fLISTENER;
+        _errcode = errcode;
     }
 
-    virtual void set_content_type( const char* ct )
+    ///Indicate that the writing mode is a http request
+    void set_request()
     {
-        if( _flags & fRESPONSE )
-            _content_type_rsp = ct ? ct : "Content-Type: text/plain\r\n";
-        else
-            _content_type_qry = ct ? ct : "Content-Type: text/plain\r\n";
+        _flags &= ~fLISTENER;
+    }
+
+
+    ///Set content type for request or query
+    void set_content_type( const token& ct )
+    {
+        charstr& dst = (_flags & fLISTENER)!=0
+            ? _content_type_rsp
+            : _content_type_qry;
+
+        dst.trim_to_length( _content_type_len );
+        dst += !ct.is_empty() ? ct : "text/plain";
+        dst += "\r\n";
     }
 
     void set_skip_header()
     {
         _flags |= fSKIP_HEADER;
-        //_len = content_length;
     }
 
+    ///Set optional headers, returns a reference to charstr that can be manipulated
+    charstr& set_optional_header( const token& opt )
+    {
+        _opthdr = opt;
+        return _opthdr;
+    }
+
+    ///Set connection type: Close (true) or Keep-Alive (false)
     void set_connection_type( bool bclose )
     {
         if(bclose)
@@ -514,22 +493,24 @@ public:
             _flags &=~(int)fCLOSE_CONN;
     }
 
+    ///Set time for Last-Modified header. It is cleared after every reply.
+    void set_modified( time_t mdf )
+    {
+        tmmodif = mdf;
+    }
+
     bool is_writting()                  { return (_flags & fWSTATUS) != 0; }
     bool is_reading()                   { return (_flags & fRSTATUS) != 0; }
 
+    ///Read header of the reply
+    opcd read_header()                  { return check_read(); }
 
-    virtual uint64 get_session_id() const
-    {
-        return _hdr->_ssid;
-    }
+    const header& get_header() const    { return *_hdr; }
 
-    virtual void set_session_id( uint64 sid )
-    {
-        set_response_type(true);    //setting session id implies that the caller is server
-        _flags |= fSETSESSION;
 
-        _hdr->_ssid = sid;
-    }
+    void set_cache_size( uints sizer, uints sizew )   { _cache.reserve_buffer_size( sizer, sizew ); }
+
+    cachestream& get_cache_stream()     { return _cache; }
 
 protected:
 
@@ -539,24 +520,26 @@ protected:
     local<header>  _hdrx;
     header* _hdr;
 
+    charstr _tmp;
+
+    token _errcode;
     charstr _proxyreq;
     charstr _urihdr;
     charstr _opthdr;
 
-    token _content_type_qry;
-    token _content_type_rsp;
+    charstr _content_type_qry;
+    charstr _content_type_rsp;
+    uint _content_type_len;
 
-    rnd_int _rnd;
-    uint _seqnum;
+    timet tmmodif;
 
     netAddress _addr;
     uint _flags;
     enum {
         fRSTATUS                = 0x01,         ///< closed/transm.open
         fWSTATUS                = 0x02,         ///< reading/all read
-        fRESPONSE               = 0x04,         ///< request/response header mode
+        fLISTENER               = 0x04,         ///< request/response header mode
 
-        fSETSESSION             = 0x10,         ///< write session cookie
         fSKIP_HEADER            = 0x20,
         fCLOSE_CONN             = 0x40,
 
@@ -575,16 +558,16 @@ protected:
         return new_read();
     }
 
-    opcd check_write()
+    opcd check_write( uints len=UMAX )
     {
         if( (_flags & fWSTATUS) != 0 )
             return 0;
         //write header
-        return new_write();
+        return new_write(len);
     }
 
     ///
-    opcd new_write()
+    opcd new_write( uints content_len )
     {
         if( _flags & fWSTATUS )
             return ersUNAVAILABLE;
@@ -592,6 +575,7 @@ protected:
         //_cache.set_timeout(0);
 
         static token _POST( "POST http://" );
+        static token _GET( "GET http://" );
         static token _POST1(
             " HTTP/1.1\r\n"
             );
@@ -602,42 +586,57 @@ protected:
 
         static token _RESP(
             //"X-PLEASE_WAIT: .\r\n"
-            "HTTP/1.1 200 OK\r\n"
+            "\r\n"
             "Server: COID/HT\r\n"
-            "Cache-Control: no-cache\r\n"
             "MIME-Version: 1.0\r\n"
             );
 
         _flags |= fWSTATUS;
 
-        if( _flags & fRESPONSE )
-            _tcache << _RESP << _content_type_rsp;
-        else
-            _tcache << _POST << _urihdr << (++_seqnum) << _rnd.rand()
-                << _POST1 << _proxyreq << _POST2 << _content_type_qry;
+        if( _flags & fLISTENER ) {
+            _tcache << "HTTP/1.1 " << _errcode << _RESP;
+            
+            if(content_len)
+                _tcache << _content_type_rsp;
 
-        charstr date;
-        time_t t0;
-        date.append_date_gmt( time(&t0) );
-        _tcache << "Date: " << date << "\r\n";
+            if( tmmodif != 0 ) {
+                static token _MDF("Last-Modified: ");
 
-
-        static token _SSID_COOKIE( "Set-Cookie: sessioncoid=" );
-        static token _SSID( "Session-Coid: " );
-        if( (_flags & fSETSESSION) && _hdr->_ssid ) {
-            //_tcache << _SSID_COOKIE << _hdr->_ssid;
-            //_tcache << "\r\n";
-            _tcache << _SSID << _hdr->_ssid;
-            _tcache << "\r\n";
-            _flags &= ~fSETSESSION;
+                _tmp.reset();
+                _tmp.append_date_gmt( tmmodif );
+                _tcache << _MDF << _tmp << "\r\n";
+                tmmodif = 0;
+            }
+            else {
+                static token _CCO("Cache-Control: no-cache\r\n");
+                _tcache << _CCO;
+            }
         }
+        else {
+            _tcache << (content_len ? _POST : _GET)
+                << _urihdr << _POST1 << _proxyreq << _POST2;
+            
+            if(content_len)
+                _tcache << _content_type_qry;
+        }
+
+        _tmp.reset();
+        _tmp.append_date_gmt( timet::current() );
+        _tcache << "Date: " << _tmp << "\r\n";
 
         //
         static token _CONC( "Connection: Close\r\n" );
         static token _CONKA( "Connection: Keep-Alive\r\n" );
         _tcache << ( _hdr->_bclose ? _CONC : _CONKA );
 
-        _cache.set_hdr_pos();
+        if( !_opthdr.is_empty() ) {
+            _tcache << _opthdr;
+
+            if( !_opthdr.ends_with("\r\n") )
+                _tcache << "\r\n";
+        }
+
+        _cache.set_hdr_pos( content_len );
 
         return on_new_write();
     }
@@ -648,55 +647,184 @@ protected:
         if( _flags & fRSTATUS )
             return ersUNAVAILABLE;
 
-        //_cache.set_timeout(4000);
-        _flags |= fRSTATUS;
-
         opcd e;
 
         if( (_flags & fSKIP_HEADER) == 0 )
         {
             binstreambuf buf;
-            e = _hdr->decode( 0, _cache, &buf );
+            e = _hdr->decode( (_flags & fLISTENER)!=0, *this, &buf );
 
-            if(!e  &&  (_flags & fRESPONSE) )
-            {
-                if( !_hdr->_fullpath.begins_with("?.t") )
-                    e = ersFE_UNRECG_REQUEST;
-            }
-
-            if(e)
-            {
+            if(e) {
                  //_cache.set_timeout(10);
-                 _cache.read_until( substring::zero(), &buf );
+                _cache.read_until( substring::zero(), &buf );
                  //_cache.set_timeout(0);
 
-                 bofstream bf("tunnel-http.log.html?wb+");
+                 bofstream bf(  (_flags & fLISTENER)
+                     ? "httpstream_req.log?wc+"
+                     : "httpstream_resp.log?wc+"
+                     );
                  txtstream txt(bf);
                  txt << (token)buf
                      << "-------------------------------------------------------------------------------------\n\n";
 
-                 //_c6.set_all_read();
-
-                 return ersFE_UNRECG_REQUEST;
-            }
-            else
-            {
-                 bofstream bf("tunnel-http.log.html?wb+");
-                 txtstream txt(bf);
-                 txt << (token)buf
-                     << "-------------------------------------------------------------------------------------\n\n";
+                 return ersFAILED;
             }
         }
 
-        if(!e)
-            e = on_new_read();
+        e = on_new_read();
+        _flags |= fRSTATUS;
 
         return e;
     }
 };
 
 
+////////////////////////////////////////////////////////////////////////////////
+inline opcd httpstream::header::decode( bool is_listener, httpstream& http, binstream* log )
+{
+    binstreambuf buf;
+    cachestream& bin = http.get_cache_stream();
+
+    _bclose = true;
+    _te = 0;
+    _content_length = UMAX;
+    _if_mdf_since = 0;
+
+    //skip any nonsense 
+    opcd e;
+    for(;;)
+    {
+        e = bin.read_until( substring::crlf(), &buf );
+        if(e)
+            return e;
+
+        token t = buf;
+
+        if(log)
+            *log << t << "\r\n";
+
+        if( is_listener  ||  t.begins_with_icase("http/") ) break;
+
+        buf.reset_write();
+    }
+     
+    token n, tok = buf;
+    tok.skip_char(' ');
+
+    if(is_listener)
+    {
+        token meth = tok.cut_left(' ',1);
+        _method = meth;
+
+        token path = tok.cut_left(' ',1);
+
+        static token _HTTP = "http://";
+
+        //check the path
+        if( path.begins_with_icase(_HTTP) )
+        {
+            path += _HTTP.len();
+            path.skip_notchar('/');
+        }
+
+        _fullpath = path;
+        path = _fullpath;
+
+        _relpath = path.cut_left('?',1);
+        _query = path;
+
+
+        token proto = tok.cut_left(' ',1);
+        if( proto.cmpeqi("http/1.0") )
+            _bhttp10 = _bclose = true;
+        else if( proto.cmpeqi("http/1.1") )
+            _bhttp10 = _bclose = false;
+        else
+            return ersFE_UNRECG_REQUEST "unknown protocol";
+    }
+    else
+    {
+        token proto= tok.cut_left(' ',1);
+        if( proto.cmpeqi("http/1.0") )
+            _bhttp10 = _bclose = true;
+        else if( proto.cmpeqi("http/1.1") )
+            _bhttp10 = _bclose = false;
+        else
+            return ersFE_UNRECG_REQUEST "unknown protocol";
+
+        token errcd = tok.cut_left(' ',1);
+        _errcode = errcd.toint();
+    }
+
+    //read remaining headers
+    for(;;)
+    {
+        buf.reset_write();
+
+        e = bin.read_until( substring::crlf(), &buf );
+        if(e)
+            return e;
+
+        if( buf.is_empty() )
+            return 0;
+
+        token h = buf;
+        if(log)
+            *log << h << "\r\n";
+
+        token h1 = h.cut_left(':',1);
+        h.skip_char(' ');
+
+        if( h1.cmpeqi("TE")  ||  h1.cmpeqi("Transfer-Encoding") )
+        {
+            for(;;)
+            {
+                token k = h.cut_left(", ",-1);
+                if( k.is_empty() )  break;
+
+                if( k.cmpeqi("deflate") )
+                    _te |= TE_DEFLATE;
+                else if( k.cmpeqi("gzip") )
+                    _te |= TE_GZIP;
+                else if( k.cmpeqi("chunked") )
+                    _te |= TE_CHUNKED;
+                else if( k.cmpeqi("trailers") )
+                    _te |= TE_TRAILERS;
+                else if( k.cmpeqi("identity") )
+                    _te |= TE_IDENTITY;
+            }
+        }
+        else if( h1.cmpeqi("Connection") )
+        {
+            for(;;)
+            {
+                token k = h.cut_left(", ",-1);
+                if( k.is_empty() )  break;
+
+                if( k.cmpeqi("close") )
+                    _bclose = true;
+                else if( k.cmpeqi("keep-alive") )
+                    _bclose = false;
+            }
+        }
+        else if( h1.cmpeqi("Content-Length") )
+        {
+            _content_length = h.toint();
+        }
+        else if( h1.cmpeqi("If-Modified-Since") )
+        {
+            h.todate_gmt(_if_mdf_since);
+        }
+        else {
+            e = http.on_extra_header( h1, h );
+            if(e) break;
+        }
+    }
+
+    return e;
+}
+
 COID_NAMESPACE_END
 
-#endif //__COID_COMM_HTTPSTREAM__HEADER_FILE__
 
+#endif //__COID_COMM_HTTPSTREAM2__HEADER_FILE__

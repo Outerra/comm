@@ -179,17 +179,10 @@ struct opcd
 
 
     ////////////////////////////////////////////////////////////////////////////////
-    opcd()  {_ptr=0;}
+    opcd() : _ptr(0) {}
 
-    opcd( const opcd& e )
-    {
-        _ptr = e._ptr;
-    }
-
-    opcd( const errcode* pe )
-    {
-        _ptr = pe;
-    }
+    opcd( const opcd& e ) : _ptr(e._ptr) {}
+    opcd( const errcode* pe ) : _ptr(pe) {}
 
     opcd& operator = (const opcd e)
     {

@@ -255,7 +255,7 @@ public:
     void xread_separator()                              { xread( 0, type( type::T_SEPARATOR, 0 ) ); }
 
     ////////////////////////////////////////////////////////////////////////////////
-    ///Write character token
+    ///Write character token (substring)
     opcd write_token( const token& x )
     {
         binstream_container_fixed_array<char> c((char*)x.ptr(), x.len());
@@ -269,6 +269,7 @@ public:
         return write_array(c);
     }
 
+    ///Write character token (substring)
     opcd write_token( const char* p, uints len )
     {
         binstream_container_fixed_array<char> c((char*)p, len);
@@ -286,7 +287,15 @@ public:
     binstream& xwrite_key( const token& x )             { opcd e = write_key(x);  if(e) throw e; return *this; }
     binstream& xwrite_token( const char* p, uints len ) { opcd e = write_token(p,len);  if(e) throw e; return *this; }
     binstream& xwrite_key( const char* p, uints len )   { opcd e = write_key(p,len);  if(e) throw e; return *this; }
-    
+
+
+    ////////////////////////////////////////////////////////////////////////////////
+    ///Write token content as raw data (helper for text-writing streams)
+    opcd write_token_raw( const token& x )
+    {
+        uints len = x.len();
+        return write_raw( x.ptr(), len );
+    }
 
     ////////////////////////////////////////////////////////////////////////////////
     ///Write single primitive type

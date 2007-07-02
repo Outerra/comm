@@ -93,29 +93,32 @@ public:
     bool is_entry_directory() const;
     bool is_entry_regular() const;
 
-    static bool is_valid( const charstr& dir )              { return is_valid( dir.ptr() ); }
+    static bool is_valid( const charstr& dir )              { return is_valid( dir.c_str() ); }
     static bool is_valid( const char* dir )
     {
         struct stat st;
-        return 0 == stat( dir, &st );
+        return stat( dir, &st );
     }
 
-    static bool is_valid_directory( const charstr& arg )    { return is_valid_directory( arg.ptr() ); }
+    static bool is_valid_directory( const charstr& arg )    { return is_valid_directory( arg.c_str() ); }
     static bool is_valid_directory( const char* arg )
     {
         struct stat st;
-        return 0 == stat( arg, &st )  &&  is_directory(st.st_mode);
+        return stat( arg, &st )  &&  is_directory(st.st_mode);
     }
 
-    static bool is_valid_file( const charstr& arg )         { return is_valid_file( arg.ptr() ); }
+    static bool is_valid_file( const charstr& arg )         { return is_valid_file( arg.c_str() ); }
     static bool is_valid_file( const char* arg )
     {
         struct stat st;
-        return 0 == stat( arg, &st )  &&  is_regular(st.st_mode);
+        return stat( arg, &st )  &&  is_regular(st.st_mode);
     }
 
     static bool is_directory( ushort mode );
     static bool is_regular( ushort mode );
+
+    static bool stat( const char* name, struct stat* dst )  { return 0 == ::stat( name, dst ); }
+    static bool stat( const charstr& name, struct stat* dst )   { return 0 == ::stat( name.c_str(), dst ); }
     
     static opcd mkdir( const char* name, uint mode=0750 );
     static opcd mkdir( const charstr& name, uint mode=0750 ){ return mkdir( name.c_str(), mode ); }
@@ -164,8 +167,8 @@ public:
 
     ///After a successful call to next(), this function returns full path to the file
     const charstr& get_last_full_path() const   { return _curpath; }
-    const char* get_last_file_name() const      { return _curpath.ptr() + _baselen; }
-    token get_last_file_name_token() const      { return token(_curpath.ptr()+_baselen,_curpath.len()-_baselen); }
+    const char* get_last_file_name() const      { return _curpath.c_str() + _baselen; }
+    token get_last_file_name_token() const      { return token(_curpath.c_str()+_baselen,_curpath.len()-_baselen); }
 
 private:
     charstr     _curpath;

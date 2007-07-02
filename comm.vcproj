@@ -230,6 +230,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\binstream\httpstream_old.h"
+				>
+			</File>
+			<File
+				RelativePath=".\binstream\httpstreamcoid.h"
+				>
+			</File>
+			<File
 				RelativePath=".\binstream\httpstreamtunnel.h"
 				>
 			</File>
@@ -246,7 +254,7 @@
 				>
 			</File>
 			<File
-				RelativePath="binstream\netstreamhttp.h"
+				RelativePath=".\binstream\netstreamhttp.h"
 				>
 			</File>
 			<File

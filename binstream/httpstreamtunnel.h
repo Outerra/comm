@@ -43,7 +43,7 @@
 #include "../str.h"
 
 #include "enc_base64stream.h"
-#include "httpstream.h"
+#include "httpstreamcoid.h"
 
 
 COID_NAMESPACE_BEGIN
@@ -155,13 +155,13 @@ public:
     {
         _c6.bind( _cache );
     }
-
+/*
     httpstreamtunnel( binstream& bin ) : httpstreamcoid(bin)
     {
         _c6.bind( _cache );
     }
-
-    httpstreamtunnel( httpstreamcoid::header& hdr, cachestream& cache ) : httpstreamcoid(hdr,cache)
+*/
+    httpstreamtunnel( httpstream::header& hdr, cachestream& cache ) : httpstreamcoid(hdr,cache)
     {
         _c6.bind( _cache );
     }

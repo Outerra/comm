@@ -164,7 +164,7 @@ const struct stat* directory::next()
     {
         _curpath.trim_to_length( _baselen );
         _curpath << dire->d_name;
-        if( 0 == stat( _curpath.ptr(), &_st ) )
+        if( stat( _curpath.ptr(), &_st ) )
             return &_st;
     }
 
