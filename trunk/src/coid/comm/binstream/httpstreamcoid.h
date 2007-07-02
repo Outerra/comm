@@ -14,12 +14,11 @@
  * The Original Code is COID/comm module.
  *
  * The Initial Developer of the Original Code is
- * PosAm.
- * Portions created by the Initial Developer are Copyright (C) 2006
+ * Brano Kemen
+ *
+ * Portions created by the Initial Developer are Copyright (C) 2003
  * the Initial Developer. All Rights Reserved.
  *
- * Contributor(s):
- * Brano Kemen
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -35,46 +34,47 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#ifndef __COID_COMM_HTTPSTREAMCOID__HEADER_FILE__
+#define __COID_COMM_HTTPSTREAMCOID__HEADER_FILE__
 
-#ifndef __COID_COMM_TIME__HEADER_FILE__
-#define __COID_COMM_TIME__HEADER_FILE__
+#include "coid/comm/namespace.h"
+#include "httpstream.h"
 
-#include "namespace.h"
-#include <time.h>
 
 COID_NAMESPACE_BEGIN
 
-struct timet
+////////////////////////////////////////////////////////////////////////////////
+class httpstreamcoid : public httpstream
 {
-    int64  t;
+    uint64 _ssid;
 
-    timet()                         { now(); }
-    timet( time_t tx )              { t = tx; }
-
-    operator time_t () const        { return (time_t)t; }
-
-    timet& operator = ( time_t tx ) { t = tx;  return *this; }
-
-
-    int64 diff( time_t tx ) const   { return t - tx; }
-
-
-    timet& now()
+public:
+    
+    virtual opcd on_extra_header( const token& name, token value )
     {
-        t = (int64) ::time(0);
-        return *this;
+        if( name.cmpeqi("Session-Coid") ) {
+            _ssid = value.touint64();
+        }
+        return 0;
     }
 
-    static timet current()
+
+    uint64 get_session_id() const       { return _ssid; }
+
+    void set_session_id( uint64 ssid )
     {
-        timet t;
-        t.now();
-        return t;
+        _ssid = ssid;
+        set_optional_header("Session-Coid: ") << ssid << "\r\n";
     }
 
+
+    httpstreamcoid() : _ssid(0) {}
+
+    httpstreamcoid( header& hdr, cachestream& cache )
+        : httpstream(hdr,cache), _ssid(0) {}
 };
-
 
 COID_NAMESPACE_END
 
-#endif //__COID_COMM_TIME__HEADER_FILE__
+#endif //__COID_COMM_HTTPSTREAMCOID__HEADER_FILE__
+

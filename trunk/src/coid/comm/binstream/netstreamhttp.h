@@ -124,7 +124,11 @@ public:
     virtual opcd connect( const netAddress& addr )
     {
         _addr = addr;
-        _tunh.set_host(addr);
+
+        charstr tmp;
+		addr.getHost(tmp, true);
+
+        _tunh.set_host(tmp);
         return _tcps.connect( addr );
     }
 
@@ -154,7 +158,8 @@ public:
 
 
 
-    void set_response_type( bool resp=true )        { _tunh.set_response_type(resp); }
+    void set_response( const token& code )          { _tunh.set_response(code); }
+    void set_request()                              { _tunh.set_request(); }
 
     uint64 get_session_id() const                   { return _tunh.get_session_id(); }
     void set_session_id( uint64 sid )               { _tunh.set_session_id(sid); }
@@ -170,7 +175,10 @@ public:
         s.getRemoteAddress(&_addr);
         _tcps.assign_socket(s);
         _tunh.bind(_tcps);
-        _tunh.set_host(_addr);
+
+        charstr tmp;
+        _addr.getHost(tmp, true);
+        _tunh.set_host(tmp);
     }
 
 };
