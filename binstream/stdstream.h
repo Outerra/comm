@@ -53,7 +53,7 @@ public:
     stdoutstream()
     {
         create_internal_buffer();
-        set_newline_on_flush(true);
+        set_flush_token("\n");
     }
 
     virtual ~stdoutstream()

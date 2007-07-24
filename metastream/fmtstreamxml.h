@@ -611,7 +611,7 @@ public:
 
                 /////////////////////////////////////////////////////////////////////////////////////
                 case type::T_BINARY: {
-                    uints i = hex2bin( tok, p, t.get_size(), ' ' );
+                    uints i = charstrconv::hex2bin( tok, p, t.get_size(), ' ' );
                     if(i>0)
                         return ersMISMATCHED "not enough array elements";
                     tok.skip_char(' ');
@@ -742,7 +742,7 @@ public:
     opcd write_binary( const void* data, uints n )
     {
         char* buf = _bufw.get_append_buf(n*2);
-        bin2hex( data, buf, n, 1, 0 );
+        charstrconv::bin2hex( data, buf, n, 1, 0 );
         //_bufw.append_num_uint( 16, data, n, n*2, charstr::ALIGN_NUM_FILL_WITH_ZEROS );
         return 0;
     }
@@ -751,10 +751,10 @@ public:
     {
         uints nr = n;
         if( c.is_continuous() && n!=UMAX )
-            nr = hex2bin( tok, c.insert(n), n, ' ' );
+            nr = charstrconv::hex2bin( tok, c.insert(n), n, ' ' );
         else {
             for(; nr>0; --nr) {
-                if( hex2bin( tok, c.insert(1), 1, ' ' ) ) break;
+                if( charstrconv::hex2bin( tok, c.insert(1), 1, ' ' ) ) break;
             }
         }
         if( n != UMAX  &&  nr>0 )

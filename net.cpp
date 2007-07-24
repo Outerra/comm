@@ -353,6 +353,8 @@ size numbers). */
 
 charstr& netAddress::getHost( charstr& buf, bool useport ) const
 {
+    buf.reset();
+
     long x = ntohl(sin_addr);
     buf << ((x>>24) & 0xff) << '.'
         << ((x>>16) & 0xff) << '.'

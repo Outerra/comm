@@ -297,6 +297,12 @@ public:
         return write_raw( x.ptr(), len );
     }
 
+    void xwrite_token_raw( const token& x )
+    {
+        opcd e = write_token_raw(x);
+        if(e) throw e;
+    }
+
     ////////////////////////////////////////////////////////////////////////////////
     ///Write single primitive type
     virtual opcd write( const void* p, type t )

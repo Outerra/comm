@@ -14,12 +14,9 @@
  * The Original Code is COID/comm module.
  *
  * The Initial Developer of the Original Code is
- * PosAm.
- * Portions created by the Initial Developer are Copyright (C) 2003
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
  * Brano Kemen
+ * Portions created by the Initial Developer are Copyright (C) 2007
+ * the Initial Developer. All Rights Reserved.
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -35,39 +32,32 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef __COID_COMM_TXTSTREAM__HEADER_FILE__
-#define __COID_COMM_TXTSTREAM__HEADER_FILE__
+#ifndef __COID_COMM_TXTCACHESTREAM__HEADER_FILE__
+#define __COID_COMM_TXTCACHESTREAM__HEADER_FILE__
 
 #include "../namespace.h"
 
-#include "binstreambuf.h"
-#include "../local.h"
-#include "../str.h"
-#include "../txtconv.h"
+#include "txtcachestream.h"
+#include "cachestream.h"
 
 COID_NAMESPACE_BEGIN
 
+
 ////////////////////////////////////////////////////////////////////////////////
 ///Formatting binstream class to output plain text
-class txtstream : public binstream
+class txtcachestream : public binstream
 {
 protected:
-    binstream*  _binr;
-    binstream*  _binw;
+    cachestream _cache;
     charstr _buf;
-    local<binstreambuf> _readbuf;
-    token _flush;
 
-    char get_separator() const          { return char(' '); }
+    token _flush;
 
 public:
 
     virtual uint binstream_attributes( bool in0out1 ) const
     {
-        uint f = fATTR_IO_FORMATTING;
-        if(_binr)
-            f |= _binr->binstream_attributes(in0out1) & fATTR_READ_UNTIL;
-        return f;
+        return fATTR_IO_FORMATTING | _cache.binstream_attributes(in0out1);
     }
 
     ///@param s specifies string that should be appended to output upon flush()
@@ -78,8 +68,6 @@ public:
 
     virtual opcd write( const void* p, type t )
     {
-        ASSERT_RET( _binw, ersUNAVAILABLE "underlying binstream not set" );
-
         //does no special formatting of arrays
         if( t.is_array_control_type() )
             return 0;
@@ -90,7 +78,7 @@ public:
             {
 				uint bytes = t.get_size();
                 char* d = _buf.get_append_buf( bytes*2 );
-                charstrconv::bin2hex( p, d, 1, bytes, get_separator() );
+                charstrconv::bin2hex( p, d, 1, bytes, ' ' );
                 break;
             }
         case type::T_INT:
@@ -112,7 +100,7 @@ public:
                 case 8: _buf << *(double*)p;
                         break;
                 default:
-                    return ersINVALID_TYPE "unsupported size";
+                    throw ersINVALID_TYPE "unsupported size";
                 }
                 break;
             }
@@ -129,7 +117,7 @@ public:
         if( !_buf.is_empty() )
         {
             uints bl = _buf.len();
-            opcd e = _binw->write_raw( _buf.ptr(), bl );
+            opcd e = _cache.write_raw( _buf.ptr(), bl );
             if(e)  return e;
             _buf.reset();
         }
@@ -139,24 +127,22 @@ public:
 
     virtual opcd read( void* p, type t )
     {
-        ASSERT_RET( _binr, ersUNAVAILABLE "underlying binstream not set" );
-
         //does no special formatting of arrays
         if( t.is_array_control_type() )
             return 0;
 
         //since the text output is plain, without any additional marks that
         // can be used to determine the type, we can only read text
-        //for anything more sophisticated use class textparstream instead
+        //for anything more sophisticated use class fmtstream* classes instead
 
         if( t._type == type::T_CHAR  ||  t._type == type::T_KEY )
-            return _binr->read( p, t );
+            return _cache.read( p, t );
         else
             return ersUNAVAILABLE;
     }
 
-    virtual opcd write_raw( const void* p, uints& len )      { return _binw->write_raw( p, len ); }
-    virtual opcd read_raw( void* p, uints& len )             { return _binr->read_raw( p, len ); }
+    virtual opcd write_raw( const void* p, uints& len )      { return _cache.write_raw( p, len ); }
+    virtual opcd read_raw( void* p, uints& len )             { return _cache.read_raw( p, len ); }
 
     virtual opcd write_array_content( binstream_container& c )
     {
@@ -204,113 +190,63 @@ public:
 
     virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX )
     {
-        return _binr->read_until( ss, bout, max_size );
+        return _cache.read_until( ss, bout, max_size );
     }
 
     virtual opcd bind( binstream& bin, int io=0 )
     {
-        if( io<0 )
-            _binr = &bin;
-        else if( io>0 )
-            _binw = &bin;
-        else
-            _binr = _binw = &bin;
-        return 0;
+        return _cache.bind( bin, io );
     }
 
     virtual opcd open( const token& arg )
     {
-        return _binw->open(arg);
-    }
-    virtual opcd close( bool linger=false )
-    {
-        return _binw->close(linger);
+        return _cache.open(arg);
     }
 
-    virtual bool is_open() const    { return _binr->is_open (); }
+    virtual opcd close( bool linger=false )
+    {
+        return _cache.close(linger);
+    }
+
+    virtual bool is_open() const    { return _cache.is_open (); }
+
     virtual void flush()
     {
-        if(_binw)
-        {
-            if( !_flush.is_empty() )
-                _binw->xwrite_token_raw(_flush);
-            _binw->flush();
-        }
+        if( !_flush.is_empty() )
+            _cache.xwrite_token_raw(_flush);
+
+        _cache.flush();
     }
+
     virtual void acknowledge (bool eat=false)
     {
-        if(_binr)
-            _binr->acknowledge(eat);
+        return _cache.acknowledge(eat);
     }
 
     virtual void reset_read()
     {
-        _binr->reset_read();
+        _cache.reset_read();
     }
 
     virtual void reset_write()
     {
         _buf.reset();
-        _binw->reset_write();
+        _cache.reset_write();
     }
 
-    void assign (binstream* br, binstream* bw=0)
-    {
-        _binr = br;
-        _binw = bw ? bw : br;
-    }
 
-    void assign (charstr& str, binstream* bw=0)
-    {
-        _readbuf = new binstreambuf (str);
-        _binr = _readbuf;
-        _binw = bw ? bw : _binr;
-    }
-
-    void assign_read_buffer( charstr& str )
-    {
-        _readbuf = new binstreambuf(str);
-        _binr = _readbuf;
-    }
-
-    binstreambuf* get_read_buffer() const   { return _readbuf; }
-
-
-    void create_internal_buffer( binstream* bw = 0 )
-    {
-        _readbuf = new binstreambuf;
-        _binr = _readbuf;
-        _binw = bw ? bw : _binr;
-    }
-
-    txtstream (binstream& b) : _binr(&b), _binw(&b)
+    txtcachestream( binstream& b ) : _cache(b)
     {   _flush = ""; }
-    txtstream (binstream* br, binstream* bw=0) : _binr(br), _binw(bw == 0 ? br : bw)
+
+    txtcachestream()
     {   _flush = ""; }
-    txtstream ()
-    {   _binr = _binw = 0;  _flush = ""; }
 
-    txtstream (charstr& str, binstream* bw = 0)
+    ~txtcachestream()
     {
-        _readbuf = new binstreambuf(str);
-        _binr = _readbuf;
-        _binw = bw ? bw : _binr;
-    }
-
-    txtstream (const token& str, binstream* bw = 0)
-    {
-        _readbuf = new binstreambuf(str);
-        _binr = _readbuf;
-        _binw = bw ? bw : _binr;
-    }
-
-    ~txtstream ()
-    {
-//        flush ();
     }
 };
 
 COID_NAMESPACE_END
 
-#endif //__COID_COMM_TXTSTREAM__HEADER_FILE__
+#endif //__COID_COMM_TXTCACHESTREAM__HEADER_FILE__
 

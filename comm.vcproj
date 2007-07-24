@@ -294,7 +294,7 @@
 				>
 			</File>
 			<File
-				RelativePath="binstream\textstream.h"
+				RelativePath=".\binstream\txtcachestream.h"
 				>
 			</File>
 			<File

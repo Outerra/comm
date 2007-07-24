@@ -49,6 +49,9 @@ bool directory::append_path( charstr& dst, token path )
     else
     {
         token tdst = dst;
+        if( directory::is_separator( tdst.last_char() ) )
+            tdst--;
+
         while( path.begins_with("..") )
         {
             path += 2;
