@@ -152,6 +152,16 @@ public:
         return open( name, flg );
     }
 
+    ///Open file
+    ///@param name file name
+    ///@param attr open attributes
+    /// r - open for reading
+    /// w - open for writing
+    /// l - lock file
+    /// e - exclusive
+    /// c - create
+    /// t - truncate
+    /// a,+ - append
     opcd open( const charstr& name, token attr )
     {
         int flg=0;
@@ -168,7 +178,7 @@ public:
             else if( attr[0] == 'a' || attr[0] == '+' )  flg |= O_APPEND;
             //else if( m[0] == 'n' )  flg |= O_NONBLOCK;
             else if( attr[0] != ' ' )
-                throw ersINVALID_PARAMS;
+                return ersINVALID_PARAMS;
 
             ++attr;
         }
@@ -186,9 +196,9 @@ public:
         flg |= O_BINARY;
 
 # ifdef SYSTYPE_MSVC8plus
-        return ::_sopen_s( &_handle, name.ptr(), flg, sh, af ) ? ersIO_ERROR : opcd(0);
+        return ::_sopen_s( &_handle, name.c_str(), flg, sh, af ) ? ersIO_ERROR : opcd(0);
 # else
-        _handle = ::_sopen( name.ptr(), flg, sh, af );
+        _handle = ::_sopen( name.c_str(), flg, sh, af );
         return _handle != -1  ?  opcd(0)  :  ersIO_ERROR;
 # endif
 #else
@@ -198,7 +208,7 @@ public:
 
         flg |= O_RAW;
 
-        _handle = ::open( name.ptr(), flg, 0644 );
+        _handle = ::open( name.c_str(), flg, 0644 );
         if( _handle != -1  &&  sh )
         {
             int e = ::lockf( _handle, F_TLOCK, 0 );

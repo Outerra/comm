@@ -39,7 +39,7 @@
 #define __COID_COMM_TXTCONV__HEADER_FILE__
 
 #include "namespace.h"
-#include "commtypes.h"
+#include "token.h"
 #include "assert.h"
 
 COID_NAMESPACE_BEGIN
@@ -117,37 +117,47 @@ public:
         }
     }
 */
-    static void hex2bin( const char*& src, void* dst, uints nb )
+
+    ///Convert hexadecimal string content to binary data
+    static uints hex2bin( token& src, void* dst, uints nbytes, char sep )
     {
-        for (; *src != 0; ++src)
+        for( ; !src.is_empty(); )
         {
-            if (*src == ' ')  continue;
-            if (*src == '\t') continue;
+            if( src.first_char() == sep )  { ++src; continue; }
 
             char base;
-            if (*src >= '0'  &&  *src <= '9')       base = '0';
-            else if (*src >= 'a'  &&  *src <= 'f')  base = 'a';
-            else if (*src >= 'A'  &&  *src <= 'F')  base = 'A';
-            else throw ersSYNTAX_ERROR "invalid character";
+            char c = src.first_char();
+            if( c >= '0'  &&  c <= '9' )        base = '0';
+            else if( c >= 'a'  &&  c <= 'f' )   base = 'a'-10;
+            else if( c >= 'A'  &&  c <= 'F' )   base = 'A'-10;
+            else 
+                break;
 
-            *(uchar*)dst = (*src - base) << 4;
-
+            *(uchar*)dst = (c - base) << 4;
             ++src;
-            if (*src >= '0'  &&  *src <= '9')       base = '0';
-            else if (*src >= 'a'  &&  *src <= 'f')  base = 'a';
-            else if (*src >= 'A'  &&  *src <= 'F')  base = 'A';
-            else throw ersSYNTAX_ERROR "invalid character";
 
-            *(uchar*)dst += (*src - base);
+            c = src.first_char();
+            if( c >= '0'  &&  c <= '9' )        base = '0';
+            else if( c >= 'a'  &&  c <= 'f' )   base = 'a'-10;
+            else if( c >= 'A'  &&  c <= 'F' )   base = 'A'-10;
+            else
+            {
+                --src;
+                break;
+            }
+
+            *(uchar*)dst += (c - base);
             dst = (uchar*)dst + 1;
+            ++src;
 
-            --nb;
-            if (!nb)  break;
+            --nbytes;
+            if(!nbytes)  break;
         }
 
-        if (nb)  throw ersNO_MORE "string terminated too early";
+        return nbytes;
     }
 
+    ///Convert binary data to hexadecimal string
     static void bin2hex( const void* src, char*& dst, uints nitems, uint itemsize, char sep=' ' )
     {
         if( nitems == 0 )  return;

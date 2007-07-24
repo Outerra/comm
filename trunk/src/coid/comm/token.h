@@ -47,6 +47,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <math.h>
+#include <string>
 
 COID_NAMESPACE_BEGIN
 
@@ -1596,8 +1597,59 @@ struct token
         return 0;
     }
 
+    ///Convert token to array of wchar_t characters
     template<class A>
-    bool to_wchar( dynarray<ushort,A>& dst ) const;
+    bool utf8_to_wchar_buf( dynarray<wchar_t,A>& dst ) const;
+
+    ///Convert token to wide stl string
+    bool utf8_to_wstring( std::wstring& dst ) const
+    {
+        dst.clear();
+        return utf8_to_wstring_append(dst);
+    }
+
+    ///Append token to wide stl string
+    bool utf8_to_wstring_append( std::wstring& dst ) const
+    {
+        uints i=dst.length(), n=len();
+        const char* p = ptr();
+
+        dst.resize(i+n);
+        wchar_t* data = const_cast<wchar_t*>(dst.data());
+
+        while(n>0)
+        {
+            if( (uchar)*p <= 0x7f ) {
+                data[i++] = *p++;
+                --n;
+            }
+            else
+            {
+                uint ne = get_utf8_seq_expected_bytes(p);
+                if( ne > n )  return false;
+
+                data[i++] = (wchar_t)read_utf8_seq(p);
+                p += ne;
+                n -= ne;
+            }
+        }
+
+        dst.resize(i);
+
+        return true;
+    }
+
+#ifdef SYSTYPE_WIN32
+    ///Convert token to wide stl string
+    bool codepage_to_wstring( uint cp, std::wstring& dst ) const
+    {
+        dst.clear();
+        return codepage_to_wstring_append(cp,dst);
+    }
+
+    ///Append token to wide stl string
+    bool codepage_to_wstring_append( uint cp, std::wstring& dst ) const;
+#endif
 };
 
 ////////////////////////////////////////////////////////////////////////////////

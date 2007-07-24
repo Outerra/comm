@@ -74,6 +74,8 @@ public:
     }
     void close();
 
+    ///@return true if the character is allowed path separator
+    ///@note on windows it's both / and \ characters
     static bool is_separator( char c )      { return c == '/'  ||  c == separator(); }
 
     static char separator();
@@ -167,6 +169,8 @@ public:
 
     ///After a successful call to next(), this function returns full path to the file
     const charstr& get_last_full_path() const   { return _curpath; }
+    token get_last_dir() const                  { return token( _curpath.ptr(), _baselen ); }
+
     const char* get_last_file_name() const      { return _curpath.c_str() + _baselen; }
     token get_last_file_name_token() const      { return token(_curpath.c_str()+_baselen,_curpath.len()-_baselen); }
 

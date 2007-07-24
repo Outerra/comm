@@ -758,7 +758,7 @@ public:
     ///@param src pointer to the source buffer
     ///@param nchars number of characters in the source buffer, -1 if zero terminated
     ///@return number of bytes appended
-    uints append_wchar_buf( const ushort* src, uints nchars )
+    uints append_wchar_buf( const wchar_t* src, uints nchars )
     {
         uints nold = len();
         _tstr.set_size(nold);
@@ -785,7 +785,7 @@ public:
     ///Append wchar (UCS-2) buffer, converting it to the ANSI on the fly
     ///@param src pointer to the source buffer
     ///@param nchars number of characters in the source buffer, -1 if zero terminated
-    uints append_wchar_buf_ansi( const ushort* src, uints nchars );
+    uints append_wchar_buf_ansi( const wchar_t* src, uints nchars );
 #endif
 
     ///Date element codes
@@ -1297,11 +1297,6 @@ public:
     ints toint (uints offs=0) const          { return token(*this).toint(offs); }
     double todouble (uints offs=0) const     { return token(*this).todouble(offs); }
 
-    bool to_wchar( dynarray<ushort>& dst )
-    {
-        return token(*this).to_wchar(dst);
-    }
-
     ////////////////////////////////////////////////////////////////////////////////
     bool cmpeq( const token& str ) const
     {
@@ -1561,12 +1556,13 @@ inline void token::assign( const charstr& str )
 }
 
 template<class A>
-inline bool token::to_wchar( dynarray<ushort,A>& dst ) const
+inline bool token::utf8_to_wchar_buf( dynarray<wchar_t,A>& dst ) const
 {
     dst.reset();
     uints n = len();
     const char* p = ptr();
-    for( ; n>0; )
+    
+    while(n>0)
     {
         if( (uchar)*p <= 0x7f ) {
             *dst.add() = *p++;
@@ -1577,7 +1573,7 @@ inline bool token::to_wchar( dynarray<ushort,A>& dst ) const
             uint ne = get_utf8_seq_expected_bytes(p);
             if( ne > n )  return false;
 
-            *dst.add() = (ushort)read_utf8_seq(p);
+            *dst.add() = (wchar_t)read_utf8_seq(p);
             p += ne;
             n -= ne;
         }

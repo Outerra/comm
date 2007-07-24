@@ -77,7 +77,7 @@ public:
     charstr& append_to_string( charstr& str )
     {
         char* pb = str.get_append_buf( SHA1_RESULTLEN * 3 - 1 );
-        bin2hex( _hp, pb, SHA1_RESULTLEN, 1, ' ' );
+        charstrconv::bin2hex( _hp, pb, SHA1_RESULTLEN, 1, ' ' );
         return str.correct_size();
     }
 
