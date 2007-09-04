@@ -381,10 +381,6 @@
 				RelativePath="..\metastream\metavar.h"
 				>
 			</File>
-			<File
-				RelativePath="..\metastream\test_meta.cpp"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="alloc"
