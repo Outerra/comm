@@ -96,6 +96,12 @@ struct token
         _len = len;
     }
 
+    token( const char* ptr, const char* ptre )
+    {
+        _ptr = ptr;
+        _len = ptre - ptr;
+    }
+
     static token from_cstring( const char* czstr, uints maxlen = UMAX )
     {
         return token( czstr, strnlen(czstr,maxlen) );
@@ -134,7 +140,7 @@ struct token
     }
 
 
-    static token empty()                    { static token _tk(0,0);  return _tk; }
+    static token empty()                    { static token _tk(0,(const char*)0);  return _tk; }
 
     static const token& TK_whitespace()     { static token _tk(" \t\n\r");  return _tk; }
     static const token& TK_newlines()       { static token _tk("\n\r");  return _tk; }
@@ -1323,13 +1329,51 @@ struct token
 
 
     ////////////////////////////////////////////////////////////////////////////////
+    ///Helper class for string to number conversions
     template< class T >
     struct tonum
     {
-        static T touint( token& t, uints offs, uint BaseN )
+        uint BaseN;
+        bool success;
+
+
+        tonum( uint BaseN=10 ) : BaseN(BaseN) {}
+
+        ///@return true if the conversion failed
+        bool failed() const             { return !success; }
+
+        ///Deduce the numeric base (0x, 0o, 0b or decimal)
+        void get_num_base( token& tok )
         {
+            BaseN = 10;
+            uints i=0;
+            if( tok.len()>2  &&  tok[0] == '0' )
+            {
+                char c = tok[1];
+                if( c == 'x' )  BaseN=16;
+                else if( c == 'o' )  BaseN=8;
+                else if( c == 'b' )  BaseN=2;
+                else if( c >= '0' && c <= '9' )  BaseN=10;
+
+                if( BaseN != 10 )
+                    tok += 2;
+            }
+        }
+
+        ///Convert part of the token to unsigned integer deducing the numeric base (0x, 0o, 0b or decimal)
+        T xtouint( token& t )
+        {
+            get_num_base(t);
+            return touint(t);
+        }
+
+        ///Convert part of the token to unsigned integer
+        T touint( token& t )
+        {
+            success = false;
             T r=0;
-            uints i=offs;
+            uints i=0;
+
             for( ; i<t._len; ++i )
             {
                 char k = t._ptr[i];
@@ -1345,161 +1389,201 @@ struct token
                     break;
 
                 r = r*BaseN + a;
+                success = true;
             }
             t += i;
             return r;
         }
 
-        static T toint( token& t, uints offs, uint BaseN )
+        ///Convert part of the token to signed integer deducing the numeric base (0x, 0o, 0b or decimal)
+        T xtoint( token& t )
         {
-            if(t.is_empty())  return 0;
-            char c = t[offs];
-            if(c == '-')  return -(T)touint(t,offs+1,BaseN);
-            if(c == '+')  return (T)touint(t,offs+1,BaseN);
-            return (T)touint(t,offs,BaseN);
+            if(t.is_empty()) {
+                success = false;
+                return 0;
+            }
+            char c = t[0];
+            if(c == '-')  return -(T)xtouint(t+=1);
+            if(c == '+')  return (T)xtouint(t+=1);
+            return (T)xtouint(t);
         }
 
-        static T touint( const char* s, uint BaseN )
+        ///Convert part of the token to signed integer
+        T toint( token& t )
+        {
+            if(t.is_empty()) {
+                success = false;
+                return 0;
+            }
+            char c = t[0];
+            if(c == '-')  return -(T)touint(t+=1);
+            if(c == '+')  return (T)touint(t+=1);
+            return (T)touint(t);
+        }
+
+        T touint( const char* s )
         {
             token t(s, UMAX);
-            return touint( t, 0, BaseN );
+            return touint(t,0);
         }
 
-        static T toint( const char* s, uint BaseN )
+        T toint( const char* s )
         {
             if( *s == 0 )  return 0;
             token t(s, UMAX);
-            return toint( t, 0, BaseN );
+            return toint(t,0);
         }
     };
 
     ///Convert the token to unsigned int using as much digits as possible
-    uint touint( uints offs=0 ) const
+    uint touint() const
     {
         token t(*this);
-        return tonum<uint>::touint(t, offs, 10 );
+        tonum<uint> conv(10);
+        return conv.touint(t);
     }
 
     ///Convert the token to unsigned int using as much digits as possible
-    uint64 touint64( uints offs=0 ) const
+    uint64 touint64( ) const
     {
         token t(*this);
-        return tonum<uint64>::touint(t, offs, 10 );
+        tonum<uint64> conv(10);
+        return conv.touint(t);
+    }
+
+    ///Convert the token to unsigned int using as much digits as possible, deducing the numeric base
+    uint xtouint() const
+    {
+        token t(*this);
+        tonum<uint> conv;
+        return conv.xtouint(t);
+    }
+
+    ///Convert the token to unsigned int using as much digits as possible, deducing the numeric base
+    uint64 xtouint64( ) const
+    {
+        token t(*this);
+        tonum<uint64> conv;
+        return conv.xtouint(t);
     }
 
     ///Convert the token to unsigned int using as much digits as possible
-    uint touint_and_shift( uints offs=0 )
+    uint touint_and_shift()
     {
-        return tonum<uint>::touint( *this, offs, 10 );
+        tonum<uint> conv(10);
+        return conv.touint(*this);
     }
 
     ///Convert the token to unsigned int using as much digits as possible
-    uint64 touint64_and_shift( uints offs=0 )
+    uint64 touint64_and_shift()
     {
-        return tonum<uint64>::touint( *this, offs, 10 );
-    }
-
-    uint get_num_base( uints& off ) const
-    {
-        uint base=10;
-        uints i=off;
-        if( _len>i+2  &&  _ptr[i] == '0' )
-        {
-            ++i;
-            if( _ptr[i] == 'x' )  base=16;
-            else if( _ptr[i] == 'o' )  base=8;
-            else if( _ptr[i] == 'b' )  base=2;
-            else if( _ptr[i] >= '0' && _ptr[i] <= '9' )  base=10;
-
-            if( base != 10 )
-                ++i;
-        }
-
-        off = i;
-        return base;
+        tonum<uint64> conv(10);
+        return conv.touint(*this);
     }
 
     ///Convert a hexadecimal, decimal, octal or binary token to unsigned int using as much digits as possible
-    uint xtouint_and_shift( uints offs=0 )
+    uint xtouint_and_shift()
     {
-        uint base = get_num_base(offs);
-        return tonum<uint>::touint( *this, offs, base );
+        tonum<uint> conv;
+        return conv.xtouint(*this);
     }
 
     ///Convert a hexadecimal, decimal, octal or binary token to unsigned int using as much digits as possible
-    uint64 xtouint64_and_shift( uints offs=0 )
+    uint64 xtouint64_and_shift()
     {
-        uint base = get_num_base(offs);
-        return tonum<uint64>::touint( *this, offs, base );
+        tonum<uint> conv;
+        return conv.xtouint(*this);
     }
 
     ///Convert a hexadecimal, decimal, octal or binary token to unsigned int using as much digits as possible
-    uint touint_and_shift_base( uint base, uints offs=0 )
+    uint touint_and_shift_base( uint base )
     {
-        return tonum<uint>::touint( *this, offs, base );
+        tonum<uint> conv(base);
+        return conv.touint(*this);
     }
 
     ///Convert a hexadecimal, decimal, octal or binary token to unsigned int using as much digits as possible
-    uint64 touint64_and_shift_base( uint base, uints offs=0 )
+    uint64 touint64_and_shift_base( uint base )
     {
-        return tonum<uint64>::touint( *this, offs, base );
+        tonum<uint64> conv(base);
+        return conv.touint(*this);
     }
 
     ///Convert the token to signed int using as much digits as possible
-    int toint( uints offs=0 ) const
+    int toint() const
     {
         token t(*this);
-        return tonum<int>::toint( t, offs, 10 );
+        tonum<int> conv(10);
+        return conv.toint(t);
     }
 
     ///Convert the token to signed int using as much digits as possible
-    int64 toint64( uints offs=0 ) const
+    int64 toint64() const
     {
         token t(*this);
-        return tonum<int64>::toint( t, offs, 10 );
+        tonum<int64> conv(10);
+        return conv.toint(t);
+    }
+
+    ///Convert the token to signed int using as much digits as possible, deducing the numeric base
+    int xtoint() const
+    {
+        token t(*this);
+        tonum<int> conv;
+        return conv.xtoint(t);
+    }
+
+    ///Convert the token to signed int using as much digits as possible, deducing the numeric base
+    int64 xtoint64() const
+    {
+        token t(*this);
+        tonum<int64> conv;
+        return conv.xtoint(t);
     }
 
     ///Convert the token to signed int using as much digits as possible
-    int toint_and_shift( uints offs=0 )
+    int toint_and_shift()
     {
-        return tonum<int>::toint( *this, offs, 10 );
+        tonum<int> conv(10);
+        return conv.toint(*this);
     }
 
     ///Convert the token to signed int using as much digits as possible
-    int64 toint64_and_shift( uints offs=0 )
+    int64 toint64_and_shift()
     {
-        return tonum<int64>::toint( *this, offs, 10 );
+        tonum<int64> conv(10);
+        return conv.toint(*this);
     }
 
     ///Convert a hexadecimal, decimal, octal or binary token to unsigned int using as much digits as possible
-    int xtoint_and_shift( uints offs=0 )
+    int xtoint_and_shift()
     {
-        uint base = get_num_base(offs);
-        return tonum<int>::toint( *this, offs, base );
+        tonum<int> conv;
+        return conv.xtoint(*this);
     }
 
     ///Convert a hexadecimal, decimal, octal or binary token to unsigned int using as much digits as possible
-    int64 xtoint64_and_shift( uints offs=0 )
+    int64 xtoint64_and_shift()
     {
-        uint base = get_num_base(offs);
-        return tonum<int64>::toint( *this, offs, base );
+        tonum<int64> conv;
+        return conv.xtoint(*this);
     }
 
 
-    double todouble( uints offs=0 ) const
+    double todouble() const
     {
         token t = *this;
-        return t.todouble_and_shift(offs);
+        return t.todouble_and_shift();
     }
     
     ///Convert the token to double
-    double todouble_and_shift( uints offs=0 )
+    double todouble_and_shift()
     {
         bool invsign=false;
         if( first_char() == '-' ) { ++_ptr; --_len; invsign=true; }
         else if( first_char() == '+' ) { ++_ptr; --_len; }
 
-        double val = (double)touint_and_shift(offs);
+        double val = (double)touint_and_shift();
 
         if( first_char() == '.' )
         {

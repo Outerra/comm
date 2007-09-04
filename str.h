@@ -886,7 +886,7 @@ public:
             for( uchar i='0'; i<='9'; ++i )  charmap[i] = 1;
             for( uchar i='a'; i<='z'; ++i )  charmap[i] = 1;
             for( uchar i='A'; i<='Z'; ++i )  charmap[i] = 1;
-            const char* spec = "$-_.+!*'(),";
+            const char* spec = "-_.~!*'(),";
             for( ; *spec; ++spec ) charmap[(uchar)*spec] = 1;
 
             hexmap = "0123456789abcdef";
@@ -1293,9 +1293,13 @@ public:
 
 
 
-    uints touint( uints offs=0 ) const       { return token(*this).touint(offs); }
-    ints toint (uints offs=0) const          { return token(*this).toint(offs); }
-    double todouble (uints offs=0) const     { return token(*this).todouble(offs); }
+    uints touint( uints offs=0 ) const       { return token(ptr()+offs, ptre()).touint(); }
+    ints toint (uints offs=0) const          { return token(ptr()+offs, ptre()).toint(); }
+    
+    uints xtouint( uints offs=0 ) const      { return token(ptr()+offs, ptre()).xtouint(); }
+    ints xtoint (uints offs=0) const         { return token(ptr()+offs, ptre()).xtoint(); }
+
+    double todouble (uints offs=0) const     { return token(ptr()+offs, ptre()).todouble(); }
 
     ////////////////////////////////////////////////////////////////////////////////
     bool cmpeq( const token& str ) const

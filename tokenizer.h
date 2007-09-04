@@ -881,7 +881,7 @@ protected:
             // return special terminating token if we are in the ignore mode
             // or there is nothing in the buffer and in input
             if( ignore || (off==0 && _strbuf.len()>0) )
-                return token(0,0);
+                return token(0,0U);
         }
 
         // if there was something in the buffer, append this to it
