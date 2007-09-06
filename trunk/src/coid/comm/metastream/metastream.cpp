@@ -42,14 +42,14 @@ COID_NAMESPACE_BEGIN
 
 
 struct SMReg {
-    typedef hash_keyset<token,metastream::DESC,_Select_Copy<metastream::DESC,token> >  MAP;
+    typedef hash_keyset<token,MetaDesc,_Select_Copy<MetaDesc,token> >  MAP;
     MAP _map;
-    dynarray< local<metastream::DESC> > _arrays;
+    dynarray< local<MetaDesc> > _arrays;
     //comm_mutex _mutex;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-void metastream::StructureMap::get_all_types( dynarray<const metastream::DESC*>& dst ) const
+void metastream::StructureMap::get_all_types( dynarray<const MetaDesc*>& dst ) const
 {
     SMReg& smr = *(SMReg*)pimpl;
 
@@ -76,34 +76,36 @@ metastream::StructureMap::~StructureMap()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-metastream::DESC* metastream::StructureMap::insert( const metastream::DESC& v )
+MetaDesc* metastream::StructureMap::insert( const MetaDesc& v )
 {
     //SMReg& smr = SINGLETON(SMReg);
     //GUARDTHIS(smr._mutex);
     SMReg& smr = *(SMReg*)pimpl;
 
-    return (DESC*) smr._map.insert_value(v);
+    return (MetaDesc*) smr._map.insert_value(v);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-metastream::DESC* metastream::StructureMap::find( const token& k ) const
+MetaDesc* metastream::StructureMap::find( const token& k ) const
 {
     //SMReg& smr = SINGLETON(SMReg);
     //GUARDTHIS(smr._mutex);
     const SMReg& smr = *(const SMReg*)pimpl;
 
-    return (DESC*) smr._map.find_value(k);
+    return (MetaDesc*) smr._map.find_value(k);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-metastream::DESC* metastream::StructureMap::create_array_desc( uints size )
+MetaDesc* metastream::StructureMap::create_array_desc( uints size, binstream::fnc_from_stream fnfrom, binstream::fnc_to_stream fnto )
 {
     //SMReg& smr = SINGLETON(SMReg);
     //GUARDTHIS(smr._mutex);
     SMReg& smr = *(SMReg*)pimpl;
 
-    DESC* d = *smr._arrays.add() = new DESC;
+    MetaDesc* d = *smr._arrays.add() = new MetaDesc;
     d->array_size = size;
+    d->stream_from = fnfrom;
+    d->stream_to = fnto;
     return d;
 }
 

@@ -27,7 +27,7 @@ bool token::codepage_to_wstring_append( uint cp, std::wstring& dst ) const
     dst.resize(i+len());
 
     wchar_t* data = const_cast<wchar_t*>(dst.data());
-    uint n = MultiByteToWideChar( cp, 0, ptr(), len(), data+i, len() );
+    uint n = MultiByteToWideChar( cp, 0, ptr(), (uint)len(), data+i, (uint)len() );
 
     dst.resize(i+n);
     return n>0;

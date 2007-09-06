@@ -84,7 +84,7 @@ public:
         if( t.is_array_control_type() )
             return 0;
 
-        switch( t._type )
+        switch( t.type )
         {
         case type::T_BINARY:
             {
@@ -149,7 +149,7 @@ public:
         // can be used to determine the type, we can only read text
         //for anything more sophisticated use class textparstream instead
 
-        if( t._type == type::T_CHAR  ||  t._type == type::T_KEY )
+        if( t.type == type::T_CHAR  ||  t.type == type::T_KEY )
             return _binr->read( p, t );
         else
             return ersUNAVAILABLE;
@@ -158,48 +158,62 @@ public:
     virtual opcd write_raw( const void* p, uints& len )      { return _binw->write_raw( p, len ); }
     virtual opcd read_raw( void* p, uints& len )             { return _binr->read_raw( p, len ); }
 
-    virtual opcd write_array_content( binstream_container& c )
+    virtual opcd write_array_content( binstream_container& c, uints* count )
     {
         type t = c._type;
         uints n = c._nelements;
 
         //types other than char and key must be written by elements
-        if( t._type != type::T_CHAR  &&  t._type != type::T_KEY )
-            return write_compound_array_content(c);
+        if( t.type != type::T_CHAR  &&  t.type != type::T_KEY )
+            return write_compound_array_content(c,count);
 
+        opcd e;
         if( c.is_continuous()  &&  n != UMAX )
         {
             //n *= t.get_size();
-            return write_raw( c.extract(n), n );
+            e = write_raw( c.extract(n), n );
+
+            if(!e)  *count = n;
         }
         else
-            return write_compound_array_content(c);
+            e = write_compound_array_content(c,count);
+
+        return e;
     }
 
-    virtual opcd read_array_content( binstream_container& c, uints n )
+    virtual opcd read_array_content( binstream_container& c, uints n, uints* count )
     {
         type t = c._type;
         //uints n = c._nelements;
 
-        if( t._type != type::T_CHAR  &&  t._type != type::T_KEY )
+        if( t.type != type::T_CHAR  &&  t.type != type::T_KEY )
             return ersUNAVAILABLE;
 
+        opcd e=0;
         if( c.is_continuous()  &&  n != UMAX )
         {
             //uints na = n * t.get_size();
-            return read_raw( c.insert(n), n );
+            e = read_raw( c.insert(n), n );
+
+            if(!e)  *count = n;
         }
         else
         {
-            uints es = 1;
+            uints es=1, k=0;
             char ch;
             while( n-- > 0  &&  0 == read_raw( &ch, es ) ) {
-                *(char*)c.insert(1) = ch;
+                char* p = (char*)c.insert(1);
+                if(!p)  return ersNOT_ENOUGH_MEM;
+
+                *p = ch;
                 es = 1;
+                ++k;
             }
 
-            return 0;
+            *count = k;
         }
+
+        return e;
     }
 
     virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX )

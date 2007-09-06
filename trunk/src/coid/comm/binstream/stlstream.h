@@ -66,29 +66,34 @@ struct binstream_container_stl_input_iterator : binstream_containerT<typename St
 
     const void* extract( uints n )
     {
-        const T* p = &(*inpi++);
+        if( inpi == endi )  return 0;
+
+        const T* p = &*inpi;
+        ++inpi;
         return p;
     }
 
     void* insert( uints n )
     {
         DASSERT(0); //not defined for input
+        return 0;
     }
 
     bool is_continuous() const      { return false; }
 
 
     binstream_container_stl_input_iterator( const StlContainer& cont, uints n )
-        : binstream_containerT<T>(n), inpi(cont.begin()) {}
+        : binstream_containerT<T>(n), inpi(cont.begin()), endi(cont.end()) {}
 
     void set( const StlContainer& cont, uints n )
     {
         inpi = cont.begin();
+        endi = cont.end();
         this->_nelements = n;
     }
 
 protected:
-    typename StlContainer::const_iterator inpi;
+    typename StlContainer::const_iterator inpi, endi;
 };
 
 ///Container for inserting to stl containers 
@@ -98,7 +103,11 @@ struct binstream_container_stl_insert_iterator : binstream_container
     typedef typename StlContainer::value_type       T;
     enum { ELEMSIZE = sizeof(T) };
 
-    virtual const void* extract( uints n )      { return 0; }
+    virtual const void* extract( uints n )
+    {
+        DASSERT(0); //not defined for output
+        return 0;
+    }
     virtual void* insert( uints n )             { return &temp; }
 
     virtual bool is_continuous() const          { return false; }
@@ -136,7 +145,11 @@ struct binstream_container_stl_assoc_iterator : binstream_container
     typedef typename StlContainer::value_type       T;
     enum { ELEMSIZE = sizeof(T) };
 
-    virtual const void* extract( uints n )      { return 0; }
+    virtual const void* extract( uints n )
+    {
+        DASSERT(0); //not defined for output
+        return 0;
+    }
     virtual void* insert( uints n )             { return &temp; }
 
     virtual bool is_continuous() const          { return false; }
@@ -175,7 +188,7 @@ template<class T, class A> inline binstream& operator << (binstream& out, const 
 template<class T, class A> inline binstream& operator >> (binstream& out, CONT<T,A>& v) \
 {   v.clear(); \
     binstream_container_stl_insert_iterator< CONT<T,A> > c( v, UMAX ); \
-    out.xwrite_array(c); \
+    out.xread_array(c); \
 	return out; } \
 template<class T, class A> inline metastream& operator << (metastream& m, const CONT<T,A>& ) \
 {   m.meta_array();  m<<*(typename CONT<T,A>::value_type*)0;  return m; } \
@@ -191,7 +204,7 @@ template<class T, class A> inline binstream& operator << (binstream& out, const 
 template<class T, class A> inline binstream& operator >> (binstream& out, CONT<T,A>& v) \
 {   v.clear(); \
     binstream_container_stl_assoc_iterator< CONT<T,A> > c( v, UMAX ); \
-    out.xwrite_array(c); \
+    out.xread_array(c); \
 	return out; } \
 template<class T, class A> inline metastream& operator << (metastream& m, const CONT<T,A>& ) \
 {   m.meta_array();  m<<*(typename CONT<T,A>::value_type*)0;  return m; } \

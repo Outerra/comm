@@ -52,6 +52,15 @@ class binstream;
 
 namespace bstype {
 
+
+///Helper struct for writting binary data
+struct binary {
+    const void* data;
+    uints len;
+
+    binary( const void* data, uints len ) : data(data), len(len) {}
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 struct key
 {
@@ -78,11 +87,11 @@ struct SEPARATOR
 */
 ////////////////////////////////////////////////////////////////////////////////
 ///Object type descriptor
-struct type
+struct kind
 {
-    ushort _size;       ///<byte size of the element
-    uchar  _type;       ///<type enum
-    uchar  _ctrl;       ///<control flags
+    ushort size;                       ///<byte size of the element
+    uchar  type;                       ///<type enum
+    uchar  ctrl;                       ///<control flags
 
     ///Type enum
     enum {
@@ -91,68 +100,76 @@ struct type
         T_UINT,
         T_FLOAT,
         T_BOOL,
-        T_CHAR,                                     ///< character data - strings
+        T_CHAR,                         ///< character data - strings
         T_ERRCODE,
         T_TIME,
 
-        T_KEY,                                      ///< unformatted characters
+        T_KEY,                          ///< unformatted characters
         T_STRUCTBGN, T_STRUCTEND,
         T_SEPARATOR,
 
         COUNT,
 
-        T_COMPOUND                  = 0xff,
+        T_COMPOUND          = 0xff,
     };
 
     ///Control flags
     enum {
-        xELEMENT                    = 0x0f,
-        fARRAY_ELEMENT              = 0x01,         ///< array element flag
-        fARRAY_ELEMENT_NEXT         = 0x02,         ///< always in addition to fARRAY_ELEMENT, all after first
-        fARRAY_UNSPECIFIED_SIZE     = 0x04,         ///< size of the array is not specified in advance
+        xELEMENT                = 0x0f,
+        fARRAY_ELEMENT          = 0x01, ///< array element flag
+        fARRAY_ELEMENT_NEXT     = 0x02, ///< always in addition to fARRAY_ELEMENT, all after first
+        fARRAY_UNSPECIFIED_SIZE = 0x04, ///< size of the array is not specified in advance
 
-        fARRAY_BEGIN                = 0x10,         ///< array start mark
-        fARRAY_END                  = 0x20,         ///< array end mark
+        fARRAY_BEGIN            = 0x10, ///< array start mark
+        fARRAY_END              = 0x20, ///< array end mark
+
+        fNAMELESS               = 0x40, ///< nameless compound, for T_STRUCTBGN and T_STRUCTEND
     };
 
-    type() : _size(0), _type(T_COMPOUND), _ctrl(0) {}
-    type( uchar btype, ushort size, uchar ctrl=0 ) : _size(size), _type(btype), _ctrl(ctrl) {}
-    explicit type( uchar btype ) : _size(0), _type(btype), _ctrl(0) {}
+
+    kind() : size(0), type(T_COMPOUND), ctrl(0) {}
+    kind( uchar btype, ushort size, uchar ctrl=0 ) : size(size), type(btype), ctrl(ctrl) {}
+    explicit kind( uchar btype ) : size(0), type(btype), ctrl(0) {}
 
 
-    bool operator == ( type t ) const       { return *(uint32*)this == *(uint32*)&t; }
+    bool operator == ( kind t ) const       { return *(uint32*)this == *(uint32*)&t; }
 
-    bool is_no_size() const                 { return _size == 0; }
-    bool is_primitive() const               { return _type < T_COMPOUND; }
+    bool is_no_size() const                 { return size == 0; }
+    bool is_primitive() const               { return type < T_COMPOUND; }
+
+    bool is_nameless() const                { return (ctrl & fNAMELESS) != 0; }
 
     ///@return true if the type is array control token
-    bool is_array_control_type() const      { return (_ctrl & (fARRAY_BEGIN|fARRAY_END)) != 0; }
+    bool is_array_control_type() const      { return (ctrl & (fARRAY_BEGIN|fARRAY_END)) != 0; }
+
+    bool is_array_start() const             { return (ctrl & fARRAY_BEGIN) != 0; }
+    bool is_array_end() const               { return (ctrl & fARRAY_END) != 0; }
 
     //@{ Create array control types from current type
-    type get_array_begin() const            { type t=*this; t._ctrl=fARRAY_BEGIN; t._size=sizeof(uints); return t; }
-    type get_array_end() const              { type t=*this; t._ctrl=fARRAY_END; t._size=0; return t; }
+    kind get_array_begin() const            { kind t=*this; t.ctrl=fARRAY_BEGIN; t.size=sizeof(uints); return t; }
+    kind get_array_end() const              { kind t=*this; t.ctrl=fARRAY_END; t.size=0; return t; }
     
-    type get_array_element() const          { type t=*this; t._ctrl=fARRAY_ELEMENT; t._size=_size; return t; }
+    kind get_array_element() const          { kind t=*this; t.ctrl=fARRAY_ELEMENT; t.size=size; return t; }
 
-    static void mask_array_element_first_flag( type& t )     { t._ctrl |= fARRAY_ELEMENT_NEXT; }
+    static void mask_array_element_first_flag( kind& t )     { t.ctrl |= fARRAY_ELEMENT_NEXT; }
 
-    void set_array_unspecified_size()       { _ctrl |= fARRAY_UNSPECIFIED_SIZE; }
-    bool is_array_unspecified_size() const  { return (_ctrl & fARRAY_UNSPECIFIED_SIZE) != 0; }
+    void set_array_unspecified_size()       { ctrl |= fARRAY_UNSPECIFIED_SIZE; }
+    bool is_array_unspecified_size() const  { return (ctrl & fARRAY_UNSPECIFIED_SIZE) != 0; }
     //@}
 
-    bool is_array_element() const           { return (_ctrl & fARRAY_ELEMENT) != 0; }
-    bool is_next_array_element() const      { return (_ctrl & fARRAY_ELEMENT_NEXT) != 0; }
+    bool is_array_element() const           { return (ctrl & fARRAY_ELEMENT) != 0; }
+    bool is_next_array_element() const      { return (ctrl & fARRAY_ELEMENT_NEXT) != 0; }
     
-    bool should_place_separator() const     { return !(_ctrl & fARRAY_END)  &&  ((_ctrl & fARRAY_ELEMENT_NEXT) || !(_ctrl & fARRAY_ELEMENT)); }
+    bool should_place_separator() const     { return !(ctrl & fARRAY_END)  &&  ((ctrl & fARRAY_ELEMENT_NEXT) || !(ctrl & fARRAY_ELEMENT)); }
 
 
     ///Get byte size of primitive element
-    ushort get_size() const                 { return _size; }
+    ushort get_size() const                 { return size; }
 
     int64 value_int( const void* data ) const
     {
         int64 val = 0;
-        switch( _type )
+        switch( type )
         {
             case T_INT:
             case T_UINT:
@@ -188,16 +205,16 @@ struct type
 
 ////////////////////////////////////////////////////////////////////////////////
 template<class T>
-struct t_type : type
+struct t_type : kind
 {
     typedef T   value;
 };
 
 #define DEF_TYPE(t,basic_type) \
-template<> struct t_type<t> : type { t_type() : type(type::basic_type,sizeof(t)) {} }
+template<> struct t_type<t> : kind { t_type() : kind(kind::basic_type,sizeof(t)) {} }
 
 #define DEF_TYPE2(t,basic_type,size) \
-template<> struct t_type<t> : type { t_type() : type(type::basic_type,size) {} }
+template<> struct t_type<t> : kind { t_type() : kind(kind::basic_type,size) {} }
 
 DEF_TYPE2(  void,               T_BINARY, 1);
 DEF_TYPE(   bool,               T_BOOL);

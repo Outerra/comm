@@ -75,7 +75,7 @@ public:
         if( t.is_array_control_type() )
             return 0;
 
-        if( t._type == type::T_CHAR )
+        if( t.type == type::T_CHAR )
         {
             uints n = t.get_size();
             token tok((const char*)p, n);

@@ -108,7 +108,7 @@ static const char* teststr =
 static const char* teststr1 =
 "b = 200\n"
 "fx = { j=1 fa={i=-1 f=-.77} }\n"
-"af = [  { j=10 fa={ f=3.140}},\n"
+"af = [  { j=10 },\n"
 "        { j=11 fa={i=2 f=4.140}},\n"
 "        { j=12 fa={i=3 f=5.140}} ]\n"
 "aaf = [ [ { j=20 fa={i=9 f=8.33} }, { j=21 fa={i=10 f=4.66} }, { j=22 fa={i=11 f=7.66} } ], [] ]\n"

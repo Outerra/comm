@@ -72,9 +72,17 @@ inline uchar int_high_pow2( uints x )       { uchar i; --x; for( i=0; x; ++i,x>>
 /// Checks if a value is power of two
 #define IS_2_POW_N(X)   (((X)&(X-1)) == 0)
 
-template<class INT>
-inline typename INTBASE<INT>::UNSIGNED align_value( INT uval, typename INTBASE<INT>::UNSIGNED usize )
-{ return typename INTBASE<INT>::UNSIGNED( ((uval-1)/usize)*usize +usize ); }
+
+/// Align value to the nearest greater multiplier of specified chunk size
+inline uint align_value( uint val, uint size )
+{ return ((val+size-1)/size)*size; }
+
+inline uint64 align_value( uint64 val, uint64 size )
+{ return ((val+size-1)/size)*size; }
+
+inline uints align_offset( uints val, uints size )
+{ return ((val+size-1)/size)*size; }
+
 
 
 /// Aligns value to given chunk size (enlarges to next chunk boundary)
