@@ -80,17 +80,29 @@ void* dynarray_new( void* p, uints nitems, uints itemsize, uints ralign = 0 );
 **/
 class binstream
 {
+public:
+
+    typedef void (*fnc_to_stream)(binstream&, const void*);
+    typedef void (*fnc_from_stream)(binstream&, void*);
+
+    template<class T>
+    class streamfunc {
+    public:
+        static void to_stream( binstream& bin, const void* p )      { bin << *(const T*)p; }
+        static void from_stream( binstream& bin, void* p )          { bin >> *(T*)p; }
+    };
+
+/*
     template<class T>
     struct stream_wrapper
     {
         static void to_stream( binstream& bin, const void* p )      { bin << *(const T*)p; }
         static void from_stream( binstream& bin, void* p )          { bin >> *(T*)p; }
     };
+*/
 
-public:
-
-    typedef bstype::type      type;
-    typedef bstype::key       key;
+    typedef bstype::kind        type;
+    typedef bstype::key         key;
 
     virtual ~binstream()        { }
 
@@ -122,8 +134,6 @@ public:
     typedef bstype::BINSTREAM_ACK       BINSTREAM_ACK;
     typedef bstype::BINSTREAM_ACK_EAT   BINSTREAM_ACK_EAT;
 
-    //typedef bstype::SEPARATOR           SEPARATOR;
-
 
     binstream& operator << (const BINSTREAM_FLUSH&)     { flush();  return *this; }
     binstream& operator >> (const BINSTREAM_ACK&)   	{ acknowledge();  return *this; }
@@ -135,8 +145,8 @@ public:
     binstream& operator >> (const STRUCT_OPEN&)         { return xread(0, bstype::t_type<STRUCT_OPEN>() ); }
     binstream& operator >> (const STRUCT_CLOSE&)        { return xread(0, bstype::t_type<STRUCT_CLOSE>() ); }
 
-    //binstream& operator << (const SEPARATOR a)          { return xwrite( &a._s, bstype::t_type<SEPARATOR>() ); }
 
+//@{ Primitive operators for extracting data from binstream.
     binstream& operator << (opcd x)
     {
 		if( !x._ptr )
@@ -145,13 +155,6 @@ public:
 			xwrite( x._ptr, bstype::t_type<opcd>() );
         return *this;
     }
-/*
-    binstream& operator << (const opcd::errcode* x)
-    {
-        write( x, 1, type::t_ercd );
-        return *this;
-    }
-*/
 
     binstream& operator << (key x)                      { return xwrite(&x, bstype::t_type<key>() ); }
 
@@ -186,6 +189,16 @@ public:
 
     binstream& operator << (const timet& x)             { return xwrite(&x, bstype::t_type<timet>() ); }
 
+    binstream& operator << (const bstype::binary& b )   { return xwrite(b.data, type(type::T_BINARY,(ushort)b.len)); }
+//@}
+
+
+/** @{ Primitive operators for extracting data from binstream.
+    @note enum values should be streamed using EnumType<> template, like this:
+        enum Foo x;
+        bin >> (EnumType<sizeof(panel)>::TEnum&)x;
+    The template deduces the actual size that the enum type takes.
+**/
     binstream& operator >> (const char*& x )            { binstream_container_char_array c(UMAX); xread_array(c); x=c.get(); return *this; }
     binstream& operator >> (char*& x )                  { binstream_container_char_array c(UMAX); xread_array(c); x=(char*)c.get(); return *this; }
 
@@ -227,7 +240,9 @@ public:
 		x.set(e);
         return *this;
     }
+    //@}
 
+    ///Read error code from binstream. Also translates binstream errors to 
     opcd read_error()
     {
 		ushort ec;
@@ -356,25 +371,68 @@ public:
         return 0;
     }
 
-
+    ///Write pointer as a compatible integer type
     template< class T >
     opcd write_ptr( const T* p )                    { return write( (void*)&p, type(type::T_UINT,sizeof(void*)) ); }
 
+    ///Read pointer as a compatible integer type
     template< class T >
     opcd read_ptr( T*& p )                          { return read( (void*)&p, type(type::T_UINT,sizeof(void*)) ); }
 
 
-    opcd write_struct_open( const charstr* name=0 )     { type t(type::T_STRUCTBGN);  return write( name, t ); }
-    opcd write_struct_close( const charstr* name=0 )    { type t(type::T_STRUCTEND);  return write( name, t ); }
+    ///Write struct open token. Normally ignored by any but formatting binstream.
+    opcd write_struct_open( bool nameless, const charstr* name=0 ) {
+        type t( type::T_STRUCTBGN, 0, nameless?type::fNAMELESS:0 );
+        return write( name, t );
+    }
 
-    opcd read_struct_open( charstr* name=0 )        { type t(type::T_STRUCTBGN);  return read( name, t ); }
-    opcd read_struct_close( charstr* name=0 )       { type t(type::T_STRUCTEND);  return read( name, t ); }
+    ///Write struct close token. Normally ignored by any but formatting binstream.
+    opcd write_struct_close( bool nameless, const charstr* name=0 ) {
+        type t( type::T_STRUCTEND, 0, nameless?type::fNAMELESS:0 );
+        return write( name, t );
+    }
 
-    opcd write_compound_array_open( const charstr* name=0 )     { type t(type::T_COMPOUND,0,type::fARRAY_BEGIN);  return write( name, t ); }
-    opcd write_compound_array_close( const charstr* name=0 )    { type t(type::T_COMPOUND,0,type::fARRAY_END);  return write( name, t ); }
+    ///Read struct open token. Normally ignored by any but formatting binstream.
+    opcd read_struct_open( bool nameless, charstr* name=0 ) {
+        type t( type::T_STRUCTBGN, 0, nameless?type::fNAMELESS:0 );
+        return read( name, t );
+    }
 
-    opcd read_compound_array_open( charstr* name=0 )    { type t(type::T_COMPOUND,0,type::fARRAY_BEGIN);  return read( name, t ); }
-    opcd read_compound_array_close( charstr* name=0 )   { type t(type::T_COMPOUND,0,type::fARRAY_END);  return read( name, t ); }
+    ///Read struct close token. Normally ignored by any but formatting binstream.
+    opcd read_struct_close( bool nameless, charstr* name=0 ) {
+        type t( type::T_STRUCTEND, 0, nameless?type::fNAMELESS:0 );
+        return read( name, t );
+    }
+
+
+    ///Write compound array open token. Normally ignored by any but formatting binstream.
+    opcd write_compound_array_open( bool nameless, const charstr* name=0 ) {
+        type t( type::T_COMPOUND, 0,
+            nameless?type::fNAMELESS|type::fARRAY_BEGIN:type::fARRAY_BEGIN );
+        return write( name, t );
+    }
+
+    ///Write compound array close token. Normally ignored by any but formatting binstream.
+    opcd write_compound_array_close( bool nameless, const charstr* name=0 ) {
+        type t( type::T_COMPOUND, 0,
+            nameless?type::fNAMELESS|type::fARRAY_BEGIN:type::fARRAY_END );
+        return write( name, t );
+    }
+
+    ///Read compound array open token. Normally ignored by any but formatting binstream.
+    opcd read_compound_array_open( bool nameless, charstr* name=0 ) {
+        type t( type::T_COMPOUND, 0,
+            nameless?type::fNAMELESS|type::fARRAY_BEGIN:type::fARRAY_BEGIN );
+        return read( name, t );
+    }
+
+    ///Read compound array close token. Normally ignored by any but formatting binstream.
+    opcd read_compound_array_close( bool nameless, charstr* name=0 ) {
+        type t( type::T_COMPOUND, 0,
+            nameless?type::fNAMELESS|type::fARRAY_BEGIN:type::fARRAY_END );
+        return read( name, t );
+    }
+
 
     ////////////////////////////////////////////////////////////////////////////////
     ///Write raw data
@@ -509,10 +567,11 @@ public:
         if( n == UMAX )
             t = c.set_array_needs_separators();
 
-        e = write_array_content(c);
+        uints count=0;
+        e = write_array_content( c, &count );
 
         if(!e)
-            e = write( 0, t.get_array_end() );
+            e = write( &count, t.get_array_end() );
 
         return e;
     }
@@ -535,11 +594,12 @@ public:
         else
             t = c.set_array_needs_separators();
 
-        e = read_array_content( c, n );
+        uints count=0;
+        e = read_array_content( c, n, &count );
 
-        //read trailing mark only for arrays with specified size
+        //read endarray
         if(!e)
-            e = read( 0, t.get_array_end() );
+            e = read( &count, t.get_array_end() );
 
         return e;
     }
@@ -564,47 +624,57 @@ public:
     ///Overloadable method for writing array objects
     /// to binstream.
     ///The default code is for writing a binary representation
-    virtual opcd write_array_content( binstream_container& c )
+    virtual opcd write_array_content( binstream_container& c, uints* count )
     {
         type t = c._type;
         uints n = c._nelements;
 
+        opcd e;
         if( t.is_primitive()  &&  c.is_continuous()  &&  n != UMAX )
         {
             DASSERT( !t.is_no_size() );
 
             uints na = n * t.get_size();
-            return write_raw( c.extract(n), na );
+            e = write_raw( c.extract(n), na );
+
+            if(!e)  *count = n;
         }
         else
-            return write_compound_array_content(c);
+            e = write_compound_array_content(c,count);
+
+        return e;
     }
 
     ///Overloadable method for reading array of objects
     /// from binstream.
     ///The default code is for reading a binary representation
-    virtual opcd read_array_content( binstream_container& c, uints n )
+    virtual opcd read_array_content( binstream_container& c, uints n, uints* count )
     {
         type t = c._type;
         //uints n = c._nelements;
 
+        opcd e;
         if( t.is_primitive()  &&  c.is_continuous()  &&  n != UMAX )
         {
             DASSERT( !t.is_no_size() );
 
             uints na = n * t.get_size();
-            return read_raw_full( c.insert(n), na );
+            e = read_raw_full( c.insert(n), na );
+
+            if(!e)  *count = n;
         }
         else
-            return read_compound_array_content( c, n );
+            e = read_compound_array_content( c, n, count );
+
+        return e;
     }
 
 
     ///
-    opcd write_compound_array_content( binstream_container& c )
+    opcd write_compound_array_content( binstream_container& c, uints* count )
     {
         type tae = c._type.get_array_element();
-        uints n = c._nelements;
+        uints n = c._nelements, k=0;
         bool complextype = !c._type.is_primitive();
         bool needpeek = c.array_needs_separators();
 
@@ -615,10 +685,10 @@ public:
 
             const void* p = c.extract(1);
             if(!p)
-                return ersNOT_ENOUGH_MEM;
+                break;
 
             if( needpeek && (e = write_array_separator(tae,0)) )
-                break;
+                return e;
 
             if(complextype)
                 e = c._stream_out( *this, (void*)p, c );
@@ -627,12 +697,16 @@ public:
 
             if(e)
                 return e;
+            ++k;
 
             type::mask_array_element_first_flag(tae);
         }
 
         if(needpeek)
             e = write_array_separator(tae,1);
+
+        if(!e)
+            *count = k;
 
         return e;
     }
@@ -641,11 +715,12 @@ public:
     /** Contrary to its name, it can be used to read a primitive elements too, when
         the container isn't continuous or its size is not known in advance
     **/
-    opcd read_compound_array_content( binstream_container& c, uints n )
+    opcd read_compound_array_content( binstream_container& c, uints n, uints* count )
     {
         type tae = c._type.get_array_element();
         bool complextype = !c._type.is_primitive();
         bool needpeek = c.array_needs_separators();
+        uints k=0;
 
         opcd e;
         while( n>0 )
@@ -667,10 +742,12 @@ public:
 
             if(e)
                 return e;
+            ++k;
 
             type::mask_array_element_first_flag(tae);
         }
 
+        *count = k;
         return 0;
     }
 
@@ -686,14 +763,16 @@ public:
     opcd write_fixed_array( const T* p, uints n )
     {
         binstream_container_fixed_array<T> c((T*)p,n);
-        return write_array_content(c);
+        uints count;
+        return write_array_content(c,&count);
     }
 
     template< class T >
     opcd read_fixed_array( T* p, uints n )
     {
         binstream_container_fixed_array<T> c(p,n);
-        return read_array_content(c,n);
+        uints count;
+        return read_array_content(c,n,&count);
     }
 
     template< class T >
@@ -826,6 +905,13 @@ public:
 //#define STRUCT_OPEN         binstream::STRUCT_OPEN()
 //#define STRUCT_CLOSE        binstream::STRUCT_CLOSE()
 
+
+////////////////////////////////////////////////////////////////////////////////
+///Helper template for streaming enum values
+template<int S> struct EnumType     { typedef uint      TEnum; };
+template<> struct EnumType<8>       { typedef uint64    TEnum; };
+template<> struct EnumType<2>       { typedef ushort    TEnum; };
+template<> struct EnumType<1>       { typedef uchar     TEnum; };
 
 ////////////////////////////////////////////////////////////////////////////////
 struct opcd_formatter

@@ -250,7 +250,7 @@ protected:
         int is_referred_by (COID id_node) const { return find_in_list (_ahooked, id_node); }
         ///Test if given node is child of this node
         ///@return -1 if not, position in the list of children nodes otherwise
-        int find_id (COID id) const             { return find_in_list (_asubnodes, id); }
+        int find_id (COID id) const             { return (int)find_in_list (_asubnodes, id); }
 
         bool has_children() const               { return _asubnodes.size() > 0; }
         bool has_dependants() const             { return _ahooked.size() > 0; }
@@ -1639,7 +1639,7 @@ public:
             token k = tok.cut_left(separator,-1);
 
             COID* pn = id->_asubnodes.ptr();
-            uint i, lim = id->_asubnodes.size();
+            uints i, lim = id->_asubnodes.size();
 
             for( i=0; i<lim; ++i )
             {
@@ -1674,7 +1674,7 @@ public:
             token k = tok.cut_left(separator,-1);
 
             COID* pn = id->_asubnodes.ptr();
-            uint i, lim = id->_asubnodes.size();
+            uints i, lim = id->_asubnodes.size();
 
             for( i=0; i<lim; ++i )
             {

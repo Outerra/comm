@@ -62,7 +62,7 @@ COID_NAMESPACE_BEGIN
 
 
 ////////////////////////////////////////////////////////////////////////////////
-class fileiostream : public binstream
+class filestream : public binstream
 {
     int   _handle;
     int   _op;                  ///< >0 reading, <0 writing
@@ -102,6 +102,8 @@ public:
             _op = -1;
         }
 
+        DASSERT( _handle != -1 );
+
         uint k = ::_write( _handle, p, (uint)len );
         _wpos += k;
         len -= k;
@@ -116,6 +118,8 @@ public:
             setpos( _rpos );
             _op = 1;
         }
+
+        DASSERT( _handle != -1 );
 
         uint k = ::_read( _handle, p, (uint)len );
         _rpos += k;
@@ -252,19 +256,22 @@ public:
 		return 0;
 	}
 
-    fileiostream() { _handle = -1; _wpos = _rpos = 0; _op = 1; }
-    explicit fileiostream( const token& s )
+    filestream() { _handle = -1; _wpos = _rpos = 0; _op = 1; }
+    explicit filestream( const token& s )
     {
         _handle = -1;
         open(s);
     }
 
-    ~fileiostream() { close(); }
+    ~filestream() { close(); }
 };
+
+//compatibility
+typedef filestream fileiostream;
 
 
 ////////////////////////////////////////////////////////////////////////////////
-class bofstream : public fileiostream
+class bofstream : public filestream
 {
 public:
 
@@ -281,7 +288,7 @@ public:
             flg = "wct";
         else
             flg << char('w');
-        return fileiostream::open( name, flg );
+        return filestream::open( name, flg );
     }
 
     bofstream() { }
@@ -294,7 +301,7 @@ public:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-class bifstream : public fileiostream
+class bifstream : public filestream
 {
 public:
     virtual uint binstream_attributes( bool in0out1 ) const
@@ -307,7 +314,7 @@ public:
         token name = arg;
         charstr flg = name.cut_right_back( '?', 1, true );
         flg << char('r');
-        return fileiostream::open( name, flg );
+        return filestream::open( name, flg );
     }
 
     bifstream() { }

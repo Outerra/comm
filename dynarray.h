@@ -814,7 +814,7 @@ public:
         if (nitems*sizeof(T) > _size())
         {
             if (!ikeep)  _destroy();
-            _ptr = A::reserve( _ptr, align_value(nitems, CHUNKSIZE), ikeep );
+            _ptr = A::reserve( _ptr, align_offset(nitems, CHUNKSIZE), ikeep );
         }
         return _ptr;
     }

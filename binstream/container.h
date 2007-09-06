@@ -72,7 +72,7 @@ struct binstream_container
     typedef opcd (*fnc_stream)(binstream&, void*,binstream_container&);
 
 
-    binstream_container( uints n, bstype::type t, fnc_stream fout, fnc_stream fin )
+    binstream_container( uints n, bstype::kind t, fnc_stream fout, fnc_stream fin )
         : _stream_in(fin),_stream_out(fout),_type(t),_nelements(n)
     {
     }
@@ -81,7 +81,7 @@ struct binstream_container
     /// its size in advance.
     ///This is used in binary streams to write and read prefix marks before objects
     /// to figure out where the array ends.
-    bstype::type set_array_needs_separators()
+    bstype::kind set_array_needs_separators()
     {
         _type.set_array_unspecified_size();
         return _type;
@@ -97,7 +97,7 @@ struct binstream_container
     fnc_stream _stream_out;
 
     ///Type information about streamed object
-    bstype::type _type;
+    bstype::kind _type;
 
     ///Number of objects to stream, UMAX if not known in advance
     uints _nelements;
@@ -148,7 +148,7 @@ struct binstream_containerT<void> : binstream_container
     enum { ELEMSIZE = 1 };
     typedef void    TData;
 
-    binstream_containerT( uints n ) : binstream_container(n,bstype::type(bstype::type::T_BINARY,1),0,0)
+    binstream_containerT( uints n ) : binstream_container(n,bstype::kind(bstype::kind::T_BINARY,1),0,0)
     {}
 };
 
@@ -298,7 +298,7 @@ protected:
 ///Primitive abstract base container
 struct binstream_container_primitive : binstream_container
 {
-    binstream_container_primitive( uints n, bstype::type t ) : binstream_container(n,t,0,0)
+    binstream_container_primitive( uints n, bstype::kind t ) : binstream_container(n,t,0,0)
     {}
 
 };

@@ -188,34 +188,33 @@ public:
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     opcd write( const void* p, type t )
     {
-        if( t.is_array_control_type() )
+        if( t.is_array_start() )
         {
-            if( t._ctrl & type::fARRAY_BEGIN )
-            {
-                if( t._type == type::T_KEY )
-                    write_tabs( _indent );
-                else if( t._type == type::T_CHAR  ||  t._type == type::T_BINARY )
-                    _bufw << char('\"');
-                else
-                    _bufw << char('[');
-            }
+            if( t.type == type::T_KEY )
+                write_tabs( _indent );
+            else if( t.type == type::T_CHAR  ||  t.type == type::T_BINARY )
+                _bufw << char('\"');
             else
-            {
-                if( t._type == type::T_KEY )
-                    _bufw << " = ";
-                else if( t._type == type::T_CHAR  ||  t._type == type::T_BINARY )
-                    _bufw << char('\"');
-                else
-                    _bufw << char(']');
-            }
+                _bufw << char('[');
         }
-        else if( t._type == type::T_STRUCTEND )
+        else if( t.is_array_end() )
+        {
+            if( t.type == type::T_KEY )
+                _bufw << " = ";
+            else if( t.type == type::T_CHAR  ||  t.type == type::T_BINARY )
+                _bufw << char('\"');
+            else
+                _bufw << char(']');
+        }
+        else if( t.type == type::T_STRUCTEND )
         {
             _bufw << tEol;
             write_tabs_check( --_indent );
-            _bufw << char('}');
+
+            if( !t.is_nameless() )
+                _bufw << char('}');
         }
-        else if( t._type == type::T_STRUCTBGN )
+        else if( t.type == type::T_STRUCTBGN )
         {
             if( t.is_array_element() )
                 write_tabs( _indent++ );
@@ -223,15 +222,17 @@ public:
                 _bufw << char(' ');
                 ++_indent;
             }
-            
-            if(p)
-                _bufw << char('(') << *(const charstr*)p << ") ";
-            _bufw << char('{');
-            _bufw << tEol;
+
+            if( !t.is_nameless() ) {
+                if(p)
+                    _bufw << char('(') << *(const charstr*)p << ") ";
+                _bufw << char('{');
+                _bufw << tEol;
+            }
         }
         else
         {
-            switch( t._type )
+            switch( t.type )
             {
                 case type::T_INT:
                     _bufw.append_num_int( 10, p, t.get_size() );
@@ -343,97 +344,113 @@ public:
     opcd read( void* p, type t )
     {
         token tok = _tokenizer.next();
-        if( tok.is_empty()  &&  !_tokenizer.was_string() )
-            return ersSYNTAX_ERROR "empty token read";
 
         opcd e=0;
-        if( t.is_array_control_type() )
+        if( t.is_array_start() )
         {
-            if( t._ctrl & type::fARRAY_BEGIN )
-            {
-                if( t._type == type::T_CHAR  ||  t._type == type::T_BINARY ) {
-                    e = _tokenizer.was_string() ? opcd(0) : ersSYNTAX_ERROR "expected string";
-                    if(!e)
-                        *(uints*)p =  (t._type == type::T_BINARY) ? tok.len()/2 : tok.len();
+            if( t.type == type::T_CHAR  ||  t.type == type::T_BINARY ) {
+                e = _tokenizer.was_string() ? opcd(0) : ersSYNTAX_ERROR "expected string";
+                if(!e)
+                    *(uints*)p =  (t.type == type::T_BINARY) ? tok.len()/2 : tok.len();
 
-                    _tokenizer.push_back();
-                }
-                else if( t._type == type::T_KEY ) {
-                    if( tok == char('}') )
-                        e = ersNO_MORE;
-                    else
-                        e = _tokenizer.last_mask() == (1<<GROUP_IDENTIFIERS)
-                            ? opcd(0)
-                            : ersSYNTAX_ERROR "expected identifier";
-                    if(!e)
-                        *(uints*)p = tok.len();
-                    _tokenizer.push_back();
-                }
-                else if( t._type == type::T_COMPOUND )
-                {
-                    if( _tokenizer.last_string_delimiter() == '(' )
-                    {
-                        //optional class name found
-                        if(p) {
-                            charstr& s = *(charstr*)p;
-                            if(s.is_empty())        //return the class type if empty
-                                s = tok;
-                            else if( s != tok )     //otherwise compare
-                                return ersSYNTAX_ERROR "class name mismatch";
-                        }
-                        tok = _tokenizer.next();
-                    }
-                    e = (tok == char('[')) ? opcd(0) : ersSYNTAX_ERROR "expected [";
-                }
+                _tokenizer.push_back();
+            }
+            else if( t.type == type::T_KEY ) {
+                if( tok == char('}')  ||  tok.is_null() )
+                    e = ersNO_MORE;
                 else
-                    e = (tok == char('[')) ? opcd(0) : ersSYNTAX_ERROR "expected [";
+                    e = _tokenizer.last_mask() == (1<<GROUP_IDENTIFIERS)
+                        ? opcd(0)
+                        : ersSYNTAX_ERROR "expected identifier";
+                if(!e)
+                    *(uints*)p = tok.len();
+                _tokenizer.push_back();
+            }
+            else if( t.type == type::T_COMPOUND )
+            {
+                if( _tokenizer.last_string_delimiter() == '(' )
+                {
+                    //optional class name found
+                    if(p) {
+                        charstr& s = *(charstr*)p;
+                        if(s.is_empty())        //return the class type if empty
+                            s = tok;
+                        else if( s != tok )     //otherwise compare
+                            return ersSYNTAX_ERROR "class name mismatch";
+                    }
+                    tok = _tokenizer.next();
+                }
+                e = (tok == char('[')) ? opcd(0) : ersSYNTAX_ERROR "expected [";
             }
             else
-            {
-                if( t._type == type::T_CHAR  ||  t._type == type::T_BINARY ) {
-                    e = _tokenizer.was_string() ? opcd(0) : ersSYNTAX_ERROR "expected string";
-                }
-                else if( t._type == type::T_KEY ) {
-                    if( _tokenizer.last_mask() != (1<<GROUP_IDENTIFIERS) )
-                        return ersSYNTAX_ERROR "expected identifier";
-                    
-                    tok = _tokenizer.next();
-                    e = (tok == char('='))  ?  opcd(0) : ersSYNTAX_ERROR "expected =";
-                }
-                else
-                    e = (tok == char(']')) ? opcd(0) : ersSYNTAX_ERROR "expected ]";
+                e = (tok == char('[')) ? opcd(0) : ersSYNTAX_ERROR "expected [";
+        }
+        else if( t.is_array_end() )
+        {
+            if( t.type == type::T_CHAR  ||  t.type == type::T_BINARY ) {
+                e = _tokenizer.was_string() ? opcd(0) : ersSYNTAX_ERROR "expected string";
             }
-        }
-        else if( t._type == type::T_STRUCTEND )
-        {
-            e = (tok == char('}')) ? opcd(0) : ersSYNTAX_ERROR "expected }";
-        }
-        else if( t._type == type::T_STRUCTBGN )
-        {
-            if( _tokenizer.last_string_delimiter() == '(' )
-            {
-                //optional class name found
-                if(p) {
-                    charstr& s = *(charstr*)p;
-                    if(s.is_empty())        //return the class type if empty
-                        s = tok;
-                    else if( s != tok )     //otherwise compare
-                        return ersSYNTAX_ERROR "class name mismatch";
-                }
+            else if( t.type == type::T_KEY ) {
+                if( _tokenizer.last_mask() != (1<<GROUP_IDENTIFIERS) )
+                    return ersSYNTAX_ERROR "expected identifier";
+                
                 tok = _tokenizer.next();
+                e = (tok == char('='))  ?  opcd(0) : ersSYNTAX_ERROR "expected =";
             }
-            
-            e = (tok == char('{')) ? opcd(0) : ersSYNTAX_ERROR "expected {";
+            else
+                e = (tok == char(']')) ? opcd(0) : ersSYNTAX_ERROR "expected ]";
         }
+        else if( t.type == type::T_STRUCTEND )
+        {
+            if( t.is_nameless() )
+                _tokenizer.push_back();
+            else
+                e = (tok == char('}')) ? opcd(0) : ersSYNTAX_ERROR "expected }";
+        }
+        else if( t.type == type::T_STRUCTBGN )
+        {
+            if( t.is_nameless() )
+                _tokenizer.push_back();
+            else {
+                if( _tokenizer.last_string_delimiter() == '(' )
+                {
+                    //optional class name found
+                    if(p) {
+                        charstr& s = *(charstr*)p;
+                        if(s.is_empty())        //return the class type if empty
+                            s = tok;
+                        else if( s != tok )     //otherwise compare
+                            return ersSYNTAX_ERROR "class name mismatch";
+                    }
+                    tok = _tokenizer.next();
+                }
+                
+                e = (tok == char('{')) ? opcd(0) : ersSYNTAX_ERROR "expected {";
+            }
+        }
+        else if( t.type == type::T_SEPARATOR )
+        {
+            if( trSep.is_empty() )
+                _tokenizer.push_back();
+            else if( tok != trSep )
+                e = ersSYNTAX_ERROR "missing separator";
+        }
+        else if( tok.is_empty() )
+            e = ersSYNTAX_ERROR "empty token read";
         else
         {
-            switch( t._type )
+            switch( t.type )
             {
                 case type::T_INT:
                     {
-                        int64 v = tok.xtoint64_and_shift();
+                        token::tonum<int64> conv;
+                        int64 v = conv.xtoint(tok);
+
+                        if( conv.failed() )
+                            return ersSYNTAX_ERROR " expected number";
+
                         if( !tok.is_empty() )
-                            return ersSYNTAX_ERROR "unrecognized characters after number";
+                            return ersSYNTAX_ERROR " unrecognized characters after number";
 
                         if( !valid_int_range(v,t.get_size()) )
                             return ersINTEGER_OVERFLOW;
@@ -450,9 +467,14 @@ public:
                 
                 case type::T_UINT:
                     {
-                        uint64 v = tok.xtouint64_and_shift();
+                        token::tonum<uint64> conv;
+                        uint64 v = conv.xtouint(tok);
+
+                        if( conv.failed() )
+                            return ersSYNTAX_ERROR " expected number";
+
                         if( !tok.is_empty() )
-                            return ersSYNTAX_ERROR "unrecognized characters after number";
+                            return ersSYNTAX_ERROR " unrecognized characters after number";
 
                         if( !valid_uint_range(v,t.get_size()) )
                             return ersINTEGER_OVERFLOW;
@@ -468,7 +490,7 @@ public:
                     break;
 
                 case type::T_KEY:
-                    return ersUNAVAILABLE "should be read as array";
+                    return ersUNAVAILABLE;// "should be read as array";
                     break;
 
                 case type::T_CHAR:
@@ -477,7 +499,7 @@ public:
                         {
                             ucs4 d = _tokenizer.last_string_delimiter();
                             if( d == '\"' || d == '\'' )
-                                *(char*)p = tok[0];
+                                *(char*)p = tok.first_char();
                             else
                                 e = ersSYNTAX_ERROR "expected string";
                         }
@@ -543,15 +565,6 @@ public:
 
 
                 /////////////////////////////////////////////////////////////////////////////////////
-                case type::T_SEPARATOR:
-                    if( trSep.is_empty() )
-                        _tokenizer.push_back();
-                    else if( tok != trSep )
-                        return ersSYNTAX_ERROR "missing separator";
-                    //else
-                    //    _tokenizer.push_back();
-                    break;
-
                 case type::T_COMPOUND:
                     break;
 
@@ -570,7 +583,7 @@ public:
     {
         if( !end && t.is_next_array_element() )
         {
-            if( t._type != type::T_CHAR && t._type != type::T_KEY && t._type != type::T_BINARY )
+            if( t.type != type::T_CHAR && t.type != type::T_KEY && t.type != type::T_BINARY )
                 _bufw << tArraySep << char(' ');
         }
         return 0;
@@ -588,7 +601,7 @@ public:
 
         if( t.is_next_array_element() )
         {
-            if( t._type != type::T_CHAR && t._type != type::T_KEY && t._type != type::T_BINARY )
+            if( t.type != type::T_CHAR && t.type != type::T_KEY && t.type != type::T_BINARY )
             {
                 if( tok != tArraySep )
                     return ersSYNTAX_ERROR "expected array separator";
@@ -600,22 +613,23 @@ public:
         return 0;
     }
 
-    virtual opcd write_array_content( binstream_container& c )
+    virtual opcd write_array_content( binstream_container& c, uints* count )
     {
         type t = c._type;
         uints n = c._nelements;
         c.set_array_needs_separators();
 
-        if( t._type != type::T_CHAR  &&  t._type != type::T_KEY && t._type != type::T_BINARY )
-            return write_compound_array_content(c);
+        if( t.type != type::T_CHAR  &&  t.type != type::T_KEY && t.type != type::T_BINARY )
+            return write_compound_array_content(c,count);
 
+        opcd e;
         //optimized for character and key strings
         if( c.is_continuous()  &&  n != UMAX )
         {
-            if( t._type == type::T_BINARY )
-                return write_binary( c.extract(n), n );
-            if( t._type == type::T_KEY )
-                return write_raw( c.extract(n), n );
+            if( t.type == type::T_BINARY )
+                e = write_binary( c.extract(n), n );
+            else if( t.type == type::T_KEY )
+                e = write_raw( c.extract(n), n );
             else
             {
                 //_bufw.append('\"');
@@ -627,28 +641,30 @@ public:
                 //_bufw.append('\"');
 
                 uints len = _bufw.len();
-                opcd e = write_raw( _bufw.ptr(), len );
+                e = write_raw( _bufw.ptr(), len );
                 _bufw.reset();
-
-                return e;
             }
+
+            if(!e)  *count = n;
         }
         else
-            return write_compound_array_content(c);
+            e = write_compound_array_content(c,count);
+
+        return e;
     }
 
-    virtual opcd read_array_content( binstream_container& c, uints n )
+    virtual opcd read_array_content( binstream_container& c, uints n, uints* count )
     {
         type t = c._type;
         //uints n = c._nelements;
         c.set_array_needs_separators();
 
-        if( t._type != type::T_CHAR  &&  t._type != type::T_KEY && t._type != type::T_BINARY )
-            return read_compound_array_content(c,n);
+        if( t.type != type::T_CHAR  &&  t.type != type::T_KEY && t.type != type::T_BINARY )
+            return read_compound_array_content(c,n,count);
 
         token tok = _tokenizer.next();
 
-        if( t._type == type::T_KEY )
+        if( t.type == type::T_KEY )
         {
             if( _tokenizer.last_mask() != (1<<GROUP_IDENTIFIERS) )
                 return ersSYNTAX_ERROR;
@@ -660,19 +676,26 @@ public:
         }
 
         opcd e=0;
-        if( t._type == type::T_BINARY )
-            e = read_binary(tok,c,n);
+        if( t.type == type::T_BINARY )
+            e = read_binary(tok,c,n,count);
         else
         {
             if( n != UMAX  &&  n != tok.len() )
                 e = ersMISMATCHED "array size";
-            else if( c.is_continuous()  &&  n != UMAX )
+            else if( c.is_continuous() )
+            {
                 xmemcpy( c.insert(n), tok.ptr(), tok.len() );
+
+                *count = tok.len();
+            }
             else
             {
                 const char* p = tok.ptr();
-                uints n = tok.len();
-                for(; n>0; --n,++p )  *(char*)c.insert(1) = *p;
+                uints nc = tok.len();
+                for(; nc>0; --nc,++p )
+                    *(char*)c.insert(1) = *p;
+
+                *count = nc;
             }
         }
 
@@ -690,16 +713,18 @@ public:
         return 0;
     }
 
-    opcd read_binary( token& tok, binstream_container& c, uints n )
+    opcd read_binary( token& tok, binstream_container& c, uints n, uints* count )
     {
         uints nr = n;
         if( c.is_continuous() && n!=UMAX )
             nr = charstrconv::hex2bin( tok, c.insert(n), n, ' ' );
         else {
-            for(; nr>0; --nr) {
+            for( ; nr>0; --nr )
                 if( charstrconv::hex2bin( tok, c.insert(1), 1, ' ' ) ) break;
-            }
         }
+
+        *count = n - nr;
+
         if( n != UMAX  &&  nr>0 )
             return ersMISMATCHED "not enough array elements";
 

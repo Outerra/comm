@@ -49,7 +49,7 @@ COID_NAMESPACE_BEGIN
 ///Descriptor structure for type
 struct MetaDesc
 {
-    typedef bstype::type            type;
+    typedef bstype::kind                type;
 
     ///Member variable descriptor
     struct Var
@@ -58,12 +58,18 @@ struct MetaDesc
         charstr varname;                ///< name of the variable (empty if this is an array element)
 
         dynarray<uchar> defval;         ///< default value for reading if not found in input stream
+        bool nameless_root;             ///< true if the variable is nameless root
+        bool default_skip;
 
+
+        Var() : desc(0), nameless_root(false), default_skip(false) {}
 
         bool is_array() const           { return desc->is_array(); }
         bool is_array_element() const   { return varname.is_empty(); }
         bool is_primitive() const       { return desc->is_primitive(); }
         bool is_compound() const        { return desc->is_compound(); }
+
+        bool has_default() const        { return defval.size() > 0; }
 
         ushort get_size() const         { return desc->btype.get_size(); }
 
@@ -92,27 +98,34 @@ struct MetaDesc
             return desc->type_string(dst);
         }
 
-        Var* add_child( MetaDesc* d, const token& n, dynarray<uchar>& valdefault )
+        Var* add_child( MetaDesc* d, const token& n )
         {
-            return desc->add_desc_var( d, n, valdefault );
+            return desc->add_desc_var( d, n );
         }
     };
 
 
-    dynarray<Var> children;         ///< member variables
-    uints array_size;               ///< array size, UMAX for unknown
+    dynarray<Var> children;             ///< member variables
+    uints array_size;                   ///< array size, UMAX for unknown
 
-    charstr type_name;              ///< type name, name of a structure (empty if this is an array)
-    type btype;                     ///< basic type id
+    charstr type_name;                  ///< type name, name of a structure (empty if this is an array)
+    type btype;                         ///< basic type id
+
+    binstream::fnc_from_stream
+        stream_from;                    ///< binstream streaming function used to read data from stream
+    binstream::fnc_to_stream
+        stream_to;                      ///< binstream streaming function used to write data to stream
 
 
 
-    bool is_array() const           { return type_name.is_empty(); }
-    bool is_primitive() const       { return btype.is_primitive(); }
-    bool is_compound() const        { return !btype.is_primitive() && !is_array(); }
+    bool is_array() const               { return type_name.is_empty(); }
+    bool is_primitive() const           { return btype.is_primitive(); }
+    bool is_compound() const            { return !btype.is_primitive() && !is_array(); }
     
 
-    uints num_children() const      { return children.size(); }
+    uints num_children() const          { return children.size(); }
+
+
 
     ///Get first member
     Var* first_child() const
@@ -147,7 +160,7 @@ struct MetaDesc
         return -1;
     }
 
-    uints get_child_pos( Var* v ) const     { return uints(v-children.ptr()); }
+    uints get_child_pos( Var* v ) const { return uints(v-children.ptr()); }
 
 
     charstr& type_string( charstr& dst ) const
@@ -160,26 +173,23 @@ struct MetaDesc
         if( btype.is_primitive() )
             dst << char('$');
         dst << type_name;
-        if( btype._size )
-            dst << (8*btype._size);
+        if( btype.size )
+            dst << (8 * btype.size);
         return dst;
     }
 
-    operator token() const                  { return type_name; }
-    uints size() const                      { return children.size(); }
+    operator token() const              { return type_name; }
+    uints size() const                  { return children.size(); }
 
 
-    MetaDesc() {}
-    MetaDesc( const token& n ) : type_name(n) {}
+    MetaDesc() : array_size(UMAX), stream_from(0), stream_to(0) {}
+    MetaDesc( const token& n ) : array_size(UMAX), type_name(n), stream_from(0), stream_to(0) {}
 
-    Var* add_desc_var( MetaDesc* d, const token& n, dynarray<uchar>& valdefault )
+    Var* add_desc_var( MetaDesc* d, const token& n )
     {
         Var* c = children.add();
         c->desc = d;
         c->varname = n;
-
-        if( valdefault.size() )
-            c->defval.swap( valdefault );
 
         return c;
     }

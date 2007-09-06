@@ -255,44 +255,41 @@ public:
             _sesinitw = true;
         }
 
-        if( t.is_array_control_type() )
+        if( t.is_array_start() )
         {
-            if( t._ctrl & type::fARRAY_BEGIN )
+            if( t.type != type::T_KEY )
             {
-                if( t._type != type::T_KEY )
-                {
-                    write_tabs(_indent);
-                    if( t._type != type::T_CHAR )
-                        ++_indent;
+                write_tabs(_indent);
+                if( t.type != type::T_CHAR )
+                    ++_indent;
 
-                    _bufw << xml_get_leading_tag(t);
+                _bufw << xml_get_leading_tag(t);
 
-                    if( !_name.is_empty() )
-                        _bufw << " name=\"" << _name << "\">";
-                    else
-                        _bufw << char('>');
-                    _name.reset();
-                }
-            }
-            else
-            {
-                if( t._type != type::T_KEY )
-                {
-                    if( t._type != type::T_CHAR )
-                        write_tabs( --_indent );
-
-                    _bufw << xml_get_trailing_tag(t);
-                }
+                if( !_name.is_empty() )
+                    _bufw << " name=\"" << _name << "\">";
+                else
+                    _bufw << char('>');
+                _name.reset();
             }
         }
-        else if( t._type == type::T_SEPARATOR )
+        else if( t.is_array_end() )
+        {
+            if( t.type != type::T_KEY )
+            {
+                if( t.type != type::T_CHAR )
+                    write_tabs( --_indent );
+
+                _bufw << xml_get_trailing_tag(t);
+            }
+        }
+        else if( t.type == type::T_SEPARATOR )
             return 0;
-        else if( t._type == type::T_STRUCTEND )
+        else if( t.type == type::T_STRUCTEND )
         {
             write_tabs( --_indent );
             _bufw << xml_get_trailing_tag(t);
         }
-        else if( t._type == type::T_STRUCTBGN )
+        else if( t.type == type::T_STRUCTBGN )
         {
             write_tabs( _indent++ );
             _bufw << xml_get_leading_tag(t);
@@ -311,7 +308,7 @@ public:
         }
         else
         {
-            if( t._type == type::T_KEY )
+            if( t.type == type::T_KEY )
                 _name << *(char*)p;
             else
             {
@@ -327,7 +324,7 @@ public:
                     _name.reset();
                 }
 
-                switch( t._type )
+                switch( t.type )
                 {
                     case type::T_INT:
                         _bufw.append_num_int( 10, p, t.get_size() );
@@ -453,49 +450,47 @@ public:
 
         _tag_read = false;
 
-        if( t.is_array_control_type() )
+        if( t.is_array_start() )
         {
-            if( t._ctrl & type::fARRAY_BEGIN )
+            if( t.type == type::T_KEY )
             {
-                if( t._type == type::T_KEY )
-                {
-                    tag* tg = _tagstack.last();
-                    
-                    _curname = tg->_name;
-                    *(uints*)p = _curname.len();
-                    _tag_read = true;
-                }
-                else
-                {
-                    if( !match_type_leading(t) )
-                        return ersSYNTAX_ERROR "expected array";
-                }
+                tag* tg = _tagstack.last();
+                
+                _curname = tg->_name;
+                *(uints*)p = _curname.len();
+                _tag_read = true;
             }
             else
             {
-                if( t._type != type::T_KEY )
-                {
-                    if( !match_type_trailing2(t) )
-                        return ersSYNTAX_ERROR "expected array end";
-                }
-                else
-                    _tag_read = true;
-                
+                if( !match_type_leading(t) )
+                    return ersSYNTAX_ERROR "expected array";
             }
             return 0;
         }
-        else if( t._type == type::T_SEPARATOR )
+        else if( t.is_array_end() )
+        {
+            if( t.type != type::T_KEY )
+            {
+                if( !match_type_trailing2(t) )
+                    return ersSYNTAX_ERROR "expected array end";
+            }
+            else
+                _tag_read = true;
+            
+            return 0;
+        }
+        else if( t.type == type::T_SEPARATOR )
         {
             _tag_read = true;
             return 0;
         }
-        else if( t._type == type::T_STRUCTBGN )
+        else if( t.type == type::T_STRUCTBGN )
         {
             if( !match_type_leading(t) )
                 return ersSYNTAX_ERROR "expected structure";
             return 0;
         }
-        else if( t._type == type::T_STRUCTEND )
+        else if( t.type == type::T_STRUCTEND )
         {
             if( !match_type_trailing2(t) )
                 return ersSYNTAX_ERROR "expected structure end";
@@ -508,7 +503,7 @@ public:
             // been read already
             tok = _tokenizer.next_as_string('<');
 
-            switch( t._type )
+            switch( t.type )
             {
                 case type::T_INT:
                     {
@@ -659,26 +654,23 @@ public:
         return 0;
     }
 
-    virtual opcd write_array_content( binstream_container& c )
+    virtual opcd write_array_content( binstream_container& c, uints* count )
     {
         type t = c._type;
         uints n = c._nelements;
         c.set_array_needs_separators();
 
-        if( t._type != type::T_CHAR  &&  t._type != type::T_KEY  &&  t._type != type::T_BINARY )
-            return write_compound_array_content(c);
+        if( t.type != type::T_CHAR  &&  t.type != type::T_KEY  &&  t.type != type::T_BINARY )
+            return write_compound_array_content(c,count);
 
         //optimized for character and key strings
+        opcd e=0;
         if( c.is_continuous()  &&  n != UMAX )
         {
-            if( t._type == type::T_BINARY )
-                return write_binary( c.extract(n), n );
-            
-            if( t._type == type::T_KEY )
-            {
+            if( t.type == type::T_BINARY )
+                e = write_binary( c.extract(n), n );
+            else if( t.type == type::T_KEY )
                 _name.set_from( (const char*)c.extract(n), n );
-                return 0;
-            }
             else
             {
                 static token cdata = "<![CDATA[";
@@ -687,28 +679,30 @@ public:
                     _bufw += t;
 
                 uints len = _bufw.len();
-                opcd e = write_raw( _bufw.ptr(), len );
+                e = write_raw( _bufw.ptr(), len );
                 _bufw.reset();
-
-                return e;
             }
+
+            if(!e)  *count = n;
         }
         else
-            return write_compound_array_content(c);
+            e = write_compound_array_content(c,count);
+
+        return e;
     }
 
-    virtual opcd read_array_content( binstream_container& c, uints n )
+    virtual opcd read_array_content( binstream_container& c, uints n, uints* count )
     {
         type t = c._type;
         //uints n = c._nelements;
         c.set_array_needs_separators();
 
-        if( t._type != type::T_CHAR  &&  t._type != type::T_KEY && t._type != type::T_BINARY )
-            return read_compound_array_content(c,n);
+        if( t.type != type::T_CHAR  &&  t.type != type::T_KEY && t.type != type::T_BINARY )
+            return read_compound_array_content(c,n,count);
 
         token tok;
 
-        if( t._type == type::T_KEY )
+        if( t.type == type::T_KEY )
         {
             if( _curname.is_empty() )
                 return ersSYNTAX_ERROR;
@@ -720,8 +714,8 @@ public:
             tok = _tokenizer.next_as_string('<');
 
         opcd e=0;
-        if( t._type == type::T_BINARY )
-            e = read_binary(tok,c,n);
+        if( t.type == type::T_BINARY )
+            e = read_binary(tok,c,n,count);
         else
         {
             if( n != UMAX  &&  n != tok.len() )
@@ -734,6 +728,8 @@ public:
                 uints n = tok.len();
                 for(; n>0; --n,++p )  *(char*)c.insert(1) = *p;
             }
+
+            if(!e)  *count = tok.len();
         }
 
         return e;
@@ -747,7 +743,7 @@ public:
         return 0;
     }
 
-    opcd read_binary( token& tok, binstream_container& c, uints n )
+    opcd read_binary( token& tok, binstream_container& c, uints n, uints* count )
     {
         uints nr = n;
         if( c.is_continuous() && n!=UMAX )
@@ -763,6 +759,8 @@ public:
         tok.skip_char(' ');
         if( !tok.is_empty() )
             return ersMISMATCHED "more characters after array elements read";
+
+        *count = n - nr;
 
         return 0;
     }
@@ -923,7 +921,7 @@ protected:
         return false;
     }
 
-    enum { NTAG = bstype::type::T_ERRCODE+2, };
+    enum { NTAG = bstype::kind::T_ERRCODE+2, };
 
     static const token* get_tk_list()
     {
@@ -973,9 +971,9 @@ protected:
     {
         const token* ptk = get_tk_list();
         uints offs =
-            t._type <= bstype::type::T_ERRCODE
-            ? t._type
-            : bstype::type::T_ERRCODE+1;
+            t.type <= bstype::kind::T_ERRCODE
+            ? t.type
+            : bstype::kind::T_ERRCODE+1;
 
         if( t.is_array_control_type() )
             return ptk[2*NTAG+offs];
@@ -989,9 +987,9 @@ protected:
     {
         const token* ptk = get_tk_list();
         uints offs =
-            t._type <= bstype::type::T_ERRCODE
-            ? t._type
-            : bstype::type::T_ERRCODE+1;
+            t.type <= bstype::kind::T_ERRCODE
+            ? t.type
+            : bstype::kind::T_ERRCODE+1;
 
         if( t.is_array_control_type() )
             return ptk[3*NTAG+offs];

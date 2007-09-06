@@ -72,7 +72,7 @@ public:
         if( t.is_array_control_type() )
             return 0;
 
-        switch( t._type )
+        switch( t.type )
         {
         case type::T_BINARY:
             {
@@ -135,7 +135,7 @@ public:
         // can be used to determine the type, we can only read text
         //for anything more sophisticated use class fmtstream* classes instead
 
-        if( t._type == type::T_CHAR  ||  t._type == type::T_KEY )
+        if( t.type == type::T_CHAR  ||  t.type == type::T_KEY )
             return _cache.read( p, t );
         else
             return ersUNAVAILABLE;
@@ -144,46 +144,50 @@ public:
     virtual opcd write_raw( const void* p, uints& len )      { return _cache.write_raw( p, len ); }
     virtual opcd read_raw( void* p, uints& len )             { return _cache.read_raw( p, len ); }
 
-    virtual opcd write_array_content( binstream_container& c )
+    virtual opcd write_array_content( binstream_container& c, uints* count )
     {
         type t = c._type;
         uints n = c._nelements;
 
         //types other than char and key must be written by elements
-        if( t._type != type::T_CHAR  &&  t._type != type::T_KEY )
-            return write_compound_array_content(c);
+        if( t.type != type::T_CHAR  &&  t.type != type::T_KEY )
+            return write_compound_array_content(c,count);
 
         if( c.is_continuous()  &&  n != UMAX )
         {
             //n *= t.get_size();
+            *count = n;
             return write_raw( c.extract(n), n );
         }
         else
-            return write_compound_array_content(c);
+            return write_compound_array_content(c,count);
     }
 
-    virtual opcd read_array_content( binstream_container& c, uints n )
+    virtual opcd read_array_content( binstream_container& c, uints n, uints* count )
     {
         type t = c._type;
         //uints n = c._nelements;
 
-        if( t._type != type::T_CHAR  &&  t._type != type::T_KEY )
+        if( t.type != type::T_CHAR  &&  t.type != type::T_KEY )
             return ersUNAVAILABLE;
 
         if( c.is_continuous()  &&  n != UMAX )
         {
             //uints na = n * t.get_size();
+            *count = n;
             return read_raw( c.insert(n), n );
         }
         else
         {
-            uints es = 1;
+            uints es=1, k=0;
             char ch;
             while( n-- > 0  &&  0 == read_raw( &ch, es ) ) {
                 *(char*)c.insert(1) = ch;
                 es = 1;
+                ++k;
             }
 
+            *count = k;
             return 0;
         }
     }
