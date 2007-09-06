@@ -735,7 +735,7 @@ public:
         return _map.find(type);
     }
 
-    void get_type_info_all( dynarray<const metastream::MetaDesc*>& dst )
+    void get_type_info_all( dynarray<const MetaDesc*>& dst )
     {
         return _map.get_all_types(dst);
     }
@@ -1502,7 +1502,7 @@ protected:
 
         write_array_separator(t,end);
 
-        return end ? 0 : movein_array<WRITE_MODE>();
+        return end ? opcd(0) : movein_array<WRITE_MODE>();
     }
 
     ///Called from binstream to read array separator or detect an array end

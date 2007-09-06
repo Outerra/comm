@@ -1346,7 +1346,6 @@ struct token
         void get_num_base( token& tok )
         {
             BaseN = 10;
-            uints i=0;
             if( tok.len()>2  &&  tok[0] == '0' )
             {
                 char c = tok[1];
