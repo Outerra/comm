@@ -1709,7 +1709,7 @@ public:
         if( _nsegmapped >= _nsegmapmax )
             unmap();
 
-        return _segmem.init( size<<_rsegsize, 1<<_rsegsize );
+        return _segmem.init( nseg<<_rsegsize, 1<<_rsegsize );
     }
 
     uints get_max_memory() const

@@ -85,7 +85,7 @@ public:
         _cachelevel = UMAX;
 
         _sesopen = 0;
-        _arraynm = 0;
+        _beseparator = false;
         _current_var = 0;
         _cur_var = 0;
         _cur_variable_name = 0;
@@ -104,7 +104,7 @@ public:
         _fmtstream = &b;
         stream_reset( 0, cache_prepared() );
         _sesopen = 0;
-        _arraynm = 0;
+        _beseparator = false;
     }
 
     binstream& get_formatting_stream() const    { return *_fmtstream; }
@@ -122,7 +122,6 @@ public:
     template<class T>
     opcd prepare_type_read(T&, const token& name)
     {
-        if(_disable_meta_read) { _tmetafnc = 0;  return 0; }
         _root.desc = 0;
         _current_var = 0;
 
@@ -130,7 +129,7 @@ public:
         DASSERT( _sesopen <= 0 );   //or else unflushed write
         if( _sesopen == 0 ) {
             _err.reset();
-            _fmtstream->reset_read();
+            //_fmtstream->reset_read();
             _sesopen = -1;
         }
         else {
@@ -142,7 +141,12 @@ public:
             }
         }
 
-        _arraynm = 0;
+        _beseparator = false;
+
+        if(_disable_meta_read) {
+            _tmetafnc = 0;
+            return 0;
+        }
 
         *this << *(const T*)0;     // build description tree
 
@@ -158,7 +162,6 @@ public:
     template<class T>
     opcd prepare_type_write(T&, const token& name)
     {
-        if(_disable_meta_write) { _tmetafnc = 0;  return 0; }
         _root.desc = 0;
         _current_var = 0;
 
@@ -166,7 +169,7 @@ public:
         DASSERT( _sesopen >= 0 );   //or else unacked read
         if( _sesopen == 0 ) {
             _err.reset();
-            _fmtstream->reset_write();
+            //_fmtstream->reset_write();
             _sesopen = 1;
         }
         else {
@@ -174,7 +177,12 @@ public:
             if(e) return e;
         }
 
-        _arraynm = 0;
+        _beseparator = false;
+
+        if(_disable_meta_write) {
+            _tmetafnc = 0;
+            return 0;
+        }
 
         *this << *(const T*)0;     // build description
 
@@ -190,7 +198,6 @@ public:
     template<class T>
     opcd prepare_type_read_array( T&, uints n, const token& name )
     {
-        if(_disable_meta_read) { _tmetafnc = 0;  return 0; }
         _root.desc = 0;
         _current_var = 0;
 
@@ -198,7 +205,7 @@ public:
         DASSERT( _sesopen <= 0 );   //or else unflushed write
         if( _sesopen == 0 ) {
             _err.reset();
-            _fmtstream->reset_read();
+            //_fmtstream->reset_read();
             _sesopen = -1;
         }
         else {
@@ -208,6 +215,13 @@ public:
                 throw e;
                 return e;
             }
+        }
+
+        _beseparator = false;
+
+        if(_disable_meta_read) {
+            _tmetafnc = 0;
+            return 0;
         }
 
         meta_array(n);
@@ -225,7 +239,6 @@ public:
     template<class T>
     opcd prepare_type_write_array( T&, uints n, const token& name )
     {
-        if(_disable_meta_write) { _tmetafnc = 0;  return 0; }
         _root.desc = 0;
         _current_var = 0;
 
@@ -233,12 +246,19 @@ public:
         DASSERT( _sesopen >= 0 );   //or else unacked read
         if( _sesopen == 0 ) {
             _err.reset();
-            _fmtstream->reset_write();
+            //_fmtstream->reset_write();
             _sesopen = 1;
         }
         else {
             e = _fmtstream->write_separator();
             if(e) return e;
+        }
+
+        _beseparator = false;
+
+        if(_disable_meta_write) {
+            _tmetafnc = 0;
+            return 0;
         }
 
         meta_array(n);
@@ -285,9 +305,23 @@ public:
     }
 
     ///Write object of type T to the currently bound formatting stream
+    template<class T>
+    opcd stream_out( const T& x, const token& name = token::empty() )
+    {
+        return stream_or_cache_out(x,false,name);
+    }
+
+    ///Write object of type T to the cache
+    template<class T>
+    opcd cache_out( const T& x, const token& name = token::empty() )
+    {
+        return stream_or_cache_out(x,true,name);
+    }
+
+    ///Write object of type T to the currently bound formatting stream
     ///@param cache true if the object should be trapped in the cache instead of sending it out through the formatting stream
     template<class T>
-    opcd stream_out( const T& x, bool cache=false, const token& name = token::empty() )
+    opcd stream_or_cache_out( const T& x, bool cache, const token& name = token::empty() )
     {
         stream_reset(0,cache);
 
@@ -335,9 +369,23 @@ public:
     }
 
     ///Write array of objects of type T to the currently bound formatting stream
+    template<class T>
+    opcd stream_array_out( binstream_containerT<T>& C, const token& name = token::empty() )
+    {
+        return stream_or_cache_array_out(C,false,name);
+    }
+
+    ///Write array of objects of type T to the currently bound formatting stream
+    template<class T>
+    opcd cache_array_out( binstream_containerT<T>& C, bool cache=false, const token& name = token::empty() )
+    {
+        return stream_or_cache_array_out(C,true,name);
+    }
+
+    ///Write array of objects of type T to the currently bound formatting stream
     ///@param cache true if the array should be trapped in the cache instead of sending it out through the formatting stream
     template<class T>
-    opcd stream_array_out( binstream_containerT<T>& C, bool cache=false, const token& name = token::empty() )
+    opcd stream_or_cache_array_out( binstream_containerT<T>& C, bool cache, const token& name = token::empty() )
     {
         stream_reset(0,cache);
 
@@ -375,12 +423,22 @@ public:
 
     ///Write container of objects of type T to the currently bound formatting stream
     template<class CONT>
-    opcd stream_container_out( CONT& C, bool cache=false, const token& name = token::empty() )
+    opcd stream_container_out( CONT& C, const token& name = token::empty() )
     {
         typedef typename binstream_adapter_readable<CONT>::TBinstreamContainer     BC;
 
         BC bc = binstream_container_readable<CONT,BC>::create(C);
-        return stream_array_out( bc, cache, name );
+        return stream_array_out( bc, name );
+    }
+
+    ///Write container of objects of type T to the cache
+    template<class CONT>
+    opcd cache_container_out( CONT& C, const token& name = token::empty() )
+    {
+        typedef typename binstream_adapter_readable<CONT>::TBinstreamContainer     BC;
+
+        BC bc = binstream_container_readable<CONT,BC>::create(C);
+        return cache_array_out( bc, name );
     }
 
 
@@ -393,8 +451,12 @@ public:
     {   opcd e = cache_in(x,name);  if(e) throw e; }
 
     template<class T>
-    void xstream_out( T& x, bool cache=false, const token& name = token::empty() )
-    {   opcd e = stream_out(x,cache,name);  if(e) throw e; }
+    void xstream_out( T& x, const token& name = token::empty() )
+    {   opcd e = stream_out(x,name);  if(e) throw e; }
+
+    template<class T>
+    void xcache_out( T& x, const token& name = token::empty() )
+    {   opcd e = stream_out(x,name);  if(e) throw e; }
 
 
     void stream_acknowledge( bool eat = false )
@@ -402,7 +464,7 @@ public:
         DASSERT( _sesopen <= 0 );
         if( _sesopen < 0 ) {
             _sesopen = 0;
-            _arraynm = 0;
+            _beseparator = false;
             _fmtstream->acknowledge(eat);
         }
     }
@@ -412,7 +474,7 @@ public:
         DASSERT( _sesopen >= 0 );
         if( _sesopen > 0 ) {
             _sesopen = 0;
-            _arraynm = 0;
+            _beseparator = false;
             _fmtstream->flush();
         }
     }
@@ -423,7 +485,7 @@ public:
     {
         if(fmts_reset) {
             _sesopen = 0;
-            _arraynm = 0;
+            _beseparator = false;
         }
 
         _stack.reset();
@@ -712,8 +774,6 @@ public:
         _root.desc = 0;
         _current_var = 0;
 
-        _arraynm = 0;
-
         *this << *(const T*)0;     // build description
         return &_root;
     }
@@ -853,12 +913,13 @@ private:
     binstream::fnc_to_stream _cur_streamto_fnc;
 
     int _sesopen;                       ///< flush(>0) or ack(<0) session currently open
-    int _arraynm;                       ///< first array element marker in non-meta mode
 
     dynarray<MetaDesc::Var*> _stack;    ///< stack for current variable
 
     dynarray<charstr> _templ_name_stack;
     bool _templ_arg_rdy;
+
+    bool _beseparator;                  ///< true if separator between members should be read or written
 
     bool _disable_meta_write;           ///< disable meta functionality for writting
     bool _disable_meta_read;            ///< disable meta functionality for reading
@@ -1273,14 +1334,14 @@ protected:
 
         if(!_tmetafnc)
         {
-            if( _sesopen && !t.is_array_end() && !_arraynm ) {
+            if( !t.is_array_end() && _beseparator ) {
                 opcd e = _fmtstream->write_separator();
                 if(e) return e;
             }
             else
                 _sesopen = 1;
 
-            _arraynm = t.is_array_start() ? 1 : 0;
+            _beseparator = !t.is_array_start();
 
             return _fmtstream->write(p,t);
         }
@@ -1309,7 +1370,7 @@ protected:
 
         if(!_tmetafnc)
         {
-            if( _sesopen && !t.is_array_end() && !_arraynm )
+            if( !t.is_array_end() && _beseparator )
             {
                 opcd e = _fmtstream->read_separator();
                 if(e) {
@@ -1322,7 +1383,7 @@ protected:
             else
                 _sesopen = -1;
 
-            _arraynm = t.is_array_start() ? 1 : 0;
+            _beseparator = !t.is_array_start();
 
             return _fmtstream->read(p,t);
         }
@@ -1498,7 +1559,7 @@ protected:
     opcd data_write_array_separator( type t, uchar end )
     {
         if(!_tmetafnc)
-            _arraynm = 1;
+            _beseparator = false;
 
         write_array_separator(t,end);
 
@@ -1511,7 +1572,7 @@ protected:
     opcd data_read_array_separator( type t )
     {
         if(!_tmetafnc)
-            _arraynm = 1;
+            _beseparator = false;
 
         if( !read_array_separator(t) )
             return ersNO_MORE;
