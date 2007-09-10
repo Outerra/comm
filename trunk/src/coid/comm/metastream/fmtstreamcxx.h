@@ -774,7 +774,7 @@ public:
     {
         tEol = "\n";
         tTab = "\t";
-        trSep = tSep = "\n";
+        trSep = tSep = ",\n";
         tArraySep = ",";
 
         _tokenizer.strip_group( trSep, 0 );
