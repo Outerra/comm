@@ -1018,11 +1018,11 @@ private:
             return t;
         }
 
-        ///Append value to the buffer, aligning the buffer position according to the \a size
+        ///Allocate space in the buffer, aligning the buffer position according to the \a size
         ///@return position where inserted
         uints insert_void( uints size )
         {
-            uints k = pad(size);
+            uints k = pad();
 
             buf->add(size);
             return k;
@@ -1159,7 +1159,7 @@ protected:
             if( !_current->valid_addr() ) {
                 DASSERT( _cur_var->has_default() );
                 ce->buf = &_cur_var->defval;
-                ce->offs = 0;
+                ce->offs = sizeof(uints);
             }
             else {
                 uints v = _current->extract_member();
@@ -1422,6 +1422,9 @@ protected:
 
     opcd data_read_raw( void* p, uints& len )
     {
+        if(_cachevar)
+            p = _current->data( _current->insert_void(len) );
+
         return _fmtstream->read_raw( p, len );
     }
 
@@ -1536,10 +1539,8 @@ protected:
         }
         else if( cache_prepared() ) //cache with a primitive array
         {
-            if( c.is_continuous()  &&  n != UMAX )
+            if( !_cachevar  &&  c.is_continuous()  &&  n != UMAX )
             {
-                DASSERT( !_cachevar );
-
                 uints na = n * tae.get_size();
                 xmemcpy( c.insert(n), _current->data(), na );
 
@@ -1640,14 +1641,18 @@ protected:
                 movein_cache_member<R>();
 
                 if( !R || _cachevar ) {
-                    _current->insert_asize_field();
+                    *_current->insert_asize_field() = UMAX;
 
                     if(_cachevar)
                         e = _fmtstream->read(p,t);
                 }
                 else {
                     _current->extract_asize_field();
-                    *(uints*)p = _current->get_asize();
+
+                    uints n = _current->get_asize();
+                    DASSERT( n != UMAX  &&  n != 0xcdcdcdcd );
+
+                    *(uints*)p = n;
                 }
             }
             else if( t.is_array_end() )
@@ -1656,7 +1661,10 @@ protected:
                     if(_cachevar)
                         e = _fmtstream->read(p,t);
 
-                    _current->set_asize( *(const uints*)p );
+                    uints n = *(const uints*)p;
+                    DASSERT( n != UMAX  &&  n != 0xcdcdcdcd );
+
+                    _current->set_asize(n);
                 }
                 else {
                     if( _current->get_asize() != *(const uints*)p )
@@ -1672,12 +1680,14 @@ protected:
                 DASSERT( t.type != type::T_STRUCTBGN  &&  t.type != type::T_STRUCTEND );
                 DASSERT( _cachevar || !_cur_var->is_array_element() );
 
+                uints tsize = t.get_size();
+
                 if( R && _cachevar )
-                    e = _fmtstream->read( _current->alloc_cache(t.get_size()), t );
+                    e = _fmtstream->read( _current->alloc_cache(tsize), t );
                 else if(R)
-                    _current->read_cache( p, t.get_size() );
+                    _current->read_cache( p, tsize );
                 else
-                    ::memcpy( _current->alloc_cache(t.get_size()), p, t.get_size() );
+                    ::memcpy( _current->alloc_cache(tsize), p, tsize );
             }
         }
         else
@@ -1882,11 +1892,11 @@ protected:
         //just fake it as the memory wouldn't be used anyway but it can't be NULL
         void* insert( uints n )         { return (void*)1; }
 
-        bool is_continuous() const      { return false; }
+        bool is_continuous() const      { return true; }    //for primitive types it's continuous
 
 
         cache_container( metastream& meta, MetaDesc& desc )
-            : binstream_container(desc.array_size, desc.btype, 0, &stream_in),
+            : binstream_container(desc.array_size, desc.array_type(), 0, &stream_in),
             meta(meta), element(desc.children[0])
         {}
 
@@ -1941,6 +1951,7 @@ protected:
         {
             //found in the cache, set up a cache read
             _current->offs = k;
+            _current->buf = &_cache;
             _cachequit = _cur_var;
 
             return true;
@@ -1959,7 +1970,9 @@ protected:
         //get child map
         MetaDesc* par = parent_var()->desc;
 
-        _current->offs = par->get_child_pos(_cur_var) * sizeof(uints);
+        //_current->offs = par->get_child_pos(_cur_var) * sizeof(uints);
+        _current->offs = 0;
+        _current->buf = &_cur_var->defval;
         _cachequit = _cur_var;
 
         //not actually in the primary cache, but increment 

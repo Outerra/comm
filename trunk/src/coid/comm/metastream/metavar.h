@@ -125,7 +125,7 @@ struct MetaDesc
 
     uints num_children() const          { return children.size(); }
 
-
+    type array_type() const             { return children[0].desc->btype; }
 
     ///Get first member
     Var* first_child() const
