@@ -94,7 +94,7 @@ public:
 
         _from = 255;
         _to = 0;
-        for( uints n=len; n>0; --n,++subs ) {
+        for( uints nc=len; nc>0; --nc,++subs ) {
             uchar c = *subs;
             if( c < _from )  _from = c;
             if( c > _to )    _to = c;
