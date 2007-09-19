@@ -1956,7 +1956,7 @@ protected:
             //found in the cache, set up a cache read
             _current->offs = k;
             _current->buf = &_cache;
-            _cachequit = _cur_var;
+            _cachequit = _curvar.var;
 
             return true;
         }
@@ -1976,8 +1976,8 @@ protected:
 
         //_current->offs = par->get_child_pos(_cur_var) * sizeof(uints);
         _current->offs = 0;
-        _current->buf = &_cur_var->defval;
-        _cachequit = _cur_var;
+        _current->buf = &_curvar.var->defval;
+        _cachequit = _curvar.var;
 
         //not actually in the primary cache, but increment 
         ++_cacheentries;
