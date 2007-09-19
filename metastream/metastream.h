@@ -87,7 +87,7 @@ public:
         _sesopen = 0;
         _beseparator = false;
         _current_var = 0;
-        _cur_var = 0;
+        _curvar.var = 0;
         _cur_variable_name = 0;
 
         _disable_meta_write = _disable_meta_read = false;
@@ -152,9 +152,9 @@ public:
 
         _tmetafnc = &metacall<T>::stream;
 
-        _cur_var = &_root;
-        _cur_var->varname = name;
-        _cur_var->nameless_root = name.is_empty();
+        _curvar.var = &_root;
+        _curvar.var->varname = name;
+        _curvar.var->nameless_root = name.is_empty();
 
         return movein_current<READ_MODE>(true);
     }
@@ -188,9 +188,9 @@ public:
 
         _tmetafnc = &metacall<T>::stream;
 
-        _cur_var = &_root;
-        _cur_var->varname = name;
-        _cur_var->nameless_root = name.is_empty();
+        _curvar.var = &_root;
+        _curvar.var->varname = name;
+        _curvar.var->nameless_root = name.is_empty();
 
         return movein_current<WRITE_MODE>(true);
     }
@@ -229,9 +229,9 @@ public:
 
         _tmetafnc = &metacall<T>::stream;
 
-        _cur_var = &_root;
-        _cur_var->varname = name;
-        _cur_var->nameless_root = name.is_empty();
+        _curvar.var = &_root;
+        _curvar.var->varname = name;
+        _curvar.var->nameless_root = name.is_empty();
 
         return movein_current<READ_MODE>(true);
     }
@@ -266,9 +266,9 @@ public:
 
         _tmetafnc = &metacall<T>::stream;
 
-        _cur_var = &_root;
-        _cur_var->varname = name;
-        _cur_var->nameless_root = name.is_empty();
+        _curvar.var = &_root;
+        _curvar.var->varname = name;
+        _curvar.var->nameless_root = name.is_empty();
 
         return movein_current<WRITE_MODE>(true);
     }
@@ -492,7 +492,7 @@ public:
         cache_reset(cache_open);
 
         _tmetafnc = 0;
-        _cur_var = 0;
+        _curvar.var = 0;
         _cur_variable_name = 0;
 
         _err.reset();
@@ -680,10 +680,10 @@ public:
     template<class T>
     void meta_cache_default( const T& var, const T& defval )
     {
-        _cur_var = _last_var;
+        _curvar.var = _last_var;
 
         _current = _cachestack.push();
-        _current->buf = &_cur_var->defval;
+        _current->buf = &_curvar.var->defval;
         _current->offs = 0;
 
         //insert a dummy address field
@@ -698,7 +698,7 @@ public:
         _current = _cachestack.last();
 
         _tmetafnc = 0;
-        _cur_var = 0;
+        _curvar.var = 0;
     }
 
     bool meta_struct_open( const char* name )
@@ -914,11 +914,22 @@ private:
 
     int _sesopen;                       ///< flush(>0) or ack(<0) session currently open
 
-    dynarray<MetaDesc::Var*> _stack;    ///< stack for current variable
+    ///Entry for variable stack
+    struct VarEntry {
+        MetaDesc::Var* var;             ///< currently processed variable
+        int kth;                        ///< its position within parent
+    };
+
+    dynarray<VarEntry> _stack;          ///< stack for current variable
+
+    VarEntry _curvar;                   ///< currently processed variable (read/write)            
+
+    charstr _rvarname;                  ///< name of variable that follows in the input stream
+    charstr _struct_name;               ///< used during the template name building step
 
     dynarray<charstr> _templ_name_stack;
     bool _templ_arg_rdy;
-
+ 
     bool _beseparator;                  ///< true if separator between members should be read or written
 
     bool _disable_meta_write;           ///< disable meta functionality for writting
@@ -1075,31 +1086,20 @@ private:
     uints _cachelevel;                  ///< level where the cache was initialized
     uints _cacheentries;                ///< no.of valid members in cache (for fast discarding of cache when everything was read)
 
-    charstr _rvarname;                  ///< name of variable that follows in the input stream
-
-    MetaDesc::Var* _cur_var;            ///< currently processed variable (read/write)
-    charstr _struct_name;               ///< used during the template name building step
-
 private:
 
     ////////////////////////////////////////////////////////////////////////////////
-    MetaDesc::Var* last_var() const     { return *_stack.last(); }
-    void pop_var()                      { EASSERT( _stack.pop(_cur_var) ); }
-    void push_var()                     { _stack.push(_cur_var);  _cur_var = _cur_var->desc->first_child(); }
+    MetaDesc::Var* last_var() const     { return _stack.last()->var; }
+    void pop_var()                      { EASSERT( _stack.pop(_curvar) ); }
+    void push_var()                     { _stack.push(_curvar);  _curvar.var = _curvar.var->desc->first_child();  _curvar.kth = 0; }
 
     MetaDesc::Var* parent_var() const
     {
-        MetaDesc::Var** v = _stack.last();
-        return v ? *v : 0;
+        VarEntry* v = _stack.last();
+        return v ? v->var : 0;
     }
 
-    bool is_first_var() const
-    {
-        if( _stack.size() == 0 )
-            return true;            //lets treat all top-level variables as first
-        MetaDesc::Var* p = last_var();
-        return _cur_var == p->desc->children.ptr();
-    }
+    bool is_first_var() const           { return _curvar.kth == 0; }
 
 
     charstr& dump_stack( charstr& dst, int depth, MetaDesc::Var* var=0 ) const
@@ -1116,7 +1116,7 @@ private:
         for( int i=0; i<depth; ++i )
         {
             //dst << char('/');
-            _stack[i]->dump(dst);
+            _stack[i].var->dump(dst);
         }
 
         if(var) {
@@ -1141,7 +1141,7 @@ protected:
 
         //_current->offs points to the actual offset to member data if we are nested in another struct
         // or it is the offset to member data itself if we are in array
-        if( _cur_var->is_array_element() )
+        if( _curvar.var->is_array_element() )
         {
             ce->buf = _current->buf;
             ce->offs = cachewrite ? _current->pad() : _current->offs;
@@ -1157,8 +1157,8 @@ protected:
         {
             //check if the member was cached or use the default value cache instead
             if( !_current->valid_addr() ) {
-                DASSERT( _cur_var->has_default() );
-                ce->buf = &_cur_var->defval;
+                DASSERT( _curvar.var->has_default() );
+                ce->buf = &_curvar.var->defval;
                 ce->offs = sizeof(uints);
             }
             else {
@@ -1181,10 +1181,10 @@ protected:
 
         if( !cache || _cachevar )
         {
-            bool nameless = _cur_var->nameless_root;
+            bool nameless = _curvar.var->nameless_root;
             opcd e = R
-                ? _fmtstream->read_struct_open( nameless, &_cur_var->desc->type_name )
-                : _fmtstream->write_struct_open( nameless, &_cur_var->desc->type_name );
+                ? _fmtstream->read_struct_open( nameless, &_curvar.var->desc->type_name )
+                : _fmtstream->write_struct_open( nameless, &_curvar.var->desc->type_name );
 
             if(e) {
                 dump_stack(_err,0);
@@ -1200,7 +1200,7 @@ protected:
 
             //append member offset table
             if( !R || _cachevar )
-                _current->insert_table( _cur_var->desc->num_children() );
+                _current->insert_table( _curvar.var->desc->num_children() );
         }
 
         push_var();
@@ -1216,10 +1216,10 @@ protected:
 
         if( !cache || _cachevar )
         {
-            bool nameless = _cur_var->nameless_root;
+            bool nameless = _curvar.var->nameless_root;
             opcd e = R
-                ? _fmtstream->read_struct_close( nameless, &_cur_var->desc->type_name )
-                : _fmtstream->write_struct_close( nameless, &_cur_var->desc->type_name );
+                ? _fmtstream->read_struct_close( nameless, &_curvar.var->desc->type_name )
+                : _fmtstream->write_struct_close( nameless, &_curvar.var->desc->type_name );
 
             if(e) {
                 dump_stack(_err,0);
@@ -1239,7 +1239,7 @@ protected:
     template<int R>
     opcd movein_process_key()
     {
-        bool ary = _cur_var->is_array_element();
+        bool ary = _curvar.var->is_array_element();
         if(ary)  return 0;
 
         //this is the first member so no member separator
@@ -1256,7 +1256,7 @@ protected:
         if(key)
             movein_process_key<R>();
 
-        while( _cur_var->is_compound() )
+        while( _curvar.var->is_compound() )
         {
             movein_struct<R>();
             movein_process_key<R>();
@@ -1282,12 +1282,12 @@ protected:
         MetaDesc::Var* cvar;
 
         do {
-            if( _cur_var == _cachevar ) {
+            if( _curvar.var == _cachevar ) {
                 //_cachevar = 0;
                 _current->offs = UMAX;
                 return 0;
             }
-            else if( _cur_var == _cachequit )
+            else if( _curvar.var == _cachequit )
                 invalidate_cache_entry();
 
             //get next var
@@ -1297,7 +1297,7 @@ protected:
                 return 0;
             }
 
-            cvar = par->desc->next_child(_cur_var);
+            cvar = par->desc->next_child(_curvar.var);
             if(!cvar)
             {
                 //we are in the (last) child variable, the parent could have been only
@@ -1316,7 +1316,7 @@ protected:
         }
         while(!cvar);
 
-        _cur_var = cvar;
+        _curvar.var = cvar;
         movein_process_key<R>();
 
         return _cacheskip
@@ -1330,7 +1330,7 @@ protected:
     /// or array cotrol tokens
     opcd data_write( const void* p, type t )
     {
-        DASSERT( !t.is_array_control_type() || !_cur_var || _cur_var->is_array() );
+        DASSERT( !t.is_array_control_type() || !_curvar.var || _curvar.var->is_array() );
 
         if(!_tmetafnc)
         {
@@ -1366,7 +1366,7 @@ protected:
     /// read. 
     opcd data_read( void* p, type t )
     {
-        DASSERT( !t.is_array_control_type() || !_cur_var || _cur_var->is_array() );
+        DASSERT( !t.is_array_control_type() || !_curvar.var || _curvar.var->is_array() );
 
         if(!_tmetafnc)
         {
@@ -1399,7 +1399,7 @@ protected:
         opcd e = fmts_or_cache<READ_MODE>( p, t );
         if(e) {
             dump_stack(_err,0);
-            _err << " - error reading variable '" << _cur_var->varname << "', error: " << opcd_formatter(e);
+            _err << " - error reading variable '" << _curvar.var->varname << "', error: " << opcd_formatter(e);
             throw e;
             return e;
         }
@@ -1408,8 +1408,8 @@ protected:
             return 0;
         else if( t.is_array_end() )
         {
-            if( _cur_var == _cachequit )  invalidate_cache_entry();
-            //if( _cur_var == &_root )      { _tmetafnc = 0;  return 0; }
+            if( _curvar.var == _cachequit )  invalidate_cache_entry();
+            //if( _curvar.var == &_root )      { _tmetafnc = 0;  return 0; }
         }
 
         return moveto_expected_target<READ_MODE>();
@@ -1440,7 +1440,7 @@ protected:
             if( cache_prepared() )  //cached compound array
             {
                 //write to cache
-                DASSERT( !_cur_var->is_primitive() );
+                DASSERT( !_curvar.var->is_primitive() );
 
                 uints prevoff, i;
                 for( i=0; i<n; ++i )
@@ -1490,7 +1490,7 @@ protected:
             {
                 //reading from cache
                 DASSERT( _cachevar  ||  n != UMAX );
-                DASSERT( !_cur_var->is_primitive() );
+                DASSERT( !_curvar.var->is_primitive() );
 
                 uints i, prevoff;
                 for( i=0; i<n; ++i )
@@ -1678,7 +1678,7 @@ protected:
                 //only primitive data here
                 DASSERT( t.is_primitive() );
                 DASSERT( t.type != type::T_STRUCTBGN  &&  t.type != type::T_STRUCTEND );
-                DASSERT( _cachevar || !_cur_var->is_array_element() );
+                DASSERT( _cachevar || !_curvar.var->is_array_element() );
 
                 uints tsize = t.get_size();
 
@@ -1699,24 +1699,28 @@ protected:
     ///Read key from input
     opcd fmts_read_key()
     {
-        opcd e;/*
+        opcd e;
         if( !is_first_var() )
         {
             e = _fmtstream->read_separator();
+            if(e==ersNO_MORE)
+                return e;
+
             if(e) {
                 dump_stack(_err,0);
                 _err << " - error reading the variable separator: " << opcd_formatter(e);
                 throw e;
-                return e;
             }
-        }*/
+        }
 
         e = binstream_read_key( *_fmtstream, _rvarname );
         if( e  &&  e!=ersNO_MORE ) {
             dump_stack(_err,0);
-            _err << " - error while seeking for variable '" << _cur_var->varname << "': " << opcd_formatter(e);
+            _err << " - error while seeking for variable '" << _curvar.var->varname << "': " << opcd_formatter(e);
             throw e;
         }
+
+        ++_curvar.kth;
 
         return e;
     }
@@ -1727,7 +1731,7 @@ protected:
         if(_cachevar) {
             //it's been already cached (during caching)
             if( _current->valid_addr() ) {
-                _cacheskip = _cur_var;
+                _cacheskip = _curvar.var;
                 return 0;
             }
         }
@@ -1744,20 +1748,20 @@ protected:
                 DASSERT( e == ersNO_MORE );
 
                 if(_cachevar)
-                    _cacheskip = _cur_var;
+                    _cacheskip = _curvar.var;
                 else if( !cache_use_default() ) {
                     dump_stack(_err,0);
-                    _err << " - variable '" << _cur_var->varname << "' not found and no default value provided";
+                    _err << " - variable '" << _curvar.var->varname << "' not found and no default value provided";
                     throw e;
                 }
                 break;
             }
 
             //cache the next member if the key read belongs to an out of the order sibling
-            outoforder = _rvarname != _cur_var->varname;
+            outoforder = _rvarname != _curvar.var->varname;
             if(outoforder)
             {
-                if( _cur_var == &_root )
+                if( _curvar.var == &_root )
                     cache_fill_root();
                 else
                     cache_fill_member();
@@ -1784,30 +1788,30 @@ protected:
                 dump_stack(_err,0);
                 _err << " - error writing the variable separator: " << opcd_formatter(e);
                 throw e;
-                return e;
             }
         }
 
-        e = _fmtstream->write_key( _cur_var->varname );
+        e = _fmtstream->write_key( _curvar.var->varname );
         if(e) {
             dump_stack(_err,0);
-            _err << " - error while writing the variable name '" << _cur_var->varname << "': " << opcd_formatter(e);
+            _err << " - error while writing the variable name '" << _curvar.var->varname << "': " << opcd_formatter(e);
             throw e;
-            return e;
         }
+
+        ++_curvar.kth;
 
         return 0;
     }
 
 
     ///Fill intermediate cache, _rvarname contains the key read, and
-    /// _cur_var->varname the key requested
+    /// _curvar.var->varname the key requested
     void cache_fill_member()
     {
         opcd e;
-        //here _rvarname can only be another member of _cur_var's parent
+        //here _rvarname can only be another member of _curvar.var's parent
         // we should find it and cache its whole structure, as well as any other
-        // members until the one pointed to by _cur_var is found
+        // members until the one pointed to by _curvar.var is found
         MetaDesc* par = parent_var()->desc;
 
         uints base;
@@ -1816,7 +1820,7 @@ protected:
             uints n = _cachestack.size();
             base = n <= 1
                 ? 0
-                : _current->offs - par->get_child_pos(_cur_var)*sizeof(uints);
+                : _current->offs - par->get_child_pos(_curvar.var)*sizeof(uints);
                 //: _current->addr( _cachestack[n-2].offs - sizeof(uints) );
         }
         else {
@@ -1864,14 +1868,14 @@ protected:
     ///
     void cache_fill( MetaDesc::Var* crv, uints offs )
     {
-        MetaDesc::Var* old_var = _cur_var;
+        MetaDesc::Var* old_var = _curvar.var;
         MetaDesc::Var* old_cvar = _cachevar;
         uints old_offs = _current->offs;
 
         _current->offs = offs;
 
         //force reading to cache
-        _cachevar = _cur_var = crv;
+        _cachevar = _curvar.var = crv;
 
         movein_current<READ_MODE>(false);
         streamvar(*crv);
@@ -1880,7 +1884,7 @@ protected:
 
         _current->offs = old_offs;
         _cachevar = old_cvar;
-        _cur_var = old_var;
+        _curvar.var = old_var;
     }
 
 
@@ -1937,7 +1941,7 @@ protected:
     }
 
 
-    ///Find _cur_var->varname in cache
+    ///Find _curvar.var->varname in cache
     bool cache_toplevel_lookup()
     {
         if( _cache.size() == 0  ||  _cachelevel < _stack.size() )
@@ -1946,7 +1950,7 @@ protected:
         //get child map
         MetaDesc* par = parent_var()->desc;
 
-        uints k = par->get_child_pos(_cur_var) * sizeof(uints);
+        uints k = par->get_child_pos(_curvar.var) * sizeof(uints);
         if( _current->valid_addr(k) )
         {
             //found in the cache, set up a cache read
@@ -1963,7 +1967,7 @@ protected:
     ///Setup usage of the default value for reading
     bool cache_use_default()
     {
-        if( !_cur_var->has_default() )  return false;
+        if( !_curvar.var->has_default() )  return false;
 
         DASSERT( _cache.size() > 0 );
 
