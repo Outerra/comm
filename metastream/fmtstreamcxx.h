@@ -432,6 +432,10 @@ public:
         {
             if( trSep.is_empty() )
                 _tokenizer.push_back();
+            else if( tok == char('}') ) {
+                _tokenizer.push_back();
+                e = ersNO_MORE;
+            }
             else if( tok != trSep )
                 e = ersSYNTAX_ERROR "missing separator";
         }

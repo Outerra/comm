@@ -52,11 +52,11 @@
 COID_NAMESPACE_BEGIN
 
 #ifdef SYSTYPE_MSVC8plus
-# define strncasecmp     _strnicmp
-# define strcasecmp      _stricmp
-#elif defined SYSTYPE_MSVC
-# define strncasecmp     strnicmp
-# define strcasecmp      stricmp
+# define xstrncasecmp     _strnicmp
+# define xstrcasecmp      _stricmp
+#else
+# define xstrncasecmp     strncasecmp
+# define xstrcasecmp      strcasecmp
 #endif
 
 
@@ -239,7 +239,7 @@ struct token
     {
         if( len() != str.len() )
             return 0;
-        return 0 == strncasecmp( ptr(), str.ptr(), len() );
+        return 0 == xstrncasecmp( ptr(), str.ptr(), len() );
     }
 
     bool cmpeqc( const token& str, bool casecmp ) const
@@ -263,7 +263,7 @@ struct token
     int cmpi( const token& str ) const
     {
         uints lex = str.len();
-        int r = strncasecmp( ptr(), str.ptr(), uint_min(_len,lex) );
+        int r = xstrncasecmp( ptr(), str.ptr(), uint_min(_len,lex) );
         if( r == 0 )
         {
             if( _len<lex )  return -1;
@@ -1423,14 +1423,14 @@ struct token
         T touint( const char* s )
         {
             token t(s, UMAX);
-            return touint(t,0);
+            return touint(t);
         }
 
         T toint( const char* s )
         {
             if( *s == 0 )  return 0;
             token t(s, UMAX);
-            return toint(t,0);
+            return toint(t);
         }
     };
 

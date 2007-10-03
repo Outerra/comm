@@ -461,6 +461,10 @@ public:
         {
             if( trSep.is_empty() )
                 _tokenizer.push_back();
+            else if( tok == char('}') ) {
+                _tokenizer.push_back();
+                e = ersNO_MORE;
+            }
             else if( tok != trSep )
                 e = ersSYNTAX_ERROR "missing separator";
         }
@@ -488,7 +492,7 @@ public:
                         }
                     }
                     break;
-                
+
                 case type::T_UINT:
                     {
                         uint64 v = tok.xtouint64_and_shift();
@@ -527,7 +531,7 @@ public:
                             e = ersNOT_IMPLEMENTED;
                     }
                     break;
-                
+
                 case type::T_FLOAT:
                     {
                         double v = tok.todouble_and_shift();
@@ -557,7 +561,7 @@ public:
                 case type::T_TIME: {
                     if( !_tokenizer.was_string() )
                         return ersSYNTAX_ERROR "expected time";
-                    
+
                     e = tok.todate_local( *(timet*)p );
                     if( !e && !tok.is_empty() )
                         e = ersSYNTAX_ERROR "unexpected trailing characters";
