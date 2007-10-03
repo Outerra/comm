@@ -42,7 +42,7 @@
 #include "coid/comm/str.h"
 #include "coid/comm/rnd.h"
 #include "coid/comm/dir.h"
-//#include "coid/comm/net.h"
+#include "coid/comm/net.h"
 //#include "coid/comm/txtconv.h"
 
 #include "coid/comm/binstream/cachestream.h"

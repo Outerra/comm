@@ -1318,12 +1318,12 @@ public:
     {
         if( _tstr.size() != str.len() )
             return 0;
-        return 0 == strncasecmp( _tstr.ptr(), str.ptr(), str.len() );
+        return 0 == xstrncasecmp( _tstr.ptr(), str.ptr(), str.len() );
     }
     bool cmpeqi( const char* str ) const
     {
         if( _tstr.size() == 0 )  return str == 0  ||  str[0] == 0;
-        return 0 == strcasecmp( _tstr.ptr(), str );
+        return 0 == xstrcasecmp( _tstr.ptr(), str );
     }
 
     bool cmpeqc( const token& str, bool casecmp ) const      { return casecmp ? cmpeq(str) : cmpeqi(str); }
@@ -1348,7 +1348,7 @@ public:
     {
         uints len = _tstr.size();
         uints lex = str.len();
-        int r = strncasecmp( _tstr.ptr(), str.ptr(), uint_min(len,lex) );
+        int r = xstrncasecmp( _tstr.ptr(), str.ptr(), uint_min(len,lex) );
         if( r == 0 )
         {
             if( len<lex )  return -1;
@@ -1356,7 +1356,7 @@ public:
         }
         return r;
     }
-    int cmpi( const char* str ) const       { return strcasecmp( _tstr.ptr(), str ); }
+    int cmpi( const char* str ) const       { return xstrcasecmp( _tstr.ptr(), str ); }
 
     int cmpc( const token& str, bool casecmp ) const      { return casecmp ? cmp(str) : cmpi(str); }
     int cmpc( const char* str, bool casecmp ) const       { return casecmp ? cmp(str) : cmpi(str); }
