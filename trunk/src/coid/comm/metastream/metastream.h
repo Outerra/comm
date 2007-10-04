@@ -125,28 +125,28 @@ public:
         _root.desc = 0;
         _current_var = 0;
 
-        opcd e;
+        opcd e=0;
         DASSERT( _sesopen <= 0 );   //or else unflushed write
         if( _sesopen == 0 ) {
             _err.reset();
             //_fmtstream->reset_read();
             _sesopen = -1;
+            _curvar.kth = 0;
         }
-        else {
-            e = _fmtstream->read_separator();
+        
+        if(_disable_meta_read) {
+            _tmetafnc = 0;
+            if(_curvar.kth)
+                e = _fmtstream->read_separator();
+
             if(e) {
                 _err << "error reading separator";
                 throw e;
-                return e;
             }
+            return e;
         }
 
         _beseparator = false;
-
-        if(_disable_meta_read) {
-            _tmetafnc = 0;
-            return 0;
-        }
 
         *this << *(const T*)0;     // build description tree
 
@@ -165,24 +165,28 @@ public:
         _root.desc = 0;
         _current_var = 0;
 
-        opcd e;
+        opcd e=0;
         DASSERT( _sesopen >= 0 );   //or else unacked read
         if( _sesopen == 0 ) {
             _err.reset();
             //_fmtstream->reset_write();
             _sesopen = 1;
+            _curvar.kth = 0;
         }
-        else {
-            e = _fmtstream->write_separator();
-            if(e) return e;
+        
+        if(_disable_meta_write) {
+            _tmetafnc = 0;
+            if(_curvar.kth)
+                e = _fmtstream->write_separator();
+
+            if(e) {
+                _err << "error writing separator";
+                throw e;
+            }
+            return e;
         }
 
         _beseparator = false;
-
-        if(_disable_meta_write) {
-            _tmetafnc = 0;
-            return 0;
-        }
 
         *this << *(const T*)0;     // build description
 
@@ -201,28 +205,28 @@ public:
         _root.desc = 0;
         _current_var = 0;
 
-        opcd e;
+        opcd e=0;
         DASSERT( _sesopen <= 0 );   //or else unflushed write
         if( _sesopen == 0 ) {
             _err.reset();
             //_fmtstream->reset_read();
             _sesopen = -1;
+            _curvar.kth = 0;
         }
-        else {
-            e = _fmtstream->read_separator();
+        
+        if(_disable_meta_read) {
+            _tmetafnc = 0;
+            if(_curvar.kth)
+                e = _fmtstream->read_separator();
+
             if(e) {
                 _err << "error reading separator";
                 throw e;
-                return e;
             }
+            return e;
         }
 
         _beseparator = false;
-
-        if(_disable_meta_read) {
-            _tmetafnc = 0;
-            return 0;
-        }
 
         meta_array(n);
         *this << *(const T*)0;     // build description
@@ -242,24 +246,28 @@ public:
         _root.desc = 0;
         _current_var = 0;
 
-        opcd e;
+        opcd e=0;
         DASSERT( _sesopen >= 0 );   //or else unacked read
         if( _sesopen == 0 ) {
             _err.reset();
             //_fmtstream->reset_write();
             _sesopen = 1;
+            _curvar.kth = 0;
         }
-        else {
-            e = _fmtstream->write_separator();
-            if(e) return e;
+        
+        if(_disable_meta_write) {
+            _tmetafnc = 0;
+            if(_curvar.kth)
+                e = _fmtstream->write_separator();
+            
+            if(e) {
+                _err << "error writing separator";
+                throw e;
+            }
+            return e;
         }
 
         _beseparator = false;
-
-        if(_disable_meta_write) {
-            _tmetafnc = 0;
-            return 0;
-        }
 
         meta_array(n);
         *this << *(const T*)0;     // build description
