@@ -536,6 +536,8 @@ public:
     ///@return true if the last token was string
     bool was_string() const             { return _last_mask == fGROUP_STRING; }
 
+    bool was_group( uint g ) const      { return _last_mask == 1<<g; }
+
     ///@return last string delimiter or 0 if it wasn't a string
     ucs4 last_string_delimiter() const  { return _last_mask == fGROUP_STRING  ?  _last_strdel : 0; }
 

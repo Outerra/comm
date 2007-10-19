@@ -230,10 +230,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\binstream\httpstream_old.h"
-				>
-			</File>
-			<File
 				RelativePath=".\binstream\httpstreamcoid.h"
 				>
 			</File>

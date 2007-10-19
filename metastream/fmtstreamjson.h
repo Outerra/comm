@@ -110,10 +110,10 @@ public:
         _tokenizer.add_to_group( GROUP_IDENTIFIERS, '0', '9' );
         _tokenizer.add_to_group( GROUP_IDENTIFIERS, 'a', 'z' );
         _tokenizer.add_to_group( GROUP_IDENTIFIERS, 'A', 'Z' );
-        _tokenizer.add_to_group( GROUP_IDENTIFIERS, "_.:+-" );
+        _tokenizer.add_to_group( GROUP_IDENTIFIERS, "_.+-" );
 
         //characters that correspond to struct and array control tokens
-        _tokenizer.add_to_group( GROUP_CONTROL, "{}[],:", true );
+        _tokenizer.add_to_group( GROUP_CONTROL, "(){}[],:", true );
 
         //remaining stuff to group 3, single char output
         _tokenizer.add_remaining( 3, true );
@@ -171,7 +171,7 @@ public:
 
         _sesinitw = false;
         _indent = 0;
-        _bufw << char('}');
+        _bufw << "})";
 
         _binw->xwrite_raw( _bufw.ptr(), _bufw.len() );
 
@@ -188,7 +188,11 @@ public:
             if( tok != '}' )
                 throw ersSYNTAX_ERROR "closing } not found";
 
-            if( !_tokenizer.empty_buffer() )
+            tok = _tokenizer.next();
+            if( tok == ')' )
+                tok = _tokenizer.next();
+
+            if( !tok.is_null() )
                 throw ersIO_ERROR "data left in received block";
         }
         reset_read();
@@ -215,7 +219,7 @@ public:
     {
         if(!_sesinitw)
         {
-            _bufw << char('{');
+            _bufw << "({";
             ++_indent;
             _sesinitw = true;
         }
@@ -369,6 +373,9 @@ public:
         if(!_sesinitr)
         {
             token tok = _tokenizer.next();
+            if( tok == '(' )
+                tok = _tokenizer.next();
+
             if( tok != '{' )
                 return ersSYNTAX_ERROR "opening { not found";
             
@@ -384,7 +391,8 @@ public:
         {
             if( t.type == type::T_CHAR  ||  t.type == type::T_BINARY )
             {
-                e = _tokenizer.was_string() ? opcd(0) : ersSYNTAX_ERROR "expected string";
+                e = (_tokenizer.was_string()  ||  _tokenizer.was_group(GROUP_IDENTIFIERS))
+                    ? opcd(0) : ersSYNTAX_ERROR "expected string";
                 if(!e)
                     *(uints*)p =  (t.type == type::T_BINARY) ? tok.len()/2 : tok.len();
 
@@ -392,7 +400,7 @@ public:
             }
             else if( t.type == type::T_KEY )
             {
-                if( _tokenizer.was_string() )
+                if( _tokenizer.was_string()  ||  _tokenizer.was_group(GROUP_IDENTIFIERS) )
                     *(uints*)p = tok.len();
                 else if( tok == char('}')  ||  tok.is_null() )
                     e = ersNO_MORE;
@@ -424,10 +432,11 @@ public:
         else if( t.is_array_end() )
         {
             if( t.type == type::T_CHAR  ||  t.type == type::T_BINARY ) {
-                e = _tokenizer.was_string() ? opcd(0) : ersSYNTAX_ERROR "expected string";
+                e = (_tokenizer.was_string()  ||  _tokenizer.was_group(GROUP_IDENTIFIERS))
+                    ? opcd(0) : ersSYNTAX_ERROR "expected string";
             }
             else if( t.type == type::T_KEY ) {
-                if( !_tokenizer.was_string() )
+                if( !_tokenizer.was_string()  &&  !_tokenizer.was_group(GROUP_IDENTIFIERS) )
                     return ersSYNTAX_ERROR "expected identifier";
                 
                 tok = _tokenizer.next();
@@ -688,7 +697,7 @@ public:
 
         token tok = _tokenizer.next();
 
-        if( !_tokenizer.was_string() )
+        if( !_tokenizer.was_string()  &&  !_tokenizer.was_group(GROUP_IDENTIFIERS) )
             return ersSYNTAX_ERROR;
 
         opcd e=0;

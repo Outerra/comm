@@ -166,10 +166,14 @@ public:
             }
             else {
                 _hdrpos = 0;
-                _tmp.trim_to_length(16);
-                _tmp << content_len << "\r\n\r\n";
+                if(content_len) {
+                    _tmp.trim_to_length(16);
+                    _tmp << content_len << "\r\n\r\n";
 
-                return write_token_raw(_tmp);
+                    return write_token_raw(_tmp);
+                }
+                else
+                    return 0;
             }
         }
 
