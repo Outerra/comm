@@ -52,7 +52,7 @@ public:
     
     virtual opcd on_extra_header( const token& name, token value )
     {
-        if( name.cmpeqi("Session-Coid") ) {
+        if( name.cmpeqi("X-Session-Coid") ) {
             _ssid = value.touint64();
         }
         return 0;
@@ -64,9 +64,14 @@ public:
     void set_session_id( uint64 ssid )
     {
         _ssid = ssid;
-        set_optional_header("Session-Coid: ") << ssid << "\r\n";
+        set_optional_header("X-Session-Coid: ") << ssid << "\r\n";
     }
 
+    virtual void reset_read()
+    {
+        _ssid = 0;
+        httpstream::reset_read();
+    }
 
     httpstreamcoid() : _ssid(0) {}
 
