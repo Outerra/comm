@@ -50,17 +50,18 @@ COID_NAMESPACE_BEGIN
 ///Caching stream adapter
 class cachestream : public binstream
 {
+protected:
     binstream* _bin;
-    uints _cinread;
+    uints _cinread, _tcinread;
     dynarray<uchar> _cin;
     dynarray<uchar> _cot;
-    uints _cotwritten;
+    uints _cotwritten, _tcotwritten;
 
     enum {
         CACHE_SIZE                  = 256,
     };
 
-    bool eois;                      ///< end of input stream already read
+    bool eois;                      ///< end of the input stream already read
 
 public:
 
@@ -69,13 +70,15 @@ public:
     {
         _bin = other._bin;
         _cinread = other._cinread;
+        _tcinread = other._tcinread;
         _cotwritten = other._cotwritten;
+        _tcotwritten = other._tcotwritten;
         _cin.takeover( other._cin );
         _cot.takeover( other._cot );
         eois = other.eois;
 
-        other._cinread = 0;
-        other._cotwritten = 0;
+        other._cinread = other._tcinread = 0;
+        other._cotwritten = other._tcotwritten = 0;
         other._bin = 0;
         other.eois = false;
     }
@@ -84,7 +87,9 @@ public:
     {
         std::swap( _bin, other._bin );
         std::swap( _cinread, other._cinread );
+        std::swap( _tcinread, other._tcinread );
         std::swap( _cotwritten, other._cotwritten );
+        std::swap( _tcotwritten, other._tcotwritten );
         _cin.swap(other._cin);
         _cot.swap(other._cot);
         std::swap( eois, other.eois );
@@ -101,7 +106,9 @@ public:
         _cot.reserve( nextpow2(sizew?sizew:sizer), false );
     }
 
-    uints len() const            { return _cotwritten + _cot.size(); }
+    uints len() const           { return _cotwritten + _cot.size(); }
+
+    uints size_read() const     { return _tcinread + _cinread; }
 
 
     ///Override this to handle the cache flushes
@@ -262,7 +269,7 @@ public:
             _bin->xwrite_raw( _cot.ptr(), _cot.size() );     //throws
 
         _cot.reset();
-        _cotwritten = 0;
+        _cotwritten = _tcotwritten = 0;
         _bin->flush();
     }
 
@@ -275,14 +282,14 @@ public:
         }
 
         _bin->acknowledge(eat);
-        _cinread = 0;
+        _cinread = _tcinread = 0;
         _cin.reset();
         eois = false;
     }
 
     virtual void reset_read()
     {
-        _cinread = 0;
+        _cinread = _tcinread = 0;
         _cin.reset();
         eois = false;
 
@@ -292,7 +299,7 @@ public:
     virtual void reset_write()
     {
         _cot.reset();
-        _cotwritten = 0;
+        _cotwritten = _tcotwritten = 0;
         if(_bin) _bin->reset_write();
     }
 
@@ -306,22 +313,22 @@ public:
     cachestream()
     {
         _bin = 0;
-        _cinread = 0;
-        _cotwritten = 0;
+        _cinread = _tcinread = 0;
+        _cotwritten = _tcotwritten = 0;
         eois = false;
     }
     cachestream( binstream* bin )
     {
         _bin = bin;
-        _cinread = 0;
-        _cotwritten = 0;
+        _cinread = _tcinread = 0;
+        _cotwritten = _tcotwritten = 0;
         eois = false;
     }
     cachestream( binstream& bin )
     {
         _bin = &bin;
-        _cinread = 0;
-        _cotwritten = 0;
+        _cinread = _tcinread = 0;
+        _cotwritten = _tcotwritten = 0;
         eois = false;
     }
 
@@ -435,6 +442,7 @@ private:
         opcd e = _bin->read_raw_any( _cin.ptr(), cs );
 
         _cin.set_size( _cin.reserved_total() - cs );
+        _tcinread += _cinread;
         _cinread = 0;
 
         if( e && e!=ersRETRY )
@@ -490,6 +498,7 @@ private:
             _cin.takeover(newcin);
         }
 
+        _tcinread += _cinread;
         _cinread = 0;
 
         uints ts = _cin.reserved_remaining();

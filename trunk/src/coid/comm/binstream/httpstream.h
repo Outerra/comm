@@ -61,6 +61,7 @@ public:
     struct header
     {
         uints _content_length;
+        uints _header_length;
         int _errcode;
 
         timet _if_mdf_since;
@@ -83,6 +84,7 @@ public:
         header()
         {
             _errcode = 0;
+            _header_length = 0;
             _content_length = UMAX;
             _bclose = _bhttp10 = false;
             _te = 0;
@@ -115,6 +117,10 @@ public:
             final=false;
         }
 
+
+        bool everything_read( uints size ) {
+            return size_read() >= size;
+        }
 
         opcd chunked_read_raw( void* p, uints& len )
         {
@@ -166,14 +172,11 @@ public:
             }
             else {
                 _hdrpos = 0;
-                if(content_len) {
-                    _tmp.trim_to_length(16);
-                    _tmp << content_len << "\r\n\r\n";
 
-                    return write_token_raw(_tmp);
-                }
-                else
-                    return 0;
+                _tmp.trim_to_length(16);
+                _tmp << content_len << "\r\n\r\n";
+
+                return write_token_raw(_tmp);
             }
         }
 
@@ -258,9 +261,14 @@ public:
         opcd e = check_read();
         if(e) return e;
 
-        return _hdr->is_chunked() 
-            ? _cache.chunked_read_raw( p, len )
-            : _cache.read_raw( p, len );
+        if(_hdr->is_chunked())
+            return _cache.chunked_read_raw(p, len);
+
+        if( _hdr->_content_length != UMAX
+            &&  _cache.everything_read(_hdr->_header_length + _hdr->_content_length) )
+            return ersNO_MORE;
+
+        return _cache.read_raw( p, len );
     }
 
     virtual void flush()
@@ -611,10 +619,10 @@ protected:
                 _tcache << _MDF << _tmp << "\r\n";
                 tmmodif = 0;
             }
-            else {
+            /*else {
                 static token _CCO("Cache-Control: no-cache\r\n");
                 _tcache << _CCO;
-            }
+            }*/
         }
         else {
             _tcache << (content_len ? _POST : _GET)
@@ -691,6 +699,7 @@ inline opcd httpstream::header::decode( bool is_listener, httpstream& http, bins
 
     _bclose = true;
     _te = 0;
+    _header_length = 0;
     _content_length = UMAX;
     _if_mdf_since = 0;
 
@@ -769,8 +778,10 @@ inline opcd httpstream::header::decode( bool is_listener, httpstream& http, bins
         if(e)
             return e;
 
-        if( buf.is_empty() )
+        if( buf.is_empty() ) {
+            _header_length = bin.size_read();
             return 0;
+        }
 
         token h = buf;
         if(log)
