@@ -483,44 +483,53 @@ public:
         {
             switch( t.type )
             {
-                case type::T_INT:
-                    {
-                        int64 v = tok.xtoint64_and_shift();
-                        if( !tok.is_empty() )
-                            return ersSYNTAX_ERROR "unrecognized characters after number";
+			case type::T_INT:
+				{
+					token::tonum<int64> conv;
+					int64 v = conv.xtoint(tok);
 
-                        if( !valid_int_range(v,t.get_size()) )
-                            return ersINTEGER_OVERFLOW;
+					if( conv.failed() )
+						return ersSYNTAX_ERROR " expected number";
 
-                        switch( t.get_size() )
-                        {
-                        case 1: *(int8*)p = (int8)v;  break;
-                        case 2: *(int16*)p = (int16)v;  break;
-                        case 4: *(int32*)p = (int32)v;  break;
-                        case 8: *(int64*)p = (int64)v;  break;
-                        }
-                    }
-                    break;
+					if( !tok.is_empty() )
+						return ersSYNTAX_ERROR " unrecognized characters after number";
 
-                case type::T_UINT:
-                    {
-                        uint64 v = tok.xtouint64_and_shift();
-                        if( !tok.is_empty() )
-                            return ersSYNTAX_ERROR "unrecognized characters after number";
+					if( !valid_int_range(v,t.get_size()) )
+						return ersINTEGER_OVERFLOW;
 
-                        if( !valid_uint_range(v,t.get_size()) )
-                            return ersINTEGER_OVERFLOW;
+					switch( t.get_size() )
+					{
+					case 1: *(int8*)p = (int8)v;  break;
+					case 2: *(int16*)p = (int16)v;  break;
+					case 4: *(int32*)p = (int32)v;  break;
+					case 8: *(int64*)p = (int64)v;  break;
+					}
+				}
+				break;
 
-                        switch( t.get_size() )
-                        {
-                        case 1: *(uint8*)p = (uint8)v;  break;
-                        case 2: *(uint16*)p = (uint16)v;  break;
-                        case 4: *(uint32*)p = (uint32)v;  break;
-                        case 8: *(uint64*)p = (uint64)v;  break;
-                        }
-                    }
-                    break;
+			case type::T_UINT:
+				{
+					token::tonum<uint64> conv;
+					uint64 v = conv.xtouint(tok);
 
+					if( conv.failed() )
+						return ersSYNTAX_ERROR " expected number";
+
+					if( !tok.is_empty() )
+						return ersSYNTAX_ERROR " unrecognized characters after number";
+
+					if( !valid_uint_range(v,t.get_size()) )
+						return ersINTEGER_OVERFLOW;
+
+					switch( t.get_size() )
+					{
+					case 1: *(uint8*)p = (uint8)v;  break;
+					case 2: *(uint16*)p = (uint16)v;  break;
+					case 4: *(uint32*)p = (uint32)v;  break;
+					case 8: *(uint64*)p = (uint64)v;  break;
+					}
+				}
+				break;
                 case type::T_KEY:
                     return ersUNAVAILABLE "should be read as array";
                     break;
