@@ -2005,7 +2005,9 @@ protected:
     @def MMAF(meta,n,t,s) specify that member is a fixed size array of type \a t
 **/
 #define MSTRUCT_OPEN(meta, n)       if( !meta.meta_struct_open(n) ) {
-#define MM(meta, n, v)              meta.meta_variable(n,v);    meta << v;
+#define MM(meta, n, v)              { meta.meta_variable(n,v);    meta << v; }
+
+#define MME(meta, n, v)				{ typedef EnumType<sizeof(v)>::TEnum t; meta.meta_variable<t>(n);  meta << *(t*)0; }
 #define MMT(meta, n, t)             meta.meta_variable<t>(n);   meta << *(t*)0;
 #define MMD(meta, n, v, d)          meta.meta_variable(n,v);    meta << v;          meta.meta_cache_default(v,d);
 #define MMTD(meta, n, t, d)         meta.meta_variable<t>(n);   meta << *(t*)0;     meta.meta_cache_default(*(t*)0,d);
