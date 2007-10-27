@@ -40,7 +40,7 @@
 
 #include "../namespace.h"
 #include "../str.h"
-#include "../binstream.h"
+#include "../binstream/binstream.h"
 #include "../local.h"
 #include "../lexer.h"
 
@@ -852,7 +852,7 @@ public:
         meta.stream_out(obj);
         meta.stream_flush();
 
-        meta.stream_in_cache<T>();
+        meta.cache_in<T>();
         meta.stream_acknowledge();
 
         generate( bot, meta.get_root_var(), meta.get_cache() );
@@ -887,7 +887,7 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 void metagen::Varx::write_var( metagen& mg ) const
 {
-    typedef bstype::type    type;
+    typedef bstype::kind    type;
 
     const uchar* p = data;
     type t = var->desc->btype;
@@ -901,7 +901,7 @@ void metagen::Varx::write_var( metagen& mg ) const
     charstr& buf = mg.buf;
     buf.reset();
 
-    switch(t._type)
+    switch(t.type)
     {
         case type::T_INT:
             buf.append_num_int( 10, p, t.get_size() );
