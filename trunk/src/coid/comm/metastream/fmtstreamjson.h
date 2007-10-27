@@ -95,7 +95,6 @@ public:
         //_tokenizer.set_special_char( '\"', '\\' ); 
         _tokenizer.add_delimiters( '"', '"' );
         _tokenizer.add_delimiters( '\'', '\'' );
-        _tokenizer.add_delimiters( '(', ')' );
         _tokenizer.set_escape_char('\\');
         _tokenizer.add_escape_pair( "\"", '"' );
         _tokenizer.add_escape_pair( "'", '\'' );
@@ -184,7 +183,6 @@ public:
         if(!eat)
         {
             token tok = _tokenizer.next();
-
             if( tok != '}' )
                 throw ersSYNTAX_ERROR "closing } not found";
 
@@ -247,13 +245,17 @@ public:
         }
         else if( t.type == type::T_STRUCTEND )
         {
-            write_tabs_check( --_indent );
-            _bufw << char('}');
+            if( !t.is_nameless() ) {
+                write_tabs_check( --_indent );
+                _bufw << char('}');
+            }
         }
         else if( t.type == type::T_STRUCTBGN )
         {
-            write_tabs( _indent++ );
-            _bufw << char('{');
+            if( !t.is_nameless() ) {
+                write_tabs( _indent++ );
+                _bufw << char('{');
+            }
         }
         else
         {
@@ -447,24 +449,31 @@ public:
         }
         else if( t.type == type::T_STRUCTEND )
         {
-            e = (tok == char('}')) ? opcd(0) : ersSYNTAX_ERROR "expected }";
+            if( t.is_nameless() )
+                _tokenizer.push_back();
+            else
+                e = (tok == char('}')) ? opcd(0) : ersSYNTAX_ERROR "expected }";
         }
         else if( t.type == type::T_STRUCTBGN )
         {
-            if( _tokenizer.last_string_delimiter() == '(' )
-            {
-                //optional class name found
-                if(p) {
-                    charstr& s = *(charstr*)p;
-                    if(s.is_empty())        //return the class type if empty
-                        s = tok;
-                    else if( s != tok )     //otherwise compare
-                        return ersSYNTAX_ERROR "class name mismatch";
+            if( t.is_nameless() )
+                _tokenizer.push_back();
+            else {
+                if( _tokenizer.last_string_delimiter() == '(' )
+                {
+                    //optional class name found
+                    if(p) {
+                        charstr& s = *(charstr*)p;
+                        if(s.is_empty())        //return the class type if empty
+                            s = tok;
+                        else if( s != tok )     //otherwise compare
+                            return ersSYNTAX_ERROR "class name mismatch";
+                    }
+                    tok = _tokenizer.next();
                 }
-                tok = _tokenizer.next();
+
+                e = (tok == char('{')) ? opcd(0) : ersSYNTAX_ERROR "expected {";
             }
-            
-            e = (tok == char('{')) ? opcd(0) : ersSYNTAX_ERROR "expected {";
         }
         else if( t.type == type::T_SEPARATOR )
         {

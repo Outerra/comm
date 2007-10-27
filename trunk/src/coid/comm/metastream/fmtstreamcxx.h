@@ -209,21 +209,21 @@ public:
         else if( t.type == type::T_STRUCTEND )
         {
             _bufw << tEol;
-            write_tabs_check( --_indent );
 
-            if( !t.is_nameless() )
+            if( !t.is_nameless() ) {
+                write_tabs_check( --_indent );
                 _bufw << char('}');
+            }
         }
         else if( t.type == type::T_STRUCTBGN )
         {
-            if( t.is_array_element() )
-                write_tabs( _indent++ );
-            else {
-                _bufw << char(' ');
-                ++_indent;
-            }
-
             if( !t.is_nameless() ) {
+                if( t.is_array_element() )
+                    write_tabs(_indent);
+                else
+                    _bufw << char(' ');
+                ++_indent;
+
                 if(p)
                     _bufw << char('(') << *(const charstr*)p << ") ";
                 _bufw << char('{');
