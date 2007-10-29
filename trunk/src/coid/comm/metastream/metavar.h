@@ -130,14 +130,16 @@ struct MetaDesc
     ///Get first member
     Var* first_child() const
     {
-        DASSERT( children.size() > 0 );
+        //DASSERT( children.size() > 0 );
         return (Var*)children.ptr();
     }
 
     ///Get next member from given one
     Var* next_child( Var* c ) const
     {
-        DASSERT( c && c>=children.ptr() && c<=children.last() );
+        if(!c)  return 0;
+
+        DASSERT( c>=children.ptr() && c<=children.last() );
         if( !c || c >= children.last() )  return 0;
         return c+1;
     }
