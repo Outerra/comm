@@ -165,6 +165,27 @@ public:
         return true;
     }
 
+    template<int R>
+    opcd prepare_type_final( const token& name, bool cache )
+    {
+        _dometa = true;
+
+        _curvar.var = &_root;
+        _curvar.var->varname = name;
+        _curvar.var->nameless_root = name.is_empty();
+
+        opcd e;
+        if(cache) {
+            e = movein_process_key<R>();
+            if(!e)
+                cache_fill_root();
+        }
+        else
+            e = movein_current<R>(true);
+
+        return e;
+    }
+
 
     template<int R, class T>
     opcd prepare_type( T&, const token& name, bool cache )
@@ -173,13 +194,7 @@ public:
 
         *this << *(const T*)0;     // build description
 
-        _dometa = true;
-
-        _curvar.var = &_root;
-        _curvar.var->varname = name;
-        _curvar.var->nameless_root = name.is_empty();
-
-        return movein_current<R>(true);
+        return prepare_type_final<R>(name,cache);
     }
 
     template<int R>
@@ -190,13 +205,7 @@ public:
         if( !meta_find(type) )
             return ersNOT_FOUND;
 
-        _dometa = true;
-
-        _curvar.var = &_root;
-        _curvar.var->varname = name;
-        _curvar.var->nameless_root = name.is_empty();
-
-        return movein_current<R>(true);
+        return prepare_type_final<R>(name,cache);
     }
 
     template<int R, class T>
@@ -207,13 +216,7 @@ public:
         meta_array(n);
         *this << *(const T*)0;     // build description
 
-        _dometa = true;
-
-        _curvar.var = &_root;
-        _curvar.var->varname = name;
-        _curvar.var->nameless_root = name.is_empty();
-
-        return movein_current<R>(true);
+        return prepare_type_final<R>(name,cache);
     }
 
 
@@ -404,8 +407,8 @@ public:
         if( _sesopen < 0 ) {
             _sesopen = 0;
             _beseparator = false;
-            _root.desc = 0;
-            _current_var = 0;
+            //_root.desc = 0;
+            //_current_var = 0;
 
             _fmtstream->acknowledge(eat);
         }
@@ -417,8 +420,8 @@ public:
         if( _sesopen > 0 ) {
             _sesopen = 0;
             _beseparator = false;
-            _root.desc = 0;
-            _current_var = 0;
+            //_root.desc = 0;
+            //_current_var = 0;
 
             _fmtstream->flush();
         }
