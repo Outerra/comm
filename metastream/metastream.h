@@ -88,14 +88,14 @@ public:
         _beseparator = false;
         _current_var = 0;
         _curvar.var = 0;
-        _cur_variable_name = 0;
+        _cur_variable_name.set_empty();
 
         _disable_meta_write = _disable_meta_read = false;
         _templ_arg_rdy = false;
 
         _hook.set_meta( *this );
 
-        _tmetafnc = 0;
+        _dometa = 0;
         _fmtstream = 0;
     }
 
@@ -119,63 +119,27 @@ public:
     ////////////////////////////////////////////////////////////////////////////////
     //@{ methods to physically stream the data utilizing the metastream
 
-    template<class T>
-    opcd prepare_type_read(T&, const token& name)
+
+    template<int R>
+    bool prepare_type_common( bool cache )
     {
+        stream_reset(0,cache);
+
         _root.desc = 0;
         _current_var = 0;
 
-        opcd e=0;
-        DASSERT( _sesopen <= 0 );   //or else unflushed write
+        DASSERT( R || _sesopen >= 0 );      //or else pending ack on read
+        DASSERT( !R || _sesopen <= 0 );     //or else pending flush on write
+
         if( _sesopen == 0 ) {
             _err.reset();
-            //_fmtstream->reset_read();
-            _sesopen = -1;
+            _sesopen = R ? -1 : 1;
             _curvar.kth = 0;
         }
-        
-        if(_disable_meta_read) {
-            _tmetafnc = 0;
-            if(_curvar.kth)
-                e = _fmtstream->read_separator();
-
-            if(e) {
-                _err << "error reading separator";
-                throw e;
-            }
-            return e;
-        }
-
-        _beseparator = false;
-
-        *this << *(const T*)0;     // build description tree
-
-        _tmetafnc = &metacall<T>::stream;
-
-        _curvar.var = &_root;
-        _curvar.var->varname = name;
-        _curvar.var->nameless_root = name.is_empty();
-
-        return movein_current<READ_MODE>(true);
-    }
-
-    template<class T>
-    opcd prepare_type_write(T&, const token& name)
-    {
-        _root.desc = 0;
-        _current_var = 0;
 
         opcd e=0;
-        DASSERT( _sesopen >= 0 );   //or else unacked read
-        if( _sesopen == 0 ) {
-            _err.reset();
-            //_fmtstream->reset_write();
-            _sesopen = 1;
-            _curvar.kth = 0;
-        }
-        
-        if(_disable_meta_write) {
-            _tmetafnc = 0;
+        if( !R && _disable_meta_write ) {
+            _dometa = 0;
             if(_curvar.kth)
                 e = _fmtstream->write_separator();
 
@@ -183,113 +147,83 @@ public:
                 _err << "error writing separator";
                 throw e;
             }
-            return e;
+            return false;
         }
-
-        _beseparator = false;
-
-        *this << *(const T*)0;     // build description
-
-        _tmetafnc = &metacall<T>::stream;
-
-        _curvar.var = &_root;
-        _curvar.var->varname = name;
-        _curvar.var->nameless_root = name.is_empty();
-
-        return movein_current<WRITE_MODE>(true);
-    }
-
-    template<class T>
-    opcd prepare_type_read_array( T&, uints n, const token& name )
-    {
-        _root.desc = 0;
-        _current_var = 0;
-
-        opcd e=0;
-        DASSERT( _sesopen <= 0 );   //or else unflushed write
-        if( _sesopen == 0 ) {
-            _err.reset();
-            //_fmtstream->reset_read();
-            _sesopen = -1;
-            _curvar.kth = 0;
-        }
-        
-        if(_disable_meta_read) {
-            _tmetafnc = 0;
-            if(_curvar.kth)
-                e = _fmtstream->read_separator();
-
-            if(e) {
-                _err << "error reading separator";
-                throw e;
-            }
-            return e;
-        }
-
-        _beseparator = false;
-
-        meta_array(n);
-        *this << *(const T*)0;     // build description
-
-        _tmetafnc = &metacall<T>::stream;
-
-        _curvar.var = &_root;
-        _curvar.var->varname = name;
-        _curvar.var->nameless_root = name.is_empty();
-
-        return movein_current<READ_MODE>(true);
-    }
-
-    template<class T>
-    opcd prepare_type_write_array( T&, uints n, const token& name )
-    {
-        _root.desc = 0;
-        _current_var = 0;
-
-        opcd e=0;
-        DASSERT( _sesopen >= 0 );   //or else unacked read
-        if( _sesopen == 0 ) {
-            _err.reset();
-            //_fmtstream->reset_write();
-            _sesopen = 1;
-            _curvar.kth = 0;
-        }
-        
-        if(_disable_meta_write) {
-            _tmetafnc = 0;
+        else if( R && _disable_meta_read ) {
+            _dometa = 0;
             if(_curvar.kth)
                 e = _fmtstream->write_separator();
-            
+
             if(e) {
                 _err << "error writing separator";
                 throw e;
             }
-            return e;
+            return false;
         }
 
         _beseparator = false;
+        return true;
+    }
 
-        meta_array(n);
+
+    template<int R, class T>
+    opcd prepare_type( T&, const token& name, bool cache )
+    {
+        if( !prepare_type_common<R>(cache) )  return 0;
+
         *this << *(const T*)0;     // build description
 
-        _tmetafnc = &metacall<T>::stream;
+        _dometa = true;
 
         _curvar.var = &_root;
         _curvar.var->varname = name;
         _curvar.var->nameless_root = name.is_empty();
 
-        return movein_current<WRITE_MODE>(true);
+        return movein_current<R>(true);
     }
+
+    template<int R>
+    opcd prepare_named_type( const token& type, const token& name, bool cache )
+    {
+        if( !prepare_type_common<R>(cache) )  return 0;
+
+        if( !meta_find(type) )
+            return ersNOT_FOUND;
+
+        _dometa = true;
+
+        _curvar.var = &_root;
+        _curvar.var->varname = name;
+        _curvar.var->nameless_root = name.is_empty();
+
+        return movein_current<R>(true);
+    }
+
+    template<int R, class T>
+    opcd prepare_type_array( T&, uints n, const token& name, bool cache )
+    {
+        if( !prepare_type_common<R>(cache) )  return 0;
+
+        meta_array(n);
+        *this << *(const T*)0;     // build description
+
+        _dometa = true;
+
+        _curvar.var = &_root;
+        _curvar.var->varname = name;
+        _curvar.var->nameless_root = name.is_empty();
+
+        return movein_current<R>(true);
+    }
+
 
     ///Read object of type T from the currently bound formatting stream
     template<class T>
     opcd stream_in( T& x, const token& name = token::empty() )
     {
-        stream_reset(0,false);
-
         opcd e;
         try {
-            e = prepare_type_read(x,name);
+            e = prepare_type<READ_MODE>( x, name, false );
             if(e) return e;
 
             _hook >> x;
@@ -302,11 +236,9 @@ public:
     template<class T>
     opcd cache_in( const token& name = token::empty() )
     {
-        stream_reset(0,true);
-
         opcd e;
         try {
-            e = prepare_type_read( *(const T*)0, name );
+            e = prepare_type<READ_MODE>( *(const T*)0, name, true );
         }
         catch(opcd ee) {e=ee;}
         return e;
@@ -316,14 +248,14 @@ public:
     template<class T>
     opcd stream_out( const T& x, const token& name = token::empty() )
     {
-        return stream_or_cache_out(x,false,name);
+        return stream_or_cache_out( x, false, name );
     }
 
     ///Write object of type T to the cache
     template<class T>
     opcd cache_out( const T& x, const token& name = token::empty() )
     {
-        return stream_or_cache_out(x,true,name);
+        return stream_or_cache_out( x, true, name );
     }
 
     ///Write object of type T to the currently bound formatting stream
@@ -331,11 +263,9 @@ public:
     template<class T>
     opcd stream_or_cache_out( const T& x, bool cache, const token& name = token::empty() )
     {
-        stream_reset(0,cache);
-
         opcd e;
         try {
-            e = prepare_type_write(x,name);
+            e = prepare_type<WRITE_MODE>( x, name, cache );
             if(e) return e;
 
             if(!cache)
@@ -345,15 +275,20 @@ public:
         return e;
     }
 
+    ///Prepare streaming of a named type
+    opcd stream_out_named( const token& type, const token& name, bool cache=false )
+    {
+        return prepare_named_type<WRITE_MODE>( type, name, cache );
+    }
+
+
     ///Read array of objects of type T from the currently bound formatting stream
     template<class T>
     opcd stream_array_in( binstream_containerT<T>& C, const token& name = token::empty() )
     {
-        stream_reset(0,false);
-
         opcd e;
         try {
-            e = prepare_type_read_array( *(const T*)0, C._nelements, name );
+            e = prepare_type_array<READ_MODE>( *(const T*)0, C._nelements, name, false );
             if(e) return e;
 
             return _hook.read_array(C);
@@ -366,11 +301,9 @@ public:
     template<class T>
     opcd cache_array_in( const token& name = token::empty(), uints n=UMAX )
     {
-        stream_reset(0,true);
-
         opcd e;
         try {
-            e = prepare_type_read_array( *(const T*)0, n, name );
+            e = prepare_type_array<READ_MODE>( *(const T*)0, n, name, true );
         }
         catch(opcd ee) {e=ee;}
         return e;
@@ -395,11 +328,9 @@ public:
     template<class T>
     opcd stream_or_cache_array_out( binstream_containerT<T>& C, bool cache, const token& name = token::empty() )
     {
-        stream_reset(0,cache);
-
         opcd e;
         try {
-            e = prepare_type_write_array( *(const T*)0, C._nelements, name );
+            e = prepare_type_array<WRITE_MODE>( *(const T*)0, C._nelements, name, cache );
             if(e) return e;
 
             if(!cache)
@@ -473,6 +404,9 @@ public:
         if( _sesopen < 0 ) {
             _sesopen = 0;
             _beseparator = false;
+            _root.desc = 0;
+            _current_var = 0;
+
             _fmtstream->acknowledge(eat);
         }
     }
@@ -483,6 +417,9 @@ public:
         if( _sesopen > 0 ) {
             _sesopen = 0;
             _beseparator = false;
+            _root.desc = 0;
+            _current_var = 0;
+
             _fmtstream->flush();
         }
     }
@@ -499,9 +436,9 @@ public:
         _stack.reset();
         cache_reset(cache_open);
 
-        _tmetafnc = 0;
+        _dometa = 0;
         _curvar.var = 0;
-        _cur_variable_name = 0;
+        _cur_variable_name.set_empty();
 
         _err.reset();
         if( fmts_reset>0 )
@@ -575,22 +512,39 @@ public:
     ////////////////////////////////////////////////////////////////////////////////
     //@{ meta_* functions deal with building the description tree
 protected:
-    MetaDesc::Var* meta_find( const token& name )
+
+    MetaDesc::Var* meta_fill_parent_variable( MetaDesc* d, bool is_hidden=false )
+    {
+        MetaDesc::Var* var;
+
+        //remember the first descriptor, it's the root type requested for streaming
+        if(!_root.desc) {
+            _root.desc = d;
+            var = &_root;
+        }
+        else
+            var = _current_var->add_child( d, _cur_variable_name );
+
+        _cur_variable_name.set_empty();
+
+        return var;
+    }
+
+    bool meta_find( const token& name )
     {
         MetaDesc* d = _map.find(name);
         if(!d)
-            return 0;
+            return false;
 
-        return meta_fill_parent_variable(d);
+        _last_var = meta_fill_parent_variable(d);
+        meta_exit();
+        return true;
     }
 
     bool meta_insert( const token& name )
     {
-        _last_var = meta_find(name);
-        if( _last_var ) {
-            meta_exit();
+        if( meta_find(name) )
             return true;
-        }
 
         MetaDesc* d = _map.create( name, type(), _cur_streamfrom_fnc, _cur_streamto_fnc );
 
@@ -600,7 +554,7 @@ protected:
         return false;
     }
 
-    ///Insert array when its elements are arrays too
+    ///Insert array
     void meta_insert_array( uints n )
     {
         MetaDesc* d = _map.create_array_desc( n, _cur_streamfrom_fnc, _cur_streamto_fnc );
@@ -609,27 +563,10 @@ protected:
         _map.push( _current_var );
     }
 
-    MetaDesc::Var* meta_fill_parent_variable( MetaDesc* d, bool is_hidden=false )
-    {
-        MetaDesc::Var* var;
-
-        //remember the first descriptor, it's the root type requested for streaming
-        if(!_root.desc)
-        {
-            _root.desc = d;
-            var = &_root;
-        }
-        else
-            var = _current_var->add_child( d, _cur_variable_name );
-
-        _cur_variable_name = 0;
-
-        return var;
-    }
 
     bool is_template_name_mode()            { return _templ_name_stack.size() > 0; }
     
-    bool handle_template_name_mode( const char* name )
+    bool handle_template_name_mode( const token& name )
     {
         charstr& k = *_templ_name_stack.last();
 
@@ -669,7 +606,7 @@ protected:
 public:
     ///Called before metastream << on member variable
     template<class T>
-    void meta_variable( const char* varname, const T& dummy )
+    void meta_variable( const token& varname, const T& dummy )
     {
         _cur_variable_name = varname;
         _cur_streamfrom_fnc = &binstream::streamfunc<T>::from_stream;
@@ -678,7 +615,7 @@ public:
 
     ///Called before metastream << on member variable
     template<class T>
-    void meta_variable( const char* varname )
+    void meta_variable( const token& varname )
     {
         _cur_variable_name = varname;
         _cur_streamfrom_fnc = &binstream::streamfunc<T>::from_stream;
@@ -697,7 +634,7 @@ public:
         //insert a dummy address field
         _current->set_addr( _current->insert_address(), sizeof(uints) );
 
-        _tmetafnc = &metacall<T>::stream;
+        _dometa = true;
 
         movein_current<WRITE_MODE>(true);
         _hook << defval;
@@ -705,11 +642,11 @@ public:
         _cachestack.pop();
         _current = _cachestack.last();
 
-        _tmetafnc = 0;
+        _dometa = 0;
         _curvar.var = 0;
     }
 
-    bool meta_struct_open( const char* name )
+    bool meta_struct_open( const token& name )
     {
         if( is_template_name_mode() )
             return handle_template_name_mode(name);
@@ -777,36 +714,40 @@ public:
 
     ///Get type descriptor for given type
     template<class T>
-    const MetaDesc::Var* get_type_desc( const T* )
+    const MetaDesc* get_type_desc( const T* )
     {
         _root.desc = 0;
         _current_var = 0;
 
         *this << *(const T*)0;     // build description
-        return &_root;
+        const MetaDesc* mtd = _root.desc;
+
+        _root.desc = 0;
+        return mtd;
     }
 
+    ///
     template<class T>
     struct TypeDesc {
-        static const MetaDesc::Var* get(metastream& meta)   { return meta.get_type_desc( (const T*)0 ); }
-        static charstr get_str(metastream& meta)
+        static const MetaDesc* get( metastream& meta )
         {
-            const MetaDesc::Var* var = meta.get_type_desc( (const T*)0 );
+            return meta.get_type_desc( (const T*)0 );
+        }
+
+        static charstr get_str( metastream& meta )
+        {
+            const MetaDesc* dsc = meta.get_type_desc( (const T*)0 );
+            
             charstr res;
-            var->type_string(res);
+
+            dsc->type_string(res);
             return res;
         }
     };
 
-    const MetaDesc* get_type_info( const token& type ) const
-    {
-        return _map.find(type);
-    }
+    const MetaDesc* get_type_info( const token& type ) const    { return _map.find(type); }
 
-    void get_type_info_all( dynarray<const MetaDesc*>& dst )
-    {
-        return _map.get_all_types(dst);
-    }
+    void get_type_info_all( dynarray<const MetaDesc*>& dst )    { return _map.get_all_types(dst); }
 
 private:
 
@@ -894,7 +835,7 @@ private:
         dynarray<MetaDesc::Var*> _stack;
         void* pimpl;
     };
-
+/*
     ///
     template<class T>
     struct metacall {
@@ -903,20 +844,20 @@ private:
     };
 
     typedef metastream& (*type_metacall)( metastream&, void* );
-
+*/
 
     ////////////////////////////////////////////////////////////////////////////////
-    type_metacall _tmetafnc;
+    bool _dometa;                       ///< true if shoud stream metadata, false if only the values
 
     StructureMap _map;
-
     charstr _err;
     
     // description parsing:
     MetaDesc::Var _root;
     MetaDesc::Var* _current_var;
     MetaDesc::Var* _last_var;
-    const char* _cur_variable_name;
+
+    token _cur_variable_name;
     binstream::fnc_from_stream _cur_streamfrom_fnc;
     binstream::fnc_to_stream _cur_streamto_fnc;
 
@@ -1267,7 +1208,11 @@ protected:
         while( _curvar.var->is_compound() )
         {
             movein_struct<R>();
-            movein_process_key<R>();
+
+            if(_curvar.var)
+                movein_process_key<R>();
+            else
+                return moveto_expected_target<R>();
         }
 
         return 0;
@@ -1301,7 +1246,7 @@ protected:
             //get next var
             MetaDesc::Var* par = parent_var();
             if(!par) {
-                _tmetafnc = 0;
+                _dometa = 0;
                 return 0;
             }
 
@@ -1340,7 +1285,7 @@ protected:
     {
         DASSERT( !t.is_array_control_type() || !_curvar.var || _curvar.var->is_array() );
 
-        if(!_tmetafnc)
+        if(!_dometa)
         {
             if( !t.is_array_end() && _beseparator ) {
                 opcd e = _fmtstream->write_separator();
@@ -1376,7 +1321,7 @@ protected:
     {
         DASSERT( !t.is_array_control_type() || !_curvar.var || _curvar.var->is_array() );
 
-        if(!_tmetafnc)
+        if(!_dometa)
         {
             if( !t.is_array_end() && _beseparator )
             {
@@ -1417,7 +1362,7 @@ protected:
         else if( t.is_array_end() )
         {
             if( _curvar.var == _cachequit )  invalidate_cache_entry();
-            //if( _curvar.var == &_root )      { _tmetafnc = 0;  return 0; }
+            //if( _curvar.var == &_root )      { _dometa = 0;  return 0; }
         }
 
         return moveto_expected_target<READ_MODE>();
@@ -1567,7 +1512,7 @@ protected:
     ///
     opcd data_write_array_separator( type t, uchar end )
     {
-        if(!_tmetafnc)
+        if(!_dometa)
             _beseparator = false;
 
         write_array_separator(t,end);
@@ -1580,7 +1525,7 @@ protected:
     /// use the data_read_array_content() method.
     opcd data_read_array_separator( type t )
     {
-        if(!_tmetafnc)
+        if(!_dometa)
             _beseparator = false;
 
         if( !read_array_separator(t) )
@@ -1998,6 +1943,7 @@ protected:
 /// struct-related defines:
 /**
     @def MM(meta,n,v)   specify member metadata providing member name
+    @def MME(meta,n,v)  specify an enum-type member
     @def MMT(meta,n,t)  specify member metadata providing member type
     @def MMD(meta,n,d)  specify member metadata providing a default value of member type
     @def MMTD(meta,n,d) specify member metadata providing a default value of specified type
@@ -2006,14 +1952,14 @@ protected:
 **/
 #define MSTRUCT_OPEN(meta, n)       if( !meta.meta_struct_open(n) ) {
 #define MM(meta, n, v)              { meta.meta_variable(n,v);    meta << v; }
-
-#define MME(meta, n, v)				{ typedef EnumType<sizeof(v)>::TEnum t; meta.meta_variable<t>(n);  meta << *(t*)0; }
+#define MME(meta, n, v)				{ typedef EnumType<sizeof(v)>::TEnum t;  meta.meta_variable<t>(n);  meta << *(t*)0; }
 #define MMT(meta, n, t)             meta.meta_variable<t>(n);   meta << *(t*)0;
 #define MMD(meta, n, v, d)          meta.meta_variable(n,v);    meta << v;          meta.meta_cache_default(v,d);
 #define MMTD(meta, n, t, d)         meta.meta_variable<t>(n);   meta << *(t*)0;     meta.meta_cache_default(*(t*)0,d);
 #define MMAT(meta, n, t)            meta.meta_variable<t>(n);   meta.meta_array();  meta << *(t*)0;
 #define MMAF(meta, n, t, s)         meta.meta_variable<t>(n);   meta.meta_array(s); meta << *(t*)0;
 #define MSTRUCT_CLOSE(meta)         meta.meta_struct_close(); } return meta;
+#define MSTRUCT_CLOSE_NORET(meta)   meta.meta_struct_close(); }
 
 #define MSTRUCT_BEGIN               MSTRUCT_OPEN
 #define MSTRUCT_END                 MSTRUCT_CLOSE

@@ -57,6 +57,7 @@ void metastream::StructureMap::get_all_types( dynarray<const MetaDesc*>& dst ) c
     b = smr._map.begin();
     e = smr._map.end();
 
+    dst.reset();
     dst.reserve( smr._map.size(), false );
     for(; b!=e; ++b )
         *dst.add() = &(*b);
