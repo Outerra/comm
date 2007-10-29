@@ -590,7 +590,7 @@ struct token
 
     ///Cut left substring, searching for separator backwards
     ///@param skipsep zero if the separator should remain with the original token, nonzero if it's discarded
-    token cut_left_back( const char c, int skipsep, bool def_empty=true )     //up to, but without the character c
+    token cut_left_back( const char c, int skipsep, bool def_empty=false )     //up to, but without the character c
     {
         token r;
         const char* p = strrchr(c);
@@ -616,7 +616,7 @@ struct token
     }
 
     ///Cut left substring, searching for separator backwards
-    token cut_left_back( const token& separators, int skipsep, bool def_empty=false)
+    token cut_left_back( const token& separators, int skipsep, bool def_empty=false )
     {
         token r;
         uints off = count_notingroup_back(separators);
@@ -649,7 +649,7 @@ struct token
     }
 
     ///Cut left substring, searching for separator backwards
-    token cut_left_back( const substring& ss, int skipsep, bool def_empty=false)
+    token cut_left_back( const substring& ss, int skipsep, bool def_empty=false )
     {
         token r;
         uints off=0;
