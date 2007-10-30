@@ -462,8 +462,11 @@ public:
         _cacheskip = 0;
     }
 
-    const MetaDesc::Var& get_root_var() const               { return _root; }
-    const uchar* get_cache() const                          { return _cache.ptr(); }
+    const MetaDesc::Var& get_root_var( const uchar*& cachedata ) const
+    {
+        cachedata = _cache.ptr() + sizeof(uints);
+        return _root;
+    }
 
     const charstr& error_string() const                     { return _err; }
 
@@ -1818,7 +1821,7 @@ protected:
         _cachelevel = _stack.size();
 
         _current->insert_table(1);
-        cache_fill( &_root, 0 );
+        cache_fill( &_root, sizeof(uints) );
     }
 
     ///

@@ -855,7 +855,10 @@ public:
         meta.cache_in<T>();
         meta.stream_acknowledge();
 
-        generate( bot, meta.get_root_var(), meta.get_cache() );
+        const uchar* cachedata;
+        const MetaDesc::Var& root = meta.get_root_var( cachedata );
+
+        generate( bot, root, cachedata );
     }
 
     void generate( binstream& bin, const Var& var, const uchar* data )
