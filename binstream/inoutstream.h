@@ -95,6 +95,10 @@ public:
         return _in->read_until( ss, bout, max_size );
     }
 
+    virtual opcd peek_read( uint timeout )  { return _in->peek_read(timeout); }
+    virtual opcd peek_write( uint timeout ) { return _out->peek_write(timeout); }
+
+
     virtual opcd bind( binstream& bin, int io )
     {
         if( io<0 )
@@ -106,8 +110,8 @@ public:
         return 0;
     }
 
-    virtual bool is_open() const        { return _in->is_open(); }
-    virtual void flush()                { _out->flush(); }
+    virtual bool is_open() const            { return _in->is_open(); }
+    virtual void flush()                    { _out->flush(); }
     virtual void acknowledge (bool eat=false)   { _in->acknowledge(eat); }
 
     virtual void reset_read()

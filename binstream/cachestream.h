@@ -350,6 +350,16 @@ public:
         return ersNOT_FOUND;
 	}
 
+
+    virtual opcd peek_read( uint timeout ) {
+        return _cin.size() > _cinread  ?  opcd(0) : _bin->peek_read(timeout);
+    }
+
+    virtual opcd peek_write( uint timeout ) {
+        return 0;
+    }
+
+
     ///Advance past substring, preceding part pushing to \a pout (if \a pout is nonzero)
     /// @return >0 if found, 0 if not found, <0 if no input
     int find_substring( const substring& sub, binstream* bout, uints limit=UMAX )

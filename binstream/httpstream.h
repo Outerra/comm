@@ -418,6 +418,10 @@ public:
         return _cache.read_until( ss, bout, max_size );
     }
 
+    virtual opcd peek_read( uint timeout )  { return _cache.peek_read(timeout); }
+    virtual opcd peek_write( uint timeout ) { return _cache.peek_write(timeout); }
+
+
     virtual opcd bind( binstream& bin, int io=0 )
     {
         return _cache.bind( bin, io );

@@ -186,6 +186,16 @@ public:
         return 0;
 	}
 
+    virtual opcd peek_read( uint timeout )
+    {
+        return _socket.wait_read(timeout) ? opcd(0) : ersTIMEOUT;
+    }
+
+    virtual opcd peek_write( uint timeout )
+    {
+        return _socket.wait_write(timeout) ? opcd(0) : ersTIMEOUT;
+    }
+
 	virtual opcd write_raw( const void* p, uints& len )
 	{
         if( !_socket.isValid() )  return ersDISCONNECTED;

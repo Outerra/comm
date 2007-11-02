@@ -244,6 +244,17 @@ public:
         return _in->read_until( ss, bout, max_size );
     }
 
+
+    virtual opcd peek_read( uint timeout ) {
+        if(timeout)  return ersINVALID_PARAMS;
+        return _ibuf.size() > _ioffs  ?  opcd(0) : _in->peek_read(timeout);
+    }
+
+    virtual opcd peek_write( uint timeout ) {
+        return 0;
+    }
+
+
     virtual opcd bind( binstream& bin, int io=0 )
     {
         if( io<0 )

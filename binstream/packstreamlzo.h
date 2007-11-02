@@ -98,8 +98,17 @@ public:
     {
         return 0;
     }
+/*
+    virtual opcd peek_read( uint timeout ) {
+        return _cache.peek_read(timeout);
+    }
 
+    virtual opcd peek_write( uint timeout ) {
+        return _cache.peek_write(timeout);
+    }
+*/
     virtual bool is_open() const        { return _in->is_open(); }
+
     virtual void flush()
     {
     }

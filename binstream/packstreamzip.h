@@ -62,6 +62,15 @@ public:
         return 0;
     }
 
+    virtual opcd peek_read( uint timeout ) {
+        if(timeout)  return ersINVALID_PARAMS;
+        
+        uints n=0;
+        return read_raw( 0, n );
+    }
+
+    virtual opcd peek_write( uint timeout ) { return 0; }
+
     virtual bool is_open() const        { return _in->is_open(); }
     virtual void flush()                { packed_flush(); }
     virtual void acknowledge (bool eat=false)   { packed_ack(eat); }

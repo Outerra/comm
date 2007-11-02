@@ -124,6 +124,19 @@ public:
         _rrem = 0;
     }
 
+    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX ) {
+        return ersNOT_IMPLEMENTED; //_bin->read_until( ss, bout, max_size );
+    }
+
+    virtual opcd peek_read( uint timeout ) {
+        if(timeout)  return ersINVALID_PARAMS;
+        return _rrem  ?  opcd(0) : ersNO_MORE;
+    }
+
+    virtual opcd peek_write( uint timeout ) {
+        return 0;
+    }
+
     virtual bool is_open() const
     {
         return _bin->is_open();
@@ -168,10 +181,6 @@ public:
         bind(bin);
     }
 
-    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX )
-    {
-        return ersNOT_IMPLEMENTED; //_bin->read_until( ss, bout, max_size );
-    }
 
     virtual opcd bind( binstream& bin, int io=0 )
     {

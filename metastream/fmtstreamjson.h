@@ -143,6 +143,9 @@ public:
         return ersNOT_IMPLEMENTED;
     }
 
+    virtual opcd peek_read( uint timeout )  { return _binr->peek_read(timeout); }
+    virtual opcd peek_write( uint timeout ) { return _binw->peek_write(timeout); }
+
     virtual opcd bind( binstream& bin, int io=0 )
     {
         if( io<0 )

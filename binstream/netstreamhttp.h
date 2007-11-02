@@ -91,6 +91,9 @@ public:
         _tunh.acknowledge(eat);
     }
 
+    virtual opcd peek_read( uint timeout )      { return _tunh.peek_read(timeout); }
+    virtual opcd peek_write( uint timeout )     { return _tunh.peek_write(timeout); }
+
     virtual bool is_open() const
     {
         return _tcps.is_open();

@@ -74,6 +74,11 @@ public:
 	virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX ) {
 		return _buf.read_until( ss, bout, max_size );
 	}
+
+    virtual opcd peek_read( uint timeout )              { return _buf.peek_read(timeout); }
+    virtual opcd peek_write( uint timeout )             { return 0; }
+
+
     virtual bool is_open() const                        { return _buf.is_open(); }
 
     virtual void reset_read()
@@ -160,6 +165,9 @@ public:
 	virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX ) {
 		return _buf.read_until( ss, bout, max_size );
 	}
+
+    virtual opcd peek_read( uint timeout )              { return _buf.peek_read(timeout); }
+    virtual opcd peek_write( uint timeout )             { return 0; }
 
     virtual bool is_open() const                        { return _buf.is_open(); }
 

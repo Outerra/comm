@@ -133,7 +133,7 @@ public:
 
         //since the text output is plain, without any additional marks that
         // can be used to determine the type, we can only read text
-        //for anything more sophisticated use class fmtstream* classes instead
+        //for anything more sophisticated use the fmtstream* classes instead
 
         if( t.type == type::T_CHAR  ||  t.type == type::T_KEY )
             return _cache.read( p, t );
@@ -196,6 +196,9 @@ public:
     {
         return _cache.read_until( ss, bout, max_size );
     }
+
+    virtual opcd peek_read( uint timeout )  { return _cache.peek_read(timeout); }
+    virtual opcd peek_write( uint timeout ) { return _cache.peek_write(timeout); }
 
     virtual opcd bind( binstream& bin, int io=0 )
     {

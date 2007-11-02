@@ -133,6 +133,9 @@ public:
         return _in->read_until( ss, bout, max_size );
     }
 
+    virtual opcd peek_read( uint timeout )      { return _in->peek_read(timeout); }
+    virtual opcd peek_write( uint timeout )     { return 0; }
+
 
     virtual opcd open( const token& arg )       { return _in->open(arg); }
     virtual opcd close( bool linger )           { return _in ? _in->close(linger) : opcd(0); }

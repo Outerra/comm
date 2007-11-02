@@ -100,6 +100,16 @@ public:
 
     virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX ) { return ersUNAVAILABLE; }
 
+    virtual opcd peek_read( uint timeout )
+    {
+        return _recvbuf.size() > _roffs  ? opcd(0) : ersTIMEOUT;
+    }
+
+    virtual opcd peek_write( uint timeout )
+    {
+        return 0;
+    }
+
 
     virtual uint64 get_size() const                 { return _sendbuf.size(); }
     virtual uint64 set_size( int64 n )
