@@ -783,6 +783,15 @@ public:
     }
 
 
+    ////////////////////////////////////////////////////////////////////////////////
+    ///Peek at the input if there's anything to read
+    //@param timeout timeout to wait before returning with ersTIMEOUT error
+    //@return 0 if there's something to read, ersNO_MORE if nothing, ersINVALID_PARAMS (see note) or ersTIMEOUT
+    //@note not all streams support the timeouts, the streams that don't would return ersINVALID_PARAMS on nonzero timeout values
+    virtual opcd peek_read( uint timeout ) = 0;
+
+    ///Peek at the output if writing is possible
+    virtual opcd peek_write( uint timeout ) = 0;
     
 	////////////////////////////////////////////////////////////////////////////////
     ///Read until @p ss substring is read or @p max_size bytes received
@@ -795,13 +804,18 @@ public:
     }
     
 
+    //@{ Methods for streams where the medium should be opened before use and closed after.
+    /**
+    **/
     ///Open underlying medium
     virtual opcd open( const token& arg )           { return ersNOT_IMPLEMENTED; }
     ///Close underlying medium
     virtual opcd close( bool linger=false )         { return ersNOT_IMPLEMENTED; }
     ///Check if the underlying medium is open
     virtual bool is_open() const = 0;
-    
+    //@}
+
+
     ///Bind to another binstream (for wrapper and formatting binstreams)
     /// @param io which stream to bind (input or output one), can be ignored if not supported
     virtual opcd bind( binstream& bin, int io=0 )   { return ersNOT_IMPLEMENTED; }

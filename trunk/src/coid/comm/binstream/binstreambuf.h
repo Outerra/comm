@@ -189,6 +189,16 @@ public:
         return n<t.len() ? opcd(0) : ersNOT_FOUND;
 	}
 
+    virtual opcd peek_read( uint timeout ) {
+        if(timeout)  return ersINVALID_PARAMS;
+        return _buf.size() > _bgi  ?  opcd(0) : ersNO_MORE;
+    }
+
+    virtual opcd peek_write( uint timeout ) {
+        return 0;
+    }
+
+
     virtual bool is_open() const        { return true; }//_buf.size() > 0; }
     virtual void flush()                { }
     virtual void acknowledge( bool eat=false )
@@ -280,15 +290,16 @@ public:
     {
         if( _len < len )
         {
-            xmemcpy (p, _source, _len);
+            xmemcpy( p, _source, _len );
             len -= _len;
             _source += _len;
             _len = 0;
             return ersNO_MORE;
         }
 
-        xmemcpy (p, _source, len);
+        xmemcpy( p, _source, len );
 		_source += len;
+
 		if( _len != UMAX ) _len -= len;
         len = 0;
         return 0;
@@ -312,6 +323,16 @@ public:
 
         return e;
 	}
+
+    virtual opcd peek_read( uint timeout ) {
+        if(timeout)  return ersINVALID_PARAMS;
+        return _len  ?  opcd(0) : ersNO_MORE;
+    }
+
+    virtual opcd peek_write( uint timeout ) {
+        return ersNO_MORE;
+    }
+
 
     virtual bool is_open() const        { return _source != NULL; }
     virtual void flush()                { }

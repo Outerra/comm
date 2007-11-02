@@ -789,6 +789,10 @@ private:
         virtual opcd read_array_separator( type t )             { return _meta->data_read_array_separator(t); }
 
         virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX ) {return ersNOT_IMPLEMENTED;}
+
+        virtual opcd peek_read( uint timeout )                  { return 0; }
+        virtual opcd peek_write( uint timeout )                 { return 0; }
+
         virtual opcd bind( binstream& bin ) {return ersNOT_IMPLEMENTED;}
 
         virtual bool is_open() const                            { return _meta != 0; }

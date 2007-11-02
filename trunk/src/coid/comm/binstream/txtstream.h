@@ -221,6 +221,9 @@ public:
         return _binr->read_until( ss, bout, max_size );
     }
 
+    virtual opcd peek_read( uint timeout )  { return _binr->peek_read(timeout); }
+    virtual opcd peek_write( uint timeout ) { return _binw->peek_write(timeout); }
+
     virtual opcd bind( binstream& bin, int io=0 )
     {
         if( io<0 )
@@ -236,6 +239,7 @@ public:
     {
         return _binw->open(arg);
     }
+
     virtual opcd close( bool linger=false )
     {
         return _binw->close(linger);

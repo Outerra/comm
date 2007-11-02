@@ -171,6 +171,10 @@ public:
         return _c6.read_until( ss, bout, max_size );
     }
 
+    virtual opcd peek_read( uint timeout )  { return _c6.peek_read(timeout); }
+    virtual opcd peek_write( uint timeout ) { return _c6.peek_write(timeout); }
+
+
     virtual opcd bind( binstream& bin, int io=0 )
     {
         return _cache.bind( bin, io );

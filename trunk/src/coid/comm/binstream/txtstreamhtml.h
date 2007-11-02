@@ -122,19 +122,6 @@ public:
             return txtstream::write(p, t);
         }
     }
-
-    virtual opcd read( void* p, type t )
-    {
-        return txtstream::read( p, t );
-    }
-
-    virtual opcd write_raw( const void* p, uints& len )      { return txtstream::write_raw( p, len ); }
-    virtual opcd read_raw( void* p, uints& len )             { return txtstream::read_raw( p, len ); }
-
-    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX )
-    {
-        return txtstream::read_until( ss, bout, max_size );
-    }
 };
 
 namespace HTML

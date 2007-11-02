@@ -94,6 +94,16 @@ public:
         return 0;
     }
 
+    virtual opcd peek_read( uint timeout )
+    {
+        return _socket.wait_read(timeout) ? opcd(0) : ersTIMEOUT;
+    }
+
+    virtual opcd peek_write( uint timeout )
+    {
+        return _socket.wait_write(timeout) ? opcd(0) : ersTIMEOUT;
+    }
+
     virtual bool is_open() const        { return _socket.getHandle() != -1; }
     virtual void flush()
     {

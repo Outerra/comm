@@ -131,6 +131,16 @@ public:
 
     virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX ) { return ersUNAVAILABLE; }
 
+    virtual opcd peek_read( uint timeout ) {
+        if(timeout)  return ersINVALID_PARAMS;
+        return (uint64)_rpos < size()  ?  opcd(0) : ersNO_MORE;
+    }
+
+    virtual opcd peek_write( uint timeout ) {
+        return 0;
+    }
+
+
     virtual bool is_open() const        { return _handle != -1; }
     virtual void flush()                { }
     virtual void acknowledge( bool eat=false )  { }
