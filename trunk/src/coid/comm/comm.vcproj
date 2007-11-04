@@ -789,6 +789,22 @@
 			>
 		</File>
 		<File
+			RelativePath=".\atomic\atomic.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\atomic\atomic.h"
+			>
+		</File>
+		<File
+			RelativePath=".\atomic\atomic_gcc.h"
+			>
+		</File>
+		<File
+			RelativePath=".\atomic\atomic_win32.h"
+			>
+		</File>
+		<File
 			RelativePath="comm.h"
 			>
 		</File>
@@ -862,6 +878,10 @@
 		</File>
 		<File
 			RelativePath="ptrowner.h"
+			>
+		</File>
+		<File
+			RelativePath=".\atomic\queue.h"
 			>
 		</File>
 		<File
