@@ -16,10 +16,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(ProjectDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
+			InheritedPropertySheets="..\..\..\src\eng2_debug.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
@@ -41,20 +39,9 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
 				PreprocessorDefinitions="_LIB;WIN32;_DEBUG"
-				StringPooling="true"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				BufferSecurityCheck="false"
-				PrecompiledHeaderFile=".\Debug/comm.pch"
-				AssemblerListingLocation=".\Debug/"
-				ObjectFile=".\Debug/"
-				ProgramDataBaseFileName=".\Debug/"
+				UsePrecompiledHeader="0"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -69,8 +56,6 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\bin\commd.lib"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -92,10 +77,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(ProjectDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
+			InheritedPropertySheets="..\..\..\src\eng2_release.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
@@ -117,20 +100,9 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="2"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
-				StringPooling="true"
-				RuntimeLibrary="2"
-				BufferSecurityCheck="false"
-				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/comm.pch"
-				AssemblerListingLocation=".\Release/"
-				ObjectFile=".\Release/"
-				ProgramDataBaseFileName=".\Release/"
+				UsePrecompiledHeader="0"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
-				DebugInformationFormat="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -145,8 +117,6 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\bin\comm.lib"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -784,24 +754,32 @@
 				>
 			</File>
 		</Filter>
+		<Filter
+			Name="atomic"
+			>
+			<File
+				RelativePath=".\atomic\atomic.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\atomic\atomic.h"
+				>
+			</File>
+			<File
+				RelativePath=".\atomic\atomic_gcc.h"
+				>
+			</File>
+			<File
+				RelativePath=".\atomic\atomic_win32.h"
+				>
+			</File>
+			<File
+				RelativePath=".\atomic\queue.h"
+				>
+			</File>
+		</Filter>
 		<File
 			RelativePath="assert.h"
-			>
-		</File>
-		<File
-			RelativePath=".\atomic\atomic.cpp"
-			>
-		</File>
-		<File
-			RelativePath=".\atomic\atomic.h"
-			>
-		</File>
-		<File
-			RelativePath=".\atomic\atomic_gcc.h"
-			>
-		</File>
-		<File
-			RelativePath=".\atomic\atomic_win32.h"
 			>
 		</File>
 		<File
@@ -878,10 +856,6 @@
 		</File>
 		<File
 			RelativePath="ptrowner.h"
-			>
-		</File>
-		<File
-			RelativePath=".\atomic\queue.h"
 			>
 		</File>
 		<File

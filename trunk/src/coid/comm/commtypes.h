@@ -192,12 +192,6 @@ TYPE_TRIVIAL(long double);
 
 
 
-#define UMAX                ((uints)0xffffffffffffffffULL)
-#define UMAX64              0xffffffffffffffffULL
-#define WMAX                0xffff
-
-
-
 ////////////////////////////////////////////////////////////////////////////////
 template<class INT>
 struct SIGNEDNESS
@@ -320,6 +314,9 @@ bool cdcd_memcheck( const uchar* a, const uchar* ae, const uchar* b, const uchar
 
 COID_NAMESPACE_END
 
+#define UMAX                ((coid::uints)0xffffffffffffffffULL)
+#define UMAX64              0xffffffffffffffffULL
+#define WMAX                0xffff
 
 #include "net_ul.h"
 

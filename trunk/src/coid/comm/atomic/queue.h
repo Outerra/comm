@@ -41,25 +41,20 @@ public:
 	};
 
 	//!
-	template <class T>
+	template<class T>
 	struct node
 	{
-		node(const T & value)
-			: m_pNext(0)
-			, m_pPrev(0)
-			, m_tValue(value) {}
-
 		node()
 			: m_pNext(0)
 			, m_pPrev(0)
-			, m_tValue(-1) {}
+			, m_bDummy(false) {}
 
-		ptr_t<node<T> > m_pNext;
-		ptr_t<node<T> > m_pPrev;
-		T m_tValue;
+		ptr_t<T> m_pNext;
+		ptr_t<T> m_pPrev;
+		bool m_bDummy;
 	};
 
-	typedef ptr_t<node<T> > node_ptr_t;
+	typedef ptr_t<T> node_ptr_t;
 	typedef node<T> node_t;
 
 public:
@@ -81,24 +76,27 @@ public:
 public:
 	//!
 	queue() throw(...)
-		: m_pTail(A::alloc<node_t>())
+		: m_pTail(A::alloc<T>())
 		, m_pHead(m_pTail.ptr)
 		, m_uiPushCollisions(0L)
 		, m_uiPopCollisions(0L)
 		, m_uiFixes(0L)
 	{
+		m_pHead.ptr->m_bDummy = true;
 	}
 
 	~queue() throw() {} 
 
-	void push(node_t * const pNewNode)
+	void push(T * const pNewNode)
 	{
 		node_ptr_t tail;
+
+		pNewNode->m_pPrev = node_ptr_t(0, 0);
 
 		for (;;) {
 			tail = m_pTail;
 			pNewNode->m_pNext = node_ptr_t(tail.ptr, tail.tag + 1);
-			if (cas<node_t*>(
+			if (cas<T*>(
 				&m_pTail, 
 				pNewNode,
 				tail.tag + 1,
@@ -107,14 +105,11 @@ public:
 					tail.ptr->m_pPrev = node_ptr_t(pNewNode, tail.tag);
 					return;
 			}
-			Increment(&m_uiPushCollisions);
 		}
 	}
 
 	void fixList(node_ptr_t tail, node_ptr_t head)
 	{
-		Increment(&m_uiFixes);
-
 		node_ptr_t curNode, curNodeNext, nextNodePrev;
 
 		curNode = tail;
@@ -133,18 +128,16 @@ public:
 		};
 	}
 
-	node_t * pop()
+	T * pop()
 	{
 		node_ptr_t head, tail;
-		node_t * pDummy;
-		int iValue;
+		T * pDummy;
 
 		for (;;) {
 			head = m_pHead;
 			tail = m_pTail;
-			iValue = head.ptr->m_tValue;
 			if (head == m_pHead) {
-				if (iValue != -1) {
+				if (!head.ptr->m_bDummy) {
 					if (tail != head) {
 						if (head.ptr->m_pPrev.tag != head.tag) {
 							fixList(tail, head);
@@ -152,45 +145,45 @@ public:
 						}
 					} 
 					else {
-						pDummy = A::alloc<node_t>();
+						pDummy = A::alloc<T>();
+						pDummy->m_bDummy = true;
 						pDummy->m_pNext = node_ptr_t(tail.ptr, tail.tag + 1);
-						if (cas<node_t*>(
+						if (cas<T*>(
 							&m_pTail, 
 							pDummy, 
 							tail.tag + 1, 
 							tail.ptr, 
-							tail.tag)) {
-								head.ptr->m_pPrev = pDummy;
-						}
+							tail.tag))
+							head.ptr->m_pPrev = pDummy;
+						else
+							A::free(pDummy);
 						continue;
 					}
-					if (cas<node_t*>(
+					if (cas<T*>(
 						&m_pHead, 
 						head.ptr->m_pPrev.ptr,
 						head.tag + 1,
 						head.ptr, 
-						head.tag)) {
-						return iValue;
-					}
+						head.tag))
+						return head.ptr;
 				} 
 				else {
-					if (tail.ptr == head.ptr) {
+					if (tail.ptr == head.ptr)
 						return 0;
-					} 
 					else {	
 						if (head.ptr->m_pPrev.tag != head.tag) {
 							fixList(tail, head);
 							continue;
 						}
-						cas<node_t*>(
+						cas<T*>(
 							&m_pHead, 
 							head.ptr->m_pPrev.ptr, 
 							head.tag + 1, 
 							head.ptr, 
 							head.tag);
+						A::free(head.ptr);
 					}
 				} 
-				Increment(&m_uiPopCollisions);
 			}
 		}
 	};
