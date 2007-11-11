@@ -16,8 +16,9 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
+			OutputDirectory="$(ProjectDir)\bin\"
+			IntermediateDirectory="$(ProjectDir)\bin\$(ConfigurationName)\"
 			ConfigurationType="4"
-			InheritedPropertySheets="..\..\..\src\eng2_debug.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
@@ -39,9 +40,20 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				Optimization="0"
 				PreprocessorDefinitions="_LIB;WIN32;_DEBUG"
-				UsePrecompiledHeader="0"
+				StringPooling="true"
+				MinimalRebuild="true"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				BufferSecurityCheck="false"
+				PrecompiledHeaderFile="$(IntDir)\comm.pch"
+				AssemblerListingLocation="$(IntDir)\"
+				ObjectFile="$(IntDir)\"
+				ProgramDataBaseFileName="$(IntDir)\"
 				WarningLevel="3"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -56,6 +68,8 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				OutputFile="$(OutDir)commd.lib"
+				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -77,8 +91,9 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
+			OutputDirectory="$(ProjectDir)\bin\"
+			IntermediateDirectory="$(ProjectDir)\bin\$(ConfigurationName)\"
 			ConfigurationType="4"
-			InheritedPropertySheets="..\..\..\src\eng2_release.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
@@ -100,9 +115,20 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				Optimization="2"
+				InlineFunctionExpansion="2"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
-				UsePrecompiledHeader="0"
+				StringPooling="true"
+				RuntimeLibrary="2"
+				BufferSecurityCheck="false"
+				EnableFunctionLevelLinking="true"
+				PrecompiledHeaderFile="$(IntDir)\comm.pch"
+				AssemblerListingLocation="$(IntDir)\"
+				ObjectFile="$(IntDir)\"
+				ProgramDataBaseFileName="$(IntDir)\"
 				WarningLevel="3"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -117,6 +143,8 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				OutputFile="$(OutDir)comm.lib"
+				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -140,6 +168,30 @@
 	<References>
 	</References>
 	<Files>
+		<Filter
+			Name="atomic"
+			>
+			<File
+				RelativePath=".\atomic\atomic.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\atomic\atomic.h"
+				>
+			</File>
+			<File
+				RelativePath=".\atomic\atomic_gcc.h"
+				>
+			</File>
+			<File
+				RelativePath=".\atomic\atomic_win32.h"
+				>
+			</File>
+			<File
+				RelativePath=".\atomic\queue.h"
+				>
+			</File>
+		</Filter>
 		<Filter
 			Name="binstream"
 			>
@@ -751,30 +803,6 @@
 			</File>
 			<File
 				RelativePath="sync\thread_mgr.h"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="atomic"
-			>
-			<File
-				RelativePath=".\atomic\atomic.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\atomic\atomic.h"
-				>
-			</File>
-			<File
-				RelativePath=".\atomic\atomic_gcc.h"
-				>
-			</File>
-			<File
-				RelativePath=".\atomic\atomic_win32.h"
-				>
-			</File>
-			<File
-				RelativePath=".\atomic\queue.h"
 				>
 			</File>
 		</Filter>
