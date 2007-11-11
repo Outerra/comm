@@ -159,6 +159,8 @@ public:
             setpos(_wpos);
     }
 
+    ///Open file
+    //@param arg concatenated file name, '?' character and attributes as specified in open(name,attr)
     virtual opcd open( const token& arg )
     {
         token name = arg;
@@ -167,12 +169,12 @@ public:
     }
 
     ///Open file
-    ///@param name file name
-    ///@param attr open attributes
+    //@param name file name
+    //@param attr open attributes
     /// r - open for reading
     /// w - open for writing
     /// l - lock file
-    /// e - exclusive
+    /// e - fail if file already exists
     /// c - create
     /// t - truncate
     /// a,+ - append

@@ -3,9 +3,8 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="comm_static"
-	ProjectGUID="{F122BDCB-130F-4BE3-8BAD-FFB358B9DD2C}"
+	ProjectGUID="{D2F47060-00C0-4A3C-9888-CF663F14D44D}"
 	RootNamespace="comm_static"
-	Keyword="Win32Proj"
 	>
 	<Platforms>
 		<Platform
@@ -17,9 +16,11 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(ProjectDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory="$(ProjectDir)\bin\"
+			IntermediateDirectory="$(ProjectDir)\bin\$(ConfigurationName)Static\"
 			ConfigurationType="4"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
 			>
 			<Tool
@@ -40,14 +41,18 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
+				PreprocessorDefinitions="_LIB;WIN32;_DEBUG"
 				StringPooling="true"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="1"
-				UsePrecompiledHeader="0"
+				RuntimeLibrary="3"
+				BufferSecurityCheck="false"
+				PrecompiledHeaderFile="$(IntDir)\comm_static.pch"
+				AssemblerListingLocation="$(IntDir)\"
+				ObjectFile="$(IntDir)\"
+				ProgramDataBaseFileName="$(IntDir)\"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
+				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -55,13 +60,16 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="1051"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\..\bin\$(ProjectName)d.lib"
+				OutputFile="$(OutDir)comm_staticd.lib"
+				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -71,6 +79,8 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
+				SuppressStartupBanner="true"
+				OutputFile="$(IntDir)\comm_static.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -81,11 +91,12 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(ProjectDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory="$(ProjectDir)\bin\"
+			IntermediateDirectory="$(ProjectDir)\bin\$(ConfigurationName)Static\"
 			ConfigurationType="4"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
-			WholeProgramOptimization="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -104,13 +115,19 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				Optimization="2"
 				InlineFunctionExpansion="2"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
-				RuntimeLibrary="0"
+				StringPooling="true"
+				RuntimeLibrary="2"
 				BufferSecurityCheck="false"
-				UsePrecompiledHeader="0"
+				EnableFunctionLevelLinking="true"
+				PrecompiledHeaderFile="$(IntDir)\comm_static.pch"
+				AssemblerListingLocation="$(IntDir)\"
+				ObjectFile="$(IntDir)\"
+				ProgramDataBaseFileName="$(IntDir)\"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
+				SuppressStartupBanner="true"
 				DebugInformationFormat="0"
 			/>
 			<Tool
@@ -118,13 +135,16 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1051"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\..\bin\$(ProjectName).lib"
+				OutputFile="$(OutDir)comm_static.lib"
+				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -134,6 +154,8 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
+				SuppressStartupBanner="true"
+				OutputFile="$(IntDir)\comm_static.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -147,130 +169,158 @@
 	</References>
 	<Files>
 		<Filter
+			Name="atomic"
+			>
+			<File
+				RelativePath=".\atomic\atomic.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\atomic\atomic.h"
+				>
+			</File>
+			<File
+				RelativePath=".\atomic\atomic_gcc.h"
+				>
+			</File>
+			<File
+				RelativePath=".\atomic\atomic_win32.h"
+				>
+			</File>
+			<File
+				RelativePath=".\atomic\queue.h"
+				>
+			</File>
+		</Filter>
+		<Filter
 			Name="binstream"
 			>
 			<File
-				RelativePath="..\binstream\binstream.h"
+				RelativePath="binstream\binstream.h"
 				>
 			</File>
 			<File
-				RelativePath="..\binstream\binstreambuf.h"
+				RelativePath="binstream\binstreambuf.h"
 				>
 			</File>
 			<File
-				RelativePath="..\binstream\binstreamsegbuf.h"
+				RelativePath="binstream\binstreamsegbuf.h"
 				>
 			</File>
 			<File
-				RelativePath="..\binstream\bstype.h"
+				RelativePath="binstream\bstype.h"
 				>
 			</File>
 			<File
-				RelativePath="..\binstream\cachestream.h"
+				RelativePath="binstream\cachestream.h"
 				>
 			</File>
 			<File
-				RelativePath="..\binstream\circularstreambuf.h"
+				RelativePath="binstream\circularstreambuf.h"
 				>
 			</File>
 			<File
-				RelativePath="..\binstream\code6stream.h"
+				RelativePath=".\binstream\container.h"
 				>
 			</File>
 			<File
-				RelativePath="..\.\binstream\container.h"
+				RelativePath=".\binstream\container_linear.h"
 				>
 			</File>
 			<File
-				RelativePath="..\.\binstream\container_linear.h"
+				RelativePath=".\binstream\enc_base64stream.h"
 				>
 			</File>
 			<File
-				RelativePath="..\binstream\exestream.h"
+				RelativePath=".\binstream\enc_hexstream.h"
 				>
 			</File>
 			<File
-				RelativePath="..\binstream\filestream.h"
+				RelativePath="binstream\exestream.h"
 				>
 			</File>
 			<File
-				RelativePath="..\binstream\forkstream.h"
+				RelativePath="binstream\filestream.h"
 				>
 			</File>
 			<File
-				RelativePath="..\binstream\hexstream.h"
+				RelativePath="binstream\forkstream.h"
 				>
 			</File>
 			<File
-				RelativePath="..\.\binstream\httpstream.h"
+				RelativePath=".\binstream\httpstream.h"
 				>
 			</File>
 			<File
-				RelativePath="..\.\binstream\httpstreamtunnel.h"
+				RelativePath=".\binstream\httpstreamcoid.h"
 				>
 			</File>
 			<File
-				RelativePath="..\binstream\inoutstream.h"
+				RelativePath=".\binstream\httpstreamtunnel.h"
 				>
 			</File>
 			<File
-				RelativePath="..\binstream\netstream.h"
+				RelativePath="binstream\inoutstream.h"
 				>
 			</File>
 			<File
-				RelativePath="..\binstream\netstreamcoid.h"
+				RelativePath="binstream\netstream.h"
 				>
 			</File>
 			<File
-				RelativePath="..\binstream\netstreamhttp.h"
+				RelativePath="binstream\netstreamcoid.h"
 				>
 			</File>
 			<File
-				RelativePath="..\binstream\netstreamtcp.h"
+				RelativePath=".\binstream\netstreamhttp.h"
 				>
 			</File>
 			<File
-				RelativePath="..\binstream\netstreamudp.h"
+				RelativePath="binstream\netstreamtcp.h"
 				>
 			</File>
 			<File
-				RelativePath="..\binstream\netstreamudpbuf.h"
+				RelativePath="binstream\netstreamudp.h"
 				>
 			</File>
 			<File
-				RelativePath="..\binstream\nullstream.h"
+				RelativePath="binstream\netstreamudpbuf.h"
 				>
 			</File>
 			<File
-				RelativePath="..\binstream\packstream.h"
+				RelativePath="binstream\nullstream.h"
 				>
 			</File>
 			<File
-				RelativePath="..\binstream\packstreamlzo.h"
+				RelativePath="binstream\packstream.h"
 				>
 			</File>
 			<File
-				RelativePath="..\binstream\packstreamzip.h"
+				RelativePath="binstream\packstreamlzo.h"
 				>
 			</File>
 			<File
-				RelativePath="..\binstream\stdstream.h"
+				RelativePath="binstream\packstreamzip.h"
 				>
 			</File>
 			<File
-				RelativePath="..\binstream\stlstream.h"
+				RelativePath="binstream\stdstream.h"
 				>
 			</File>
 			<File
-				RelativePath="..\binstream\textstream.h"
+				RelativePath="binstream\stlstream.h"
 				>
 			</File>
 			<File
-				RelativePath="..\binstream\txtstream.h"
+				RelativePath=".\binstream\txtcachestream.h"
 				>
 			</File>
 			<File
-				RelativePath="..\binstream\txtstreamhtml.h"
+				RelativePath="binstream\txtstream.h"
+				>
+			</File>
+			<File
+				RelativePath="binstream\txtstreamhtml.h"
 				>
 			</File>
 		</Filter>
@@ -278,23 +328,27 @@
 			Name="tree"
 			>
 			<File
-				RelativePath="..\tree\nodeclass.h"
+				RelativePath="tree\nodeclass.h"
 				>
 			</File>
 			<File
-				RelativePath="..\tree\ttree.h"
+				RelativePath=".\tree\treenode.h"
 				>
 			</File>
 			<File
-				RelativePath="..\tree\ttreebm.h"
+				RelativePath="tree\ttree.h"
 				>
 			</File>
 			<File
-				RelativePath="..\tree\ttreeid.h"
+				RelativePath="tree\ttreebm.h"
 				>
 			</File>
 			<File
-				RelativePath="..\tree\ttreeit.h"
+				RelativePath="tree\ttreeid.h"
+				>
+			</File>
+			<File
+				RelativePath="tree\ttreeit.h"
 				>
 			</File>
 		</Filter>
@@ -302,7 +356,7 @@
 			Name="crypt"
 			>
 			<File
-				RelativePath="..\crypt\sha1.cpp"
+				RelativePath="crypt\sha1.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -322,7 +376,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\crypt\sha1.h"
+				RelativePath="crypt\sha1.h"
 				>
 			</File>
 		</Filter>
@@ -330,23 +384,23 @@
 			Name="hash"
 			>
 			<File
-				RelativePath="..\hash\hashfunc.h"
+				RelativePath="hash\hashfunc.h"
 				>
 			</File>
 			<File
-				RelativePath="..\hash\hashkeyset.h"
+				RelativePath="hash\hashkeyset.h"
 				>
 			</File>
 			<File
-				RelativePath="..\hash\hashmap.h"
+				RelativePath="hash\hashmap.h"
 				>
 			</File>
 			<File
-				RelativePath="..\hash\hashset.h"
+				RelativePath="hash\hashset.h"
 				>
 			</File>
 			<File
-				RelativePath="..\hash\hashtable.h"
+				RelativePath="hash\hashtable.h"
 				>
 			</File>
 		</Filter>
@@ -354,31 +408,35 @@
 			Name="metastream"
 			>
 			<File
-				RelativePath="..\metastream\fmtstreamcxx.h"
+				RelativePath="metastream\fmtstreamcxx.h"
 				>
 			</File>
 			<File
-				RelativePath="..\metastream\fmtstreamjson.h"
+				RelativePath="metastream\fmtstreamjson.h"
 				>
 			</File>
 			<File
-				RelativePath="..\metastream\fmtstreamxml.h"
+				RelativePath=".\metastream\fmtstreamxml.h"
 				>
 			</File>
 			<File
-				RelativePath="..\metastream\metagen.h"
+				RelativePath=".\metastream\fmtstreamxml2.h"
 				>
 			</File>
 			<File
-				RelativePath="..\.\metastream\metastream.cpp"
+				RelativePath=".\metastream\metagen.h"
 				>
 			</File>
 			<File
-				RelativePath="..\metastream\metastream.h"
+				RelativePath=".\metastream\metastream.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\metastream\metavar.h"
+				RelativePath="metastream\metastream.h"
+				>
+			</File>
+			<File
+				RelativePath=".\metastream\metavar.h"
 				>
 			</File>
 		</Filter>
@@ -386,39 +444,39 @@
 			Name="alloc"
 			>
 			<File
-				RelativePath="..\.\alloc\alloc.cpp"
+				RelativePath=".\alloc\alloc.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\.\alloc\alloc.h"
+				RelativePath=".\alloc\alloc.h"
 				>
 			</File>
 			<File
-				RelativePath="..\.\alloc\allocrp.h"
+				RelativePath=".\alloc\allocrp.h"
 				>
 			</File>
 			<File
-				RelativePath="..\alloc\chunkalloc.h"
+				RelativePath=".\alloc\chunkalloc.h"
 				>
 			</File>
 			<File
-				RelativePath="..\alloc\chunkblock.h"
+				RelativePath=".\alloc\chunkblock.h"
 				>
 			</File>
 			<File
-				RelativePath="..\alloc\chunkpage.h"
+				RelativePath=".\alloc\chunkpage.h"
 				>
 			</File>
 			<File
-				RelativePath="..\alloc\chunkpool.h"
+				RelativePath=".\alloc\chunkpool.h"
 				>
 			</File>
 			<File
-				RelativePath="..\.\alloc\sseg.cpp"
+				RelativePath=".\alloc\sseg.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\.\alloc\sseg.h"
+				RelativePath=".\alloc\sseg.h"
 				>
 			</File>
 		</Filter>
@@ -426,7 +484,7 @@
 			Name="cxx"
 			>
 			<File
-				RelativePath="..\assert.cpp"
+				RelativePath="assert.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -446,7 +504,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\comm.cpp"
+				RelativePath="comm.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -466,7 +524,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\dir.cpp"
+				RelativePath="dir.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -486,68 +544,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\dirgcc.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\dirwin.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\hptimer.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\hptimeru.cpp"
+				RelativePath="dirgcc.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -560,6 +557,7 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32"
+					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -568,7 +566,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\net.cpp"
+				RelativePath="dirwin.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -588,7 +586,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\pthreadx.cpp"
+				RelativePath="hptimer.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -608,7 +606,29 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\retcodes.cpp"
+				RelativePath="hptimeru.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="net.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -628,7 +648,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\singleton.cpp"
+				RelativePath="pthreadx.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -648,7 +668,27 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\str-win.cpp"
+				RelativePath="retcodes.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\str-win.cpp"
 				>
 			</File>
 		</Filter>
@@ -656,7 +696,7 @@
 			Name="sync"
 			>
 			<File
-				RelativePath="..\sync\_mutex.cpp"
+				RelativePath="sync\_mutex.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -676,47 +716,15 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\sync\_mutex.h"
+				RelativePath="sync\_mutex.h"
 				>
 			</File>
 			<File
-				RelativePath="..\sync\guard.h"
+				RelativePath="sync\guard.h"
 				>
 			</File>
 			<File
-				RelativePath="..\sync\mutex.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\sync\mutex.h"
-				>
-			</File>
-			<File
-				RelativePath="..\sync\mutex_reg.h"
-				>
-			</File>
-			<File
-				RelativePath="..\sync\rw_mutex.h"
-				>
-			</File>
-			<File
-				RelativePath="..\sync\rw_mx_core.cpp"
+				RelativePath="sync\mutex.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -736,11 +744,43 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\sync\rw_mx_core.h"
+				RelativePath="sync\mutex.h"
 				>
 			</File>
 			<File
-				RelativePath="..\sync\rw_mx_core_pthread.cpp"
+				RelativePath="sync\mutex_reg.h"
+				>
+			</File>
+			<File
+				RelativePath="sync\rw_mutex.h"
+				>
+			</File>
+			<File
+				RelativePath="sync\rw_mx_core.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="sync\rw_mx_core.h"
+				>
+			</File>
+			<File
+				RelativePath="sync\rw_mx_core_pthread.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -753,6 +793,7 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32"
+					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -761,128 +802,144 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\sync\thread_mgr.h"
+				RelativePath="sync\thread_mgr.h"
 				>
 			</File>
 		</Filter>
 		<File
-			RelativePath="..\assert.h"
+			RelativePath="assert.h"
 			>
 		</File>
 		<File
-			RelativePath="..\comm.h"
+			RelativePath="comm.h"
 			>
 		</File>
 		<File
-			RelativePath="..\commtypes.h"
+			RelativePath=".\commtime.h"
 			>
 		</File>
 		<File
-			RelativePath="..\dir.h"
+			RelativePath="commtypes.h"
 			>
 		</File>
 		<File
-			RelativePath="..\dynarray.h"
+			RelativePath="dir.h"
 			>
 		</File>
 		<File
-			RelativePath="..\facility.h"
+			RelativePath="dynarray.h"
 			>
 		</File>
 		<File
-			RelativePath="..\hptimer.h"
+			RelativePath="facility.h"
 			>
 		</File>
 		<File
-			RelativePath="..\interfnc.h"
+			RelativePath="hptimer.h"
 			>
 		</File>
 		<File
-			RelativePath="..\keywordt.h"
+			RelativePath="interfnc.h"
 			>
 		</File>
 		<File
-			RelativePath="..\local.h"
+			RelativePath="keywordt.h"
 			>
 		</File>
 		<File
-			RelativePath="..\namespace.h"
+			RelativePath=".\lexer.h"
 			>
 		</File>
 		<File
-			RelativePath="..\net.h"
+			RelativePath="local.h"
 			>
 		</File>
 		<File
-			RelativePath="..\net_ul.h"
+			RelativePath=".\mathf.h"
 			>
 		</File>
 		<File
-			RelativePath="..\password.h"
+			RelativePath=".\mathi.h"
 			>
 		</File>
 		<File
-			RelativePath="..\pthreadx.h"
+			RelativePath="namespace.h"
 			>
 		</File>
 		<File
-			RelativePath="..\ptrowner.h"
+			RelativePath="net.h"
 			>
 		</File>
 		<File
-			RelativePath="..\radix.h"
+			RelativePath="net_ul.h"
 			>
 		</File>
 		<File
-			RelativePath="..\retcodes.h"
+			RelativePath="password.h"
 			>
 		</File>
 		<File
-			RelativePath="..\rnd.h"
+			RelativePath="pthreadx.h"
 			>
 		</File>
 		<File
-			RelativePath="..\segarray.h"
+			RelativePath="ptrowner.h"
 			>
 		</File>
 		<File
-			RelativePath="..\singleton.h"
+			RelativePath="radix.h"
 			>
 		</File>
 		<File
-			RelativePath="..\str.h"
+			RelativePath="retcodes.h"
 			>
 		</File>
 		<File
-			RelativePath="..\substring.h"
+			RelativePath="rnd.h"
 			>
 		</File>
 		<File
-			RelativePath="..\.\time.h"
+			RelativePath="segarray.h"
 			>
 		</File>
 		<File
-			RelativePath="..\token.h"
+			RelativePath="singleton.h"
 			>
 		</File>
 		<File
-			RelativePath="..\tokenizer.h"
+			RelativePath="str.h"
 			>
 		</File>
 		<File
-			RelativePath="..\.\trait.h"
+			RelativePath=".\strgen.h"
 			>
 		</File>
 		<File
-			RelativePath="..\tutf8.h"
+			RelativePath=".\substring.h"
 			>
 		</File>
 		<File
-			RelativePath="..\txtconv.h"
+			RelativePath="token.h"
 			>
 		</File>
 		<File
-			RelativePath="..\version.h"
+			RelativePath="tokenizer.h"
+			>
+		</File>
+		<File
+			RelativePath=".\trait.h"
+			>
+		</File>
+		<File
+			RelativePath="tutf8.h"
+			>
+		</File>
+		<File
+			RelativePath="txtconv.h"
+			>
+		</File>
+		<File
+			RelativePath="version.h"
 			>
 		</File>
 	</Files>
