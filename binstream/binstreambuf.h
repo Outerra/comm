@@ -139,15 +139,6 @@ public:
         return _buf.ptr()+pos;
     }
 
-	///Write binstreambuf to another binstream without any overhead
-	opcd write_raw_to( binstream & b ) const
-    {
-        if( _bgi >= get_size() ) return ersNO_MORE;
-		uints size = (uints)get_size() - _bgi;
-		const void * p = _buf.ptr() + _bgi;
-		return b.write_raw( p, size );
-	}
-
 
     virtual opcd write_raw( const void* p, uints& len )
     {
@@ -196,6 +187,30 @@ public:
 
     virtual opcd peek_write( uint timeout ) {
         return 0;
+    }
+
+
+    ///Write raw data to another binstream. Overloadable to avoid excesive copying when not neccessary.
+    ///@return number of bytes written
+    virtual uints write_to( binstream& bin )
+    {
+        uints n=0, tlen=_buf.size();
+
+        for( ; _bgi<tlen; )
+        {
+            uints len = uint_min( tlen - _bgi, uints(4096) );
+            uints oen = len;
+            
+            opcd e = bin.write_raw( _buf.ptr()+_bgi, len );
+
+            n += oen - len;
+            _bgi += oen - len;
+
+            if( e || len>0 )
+                break;
+        }
+
+        return n;
     }
 
 
