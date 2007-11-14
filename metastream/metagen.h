@@ -83,6 +83,7 @@ class metagen //: public binstream
             int ie = def_escape( "escape", '\\', 0 );
             def_escape_pair( ie, "\\", "\\" );
             def_escape_pair( ie, "n", "\n" );
+            def_escape_pair( ie, "t", "    " );
             def_escape_pair( ie, "\n", 0 );
 
             DQSTRING = def_string( "dqstring", "\"", "\"", "escape" );
@@ -242,8 +243,14 @@ class metagen //: public binstream
         bool parse( MtgLexer& lex )
         {
             //attribute can be
-            // <name> [?!] [= "value"]
+            // <name>(.<name>)* [?!] [= "value"]
             const lextoken& tok = lex.last();
+
+            bool condneg = false;
+            if( tok == '!' ) {
+                condneg = true;
+                lex.next();
+            }
             
             if( tok.id != lex.IDENT )  return false;
             name = tok.tok;
@@ -256,7 +263,7 @@ class metagen //: public binstream
 
             cond = UNKNOWN;
             lex.next();
-            if( tok.tok == '?' )        cond = COND_POS;
+            if( tok.tok == '?' )        cond = condneg ? COND_NEG : COND_POS;
             else if( tok.tok == '!' )   cond = COND_NEG;
             else lex.push_back();
 
@@ -344,6 +351,7 @@ class metagen //: public binstream
 
         enum { fTRAILING = 1, fEAT_LEFT = 2, fEAT_RIGHT = 4, };
 
+        ParsedTag() : flags(0) {}
 
         bool same_group( const ParsedTag& p ) const
         {
@@ -356,7 +364,7 @@ class metagen //: public binstream
                 && varname == p.varname;
         }
 
-        void set_empty()    { varname.set_empty(); }
+        void set_empty()    { varname.set_empty();  brace=flags=0;  depth=0; }
 
         void parse( MtgLexer& lex )
         {
@@ -507,8 +515,10 @@ class metagen //: public binstream
             bool succ = lex.next_string_or_block( lex.STEXT );
             stext = lex.last().tok;
 
-            if(skip_newline)
+            if(skip_newline) {
+                stext.skip_ingroup(" \t");
                 stext.skip_newline();
+            }
 
             return succ;
         }
@@ -579,7 +589,7 @@ class metagen //: public binstream
 
                 if( (tout.flags & ParsedTag::fEAT_LEFT) ) {
                     token& stext = (*sequence.last())->stext;
-                    stext.cut_right_back(" \t",1);
+                    stext.cut_right_back(" \t",-1);
                     stext.trim_newline();
                 }
 
@@ -730,8 +740,11 @@ class metagen //: public binstream
                 TagRange& rng = bind_attributes( lex, tmp.attr );
 
                 rng.parse( lex, tmp, hdr );
-                if( tmp.flags & ParsedTag::fTRAILING )
+                if( tmp.flags & ParsedTag::fTRAILING ) {
+                    hdr.flags &= ~(ParsedTag::fTRAILING | ParsedTag::fEAT_RIGHT);
+                    hdr.flags = tmp.flags & ParsedTag::fEAT_RIGHT;
                     break;
+                }
             }
             while(1);
         }
@@ -875,6 +888,19 @@ public:
     }
 
     const char* error_text() const  { return err_lex; }
+
+    charstr& error_location( charstr& buf, const token& file ) const
+    {
+        const lextoken& last = lex.last();
+        buf << file << ":" << (last.line+1) << ": " << err_lex << "\n";
+
+        uints n = last.tok.ptr() - last.start;
+        buf << token(last.start,n+1) << "\n";
+        buf.appendn( (uint)n, ' ' );
+        buf << "^\n";
+
+        return buf;
+    }
 
 private:
     charstr buf;                    ///< helper buffer
