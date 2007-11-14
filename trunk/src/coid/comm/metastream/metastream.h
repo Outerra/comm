@@ -1935,7 +1935,7 @@ protected:
         DASSERT( _cache.size() > 0 );
 
         //get child map
-        MetaDesc* par = parent_var()->desc;
+        //MetaDesc* par = parent_var()->desc;
 
         //_current->offs = par->get_child_pos(_cur_var) * sizeof(uints);
         _current->offs = 0;

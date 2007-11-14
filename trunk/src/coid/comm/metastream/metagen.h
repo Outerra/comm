@@ -314,7 +314,7 @@ class metagen //: public binstream
                 val = defined;
             else if( n == "nonzero"  ||  n == "true" )
                 val = defined && v.is_nonzero();
-            else if( n == "false" )
+            else if( n == "empty"  ||  n == "false" )
                 val = !(defined && v.is_nonzero());
             else if( n == "always" )
                 val = true;
@@ -474,8 +474,10 @@ class metagen //: public binstream
             bool succ = lex.next_string_or_block( lex.STEXT );
             stext = lex.last().tok;
 
-            if( hdr.flags & ParsedTag::fEAT_RIGHT )
+            if( hdr.flags & ParsedTag::fEAT_RIGHT ) {
+                stext.skip_ingroup(" \t");
                 stext.skip_newline();
+            }
 
             return succ;
         }
@@ -575,8 +577,11 @@ class metagen //: public binstream
             do {
                 tout.parse(lex);
 
-                if( (tout.flags & ParsedTag::fEAT_LEFT) )
-                    (*sequence.last())->stext.trim_newline();
+                if( (tout.flags & ParsedTag::fEAT_LEFT) ) {
+                    token& stext = (*sequence.last())->stext;
+                    stext.cut_right_back(" \t",1);
+                    stext.trim_newline();
+                }
 
                 if( tout.flags & ParsedTag::fTRAILING ) {
                     if( !tout.same_group(par) )
