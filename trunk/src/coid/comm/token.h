@@ -625,7 +625,7 @@ struct token
         {
             uints n;
             if(skipsep>0)       n = off-1;
-            else if(skipsep<0)  n = count_ingroup_back(separators,off);
+            else if(skipsep<0)  n = token(ptr(),off).count_ingroup_back(separators);
             else                n = off;
             r._ptr = _ptr;
             r._len = n;
@@ -1018,7 +1018,7 @@ struct token
             --_len;
             c = last_char();
         }
-        if( c == '\n' )
+        if( c == '\r' )
             --_len;
 
         return *this;
