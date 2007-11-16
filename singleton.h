@@ -44,30 +44,33 @@
 
 #include "sync/mutex.h"
 
-COID_NAMESPACE_BEGIN
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SINGLETON(T) \
-    singleton< T >::instance()
+    coid::singleton< T >::instance()
 
 #define SINGLETON_ALIVE(T) \
-    singleton< T >::instance_alive()
+    coid::singleton< T >::instance_alive()
 
 #define FORCE_CREATE_SINGLETON(T) \
     static T& __singleton##T = SINGLETON(T)
 
 
 #define MXSINGLETON(T) \
-    mxsingleton< T >::instance()
+    coid::mxsingleton< T >::instance()
 
 #define MXSINGLETON_ALIVE(T) \
-    mxsingleton< T >::instance_alive()
+    coid::mxsingleton< T >::instance_alive()
 
-#define MXSINGLETON_T(T)        mxsingleton< T >::Instance
+#define MXSINGLETON_T(T) \
+    coid::mxsingleton< T >::Instance
 
 #define FORCE_CREATE_MXSINGLETON(T) \
-    static mxsingleton< T >::Instance& __mxsingleton##T = MXSINGLETON(T)
+    static coid::mxsingleton< T >::Instance& __mxsingleton##T = MXSINGLETON(T)
 
+
+
+COID_NAMESPACE_BEGIN
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Global singleton registrator
