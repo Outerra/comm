@@ -56,18 +56,19 @@ class enc_base64stream : public binstream
 
     binstream* _bin;            ///< bound io binstream
 
-    uchar _wbuf[WBUFFER_SIZE+4];///< output buffer, last 4 bytes are for newline characters
-    uchar* _wptr;               ///< current position in output buffer
+    uchar _wbuf[WBUFFER_SIZE+4];///< output buffer, last 4 bytes are for quotes and newline characters
+    uchar* _wptr;               ///< current position in the output buffer
     union {
         uchar _wtar[4];         ///< temp.output buffer
         uint _wval;
     };
     uint _nreq;                 ///< requested bytes for _wval
+    bool _use_quotes;
 
 
     uint _rrem;                 ///< remaining bytes in input
-    uchar _rbuf[RBUFFER_SIZE];  ///< output buffer, last 4 bytes are for newline characters
-    uchar* _rptr;               ///< current position in output buffer
+    uchar _rbuf[RBUFFER_SIZE];  ///< input buffer
+    uchar* _rptr;               ///< current position in the input buffer
     union {
         uchar _rtar[4];         ///< temp.input buffer
         uint _rval;
@@ -154,33 +155,40 @@ public:
     virtual void reset_write()
     {
         _nreq = 3;
-        _wptr = _wbuf;
+        _wptr = _wbuf+1;
 
         if(_bin) _bin->reset_write();
     }
 
-    enc_base64stream()
+    enc_base64stream( bool use_quotes=false )
     {
-        _nreq = 3;
-        _wptr = _wbuf;
-
-        _ndec = 0;
-        _rptr = _rbuf + RBUFFER_SIZE;
-        _rrem = UMAX;
+        init(use_quotes);
     }
 
-    enc_base64stream( binstream& bin )
+    enc_base64stream( binstream& bin, bool use_quotes=false )
     {
-        _nreq = 3;
-        _wptr = _wbuf;
-
-        _ndec = 0;
-        _rptr = _rbuf + RBUFFER_SIZE;
-        _rrem = UMAX;
+        init(use_quotes);
 
         bind(bin);
     }
 
+    void init( bool use_quotes )
+    {
+        _use_quotes = use_quotes;
+        _nreq = 3;
+        _wptr = _wbuf+1;
+
+        _wbuf[0] = '"';
+        uint n = WBUFFER_SIZE+1;
+        if(use_quotes)
+            _wbuf[n++] = '"';
+        _wbuf[n++] = '\r';
+        _wbuf[n++] = '\n';
+
+        _ndec = 0;
+        _rptr = _rbuf + RBUFFER_SIZE;
+        _rrem = UMAX;
+    }
 
     virtual opcd bind( binstream& bin, int io=0 )
     {
@@ -257,9 +265,13 @@ private:
         *_wptr++ = enctable( (_wval>>6)&0x3f );
         *_wptr++ = enctable( _wval&0x3f );
 
-        if( _wptr >= _wbuf + WBUFFER_SIZE ) {
-            _wptr = _wbuf;
-            _bin->xwrite_raw( _wbuf, WBUFFER_SIZE );
+        if( _wptr >= _wbuf + 1 + WBUFFER_SIZE ) {
+            _wptr = _wbuf+1;
+            
+            if(_use_quotes)
+                _bin->xwrite_raw( _wbuf, WBUFFER_SIZE+4 );
+            else
+                _bin->xwrite_raw( _wbuf+1, WBUFFER_SIZE+2 );
         }
     }
 
@@ -283,8 +295,14 @@ private:
         }
 
         if( _wptr > _wbuf ) {
-            _bin->xwrite_raw( _wbuf, _wptr-_wbuf );
-            _wptr = _wbuf;
+            if(_use_quotes) {
+                *_wptr++ = '"';
+                _bin->xwrite_raw( _wbuf, _wptr-_wbuf );
+            }
+            else
+                _bin->xwrite_raw( _wbuf+1, _wptr-_wbuf-1 );
+            
+            _wptr = _wbuf+1;
         }
         _nreq = 3;
     }

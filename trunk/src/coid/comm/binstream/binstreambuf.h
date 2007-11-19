@@ -92,7 +92,7 @@ public:
 
     bool is_empty() const       { return _buf.size() - _bgi == 0; }
 
-	dynarray<char> & get_buf() { return _buf; }
+	dynarray<char>& get_buf()   { return _buf; }
 
     void swap( charstr& str )
     {

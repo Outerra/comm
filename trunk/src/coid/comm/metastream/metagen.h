@@ -589,7 +589,7 @@ class metagen //: public binstream
 
                 if( (tout.flags & ParsedTag::fEAT_LEFT) ) {
                     token& stext = (*sequence.last())->stext;
-                    stext.cut_right_back(" \t",-1);
+                    stext.truncate( stext.count_ingroup_back(" \t") );
                     stext.trim_newline();
                 }
 
