@@ -125,7 +125,7 @@ public:
         _rrem = 0;
     }
 
-    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX ) {
+    virtual opcd read_until( const substring& /*ss*/, binstream* /*bout*/, uints max_size=UMAX ) {
         return ersNOT_IMPLEMENTED; //_bin->read_until( ss, bout, max_size );
     }
 
@@ -134,7 +134,7 @@ public:
         return _rrem  ?  opcd(0) : ersNO_MORE;
     }
 
-    virtual opcd peek_write( uint timeout ) {
+    virtual opcd peek_write( uint /*timeout*/ ) {
         return 0;
     }
 
@@ -192,6 +192,7 @@ public:
 
     virtual opcd bind( binstream& bin, int io=0 )
     {
+		io;
         _bin = &bin;
         return 0;
     }

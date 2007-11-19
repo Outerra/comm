@@ -545,6 +545,17 @@ public:
         return n;
     }
 
+	virtual uints transfer_from(binstream & dest)
+	{
+		return dest.write_to(dest);
+	}
+
+	virtual uints transfer_to(binstream & dest)
+	{
+		return write_to(dest);
+	}
+
+
 
     //@{ Array manipulating methods.
     /**

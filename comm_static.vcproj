@@ -907,6 +907,10 @@
 			>
 		</File>
 		<File
+			RelativePath=".\static_assert.h"
+			>
+		</File>
+		<File
 			RelativePath="str.h"
 			>
 		</File>

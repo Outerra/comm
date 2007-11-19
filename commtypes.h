@@ -40,6 +40,7 @@
 
 #include "namespace.h"
 #include "trait.h"
+#include "static_assert.h"
 
 #if defined(__CYGWIN__)
 
@@ -311,12 +312,17 @@ void *_xmemcpy( void *dest, const void *src, size_t count );
 bool cdcd_memcheck( const uchar* a, const uchar* ae, const uchar* b, const uchar* be );
 
 
-
 COID_NAMESPACE_END
 
-#define UMAX                ((coid::uints)0xffffffffffffffffULL)
-#define UMAX64              0xffffffffffffffffULL
-#define WMAX                0xffff
+#ifdef SYSTYPE_64 
+	#define UMAX        static_cast<coid::uints>(0xffffffffffffffffULL)
+#else
+	#define UMAX        static_cast<coid::uints>(0xffffffffUL)
+#endif
+
+#define UMAX64      static_cast<coid::uint64>(0xffffffffffffffffULL)
+#define WMAX        0xffff
+
 
 #include "net_ul.h"
 
