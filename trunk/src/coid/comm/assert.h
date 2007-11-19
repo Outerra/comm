@@ -150,7 +150,16 @@ struct opcd;
 
 opcd __rassert( const char* txt, opcd exc, const char* file, int line, const char* expr );
 
+template <bool x> struct static_assertion_failure;
+
+template <> struct static_assertion_failure<true> { enum { value = 1 }; };
+
+template<int x> struct static_assert_test{};
 
 COID_NAMESPACE_END
+
+#define STATIC_ASSERT_(B) \
+	typedef coid::static_assert_test<coid::static_assertion_failure<(bool)(B)> >\
+	coid_static_assert_typedef_##__COUNTER__;
 
 #endif  //!__COID_COMM_ASSERT__HEADER_FILE__

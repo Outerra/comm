@@ -40,7 +40,6 @@
 
 #include "namespace.h"
 #include "trait.h"
-#include "static_assert.h"
 
 #if defined(__CYGWIN__)
 
