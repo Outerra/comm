@@ -126,6 +126,7 @@ public:
     }
 
     virtual opcd read_until( const substring& /*ss*/, binstream* /*bout*/, uints max_size=UMAX ) {
+        max_size;
         return ersNOT_IMPLEMENTED; //_bin->read_until( ss, bout, max_size );
     }
 
@@ -261,10 +262,10 @@ private:
 
     void encode3()
     {
-        *_wptr++ = enctable( (_wval>>18)&0x3f );
-        *_wptr++ = enctable( (_wval>>12)&0x3f );
-        *_wptr++ = enctable( (_wval>>6)&0x3f );
-        *_wptr++ = enctable( _wval&0x3f );
+        *_wptr++ = enctable( uchar((_wval>>18)&0x3f) );
+        *_wptr++ = enctable( uchar((_wval>>12)&0x3f) );
+        *_wptr++ = enctable( uchar((_wval>>6)&0x3f) );
+        *_wptr++ = enctable( uchar(_wval&0x3f) );
 
         if( _wptr >= _wbuf + 1 + WBUFFER_SIZE ) {
             _wptr = _wbuf+1;
@@ -281,17 +282,17 @@ private:
         if( _nreq == 2 )    //2 bytes missing
         {
             _wtar[1] = 0;
-            *_wptr++ = enctable( (_wval>>18)&0x3f );
-            *_wptr++ = enctable( (_wval>>12)&0x3f );
+            *_wptr++ = enctable( uchar((_wval>>18)&0x3f) );
+            *_wptr++ = enctable( uchar((_wval>>12)&0x3f) );
             *_wptr++ = '=';
             *_wptr++ = '=';
         }
         else if( _nreq == 1 )
         {
             _wtar[0] = 0;
-            *_wptr++ = enctable( (_wval>>18)&0x3f );
-            *_wptr++ = enctable( (_wval>>12)&0x3f );
-            *_wptr++ = enctable( (_wval>>6)&0x3f );
+            *_wptr++ = enctable( uchar((_wval>>18)&0x3f) );
+            *_wptr++ = enctable( uchar((_wval>>12)&0x3f) );
+            *_wptr++ = enctable( uchar((_wval>>6)&0x3f) );
             *_wptr++ = '=';
         }
 
