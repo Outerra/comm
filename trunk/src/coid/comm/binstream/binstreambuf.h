@@ -193,7 +193,7 @@ public:
 
     ///Write raw data to another binstream. Overloadable to avoid excesive copying when not neccessary.
     ///@return number of bytes written
-    virtual uints write_to( binstream& bin )
+    virtual uints transfer_to( binstream& bin )
     {
         uints n=0, tlen=_buf.size();
 
@@ -213,6 +213,11 @@ public:
 
         return n;
     }
+
+	virtual uints transfer_from( binstream& bin )
+	{
+		return 0;
+	}
 
 
     virtual bool is_open() const        { return true; }//_buf.size() > 0; }
