@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="windows-1250"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="comm_static"
 	ProjectGUID="{D2F47060-00C0-4A3C-9888-CF663F14D44D}"
 	RootNamespace="comm_static"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -48,9 +49,6 @@
 				RuntimeLibrary="1"
 				BufferSecurityCheck="false"
 				PrecompiledHeaderFile="$(IntDir)\comm_static.pch"
-				AssemblerListingLocation="$(IntDir)\"
-				ObjectFile="$(IntDir)\"
-				ProgramDataBaseFileName="$(IntDir)\"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
@@ -80,7 +78,6 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile="$(IntDir)\comm_static.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -123,9 +120,6 @@
 				BufferSecurityCheck="false"
 				EnableFunctionLevelLinking="true"
 				PrecompiledHeaderFile="$(IntDir)\comm_static.pch"
-				AssemblerListingLocation="$(IntDir)\"
-				ObjectFile="$(IntDir)\"
-				ProgramDataBaseFileName="$(IntDir)\"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="0"
@@ -155,7 +149,6 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile="$(IntDir)\comm_static.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
