@@ -184,6 +184,10 @@
 				RelativePath=".\atomic\queue.h"
 				>
 			</File>
+			<File
+				RelativePath=".\atomic\stack.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="binstream"
