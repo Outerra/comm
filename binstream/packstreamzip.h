@@ -89,7 +89,13 @@ public:
     {
         init_streams();
     }
+
     packstreamzip( binstream* bin, binstream* bout ) : packstream(bin,bout)
+    {
+        init_streams();
+    }
+
+    packstreamzip( binstream& bin ) : packstream(bin)
     {
         init_streams();
     }
