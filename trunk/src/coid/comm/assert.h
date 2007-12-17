@@ -64,18 +64,18 @@
 #define XASSERT                     assert(__assert_e);
 #endif
 
-#define XASSERTE(expr)              do{ if(expr) break;  opcd __assert_e =
+#define XASSERTE(expr)              do{ if(expr) break;  coid::opcd __assert_e =
 
 //@{ Runtime assertions
-#define RASSERT(expr)               XASSERTE(expr) __rassert(0,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT } while(0)
-#define RASSERTX(expr,txt)          XASSERTE(expr) __rassert(txt,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT } while(0)
+#define RASSERT(expr)               XASSERTE(expr) coid::__rassert(0,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT } while(0)
+#define RASSERTX(expr,txt)          XASSERTE(expr) coid::__rassert(txt,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT } while(0)
 
-#define RASSERTE(expr,exc)          XASSERTE(expr) __rassert(0,exc,__FILE__,__LINE__,#expr); XASSERT } while(0)
-#define RASSERTEX(expr,exc,txt)     XASSERTE(expr) __rassert(txt,exc,__FILE__,__LINE__,#expr); XASSERT } while(0)
+#define RASSERTE(expr,exc)          XASSERTE(expr) coid::__rassert(0,exc,__FILE__,__LINE__,#expr); XASSERT } while(0)
+#define RASSERTEX(expr,exc,txt)     XASSERTE(expr) coid::__rassert(txt,exc,__FILE__,__LINE__,#expr); XASSERT } while(0)
 #define RASSERTXE(expr,exc,txt)     RASSERTEX(expr,exc,txt)
 
-#define RASSERTL(expr)              XASSERTE(expr) __rassert(0,0,__FILE__,__LINE__,#expr); XASSERT } while(0)
-#define RASSERTLX(expr,txt)         XASSERTE(expr) __rassert(txt,0,__FILE__,__LINE__,#expr); XASSERT } while(0)
+#define RASSERTL(expr)              XASSERTE(expr) coid::__rassert(0,0,__FILE__,__LINE__,#expr); XASSERT } while(0)
+#define RASSERTLX(expr,txt)         XASSERTE(expr) coid::__rassert(txt,0,__FILE__,__LINE__,#expr); XASSERT } while(0)
 #define RASSERTXL(expr,txt)         RASSERTLX(expr,txt)
 //@}
 
@@ -83,30 +83,30 @@
 #ifdef _DEBUG
 
 //@{ Debug-only assertions, release build doesn't see anything from it
-#define DASSERT(expr)               XASSERTE(expr) __rassert(0,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT } while(0)
-#define DASSERTX(expr,txt)          XASSERTE(expr) __rassert(txt,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT } while(0)
+#define DASSERT(expr)               XASSERTE(expr) coid::__rassert(0,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT } while(0)
+#define DASSERTX(expr,txt)          XASSERTE(expr) coid::__rassert(txt,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT } while(0)
 
-#define DASSERTE(expr,exc)          XASSERTE(expr) __rassert(0,exc,__FILE__,__LINE__,#expr); XASSERT } while(0)
-#define DASSERTEX(expr,exc,txt)     XASSERTE(expr) __rassert(txt,exc,__FILE__,__LINE__,#expr); XASSERT } while(0)
+#define DASSERTE(expr,exc)          XASSERTE(expr) coid::__rassert(0,exc,__FILE__,__LINE__,#expr); XASSERT } while(0)
+#define DASSERTEX(expr,exc,txt)     XASSERTE(expr) coid::__rassert(txt,exc,__FILE__,__LINE__,#expr); XASSERT } while(0)
 
-#define DASSERTL(expr)              XASSERTE(expr) __rassert(0,0,__FILE__,__LINE__,#expr); } while(0)
-#define DASSERTLX(expr,txt)         XASSERTE(expr) __rassert(txt,0,__FILE__,__LINE__,#expr); } while(0)
+#define DASSERTL(expr)              XASSERTE(expr) coid::__rassert(0,0,__FILE__,__LINE__,#expr); } while(0)
+#define DASSERTLX(expr,txt)         XASSERTE(expr) coid::__rassert(txt,0,__FILE__,__LINE__,#expr); } while(0)
 //@}
 
 //@{ Debug assertion, but in release build the expression \a expr is still evaluated
-#define EASSERT(expr)               XASSERTE(expr) __rassert(0,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT } while(0)
-#define EASSERTX(expr,txt)          XASSERTE(expr) __rassert(txt,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT } while(0)
+#define EASSERT(expr)               XASSERTE(expr) coid::__rassert(0,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT } while(0)
+#define EASSERTX(expr,txt)          XASSERTE(expr) coid::__rassert(txt,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT } while(0)
 
-#define EASSERTE(expr,exc)          XASSERTE(expr) __rassert(0,exc,__FILE__,__LINE__,#expr); XASSERT } while(0)
-#define EASSERTEX(expr,exc,txt)     XASSERTE(expr) __rassert(txt,exc,__FILE__,__LINE__,#expr); XASSERT } while(0)
+#define EASSERTE(expr,exc)          XASSERTE(expr) coid::__rassert(0,exc,__FILE__,__LINE__,#expr); XASSERT } while(0)
+#define EASSERTEX(expr,exc,txt)     XASSERTE(expr) coid::__rassert(txt,exc,__FILE__,__LINE__,#expr); XASSERT } while(0)
 
-#define EASSERTL(expr)              XASSERTE(expr) __rassert(0,0,__FILE__,__LINE__,#expr); } while(0)
-#define EASSERTLX(expr,txt)         XASSERTE(expr) __rassert(txt,0,__FILE__,__LINE__,#expr); } while(0)
+#define EASSERTL(expr)              XASSERTE(expr) coid::__rassert(0,0,__FILE__,__LINE__,#expr); } while(0)
+#define EASSERTLX(expr,txt)         XASSERTE(expr) coid::__rassert(txt,0,__FILE__,__LINE__,#expr); } while(0)
 //@}
 
 //@{ Assert in debug, log in release, return \a ret on failed assertion
-#define ASSERT_RET(expr,ret)        XASSERTE(expr) __rassert(0,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT return ret; } while(0)
-#define ASSERT_RETVOID(expr)        XASSERTE(expr) __rassert(0,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT return; } while(0)
+#define ASSERT_RET(expr,ret)        XASSERTE(expr) coid::__rassert(0,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT return ret; } while(0)
+#define ASSERT_RETVOID(expr)        XASSERTE(expr) coid::__rassert(0,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT return; } while(0)
 
 #define DASSERT_RET(expr,ret)       ASSERT_RET(expr,ret)
 #define DASSERT_RETVOID(expr)       ASSERT_RETVOID(expr)
@@ -134,8 +134,8 @@
 #define EASSERTNX(expr,txt)         expr
 
 
-#define ASSERT_RET(expr,ret)        XASSERTE(expr) __rassert(0,0,__FILE__,__LINE__,#expr); return ret; } while(0)
-#define ASSERT_RETVOID(expr)        XASSERTE(expr) __rassert(0,0,__FILE__,__LINE__,#expr); return; } while(0)
+#define ASSERT_RET(expr,ret)        XASSERTE(expr) coid::__rassert(0,0,__FILE__,__LINE__,#expr); return ret; } while(0)
+#define ASSERT_RETVOID(expr)        XASSERTE(expr) coid::__rassert(0,0,__FILE__,__LINE__,#expr); return; } while(0)
 
 #define DASSERT_RET(expr,ret)
 #define DASSERT_RETVOID(expr)
@@ -150,9 +150,11 @@ struct opcd;
 
 opcd __rassert( const char* txt, opcd exc, const char* file, int line, const char* expr );
 
+
 template <bool x> struct static_assertion_failure;
 
-template <> struct static_assertion_failure<true> { enum { value = 1 }; };
+template <> struct static_assertion_failure<true>
+{ enum { value = 1 }; };
 
 template<int x> struct static_assert_test{};
 
