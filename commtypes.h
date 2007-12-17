@@ -115,7 +115,7 @@
 #endif
 
 
-COID_NAMESPACE_BEGIN
+namespace coid {
 
 #ifdef SYSTYPE_MSVC
 typedef short               __int16_t;
@@ -143,7 +143,8 @@ typedef float               flt32;
 typedef double              flt64;
 
 
-#ifndef __USE_MISC      /// defined on linux systems in sys/types.h
+#ifndef __USE_MISC      // defined on linux systems in sys/types.h
+#define COID_UINT_DEFINED
     typedef unsigned int		uint;
     typedef unsigned long       ulong;
     typedef unsigned short      ushort;
@@ -165,6 +166,32 @@ typedef uint                uints_to;
 typedef int                 ints_to;
 #endif
 
+} //namespace coid
+
+#ifndef COID_COMMTYPES_IN_NAMESPACE
+using coid::int8;
+using coid::int16;
+using coid::int32;
+using coid::int64;
+using coid::uint8;
+using coid::uint16;
+using coid::uint32;
+using coid::uint64;
+using coid::uchar;
+using coid::schar;
+using coid::uints;
+using coid::ints;
+# ifdef COID_UINT_DEFINED
+using coid::uint;
+using coid::ulong;
+using coid::ushort;
+# endif
+#endif
+
+
+COID_NAMESPACE_BEGIN
+
+////////////////////////////////////////////////////////////////////////////////
 TYPE_TRIVIAL(bool);
 
 TYPE_TRIVIAL(uint8);
@@ -297,7 +324,6 @@ T* ptr_byteshift( T* p, ints b )
 
 
 ////////////////////////////////////////////////////////////////////////////////
-
 void *_xmemcpy( void *dest, const void *src, size_t count );
 #ifdef _DEBUG
 #define xmemcpy     _xmemcpy

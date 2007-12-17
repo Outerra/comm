@@ -70,13 +70,13 @@ COID_NAMESPACE_BEGIN
     catch( thread::Exception& )  {  throw;  } \
     catch( ... )  { }
 
-#define ERETURN(exp)    { opcd e = exp;  if(e)  return e; }
+#define ERETURN(exp)    { coid::opcd e = exp;  if(e)  return e; }
 
 
 
 ////////////////////////////////////////////////////////////////////////////////
-#define MKERR1(id, code)                   (opcd)(const opcd::errcode*) id "\x000" code
-#define MKERR2(id1, id2, code)             (opcd)(const opcd::errcode*) id1 id2 code
+#define MKERR1(id, code)                   (coid::opcd)(const coid::opcd::errcode*) id "\x000" code
+#define MKERR2(id1, id2, code)             (coid::opcd)(const coid::opcd::errcode*) id1 id2 code
 
 
 #define ersxFRAMEWORK_ERROR(id, code)       MKERR1(id, "FE" code)
@@ -85,7 +85,7 @@ COID_NAMESPACE_BEGIN
 
 
 #define NOERR                               0
-#define ersNOERR                            opcd(0)
+#define ersNOERR                            coid::opcd(0)
 
 
 #define ersUNKNOWN                          MKERR1("\x001", "?????")
