@@ -222,7 +222,25 @@ public:
 
 	virtual uints transfer_from( binstream& bin )
 	{
-		return 0;
+        uints old = _buf.size();
+        uints n=0;
+
+        for( ; ; )
+        {
+            uints len = 4096;
+            void* ptr = _buf.add(len);
+            
+            opcd e = bin.read_raw_full( ptr, len );
+
+            n += 4096 - len;
+
+            if( e || len>0 )
+                break;
+        }
+
+        _buf.resize(old+n);
+
+        return n;
 	}
 
 
