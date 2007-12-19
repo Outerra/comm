@@ -839,7 +839,7 @@ public:
 
     bool parse( binstream& bin )
     {
-        bin.write_to(patbuf);
+        patbuf.transfer_from(bin);
         const token& tok = patbuf;
 
         lex.bind(tok);
