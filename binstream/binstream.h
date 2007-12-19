@@ -520,9 +520,9 @@ public:
         return len;
     }
 
-    ///Write raw data to another binstream. Overloadable to avoid excesive copying when not neccessary.
+    ///Write raw data to another binstream.
     ///@return number of bytes written
-    virtual uints write_to( binstream& bin )
+    uints copy_to( binstream& bin )
     {
         opcd e;
         uints n=0;
@@ -547,12 +547,12 @@ public:
 
 	virtual uints transfer_from(binstream & dest)
 	{
-		return dest.write_to(dest);
+		return dest.copy_to(dest);
 	}
 
 	virtual uints transfer_to(binstream & dest)
 	{
-		return write_to(dest);
+		return copy_to(dest);
 	}
 
 

@@ -106,6 +106,12 @@ public:
         _bgi = 0;
     }
 
+    void swap( binstreambuf& buf )
+    {
+        _buf.swap( buf._buf );
+        std::swap(_bgi, buf._bgi);
+    }
+
     ///Reserve raw space in the buffer
     void* add_raw( uints len )
     {
