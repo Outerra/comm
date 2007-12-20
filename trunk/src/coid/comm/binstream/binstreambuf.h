@@ -124,6 +124,12 @@ public:
         return _buf.addc( len, toones );
     }
 
+    ///Reserve memory in the buffer
+    void reserve( uints size )
+    {
+        _buf.reserve(size,true);
+    }
+
     ///Get pointer to raw data in the buffer
     void* get_raw_available( uints pos, uints& len )
     {
