@@ -367,7 +367,7 @@ public:
         _cache.flush();
 
         //and write the content
-        bif.write_to( *_cache.bound() );
+        bif.transfer_to( *_cache.bound() );
 
         _flags &= ~fWSTATUS;
 
