@@ -126,7 +126,27 @@ struct token
 
     const char* ptr() const                 { return _ptr; }
     const char* ptre() const                { return _ptr+_len; }
+
+    ///Return length of token
     uints len() const                       { return _len; }
+
+    ///Return number of unicode characters within utf8 encoded token
+    uints len_utf8() const
+    {
+        uints n=0;
+        const char* p = _ptr;
+        const char* pe = _ptr+_len;
+
+        while(p<pe) {
+            p += get_utf8_seq_expected_bytes(p);
+            if(p>pe)
+                return n;   //errorneous utf8 token
+            
+            ++n;
+        }
+            
+        return n;
+    }
 
     void truncate( ints n )
     {
