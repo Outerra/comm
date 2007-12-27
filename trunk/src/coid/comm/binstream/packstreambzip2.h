@@ -131,7 +131,7 @@ public:
         while(1)
         {
             int stt = BZ2_bzCompress( &_strout, BZ_RUN );
-            if( stt != Z_OK )
+            if( stt != BZ_RUN_OK )
                 return ersIO_ERROR;
 
             // flush
@@ -180,13 +180,13 @@ public:
             int stt = BZ2_bzDecompress( &_strin );
             len = _strin.avail_out;
 
-            if( stt == Z_STREAM_END )
+            if( stt == BZ_STREAM_END )
             {
                 if( _strin.avail_out != 0 )
                     return ersNO_MORE "required more data than available";
                 break;
             }
-            else if( stt == Z_OK )
+            else if( stt == BZ_OK )
             {
                 if( _strin.avail_out == 0 )
                     break;
@@ -219,7 +219,7 @@ protected:
         while(1)
         {
             int stt = BZ2_bzCompress( &_strout, BZ_FINISH );
-            RASSERTX( stt == BZ_OK || stt == BZ_STREAM_END, "unexpected error" );
+            RASSERTX( stt == BZ_FINISH_OK || stt == BZ_STREAM_END, "unexpected error" );
 
             _out->xwrite_raw( _wblockout.ptr(), BUFFER_SIZE-_strout.avail_out );
             if( stt == BZ_STREAM_END )
