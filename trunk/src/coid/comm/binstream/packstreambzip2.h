@@ -193,9 +193,9 @@ public:
 
             if( stt == BZ_STREAM_END )
             {
+                _rstate = -1;
                 if( _strin.avail_out != 0 )
                     return ersNO_MORE "required more data than available";
-                _rstate = -1;
                 break;
             }
             else if( stt == BZ_OK )
