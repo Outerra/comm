@@ -53,8 +53,8 @@ public:
     virtual ~packstreambzip2()
     {
         close();
-        BZ2_bzDecompressEnd( &_strin );
-        BZ2_bzCompressEnd( &_strout );
+        if(_rstate)  BZ2_bzDecompressEnd(&_strin);
+        if(_wstate)  BZ2_bzCompressEnd(&_strout);
     }
 
     virtual uint binstream_attributes( bool in0out1 ) const
@@ -106,8 +106,9 @@ protected:
     {
         _strin.bzalloc = 0; _strin.bzfree = 0;
         _strout.bzalloc = 0; _strout.bzfree = 0;
-        BZ2_bzDecompressInit( &_strin, 0, 0 );
-        BZ2_bzCompressInit( &_strout, 5, 0, 0 );
+
+        _rstate = 0;
+        _wstate = 0;
     }
 
     enum {
@@ -118,6 +119,11 @@ public:
     ///
     virtual opcd write_raw( const void* p, uints& len )
     {
+        if(!_wstate) {
+            BZ2_bzCompressInit( &_strout, 5, 0, 0 );
+            _wstate = 1;
+        }
+
         if( _wblockout.size() == 0 )
         {
             _wblockout.need_new(BUFFER_SIZE);
@@ -155,6 +161,11 @@ public:
     ///
     virtual opcd read_raw( void* p, uints& len )
     {
+        if(!_rstate) {
+            BZ2_bzDecompressInit( &_strin, 0, 0 );
+            _rstate = 1;
+        }
+
         if( _rblockin.size() == 0 )
         {
             _rblockin.need_new(BUFFER_SIZE);
@@ -184,6 +195,7 @@ public:
             {
                 if( _strin.avail_out != 0 )
                     return ersNO_MORE "required more data than available";
+                _rstate = -1;
                 break;
             }
             else if( stt == BZ_OK )
@@ -202,15 +214,23 @@ public:
     virtual void reset_read()
     {
         _rblockin.reset();
-        BZ2_bzDecompressEnd( &_strin );
-        BZ2_bzDecompressInit( &_strin, 0, 0 );
+        if(_rstate>0) {
+            BZ2_bzDecompressEnd( &_strin );
+            BZ2_bzDecompressInit( &_strin, 0, 0 );
+        }
+        else if(_rstate<0)
+            _rstate = 1;
     }
 
     virtual void reset_write()
     {
         _wblockout.reset();
-        BZ2_bzCompressEnd( &_strout );
-        BZ2_bzCompressInit( &_strout, 5, 0, 0 );
+        if(_wstate>0) {
+            BZ2_bzCompressEnd( &_strout );
+            BZ2_bzCompressInit( &_strout, 5, 0, 0 );
+        }
+        else if(_wstate<0)
+            _wstate = 1;
     }
 
 protected:
@@ -227,13 +247,15 @@ protected:
             _strout.avail_out = BUFFER_SIZE;
             _strout.next_out = _wblockout.ptr();
         }
-        
+
+        _wstate = -1;
         reset_write();
     }
 
     void packed_ack( bool eat )
     {
-        if( _strin.avail_in > 0  ||  BZ_STREAM_END != BZ2_bzDecompress( &_strin ) )
+        if( _rstate>0
+            &&  (_strin.avail_in > 0  ||  BZ_STREAM_END != BZ2_bzDecompress(&_strin)) )
         {
             if(!eat)
                 throw ersIO_ERROR "data left in input buffer";
@@ -245,6 +267,7 @@ protected:
     dynarray<char> _wblockout;              ///< write buffer
     dynarray<char> _rblockin;               ///< read buffer
     bz_stream _strin, _strout;
+    int _rstate, _wstate;
 };
 
 COID_NAMESPACE_END
