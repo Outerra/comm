@@ -293,6 +293,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\binstream\packstreambzip2.h"
+				>
+			</File>
+			<File
 				RelativePath="binstream\packstreamlzo.h"
 				>
 			</File>

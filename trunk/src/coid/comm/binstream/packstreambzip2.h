@@ -35,26 +35,26 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef __COID_COMM_PACKSTREAMZIP__HEADER_FILE__
-#define __COID_COMM_PACKSTREAMZIP__HEADER_FILE__
+#ifndef __COID_COMM_PACKSTREAMBZIP2__HEADER_FILE__
+#define __COID_COMM_PACKSTREAMBZIP2__HEADER_FILE__
 
 #include "../namespace.h"
 
 #include "packstream.h"
-#include "zlib.h"
+#include "bzlib.h"
 
 COID_NAMESPACE_BEGIN
 
 ////////////////////////////////////////////////////////////////////////////////
 ///
-class packstreamzip : public packstream
+class packstreambzip2 : public packstream
 {
 public:
-    virtual ~packstreamzip()
+    virtual ~packstreambzip2()
     {
         close();
-        inflateEnd( &_strin );
-        deflateEnd( &_strout );
+        BZ2_bzDecompressEnd( &_strin );
+        BZ2_bzCompressEnd( &_strout );
     }
 
     virtual uint binstream_attributes( bool in0out1 ) const
@@ -85,17 +85,17 @@ public:
     }
 
 
-    packstreamzip()
+    packstreambzip2()
     {
         init_streams();
     }
 
-    packstreamzip( binstream* bin, binstream* bout ) : packstream(bin,bout)
+    packstreambzip2( binstream* bin, binstream* bout ) : packstream(bin,bout)
     {
         init_streams();
     }
 
-    packstreamzip( binstream& bin ) : packstream(bin)
+    packstreambzip2( binstream& bin ) : packstream(bin)
     {
         init_streams();
     }
@@ -104,10 +104,10 @@ protected:
 
     void init_streams()
     {
-        _strin.zalloc = 0; _strin.zfree = 0;
-        _strout.zalloc = 0; _strout.zfree = 0;
-        inflateInit( &_strin );
-        deflateInit( &_strout, Z_DEFAULT_COMPRESSION );
+        _strin.bzalloc = 0; _strin.bzfree = 0;
+        _strout.bzalloc = 0; _strout.bzfree = 0;
+        BZ2_bzDecompressInit( &_strin, 0, 0 );
+        BZ2_bzCompressInit( &_strout, 5, 0, 0 );
     }
 
     enum {
@@ -125,12 +125,12 @@ public:
             _strout.next_out = _wblockout.ptr();
         }
 
-        _strout.next_in = (unsigned char*)p;
+        _strout.next_in = (char*)p;
         _strout.avail_in = len;
 
         while(1)
         {
-            int stt = deflate( &_strout, Z_NO_FLUSH );
+            int stt = BZ2_bzCompress( &_strout, BZ_RUN );
             if( stt != Z_OK )
                 return ersIO_ERROR;
 
@@ -162,7 +162,7 @@ public:
             //_strin.next_out = _rblockin.ptr();
         }
 
-        _strin.next_out = (unsigned char*)p;
+        _strin.next_out = (char*)p;
         _strin.avail_out = len;
 
         while(1)
@@ -177,7 +177,7 @@ public:
                 _strin.next_in = _rblockin.ptr();
             }
 
-            int stt = inflate( &_strin, Z_NO_FLUSH );
+            int stt = BZ2_bzDecompress( &_strin );
             len = _strin.avail_out;
 
             if( stt == Z_STREAM_END )
@@ -202,13 +202,15 @@ public:
     virtual void reset_read()
     {
         _rblockin.reset();
-        inflateReset( &_strin );
+        BZ2_bzDecompressEnd( &_strin );
+        BZ2_bzDecompressInit( &_strin, 0, 0 );
     }
 
     virtual void reset_write()
     {
         _wblockout.reset();
-        deflateReset( &_strout );
+        BZ2_bzCompressEnd( &_strout );
+        BZ2_bzCompressInit( &_strout, 5, 0, 0 );
     }
 
 protected:
@@ -216,37 +218,35 @@ protected:
     {
         while(1)
         {
-            int stt = deflate( &_strout, Z_FINISH );
-            RASSERTX( stt == Z_OK || stt == Z_STREAM_END, "unexpected error" );
+            int stt = BZ2_bzCompress( &_strout, BZ_FINISH );
+            RASSERTX( stt == BZ_OK || stt == BZ_STREAM_END, "unexpected error" );
 
             _out->xwrite_raw( _wblockout.ptr(), BUFFER_SIZE-_strout.avail_out );
-            if( stt == Z_STREAM_END )
+            if( stt == BZ_STREAM_END )
                 break;
             _strout.avail_out = BUFFER_SIZE;
             _strout.next_out = _wblockout.ptr();
         }
         
-        deflateReset( &_strout );
-        _wblockout.reset();
+        reset_write();
     }
 
     void packed_ack( bool eat )
     {
-        if( _strin.avail_in > 0  ||  Z_STREAM_END != inflate( &_strin, Z_FINISH ) )
+        if( _strin.avail_in > 0  ||  BZ_STREAM_END != BZ2_bzDecompress( &_strin ) )
         {
-            if(eat) { inflateReset( &_strin );  return; }
-            throw ersIO_ERROR "data left in input buffer";
+            if(!eat)
+                throw ersIO_ERROR "data left in input buffer";
         }
 
-        _rblockin.reset();
-        inflateReset( &_strin );
+        reset_read();
     }
 
-    dynarray<uchar> _wblockout;             ///< write buffer
-    dynarray<uchar> _rblockin;              ///< read buffer
-    z_stream    _strin, _strout;
+    dynarray<char> _wblockout;              ///< write buffer
+    dynarray<char> _rblockin;               ///< read buffer
+    bz_stream _strin, _strout;
 };
 
 COID_NAMESPACE_END
 
-#endif //__COID_COMM_PACKSTREAMZIP__HEADER_FILE__
+#endif //__COID_COMM_PACKSTREAMBZIP2__HEADER_FILE__
