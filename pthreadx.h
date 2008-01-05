@@ -41,6 +41,7 @@
 
 #include "retcodes.h"
 #include "net_ul.h"
+#include "token.h"
 
 #ifndef SYSTYPE_WIN32
 #   include <pthread.h>
@@ -60,16 +61,17 @@ COID_NAMESPACE_BEGIN
 ////////////////////////////////////////////////////////////////////////////////
 struct thread
 {
+private:
+    thread_t    _thread;
+
+public:
     typedef void* (*fnc_entry) (void*);
 
     struct Exception {};
     struct CancelException : Exception {};
     struct ExitException : Exception {};
 
-
-    thread_t    _thread;
-
-
+public:
     operator thread_t() const       { return _thread; }
 
     thread();
@@ -81,31 +83,67 @@ struct thread
     int operator == (thread_t t) const;
     int operator != (thread_t t) const  { return !(*this == t); }
 
-
+    ///@return true if the object contains invalid thread id value (not that the thread is invalid)
     bool is_invalid() const;
 
-    static thread self();
-    static thread_t invalid();
-
-    thread& create( fnc_entry f, void* arg, void* context=0 )
-    {
-        _thread = create_new( f, arg, context );
-        return *this;
+    ///@return true if thread exists
+    bool exists() const {
+        return exists(_thread);
     }
-    
-    static thread create_new( fnc_entry f, void* arg, void* context=0 );
-    static void exit_self( uint code );
 
+    ///@return true if thread exists
     static bool exists( thread_t tid );
 
+    ///@return invalid thread id
+    static thread_t invalid();
+
+
+    ///Spawn new thread, setting up this object with reference to the new thread
+    thread& create( fnc_entry f, void* arg, void* context=0, const token& name = token::empty() )
+    {
+        _thread = create_new( f, arg, context, name );
+        return *this;
+    }
+
+    ///Spawn new thread, returning the thread object
+    static thread create_new( fnc_entry f, void* arg, void* context=0, const token& name = token::empty() );
+
+
+    //@{ Static methods dealing with the thread currently running
+
+    ///@return thread object for the thread we are currently in
+    static thread self();
+
+    ///Exit from current thread
+    static void self_exit( uint code );
+
+    ///Cancel the current thread
+    static void self_cancel();
+
+    ///@return true if the current thread should be cancelled
+    static bool self_should_cancel();
+
+    ///Cancel current thread if it was signalled to cancel
+    static void self_test_cancel( uint exitcode );
+
+    //@}
+
+
+    ///Request cancellation of the thread referred to by this object
+    //@note the thread must check itself if it should be cancelled
     opcd cancel();
-    static void cancel_self();
 
+    ///@return true if the thread referred by this object should be cancelled
     bool should_cancel() const;
-    static bool should_cancel_self();
-    static void test_cancel_self( uint exitcode );
 
+    ///Request cancellation of referred thread and wait for it to cancel itself
+    ///@param mstimeout maximum time to wait for the thread to end
+    ///@return true if thread was successfully terminated in time
+    bool cancel_and_wait( uint mstimeout );
+
+    ///Wait for thread to end
     static void join( thread_t tid );
+
 
 protected:
 
@@ -116,9 +154,6 @@ protected:
         throw CancelException();
     }
 };
-
-//for backward compatibility
-typedef thread::Exception       ThreadException;
 
 ////////////////////////////////////////////////////////////////////////////////
 struct thread_key

@@ -16,6 +16,8 @@ COID_NAMESPACE_BEGIN
 ////////////////////////////////////////////////////////////////////////////////
 thread::thread()
 {
+    SINGLETON(thread_manager);
+
 #ifdef SYSTYPE_MSVC
     _thread = UMAX;
 #else
@@ -80,13 +82,13 @@ void thread::_end( uint v )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-thread thread::create_new( fnc_entry f, void* arg, void* context )
+thread thread::create_new( fnc_entry f, void* arg, void* context, const token& name )
 {
-    return SINGLETON(thread_manager).thread_create( arg, f, context );
+    return SINGLETON(thread_manager).thread_create( arg, f, context, name );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void thread::exit_self( uint code )
+void thread::self_exit( uint code )
 {
     throw thread::CancelException();
     //SINGLETON(thread_manager).thread_delete( self() );
@@ -100,7 +102,7 @@ opcd thread::cancel()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void thread::cancel_self()
+void thread::self_cancel()
 {
     SINGLETON(thread_manager).request_cancellation( self() );
 }
@@ -112,16 +114,35 @@ bool thread::should_cancel() const
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool thread::should_cancel_self()
+bool thread::self_should_cancel()
 {
     return SINGLETON(thread_manager).test_cancellation( self() );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void thread::test_cancel_self( uint exitcode )
+void thread::self_test_cancel( uint exitcode )
 {
     if( SINGLETON(thread_manager).test_cancellation( self() ) )
-        exit_self(exitcode);
+        self_exit(exitcode);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+bool thread::cancel_and_wait( uint mstimeout )
+{
+    if( ersINVALID_PARAMS == cancel() )
+        return true;
+
+    sysMilliSecondSleep(0);
+
+    while(mstimeout) {
+        if( !exists() )
+            return true;
+
+        sysMilliSecondSleep(1);
+        --mstimeout;
+    }
+
+    return !exists();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -133,7 +154,7 @@ void thread::join( thread_t tid )
         if( !SINGLETON(thread_manager).thread_exists(tid) )
             return;
 
-        test_cancel_self(0);
+        self_test_cancel(0);
         sysMilliSecondSleep(20);
     }
 }
@@ -163,10 +184,40 @@ thread thread_manager::thread_start( thread_manager::info* ti )
     return tid;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+typedef struct tagTHREADNAME_INFO
+{
+	uint dwType;    // must be 0x1000
+	const char* szName; // pointer to name (in user addr space)
+	uint dwThreadID; // thread ID (-1=caller thread)
+	uint dwFlags; // reserved for future use, must be zero
+} THREADNAME_INFO;
+
+
+//! Usage: set_thread_name (-1, "MainThread");
+static void set_thread_name(const uint dwThreadID, const char * const szThreadName)
+{
+#ifdef SYSTYPE_WIN32
+	THREADNAME_INFO info = {0x1000, szThreadName, dwThreadID, 0};
+
+	__try {
+		RaiseException(
+			0x406D1388, 0, sizeof(info) / sizeof(DWORD), (DWORD*)&info );
+	}
+	__except(EXCEPTION_CONTINUE_EXECUTION) {
+	}
+#endif
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 void* thread_manager::def_thread( void* pinfo )
 {
     info* ti = (info*)pinfo;
+
+    if( !ti->name.is_empty() )
+        set_thread_name( -1, ti->name.c_str() );
 
     //wait until the spawner inserts the id
     while( ti->tid == thread::invalid() )
