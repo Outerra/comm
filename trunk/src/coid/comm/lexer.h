@@ -93,7 +93,7 @@ COID_NAMESPACE_BEGIN
     (TODBG) Internal line and character position counting for error reporting.
 
     (TODO) Nestable tokenization of blocks. A mode when upon encountering an opening
-    block sequence, the lexer pushes its previous context to stack and returns,
+    block sequence, the lexer pushes its previous context to the stack and returns,
     stating that block is about to be read. Subsequent calls to lexer then return
     tokens from inside the block. At last the closing sequence is read and the stack
     is popped.
@@ -167,23 +167,23 @@ public:
     ///Lexer token
     struct lextoken
     {
-        token   tok;                        ///< value string token
-        int     id;                         ///< token id (group type or string type)
-        charstr tokbuf;                     ///< buffer that keeps processed string
-        token_hash hash;                    ///< hash value computed for tokens (but not for strings or blocks)
-        uint    line;                       ///< current line number
-        const char* start;                  ///< current line start
-        char ch;                            ///< last read character
+        token   tok;                            ///< value string token
+        int     id;                             ///< token id (group type or string type)
+        charstr tokbuf;                         ///< buffer that keeps processed string
+        token_hash hash;                        ///< hash value computed for tokens (but not for strings or blocks)
+        uint    line;                           ///< current line number
+        const char* start;                      ///< current line start
+        char ch;                                ///< last read character
 
-        bool operator == (int i) const              { return i == id; }
-        bool operator == (const token& t) const     { return tok == t; }
-        bool operator == (char c) const             { return tok == c; }
+        bool operator == (int i) const          { return i == id; }
+        bool operator == (const token& t) const { return tok == t; }
+        bool operator == (char c) const         { return tok == c; }
 
-        bool operator != (int i) const              { return i != id; }
-        bool operator != (const token& t) const     { return tok != t; }
-        bool operator != (char c) const             { return tok != c; }
+        bool operator != (int i) const          { return i != id; }
+        bool operator != (const token& t) const { return tok != t; }
+        bool operator != (char c) const         { return tok != c; }
 
-        operator token() const                      { return tok; }
+        operator token() const                  { return tok; }
 
         void swap_to_string( charstr& buf )
         {
@@ -210,8 +210,8 @@ public:
         {
             uchar c = *p;
 
-            if( c == '\r' )         { start = p+1;  ++line; }
-            else if( c == '\n' )    { start = p+1;  if(ch != '\r') ++line; }
+            if( c == '\r' )      { start = p+1;  ++line; }
+            else if( c == '\n' ) { start = p+1;  if(ch != '\r') ++line; }
 
             ch = c;
         }
@@ -232,6 +232,8 @@ public:
         }
     };
 
+    ///Constructor
+    //@param utf8 enable or disable utf8 mode
     lexer( bool utf8 = true )
     {
         _ntrails = 0;
@@ -252,6 +254,7 @@ public:
             _abmap[i] = GROUP_UNASSIGNED;
     }
 
+    ///Enable or disable utf8 mode
     void set_utf8( bool set )
     {
         _utf8 = set;
@@ -282,6 +285,7 @@ public:
     ///@return true if the lexer is set up to interpret input as utf-8 characters
     bool is_utf8() const            { return _abmap.size() == BASIC_UTF8_CHARS; }
 
+    ///Reset lexer state
     opcd reset()
     {
         if(_bin)
@@ -300,7 +304,8 @@ public:
         return 0;
     }
 
-    ///Create new group named \a name with characters from \a set
+    ///Create new group named \a name with characters from \a set. Clumps of continuous characters
+    /// from the group is returned as one token.
     ///@return group id or 0 on error, error id is stored in the _err variable
     ///@param name group name
     ///@param set characters to include in the group, recognizes ranges when .. is found
@@ -352,7 +357,7 @@ public:
     }
 
     ///Define specific keywords that should be returned as a separate token type.
-    ///If the characters of specific keyword fit into one character group, they are
+    ///If the characters of specific keyword all fit in one character group, they are
     /// implemented as lookups into the keyword hash table after the scanner computes
     /// the hash value for the token it processed.
     ///Otherwise (when they are heterogenous) they have to be set up as sequences.
@@ -374,7 +379,7 @@ public:
     }
 
     ///Escape sequence processor function prototype.
-    ///Used to consume input after escape character and append translated characters to dst
+    ///Used to consume input after escape character and to append translated characters to dst
     ///@param src source characters to translate, the token should be advanced by the consumed amount
     ///@param dst destination buffer to append the translated characters to
     typedef bool (*fn_replace_esc_seq)( token& src, charstr& dst );
@@ -403,7 +408,7 @@ public:
         return g+1;
     }
 
-    ///Define escape string mappings
+    ///Define escape string mappings.
     ///@return true if successful
     ///@param escrule id of the escape rule
     ///@param code source sequence that if found directly after the escape character, will be replaced
@@ -421,9 +426,9 @@ public:
     }
 
 
-    ///Create new string sequence detector named \a name, using specified leading and trailing strings.
-    ///If the leading string was already defined for another string, only the trailing string is
-    /// inserted to its trailing set, and escape definition is ignored.
+    ///Create new string sequence detector named \a name, using specified leading and trailing sequence.
+    ///If the leading sequence was already defined for another string, only the trailing sequence is
+    /// inserted to its trailing set, and the escape definition is ignored.
     ///@return string id (a negative number) or 0 on error, error id is stored in the _err variable
     ///@param name string rule name
     ///@param leading the leading string delimiter
@@ -437,7 +442,7 @@ public:
         if( ens && (*ens)->type != entity::STRING )  { _err=ERR_DIFFERENT_ENTITY_EXISTS; return 0; }
 
         if( ens && ((string_rule*)*ens)->leading == leading ) {
-            //reuse, only trailing mark is different
+            //reuse, only the trailing mark is different
             g = add_trailing( ((string_rule*)*ens), trailing );
             return -1-g;
         }
@@ -461,7 +466,7 @@ public:
     }
 
 
-    ///Create new block sequence detector named \a name, using specified leading and trailing strings
+    ///Create new block sequence detector named \a name, using specified leading and trailing sequences.
     ///@return block id (a negative number) or 0 on error, error id is stored in the _err variable
     ///@param name block rule name
     ///@param leading the leading block delimiter
@@ -519,7 +524,7 @@ public:
     }
 
 
-    ///Create new sequence detector named \a name, using specified leading and trailing strings
+    ///Create new simple sequence detector named \a name.
     ///@return block id (a negative number) or 0 on error, error id is stored in the _err variable
     ///@param name block rule name
     ///@param seq the sequence to detect, prior to basic grouping rules
@@ -539,7 +544,7 @@ public:
         return -1-g;
     }
 
-    ///Enable or disable specified sequence, string or block
+    ///Enable or disable specified sequence, string or block. Disabled construct is not detected in input.
     ///@note for s/s/b with same name, this applies only to the specific one
     void enable( int seqid, bool en )
     {
@@ -549,7 +554,7 @@ public:
         (*_stack.last())->enable( *seq, en );
     }
 
-    ///Make sequence, string or block ignored or not. Ignored constructs are skipped.
+    ///Make sequence, string or block ignored or not. Ignored constructs are detected but skipped and not returned.
     ///@note for s/s/b with same name, this applies only to the specific one
     void ignore( int seqid, bool ig )
     {
@@ -559,7 +564,7 @@ public:
         (*_stack.last())->ignore( *seq, ig );
     }
 
-    ///Enable/disable all entities under the same name
+    ///Enable/disable all entities with the same (common) name.
     void enable( const token& name, bool en )
     {
         Tentmap::range_const_iterator r = _entmap.equal_range(name);
@@ -572,7 +577,7 @@ public:
         }
     }
 
-    ///Ignore/don't ignore all entities under the same name
+    ///Ignore/don't ignore all entities with the same name
     void ignore( const token& name, bool ig )
     {
         Tentmap::range_const_iterator r = _entmap.equal_range(name);
@@ -585,9 +590,9 @@ public:
         }
     }
 
-    ///Return next token as if the block/string opening sequence was already read
-    ///@note this explicit request would read the string/block content even if the
-    /// string or block is disabled
+    ///Return next token as if the block/string opening sequence has been already read.
+    ///@note this explicit request will read the string/block content even if the
+    /// string or block is currently disabled
     bool next_string_or_block( int sbid )
     {
         uint sid = -1 - sbid;
@@ -612,9 +617,9 @@ public:
         return dst;
     }
 
-    ///Return next token from the input
+    ///Return the next token from input.
     /**
-        Returns token of characters identified by a lexer rule.
+        Returns token of characters identified by a lexer rule (group or sequence types).
         Tokens of rules that are currently set to ignored are skipped.
         On error an empty token is returned and _err contains the error.
 
@@ -652,7 +657,7 @@ public:
         if(x & xSEQ)
         {
             //this could be a leading string/block delimiter, if we can find it in the register
-            const dynarray<sequence*>& dseq = _seqary[(x>>rSEQ)-1];
+            const dynarray<sequence*>& dseq = _seqary[((x&xSEQ)>>rSEQ)-1];
             uint i, n = (uint)dseq.size();
             for( i=0; i<n; ++i )
                 if( enabled(*dseq[i])  &&  follows(dseq[i]->leading) )  break;
@@ -715,7 +720,7 @@ public:
         return _last;
     }
 
-    ///Try to match a string
+    ///Try to match a raw string following in the input
     bool follows( const token& tok )
     {
         if( tok.len() > _tok.len() )
@@ -729,10 +734,11 @@ public:
 
     ///@return true if next token matches literal string
     bool match_literal( const token& val )      { return next() == val; }
+    
     ///@return true if next token matches literal character
     bool match_literal( char c )                { return next() == c; }
 
-    ///try to match optional literal, push back if not succeeded
+    ///Try to match an optional literal, push back if not succeeded.
     bool match_optional( const token& val )
     {
         bool succ = (next() == val);
@@ -740,7 +746,7 @@ public:
             push_back();
         return succ;
     }
-    ///try to match optional literal, push back if not succeeded
+    ///Try to match an optional literal character, push back if not succeeded.
     bool match_optional( char c )
     {
         bool succ = (next() == c);
@@ -749,6 +755,9 @@ public:
         return succ;
     }
 
+    ///@return true if next token belongs to the specified group/sequence.
+    ///@param grp group/sequence id
+    ///@param dst the token read
     bool match( int grp, charstr& dst )
     {
         next();
@@ -760,6 +769,9 @@ public:
         return true;
     }
 
+    ///@return true if the last token read belongs to the specified group/sequence.
+    ///@param grp group/sequence id
+    ///@param dst the token read
     bool match_last( int grp, charstr& dst )
     {
         if( grp != _last.id )  return false;
@@ -770,7 +782,8 @@ public:
         return true;
     }
 
-    ///Push the last token back to be retrieved again next time
+    ///Push the last token back to be retrieved again by the next() method
+    /// (and all the methods that use it, like the match_* methods etc.).
     void push_back()
     {
         _pushback = 1;
@@ -779,14 +792,14 @@ public:
     ///@return true if whole input was consumed
     bool end() const                            { return _last.id == 0; }
 
-    ///@return last token
+    ///@return last token read
     const lextoken& last() const                { return _last; }
 
     ///@return current line number
     uint current_line() const                   { return _last.line+1; }
 
-    ///Test if whole token consists of characters from one group
-    ///@return 0 if not, or else the the character group (>0)
+    ///Test if whole token consists of characters from single group.
+    ///@return 0 if not, or else the character group it belongs to (>0)
     int homogenous( token t ) const
     {
         uchar code = t[0];
@@ -808,7 +821,7 @@ public:
         return n<t.len()  ?  0  :  gid;
     }
 
-    ///Strip leading and trailing characters belonging to the given group
+    ///Strip the leading and trailing characters belonging to the given group
     token& strip_group( token& tok, uint grp ) const
     {
         for(;;)
@@ -844,27 +857,21 @@ protected:
     {
         ///Known enity types
         enum EType {
-            GROUP = 1,
-            ESCAPE,
-            KEYWORDLIST,
-            SEQUENCE,
-            STRING,
-            BLOCK,
+            GROUP = 1,                  ///< character group
+            ESCAPE,                     ///< escape character(s)
+            KEYWORDLIST,                ///< keywords (matched by a group but having a different class when returned)
+            SEQUENCE,                   ///< sequences (for string and block matching or keywords that span multiple groups)
+            STRING,                     ///< sequence specialization with simple content
+            BLOCK,                      ///< sequence specialization with recursive content
         };
-/*
-        ///Entity states
-        enum EState {
-            ENABLED         = 1,
-            IGNORED         = 2,
-        };
-*/
+
         charstr name;                   ///< entity name
         uchar type;                     ///< EType values
-        uchar status;                   ///< EState or-ed values
+        uchar status;                   ///< 
         ushort id;                      ///< entity id, index to containers by entity type
 
 
-        entity( const token& name_, uchar type_, ushort id_ ) : name(name_), type(type_), id(id_)
+        entity( const token& name, uchar type, ushort id ) : name(name), type(type), id(id)
         {
             status = 0;
         }
@@ -885,9 +892,10 @@ protected:
     struct group_rule : entity
     {
         short bitmap;                   ///< trailing bit map id, or -1
-        bool single;
+        bool single;                    ///< true if single characters are emitted instead of chunks
 
-        group_rule( const token& name, ushort id, bool bsingle ) : entity(name,entity::GROUP,id)
+        group_rule( const token& name, ushort id, bool bsingle )
+        : entity(name,entity::GROUP,id)
         {
             bitmap = -1;
             single = bsingle;
@@ -899,11 +907,13 @@ protected:
     ///Escape tuple for substitutions
     struct escpair
     {
-        charstr code;
-        charstr replace;
+        charstr code;                   ///< escape sequence (without the escape char itself)
+        charstr replace;                ///< substituted string
         newline nwl;
 
-        bool operator <  ( const token& k ) const   { return code.len() > k.len(); }
+        bool operator <  ( const token& k ) const {
+            return code.len() > k.len();
+        }
 
         void assign( const token& code, const token& replace )
         {
@@ -916,22 +926,27 @@ protected:
     ///Escape sequence translator descriptor 
     struct escape_rule : entity
     {
-        char esc;                               ///< escape character
-        fn_replace_esc_seq  replfn;             ///< custom replacement function
+        char esc;                       ///< escape character
+        fn_replace_esc_seq  replfn;     ///< custom replacement function
 
-        dynarray<escpair> pairs;                ///< replacement pairs
+        dynarray<escpair> pairs;        ///< replacement pairs
 
-        escape_rule( const token& name, ushort id ) : entity(name,entity::ESCAPE,id) { }
+        escape_rule( const token& name, ushort id )
+        : entity(name,entity::ESCAPE,id)
+        { }
     };
 
     ///Keyword map for detection of whether token is a reserved word
     struct keywords
     {
-        hash_set<charstr, token_hash> set;      ///< hash_set for fast detection if the string is in the list
-        int nkwd;
+        hash_set<charstr, token_hash>
+            set;                        ///< hash_set for fast detection if the string is in the list
+        int nkwd;                       ///< number of keywords
 
 
-        bool has_keywords() const       { return nkwd > 0; }
+        bool has_keywords() const {
+            return nkwd > 0;
+        }
 
         bool add( const token& kwd )
         {
@@ -951,9 +966,13 @@ protected:
     ///Character sequence descriptor
     struct sequence : entity
     {
-        charstr leading;                        ///< sequence of characters to be detected
+        charstr leading;                ///< sequence of characters to be detected
 
-        sequence( const token& name, ushort id, uchar type=entity::SEQUENCE ) : entity(name,type,id) { }
+        sequence( const token& name, ushort id, uchar type=entity::SEQUENCE )
+        : entity(name,type,id)
+        {
+            DASSERT( id < xSEQ || id==WMAX );
+        }
     };
 
     ///String and block base entity
@@ -970,7 +989,7 @@ protected:
             }
         };
 
-        dynarray<trail> trailing;               ///< at least one trailing string/block delimiter
+        dynarray<trail> trailing;       ///< at least one trailing string/block delimiter
 
 
         void add_trailing( const charstr& t )
@@ -983,13 +1002,15 @@ protected:
             trailing.ins(i)->set(t);
         }
 
-        stringorblock( const token& name, ushort id, uchar type ) : sequence(name,id,type) { }
+        stringorblock( const token& name, ushort id, uchar type )
+        : sequence(name,id,type)
+        { }
     };
 
     ///String descriptor
     struct string_rule : stringorblock
     {
-        escape_rule* escrule;                   ///< escape rule to use within the string
+        escape_rule* escrule;           ///< escape rule to use within the string
 
         string_rule( const token& name, ushort id ) : stringorblock(name,id,entity::STRING)
         { escrule = 0; }
@@ -998,8 +1019,8 @@ protected:
     ///Block descriptor
     struct block_rule : stringorblock
     {
-        uint64 stbenabled;                      ///< bit map with sequences allowed to nest (enabled)
-        uint64 stbignored;                      ///< bit map with sequences skipped (ignored)
+        uint64 stbenabled;              ///< bit map with sequences allowed to nest (enabled)
+        uint64 stbignored;              ///< bit map with sequences skipped (ignored)
 
         ///Make the specified S/S/B enabled or disabled within this block.
         ///If this very same block is enabled it means that it can nest in itself.
@@ -1027,14 +1048,16 @@ protected:
         bool ignored( const sequence& seq ) const   { return (stbignored & (1ULL<<seq.id)) != 0; }
 
 
-        block_rule( const token& name, ushort id ) : stringorblock(name,id,entity::BLOCK)
-        {   stbenabled = 0;  stbignored = 0; }
+        block_rule( const token& name, ushort id )
+        : stringorblock(name,id,entity::BLOCK)
+        { stbenabled = 0;  stbignored = 0; }
     };
 
     struct root_block : block_rule
     {
-        root_block() : block_rule(token::empty(),WMAX)
-        {   stbenabled = UMAX64; }
+        root_block()
+        : block_rule(token::empty(),WMAX)
+        { stbenabled = UMAX64; }
     };
 
 
@@ -1044,15 +1067,17 @@ protected:
 
     ///Character flags
     enum {
-        xGROUP                      = 0x000f,   ///< mask for primary character group id
-        fGROUP_KEYWORDS             = 0x0010,   ///< set if there are any keywords defined for the group and this leading character
-        fGROUP_ESCAPE               = 0x0020,   ///< set if the character is either an escape character or a trailing sequence
+        xGROUP                      = 0x000f,   ///< mask for the primary character group id
+        fGROUP_KEYWORDS             = 0x0010,   ///< set if there are any keywords defined for the group with this leading character
+        fGROUP_ESCAPE               = 0x0020,   ///< set if the character is an escape character
         fGROUP_SINGLE               = 0x0040,   ///< set if this is a single-character token emitting group
         fGROUP_TRAILSET             = 0x0080,   ///< set if the group the char belongs to has a specific trailing set defined
 
         GROUP_UNASSIGNED            = xGROUP,   ///< character group with characters that weren't assigned
 
-        xSEQ                        = 0xff00,   ///< mask for id of group of sequences that can start with this character (zero if none)
+        fSEQ_TRAILING               = 0x8000,   ///< set if this character can start a trailing sequence
+        
+        xSEQ                        = 0x7f00,   ///< mask for id of group of sequences that can start with this character (zero if none)
         rSEQ                        = 8,
 
         //default sizes
@@ -1074,8 +1099,14 @@ protected:
     };
 
 
-    uchar get_group( uchar c ) const        { return _abmap[c] & xGROUP; }
+    uchar get_group( uchar c ) const {
+        return _abmap[c] & xGROUP;
+    }
 
+    ///Process the definition of a set, executing callbacks on each character included
+    ///@param s the set definition, characters and ranges
+    ///@param fnval parameter for the callback function
+    ///@param fn callback
     bool process_set( token s, uchar fnval, void (lexer::*fn)(uchar,uchar) )
     {
         uchar k, kprev=0;
@@ -1097,14 +1128,15 @@ protected:
         return true;
     }
 
+    ///Callback for process_set(), add character to leading bitmap detector of a group
     void fn_group( uchar i, uchar val )
     {
         _abmap[i] &= ~xGROUP;
         _abmap[i] |= val;
     }
 
-    void fn_trail( uchar i, uchar val )
-    {
+    ///Callback for process_set(), add character to trailing bitmap detector of a group
+    void fn_trail( uchar i, uchar val ) {
         _trail[i] |= val;
     }
 
@@ -1128,7 +1160,7 @@ protected:
         return -1;
     }
 
-    ///Try to match a string at offset
+    ///Try to match the string at the offset
     bool match( const token& tok, uints& off )
     {
         if( tok.len()+off > _tok.len() )
@@ -1141,7 +1173,7 @@ protected:
         return _tok.begins_with(tok,off);
     }
 
-    ///Read next token as if it was string, with leading characters already read
+    ///Read next token as if it was a string with the leading sequence already read
     bool next_read_string( const string_rule& sr, uints& off, bool outermost )
     {
         const escape_rule* er = sr.escrule;
@@ -1249,7 +1281,7 @@ protected:
     {
         while(1)
         {
-            //find the end while processing the escape characters
+            //find the end while processing the nested sequences
             // note that the escape group must contain also the terminators
             off = count_notleading(off);
             if( off >= _tok.len() )
@@ -1265,11 +1297,13 @@ protected:
                 continue;
             }
 
+            //a leading character of a sequence found
             uchar code = _tok[off];
             ushort x = _abmap[code];
 
+            //test if it's our trailing sequence
             int k;
-            if( (x & fGROUP_ESCAPE)  &&  (k = match(br.trailing, off)) >= 0 )
+            if( (x & fSEQ_TRAILING) && (k = match(br.trailing, off)) >= 0 )
             {
                 //trailing string found
                 _last.adjust( br.trailing[k].nwl, _tok.ptr()+off );
@@ -1277,34 +1311,42 @@ protected:
                 return true;
             }
 
-            if(x & xSEQ)
+            //it's another leading sequence, find it
+            DASSERT(x & xSEQ);
+
+            const dynarray<sequence*>& dseq = _seqary[(x>>rSEQ)-1];
+            uint i, n = (uint)dseq.size();
+
+            for( i=0; i<n; ++i ) {
+                if(!enabled(*dseq[i]))  continue;
+
+                uint k = dseq[i]->id;
+                if( (br.stbenabled & (1ULL<<k))  &&  match(dseq[i]->leading,off) )
+                    break;
+            }
+
+            if(i<n)
             {
-                const dynarray<sequence*>& dseq = _seqary[(x>>rSEQ)-1];
-                uint i, n = (uint)dseq.size();
-                for( i=0; i<n; ++i ) {
-                    if(!enabled(*dseq[i]))  continue;
+                //valid sequence found, nest
+                sequence* sob = dseq[i];
+                off += sob->leading.len();
 
-                    uint k = dseq[i]->id;
-                    if( (br.stbenabled & (1ULL<<k))  &&  match(dseq[i]->leading,off) )  break;
-                }
-
-                if(i<n)
-                {
-                    //nest
-                    sequence* sob = dseq[i];
-                    off += sob->leading.len();
-
-                    bool nest;
-                    if( sob->type == entity::BLOCK )
-                        nest = next_read_block( *(const block_rule*)sob, off, false );
-                    else if( sob->type == entity::STRING )
-                        nest = next_read_string( *(const string_rule*)sob, off, false );
-                    else
-                        nest = true;
-                    if(!nest)  return false;
-                    
-                    continue;
-                }
+                bool nest;
+                if( sob->type == entity::BLOCK )
+                    nest = next_read_block(
+                        *(const block_rule*)sob,
+                        off, false
+                    );
+                else if( sob->type == entity::STRING )
+                    nest = next_read_string(
+                        *(const string_rule*)sob,
+                        off, false
+                    );
+                else
+                    nest = true;
+                if(!nest)  return false;
+                
+                continue;
             }
 
             _last.upd_newline( _tok.ptr()+off );
@@ -1316,6 +1358,7 @@ protected:
     void add_stb_segment( const stringorblock& sb, int trailid, uints& off, bool final )
     {
         uints len = trailid<0  ?  0  :  sb.trailing[trailid].seq.len(); 
+
         if(!final)
             off += len;
 
@@ -1385,7 +1428,7 @@ protected:
     }
 
     ///Get utf8 code from input data. If the code crosses the buffer boundary, put anything
-    /// preceeding it to the buffer and fetch next buffer page
+    /// preceeding it to the buffer and fetch the next buffer page
     ucs4 get_utf8_code( uints& offs )
     {
         uint nb = get_utf8_seq_expected_bytes( _tok.ptr()+offs );
@@ -1403,26 +1446,28 @@ protected:
         return read_utf8_seq( _tok.ptr(), offs );
     }
 
+    ///Count characters until escape character or a possible trailing sequence character
     uints count_notescape( uints off )
     {
         const uchar* pc = (const uchar*)_tok.ptr();
         for( ; off<_tok._len; ++off )
         {
             const char* p = (const char*)pc+off;
-            if( (_abmap[*p] & fGROUP_ESCAPE) != 0 )  break;
+            if( (_abmap[*p] & (fGROUP_ESCAPE|fSEQ_TRAILING)) != 0 )  break;
 
             _last.upd_newline(p);
         }
         return off;
     }
 
+    ///Count characters that are not leading characters of a sequence
     uints count_notleading( uints off )
     {
         const uchar* pc = (const uchar*)_tok.ptr();
         for( ; off<_tok._len; ++off )
         {
             const char* p = (const char*)pc+off;
-            if( (_abmap[*p] & (xSEQ|fGROUP_ESCAPE)) != 0 )  break;
+            if( (_abmap[*p] & xSEQ) != 0 )  break;
 
             _last.upd_newline(p);
         }
@@ -1605,7 +1650,7 @@ protected:
 
     dynarray<sequence*>& set_seqgroup( uchar c )
     {
-        uchar k = _abmap[c] >> rSEQ;
+        uchar k = (_abmap[c]&xSEQ) >> rSEQ;
         if(!k) {
             _seqary.add();
             k = (uchar)_seqary.size();
@@ -1620,7 +1665,7 @@ protected:
         sob->add_trailing(trailing);
 
         //mark the leading character of trailing token to _abmap
-        _abmap[(uchar)trailing.first_char()] |= fGROUP_ESCAPE;
+        _abmap[(uchar)trailing.first_char()] |= fSEQ_TRAILING;
         
         return sob->id;
     }

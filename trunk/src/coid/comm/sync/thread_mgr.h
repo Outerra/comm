@@ -61,6 +61,7 @@ struct thread_manager
             fREQUESTED_CANCELLATION             = 1,
         };
 
+        charstr name;
         thread_manager* mgr;
 
 
@@ -98,7 +99,7 @@ public:
         return pti ? opcd(0) : ersIMPROPER_STATE;
     }
 
-    thread thread_create( void* arg, thread::fnc_entry f, void* context=0 )
+    thread thread_create( void* arg, thread::fnc_entry f, void* context=0, const token& name = token::empty() )
     {
         info* i = new info;
         i->context = context;
@@ -108,7 +109,8 @@ public:
 
         i->tid = thread::invalid();
         i->flags = 0;
-        
+
+        i->name = name;
         i->mgr = this;
 
         return thread_start(i);
@@ -118,6 +120,24 @@ public:
     {
         GUARDME;
         return 0 != _hash.find_value(tid);
+    }
+
+    token thread_name( thread_t tid ) const
+    {
+        GUARDME;
+        info*const* pti = _hash.find_value(tid);
+        if(pti)
+            return (*pti)->name;
+
+        return token::empty();
+    }
+
+    void thread_name( thread_t tid, const token& name )
+    {
+        GUARDME;
+        info*const* pti = _hash.find_value(tid);
+        if(pti)
+            (*pti)->name = name;
     }
 
     opcd request_cancellation( thread_t tid )
