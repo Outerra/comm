@@ -61,7 +61,7 @@ public:
     }
 
 
-    virtual uint64 get_size() const                   { return _buf.size() - _bgi; }
+    virtual uint64 get_size() const         { return _buf.size() - _bgi; }
     virtual uint64 set_size( int64 n )
     {
         if( n < 0 )
@@ -88,11 +88,12 @@ public:
     }
 
     
-    operator token() const      { return token( _buf.ptr()+_bgi, _buf.size() - _bgi ); }
+    operator token() const                  { return token( _buf.ptr()+_bgi, _buf.size() - _bgi ); }
 
-    bool is_empty() const       { return _buf.size() - _bgi == 0; }
+    bool is_empty() const                   { return _buf.size() - _bgi == 0; }
 
-	dynarray<char>& get_buf()   { return _buf; }
+	dynarray<char>& get_buf()               { return _buf; }
+	const dynarray<char>& get_buf() const   { return _buf; }
 
     void swap( charstr& str )
     {
