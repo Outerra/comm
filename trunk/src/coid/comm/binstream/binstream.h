@@ -530,9 +530,7 @@ public:
         for (;;)
         {
             uints len = 256;
-            e = read_raw( buf, len );
-            if( e == ersRETRY )
-                e = 0;
+            e = read_raw_full( buf, len );
 
             uints alen = 256-len;
             bin.write_raw( buf, alen );

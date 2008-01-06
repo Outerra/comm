@@ -51,7 +51,7 @@
 namespace coid {
 
 //enable checking
-#if 0
+#if 1
 #define SEG_CHECK           check_state()
 #define SEG_CHECK_(n)       check_state(n)
 #else
@@ -322,6 +322,7 @@ ssegpage::block* ssegpage::_realloc (
     if( !_freebg  ||  size > _freebg->get_size() )
         return 0;
 
+    SEG_CHECK;
 
     uints uoldbs = bi->get_size();
     if( uoldbs >= size )
