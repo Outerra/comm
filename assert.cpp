@@ -54,8 +54,9 @@ struct AssertLog
     {
         if(!_file.is_open())
         {
-            _file.open("assert.log");
+            _file.filestream::open("assert.log","wct");
             _text.bind(_file);
+            _text.reserve_buf(2048-8);
         }
 
         if( _file.is_open() )
@@ -63,8 +64,12 @@ struct AssertLog
         return nullstream;
     }
 
-    bool is_open() const        { return _file.is_open(); }
+    bool is_open() const {
+        return _file.is_open();
+    }
 };
+
+static binstream& bin = SINGLETON(AssertLog).get_file();
 
 static int __assert_throws = 1;
 
@@ -74,7 +79,6 @@ opcd __rassert( const char* txt, opcd exc, const char* file, int line, const cha
     AssertLog& asl = SINGLETON(AssertLog);
     {
         comm_mutex_guard<comm_mutex> _guard( asl._mutex );
-        binstream& bin = asl.get_file();
 
 	    bin << "Assertion failed in " << file << ":" << line << " expression:\n    "
 		    << expr << "\n    " << (txt ? txt : "") << "\n\n";

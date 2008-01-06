@@ -178,7 +178,23 @@ public:
     /// c - create
     /// t - truncate
     /// a,+ - append
-    opcd open( const charstr& name, token attr )
+    opcd open( const token& name, token attr )
+    {
+        charstr tmp = name;
+        return open( tmp.c_str(), attr );
+    }
+
+    ///Open file
+    //@param name file name
+    //@param attr open attributes
+    /// r - open for reading
+    /// w - open for writing
+    /// l - lock file
+    /// e - fail if file already exists
+    /// c - create
+    /// t - truncate
+    /// a,+ - append
+    opcd open( const char* name, token attr )
     {
         int flg=0;
         int rw=0,sh=0;
@@ -212,9 +228,9 @@ public:
         flg |= O_BINARY;
 
 # ifdef SYSTYPE_MSVC8plus
-        return ::_sopen_s( &_handle, name.c_str(), flg, sh, af ) ? ersIO_ERROR : opcd(0);
+        return ::_sopen_s( &_handle, name, flg, sh, af ) ? ersIO_ERROR : opcd(0);
 # else
-        _handle = ::_sopen( name.c_str(), flg, sh, af );
+        _handle = ::_sopen( name, flg, sh, af );
         return _handle != -1  ?  opcd(0)  :  ersIO_ERROR;
 # endif
 #else
@@ -224,7 +240,7 @@ public:
 
         flg |= O_RAW;
 
-        _handle = ::open( name.c_str(), flg, 0644 );
+        _handle = ::open( name, flg, 0644 );
         if( _handle != -1  &&  sh )
         {
             int e = ::lockf( _handle, F_TLOCK, 0 );

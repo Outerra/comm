@@ -291,6 +291,14 @@ public:
         _binr = _readbuf;
     }
 
+
+    ///Set size of internal write buffer
+    void reserve_buf( uints size )
+    {
+        _buf.reserve(size);
+    }
+
+
     binstreambuf* get_read_buffer() const   { return _readbuf; }
 
 
