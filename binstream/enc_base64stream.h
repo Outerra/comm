@@ -126,7 +126,7 @@ public:
     }
 
     virtual opcd read_until( const substring& /*ss*/, binstream* /*bout*/, uints max_size=UMAX ) {
-        max_size;
+        (void)max_size;
         return ersNOT_IMPLEMENTED; //_bin->read_until( ss, bout, max_size );
     }
 
@@ -193,7 +193,7 @@ public:
 
     virtual opcd bind( binstream& bin, int io=0 )
     {
-		io;
+	(void)io;
         _bin = &bin;
         return 0;
     }
