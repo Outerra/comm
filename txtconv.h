@@ -118,7 +118,14 @@ public:
     }
 */
 
-    ///Convert hexadecimal string content to binary data
+    ///Convert hexadecimal string content to binary data. Expects little-endian ordering.
+    //@param src input: source string, output: remainder of the input
+    //@param dst destination buffer of size at least nbytes
+    //@param nbytes maximum number of bytes to convert
+    //@param sep separator character to ignore, all other characters will cause the function to stop
+    //@return number of bytes remaining to convert
+    //@note function returns either after it converted required number of bytes, or it has read
+    /// the whole string, or it encountered an invalid character.
     static uints hex2bin( token& src, void* dst, uints nbytes, char sep )
     {
         for( ; !src.is_empty(); )
@@ -158,6 +165,11 @@ public:
     }
 
     ///Convert binary data to hexadecimal string
+    //@param src source memory buffer
+    //@param dst destination character buffer capable to hold at least (((itemsize*2) + sep?1:0) * nitems) bytes
+    //@param nitems number of itemsize sized words to convert
+    //@param itemsize number of bytes to write clumped together before separator
+    //@param sep separator character, 0 if none
     static void bin2hex( const void* src, char*& dst, uints nitems, uint itemsize, char sep=' ' )
     {
         if( nitems == 0 )  return;
@@ -198,27 +210,9 @@ public:
         }
     }
 
-    static void txtint2bin (const char*& src, void* dst, ulong nitems, ulong itemsize)
-    {
-        // number {
-        //      [int] {?'+-'} {+ '0..9'}
-        //      [hex] {?"0"} "x" {+ '0..9a..fA..F'}
-        //      [oct] {?"0"} "o" {+ '0..7'}
-        //      [bin] {?"0"} "b" {+ '01'}
-        //      [flt] {?'+-'} number.int {?"." {? number.int}} {? 'eE' {?'+-'} number.int}
-        // }
-    }
-/*
-    ///convert text to integer of specified size
-    static void scanint (const char*& src, void* dst, ulong typesize)
-    {
-    	for (;;++src)
-    	{
-    		if (*src >= '0'  &&  *src <= '9')
-    	}
-    }
-*/
     ////////////////////////////////////////////////////////////////////////////////
+
+    ///Convert bytes to intelhex format output
     static uints write_intelhex_line( char* dst, ushort addr, uchar n, const void* data )
     {
         *dst++ = ':';

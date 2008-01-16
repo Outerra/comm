@@ -176,7 +176,7 @@ public:
     /// l - lock file
     /// e - fail if file already exists
     /// c - create
-    /// t - truncate
+    /// t,- - truncate
     /// a,+ - append
     opcd open( const token& name, token attr )
     {
@@ -192,7 +192,7 @@ public:
     /// l - lock file
     /// e - fail if file already exists
     /// c - create
-    /// t - truncate
+    /// t,- - truncate
     /// a,+ - append
     opcd open( const char* name, token attr )
     {
@@ -206,7 +206,7 @@ public:
             else if( attr[0] == 'l' )  sh |= 1;
             else if( attr[0] == 'e' )  flg |= O_EXCL;
             else if( attr[0] == 'c' )  flg |= O_CREAT;
-            else if( attr[0] == 't' )  flg |= O_TRUNC;
+            else if( attr[0] == 't' || attr[0] == '-' )  flg |= O_TRUNC;
             else if( attr[0] == 'a' || attr[0] == '+' )  flg |= O_APPEND;
             //else if( m[0] == 'n' )  flg |= O_NONBLOCK;
             else if( attr[0] != ' ' )
@@ -285,10 +285,23 @@ public:
 	}
 
     filestream() { _handle = -1; _wpos = _rpos = 0; _op = 1; }
+
     explicit filestream( const token& s )
     {
         _handle = -1;
         open(s);
+    }
+
+    filestream( const token& s, token attr )
+    {
+        _handle = -1;
+        open(s,attr);
+    }
+
+    filestream( const char* s, token attr )
+    {
+        _handle = -1;
+        open(s,attr);
     }
 
     ~filestream() { close(); }
