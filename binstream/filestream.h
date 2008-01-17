@@ -215,6 +215,8 @@ public:
             ++attr;
         }
 
+        _rpos = _wpos = 0;
+
 #ifdef SYSTYPE_WIN32
         int af;
 

@@ -50,9 +50,12 @@ struct AssertLog
     comm_mutex _mutex;
 
 
-    binstream& get_file()
+    binstream& get_file( bool noopen=false )
     {
-        if(!_file.is_open())
+        if(noopen) {
+            _text.reserve_buf(2048-8);
+        }
+        else if(!_file.is_open())
         {
             _file.filestream::open("assert.log","wct");
             _text.bind(_file);
@@ -69,7 +72,7 @@ struct AssertLog
     }
 };
 
-static binstream& bin = SINGLETON(AssertLog).get_file();
+static binstream& bin = SINGLETON(AssertLog).get_file(true);
 
 static int __assert_throws = 1;
 
