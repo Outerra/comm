@@ -5,7 +5,7 @@
 
 namespace atomic {
 
-template <class T, class S>
+template <class T, class S = void>
 class stack
 {
 public:
@@ -13,26 +13,29 @@ public:
 	template<class T>
 	struct node
 	{
-		node() : m_pNext(0) {}
+		node() : m_pNext(0), m_pObj(0) {}
 
-		T * m_pNext;
+		node * m_pNext;
+		T * m_pObj;
 	};
 
 	typedef node<T> node_t;
 
 private:
-	T * volatile m_pHead;
+	node_t * volatile m_pHead;
 
 	volatile uint m_nPops;
 
 public:
 	stack()	: m_pHead(0), m_nPops(0) {}
 
-	void push(T * pNewNode)
+	void push(T * pNewItem)
 	{
+		node_t * const pNewNode = pNewItem;
+
 		for (;;) {
-			S::get(pNewNode).m_pNext = m_pHead;
-			if (cas<T*>(&m_pHead, pNewNode, S::get(pNewNode).m_pNext))
+			pNewNode->m_pNext = m_pHead;
+			if (cas<node_t*>(&m_pHead, pNewNode, pNewNode->m_pNext))
 				break;
 		}
 	}
@@ -40,15 +43,16 @@ public:
 	T * pop()
 	{
 		for (;;) {
-			T * pHead = m_pHead;
+			node_t * pHead = m_pHead;
 			uint nPops = m_nPops;
 
 			if (pHead == 0) return 0;
 
-			T * pNext = S::get(pHead).m_pNext;
+			node_t * pNext = pHead->m_pNext;
 
-			if (cas<T*>(&m_pHead, pNext, nPops + 1, pHead, nPops)) 
-				return pHead;
+			if (cas<node_t*>(&m_pHead, pNext, nPops + 1, pHead, nPops)) {
+				return static_cast<T*>(pHead);
+			}
 		}
 	}
 };
