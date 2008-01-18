@@ -64,7 +64,6 @@ public:
 		node_ptr_t m_pNext;
 		node_ptr_t m_pPrev;
 		bool m_bDummy;
-		T * m_pObj;
 	};
 
 	typedef node<T> node_t;

@@ -13,10 +13,9 @@ public:
 	template<class T>
 	struct node
 	{
-		node() : m_pNext(0), m_pObj(0) {}
+		node() : m_pNext(0) {}
 
 		node * m_pNext;
-		T * m_pObj;
 	};
 
 	typedef node<T> node_t;
