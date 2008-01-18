@@ -5,26 +5,38 @@
 
 namespace atomic {
 
+//! this is not ideal solution! should be replaced by some kind of pool
+struct queue_dummy_alloc
+{
+	template<class T>
+	static T* alloc()
+	{
+		return new T(true);
+	}
+
+	template<class T>
+	static void free(T * p)
+	{
+		delete p;
+	}
+};
+
 //! double linked list FIFO queue
-template <class T, class A>
+template <class T, class A = queue_dummy_alloc>
 class queue
 {
 public:
+	template<class T> struct node;
+
 	//! helper pointer with counter
-	template <class T>
+	template<class T>
 	struct ptr_t
 	{
-		ptr_t(T * const p)
-			: ptr(p)
-			, tag(0) {}
+		ptr_t(node<T> * const p) : ptr(p) , tag(0) {}
 
-		ptr_t(T * const p, const unsigned int t)
-			: ptr(p)
-			, tag(t) {}
+		ptr_t(node<T> * const p, const unsigned int t) : ptr(p), tag(t) {}
 
-		ptr_t()
-			: ptr(0)
-			, tag(0) {}
+		ptr_t() : ptr(0) , tag(0) {}
 
 		bool operator == (const ptr_t & p)
 		{
@@ -36,25 +48,25 @@ public:
 			return !operator == (p);
 		}
 
-		T * volatile ptr;
+		node<T> * volatile ptr;
 		volatile unsigned int tag;
 	};
+
+	typedef ptr_t<T> node_ptr_t;
 
 	//!
 	template<class T>
 	struct node
 	{
-		node()
-			: m_pNext(0)
-			, m_pPrev(0)
-			, m_bDummy(false) {}
+		node() : m_pNext(0) , m_pPrev(0) , m_bDummy(false) {}
+		node(const bool) : m_pNext(0) , m_pPrev(0) , m_bDummy(true) {}
 
-		ptr_t<T> m_pNext;
-		ptr_t<T> m_pPrev;
+		node_ptr_t m_pNext;
+		node_ptr_t m_pPrev;
 		bool m_bDummy;
+		T * m_pObj;
 	};
 
-	typedef ptr_t<T> node_ptr_t;
 	typedef node<T> node_t;
 
 public:
@@ -76,27 +88,26 @@ public:
 public:
 	//!
 	queue() throw(...)
-		: m_pTail(A::alloc<T>())
+		: m_pTail(A::alloc<node_t>())
 		, m_pHead(m_pTail.ptr)
 		, m_uiPushCollisions(0L)
 		, m_uiPopCollisions(0L)
-		, m_uiFixes(0L)
-	{
-		m_pHead.ptr->m_bDummy = true;
-	}
+		, m_uiFixes(0L) {}
 
 	~queue() throw() {} 
 
-	void push(T * const pNewNode)
+	void push(T * const pNewIdem)
 	{
 		node_ptr_t tail;
+
+		node_t * const pNewNode = pNewIdem;
 
 		pNewNode->m_pPrev = node_ptr_t(0, 0);
 
 		for (;;) {
 			tail = m_pTail;
 			pNewNode->m_pNext = node_ptr_t(tail.ptr, tail.tag + 1);
-			if (cas<T*>(
+			if (cas<node_t*>(
 				&m_pTail, 
 				pNewNode,
 				tail.tag + 1,
@@ -131,7 +142,7 @@ public:
 	T * pop()
 	{
 		node_ptr_t head, tail;
-		T * pDummy;
+		node_t * pDummy;
 
 		for (;;) {
 			head = m_pHead;
@@ -145,10 +156,10 @@ public:
 						}
 					} 
 					else {
-						pDummy = A::alloc<T>();
+						pDummy = A::alloc<node_t>();
 						pDummy->m_bDummy = true;
 						pDummy->m_pNext = node_ptr_t(tail.ptr, tail.tag + 1);
-						if (cas<T*>(
+						if (cas<node_t*>(
 							&m_pTail, 
 							pDummy, 
 							tail.tag + 1, 
@@ -159,13 +170,13 @@ public:
 							A::free(pDummy);
 						continue;
 					}
-					if (cas<T*>(
+					if (cas<node_t*>(
 						&m_pHead, 
 						head.ptr->m_pPrev.ptr,
 						head.tag + 1,
 						head.ptr, 
 						head.tag))
-						return head.ptr;
+						return static_cast<T*>(head.ptr);
 				} 
 				else {
 					if (tail.ptr == head.ptr)
@@ -175,7 +186,7 @@ public:
 							fixList(tail, head);
 							continue;
 						}
-						cas<T*>(
+						cas<node_t*>(
 							&m_pHead, 
 							head.ptr->m_pPrev.ptr, 
 							head.tag + 1, 
