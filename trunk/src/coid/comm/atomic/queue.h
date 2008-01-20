@@ -185,13 +185,13 @@ public:
 							fixList(tail, head);
 							continue;
 						}
-						cas<node_t*>(
+						if (cas<node_t*>(
 							&m_pHead, 
 							head.ptr->m_pPrev.ptr, 
 							head.tag + 1, 
 							head.ptr, 
-							head.tag);
-						A::free(head.ptr);
+							head.tag))
+							A::free(head.ptr);
 					}
 				} 
 			}
