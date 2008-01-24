@@ -543,12 +543,12 @@ public:
         return n;
     }
 
-	virtual uints transfer_from(binstream & dest)
+	virtual uints transfer_from(binstream & dest, uints blocksize = 4096 )
 	{
 		return dest.copy_to(dest);
 	}
 
-	virtual uints transfer_to(binstream & dest)
+	virtual uints transfer_to(binstream & dest, uints blocksize = 4096 )
 	{
 		return copy_to(dest);
 	}
