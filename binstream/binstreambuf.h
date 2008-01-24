@@ -206,13 +206,13 @@ public:
 
     ///Write raw data to another binstream. Overloadable to avoid excesive copying when not neccessary.
     ///@return number of bytes written
-    virtual uints transfer_to( binstream& bin )
+    virtual uints transfer_to( binstream& bin, uints blocksize = 4096 )
     {
         uints n=0, tlen=_buf.size();
 
         for( ; _bgi<tlen; )
         {
-            uints len = uint_min( tlen - _bgi, uints(4096) );
+			uints len = uint_min( tlen - _bgi, uints(blocksize) );
             uints oen = len;
             
             opcd e = bin.write_raw( _buf.ptr()+_bgi, len );
@@ -227,19 +227,19 @@ public:
         return n;
     }
 
-	virtual uints transfer_from( binstream& bin )
+	virtual uints transfer_from( binstream& bin, uints blocksize = 4096 )
 	{
         uints old = _buf.size();
         uints n=0;
 
         for( ; ; )
         {
-            uints len = 4096;
+            uints len = blocksize;
             void* ptr = _buf.add(len);
             
             opcd e = bin.read_raw_full( ptr, len );
 
-            n += 4096 - len;
+            n += blocksize - len;
 
             if( e || len>0 )
                 break;
