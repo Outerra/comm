@@ -21,14 +21,14 @@ struct queue_dummy_alloc
 	}
 };
 
-//! double linked list FIFO queue
+//! atomic double linked list FIFO queue
 template <class T, class A = queue_dummy_alloc>
 class queue
 {
 public:
 	template<class T> struct node;
 
-	//! helper pointer with counter
+	//! helper pointer with tag
 	template<class T>
 	struct ptr_t
 	{
@@ -69,55 +69,15 @@ public:
 	typedef node<T> node_t;
 
 public:
-	//! 
+	//! last pushed item
 	node_ptr_t m_pTail;
 
-	//!
+	//! first pushed item
 	node_ptr_t m_pHead;
 
-	//!
-	volatile unsigned int m_uiPushCollisions;
+protected:
 
-	//!
-	volatile unsigned int m_uiPopCollisions;
-
-	//!
-	volatile unsigned int m_uiFixes;
-
-public:
-	//!
-	queue() throw(...)
-		: m_pTail(A::alloc<node_t>())
-		, m_pHead(m_pTail.ptr)
-		, m_uiPushCollisions(0L)
-		, m_uiPopCollisions(0L)
-		, m_uiFixes(0L) {}
-
-	~queue() throw() {} 
-
-	void push(T * const pNewIdem)
-	{
-		node_ptr_t tail;
-
-		node_t * const pNewNode = pNewIdem;
-
-		pNewNode->m_pPrev = node_ptr_t(0, 0);
-
-		for (;;) {
-			tail = m_pTail;
-			pNewNode->m_pNext = node_ptr_t(tail.ptr, tail.tag + 1);
-			if (cas<node_t*>(
-				&m_pTail, 
-				pNewNode,
-				tail.tag + 1,
-				tail.ptr,
-				tail.tag)) {
-					tail.ptr->m_pPrev = node_ptr_t(pNewNode, tail.tag);
-					return;
-			}
-		}
-	}
-
+	//! optimistic fix called when prev pointer is not set
 	void fixList(node_ptr_t tail, node_ptr_t head)
 	{
 		node_ptr_t curNode, curNodeNext, nextNodePrev;
@@ -138,6 +98,40 @@ public:
 		};
 	}
 
+public:
+	//!	constructor
+	queue() throw(...)
+		: m_pTail(A::alloc<node_t>())
+		, m_pHead(m_pTail.ptr) {}
+
+	//!	destructor (do not clear queue for now)
+	~queue() throw() {} 
+
+	//! return item from the head of the queue
+	void push(T * const pNewIdem)
+	{
+		node_ptr_t tail;
+
+		node_t * const pNewNode = pNewIdem;
+
+		pNewNode->m_pPrev = node_ptr_t(0, 0);
+
+		for (;;) {
+			tail = m_pTail;
+			pNewNode->m_pNext = node_ptr_t(tail.ptr, tail.tag + 1);
+			if (cas<node_t*>(
+				&m_pTail, 
+				pNewNode,
+				tail.tag + 1,
+				tail.ptr,
+				tail.tag)) {
+				tail.ptr->m_pPrev = node_ptr_t(pNewNode, tail.tag);
+				return;
+			}
+		}
+	}
+
+	//! return item from the head of the queue
 	T * pop()
 	{
 		node_ptr_t head, tail;
@@ -195,7 +189,7 @@ public:
 				} 
 			}
 		}
-	};
+	}
 };
 
 } // end of namespace atomic
