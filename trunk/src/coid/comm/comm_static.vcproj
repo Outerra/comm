@@ -185,10 +185,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\atomic\rbuffer.h"
-				>
-			</File>
-			<File
 				RelativePath=".\atomic\stack.h"
 				>
 			</File>
