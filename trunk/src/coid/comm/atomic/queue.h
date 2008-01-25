@@ -32,7 +32,7 @@ public:
 	template<class T>
 	struct ptr_t
 	{
-		ptr_t(node<T> * const p) : ptr(p) , tag(0) {}
+		explicit ptr_t(node<T> * const p) : ptr(p) , tag(0) {}
 
 		ptr_t(node<T> * const p, const unsigned int t) : ptr(p), tag(t) {}
 
@@ -164,7 +164,7 @@ public:
 							tail.tag + 1, 
 							tail.ptr, 
 							tail.tag))
-							head.ptr->m_pPrev = pDummy;
+							head.ptr->m_pPrev = node_ptr_t(pDummy, tail.tag);
 						else
 							A::free(pDummy);
 						continue;
@@ -185,13 +185,12 @@ public:
 							fixList(tail, head);
 							continue;
 						}
-						if (cas<node_t*>(
+						cas<node_t*>(
 							&m_pHead, 
 							head.ptr->m_pPrev.ptr, 
 							head.tag + 1, 
 							head.ptr, 
-							head.tag))
-							A::free(head.ptr);
+							head.tag);
 					}
 				} 
 			}
