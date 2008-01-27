@@ -242,7 +242,25 @@ public:
 
         flg |= O_RAW;
 
-        _handle = ::open( name, flg, 0644 );
+		/*Handle hfile = CreateFile( 
+			name,
+			GENERIC_READ, // desired access
+			0,                            // share mode (none)
+			0,                         // security attributes
+			OPEN_EXISTING,                // fail if it doesn't exist
+			FILE_FLAG_NO_BUFFERING,    // flags & attributes
+			0);                       // file template
+
+
+		if( hfile == INVALID_HANDLE_VALUE ) {
+            int e = ::lockf( _handle, F_TLOCK, 0 );
+            if( e != 0 )  close();
+		}
+
+		_handle = _open_osfhandle((intptr_t)hfile, 0);*/
+
+		_handle = ::open( name, flg, 0644 );
+
         if( _handle != -1  &&  sh )
         {
             int e = ::lockf( _handle, F_TLOCK, 0 );
