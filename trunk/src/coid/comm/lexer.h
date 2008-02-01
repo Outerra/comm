@@ -1311,42 +1311,43 @@ protected:
                 return true;
             }
 
-            //it's another leading sequence, find it
-            DASSERT(x & xSEQ);
-
-            const dynarray<sequence*>& dseq = _seqary[(x>>rSEQ)-1];
-            uint i, n = (uint)dseq.size();
-
-            for( i=0; i<n; ++i ) {
-                if(!enabled(*dseq[i]))  continue;
-
-                uint k = dseq[i]->id;
-                if( (br.stbenabled & (1ULL<<k))  &&  match(dseq[i]->leading,off) )
-                    break;
-            }
-
-            if(i<n)
+            //if it's another leading sequence, find it
+            if(x & xSEQ)
             {
-                //valid sequence found, nest
-                sequence* sob = dseq[i];
-                off += sob->leading.len();
+                const dynarray<sequence*>& dseq = _seqary[((x&xSEQ)>>rSEQ)-1];
+                uint i, n = (uint)dseq.size();
 
-                bool nest;
-                if( sob->type == entity::BLOCK )
-                    nest = next_read_block(
-                        *(const block_rule*)sob,
-                        off, false
-                    );
-                else if( sob->type == entity::STRING )
-                    nest = next_read_string(
-                        *(const string_rule*)sob,
-                        off, false
-                    );
-                else
-                    nest = true;
-                if(!nest)  return false;
-                
-                continue;
+                for( i=0; i<n; ++i ) {
+                    if(!enabled(*dseq[i]))  continue;
+
+                    uint sid = dseq[i]->id;
+                    if( (br.stbenabled & (1ULL<<sid))  &&  match(dseq[i]->leading,off) )
+                        break;
+                }
+
+                if(i<n)
+                {
+                    //valid & enabled sequence found, nest
+                    sequence* sob = dseq[i];
+                    off += sob->leading.len();
+
+                    bool nest;
+                    if( sob->type == entity::BLOCK )
+                        nest = next_read_block(
+                            *(const block_rule*)sob,
+                            off, false
+                        );
+                    else if( sob->type == entity::STRING )
+                        nest = next_read_string(
+                            *(const string_rule*)sob,
+                            off, false
+                        );
+                    else
+                        nest = true;
+                    if(!nest)  return false;
+                    
+                    continue;
+                }
             }
 
             _last.upd_newline( _tok.ptr()+off );
@@ -1467,7 +1468,7 @@ protected:
         for( ; off<_tok._len; ++off )
         {
             const char* p = (const char*)pc+off;
-            if( (_abmap[*p] & xSEQ) != 0 )  break;
+            if( (_abmap[*p] & (fSEQ_TRAILING|xSEQ)) != 0 )  break;
 
             _last.upd_newline(p);
         }
