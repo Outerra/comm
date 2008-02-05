@@ -119,6 +119,21 @@ struct type_moving_constructor
     static void move( T& dst, T* oldp )     { dst = *oldp; }
 };
 
+////////////////////////////////////////////////////////////////////////////////
+///Template that either copies or swaps values according to the template argument
+template<class T, bool SWAP>
+struct type_copier_swapper {
+    static void assign( T& dst, const T& src ) {
+        dst = src;
+    }
+};
+
+template<class T>
+struct type_copier_swapper<T,true> {
+    static void assign( T& dst, const T& src ) {
+        dst.swap( const_cast<T&>(src) );
+    }
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 template <class T>
