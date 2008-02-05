@@ -143,6 +143,12 @@
 #endif //_DEBUG
 
 
+///Compile-time assertion
+#define STATIC_ASSERT_(B) \
+	typedef coid::static_assert_test<coid::static_assertion_failure<(bool)(B)> >\
+	coid_static_assert_typedef_##__COUNTER__;
+
+
 ////////////////////////////////////////////////////////////////////////////////
 COID_NAMESPACE_BEGIN
 
@@ -159,9 +165,5 @@ template <> struct static_assertion_failure<true>
 template<int x> struct static_assert_test{};
 
 COID_NAMESPACE_END
-
-#define STATIC_ASSERT_(B) \
-	typedef coid::static_assert_test<coid::static_assertion_failure<(bool)(B)> >\
-	coid_static_assert_typedef_##__COUNTER__;
 
 #endif  //!__COID_COMM_ASSERT__HEADER_FILE__

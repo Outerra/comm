@@ -566,20 +566,12 @@ public:
         return std::pair<const_iterator,const_iterator>( const_iterator(f,*this), const_iterator(l,*this) );
     }
 
-    bool erase_value( const LOOKUP_KEY& k, VAL* dst )
-    {
-        Node** pn = find_socket(k);
-        if(!*pn)
-            return false;
+    bool erase_value( const LOOKUP_KEY& k, VAL* dst ) {
+        return _erase_value<false>(k, dst);
+    }
 
-        Node* n = *pn;
-        *pn = n->_next;
-        if(dst)
-            *dst = n->_val;
-        delete n;
-        --_nelem;
-
-        return true;
+    bool swap_erase_value( const LOOKUP_KEY& k, VAL& dst ) {
+        return _erase_value<true>(k, &dst);
     }
 
     size_t erase( const LOOKUP_KEY& k )        { return del(k); }
@@ -767,6 +759,25 @@ private:
     }
 
 protected:
+
+    template<bool SWAP>
+    bool erase_value( const LOOKUP_KEY& k, VAL* dst )
+    {
+        Node** pn = find_socket(k);
+        if(!*pn)
+            return false;
+
+        Node* n = *pn;
+        *pn = n->_next;
+        if(dst)
+            type_copier_swapper<VAL,SWAP>::assign( *dst, n->_val );
+        delete n;
+        --_nelem;
+
+        return true;
+    }
+
+    template<bool SWAP>
     Node** _insert_unique( const VAL& v )
     {
         typename GETKEYFUNC::retType k = _GETKEYFUNC(v);
@@ -775,7 +786,7 @@ protected:
         {
             Node* n = new Node;
             n->_next = *ppn;
-            n->_val = v;
+            type_copier_swapper<VAL,SWAP>::assign( n->_val, v );
             *ppn = n;
 
             ++_nelem;
@@ -801,27 +812,43 @@ protected:
         return 0;
     }
 
-    Node** _insert_unique__replace( const VAL& v )
+    Node** _find_or_insert_slot( const LOOKUP_KEY& k )
     {
-        typename GETKEYFUNC::retType k = _GETKEYFUNC(v);
         Node** ppn = find_socket(k);
-        if( *ppn != 0  &&  _EQFUNC( _GETKEYFUNC((*ppn)->_val), k ) )
+        if( *ppn == 0  ||  !_EQFUNC( _GETKEYFUNC((*ppn)->_val), k ) )
         {
-            Node* n = *ppn;
-            *ppn = n->_next;
-            delete n;
-            --_nelem;
+            Node* n = new Node;
+            n->_next = *ppn;
+            *ppn = n;
+
+            ++_nelem;
         }
 
-        Node* n = new Node;
-        n->_next = *ppn;
-        n->_val = v;
-        *ppn = n;
-
-        ++_nelem;
         return ppn;
     }
 
+    template<bool SWAP>
+    Node** _insert_unique__replace( const VAL& v )
+    {
+        typename GETKEYFUNC::retType k = _GETKEYFUNC(v);
+        Node* n;
+        Node** ppn = find_socket(k);
+        if( *ppn != 0  &&  _EQFUNC( _GETKEYFUNC((*ppn)->_val), k ) ) {
+            n = *ppn;
+        }
+        else {
+            n = new Node;
+            n->_next = *ppn;
+            *ppn = n;
+            ++_nelem;
+        }
+
+        type_copier_swapper<VAL,SWAP>::assign( n->_val, v );
+
+        return ppn;
+    }
+
+    template<bool SWAP>
     Node** _insert_equal( const VAL& v )
     {
         typename GETKEYFUNC::retType k = _GETKEYFUNC(v);
@@ -829,7 +856,7 @@ protected:
 
         Node* n = new Node;
         n->_next = *ppn;
-        n->_val = v;
+        type_copier_swapper<VAL,SWAP>::assign( n->_val, v );
         *ppn = n;
 
         ++_nelem;

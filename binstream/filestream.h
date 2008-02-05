@@ -64,28 +64,6 @@ COID_NAMESPACE_BEGIN
 ////////////////////////////////////////////////////////////////////////////////
 class filestream : public binstream
 {
-    int   _handle;
-    int   _op;                  ///< >0 reading, <0 writing
-    int64 _rpos, _wpos;
-
-    bool setpos( int64 pos )
-    {
-#ifdef SYSTYPE_MSVC
-        return -1 != _lseeki64( _handle, pos, SEEK_SET );
-#else
-        return pos == lseek64( _handle, pos, SEEK_SET );
-#endif
-    }
-
-    int64 getpos() const
-    {
-#ifdef SYSTYPE_MSVC
-        return _telli64( _handle );
-#else
-        return lseek64( _handle, 0, SEEK_CUR );
-#endif
-    }
-
 public:
 
     virtual uint binstream_attributes( bool in0out1 ) const
@@ -96,11 +74,7 @@ public:
     virtual opcd write_raw( const void* p, uints& len )
     {
         if(_op>0 )
-        {
-            _rpos = getpos();
-            setpos( _wpos );
-            _op = -1;
-        }
+            upd_rpos();
 
         DASSERT( _handle != -1 );
 
@@ -113,11 +87,7 @@ public:
     virtual opcd read_raw( void* p, uints& len )
     {
         if(_op<0)
-        {
-            _wpos = getpos();
-            setpos( _rpos );
-            _op = 1;
-        }
+            upd_wpos();
 
         DASSERT( _handle != -1 );
 
@@ -158,6 +128,25 @@ public:
         if(_op<0)
             setpos(_wpos);
     }
+
+    //@{ Get and set current reading and writing position
+    uint64 get_read_pos() const         { return _op>0  ?  getpos()  :  _rpos; }
+    uint64 get_write_pos() const        { return _op<0  ?  getpos()  :  _wpos; }
+
+    bool set_read_pos( uint64 pos )     {
+        if(_op<0)
+            upd_wpos();
+
+        return setpos(pos);
+    }
+
+    bool set_write_pos( uint64 pos )     {
+        if(_op>0)
+            upd_rpos();
+
+        return setpos(pos);
+    }
+    //@}
 
     ///Open file
     //@param arg concatenated file name, '?' character and attributes as specified in open(name,attr)
@@ -309,22 +298,64 @@ public:
     explicit filestream( const token& s )
     {
         _handle = -1;
+        _rpos = _wpos = 0;
         open(s);
     }
 
     filestream( const token& s, token attr )
     {
         _handle = -1;
+        _rpos = _wpos = 0;
         open(s,attr);
     }
 
     filestream( const char* s, token attr )
     {
         _handle = -1;
+        _rpos = _wpos = 0;
         open(s,attr);
     }
 
     ~filestream() { close(); }
+
+
+private:
+
+    int   _handle;
+    int   _op;                          ///< >0 reading, <0 writing
+    int64 _rpos, _wpos;
+
+    bool setpos( int64 pos )
+    {
+#ifdef SYSTYPE_MSVC
+        return -1 != _lseeki64( _handle, pos, SEEK_SET );
+#else
+        return pos == lseek64( _handle, pos, SEEK_SET );
+#endif
+    }
+
+    int64 getpos() const
+    {
+#ifdef SYSTYPE_MSVC
+        return _telli64( _handle );
+#else
+        return lseek64( _handle, 0, SEEK_CUR );
+#endif
+    }
+
+    ///Update _wpos and switch to reading mode
+    void upd_wpos() {
+        _wpos = getpos();
+        setpos(_rpos);
+        _op = 1;
+    }
+
+    ///Update _rpos and switch to writing mode
+    void upd_rpos() {
+        _rpos = getpos();
+        setpos(_wpos);
+        _op = -1;
+    }
 };
 
 //compatibility
