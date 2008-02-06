@@ -163,7 +163,7 @@ public:
 protected:
 
     ///Map from thread_t to thread_info
-    typedef hash_keyset<thread_t,info*,_Select_CopyPtr<info,thread_t> >     t_hash;
+    typedef hash_keyset<info*,_Select_CopyPtr<info,thread_t> >     t_hash;
 
     t_hash          _hash;
     //thread_key      _pkey;

@@ -324,7 +324,7 @@ public:
     }
 
 
-    typedef hash_multikeyset<token,element_data,_Select_Copy<element_data,token> >  t_hash;
+    typedef hash_multikeyset<element_data,_Select_Copy<element_data,token> >  t_hash;
     typedef typename t_hash::const_iterator  t_ci;
 
     

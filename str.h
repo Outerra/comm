@@ -1686,7 +1686,7 @@ inline opcd binstream_write_token( binstream &out, const token& x )
 ////////////////////////////////////////////////////////////////////////////////
 template<> struct hash<charstr>
 {
-    typedef charstr type_key;
+    typedef charstr key_type;
 
     size_t operator() (const charstr& str) const
     {
@@ -1696,7 +1696,7 @@ template<> struct hash<charstr>
 
 template<> struct hash<token>
 {
-    typedef token type_key;
+    typedef token key_type;
 
     size_t operator() (const token& tok) const
     {

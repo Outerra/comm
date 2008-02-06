@@ -48,22 +48,36 @@ COID_NAMESPACE_BEGIN
 
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+@class hash_map
+@param KEY key type (stored in pair with the value)
+@param VAL value type
+@param HASHFUNC hash function, HASHFUNC::key_type should be the type used for lookup
+@param EQFUNC equality functor
+**/
 template <
     class KEY,
     class VAL,
     class HASHFUNC=hash<KEY>,
-    class EQFUNC=equal_to<KEY,typename HASHFUNC::type_key>,
+    class EQFUNC=equal_to<KEY,typename HASHFUNC::key_type>,
     class ALLOC=comm_allocator<VAL>
     >
 class hash_map
-    : public hashtable<std::pair<KEY,VAL>,HASHFUNC,EQFUNC,_Select_pair1st<std::pair<KEY,VAL>,KEY>,ALLOC>
+    : public hashtable<
+        std::pair<KEY,VAL>,
+        HASHFUNC,
+        EQFUNC,
+        _Select_pair1st<std::pair<KEY,VAL>,typename HASHFUNC::key_type>,
+        ALLOC
+    >
 {
-    typedef _Select_pair1st<std::pair<KEY,VAL>,KEY>                     _SEL;
+    typedef typename HASHFUNC::key_type                                 _LOOKUP;
+    typedef _Select_pair1st<std::pair<KEY,VAL>,_LOOKUP>                 _SEL;
     typedef hashtable<std::pair<KEY,VAL>,HASHFUNC,EQFUNC,_SEL,ALLOC>    _HT;
 
 public:
 
-    typedef typename _HT::KEY                       key_type;
+    typedef typename _HT::LOOKUP                    key_type;
     typedef std::pair<KEY,VAL>                      value_type;
     typedef HASHFUNC                                hasher;
     typedef EQFUNC                                  key_equal;
@@ -193,15 +207,36 @@ public:
 
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class KEY, class VAL, class HASHFUNC=hash<KEY>, class EQFUNC=equal_to<KEY,typename HASHFUNC::type_key>, class ALLOC=comm_allocator<VAL> >
-class hash_multimap : public hashtable<std::pair<KEY,VAL>,HASHFUNC,EQFUNC,_Select_pair1st<std::pair<KEY,VAL>,KEY>,ALLOC>
+/**
+@class hash_multimap
+@param KEY key type (stored in pair with the value)
+@param VAL value type
+@param HASHFUNC hash function, HASHFUNC::key_type should be the type used for lookup
+@param EQFUNC equality functor
+**/
+template <
+    class KEY,
+    class VAL,
+    class HASHFUNC=hash<KEY>,
+    class EQFUNC=equal_to<KEY,typename HASHFUNC::key_type>,
+    class ALLOC=comm_allocator<VAL>
+    >
+class hash_multimap
+    : public hashtable<
+        std::pair<KEY,VAL>,
+        HASHFUNC,
+        EQFUNC,
+        _Select_pair1st<std::pair<KEY,VAL>,typename HASHFUNC::key_type>,
+        ALLOC
+    >
 {
-    typedef _Select_pair1st<std::pair<KEY,VAL>,KEY>                     _SEL;
+    typedef typename HASHFUNC::key_type                                 _LOOKUP;
+    typedef _Select_pair1st<std::pair<KEY,VAL>,_LOOKUP>                 _SEL;
     typedef hashtable<std::pair<KEY,VAL>,HASHFUNC,EQFUNC,_SEL,ALLOC>    _HT;
 
 public:
 
-    typedef typename _HT::KEY                       key_type;
+    typedef typename _HT::LOOKUP                    key_type;
     typedef std::pair<KEY,VAL>                      value_type;
     typedef HASHFUNC                                hasher;
     typedef EQFUNC                                  key_equal;

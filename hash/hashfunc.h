@@ -47,7 +47,7 @@ COID_NAMESPACE_BEGIN
 ////////////////////////////////////////////////////////////////////////////////
 template<class KEY> struct hash
 {
-    typedef KEY     type_key;
+    typedef KEY     key_type;
 };
 
 inline uints __coid_hash_string( const char* s )
@@ -75,60 +75,60 @@ inline uints __coid_hash_string( const char* s, uints n )
 ////////////////////////////////////////////////////////////////////////////////
 template<> struct hash<char*>
 {
-    typedef char* type_key;
+    typedef char* key_type;
     uints operator()(const char* s) const { return __coid_hash_string(s); }
 };
 
 template<> struct hash<const char*>
 {
-    typedef const char* type_key;
+    typedef const char* key_type;
     uints operator()(const char* s) const { return __coid_hash_string(s); }
 };
 
 template<> struct hash<char> {
-    typedef char type_key;
+    typedef char key_type;
     uints operator()(char x) const { return x; }
 };
 template<> struct hash<unsigned char> {
-    typedef unsigned char type_key;
+    typedef unsigned char key_type;
     uints operator()(unsigned char x) const { return x; }
 };
 template<> struct hash<signed char> {
-    typedef signed char type_key;
+    typedef signed char key_type;
     uints operator()(unsigned char x) const { return x; }
 };
 
 template<> struct hash<short> {
-    typedef short type_key;
+    typedef short key_type;
     uints operator()(short x) const { return x; }
 };
 template<> struct hash<unsigned short> {
-    typedef unsigned short type_key;
+    typedef unsigned short key_type;
     uints operator()(unsigned short x) const { return x; }
 };
 template<> struct hash<int> {
-    typedef int type_key;
+    typedef int key_type;
     uints operator()(int x) const { return x; }
 };
 template<> struct hash<unsigned int> {
-    typedef unsigned int type_key;
+    typedef unsigned int key_type;
     uints operator()(unsigned int x) const { return x; }
 };
 template<> struct hash<long> {
-    typedef long type_key;
+    typedef long key_type;
     uints operator()(long x) const { return x; }
 };
 template<> struct hash<unsigned long> {
-    typedef unsigned long type_key;
+    typedef unsigned long key_type;
     uints operator()(unsigned long x) const { return x; }
 };
 
 template<> struct hash<int64> {
-    typedef int64 type_key;
+    typedef int64 key_type;
     uints operator()(int64 x) const { return (uints)x; }
 };
 template<> struct hash<uint64> {
-    typedef uint64 type_key;
+    typedef uint64 key_type;
     uints operator()(uint64 x) const { return (uints)x; }
 };
 
