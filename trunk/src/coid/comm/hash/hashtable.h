@@ -54,17 +54,17 @@ COID_NAMESPACE_BEGIN
 ////////////////////////////////////////////////////////////////////////////////
 template <class T>
 struct _Select_Itself{
-    typedef const T&    retType;
+    typedef const T&    ret_type;
 
-    retType operator()(const T& t) const { return t; }
+    ret_type operator()(const T& t) const { return t; }
 };
 
-template <class PAIR, class KEY>
+template <class PAIR, class LOOKUP>
 struct _Select_pair1st
 {
-    typedef const KEY&  retType;
+    typedef const LOOKUP&  ret_type;
 
-    retType operator() (const PAIR& __x) const  { return __x.first; }
+    ret_type operator() (const PAIR& __x) const  { return __x.first; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -80,7 +80,7 @@ struct equal_to	: public std::binary_function<KEYSTORE, KEYLOOKUP, bool>
 ////////////////////////////////////////////////////////////////////////////////
 ///Base class for hash containers
 //@param VAL value type stored at hashtable nodes
-//@param HASHFUNC hash functor, should define type of the key as type_key
+//@param HASHFUNC hash functor, should define type of the key as key_type
 //@param EQFUNC equality functor
 //@param GETKEYFUNC key extractor from VAL
 template <class VAL, class HASHFUNC, class EQFUNC, class GETKEYFUNC, class ALLOC>
@@ -88,7 +88,7 @@ class hashtable
 {
 public:
     ///Type used for lookups is deduced from the hash template
-    typedef typename HASHFUNC::type_key     KEY;
+    typedef typename HASHFUNC::key_type         LOOKUP;
 
 protected:
     struct Node
@@ -108,8 +108,6 @@ private:
 
 protected:
 
-    typedef hashtable<VAL,HASHFUNC,EQFUNC,GETKEYFUNC,ALLOC>   _HT;
-
     void add( Node** n, const VAL& v )
     {
         Node* r = new Node;
@@ -122,8 +120,8 @@ protected:
     EQFUNC      _EQFUNC;
     GETKEYFUNC  _GETKEYFUNC;
 
-    uints bucket( const KEY& v ) const              { return _HASHFUNC(v) % _table.size(); }
-    uints bucketn( const KEY& v, uints n ) const    { return _HASHFUNC(v) % n; }
+    uints bucket( const LOOKUP& v ) const              { return _HASHFUNC(v) % _table.size(); }
+    uints bucketn( const LOOKUP& v, uints n ) const    { return _HASHFUNC(v) % n; }
 
 
 public:
@@ -134,14 +132,12 @@ public:
 
     class Ptr : public std::iterator<std::forward_iterator_tag, VAL>
     {
-        typedef hashtable<VAL,HASHFUNC,EQFUNC,GETKEYFUNC,ALLOC>   _HT;
-
         Node* _p;
-        const _HT* _ht;
+        const _Self* _ht;
 
     public:
 
-        typedef KEY                    key_type;
+        typedef LOOKUP                 key_type;
         typedef VAL                    value_type;
         typedef HASHFUNC               hasher;
         typedef EQFUNC                 key_equal;
@@ -154,9 +150,9 @@ public:
         typedef const VAL&             const_reference;
 
         const Node* _get_node() const       { return _p; }
-        const _HT* _get_ht() const          { return _ht; }
+        const _Self* _get_ht() const          { return _ht; }
 
-        Ptr( Node* p, const _HT& ht ) : _p(p), _ht(&ht) {}
+        Ptr( Node* p, const _Self& ht ) : _p(p), _ht(&ht) {}
         Ptr() {}
 
         bool operator == (const Ptr& p) const       { return _p == p._p; }
@@ -184,14 +180,12 @@ public:
 
     class CPtr : public std::iterator<std::forward_iterator_tag, VAL>
     {
-        typedef hashtable<VAL,HASHFUNC,EQFUNC,GETKEYFUNC,ALLOC>   _HT;
-
         const Node* _p;
-        const _HT*  _ht;
+        const _Self*  _ht;
 
     public:
 
-        typedef KEY                    key_type;
+        typedef LOOKUP                 key_type;
         typedef VAL                    value_type;
         typedef HASHFUNC               hasher;
         typedef EQFUNC                 key_equal;
@@ -203,7 +197,7 @@ public:
         typedef VAL&                   reference;
         typedef const VAL&             const_reference;
 
-        CPtr( const Node* p, const _HT& ht ) : _p(p), _ht(&ht) {}
+        CPtr( const Node* p, const _Self& ht ) : _p(p), _ht(&ht) {}
         CPtr() {}
 
         CPtr( const Ptr& p )
@@ -276,14 +270,14 @@ protected:
         virtual bool is_continuous() const      { return false; }
 
 
-        hashtable_binstream_container( const _HT& ht )
-            : binstream_containerT<VAL>(ht.size()), _ht((_HT&)ht)
+        hashtable_binstream_container( const _Self& ht )
+            : binstream_containerT<VAL>(ht.size()), _ht((_Self&)ht)
         {
             _begin = _ht.begin();
             _end = _ht.end();
         }
 
-        hashtable_binstream_container( _HT& ht, uints n )
+        hashtable_binstream_container( _Self& ht, uints n )
             : binstream_containerT<VAL>(n), _ht(ht)
         {
             _begin = _ht.begin();
@@ -303,13 +297,13 @@ protected:
         }
 
     protected:
-        _HT& _ht;
+        _Self& _ht;
         const_iterator _begin, _end;
         dynarray<Node*> _newnode;
     };
 
     ///Find first node that matches the key, provided hash value is given
-    Node* find_node( uint hash, const KEY& k ) const
+    Node* find_node( uint hash, const LOOKUP& k ) const
     {
         uints h = hash % _table.size();
         Node* n = (Node*)_table[h];
@@ -323,7 +317,7 @@ protected:
     }
 
     ///Find first node that matches the key
-    Node* find_node( const KEY& k ) const
+    Node* find_node( const LOOKUP& k ) const
     {
         uints h = bucket(k);
         Node* n = (Node*)_table[h];
@@ -337,7 +331,7 @@ protected:
     }
 
     ///Find first node that matches the key
-    Node* find_node( const KEY& k, uints& slot ) const
+    Node* find_node( const LOOKUP& k, uints& slot ) const
     {
         slot = bucket(k);
         Node* n = (Node*)_table[slot];
@@ -351,7 +345,7 @@ protected:
     }
 
     ///Find first node that matches the key
-    Node** find_socket( const KEY& k ) const
+    Node** find_socket( const LOOKUP& k ) const
     {
         uints h = bucket(k);
         Node** n = (Node**)&_table[h];
@@ -365,7 +359,7 @@ protected:
     }
 
     ///Find first node that matches the key
-    Node** find_socket( dynarray<Node*>& a, const KEY& k ) const
+    Node** find_socket( dynarray<Node*>& a, const LOOKUP& k ) const
     {
         uints h = bucketn( k, a.size() );
         Node** n = (Node**)&a[h];
@@ -379,7 +373,7 @@ protected:
     }
 
     ///Delete all records that match the key
-    uints del( const KEY& k )
+    uints del( const LOOKUP& k )
     {
         Node** ppn = find_socket(k);
         Node* n = *ppn;
@@ -515,7 +509,7 @@ public:
     }
 
 
-    iterator find( const KEY& k )
+    iterator find( const LOOKUP& k )
     {
         Node* n = find_node(k);
         if(n)
@@ -524,7 +518,7 @@ public:
             return end();
     }
 
-    const_iterator find( const KEY& k ) const
+    const_iterator find( const LOOKUP& k ) const
     {
         const Node* n = find_node(k);
         if(n)
@@ -533,7 +527,7 @@ public:
             return end();
     }
 
-    size_t count( const KEY& k )
+    size_t count( const LOOKUP& k )
     {
         Node* n = find_node(k);
         if(!n)  return 0;
@@ -548,7 +542,7 @@ public:
         return c;
     }
 
-    std::pair<iterator, iterator> equal_range( const KEY& k )
+    std::pair<iterator, iterator> equal_range( const LOOKUP& k )
     {
         uint slot;
         Node* f = find_node(k,slot);
@@ -563,7 +557,7 @@ public:
         return std::pair<iterator,iterator>( iterator(f,*this), iterator(l,*this) );
     }
 
-    std::pair<const_iterator, const_iterator> equal_range( const KEY& k ) const
+    std::pair<const_iterator, const_iterator> equal_range( const LOOKUP& k ) const
     {
         uint slot;
         const Node* f = find_node(k,slot);
@@ -578,15 +572,17 @@ public:
         return std::pair<const_iterator,const_iterator>( const_iterator(f,*this), const_iterator(l,*this) );
     }
 
-    bool erase_value( const KEY& k, VAL* dst ) {
+    bool erase_value( const LOOKUP& k, VAL* dst ) {
         return _erase_value<false>(k, dst);
     }
 
-    bool swap_erase_value( const KEY& k, VAL& dst ) {
+    bool swap_erase_value( const LOOKUP& k, VAL& dst ) {
         return _erase_value<true>(k, &dst);
     }
 
-    size_t erase( const KEY& k )        { return del(k); }
+    size_t erase( const LOOKUP& k ) {
+        return del(k);
+    }
 
     void erase( const_iterator& it )
     {
@@ -745,7 +741,9 @@ public:
         return *this;
     }
 
-    ~hashtable()    { clear(); } 
+    ~hashtable() {
+        clear();
+    }
 
 private:
     void copy_from( const _Self& ht )
@@ -773,7 +771,7 @@ private:
 protected:
 
     template<bool SWAP>
-    bool _erase_value( const KEY& k, VAL* dst )
+    bool _erase_value( const LOOKUP& k, VAL* dst )
     {
         Node** pn = find_socket(k);
         if(!*pn)
@@ -792,7 +790,7 @@ protected:
     template<bool SWAP>
     Node** _insert_unique( const VAL& v )
     {
-        typename GETKEYFUNC::retType k = _GETKEYFUNC(v);
+        typename GETKEYFUNC::ret_type k = _GETKEYFUNC(v);
         Node** ppn = find_socket(k);
         if( *ppn == 0  ||  !_EQFUNC( _GETKEYFUNC((*ppn)->_val), k ) )
         {
@@ -808,7 +806,7 @@ protected:
         return 0;
     }
 
-    Node** _insert_unique_slot( const KEY& k )
+    Node** _insert_unique_slot( const LOOKUP& k )
     {
         Node** ppn = find_socket(k);
         if( *ppn == 0  ||  !_EQFUNC( _GETKEYFUNC((*ppn)->_val), k ) )
@@ -824,7 +822,7 @@ protected:
         return 0;
     }
 
-    Node** _find_or_insert_slot( const KEY& k )
+    Node** _find_or_insert_slot( const LOOKUP& k )
     {
         Node** ppn = find_socket(k);
         if( *ppn == 0  ||  !_EQFUNC( _GETKEYFUNC((*ppn)->_val), k ) )
@@ -842,7 +840,7 @@ protected:
     template<bool SWAP>
     Node** _insert_unique__replace( const VAL& v )
     {
-        typename GETKEYFUNC::retType k = _GETKEYFUNC(v);
+        typename GETKEYFUNC::ret_type k = _GETKEYFUNC(v);
         Node* n;
         Node** ppn = find_socket(k);
         if( *ppn != 0  &&  _EQFUNC( _GETKEYFUNC((*ppn)->_val), k ) ) {
@@ -863,7 +861,7 @@ protected:
     template<bool SWAP>
     Node** _insert_equal( const VAL& v )
     {
-        typename GETKEYFUNC::retType k = _GETKEYFUNC(v);
+        typename GETKEYFUNC::ret_type k = _GETKEYFUNC(v);
         Node** ppn = find_socket(k);
 
         Node* n = new Node;
@@ -875,7 +873,7 @@ protected:
         return ppn;
     }
 
-    Node** _insert_equal_slot( const KEY& k )
+    Node** _insert_equal_slot( const LOOKUP& k )
     {
         Node** ppn = find_socket(k);
 

@@ -42,7 +42,7 @@ COID_NAMESPACE_BEGIN
 
 
 struct SMReg {
-    typedef hash_keyset<token,MetaDesc,_Select_Copy<MetaDesc,token> >  MAP;
+    typedef hash_keyset<MetaDesc,_Select_Copy<MetaDesc,token> >  MAP;
     MAP _map;
     dynarray< local<MetaDesc> > _arrays;
     //comm_mutex _mutex;

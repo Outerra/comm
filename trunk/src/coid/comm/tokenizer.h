@@ -138,7 +138,7 @@ class tokenizer
     int _pushback;                  ///< true if the tokenizer should return the previous token again (was pushed back)
 
     ///Reverted mapping of escaped symbols for synthesizer
-    hash_keyset< ucs4,const escpair*,_Select_CopyPtr<escpair,ucs4> >
+    hash_keyset< const escpair*, _Select_CopyPtr<escpair,ucs4> >
         _backmap;
 
 protected:

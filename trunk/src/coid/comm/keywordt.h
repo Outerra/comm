@@ -70,7 +70,7 @@ template <class KEY, class VAL, class HASH = hash<KEY> >
 class keywordmap
 {
 public:
-    typedef typename HASH::type_key                     t_lookup;
+    typedef typename HASH::key_type                     t_lookup;
     typedef hash_map<KEY, VAL, HASH>                    t_hash;
     typedef typename t_hash::const_iterator             const_iterator;
     typedef typename t_hash::iterator                   iterator;
@@ -103,7 +103,7 @@ public:
         _hash.clear();
     }
 
-    uints size() const                   { return _hash.size(); }
+    uints size() const                  { return _hash.size(); }
 
     const_iterator begin() const        { return _hash.begin(); }
     iterator begin()                    { return _hash.begin(); }
@@ -152,7 +152,7 @@ public:
         _hash.clear();
     }
 
-    uints size() const                   { return _hash.size(); }
+    uints size() const                  { return _hash.size(); }
 
 
     const_iterator begin() const        { return _hash.begin(); }

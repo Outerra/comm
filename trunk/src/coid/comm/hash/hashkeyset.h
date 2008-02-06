@@ -53,50 +53,63 @@ COID_NAMESPACE_BEGIN
 template <class VAL, class KEY>
 struct _Select_Copy
 {
-    typedef KEY retType;
+    typedef KEY ret_type;
 
-    retType operator()(const VAL& t) const   { return (KEY)t; }
+    ret_type operator()(const VAL& t) const   { return (ret_type)t; }
 };
 
 ///Extracts key object from the value pointer by dereferencing and casting
 template <class VAL, class KEY>
 struct _Select_CopyPtr
 {
-    typedef KEY retType;
+    typedef KEY ret_type;
 
-    retType operator()(const VAL* t) const   { return (KEY)*t; }
+    ret_type operator()(const VAL* t) const   { return (ret_type)*t; }
 };
 
 ///Extracts key reference from the value by casting operator
 template <class VAL, class KEY>
 struct _Select_GetRef
 {
-    typedef const KEY& retType;
+    typedef const KEY& ret_type;
 
-    retType operator()(const VAL& t) const   { return (const KEY&)t; }
+    ret_type operator()(const VAL& t) const   { return (ret_type)t; }
 };
 
 ///Extracts key reference from the value pointer by dereferencing and casting
 template <class VAL, class KEY>
 struct _Select_GetRefPtr
 {
-    typedef const KEY& retType;
+    typedef const KEY& ret_type;
 
-    retType operator()(const VAL* t) const   { return (const KEY&)*t; }
+    ret_type operator()(const VAL* t) const   { return (ret_type)*t; }
 };
 
 //@} EXTRACTKEY templates
 
 ////////////////////////////////////////////////////////////////////////////////
-///
-template <class KEY, class VAL, class EXTRACTKEY, class HASHFUNC=hash<KEY>, class EQFUNC=equal_to<KEY,typename HASHFUNC::type_key>, class ALLOC=comm_allocator<VAL> >
-class hash_keyset : public hashtable<VAL,HASHFUNC,EQFUNC,EXTRACTKEY,ALLOC>
+/**
+@class hash_keyset
+@param VAL value type stored in hash table
+@param EXTRACTKEY key extractor from value type, EXTRACTKEY::ret_type is the type extracted
+@param HASHFUNC hash function, HASHFUNC::key_type should be the type used for lookup
+@param EQFUNC equality functor, comparing EXTRACTKEY::ret_type extracted from value with HASHFUNC::key_type lookup key
+**/
+template <
+    class VAL,
+    class EXTRACTKEY,
+    class HASHFUNC=hash<typename EXTRACTKEY::ret_type>,
+    class EQFUNC=equal_to<typename EXTRACTKEY::ret_type, typename HASHFUNC::key_type>,
+    class ALLOC=comm_allocator<VAL>
+    >
+class hash_keyset
+    : public hashtable<VAL,HASHFUNC,EQFUNC,EXTRACTKEY,ALLOC>
 {
     typedef hashtable<VAL,HASHFUNC,EQFUNC,EXTRACTKEY,ALLOC>  _HT;
 
 public:
 
-    typedef typename _HT::KEY                       key_type;
+    typedef typename _HT::LOOKUP                    key_type;
     typedef VAL                                     value_type;
     typedef EXTRACTKEY                              extractor;
     typedef HASHFUNC                                hasher;
@@ -267,14 +280,28 @@ public:
 
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class KEY, class VAL, class EXTRACTKEY, class HASHFUNC=hash<KEY>, class EQFUNC=equal_to<KEY,typename HASHFUNC::type_key>, class ALLOC=comm_allocator<VAL> >
-class hash_multikeyset : public hashtable<VAL,HASHFUNC,EQFUNC,EXTRACTKEY,ALLOC>
+/**
+@class hash_keyset
+@param VAL value type stored in hash table
+@param EXTRACTKEY key extractor from value type, EXTRACTKEY::ret_type is the type extracted
+@param HASHFUNC hash function, HASHFUNC::key_type should be the type used for lookup
+@param EQFUNC equality functor, comparing EXTRACTKEY::ret_type extracted from value with HASHFUNC::key_type lookup key
+**/
+template <
+    class VAL,
+    class EXTRACTKEY,
+    class HASHFUNC=hash<typename EXTRACTKEY::ret_type>,
+    class EQFUNC=equal_to<typename EXTRACTKEY::ret_type, typename HASHFUNC::key_type>,
+    class ALLOC=comm_allocator<VAL>
+    >
+class hash_multikeyset
+    : public hashtable<VAL,HASHFUNC,EQFUNC,EXTRACTKEY,ALLOC>
 {
     typedef hashtable<VAL,HASHFUNC,EQFUNC,EXTRACTKEY,ALLOC>  _HT;
 
 public:
 
-    typedef typename _HT::KEY                       key_type;
+    typedef typename _HT::LOOKUP                    key_type;
     typedef VAL                                     value_type;
     typedef EXTRACTKEY                              extractor;
     typedef HASHFUNC                                hasher;
@@ -407,33 +434,33 @@ public:
 
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class KEY, class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, class ALLOC>
-inline binstream& operator << ( binstream& bin, const hash_keyset<KEY,VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
+template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, class ALLOC>
+inline binstream& operator << ( binstream& bin, const hash_keyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
 {   return a.stream_out(bin);    }
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class KEY, class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, class ALLOC>
-inline binstream& operator >> ( binstream& bin, hash_keyset<KEY,VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
+template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, class ALLOC>
+inline binstream& operator >> ( binstream& bin, hash_keyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
 {   return a.stream_in(bin);    }
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class KEY, class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, class ALLOC>
-inline binstream& operator << ( binstream& bin, const hash_multikeyset<KEY,VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
+template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, class ALLOC>
+inline binstream& operator << ( binstream& bin, const hash_multikeyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
 {   return a.stream_out(bin);    }
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class KEY, class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, class ALLOC>
-inline binstream& operator >> ( binstream& bin, hash_multikeyset<KEY,VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
+template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, class ALLOC>
+inline binstream& operator >> ( binstream& bin, hash_multikeyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
 {   return a.stream_in(bin);    }
 
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class KEY, class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, class ALLOC>
-inline metastream& operator << ( metastream& bin, const hash_keyset<KEY,VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
+template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, class ALLOC>
+inline metastream& operator << ( metastream& bin, const hash_keyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
 {   return a.stream_meta(bin);    }
 
-template <class KEY, class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, class ALLOC>
-inline metastream& operator << ( metastream& bin, const hash_multikeyset<KEY,VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
+template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, class ALLOC>
+inline metastream& operator << ( metastream& bin, const hash_multikeyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
 {   return a.stream_meta(bin);    }
 
 

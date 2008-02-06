@@ -47,15 +47,27 @@ COID_NAMESPACE_BEGIN
 
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class VAL, class HASHFUNC=hash<VAL>, class EQFUNC=equal_to<VAL,typename HASHFUNC::type_key>, class ALLOC=comm_allocator<VAL> >
-class hash_set : public hashtable<VAL,HASHFUNC,EQFUNC,_Select_Itself<VAL>,ALLOC>
+/**
+@class hash_set
+@param VAL value type
+@param HASHFUNC hash function, HASHFUNC::key_type should be the type used for lookup
+@param EQFUNC equality functor
+**/
+template <
+    class VAL,
+    class HASHFUNC=hash<VAL>,
+    class EQFUNC=equal_to<VAL,typename HASHFUNC::key_type>,
+    class ALLOC=comm_allocator<VAL>
+    >
+class hash_set
+    : public hashtable<VAL,HASHFUNC,EQFUNC,_Select_Itself<VAL>,ALLOC>
 {
-    typedef hashtable<VAL,HASHFUNC,EQFUNC,_Select_Itself<VAL>,ALLOC>   _HT;
-    typedef _Select_Itself<VAL>        _SEL;
+    typedef _Select_Itself<VAL>                         _SEL;
+    typedef hashtable<VAL,HASHFUNC,EQFUNC,_SEL,ALLOC>   _HT;
 
 public:
 
-    typedef typename _HT::KEY                       key_type;
+    typedef typename _HT::LOOKUP                    key_type;
     typedef VAL                                     value_type;
     typedef HASHFUNC                                hasher;
     typedef EQFUNC                                  key_equal;
@@ -170,15 +182,27 @@ public:
 
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class VAL, class HASHFUNC=hash<VAL>, class EQFUNC=equal_to<VAL,typename HASHFUNC::type_key>, class ALLOC=comm_allocator<VAL> >
-class hash_multiset : public hashtable<VAL,HASHFUNC,EQFUNC,_Select_Itself<VAL>,ALLOC>
+/**
+@class hash_set
+@param VAL value type
+@param HASHFUNC hash function, HASHFUNC::key_type should be the type used for lookup
+@param EQFUNC equality functor
+**/
+template <
+    class VAL,
+    class HASHFUNC=hash<VAL>,
+    class EQFUNC=equal_to<VAL,typename HASHFUNC::key_type>,
+    class ALLOC=comm_allocator<VAL>
+    >
+class hash_multiset
+    : public hashtable<VAL,HASHFUNC,EQFUNC,_Select_Itself<VAL>,ALLOC>
 {
-    typedef hashtable<VAL,HASHFUNC,EQFUNC,_Select_Itself<VAL>,ALLOC>   _HT;
-    typedef _Select_Itself<VAL>        _SEL;
+    typedef _Select_Itself<VAL>                         _SEL;
+    typedef hashtable<VAL,HASHFUNC,EQFUNC,_SEL,ALLOC>   _HT;
 
 public:
 
-    typedef typename _HT::KEY                       key_type;
+    typedef typename _HT::LOOKUP                    key_type;
     typedef VAL                                     value_type;
     typedef HASHFUNC                                hasher;
     typedef EQFUNC                                  key_equal;
