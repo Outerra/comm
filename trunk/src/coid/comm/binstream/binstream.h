@@ -768,6 +768,7 @@ public:
     binstream& xread_array( binstream_container& s )       { opcd e = read_array(s);  if(e) throw e;  return *this; }
 
 
+    ///Writes array without storing the count explicitly, reader is expected to know the count
     template< class T >
     opcd write_fixed_array( const T* p, uints n )
     {
@@ -776,6 +777,7 @@ public:
         return write_array_content(c,&count);
     }
 
+    ///Read array that was stored without the count
     template< class T >
     opcd read_fixed_array( T* p, uints n )
     {
@@ -784,6 +786,7 @@ public:
         return read_array_content(c,n,&count);
     }
 
+    ///Write linear array (helper function)
     template< class T >
     opcd write_linear_array( const T* p, uints n )
     {

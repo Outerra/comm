@@ -88,14 +88,15 @@ struct _Select_GetRefPtr
 //@} EXTRACTKEY templates
 
 ////////////////////////////////////////////////////////////////////////////////
+///
 template <class KEY, class VAL, class EXTRACTKEY, class HASHFUNC=hash<KEY>, class EQFUNC=equal_to<KEY,typename HASHFUNC::type_key>, class ALLOC=comm_allocator<VAL> >
-class hash_keyset : public hashtable<VAL,KEY,HASHFUNC,EQFUNC,EXTRACTKEY,ALLOC>
+class hash_keyset : public hashtable<VAL,HASHFUNC,EQFUNC,EXTRACTKEY,ALLOC>
 {
-    typedef hashtable<VAL,KEY,HASHFUNC,EQFUNC,EXTRACTKEY,ALLOC>  _HT;
+    typedef hashtable<VAL,HASHFUNC,EQFUNC,EXTRACTKEY,ALLOC>  _HT;
 
 public:
 
-    typedef typename _HT::LOOKUP_KEY                key_type;
+    typedef typename _HT::KEY                       key_type;
     typedef VAL                                     value_type;
     typedef EXTRACTKEY                              extractor;
     typedef HASHFUNC                                hasher;
@@ -267,13 +268,13 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////////
 template <class KEY, class VAL, class EXTRACTKEY, class HASHFUNC=hash<KEY>, class EQFUNC=equal_to<KEY,typename HASHFUNC::type_key>, class ALLOC=comm_allocator<VAL> >
-class hash_multikeyset : public hashtable<VAL,KEY,HASHFUNC,EQFUNC,EXTRACTKEY,ALLOC>
+class hash_multikeyset : public hashtable<VAL,HASHFUNC,EQFUNC,EXTRACTKEY,ALLOC>
 {
-    typedef hashtable<VAL,KEY,HASHFUNC,EQFUNC,EXTRACTKEY,ALLOC>  _HT;
+    typedef hashtable<VAL,HASHFUNC,EQFUNC,EXTRACTKEY,ALLOC>  _HT;
 
 public:
 
-    typedef typename _HT::LOOKUP_KEY                key_type;
+    typedef typename _HT::KEY                       key_type;
     typedef VAL                                     value_type;
     typedef EXTRACTKEY                              extractor;
     typedef HASHFUNC                                hasher;
