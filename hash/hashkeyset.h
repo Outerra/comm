@@ -55,7 +55,7 @@ struct _Select_Copy
 {
     typedef KEY ret_type;
 
-    ret_type operator()(const VAL& t) const   { return (ret_type)t; }
+    ret_type operator()(const VAL& t) const   { return t; }
 };
 
 ///Extracts key object from the value pointer by dereferencing and casting
@@ -64,7 +64,7 @@ struct _Select_CopyPtr
 {
     typedef KEY ret_type;
 
-    ret_type operator()(const VAL* t) const   { return (ret_type)*t; }
+    ret_type operator()(const VAL* t) const   { return *t; }
 };
 
 ///Extracts key reference from the value by casting operator
@@ -73,7 +73,7 @@ struct _Select_GetRef
 {
     typedef const KEY& ret_type;
 
-    ret_type operator()(const VAL& t) const   { return (ret_type)t; }
+    ret_type operator()(const VAL& t) const   { return t; }
 };
 
 ///Extracts key reference from the value pointer by dereferencing and casting
@@ -82,7 +82,7 @@ struct _Select_GetRefPtr
 {
     typedef const KEY& ret_type;
 
-    ret_type operator()(const VAL* t) const   { return (ret_type)*t; }
+    ret_type operator()(const VAL* t) const   { return *t; }
 };
 
 //@} EXTRACTKEY templates
@@ -99,7 +99,7 @@ template <
     class VAL,
     class EXTRACTKEY,
     class HASHFUNC=hash<typename EXTRACTKEY::ret_type>,
-    class EQFUNC=equal_to<typename EXTRACTKEY::ret_type, typename HASHFUNC::key_type>,
+    class EQFUNC=equal_to<typename type_base<typename EXTRACTKEY::ret_type>::type, typename HASHFUNC::key_type>,
     class ALLOC=comm_allocator<VAL>
     >
 class hash_keyset
@@ -268,7 +268,7 @@ public:
     static metastream& stream_meta( metastream& m )
     {
         MTEMPL_OPEN(m);
-        MT(m, KEY);
+        MT(m, typename type_base<typename EXTRACTKEY::ret_type>::type);
         MT(m, VAL);
         MTEMPL_CLOSE(m);
 
@@ -291,7 +291,7 @@ template <
     class VAL,
     class EXTRACTKEY,
     class HASHFUNC=hash<typename EXTRACTKEY::ret_type>,
-    class EQFUNC=equal_to<typename EXTRACTKEY::ret_type, typename HASHFUNC::key_type>,
+    class EQFUNC=equal_to<typename type_base<typename EXTRACTKEY::ret_type>::type, typename HASHFUNC::key_type>,
     class ALLOC=comm_allocator<VAL>
     >
 class hash_multikeyset
@@ -422,7 +422,7 @@ public:
     static metastream& stream_meta( metastream& m )
     {
         MTEMPL_OPEN(m);
-        MT(m, EXTRACTKEY::ret_type);
+        MT(m, typename type_base<typename EXTRACTKEY::ret_type>::type);
         MT(m, VAL);
         MTEMPL_CLOSE(m);
 
