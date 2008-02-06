@@ -67,12 +67,12 @@ class hash_map
         std::pair<KEY,VAL>,
         HASHFUNC,
         EQFUNC,
-        _Select_pair1st<std::pair<KEY,VAL>,typename HASHFUNC::key_type>,
+        _Select_pair1st<std::pair<KEY,VAL>,KEY>,
         ALLOC
     >
 {
     typedef typename HASHFUNC::key_type                                 _LOOKUP;
-    typedef _Select_pair1st<std::pair<KEY,VAL>,_LOOKUP>                 _SEL;
+    typedef _Select_pair1st<std::pair<KEY,VAL>,KEY>                     _SEL;
     typedef hashtable<std::pair<KEY,VAL>,HASHFUNC,EQFUNC,_SEL,ALLOC>    _HT;
 
 public:
@@ -226,12 +226,12 @@ class hash_multimap
         std::pair<KEY,VAL>,
         HASHFUNC,
         EQFUNC,
-        _Select_pair1st<std::pair<KEY,VAL>,typename HASHFUNC::key_type>,
+        _Select_pair1st<std::pair<KEY,VAL>,KEY>,
         ALLOC
     >
 {
     typedef typename HASHFUNC::key_type                                 _LOOKUP;
-    typedef _Select_pair1st<std::pair<KEY,VAL>,_LOOKUP>                 _SEL;
+    typedef _Select_pair1st<std::pair<KEY,VAL>,KEY>                     _SEL;
     typedef hashtable<std::pair<KEY,VAL>,HASHFUNC,EQFUNC,_SEL,ALLOC>    _HT;
 
 public:

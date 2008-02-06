@@ -422,7 +422,7 @@ public:
     static metastream& stream_meta( metastream& m )
     {
         MTEMPL_OPEN(m);
-        MT(m, KEY);
+        MT(m, EXTRACTKEY::ret_type);
         MT(m, VAL);
         MTEMPL_CLOSE(m);
 
