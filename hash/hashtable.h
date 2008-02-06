@@ -773,7 +773,7 @@ private:
 protected:
 
     template<bool SWAP>
-    bool erase_value( const KEY& k, VAL* dst )
+    bool _erase_value( const KEY& k, VAL* dst )
     {
         Node** pn = find_socket(k);
         if(!*pn)
