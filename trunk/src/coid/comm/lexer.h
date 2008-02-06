@@ -109,7 +109,7 @@ class lexer
     struct token_hash
     {
         uint    hash;
-        typedef token type_key;
+        typedef token key_type;
 
         ///Compute hash of token
         uint operator() (const token& s) const
@@ -1706,7 +1706,7 @@ protected:
 
     int _pushback;                  ///< true if the lexer should return the previous token again (was pushed back)
 
-    typedef hash_multikeyset< token, entity*, _Select_CopyPtr<entity,token> >
+    typedef hash_multikeyset< entity*, _Select_CopyPtr<entity,token> >
         Tentmap;
 
     Tentmap _entmap;                ///< entity map, maps names to groups, strings, blocks etc.
