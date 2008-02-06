@@ -105,6 +105,23 @@ struct type_base<K*> {
     static bool dereference() { return true; }
 };
 
+template<class K>
+struct type_base<const K*> {
+    typedef K type;
+    static bool dereference() { return true; }
+};
+
+template<class K>
+struct type_base<K&> {
+    typedef K type;
+    static bool dereference() { return false; }
+};
+
+template<class K>
+struct type_base<const K&> {
+    typedef K type;
+    static bool dereference() { return false; }
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 template <class T>
