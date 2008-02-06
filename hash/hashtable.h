@@ -78,12 +78,17 @@ struct equal_to	: public std::binary_function<KEYSTORE, KEYLOOKUP, bool>
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class VAL, class KEY, class HASHFUNC, class EQFUNC, class GETKEYFUNC, class ALLOC>
+///Base class for hash containers
+//@param VAL value type stored at hashtable nodes
+//@param HASHFUNC hash functor, should define type of the key as type_key
+//@param EQFUNC equality functor
+//@param GETKEYFUNC key extractor from VAL
+template <class VAL, class HASHFUNC, class EQFUNC, class GETKEYFUNC, class ALLOC>
 class hashtable
 {
 public:
-    ///Type used for lookups. Usually the same as LOOKUP_KEY, but sometimes can differ.
-    typedef typename HASHFUNC::type_key             LOOKUP_KEY;
+    ///Type used for lookups is deduced from the hash template
+    typedef typename HASHFUNC::type_key     KEY;
 
 protected:
     struct Node
@@ -99,11 +104,11 @@ private:
     dynarray<Node*> _table;
     uints _nelem;
 
-    typedef hashtable<VAL,LOOKUP_KEY,HASHFUNC,EQFUNC,GETKEYFUNC,ALLOC>  _Self;
+    typedef hashtable<VAL,HASHFUNC,EQFUNC,GETKEYFUNC,ALLOC>  _Self;
 
 protected:
 
-    typedef hashtable<VAL,LOOKUP_KEY,HASHFUNC,EQFUNC,GETKEYFUNC,ALLOC>   _HT;
+    typedef hashtable<VAL,HASHFUNC,EQFUNC,GETKEYFUNC,ALLOC>   _HT;
 
     void add( Node** n, const VAL& v )
     {
@@ -117,8 +122,8 @@ protected:
     EQFUNC      _EQFUNC;
     GETKEYFUNC  _GETKEYFUNC;
 
-    uints bucket( const LOOKUP_KEY& v ) const              { return _HASHFUNC(v) % _table.size(); }
-    uints bucketn( const LOOKUP_KEY& v, uints n ) const    { return _HASHFUNC(v) % n; }
+    uints bucket( const KEY& v ) const              { return _HASHFUNC(v) % _table.size(); }
+    uints bucketn( const KEY& v, uints n ) const    { return _HASHFUNC(v) % n; }
 
 
 public:
@@ -129,14 +134,14 @@ public:
 
     class Ptr : public std::iterator<std::forward_iterator_tag, VAL>
     {
-        typedef hashtable<VAL,LOOKUP_KEY,HASHFUNC,EQFUNC,GETKEYFUNC,ALLOC>   _HT;
+        typedef hashtable<VAL,HASHFUNC,EQFUNC,GETKEYFUNC,ALLOC>   _HT;
 
         Node* _p;
         const _HT* _ht;
 
     public:
 
-        typedef LOOKUP_KEY                    key_type;
+        typedef KEY                    key_type;
         typedef VAL                    value_type;
         typedef HASHFUNC               hasher;
         typedef EQFUNC                 key_equal;
@@ -179,14 +184,14 @@ public:
 
     class CPtr : public std::iterator<std::forward_iterator_tag, VAL>
     {
-        typedef hashtable<VAL,LOOKUP_KEY,HASHFUNC,EQFUNC,GETKEYFUNC,ALLOC>   _HT;
+        typedef hashtable<VAL,HASHFUNC,EQFUNC,GETKEYFUNC,ALLOC>   _HT;
 
         const Node* _p;
         const _HT*  _ht;
 
     public:
 
-        typedef LOOKUP_KEY                    key_type;
+        typedef KEY                    key_type;
         typedef VAL                    value_type;
         typedef HASHFUNC               hasher;
         typedef EQFUNC                 key_equal;
@@ -304,7 +309,7 @@ protected:
     };
 
     ///Find first node that matches the key, provided hash value is given
-    Node* find_node( uint hash, const LOOKUP_KEY& k ) const
+    Node* find_node( uint hash, const KEY& k ) const
     {
         uints h = hash % _table.size();
         Node* n = (Node*)_table[h];
@@ -318,7 +323,7 @@ protected:
     }
 
     ///Find first node that matches the key
-    Node* find_node( const LOOKUP_KEY& k ) const
+    Node* find_node( const KEY& k ) const
     {
         uints h = bucket(k);
         Node* n = (Node*)_table[h];
@@ -332,7 +337,7 @@ protected:
     }
 
     ///Find first node that matches the key
-    Node* find_node( const LOOKUP_KEY& k, uints& slot ) const
+    Node* find_node( const KEY& k, uints& slot ) const
     {
         slot = bucket(k);
         Node* n = (Node*)_table[slot];
@@ -346,7 +351,7 @@ protected:
     }
 
     ///Find first node that matches the key
-    Node** find_socket( const LOOKUP_KEY& k ) const
+    Node** find_socket( const KEY& k ) const
     {
         uints h = bucket(k);
         Node** n = (Node**)&_table[h];
@@ -360,7 +365,7 @@ protected:
     }
 
     ///Find first node that matches the key
-    Node** find_socket( dynarray<Node*>& a, const LOOKUP_KEY& k ) const
+    Node** find_socket( dynarray<Node*>& a, const KEY& k ) const
     {
         uints h = bucketn( k, a.size() );
         Node** n = (Node**)&a[h];
@@ -374,7 +379,7 @@ protected:
     }
 
     ///Delete all records that match the key
-    uints del( const LOOKUP_KEY& k )
+    uints del( const KEY& k )
     {
         Node** ppn = find_socket(k);
         Node* n = *ppn;
@@ -475,7 +480,9 @@ public:
         return end();
     }
 
-    iterator end()      { return iterator( (Node*)0, *this ); }
+    iterator end() {
+        return iterator( (Node*)0, *this );
+    }
 
     const_iterator begin() const
     {
@@ -486,13 +493,18 @@ public:
         return end();
     }
 
-    const_iterator end() const          { return const_iterator( (Node*)0, *this ); }
+    const_iterator end() const {
+        return const_iterator( (Node*)0, *this );
+    }
 
   
-    size_t bucket_count() const         { return _table.size(); }
+    size_t bucket_count() const {
+        return _table.size();
+    }
 
-    size_t max_bucket_count() const
-    {   return size_t(-1);   } 
+    size_t max_bucket_count() const {
+        return size_t(-1);
+    }
 
     size_t elems_in_bucket( size_t k ) const
     {
@@ -503,7 +515,7 @@ public:
     }
 
 
-    iterator find( const LOOKUP_KEY& k )
+    iterator find( const KEY& k )
     {
         Node* n = find_node(k);
         if(n)
@@ -512,7 +524,7 @@ public:
             return end();
     }
 
-    const_iterator find( const LOOKUP_KEY& k ) const
+    const_iterator find( const KEY& k ) const
     {
         const Node* n = find_node(k);
         if(n)
@@ -521,7 +533,7 @@ public:
             return end();
     }
 
-    size_t count( const LOOKUP_KEY& k )
+    size_t count( const KEY& k )
     {
         Node* n = find_node(k);
         if(!n)  return 0;
@@ -536,7 +548,7 @@ public:
         return c;
     }
 
-    std::pair<iterator, iterator> equal_range( const LOOKUP_KEY& k )
+    std::pair<iterator, iterator> equal_range( const KEY& k )
     {
         uint slot;
         Node* f = find_node(k,slot);
@@ -551,7 +563,7 @@ public:
         return std::pair<iterator,iterator>( iterator(f,*this), iterator(l,*this) );
     }
 
-    std::pair<const_iterator, const_iterator> equal_range( const LOOKUP_KEY& k ) const
+    std::pair<const_iterator, const_iterator> equal_range( const KEY& k ) const
     {
         uint slot;
         const Node* f = find_node(k,slot);
@@ -566,15 +578,15 @@ public:
         return std::pair<const_iterator,const_iterator>( const_iterator(f,*this), const_iterator(l,*this) );
     }
 
-    bool erase_value( const LOOKUP_KEY& k, VAL* dst ) {
+    bool erase_value( const KEY& k, VAL* dst ) {
         return _erase_value<false>(k, dst);
     }
 
-    bool swap_erase_value( const LOOKUP_KEY& k, VAL& dst ) {
+    bool swap_erase_value( const KEY& k, VAL& dst ) {
         return _erase_value<true>(k, &dst);
     }
 
-    size_t erase( const LOOKUP_KEY& k )        { return del(k); }
+    size_t erase( const KEY& k )        { return del(k); }
 
     void erase( const_iterator& it )
     {
@@ -761,7 +773,7 @@ private:
 protected:
 
     template<bool SWAP>
-    bool erase_value( const LOOKUP_KEY& k, VAL* dst )
+    bool erase_value( const KEY& k, VAL* dst )
     {
         Node** pn = find_socket(k);
         if(!*pn)
@@ -796,7 +808,7 @@ protected:
         return 0;
     }
 
-    Node** _insert_unique_slot( const LOOKUP_KEY& k )
+    Node** _insert_unique_slot( const KEY& k )
     {
         Node** ppn = find_socket(k);
         if( *ppn == 0  ||  !_EQFUNC( _GETKEYFUNC((*ppn)->_val), k ) )
@@ -812,7 +824,7 @@ protected:
         return 0;
     }
 
-    Node** _find_or_insert_slot( const LOOKUP_KEY& k )
+    Node** _find_or_insert_slot( const KEY& k )
     {
         Node** ppn = find_socket(k);
         if( *ppn == 0  ||  !_EQFUNC( _GETKEYFUNC((*ppn)->_val), k ) )
@@ -863,7 +875,7 @@ protected:
         return ppn;
     }
 
-    Node** _insert_equal_slot( const LOOKUP_KEY& k )
+    Node** _insert_equal_slot( const KEY& k )
     {
         Node** ppn = find_socket(k);
 

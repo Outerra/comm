@@ -48,15 +48,22 @@ COID_NAMESPACE_BEGIN
 
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class KEY, class VAL, class HASHFUNC=hash<KEY>, class EQFUNC=equal_to<KEY,typename HASHFUNC::type_key>, class ALLOC=comm_allocator<VAL> >
-class hash_map : public hashtable<std::pair<KEY,VAL>,KEY,HASHFUNC,EQFUNC,_Select_pair1st<std::pair<KEY,VAL>,KEY>,ALLOC>
+template <
+    class KEY,
+    class VAL,
+    class HASHFUNC=hash<KEY>,
+    class EQFUNC=equal_to<KEY,typename HASHFUNC::type_key>,
+    class ALLOC=comm_allocator<VAL>
+    >
+class hash_map
+    : public hashtable<std::pair<KEY,VAL>,HASHFUNC,EQFUNC,_Select_pair1st<std::pair<KEY,VAL>,KEY>,ALLOC>
 {
-    typedef hashtable<std::pair<KEY,VAL>,KEY,HASHFUNC,EQFUNC,_Select_pair1st<std::pair<KEY,VAL>,KEY>,ALLOC>   _HT;
-    typedef _Select_pair1st<std::pair<KEY,VAL>,KEY>         _SEL;
+    typedef _Select_pair1st<std::pair<KEY,VAL>,KEY>                     _SEL;
+    typedef hashtable<std::pair<KEY,VAL>,HASHFUNC,EQFUNC,_SEL,ALLOC>    _HT;
 
 public:
 
-    typedef typename _HT::LOOKUP_KEY                key_type;
+    typedef typename _HT::KEY                       key_type;
     typedef std::pair<KEY,VAL>                      value_type;
     typedef HASHFUNC                                hasher;
     typedef EQFUNC                                  key_equal;
@@ -187,14 +194,14 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////////
 template <class KEY, class VAL, class HASHFUNC=hash<KEY>, class EQFUNC=equal_to<KEY,typename HASHFUNC::type_key>, class ALLOC=comm_allocator<VAL> >
-class hash_multimap : public hashtable<std::pair<KEY,VAL>,KEY,HASHFUNC,EQFUNC,_Select_pair1st<std::pair<KEY,VAL>,KEY>,ALLOC>
+class hash_multimap : public hashtable<std::pair<KEY,VAL>,HASHFUNC,EQFUNC,_Select_pair1st<std::pair<KEY,VAL>,KEY>,ALLOC>
 {
-    typedef hashtable<std::pair<KEY,VAL>,KEY,HASHFUNC,EQFUNC,_Select_pair1st<std::pair<KEY,VAL>,KEY>,ALLOC>   _HT;
-    typedef _Select_pair1st<std::pair<KEY,VAL>,KEY>         _SEL;
+    typedef _Select_pair1st<std::pair<KEY,VAL>,KEY>                     _SEL;
+    typedef hashtable<std::pair<KEY,VAL>,HASHFUNC,EQFUNC,_SEL,ALLOC>    _HT;
 
 public:
 
-    typedef typename _HT::LOOKUP_KEY                key_type;
+    typedef typename _HT::KEY                       key_type;
     typedef std::pair<KEY,VAL>                      value_type;
     typedef HASHFUNC                                hasher;
     typedef EQFUNC                                  key_equal;
