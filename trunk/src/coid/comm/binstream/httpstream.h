@@ -528,6 +528,8 @@ public:
 
     cachestream& get_cache_stream()     { return _cache; }
 
+    binstream& text()                   { check_write(); return _tcache; }
+
 protected:
 
     txtstream _tcache;
