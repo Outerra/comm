@@ -52,10 +52,10 @@
 #else
 # include <unistd.h>
 # define  O_RAW   0
-# define _write     ::write
-# define _read      ::read
-# define _close     ::close
-# define _fileno    ::fileno
+# define _write     write
+# define _read      read
+# define _close     close
+# define _fileno    fileno
 #endif
 
 COID_NAMESPACE_BEGIN
