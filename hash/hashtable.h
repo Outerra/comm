@@ -573,11 +573,11 @@ public:
     }
 
     bool erase_value( const LOOKUP& k, VAL* dst ) {
-        return _erase_value<false>(k, dst);
+        return this->_erase_value<false>(k, dst);
     }
 
     bool swap_erase_value( const LOOKUP& k, VAL& dst ) {
-        return _erase_value<true>(k, &dst);
+        return this->_erase_value<true>(k, &dst);
     }
 
     size_t erase( const LOOKUP& k ) {
