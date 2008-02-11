@@ -56,6 +56,7 @@
 # define _read      read
 # define _close     close
 # define _fileno    fileno
+# define _dup       dup
 #endif
 
 COID_NAMESPACE_BEGIN
@@ -278,7 +279,7 @@ public:
             return ersIMPROPER_STATE;
 
         dst.close();
-        dst._handle = _dup(_handle);
+        dst._handle = ::_dup(_handle);
 
         return 0;
     }
