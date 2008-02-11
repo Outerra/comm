@@ -43,7 +43,6 @@
 #include "tutf8.h"
 #include "dynarray.h"
 #include "hash/hashkeyset.h"
-#include "hash/hashmap.h"
 #include "hash/hashset.h"
 
 COID_NAMESPACE_BEGIN
@@ -59,8 +58,8 @@ COID_NAMESPACE_BEGIN
     not returned by default, just skipped.
 
         It's possible to define keywords that are returned as a different entity
-    when encountered. As a token of some group is being read, a hash value is
-    computed along the scanning. If any keywords are defined, an additional
+    when encountered. As a token of some group is being read, hash value is
+    computed along the scanning. If any keywords are defined, additional
     check is performed to see whether the token read has been a keyword or not.
     The token is then returned as of type ID_KEYWORDS instead of the original
     group id.
@@ -70,7 +69,7 @@ COID_NAMESPACE_BEGIN
     enclosed in custom delimiter sequences.
         With strings it performs substitution of escape character sequences and
     outputs the strings as one processed token.
-        With blocks, it allows recursive processing of nested blocks, strings or
+        With blocks it allows recursive processing of nested blocks, strings or
     sequences, and outputs the whole block as a single token.
 
     Sequences, strings and blocks can be in enabled or disabled state. This is used
@@ -100,7 +99,7 @@ COID_NAMESPACE_BEGIN
         Note that blocks can declare what other block and string types are enabled
     when processing their content, so the lexer can use slightly different rules
     for processing text inside the block than outside of it.
-    
+
     This functionality will be used by the parser.
 **/
 class lexer
@@ -173,7 +172,7 @@ public:
         token_hash hash;                        ///< hash value computed for tokens (but not for strings or blocks)
         uint    line;                           ///< current line number
         const char* start;                      ///< current line start
-        char ch;                                ///< last read character
+        char    ch;                             ///< last read character
 
         bool operator == (int i) const          { return i == id; }
         bool operator == (const token& t) const { return tok == t; }
@@ -1706,7 +1705,7 @@ protected:
 
     int _pushback;                  ///< true if the lexer should return the previous token again (was pushed back)
 
-    typedef hash_multikeyset< entity*, _Select_CopyPtr<entity,token> >
+    typedef hash_multikeyset<entity*, _Select_CopyPtr<entity,token> >
         Tentmap;
 
     Tentmap _entmap;                ///< entity map, maps names to groups, strings, blocks etc.

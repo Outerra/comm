@@ -543,14 +543,14 @@ public:
         return n;
     }
 
-	virtual uints transfer_from(binstream & dest, uints blocksize = 4096 )
+	virtual uints transfer_from( binstream& src, uints blocksize = 4096 )
 	{
-		return dest.copy_to(dest);
+		return src.copy_to(*this);
 	}
 
-	virtual uints transfer_to(binstream & dest, uints blocksize = 4096 )
+	virtual uints transfer_to( binstream& dst, uints blocksize = 4096 )
 	{
-		return copy_to(dest);
+		return copy_to(dst);
 	}
 
 
