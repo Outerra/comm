@@ -52,10 +52,10 @@
 #else
 # include <unistd.h>
 # define  O_RAW   0
-# define _write     write
-# define _read      read
-# define _close     close
-# define _fileno    fileno
+# define _write     ::write
+# define _read      ::read
+# define _close     ::close
+# define _fileno    ::fileno
 #endif
 
 COID_NAMESPACE_BEGIN
@@ -261,9 +261,25 @@ public:
 
     virtual opcd close( bool linger=false )
     {
-        if( _handle != -1 )
+        if( _handle != -1 ) {
             ::_close(_handle);
-        _handle = -1;
+            _handle = -1;
+        }
+
+        _rpos = _wpos = 0;
+
+        return 0;
+    }
+
+    ///Duplicate filestream
+    opcd dup( filestream& dst ) const
+    {
+        if( _handle == -1 )
+            return ersIMPROPER_STATE;
+
+        dst.close();
+        dst._handle = _dup(_handle);
+
         return 0;
     }
 
