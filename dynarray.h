@@ -121,13 +121,13 @@ struct _dynarray_eptr : std::iterator<std::random_access_iterator_tag, T>
     _dynarray_eptr& operator ++()       { ++_p;  return *this; }
     _dynarray_eptr& operator --()       { --_p;  return *this; }
 
-    _dynarray_eptr  operator ++(ints)   { _dynarray_eptr x(_p);  ++_p;  return x; }
-    _dynarray_eptr  operator --(ints)   { _dynarray_eptr x(_p);  --_p;  return x; }
+    _dynarray_eptr  operator ++(ints) { _dynarray_eptr x(_p);  ++_p;  return x; }
+    _dynarray_eptr  operator --(ints) { _dynarray_eptr x(_p);  --_p;  return x; }
 
     _dynarray_eptr& operator += (ints n){ _p += n;  return *this; }
 
-    _dynarray_eptr  operator + (ints n) { return _dynarray_eptr(_p+n); }
-    _dynarray_eptr  operator - (ints n) { return _dynarray_eptr(_p-n); }
+    _dynarray_eptr  operator + (ints n) const { return _dynarray_eptr(_p+n); }
+    _dynarray_eptr  operator - (ints n) const { return _dynarray_eptr(_p-n); }
 
     const T& operator [] (ints i) const { return _p[i]; }
     T& operator [] (ints i)             { return _p[i]; }
@@ -170,20 +170,20 @@ struct _dynarray_const_eptr : std::iterator<std::random_access_iterator_tag, T>
     _dynarray_const_eptr& operator ++()         { ++_p;  return *this; }
     _dynarray_const_eptr& operator --()         { --_p;  return *this; }
 
-    _dynarray_const_eptr  operator ++(int)      { _dynarray_const_eptr x(_p);  ++_p;  return x; }
-    _dynarray_const_eptr  operator --(int)      { _dynarray_const_eptr x(_p);  --_p;  return x; }
+    _dynarray_const_eptr  operator ++(int) { _dynarray_const_eptr x(_p);  ++_p;  return x; }
+    _dynarray_const_eptr  operator --(int) { _dynarray_const_eptr x(_p);  --_p;  return x; }
 
     _dynarray_const_eptr& operator += (ints n)  { _p += n;  return *this; }
 
-    _dynarray_const_eptr  operator + (ints n)   { return _dynarray_const_eptr(_p+n); }
-    _dynarray_const_eptr  operator - (ints n)   { return _dynarray_const_eptr(_p-n); }
+    _dynarray_const_eptr  operator + (ints n) const { return _dynarray_const_eptr(_p+n); }
+    _dynarray_const_eptr  operator - (ints n) const { return _dynarray_const_eptr(_p-n); }
 
     const T& operator [] (ints i) const { return _p[i]; }
 
     const T* ptr() const                        { return _p; }
 
     _dynarray_const_eptr() { _p = 0; }
-    _dynarray_const_eptr( T* p ) : _p(p)  { }
+    _dynarray_const_eptr( const T* p ) : _p(p)  { }
 
     _dynarray_const_eptr( const _dynarray_eptr<T>& i )
     {
