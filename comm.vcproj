@@ -401,6 +401,10 @@
 			Name="metastream"
 			>
 			<File
+				RelativePath=".\metastream\fmtstream.h"
+				>
+			</File>
+			<File
 				RelativePath="metastream\fmtstreamcxx.h"
 				>
 			</File>

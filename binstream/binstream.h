@@ -820,8 +820,10 @@ public:
     /**
     **/
     ///Open underlying medium
-    virtual opcd open( const token& arg )           { return ersNOT_IMPLEMENTED; }
-    ///Close underlying medium
+    virtual opcd open( const token& name, token arg = token::empty() ) {
+        return ersNOT_IMPLEMENTED;
+    }
+    ///Close the underlying medium
     virtual opcd close( bool linger=false )         { return ersNOT_IMPLEMENTED; }
     ///Check if the underlying medium is open
     virtual bool is_open() const = 0;

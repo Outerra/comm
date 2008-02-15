@@ -325,7 +325,7 @@ T* ptr_byteshift( T* p, ints b )
 
 ////////////////////////////////////////////////////////////////////////////////
 void *_xmemcpy( void *dest, const void *src, size_t count );
-#ifdef _DEBUG
+#if 0//defined _DEBUG
 #define xmemcpy     _xmemcpy
 #else
 #define xmemcpy     ::memcpy
