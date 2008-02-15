@@ -44,8 +44,8 @@
 #include "../namespace.h"
 #include "../dynarray.h"
 #include "../str.h"
-#include "../binstream/binstream.h"
 
+#include "fmtstream.h"
 #include "metavar.h"
 
 COID_NAMESPACE_BEGIN
@@ -59,14 +59,17 @@ COID_NAMESPACE_BEGIN
 class metastream
 {
 public:
-    metastream() { init(); }
-    explicit metastream( binstream& bin )
+    metastream() {
+        init();
+    }
+
+    explicit metastream( fmtstream& bin )
     {
         init();
         bind_formatting_stream(bin);
     }
 
-    virtual ~metastream()    {}
+    virtual ~metastream() {}
 
 
     typedef bstype::kind            type;
@@ -96,25 +99,41 @@ public:
         _hook.set_meta( *this );
 
         _dometa = 0;
-        _fmtstream = 0;
+        _fmtstreamwr = _fmtstreamrd = 0;
     }
 
-    void bind_formatting_stream( binstream& b )
+    ///Bind the same stream to both input and output
+    void bind_formatting_stream( fmtstream& bin )
     {
-        _fmtstream = &b;
+        _fmtstreamwr = _fmtstreamrd = &bin;
         stream_reset( 0, cache_prepared() );
         _sesopen = 0;
         _beseparator = false;
     }
 
-    binstream& get_formatting_stream() const    { return *_fmtstream; }
+    ///Bind formatting streams for input and output
+    void bind_formatting_streams( fmtstream& brd, fmtstream& bwr )
+    {
+        _fmtstreamwr = &bwr;
+        _fmtstreamrd = &brd;
+        stream_reset( 0, cache_prepared() );
+        _sesopen = 0;
+        _beseparator = false;
+    }
 
+    fmtstream& get_reading_formatting_stream() const {
+        return *_fmtstreamrd;
+    }
+
+    fmtstream& get_writing_formatting_stream() const {
+        return *_fmtstreamwr;
+    }
 
     ///Return the transport stream
-    binstream& get_binstream()                  { return _hook; }
+    binstream& get_binstream()          { return _hook; }
 
-    void enable_meta_write( bool en )           { _disable_meta_write = !en; }
-    void enable_meta_read( bool en )            { _disable_meta_read = !en; }
+    void enable_meta_write( bool en )   { _disable_meta_write = !en; }
+    void enable_meta_read( bool en )    { _disable_meta_read = !en; }
 
     ////////////////////////////////////////////////////////////////////////////////
     //@{ methods to physically stream the data utilizing the metastream
@@ -141,7 +160,7 @@ public:
         if( !R && _disable_meta_write ) {
             _dometa = 0;
             if(_curvar.kth)
-                e = _fmtstream->write_separator();
+                e = _fmtstreamwr->write_separator();
 
             if(e) {
                 _err << "error writing separator";
@@ -152,7 +171,7 @@ public:
         else if( R && _disable_meta_read ) {
             _dometa = 0;
             if(_curvar.kth)
-                e = _fmtstream->write_separator();
+                e = _fmtstreamwr->write_separator();
 
             if(e) {
                 _err << "error writing separator";
@@ -410,7 +429,7 @@ public:
             //_root.desc = 0;
             //_current_var = 0;
 
-            _fmtstream->acknowledge(eat);
+            _fmtstreamrd->acknowledge(eat);
         }
     }
 
@@ -423,7 +442,7 @@ public:
             //_root.desc = 0;
             //_current_var = 0;
 
-            _fmtstream->flush();
+            _fmtstreamwr->flush();
         }
     }
 
@@ -445,9 +464,9 @@ public:
 
         _err.reset();
         if( fmts_reset>0 )
-            _fmtstream->reset_read();
+            _fmtstreamrd->reset_read();
         else if( fmts_reset<0 )
-            _fmtstream->reset_write();
+            _fmtstreamwr->reset_write();
     }
 
 //@}
@@ -894,7 +913,8 @@ private:
     bool _disable_meta_write;           ///< disable meta functionality for writting
     bool _disable_meta_read;            ///< disable meta functionality for reading
 
-    binstream* _fmtstream;              ///< bound formatting front-end binstream
+    fmtstream* _fmtstreamrd;            ///< bound formatting front-end binstream
+    fmtstream* _fmtstreamwr;            ///< bound formatting front-end binstream
     binstreamhook _hook;                ///< internal data binstream
 
     dynarray<uchar> _cache;             ///< cache for unordered input data or written data in the write-to-cache mode
@@ -1085,6 +1105,28 @@ private:
         return dst;
     }
 
+    void fmt_error()
+    {
+        charstr err;
+        uint row, col;
+        token line;
+
+        opcd e = _fmtstreamrd->fmtstream_err( &err, &line, &row, &col );
+        if( e == ersNOT_IMPLEMENTED )
+            return;
+
+        _err << "(" << _fmtstreamrd->fmtstream_name() << ") line " << row;
+        if(!err.is_empty())
+            _err << "\nerror: " << err;
+        
+        if(!line.is_empty()) {
+            _err << "\n" << line;
+            _err << "\n";
+            _err.appendn(col, ' ');
+            _err << "^\n";
+        }
+    }
+
     ////////////////////////////////////////////////////////////////////////////////
 protected:
 
@@ -1142,12 +1184,13 @@ protected:
         {
             bool nameless = _curvar.var->nameless_root;
             opcd e = R
-                ? _fmtstream->read_struct_open( nameless, &_curvar.var->desc->type_name )
-                : _fmtstream->write_struct_open( nameless, &_curvar.var->desc->type_name );
+                ? _fmtstreamrd->read_struct_open( nameless, &_curvar.var->desc->type_name )
+                : _fmtstreamwr->write_struct_open( nameless, &_curvar.var->desc->type_name );
 
             if(e) {
                 dump_stack(_err,0);
-                _err << " - error " << (R?"reading":"writing") << " struct opening token";
+                _err << " - error " << (R?"reading":"writing") << " struct opening token\n";
+                if(R) fmt_error();
                 throw e;
                 return e;
             }
@@ -1177,12 +1220,13 @@ protected:
         {
             bool nameless = _curvar.var->nameless_root;
             opcd e = R
-                ? _fmtstream->read_struct_close( nameless, &_curvar.var->desc->type_name )
-                : _fmtstream->write_struct_close( nameless, &_curvar.var->desc->type_name );
+                ? _fmtstreamrd->read_struct_close( nameless, &_curvar.var->desc->type_name )
+                : _fmtstreamwr->write_struct_close( nameless, &_curvar.var->desc->type_name );
 
             if(e) {
                 dump_stack(_err,0);
                 _err << " - error " << (R?"reading":"writing") << " struct closing token";
+                if(R) fmt_error();
                 throw e;
                 return e;
             }
@@ -1298,7 +1342,7 @@ protected:
         if(!_dometa)
         {
             if( !t.is_array_end() && _beseparator ) {
-                opcd e = _fmtstream->write_separator();
+                opcd e = _fmtstreamwr->write_separator();
                 if(e) return e;
             }
             else
@@ -1306,7 +1350,7 @@ protected:
 
             _beseparator = !t.is_array_start();
 
-            return _fmtstream->write(p,t);
+            return _fmtstreamwr->write(p,t);
         }
 
         uchar t2 = t.type;
@@ -1335,10 +1379,11 @@ protected:
         {
             if( !t.is_array_end() && _beseparator )
             {
-                opcd e = _fmtstream->read_separator();
+                opcd e = _fmtstreamrd->read_separator();
                 if(e) {
                     dump_stack(_err,0);
                     _err << " - error reading separator: " << opcd_formatter(e);
+                    fmt_error();
                     throw e;
                     return e;
                 }
@@ -1348,7 +1393,7 @@ protected:
 
             _beseparator = !t.is_array_start();
 
-            return _fmtstream->read(p,t);
+            return _fmtstreamrd->read(p,t);
         }
 
         uchar t2 = t.type;
@@ -1363,6 +1408,7 @@ protected:
         if(e) {
             dump_stack(_err,0);
             _err << " - error reading variable '" << _curvar.var->varname << "', error: " << opcd_formatter(e);
+            fmt_error();
             throw e;
             return e;
         }
@@ -1380,7 +1426,7 @@ protected:
 
     opcd data_write_raw( const void* p, uints& len )
     {
-        return _fmtstream->write_raw( p, len );
+        return _fmtstreamwr->write_raw( p, len );
     }
 
     opcd data_read_raw( void* p, uints& len )
@@ -1388,7 +1434,7 @@ protected:
         if(_cachevar)
             p = _current->data( _current->insert_void(len) );
 
-        return _fmtstream->read_raw( p, len );
+        return _fmtstreamrd->read_raw( p, len );
     }
 
     opcd data_write_array_content( binstream_container& c, uints* count )
@@ -1436,7 +1482,7 @@ protected:
                 e = _hook.write_compound_array_content(c,count);
         }
         else
-            e = _fmtstream->write_array_content(c,count);
+            e = _fmtstreamwr->write_array_content(c,count);
 
         return e;
     }
@@ -1514,7 +1560,7 @@ protected:
                 e = _hook.generic_read_array_content(c,n,count);
         }
         else                        //primitive uncached array
-            e = _fmtstream->read_array_content(c,n,count);
+            e = _fmtstreamrd->read_array_content(c,n,count);
 
         return e;
     }
@@ -1550,7 +1596,7 @@ protected:
         if( cache_prepared() )
             return;
 
-        opcd e = _fmtstream->write_array_separator(t,end);
+        opcd e = _fmtstreamwr->write_array_separator(t,end);
 
         if(e) {
             dump_stack(_err,0);
@@ -1565,13 +1611,14 @@ protected:
         if( cache_prepared() && !_cachevar )
             return true;
 
-        opcd e = _fmtstream->read_array_separator(t);
+        opcd e = _fmtstreamrd->read_array_separator(t);
         if( e == ersNO_MORE )
             return false;
 
         if(e) {
             dump_stack(_err,0);
             _err << " - error reading array separator: " << opcd_formatter(e);
+            fmt_error();
             throw e;
         }
 
@@ -1607,7 +1654,7 @@ protected:
                     *_current->insert_asize_field() = UMAX;
 
                     if(_cachevar)
-                        e = _fmtstream->read(p,t);
+                        e = _fmtstreamrd->read(p,t);
                 }
                 else {
                     _current->extract_asize_field();
@@ -1622,7 +1669,7 @@ protected:
             {
                 if( !R || _cachevar ) {
                     if(_cachevar)
-                        e = _fmtstream->read(p,t);
+                        e = _fmtstreamrd->read(p,t);
 
                     uints n = *(const uints*)p;
                     DASSERT( n != UMAX  &&  n != 0xcdcdcdcd );
@@ -1646,7 +1693,7 @@ protected:
                 uints tsize = t.get_size();
 
                 if( R && _cachevar )
-                    e = _fmtstream->read( _current->alloc_cache(tsize), t );
+                    e = _fmtstreamrd->read( _current->alloc_cache(tsize), t );
                 else if(R)
                     _current->read_cache( p, tsize );
                 else
@@ -1654,7 +1701,7 @@ protected:
             }
         }
         else
-            e = R ? _fmtstream->read(p,t) : _fmtstream->write(p,t);
+            e = R ? _fmtstreamrd->read(p,t) : _fmtstreamwr->write(p,t);
 
         return e;
     }
@@ -1665,21 +1712,23 @@ protected:
         opcd e;
         if( !is_first_var() )
         {
-            e = _fmtstream->read_separator();
+            e = _fmtstreamrd->read_separator();
             if(e==ersNO_MORE)
                 return e;
 
             if(e) {
                 dump_stack(_err,0);
                 _err << " - error reading the variable separator: " << opcd_formatter(e);
+                fmt_error();
                 throw e;
             }
         }
 
-        e = binstream_read_key( *_fmtstream, _rvarname );
+        e = binstream_read_key( *_fmtstreamrd, _rvarname );
         if( e  &&  e!=ersNO_MORE ) {
             dump_stack(_err,0);
             _err << " - error while seeking for variable '" << _curvar.var->varname << "': " << opcd_formatter(e);
+            fmt_error();
             throw e;
         }
 
@@ -1715,6 +1764,7 @@ protected:
                 else if( !cache_use_default() ) {
                     dump_stack(_err,0);
                     _err << " - variable '" << _curvar.var->varname << "' not found and no default value provided";
+                    fmt_error();
                     throw e;
                 }
                 break;
@@ -1746,7 +1796,7 @@ protected:
         opcd e;
         if( !is_first_var() )
         {
-            e = _fmtstream->write_separator();
+            e = _fmtstreamwr->write_separator();
             if(e) {
                 dump_stack(_err,0);
                 _err << " - error writing the variable separator: " << opcd_formatter(e);
@@ -1754,7 +1804,7 @@ protected:
             }
         }
 
-        e = _fmtstream->write_key( _curvar.var->varname );
+        e = _fmtstreamwr->write_key( _curvar.var->varname );
         if(e) {
             dump_stack(_err,0);
             _err << " - error while writing the variable name '" << _curvar.var->varname << "': " << opcd_formatter(e);
@@ -1799,6 +1849,7 @@ protected:
         if(!crv) {
             dump_stack(_err,0);
             _err << " - member variable: " << _rvarname << " not defined";
+            fmt_error();
             e = ersNOT_FOUND "no such member variable";
             throw e;
             //return e;
@@ -1808,6 +1859,7 @@ protected:
         if( _current->valid_addr(base+k) ) {
             dump_stack(_err,0);
             _err << " - data for member: " << _rvarname << " specified more than once";
+            fmt_error();
             e = ersMISMATCHED "redundant member data";
             throw e;
             //return e;

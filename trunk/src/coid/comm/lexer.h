@@ -104,7 +104,7 @@ COID_NAMESPACE_BEGIN
 **/
 class lexer
 {
-    ///
+    ///Incremental token hasher used by the lexer
     struct token_hash
     {
         uint    hash;
@@ -123,40 +123,11 @@ class lexer
         }
 
         ///Incremental hash value computation
-        void inc_char( char c )
-        {
+        void inc_char( char c ) {
             hash = (hash ^ (uint)c) + (hash<<26) + (hash>>6);
         }
 
         void reset()    { hash = 0; }
-    };
-
-    ///Newline information helper struct for strings
-    struct newline
-    {
-        int newlines;                   ///< number of newlines contained within string
-        uint nlpast;                    ///< offset past the last newline
-
-        void process( const token& str )
-        {
-            newlines = 0;
-            nlpast = 0;
-
-            const char* p = str.ptr();
-            const char* pe = str.ptre();
-
-            for( char oc=0; p<pe; ++p ) {
-                char c = *p;
-                if( c == '\r' )
-                {   nlpast = uint(p+1-str.ptr());  ++newlines; }
-                else if( c == '\n' )
-                {   nlpast = uint(p+1-str.ptr());  if(oc!='\r') ++newlines; }
-
-                oc = c;
-            }
-        }
-
-        newline() : newlines(0), nlpast(0) {}
     };
 
 public:
@@ -170,9 +141,6 @@ public:
         int     id;                             ///< token id (group type or string type)
         charstr tokbuf;                         ///< buffer that keeps processed string
         token_hash hash;                        ///< hash value computed for tokens (but not for strings or blocks)
-        uint    line;                           ///< current line number
-        const char* start;                      ///< current line start
-        char    ch;                             ///< last read character
 
         bool operator == (int i) const          { return i == id; }
         bool operator == (const token& t) const { return tok == t; }
@@ -202,26 +170,6 @@ public:
         void upd_hash( const char* p )
         {
             hash.inc_char(*p);
-            upd_newline(p);
-        }
-
-        void upd_newline( const char* p )
-        {
-            uchar c = *p;
-
-            if( c == '\r' )      { start = p+1;  ++line; }
-            else if( c == '\n' ) { start = p+1;  if(ch != '\r') ++line; }
-
-            ch = c;
-        }
-
-        void adjust( const newline& nwl, const token& tok )
-        {
-            if( nwl.newlines ) {
-                line += nwl.newlines;
-                start = tok.ptr() + nwl.nlpast;
-                ch = tok.last_char();
-            }
         }
 
         void reset()
@@ -235,18 +183,11 @@ public:
     //@param utf8 enable or disable utf8 mode
     lexer( bool utf8 = true )
     {
-        _ntrails = 0;
         _bin = 0;
-        _tok.set_null();
-
         _utf8 = utf8;
-        _last.id = 0;
-        _last.tok.set_null();
-        _last_string = -1;
-        _err = 0;
+        _ntrails = 0;
 
-        _stack.push(&_root);
-        _pushback = 0;
+        reset();
 
         _abmap.need_new(256);
         for( uint i=0; i<_abmap.size(); ++i )
@@ -267,7 +208,6 @@ public:
         reset();
 
         _bin = &bin;
-        _binbuf.need_new(BINSTREAM_BUFFER_SIZE);
         return 0;
     }
 
@@ -276,15 +216,19 @@ public:
     {
         _bin = 0;
         reset();
+
         _tok = tok;
+        _lines_processed = _lines_last = _tok.ptr();
         return 0;
     }
 
 
-    ///@return true if the lexer is set up to interpret input as utf-8 characters
-    bool is_utf8() const            { return _abmap.size() == BASIC_UTF8_CHARS; }
+    //@return true if the lexer is set up to interpret input as utf-8 characters
+    bool is_utf8() const {
+        return _abmap.size() == BASIC_UTF8_CHARS;
+    }
 
-    ///Reset lexer state
+    ///Reset lexer state (but not the rules)
     opcd reset()
     {
         if(_bin)
@@ -293,22 +237,25 @@ public:
         _binbuf.reset();
         _last.id = 0;
         _last.tok.set_null();
-        _last.line = 0;
-        _last.start = 0;
-        _last.ch = 0;
         _last_string = -1;
         _err = 0;
+        _errctx = 0;
         _pushback = 0;
-        _stack.need(1);
+        *_stack.need(1) = &_root;
+
+        _lines = 0;
+        _lines_processed = _lines_last = 0;
+        _lines_oldchar = 0;
+
         return 0;
     }
 
     ///Create new group named \a name with characters from \a set. Clumps of continuous characters
     /// from the group is returned as one token.
-    ///@return group id or 0 on error, error id is stored in the _err variable
-    ///@param name group name
-    ///@param set characters to include in the group, recognizes ranges when .. is found
-    ///@param trailset optional character set to match after the first character from the
+    //@return group id or 0 on error, error id is stored in the _err variable
+    //@param name group name
+    //@param set characters to include in the group, recognizes ranges when .. is found
+    //@param trailset optional character set to match after the first character from the
     /// set was found. This can be used to allow different characters after first letter of token
     int def_group( const token& name, const token& set, const token& trailset = token::empty() )
     {
@@ -337,9 +284,9 @@ public:
 
     ///Create new group named \a name with characters from \a set that will be returned as single
     /// character tokens
-    ///@return group id or 0 on error, error id is stored in the _err variable
-    ///@param name group name
-    ///@param set characters to include in the group, recognizes ranges when .. is found
+    //@return group id or 0 on error, error id is stored in the _err variable
+    //@param name group name
+    //@param set characters to include in the group, recognizes ranges when .. is found
     int def_group_single( const token& name, const token& set )
     {
         uint g = (uint)_grpary.size();
@@ -360,8 +307,8 @@ public:
     /// implemented as lookups into the keyword hash table after the scanner computes
     /// the hash value for the token it processed.
     ///Otherwise (when they are heterogenous) they have to be set up as sequences.
-    ///@param kwd keyword to add
-    ///@return ID_KEYWORDS if the keyword consists of homogenous characters from
+    //@param kwd keyword to add
+    //@return ID_KEYWORDS if the keyword consists of homogenous characters from
     /// one character group, or id of a sequence created, or 0 if already defined.
     int def_keyword( const token& kwd )
     {
@@ -379,15 +326,15 @@ public:
 
     ///Escape sequence processor function prototype.
     ///Used to consume input after escape character and to append translated characters to dst
-    ///@param src source characters to translate, the token should be advanced by the consumed amount
-    ///@param dst destination buffer to append the translated characters to
+    //@param src source characters to translate, the token should be advanced by the consumed amount
+    //@param dst destination buffer to append the translated characters to
     typedef bool (*fn_replace_esc_seq)( token& src, charstr& dst );
 
     ///Define an escape rule. Escape replacement pairs are added subsequently via def_escape_pair()
-    ///@return the escape rule id, or -1 on error
-    ///@param name the escape rule name
-    ///@param escapechar the escape character used to prefix the sequences
-    ///@param fn_replace pointer to function that should perform the replacement
+    //@return the escape rule id, or -1 on error
+    //@param name the escape rule name
+    //@param escapechar the escape character used to prefix the sequences
+    //@param fn_replace pointer to function that should perform the replacement
     int def_escape( const token& name, char escapechar, fn_replace_esc_seq fn_replace = 0 )
     {
         uint g = (uint)_escary.size();
@@ -408,10 +355,10 @@ public:
     }
 
     ///Define escape string mappings.
-    ///@return true if successful
-    ///@param escrule id of the escape rule
-    ///@param code source sequence that if found directly after the escape character, will be replaced
-    ///@param replacewith the replacement string
+    //@return true if successful
+    //@param escrule id of the escape rule
+    //@param code source sequence that if found directly after the escape character, will be replaced
+    //@param replacewith the replacement string
     bool def_escape_pair( int escrule, const token& code, const token& replacewith )
     {
         --escrule;
@@ -428,11 +375,11 @@ public:
     ///Create new string sequence detector named \a name, using specified leading and trailing sequence.
     ///If the leading sequence was already defined for another string, only the trailing sequence is
     /// inserted to its trailing set, and the escape definition is ignored.
-    ///@return string id (a negative number) or 0 on error, error id is stored in the _err variable
-    ///@param name string rule name
-    ///@param leading the leading string delimiter
-    ///@param trailing the trailing string delimiter
-    ///@param escape name of the escape rule to use for processing of escape sequences within strings
+    //@return string id (a negative number) or 0 on error, error id is stored in the _err variable
+    //@param name string rule name
+    //@param leading the leading string delimiter
+    //@param trailing the trailing string delimiter
+    //@param escape name of the escape rule to use for processing of escape sequences within strings
     int def_string( const token& name, const token& leading, const token& trailing, const token& escape )
     {
         uint g = (uint)_stbary.size();
@@ -466,11 +413,11 @@ public:
 
 
     ///Create new block sequence detector named \a name, using specified leading and trailing sequences.
-    ///@return block id (a negative number) or 0 on error, error id is stored in the _err variable
-    ///@param name block rule name
-    ///@param leading the leading block delimiter
-    ///@param trailing the trailing block delimiter
-    ///@param nested names of possibly nested blocks and strings to look and account for (separated with spaces)
+    //@return block id (a negative number) or 0 on error, error id is stored in the _err variable
+    //@param name block rule name
+    //@param leading the leading block delimiter
+    //@param trailing the trailing block delimiter
+    //@param nested names of possibly nested blocks and strings to look and account for (separated with spaces)
     int def_block( const token& name, const token& leading, const token& trailing, token nested )
     {
         uint g = (uint)_stbary.size();
@@ -524,9 +471,9 @@ public:
 
 
     ///Create new simple sequence detector named \a name.
-    ///@return block id (a negative number) or 0 on error, error id is stored in the _err variable
-    ///@param name block rule name
-    ///@param seq the sequence to detect, prior to basic grouping rules
+    //@return block id (a negative number) or 0 on error, error id is stored in the _err variable
+    //@param name block rule name
+    //@param seq the sequence to detect, prior to basic grouping rules
     int def_sequence( const token& name, const token& seq )
     {
         uint g = (uint)_stbary.size();
@@ -544,7 +491,7 @@ public:
     }
 
     ///Enable or disable specified sequence, string or block. Disabled construct is not detected in input.
-    ///@note for s/s/b with same name, this applies only to the specific one
+    //@note for s/s/b with same name, this applies only to the specific one
     void enable( int seqid, bool en )
     {
         uint sid = -1 - seqid;
@@ -554,7 +501,7 @@ public:
     }
 
     ///Make sequence, string or block ignored or not. Ignored constructs are detected but skipped and not returned.
-    ///@note for s/s/b with same name, this applies only to the specific one
+    //@note for s/s/b with same name, this applies only to the specific one
     void ignore( int seqid, bool ig )
     {
         uint sid = -1 - seqid;
@@ -590,7 +537,7 @@ public:
     }
 
     ///Return next token as if the block/string opening sequence has been already read.
-    ///@note this explicit request will read the string/block content even if the
+    //@note this explicit request will read the string/block content even if the
     /// string or block is currently disabled
     bool next_string_or_block( int sbid )
     {
@@ -643,7 +590,7 @@ public:
             //end of buffer
             // if there's a source binstream connected, try to suck more data from it
             if(_bin) {
-                if( fetch_page(0,0) == 0 )
+                if( fetch_page(0,false) == 0 )
                     return set_end();
             }
             else
@@ -731,10 +678,10 @@ public:
         return _tok.begins_with(tok);
     }
 
-    ///@return true if next token matches literal string
+    //@return true if next token matches literal string
     bool match_literal( const token& val )      { return next() == val; }
     
-    ///@return true if next token matches literal character
+    //@return true if next token matches literal character
     bool match_literal( char c )                { return next() == c; }
 
     ///Try to match an optional literal, push back if not succeeded.
@@ -754,9 +701,9 @@ public:
         return succ;
     }
 
-    ///@return true if next token belongs to the specified group/sequence.
-    ///@param grp group/sequence id
-    ///@param dst the token read
+    //@return true if next token belongs to the specified group/sequence.
+    //@param grp group/sequence id
+    //@param dst the token read
     bool match( int grp, charstr& dst )
     {
         next();
@@ -768,9 +715,9 @@ public:
         return true;
     }
 
-    ///@return true if the last token read belongs to the specified group/sequence.
-    ///@param grp group/sequence id
-    ///@param dst the token read
+    //@return true if the last token read belongs to the specified group/sequence.
+    //@param grp group/sequence id
+    //@param dst the token read
     bool match_last( int grp, charstr& dst )
     {
         if( grp != _last.id )  return false;
@@ -788,17 +735,37 @@ public:
         _pushback = 1;
     }
 
-    ///@return true if whole input was consumed
-    bool end() const                            { return _last.id == 0; }
+    //@return true if whole input was consumed
+    bool end() const                    { return _last.id == 0; }
 
-    ///@return last token read
-    const lextoken& last() const                { return _last; }
+    //@return last token read
+    const lextoken& last() const        { return _last; }
 
-    ///@return current line number
-    uint current_line() const                   { return _last.line+1; }
+    //@return current line number
+    //@param text optional token, recieves current line text (may be incomplete)
+    //@param col receives column number of current token
+    uint current_line( token* text, uint* col )
+    {
+        if(text) {
+            if( _tok.ptr() > _lines_processed )
+                _lines += count_newlines( _lines_processed, _tok.ptr() );
+
+            uint n = _tok.count_notingroup("\r\n");
+            const char* last = _lines_last > _binbuf.ptr()
+                ? _lines_last
+                : _binbuf.ptr();
+
+            text->set( last, _tok.ptr()-last+n );
+        }
+        if(col)
+            *col = _tok.ptr() - _lines_last;
+
+        return _lines+1;
+    }
+
 
     ///Test if whole token consists of characters from single group.
-    ///@return 0 if not, or else the character group it belongs to (>0)
+    //@return 0 if not, or else the character group it belongs to (>0)
     int homogenous( token t ) const
     {
         uchar code = t[0];
@@ -823,15 +790,19 @@ public:
     ///Strip the leading and trailing characters belonging to the given group
     token& strip_group( token& tok, uint grp ) const
     {
-        for(;;)
+        //only character groups
+        DASSERT( grp > 0 );
+        --grp;
+
+        while( !tok.is_empty() )
         {
-            if( grp == get_group( tok.first_char() ) )
+            if( grp != get_group( tok.first_char() ) )
                 break;
             ++tok;
         }
-        for(;;)
+        while( !tok.is_empty() )
         {
-            if( grp == get_group( tok.last_char() ) )
+            if( grp != get_group( tok.last_char() ) )
                 break;
             tok--;
         }
@@ -845,6 +816,67 @@ public:
             _err = ERR_EXTERNAL_ERROR;
         else
             _err = 0;
+    }
+
+    /// Errors
+    enum {
+        //ERR_CHAR_OUT_OF_RANGE       = 1,
+        ERR_ILL_FORMED_RANGE        = 2,
+        ERR_ENTITY_EXISTS           = 3,
+        ERR_ENTITY_DOESNT_EXIST     = 4,
+        ERR_ENTITY_BAD_TYPE         = 5,
+        ERR_DIFFERENT_ENTITY_EXISTS = 6,
+        ERR_STRING_TERMINATED_EARLY = 7,
+        ERR_UNRECOGNIZED_ESCAPE_SEQ = 8,
+        ERR_BLOCK_TERMINATED_EARLY  = 9,
+        ERR_EXTERNAL_ERROR          = 10,       ///< the error was set from outside
+        ERR_KEYWORD_ALREADY_DEFINED = 11,
+    };
+
+    //@return internal lexer error
+    int err( charstr* errtext ) const
+    {
+        if(errtext) switch(_err) {
+            case ERR_STRING_TERMINATED_EARLY: {
+                    string_rule* sr = reinterpret_cast<string_rule*>(_errctx);
+                    *errtext << "no matching " << sr->trailing[0].seq << " found";
+                    break;
+                }
+            case ERR_UNRECOGNIZED_ESCAPE_SEQ:
+                *errtext << "unrecognized escape sequence";
+                break;
+            case ERR_BLOCK_TERMINATED_EARLY: {
+                    block_rule* br = reinterpret_cast<block_rule*>(_errctx);
+                    *errtext << "no matching " << br->trailing[0].seq << " found";
+                    break;
+                }
+            default:
+                if(_err)
+                    *errtext << "error " << _err;
+                else
+                    errtext->reset();
+        }
+        return _err;
+    }
+
+
+    ///Synthesize proper escape sequences for given string
+    //@param string id of the string type as returned by def_string
+    //@param tok string to synthesize
+    //@param dst destination storage where altered string is appended (if not altered it's not used)
+    //@return true if the string has been altered
+    bool synthesize_string( int string, token tok, charstr& dst ) const
+    {
+        uint sid = -1 - string;
+        sequence* seq = _stbary[sid];
+
+        if( !seq->is_string() )
+            throw ersINVALID_PARAMS;
+
+        const string_rule* sr = reinterpret_cast<string_rule*>(seq);
+        if(!sr)  return false;
+
+        return sr->escrule->synthesize_string(tok, dst);
     }
 
 
@@ -908,7 +940,6 @@ protected:
     {
         charstr code;                   ///< escape sequence (without the escape char itself)
         charstr replace;                ///< substituted string
-        newline nwl;
 
         bool operator <  ( const token& k ) const {
             return code.len() > k.len();
@@ -918,7 +949,6 @@ protected:
         {
             this->code = code;
             this->replace = replace;
-            nwl.process(code);
         }
     };
 
@@ -928,11 +958,74 @@ protected:
         char esc;                       ///< escape character
         fn_replace_esc_seq  replfn;     ///< custom replacement function
 
-        dynarray<escpair> pairs;        ///< replacement pairs
+        dynarray<escpair> pairs;        ///< static replacement pairs
+
+        ///Backward mapping from replacement to escape strings
+        class back_map {
+            enum { BITBLK = 8*sizeof(uint32) };
+
+            dynarray<const escpair*>
+                map;                    ///< reverted mapping of escaped symbols for synthesizer
+
+            /// bit map for fast lookups whether replacement sequence can start with given character
+            uint32 fastlookup[256/BITBLK];
+
+            ///Sorter
+            struct func {
+                bool operator()(const escpair* p, const token& k) const {
+                    return p->replace < k;
+                }
+            };
+
+        public:
+            ///Insert escape pair into backmap
+            void insert( const escpair* pair ) {
+                uchar c = pair->replace.first_char();
+                fastlookup[c/BITBLK] |= 1<<(c%BITBLK);
+                *map.add_sortT(pair->replace, func()) = pair;
+            }
+
+            ///Find longest replacement that starts given token
+            const escpair* find( token& t ) const
+            {
+                if( !(fastlookup[t[0]/BITBLK] & (1<<(t[0]%BITBLK))) )
+                    return 0;
+                uints i = map.lower_boundT(t, func());
+                uints j, n = map.size();
+                for( j=i ; j<n; ++j ) {
+                    if( !t.begins_with( map[j]->replace ) )
+                        break;
+                }
+                return j>i ? map[j-1] : 0;
+            }
+
+            back_map() {
+                ::memset( fastlookup, 0, sizeof(fastlookup) );
+            }
+        };
+
+        mutable local<back_map>
+            backmap;                    ///< backmap object, created on demand
+
+
 
         escape_rule( const token& name, ushort id )
         : entity(name,entity::ESCAPE,id)
         { }
+
+
+        //@return true if some replacements were made and \a dst is filled,
+        /// or false if no processing was required and \a dst was not filled
+        bool synthesize_string( token tok, charstr& dst ) const;
+
+    private:
+        void init_backmap() const {
+            if(!backmap) return;
+
+            backmap = new back_map;
+            for( uint i=0; i<pairs.size(); ++i )
+                backmap->insert(&pairs[i]);
+        }
     };
 
     ///Keyword map for detection of whether token is a reserved word
@@ -980,11 +1073,9 @@ protected:
         ///Possible trailing sequences
         struct trail {
             charstr seq;
-            newline nwl;
 
             void set( const token& s ) {
                 seq = s;
-                nwl.process(s);
             }
         };
 
@@ -1082,19 +1173,6 @@ protected:
         //default sizes
         BASIC_UTF8_CHARS            = 128,
         BINSTREAM_BUFFER_SIZE       = 256,
-
-        //errors
-        ERR_CHAR_OUT_OF_RANGE       = 1,
-        ERR_ILL_FORMED_RANGE        = 2,
-        ERR_ENTITY_EXISTS           = 3,
-        ERR_ENTITY_DOESNT_EXIST     = 4,
-        ERR_ENTITY_BAD_TYPE         = 5,
-        ERR_STRING_TERMINATED_EARLY = 6,
-        ERR_UNRECOGNIZED_ESCAPE_SEQ = 7,
-        ERR_BLOCK_TERMINATED_EARLY  = 8,
-        ERR_DIFFERENT_ENTITY_EXISTS = 9,
-        ERR_EXTERNAL_ERROR          = 10,       ///< the error was set from outside
-        ERR_KEYWORD_ALREADY_DEFINED = 11,
     };
 
 
@@ -1103,9 +1181,9 @@ protected:
     }
 
     ///Process the definition of a set, executing callbacks on each character included
-    ///@param s the set definition, characters and ranges
-    ///@param fnval parameter for the callback function
-    ///@param fn callback
+    //@param s the set definition, characters and ranges
+    //@param fnval parameter for the callback function
+    //@param fn callback
     bool process_set( token s, uchar fnval, void (lexer::*fn)(uchar,uchar) )
     {
         uchar k, kprev=0;
@@ -1140,8 +1218,8 @@ protected:
     }
 
     ///Try to match a set of strings at offset
-    ///@return position of the trailing string matched or -1
-    ///@note strings are expected to be sorted by size (longest first)
+    //@return position of the trailing string matched or -1
+    //@note strings are expected to be sorted by size (longest first)
     int match( const dynarray<stringorblock::trail>& str, uints& off )
     {
         if( str[0].seq.len()+off > _tok.len() )
@@ -1229,7 +1307,7 @@ protected:
                         _last.tokbuf.reset();
                 }
 
-                if(!norepl)
+                if(!norepl) //i.e. it was replaced
                 {
                     uint i, n = (uint)er->pairs.size();
                     for( i=0; i<n; ++i )
@@ -1241,9 +1319,8 @@ protected:
                         return false;
                     }
 
-                    //found, update newline info
+                    //found
                     const escpair& ep = er->pairs[i];
-                    _last.adjust( ep.nwl, _tok.ptr() );
 
                     if(outermost)
                         _last.tokbuf += ep.replace;
@@ -1257,23 +1334,16 @@ protected:
                 int k = match( sr.trailing, off );
                 if(k>=0)
                 {
-                    _last.adjust( sr.trailing[k].nwl, _tok.ptr()+off );
                     add_stb_segment( sr, k, off, outermost );
                     return true;
                 }
 
                 //this wasn't our terminator, passing by
-                _last.upd_newline( _tok.ptr()+off );
                 ++off;
             }
         }
     }
 
-
-    ///Read a block that should be discarded (ignored)
-    bool read_ignored_block( const block_rule& br, uints& off )
-    {
-    }
 
     ///Read next token as block
     bool next_read_block( const block_rule& br, uints& off, bool outermost )
@@ -1305,7 +1375,6 @@ protected:
             if( (x & fSEQ_TRAILING) && (k = match(br.trailing, off)) >= 0 )
             {
                 //trailing string found
-                _last.adjust( br.trailing[k].nwl, _tok.ptr()+off );
                 add_stb_segment( br, k, off, outermost );
                 return true;
             }
@@ -1349,7 +1418,6 @@ protected:
                 }
             }
 
-            _last.upd_newline( _tok.ptr()+off );
             ++off;
         }
     }
@@ -1454,8 +1522,6 @@ protected:
         {
             const char* p = (const char*)pc+off;
             if( (_abmap[*p] & (fGROUP_ESCAPE|fSEQ_TRAILING)) != 0 )  break;
-
-            _last.upd_newline(p);
         }
         return off;
     }
@@ -1468,8 +1534,6 @@ protected:
         {
             const char* p = (const char*)pc+off;
             if( (_abmap[*p] & (fSEQ_TRAILING|xSEQ)) != 0 )  break;
-
-            _last.upd_newline(p);
         }
         return off;
     }
@@ -1524,11 +1588,11 @@ protected:
     }
 
     ///Scan input for characters from group
-    ///@return token with the data, an empty token if there were none or ignored, or
+    //@return token with the data, an empty token if there were none or ignored, or
     /// an empty token with _ptr==0 if there are no more data
-    ///@param group group characters to return
-    ///@param ignore true if the result would be ignored, so there's no need to fill the buffer
-    ///@param off number of leading characters that are already considered belonging to the group
+    //@param group group characters to return
+    //@param ignore true if the result would be ignored, so there's no need to fill the buffer
+    //@param off number of leading characters that are already considered belonging to the group
     token scan_group( uchar group, bool ignore, uints off=0 )
     {
         off = count_intable(_tok,group,off);
@@ -1564,10 +1628,10 @@ protected:
     }
 
     ///Scan input for characters set in mask
-    ///@return token with the data, an empty token if there were none or ignored, or
+    //@return token with the data, an empty token if there were none or ignored, or
     /// an empty token with _ptr==0 if there are no more data
-    ///@param msk to check in \a _trail array
-    ///@param ignore true if the result would be ignored, so there's no need to fill the buffer
+    //@param msk to check in \a _trail array
+    //@param ignore true if the result would be ignored, so there's no need to fill the buffer
     token scan_mask( uchar msk, bool ignore, uints off=0 )
     {
         off = count_inmask(_tok,msk,off);
@@ -1603,8 +1667,8 @@ protected:
     }
 
     ///Fetch more data from input
-    ///@param nkeep bytes to keep in buffer
-    ///@param ignore true if data before last nkeep bytes should be discarded.
+    //@param nkeep bytes to keep in buffer
+    //@param ignore true if data before last nkeep bytes should be discarded.
     /// If false, these are copied to the token buffer
     uints fetch_page( uints nkeep, bool ignore )
     {
@@ -1615,20 +1679,26 @@ protected:
         if( _last.tokbuf.len() > 0  ||  !ignore )
             _last.tokbuf.add_from( _tok.ptr(), old );
 
+        //count _lines being discarded
+        if( !_binbuf.size() ) {
+            _lines_processed = _binbuf.need_new(BINSTREAM_BUFFER_SIZE);
+            _lines_last = _lines_processed;
+        }
+        else if( _tok.ptr()+old > _lines_processed ) {
+            _lines += count_newlines( _lines_processed, _tok.ptr()+old );
+            _lines_processed = _binbuf.ptr();
+            _lines_last = _binbuf.ptr() - int(_tok.ptr()+old - _lines_last);
+        }
+
         if(nkeep)
             xmemcpy( _binbuf.ptr(), _tok.ptr() + old, nkeep );
 
-        //adjust last line pointer
-        _last.start -= old;
-
         uints rl = BINSTREAM_BUFFER_SIZE - nkeep;
-        if( !_binbuf.size() )
-            _binbuf.need_new(BINSTREAM_BUFFER_SIZE);
-
         uints rla = rl;
-        opcd e = _bin->read_raw( _binbuf.ptr()+nkeep, rla );
+        opcd e = _bin->read_raw_full( _binbuf.ptr()+nkeep, rla );
 
         _tok.set( _binbuf.ptr(), rl-rla+nkeep );
+
         return rl-rla+nkeep;
     }
 
@@ -1677,6 +1747,33 @@ protected:
         return _last;
     }
 
+    /// Counts newlines, detects \r \n and \r\n
+    uint count_newlines( const char* p, const char* pe )
+    {
+        uint newlines = 0;
+        char oc = _lines_oldchar;
+
+        for( ; p<pe; ++p )
+        {
+            char c = *p;
+            if( c == '\r' ) {
+                ++newlines;
+                _lines_last = p+1;
+            }
+            else if( c == '\n' ) {
+                if( oc != '\r' )
+                    ++newlines;
+                _lines_last = p+1;
+            }
+
+            oc = c;
+        }
+
+        _lines_oldchar = oc;
+        return newlines;
+    }
+
+
 protected:
 
     dynarray<ushort> _abmap;        ///< group flag array, fGROUP_xxx
@@ -1697,7 +1794,13 @@ protected:
     lextoken _last;                 ///< last token read
     int _last_string;               ///< last string type read
     int _err;                       ///< last error code, see ERR_* enums
+    entity* _errctx;                ///< error context
     bool _utf8;                     ///< utf8 mode
+
+    char _lines_oldchar;             ///< last character processed
+    uint _lines;                     ///< number of _lines counted until _lines_processed
+    const char* _lines_last;         ///< current line start
+    const char* _lines_processed;    ///< characters processed in search for newlines
 
     token _tok;                     ///< source string to process, can point to an external source or into the _binbuf
     binstream* _bin;                ///< source stream
@@ -1712,8 +1815,41 @@ protected:
 };
 
 
+////////////////////////////////////////////////////////////////////////////////
+//@return true if some replacements were made and \a dst is filled,
+/// or false if no processing was required and \a dst was not filled
+inline bool lexer::escape_rule::synthesize_string( token tok, charstr& dst ) const
+{
+    init_backmap();
+    const char* copied = tok.ptr();
+    bool altered = false;
+
+    for( ; !tok.is_empty(); )
+    {
+        const char* p = tok.ptr();
+        const escpair* pair = backmap->find(tok);
+
+        if(pair) {
+            dst.add_from_range( copied, p );
+            copied = tok.ptr();
+
+            dst.append( pair->code );
+            altered = true;
+        }
+        else
+            ++tok;
+    }
+
+    if( altered  &&  tok.ptr() > copied )
+        dst.add_from_range( copied, tok.ptr() );
+
+    return altered;
+}
+
+
 
 COID_NAMESPACE_END
 
 #endif //__COID_COMM_LEXER__HEADER_FILE__
+
 

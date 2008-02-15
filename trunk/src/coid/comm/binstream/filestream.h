@@ -150,15 +150,6 @@ public:
     //@}
 
     ///Open file
-    //@param arg concatenated file name, '?' character and attributes as specified in open(name,attr)
-    virtual opcd open( const token& arg )
-    {
-        token name = arg;
-        token flg = name.cut_right_back( '?', 1, true );
-        return open( name, flg );
-    }
-
-    ///Open file
     //@param name file name
     //@param attr open attributes
     /// r - open for reading
@@ -168,7 +159,7 @@ public:
     /// c - create
     /// t,- - truncate
     /// a,+ - append
-    opcd open( const token& name, token attr )
+    virtual opcd open( const token& name, token attr = token::empty() )
     {
         charstr tmp = name;
         return open( tmp.c_str(), attr );
@@ -184,7 +175,7 @@ public:
     /// c - create
     /// t,- - truncate
     /// a,+ - append
-    opcd open( const char* name, token attr )
+    opcd open( const char* name, token attr = token::empty() )
     {
         int flg=0;
         int rw=0,sh=0;

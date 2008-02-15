@@ -42,6 +42,7 @@
 #include "../str.h"
 #include "../tokenizer.h"
 #include "../binstream/txtstream.h"
+#include "fmtstream.h"
 
 
 
@@ -49,7 +50,7 @@ COID_NAMESPACE_BEGIN
 
 
 ////////////////////////////////////////////////////////////////////////////////
-class fmtstreamxml : public binstream
+class fmtstreamxml : public fmtstream
 {
 protected:
     binstream* _binr;
@@ -136,8 +137,6 @@ public:
         //remaining stuff to group 3, single char output
         _tokenizer.add_remaining( 3, true );
         //_tokenizer.add_to_group( 2, "()~!@#$%^&*-+=|\\?/<>`'.,;:" );
-
-        init_tokenizer();
     }
 
     void set_bool_tokens( token boolTrue, token boolFalse, const token& boolTrueR="1", const token& boolFalseR="0" )
@@ -148,12 +147,11 @@ public:
         tkrBoolFalse = boolFalseR;
     }
 
+    virtual token fmtstream_name()          { return "fmtstreamxml"; }
 
-    virtual void init_tokenizer()
-    {
-        //_tokenizer.add_to_group( 2, "{}[]", true );
+    virtual opcd fmtstream_err( charstr* err, token* line, uint* row, uint* col ) {
+        return ersNOT_IMPLEMENTED;
     }
-
 
     virtual uint binstream_attributes( bool in0out1 ) const
     {

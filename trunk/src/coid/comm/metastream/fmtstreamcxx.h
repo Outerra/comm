@@ -42,31 +42,26 @@
 
 #include "../namespace.h"
 #include "../str.h"
-#include "../tokenizer.h"
+#include "../lexer.h"
 #include "../binstream/txtstream.h"
+#include "fmtstream.h"
 
 
 
 COID_NAMESPACE_BEGIN
 
 ////////////////////////////////////////////////////////////////////////////////
-class fmtstreamcxx : public binstream
+class fmtstreamcxx : public fmtstream
 {
 protected:
     binstream* _binr;
     binstream* _binw;
     //charstr _bufr;
     charstr _bufw;
-    tokenizer _tokenizer;
+    lexer _tokenizer;
 
     int _indent;
-
-    enum {
-        GROUP_IDENTIFIERS               = 1,
-        GROUP_CONTROL                   = 2,
-    };
-
-
+    int lexid, lexstr, lexcode;
 
 public:
     fmtstreamcxx( bool utf8=false ) : _tokenizer(utf8)  {init(0,0);}
@@ -82,44 +77,41 @@ public:
 
         _indent = 0;
 
-        _tokenizer.add_to_group( 0, " \t\r\n" );
-
-        //_tokenizer.set_special_char( '\"', '\\' ); 
-        _tokenizer.add_delimiters( '"', '"' );
-        _tokenizer.add_delimiters( '\'', '\'' );
-        _tokenizer.add_delimiters( '(', ')' );
-        _tokenizer.set_escape_char('\\');
-        _tokenizer.add_escape_pair( "\"", '"' );
-        _tokenizer.add_escape_pair( "'", '\'' );
-        _tokenizer.add_escape_pair( "\\", '\\' );
-        _tokenizer.add_escape_pair( "b", '\b' );
-        _tokenizer.add_escape_pair( "f", '\f' );
-        _tokenizer.add_escape_pair( "n", '\n' );
-        _tokenizer.add_escape_pair( "r", '\r' );
-        _tokenizer.add_escape_pair( "t", '\t' );
+        _tokenizer.def_group( "", " \t\r\n" );
 
         //add anything that can be a part of identifier or value (strings are treated separately)
-        _tokenizer.add_to_group( GROUP_IDENTIFIERS, '0', '9' );
-        _tokenizer.add_to_group( GROUP_IDENTIFIERS, 'a', 'z' );
-        _tokenizer.add_to_group( GROUP_IDENTIFIERS, 'A', 'Z' );
-        _tokenizer.add_to_group( GROUP_IDENTIFIERS, "_.:+-" );
+        lexid = _tokenizer.def_group( "id", "0..9a..zA..Z_.:+-" );
+
+        int er = _tokenizer.def_escape( "esc", '\\' );
+        _tokenizer.def_escape_pair( er, "\"", "\"" );
+        _tokenizer.def_escape_pair( er, "'", "\'" );
+        _tokenizer.def_escape_pair( er, "\\", "\\" );
+        _tokenizer.def_escape_pair( er, "b", "\b" );
+        _tokenizer.def_escape_pair( er, "f", "\f" );
+        _tokenizer.def_escape_pair( er, "n", "\n" );
+        _tokenizer.def_escape_pair( er, "r", "\r" );
+        _tokenizer.def_escape_pair( er, "t", "\t" );
+
+        lexstr = _tokenizer.def_string( "str", "\"", "\"", "esc" );
+        _tokenizer.def_string( "str", "\'", "\'", "esc" );
+
+        lexcode = _tokenizer.def_string( "class", "(", ")", "" );
+
 
         //characters that correspond to struct and array control tokens
-        _tokenizer.add_to_group( GROUP_CONTROL, "{}[],=", true );
-
-        //remaining stuff to group 3, single char output
-        _tokenizer.add_remaining( 3, true );
-        //_tokenizer.add_to_group( 2, "()~!@#$%^&*-+=|\\?/<>`'.,;:" );
-
-        init_tokenizer();
+        _tokenizer.def_group_single( "ctrl", "{}[],=" );
 
         set_default_separators();
     }
 
+    virtual token fmtstream_name()          { return "fmtstreamcxx"; }
 
-    virtual void init_tokenizer()
+    virtual opcd fmtstream_err( charstr* err, token* line, uint* row, uint* col )
     {
-        //_tokenizer.add_to_group( 2, "{}[]", true );
+        uint n = _tokenizer.current_line( line, col );
+        if(line)  *row = n;
+        
+        return _tokenizer.err(err) == 0  ?  opcd(0)  :  ersSYNTAX_ERROR;
     }
 
 
@@ -128,8 +120,8 @@ public:
         return fATTR_OUTPUT_FORMATTING;
     }
 
-    uint get_indent() const {return _indent;}
-    void set_indent( uint indent ) {_indent = indent;}
+    uint get_indent() const                 { return _indent; }
+    void set_indent( uint indent )          { _indent = indent; }
 
     virtual opcd read_until( const substring & ss, binstream * bout, uints max_size=UMAX )
     {
@@ -171,7 +163,7 @@ public:
 
     virtual void acknowledge( bool eat = false )
     {
-        if( !eat && !_tokenizer.empty_buffer() )
+        if( !eat && !_tokenizer.end() )
             throw ersIO_ERROR "data left in received block";
         else
             _tokenizer.reset();
@@ -353,7 +345,7 @@ public:
         if( t.is_array_start() )
         {
             if( t.type == type::T_CHAR  ||  t.type == type::T_BINARY ) {
-                e = _tokenizer.was_string() ? opcd(0) : ersSYNTAX_ERROR "expected string";
+                e = _tokenizer.last() == lexstr ? opcd(0) : ersSYNTAX_ERROR "expected string";
                 if(!e)
                     *(uints*)p =  (t.type == type::T_BINARY) ? tok.len()/2 : tok.len();
 
@@ -363,7 +355,7 @@ public:
                 if( tok == char('}')  ||  tok.is_null() )
                     e = ersNO_MORE;
                 else
-                    e = _tokenizer.last_mask() == (1<<GROUP_IDENTIFIERS)
+                    e = _tokenizer.last() == lexid
                         ? opcd(0)
                         : ersSYNTAX_ERROR "expected identifier";
                 if(!e)
@@ -372,7 +364,7 @@ public:
             }
             else if( t.type == type::T_COMPOUND )
             {
-                if( _tokenizer.last_string_delimiter() == '(' )
+                if( _tokenizer.last() == lexcode )
                 {
                     //optional class name found
                     if(p) {
@@ -392,10 +384,10 @@ public:
         else if( t.is_array_end() )
         {
             if( t.type == type::T_CHAR  ||  t.type == type::T_BINARY ) {
-                e = _tokenizer.was_string() ? opcd(0) : ersSYNTAX_ERROR "expected string";
+                e = _tokenizer.last() == lexstr ? opcd(0) : ersSYNTAX_ERROR "expected string";
             }
             else if( t.type == type::T_KEY ) {
-                if( _tokenizer.last_mask() != (1<<GROUP_IDENTIFIERS) )
+                if( _tokenizer.last() != lexid )
                     return ersSYNTAX_ERROR "expected identifier";
                 
                 tok = _tokenizer.next();
@@ -416,7 +408,7 @@ public:
             if( t.is_nameless() )
                 _tokenizer.push_back();
             else {
-                if( _tokenizer.last_string_delimiter() == '(' )
+                if( _tokenizer.last() == lexcode )
                 {
                     //optional class name found
                     if(p) {
@@ -440,6 +432,8 @@ public:
                 _tokenizer.push_back();
                 e = ersNO_MORE;
             }
+            else if( _tokenizer.end() )
+                e = ersNO_MORE;
             else if( tok != trSep )
                 e = ersSYNTAX_ERROR "missing separator";
         }
@@ -505,8 +499,7 @@ public:
                     {
                         if( !t.is_array_element() )
                         {
-                            ucs4 d = _tokenizer.last_string_delimiter();
-                            if( d == '\"' || d == '\'' )
+                            if( _tokenizer.last() == lexstr )
                                 *(char*)p = tok.first_char();
                             else
                                 e = ersSYNTAX_ERROR "expected string";
@@ -544,7 +537,7 @@ public:
 
                 /////////////////////////////////////////////////////////////////////////////////////
                 case type::T_TIME: {
-                    if( !_tokenizer.was_string() )
+                    if( _tokenizer.last() != lexstr )
                         return ersSYNTAX_ERROR "expected time";
                     
                     e = tok.todate_local( *(timet*)p );
@@ -640,13 +633,9 @@ public:
                 e = write_raw( c.extract(n), n );
             else
             {
-                //_bufw.append('\"');
-
                 token t( (const char*)c.extract(n), n );
-                if( !_tokenizer.synthesize_string( t, _bufw ) )
+                if( !_tokenizer.synthesize_string( lexstr, t, _bufw ) )
                     _bufw += t;
-
-                //_bufw.append('\"');
 
                 uints len = _bufw.len();
                 e = write_raw( _bufw.ptr(), len );
@@ -674,12 +663,12 @@ public:
 
         if( t.type == type::T_KEY )
         {
-            if( _tokenizer.last_mask() != (1<<GROUP_IDENTIFIERS) )
+            if( _tokenizer.last() != lexid )
                 return ersSYNTAX_ERROR;
         }
         else
         {
-            if( !_tokenizer.was_string() )
+            if( _tokenizer.last() != lexstr )
                 return ersSYNTAX_ERROR;
         }
 
@@ -750,7 +739,7 @@ public:
 
     virtual opcd read_raw( void* p, uints& len )
     {
-        token t = _tokenizer.get_pushback_data();
+        token t = _tokenizer.last();
 
         if( len != UMAX  &&  len>t.len() )
             return ersNO_MORE;
@@ -775,7 +764,7 @@ public:
         trSep = tSep = sep;
         tArraySep = arraysep;
 
-        _tokenizer.strip_group( trSep, 0 );
+        _tokenizer.strip_group( trSep, 1 );
     }
 
     void set_default_separators()
@@ -785,7 +774,7 @@ public:
         trSep = tSep = ",\n";
         tArraySep = ",";
 
-        _tokenizer.strip_group( trSep, 0 );
+        _tokenizer.strip_group( trSep, 1 );
     }
 
 protected:
