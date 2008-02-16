@@ -268,6 +268,8 @@ struct token
     }
 
     ////////////////////////////////////////////////////////////////////////////////
+    ///Compare strings
+    //@return -1 if str<this, 0 if str==this, 1 if str>this
     int cmp( const token& str ) const
     {
         uints lex = str.len();
@@ -276,6 +278,19 @@ struct token
         {
             if( _len<lex )  return -1;
             if( lex<_len )  return 1;
+        }
+        return r;
+    }
+
+    ///Compare strings, longer first
+    int cmplf( const token& str ) const
+    {
+        uints lex = str.len();
+        int r = memcmp( ptr(), str.ptr(), uint_min(_len,lex) );
+        if( r == 0 )
+        {
+            if( _len<lex )  return 1;
+            if( lex<_len )  return -1;
         }
         return r;
     }

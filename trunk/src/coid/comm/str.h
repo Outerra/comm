@@ -997,9 +997,9 @@ public:
     {
         if( ptr() == str.ptr() )
             return 1;           //only when 0==0
-        if( _tstr.size() != str._tstr.size() )
+        if( len() != str.len() )
             return 0;
-        return 0 == memcmp( _tstr.ptr(), str._tstr.ptr(), _tstr.size() );
+        return 0 == memcmp( _tstr.ptr(), str._tstr.ptr(), len() );
         //return _tbuf.operator == (str._tbuf);
     }
     bool operator != (const charstr& str) const     { return !operator == (str); }
@@ -1023,11 +1023,11 @@ public:
     }
 
     bool operator == (const char c) const {
-        if (_tstr.size() != 2)  return false;
+        if (len() != 1)  return false;
         return _tstr[0] == c;
     }
     bool operator != (const char c) const {
-        if (_tstr.size() != 2)  return true;
+        if (len() != 1)  return true;
         return _tstr[0] != c;
     }
 
@@ -1304,7 +1304,7 @@ public:
     ////////////////////////////////////////////////////////////////////////////////
     bool cmpeq( const token& str ) const
     {
-        if( _tstr.size() != str.len() )
+        if( len() != str.len() )
             return 0;
         return 0 == memcmp( _tstr.ptr(), str.ptr(), str.len() );
     }
@@ -1316,7 +1316,7 @@ public:
 
     bool cmpeqi( const token& str ) const
     {
-        if( _tstr.size() != str.len() )
+        if( len() != str.len() )
             return 0;
         return 0 == xstrncasecmp( _tstr.ptr(), str.ptr(), str.len() );
     }
@@ -1330,29 +1330,45 @@ public:
     bool cmpeqc( const char* str, bool casecmp ) const       { return casecmp ? cmpeq(str) : cmpeqi(str); }
 
     ////////////////////////////////////////////////////////////////////////////////
+    ///Compare strings
+    //@return -1 if str<this, 0 if str==this, 1 if str>this
     int cmp( const token& str ) const
     {
-        uints len = _tstr.size();
+        uints let = len();
         uints lex = str.len();
-        int r = memcmp( _tstr.ptr(), str.ptr(), uint_min(len,lex) );
+        int r = memcmp( _tstr.ptr(), str.ptr(), uint_min(let,lex) );
         if( r == 0 )
         {
-            if( len<lex )  return -1;
-            if( lex<len )  return 1;
+            if( let<lex )  return -1;
+            if( lex<let )  return 1;
         }
         return r;
     }
     int cmp( const char* str ) const        { return strcmp( _tstr.ptr(), str ); }
 
-    int cmpi( const token& str ) const
+    ///Compare strings, longer first
+    int cmplf( const token& str ) const
     {
-        uints len = _tstr.size();
+        uints let = len();
         uints lex = str.len();
-        int r = xstrncasecmp( _tstr.ptr(), str.ptr(), uint_min(len,lex) );
+        int r = memcmp( _tstr.ptr(), str.ptr(), uint_min(let,lex) );
         if( r == 0 )
         {
-            if( len<lex )  return -1;
-            if( lex<len )  return 1;
+            if( let<lex )  return 1;
+            if( lex<let )  return -1;
+        }
+        return r;
+    }
+
+    int cmpi( const token& str ) const
+    {
+        uints let = len();
+        uints lex = str.len();
+        int r = xstrncasecmp( _tstr.ptr(), str.ptr(), uint_min(let,lex) );
+        if( r == 0 )
+        {
+            if( let<lex )  return -1;
+            if( lex<let )  return 1;
         }
         return r;
     }

@@ -889,15 +889,20 @@ public:
 
     const char* error_text() const  { return err_lex; }
 
-    charstr& error_location( charstr& buf, const token& file ) const
+    charstr& error_location( charstr& buf, const token& file )
     {
         const lextoken& last = lex.last();
-        buf << file << ":" << (last.line+1) << ": " << err_lex << "\n";
+        token line;
+        uint col;
+        uint row = lex.current_line( &line, &col );
 
-        uints n = last.tok.ptr() - last.start;
-        buf << token(last.start,n+1) << "\n";
-        buf.appendn( (uint)n, ' ' );
-        buf << "^\n";
+        buf << file << ":" << (row+1) << ": " << err_lex << "\n";
+
+        if( !line.is_empty() ) {
+            buf << line << "\n";
+            buf.appendn( col, ' ' );
+            buf << "^\n";
+        }
 
         return buf;
     }
