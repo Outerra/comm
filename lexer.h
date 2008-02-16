@@ -744,7 +744,7 @@ public:
     //@return current line number
     //@param text optional token, recieves current line text (may be incomplete)
     //@param col receives column number of current token
-    uint current_line( token* text, uint* col )
+    uint current_line( token* text=0, uint* col=0 )
     {
         if(text) {
             if( _tok.ptr() > _lines_processed )
@@ -970,10 +970,10 @@ protected:
             /// bit map for fast lookups whether replacement sequence can start with given character
             uint32 fastlookup[256/BITBLK];
 
-            ///Sorter
+            ///Sorter: longer strings place lower than shorter string they start with
             struct func {
                 bool operator()(const escpair* p, const token& k) const {
-                    return p->replace < k;
+                    return p->replace.cmplf(k) < 0;
                 }
             };
 
@@ -986,10 +986,11 @@ protected:
             }
 
             ///Find longest replacement that starts given token
-            const escpair* find( token& t ) const
+            const escpair* find( const token& t ) const
             {
                 if( !(fastlookup[t[0]/BITBLK] & (1<<(t[0]%BITBLK))) )
                     return 0;
+
                 uints i = map.lower_boundT(t, func());
                 uints j, n = map.size();
                 for( j=i ; j<n; ++j ) {
@@ -1020,7 +1021,7 @@ protected:
 
     private:
         void init_backmap() const {
-            if(!backmap) return;
+            if(backmap) return;
 
             backmap = new back_map;
             for( uint i=0; i<pairs.size(); ++i )
@@ -1831,8 +1832,10 @@ inline bool lexer::escape_rule::synthesize_string( token tok, charstr& dst ) con
 
         if(pair) {
             dst.add_from_range( copied, p );
+            tok += pair->replace.len();
             copied = tok.ptr();
 
+            dst.append(esc);
             dst.append( pair->code );
             altered = true;
         }
