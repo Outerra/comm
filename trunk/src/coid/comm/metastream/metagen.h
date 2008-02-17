@@ -726,7 +726,9 @@ class metagen //: public binstream
                     ++i;
                 }
 
-                atr_after.process( mg, v );
+                //the 'after' statement is evaluated only if there were some array items evaluated too
+                if(i>0)
+                    atr_after.process( mg, v );
             }
         }
 
