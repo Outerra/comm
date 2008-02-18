@@ -98,7 +98,7 @@ struct _Select_GetRefPtr
 template <
     class VAL,
     class EXTRACTKEY,
-    class HASHFUNC=hash<typename EXTRACTKEY::ret_type>,
+    class HASHFUNC=hash<typename type_base<typename EXTRACTKEY::ret_type>::type>,
     class EQFUNC=equal_to<typename type_base<typename EXTRACTKEY::ret_type>::type, typename HASHFUNC::key_type>,
     class ALLOC=comm_allocator<VAL>
     >
@@ -290,7 +290,7 @@ public:
 template <
     class VAL,
     class EXTRACTKEY,
-    class HASHFUNC=hash<typename EXTRACTKEY::ret_type>,
+    class HASHFUNC=hash<typename type_base<typename EXTRACTKEY::ret_type>::type>,
     class EQFUNC=equal_to<typename type_base<typename EXTRACTKEY::ret_type>::type, typename HASHFUNC::key_type>,
     class ALLOC=comm_allocator<VAL>
     >
