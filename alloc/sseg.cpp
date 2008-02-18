@@ -51,7 +51,7 @@
 namespace coid {
 
 //enable checking
-#if 1
+#if 0
 #define SEG_CHECK           check_state()
 #define SEG_CHECK_(n)       check_state(n)
 #else
