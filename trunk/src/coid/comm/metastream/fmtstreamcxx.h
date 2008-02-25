@@ -106,7 +106,7 @@ public:
 
     virtual token fmtstream_name()          { return "fmtstreamcxx"; }
 
-    virtual opcd fmtstream_err( charstr* err, token* line, uint* row, uint* col )
+    virtual opcd fmtstream_err( token* err, token* line, uint* row, uint* col )
     {
         uint n = _tokenizer.current_line( line, col );
         if(line)  *row = n;

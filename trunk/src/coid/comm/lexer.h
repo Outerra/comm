@@ -67,17 +67,30 @@ COID_NAMESPACE_BEGIN
         Lexer can also detect sequences of characters that have higher priority
     than a simple grouping. It also processes strings and blocks, that are
     enclosed in custom delimiter sequences.
-        With strings it performs substitution of escape character sequences and
-    outputs the strings as one processed token.
-        With blocks it allows recursive processing of nested blocks, strings or
-    sequences, and outputs the whole block as a single token.
+    Sequences alter behavior of the lexer by temporarily changing the rules. If a
+    simple sequence can be matched, it has higher priority than ordinary character
+    grouping even if the grouping would match longer input.
+    Sequences are mostly used in pairs (one leading sequence and multiple trailing
+    ones) to constraint an area with different set of rules.
+
+        With the string sequence, lexer interprets characters in between the leading
+    and trailing sequences as single token, but also performs substitutions of escape
+    character sequences. It then outputs the processed content as single token.
+
+        With the block sequence, lexer enables and/or disables rules according to the
+    specification for the block rule. It allows recursive processing of nested blocks,
+    strings or sequences and normal tokens, and can either output the whole block
+    content as a single token or as a series of tokens terminated by an end-of-block
+    token.
+    Different sets of rules can be enabled inside the blocks, or even the block
+    itself may be disabled within itself (non-nestable).
 
     Sequences, strings and blocks can be in enabled or disabled state. This is used
     mainly to temporarily enable certain sequences that would be otherwise grouped
     with other characters and provide undesired tokens. This is used for example to
     solve the problem when < and > characters in C++ are used both as template
     argument list delimiters and operators. Parser cares for enabling and disabling
-    the particular sequences when appropriate.
+    particular sequences when appropriate.
     
 
     It's possible to bind the lexer to a token (a string) source or to a binstream
@@ -104,6 +117,7 @@ COID_NAMESPACE_BEGIN
 **/
 class lexer
 {
+public:
     ///Incremental token hasher used by the lexer
     struct token_hash
     {
@@ -130,16 +144,15 @@ class lexer
         void reset()    { hash = 0; }
     };
 
-public:
-
     enum { ID_KEYWORDS = 0x8000 };
 
-    ///Lexer token
+    ///Lexer output token
     struct lextoken
     {
-        token   tok;                            ///< value string token
+        token   tok;                            ///< value string, points to input string or to tokbuf
         int     id;                             ///< token id (group type or string type)
-        charstr tokbuf;                         ///< buffer that keeps processed string
+        int     state;                          ///< >0 leading, <0 trailing, =0 chunked
+        charstr tokbuf;                         ///< buffer that keeps processed string in case it had to be altered (escape seq.replacements etc.)
         token_hash hash;                        ///< hash value computed for tokens (but not for strings or blocks)
 
         bool operator == (int i) const          { return i == id; }
@@ -152,6 +165,22 @@ public:
 
         operator token() const                  { return tok; }
 
+
+        typedef int lextoken::*unspecified_bool_type;
+	    operator unspecified_bool_type() const {
+		    return id == 0 ? 0 : &lextoken::id;
+	    }
+
+        //@return true if this is end-of-file token
+        bool end() const                        { return id == 0; }
+
+        //@return true if this is leading token of specified sequence
+        bool leading(int i) const               { return state>0 && id==i; }
+
+        //@return true if this is trailing token of specified sequence
+        bool trailing(int i) const              { return state<0 && id==i; }
+
+        ///Swap or assign token to the destination string
         void swap_to_string( charstr& buf )
         {
             if( !tokbuf.is_empty() )
@@ -160,11 +189,12 @@ public:
                 buf = tok;
         }
 
-        void swap_to_token_or_string( token& dst, charstr& dstr )
+        ///Swap content 
+        token swap_to_token_or_string( charstr& dstr )
         {
             if( !tokbuf.is_empty() )
                 dstr.swap(tokbuf);
-            dst = tok;
+            return tok;
         }
 
         void upd_hash( const char* p )
@@ -228,7 +258,7 @@ public:
         return _abmap.size() == BASIC_UTF8_CHARS;
     }
 
-    ///Reset lexer state (but not the rules)
+    ///Reset lexer state (does not discard the rules)
     opcd reset()
     {
         if(_bin)
@@ -236,10 +266,11 @@ public:
         _tok.set_null();
         _binbuf.reset();
         _last.id = 0;
+        _last.state = 0;
         _last.tok.set_null();
         _last_string = -1;
         _err = 0;
-        _errctx = 0;
+        _errtext.reset();
         _pushback = 0;
         *_stack.need(1) = &_root;
 
@@ -250,18 +281,20 @@ public:
         return 0;
     }
 
-    ///Create new group named \a name with characters from \a set. Clumps of continuous characters
+    ///Create new group named \a name with characters from \a set. Clump of continuous characters
     /// from the group is returned as one token.
     //@return group id or 0 on error, error id is stored in the _err variable
     //@param name group name
     //@param set characters to include in the group, recognizes ranges when .. is found
     //@param trailset optional character set to match after the first character from the
-    /// set was found. This can be used to allow different characters after first letter of token
+    /// set was found. This can be used to allow different characters after the first
+    /// letter matched
     int def_group( const token& name, const token& set, const token& trailset = token::empty() )
     {
         uint g = (uint)_grpary.size();
 
-        if( _entmap.find_value(name) )  { _err=ERR_ENTITY_EXISTS; return 0; }
+        if( _entmap.find_value(name) )
+            __throw_entity_exists(name);
 
         group_rule* gr = new group_rule( name, (ushort)g, false );
         _entmap.insert_value(gr);
@@ -282,8 +315,8 @@ public:
         return g+1;
     }
 
-    ///Create new group named \a name with characters from \a set that will be returned as single
-    /// character tokens
+    ///Create new group named \a name with characters from \a set that will be returned
+    /// as single character tokens
     //@return group id or 0 on error, error id is stored in the _err variable
     //@param name group name
     //@param set characters to include in the group, recognizes ranges when .. is found
@@ -291,7 +324,8 @@ public:
     {
         uint g = (uint)_grpary.size();
 
-        if( _entmap.find_value(name) )  { _err=ERR_ENTITY_EXISTS; return 0; }
+        if( _entmap.find_value(name) )
+            __throw_entity_exists(name);
 
         group_rule* gr = new group_rule( name, (ushort)g, true );
         _entmap.insert_value(gr);
@@ -302,11 +336,11 @@ public:
         return g+1;
     }
 
-    ///Define specific keywords that should be returned as a separate token type.
-    ///If the characters of specific keyword all fit in one character group, they are
+    ///Define character sequence (keyword) that should be returned as a separate token type.
+    ///If the characters of specific keyword all fit in the same character group, they are
     /// implemented as lookups into the keyword hash table after the scanner computes
     /// the hash value for the token it processed.
-    ///Otherwise (when they are heterogenous) they have to be set up as sequences.
+    ///Otherwise (when they are heterogenous) they are set up as sequences.
     //@param kwd keyword to add
     //@return ID_KEYWORDS if the keyword consists of homogenous characters from
     /// one character group, or id of a sequence created, or 0 if already defined.
@@ -320,8 +354,10 @@ public:
             return ID_KEYWORDS;
         }
 
-        _err = ERR_KEYWORD_ALREADY_DEFINED;
-        return 0;
+        _err = exception::ERR_KEYWORD_ALREADY_DEFINED;
+        _errtext << "keyword '" << kwd << "' already exists";
+
+        throw exception(_err, _errtext);
     }
 
     ///Escape sequence processor function prototype.
@@ -340,7 +376,8 @@ public:
         uint g = (uint)_escary.size();
 
         //only one escape rule of given name
-        if( _entmap.find_value(name) )  { _err=ERR_ENTITY_EXISTS; return 0; }
+        if( _entmap.find_value(name) )
+            __throw_entity_exists(name);
 
         escape_rule* er = new escape_rule( name, (ushort)g );
         _entmap.insert_value(er);
@@ -354,7 +391,7 @@ public:
         return g+1;
     }
 
-    ///Define escape string mappings.
+    ///Define the escape string mappings.
     //@return true if successful
     //@param escrule id of the escape rule
     //@param code source sequence that if found directly after the escape character, will be replaced
@@ -372,20 +409,25 @@ public:
     }
 
 
-    ///Create new string sequence detector named \a name, using specified leading and trailing sequence.
+    ///Create new string sequence detector named \a name, using specified leading and trailing sequences.
     ///If the leading sequence was already defined for another string, only the trailing sequence is
-    /// inserted to its trailing set, and the escape definition is ignored.
+    /// inserted into its trailing set, and the escape definition is ignored.
     //@return string id (a negative number) or 0 on error, error id is stored in the _err variable
-    //@param name string rule name
+    //@param name string rule name. Name prefixed with . (dot) makes the block content ignored in global scope.
     //@param leading the leading string delimiter
     //@param trailing the trailing string delimiter
     //@param escape name of the escape rule to use for processing of escape sequences within strings
-    int def_string( const token& name, const token& leading, const token& trailing, const token& escape )
+    int def_string( token name, const token& leading, const token& trailing, const token& escape )
     {
         uint g = (uint)_stbary.size();
 
+        bool ign = name.first_char() == '.';
+        if(ign)
+            ++name;
+
         entity* const* ens = _entmap.find_value(name);
-        if( ens && (*ens)->type != entity::STRING )  { _err=ERR_DIFFERENT_ENTITY_EXISTS; return 0; }
+        if( ens && (*ens)->type != entity::STRING )
+            __throw_different_exists(name);
 
         if( ens && ((string_rule*)*ens)->leading == leading ) {
             //reuse, only the trailing mark is different
@@ -396,12 +438,21 @@ public:
         string_rule* sr = new string_rule( name, (ushort)g );
         _entmap.insert_value(sr);
 
+        _root.ignore(*sr, ign);
+
         if( !escape.is_empty() )
         {
             entity* const* en = _entmap.find_value(escape);
             sr->escrule = en ? reinterpret_cast<escape_rule*>(*en) : 0;
-            if( !sr->escrule )  { _err=ERR_ENTITY_DOESNT_EXIST; return 0; }
-            if( sr->escrule->type != entity::ESCAPE )  { _err=ERR_ENTITY_BAD_TYPE; return 0; }
+            if( !sr->escrule )
+                __throw_doesnt_exist(escape);
+
+            if( sr->escrule->type != entity::ESCAPE ) {
+                _err = exception::ERR_ENTITY_BAD_TYPE;
+                _errtext << "bad rule type '" << escape << "'; expected escape rule";
+
+                throw exception(_err, _errtext);
+            }
         }
 
         sr->leading = leading;
@@ -414,16 +465,25 @@ public:
 
     ///Create new block sequence detector named \a name, using specified leading and trailing sequences.
     //@return block id (a negative number) or 0 on error, error id is stored in the _err variable
-    //@param name block rule name
+    //@param name block rule name. Name prefixed with . (dot) makes the block content ignored in global scope.
     //@param leading the leading block delimiter
     //@param trailing the trailing block delimiter
-    //@param nested names of possibly nested blocks and strings to look and account for (separated with spaces)
-    int def_block( const token& name, const token& leading, const token& trailing, token nested )
+    //@param nested names of recognized nested blocks and strings to look and account for (separated with
+    /// spaces). An empty list disables any nested blocks and strings.
+    //@note The rule names (either in the name or the nested params) can start with '.' (dot) character,
+    /// in which case the rule is set to ignored state either within global scope (if placed before the
+    /// rule name) or within the rule scope (if placed before rule names in nested list).
+    int def_block( token name, const token& leading, const token& trailing, token nested )
     {
         uint g = (uint)_stbary.size();
 
+        bool ign = name.first_char() == '.';
+        if(ign)
+            ++name;
+
         entity* const* ens = _entmap.find_value(name);
-        if( ens && (*ens)->type != entity::BLOCK )  { _err=ERR_DIFFERENT_ENTITY_EXISTS; return 0; }
+        if( ens && (*ens)->type != entity::BLOCK )
+            __throw_different_exists(name);
 
         if( ens && ((block_rule*)*ens)->leading == leading ) {
             //reuse, only trailing mark is different
@@ -434,32 +494,54 @@ public:
         block_rule* br = new block_rule( name, (ushort)g );
         _entmap.insert_value(br);
 
+        _root.ignore(*br, ign);
+
         for(;;)
         {
             token ne = nested.cut_left(' ',1);
             if(ne.is_empty())  break;
 
+            if(ne == '*') {
+                //inherit all global rules
+                br->stbenabled = _root.stbenabled;
+                br->stbignored = _root.stbignored;
+                continue;
+            }
+
+            bool ignn = ne.first_char() == '.';
+            if(ignn)
+                ++ne;
+
             int rn=-1;
             if( ne.char_is_number(0) )
             {
+                token net = ne;
+
                 //special case for cross-linked blocks, id of future block rule instead of the name
                 rn = ne.touint_and_shift();
-                if( ne.len() )  { _err=ERR_ENTITY_DOESNT_EXIST; return 0; }
+                if( ne.len() )
+                    __throw_different_exists(net);
             }
             else
             {
                 entity* const* en = _entmap.find_value(ne);
-                stringorblock* sob = en ? reinterpret_cast<stringorblock*>(*en) : 0;
-                if(!sob)  { _err=ERR_ENTITY_DOESNT_EXIST; return 0; }
+                sequence* sob = en ? reinterpret_cast<sequence*>(*en) : 0;
+                if(!sob)
+                    __throw_doesnt_exist(ne);
 
-                if( sob->type != entity::BLOCK  &&  sob->type != entity::STRING  &&  sob->type != entity::SEQUENCE ) {
-                    _err=ERR_ENTITY_BAD_TYPE; return 0;
+                if( !sob->is_ssb() ) {
+                    _err = exception::ERR_ENTITY_BAD_TYPE;
+                    _errtext << "bad type of rule '" << ne << "'; expected sequence-type";
+
+                    throw exception(_err, _errtext);
                 }
 
                 rn = sob->id;
             }
 
             br->stbenabled |= 1ULL<<rn;
+            if(ignn)
+                br->stbignored |= 1ULL<<rn;
         }
 
         br->leading = leading;
@@ -472,17 +554,24 @@ public:
 
     ///Create new simple sequence detector named \a name.
     //@return block id (a negative number) or 0 on error, error id is stored in the _err variable
-    //@param name block rule name
+    //@param name block rule name. Name prefixed with . (dot) makes the block content ignored in global scope.
     //@param seq the sequence to detect, prior to basic grouping rules
-    int def_sequence( const token& name, const token& seq )
+    int def_sequence( token name, const token& seq )
     {
         uint g = (uint)_stbary.size();
 
+        bool ign = name.first_char() == '.';
+        if(ign)
+            ++name;
+
         entity* const* ens = _entmap.find_value(name);
-        if( ens && (*ens)->type != entity::SEQUENCE )  { _err=ERR_DIFFERENT_ENTITY_EXISTS; return 0; }
+        if( ens && (*ens)->type != entity::SEQUENCE )
+            __throw_different_exists(name);
 
         sequence* se = new sequence( name, (ushort)g );
         _entmap.insert_value(se);
+
+        _root.ignore(*se, ign);
 
         se->leading = seq;
 
@@ -511,8 +600,11 @@ public:
     }
 
     ///Enable/disable all entities with the same (common) name.
-    void enable( const token& name, bool en )
+    void enable( token name, bool en )
     {
+        if(name.first_char() == '.')
+            ++name;
+
         Tentmap::range_const_iterator r = _entmap.equal_range(name);
         block_rule* br = *_stack.last();
 
@@ -524,8 +616,11 @@ public:
     }
 
     ///Ignore/don't ignore all entities with the same name
-    void ignore( const token& name, bool ig )
+    void ignore( token name, bool ig )
     {
+        if(name.first_char() == '.')
+            ++name;
+
         Tentmap::range_const_iterator r = _entmap.equal_range(name);
         block_rule* br = *_stack.last();
 
@@ -536,20 +631,32 @@ public:
         }
     }
 
-    ///Return next token as if the block/string opening sequence has been already read.
-    //@note this explicit request will read the string/block content even if the
-    /// string or block is currently disabled
-    bool next_string_or_block( int sbid )
+    ///Return next token as if the string opening sequence has been already read.
+    //@note this explicit request will read the string content even if the
+    /// string is currently disabled
+    const lextoken& next_as_string( int stringid )
     {
-        uint sid = -1 - sbid;
+        uint sid = -1 - stringid;
         sequence* seq = _stbary[sid];
 
-        DASSERT( seq->is_block() || seq->is_string() );
+        DASSERT( seq->is_string() );
 
         uint off=0;
-        return seq->is_block()
-            ? next_read_block( *(block_rule*)seq, off, true )
-            : next_read_string( *(string_rule*)seq, off, true );
+        return next_read_string( *(string_rule*)seq, off, true );
+    }
+
+    ///Return next token as if the block opening sequence has been already read.
+    //@note this explicit request will read the block content even if the
+    /// block is currently disabled
+    const lextoken& next_as_block( int blockid )
+    {
+        uint sid = -1 - blockid;
+        sequence* seq = _stbary[sid];
+
+        DASSERT( seq->is_block() );
+
+        uint off=0;
+        return next_read_block( *(block_rule*)seq, off, true );
     }
 
     ///Return next token, appending it to the \a dst
@@ -563,19 +670,30 @@ public:
         return dst;
     }
 
+    ///Return current block as single token
+    /** Finds the end of active block and returns the content as a single token.
+        For the top-most, implicit block it processes input to the end. Enabled sequences
+        are processed normally: ignored sequences are read but discarded, strings have
+        their escape sequences replaced, etc.
+    **/
+    const lextoken& next_block( bool ignore )
+    {
+    }
+
     ///Return the next token from input.
     /**
         Returns token of characters identified by a lexer rule (group or sequence types).
         Tokens of rules that are currently set to ignored are skipped.
-        On error an empty token is returned and _err contains the error.
+        Rules that are disabled in current scope are not considered.
+        On error an empty token is returned and _err contains the error code.
 
         @param ignoregrp id of the group to ignore if found at the beginning, 0 for none.
-        This is used mainly to omit whitespace (group 0), or explicitly not skip it.
+        This is used mainly to omit the whitespace (group 1), or explicitly to not skip it.
     **/
     const lextoken& next( uint ignoregrp=1 )
     {
         //return last token if instructed
-        if( _pushback ) { _pushback = 0; return _last; }
+        if(_pushback) { _pushback = 0; return _last; }
 
         _last.reset();
 
@@ -590,7 +708,7 @@ public:
             //end of buffer
             // if there's a source binstream connected, try to suck more data from it
             if(_bin) {
-                if( fetch_page(0,false) == 0 )
+                if( fetch_page(0, false) == 0 )
                     return set_end();
             }
             else
@@ -602,6 +720,25 @@ public:
 
         if(x & xSEQ)
         {
+            //check if it's the trailing sequence
+            int kt;
+            uint off=0;
+
+            if( (x & fSEQ_TRAILING)
+                && _stack.size()>1
+                && (kt = match_trail((*_stack.last())->trailing, off)) >= 0 )
+            {
+                const block_rule& br = **_stack.pop();
+
+                uint k = br.id;
+                _last.id = -1 - k;
+                _last.state = -(int)k;
+                _last_string = k;
+
+                _last.tok = _tok.cut_left_n( br.trailing[kt].seq.len() );
+                return _last;
+            }
+
             //this could be a leading string/block delimiter, if we can find it in the register
             const dynarray<sequence*>& dseq = _seqary[((x&xSEQ)>>rSEQ)-1];
             uint i, n = (uint)dseq.size();
@@ -613,23 +750,39 @@ public:
                 sequence* seq = dseq[i];
                 uint k = seq->id;
                 _last.id = -1 - k;
+                _last.state = k;
                 _last_string = k;
 
-                _tok += seq->leading.len();
+                _last.tok = _tok.cut_left_n( seq->leading.len() );
 
                 //this is a leading string or block delimiter
                 uints off=0;
-                bool st;
-                if( seq->type == entity::BLOCK )
-                    st = next_read_block( *(const block_rule*)seq, off, true );
-                else if( seq->type == entity::STRING )
-                    st = next_read_string( *(const string_rule*)seq, off, true );
 
-                if( st && ignored(*seq) )    //ignored rule
+                if( seq->type == entity::BLOCK )
+                {
+                    if( !chunked(*seq)  &&  !ignored(*seq) )
+                    {
+                        _stack.push( reinterpret_cast<block_rule*>(seq) );
+
+                        uint k = seq->id;
+                        _last.id = -1 - k;
+                        _last.state = k;
+                        _last_string = k;
+
+                        _last.tok = _tok.cut_left_n( seq->leading.len() );
+                        return _last;
+                    }
+
+                    next_read_block( *(const block_rule*)seq, off, true );
+                }
+                else if( seq->type == entity::STRING )
+                    next_read_string( *(const string_rule*)seq, off, true );
+
+                if( ignored(*seq) )   //ignored rule
                     return next(ignoregrp);
 
-                if(!st)
-                    token::empty(); //there was an error reading the string or block
+                //if(!st)
+                //    _last.tok.set_empty();  //there was an error reading the string or block
 
                 return _last;
             }
@@ -671,7 +824,7 @@ public:
     {
         if( tok.len() > _tok.len() )
         {
-            uints n = fetch_page( _tok.len(), false );
+            uints n = fetch_page(_tok.len(), false);
             if( n < tok.len() )  return false;
         }
 
@@ -679,10 +832,30 @@ public:
     }
 
     //@return true if next token matches literal string
-    bool match_literal( const token& val )      { return next() == val; }
+    bool match( const token& val )  { return next() == val; }
     
     //@return true if next token matches literal character
-    bool match_literal( char c )                { return next() == c; }
+    bool match( char c )            { return next() == c; }
+
+    ///Match literal or else throw exception
+    void xmatch( const token& val ) {
+        if(!match(val)) {
+            _err = exception::ERR_EXTERNAL_ERROR;
+            _errtext << "expected " << val;
+
+            throw exception(_err, _errtext);
+        }
+    }
+
+    ///Match literal or else throw exception
+    void xmatch( char c ) {
+        if(!match(c)) {
+            _err = exception::ERR_EXTERNAL_ERROR;
+            _errtext << "expected " << c;
+
+            throw exception(_err, _errtext);
+        }
+    }
 
     ///Try to match an optional literal, push back if not succeeded.
     bool match_optional( const token& val )
@@ -704,7 +877,7 @@ public:
     //@return true if next token belongs to the specified group/sequence.
     //@param grp group/sequence id
     //@param dst the token read
-    bool match( int grp, charstr& dst )
+    bool match_group( int grp, charstr& dst )
     {
         next();
         if( _last != grp )  return false;
@@ -718,7 +891,7 @@ public:
     //@return true if the last token read belongs to the specified group/sequence.
     //@param grp group/sequence id
     //@param dst the token read
-    bool match_last( int grp, charstr& dst )
+    bool match_last_group( int grp, charstr& dst )
     {
         if( grp != _last.id )  return false;
         if( !_last.tokbuf.is_empty() )
@@ -730,8 +903,7 @@ public:
 
     ///Push the last token back to be retrieved again by the next() method
     /// (and all the methods that use it, like the match_* methods etc.).
-    void push_back()
-    {
+    void push_back() {
         _pushback = 1;
     }
 
@@ -761,6 +933,13 @@ public:
             *col = _tok.ptr() - _lines_last;
 
         return _lines+1;
+    }
+
+    ///Get error code
+    int err( token* errstr ) const {
+        if(errstr)
+            *errstr = _errtext;
+        return _err;
     }
 
 
@@ -809,56 +988,6 @@ public:
         return tok;
     }
 
-    ///Signal an external error (for derived classes that provide additional syntax checking)
-    void set_external_error( bool set )
-    {
-        if(set)
-            _err = ERR_EXTERNAL_ERROR;
-        else
-            _err = 0;
-    }
-
-    /// Errors
-    enum {
-        //ERR_CHAR_OUT_OF_RANGE       = 1,
-        ERR_ILL_FORMED_RANGE        = 2,
-        ERR_ENTITY_EXISTS           = 3,
-        ERR_ENTITY_DOESNT_EXIST     = 4,
-        ERR_ENTITY_BAD_TYPE         = 5,
-        ERR_DIFFERENT_ENTITY_EXISTS = 6,
-        ERR_STRING_TERMINATED_EARLY = 7,
-        ERR_UNRECOGNIZED_ESCAPE_SEQ = 8,
-        ERR_BLOCK_TERMINATED_EARLY  = 9,
-        ERR_EXTERNAL_ERROR          = 10,       ///< the error was set from outside
-        ERR_KEYWORD_ALREADY_DEFINED = 11,
-    };
-
-    //@return internal lexer error
-    int err( charstr* errtext ) const
-    {
-        if(errtext) switch(_err) {
-            case ERR_STRING_TERMINATED_EARLY: {
-                    string_rule* sr = reinterpret_cast<string_rule*>(_errctx);
-                    *errtext << "no matching " << sr->trailing[0].seq << " found";
-                    break;
-                }
-            case ERR_UNRECOGNIZED_ESCAPE_SEQ:
-                *errtext << "unrecognized escape sequence";
-                break;
-            case ERR_BLOCK_TERMINATED_EARLY: {
-                    block_rule* br = reinterpret_cast<block_rule*>(_errctx);
-                    *errtext << "no matching " << br->trailing[0].seq << " found";
-                    break;
-                }
-            default:
-                if(_err)
-                    *errtext << "error " << _err;
-                else
-                    errtext->reset();
-        }
-        return _err;
-    }
-
 
     ///Synthesize proper escape sequences for given string
     //@param string id of the string type as returned by def_string
@@ -880,6 +1009,71 @@ public:
     }
 
 
+    ///Lexer exception
+    struct exception
+    {
+        int code;
+        const charstr& text;
+
+        exception(int e, const charstr& text) : code(e), text(text)
+        {}
+
+        /// Error codes
+        enum {
+            //ERR_CHAR_OUT_OF_RANGE       = 1,
+            ERR_ILL_FORMED_RANGE        = 2,
+            ERR_ENTITY_EXISTS           = 3,
+            ERR_ENTITY_DOESNT_EXIST     = 4,
+            ERR_ENTITY_BAD_TYPE         = 5,
+            ERR_DIFFERENT_ENTITY_EXISTS = 6,
+            ERR_STRING_TERMINATED_EARLY = 7,
+            ERR_UNRECOGNIZED_ESCAPE_SEQ = 8,
+            ERR_BLOCK_TERMINATED_EARLY  = 9,
+            ERR_EXTERNAL_ERROR          = 10,       ///< the error was set from outside
+            ERR_KEYWORD_ALREADY_DEFINED = 11,
+        };
+
+    };
+
+protected:
+
+    ///Prepare to throw
+    charstr& set_lexer_exception() {
+        _err = exception::ERR_EXTERNAL_ERROR;
+        _errtext.reset();
+        return _errtext;
+    }
+
+    void __throw_lexer_exception() {
+        throw exception(_err, _errtext);
+    }
+
+private:
+    void __throw_entity_exists( const token& name )
+    {
+        _err = exception::ERR_ENTITY_EXISTS;
+        _errtext << "a rule with name '" << name << "' already exists";
+
+        throw exception(_err, _errtext);
+    }
+
+    void __throw_different_exists( const token& name )
+    {
+        _err = exception::ERR_DIFFERENT_ENTITY_EXISTS;
+        _errtext << "a different type of rule '" << name << "' already exists";
+
+        throw exception(_err, _errtext);
+    }
+
+    void __throw_doesnt_exist( const token& name )
+    {
+        _err = exception::ERR_ENTITY_DOESNT_EXIST;
+        _errtext << "specified rule '" << name << "' doesn't exist";
+
+        throw exception(_err, _errtext);
+    }
+
+
 ////////////////////////////////////////////////////////////////////////////////
 protected:
 
@@ -892,7 +1086,7 @@ protected:
             ESCAPE,                     ///< escape character(s)
             KEYWORDLIST,                ///< keywords (matched by a group but having a different class when returned)
             SEQUENCE,                   ///< sequences (for string and block matching or keywords that span multiple groups)
-            STRING,                     ///< sequence specialization with simple content
+            STRING,                     ///< sequence specialization with simple content (with escape sequences processing)
             BLOCK,                      ///< sequence specialization with recursive content
         };
 
@@ -902,7 +1096,8 @@ protected:
         ushort id;                      ///< entity id, index to containers by entity type
 
 
-        entity( const token& name, uchar type, ushort id ) : name(name), type(type), id(id)
+        entity( const token& name, uchar type, ushort id )
+        : name(name), type(type), id(id)
         {
             status = 0;
         }
@@ -1056,7 +1251,7 @@ protected:
         }
     };
 
-    ///Character sequence descriptor
+    ///Character sequence descriptor.
     struct sequence : entity
     {
         charstr leading;                ///< sequence of characters to be detected
@@ -1068,7 +1263,9 @@ protected:
         }
     };
 
-    ///String and block base entity
+    ///String and block base entity. This is the base class for compound sequences
+    /// that are wrapped between one leading and possibly multiple trailing character
+    /// sequences.
     struct stringorblock : sequence
     {
         ///Possible trailing sequences
@@ -1098,7 +1295,8 @@ protected:
         { }
     };
 
-    ///String descriptor
+    ///String descriptor. Rule that interprets all input between two character 
+    /// sequences as one token, with additional escape sequence processing.
     struct string_rule : stringorblock
     {
         escape_rule* escrule;           ///< escape rule to use within the string
@@ -1107,11 +1305,12 @@ protected:
         { escrule = 0; }
     };
 
-    ///Block descriptor
+    ///Block descriptor.
     struct block_rule : stringorblock
     {
         uint64 stbenabled;              ///< bit map with sequences allowed to nest (enabled)
         uint64 stbignored;              ///< bit map with sequences skipped (ignored)
+        uint64 stbchunked;              ///< bit map with sequences whose inner content should be processed and returned as single token
 
         ///Make the specified S/S/B enabled or disabled within this block.
         ///If this very same block is enabled it means that it can nest in itself.
@@ -1135,15 +1334,31 @@ protected:
                 stbignored &= ~(1ULL << seq.id);
         }
 
-        bool enabled( const sequence& seq ) const   { return (stbenabled & (1ULL<<seq.id)) != 0; }
-        bool ignored( const sequence& seq ) const   { return (stbignored & (1ULL<<seq.id)) != 0; }
+        ///Make the specified S/S/B chunked or not chunked within this block.
+        ///Content of chunked sequences is returned as single token, with ignored
+        /// subsequences removed and strings properly escaped
+        void chunkit( const sequence& seq, bool ch )
+        {
+            DASSERT( seq.id < 64 );
+            if(ch)
+                stbchunked |= 1ULL << seq.id;
+            else
+                stbchunked &= ~(1ULL << seq.id);
+        }
+
+        bool enabled( int seq ) const   { return (stbenabled & (1ULL<<seq)) != 0; }
+        bool ignored( int seq ) const   { return (stbignored & (1ULL<<seq)) != 0; }
+        bool chunked( int seq ) const   { return (stbchunked & (1ULL<<seq)) != 0; }
 
 
         block_rule( const token& name, ushort id )
         : stringorblock(name,id,entity::BLOCK)
-        { stbenabled = 0;  stbignored = 0; }
+        {
+            stbenabled = stbignored = stbchunked = 0;
+        }
     };
 
+    ///Root block
     struct root_block : block_rule
     {
         root_block()
@@ -1152,9 +1367,13 @@ protected:
     };
 
 
-    bool enabled( const sequence& seq ) const   { return (*_stack.last())->enabled(seq); }
-    bool ignored( const sequence& seq ) const   { return (*_stack.last())->ignored(seq); }
+    bool enabled( const sequence& seq ) const   { return (*_stack.last())->enabled(seq.id); }
+    bool ignored( const sequence& seq ) const   { return (*_stack.last())->ignored(seq.id); }
+    bool chunked( const sequence& seq ) const   { return (*_stack.last())->chunked(seq.id); }
 
+    bool enabled( int seq ) const               { return (*_stack.last())->enabled(seq); }
+    bool ignored( int seq ) const               { return (*_stack.last())->ignored(seq); }
+    bool chunked( int seq ) const               { return (*_stack.last())->chunked(seq); }
 
     ///Character flags
     enum {
@@ -1194,7 +1413,12 @@ protected:
             if( k == '.'  &&  s.first_char() == '.' )
             {
                 k = s.nth_char(1);
-                if(!k || !kprev)  { _err=ERR_ILL_FORMED_RANGE; return false; }
+                if(!k || !kprev) {
+                    _err = exception::ERR_ILL_FORMED_RANGE;
+                    _errtext << "ill-formed range: " << char(kprev) << ".." << char(k);
+
+                    throw exception(_err, _errtext);
+                }
 
                 if( kprev > k ) { uchar kt=k; k=kprev; kprev=kt; }
                 for( int i=kprev; i<=(int)k; ++i )  (this->*fn)(i,fnval);
@@ -1219,13 +1443,13 @@ protected:
     }
 
     ///Try to match a set of strings at offset
-    //@return position of the trailing string matched or -1
+    //@return number of the trailing string matched or -1
     //@note strings are expected to be sorted by size (longest first)
-    int match( const dynarray<stringorblock::trail>& str, uints& off )
+    int match_trail( const dynarray<stringorblock::trail>& str, uints& off )
     {
         if( str[0].seq.len()+off > _tok.len() )
         {
-            uints n = fetch_page( _tok.len()-off, false );
+            uints n = fetch_page(_tok.len()-off, false);
             if( n < str.last()->seq.len() )  return false;
             off = 0;
         }
@@ -1239,11 +1463,11 @@ protected:
     }
 
     ///Try to match the string at the offset
-    bool match( const token& tok, uints& off )
+    bool match_leading( const token& tok, uints& off )
     {
         if( tok.len()+off > _tok.len() )
         {
-            uints n = fetch_page( _tok.len()-off, false );
+            uints n = fetch_page(_tok.len()-off, false);
             if( n < tok.len() )  return false;
             off = 0;
         }
@@ -1252,7 +1476,7 @@ protected:
     }
 
     ///Read next token as if it was a string with the leading sequence already read
-    bool next_read_string( const string_rule& sr, uints& off, bool outermost )
+    const lextoken& next_read_string( const string_rule& sr, uints& off, bool outermost )
     {
         const escape_rule* er = sr.escrule;
 
@@ -1263,14 +1487,17 @@ protected:
             off = count_notescape(off);
             if( off >= _tok.len() )
             {
-                if( 0 == fetch_page( 0, false ) )
+                if( 0 == fetch_page(0, false) )
                 {
                     //input terminated before the end of the string
                     add_stb_segment( sr, -1, off, outermost );
-                    _err=ERR_STRING_TERMINATED_EARLY;
-                    //_last.tok.set_null();
-                    return false;
+
+                    _err = exception::ERR_STRING_TERMINATED_EARLY;
+                    _errtext << "no closing sequence of '" << sr.name << "' found";
+
+                    throw exception(_err, _errtext);
                 }
+
                 off = 0;
                 continue;
             }
@@ -1281,9 +1508,11 @@ protected:
             {
                 //this is a syntax error, since the string wasn't properly terminated
                 add_stb_segment( sr, -1, off, outermost );
-                _err=ERR_STRING_TERMINATED_EARLY;
-                //_last.tok.set_null();
-                return false;
+                
+                _err = exception::ERR_STRING_TERMINATED_EARLY;
+                _errtext << "no closing sequence of '" << sr.name << "' found";
+
+                throw exception(_err, _errtext);
             }
 
             //this can be either an escape character or the terminating character,
@@ -1296,47 +1525,53 @@ protected:
                     _last.tokbuf.add_from( _tok.ptr(), off );
                 _tok += off+1;  //past the escape char
 
-                bool norepl=false;
+                bool replaced = false;
+
                 if( er->replfn )
                 {
                     //a function was provided for translation, we should prefetch as much data as possible
-                    fetch_page( _tok.len(), false );
+                    fetch_page(_tok.len(), false);
 
-                    norepl = er->replfn( _tok, _last.tokbuf );
+                    replaced = er->replfn( _tok, _last.tokbuf );
 
                     if(!outermost)  //a part of block, do not actually build the buffer
                         _last.tokbuf.reset();
                 }
 
-                if(!norepl) //i.e. it was replaced
+                if(!replaced)
                 {
                     uint i, n = (uint)er->pairs.size();
                     for( i=0; i<n; ++i )
                         if( follows( er->pairs[i].code ) )  break;
                     if( i >= n )
                     {
-                        _err=ERR_UNRECOGNIZED_ESCAPE_SEQ;
-                        //_last.tok.set_null();
-                        return false;
+                        //_err = exception::ERR_UNRECOGNIZED_ESCAPE_SEQ;
+                        //_errtext << "unrecognized escape sequence " << er->esc
+                        //    << token(_tok.ptr(), uint_min(3,_tok.len())) << "..";
+
+                        //skip one char after the escape char
+                        _tok += 1;
                     }
+                    else
+                    {
+                        //found
+                        const escpair& ep = er->pairs[i];
 
-                    //found
-                    const escpair& ep = er->pairs[i];
-
-                    if(outermost)
-                        _last.tokbuf += ep.replace;
-                    _tok += ep.code.len();
+                        if(outermost)
+                            _last.tokbuf += ep.replace;
+                        _tok += ep.code.len();
+                    }
                 }
 
                 off = 0;
             }
             else
             {
-                int k = match( sr.trailing, off );
+                int k = match_trail( sr.trailing, off );
                 if(k>=0)
                 {
                     add_stb_segment( sr, k, off, outermost );
-                    return true;
+                    return _last;
                 }
 
                 //this wasn't our terminator, passing by
@@ -1346,8 +1581,9 @@ protected:
     }
 
 
-    ///Read next token as block
-    bool next_read_block( const block_rule& br, uints& off, bool outermost )
+    ///Read tokens until block terminating sequence is found. Composes single token out of
+    /// the block content
+    const lextoken& next_read_block( const block_rule& br, uints& off, bool outermost )
     {
         while(1)
         {
@@ -1356,13 +1592,16 @@ protected:
             off = count_notleading(off);
             if( off >= _tok.len() )
             {
-                if( 0 == fetch_page( 0, false ) )
+                if( 0 == fetch_page(0, false) )
                 {
                     add_stb_segment( br, -1, off, outermost );
-                    _err=ERR_BLOCK_TERMINATED_EARLY;
-                    //_last.tok.set_null();
-                    return false;
+
+                    _err = exception::ERR_BLOCK_TERMINATED_EARLY;
+                    _errtext << "no closing " << br.trailing[0].seq << " found";
+
+                    throw exception(_err, _errtext);
                 }
+
                 off = 0;
                 continue;
             }
@@ -1373,11 +1612,11 @@ protected:
 
             //test if it's our trailing sequence
             int k;
-            if( (x & fSEQ_TRAILING) && (k = match(br.trailing, off)) >= 0 )
+            if( (x & fSEQ_TRAILING) && (k = match_trail(br.trailing, off)) >= 0 )
             {
                 //trailing string found
                 add_stb_segment( br, k, off, outermost );
-                return true;
+                return _last;
             }
 
             //if it's another leading sequence, find it
@@ -1390,7 +1629,7 @@ protected:
                     if(!enabled(*dseq[i]))  continue;
 
                     uint sid = dseq[i]->id;
-                    if( (br.stbenabled & (1ULL<<sid))  &&  match(dseq[i]->leading,off) )
+                    if( (br.stbenabled & (1ULL<<sid))  &&  match_leading(dseq[i]->leading,off) )
                         break;
                 }
 
@@ -1400,20 +1639,16 @@ protected:
                     sequence* sob = dseq[i];
                     off += sob->leading.len();
 
-                    bool nest;
                     if( sob->type == entity::BLOCK )
-                        nest = next_read_block(
+                        next_read_block(
                             *(const block_rule*)sob,
                             off, false
                         );
                     else if( sob->type == entity::STRING )
-                        nest = next_read_string(
+                        next_read_string(
                             *(const string_rule*)sob,
                             off, false
                         );
-                    else
-                        nest = true;
-                    if(!nest)  return false;
                     
                     continue;
                 }
@@ -1474,7 +1709,7 @@ protected:
         uints ab = _tok.len() - offs;
         if( nb > ab )
         {
-            ab = fetch_page( ab, false );
+            ab = fetch_page(ab, false);
             if( ab < nb )
                 throw ersSYNTAX_ERROR "invalid utf8 character";
         }
@@ -1505,7 +1740,7 @@ protected:
         uints ab = _tok.len() - offs;
         if( nb > ab )
         {
-            ab = fetch_page( ab, false );
+            ab = fetch_page(ab, false);
             if( ab < nb )
                 throw ersSYNTAX_ERROR "invalid utf8 character";
 
@@ -1603,7 +1838,7 @@ protected:
             // if there's a source binstream connected, try to suck more data from it
             if(_bin)
             {
-                if( fetch_page( off, ignore ) > off )
+                if( fetch_page(off, ignore) > off )
                     return scan_group( group, ignore, off );
             }
 
@@ -1642,7 +1877,7 @@ protected:
             // if there's a source binstream connected, try to suck more data from it
             if(_bin)
             {
-                if( fetch_page( off, ignore ) > off )
+                if( fetch_page(off, ignore) > off )
                     return scan_mask( msk, ignore, off );
             }
 
@@ -1714,9 +1949,6 @@ protected:
             if( dseq[i]->leading.len() < nc )  break;
 
         *dseq.ins(i) = seq;
-
-        if( seq->name.first_char() == '.' )
-            _stack[0]->ignore( *seq, true );
     }
 
     dynarray<sequence*>& set_seqgroup( uchar c )
@@ -1741,6 +1973,7 @@ protected:
         return sob->id;
     }
 
+    ///Set end-of-input token
     const lextoken& set_end()
     {
         _last.id = 0;
@@ -1748,7 +1981,7 @@ protected:
         return _last;
     }
 
-    /// Counts newlines, detects \r \n and \r\n
+    ///Counts newlines, detects \r \n and \r\n
     uint count_newlines( const char* p, const char* pe )
     {
         uint newlines = 0;
@@ -1777,42 +2010,43 @@ protected:
 
 protected:
 
-    dynarray<ushort> _abmap;        ///< group flag array, fGROUP_xxx
-    dynarray<uchar> _trail;         ///< mask arrays for customized group's trailing set
-    uint _ntrails;                  ///< number of trailing sets defined
+    dynarray<ushort> _abmap;            ///< group flag array, fGROUP_xxx
+    dynarray<uchar> _trail;             ///< mask arrays for customized group's trailing set
+    uint _ntrails;                      ///< number of trailing sets defined
 
     typedef dynarray<sequence*> TAsequence;
-    dynarray<TAsequence> _seqary;   ///< sequence (or string or block) groups with common leading character
+    dynarray<TAsequence> _seqary;       ///< sequence (or string or block) groups with common leading character
 
-    dynarray<group_rule*> _grpary;  ///< character groups
-    dynarray<escape_rule*> _escary; ///< escape character replacement pairs
-    dynarray<sequence*> _stbary;    ///< string or block delimiters
+    dynarray<group_rule*> _grpary;      ///< character groups
+    dynarray<escape_rule*> _escary;     ///< escape character replacement pairs
+    dynarray<sequence*> _stbary;        ///< string or block delimiters
     keywords _kwds;
 
-    root_block _root;               ///< root block rule containing initial enable flags
-    dynarray<block_rule*> _stack;   ///< stack with open block rules, initially contains &_root
+    root_block _root;                   ///< root block rule containing initial enable flags
+    dynarray<block_rule*> _stack;       ///< stack with open block rules, initially contains &_root
 
-    lextoken _last;                 ///< last token read
-    int _last_string;               ///< last string type read
-    int _err;                       ///< last error code, see ERR_* enums
-    entity* _errctx;                ///< error context
-    bool _utf8;                     ///< utf8 mode
+    lextoken _last;                     ///< last token read
+    int _last_string;                   ///< last string type read
+    int _err;                           ///< last error code, see ERR_* enums
+    charstr _errtext;                   ///< error text
 
-    char _lines_oldchar;             ///< last character processed
-    uint _lines;                     ///< number of _lines counted until _lines_processed
-    const char* _lines_last;         ///< current line start
-    const char* _lines_processed;    ///< characters processed in search for newlines
+    bool _utf8;                         ///< utf8 mode
 
-    token _tok;                     ///< source string to process, can point to an external source or into the _binbuf
-    binstream* _bin;                ///< source stream
-    dynarray<char> _binbuf;         ///< source stream cache buffer
+    char _lines_oldchar;                ///< last character processed
+    uint _lines;                        ///< number of _lines counted until _lines_processed
+    const char* _lines_last;            ///< current line start
+    const char* _lines_processed;       ///< characters processed in search for newlines
 
-    int _pushback;                  ///< true if the lexer should return the previous token again (was pushed back)
+    token _tok;                         ///< source string to process, can point to an external source or into the _binbuf
+    binstream* _bin;                    ///< source stream
+    dynarray<char> _binbuf;             ///< source stream cache buffer
+
+    int _pushback;                      ///< true if the lexer should return the previous token again (was pushed back)
 
     typedef hash_multikeyset<entity*, _Select_CopyPtr<entity,token> >
         Tentmap;
 
-    Tentmap _entmap;                ///< entity map, maps names to groups, strings, blocks etc.
+    Tentmap _entmap;                    ///< entity map, maps names to groups, strings, blocks etc.
 };
 
 

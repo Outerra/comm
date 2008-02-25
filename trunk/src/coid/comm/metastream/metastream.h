@@ -1107,7 +1107,7 @@ private:
 
     void fmt_error()
     {
-        charstr err;
+        token err;
         uint row, col;
         token line;
 
