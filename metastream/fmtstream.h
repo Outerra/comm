@@ -54,7 +54,7 @@ public:
     virtual token fmtstream_name() = 0;
 
     /// Return formatting stream error (if any) and current line and column for error reporting purposes
-    virtual opcd fmtstream_err( charstr* err, token* line, uint* row, uint* col ) {
+    virtual opcd fmtstream_err( token* err, token* line, uint* row, uint* col ) {
         return ersNOT_IMPLEMENTED;
     }
 };

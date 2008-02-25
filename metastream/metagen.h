@@ -274,7 +274,7 @@ class metagen //: public binstream
                 if( tok.id != lex.DQSTRING )
                     lex.throw_error("expected attribute value string");
 
-                const_cast<lextoken&>(tok).swap_to_token_or_string( value.value, value.valuebuf );
+                value.value = const_cast<lextoken&>(tok).swap_to_token_or_string( value.valuebuf );
                 if(!cond)
                     cond = INLINE;
 
@@ -479,7 +479,11 @@ class metagen //: public binstream
 
             parse_content( lex, hdr );
 
-            bool succ = lex.next_string_or_block( lex.STEXT );
+            try { lex.next_as_string( lex.STEXT ); }
+            catch( lexer::exception& ) {
+                return false;
+            }
+
             stext = lex.last().tok;
 
             if( hdr.flags & ParsedTag::fEAT_RIGHT ) {
@@ -487,7 +491,7 @@ class metagen //: public binstream
                 stext.skip_newline();
             }
 
-            return succ;
+            return true;
         }
 
         ///Write inline default attribute if there's one
@@ -512,7 +516,11 @@ class metagen //: public binstream
             varname.set_empty();
             depth = 0;
 
-            bool succ = lex.next_string_or_block( lex.STEXT );
+            try { lex.next_as_string( lex.STEXT ); }
+            catch( lexer::exception& ) {
+                return false;
+            }
+
             stext = lex.last().tok;
 
             if(skip_newline) {
@@ -520,7 +528,7 @@ class metagen //: public binstream
                 stext.skip_newline();
             }
 
-            return succ;
+            return true;
         }
     };
 
