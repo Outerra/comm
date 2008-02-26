@@ -68,10 +68,20 @@ class metagen //: public binstream
     {
         int IDENT,NUM,DQSTRING,STEXT;
 
-        struct Exception {
-            const char* errtext;
-            Exception(const char* t) : errtext(t) {}
-        };
+        virtual bool on_error_prefix( bool rules )
+        {
+            if(!rules) {
+                uint c, l = current_line(0, &c);
+                _errtext << infile << char(':') << l << char(':') << c << ": ";
+            }
+
+            return true;
+        }
+
+        void set_current_file( const token& file ) {
+            infile = file;
+        }
+
 
         MtgLexer()
         {
@@ -90,13 +100,16 @@ class metagen //: public binstream
 
             //static text between tags
             STEXT = def_string( "stext", "$", "$", "" );
+            def_string( "stext", "$", "", "" );
             enable( STEXT, false );
         }
 
-        void throw_error( const char* text )
-        {
-            throw Exception(text);
+        charstr& set_err() {
+            return (set_lexer_exception() << "syntax error: ");
         }
+
+    private:
+        charstr infile;
     };
 
     typedef lexer::lextoken         lextoken;
@@ -271,8 +284,11 @@ class metagen //: public binstream
             if( tok == '=' )
             {
                 lex.next();
-                if( tok.id != lex.DQSTRING )
-                    lex.throw_error("expected attribute value string");
+
+                if( tok.id != lex.DQSTRING ) {
+                    lex.set_err() << "expected attribute value string";
+                    throw lex.get_exception();
+                }
 
                 value.value = const_cast<lextoken&>(tok).swap_to_token_or_string( value.valuebuf );
                 if(!cond)
@@ -286,8 +302,10 @@ class metagen //: public binstream
             if( name == "default" )
             {
                 if( cond == INLINE )  cond = DEFAULT;
-                else if( cond != OPEN )
-                    lex.throw_error("'default' attribute can only be open or inline");
+                else if( cond != OPEN ) {
+                    lex.set_err() << "'default' attribute can only be open or inline";
+                    throw lex.get_exception();
+                }
             }
 
             return true;
@@ -366,11 +384,13 @@ class metagen //: public binstream
 
         void set_empty()    { varname.set_empty();  brace=flags=0;  depth=0; }
 
-        void parse( MtgLexer& lex )
+        bool parse( MtgLexer& lex )
         {
             //tag content
             // <name> (attribute)*
-            lex.next(0);
+            if( 0 == lex.next(0) )
+                return false;
+
             const lextoken& tok = lex.last();
 
             flags = 0;
@@ -393,8 +413,10 @@ class metagen //: public binstream
                 lex.next();
             }
 
-            if( tok.id != lex.IDENT )
-                lex.throw_error("Expected identifier");
+            if( tok.id != lex.IDENT ) {
+                lex.set_err() << "Expected identifier";
+                throw lex.get_exception();
+            }
             varname = tok.tok;
 
             depth = 0;
@@ -413,8 +435,10 @@ class metagen //: public binstream
             Attribute at;
             while( at.parse(lex) )
             {
-                if( lastopen )
-                    lex.throw_error("An open attribute followed by another");
+                if(lastopen) {
+                    lex.set_err() << "An open attribute followed by another";
+                    throw lex.get_exception();
+                }
 
                 lastopen = at.is_open();
 
@@ -427,12 +451,19 @@ class metagen //: public binstream
 
             if(brace)
             {
-                if( brace == '('  &&  tok.tok != ')' )
-                    lex.throw_error("Expecting )");
-                if( brace == '{'  &&  tok.tok != '}' )
-                    lex.throw_error("Expecting }");
-                if( brace == '['  &&  tok.tok != ']' )
-                    lex.throw_error("Expecting ]");
+                if( brace == '('  &&  tok.tok != ')' ) {
+                    lex.set_err() << "Expecting )";
+                    throw lex.get_exception();
+                }
+                if( brace == '{'  &&  tok.tok != '}' ) {
+                    lex.set_err() << "Expecting }";
+                    throw lex.get_exception();
+                }
+                if( brace == '['  &&  tok.tok != ']' ) {
+                    lex.set_err() << "Expecting ]";
+                    throw lex.get_exception();
+                }
+
                 lex.next(0);
             }
 
@@ -441,8 +472,12 @@ class metagen //: public binstream
                 lex.next(0);
             }
 
-            if( tok.tok != '$' )
-                lex.throw_error("Expecting end of tag $");
+            if( tok.tok != '$' ) {
+                lex.set_err() << "Expecting end of tag $";
+                throw lex.get_exception();
+            }
+
+            return true;
         }
     };
 
@@ -466,7 +501,7 @@ class metagen //: public binstream
         void process( metagen& mg, const Varx& var ) const
         {
             if( !varname.is_empty() )
-                process_content( mg, var );
+                process_content(mg, var);
 
             if( !stext.is_empty() )
                 mg.bin->xwrite_raw( stext.ptr(), stext.len() );
@@ -477,9 +512,9 @@ class metagen //: public binstream
             varname = hdr.varname;
             depth = hdr.depth;
 
-            parse_content( lex, hdr );
+            parse_content(lex, hdr);
 
-            try { lex.next_as_string( lex.STEXT ); }
+            try { lex.next_as_string(lex.STEXT); }
             catch( lexer::exception& ) {
                 return false;
             }
@@ -551,8 +586,10 @@ class metagen //: public binstream
         {
             attr.swap( hdr.attr );
 
-            if( attr.size()>0 && attr.last()->is_open() )
-                lex.throw_error("Simple tags cannot contain open attribute");
+            if( attr.size()>0 && attr.last()->is_open() ) {
+                lex.set_err() << "Simple tags cannot contain open attribute";
+                throw lex.get_exception();
+            }
         }
     };
 
@@ -593,7 +630,8 @@ class metagen //: public binstream
             if(!succ) return succ;
 
             do {
-                tout.parse(lex);
+                if(!tout.parse(lex))
+                    break;
 
                 if( (tout.flags & ParsedTag::fEAT_LEFT) ) {
                     token& stext = (*sequence.last())->stext;
@@ -602,8 +640,10 @@ class metagen //: public binstream
                 }
 
                 if( tout.flags & ParsedTag::fTRAILING ) {
-                    if( !tout.same_group(par) )
-                        lex.throw_error("Mismatched closing tag");
+                    if( !tout.same_group(par) ) {
+                        lex.set_err() << "Mismatched closing tag";
+                        throw lex.get_exception();
+                    }
                     return succ;
                 }
                 if( tout.same_group(par) )
@@ -621,12 +661,14 @@ class metagen //: public binstream
                     ptag = new TagSimple;
 
                 *sequence.add() = ptag;
-                succ = ptag->parse( lex, tout );
+                succ = ptag->parse(lex, tout);
             }
             while(succ);
 
-            if( !par.varname.is_empty() )
-                lex.throw_error("End of file before the closing tag");
+            if( !par.varname.is_empty() ) {
+                lex.set_err() << "End of file before the closing tag";
+                throw lex.get_exception();
+            }
             return succ;
         }
 
@@ -668,8 +710,10 @@ class metagen //: public binstream
 
         virtual void parse_content( MtgLexer& lex, ParsedTag& hdr )
         {
-            if( hdr.varname != "if" )
-                lex.throw_error("Unknown code block");
+            if( hdr.varname != "if" ) {
+                lex.set_err() << "Unknown code block";
+                throw lex.get_exception();
+            }
 
             ParsedTag tmp;
             tmp.attr.swap( hdr.attr );
@@ -784,23 +828,31 @@ class metagen //: public binstream
 
                 TagRange* tr = section( p->name );
 
-                if(!tr)
-                    lex.throw_error("Unknown attribute of an array tag");
+                if(!tr) {
+                    lex.set_err() << "Unknown attribute of an array tag";
+                    throw lex.get_exception();
+                }
 
-                if( tr->is_set() )
-                    lex.throw_error("Section already assigned");
+                if( tr->is_set() ) {
+                    lex.set_err() << "Section already assigned";
+                    throw lex.get_exception();
+                }
 
                 if( p->cond == Attribute::INLINE )
                     tr->set_attribute(*p);
                 else if( p->cond == Attribute::OPEN )
                     sec = tr;
-                else
-                    lex.throw_error("Array attribute can be only inline or open");
+                else {
+                    lex.set_err() << "Array attribute can be only inline or open";
+                    throw lex.get_exception();
+                }
             }
 
             if(!sec) {
-                if( atr_body.is_set() )
-                    lex.throw_error("Section already assigned");
+                if( atr_body.is_set() ) {
+                    lex.set_err() << "Section already assigned";
+                    throw lex.get_exception();
+                }
                 sec = &atr_body;
             }
 
@@ -829,8 +881,10 @@ class metagen //: public binstream
             tmp.flags = hdr.flags;
 
             do {
-                if( tmp.attr.size() > 0 )
-                    lex.throw_error("Unknown attribute for structural tag");
+                if( tmp.attr.size() > 0 ) {
+                    lex.set_err() << "Unknown attribute for structural tag";
+                    throw lex.get_exception();
+                }
 
                 TagRange rng;
                 rng.parse( lex, tmp, hdr );
@@ -853,7 +907,6 @@ public:
         const token& tok = patbuf;
 
         lex.bind(tok);
-        err_lex = 0;
 
         ParsedTag tmp;
         try {
@@ -863,10 +916,13 @@ public:
             tags.parse( lex, tmp, empty );
             return true;
         }
-        catch(MtgLexer::Exception e) {
-            err_lex = e.errtext;
+        catch( const lexer::exception& ) {
             return false;
         }
+    }
+
+    const charstr& err() const {
+        return lex.err();
     }
 
     template<class T>
@@ -897,6 +953,12 @@ public:
         tags.process( *this, v );
     }
 
+    ///Set prefix to be displayed when reporting errors
+    void set_source_path( const token& path ) {
+        lex.set_current_file(path);
+    }
+
+/*
     const char* error_text() const  { return err_lex; }
 
     charstr& error_location( charstr& buf, const token& file )
@@ -916,7 +978,7 @@ public:
 
         return buf;
     }
-
+*/
 private:
     charstr buf;                    ///< helper buffer
     binstream* bin;                 ///< output stream
@@ -927,7 +989,7 @@ private:
     binstreambuf tmpx;
     fmtstreamcxx fmtx;
 
-    const char* err_lex;
+    //const char* err_lex;
 
     MtgLexer lex;                   ///< lexer used to parse the template file
     TagRange tags;                  ///< top level tag array

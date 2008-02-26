@@ -118,6 +118,16 @@ COID_NAMESPACE_BEGIN
 class lexer
 {
 public:
+
+    ///Called before throwing an error exception to preset the _errtext member
+    //@param rules true if the error occured during parsing the lexer grammar
+    //@return the method should return false to make lexer ignore the error, works only in limited cases
+    virtual bool on_error_prefix( bool rules ) {
+        if(!rules)
+            _errtext << current_line() << ": ";
+        return true;
+    }
+
     ///Incremental token hasher used by the lexer
     struct token_hash
     {
@@ -355,6 +365,8 @@ public:
         }
 
         _err = exception::ERR_KEYWORD_ALREADY_DEFINED;
+        on_error_prefix(true);
+
         _errtext << "keyword '" << kwd << "' already exists";
 
         throw exception(_err, _errtext);
@@ -415,15 +427,14 @@ public:
     //@return string id (a negative number) or 0 on error, error id is stored in the _err variable
     //@param name string rule name. Name prefixed with . (dot) makes the block content ignored in global scope.
     //@param leading the leading string delimiter
-    //@param trailing the trailing string delimiter
+    //@param trailing the trailing string delimiter. An empty string means end of file.
     //@param escape name of the escape rule to use for processing of escape sequences within strings
     int def_string( token name, const token& leading, const token& trailing, const token& escape )
     {
         uint g = (uint)_stbary.size();
 
-        bool ign = name.first_char() == '.';
-        if(ign)
-            ++name;
+        bool enb, ign;
+        get_flags(name, &ign, &enb);
 
         entity* const* ens = _entmap.find_value(name);
         if( ens && (*ens)->type != entity::STRING )
@@ -438,7 +449,8 @@ public:
         string_rule* sr = new string_rule( name, (ushort)g );
         _entmap.insert_value(sr);
 
-        _root.ignore(*sr, ign);
+        _root.ignore(sr->id, ign);
+        _root.enable(sr->id, enb);
 
         if( !escape.is_empty() )
         {
@@ -449,6 +461,8 @@ public:
 
             if( sr->escrule->type != entity::ESCAPE ) {
                 _err = exception::ERR_ENTITY_BAD_TYPE;
+                on_error_prefix(true);
+
                 _errtext << "bad rule type '" << escape << "'; expected escape rule";
 
                 throw exception(_err, _errtext);
@@ -477,9 +491,8 @@ public:
     {
         uint g = (uint)_stbary.size();
 
-        bool ign = name.first_char() == '.';
-        if(ign)
-            ++name;
+        bool enb, ign;
+        get_flags(name, &ign, &enb);
 
         entity* const* ens = _entmap.find_value(name);
         if( ens && (*ens)->type != entity::BLOCK )
@@ -494,7 +507,8 @@ public:
         block_rule* br = new block_rule( name, (ushort)g );
         _entmap.insert_value(br);
 
-        _root.ignore(*br, ign);
+        _root.ignore(br->id, ign);
+        _root.enable(br->id, enb);
 
         for(;;)
         {
@@ -508,9 +522,8 @@ public:
                 continue;
             }
 
-            bool ignn = ne.first_char() == '.';
-            if(ignn)
-                ++ne;
+            bool ignn, enbn;
+            get_flags( ne, &ignn, &enbn );
 
             int rn=-1;
             if( ne.char_is_number(0) )
@@ -531,6 +544,8 @@ public:
 
                 if( !sob->is_ssb() ) {
                     _err = exception::ERR_ENTITY_BAD_TYPE;
+                    on_error_prefix(true);
+
                     _errtext << "bad type of rule '" << ne << "'; expected sequence-type";
 
                     throw exception(_err, _errtext);
@@ -539,9 +554,8 @@ public:
                 rn = sob->id;
             }
 
-            br->stbenabled |= 1ULL<<rn;
-            if(ignn)
-                br->stbignored |= 1ULL<<rn;
+            br->enable(rn, enbn);
+            br->ignore(rn, ignn);
         }
 
         br->leading = leading;
@@ -560,9 +574,8 @@ public:
     {
         uint g = (uint)_stbary.size();
 
-        bool ign = name.first_char() == '.';
-        if(ign)
-            ++name;
+        bool enb, ign;
+        get_flags(name, &ign, &enb);
 
         entity* const* ens = _entmap.find_value(name);
         if( ens && (*ens)->type != entity::SEQUENCE )
@@ -571,7 +584,8 @@ public:
         sequence* se = new sequence( name, (ushort)g );
         _entmap.insert_value(se);
 
-        _root.ignore(*se, ign);
+        _root.ignore(se->id, ign);
+        _root.enable(se->id, enb);
 
         se->leading = seq;
 
@@ -586,7 +600,7 @@ public:
         uint sid = -1 - seqid;
         const sequence* seq = _stbary[sid];
 
-        (*_stack.last())->enable( *seq, en );
+        (*_stack.last())->enable(seq->id, en);
     }
 
     ///Make sequence, string or block ignored or not. Ignored constructs are detected but skipped and not returned.
@@ -596,7 +610,7 @@ public:
         uint sid = -1 - seqid;
         const sequence* seq = _stbary[sid];
 
-        (*_stack.last())->ignore( *seq, ig );
+        (*_stack.last())->ignore(seq->id, ig);
     }
 
     ///Enable/disable all entities with the same (common) name.
@@ -611,7 +625,7 @@ public:
         for( ; r.first!=r.second; ++r.first ) {
             const entity* ent = *r.first;
             if( ent->is_ssb() )
-                br->enable( *(const sequence*)ent, en );
+                br->enable(ent->id, en);
         }
     }
 
@@ -627,7 +641,7 @@ public:
         for( ; r.first!=r.second; ++r.first ) {
             const entity* ent = *r.first;
             if( ent->is_ssb() )
-                br->ignore( *(const sequence*)ent, ig );
+                br->ignore(ent->id, ig);
         }
     }
 
@@ -707,12 +721,24 @@ public:
         {
             //end of buffer
             // if there's a source binstream connected, try to suck more data from it
-            if(_bin) {
-                if( fetch_page(0, false) == 0 )
-                    return set_end();
-            }
-            else
+            if( !_bin || fetch_page(0, false) == 0 )
+            {
+                //there still may be block rule active that is terminatable by eof
+                if( _stack.size()>1  &&  (*_stack.last())->trailing.last()->seq.is_empty() )
+                {
+                    const block_rule& br = **_stack.pop();
+
+                    uint k = br.id;
+                    _last.id = -1 - k;
+                    _last.state = -(int)k;
+                    _last_string = k;
+
+                    _last.tok.set_empty();
+                    return _last;
+                }
+
                 return set_end();
+            }
         }
 
         uchar code = *_tok.ptr();
@@ -841,6 +867,8 @@ public:
     void xmatch( const token& val ) {
         if(!match(val)) {
             _err = exception::ERR_EXTERNAL_ERROR;
+            on_error_prefix(false);
+
             _errtext << "expected " << val;
 
             throw exception(_err, _errtext);
@@ -851,6 +879,8 @@ public:
     void xmatch( char c ) {
         if(!match(c)) {
             _err = exception::ERR_EXTERNAL_ERROR;
+            on_error_prefix(true);
+
             _errtext << "expected " << c;
 
             throw exception(_err, _errtext);
@@ -918,10 +948,12 @@ public:
     //@param col receives column number of current token
     uint current_line( token* text=0, uint* col=0 )
     {
-        if(text) {
+        if(text || col) {
             if( _tok.ptr() > _lines_processed )
                 _lines += count_newlines( _lines_processed, _tok.ptr() );
+        }
 
+        if(text) {
             uint n = _tok.count_notingroup("\r\n");
             const char* last = _lines_last > _binbuf.ptr()
                 ? _lines_last
@@ -940,6 +972,10 @@ public:
         if(errstr)
             *errstr = _errtext;
         return _err;
+    }
+
+    const charstr& err() const {
+        return _errtext;
     }
 
 
@@ -1032,8 +1068,11 @@ public:
             ERR_EXTERNAL_ERROR          = 10,       ///< the error was set from outside
             ERR_KEYWORD_ALREADY_DEFINED = 11,
         };
-
     };
+
+    exception get_exception() const {
+        return exception(_err, _errtext);
+    }
 
 protected:
 
@@ -1041,17 +1080,21 @@ protected:
     charstr& set_lexer_exception() {
         _err = exception::ERR_EXTERNAL_ERROR;
         _errtext.reset();
+        on_error_prefix(false);
+
         return _errtext;
     }
-
+/*
     void __throw_lexer_exception() {
         throw exception(_err, _errtext);
     }
-
+*/
 private:
     void __throw_entity_exists( const token& name )
     {
         _err = exception::ERR_ENTITY_EXISTS;
+        on_error_prefix(true);
+
         _errtext << "a rule with name '" << name << "' already exists";
 
         throw exception(_err, _errtext);
@@ -1060,6 +1103,8 @@ private:
     void __throw_different_exists( const token& name )
     {
         _err = exception::ERR_DIFFERENT_ENTITY_EXISTS;
+        on_error_prefix(true);
+
         _errtext << "a different type of rule '" << name << "' already exists";
 
         throw exception(_err, _errtext);
@@ -1068,6 +1113,8 @@ private:
     void __throw_doesnt_exist( const token& name )
     {
         _err = exception::ERR_ENTITY_DOESNT_EXIST;
+        on_error_prefix(true);
+
         _errtext << "specified rule '" << name << "' doesn't exist";
 
         throw exception(_err, _errtext);
@@ -1280,7 +1327,7 @@ protected:
         dynarray<trail> trailing;       ///< at least one trailing string/block delimiter
 
 
-        void add_trailing( const charstr& t )
+        void add_trailing( const token& t )
         {
             uints len = t.len();
             uints i=0;
@@ -1314,36 +1361,36 @@ protected:
 
         ///Make the specified S/S/B enabled or disabled within this block.
         ///If this very same block is enabled it means that it can nest in itself.
-        void enable( const sequence& seq, bool en )
+        void enable( int id, bool en )
         {
-            DASSERT( seq.id < 64 );
+            DASSERT( id < 64 );
             if(en)
-                stbenabled |= 1ULL << seq.id;
+                stbenabled |= 1ULL << id;
             else
-                stbenabled &= ~(1ULL << seq.id);
+                stbenabled &= ~(1ULL << id);
         }
 
         ///Make the specified S/S/B ignored or not ignored within this block.
         ///Ignored sequences are still analyzed for correctness, but are not returned.
-        void ignore( const sequence& seq, bool ig )
+        void ignore( int id, bool ig )
         {
-            DASSERT( seq.id < 64 );
+            DASSERT( id < 64 );
             if(ig)
-                stbignored |= 1ULL << seq.id;
+                stbignored |= 1ULL << id;
             else
-                stbignored &= ~(1ULL << seq.id);
+                stbignored &= ~(1ULL << id);
         }
 
         ///Make the specified S/S/B chunked or not chunked within this block.
         ///Content of chunked sequences is returned as single token, with ignored
         /// subsequences removed and strings properly escaped
-        void chunkit( const sequence& seq, bool ch )
+        void chunkit( int id, bool ch )
         {
-            DASSERT( seq.id < 64 );
+            DASSERT( id < 64 );
             if(ch)
-                stbchunked |= 1ULL << seq.id;
+                stbchunked |= 1ULL << id;
             else
-                stbchunked &= ~(1ULL << seq.id);
+                stbchunked &= ~(1ULL << id);
         }
 
         bool enabled( int seq ) const   { return (stbenabled & (1ULL<<seq)) != 0; }
@@ -1413,8 +1460,11 @@ protected:
             if( k == '.'  &&  s.first_char() == '.' )
             {
                 k = s.nth_char(1);
-                if(!k || !kprev) {
+                if(!k || !kprev)
+                {
                     _err = exception::ERR_ILL_FORMED_RANGE;
+                    on_error_prefix(true);
+
                     _errtext << "ill-formed range: " << char(kprev) << ".." << char(k);
 
                     throw exception(_err, _errtext);
@@ -1457,7 +1507,7 @@ protected:
         const stringorblock::trail* p = str.ptr();
         const stringorblock::trail* pe = str.ptre();
         for( int i=0; p<pe; ++p,++i )
-            if( _tok.begins_with(p->seq,off) )  return i;
+            if( !p->seq.is_empty() && _tok.begins_with(p->seq,off) )  return i;
 
         return -1;
     }
@@ -1489,10 +1539,19 @@ protected:
             {
                 if( 0 == fetch_page(0, false) )
                 {
-                    //input terminated before the end of the string
-                    add_stb_segment( sr, -1, off, outermost );
+                    //verify if the trailing set contains empty string, which would mean
+                    // that end of file is a valid terminator of the string
+                    int tid = sr.trailing.last()->seq.is_empty()
+                        ?  sr.trailing.size()-1  :  -1;
+
+                    add_stb_segment( sr, tid, off, outermost );
+
+                    if(tid>=0)
+                        return _last;
 
                     _err = exception::ERR_STRING_TERMINATED_EARLY;
+                    on_error_prefix(false);
+
                     _errtext << "no closing sequence of '" << sr.name << "' found";
 
                     throw exception(_err, _errtext);
@@ -1506,10 +1565,13 @@ protected:
 
             if( escc == 0 )
             {
+                DASSERT(0);
                 //this is a syntax error, since the string wasn't properly terminated
                 add_stb_segment( sr, -1, off, outermost );
-                
+
                 _err = exception::ERR_STRING_TERMINATED_EARLY;
+                on_error_prefix(false);
+
                 _errtext << "no closing sequence of '" << sr.name << "' found";
 
                 throw exception(_err, _errtext);
@@ -1594,9 +1656,19 @@ protected:
             {
                 if( 0 == fetch_page(0, false) )
                 {
-                    add_stb_segment( br, -1, off, outermost );
+                    //verify if the trailing set contains empty string, which would mean
+                    // that end of file is a valid terminator of the block
+                    int tid = br.trailing.last()->seq.is_empty()
+                        ?  br.trailing.size()-1  :  -1;
+
+                    add_stb_segment( br, tid, off, outermost );
+
+                    if(tid>=0)
+                        return _last;
 
                     _err = exception::ERR_BLOCK_TERMINATED_EARLY;
+                    on_error_prefix(false);
+
                     _errtext << "no closing " << br.trailing[0].seq << " found";
 
                     throw exception(_err, _errtext);
@@ -1685,6 +1757,24 @@ protected:
         }
     }
 
+    ///Get ignore and disable flags from name
+    static void get_flags( token& name, bool* ig, bool* en )
+    {
+        bool ign = false;
+        bool dis = false;
+
+        while(!name.is_empty()) {
+            char c = name.first_char();
+            ign |= (c == '.');
+            dis |= (c == '!');
+            if( c!='.' && c!='!' )
+                break;
+            ++name;
+        }
+
+        *ig = ign;
+        *en = !dis;
+    }
 
     ucs4 get_code( uints& offs )
     {
@@ -1963,7 +2053,7 @@ protected:
         return _seqary[k-1];
     }
 
-    uint add_trailing( stringorblock* sob, const charstr& trailing )
+    uint add_trailing( stringorblock* sob, const token& trailing )
     {
         sob->add_trailing(trailing);
 
