@@ -180,7 +180,11 @@ class metagen //: public binstream
             return *(uint*)data;
         }
 
-        void write_var( metagen& mg ) const;
+        token write_buf( metagen& mg ) const;
+
+        void write_var( metagen& mg ) const {
+            mg.bin->xwrite_token_raw( write_buf(mg) );
+        }
 
         bool is_nonzero() const
         {
@@ -195,7 +199,7 @@ class metagen //: public binstream
     ///Array element variable from cache
     struct VarxElement : Varx
     {
-        uint size;                  ///< element byte size
+        uint size;                      ///< element byte size
 
 
         ///First array element, return count
@@ -296,6 +300,9 @@ class metagen //: public binstream
 
                 lex.next();
             }
+
+            if( cond && depth==0 )
+                depth = 1;
             else if(!cond)
                 cond = OPEN;
 
@@ -311,7 +318,7 @@ class metagen //: public binstream
             return true;
         }
 
-        bool eval( const Varx& var ) const
+        bool eval( metagen& mg, const Varx& var ) const
         {
             //if the depth is set, the attribute reffers to a descendant
             token n = name;
@@ -335,14 +342,14 @@ class metagen //: public binstream
 
             bool val;
 
-            if( n == "defined" )
+            if( !value.value.is_empty() )
+                val = defined && value.value == v.write_buf(mg);
+            else if( n == "defined" )
                 val = defined;
-            else if( n == "nonzero"  ||  n == "true" )
+            else if( n.is_empty()  ||  n == "nonzero"  ||  n == "true" )
                 val = defined && v.is_nonzero();
             else if( n == "empty"  ||  n == "false" )
                 val = !(defined && v.is_nonzero());
-            else if( n == "always" )
-                val = true;
             else
                 val = false;
 
@@ -689,7 +696,7 @@ class metagen //: public binstream
                 const Attribute* pe = attr.ptre();
 
                 for( ; p<pe; ++p )
-                    if( !p->eval(var) )  return false;
+                    if( !p->eval(mg, var) )  return false;
 
                 rng.process( mg, var );
                 return true;
@@ -741,12 +748,12 @@ class metagen //: public binstream
 
         dynarray<Attribute> cond;
 
-        bool eval_cond( const Varx& var ) const
+        bool eval_cond( metagen& mg, const Varx& var ) const
         {
             const Attribute* p = cond.ptr();
             const Attribute* pe = cond.ptre();
             for( ; p<pe; ++p )
-                if( !p->eval(var) )  return false;
+                if( !p->eval(mg, var) )  return false;
             return true;
         }
 
@@ -768,7 +775,7 @@ class metagen //: public binstream
                 int i=0;
                 for( ; n>0; --n,ve.next() )
                 {
-                    if( evalcond && !eval_cond(ve) )
+                    if( evalcond && !eval_cond(mg, ve) )
                         continue;
 
                     if(i==0)  atr_first.process( mg, ve );
@@ -996,7 +1003,7 @@ private:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-void metagen::Varx::write_var( metagen& mg ) const
+token metagen::Varx::write_buf( metagen& mg ) const
 {
     typedef bstype::kind    type;
 
@@ -1004,10 +1011,7 @@ void metagen::Varx::write_var( metagen& mg ) const
     type t = var->desc->btype;
 
     if( var->is_array() )
-    {
-        mg.bin->xwrite_raw( (const char*)p+sizeof(uint), *(uint*)p );
-        return;
-    }
+        return token( (const char*)p+sizeof(uint), *(uint*)p );
 
     charstr& buf = mg.buf;
     buf.reset();
@@ -1067,8 +1071,7 @@ void metagen::Varx::write_var( metagen& mg ) const
         break;
     }
 
-    if( !buf.is_empty() )
-        mg.bin->xwrite_raw( buf.ptr(), buf.len() );
+    return buf;
 }
 
 

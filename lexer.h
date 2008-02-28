@@ -690,8 +690,31 @@ public:
         are processed normally: ignored sequences are read but discarded, strings have
         their escape sequences replaced, etc.
     **/
-    const lextoken& next_block( bool ignore )
+    const lextoken& match_block( int blockid )
     {
+        uint sid = -1 - blockid;
+        sequence* seq = _stbary[sid];
+
+        DASSERT( seq->is_block() );
+
+        bool enb = enabled(*seq);
+        if(!enb)
+            enable(sid, true);
+
+        next();
+        if(!enb)
+            enable(sid, false);
+
+        if(_last.id == blockid) {
+            uint off=0;
+            return next_read_block( *(block_rule*)seq, off, true );
+        }
+
+        _err = exception::ERR_EXTERNAL_ERROR;
+        on_error_prefix(false);
+
+        _errtext << "expected block: " << seq->name;
+        throw exception(_err, _errtext);
     }
 
     ///Return the next token from input.
@@ -789,13 +812,6 @@ public:
                     if( !chunked(*seq)  &&  !ignored(*seq) )
                     {
                         _stack.push( reinterpret_cast<block_rule*>(seq) );
-
-                        uint k = seq->id;
-                        _last.id = -1 - k;
-                        _last.state = k;
-                        _last_string = k;
-
-                        _last.tok = _tok.cut_left_n( seq->leading.len() );
                         return _last;
                     }
 
@@ -948,10 +964,8 @@ public:
     //@param col receives column number of current token
     uint current_line( token* text=0, uint* col=0 )
     {
-        if(text || col) {
-            if( _tok.ptr() > _lines_processed )
-                _lines += count_newlines( _lines_processed, _tok.ptr() );
-        }
+        if( _tok.ptr() > _lines_processed )
+            _lines += count_newlines( _lines_processed, _tok.ptr() );
 
         if(text) {
             uint n = _tok.count_notingroup("\r\n");
@@ -1418,9 +1432,9 @@ protected:
     bool ignored( const sequence& seq ) const   { return (*_stack.last())->ignored(seq.id); }
     bool chunked( const sequence& seq ) const   { return (*_stack.last())->chunked(seq.id); }
 
-    bool enabled( int seq ) const               { return (*_stack.last())->enabled(seq); }
-    bool ignored( int seq ) const               { return (*_stack.last())->ignored(seq); }
-    bool chunked( int seq ) const               { return (*_stack.last())->chunked(seq); }
+    bool enabled( int seq ) const               { return (*_stack.last())->enabled(-1-seq); }
+    bool ignored( int seq ) const               { return (*_stack.last())->ignored(-1-seq); }
+    bool chunked( int seq ) const               { return (*_stack.last())->chunked(-1-seq); }
 
     ///Character flags
     enum {
@@ -1537,7 +1551,7 @@ protected:
             off = count_notescape(off);
             if( off >= _tok.len() )
             {
-                if( 0 == fetch_page(0, false) )
+                if( !_bin || (off=0, 0 == fetch_page(0, false)) )
                 {
                     //verify if the trailing set contains empty string, which would mean
                     // that end of file is a valid terminator of the string
@@ -1557,7 +1571,6 @@ protected:
                     throw exception(_err, _errtext);
                 }
 
-                off = 0;
                 continue;
             }
 
@@ -1589,7 +1602,7 @@ protected:
 
                 bool replaced = false;
 
-                if( er->replfn )
+                if(er->replfn)
                 {
                     //a function was provided for translation, we should prefetch as much data as possible
                     fetch_page(_tok.len(), false);
@@ -1654,7 +1667,7 @@ protected:
             off = count_notleading(off);
             if( off >= _tok.len() )
             {
-                if( 0 == fetch_page(0, false) )
+                if( !_bin || (off=0, 0 == fetch_page(0, false)) )
                 {
                     //verify if the trailing set contains empty string, which would mean
                     // that end of file is a valid terminator of the block
@@ -1674,7 +1687,6 @@ protected:
                     throw exception(_err, _errtext);
                 }
 
-                off = 0;
                 continue;
             }
 
@@ -1698,8 +1710,6 @@ protected:
                 uint i, n = (uint)dseq.size();
 
                 for( i=0; i<n; ++i ) {
-                    if(!enabled(*dseq[i]))  continue;
-
                     uint sid = dseq[i]->id;
                     if( (br.stbenabled & (1ULL<<sid))  &&  match_leading(dseq[i]->leading,off) )
                         break;
@@ -1998,12 +2008,15 @@ protected:
     /// If false, these are copied to the token buffer
     uints fetch_page( uints nkeep, bool ignore )
     {
-        if(!_bin)  return 0;
-
         //save skipped data to buffer if there is already something or if instructed to do so
         uints old = _tok.len() - nkeep;
         if( _last.tokbuf.len() > 0  ||  !ignore )
             _last.tokbuf.add_from( _tok.ptr(), old );
+
+        if(!_bin) {
+            _tok += _tok.len() - nkeep;
+            return 0;
+        }
 
         //count _lines being discarded
         if( !_binbuf.size() ) {
