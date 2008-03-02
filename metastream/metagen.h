@@ -1040,6 +1040,11 @@ token metagen::Varx::write_buf( metagen& mg ) const
             }
         break;
 
+        case type::T_CHAR: {
+            char c = *(char*)p;
+            if(c) buf.append(c);
+        } break;
+
         case type::T_BOOL:
             if( *(bool*)p ) buf << "true";
             else            buf << "false";

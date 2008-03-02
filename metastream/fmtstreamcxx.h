@@ -61,7 +61,7 @@ protected:
     lexer _tokenizer;
 
     int _indent;
-    int lexid, lexstr, lexcode;
+    int lexid, lexstr, lexchr, lexcode;
 
 public:
     fmtstreamcxx( bool utf8=false ) : _tokenizer(utf8)  {init(0,0);}
@@ -91,9 +91,10 @@ public:
         _tokenizer.def_escape_pair( er, "n", "\n" );
         _tokenizer.def_escape_pair( er, "r", "\r" );
         _tokenizer.def_escape_pair( er, "t", "\t" );
+        _tokenizer.def_escape_pair( er, "0", token("\0",1) );
 
         lexstr = _tokenizer.def_string( "str", "\"", "\"", "esc" );
-        _tokenizer.def_string( "str", "\'", "\'", "esc" );
+        lexchr = _tokenizer.def_string( "str", "\'", "\'", "esc" );
 
         lexcode = _tokenizer.def_string( "class", "(", ")", "" );
 
@@ -499,7 +500,7 @@ public:
                     {
                         if( !t.is_array_element() )
                         {
-                            if( _tokenizer.last() == lexstr )
+                            if( _tokenizer.last() == lexchr )
                                 *(char*)p = tok.first_char();
                             else
                                 e = ersSYNTAX_ERROR "expected string";
