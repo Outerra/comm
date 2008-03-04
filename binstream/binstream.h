@@ -893,20 +893,22 @@ public:
     **/
     
     ///Get written amount of bytes
-    virtual uint64 get_size() const                 { return UMAX; }
+    virtual uint64 get_written_size() const         { return UMAX64; }
     
     ///Cut to specified length, negative numbers cut abs(len) from the end
-    virtual uint64 set_size( int64 n )              { return UMAX; }
+    virtual uint64 set_written_size( int64 n )      { return UMAX64; }
 
     ///Return actual pure data size written from specified offset
     ///This can be overwritten by binstreams that insert additional data into stream (like packet headers etc.)
-    virtual uint64 get_size_pure( uint64 from ) const
+    virtual uint64 get_written_size_pure( uint64 from ) const
     {
-        return get_size() - from;
+        return get_written_size() - from;
     }
 
     ///Overwrite stream at position \a pos with data from \a data of length \a len
-    virtual opcd overwrite_raw( uint64 pos, const void* data, uints len )   { return ersNOT_IMPLEMENTED; }
+    virtual opcd overwrite_raw( uint64 pos, const void* data, uints len ) {
+        return ersNOT_IMPLEMENTED;
+    }
     
     //@}
 
