@@ -83,8 +83,8 @@ public:
     }
 
 
-    virtual uint64 get_size() const                   { return _sendbuf.size(); }
-    virtual uint64 set_size( int64 n )
+    virtual uint64 get_written_size() const             { return _sendbuf.size(); }
+    virtual uint64 set_written_size( int64 n )
     {
         if( n < 0 )
         {
@@ -106,7 +106,7 @@ public:
         return _sendbuf.size();
     }
 
-    virtual uint64 get_size_pure( uint64 from ) const
+    virtual uint64 get_written_size_pure( uint64 from ) const
     {
         uints s = _sendbuf.size();
         return s - from - (int_udiv((ints)s-1,_packetsize) - int_udiv((ints)from-1,_packetsize))*sizeof(udp_hdr);

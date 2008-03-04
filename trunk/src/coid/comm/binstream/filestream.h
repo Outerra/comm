@@ -104,7 +104,7 @@ public:
 
     virtual opcd peek_read( uint timeout ) {
         if(timeout)  return ersINVALID_PARAMS;
-        return (uint64)_rpos < size()  ?  opcd(0) : ersNO_MORE;
+        return (uint64)_rpos < get_size()  ?  opcd(0) : ersNO_MORE;
     }
 
     virtual opcd peek_write( uint timeout ) {
@@ -293,7 +293,8 @@ public:
         return 0;
     }
 
-    uint64 size() const
+    ///Get file size
+    uint64 get_size() const
 	{
 		struct stat s;
         if( 0 == ::fstat( _handle, &s ) )
