@@ -15,26 +15,40 @@ public:
 	{
 		node() : m_pNext(0) {}
 
-		node * m_pNext;
+		node * volatile m_pNext;
 	};
 
 	typedef node<T> node_t;
 
 private:
-	node_t * volatile m_pHead;
+	struct ptr_t
+	{
+		ptr_t() : _ptr(0), _pops(0) {}
 
-	volatile uint m_nPops;
+		ptr_t(node_t * const ptr, const uint pops)
+			: _ptr(ptr), _pops(pops) {}
+
+		union {
+			struct {
+				node_t * _ptr;
+				uint _pops;
+			};
+			__int64 _data;
+		};
+	};
+
+	ptr_t _head;
 
 public:
-	stack()	: m_pHead(0), m_nPops(0) {}
+	stack()	: _head() {}
 
 	void push(T * pNewItem)
 	{
 		node_t * const pNewNode = pNewItem;
 
 		for (;;) {
-			pNewNode->m_pNext = m_pHead;
-			if (cas<node_t*>(&m_pHead, pNewNode, pNewNode->m_pNext))
+			pNewNode->m_pNext = _head._ptr;
+			if (b_cas_ptr(reinterpret_cast<void**>(&_head._ptr), pNewNode, pNewNode->m_pNext))
 				break;
 		}
 	}
@@ -42,15 +56,14 @@ public:
 	T * pop()
 	{
 		for (;;) {
-			node_t * pHead = m_pHead;
-			uint nPops = m_nPops;
+			const ptr_t head = _head;
 
-			if (pHead == 0) return 0;
+			if (head._ptr == 0) return 0;
 
-			node_t * pNext = pHead->m_pNext;
+			const ptr_t next(head._ptr->m_pNext, head._pops + 1);
 
-			if (cas<node_t*>(&m_pHead, pNext, nPops + 1, pHead, nPops)) {
-				return static_cast<T*>(pHead);
+			if (b_cas(&_head._data, next._data, head._data)) {
+				return static_cast<T*>(head._ptr);
 			}
 		}
 	}

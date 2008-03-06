@@ -48,8 +48,13 @@ public:
 			return !operator == (p);
 		}
 
-		node<T> * volatile ptr;
-		volatile unsigned int tag;
+		union {
+			struct {
+				node<T> * volatile ptr;
+				volatile unsigned int tag;
+			};
+			__int64 data;
+		};
 	};
 
 	typedef ptr_t<T> node_ptr_t;
@@ -58,22 +63,22 @@ public:
 	template<class T>
 	struct node
 	{
-		node() : m_pNext(0) , m_pPrev(0) , m_bDummy(false) {}
-		node(const bool) : m_pNext(0) , m_pPrev(0) , m_bDummy(true) {}
+		node() : _next(0) , _prev(0) , _dummy(false) {}
+		node(const bool) : _next(0) , _prev(0) , _dummy(true) {}
 
-		node_ptr_t m_pNext;
-		node_ptr_t m_pPrev;
-		bool m_bDummy;
+		node_ptr_t _next;
+		node_ptr_t _prev;
+		bool _dummy;
 	};
 
 	typedef node<T> node_t;
 
 public:
 	//! last pushed item
-	node_ptr_t m_pTail;
+	node_ptr_t _tail;
 
 	//! first pushed item
-	node_ptr_t m_pHead;
+	node_ptr_t _head;
 
 protected:
 
@@ -84,15 +89,15 @@ protected:
 
 		curNode = tail;
 
-		while ((head == m_pHead) && (curNode != head)) {
-			curNodeNext = curNode.ptr->m_pNext;
+		while ((head == _head) && (curNode != head)) {
+			curNodeNext = curNode.ptr->_next;
 
 			if (curNodeNext.tag != curNode.tag)
 				return;
 
-			nextNodePrev = curNodeNext.ptr->m_pPrev;
+			nextNodePrev = curNodeNext.ptr->_prev;
 			if (nextNodePrev != node_ptr_t(curNode.ptr, curNode.tag - 1))
-				curNodeNext.ptr->m_pPrev = node_ptr_t(curNode.ptr, curNode.tag - 1);
+				curNodeNext.ptr->_prev = node_ptr_t(curNode.ptr, curNode.tag - 1);
 
 			curNode = node_ptr_t(curNodeNext.ptr, curNode.tag - 1);
 		};
@@ -101,31 +106,26 @@ protected:
 public:
 	//!	constructor
 	queue() throw(...)
-		: m_pTail(A::alloc<node_t>())
-		, m_pHead(m_pTail.ptr) {}
+		: _tail(A::alloc<node_t>())
+		, _head(_tail.ptr) {}
 
 	//!	destructor (do not clear queue for now)
 	~queue() throw() {} 
 
 	//! return item from the head of the queue
-	void push(T * const pNewIdem)
+	void push(T * const item)
 	{
 		node_ptr_t tail;
 
-		node_t * const pNewNode = pNewIdem;
+		node_t * const newnode = item;
 
-		pNewNode->m_pPrev = node_ptr_t(0, 0);
+		newnode->_prev = node_ptr_t(0, 0);
 
 		for (;;) {
-			tail = m_pTail;
-			pNewNode->m_pNext = node_ptr_t(tail.ptr, tail.tag + 1);
-			if (cas<node_t*>(
-				&m_pTail, 
-				pNewNode,
-				tail.tag + 1,
-				tail.ptr,
-				tail.tag)) {
-				tail.ptr->m_pPrev = node_ptr_t(pNewNode, tail.tag);
+			tail = _tail;
+			newnode->_next = node_ptr_t(tail.ptr, tail.tag + 1);
+			if (b_cas(&_tail.data, node_ptr_t(newnode, tail.tag + 1).data, tail.data)) {
+				tail.ptr->_prev = node_ptr_t(newnode, tail.tag);
 				return;
 			}
 		}
@@ -138,53 +138,38 @@ public:
 		node_t * pDummy;
 
 		for (;;) {
-			head = m_pHead;
-			tail = m_pTail;
-			if (head == m_pHead) {
-				if (!head.ptr->m_bDummy) {
+			head = _head;
+			tail = _tail;
+			if (head == _head) {
+				if (!head.ptr->_dummy) {
 					if (tail != head) {
-						if (head.ptr->m_pPrev.tag != head.tag) {
+						if (head.ptr->_prev.tag != head.tag) {
 							fixList(tail, head);
 							continue;
 						}
 					} 
 					else {
 						pDummy = A::alloc<node_t>();
-						pDummy->m_bDummy = true;
-						pDummy->m_pNext = node_ptr_t(tail.ptr, tail.tag + 1);
-						if (cas<node_t*>(
-							&m_pTail, 
-							pDummy, 
-							tail.tag + 1, 
-							tail.ptr, 
-							tail.tag))
-							head.ptr->m_pPrev = node_ptr_t(pDummy, tail.tag);
+						pDummy->_dummy = true;
+						pDummy->_next = node_ptr_t(tail.ptr, tail.tag + 1);
+						if (b_cas(&_tail.data, node_ptr_t(pDummy, tail.tag + 1).data, tail.data))
+							head.ptr->_prev = node_ptr_t(pDummy, tail.tag);
 						else
 							A::free(pDummy);
 						continue;
 					}
-					if (cas<node_t*>(
-						&m_pHead, 
-						head.ptr->m_pPrev.ptr,
-						head.tag + 1,
-						head.ptr, 
-						head.tag))
+					if (b_cas(&_head.data, node_ptr_t(head.ptr->_prev.ptr, head.tag + 1).data, head.data))
 						return static_cast<T*>(head.ptr);
 				} 
 				else {
 					if (tail.ptr == head.ptr)
 						return 0;
 					else {	
-						if (head.ptr->m_pPrev.tag != head.tag) {
+						if (head.ptr->_prev.tag != head.tag) {
 							fixList(tail, head);
 							continue;
 						}
-						cas<node_t*>(
-							&m_pHead, 
-							head.ptr->m_pPrev.ptr, 
-							head.tag + 1, 
-							head.ptr, 
-							head.tag);
+						b_cas(&_head.data, node_ptr_t(head.ptr->_prev.ptr, head.tag + 1).data, head.data);
 					}
 				} 
 			}
