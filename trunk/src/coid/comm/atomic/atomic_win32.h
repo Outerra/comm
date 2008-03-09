@@ -19,13 +19,13 @@ namespace atomic {
 	typedef coid::int32 aint32;
 	typedef coid::int64 aint64;
 
-	inline aint32 inc(aint32 * ptr)
+	inline aint32 inc(volatile aint32 * ptr)
 	{
 		DASSERT(sizeof(aint32) == 4 && sizeof(long) == 4);
 		return _InterlockedIncrement(reinterpret_cast<long volatile*>(ptr));
 	}
 
-	inline aint32 dec(aint32 * ptr)
+	inline aint32 dec(volatile aint32 * ptr)
 	{
 		DASSERT(sizeof(aint32) == 4 && sizeof(long) == 4);
 		return _InterlockedDecrement(reinterpret_cast<long volatile*>(ptr));

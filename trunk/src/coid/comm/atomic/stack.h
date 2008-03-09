@@ -13,9 +13,9 @@ public:
 	template<class T>
 	struct node
 	{
-		node() : m_pNext(0) {}
+		node() : _nexts(0) {}
 
-		node * volatile m_pNext;
+		node * _nexts;
 	};
 
 	typedef node<T> node_t;
@@ -31,7 +31,7 @@ private:
 		union {
 			struct {
 				node_t * _ptr;
-				uint _pops;
+				volatile uint _pops;
 			};
 			__int64 _data;
 		};
@@ -42,13 +42,13 @@ private:
 public:
 	stack()	: _head() {}
 
-	void push(T * pNewItem)
+	void push(T * item)
 	{
-		node_t * const pNewNode = pNewItem;
+		node_t * const newnode = item;
 
 		for (;;) {
-			pNewNode->m_pNext = _head._ptr;
-			if (b_cas_ptr(reinterpret_cast<void**>(&_head._ptr), pNewNode, pNewNode->m_pNext))
+			newnode->_nexts = _head._ptr;
+			if (b_cas_ptr(reinterpret_cast<void**>(&_head._ptr), newnode, newnode->_nexts))
 				break;
 		}
 	}
@@ -60,7 +60,7 @@ public:
 
 			if (head._ptr == 0) return 0;
 
-			const ptr_t next(head._ptr->m_pNext, head._pops + 1);
+			const ptr_t next(head._ptr->_nexts, head._pops + 1);
 
 			if (b_cas(&_head._data, next._data, head._data)) {
 				return static_cast<T*>(head._ptr);
