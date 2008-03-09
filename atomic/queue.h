@@ -2,39 +2,24 @@
 #define __COMM_ATOMIC_QUEUE_H__
 
 #include "atomic.h"
+#include "stack.h"
 
 namespace atomic {
 
-//! this is not ideal solution! should be replaced by some kind of pool
-struct queue_dummy_alloc
-{
-	template<class T>
-	static T* alloc()
-	{
-		return new T(true);
-	}
-
-	template<class T>
-	static void free(T * p)
-	{
-		delete p;
-	}
-};
-
 //! atomic double linked list FIFO queue
-template <class T, class A = queue_dummy_alloc>
+template <class T>
 class queue
 {
 public:
-	template<class T> struct node;
+	struct node;
 
 	//! helper pointer with tag
 	template<class T>
 	struct ptr_t
 	{
-		explicit ptr_t(node<T> * const p) : ptr(p) , tag(0) {}
+		explicit ptr_t(node * const p) : ptr(p) , tag(0) {}
 
-		ptr_t(node<T> * const p, const unsigned int t) : ptr(p), tag(t) {}
+		ptr_t(node * const p, const unsigned int t) : ptr(p), tag(t) {}
 
 		ptr_t() : ptr(0) , tag(0) {}
 
@@ -50,7 +35,7 @@ public:
 
 		union {
 			struct {
-				node<T> * volatile ptr;
+				node * ptr;
 				volatile unsigned int tag;
 			};
 			__int64 data;
@@ -59,9 +44,9 @@ public:
 
 	typedef ptr_t<T> node_ptr_t;
 
-	//!
-	template<class T>
-	struct node
+public:
+
+	struct node : public stack<node>::node_t
 	{
 		node() : _next(0) , _prev(0) , _dummy(false) {}
 		node(const bool) : _next(0) , _prev(0) , _dummy(true) {}
@@ -71,7 +56,7 @@ public:
 		bool _dummy;
 	};
 
-	typedef node<T> node_t;
+	typedef node node_t;
 
 public:
 	//! last pushed item
@@ -79,6 +64,9 @@ public:
 
 	//! first pushed item
 	node_ptr_t _head;
+
+protected:
+	stack<node> _dpool;
 
 protected:
 
@@ -106,11 +94,16 @@ protected:
 public:
 	//!	constructor
 	queue() throw(...)
-		: _tail(A::alloc<node_t>())
-		, _head(_tail.ptr) {}
+		: _tail(new node_t())
+		, _head(_tail.ptr)
+		, _dpool() {}
 
 	//!	destructor (do not clear queue for now)
-	~queue() throw() {} 
+	~queue() throw() 
+	{
+		node_t * p;
+		while ((p = _dpool.pop()) != 0) delete p;
+	} 
 
 	//! return item from the head of the queue
 	void push(T * const item)
@@ -149,13 +142,15 @@ public:
 						}
 					} 
 					else {
-						pDummy = A::alloc<node_t>();
+						pDummy = _dpool.pop();
+						if (pDummy == 0)
+							pDummy = new node_t();
 						pDummy->_dummy = true;
 						pDummy->_next = node_ptr_t(tail.ptr, tail.tag + 1);
 						if (b_cas(&_tail.data, node_ptr_t(pDummy, tail.tag + 1).data, tail.data))
 							head.ptr->_prev = node_ptr_t(pDummy, tail.tag);
 						else
-							A::free(pDummy);
+							_dpool.push(head.ptr);
 						continue;
 					}
 					if (b_cas(&_head.data, node_ptr_t(head.ptr->_prev.ptr, head.tag + 1).data, head.data))
@@ -169,7 +164,8 @@ public:
 							fixList(tail, head);
 							continue;
 						}
-						b_cas(&_head.data, node_ptr_t(head.ptr->_prev.ptr, head.tag + 1).data, head.data);
+						if (b_cas(&_head.data, node_ptr_t(head.ptr->_prev.ptr, head.tag + 1).data, head.data))
+							_dpool.push(head.ptr);
 					}
 				} 
 			}
