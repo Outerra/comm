@@ -90,7 +90,7 @@ thread thread::create_new( fnc_entry f, void* arg, void* context, const token& n
 ////////////////////////////////////////////////////////////////////////////////
 void thread::self_exit( uint code )
 {
-    throw thread::CancelException();
+    throw thread::CancelException(code);
     //SINGLETON(thread_manager).thread_delete( self() );
     //_end(code);
 }
@@ -116,13 +116,13 @@ bool thread::should_cancel() const
 ////////////////////////////////////////////////////////////////////////////////
 bool thread::self_should_cancel()
 {
-    return SINGLETON(thread_manager).test_cancellation( self() );
+	return SINGLETON(thread_manager).self_test_cancellation();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 void thread::self_test_cancel( uint exitcode )
 {
-    if( SINGLETON(thread_manager).test_cancellation( self() ) )
+    if( SINGLETON(thread_manager).self_test_cancellation() )
         self_exit(exitcode);
 }
 
@@ -234,8 +234,11 @@ void* thread_manager::def_thread( void* pinfo )
     try {
         res = ti->entry( ti->arg );
     }
-    catch(...)
-    {
+	catch(thread::CancelException &) {
+		res = 0;
+	}
+    catch(...) {
+		DASSERT(false && "unknown exception thrown!");
         res = 0;
     }
 

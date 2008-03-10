@@ -71,6 +71,7 @@ struct thread_manager
 public:
 
     thread_manager()
+		: _pkey()
     {
         _mutex.set_name( "comm/thread::manager" );
     }
@@ -160,13 +161,26 @@ public:
         return  pti  &&  ((*pti)->flags & info::fREQUESTED_CANCELLATION);
     }
 
+	const info * tls_info()
+	{
+		return reinterpret_cast<info*>(_pkey.get());
+	}
+
+	bool self_test_cancellation()
+	{
+		const info * const ti = tls_info();
+
+		return (ti != 0 && ti->flags & info::fREQUESTED_CANCELLATION);
+	}
+
+
 protected:
 
     ///Map from thread_t to thread_info
     typedef hash_keyset<info*,_Select_CopyPtr<info,thread_t> >     t_hash;
 
     t_hash          _hash;
-    //thread_key      _pkey;
+    thread_key      _pkey;
 
     mutable comm_mutex  _mutex;
 
@@ -177,6 +191,7 @@ protected:
     {
         GUARDME;
         _hash.insert_value(i);
+		_pkey.set(i);
     }
 
     void thread_unregister( thread_t tid )
