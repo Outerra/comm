@@ -96,7 +96,10 @@ public:
 	queue() throw(...)
 		: _tail(new node_t(true))
 		, _head(_tail.ptr)
-		, _dpool() {}
+		, _dpool() 
+	{
+		for (int i = 0; i < 14; ++i) _dpool.push(new node_t(true));
+	}
 
 	//!	destructor (do not clear queue for now)
 	~queue() throw() 
@@ -128,7 +131,7 @@ public:
 	T * pop()
 	{
 		node_ptr_t head, tail;
-		node_t * pDummy;
+		node_t * dummy;
 
 		for (;;) {
 			head = _head;
@@ -142,14 +145,13 @@ public:
 						}
 					} 
 					else {
-						pDummy = _dpool.pop();
-						if (pDummy == 0) pDummy = new node_t(true);
-						pDummy->_dummy = true;
-						pDummy->_next = node_ptr_t(tail.ptr, tail.tag + 1);
-						if (b_cas(&_tail.data, node_ptr_t(pDummy, tail.tag + 1).data, tail.data))
-							head.ptr->_prev = node_ptr_t(pDummy, tail.tag);
+						dummy = _dpool.pop();
+						if (dummy == 0) dummy = new node_t(true);
+						dummy->_next = node_ptr_t(tail.ptr, tail.tag + 1);
+						if (b_cas(&_tail.data, node_ptr_t(dummy, tail.tag + 1).data, tail.data))
+							head.ptr->_prev = node_ptr_t(dummy, tail.tag);
 						else
-							_dpool.push(head.ptr);
+							_dpool.push(dummy);
 						continue;
 					}
 					if (b_cas(&_head.data, node_ptr_t(head.ptr->_prev.ptr, head.tag + 1).data, head.data))
@@ -163,7 +165,8 @@ public:
 							fixList(tail, head);
 							continue;
 						}
-						b_cas(&_head.data, node_ptr_t(head.ptr->_prev.ptr, head.tag + 1).data, head.data);
+						if (b_cas(&_head.data, node_ptr_t(head.ptr->_prev.ptr, head.tag + 1).data, head.data))
+							_dpool.push(head.ptr);
 					}
 				} 
 			}
