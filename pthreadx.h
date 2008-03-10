@@ -68,7 +68,7 @@ public:
     typedef void* (*fnc_entry) (void*);
 
     struct Exception {};
-    struct CancelException : Exception {};
+	struct CancelException : Exception { uint _code; CancelException(uint code):_code(code) {} };
     struct ExitException : Exception {};
 
 public:
@@ -149,10 +149,12 @@ protected:
 
     static void _end( uint v );
 
+/*
     static void cancel_callback()
     {
         throw CancelException();
     }
+*/
 };
 
 typedef thread::Exception   ThreadException;
