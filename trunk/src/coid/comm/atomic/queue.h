@@ -163,8 +163,7 @@ public:
 							fixList(tail, head);
 							continue;
 						}
-						if (b_cas(&_head.data, node_ptr_t(head.ptr->_prev.ptr, head.tag + 1).data, head.data))
-							_dpool.push(head.ptr);
+						b_cas(&_head.data, node_ptr_t(head.ptr->_prev.ptr, head.tag + 1).data, head.data);
 					}
 				} 
 			}
