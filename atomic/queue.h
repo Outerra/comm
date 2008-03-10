@@ -94,7 +94,7 @@ protected:
 public:
 	//!	constructor
 	queue() throw(...)
-		: _tail(new node_t())
+		: _tail(new node_t(true))
 		, _head(_tail.ptr)
 		, _dpool() {}
 
@@ -143,8 +143,7 @@ public:
 					} 
 					else {
 						pDummy = _dpool.pop();
-						if (pDummy == 0)
-							pDummy = new node_t();
+						if (pDummy == 0) pDummy = new node_t(true);
 						pDummy->_dummy = true;
 						pDummy->_next = node_ptr_t(tail.ptr, tail.tag + 1);
 						if (b_cas(&_tail.data, node_ptr_t(pDummy, tail.tag + 1).data, tail.data))

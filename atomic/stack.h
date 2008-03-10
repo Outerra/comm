@@ -5,32 +5,46 @@
 
 namespace atomic {
 
-template <class T, class S = void>
+template<class T>
+struct stack_node
+{
+	stack_node() : _nexts(0) {}
+
+	T * _nexts;
+};
+
+template <class T>
+struct DefaultSelector
+{
+	static stack_node<T>* get(T * const p) { return p; }
+};
+
+template <class T, class S = DefaultSelector<T>>
 class stack
 {
 public:
 	//!
-	template<class T>
+	/*template<class T>
 	struct node
 	{
 		node() : _nexts(0) {}
 
 		node * _nexts;
-	};
+	};*/
 
-	typedef node<T> node_t;
+	typedef stack_node<T> node_t;
 
 private:
 	struct ptr_t
 	{
 		ptr_t() : _ptr(0), _pops(0) {}
 
-		ptr_t(node_t * const ptr, const uint pops)
+		ptr_t(T * const ptr, const uint pops)
 			: _ptr(ptr), _pops(pops) {}
 
 		union {
 			struct {
-				node_t * _ptr;
+				T * _ptr;
 				volatile uint _pops;
 			};
 			__int64 _data;
@@ -44,11 +58,9 @@ public:
 
 	void push(T * item)
 	{
-		node_t * const newnode = item;
-
 		for (;;) {
-			newnode->_nexts = _head._ptr;
-			if (b_cas_ptr(reinterpret_cast<void**>(&_head._ptr), newnode, newnode->_nexts))
+			S::get(item)->_nexts = _head._ptr;
+			if (b_cas_ptr(reinterpret_cast<void**>(&_head._ptr), item, S::get(item)->_nexts))
 				break;
 		}
 	}
@@ -60,7 +72,7 @@ public:
 
 			if (head._ptr == 0) return 0;
 
-			const ptr_t next(head._ptr->_nexts, head._pops + 1);
+			const ptr_t next(S::get(head._ptr)->_nexts, head._pops + 1);
 
 			if (b_cas(&_head._data, next._data, head._data)) {
 				return static_cast<T*>(head._ptr);
