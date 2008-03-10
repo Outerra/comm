@@ -96,10 +96,7 @@ public:
 	queue() throw(...)
 		: _tail(new node_t(true))
 		, _head(_tail.ptr)
-		, _dpool() 
-	{
-		for (int i = 0; i < 14; ++i) _dpool.push(new node_t(true));
-	}
+		, _dpool() {}
 
 	//!	destructor (do not clear queue for now)
 	~queue() throw() 
