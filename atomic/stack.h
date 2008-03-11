@@ -10,7 +10,7 @@ struct stack_node
 {
 	stack_node() : _nexts(0) {}
 
-	T * _nexts;
+	T * volatile _nexts;
 };
 
 template <class T>
@@ -23,15 +23,6 @@ template <class T, class S = DefaultSelector<T> >
 class stack
 {
 public:
-	//!
-	/*template<class T>
-	struct node
-	{
-		node() : _nexts(0) {}
-
-		node * _nexts;
-	};*/
-
 	typedef stack_node<T> node_t;
 
 private:
@@ -44,13 +35,10 @@ private:
 
 		union {
 			struct {
-			    union {
-			        T * _ptr;
-				ints _ptri;
-			    };
+		        T * volatile _ptr;
 			    volatile uint _pops;
 			};
-			int64 _data;
+			volatile int64 _data;
 		};
 	};
 
@@ -64,7 +52,7 @@ public:
 		for (;;) {
 			S::get(item)->_nexts = _head._ptr;
 			if (b_cas_ptr(
-			    reinterpret_cast<void**>(&_head._ptr),
+			    reinterpret_cast<void*volatile*>(&_head._ptr),
 			    item, 
 			    S::get(item)->_nexts))
 				break;
