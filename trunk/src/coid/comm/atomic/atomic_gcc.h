@@ -25,7 +25,9 @@ namespace atomic {
 	{
 		DASSERT(sizeof(aint32) == 4 && sizeof(long) == 4);
 
-		return 0;/*_InterlockedCompareExchange(
+		return __sync_val_compare_and_swap(ptr, cmp, val);
+		
+		/*_InterlockedCompareExchange(
 			reinterpret_cast<long volatile*>(ptr), val, cmp);*/
 	}
 
@@ -34,7 +36,9 @@ namespace atomic {
 	{
 		DASSERT(sizeof(aint32) == 4 && sizeof(long) == 4);
 
-		return false;/*_InterlockedCompareExchange(
+		return __sync_bool_compare_and_swap(ptr, cmp, val);
+                
+                /*_InterlockedCompareExchange(
 			reinterpret_cast<long volatile*>(ptr), val, cmp) == cmp;*/
 	}
 
@@ -43,7 +47,9 @@ namespace atomic {
 	{
 		DASSERT(sizeof(aint64) == 8 && sizeof(__int64) == 8);
 
-		return 0;/*_InterlockedCompareExchange64(
+		return __sync_val_compare_and_swap(ptr, cmp, val);
+                
+                /*_InterlockedCompareExchange64(
 			reinterpret_cast<__int64 volatile*>(ptr), val, cmp);*/
 	}
 
@@ -52,7 +58,9 @@ namespace atomic {
 	{
 		DASSERT(sizeof(aint64) == 8 && sizeof(__int64) == 8);
 
-		return false;/*_InterlockedCompareExchange64(
+		return __sync_bool_compare_and_swap(ptr, cmp, val);
+                
+                /*_InterlockedCompareExchange64(
 			reinterpret_cast<__int64 volatile*>(ptr), val, cmp) == cmp;*/
 	}
 
@@ -71,7 +79,12 @@ namespace atomic {
 
 	inline void * cas_ptr(void * * pdst, void * pval, void * pcmp) 
 	{
-		return 0;/*reinterpret_cast<void*>(_InterlockedCompareExchange(
+		return reinterpret_cast<void*>(__sync_val_compare_and_swap(
+                    reinterpret_cast<ints*>(pdst),
+                    reinterpret_cast<ints>(pcmp), 
+		    reinterpret_cast<ints>(pval)));
+                
+                /*reinterpret_cast<void*>(_InterlockedCompareExchange(
 			reinterpret_cast<long volatile *>(pdst),
 			reinterpret_cast<long>(pval),
 			reinterpret_cast<long>(pcmp)));*/
@@ -79,7 +92,12 @@ namespace atomic {
 
 	inline bool b_cas_ptr(void * * pdst, void * pval, void * pcmp) 
 	{
-		return false;/*_InterlockedCompareExchange(
+		return __sync_bool_compare_and_swap(
+                    reinterpret_cast<ints*>(pdst),
+                    reinterpret_cast<ints>(pcmp), 
+		    reinterpret_cast<ints>(pval));
+		
+		/*_InterlockedCompareExchange(
 			reinterpret_cast<long volatile *>(pdst),
 			reinterpret_cast<long>(pval),
 			reinterpret_cast<long>(pcmp)) == reinterpret_cast<long>(pcmp);*/

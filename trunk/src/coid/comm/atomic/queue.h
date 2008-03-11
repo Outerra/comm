@@ -14,7 +14,6 @@ public:
 	struct node;
 
 	//! helper pointer with tag
-	template<class T>
 	struct ptr_t
 	{
 		explicit ptr_t(node * const p) : ptr(p) , tag(0) {}
@@ -38,11 +37,11 @@ public:
 				node * ptr;
 				volatile unsigned int tag;
 			};
-			__int64 data;
+			int64 data;
 		};
 	};
 
-	typedef ptr_t<T> node_ptr_t;
+	typedef ptr_t node_ptr_t;
 
 public:
 
@@ -93,7 +92,7 @@ protected:
 
 public:
 	//!	constructor
-	queue() throw(...)
+	queue()
 		: _tail(new node_t(true))
 		, _head(_tail.ptr)
 		, _dpool() {}

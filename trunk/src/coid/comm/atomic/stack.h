@@ -19,7 +19,7 @@ struct DefaultSelector
 	static stack_node<T>* get(T * const p) { return p; }
 };
 
-template <class T, class S = DefaultSelector<T>>
+template <class T, class S = DefaultSelector<T> >
 class stack
 {
 public:
@@ -44,10 +44,13 @@ private:
 
 		union {
 			struct {
-				T * _ptr;
-				volatile uint _pops;
+			    union {
+			        T * _ptr;
+				ints _ptri;
+			    };
+			    volatile uint _pops;
 			};
-			__int64 _data;
+			int64 _data;
 		};
 	};
 
@@ -60,7 +63,10 @@ public:
 	{
 		for (;;) {
 			S::get(item)->_nexts = _head._ptr;
-			if (b_cas_ptr(reinterpret_cast<void**>(&_head._ptr), item, S::get(item)->_nexts))
+			if (b_cas_ptr(
+			    reinterpret_cast<void**>(&_head._ptr),
+			    item, 
+			    S::get(item)->_nexts))
 				break;
 		}
 	}
