@@ -34,10 +34,10 @@ public:
 
 		union {
 			struct {
-				node * ptr;
+				node * volatile ptr;
 				volatile unsigned int tag;
 			};
-			int64 data;
+			volatile int64 data;
 		};
 	};
 
@@ -92,13 +92,10 @@ protected:
 
 public:
 	//!	constructor
-	queue()
-		: _tail(new node_t(true))
-		, _head(_tail.ptr)
-		, _dpool() {}
+	queue() : _tail(new node_t(true)) , _head(_tail.ptr) , _dpool() {}
 
 	//!	destructor (do not clear queue for now)
-	~queue() throw() 
+	~queue() 
 	{
 		node_t * p;
 		while ((p = _dpool.pop()) != 0) delete p;

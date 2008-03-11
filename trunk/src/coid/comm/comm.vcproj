@@ -173,14 +173,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\atomic\atomic_gcc.h"
-				>
-			</File>
-			<File
-				RelativePath=".\atomic\atomic_win32.h"
-				>
-			</File>
-			<File
 				RelativePath=".\atomic\queue.h"
 				>
 			</File>
