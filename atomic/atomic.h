@@ -118,7 +118,7 @@ namespace atomic {
 	{
 #if defined(__GNUC__)
 		return reinterpret_cast<void*>(__sync_val_compare_and_swap(
-			reinterpret_cast<ints*>(pdst),
+			reinterpret_cast<volatile ints*>(pdst),
 			reinterpret_cast<ints>(pcmp), 
 			reinterpret_cast<ints>(pval)));
 #elif defined(WIN32)
@@ -133,7 +133,7 @@ namespace atomic {
 	{
 #if defined(__GNUC__)
 		return __sync_bool_compare_and_swap(
-			reinterpret_cast<ints*>(pdst),
+			reinterpret_cast<volatile ints*>(pdst),
 			reinterpret_cast<ints>(pcmp), 
 			reinterpret_cast<ints>(pval));
 #elif defined(WIN32)
