@@ -896,6 +896,10 @@
 			>
 		</File>
 		<File
+			RelativePath=".\ref.h"
+			>
+		</File>
+		<File
 			RelativePath="retcodes.h"
 			>
 		</File>
