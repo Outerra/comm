@@ -150,7 +150,7 @@ class metagen //: public binstream
 
             //leading dots address ancestors
             do {
-                part = name.cut_left('.',1);
+                part = name.cut_left('.');
                 if( !part.is_empty() )  break;
 
                 if( !v->varparent )  return false;
@@ -167,7 +167,7 @@ class metagen //: public binstream
                 if( !ch.find_child( part, ch ) )
                     return false;
 
-                part = name.cut_left('.',1);
+                part = name.cut_left('.');
             }
             while( !name.is_empty() );
 
@@ -327,7 +327,7 @@ class metagen //: public binstream
 
             if(depth) {
                 for( int d=depth; d>0; --d ) {
-                    token part = n.cut_left('.',1);
+                    token part = n.cut_left('.');
                     if( !v.find_child( part, v ) ) {
                         defined = false;
                         break;

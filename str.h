@@ -1398,43 +1398,43 @@ public:
     // extract from token
     charstr& set_left( token str, const char c, bool def_empty=false )     //up to, but without the character c
     {
-        return *this = str.cut_left( c, 0, def_empty );
+        return *this = str.cut_left( c, make_set_trait(def_empty) );
     }
 
     charstr& set_left( token str, const token& separators, bool def_empty=false )
     {
-        return *this = str.cut_left( separators, 0, def_empty );
+        return *this = str.cut_left( separators, make_set_trait(def_empty) );
     }
 
     charstr& set_left_back( token str, const char c, bool def_empty=false )     //up to, but without the character c
     {
-        return *this = str.cut_left_back( c, 0, def_empty );
+        return *this = str.cut_left_back( c, make_set_trait(def_empty) );
     }
 
     charstr& set_left_back( token str, const token& separators, bool def_empty=false )     //up to, but without the character c
     {
-        return *this = str.cut_left_back( separators, 0, def_empty );
+        return *this = str.cut_left_back( separators, make_set_trait(def_empty) );
     }
 
     //
     charstr& set_right( token str, const char c, bool def_empty=false )     //up to, but without the character c
     {
-        return *this = str.cut_right( c, 0, def_empty );
+        return *this = str.cut_right( c, make_set_trait(def_empty) );
     }
 
     charstr& set_right( token str, const token& separators, bool def_empty=false )
     {
-        return *this = str.cut_right( separators, 0, def_empty );
+        return *this = str.cut_right( separators, make_set_trait(def_empty) );
     }
 
     charstr& set_right_back( token str, const char c, bool def_empty=false )     //up to, but without the character c
     {
-        return *this = str.cut_right_back( c, 0, def_empty );
+        return *this = str.cut_right_back( c, make_set_trait(def_empty) );
     }
 
     charstr& set_right_back( token str, const token& separators, bool def_empty=false )     //up to, but without the character c
     {
-        return *this = str.cut_right_back( separators, 0, def_empty );
+        return *this = str.cut_right_back( separators, make_set_trait(def_empty) );
     }
 
 
@@ -1442,49 +1442,49 @@ public:
     token select_left( const char c, bool def_empty=false ) const    //up to, but without the character c
     {
         token r = *this;
-        return r.cut_left( c, 0, def_empty );
+        return r.cut_left( c, make_set_trait(def_empty) );
     }
 
     token select_left( const token& separators, bool def_empty=false ) const
     {
         token r = *this;
-        return r.cut_left( separators, 0, def_empty );
+        return r.cut_left( separators, make_set_trait(def_empty) );
     }
 
     token select_left_back( const char c, bool def_empty=false ) const     //up to, but without the character c
     {
         token r = *this;
-        return r.cut_left_back( c, 0, def_empty );
+        return r.cut_left_back( c, make_set_trait(def_empty) );
     }
 
     token select_left_back( const token& separators, bool def_empty=false ) const
     {
         token r = *this;
-        return r.cut_left_back( separators, 0, def_empty );
+        return r.cut_left_back( separators, make_set_trait(def_empty) );
     }
 
     token select_right( const char c, bool def_empty=false ) const     //up to, but without the character c
     {
         token r = *this;
-        return r.cut_right( c, 0, def_empty );
+        return r.cut_right( c, make_set_trait(def_empty) );
     }
 
     token select_right( const token& separators, bool def_empty=false ) const
     {
         token r = *this;
-        return r.cut_right( separators, 0, def_empty );
+        return r.cut_right( separators, make_set_trait(def_empty) );
     }
 
     token select_right_back( const char c, bool def_empty=false ) const     //up to, but without the character c
     {
         token r = *this;
-        return r.cut_right_back( c, 0, def_empty );
+        return r.cut_right_back( c, make_set_trait(def_empty) );
     }
 
     token select_right_back( const token& separators, bool def_empty=false ) const
     {
         token r = *this;
-        return r.cut_right_back( separators, 0, def_empty );
+        return r.cut_right_back( separators, make_set_trait(def_empty) );
     }
 
 
@@ -1536,6 +1536,11 @@ protected:
         p[n] = 0;
 
         return p;
+    }
+
+    token::cut_trait make_set_trait( bool def_empty ) const {
+        uint flags = def_empty  ?  token::fON_FAIL_RETURN_EMPTY  :  0;
+        return token::cut_trait(flags);
     }
 };
 
@@ -1809,7 +1814,7 @@ struct command_tokens
 
         for( ; _tokn < i; ++_tokn )
         {
-            _ctok = _rtok.cut_left( token::TK_whitespace(), -1 );
+            _ctok = _rtok.cut_left( token::TK_whitespace(), token::cut_trait(token::fREMOVE_ALL_SEPARATORS) );
             if( _ctok.is_empty() )  { ++_tokn; break; }
         }
 

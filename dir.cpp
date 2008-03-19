@@ -63,7 +63,7 @@ bool directory::append_path( charstr& dst, token path )
             if( tdst.is_empty() )
                 return false;       //too many .. in path
 
-            tdst.cut_right_back( separator(), 1 );
+            tdst.cut_right_back( separator() );
 
             if( c == 0 ) {
                 dst.trim_to_length( tdst.len() );
@@ -93,7 +93,7 @@ opcd directory::copy_file_from( const token& src, const token& name )
     {
         //extract name from the source path
         token srct = src;
-        token srcfn = srct.cut_right_back( separator(), 0 );
+        token srcfn = srct.cut_right_back( separator() );
         _curpath << srcfn;
     }
     else
@@ -111,7 +111,7 @@ opcd directory::copy_file_to( const token& dst, const token& name )
     {
         //extract name from the destination path
         token dstt = dst;
-        token srcfn = dstt.cut_right_back( separator(), 0 );
+        token srcfn = dstt.cut_right_back( separator() );
         _curpath << srcfn;
     }
     else
@@ -171,7 +171,7 @@ opcd directory::move_file_from( const token& src, const token& name )
     {
         //extract name from the source path
         token srct = src;
-        token srcfn = srct.cut_right_back( separator(), 0 );
+        token srcfn = srct.cut_right_back( separator() );
         _curpath << srcfn;
     }
     else
@@ -189,7 +189,7 @@ opcd directory::move_file_to( const token& dst, const token& name )
     {
         //extract name from the destination path
         token dstt = dst;
-        token srcfn = dstt.cut_right_back( separator(), 0 );
+        token srcfn = dstt.cut_right_back( separator() );
         _curpath << srcfn;
     }
     else

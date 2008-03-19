@@ -136,15 +136,28 @@ charstr& directory::get_cwd( charstr& buf )
 {
     uints size = 64;
 
-    while( !getcwd( buf.get_append_buf(size-1), size )  &&  size < 1024 )
+    while( size < 1024  &&  !getcwd(buf.get_buf(size-1), size) )
     {
         size <<= 1;
         buf.reset();
     }
     buf.correct_size();
-    if( buf.last_char() != '/' )
-        buf << "/";
-    return buf;
+
+    return treat_trailing_separator(buf, true);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+charstr& directory::get_ped( charstr& buf )
+{
+    charstr path = "/proc/";
+    path << ::getpid() << "/exe";
+
+    ::readlink(path.c_str(), buf.get_buf(PATH_MAX), PATH_MAX);
+
+    token t = buf.c_str();
+    t.cut_right_back('/', token::cut_trait::do_keep_sep_with_source());
+
+    return buf.trim_to_length( t.len() );
 }
 
 ////////////////////////////////////////////////////////////////////////////////

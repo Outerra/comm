@@ -80,10 +80,13 @@ class charstr;
 ///Token structure describing a part of a string.
 struct token
 {
-    const char *_ptr;           ///<ptr to the beginning of current string part
-    uints _len;                  ///<length of current string part
+    const char *_ptr;                   ///<ptr to the beginning of current string part
+    uints _len;                         ///<length of current string part
 
-    token() {}
+    token() {
+        _ptr = 0;
+        _len = 0;
+    }
 
     token( const char *czstr )
     {   set(czstr); }
@@ -409,6 +412,7 @@ struct token
     }
 */
     bool is_empty() const               { return _len == 0; }
+    bool is_set() const                 { return _len > 0; }
     bool is_null() const                { return _ptr == 0; }
     void set_empty()                    { _len = 0; }
     void set_null()                     { _ptr = 0; _len = 0; }
@@ -530,161 +534,185 @@ struct token
         r._len = n;
         return r;
     }
-    
+
+
+
+    ///Flags for cut_xxx methods concerning the treating of separator
+    enum ESeparatorTreat {
+        fKEEP_SEPARATOR         = 0,    ///< do not remove the separator if found
+        fREMOVE_SEPARATOR       = 1,    ///< remove the separator from source token after the cutting
+        fREMOVE_ALL_SEPARATORS  = 3,    ///< remove all continuous separators from the source token
+        fRETURN_SEPARATOR       = 4,    ///< if neither fREMOVE_SEPARATOR nor fREMOVE_ALL_SEPARATORS is set, return the separator with the cut token, otherwise keep with the source
+        fON_FAIL_RETURN_EMPTY   = 8,    ///< if the separator is not found, return an empty token. If not set, whole source token is cut and returned.
+        fSWAP                   = 16,   ///< swap resulting source and destination tokens. Note fRETURN_SEPARATOR and fON_FAIL_RETURN_EMPTY flags concern the actual returned value, i.e. after swap.
+    };
+
+    ///Behavior of the cut operation. Constructed using ESeparatorTreat flags or-ed.
+    struct cut_trait
+    {
+        uint flags;
+
+        explicit cut_trait(int flags) : flags(flags)
+        {}
+
+        //@{ Most used traits
+        static cut_trait do_keep_sep_with_source() {
+            return cut_trait(fKEEP_SEPARATOR);
+        }
+
+        static cut_trait do_keep_sep_with_returned() {
+            return cut_trait(fRETURN_SEPARATOR);
+        }
+
+        static cut_trait do_default_empty() {
+            return cut_trait(fON_FAIL_RETURN_EMPTY);
+        }
+
+        static cut_trait do_remove_sep_default_empty() {
+            return cut_trait(fREMOVE_SEPARATOR|fON_FAIL_RETURN_EMPTY);
+        }
+
+        static cut_trait do_remove_all_default_empty() {
+            return cut_trait(fREMOVE_ALL_SEPARATORS|fON_FAIL_RETURN_EMPTY);
+        }
+        //@}
+
+        //@return true if all continuous separators should be consumed
+        bool consume_other_separators() const {
+            return (flags & fREMOVE_ALL_SEPARATORS) != 0;
+        }
+
+        ///Duplicate cut_trait object but with fSWAP flag set
+        cut_trait make_swap() {
+            return cut_trait(flags | fSWAP);
+        }
+
+
+
+        token& process_found( token& source, token& dest, token& sep ) const
+        {
+            if( !(flags & fREMOVE_SEPARATOR) ) {
+                if( ((flags>>2) ^ flags) & fRETURN_SEPARATOR )
+                    sep += sep._len;
+                else
+                    sep._len = 0;
+            }
+
+            dest._ptr = source._ptr;
+            dest._len = sep._ptr - source._ptr;
+            source._len = source.ptre() - sep.ptre();
+            source._ptr = sep.ptre();
+
+            if( flags & fSWAP )
+                source.swap(dest);
+
+            return dest;
+        }
+
+        token& process_notfound( token& source, token& dest ) const
+        {
+            if( flags & fON_FAIL_RETURN_EMPTY ) {
+                dest._ptr = (flags & fSWAP) ? source.ptre() : source.ptr();
+                dest._len = 0;
+            }
+            else {
+                dest._len = source._len;
+                dest._ptr = source._ptr;
+                if(!(flags & fSWAP))
+                    source._ptr += source._len;
+                source._len = 0;
+            }
+
+            return dest;
+        }
+    };
 
 
     ///Cut a token off, using single character as the delimiter
     ///@param skipsep zero if separator should remain with the original token, nonzero if it's discarded
-    token cut_left( char c, int skipsep, bool def_empty=false )     //up to, but without the character c
+    token cut_left( char c, cut_trait ctr = cut_trait(fREMOVE_SEPARATOR) )
     {
         token r;
         const char* p = strchr(c);
         if(p) {
-            r._ptr = _ptr;
-            r._len = uints(p-_ptr);
-            uints n = skipsep ? 1 : 0;
-            n += r._len;
-            _ptr += n;
-            _len -= n;
+            token sep(p, 1);
+            return ctr.process_found(*this, r, sep);
         }
-        else if (!def_empty) {
-            r._ptr = _ptr;
-            r._len = _len;
-            _ptr += r._len;
-            _len = 0;
-        }
-        else {
-            r._ptr = _ptr;
-            r._len = 0;
-        }
-        return r;
+        else
+            return ctr.process_notfound(*this, r);
     }
 
     ///Cut a token off, using group of single characters as delimiters
-    ///@param skipsep zero if separator should remain with the original token,
-    /// >0 if single separator character is discarded, <0 if all consequent separators should be discarded
-    token cut_left( const token& separators, int skipsep, bool def_empty=false )
+    token cut_left( const token& separators, cut_trait ctr = cut_trait(fREMOVE_SEPARATOR) )
     {
         token r;
         uints ln = count_notingroup(separators);
         if( _len > ln )         //if not all is not separator
         {
-            r._ptr = _ptr;
-            r._len = ln;
-            if(skipsep>0)       ++ln;
-            else if(skipsep<0)  ln = count_ingroup(separators,ln);
-            _ptr += ln;
-            _len -= ln;
-        }
-        else if( !def_empty )   //_len==ln
-        {
-            r._ptr = _ptr;
-            r._len = ln;
-            _ptr += ln;
-            _len = 0;
+            token sep(_ptr+ln, ctr.consume_other_separators()
+                ? count_ingroup(separators,ln)-ln
+                : 1);
+
+            return ctr.process_found(*this, r, sep);
         }
         else
-        {
-            r._ptr = _ptr;
-            r._len = 0;
-        }
-
-        return r;
+            return ctr.process_notfound(*this, r);
     }
 
     ///Cut left substring
     ///@param skipsep zero if the separator should remain with the original token, nonzero if it's discarded
-    token cut_left( const substring& ss, int skipsep, bool def_empty=false )
+    token cut_left( const substring& ss, cut_trait ctr = cut_trait(fREMOVE_SEPARATOR) )
     {
         token r;
         uints n = count_until_substring(ss);
         if( n < _len )
         {
-            r._ptr = _ptr;
-            r._len = n;
-            if(skipsep)  n += ss.len();
-            _ptr += n;
-            _len -= n;
-        }
-        else if( !def_empty )   //_len==ln
-        {
-            r._ptr = _ptr;
-            r._len = n;
-            _ptr += n;
-            _len = 0;
+            token sep(_ptr+n, ss.len());
+
+            return ctr.process_found(*this, r, sep);
         }
         else
-        {
-            r._ptr = _ptr;
-            r._len = 0;
-        }
-
-        return r;
+            return ctr.process_notfound(*this, r);
     }
 
 
     ///Cut left substring, searching for separator backwards
     ///@param skipsep zero if the separator should remain with the original token, nonzero if it's discarded
-    token cut_left_back( const char c, int skipsep, bool def_empty=false )     //up to, but without the character c
+    token cut_left_back( const char c, cut_trait ctr = cut_trait(fREMOVE_SEPARATOR) )
     {
         token r;
         const char* p = strrchr(c);
         if(p)
         {
-            r._ptr = _ptr;
-            r._len = uints(p-_ptr);
-            uints n = skipsep ? 1 : 0;
-            _ptr = p+n;
-            _len -= r._len+n;
+            token sep(p, 1);
+            return ctr.process_found(*this, r, sep);
         }
-        else if( !def_empty ) {
-            r._ptr = _ptr;
-            r._len = _len;
-            _ptr += _len;
-            _len = 0;
-        }
-        else {
-            r._ptr = _ptr;
-            r._len = 0;
-        }
-        return r;
+        else
+            return ctr.process_notfound(*this, r);
     }
 
     ///Cut left substring, searching for separator backwards
-    token cut_left_back( const token& separators, int skipsep, bool def_empty=false )
+    token cut_left_back( const token& separators, cut_trait ctr = cut_trait(fREMOVE_SEPARATOR) )
     {
         token r;
         uints off = count_notingroup_back(separators);
 
         if( off > 0 )
         {
-            uints n;
-            if(skipsep>0)       n = off-1;
-            else if(skipsep<0)  n = token(ptr(),off).count_ingroup_back(separators);
-            else                n = off;
-            r._ptr = _ptr;
-            r._len = n;
-            _ptr = _ptr + off;
-            _len -= off;
-        }
-        else if( !def_empty )
-        {
-            r._ptr = _ptr;
-            r._len = _len;
-            _ptr += _len;
-            _len = 0;
+            uint ln = ctr.consume_other_separators()
+                ? off - token(_ptr,off).count_ingroup_back(separators)
+                : 1;
+
+            token sep(_ptr+off-ln, ln);
+
+            return ctr.process_found(*this, r, sep);
         }
         else
-        {
-            r._ptr = _ptr;
-            r._len = 0;
-        }
-
-        return r;
+            return ctr.process_notfound(*this, r);
     }
 
     ///Cut left substring, searching for separator backwards
-    token cut_left_back( const substring& ss, int skipsep, bool def_empty=false )
+    token cut_left_back( const substring& ss, cut_trait ctr = cut_trait(fREMOVE_SEPARATOR) )
     {
         token r;
         uints off=0;
@@ -702,74 +730,49 @@ struct token
 
         if( lastss < _len )
         {
-            r._ptr = _ptr;
-            r._len = _len - lastss;
-            if(skipsep)
-                lastss += ss.len();
-            _ptr += lastss;
-            _len -= lastss;
-        }
-        else if(!def_empty)
-        {
-            r._ptr = _ptr;
-            r._len = _len;
-            _ptr += _len;
-            _len = 0;
+            token sep(_ptr+lastss, ss.len());
+
+            return ctr.process_found(*this, r, sep);
         }
         else
-        {
-            r._ptr = _ptr;
-            r._len = 0;
-        }
-        return r;
+            return ctr.process_notfound(*this, r);
+    }
+
+
+    ///Cut right substring
+    token cut_right( const char c, cut_trait ctr = cut_trait(fREMOVE_SEPARATOR) )
+    {
+        return cut_left(c, ctr.make_swap());
     }
 
     ///Cut right substring
-    token cut_right( const char c, int skipsep, bool def_empty=false )       //up to, but without the character c
+    token cut_right( const token& separators, cut_trait ctr = cut_trait(fREMOVE_SEPARATOR) )
     {
-        token r = cut_left( c, skipsep, !def_empty );
-        swap(r);
-        return r;
+        return cut_left(separators, ctr.make_swap());
     }
 
     ///Cut right substring
-    token cut_right( const token& separators, int skipsep, bool def_empty=false )
+    token cut_right( const substring& ss, cut_trait ctr = cut_trait(fREMOVE_SEPARATOR) )
     {
-        token r = cut_left( separators, skipsep, !def_empty );
-        swap(r);
-        return r;
-    }
-
-    ///Cut right substring
-    token cut_right( const substring& ss, int skipsep, bool def_empty=false )
-    {
-        token r = cut_left( ss, skipsep, !def_empty );
-        swap(r);
-        return r;
+        return cut_left(ss, ctr.make_swap());
     }
 
     ///Cut right substring, searching for separator backwards
-    token cut_right_back( const char c, int skipsep, bool def_empty=false )       //up to, but without the character c
+    token cut_right_back( const char c, cut_trait ctr = cut_trait(fREMOVE_SEPARATOR) )
     {
-        token r = cut_left_back( c, skipsep, !def_empty );
-        swap(r);
-        return r;
+        return cut_left_back(c, ctr.make_swap());
     }
 
     ///Cut right substring, searching for separator backwards
-    token cut_right_back( const token& separators, int skipsep, bool def_empty=false )
+    token cut_right_back( const token& separators, cut_trait ctr = cut_trait(fREMOVE_SEPARATOR) )
     {
-        token r = cut_left_back( separators, skipsep, !def_empty );
-        swap(r);
-        return r;
+        return cut_left_back(separators, ctr.make_swap());
     }
 
     ///Cut right substring, searching for separator backwards
-    token cut_right_back( const substring& ss, int skipsep, bool def_empty=false )
+    token cut_right_back( const substring& ss, cut_trait ctr = cut_trait(fREMOVE_SEPARATOR) )
     {
-        token r = cut_left_back( ss, skipsep, !def_empty );
-        swap(r);
-        return r;
+        return cut_left_back(ss, ctr.make_swap());
     }
 
 
@@ -1167,7 +1170,7 @@ struct token
 
     token get_line()
     {
-        token r = cut_left( '\n', 1 );
+        token r = cut_left('\n');
         if( r.last_char() == '\r' )
             --r._len;
         return r;
@@ -1677,15 +1680,17 @@ struct token
     {
         //Tue, 15 Nov 1994 08:12:31 GMT
 
+        cut_trait ctr(fREMOVE_SEPARATOR|fON_FAIL_RETURN_EMPTY);
+
         //skip the day name
-        cut_left(',', 1, true);
-        cut_left(' ', 1, true);
+        cut_left(',', ctr);
+        cut_left(' ', ctr);
 
         tmm.tm_mday = touint_and_shift();
         if( tmm.tm_mday == 0 || tmm.tm_mday > 31 )  return ersINVALID_PARAMS;
-        cut_left(' ', 1, true);
+        cut_left(' ', ctr);
 
-        token monstr = cut_left(' ',1,true);
+        token monstr = cut_left(' ', ctr);
         static const char* mons[] = {
             "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"
         };
@@ -1695,17 +1700,21 @@ struct token
         tmm.tm_mon = mon;
 
         tmm.tm_year = touint_and_shift() - 1900;
-        cut_left(' ', 1, true);
+        cut_left(' ', ctr);
 
-        token h = cut_left(':', 1, true);
+        token h = cut_left(':', ctr);
         tmm.tm_hour = h.touint_and_shift();
         if( !h.is_empty() || tmm.tm_hour > 23 )  return ersINVALID_PARAMS "timefmt: hours";
 
-        token m = cut_left(':', 1, true);
+        token m = cut_left(':', ctr);
         tmm.tm_min = m.touint_and_shift();
         if( !m.is_empty() || tmm.tm_min > 59 )  return ersINVALID_PARAMS "timefmt: minutes";
 
-        token s = cut_left(' ', 1, !timezone.is_empty() );
+        uint fctr = fREMOVE_SEPARATOR;
+        if(!timezone.is_empty())
+            fctr |= fON_FAIL_RETURN_EMPTY;
+
+        token s = cut_left(' ', cut_trait(fctr));
         tmm.tm_sec = s.touint_and_shift();
         if( !s.is_empty() || tmm.tm_sec > 59 )  return ersINVALID_PARAMS "timefmt: seconds";
 
@@ -1768,6 +1777,7 @@ struct token
     ///Append token to wide stl string
     bool codepage_to_wstring_append( uint cp, std::wstring& dst ) const;
 #endif
+
 };
 
 ////////////////////////////////////////////////////////////////////////////////
