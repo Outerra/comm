@@ -150,8 +150,11 @@ public:
     opcd move_file_to( const token& dst, const token& name=token::empty() );
     opcd move_current_file_to( const token& dst );
 
-
+    ///Get current working directory
     static charstr& get_cwd( charstr& buf );
+
+    ///Get program executable directory
+    static charstr& get_ped( charstr& buf );
 
 
     uint64 file_size() const                    { return _st.st_size; }

@@ -44,6 +44,10 @@
 #include <io.h>
 #include <errno.h>
 
+extern "C" {
+ulong __stdcall GetModuleFileNameA(void*, char*, ulong);
+}
+
 COID_NAMESPACE_BEGIN
 
 
@@ -134,15 +138,31 @@ charstr& directory::get_cwd( charstr& buf )
 {
     uint size = 64;
 
-    while( !::_getcwd( buf.get_append_buf(size-1), size )  &&  size < 1024 )
+    while( size < 1024  &&  !::_getcwd( buf.get_buf(size-1), size) )
     {
         size <<= 1;
         buf.reset();
     }
     buf.correct_size();
-    if( buf.last_char() != '\\' )
-        buf << "\\";
-    return buf;
+    
+    return treat_trailing_separator(buf, true);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+charstr& directory::get_ped( charstr& buf )
+{
+    uint size = 64, asize;
+
+    while( size < 1024  &&  size == (asize = GetModuleFileNameA(0, buf.get_buf(size-1), size)) )
+    {
+        size <<= 1;
+        buf.reset();
+    }
+    
+    token t = buf.c_str();
+    t.cut_right_back('\\', token::cut_trait::do_keep_sep_with_source());
+
+    return buf.trim_to_length( t.len() );
 }
 
 ////////////////////////////////////////////////////////////////////////////////

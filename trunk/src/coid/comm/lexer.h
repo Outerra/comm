@@ -512,7 +512,7 @@ public:
 
         for(;;)
         {
-            token ne = nested.cut_left(' ',1);
+            token ne = nested.cut_left(' ');
             if(ne.is_empty())  break;
 
             if(ne == '*') {

@@ -381,15 +381,18 @@ public:
         return in0out1 ? 0 : fATTR_NO_INPUT_FUNCTION;
     }
 
-    virtual opcd open( const token& arg )
+    virtual opcd open( const token& name, token attr = token::empty() )
     {
-        token name = arg;
-        charstr flg = name.cut_right_back( '?', 1, true );
-        if( flg.is_empty() )
-            flg = "wct";
-        else
-            flg << char('w');
-        return filestream::open( name, flg );
+        charstr flg;
+
+        if( attr.is_empty() )
+            attr = "wct";
+        else {
+            flg << attr << char('w');
+            attr = flg;
+        }
+
+        return filestream::open( name, attr );
     }
 
     bofstream() { }
@@ -410,12 +413,18 @@ public:
         return in0out1 ? 0 : fATTR_NO_OUTPUT_FUNCTION;
     }
 
-    virtual opcd open( const token& arg )
+    virtual opcd open( const token& name, token attr = token::empty() )
     {
-        token name = arg;
-        charstr flg = name.cut_right_back( '?', 1, true );
-        flg << char('r');
-        return filestream::open( name, flg );
+        charstr flg;
+
+        if( attr.is_empty() )
+            attr = "r";
+        else {
+            flg << attr << char('r');
+            attr = flg;
+        }
+
+        return filestream::open( name, attr );
     }
 
     bifstream() { }
