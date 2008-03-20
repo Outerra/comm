@@ -575,6 +575,14 @@ struct token
         static cut_trait do_remove_all_default_empty() {
             return cut_trait(fREMOVE_ALL_SEPARATORS|fON_FAIL_RETURN_EMPTY);
         }
+
+        static cut_trait do_remove_sep() {
+            return cut_trait(fREMOVE_SEPARATOR);
+        }
+
+        static cut_trait do_remove_all() {
+            return cut_trait(fREMOVE_ALL_SEPARATORS);
+        }
         //@}
 
         //@return true if all continuous separators should be consumed
@@ -699,7 +707,7 @@ struct token
 
         if( off > 0 )
         {
-            uint ln = ctr.consume_other_separators()
+            uints ln = ctr.consume_other_separators()
                 ? off - token(_ptr,off).count_ingroup_back(separators)
                 : 1;
 

@@ -438,10 +438,10 @@ public:
     void set_host( const token& tok )
     {
         token host = tok;
-        host.cut_left( substring_proto(), 1, true );
+        host.cut_left( substring_proto(), token::cut_trait::do_remove_sep_default_empty() );
 
         _urihdr = host;
-        (_proxyreq = "Host: ") << host.cut_left('/',1) << "\r\n";
+        (_proxyreq = "Host: ") << host.cut_left('/') << "\r\n";
     }
 /*
     void set_host( const netAddress& addr )
@@ -732,10 +732,10 @@ inline opcd httpstream::header::decode( bool is_listener, httpstream& http, bins
 
     if(is_listener)
     {
-        token meth = tok.cut_left(' ',1);
+        token meth = tok.cut_left(' ');
         _method = meth;
 
-        token path = tok.cut_left(' ',1);
+        token path = tok.cut_left(' ');
 
         static token _HTTP = "http://";
 
@@ -749,11 +749,11 @@ inline opcd httpstream::header::decode( bool is_listener, httpstream& http, bins
         _fullpath = path;
         path = _fullpath;
 
-        _relpath = path.cut_left('?',1);
+        _relpath = path.cut_left('?');
         _query = path;
 
 
-        token proto = tok.cut_left(' ',1);
+        token proto = tok.cut_left(' ');
         if( proto.cmpeqi("http/1.0") )
             _bhttp10 = _bclose = true;
         else if( proto.cmpeqi("http/1.1") )
@@ -763,7 +763,7 @@ inline opcd httpstream::header::decode( bool is_listener, httpstream& http, bins
     }
     else
     {
-        token proto= tok.cut_left(' ',1);
+        token proto= tok.cut_left(' ');
         if( proto.cmpeqi("http/1.0") )
             _bhttp10 = _bclose = true;
         else if( proto.cmpeqi("http/1.1") )
@@ -771,7 +771,7 @@ inline opcd httpstream::header::decode( bool is_listener, httpstream& http, bins
         else
             return ersFE_UNRECG_REQUEST "unknown protocol";
 
-        token errcd = tok.cut_left(' ',1);
+        token errcd = tok.cut_left(' ');
         _errcode = errcd.toint();
     }
 
@@ -793,14 +793,14 @@ inline opcd httpstream::header::decode( bool is_listener, httpstream& http, bins
         if(log)
             *log << h << "\r\n";
 
-        token h1 = h.cut_left(':',1);
+        token h1 = h.cut_left(':');
         h.skip_char(' ');
 
         if( h1.cmpeqi("TE")  ||  h1.cmpeqi("Transfer-Encoding") )
         {
             for(;;)
             {
-                token k = h.cut_left(", ",-1);
+                token k = h.cut_left(", ", token::cut_trait::do_remove_all() );
                 if( k.is_empty() )  break;
 
                 if( k.cmpeqi("deflate") )
@@ -819,7 +819,7 @@ inline opcd httpstream::header::decode( bool is_listener, httpstream& http, bins
         {
             for(;;)
             {
-                token k = h.cut_left(", ",-1);
+                token k = h.cut_left(", ", token::cut_trait::do_remove_all() );
                 if( k.is_empty() )  break;
 
                 if( k.cmpeqi("close") )
