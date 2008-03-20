@@ -157,7 +157,7 @@ struct version
         // from inside of '(' and ')' three consequent numbers are extracted (if possible)
         // anything other than 0..9 is considered to be a separator
 
-        token t = ver.cut_left( '(', 1 );
+        token t = ver.cut_left('(');
 
         if( ver.is_empty() )
         {
@@ -167,7 +167,7 @@ struct version
         }
 
         set_string(t);
-        ver.cut_right_back( ')', 1 );
+        ver.cut_right_back(')');
         return set_internal(ver);
     }
 

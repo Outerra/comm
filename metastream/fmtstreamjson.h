@@ -599,7 +599,7 @@ public:
                 case type::T_ERRCODE: {
                     if( tok[0] != '[' )  return ersSYNTAX_ERROR;
                     ++tok;
-                    token cd = tok.cut_left( ']', 1 );
+                    token cd = tok.cut_left(']');
                     uints n = opcd::find_code( cd.ptr(), cd.len() );
                     *(ushort*)p = (ushort)n;
                 } break;
