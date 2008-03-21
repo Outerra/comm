@@ -113,7 +113,7 @@ public:
     virtual opcd connect( const token& addr, int port=0, bool portoverride=false )
     {
         token a = addr;
-        token ho = a.cut_left( '=', token::cut_trait::do_remove_sep_default_empty() );
+        token ho = a.cut_left( '=', token::cut_trait_remove_sep_default_empty() );
 
         netAddress naddr;
         naddr.set( a, port, portoverride );
