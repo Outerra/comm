@@ -308,9 +308,9 @@ void netAddress::set( const token& host, int port, bool portoverride )
         token hostx = host;
 
         //skip the protocol part if any
-        hostx.cut_left( protocol, token::cut_trait::do_remove_sep_default_empty() );
+        hostx.cut_left( protocol, token::cut_trait_remove_sep_default_empty() );
 
-        token name = hostx.cut_left( ":/", token::cut_trait::do_keep_sep_with_source() );
+        token name = hostx.cut_left( ":/", token::cut_trait_keep_sep_with_source() );
 
         int p = 0;
         if( hostx.first_char() == ':' ) {

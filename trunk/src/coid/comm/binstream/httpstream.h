@@ -438,7 +438,7 @@ public:
     void set_host( const token& tok )
     {
         token host = tok;
-        host.cut_left( substring_proto(), token::cut_trait::do_remove_sep_default_empty() );
+        host.cut_left( substring_proto(), token::cut_trait_remove_sep_default_empty() );
 
         _urihdr = host;
         (_proxyreq = "Host: ") << host.cut_left('/') << "\r\n";
@@ -800,7 +800,7 @@ inline opcd httpstream::header::decode( bool is_listener, httpstream& http, bins
         {
             for(;;)
             {
-                token k = h.cut_left(", ", token::cut_trait::do_remove_all() );
+                token k = h.cut_left(", ", token::cut_trait_remove_all() );
                 if( k.is_empty() )  break;
 
                 if( k.cmpeqi("deflate") )
@@ -819,7 +819,7 @@ inline opcd httpstream::header::decode( bool is_listener, httpstream& http, bins
         {
             for(;;)
             {
-                token k = h.cut_left(", ", token::cut_trait::do_remove_all() );
+                token k = h.cut_left(", ", token::cut_trait_remove_all() );
                 if( k.is_empty() )  break;
 
                 if( k.cmpeqi("close") )

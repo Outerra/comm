@@ -160,7 +160,7 @@ charstr& directory::get_ped( charstr& buf )
     }
     
     token t = buf.c_str();
-    t.cut_right_back('\\', token::cut_trait::do_keep_sep_with_source());
+    t.cut_right_back('\\', token::cut_trait_keep_sep_with_source());
 
     return buf.trim_to_length( t.len() );
 }

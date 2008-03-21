@@ -555,36 +555,6 @@ struct token
         explicit cut_trait(int flags) : flags(flags)
         {}
 
-        //@{ Most used traits
-        static cut_trait do_keep_sep_with_source() {
-            return cut_trait(fKEEP_SEPARATOR);
-        }
-
-        static cut_trait do_keep_sep_with_returned() {
-            return cut_trait(fRETURN_SEPARATOR);
-        }
-
-        static cut_trait do_default_empty() {
-            return cut_trait(fON_FAIL_RETURN_EMPTY);
-        }
-
-        static cut_trait do_remove_sep_default_empty() {
-            return cut_trait(fREMOVE_SEPARATOR|fON_FAIL_RETURN_EMPTY);
-        }
-
-        static cut_trait do_remove_all_default_empty() {
-            return cut_trait(fREMOVE_ALL_SEPARATORS|fON_FAIL_RETURN_EMPTY);
-        }
-
-        static cut_trait do_remove_sep() {
-            return cut_trait(fREMOVE_SEPARATOR);
-        }
-
-        static cut_trait do_remove_all() {
-            return cut_trait(fREMOVE_ALL_SEPARATORS);
-        }
-        //@}
-
         //@return true if all continuous separators should be consumed
         bool consume_other_separators() const {
             return (flags & fREMOVE_ALL_SEPARATORS) != 0;
@@ -634,6 +604,37 @@ struct token
             return dest;
         }
     };
+
+    //@{ Most used traits
+    static cut_trait cut_trait_keep_sep_with_source() {
+        return cut_trait(fKEEP_SEPARATOR);
+    }
+
+    static cut_trait cut_trait_keep_sep_with_returned() {
+        return cut_trait(fRETURN_SEPARATOR);
+    }
+
+    static cut_trait cut_trait_default_empty() {
+        return cut_trait(fON_FAIL_RETURN_EMPTY);
+    }
+
+    static cut_trait cut_trait_remove_sep_default_empty() {
+        return cut_trait(fREMOVE_SEPARATOR|fON_FAIL_RETURN_EMPTY);
+    }
+
+    static cut_trait cut_trait_remove_all_default_empty() {
+        return cut_trait(fREMOVE_ALL_SEPARATORS|fON_FAIL_RETURN_EMPTY);
+    }
+
+    static cut_trait cut_trait_remove_sep() {
+        return cut_trait(fREMOVE_SEPARATOR);
+    }
+
+    static cut_trait cut_trait_remove_all() {
+        return cut_trait(fREMOVE_ALL_SEPARATORS);
+    }
+    //@}
+
 
 
     ///Cut a token off, using single character as the delimiter
