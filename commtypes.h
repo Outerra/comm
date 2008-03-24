@@ -158,14 +158,6 @@ typedef signed char         schar;
 typedef size_t              uints;
 typedef ptrdiff_t           ints;
 
-#ifdef SYSTYPE_64
-typedef uint64              uints_to;
-typedef int64               ints_to;
-#else
-typedef uint                uints_to;
-typedef int                 ints_to;
-#endif
-
 } //namespace coid
 
 #ifndef COID_COMMTYPES_IN_NAMESPACE
@@ -249,34 +241,6 @@ SIGNEDNESS_MACRO(long);
 # endif
 #endif //_MSC_VER
 
-
-////////////////////////////////////////////////////////////////////////////////
-template<class INT>
-struct INTBASE
-{
-    typedef int     SIGNED;
-    typedef uint    UNSIGNED;
-};
-
-template<> struct INTBASE<int64> { typedef int64   SIGNED;  typedef uint64  UNSIGNED; };
-template<> struct INTBASE<uint64> { typedef int64   SIGNED;  typedef uint64  UNSIGNED; };
-
-template<> struct INTBASE<ints> { typedef ints_to   SIGNED;  typedef uints_to  UNSIGNED; };
-template<> struct INTBASE<uints> { typedef ints_to   SIGNED;  typedef uints_to  UNSIGNED; };
-
-////////////////////////////////////////////////////////////////////////////////
-inline bool valid_int_range( int64 v, uint bytes )
-{
-    int64 vmax = ((uint64)1<<(8*bytes-1)) - 1;
-    int64 vmin = ~vmax;
-    return v >= vmin  &&  v <= vmax;
-}
-
-inline bool valid_uint_range( uint64 v, uint bytes )
-{
-    uint64 vmax = ((uint64)1<<(8*bytes)) - 1;
-    return v <= vmax;
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 #ifdef SYSTYPE_MSVC

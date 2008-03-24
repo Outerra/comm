@@ -44,6 +44,20 @@
 COID_NAMESPACE_BEGIN
 
 
+////////////////////////////////////////////////////////////////////////////////
+inline bool valid_int_range( int64 v, uint bytes )
+{
+    int64 vmax = ((uint64)1<<(8*bytes-1)) - 1;
+    int64 vmin = ~vmax;
+    return v >= vmin  &&  v <= vmax;
+}
+
+inline bool valid_uint_range( uint64 v, uint bytes )
+{
+    uint64 vmax = ((uint64)1<<(8*bytes)) - 1;
+    return v <= vmax;
+}
+
 /// Efficiently returns the least power of two greater than or equal to X
 template< class UINT >
 inline UINT nextpow2( UINT x )
@@ -56,17 +70,19 @@ inline UINT nextpow2( UINT x )
 }
 
 template<>
-inline uints_to nextpow2<uints>( uints x )
+inline uints nextpow2<uints>( uints x )
 {
     if(!x)  return 1;
     --x;
     for( uint n=1; n<sizeof(x)*8; n<<=1 )
         x |= x>>n;
-    return (uints_to)++x;
+    return ++x;
 }
 
-
+///@return 2's exponent of nearest lower power of two number
 inline uchar int_low_pow2( uints x )        { uchar i;  for( i=0; x; ++i,x>>=1 );  return i-1; }
+
+///@return 2's exponent of nearest higher power of two number
 inline uchar int_high_pow2( uints x )       { uchar i; --x; for( i=0; x; ++i,x>>=1 );  return i; }
 
 /// Checks if a value is power of two
@@ -86,8 +102,8 @@ inline uints align_offset( uints val, uints size )
 
 
 /// Aligns value to given chunk size (enlarges to next chunk boundary)
-inline uints_to align_to_chunks( uints uval, uints usize )
-{ return uints_to((uval+usize-1)/usize); }
+inline uints align_to_chunks( uints uval, uints usize )
+{ return uints((uval+usize-1)/usize); }
 
 /// Aligns value to given chunk size (enlarges to next chunk boundary)
 inline uint64 align_to_chunks64( uint64 uval, uint64 usize )
@@ -95,8 +111,8 @@ inline uint64 align_to_chunks64( uint64 uval, uint64 usize )
 
 
 /// Aligns value to nearest multiplier of 2 pow rsize chunk size
-inline uints_to align_value_to_power2( uints uval, uchar rsize )
-{ return uints_to((uval+(1<<rsize)-1) &~ ((1UL<<rsize)-1)); }
+inline uints align_value_to_power2( uints uval, uchar rsize )
+{ return uints((uval+(1<<rsize)-1) &~ ((1UL<<rsize)-1)); }
 
 /// Aligns value to nearest multiplier of 2 pow rsize chunk size
 inline uint64 align_value_to_power2_64( uint64 uval, uchar rsize )
@@ -104,8 +120,8 @@ inline uint64 align_value_to_power2_64( uint64 uval, uchar rsize )
 
 
 /// Aligns value to given chunk size (enlarges to next chunk boundary)
-inline uints_to align_to_chunks_pow2( uints uval, uchar rsize )
-{ return uints_to((uval+((1<<rsize)-1))>>rsize); }
+inline uints align_to_chunks_pow2( uints uval, uchar rsize )
+{ return uints((uval+((1<<rsize)-1))>>rsize); }
 
 /// Aligns value to given chunk size (enlarges to next chunk boundary)
 inline uint64 align_to_chunks_pow2_64( uint64 uval, uchar rsize )
@@ -143,15 +159,13 @@ inline INT uint_max( INT a, INT b )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+///Absolute value of int without branching
 template< class INT >
 inline typename SIGNEDNESS<INT>::UNSIGNED int_abs( INT a )
 {
-    return typename SIGNEDNESS<INT>::UNSIGNED( a - ((a+a) & ((typename SIGNEDNESS<INT>::SIGNED)a>>(sizeof(INT)*8-1))) );
-}
-
-inline uints ints_abs( ints a )
-{
-    return uints( a - ((a+a) & ((ints)a>>(sizeof(ints)*8-1))) );
+    typedef typename SIGNEDNESS<INT>::UNSIGNED UINT;
+    typedef typename SIGNEDNESS<INT>::SIGNED SINT;
+    return typename UINT( a - ((a+a) & ((SINT)a>>(sizeof(INT)*8-1))) );
 }
 
 ///@return a<0 ? onminus : onplus
