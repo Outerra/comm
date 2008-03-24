@@ -62,6 +62,8 @@ struct rlr_coder
     ///
     void encode( const INT* data, uints len, binstream& bin )
     {
+        reset();
+
         uchar plane = 1;
         uchar maxplane = plane;
 
@@ -96,11 +98,13 @@ struct rlr_coder
                     --plane;
                     planes[plane].down(i);
                 }
-                while( !(v>>plane) && plane>1 );
+                while( !(v>>(plane-1)) && plane>1 );
 
                 if(v)  planes[plane-1].one(v);
             }
         }
+
+        bin << maxplane;
 
         for( uchar i=maxplane; i>1; --i )
             planes[i-1].write_to(bin);
@@ -108,7 +112,48 @@ struct rlr_coder
         planes[0].write_to(bin);
     }
 
+    void decode( INT* data, uints len, binstream& bin )
+    {
+        reset();
+
+        uchar maxplane;
+        bin >> maxplane;
+
+        for( uchar i=maxplane; i>1; --i )
+            planes[i-1].read_from(bin);
+
+        planes[0].read_from(bin);
+
+        decode( maxplane, data, len );
+    }
+
 private:
+
+    void decode( uchar plane, INT* data, uints len )
+    {
+        rlr_bitplane& rp = planes[plane-1];
+        uints n = rp.zeros();
+
+        while( len>0 )
+        {
+            if(n == 0) {
+                *data++ = rp.read();
+                --len;
+                rp.decode0();
+                n = rp.zeros();
+            }
+
+            //n elements encoded in lower planes
+            uints k = int_min(len, n);
+
+            if(k) {
+                decode( plane-1, data, k );
+                data += k;
+                len -= k;
+            }
+        }
+    }
+
     struct rlr_bitplane
     {
         ///Coming from lower plane
@@ -137,16 +182,63 @@ private:
 
         void write_to( binstream& bin )
         {
-            while( bitpos < 8*buf.byte_size() ) {
+            uints total = align_to_chunks(bitpos, 8);
+            lastpos = bitpos;
+
+            while( bitpos < total*8 ) {
                 buf[bitpos>>5] |= 1<<(bitpos&31);
                 ++bitpos;
             }
 
-            bin.xwrite_raw( buf.ptr(), buf.byte_size() );
+            bin << (uint)lastpos;
+            bin.xwrite_raw( buf.ptr(), total );
+        }
+
+        void read_from( binstream& bin )
+        {
+            uint pos;
+            bin >> pos;
+
+            lastpos = pos;
+            bitpos = 0;
+
+            uints total = align_to_chunks(lastpos, 8);
+            bin.xread_raw(
+                buf.need(align_to_chunks(total, sizeof(uint))),
+                total );
         }
 
         rlr_bitplane() {
             reset(UMAX);
+        }
+
+        UINT read()
+        {
+            return (1<<plane) | read_rem();
+        }
+
+        ///Decode count of zeroes followed by 1
+        bool decode0()
+        {
+            uints count = 0;
+
+            while(!readb()) {
+                nzero += k;
+                ++k;
+            }
+
+            if(bitpos >= lastpos)
+                return false;    //end
+
+            nzero += read_count();
+            --k;
+            return true;
+        }
+
+        uints zeros() {
+            if(bitpos == 0)
+                decode0();
+            return nzero;
         }
 
     private:
@@ -163,30 +255,13 @@ private:
 
             //encode run of count 0's followed by a 1
             write1();
-            write(nzero);
+            write_count(nzero);
             --k;
             nzero = 0;
         }
 
-        ///Decode count of zeroes followed by 1
-        uints decode0()
-        {
-            uints count = 0;
 
-            while(!readb()) {
-                nzero += k;
-                ++k;
-            }
-
-            if(bitpos >= lastpos)
-                return nzero;
-
-            nzero += read();
-            --k;
-        }
-
-
-        void write( uints count )
+        void write_count( uints count )
         {
             if(bitpos+32 > 8*buf.byte_size())
                 buf.need(2*buf.size());
@@ -205,10 +280,10 @@ private:
 
         void write_rem( UINT v )
         {
-            if(bitpos+plane+1 > 8*buf.byte_size())
+            if(bitpos+plane > 8*buf.byte_size())
                 buf.need(2*buf.size());
 
-            for( uint kk=plane+1; kk>0; --kk ) {
+            for( uint kk=plane; kk>0; --kk ) {
                 if(v&1)
                     buf[bitpos>>5] |= 1<<(bitpos&31);
                 else
@@ -240,9 +315,10 @@ private:
 
             uint v = buf[bitpos>>5] & (1<<(bitpos&31));
             ++bitpos;
+            return v;
         }
 
-        uints read() {
+        uints read_count() {
             uints count = 0;
             uint kk = k;
             uchar i = 0;
@@ -259,7 +335,7 @@ private:
         UINT read_rem() {
             UINT v = 0;
 
-            for( uint i=0; i<=plane; ++i ) {
+            for( uint i=0; i<plane; ++i ) {
                 v |= ((buf[bitpos>>5] >> (bitpos&31))&1) << i;
                 ++bitpos;
             }
