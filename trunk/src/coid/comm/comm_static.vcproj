@@ -289,10 +289,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\binstream\packer-rlr.h"
-				>
-			</File>
-			<File
 				RelativePath="binstream\packstream.h"
 				>
 			</File>
@@ -812,6 +808,14 @@
 			</File>
 			<File
 				RelativePath="sync\thread_mgr.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="coder"
+			>
+			<File
+				RelativePath=".\coder\rlr.h"
 				>
 			</File>
 		</Filter>
