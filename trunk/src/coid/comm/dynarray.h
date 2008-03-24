@@ -356,15 +356,15 @@ public:
     
     ///Debug checks
 #ifdef _DEBUG
-# define DYNARRAY_CHECK_BOUNDS_S(k)          _check_bounds((ints)k);
-# define DYNARRAY_CHECK_BOUNDS_U(k)          _check_bounds((uints)k);
+# define DYNARRAY_CHECK_BOUNDS_S(k)          __check_bounds((ints)k);
+# define DYNARRAY_CHECK_BOUNDS_U(k)          __check_bounds((uints)k);
 #else
 # define DYNARRAY_CHECK_BOUNDS_S(k)
 # define DYNARRAY_CHECK_BOUNDS_U(k)
 #endif
 
-    void _check_bounds(ints k) const         { DASSERTE( k>=0 && (uints)k<_count(), ersOUT_OF_RANGE ); }
-    void _check_bounds(uints k) const        { DASSERTE( k<_count(), ersOUT_OF_RANGE ); }
+    void __check_bounds(ints k) const        { DASSERTE( k>=0 && (uints)k<_count(), ersOUT_OF_RANGE ); }
+    void __check_bounds(uints k) const       { DASSERTE( k<_count(), ersOUT_OF_RANGE ); }
 
     const T& operator [] (uints k) const     { DYNARRAY_CHECK_BOUNDS_U(k)  return *(_ptr+k); }
     T& operator [] (uints k)                 { DYNARRAY_CHECK_BOUNDS_U(k)  return *(_ptr+k); }

@@ -74,10 +74,10 @@ public:
 
     virtual opcd write_raw( const void* p, uints& len )
     {
+        DASSERT( _handle != -1 );
+
         if(_op>0 )
             upd_rpos();
-
-        DASSERT( _handle != -1 );
 
         uint k = ::_write( _handle, p, (uint)len );
         _wpos += k;
@@ -87,10 +87,10 @@ public:
 
     virtual opcd read_raw( void* p, uints& len )
     {
+        DASSERT( _handle != -1 );
+
         if(_op<0)
             upd_wpos();
-
-        DASSERT( _handle != -1 );
 
         uint k = ::_read( _handle, p, (uint)len );
         _rpos += k;

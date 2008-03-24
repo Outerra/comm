@@ -77,11 +77,12 @@ COID_NAMESPACE_BEGIN
     and trailing sequences as single token, but also performs substitutions of escape
     character sequences. It then outputs the processed content as single token.
 
-        With the block sequence, lexer enables and/or disables rules according to the
+        With the block sequence, lexer enables specific rules according to the
     specification for the block rule. It allows recursive processing of nested blocks,
-    strings or sequences and normal tokens, and can either output the whole block
-    content as a single token or as a series of tokens terminated by an end-of-block
-    token.
+    strings or sequences and normal tokens. Block content can be output as normal
+    series of tokens followed by an end-of-block token, when using next() method.
+    Alternatively, next_as_block() method can be used to read the content as a single
+    token after the leading block token has been received.
     Different sets of rules can be enabled inside the blocks, or even the block
     itself may be disabled within itself (non-nestable).
 
@@ -92,6 +93,14 @@ COID_NAMESPACE_BEGIN
     argument list delimiters and operators. Parser cares for enabling and disabling
     particular sequences when appropriate.
     
+    Sequences, strings and blocks can also be in ignored state. In this case they are
+    being processed normally, but after succesfull recognition they are discarded and
+    lexer reads next token. 
+
+    The initial enabled/disabled and ignored state for a rule can be specified by
+    prefixing the name with either . (dot, for ignored rule) or ! (exclamation mark,
+    for disabled rule). This can be used also in the nesting list of block rule, where
+    it directly specifies the nesting of rules within the block.
 
     It's possible to bind the lexer to a token (a string) source or to a binstream
     source, in which case the lexer also performs caching.
@@ -101,19 +110,6 @@ COID_NAMESPACE_BEGIN
 
     The lexer uses first group as the one containing ignored whitespace characters,
     unless you provide the next() method with different group id (or none) to ignore.
-
-    (TODBG) Internal line and character position counting for error reporting.
-
-    (TODO) Nestable tokenization of blocks. A mode when upon encountering an opening
-    block sequence, the lexer pushes its previous context to the stack and returns,
-    stating that block is about to be read. Subsequent calls to lexer then return
-    tokens from inside the block. At last the closing sequence is read and the stack
-    is popped.
-        Note that blocks can declare what other block and string types are enabled
-    when processing their content, so the lexer can use slightly different rules
-    for processing text inside the block than outside of it.
-
-    This functionality will be used by the parser.
 **/
 class lexer
 {
@@ -809,7 +805,7 @@ public:
 
                 if( seq->type == entity::BLOCK )
                 {
-                    if( !chunked(*seq)  &&  !ignored(*seq) )
+                    if( !ignored(*seq) )
                     {
                         _stack.push( reinterpret_cast<block_rule*>(seq) );
                         return _last;
@@ -1371,7 +1367,6 @@ protected:
     {
         uint64 stbenabled;              ///< bit map with sequences allowed to nest (enabled)
         uint64 stbignored;              ///< bit map with sequences skipped (ignored)
-        uint64 stbchunked;              ///< bit map with sequences whose inner content should be processed and returned as single token
 
         ///Make the specified S/S/B enabled or disabled within this block.
         ///If this very same block is enabled it means that it can nest in itself.
@@ -1395,27 +1390,14 @@ protected:
                 stbignored &= ~(1ULL << id);
         }
 
-        ///Make the specified S/S/B chunked or not chunked within this block.
-        ///Content of chunked sequences is returned as single token, with ignored
-        /// subsequences removed and strings properly escaped
-        void chunkit( int id, bool ch )
-        {
-            DASSERT( id < 64 );
-            if(ch)
-                stbchunked |= 1ULL << id;
-            else
-                stbchunked &= ~(1ULL << id);
-        }
-
         bool enabled( int seq ) const   { return (stbenabled & (1ULL<<seq)) != 0; }
         bool ignored( int seq ) const   { return (stbignored & (1ULL<<seq)) != 0; }
-        bool chunked( int seq ) const   { return (stbchunked & (1ULL<<seq)) != 0; }
 
 
         block_rule( const token& name, ushort id )
         : stringorblock(name,id,entity::BLOCK)
         {
-            stbenabled = stbignored = stbchunked = 0;
+            stbenabled = stbignored = 0;
         }
     };
 
@@ -1430,11 +1412,9 @@ protected:
 
     bool enabled( const sequence& seq ) const   { return (*_stack.last())->enabled(seq.id); }
     bool ignored( const sequence& seq ) const   { return (*_stack.last())->ignored(seq.id); }
-    bool chunked( const sequence& seq ) const   { return (*_stack.last())->chunked(seq.id); }
 
     bool enabled( int seq ) const               { return (*_stack.last())->enabled(-1-seq); }
     bool ignored( int seq ) const               { return (*_stack.last())->ignored(-1-seq); }
-    bool chunked( int seq ) const               { return (*_stack.last())->chunked(-1-seq); }
 
     ///Character flags
     enum {

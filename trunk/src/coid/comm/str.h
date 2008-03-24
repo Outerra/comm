@@ -288,11 +288,11 @@ public:
     charstr& operator = (uint64 i)              { reset(); append_num(10,i);       return *this; }
 
 #ifdef SYSTYPE_MSVC
-    charstr& operator = (ints i)                { reset(); append_num(10,(ints_to)i);  return *this; }
-    charstr& operator = (uints i)               { reset(); append_num(10,(uints_to)i); return *this; }
+    charstr& operator = (ints i)                { reset(); append_num(10,(ints)i);  return *this; }
+    charstr& operator = (uints i)               { reset(); append_num(10,(uints)i); return *this; }
 #else
-    charstr& operator = (long i)                { reset(); append_num(10,(ints_to)i);  return *this; }
-    charstr& operator = (ulong i)               { reset(); append_num(10,(uints_to)i); return *this; }
+    charstr& operator = (long i)                { reset(); append_num(10,(ints)i);  return *this; }
+    charstr& operator = (ulong i)               { reset(); append_num(10,(uints)i); return *this; }
 #endif //SYSTYPE_MSVC
 
     charstr& operator = (double d)              { reset(); return operator += (d); }
@@ -348,11 +348,11 @@ public:
     charstr& operator += (uint64 i)             { append_num(10,i);       return *this; }
 
 #ifdef SYSTYPE_MSVC
-    charstr& operator += (ints i)               { append_num(10,(ints_to)i);  return *this; }
-    charstr& operator += (uints i)              { append_num(10,(uints_to)i); return *this; }
+    charstr& operator += (ints i)               { append_num(10,(ints)i);  return *this; }
+    charstr& operator += (uints i)              { append_num(10,(uints)i); return *this; }
 #else
-    charstr& operator += (long i)               { append_num(10,(ints_to)i);  return *this; }
-    charstr& operator += (ulong i)              { append_num(10,(uints_to)i); return *this; }
+    charstr& operator += (long i)               { append_num(10,(ints)i);  return *this; }
+    charstr& operator += (ulong i)              { append_num(10,(uints)i); return *this; }
 #endif //SYSTYPE_MSVC
 
     charstr& operator += (double d)
@@ -429,11 +429,11 @@ public:
     charstr& operator << (uint64 i)             { append_num(10,i);       return *this; }
 
 #ifdef SYSTYPE_MSVC
-    charstr& operator << (ints i)               { append_num(10,(ints_to)i);  return *this; }
-    charstr& operator << (uints i)              { append_num(10,(uints_to)i); return *this; }
+    charstr& operator << (ints i)               { append_num(10,(ints)i);  return *this; }
+    charstr& operator << (uints i)              { append_num(10,(uints)i); return *this; }
 #else
-    charstr& operator << (long i)               { append_num(10,(ints_to)i);  return *this; }
-    charstr& operator << (ulong i)              { append_num(10,(uints_to)i); return *this; }
+    charstr& operator << (long i)               { append_num(10,(ints)i);  return *this; }
+    charstr& operator << (ulong i)              { append_num(10,(uints)i); return *this; }
 #endif //SYSTYPE_MSVC
 
     charstr& operator << (double d)             { return operator += (d); }

@@ -66,7 +66,7 @@ public:
     {
         if( n < 0 )
         {
-            ints k = _buf.size() - _bgi - ints_abs((ints)n);
+            ints k = _buf.size() - _bgi - int_abs((ints)n);
             if( k <= 0 )
                 _buf.reset();
             else
