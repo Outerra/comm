@@ -795,6 +795,14 @@
 				>
 			</File>
 		</Filter>
+		<Filter
+			Name="coder"
+			>
+			<File
+				RelativePath=".\coder\rlr.h"
+				>
+			</File>
+		</Filter>
 		<File
 			RelativePath="assert.h"
 			>
