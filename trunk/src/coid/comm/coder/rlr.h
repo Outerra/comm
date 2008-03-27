@@ -49,7 +49,7 @@ struct rlr_coder
 {
     typedef typename SIGNEDNESS<INT>::UNSIGNED      UINT;
 
-    static const int8 minplane = 3;
+    static const int8 minplane = 0;
 
 
     rlr_coder() {
@@ -88,7 +88,7 @@ struct rlr_coder
                 //in the plane
                 if(plane>minplane)
                     planes[plane-1].one(v);
-                else
+                else if(plane>0)
                     planes[plane-1].zero(v);
             }
             else if(plane>minplane)
@@ -103,10 +103,10 @@ struct rlr_coder
 
                 if(plane>minplane)
                     planes[plane-1].one(v);
-                else
+                else if(plane>0)
                     planes[plane-1].zero(v);
             }
-            else
+            else if(plane>0)
                 planes[plane-1].zero(v);
         }
 
@@ -144,6 +144,12 @@ private:
 
     void decode( int8 plane, INT* data, uints len )
     {
+        if(plane == 0) {
+            for(; len>0; --len)
+                *data++ = 0;
+            return;
+        }
+
         rlr_bitplane& rp = planes[plane-1];
 
         if(plane<=minplane) {
