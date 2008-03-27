@@ -49,28 +49,26 @@ struct rlr_coder
 {
     typedef typename SIGNEDNESS<INT>::UNSIGNED      UINT;
 
-    void reset() {
-        for( uint i=0; i<8*sizeof(INT); ++i )
-            planes[i].reset(i);
-    }
+    static const int8 minplane = 3;
+
 
     rlr_coder() {
         planes.need(8*sizeof(INT));
-        reset();
+        //reset();
     }
 
     ///
     void encode( const INT* data, uints len, binstream& bin )
     {
-        reset();
+        reset(true);
 
-        uchar plane = 1;
-        uchar maxplane = plane;
+        int8 plane = minplane;
+        int8 maxplane = plane;
 
         for( uints i=0; i<len; ++i )
         {
             INT vs = data[i];
-            UINT v = vs<0 ? (((~vs)<<1)|1) : (vs<<1);
+            UINT v = (vs<<1) ^ (vs>>(8*sizeof(INT)-1));//vs<0 ? (((~vs)<<1)|1) : (vs<<1);
 
             if(v>>plane)
             {
@@ -88,68 +86,90 @@ struct rlr_coder
             else if(v>>(plane-1))
             {
                 //in the plane
-                planes[plane-1].one(v);
+                if(plane>minplane)
+                    planes[plane-1].one(v);
+                else
+                    planes[plane-1].zero(v);
             }
-            else
+            else if(plane>minplane)
             {
                 //below the current plane
-                if(plane>1) do
+                do
                 {
                     --plane;
                     planes[plane].down(i);
                 }
-                while( !(v>>(plane-1)) && plane>1 );
+                while( !(v>>(plane-1)) && plane>minplane );
 
-                if(v)  planes[plane-1].one(v);
+                if(plane>minplane)
+                    planes[plane-1].one(v);
+                else
+                    planes[plane-1].zero(v);
             }
+            else
+                planes[plane-1].zero(v);
         }
 
         bin << maxplane;
 
-        for( uchar i=maxplane; i>1; --i )
+        for( int8 i=maxplane; i>minplane; --i )
             planes[i-1].write_to(bin);
 
-        planes[0].write_to(bin);
+        if(minplane>0)
+            planes[minplane-1].write_to(bin);
     }
 
     void decode( INT* data, uints len, binstream& bin )
     {
-        reset();
+        reset(false);
 
-        uchar maxplane;
+        int8 maxplane;
         bin >> maxplane;
 
-        for( uchar i=maxplane; i>1; --i )
+        for( int8 i=maxplane; i>minplane; --i )
             planes[i-1].read_from(bin);
 
-        planes[0].read_from(bin);
+        if(minplane>0)
+            planes[minplane-1].read_from(bin);
 
         decode( maxplane, data, len );
     }
 
 private:
 
-    void decode( uchar plane, INT* data, uints len )
+    void reset( bool enc ) {
+        for( uint i=0; i<8*sizeof(INT); ++i )
+            planes[i].reset(i, enc);
+    }
+
+    void decode( int8 plane, INT* data, uints len )
     {
         rlr_bitplane& rp = planes[plane-1];
-        uints n = rp.zeros();
 
-        while( len>0 )
+        if(plane<=minplane) {
+            rp.readn(data, len);
+            return;
+        }
+
+        ints& n = rp.zeros(len);
+
+        while(len>0)
         {
             if(n == 0) {
                 *data++ = rp.read();
                 --len;
-                rp.decode0();
-                n = rp.zeros();
+                rp.zeros(len);
             }
 
             //n elements encoded in lower planes
-            uints k = int_min(len, n);
+            uints k = int_min(len, uints(n));
 
             if(k) {
                 decode( plane-1, data, k );
+
                 data += k;
                 len -= k;
+                n -= k;
             }
         }
     }
@@ -163,7 +183,11 @@ private:
 
         void one( UINT v ) {
             encode0();
-            write_rem(v);
+            write_rem(v, plane);
+        }
+
+        void zero( UINT v ) {
+            write_rem(v, plane+1);
         }
 
         ///Leaving to lower plane
@@ -171,10 +195,10 @@ private:
             lastpos = pos;
         }
 
-        void reset( uint plane ) {
-            nzero = 0;
+        void reset( uint plane, bool enc ) {
+            nzero = enc ? 0 : -1;
             lastpos = 0;
-            k = 3;
+            runbits = 3;
             bitpos = 0;
             buf.need(32);
             this->plane = plane;
@@ -209,35 +233,61 @@ private:
         }
 
         rlr_bitplane() {
-            reset(UMAX);
+            //reset(UMAX);
         }
 
-        UINT read()
+        INT read()
         {
-            return (1<<plane) | read_rem();
+            static const int8 bits = 8*sizeof(INT)-1;
+
+            --nzero;
+
+            UINT v = (1<<plane) | read_rem(plane);
+            return (INT(v<<bits)>>bits) ^ (v>>1);
+        }
+
+        void readn( INT* val, uint n )
+        {
+            static const int8 bits = 8*sizeof(INT)-1;
+
+            for( uint i=0; i<n; ++i ) {
+                UINT v = read_rem(plane+1);
+                val[i] = (INT(v<<bits)>>bits) ^ (v>>1);
+            }
         }
 
         ///Decode count of zeroes followed by 1
         bool decode0()
         {
-            uints count = 0;
+            int run = 1<<runbits;
+            nzero = 0;
 
             while(!readb()) {
-                nzero += k;
-                ++k;
+                nzero += run;
+                ++runbits;
+                run <<= 1;
             }
 
             if(bitpos >= lastpos)
                 return false;    //end
 
             nzero += read_count();
-            --k;
+            
+            if(runbits>0) {
+                --runbits;
+                run >>= 1;
+            }
+
             return true;
         }
 
-        uints zeros() {
-            if(bitpos == 0)
+        ints& zeros( ints rem ) {
+            if(bitpos<lastpos  &&  nzero < 0)
                 decode0();
+
+            if(bitpos>=lastpos)
+                nzero = rem;
+            
             return nzero;
         }
 
@@ -245,45 +295,55 @@ private:
         ///Encode count of zeroes followed by 1
         void encode0()
         {
-            while(nzero >= k)
+            ints run = 1<<runbits;
+
+            while(nzero >= run)
             {
-                //encode run of k zeros by a single 0
+                //encode run of run zeros by a single 0
                 write0();
-                nzero -= k;
-                ++k;
+                nzero -= run;
+                
+                ++runbits;
+                run <<= 1;
             }
 
             //encode run of count 0's followed by a 1
             write1();
             write_count(nzero);
-            --k;
+            
+            if(runbits>0) {
+                --runbits;
+                run >>= 1;
+            }
+
             nzero = 0;
         }
 
 
         void write_count( uints count )
         {
-            if(bitpos+32 > 8*buf.byte_size())
+            if(bitpos+runbits > 8*buf.byte_size())
                 buf.need(2*buf.size());
 
-            uint kk = k;
-            while(kk) {
+            int8 k = runbits;
+            while(k>0)
+            {
                 if(count&1)
                     buf[bitpos>>5] |= 1<<(bitpos&31);
                 else
                     buf[bitpos>>5] &= ~(1<<(bitpos&31));
                 ++bitpos;
                 count >>= 1;
-                kk >>= 1;
+                --k;
             }
         }
 
-        void write_rem( UINT v )
+        void write_rem( UINT v, uint8 nbits )
         {
-            if(bitpos+plane > 8*buf.byte_size())
+            if(bitpos+nbits > 8*buf.byte_size())
                 buf.need(2*buf.size());
 
-            for( uint kk=plane; kk>0; --kk ) {
+            for( uint8 k=nbits; k>0; --k ) {
                 if(v&1)
                     buf[bitpos>>5] |= 1<<(bitpos&31);
                 else
@@ -320,22 +380,22 @@ private:
 
         uints read_count() {
             uints count = 0;
-            uint kk = k;
             uchar i = 0;
 
-            while(kk) {
+            int8 k = runbits;
+            while(k>0) {
                 count |= ((buf[bitpos>>5] >> (bitpos&31))&1) << i++;
                 ++bitpos;
-                kk >>= 1;
+                --k;
             }
 
             return count;
         }
 
-        UINT read_rem() {
+        UINT read_rem( uint8 nbits ) {
             UINT v = 0;
 
-            for( uint i=0; i<plane; ++i ) {
+            for( uint8 i=0; i<nbits; ++i ) {
                 v |= ((buf[bitpos>>5] >> (bitpos&31))&1) << i;
                 ++bitpos;
             }
@@ -344,13 +404,14 @@ private:
         }
 
     private:
-        uint nzero;
-        uint k;
-        uint plane;
+        ints nzero;
         uints lastpos;
 
         dynarray<uint> buf;
         uint bitpos;
+
+        int8 runbits;
+        uint8 plane;
     };
 
 
