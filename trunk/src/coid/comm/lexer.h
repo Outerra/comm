@@ -254,6 +254,7 @@ public:
         reset();
 
         _tok = tok;
+        _last.tok.set(_tok.ptr(), 0);
         _lines_processed = _lines_last = _tok.ptr();
         return 0;
     }
@@ -972,7 +973,7 @@ public:
             text->set( last, _tok.ptr()-last+n );
         }
         if(col)
-            *col = _tok.ptr() - _lines_last;
+            *col = _last.tok.ptr() - _lines_last;
 
         return _lines+1;
     }
@@ -2017,6 +2018,7 @@ protected:
         opcd e = _bin->read_raw_full( _binbuf.ptr()+nkeep, rla );
 
         _tok.set( _binbuf.ptr(), rl-rla+nkeep );
+        _last.tok.set(_tok.ptr(), 0);
 
         return rl-rla+nkeep;
     }

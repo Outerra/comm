@@ -1117,13 +1117,13 @@ private:
 
         _err << "(" << _fmtstreamrd->fmtstream_name() << ") line " << row;
         if(!err.is_empty())
-            _err << "\nerror: " << err;
+            _err << "\r\nerror: " << err;
         
         if(!line.is_empty()) {
-            _err << "\n" << line;
-            _err << "\n";
+            _err << "\r\n" << line;
+            _err << "\r\n";
             _err.appendn(col, ' ');
-            _err << "^\n";
+            _err << "^\r\n";
         }
     }
 
