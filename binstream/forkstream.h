@@ -184,8 +184,9 @@ public:
         return e;
     }
 
-    virtual uint64 get_size() const               { return _outa->get_size(); }
-    virtual uint64 set_size( int64 n )              { return _outa->set_size(n); }
+    virtual uint64 get_written_size() const     { return _outa->get_written_size(); }
+    virtual uint64 set_written_size( int64 n )  { return _outa->set_written_size(n); }
+
     virtual opcd overwrite_raw( uint64 pos, const void* data, uints len )
     {
         return _outa->overwrite_raw( pos, data, len );
