@@ -14,12 +14,11 @@
  * The Original Code is COID/comm module.
  *
  * The Initial Developer of the Original Code is
- * PosAm.
+ * Brano Kemen
  * Portions created by the Initial Developer are Copyright (C) 2003
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * Brano Kemen
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -49,6 +48,23 @@ COID_NAMESPACE_BEGIN
 
 
 void* dynarray_new( void* p, uints nitems, uints itemsize, uints ralign = 0 );
+
+////////////////////////////////////////////////////////////////////////////////
+///
+template<class T>
+struct pointer
+{
+    pointer(const T* t)
+        : ptr(const_cast<T*>(t)) {}
+    
+    pointer(T* t)
+        : ptr(t) {}
+
+private:
+    friend class binstream;
+    T* ptr;
+};
+
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Binstream base class
@@ -91,15 +107,6 @@ public:
         static void to_stream( binstream& bin, const void* p )      { bin << *(const T*)p; }
         static void from_stream( binstream& bin, void* p )          { bin >> *(T*)p; }
     };
-
-/*
-    template<class T>
-    struct stream_wrapper
-    {
-        static void to_stream( binstream& bin, const void* p )      { bin << *(const T*)p; }
-        static void from_stream( binstream& bin, void* p )          { bin >> *(T*)p; }
-    };
-*/
 
     typedef bstype::kind        type;
     typedef bstype::key         key;
@@ -156,40 +163,49 @@ public:
         return *this;
     }
 
-    binstream& operator << (key x)                      { return xwrite(&x, bstype::t_type<key>() ); }
+    binstream& operator << (key x)              { return xwrite(&x, bstype::t_type<key>() ); }
 
-    binstream& operator << (bool x)                     { return xwrite(&x, bstype::t_type<bool>() ); }
+    binstream& operator << (bool x)             { return xwrite(&x, bstype::t_type<bool>() ); }
 
-    binstream& operator << (const char* x )             { return xwrite_token(x); }
-    binstream& operator << (const unsigned char* x)     { return xwrite_token((const char*)x); }
-    binstream& operator << (const signed char* x)       { return xwrite_token((const char*)x); }
+    binstream& operator << (const char* x )     { return xwrite_token(x); }
+    binstream& operator << (const unsigned char* x) { return xwrite_token((const char*)x); }
+    binstream& operator << (const signed char* x)   { return xwrite_token((const char*)x); }
 
-    binstream& operator << (uint8 x )                   { return xwrite(&x, bstype::t_type<uint8>() ); }
-    binstream& operator << (int8 x )                    { return xwrite(&x, bstype::t_type<int8>() ); }
-    binstream& operator << (int16 x )                   { return xwrite(&x, bstype::t_type<int16>() ); }
-    binstream& operator << (uint16 x )                  { return xwrite(&x, bstype::t_type<uint16>() ); }
-    binstream& operator << (int32 x )                   { return xwrite(&x, bstype::t_type<int32>() ); }
-    binstream& operator << (uint32 x )                  { return xwrite(&x, bstype::t_type<uint32>() ); }
-    binstream& operator << (int64 x )                   { return xwrite(&x, bstype::t_type<int64>() ); }
-    binstream& operator << (uint64 x )                  { return xwrite(&x, bstype::t_type<uint64>() ); }
+    binstream& operator << (uint8 x )           { return xwrite(&x, bstype::t_type<uint8>() ); }
+    binstream& operator << (int8 x )            { return xwrite(&x, bstype::t_type<int8>() ); }
+    binstream& operator << (int16 x )           { return xwrite(&x, bstype::t_type<int16>() ); }
+    binstream& operator << (uint16 x )          { return xwrite(&x, bstype::t_type<uint16>() ); }
+    binstream& operator << (int32 x )           { return xwrite(&x, bstype::t_type<int32>() ); }
+    binstream& operator << (uint32 x )          { return xwrite(&x, bstype::t_type<uint32>() ); }
+    binstream& operator << (int64 x )           { return xwrite(&x, bstype::t_type<int64>() ); }
+    binstream& operator << (uint64 x )          { return xwrite(&x, bstype::t_type<uint64>() ); }
 
-    binstream& operator << (char x)                     { return xwrite(&x, bstype::t_type<char>() ); }
+    binstream& operator << (char x)             { return xwrite(&x, bstype::t_type<char>() ); }
 
 #ifdef _MSC_VER
-    binstream& operator << (ints x )                    { return xwrite(&x, bstype::t_type<int>() ); }
-    binstream& operator << (uints x )                   { return xwrite(&x, bstype::t_type<uint>() ); }
+    binstream& operator << (ints x )            { return xwrite(&x, bstype::t_type<int>() ); }
+    binstream& operator << (uints x )           { return xwrite(&x, bstype::t_type<uint>() ); }
 #else
-    binstream& operator << (long x )                    { return xwrite(&x, bstype::t_type<long>() ); }
-    binstream& operator << (ulong x )                   { return xwrite(&x, bstype::t_type<ulong>() ); }
+    binstream& operator << (long x )            { return xwrite(&x, bstype::t_type<long>() ); }
+    binstream& operator << (ulong x )           { return xwrite(&x, bstype::t_type<ulong>() ); }
 #endif //_MSC_VER    
     
-    binstream& operator << (float x )                   { return xwrite(&x, bstype::t_type<float>() ); }
-    binstream& operator << (double x )                  { return xwrite(&x, bstype::t_type<double>() ); }
-    binstream& operator << (long double x )             { return xwrite(&x, type(type::T_FLOAT,16) ); }
+    binstream& operator << (float x )           { return xwrite(&x, bstype::t_type<float>() ); }
+    binstream& operator << (double x )          { return xwrite(&x, bstype::t_type<double>() ); }
+    binstream& operator << (long double x )     { return xwrite(&x, type(type::T_FLOAT,16) ); }
 
-    binstream& operator << (const timet& x)             { return xwrite(&x, bstype::t_type<timet>() ); }
+    binstream& operator << (const timet& x)     { return xwrite(&x, bstype::t_type<timet>() ); }
 
     binstream& operator << (const bstype::binary& b )   { return xwrite(b.data, type(type::T_BINARY,(ushort)b.len)); }
+
+    template<class T>
+    binstream& operator << (const pointer<T>& p) {
+        uint8 valid = p.ptr != 0;
+        xwrite(&valid, type(type::T_OPTIONAL,sizeof(valid)));
+        
+        if(valid)
+            *this << *p.ptr;
+    }
 //@}
 
 
@@ -199,38 +215,49 @@ public:
         bin >> (EnumType<sizeof(panel)>::TEnum&)x;
     The template deduces the actual size that the enum type takes.
 **/
-    binstream& operator >> (const char*& x )            { binstream_container_char_array c(UMAX); xread_array(c); x=c.get(); return *this; }
-    binstream& operator >> (char*& x )                  { binstream_container_char_array c(UMAX); xread_array(c); x=(char*)c.get(); return *this; }
+    binstream& operator >> (const char*& x )    { binstream_container_char_array c(UMAX); xread_array(c); x=c.get(); return *this; }
+    binstream& operator >> (char*& x )          { binstream_container_char_array c(UMAX); xread_array(c); x=(char*)c.get(); return *this; }
 
 
-    binstream& operator >> (key x)                      { return xread(&x, bstype::t_type<key>() ); }
+    binstream& operator >> (key x)              { return xread(&x, bstype::t_type<key>() ); }
 
-    binstream& operator >> (bool& x )                   { return xread(&x, bstype::t_type<bool>() ); }
+    binstream& operator >> (bool& x )           { return xread(&x, bstype::t_type<bool>() ); }
 
-    binstream& operator >> (uint8& x )                  { return xread(&x, bstype::t_type<uint8>() ); }
-    binstream& operator >> (int8& x )                   { return xread(&x, bstype::t_type<int8>() ); }
-    binstream& operator >> (int16& x )                  { return xread(&x, bstype::t_type<int16>() ); }
-    binstream& operator >> (uint16& x )                 { return xread(&x, bstype::t_type<uint16>() ); }
-    binstream& operator >> (int32& x )                  { return xread(&x, bstype::t_type<int32>() ); }
-    binstream& operator >> (uint32& x )                 { return xread(&x, bstype::t_type<uint32>() ); }
-    binstream& operator >> (int64& x )                  { return xread(&x, bstype::t_type<int64>() ); }
-    binstream& operator >> (uint64& x )                 { return xread(&x, bstype::t_type<uint64>() ); }
+    binstream& operator >> (uint8& x )          { return xread(&x, bstype::t_type<uint8>() ); }
+    binstream& operator >> (int8& x )           { return xread(&x, bstype::t_type<int8>() ); }
+    binstream& operator >> (int16& x )          { return xread(&x, bstype::t_type<int16>() ); }
+    binstream& operator >> (uint16& x )         { return xread(&x, bstype::t_type<uint16>() ); }
+    binstream& operator >> (int32& x )          { return xread(&x, bstype::t_type<int32>() ); }
+    binstream& operator >> (uint32& x )         { return xread(&x, bstype::t_type<uint32>() ); }
+    binstream& operator >> (int64& x )          { return xread(&x, bstype::t_type<int64>() ); }
+    binstream& operator >> (uint64& x )         { return xread(&x, bstype::t_type<uint64>() ); }
 
-    binstream& operator >> (char& x )                   { return xread(&x, bstype::t_type<char>() ); }
+    binstream& operator >> (char& x )           { return xread(&x, bstype::t_type<char>() ); }
 
 #ifdef _MSC_VER
-    binstream& operator >> (ints& x )                   { return xread(&x, bstype::t_type<int>() ); }
-    binstream& operator >> (uints& x )                  { return xread(&x, bstype::t_type<uint>() ); }
+    binstream& operator >> (ints& x )           { return xread(&x, bstype::t_type<int>() ); }
+    binstream& operator >> (uints& x )          { return xread(&x, bstype::t_type<uint>() ); }
 #else
-    binstream& operator >> (long& x )                   { return xread(&x, bstype::t_type<long>() ); }
-    binstream& operator >> (ulong& x )                  { return xread(&x, bstype::t_type<ulong>() ); }
+    binstream& operator >> (long& x )           { return xread(&x, bstype::t_type<long>() ); }
+    binstream& operator >> (ulong& x )          { return xread(&x, bstype::t_type<ulong>() ); }
 #endif //_MSC_VER    
-    
-    binstream& operator >> (float& x )                  { return xread(&x, bstype::t_type<float>() ); }
-    binstream& operator >> (double& x )                 { return xread(&x, bstype::t_type<double>() ); }
-    binstream& operator >> (long double& x )            { return xread(&x, type(type::T_FLOAT,16) ); }
 
-    binstream& operator >> (timet& x)                   { return xread(&x, bstype::t_type<timet>() ); }
+    binstream& operator >> (float& x )          { return xread(&x, bstype::t_type<float>() ); }
+    binstream& operator >> (double& x )         { return xread(&x, bstype::t_type<double>() ); }
+    binstream& operator >> (long double& x )    { return xread(&x, type(type::T_FLOAT,16) ); }
+
+    binstream& operator >> (timet& x)           { return xread(&x, bstype::t_type<timet>() ); }
+
+    template<class T>
+    binstream& operator >> (pointer<T>& p) {
+        uint8 valid;
+        xread(&valid, type(type::T_OPTIONAL,sizeof(valid)));
+        
+        if(valid) {
+            p.ptr = new T;
+            *this >> *p.ptr;
+        }
+    }
 
 
     binstream& operator >> (opcd& x)
@@ -263,11 +290,11 @@ public:
 
 
     ////////////////////////////////////////////////////////////////////////////////
-    opcd write_separator()                              { return write( 0, type( type::T_SEPARATOR, 0 ) ); }
-    opcd read_separator()                               { return read( 0, type( type::T_SEPARATOR, 0 ) ); }
+    opcd write_separator()              { return write( 0, type( type::T_SEPARATOR, 0 ) ); }
+    opcd read_separator()               { return read( 0, type( type::T_SEPARATOR, 0 ) ); }
 
-    void xwrite_separator()                             { xwrite( 0, type( type::T_SEPARATOR, 0 ) ); }
-    void xread_separator()                              { xread( 0, type( type::T_SEPARATOR, 0 ) ); }
+    void xwrite_separator()             { xwrite( 0, type( type::T_SEPARATOR, 0 ) ); }
+    void xread_separator()              { xread( 0, type( type::T_SEPARATOR, 0 ) ); }
 
     ////////////////////////////////////////////////////////////////////////////////
     ///Write character token (substring)
@@ -543,11 +570,15 @@ public:
         return n;
     }
 
+    ///Transfer the content of source binstream to this binstream
+    //@param blocksize hint about size of the memory block used for copying
 	virtual uints transfer_from( binstream& src, uints blocksize = 4096 )
 	{
 		return src.copy_to(*this);
 	}
 
+    ///Transfer the content of this binstream to the destination binstream
+    //@param blocksize hint about size of the memory block used for copying
 	virtual uints transfer_to( binstream& dst, uints blocksize = 4096 )
 	{
 		return copy_to(dst);
@@ -959,119 +990,6 @@ struct opcd_formatter
         if( f._e.text() && f._e.text()[0] )
             out << " : " << f._e.text();
         return out;
-    }
-};
-
-////////////////////////////////////////////////////////////////////////////////
-inline binstream& operator >> (binstream& from, binstream& to)
-{
-    uchar buf[4096];
-    for (;;)
-    {
-        uints len = 4096;
-        from.read_raw_full( buf, len );
-        to.xwrite_raw( buf, 4096 - len );
-        if( len > 0 )
-            break;
-    }
-    return from;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-inline binstream& operator << (binstream& to, binstream& from)
-{
-    from >> to;
-    return to;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-template<bool FLUSHACK=false>
-class binstream_redirect
-{
-	binstream* _ref;
-	bool _owned;
-
-public:
-    binstream_redirect( binstream& bin ) : _ref(&bin)
-    {
-		_owned = false;
-    }
-
-    binstream_redirect()
-    {
-        _owned = false; _ref = 0;
-    }
-
-    ~binstream_redirect()
-    {
-        if( _owned && _ref ) delete _ref;
-    }
-
-    void set( binstream& bin )
-    {
-        if( _owned && _ref ) delete _ref;
-		_owned = false;
-        _ref = &bin;
-    }
-
-    void set_ptr( binstream* bin )
-    {
-        if( _owned && _ref ) delete _ref;
-		_owned = true;
-        _ref = bin;
-    }
-
-    enum {
-        BUFFER_SIZE             = 4096,
-    };
-
-    friend binstream& operator << (binstream& out, binstream_redirect& o)
-    {
-        if (!o._ref)
-            throw ersUNAVAILABLE "source binstream not set";
-
-        uchar buf[BUFFER_SIZE];
-        for(;;)
-        {
-            uints len = BUFFER_SIZE;
-            o._ref->read_raw( buf, len );
-            
-            uints alen = BUFFER_SIZE - len;
-            if(!FLUSHACK)
-                out.xwrite_raw( &alen, sizeof(alen) );
-            out.xwrite_raw( buf, alen );
-            if( len > 0 )
-                break;
-        }
-
-        if(FLUSHACK)
-            out.flush();
-        return out;
-    }
-
-    friend binstream& operator >> (binstream& in, binstream_redirect& o)
-    {
-        if (!o._ref)
-            throw ersUNAVAILABLE "destination binstream not set";
-
-        uchar buf[BUFFER_SIZE];
-        for (;;)
-        {
-            uints len = BUFFER_SIZE;
-            if(!FLUSHACK)
-                in.xread_raw( &len, sizeof(len) );
-
-            uints alen = len;
-            in.read_raw( buf, len );
-
-            o._ref->xwrite_raw( buf, alen - len );
-            if( len > 0 )
-                break;
-        }
-
-        if(FLUSHACK)
-            in.acknowledge();
-        return in;
     }
 };
 

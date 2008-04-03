@@ -965,7 +965,7 @@ public:
             _lines += count_newlines( _lines_processed, _tok.ptr() );
 
         if(text) {
-            uint n = _tok.count_notingroup("\r\n");
+            uints n = _tok.count_notingroup("\r\n");
             const char* last = _lines_last > _binbuf.ptr()
                 ? _lines_last
                 : _binbuf.ptr();
@@ -973,7 +973,7 @@ public:
             text->set( last, _tok.ptr()-last+n );
         }
         if(col)
-            *col = _last.tok.ptr() - _lines_last;
+            *col = uint(_last.tok.ptr() - _lines_last);
 
         return _lines+1;
     }
@@ -1537,7 +1537,7 @@ protected:
                     //verify if the trailing set contains empty string, which would mean
                     // that end of file is a valid terminator of the string
                     int tid = sr.trailing.last()->seq.is_empty()
-                        ?  sr.trailing.size()-1  :  -1;
+                        ?  int(sr.trailing.size())-1  :  -1;
 
                     add_stb_segment( sr, tid, off, outermost );
 
@@ -1653,7 +1653,7 @@ protected:
                     //verify if the trailing set contains empty string, which would mean
                     // that end of file is a valid terminator of the block
                     int tid = br.trailing.last()->seq.is_empty()
-                        ?  br.trailing.size()-1  :  -1;
+                        ?  int(br.trailing.size())-1  :  -1;
 
                     add_stb_segment( br, tid, off, outermost );
 
