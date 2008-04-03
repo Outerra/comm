@@ -164,7 +164,7 @@ public:
 
     virtual void acknowledge( bool eat = false )
     {
-        if( !eat && !_tokenizer.end() )
+        if( !eat && !_tokenizer.end() && !_tokenizer.next().end() )
             throw ersIO_ERROR "data left in received block";
         else
             _tokenizer.reset();

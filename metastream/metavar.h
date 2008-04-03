@@ -58,11 +58,12 @@ struct MetaDesc
         charstr varname;                ///< name of the variable (empty if this is an array element)
 
         dynarray<uchar> defval;         ///< default value for reading if not found in input stream
-        bool nameless_root;             ///< true if the variable is nameless root
-        bool default_skip;
+        bool nameless_root;             ///< true if the variable is a nameless root
 
 
-        Var() : desc(0), nameless_root(false), default_skip(false) {}
+        Var()
+            : desc(0), nameless_root(false)
+        {}
 
         bool is_array() const           { return desc->is_array(); }
         bool is_array_element() const   { return varname.is_empty(); }
@@ -100,15 +101,15 @@ struct MetaDesc
 
         Var* add_child( MetaDesc* d, const token& n )
         {
-            return desc->add_desc_var( d, n );
+            return desc->add_desc_var(d, n);
         }
     };
 
 
     dynarray<Var> children;             ///< member variables
-    uints array_size;                   ///< array size, UMAX for unknown
+    uints array_size;                   ///< array size, UMAX for dynamic arrays, 0 for pointers
 
-    charstr type_name;                  ///< type name, name of a structure (empty if this is an array)
+    charstr type_name;                  ///< type name, name of a structure (empty if this is an array or pointer)
     type btype;                         ///< basic type id
 
     binstream::fnc_from_stream
@@ -119,6 +120,7 @@ struct MetaDesc
 
 
     bool is_array() const               { return type_name.is_empty(); }
+    bool is_pointer() const             { return type_name.is_empty()  &&  array_size==0; }
     bool is_primitive() const           { return btype.is_primitive(); }
     bool is_compound() const            { return !btype.is_primitive() && !is_array(); }
     

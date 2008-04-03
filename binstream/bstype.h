@@ -58,7 +58,9 @@ struct binary {
     const void* data;
     uints len;
 
-    binary( const void* data, uints len ) : data(data), len(len) {}
+    binary( const void* data, uints len )
+        : data(data), len(len)
+    {}
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -78,13 +80,7 @@ struct ARRAY_ELEMENT        { };
 struct BINSTREAM_FLUSH      { };
 struct BINSTREAM_ACK        { };
 struct BINSTREAM_ACK_EAT    { };
-/*
-struct SEPARATOR
-{
-    ucs4 _s;
-    SEPARATOR(char s) : _s(s) {}
-};
-*/
+
 ////////////////////////////////////////////////////////////////////////////////
 ///Object type descriptor
 struct kind
@@ -95,22 +91,24 @@ struct kind
 
     ///Type enum
     enum {
-        T_BINARY=0,
-        T_INT,
-        T_UINT,
-        T_FLOAT,
-        T_BOOL,
+        T_BINARY=0,                     ///< binary data
+        T_INT,                          ///< signed integer
+        T_UINT,                         ///< unsigned integer
+        T_FLOAT,                        ///< floating point number
+        T_BOOL,                         ///< boolean value
         T_CHAR,                         ///< character data - strings
-        T_ERRCODE,
-        T_TIME,
+        T_ERRCODE,                      ///< error codes
+        T_TIME,                         ///< time values
+        T_OPTIONAL,                     ///< marking of optional data (streaming pointer members that can be null)
 
-        T_KEY,                          ///< unformatted characters
-        T_STRUCTBGN, T_STRUCTEND,
-        T_SEPARATOR,
+        T_KEY,                          ///< unformatted characters (used in formatting streams)
+        T_STRUCTBGN,                    ///< opening struct tag (used in formatting streams)
+        T_STRUCTEND,                    ///< closing struct tag (used in formatting streams)
+        T_SEPARATOR,                    ///< member separator (used in formatting streams)
 
         COUNT,
 
-        T_COMPOUND          = 0xff,
+        T_COMPOUND              = 0xff,
     };
 
     ///Control flags
@@ -128,8 +126,10 @@ struct kind
 
 
     kind() : size(0), type(T_COMPOUND), ctrl(0) {}
-    kind( uchar btype, ushort size, uchar ctrl=0 ) : size(size), type(btype), ctrl(ctrl) {}
-    explicit kind( uchar btype ) : size(0), type(btype), ctrl(0) {}
+    kind( uchar btype, ushort size, uchar ctrl=0 )
+        : size(size), type(btype), ctrl(ctrl) {}
+    explicit kind( uchar btype )
+        : size(0), type(btype), ctrl(0) {}
 
 
     bool operator == ( kind t ) const       { return *(uint32*)this == *(uint32*)&t; }

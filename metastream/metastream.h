@@ -171,10 +171,10 @@ public:
         else if( R && _disable_meta_read ) {
             _dometa = 0;
             if(_curvar.kth)
-                e = _fmtstreamwr->write_separator();
+                e = _fmtstreamwr->read_separator();
 
             if(e) {
-                _err << "error writing separator";
+                _err << "error reading separator";
                 throw e;
             }
             return false;
@@ -487,50 +487,50 @@ public:
         return _root;
     }
 
-    const charstr& error_string() const                     { return _err; }
+    const charstr& error_string() const         { return _err; }
 
     template<class T>
-    static type get_type(const T&)                          { return bstype::t_type<T>(); }
+    static type get_type(const T&)              { return bstype::t_type<T>(); }
 
 
-    metastream& operator << (const bool&a)                  {meta_primitive( "bool", get_type(a) ); return *this;}
-    metastream& operator << (const int8&a)                  {meta_primitive( "int8", get_type(a) ); return *this;}
-    metastream& operator << (const uint8&a)                 {meta_primitive( "uint8", get_type(a) ); return *this;}
-    metastream& operator << (const int16&a)                 {meta_primitive( "int16", get_type(a) ); return *this;}
-    metastream& operator << (const uint16&a)                {meta_primitive( "uint16", get_type(a) ); return *this;}
-    metastream& operator << (const int32&a)                 {meta_primitive( "int32", get_type(a) ); return *this;}
-    metastream& operator << (const uint32&a)                {meta_primitive( "uint32", get_type(a) ); return *this;}
-    metastream& operator << (const int64&a)                 {meta_primitive( "int64", get_type(a) ); return *this;}
-    metastream& operator << (const uint64&a)                {meta_primitive( "uint64", get_type(a) ); return *this;}
+    metastream& operator << (const bool&a)      {meta_primitive( "bool", get_type(a) ); return *this;}
+    metastream& operator << (const int8&a)      {meta_primitive( "int8", get_type(a) ); return *this;}
+    metastream& operator << (const uint8&a)     {meta_primitive( "uint8", get_type(a) ); return *this;}
+    metastream& operator << (const int16&a)     {meta_primitive( "int16", get_type(a) ); return *this;}
+    metastream& operator << (const uint16&a)    {meta_primitive( "uint16", get_type(a) ); return *this;}
+    metastream& operator << (const int32&a)     {meta_primitive( "int32", get_type(a) ); return *this;}
+    metastream& operator << (const uint32&a)    {meta_primitive( "uint32", get_type(a) ); return *this;}
+    metastream& operator << (const int64&a)     {meta_primitive( "int64", get_type(a) ); return *this;}
+    metastream& operator << (const uint64&a)    {meta_primitive( "uint64", get_type(a) ); return *this;}
 
-    metastream& operator << (const char&a)                  {meta_primitive( "char", get_type(a) ); return *this;}
+    metastream& operator << (const char&a)      {meta_primitive( "char", get_type(a) ); return *this;}
 
 #ifdef _MSC_VER
-    metastream& operator << (const ints&a)                  {meta_primitive( "int", get_type(a) ); return *this;}
-    metastream& operator << (const uints&a)                 {meta_primitive( "uint", get_type(a) ); return *this;}
+    metastream& operator << (const ints&a)      {meta_primitive( "int", get_type(a) ); return *this;}
+    metastream& operator << (const uints&a)     {meta_primitive( "uint", get_type(a) ); return *this;}
 #else
-    metastream& operator << (const long&a)                  {meta_primitive( "long", get_type(a) ); return *this;}
-    metastream& operator << (const ulong&a)                 {meta_primitive( "ulong", get_type(a) ); return *this;}
+    metastream& operator << (const long&a)      {meta_primitive( "long", get_type(a) ); return *this;}
+    metastream& operator << (const ulong&a)     {meta_primitive( "ulong", get_type(a) ); return *this;}
 #endif
 
-    metastream& operator << (const float&a)                 {meta_primitive( "float", get_type(a) ); return *this;}
-    metastream& operator << (const double&a)                {meta_primitive( "double", get_type(a) ); return *this;}
-    metastream& operator << (const long double&a)           {meta_primitive( "long double", get_type(a) ); return *this;}
+    metastream& operator << (const float&a)     {meta_primitive( "float", get_type(a) ); return *this;}
+    metastream& operator << (const double&a)    {meta_primitive( "double", get_type(a) ); return *this;}
+    metastream& operator << (const long double&a)   {meta_primitive( "long double", get_type(a) ); return *this;}
 
 
-    metastream& operator << (const char * const&a)          {meta_array(); meta_primitive( "char", bstype::t_type<char>() ); return *this;}
+    metastream& operator << (const char * const&a)  {meta_array(); meta_primitive( "char", bstype::t_type<char>() ); return *this;}
     //metastream& operator << (const unsigned char* const&a)  {meta_primitive( "const unsigned char *", binstream::t_type<char>() ); return *this;}
 
-    metastream& operator << (const timet&a)                 {meta_primitive( "time", get_type(a) ); return *this;}
+    metastream& operator << (const timet&a)     {meta_primitive( "time", get_type(a) ); return *this;}
 
-    metastream& operator << (const opcd&)                   {meta_primitive( "opcd", bstype::t_type<opcd>() ); return *this;}
+    metastream& operator << (const opcd&)       {meta_primitive( "opcd", bstype::t_type<opcd>() ); return *this;}
 
-    metastream& operator << (const charstr&a)               {meta_array(); meta_primitive( "char", bstype::t_type<char>() ); return *this;}
-    metastream& operator << (const token&a)                 {meta_array(); meta_primitive( "char", bstype::t_type<char>() ); return *this;}
+    metastream& operator << (const charstr&a)   {meta_array(); meta_primitive( "char", bstype::t_type<char>() ); return *this;}
+    metastream& operator << (const token&a)     {meta_array(); meta_primitive( "char", bstype::t_type<char>() ); return *this;}
 
     /// arrays:
     //template <class T>
-    //metastream& operator << (const T* p)                    {set_array(); return *this << *p;}
+    //metastream& operator << (const T* p)      {set_array(); return *this << *p;}
 
 
     
@@ -579,17 +579,10 @@ protected:
         return false;
     }
 
-    ///Insert array
-    void meta_insert_array( uints n )
-    {
-        MetaDesc* d = _map.create_array_desc( n, _cur_streamfrom_fnc, _cur_streamto_fnc );
 
-        _current_var = meta_fill_parent_variable(d);
-        _map.push( _current_var );
+    bool is_template_name_mode() {
+        return _templ_name_stack.size() > 0;
     }
-
-
-    bool is_template_name_mode()            { return _templ_name_stack.size() > 0; }
     
     bool handle_template_name_mode( const token& name )
     {
@@ -705,7 +698,25 @@ public:
     ///@param n array element count, UMAX if unknown or varying
     void meta_array( uints n = UMAX )
     {
-        meta_insert_array(n);
+        DASSERT( n != 0 );  //0 is meaningless here, and it's used for pointers elsewhere
+        MetaDesc* d = _map.create_array_desc( n, _cur_streamfrom_fnc, _cur_streamto_fnc );
+
+        _current_var = meta_fill_parent_variable(d);
+        _map.push( _current_var );
+    }
+
+    ///Signal that the primitive or compound type coming is a pointer/reference
+    void meta_pointer()
+    {
+        MetaDesc* d = _map.create_array_desc( 0, _cur_streamfrom_fnc, _cur_streamto_fnc );
+
+        _current_var = meta_fill_parent_variable(d);
+        
+        //create default value for pointers = a null pointer header
+        *(uints*)_current_var->defval.add(sizeof(uints)) = sizeof(uints); //dummy offset
+        *_current_var->defval.add() = 0;
+
+        _map.push( _current_var );
     }
 
     ///Only for primitive types
@@ -1058,9 +1069,9 @@ private:
         _cachestack;                    ///< cache table stack
     CacheEntry* _current;               ///< currently processed cache entry
 
-    MetaDesc::Var* _cachequit;          ///< root variable read from cache
-    MetaDesc::Var* _cachevar;           ///< variable being cached from input
-    MetaDesc::Var* _cacheskip;          ///< the variable not present in input, that will be filled with default
+    MetaDesc::Var* _cachequit;          ///< root variable read from cache, caching mode terminates upon returning to it
+    MetaDesc::Var* _cachevar;           ///< variable being currently cached from input
+    MetaDesc::Var* _cacheskip;          ///< set if the variable was not present in input (can be filled with default) or has been already cached
 
     uints _cachelevel;                  ///< level where the cache was initialized
     uints _cacheentries;                ///< no.of valid members in cache (for fast discarding of cache when everything was read)
@@ -1242,10 +1253,9 @@ protected:
     template<int R>
     opcd movein_process_key()
     {
-        bool ary = _curvar.var->is_array_element();
-        if(ary)  return 0;
+        if( _curvar.var->is_array_element() )
+            return 0;
 
-        //this is the first member so no member separator
         return R
             ? fmts_or_cache_read_key()
             : fmts_or_cache_write_key();
@@ -1279,7 +1289,7 @@ protected:
         return movein_current<R>(false);
     }
 
-    ///Traverse the tree and set up the next target for input streaming
+    ///Traverse the tree and set up the next target for input/output streaming
     //@param R reading(1) or writing(0) mode
     template<int R>
     opcd moveto_expected_target()
@@ -1290,7 +1300,7 @@ protected:
 
         do {
             if( _curvar.var == _cachevar ) {
-                //_cachevar = 0;
+                //end caching - _cachevar was cached completely
                 _current->offs = UMAX;
                 return 0;
             }
@@ -1358,7 +1368,11 @@ protected:
         // as we follow those within metastream operators instead
         if( t2 == type::T_STRUCTBGN  ||  t2 == type::T_STRUCTEND )
             return 0;
-
+/*
+        if( t2 == type::T_OPTIONAL ) {
+            if( *(const uint8*)p == 0 )
+        }
+*/
         //write value
         opcd e = fmts_or_cache<WRITE_MODE>( (void*)p, t );
         if(e) return e;
@@ -1404,7 +1418,7 @@ protected:
             return 0;
 
         //read value
-        opcd e = fmts_or_cache<READ_MODE>( p, t );
+        opcd e = fmts_or_cache<READ_MODE>(p, t);
         if(e) {
             dump_stack(_err,0);
             _err << " - error reading variable '" << _curvar.var->varname << "', error: " << opcd_formatter(e);
@@ -1740,8 +1754,9 @@ protected:
     ///
     opcd fmts_or_cache_read_key()
     {
+        //if reading to cache ...
         if(_cachevar) {
-            //it's been already cached (during caching)
+            //if it's been already cached (during the caching)
             if( _current->valid_addr() ) {
                 _cacheskip = _curvar.var;
                 return 0;
@@ -1757,8 +1772,11 @@ protected:
         do {
             e = fmts_read_key();
             if(e) {
+                //no more members under current compound
                 DASSERT( e == ersNO_MORE );
 
+                //if reading to cache, make it skip reading the variable
+                // error will be dealt with later, or default value will be used
                 if(_cachevar)
                     _cacheskip = _curvar.var;
                 else if( !cache_use_default() ) {
@@ -1933,6 +1951,7 @@ protected:
     ///
     opcd streamvar( const MetaDesc::Var& var )
     {
+        //if not present in input or already cached
         if( &var == _cacheskip ) {
             _cacheskip = 0;
             return moveto_expected_target<READ_MODE>();
@@ -1984,7 +2003,7 @@ protected:
     {
         if( !_curvar.var->has_default() )  return false;
 
-        DASSERT( _cache.size() > 0 );
+        //DASSERT( _cache.size() > 0 );
 
         //get child map
         //MetaDesc* par = parent_var()->desc;
@@ -2007,6 +2026,7 @@ protected:
     @def MM(meta,n,v)   specify member metadata providing member name
     @def MME(meta,n,v)  specify an enum-type member
     @def MMT(meta,n,t)  specify member metadata providing member type
+    @def MMP(meta,n,t)  specify a pointer-type member
     @def MMD(meta,n,d)  specify member metadata providing a default value of member type
     @def MMTD(meta,n,d) specify member metadata providing a default value of specified type
     @def MMAT(meta,n,t) specify that member is an array of type \a t
@@ -2015,11 +2035,15 @@ protected:
 #define MSTRUCT_OPEN(meta, n)       if( !meta.meta_struct_open(n) ) {
 #define MM(meta, n, v)              { meta.meta_variable(n,v);    meta << v; }
 #define MME(meta, n, v)				{ typedef EnumType<sizeof(v)>::TEnum t;  meta.meta_variable<t>(n);  meta << *(t*)0; }
-#define MMT(meta, n, t)             meta.meta_variable<t>(n);   meta << *(t*)0;
-#define MMD(meta, n, v, d)          meta.meta_variable(n,v);    meta << v;          meta.meta_cache_default(v,d);
-#define MMTD(meta, n, t, d)         meta.meta_variable<t>(n);   meta << *(t*)0;     meta.meta_cache_default(*(t*)0,d);
-#define MMAT(meta, n, t)            meta.meta_variable<t>(n);   meta.meta_array();  meta << *(t*)0;
-#define MMAF(meta, n, t, s)         meta.meta_variable<t>(n);   meta.meta_array(s); meta << *(t*)0;
+#define MMT(meta, n, t)             { meta.meta_variable<t>(n);   meta << *(t*)0; }
+#define MMP(meta, n, t)             { meta.meta_pointer();        meta.meta_variable<t>(n,true);   meta << *t; }
+
+#define MMD(meta, n, v, d)          { meta.meta_variable(n,v);    meta << v;          meta.meta_cache_default(v,d); }
+#define MMTD(meta, n, t, d)         { meta.meta_variable<t>(n);   meta << *(t*)0;     meta.meta_cache_default(*(t*)0,d); }
+
+#define MMAT(meta, n, t)            { meta.meta_variable<t>(n);   meta.meta_array();  meta << *(t*)0; }
+#define MMAF(meta, n, t, s)         { meta.meta_variable<t>(n);   meta.meta_array(s); meta << *(t*)0; }
+
 #define MSTRUCT_CLOSE(meta)         meta.meta_struct_close(); } return meta;
 #define MSTRUCT_CLOSE_NORET(meta)   meta.meta_struct_close(); }
 
