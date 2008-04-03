@@ -62,54 +62,23 @@ struct rlr_coder
     {
         reset(true);
 
-        int8 plane = minplane;
-        int8 maxplane = plane;
-
         for( uints i=0; i<len; ++i )
-        {
-            INT vs = data[i];
-            UINT v = (vs<<1) ^ (vs>>(8*sizeof(INT)-1));//vs<0 ? (((~vs)<<1)|1) : (vs<<1);
+            encode1(data[i]);
 
-            if(v>>plane)
-            {
-                //above the current plane
-                do {
-                    planes[plane].up(i);
-                    ++plane;
-                }
-                while( (v>>plane) && plane<8*sizeof(INT) );
+        save(bin);
+    }
 
-                maxplane = int_max(plane, maxplane);
+    void decode( INT* data, uints len, binstream& bin )
+    {
+        reset(false);
+        load(bin);
 
-                planes[plane-1].one(v);
-            }
-            else if(v>>(plane-1))
-            {
-                //in the plane
-                if(plane>minplane)
-                    planes[plane-1].one(v);
-                else if(plane>0)
-                    planes[plane-1].zero(v);
-            }
-            else if(plane>minplane)
-            {
-                //below the current plane
-                do
-                {
-                    --plane;
-                    planes[plane].down(i);
-                }
-                while( !(v>>(plane-1)) && plane>minplane );
+        decodex( maxplane, data, len );
+    }
 
-                if(plane>minplane)
-                    planes[plane-1].one(v);
-                else if(plane>0)
-                    planes[plane-1].zero(v);
-            }
-            else if(plane>0)
-                planes[plane-1].zero(v);
-        }
-
+protected:
+    void save( binstream& bin )
+    {
         bin << maxplane;
 
         for( int8 i=maxplane; i>minplane; --i )
@@ -119,11 +88,8 @@ struct rlr_coder
             planes[minplane-1].write_to(bin);
     }
 
-    void decode( INT* data, uints len, binstream& bin )
+    void load( binstream& bin )
     {
-        reset(false);
-
-        int8 maxplane;
         bin >> maxplane;
 
         for( int8 i=maxplane; i>minplane; --i )
@@ -131,18 +97,64 @@ struct rlr_coder
 
         if(minplane>0)
             planes[minplane-1].read_from(bin);
-
-        decode( maxplane, data, len );
     }
 
-private:
+    void reset( bool enc )
+    {
+        pos = 0;
+        maxplane = plane = minplane;
 
-    void reset( bool enc ) {
         for( uint i=0; i<8*sizeof(INT); ++i )
             planes[i].reset(i, enc);
     }
 
-    void decode( int8 plane, INT* data, uints len )
+    void encode1( INT vs )
+    {
+        UINT v = (vs<<1) ^ (vs>>(8*sizeof(INT)-1));
+
+        if(v>>plane)
+        {
+            //above the current plane
+            do {
+                planes[plane].up(pos);
+                ++plane;
+            }
+            while( (v>>plane) && plane<8*sizeof(INT) );
+
+            maxplane = int_max(plane, maxplane);
+
+            planes[plane-1].one(v);
+        }
+        else if(v>>(plane-1))
+        {
+            //in the plane
+            if(plane>minplane)
+                planes[plane-1].one(v);
+            else if(plane>0)
+                planes[plane-1].zero(v);
+        }
+        else if(plane>minplane)
+        {
+            //below the current plane
+            do
+            {
+                --plane;
+                planes[plane].down(pos);
+            }
+            while( !(v>>(plane-1)) && plane>minplane );
+
+            if(plane>minplane)
+                planes[plane-1].one(v);
+            else if(plane>0)
+                planes[plane-1].zero(v);
+        }
+        else if(plane>0)
+            planes[plane-1].zero(v);
+
+        ++pos;
+    }
+
+    void decodex( int8 plane, INT* data, uints len )
     {
         if(plane == 0) {
             for(; len>0; --len)
@@ -171,7 +183,7 @@ private:
             uints k = int_min(len, uints(n));
 
             if(k) {
-                decode( plane-1, data, k );
+                decodex( plane-1, data, k );
 
                 data += k;
                 len -= k;
@@ -180,6 +192,9 @@ private:
         }
     }
 
+private:
+
+    ///
     struct rlr_bitplane
     {
         ///Coming from lower plane
@@ -425,7 +440,9 @@ private:
 
     dynarray<rlr_bitplane> planes;
 
-    coid::binstream* bin;
+    uints pos;
+    int8 plane;
+    int8 maxplane;
 };
 
 COID_NAMESPACE_END
