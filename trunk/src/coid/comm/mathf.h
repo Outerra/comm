@@ -39,17 +39,8 @@
 #ifndef __COID_COMM_MATHF__HEADER_FILE__
 #define __COID_COMM_MATHF__HEADER_FILE__
 
-
+#define _USE_MATH_DEFINES
 #include <math.h>
-
-#ifndef M_LN2
-# define M_LN2      0.693147180559945309417
-#endif
-
-#ifndef M_PI
-#define M_PI        3.14159265358979323846
-#endif
-
 
 COID_NAMESPACE_BEGIN
 
