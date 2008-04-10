@@ -16,7 +16,7 @@ struct stack_node
 template <class T>
 struct DefaultSelector
 {
-	static stack_node<T>* get(T * const p) { return p; }
+	static stack_node<T>* get(T * const p) { return static_cast<stack_node<T>*>(p); }
 };
 
 template <class T, class S = DefaultSelector<T> >

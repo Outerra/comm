@@ -149,9 +149,16 @@ public:
 		rhs.p_ = tmp;
 	}
 
+	/*
+	void cas(T * o, T * n)
+	{
+		atomic::cas_ptr(reinterpret_cast<void*volatile*>(&p_), n, o);
+	}
+	*/
+
 private:
 
-	ref_base * p_;
+	ref_base * volatile p_;
 };
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -266,7 +273,7 @@ struct policy_pooled
 	static ref<T> create()
 	{
 		ref<T> p = pool().pop();
-		return p ? p : new T();
+		return p.get() ? p : new T();
 	}
 
 	//! destroy all instances in pool
