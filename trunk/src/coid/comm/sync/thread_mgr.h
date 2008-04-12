@@ -170,7 +170,7 @@ public:
 	{
 		const info * const ti = tls_info();
 
-		return (ti != 0 && ti->flags & info::fREQUESTED_CANCELLATION);
+		return ti != 0  &&  (ti->flags & info::fREQUESTED_CANCELLATION);
 	}
 
 
