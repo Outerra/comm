@@ -64,6 +64,22 @@ struct binary {
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+///Helper struct for writting pointers
+template<class T>
+struct pointer
+{
+    pointer(const T* const* t)
+        : ptr(const_cast<T**>(t)) {}
+    
+    pointer(T* const* t)
+        : ptr(const_cast<T**>(t)) {}
+
+private:
+    friend class binstream;
+    T** ptr;
+};
+
+////////////////////////////////////////////////////////////////////////////////
 struct key
 {
     char k;

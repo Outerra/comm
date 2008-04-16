@@ -50,21 +50,17 @@ COID_NAMESPACE_BEGIN
 void* dynarray_new( void* p, uints nitems, uints itemsize, uints ralign = 0 );
 
 ////////////////////////////////////////////////////////////////////////////////
-///
+///Helper method for streaming pointer-type members to/from binstream
 template<class T>
-struct pointer
-{
-    pointer(const T* t)
-        : ptr(const_cast<T*>(t)) {}
-    
-    pointer(T* t)
-        : ptr(t) {}
-
-private:
-    friend class binstream;
-    T* ptr;
-};
-
+inline bstype::pointer<T> pointer(T* const& p) {
+    return bstype::pointer<T>(&p);
+}
+/*
+template<class T>
+inline bstype::pointer<T> pointer(T* co& p) {
+    return bstype::pointer<T>(p);
+}
+*/
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Binstream base class
@@ -199,12 +195,14 @@ public:
     binstream& operator << (const bstype::binary& b )   { return xwrite(b.data, type(type::T_BINARY,(ushort)b.len)); }
 
     template<class T>
-    binstream& operator << (const pointer<T>& p) {
-        uint8 valid = p.ptr != 0;
+    binstream& operator << (const bstype::pointer<T>& p) {
+        uint8 valid = (*p.ptr != 0);
         xwrite(&valid, type(type::T_OPTIONAL,sizeof(valid)));
         
         if(valid)
-            *this << *p.ptr;
+            *this << **p.ptr;
+
+        return *this;
     }
 //@}
 
@@ -249,14 +247,15 @@ public:
     binstream& operator >> (timet& x)           { return xread(&x, bstype::t_type<timet>() ); }
 
     template<class T>
-    binstream& operator >> (pointer<T>& p) {
+    binstream& operator >> (bstype::pointer<T>& p) {
         uint8 valid;
         xread(&valid, type(type::T_OPTIONAL,sizeof(valid)));
         
         if(valid) {
-            p.ptr = new T;
-            *this >> *p.ptr;
+            *p.ptr = new T;
+            *this >> **p.ptr;
         }
+        return *this;
     }
 
 
