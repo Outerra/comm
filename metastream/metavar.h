@@ -66,9 +66,10 @@ struct MetaDesc
         {}
 
         bool is_array() const           { return desc->is_array(); }
-        bool is_array_element() const   { return varname.is_empty(); }
+        bool is_array_element() const   { return varname.is_empty() && !nameless_root; }
         bool is_primitive() const       { return desc->is_primitive(); }
         bool is_compound() const        { return desc->is_compound(); }
+        bool is_pointer() const         { return desc->is_pointer(); }
 
         bool has_default() const        { return defval.size() > 0; }
 

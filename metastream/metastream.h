@@ -81,11 +81,11 @@ public:
         _current = _cachestack.need(1);
         _current->buf = &_cache;
 
+        _cacheroot = 0;
         _cachequit = 0;
+        _cachedefval = 0;
         _cachevar = 0;
         _cacheskip = 0;
-        _cacheentries = 0;
-        _cachelevel = UMAX;
 
         _sesopen = 0;
         _beseparator = false;
@@ -137,7 +137,6 @@ public:
 
     ////////////////////////////////////////////////////////////////////////////////
     //@{ methods to physically stream the data utilizing the metastream
-
 
     template<int R>
     bool prepare_type_common( bool cache )
@@ -193,16 +192,12 @@ public:
         _curvar.var->varname = name;
         _curvar.var->nameless_root = name.is_empty();
 
-        opcd e;
-        if(cache) {
-            e = movein_process_key<R>();
-            if(!e)
-                cache_fill_root();
-        }
-        else
-            e = movein_current<R>(true);
+        if(cache)
+            cache_fill_root();
+        else if( _curvar.var->nameless_root  &&  _curvar.var->is_compound() )
+            push_var();
 
-        return e;
+        return 0;
     }
 
 
@@ -213,7 +208,7 @@ public:
 
         *this << *(const T*)0;     // build description
 
-        return prepare_type_final<R>(name,cache);
+        return prepare_type_final<R>(name, cache);
     }
 
     template<int R>
@@ -426,8 +421,6 @@ public:
         if( _sesopen < 0 ) {
             _sesopen = 0;
             _beseparator = false;
-            //_root.desc = 0;
-            //_current_var = 0;
 
             _fmtstreamrd->acknowledge(eat);
         }
@@ -439,8 +432,6 @@ public:
         if( _sesopen > 0 ) {
             _sesopen = 0;
             _beseparator = false;
-            //_root.desc = 0;
-            //_current_var = 0;
 
             _fmtstreamwr->flush();
         }
@@ -461,6 +452,7 @@ public:
         _dometa = 0;
         _curvar.var = 0;
         _cur_variable_name.set_empty();
+        _rvarname.reset();
 
         _err.reset();
         if( fmts_reset>0 )
@@ -527,11 +519,6 @@ public:
 
     metastream& operator << (const charstr&a)   {meta_array(); meta_primitive( "char", bstype::t_type<char>() ); return *this;}
     metastream& operator << (const token&a)     {meta_array(); meta_primitive( "char", bstype::t_type<char>() ); return *this;}
-
-    /// arrays:
-    //template <class T>
-    //metastream& operator << (const T* p)      {set_array(); return *this << *p;}
-
 
     
     ////////////////////////////////////////////////////////////////////////////////
@@ -622,26 +609,59 @@ protected:
     }
 
 public:
-    ///Called before metastream << on member variable
+    ///Define member variable
     template<class T>
-    void meta_variable( const token& varname, const T& dummy )
+    void meta_variable( const token& varname, const T* )
     {
         _cur_variable_name = varname;
         _cur_streamfrom_fnc = &binstream::streamfunc<T>::from_stream;
         _cur_streamto_fnc = &binstream::streamfunc<T>::to_stream;
+
+        *this << *(const T*)0;
     }
 
-    ///Called before metastream << on member variable
+    ///Define member array variable
     template<class T>
-    void meta_variable( const token& varname )
+    void meta_variable_array( const token& varname, const T*, uints n )
     {
         _cur_variable_name = varname;
         _cur_streamfrom_fnc = &binstream::streamfunc<T>::from_stream;
         _cur_streamto_fnc = &binstream::streamfunc<T>::to_stream;
+
+        meta_array(n);
+
+        *this << *(const T*)0;
+    }
+
+    ///Define member enum variable
+    template<class T>
+    void meta_variable_enum( const token& varname, const T* )
+    {
+        typedef EnumType<sizeof(T)>::TEnum TE;
+
+        _cur_variable_name = varname;
+        _cur_streamfrom_fnc = &binstream::streamfunc<TE>::from_stream;
+        _cur_streamto_fnc = &binstream::streamfunc<TE>::to_stream;
+
+        *this << *(const TE*)0;
     }
 
     template<class T>
-    void meta_cache_default( const T& var, const T& defval )
+    void meta_variable_pointer( const token& varname, const T* )
+    {
+        typedef typename type_base<T>::type BT;
+
+        _cur_variable_name = varname;
+        _cur_streamfrom_fnc = &binstream::streamfunc<BT>::from_stream;
+        _cur_streamto_fnc = &binstream::streamfunc<BT>::to_stream;
+
+        meta_pointer();
+
+        *this << *(T)0;
+    }
+
+    template<class T>
+    void meta_cache_default( const T* defval )
     {
         _curvar.var = _last_var;
 
@@ -654,8 +674,9 @@ public:
 
         _dometa = true;
 
-        movein_current<WRITE_MODE>(true);
-        _hook << defval;
+        //movein_process_key<WRITE_MODE>();
+        //movein_current<WRITE_MODE>();
+        _hook << *defval;
 
         _cachestack.pop();
         _current = _cachestack.last();
@@ -797,11 +818,11 @@ private:
 
         void set_meta( metastream& m ) {_meta = &m;}
 
-        virtual opcd write( const void* p, type t )             { return _meta->data_write( p, t ); }
-        virtual opcd read( void* p, type t )                    { return _meta->data_read( p, t ); }
+        virtual opcd write( const void* p, type t )             { return _meta->data_write(p, t); }
+        virtual opcd read( void* p, type t )                    { return _meta->data_read(p, t); }
 
-        virtual opcd write_raw( const void* p, uints& len )     { return _meta->data_write_raw(p,len); }
-        virtual opcd read_raw( void* p, uints& len )            { return _meta->data_read_raw(p,len); }
+        virtual opcd write_raw( const void* p, uints& len )     { return _meta->data_write_raw(p, len); }
+        virtual opcd read_raw( void* p, uints& len )            { return _meta->data_read_raw(p, len); }
 
         virtual opcd write_array_content( binstream_container& c, uints* count ) {
             return _meta->data_write_array_content(c,count);
@@ -809,6 +830,11 @@ private:
 
         virtual opcd read_array_content( binstream_container& c, uints n, uints* count ) {
             return _meta->data_read_array_content(c,n,count);
+        }
+
+
+        opcd generic_write_array_content( binstream_container& c, uints* count ) {
+            return binstream::write_array_content(c,count);
         }
 
         opcd generic_read_array_content( binstream_container& c, uints n, uints* count ) {
@@ -875,16 +901,6 @@ private:
         dynarray<MetaDesc::Var*> _stack;
         void* pimpl;
     };
-/*
-    ///
-    template<class T>
-    struct metacall {
-        static metastream& stream( metastream& m, void* t )
-        {   return m << *(const T*)t;   }
-    };
-
-    typedef metastream& (*type_metacall)( metastream&, void* );
-*/
 
     ////////////////////////////////////////////////////////////////////////////////
     bool _dometa;                       ///< true if shoud stream metadata, false if only the values
@@ -940,7 +956,9 @@ private:
         uints offs;                     ///< offset to the current entry in stored class table
         uints ofsz;                     ///< offset to the count field (only for arrays)
 
-        CacheEntry() : buf(0), offs(UMAX), ofsz(UMAX) {}
+        CacheEntry()
+            : buf(0), offs(UMAX), ofsz(UMAX)
+        {}
 
         uints size() const              { return buf->size(); }
 
@@ -964,6 +982,7 @@ private:
         ///Set address (offset) at the current offset 
         void set_addr( uints v )        { *(uints*)(buf->ptr() + offs) = v - offs; }
         void set_addr( uints adr, uints v ) { *(uints*)(buf->ptr() + adr) = v - adr; }
+        void set_addr_invalid( uints adr )  { *(uints*)(buf->ptr() + adr) = 0; }
 
         bool valid_addr() const         { return offs != UMAX  &&  0 != *(const uints*)(buf->ptr() + offs); }
         bool valid_addr( uints adr ) const  { return 0 != *(const uints*)(buf->ptr() + adr); }
@@ -1029,6 +1048,11 @@ private:
             return k;
         }
 
+        void* insert_void_unpadded( uints size )
+        {
+            return buf->add(size);
+        }
+
         ///Append a field that will contain an address (offset)
         ///@note expects padded data
         uints insert_address()
@@ -1069,19 +1093,23 @@ private:
         _cachestack;                    ///< cache table stack
     CacheEntry* _current;               ///< currently processed cache entry
 
-    MetaDesc::Var* _cachequit;          ///< root variable read from cache, caching mode terminates upon returning to it
+    MetaDesc::Var* _cacheroot;          ///< root of the cache, whose members are going to be cached
+    MetaDesc::Var* _cachequit;          ///< member variable being read from cache
+    MetaDesc::Var* _cachedefval;        ///< variable whose default value is currently being read
     MetaDesc::Var* _cachevar;           ///< variable being currently cached from input
     MetaDesc::Var* _cacheskip;          ///< set if the variable was not present in input (can be filled with default) or has been already cached
-
-    uints _cachelevel;                  ///< level where the cache was initialized
-    uints _cacheentries;                ///< no.of valid members in cache (for fast discarding of cache when everything was read)
 
 private:
 
     ////////////////////////////////////////////////////////////////////////////////
     MetaDesc::Var* last_var() const     { return _stack.last()->var; }
     void pop_var()                      { EASSERT( _stack.pop(_curvar) ); }
-    void push_var()                     { _stack.push(_curvar);  _curvar.var = _curvar.var->desc->first_child();  _curvar.kth = 0; }
+
+    void push_var() {
+        _stack.push(_curvar);
+        _curvar.var = _curvar.var->desc->first_child();
+        _curvar.kth = 0;
+    }
 
     MetaDesc::Var* parent_var() const
     {
@@ -1126,7 +1154,7 @@ private:
         if( e == ersNOT_IMPLEMENTED )
             return;
 
-        _err << "(" << _fmtstreamrd->fmtstream_name() << ") line " << row;
+        _err << " (" << _fmtstreamrd->fmtstream_name() << ") line " << row;
         if(!err.is_empty())
             _err << "\r\nerror: " << err;
         
@@ -1170,11 +1198,14 @@ protected:
             //check if the member was cached or use the default value cache instead
             if( !_current->valid_addr() ) {
                 DASSERT( _curvar.var->has_default() );
+                _current->extract_member(); //move offset in parent to next member
+
                 ce->buf = &_curvar.var->defval;
                 ce->offs = sizeof(uints);
+                //_cachedefval = _curvar.var;
             }
             else {
-                uints v = _current->extract_member();
+                uints v = _current->extract_member();   //also moves offset to next
 
                 ce->buf = _current->buf;
                 ce->offs = v;
@@ -1253,6 +1284,12 @@ protected:
     template<int R>
     opcd movein_process_key()
     {
+        if( !_rvarname.is_empty() ) {
+            DASSERT( _rvarname == _curvar.var->varname );
+            _rvarname.reset();
+            return 0;
+        }
+
         if( _curvar.var->is_array_element() )
             return 0;
 
@@ -1264,29 +1301,20 @@ protected:
     ///Move onto the nearest primitive or array descendant
     //@param R read(1) or write(0) mode
     template<int R>
-    opcd movein_current( bool key )
+    opcd movein_current()
     {
-        if(key)
-            movein_process_key<R>();
+        opcd e = movein_process_key<R>();
 
         while( _curvar.var->is_compound() )
         {
             movein_struct<R>();
+            DASSERT( _curvar.var );
 
-            if(_curvar.var)
-                movein_process_key<R>();
-            else
-                return moveto_expected_target<R>();
+            e = movein_process_key<R>();
+            DASSERT( !e || !_curvar.var->is_compound() );
         }
 
-        return 0;
-    }
-
-    template<int R>
-    opcd movein_array()
-    {
-        push_var();
-        return movein_current<R>(false);
+        return e;
     }
 
     ///Traverse the tree and set up the next target for input/output streaming
@@ -1304,8 +1332,15 @@ protected:
                 _current->offs = UMAX;
                 return 0;
             }
-            else if( _curvar.var == _cachequit )
-                invalidate_cache_entry();
+            else {
+                if( _curvar.var == _cachedefval ) {
+                    _current = _cachestack.pop();
+                    _cachedefval = 0;
+                }
+                
+                if( _curvar.var == _cachequit )
+                    invalidate_cache_entry();
+            }
 
             //get next var
             MetaDesc::Var* par = parent_var();
@@ -1327,18 +1362,16 @@ protected:
                     DASSERT( par->is_array() );
                     pop_var();
 
-                    return 0;   //exit from the arrays here, they have their own array-end control tokens
+                    //exit from the arrays here, they have their own array-end control tokens
+                    if( !_curvar.var->is_pointer() )
+                        return 0;
                 }
             }
         }
         while(!cvar);
 
         _curvar.var = cvar;
-        movein_process_key<R>();
-
-        return _cacheskip
-            ? opcd(0)
-            : movein_current<R>(false);
+        return 0;
     }
 
 
@@ -1347,37 +1380,29 @@ protected:
     /// or array cotrol tokens
     opcd data_write( const void* p, type t )
     {
-        DASSERT( !t.is_array_control_type() || !_curvar.var || _curvar.var->is_array() );
+        //DASSERT( !t.is_array_control_type() || !_curvar.var || _curvar.var->is_array() );
 
         if(!_dometa)
-        {
-            if( !t.is_array_end() && _beseparator ) {
-                opcd e = _fmtstreamwr->write_separator();
-                if(e) return e;
-            }
-            else
-                _sesopen = 1;
+            return data_write_nometa(p, t);
 
-            _beseparator = !t.is_array_start();
-
-            return _fmtstreamwr->write(p,t);
+        if( t.type == type::T_OPTIONAL ) {
+            if( *(const uint8*)p == 0 )
+                return moveto_expected_target<WRITE_MODE>();
         }
 
-        uchar t2 = t.type;
+        if( !t.is_array_end() )
+            movein_current<WRITE_MODE>();
+
         //ignore the struct open and close tokens nested in binstream operators,
         // as we follow those within metastream operators instead
-        if( t2 == type::T_STRUCTBGN  ||  t2 == type::T_STRUCTEND )
+        if( t.type == type::T_STRUCTBGN  ||  t.type == type::T_STRUCTEND )
             return 0;
-/*
-        if( t2 == type::T_OPTIONAL ) {
-            if( *(const uint8*)p == 0 )
-        }
-*/
+
         //write value
         opcd e = fmts_or_cache<WRITE_MODE>( (void*)p, t );
         if(e) return e;
 
-        if( t.is_array_start() )
+        if( t.is_array_start()  ||  t.type == type::T_OPTIONAL )
             return 0;
 
         return moveto_expected_target<WRITE_MODE>();
@@ -1387,36 +1412,27 @@ protected:
     /// read. 
     opcd data_read( void* p, type t )
     {
-        DASSERT( !t.is_array_control_type() || !_curvar.var || _curvar.var->is_array() );
+        //DASSERT( !t.is_array_control_type() || !_curvar.var || _curvar.var->is_array() );
 
         if(!_dometa)
-        {
-            if( !t.is_array_end() && _beseparator )
-            {
-                opcd e = _fmtstreamrd->read_separator();
-                if(e) {
-                    dump_stack(_err,0);
-                    _err << " - error reading separator: " << opcd_formatter(e);
-                    fmt_error();
-                    throw e;
-                    return e;
-                }
-            }
-            else
-                _sesopen = -1;
+            return data_read_nometa(p, t);
 
-            _beseparator = !t.is_array_start();
-
-            return _fmtstreamrd->read(p,t);
+        if( !t.is_array_end() ) {
+            //move to the first primitive member in input, caching the unordered siblings
+            movein_current<READ_MODE>();
         }
-
-        uchar t2 = t.type;
 
         //ignore the struct open and close tokens nested in binstream operators,
         // as we follow those within metastream operators instead
-        if( t2 == type::T_STRUCTBGN  ||  t2 == type::T_STRUCTEND )
+        if( t.type == type::T_STRUCTBGN  ||  t.type == type::T_STRUCTEND )
             return 0;
 
+        return data_read_value(p, t);
+    }
+
+    ///
+    opcd data_read_value( void* p, type t )
+    {
         //read value
         opcd e = fmts_or_cache<READ_MODE>(p, t);
         if(e) {
@@ -1427,15 +1443,61 @@ protected:
             return e;
         }
 
-        if( t.is_array_start() )
+        if( t.type == type::T_OPTIONAL  &&  *(const uint8*)p != 0 ) {
             return 0;
+        }
+        else if( t.is_array_start() ) {
+            return 0;
+        }/*
         else if( t.is_array_end() )
         {
-            if( _curvar.var == _cachequit )  invalidate_cache_entry();
-            //if( _curvar.var == &_root )      { _dometa = 0;  return 0; }
-        }
+            if( _curvar.var == _cachedefval ) {
+                _current = _cachestack.pop();
+                _cachedefval = 0;
+            }
+            
+            if( _curvar.var == _cachequit )
+                invalidate_cache_entry();
+        }*/
 
         return moveto_expected_target<READ_MODE>();
+    }
+
+    ///
+    opcd data_write_nometa( const void* p, type t )
+    {
+        if( !t.is_array_end() && _beseparator ) {
+            opcd e = _fmtstreamwr->write_separator();
+            if(e) return e;
+        }
+        else
+            _sesopen = 1;
+
+        _beseparator = !t.is_array_start();
+
+        return _fmtstreamwr->write(p,t);
+    }
+
+    ///
+    opcd data_read_nometa( void* p, type t )
+    {
+        if( !t.is_array_end() && _beseparator )
+        {
+            opcd e = _fmtstreamrd->read_separator();
+            if(e) {
+                dump_stack(_err,0);
+                _err << " - error reading separator: " << opcd_formatter(e);
+                fmt_error();
+                throw e;
+                return e;
+            }
+        }
+        else
+            _sesopen = -1;
+
+        _beseparator = !t.is_array_start();
+
+        return _fmtstreamrd->read(p,t);
     }
 
     opcd data_write_raw( const void* p, uints& len )
@@ -1479,7 +1541,7 @@ protected:
                         _current->set_addr( prevoff, off );
                     prevoff = _current->insert_address();
 
-                    movein_array<WRITE_MODE>();
+                    push_var();
 
                     e = c._stream_out( _hook, (void*)p, c );
                     if(e)  break;
@@ -1494,6 +1556,19 @@ protected:
             }
             else                    //uncached compound array
                 e = _hook.write_compound_array_content(c,count);
+        }
+        else if( cache_prepared() ) //cache with a primitive array
+        {
+            if( !_cachevar  &&  c.is_continuous()  &&  n != UMAX )
+            {
+                uints na = n * tae.get_size();
+                xmemcpy( _current->insert_void_unpadded(na), c.extract(n), na );
+
+                _current->offs += na;
+                *count = n;
+            }
+            else
+                e = _hook.generic_write_array_content(c,count);
         }
         else
             e = _fmtstreamwr->write_array_content(c,count);
@@ -1540,7 +1615,7 @@ protected:
                     else
                         off = _current->extract_offset();
 
-                    movein_array<READ_MODE>();
+                    push_var();
 
                     e = c._stream_in( _hook, p, c );
                     if(e)  break;
@@ -1587,7 +1662,10 @@ protected:
 
         write_array_separator(t,end);
 
-        return end ? opcd(0) : movein_array<WRITE_MODE>();
+        if(!end)
+            push_var();
+
+        return 0;
     }
 
     ///Called from binstream to read array separator or detect an array end
@@ -1601,7 +1679,8 @@ protected:
         if( !read_array_separator(t) )
             return ersNO_MORE;
 
-        return movein_array<READ_MODE>();
+        push_var();
+        return 0;
     }
 
     ///
@@ -1640,14 +1719,19 @@ protected:
     }
 
 
-    bool cache_prepared() const         { return _current->offs != UMAX; }
+    bool cache_prepared() const {
+        return _current->offs != UMAX;
+    }
 
 
     void invalidate_cache_entry()
     {
-        if( --_cacheentries == 0 ) {
-            _cache.reset();
-        }
+        MetaDesc* desc = _stack.last()->var->desc;
+
+        uints k = desc->get_child_pos(_cachequit) * sizeof(uints);
+        DASSERT( k!=UMAX  &&  _current->valid_addr(k) );
+
+        _current->set_addr_invalid(k);
         _current->offs = UMAX;
         _cachequit = 0;
     }
@@ -1714,6 +1798,14 @@ protected:
                     ::memcpy( _current->alloc_cache(tsize), p, tsize );
             }
         }
+        else if( t.type == type::T_OPTIONAL ) {
+            if(R) {
+                *(uint8*)p = 1;
+                push_var();
+            }
+            else if( *(const uint8*)p )
+                push_var();
+        }
         else
             e = R ? _fmtstreamrd->read(p,t) : _fmtstreamwr->write(p,t);
 
@@ -1727,10 +1819,8 @@ protected:
         if( !is_first_var() )
         {
             e = _fmtstreamrd->read_separator();
-            if(e==ersNO_MORE)
-                return e;
 
-            if(e) {
+            if( e  &&  e != ersNO_MORE ) {
                 dump_stack(_err,0);
                 _err << " - error reading the variable separator: " << opcd_formatter(e);
                 fmt_error();
@@ -1738,20 +1828,37 @@ protected:
             }
         }
 
-        e = binstream_read_key( *_fmtstreamrd, _rvarname );
-        if( e  &&  e!=ersNO_MORE ) {
+        if(!e)
+            e = binstream_read_key( *_fmtstreamrd, _rvarname );
+
+        ++_curvar.kth;
+
+        if( e == ersNO_MORE ) {
+            //if reading to cache, make it skip reading the variable
+            // error will be dealt with later, or a default value will be used (if existing)
+            if(_cachevar)
+                _cacheskip = _curvar.var;
+            //if normal reading (not a reading to cache), set up defval read or fail
+            else if( !cache_use_default() ) {
+                dump_stack(_err,0);
+                _err << " - variable '" << _curvar.var->varname << "' not found and no default value provided";
+                fmt_error();
+                throw e;
+            }
+        }
+        else if(e) {
             dump_stack(_err,0);
             _err << " - error while seeking for variable '" << _curvar.var->varname << "': " << opcd_formatter(e);
             fmt_error();
             throw e;
         }
 
-        ++_curvar.kth;
 
         return e;
     }
 
     ///
+    //@return ersNO_MORE if no more keys under current compound variable parent
     opcd fmts_or_cache_read_key()
     {
         //if reading to cache ...
@@ -1763,7 +1870,7 @@ protected:
             }
         }
         //already reading from the cache or the required key has been found in the cache
-        else if( cache_prepared() || cache_toplevel_lookup() )
+        else if( cache_prepared() || cache_lookup() )
             return 0;
 
         opcd e;
@@ -1774,35 +1881,19 @@ protected:
             if(e) {
                 //no more members under current compound
                 DASSERT( e == ersNO_MORE );
-
-                //if reading to cache, make it skip reading the variable
-                // error will be dealt with later, or default value will be used
-                if(_cachevar)
-                    _cacheskip = _curvar.var;
-                else if( !cache_use_default() ) {
-                    dump_stack(_err,0);
-                    _err << " - variable '" << _curvar.var->varname << "' not found and no default value provided";
-                    fmt_error();
-                    throw e;
-                }
                 break;
             }
 
             //cache the next member if the key read belongs to an out of the order sibling
             outoforder = _rvarname != _curvar.var->varname;
             if(outoforder)
-            {
-                if( _curvar.var == &_root )
-                    cache_fill_root();
-                else
-                    cache_fill_member();
+                cache_fill_member();
 
-                //return fmts_or_cache_read_key();
-            }
+            _rvarname.reset();
         }
         while(outoforder);
 
-        return 0;
+        return e;
     }
 
     ///
@@ -1843,27 +1934,27 @@ protected:
         //here _rvarname can only be another member of _curvar.var's parent
         // we should find it and cache its whole structure, as well as any other
         // members until the one pointed to by _curvar.var is found
-        MetaDesc* par = parent_var()->desc;
+        MetaDesc::Var* par = parent_var();
 
         uints base;
-        if( _cache.size() > 0 ) {
+        if( _cache.size()>0  ||  par == _cacheroot ) { //_cache.size() > 0 ) {
             //compute base offset
             uints n = _cachestack.size();
             base = n <= 1
                 ? 0
-                : _current->offs - par->get_child_pos(_curvar.var)*sizeof(uints);
-                //: _current->addr( _cachestack[n-2].offs - sizeof(uints) );
+                : _current->offs - par->desc->get_child_pos(_curvar.var)*sizeof(uints);
         }
         else {
             //create child offset table for the members of par variable
             _cache.reset();
-            _cachelevel = _stack.size();
+            _cacheroot = par;
 
-            _current->insert_table( par->num_children() );
+            _current->buf = &_cache;
+            _current->insert_table( par->desc->num_children() );
             base = 0;
         }
 
-        MetaDesc::Var* crv = par->find_child(_rvarname);
+        MetaDesc::Var* crv = par->desc->find_child(_rvarname);
         if(!crv) {
             dump_stack(_err,0);
             _err << " - member variable: " << _rvarname << " not defined";
@@ -1873,7 +1964,7 @@ protected:
             //return e;
         }
 
-        uints k = par->get_child_pos(crv) * sizeof(uints);
+        uints k = par->desc->get_child_pos(crv) * sizeof(uints);
         if( _current->valid_addr(base+k) ) {
             dump_stack(_err,0);
             _err << " - data for member: " << _rvarname << " specified more than once";
@@ -1892,7 +1983,7 @@ protected:
         opcd e;
 
         DASSERT( _cache.size() == 0 );
-        _cachelevel = _stack.size();
+        _cacheroot = &_root;
 
         _current->insert_table(1);
         cache_fill( &_root, sizeof(uints) );
@@ -1907,13 +1998,14 @@ protected:
 
         _current->offs = offs;
 
+        //pointer-type members
+        if( crv->is_pointer() )
+            crv = crv->desc->first_child();
+
         //force reading to cache
         _cachevar = _curvar.var = crv;
 
-        movein_current<READ_MODE>(false);
         streamvar(*crv);
-
-        ++_cacheentries;
 
         _current->offs = old_offs;
         _cachevar = old_cvar;
@@ -1951,34 +2043,67 @@ protected:
     ///
     opcd streamvar( const MetaDesc::Var& var )
     {
-        //if not present in input or already cached
-        if( &var == _cacheskip ) {
+        if(!_curvar.var->nameless_root)
+            movein_process_key<READ_MODE>();
+
+        //set if reading to cache, when the current variable has been already read or its default value will be used
+        if(_cacheskip) {
             _cacheskip = 0;
             return moveto_expected_target<READ_MODE>();
         }
 
         MetaDesc& desc = *var.desc;
-        if( desc.is_primitive() )
-            return _hook.read( 0, desc.btype );
-
-        if( desc.is_array() ) {
+        if( desc.is_primitive() ) {
+            return data_read_value( 0, desc.btype );
+        }
+        else if( desc.is_array() ) {
             cache_container cc( *this, desc );
-            return _hook.read_array(cc);
+            return cache_read_array(cc);
         }
 
-        opcd e=0;
+        movein_struct<READ_MODE>();
+
         uints n = desc.children.size();
-        for( uints i=0; i<n && !e; ++i )
-            e = streamvar( desc.children[i] );
+        for( uints i=0; i<n; ++i )
+        {
+            streamvar( desc.children[i] );
+        }
+
+        return 0;
+    }
+
+    ///Read array to container \a c from this binstream
+    opcd cache_read_array( binstream_container& c )
+    {
+        uints na = UMAX;
+        uints n = c._nelements;
+        type t = c._type;
+
+        //read bgnarray
+        opcd e = data_read_value( &na, t.get_array_begin() );
+        if(e)  return e;
+
+        if( na != UMAX  &&  n != UMAX  &&  n != na )
+            return ersMISMATCHED "requested and stored count";
+        if( na != UMAX )
+            n = na;
+        else
+            t = c.set_array_needs_separators();
+
+        uints count=0;
+        e = data_read_array_content(c, n, &count);
+
+        //read endarray
+        if(!e)
+            e = data_read_value( &count, t.get_array_end() );
 
         return e;
     }
 
-
     ///Find _curvar.var->varname in cache
-    bool cache_toplevel_lookup()
+    bool cache_lookup()
     {
-        if( _cache.size() == 0  ||  _cachelevel < _stack.size() )
+        if( _cache.size() == 0 )
             return false;
 
         //get child map
@@ -2003,24 +2128,28 @@ protected:
     {
         if( !_curvar.var->has_default() )  return false;
 
-        //DASSERT( _cache.size() > 0 );
-
-        //get child map
-        //MetaDesc* par = parent_var()->desc;
-
-        //_current->offs = par->get_child_pos(_cur_var) * sizeof(uints);
+        _current = _cachestack.push();
         _current->offs = 0;
         _current->buf = &_curvar.var->defval;
-        _cachequit = _curvar.var;
-
-        //not actually in the primary cache, but increment 
-        ++_cacheentries;
+        _cachedefval = _curvar.var;
 
         return true;
     }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+template<class T>
+struct type_holder {
+    const T* operator = (const T& val) {
+        return &val;
+    }
+};
+
+template<class T>
+inline type_holder<T> get_type_holder(T*) {
+    return type_holder<T>();
+}
+
 /// struct-related defines:
 /**
     @def MM(meta,n,v)   specify member metadata providing member name
@@ -2033,16 +2162,16 @@ protected:
     @def MMAF(meta,n,t,s) specify that member is a fixed size array of type \a t
 **/
 #define MSTRUCT_OPEN(meta, n)       if( !meta.meta_struct_open(n) ) {
-#define MM(meta, n, v)              { meta.meta_variable(n,v);    meta << v; }
-#define MME(meta, n, v)				{ typedef EnumType<sizeof(v)>::TEnum t;  meta.meta_variable<t>(n);  meta << *(t*)0; }
-#define MMT(meta, n, t)             { meta.meta_variable<t>(n);   meta << *(t*)0; }
-#define MMP(meta, n, t)             { meta.meta_pointer();        meta.meta_variable<t>(n,true);   meta << *t; }
+#define MM(meta, n, v)              { meta.meta_variable(n,&(v)); }
+#define MME(meta, n, v)				{ meta.meta_variable_enum(n,&(v)); }
+#define MMT(meta, n, t)             { meta.meta_variable<t>(n,0); }
+#define MMP(meta, n, v)             { meta.meta_variable_pointer(n,&(v)); }
 
-#define MMD(meta, n, v, d)          { meta.meta_variable(n,v);    meta << v;          meta.meta_cache_default(v,d); }
-#define MMTD(meta, n, t, d)         { meta.meta_variable<t>(n);   meta << *(t*)0;     meta.meta_cache_default(*(t*)0,d); }
+#define MMD(meta, n, v, d)          { meta.meta_variable(n,&(v)); meta.meta_cache_default( get_type_holder(&(v)) = d ); }
+#define MMTD(meta, n, t, d)         { meta.meta_variable<t>(n,0); meta.meta_cache_default( get_type_holder<t>(0) = d ); }
 
-#define MMAT(meta, n, t)            { meta.meta_variable<t>(n);   meta.meta_array();  meta << *(t*)0; }
-#define MMAF(meta, n, t, s)         { meta.meta_variable<t>(n);   meta.meta_array(s); meta << *(t*)0; }
+#define MMAT(meta, n, t)            { meta.meta_variable_array<t>(n,0,UMAX); }
+#define MMAF(meta, n, t, s)         { meta.meta_variable_array<t>(n,0,s); }
 
 #define MSTRUCT_CLOSE(meta)         meta.meta_struct_close(); } return meta;
 #define MSTRUCT_CLOSE_NORET(meta)   meta.meta_struct_close(); }

@@ -35,6 +35,7 @@ struct FooA
 
 struct FooAA
 {
+    charstr text;
     int j;
     FooA fa;
 
@@ -46,12 +47,13 @@ struct FooAA
     }
 
     friend binstream& operator << (binstream& bin, const FooAA& s)
-    {   return bin << s.j << s.fa;   }
+    {   return bin << s.text << s.j << s.fa;   }
     friend binstream& operator >> (binstream& bin, FooAA& s)
-    {   return bin >> s.j >> s.fa;   }
+    {   return bin >> s.text >> s.j >> s.fa;   }
     friend metastream& operator << (metastream& m, const FooAA& s)
     {
         MSTRUCT_OPEN(m,"FooAA")
+            MMD(m, "text", s.text, "def")
             MM(m, "j", s.j)
             MMD(m, "fa", s.fa, FooA(47, 47.47f) )
         MSTRUCT_CLOSE(m)
@@ -67,12 +69,18 @@ struct FooB
     dynarray< dynarray< dynarray<FooAA> > > aaaf;
     dynarray<int> ai;
     dynarray< dynarray<int> > aai;
+
+    FooAA* pfo;
     int end;
 
+
+    FooB() : pfo(0)
+    {}
+
     friend binstream& operator << (binstream& bin, const FooB& s)
-    {   return bin << s.a << s.b << s.fx << s.af << s.aaf << s.aaaf << s.ai << s.aai << s.end;   }
+    {   return bin << s.a << s.b << s.fx << s.af << s.aaf << s.aaaf << s.ai << s.aai << pointer(s.pfo) << s.end;   }
     friend binstream& operator >> (binstream& bin, FooB& s)
-    {   return bin >> s.a >> s.b >> s.fx >> s.af >> s.aaf >> s.aaaf >> s.ai >> s.aai >> s.end;   }
+    {   return bin >> s.a >> s.b >> s.fx >> s.af >> s.aaf >> s.aaaf >> s.ai >> s.aai >> pointer(s.pfo) >> s.end;   }
     friend metastream& operator << (metastream& m, const FooB& s)
     {
         MSTRUCT_OPEN(m,"FooB")
@@ -84,6 +92,7 @@ struct FooB
             MM(m, "aaaf", s.aaaf)
             MM(m, "ai", s.ai)
             MM(m, "aai", s.aai)
+            MMP(m, "p", s.pfo)
             MM(m, "end", s.end)
         MSTRUCT_CLOSE(m)
     }
@@ -99,7 +108,7 @@ static const char* teststr =
 "        { j=11, fa={i=2, f=4.140}},\n"
 "        { j=12, fa={i=3, f=5.140}} ],\n"
 "aaf = [ [ { j=20, fa={i=9, f=8.33} }, { j=21, fa={i=10, f=4.66} }, { j=22, fa={i=11, f=7.66} } ], [] ],\n"
-"aaaf = [ [ [ { j=30, fa={i=9, f=8.33} }, { j=31, fa={i=10, f=4.66} }, { j=32, fa={i=11, f=7.66} } ], [] ], [ [ { j=33, fa={i=33, f=0.66} } ] ] ],\n"
+"aaaf = [ [ [ { text=\"\", j=30, fa={i=9, f=8.33} }, { j=31, fa={i=10, f=4.66} }, { j=32, fa={i=11, f=7.66} } ], [] ], [ [ { j=33, fa={i=33, f=0.66} } ] ] ],\n"
 "ai = [ 1, 2, 3, 4, 5 ],\n"
 "aai = [ [1, 2, 3], [4, 5], [6] ],\n"
 "end = 99\n"
@@ -107,16 +116,17 @@ static const char* teststr =
 
 static const char* teststr1 =
 "a = 1,\n"
-"b = 200,\n"
 "fx = { j=1, fa={i=-1, f=-.77} },\n"
-"af = [  { j=10 },\n"
-"        { j=11, fa={i=2, f=4.140}},\n"
-"        { j=12, fa={i=3, f=5.140}} ],\n"
+"b = 200,\n"
+"af = [  { text=\"jano\", j=10 },\n"
+"        { fa={i=2, f=4.140}, j=11, text=\"fero\" },\n"
+"        { text=\"jozo\", j=12, fa={i=3, f=5.140} } ],\n"
 "aaf = [ [ { j=20, fa={i=9, f=8.33} }, { j=21, fa={i=10, f=4.66} }, { j=22, fa={i=11, f=7.66} } ], [] ],\n"
 "aaaf = [ [ [ { j=30, fa={i=9, f=8.33} }, { j=31, fa={i=10, f=4.66} }, { j=32, fa={i=11, f=7.66} } ], [] ], [ [ { j=33, fa={i=33, f=0.66} } ] ] ],\n"
 "ai = [ 1, 2, 3, 4, 5 ],\n"
 "aai = [ [1, 2, 3], [4, 5], [6] ],\n"
-"end = 99\n"
+"end = 99,\n"
+//"p = { j=66, fa={i=6, f=0.998} }\n"
 //",a = 100\n"
 ;
 
