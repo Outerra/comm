@@ -405,6 +405,9 @@ public:
     //@param escrule id of the escape rule
     //@param code source sequence that if found directly after the escape character, will be replaced
     //@param replacewith the replacement string
+    //@note To define rule that replaces escaped \n, specify \n for code and an empty token for
+    /// the replacewith param. To specify a sequence that inserts \0 character(s), the replacewith
+    /// token must be explicitly set to include it, like token("\0", 1).
     bool def_escape_pair( int escrule, const token& code, const token& replacewith )
     {
         --escrule;
