@@ -40,33 +40,30 @@
 #ifndef __COID_COMM_FMTSTREAMCXX__HEADER_FILE__
 #define __COID_COMM_FMTSTREAMCXX__HEADER_FILE__
 
-#include "../namespace.h"
-#include "../str.h"
-#include "../lexer.h"
-#include "../binstream/txtstream.h"
-#include "fmtstream.h"
+#include "fmtstream_lexer.h"
 
 
 
 COID_NAMESPACE_BEGIN
 
 ////////////////////////////////////////////////////////////////////////////////
-class fmtstreamcxx : public fmtstream
+class fmtstreamcxx : public fmtstream_lexer
 {
 protected:
-    binstream* _binr;
-    binstream* _binw;
-    //charstr _bufr;
-    charstr _bufw;
-    lexer _tokenizer;
 
     int _indent;
     int lexid, lexstr, lexchr, lexcode;
 
 public:
-    fmtstreamcxx( bool utf8=false ) : _tokenizer(utf8)  {init(0,0);}
-    fmtstreamcxx( binstream& b, bool utf8=false ) : _tokenizer(utf8)  {init( &b, &b );}
-    fmtstreamcxx( binstream* br, binstream* bw, bool utf8=false ) : _tokenizer(utf8)  {init( br, bw );}
+    fmtstreamcxx( bool utf8=false ) : fmtstream_lexer(utf8)
+    { init(0,0); }
+    
+    fmtstreamcxx( binstream& b, bool utf8=false ) : fmtstream_lexer(utf8)
+    { init( &b, &b ); }
+    
+    fmtstreamcxx( binstream* br, binstream* bw, bool utf8=false ) : fmtstream_lexer(utf8)
+    { init( br, bw ); }
+
     ~fmtstreamcxx() {}
 
     void init( binstream* br, binstream* bw )
@@ -107,79 +104,8 @@ public:
 
     virtual token fmtstream_name()          { return "fmtstreamcxx"; }
 
-    virtual opcd fmtstream_err( token* err, token* line, uint* row, uint* col )
-    {
-        uint n = _tokenizer.current_line( line, col );
-        if(line)  *row = n;
-        
-        return _tokenizer.err(err) == 0  ?  opcd(0)  :  ersSYNTAX_ERROR;
-    }
-
-
-    virtual uint binstream_attributes( bool in0out1 ) const
-    {
-        return fATTR_OUTPUT_FORMATTING;
-    }
-
     uint get_indent() const                 { return _indent; }
     void set_indent( uint indent )          { _indent = indent; }
-
-    virtual opcd read_until( const substring & ss, binstream * bout, uints max_size=UMAX )
-    {
-        return ersNOT_IMPLEMENTED;
-    }
-
-    virtual opcd peek_read( uint timeout )  { return _binr->peek_read(timeout); }
-    virtual opcd peek_write( uint timeout ) { return _binw->peek_write(timeout); }
-
-
-    virtual opcd bind( binstream& bin, int io=0 )
-    {
-        if( io<0 )
-            _binr = &bin;
-        else if( io>0 )
-            _binw = &bin;
-        else
-            _binr = _binw = &bin;
-        
-        if(_binr)
-            return _tokenizer.bind( *_binr );
-        return 0;
-    }
-
-    virtual opcd open( const token & arg )  {return _binw->open( arg );}
-    virtual opcd close( bool linger=false ) {return _binw->close( linger );}
-    virtual bool is_open() const            {return _binr->is_open();}
-    virtual void flush()
-    {
-        if( _binw == NULL )
-            return;
-
-        if( _bufw.len() != 0 )
-            _binw->xwrite_raw( _bufw.ptr(), _bufw.len() );
-
-        _binw->flush();
-        _bufw.reset();
-    }
-
-    virtual void acknowledge( bool eat = false )
-    {
-        if( !eat && !_tokenizer.end() && !_tokenizer.next().end() )
-            throw ersIO_ERROR "data left in received block";
-        else
-            _tokenizer.reset();
-    }
-
-    virtual void reset_read()
-    {
-        _tokenizer.reset();
-    }
-
-    virtual void reset_write()
-    {
-        _binw->reset_write();
-        _bufw.reset();
-    }
 
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -700,56 +626,6 @@ public:
         //push back so the trailing delimiter would match
         _tokenizer.push_back();
         return e;
-    }
-
-    
-    opcd write_binary( const void* data, uints n )
-    {
-        char* buf = _bufw.get_append_buf(n*2);
-        charstrconv::bin2hex( data, buf, n, 1, 0 );
-        //_bufw.append_num_uint( 16, data, n, n*2, charstr::ALIGN_NUM_FILL_WITH_ZEROS );
-        return 0;
-    }
-
-    opcd read_binary( token& tok, binstream_container& c, uints n, uints* count )
-    {
-        uints nr = n;
-        if( c.is_continuous() && n!=UMAX )
-            nr = charstrconv::hex2bin( tok, c.insert(n), n, ' ' );
-        else {
-            for( ; nr>0; --nr )
-                if( charstrconv::hex2bin( tok, c.insert(1), 1, ' ' ) ) break;
-        }
-
-        *count = n - nr;
-
-        if( n != UMAX  &&  nr>0 )
-            return ersMISMATCHED "not enough array elements";
-
-        tok.skip_char(' ');
-        if( !tok.is_empty() )
-            return ersMISMATCHED "more characters after array elements read";
-
-        return 0;
-    }
-
-    virtual opcd write_raw( const void* p, uints& len )
-    {
-        return _binw->write_raw( p, len );
-    }
-
-    virtual opcd read_raw( void* p, uints& len )
-    {
-        token t = _tokenizer.last();
-
-        if( len != UMAX  &&  len>t.len() )
-            return ersNO_MORE;
-
-        if( t.len() < len )
-            len = t.len();
-        xmemcpy( p, t.ptr(), len );
-        len = 0;
-        return 0;
     }
 
 

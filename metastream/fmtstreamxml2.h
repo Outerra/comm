@@ -38,31 +38,29 @@
 #ifndef __COID_COMM_FMTSTREAMXML2__HEADER_FILE__
 #define __COID_COMM_FMTSTREAMXML2__HEADER_FILE__
 
-#include "../namespace.h"
-#include "../str.h"
-#include "../lexer.h"
-#include "fmtstream.h"
+#include "fmtstream_lexer.h"
 
 
 
 COID_NAMESPACE_BEGIN
 
 ////////////////////////////////////////////////////////////////////////////////
-class fmtstreamxml2 : public fmtstream
+class fmtstreamxml2 : public fmtstream_lexer
 {
 protected:
-    binstream* _binr;
-    binstream* _binw;
-
-    charstr _bufw;
-    lexer _tokenizer;
 
     int lexid, lexstr, lexchr, lextag;
 
 public:
-    fmtstreamxml2() : _tokenizer(true)  {init(0,0);}
-    fmtstreamxml2( binstream& b ) : _tokenizer(true)  {init(&b, &b);}
-    fmtstreamxml2( binstream* br, binstream* bw ) : _tokenizer(true)  {init(br, bw);}
+    fmtstreamxml2() : fmtstream_lexer(true)
+    { init(0,0); }
+    
+    fmtstreamxml2( binstream& b ) : fmtstream_lexer(true)
+    { init(&b, &b); }
+    
+    fmtstreamxml2( binstream* br, binstream* bw ) : fmtstream_lexer(true)
+    { init(br, bw); }
+
     ~fmtstreamxml2() {}
 
     void init( binstream* br, binstream* bw )
@@ -93,6 +91,43 @@ public:
 
     lexer& get_lexer() {
         return _tokenizer;
+    }
+
+    virtual token fmtstream_name()          { return "fmtstreamxml2"; }
+
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
+    opcd write( const void* p, type t )
+    {
+        return 0;
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
+    opcd read( void* p, type t )
+    {
+        return 0;
+    }
+
+
+    virtual opcd write_array_separator( type t, uchar end )
+    {
+        return 0;
+    }
+
+    virtual opcd read_array_separator( type t )
+    {
+        return 0;
+    }
+
+    virtual opcd write_array_content( binstream_container& c, uints* count )
+    {
+        return 0;
+    }
+
+    virtual opcd read_array_content( binstream_container& c, uints n, uints* count )
+    {
+        return 0;
     }
 
 };

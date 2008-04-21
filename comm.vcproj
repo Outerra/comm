@@ -397,6 +397,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\metastream\fmtstream_lexer.h"
+				>
+			</File>
+			<File
 				RelativePath="metastream\fmtstreamcxx.h"
 				>
 			</File>
