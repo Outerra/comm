@@ -1,5 +1,6 @@
 
 #include "binstream/filestream.h"
+#include "binstream/binstreambuf.h"
 #include "metastream/metastream.h"
 #include "metastream/fmtstreamcxx.h"
 //#include "metagen.h"
