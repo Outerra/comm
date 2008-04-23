@@ -1517,6 +1517,8 @@ protected:
     ///Enable/disable all entities with the same (common) name.
     void enable_in_block( block_rule* br, token name, bool en )
     {
+        strip_flags(name);
+
         Tentmap::range_const_iterator r = _entmap.equal_range(name);
 
         if( r.first == r.second )
@@ -1532,6 +1534,8 @@ protected:
     ///Ignore/don't ignore all entities with the same name
     void ignore_in_block( block_rule* br, token name, bool ig )
     {
+        strip_flags(name);
+
         Tentmap::range_const_iterator r = _entmap.equal_range(name);
 
         if( r.first == r.second )
@@ -1872,6 +1876,17 @@ protected:
         if(final) {
             _tok += off + len;
             off = 0;
+        }
+    }
+
+    ///Strip leading . or ! characters from rule name
+    static void strip_flags( token& name )
+    {
+        while(!name.is_empty()) {
+            char c = name.first_char();
+            if( c!='.' && c!='!' )
+                break;
+            ++name;
         }
     }
 
