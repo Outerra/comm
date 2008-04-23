@@ -1,8 +1,8 @@
 
-#include "binstream/stlstream.h"
-#include "binstream/filestream.h"
-#include "metastream/metastream.h"
-#include "metastream/fmtstreamcxx.h"
+#include "comm/binstream/stlstream.h"
+#include "comm/binstream/filestream.h"
+#include "comm/metastream/metastream.h"
+#include "comm/metastream/fmtstreamcxx.h"
 
 namespace coid {
 

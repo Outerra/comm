@@ -531,31 +531,18 @@ public:
                 token net = ne;
 
                 //special case for cross-linked blocks, id of future block rule instead of the name
-                rn = ne.touint_and_shift();
+                int rn = ne.touint_and_shift();
                 if( ne.len() )
                     __throw_different_exists(net);
+
+                br->enable(rn, enbn);
+                br->ignore(rn, ignn);
             }
             else
             {
-                entity* const* en = _entmap.find_value(ne);
-                sequence* sob = en ? reinterpret_cast<sequence*>(*en) : 0;
-                if(!sob)
-                    __throw_doesnt_exist(ne);
-
-                if( !sob->is_ssb() ) {
-                    _err = exception::ERR_ENTITY_BAD_TYPE;
-                    on_error_prefix(true);
-
-                    _errtext << "bad type of rule '" << ne << "'; expected sequence-type";
-
-                    throw exception(_err, _errtext);
-                }
-
-                rn = sob->id;
+                enable_in_block( br, ne, enbn );
+                ignore_in_block( br, ne, ignn );
             }
-
-            br->enable(rn, enbn);
-            br->ignore(rn, ignn);
         }
 
         br->leading = leading;
@@ -597,6 +584,8 @@ public:
     //@note for s/s/b with same name, this applies only to the specific one
     void enable( int seqid, bool en )
     {
+        __assert_valid_sequence(seqid, 0);
+
         uint sid = -1 - seqid;
         const sequence* seq = _stbary[sid];
 
@@ -607,6 +596,8 @@ public:
     //@note for s/s/b with same name, this applies only to the specific one
     void ignore( int seqid, bool ig )
     {
+        __assert_valid_sequence(seqid, 0);
+
         uint sid = -1 - seqid;
         const sequence* seq = _stbary[sid];
 
@@ -616,33 +607,13 @@ public:
     ///Enable/disable all entities with the same (common) name.
     void enable( token name, bool en )
     {
-        if(name.first_char() == '.')
-            ++name;
-
-        Tentmap::range_const_iterator r = _entmap.equal_range(name);
-        block_rule* br = *_stack.last();
-
-        for( ; r.first!=r.second; ++r.first ) {
-            const entity* ent = *r.first;
-            if( ent->is_ssb() )
-                br->enable(ent->id, en);
-        }
+        enable_in_block( *_stack.last(), name, en );
     }
 
     ///Ignore/don't ignore all entities with the same name
     void ignore( token name, bool ig )
     {
-        if(name.first_char() == '.')
-            ++name;
-
-        Tentmap::range_const_iterator r = _entmap.equal_range(name);
-        block_rule* br = *_stack.last();
-
-        for( ; r.first!=r.second; ++r.first ) {
-            const entity* ent = *r.first;
-            if( ent->is_ssb() )
-                br->ignore(ent->id, ig);
-        }
+        ignore_in_block( *_stack.last(), name, ig );
     }
 
     ///Return next token as if the string opening sequence has been already read.
@@ -650,6 +621,8 @@ public:
     /// string is currently disabled
     const lextoken& next_as_string( int stringid )
     {
+        __assert_valid_sequence(stringid, entity::STRING);
+
         uint sid = -1 - stringid;
         sequence* seq = _stbary[sid];
 
@@ -664,6 +637,8 @@ public:
     /// block is currently disabled
     const lextoken& next_as_block( int blockid )
     {
+        __assert_valid_sequence(blockid, entity::BLOCK);
+
         uint sid = -1 - blockid;
         sequence* seq = _stbary[sid];
 
@@ -692,6 +667,8 @@ public:
     **/
     const lextoken& match_block( int blockid )
     {
+        __assert_valid_sequence(blockid, entity::BLOCK);
+
         uint sid = -1 - blockid;
         sequence* seq = _stbary[sid];
 
@@ -874,14 +851,51 @@ public:
     }
 
     //@return true if next token matches literal string
-    bool match( const token& val )  { return next() == val; }
-    
+    bool matches( const token& val )  { return next() == val; }
+
     //@return true if next token matches literal character
-    bool match( char c )            { return next() == c; }
+    bool matches( char c )            { return next() == c; }
+
+    //@return true if next token belongs to the specified group/sequence.
+    //@param grp group/sequence id
+    //@param dst the token read
+    bool matches( int grp, charstr& dst )
+    {
+        __assert_valid_rule(grp);
+
+        next();
+
+        if( _last != grp )
+            return false;
+
+        if( !_last.tokbuf.is_empty() )
+            dst.takeover( _last.tokbuf );
+        else
+            dst = _last.tok;
+        return true;
+    }
+
+    //@return true if the last token read belongs to the specified group/sequence.
+    //@param grp group/sequence id
+    //@param dst the token read
+    bool matches_last( int grp, charstr& dst )
+    {
+        __assert_valid_rule(grp);
+
+        if( grp != _last.id )
+            return false;
+
+        if( !_last.tokbuf.is_empty() )
+            dst.takeover( _last.tokbuf );
+        else
+            dst = _last.tok;
+        return true;
+    }
 
     ///Match literal or else throw exception
-    void xmatch( const token& val ) {
-        if(!match(val)) {
+    void match( const token& val )
+    {
+        if(!matches(val)) {
             _err = exception::ERR_EXTERNAL_ERROR;
             on_error_prefix(false);
 
@@ -892,12 +906,27 @@ public:
     }
 
     ///Match literal or else throw exception
-    void xmatch( char c ) {
-        if(!match(c)) {
+    void match( char c )
+    {
+        if(!matches(c)) {
             _err = exception::ERR_EXTERNAL_ERROR;
             on_error_prefix(true);
 
             _errtext << "expected " << c;
+
+            throw exception(_err, _errtext);
+        }
+    }
+
+    ///Match rule or else throw exception
+    void match( int grp, charstr& dst )
+    {
+        if(!matches(grp, dst)) {
+            _err = exception::ERR_EXTERNAL_ERROR;
+            on_error_prefix(true);
+
+            const entity& ent = get_entity(grp);
+            _errtext << "expected a " << ent.entity_type() << " '" << ent.name << "'";
 
             throw exception(_err, _errtext);
         }
@@ -911,6 +940,7 @@ public:
             push_back();
         return succ;
     }
+
     ///Try to match an optional literal character, push back if not succeeded.
     bool match_optional( char c )
     {
@@ -920,31 +950,16 @@ public:
         return succ;
     }
 
-    //@return true if next token belongs to the specified group/sequence.
-    //@param grp group/sequence id
-    //@param dst the token read
-    bool match_group( int grp, charstr& dst )
+    ///Try to match an optional rule, setting matched value to \a dst
+    bool match_optional( int grp, charstr& dst )
     {
-        next();
-        if( _last != grp )  return false;
-        if( !_last.tokbuf.is_empty() )
-            dst.takeover( _last.tokbuf );
-        else
-            dst = _last.tok;
-        return true;
-    }
+        __assert_valid_rule(grp);
 
-    //@return true if the last token read belongs to the specified group/sequence.
-    //@param grp group/sequence id
-    //@param dst the token read
-    bool match_last_group( int grp, charstr& dst )
-    {
-        if( grp != _last.id )  return false;
-        if( !_last.tokbuf.is_empty() )
-            dst.takeover( _last.tokbuf );
-        else
-            dst = _last.tok;
-        return true;
+        bool succ = matches(grp, dst);
+        if(!succ)
+            push_back();
+
+        return succ;
     }
 
     ///Push the last token back to be retrieved again by the next() method
@@ -1046,6 +1061,8 @@ public:
     //@return true if the string has been altered
     bool synthesize_string( int string, token tok, charstr& dst ) const
     {
+        __assert_valid_sequence(string, entity::STRING);
+
         uint sid = -1 - string;
         sequence* seq = _stbary[sid];
 
@@ -1081,6 +1098,7 @@ public:
             ERR_BLOCK_TERMINATED_EARLY  = 9,
             ERR_EXTERNAL_ERROR          = 10,       ///< the error was set from outside
             ERR_KEYWORD_ALREADY_DEFINED = 11,
+            ERR_INVALID_RULE_ID         = 12,
         };
     };
 
@@ -1135,6 +1153,51 @@ private:
     }
 
 
+protected:
+
+    ///Assert valid rule id
+    void __assert_valid_rule( int sid ) const
+    {
+        if( sid == 0  ||  sid+1 >= (int)_grpary.size()  ||  -sid-1 >= (int)_stbary.size() )
+        {
+            _err = exception::ERR_INVALID_RULE_ID;
+            _errtext << "invalid rule id (" << sid << ")";
+
+            throw exception(_err, _errtext);
+        }
+    }
+
+    ///Assert valid sequence-type rule id
+    void __assert_valid_sequence( int sid, uchar type ) const
+    {
+        if( sid > 0 ) {
+            _err = exception::ERR_ENTITY_BAD_TYPE;
+            _errtext << "invalid rule type (" << sid << "), a sequence-type expected";
+
+            throw exception(_err, _errtext);
+        }
+        else if( sid == 0  ||  -sid-1 >= (int)_stbary.size() )
+        {
+            _err = exception::ERR_INVALID_RULE_ID;
+            _errtext << "invalid rule id (" << sid << ")";
+
+            throw exception(_err, _errtext);
+        }
+        else if( type > 0 )
+        {
+            const sequence* seq = _stbary[-sid-1];
+            if( seq->type != type ) {
+                _err = exception::ERR_ENTITY_BAD_TYPE;
+                _errtext << "invalid rule type: " << seq->entity_type()
+                    << " ('" << seq->name << "'), a "
+                    << entity::entity_type(type) << " expected";
+
+                throw exception(_err, _errtext);
+            }
+        }
+    }
+
+
 ////////////////////////////////////////////////////////////////////////////////
 protected:
 
@@ -1163,16 +1226,33 @@ protected:
             status = 0;
         }
 
+        ///Is a sequence, string or block
+        bool is_ssb() const             { return type >= SEQUENCE; }
+
         bool is_sequence() const        { return type == SEQUENCE; }
         bool is_block() const           { return type == BLOCK; }
         bool is_string() const          { return type == STRING; }
 
-        ///Is a sequence, string or block
-        bool is_ssb() const             { return type >= SEQUENCE; }
-
         bool is_keywordlist() const     { return type == KEYWORDLIST; }
 
         operator token() const          { return name; }
+
+        ///Entity name
+        const char* entity_type() const { return entity_type(type); }
+
+        static const char* entity_type( uchar type )
+        {
+            switch(type) {
+            case 0:             return "end-of-file";
+            case GROUP:         return "group";
+            case ESCAPE:        return "escape";
+            case KEYWORDLIST:   return "keyword";
+            case SEQUENCE:      return "sequence";
+            case STRING:        return "string";
+            case BLOCK:         return "block";
+            default:            return "unknown";
+            }
+        }
     };
 
     ///Character group descriptor
@@ -1414,11 +1494,55 @@ protected:
     };
 
 
+    const entity& get_entity( int id ) const
+    {
+        if( id > 0 )
+            return *_grpary[id-1];
+        else if( id < 0 )
+            return *_stbary[-id-1];
+        else {
+            static entity end("end-of-file", 0, 0);
+            return end;
+        }
+    }
+
+
     bool enabled( const sequence& seq ) const   { return (*_stack.last())->enabled(seq.id); }
     bool ignored( const sequence& seq ) const   { return (*_stack.last())->ignored(seq.id); }
 
     bool enabled( int seq ) const               { return (*_stack.last())->enabled(-1-seq); }
     bool ignored( int seq ) const               { return (*_stack.last())->ignored(-1-seq); }
+
+
+    ///Enable/disable all entities with the same (common) name.
+    void enable_in_block( block_rule* br, token name, bool en )
+    {
+        Tentmap::range_const_iterator r = _entmap.equal_range(name);
+
+        if( r.first == r.second )
+            __throw_doesnt_exist(name);
+
+        for( ; r.first!=r.second; ++r.first ) {
+            const entity* ent = *r.first;
+            if( ent->is_ssb() )
+                br->enable(ent->id, en);
+        }
+    }
+
+    ///Ignore/don't ignore all entities with the same name
+    void ignore_in_block( block_rule* br, token name, bool ig )
+    {
+        Tentmap::range_const_iterator r = _entmap.equal_range(name);
+
+        if( r.first == r.second )
+            __throw_doesnt_exist(name);
+
+        for( ; r.first!=r.second; ++r.first ) {
+            const entity* ent = *r.first;
+            if( ent->is_ssb() )
+                br->ignore(ent->id, ig);
+        }
+    }
 
     ///Character flags
     enum {
@@ -2115,8 +2239,8 @@ protected:
 
     lextoken _last;                     ///< last token read
     int _last_string;                   ///< last string type read
-    int _err;                           ///< last error code, see ERR_* enums
-    charstr _errtext;                   ///< error text
+    mutable int _err;                   ///< last error code, see ERR_* enums
+    mutable charstr _errtext;           ///< error text
 
     bool _utf8;                         ///< utf8 mode
 
