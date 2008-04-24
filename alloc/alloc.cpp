@@ -287,6 +287,9 @@ seg_allocator::HEADER* seg_allocator::realloc( seg_allocator::HEADER* p, uints c
         //was allocated using segmented alloc
         if( size >= _segsize/2 )
         {
+            if(!keep)
+                ssegpage::free(p);
+
             HEADER* hdr;
             hdr = (HEADER*) ssegpage::alloc_big(size);
             if(!hdr)
@@ -294,10 +297,10 @@ seg_allocator::HEADER* seg_allocator::realloc( seg_allocator::HEADER* p, uints c
 
             hdr->_count = count;
 
-            if(keep)
+            if(keep) {
                 xmemcpy( hdr+1, p+1, p->_count*chunk );
-
-            ssegpage::free(p);
+                ssegpage::free(p);
+            }
 
             return hdr;
         }
@@ -308,11 +311,16 @@ seg_allocator::HEADER* seg_allocator::realloc( seg_allocator::HEADER* p, uints c
                 hdr->_count = count;
             else
             {
-                HEADER* hdr = alloc( count, chunk );
-                if(keep)
-                    xmemcpy( hdr+1, p+1, p->_count < count ? p->_count*chunk : count*chunk );
+                if(!keep)
+                    ssegpage::free(p);
 
-                ssegpage::free(p);
+                HEADER* hdr = alloc( count, chunk );
+
+                if(keep) {
+                    xmemcpy( hdr+1, p+1, p->_count < count ? p->_count*chunk : count*chunk );
+                    ssegpage::free(p);
+                }
+
                 return hdr;
             }
 
