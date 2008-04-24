@@ -77,24 +77,24 @@ namespace atomic {
 	inline int64 cas(
 		volatile int64 * ptr, const int64 val, const int64 cmp) 
 	{
-		DASSERT(sizeof(int64) == 8 && sizeof(__int64) == 8);
+		DASSERT(sizeof(int64) == 8);
 #if defined(__GNUC__)
 		return __sync_val_compare_and_swap(ptr, cmp, val);
 #elif defined(WIN32)
 		return _InterlockedCompareExchange64(
-			reinterpret_cast<volatile __int64*>(ptr), val, cmp);
+			reinterpret_cast<volatile int64*>(ptr), val, cmp);
 #endif
 	}
 
 	inline bool b_cas(
 		volatile int64 * ptr, const int64 val, const int64 cmp) 
 	{
-		DASSERT(sizeof(int64) == 8 && sizeof(__int64) == 8);
+		DASSERT(sizeof(int64) == 8);
 #if defined(__GNUC__)
 		return __sync_bool_compare_and_swap(ptr, cmp, val);
 #elif defined(WIN32)
 		return _InterlockedCompareExchange64(
-			reinterpret_cast<volatile __int64*>(ptr), val, cmp) == cmp;
+			reinterpret_cast<volatile int64*>(ptr), val, cmp) == cmp;
 #endif
 	}
 
@@ -102,12 +102,12 @@ namespace atomic {
 /*	inline bool b_cas(
 		int64 * ptr, const int64 valh, const int64 vall, int64 * cmp) 
 	{
-		DASSERT(sizeof(int64) == 8 && sizeof(__int64) == 8);
+		DASSERT(sizeof(int64) == 8);
 #if defined(__GNUC__)
 		return __sync_bool_compare_and_swap(ptr, cmp, val);
 #elif defined(WIN32)
 		return _InterlockedCompareExchange128(
-			reinterpret_cast<__int64 volatile*>(ptr), 
+			reinterpret_cast<int64 volatile*>(ptr), 
 			valh, vall, 
 			cmp) == cmp;
 #endif
