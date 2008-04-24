@@ -155,7 +155,7 @@ charstr& directory::get_ped( charstr& buf )
     ::readlink(path.c_str(), buf.get_buf(PATH_MAX), PATH_MAX);
 
     token t = buf.c_str();
-    t.cut_right_back('/', token::cut_trait::do_keep_sep_with_source());
+    t.cut_right_back('/', token::cut_trait_keep_sep_with_source());
 
     return buf.trim_to_length( t.len() );
 }
