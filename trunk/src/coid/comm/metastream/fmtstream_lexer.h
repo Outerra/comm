@@ -90,11 +90,9 @@ public:
         if( _binw == NULL )
             return;
 
-        if( _bufw.len() != 0 )
-            _binw->xwrite_raw( _bufw.ptr(), _bufw.len() );
+        write_buffer(true);
 
         _binw->flush();
-        _bufw.reset();
     }
 
     virtual void acknowledge( bool eat = false )
@@ -174,6 +172,24 @@ public:
     fmtstream_lexer(bool utf8)
         : _binr(0), _binw(0), _tokenizer(utf8)
     {}
+
+protected:
+
+    opcd write_buffer( bool force = false )
+    {
+        opcd e = 0;
+        uints len = _bufw.len();
+
+        if( len == 0 )
+            return 0;
+
+        if( force || len >= 2048 ) {
+            e = write_raw( _bufw.ptr(), len );
+            _bufw.reset();
+        }
+
+        return e;
+    }
 
 protected:
     binstream* _binr;                   ///< bound reading stream

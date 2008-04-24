@@ -3,6 +3,7 @@
 #include "comm/binstream/binstreambuf.h"
 #include "comm/metastream/metastream.h"
 #include "comm/metastream/fmtstreamcxx.h"
+#include "comm/metastream/fmtstreamxml2.h"
 //#include "metagen.h"
 
 COID_NAMESPACE_BEGIN
@@ -145,6 +146,14 @@ void metastream_test()
     bofstream bof("meta.test");
     fmt.bind(bof);
 
+    meta.stream_out(b);
+    meta.stream_flush();
+
+    bof.close();
+    bof.open("meta-xml2.test");
+
+    fmtstreamxml2 fmx(bof);
+    meta.bind_formatting_stream(fmx);
     meta.stream_out(b);
     meta.stream_flush();
 };
