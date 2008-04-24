@@ -136,16 +136,31 @@ public:
         // "<name>" or "name=""
         //compound types and arrays are always written using the "<name>" form
 
+        static token array_element = "item";
+
 
         if( t.is_array_start() )
         {
             if( t.type == type::T_KEY )
                 _tag.reset();
-            else if( t.type != type::T_CHAR )
+            else if( t.type == type::T_CHAR ) {
+                close_previous_tag(true);
+                open_this_tag(t);
+            }
+            else
             {
                 close_previous_tag(true);
 
-                _bufw << char('<') << _tag << char('>');
+                _bufw << char('<') << (_tag.is_empty() ? array_element : token(_tag));
+
+                if( t.type != type::T_COMPOUND ) {
+                    _bufw << " SOAP-ENC:arrayType=\"" << get_xsi_type(t) << "[";
+                    if( *(const uints*)p != UMAX )
+                        _bufw << *(const uints*)p;
+                    _bufw << "]\" xsi:type=\"SOAP-ENC:Array\"";
+                }
+
+                _bufw << char('>');
 
                 Parent* par = _stack.push();
                 par->tag.swap(_tag);
@@ -153,7 +168,11 @@ public:
         }
         else if( t.is_array_end() )
         {
-            if( t.type != type::T_KEY  &&  t.type != type::T_CHAR )
+            if( t.type == type::T_CHAR )
+            {
+                close_this_tag();
+            }
+            else if( t.type != type::T_KEY )
             {
                 Parent* par = _stack.last();
 
@@ -169,7 +188,12 @@ public:
         {
             Parent* par = _stack.last();
 
-            _bufw << "</" << par->tag << char('>');
+            const charstr* name = (const charstr*)p;
+            token tok = par->tag.is_empty()
+                ? (name ? token(*name) : array_element)
+                : token(par->tag);
+
+            _bufw << "</" << tok << char('>');
             _tag.swap(par->tag);
 
             _attrmode = false;
@@ -178,7 +202,12 @@ public:
         {
             close_previous_tag(true);
 
-            _bufw << char('<') << _tag;
+            const charstr* name = (const charstr*)p;
+            token tok = _tag.is_empty()
+                ? (name ? token(*name) : array_element)
+                : token(_tag);
+
+            _bufw << char('<') << tok;
             _attrmode = true;
 
             Parent* par = _stack.push();
@@ -190,6 +219,7 @@ public:
         else
         {
             close_previous_tag(false);
+            open_this_tag(t);
 
             //if( !t.is_array_element() )
 
@@ -356,7 +386,57 @@ public:
 protected:
     static const token& get_xsi_type( type t )
     {
+        switch(t.type) {
+        case type::T_BINARY: { static token tt("xsd:hexBinary");  return tt; }
 
+        case type::T_INT:
+            switch(t.size) {
+        case 1: { static token tt("xsd:byte");  return tt; }
+        case 2: { static token tt("xsd:short");  return tt; }
+        case 4: { static token tt("xsd:int");  return tt; }
+        case 8: { static token tt("xsd:long");  return tt; }
+            }
+            break;
+
+        case type::T_UINT:
+            switch(t.size) {
+        case 1: { static token tt("xsd:unsignedByte");  return tt; }
+        case 2: { static token tt("xsd:unsignedShort");  return tt; }
+        case 4: { static token tt("xsd:unsignedInt");  return tt; }
+        case 8: { static token tt("xsd:unsignedLong");  return tt; }
+            }
+            break;
+
+        case type::T_FLOAT:
+            switch(t.size) {
+        case 4: { static token tt("xsd:float");  return tt; }
+        case 8: { static token tt("xsd:double");  return tt; }
+        case 12:
+        case 16: { static token tt("xsd:decimal");  return tt; }
+            }
+            break;
+
+        case type::T_BOOL: { static token tt("xsd:boolean");  return tt; }
+
+        case type::T_TIME: { static token tt("xsd:dateTime");  return tt; }
+
+        case type::T_CHAR: { static token tt("xsd:string");  return tt; }   //both single char and string
+
+        case type::T_ERRCODE:
+        case type::T_OPTIONAL:
+
+        case type::T_KEY:
+        case type::T_STRUCTBGN:
+        case type::T_STRUCTEND:
+        case type::T_SEPARATOR:
+
+        case type::T_COMPOUND:
+            
+            DASSERT(0);
+        }
+
+        static token empty = token::empty();
+        return empty;
     }
 
     void close_previous_tag( bool end_attr_mode )
@@ -366,11 +446,18 @@ protected:
             _bufw << char('>');
             _attrmode = false;
         }
+    }
+
+    void open_this_tag( type t )
+    {
+        token tok = _tag.is_empty()
+            ?  get_xsi_type(t)
+            :  _tag;
 
         if(_attrmode)
-            _bufw << char(' ') << _tag << "=\"";
+            _bufw << char(' ') << tok << "=\"";
         else
-            _bufw << char('<') << _tag << char('>');
+            _bufw << char('<') << tok << char('>');
     }
 
     void close_this_tag()
