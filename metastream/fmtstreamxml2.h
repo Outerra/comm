@@ -68,6 +68,7 @@ public:
     void init( binstream* br, binstream* bw )
     {
         _sesinitr = _sesinitw = 0;
+        _attrmode = false;
 
         _binr = _binw = 0;
         if(bw)  bind( *bw, BIND_OUTPUT );
@@ -93,26 +94,32 @@ public:
         lextag = _tokenizer.def_block( "tag", "<", ">", "str" );
 
         _tokenizer.def_block( ".comment", "<!--", "-->", "" );
+
+
+        tkBoolTrue = "1";
+        tkBoolFalse = "0";
+        tkrBoolTrue = "true";
+        tkrBoolFalse = "false";
     }
 
     lexer& get_lexer() {
         return _tokenizer;
     }
 
-    virtual token fmtstream_name()          { return "fmtstreamxml2"; }
+    virtual token fmtstream_name()      { return "fmtstreamxml2"; }
 
 
-
-    virtual opcd on_read_open() {
-    }
-
-    virtual opcd on_read_close() {
-    }
+    virtual opcd on_read_open()         { return 0; }
+    virtual opcd on_read_close()        { return 0; }
 
     virtual opcd on_write_open() {
+        _bufw << "<root>";
+        return 0;
     }
 
     virtual opcd on_write_close() {
+        _bufw << "</root>";
+        return 0;
     }
 
 
@@ -122,167 +129,151 @@ public:
         if(!_sesinitw)
         {
             on_write_open();
-            _sesinitw = true;
+            _sesinitw = 1;
         }
 
         //note: a key preceding the value does write open tag in the form
         // "<name>" or "name=""
         //compound types and arrays are always written using the "<name>" form
 
+
         if( t.is_array_start() )
         {
-            if( t.type != type::T_KEY  &&  t.type != type::T_CHAR )
+            if( t.type == type::T_KEY )
+                _tag.reset();
+            else if( t.type != type::T_CHAR )
             {
-                //SOAP-ENC:arrayType="xsd:int[4]"
-                _bufw << xml_get_leading_tag(t);
+                close_previous_tag(true);
 
-                if( !_name.is_empty() )
-                    _bufw << " name=\"" << _name << "\">";
-                else
-                    _bufw << char('>');
-                _name.reset();
+                _bufw << char('<') << _tag << char('>');
+
+                Parent* par = _stack.push();
+                par->tag.swap(_tag);
             }
         }
         else if( t.is_array_end() )
         {
-            if( t.type != type::T_KEY )
+            if( t.type != type::T_KEY  &&  t.type != type::T_CHAR )
             {
-                if( t.type != type::T_CHAR )
-                    write_tabs( --_indent );
+                Parent* par = _stack.last();
 
-                _bufw << xml_get_trailing_tag(t);
+                _bufw << "</" << par->tag << char('>');
+                _tag.swap(par->tag);
+
+                _attrmode = false;
             }
         }
         else if( t.type == type::T_SEPARATOR )
             return 0;
         else if( t.type == type::T_STRUCTEND )
         {
-            write_tabs( --_indent );
-            _bufw << xml_get_trailing_tag(t);
+            Parent* par = _stack.last();
+
+            _bufw << "</" << par->tag << char('>');
+            _tag.swap(par->tag);
+
+            _attrmode = false;
         }
         else if( t.type == type::T_STRUCTBGN )
         {
-            write_tabs( _indent++ );
-            _bufw << xml_get_leading_tag(t);
+            close_previous_tag(true);
 
-            if( !_name.is_empty() )
-                _bufw << " name=\"" << _name << char('"');
-            
-            if(p) {
-                correct_typename(*(const charstr*)p);
-                _bufw << " type=\"" << _typename << "\">";
-            }
-            else
-                _bufw << char('>');
+            _bufw << char('<') << _tag;
+            _attrmode = true;
 
-            _name.reset();
+            Parent* par = _stack.push();
+            par->tag.swap(_tag);
+        }
+        else if( t.type == type::T_KEY ) {
+            _tag << *(char*)p;
         }
         else
         {
-            if( t.type == type::T_KEY )
-                _name << *(char*)p;
-            else
+            close_previous_tag(false);
+
+            //if( !t.is_array_element() )
+
+            switch( t.type )
             {
-                if( !t.is_array_element() )
-                {
-                    write_tabs(_indent);
-                    _bufw << xml_get_leading_tag(t);
-
-                    if( !_name.is_empty() )
-                        _bufw << " name=\"" << _name << "\">";
-                    else
-                        _bufw << char('>');
-                    _name.reset();
-                }
-
-                switch( t.type )
-                {
-                    case type::T_INT:
-                        _bufw.append_num_int( 10, p, t.get_size() );
-                        break;
-
-                    case type::T_UINT:
-                        _bufw.append_num_uint( 10, p, t.get_size() );
-                        break;
-
-                    case type::T_CHAR: {
-                        char c = *(char*)p;
-
-                        if( !_tokenizer.synthesize_char(c,_bufw) )
-                            _bufw.append(c);
-
-                    } break;
-
-                    /////////////////////////////////////////////////////////////////////////////////////
-                    case type::T_FLOAT:
-                        switch( t.get_size() ) {
-                        case 4:
-                            _bufw += *(const float*)p;
-                            break;
-                        case 8:
-                            _bufw += *(const double*)p;
-                            break;
-                        case 16:
-                            _bufw += *(const long double*)p;
-                            break;
-
-                        default: throw ersSYNTAX_ERROR "unknown type"; break;
-                        }
+                case type::T_INT:
+                    _bufw.append_num_int( 10, p, t.get_size() );
                     break;
 
-                    /////////////////////////////////////////////////////////////////////////////////////
-                    case type::T_BOOL:
-                        if( *(bool*)p ) _bufw << tkBoolTrue;
-                        else            _bufw << tkBoolFalse;
+                case type::T_UINT:
+                    _bufw.append_num_uint( 10, p, t.get_size() );
                     break;
 
-                    /////////////////////////////////////////////////////////////////////////////////////
-                    case type::T_TIME: {
-                        _bufw.append_date_local( *(const timet*)p );
-                    } break;
+                case type::T_CHAR: {
+                    if( !_tokenizer.synthesize_string(lexchr, token((char*)p,1), _bufw) )
+                        _bufw.append(*(char*)p);
 
-                    /////////////////////////////////////////////////////////////////////////////////////
-                    case type::T_ERRCODE:
-                        {
-                            opcd e = (const opcd::errcode*)p;
-                            token t;
-                            t.set( e.error_code(), token::strnlen( e.error_code(), 5 ) );
+                } break;
 
-                            _bufw << "[" << t;
-                            if(!e)  _bufw << "]";
-                            else {
-                                _bufw << "] " << e.error_desc();
-                                const char* text = e.text();
-                                if(text[0])
-                                    _bufw << ": " << e.text();
-                            }
-                        }
-                    break;
-
-                    /////////////////////////////////////////////////////////////////////////////////////
-                    case type::T_BINARY:
-                        //_bufw.append_num_uint( 16, p, t.get_size(), t.get_size()*2, charstr::ALIGN_NUM_FILL_WITH_ZEROS );
-                        write_binary( p, t.get_size() );
+                /////////////////////////////////////////////////////////////////////////////////////
+                case type::T_FLOAT:
+                    switch( t.get_size() ) {
+                    case 4:
+                        _bufw += *(const float*)p;
                         break;
-
-                    case type::T_SEPARATOR:
-                    case type::T_COMPOUND:
+                    case 8:
+                        _bufw += *(const double*)p;
+                        break;
+                    case 16:
+                        _bufw += *(const long double*)p;
                         break;
 
                     default:
-                        return ersSYNTAX_ERROR "unknown type"; break;
-                }
+                        return ersSYNTAX_ERROR "unknown type";
+                    }
+                break;
 
-                if( !t.is_array_element() )
-                    _bufw << xml_get_trailing_tag(t);
+                /////////////////////////////////////////////////////////////////////////////////////
+                case type::T_BOOL:
+                    if( *(bool*)p ) _bufw << tkBoolTrue;
+                    else            _bufw << tkBoolFalse;
+                break;
+
+                /////////////////////////////////////////////////////////////////////////////////////
+                case type::T_TIME: {
+                    _bufw.append_date_local( *(const timet*)p );
+                } break;
+
+                /////////////////////////////////////////////////////////////////////////////////////
+                case type::T_ERRCODE:
+                    {
+                        opcd e = (const opcd::errcode*)p;
+                        token t;
+                        t.set( e.error_code(), token::strnlen( e.error_code(), 5 ) );
+
+                        _bufw << "[" << t;
+                        if(!e)  _bufw << "]";
+                        else {
+                            _bufw << "] " << e.error_desc();
+                            const char* text = e.text();
+                            if(text[0])
+                                _bufw << ": " << e.text();
+                        }
+                    }
+                break;
+
+                /////////////////////////////////////////////////////////////////////////////////////
+                case type::T_BINARY:
+                    //_bufw.append_num_uint( 16, p, t.get_size(), t.get_size()*2, charstr::ALIGN_NUM_FILL_WITH_ZEROS );
+                    write_binary( p, t.get_size() );
+                    break;
+
+                case type::T_SEPARATOR:
+                case type::T_COMPOUND:
+                    break;
+
+                default:
+                    return ersSYNTAX_ERROR "unknown type"; break;
             }
+
+            close_this_tag();
         }
 
-        uints len = _bufw.len();
-        opcd e = write_raw( _bufw.ptr(), len );
-        _bufw.reset();
-
-        return e;
+        return write_buffer();
     }
 
 
@@ -305,7 +296,34 @@ public:
 
     virtual opcd write_array_content( binstream_container& c, uints* count )
     {
-        return 0;
+        type t = c._type;
+        uints n = c._nelements;
+        c.set_array_needs_separators();
+
+        if( t.type != type::T_CHAR  &&  t.type != type::T_KEY  &&  t.type != type::T_BINARY )
+            return write_compound_array_content(c,count);
+
+        //optimized for character and key strings
+        opcd e=0;
+        if( c.is_continuous()  &&  n != UMAX )
+        {
+            if( t.type == type::T_BINARY )
+                e = write_binary( c.extract(n), n );
+            else if( t.type == type::T_KEY )
+                _tag.set_from( (const char*)c.extract(n), n );
+            else
+            {
+                token t( (const char*)c.extract(n), n );
+                if( !_tokenizer.synthesize_string( lexstr, t, _bufw ) )
+                    _bufw += t;
+            }
+
+            if(!e)  *count = n;
+        }
+        else
+            e = write_compound_array_content(c,count);
+
+        return e;
     }
 
     virtual opcd read_array_content( binstream_container& c, uints n, uints* count )
@@ -313,11 +331,68 @@ public:
         return 0;
     }
 
-    /////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    virtual void flush()
+    {
+        if(!_sesinitw)
+            throw ersIMPROPER_STATE;
+
+        on_write_close();
+        write_buffer(true);
+
+        _binw->flush();
+    }
+
+    virtual void acknowledge( bool eat = false )
+    {
+        if( !eat && !_tokenizer.end() && !_tokenizer.next().end() )
+            throw ersIO_ERROR "data left in received block";
+        else
+            _tokenizer.reset();
+    }
+
+
+
+protected:
     static const token& get_xsi_type( type t )
     {
 
     }
+
+    void close_previous_tag( bool end_attr_mode )
+    {
+        //close parent tag if ending the attribute mode
+        if( _attrmode  &&  (end_attr_mode || _tag.first_char() != '@') ) {
+            _bufw << char('>');
+            _attrmode = false;
+        }
+
+        if(_attrmode)
+            _bufw << char(' ') << _tag << "=\"";
+        else
+            _bufw << char('<') << _tag << char('>');
+    }
+
+    void close_this_tag()
+    {
+        if(_attrmode)
+            _bufw << char('"');
+        else
+            _bufw << "</" << _tag << char('>');
+    }
+    
+protected:
+
+    struct Parent {
+        charstr tag;
+    };
+
+    dynarray<Parent> _stack;
+    charstr _tag;
+    bool _attrmode;                     ///< attribute setting mode at the current level
+
+    token tkBoolTrue, tkBoolFalse;      ///< symbols for bool type for reading and writting
+    token tkrBoolTrue, tkrBoolFalse;    ///< additional symbols for bool type for reading
 };
 
 COID_NAMESPACE_END

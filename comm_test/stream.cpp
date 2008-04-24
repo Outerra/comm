@@ -3,6 +3,7 @@
 #include "comm/binstream/filestream.h"
 #include "comm/metastream/metastream.h"
 #include "comm/metastream/fmtstreamcxx.h"
+#include "comm/metastream/fmtstreamxml2.h"
 
 namespace coid {
 
@@ -64,7 +65,7 @@ void test()
     //metastream out and in test
 
     bof.open("stl_meta.test");
-    fmtstreamcxx txpo(bof);
+    fmtstreamxml2 txpo(bof);
     metastream meta(txpo);
 
     meta.stream_out(x);
@@ -74,7 +75,7 @@ void test()
 
     bif.open("stl_meta.test");
 
-    fmtstreamcxx txpi(bif);
+    fmtstreamxml2 txpi(bif);
     meta.bind_formatting_stream(txpi);
 
     meta.stream_in(y);
