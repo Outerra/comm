@@ -41,10 +41,11 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/MP"
 				Optimization="0"
 				PreprocessorDefinitions="_LIB;WIN32;_DEBUG"
 				StringPooling="true"
-				MinimalRebuild="true"
+				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				BufferSecurityCheck="false"
@@ -112,6 +113,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/MP"
 				Optimization="2"
 				InlineFunctionExpansion="2"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
@@ -170,14 +172,6 @@
 			</File>
 			<File
 				RelativePath=".\atomic\atomic.h"
-				>
-			</File>
-			<File
-				RelativePath=".\atomic\atomic_gcc.h"
-				>
-			</File>
-			<File
-				RelativePath=".\atomic\atomic_win32.h"
 				>
 			</File>
 			<File
