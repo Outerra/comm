@@ -525,7 +525,6 @@ public:
             bool ignn, enbn;
             get_flags( ne, &ignn, &enbn );
 
-            int rn=-1;
             if( ne.char_is_number(0) )
             {
                 token net = ne;

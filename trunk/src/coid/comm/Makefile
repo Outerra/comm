@@ -1,5 +1,5 @@
 DEST = comm.a
-SRC = *.cpp alloc/*.cpp crypt/*.cpp sync/*.cpp metastream/*.cpp
+SRC = *.cpp alloc/*.cpp atomic/*.cpp crypt/*.cpp sync/*.cpp metastream/*.cpp
 INCLUDE = -I ../..
 #LIBS =
 #STDLIBS =

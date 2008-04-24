@@ -637,7 +637,7 @@ public:
     template<class T>
     void meta_variable_enum( const token& varname, const T* )
     {
-        typedef EnumType<sizeof(T)>::TEnum TE;
+        typedef typename EnumType<sizeof(T)>::TEnum TE;
 
         _cur_variable_name = varname;
         _cur_streamfrom_fnc = &binstream::streamfunc<TE>::from_stream;

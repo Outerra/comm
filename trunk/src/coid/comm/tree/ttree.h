@@ -1636,7 +1636,7 @@ public:
 
         while( !tok.is_empty() )
         {
-            token k = tok.cut_left(separator,-1);
+            token k = tok.cut_left(separator, token::cut_trait_remove_all());
 
             COID* pn = id->_asubnodes.ptr();
             uints i, lim = id->_asubnodes.size();
@@ -1671,7 +1671,7 @@ public:
 
         while( !tok.is_empty() )
         {
-            token k = tok.cut_left(separator,-1);
+            token k = tok.cut_left(separator, token::cut_trait_remove_all());
 
             COID* pn = id->_asubnodes.ptr();
             uints i, lim = id->_asubnodes.size();

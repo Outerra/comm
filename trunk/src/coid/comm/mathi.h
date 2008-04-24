@@ -165,7 +165,7 @@ inline typename SIGNEDNESS<INT>::UNSIGNED int_abs( INT a )
 {
     typedef typename SIGNEDNESS<INT>::UNSIGNED UINT;
     typedef typename SIGNEDNESS<INT>::SIGNED SINT;
-    return typename UINT( a - ((a+a) & ((SINT)a>>(sizeof(INT)*8-1))) );
+    return UINT( a - ((a+a) & ((SINT)a>>(sizeof(INT)*8-1))) );
 }
 
 ///@return a<0 ? onminus : onplus
