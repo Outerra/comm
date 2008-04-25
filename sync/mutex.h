@@ -41,7 +41,7 @@
 #include "../namespace.h"
 
 #include "../comm.h"
-#include "../assert.h"
+#include "../commassert.h"
 
 #include "../pthreadx.h"
 #include <sys/timeb.h>

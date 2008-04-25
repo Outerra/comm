@@ -44,7 +44,7 @@
 #include "../sync/mutex.h"
 #include "../local.h"
 #include "../retcodes.h"
-#include "../assert.h"
+#include "../commassert.h"
 
 COID_NAMESPACE_BEGIN
 

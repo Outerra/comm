@@ -36,7 +36,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include <stdio.h>
-#include "../assert.h"
+#include "../commassert.h"
 
 #include "rw_mx_core.h"
 

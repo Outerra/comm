@@ -44,6 +44,7 @@
 #include "binstream.h"
 #include "../str.h"
 
+#include <io.h>
 #include <fcntl.h>
 
 #ifdef SYSTYPE_MSVC

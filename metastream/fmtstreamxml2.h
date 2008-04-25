@@ -47,7 +47,7 @@ COID_NAMESPACE_BEGIN
 ////////////////////////////////////////////////////////////////////////////////
 class fmtstreamxml2 : public fmtstream_lexer
 {
-protected:
+public:
     bool _sesinitw;
     bool _sesinitr;
 
@@ -88,7 +88,7 @@ public:
         _tokenizer.def_escape_pair( er, "quot;", "\"" );
 
         lexstr = _tokenizer.def_string( "str", "\"", "\"", "esc" );
-        lexchr = _tokenizer.def_string( "str", "\'", "\'", "esc" );
+        //lexchr = _tokenizer.def_string( "str", "\'", "\'", "esc" );
 
         //tag block, cannot have nested tags but can contain strings
         lextag = _tokenizer.def_block( "tag", "<", ">", "str" );

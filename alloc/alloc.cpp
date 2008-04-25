@@ -37,7 +37,7 @@
 
 #include "alloc.h"
 #include "../sync/mutex.h"
-#include "../assert.h"
+#include "../commassert.h"
 
 #include "../dynarray.h"
 
