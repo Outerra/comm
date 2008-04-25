@@ -113,7 +113,7 @@ public:
     virtual opcd on_read_close()        { return 0; }
 
     virtual opcd on_write_open() {
-        _bufw << "<root>";
+        _bufw << "<root xmlns:xsd='http://www.w3.org/2001/XMLSchema'>";
         return 0;
     }
 
@@ -152,14 +152,14 @@ public:
                 close_previous_tag(true);
 
                 _bufw << char('<') << (_tag.is_empty() ? array_element : token(_tag));
-
+/*
                 if( t.type != type::T_COMPOUND ) {
                     _bufw << " SOAP-ENC:arrayType=\"" << get_xsi_type(t) << "[";
                     if( *(const uints*)p != UMAX )
                         _bufw << *(const uints*)p;
                     _bufw << "]\" xsi:type=\"SOAP-ENC:Array\"";
                 }
-
+*/
                 _bufw << char('>');
 
                 Parent* par = _stack.push();
@@ -170,22 +170,27 @@ public:
         {
             if( t.type == type::T_CHAR )
             {
-                close_this_tag();
+                close_this_tag(t);
             }
             else if( t.type != type::T_KEY )
             {
                 Parent* par = _stack.last();
 
-                _bufw << "</" << par->tag << char('>');
+                _bufw << "</" << (par->tag.is_empty() ? array_element : par->tag)
+                    << char('>');
                 _tag.swap(par->tag);
 
                 _attrmode = false;
+                _stack.pop();
             }
         }
         else if( t.type == type::T_SEPARATOR )
             return 0;
         else if( t.type == type::T_STRUCTEND )
         {
+            if(t.is_nameless())
+                return 0;
+
             Parent* par = _stack.last();
 
             const charstr* name = (const charstr*)p;
@@ -197,9 +202,13 @@ public:
             _tag.swap(par->tag);
 
             _attrmode = false;
+            _stack.pop();
         }
         else if( t.type == type::T_STRUCTBGN )
         {
+            if(t.is_nameless())
+                return 0;
+
             close_previous_tag(true);
 
             const charstr* name = (const charstr*)p;
@@ -300,7 +309,7 @@ public:
                     return ersSYNTAX_ERROR "unknown type"; break;
             }
 
-            close_this_tag();
+            close_this_tag(t);
         }
 
         return write_buffer();
@@ -367,6 +376,7 @@ public:
         if(!_sesinitw)
             throw ersIMPROPER_STATE;
 
+        close_previous_tag(true);
         on_write_close();
         write_buffer(true);
 
@@ -450,22 +460,28 @@ protected:
 
     void open_this_tag( type t )
     {
-        token tok = _tag.is_empty()
-            ?  get_xsi_type(t)
-            :  _tag;
-
         if(_attrmode)
-            _bufw << char(' ') << tok << "=\"";
-        else
+            _bufw << char(' ') << _tag << "=\"";
+        else {
+            token tok = _tag.is_empty()
+                ?  get_xsi_type(t)
+                :  _tag;
+
             _bufw << char('<') << tok << char('>');
+        }
     }
 
-    void close_this_tag()
+    void close_this_tag( type t )
     {
         if(_attrmode)
             _bufw << char('"');
-        else
-            _bufw << "</" << _tag << char('>');
+        else {
+            token tok = _tag.is_empty()
+                ?  get_xsi_type(t)
+                :  _tag;
+
+            _bufw << "</" << tok << char('>');
+        }
     }
     
 protected:

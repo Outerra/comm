@@ -92,7 +92,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(ProjectDir)\bin\$(ConfigurationName)"
+			OutputDirectory="$(ProjectDir)..\bin\$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			CharacterSet="2"
@@ -169,6 +169,10 @@
 	<References>
 	</References>
 	<Files>
+		<File
+			RelativePath=".\atomic-test.cpp"
+			>
+		</File>
 		<File
 			RelativePath=".\main.cpp"
 			>

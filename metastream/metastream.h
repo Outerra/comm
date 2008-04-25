@@ -195,7 +195,7 @@ public:
         if(cache)
             cache_fill_root();
         else if( _curvar.var->nameless_root  &&  _curvar.var->is_compound() )
-            push_var();
+            movein_struct<R>();
 
         return 0;
     }
