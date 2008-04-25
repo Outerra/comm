@@ -818,11 +818,11 @@
 			</File>
 		</Filter>
 		<File
-			RelativePath="assert.h"
+			RelativePath="comm.h"
 			>
 		</File>
 		<File
-			RelativePath="comm.h"
+			RelativePath=".\commassert.h"
 			>
 		</File>
 		<File
