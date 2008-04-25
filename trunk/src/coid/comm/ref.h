@@ -1,7 +1,7 @@
 #ifndef __ENG_PTR_H__
 #define __ENG_PTR_H__
 
-#include "assert.h"
+#include "commassert.h"
 #include "atomic/atomic.h"
 #include "atomic/stack.h"
 

@@ -41,7 +41,7 @@
 #include "../namespace.h"
 
 #include "binstream.h"
-#include "coid/comm/assert.h"
+#include "coid/comm/commassert.h"
 
 
 COID_NAMESPACE_BEGIN

@@ -35,7 +35,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include "assert.h"
+#include "commassert.h"
 #include "binstream/filestream.h"
 #include "binstream/txtstream.h"
 #include "binstream/nullstream.h"

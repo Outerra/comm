@@ -2,7 +2,7 @@
 #define __COMM_ATOMIC_H__
 
 #include "../commtypes.h"
-#include "../assert.h"
+#include "../commassert.h"
 
 #if defined(WIN32)
 	#include <intrin.h>

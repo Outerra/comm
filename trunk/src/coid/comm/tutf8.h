@@ -42,7 +42,7 @@
 
 #include "namespace.h"
 
-#include "assert.h"
+#include "commassert.h"
 
 COID_NAMESPACE_BEGIN
 

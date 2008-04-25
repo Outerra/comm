@@ -41,7 +41,7 @@
 #include <stdio.h>
 
 #include "../comm.h"
-#include "../assert.h"
+#include "../commassert.h"
 
 #include "../dynarray.h"
 

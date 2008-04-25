@@ -43,7 +43,7 @@
 #include "local.h"
 #include "dynarray.h"
 #include "radix.h"
-#include "assert.h"
+#include "commassert.h"
 #include "alloc/chunkpage.h"
 #include "binstream/stlstream.h"
 

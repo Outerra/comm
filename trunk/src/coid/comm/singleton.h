@@ -39,10 +39,11 @@
 #define __COID_COMM_SINGLETON__HEADER_FILE__
 
 #include "namespace.h"
-#include "assert.h"
+#include "commassert.h"
 #include <stdlib.h>
 
 #include "sync/mutex.h"
+#include "atomic/atomic.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -85,79 +86,139 @@ struct GlobalSingleton
 
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class T>
+/*template <class T>
 class singleton
 {
-    static void destroy()
+	static T* & inst_ptr() { static T * _ptr; return _ptr; }
+	static volatile int32 & inst_status() { static volatile int32 _status; return _status; }
+
+	static void destroy()
     {
-        int& st = status_ref();
-        st = -1;
-        instance();
+		const int32 status = inst_status();
+
+		if (status == 2) {
+			if (atomic::b_cas(&inst_status(), -1, status)) {
+				delete inst_ptr();
+				inst_ptr() = 0;
+			} else  
+				throw ersALREADY_DELETED;
+		} else if (status != -1) {
+			DASSERT(false && "this should not happen!");
+		}
     }
 
-    singleton()    { }
+    singleton() {}
 
 public:
-
     static bool being_destroyed()
     {
-        return status_ref() < 0;
+        return inst_status() < 0;
     }
 
     static T& instance_alive()
     {
-        if( status_ref() >= 0 )
+        if( inst_status() >= 0 )
             return instance();
         throw ersDENIED;
     }
 
     static T& instance()
     {
-        static int& status = status_ref();
-        static T* node = 0;
-        
-        if(status>0)
-            return *node;
+		if(inst_status() == 2) return *inst_ptr();
 
-        comm_mutex_guard<_comm_mutex> mxg( GlobalSingleton::instance() );
+		for (;;) {
+			const int32 status = inst_status();
 
-        if(status>0) {
-            mxg.unlock();
-            return *node;
-        }
-
-        if( status < 0 )
-        {
-            if(node)
-            {
-                if( status-- < -1 )     //instance() called from node destructor again
-                    return *node;
-
-                delete node;
-                node = 0;
-                return *(T*)0;
-            }
-            else
-                throw ersALREADY_DELETED;
-        }
-        else
-        {
-            node = new T;
-            atexit( &destroy );
-
-            status = 1;
-        }
-
-        mxg.unlock();
-        return *node;
+			if (status > 0 && status != 2) {
+				sysMilliSecondSleep(1);
+				continue;
+			} else if (status == 0 && atomic::b_cas(&inst_status(), status + 1, status)) {
+				atexit( &destroy );
+				inst_ptr() = new T;
+				if (atomic::b_cas(&inst_status(), status + 2, status + 1))
+					return *inst_ptr();
+				else
+					throw ersDENIED;
+			} else if (status < 0)
+				throw ersDENIED;
+		}
     }
+};*/
+
+
+template <class T>
+class singleton
+{
+	static void destroy()
+	{
+		int& st = status_ref();
+		st = -1;
+		instance();
+	}
+
+	singleton()    { }
+
+public:
+
+	static bool being_destroyed()
+	{
+		return status_ref() < 0;
+	}
+
+	static T& instance_alive()
+	{
+		if( status_ref() >= 0 )
+			return instance();
+		throw ersDENIED;
+	}
+
+	static T& instance()
+	{
+		static int& status = status_ref();
+		static T* node = 0;
+
+		if(status>0)
+			return *node;
+
+		comm_mutex_guard<_comm_mutex> mxg( GlobalSingleton::instance() );
+
+		if(status>0) {
+			mxg.unlock();
+			return *node;
+		}
+
+		if( status < 0 )
+		{
+			if(node)
+			{
+				if( status-- < -1 )     //instance() called from node destructor again
+					return *node;
+
+				delete node;
+				node = 0;
+				return *(T*)0;
+			}
+			else
+				throw ersALREADY_DELETED;
+		}
+		else
+		{
+			node = new T;
+			atexit( &destroy );
+
+			status = 1;
+		}
+
+		mxg.unlock();
+		return *node;
+	}
 
 private:
-    static int& status_ref()
-    {
-        static int status = 0;
-        return status;
-    }
+	static int& status_ref()
+	{
+		static int status = 0;
+		return status;
+	}
 };
 
 
