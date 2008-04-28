@@ -44,13 +44,12 @@ COID_NAMESPACE_BEGIN
 
 
 ////////////////////////////////////////////////////////////////////////////////
-///Formatting binstream class to output plain text
+///Formatting binstream class to output plain text, using integrated cachestream
+/// for caching
 class txtcachestream : public binstream
 {
 protected:
     cachestream _cache;
-    charstr _buf;
-
     token _flush;
 
 public:
@@ -72,54 +71,76 @@ public:
         if( t.is_array_control_type() )
             return 0;
 
+        char buf[256];
+
         switch( t.type )
         {
         case type::T_BINARY:
             {
 				uint bytes = t.get_size();
-                char* d = _buf.get_append_buf( bytes*2 );
-                charstrconv::bin2hex( p, d, 1, bytes, ' ' );
+                const char* src = (const char*)p;
+
+                while( bytes > 0 )
+                {
+                    char* dst = buf;
+                    uint n = int_max(256/2, bytes);
+
+                    charstrconv::bin2hex( src, dst, 1, n, 0 );
+                    uints nd = n*2;
+                    opcd e = _cache.write_raw(buf, nd);
+                    if(e)
+                        return e;
+
+                    src += n;
+                    bytes -= n;
+                }
                 break;
             }
         case type::T_INT:
             {
-                _buf.append_num_int( 10, p, t.get_size() );
-                break;
+                token tok = charstrconv::append_num_int( buf, 256, 10, p, t.get_size() );
+
+                return _cache.write_token_raw(tok);
             }
         case type::T_UINT:
             {
-                _buf.append_num_uint( 10, p, t.get_size() );
-                break;
+                token tok = charstrconv::append_num_uint( buf, 256, 10, p, t.get_size() );
+
+                return _cache.write_token_raw(tok);
             }
         case type::T_FLOAT:
             {
+                token tok;
+
                 switch( t.get_size() )
                 {
-                case 4: _buf << *(float*)p;
-                        break;
-                case 8: _buf << *(double*)p;
-                        break;
+                case 4:
+                    tok = charstrconv::append( buf, 256, *(const float*)p, -1 );
+                    break;
+                case 8:
+                    tok = charstrconv::append( buf, 256, *(const double*)p, -2 );
+                    break;
+
                 default:
                     throw ersINVALID_TYPE "unsupported size";
                 }
+
+                return _cache.write_token_raw(tok);
                 break;
             }
         case type::T_KEY:
-        case type::T_CHAR:
-            _buf.add_from( (const char*)p, t.get_size() );
-            break;
-
-        case type::T_ERRCODE:
-            _buf << char('[') << opcd_formatter((const opcd::errcode*)p) << char(']');
-            break;
+        case type::T_CHAR: {
+            uints size = t.get_size();
+            return _cache.write_raw( p, size );
         }
 
-        if( !_buf.is_empty() )
-        {
-            uints bl = _buf.len();
-            opcd e = _cache.write_raw( _buf.ptr(), bl );
-            if(e)  return e;
-            _buf.reset();
+        case type::T_ERRCODE:
+            buf[0] = '[';
+            uints n = opcd_formatter((const opcd::errcode*)p).write(buf+1, 254) + 1;
+            buf[n] = ']';
+            ++n;
+
+            return _cache.write_raw( buf, n );
         }
 
         return 0;
@@ -141,8 +162,13 @@ public:
             return ersUNAVAILABLE;
     }
 
-    virtual opcd write_raw( const void* p, uints& len )      { return _cache.write_raw( p, len ); }
-    virtual opcd read_raw( void* p, uints& len )             { return _cache.read_raw( p, len ); }
+    virtual opcd write_raw( const void* p, uints& len ) {
+        return _cache.write_raw( p, len );
+    }
+
+    virtual opcd read_raw( void* p, uints& len ) {
+        return _cache.read_raw( p, len );
+    }
 
     virtual opcd write_array_content( binstream_container& c, uints* count )
     {
@@ -237,7 +263,6 @@ public:
 
     virtual void reset_write()
     {
-        _buf.reset();
         _cache.reset_write();
     }
 

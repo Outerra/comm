@@ -396,8 +396,26 @@ public:
         return filestream::open( name, attr );
     }
 
+    opcd open( const char* name, token attr = token::empty() )
+    {
+        charstr flg;
+
+        if( attr.is_empty() )
+            attr = "wct";
+        else {
+            flg << attr << char('w');
+            attr = flg;
+        }
+
+        return filestream::open( name, attr );
+    }
+
     bofstream() { }
     explicit bofstream( const token& s )
+    {
+        open(s);
+    }
+    explicit bofstream( const char* s )
     {
         open(s);
     }
@@ -428,8 +446,27 @@ public:
         return filestream::open( name, attr );
     }
 
+    opcd open( const char* name, token attr = token::empty() )
+    {
+        charstr flg;
+
+        if( attr.is_empty() )
+            attr = "r";
+        else {
+            flg << attr << char('r');
+            attr = flg;
+        }
+
+        return filestream::open( name, attr );
+    }
+
     bifstream() { }
     explicit bifstream( const token& s )
+    {
+        open(s);
+    }
+
+    explicit bifstream( const char* s )
     {
         open(s);
     }

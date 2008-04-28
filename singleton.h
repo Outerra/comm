@@ -41,15 +41,29 @@
 #include "namespace.h"
 
 
-#define SINGLETON(T) \
+#ifdef _DEBUG
+
+# define SINGLETON(T) \
+    coid::singleton<T>::instance(#T,__FILE__,__LINE__)
+
+#else
+
+# define SINGLETON(T) \
     coid::singleton<T>::instance()
 
+#endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 COID_NAMESPACE_BEGIN
 
-void* singleton_register_instance(void* p, void (*fn_destroy)(void*));
+void* singleton_register_instance(
+    void* p,
+    void (*fn_destroy)(void*),
+    const char* type,
+    const char* file,
+    int line);
+
 void singletons_destroy();
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -67,7 +81,18 @@ public:
 		if(node)
 			return *node;
 
-        node = (T*)singleton_register_instance(new T, &destroy);
+        node = (T*)singleton_register_instance(new T, &destroy, 0, 0, 0);
+        return *node;
+	}
+
+	static T& instance(const char* type, const char* file, int line)
+	{
+		static T* node = 0;
+
+		if(node)
+			return *node;
+
+        node = (T*)singleton_register_instance(new T, &destroy, type, file, line);
         return *node;
 	}
 
