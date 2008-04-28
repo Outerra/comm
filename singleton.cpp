@@ -42,4 +42,78 @@
 
 namespace coid {
 
+
+///Global singleton registrator
+struct GlobalSingleton
+{
+    GlobalSingleton() {
+        last = 0;
+    }
+
+    void add( void* ptr, void (*fn_destroy)(void*) )
+    {
+        comm_mutex_guard<_comm_mutex> mxg(mx);
+
+        Kill* k = new Kill(ptr, fn_destroy);
+        k->next = last;
+
+        last = k;
+    }
+
+    void destroy() {
+        while(last) {
+            Kill* tmp = last->next;
+
+            last->destroy();
+            delete last;
+
+            last = tmp;
+        }
+    }
+
+    ~GlobalSingleton() {
+        destroy();
+    }
+
+private:
+    struct Kill {
+        void* ptr;
+        void (*fn_destroy)(void*);
+
+        Kill* next;
+
+        void destroy() {
+            fn_destroy(ptr);
+        }
+
+        Kill( void* ptr, void (*fn_destroy)(void*) )
+            : ptr(ptr), fn_destroy(fn_destroy)
+        {}
+    };
+
+    _comm_mutex mx;
+    Kill* last;
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+static GlobalSingleton& global() {
+    static GlobalSingleton globs;
+    return globs;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void* singleton_register_instance( void* p, void (*fn_destroy)(void*) )
+{
+    global().add(p, fn_destroy);
+    return p;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void singletons_destroy()
+{
+    global().destroy();
+}
+
+
 } //namespace coid

@@ -46,361 +46,42 @@
 #include "atomic/atomic.h"
 
 
-////////////////////////////////////////////////////////////////////////////////
+
 #define SINGLETON(T) \
     coid::singleton< T >::instance()
 
-#define SINGLETON_ALIVE(T) \
-    coid::singleton< T >::instance_alive()
-
-#define FORCE_CREATE_SINGLETON(T) \
-    static T& __singleton##T = SINGLETON(T)
 
 
-#define MXSINGLETON(T) \
-    coid::mxsingleton< T >::instance()
-
-#define MXSINGLETON_ALIVE(T) \
-    coid::mxsingleton< T >::instance_alive()
-
-#define MXSINGLETON_T(T) \
-    coid::mxsingleton< T >::Instance
-
-#define FORCE_CREATE_MXSINGLETON(T) \
-    static coid::mxsingleton< T >::Instance& __mxsingleton##T = MXSINGLETON(T)
-
-
-
+////////////////////////////////////////////////////////////////////////////////
 COID_NAMESPACE_BEGIN
 
-////////////////////////////////////////////////////////////////////////////////
-///Global singleton registrator
-struct GlobalSingleton
-{
-    static _comm_mutex& instance()
-    {
-        static _comm_mutex mx;
-        return mx;
-    }
-};
-
+void* singleton_register_instance(void* p, void (*fn_destroy)(void*));
+void singletons_destroy();
 
 ////////////////////////////////////////////////////////////////////////////////
-/*template <class T>
-class singleton
-{
-	static T* & inst_ptr() { static T * _ptr; return _ptr; }
-	static volatile int32 & inst_status() { static volatile int32 _status; return _status; }
-
-	static void destroy()
-    {
-		const int32 status = inst_status();
-
-		if (status == 2) {
-			if (atomic::b_cas(&inst_status(), -1, status)) {
-				delete inst_ptr();
-				inst_ptr() = 0;
-			} else  
-				throw ersALREADY_DELETED;
-		} else if (status != -1) {
-			DASSERT(false && "this should not happen!");
-		}
-    }
-
-    singleton() {}
-
-public:
-    static bool being_destroyed()
-    {
-        return inst_status() < 0;
-    }
-
-    static T& instance_alive()
-    {
-        if( inst_status() >= 0 )
-            return instance();
-        throw ersDENIED;
-    }
-
-    static T& instance()
-    {
-		if(inst_status() == 2) return *inst_ptr();
-
-		for (;;) {
-			const int32 status = inst_status();
-
-			if (status > 0 && status != 2) {
-				sysMilliSecondSleep(1);
-				continue;
-			} else if (status == 0 && atomic::b_cas(&inst_status(), status + 1, status)) {
-				atexit( &destroy );
-				inst_ptr() = new T;
-				if (atomic::b_cas(&inst_status(), status + 2, status + 1))
-					return *inst_ptr();
-				else
-					throw ersDENIED;
-			} else if (status < 0)
-				throw ersDENIED;
-		}
-    }
-};*/
-
-
 template <class T>
 class singleton
 {
-	static void destroy()
-	{
-		int& st = status_ref();
-		st = -1;
-		instance();
-	}
-
 	singleton()    { }
 
 public:
 
-	static bool being_destroyed()
-	{
-		return status_ref() < 0;
-	}
-
-	static T& instance_alive()
-	{
-		if( status_ref() >= 0 )
-			return instance();
-		throw ersDENIED;
-	}
-
 	static T& instance()
 	{
-		static int& status = status_ref();
 		static T* node = 0;
 
-		if(status>0)
+		if(node)
 			return *node;
 
-		comm_mutex_guard<_comm_mutex> mxg( GlobalSingleton::instance() );
-
-		if(status>0) {
-			mxg.unlock();
-			return *node;
-		}
-
-		if( status < 0 )
-		{
-			if(node)
-			{
-				if( status-- < -1 )     //instance() called from node destructor again
-					return *node;
-
-				delete node;
-				node = 0;
-				return *(T*)0;
-			}
-			else
-				throw ersALREADY_DELETED;
-		}
-		else
-		{
-			node = new T;
-			atexit( &destroy );
-
-			status = 1;
-		}
-
-		mxg.unlock();
-		return *node;
-	}
-
-private:
-	static int& status_ref()
-	{
-		static int status = 0;
-		return status;
-	}
-};
-
-
-////////////////////////////////////////////////////////////////////////////////
-template<class T, class MUTEX=comm_mutex>
-class mxsingleton
-{
-    static void destroy()
-    {
-        int& st = status_ref();
-        st = -1;
-        instance();
-    }
-
-    mxsingleton() { }
-
-public:
-
-    class Instance
-    {
-        friend class mxsingleton;
-
-        MUTEX& _mx;
-        T* _obj;
-    public:
-
-        Instance( MUTEX& mx, T* obj, bool lock=true ) : _mx(mx), _obj(obj)
-        {
-            if(lock)
-                _mx.lock();
-        }
-        ~Instance()                         { _mx.unlock(); }
-
-        T* operator -> ()                   { return _obj; }
-        const T* operator -> () const       { return _obj; }
-    };
-
-
-    static bool being_destroyed()
-    {
-        return status_ref() < 0;
-    }
-
-    static T& instance_alive()
-    {
-        if( status_ref() >= 0 )
-            return instance();
-        throw ersDENIED;
-    }
-
-    static Instance instance()
-    {
-        static int& status = status_ref();
-        static T* node = 0;
-        static MUTEX* mutex = 0;
-        
-        if(status>0)
-            return Instance(*mutex,node);
-
-        comm_mutex_guard<_comm_mutex> mxg( GlobalSingleton::instance() );
-
-        if(status>0) {
-            mxg.unlock();
-            return Instance(*mutex,node);
-        }
-
-        if( status < 0 )
-        {
-            if(node)
-            {
-                mutex->lock();
-                if( status-- < -1 )
-                    return Instance(*mutex,node,false);   //instance() called from node destructor again
-
-                delete node;
-                node = 0;
-                return Instance(*mutex,0,false);
-            }
-            else
-                throw ersALREADY_DELETED;
-        }
-        else
-        {
-            node = new T;
-            mutex = new MUTEX;
-            atexit( &destroy );
-
-            status = 1;
-        }
-
-        mxg.unlock();
-        return Instance(*mutex,node);
-    }
-
-private:
-
-    static int& status_ref()
-    {
-        static int status = 0;
-        return status;
-    }
-};
-
-
-
-
-
-//M$VC doesn't initialize static objects when used by another static objects earlier
-// in the pre-main initialization chain, so the above code works around it, but
-// it works only when global pointers are preinitialized to zero (which M$VC does)
-//Following lessmess code works in gcc.
-/*
-////////////////////////////////////////////////////////////////////////////////
-template <class T>
-class singleton
-{
-
-public:
-    struct creator
-    {
-        DBGEXPR( int init );
-
-    public:
-        creator()
-        {
-            DBGEXPR( init = 0 );
-            singleton<T>::instance();
-        }
-
-        ~creator()
-        {
-            DASSERT( init == 0 );
-        }
-
-        void do_nothing()
-        {
-            DBGEXPR( ++init );
-        }
-
-        void destroy()
-        {
-            DASSERTX( init == 1, "Singleton deleted twice" );
-            T* p = &singleton<T>::instance();
-            delete p;
-            DBGEXPR( --init );
-        }
-    };
-    
-private:
-
-    friend struct creator;
-    static creator _singleton;
-
-    static void _destroy()
-    {
-        _singleton.destroy();
-    }
-
-    singleton()    { }
-
-public:
-
-    static T& instance()
-    {
-        static T* node = 0;
-        
-        if(node)
-            return *node;
-
-        node = new T;
-
-        _singleton.do_nothing();
-        atexit( _destroy );
-
+        node = (T*)singleton_register_instance(new T, &destroy);
         return *node;
+	}
+
+private:
+    static void destroy(void* p) {
+        delete (T*)p;
     }
 };
-
-template <class T>
-typename singleton<T>::creator  singleton<T>::_singleton;
-
-*/
 
 COID_NAMESPACE_END
 
