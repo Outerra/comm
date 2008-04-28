@@ -457,15 +457,15 @@ public:
 
     friend charstr& operator << (charstr& out, const opcd_formatter& f)
     {
-        out << f._e.error_desc();
+        out << f.e.error_desc();
         /*if( f._e.subcode() ) {
 			char tmp[2] = "\0";
 			*tmp = (char) f._e.subcode();
             out << " (code: " << tmp << ")";
 		}*/
 
-        if( f._e.text() && f._e.text()[0] )
-            out << " : " << f._e.text();
+        if( f.e.text() && f.e.text()[0] )
+            out << " : " << f.e.text();
         return out;
     }
 
@@ -485,19 +485,11 @@ public:
 
     ////////////////////////////////////////////////////////////////////////////////
     ///append number in baseN
-    /**
-        @param align    align output - fill with zeros(-2), to the left(-1), center(0), right(1)
-    **/
     template< class INT >
     struct num
     {
         typedef typename SIGNEDNESS<INT>::SIGNED          SINT;
         typedef typename SIGNEDNESS<INT>::UNSIGNED        UINT;
-
-        static UINT int_abs( SINT a )
-        {
-            return a - ((a+a) & (SINT(a)>>(8*sizeof(INT)-1)));
-        }
 
         static token insert_signed( char* dst, uints dstsize, SINT n, int BaseN, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
         {
@@ -673,18 +665,19 @@ public:
         }
     }
 
+
     ///Append floating point number
     ///@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
-    void append( float d, int nfrac )
+    void append( double d, int nfrac )
     {
-        float f = floorf(d);
-        append_num( 10, (int)f );
+        double w = floor(d);
+        append_num( 10, (int64)w );
         append('.');
-        append_fraction( d-f, nfrac );
+        append_fraction( d-w, nfrac );
     }
 
     ///@param ndig number of decimal places: >0 maximum, <0 precisely -ndig places
-    void append_fraction( float n, int ndig )
+    void append_fraction( double n, int ndig )
     {
         uint ndiga = (uint)int_abs(ndig);
         uint size = (uint)len();
@@ -694,9 +687,9 @@ public:
         for( uint i=0; i<ndiga; ++i )
         {
             n *= 10;
-            float f = floorf(n);
+            double f = floor(n);
             n -= f;
-            int v = (int)f;
+            uint8 v = (uint8)f;
             *p++ = '0' + v;
 
             if( ndig >= 0  &&  v != 0 )
@@ -1782,10 +1775,10 @@ struct nchar_fmt
 ////////////////////////////////////////////////////////////////////////////////
 inline charstr& opcd_formatter::text( charstr& dst ) const
 {
-    dst << _e.error_desc();
+    dst << e.error_desc();
 
-    if( _e.text() && _e.text()[0] )
-        dst << " : " << _e.text();
+    if( e.text() && e.text()[0] )
+        dst << " : " << e.text();
     return dst;
 }
 

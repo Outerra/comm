@@ -373,7 +373,7 @@ struct token
         }
         return 0;
     }
-
+/*
     ///Positive value moves the pointer forward, a negative one cuts from end
     token& operator += (ints i)
     {
@@ -405,6 +405,30 @@ struct token
         }
         return *this;
     }
+*/
+    ///Shift the starting pointer forwards or backwards
+    token& shift_start( ints i )
+    {
+        if( i>0  &&  i>(ints)_len )
+            i = _len;
+
+        _ptr += i;
+        _len -= i;
+
+        return *this;
+    }
+
+    ///Shift the end forwards or backwards
+    token& shift_end( ints i )
+    {
+        if( i<0  &&  -i>(ints)_len )
+            i = -(ints)_len;
+
+        _len += i;
+
+        return *this;
+    }
+
 /*
     const char* operator + (ints i)
     {
@@ -571,7 +595,7 @@ struct token
         {
             if( !(flags & fREMOVE_SEPARATOR) ) {
                 if( ((flags>>2) ^ flags) & fRETURN_SEPARATOR )
-                    sep += sep._len;
+                    sep.shift_start( sep._len );
                 else
                     sep._len = 0;
             }
@@ -1402,7 +1426,7 @@ struct token
                 else if( c >= '0' && c <= '9' )  BaseN=10;
 
                 if( BaseN != 10 )
-                    tok += 2;
+                    tok.shift_start(2);
             }
         }
 
@@ -1437,7 +1461,8 @@ struct token
                 r = r*BaseN + a;
                 success = true;
             }
-            t += i;
+
+            t.shift_start(i);
             return r;
         }
 
@@ -1449,8 +1474,8 @@ struct token
                 return 0;
             }
             char c = t[0];
-            if(c == '-')  return -(T)xtouint(t+=1);
-            if(c == '+')  return (T)xtouint(t+=1);
+            if(c == '-')  return -(T)xtouint(t.shift_start(1));
+            if(c == '+')  return (T)xtouint(t.shift_start(1));
             return (T)xtouint(t);
         }
 
@@ -1462,8 +1487,8 @@ struct token
                 return 0;
             }
             char c = t[0];
-            if(c == '-')  return -(T)touint(t+=1);
-            if(c == '+')  return (T)touint(t+=1);
+            if(c == '-')  return -(T)touint(t.shift_start(1));
+            if(c == '+')  return (T)touint(t.shift_start(1));
             return (T)touint(t);
         }
 

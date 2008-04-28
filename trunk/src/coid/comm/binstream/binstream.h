@@ -976,18 +976,38 @@ template<> struct EnumType<1>       { typedef uchar     TEnum; };
 ////////////////////////////////////////////////////////////////////////////////
 struct opcd_formatter
 {
-    opcd _e;
+    opcd e;
 
-    opcd_formatter( opcd e ) : _e(e) { }
+    opcd_formatter( opcd e ) : e(e) { }
 
     charstr& text( charstr& dst ) const;
 
+    uints write( char* buf, uints size )
+    {
+        uints n=0;
+
+        token ed = e.error_desc();
+        if( size <= ed.len() ) {
+            ed.copy_to( buf, size );
+            n = ed.len();
+        }
+
+        token et = e.text();
+        if( size <= n + 3 + et.len() ) {
+            ::memcpy( buf+n, " : ", 3 );
+            et.copy_to( buf+n+3, size-3-n );
+            n += 3 + et.len();
+        }
+
+        return n;
+    }
+
     friend binstream& operator << (binstream& out, const opcd_formatter& f)
     {
-        out << f._e.error_desc();
+        out << f.e.error_desc();
 
-        if( f._e.text() && f._e.text()[0] )
-            out << " : " << f._e.text();
+        if( f.e.text() && f.e.text()[0] )
+            out << " : " << f.e.text();
         return out;
     }
 };

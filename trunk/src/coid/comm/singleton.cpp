@@ -38,6 +38,8 @@
 #include "singleton.h"
 #include "sync/mutex.h"
 
+#include "binstream/filestream.h"
+#include "binstream/txtstream.h"
 
 namespace coid {
 
@@ -49,19 +51,31 @@ struct GlobalSingleton
         last = 0;
     }
 
-    void add( void* ptr, void (*fn_destroy)(void*) )
+    void add( void* ptr, void (*fn_destroy)(void*), const char* type, const char* file, int line )
     {
         comm_mutex_guard<_comm_mutex> mxg(mx);
 
-        Kill* k = new Kill(ptr, fn_destroy);
+        Kill* k = new Kill(ptr, fn_destroy, type, file, line);
         k->next = last;
 
         last = k;
     }
 
-    void destroy() {
+    void destroy()
+    {
+#ifdef _DEBUG
+        bofstream bof("singleton.log");
+        txtstream tof(bof);
+#endif
+
         while(last) {
             Kill* tmp = last->next;
+
+#ifdef _DEBUG
+            tof << "destroying '" << last->type << "' singleton created at "
+                << last->file << ":" << last->line << "\r\n";
+            tof.flush();
+#endif
 
             last->destroy();
             delete last;
@@ -78,6 +92,9 @@ private:
     struct Kill {
         void* ptr;
         void (*fn_destroy)(void*);
+        const char* type;
+        const char* file;
+        int line;
 
         Kill* next;
 
@@ -85,8 +102,8 @@ private:
             fn_destroy(ptr);
         }
 
-        Kill( void* ptr, void (*fn_destroy)(void*) )
-            : ptr(ptr), fn_destroy(fn_destroy)
+        Kill( void* ptr, void (*fn_destroy)(void*), const char* type, const char* file, int line )
+            : ptr(ptr), fn_destroy(fn_destroy), type(type), file(file), line(line)
         {}
     };
 
@@ -102,9 +119,10 @@ static GlobalSingleton& global() {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void* singleton_register_instance( void* p, void (*fn_destroy)(void*) )
+void* singleton_register_instance( void* p, void (*fn_destroy)(void*),
+    const char* type, const char* file, int line )
 {
-    global().add(p, fn_destroy);
+    global().add(p, fn_destroy, type, file, line);
     return p;
 }
 

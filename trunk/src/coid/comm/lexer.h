@@ -1597,7 +1597,7 @@ protected:
 
                 if( kprev > k ) { uchar kt=k; k=kprev; kprev=kt; }
                 for( int i=kprev; i<=(int)k; ++i )  (this->*fn)(i,fnval);
-                s += 2;
+                s.shift_start(2);
             }
             else
                 (this->*fn)(k,fnval);
@@ -1709,7 +1709,7 @@ protected:
                 //a regular escape sequence, flush preceding data
                 if(outermost)
                     _last.tokbuf.add_from( _tok.ptr(), off );
-                _tok += off+1;  //past the escape char
+                _tok.shift_start(off+1);  //past the escape char
 
                 bool replaced = false;
 
@@ -1736,7 +1736,7 @@ protected:
                         //    << token(_tok.ptr(), uint_min(3,_tok.len())) << "..";
 
                         //skip one char after the escape char
-                        _tok += 1;
+                        ++_tok;
                     }
                     else
                     {
@@ -1745,7 +1745,7 @@ protected:
 
                         if(outermost)
                             _last.tokbuf += ep.replace;
-                        _tok += ep.code.len();
+                        _tok.shift_start( ep.code.len() );
                     }
                 }
 
@@ -1864,7 +1864,7 @@ protected:
         {
             //if there's something in the buffer, append
             _last.tokbuf.add_from( _tok.ptr(), off );
-            _tok += off;
+            _tok.shift_start(off);
             off = 0;
             if(final)
                 _last.tok = _last.tokbuf;
@@ -1873,7 +1873,7 @@ protected:
             _last.tok.set( _tok.ptr(), off );
 
         if(final) {
-            _tok += off + len;
+            _tok.shift_start(off + len);
             off = 0;
         }
     }
@@ -2081,7 +2081,7 @@ protected:
         else
             res.set( _tok.ptr(), off );
 
-        _tok += off;
+        _tok.shift_start(off);
         return res;
     }
 
@@ -2120,7 +2120,7 @@ protected:
         else
             res.set( _tok.ptr(), off );
 
-        _tok += off;
+        _tok.shift_start(off);
         return res;
     }
 
@@ -2136,7 +2136,7 @@ protected:
             _last.tokbuf.add_from( _tok.ptr(), old );
 
         if(!_bin) {
-            _tok += _tok.len() - nkeep;
+            _tok.shift_start( _tok.len() - nkeep );
             return 0;
         }
 
@@ -2292,7 +2292,7 @@ inline bool lexer::escape_rule::synthesize_string( token tok, charstr& dst ) con
 
         if(pair) {
             dst.add_from_range( copied, p );
-            tok += pair->replace.len();
+            tok.shift_start( pair->replace.len() );
             copied = tok.ptr();
 
             dst.append(esc);

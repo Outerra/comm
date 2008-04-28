@@ -54,7 +54,7 @@ bool directory::append_path( charstr& dst, token path )
 
         while( path.begins_with("..") )
         {
-            path += 2;
+            path.shift_start(2);
             char c = path.first_char();
 
             if( c!=0 && !is_separator(c) )
