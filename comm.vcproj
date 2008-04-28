@@ -683,6 +683,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\singleton.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\str-win.cpp"
 				>
 			</File>

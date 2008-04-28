@@ -39,16 +39,10 @@
 #define __COID_COMM_SINGLETON__HEADER_FILE__
 
 #include "namespace.h"
-#include "commassert.h"
-#include <stdlib.h>
-
-#include "sync/mutex.h"
-#include "atomic/atomic.h"
-
 
 
 #define SINGLETON(T) \
-    coid::singleton< T >::instance()
+    coid::singleton<T>::instance()
 
 
 

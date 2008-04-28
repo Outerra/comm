@@ -36,8 +36,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "singleton.h"
-#include "str.h"
-#include "hash/hashkeyset.h"
+#include "sync/mutex.h"
 
 
 namespace coid {
