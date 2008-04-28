@@ -742,7 +742,7 @@ inline opcd httpstream::header::decode( bool is_listener, httpstream& http, bins
         //check the path
         if( path.begins_with_icase(_HTTP) )
         {
-            path += _HTTP.len();
+            path.shift_start( _HTTP.len() );
             path.skip_notchar('/');
         }
 
