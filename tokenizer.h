@@ -445,7 +445,7 @@ public:
                 _last_mask = fGROUP_STRING;
                 _last_strdel = k;
 
-                _tok += off;
+                _tok.shift_start(off);
 
                 //this is a leading string delimiter, [ep] points to the delimiter pair
                 return next_read_string( _strdel[ep]._second, true );
@@ -714,7 +714,7 @@ protected:
             {
                 //a regular escape sequence, flush preceding data
                 _strbuf.add_from( _tok.ptr(), off );
-                _tok += off+1;  //past the escape char
+                _tok.shift_start(off+1);  //past the escape char
 
                 //get ucs4 code of following character
                 off = 0;
@@ -732,7 +732,7 @@ protected:
                         _escary[i]._fnc_replace( _tok, _strbuf );
                     }
                     else {
-                        _tok += _escary[i]._pattern.len();
+                        _tok.shift_start( _escary[i]._pattern.len() );
                         _strbuf.append_ucs4( _escary[i]._replace );
                     }
                 }
@@ -749,7 +749,7 @@ protected:
                     {
                         //if there's something in the buffer, append
                         _strbuf.add_from( _tok.ptr(), offp );
-                        _tok += eat_term ? off : offp;
+                        _tok.shift_start( eat_term ? off : offp );
 
                         _result = _strbuf;
                         return _result;
@@ -759,7 +759,7 @@ protected:
                     // from the buffer
 
                     _result.set( _tok.ptr(), offp );
-                    _tok += eat_term ? off : offp;
+                    _tok.shift_start( eat_term ? off : offp );
                     return _result;
                 }
 
@@ -896,7 +896,7 @@ protected:
         else
             res.set( _tok.ptr(), off );
 
-        _tok += off;
+        _tok.shift_start(off);
         return res;
     }
 
@@ -1074,7 +1074,7 @@ public:
     ///Skip characters of group
     const char * skip_group (token& tok, uchar grp) const
     {
-        tok += tok._len;
+        tok.shift_start( tok._len );
         if (grp >= 8)  return 0;
         uint i, msk = 1 << grp;
         for (i=0; tok[i]!=0; ++i) {
@@ -1089,7 +1089,7 @@ public:
     ///Skip characters of multiple groups
     const char * skip_groups (token& tok, uint msk) const
     {
-        tok += tok._len;
+        tok.shift_start( tok._len );
         uint i;
         for (i=0; tok[i]!=0; ++i) {
             if (!in_groups (tok[i], msk))  break;
@@ -1103,7 +1103,7 @@ public:
     ///Skip characters not belonging to group
     const char * skip_nogroup (token& tok, uchar grp) const
     {
-        tok += tok._len;
+        tok.shift_start( tok._len );
         if (grp >= 8)  return 0;
         uint i, msk = 1 << grp;
         for (i=0; tok[i]!=0; ++i)
@@ -1116,7 +1116,7 @@ public:
     ///Skip characters not belonging to multiple groups
     const char * skip_nogroups (token& tok, uint msk) const
     {
-        tok += tok._len;
+        tok.shift_start( tok._len );
         uints i;
         for (i=0; tok[i]!=0; ++i)
         {
@@ -1130,7 +1130,7 @@ public:
     ///Skip characters not belonging to multiple groups
     const char * skip_nogroups (token& tok, uint msk, uint esc) const
     {
-        tok += tok._len;
+        tok.shift_start( tok._len );
         uints i;
         for (i=0; tok[i]!=0; ++i)
         {
