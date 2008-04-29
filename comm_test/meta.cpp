@@ -132,6 +132,25 @@ static const char* teststr1 =
 //",a = 100\n"
 ;
 
+static const char* textxml2 =
+"<root xmlns:xsd='http://www.w3.org/2001/XMLSchema'><a>1</a><b>200</b><fx><text"
+">def</text><j>1</j><fa><i>-1</i><f>-.770</f></fa></fx><af><FooAA><text>jano</t"
+"ext><j>10</j><fa><i>47</i><f>47.470</f></fa></FooAA><FooAA><text>fero</text><j"
+">11</j><fa><i>2</i><f>4.140</f></fa></FooAA><FooAA><text>jozo</text><j>12</j><"
+"fa><i>3</i><f>5.140</f></fa></FooAA></af><aaf><item><FooAA><text>def</text><j>"
+"20</j><fa><i>9</i><f>8.330</f></fa></FooAA><FooAA><text>def</text><j>21</j><fa"
+"><i>10</i><f>4.660</f></fa></FooAA><FooAA><text>def</text><j>22</j><fa><i>11</"
+"i><f>7.660</f></fa></FooAA></item><item></item></aaf><aaaf><item><item><FooAA>"
+"<text>def</text><j>30</j><fa><i>9</i><f>8.330</f></fa></FooAA><FooAA><text>def"
+"</text><j>31</j><fa><i>10</i><f>4.660</f></fa></FooAA><FooAA><text>def</text><"
+"j>32</j><fa><i>11</i><f>7.660</f></fa></FooAA></item><item></item></item><item"
+"><item><FooAA><text>def</text><j>33</j><fa><i>33</i><f>.660</f></fa></FooAA></"
+"item></item></aaaf><ai><xsd:int>1</xsd:int><xsd:int>2</xsd:int><xsd:int>3</xsd"
+":int><xsd:int>4</xsd:int><xsd:int>5</xsd:int></ai><aai><item><xsd:int>1</xsd:i"
+"nt><xsd:int>2</xsd:int><xsd:int>3</xsd:int></item><item><xsd:int>4</xsd:int><x"
+"sd:int>5</xsd:int></item><item><xsd:int>6</xsd:int></item></aai><end>99</end><"
+"/root>";
+
 ////////////////////////////////////////////////////////////////////////////////
 void metastream_test()
 {
@@ -156,6 +175,12 @@ void metastream_test()
     meta.bind_formatting_stream(fmx);
     meta.stream_out(b);
     meta.stream_flush();
+
+    FooB bi;
+    buf.set(textxml2);
+    fmx.bind(buf);
+    meta.stream_in(bi);
+    meta.stream_acknowledge();
 };
 
 COID_NAMESPACE_END
