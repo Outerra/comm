@@ -961,6 +961,83 @@ public:
         return succ;
     }
 
+    //@{
+    ///Try to match one of the rules. The parameters can be either literals (strings or
+    /// single characters) or rule identifiers.
+    //@return true if succesfull; matched rule can be found by calling last(). Returns
+    /// false if none were matched.
+    //@note if nothing was matched, the lexer doesn't consume anything from the stream
+    template<class T1, class T2>
+    bool matches_either( T1 a, T2 b ) {
+        return match_optional(a) || match_optional(b);
+    }
+
+    template<class T1, class T2, class T3>
+    bool matches_either( T1 a, T2 b, T3 c ) {
+        return match_optional(a) || match_optional(b) || match_optional(c);
+    }
+
+    template<class T1, class T2, class T3, class T4>
+    bool matches_either( T1 a, T2 b, T3 c, T4 d ) {
+        return match_optional(a) || match_optional(b) || match_optional(c)
+            || match_optional(d);
+    }
+    //@}
+
+
+    //@{
+    ///Match one of the rules. The parameters can be either literals (strings or
+    /// single characters) or rule identifiers.
+    template<class T1, class T2>
+    void match_either( T1 a, T2 b ) {
+        if(match_optional(a) || match_optional(b))
+            return;
+
+        _err = exception::ERR_EXTERNAL_ERROR;
+        on_error_prefix(true);
+
+        _errtext << "couldn't match either: ";
+        rule_map<T1>::desc(a, *this, _errtext); _errtext << ", ";
+        rule_map<T2>::desc(b, *this, _errtext);
+
+        throw exception(_err, _errtext);
+    }
+
+    template<class T1, class T2, class T3>
+    void match_either( T1 a, T2 b, T3 c ) {
+        if(match_optional(a) || match_optional(b) || match_optional(c))
+            return;
+
+        _err = exception::ERR_EXTERNAL_ERROR;
+        on_error_prefix(true);
+
+        _errtext << "couldn't match either: ";
+        rule_map<T1>::desc(a, *this, _errtext); _errtext << ", ";
+        rule_map<T2>::desc(b, *this, _errtext); _errtext << ", ";
+        rule_map<T3>::desc(c, *this, _errtext);
+
+        throw exception(_err, _errtext);
+    }
+
+    template<class T1, class T2, class T3, class T4>
+    void match_either( T1 a, T2 b, T3 c, T4 d ) {
+        if(match_optional(a) || match_optional(b) || match_optional(c)
+            || match_optional(d))
+            return;
+
+        _err = exception::ERR_EXTERNAL_ERROR;
+        on_error_prefix(true);
+
+        _errtext << "couldn't match either: ";
+        rule_map<T1>::desc(a, *this, _errtext); _errtext << ", ";
+        rule_map<T2>::desc(b, *this, _errtext); _errtext << ", ";
+        rule_map<T3>::desc(c, *this, _errtext); _errtext << ", ";
+        rule_map<T4>::desc(d, *this, _errtext);
+
+        throw exception(_err, _errtext);
+    }
+    //@}
+
     ///Push the last token back to be retrieved again by the next() method
     /// (and all the methods that use it, like the match_* methods etc.).
     void push_back() {
@@ -2233,6 +2310,40 @@ protected:
         return newlines;
     }
 
+    ///Helper rule/literal mapper
+    template<class T>
+    struct rule_map {};
+
+    template<> struct rule_map<int> {
+        static void desc( int grp, const lexer& lex, charstr& dst ) {
+            const entity& ent = lex.get_entity(grp);
+            dst << ent.entity_type() << "(" << grp << ") '" << ent.name << "'";
+        }
+    };
+
+    template<> struct rule_map<char> {
+        static void desc( char c, const lexer& lex, charstr& dst ) {
+            dst << "literal character '" << c << "'";
+        }
+    };
+
+    template<> struct rule_map<token> {
+        static void desc( const token& t, const lexer& lex, charstr& dst ) {
+            dst << "literal string '" << t << "'";
+        }
+    };
+
+    template<> struct rule_map<charstr> {
+        static void desc( const charstr& t, const lexer& lex, charstr& dst ) {
+            dst << "literal string '" << t << "'";
+        }
+    };
+
+    template<> struct rule_map<const char*> {
+        static void desc( const char* t, const lexer& lex, charstr& dst ) {
+            dst << "literal string '" << t << "'";
+        }
+    };
 
 protected:
 

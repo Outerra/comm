@@ -68,7 +68,7 @@ public:
     void init( binstream* br, binstream* bw )
     {
         _sesinitr = _sesinitw = 0;
-        _attrmode = false;
+        _attrmodew = false;
 
         _binr = _binw = 0;
         if(bw)  bind( *bw, BIND_OUTPUT );
@@ -88,7 +88,7 @@ public:
         _tokenizer.def_escape_pair( er, "quot;", "\"" );
 
         lexstr = _tokenizer.def_string( "str", "\"", "\"", "esc" );
-        //lexchr = _tokenizer.def_string( "str", "\'", "\'", "esc" );
+        lexchr = _tokenizer.def_string( "str", "\'", "\'", "esc" );
 
         //tag block, cannot have nested tags but can contain strings
         lextag = _tokenizer.def_block( "tag", "<", ">", "str" );
@@ -108,15 +108,34 @@ public:
 
     virtual token fmtstream_name()      { return "fmtstreamxml2"; }
 
+    ///Override to parse custom header
+    virtual opcd on_read_open() {
+        if( _tokenizer.matches('<') && _tokenizer.matches("root")
+            && _tokenizer.matches("xmlns:xsd") && _tokenizer.matches('=')
+            && _tokenizer.matches_either(lexstr, lexchr, 'd', "dada")
+            && _tokenizer.matches('>') )
+            return 0;
 
-    virtual opcd on_read_open()         { return 0; }
-    virtual opcd on_read_close()        { return 0; }
+        return ersSYNTAX_ERROR;
+    }
 
+    ///Override to parse custom trailer
+    virtual opcd on_read_close() {
+        if( _tokenizer.matches('<') && _tokenizer.matches('/')
+            && _tokenizer.matches("root")
+            && _tokenizer.matches('>') )
+            return 0;
+
+        return ersSYNTAX_ERROR;
+    }
+
+    ///Override to put custom header
     virtual opcd on_write_open() {
         _bufw << "<root xmlns:xsd='http://www.w3.org/2001/XMLSchema'>";
         return 0;
     }
 
+    ///Override to put custom trailer
     virtual opcd on_write_close() {
         _bufw << "</root>";
         return 0;
@@ -142,7 +161,7 @@ public:
         if( t.is_array_start() )
         {
             if( t.type == type::T_KEY )
-                _tag.reset();
+                _tagw.reset();
             else if( t.type == type::T_CHAR ) {
                 close_previous_tag(true);
                 open_this_tag(t);
@@ -151,7 +170,7 @@ public:
             {
                 close_previous_tag(true);
 
-                _bufw << char('<') << (_tag.is_empty() ? array_element : token(_tag));
+                _bufw << char('<') << (_tagw.is_empty() ? array_element : token(_tagw));
 /*
                 if( t.type != type::T_COMPOUND ) {
                     _bufw << " SOAP-ENC:arrayType=\"" << get_xsi_type(t) << "[";
@@ -163,7 +182,7 @@ public:
                 _bufw << char('>');
 
                 Parent* par = _stack.push();
-                par->tag.swap(_tag);
+                par->tag.swap(_tagw);
             }
         }
         else if( t.is_array_end() )
@@ -178,9 +197,9 @@ public:
 
                 _bufw << "</" << (par->tag.is_empty() ? array_element : par->tag)
                     << char('>');
-                _tag.swap(par->tag);
+                _tagw.swap(par->tag);
 
-                _attrmode = false;
+                _attrmodew = false;
                 _stack.pop();
             }
         }
@@ -199,9 +218,9 @@ public:
                 : token(par->tag);
 
             _bufw << "</" << tok << char('>');
-            _tag.swap(par->tag);
+            _tagw.swap(par->tag);
 
-            _attrmode = false;
+            _attrmodew = false;
             _stack.pop();
         }
         else if( t.type == type::T_STRUCTBGN )
@@ -212,18 +231,18 @@ public:
             close_previous_tag(true);
 
             const charstr* name = (const charstr*)p;
-            token tok = _tag.is_empty()
+            token tok = _tagw.is_empty()
                 ? (name ? token(*name) : array_element)
-                : token(_tag);
+                : token(_tagw);
 
             _bufw << char('<') << tok;
-            _attrmode = true;
+            _attrmodew = true;
 
             Parent* par = _stack.push();
-            par->tag.swap(_tag);
+            par->tag.swap(_tagw);
         }
         else if( t.type == type::T_KEY ) {
-            _tag << *(char*)p;
+            _tagw << *(char*)p;
         }
         else
         {
@@ -319,6 +338,14 @@ public:
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     opcd read( void* p, type t )
     {
+        if(!_sesinitr)
+        {
+            opcd e = on_read_open();
+            if(e)
+                return e;
+
+            _sesinitr = 1;
+        }
         return 0;
     }
 
@@ -349,7 +376,7 @@ public:
             if( t.type == type::T_BINARY )
                 e = write_binary( c.extract(n), n );
             else if( t.type == type::T_KEY )
-                _tag.set_from( (const char*)c.extract(n), n );
+                _tagw.set_from( (const char*)c.extract(n), n );
             else
             {
                 token t( (const char*)c.extract(n), n );
@@ -385,6 +412,9 @@ public:
 
     virtual void acknowledge( bool eat = false )
     {
+        if(!_sesinitr)
+            throw ersIMPROPER_STATE;
+
         if( !eat && !_tokenizer.end() && !_tokenizer.next().end() )
             throw ersIO_ERROR "data left in received block";
         else
@@ -452,20 +482,20 @@ protected:
     void close_previous_tag( bool end_attr_mode )
     {
         //close parent tag if ending the attribute mode
-        if( _attrmode  &&  (end_attr_mode || _tag.first_char() != '@') ) {
+        if( _attrmodew  &&  (end_attr_mode || _tagw.first_char() != '@') ) {
             _bufw << char('>');
-            _attrmode = false;
+            _attrmodew = false;
         }
     }
 
     void open_this_tag( type t )
     {
-        if(_attrmode)
-            _bufw << char(' ') << _tag << "=\"";
+        if(_attrmodew)
+            _bufw << char(' ') << _tagw << "=\"";
         else {
-            token tok = _tag.is_empty()
+            token tok = _tagw.is_empty()
                 ?  get_xsi_type(t)
-                :  _tag;
+                :  _tagw;
 
             _bufw << char('<') << tok << char('>');
         }
@@ -473,12 +503,12 @@ protected:
 
     void close_this_tag( type t )
     {
-        if(_attrmode)
+        if(_attrmodew)
             _bufw << char('"');
         else {
-            token tok = _tag.is_empty()
+            token tok = _tagw.is_empty()
                 ?  get_xsi_type(t)
-                :  _tag;
+                :  _tagw;
 
             _bufw << "</" << tok << char('>');
         }
@@ -491,8 +521,8 @@ protected:
     };
 
     dynarray<Parent> _stack;
-    charstr _tag;
-    bool _attrmode;                     ///< attribute setting mode at the current level
+    charstr _tagw;                      ///< tag to be written
+    bool _attrmodew;                    ///< attribute setting mode at the current level
 
     token tkBoolTrue, tkBoolFalse;      ///< symbols for bool type for reading and writting
     token tkrBoolTrue, tkrBoolFalse;    ///< additional symbols for bool type for reading
