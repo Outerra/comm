@@ -1156,7 +1156,7 @@ public:
     struct exception
     {
         int code;
-        const charstr& text;
+        charstr text;
 
         exception(int e, const charstr& text) : code(e), text(text)
         {}
@@ -1193,7 +1193,7 @@ protected:
         return _errtext;
     }
 /*
-    void __throw_lexer_exception() {
+    void __throw_lexer_exception() const {
         throw exception(_err, _errtext);
     }
 */
