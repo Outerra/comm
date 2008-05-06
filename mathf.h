@@ -42,6 +42,9 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
+#include "namespace.h"
+
+
 COID_NAMESPACE_BEGIN
 
 
