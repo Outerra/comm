@@ -778,27 +778,29 @@ public:
         uchar code = *_tok.ptr();
         ushort x = _abmap[code];        //get mask for the leading character
 
-        if(x & (fSEQ_TRAILING|xSEQ))
+        //check if it's the trailing sequence
+        int kt;
+        uint off=0;
+
+        if( (x & fSEQ_TRAILING)
+            && _stack.size()>1
+            && (kt = match_trail((*_stack.last())->trailing, off)) >= 0 )
         {
-            //check if it's the trailing sequence
-            int kt;
-            uint off=0;
+            const block_rule& br = **_stack.last();
 
-            if( (x & fSEQ_TRAILING)
-                && _stack.size()>1
-                && (kt = match_trail((*_stack.last())->trailing, off)) >= 0 )
-            {
-                const block_rule& br = **_stack.pop();
+            uint k = br.id;
+            _last.id = -1 - k;
+            _last.state = -(int)k;
+            _last_string = k;
 
-                uint k = br.id;
-                _last.id = -1 - k;
-                _last.state = -(int)k;
-                _last_string = k;
+            _last.tok = _tok.cut_left_n( br.trailing[kt].seq.len() );
+            _stack.pop();
 
-                _last.tok = _tok.cut_left_n( br.trailing[kt].seq.len() );
-                return _last;
-            }
+            return _last;
+        }
 
+        if(x & xSEQ)
+        {
             //this could be a leading string/block delimiter, if we can find it in the register
             const dynarray<sequence*>& dseq = _seqary[((x&xSEQ)>>rSEQ)-1];
             uint i, n = (uint)dseq.size();
