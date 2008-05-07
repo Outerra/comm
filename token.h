@@ -1640,14 +1640,126 @@ struct token
         return conv.xtoint(*this);
     }
 
+    //@{ Conversion to numbers, given size of the integer type and a destination address
+    bool toint_any( void* dst, uint size ) const
+    {
+        token tok = *this;
+        switch(size) {
+        case sizeof(int8):  { tonum<int8> conv;  *(int8*)dst = conv.toint(tok); } break;
+        case sizeof(int16): { tonum<int16> conv; *(int16*)dst = conv.toint(tok); } break;
+        case sizeof(int32): { tonum<int32> conv; *(int32*)dst = conv.toint(tok); } break;
+        case sizeof(int64): { tonum<int64> conv; *(int64*)dst = conv.toint(tok); } break;
+        default:
+            return false;
+        }
+        return true;
+    }
 
+    bool touint_any( void* dst, uint size ) const
+    {
+        token tok = *this;
+        switch(size) {
+        case sizeof(uint8):  { tonum<uint8> conv;  *(uint8*)dst = conv.touint(tok); } break;
+        case sizeof(uint16): { tonum<uint16> conv; *(uint16*)dst = conv.touint(tok); } break;
+        case sizeof(uint32): { tonum<uint32> conv; *(uint32*)dst = conv.touint(tok); } break;
+        case sizeof(uint64): { tonum<uint64> conv; *(uint64*)dst = conv.touint(tok); } break;
+        default:
+            return false;
+        }
+        return true;
+    }
+
+    bool xtoint_any( void* dst, uint size ) const
+    {
+        token tok = *this;
+        switch(size) {
+        case sizeof(int8):  { tonum<int8> conv;  *(int8*)dst = conv.xtoint(tok); } break;
+        case sizeof(int16): { tonum<int16> conv; *(int16*)dst = conv.xtoint(tok); } break;
+        case sizeof(int32): { tonum<int32> conv; *(int32*)dst = conv.xtoint(tok); } break;
+        case sizeof(int64): { tonum<int64> conv; *(int64*)dst = conv.xtoint(tok); } break;
+        default:
+            return false;
+        }
+        return true;
+    }
+
+    bool xtouint_any( void* dst, uint size ) const
+    {
+        token tok = *this;
+        switch(size) {
+        case sizeof(uint8):  { tonum<uint8> conv;  *(uint8*)dst = conv.xtouint(tok); } break;
+        case sizeof(uint16): { tonum<uint16> conv; *(uint16*)dst = conv.xtouint(tok); } break;
+        case sizeof(uint32): { tonum<uint32> conv; *(uint32*)dst = conv.xtouint(tok); } break;
+        case sizeof(uint64): { tonum<uint64> conv; *(uint64*)dst = conv.xtouint(tok); } break;
+        default:
+            return false;
+        }
+        return true;
+    }
+
+    bool toint_any_and_shift( void* dst, uint size )
+    {
+        switch(size) {
+        case sizeof(int8):  { tonum<int8> conv;  *(int8*)dst = conv.toint(*this); } break;
+        case sizeof(int16): { tonum<int16> conv; *(int16*)dst = conv.toint(*this); } break;
+        case sizeof(int32): { tonum<int32> conv; *(int32*)dst = conv.toint(*this); } break;
+        case sizeof(int64): { tonum<int64> conv; *(int64*)dst = conv.toint(*this); } break;
+        default:
+            return false;
+        }
+        return true;
+    }
+
+    bool touint_any_and_shift( void* dst, uint size )
+    {
+        switch(size) {
+        case sizeof(uint8):  { tonum<uint8> conv;  *(uint8*)dst = conv.touint(*this); } break;
+        case sizeof(uint16): { tonum<uint16> conv; *(uint16*)dst = conv.touint(*this); } break;
+        case sizeof(uint32): { tonum<uint32> conv; *(uint32*)dst = conv.touint(*this); } break;
+        case sizeof(uint64): { tonum<uint64> conv; *(uint64*)dst = conv.touint(*this); } break;
+        default:
+            return false;
+        }
+        return true;
+    }
+
+    bool xtoint_any_and_shift( void* dst, uint size )
+    {
+        switch(size) {
+        case sizeof(int8):  { tonum<int8> conv;  *(int8*)dst = conv.xtoint(*this); } break;
+        case sizeof(int16): { tonum<int16> conv; *(int16*)dst = conv.xtoint(*this); } break;
+        case sizeof(int32): { tonum<int32> conv; *(int32*)dst = conv.xtoint(*this); } break;
+        case sizeof(int64): { tonum<int64> conv; *(int64*)dst = conv.xtoint(*this); } break;
+        default:
+            return false;
+        }
+        return true;
+    }
+
+    bool xtouint_any_and_shift( void* dst, uint size )
+    {
+        switch(size) {
+        case sizeof(uint8):  { tonum<uint8> conv;  *(uint8*)dst = conv.xtouint(*this); } break;
+        case sizeof(uint16): { tonum<uint16> conv; *(uint16*)dst = conv.xtouint(*this); } break;
+        case sizeof(uint32): { tonum<uint32> conv; *(uint32*)dst = conv.xtouint(*this); } break;
+        case sizeof(uint64): { tonum<uint64> conv; *(uint64*)dst = conv.xtouint(*this); } break;
+        default:
+            return false;
+        }
+        return true;
+    }
+
+    //@}
+
+
+    ///Convert token to double value, consuming as much as possible
     double todouble() const
     {
         token t = *this;
         return t.todouble_and_shift();
     }
     
-    ///Convert the token to double
+    ///Convert token to double value, shifting the consumed part
     double todouble_and_shift()
     {
         bool invsign=false;
@@ -1680,6 +1792,7 @@ struct token
         return invsign ? -val : val;
     }
 
+    ///Convert string (in local time) to datetime value
     opcd todate_local( timet& dst )
     {
         struct tm tmm;
@@ -1695,6 +1808,7 @@ struct token
         return 0;
     }
 
+    ///Convert string (in gmt time) to datetime value
     opcd todate_gmt( timet& dst )
     {
         struct tm tmm;
@@ -1710,6 +1824,7 @@ struct token
         return 0;
     }
 
+    ///Convert string (in specified timezone) to datetime value
     opcd todate( struct tm& tmm, const token& timezone )
     {
         //Tue, 15 Nov 1994 08:12:31 GMT

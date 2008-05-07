@@ -718,12 +718,16 @@ public:
         return false;
     }
 
-    ///Pop the last element from the array
+    ///Pop the last element from the array, returning pointer to it.
     //@return pointer to the new last element or null if there's nothing left
+    //@warn Since the last element has to be returned, it can't be destroyed when the array is
+    /// being shrunk. It's the responsibility of the caller to call the destructor ~T() on it.
     T* pop()
     {
-        need( _count() - 1 );
-        return last();
+        uints cnt = _count() - 1;
+        set_size(cnt);
+
+        return _ptr + cnt;
     }
 
     ///Pop n elements from the array
@@ -1241,6 +1245,9 @@ public:
 
     ///Get number of elements in the array
     uints size() const               { return _count(); }
+
+    ///Hard set number of elements
+    //@warn Doesn't execute either destructors for the removed elements or constructors for added ones.
     uints set_size( uints n )
     {
         DASSERT( n*sizeof(T) <= _size() );
