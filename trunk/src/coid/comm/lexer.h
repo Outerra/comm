@@ -119,8 +119,12 @@ public:
     //@param rules true if the error occured during parsing the lexer grammar
     //@return the method should return false to make lexer ignore the error, works only in limited cases
     virtual bool on_error_prefix( bool rules ) {
-        if(!rules)
-            _errtext << current_line() << ": ";
+        if(!rules) {
+            uint col;
+            uint row = current_line(0, &col);
+
+            _errtext << row << ":" << col << ": ";
+        }
         return true;
     }
 
@@ -155,21 +159,21 @@ public:
     ///Lexer output token
     struct lextoken
     {
-        token   tok;                            ///< value string, points to input string or to tokbuf
-        int     id;                             ///< token id (group type or string type)
-        int     state;                          ///< >0 leading, <0 trailing, =0 chunked
-        charstr tokbuf;                         ///< buffer that keeps processed string in case it had to be altered (escape seq.replacements etc.)
-        token_hash hash;                        ///< hash value computed for tokens (but not for strings or blocks)
+        token   tok;                    ///< value string, points to input string or to tokbuf
+        int     id;                     ///< token id (group type or string type)
+        int     state;                  ///< >0 leading, <0 trailing, =0 chunked
+        charstr tokbuf;                 ///< buffer that keeps processed string in case it had to be altered (escape seq.replacements etc.)
+        token_hash hash;                ///< hash value computed for tokens (but not for strings or blocks)
 
-        bool operator == (int i) const          { return i == id; }
+        bool operator == (int i) const  { return i == id; }
         bool operator == (const token& t) const { return tok == t; }
-        bool operator == (char c) const         { return tok == c; }
+        bool operator == (char c) const { return tok == c; }
 
-        bool operator != (int i) const          { return i != id; }
+        bool operator != (int i) const  { return i != id; }
         bool operator != (const token& t) const { return tok != t; }
-        bool operator != (char c) const         { return tok != c; }
+        bool operator != (char c) const { return tok != c; }
 
-        operator token() const                  { return tok; }
+        operator token() const          { return tok; }
 
 
         typedef int lextoken::*unspecified_bool_type;
@@ -178,13 +182,13 @@ public:
 	    }
 
         //@return true if this is end-of-file token
-        bool end() const                        { return id == 0; }
+        bool end() const                { return id == 0; }
 
         //@return true if this is leading token of specified sequence
-        bool leading(int i) const               { return state>0 && id==i; }
+        bool leading(int i) const       { return state>0 && id==i; }
 
         //@return true if this is trailing token of specified sequence
-        bool trailing(int i) const              { return state<0 && id==i; }
+        bool trailing(int i) const      { return state<0 && id==i; }
 
         ///Swap or assign token to the destination string
         void swap_to_string( charstr& buf )
@@ -203,6 +207,8 @@ public:
             return tok;
         }
 
+        token value() const             { return tok; }
+
         void upd_hash( const char* p )
         {
             hash.inc_char(*p);
@@ -214,6 +220,35 @@ public:
             hash.reset();
         }
     };
+
+    ///Lexer exception
+    struct lexception
+    {
+        int code;
+        charstr text;
+
+        lexception(int e, const charstr& text) : code(e), text(text)
+        {}
+
+        /// Error codes
+        enum {
+            //ERR_CHAR_OUT_OF_RANGE       = 1,
+            ERR_ILL_FORMED_RANGE        = 2,
+            ERR_ENTITY_EXISTS           = 3,
+            ERR_ENTITY_DOESNT_EXIST     = 4,
+            ERR_ENTITY_BAD_TYPE         = 5,
+            ERR_DIFFERENT_ENTITY_EXISTS = 6,
+            ERR_STRING_TERMINATED_EARLY = 7,
+            ERR_UNRECOGNIZED_ESCAPE_SEQ = 8,
+            ERR_BLOCK_TERMINATED_EARLY  = 9,
+            ERR_EXTERNAL_ERROR          = 10,       ///< the error was set from outside
+            ERR_KEYWORD_ALREADY_DEFINED = 11,
+            ERR_INVALID_RULE_ID         = 12,
+        };
+    };
+
+
+
 
     ///Constructor
     //@param utf8 enable or disable utf8 mode
@@ -361,12 +396,12 @@ public:
             return ID_KEYWORDS;
         }
 
-        _err = exception::ERR_KEYWORD_ALREADY_DEFINED;
+        _err = lexception::ERR_KEYWORD_ALREADY_DEFINED;
         on_error_prefix(true);
 
         _errtext << "keyword '" << kwd << "' already exists";
 
-        throw exception(_err, _errtext);
+        throw lexception(_err, _errtext);
     }
 
     ///Escape sequence processor function prototype.
@@ -460,12 +495,12 @@ public:
                 __throw_doesnt_exist(escape);
 
             if( sr->escrule->type != entity::ESCAPE ) {
-                _err = exception::ERR_ENTITY_BAD_TYPE;
+                _err = lexception::ERR_ENTITY_BAD_TYPE;
                 on_error_prefix(true);
 
                 _errtext << "bad rule type '" << escape << "'; expected escape rule";
 
-                throw exception(_err, _errtext);
+                throw lexception(_err, _errtext);
             }
         }
 
@@ -686,11 +721,11 @@ public:
             return next_read_block( *(block_rule*)seq, off, true );
         }
 
-        _err = exception::ERR_EXTERNAL_ERROR;
+        _err = lexception::ERR_EXTERNAL_ERROR;
         on_error_prefix(false);
 
         _errtext << "expected block: " << seq->name;
-        throw exception(_err, _errtext);
+        throw lexception(_err, _errtext);
     }
 
     ///Return the next token from input.
@@ -743,7 +778,7 @@ public:
         uchar code = *_tok.ptr();
         ushort x = _abmap[code];        //get mask for the leading character
 
-        if(x & xSEQ)
+        if(x & (fSEQ_TRAILING|xSEQ))
         {
             //check if it's the trailing sequence
             int kt;
@@ -874,6 +909,17 @@ public:
         return true;
     }
 
+    //@return true if next token belongs to the specified group/sequence.
+    //@param grp group/sequence id
+    bool matches( int grp )
+    {
+        __assert_valid_rule(grp);
+
+        next();
+
+        return _last == grp;
+    }
+
     //@return true if the last token read belongs to the specified group/sequence.
     //@param grp group/sequence id
     //@param dst the token read
@@ -891,43 +937,57 @@ public:
         return true;
     }
 
-    ///Match literal or else throw exception
+    ///Match literal or else throw exception (struct lexception)
     void match( const token& val )
     {
         if(!matches(val)) {
-            _err = exception::ERR_EXTERNAL_ERROR;
+            _err = lexception::ERR_EXTERNAL_ERROR;
             on_error_prefix(false);
 
             _errtext << "expected " << val;
 
-            throw exception(_err, _errtext);
+            throw lexception(_err, _errtext);
         }
     }
 
-    ///Match literal or else throw exception
+    ///Match literal or else throw exception (struct lexception)
     void match( char c )
     {
         if(!matches(c)) {
-            _err = exception::ERR_EXTERNAL_ERROR;
+            _err = lexception::ERR_EXTERNAL_ERROR;
             on_error_prefix(true);
 
             _errtext << "expected " << c;
 
-            throw exception(_err, _errtext);
+            throw lexception(_err, _errtext);
         }
     }
 
-    ///Match rule or else throw exception
+    ///Match rule or else throw exception (struct lexception)
     void match( int grp, charstr& dst )
     {
         if(!matches(grp, dst)) {
-            _err = exception::ERR_EXTERNAL_ERROR;
+            _err = lexception::ERR_EXTERNAL_ERROR;
             on_error_prefix(true);
 
             const entity& ent = get_entity(grp);
             _errtext << "expected a " << ent.entity_type() << " '" << ent.name << "'";
 
-            throw exception(_err, _errtext);
+            throw lexception(_err, _errtext);
+        }
+    }
+
+    ///Match rule or else throw exception (struct lexception)
+    void match( int grp )
+    {
+        if(!matches(grp)) {
+            _err = lexception::ERR_EXTERNAL_ERROR;
+            on_error_prefix(true);
+
+            const entity& ent = get_entity(grp);
+            _errtext << "expected a " << ent.entity_type() << " '" << ent.name << "'";
+
+            throw lexception(_err, _errtext);
         }
     }
 
@@ -946,6 +1006,18 @@ public:
         bool succ = (next() == c);
         if(!succ) 
             push_back();
+        return succ;
+    }
+
+    ///Try to match an optional rule
+    bool match_optional( int grp )
+    {
+        __assert_valid_rule(grp);
+
+        bool succ = matches(grp);
+        if(!succ)
+            push_back();
+
         return succ;
     }
 
@@ -988,27 +1060,30 @@ public:
     //@{
     ///Match one of the rules. The parameters can be either literals (strings or
     /// single characters) or rule identifiers.
+    ///If no parameter is matched, throws exception (struct lexception).
     template<class T1, class T2>
-    void match_either( T1 a, T2 b ) {
+    const lextoken& match_either( T1 a, T2 b )
+    {
         if(match_optional(a) || match_optional(b))
-            return;
+            return _last;
 
-        _err = exception::ERR_EXTERNAL_ERROR;
+        _err = lexception::ERR_EXTERNAL_ERROR;
         on_error_prefix(true);
 
         _errtext << "couldn't match either: ";
         rule_map<T1>::desc(a, *this, _errtext); _errtext << ", ";
         rule_map<T2>::desc(b, *this, _errtext);
 
-        throw exception(_err, _errtext);
+        throw lexception(_err, _errtext);
     }
 
     template<class T1, class T2, class T3>
-    void match_either( T1 a, T2 b, T3 c ) {
+    const lextoken& match_either( T1 a, T2 b, T3 c )
+    {
         if(match_optional(a) || match_optional(b) || match_optional(c))
-            return;
+            return _last;
 
-        _err = exception::ERR_EXTERNAL_ERROR;
+        _err = lexception::ERR_EXTERNAL_ERROR;
         on_error_prefix(true);
 
         _errtext << "couldn't match either: ";
@@ -1016,16 +1091,17 @@ public:
         rule_map<T2>::desc(b, *this, _errtext); _errtext << ", ";
         rule_map<T3>::desc(c, *this, _errtext);
 
-        throw exception(_err, _errtext);
+        throw lexception(_err, _errtext);
     }
 
     template<class T1, class T2, class T3, class T4>
-    void match_either( T1 a, T2 b, T3 c, T4 d ) {
+    const lextoken& match_either( T1 a, T2 b, T3 c, T4 d )
+    {
         if(match_optional(a) || match_optional(b) || match_optional(c)
             || match_optional(d))
-            return;
+            return _last;
 
-        _err = exception::ERR_EXTERNAL_ERROR;
+        _err = lexception::ERR_EXTERNAL_ERROR;
         on_error_prefix(true);
 
         _errtext << "couldn't match either: ";
@@ -1034,7 +1110,7 @@ public:
         rule_map<T3>::desc(c, *this, _errtext); _errtext << ", ";
         rule_map<T4>::desc(d, *this, _errtext);
 
-        throw exception(_err, _errtext);
+        throw lexception(_err, _errtext);
     }
     //@}
 
@@ -1079,9 +1155,32 @@ public:
         return _err;
     }
 
+    ///Return error text
     const charstr& err() const {
         return _errtext;
     }
+
+    ///Prepare to throw an external lexer exception.
+    ///This is used to obtain an exception with the same format as with an internal lexer exception.
+    ///The line and column info relates to the last returned token. After using the return value to
+    /// provide specific error text, call throw exception().
+    //@return string object that can be used to fill specific info; the string is
+    /// already prefilled with whatever the on_error_prefix() handler inserted into it
+    //@note 
+    charstr& prepare_exception()
+    {
+        _err = lexception::ERR_EXTERNAL_ERROR;
+        _errtext.reset();
+        on_error_prefix(false);
+
+        return _errtext;
+    }
+
+    //@return lexception object to be thrown
+    lexception exception() const {
+        return lexception(_err, _errtext);
+    }
+
 
 
     ///Test if whole token consists of characters from single group.
@@ -1152,80 +1251,35 @@ public:
     }
 
 
-    ///Lexer exception
-    struct exception
-    {
-        int code;
-        charstr text;
-
-        exception(int e, const charstr& text) : code(e), text(text)
-        {}
-
-        /// Error codes
-        enum {
-            //ERR_CHAR_OUT_OF_RANGE       = 1,
-            ERR_ILL_FORMED_RANGE        = 2,
-            ERR_ENTITY_EXISTS           = 3,
-            ERR_ENTITY_DOESNT_EXIST     = 4,
-            ERR_ENTITY_BAD_TYPE         = 5,
-            ERR_DIFFERENT_ENTITY_EXISTS = 6,
-            ERR_STRING_TERMINATED_EARLY = 7,
-            ERR_UNRECOGNIZED_ESCAPE_SEQ = 8,
-            ERR_BLOCK_TERMINATED_EARLY  = 9,
-            ERR_EXTERNAL_ERROR          = 10,       ///< the error was set from outside
-            ERR_KEYWORD_ALREADY_DEFINED = 11,
-            ERR_INVALID_RULE_ID         = 12,
-        };
-    };
-
-    exception get_exception() const {
-        return exception(_err, _errtext);
-    }
-
-protected:
-
-    ///Prepare to throw
-    charstr& set_lexer_exception() {
-        _err = exception::ERR_EXTERNAL_ERROR;
-        _errtext.reset();
-        on_error_prefix(false);
-
-        return _errtext;
-    }
-/*
-    void __throw_lexer_exception() const {
-        throw exception(_err, _errtext);
-    }
-*/
 private:
     void __throw_entity_exists( const token& name )
     {
-        _err = exception::ERR_ENTITY_EXISTS;
+        _err = lexception::ERR_ENTITY_EXISTS;
         on_error_prefix(true);
 
         _errtext << "a rule with name '" << name << "' already exists";
 
-        throw exception(_err, _errtext);
+        throw lexception(_err, _errtext);
     }
 
     void __throw_different_exists( const token& name )
     {
-        _err = exception::ERR_DIFFERENT_ENTITY_EXISTS;
+        _err = lexception::ERR_DIFFERENT_ENTITY_EXISTS;
         on_error_prefix(true);
 
         _errtext << "a different type of rule '" << name << "' already exists";
 
-        throw exception(_err, _errtext);
+        throw lexception(_err, _errtext);
     }
 
     void __throw_doesnt_exist( const token& name )
     {
-        _err = exception::ERR_ENTITY_DOESNT_EXIST;
+        _err = lexception::ERR_ENTITY_DOESNT_EXIST;
         on_error_prefix(true);
 
         _errtext << "specified rule '" << name << "' doesn't exist";
 
-        throw exception(_err, _errtext);
+        throw lexception(_err, _errtext);
     }
 
 
@@ -1236,10 +1290,10 @@ protected:
     {
         if( sid == 0  ||  sid+1 >= (int)_grpary.size()  ||  -sid-1 >= (int)_stbary.size() )
         {
-            _err = exception::ERR_INVALID_RULE_ID;
+            _err = lexception::ERR_INVALID_RULE_ID;
             _errtext << "invalid rule id (" << sid << ")";
 
-            throw exception(_err, _errtext);
+            throw lexception(_err, _errtext);
         }
     }
 
@@ -1247,28 +1301,28 @@ protected:
     void __assert_valid_sequence( int sid, uchar type ) const
     {
         if( sid > 0 ) {
-            _err = exception::ERR_ENTITY_BAD_TYPE;
+            _err = lexception::ERR_ENTITY_BAD_TYPE;
             _errtext << "invalid rule type (" << sid << "), a sequence-type expected";
 
-            throw exception(_err, _errtext);
+            throw lexception(_err, _errtext);
         }
         else if( sid == 0  ||  -sid-1 >= (int)_stbary.size() )
         {
-            _err = exception::ERR_INVALID_RULE_ID;
+            _err = lexception::ERR_INVALID_RULE_ID;
             _errtext << "invalid rule id (" << sid << ")";
 
-            throw exception(_err, _errtext);
+            throw lexception(_err, _errtext);
         }
         else if( type > 0 )
         {
             const sequence* seq = _stbary[-sid-1];
             if( seq->type != type ) {
-                _err = exception::ERR_ENTITY_BAD_TYPE;
+                _err = lexception::ERR_ENTITY_BAD_TYPE;
                 _errtext << "invalid rule type: " << seq->entity_type()
                     << " ('" << seq->name << "'), a "
                     << entity::entity_type(type) << " expected";
 
-                throw exception(_err, _errtext);
+                throw lexception(_err, _errtext);
             }
         }
     }
@@ -1664,12 +1718,12 @@ protected:
                 k = s.nth_char(1);
                 if(!k || !kprev)
                 {
-                    _err = exception::ERR_ILL_FORMED_RANGE;
+                    _err = lexception::ERR_ILL_FORMED_RANGE;
                     on_error_prefix(true);
 
                     _errtext << "ill-formed range: " << char(kprev) << ".." << char(k);
 
-                    throw exception(_err, _errtext);
+                    throw lexception(_err, _errtext);
                 }
 
                 if( kprev > k ) { uchar kt=k; k=kprev; kprev=kt; }
@@ -1751,12 +1805,12 @@ protected:
                     if(tid>=0)
                         return _last;
 
-                    _err = exception::ERR_STRING_TERMINATED_EARLY;
+                    _err = lexception::ERR_STRING_TERMINATED_EARLY;
                     on_error_prefix(false);
 
                     _errtext << "no closing sequence of '" << sr.name << "' found";
 
-                    throw exception(_err, _errtext);
+                    throw lexception(_err, _errtext);
                 }
 
                 continue;
@@ -1770,12 +1824,12 @@ protected:
                 //this is a syntax error, since the string wasn't properly terminated
                 add_stb_segment( sr, -1, off, outermost );
 
-                _err = exception::ERR_STRING_TERMINATED_EARLY;
+                _err = lexception::ERR_STRING_TERMINATED_EARLY;
                 on_error_prefix(false);
 
                 _errtext << "no closing sequence of '" << sr.name << "' found";
 
-                throw exception(_err, _errtext);
+                throw lexception(_err, _errtext);
             }
 
             //this can be either an escape character or the terminating character,
@@ -1808,7 +1862,7 @@ protected:
                         if( follows( er->pairs[i].code ) )  break;
                     if( i >= n )
                     {
-                        //_err = exception::ERR_UNRECOGNIZED_ESCAPE_SEQ;
+                        //_err = lexception::ERR_UNRECOGNIZED_ESCAPE_SEQ;
                         //_errtext << "unrecognized escape sequence " << er->esc
                         //    << token(_tok.ptr(), uint_min(3,_tok.len())) << "..";
 
@@ -1867,12 +1921,12 @@ protected:
                     if(tid>=0)
                         return _last;
 
-                    _err = exception::ERR_BLOCK_TERMINATED_EARLY;
+                    _err = lexception::ERR_BLOCK_TERMINATED_EARLY;
                     on_error_prefix(false);
 
                     _errtext << "no closing " << br.trailing[0].seq << " found";
 
-                    throw exception(_err, _errtext);
+                    throw lexception(_err, _errtext);
                 }
 
                 continue;
@@ -2314,37 +2368,6 @@ protected:
     template<class T>
     struct rule_map {};
 
-    template<> struct rule_map<int> {
-        static void desc( int grp, const lexer& lex, charstr& dst ) {
-            const entity& ent = lex.get_entity(grp);
-            dst << ent.entity_type() << "(" << grp << ") '" << ent.name << "'";
-        }
-    };
-
-    template<> struct rule_map<char> {
-        static void desc( char c, const lexer& lex, charstr& dst ) {
-            dst << "literal character '" << c << "'";
-        }
-    };
-
-    template<> struct rule_map<token> {
-        static void desc( const token& t, const lexer& lex, charstr& dst ) {
-            dst << "literal string '" << t << "'";
-        }
-    };
-
-    template<> struct rule_map<charstr> {
-        static void desc( const charstr& t, const lexer& lex, charstr& dst ) {
-            dst << "literal string '" << t << "'";
-        }
-    };
-
-    template<> struct rule_map<const char*> {
-        static void desc( const char* t, const lexer& lex, charstr& dst ) {
-            dst << "literal string '" << t << "'";
-        }
-    };
-
 protected:
 
     dynarray<ushort> _abmap;            ///< group flag array, fGROUP_xxx
@@ -2420,7 +2443,37 @@ inline bool lexer::escape_rule::synthesize_string( token tok, charstr& dst ) con
     return altered;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+template<> struct lexer::rule_map<int> {
+    static void desc( int grp, const lexer& lex, charstr& dst ) {
+        const entity& ent = lex.get_entity(grp);
+        dst << ent.entity_type() << "(" << grp << ") '" << ent.name << "'";
+    }
+};
 
+template<> struct lexer::rule_map<char> {
+    static void desc( char c, const lexer& lex, charstr& dst ) {
+        dst << "literal character '" << c << "'";
+    }
+};
+
+template<> struct lexer::rule_map<token> {
+    static void desc( const token& t, const lexer& lex, charstr& dst ) {
+        dst << "literal string '" << t << "'";
+    }
+};
+
+template<> struct lexer::rule_map<charstr> {
+    static void desc( const charstr& t, const lexer& lex, charstr& dst ) {
+        dst << "literal string '" << t << "'";
+    }
+};
+
+template<> struct lexer::rule_map<const char*> {
+    static void desc( const char* t, const lexer& lex, charstr& dst ) {
+        dst << "literal string '" << t << "'";
+    }
+};
 
 COID_NAMESPACE_END
 

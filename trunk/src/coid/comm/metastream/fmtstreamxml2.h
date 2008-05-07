@@ -51,7 +51,7 @@ public:
     bool _sesinitw;
     bool _sesinitr;
 
-    int lexid, lexstr, lexchr, lextag;
+    int lexid, lexstr, lexchr, lextag, lexcont;
 
 public:
     fmtstreamxml2() : fmtstream_lexer(true)
@@ -95,6 +95,12 @@ public:
 
         _tokenizer.def_block( ".comment", "<!--", "-->", "" );
 
+        //this is disabled string definition, used to get the tag content as one string
+        // (anything between the leading and trailing tag)
+        //since it's disabled, and not used in other rules, the only way it can be used
+        // is an explicit call to next_as_string
+        lexcont = _tokenizer.def_string( "!intag", "", "<", "esc" );
+
 
         tkBoolTrue = "1";
         tkBoolFalse = "0";
@@ -111,12 +117,14 @@ public:
     ///Override to parse custom header
     virtual opcd on_read_open() {
         if( _tokenizer.matches('<') && _tokenizer.matches("root")
-            && _tokenizer.matches("xmlns:xsd") && _tokenizer.matches('=')
-            && _tokenizer.matches_either(lexstr, lexchr, 'd', "dada")
+            && _tokenizer.matches("xmlns:xsd")
+            && _tokenizer.matches('=')
+            && _tokenizer.matches_either(lexstr, lexchr, 'd')
             && _tokenizer.matches('>') )
             return 0;
 
-        return ersSYNTAX_ERROR;
+        _tokenizer.prepare_exception() << "error parsing the header";
+        throw _tokenizer.exception();
     }
 
     ///Override to parse custom trailer
@@ -126,7 +134,8 @@ public:
             && _tokenizer.matches('>') )
             return 0;
 
-        return ersSYNTAX_ERROR;
+        _tokenizer.prepare_exception() << "error parsing the footer";
+        throw _tokenizer.exception();
     }
 
     ///Override to put custom header
@@ -181,7 +190,7 @@ public:
 */
                 _bufw << char('>');
 
-                Parent* par = _stack.push();
+                Parent* par = _stackw.push();
                 par->tag.swap(_tagw);
             }
         }
@@ -193,14 +202,14 @@ public:
             }
             else if( t.type != type::T_KEY )
             {
-                Parent* par = _stack.last();
+                Parent* par = _stackw.last();
 
                 _bufw << "</" << (par->tag.is_empty() ? array_element : par->tag)
                     << char('>');
                 _tagw.swap(par->tag);
 
                 _attrmodew = false;
-                _stack.pop();
+                _stackw.pop();
             }
         }
         else if( t.type == type::T_SEPARATOR )
@@ -210,7 +219,7 @@ public:
             if(t.is_nameless())
                 return 0;
 
-            Parent* par = _stack.last();
+            Parent* par = _stackw.last();
 
             const charstr* name = (const charstr*)p;
             token tok = par->tag.is_empty()
@@ -221,7 +230,7 @@ public:
             _tagw.swap(par->tag);
 
             _attrmodew = false;
-            _stack.pop();
+            _stackw.pop();
         }
         else if( t.type == type::T_STRUCTBGN )
         {
@@ -238,7 +247,7 @@ public:
             _bufw << char('<') << tok;
             _attrmodew = true;
 
-            Parent* par = _stack.push();
+            Parent* par = _stackw.push();
             par->tag.swap(_tagw);
         }
         else if( t.type == type::T_KEY ) {
@@ -346,6 +355,160 @@ public:
 
             _sesinitr = 1;
         }
+
+        static token array_element = "item";
+
+        if( t.is_array_start() )
+        {
+            if( t.type == type::T_KEY )
+                _tagr.reset();
+            else
+            {
+                //close_previous_tag(true);
+
+                if(_tagr.is_empty()) {
+                    //array within array
+                    _tokenizer.match('<');
+                    _tokenizer.match(array_element);
+                    _tokenizer.match('>');
+                }
+
+                Parent* par = _stackr.push();
+                par->tag.swap(_tagr);
+            }
+        }
+        else if( t.is_array_end() )
+        {
+            if( t.type != type::T_KEY )
+            {
+                Parent* par = _stackw.last();
+
+                if(par->tag.is_empty()) {
+                    _tokenizer.match('<');
+                    _tokenizer.match('/');
+                    _tokenizer.match(par->tag);
+                    _tokenizer.match('>');
+                }
+
+                _stackw.pop();
+            }
+        }
+        else if( t.type == type::T_SEPARATOR )
+            return 0;
+        else if( t.type == type::T_STRUCTEND )
+        {
+            if(t.is_nameless())
+                return 0;
+
+            const charstr* name = (const charstr*)p;
+
+            Parent* par = _stackw.last();
+
+            _tokenizer.match('<');
+            _tokenizer.match('/');
+            _tokenizer.match( par->tag.is_empty()
+                ? (name ? token(*name) : array_element)
+                : token(par->tag) );
+            _tokenizer.match('>');
+
+            _stackw.pop();
+        }
+        else if( t.type == type::T_STRUCTBGN )
+        {
+            if(t.is_nameless())
+                return 0;
+
+            if(_tagw.is_empty()) {
+                //struct within an array
+                const charstr* name = (const charstr*)p;
+                _tokenizer.match('<');
+                _tokenizer.match( name ? token(*name) : array_element );
+                //not reading the trailing '>' here, attributes may follow
+            }
+
+            Parent* par = _stackw.push();
+            par->tag.swap(_tagw);
+        }
+        else if( t.type == type::T_KEY ) {
+            _tagw << *(char*)p;
+        }
+        else
+        {
+            //if( !t.is_array_element() )
+            token tok;
+            if(_attrmoder)
+                tok = _tokenizer.match_either(lexstr, lexchr);
+            else
+                tok = _tokenizer.next_as_string(lexcont);
+
+            switch( t.type )
+            {
+            case type::T_INT:
+                tok.xtoint_any_and_shift( p, t.get_size() );
+                break;
+
+            case type::T_UINT:
+                tok.xtouint_any_and_shift( p, t.get_size() );
+                break;
+
+            case type::T_CHAR: {
+                DASSERT(0);
+            } break;
+
+            /////////////////////////////////////////////////////////////////////////////////////
+            case type::T_FLOAT: {
+                double d = tok.todouble_and_shift();
+
+                switch( t.get_size() ) {
+                case 4:
+                    *(float*)p = (float)d;
+                    break;
+                case 8:
+                    *(double*)p = d;
+                    break;
+
+                default:
+                    return ersSYNTAX_ERROR "unknown type";
+                }
+            } break;
+
+            /////////////////////////////////////////////////////////////////////////////////////
+            case type::T_BOOL: {
+                if( _tokenizer.matches_either(tkBoolTrue, tkrBoolTrue) )
+                    *(bool*)p = true;
+                else if( _tokenizer.matches_either(tkBoolFalse, tkrBoolFalse) )
+                    *(bool*)p = false;
+                else {
+                    _tokenizer.prepare_exception() << "expecting boolean value";
+                    throw _tokenizer.exception();
+                }
+            } break;
+
+            /////////////////////////////////////////////////////////////////////////////////////
+            case type::T_TIME: {
+                tok.todate_gmt( *(timet*)p );
+            } break;
+
+            /////////////////////////////////////////////////////////////////////////////////////
+            case type::T_ERRCODE:
+            break;
+
+            /////////////////////////////////////////////////////////////////////////////////////
+            case type::T_BINARY:
+                //write_binary( p, t.get_size() );
+                break;
+
+            case type::T_SEPARATOR:
+            case type::T_COMPOUND:
+                break;
+
+            default:
+                return ersSYNTAX_ERROR "unknown type"; break;
+            }
+
+            //close_this_tag(t);
+        }
+
         return 0;
     }
 
@@ -513,6 +676,26 @@ protected:
             _bufw << "</" << tok << char('>');
         }
     }
+
+    void match_previous_tag()
+    {
+        if(!_attrmoder)
+            _tokenizer.match('>');
+    }
+
+    void read_key( type t )
+    {
+        if(_attrmoder  &&  _tokenizer.match_optional(lexid, _tagr)) {
+            _tokenizer.match('=');
+        }
+        else {
+            _attrmoder = false;
+            _tokenizer.match('<');
+            _tokenizer.match('/');
+            _tokenizer.match(lexid, _tagr);
+            _tokenizer.match('>');
+        }
+    }
     
 protected:
 
@@ -520,9 +703,13 @@ protected:
         charstr tag;
     };
 
-    dynarray<Parent> _stack;
+    dynarray<Parent> _stackw;
+    dynarray<Parent> _stackr;
     charstr _tagw;                      ///< tag to be written
+    charstr _tagr;                      ///< tag being read
+
     bool _attrmodew;                    ///< attribute setting mode at the current level
+    bool _attrmoder;                    ///< attribute reading mode
 
     token tkBoolTrue, tkBoolFalse;      ///< symbols for bool type for reading and writting
     token tkrBoolTrue, tkrBoolFalse;    ///< additional symbols for bool type for reading
@@ -531,4 +718,4 @@ protected:
 COID_NAMESPACE_END
 
 
-#endif  // ! __COID_COMM_FMTSTREAMXML2__HEADER_FILE__
+#endif  // ! __COID_COMM_FMTSTREAMXML2__HEADER_FILE__ 
