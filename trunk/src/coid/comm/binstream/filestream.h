@@ -44,9 +44,6 @@
 #include "binstream.h"
 #include "../str.h"
 
-#include <io.h>
-#include <fcntl.h>
-
 #ifdef SYSTYPE_MSVC
 # include <io.h>
 # include <share.h>
@@ -59,6 +56,9 @@
 # define _fileno    fileno
 # define _dup       dup
 #endif
+
+#include <fcntl.h>
+
 
 COID_NAMESPACE_BEGIN
 
