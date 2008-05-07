@@ -718,16 +718,16 @@ public:
         return false;
     }
 
-    ///Pop the last element from the array, returning pointer to it.
+    ///Pop the last element from the array, returning pointer to new last element.
     //@return pointer to the new last element or null if there's nothing left
-    //@warn Since the last element has to be returned, it can't be destroyed when the array is
-    /// being shrunk. It's the responsibility of the caller to call the destructor ~T() on it.
     T* pop()
     {
-        uints cnt = _count() - 1;
-        set_size(cnt);
+        uints cnt = _count();
+        if(!cnt)  return 0;
 
-        return _ptr + cnt;
+        need(cnt-1);
+
+        return last();
     }
 
     ///Pop n elements from the array
