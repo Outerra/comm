@@ -105,7 +105,7 @@ class metagen //: public binstream
         }
 
         charstr& set_err() {
-            return (set_lexer_exception() << "syntax error: ");
+            return (prepare_exception() << "syntax error: ");
         }
 
     private:
@@ -291,7 +291,7 @@ class metagen //: public binstream
 
                 if( tok.id != lex.DQSTRING ) {
                     lex.set_err() << "expected attribute value string";
-                    throw lex.get_exception();
+                    throw lex.exception();
                 }
 
                 value.value = const_cast<lextoken&>(tok).swap_to_token_or_string( value.valuebuf );
@@ -311,7 +311,7 @@ class metagen //: public binstream
                 if( cond == INLINE )  cond = DEFAULT;
                 else if( cond != OPEN ) {
                     lex.set_err() << "'default' attribute can only be open or inline";
-                    throw lex.get_exception();
+                    throw lex.exception();
                 }
             }
 
@@ -422,7 +422,7 @@ class metagen //: public binstream
 
             if( tok.id != lex.IDENT ) {
                 lex.set_err() << "Expected identifier";
-                throw lex.get_exception();
+                throw lex.exception();
             }
             varname = tok.tok;
 
@@ -444,7 +444,7 @@ class metagen //: public binstream
             {
                 if(lastopen) {
                     lex.set_err() << "An open attribute followed by another";
-                    throw lex.get_exception();
+                    throw lex.exception();
                 }
 
                 lastopen = at.is_open();
@@ -460,15 +460,15 @@ class metagen //: public binstream
             {
                 if( brace == '('  &&  tok.tok != ')' ) {
                     lex.set_err() << "Expecting )";
-                    throw lex.get_exception();
+                    throw lex.exception();
                 }
                 if( brace == '{'  &&  tok.tok != '}' ) {
                     lex.set_err() << "Expecting }";
-                    throw lex.get_exception();
+                    throw lex.exception();
                 }
                 if( brace == '['  &&  tok.tok != ']' ) {
                     lex.set_err() << "Expecting ]";
-                    throw lex.get_exception();
+                    throw lex.exception();
                 }
 
                 lex.next(0);
@@ -481,7 +481,7 @@ class metagen //: public binstream
 
             if( tok.tok != '$' ) {
                 lex.set_err() << "Expecting end of tag $";
-                throw lex.get_exception();
+                throw lex.exception();
             }
 
             return true;
@@ -522,7 +522,7 @@ class metagen //: public binstream
             parse_content(lex, hdr);
 
             try { lex.next_as_string(lex.STEXT); }
-            catch( lexer::exception& ) {
+            catch( lexer::lexception& ) {
                 return false;
             }
 
@@ -559,7 +559,7 @@ class metagen //: public binstream
             depth = 0;
 
             try { lex.next_as_string( lex.STEXT ); }
-            catch( lexer::exception& ) {
+            catch( lexer::lexception& ) {
                 return false;
             }
 
@@ -595,7 +595,7 @@ class metagen //: public binstream
 
             if( attr.size()>0 && attr.last()->is_open() ) {
                 lex.set_err() << "Simple tags cannot contain open attribute";
-                throw lex.get_exception();
+                throw lex.exception();
             }
         }
     };
@@ -649,7 +649,7 @@ class metagen //: public binstream
                 if( tout.flags & ParsedTag::fTRAILING ) {
                     if( !tout.same_group(par) ) {
                         lex.set_err() << "Mismatched closing tag";
-                        throw lex.get_exception();
+                        throw lex.exception();
                     }
                     return succ;
                 }
@@ -674,7 +674,7 @@ class metagen //: public binstream
 
             if( !par.varname.is_empty() ) {
                 lex.set_err() << "End of file before the closing tag";
-                throw lex.get_exception();
+                throw lex.exception();
             }
             return succ;
         }
@@ -719,7 +719,7 @@ class metagen //: public binstream
         {
             if( hdr.varname != "if" ) {
                 lex.set_err() << "Unknown code block";
-                throw lex.get_exception();
+                throw lex.exception();
             }
 
             ParsedTag tmp;
@@ -837,12 +837,12 @@ class metagen //: public binstream
 
                 if(!tr) {
                     lex.set_err() << "Unknown attribute of an array tag";
-                    throw lex.get_exception();
+                    throw lex.exception();
                 }
 
                 if( tr->is_set() ) {
                     lex.set_err() << "Section already assigned";
-                    throw lex.get_exception();
+                    throw lex.exception();
                 }
 
                 if( p->cond == Attribute::INLINE )
@@ -851,14 +851,14 @@ class metagen //: public binstream
                     sec = tr;
                 else {
                     lex.set_err() << "Array attribute can be only inline or open";
-                    throw lex.get_exception();
+                    throw lex.exception();
                 }
             }
 
             if(!sec) {
                 if( atr_body.is_set() ) {
                     lex.set_err() << "Section already assigned";
-                    throw lex.get_exception();
+                    throw lex.exception();
                 }
                 sec = &atr_body;
             }
@@ -890,7 +890,7 @@ class metagen //: public binstream
             do {
                 if( tmp.attr.size() > 0 ) {
                     lex.set_err() << "Unknown attribute for structural tag";
-                    throw lex.get_exception();
+                    throw lex.exception();
                 }
 
                 TagRange rng;
@@ -923,7 +923,7 @@ public:
             tags.parse( lex, tmp, empty );
             return true;
         }
-        catch( const lexer::exception& ) {
+        catch( const lexer::lexception& ) {
             return false;
         }
     }
