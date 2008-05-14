@@ -147,10 +147,11 @@ public:
         tkrBoolFalse = boolFalseR;
     }
 
-    virtual token fmtstream_name()          { return "fmtstreamxml"; }
+    virtual token fmtstream_name() {
+        return "fmtstreamxml_old";
+    }
 
-    virtual opcd fmtstream_err( token* err, token* line, uint* row, uint* col ) {
-        return ersNOT_IMPLEMENTED;
+    virtual void fmtstream_file_name( const token& file_name ) {
     }
 
     virtual uint binstream_attributes( bool in0out1 ) const

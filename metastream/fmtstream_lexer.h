@@ -47,15 +47,51 @@ COID_NAMESPACE_BEGIN
 ///Base class for formatting streams using lexer
 class fmtstream_lexer : public fmtstream
 {
+protected:
+    class fmt_lexer : public lexer
+    {
+    public:
+        fmt_lexer( bool utf8 ) : lexer(utf8)
+        {}
+
+        virtual void on_error_prefix( bool rules, charstr& dst )
+        {
+            if(!rules)
+                dst << file_name << ":" << current_line() << " : ";
+        }
+
+        void set_file_name( const token& file_name ) {
+            this->file_name = file_name;
+        }
+
+        const charstr& get_file_name() const {
+            return file_name;
+        }
+
+    private:
+        charstr file_name;
+    };
+
 public:
 
-    /// Return formatting stream error (if any) and current line and column for error reporting purposes
-    virtual opcd fmtstream_err( token* err, token* line, uint* row, uint* col )
+    virtual void fmtstream_file_name( const token& file_name )
     {
-        uint n = _tokenizer.current_line( line, col );
-        if(line)  *row = n;
-        
-        return _tokenizer.err(err) == 0  ?  opcd(0)  :  ersSYNTAX_ERROR;
+        _tokenizer.set_file_name(file_name);
+    }
+
+    ///Return formatting stream error (if any) and current line and column for error reporting purposes
+    //@param err [in] error text
+    //@param err [out] final (formatted) error text with line info etc.
+    virtual void fmtstream_err( charstr& err )
+    {
+        charstr& txt = _tokenizer.prepare_exception();
+
+        txt << err;
+
+        _tokenizer.final_exception();
+
+        err.swap(txt);
+        txt.reset();
     }
 
 
@@ -114,9 +150,9 @@ public:
         _bufw.reset();
     }
 
-    virtual opcd open( const token & arg )  {return _binw->open( arg );}
-    virtual opcd close( bool linger=false ) {return _binw->close( linger );}
-    virtual bool is_open() const            {return _binr->is_open();}
+    virtual opcd open( const token & arg )  { return _binw->open(arg); }
+    virtual opcd close( bool linger=false ) { return _binw->close(linger); }
+    virtual bool is_open() const            { return _binr->is_open(); }
 
 
     virtual opcd write_raw( const void* p, uints& len )
@@ -196,7 +232,7 @@ protected:
     binstream* _binw;                   ///< bound writing stream
 
     charstr _bufw;                      ///< caching write buffer
-    lexer _tokenizer;                   ///< lexer for the format
+    fmt_lexer _tokenizer;               ///< lexer for the format
 };
 
 
