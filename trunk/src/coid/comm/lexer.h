@@ -115,17 +115,39 @@ class lexer
 {
 public:
 
-    ///Called before throwing an error exception to preset the _errtext member
+    ///Called before throwing an error exception to preset the _errtext member, just before
+    /// the lexer inserts the error information itself.
     //@param rules true if the error occured during parsing the lexer grammar
-    //@return the method should return false to make lexer ignore the error, works only in limited cases
-    virtual bool on_error_prefix( bool rules ) {
-        if(!rules) {
-            uint col;
-            uint row = current_line(0, &col);
+    virtual void on_error_prefix( bool rules, charstr& dst )
+    {
+        if(!rules)
+            dst << current_line() << " : ";
+    }
 
-            _errtext << row << ":" << col << ": ";
+    ///Called before throwing an error exception to finalize the _errtext member, just after
+    /// the lexer inserted the error information. Default implementation here inserts
+    /// a fragment of input string and location pointer.
+    virtual void on_error_suffix( charstr& dst )
+    {
+        token text;
+        uint col;
+        current_line(&text, &col);
+
+        if( !text.is_empty() ) {
+            //limit to 80 characters max
+            if( text.len() > 80 ) {
+                int start = int_max( 0, int(col - 40) );
+                int end = int_min( int(text.len()), start + 80 );
+
+                text.shift_end(end);
+                text.shift_start(start);
+            }
+
+            dst << "\r\n" << text;
+            dst << "\r\n";
+            dst.appendn(col, ' ');
+            dst << "^\r\n";
         }
-        return true;
     }
 
     ///Incremental token hasher used by the lexer
@@ -161,17 +183,18 @@ public:
     {
         token   tok;                    ///< value string, points to input string or to tokbuf
         int     id;                     ///< token id (group type or string type)
+        int     termid;                 ///< terminator id, for strings or blocks with multiple trailing sequences
         int     state;                  ///< >0 leading, <0 trailing, =0 chunked
         charstr tokbuf;                 ///< buffer that keeps processed string in case it had to be altered (escape seq.replacements etc.)
         token_hash hash;                ///< hash value computed for tokens (but not for strings or blocks)
 
         bool operator == (int i) const  { return i == id; }
-        bool operator == (const token& t) const { return tok == t; }
         bool operator == (char c) const { return tok == c; }
+        bool operator == (const token& t) const { return tok == t; }
 
         bool operator != (int i) const  { return i != id; }
-        bool operator != (const token& t) const { return tok != t; }
         bool operator != (char c) const { return tok != c; }
+        bool operator != (const token& t) const { return tok != t; }
 
         operator token() const          { return tok; }
 
@@ -189,6 +212,11 @@ public:
 
         //@return true if this is trailing token of specified sequence
         bool trailing(int i) const      { return state<0 && id==i; }
+
+        //@return true if this is actually a string or block content (without the leading and trailing sequences)
+        bool is_content() const {
+            return id<0  &&  state==0;
+        }
 
         ///Swap or assign token to the destination string
         void swap_to_string( charstr& buf )
@@ -397,9 +425,9 @@ public:
         }
 
         _err = lexception::ERR_KEYWORD_ALREADY_DEFINED;
-        on_error_prefix(true);
 
-        _errtext << "keyword '" << kwd << "' already exists";
+        on_error_prefix(true, _errtext);
+        _errtext << "keyword `" << kwd << "' already exists";
 
         throw lexception(_err, _errtext);
     }
@@ -496,9 +524,9 @@ public:
 
             if( sr->escrule->type != entity::ESCAPE ) {
                 _err = lexception::ERR_ENTITY_BAD_TYPE;
-                on_error_prefix(true);
 
-                _errtext << "bad rule type '" << escape << "'; expected escape rule";
+                on_error_prefix(true, _errtext);
+                _errtext << "bad type of rule <<" << escape << ">>; required an escape rule name here";
 
                 throw lexception(_err, _errtext);
             }
@@ -652,24 +680,34 @@ public:
 
     ///Return next token as if the string opening sequence has been already read.
     //@note this explicit request will read the string content even if the
-    /// string is currently disabled
-    const lextoken& next_as_string( int stringid )
+    /// string is currently disabled.
+    //@param stringid string identifier as returned by def_string() call.
+    //@param consume_trailing_seq true if the trailing sequence should be consumed, false if it should be left in input
+    const lextoken& next_as_string( int stringid, bool consume_trailing_seq = true )
     {
         __assert_valid_sequence(stringid, entity::STRING);
 
         uint sid = -1 - stringid;
-        sequence* seq = _stbary[sid];
+        const sequence* seq = _stbary[sid];
 
         DASSERT( seq->is_string() );
+        const string_rule* str = static_cast<const string_rule*>(seq);
 
         uint off=0;
-        return next_read_string( *(string_rule*)seq, off, true );
+        next_read_string( *str, off, true );
+
+        if(!consume_trailing_seq)
+            _tok.shift_start( -(int)str->trailing[_last.termid].seq.len() );
+
+        return _last;
     }
 
     ///Return next token as if the block opening sequence has been already read.
     //@note this explicit request will read the block content even if the
     /// block is currently disabled
-    const lextoken& next_as_block( int blockid )
+    //@param blockid string identifier as returned by def_block() call.
+    //@param consume_trailing_seq true if the trailing sequence should be consumed, false if it should be left in input
+    const lextoken& next_as_block( int blockid, bool consume_trailing_seq = true )
     {
         __assert_valid_sequence(blockid, entity::BLOCK);
 
@@ -677,9 +715,15 @@ public:
         sequence* seq = _stbary[sid];
 
         DASSERT( seq->is_block() );
+        const block_rule* blk = static_cast<const block_rule*>(seq);
 
         uint off=0;
-        return next_read_block( *(block_rule*)seq, off, true );
+        next_read_block( *blk, off, true );
+
+        if(!consume_trailing_seq)
+            _tok.shift_start( -(int)blk->trailing[_last.termid].seq.len() );
+
+        return _last;
     }
 
     ///Return next token, appending it to the \a dst
@@ -722,9 +766,11 @@ public:
         }
 
         _err = lexception::ERR_EXTERNAL_ERROR;
-        on_error_prefix(false);
+        
+        on_error_prefix(false, _errtext);
+        _errtext << "expected block <<" << seq->name << ">>";
+        on_error_suffix(_errtext);
 
-        _errtext << "expected block: " << seq->name;
         throw lexception(_err, _errtext);
     }
 
@@ -874,9 +920,17 @@ public:
         return _last;
     }
 
-    ///Try to match a raw string following in the input
-    bool follows( const token& tok )
+    ///Try to match a raw (untokenized) string following in the input
+    //@param tok raw string to match
+    //@param ignore id of the group that should be skipped beforehand, 0 if nothing shall be skipped
+    bool follows( const token& tok, uint ignore=1 )
     {
+        if(ignore) {
+            _last.tok = scan_group( ignore-1, true );
+            if( _last.tok.ptr() == 0 )
+                return false;
+        }
+
         if( tok.len() > _tok.len() )
         {
             uints n = fetch_page(_tok.len(), false);
@@ -887,10 +941,16 @@ public:
     }
 
     //@return true if next token matches literal string
-    bool matches( const token& val )  { return next() == val; }
+    //@note This won't match a string or block with content equal to @a val, only normal tokens can be matched
+    bool matches( const token& val ) {
+        return next() == val  &&  !_last.is_content();
+    }
 
     //@return true if next token matches literal character
-    bool matches( char c )            { return next() == c; }
+    //@note This won't match a string or block with content equal to @a val, only normal tokens can be matched
+    bool matches( char c ) {
+        return next() == c  &&  !_last.is_content();
+    }
 
     //@return true if next token belongs to the specified group/sequence.
     //@param grp group/sequence id
@@ -940,26 +1000,30 @@ public:
     }
 
     ///Match literal or else throw exception (struct lexception)
+    //@note This won't match a string or block with content equal to @a val, only normal tokens can be matched
     void match( const token& val )
     {
         if(!matches(val)) {
             _err = lexception::ERR_EXTERNAL_ERROR;
-            on_error_prefix(false);
 
-            _errtext << "expected " << val;
+            on_error_prefix(false, _errtext);
+            _errtext << "expected `" << val << "'";
+            on_error_suffix(_errtext);
 
             throw lexception(_err, _errtext);
         }
     }
 
     ///Match literal or else throw exception (struct lexception)
+    //@note This won't match a string or block with content equal to @a val, only normal tokens can be matched
     void match( char c )
     {
         if(!matches(c)) {
             _err = lexception::ERR_EXTERNAL_ERROR;
-            on_error_prefix(true);
-
-            _errtext << "expected " << c;
+            
+            on_error_prefix(false, _errtext);
+            _errtext << "expected `" << c << "'";
+            on_error_suffix(_errtext);
 
             throw lexception(_err, _errtext);
         }
@@ -970,42 +1034,52 @@ public:
     {
         if(!matches(grp, dst)) {
             _err = lexception::ERR_EXTERNAL_ERROR;
-            on_error_prefix(true);
+
+            on_error_prefix(false, _errtext);
 
             const entity& ent = get_entity(grp);
-            _errtext << "expected a " << ent.entity_type() << " '" << ent.name << "'";
+            _errtext << "expected a " << ent.entity_type() << " <<" << ent.name << ">>";
+
+            on_error_suffix(_errtext);
 
             throw lexception(_err, _errtext);
         }
     }
 
     ///Match rule or else throw exception (struct lexception)
-    void match( int grp )
+    const lextoken& match( int grp )
     {
         if(!matches(grp)) {
             _err = lexception::ERR_EXTERNAL_ERROR;
-            on_error_prefix(true);
+            
+            on_error_prefix(false, _errtext);
 
             const entity& ent = get_entity(grp);
-            _errtext << "expected a " << ent.entity_type() << " '" << ent.name << "'";
+            _errtext << "expected a " << ent.entity_type() << " <<" << ent.name << ">>";
+
+            on_error_suffix(_errtext);
 
             throw lexception(_err, _errtext);
         }
+
+        return _last;
     }
 
     ///Try to match an optional literal, push back if not succeeded.
+    //@note This won't match a string or block with content equal to @a val, only normal tokens can be matched
     bool match_optional( const token& val )
     {
-        bool succ = (next() == val);
+        bool succ = matches(val);
         if(!succ) 
             push_back();
         return succ;
     }
 
     ///Try to match an optional literal character, push back if not succeeded.
+    //@note This won't match a string or block with content equal to @a val, only normal tokens can be matched
     bool match_optional( char c )
     {
-        bool succ = (next() == c);
+        bool succ = matches(c);
         if(!succ) 
             push_back();
         return succ;
@@ -1070,11 +1144,14 @@ public:
             return _last;
 
         _err = lexception::ERR_EXTERNAL_ERROR;
-        on_error_prefix(true);
+        
+        on_error_prefix(false, _errtext);
 
         _errtext << "couldn't match either: ";
         rule_map<T1>::desc(a, *this, _errtext); _errtext << ", ";
         rule_map<T2>::desc(b, *this, _errtext);
+
+        on_error_suffix(_errtext);
 
         throw lexception(_err, _errtext);
     }
@@ -1086,12 +1163,15 @@ public:
             return _last;
 
         _err = lexception::ERR_EXTERNAL_ERROR;
-        on_error_prefix(true);
+
+        on_error_prefix(false, _errtext);
 
         _errtext << "couldn't match either: ";
         rule_map<T1>::desc(a, *this, _errtext); _errtext << ", ";
         rule_map<T2>::desc(b, *this, _errtext); _errtext << ", ";
         rule_map<T3>::desc(c, *this, _errtext);
+
+        on_error_suffix(_errtext);
 
         throw lexception(_err, _errtext);
     }
@@ -1104,13 +1184,16 @@ public:
             return _last;
 
         _err = lexception::ERR_EXTERNAL_ERROR;
-        on_error_prefix(true);
+        
+        on_error_prefix(false, _errtext);
 
         _errtext << "couldn't match either: ";
         rule_map<T1>::desc(a, *this, _errtext); _errtext << ", ";
         rule_map<T2>::desc(b, *this, _errtext); _errtext << ", ";
         rule_map<T3>::desc(c, *this, _errtext); _errtext << ", ";
         rule_map<T4>::desc(d, *this, _errtext);
+
+        on_error_suffix(_errtext);
 
         throw lexception(_err, _errtext);
     }
@@ -1128,10 +1211,22 @@ public:
     //@return last token read
     const lextoken& last() const        { return _last; }
 
-    //@return current line number
+
+    ///Return current lexer line position
+    //@return current line number (from index 1, not 0)
+    uint current_line()
+    {
+        if( _tok.ptr() > _lines_processed )
+            _lines += count_newlines( _lines_processed, _tok.ptr() );
+
+        return _lines+1;
+    }
+
+    ///Return current lexer position info
+    //@return current line number (from index 1, not 0)
     //@param text optional token, recieves current line text (may be incomplete)
     //@param col receives column number of current token
-    uint current_line( token* text=0, uint* col=0 )
+    uint current_line( token* text, uint* col )
     {
         if( _tok.ptr() > _lines_processed )
             _lines += count_newlines( _lines_processed, _tok.ptr() );
@@ -1173,13 +1268,22 @@ public:
     {
         _err = lexception::ERR_EXTERNAL_ERROR;
         _errtext.reset();
-        on_error_prefix(false);
+        on_error_prefix(false, _errtext);
 
         return _errtext;
     }
 
+    ///Return exception that was prepared externally, appending suffix
+    lexception final_exception()
+    {
+        on_error_suffix(_errtext);
+
+        return lexception(_err, _errtext);
+    }
+
     //@return lexception object to be thrown
-    lexception exception() const {
+    lexception exception() const
+    {
         return lexception(_err, _errtext);
     }
 
@@ -1257,9 +1361,9 @@ private:
     void __throw_entity_exists( const token& name )
     {
         _err = lexception::ERR_ENTITY_EXISTS;
-        on_error_prefix(true);
-
-        _errtext << "a rule with name '" << name << "' already exists";
+        
+        on_error_prefix(true, _errtext);
+        _errtext << "another rule with name '" << name << "' already exists";
 
         throw lexception(_err, _errtext);
     }
@@ -1267,9 +1371,9 @@ private:
     void __throw_different_exists( const token& name )
     {
         _err = lexception::ERR_DIFFERENT_ENTITY_EXISTS;
-        on_error_prefix(true);
-
-        _errtext << "a different type of rule '" << name << "' already exists";
+        
+        on_error_prefix(true, _errtext);
+        _errtext << "a different type of rule named '" << name << "' already exists";
 
         throw lexception(_err, _errtext);
     }
@@ -1277,9 +1381,9 @@ private:
     void __throw_doesnt_exist( const token& name )
     {
         _err = lexception::ERR_ENTITY_DOESNT_EXIST;
-        on_error_prefix(true);
-
-        _errtext << "specified rule '" << name << "' doesn't exist";
+        
+        on_error_prefix(true, _errtext);
+        _errtext << "a rule named '" << name << "' doesn't exist";
 
         throw lexception(_err, _errtext);
     }
@@ -1290,7 +1394,9 @@ protected:
     ///Assert valid rule id
     void __assert_valid_rule( int sid ) const
     {
-        if( sid == 0  ||  sid+1 >= (int)_grpary.size()  ||  -sid-1 >= (int)_stbary.size() )
+        if( sid == 0
+            || ( sid>0  &&  sid-1 >= (int)_grpary.size() )
+            || ( sid<0  &&  -sid-1 >= (int)_stbary.size() ) )
         {
             _err = lexception::ERR_INVALID_RULE_ID;
             _errtext << "invalid rule id (" << sid << ")";
@@ -1321,7 +1427,7 @@ protected:
             if( seq->type != type ) {
                 _err = lexception::ERR_ENTITY_BAD_TYPE;
                 _errtext << "invalid rule type: " << seq->entity_type()
-                    << " ('" << seq->name << "'), a "
+                    << " <<" << seq->name << ">>, a "
                     << entity::entity_type(type) << " expected";
 
                 throw lexception(_err, _errtext);
@@ -1721,8 +1827,8 @@ protected:
                 if(!k || !kprev)
                 {
                     _err = lexception::ERR_ILL_FORMED_RANGE;
-                    on_error_prefix(true);
 
+                    on_error_prefix(true, _errtext);
                     _errtext << "ill-formed range: " << char(kprev) << ".." << char(k);
 
                     throw lexception(_err, _errtext);
@@ -1783,7 +1889,10 @@ protected:
         return _tok.begins_with(tok,off);
     }
 
-    ///Read next token as if it was a string with the leading sequence already read
+    ///Read next token as if it was a string with the leading sequence already read.
+    //@note Also consumes the trailing string sequence, but it's not included in the
+    /// returned lextoken if @a outermost is set. The lextoken contains the id member
+    /// to distinguish between strings and literals.
     const lextoken& next_read_string( const string_rule& sr, uints& off, bool outermost )
     {
         const escape_rule* er = sr.escrule;
@@ -1797,8 +1906,10 @@ protected:
             {
                 if( !_bin || (off=0, 0 == fetch_page(0, false)) )
                 {
-                    //verify if the trailing set contains empty string, which would mean
-                    // that end of file is a valid terminator of the string
+                    //end of input
+
+                    //find if the trailing set contains an empty string, which would mean
+                    // that the end of file is valid terminator of the string
                     int tid = sr.trailing.last()->seq.is_empty()
                         ?  int(sr.trailing.size())-1  :  -1;
 
@@ -1808,9 +1919,10 @@ protected:
                         return _last;
 
                     _err = lexception::ERR_STRING_TERMINATED_EARLY;
-                    on_error_prefix(false);
-
-                    _errtext << "no closing sequence of '" << sr.name << "' found";
+                    
+                    on_error_prefix(false, _errtext);
+                    _errtext << "string <<" << sr.name << ">> was left unterminated";
+                    on_error_suffix(_errtext);
 
                     throw lexception(_err, _errtext);
                 }
@@ -1827,9 +1939,10 @@ protected:
                 add_stb_segment( sr, -1, off, outermost );
 
                 _err = lexception::ERR_STRING_TERMINATED_EARLY;
-                on_error_prefix(false);
-
-                _errtext << "no closing sequence of '" << sr.name << "' found";
+                
+                on_error_prefix(false, _errtext);
+                _errtext << "string <<" << sr.name << ">> was left unterminated";
+                on_error_suffix(_errtext);
 
                 throw lexception(_err, _errtext);
             }
@@ -1890,6 +2003,8 @@ protected:
                 if(k>=0)
                 {
                     add_stb_segment( sr, k, off, outermost );
+
+                    _last.termid = k;
                     return _last;
                 }
 
@@ -1924,9 +2039,10 @@ protected:
                         return _last;
 
                     _err = lexception::ERR_BLOCK_TERMINATED_EARLY;
-                    on_error_prefix(false);
-
-                    _errtext << "no closing " << br.trailing[0].seq << " found";
+                    
+                    on_error_prefix(false, _errtext);
+                    _errtext << "block <<" << br.name << ">> was left unterminated";
+                    on_error_suffix(_errtext);
 
                     throw lexception(_err, _errtext);
                 }
@@ -1944,6 +2060,8 @@ protected:
             {
                 //trailing string found
                 add_stb_segment( br, k, off, outermost );
+
+                _last.termid = k;
                 return _last;
             }
 
@@ -2449,31 +2567,31 @@ inline bool lexer::escape_rule::synthesize_string( token tok, charstr& dst ) con
 template<> struct lexer::rule_map<int> {
     static void desc( int grp, const lexer& lex, charstr& dst ) {
         const entity& ent = lex.get_entity(grp);
-        dst << ent.entity_type() << "(" << grp << ") '" << ent.name << "'";
+        dst << ent.entity_type() << "(" << grp << ") <<" << ent.name << ">>";
     }
 };
 
 template<> struct lexer::rule_map<char> {
     static void desc( char c, const lexer& lex, charstr& dst ) {
-        dst << "literal character '" << c << "'";
+        dst << "literal character `" << c << "'";
     }
 };
 
 template<> struct lexer::rule_map<token> {
     static void desc( const token& t, const lexer& lex, charstr& dst ) {
-        dst << "literal string '" << t << "'";
+        dst << "literal string `" << t << "'";
     }
 };
 
 template<> struct lexer::rule_map<charstr> {
     static void desc( const charstr& t, const lexer& lex, charstr& dst ) {
-        dst << "literal string '" << t << "'";
+        dst << "literal string `" << t << "'";
     }
 };
 
 template<> struct lexer::rule_map<const char*> {
     static void desc( const char* t, const lexer& lex, charstr& dst ) {
-        dst << "literal string '" << t << "'";
+        dst << "literal string `" << t << "'";
     }
 };
 

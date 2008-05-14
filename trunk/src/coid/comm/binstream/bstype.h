@@ -174,6 +174,7 @@ struct kind
     //@}
 
     bool is_array_element() const           { return (ctrl & fARRAY_ELEMENT) != 0; }
+    bool is_first_array_element() const     { return (ctrl & (fARRAY_ELEMENT|fARRAY_ELEMENT_NEXT)) == fARRAY_ELEMENT; }
     bool is_next_array_element() const      { return (ctrl & fARRAY_ELEMENT_NEXT) != 0; }
     
     bool should_place_separator() const     { return !(ctrl & fARRAY_END)  &&  ((ctrl & fARRAY_ELEMENT_NEXT) || !(ctrl & fARRAY_ELEMENT)); }

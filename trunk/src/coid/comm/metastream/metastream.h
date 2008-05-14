@@ -132,6 +132,11 @@ public:
     ///Return the transport stream
     binstream& get_binstream()          { return _hook; }
 
+    ///Set current file name (for error reporting)
+    void set_file_name( const token& name ) {
+        file_name = name;
+    }
+
     void enable_meta_write( bool en )   { _disable_meta_write = !en; }
     void enable_meta_read( bool en )    { _disable_meta_read = !en; }
 
@@ -1099,6 +1104,8 @@ private:
     MetaDesc::Var* _cachevar;           ///< variable being currently cached from input
     MetaDesc::Var* _cacheskip;          ///< set if the variable was not present in input (can be filled with default) or has been already cached
 
+    charstr file_name;                  ///< current file name (for error reporting)
+
 private:
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -1146,24 +1153,7 @@ private:
 
     void fmt_error()
     {
-        token err;
-        uint row, col;
-        token line;
-
-        opcd e = _fmtstreamrd->fmtstream_err( &err, &line, &row, &col );
-        if( e == ersNOT_IMPLEMENTED )
-            return;
-
-        _err << " (" << _fmtstreamrd->fmtstream_name() << ") line " << row;
-        if(!err.is_empty())
-            _err << "\r\nerror: " << err;
-        
-        if(!line.is_empty()) {
-            _err << "\r\n" << line;
-            _err << "\r\n";
-            _err.appendn(col, ' ');
-            _err << "^\r\n";
-        }
+        _fmtstreamrd->fmtstream_format_err(_err);
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -1232,7 +1222,8 @@ protected:
             if(e) {
                 dump_stack(_err,0);
                 _err << " - error " << (R?"reading":"writing") << " struct opening token\n";
-                if(R) fmt_error();
+                if(R)
+                    fmt_error();
                 throw e;
                 return e;
             }
@@ -1268,7 +1259,8 @@ protected:
             if(e) {
                 dump_stack(_err,0);
                 _err << " - error " << (R?"reading":"writing") << " struct closing token";
-                if(R) fmt_error();
+                if(R)
+                    fmt_error();
                 throw e;
                 return e;
             }

@@ -14,14 +14,11 @@
  * The Original Code is COID/comm module.
  *
  * The Initial Developer of the Original Code is
- * PosAm.
- * Portions created by the Initial Developer are Copyright (C) 2003
+ * Brano Kemen
+ * Portions created by the Initial Developer are Copyright (C) 2008
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * Jozef Moravcik
- * Brano Kemen
- * Robert Strycek
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -42,6 +39,7 @@
 
 #include "../namespace.h"
 #include "../binstream/binstream.h"
+#include "../str.h"
 
 COID_NAMESPACE_BEGIN
 
@@ -54,9 +52,12 @@ public:
     virtual token fmtstream_name() = 0;
 
     /// Return formatting stream error (if any) and current line and column for error reporting purposes
-    virtual opcd fmtstream_err( token* err, token* line, uint* row, uint* col ) {
-        return ersNOT_IMPLEMENTED;
-    }
+    //@param err [in] error text
+    //@param err [out] final (formatted) error text with line info etc.
+    virtual void fmtstream_format_err( charstr& dst ) { }
+
+    ///Called to provide prefix for error reporting
+    virtual void fmtstream_file_name( const token& file_name ) = 0;
 };
 
 
