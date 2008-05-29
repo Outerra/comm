@@ -118,6 +118,7 @@ public:
     ///Called before throwing an error exception to preset the _errtext member, just before
     /// the lexer inserts the error information itself.
     //@param rules true if the error occured during parsing the lexer grammar
+    //@param dst destination string to fill
     virtual void on_error_prefix( bool rules, charstr& dst )
     {
         if(!rules)
@@ -131,7 +132,7 @@ public:
     {
         token text;
         uint col;
-        current_line(&text, &col);
+        current_line( &text, &col );
 
         if( !text.is_empty() ) {
             //limit to 80 characters max
@@ -237,7 +238,7 @@ public:
 
         token value() const             { return tok; }
 
-        void upd_hash( const char* p )
+        void upd_hash( const uchar* p )
         {
             hash.inc_char(*p);
         }
@@ -316,7 +317,7 @@ public:
         _bin = 0;
         reset();
 
-        _tok = tok;
+        _orig = _tok = tok;
         _last.tok.set(_tok.ptr(), 0);
         _lines_processed = _lines_last = _tok.ptr();
         return 0;
@@ -334,7 +335,13 @@ public:
         if(_bin)
             _bin->reset_read();
         _tok.set_null();
+        _orig.set_null();
         _binbuf.reset();
+
+        _rawpos = 0;
+        _rawline = 0;
+        _rawlast = 0;
+
         _last.id = 0;
         _last.state = 0;
         _last.tok.set_null();
@@ -430,6 +437,17 @@ public:
         _errtext << "keyword `" << kwd << "' already exists";
 
         throw lexception(_err, _errtext);
+    }
+
+    ///Define multiple keywords at once
+    //@param kwdlist list of keywords separated by @a sep character
+    //@param sep separator character
+    void def_keywords( token kwdlist, char sep = ':' )
+    {
+        token kwd;
+        
+        while( !(kwd = kwdlist.cut_left(sep)).is_empty() )
+            def_keyword(kwd);
     }
 
     ///Escape sequence processor function prototype.
@@ -766,7 +784,7 @@ public:
         }
 
         _err = lexception::ERR_EXTERNAL_ERROR;
-        
+
         on_error_prefix(false, _errtext);
         _errtext << "expected block <<" << seq->name << ">>";
         on_error_suffix(_errtext);
@@ -821,7 +839,8 @@ public:
             }
         }
 
-        uchar code = *_tok.ptr();
+        _rawpos = _tok.ptr();
+        uchar code = *_rawpos;
         ushort x = _abmap[code];        //get mask for the leading character
 
         //check if it's the trailing sequence
@@ -851,7 +870,7 @@ public:
             const dynarray<sequence*>& dseq = _seqary[((x&xSEQ)>>rSEQ)-1];
             uint i, n = (uint)dseq.size();
             for( i=0; i<n; ++i )
-                if( enabled(*dseq[i])  &&  follows(dseq[i]->leading) )  break;
+                if( enabled(*dseq[i])  &&  follows(dseq[i]->leading, 0) )  break;
 
             if(i<n)
             {
@@ -882,9 +901,6 @@ public:
                 if( ignored(*seq) )   //ignored rule
                     return next(ignoregrp);
 
-                //if(!st)
-                //    _last.tok.set_empty();  //there was an error reading the string or block
-
                 return _last;
             }
         }
@@ -892,7 +908,7 @@ public:
         _last.id = x & xGROUP;
         ++_last.id;
 
-        _last.upd_hash( _tok.ptr() );
+        _last.upd_hash( reinterpret_cast<const uchar*>(_tok.ptr()) );
 
         //normal token, get all characters belonging to the same group, unless this is
         // a single-char group
@@ -940,18 +956,29 @@ public:
         return _tok.begins_with(tok);
     }
 
+    ///Match a literal string. Pushes the read token back if not matched.
     //@return true if next token matches literal string
     //@note This won't match a string or block with content equal to @a val, only normal tokens can be matched
     bool matches( const token& val ) {
-        return next() == val  &&  !_last.is_content();
+        bool res = next() == val  &&  !_last.is_content();
+
+        if(!res)
+            push_back();
+        return res;
     }
 
+    ///Match a literal character. Pushes the read token back if not matched.
     //@return true if next token matches literal character
     //@note This won't match a string or block with content equal to @a val, only normal tokens can be matched
     bool matches( char c ) {
-        return next() == c  &&  !_last.is_content();
+        bool res = next() == c  &&  !_last.is_content();
+
+        if(!res)
+            push_back();
+        return res;
     }
 
+    ///Match group of characters. Pushes the read token back if not matched.
     //@return true if next token belongs to the specified group/sequence.
     //@param grp group/sequence id
     //@param dst the token read
@@ -961,8 +988,10 @@ public:
 
         next();
 
-        if( _last != grp )
+        if( _last != grp ) {
+            push_back();
             return false;
+        }
 
         if( !_last.tokbuf.is_empty() )
             dst.takeover( _last.tokbuf );
@@ -971,39 +1000,38 @@ public:
         return true;
     }
 
+    ///Match group of characters. Pushes the read token back if not matched.
     //@return true if next token belongs to the specified group/sequence.
     //@param grp group/sequence id
     bool matches( int grp )
     {
         __assert_valid_rule(grp);
 
-        next();
+        bool res = next() == grp;
 
-        return _last == grp;
+        if(!res)
+            push_back();
+        return res;
     }
 
-    //@return true if the last token read belongs to the specified group/sequence.
-    //@param grp group/sequence id
-    //@param dst the token read
-    bool matches_last( int grp, charstr& dst )
+    //@return true if end of file was matched
+    bool matches_end()
     {
-        __assert_valid_rule(grp);
-
-        if( grp != _last.id )
-            return false;
-
-        if( !_last.tokbuf.is_empty() )
-            dst.takeover( _last.tokbuf );
-        else
-            dst = _last.tok;
-        return true;
+        return last().end()  ||  next().end();
     }
+
 
     ///Match literal or else throw exception (struct lexception)
     //@note This won't match a string or block with content equal to @a val, only normal tokens can be matched
-    void match( const token& val )
+    //@param val literal string to match
+    //@param peek set to true if the function should return match status instead of throwing the exception
+    //@return match result if @a peek was set to true (otherwise an exception is thrown)
+    bool match( const token& val, bool peek = false )
     {
-        if(!matches(val)) {
+        bool res = matches(val);
+        
+        if( !res && !peek )
+        {
             _err = lexception::ERR_EXTERNAL_ERROR;
 
             on_error_prefix(false, _errtext);
@@ -1012,13 +1040,20 @@ public:
 
             throw lexception(_err, _errtext);
         }
+
+        return res;
     }
 
     ///Match literal or else throw exception (struct lexception)
     //@note This won't match a string or block with content equal to @a val, only normal tokens can be matched
-    void match( char c )
+    //@param c literal character to match
+    //@param peek set to true if the function should return match status instead of throwing the exception
+    //@return match result if @a peek was set to true (otherwise an exception is thrown)
+    bool match( char c, bool peek = false )
     {
-        if(!matches(c)) {
+        bool res = matches(c);
+        
+        if( !res && !peek ) {
             _err = lexception::ERR_EXTERNAL_ERROR;
             
             on_error_prefix(false, _errtext);
@@ -1027,12 +1062,20 @@ public:
 
             throw lexception(_err, _errtext);
         }
+
+        return res;
     }
 
     ///Match rule or else throw exception (struct lexception)
-    void match( int grp, charstr& dst )
+    //@param grp group id to match
+    //@param dst destination string that is to receive the matched value
+    //@param peek set to true if the function should return match status instead of throwing the exception
+    //@return match result if @a peek was set to true (otherwise an exception is thrown)
+    bool match( int grp, charstr& dst, bool peek = false )
     {
-        if(!matches(grp, dst)) {
+        bool res = matches(grp, dst);
+                
+        if( !res && !peek ) {
             _err = lexception::ERR_EXTERNAL_ERROR;
 
             on_error_prefix(false, _errtext);
@@ -1044,12 +1087,19 @@ public:
 
             throw lexception(_err, _errtext);
         }
+
+        return res;
     }
 
     ///Match rule or else throw exception (struct lexception)
-    const lextoken& match( int grp )
+    //@param grp group id to match
+    //@param peek set to true if the function should return match status instead of throwing the exception
+    //@return lextoken result if @a peek was set to true (otherwise an exception is thrown)
+    const lextoken& match( int grp, bool peek = false )
     {
-        if(!matches(grp)) {
+        bool res = matches(grp);
+        
+        if( !res && !peek ) {
             _err = lexception::ERR_EXTERNAL_ERROR;
             
             on_error_prefix(false, _errtext);
@@ -1062,73 +1112,96 @@ public:
             throw lexception(_err, _errtext);
         }
 
+        if(!res)
+            _last.id = 0;
+
         return _last;
+    }
+
+    //@return true if end of file was matched
+    bool match_end( bool peek = false )
+    {
+        bool res = matches_end();
+                
+        if( !res && !peek ) {
+            _err = lexception::ERR_EXTERNAL_ERROR;
+
+            on_error_prefix(false, _errtext);
+
+            _errtext << "expected end of file";
+
+            on_error_suffix(_errtext);
+
+            throw lexception(_err, _errtext);
+        }
+
+        return res;
     }
 
     ///Try to match an optional literal, push back if not succeeded.
     //@note This won't match a string or block with content equal to @a val, only normal tokens can be matched
     bool match_optional( const token& val )
     {
-        bool succ = matches(val);
-        if(!succ) 
-            push_back();
-        return succ;
+        return matches(val);
     }
 
     ///Try to match an optional literal character, push back if not succeeded.
     //@note This won't match a string or block with content equal to @a val, only normal tokens can be matched
     bool match_optional( char c )
     {
-        bool succ = matches(c);
-        if(!succ) 
-            push_back();
-        return succ;
+        return matches(c);
     }
 
     ///Try to match an optional rule
     bool match_optional( int grp )
     {
-        __assert_valid_rule(grp);
-
-        bool succ = matches(grp);
-        if(!succ)
-            push_back();
-
-        return succ;
+        return matches(grp);
     }
 
     ///Try to match an optional rule, setting matched value to \a dst
     bool match_optional( int grp, charstr& dst )
     {
-        __assert_valid_rule(grp);
-
-        bool succ = matches(grp, dst);
-        if(!succ)
-            push_back();
-
-        return succ;
+        return matches(grp, dst);
     }
 
     //@{
     ///Try to match one of the rules. The parameters can be either literals (strings or
     /// single characters) or rule identifiers.
-    //@return true if succesfull; matched rule can be found by calling last(). Returns
-    /// false if none were matched.
+    //@return number of matched rule (base 1) if succesfull; matched rule content can be
+    /// retrieved by calling last(). Returns 0 if none were matched.
     //@note if nothing was matched, the lexer doesn't consume anything from the stream
     template<class T1, class T2>
-    bool matches_either( T1 a, T2 b ) {
-        return match_optional(a) || match_optional(b);
+    int matches_either( T1 a, T2 b ) {
+        if( matches(a) )  return 1;
+        if( matches(b) )  return 2;
+        return 0;
     }
 
     template<class T1, class T2, class T3>
-    bool matches_either( T1 a, T2 b, T3 c ) {
-        return match_optional(a) || match_optional(b) || match_optional(c);
+    int matches_either( T1 a, T2 b, T3 c ) {
+        if( matches(a) )  return 1;
+        if( matches(b) )  return 2;
+        if( matches(c) )  return 3;
+        return 0;
     }
 
     template<class T1, class T2, class T3, class T4>
-    bool matches_either( T1 a, T2 b, T3 c, T4 d ) {
-        return match_optional(a) || match_optional(b) || match_optional(c)
-            || match_optional(d);
+    int matches_either( T1 a, T2 b, T3 c, T4 d ) {
+        if( matches(a) )  return 1;
+        if( matches(b) )  return 2;
+        if( matches(c) )  return 3;
+        if( matches(d) )  return 4;
+        return 0;
+    }
+
+    template<class T1, class T2, class T3, class T4, class T5>
+    int matches_either( T1 a, T2 b, T3 c, T4 d, T5 e ) {
+        if( matches(a) )  return 1;
+        if( matches(b) )  return 2;
+        if( matches(c) )  return 3;
+        if( matches(d) )  return 4;
+        if( matches(e) )  return 5;
+        return 0;
     }
     //@}
 
@@ -1159,7 +1232,7 @@ public:
     template<class T1, class T2, class T3>
     const lextoken& match_either( T1 a, T2 b, T3 c )
     {
-        if(match_optional(a) || match_optional(b) || match_optional(c))
+        if(matches(a) || matches(b) || matches(c))
             return _last;
 
         _err = lexception::ERR_EXTERNAL_ERROR;
@@ -1179,8 +1252,8 @@ public:
     template<class T1, class T2, class T3, class T4>
     const lextoken& match_either( T1 a, T2 b, T3 c, T4 d )
     {
-        if(match_optional(a) || match_optional(b) || match_optional(c)
-            || match_optional(d))
+        if(matches(a) || matches(b) || matches(c)
+            || matches(d))
             return _last;
 
         _err = lexception::ERR_EXTERNAL_ERROR;
@@ -1192,6 +1265,29 @@ public:
         rule_map<T2>::desc(b, *this, _errtext); _errtext << ", ";
         rule_map<T3>::desc(c, *this, _errtext); _errtext << ", ";
         rule_map<T4>::desc(d, *this, _errtext);
+
+        on_error_suffix(_errtext);
+
+        throw lexception(_err, _errtext);
+    }
+
+    template<class T1, class T2, class T3, class T4, class T5>
+    const lextoken& match_either( T1 a, T2 b, T3 c, T4 d, T5 e )
+    {
+        if(matches(a) || matches(b) || matches(c)
+            || matches(d) || matches(e))
+            return _last;
+
+        _err = lexception::ERR_EXTERNAL_ERROR;
+        
+        on_error_prefix(false, _errtext);
+
+        _errtext << "couldn't match either: ";
+        rule_map<T1>::desc(a, *this, _errtext); _errtext << ", ";
+        rule_map<T2>::desc(b, *this, _errtext); _errtext << ", ";
+        rule_map<T3>::desc(c, *this, _errtext); _errtext << ", ";
+        rule_map<T3>::desc(d, *this, _errtext); _errtext << ", ";
+        rule_map<T4>::desc(e, *this, _errtext);
 
         on_error_suffix(_errtext);
 
@@ -1216,10 +1312,15 @@ public:
     //@return current line number (from index 1, not 0)
     uint current_line()
     {
-        if( _tok.ptr() > _lines_processed )
-            _lines += count_newlines( _lines_processed, _tok.ptr() );
+        if( _rawpos - _orig.ptr() < 0 ) {
+            //if the beginning of the last token has been already discarded ...
+            return _rawline;
+        }
 
-        return _lines+1;
+        if( _rawpos > _lines_processed )
+            count_newlines( _lines_processed, _rawpos );
+
+        return _rawline + 1;
     }
 
     ///Return current lexer position info
@@ -1228,21 +1329,35 @@ public:
     //@param col receives column number of current token
     uint current_line( token* text, uint* col )
     {
-        if( _tok.ptr() > _lines_processed )
-            _lines += count_newlines( _lines_processed, _tok.ptr() );
+        if( _rawpos - _orig.ptr() < 0 ) {
+            //if the beginning of the last token has been already discarded ...
+            if(col)  *col = 0;
+            if(text)  text->set_empty();
+
+            return _rawline + 1;
+        }
+
+        token pstr = token(_rawpos, _orig.ptre() - _rawpos);
+
+        if( _rawpos > _lines_processed )
+            count_newlines( _lines_processed, _rawpos );
 
         if(text) {
-            uints n = _tok.count_notingroup("\r\n");
-            const char* last = _lines_last > _binbuf.ptr()
+            //find the end of current line
+            uints n = pstr.count_notingroup("\r\n");
+
+            //get available part of the string
+            const char* last = _lines_last - _rawlast > 0
                 ? _lines_last
-                : _binbuf.ptr();
+                : _rawlast;
 
-            text->set( last, _tok.ptr()-last+n );
+            text->set( last, pstr.ptr() - last + n );
         }
-        if(col)
-            *col = uint(_last.tok.ptr() - _lines_last);
 
-        return _lines+1;
+        if(col)
+            *col = uint(pstr.ptr() - _lines_last);
+
+        return _rawline + 1;
     }
 
     ///Get error code
@@ -1264,7 +1379,7 @@ public:
     //@return string object that can be used to fill specific info; the string is
     /// already prefilled with whatever the on_error_prefix() handler inserted into it
     //@note 
-    charstr& prepare_exception()
+    charstr& prepare_exception( bool last_token = false )
     {
         _err = lexception::ERR_EXTERNAL_ERROR;
         _errtext.reset();
@@ -1274,7 +1389,7 @@ public:
     }
 
     ///Return exception that was prepared externally, appending suffix
-    lexception final_exception()
+    lexception final_exception( bool last_token = false )
     {
         on_error_suffix(_errtext);
 
@@ -1950,14 +2065,16 @@ protected:
             //this can be either an escape character or the terminating character,
             // although possibly from another delimiter pair
 
+            bool replaced = false;
+
             if( er && escc == er->esc )
             {
                 //a regular escape sequence, flush preceding data
                 if(outermost)
                     _last.tokbuf.add_from( _tok.ptr(), off );
-                _tok.shift_start(off+1);  //past the escape char
 
-                bool replaced = false;
+                _tok.shift_start(off+1);  //past the escape char
+                off = 0;
 
                 if(er->replfn)
                 {
@@ -1974,17 +2091,8 @@ protected:
                 {
                     uint i, n = (uint)er->pairs.size();
                     for( i=0; i<n; ++i )
-                        if( follows( er->pairs[i].code ) )  break;
-                    if( i >= n )
-                    {
-                        //_err = lexception::ERR_UNRECOGNIZED_ESCAPE_SEQ;
-                        //_errtext << "unrecognized escape sequence " << er->esc
-                        //    << token(_tok.ptr(), uint_min(3,_tok.len())) << "..";
-
-                        //skip one char after the escape char
-                        ++_tok;
-                    }
-                    else
+                        if( follows(er->pairs[i].code, 0) )  break;
+                    if( i < n )
                     {
                         //found
                         const escpair& ep = er->pairs[i];
@@ -1992,12 +2100,16 @@ protected:
                         if(outermost)
                             _last.tokbuf += ep.replace;
                         _tok.shift_start( ep.code.len() );
+
+                        replaced = true;
                     }
                 }
 
-                off = 0;
+                if(!replaced)
+                    _tok.shift_start(-1);
             }
-            else
+
+            if(!replaced)
             {
                 int k = match_trail( sr.trailing, off );
                 if(k>=0)
@@ -2229,7 +2341,7 @@ protected:
         const uchar* pc = (const uchar*)_tok.ptr();
         for( ; off<_tok._len; ++off )
         {
-            const char* p = (const char*)pc+off;
+            const uchar* p = pc + off;
             if( (_abmap[*p] & (fGROUP_ESCAPE|fSEQ_TRAILING)) != 0 )  break;
         }
         return off;
@@ -2241,7 +2353,7 @@ protected:
         const uchar* pc = (const uchar*)_tok.ptr();
         for( ; off<_tok._len; ++off )
         {
-            const char* p = (const char*)pc+off;
+            const uchar* p = pc + off;
             if( (_abmap[*p] & (fSEQ_TRAILING|xSEQ)) != 0 )  break;
         }
         return off;
@@ -2252,7 +2364,7 @@ protected:
         const uchar* pc = (const uchar*)tok.ptr();
         for( ; off<tok._len; ++off )
         {
-            const char* p = (const char*)pc+off;
+            const uchar* p = pc+off;
             if( (_abmap[*p] & xGROUP) != grp )
                 break;
 
@@ -2266,7 +2378,7 @@ protected:
         const uchar* pc = (const uchar*)tok.ptr();
         for( ; off<tok._len; ++off )
         {
-            const char* p = (const char*)pc+off;
+            const uchar* p = pc+off;
             if( (_trail[*p] & msk) == 0 )  break;
 
             _last.upd_hash(p);
@@ -2376,7 +2488,7 @@ protected:
     }
 
     ///Fetch more data from input
-    //@param nkeep bytes to keep in buffer
+    //@param nkeep bytes to keep in buffer (from end)
     //@param ignore true if data before last nkeep bytes should be discarded.
     /// If false, these are copied to the token buffer
     uints fetch_page( uints nkeep, bool ignore )
@@ -2392,15 +2504,22 @@ protected:
         }
 
         //count _lines being discarded
-        if( !_binbuf.size() ) {
+        if( !_binbuf.size() )
+        {
+            //an initial fetch
             _lines_processed = _binbuf.need_new(BINSTREAM_BUFFER_SIZE);
             _lines_last = _lines_processed;
+            _rawpos = _rawlast = _lines_last;
         }
-        else if( _tok.ptr()+old > _lines_processed ) {
-            _lines += count_newlines( _lines_processed, _tok.ptr()+old );
+        else if( _tok.ptr() + old > _lines_processed )
+        {
+            count_newlines( _lines_processed, _tok.ptr() + old );
             _lines_processed = _binbuf.ptr();
-            _lines_last = _binbuf.ptr() - int(_tok.ptr()+old - _lines_last);
+            _lines_last = _binbuf.ptr() - int(_tok.ptr() + old - _lines_last);
         }
+
+        _rawpos -= old;
+        _rawlast -= old;
 
         if(nkeep)
             xmemcpy( _binbuf.ptr(), _tok.ptr() + old, nkeep );
@@ -2410,6 +2529,8 @@ protected:
         opcd e = _bin->read_raw_full( _binbuf.ptr()+nkeep, rla );
 
         _tok.set( _binbuf.ptr(), rl-rla+nkeep );
+        _orig = _tok;
+
         _last.tok.set(_tok.ptr(), 0);
 
         return rl-rla+nkeep;
@@ -2477,11 +2598,19 @@ protected:
                 _lines_last = p+1;
             }
 
+            if( p == _rawpos ) {
+                //mark rawpos line if coming accross it
+                _rawline = _lines + newlines;
+                _rawlast = _lines_last;
+            }
+
             oc = c;
         }
 
         _lines_oldchar = oc;
-        return newlines;
+        _lines += newlines;
+
+        return _lines;
     }
 
     ///Helper rule/literal mapper
@@ -2517,9 +2646,14 @@ protected:
     const char* _lines_last;            ///< current line start
     const char* _lines_processed;       ///< characters processed in search for newlines
 
+    const char* _rawpos;                ///< original position of last token in _orig
+    const char* _rawlast;               ///< line on which the last token lies
+    int _rawline;                       ///< original starting line of last token
+
     token _tok;                         ///< source string to process, can point to an external source or into the _binbuf
     binstream* _bin;                    ///< source stream
     dynarray<char> _binbuf;             ///< source stream cache buffer
+    token _orig;                        ///< original token
 
     int _pushback;                      ///< true if the lexer should return the previous token again (was pushed back)
 
