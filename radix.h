@@ -57,7 +57,7 @@ struct T_GET_INT
 /**
     @param T        class type to sort through
     @param INT_IDX  an int type to use as index, default uints
-    @param INT_DAT  an int type to use as
+    @param INT_DAT  an int type to use as integer key extracted from T objects
 **/
 template <class T, class INT_IDX = uints, class INT_DAT = INT_IDX, class GETINT = T_GET_INT<INT_DAT> >
 class radixi {

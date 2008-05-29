@@ -53,6 +53,11 @@
 
 #endif
 
+///Used for function-local static objects.
+/// LOCAL_SINGLETON(class) name = initialization
+#define LOCAL_SINGLETON(T) \
+    static coid::local_singleton<T>
+
 
 ////////////////////////////////////////////////////////////////////////////////
 COID_NAMESPACE_BEGIN
@@ -101,6 +106,37 @@ private:
         delete (T*)p;
     }
 };
+
+////////////////////////////////////////////////////////////////////////////////
+template<class T>
+class local_singleton
+{
+public:
+
+    T* operator -> () {
+        return p;
+    }
+
+    T& operator * () {
+        return *p;
+    }
+
+    local_singleton(T* p)
+    {
+        this->p = (T*)singleton_register_instance(p, &destroy, 0, 0, 0);
+    }
+
+
+private:
+
+    T* p;
+
+    static void destroy(void* p) {
+        delete (T*)p;
+    }
+};
+
+
 
 COID_NAMESPACE_END
 
