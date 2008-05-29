@@ -407,7 +407,7 @@ private:
 
 //////////////////////////////////////////////////////////////////////////
 #define INTERFACE_REGISTER(iface) \
-    singleton< ClassRegister<iface> >::instance()
+    SINGLETON(ClassRegister<iface>)
 
 /// Begins implementation of interface within a class
 #define IMPLEMENTS_INTERFACE_BEGIN(iface,classname,ver,baseclass) \
