@@ -941,19 +941,23 @@ public:
     //@param ignore id of the group that should be skipped beforehand, 0 if nothing shall be skipped
     bool follows( const token& tok, uint ignore=1 )
     {
+        uint skip = 0;
+
         if(ignore) {
-            _last.tok = scan_group( ignore-1, true );
-            if( _last.tok.ptr() == 0 )
+            token white = scan_group( ignore-1, true );
+            if( white.ptr() == 0 )
                 return false;
+
+            skip = white.len();
         }
 
-        if( tok.len() > _tok.len() )
+        if( tok.len() + skip > _tok.len() )
         {
             uints n = fetch_page(_tok.len(), false);
-            if( n < tok.len() )  return false;
+            if( n < tok.len() + skip )  return false;
         }
 
-        return _tok.begins_with(tok);
+        return _tok.begins_with(tok, skip);
     }
 
     ///Match a literal string. Pushes the read token back if not matched.
