@@ -945,6 +945,8 @@ public:
 
         if(ignore) {
             token white = scan_group( ignore-1, true );
+            _tok.shift_start( -(int)white.len() );
+
             if( white.ptr() == 0 )
                 return false;
 
