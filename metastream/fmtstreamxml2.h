@@ -371,18 +371,8 @@ public:
                     return ersNO_MORE;
             }
 			else if( t.type == type::T_CHAR ) {
-				if( _attrmoder  &&  _tokenizer.match_optional('>') ) {
-					_attrmoder = false;
-				}
-
-				token tok;
-				if(_attrmoder)
-					tok = _tokenizer.match_either(lexstr, lexchr);
-				else
-					tok = _tokenizer.next_as_string(lexcont, false);
-
-				*(uints*)p = tok.len();
-				_tokenizer.push_back();
+                open_tagmode();
+                *(uints*)p = _tokenizer.last().value().len();
 			}
             else
             {
@@ -406,6 +396,7 @@ public:
         else if( t.is_array_end() )
         {
 			if( t.type == type::T_CHAR ) {
+                close_tagmode(t);
             }
             else if( t.type != type::T_KEY )
             {
@@ -471,31 +462,14 @@ public:
         }
         else
         {
-            //if( !t.is_array_element() )
-            token tok;
-            int mode;   //0 between tags, 1 attribute, 2 value, 3 array element
-
             if(_tagr.is_empty()) {
                 //an array element
                 _tokenizer.match('<');
                 _tokenizer.match( get_xsi_type(t) );
             }
 
-            if( _tokenizer.match_optional('>') ) {
-                tok = _tokenizer.next_as_string(lexcont, false);
-                mode = 0;
-                _attrmoder = false;
-            }
-            else if( _tokenizer.match_optional("value") ) {
-                _tokenizer.match('=');
-                tok = _tokenizer.match_either(lexstr, lexchr);
-                mode = 2;
-            }
-            else {
-                tok = _tokenizer.match_either(lexstr, lexchr);
-                mode = 1;
-            }
-                
+            open_tagmode();
+            token tok = _tokenizer.last();
 
             switch( t.type )
             {
@@ -562,17 +536,7 @@ public:
                 return ersSYNTAX_ERROR "unknown type"; break;
             }
 
-            if( mode == 0 ) {
-                _tokenizer.match('<');
-                _tokenizer.match('/');
-                _tokenizer.match( _tagr.is_empty() ? get_xsi_type(t) : _tagr );
-                _tokenizer.match('>');
-            }
-            else if( mode == 2 ) {
-                _tokenizer.match('/');
-                _tokenizer.match('>');
-            }
-            //close_this_tag(t);
+            close_tagmode(t);
         }
 
         return 0;
@@ -660,10 +624,6 @@ public:
         }
 		else
 			tok = _tokenizer.last();
-        /*else if(_attrmoder)
-            tok = _tokenizer.match_either(lexstr, lexchr);
-        else
-            tok = _tokenizer.next_as_string(lexcont, false);*/
 
         opcd e=0;
         if( t.type == type::T_BINARY )
@@ -825,6 +785,38 @@ protected:
             _tokenizer.match('>');
         }
     }
+
+    void open_tagmode()
+    {
+        if( _tokenizer.match_optional('>') ) {
+            _tokenizer.next_as_string(lexcont, false);
+            _tagmode = 0;
+            _attrmoder = false;
+        }
+        else if( _tokenizer.match_optional("value") ) {
+            _tokenizer.match('=');
+            _tokenizer.match_either(lexstr, lexchr);
+            _tagmode = 2;
+        }
+        else {
+            _tokenizer.match_either(lexstr, lexchr);
+            _tagmode = 1;
+        }
+    }
+
+    void close_tagmode( type t )
+    {
+        if( _tagmode == 0 ) {
+            _tokenizer.match('<');
+            _tokenizer.match('/');
+            _tokenizer.match( _tagr.is_empty() ? get_xsi_type(t) : _tagr );
+            _tokenizer.match('>');
+        }
+        else if( _tagmode == 2 ) {
+            _tokenizer.match('/');
+            _tokenizer.match('>');
+        }
+    }
     
 protected:
 
@@ -836,6 +828,8 @@ protected:
     dynarray<Parent> _stackr;
     charstr _tagw;                      ///< tag to be written
     charstr _tagr;                      ///< tag being read
+
+    int _tagmode;                       ///< 0 between tags, 1 attribute, 2 value, 3 array element
 
     bool _attrmodew;                    ///< attribute setting mode at the current level
     bool _attrmoder;                    ///< attribute reading mode
