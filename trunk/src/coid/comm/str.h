@@ -790,6 +790,8 @@ public:
         DATE_HHMM           = 0x10,
         DATE_HHMMSS         = 0x20,
         DATE_TZ             = 0x40,
+		DATE_ISO8601        = 0x80,
+		DATE_ISO8601_GMT	= 0x100,
     };
 
     ///Append GMT date string constructed by the flags set
@@ -848,24 +850,62 @@ public:
             append(' ');
         }
 
-        if( flg & (DATE_HHMM|DATE_HHMMSS) ) {
+		if( flg & DATE_ISO8601 ) {  // 2008-02-22T15:08:13Z
+			append_num(10, tm.tm_year+1900);
+			append('-');
+			append_num(10, tm.tm_mon+1);
+			append('-');
+			append_num(10, tm.tm_mday);
+			append('T');
+		}
+
+        if( flg & (DATE_HHMM|DATE_HHMMSS|DATE_ISO8601) ) {
             append_num(10,tm.tm_hour,2,charstr::ALIGN_NUM_RIGHT_FILL_ZEROS);
             append(':');
             append_num(10,tm.tm_min,2,charstr::ALIGN_NUM_RIGHT_FILL_ZEROS);
         }
 
-        if( flg & DATE_HHMMSS ) {
+        if( flg & (DATE_HHMMSS|DATE_ISO8601) ) {
             append(':');
             append_num(10,tm.tm_sec,2,charstr::ALIGN_NUM_RIGHT_FILL_ZEROS);
         }
 
         if( flg & DATE_TZ ) {
-            append(' ');
-            append(tz);
+			append(' ');
+			append(tz);
         }
+
+		if( flg & DATE_ISO8601 ) {
+			if( flg & DATE_ISO8601_GMT ) {
+				append('Z');
+			} else {
+				long t;
+#ifdef SYSTYPE_MSVC8plus
+				_get_timezone(&t);
+				t = -t;
+#else
+				t = -get_timezone();
+#endif
+				if (t > 0) append('+');
+				append_num(10,t/3600,2,charstr::ALIGN_NUM_RIGHT_FILL_ZEROS);
+				append(':');
+				append_num(10,(t%3600)/60,2,charstr::ALIGN_NUM_RIGHT_FILL_ZEROS);
+			}
+		}
 
         return *this;
     }
+
+	charstr& append_time_xsd( const timet & t)
+	{
+		return append_date_local(t, DATE_ISO8601);
+	}
+
+	charstr& append_time_xsd_gmt( const timet & t)
+	{
+		return append_date_local(t, DATE_ISO8601|DATE_ISO8601_GMT);
+	}
+
 
     ///Append string while encoding characters as specified for URL encoding
     charstr& append_encode_url( const token& str )

@@ -1353,7 +1353,7 @@ public:
             uints n = pstr.count_notingroup("\r\n");
 
             //get available part of the string
-            const char* last = _lines_last - _rawlast > 0
+            const char* last = ints(_lines_last - _rawlast) > 0
                 ? _lines_last
                 : _rawlast;
 
