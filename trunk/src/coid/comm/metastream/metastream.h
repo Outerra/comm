@@ -249,9 +249,6 @@ public:
             if(e) return e;
 
             _hook >> x;
-
-            if( _root.desc->first_child()->is_compound() )
-                moveout_struct<READ_MODE>();
         }
         catch(opcd ee) {e=ee;}
         return e;
@@ -293,12 +290,8 @@ public:
             e = prepare_type<WRITE_MODE>( x, name, cache );
             if(e) return e;
 
-            if(!cache) {
+            if(!cache)
                 _hook << x;
-
-                if( _root.desc->first_child()->is_compound() )
-                    moveout_struct<WRITE_MODE>();
-            }
         }
         catch(opcd ee) {e=ee;}
         return e;
