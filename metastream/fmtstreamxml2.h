@@ -75,7 +75,7 @@ public:
         if(br)  bind( *br, BIND_INPUT );
 
         _tokenizer.def_group( "", " \t\r\n" );
-        _tokenizer.def_group_single( "sep", "/=" );
+        _tokenizer.def_group_single( "sep", "/=?" );
 
         //add anything that can be a part of identifier or value (strings are treated separately)
         lexid = _tokenizer.def_group( "id", "a..zA..Z_:", "0..9a..zA..Z_:-." );
@@ -363,9 +363,27 @@ public:
             if( t.type == type::T_KEY ) {
                 _tagr.reset();
 
+				if( _attrmoder  &&  _tokenizer.match_optional('>') ) {
+					_attrmoder = false;
+				}
+
                 if( _tokenizer.follows("</") )
                     return ersNO_MORE;
             }
+			else if( t.type == type::T_CHAR ) {
+				if( _attrmoder  &&  _tokenizer.match_optional('>') ) {
+					_attrmoder = false;
+				}
+
+				token tok;
+				if(_attrmoder)
+					tok = _tokenizer.match_either(lexstr, lexchr);
+				else
+					tok = _tokenizer.next_as_string(lexcont, false);
+
+				*(uints*)p = tok.len();
+				_tokenizer.push_back();
+			}
             else
             {
                 //close_previous_tag(true);
@@ -627,6 +645,10 @@ public:
             }
             else {
                 _tokenizer.match('<');
+				//if ( _tokenizer.follows("/", 0) ) {
+				//	_tokenizer.push_back();
+				//	return ersNO_MORE;
+				//}
                 _tagr = _tokenizer.match(lexid);
 
                 _attrmoder = true;
@@ -634,10 +656,12 @@ public:
 
             tok = _tagr;
         }
-        else if(_attrmoder)
+		else
+			tok = _tokenizer.last();
+        /*else if(_attrmoder)
             tok = _tokenizer.match_either(lexstr, lexchr);
         else
-            tok = _tokenizer.next_as_string(lexcont, false);
+            tok = _tokenizer.next_as_string(lexcont, false);*/
 
         opcd e=0;
         if( t.type == type::T_BINARY )
