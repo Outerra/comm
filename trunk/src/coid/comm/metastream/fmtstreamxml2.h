@@ -405,7 +405,9 @@ public:
         }
         else if( t.is_array_end() )
         {
-            if( t.type != type::T_KEY )
+			if( t.type == type::T_CHAR ) {
+            }
+            else if( t.type != type::T_KEY )
             {
                 Parent* par = _stackr.last();
 
