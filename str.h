@@ -120,6 +120,7 @@ public:
         _tstr[tok._len] = 0;
     }
 
+
     charstr& set( const char* czstr )
     {
         if(czstr)
@@ -1152,24 +1153,38 @@ public:
         return p + len;
     }
 
+    //@return true if the string is empty
     bool is_empty() const {
         return _tstr.size () <= 1;
     }
 
+    typedef dynarray<char> charstr::*unspecified_bool_type;
+
+    ///Automatic cast to bool for checking emptiness
+	operator unspecified_bool_type () const {
+	    return len() == 0  ?  0  :  &charstr::_tstr;
+	}
+
+
+
     dynarray<char>& dynarray_ref()      { return _tstr; }
 
+    //@return char* to the string beginning
     const char* ptr() const             { return _tstr.ptr(); }
+
+    //@return char* to past the string end
     const char* ptre() const            { return _tstr.ptr() + len(); }
 
+    //@return zero-terminated C-string
     const char* c_str() const           { return _tstr.size() ? _tstr.ptr() : ""; }
 
-    ///<String length excluding terminating zero
+    ///String length excluding terminating zero
     uints len() const                   { return _tstr.size() ? (_tstr.size() - 1) : 0; }
 
-    ///<String length counting terminating zero
+    ///String length counting terminating zero
     uints lent() const                  { return _tstr.size(); }
 
-    ///<String allocated length, always aligned to 4-byte
+    ///String allocated length, always aligned to 4-byte
     uints lenf() const                  { return (_tstr.size() + 3) & ~3; }
 
     void free ()                        { _tstr.discard(); }
@@ -1180,9 +1195,7 @@ public:
     //operator const char *() const       { return _tstr; }
     //operator char *()                   { return _tstr; }
 
-    ~charstr() {
-        //_tbuf.free();
-    }
+    ~charstr() {}
 
 
 protected:
