@@ -238,6 +238,8 @@ public:
 
         token value() const             { return tok; }
 
+        int group() const               { return id; }
+
         void upd_hash( const uchar* p )
         {
             hash.inc_char(*p);
@@ -337,6 +339,7 @@ public:
         _tok.set_null();
         _orig.set_null();
         _binbuf.reset();
+        _strings.reset();
 
         _rawpos = 0;
         _rawline = 0;
@@ -442,12 +445,16 @@ public:
     ///Define multiple keywords at once
     //@param kwdlist list of keywords separated by @a sep character
     //@param sep separator character
-    void def_keywords( token kwdlist, char sep = ':' )
+    //@return group id of the last keyword
+    int def_keywords( token kwdlist, char sep = ':' )
     {
         token kwd;
+        int grp = 0;
         
         while( !(kwd = kwdlist.cut_left(sep)).is_empty() )
-            def_keyword(kwd);
+            grp = def_keyword(kwd);
+
+        return grp;
     }
 
     ///Escape sequence processor function prototype.
@@ -807,6 +814,8 @@ public:
         //return last token if instructed
         if(_pushback) { _pushback = 0; return _last; }
 
+        if(_last.tokbuf)
+            _strings.add()->swap(_last.tokbuf);
         _last.reset();
 
         //skip characters from the ignored group
@@ -2660,6 +2669,7 @@ protected:
     binstream* _bin;                    ///< source stream
     dynarray<char> _binbuf;             ///< source stream cache buffer
     token _orig;                        ///< original token
+    dynarray<charstr> _strings;         ///< parsed strings
 
     int _pushback;                      ///< true if the lexer should return the previous token again (was pushed back)
 
