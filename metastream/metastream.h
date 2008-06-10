@@ -475,6 +475,7 @@ public:
         _current = _cachestack.need(1);
         _current->offs = open ? 0 : UMAX;
         _cachevar = 0;
+		_cacheroot = 0;
         _cacheskip = 0;
     }
 
