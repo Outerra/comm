@@ -154,20 +154,7 @@ public:
     ///Incremental token hasher used by the lexer
     struct token_hash
     {
-        uint    hash;
-        typedef token key_type;
-
-        ///Compute hash of token
-        uint operator() (const token& s) const
-        {
-            uint h = 0;
-            const char* p = s.ptr();
-            const char* pe = s.ptre();
-
-            for( ; p<pe; ++p )
-                h = (h ^ (uint)*p) + (h<<26) + (h>>6);
-            return h;
-        }
+        uint hash;
 
         ///Incremental hash value computation
         void inc_char( char c ) {
@@ -188,14 +175,16 @@ public:
         int     state;                  ///< >0 leading, <0 trailing, =0 chunked
         charstr tokbuf;                 ///< buffer that keeps processed string in case it had to be altered (escape seq.replacements etc.)
         token_hash hash;                ///< hash value computed for tokens (but not for strings or blocks)
+        bool icase;                     ///< case-insensitive string
+
 
         bool operator == (int i) const  { return i == id; }
         bool operator == (char c) const { return tok == c; }
-        bool operator == (const token& t) const { return tok == t; }
+        bool operator == (const token& t) const { return tok.cmpeqc(t, !icase); }
 
         bool operator != (int i) const  { return i != id; }
         bool operator != (char c) const { return tok != c; }
-        bool operator != (const token& t) const { return tok != t; }
+        bool operator != (const token& t) const { return !tok.cmpeqc(t, !icase); }
 
         operator token() const          { return tok; }
 
@@ -240,13 +229,16 @@ public:
 
         int group() const               { return id; }
 
-        void upd_hash( const uchar* p )
-        {
-            hash.inc_char(*p);
+        void upd_hash( uchar p ) {
+            hash.inc_char(p);
         }
 
-        void reset()
-        {
+        void set_hash( uchar p ) {
+            reset();
+            hash.inc_char(p);
+        }
+
+        void reset() {
             tokbuf.reset();
             hash.reset();
         }
@@ -275,6 +267,7 @@ public:
             ERR_EXTERNAL_ERROR          = 10,       ///< the error was set from outside
             ERR_KEYWORD_ALREADY_DEFINED = 11,
             ERR_INVALID_RULE_ID         = 12,
+            ERR_INTERNAL_ERROR          = 13,
         };
     };
 
@@ -283,7 +276,8 @@ public:
 
     ///Constructor
     //@param utf8 enable or disable utf8 mode
-    lexer( bool utf8 = true )
+    //@param icase case insensitive tokens (true) or sensitive (false)
+    lexer( bool utf8 = true, bool icase = false )
     {
         _bin = 0;
         _utf8 = utf8;
@@ -292,8 +286,15 @@ public:
         reset();
 
         _abmap.need_new(256);
-        for( uint i=0; i<_abmap.size(); ++i )
+        _casemap.need_new(256);
+
+        for( uint i=0; i<_abmap.size(); ++i ) {
             _abmap[i] = GROUP_UNASSIGNED;
+            _casemap[i] = icase ? tolower(i) : i;
+        }
+
+        _last.icase = icase;
+        _kwds.set_icase(icase);
     }
 
     ///Enable or disable utf8 mode
@@ -561,6 +562,9 @@ public:
         add_trailing( sr, trailing );
 
         add_sequence(sr);
+        if(enb)
+            __assert_reachable_sequence(sr);
+
         return -1-g;
     }
 
@@ -636,6 +640,9 @@ public:
         add_trailing( br, trailing );
 
         add_sequence(br);
+        if(enb)
+            __assert_reachable_sequence(br);
+
         return -1-g;
     }
 
@@ -664,6 +671,9 @@ public:
         se->leading = seq;
 
         add_sequence(se);
+        if(enb)
+            __assert_reachable_sequence(se);
+
         return -1-g;
     }
 
@@ -763,12 +773,16 @@ public:
     }
 
     ///Return current block as single token
+    //@param blockid id of block to match
+    //@param complete true if the block should be read completely and returned, false if only the leading token should be matched
+    //@note This method temporarily enables the block if it was disabled before the call. If the block shares common
+    /// leading delimiter with other enabled block, the one that was specified first is evaluated.
     /** Finds the end of active block and returns the content as a single token.
         For the top-most, implicit block it processes input to the end. Enabled sequences
         are processed normally: ignored sequences are read but discarded, strings have
         their escape sequences replaced, etc.
     **/
-    const lextoken& match_block( int blockid )
+    const lextoken& match_block( int blockid, bool complete )
     {
         __assert_valid_sequence(blockid, entity::BLOCK);
 
@@ -778,14 +792,20 @@ public:
         DASSERT( seq->is_block() );
 
         bool enb = enabled(*seq);
-        if(!enb)
+        if(!enb) {
+            __assert_reachable_sequence(seq);
             enable(sid, true);
+        }
 
         next();
+
         if(!enb)
             enable(sid, false);
 
         if(_last.id == blockid) {
+            if(!complete)
+                return _last;
+
             uint off=0;
             return next_read_block( *(block_rule*)seq, off, true );
         }
@@ -812,7 +832,10 @@ public:
     const lextoken& next( uint ignoregrp=1 )
     {
         //return last token if instructed
-        if(_pushback) { _pushback = 0; return _last; }
+        if(_pushback) {
+            _pushback = 0;
+            return _last;
+        }
 
         if(_last.tokbuf)
             _strings.add()->swap(_last.tokbuf);
@@ -917,7 +940,7 @@ public:
         _last.id = x & xGROUP;
         ++_last.id;
 
-        _last.upd_hash( reinterpret_cast<const uchar*>(_tok.ptr()) );
+        _last.set_hash( _casemap[(uchar)*_tok.ptr()] );
 
         //normal token, get all characters belonging to the same group, unless this is
         // a single-char group
@@ -946,7 +969,7 @@ public:
     }
 
     ///Try to match a raw (untokenized) string following in the input
-    //@param tok raw string to match
+    //@param tok raw string to try match
     //@param ignore id of the group that should be skipped beforehand, 0 if nothing shall be skipped
     bool follows( const token& tok, uint ignore=1 )
     {
@@ -969,6 +992,32 @@ public:
         }
 
         return _tok.begins_with(tok, skip);
+    }
+
+    ///Try to match a character following in the input
+    //@param c character to try to match
+    //@param ignore id of the group that should be skipped beforehand, 0 if nothing shall be skipped
+    bool follows( char c, uint ignore=1 )
+    {
+        uint skip = 0;
+
+        if(ignore) {
+            token white = scan_group( ignore-1, true );
+            _tok.shift_start( -(int)white.len() );
+
+            if( white.ptr() == 0 )
+                return false;
+
+            skip = white.len();
+        }
+
+        if( 1 + skip > _tok.len() )
+        {
+            uints n = fetch_page(_tok.len(), false);
+            if( n < 1 + skip )  return false;
+        }
+
+        return _tok.nth_char(skip) == c;
     }
 
     ///Match a literal string. Pushes the read token back if not matched.
@@ -1524,6 +1573,9 @@ protected:
     ///Assert valid rule id
     void __assert_valid_rule( int sid ) const
     {
+        if( sid == ID_KEYWORDS )
+            return;
+
         if( sid == 0
             || ( sid>0  &&  sid-1 >= (int)_grpary.size() )
             || ( sid<0  &&  -sid-1 >= (int)_stbary.size() ) )
@@ -1564,7 +1616,6 @@ protected:
             }
         }
     }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 protected:
@@ -1733,13 +1784,67 @@ protected:
         }
     };
 
+    ///
+    struct equal_keyword
+    {
+        bool operator()( const charstr& val, const token& key ) const {
+            return val.cmpeqc(key, !icase);
+        }
+
+        equal_keyword() : icase(false)
+        {}
+
+        void set_icase( bool icase ) {
+            this->icase = icase;
+        }
+
+    private:
+        bool icase;
+    };
+
+    ///
+    struct hash_keyword : public token_hash
+    {
+        typedef token key_type;
+
+        ///Compute hash of token
+        uint operator() (const token& s) const
+        {
+            uint h = 0;
+            const char* p = s.ptr();
+            const char* pe = s.ptre();
+
+            for( ; p<pe; ++p ) {
+                uint k = icase ? tolower(*p) : *p;
+                h = (h ^ k) + (h<<26) + (h>>6);
+            }
+
+            return h;
+        }
+
+        hash_keyword() : icase(false)
+        {}
+
+        void set_icase( bool icase ) {
+            this->icase = icase;
+        }
+
+    private:
+        bool icase;
+    };
+
     ///Keyword map for detection of whether token is a reserved word
     struct keywords
     {
-        hash_set<charstr, token_hash>
+        hash_set<charstr, hash_keyword, equal_keyword>
             set;                        ///< hash_set for fast detection if the string is in the list
         int nkwd;                       ///< number of keywords
 
+
+        void set_icase( bool icase ) {
+            set.hash_func().set_icase(icase);
+            set.equal_func().set_icase(icase);
+        }
 
         bool has_keywords() const {
             return nkwd > 0;
@@ -2229,6 +2334,42 @@ protected:
         }
     }
 
+
+    ///Assert valid sequence-type rule id
+    void __assert_reachable_sequence( sequence* seq ) const
+    {
+        sequence* shield = verify_matchable_sequence(seq);
+
+        if(shield) {
+            _err = lexception::ERR_INTERNAL_ERROR;
+            _errtext << "sequence <<" << seq->name << ">> cannot ever be matched because it's shielded by rule <<"
+                << shield->name << ">> with the same leading delimiter, specified first in the rules";
+
+            throw lexception(_err, _errtext);
+        }
+    }
+
+    ///Verify if the sequence can ever be matched
+    //@return null if ok, or else pointer to sequence which comes before the given one and has the same leading token
+    sequence* verify_matchable_sequence( sequence* seq ) const
+    {
+        ushort x = _abmap[ seq->leading.first_char() ];
+        const dynarray<sequence*>& seqlist = _seqary[((x&xSEQ)>>rSEQ)-1];
+
+        uint n = (uint)seqlist.size();
+        for( uint i=0; i<n; ++i ) {
+            if( seqlist[i] == seq )
+                return 0;
+
+            if( enabled(*seqlist[i])  &&  seqlist[i]->leading == seq->leading )
+                return seqlist[i];
+        }
+
+        DASSERT(0);
+        return seq;
+    }
+
+
     ///Add string or block segment
     void add_stb_segment( const stringorblock& sb, int trailid, uints& off, bool final )
     {
@@ -2383,7 +2524,7 @@ protected:
             if( (_abmap[*p] & xGROUP) != grp )
                 break;
 
-            _last.upd_hash(p);
+            _last.upd_hash(_casemap[*p]);
         }
         return off;
     }
@@ -2396,7 +2537,7 @@ protected:
             const uchar* p = pc+off;
             if( (_trail[*p] & msk) == 0 )  break;
 
-            _last.upd_hash(p);
+            _last.upd_hash(_casemap[*p]);
         }
         return off;
     }
@@ -2635,6 +2776,7 @@ protected:
 protected:
 
     dynarray<ushort> _abmap;            ///< group flag array, fGROUP_xxx
+    dynarray<char> _casemap;            ///< mapping to deal with case-sensitiveness
     dynarray<uchar> _trail;             ///< mask arrays for customized group's trailing set
     uint _ntrails;                      ///< number of trailing sets defined
 

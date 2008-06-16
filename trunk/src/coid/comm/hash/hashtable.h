@@ -126,8 +126,11 @@ protected:
 
 public:
 
-    HASHFUNC hash_funct() const     { return _HASHFUNC; }
-    EQFUNC key_eq() const           { return _EQFUNC; }
+    const HASHFUNC& hash_func() const   { return _HASHFUNC; }
+    HASHFUNC& hash_func()               { return _HASHFUNC; }
+
+    const EQFUNC& equal_func() const    { return _EQFUNC; }
+    EQFUNC& equal_func()                { return _EQFUNC; }
 
 
     class Ptr : public std::iterator<std::forward_iterator_tag, VAL>
@@ -137,29 +140,29 @@ public:
 
     public:
 
-        typedef LOOKUP                 key_type;
-        typedef VAL                    value_type;
-        typedef HASHFUNC               hasher;
-        typedef EQFUNC                 key_equal;
+        typedef LOOKUP                  key_type;
+        typedef VAL                     value_type;
+        typedef HASHFUNC                hasher;
+        typedef EQFUNC                  key_equal;
 
-        typedef size_t                 size_type;
-        typedef ptrdiff_t              difference_type;
-        typedef VAL*                   pointer;
-        typedef const VAL*             const_pointer;
-        typedef VAL&                   reference;
-        typedef const VAL&             const_reference;
+        typedef size_t                  size_type;
+        typedef ptrdiff_t               difference_type;
+        typedef VAL*                    pointer;
+        typedef const VAL*              const_pointer;
+        typedef VAL&                    reference;
+        typedef const VAL&              const_reference;
 
-        const Node* _get_node() const       { return _p; }
-        const _Self* _get_ht() const          { return _ht; }
+        const Node* _get_node() const   { return _p; }
+        const _Self* _get_ht() const    { return _ht; }
 
         Ptr( Node* p, const _Self& ht ) : _p(p), _ht(&ht) {}
         Ptr() {}
 
-        bool operator == (const Ptr& p) const       { return _p == p._p; }
-        bool operator != (const Ptr& p) const       { return _p != p._p; }
+        bool operator == (const Ptr& p) const   { return _p == p._p; }
+        bool operator != (const Ptr& p) const   { return _p != p._p; }
 
-        reference operator*()                       { return _p->_val; }
-        pointer operator ->()                       { return &_p->_val; }
+        reference operator*()           { return _p->_val; }
+        pointer operator ->()           { return &_p->_val; }
 
         Ptr& operator++()
         {
@@ -185,17 +188,17 @@ public:
 
     public:
 
-        typedef LOOKUP                 key_type;
-        typedef VAL                    value_type;
-        typedef HASHFUNC               hasher;
-        typedef EQFUNC                 key_equal;
+        typedef LOOKUP                  key_type;
+        typedef VAL                     value_type;
+        typedef HASHFUNC                hasher;
+        typedef EQFUNC                  key_equal;
 
-        typedef size_t                 size_type;
-        typedef ptrdiff_t              difference_type;
-        typedef VAL*                   pointer;
-        typedef const VAL*             const_pointer;
-        typedef VAL&                   reference;
-        typedef const VAL&             const_reference;
+        typedef size_t                  size_type;
+        typedef ptrdiff_t               difference_type;
+        typedef VAL*                    pointer;
+        typedef const VAL*              const_pointer;
+        typedef VAL&                    reference;
+        typedef const VAL&              const_reference;
 
         CPtr( const Node* p, const _Self& ht ) : _p(p), _ht(&ht) {}
         CPtr() {}
@@ -220,11 +223,11 @@ public:
             return *this;
         }
 
-        bool operator == (const CPtr& p) const      { return _p == p._p; }
-        bool operator != (const CPtr& p) const      { return _p != p._p; }
+        bool operator == (const CPtr& p) const  { return _p == p._p; }
+        bool operator != (const CPtr& p) const  { return _p != p._p; }
 
-        const_reference operator*() const           { return _p->_val; }
-        const_pointer operator ->()                 { return &_p->_val; }
+        const_reference operator*() const       { return _p->_val; }
+        const_pointer operator ->()             { return &_p->_val; }
 
         CPtr& operator++()
         {
