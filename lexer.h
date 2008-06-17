@@ -431,7 +431,7 @@ public:
             return def_sequence( "keywords", kwd );
 
         if( _kwds.add(kwd) ) {
-            _abmap[(uchar)kwd.first_char()] |= fGROUP_KEYWORDS;
+            _abmap[(uchar)_casemap[kwd.first_char()]] |= fGROUP_KEYWORDS;
             return ID_KEYWORDS;
         }
 
@@ -794,13 +794,13 @@ public:
         bool enb = enabled(*seq);
         if(!enb) {
             __assert_reachable_sequence(seq);
-            enable(sid, true);
+            enable(blockid, true);
         }
 
         next();
 
         if(!enb)
-            enable(sid, false);
+            enable(blockid, false);
 
         if(_last.id == blockid) {
             if(!complete)
@@ -860,7 +860,7 @@ public:
 
                     uint k = br.id;
                     _last.id = -1 - k;
-                    _last.state = -(int)k;
+                    _last.state = -1;
                     _last_string = k;
 
                     _last.tok.set_empty();
@@ -887,7 +887,7 @@ public:
 
             uint k = br.id;
             _last.id = -1 - k;
-            _last.state = -(int)k;
+            _last.state = -1;
             _last_string = k;
 
             _last.tok = _tok.cut_left_n( br.trailing[kt].seq.len() );
@@ -909,7 +909,7 @@ public:
                 sequence* seq = dseq[i];
                 uint k = seq->id;
                 _last.id = -1 - k;
-                _last.state = k;
+                _last.state = 1;
                 _last_string = k;
 
                 _last.tok = _tok.cut_left_n( seq->leading.len() );
@@ -940,7 +940,10 @@ public:
         _last.id = x & xGROUP;
         ++_last.id;
 
-        _last.set_hash( _casemap[(uchar)*_tok.ptr()] );
+        uchar cmap = _casemap[(uchar)*_tok.ptr()];
+        _last.set_hash(cmap);
+
+        x = _abmap[cmap];
 
         //normal token, get all characters belonging to the same group, unless this is
         // a single-char group
@@ -1365,6 +1368,50 @@ public:
         _pushback = 1;
     }
 
+    ///Mark a backtrackable point
+    //@param overwrite overwrite last backtrack point
+    //@return nonnegative identifier of the backtrack point
+    //@note won't work with bound streams
+    int push_backtrack_mark( bool overwrite ) {
+        DASSERT( _bin == 0 );   //doesn't work with bound streams now
+        DASSERT( _pushback == 0 );  //not compatible with old style pushback
+
+        backtrack_point* btp = overwrite ? _btpoint.last() : _btpoint.add();
+
+        btp->stack_size = _stack.size();
+        btp->tok = _tok;
+
+        return _btpoint.size() - 1;
+    }
+
+    ///Backtrack the lexer status
+    //@TODO needs to recover much more
+    void backtrack( int mark = -1 ) {
+        const backtrack_point* btm;
+        if(mark<0)
+            btm = _btpoint.last();
+        else
+            btm = &_btpoint[mark];
+
+        _tok = btm->tok;
+
+        DASSERT( _stack.size() >= btm->stack_size );
+        _stack.need( btm->stack_size );
+
+        _pushback = 0;
+        _btpoint.need( btm - _btpoint.ptr() );
+    }
+
+    ///Pop the mark without backtracking
+    void pop_backtrack_mark( int mark = -1 ) {
+        if(mark < 0)
+            _btpoint.resize(-1);
+        else
+            _btpoint.resize(mark);
+    }
+
+
+
     //@return true if whole input was consumed
     bool end() const                    { return _last.id == 0; }
 
@@ -1620,6 +1667,12 @@ protected:
 ////////////////////////////////////////////////////////////////////////////////
 protected:
 
+    ///
+    struct backtrack_point {
+        token tok;                      ///< remaining part of the input
+        uint stack_size;                ///< stack size at the point
+    };
+
     ///Lexer entity base class
     struct entity
     {
@@ -1834,11 +1887,15 @@ protected:
     };
 
     ///Keyword map for detection of whether token is a reserved word
-    struct keywords
+    struct keywords : entity
     {
         hash_set<charstr, hash_keyword, equal_keyword>
             set;                        ///< hash_set for fast detection if the string is in the list
         int nkwd;                       ///< number of keywords
+
+
+        keywords() : entity("keywords", entity::KEYWORDLIST, 0)
+        {}
 
 
         void set_icase( bool icase ) {
@@ -1852,8 +1909,10 @@ protected:
 
         bool add( const token& kwd )
         {
+            charstr skwd = kwd;
+
             bool succ;
-            if( succ = (0 != set.insert_value(kwd)) )
+            if( succ = (0 != set.swap_insert_value(skwd)) )
                 ++nkwd;
 
             return succ;
@@ -1969,6 +2028,8 @@ protected:
 
     const entity& get_entity( int id ) const
     {
+        if( id == ID_KEYWORDS )
+            return _kwds;
         if( id > 0 )
             return *_grpary[id-1];
         else if( id < 0 )
@@ -2132,6 +2193,8 @@ protected:
     {
         const escape_rule* er = sr.escrule;
 
+        _last.state = 0;
+
         while(1)
         {
             //find the end while processing the escape characters
@@ -2267,8 +2330,10 @@ protected:
 
                     add_stb_segment( br, tid, off, outermost );
 
-                    if(tid>=0)
+                    if(tid>=0) {
+                        _last.state = 0;
                         return _last;
+                    }
 
                     _err = lexception::ERR_BLOCK_TERMINATED_EARLY;
                     
@@ -2294,6 +2359,8 @@ protected:
                 add_stb_segment( br, k, off, outermost );
 
                 _last.termid = k;
+                if(outermost)
+                    _last.state = 0;
                 return _last;
             }
 
@@ -2766,6 +2833,12 @@ protected:
         _lines_oldchar = oc;
         _lines += newlines;
 
+        if( p == _rawpos ) {
+            //mark rawpos line if coming accross it
+            _rawline = _lines;
+            _rawlast = _lines_last;
+        }
+
         return _lines;
     }
 
@@ -2814,6 +2887,8 @@ protected:
     dynarray<charstr> _strings;         ///< parsed strings
 
     int _pushback;                      ///< true if the lexer should return the previous token again (was pushed back)
+
+    dynarray<backtrack_point> _btpoint; ///< backtrack stack
 
     typedef hash_multikeyset<entity*, _Select_CopyPtr<entity,token> >
         Tentmap;
