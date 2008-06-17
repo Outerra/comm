@@ -916,7 +916,7 @@ tag attributes it's possible to condition the content processing depending on wh
 the <code>?</code> character or with the <code>!</code> character. The use with exclamation mark inverts the meaning of the condition.<br>
 
 
-<br>
+<br><table style="text-align: left; width: 640px;" border="1" cellpadding="2" cellspacing="2"><tbody><tr><th style="white-space: nowrap; text-align: center; width: 171px;">conditional tag</th><th style="white-space: nowrap; text-align: center; width: 449px;">description (do if)</th></tr><tr><td style="background-color: rgb(255, 255, 204);"><code>$(if <span style="font-style: italic;">var</span>?)$</code></td><td>variable is a non-empty array (also a string), compound or non-zero number</td></tr><tr><td style="background-color: rgb(255, 255, 204);"><code>$(if <span style="font-style: italic;">var</span>!)$<br>$(if !<span style="font-style: italic;">var</span>?)$</code></td><td>variable is an empty array, empty string, or&nbsp;number zero</td></tr><tr><td style="background-color: rgb(255, 255, 204);"><code>$(if <span style="font-style: italic;">var</span>?="<span style="font-style: italic;">string</span>")$</code></td><td>variable converted to string contains the specified string</td></tr><tr><td style="background-color: rgb(255, 255, 204);"><code>$(if <span style="font-style: italic;">var</span>!="<span style="font-style: italic;">string</span>")$</code></td><td>variable converted to string does not contain the specified string</td></tr></tbody></table><br><br>
 
 
 <table style="text-align: left; width: 640px;" border="1" cellpadding="2" cellspacing="2">
@@ -955,7 +955,7 @@ the <code>?</code> character or with the <code>!</code> character. The use with 
       <td style="background-color: rgb(255, 255, 204); width: 171px;" nowrap="nowrap"><code></code><code>$(if <span style="font-style: italic;">var</span>.<span style="font-weight: bold;">nonzero</span>?)$<br></code><code>$(if <span style="font-style: italic;">var</span>.<span style="font-weight: bold;">true</span>?)$</code></td>
 
 
-      <td style="width: 449px;">variable is non-empty array, compound or non-zero number</td>
+      <td style="width: 449px;">variable is a non-empty array (also a string), compound or non-zero number</td>
 
 
     </tr>
@@ -985,8 +985,7 @@ the <code>?</code> character or with the <code>!</code> character. The use with 
     <tr>
       <td style="background-color: rgb(255, 255, 204); width: 171px;" nowrap="nowrap"><code>$(/if)$</code></td>
       <td style="width: 449px;" nowrap="nowrap">end of the condition</td>
-    </tr><tr align="left"><td colspan="2" rowspan="1" style="width: 171px;">The condition can be inverted by prefixing it with exclamation mark, or
-by replacing the trailing question mark by the exclamation mark:</td></tr><tr><td style="width: 171px; background-color: rgb(255, 255, 204);"><code>$(if !<span style="font-style: italic;">var</span>.<span style="font-weight: bold;">nonzero</span>?)$<br></code><code>$(if <span style="font-style: italic;">var</span>.<span style="font-weight: bold;"><span style="font-family: monospace;">nonzero</span></span>!)$</code></td><td style="width: 449px;"></td></tr>
+    </tr>
 
 
   
@@ -995,7 +994,8 @@ by replacing the trailing question mark by the exclamation mark:</td></tr><tr><t
 </table>
 
 
-<br><br>Example:<br><br><table style="text-align: left; width: 640px;" border="1" cellpadding="2" cellspacing="2">
+<br><br>Conditions can be inverted by prefixing it with exclamation mark, or
+by replacing the trailing question mark by the exclamation mark:<br><br><table style="text-align: left; width: 640px;" border="1" cellpadding="2" cellspacing="2"><tbody><tr><td style="width: 171px; background-color: rgb(255, 255, 204);"><code>$(if !<span style="font-style: italic;">var</span>.<span style="font-weight: bold;">nonzero</span>?)$<br></code><code>$(if <span style="font-style: italic;">var</span>.<span style="font-weight: bold;"><span style="font-family: monospace;">nonzero</span></span>!)$</code></td><td style="width: 449px;">the condition body is evaluated when <span style="font-weight: bold;">it's not true</span> that the variable is&nbsp;a non-empty array (also a string), compound&nbsp;or non-zero number</td></tr></tbody></table><br><br>Example:<br><br><table style="text-align: left; width: 640px;" border="1" cellpadding="2" cellspacing="2">
 
 
   <tbody>
