@@ -178,12 +178,18 @@ public:
     {
         double w = floor(d);
         token tokw = append_num( dst, dstsize, 10, (int64)w );
-        if(tokw.len()>1) {
+
+        if(nfrac == 0)
+            return tokw;
+
+        if( tokw.len() - dstsize > 0 ) {
             dst[tokw.len()] = '.';
             tokw++;
         }
 
-        token tokf = append_fraction( dst+tokw.len(), d-w, int_max(nfrac, int(dstsize-tokw.len())) );
+        int tfrac = int_min( int(int_abs(nfrac)), int(dstsize-tokw.len()) );
+
+        token tokf = append_fraction( dst+tokw.len(), d-w, nfrac>0 ? tfrac : -tfrac );
 
         tokw.shift_end( tokf.len() );
         return tokw;
