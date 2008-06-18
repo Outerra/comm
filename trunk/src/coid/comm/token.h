@@ -441,6 +441,14 @@ struct token
     void set_empty()                    { _len = 0; }
     void set_null()                     { _ptr = 0; _len = 0; }
 
+    typedef const char* token::*unspecified_bool_type;
+
+    ///Automatic cast to bool for checking emptiness
+	operator unspecified_bool_type () const {
+	    return _len == 0  ?  0  :  &token::_ptr;
+	}
+
+
     char last_char() const              { return _len > 0  ?  _ptr[_len-1]  :  0; }
     char first_char() const             { return _len > 0  ?  _ptr[0]  :  0; }
     char nth_char( ints n ) const       { return n<0 ? ((uints)-n<=_len  ?  _ptr[_len+n] : 0) : ((uints)n<_len  ?  _ptr[n] : 0); }
