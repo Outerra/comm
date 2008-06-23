@@ -39,6 +39,7 @@
 #define __COID_COMM_RADIX__HEADER_FILE__
 
 #include "namespace.h"
+#include <algorithm>
 
 #include "dynarray.h"
 
@@ -48,9 +49,10 @@ COID_NAMESPACE_BEGIN
 template <class INT>
 struct T_GET_INT
 {
-    INT operator() (const void* p) const        { return *(INT*)p; }
+    INT operator() (const void* p) const {
+        return *(INT*)p;
+    }
 };
-
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Radix sort template with index output
@@ -59,178 +61,221 @@ struct T_GET_INT
     @param INT_IDX  an int type to use as index, default uints
     @param INT_DAT  an int type to use as integer key extracted from T objects
 **/
-template <class T, class INT_IDX = uints, class INT_DAT = INT_IDX, class GETINT = T_GET_INT<INT_DAT> >
-class radixi {
-    uints _aucnts[256];
-    dynarray<INT_IDX> _puidxa;
-    INT_IDX* _puidxb;
-    GETINT  _getint;
-
+template<
+    class T,
+    class INT_IDX = uints,
+    class INT_DAT = INT_IDX,
+    class GETINT = T_GET_INT<INT_DAT>
+>
+class radixi
+{
 public:
-    radixi()
-    {
+    radixi() {
         memset(_aucnts, 0, sizeof(_aucnts) );
     }
 
-    radixi( const GETINT& gi ) : _getint(gi)
-    {
+    radixi( const GETINT& gi ) : _getint(gi) {
         memset(_aucnts, 0, sizeof(_aucnts) );
     }
 
-    void set_getint( const GETINT& gi )
-    {
+    void set_getint( const GETINT& gi ) {
         _getint = gi;
     }
 
-    const INT_IDX * ret_index() const
-    {
+    GETINT& get_getint() {
+        return _getint;
+    }
+
+    ///Return resulting sort index
+    const INT_IDX* ret_index() const {
         return _puidxa.ptr();
     }
 
     uints size() const      { return _puidxa.size(); }
 
-    INT_IDX* sortasc( const T* psort, uints nitems )
+    ///Sort integer data
+    //@param ascending true for ascending order, false for descending one
+    //@param psort array to sort
+    //@param nitems number of elements in the array
+    //@param useindex true if the current index should be used (preserves partial order in the index)
+    //@param stride byte size of an array element
+    template<class CONTAINER>
+    INT_IDX* sort( bool ascending, const CONTAINER& psort, uints nitems, bool useindex = false )
     {
         _puidxa.need_new( nitems<<1 );
-        _puidxb= _puidxa.ptr() + nitems;
-        sortone(psort);
-        sorttwo(psort, _puidxb, _puidxa.ptr(), 8);
-        if (sizeof(INT_DAT) > 2)
+        _puidxb = _puidxa.ptr() + nitems;
+
+        count_frequency(psort);
+        
+        _sort(psort, useindex ? _puidxa.ptr() : 0, _puidxb, 0, ascending);
+        _sort(psort, _puidxb, _puidxa.ptr(), 8, ascending);
+        
+        if(sizeof(INT_DAT) > 2)
         {
-            sorttwo(psort, _puidxa.ptr(), _puidxb, 16);
-            sorttwo(psort, _puidxb, _puidxa.ptr(), 24);
+            _sort(psort, _puidxa.ptr(), _puidxb, 16, ascending);
+            _sort(psort, _puidxb, _puidxa.ptr(), 24, ascending);
         }
         return _puidxa.ptr();
     }
 
-    INT_IDX* sortdsc( const T* psort, uints nitems )
+    ///Binary search in indexed array
+    template<class CONTAINER, class LESS, class EQUAL>
+    const T* bin_search(
+        const CONTAINER& psort,
+        const T& val,
+        const LESS& less = std::less<T>(),
+        const EQUAL& equal = std::equal<T>()
+        ) const
     {
-        _puidxa.need_new( nitems<<1 );
-        _puidxb= _puidxa.ptr() + nitems;
-
-        sortoned(psort);
-        sorttwod(psort, _puidxb, _puidxa.ptr(), 8);
-        if (sizeof(INT_DAT) > 2)
-        {
-            sorttwod(psort, _puidxa.ptr(), _puidxb, 16);
-            sorttwod(psort, _puidxb, _puidxa.ptr(), 24);
-        }
-        return _puidxa.ptr();
-    }
-
-    T* bin_search_a( const T* psort, INT_DAT ufind ) const {
         uints i, j, m;
-        i=0;
-        j= _puidxa.size() >> 1;
+        i = 0;
+        j = _puidxa.size() >> 1;
+
         for(;j>i;) {
-            m= (i+j)>>1;
-            if(*(INT_DAT*)(psort+_puidxa[m]) == ufind)  return psort+_puidxa[m];
-            if(*(INT_DAT*)(psort+_puidxa[m]) > ufind) j=m;
-            else i=m+1;
+            m = (i+j)>>1;
+
+            const T* v = psort[_puidxa[m]];
+
+            if( equal(*v, val) )
+                return v;
+
+            if( less(*v, val) )
+                i = m+1;
+            else
+                j = m;
         }
         return 0;
     }
 
-    T* bin_search_d( const T* psort, INT_DAT ufind ) const {
+    const T* bin_search_a( const T* psort, INT_DAT ufind, uints stride = sizeof(T) ) const {
         uints i, j, m;
-        i=0;
-        j= _puidxa.size() >> 1;
+        i = 0;
+        j = _puidxa.size() >> 1;
+
         for(;j>i;) {
-            m= (i+j)>>1;
-            if(*(INT_DAT*)(psort+_puidxa[m]) == ufind)  return psort+_puidxa[m];
-            if(*(INT_DAT*)(psort+_puidxa[m]) > ufind) i=m+1;
-            else j=m;
+            m = (i+j)>>1;
+
+            const T* v = ptr_byteshift(psort, _puidxa[m]*stride);
+
+            if( *(INT_DAT*)(v) == ufind )
+                return psort+_puidxa[m];
+
+            if( *(INT_DAT*)(v) > ufind )
+                j = m;
+            else
+                i = m+1;
+        }
+        return 0;
+    }
+
+    const T* bin_search_d( const T* psort, INT_DAT ufind, uints stride = sizeof(T) ) const {
+        uints i, j, m;
+        i = 0;
+        j = _puidxa.size() >> 1;
+
+        for(;j>i;) {
+            m = (i+j)>>1;
+
+            const T* v = ptr_byteshift(psort, _puidxa[m]*stride);
+
+            if( *(INT_DAT*)(v) == ufind )
+                return psort+_puidxa[m];
+
+            if( *(INT_DAT*)(v) > ufind )
+                i=m+1;
+            else
+                j=m;
         }
         return 0;
     }
 
 private:
-    void sortone( const T* psrc )
+
+    template<class CONTAINER>
+    void _sort( const CONTAINER& psrc, const INT_IDX* pusrcidx, INT_IDX *pudstidx, uints uoffs, bool ascending )
     {
-        uints i, j, nit;
+        uchar vmin = _min[uoffs >> 3];
+        uchar vmax = _max[uoffs >> 3];
+
+        if( vmin == vmax )  //nothing to do
+            return;
+
+        uints* count = _aucnts[uoffs >> 3];
         uints audsti[256];
-        INT_IDX* puidx = _puidxb;
 
-        nit = _puidxa.size() >> 1;
-        for( i=0; i<nit; ++i )  ++_aucnts[(uchar)_getint(psrc+i)];
-
-        for( j=0, i=0; i<256; ++i ) {
-            audsti[i]= j;
-            j += _aucnts[i];
-            _aucnts[i]= 0;
+        if(ascending) {
+            for( ints j=0, i=vmin; i<=vmax; ++i ) {
+                audsti[i] = j;
+                j += count[i];
+                count[i] = 0;
+            }
+        }
+        else {
+            for( ints j=0, i=vmax; i>=(int)vmin; ) {
+                audsti[i] = j;
+                j += count[i];
+                count[i] = 0;
+            }
         }
 
-        for( i=0; i<nit; ++i )
+        uints nit = _puidxa.size() >> 1;
+
+        if(pusrcidx) {
+            for( uints i=0; i<nit; ++i ) {
+                uchar k = (_getint( psrc[pusrcidx[i]] )
+                    >> uoffs) & 0xff;
+                pudstidx[audsti[k]] = pusrcidx[i];
+                ++audsti[k];
+            }
+        }
+        else {
+            for( uints i=0; i<nit; ++i ) {
+                uchar k = (_getint( psrc[i] )
+                    >> uoffs) & 0xff;
+                pudstidx[audsti[k]] = (INT_IDX)i;
+                ++audsti[k];
+            }
+        }
+    }
+
+    template<class CONTAINER>
+    void count_frequency( const CONTAINER& psrc )
+    {
+        uints nit = _puidxa.size() >> 1;
+
+        _min[0] = _min[1] = _min[2] = _min[3] = 255;
+        _max[0] = _max[1] = _max[2] = _max[3] = 0;
+
+        for( uints i=0; i<nit; ++i )
         {
-            uchar k = (uchar)_getint(psrc+i);
-            puidx[audsti[k]] = (INT_IDX)i;
-            ++audsti[k];
+            INT_DAT v = _getint( psrc[i] );
+
+            count_val(0, v);
+
+            if(sizeof(INT_DAT) > 1)
+                count_val(1, v>>8);
+
+            if(sizeof(INT_DAT) > 2) {
+                count_val(2, v>>16);
+                count_val(3, v>>24);
+            }
         }
     }
 
-    void sorttwo( const T* psrc, INT_IDX* pusrcidx, INT_IDX *pudstidx, uints uoffs )
-    {
-        uints i, j, nit;
-        uints audsti[256];
-
-        nit = _puidxa.size() >> 1;
-        for( i=0; i<nit; ++i )  ++_aucnts[(_getint(psrc+i) >> uoffs) & 0xff];
-
-        for( j=0, i=0; i<256; ++i ) {
-            audsti[i] = j;
-            j += _aucnts[i];
-            _aucnts[i] = 0;
-        }
-
-        for( i=0; i<nit; ++i ) {
-            uchar k = (_getint(psrc+pusrcidx[i]) >> uoffs) & 0xff;
-            pudstidx[audsti[k]] = pusrcidx[i];
-            ++audsti[k];
-        }
+    void count_val( uchar i, uchar v ) {
+        ++_aucnts[i][v];
+        _min[i] = int_min(_min[i], v);
+        _max[i] = int_max(_max[i], v);
     }
 
-    void sortoned( const T* psrc )
-    {
-        ints i, j, nit;
-        uints audsti[256];
-        INT_IDX* puidx = _puidxb;
+private:
 
-        nit = _puidxa.size() >> 1;
-        for( i=0; i<nit; ++i )  ++_aucnts[(uchar)_getint(psrc+i)];
+    uints _aucnts[256][4];
+    uchar _min[4], _max[4];
 
-        for( j=0, i=255; i>=0; --i ) {
-            audsti[i] = j;
-            j += _aucnts[i];
-            _aucnts[i] = 0;
-        }
-
-        for( i=0; i<nit; ++i ) {
-            uchar k = (uchar)_getint(psrc+i);
-            puidx[audsti[k]] = (INT_IDX)i;
-            ++audsti[k];
-        }
-    }
-
-    void sorttwod( const T* psrc, INT_IDX* pusrcidx, INT_IDX *pudstidx, uints uoffs )
-    {
-        ints i, j, nit;
-        uints audsti[256];
-
-        nit = _puidxa.size() >> 1;
-        for( i=0; i<nit; ++i )  ++_aucnts[(_getint(psrc+i) >> uoffs) & 0xff];
-
-        for( j=0, i=255; i>=0; --i ) {
-            audsti[i] = j;
-            j += _aucnts[i];
-            _aucnts[i] = 0;
-        }
-
-        for( i=0; i<nit; ++i ) {
-            uchar k = (uchar) ( (_getint(psrc+pusrcidx[i]) >> uoffs) & 0xff );
-            pudstidx[audsti[k]] = pusrcidx[i];
-            ++audsti[k];
-        }
-    }
+    dynarray<INT_IDX> _puidxa;
+    INT_IDX* _puidxb;
+    GETINT  _getint;
 };
 
 

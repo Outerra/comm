@@ -673,7 +673,7 @@ private:
 
         GET_INT_FROM_SEG gi(_usg_iter);
         _radix.set_getint(gi);
-        _radix.sortdsc( _segments.ptr(), _segments.size() );
+        _radix.sort( false, _segments.ptr(), _segments.size() );
         const uint* idx = _radix.ret_index();
 
         for( ; n>0; )
