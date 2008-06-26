@@ -994,7 +994,9 @@ public:
             if( n < tok.len() + skip )  return false;
         }
 
-        return _tok.begins_with(tok, skip);
+        return _kwds.is_icase()
+            ? _tok.begins_with_icase(tok, skip)
+            : _tok.begins_with(tok, skip);
     }
 
     ///Try to match a character following in the input
@@ -1882,6 +1884,10 @@ protected:
             this->icase = icase;
         }
 
+        bool is_icase() const {
+            return icase;
+        }
+
     private:
         bool icase;
     };
@@ -1901,6 +1907,10 @@ protected:
         void set_icase( bool icase ) {
             set.hash_func().set_icase(icase);
             set.equal_func().set_icase(icase);
+        }
+
+        bool is_icase() const {
+            return set.hash_func().is_icase();
         }
 
         bool has_keywords() const {
