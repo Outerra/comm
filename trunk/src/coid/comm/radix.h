@@ -88,10 +88,10 @@ public:
 
     ///Return resulting sort index
     const INT_IDX* ret_index() const {
-        return _puidxa.ptr();
+        return _puidxa;
     }
 
-    uints size() const      { return _puidxa.size(); }
+    //uints size() const      { return _puidxa.size(); }
 
     ///Sort integer data
     //@param ascending true for ascending order, false for descending one
@@ -102,20 +102,29 @@ public:
     template<class CONTAINER>
     INT_IDX* sort( bool ascending, const CONTAINER& psort, uints nitems, bool useindex = false )
     {
-        _puidxa.need_new( nitems<<1 );
-        _puidxb = _puidxa.ptr() + nitems;
+        _puidx.need_new( nitems<<1 );
+        _puidxa = _puidx.ptr();
+        _puidxb = _puidxa + nitems;
 
         count_frequency(psort);
-        
-        _sort(psort, useindex ? _puidxa.ptr() : 0, _puidxb, 0, ascending);
-        _sort(psort, _puidxb, _puidxa.ptr(), 8, ascending);
+
+        bool hasindex = false;
+
+        hasindex |= _sort(psort, 0, ascending, useindex);
+        hasindex |= _sort(psort, 8, ascending, true);
         
         if(sizeof(INT_DAT) > 2)
         {
-            _sort(psort, _puidxa.ptr(), _puidxb, 16, ascending);
-            _sort(psort, _puidxb, _puidxa.ptr(), 24, ascending);
+            hasindex |= _sort(psort, 16, ascending, true);
+            hasindex |= _sort(psort, 24, ascending, true);
         }
-        return _puidxa.ptr();
+
+        if(!hasindex) {
+            for( uint i=0; i<nitems; ++i ) 
+                _puidxa[i] = (INT_IDX)i;
+        }
+
+        return _puidxa;
     }
 
     ///Binary search in indexed array
@@ -129,7 +138,7 @@ public:
     {
         uints i, j, m;
         i = 0;
-        j = _puidxa.size() >> 1;
+        j = _puidx.size() >> 1;
 
         for(;j>i;) {
             m = (i+j)>>1;
@@ -150,7 +159,7 @@ public:
     const T* bin_search_a( const T* psort, INT_DAT ufind, uints stride = sizeof(T) ) const {
         uints i, j, m;
         i = 0;
-        j = _puidxa.size() >> 1;
+        j = _puidx.size() >> 1;
 
         for(;j>i;) {
             m = (i+j)>>1;
@@ -171,7 +180,7 @@ public:
     const T* bin_search_d( const T* psort, INT_DAT ufind, uints stride = sizeof(T) ) const {
         uints i, j, m;
         i = 0;
-        j = _puidxa.size() >> 1;
+        j = _puidx.size() >> 1;
 
         for(;j>i;) {
             m = (i+j)>>1;
@@ -192,13 +201,13 @@ public:
 private:
 
     template<class CONTAINER>
-    void _sort( const CONTAINER& psrc, const INT_IDX* pusrcidx, INT_IDX *pudstidx, uints uoffs, bool ascending )
+    bool _sort( const CONTAINER& psrc, uints uoffs, bool ascending, bool useindex )
     {
         uchar vmin = _min[uoffs >> 3];
         uchar vmax = _max[uoffs >> 3];
 
         if( vmin == vmax )  //nothing to do
-            return;
+            return false;
 
         uints* count = _aucnts[uoffs >> 3];
         uints audsti[256];
@@ -211,20 +220,20 @@ private:
             }
         }
         else {
-            for( ints j=0, i=vmax; i>=(int)vmin; ) {
+            for( ints j=0, i=vmax; i>=(int)vmin; --i ) {
                 audsti[i] = j;
                 j += count[i];
                 count[i] = 0;
             }
         }
 
-        uints nit = _puidxa.size() >> 1;
+        uints nit = _puidx.size() >> 1;
 
-        if(pusrcidx) {
+        if(useindex) {
             for( uints i=0; i<nit; ++i ) {
-                uchar k = (_getint( psrc[pusrcidx[i]] )
+                uchar k = (_getint( psrc[_puidxa[i]] )
                     >> uoffs) & 0xff;
-                pudstidx[audsti[k]] = pusrcidx[i];
+                _puidxb[audsti[k]] = _puidxa[i];
                 ++audsti[k];
             }
         }
@@ -232,16 +241,19 @@ private:
             for( uints i=0; i<nit; ++i ) {
                 uchar k = (_getint( psrc[i] )
                     >> uoffs) & 0xff;
-                pudstidx[audsti[k]] = (INT_IDX)i;
+                _puidxb[audsti[k]] = (INT_IDX)i;
                 ++audsti[k];
             }
         }
+
+        std::swap(_puidxa, _puidxb);
+        return true;
     }
 
     template<class CONTAINER>
     void count_frequency( const CONTAINER& psrc )
     {
-        uints nit = _puidxa.size() >> 1;
+        uints nit = _puidx.size() >> 1;
 
         _min[0] = _min[1] = _min[2] = _min[3] = 255;
         _max[0] = _max[1] = _max[2] = _max[3] = 0;
@@ -264,16 +276,17 @@ private:
 
     void count_val( uchar i, uchar v ) {
         ++_aucnts[i][v];
-        _min[i] = int_min(_min[i], v);
-        _max[i] = int_max(_max[i], v);
+        _min[i] = uint_min(_min[i], v);
+        _max[i] = uint_max(_max[i], v);
     }
 
 private:
 
-    uints _aucnts[256][4];
+    uints _aucnts[4][256];
     uchar _min[4], _max[4];
 
-    dynarray<INT_IDX> _puidxa;
+    dynarray<INT_IDX> _puidx;
+    INT_IDX* _puidxa;
     INT_IDX* _puidxb;
     GETINT  _getint;
 };
