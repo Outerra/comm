@@ -30,7 +30,7 @@ struct FooA
     {
         MSTRUCT_OPEN(m,"FooA")
             MMD(m, "i", s.i, 4)
-            MM(m, "f", s.f)
+            MMD(m, "f", s.f, 3.3f)
         MSTRUCT_CLOSE(m)
     }
 };
@@ -133,8 +133,10 @@ static const char* teststr1 =
 ;
 
 static const char* textxml2 =
-"<root xmlns:xsd='http://www.w3.org/2001/XMLSchema'><a>1</a><b>200</b><fx>\r\n"
-"<text>def</text><j>1</j><fa><i>-1</i><f>-.770</f></fa></fx><af><FooAA>\r\n"
+"<root xmlns:xsd='http://www.w3.org/2001/XMLSchema'>"
+"<a>1</a><b>200</b><fx>\r\n"
+//"<text>def</text><j>1</j><fa><i>-1</i><f>-.770</f></fa></fx><af><FooAA>\r\n"
+"<text>def</text><j>1</j><fa i='1'/></fx><af><FooAA>\r\n"
 "<text>jano</text><j>10</j><fa><i>47</i><f>47.470</f></fa></FooAA><FooAA>\r\n"
 "<text>fero</text><j>11</j><fa><i>2</i><f>4.140</f></fa></FooAA><FooAA>\r\n"
 "<text>jozo</text><j>12</j><fa><i>3</i><f>5.140</f></fa></FooAA></af><aaf>\r\n"

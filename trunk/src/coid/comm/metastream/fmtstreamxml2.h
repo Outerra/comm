@@ -68,7 +68,8 @@ public:
     void init( binstream* br, binstream* bw )
     {
         _sesinitr = _sesinitw = 0;
-        _attrmodew = false;
+        _attrmoder = _attrmodew = false;
+        _emptytag = false;
 
         _binr = _binw = 0;
         if(bw)  bind( *bw, BIND_OUTPUT );
@@ -354,6 +355,7 @@ public:
                 return e;
 
             _sesinitr = 1;
+            _emptytag = false;
         }
 
         static token array_element = "item";
@@ -363,8 +365,14 @@ public:
             if( t.type == type::T_KEY ) {
                 _tagr.reset();
 
-				if( _attrmoder  &&  _tokenizer.match_optional('>') ) {
-					_attrmoder = false;
+                if(_attrmoder) {
+                    if( _tokenizer.matches('>') )
+					    _attrmoder = false;
+                    else if( _tokenizer.matches('/') ) {
+                        _emptytag = true;
+                        _tokenizer.push_back();
+                        return ersNO_MORE;
+                    }
 				}
 
                 if( _tokenizer.follows("</") )
@@ -376,8 +384,6 @@ public:
 			}
             else
             {
-                //close_previous_tag(true);
-
                 if(_tagr.is_empty()) {
                     //array within array
                     _tokenizer.match('<');
@@ -427,12 +433,19 @@ public:
 
             Parent* par = _stackr.last();
 
-            _tokenizer.match('<');
-            _tokenizer.match('/');
-            _tokenizer.match( par->tag.is_empty()
-                ? (name ? token(*name) : array_element)
-                : token(par->tag) );
-            _tokenizer.match('>');
+            if(_emptytag) {
+                _tokenizer.match('/');
+                _tokenizer.match('>');
+                _emptytag = false;
+            }
+            else {
+                _tokenizer.match('<');
+                _tokenizer.match('/');
+                _tokenizer.match( par->tag.is_empty()
+                    ? (name ? token(*name) : array_element)
+                    : token(par->tag) );
+                _tokenizer.match('>');
+            }
 
             _attrmoder = false;
             _tagr.reset();
@@ -601,20 +614,16 @@ public:
 
         if( t.type == type::T_KEY )
         {
-            if( _attrmoder  &&  _tokenizer.match_optional('>') ) {
+            if( _attrmoder  &&  _tokenizer.matches('>') ) {
                 _attrmoder = false;
             }
 
-            if( _attrmoder  &&  _tokenizer.match_optional(lexid) ) {
+            if( _attrmoder  &&  _tokenizer.matches(lexid) ) {
                 _tagr = _tokenizer.last();
                 _tokenizer.match('=');
             }
             else {
                 _tokenizer.match('<');
-				//if ( _tokenizer.follows("/", 0) ) {
-				//	_tokenizer.push_back();
-				//	return ersNO_MORE;
-				//}
                 _tagr = _tokenizer.match(lexid);
 
                 _attrmoder = true;
@@ -774,7 +783,7 @@ protected:
 
     void read_key( type t )
     {
-        if(_attrmoder  &&  _tokenizer.match_optional(lexid, _tagr)) {
+        if(_attrmoder  &&  _tokenizer.matches(lexid, _tagr)) {
             _tokenizer.match('=');
         }
         else {
@@ -788,12 +797,12 @@ protected:
 
     void open_tagmode()
     {
-        if( _tokenizer.match_optional('>') ) {
+        if( _tokenizer.matches('>') ) {
             _tokenizer.next_as_string(lexcont, false);
             _tagmode = 0;
             _attrmoder = false;
         }
-        else if( _tokenizer.match_optional("value") ) {
+        else if( _tokenizer.matches("value") ) {
             _tokenizer.match('=');
             _tokenizer.match_either(lexstr, lexchr);
             _tagmode = 2;
@@ -833,6 +842,7 @@ protected:
 
     bool _attrmodew;                    ///< attribute setting mode at the current level
     bool _attrmoder;                    ///< attribute reading mode
+    bool _emptytag;                     ///< true if empty tag was read <tag/>
 
     token tkBoolTrue, tkBoolFalse;      ///< symbols for bool type for reading and writting
     token tkrBoolTrue, tkrBoolFalse;    ///< additional symbols for bool type for reading
