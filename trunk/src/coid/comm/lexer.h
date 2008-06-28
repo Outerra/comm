@@ -140,14 +140,19 @@ public:
                 int start = int_max( 0, int(col - 40) );
                 int end = int_min( int(text.len()), start + 80 );
 
-                text.shift_end(end);
+                text.shift_end( end - (ints)text.len() );
                 text.shift_start(start);
+
+                col -= start;
             }
 
             dst << "\r\n" << text;
             dst << "\r\n";
-            dst.appendn(col, ' ');
-            dst << "^\r\n";
+
+            if( col < text.len() ) {
+                dst.appendn(col, ' ');
+                dst << "^\r\n";
+            }
         }
     }
 
