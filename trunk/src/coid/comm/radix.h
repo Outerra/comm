@@ -205,11 +205,13 @@ private:
     {
         uchar vmin = _min[uoffs >> 3];
         uchar vmax = _max[uoffs >> 3];
-
-        if( vmin == vmax )  //nothing to do
-            return false;
-
         uints* count = _aucnts[uoffs >> 3];
+
+        if( vmin == vmax ) { //nothing to do
+            count[vmin] = 0;
+            return false;
+        }
+
         uints audsti[256];
 
         if(ascending) {
