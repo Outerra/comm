@@ -111,12 +111,12 @@ public:
         bool hasindex = false;
 
         hasindex |= _sort(psort, 0, ascending, useindex);
-        hasindex |= _sort(psort, 8, ascending, true);
+        hasindex |= _sort(psort, 8, ascending, hasindex);
         
         if(sizeof(INT_DAT) > 2)
         {
-            hasindex |= _sort(psort, 16, ascending, true);
-            hasindex |= _sort(psort, 24, ascending, true);
+            hasindex |= _sort(psort, 16, ascending, hasindex);
+            hasindex |= _sort(psort, 24, ascending, hasindex);
         }
 
         if(!hasindex) {
