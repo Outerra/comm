@@ -666,6 +666,30 @@ public:
         }
     }
 
+    ///Append number with thousands separated
+    void append_num_formatted( int64 n, char thousand_sep = ' ' )
+    {
+        if(n == 0)
+            return append('0');
+
+        int mods[(64+10-1)/10];
+        uint k=0;
+
+        for( ; n>=1000 || n<=-1000; ++k) {
+            mods[k] = n % 1000;
+            n = n / 1000;
+        }
+
+        append_num( 10, n );
+
+        for( ; k>0; ) {
+            --k;
+            if(thousand_sep)
+                append(thousand_sep);
+
+            append_num( 10, int_abs(mods[k]), 3, ALIGN_NUM_RIGHT_FILL_ZEROS );
+        }
+    }
 
     ///Append floating point number
     ///@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
