@@ -1929,6 +1929,19 @@ protected:
         // members until the one pointed to by _curvar.var is found
         MetaDesc::Var* par = parent_var();
 
+        if(!par) {
+            //if there is no parent, that means this was attempt to read the top level
+            // member itself
+            //there is no point in caching current member since it's not defined
+            // and thus an error
+            dump_stack(_err,0);
+            _err << " - expected variable: " << _curvar.var->varname;
+            fmt_error();
+            e = ersNOT_FOUND "no such variable";
+            throw e;
+        }
+
+
         uints base;
         if( _cache.size()>0  ||  par == _cacheroot ) { //_cache.size() > 0 ) {
             //compute base offset
