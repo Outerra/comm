@@ -130,14 +130,12 @@ opcd directory::copy_current_file_to( const token& dst )
 opcd directory::copy_file( const token& src, const token& dst )
 {
     fileiostream fsrc, fdst;
-    charstr argdst;
 
     opcd e = fsrc.open(src);
     if(e)
         return e;
 
-    argdst << dst << "?wct";
-    e = fdst.open(argdst);
+    e = fdst.open(dst, "wct");
     if(e)
         return e;
 

@@ -102,7 +102,7 @@ public:
     template<class CONTAINER>
     INT_IDX* sort( bool ascending, const CONTAINER& psort, uints nitems, bool useindex = false )
     {
-        _puidx.need_new( nitems<<1 );
+        _puidx.need( nitems<<1 );
         _puidxa = _puidx.ptr();
         _puidxb = _puidxa + nitems;
 
