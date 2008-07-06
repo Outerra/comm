@@ -108,18 +108,16 @@ public:
 
         count_frequency(psort);
 
-        bool hasindex = false;
-
-        hasindex |= _sort(psort, 0, ascending, useindex);
-        hasindex |= _sort(psort, 8, ascending, hasindex);
+        useindex |= _sort(psort, 0, ascending, useindex);
+        useindex |= _sort(psort, 8, ascending, useindex);
         
         if(sizeof(INT_DAT) > 2)
         {
-            hasindex |= _sort(psort, 16, ascending, hasindex);
-            hasindex |= _sort(psort, 24, ascending, hasindex);
+            useindex |= _sort(psort, 16, ascending, useindex);
+            useindex |= _sort(psort, 24, ascending, useindex);
         }
 
-        if(!hasindex) {
+        if(!useindex) {
             for( uint i=0; i<nitems; ++i ) 
                 _puidxa[i] = (INT_IDX)i;
         }
