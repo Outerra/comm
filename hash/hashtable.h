@@ -587,16 +587,18 @@ public:
         return del(k);
     }
 
-    void erase( const_iterator& it )
+    void erase( iterator& it )
     {
-        Node** pn = get_socket(it._p);
+        Node** pn = get_socket(it._get_node());
+        ++it;
+
         Node* n = *pn;
         *pn = n->_next;
         delete n;
         --_nelem;
     }
 
-    void erase( const_iterator f, const_iterator l )
+    void erase( iterator f, iterator l )
     {
         Node** pn = get_socket(f._p);
         Node* n = *pn;
