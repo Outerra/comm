@@ -276,6 +276,14 @@ struct policy_pooled
 		return p.get() ? p : new T();
 	}
 
+	//! create instance or take one from pool
+	template<class P>
+	static ref<T> create(P param)
+	{
+		ref<T> p = pool().pop();
+		return p.get() ? p : new T(param);
+	}
+
 	//! destroy all instances in pool
 	static void purge() 
 	{ 
