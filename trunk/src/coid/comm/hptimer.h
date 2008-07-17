@@ -142,6 +142,7 @@ public:
 
     uint time() const;
     uint time_usec() const;
+	uint time_reset();
 
     uint ticks() const;
     int usec_to_tick( uint k ) const;

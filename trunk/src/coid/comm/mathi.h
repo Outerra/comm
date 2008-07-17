@@ -86,7 +86,7 @@ inline uchar int_low_pow2( uints x )        { uchar i;  for( i=0; x; ++i,x>>=1 )
 inline uchar int_high_pow2( uints x )       { uchar i; --x; for( i=0; x; ++i,x>>=1 );  return i; }
 
 /// Checks if a value is power of two
-#define IS_2_POW_N(X)   (((X)&(X-1)) == 0)
+#define IS_2_POW_N(_X)   (((_X)&(_X-1)) == 0)
 
 
 /// Align value to the nearest greater multiplier of specified chunk size
