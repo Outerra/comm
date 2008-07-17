@@ -67,6 +67,15 @@ uint MsecTimer::time() const
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+uint MsecTimer::time_reset()
+{
+	uint tend = timeGetTime();
+	uint t = uint(tend - _tstart);
+	_tstart = tend;
+	return t;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 uint MsecTimer::time_usec() const
 {
     uint tend = timeGetTime();
