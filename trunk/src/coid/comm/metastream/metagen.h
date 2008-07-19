@@ -126,6 +126,7 @@ class metagen //: public binstream
         Varx() { var=0; varparent=0; data=0; }
         Varx( const Var* v, const uchar* d ) : var(v), varparent(0), data(d) {}
 
+
         ///Find member variable and its position in the cache
         bool find_child( const token& name, Varx& ch ) const
         {
@@ -141,12 +142,16 @@ class metagen //: public binstream
         }
 
         ///Find a descendant variable and its position in the cache
-        bool find_descendant( token name, Varx& ch ) const
+        //@param last if set, do not treat the last token as child name and return it here, but only after at least one child has been read
+        bool find_descendant( token name, Varx& ch, token* last = 0 ) const
         {
             const Varx* v = this;
             token part;
 
             if( name.is_empty() )  return false;
+
+            if(last)
+                last->set_empty();
 
             //leading dots address ancestors
             do {
@@ -163,13 +168,20 @@ class metagen //: public binstream
                 return true;
 
             //find descendant
+            int nch = 0;
             do {
+                if( last  &&  nch>0  &&  name.len() == 0 ) {
+                    *last = part;
+                    return true;
+                }
+
                 if( !ch.find_child( part, ch ) )
                     return false;
 
                 part = name.cut_left('.');
+                ++nch;
             }
-            while( !name.is_empty() );
+            while( !part.is_empty() );
 
             return true;
         }
@@ -260,7 +272,7 @@ class metagen //: public binstream
         bool parse( MtgLexer& lex )
         {
             //attribute can be
-            // <name>(.<name>)* [?!] [= "value"]
+            // [!]<name>(.<name>)* [?!] [= "value"]
             const lextoken& tok = lex.last();
 
             bool condneg = false;
@@ -275,6 +287,9 @@ class metagen //: public binstream
             depth = 0;
             const char* pc = name.ptr();
             const char* pce = name.ptre();
+
+            while( *pc == '.' )  ++pc;  //skip leading .. (not counted to depth)
+
             for( ; pc<pce; ++pc )
                 if( *pc == '.' )  ++depth;
 
@@ -302,7 +317,7 @@ class metagen //: public binstream
             }
 
             if( cond && depth==0 )
-                depth = 1;
+                depth = 1;          //force find_child
             else if(!cond)
                 cond = OPEN;
 
@@ -322,18 +337,13 @@ class metagen //: public binstream
         {
             //if the depth is set, the attribute reffers to a descendant
             token n = name;
-            Varx v = var;
+            Varx v;
             bool defined = true;
 
-            if(depth) {
-                for( int d=depth; d>0; --d ) {
-                    token part = n.cut_left('.');
-                    if( !v.find_child( part, v ) ) {
-                        defined = false;
-                        break;
-                    }
-                }
-            }
+            if( depth > 0 )
+                defined = var.find_descendant(name, v, &n);
+            else
+                v = var;
 
             bool inv;
             if( cond == COND_POS )      inv = false;
@@ -343,7 +353,7 @@ class metagen //: public binstream
             bool val;
 
             if( !value.value.is_empty() )
-                val = defined && value.value == v.write_buf(mg);
+                val = defined  &&  value.value == v.write_buf(mg);
             else if( n == "defined" )
                 val = defined;
             else if( n.is_empty()  ||  n == "nonzero"  ||  n == "true" )
