@@ -1425,6 +1425,9 @@ public:
     //@return last token read
     const lextoken& last() const        { return _last; }
 
+    ///Return remainder of the input
+    token remainder() const             { return _tok; }
+
 
     ///Return current lexer line position
     //@return current line number (from index 1, not 0)
