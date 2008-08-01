@@ -302,7 +302,7 @@ public:
         binstream_container_fixed_array<char> c((char*)x.ptr(), x.len());
         return write_array(c);
     }
-    
+
     ///Write key token
     opcd write_key( const token& x )
     {
@@ -316,7 +316,7 @@ public:
         binstream_container_fixed_array<char> c((char*)p, len);
         return write_array(c);
     }
-    
+
     ///Write key token
     opcd write_key( const char* p, uints len )
     {
