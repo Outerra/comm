@@ -1594,6 +1594,12 @@ public:
         return res;
     }
 
+    charstr operator + (char c) const
+    {
+        charstr res = *this;
+        res.append(c);
+        return res;
+    }
 
 protected:
 

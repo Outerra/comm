@@ -337,6 +337,14 @@ struct token
 
 
     ////////////////////////////////////////////////////////////////////////////////
+    //@return this token if not empty, otherwise the second one
+    token operator | (const token& b) const {
+        return _len
+            ? *this
+            : b;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////
     ///Eat the first character from token, returning it
     char operator ++ ()
     {
@@ -373,39 +381,7 @@ struct token
         }
         return 0;
     }
-/*
-    ///Positive value moves the pointer forward, a negative one cuts from end
-    token& operator += (ints i)
-    {
-        if(i>0)
-        {
-            if( i>(ints)_len )  i = _len;
-            _ptr += i;
-            _len -= i;
-        }
-        else
-        {
-            if( -i>(ints)_len )  i = -(ints)_len;
-            _len += i;
-        }
-        return *this;
-    }
 
-    ///Positive value moves the pointer backward, a negative one adds to end
-    token& operator -= (ints i)
-    {
-        if(i>0)
-        {
-            _ptr -= i;
-            _len += i;
-        }
-        else
-        {
-            _len -= i;
-        }
-        return *this;
-    }
-*/
     ///Shift the starting pointer forwards or backwards
     token& shift_start( ints i )
     {
