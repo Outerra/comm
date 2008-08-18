@@ -968,10 +968,10 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Helper template for streaming enum values
-template<int S> struct EnumType     { typedef uint      TEnum; };
-template<> struct EnumType<8>       { typedef uint64    TEnum; };
-template<> struct EnumType<2>       { typedef ushort    TEnum; };
-template<> struct EnumType<1>       { typedef uchar     TEnum; };
+template<int S> struct EnumType     { typedef int      TEnum; };
+template<> struct EnumType<8>       { typedef int64    TEnum; };
+template<> struct EnumType<2>       { typedef short    TEnum; };
+template<> struct EnumType<1>       { typedef char     TEnum; };
 
 ////////////////////////////////////////////////////////////////////////////////
 struct opcd_formatter
