@@ -252,7 +252,7 @@ public:
         xread(&valid, type(type::T_OPTIONAL,sizeof(valid)));
         
         if(valid) {
-            *p.ptr = new T;
+            *p.ptr_const = new T;
             *this >> **p.ptr;
         }
         return *this;
