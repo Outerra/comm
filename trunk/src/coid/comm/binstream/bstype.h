@@ -68,15 +68,22 @@ struct binary {
 template<class T>
 struct pointer
 {
-    pointer(const T* const* t)
-        : ptr(const_cast<T**>(t)) {}
+    typedef typename type_deconst<T>::type
+        Tnc;
+
+
+    pointer(const Tnc* const* t)
+        : ptr_const(const_cast<const Tnc**>(t)) {}
     
-    pointer(T* const* t)
-        : ptr(const_cast<T**>(t)) {}
+    pointer(Tnc* const* t)
+        : ptr(const_cast<Tnc**>(t)) {}
 
 private:
     friend class binstream;
-    T** ptr;
+    union {
+        const Tnc** ptr_const;
+        Tnc** ptr;
+    };
 };
 
 ////////////////////////////////////////////////////////////////////////////////

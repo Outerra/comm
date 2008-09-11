@@ -85,11 +85,10 @@ struct type_dereference<K*> {typedef K type;};
 
 ////////////////////////////////////////////////////////////////////////////////
 template<class T>
-struct type_deconst {typedef T type;};
+struct type_deconst {typedef T type; typedef const T type_const;};
 
 template<class K>
-struct type_deconst<const K> {typedef K type;};
-
+struct type_deconst<const K> {typedef K type; typedef const K type_const;};
 
 ////////////////////////////////////////////////////////////////////////////////
 template<class T>
