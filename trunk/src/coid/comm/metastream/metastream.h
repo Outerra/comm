@@ -1282,8 +1282,7 @@ protected:
             _rvarname.reset();
             return 0;
         }
-
-        if( _curvar.var->is_array_element() )
+        else if( _curvar.var->is_pointer()  ||  _curvar.var->is_array_element() )
             return 0;
 
         return R
@@ -1378,13 +1377,16 @@ protected:
         if(!_dometa)
             return data_write_nometa(p, t);
 
-        if( t.type == type::T_OPTIONAL ) {
-            if( *(const uint8*)p == 0 )
-                return moveto_expected_target<WRITE_MODE>();
-        }
-
         if( !t.is_array_end() )
             movein_current<WRITE_MODE>();
+
+        if( t.type == type::T_OPTIONAL )
+        {
+            if( *(const uint8*)p == 0 )
+                return moveto_expected_target<WRITE_MODE>();
+            else
+                fmts_or_cache_write_key();
+        }
 
         //ignore the struct open and close tokens nested in binstream operators,
         // as we follow those within metastream operators instead
@@ -1410,9 +1412,13 @@ protected:
         if(!_dometa)
             return data_read_nometa(p, t);
 
-        if( !t.is_array_end() ) {
-            //move to the first primitive member in input, caching the unordered siblings
+        //move to the first primitive member in input, caching the unordered siblings
+        if( !t.is_array_end() )
             movein_current<READ_MODE>();
+
+        if( t.type == type::T_OPTIONAL )
+        {
+            fmts_or_cache_read_key();
         }
 
         //ignore the struct open and close tokens nested in binstream operators,
