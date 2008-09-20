@@ -906,8 +906,9 @@ public:
 			} else {
 				int t;
 #ifdef SYSTYPE_MSVC8plus
-				_get_timezone(&t);
-				t = -t;
+                long tz;
+				_get_timezone(&tz);
+				t = -tz;
 #else
 				t = -__timezone;
 #endif
