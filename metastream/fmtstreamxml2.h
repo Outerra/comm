@@ -205,7 +205,7 @@ public:
             {
                 Parent* par = _stackw.last();
 
-                _bufw << "</" << (par->tag.is_empty() ? array_element : par->tag)
+                _bufw << "</" << (par->tag.is_empty() ? array_element : token(par->tag))
                     << char('>');
                 _tagw.swap(par->tag);
 
@@ -410,7 +410,7 @@ public:
 
                 _tokenizer.match('<');
                 _tokenizer.match('/');
-                _tokenizer.match( par->tag.is_empty()  ?  array_element  :  par->tag );
+                _tokenizer.match( par->tag.is_empty()  ?  array_element  :  token(par->tag) );
                 _tokenizer.match('>');
 
                 _attrmoder = false;
@@ -756,7 +756,7 @@ protected:
         else {
             token tok = _tagw.is_empty()
                 ?  get_xsi_type(t)
-                :  _tagw;
+                :  token(_tagw);
 
             _bufw << char('<') << tok << char('>');
         }
@@ -769,7 +769,7 @@ protected:
         else {
             token tok = _tagw.is_empty()
                 ?  get_xsi_type(t)
-                :  _tagw;
+                :  token(_tagw);
 
             _bufw << "</" << tok << char('>');
         }
@@ -818,7 +818,7 @@ protected:
         if( _tagmode == 0 ) {
             _tokenizer.match('<');
             _tokenizer.match('/');
-            _tokenizer.match( _tagr.is_empty() ? get_xsi_type(t) : _tagr );
+            _tokenizer.match( _tagr.is_empty() ? get_xsi_type(t) : token(_tagr) );
             _tokenizer.match('>');
         }
         else if( _tagmode == 2 ) {
