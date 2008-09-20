@@ -904,12 +904,12 @@ public:
 			if( flg & DATE_ISO8601_GMT ) {
 				append('Z');
 			} else {
-				long t;
+				int t;
 #ifdef SYSTYPE_MSVC8plus
 				_get_timezone(&t);
 				t = -t;
 #else
-				t = -get_timezone();
+				t = -__timezone;
 #endif
 				if (t > 0) append('+');
 				append_num(10,t/3600,2,charstr::ALIGN_NUM_RIGHT_FILL_ZEROS);
