@@ -49,10 +49,26 @@ class logger
 {
 public:
 	enum ELogType {
-		Warning = 0,
-		Info,
+		Info=0,
+		Warning,		
 		Error,
+		Debug,
+		Last
 	};
+
+	coid::token & type2tok(const ELogType t)
+	{
+		static coid::token st[]={
+			"Info",
+			"Warning",
+			"Error",
+			"Debug",
+		};
+		static coid::token ud="userdefined";
+		
+		if (t<Last) return st[t];
+		return ud;
+	}
 
 private:
 	coid::bofstream _logfile;
@@ -72,6 +88,30 @@ public:
 	{
 		ref<logmsg> lm=logmsg::create();
 		lm->set_logger(this);
+		return lm;
+	}
+
+	ref<logmsg> operator () (const ELogType t)
+	{
+		ref<logmsg> lm=logmsg::create();
+		lm->set_logger(this);
+		(*lm)<<type2tok(t)<<' ';
+		return lm;
+	}
+
+	ref<logmsg> operator () (const ELogType t, const char * fnc)
+	{
+		ref<logmsg> lm=logmsg::create();
+		lm->set_logger(this);
+		(*lm)<<type2tok(t)<<' '<<fnc<<' ';
+		return lm;
+	}
+
+	ref<logmsg> operator () (const ELogType t, const char * fnc, const int line)
+	{
+		ref<logmsg> lm=logmsg::create();
+		lm->set_logger(this);
+		(*lm)<<type2tok(t)<<' '<<fnc<<'('<<line<<')'<<' ';
 		return lm;
 	}
 };
