@@ -59,19 +59,22 @@ struct timet
     int64 diff( time_t tx ) const   { return t - tx; }
 
 
-    timet& now()
+    timet& set_now()
     {
         t = (int64) ::time(0);
         return *this;
     }
 
-    static timet current()
+    static timet now()
     {
         timet t;
-        t.now();
+        t.set_now();
         return t;
     }
 
+    static timet current() {
+        return now();
+    }
 };
 
 
