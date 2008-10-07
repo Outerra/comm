@@ -813,6 +813,22 @@
 				>
 			</File>
 		</Filter>
+		<Filter
+			Name="log"
+			>
+			<File
+				RelativePath=".\log\logger.h"
+				>
+			</File>
+			<File
+				RelativePath=".\log\policy_log.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\log\policy_log.h"
+				>
+			</File>
+		</Filter>
 		<File
 			RelativePath="comm.h"
 			>
