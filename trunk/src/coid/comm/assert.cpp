@@ -68,7 +68,7 @@ struct AssertLog
     }
 };
 
-static binstream& bin = SINGLETON(AssertLog).get_file();
+static binstream& bin = SINGLETON(AssertLog)._text;
 
 static int __assert_throws = 1;
 
@@ -79,9 +79,9 @@ opcd __rassert( const char* txt, opcd exc, const char* file, int line, const cha
     {
         comm_mutex_guard<comm_mutex> _guard( asl._mutex );
 
-	    bin << "Assertion failed in " << file << ":" << line << " expression:\n    "
-		    << expr << "\n    " << (txt ? txt : "") << "\n\n";
-        bin.flush();
+        bin << "Assertion failed in " << file << ":" << line << " expression:\n    "
+		    << expr << "\n    " << (txt ? txt : "") << "\n\n"
+            << BINSTREAM_FLUSH;
     }
 
     opcd e = __assert_throws ? exc : opcd(0);

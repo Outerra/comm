@@ -48,7 +48,7 @@ struct timet
 {
     int64  t;
 
-    timet()                         { now(); }
+    timet()                         { set_now(); }
     timet( time_t tx )              { t = tx; }
 
     operator time_t () const        { return (time_t)t; }
