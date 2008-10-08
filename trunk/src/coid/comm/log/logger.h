@@ -7,6 +7,7 @@
 #include "../ref.h"
 #include "../SINGLETON.h"
 #include "policy_log.h"
+#include "../atomic/queue.h"
 
 COID_NAMESPACE_BEGIN
 
@@ -21,6 +22,7 @@ DEFAULT_POLICY(logmsg, policy_log);
 class logmsg 
 	: public coid::charstr
 	, public pooled<logmsg>
+	, public atomic::queue<logmsg>::node_t
 {
 protected:
 	logger * _logger;
@@ -116,6 +118,44 @@ public:
 		(*lm)<<type2tok(t)<<fnc<<'('<<line<<')'<<' ';
 		return lm;
 	}
+};
+
+class log_writer
+{
+protected:
+	coid::thread _thread;
+	atomic::queue<logmsg> _queue;
+
+public:
+	log_writer()
+		: _thread()
+	{
+		_thread.create( thread_run_fn, this, 0, "log_writer" );
+	}
+
+    static void* thread_run_fn( void* p )
+    {
+        return reinterpret_cast<log_writer*>(p)->thread_run();
+    }
+
+	void* thread_run()
+	{
+		for ( ;; ) {
+			logmsg * m;
+			
+			while ( (m=_queue.pop())!=0) { 
+				m->get_logger()->flush(*m);
+				logmsg * const p = static_cast<logmsg*>(const_cast<logmsg*>(m));
+				p->reset();
+				policy_log<logmsg>::pool().push(p);
+			}
+			if ( coid::thread::self_should_cancel() ) break;
+			coid::sysMilliSecondSleep(100);
+		}
+		return 0;
+	}
+
+	void addmsg(logmsg * m) { _queue.push(m); }
 };
 
 COID_NAMESPACE_END

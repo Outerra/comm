@@ -23,10 +23,10 @@ struct policy_log : public policy_pooled<T>
 			// flush it 
 			log_flusher::flush(obj);
 
-			// return it to the pool
+			/*// return it to the pool
 			T * const p = static_cast<T*>(const_cast<ref_base*>(obj));
 			p->reset();
-			pool().push(p);
+			pool().push(p);*/
 		}
 	}
 };
