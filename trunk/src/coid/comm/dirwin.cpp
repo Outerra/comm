@@ -128,7 +128,7 @@ bool directory::is_regular( ushort mode )
 ////////////////////////////////////////////////////////////////////////////////
 opcd directory::mkdir( const char* name, uint mode )
 {
-    if(!::_mkdir(name))  return 0;
+    if(!_mkdir(name))  return 0;
     if( errno == EEXIST )  return 0;
     return ersFAILED;
 }
