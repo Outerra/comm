@@ -7,9 +7,7 @@ using namespace coid;
 
 void log_flusher::flush(const ref_base *const obj)
 {
-	const logmsg * const lm = static_cast<const logmsg*>(obj);
-
-	lm->get_logger()->flush(*lm);
+	SINGLETON(log_writer).addmsg(static_cast<logmsg*>(const_cast<ref_base*>(obj)));
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
