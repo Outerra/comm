@@ -78,6 +78,7 @@ opcd __rassert( const char* txt, opcd exc, const char* file, int line, const cha
     AssertLog& asl = SINGLETON(AssertLog);
     {
         comm_mutex_guard<comm_mutex> _guard( asl._mutex );
+        asl.get_file();
 
         bin << "Assertion failed in " << file << ":" << line << " expression:\n    "
 		    << expr << "\n    " << (txt ? txt : "") << "\n\n"
