@@ -70,8 +70,8 @@
 #define RASSERT(expr)               XASSERTE(expr) coid::__rassert(0,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT } while(0)
 #define RASSERTX(expr,txt)          XASSERTE(expr) coid::__rassert(txt,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT } while(0)
 
-#define RASSERTE(expr,exc)          XASSERTE(expr) coid::__rassert(0,exc,__FILE__,__LINE__,#expr); XASSERT } while(0)
-#define RASSERTEX(expr,exc,txt)     XASSERTE(expr) coid::__rassert(txt,exc,__FILE__,__LINE__,#expr); XASSERT } while(0)
+#define RASSERTE(expr,exc)          XASSERTE(expr) coid::__rassert(0,exc,__FILE__,__LINE__,#expr); if(__assert_e) throw exc; } while(0)
+#define RASSERTEX(expr,exc,txt)     XASSERTE(expr) coid::__rassert(txt,exc,__FILE__,__LINE__,#expr); if(__assert_e) throw exc; } while(0)
 #define RASSERTXE(expr,exc,txt)     RASSERTEX(expr,exc,txt)
 
 #define RASSERTL(expr)              XASSERTE(expr) coid::__rassert(0,0,__FILE__,__LINE__,#expr); XASSERT } while(0)
@@ -86,9 +86,6 @@
 #define DASSERT(expr)               XASSERTE(expr) coid::__rassert(0,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT } while(0)
 #define DASSERTX(expr,txt)          XASSERTE(expr) coid::__rassert(txt,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT } while(0)
 
-#define DASSERTE(expr,exc)          XASSERTE(expr) coid::__rassert(0,exc,__FILE__,__LINE__,#expr); XASSERT } while(0)
-#define DASSERTEX(expr,exc,txt)     XASSERTE(expr) coid::__rassert(txt,exc,__FILE__,__LINE__,#expr); XASSERT } while(0)
-
 #define DASSERTL(expr)              XASSERTE(expr) coid::__rassert(0,0,__FILE__,__LINE__,#expr); } while(0)
 #define DASSERTLX(expr,txt)         XASSERTE(expr) coid::__rassert(txt,0,__FILE__,__LINE__,#expr); } while(0)
 //@}
@@ -96,9 +93,6 @@
 //@{ Debug assertion, but in release build the expression \a expr is still evaluated
 #define EASSERT(expr)               XASSERTE(expr) coid::__rassert(0,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT } while(0)
 #define EASSERTX(expr,txt)          XASSERTE(expr) coid::__rassert(txt,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT } while(0)
-
-#define EASSERTE(expr,exc)          XASSERTE(expr) coid::__rassert(0,exc,__FILE__,__LINE__,#expr); XASSERT } while(0)
-#define EASSERTEX(expr,exc,txt)     XASSERTE(expr) coid::__rassert(txt,exc,__FILE__,__LINE__,#expr); XASSERT } while(0)
 
 #define EASSERTL(expr)              XASSERTE(expr) coid::__rassert(0,0,__FILE__,__LINE__,#expr); } while(0)
 #define EASSERTLX(expr,txt)         XASSERTE(expr) coid::__rassert(txt,0,__FILE__,__LINE__,#expr); } while(0)

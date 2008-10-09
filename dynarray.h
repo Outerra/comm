@@ -363,8 +363,8 @@ public:
 # define DYNARRAY_CHECK_BOUNDS_U(k)
 #endif
 
-    void __check_bounds(ints k) const        { DASSERTE( k>=0 && (uints)k<_count(), ersOUT_OF_RANGE ); }
-    void __check_bounds(uints k) const       { DASSERTE( k<_count(), ersOUT_OF_RANGE ); }
+    void __check_bounds(ints k) const        { DASSERT( k>=0 && (uints)k<_count() ); }
+    void __check_bounds(uints k) const       { DASSERT( k<_count() ); }
 
     const T& operator [] (uints k) const     { DYNARRAY_CHECK_BOUNDS_U(k)  return *(_ptr+k); }
     T& operator [] (uints k)                 { DYNARRAY_CHECK_BOUNDS_U(k)  return *(_ptr+k); }

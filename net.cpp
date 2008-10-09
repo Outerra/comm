@@ -522,7 +522,7 @@ netSocket::open ( bool stream )
 ////////////////////////////////////////////////////////////////////////////////
 void netSocket::setBlocking( bool blocking )
 {
-    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
 
 #ifdef SYSTYPE_MSVC
 
@@ -544,7 +544,7 @@ void netSocket::setBlocking( bool blocking )
 ////////////////////////////////////////////////////////////////////////////////
 void netSocket::setBroadcast( bool broadcast )
 {
-    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     int result;
     int one = 1;
 #ifdef SYSTYPE_WIN32
@@ -552,13 +552,13 @@ void netSocket::setBroadcast( bool broadcast )
 #else
     result = ::setsockopt( handle, SOL_SOCKET, SO_BROADCAST, &one, sizeof(one) );
 #endif
-    DASSERTE( result != -1, ersFAILED );
+    RASSERTE( result != -1, ersFAILED );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 void netSocket::setBuffers( uint rsize, uint wsize )
 {
-    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     int result;
 #ifdef SYSTYPE_WIN32
     if(rsize)
@@ -571,13 +571,13 @@ void netSocket::setBuffers( uint rsize, uint wsize )
     if(wsize)
         result = ::setsockopt( handle, SOL_SOCKET, SO_SNDBUF, &wsize, sizeof(wsize) );
 #endif
-    DASSERTE( result != -1, ersFAILED );
+    RASSERTE( result != -1, ersFAILED );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 void netSocket::setNoDelay( bool nodelay )
 {
-    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     int result;
 
     int one = nodelay;
@@ -591,7 +591,7 @@ void netSocket::setNoDelay( bool nodelay )
 ////////////////////////////////////////////////////////////////////////////////
 void netSocket::setReuseAddr( bool reuse )
 {
-    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     int result;
 
     int one = reuse;
@@ -605,7 +605,7 @@ void netSocket::setReuseAddr( bool reuse )
 ////////////////////////////////////////////////////////////////////////////////
 void netSocket::setLinger( bool blinger, ushort sec )
 {
-    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     int result;
 
     struct linger lg;
@@ -622,7 +622,7 @@ void netSocket::setLinger( bool blinger, ushort sec )
 ////////////////////////////////////////////////////////////////////////////////
 int netSocket::bind( const char* host, int port )
 {
-    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     netAddress addr ( host, port, true ) ;
     return ::bind(handle,(const sockaddr*)&addr,sizeof(netAddress));
 }
@@ -630,14 +630,14 @@ int netSocket::bind( const char* host, int port )
 ////////////////////////////////////////////////////////////////////////////////
 int netSocket::listen( int backlog )
 {
-    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     return ::listen(handle,backlog);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ints netSocket::accept( netAddress* addr )
 {
-    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     socklen_t addr_len = (socklen_t) sizeof(netAddress) ;
     return ::accept(handle,(sockaddr*)addr,&addr_len);
 }
@@ -645,7 +645,7 @@ ints netSocket::accept( netAddress* addr )
 ////////////////////////////////////////////////////////////////////////////////
 int netSocket::connect( const token& host, int port, bool portoverride )
 {
-    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     netAddress addr( host, port, portoverride );
 
     if( addr.getBroadcast() )
@@ -657,7 +657,7 @@ int netSocket::connect( const token& host, int port, bool portoverride )
 ////////////////////////////////////////////////////////////////////////////////
 int netSocket::connect( const netAddress& addr )
 {
-    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     if ( addr.getBroadcast() ) {
         setBroadcast( true );
     }
@@ -667,28 +667,28 @@ int netSocket::connect( const netAddress& addr )
 ////////////////////////////////////////////////////////////////////////////////
 int netSocket::send( const void * buffer, int size, int flags )
 {
-    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     return ::send (handle, (const char*)buffer, size, flags);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 int netSocket::sendto( const void * buffer, int size, int flags, const netAddress* to )
 {
-    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     return ::sendto(handle,(const char*)buffer,size,flags,(const sockaddr*)to,sizeof(netAddress));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 int netSocket::recv( void * buffer, int size, int flags )
 {
-    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     return ::recv (handle, (char*)buffer, size, flags);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 int netSocket::recvfrom( void * buffer, int size, int flags, netAddress* from )
 {
-    DASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     socklen_t fromlen = (socklen_t) sizeof(netAddress) ;
     return ::recvfrom(handle,(char*)buffer,size,flags,(sockaddr*)from,&fromlen);
 }
