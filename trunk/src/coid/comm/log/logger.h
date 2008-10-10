@@ -138,22 +138,7 @@ public:
         return reinterpret_cast<log_writer*>(p)->thread_run();
     }
 
-	void* thread_run()
-	{
-		for ( ;; ) {
-			logmsg * m;
-			
-			while ( (m=_queue.pop())!=0) { 
-				m->get_logger()->flush(*m);
-				logmsg * const p = static_cast<logmsg*>(const_cast<logmsg*>(m));
-				p->reset();
-				policy_log<logmsg>::pool().push(p);
-			}
-			if ( coid::thread::self_should_cancel() ) break;
-			coid::sysMilliSecondSleep(100);
-		}
-		return 0;
-	}
+	void* thread_run();
 
 	void addmsg(logmsg * m) { _queue.push(m); }
 };
