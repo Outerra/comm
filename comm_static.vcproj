@@ -827,6 +827,26 @@
 				>
 			</File>
 		</Filter>
+		<Filter
+			Name="log"
+			>
+			<File
+				RelativePath=".\log\logger.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\log\logger.h"
+				>
+			</File>
+			<File
+				RelativePath=".\log\policy_log.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\log\policy_log.h"
+				>
+			</File>
+		</Filter>
 		<File
 			RelativePath="comm.h"
 			>
@@ -876,10 +896,6 @@
 			>
 		</File>
 		<File
-			RelativePath=".\log\logger.h"
-			>
-		</File>
-		<File
 			RelativePath=".\mathf.h"
 			>
 		</File>
@@ -901,14 +917,6 @@
 		</File>
 		<File
 			RelativePath="password.h"
-			>
-		</File>
-		<File
-			RelativePath=".\log\policy_log.cpp"
-			>
-		</File>
-		<File
-			RelativePath=".\log\policy_log.h"
 			>
 		</File>
 		<File
