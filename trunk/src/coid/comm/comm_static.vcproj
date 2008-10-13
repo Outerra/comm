@@ -839,6 +839,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\log\logwriter.h"
+				>
+			</File>
+			<File
 				RelativePath=".\log\policy_log.cpp"
 				>
 			</File>
