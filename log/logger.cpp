@@ -1,4 +1,5 @@
-#include "logger.h"
+
+#include "logwriter.h"
 
 using namespace coid;
 
