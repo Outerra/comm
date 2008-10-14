@@ -4,6 +4,8 @@
 #include "commassert.h"
 #include "atomic/atomic.h"
 #include "atomic/stack.h"
+#include "binstream/binstreambuf.h"
+#include "metastream/metastream.h"
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
@@ -155,6 +157,19 @@ public:
 		atomic::cas_ptr(reinterpret_cast<void*volatile*>(&p_), n, o);
 	}
 	*/
+
+	friend coid::binstream& operator << (coid::binstream& bin, const ref<T,P>& s)
+	{   return bin << *static_cast<T*>(s.p_); }
+
+	friend coid::binstream& operator >> (coid::binstream& bin, ref<T,P>& s)
+	{   s=new T(); return bin >> *static_cast<T*>(s.p_); }
+
+	friend coid::metastream& operator << (coid::metastream& m, const ref<T,P>& s)
+	{
+		MSTRUCT_OPEN(m,"ref")
+			MMAT(m, "ptr", object)
+		MSTRUCT_CLOSE(m)
+	}
 
 private:
 
