@@ -309,6 +309,49 @@ public:
         }
     }
 
+    ///Convert binary data to escaped hexadecimal string
+    //@param src source memory buffer
+    //@param dst destination character buffer capable to hold at least (((itemsize*2) + sep?1:0) * nitems) bytes
+    //@param nitems number of itemsize sized words to convert
+    //@param itemsize number of bytes to write clumped together after prefix
+    //@param prefix before each item
+    static void bin2prehex( const void* src, charstr& dst, uints nitems, uint itemsize, const token& prefix )
+    {
+        if( nitems == 0 )  return;
+
+        static char tbl[] = "0123456789ABCDEF";
+        for( uints i=0;; )
+        {
+            dst.append(prefix);
+            char* pdst = dst.get_append_buf(itemsize * 2);
+
+            if(sysIsLittleEndian)
+            {
+                for( uint j=itemsize; j>0; )
+                {
+                    --j;
+                    pdst[0] = tbl[((uchar*)src)[j] >> 4];
+                    pdst[1] = tbl[((uchar*)src)[j] & 0x0f];
+                    pdst += 2;
+                }
+            }
+            else
+            {
+                for( uint j=0; j<itemsize; ++j )
+                {
+                    pdst[0] = tbl[((uchar*)src)[j] >> 4];
+                    pdst[1] = tbl[((uchar*)src)[j] & 0x0f];
+                    pdst += 2;
+                }
+            }
+
+            src = (uchar*)src + itemsize;
+
+            ++i;
+            if( i>=nitems )  break;
+        }
+    }
+
     ////////////////////////////////////////////////////////////////////////////////
 
     ///Convert bytes to intelhex format output
