@@ -63,25 +63,27 @@ struct GlobalSingleton
 
     void destroy()
     {
+		if (last) {
 #ifdef _DEBUG
-        bofstream bof("singleton.log");
-        txtstream tof(bof);
+			bofstream bof("singleton.log");
+			txtstream tof(bof);
 #endif
 
-        while(last) {
-            Kill* tmp = last->next;
+			while(last) {
+				Kill* tmp = last->next;
 
 #ifdef _DEBUG
-            tof << "destroying '" << last->type << "' singleton created at "
-                << last->file << ":" << last->line << "\r\n";
-            tof.flush();
+				tof << "destroying '" << last->type << "' singleton created at "
+					<< last->file << ":" << last->line << "\r\n";
+				tof.flush();
 #endif
 
-            last->destroy();
-            delete last;
+				last->destroy();
+				delete last;
 
-            last = tmp;
-        }
+				last = tmp;
+			}
+		}
     }
 
     ~GlobalSingleton() {
