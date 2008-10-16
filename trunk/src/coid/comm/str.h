@@ -691,6 +691,26 @@ public:
         }
     }
 
+    ///Append time (secs)
+    void append_time_formatted( int64 n )
+    {
+        if(n == 0) {
+            *this << "00:00";
+            return;
+        }
+
+        int hrs = n / 3600;
+        n %= 3600;
+        int mns = n / 60;
+        int sec = n % 60;
+
+        append_num(10, hrs);
+        append(':');
+        append_num(10, mns, 2, charstr::ALIGN_NUM_RIGHT_FILL_ZEROS);
+        append(':');
+        append_num(10, sec, 2, charstr::ALIGN_NUM_RIGHT_FILL_ZEROS);
+    }
+
     ///Append floating point number
     ///@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
     void append( double d, int nfrac )
