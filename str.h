@@ -692,17 +692,17 @@ public:
     }
 
     ///Append time (secs)
-    void append_time_formatted( int64 n )
+    void append_time_formatted( uint64 n )
     {
         if(n == 0) {
             *this << "00:00";
             return;
         }
 
-        int hrs = n / 3600;
-        n %= 3600;
-        int mns = n / 60;
-        int sec = n % 60;
+        uint hrs = uint(n / 3600);
+        uint hs = uint(n % 3600);
+        uint mns = hs / 60;
+        uint sec = hs % 60;
 
         append_num(10, hrs);
         append(':');
