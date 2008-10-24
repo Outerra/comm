@@ -175,8 +175,11 @@ class metagen //: public binstream
                     return true;
                 }
 
-                if( !ch.find_child( part, ch ) )
+                if( !ch.find_child(part, ch) ) {
+                    if(last)
+                        *last = name.cut_right_back('.');
                     return false;
+                }
 
                 part = name.cut_left('.');
                 ++nch;
@@ -728,7 +731,7 @@ class metagen //: public binstream
         virtual void parse_content( MtgLexer& lex, ParsedTag& hdr )
         {
             if( hdr.varname != "if" ) {
-                lex.set_err() << "Unknown code block";
+                lex.set_err() << "Unknown code block: " << hdr.varname;
                 throw lex.exception();
             }
 
@@ -846,7 +849,7 @@ class metagen //: public binstream
                 TagRange* tr = section( p->name );
 
                 if(!tr) {
-                    lex.set_err() << "Unknown attribute of an array tag";
+                    lex.set_err() << "Unknown attribute of an array tag: " << p->name;
                     throw lex.exception();
                 }
 
