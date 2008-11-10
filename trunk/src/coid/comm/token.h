@@ -120,6 +120,44 @@ struct token
             _ptr = src._ptr+offs, _len = len;
     }
 
+    ///Const iterator for token
+    struct const_iterator : std::iterator<std::random_access_iterator_tag, char>
+    {
+        const char* _p;
+
+        difference_type operator - (const const_iterator& p) const  { return _p - p._p; }
+
+        bool operator < (const const_iterator& p) const    { return _p < p._p; }
+        bool operator <= (const const_iterator& p) const   { return _p <= p._p; }
+
+        int operator == (const char* p) const  { return p == _p; }
+
+        int operator == (const const_iterator& p) const    { return p._p == _p; }
+        int operator != (const const_iterator& p) const    { return p._p != _p; }
+
+        char operator *(void) const         { return *_p; }
+
+        const_iterator& operator ++()       { ++_p;  return *this; }
+        const_iterator& operator --()       { --_p;  return *this; }
+
+        const_iterator  operator ++(int)    { const_iterator x(*this);  ++_p;  return x; }
+        const_iterator  operator --(int)    { const_iterator x(*this);  --_p;  return x; }
+
+        const_iterator& operator += (ints n)    { _p += n;  return *this; }
+        const_iterator& operator -= (ints n)    { _p -= n;  return *this; }
+
+        const_iterator  operator + (ints n) const   { const_iterator t(*this);  t += n; }
+        const_iterator  operator - (ints n) const   { const_iterator t(*this);  t -= n; }
+
+        char operator [] (ints i) const     { return _p[i]; }
+
+        const_iterator() : _p(0)  { }
+        const_iterator( const char* p ) : _p(p)  { }
+    };
+
+    const_iterator begin() const    { return const_iterator(ptr()); }
+    const_iterator end() const      { return const_iterator(ptre()); }
+
 
     void swap( token& t )
     {

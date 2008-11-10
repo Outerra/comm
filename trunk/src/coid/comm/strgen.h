@@ -116,7 +116,7 @@ public:
             ch->prefix.set( str.ptr(), ofk-1 );
             ++off;
 
-            str += off;
+            str.shift_start(off);
             off = 0;
 
             ch->var = find_or_create(k);

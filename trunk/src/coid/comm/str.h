@@ -63,7 +63,20 @@ class charstr
 
 public:
 
+    struct output_iterator : std::iterator<std::output_iterator_tag, char>
+    {
+        charstr* _p;                    ///<ptr to the managed item
 
+        char& operator *(void) const {
+            return *_p->uniadd(1);
+        }
+
+        output_iterator& operator ++()  { return *this; }
+        output_iterator& operator ++(ints)  { return *this; }
+
+        output_iterator() { _p = 0; }
+        output_iterator( charstr& p ) : _p(&p)  { }
+    };
 
     charstr() {}
 

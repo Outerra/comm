@@ -312,34 +312,6 @@
 			</File>
 		</Filter>
 		<Filter
-			Name="tree"
-			>
-			<File
-				RelativePath="tree\nodeclass.h"
-				>
-			</File>
-			<File
-				RelativePath=".\tree\treenode.h"
-				>
-			</File>
-			<File
-				RelativePath="tree\ttree.h"
-				>
-			</File>
-			<File
-				RelativePath="tree\ttreebm.h"
-				>
-			</File>
-			<File
-				RelativePath="tree\ttreeid.h"
-				>
-			</File>
-			<File
-				RelativePath="tree\ttreeit.h"
-				>
-			</File>
-		</Filter>
-		<Filter
 			Name="crypt"
 			>
 			<File
