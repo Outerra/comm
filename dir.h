@@ -65,7 +65,7 @@ public:
     /// content of \a dst is dicarded.
     static bool append_path( charstr& dst, token path );
 
-
+    ///Open directory for iterating files using the filter
     opcd open( const token& path, const token& filter );
     opcd open_cwd( const token& filter )
     {
@@ -84,7 +84,7 @@ public:
     {
         char c = path.last_char();
         if( is_separator(c) ) {
-            if(!shouldbe)  path.trim_to_length(-1);
+            if(!shouldbe)  path.resize(-1);
         }
         else if(shouldbe)
             path.append( separator() );

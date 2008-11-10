@@ -173,7 +173,7 @@ public:
             else {
                 _hdrpos = 0;
 
-                _tmp.trim_to_length(16);
+                _tmp.resize(16);
                 _tmp << content_len << "\r\n\r\n";
 
                 return write_token_raw(_tmp);
@@ -483,7 +483,7 @@ public:
             ? _content_type_rsp
             : _content_type_qry;
 
-        dst.trim_to_length( _content_type_len );
+        dst.resize( _content_type_len );
         dst += !ct.is_empty() ? ct : "text/plain";
         dst += "\r\n";
     }

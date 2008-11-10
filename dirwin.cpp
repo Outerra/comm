@@ -74,7 +74,7 @@ opcd directory::open( const token& path, const token& filter )
 
     _pattern = path;
     if( _pattern.last_char() == '\\' )
-        _pattern.trim_to_length(-1);
+        _pattern.resize(-1);
 
     if( !stat( _pattern.ptr(), &_st ) )
         return ersFAILED;
@@ -162,7 +162,7 @@ charstr& directory::get_ped( charstr& buf )
     token t = buf.c_str();
     t.cut_right_back('\\', token::cut_trait_keep_sep_with_source());
 
-    return buf.trim_to_length( t.len() );
+    return buf.resize( t.len() );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -188,7 +188,7 @@ const struct stat* directory::next()
             return 0;
     }
 
-    _curpath.trim_to_length( _baselen );
+    _curpath.resize( _baselen );
     _curpath << dir.name;
     if( stat( _curpath.ptr(), &_st ) )
         return &_st;
