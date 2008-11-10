@@ -70,7 +70,7 @@ opcd directory::open( const token& path, const token& filter )
 
     _curpath = path;
     if( _curpath.last_char() == '/' )
-        _curpath.trim_to_length(-1);
+        _curpath.resize(-1);
 
     _dir = opendir( _curpath.ptr() );
 	if(!_dir)
@@ -157,7 +157,7 @@ charstr& directory::get_ped( charstr& buf )
     token t = buf.c_str();
     t.cut_right_back('/', token::cut_trait_keep_sep_with_source());
 
-    return buf.trim_to_length( t.len() );
+    return buf.resize( t.len() );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -175,7 +175,7 @@ const struct stat* directory::next()
 
     if( 0 == fnmatch( _pattern.ptr(), dire->d_name, 0 ) )
     {
-        _curpath.trim_to_length( _baselen );
+        _curpath.resize( _baselen );
         _curpath << dire->d_name;
         if( stat( _curpath.ptr(), &_st ) )
             return &_st;

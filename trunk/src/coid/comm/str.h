@@ -209,7 +209,7 @@ public:
 
 
     ///Cut to specified length, negative numbers cut abs(len) from the end
-    charstr& trim_to_length( ints length )
+    charstr& resize( ints length )
     {
         if( length < 0 )
         {
@@ -742,7 +742,7 @@ public:
         }
 
         if( lastnzero < ndig )
-            trim_to_length( size + lastnzero );
+            resize( size + lastnzero );
     }
 
     void append( char c )
@@ -787,7 +787,7 @@ public:
             char* p = get_append_buf(6);
             uchar n = write_utf8_seq( c, p );
 
-            trim_to_length( n + uints(p - ptr()) );
+            resize( n + uints(p - ptr()) );
             return n;
         }
     }
@@ -998,6 +998,8 @@ public:
         return *this;
     }
 
+    ///Append from binstream (without the resetting)
+    binstream& append( binstream& bin );
 
 
     void replace( char from, char to )
@@ -1187,7 +1189,7 @@ public:
         {
             uints n = ::strlen(_tstr.ptr());
             if (n<l)
-                trim_to_length(n);
+                resize(n);
         }
         return *this;
     }
@@ -1705,15 +1707,25 @@ inline bool token::utf8_to_wchar_buf( dynarray<wchar_t,A>& dst ) const
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-inline binstream& operator >> (binstream &in, charstr& x)
+inline binstream& operator >> (binstream &bin, charstr& x)
 {
     x._tstr.reset();
     dynarray<char>::binstream_container c(x._tstr);
 
-    in.xread_array(c);
+    bin.xread_array(c);
     if( x._tstr.size() )
         *x._tstr.add() = 0;
-    return in;
+    return bin;
+}
+
+inline binstream& charstr::append( binstream& bin )
+{
+    dynarray<char>::binstream_container c(_tstr);
+
+    bin.xread_array(c);
+    if( _tstr.size() )
+        *_tstr.add() = 0;
+    return bin;
 }
 
 inline binstream& operator << (binstream &out, const charstr& x)

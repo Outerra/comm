@@ -66,14 +66,14 @@ bool directory::append_path( charstr& dst, token path )
             tdst.cut_right_back( separator() );
 
             if( c == 0 ) {
-                dst.trim_to_length( tdst.len() );
+                dst.resize( tdst.len() );
                 return true;
             }
 
             ++path;
         }
 
-        dst.trim_to_length( tdst.len() );
+        dst.resize( tdst.len() );
 
         if( !is_separator( dst.last_char() ) )
             dst << separator();
@@ -87,7 +87,7 @@ bool directory::append_path( charstr& dst, token path )
 ////////////////////////////////////////////////////////////////////////////////
 opcd directory::copy_file_from( const token& src, const token& name )
 {
-    _curpath.trim_to_length(_baselen);
+    _curpath.resize(_baselen);
 
     if( name.is_empty() )
     {
@@ -105,7 +105,7 @@ opcd directory::copy_file_from( const token& src, const token& name )
 ////////////////////////////////////////////////////////////////////////////////
 opcd directory::copy_file_to( const token& dst, const token& name )
 {
-    _curpath.trim_to_length(_baselen);
+    _curpath.resize(_baselen);
 
     if( name.is_empty() )
     {
@@ -163,7 +163,7 @@ opcd directory::copy_file( const token& src, const token& dst )
 ////////////////////////////////////////////////////////////////////////////////
 opcd directory::move_file_from( const token& src, const token& name )
 {
-    _curpath.trim_to_length(_baselen);
+    _curpath.resize(_baselen);
 
     if( name.is_empty() )
     {
@@ -181,7 +181,7 @@ opcd directory::move_file_from( const token& src, const token& name )
 ////////////////////////////////////////////////////////////////////////////////
 opcd directory::move_file_to( const token& dst, const token& name )
 {
-    _curpath.trim_to_length(_baselen);
+    _curpath.resize(_baselen);
 
     if( name.is_empty() )
     {
