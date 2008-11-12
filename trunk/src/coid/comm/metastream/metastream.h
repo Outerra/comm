@@ -475,7 +475,7 @@ public:
         _current = _cachestack.need(1);
         _current->offs = open ? 0 : UMAX;
         _cachevar = 0;
-		_cacheroot = 0;
+        _cacheroot = 0;
         _cacheskip = 0;
     }
 
@@ -664,6 +664,15 @@ public:
         meta_pointer();
 
         *this << *(T)0;
+    }
+
+    template<class T>
+    void meta_cache_default_enum( const T* enum_val )
+    {
+        typedef typename EnumType<sizeof(T)>::TEnum TE;
+        TE v = *enum_val;
+
+        meta_cache_default(&v);
     }
 
     template<class T>
@@ -2180,6 +2189,7 @@ inline type_holder<T> get_type_holder(T*) {
 #define MMP(meta, n, v)             { meta.meta_variable_pointer(n,&(v)); }
 
 #define MMD(meta, n, v, d)          { meta.meta_variable(n,&(v)); meta.meta_cache_default( get_type_holder(&(v)) = d ); }
+#define MMED(meta, n, v, d)			{ meta.meta_variable_enum(n,&(v)); meta.meta_cache_default_enum( get_type_holder(&(v)) = d ); }
 #define MMTD(meta, n, t, d)         { meta.meta_variable<t>(n,0); meta.meta_cache_default( get_type_holder<t>(0) = d ); }
 
 #define MMAT(meta, n, t)            { meta.meta_variable_array<t>(n,0,UMAX); }

@@ -973,6 +973,8 @@ template<> struct EnumType<8>       { typedef int64    TEnum; };
 template<> struct EnumType<2>       { typedef short    TEnum; };
 template<> struct EnumType<1>       { typedef char     TEnum; };
 
+#define ENUM_TYPE(x)  (EnumType<sizeof(x)>::TEnum&)x
+
 ////////////////////////////////////////////////////////////////////////////////
 struct opcd_formatter
 {
