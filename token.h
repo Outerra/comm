@@ -146,8 +146,8 @@ struct token
         const_iterator& operator += (ints n)    { _p += n;  return *this; }
         const_iterator& operator -= (ints n)    { _p -= n;  return *this; }
 
-        const_iterator  operator + (ints n) const   { const_iterator t(*this);  t += n; }
-        const_iterator  operator - (ints n) const   { const_iterator t(*this);  t -= n; }
+        const_iterator  operator + (ints n) const   { const_iterator t(*this);  t += n;  return t; }
+        const_iterator  operator - (ints n) const   { const_iterator t(*this);  t -= n;  return t; }
 
         char operator [] (ints i) const     { return _p[i]; }
 
