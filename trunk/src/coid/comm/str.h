@@ -1011,8 +1011,8 @@ public:
         return *this;
     }
 
-    ///Append from binstream (without the resetting)
-    binstream& append( binstream& bin );
+    ///Append string from binstream (without resetting previous content)
+    binstream& append_from_stream( binstream& bin );
 
 
     void replace( char from, char to )
@@ -1731,7 +1731,7 @@ inline binstream& operator >> (binstream &bin, charstr& x)
     return bin;
 }
 
-inline binstream& charstr::append( binstream& bin )
+inline binstream& charstr::append_from_stream( binstream& bin )
 {
     dynarray<char>::binstream_container c(_tstr);
 
