@@ -73,7 +73,7 @@ opcd directory::open( const token& path, const token& filter )
     close();
 
     _pattern = path;
-    if( _pattern.last_char() == '\\' )
+    if( _pattern.last_char() == '\\' || _pattern.last_char() == '/' )
         _pattern.resize(-1);
 
     if( !stat( _pattern.ptr(), &_st ) )
@@ -158,8 +158,10 @@ charstr& directory::get_ped( charstr& buf )
         size <<= 1;
         buf.reset();
     }
-    
-    token t = buf.c_str();
+
+    buf.resize(asize);
+
+    token t = buf;
     t.cut_right_back('\\', token::cut_trait_keep_sep_with_source());
 
     return buf.resize( t.len() );

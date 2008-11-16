@@ -220,5 +220,31 @@ opcd directory::delete_file( const char* src )
 #endif
 }
 
+////////////////////////////////////////////////////////////////////////////////
+opcd directory::mkdir_tree( token name, uint mode )
+{
+    while( name.last_char() == '/' || name.last_char() == '\\' )
+        name.shift_end(-1);
+
+    charstr path = name;
+    char* pc = (char*)path.c_str();
+
+    for( uint i=0; i<name.len(); ++i )
+    {
+        if( name[i] == '/'  ||  name[i] == '\\' )
+        {
+            char c = pc[i];
+            pc[i] = 0;
+
+            opcd e = mkdir(path, mode);
+            if(e)  return e;
+
+            pc[i] = c;
+        }
+    }
+
+    return mkdir(path, mode);
+}
+
 
 COID_NAMESPACE_END

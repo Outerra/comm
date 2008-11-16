@@ -124,7 +124,9 @@ public:
     
     static opcd mkdir( const char* name, uint mode=0750 );
     static opcd mkdir( const charstr& name, uint mode=0750 ){ return mkdir( name.c_str(), mode ); }
-    
+
+    static opcd mkdir_tree( token name, uint mode=0750 );
+
     static int chdir( const char* name );
     static int chdir( const charstr& name )                 { return chdir(name.c_str()); }
 
