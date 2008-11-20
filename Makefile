@@ -11,11 +11,11 @@ SRC2 = $(shell ls $(SRC))
 OBJS = $(SRC2:.cpp=.o)
 
 
-IS_DEBUG = $(shell test -f ".debug" && echo 1)
+#IS_DEBUG = $(shell test -f ".debug" && echo 1)
 ifeq ($(IS_DEBUG), 1)
-	CC = g++ -Wall -g -fmessage-length=0
+	CC = g++ $(CPPFLAGS)-Wall -g -fmessage-length=0
 else
-	CC = g++ -Wall -DNDEBUG
+	CC = g++ $(CPPFLAGS) -Wall -DNDEBUG
 #	CC = g++ -Wall -DNDEBUG -O3
 endif
 ifeq ($(IS_SHARED_LIB), 1)
