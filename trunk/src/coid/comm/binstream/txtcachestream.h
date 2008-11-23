@@ -39,6 +39,7 @@
 
 #include "txtcachestream.h"
 #include "cachestream.h"
+#include "../txtconv.h"
 
 COID_NAMESPACE_BEGIN
 
@@ -83,7 +84,7 @@ public:
                 while( bytes > 0 )
                 {
                     char* dst = buf;
-                    uint n = int_max(256/2, bytes);
+                    uint n = int_max(256U/2, bytes);
 
                     charstrconv::bin2hex( src, dst, 1, n, 0 );
                     uints nd = n*2;
