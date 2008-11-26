@@ -286,6 +286,7 @@ public:
     {
         _bin = 0;
         _utf8 = utf8;
+        _bomread = false;
         _ntrails = 0;
 
         reset();
@@ -306,6 +307,7 @@ public:
     void set_utf8( bool set )
     {
         _utf8 = set;
+        _bomread = false;
     }
 
 
@@ -325,7 +327,15 @@ public:
         _bin = 0;
         reset();
 
-        _orig = _tok = tok;
+        _tok = tok;
+
+        static const token BOM = "\xEF\xBB\xBF";
+        if( _utf8 && _tok.begins_with(BOM) ) {
+            _tok.shift_start(BOM.len());
+        }
+        _bomread = true;
+
+        _orig = _tok;
         _last.tok.set(_tok.ptr(), 0);
         _lines_processed = _lines_last = _tok.ptr();
         return 0;
@@ -334,7 +344,7 @@ public:
 
     //@return true if the lexer is set up to interpret input as utf-8 characters
     bool is_utf8() const {
-        return _abmap.size() == BASIC_UTF8_CHARS;
+        return _utf8;
     }
 
     ///Reset lexer state (does not discard the rules)
@@ -346,6 +356,8 @@ public:
         _orig.set_null();
         _binbuf.reset();
         _strings.reset();
+
+        _bomread = false;
 
         _rawpos = 0;
         _rawline = 0;
@@ -2770,8 +2782,15 @@ protected:
         opcd e = _bin->read_raw_full( _binbuf.ptr()+nkeep, rla );
 
         _tok.set( _binbuf.ptr(), rl-rla+nkeep );
-        _orig = _tok;
 
+        static const token BOM = "\xEF\xBB\xBF";
+        if( _utf8 && !_bomread && _tok.begins_with(BOM) ) {
+            _tok.shift_start(BOM.len());
+            rla += BOM.len();
+        }
+        _bomread = true;
+
+        _orig = _tok;
         _last.tok.set(_tok.ptr(), 0);
 
         return rl-rla+nkeep;
@@ -2887,7 +2906,8 @@ protected:
     mutable int _err;                   ///< last error code, see ERR_* enums
     mutable charstr _errtext;           ///< error text
 
-    bool _utf8;                         ///< utf8 mode
+    bool _utf8;                         ///< utf-8 mode
+    bool _bomread;                      ///< utf-8 BOM reading phase passed
 
     char _lines_oldchar;                ///< last character processed
     uint _lines;                        ///< number of _lines counted until _lines_processed

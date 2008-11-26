@@ -267,14 +267,9 @@ public:
 
     static metastream& stream_meta( metastream& m )
     {
-        MTEMPL_OPEN(m);
-        MT(m, typename type_base<typename EXTRACTKEY::ret_type>::type);
-        MT(m, VAL);
-        MTEMPL_CLOSE(m);
-
-        MSTRUCT_OPEN(m, "hash_keyset");
-        MMAT(m, "elements", value_type );
-        MSTRUCT_CLOSE(m);
+        m.meta_array();
+        m << *(const VAL*)0;
+        return m;
     }
 };
 
@@ -421,14 +416,9 @@ public:
 
     static metastream& stream_meta( metastream& m )
     {
-        MTEMPL_OPEN(m);
-        MT(m, typename type_base<typename EXTRACTKEY::ret_type>::type);
-        MT(m, VAL);
-        MTEMPL_CLOSE(m);
-
-        MSTRUCT_OPEN(m, "hash_multikeyset");
-        MMAT(m, "elements", value_type );
-        MSTRUCT_CLOSE(m);
+        m.meta_array();
+        m << *(const VAL*)0;
+        return m;
     }
 };
 

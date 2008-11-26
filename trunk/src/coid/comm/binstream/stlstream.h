@@ -322,9 +322,13 @@ template <class F, class S> inline binstream& operator >> (binstream& in, std::p
 
 template <class F, class S> inline metastream& operator << (metastream& m, const std::pair<F,S>& p)
 {
+    MTEMPL_OPEN(m)
+        MT(m, F)
+        MT(m, S)
+    MTEMPL_CLOSE(m)
     MSTRUCT_OPEN(m, "std::pair");
-    MM(m, "key", p.first );
-    MM(m, "value", p.second );
+        MM(m, "key", p.first );
+        MM(m, "value", p.second );
     MSTRUCT_CLOSE(m);
 }
 

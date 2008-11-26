@@ -1015,13 +1015,21 @@ public:
     binstream& append_from_stream( binstream& bin );
 
 
-    void replace( char from, char to )
+    ///Clamp character positions to actual string range. Negative values index from end and are converted. Zero in \a to means an end of the string position
+    void clamp_range( int& from, int& to ) const
     {
-        char* pe = (char*)ptre();
-        for( char* p = (char*)ptr(); p<pe; ++p )
-            if( *p == from )  *p = to;
+        int size = len();
+        if(from<0)  from = size - from;
+        if(to<=0)   to   = size - to;
+
+        if(from >= size) from = size;
+        else if(from < 0) from = 0;
+
+        if(to >= size) to = size;
+        else if(to < from) to = from;
     }
 
+    ///Convert string to lowercase
     void tolower()
     {
         char* pe = (char*)ptre();
@@ -1029,6 +1037,17 @@ public:
             *p = ::tolower(*p);
     }
 
+    ///Convert range within string to lowercase
+    void tolower( int from, int to )
+    {
+        clamp_range(from, to);
+
+        char* pe = (char*)ptr() + to;
+        for( char* p = (char*)ptr()+from; p<pe; ++p )
+            *p = ::tolower(*p);
+    }
+
+    ///Convert string to uppercase
     void toupper()
     {
         char* pe = (char*)ptre();
@@ -1036,7 +1055,26 @@ public:
             *p = ::toupper(*p);
     }
 
+    ///Convert range within string to uppercase
+    void toupper( int from, int to )
+    {
+        clamp_range(from, to);
 
+        char* pe = (char*)ptr() + to;
+        for( char* p = (char*)ptr()+from; p<pe; ++p )
+            *p = ::toupper(*p);
+    }
+
+    ///Replace every occurence of character \a from to character \a to
+    void replace( char from, char to )
+    {
+        char* pe = (char*)ptre();
+        for( char* p = (char*)ptr(); p<pe; ++p )
+            if( *p == from )  *p = to;
+    }
+
+
+    ///Insert character at position
     bool ins( uints pos, char c )
     {
         if( pos > len() )  return false;
@@ -1044,6 +1082,7 @@ public:
         return true;
     }
 
+    ///Insert substring at position
     bool ins( uints pos, const token& t )
     {
         if( pos > len() )  return false;
@@ -1051,6 +1090,7 @@ public:
         return true;
     }
 
+    ///Delete character(s) at position
     bool del( uints pos, uints n=1 )
     {
         if( pos+n > len() )  return false;

@@ -54,7 +54,7 @@ public:
     /// Return formatting stream error (if any) and current line and column for error reporting purposes
     //@param err [in] error text
     //@param err [out] final (formatted) error text with line info etc.
-    virtual void fmtstream_format_err( charstr& dst ) { }
+    virtual void fmtstream_err( charstr& dst ) { }
 
     ///Called to provide prefix for error reporting
     virtual void fmtstream_file_name( const token& file_name ) = 0;

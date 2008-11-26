@@ -52,7 +52,7 @@ class fmtstreamcxx : public fmtstream_lexer
 protected:
 
     int _indent;
-    int lexid, lexstr, lexchr, lexcode;
+    int lexid, lexstr, lexchr, lexstre, lexchre, lexcode;
 
 public:
     fmtstreamcxx( bool utf8=false ) : fmtstream_lexer(utf8)
@@ -90,8 +90,11 @@ public:
         _tokenizer.def_escape_pair( er, "t", "\t" );
         _tokenizer.def_escape_pair( er, "0", token("\0",1) );
 
-        lexstr = _tokenizer.def_string( "str", "\"", "\"", "esc" );
-        lexchr = _tokenizer.def_string( "str", "\'", "\'", "esc" );
+        lexstre = _tokenizer.def_string( "str", "\\\"", "\"", "esc" );
+        lexchre = _tokenizer.def_string( "str", "\\\'", "\'", "esc" );
+
+        lexstr = _tokenizer.def_string( "str", "\"", "\"", "" );
+        lexchr = _tokenizer.def_string( "str", "\'", "\'", "" );
 
         lexcode = _tokenizer.def_string( "class", "(", ")", "" );
 
@@ -115,8 +118,11 @@ public:
         {
             if( t.type == type::T_KEY )
                 write_tabs( _indent );
-            else if( t.type == type::T_CHAR  ||  t.type == type::T_BINARY )
-                _bufw << char('\"');
+            else if( t.type == type::T_BINARY )
+                _bufw << "\\\"";
+            else if( t.type == type::T_CHAR )
+                //_bufw << "\\\"";
+                ;//postpone writing until the escape status is known
             else
                 _bufw << char('[');
         }
@@ -125,7 +131,7 @@ public:
             if( t.type == type::T_KEY )
                 _bufw << " = ";
             else if( t.type == type::T_CHAR  ||  t.type == type::T_BINARY )
-                _bufw << char('\"');
+                _bufw << char('"');
             else
                 _bufw << char(']');
         }
@@ -175,14 +181,16 @@ public:
                     {
                         _bufw.append('\'');
                         char c = *(char*)p;
-                        if( c == '\'' || c == '\\' || c == 0 )  _bufw.append('\\');
+                        if( c == '\'' || c == '\\' || c == 0 )
+                            _bufw.append('\\');
                         _bufw.append(c?c:'0');
                         _bufw.append('\'');
                     }
                     else
                     {
                         char c = *(char*)p;
-                        if( c == '\"' || c == '\\' || c == 0 )  _bufw.append('\\');
+                        if( c == '\"' || c == '\\' || c == 0 )
+                            _bufw.append('\\');
                         _bufw.append(c?c:'0');
                     }
 
@@ -272,7 +280,9 @@ public:
         if( t.is_array_start() )
         {
             if( t.type == type::T_CHAR  ||  t.type == type::T_BINARY ) {
-                e = _tokenizer.last() == lexstr ? opcd(0) : ersSYNTAX_ERROR "expected string";
+                e = _tokenizer.last() == lexstr  ||  _tokenizer.last() == lexstre
+                    ? opcd(0)
+                    : ersSYNTAX_ERROR "expected string";
                 if(!e)
                     *(uints*)p =  (t.type == type::T_BINARY) ? tok.len()/2 : tok.len();
 
@@ -311,7 +321,9 @@ public:
         else if( t.is_array_end() )
         {
             if( t.type == type::T_CHAR  ||  t.type == type::T_BINARY ) {
-                e = _tokenizer.last() == lexstr ? opcd(0) : ersSYNTAX_ERROR "expected string";
+                e = _tokenizer.last() == lexstr  ||  _tokenizer.last() == lexstre
+                    ? opcd(0)
+                    : ersSYNTAX_ERROR "expected string";
             }
             else if( t.type == type::T_KEY ) {
                 if( _tokenizer.last() != lexid )
@@ -426,7 +438,7 @@ public:
                     {
                         if( !t.is_array_element() )
                         {
-                            if( _tokenizer.last() == lexchr )
+                            if( _tokenizer.last() == lexchr  ||  _tokenizer.last() == lexchre )
                                 *(char*)p = tok.first_char();
                             else
                                 e = ersSYNTAX_ERROR "expected string";
@@ -464,7 +476,7 @@ public:
 
                 /////////////////////////////////////////////////////////////////////////////////////
                 case type::T_TIME: {
-                    if( _tokenizer.last() != lexstr )
+                    if( _tokenizer.last() != lexstr  &&  _tokenizer.last() != lexstre )
                         return ersSYNTAX_ERROR "expected time";
                     
                     e = tok.todate_local( *(timet*)p );
@@ -560,9 +572,16 @@ public:
                 e = write_raw( c.extract(n), n );
             else
             {
+                DASSERT(_bufw.is_empty());
+
+                _bufw << "\\\"";
+
                 token t( (const char*)c.extract(n), n );
-                if( !_tokenizer.synthesize_string( lexstr, t, _bufw ) )
+                if( !_tokenizer.synthesize_string( lexstre, t, _bufw ) ) {
+                    _bufw.reset();
+                    _bufw << char('"');
                     _bufw += t;
+                }
 
                 uints len = _bufw.len();
                 e = write_raw( _bufw.ptr(), len );
@@ -595,7 +614,7 @@ public:
         }
         else
         {
-            if( _tokenizer.last() != lexstr )
+            if( _tokenizer.last() != lexstr  &&  _tokenizer.last() == lexstre )
                 return ersSYNTAX_ERROR;
         }
 

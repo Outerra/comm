@@ -194,14 +194,9 @@ public:
 
     static metastream& stream_meta( metastream& m )
     {
-        MTEMPL_OPEN(m);
-        MT(m, KEY);
-        MT(m, VAL);
-        MTEMPL_CLOSE(m);
-
-        MSTRUCT_OPEN(m, "hash_map");
-        MMAT(m, "elements", value_type );
-        MSTRUCT_CLOSE(m);
+        m.meta_array();
+        m << *(const value_type*)0;
+        return m;
     }
 };
 
@@ -347,14 +342,9 @@ public:
 
     static metastream& stream_meta( metastream& m )
     {
-        MTEMPL_OPEN(m);
-        MT(m, KEY);
-        MT(m, VAL);
-        MTEMPL_CLOSE(m);
-
-        MSTRUCT_OPEN(m, "hash_multimap");
-        MMAT(m, "elements", value_type );
-        MSTRUCT_CLOSE(m);
+        m.meta_array();
+        m << *(const value_type*)0;
+        return m;
     }
 };
 
