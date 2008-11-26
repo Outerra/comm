@@ -517,7 +517,7 @@ public:
     bool def_escape_pair( int escrule, const token& code, const token& replacewith )
     {
         --escrule;
-        if( escrule < 0  &&  escrule >= (int)_escary.size() )  return false;
+        DASSERT_RET( escrule >= 0  &&  escrule < (int)_escary.size(), false );
 
         //add escape pairs, longest codes first
         escpair* ep = _escary[escrule]->pairs.add_sortT(code);
@@ -526,6 +526,14 @@ public:
         return true;
     }
 
+    ///
+    bool is_escaped_char( int escrule, char c )
+    {
+        --escrule;
+        DASSERT_RET( escrule >= 0  &&  escrule < (int)_escary.size(), false );
+
+        return _escary[escrule]->is_escaped_char(c);
+    }
 
     ///Create new string sequence detector named \a name, using specified leading and trailing sequences.
     ///If the leading sequence was already defined for another string, only the trailing sequence is
@@ -1815,6 +1823,11 @@ protected:
                 *map.add_sortT(pair->replace, func()) = pair;
             }
 
+            ///
+            bool is_escaped( uchar c ) const {
+                return (fastlookup[c/BITBLK] & 1<<(c%BITBLK)) != 0;
+            }
+
             ///Find longest replacement that starts given token
             const escpair* find( const token& t ) const
             {
@@ -1848,6 +1861,11 @@ protected:
         //@return true if some replacements were made and \a dst is filled,
         /// or false if no processing was required and \a dst was not filled
         bool synthesize_string( token tok, charstr& dst ) const;
+
+        bool is_escaped_char( char c ) {
+            init_backmap();
+            return backmap->is_escaped(c);
+        }
 
     private:
         void init_backmap() const {
