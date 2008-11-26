@@ -581,7 +581,7 @@ protected:
     {
         charstr& k = *_templ_name_stack.last();
 
-        if(_templ_arg_rdy)
+        if(_templ_arg_rdy)      //template string ready from nested template arg
         {
             charstr targ;
             targ.takeover(k);
@@ -599,15 +599,19 @@ protected:
             }
 
             charstr& k1 = *_templ_name_stack.last();
-            if( k1.last_char() != '<' )
+            char c = k1.last_char();
+            if( c != '<'  &&  c != '@'  &&  c != '*' )
                 k1.append(',');
+
             k1.append(name);
             k1.append(targ);
         }
         else
         {
-            if( k.last_char() != '<' )
+            char c = k.last_char();
+            if( c != '<'  &&  c != '@'  &&  c != '*' )
                 k.append(',');
+
             k.append(name);
         }
 
@@ -734,6 +738,12 @@ public:
     ///@param n array element count, UMAX if unknown or varying
     void meta_array( uints n = UMAX )
     {
+        if( is_template_name_mode() ) {
+            static token tarray = "@";
+            handle_template_name_mode(tarray);
+            return;
+        }
+
         DASSERT( n != 0 );  //0 is meaningless here, and it's used for pointers elsewhere
         MetaDesc* d = _map.create_array_desc( n, _cur_streamfrom_fnc, _cur_streamto_fnc );
 
@@ -744,6 +754,12 @@ public:
     ///Signal that the primitive or compound type coming is a pointer/reference
     void meta_pointer()
     {
+        if( is_template_name_mode() ) {
+            static token tpointer = "*";
+            handle_template_name_mode(tpointer);
+            return;
+        }
+
         MetaDesc* d = _map.create_array_desc( 0, _cur_streamfrom_fnc, _cur_streamto_fnc );
 
         _current_var = meta_fill_parent_variable(d);
@@ -1163,7 +1179,7 @@ private:
 
     void fmt_error()
     {
-        _fmtstreamrd->fmtstream_format_err(_err);
+        _fmtstreamrd->fmtstream_err(_err);
     }
 
     ////////////////////////////////////////////////////////////////////////////////
