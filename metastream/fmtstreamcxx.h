@@ -52,6 +52,7 @@ class fmtstreamcxx : public fmtstream_lexer
 protected:
 
     int _indent;
+    int er;
     int lexid, lexstr, lexchr, lexstre, lexchre, lexcode;
 
 public:
@@ -79,7 +80,7 @@ public:
         //add anything that can be a part of identifier or value (strings are treated separately)
         lexid = _tokenizer.def_group( "id", "0..9a..zA..Z_.:+-" );
 
-        int er = _tokenizer.def_escape( "esc", '\\' );
+        er = _tokenizer.def_escape( "esc", '\\' );
         _tokenizer.def_escape_pair( er, "\"", "\"" );
         _tokenizer.def_escape_pair( er, "'", "\'" );
         _tokenizer.def_escape_pair( er, "\\", "\\" );
@@ -179,15 +180,19 @@ public:
 
                     if( !t.is_array_element() )
                     {
-                        _bufw.append('\'');
                         char c = *(char*)p;
-                        if( c == '\'' || c == '\\' || c == 0 )
-                            _bufw.append('\\');
+
+                        if( _tokenizer.is_escaped_char(er, c) )
+                            _bufw << "\\'\\";
+                        else
+                            _bufw.append('\'');
+
                         _bufw.append(c?c:'0');
                         _bufw.append('\'');
                     }
                     else
                     {
+                        DASSERT(0); //should not get here - optimized in write_array
                         char c = *(char*)p;
                         if( c == '\"' || c == '\\' || c == 0 )
                             _bufw.append('\\');
