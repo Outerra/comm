@@ -1307,7 +1307,10 @@ protected:
             _rvarname.reset();
             return 0;
         }
-        else if( _curvar.var->is_pointer()  ||  _curvar.var->is_array_element() )
+        else
+        if( _curvar.var->nameless_root ||
+            _curvar.var->is_pointer()  ||
+            _curvar.var->is_array_element() )
             return 0;
 
         return R

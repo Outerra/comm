@@ -119,7 +119,7 @@ public:
             if( t.type == type::T_KEY )
                 write_tabs( _indent );
             else if( t.type == type::T_BINARY )
-                _bufw << "\\\"";
+                _bufw << "\"";
             else if( t.type == type::T_CHAR )
                 //_bufw << "\\\"";
                 ;//postpone writing until the escape status is known
@@ -279,12 +279,21 @@ public:
         opcd e=0;
         if( t.is_array_start() )
         {
-            if( t.type == type::T_CHAR  ||  t.type == type::T_BINARY ) {
+            if( t.type == type::T_BINARY ) {
+                e = _tokenizer.last() == lexstr
+                    ? opcd(0)
+                    : ersSYNTAX_ERROR "expected string";
+                if(!e)
+                    *(uints*)p = tok.len()/2;
+
+                _tokenizer.push_back();
+            }
+            else if( t.type == type::T_CHAR ) {
                 e = _tokenizer.last() == lexstr  ||  _tokenizer.last() == lexstre
                     ? opcd(0)
                     : ersSYNTAX_ERROR "expected string";
                 if(!e)
-                    *(uints*)p =  (t.type == type::T_BINARY) ? tok.len()/2 : tok.len();
+                    *(uints*)p = tok.len();
 
                 _tokenizer.push_back();
             }
@@ -320,7 +329,12 @@ public:
         }
         else if( t.is_array_end() )
         {
-            if( t.type == type::T_CHAR  ||  t.type == type::T_BINARY ) {
+            if( t.type == type::T_BINARY ) {
+                e = _tokenizer.last() == lexstr
+                    ? opcd(0)
+                    : ersSYNTAX_ERROR "expected string";
+            }
+            else if( t.type == type::T_CHAR ) {
                 e = _tokenizer.last() == lexstr  ||  _tokenizer.last() == lexstre
                     ? opcd(0)
                     : ersSYNTAX_ERROR "expected string";
@@ -614,7 +628,7 @@ public:
         }
         else
         {
-            if( _tokenizer.last() != lexstr  &&  _tokenizer.last() == lexstre )
+            if( _tokenizer.last() != lexstr  &&  _tokenizer.last() != lexstre )
                 return ersSYNTAX_ERROR;
         }
 
