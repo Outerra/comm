@@ -1331,7 +1331,10 @@ protected:
             DASSERT( _curvar.var );
 
             e = movein_process_key<R>();
-            DASSERT( !e || !_curvar.var->is_compound() );
+            if( e == ersNO_MORE && _curvar.var->is_compound() )
+				break;
+
+			DASSERT( !e || !_curvar.var->is_compound() );
         }
 
         return e;
