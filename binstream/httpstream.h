@@ -677,14 +677,14 @@ protected:
                 _cache.read_until( substring::zero(), &buf );
                  //_cache.set_timeout(0);
 
-                 bofstream bf(  (_flags & fLISTENER)
+                 /*bofstream bf(  (_flags & fLISTENER)
                      ? "httpstream_req.log?wc+"
                      : "httpstream_resp.log?wc+"
                      );
                  txtstream txt(bf);
                  txt << (token)buf
                      << "-------------------------------------------------------------------------------------\n\n";
-
+				 */
                  return ersFAILED;
             }
         }

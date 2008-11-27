@@ -548,21 +548,24 @@ public:
 
     ///Write raw data to another binstream.
     ///@return number of bytes written
-    uints copy_to( binstream& bin )
+    uints copy_to( binstream& bin,uints dlen )
     {
         opcd e;
         uints n=0;
-        uchar buf[256];
-        for (;;)
+		const uints BLOCKSIZE=4096;
+        uchar buf[BLOCKSIZE];
+		
+        for ( ;; )
         {
-            uints len = 256;
+			uints len = dlen>BLOCKSIZE ? BLOCKSIZE : dlen;
             e = read_raw_full( buf, len );
+			dlen-=len;
 
-            uints alen = 256-len;
+            uints alen = BLOCKSIZE-len;
             bin.write_raw( buf, alen );
 
-            n += 256-len-alen;
-            if( e || alen>0 )
+            n += BLOCKSIZE-len-alen;
+            if( e || alen>0 || dlen==0 )
                 break;
         }
 
@@ -571,16 +574,16 @@ public:
 
     ///Transfer the content of source binstream to this binstream
     //@param blocksize hint about size of the memory block used for copying
-	virtual uints transfer_from( binstream& src, uints blocksize = 4096 )
+	virtual uints transfer_from( binstream& src, uints datasize=-1, uints blocksize = 4096 )
 	{
-		return src.copy_to(*this);
+		return src.copy_to(*this,datasize);
 	}
 
     ///Transfer the content of this binstream to the destination binstream
     //@param blocksize hint about size of the memory block used for copying
-	virtual uints transfer_to( binstream& dst, uints blocksize = 4096 )
+	virtual uints transfer_to( binstream& dst, uints datasize=-1, uints blocksize = 4096 )
 	{
-		return copy_to(dst);
+		return copy_to(dst,datasize);
 	}
 
 

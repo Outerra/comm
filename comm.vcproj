@@ -850,6 +850,14 @@
 			>
 		</File>
 		<File
+			RelativePath=".\log\logger.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\log\logwriter.h"
+			>
+		</File>
+		<File
 			RelativePath=".\mathf.h"
 			>
 		</File>
@@ -903,6 +911,10 @@
 		</File>
 		<File
 			RelativePath="singleton.h"
+			>
+		</File>
+		<File
+			RelativePath=".\atomic\stack.h"
 			>
 		</File>
 		<File

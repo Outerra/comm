@@ -206,9 +206,9 @@ public:
 
     ///Write raw data to another binstream. Overloadable to avoid excesive copying when not neccessary.
     ///@return number of bytes written
-    virtual uints transfer_to( binstream& bin, uints blocksize = 4096 )
+    virtual uints transfer_to( binstream& bin, uints datasize=-1, uints blocksize = 4096 )
     {
-        uints n=0, tlen=_buf.size();
+        uints n=0, tlen=uint_min(_buf.size(),datasize);
 
         for( ; _bgi<tlen; )
         {
@@ -227,21 +227,23 @@ public:
         return n;
     }
 
-	virtual uints transfer_from( binstream& bin, uints blocksize = 4096 )
+	virtual uints transfer_from( binstream& bin, uints datasize=-1, uints blocksize = 4096 )
 	{
         uints old = _buf.size();
         uints n=0;
 
-        for( ; ; )
+        for( ;; )
         {
-            uints len = blocksize;
-            void* ptr = _buf.add(len);
+			uints len=datasize>blocksize?blocksize:datasize;
+            uints toread=len;
+            void* ptr=_buf.add(len);
             
-            opcd e = bin.read_raw_full( ptr, len );
+            opcd e=bin.read_raw_full( ptr,len );
+			datasize-=toread;
 
-            n += blocksize - len;
+            n+=toread-len;
 
-            if( e || len>0 )
+            if( e || len>0 || datasize==0 )
                 break;
         }
 
@@ -312,6 +314,12 @@ public:
     explicit binstreambuf( dynarray<uchar>& buf )
     {
         _buf.takeover( (dynarray<char>&)buf );
+        _bgi=0;
+    }
+
+    explicit binstreambuf( dynarray<char>& buf )
+    {
+        _buf.takeover( buf );
         _bgi=0;
     }
 

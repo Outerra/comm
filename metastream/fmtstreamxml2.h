@@ -380,7 +380,10 @@ public:
             }
 			else if( t.type == type::T_CHAR ) {
                 open_tagmode();
-                *(uints*)p = _tokenizer.last().value().len();
+				if( _tagmode!=3 )
+					*(uints*)p = _tokenizer.last().value().len();
+				else 
+					*(uints*)p = 0;
 			}
             else
             {
@@ -635,7 +638,10 @@ public:
 			tok = _tokenizer.last();
 
         opcd e=0;
-        if( t.type == type::T_BINARY )
+		if( _tagmode == 3 ) {
+			*count = 0;
+		}
+        else if( t.type == type::T_BINARY )
             e = read_binary(tok,c,n,count);
         else
         {
@@ -797,19 +803,32 @@ protected:
 
     void open_tagmode()
     {
+		static coid::token VAL="value";
+		static coid::token NS="xmlns";
+
         if( _tokenizer.matches('>') ) {
             _tokenizer.next_as_string(lexcont, false);
             _tagmode = 0;
             _attrmoder = false;
         }
-        else if( _tokenizer.matches("value") ) {
+        else if( _tokenizer.matches(VAL) ) {
             _tokenizer.match('=');
             _tokenizer.match_either(lexstr, lexchr);
             _tagmode = 2;
         }
-        else {
-            _tokenizer.match_either(lexstr, lexchr);
+		else if( _tokenizer.matches_either(lexstr, lexchr) ) {
             _tagmode = 1;
+		}
+		else if( _tokenizer.matches('/') ) {
+			_tokenizer.match('>');
+			_tagmode = 3;			
+		}
+		else {
+			if( _tokenizer.matches(NS) ) {
+	            _tokenizer.match('=');
+				_tokenizer.match_either(lexstr, lexchr);
+				open_tagmode();
+			}
         }
     }
 
@@ -825,6 +844,7 @@ protected:
             _tokenizer.match('/');
             _tokenizer.match('>');
         }
+		_tagmode=0;
     }
     
 protected:
