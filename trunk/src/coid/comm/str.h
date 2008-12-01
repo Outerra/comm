@@ -835,8 +835,13 @@ public:
 #ifdef SYSTYPE_WIN32
     ///Append wchar (UCS-2) buffer, converting it to the ANSI on the fly
     ///@param src pointer to the source buffer
-    ///@param nchars number of characters in the source buffer, -1 if zero terminated
+    ///@param nchars number of characters in the source buffer, -1 if zero-terminated
     uints append_wchar_buf_ansi( const wchar_t* src, uints nchars );
+
+    ///Append wchar (UCS-2) buffer, converting it to the UTF-8 on the fly
+    ///@param src pointer to the source buffer
+    ///@param nchars number of characters in the source buffer, -1 if zero-terminated
+    uints append_wchar_buf_utf8( const wchar_t* src, uints nchars );
 #endif
 
     ///Date element codes
