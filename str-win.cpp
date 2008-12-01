@@ -17,7 +17,22 @@ uints charstr::append_wchar_buf_ansi( const wchar_t* src, uints nchars )
         ? wcslen((const wchar_t*)src)
         : nchars;
 
-    return WideCharToMultiByte( 0, 0, src, (int)n, get_append_buf(n), (int)n, 0, 0 );
+    return WideCharToMultiByte( CP_ACP, 0, src, (int)n, get_append_buf(n), (int)n, 0, 0 );
+}
+
+///////////////////////////////////////////////////////////////////////////////
+uints charstr::append_wchar_buf_utf8( const wchar_t* src, uints nchars )
+{
+    uints n = nchars==UMAX
+        ? wcslen((const wchar_t*)src)
+        : nchars;
+
+    uints os = len();
+
+    uints nb = WideCharToMultiByte( CP_UTF8, 0, src, (int)n, get_append_buf(n), (int)n, 0, 0 );
+    resize(os + nb);
+
+    return nb;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
