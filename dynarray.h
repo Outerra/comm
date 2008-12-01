@@ -335,14 +335,13 @@ public:
         }
 
         virtual bool is_continuous() const      { return true; }
-
-        binstream_container( dynarray<T>& v, uints n=UMAX )
+		binstream_container( dynarray<T>& v, uints n=UMAX )
             : binstream_containerT<T>(n), _v(v)
         {
             _pos = 0;
         }
 
-        binstream_container( dynarray<T>& v, uints n, fnc_stream fout, fnc_stream fin )
+		binstream_container( dynarray<T>& v, uints n, fnc_stream fout, fnc_stream fin )
             : binstream_containerT<T>(n,fout,fin), _v(v)
         {
             _pos = 0;
