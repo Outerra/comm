@@ -78,12 +78,13 @@ struct pointer
     pointer(Tnc* const* t)
         : ptr(const_cast<Tnc**>(t)) {}
 
-private:
-    friend class binstream;
+//public:
     union {
         const Tnc** ptr_const;
         Tnc** ptr;
     };
+private:
+    friend class binstream;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
