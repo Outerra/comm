@@ -37,7 +37,7 @@
 #define __COMM_LOGGER_H__
 
 #include "../binstream/filestream.h"
-#include "../binstream/txtstream.h"
+#include "../binstream/txtcachestream.h"
 #include "../str.h"
 #include "../ref.h"
 #include "../singleton.h"
@@ -53,7 +53,7 @@ DEFAULT_POLICY(logmsg, policy_log);
 class logger_file : public ref_base
 {
 	bofstream _logfile;
-	txtstream _logtxt;
+	txtcachestream _logtxt;
 
 public:
 	logger_file(const token& filename)
