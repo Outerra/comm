@@ -21,21 +21,6 @@ uints charstr::append_wchar_buf_ansi( const wchar_t* src, uints nchars )
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-uints charstr::append_wchar_buf_utf8( const wchar_t* src, uints nchars )
-{
-    uints n = nchars==UMAX
-        ? wcslen((const wchar_t*)src)
-        : nchars;
-
-    uints os = len();
-
-    uints nb = WideCharToMultiByte( CP_UTF8, 0, src, (int)n, get_append_buf(n), (int)n, 0, 0 );
-    resize(os + nb);
-
-    return nb;
-}
-
-///////////////////////////////////////////////////////////////////////////////
 bool token::codepage_to_wstring_append( uint cp, std::wstring& dst ) const
 {
     uints i = dst.length();
