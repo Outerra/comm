@@ -1959,8 +1959,8 @@ protected:
         {
             charstr skwd = kwd;
 
-            bool succ;
-            if( succ = (0 != set.swap_insert_value(skwd)) )
+            bool succ = (0 != set.swap_insert_value(skwd));
+            if (succ)
                 ++nkwd;
 
             return succ;

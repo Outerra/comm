@@ -188,7 +188,7 @@ inline ucs4 read_utf8_seq_partial( const char* utf8, uint len, char* buf6, uints
         //there's not enough input data
         // setup the buf6 buffer to signal the need to fetch next page
         // first byte marks number of bytes loaded, and total bytes
-        *buf6++ = (nb<<4) | len+sh;
+        *buf6++ = (nb<<4) | (len+sh);
         //copy what's available from this page
         buf6 += sh;
         --off;

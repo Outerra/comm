@@ -51,7 +51,8 @@ class txtstreamhtml : public txtstream
     static const char* strnchr( const char* p, char c, uints len )
     {
         uints i;
-        for (i=0; i<len && p[c]; ++i)
+        //FIXME g++ 4.3.2 warning: array subscript has type ‘char’
+        for (i=0; i<len && (p[c]); ++i)
             if (p[i] == c)  return p+i;
         return 0;
     }
@@ -148,6 +149,7 @@ public:
     MARK() { _p = ""; }
 };
 
+//FIXME: unused variables
 static BOLD_t       BOLD;
 static _BOLD_t      _BOLD;
 static ITALIC_t     ITALIC;
