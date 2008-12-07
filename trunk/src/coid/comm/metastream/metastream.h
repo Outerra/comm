@@ -516,8 +516,14 @@ public:
     metastream& operator << (const long double&a)   {meta_primitive( "long double", get_type(a) ); return *this;}
 
 
-    metastream& operator << (const char * const&a)  {meta_array(); meta_primitive( "char", bstype::t_type<char>() ); return *this;}
+    metastream& operator << (const char* const& a) {
+        meta_array(); meta_primitive( "char", bstype::t_type<char>() ); return *this;
+    }
     //metastream& operator << (const unsigned char* const&a)  {meta_primitive( "const unsigned char *", binstream::t_type<char>() ); return *this;}
+
+    metastream& operator << (const bstype::kind& k) {
+        meta_primitive( "uint", bstype::t_type<bstype::kind>() ); return *this;
+    }
 
     metastream& operator << (const timet&a)     {meta_primitive( "time", get_type(a) ); return *this;}
 

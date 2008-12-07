@@ -192,7 +192,13 @@ public:
 
     binstream& operator << (const timet& x)     { return xwrite(&x, bstype::t_type<timet>() ); }
 
-    binstream& operator << (const bstype::binary& b )   { return xwrite(b.data, type(type::T_BINARY,(ushort)b.len)); }
+    binstream& operator << (const bstype::binary& b ) {
+        return xwrite(b.data, type(type::T_BINARY,(ushort)b.len));
+    }
+
+    binstream& operator << (const bstype::kind& k ) {
+        return xwrite(&k, type(type::T_UINT,(ushort)sizeof(type)));
+    }
 
     template<class T>
     binstream& operator << (const bstype::pointer<T>& p) {
@@ -245,6 +251,10 @@ public:
     binstream& operator >> (long double& x )    { return xread(&x, type(type::T_FLOAT,16) ); }
 
     binstream& operator >> (timet& x)           { return xread(&x, bstype::t_type<timet>() ); }
+
+    binstream& operator >> (bstype::kind& k ) {
+        return xread(&k, type(type::T_UINT,(ushort)sizeof(type)));
+    }
 
     template<class T>
     binstream& operator >> (bstype::pointer<T>& p) {
