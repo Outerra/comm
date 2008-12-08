@@ -511,6 +511,13 @@ struct token
         return _ptr+_len;
     }
 
+    const char* set( const char* str, const char* strend )
+    {
+        _ptr = str;
+        _len = strend - str;
+        return _ptr+_len;
+    }
+
     const char* set( const charstr& str );
 
 
