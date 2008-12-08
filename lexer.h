@@ -336,7 +336,7 @@ public:
         _bomread = true;
 
         _orig = _tok;
-        _last.tok.set(_tok.ptr(), 0);
+        _last.tok.set(_tok.ptr(), 0U);
         _lines_processed = _lines_last = _tok.ptr();
         return 0;
     }
@@ -2809,7 +2809,7 @@ protected:
         _bomread = true;
 
         _orig = _tok;
-        _last.tok.set(_tok.ptr(), 0);
+        _last.tok.set(_tok.ptr(), 0U);
 
         return rl-rla+nkeep;
     }
