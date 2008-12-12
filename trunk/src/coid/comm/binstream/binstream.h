@@ -257,12 +257,12 @@ public:
     }
 
     template<class T>
-    binstream& operator >> (bstype::pointer<T>& p) {
+    binstream& operator >> (const bstype::pointer<T>& p) {
         uint8 valid;
         xread(&valid, type(type::T_OPTIONAL,sizeof(valid)));
         
         if(valid) {
-            *p.ptr_const = new T;
+            *p.ptr_const = new typename bstype::pointer<T>::Tnc;
             *this >> **p.ptr;
         }
         return *this;
