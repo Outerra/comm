@@ -80,7 +80,7 @@ struct pointer
 
 //public:
     union {
-        const Tnc** ptr_const;
+        mutable const Tnc** ptr_const;
         Tnc** ptr;
     };
 private:
