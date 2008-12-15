@@ -522,7 +522,7 @@ public:
     //metastream& operator << (const unsigned char* const&a)  {meta_primitive( "const unsigned char *", binstream::t_type<char>() ); return *this;}
 
     metastream& operator << (const bstype::kind& k) {
-        meta_primitive( "uint", bstype::t_type<bstype::kind>() ); return *this;
+        meta_primitive( "uint", bstype::t_type<uint>() ); return *this;
     }
 
     metastream& operator << (const timet&a)     {meta_primitive( "time", get_type(a) ); return *this;}
