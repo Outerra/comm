@@ -188,6 +188,11 @@ struct kind
     bool should_place_separator() const     { return !(ctrl & fARRAY_END)  &&  ((ctrl & fARRAY_ELEMENT_NEXT) || !(ctrl & fARRAY_ELEMENT)); }
 
 
+    ///Get single uint code
+    uint as_uint() const {
+        return *(const uint*)this;
+    }
+
     ///Get byte size of primitive element
     ushort get_size() const                 { return size; }
 
