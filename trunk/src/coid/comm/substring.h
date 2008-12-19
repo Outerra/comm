@@ -49,9 +49,8 @@ struct token;
 class substring
 {
     //mutable uchar _shf[256];
-    uchar* _shf;
+    uints* _shf;
     uchar _from, _to;
-    uchar _onechar, _onebuf;
 
     const uchar* _subs;
     uints _len;
@@ -64,7 +63,7 @@ public:
 
     ~substring()
     {
-        if( _shf && _shf!=&_onebuf )
+        if(_shf)
             delete[] _shf;
     }
 
@@ -85,45 +84,52 @@ public:
     ///Initialize with string
     void set( const char* subs, uints len )
     {
-        DASSERT( len < 255 );
-        if( len >= 255 )
-            len = 254;
+        if(len == 1)
+            return set(*subs);
 
         _subs = (const uchar*)subs;
         _len = len;
 
-        _from = 255;
-        _to = 0;
-        for( uints nc=len; nc>0; --nc,++subs ) {
+        //create uninitialized distance array, compute range and fill the distances
+        // the dist array stores how many characters remain until the end of the substring
+        // from the last occurence of each of the characters in the substring
+        //note value 0 means that the character isn't there and it's safe to skip
+        // whole substring length as the substring cannot be there
+        _from = _to = *subs++;
+        uint dist[256];
+        dist[_to] = len;
+
+        for( uints i=1; i<len; ++i,++subs ) {
             uchar c = *subs;
-            if( c < _from )  _from = c;
-            if( c > _to )    _to = c;
+            if( c < _from ) {
+                ::memset( dist+c+1, 0, (_from-c-1)*sizeof(uint) );
+                _from = c;
+            }
+            if( c > _to ) {
+                ::memset( dist+_to, 0, (c-_to)*sizeof(uint) );
+                _to = c;
+            }
+
+            dist[c] = len - i;
         }
 
-        if( _shf && _shf!=&_onebuf )
+        if(_shf)
             delete[] _shf;
 
-        uints n = (uint)_to+1 - _from;
-        _shf = new uchar[n];
-
-        //store how many characters remain until the end of the substring
-        // from the last occurence of each of the characters contained
-        // in the substring
-
-        ::memset( _shf, (uchar)_len+1, n );
-        for( uints i=0; i<_len; ++i )
-            _shf[ _subs[i] - _from ] = (uchar)(_len-i);
+        uints n = (uints)_to+1 - (uints)_from;
+        _shf = new uints[n];
+        ::memcpy(_shf, dist, n*sizeof(uints));
     }
 
     void set( char k )
     {
-        _onechar = k;
-        _onebuf = 1;
-
         _from = _to = k;
 
-        _shf = &_onebuf;
-        _subs = &_onechar;
+        if(_shf)
+            delete[] _shf;
+        _shf = 0;
+
+        _subs = &_from; //for comparison in find_onechar
         _len = 1;
     }
 
@@ -157,14 +163,10 @@ public:
             {
                 if( 0 == ::memcmp( ptr+off, _subs, _len ) )
                     return off;
-/*                uints n = memcmplen(ptr+off);
-                if( n == _len )
-                    //substring found
-                    return off;*/
             }
             
             if( _len >= rlen )
-                return len;       //end of input, substring cannot be there
+                return len;       //end of input, the substring cannot be there
 
             //so the substring wasn't there
             //we can look on the character just behind (the substring length) in the input
@@ -174,7 +176,11 @@ public:
             // substring at all, we can skip substring length + 1
 
             uchar o = ptr[off+_len];
-            uints sk = (o<_from || o>_to)  ?  _len+1  :  _shf[o-_from];
+            uints sk = (o<_from || o>_to)
+                ? _len+1
+                : _shf[o-_from];
+            if( sk == 0 )
+                sk = _len+1;
 
             off += sk;
             rlen -= sk;
@@ -191,7 +197,11 @@ public:
 */
     uints get_skip( uchar k ) const
     {
-        return (k<_from || k>_to)  ?  _len+1  :  _shf[k-_from];
+        uints n = (k<_from || k>_to)
+            ? _len+1
+            : _shf[k-_from];
+        if(!n) n = _len+1;
+        return n;
     }
 
 protected:
