@@ -118,7 +118,7 @@ public:
 
         uints n = (uints)_to+1 - (uints)_from;
         _shf = new uints[n];
-        ::memcpy(_shf, dist, n*sizeof(uints));
+        ::memcpy(_shf, dist+_from, n*sizeof(uints));
     }
 
     void set( char k )
