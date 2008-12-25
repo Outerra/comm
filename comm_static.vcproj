@@ -354,30 +354,6 @@
 			</File>
 		</Filter>
 		<Filter
-			Name="hash"
-			>
-			<File
-				RelativePath="hash\hashfunc.h"
-				>
-			</File>
-			<File
-				RelativePath="hash\hashkeyset.h"
-				>
-			</File>
-			<File
-				RelativePath="hash\hashmap.h"
-				>
-			</File>
-			<File
-				RelativePath="hash\hashset.h"
-				>
-			</File>
-			<File
-				RelativePath="hash\hashtable.h"
-				>
-			</File>
-		</Filter>
-		<Filter
 			Name="metastream"
 			>
 			<File
@@ -822,6 +798,30 @@
 				RelativePath=".\log\policy_log.h"
 				>
 			</File>
+			<Filter
+				Name="hash"
+				>
+				<File
+					RelativePath="hash\hashfunc.h"
+					>
+				</File>
+				<File
+					RelativePath="hash\hashkeyset.h"
+					>
+				</File>
+				<File
+					RelativePath="hash\hashmap.h"
+					>
+				</File>
+				<File
+					RelativePath="hash\hashset.h"
+					>
+				</File>
+				<File
+					RelativePath="hash\hashtable.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<File
 			RelativePath="comm.h"
