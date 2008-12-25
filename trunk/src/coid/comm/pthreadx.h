@@ -80,8 +80,8 @@ public:
     thread& operator = (thread_t t) { _thread = t;  return *this; }
 
     
-    int operator == (thread_t t) const;
-    int operator != (thread_t t) const  { return !(*this == t); }
+    bool operator == (thread_t t) const;
+    bool operator != (thread_t t) const  { return !(*this == t); }
 
     ///@return true if the object contains invalid thread id value (not that the thread is invalid)
     bool is_invalid() const;

@@ -32,12 +32,12 @@ thread::thread( thread_t t )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int thread::operator == (thread_t t) const
+bool thread::operator == (thread_t t) const
 {
 #ifdef SYSTYPE_MSVC
     return _thread == t;
 #else
-    return pthread_equal( t, _thread );
+    return pthread_equal( t, _thread ) != 0;
 #endif
 }
 
