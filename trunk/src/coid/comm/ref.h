@@ -41,6 +41,7 @@
 #include "atomic/stack.h"
 #include "binstream/binstreambuf.h"
 #include "metastream/metastream.h"
+#include "refs.h"
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
@@ -177,7 +178,7 @@ public:
 	return p_ == 0 ? 0 : &this_type::p_;
 	}
 	*/
-	operator T* () const    { return static_cast<T*>(p_); }
+	operator T* () const { return static_cast<T*>(p_); }
 
 	void swap(ref & rhs)
 	{
@@ -296,16 +297,19 @@ struct policy_refcount
 	static void addRef(const ref_base * const obj) throw()
 	{
 		if (obj->_refcount < 0) return;
-		atomic::inc(&obj->_refcount);
-		DASSERT(atomic::add(&obj->_refcount, 0) != 0 && "Problem?");
+
+		if( atomic::add(&obj->_refcount,1)>0 )
+			return;
+		else {
+			DASSERT(atomic::add(&obj->_refcount, 0) != 0 && "Problem?");
+		}
 	}
 
 	//! add reference
 	static void release(const ref_base * const obj) throw()
 	{
 		if (obj->_refcount < 0) return;
-		DASSERT(atomic::add(&obj->_refcount, 0) != 0 && "already released!");
-		if (atomic::dec(&obj->_refcount) == 0) {
+		if (atomic::add(&obj->_refcount,-1) == 0) {
 			delete const_cast<ref_base*>(obj);
 		}
 	}
