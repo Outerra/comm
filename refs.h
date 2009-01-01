@@ -2,6 +2,7 @@
 #define __COMM_REF_NG_H__
 
 #include "atomic/stack.h"
+#include "atomic/queue.h"
 #include "singleton.h"
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -70,63 +71,6 @@ public:
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-/*template<class T>
-class creator_ref
-{
-public:
-	static T* create(T* obj) { return obj; }
-	static T* create() { return new T; }
-};
-
-template<class T>
-class destroyer_ref
-{
-public:
-	static void destroy(T* obj) { delete obj; }
-};
-
-template<class T, class C=creator_ref<T>, class D=destroyer_ref<T> >
-class policy_ref 
-	: public policy_generic<T>
-	, public ref_count
-{
-private:
-	policy_ref( policy_ref const & );
-	policy_ref & operator=( policy_ref const & );
-
-	typedef policy_ref<T> this_t;
-
-protected:
-	explicit policy_ref(T* const obj)
-		: policy_generic(obj)
-		, ref_count() {}
-
-public:
-	virtual ~policy_ref()
-	{
-		if( _obj ) {
-			D::destroy(_obj);
-			_obj=0;
-		}
-	}
-
-	virtual void destroy() { delete this; }
-
-	virtual void add_ref_copy() { internal_add_ref_copy(); }
-
-	virtual void release() { internal_release(); }
-
-	static void static_add_ref_copy(this_t* p) { p->internal_add_ref_copy(); }
-
-	static void static_release(this_t* p) { p->internal_release(); }
-
-	static this_t* create(T*const obj) { return new this_t(C::create(obj)); }
-
-	static this_t* create() { return new this_t(C::create()); }
-};
-*/
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
 template<class P>
 class pool
 {
@@ -149,10 +93,15 @@ public:
 	}
 };
 
+namespace atomic {
+	template<class T> class queue_ng;
+}
+
 template<class T>
 class policy_queue_pooled 
 	: public policy_ref_count<T>
 	, public atomic::stack_node<policy_queue_pooled<T> >
+	, public atomic::queue_ng<T>::node_t
 {
 	typedef policy_queue_pooled<T> this_t;
 	typedef pool<this_t> pool_t;
@@ -166,6 +115,8 @@ public:
 	virtual void destroy() { DASSERT(_pool!=0); _pool->destroy(this); }
 
 	static this_t* create() { return SINGLETON(pool_t).create(); }
+
+	static this_t* create(pool_t* p) { DASSERT(p!=0); return p->create(); }
 
 	static this_t* internal_create(pool_t* pl) { return new this_t(new T,pl); }
 
@@ -181,6 +132,8 @@ static create_me CREATE_ME;
 template<class T, class P=policy_ref_count<T> >
 class refs 
 {
+	friend atomic::queue_ng<T>;
+
 protected:
 	refs(P* const p)
 		: _p(p)
@@ -188,6 +141,7 @@ protected:
 
 public:
 	typedef refs<T,P> refs_t;
+	typedef pool<P> pool_t;
 
 	/// DO NOT USE !!!
 	P* add_ref_copy() const { _p->add_ref_copy(); return _p; }
@@ -229,13 +183,13 @@ public:
 
 	T * operator->() const
 	{
-		DASSERT( _p!=0 && "You are trying to use bad uninitialized REF!" );
+		DASSERT( _p!=0 && "You are trying to use not uninitialized REF!" );
 		return _o;
 	}
 
 	T * operator->()
 	{
-		DASSERT( _p!=0 && "You are trying to use bad uninitialized REF!" );
+		DASSERT( _p!=0 && "You are trying to use not initialized REF!" );
 		return _o;
 	}
 
@@ -249,7 +203,24 @@ public:
 		rhs._o = tmp_o;
 	}
 
-	static refs_t create() { return refs_t(P::create()); }
+	void create(pool_t* p) {
+		if( _p!=0 ) { _p->release(); _p=0; _o=0; } 
+		_p=P::create(p); 
+		_o=_p->object_ptr(); 
+	}
+
+	void create() { 
+		if( _p!=0 ) { _p->release(); _p=0; _o=0; } 
+		_p=P::create(); 
+		_o=_p->object_ptr(); 
+	}
+
+protected:
+	void create(P* po) { 
+		if( _p!=0 ) { _p->release(); _p=0; _o=0; } 
+		_p=po;
+		_o=_p->object_ptr();
+	}
 
 private:
 	P *_p;
