@@ -193,6 +193,8 @@ public:
 		return _o;
 	}
 
+	T & operator*() const	{ return *_o; }
+
 	void swap(refs_t& rhs)
 	{
 		P* tmp_p = _p;
@@ -203,21 +205,31 @@ public:
 		rhs._o = tmp_o;
 	}
 
+	void release() {
+		if( _p!=0 ) { 
+			_p->release(); _p=0; _o=0; 
+		} 
+	}
+
 	void create(pool_t* p) {
-		if( _p!=0 ) { _p->release(); _p=0; _o=0; } 
+		release();
 		_p=P::create(p); 
 		_o=_p->object_ptr(); 
 	}
 
 	void create() { 
-		if( _p!=0 ) { _p->release(); _p=0; _o=0; } 
+		release();
 		_p=P::create(); 
 		_o=_p->object_ptr(); 
 	}
 
+	T* get() const { return _o; }
+
+	bool is_empty() const { return (_p==0); }
+
 protected:
 	void create(P* po) { 
-		if( _p!=0 ) { _p->release(); _p=0; _o=0; } 
+		release();
 		_p=po;
 		_o=_p->object_ptr();
 	}
@@ -226,6 +238,19 @@ private:
 	P *_p;
 	T *_o;
 };
+
+template<class T,class P> 
+inline bool operator==( const refs<T,P>& a,const refs<T,P>& b )
+{
+	return a.get()==b.get();
+}
+
+template<class T,class P> 
+inline bool operator!=( const refs<T,P>& a,const refs<T,P>& b )
+{
+	return !operator==(a,b);
+}
+
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 

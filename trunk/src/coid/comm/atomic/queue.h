@@ -226,11 +226,9 @@ protected:
 
 		ptr_t() : _ptr(0) , _tag(0) {}
 
-		void set(node * const p, const int32 t) {
-			_ptr = p; _tag = t; 
-		}
+		void set(node * const p, const int32 t) { _ptr=p; _tag=t; }
 
-		bool operator == (const ptr_t & p) { return (_ptr == p._ptr) && (_tag == p._tag); }
+		bool operator == (const ptr_t & p) { return (_ptr==p._ptr) && (_tag==p._tag); }
 
 		bool operator != (const ptr_t & p) { return !operator == (p); }
 
@@ -315,6 +313,26 @@ public:
 	{
 		node_ptr_t tail;
 		node_t * const newnode = item.add_ref_copy();
+
+		newnode->_prev.set(0, 0);
+
+		for (;;) {
+			tail = _tail;
+			newnode->_next.set(tail._ptr, tail._tag + 1);
+			if (b_cas(&_tail._data, node_ptr_t(newnode, tail._tag + 1)._data, tail._data)) {
+				tail._ptr->_prev.set(newnode, tail._tag);
+				return;
+			}
+		}
+	}
+
+	void push_take(refs<T,policy_queue_pooled<T> >& item)
+	{
+		node_ptr_t tail;
+		node_t * const newnode = item._p;
+
+		item._p=0;
+		item._o=0;
 
 		newnode->_prev.set(0, 0);
 
