@@ -181,6 +181,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\atomic\pool.h"
+				>
+			</File>
+			<File
 				RelativePath=".\atomic\queue.h"
 				>
 			</File>

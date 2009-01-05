@@ -1,8 +1,6 @@
 #ifndef __COMM_REF_NG_H__
 #define __COMM_REF_NG_H__
 
-#include "atomic/stack.h"
-#include "atomic/queue.h"
 #include "singleton.h"
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -71,63 +69,15 @@ public:
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-template<class P>
-class pool
-{
-protected:
-	atomic::stack<P> _stack;
+struct create_me { };
 
-public:
-	//! static instance of stack
-	static pool & get() { static pool p; return p; }
+static create_me CREATE_ME;
 
-	//! create instance or take one from pool
-	P* create() {
-		P* p = _stack.pop();
-		return p?p:P::internal_create(this);
-	}
-
-	void destroy( P* p) {
-		//!TODO call reset?
-		_stack.push(p);
-	}
-};
+template<class T> class pool;
 
 namespace atomic {
 	template<class T> class queue_ng;
 }
-
-template<class T>
-class policy_queue_pooled 
-	: public policy_ref_count<T>
-	, public atomic::stack_node<policy_queue_pooled<T> >
-	, public atomic::queue_ng<T>::node_t
-{
-	typedef policy_queue_pooled<T> this_t;
-	typedef pool<this_t> pool_t;
-
-protected:
-	explicit policy_queue_pooled(T* const obj, pool_t* const pl=0) 
-		: policy_ref_count(obj)
-		, _pool(pl) {}
-
-public:
-	virtual void destroy() { DASSERT(_pool!=0); _pool->destroy(this); }
-
-	static this_t* create() { return SINGLETON(pool_t).create(); }
-
-	static this_t* create(pool_t* p) { DASSERT(p!=0); return p->create(); }
-
-	static this_t* internal_create(pool_t* pl) { return new this_t(new T,pl); }
-
-	pool_t* _pool;
-};
-
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
-struct create_me { };
-
-static create_me CREATE_ME;
 
 template<class T, class P=policy_ref_count<T> >
 class refs 
@@ -161,37 +111,29 @@ public:
 		: _p( p.add_ref_copy() )
 		, _o( _p->object_ptr() ) {}
 
-	refs( const refs_t& r )
+	refs( const refs_t& p )
 		: _p( p.add_ref_copy() )
-		, _o( r._o ) {}
+		, _o( p._o ) {}
 
 	~refs() { if( _p ) { _p->release(); _p=0; _o=0; } }
 
-	refs& operator=(refs_t const& r)
+	const refs_t& operator=(const refs_t& r)
 	{
 		_p=r.add_ref_copy();
 		_o=r._o;
 		return *this;
 	}
 
-	template<class P2>
-	refs& operator=(refs<T,P2>& p) 
+	/*template<class P2>
+	refs_t& operator=(refs<T,P2>& p) 
 	{
 		//!TODO
 		return *this;
-	}
+	}*/
 
-	T * operator->() const
-	{
-		DASSERT( _p!=0 && "You are trying to use not uninitialized REF!" );
-		return _o;
-	}
+	T * operator->() const { DASSERT( _p!=0 && "You are trying to use not uninitialized REF!" ); return _o; }
 
-	T * operator->()
-	{
-		DASSERT( _p!=0 && "You are trying to use not initialized REF!" );
-		return _o;
-	}
+	T * operator->() { DASSERT( _p!=0 && "You are trying to use not initialized REF!" ); return _o; }
 
 	T & operator*() const	{ return *_o; }
 
@@ -227,6 +169,17 @@ public:
 
 	bool is_empty() const { return (_p==0); }
 
+	template<class T>
+	void takeover(refs<T,P>& p) {
+		release();
+		_o=p._o;
+		_p=p._p;
+		p._o=0;
+		p._p=0;
+	}
+
+	P* give_me() { P*tmp=_p; _p=0;_o=0; return tmp; }
+
 protected:
 	void create(P* po) { 
 		release();
@@ -250,7 +203,6 @@ inline bool operator!=( const refs<T,P>& a,const refs<T,P>& b )
 {
 	return !operator==(a,b);
 }
-
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 

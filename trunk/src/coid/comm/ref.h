@@ -374,7 +374,7 @@ struct policy_pooled
 template<class T>
 class pooled 
 	: public ref_base
-	, public atomic::stack<T>::node_t
+	, public atomic::stack_node
 {
 public:
 	//! create instance

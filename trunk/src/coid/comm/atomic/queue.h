@@ -95,7 +95,7 @@ public:
 
 	struct dummy_node
 		: public node
-		, public stack<dummy_node>::node_t
+		, public stack_node
 	{
 		dummy_node() : node(true) {}
 	};
@@ -209,69 +209,63 @@ public:
 	}
 };
 
+struct queue_node;
+
+//! helper pointer with tag
+struct queue_ptr
+{
+	explicit queue_ptr(queue_node * const p) : _ptr(p) , _tag(0) {}
+
+	queue_ptr(queue_node * const p, const int32 t) : _ptr(p), _tag(t) {}
+
+	queue_ptr() : _ptr(0) , _tag(0) {}
+
+	void set(queue_node * const p, const int32 t) { _ptr=p; _tag=t; }
+
+	bool operator == (const queue_ptr & p) { return (_ptr==p._ptr) && (_tag==p._tag); }
+
+	bool operator != (const queue_ptr & p) { return !operator == (p); }
+
+	union {
+		struct {
+			queue_node * volatile _ptr;
+			volatile unsigned int _tag;
+		};
+		volatile int64 _data;
+	};
+};
+
+struct queue_node
+{
+	queue_node() : _next(0) , _prev(0) , _dummy(false) {}
+
+	queue_ptr _next;
+	queue_ptr _prev;
+	bool _dummy;
+
+protected:
+	queue_node(const bool) : _next(0) , _prev(0) , _dummy(true) {}
+};
+
+
 //! atomic double linked list FIFO queue
 template <class T>
 class queue_ng
 {
 public:
-	struct node;
-
-protected:
-	//! helper pointer with tag
-	struct ptr_t
-	{
-		explicit ptr_t(node * const p) : _ptr(p) , _tag(0) {}
-
-		ptr_t(node * const p, const int32 t) : _ptr(p), _tag(t) {}
-
-		ptr_t() : _ptr(0) , _tag(0) {}
-
-		void set(node * const p, const int32 t) { _ptr=p; _tag=t; }
-
-		bool operator == (const ptr_t & p) { return (_ptr==p._ptr) && (_tag==p._tag); }
-
-		bool operator != (const ptr_t & p) { return !operator == (p); }
-
-		union {
-			struct {
-				node * volatile _ptr;
-				volatile unsigned int _tag;
-			};
-			volatile int64 _data;
-		};
-	};
-
-	typedef ptr_t node_ptr_t;
-
-public:
-
-	struct node
-	{
-		node() : _next(0) , _prev(0) , _dummy(false) {}
-
-		node_ptr_t _next;
-		node_ptr_t _prev;
-		bool _dummy;
-
-	protected:
-		node(const bool) : _next(0) , _prev(0) , _dummy(true) {}
-	};
-
 	struct dummy_node 
-		: public node
-		, public stack<dummy_node>::node_t
+		: public queue_node
+		, public stack_node 
 	{
-		dummy_node() : node(true) {}
+		dummy_node() : queue_node(true) {}
 	};
-
-	typedef node node_t;
 
 public:
 	//! last pushed item
-	node_ptr_t _tail;
+	queue_ptr _tail;
 
 	//! first pushed item
-	node_ptr_t _head;
+	queue_ptr _head;
 
 protected:
 	stack<dummy_node> _dpool;
@@ -279,9 +273,9 @@ protected:
 protected:
 
 	//! optimistic fix called when prev pointer is not set
-	void fixList(node_ptr_t & tail, node_ptr_t & head)
+	void fixList(queue_ptr & tail, queue_ptr & head)
 	{
-		node_ptr_t curNode, curNodeNext, nextNodePrev;
+		queue_ptr curNode, curNodeNext, nextNodePrev;
 
 		curNode = tail;
 
@@ -292,7 +286,7 @@ protected:
 				return;
 
 			nextNodePrev = curNodeNext._ptr->_prev;
-			if (nextNodePrev != node_ptr_t(curNode._ptr, curNode._tag - 1))
+			if (nextNodePrev != queue_ptr(curNode._ptr, curNode._tag - 1))
 				curNodeNext._ptr->_prev.set(curNode._ptr, curNode._tag - 1);
 
 			curNode.set(curNodeNext._ptr, curNode._tag - 1);
@@ -305,50 +299,48 @@ public:
 
 	//!	destructor (do not clear queue for now)
 	~queue_ng() {
-		node_t * p;
+		queue_node* p;
 		while ((p = _dpool.pop()) != 0) delete p;
 	} 
 
-	void push(refs<T,policy_queue_pooled<T> >& item)
+protected:
+	template<class T>
+	void push(policy_queue_pooled<T>* item)
 	{
-		node_ptr_t tail;
-		node_t * const newnode = item.add_ref_copy();
+		queue_ptr tail;
+		queue_node * const newnode = item;
 
 		newnode->_prev.set(0, 0);
 
 		for (;;) {
 			tail = _tail;
 			newnode->_next.set(tail._ptr, tail._tag + 1);
-			if (b_cas(&_tail._data, node_ptr_t(newnode, tail._tag + 1)._data, tail._data)) {
+			if (b_cas(&_tail._data, queue_ptr(newnode, tail._tag + 1)._data, tail._data)) {
 				tail._ptr->_prev.set(newnode, tail._tag);
 				return;
 			}
 		}
 	}
 
-	void push_take(refs<T,policy_queue_pooled<T> >& item)
+public:
+	/// enqueue item
+	template<class T2>
+	void push(refs<T2,policy_queue_pooled<T2> >& item)
 	{
-		node_ptr_t tail;
-		node_t * const newnode = item._p;
-
-		item._p=0;
-		item._o=0;
-
-		newnode->_prev.set(0, 0);
-
-		for (;;) {
-			tail = _tail;
-			newnode->_next.set(tail._ptr, tail._tag + 1);
-			if (b_cas(&_tail._data, node_ptr_t(newnode, tail._tag + 1)._data, tail._data)) {
-				tail._ptr->_prev.set(newnode, tail._tag);
-				return;
-			}
-		}
+		push( item.add_ref_copy() );
 	}
 
+	/// same as previous push but TAKE given ref (no addref is needed) 
+	template<class T2>
+	void push_take(refs<T2,policy_queue_pooled<T2> >& item)
+	{
+		push( item.give_me() );
+	}
+
+	/// pop item from queue returns false when queue is empty
 	bool pop(refs<T,policy_queue_pooled<T> > &item)
 	{
-		node_ptr_t head, tail;
+		queue_ptr head, tail;
 		dummy_node * dummy;
 
 		for( ;; ) {
@@ -366,13 +358,13 @@ public:
 						dummy=_dpool.pop();
 						if( dummy==0 ) dummy=new dummy_node();
 						dummy->_next.set( tail._ptr,tail._tag+1 );
-						if( b_cas( &_tail._data,node_ptr_t( dummy,tail._tag+1 )._data,tail._data ) )
+						if( b_cas( &_tail._data,queue_ptr( dummy,tail._tag+1 )._data,tail._data ) )
 							head._ptr->_prev.set(dummy,tail._tag);
 						else
 							_dpool.push(dummy);
 						continue;
 					}
-					if( b_cas( &_head._data,node_ptr_t( head._ptr->_prev._ptr,head._tag+1 )._data,head._data ) ) {
+					if( b_cas( &_head._data,queue_ptr( head._ptr->_prev._ptr,head._tag+1 )._data,head._data ) ) {
 						item.create( static_cast<policy_queue_pooled<T>*>(head._ptr) );
 						return true;
 					}
@@ -385,7 +377,7 @@ public:
 							fixList( tail,head );
 							continue;
 						}
-						if( b_cas( &_head._data,node_ptr_t(head._ptr->_prev._ptr,head._tag+1)._data,head._data ) )
+						if( b_cas( &_head._data,queue_ptr(head._ptr->_prev._ptr,head._tag+1)._data,head._data ) )
 							_dpool.push( static_cast<dummy_node*>(head._ptr) );
 					}
 				} 
