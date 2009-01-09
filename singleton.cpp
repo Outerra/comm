@@ -49,10 +49,13 @@ struct GlobalSingleton
 {
     GlobalSingleton() {
         last = 0;
+        shutting_down = false;
     }
 
     void add( void* ptr, void (*fn_destroy)(void*), const char* type, const char* file, int line )
     {
+        RASSERT( !shutting_down );
+
         comm_mutex_guard<_comm_mutex> mxg(mx);
 
         Kill* k = new Kill(ptr, fn_destroy, type, file, line);
@@ -63,6 +66,8 @@ struct GlobalSingleton
 
     void destroy()
     {
+        shutting_down = true;
+
 		if (last) {
 #ifdef _DEBUG
 			bofstream bof("singleton.log");
@@ -111,6 +116,8 @@ private:
 
     _comm_mutex mx;
     Kill* last;
+
+    bool shutting_down;
 };
 
 
