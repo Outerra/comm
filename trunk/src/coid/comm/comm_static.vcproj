@@ -857,6 +857,10 @@
 			>
 		</File>
 		<File
+			RelativePath=".\fastdelegate.h"
+			>
+		</File>
+		<File
 			RelativePath="hptimer.h"
 			>
 		</File>
