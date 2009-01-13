@@ -31,6 +31,8 @@ public:
 	}
 
 	void release() { if( atomic::dec( &_count )==0 ) destroy(); }
+
+	int32 refcount() { return atomic::add(&_count,0); }
 };
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -58,7 +60,11 @@ public:
 		}
 	}
 
-	virtual void destroy() { delete this; }
+	virtual void destroy() { 
+		//DASSERT(_CrtCheckMemory());
+		delete this; 
+		//DASSERT(_CrtCheckMemory());
+	}
 
 	T* object_ptr() const { return _obj; }
 
@@ -76,13 +82,13 @@ static create_me CREATE_ME;
 template<class T> class pool;
 
 namespace atomic {
-	template<class T> class queue_ng;
+	template<class T,class P> class queue_ng;
 }
 
 template<class T, class P=policy_ref_count<T> >
 class refs 
 {
-	friend atomic::queue_ng<T>;
+	friend atomic::queue_ng<T,P>;
 
 protected:
 	refs(P* const p)
@@ -179,6 +185,8 @@ public:
 	}
 
 	P* give_me() { P*tmp=_p; _p=0;_o=0; return tmp; }
+
+	int32 refcount() const { return _p?_p->refcount():0; }
 
 protected:
 	void create(P* po) { 

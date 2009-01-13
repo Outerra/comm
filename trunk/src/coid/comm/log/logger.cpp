@@ -38,6 +38,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "logwriter.h"
+#include "../atomic/pool.h"
 
 using namespace coid;
 
@@ -51,27 +52,58 @@ logger::logger(const token& filename)
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+log_writer::log_writer() 
+	: _thread()
+	, _queue() 
+{
+	SINGLETON(policy_queue_pooled<logmsg>::pool_t);
+	_thread.create( thread_run_fn, this, 0, "log_writer" );
+}
+
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
 log_writer::~log_writer()
 {
    _thread.cancel_and_wait(10000);
+   flush();
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 void* log_writer::thread_run()
 {
+	logmsg_ptr m;
+
 	for ( ;; ) {
-		logmsg * m;
-		
-		while ( (m=_queue.pop())!=0) { 
-			m->get_logger()->flush(*m);
-			m->reset();
-			policy_log<logmsg>::pool().push(m);
+		while( _queue.pop(m) ) { 
+			m->write_to_file();
+			m.release();
 		}
 		if ( coid::thread::self_should_cancel() ) break;
 		coid::sysMilliSecondSleep(500);
 	}
+
 	return 0;
+}
+
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+void log_writer::flush()
+{
+	logmsg_ptr m;
+
+	while( _queue.pop(m) ) { 
+		m->write_to_file();
+		m.release();
+	}
+}
+
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+logger::logmsg_local::~logmsg_local()
+{
+	if( !_lm.is_empty() && _lm.refcount()==1 )
+		SINGLETON(log_writer).addmsg(_lm);
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

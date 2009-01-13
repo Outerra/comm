@@ -43,12 +43,11 @@
 #include "../singleton.h"
 #include "policy_log.h"
 #include "../atomic/queue.h"
+#include "../atomic/pool.h"
 
 COID_NAMESPACE_BEGIN
 
 class logger;
-class logmsg;
-DEFAULT_POLICY(logmsg, policy_log);
 
 class logger_file : public ref_base
 {
@@ -62,33 +61,30 @@ public:
 		_logtxt.bind(_logfile);
 	}
 
-	void flush(const charstr& lm) { _logtxt<<lm; }
+	void write_to_file(const charstr& lm) { _logtxt<<lm; }
 };
+
+typedef refs<logger_file> logger_file_ptr;
 
 /* 
  * Log message object, returned by the logger.
  * Message is written in policy_log::release() upon calling destructor of ref
  * with policy policy_log.
  */
-class logmsg 
-	: public charstr
-	, public pooled<logmsg>
-	, public atomic::queue<logmsg>::node_t
+class logmsg : public charstr
 {
 protected:
-	ref<logger_file> _logger;
+	logger_file_ptr _lf;
 
 public:
-	void set_logger(ref<logger_file> & lf) { _logger = lf; }
+	void set_log_file(logger_file_ptr& lf) { _lf=lf; }
 
-	const ref<logger_file>& get_logger() const { return _logger; }
+	void reset() { coid::charstr::reset(); _lf.release(); }
 
-	void reset()
-	{
-		coid::charstr::reset();
-		_logger=0;
-	}
+	void write_to_file() { _lf->write_to_file(*this); }
 };
+
+typedef refs<logmsg,policy_queue_pooled<logmsg> > logmsg_ptr;
 
 /* 
  * USAGE :
@@ -106,6 +102,22 @@ public:
  */
 class logger
 {
+public:
+	class logmsg_local
+	{
+	protected:
+		logmsg_ptr _lm;
+
+	public:
+		logmsg_local(logger_file_ptr& lf) : _lm(CREATE_ME) { _lm->set_log_file(lf); }
+
+		logmsg_local() : _lm() {}
+
+		~logmsg_local();
+
+		template<class T> charstr& operator<<(const T& o) { DASSERT(!_lm.is_empty()); return (*_lm)<<(o); }
+	};
+
 public:
 	enum ELogType {
 		Info=0,
@@ -132,42 +144,32 @@ public:
 	}
 
 protected:
-	ref<logger_file> _logfile;
+	logger_file_ptr _logfile;
 
 public:
 	logger(const token& filename);
 
 public:
-	//void flush(const charstr& lm) { _logfile->flush(lm); }
-
-	ref<logmsg> operator () ()
-	{
-		ref<logmsg> lm = logmsg::create();
-		lm->set_logger(_logfile);
+	logmsg_local operator()() {
+		logmsg_local lm(_logfile);
 		return lm;
 	}
 
-	ref<logmsg> operator () (const ELogType t)
-	{
-		ref<logmsg> lm = logmsg::create();
-		lm->set_logger(_logfile);
-		(*lm)<<type2tok(t);
+	logmsg_local operator()(const ELogType t) {
+		logmsg_local lm(_logfile);
+		lm<<type2tok(t);
 		return lm;
 	}
 
-	ref<logmsg> operator () (const ELogType t, const char * fnc)
-	{
-		ref<logmsg> lm = logmsg::create();
-		lm->set_logger(_logfile);
-		(*lm)<<type2tok(t)<<fnc<<' ';
+	logmsg_local operator()( const ELogType t,const char* fnc ) {
+		logmsg_local lm(_logfile);
+		lm<<type2tok(t)<<fnc<<' ';
 		return lm;
 	}
 
-	ref<logmsg> operator () (const ELogType t, const char * fnc, const int line)
-	{
-		ref<logmsg> lm = logmsg::create();
-		lm->set_logger(_logfile);
-		(*lm)<<type2tok(t)<<fnc<<'('<<line<<')'<<' ';
+	logmsg_local operator()( const ELogType t,const char* fnc,const int line ) {
+		logmsg_local lm(_logfile);
+		lm<<type2tok(t)<<fnc<<'('<<line<<')'<<' ';
 		return lm;
 	}
 };
