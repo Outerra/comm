@@ -35,37 +35,32 @@
 
 #ifndef __COMM_LOG_POLICY_LOG_H__
 #define __COMM_LOG_POLICY_LOG_H__
-
+/*
 #include "../ref.h"
+#include "../atomic/pool.h"
 
 class ref_base;
 
 COID_NAMESPACE_BEGIN
 
-struct log_flusher {
-	static void flush(const ref_base * const obj);
-};
+class logmsg;
 
-template<class T>
-struct policy_log : public policy_pooled<T>
+struct policy_log : public policy_queue_pooled<logmsg>
 {
-	//! release reference
-	static void release(const ref_base * const obj) throw()
-	{
-		DASSERT(atomic::add(&obj->_refcount,0)!=0);
+protected:
+	explicit policy_log( logmsg* const obj,pool_t* const pl=0 ) 
+		: policy_queue_pooled( obj,pl ) {}
 
-		if (atomic::dec(&obj->_refcount) == 0) {
-			// flush it 
-			log_flusher::flush(obj);
+public:
+	virtual void destroy();
 
-			/*// return it to the pool
-			T * const p = static_cast<T*>(const_cast<ref_base*>(obj));
-			p->reset();
-			pool().push(p);*/
-		}
-	}
+	static this_t* create() { return SINGLETON(pool_t).create(); }
+
+	static this_t* create(pool_t* p) { DASSERT(p!=0); return p->create(); }
+
+	static this_t* internal_create(pool_t* pl);
 };
 
 COID_NAMESPACE_END
-
+*/
 #endif // __COMM_LOG_POLICY_LOG_H__

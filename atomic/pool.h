@@ -28,7 +28,6 @@ public:
 	}
 
 	void destroy( P* p) {
-		//!TODO call reset?
 		p->object_ptr()->reset();
 		_stack.push(p);
 	}
@@ -40,6 +39,7 @@ class policy_queue_pooled
 	, public atomic::stack_node
 	, public atomic::queue_node
 {
+public:
 	typedef policy_queue_pooled<T> this_t;
 	typedef pool<this_t> pool_t;
 

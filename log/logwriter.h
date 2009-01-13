@@ -44,27 +44,21 @@ class log_writer
 {
 protected:
 	coid::thread _thread;
-	atomic::queue<logmsg> _queue;
+	atomic::queue_ng<logmsg> _queue;
 
 public:
-	log_writer()
-		: _thread()
-	{
-		_thread.create( thread_run_fn, this, 0, "log_writer" );
-	}
+	log_writer();
 
 	~log_writer();
 
-    static void* thread_run_fn( void* p )
-    {
-        return reinterpret_cast<log_writer*>(p)->thread_run();
-    }
+    static void* thread_run_fn( void* p ) { return reinterpret_cast<log_writer*>(p)->thread_run(); }
 
 	void* thread_run();
 
-	void addmsg(logmsg * m) { _queue.push(m); }
-};
+	void addmsg(logmsg_ptr& m) { _queue.push_take(m); }
 
+	void flush();
+};
 
 COID_NAMESPACE_END
 

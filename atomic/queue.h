@@ -249,7 +249,7 @@ protected:
 
 
 //! atomic double linked list FIFO queue
-template <class T>
+template <class T,class P=policy_queue_pooled<T> >
 class queue_ng
 {
 public:
@@ -304,11 +304,10 @@ public:
 	} 
 
 protected:
-	template<class T>
-	void push(policy_queue_pooled<T>* item)
+	//template<class T>
+	void push(queue_node* newnode)
 	{
 		queue_ptr tail;
-		queue_node * const newnode = item;
 
 		newnode->_prev.set(0, 0);
 
@@ -338,7 +337,7 @@ public:
 	}
 
 	/// pop item from queue returns false when queue is empty
-	bool pop(refs<T,policy_queue_pooled<T> > &item)
+	bool pop(refs<T,P> &item)
 	{
 		queue_ptr head, tail;
 		dummy_node * dummy;
@@ -365,7 +364,7 @@ public:
 						continue;
 					}
 					if( b_cas( &_head._data,queue_ptr( head._ptr->_prev._ptr,head._tag+1 )._data,head._data ) ) {
-						item.create( static_cast<policy_queue_pooled<T>*>(head._ptr) );
+						item.create( static_cast<P*>(head._ptr) );
 						return true;
 					}
 				} 
