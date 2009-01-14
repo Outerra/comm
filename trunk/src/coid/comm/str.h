@@ -195,7 +195,7 @@ public:
         return add_from( strbgn, uints(strend-strbgn) );
     }
 
-
+    ///Copy to buffer, terminate with zero
     char* copy_to( char* str, uints maxbufsize ) const
     {
         if( maxbufsize == 0 )  return str;
@@ -207,6 +207,19 @@ public:
         str[lt] = 0;
 
         return str;
+    }
+
+    ///Copy to buffer, unterminated
+    uints copy_raw_to( char* str, uints maxbufsize ) const
+    {
+        if( maxbufsize == 0 )  return 0;
+
+        uints lt = len();
+        if( lt > maxbufsize )
+            lt = maxbufsize;
+        xmemcpy( str, _tstr.ptr(), lt );
+
+        return lt;
     }
 
     const char* set_group( const char* czstr, const char* chars )

@@ -68,14 +68,13 @@ class metagen //: public binstream
     {
         int IDENT,NUM,DQSTRING,STEXT;
 
-        virtual bool on_error_prefix( bool rules )
+        virtual void on_error_prefix( bool rules, charstr& dst )
         {
             if(!rules) {
-                uint c, l = current_line(0, &c);
-                _errtext << infile << char(':') << l << char(':') << c << ": ";
+                uint c;
+                uint l = current_line(0, &c);
+                dst << infile << char(':') << l << char(':') << c << ": ";
             }
-
-            return true;
         }
 
         void set_current_file( const token& file ) {
@@ -383,13 +382,21 @@ class metagen //: public binstream
     {
         token varname;
         dynarray<Attribute> attr;
-        char brace;
-        char flags;
-        int8 depth;
+        uint16 flags;
+        char brace;                     ///< brace type (character)
+        int8 depth;                     ///< tag depth from current level (number of dots before name)
 
-        enum { fTRAILING = 1, fEAT_LEFT = 2, fEAT_RIGHT = 4, };
+        enum { fTRAILING = 1, rEAT_LEFT = 8, rEAT_RIGHT = 12, xEAT = 0xf };
 
         ParsedTag() : flags(0) {}
+
+        uint eat_left() const {
+            return (flags >> rEAT_LEFT) & xEAT;
+        }
+
+        uint eat_right() const {
+            return (flags >> rEAT_RIGHT) & xEAT;
+        }
 
         bool same_group( const ParsedTag& p ) const
         {
@@ -402,7 +409,7 @@ class metagen //: public binstream
                 && varname == p.varname;
         }
 
-        void set_empty()    { varname.set_empty();  brace=flags=0;  depth=0; }
+        void set_empty()    { varname.set_empty();  flags=0;  brace=0;  depth=0; }
 
         bool parse( MtgLexer& lex )
         {
@@ -414,8 +421,8 @@ class metagen //: public binstream
             const lextoken& tok = lex.last();
 
             flags = 0;
-            if( tok.tok == '-' ) {
-                flags |= fEAT_LEFT;
+            while( tok.tok == '-' ) {
+                flags += 1 << rEAT_LEFT;
                 lex.next(0);
             }
 
@@ -487,8 +494,8 @@ class metagen //: public binstream
                 lex.next(0);
             }
 
-            if( tok.tok == '-' ) {
-                flags |= fEAT_RIGHT;
+            while( tok.tok == '-' ) {
+                flags += 1 << rEAT_RIGHT;
                 lex.next(0);
             }
 
@@ -541,9 +548,14 @@ class metagen //: public binstream
 
             stext = lex.last().tok;
 
-            if( hdr.flags & ParsedTag::fEAT_RIGHT ) {
+            uint nr = hdr.eat_right();
+            while(nr--) {
                 stext.skip_ingroup(" \t");
+
+                uint len = stext.len();
                 stext.skip_newline();
+                if( len == stext.len() )
+                    break;
             }
 
             return true;
@@ -566,7 +578,7 @@ class metagen //: public binstream
         virtual void process_content( metagen& mg, const Varx& var ) const  {}
         virtual void parse_content( MtgLexer& lex, ParsedTag& hdr ) {}
 
-        bool parse( MtgLexer& lex, bool skip_newline )
+        bool parse( MtgLexer& lex, uint skip_newline )
         {
             varname.set_empty();
             depth = 0;
@@ -578,9 +590,13 @@ class metagen //: public binstream
 
             stext = lex.last().tok;
 
-            if(skip_newline) {
+            while(skip_newline--) {
                 stext.skip_ingroup(" \t");
+
+                uints len = stext.len();
                 stext.skip_newline();
+                if( len == stext.len() )
+                    break;
             }
 
             return true;
@@ -646,17 +662,22 @@ class metagen //: public binstream
             TagEmpty* etag = new TagEmpty;
             *sequence.add() = etag;
 
-            bool succ = etag->parse( lex, (tout.flags & ParsedTag::fEAT_RIGHT)!=0 );
+            bool succ = etag->parse( lex, tout.eat_right() );
             if(!succ) return succ;
 
             do {
                 if(!tout.parse(lex))
                     break;
 
-                if( (tout.flags & ParsedTag::fEAT_LEFT) ) {
+                uint nl = tout.eat_left();
+                while(nl--) {
                     token& stext = (*sequence.last())->stext;
                     stext.truncate( stext.count_ingroup_back(" \t") );
+
+                    uints len = stext.len();
                     stext.trim_newline();
+                    if( len == stext.len() )
+                        break;
                 }
 
                 if( tout.flags & ParsedTag::fTRAILING ) {
@@ -815,8 +836,8 @@ class metagen //: public binstream
 
                 rng.parse( lex, tmp, hdr );
                 if( tmp.flags & ParsedTag::fTRAILING ) {
-                    hdr.flags &= ~(ParsedTag::fTRAILING | ParsedTag::fEAT_RIGHT);
-                    hdr.flags = tmp.flags & ParsedTag::fEAT_RIGHT;
+                    hdr.flags &= ~(ParsedTag::fTRAILING | (ParsedTag::xEAT<<ParsedTag::rEAT_RIGHT));
+                    hdr.flags = tmp.flags & (ParsedTag::xEAT<<ParsedTag::rEAT_RIGHT);
                     break;
                 }
             }
