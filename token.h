@@ -521,6 +521,7 @@ struct token
     const char* set( const charstr& str );
 
 
+    ///Copy to buffer, terminate with zero
     char* copy_to( char* str, uints maxbufsize ) const
     {
         if( maxbufsize == 0 )  return str;
@@ -532,6 +533,19 @@ struct token
         str[lt] = 0;
 
         return str;
+    }
+
+    ///Copy to buffer, unterminated
+    uints copy_raw_to( char* str, uints maxbufsize ) const
+    {
+        if( maxbufsize == 0 )  return 0;
+
+        uints lt = _len;
+        if( lt > maxbufsize )
+            lt = maxbufsize;
+        xmemcpy( str, _ptr, lt );
+
+        return lt;
     }
 
     ///Retrieve UCS-4 code from UTF-8 encoded sequence at offset \a off
