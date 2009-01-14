@@ -1726,9 +1726,9 @@ public:
         RASSERTX( sizeof_T()+n*sizeof(TAIL) < (1UL<<_rsegsize), "required size must be lower than size of segment" );
         _segments.reset();
         _ntail = n;
-        _segitems = (1<<_rsegsize)/item_size();
+        _segitems = item_size() ? (1<<_rsegsize)/item_size() : 0;
         //_segsize = _segitems*item_size();
-        return true;
+        return _ntail;
     }
 
     uint set_segsize( uint segsize )
