@@ -66,13 +66,13 @@ struct GlobalSingleton
 
     void destroy()
     {
-        shutting_down = true;
-
 		if (last) {
 #ifdef _DEBUG
 			bofstream bof("singleton.log");
 			txtstream tof(bof);
 #endif
+
+            shutting_down = true;
 
 			while(last) {
 				Kill* tmp = last->next;
