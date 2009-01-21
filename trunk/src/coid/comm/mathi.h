@@ -58,6 +58,14 @@ inline bool valid_uint_range( uint64 v, uint bytes )
     return v <= vmax;
 }
 
+///Return next power-of-2 number higher or equal to x (macro form for enums)
+#define NEXTPOW2_32(x) NEXTPOW2_32_((x-1))
+#define NEXTPOW2_32_(x) ((x|(x>>1)|(x>>2)|(x>>4)|(x>>8)|(x>>16))+1)
+
+///Return next power-of-2 number higher or equal to x (macro form for enums)
+#define NEXTPOW2_64(x) NEXTPOW2_64_((x-1))
+#define NEXTPOW2_64_(x) ((x|(x>>1)|(x>>2)|(x>>4)|(x>>8)|(x>>16)|(x>>32))+1)
+
 /// Efficiently returns the least power of two greater than or equal to X
 template< class UINT >
 inline UINT nextpow2( UINT x )

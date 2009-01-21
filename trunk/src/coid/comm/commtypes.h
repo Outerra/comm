@@ -313,6 +313,35 @@ COID_NAMESPACE_END
 #define WMAX        0xffff
 
 
+////////////////////////////////////////////////////////////////////////////////
+///Maximum default type alignment. Can be overriden for particular type by
+/// specializing alignment_trait for T
+static const int MaxAlignment = 8;
+
+template<class T>
+static int alignment_size()
+{
+    int alignment = alignment_trait<T>::alignment;
+
+    if(!alignment)
+        alignment = sizeof(T) > MaxAlignmentPow2
+            ?  MaxAlignment
+            :  sizeof(T);
+
+    return alignment;
+}
+
+///Align pointer to proper boundary, in forward direction
+template<class T>
+static T* align_forward( void* p )
+{
+    int mask = alignment_size<T>() - 1;
+
+    return static_cast<T*>( (static_cast<uints>(p) + mask) &~ mask );
+}
+
+
+
 #include "net_ul.h"
 
 

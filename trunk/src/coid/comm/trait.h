@@ -182,6 +182,19 @@ template<> struct type_trait<t> { \
 }; }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+///Alignment trait
+template<class T>
+struct alignment_trait
+{
+    ///Override to specify the required alignment, otherwise it will be computed
+    /// according to current maximum alignment size and size of T
+    static const int alignment = 0;
+};
+
+
 COID_NAMESPACE_END
 
 #endif //__COID_COMM_TRAIT__HEADER_FILE__
