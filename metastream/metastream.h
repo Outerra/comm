@@ -2035,7 +2035,7 @@ protected:
         _cacheroot = &_root;
 
         _current->insert_table(1);
-        cache_fill( &_root, sizeof(uints) );
+        cache_fill(&_root, 0);
     }
 
     ///
