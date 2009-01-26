@@ -124,7 +124,7 @@ public:
         }
 
         if( n < (int64)_sendbuf.size() )
-            _sendbuf.need((ints)n);
+            _sendbuf.realloc((ints)n);
 
         return _sendbuf.size();
     }
@@ -203,7 +203,7 @@ public:
         {
             uchar tmpbuf[0x10000];
             uint dsz = ss + (ss / 16) + 64 + 3;
-            _wrkbuf.need(dsz);
+            _wrkbuf.realloc(dsz);
             int sz = lzo1x_1_compress( _sendbuf.ptr() + nocompressoffs, (uint)_sendbuf.size() - nocompressoffs,
                 _wrkbuf.ptr() + nocompressoffs + sizeof(ushort), &dsz, tmpbuf );
             ::memcpy( _wrkbuf.ptr(), _sendbuf.ptr(), nocompressoffs );
@@ -222,7 +222,7 @@ public:
         if( nocompressoffs < ss )
         {
             uint dsz = *(const ushort*)(_recvbuf.ptr()+nocompressoffs);
-            _wrkbuf.need(dsz);
+            _wrkbuf.realloc(dsz);
             int sz = lzo1x_decompress_safe( _recvbuf.ptr() + nocompressoffs + sizeof(ushort), (uint)_recvbuf.size() - nocompressoffs - sizeof(ushort),
                 _wrkbuf.ptr() + nocompressoffs, &dsz, 0 );
             if( (int)dsz != sz )  return false;
@@ -280,7 +280,7 @@ protected:
         //MSG_PEEK first
         int n = _socket.recvfrom( 0, 0, 0x2, &_address );
 
-        n = _socket.recvfrom( _recvbuf.need(n), n, 0, &_address );
+        n = _socket.recvfrom( _recvbuf.realloc(n), n, 0, &_address );
         if( n == -1 )
             return false;
 

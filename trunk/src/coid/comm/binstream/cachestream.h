@@ -173,9 +173,9 @@ public:
             if(e)
             {
                 //enlarge the cache instead
-                uints newsize = _cot.reserved_total() * 2;
+                uints newsize = _cot.reserved_total();
                 if( newsize < _cot.size() + len )
-                    newsize = _cot.size() + len;
+                    newsize = nextpow2(_cot.size() + len);
 
                 _cot.reserve( newsize, true );
                 return write_raw( p, len );

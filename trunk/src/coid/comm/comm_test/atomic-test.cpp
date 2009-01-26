@@ -3,6 +3,7 @@
 #include <comm/atomic/stack.h>
 #include <comm/ref.h>
 #include <comm/str.h>
+#include <comm/pthreadx.h>
 #include <comm/hptimer.h>
 #include <comm/binstream/stdstream.h>
 //#include <stdio.h>
@@ -27,8 +28,8 @@ struct ref_test : ref_base
 };
 
 struct test 
-	: public atomic::queue<test>::node_t
-	, public atomic::stack<test>::node_t
+	: public atomic::queue<test>::node
+	, public atomic::stack_node
 {
 	int32 _val;
 

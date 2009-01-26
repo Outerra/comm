@@ -406,6 +406,14 @@
 			Name="alloc"
 			>
 			<File
+				RelativePath=".\alloc\_malloc.c"
+				>
+			</File>
+			<File
+				RelativePath=".\alloc\_malloc.h"
+				>
+			</File>
+			<File
 				RelativePath=".\alloc\alloc.cpp"
 				>
 			</File>
@@ -431,6 +439,10 @@
 			</File>
 			<File
 				RelativePath=".\alloc\chunkpool.h"
+				>
+			</File>
+			<File
+				RelativePath=".\alloc\commalloc.h"
 				>
 			</File>
 			<File

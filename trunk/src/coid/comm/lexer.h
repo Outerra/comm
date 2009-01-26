@@ -42,6 +42,7 @@
 #include "token.h"
 #include "tutf8.h"
 #include "dynarray.h"
+#include "local.h"
 #include "hash/hashkeyset.h"
 #include "hash/hashset.h"
 
@@ -291,8 +292,8 @@ public:
 
         reset();
 
-        _abmap.need_new(256);
-        _casemap.need_new(256);
+        _abmap.alloc(256);
+        _casemap.alloc(256);
 
         for( uint i=0; i<_abmap.size(); ++i ) {
             _abmap[i] = GROUP_UNASSIGNED;
@@ -370,7 +371,7 @@ public:
         _err = 0;
         _errtext.reset();
         _pushback = 0;
-        *_stack.need(1) = &_root;
+        *_stack.realloc(1) = &_root;
 
         _lines = 0;
         _lines_processed = _lines_last = 0;
@@ -405,7 +406,7 @@ public:
         if( !trailset.is_empty() )
         {
             gr->bitmap = _ntrails;
-            _trail.needc( _abmap.size() );
+            _trail.crealloc( _abmap.size() );
             if( !process_set( trailset, 1<<_ntrails++, &lexer::fn_trail ) )  return 0;
         }
 
@@ -1423,10 +1424,10 @@ public:
         _tok = btm->tok;
 
         DASSERT( _stack.size() >= btm->stack_size );
-        _stack.need( btm->stack_size );
+        _stack.realloc( btm->stack_size );
 
         _pushback = 0;
-        _btpoint.need( btm - _btpoint.ptr() );
+        _btpoint.realloc( btm - _btpoint.ptr() );
     }
 
     ///Pop the mark without backtracking
@@ -2778,7 +2779,7 @@ protected:
         if( !_binbuf.size() )
         {
             //an initial fetch
-            _lines_processed = _binbuf.need_new(BINSTREAM_BUFFER_SIZE);
+            _lines_processed = _binbuf.alloc(BINSTREAM_BUFFER_SIZE);
             _lines_last = _lines_processed;
             _rawpos = _rawlast = _lines_last;
         }

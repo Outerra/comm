@@ -78,7 +78,7 @@ public:
     {
         _root.desc = 0;
 
-        _current = _cachestack.need(1);
+        _current = _cachestack.realloc(1);
         _current->buf = &_cache;
 
         _cacheroot = 0;
@@ -472,7 +472,7 @@ public:
     void cache_reset( bool open )
     {
         _cache.reset();
-        _current = _cachestack.need(1);
+        _current = _cachestack.realloc(1);
         _current->offs = open ? 0 : UMAX;
         _cachevar = 0;
         _cacheroot = 0;

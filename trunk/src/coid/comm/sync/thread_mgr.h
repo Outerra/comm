@@ -40,7 +40,7 @@
 
 #include "../pthreadx.h"
 #include "../hash/hashkeyset.h"
-
+#include "mutex.h"
 
 COID_NAMESPACE_BEGIN
 

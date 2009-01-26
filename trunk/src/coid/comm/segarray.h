@@ -711,7 +711,7 @@ private:
             if( sg->is_allocated()  &&  !sg->is_locked()  &&  int( sg->get_lrui() - _usg_iter_last ) <= 0 )
             {
                 unmap_segment( sg, _pages_to_swap[i] );
-                _pages_to_swap.need(i);
+                _pages_to_swap.realloc(i);
                 return;
             }
         }

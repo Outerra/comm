@@ -56,7 +56,7 @@ struct rlr_coder
 
 
     rlr_coder() {
-        planes.need(8*sizeof(INT));
+        planes.realloc(8*sizeof(INT));
         //reset();
     }
 
@@ -236,7 +236,7 @@ private:
             lastpos = 0;
             runbits = 3;
             bitpos = 0;
-            buf.need(32);
+            buf.realloc(32);
             this->plane = plane;
         }
 
@@ -264,7 +264,7 @@ private:
 
             uints total = align_to_chunks(lastpos, 8);
             bin.xread_raw(
-                buf.need(align_to_chunks(total, sizeof(uint))),
+                buf.realloc(align_to_chunks(total, sizeof(uint))),
                 total );
         }
 
@@ -381,7 +381,7 @@ private:
         void write_count( uints count )
         {
             if(bitpos+runbits > 8*buf.byte_size())
-                buf.need(2*buf.size());
+                buf.realloc(2*buf.size());
 
             int8 k = runbits;
             while(k>0)
@@ -399,7 +399,7 @@ private:
         void write_rem( UINT v, uint8 nbits )
         {
             if(bitpos+nbits > 8*buf.byte_size())
-                buf.need(2*buf.size());
+                buf.realloc(2*buf.size());
 
             for( uint8 k=nbits; k>0; --k ) {
                 if(v&1)
@@ -413,7 +413,7 @@ private:
 
         void write1() {
             if(bitpos >= 8*buf.byte_size())
-                buf.need(2*buf.size());
+                buf.realloc(2*buf.size());
 
             buf[bitpos>>5] |= 1<<(bitpos&31);
             ++bitpos;
@@ -421,7 +421,7 @@ private:
 
         void write0() {
             if(bitpos >= 8*buf.byte_size())
-                buf.need(2*buf.size());
+                buf.realloc(2*buf.size());
 
             buf[bitpos>>5] &= ~(1<<(bitpos&31));
             ++bitpos;

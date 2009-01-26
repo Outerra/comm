@@ -47,14 +47,6 @@
 #include "../binstream/binstream.h"
 
 
-#define COIDNEWDELETE \
-    void* operator new( size_t size )  { return comm_allocator<uchar>::alloc(size); } \
-    void* operator new( size_t, void* p ) { return p; } \
-    void operator delete(void* ptr)    { if(ptr) comm_allocator<uchar>::free((uchar*)ptr); } \
-    void operator delete(void*, void*) { }
-
-
-
 COID_NAMESPACE_BEGIN
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -171,55 +163,6 @@ protected:
 
     page*       _last;
     page*       _last_succ;
-};
-
-
-////////////////////////////////////////////////////////////////////////////////
-template< class T >
-struct comm_allocator
-{
-    typedef typenamex seg_allocator::HEADER   HEADER;
-
-    static void instance()   { SINGLETON(seg_allocator); }
-
-    static T* alloc( uints n )
-    {   return (T*) (SINGLETON(seg_allocator).alloc( n, sizeof(T) ) + 1);    }
-
-    static T* realloc( T* p, uints n, bool keep )
-    {   return (T*) (SINGLETON(seg_allocator).realloc( p ? (HEADER*)p-1 : (HEADER*)p, n, sizeof(T), keep ) + 1);  }
-
-    static T* reserve( T* p, uints n, bool keep )
-    {   return (T*) (SINGLETON(seg_allocator).reserve( p ? (HEADER*)p-1 : (HEADER*)p, n, sizeof(T), keep ) + 1);  }
-
-    static T* allocset( uints n, uchar set )
-    {   return (T*) (SINGLETON(seg_allocator).allocset( n, sizeof(T), set ) + 1);    }
-
-    static T* reallocset( T* p, uints n, bool keep, uchar set )
-    {   return (T*) (SINGLETON(seg_allocator).reallocset( p ? (HEADER*)p-1 : (HEADER*)p, n, sizeof(T), keep, set ) + 1);  }
-
-    static T* reserveset( T* p, uints n, bool keep, uchar set )
-    {   return (T*) (SINGLETON(seg_allocator).reserveset( p ? (HEADER*)p-1 : (HEADER*)p, n, sizeof(T), keep, set ) + 1);  }
-
-    static void free( T* p )
-    {   SINGLETON(seg_allocator).free( p ? (HEADER*)p - 1 : (HEADER*)p );    }
-
-
-    static uints size( T* p )
-    {   return p ? ((HEADER*)p - 1)->get_usable_size() : 0;    }
-
-    static uints count( T* p )
-    {   return p ? ((HEADER*)p - 1)->_count : 0;    }
-
-    static uints set_count( T* p, uints n )
-    {
-        ((HEADER*)p - 1)->_count = n;
-        return n;
-    }
-
-
-    //static bool is_valid_ptr( const T* p )
-    //{   return SINGLETON(seg_allocator).is_valid_ptr( p ? (HEADER*)p - 1 : (HEADER*)p );   }
-
 };
 
 ////////////////////////////////////////////////////////////////////////////////

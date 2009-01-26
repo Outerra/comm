@@ -99,7 +99,7 @@ public:
         DASSERT( m >= sizeof(udp_hdr) );
 
         if( n < (int64)_sendbuf.size() ) {
-            _sendbuf.need((ints)n);
+            _sendbuf.realloc((ints)n);
             _spacketid = ushort(n/_packetsize);
         }
 
@@ -594,8 +594,8 @@ protected:
             else if( should_pack() && sz > (uints)_packetsize/8 )
             {
                 uints dsz = (_packetsize*3)/2;
-                _packbuf.need(dsz);
-                _packwrkbuf.need(0x10000);
+                _packbuf.realloc(dsz);
+                _packwrkbuf.realloc(0x10000);
                 dsz -= sizeof(udp_hdr);
 
                 lzo1x_1_compress( pd+sizeof(udp_hdr), sz-sizeof(udp_hdr),
@@ -675,7 +675,7 @@ protected:
             pck = &_recvbuf[_rpckid];
 
             uints dsz = _packetsize + _packetsize/8;
-            unpck.need(dsz);
+            unpck.realloc(dsz);
             dsz -= sizeof(udp_hdr);
 
             if( 0 != lzo1x_decompress_safe( pck->ptr()+sizeof(udp_hdr), n-sizeof(udp_hdr), unpck.ptr()+sizeof(udp_hdr), &dsz, 0 ) )

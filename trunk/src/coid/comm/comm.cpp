@@ -36,69 +36,12 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "comm.h"
-
-#ifdef USE_COMM_ALLOC
-
-COID_NAMESPACE_BEGIN
-/*
-void * operator new(size_t size) NEWTHROWTYPE {
-    comm_allocator::instance ();
-    void* p = (comm_allocator::_alloc->alloc(size, 1) + 1);
-    return p;
-}
-
-void operator delete(void * ptr) DELTHROWTYPE {
-    if(ptr)
-        comm_allocator::_alloc->free( (seg_allocator::HEADER*)ptr - 1 );
-}
-
-void * operator new[] (size_t size) NEWTHROWTYPE {
-    comm_allocator::instance();
-    void* p = (comm_allocator::_alloc->alloc(size, 1) + 1);
-    return p;
-}
-
-void operator delete[] (void *ptr) DELTHROWTYPE {
-    if (ptr)
-        comm_allocator::_alloc->free( (seg_allocator::HEADER*)ptr - 1 );
-}
-*/
-COID_NAMESPACE_END
-
-#else
-#include <malloc.h>
-
-COID_NAMESPACE_BEGIN
-/*
-void * operator new(size_t size) NEWTHROWTYPE {
-    return malloc (size);
-}
-
-void operator delete(void * ptr) DELTHROWTYPE {
-    free (ptr);
-}
-
-void * operator new[] (size_t size) NEWTHROWTYPE {
-    return malloc (size);
-}
-
-void operator delete[] (void *ptr) DELTHROWTYPE {
-    free (ptr);
-}
-*/
-COID_NAMESPACE_END
-
-#endif // USE_COMM_ALLOC
-
-
-
-
 #include "dynarray.h"
+#include "alloc/_malloc.h"
 
 COID_NAMESPACE_BEGIN
 
-uints _Gmemused = 0;
-
+static uints G_mem = 0;
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Only for concentrated debug point
@@ -128,153 +71,56 @@ bool cdcd_memcheck( const uchar* a, const uchar* ae, const uchar* b, const uchar
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+void* memaligned_alloc( size_t size, size_t alignment )
+{
+    void* p = ::dlmemalign(alignment, size);
+
+    if(p)
+        G_mem += ::dlmalloc_usable_size(p);
+    return p;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void memaligned_free( void* p )
+{
+    if(p)
+        G_mem -= ::dlmalloc_usable_size(p);
+
+    ::dlfree(p);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 uints memaligned_used()
 {
-    return _Gmemused;
+    return G_mem;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void * memaligned_alloc( size_t size, size_t alignment )
-{
-	size_t ptr, r_ptr;
-	size_t *reptr;
-
-    if( size >= (size_t)-(int)(alignment+sizeof(void*)) )
-        return 0;
-
-	if( !IS_2_POW_N(alignment) ) {
-		RASSERTX( 0, "alignment must be a power of 2" );
-		return 0;
-	}
-
-	alignment = (alignment > sizeof(void *) ? alignment : sizeof(void *));
-
-	if ((ptr = (size_t)malloc(size + alignment + sizeof(void *))) == (size_t)NULL)
-		return NULL;
-
-#ifdef SYSTYPE_MSVC
-	_Gmemused += _msize( (void*)ptr );
-#else
-	_Gmemused += malloc_usable_size( (void*)ptr );
-#endif
-
-	r_ptr = (ptr + alignment + sizeof(void *)) & ~(alignment -1);
-	reptr = (size_t *)(r_ptr - sizeof(void *));
-	*reptr = ptr;
-
-	return (void *)r_ptr;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-void * memaligned_realloc( void * memblock, size_t size, size_t alignment )
-{
-	size_t ptr, r_ptr, s_ptr;
-	size_t *reptr;
-	size_t mov_sz;
-
-	if (memblock == NULL)
-		return NULL;
-
-    if( size >= (size_t)-(int)(alignment+sizeof(void*)) )
-        return 0;
-
-	s_ptr = (size_t)memblock;
-
-	/* ptr points to the pointer to starting of the memory block */
-	s_ptr = (s_ptr & ~(sizeof(void *) -1)) - sizeof(void *);
-
-	/* ptr is the pointer to the start of memory block*/
-	s_ptr = *((size_t *)s_ptr);
-
-	if (!IS_2_POW_N(alignment))
-	{
-		RASSERTX( 0, "alignment must be a power of 2" );
-		return NULL;
-	}
-
-	alignment = (alignment > sizeof(void *) ? alignment : sizeof(void *));
-
-	// Calculate the size that is needed to move
-#ifdef SYSTYPE_MSVC
-	mov_sz = _msize( (void *)s_ptr) - ((size_t)memblock - s_ptr );
-#else
-	mov_sz = malloc_usable_size( (void *)s_ptr) - ((size_t)memblock - s_ptr );
-#endif
-
-    _Gmemused -= mov_sz;
-
-	if ((ptr = (size_t)malloc(size + alignment + sizeof(void *))) == (size_t)NULL)
-		return NULL;
-
-#ifdef SYSTYPE_MSVC
-	_Gmemused += _msize( (void*)ptr );
-#else
-	_Gmemused += malloc_usable_size( (void*)ptr );
-#endif
-
-	r_ptr = (ptr + alignment + sizeof(void *)) & ~(alignment -1);
-	reptr = (size_t *)(r_ptr - sizeof(void *));
-	*reptr = ptr;
-
-	/* copy the content from older memory location to newer one */
-	xmemcpy((void *)r_ptr, memblock, mov_sz > size ? size: mov_sz);
-	free((void *)s_ptr);
-
-	return (void *)r_ptr;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-void memaligned_free( void * memblock )
-{
-	size_t ptr;
-
-	if (memblock == NULL)
-		return;
-
-	ptr = (size_t)memblock;
-
-	/* ptr points to the pointer to start of the memory block */
-	ptr = (ptr & ~(sizeof(void *) -1)) - sizeof(void *);
-
-	/* ptr is the pointer to the start of memory block*/
-	ptr = *((size_t *)ptr);
-
-#ifdef SYSTYPE_MSVC
-	_Gmemused -= _msize( (void*)ptr );
-#else
-	_Gmemused -= malloc_usable_size( (void*)ptr );
-#endif
-
-	free((void *)ptr);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-///Get fresh array with \a nitems of elements
+///Realloc array with \a nitems of elements, without knowing exact type
 /** Adjusts the array to the required size
     @note only trivial types can be allocated this way (no constructor)
     @param nitems number of items to resize to
     @param itemsize size of item in bytes
-    @param ralign granularity (exponent of two) of reserved items
     @return pointer to the first element of array */
-void* dynarray_new( void* p, uints nitems, uints itemsize, uints ralign )
+void* dynarray_realloc( void* p, uints nitems, uints itemsize )
 {
-    uints nalloc;
-    if( ralign > 0 )
-        nalloc = get_aligned_size(nitems, ralign);
-    else
-        nalloc = nitems;
-
-    uints size = p ? ((seg_allocator::HEADER*)p-1)->get_usable_size() : 0;
+    uints n = *((const uints*)p - 1);
+    uints nalloc = nitems;
+    uints size = p ? (dlmalloc_usable_size( (uints*)p - 1 ) - sizeof(uints)) : 0;
 
     if( nalloc*itemsize > size )
-        p = SINGLETON(seg_allocator).reserve( p ? (seg_allocator::HEADER*)p-1 : (seg_allocator::HEADER*)p,
-            nalloc, itemsize, true ) + 1;
+    {
+        uints* pn = (uints*)::mspace_realloc(SINGLETON(comm_array_mspace).msp, (uints*)p - 1,
+            sizeof(uints) + n * itemsize);
+        pn[0] = nitems;
 
-    if(p)
-        comm_allocator<uchar>::set_count( (uchar*)p, nitems );
+        p = pn + 1;
+    }
+    else
+        *((uints*)p - 1) = nitems;
 
     if(nitems) {
-#ifdef _DEBUG
+#if defined(_DEBUG) && !defined(NO_DYNARRAY_DEBUG_FILL)
         if (nalloc*itemsize > size)
             ::memset( (uchar*)p+size, 0xcd, nalloc*itemsize - size );
 #endif

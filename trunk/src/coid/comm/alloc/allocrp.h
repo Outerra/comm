@@ -62,7 +62,7 @@ public:
                 return _pages[n];
         }
         else
-            _pages.need( n+1 );
+            _pages.realloc( n+1 );
 
 #ifdef _DEBUG
         ++_npages;
@@ -118,7 +118,7 @@ public:
     opcd set_page_size( uints segsize )
     {
         _segsize = nextpow2(segsize);
-        _pages.need_new(32);
+        _pages.alloc(32);
         return 0;
     }
 

@@ -36,6 +36,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "metastream.h"
+#include "../local.h"
 #include "../hash/hashkeyset.h"
 
 COID_NAMESPACE_BEGIN

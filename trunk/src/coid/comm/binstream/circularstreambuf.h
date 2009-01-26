@@ -128,7 +128,7 @@ protected:
 
         uints ts = _buf.size();
         uints n = nextpow2(size);
-        _buf.need(n);
+        _buf.realloc(n);
 
         //find the wrapped packet
         uints ofe = _offs[_endpck] + _sizewr;
@@ -187,7 +187,7 @@ public:
             size = 256;
 
         _ralign = 0;
-        _buf.need_new( nextpow2((uints)size) );
+        _buf.alloc( nextpow2((uints)size) );
         reset();
     }
 
@@ -328,8 +328,8 @@ public:
         _sizewr = _sizerd = 0;
         _ptrrd = 0;
         
-        _offs.need_new(8);
-        _lens.need_newc(8);
+        _offs.alloc(8);
+        _lens.calloc(8);
         _begpck = _endpck = 0;
         _offs[0] = 0;
     }
