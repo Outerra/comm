@@ -187,8 +187,11 @@ ssegpage::block* ssegpage::realloc_big( block* b, uint size, bool keep_content )
     size = align_value_to_power2( size + sizeof(fblock), 12 );
     if( ra >= 12 )
     {
-        void* base = memaligned_realloc( b->get_base(), size, 4096 );
+        void* base = memaligned_alloc( size, 4096 );
         if(!base)  return 0;
+
+        ::memcpy( base, b->get_base(), b->get_size() );
+        memaligned_free(b->get_base());
 
         block* p = (block*) ( (char*)base + sizeof(int) );
 

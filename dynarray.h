@@ -42,7 +42,7 @@
 
 #include "commtypes.h"
 #include "binstream/binstream.h"
-#include "alloc/alloc.h"
+#include "alloc/commalloc.h"
 
 #include <iterator>
 #include <algorithm>
@@ -71,22 +71,6 @@ template <class T> T* __del(T* &ptr, uints nfrom, uints nlen, uints ndel=1) {
     return ptr;
 }
 template <> inline void* __del(void* &ptr, uints nfrom, uints nlen, uints ndel) { return __del<char>((char*&)ptr,nfrom,nlen,ndel); }
-
-
-////////////////////////////////////////////////////////////////////////////////
-///Get alignment size for given \a size and binary exponent of granularity
-inline uints get_aligned_size (uints size, uints ralign)
-{
-    uints align = (1 << ralign) - 1;
-    return (size + align) &~align;
-}
-
-///Get alignment size for given \a size and binary exponent of granularity
-inline ints get_aligned_size( ints size, uints ralign )
-{
-    ints align = (1 << ralign) - 1;
-    return (size + align) &~align;
-}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -202,7 +186,7 @@ template<class T, class A> binstream& operator >> (binstream&, dynarray<T,A>& );
 
 
 ///Template managing arrays of objects
-template< class T, class A=comm_allocator<T> >
+template< class T, class A=comm_array_allocator<T> >
 class dynarray
 {
     enum {
@@ -210,7 +194,7 @@ class dynarray
     };
     uints _count() const        { return A::count(_ptr); }
     uints _size() const         { return A::size(_ptr); }
-    void _set_count(uints n)    { A::set_count( _ptr, n ); }
+    void _set_count(uints n)    { A::set_count(_ptr, n); }
 
 public:
 
@@ -242,9 +226,9 @@ public:
         //A::instance();
         //_ptr = p._ptr;
         _ptr = 0;
-        uints c = p.size();
-        need(c);
-        for( uints i=0; i<c; ++i ) {
+        uints n = p.size();
+        alloc(n);
+        for( uints i=0; i<n; ++i ) {
             _ptr[i] = p._ptr[i];
         }
     }
@@ -252,9 +236,9 @@ public:
     ///assignment operator - duplicate
     dynarray& operator = ( const dynarray& p )
     {
-        uints c = p.size();
-        need(c);
-        for( uints i=0; i<c; ++i )
+        uints n = p.size();
+        alloc(n);
+        for( uints i=0; i<n; ++i )
             _ptr[i] = p._ptr[i];
 
         return *this;
@@ -355,18 +339,18 @@ public:
     
     ///Debug checks
 #ifdef _DEBUG
-# define DYNARRAY_CHECK_BOUNDS_S(k)          __check_bounds((ints)k);
-# define DYNARRAY_CHECK_BOUNDS_U(k)          __check_bounds((uints)k);
+# define DYNARRAY_CHECK_BOUNDS_S(k)      __check_bounds((ints)k);
+# define DYNARRAY_CHECK_BOUNDS_U(k)      __check_bounds((uints)k);
 #else
 # define DYNARRAY_CHECK_BOUNDS_S(k)
 # define DYNARRAY_CHECK_BOUNDS_U(k)
 #endif
 
-    void __check_bounds(ints k) const        { DASSERT( k>=0 && (uints)k<_count() ); }
-    void __check_bounds(uints k) const       { DASSERT( k<_count() ); }
+    void __check_bounds(ints k) const    { DASSERT( k>=0 && (uints)k<_count() ); }
+    void __check_bounds(uints k) const   { DASSERT( k<_count() ); }
 
-    const T& operator [] (uints k) const     { DYNARRAY_CHECK_BOUNDS_U(k)  return *(_ptr+k); }
-    T& operator [] (uints k)                 { DYNARRAY_CHECK_BOUNDS_U(k)  return *(_ptr+k); }
+    const T& operator [] (uints k) const { DYNARRAY_CHECK_BOUNDS_U(k)  return *(_ptr+k); }
+    T& operator [] (uints k)             { DYNARRAY_CHECK_BOUNDS_U(k)  return *(_ptr+k); }
 
 
     bool operator == ( const dynarray<T>& a ) const
@@ -385,34 +369,32 @@ public:
     ///Get fresh array with \a nitems of elements
     /** Destroys all elements of array and adjusts the array to the required size
         @param nitems number of items to resize to
-        @param ralign granularity (exponent of two) of reserved items
         @return pointer to the first element of array */
-    T* need_new( uints nitems, uints ralign = 0 )
+    T* alloc( uints nitems )
     {
         _destroy();
+        uints n = _count();
+        uints nalloc = nitems;
 
-        uints nalloc;
-        if (ralign > 0) {
-            nalloc = get_aligned_size( nitems, ralign );
-        }
-        else
-            nalloc = nitems;
+        if( nalloc > n  &&  nalloc*sizeof(T) > _size() ) {
+            if( nalloc < 2*n )
+                nalloc = 2*n;
 
-        if( nalloc*sizeof(T) > _size() ) {
-            if (nalloc < 2*_count())
-                nalloc = 2*_count();
-            _ptr = A::reserve( _ptr, nalloc, false );
+            A::free(_ptr);
+
+            _ptr = A::alloc(nalloc);
         }
+
+        if(nitems) {
+            if( !type_trait<T>::trivial_constr )
+                for( uints i=0; i<nitems; ++i )  ::new(_ptr+i) T;
+        }
+
+#if defined(_DEBUG) && !defined(NO_DYNARRAY_DEBUG_FILL)
+        ::memset( _ptr+nitems, 0xcd, (nalloc - nitems)*sizeof(T) );
+#endif
 
         if(_ptr)  _set_count(nitems);
-        if(nitems) {
-#if defined(_DEBUG) && !defined(NO_DYNARRAY_DEBUG_FILL)
-            ::memset( _ptr, 0xcd, nitems*sizeof(T) );
-#endif
-            if( !type_trait<T>::trivial_constr )
-                for( uints i=0; i<nitems; ++i )  ::new (_ptr+i) T;
-        }
-
         return _ptr;
     };
 
@@ -420,25 +402,32 @@ public:
     /** Destroys all elements of array and adjusts the array to the required size
         @param nitems number of items to resize to
         @param toones fill memory with ones (true) or zeros (false) before calling default constructor of element
-        @param ralign granularity (exponent of two) of reserved items
         @return pointer to the first element of array */
-    T* need_newc( uints nitems, bool toones=false, uints ralign = 0 )
+    T* calloc( uints nitems, bool toones=false )
     {
         _destroy();
+        uints n = _count();
+        uints nalloc = nitems;
 
-        uints nalloc;
-        if( ralign > 0 )
-            nalloc = get_aligned_size( nitems, ralign );
-        else
-            nalloc = nitems;
+        if( nalloc > n  &&  nalloc*sizeof(T) > _size() ) {
+            if( nalloc < 2*n )
+                nalloc = 2*n;
 
-        if( nalloc*sizeof(T) > _size() ) {
-            if( nalloc < 2*_count() )
-                nalloc = 2*_count();
-            _ptr = A::reserveset( _ptr, nalloc, false, toones ? 0xff : 0x00 );
+            A::free(_ptr);
+
+            _ptr = A::alloc(nalloc);
         }
-        else
-            ::memset (_ptr, toones ? 0xff : 0x00, _size());
+
+        if(nitems) {
+            ::memset( _ptr, toones ? 0xff : 0x00, nitems * sizeof(T) );
+
+            if( !type_trait<T>::trivial_constr )
+                for( uints i=0; i<nitems; ++i )  ::new(_ptr+i) T;
+        }
+
+#if defined(_DEBUG) && !defined(NO_DYNARRAY_DEBUG_FILL)
+        ::memset( _ptr+nitems, 0xcd, (nalloc - nitems)*sizeof(T) );
+#endif
 
         if(_ptr)  _set_count(nitems);
         return _ptr;
@@ -448,47 +437,30 @@ public:
     ///Resize array to \a nitems of elements
     /** Truncates array if currently larger than desired count, or enlarges it if it is smaller
         @param nitems number of elements to resize to
-        @param ralign granularity (exponent of two) of reserved items
         @return pointer to the first element of array */
-    T* need( uints nitems, uints ralign = 0 )
+    T* realloc( uints nitems )
     {
-        if (nitems == _count())  return _ptr;
-        if (nitems < _count()) {
+        uints n = _count();
+
+        if( nitems == n )  return _ptr;
+        if( nitems < n ) {
             if( !type_trait<T>::trivial_constr )
-                for( uints i=_count()-1; i>nitems; --i )  _ptr[i].~T();
+                for( uints i=n-1; i>nitems; --i )  _ptr[i].~T();
             _set_count(nitems);
             return _ptr;
         }
+        uints nalloc = nitems;
 
-        uints nalloc;
-        if (ralign > 0) {
-            nalloc = get_aligned_size( nitems, ralign );
-        }
-        else
-            nalloc = nitems;
+        if( nalloc*sizeof(T) > _size() )
+            nalloc = _realloc(nalloc, n);
 
-        if (nalloc*sizeof(T) > _size())
-        {
-            if (nalloc < 2*_count())
-                nalloc = 2*_count();
-            T* op = _ptr;
-            _ptr = A::reserve( _ptr, nalloc, true );
-
-            if( !type_trait<T>::trivial_moving_constr  &&  op != _ptr )
-            {
-                uints n = _count();
-                for( uints i=0; i<n; ++i )
-                    type_trait<T>::moving::move( _ptr[i], op+i );
-                    //_COPYTRAIT<T>::type::move( _ptr[i], op+i );
-            }
-        }
-        if (nitems > _count()) {
 #if defined(_DEBUG) && !defined(NO_DYNARRAY_DEBUG_FILL)
-            ::memset (_ptr+_count(), 0xcd, (nitems - _count())*sizeof(T));
+        ::memset( _ptr+n, 0xcd, (nalloc - n)*sizeof(T) );
 #endif
-            if( !type_trait<T>::trivial_constr )
-                for( uints i=_count(); i<nitems; ++i )  ::new (_ptr+i) T;
-        }
+
+        if( !type_trait<T>::trivial_constr )
+            for( uints i=n; i<nitems; ++i )  ::new(_ptr+i) T;
+
         if(_ptr)  _set_count(nitems);
         return _ptr;
     };
@@ -497,62 +469,59 @@ public:
     /** Truncates array if currently larger than desired count, or enlarges it if it is smaller
         @param nitems number of elements to resize to
         @param toones fill memory with ones (true) or zeros (false) before calling default constructor of element
-        @param ralign granularity (exponent of two) of reserved items
         @return pointer to the first element of array */
-    T* needc( uints nitems, bool toones = false, uints ralign = 0 )
+    T* crealloc( uints nitems, bool toones = false )
     {
-        if (nitems == _count())  return _ptr;
-        if (nitems < _count()) {
-            for( uints i=_count()-1; i>nitems; --i )
+        uints n = _count();
+
+        if( nitems == n )  return _ptr;
+        if( nitems < n ) {
+            for( uints i=n-1; i>nitems; --i )
                 _ptr[i].~T();
             _set_count(nitems);
             return _ptr;
         }
 
-        uints nalloc;
-        if (ralign > 0) {
-            nalloc = get_aligned_size( nitems, ralign );
-        }
-        else
-            nalloc = nitems;
+        uints nalloc = nitems;
 
-        if (nalloc*sizeof(T) > _size()) {
-            if (nalloc < 2*_count())
-                nalloc = 2*_count();
-            T* op = _ptr;
-            _ptr = A::reserveset( _ptr, nalloc, true, toones ? 0xff : 0x00 );
+        if( nalloc*sizeof(T) > _size() )
+            nalloc = _realloc(nalloc, n);
 
-            if( !type_trait<T>::trivial_moving_constr  &&  op != _ptr )
-            {
-                uints n = _count();
-                for( uints i=0; i<n; ++i )
-                    type_trait<T>::moving::move( _ptr[i], op+i );
-                    //_COPYTRAIT<T>::type::move( _ptr[i], op+i );
-            }
-        }
-        if (nitems > _count())
-        {
-            ::memset (_ptr+_count(), toones ? 0xff : 0x00, (nitems - _count())*sizeof(T));
-            if( !type_trait<T>::trivial_constr )
-                for( uints i=_count(); i<nitems; ++i )  ::new (_ptr+i) T;
-        }
+        ::memset( _ptr+n, toones ? 0xff : 0x00, (nitems - n)*sizeof(T) );
+
+#if defined(_DEBUG) && !defined(NO_DYNARRAY_DEBUG_FILL)
+        ::memset( _ptr+nitems, 0xcd, (nalloc - nitems)*sizeof(T) );
+#endif
+
+        if( !type_trait<T>::trivial_constr )
+            for( uints i=n; i<nitems; ++i )  ::new(_ptr+i) T;
+
         if(_ptr)  _set_count(nitems);
         return _ptr;
     };
 
+    //@{ alternative names
+    T* need_new( uints nitems )                 { return alloc(nitems); }
+    T* need_newc( uints nitems, bool toones=false ) { return calloc(nitems, toones); }
+
+    T* need( uints nitems )                     { return realloc(nitems); }
+    T* needc( uints nitems, bool toones=false ) { return crealloc(nitems, toones); }
+    //@} alternative names
+
+
     ///Cut to specified length, negative numbers cut abs(len) from the end
-    dynarray<T,A>& resize( ints length )
+    dynarray<T,A>& resize( ints len )
     {
-        if( length < 0 )
+        if( len < 0 )
         {
-            ints k = size() + length;
+            ints k = _count() + len;
             if( k <= 0 )
                 reset();
             else
-                need(k);
+                realloc(k);
         }
         else
-            need( length );
+            realloc(len);
 
         return *this;
     }
@@ -560,79 +529,54 @@ public:
 
     ///Add \a nitems of elements on the end
     /** @param nitems count of items to add
-        @param ralign granularity (exponent of two) of reserved items
         @return pointer to the first added element */
-    T* add( uints nitems=1, uints ralign = 0 )
+    T* add( uints nitems=1 )
     {
-        if (!nitems)  return _ptr + _count();
-        uints nalloc, nto = nitems + _count();
+        uints n = _count();
 
-        if( ralign > 0 ) {
-            nalloc = get_aligned_size( nto, ralign );
-        }
-        else
-            nalloc = nto;
+        if(!nitems)  return _ptr + n;
+        uints nto = nitems + n;
+        uints nalloc = nto;
 
-        if( nalloc*sizeof(T) > _size() ) {
-            if( nalloc < 2*_count() )
-                nalloc = 2*_count();
-            T* op = _ptr;
-            _ptr = A::reserve( _ptr, nalloc, true );
+        if( nalloc*sizeof(T) > _size() )
+            nalloc = _realloc(nalloc, n);
 
-            if( !type_trait<T>::trivial_moving_constr  &&  op != _ptr )
-            {
-                uints n = _count();
-                for( uints i=0; i<n; ++i )
-                    type_trait<T>::moving::move( _ptr[i], op+i );
-                    //_COPYTRAIT<T>::type::move( _ptr[i], op+i );
-            }
-        }
 #if defined(_DEBUG) && !defined(NO_DYNARRAY_DEBUG_FILL)
-        ::memset (_ptr+_count(), 0xcd, (nto-_count())*sizeof(T));
+        ::memset( _ptr+n, 0xcd, (nalloc-n)*sizeof(T) );
 #endif
         if( !type_trait<T>::trivial_constr )
-            for( uints i=_count(); i<nto; ++i )  ::new (_ptr+i) T;
+            for( uints i=n; i<nto; ++i )  ::new(_ptr+i) T;
 
         _set_count(nto);
-        return _ptr + _count() - nitems;
+        return _ptr + n;
     };
 
     ///Add \a nitems of elements on the end and clear the memory
     /** @param nitems count of items to add
         @param toones fill memory with ones (true) or zeros (false) before calling default constructor of element
-        @param ralign granularity (exponent of two) of reserved items
         @return pointer to the first added element */
-    T* addc( uints nitems=1, bool toones = false, uints ralign = 0 )
+    T* addc( uints nitems=1, bool toones = false )
     {
-        uints nalloc, nto = nitems + _count();
-        if (ralign > 0) {
-            nalloc = get_aligned_size (nto, ralign);
-        }
-        else
-            nalloc = nto;
+        uints n = _count();
 
-        if (nalloc*sizeof(T) > _size()) {
-            if (nalloc < 2*_count())
-                nalloc = 2*_count();
-            T* op = _ptr;
-            _ptr = A::reserveset( _ptr, nalloc, true, toones ? 0xff : 0x00 );
+        if(!nitems)  return _ptr + n;
+        uints nto = nitems + n;
+        uints nalloc = nto;
 
-            if( !type_trait<T>::trivial_moving_constr  &&  op != _ptr )
-            {
-                uints n = _count();
-                for( uints i=0; i<n; ++i )
-                    type_trait<T>::moving::move( _ptr[i], op+i );
-                    //_COPYTRAIT<T>::type::move( _ptr[i], op+i );
-            }
-        }
-        else
-            ::memset( _ptr+_count(), toones ? 0xff : 0, (nalloc-_count())*sizeof(T) );
+        if( nalloc*sizeof(T) > _size() )
+            nalloc = _realloc(nto, n);
+
+        ::memset( _ptr+n, toones ? 0xff : 0, (nto-n)*sizeof(T) );
+
+#if defined(_DEBUG) && !defined(NO_DYNARRAY_DEBUG_FILL)
+        ::memset( _ptr+nto, 0xcd, (nalloc-nto)*sizeof(T) );
+#endif
 
         if( !type_trait<T>::trivial_constr )
-            for( uints i=_count(); i<nto; ++i )  ::new (_ptr+i) T;
+            for( uints i=n; i<nto; ++i )  ::new(_ptr+i) T;
 
         _set_count(nto);
-        return _ptr + _count() - nitems;
+        return _ptr + n;
     };
 
     ///Add n new elements on position where key would be inserted.
@@ -711,7 +655,7 @@ public:
         uints n = _count();
         if( n > 0 ) {
             dest = *last();
-            need(n-1);
+            realloc(n-1);
             return true;
         }
         return false;
@@ -724,7 +668,7 @@ public:
         uints cnt = _count();
         if(!cnt)  return 0;
 
-        need(cnt-1);
+        realloc(cnt-1);
 
         return last();
     }
@@ -753,7 +697,7 @@ public:
         @param n number of elements to get
         @return pointer to the first element of array */
     T* copy_bin_from( const T* pin, uints n ) {
-        T* p = need_new(n);
+        T* p = alloc(n);
         xmemcpy( p, pin, n*sizeof(T) );
         return p;
     }
@@ -814,10 +758,15 @@ public:
         @return pointer to the first item of array */
     T* reserve( uints nitems, bool ikeep )
     {
-        if (nitems*sizeof(T) > _size())
+        uints n = _count();
+
+        if( nitems > n  &&  nitems*sizeof(T) > _size() )
         {
-            if (!ikeep)  _destroy();
-            _ptr = A::reserve( _ptr, align_offset(nitems, CHUNKSIZE), ikeep );
+            if(!ikeep)
+                _destroy();
+
+            _realloc(nitems, n);
+            _set_count(n);
         }
         return _ptr;
     }
@@ -833,7 +782,7 @@ public:
     {
         if( i < _count() )
             return _ptr[i];
-        need(i+1);
+        realloc(i+1);
         return _ptr[i];
     }
 
@@ -842,7 +791,7 @@ public:
     {
         if( i < _count() )
             return _ptr[i];
-        needc( i+1, toones );
+        crealloc( i+1, toones );
         return _ptr[i];
     }
 
@@ -850,38 +799,38 @@ public:
     void set_safe( uints i, const T& val )
     {
         if( i >= _count() )
-            need(i+1);
+            realloc(i+1);
         _ptr[i] = val;
     }
 
 
     //{@ Bit-manipulating routines.
     ///Append n bits to dynarray
-    T* need_bits( uints n, uints ralign = 0 )
+    T* realloc_bits( uints n )
     {
         uints nit = align_to_chunks(n,sizeof(T)*8);
-        return need( nit, ralign );
+        return realloc(nit);
     }
 
     ///Allocate n new bits in dynarray
-    T* need_new_bits( uints n, uints ralign = 0 )
+    T* alloc_bits( uints n )
     {
         uints nit = align_to_chunks(n,sizeof(T)*8);
-        return need_new( nit, ralign );
+        return alloc(nit);
     }
 
     ///Append n bits to dynarray while setting them to requested value
-    T* needc_bits( uints n, bool toones = false, uints ralign = 0 )
+    T* crealloc_bits( uints n, bool toones = false )
     {
         uints nit = align_to_chunks(n,sizeof(T)*8);
-        return needc( nit, toones, ralign );
+        return crealloc( nit, toones );
     }
 
     //Allocate n new bits in dynarray while setting them to requested value
-    T* needc_new_bits( uints n, bool toones = false, uints ralign = 0 )
+    T* calloc_bits( uints n, bool toones = false )
     {
         uints nit = align_to_chunks(n,sizeof(T)*8);
-        return need_newc( nit, toones, ralign );
+        return calloc( nit, toones );
     }
 
     ///Set i-th bit 
@@ -905,7 +854,7 @@ public:
     {
         uints n = i >> 3;
         uints b = i & 0x07;
-        needc( (n+sizeof(T))/sizeof(T) );
+        crealloc( (n+sizeof(T))/sizeof(T) );
         ((uchar*)_ptr)[n] ^= (-t ^ ((uchar*)_ptr)[n]) & (1<<b);
     }
 
@@ -1203,16 +1152,16 @@ public:
         if (num < 256)
         {
             T buf[256];
-            T* p = move_temp (from, to, num, buf);
+            T* p = move_temp( from, to, num, buf );
             xmemcpy (p, buf, num*sizeof(T));
             return p;
         }
         else
         {
             dynarray<uchar> buf;
-            buf.need_new (num*sizeof(T));
-            T* p = move_temp (from, to, num, buf.ptr());
-            xmemcpy (p, buf.ptr(), num*sizeof(T));
+            buf.alloc( num*sizeof(T) );
+            T* p = move_temp( from, to, num, buf.ptr() );
+            xmemcpy( p, buf.ptr(), num*sizeof(T) );
             return p;
         }
 
@@ -1231,7 +1180,7 @@ public:
         return n;
     }
 
-    void clear()                { reset(); }
+    void clear()                        { reset(); }
 
     ///Delete content and _destroy the memory
     void discard() {
@@ -1243,7 +1192,7 @@ public:
     }
 
     ///Get number of elements in the array
-    uints size() const               { return _count(); }
+    uints size() const                  { return _count(); }
 
     ///Hard set number of elements
     //@warn Doesn't execute either destructors for the removed elements or constructors for added ones.
@@ -1254,21 +1203,21 @@ public:
         return n;
     }
 
-    uints byte_size() const          { return _count() * sizeof(T); }
+    uints byte_size() const             { return _count() * sizeof(T); }
 
     ///Return number of remaining reserved bytes
-    uints reserved_remaining() const { return A::size(_ptr) - sizeof(T)*A::count(_ptr); }
-    uints reserved_total() const     { return A::size(_ptr); }
+    uints reserved_remaining() const    { return A::size(_ptr) - sizeof(T)*A::count(_ptr); }
+    uints reserved_total() const        { return A::size(_ptr); }
 
 
-    typedef _dynarray_eptr<T>               iterator;
-    typedef _dynarray_const_eptr<T>         const_iterator;
+    typedef _dynarray_eptr<T>           iterator;
+    typedef _dynarray_const_eptr<T>     const_iterator;
 
-    iterator begin()                { return _dynarray_eptr<T>(_ptr); }
-    iterator end()                  { return _dynarray_eptr<T>(_ptr+_count()); }
+    iterator begin()                    { return _dynarray_eptr<T>(_ptr); }
+    iterator end()                      { return _dynarray_eptr<T>(_ptr+_count()); }
 
-    const_iterator begin() const    { return _dynarray_const_eptr<T>(_ptr); }
-    const_iterator end() const      { return _dynarray_const_eptr<T>(_ptr+_count()); }
+    const_iterator begin() const        { return _dynarray_const_eptr<T>(_ptr); }
+    const_iterator end() const          { return _dynarray_const_eptr<T>(_ptr+_count()); }
 
 
     binstream_container get_container_to_write( uints n=UMAX )
@@ -1292,219 +1241,44 @@ private:
             for( uints i=0; i<c; ++i )  _ptr[i].~T();
     }
 
+    uints _realloc( uints newsize, uints oldsize )
+    {
+        uints nalloc = newsize;
+        if( nalloc < 2 * oldsize )
+            nalloc = 2 * oldsize;
+
+        T* op = _ptr;
+        _ptr = A::realloc(_ptr, nalloc);
+        _set_count(newsize);
+
+        if( !type_trait<T>::trivial_moving_constr  &&  op != _ptr )
+        {
+            for( uints i=0; i<oldsize; ++i )
+                type_trait<T>::moving::move( _ptr[i], op+i );
+        }
+
+        return nalloc;
+    }
+
 protected:
     ///Add \a nitems of elements on the end but do not initialize them with default constructor
     /** @param nitems count of items to add
         @param toones fill memory with ones (true) or zeros (false) before calling default constructor of element
-        @param ralign granularity (exponent of two) of reserved items
         @return pointer to the first added element */
-    T* addnc( uints nitems, uints ralign = 0 )
+    T* addnc( uints nitems )
     {
-        uints nalloc, nto = nitems + _count();
-        if (ralign > 0) {
-            nalloc = get_aligned_size (nto, ralign);
-        }
-        else
-            nalloc = nto;
+        uints n = _count();
 
-        if( nalloc*sizeof(T) > _size() ) {
-            if( nalloc < 2*_count() )
-                nalloc = 2*_count();
-            _ptr = A::reserve( _ptr, nalloc, true );
-        }
+        if(!nitems)  return _ptr + n;
+        uints nto = nitems + n;
+        uints nalloc = nto;
+
+        if( nalloc*sizeof(T) > _size() )
+            nalloc = _realloc(nalloc, n);
 
         _set_count(nto);
-        return _ptr + _count() - nitems;
+        return _ptr + n;
     };
-
-
-    ////////////////////////////////////////////////////////////////////////////////
-    //@{ Functions for allocation within specific segment page
-    bool pg_is_in( const ssegpage* pg ) const
-    {
-        return pg && pg->can_be_valid(_ptr);
-    }
-
-
-    typedef typenamex seg_allocator::HEADER     HEADER;
-    typedef typenamex ssegpage::block           block;
-
-    T* _pg_alloc( uints n, ssegpage* pg, seg_allocator* alc )
-    {
-        discard();
-        if( n == 0 )
-            return _ptr;
-
-        uints size = sizeof(HEADER) - sizeof(block) + n*sizeof(T);
-
-        HEADER* hdr;
-        if(pg)
-            hdr = (HEADER*)pg->alloc(size);
-
-        if( !pg || !hdr )
-        {
-            if(!alc)
-                alc = &SINGLETON(seg_allocator);
-            return set_dynarray_conforming_ptr( (T*) (alc->alloc( n, sizeof(T) ) + 1) ).ptr();
-        }
-
-        hdr->_count = n;
-        return set_dynarray_conforming_ptr( (T*) (hdr+1) ).ptr();
-    }
-
-    T* _pg_realloc( uints count, ssegpage* pg, seg_allocator* alc )
-    {
-        if(!_ptr)
-            return _pg_alloc( count, pg, alc );
-
-        HEADER* ph = (HEADER*)_ptr - 1;
-        uints size = count*sizeof(T) + sizeof(HEADER) - sizeof(block);
-
-        //not from this page
-        if( !pg_is_in(pg) )
-        {
-            dynarray<T> n;
-            n._pg_alloc( count, pg, alc );
-            _pg_copy( n._ptr, count );
-            return takeover(n).ptr();
-        }
-
-        _pg_predestroy( count );
-
-        HEADER* hdr = (HEADER*) ssegpage::realloc( ph, size );
-        if(hdr)
-        {
-            hdr->_count = count;
-            return set_dynarray_conforming_ptr( (T*)(hdr+1) ).ptr();
-        }
-        else
-        {
-            dynarray<T> n;
-            n._pg_alloc( count, pg, alc );
-            _pg_copy( n._ptr, count );
-            return takeover(n).ptr();
-        }
-    }
-
-    void _pg_copy( T* nptr, uints ns )
-    {
-        uints os = size();
-
-        if( os > ns )
-        {
-            if( !type_trait<T>::trivial_constr )
-                for( uints i=ns; i<os; ++i )  _ptr[i].~T();
-        }
-
-        if(os)
-            xmemcpy( nptr, _ptr, os*sizeof(T) );
-        ((HEADER*)_ptr)[-1]._count = 0;
-    }
-
-    void _pg_predestroy( uints nsize )
-    {
-        uints os = size();
-
-        if( !type_trait<T>::trivial_constr )
-            for( uints i=nsize; i<os; ++i )  _ptr[i].~T();
-
-        if( nsize < os )
-            ((HEADER*)_ptr)[-1]._count = nsize;
-    }
-    
-public:
-
-    dynarray<T>& pg_dup( dynarray<T>& dst, ssegpage* pg, seg_allocator* alc=0 ) const
-    {
-        dst._pg_alloc( size(), pg, alc );
-        for( uints i=0; i<size(); ++i )
-            dst._ptr[i] = _ptr[i];
-        return dst;
-    }
-
-    T* pg_ins( uints pos, ssegpage* pg, uints nitems=1, seg_allocator* alc=0 )
-    {
-        DASSERT( pos <= size() );
-
-        uints os = size();
-        _pg_realloc( os+nitems, pg, alc );
-        T* p = __ins( _ptr, pos, os, nitems );
-
-        if( !type_trait<T>::trivial_constr )
-            for( ; nitems>0; --nitems,++p )  ::new(p) T;
-
-        return _ptr + pos;
-    }
-
-
-    dynarray<T>& pg_alloc( uints n, ssegpage* pg, seg_allocator* alc=0 )
-    {
-        _pg_alloc( n, pg, alc );
-        if( !type_trait<T>::trivial_constr )
-            for( uints i=0; i<n; ++i )  ::new(_ptr+i) T;
-
-        return *this;
-    }
-
-    dynarray<T>& pg_realloc( uints n, ssegpage* pg, seg_allocator* alc=0 )
-    {
-        uints os = size();
-
-        _pg_realloc( n, pg, alc );
-        if( !type_trait<T>::trivial_constr )
-            for( uints i=os; i<n; ++i )  ::new(_ptr+i) T;
-
-        return *this;
-    }
-
-    dynarray<T>& pg_reserve( uints n, bool keep, ssegpage* pg, seg_allocator* alc=0 )
-    {
-        if( !keep  ||  size() == 0 )
-        {
-            _pg_alloc( n, pg, alc );
-            ((HEADER*)_ptr)[-1]._count = 0;
-        }
-        else
-        {
-            uints ocount = ((HEADER*)_ptr)[-1]._count;
-            _pg_realloc( n, pg, alc );
-            ((HEADER*)_ptr)[-1]._count = ocount < n ? ocount : n;
-        }
-        return *this;
-    }
-
-    dynarray<T>& pg_allocset( uints n, uchar set, ssegpage* pg, seg_allocator* alc=0 )
-    {
-        _pg_alloc( n, pg, alc );
-        ::memset( _ptr, set, ((HEADER*)_ptr)[-1].get_size() );
-        return *this;
-    }
-
-    dynarray<T>& pg_reallocset( uints n, uchar set, ssegpage* pg, seg_allocator* alc=0 )
-    {
-        uints ocount = ((HEADER*)_ptr)[-1]._count;
-
-        _pg_realloc( n, pg, alc );
-        if( n > ocount )
-            ::memset( _ptr + ocount, set, ((HEADER*)_ptr)[-1].get_size() - ocount*sizeof(T) );
-        return *this;
-    }
-
-    dynarray<T>& pg_reserveset( uints n, bool keep, uchar set, ssegpage* pg, seg_allocator* alc=0 )
-    {
-        if( !keep  ||  size() == 0 )
-        {
-            pg_allocset( n, set, pg, alc );
-            ((HEADER*)_ptr)[-1]._count = 0;
-        }
-        else {
-            uints ocount = ((HEADER*)_ptr)[-1]._count;
-            pg_reallocset( n, keep, set, pg, alc );
-            ((HEADER*)_ptr)[-1]._count = ocount < n ? ocount : n;
-        }
-        return *this;
-    }
-    //@}
 };
 
 

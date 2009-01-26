@@ -70,10 +70,10 @@ public:
             if( k <= 0 )
                 _buf.reset();
             else
-                _buf.need( _bgi + k );
+                _buf.realloc( _bgi + k );
         }
         else if( n < _buf.size() - _bgi )
-            _buf.need( uints(n + _bgi) );
+            _buf.realloc( uints(n + _bgi) );
 
         return _buf.size() - _bgi;
     }

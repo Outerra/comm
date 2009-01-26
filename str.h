@@ -82,7 +82,6 @@ public:
 
     static charstr empty()  { return charstr(); }
 
-    typedef seg_allocator::HEADER   HDR;
     //void * operator new (size_t size)   { return (charstr*) SINGLETON(segchunk_manager).alloc_hook(); }
     //void operator delete (void * ptr)   { SINGLETON(segchunk_manager).free_hook(ptr); }
 
@@ -244,13 +243,13 @@ public:
                 reset();
             else
             {
-                _tstr.need( k+1, 2 );
+                _tstr.realloc(k+1);
                 _tstr.ptr()[k]=0;
             }
         }
         else if( length+1 < (ints)_tstr.size() )
         {
-            _tstr.need( length+1, 2 );
+            _tstr.realloc( length+1 );
             _tstr.ptr()[length]=0;
         }
         else if( _tstr.size()>0 )
@@ -275,7 +274,7 @@ public:
             else
                 break;
         }
-        _tstr.need( n+1, 2 );
+        _tstr.realloc(n+1);
         _tstr[n] = 0;
         return *this;
     }
@@ -296,10 +295,7 @@ public:
         if( tok._len == 0 )
             reset();
         else
-        {
             assign( tok._ptr, tok._len+1 );
-            _tstr[tok._len] = 0;
-        }
         return *this;
     }
 
@@ -1261,7 +1257,7 @@ public:
     }
 
     char *copy32(char *p) const {
-        uints len = get_aligned_size(_tstr.size(), 2);
+        uints len = _tstr.size();
         xmemcpy( p, _tstr.ptr(), len );
         return p + len;
     }
@@ -1320,7 +1316,7 @@ protected:
             reset();
             return;
         }
-        _tstr.need_new( len, 2 );
+        _tstr.alloc(len);
         xmemcpy( _tstr.ptr(), czstr, len );
         termzero();
         //fill_align();
@@ -1340,7 +1336,7 @@ protected:
             return 0;
         }
 
-        char* p = _tstr.need_new( len+1, 2 );
+        char* p = _tstr.alloc(len+1);
         termzero();
 
         return p;

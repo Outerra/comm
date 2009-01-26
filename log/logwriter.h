@@ -37,6 +37,7 @@
 #define __COMM_LOGWRITTER_H__
 
 #include "logger.h"
+#include "../pthreadx.h"
 
 COID_NAMESPACE_BEGIN
 

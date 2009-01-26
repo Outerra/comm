@@ -47,33 +47,6 @@
 
 COID_NAMESPACE_BEGIN
 
-uints memaligned_used();
-void * memaligned_alloc( size_t size, size_t alignment );
-void * memaligned_realloc( void * memblock, size_t size, size_t alignment );
-void   memaligned_free( void * memblock );
-
-
-/*
-#ifdef _MSC_VER
-#define NEWTHROWTYPE
-#define DELTHROWTYPE
-#else
-#define NEWTHROWTYPE    throw (std::bad_alloc)
-#define DELTHROWTYPE    throw ()
-#endif
-
-
-void * operator new (size_t size) NEWTHROWTYPE;
-void operator delete (void * ptr) DELTHROWTYPE;
-void * operator new[] (size_t size) NEWTHROWTYPE;
-void operator delete[] (void *ptr) DELTHROWTYPE;
-*/
-
-////////////////////////////////////////////////////////////////////////////////
-/// Check if all set bits of \a b are also set in \a a
-inline bool bits_set (long a, long b)          { return (a&b) == b; }
-
-
 COID_NAMESPACE_END
 
 #endif // __COID_COMM_COMM__HEADER_FILE__

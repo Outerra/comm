@@ -103,7 +103,7 @@ public:
     INT_IDX* sort( bool ascending, const CONTAINER& psort, uints nitems, bool useindex = false )
     {
         if(!useindex) {
-            _puidx.need( nitems<<1 );
+            _puidx.realloc( nitems<<1 );
             _puidxa = _puidx.ptr();
             _puidxb = _puidxa + nitems;
         }
@@ -305,7 +305,7 @@ public:
     radix() {memset(_aucnts, 0, sizeof(_aucnts));}
 
     void sort(T* psort, uints nitems) {
-        _ptemp.need_new(nitems);
+        _ptemp.alloc(nitems);
         sortone(psort, _ptemp, 0);
         sortone(_ptemp, psort, 8);
         sortone(psort, _ptemp, 16);

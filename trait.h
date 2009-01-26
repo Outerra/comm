@@ -132,7 +132,12 @@ struct type_moving_constructor_trivial
 template <class T>
 struct type_moving_constructor
 {
-    static void move( T& dst, T* oldp )     { dst = *oldp; }
+    static void move( T& dst, T* oldp ) {
+        //if object of type T cannot be trivially copied to a new memory
+        // location, it must provide rebase(T*) method to autocorrect 
+        // its state after being copied
+        dst.rebase(oldp);
+    }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -181,6 +186,13 @@ template<> struct type_trait<t> { \
         type_moving_constructor<t> >::type  moving; \
 }; }
 
+#define COID_TYPE_NONTRIVIAL_REBASE(t) namespace coid { \
+template<> struct type_trait<t> { \
+    enum { trivial_constr = false, trivial_moving_constr = false, }; \
+    typedef type_select< trivial_moving_constr, \
+        type_moving_constructor_trivial<t>, \
+        type_moving_constructor<t> >::type  moving; \
+}; }
 
 ////////////////////////////////////////////////////////////////////////////////
 

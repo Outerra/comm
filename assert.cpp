@@ -36,6 +36,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "commassert.h"
+#include "sync/mutex.h"
 #include "binstream/filestream.h"
 #include "binstream/txtstream.h"
 #include "binstream/nullstream.h"
