@@ -166,7 +166,7 @@ public:
         _c6.bind( _cache );
     }
 
-    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX )
+    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS )
     {
         return _c6.read_until( ss, bout, max_size );
     }

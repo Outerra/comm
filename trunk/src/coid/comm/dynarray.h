@@ -105,8 +105,8 @@ struct _dynarray_eptr : std::iterator<std::random_access_iterator_tag, T>
     _dynarray_eptr& operator ++()       { ++_p;  return *this; }
     _dynarray_eptr& operator --()       { --_p;  return *this; }
 
-    _dynarray_eptr  operator ++(ints) { _dynarray_eptr x(_p);  ++_p;  return x; }
-    _dynarray_eptr  operator --(ints) { _dynarray_eptr x(_p);  --_p;  return x; }
+    _dynarray_eptr  operator ++(int) { _dynarray_eptr x(_p);  ++_p;  return x; }
+    _dynarray_eptr  operator --(int) { _dynarray_eptr x(_p);  --_p;  return x; }
 
     _dynarray_eptr& operator += (ints n){ _p += n;  return *this; }
 
@@ -319,7 +319,7 @@ public:
         }
 
         virtual bool is_continuous() const      { return true; }
-		binstream_container( dynarray<T>& v, uints n=UMAX )
+		binstream_container( dynarray<T>& v, uints n=UMAXS )
             : binstream_containerT<T>(n), _v(v)
         {
             _pos = 0;
@@ -743,7 +743,7 @@ public:
     }
 
 /*
-    void clear( uints nitems=UMAX, uints ufrm=0 )
+    void clear( uints nitems=UMAXS, uints ufrm=0 )
     {
         RASSERTX( ufrm*sizeof(T) < _size(), "offset out of range" );
         if( (nitems+ufrm)*sizeof(T) > _size() )
@@ -996,7 +996,7 @@ public:
         @return pointer to the first inserted element */
     T* ins( uints pos, uints nitems=1 )
     {
-        DASSERT( pos != UMAX );
+        DASSERT( pos != UMAXS );
         if( pos > _count() )
         {
             uints ov = pos - _count();
@@ -1012,7 +1012,7 @@ public:
 
     T* insc( uints pos, uints nitems=1 )
     {
-        DASSERT( pos != UMAX );
+        DASSERT( pos != UMAXS );
     	if( pos > _count() ) {
             uints ov = pos - _count();
             return addc(ov + nitems) + ov;
@@ -1025,7 +1025,7 @@ public:
 
     void ins_value( uints pos, const T& v )
     {
-        DASSERT( pos != UMAX );
+        DASSERT( pos != UMAXS );
         T* p;
         if( pos > _count() )
         {
@@ -1220,7 +1220,7 @@ public:
     const_iterator end() const          { return _dynarray_const_eptr<T>(_ptr+_count()); }
 
 
-    binstream_container get_container_to_write( uints n=UMAX )
+    binstream_container get_container_to_write( uints n=UMAXS )
     {
         return binstream_container( *this, n );
     }
@@ -1342,7 +1342,7 @@ template <class T>
 inline binstream& operator >> ( binstream &in, dynarray<T*>& dyna )
 {
     dyna.reset();
-    typename dynarray<T*>::binstream_container c( dyna, UMAX, 0, 0 );
+    typename dynarray<T*>::binstream_container c( dyna, UMAXS, 0, 0 );
     binstream_dereferencing_containerT<T> dc(c);
 
     return in.xread_array(dc);

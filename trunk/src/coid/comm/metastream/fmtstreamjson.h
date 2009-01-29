@@ -633,7 +633,7 @@ public:
 
         //optimized for character and key strings
         opcd e;
-        if( c.is_continuous()  &&  n != UMAX )
+        if( c.is_continuous()  &&  n != UMAXS )
         {
             if( t.type == type::T_BINARY )
                 e = write_binary( c.extract(n), n );
@@ -677,9 +677,9 @@ public:
             e = read_binary(tok,c,n,count);
         else
         {
-            if( n != UMAX  &&  n != tok.len() )
+            if( n != UMAXS  &&  n != tok.len() )
                 e = ersMISMATCHED "array size";
-            else if( c.is_continuous()  &&  n != UMAX )
+            else if( c.is_continuous()  &&  n != UMAXS )
                 xmemcpy( c.insert(n), tok.ptr(), tok.len() );
             else
             {

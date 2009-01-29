@@ -178,13 +178,18 @@ public:
 
     binstream& operator << (char x)             { return xwrite(&x, bstype::t_type<char>() ); }
 
-#ifdef _MSC_VER
+#ifdef SYSTYPE_MSVC
+# ifdef SYSTYPE_32
     binstream& operator << (ints x )            { return xwrite(&x, bstype::t_type<int>() ); }
     binstream& operator << (uints x )           { return xwrite(&x, bstype::t_type<uint>() ); }
+# else //SYSTYPE_64
+    binstream& operator << (int x )             { return xwrite(&x, bstype::t_type<int>() ); }
+    binstream& operator << (uint x )            { return xwrite(&x, bstype::t_type<uint>() ); }
+# endif
 #else
     binstream& operator << (long x )            { return xwrite(&x, bstype::t_type<long>() ); }
     binstream& operator << (ulong x )           { return xwrite(&x, bstype::t_type<ulong>() ); }
-#endif //_MSC_VER    
+#endif
     
     binstream& operator << (float x )           { return xwrite(&x, bstype::t_type<float>() ); }
     binstream& operator << (double x )          { return xwrite(&x, bstype::t_type<double>() ); }
@@ -219,8 +224,8 @@ public:
         bin >> (EnumType<sizeof(panel)>::TEnum&)x;
     The template deduces the actual size that the enum type takes.
 **/
-    binstream& operator >> (const char*& x )    { binstream_container_char_array c(UMAX); xread_array(c); x=c.get(); return *this; }
-    binstream& operator >> (char*& x )          { binstream_container_char_array c(UMAX); xread_array(c); x=(char*)c.get(); return *this; }
+    binstream& operator >> (const char*& x )    { binstream_container_char_array c(UMAXS); xread_array(c); x=c.get(); return *this; }
+    binstream& operator >> (char*& x )          { binstream_container_char_array c(UMAXS); xread_array(c); x=(char*)c.get(); return *this; }
 
 
     binstream& operator >> (key x)              { return xread(&x, bstype::t_type<key>() ); }
@@ -238,13 +243,18 @@ public:
 
     binstream& operator >> (char& x )           { return xread(&x, bstype::t_type<char>() ); }
 
-#ifdef _MSC_VER
+#ifdef SYSTYPE_MSVC
+# ifdef SYSTYPE_32
     binstream& operator >> (ints& x )           { return xread(&x, bstype::t_type<int>() ); }
     binstream& operator >> (uints& x )          { return xread(&x, bstype::t_type<uint>() ); }
+# else //SYSTYPE_64
+    binstream& operator >> (int& x )            { return xread(&x, bstype::t_type<int>() ); }
+    binstream& operator >> (uint& x )           { return xread(&x, bstype::t_type<uint>() ); }
+# endif
 #else
     binstream& operator >> (long& x )           { return xread(&x, bstype::t_type<long>() ); }
     binstream& operator >> (ulong& x )          { return xread(&x, bstype::t_type<ulong>() ); }
-#endif //_MSC_VER    
+#endif  
 
     binstream& operator >> (float& x )          { return xread(&x, bstype::t_type<float>() ); }
     binstream& operator >> (double& x )         { return xread(&x, bstype::t_type<double>() ); }
@@ -616,7 +626,7 @@ public:
         if(e)  return e;
 
         //if container doesn't know number of items in advance, require separators
-        if( n == UMAX )
+        if( n == UMAXS )
             t = c.set_array_needs_separators();
 
         uints count=0;
@@ -631,7 +641,7 @@ public:
     ///Read array to container \a c from this binstream
     opcd read_array( binstream_container& c )
     {
-        uints na = UMAX;
+        uints na = UMAXS;
         uints n = c._nelements;
         type t = c._type;
 
@@ -639,9 +649,9 @@ public:
         opcd e = read( &na, t.get_array_begin() );
         if(e)  return e;
 
-        if( na != UMAX  &&  n != UMAX  &&  n != na )
+        if( na != UMAXS  &&  n != UMAXS  &&  n != na )
             return ersMISMATCHED "requested and stored count";
-        if( na != UMAX )
+        if( na != UMAXS )
             n = na;
         else
             t = c.set_array_needs_separators();
@@ -682,7 +692,7 @@ public:
         uints n = c._nelements;
 
         opcd e;
-        if( t.is_primitive()  &&  c.is_continuous()  &&  n != UMAX )
+        if( t.is_primitive()  &&  c.is_continuous()  &&  n != UMAXS )
         {
             DASSERT( !t.is_no_size() );
 
@@ -706,7 +716,7 @@ public:
         //uints n = c._nelements;
 
         opcd e;
-        if( t.is_primitive()  &&  c.is_continuous()  &&  n != UMAX )
+        if( t.is_primitive()  &&  c.is_continuous()  &&  n != UMAXS )
         {
             DASSERT( !t.is_no_size() );
 
@@ -850,10 +860,10 @@ public:
     
 	////////////////////////////////////////////////////////////////////////////////
     ///Read until @p ss substring is read or @p max_size bytes received
-    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX ) = 0;
+    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS ) = 0;
 
     ///A convenient function to read one line of input with binstreams that support read_until()
-    opcd read_line( binstream* bout, uints max_size=UMAX )
+    opcd read_line( binstream* bout, uints max_size=UMAXS )
     {
         return read_until( substring::newline(), bout, max_size );
     }

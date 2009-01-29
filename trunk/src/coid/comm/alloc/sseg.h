@@ -107,7 +107,7 @@ public:
             return (_shftsize << (6+13)) >> (6+13-3-s);
         }
 
-        uints get_size( uint* prev ) const
+        uints get_size( uints* prev ) const
         {
             DASSERT( !is_big_chunk() );
             uchar s = _shftsize >> (32-6);
@@ -166,7 +166,7 @@ public:
             _shftsize |= (rgran-3) << (32-6);
             _shftsize |= uint(size>>rgran);
 
-            if( (char*)this + size < (char*)base + (1<<base->_rsegsize) )
+            if( (char*)this + size < (char*)base + (uints(1)<<base->_rsegsize) )
             {
                 block* nx = (block*) ((char*)this + size);
                 nx->_shftsize &= ~0x03ffe000;
@@ -267,8 +267,8 @@ protected:
     block::tail _dummy;
 
 
-    bool is_behind_page( block* b ) const           { return (char*)b >= (char*)this + (1<<_rsegsize); }
-    bool is_last( block* b ) const                  { return (char*)b + b->get_size() >= (char*)this + (1<<_rsegsize); }
+    bool is_behind_page( block* b ) const           { return (char*)b >= (char*)this + (uints(1)<<_rsegsize); }
+    bool is_last( block* b ) const                  { return (char*)b + b->get_size() >= (char*)this + (uints(1)<<_rsegsize); }
 
 /*
     block* get_block( const block& ch ) const       { return (block*) ((char*)this + ch.get_offs()); }
@@ -300,7 +300,7 @@ public:
     opcd write_to_stream( binstream& bin );
     opcd read_from_stream( binstream& bin, void** pbase, int* diffaddr );
 
-    uints get_segsize() const               { return 1<<_rsegsize; }
+    uints get_segsize() const               { return uints(1)<<_rsegsize; }
     uints get_used_size() const             { return _used; }
 
     static ssegpage* create( bool mutex, uints segsize = 65536 )
@@ -320,14 +320,14 @@ public:
 
     uints usable_size() const
     {
-        return (1<<_rsegsize) - align_size(sizeof(ssegpage))
+        return (uints(1)<<_rsegsize) - align_size(sizeof(ssegpage))
             - align_size(INITALRESERVEDUSEDN*sizeof(block*) + sizeof(block));
     }
     
     static uints usable_size_r( uint rsegsize )
     {
         uchar r = ssegpage::block::get_granularity_shift_from_rpagesize(rsegsize);
-        return (1<<rsegsize)
+        return (uints(1)<<rsegsize)
             - align_value_to_power2(sizeof(ssegpage),r)
             - align_value_to_power2(INITALRESERVEDUSEDN*sizeof(block*) + sizeof(block),r);
     }
@@ -346,7 +346,7 @@ public:
 
     bool is_empty() const                   { return _used == 0;  }
 
-    bool can_be_valid( void* p ) const      { return  p > (void*)this  &&  p < (void*)( (char*)this + (1<<_rsegsize) ); }
+    bool can_be_valid( void* p ) const      { return  p > (void*)this  &&  p < (void*)( (char*)this + (uints(1)<<_rsegsize) ); }
 
     ////////////////////////////////////////////////////////////////////////////////
     struct SEGLOCK
@@ -410,7 +410,7 @@ protected:
     
     block* alloc( uints size, bool adj );
 
-    bool test_offs( block* b ) const        { return b >= get_first_ptr()  &&  (char*)b < (char*)this + (1<<_rsegsize); }
+    bool test_offs( block* b ) const        { return b >= get_first_ptr()  &&  (char*)b < (char*)this + (uints(1)<<_rsegsize); }
 
     //block* blockptr( const void* p ) const  { return (block*)p; }
 

@@ -105,7 +105,7 @@ struct token
         _len = ptre - ptr;
     }
 
-    static token from_cstring( const char* czstr, uints maxlen = UMAX )
+    static token from_cstring( const char* czstr, uints maxlen = UMAXS )
     {
         return token( czstr, strnlen(czstr,maxlen) );
     }
@@ -453,6 +453,7 @@ struct token
     bool is_set() const                 { return _len > 0; }
     bool is_null() const                { return _ptr == 0; }
     void set_empty()                    { _len = 0; }
+    void set_empty( const char* p )     { _ptr = p; _len = 0; }
     void set_null()                     { _ptr = 0; _len = 0; }
 
     typedef const char* token::*unspecified_bool_type;
@@ -498,19 +499,23 @@ struct token
     ///Assigns string to token, initially setting up the token as empty, allowing for subsequent calls to token() method to retrieve next token.
     void assign( const charstr& str );
 
+    ///Set token from zero-terminated string
     const char* set( const char* czstr ) {
         _ptr = czstr;
         _len = czstr ? ::strlen(czstr) : 0;
         return _ptr+_len;
     }
 
-    const char* set( const char* czstr, uints len )
+    ///Set token from string and length.
+    ///@note use set_empty(ptr) to avoid conflict with overloads when len==0
+    const char* set( const char* str, uints len )
     {
-        _ptr = czstr;
+        _ptr = str;
         _len = len;
         return _ptr+_len;
     }
 
+    ///Set token from substring
     const char* set( const char* str, const char* strend )
     {
         _ptr = str;
@@ -518,6 +523,7 @@ struct token
         return _ptr+_len;
     }
 
+    ///Set token from string
     const char* set( const charstr& str );
 
 
@@ -552,7 +558,7 @@ struct token
     ucs4 get_utf8( uints& off ) const
     {
         if( off >= _len )  return 0;
-        if( _len - off < get_utf8_seq_expected_bytes(_ptr+off) )  return UMAX;
+        if( _len - off < get_utf8_seq_expected_bytes(_ptr+off) )  return UMAX32;
         return read_utf8_seq( _ptr, off );
     }
 
@@ -565,7 +571,7 @@ struct token
             //malformed UTF-8 character, but truncate it to make progress
             _ptr += _len;
             _len = 0;
-            return UMAX;
+            return UMAX32;
         }
         ucs4 ch = read_utf8_seq(_ptr);
         _ptr += off;
@@ -1958,7 +1964,7 @@ struct token
         return true;
     }
 
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
     ///Convert token to wide stl string
     bool codepage_to_wstring( uint cp, std::wstring& dst ) const
     {

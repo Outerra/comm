@@ -60,11 +60,10 @@ public:
     }
 
     virtual opcd read_raw( void*, uints& len )
-    {
-        return ersNO_MORE;
-    }
+    {   return ersNO_MORE; }
 
-    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX ) { return ersUNAVAILABLE; }
+    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS )
+    {   return ersUNAVAILABLE; }
 
     virtual opcd peek_read( uint timeout )          { return ersNO_MORE; }
     virtual opcd peek_write( uint timeout )         { return 0; }

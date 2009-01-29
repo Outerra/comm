@@ -101,7 +101,8 @@ public:
         return 0;
     }
 
-    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX ) { return ersUNAVAILABLE; }
+    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS )
+    {   return ersUNAVAILABLE; }
 
     virtual opcd peek_read( uint timeout ) {
         if(timeout)  return ersINVALID_PARAMS;
@@ -199,7 +200,7 @@ public:
 
         _rpos = _wpos = 0;
 
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
         int af;
 
         if( rw == 3 )       flg |= O_RDWR,      af = S_IREAD | S_IWRITE;
@@ -241,7 +242,7 @@ public:
 
 		_handle = _open_osfhandle((intptr_t)hfile, 0);*/
 
-		_handle = ::open( name, flg, 0644 );
+		_handle = ::_open( name, flg, 0644 );
 
         if( _handle != -1  &&  sh )
         {

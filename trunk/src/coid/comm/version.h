@@ -102,7 +102,7 @@ struct version
     ///Test whether client version can use provider
     bool can_use_provider( const version& provider, bool ignore_minor=true ) const
     {
-        if( _build == UMAX  ||  provider._build == UMAX )
+        if( _build == UMAX32  ||  provider._build == UMAX32 )
             return true;
 
         //cannot when majors aren't equal, e.g. client 1.x.x and provider 2.x.x
@@ -162,7 +162,7 @@ struct version
         if( ver.is_empty() )
         {
             //there's no internal version, fallback to default values
-            set( t, 0, 0, UMAX );
+            set( t, 0, 0, UMAX32 );
             return 0;
         }
 

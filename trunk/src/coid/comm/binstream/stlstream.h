@@ -182,12 +182,12 @@ protected:
 ////////////////////////////////////////////////////////////////////////////////
 #define STD_BINSTREAM(CONT) \
 template<class T, class A> inline binstream& operator << (binstream& out, const CONT<T,A>& v) \
-{   binstream_container_stl_input_iterator< CONT<T,A> > c( v, UMAX ); \
+{   binstream_container_stl_input_iterator< CONT<T,A> > c( v, UMAXS ); \
     out.xwrite_array(c); \
     return out; } \
 template<class T, class A> inline binstream& operator >> (binstream& out, CONT<T,A>& v) \
 {   v.clear(); \
-    binstream_container_stl_insert_iterator< CONT<T,A> > c( v, UMAX ); \
+    binstream_container_stl_insert_iterator< CONT<T,A> > c( v, UMAXS ); \
     out.xread_array(c); \
 	return out; } \
 template<class T, class A> inline metastream& operator << (metastream& m, const CONT<T,A>& ) \
@@ -198,12 +198,12 @@ PAIRUP_CONTAINERS_READABLE2( CONT, binstream_container_stl_input_iterator )
 
 #define STD_ASSOC_BINSTREAM(CONT) \
 template<class T, class A> inline binstream& operator << (binstream& out, const CONT<T,A>& v) \
-{   binstream_container_stl_input_iterator< CONT<T,A> > c( v, UMAX ); \
+{   binstream_container_stl_input_iterator< CONT<T,A> > c( v, UMAXS ); \
     out.xwrite_array(c); \
 	return out; } \
 template<class T, class A> inline binstream& operator >> (binstream& out, CONT<T,A>& v) \
 {   v.clear(); \
-    binstream_container_stl_assoc_iterator< CONT<T,A> > c( v, UMAX ); \
+    binstream_container_stl_assoc_iterator< CONT<T,A> > c( v, UMAXS ); \
     out.xread_array(c); \
 	return out; } \
 template<class T, class A> inline metastream& operator << (metastream& m, const CONT<T,A>& ) \
@@ -246,7 +246,7 @@ struct std_vector_binstream_container : public binstream_containerT<T>
     virtual bool is_continuous() const      { return true; }
 
     std_vector_binstream_container( std::vector<T,A>& v )
-        : binstream_containerT<T>(UMAX), _v(v)
+        : binstream_containerT<T>(UMAXS), _v(v)
     {
         v.clear();
         _pos = 0;

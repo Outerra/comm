@@ -99,7 +99,7 @@ public:
         return fATTR_OUTPUT_FORMATTING;
     }
 
-    virtual opcd read_until( const substring& ss, binstream * bout, uints max_size=UMAX ) {
+    virtual opcd read_until( const substring& ss, binstream * bout, uints max_size=UMAXS ) {
         return ersNOT_IMPLEMENTED;
     }
 
@@ -164,7 +164,7 @@ public:
     {
         token t = _tokenizer.last();
 
-        if( len != UMAX  &&  len>t.len() )
+        if( len != UMAXS  &&  len>t.len() )
             return ersNO_MORE;
 
         if( t.len() < len )
@@ -186,7 +186,7 @@ public:
     opcd read_binary( token& tok, binstream_container& c, uints n, uints* count )
     {
         uints nr = n;
-        if( c.is_continuous() && n!=UMAX )
+        if( c.is_continuous() && n!=UMAXS )
             nr = charstrconv::hex2bin( tok, c.insert(n), n, ' ' );
         else {
             for( ; nr>0; --nr )
@@ -195,7 +195,7 @@ public:
 
         *count = n - nr;
 
-        if( n != UMAX  &&  nr>0 )
+        if( n != UMAXS  &&  nr>0 )
             return ersMISMATCHED "not enough array elements";
 
         tok.skip_char(' ');

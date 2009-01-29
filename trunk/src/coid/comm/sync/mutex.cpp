@@ -42,7 +42,7 @@
 
 #ifdef _DEBUG
 
-#   ifdef SYSTYPE_WIN32
+#   ifdef SYSTYPE_WIN
 //#	    include <windows.h>
 #   endif
 
@@ -68,7 +68,7 @@ comm_mutex::comm_mutex (bool recursive, const char * name) : _comm_mutex(recursi
 {
 	SINGLETON(MX_REGISTER).add( this );
 	_locktime = 0;
-	_objid = UMAX;
+	_objid = UMAX32;
     _name = name;
 }
 #else
@@ -83,7 +83,8 @@ comm_mutex::comm_mutex( NOINIT_t n ) : _comm_mutex(n)
 #ifdef _DEBUG
 	SINGLETON(MX_REGISTER).add( this );
 	_locktime = 0;
-	_name = NULL; _objid = UMAX;
+	_name = NULL;
+    _objid = UMAX32;
 #endif
 }
 

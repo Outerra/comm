@@ -41,7 +41,7 @@
 #include "rw_mx_core.h"
 
 /// only win
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
 
 #include <windows.h>
 

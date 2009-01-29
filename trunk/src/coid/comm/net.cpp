@@ -141,7 +141,7 @@ void sysMilliSecondSleep( int milliseconds )
 ////////////////////////////////////////////////////////////////////////////////
 uint sysGetPid()
 {
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
     return _getpid();
 #else
     return getpgrp();
@@ -301,7 +301,7 @@ void netAddress::set( const token& host, int port, bool portoverride )
 
     if( host == _BROADCAST )
     {
-        sin_addr = UMAX;//INADDR_BROADCAST;
+        sin_addr = UMAX32;//INADDR_BROADCAST;
     }
     else
     {
@@ -327,7 +327,7 @@ void netAddress::set( const token& host, int port, bool portoverride )
         {
             charstr nameh = name;
             sin_addr = inet_addr(nameh.ptr());
-            if( sin_addr == UMAX )//INADDR_NONE )
+            if( sin_addr == UMAX32 )//INADDR_NONE )
             {
                 struct hostent *hp = gethostbyname(nameh.ptr());
                 if( hp != NULL )
@@ -446,7 +446,7 @@ charstr& netAddress::getLocalHostName( charstr& buf )
 
 ////////////////////////////////////////////////////////////////////////////////
 bool netAddress::getBroadcast() const {
-    return sin_addr == UMAX;//INADDR_BROADCAST;
+    return sin_addr == UMAX32;//INADDR_BROADCAST;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -499,7 +499,7 @@ netSocket::~netSocket()
     close();
 }
 
-void netSocket::setHandle( ints _handle )
+void netSocket::setHandle( uints _handle )
 {
     close();
     handle = _handle;
@@ -547,7 +547,7 @@ void netSocket::setBroadcast( bool broadcast )
     RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     int result;
     int one = 1;
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
     result = ::setsockopt( handle, SOL_SOCKET, SO_BROADCAST, (char*)&one, sizeof(one) );
 #else
     result = ::setsockopt( handle, SOL_SOCKET, SO_BROADCAST, &one, sizeof(one) );
@@ -560,7 +560,7 @@ void netSocket::setBuffers( uint rsize, uint wsize )
 {
     RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     int result;
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
     if(rsize)
         result = ::setsockopt( handle, SOL_SOCKET, SO_RCVBUF, (char*)&rsize, sizeof(rsize) );
     if(wsize)
@@ -581,7 +581,7 @@ void netSocket::setNoDelay( bool nodelay )
     int result;
 
     int one = nodelay;
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
     result = ::setsockopt( handle, SOL_SOCKET, TCP_NODELAY, (char*)&one, sizeof(one) );
 #else
     result = ::setsockopt( handle, SOL_SOCKET, TCP_NODELAY, &one, sizeof(one) );
@@ -595,7 +595,7 @@ void netSocket::setReuseAddr( bool reuse )
     int result;
 
     int one = reuse;
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
     result = ::setsockopt( handle, SOL_SOCKET, SO_REUSEADDR, (char*)&one, sizeof(one) );
 #else
     result = ::setsockopt( handle, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one) );
@@ -612,7 +612,7 @@ void netSocket::setLinger( bool blinger, ushort sec )
     lg.l_onoff = blinger;
     lg.l_linger = sec;
 
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
     result = ::setsockopt( handle, SOL_SOCKET, SO_LINGER, (char*)&lg, sizeof(lg) );
 #else
     result = ::setsockopt( handle, SOL_SOCKET, SO_LINGER, &lg, sizeof(lg) );
@@ -635,7 +635,7 @@ int netSocket::listen( int backlog )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-ints netSocket::accept( netAddress* addr )
+uints netSocket::accept( netAddress* addr )
 {
     RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
     socklen_t addr_len = (socklen_t) sizeof(netAddress) ;
@@ -728,7 +728,7 @@ void netSocket::lingering_close()
 ////////////////////////////////////////////////////////////////////////////////
 bool netSocket::isNonBlockingError()
 {
-#if defined(SYSTYPE_CYGWIN) || !defined (SYSTYPE_WIN32)
+#if defined(SYSTYPE_CYGWIN) || !defined (SYSTYPE_WIN)
     switch (errno) {
     case EWOULDBLOCK: // always == NET_EAGAIN?
     case EALREADY:
@@ -875,7 +875,7 @@ int netSocket::select( netSocket** reads, netSocket** writes, int timeout )
 /* Init/Exit functions */
 static void netExit ( void )
 {
-#if defined(SYSTYPE_CYGWIN) || !defined (SYSTYPE_WIN32)
+#if defined(SYSTYPE_CYGWIN) || !defined (SYSTYPE_WIN)
 #else
     /* Clean up windows networking */
     if ( WSACleanup() == SOCKET_ERROR ) {

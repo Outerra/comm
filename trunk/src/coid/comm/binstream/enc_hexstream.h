@@ -133,7 +133,7 @@ public:
         return 0;
     }
 
-    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX )
+    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS )
     {
         return _in->read_until( ss, bout, max_size );
     }
@@ -227,7 +227,7 @@ public:
         DASSERT( line>=4 );
 
         _line = line & ~1;
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
         token nl = "\r\n";
 #else
         token nl = "\n";

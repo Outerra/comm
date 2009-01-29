@@ -231,17 +231,17 @@ inline char* netaddr2String( char* _astr, const netaddr* ba)
 ///Socket type
 class netSocket
 {
-    ints handle;
+    uints handle;
 
 public:
 
     netSocket();
-    netSocket( int handle_ ) : handle(handle_) { }
+    netSocket( uints handle_ ) : handle(handle_) { }
 
     ~netSocket();
 
     ints getHandle () const { return handle; }
-    void setHandle (ints handle) ;
+    void setHandle (uints handle) ;
     void setHandleInvalid () ;
 
     bool isValid () const     { return handle != -1; }
@@ -251,7 +251,7 @@ public:
     void  lingering_close();
     int   bind        ( const char* host, int port ) ;
     int   listen      ( int backlog ) ;
-    ints  accept      ( netAddress* addr ) ;
+    uints accept      ( netAddress* addr ) ;
     int   connect     ( const token& host, int port, bool portoverride ) ;
     int   connect     ( const netAddress& addr ) ;
     int   send        ( const void* buffer, int size, int flags = 0 ) ;

@@ -37,7 +37,7 @@
 
 #include "rw_mx_core.h"
 
-#ifndef SYSTYPE_WIN32
+#ifndef SYSTYPE_WIN
 
 #include <stdio.h>
 #include <assert.h>
@@ -199,4 +199,4 @@ bool comm_mutex_rw::try_wr_lock()
 
 COID_NAMESPACE_END
 
-#endif //!SYSTYPE_WIN32
+#endif //!SYSTYPE_WIN

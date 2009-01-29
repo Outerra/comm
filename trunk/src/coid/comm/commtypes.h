@@ -43,17 +43,17 @@
 
 #if defined(__CYGWIN__)
 
-# define SYSTYPE_WIN32     1
-# define SYSTYPE_CYGWIN    1
+# define SYSTYPE_WIN        1
+# define SYSTYPE_CYGWIN     1
 
 # if !defined(NDEBUG) && !defined(_DEBUG)
 #  define _DEBUG
 # endif
 
-#elif defined(_WIN32) || defined(__WIN32__) || defined(_MSC_VER)
+#elif defined(_MSC_VER)
 
-# define SYSTYPE_WIN32     1
-# define SYSTYPE_MSVC      1
+# define SYSTYPE_WIN        1
+# define SYSTYPE_MSVC       1
 
 # if _MSC_VER >= 1400
 #  define SYSTYPE_MSVC8plus
@@ -91,7 +91,7 @@
 
 
 #ifdef SYSTYPE_MSVC
-# ifdef _WIN64
+# if defined(_WIN64)
 #  define SYSTYPE_64
 # else
 #  define SYSTYPE_32
@@ -108,11 +108,9 @@
 #include <sys/types.h>
 #include <stddef.h>
 
-#ifndef SYSTYPE_MSVC6
-    /// Operator new for preallocated storage
-    inline void * operator new (size_t, const void *p) { return (void*)p; }
-    inline void operator delete (void *, const void *) {}
-#endif
+/// Operator new for preallocated storage
+inline void * operator new (size_t, const void *p) { return (void*)p; }
+inline void operator delete (void *, const void *) {}
 
 
 namespace coid {
@@ -197,12 +195,12 @@ TYPE_TRIVIAL(uint64);
 
 TYPE_TRIVIAL(char);
 
-#ifdef _MSC_VER
+#ifdef SYSTYPE_32
 TYPE_TRIVIAL(ints);
 TYPE_TRIVIAL(uints);
 #else
-TYPE_TRIVIAL(long);
-TYPE_TRIVIAL(ulong);
+//TYPE_TRIVIAL(long);
+//TYPE_TRIVIAL(ulong);
 #endif
 
 TYPE_TRIVIAL(float);
@@ -215,22 +213,30 @@ TYPE_TRIVIAL(long double);
 template<class INT>
 struct SIGNEDNESS
 {
-    typedef int     SIGNED;
-    typedef uint    UNSIGNED;
+    //typedef int     SIGNED;
+    //typedef uint    UNSIGNED;
 };
 
-#define SIGNEDNESS_MACRO(T) \
-template<> struct SIGNEDNESS<T> { typedef T SIGNED; typedef unsigned T UNSIGNED; }; \
-template<> struct SIGNEDNESS<unsigned T> { typedef T SIGNED; typedef unsigned T UNSIGNED; }
+#define SIGNEDNESS_MACRO(T,S,U) \
+template<> struct SIGNEDNESS<T> { typedef S SIGNED; typedef U UNSIGNED; };
 
-SIGNEDNESS_MACRO(char);
-SIGNEDNESS_MACRO(short);
-SIGNEDNESS_MACRO(long);
 
-#ifdef _MSC_VER
+SIGNEDNESS_MACRO(int,int,uint);
+SIGNEDNESS_MACRO(uint,int,uint);
+
+SIGNEDNESS_MACRO(int8,int8,uint8);
+SIGNEDNESS_MACRO(uint8,int8,uint8);
+SIGNEDNESS_MACRO(int16,int16,uint16);
+SIGNEDNESS_MACRO(uint16,int16,uint16);
+SIGNEDNESS_MACRO(int32,int32,uint32);
+SIGNEDNESS_MACRO(uint32,int32,uint32);
+SIGNEDNESS_MACRO(int64,int64,uint64);
+SIGNEDNESS_MACRO(uint64,int64,uint64);
+/*
+#ifdef SYSTYPE_MSVC
     //SIGNEDNESS_MACRO(__int64);
-    template<> struct SIGNEDNESS<ints> { typedef ints SIGNED; typedef uints UNSIGNED; };
-    template<> struct SIGNEDNESS<uints> { typedef ints SIGNED; typedef uints UNSIGNED; };
+    template<> struct SIGNEDNESS<int32> { typedef int32 SIGNED; typedef uint32 UNSIGNED; };
+    template<> struct SIGNEDNESS<uint32> { typedef int32 SIGNED; typedef uint32 UNSIGNED; };
     template<> struct SIGNEDNESS<int64> { typedef int64 SIGNED; typedef uint64 UNSIGNED; };
     template<> struct SIGNEDNESS<uint64> { typedef int64 SIGNED; typedef uint64 UNSIGNED; };
 #else
@@ -240,46 +246,25 @@ SIGNEDNESS_MACRO(long);
     template<> struct SIGNEDNESS<__U64_TYPE> { typedef __S64_TYPE SIGNED; typedef __U64_TYPE UNSIGNED; };
 # endif
 #endif //_MSC_VER
-
+*/
 
 ////////////////////////////////////////////////////////////////////////////////
 #ifdef SYSTYPE_MSVC
-
-#pragma warning ( disable : 4786 )      //identifier truncated
-
-#   ifdef SYSTYPE_MSVC7plus
-
-#       define typenamex typename
-#       define TEMPLFRIEND
-#       define DEDUCE_T_HACK(T)
-#       define INDUCE_T_HACK(T)
-#   else
-#       define typenamex
-#       define TEMPLFRIEND
-#       define DEDUCE_T_HACK(T)    , T*
-#       define INDUCE_T_HACK(T)    , (T*)0
-#   endif
-
+# define TEMPLFRIEND
 #else
-
-#   define typenamex typename
-#   define TEMPLFRIEND <>
-#   define DEDUCE_T_HACK(T)
-#   define INDUCE_T_HACK(T)
-
+# define TEMPLFRIEND <>
 #endif
-
 
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Structure used as argument to constructors that should not initialize the object
 struct NOINIT_t
-{
-};
+{};
 
 #define NOINIT      NOINIT_t()
 
 ////////////////////////////////////////////////////////////////////////////////
+///Shift pointer address in bytes
 template <class T>
 T* ptr_byteshift( T* p, ints b )
 {
@@ -304,19 +289,24 @@ bool cdcd_memcheck( const uchar* a, const uchar* ae, const uchar* b, const uchar
 COID_NAMESPACE_END
 
 #ifdef SYSTYPE_64 
-	#define UMAX        static_cast<coid::uints>(0xffffffffffffffffULL)
+	#define UMAXS       static_cast<coid::uints>(0xffffffffffffffffULL)
 #else
-	#define UMAX        static_cast<coid::uints>(0xffffffffUL)
+	#define UMAXS       static_cast<coid::uints>(0xffffffffUL)
 #endif
 
-#define UMAX64      static_cast<coid::uint64>(0xffffffffffffffffULL)
+#define UMAX32      0xffffffffUL
+#define UMAX64      0xffffffffffffffffULL
 #define WMAX        0xffff
 
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Maximum default type alignment. Can be overriden for particular type by
 /// specializing alignment_trait for T
+#ifdef SYSTYPE_32
 static const int MaxAlignment = 8;
+#else
+static const int MaxAlignment = 16;
+#endif
 
 template<class T>
 static int alignment_size()

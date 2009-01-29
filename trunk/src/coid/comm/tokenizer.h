@@ -370,14 +370,14 @@ public:
                 return n;
         }
 
-        return UMAX;
+        return UMAX32;
     }
 
     uint next_group_id()
     {
         ucs4 k = exists_next();
         if( k == 0 )
-            return UMAX;
+            return UMAX32;
 
         return group_id(k);
     }
@@ -883,7 +883,7 @@ protected:
             // return special terminating token if we are in the ignore mode
             // or there is nothing in the buffer and in input
             if( ignore || (off==0 && _strbuf.len()>0) )
-                return token(0,0U);
+                return token(0);
         }
 
         // if there was something in the buffer, append this to it
@@ -1001,12 +1001,12 @@ public:
     uint group_id( const token& tok ) const
     {
         if (tok._len == 0)
-            return UMAX;
+            return UMAX32;
         for (uint n=0,b=_abmap[(uchar)*tok._ptr]; b; b>>=1,++n)
         {
             if (b & 1)  return n;
         }
-        return UMAX;
+        return UMAX32;
     }
 
     bool is_group (const token& tok, uchar grp) const

@@ -60,10 +60,11 @@ public:
 
     netstream()
     {
-        _timeout = UMAX;
+        _timeout = UMAX32;
     }
 
-    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX ) { return ersUNAVAILABLE; }
+    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS )
+    {   return ersUNAVAILABLE; }
 
     virtual opcd open( const token& arg )
     {

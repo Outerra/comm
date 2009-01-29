@@ -85,6 +85,8 @@ template<class T, class TAIL, class UIDX> binstream& operator >> (binstream&, se
 template <class T, class TAIL = EmptyTail, class UIDX=uint>
 class segarray
 {
+    typedef typename SIGNEDNESS<UIDX>::SIGNED    SIDX;
+
 public:
     struct segment;
 	struct ptr;
@@ -95,7 +97,7 @@ public:
 
         void* context;                  ///< context pointer
         void* segdata;                  ///< pointer to raw segment start
-        uint segsize;                   ///< raw segment size
+        uint  segsize;                  ///< raw segment size
 
         T*   data;                      ///< ptr to useful data in the segment
         uint chunksize;                 ///< size of one element in bytes (for dynamic TAILs)
@@ -205,12 +207,18 @@ public:
 
         uint   getset_swapid( uint& heap )
         {
-            if( _swapid != UMAX )
+            if( _swapid != UMAX32 )
                 return _swapid;
             return _swapid = heap++;
         }
 
-		bool   is_valid_ptr( const void* p ) const      { return p<end_ptr() && p>=bgi_ptr(); }
+        bool   is_valid_index( UIDX idx ) const {
+            return idx < _begidx  ||  idx-_begidx >= _nitems;
+        }
+
+		bool   is_valid_ptr( const void* p ) const {
+            return p<end_ptr() && p>=bgi_ptr();
+        }
 
         opcd   get_info( UIDX* first, uint* nitems, uint* offs ) const
         {
@@ -279,7 +287,7 @@ public:
         void   adjust( const segment& seg )     { _begidx = seg._begidx + seg._nitems; }
         void   set_index( UIDX i )              { _begidx = i; }
 
-        UIDX   get_index( const T* p ) const    { return _begidx + ((char*)p - bgi_ptr())/_chunksize; }
+        UIDX   get_index( const T* p ) const    { return _begidx + UIDX(((char*)p - bgi_ptr())/_chunksize); }
 
         bool inc_ptr( T*& p ) const
         { 
@@ -421,7 +429,7 @@ public:
         segment( ushort chunksize = 0 )
         {
             _pseg = 0;
-            _begidx = UMAX;
+            _begidx = (UIDX)UMAXS;
             _nitems = 0;
             _usdpos = 0;
             _chunksize = chunksize;
@@ -430,7 +438,7 @@ public:
             _segitems = 0;
             _array = 0;
             _nref = 0;
-            _swapid = UMAX;
+            _swapid = UMAX32;
             _lrui = 0;
         }
 
@@ -450,7 +458,7 @@ public:
             _begidx = seg._begidx;
             _nitems = seg._nitems;
             _nref = 0;
-            _swapid = UMAX;
+            _swapid = UMAX32;
             _flags = seg._flags;
 
             _pseg = seg._array.seg_alloc();
@@ -470,7 +478,7 @@ public:
             _begidx = seg._begidx;
             _nitems = seg._nitems;
             _nref = 0;
-            _swapid = UMAX;
+            _swapid = UMAX32;
             _flags = seg._flags;
 
             if( !_pseg )
@@ -490,7 +498,7 @@ public:
 */
         segment* alloc( UIDX idx, segarray* a )
         {
-            if( idx == UMAX )
+            if( idx == (UIDX)UMAXS )
                 idx = 0;
             _chunksize = a->item_size();
             _ntail = a->tail_element_count();
@@ -576,7 +584,7 @@ public:
         segment* next_segment()
         {
             uint sid = _array->get_segment_id( index_behind() );
-            if( sid == UMAX )
+            if( sid == UMAX32 )
                 return 0;
 
             return _array->get_segment(sid);
@@ -647,7 +655,7 @@ private:
     {
         ++_nsegmapped;
 
-        if( _nsegmapmax == UMAX )
+        if( _nsegmapmax == UMAX32 )
             return ::malloc( 1<<_rsegsize );
 
         return _segmem.alloc();
@@ -655,7 +663,7 @@ private:
 
     void seg_free( void* seg )
     {
-        if( _nsegmapmax == UMAX )
+        if( _nsegmapmax == UMAX32 )
             ::free(seg);
         else
             _segmem.free(seg);
@@ -751,7 +759,7 @@ private:
 
     segment* create_segment( uint sid, uint n=1 )
     {
-        if( sid == UMAX )
+        if( sid == UMAX32 )
             sid = (uint)_segments.size();
 
         UIDX off = sid>0 ? _segments[sid-1]->index_behind() : 0;
@@ -777,7 +785,7 @@ private:
                 p.count = sg->used_count();
                 p.chunksize = sg->get_chunksize();
                 p.segmentno = sid;
-                p.fileblock = UMAX;
+                p.fileblock = UMAX32;
                 p.bprimeload = 0;
 
                 opcd e = _fnc_stream_in(p);
@@ -832,7 +840,7 @@ private:
     uint get_segment_id( UIDX a ) const
     {
         if( _segments.size() == 0  ||  a >= _lastidx )
-            return UMAX;
+            return UMAX32;
 
         uint i=0, j=(uint)_segments.size();
         for( ;j-i>1; )
@@ -880,7 +888,7 @@ private:
     //look for the segment below the one given
     uint get_segment_before( UIDX a, uint sid ) const
     {
-        for(; sid != UMAX; --sid) {
+        for(; sid != UMAX32; --sid) {
             if( _segments[sid]->is_at(a) )  return sid;
         }
         return 0;
@@ -892,7 +900,7 @@ public:
 
     uint get_last_segment_id() const
     {
-        if( 0 == _segments.size() )  return UMAX;
+        if( 0 == _segments.size() )  return UMAX32;
 
         return (uint)_segments.size() - 1;
     }
@@ -972,84 +980,81 @@ public:
             return x;
         }
 
-        ptr& operator += (ints i)
+        ptr& operator += (SIDX i)
         {
             if( i == 0 )
                 return *this;
 
             if(!_p)
-            {
                 return _array->_get_at_safe( _array->_lastidx+i, *this );
+
+            UIDX ix = _seg->get_index(_p) + i;
+
+            if( _seg->is_valid_index(ix) ) {
+                ints oi = i * _seg->_chunksize;
+                _p = (T*)((char*)_p + oi);
             }
-
-            ints oi = i * _seg->_chunksize;
-            char* p = (char*)_p + oi;
-
-            if( _seg->is_valid_ptr(p) )
-                _p = (T*)p;
-            else
-            {
+            else {
                 _seg->refcnt_dec();
-                _seg->_array->_get_at_safe( _seg->get_index(_p)+i, *this );
+                _seg->_array->_get_at_safe(ix, *this);
             }
             return *this;
         }
 
-        ptr& operator -= (ints i)        { return operator += (-i); }
-
-        const T& operator [] (ints i) const
-        {
-            if( i == 0 )
-                return **this;
-
-            if(!_p)
-            {
-                return *_array->_get_at( _array->_lastidx+i );
-            }
-
-            ints oi = i * _seg->_chunksize;
-            char* p = (char*)_p + oi;
-
-            if( _seg->is_valid_ptr(p) )
-                return *(T*)p;
-            else
-                return *_seg->_array->_get_at( _seg->get_index(_p)+i );
+        ptr& operator -= (SIDX i) {
+            return operator += (-i);
         }
 
-        T& operator [] (ints i)
+        const T& operator [] (SIDX i) const
         {
             if( i == 0 )
                 return **this;
 
             if(!_p)
-            {
                 return *_array->_get_at( _array->_lastidx+i );
+
+            UIDX ix = _seg->get_index(_p) + i;
+
+            if( _seg->is_valid_index(ix) ) {
+                ints oi = i * _seg->_chunksize;
+                return *(const T*)((char*)_p + oi);
             }
-
-            ints oi = i * _seg->get_chunksize();
-            char* p = (char*)_p + oi;
-
-
-            if( _seg->is_valid_ptr(p) )
-                return *(T*)p;
             else
-                return *_seg->_array->_get_at( _seg->get_index(_p)+i );
+                return *_seg->_array->_get_at(ix);
+        }
+
+        T& operator [] (SIDX i)
+        {
+            if( i == 0 )
+                return **this;
+
+            if(!_p)
+                return *_array->_get_at( _array->_lastidx+i );
+
+            UIDX ix = _seg->get_index(_p) + i;
+
+            if( _seg->is_valid_index(ix) ) {
+                ints oi = i * _seg->_chunksize;
+                return *(T*)((char*)_p + oi);
+            }
+            else
+                return *_seg->_array->_get_at(ix);
         }
 
         const T* operator () () const           { return _p; }
         T* operator () ()                       { return _p; }
 
-        const T* operator () (ints i) const      { return & (operator[] (i)); }
-        T* operator () (ints i)                  { return & (operator[] (i)); }
+        const T* operator () (SIDX i) const     { return & (operator[] (i)); }
+        T* operator () (SIDX i)                 { return & (operator[] (i)); }
 
-        ptr operator + (ints i) const
+        ptr operator + (SIDX i) const
         {
             ptr t = *this;
             t += i;
             return t;
         }
 
-        ptr operator - (ints i) const
+        ptr operator - (SIDX i) const
         {
             ptr t = *this;
             t -= i;
@@ -1338,33 +1343,33 @@ public:
     }
 
     ///Insert n items on a-th item
-    void ins( UIDX a, uint n=1 )
+    void ins( UIDX a, UIDX n=1 )
     {
         if( n==0 )  return;
         _ins(a, n);
     }
 
     ///Delete n items starting at the a-th item
-    void del( UIDX a, uint n=1 )
+    void del( UIDX a, UIDX n=1 )
     {
         _del(a, n);
     }
 
     ///Insert n items on a-th item
-    void ins( ptr& a, uint n=1 )
+    void ins( ptr& a, UIDX n=1 )
     {
         if( n==0 )  return;
         _ins( a.index(), n );
     }
 
     ///Delete n items starting at the a-th item
-    void del( ptr& a, uint n=1 )
+    void del( ptr& a, UIDX n=1 )
     {
         _del( a.index(), n );
     }
 
 
-    ptr& ins( UIDX a, ptr& p, uint n=1 )
+    ptr& ins( UIDX a, ptr& p, UIDX n=1 )
     {
         segment* segid = _ins(a,n);
         if( segid->is_at(a) )
@@ -1383,13 +1388,13 @@ public:
         return segid->get_at(a);
     }
 
-    ptr& del( UIDX a, ptr &p, uint n=1 )
+    ptr& del( UIDX a, ptr &p, UIDX n=1 )
     {
         _del(a, n);
         return get_ptr(a, p);
     }
 
-    ptr& push( ptr &p, uint n=1 )
+    ptr& push( ptr &p, UIDX n=1 )
     {
         if(!n)
             return p;
@@ -1398,7 +1403,7 @@ public:
         return p;
     }
 
-    ptr& push_set_to_last( ptr &p, uint n=1 )
+    ptr& push_set_to_last( ptr &p, UIDX n=1 )
     {
         if(!n)
             return p;
@@ -1421,7 +1426,7 @@ public:
         return segid->get_last();
     }
 
-    bool pop( uint n=1 )
+    bool pop( UIDX n=1 )
     {
         if(_lastidx == 0)  return false;
         _del( _lastidx, n );
@@ -1464,7 +1469,7 @@ public:
     ///Get item ptr, do not throw when index equals array size
     ptr& _get_at_safe( UIDX i, ptr& p ) const
     {
-        if( i == _lastidx  ||  i == UMAX )
+        if( i == _lastidx  ||  i == (UIDX)UMAXS )
         {
             p.set(this);
             return p;
@@ -1526,8 +1531,6 @@ public:
 
     T* operator () (UIDX i)                  { return _get_at(i); }
 
-    ///set up ptr object to point at specified item index
-    ptr& operator () (UIDX i, ptr& x)        { _get_at_safe( i, x );  return x; }
 
     segarray& operator = (const segarray& in)
     {
@@ -1604,10 +1607,10 @@ public:
 
     uint get_mapped_segment_id( uint sid ) const
     {
-        if( _nsegmapmax == UMAX )  return UMAX;
+        if( _nsegmapmax == UMAX32 )  return UMAX32;
 
         segment* sg = get_segment(sid);
-        if(!sg) return UMAX;
+        if(!sg) return UMAX32;
 
         return (uint)_segmem.get_item_id( sg->ptr_mem() );
     }
@@ -1694,7 +1697,7 @@ public:
     {
         if( size == 0 )
         {
-            _nsegmapmax = UMAX;
+            _nsegmapmax = UMAX32;
             return 0;
         }
 
@@ -1714,7 +1717,7 @@ public:
 
     uints get_max_memory() const
     {
-        return _nsegmapmax == UMAX  ?  0 : (_nsegmapmax<<_rsegsize);
+        return _nsegmapmax == UMAX32  ?  0 : (_nsegmapmax<<_rsegsize);
     }
 
     ///Set actual item size
@@ -1731,12 +1734,12 @@ public:
         return _ntail;
     }
 
-    uint set_segsize( uint segsize )
+    uint set_segsize( uints segsize )
     {
         if(_lastidx)
             return 1<<_rsegsize;        //if anything already pushed in, return the old size
 
-        uint rs = segsize;
+        uints rs = segsize;
         uchar i;
         for( i=0; rs; ++i, rs>>=1 );
         if( i-- == 0 )
@@ -1772,26 +1775,26 @@ public:
 
     TAIL* ptr_tail( const T* p ) const      { return (TAIL*)((char*)p + sizeof_T()); }
 
-    segarray( uint flags = fSEQ_INSERT, uint segsize = 0, uint ntail = 0 )
+    segarray( uint flags = fSEQ_INSERT, uints segsize = 0, uint ntail = 0 )
     {
         uchar i;
-        uint rs = segsize;
+        uints rs = segsize;
         for(i=0; rs; ++i, rs>>=1);
         if(i--==0)  _rsegsize = DEF_RSEGSIZE;
         else
         {
-            if(segsize & ((1<<i)-1))  ++i;
+            if(segsize & ((uints(1)<<i)-1))  ++i;
             _rsegsize = i;
         }
         _flags = flags;
         _lastidx = 0;
         _ntail = ntail;
-        _segitems = uint( (1<<_rsegsize)/item_size() );
+        _segitems = uint( (uints(1)<<_rsegsize)/item_size() );
         //_segsize = _segitems*item_size();
 
         _fnc_stream_in = _fnc_stream_out = 0;
         _stream_context = 0;
-        _nsegmapmax = UMAX;
+        _nsegmapmax = UMAX32;
         _nsegmapped = 0;
         _usg_iter = 0;
         _swapsegcount = 0;
@@ -1810,7 +1813,7 @@ protected:
             UIDX nc = a - _lastidx;    //to construct
             UIDX nt = nc + n;          //to tal    :)
             sid = get_last_segment_id();
-            if( sid != UMAX )
+            if( sid != UMAX32 )
             {
                 segment* segid = get_segment(sid);
                 //if (segid->_segarray != this)
@@ -1829,7 +1832,7 @@ protected:
                 sid = 0;
             while(nt)
             {
-                segment* segid = create_segment(UMAX);
+                segment* segid = create_segment(UMAX32);
                 //segment* segid = *_segments.add(1) = new segment;
                 //segid->alloc( _lastidx, *this, _usg_iter );
 
@@ -2008,7 +2011,7 @@ protected:
         if( n > segid->used_count_after(a) )
         {
             n -= segid->used_count_after(a);
-            segid->del( rp, segid->used_count_after(a) );
+            segid->del( (uint)rp, segid->used_count_after(a) );
             uint i;
 
             for( i=1; ; ++i )
@@ -2016,7 +2019,7 @@ protected:
                 segment& si = *get_segment(sid+i);
                 if(n < si.used_count())
                 {
-                    si.del( 0, n );
+                    si.del( 0, (uint)n );
                     break;
                 }
                 else
@@ -2033,7 +2036,7 @@ protected:
         }
         else
         {
-            segid->del( rp, n );
+            segid->del( (uint)rp, (uint)n );
             if( segid->used_count() == 0 )
                 _segments.del(sid, 1);
             if(sid == 0)
@@ -2070,14 +2073,14 @@ protected:
 
     uint adjust( uint sid, UIDX id )
     {
-        uint ssi = UMAX;
+        uint ssi = UMAX32;
         for( ++sid; sid<_segments.size(); ++sid )
         {
             _segments[sid]->adjust( *_segments[sid-1] );
             if( id < _segments[sid]->bgi_index() )
             {
                 ssi = sid-1;
-                id = (UIDX)-1;//UMAX;
+                id = (UIDX)UMAXS;
             }
         }
 

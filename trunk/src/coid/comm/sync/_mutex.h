@@ -95,7 +95,7 @@ public:
 class _comm_mutex
 {
 public:
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
     struct critical_section
     {
         enum { CS_SIZE = 16*4, };
@@ -105,7 +105,7 @@ public:
 #endif    
 
 private:
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
     critical_section    _cs;
 #else
     pthread_mutex_t     _mutex;

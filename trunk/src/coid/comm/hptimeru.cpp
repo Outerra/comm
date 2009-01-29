@@ -102,38 +102,6 @@ int MsecTimer::usec_to_tick( uint k ) const
     return int( k*uint64(_period) - usec );
 }
 
-////////////////////////////////////////////////////////////////////////////////
-uint64 get_hz( uint times = 4, uint msec = 50 )
-{
-    struct timeval tva, tvb;
-    uint64 ca, cb, val=0;
-
-    for( uint i=0; i<times; ++i )
-    {
-        gettimeofday( &tva, 0 );
-        ca = cpu_ticks();
-
-        sysMilliSecondSleep(msec);
-
-        gettimeofday( &tvb, 0 );
-        cb = cpu_ticks();
-
-        uint64 d = cb - ca;
-        uint db = tvb.tv_sec*1000000 + tvb.tv_usec - tva.tv_sec*1000000 - tva.tv_usec;  //microseconds
-        
-        val += (d*1000000) / db;
-    }
-
-    return val / times;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-HPTIMER::HPTIMER()
-{
-    _Irate = get_hz();
-    _Isttime = cpu_ticks();
-}
-
 } // namespace coid
 
 

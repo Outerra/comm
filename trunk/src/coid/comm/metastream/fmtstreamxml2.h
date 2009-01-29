@@ -184,7 +184,7 @@ public:
 /*
                 if( t.type != type::T_COMPOUND ) {
                     _bufw << " SOAP-ENC:arrayType=\"" << get_xsi_type(t) << "[";
-                    if( *(const uints*)p != UMAX )
+                    if( *(const uints*)p != UMAXS )
                         _bufw << *(const uints*)p;
                     _bufw << "]\" xsi:type=\"SOAP-ENC:Array\"";
                 }
@@ -583,7 +583,7 @@ public:
 
         //optimized for character and key strings
         opcd e=0;
-        if( c.is_continuous()  &&  n != UMAX )
+        if( c.is_continuous()  &&  n != UMAXS )
         {
             if( t.type == type::T_BINARY )
                 e = write_binary( c.extract(n), n );
@@ -645,7 +645,7 @@ public:
             e = read_binary(tok,c,n,count);
         else
         {
-            if( n != UMAX  &&  n != tok.len() )
+            if( n != UMAXS  &&  n != tok.len() )
                 e = ersMISMATCHED "array size";
             else if( c.is_continuous() )
                 xmemcpy( c.insert(tok.len()), tok.ptr(), tok.len() );

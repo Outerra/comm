@@ -583,7 +583,7 @@ public:
 
         opcd e;
         //optimized for character and key strings
-        if( c.is_continuous()  &&  n != UMAX )
+        if( c.is_continuous()  &&  n != UMAXS )
         {
             if( t.type == type::T_BINARY )
                 e = write_binary( c.extract(n), n );
@@ -642,7 +642,7 @@ public:
             e = read_binary(tok,c,n,count);
         else
         {
-            if( n != UMAX  &&  n != tok.len() )
+            if( n != UMAXS  &&  n != tok.len() )
                 e = ersMISMATCHED "array size";
             else if( c.is_continuous() )
             {

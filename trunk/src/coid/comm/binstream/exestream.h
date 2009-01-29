@@ -71,7 +71,7 @@ public:
     virtual opcd write_raw( const void* p, uints& len ) { return _buf.write_raw( p, len ); }
     virtual opcd read_raw( void* p, uints& len )        { return _buf.read_raw( p, len ); }
 
-	virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX ) {
+	virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS ) {
 		return _buf.read_until( ss, bout, max_size );
 	}
 
@@ -162,7 +162,7 @@ public:
     virtual opcd write_raw( const void* p, uints& len ) { return _buf.write_raw( p, len ); }
     virtual opcd read_raw( void* p, uints& len )        { return _buf.read_raw( p, len ); }
 
-	virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX ) {
+	virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS ) {
 		return _buf.read_until( ss, bout, max_size );
 	}
 

@@ -426,7 +426,7 @@ public:
 
     binstream& stream_in( binstream& bin )
     {
-        hashtable_binstream_container bc(*this,UMAX);
+        hashtable_binstream_container bc(*this, UMAXS);
         bin.xread_array( bc );
 
         return bin;
@@ -547,7 +547,7 @@ public:
 
     std::pair<iterator, iterator> equal_range( const LOOKUP& k )
     {
-        uint slot;
+        uints slot;
         Node* f = find_node(k,slot);
         if(!f)
             return std::pair<iterator,iterator>( end(), end() );
@@ -562,7 +562,7 @@ public:
 
     std::pair<const_iterator, const_iterator> equal_range( const LOOKUP& k ) const
     {
-        uint slot;
+        uints slot;
         const Node* f = find_node(k,slot);
         if(!f)
             return std::pair<const_iterator,const_iterator>( end(), end() );
