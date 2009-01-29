@@ -43,7 +43,7 @@
 #include "net_ul.h"
 #include "token.h"
 
-#ifndef SYSTYPE_WIN32
+#ifndef SYSTYPE_WIN
 #   include <pthread.h>
 #   include <semaphore.h>
 #endif
@@ -162,7 +162,7 @@ typedef thread::Exception   ThreadException;
 ////////////////////////////////////////////////////////////////////////////////
 struct thread_key
 {
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
     uint _key;
 #else
     pthread_key_t _key;
@@ -178,7 +178,7 @@ struct thread_key
 ////////////////////////////////////////////////////////////////////////////////
 struct thread_semaphore
 {
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
     uints _handle;
 #else
     sem_t* _handle;

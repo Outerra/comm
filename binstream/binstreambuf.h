@@ -72,7 +72,7 @@ public:
             else
                 _buf.realloc( _bgi + k );
         }
-        else if( n < _buf.size() - _bgi )
+        else if( (uints)n < _buf.size() - _bgi )
             _buf.realloc( uints(n + _bgi) );
 
         return _buf.size() - _bgi;
@@ -181,7 +181,7 @@ public:
     }
 
 	/// read until \a ss substring is read or 'max_size' bytes received
-	opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX )
+	opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS )
     {
         token t( _buf.ptr()+_bgi, _buf.size() - _bgi );
         token o;
@@ -360,13 +360,13 @@ public:
         xmemcpy( p, _source, len );
 		_source += len;
 
-		if( _len != UMAX ) _len -= len;
+		if( _len != UMAXS ) _len -= len;
         len = 0;
         return 0;
     }
 
 	/// read until \a ss substring is read or 'max_size' bytes received
-	opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX )
+	opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS )
     {
         token t( (const char*)_source, _len );
         
@@ -421,7 +421,7 @@ public:
 
     friend inline binstream& operator << (binstream& out, const binstreamconstbuf& buf)
     {
-		if( buf._len == UMAX ) throw ersUNAVAILABLE "unknown size";
+		if( buf._len == UMAXS ) throw ersUNAVAILABLE "unknown size";
 		out.xwrite_raw( buf._source, buf._len );
         return out;
     }

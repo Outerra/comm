@@ -61,12 +61,12 @@ public:
     virtual ~netstreamtcp()     { close(); }
 
 	netstreamtcp() {
-		_timeout = UMAX;
+		_timeout = UMAX32;
 		_socket.setHandleInvalid();
 	}
-	netstreamtcp( netSocket& s ) {_timeout = UMAX; assign_socket( s );}
+	netstreamtcp( netSocket& s ) {_timeout = UMAX32; assign_socket( s );}
 	netstreamtcp( int socket ) {
-		_timeout = UMAX;
+		_timeout = UMAX32;
 		_socket.setHandle( socket );
 		_socket.setBlocking( true );
         _socket.setNoDelay( true );
@@ -146,7 +146,7 @@ public:
 	}
 
 	 /// continue reading until 'term' character is read or 'max_size' bytes received
-	opcd read_until( charstr& buf, char term, uints max_size=UMAX )
+	opcd read_until( charstr& buf, char term, uints max_size=UMAXS )
     {
 		uints buf_len = max_size < 512 ? max_size : 512;
 		char * p = buf.get_append_buf( buf_len );

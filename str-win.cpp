@@ -13,7 +13,7 @@ COID_NAMESPACE_BEGIN
 ///////////////////////////////////////////////////////////////////////////////
 uints charstr::append_wchar_buf_ansi( const wchar_t* src, uints nchars )
 {
-    uints n = nchars==UMAX
+    uints n = nchars==UMAXS
         ? wcslen((const wchar_t*)src)
         : nchars;
 

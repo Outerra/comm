@@ -117,7 +117,7 @@ public:
         _pagesize = 0;
         _mem = 0;
         _numfree = 0;
-        _first = UMAX;
+        _first = -1;
     }
 
     chunkpage( uints pagesize, uints itemsize = sizeof(T) )

@@ -321,7 +321,7 @@ public:
 
     ///Read array of objects of type T from the currently bound formatting stream into the cache
     template<class T>
-    opcd cache_array_in( const token& name = token::empty(), uints n=UMAX )
+    opcd cache_array_in( const token& name = token::empty(), uints n=UMAXS )
     {
         opcd e;
         try {
@@ -473,7 +473,7 @@ public:
     {
         _cache.reset();
         _current = _cachestack.realloc(1);
-        _current->offs = open ? 0 : UMAX;
+        _current->offs = open ? 0 : UMAXS;
         _cachevar = 0;
         _cacheroot = 0;
         _cacheskip = 0;
@@ -503,9 +503,14 @@ public:
 
     metastream& operator << (const char&a)      {meta_primitive( "char", get_type(a) ); return *this;}
 
-#ifdef _MSC_VER
+#ifdef SYSTYPE_MSVC
+# ifdef SYSTYPE_32
     metastream& operator << (const ints&a)      {meta_primitive( "int", get_type(a) ); return *this;}
     metastream& operator << (const uints&a)     {meta_primitive( "uint", get_type(a) ); return *this;}
+# else //SYSTYPE_64
+    metastream& operator << (const int&a)       {meta_primitive( "int", get_type(a) ); return *this;}
+    metastream& operator << (const uint&a)      {meta_primitive( "uint", get_type(a) ); return *this;}
+# endif
 #else
     metastream& operator << (const long&a)      {meta_primitive( "long", get_type(a) ); return *this;}
     metastream& operator << (const ulong&a)     {meta_primitive( "ulong", get_type(a) ); return *this;}
@@ -741,8 +746,8 @@ public:
     }
 
     ///Signal that the primitive or compound type coming is an array
-    ///@param n array element count, UMAX if unknown or varying
-    void meta_array( uints n = UMAX )
+    ///@param n array element count, UMAXS if unknown or varying
+    void meta_array( uints n = UMAXS )
     {
         if( is_template_name_mode() ) {
             static token tarray = "@";
@@ -881,7 +886,8 @@ private:
         virtual opcd write_array_separator( type t, uchar end ) { return _meta->data_write_array_separator(t,end); }
         virtual opcd read_array_separator( type t )             { return _meta->data_read_array_separator(t); }
 
-        virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX ) {return ersNOT_IMPLEMENTED;}
+        virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS )
+        {   return ersNOT_IMPLEMENTED;}
 
         virtual opcd peek_read( uint timeout )                  { return 0; }
         virtual opcd peek_write( uint timeout )                 { return 0; }
@@ -994,7 +1000,7 @@ private:
         uints ofsz;                     ///< offset to the count field (only for arrays)
 
         CacheEntry()
-            : buf(0), offs(UMAX), ofsz(UMAX)
+            : buf(0), offs(UMAXS), ofsz(UMAXS)
         {}
 
         uints size() const              { return buf->size(); }
@@ -1021,7 +1027,7 @@ private:
         void set_addr( uints adr, uints v ) { *(uints*)(buf->ptr() + adr) = v - adr; }
         void set_addr_invalid( uints adr )  { *(uints*)(buf->ptr() + adr) = 0; }
 
-        bool valid_addr() const         { return offs != UMAX  &&  0 != *(const uints*)(buf->ptr() + offs); }
+        bool valid_addr() const         { return offs != UMAXS  &&  0 != *(const uints*)(buf->ptr() + offs); }
         bool valid_addr( uints adr ) const  { return 0 != *(const uints*)(buf->ptr() + adr); }
 
         ///Extract offset-containing field, moving to the next entry
@@ -1358,7 +1364,7 @@ protected:
         do {
             if( _curvar.var == _cachevar ) {
                 //end caching - _cachevar was cached completely
-                _current->offs = UMAX;
+                _current->offs = UMAXS;
                 return 0;
             }
             else {
@@ -1595,7 +1601,7 @@ protected:
         }
         else if( cache_prepared() ) //cache with a primitive array
         {
-            if( !_cachevar  &&  c.is_continuous()  &&  n != UMAX )
+            if( !_cachevar  &&  c.is_continuous()  &&  n != UMAXS )
             {
                 uints na = n * tae.get_size();
                 xmemcpy( _current->insert_void_unpadded(na), c.extract(n), na );
@@ -1623,7 +1629,7 @@ protected:
             if( cache_prepared() )  //cached compound array
             {
                 //reading from cache
-                DASSERT( _cachevar  ||  n != UMAX );
+                DASSERT( _cachevar  ||  n != UMAXS );
                 DASSERT( !_curvar.var->is_primitive() );
 
                 uints i, prevoff;
@@ -1673,7 +1679,7 @@ protected:
         }
         else if( cache_prepared() ) //cache with a primitive array
         {
-            if( !_cachevar  &&  c.is_continuous()  &&  n != UMAX )
+            if( !_cachevar  &&  c.is_continuous()  &&  n != UMAXS )
             {
                 uints na = n * tae.get_size();
                 xmemcpy( c.insert(n), _current->data(), na );
@@ -1756,7 +1762,7 @@ protected:
 
 
     bool cache_prepared() const {
-        return _current->offs != UMAX;
+        return _current->offs != UMAXS;
     }
 
 
@@ -1765,10 +1771,10 @@ protected:
         MetaDesc* desc = _stack.last()->var->desc;
 
         uints k = desc->get_child_pos(_cachequit) * sizeof(uints);
-        DASSERT( k!=UMAX  &&  _current->valid_addr(k) );
+        DASSERT( k!=UMAXS  &&  _current->valid_addr(k) );
 
         _current->set_addr_invalid(k);
-        _current->offs = UMAX;
+        _current->offs = UMAXS;
         _cachequit = 0;
     }
 
@@ -1785,7 +1791,7 @@ protected:
                 movein_cache_member<R>();
 
                 if( !R || _cachevar ) {
-                    *_current->insert_asize_field() = UMAX;
+                    *_current->insert_asize_field() = UMAXS;
 
                     if(_cachevar)
                         e = _fmtstreamrd->read(p,t);
@@ -1794,7 +1800,7 @@ protected:
                     _current->extract_asize_field();
 
                     uints n = _current->get_asize();
-                    DASSERT( n != UMAX  &&  n != 0xcdcdcdcd );
+                    DASSERT( n != UMAXS  &&  n != 0xcdcdcdcd );
 
                     *(uints*)p = n;
                 }
@@ -1806,7 +1812,7 @@ protected:
                         e = _fmtstreamrd->read(p,t);
 
                     uints n = *(const uints*)p;
-                    DASSERT( n != UMAX  &&  n != 0xcdcdcdcd );
+                    DASSERT( n != UMAXS  &&  n != 0xcdcdcdcd );
 
                     _current->set_asize(n);
                 }
@@ -2124,7 +2130,7 @@ protected:
     ///Read array to container \a c from this binstream
     opcd cache_read_array( binstream_container& c )
     {
-        uints na = UMAX;
+        uints na = UMAXS;
         uints n = c._nelements;
         type t = c._type;
 
@@ -2132,9 +2138,9 @@ protected:
         opcd e = data_read_value( &na, t.get_array_begin() );
         if(e)  return e;
 
-        if( na != UMAX  &&  n != UMAX  &&  n != na )
+        if( na != UMAXS  &&  n != UMAXS  &&  n != na )
             return ersMISMATCHED "requested and stored count";
-        if( na != UMAX )
+        if( na != UMAXS )
             n = na;
         else
             t = c.set_array_needs_separators();
@@ -2220,7 +2226,7 @@ inline type_holder<T> get_type_holder(T*) {
 #define MMED(meta, n, v, d)			{ meta.meta_variable_enum(n,&(v)); meta.meta_cache_default_enum( get_type_holder(&(v)) = d ); }
 #define MMTD(meta, n, t, d)         { meta.meta_variable<t>(n,0); meta.meta_cache_default( get_type_holder<t>(0) = d ); }
 
-#define MMAT(meta, n, t)            { meta.meta_variable_array<t>(n,0,UMAX); }
+#define MMAT(meta, n, t)            { meta.meta_variable_array<t>(n,0,UMAXS); }
 #define MMAF(meta, n, t, s)         { meta.meta_variable_array<t>(n,0,s); }
 
 #define MSTRUCT_CLOSE(meta)         meta.meta_struct_close(); } return meta;

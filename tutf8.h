@@ -90,7 +90,7 @@ inline ucs4 read_utf8_seq( const char* utf8, uints& off )
     };
 
     if( cd < 0xc0  ||  cd >= 254 )
-        return UMAX;        //invalid utf8 character
+        return UMAX32;        //invalid utf8 character
 
     ucs4 ch = cd - 0xc0;
     int nb = gUTF8_TB[ch>>2];
@@ -126,7 +126,7 @@ inline ucs4 read_utf8_seq( const char* utf8 )
     };
 
     if( cd < 0xc0  ||  cd >= 254 )
-        return UMAX;        //invalid utf8 character
+        return UMAX32;        //invalid utf8 character
 
     ucs4 ch = cd - 0xc0;
     int nb = gUTF8_TB[ch>>2];
@@ -160,7 +160,7 @@ inline ucs4 read_utf8_seq_partial( const char* utf8, uint len, char* buf6, uints
     };
 
     if( len == 0 )
-        return UMAX;
+        return UMAX32;
 
     ucs4 cd;
     uint nb,sh=0;
@@ -195,7 +195,7 @@ inline ucs4 read_utf8_seq_partial( const char* utf8, uint len, char* buf6, uints
         for( ; len>0; --len )
             *buf6++ = utf8[off++];
 
-        return UMAX;
+        return UMAX32;
     }
     else if(sh)         //there was something in previous page
         utf8 = buf6+2;

@@ -72,7 +72,7 @@ public:
         }
 
         output_iterator& operator ++()  { return *this; }
-        output_iterator& operator ++(ints)  { return *this; }
+        output_iterator& operator ++(int)  { return *this; }
 
         output_iterator() { _p = 0; }
         output_iterator( charstr& p ) : _p(&p)  { }
@@ -311,8 +311,13 @@ public:
     charstr& operator = (uint64 i)              { reset(); append_num(10,i);       return *this; }
 
 #ifdef SYSTYPE_MSVC
+# ifdef SYSTYPE_32
     charstr& operator = (ints i)                { reset(); append_num(10,(ints)i);  return *this; }
     charstr& operator = (uints i)               { reset(); append_num(10,(uints)i); return *this; }
+# else //SYSTYPE_64
+    charstr& operator = (int i)                 { reset(); append_num(10,i); return *this; }
+    charstr& operator = (uint i)                { reset(); append_num(10,i); return *this; }
+# endif
 #else
     charstr& operator = (long i)                { reset(); append_num(10,(ints)i);  return *this; }
     charstr& operator = (ulong i)               { reset(); append_num(10,(uints)i); return *this; }
@@ -371,8 +376,13 @@ public:
     charstr& operator += (uint64 i)             { append_num(10,i);       return *this; }
 
 #ifdef SYSTYPE_MSVC
+# ifdef SYSTYPE_32
     charstr& operator += (ints i)               { append_num(10,(ints)i);  return *this; }
     charstr& operator += (uints i)              { append_num(10,(uints)i); return *this; }
+# else //SYSTYPE_64
+    charstr& operator += (int i)                { append_num(10,i); return *this; }
+    charstr& operator += (uint i)               { append_num(10,i); return *this; }
+# endif
 #else
     charstr& operator += (long i)               { append_num(10,(ints)i);  return *this; }
     charstr& operator += (ulong i)              { append_num(10,(uints)i); return *this; }
@@ -452,8 +462,13 @@ public:
     charstr& operator << (uint64 i)             { append_num(10,i);       return *this; }
 
 #ifdef SYSTYPE_MSVC
+# ifdef SYSTYPE_32
     charstr& operator << (ints i)               { append_num(10,(ints)i);  return *this; }
     charstr& operator << (uints i)              { append_num(10,(uints)i); return *this; }
+# else //SYSTYPE_64
+    charstr& operator << (int i)                { append_num(10,i); return *this; }
+    charstr& operator << (uint i)               { append_num(10,i); return *this; }
+# endif
 #else
     charstr& operator << (long i)               { append_num(10,(ints)i);  return *this; }
     charstr& operator << (ulong i)              { append_num(10,(uints)i); return *this; }
@@ -841,7 +856,7 @@ public:
         return len() - nold;
     }
 
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
     ///Append wchar (UCS-2) buffer, converting it to the ANSI on the fly
     ///@param src pointer to the source buffer
     ///@param nchars number of characters in the source buffer, -1 if zero-terminated
@@ -862,7 +877,7 @@ public:
     };
 
     ///Append GMT date string constructed by the flags set
-    charstr& append_date_gmt( const timet t, uint flg=UMAX )
+    charstr& append_date_gmt( const timet t, uint flg=UMAX32 )
     {
 #ifdef SYSTYPE_MSVC8plus
         struct tm tm;
@@ -873,7 +888,7 @@ public:
         return append_time( tm, flg, "GMT" );
     }
 
-    charstr& append_date_local( const timet t, uint flg=UMAX )
+    charstr& append_date_local( const timet t, uint flg=UMAX32 )
     {
 #ifdef SYSTYPE_MSVC8plus
         struct tm tm;
@@ -1025,9 +1040,9 @@ public:
 
 
     ///Clamp character positions to actual string range. Negative values index from end and are converted. Zero in \a to means an end of the string position
-    void clamp_range( int& from, int& to ) const
+    void clamp_range( ints& from, ints& to ) const
     {
-        int size = len();
+        ints size = len();
         if(from<0)  from = size - from;
         if(to<=0)   to   = size - to;
 
@@ -1047,7 +1062,7 @@ public:
     }
 
     ///Convert range within string to lowercase
-    void tolower( int from, int to )
+    void tolower( ints from, ints to )
     {
         clamp_range(from, to);
 
@@ -1065,7 +1080,7 @@ public:
     }
 
     ///Convert range within string to uppercase
-    void toupper( int from, int to )
+    void toupper( ints from, ints to )
     {
         clamp_range(from, to);
 

@@ -3,7 +3,7 @@
 #include "sync/thread_mgr.h"
 #include "singleton.h"
 
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
 #   include <windows.h>
 #   include <process.h>
 #endif
@@ -19,7 +19,7 @@ thread::thread()
     SINGLETON(thread_manager);
 
 #ifdef SYSTYPE_MSVC
-    _thread = UMAX;
+    _thread = UMAX32;
 #else
     _thread = 0;
 #endif
@@ -55,7 +55,7 @@ thread thread::self()
 thread_t thread::invalid()
 {
 #ifdef SYSTYPE_MSVC
-    return UMAX;
+    return UMAX32;
 #else
     return 0;
 #endif
@@ -65,7 +65,7 @@ thread_t thread::invalid()
 bool thread::is_invalid() const
 {
 #ifdef SYSTYPE_MSVC
-    return _thread == UMAX;
+    return _thread == UMAXS;
 #else
     return _thread == 0;
 #endif
@@ -198,12 +198,12 @@ typedef struct tagTHREADNAME_INFO
 //! Usage: set_thread_name (-1, "MainThread");
 static void set_thread_name(const uint dwThreadID, const char * const szThreadName)
 {
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
 	THREADNAME_INFO info = {0x1000, szThreadName, dwThreadID, 0};
 
 	__try {
 		RaiseException(
-			0x406D1388, 0, sizeof(info) / sizeof(DWORD), (DWORD*)&info );
+			0x406D1388, 0, sizeof(info) / sizeof(DWORD), (ULONG_PTR*)&info );
 	}
 	__except(EXCEPTION_CONTINUE_EXECUTION) {
 	}
@@ -257,7 +257,7 @@ void* thread_manager::def_thread( void* pinfo )
 ////////////////////////////////////////////////////////////////////////////////
 thread_key::thread_key()
 {
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
     _key = TlsAlloc();
 #else
     pthread_key_create( &_key, 0 );
@@ -267,7 +267,7 @@ thread_key::thread_key()
 ////////////////////////////////////////////////////////////////////////////////
 thread_key::~thread_key()
 {
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
     TlsFree(_key);
 #else
     pthread_key_delete( _key );
@@ -277,7 +277,7 @@ thread_key::~thread_key()
 ////////////////////////////////////////////////////////////////////////////////
 void thread_key::set( void* v )
 {
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
     TlsSetValue( _key, v );
 #else
     pthread_setspecific( _key, v );
@@ -287,7 +287,7 @@ void thread_key::set( void* v )
 ////////////////////////////////////////////////////////////////////////////////
 void* thread_key::get() const
 {
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
     return TlsGetValue(_key);
 #else
     return pthread_getspecific( _key );
@@ -301,7 +301,7 @@ void* thread_key::get() const
 ////////////////////////////////////////////////////////////////////////////////
 thread_semaphore::thread_semaphore( uint initial )
 {
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
     _handle = (uints)CreateSemaphore( 0, initial, initial, 0 );
 #else
     _handle = new sem_t;
@@ -313,7 +313,7 @@ thread_semaphore::thread_semaphore( uint initial )
 ////////////////////////////////////////////////////////////////////////////////
 thread_semaphore::thread_semaphore( NOINIT_t )
 {
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
     _handle = (uints)INVALID_HANDLE_VALUE;
 #else
     _init = 0;
@@ -323,7 +323,7 @@ thread_semaphore::thread_semaphore( NOINIT_t )
 ////////////////////////////////////////////////////////////////////////////////
 thread_semaphore::~thread_semaphore()
 {
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
     if( _handle != (uints)INVALID_HANDLE_VALUE )
         CloseHandle( (HANDLE)_handle );
 #else
@@ -336,7 +336,7 @@ thread_semaphore::~thread_semaphore()
 ////////////////////////////////////////////////////////////////////////////////
 bool thread_semaphore::init( uint initial )
 {
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
     if( _handle != (uints)INVALID_HANDLE_VALUE )
         return false;
     _handle = (uints)CreateSemaphore( 0, initial, initial, 0 );
@@ -354,7 +354,7 @@ bool thread_semaphore::init( uint initial )
 ////////////////////////////////////////////////////////////////////////////////
 bool thread_semaphore::acquire()
 {
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
     return WAIT_OBJECT_0 == WaitForSingleObject( (HANDLE)_handle, INFINITE );
 #else
     return 0 == sem_wait( _handle );
@@ -364,7 +364,7 @@ bool thread_semaphore::acquire()
 ////////////////////////////////////////////////////////////////////////////////
 void thread_semaphore::release()
 {
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
     ReleaseSemaphore( (HANDLE)_handle, 1, 0 );
 #else
     sem_post( _handle );

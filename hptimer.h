@@ -39,81 +39,17 @@
 #define __COID_COMM_HPTIMER__HEADER_FILE__
 
 #include "namespace.h"
-
 #include "commtypes.h"
 
 COID_NAMESPACE_BEGIN
 
-
 ////////////////////////////////////////////////////////////////////////////////
-#define	CCPU_I32TO64(high, low)	(((int64)high<<32)+low)
-
-#ifdef _MSC_VER
-inline __declspec( naked ) int64 cpu_ticks() {
-    __asm {
-        rdtsc
-        ret
-    }
-}
-#else
-inline uint64 cpu_ticks() {
-    unsigned int ra;
-    unsigned int rd;
-    asm (   "rdtsc"
-            : "=a" (ra), "=d" (rd)
-            : /*no inputs*/ );
-    return CCPU_I32TO64(rd,ra);
-}
-#endif
-
-////////////////////////////////////////////////////////////////////////////////
-class HPTIMER
-{
-public:
-
-    static const char* class_name() { return "HPTIMER"; }
-
-    HPTIMER();
-
-    void reset() {
-        _Isttime = cpu_ticks();
-    }
-
-    uint time() const {
-        uint64 Ietm;
-        Ietm = cpu_ticks();
-        return (uint) (((Ietm-_Isttime)<<10)/_Irate);    //in 1/1024ths of second
-    }
-
-    double ftime() const {
-        int64 Ietm;
-        Ietm = cpu_ticks();
-        return (double) (Ietm-(int64)_Isttime)/((double)(int64)_Irate);    //in seconds
-    }
-
-    operator uint(void) const {
-        return time();
-    }
-
-    operator double(void) const {
-        return ftime();
-    }
-
-private:
-    uint64 _Isttime;
-    uint64 _Irate;
-};
-
-
-////////////////////////////////////////////////////////////////////////////////
-#ifdef SYSTYPE_WIN32
-
+#ifdef SYSTYPE_WIN
 extern "C" {
     __declspec(dllimport) uint __stdcall timeBeginPeriod( uint );
     __declspec(dllimport) uint __stdcall timeEndPeriod( uint );
     __declspec(dllimport) ulong __stdcall timeGetTime();
 }
-
 #endif
 
 
@@ -129,7 +65,7 @@ public:
     void set_period_usec( uint usec )   { _period = usec; }
     uint get_period_usec() const        { return _period; }
 
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
     static void init()      { timeBeginPeriod(1); }
     static void term()      { timeEndPeriod(1); }
 #else

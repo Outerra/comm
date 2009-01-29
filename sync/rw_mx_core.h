@@ -56,7 +56,7 @@ protected:
 
 	thread_t  				_W_owner;			/// write lock owner
 
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
     struct critical_section
     {
         uint8   _tmp[16*4];

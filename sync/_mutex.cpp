@@ -39,7 +39,7 @@
 #include "../retcodes.h"
 #include "../pthreadx.h"
 
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
 
 #if _WIN32_WINNT < 0x0400
 #	undef _WIN32_WINNT
@@ -64,7 +64,7 @@ _comm_mutex::_comm_mutex (bool recursive)
 ////////////////////////////////////////////////////////////////////////////////
 void _comm_mutex::init( bool recursive )
 {
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
 	InitializeCriticalSection( (CRITICAL_SECTION*)&_cs );
 #else
     pthread_mutexattr_t m;
@@ -86,7 +86,7 @@ _comm_mutex::_comm_mutex( NOINIT_t )
 _comm_mutex::~_comm_mutex()
 {
     if(_init)
-#   ifdef SYSTYPE_WIN32
+#   ifdef SYSTYPE_WIN
 	    DeleteCriticalSection( (CRITICAL_SECTION*)&_cs );
 #   else
         pthread_mutex_destroy(&_mutex);
@@ -96,7 +96,7 @@ _comm_mutex::~_comm_mutex()
 ////////////////////////////////////////////////////////////////////////////////
 void _comm_mutex::lock()
 {
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
 	EnterCriticalSection( (CRITICAL_SECTION*)&_cs );
 #else
     (void)pthread_mutex_lock(&_mutex);
@@ -110,7 +110,7 @@ void _comm_mutex::lock()
 ////////////////////////////////////////////////////////////////////////////////
 void _comm_mutex::unlock()
 {
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
 	LeaveCriticalSection( (CRITICAL_SECTION*)&_cs );
 #else
     pthread_mutex_unlock(&_mutex);
@@ -120,7 +120,7 @@ void _comm_mutex::unlock()
 ////////////////////////////////////////////////////////////////////////////////
 bool _comm_mutex::try_lock()
 {
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
 	bool ret = 0 != TryEnterCriticalSection( (CRITICAL_SECTION*)&_cs );
 #else
     bool ret = 0 == pthread_mutex_trylock(&_mutex);
@@ -135,7 +135,7 @@ bool _comm_mutex::try_lock()
 ////////////////////////////////////////////////////////////////////////////////
 bool _comm_mutex::timed_lock( uint delaymsec )
 {
-#ifdef SYSTYPE_WIN32
+#ifdef SYSTYPE_WIN
 	if( try_lock() ) return true;
 	if( delaymsec > 1 ) {
 		delaymsec--;

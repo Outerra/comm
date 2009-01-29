@@ -89,7 +89,7 @@ private:
     void reset()
     {
         _me = this;
-        _numfree = (PAGESIZE - _first) / item.size;
+        _numfree = uint((PAGESIZE - _first) / item.size);
         _used = align_value( sizeof(chunkblock), sizeof(uint64) );
         _first = 0;
     }

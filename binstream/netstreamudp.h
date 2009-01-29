@@ -98,7 +98,8 @@ public:
         return 0;
     }
 
-    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX ) { return ersUNAVAILABLE; }
+    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS )
+    {   return ersUNAVAILABLE; }
 
     virtual opcd peek_read( uint timeout )
     {
@@ -179,7 +180,7 @@ public:
         return recv(timeout);
     }
 
-    bool get_raw_unread_data( const uchar*& pd, uint& len )
+    bool get_raw_unread_data( const uchar*& pd, uints& len )
     {
         uint rsize = (uint)_recvbuf.size();
         if(!rsize)  return false;
@@ -270,7 +271,7 @@ protected:
     ///@return true if message received
     bool recv( uint timeout )
     {
-        if( timeout != UMAX )
+        if( timeout != UMAX32 )
         {
             int ns = _socket.wait_read(timeout);
             if( ns <= 0 )

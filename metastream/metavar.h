@@ -87,7 +87,7 @@ struct MetaDesc
                 dst << char('.') << varname;
 
             if( is_array() ) {
-                if( desc->array_size == UMAX )
+                if( desc->array_size == UMAXS )
                     dst << "[]";
                 else
                     dst << char('[') << desc->array_size << char(']');
@@ -187,8 +187,8 @@ struct MetaDesc
     uints size() const                  { return children.size(); }
 
 
-    MetaDesc() : array_size(UMAX), stream_from(0), stream_to(0) {}
-    MetaDesc( const token& n ) : array_size(UMAX), type_name(n), stream_from(0), stream_to(0) {}
+    MetaDesc() : array_size(UMAXS), stream_from(0), stream_to(0) {}
+    MetaDesc( const token& n ) : array_size(UMAXS), type_name(n), stream_from(0), stream_to(0) {}
 
     Var* add_desc_var( MetaDesc* d, const token& n )
     {

@@ -120,20 +120,20 @@ inline uint64 align_to_chunks64( uint64 uval, uint64 usize )
 
 /// Aligns value to nearest multiplier of 2 pow rsize chunk size
 inline uints align_value_to_power2( uints uval, uchar rsize )
-{ return uints((uval+(1<<rsize)-1) &~ ((1UL<<rsize)-1)); }
+{ return uints((uval+(uints(1)<<rsize)-1) &~ ((uints(1)<<rsize)-1)); }
 
 /// Aligns value to nearest multiplier of 2 pow rsize chunk size
 inline uint64 align_value_to_power2_64( uint64 uval, uchar rsize )
-{ return (uval+((uint64)1<<rsize)-1) &~ (((uint64)1<<rsize)-1); }
+{ return (uval+(uint64(1)<<rsize)-1) &~ ((uint64(1)<<rsize)-1); }
 
 
 /// Aligns value to given chunk size (enlarges to next chunk boundary)
 inline uints align_to_chunks_pow2( uints uval, uchar rsize )
-{ return uints((uval+((1<<rsize)-1))>>rsize); }
+{ return uints((uval+((uints(1)<<rsize)-1))>>rsize); }
 
 /// Aligns value to given chunk size (enlarges to next chunk boundary)
 inline uint64 align_to_chunks_pow2_64( uint64 uval, uchar rsize )
-{ return (uval+(((uint64)1<<rsize)-1))>>rsize; }
+{ return (uval+((uint64(1)<<rsize)-1))>>rsize; }
 
 
 ////////////////////////////////////////////////////////////////////////////////

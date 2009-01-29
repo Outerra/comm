@@ -337,7 +337,7 @@ public:
         _bomread = true;
 
         _orig = _tok;
-        _last.tok.set(_tok.ptr(), 0U);
+        _last.tok.set_empty(_tok.ptr());
         _lines_processed = _lines_last = _tok.ptr();
         return 0;
     }
@@ -754,7 +754,7 @@ public:
         DASSERT( seq->is_string() );
         const string_rule* str = static_cast<const string_rule*>(seq);
 
-        uint off=0;
+        uints off=0;
         next_read_string( *str, off, true );
 
         if(!consume_trailing_seq)
@@ -778,7 +778,7 @@ public:
         DASSERT( seq->is_block() );
         const block_rule* blk = static_cast<const block_rule*>(seq);
 
-        uint off=0;
+        uints off=0;
         next_read_block( *blk, off, true );
 
         if(!consume_trailing_seq)
@@ -832,7 +832,7 @@ public:
             if(!complete)
                 return _last;
 
-            uint off=0;
+            uints off=0;
             return next_read_block( *(block_rule*)seq, off, true );
         }
 
@@ -903,7 +903,7 @@ public:
 
         //check if it's the trailing sequence
         int kt;
-        uint off=0;
+        uints off=0;
 
         if( (x & fSEQ_TRAILING)
             && _stack.size()>1
@@ -1002,7 +1002,7 @@ public:
     //@param ignore id of the group that should be skipped beforehand, 0 if nothing shall be skipped
     bool follows( const token& tok, uint ignore=1 )
     {
-        uint skip = 0;
+        uints skip = 0;
 
         if(ignore) {
             token white = scan_group( ignore-1, true );
@@ -1030,7 +1030,7 @@ public:
     //@param ignore id of the group that should be skipped beforehand, 0 if nothing shall be skipped
     bool follows( char c, uint ignore=1 )
     {
-        uint skip = 0;
+        uints skip = 0;
 
         if(ignore) {
             token white = scan_group( ignore-1, true );
@@ -1409,7 +1409,7 @@ public:
         btp->stack_size = _stack.size();
         btp->tok = _tok;
 
-        return _btpoint.size() - 1;
+        return int(_btpoint.size() - 1);
     }
 
     ///Backtrack the lexer status
@@ -1701,7 +1701,7 @@ protected:
     ///
     struct backtrack_point {
         token tok;                      ///< remaining part of the input
-        uint stack_size;                ///< stack size at the point
+        uints stack_size;               ///< stack size at the point
     };
 
     ///Lexer entity base class
@@ -2810,7 +2810,7 @@ protected:
         _bomread = true;
 
         _orig = _tok;
-        _last.tok.set(_tok.ptr(), 0U);
+        _last.tok.set_empty(_tok.ptr());
 
         return rl-rla+nkeep;
     }

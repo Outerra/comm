@@ -125,7 +125,7 @@ public:
         _rrem = 0;
     }
 
-    virtual opcd read_until( const substring& /*ss*/, binstream* /*bout*/, uints max_size=UMAX ) {
+    virtual opcd read_until( const substring& /*ss*/, binstream* /*bout*/, uints max_size=UMAXS ) {
         (void)max_size;
         return ersNOT_IMPLEMENTED; //_bin->read_until( ss, bout, max_size );
     }
@@ -148,7 +148,7 @@ public:
     {
         _ndec = 0;
         _rptr = _rbuf + RBUFFER_SIZE;
-        _rrem = UMAX;
+        _rrem = UMAX32;
 
         if(_bin) _bin->reset_read();
     }
@@ -188,7 +188,7 @@ public:
 
         _ndec = 0;
         _rptr = _rbuf + RBUFFER_SIZE;
-        _rrem = UMAX;
+        _rrem = UMAX32;
     }
 
     virtual opcd bind( binstream& bin, int io=0 )
@@ -209,14 +209,14 @@ protected:
     {
         if(!eat)
         {
-            if( _rrem == UMAX )     //correct end cannot be decided, behave like if it was ok
+            if( _rrem == UMAX32 )     //correct end cannot be decided, behave like if it was ok
                 _rrem = 0;
 
             if( _rrem > 0 )
                 throw ersIO_ERROR "data left in input buffer";
         }
         
-        _rrem = UMAX;
+        _rrem = UMAX32;
         _rptr = _rbuf + RBUFFER_SIZE;
         _ndec = 0;
     }
@@ -350,7 +350,7 @@ private:
             _ndec = 3;
 
             //here there is less than 3 bytes required
-            switch( uint_min(len,_rrem) ) {
+            switch( uint_min((uint)len,_rrem) ) {
                 case 2: *p++ = _rtar[--_ndec];  --len;  --_rrem;
                 case 1: *p++ = _rtar[--_ndec];  --len;  --_rrem;
             }
@@ -381,9 +381,9 @@ private:
                 return _rrem;
             _rptr = _rbuf;
 
-            uint np = RBUFFER_SIZE;
+            uints np = RBUFFER_SIZE;
             if( _bin->read_raw_full( _rbuf, np ) ) {
-                _rrem = ((RBUFFER_SIZE-np)/4)*3;
+                _rrem = uint(((RBUFFER_SIZE-np)/4)*3);
                 if( _rrem == 0 )
                     return _rrem;
             }

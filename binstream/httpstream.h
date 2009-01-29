@@ -85,7 +85,7 @@ public:
         {
             _errcode = 0;
             _header_length = 0;
-            _content_length = UMAX;
+            _content_length = UMAXS;
             _bclose = _bhttp10 = false;
             _te = 0;
         }
@@ -111,7 +111,7 @@ public:
     public:
 
         cachestreamex() {
-            _hdrpos = UMAX;
+            _hdrpos = UMAXS;
             _tmp = "Content-Length: ";  //length=16
             rdchunk = 0;
             final=false;
@@ -165,7 +165,7 @@ public:
 
         opcd set_hdr_pos( uints content_len )
         {
-            if( content_len == UMAX ) {
+            if( content_len == UMAXS ) {
                 _hdrpos = len() + 16;   //skip "Content-Length: "
 
                 return write_token_raw( CLheader() );
@@ -185,7 +185,7 @@ public:
             if(!final)
                 return ersDENIED;   //no multiple packets supported
 
-            DASSERT( _hdrpos != UMAX );
+            DASSERT( _hdrpos != UMAXS );
 
             if(_hdrpos) {
                 //write msg len
@@ -196,7 +196,7 @@ public:
                 charstr::num<int64>::insert( pc, 20, csize, 10, 0, 20, charstr::ALIGN_NUM_RIGHT );
             }
 
-            _hdrpos = UMAX;
+            _hdrpos = UMAXS;
 
             return 0;
         }
@@ -264,7 +264,7 @@ public:
         if(_hdr->is_chunked())
             return _cache.chunked_read_raw(p, len);
 
-        if( _hdr->_content_length != UMAX
+        if( _hdr->_content_length != UMAXS
             &&  _cache.everything_read(_hdr->_header_length + _hdr->_content_length) )
             return ersNO_MORE;
 
@@ -413,7 +413,7 @@ public:
         _errcode = "200 OK";
     }
 
-    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX )
+    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS )
     {
         return _cache.read_until( ss, bout, max_size );
     }
@@ -576,7 +576,7 @@ protected:
         return new_read();
     }
 
-    opcd check_write( uints len=UMAX )
+    opcd check_write( uints len=UMAXS )
     {
         if( (_flags & fWSTATUS) != 0 )
             return 0;
@@ -706,7 +706,7 @@ inline opcd httpstream::header::decode( bool is_listener, httpstream& http, bins
     _bclose = true;
     _te = 0;
     _header_length = 0;
-    _content_length = UMAX;
+    _content_length = UMAXS;
     _if_mdf_since = 0;
 
     //skip any nonsense 

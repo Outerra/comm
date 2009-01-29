@@ -72,7 +72,7 @@ void* ssegpage::operator new ( size_t, uints segsize )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ssegpage::operator delete (void * ptr, uint segsize )
+void ssegpage::operator delete (void * ptr, uints segsize )
 {
     memaligned_free( ptr );
 }
@@ -117,7 +117,7 @@ void ssegpage::reset()
 opcd ssegpage::write_to_stream( binstream& bin )
 {
     IFGUARD;
-    uint len = 1<<_rsegsize;
+    uints len = uints(1)<<_rsegsize;
     return bin.write_raw( this, len );
 }
 
@@ -128,7 +128,7 @@ opcd ssegpage::read_from_stream( binstream& bin, void** pbase, int* diffaddr )
     uint rsegsize = _rsegsize;
     comm_mutex* p = _mutex.eject();
 
-    uint len = 1<<_rsegsize;
+    uints len = uints(1)<<_rsegsize;
     opcd e = bin.read_raw( this, len );
 
     new(&_mutex) local<comm_mutex>;   //clean initialization
@@ -166,7 +166,7 @@ opcd ssegpage::read_from_stream( binstream& bin, void** pbase, int* diffaddr )
 
 
 ////////////////////////////////////////////////////////////////////////////////
-ssegpage::block* ssegpage::alloc_big( uint size )
+ssegpage::block* ssegpage::alloc_big( uints size )
 {
     size = (uint)align_value_to_power2( size + sizeof(fblock), 12 );
 
@@ -180,7 +180,7 @@ ssegpage::block* ssegpage::alloc_big( uint size )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-ssegpage::block* ssegpage::realloc_big( block* b, uint size, bool keep_content )
+ssegpage::block* ssegpage::realloc_big( block* b, uints size, bool keep_content )
 {
     uchar ra = b->get_ralign();
 
@@ -275,7 +275,7 @@ ssegpage::block* ssegpage::alloc (
 
     SEG_CHECK;
 
-    DASSERT( _used + pblockf->get_size() <= (1<<_rsegsize) - align_size(sizeof(*this)) );
+    DASSERT( _used + pblockf->get_size() <= (uints(1)<<_rsegsize) - align_size(sizeof(*this)) );
     _used += pblockf->get_size();
 
 #ifdef _DEBUG
@@ -290,7 +290,7 @@ ssegpage::block* ssegpage::alloc (
 ///Realloc block if possible, that means when space immediatelly following the block is enough, fail otherwise
 ssegpage::block* ssegpage::realloc (
         block* bi,           ///<structure specifying offset and page of the block, gets new block's size
-        uint size,
+        uints size,
         bool keep_content
         )
 {
@@ -351,7 +351,7 @@ ssegpage::block* ssegpage::_realloc (
     uints sn, sp;
     sn = bi->get_size( &sp );
 
-    if( sn  &&  (char*)bi + sn < (char*)this + (1<<_rsegsize) )
+    if( sn  &&  (char*)bi + sn < (char*)this + (uints(1)<<_rsegsize) )
     {
         fu = (fblock*) ((char*)bi + sn);
         if( !fu->is_free_block() )
@@ -452,7 +452,7 @@ ssegpage::block* ssegpage::_realloc (
 
     SEG_CHECK;
 
-    DASSERT( _used + pn->get_size() <= (1<<_rsegsize) - align_size(sizeof(*this)) );
+    DASSERT( _used + pn->get_size() <= (uints(1)<<_rsegsize) - align_size(sizeof(*this)) );
     _used += pn->get_size();
 
 #ifdef _DEBUG
@@ -503,7 +503,7 @@ opcd ssegpage::_free(
     sn = bi->get_size( &sp );
     _used -= sn;
 
-    if( sn  &&  (char*)bi + sn < (char*)this + (1<<_rsegsize) )
+    if( sn  &&  (char*)bi + sn < (char*)this + (uints(1)<<_rsegsize) )
     {
         fu = (fblock*) ((char*)bi + sn);
         if( !fu->is_free_block() )
@@ -528,7 +528,7 @@ opcd ssegpage::_free(
 ///Sort block in the free blocks chain
 void ssegpage::sortf (
         void* b,                ///<block to sort
-        uint size,
+        uints size,
         fblock* fl,             ///<offset to free block immediatelly under the sorted block
         fblock* fu              ///<offset to free block immediatelly above the sorted block
         )
@@ -624,7 +624,7 @@ void ssegpage::sortf_up (
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd ssegpage::reduce( block* bi, uint size )
+opcd ssegpage::reduce( block* bi, uints size )
 {
     fblock* fu=0;
     uints sn = bi->get_size();
@@ -632,7 +632,7 @@ opcd ssegpage::reduce( block* bi, uint size )
     _used -= sn;
 
     fu = (fblock*) ((char*)bi + sn);
-    if( (char*)fu < (char*)this + (1<<_rsegsize)  &&  !fu->is_free_block() )
+    if( (char*)fu < (char*)this + (uints(1)<<_rsegsize)  &&  !fu->is_free_block() )
         fu = 0;
 
     fblock* pf = (fblock*) ((char*)bi + size);
@@ -660,7 +660,7 @@ opcd ssegpage::reduce( block* bi, uint size )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ssegpage::check_state( uint used ) const
+void ssegpage::check_state( uints used ) const
 {
 	DASSERT( _me == this );
     IFGUARD;
@@ -701,7 +701,7 @@ void ssegpage::check_state( uint used ) const
         bo = bi;
     }
 
-    RASSERT( (char*)bo + bo->get_size() == (char*)this + (1<<_rsegsize) );
+    RASSERT( (char*)bo + bo->get_size() == (char*)this + (uints(1)<<_rsegsize) );
 
     RASSERT( isfreesm  ||  _freesm == 0  ||  bo == _freesm );
     RASSERT( isfreebg  ||  _freebg == 0  ||  bo == _freebg );

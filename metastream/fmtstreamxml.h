@@ -162,7 +162,7 @@ public:
     uint get_indent() const {return _indent;}
     void set_indent( uint indent ) {_indent = indent;}
 
-    virtual opcd read_until( const substring & ss, binstream * bout, uints max_size=UMAX )
+    virtual opcd read_until( const substring & ss, binstream * bout, uints max_size=UMAXS )
     {
         return ersNOT_IMPLEMENTED;
     }
@@ -603,7 +603,7 @@ public:
                     ++tok;
                     token cd = tok.cut_left(']');
                     uints n = opcd::find_code(cd.ptr(),cd.len());
-                    *(ushort*)p = n;
+                    *(ushort*)p = (ushort)n;
                 } break;
 
                 /////////////////////////////////////////////////////////////////////////////////////
@@ -667,7 +667,7 @@ public:
 
         //optimized for character and key strings
         opcd e=0;
-        if( c.is_continuous()  &&  n != UMAX )
+        if( c.is_continuous()  &&  n != UMAXS )
         {
             if( t.type == type::T_BINARY )
                 e = write_binary( c.extract(n), n );
@@ -720,7 +720,7 @@ public:
             e = read_binary(tok,c,n,count);
         else
         {
-            if( n != UMAX  &&  n != tok.len() )
+            if( n != UMAXS  &&  n != tok.len() )
                 e = ersMISMATCHED "array size";
             else if( c.is_continuous() )
                 xmemcpy( c.insert(tok.len()), tok.ptr(), tok.len() );
@@ -748,14 +748,14 @@ public:
     opcd read_binary( token& tok, binstream_container& c, uints n, uints* count )
     {
         uints nr = n;
-        if( c.is_continuous() && n!=UMAX )
+        if( c.is_continuous() && n!=UMAXS )
             nr = charstrconv::hex2bin( tok, c.insert(n), n, ' ' );
         else {
             for(; nr>0; --nr) {
                 if( charstrconv::hex2bin( tok, c.insert(1), 1, ' ' ) ) break;
             }
         }
-        if( n != UMAX  &&  nr>0 )
+        if( n != UMAXS  &&  nr>0 )
             return ersMISMATCHED "not enough array elements";
 
         tok.skip_char(' ');
@@ -777,7 +777,7 @@ public:
     {
         token t = _tokenizer.get_pushback_data();
 
-        if( len != UMAX  &&  len>t.len() )
+        if( len != UMAXS  &&  len>t.len() )
             return ersNO_MORE;
 
         if( t.len() < len )

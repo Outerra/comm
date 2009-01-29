@@ -96,17 +96,17 @@ public:
         //note value 0 means that the character isn't there and it's safe to skip
         // whole substring length as the substring cannot be there
         _from = _to = *subs++;
-        uint dist[256];
+        uints dist[256];
         dist[_to] = len;
 
         for( uints i=1; i<len; ++i,++subs ) {
             uchar c = *subs;
             if( c < _from ) {
-                ::memset( dist+c+1, 0, (_from-c-1)*sizeof(uint) );
+                ::memset( dist+c+1, 0, (_from-c-1)*sizeof(uints) );
                 _from = c;
             }
             if( c > _to ) {
-                ::memset( dist+_to, 0, (c-_to)*sizeof(uint) );
+                ::memset( dist+_to, 0, (c-_to)*sizeof(uints) );
                 _to = c;
             }
 

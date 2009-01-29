@@ -191,7 +191,7 @@ public:
             return write_compound_array_content(c,count);
 
         opcd e;
-        if( c.is_continuous()  &&  n != UMAX )
+        if( c.is_continuous()  &&  n != UMAXS )
         {
             //n *= t.get_size();
             e = write_raw( c.extract(n), n );
@@ -213,7 +213,7 @@ public:
             return ersUNAVAILABLE;
 
         opcd e=0;
-        if( c.is_continuous()  &&  n != UMAX )
+        if( c.is_continuous()  &&  n != UMAXS )
         {
             //uints na = n * t.get_size();
             e = read_raw( c.insert(n), n );
@@ -239,7 +239,7 @@ public:
         return e;
     }
 
-    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX )
+    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS )
     {
         return _binr->read_until( ss, bout, max_size );
     }

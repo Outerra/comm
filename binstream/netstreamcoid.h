@@ -148,7 +148,7 @@ public:
         uints len = sizeof(id);
 
         if( get_from_packet( (uchar*)&id, len ) )
-            return UMAX;
+            return UMAX32;
         return id;
     }
 
@@ -160,7 +160,7 @@ public:
         assign_socket(s);
     }
 
-    netstreamcoid( int socket )
+    netstreamcoid( uints socket )
     {
         _timeout = 0;
         _outbuf[0] = 'B';

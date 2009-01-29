@@ -89,7 +89,7 @@ public:
         return _in->read_array_content(c,n,count);
     }
 
-    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX )
+    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS )
     {
         CHK_I();
         return _in->read_until( ss, bout, max_size );

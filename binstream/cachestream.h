@@ -342,7 +342,7 @@ public:
     binstream* bound( int io=0 ) const          { return _bin; }
 
 	/// read until 'term' bytestring is read or 'max_size' bytes received
-	opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX )
+	opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS )
     {
         int e = find_substring( ss, bout, max_size );
         if(e>0) return 0;
@@ -362,7 +362,7 @@ public:
 
     ///Advance past substring, preceding part pushing to \a pout (if \a pout is nonzero)
     /// @return >0 if found, 0 if not found, <0 if no input
-    int find_substring( const substring& sub, binstream* bout, uints limit=UMAX )
+    int find_substring( const substring& sub, binstream* bout, uints limit=UMAXS )
     {
         uints slen = sub.len();
         if( slen == 1 )
@@ -402,7 +402,7 @@ public:
         }
     }
 
-    int find_char( char k, binstream* bout, uints limit = UMAX )
+    int find_char( char k, binstream* bout, uints limit = UMAXS )
     {
         uints ts=0;
         token t( (const char*)_cin.ptr()+_cinread, _cin.size() - _cinread );
