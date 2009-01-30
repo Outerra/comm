@@ -192,8 +192,10 @@ public:
                 char* pc = (char*) get_raw( _hdrpos, 20 );
 
                 //write content length
-                uints csize = len() - _hdrpos - 20-4;
-                charstr::num<int64>::insert( pc, 20, csize, 10, 0, 20, charstr::ALIGN_NUM_RIGHT );
+				if(len() > 0) {
+					uints csize = len() - _hdrpos - 20-4;
+					charstr::num<int64>::insert( pc, 20, csize, 10, 0, 20, charstr::ALIGN_NUM_RIGHT );
+				}
             }
 
             _hdrpos = UMAXS;
