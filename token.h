@@ -1543,14 +1543,14 @@ struct token
 
         T touint( const char* s )
         {
-            token t(s, UMAX);
+            token t(s, UMAXS);
             return touint(t);
         }
 
         T toint( const char* s )
         {
             if( *s == 0 )  return 0;
-            token t(s, UMAX);
+            token t(s, UMAXS);
             return toint(t);
         }
     };
