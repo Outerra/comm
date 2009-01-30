@@ -53,7 +53,7 @@ class restricted_page_allocator
 public:
     ssegpage* get_page( uints n )
     {
-        if( n == UMAX )
+        if( n == UMAXS )
             return 0;
 
         if( n < _pages.size() )
@@ -74,7 +74,7 @@ public:
     
     void release_page( uints pg )
     {
-        if( pg == UMAX )  return;
+        if( pg == UMAXS )  return;
         DASSERT( pg < _pages.size() );
 
 #ifdef _DEBUG
@@ -149,7 +149,7 @@ class limited_page_allocator
 public:
     ssegpage* get_page( uints n ) const
     {
-        if( n == UMAX )
+        if( n == UMAXS )
             return 0;
         DASSERT( n < _npg );
         return (ssegpage*) (_mem + n*_segsize);
@@ -157,7 +157,7 @@ public:
 
     void release_page( uints n )
     {
-        if( n == UMAX )
+        if( n == UMAXS )
             return;
         ssegpage* sp = get_page(n);
         sp->reset();
