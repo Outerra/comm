@@ -5,11 +5,21 @@
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-class ref_counter
+template<class T> class policy_ref_count;
+template<class T> struct policy_trait { typedef policy_ref_count<T> policy; };
+
+#define DEFAULT_POLICY(t, p) \
+	template<> struct policy_trait<t> { \
+	typedef p<t> policy; \
+}
+
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+class policy_base
 {
 private:
-	ref_counter( ref_counter const & );
-	ref_counter & operator=( ref_counter const & );
+	policy_base( policy_base const & );
+	policy_base & operator=( policy_base const & );
 
 	volatile int32 _count;
 
@@ -17,7 +27,7 @@ public:
 
 	virtual void destroy()=0;
 
-	ref_counter() : _count(1) {}
+	policy_base() : _count(1) {}
 
 	void add_ref_copy() { atomic::inc(&_count); }
 
@@ -39,7 +49,7 @@ public:
 
 template<class T>
 class policy_ref_count
-	: public ref_counter
+	: public policy_base
 {
 private:
 	policy_ref_count( policy_ref_count const & );
@@ -60,11 +70,7 @@ public:
 		}
 	}
 
-	virtual void destroy() { 
-		//DASSERT(_CrtCheckMemory());
-		delete this; 
-		//DASSERT(_CrtCheckMemory());
-	}
+	virtual void destroy() { delete this; }
 
 	T* object_ptr() const { return _obj; }
 
@@ -82,60 +88,63 @@ static create_me CREATE_ME;
 template<class T> class pool;
 
 namespace atomic {
-	template<class T,class P> class queue_ng;
+	template<class T> class queue_ng;
 }
 
-template<class T, class P=policy_ref_count<T> >
-class refs 
+template<class T>
+class ref 
 {
-	friend atomic::queue_ng<T,P>;
+public:
+	typedef policy_base default_policy_t;
 
-protected:
-	refs(P* const p)
-		: _p(p)
-		, _o( _p->object_ptr() ) {}
+	friend atomic::queue_ng<T>;
 
 public:
-	typedef refs<T,P> refs_t;
-	typedef pool<P> pool_t;
+	typedef ref<T> ref_t;
+	typedef pool<default_policy_t> pool_t;
 
-	/// DO NOT USE !!!
-	P* add_ref_copy() const { _p->add_ref_copy(); return _p; }
+	ref() : _p(0), _o(0){}
 
-	refs() : _p(0), _o(0){}
+	explicit ref( T* o )
+		: _p( policy_trait<T>::policy::create(o) )
+		, _o(o) {}
 
-	explicit refs( T* o )
-		: _p( P::create(o) )
-		, _o( _p->object_ptr() ) {}
+	explicit ref( const create_me&)
+		: _p( policy_trait<T>::policy::create() )
+		, _o( static_cast<policy_trait<T>::policy*>(_p)->object_ptr() ) {}
 
-	explicit refs( const create_me&)
-		: _p( P::create() )
-		, _o( _p->object_ptr() ) {}
-
-	template< class P2 >
-	explicit refs( refs<T,P2> &p )
+	template< class T2 >
+	ref( const ref<T2>& p )
 		: _p( p.add_ref_copy() )
-		, _o( _p->object_ptr() ) {}
-
-	refs( const refs_t& p )
+		, _o( p.get() ) {}
+	
+	ref( const ref_t& p )
 		: _p( p.add_ref_copy() )
 		, _o( p._o ) {}
 
-	~refs() { if( _p ) { _p->release(); _p=0; _o=0; } }
+	template<class T2>
+	explicit ref(T2* const p)
+		: _p( p )
+		, _o( p->object_ptr() ) {}
 
-	const refs_t& operator=(const refs_t& r)
+	template<class T2>
+	void create(T2* const p) { 
+		release();
+		_p=p;
+		_o=p->object_ptr();
+	}
+
+	~ref() { if( _p ) { _p->release(); _p=0; _o=0; } }
+
+	/// DO NOT USE !!!
+	default_policy_t* add_ref_copy() const { if( _p ) _p->add_ref_copy(); return _p; }
+
+	const ref_t& operator=(const ref_t& r)
 	{
 		_p=r.add_ref_copy();
 		_o=r._o;
 		return *this;
 	}
-
-	/*template<class P2>
-	refs_t& operator=(refs<T,P2>& p) 
-	{
-		//!TODO
-		return *this;
-	}*/
 
 	T * operator->() const { DASSERT( _p!=0 && "You are trying to use not uninitialized REF!" ); return _o; }
 
@@ -143,9 +152,8 @@ public:
 
 	T & operator*() const	{ return *_o; }
 
-	void swap(refs_t& rhs)
-	{
-		P* tmp_p = _p;
+	void swap(ref_t& rhs) {
+		default_policy_t* tmp_p = _p;
 		T* tmp_o = _o;
 		_p = rhs._p;
 		_o = rhs._o;
@@ -161,22 +169,28 @@ public:
 
 	void create(pool_t* p) {
 		release();
-		_p=P::create(p); 
+		_p=policy_trait<T>::policy::create(p); 
 		_o=_p->object_ptr(); 
 	}
 
 	void create() { 
 		release();
-		_p=P::create(); 
-		_o=_p->object_ptr(); 
+		policy_trait<T>::policy* p=policy_trait<T>::policy::create();
+		_p=p;
+		_o=p->object_ptr(); 
+	}
+
+	void create(T* o) {
+		release();
+		_p=policy_trait<T>::policy::create(o);
+		_o=o;
 	}
 
 	T* get() const { return _o; }
 
 	bool is_empty() const { return (_p==0); }
 
-	template<class T>
-	void takeover(refs<T,P>& p) {
+	void takeover(ref<T>& p) {
 		release();
 		_o=p._o;
 		_p=p._p;
@@ -184,30 +198,33 @@ public:
 		p._p=0;
 	}
 
-	P* give_me() { P*tmp=_p; _p=0;_o=0; return tmp; }
+	default_policy_t* give_me() { default_policy_t* tmp=_p; _p=0;_o=0; return tmp; }
 
 	int32 refcount() const { return _p?_p->refcount():0; }
 
-protected:
-	void create(P* po) { 
-		release();
-		_p=po;
-		_o=_p->object_ptr();
+	friend coid::binstream& operator<<( coid::binstream& bin,const ref<T>& s ) { return bin<<(*s._o); }
+
+	friend coid::binstream& operator>>( coid::binstream& bin,ref<T>& s ) { s.create(); return bin>>(*s._o); }
+
+	friend coid::metastream& operator<<( coid::metastream& m,const ref<T>& s ) {
+		MSTRUCT_OPEN(m,"ref")
+			MMAT(m, "ptr", object)
+		MSTRUCT_CLOSE(m)
 	}
 
 private:
-	P *_p;
+	default_policy_t *_p;
 	T *_o;
 };
 
-template<class T,class P> 
-inline bool operator==( const refs<T,P>& a,const refs<T,P>& b )
+template<class T> 
+inline bool operator==( const ref<T>& a,const ref<T>& b )
 {
 	return a.get()==b.get();
 }
 
-template<class T,class P> 
-inline bool operator!=( const refs<T,P>& a,const refs<T,P>& b )
+template<class T> 
+inline bool operator!=( const ref<T>& a,const ref<T>& b )
 {
 	return !operator==(a,b);
 }

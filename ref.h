@@ -44,7 +44,7 @@
 #include "refs.h"
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
+/*
 class ref_base
 {
 public:
@@ -89,10 +89,10 @@ public:
 		delete const_cast<ref_base*>(this);
 	}
 };
-
+*/
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-template<class T> struct policy_refcount;
+/*template<class T> struct policy_refcount;
 
 template <class T>
 struct policy_trait
@@ -103,11 +103,11 @@ struct policy_trait
 #define DEFAULT_POLICY(t, p) \
 	template<> struct policy_trait<t> { \
 	typedef p<t> policy; \
-}
+}	*/
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-template<class T>
+/*template<class T>
 void policy_addRef(const T * const obj)
 {
 	policy_trait<T>::policy::addRef(obj);
@@ -120,10 +120,11 @@ void policy_release(const T * const obj)
 {
 	policy_trait<T>::policy::release(obj);
 }
+*/
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-template<class T, class P = typename policy_trait<T>::policy > 
+/*template<class T, class P = typename policy_trait<T>::policy > 
 class ref
 {
 private:
@@ -170,14 +171,7 @@ public:
 		DASSERT(p_ != 0 && "You are trying to use released ptr!");
 		return static_cast<T*>(p_);
 	}
-	/*
-	typedef T * this_type::*unspecified_bool_type;
 
-	operator unspecified_bool_type () const
-	{
-	return p_ == 0 ? 0 : &this_type::p_;
-	}
-	*/
 	operator T* () const { return static_cast<T*>(p_); }
 
 	void swap(ref & rhs)
@@ -186,13 +180,6 @@ public:
 		p_ = rhs.p_;
 		rhs.p_ = tmp;
 	}
-
-	/*
-	void cas(T * o, T * n)
-	{
-		atomic::cas_ptr(reinterpret_cast<void*volatile*>(&p_), n, o);
-	}
-	*/
 
 	friend coid::binstream& operator << (coid::binstream& bin, const ref<T,P>& s)
 	{   return bin << *static_cast<T*>(s.p_); }
@@ -211,10 +198,10 @@ private:
 
 	ref_base * volatile p_;
 };
-
+*/
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-template<class T, class U> 
+/*template<class T, class U> 
 inline bool operator==(ref<T> const & a, ref<U> const & b)
 {
 	return a.get() == b.get();
@@ -287,10 +274,10 @@ ref<T> dynamic_ptr_cast(ref<U> const & p)
 {
 	return dynamic_cast<T *>(p.get());
 }
-
+*/
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-template<class T>
+/*template<class T>
 struct policy_refcount
 {
 	//! add reference
@@ -383,7 +370,7 @@ public:
 		return policy_pooled<T>::create();
 	}
 };
-
+*/
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 #endif // __ENG_PTR_H__
