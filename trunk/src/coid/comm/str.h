@@ -96,7 +96,7 @@ public:
     }
 
     ///Take control over content of another string, the other string becomes empty
-    charstr& takeover( dynarray<char>& ref )
+    charstr& takeover( dynarray<char,uint>& ref )
     {
         _tstr.takeover(ref);
         if( _tstr.size() > 0  &&  _tstr[_tstr.size()-1] != 0 )
@@ -105,7 +105,7 @@ public:
     }
 
     ///Hand control over to the given dynarray<char> object
-    void handover( dynarray<char>& dst )
+    void handover( dynarray<char,uint>& dst )
     {
         dst.takeover(_tstr);
     }
@@ -123,20 +123,20 @@ public:
         return *this;
     }
 */
-    charstr( const char* czstr )                { set (czstr); }
-    charstr( const char* czstr, uints len )      { set_from (czstr, len); }
+    charstr( const char* czstr )            { set (czstr); }
+    charstr( const char* czstr, uints len ) { set_from (czstr, len); }
     charstr( const token& tok )
     {
-        if( tok._len == 0 ) return;
-		assign( tok._ptr, tok._len+1 );
-        _tstr[tok._len] = 0;
+        if( tok.is_empty() ) return;
+		assign( tok.ptr(), tok.len()+1 );
+        _tstr[tok.len()] = 0;
     }
 
 
     charstr& set( const char* czstr )
     {
         if(czstr)
-            assign( czstr, (uints)strlen(czstr) + 1 );
+            assign( czstr, strlen(czstr) + 1 );
         else
             free();
         return *this;
@@ -151,39 +151,46 @@ public:
 
     const char* set_from( const token& tok )
     {
-        if( tok._len == 0 )  { reset(); return tok._ptr; }
-        assign( tok._ptr, tok._len+1 );
-        _tstr[tok._len] = 0;
-        return tok._ptr + tok._len;
+        if( tok.is_empty() )  { reset(); return tok.ptr(); }
+        assign( tok.ptr(), tok.len()+1 );
+        _tstr[tok.len()] = 0;
+        return tok.ptre();
     }
 
     const char* set_from( const char* czstr, uints slen )
     {
-        if (slen == 0)  { reset(); return czstr; }
-        assign (czstr, slen+1);
+        if(slen == 0)
+        { reset(); return czstr; }
+
+        DASSERT( slen <= UMAX32 );
+
+        assign(czstr, slen+1);
         _tstr[slen] = 0;
         return czstr + slen;
     }
 
     const char* set_from( const char* strbgn, const char* strend )
     {
-        return set_from( strbgn, uints(strend-strbgn) );
+        return set_from( strbgn, strend-strbgn );
     }
 
     
     const char* add_from( const token& tok )
     {
-        if( tok._len == 0 )
-            return tok._ptr;
-        _append( tok._ptr, tok._len );
-        _tstr[len()] = 0;
-        return tok._ptr + tok._len;
+        if( tok.is_empty() )
+            return tok.ptr();
+        _append( tok.ptr(), tok.len() );
+        _tstr[tok.len()] = 0;
+        return tok.ptre();
     }
 
     const char* add_from( const char* czstr, uints slen )
     {
         if( slen == 0 )
             return czstr;
+
+        DASSERT( slen <= UMAX32 );
+
         _append( czstr, slen );
         _tstr[len()] = 0;
         return czstr + slen;
@@ -191,15 +198,16 @@ public:
 
     const char* add_from_range( const char* strbgn, const char* strend )
     {
-        return add_from( strbgn, uints(strend-strbgn) );
+        return add_from( strbgn, strend-strbgn );
     }
 
     ///Copy to buffer, terminate with zero
     char* copy_to( char* str, uints maxbufsize ) const
     {
-        if( maxbufsize == 0 )  return str;
+        if( maxbufsize == 0 )
+            return str;
 
-        uints lt = len();
+        uints lt = lens();
         if( lt >= maxbufsize )
             lt = maxbufsize - 1;
         xmemcpy( str, _tstr.ptr(), lt );
@@ -211,9 +219,10 @@ public:
     ///Copy to buffer, unterminated
     uints copy_raw_to( char* str, uints maxbufsize ) const
     {
-        if( maxbufsize == 0 )  return 0;
+        if( maxbufsize == 0 )
+            return 0;
 
-        uints lt = len();
+        uints lt = lens();
         if( lt > maxbufsize )
             lt = maxbufsize;
         xmemcpy( str, _tstr.ptr(), lt );
@@ -238,22 +247,25 @@ public:
     {
         if( length < 0 )
         {
-            ints k = len() + length;
-            if( k <= 0 )
+            if( (uints)-length >= lens() )
                 reset();
-            else
-            {
-                _tstr.realloc(k+1);
-                _tstr.ptr()[k]=0;
+            else {
+                _tstr.realloc(lens() + length + 1);
+                termzero();
             }
         }
-        else if( length+1 < (ints)_tstr.size() )
-        {
-            _tstr.realloc( length+1 );
-            _tstr.ptr()[length]=0;
+        else {
+            uints ts = lens();
+            DASSERT( ts+length <= UMAX32 );
+            
+            if( (uints)length < ts )
+            {
+                _tstr.realloc( length+1 );
+                _tstr.ptr()[length]=0;
+            }
+            else if( _tstr.size()>0 )
+                termzero();
         }
-        else if( _tstr.size()>0 )
-            termzero();
 
         return *this;
     }
@@ -263,7 +275,7 @@ public:
     {
         if (_tstr.size() <= 1)  return *this;
 
-        uints n = _tstr.size() - 1;  //without trailing zero
+        uints n = _tstr.sizes() - 1;  //without the trailing zero
         for( uints i=n; i>0; )
         {
             --i;
@@ -281,8 +293,8 @@ public:
 
     //assignment
     charstr& operator = (const char *czstr) {
-        uints len = czstr ? ((uints)strlen(czstr)+1) : 0;
-        assign (czstr, len);
+        uints len = czstr ? (strlen(czstr)+1) : 0;
+        assign(czstr, len);
         return *this;
     }
     charstr& operator = (const charstr& str) {
@@ -292,10 +304,10 @@ public:
 
     charstr& operator = (const token& tok)
     {
-        if( tok._len == 0 )
+        if( tok.is_empty() )
             reset();
         else
-            assign( tok._ptr, tok._len+1 );
+            assign( tok.ptr(), tok.len()+1 );
         return *this;
     }
 
@@ -327,35 +339,41 @@ public:
 
 
     //@{ retrieve nth character
-    char last_char() const                      { uints n=len(); return n ? _tstr[n-1] : 0; }
+    char last_char() const                      { uints n=lens(); return n ? _tstr[n-1] : 0; }
     char first_char() const                     { return _tstr.size() ? _tstr[0] : 0; }
-    char nth_char( ints n ) const               { uints s=len(); return n<0 ? ((uints)-n<=s  ?  _tstr._ptr[s+n] : 0) : ((uints)n<s  ?  _tstr._ptr[n] : 0); } 
+    char nth_char( ints n ) const
+    {
+        uints s = lens();
+        return n<0
+            ? ((uints)-n<=s  ?  _tstr[s+n] : 0)
+            : ((uints)n<s  ?  _tstr[n] : 0);
+    }
     //@}
 
     //@{ set nth character
-    char last_char( char c )                    { uints n=len(); return n ? (_tstr[n-1]=c) : 0; }
+    char last_char( char c )                    { uints n=lens(); return n ? (_tstr[n-1]=c) : 0; }
     char first_char( char c)                    { return _tstr.size() ? (_tstr[0]=c) : 0; }
     char nth_char( ints n, char c )
     {
-        uints s=len();
+        uints s = lens();
         return n<0
-            ? ((uints)-n<=s  ?  (_tstr._ptr[s+n]=c) : 0)
-            : ((uints)n<s  ?  (_tstr._ptr[n]=c) : 0);
+            ? ((uints)-n<=s  ?  (_tstr[s+n]=c) : 0)
+            : ((uints)n<s  ?  (_tstr[n]=c) : 0);
     }
     //@}
 
 
-    static uints count_notingroup( const char* str, const char* sep )
-    {   return (uints)::strcspn( str, sep );   }
+    static uint count_notingroup( const char* str, const char* sep )
+    {   return (uint)::strcspn( str, sep );   }
 
-    static uints count_ingroup( const char* str, const char* sep )
-    {   return (uints)::strspn( str, sep );   }
+    static uint count_ingroup( const char* str, const char* sep )
+    {   return (uint)::strspn( str, sep );   }
 
     
     //concatenation
     charstr& operator += (const char *czstr) {
         if(!czstr) return *this;
-        uints len = (uints)::strlen(czstr);
+        uints len = ::strlen(czstr);
         _append( czstr, len );
         return *this;
     }
@@ -411,7 +429,7 @@ public:
                 append('0');
         }
 
-        _append( p+dec, (uints)::strlen(p+dec) );
+        _append( p+dec, ::strlen(p+dec) );
         return *this;
     }
 
@@ -438,12 +456,12 @@ public:
                 append('0');
         }
 
-        _append( p+dec, (uints)::strlen(p+dec) );
+        _append( p+dec, ::strlen(p+dec) );
         return *this;
     }
 
     charstr& operator += (const token& tok) {
-        _append( tok._ptr, tok._len );
+        _append( tok.ptr(), tok.len() );
         return *this;
     }
 
@@ -710,7 +728,7 @@ public:
             return append('0');
 
         int mods[(64+10-1)/10];
-        uint k=0;
+        uints k=0;
 
         for( ; n>=1000 || n<=-1000; ++k) {
             mods[k] = n % 1000;
@@ -761,8 +779,8 @@ public:
     ///@param ndig number of decimal places: >0 maximum, <0 precisely -ndig places
     void append_fraction( double n, int ndig )
     {
-        uint ndiga = (uint)int_abs(ndig);
-        uint size = (uint)len();
+        uint ndiga = int_abs(ndig);
+        uints size = lens();
         char* p = get_append_buf(ndiga);
 
         int lastnzero=1;
@@ -788,7 +806,7 @@ public:
     }
 
     ///Append n characters 
-    void appendn( uint n, char c )
+    void appendn( uints n, char c )
     {
         char *p = uniadd(n);
         for( ; n>0; --n )
@@ -796,19 +814,20 @@ public:
     }
 
     ///Append n uninitialized characters
-    char* appendn_uninitialized( uint n )
+    char* appendn_uninitialized( uints n )
     {
         return uniadd(n);
     }
 
     void append( const token& tok, uints filllen = 0, char fillchar=' ' )
     {
+        uints len = tok.lens();
         if( filllen == 0 )
-            filllen = tok._len;
+            filllen = len;
         
         char* p = alloc_append_buf( filllen );
-        uints n = tok._len > filllen ? filllen : tok._len;
-        xmemcpy( p, tok._ptr, n );
+        uints n = len > filllen ? filllen : len;
+        xmemcpy( p, tok.ptr(), n );
         memset( p+n, fillchar, filllen - n );
     }
 
@@ -824,7 +843,7 @@ public:
             char* p = get_append_buf(6);
             uchar n = write_utf8_seq( c, p );
 
-            resize( n + uints(p - ptr()) );
+            resize( n + (p - ptr()) );
             return n;
         }
     }
@@ -833,9 +852,9 @@ public:
     ///@param src pointer to the source buffer
     ///@param nchars number of characters in the source buffer, -1 if zero terminated
     ///@return number of bytes appended
-    uints append_wchar_buf( const wchar_t* src, uints nchars )
+    uint append_wchar_buf( const wchar_t* src, uints nchars )
     {
-        uints nold = len();
+        uints nold = lens();
         _tstr.set_size(nold);
 
         for( ; *src!=0 && nchars>0; ++src,--nchars )
@@ -846,21 +865,21 @@ public:
             {
                 uints old = _tstr.size();
                 char* p = _tstr.add(6);
-                uint n = write_utf8_seq( *src, p );
+                uints n = write_utf8_seq( *src, p );
                 _tstr.set_size( old + n );
             }
         }
         if( _tstr.size() )
             *_tstr.add() = 0;
 
-        return len() - nold;
+        return uint(lens() - nold);
     }
 
 #ifdef SYSTYPE_WIN
     ///Append wchar (UCS-2) buffer, converting it to the ANSI on the fly
     ///@param src pointer to the source buffer
     ///@param nchars number of characters in the source buffer, -1 if zero-terminated
-    uints append_wchar_buf_ansi( const wchar_t* src, uints nchars );
+    uint append_wchar_buf_ansi( const wchar_t* src, uints nchars );
 #endif
 
     ///Date element codes
@@ -1101,7 +1120,7 @@ public:
     ///Insert character at position
     bool ins( uints pos, char c )
     {
-        if( pos > len() )  return false;
+        if( pos > lens() )  return false;
         *_tstr.ins(pos) = c;
         return true;
     }
@@ -1109,47 +1128,23 @@ public:
     ///Insert substring at position
     bool ins( uints pos, const token& t )
     {
-        if( pos > len() )  return false;
-        xmemcpy( _tstr.ins(pos,t.len()), t.ptr(), t.len() );
+        uints len = t.len();
+        if( pos > len )  return false;
+        xmemcpy( _tstr.ins(pos,len), t.ptr(), len );
         return true;
     }
 
     ///Delete character(s) at position
     bool del( uints pos, uints n=1 )
     {
-        if( pos+n > len() )  return false;
+        if( pos+n > lens() )  return false;
         _tstr.del(pos, n);
         return true;
     }
 
 
-    char& operator [] (uints i)                  { return _tstr[i]; }
+    char& operator [] (uints i)                 { return _tstr[i]; }
     
-/*
-    char& operator [] (char i)                  { return _tstr[(int)i]; }
-    char& operator [] (uchar i)                 { return _tstr[(uint)i]; }
-
-    char& operator [] (short i)                 { return _tstr[(int)i]; }
-    char& operator [] (ushort i)                { return _tstr[(uint)i]; }
-
-    char& operator [] (int i)                   { return _tstr[i]; }
-    char& operator [] (uint i)                  { return _tstr[i]; }
-
-    char& operator [] (int64 i)                 { return _tstr[i]; }
-    char& operator [] (uint64 i)                { return _tstr[i]; }
-
-    char operator [] (char i) const             { return _tstr[(int)i]; }
-    char operator [] (uchar i) const            { return _tstr[(uint)i]; }
-
-    char operator [] (short i) const            { return _tstr[(int)i]; }
-    char operator [] (ushort i) const           { return _tstr[(uint)i]; }
-
-    char operator [] (int i) const              { return _tstr[i]; }
-    char operator [] (uint i) const             { return _tstr[i]; }
-
-    char operator [] (int64 i) const            { return _tstr[i]; }
-    char operator [] (uint64 i) const           { return _tstr[i]; }
-*/
 
     bool operator == (const charstr& str) const
     {
@@ -1171,13 +1166,13 @@ public:
     bool operator != (const char *czstr) const      { return !operator == (czstr); }
 
     bool operator == (const token& tok) const {
-        if (tok._len != len())  return false;
-        return strncmp(_tstr.ptr(), tok._ptr, tok._len) == 0;
+        if (tok.len() != len())  return false;
+        return strncmp(_tstr.ptr(), tok.ptr(), tok.len()) == 0;
     }
 
     bool operator != (const token& tok) const {
-        if (tok._len != len())  return true;
-        return strncmp(_tstr.ptr(), tok._ptr, tok._len) != 0;
+        if (tok.len() != len())  return true;
+        return strncmp(_tstr.ptr(), tok.ptr(), tok.len()) != 0;
     }
 
     bool operator == (const char c) const {
@@ -1225,21 +1220,21 @@ public:
 
     bool operator > (const token& tok) const
     {
-        if( !len() )  return 0;
-        if( !tok._len )  return 1;
+        if( is_empty() )  return 0;
+        if( tok.is_empty() )  return 1;
 
-        int k = strncmp( _tstr.ptr(), tok._ptr, tok._len );
+        int k = strncmp( _tstr.ptr(), tok.ptr(), tok.len() );
         if( k == 0 )
-            return len() > tok._len;
+            return len() > tok.len();
         return k > 0;
     }
 
     bool operator < (const token& tok) const
     {
-        if( !tok._len )  return 0;
-        if( !len() )  return 1;
+        if( tok.is_empty() )  return 0;
+        if( is_empty() )  return 1;
 
-        int k = strncmp( _tstr.ptr(), tok._ptr, tok._len );
+        int k = strncmp( _tstr.ptr(), tok.ptr(), tok.len() );
         return k < 0;
     }
 
@@ -1255,17 +1250,17 @@ public:
 
 
     ////////////////////////////////////////////////////////////////////////////////
-    char* get_buf( uints len )                   { return alloc_buf(len); }
-    char* get_append_buf( uints len )            { return alloc_append_buf(len); }
+    char* get_buf( uints len )          { return alloc_buf(len); }
+    char* get_append_buf( uints len )   { return alloc_append_buf(len); }
 
     ///correct the size of the string if a terminating zero is found inside
     charstr& correct_size()
     {
-        uints l = len();
-        if (l>0)
+        uints l = lens();
+        if(l>0)
         {
             uints n = ::strlen(_tstr.ptr());
-            if (n<l)
+            if(n<l)
                 resize(n);
         }
         return *this;
@@ -1282,7 +1277,7 @@ public:
         return _tstr.size () <= 1;
     }
 
-    typedef dynarray<char> charstr::*unspecified_bool_type;
+    typedef dynarray<char,uint> charstr::*unspecified_bool_type;
 
     ///Automatic cast to bool for checking emptiness
 	operator unspecified_bool_type () const {
@@ -1291,7 +1286,7 @@ public:
 
 
 
-    dynarray<char>& dynarray_ref()      { return _tstr; }
+    dynarray<char,uint>& dynarray_ref()      { return _tstr; }
 
     //@return char* to the string beginning
     const char* ptr() const             { return _tstr.ptr(); }
@@ -1303,27 +1298,21 @@ public:
     const char* c_str() const           { return _tstr.size() ? _tstr.ptr() : ""; }
 
     ///String length excluding terminating zero
-    uints len() const                   { return _tstr.size() ? (_tstr.size() - 1) : 0; }
+    uint len() const                    { return _tstr.size() ? (_tstr.size() - 1) : 0; }
+    uints lens() const                  { return _tstr.sizes() ? (_tstr.sizes() - 1) : 0; }
 
     ///String length counting terminating zero
     uints lent() const                  { return _tstr.size(); }
 
-    ///String allocated length, always aligned to 4-byte
-    uints lenf() const                  { return (_tstr.size() + 3) & ~3; }
-
-    void free ()                        { _tstr.discard(); }
+    void free()                         { _tstr.discard(); }
 
     char* reserve( uints len )          { return _tstr.reserve(len, true); }
-    void reset()                        { _tstr.reset();  if (_tstr._ptr) _tstr._ptr[0]=0; }
-
-    //operator const char *() const       { return _tstr; }
-    //operator char *()                   { return _tstr; }
+    void reset()                        { _tstr.reset();  if(_tstr.size()) _tstr[0]=0; }
 
     ~charstr() {}
 
 
 protected:
-    static uints reserve_count( uints len )         { return ((len+3)&~3) - len; }
 
     void assign( const char *czstr, uints len )
     {
@@ -1331,6 +1320,9 @@ protected:
             reset();
             return;
         }
+
+        DASSERT( len <= UMAX32 );
+
         _tstr.alloc(len);
         xmemcpy( _tstr.ptr(), czstr, len );
         termzero();
@@ -1351,6 +1343,8 @@ protected:
             return 0;
         }
 
+        DASSERT( len <= UMAX32 );
+
         char* p = _tstr.alloc(len+1);
         termzero();
 
@@ -1363,113 +1357,63 @@ protected:
         return uniadd(len);
     }
 
-    /*void fill_align()
-    {
-        uints len = _tstr.size();
-        if( !len )  return;
-        uints lea = get_aligned_size( len, 2 );
-        for( --len; len<lea; ++len )
-            ((char*)_tstr)[len] = 0;
-    }*/
-
     void termzero()
     {
-        uints len = _tstr.size();
+        uints len = _tstr.sizes();
         _tstr[len-1] = 0;
     }
 
 
-    dynarray<char> _tstr;
+    dynarray<char,uint> _tstr;
 
 public:
 
 
     bool begins_with( const char* str ) const
     {
-        uints n = len();
-        for( uints i=0; i<n; ++i )
-        {
-            if( str[i] == 0 )
-                return true;
-            if( str[i] != _tstr[i] )
-                return false;
-        }
-        return false;
+        token me = *this;
+        return me.begins_with(str);
     }
 
     bool begins_with( const token& tok ) const
     {
-        if( tok._len > len() )
-            return false;
-        for( uints i=0; i<tok._len; ++i )
-        {
-            if( tok._ptr[i] != _tstr[i] )
-                return false;
-        }
-        return true;
+        token me = *this;
+        return me.begins_with(tok);
     }
 
     bool begins_with_icase( const char* str ) const
     {
-        uints n = len();
-        uints i;
-        for( i=0; i<n; ++i )
-        {
-            if( str[i] == 0 )
-                return true;
-            if( ::tolower(str[i]) != ::tolower(_tstr[i]) )
-                return false;
-        }
-        return str[i] == 0;
+        token me = *this;
+        return me.begins_with_icase(str);
     }
 
     bool begins_with_icase( const token& tok ) const
     {
-        if( tok._len > len() )
-            return false;
-        for( uints i=0; i<tok._len; ++i )
-        {
-            if( ::tolower(tok._ptr[i]) != ::tolower(_tstr[i]) )
-                return false;
-        }
-        return true;
+        token me = *this;
+        return me.begins_with_icase(tok);
     }
 
     bool ends_with( const token& tok ) const
     {
-        if( tok._len > len() )
-            return false;
-        const char* p = _tstr.ptr() + len() - tok.len();
-        for( uints i=0; i<tok._len; ++i )
-        {
-            if( tok._ptr[i] != p[i] )
-                return false;
-        }
-        return true;
+        token me = *this;
+        return me.ends_with(tok);
     }
 
     bool ends_with_icase( const token& tok ) const
     {
-        if( tok._len > len() )
-            return false;
-        const char* p = _tstr.ptr() + len() - tok.len();
-        for( uints i=0; i<tok._len; ++i )
-        {
-            if( ::tolower(tok._ptr[i]) != ::tolower(p[i]) )
-                return false;
-        }
-        return true;
+        token me = *this;
+        return me.ends_with_icase(tok);
     }
 
 
 
-    uints touint( uints offs=0 ) const       { return token(ptr()+offs, ptre()).touint(); }
-    ints toint (uints offs=0) const          { return token(ptr()+offs, ptre()).toint(); }
+    uints touint( uints offs=0 ) const      { return token(ptr()+offs, ptre()).touint(); }
+    ints toint( uints offs=0 ) const        { return token(ptr()+offs, ptre()).toint(); }
     
-    uints xtouint( uints offs=0 ) const      { return token(ptr()+offs, ptre()).xtouint(); }
-    ints xtoint (uints offs=0) const         { return token(ptr()+offs, ptre()).xtoint(); }
+    uints xtouint( uints offs=0 ) const     { return token(ptr()+offs, ptre()).xtouint(); }
+    ints xtoint( uints offs=0 ) const       { return token(ptr()+offs, ptre()).xtoint(); }
 
-    double todouble (uints offs=0) const     { return token(ptr()+offs, ptre()).todouble(); }
+    double todouble( uints offs=0 ) const   { return token(ptr()+offs, ptre()).todouble(); }
 
     ////////////////////////////////////////////////////////////////////////////////
     bool cmpeq( const token& str ) const
@@ -1504,7 +1448,7 @@ public:
     //@return -1 if str<this, 0 if str==this, 1 if str>this
     int cmp( const token& str ) const
     {
-        uints let = len();
+        uints let = lens();
         uints lex = str.len();
         int r = memcmp( _tstr.ptr(), str.ptr(), uint_min(let,lex) );
         if( r == 0 )
@@ -1519,7 +1463,7 @@ public:
     ///Compare strings, longer first
     int cmplf( const token& str ) const
     {
-        uints let = len();
+        uints let = lens();
         uints lex = str.len();
         int r = memcmp( _tstr.ptr(), str.ptr(), uint_min(let,lex) );
         if( r == 0 )
@@ -1532,7 +1476,7 @@ public:
 
     int cmpi( const token& str ) const
     {
-        uints let = len();
+        uints let = lens();
         uints lex = str.len();
         int r = xstrncasecmp( _tstr.ptr(), str.ptr(), uint_min(let,lex) );
         if( r == 0 )
@@ -1547,19 +1491,19 @@ public:
     int cmpc( const token& str, bool casecmp ) const      { return casecmp ? cmp(str) : cmpi(str); }
     int cmpc( const char* str, bool casecmp ) const       { return casecmp ? cmp(str) : cmpi(str); }
 
-    char char_is_alpha( ints n ) const
+    char char_is_alpha( int n ) const
     {
         char c = nth_char(n);
         return (c >= 'a' && c <= 'z') || (c >='A' && c <= 'Z') ? c : 0;
     }
 
-    char char_is_number( ints n ) const
+    char char_is_number( int n ) const
     {
         char c = nth_char(n);
         return (c >= '0' && c <= '9') ? c : 0;
     }
 
-    char char_is_alphanum( ints n ) const
+    char char_is_alphanum( int n ) const
     {
         char c = nth_char(n);
         return (c >= 'a' && c <= 'z') || (c >='A' && c <= 'Z') || (c >= '0' && c <= '9') ? c : 0;
@@ -1706,7 +1650,10 @@ protected:
     ///Add n uninitialized characters, plus one character for the terminating zero if it's not there already 
     char* uniadd( uints n )
     {
-        char* p = (_tstr.size() == 0)
+        uints cn = _tstr.sizes();
+        DASSERT( cn+n <= UMAX32 );
+
+        char* p = (cn == 0)
             ? _tstr.add(n+1)
             : _tstr.add(n)-1;
         p[n] = 0;
@@ -1727,40 +1674,39 @@ inline token::token( const charstr& str )       { set(str); }
 inline token& token::operator = ( const charstr& t )
 {
     _ptr = t.ptr();
-    _len = t.len();
+    _pte = t.ptre();
     return *this;
 }
 
 inline bool operator == (const token& tok, const charstr& str )
 {
-    if (tok._len != str.len() ) return 0;
-    return memcmp( tok._ptr, str.ptr(), tok._len) == 0;
+    if( tok.len() != str.len() ) return 0;
+    return memcmp( tok.ptr(), str.ptr(), tok.len()) == 0;
 }
 
 inline bool operator != (const token& tok, const charstr& str )
 {
-    if (tok._len != str.len() ) return 1;
-    return memcmp( tok._ptr, str.ptr(), tok._len) != 0;
+    if( tok.len() != str.len() ) return 1;
+    return memcmp( tok.ptr(), str.ptr(), tok.len()) != 0;
 }
 
 inline const char* token::set( const charstr& str )
 {
     _ptr = str.ptr();
-    _len = str.len();
-    return _ptr+_len;
+    _pte = str.ptre();
+    return _pte;
 }
-
-inline void token::assign( const charstr& str )
+/*
+inline void token::assign_empty( const charstr& str )
 {
-    _ptr = str.ptr();
-    _len = 0;
+    _pte = _ptr = str.ptr();
 }
-
+*/
 template<class A>
-inline bool token::utf8_to_wchar_buf( dynarray<wchar_t,A>& dst ) const
+inline bool token::utf8_to_wchar_buf( dynarray<wchar_t,uint,A>& dst ) const
 {
     dst.reset();
-    uints n = len();
+    uints n = lens();
     const char* p = ptr();
     
     while(n>0)
@@ -1771,7 +1717,7 @@ inline bool token::utf8_to_wchar_buf( dynarray<wchar_t,A>& dst ) const
         }
         else
         {
-            uint ne = get_utf8_seq_expected_bytes(p);
+            uints ne = get_utf8_seq_expected_bytes(p);
             if( ne > n )  return false;
 
             *dst.add() = (wchar_t)read_utf8_seq(p);
@@ -1787,7 +1733,7 @@ inline bool token::utf8_to_wchar_buf( dynarray<wchar_t,A>& dst ) const
 inline binstream& operator >> (binstream &bin, charstr& x)
 {
     x._tstr.reset();
-    dynarray<char>::binstream_container c(x._tstr);
+    dynarray<char,uint>::dynarray_binstream_container c(x._tstr);
 
     bin.xread_array(c);
     if( x._tstr.size() )
@@ -1797,7 +1743,7 @@ inline binstream& operator >> (binstream &bin, charstr& x)
 
 inline binstream& charstr::append_from_stream( binstream& bin )
 {
-    dynarray<char>::binstream_container c(_tstr);
+    dynarray<char,uint>::dynarray_binstream_container c(_tstr);
 
     bin.xread_array(c);
     if( _tstr.size() )
@@ -1844,7 +1790,8 @@ struct t_key<token> : public token
 inline binstream& operator >> (binstream &in, t_key<charstr>& x)
 {
     x.reset();
-    dynarray<key>::binstream_container c((dynarray<key>&)x.dynarray_ref());
+    dynarray<key,uint>::dynarray_binstream_container
+        c(reinterpret_cast<dynarray<key,uint>&>(x.dynarray_ref()));
 
     in.xread_array(c);
     if( x._tstr.size() )
@@ -1870,7 +1817,8 @@ inline binstream& operator << (binstream &out, const t_key<token>& x)
 inline opcd binstream_read_key( binstream &in, charstr& x )
 {
     x.reset();
-    dynarray<bstype::key>::binstream_container c((dynarray<bstype::key>&)x.dynarray_ref());
+    dynarray<bstype::key,uint>::dynarray_binstream_container
+        c(reinterpret_cast<dynarray<bstype::key,uint>&>(x.dynarray_ref()));
 
     opcd e = in.read_array(c);
     if( x._tstr.size() )
@@ -1907,7 +1855,7 @@ template<> struct hash<token>
 
     size_t operator() (const token& tok) const
     {
-        return __coid_hash_string( tok._ptr, tok._len );
+        return __coid_hash_string( tok.ptr(), tok.len() );
     }
 };
 
@@ -1931,37 +1879,7 @@ struct ndigit_fmt
         return out << t;
     }
 };
-/*
-struct nchar_fmt
-{
-    token _str;
-    uints  _fill;
 
-    explicit nchar_fmt( const token& str, uints n )
-    {
-        _str._ptr = str._ptr;
-        if( str._len > n )
-        {
-            _str._len = n;
-            _fill = 0;
-        }
-        else
-        {
-            _str._len = str._len;
-            _fill = n - str._len;
-        }
-    }
-
-    friend binstream& operator << (binstream& out, const nchar_fmt& d)
-    {
-        binstream::container_fixed_array<char> c( d._str.ptr(), d._str.len() );
-        out.xwrite_array(c);
-        c.set( d._str._ptr, d._fill);
-        out.write( d._str._ptr, d._fill, binstream::type::t_char );
-        return out;
-    }
-};
-*/
 
 
 
@@ -1991,8 +1909,7 @@ struct command_tokens
         {
             _rtok = _cmd;
             _tokn = -1;
-            _ctok._ptr = _cmd._ptr;
-            _ctok._len = 0;
+            _ctok._pte = _ctok._ptr = _cmd._ptr;
         }
 
         if( i == _tokn )

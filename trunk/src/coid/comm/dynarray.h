@@ -178,31 +178,39 @@ struct _dynarray_const_eptr : std::iterator<std::random_access_iterator_tag, T>
 
 ////////////////////////////////////////////////////////////////////////////////
 //Fw
-#ifndef SYSTYPE_MSVC6
-template<class T, class A> class dynarray;
-template<class T, class A> binstream& operator << (binstream&, const dynarray<T,A>& );
-template<class T, class A> binstream& operator >> (binstream&, dynarray<T,A>& );
-#endif //SYSTYPE_MSVC
+template<class T, class COUNT, class A> class dynarray;
+template<class T, class COUNT, class A>
+binstream& operator << (binstream&, const dynarray<T,COUNT,A>& );
+template<class T, class COUNT, class A>
+binstream& operator >> (binstream&, dynarray<T,COUNT,A>& );
 
 
 ///Template managing arrays of objects
-template< class T, class A=comm_array_allocator<T> >
+//@param T element type
+//@param A array allocator to use
+//@param COUNT count type, also restricts maximum array size. Mainly used to have arrays
+/// that return 32bit uint types and stream compatibly with 32bit apps
+template< class T, class COUNT=uints, class A=comm_array_allocator<T> >
 class dynarray
 {
-    enum {
-        CHUNKSIZE               = 4
-    };
     uints _count() const        { return A::count(_ptr); }
     uints _size() const         { return A::size(_ptr); }
     void _set_count(uints n)    { A::set_count(_ptr, n); }
 
+    ///Check if given number doesn't exceed the maximum counter type value
+    static void _assert_allowed_size( uints n ) {
+        DASSERT( n <= COUNT(-1) );
+    }
+
+protected:
+    T* _ptr;
+
 public:
 
     typedef T                   value_type;
+    typedef COUNT               count_t;
 
     COIDNEWDELETE
-
-    T* _ptr;
 
     dynarray() {
         A::instance();
@@ -226,8 +234,9 @@ public:
         //A::instance();
         //_ptr = p._ptr;
         _ptr = 0;
-        uints n = p.size();
+        uints n = p.sizes();
         alloc(n);
+
         for( uints i=0; i<n; ++i ) {
             _ptr[i] = p._ptr[i];
         }
@@ -236,8 +245,9 @@ public:
     ///assignment operator - duplicate
     dynarray& operator = ( const dynarray& p )
     {
-        uints n = p.size();
+        uints n = p.sizes();
         alloc(n);
+
         for( uints i=0; i<n; ++i )
             _ptr[i] = p._ptr[i];
 
@@ -269,22 +279,7 @@ public:
         _ptr = t;
         return *this;
     }
-/*
-    ///Share control over buffer controlled by \a dest dynarray.
-    dynarray& share( dynarray& dest )
-    {
-        discard();
-        _ptr = dest._ptr;
-        return *this;
-    }
 
-    ///release shared array
-    dynarray& unshare()
-    {
-        _ptr = 0;
-        return *this;
-    }
-*/
     T* ptr()                    { return _ptr; }
     T* ptre()                   { return _ptr + _count(); }
 
@@ -292,19 +287,19 @@ public:
     const T* ptre() const       { return _ptr + _count(); }
 
 #ifdef SYSTYPE_MSVC8plus
-    template< typename T, typename A >
-    friend binstream& operator << (binstream &out, const dynarray<T,A> &dyna);
-    template< typename T, typename A >
-    friend binstream& operator >> (binstream &in, dynarray<T,A> &dyna);
+    template< typename T, typename C, typename A >
+    friend binstream& operator << (binstream &out, const dynarray<T,C,A> &dyna);
+    template< typename T, typename C, typename A >
+    friend binstream& operator >> (binstream &in, dynarray<T,C,A> &dyna);
 #else
-    friend binstream& operator << TEMPLFRIEND (binstream &out, const dynarray<T,A> &dyna);
-    friend binstream& operator >> TEMPLFRIEND (binstream &in, dynarray<T,A> &dyna);
+    friend binstream& operator << TEMPLFRIEND (binstream &out, const dynarray<T,COUNT,A> &dyna);
+    friend binstream& operator >> TEMPLFRIEND (binstream &in, dynarray<T,COUNT,A> &dyna);
 #endif
 
-    typedef binstream_container::fnc_stream	fnc_stream;
+    typedef binstream_container_base::fnc_stream	fnc_stream;
 
     ////////////////////////////////////////////////////////////////////////////////
-    struct binstream_container : public binstream_containerT<T>
+    struct dynarray_binstream_container : public binstream_containerT<T,COUNT>
     {
         virtual const void* extract( uints n )
         {
@@ -315,24 +310,28 @@ public:
 
         virtual void* insert( uints n )
         {
-            return _v.add(n);
+            _v._assert_allowed_size(n);
+            return _v.add(COUNT(n));
         }
 
-        virtual bool is_continuous() const      { return true; }
-		binstream_container( dynarray<T>& v, uints n=UMAXS )
-            : binstream_containerT<T>(n), _v(v)
+        virtual bool is_continuous() const {
+            return true;
+        }
+
+		dynarray_binstream_container( dynarray& v, uints n=UMAXS )
+            : binstream_containerT<T,COUNT>(n), _v(v)
         {
             _pos = 0;
         }
 
-		binstream_container( dynarray<T>& v, uints n, fnc_stream fout, fnc_stream fin )
-            : binstream_containerT<T>(n,fout,fin), _v(v)
+		dynarray_binstream_container( dynarray& v, uints n, fnc_stream fout, fnc_stream fin )
+            : binstream_containerT<T,COUNT>(n,fout,fin), _v(v)
         {
             _pos = 0;
         }
 
     protected:
-        dynarray<T>& _v;
+        dynarray& _v;
         uints _pos;
     };
 
@@ -353,7 +352,7 @@ public:
     T& operator [] (uints k)             { DYNARRAY_CHECK_BOUNDS_U(k)  return *(_ptr+k); }
 
 
-    bool operator == ( const dynarray<T>& a ) const
+    bool operator == ( const dynarray& a ) const
     {
         if( size() != a.size() )  return false;
         for( uints i=0; i<size(); ++i )
@@ -361,7 +360,7 @@ public:
         return true;
     }
 
-    bool operator != ( const dynarray<T>& a ) const
+    bool operator != ( const dynarray& a ) const
     {
         return !operator == (a);
     }
@@ -372,6 +371,8 @@ public:
         @return pointer to the first element of array */
     T* alloc( uints nitems )
     {
+        DASSERT( nitems <= COUNT(-1) );
+
         _destroy();
         uints n = _count();
         uints nalloc = nitems;
@@ -405,6 +406,8 @@ public:
         @return pointer to the first element of array */
     T* calloc( uints nitems, bool toones=false )
     {
+        DASSERT( nitems <= COUNT(-1) );
+
         _destroy();
         uints n = _count();
         uints nalloc = nitems;
@@ -440,6 +443,8 @@ public:
         @return pointer to the first element of array */
     T* realloc( uints nitems )
     {
+        DASSERT( nitems <= COUNT(-1) );
+
         uints n = _count();
 
         if( nitems == n )  return _ptr;
@@ -472,6 +477,8 @@ public:
         @return pointer to the first element of array */
     T* crealloc( uints nitems, bool toones = false )
     {
+        DASSERT( nitems <= COUNT(-1) );
+
         uints n = _count();
 
         if( nitems == n )  return _ptr;
@@ -501,16 +508,16 @@ public:
     };
 
     //@{ alternative names
-    T* need_new( uints nitems )                 { return alloc(nitems); }
+    T* need_new( uints nitems )         { return alloc(nitems); }
     T* need_newc( uints nitems, bool toones=false ) { return calloc(nitems, toones); }
 
-    T* need( uints nitems )                     { return realloc(nitems); }
+    T* need( uints nitems )             { return realloc(nitems); }
     T* needc( uints nitems, bool toones=false ) { return crealloc(nitems, toones); }
     //@} alternative names
 
 
     ///Cut to specified length, negative numbers cut abs(len) from the end
-    dynarray<T,A>& resize( ints len )
+    dynarray& resize( ints len )
     {
         if( len < 0 )
         {
@@ -537,6 +544,7 @@ public:
         if(!nitems)  return _ptr + n;
         uints nto = nitems + n;
         uints nalloc = nto;
+        DASSERT( nto <= COUNT(-1) );
 
         if( nalloc*sizeof(T) > _size() )
             nalloc = _realloc(nalloc, n);
@@ -562,6 +570,7 @@ public:
         if(!nitems)  return _ptr + n;
         uints nto = nitems + n;
         uints nalloc = nto;
+        DASSERT( nto <= COUNT(-1) );
 
         if( nalloc*sizeof(T) > _size() )
             nalloc = _realloc(nto, n);
@@ -587,31 +596,34 @@ public:
     /** this uses the provided \a key just to find the position, doesn't insert the key
         @see push_sort() **/
     //@{
-    T* add_sort( const T& key, uints n=1 )                  { return add_sortT<T>(key,n); }
+    T* add_sort( const T& key, uints n=1 ) {
+        return add_sortT<T>(key,n);
+    }
 
     template<class FUNC>
-    T* add_sort( const T& key, const FUNC& fn, uints n=1 )  { return add_sortT<T,FUNC>(key,fn,n); }
+    T* add_sort( const T& key, const FUNC& fn, uints n=1 ) {
+        return add_sortT<T,FUNC>(key,fn,n);
+    }
 
     template<class K>
     T* add_sortT( const K& key, uints n=1 )
     {
         uints i = lower_boundT<K>(key);
-        return ins( i, n );
+        return ins(i, n);
     }
 
     template<class K, class FUNC>
     T* add_sortT( const K& key, const FUNC& fn, uints n=1 )
     {
         uints i = lower_boundT<K,FUNC>(key,fn);
-        return ins( i, n );
+        return ins(i, n);
     }
     //@}
 
 
     ///Append an empty element to the end
     //@return pointer to the last element (the one appended)
-    T* push()
-    {
+    T* push() {
         return add();
     }
 
@@ -683,7 +695,7 @@ public:
     }
 
     ///Append copy of another array to the end
-    dynarray<T,A>& append( const dynarray<T,A>& a )
+    dynarray& append( const dynarray& a )
     {
         uints c = a.size();
         T* p = add(c);
@@ -871,7 +883,9 @@ public:
     ///Linear search whether array contains element comparable with \a key
     ///@return -1 if not contained, otherwise index to the key
     //@{
-    ints contains( const T& key ) const             { return containsT<T>(key); }
+    ints contains( const T& key ) const {
+        return containsT<T>(key);
+    }
 
     template<class K>
     ints containsT( const K& key ) const
@@ -886,7 +900,9 @@ public:
     ///Linear search (backwards) whether array contains element comparable with \a key
     ///@return -1 if not contained, otherwise index to the key
     //@{
-    ints contains_back( const T& key ) const        { return contains_backT<T>(key); }
+    ints contains_back( const T& key ) const {
+        return contains_backT<T>(key);
+    }
 
     template<class K>
     ints contains_backT( const K& key ) const
@@ -904,10 +920,14 @@ public:
     ///Binary search whether sorted array contains element comparable to \a key
     /// Uses operator T<K or functor(T,K) to search for the element, and operator T==K for equality comparison
     //@{
-    ints contains_sorted( const T& key ) const                  { return contains_sortedT<T>(key); }
+    ints contains_sorted( const T& key ) const {
+        return contains_sortedT<T>(key);
+    }
 
     template<class FUNC>
-    ints contains_sorted( const T& key, const FUNC& fn ) const  { return contains_sortedT<T,FUNC>(key,fn); }
+    ints contains_sorted( const T& key, const FUNC& fn ) const {
+        return contains_sortedT<T,FUNC>(key,fn);
+    }
 
     template<class K>
     ints contains_sortedT( const K& key ) const
@@ -930,16 +950,20 @@ public:
 
 
     ///Binary search sorted array using < operator (comparing T<T)
-    uints lower_bound( const T& key ) const                     { return lower_boundT<T>(key); }
+    count_t lower_bound( const T& key ) const {
+        return lower_boundT<T>(key);
+    }
 
     ///Binary search sorted array using function object f(T,T) for comparing T<T
     template<class FUNC>
-    uints lower_bound( const T& key, const FUNC& fn ) const     { return lower_boundT<T,FUNC>(key,fn); }
+    count_t lower_bound( const T& key, const FUNC& fn ) const {
+        return lower_boundT<T,FUNC>(key,fn);
+    }
 
     ///Binary search sorted array using different type of key
     ///@note there must exist < operator able to do (T < K) comparison
     template<class K>
-    uints lower_boundT( const K& key ) const
+    count_t lower_boundT( const K& key ) const
     {
         // k<m -> top = m
         // k>m -> bot = m+1
@@ -955,12 +979,12 @@ public:
             else
                 j = m;
         }
-        return i;
+        return (count_t)i;
     }
 
     ///Binary search sorted array using function object f(T,K) for comparing T<K
     template<class K, class FUNC>
-    uints lower_boundT( const K& key, const FUNC& fn ) const
+    count_t lower_boundT( const K& key, const FUNC& fn ) const
     {
         // k<m -> top = m
         // k>m -> bot = m+1
@@ -976,7 +1000,7 @@ public:
             else
                 j = m;
         }
-        return i;
+        return (count_t)i;
     }
 
     ///Return ptr to last member or null if empty
@@ -999,7 +1023,9 @@ public:
         DASSERT( pos != UMAXS );
         if( pos > _count() )
         {
-            uints ov = pos - _count();
+            uints ov = uints(pos) - _count();
+            _assert_allowed_size(ov + nitems);
+
             return add(ov + nitems) + ov;
         }
         addnc(nitems);
@@ -1015,6 +1041,8 @@ public:
         DASSERT( pos != UMAXS );
     	if( pos > _count() ) {
             uints ov = pos - _count();
+            _assert_allowed_size(ov + nitems);
+
             return addc(ov + nitems) + ov;
         }
         addnc(nitems);
@@ -1027,7 +1055,7 @@ public:
     {
         DASSERT( pos != UMAXS );
         T* p;
-        if( pos > _count() )
+        if( pos > sizes() )
         {
             uints ov = pos - _count();
             p = add(ov+1) + ov;
@@ -1045,37 +1073,40 @@ public:
     /** @param pos position from what to delete
         @param nitems number of items to delete */
     void del( uints pos, uints nitems=1 ) {
-        if (pos+nitems > _count())  return;
+        if( uints(pos) + nitems > _count())
+            return;
+
         uints i = nitems;
         if( !type_trait<T>::trivial_constr )
             for( T* p = _ptr+pos; i>0; --i, ++p )  p->~T();
-        __del (_ptr, pos, _count(), nitems);
+
+        __del( _ptr, pos, _count(), nitems );
         _set_count( _count() - nitems );
     }
 
     ///Test whether array contains given element \a key and delete it
     /// @return number of deleted items
-    uints del_key( const T& key, uints n=1 )
+    count_t del_key( const T& key, uints n=1 )
     {
         uints c = _count();
         uints m = 0;
         for( uints i=0; i<c; ++i )
-            if (key == _ptr[i])  { ++m;  del(i);  if(!--n) return m;  --i; }
-        return m;
+            if (key == _ptr[i])  { ++m;  del(i);  if(!--n) return count_t(m);  --i; }
+        return count_t(m);
     }
 
     ///Test whether array contains given element \a key and delete it
     /// @return number of deleted items
-    uints del_key_back( const T& key, uints n=1 )
+    count_t del_key_back( const T& key, uints n=1 )
     {
         uints c = _count();
         uints m = 0;
         for( ; c>0; )
         {
             --c;
-            if( key == _ptr[c] )  { ++m;  del(c);  if(!--n) return m; }
+            if( key == _ptr[c] )  { ++m;  del(c);  if(!--n) return count_t(m); }
         }
-        return m;
+        return count_t(m);
     }
 
     ///Delete element in sorted array
@@ -1084,13 +1115,17 @@ public:
     ///@param key key to localize the first item to delete
     ///@param n maximum number of items to delete
     //@{
-    uints del_sort( const T& key, uints n=1 )                   { return del_sortT<T>(key,n); }
+    count_t del_sort( const T& key, uints n=1 ) {
+        return del_sortT<T>(key,n);
+    }
 
     template<class FUNC>
-    uints del_sort( const T& key, const FUNC& fn, uints n=1 )   { return del_sortT<T,FUNC>(key,fn,n); }
+    count_t del_sort( const T& key, const FUNC& fn, uints n=1 ) {
+        return del_sortT<T,FUNC>(key,fn,n);
+    }
 
     template<class K>
-    uints del_sortT( const K& key, uints n=1 )
+    count_t del_sortT( const K& key, uints n=1 )
     {
         uints c = lower_boundT<K>(key);
         uints i, m = _count();
@@ -1100,11 +1135,11 @@ public:
         }
         if( i>c )
             del( c, i-c );
-        return i-c;
+        return count_t(i-c);
     }
 
     template<class K, class FUNC>
-    uints del_sortT( const K& key, const FUNC& fn, uints n=1 )
+    count_t del_sortT( const K& key, const FUNC& fn, uints n=1 )
     {
         uints c = lower_boundT<K,FUNC>(key,fn);
         uints i, m = _count();
@@ -1114,11 +1149,11 @@ public:
         }
         if( i>c )
             del( c, i-c );
-        return i-c;
+        return count_t(i-c);
     }
     //@}
 
-    T* move_temp (uints from, uints to, uints num, void* buf)
+    T* move_temp( uints from, uints to, uints num, void* buf )
     {
         if (from+num > _count())  return 0;
         if (to >= _count())  return 0;
@@ -1142,7 +1177,7 @@ public:
         return 0;
     }
 
-    T* move (uints from, uints to, uints num)
+    T* move( uints from, uints to, uints num )
     {
         if (from+num > _count())  return 0;
         if (to >= _count())  return 0;
@@ -1158,7 +1193,7 @@ public:
         }
         else
         {
-            dynarray<uchar> buf;
+            dynarray<uchar,COUNT> buf;
             buf.alloc( num*sizeof(T) );
             T* p = move_temp( from, to, num, buf.ptr() );
             xmemcpy( p, buf.ptr(), num*sizeof(T) );
@@ -1170,9 +1205,9 @@ public:
 
     ///Delete content but keep the memory reserved
     ///@return previous size of the array
-    uints reset()
+    count_t reset()
     {
-        uints n=_count();
+        count_t n = size();
         if(_ptr) {
             _destroy();
             _set_count(0);
@@ -1192,13 +1227,16 @@ public:
     }
 
     ///Get number of elements in the array
-    uints size() const                  { return _count(); }
+    count_t size() const                { return (count_t)_count(); }
+    uints sizes() const                 { return _count(); }
 
     ///Hard set number of elements
     //@warn Doesn't execute either destructors for the removed elements or constructors for added ones.
     uints set_size( uints n )
     {
+        DASSERT( n <= count_t(-1) );
         DASSERT( n*sizeof(T) <= _size() );
+
         if(_ptr) _set_count(n);
         return n;
     }
@@ -1220,12 +1258,12 @@ public:
     const_iterator end() const          { return _dynarray_const_eptr<T>(_ptr+_count()); }
 
 
-    binstream_container get_container_to_write( uints n=UMAXS )
+    dynarray_binstream_container get_container_to_write( uints n=UMAXS )
     {
         return binstream_container( *this, n );
     }
 
-    binstream_container get_container_to_read()
+    dynarray_binstream_container get_container_to_read()
     {
         return binstream_container( *this, size() );
     }
@@ -1268,10 +1306,14 @@ protected:
     T* addnc( uints nitems )
     {
         uints n = _count();
+        DASSERT( n+nitems <= count_t(-1) );
 
-        if(!nitems)  return _ptr + n;
+        if(!nitems)
+            return _ptr + n;
+
         uints nto = nitems + n;
         uints nalloc = nto;
+        _assert_allowed_size(nto);
 
         if( nalloc*sizeof(T) > _size() )
             nalloc = _realloc(nalloc, n);
@@ -1285,8 +1327,8 @@ protected:
 ////////////////////////////////////////////////////////////////////////////////
 ///take control over buffer controlled by \a dest dynarray, \a dest ptr will be set to zero
 /// destination dynarray must have sizeof type == 1
-template< class SRC, class DST >
-dynarray<DST>& dynarray_takeover( dynarray<SRC>& src, dynarray<DST>& dst )
+template< class SRC, class DST, class COUNT >
+dynarray<DST,COUNT>& dynarray_takeover( dynarray<SRC,COUNT>& src, dynarray<DST,COUNT>& dst )
 {
     DASSERT( sizeof(DST) == 1 );
     
@@ -1298,8 +1340,8 @@ dynarray<DST>& dynarray_takeover( dynarray<SRC>& src, dynarray<DST>& dst )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-template< class SRC, class DST >
-dynarray<DST>& dynarray_swap( dynarray<SRC>& src, dynarray<DST>& dst )
+template< class SRC, class DST, class COUNT >
+dynarray<DST,COUNT>& dynarray_swap( dynarray<SRC,COUNT>& src, dynarray<DST,COUNT>& dst )
 {
     DASSERT( sizeof(DST) == 1 );
     
@@ -1314,54 +1356,56 @@ dynarray<DST>& dynarray_swap( dynarray<SRC>& src, dynarray<DST>& dst )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class T>
-inline binstream& operator << ( binstream &out, const dynarray<T>& dyna )
+template <class T, class COUNT, class A>
+inline binstream& operator << ( binstream &out, const dynarray<T,COUNT,A>& dyna )
 {
-    binstream_container_fixed_array<T> c(dyna.ptr(), dyna.size());
+    binstream_container_fixed_array<T,COUNT> c(dyna.ptr(), dyna.size());
     return out.xwrite_array(c);
 }
 
-template <class T>
-inline binstream& operator >> ( binstream &in, dynarray<T>& dyna )
+template <class T, class COUNT, class A>
+inline binstream& operator >> ( binstream &in, dynarray<T,COUNT,A>& dyna )
 {
     dyna.reset();
-    typename dynarray<T>::binstream_container c(dyna);
+    typename dynarray<T,COUNT,A>::dynarray_binstream_container c(dyna);
 
     return in.xread_array(c);
 }
 
-template <class T>
-inline binstream& operator << ( binstream &out, const dynarray<T*>& dyna )
+template <class T, class COUNT, class A>
+inline binstream& operator << ( binstream &out, const dynarray<T*,COUNT,A>& dyna )
 {
-    binstream_container_fixed_array<T*> c( dyna.ptr(), dyna.size(), 0, 0 );
-    binstream_dereferencing_containerT<T> dc(c);
+    binstream_container_fixed_array<T*,COUNT> c( dyna.ptr(), dyna.size(), 0, 0 );
+    binstream_dereferencing_containerT<T,COUNT> dc(c);
     return out.xwrite_array(dc);
 }
 
-template <class T>
-inline binstream& operator >> ( binstream &in, dynarray<T*>& dyna )
+template <class T, class COUNT, class A>
+inline binstream& operator >> ( binstream &in, dynarray<T*,COUNT,A>& dyna )
 {
     dyna.reset();
-    typename dynarray<T*>::binstream_container c( dyna, UMAXS, 0, 0 );
-    binstream_dereferencing_containerT<T> dc(c);
+    typename dynarray<T*,COUNT,A>::dynarray_binstream_container c( dyna, UMAXS, 0, 0 );
+    binstream_dereferencing_containerT<T,COUNT> dc(c);
 
     return in.xread_array(dc);
 }
 
-
+/*
 ////////////////////////////////////////////////////////////////////////////////
-template<class T, class A>
-struct binstream_adapter_writable< dynarray<T,A> > {
-    typedef dynarray<T,A>   TContainer;
-    typedef typename dynarray<T,A>::binstream_container TBinstreamContainer;
+template <class T, class COUNT, class A>
+struct binstream_adapter_writable< dynarray<T,COUNT,A> > {
+    typedef dynarray<T,COUNT,A>   TContainer;
+    typedef typename dynarray<T,COUNT,A>::binstream_container
+        TBinstreamContainer;
 };
 
-template<class T, class A>
-struct binstream_adapter_readable< dynarray<T,A> > {
-    typedef dynarray<T,A>   TContainer;
-    typedef typename dynarray<T,A>::binstream_container TBinstreamContainer;
+template <class T, class COUNT, class A>
+struct binstream_adapter_readable< dynarray<T,COUNT,A> > {
+    typedef dynarray<T,COUNT,A>   TContainer;
+    typedef typename dynarray<T,COUNT,A>::binstream_container
+        TBinstreamContainer;
 };
-
+*/
 COID_NAMESPACE_END
 
 

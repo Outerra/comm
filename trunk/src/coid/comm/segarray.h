@@ -1726,7 +1726,7 @@ public:
         if(_lastidx)  return _ntail;        //if anything already pushed in, return the old size
         if(sizeofTzero)
             _flags |= fSIZE_ZERO;
-        RASSERTX( sizeof_T()+n*sizeof(TAIL) < (1UL<<_rsegsize), "required size must be lower than size of segment" );
+        RASSERTX( sizeof_T()+n*sizeof(TAIL) < (uints(1)<<_rsegsize), "required size must be lower than size of segment" );
         _segments.reset();
         _ntail = n;
         _segitems = item_size() ? (1<<_rsegsize)/item_size() : 0;

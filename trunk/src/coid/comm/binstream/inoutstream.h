@@ -80,11 +80,11 @@ public:
     virtual opcd write_array_separator( type t, uchar end )             { CHK_O(); return _out->write_array_separator( t, end ); }
     virtual opcd read_array_separator( type t )                         { CHK_I(); return _in->read_array_separator(t); }
 
-    virtual opcd write_array_content( binstream_container& c, uints* count ) {
+    virtual opcd write_array_content( binstream_container_base& c, uints* count ) {
         CHK_O();
         return _out->write_array_content(c,count);
     }
-    virtual opcd read_array_content( binstream_container& c, uints n, uints* count ) {
+    virtual opcd read_array_content( binstream_container_base& c, uints n, uints* count ) {
         CHK_I();
         return _in->read_array_content(c,n,count);
     }

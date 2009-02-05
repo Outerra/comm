@@ -656,7 +656,7 @@ public:
         return 0;
     }
 
-    virtual opcd write_array_content( binstream_container& c, uints* count )
+    virtual opcd write_array_content( binstream_container_base& c, uints* count )
     {
         type t = c._type;
         uints n = c._nelements;
@@ -693,7 +693,7 @@ public:
         return e;
     }
 
-    virtual opcd read_array_content( binstream_container& c, uints n, uints* count )
+    virtual opcd read_array_content( binstream_container_base& c, uints n, uints* count )
     {
         type t = c._type;
         //uints n = c._nelements;
@@ -745,7 +745,7 @@ public:
         return 0;
     }
 
-    opcd read_binary( token& tok, binstream_container& c, uints n, uints* count )
+    opcd read_binary( token& tok, binstream_container_base& c, uints n, uints* count )
     {
         uints nr = n;
         if( c.is_continuous() && n!=UMAXS )

@@ -346,7 +346,10 @@ public:
 
     bool is_empty() const                   { return _used == 0;  }
 
-    bool can_be_valid( void* p ) const      { return  p > (void*)this  &&  p < (void*)( (char*)this + (uints(1)<<_rsegsize) ); }
+    bool can_be_valid( const void* p ) const {
+        return  p > (void*)this
+            &&  p < (void*)( (char*)this + (uints(1)<<_rsegsize) );
+    }
 
     ////////////////////////////////////////////////////////////////////////////////
     struct SEGLOCK

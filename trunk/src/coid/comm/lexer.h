@@ -2611,7 +2611,7 @@ protected:
     uints count_notescape( uints off )
     {
         const uchar* pc = (const uchar*)_tok.ptr();
-        for( ; off<_tok._len; ++off )
+        for( ; off<_tok.len(); ++off )
         {
             const uchar* p = pc + off;
             if( (_abmap[*p] & (fGROUP_ESCAPE|fSEQ_TRAILING)) != 0 )  break;
@@ -2623,7 +2623,7 @@ protected:
     uints count_notleading( uints off )
     {
         const uchar* pc = (const uchar*)_tok.ptr();
-        for( ; off<_tok._len; ++off )
+        for( ; off<_tok.len(); ++off )
         {
             const uchar* p = pc + off;
             if( (_abmap[*p] & (fSEQ_TRAILING|xSEQ)) != 0 )  break;
@@ -2634,7 +2634,7 @@ protected:
     uints count_intable( const token& tok, uchar grp, uints off )
     {
         const uchar* pc = (const uchar*)tok.ptr();
-        for( ; off<tok._len; ++off )
+        for( ; off<tok.len(); ++off )
         {
             const uchar* p = pc+off;
             if( (_abmap[*p] & xGROUP) != grp )
@@ -2648,7 +2648,7 @@ protected:
     uints count_inmask( const token& tok, uchar msk, uints off )
     {
         const uchar* pc = (const uchar*)tok.ptr();
-        for( ; off<tok._len; ++off )
+        for( ; off<tok.len(); ++off )
         {
             const uchar* p = pc+off;
             if( (_trail[*p] & msk) == 0 )  break;
@@ -2661,7 +2661,7 @@ protected:
     uints count_intable_nohash( const token& tok, uchar grp, uints off ) const
     {
         const uchar* pc = (const uchar*)tok.ptr();
-        for( ; off<tok._len; ++off )
+        for( ; off<tok.len(); ++off )
         {
             uchar c = pc[off];
             if( (_abmap[c] & xGROUP) != grp )  break;
@@ -2672,7 +2672,7 @@ protected:
     uints count_inmask_nohash( const token& tok, uchar msk, uints off ) const
     {
         const uchar* pc = (const uchar*)tok.ptr();
-        for( ; off<tok._len; ++off )
+        for( ; off<tok.len(); ++off )
         {
             uchar c = pc[off];
             if( (_trail[c] & msk) == 0 )  break;

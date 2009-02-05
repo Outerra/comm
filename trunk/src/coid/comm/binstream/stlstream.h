@@ -98,7 +98,7 @@ protected:
 
 ///Container for inserting to stl containers 
 template<class StlContainer>
-struct binstream_container_stl_insert_iterator : binstream_container
+struct binstream_container_stl_insert_iterator : binstream_container<uints>
 {
     typedef typename StlContainer::value_type       T;
     enum { ELEMSIZE = sizeof(T) };
@@ -114,14 +114,14 @@ struct binstream_container_stl_insert_iterator : binstream_container
 
 
     binstream_container_stl_insert_iterator( StlContainer& cont, uints n )
-        : binstream_container(n,bstype::t_type<T>(),0,&stream_in), outpi(std::back_inserter<StlContainer>(cont))
+        : binstream_container<uints>(n,bstype::t_type<T>(),0,&stream_in)
+        , outpi(std::back_inserter<StlContainer>(cont))
     {
         cont.clear();
-        outpi = std::back_inserter<StlContainer>(cont);
     }
 
 protected:
-    static opcd stream_in( binstream& bin, void* p, binstream_container& cont )
+    static opcd stream_in( binstream& bin, void* p, binstream_container_base& cont )
     {
         binstream_container_stl_insert_iterator<StlContainer>& contc =
             (binstream_container_stl_insert_iterator<StlContainer>&)cont;
@@ -140,7 +140,7 @@ protected:
 ////////////////////////////////////////////////////////////////////////////////
 ///Container for inserting to stl associative containers 
 template<class StlContainer>
-struct binstream_container_stl_assoc_iterator : binstream_container
+struct binstream_container_stl_assoc_iterator : binstream_container<uints>
 {
     typedef typename StlContainer::value_type       T;
     enum { ELEMSIZE = sizeof(T) };
@@ -156,13 +156,14 @@ struct binstream_container_stl_assoc_iterator : binstream_container
 
 
     binstream_container_stl_assoc_iterator( StlContainer& cont, uints n )
-        : binstream_container(n,bstype::t_type<T>(),0,&stream_in), container(cont)
+        : binstream_container<uints>(n,bstype::t_type<T>(),0,&stream_in)
+        , container(cont)
     {
         cont.clear();
     }
 
 protected:
-    static opcd stream_in( binstream& bin, void* p, binstream_container& cont )
+    static opcd stream_in( binstream& bin, void* p, binstream_container_base& cont )
     {
         binstream_container_stl_assoc_iterator<StlContainer>& contc =
             (binstream_container_stl_assoc_iterator<StlContainer>&)cont;
@@ -225,7 +226,7 @@ STD_ASSOC_BINSTREAM(std::multimap)
 ////////////////////////////////////////////////////////////////////////////////
 ///Binstream container for vector, this one can be optimized more
 template<class T, class A>
-struct std_vector_binstream_container : public binstream_containerT<T>
+struct std_vector_binstream_container : public binstream_containerT<T,uints>
 {
     virtual const void* extract( uints n )
     {
@@ -246,7 +247,7 @@ struct std_vector_binstream_container : public binstream_containerT<T>
     virtual bool is_continuous() const      { return true; }
 
     std_vector_binstream_container( std::vector<T,A>& v )
-        : binstream_containerT<T>(UMAXS), _v(v)
+        : binstream_containerT<T,uints>(UMAXS), _v(v)
     {
         v.clear();
         _pos = 0;
@@ -260,7 +261,7 @@ protected:
 
 template<class T, class A> inline binstream& operator << (binstream& out, const std::vector<T,A>& v)
 {
-    binstream_container_fixed_array<T> c( v.empty() ? 0 : &v[0], v.size() );
+    binstream_container_fixed_array<T,uints> c( v.empty() ? 0 : &v[0], v.size() );
     out.xwrite_array(c);
 	return out;
 }
@@ -283,7 +284,7 @@ template<class T, class A> inline metastream& operator << (metastream& m, const 
 ////////////////////////////////////////////////////////////////////////////////
 inline binstream& operator << (binstream& out, const std::string& p)
 {
-    binstream_container_fixed_array<char> c((char*)p.c_str(), p.size());
+    binstream_container_fixed_array<char,uint> c((char*)p.c_str(), p.size());
     out.xwrite_array(c);
 	return out;
 }
