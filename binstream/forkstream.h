@@ -115,20 +115,20 @@ public:
     virtual opcd read_array_separator( type t )                         { return _in->read_array_separator(t); }
 
 
-    virtual opcd write_array_content( binstream_container& c, uints* count )
+    virtual opcd write_array_content( binstream_container_base& c, uints* count )
     {
         opcd e = _outa->write_array_content(c,count);
         if(!e)  e = _outb->write_array_content(c,count);
         return e;
     }
 
-    virtual opcd read_array_content( binstream_container& c, uints n, uints* count )
+    virtual opcd read_array_content( binstream_container_base& c, uints n, uints* count )
     {
         return _in->read_array_content(c,n,count);
     }
 
 
-    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX )
+    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS )
     {
         return _in->read_until( ss, bout, max_size );
     }

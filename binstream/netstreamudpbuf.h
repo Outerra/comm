@@ -165,7 +165,8 @@ public:
         return 0;
     }
 
-    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX ) { return ersUNAVAILABLE; }
+    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS )
+    {   return ersUNAVAILABLE; }
 
     virtual opcd peek_read( uint timeout )
     {
@@ -181,7 +182,7 @@ public:
 
     virtual void flush()
     {
-        send(UMAX);
+        send(UMAXS);
     }
 
     virtual void reset_read()

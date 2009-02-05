@@ -171,7 +171,7 @@ public:
         return _cache.read_raw( p, len );
     }
 
-    virtual opcd write_array_content( binstream_container& c, uints* count )
+    virtual opcd write_array_content( binstream_container_base& c, uints* count )
     {
         type t = c._type;
         uints n = c._nelements;
@@ -180,7 +180,7 @@ public:
         if( t.type != type::T_CHAR  &&  t.type != type::T_KEY )
             return write_compound_array_content(c,count);
 
-        if( c.is_continuous()  &&  n != UMAX )
+        if( c.is_continuous()  &&  n != UMAXS )
         {
             //n *= t.get_size();
             *count = n;
@@ -190,7 +190,7 @@ public:
             return write_compound_array_content(c,count);
     }
 
-    virtual opcd read_array_content( binstream_container& c, uints n, uints* count )
+    virtual opcd read_array_content( binstream_container_base& c, uints n, uints* count )
     {
         type t = c._type;
         //uints n = c._nelements;
@@ -198,7 +198,7 @@ public:
         if( t.type != type::T_CHAR  &&  t.type != type::T_KEY )
             return ersUNAVAILABLE;
 
-        if( c.is_continuous()  &&  n != UMAX )
+        if( c.is_continuous()  &&  n != UMAXS )
         {
             //uints na = n * t.get_size();
             *count = n;
@@ -219,7 +219,7 @@ public:
         }
     }
 
-    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX )
+    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS )
     {
         return _cache.read_until( ss, bout, max_size );
     }

@@ -270,7 +270,7 @@ struct binstream_dereferencing_containerT
         , _bc(bc)
     {}
 
-    binstream_dereferencing_containerT( binstream_container& bc, fnc_stream fout, fnc_stream fin )
+    binstream_dereferencing_containerT( binstream_container<COUNT>& bc, fnc_stream fout, fnc_stream fin )
         : binstream_containerT( bc._nelements, fout, fin )
         , _bc(bc)
     {}
@@ -450,7 +450,7 @@ struct binstream_typechanging_container : public binstream_containerT<WRAPPER>
     }
 
 protected:
-    static opcd stream_out( binstream& bin, void* p, binstream_container& )
+    static opcd stream_out( binstream& bin, void* p, binstream_container_base& )
     {
         WRAPPER w( *(const CONTENT*)p );
         try { bin << w; }
@@ -458,7 +458,7 @@ protected:
         return 0;
     }
 
-    static opcd stream_in( binstream& bin, void* p, binstream_container& )
+    static opcd stream_in( binstream& bin, void* p, binstream_container_base& )
     {
         WRAPPER w( *(CONTENT*)p );
         try { bin >> w; }
