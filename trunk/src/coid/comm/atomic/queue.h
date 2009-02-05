@@ -37,7 +37,7 @@
 #include "atomic.h"
 #include "stack.h"
 
-template<class T,class P> class refs;
+template<class T> class ref;
 template<class T> class policy_queue_pooled;
 
 namespace atomic {
@@ -247,9 +247,8 @@ protected:
 	queue_node(const bool) : _next(0) , _prev(0) , _dummy(true) {}
 };
 
-
 //! atomic double linked list FIFO queue
-template <class T,class P=policy_queue_pooled<T> >
+template <class T>
 class queue_ng
 {
 public:
@@ -298,10 +297,7 @@ public:
 	queue_ng() : _tail(new dummy_node()) , _head(_tail._ptr) , _dpool() {}
 
 	//!	destructor (do not clear queue for now)
-	~queue_ng() {
-		queue_node* p;
-		while ((p = _dpool.pop()) != 0) delete p;
-	} 
+	~queue_ng() { queue_node* p; while ((p = _dpool.pop()) != 0) delete p; } 
 
 protected:
 	//template<class T>
@@ -324,20 +320,14 @@ protected:
 public:
 	/// enqueue item
 	template<class T2>
-	void push(refs<T2,policy_queue_pooled<T2> >& item)
-	{
-		push( item.add_ref_copy() );
-	}
+	void push(ref<T2>& item) { push( static_cast<policy_queue_pooled<T>*>item.add_ref_copy()); }
 
 	/// same as previous push but TAKE given ref (no addref is needed) 
 	template<class T2>
-	void push_take(refs<T2,policy_queue_pooled<T2> >& item)
-	{
-		push( item.give_me() );
-	}
+	void push_take(ref<T2>& item) { push( static_cast<policy_queue_pooled<T>*>(item.give_me()) ); }
 
 	/// pop item from queue returns false when queue is empty
-	bool pop(refs<T,P> &item)
+	bool pop(ref<T> &item)
 	{
 		queue_ptr head, tail;
 		dummy_node * dummy;
@@ -364,7 +354,7 @@ public:
 						continue;
 					}
 					if( b_cas( &_head._data,queue_ptr( head._ptr->_prev._ptr,head._tag+1 )._data,head._data ) ) {
-						item.create( static_cast<P*>(head._ptr) );
+						item.create( static_cast<policy_queue_pooled<T>*>(head._ptr) );
 						return true;
 					}
 				} 

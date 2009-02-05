@@ -49,7 +49,7 @@ COID_NAMESPACE_BEGIN
 
 class logger;
 
-class logger_file : public ref_base
+class logger_file
 {
 	bofstream _logfile;
 	txtstream _logtxt;
@@ -64,7 +64,7 @@ public:
 	void write_to_file(const charstr& lm) { _logtxt<<lm; }
 };
 
-typedef refs<logger_file> logger_file_ptr;
+typedef ref<logger_file> logger_file_ptr;
 
 /* 
  * Log message object, returned by the logger.
@@ -84,7 +84,8 @@ public:
 	void write_to_file() { _lf->write_to_file(*this); }
 };
 
-typedef refs<logmsg,policy_queue_pooled<logmsg> > logmsg_ptr;
+DEFAULT_POLICY(logmsg,policy_queue_pooled);
+typedef ref<logmsg> logmsg_ptr;
 
 /* 
  * USAGE :

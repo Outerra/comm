@@ -85,6 +85,14 @@ struct _Select_GetRefPtr
     ret_type operator()(const VAL* t) const   { return *t; }
 };
 
+template <class VAL, class KEY>
+struct _Select_DeRef
+{
+	typedef KEY ret_type;
+
+	ret_type operator()(const VAL& t) const { return *t; }
+};
+
 //@} EXTRACTKEY templates
 
 ////////////////////////////////////////////////////////////////////////////////
