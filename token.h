@@ -73,19 +73,18 @@ inline void xstrncpy( char* dst, const char* src, uints n )
 }
 
 
-template<class T, class A> class dynarray;
+template<class T, class COUNT, class A> class dynarray;
 class charstr;
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Token structure describing a part of a string.
 struct token
 {
-    const char *_ptr;                   ///<ptr to the beginning of current string part
-    uints _len;                         ///<length of current string part
+    const char *_ptr;                   ///< ptr to the beginning of current string part
+    const char* _pte;                   ///< pointer past the end
 
     token() {
-        _ptr = 0;
-        _len = 0;
+        _ptr = _pte = 0;
     }
 
     token( const char *czstr )
@@ -95,14 +94,15 @@ struct token
 
     token( const char* ptr, uints len )
     {
+        DASSERT( len <= UMAX32 );
         _ptr = ptr;
-        _len = len;
+        _pte = ptr + len;
     }
 
     token( const char* ptr, const char* ptre )
     {
         _ptr = ptr;
-        _len = ptre - ptr;
+        _pte = ptre;
     }
 
     static token from_cstring( const char* czstr, uints maxlen = UMAXS )
@@ -110,14 +110,14 @@ struct token
         return token( czstr, strnlen(czstr,maxlen) );
     }
 
-    token ( const token& src, uint offs, uint len )
+    token( const token& src, uints offs, uints len )
     {
-        if( offs > src._len )
-            _ptr = src._ptr+src._len, _len = 0;
-        else if( len > src._len - offs )
-            _ptr = src._ptr+offs, _len = src._len - offs;
+        if( offs > src.lens() )
+            _ptr = src._pte, _pte = _ptr;
+        else if( len > src.lens() - offs )
+            _ptr = src._ptr+offs, _pte = src._pte;
         else
-            _ptr = src._ptr+offs, _len = len;
+            _ptr = src._ptr+offs, _pte = src._ptr + len;
     }
 
     ///Const iterator for token
@@ -130,7 +130,7 @@ struct token
         bool operator < (const const_iterator& p) const    { return _p < p._p; }
         bool operator <= (const const_iterator& p) const   { return _p <= p._p; }
 
-        int operator == (const char* p) const  { return p == _p; }
+        int operator == (const char* p) const { return p == _p; }
 
         int operator == (const const_iterator& p) const    { return p._p == _p; }
         int operator != (const const_iterator& p) const    { return p._p != _p; }
@@ -143,11 +143,11 @@ struct token
         const_iterator  operator ++(int)    { const_iterator x(*this);  ++_p;  return x; }
         const_iterator  operator --(int)    { const_iterator x(*this);  --_p;  return x; }
 
-        const_iterator& operator += (ints n)    { _p += n;  return *this; }
-        const_iterator& operator -= (ints n)    { _p -= n;  return *this; }
+        const_iterator& operator += (ints n) { _p += n;  return *this; }
+        const_iterator& operator -= (ints n) { _p -= n;  return *this; }
 
-        const_iterator  operator + (ints n) const   { const_iterator t(*this);  t += n;  return t; }
-        const_iterator  operator - (ints n) const   { const_iterator t(*this);  t -= n;  return t; }
+        const_iterator  operator + (ints n) const { const_iterator t(*this);  t += n;  return t; }
+        const_iterator  operator - (ints n) const { const_iterator t(*this);  t -= n;  return t; }
 
         char operator [] (ints i) const     { return _p[i]; }
 
@@ -155,28 +155,29 @@ struct token
         const_iterator( const char* p ) : _p(p)  { }
     };
 
-    const_iterator begin() const    { return const_iterator(ptr()); }
-    const_iterator end() const      { return const_iterator(ptre()); }
+    const_iterator begin() const            { return const_iterator(ptr()); }
+    const_iterator end() const              { return const_iterator(ptre()); }
 
 
     void swap( token& t )
     {
-        const char* p = t._ptr; t._ptr = _ptr;  _ptr = p;
-        uints n = t._len;       t._len = _len;  _len = n;
+        const char* pr = t._ptr; t._ptr = _ptr;  _ptr = pr;
+        const char* pe = t._pte; t._pte = _pte;  _pte = pe;
     }
 
     const char* ptr() const                 { return _ptr; }
-    const char* ptre() const                { return _ptr+_len; }
+    const char* ptre() const                { return _pte; }
 
     ///Return length of token
-    uints len() const                       { return _len; }
+    uint len() const                        { return uint(_pte - _ptr); }
+    uints lens() const                      { return _pte - _ptr; }
 
     ///Return number of unicode characters within utf8 encoded token
-    uints len_utf8() const
+    uint len_utf8() const
     {
-        uints n=0;
+        uint n=0;
         const char* p = _ptr;
-        const char* pe = _ptr+_len;
+        const char* pe = _pte;
 
         while(p<pe) {
             p += get_utf8_seq_expected_bytes(p);
@@ -193,11 +194,11 @@ struct token
     {
         if( n < 0 )
         {
-            if( (uints)-n > _len )  _len=0;
-            else  _len += n;
+            if( (uints)-n > lens() )  _pte = _ptr;
+            else  _pte += n;
         }
-        else if( (uints)n < _len )
-            _len = n;
+        else if( (uints)n < lens() )
+            _pte = _ptr + n;
     }
 
 
@@ -213,68 +214,68 @@ struct token
 
     bool operator == (const token& tok) const
     {
-        if( _len != tok._len ) return 0;
-        return ::memcmp( _ptr, tok._ptr, _len ) == 0;
+        if( lens() != tok.lens() ) return 0;
+        return ::memcmp( _ptr, tok._ptr, _pte-_ptr ) == 0;
     }
 
     bool operator == (const char* str) const {
-        uints i;
-        for( i=0; i<_len; ++i ) {
-            if( str[i] != _ptr[i] )  return false;
+        const char* p = _ptr;
+        for( ; p<_pte; ++p, ++str ) {
+            if( *str != *p )  return false;
         }
-        return str[i] == 0;
+        return *str == 0;
     }
 
     friend bool operator == (const token& tok, const charstr& str );
 
     bool operator == (char c) const {
-        if( 1 != _len ) return 0;
+        if( 1 != lens() ) return 0;
         return c == *_ptr;
     }
 
     bool operator != (const token& tok) const {
-        if( _len != tok._len ) return true;
-        return ::memcmp( _ptr, tok._ptr, _len ) != 0;
+        if( lens() != tok.lens() ) return true;
+        return ::memcmp( _ptr, tok._ptr, _pte-_ptr ) != 0;
     }
 
     bool operator != (const char* str) const {
-        uints i;
-        for( i=0; i<_len; ++i ) {
-            if( str[i] != _ptr[i] )  return true;
+        const char* p = _ptr;
+        for( ; p<_pte; ++p, ++str ) {
+            if( *str != *p )  return true;
         }
-        return str[i] != 0;
+        return *str != 0;
     }
 
     friend bool operator != (const token& tok, const charstr& str );
 
     bool operator != (char c) const {
-        if (1 != _len) return true;
+        if(1 != lens()) return true;
         return c != *_ptr;
     }
 
     bool operator > (const token& tok) const
     {
-        if( !_len )  return 0;
-        if( !tok._len )  return 1;
+        if( !lens() )  return 0;
+        if( !tok.lens() )  return 1;
 
-        uints m = uint_min( _len, tok._len );
+        uints m = uint_min( lens(), tok.lens() );
 
         int k = ::strncmp( _ptr, tok._ptr, m );
         if( k == 0 )
-            return _len > tok._len;
+            return lens() > tok.lens();
         return k > 0;
     }
 
     bool operator < (const token& tok) const
     {
-        if( !tok._len )  return 0;
-        if( !_len )  return 1;
+        if( !tok.lens() )  return 0;
+        if( !lens() )  return 1;
 
-        uints m = uint_min( _len, tok._len );
+        uints m = uint_min( lens(), tok.lens() );
 
         int k = ::strncmp( _ptr, tok._ptr, m );
         if( k == 0 )
-            return _len < tok._len;
+            return lens() < tok.lens();
         return k < 0;
     }
 
@@ -291,16 +292,16 @@ struct token
     ////////////////////////////////////////////////////////////////////////////////
     bool cmpeq( const token& str ) const
     {
-        if( len() != str.len() )
+        if( lens() != str.lens() )
             return 0;
-        return 0 == memcmp( ptr(), str.ptr(), len() );
+        return 0 == memcmp( ptr(), str.ptr(), lens() );
     }
 
     bool cmpeqi( const token& str ) const
     {
-        if( len() != str.len() )
+        if( lens() != str.lens() )
             return 0;
-        return 0 == xstrncasecmp( ptr(), str.ptr(), len() );
+        return 0 == xstrncasecmp( ptr(), str.ptr(), lens() );
     }
 
     bool cmpeqc( const token& str, bool casecmp ) const
@@ -313,12 +314,12 @@ struct token
     //@return -1 if str<this, 0 if str==this, 1 if str>this
     int cmp( const token& str ) const
     {
-        uints lex = str.len();
-        int r = memcmp( ptr(), str.ptr(), uint_min(_len,lex) );
+        uints lex = str.lens();
+        int r = memcmp( ptr(), str.ptr(), uint_min(lens(),lex) );
         if( r == 0 )
         {
-            if( _len<lex )  return -1;
-            if( lex<_len )  return 1;
+            if( lens()<lex )  return -1;
+            if( lex<lens() )  return 1;
         }
         return r;
     }
@@ -326,24 +327,24 @@ struct token
     ///Compare strings, longer first
     int cmplf( const token& str ) const
     {
-        uints lex = str.len();
-        int r = memcmp( ptr(), str.ptr(), uint_min(_len,lex) );
+        uints lex = str.lens();
+        int r = memcmp( ptr(), str.ptr(), uint_min(lens(),lex) );
         if( r == 0 )
         {
-            if( _len<lex )  return 1;
-            if( lex<_len )  return -1;
+            if( lens()<lex )  return 1;
+            if( lex<lens() )  return -1;
         }
         return r;
     }
 
     int cmpi( const token& str ) const
     {
-        uints lex = str.len();
-        int r = xstrncasecmp( ptr(), str.ptr(), uint_min(_len,lex) );
+        uints lex = str.lens();
+        int r = xstrncasecmp( ptr(), str.ptr(), uint_min(lens(),lex) );
         if( r == 0 )
         {
-            if( _len<lex )  return -1;
-            if( lex<_len )  return 1;
+            if( lens()<lex )  return -1;
+            if( lex<lens() )  return 1;
         }
         return r;
     }
@@ -377,18 +378,17 @@ struct token
     ////////////////////////////////////////////////////////////////////////////////
     //@return this token if not empty, otherwise the second one
     token operator | (const token& b) const {
-        return _len
-            ? *this
-            : b;
+        return is_empty()
+            ? b
+            : *this;
     }
 
     ////////////////////////////////////////////////////////////////////////////////
     ///Eat the first character from token, returning it
     char operator ++ ()
     {
-        if(_len)
+        if(_ptr<_pte)
         {
-            --_len;
             ++_ptr;
             return _ptr[-1];
         }
@@ -398,14 +398,13 @@ struct token
     ///Extend token to include one more character to the right
     token& operator ++ (int)
     {
-        ++_len;
+        ++_pte;
         return *this;
     }
 
     ///Extend token to include one more character to the left
     token& operator -- ()
     {
-        ++_len;
         --_ptr;
         return *this;
     }
@@ -413,9 +412,9 @@ struct token
     ///Eat the last character from token, returning it
     char operator -- (int)
     {
-        if(_len) {
-            --_len;
-            return _ptr[_len];
+        if(_ptr<_pte) {
+            --_pte;
+            return *_pte;
         }
         return 0;
     }
@@ -423,104 +422,98 @@ struct token
     ///Shift the starting pointer forwards or backwards
     token& shift_start( ints i )
     {
-        if( i>0  &&  i>(ints)_len )
-            i = _len;
+        const char* p = _ptr + i;
+        if( p > _pte )
+            p = _pte;
 
-        _ptr += i;
-        _len -= i;
-
+        _ptr = p;
         return *this;
     }
 
     ///Shift the end forwards or backwards
     token& shift_end( ints i )
     {
-        if( i<0  &&  -i>(ints)_len )
-            i = -(ints)_len;
+        const char* p = _pte + i;
+        if( p < _ptr )
+            p = _ptr;
 
-        _len += i;
-
+        _pte = p;
         return *this;
     }
 
-/*
-    const char* operator + (ints i)
-    {
-        return _ptr + i;
-    }
-*/
-    bool is_empty() const               { return _len == 0; }
-    bool is_set() const                 { return _len > 0; }
+    bool is_empty() const               { return _ptr == _pte; }
+    bool is_set() const                 { return _ptr != _pte; }
     bool is_null() const                { return _ptr == 0; }
-    void set_empty()                    { _len = 0; }
-    void set_empty( const char* p )     { _ptr = p; _len = 0; }
-    void set_null()                     { _ptr = 0; _len = 0; }
+    void set_empty()                    { _pte = _ptr; }
+    void set_empty( const char* p )     { _ptr = _pte = p; }
+    void set_null()                     { _ptr = _pte = 0; }
 
     typedef const char* token::*unspecified_bool_type;
 
     ///Automatic cast to bool for checking emptiness
 	operator unspecified_bool_type () const {
-	    return _len == 0  ?  0  :  &token::_ptr;
+	    return _ptr == _pte  ?  0  :  &token::_ptr;
 	}
 
 
-    char last_char() const              { return _len > 0  ?  _ptr[_len-1]  :  0; }
-    char first_char() const             { return _len > 0  ?  _ptr[0]  :  0; }
-    char nth_char( ints n ) const       { return n<0 ? ((uints)-n<=_len  ?  _ptr[_len+n] : 0) : ((uints)n<_len  ?  _ptr[n] : 0); }
+    char last_char() const              { return _pte>_ptr  ?  _pte[-1]  :  0; }
+    char first_char() const             { return _pte>_ptr  ?  _ptr[0]  :  0; }
+    char nth_char( ints n ) const       { return n<0 ? (_pte+n<_ptr ? _pte[n] : 0) : (_ptr+n<_pte ? _ptr[n] : 0); }
 
 
     token& operator = ( const char *czstr ) {
         _ptr = czstr;
-        _len = czstr ? ::strlen(czstr) : 0;
+        _pte = czstr + (czstr ? ::strlen(czstr) : 0);
         return *this;
     }
 
     token& operator = ( const token& t )
     {
         _ptr = t._ptr;
-        _len = t._len;
+        _pte = t._pte;
         return *this;
     }
 
     token& operator = ( const charstr& t );
-
+/*
     ///Assigns string to token, initially setting up the token as empty, allowing for subsequent calls to token() method to retrieve next token.
-    void assign( const char *czstr ) {
-        _ptr = czstr;
-        _len = 0;
+    void assign_empty( const char *czstr ) {
+        _ptr = _pte = czstr;
     }
 
     ///Assigns string to token, initially setting up the token as empty, allowing for subsequent calls to token() method to retrieve next token.
-    void assign( const token& str ) {
-        _ptr = str.ptr();
-        _len = 0;
+    void assign_empty( const token& str ) {
+        _ptr = _pte = str.ptr();
     }
 
     ///Assigns string to token, initially setting up the token as empty, allowing for subsequent calls to token() method to retrieve next token.
-    void assign( const charstr& str );
-
+    void assign_empty( const charstr& str );
+*/
     ///Set token from zero-terminated string
+    //@return pointer past the end
     const char* set( const char* czstr ) {
         _ptr = czstr;
-        _len = czstr ? ::strlen(czstr) : 0;
-        return _ptr+_len;
+        _pte = czstr + (czstr ? ::strlen(czstr) : 0);
+        return _pte;
     }
 
     ///Set token from string and length.
-    ///@note use set_empty(ptr) to avoid conflict with overloads when len==0
+    //@note use set_empty(ptr) to avoid conflict with overloads when len==0
+    //@return pointer past the end
     const char* set( const char* str, uints len )
     {
+        DASSERT( len <= UMAX32 );
         _ptr = str;
-        _len = len;
-        return _ptr+_len;
+        _pte = str + len;
+        return _pte;
     }
 
     ///Set token from substring
     const char* set( const char* str, const char* strend )
     {
         _ptr = str;
-        _len = strend - str;
-        return _ptr+_len;
+        _pte = strend;
+        return strend;
     }
 
     ///Set token from string
@@ -532,7 +525,7 @@ struct token
     {
         if( maxbufsize == 0 )  return str;
 
-        uints lt = _len;
+        uints lt = lens();
         if( lt >= maxbufsize )
             lt = maxbufsize - 1;
         xmemcpy( str, _ptr, lt );
@@ -546,7 +539,7 @@ struct token
     {
         if( maxbufsize == 0 )  return 0;
 
-        uints lt = _len;
+        uints lt = lens();
         if( lt > maxbufsize )
             lt = maxbufsize;
         xmemcpy( str, _ptr, lt );
@@ -557,54 +550,48 @@ struct token
     ///Retrieve UCS-4 code from UTF-8 encoded sequence at offset \a off
     ucs4 get_utf8( uints& off ) const
     {
-        if( off >= _len )  return 0;
-        if( _len - off < get_utf8_seq_expected_bytes(_ptr+off) )  return UMAX32;
+        if( off >= lens() )  return 0;
+        if( lens() - off < get_utf8_seq_expected_bytes(_ptr+off) )  return UMAX32;
         return read_utf8_seq( _ptr, off );
     }
 
     ///Cut UTF-8 sequence from the token, returning its UCS-4 code
     ucs4 cut_utf8()
     {
-        if( _len == 0 )  return 0;
+        if( is_empty() )
+            return 0;
         uints off = get_utf8_seq_expected_bytes(_ptr);
-        if( _len < off ) {
+        if( lens() < off ) {
             //malformed UTF-8 character, but truncate it to make progress
-            _ptr += _len;
-            _len = 0;
+            _ptr = _pte;
             return UMAX32;
         }
         ucs4 ch = read_utf8_seq(_ptr);
         _ptr += off;
-        _len -= off;
         return ch;
     }
 
     ///Cut maximum of \a n characters from the token from the left side
     token cut_left_n( uints n )
     {
-        if( n > _len )
-            n = _len;
+        const char* p = _ptr + n;
+        if( p > _pte )
+            p = _pte;
 
-        token r;
-        r._ptr = _ptr;
-        r._len = n;
-
-        _ptr += n;
-        _len -= n;
+        token r(_ptr, p);
+        _ptr = p;
         return r;
     }
 
     ///Cut maximum of \a n characters from the token from the right side
     token cut_right_n( uints n )
     {
-        if( n > _len )
-            n = _len;
+        const char* p = _pte - n;
+        if( p < _ptr )
+            p = _ptr;
 
-        _len -= n;
-
-        token r;
-        r._ptr = _ptr + _len;
-        r._len = n;
+        token r(p, _pte);
+        _pte = p;
         return r;
     }
 
@@ -644,15 +631,15 @@ struct token
         {
             if( !(flags & fREMOVE_SEPARATOR) ) {
                 if( ((flags>>2) ^ flags) & fRETURN_SEPARATOR )
-                    sep.shift_start( sep._len );
+                    sep.shift_start( sep.lens() );
                 else
-                    sep._len = 0;
+                    sep._pte = sep._ptr;
             }
 
             dest._ptr = source._ptr;
-            dest._len = sep._ptr - source._ptr;
-            source._len = source.ptre() - sep.ptre();
-            source._ptr = sep.ptre();
+            dest._pte = sep._ptr;
+            source._ptr = sep._pte;
+            source._pte = source._pte;
 
             if( flags & fSWAP )
                 source.swap(dest);
@@ -663,15 +650,15 @@ struct token
         token& process_notfound( token& source, token& dest ) const
         {
             if( flags & fON_FAIL_RETURN_EMPTY ) {
-                dest._ptr = (flags & fSWAP) ? source.ptre() : source.ptr();
-                dest._len = 0;
+                dest._ptr = (flags & fSWAP) ? source._pte : source._ptr;
+                dest._pte = dest._ptr;
             }
             else {
-                dest._len = source._len;
+                dest._pte = source._pte;
                 dest._ptr = source._ptr;
                 if(!(flags & fSWAP))
-                    source._ptr += source._len;
-                source._len = 0;
+                    source._ptr = source._pte;
+                source._pte = source._ptr;
             }
 
             return dest;
@@ -728,12 +715,12 @@ struct token
     token cut_left( const token& separators, cut_trait ctr = cut_trait(fREMOVE_SEPARATOR) )
     {
         token r;
-        uints ln = count_notingroup(separators);
-        if( _len > ln )         //if not all is not separator
+        const char* p = _ptr + count_notingroup(separators);
+        if( p < _pte )         //if not all is not separator
         {
-            token sep(_ptr+ln, ctr.consume_other_separators()
-                ? count_ingroup(separators,ln)-ln
-                : 1);
+            token sep(p, ctr.consume_other_separators()
+                ? _ptr + count_ingroup(separators, p-_ptr)
+                : p + 1);
 
             return ctr.process_found(*this, r, sep);
         }
@@ -746,10 +733,10 @@ struct token
     token cut_left( const substring& ss, cut_trait ctr = cut_trait(fREMOVE_SEPARATOR) )
     {
         token r;
-        uints n = count_until_substring(ss);
-        if( n < _len )
+        const char* p = _ptr + count_until_substring(ss);
+        if( p < _pte )
         {
-            token sep(_ptr+n, ss.len());
+            token sep(p, p+ss.len());
 
             return ctr.process_found(*this, r, sep);
         }
@@ -798,19 +785,19 @@ struct token
     {
         token r;
         uints off=0;
-        uints lastss = _len;    //position of the last substring found
+        uints lastss = lens();    //position of the last substring found
 
         for(;;)
         {
             uints us = count_until_substring( ss, off );
-            if( us >= _len )
+            if( us >= lens() )
                 break;
 
             lastss = us;
             off = us + ss.len();
         }
 
-        if( lastss < _len )
+        if( lastss < lens() )
         {
             token sep(_ptr+lastss, ss.len());
 
@@ -860,29 +847,29 @@ struct token
 
 
 
-
-    uints count_notingroup( const token& sep, uints off=0 ) const
+    ///Count characters starting from offset @a off that are not in the group @a sep
+    uint count_notingroup( const token& sep, uints off=0 ) const
     {
-        uints i;
-        for (i=off; i<_len; ++i)
+        const char* p = _ptr + off;
+        for( ; p<_pte; ++p )
         {
-            uints j;
-            for( j=0; j<sep._len; ++j )
-                if( _ptr[i] == sep._ptr[j] )
-                    return i;
+            const char* ps = sep._ptr;
+            for( ; ps<sep._pte; ++ps )
+                if( *p == *ps )
+                    return uint(p - _ptr);
         }
-        return i;
+        return uint(p - _ptr);
     }
 
     ///\a tbl is assumed to contain 128 entries for basic ascii.
     /// characters with codes above the 128 are considered to be utf8 stuff
     /// and \a utf8in tells whether they are considered to be 'in'
-    uints count_notintable_utf8( const uchar* tbl, uchar msk, bool utf8in, uints off=0 ) const
+    uint count_notintable_utf8( const uchar* tbl, uchar msk, bool utf8in, uints off=0 ) const
     {
-        uints i;
-        for( i=off; i<_len; ++i )
+        const char* p = _ptr + off;
+        for( ; p<_pte; ++p )
         {
-            uchar k = _ptr[i];
+            uchar k = *p;
 
             if( k >= 128 )
             {
@@ -892,69 +879,69 @@ struct token
             else if( (tbl[k] & msk) != 0 )
                 break;
         }
-        return i;
+        return uint(p - _ptr);
     }
 
-    uints count_notintable( const uchar* tbl, uchar msk, uints off=0 ) const
+    uint count_notintable( const uchar* tbl, uchar msk, uints off=0 ) const
     {
-        uints i;
-        for( i=off; i<_len; ++i )
+        const char* p = _ptr + off;
+        for( ; p<_pte; ++p )
         {
-            uchar k = _ptr[i];
+            uchar k = *p;
             if( (tbl[k] & msk) != 0 )
                 break;
         }
-        return i;
+        return uint(p - _ptr);
     }
 
-    uints count_notinrange( char from, char to, uints off=0 ) const
+    uint count_notinrange( uchar from, uchar to, uints off=0 ) const
     {
-        uints i;
-        for (i=off; i<_len; ++i)
+        const char* p = _ptr + off;
+        for( ; p<_pte; ++p )
         {
-            if( _ptr[i] >= from  &&  _ptr[i] <= to )
+            if( uchar(*p) >= from  &&  uchar(*p) <= to )
                 break;
         }
-        return i;
+        return uint(p - _ptr);
     }
 
-    uints count_notchar( char sep, uints off=0 ) const
+    uint count_notchar( char sep, uints off=0 ) const
     {
-        uints i;
-        for (i=off; i<_len; ++i)
+        const char* p = _ptr + off;
+        for( ; p<_pte; ++p )
         {
-            if (_ptr[i] == sep)
+            if(*p == sep)
                 break;
         }
-        return i;
+        return uint(p - _ptr);
     }
 
-    uints count_ingroup( const token& sep, uints off=0 ) const
+    uint count_ingroup( const token& sep, uints off=0 ) const
     {
-        uints i;
-        for( i=off; i<_len; ++i )
+        const char* p = _ptr + off;
+        for( ; p<_pte; ++p )
         {
-            uints j;
-            for( j=0; j<sep._len; ++j )
+            const char* ps = sep._ptr;
+            for( ; ps<sep._pte; ++ps )
             {
-                if( _ptr[i] == sep._ptr[j] )
+                if( *p == *ps )
                     break;
             }
-            if( j>=sep._len )
+            if( ps >= sep._pte )
                 break;
         }
-        return i;
+        return uint(p - _ptr);
     }
 
     ///\a tbl is assumed to contain 128 entries for basic ascii.
     /// characters with codes above the 128 are considered to be utf8 stuff
     /// and \a utf8in tells whether they are considered to be 'in'
-    uints count_intable_utf8( const uchar* tbl, uchar msk, bool utf8in, uints off=0 ) const
+    uint count_intable_utf8( const uchar* tbl, uchar msk, bool utf8in, uints off=0 ) const
     {
-        uints i;
-        for( i=off; i<_len; ++i )
+        const char* p = _ptr + off;
+        for( ; p<_pte; ++p )
         {
-            uchar k = _ptr[i];
+            uchar k = *p;
 
             if( k >= 128 )
             {
@@ -964,157 +951,161 @@ struct token
             else if( (tbl[k] & msk) == 0 )
                 break;
         }
-        return i;
+        return uint(p - _ptr);
     }
 
-    uints count_intable( const uchar* tbl, uchar msk, uints off=0 ) const
+    uint count_intable( const uchar* tbl, uchar msk, uints off=0 ) const
     {
-        uints i;
-        for( i=off; i<_len; ++i )
+        const char* p = _ptr + off;
+        for( ; p<_pte; ++p )
         {
-            uchar k = _ptr[i];
+            uchar k = *p;
             if( (tbl[k] & msk) == 0 )
                 break;
         }
-        return i;
+        return uint(p - _ptr);
     }
 
-    uints count_inrange( char from, char to, uints off=0 ) const
+    uint count_inrange( uchar from, uchar to, uints off=0 ) const
     {
-        uints i;
-        for( i=off; i<_len; ++i )
+        const char* p = _ptr + off;
+        for( ; p<_pte; ++p )
         {
-            if( _ptr[i] < from  ||  _ptr[i] > to )
+            if( uchar(*p) < from  ||  uchar(*p) > to )
                 break;
         }
-        return i;
+        return uint(p - _ptr);
     }
 
-    uints count_char( char sep, uints off=0 ) const
+    uint count_char( char sep, uints off=0 ) const
     {
-        uints i;
-        for (i=off; i<_len; ++i)
+        const char* p = _ptr + off;
+        for( ; p<_pte; ++p )
         {
-            if (_ptr[i] != sep)
+            if(*p != sep)
                 break;
         }
-        return i;
+        return uint(p - _ptr);
     }
 
 
-    uints count_notingroup_back( const token& sep, uints off=0 ) const
+    uint count_notingroup_back( const token& sep, uints off=0 ) const
     {
-        uints i=_len;
-        for( ; i>off; )
-        {
-            --i;
+        const char* p = _pte;
+        const char* po = _ptr + off;
 
-            uints j;
-            for( j=0; j<sep._len; ++j )
-                if( _ptr[i] == sep._ptr[j] )
-                    return i+1;
+        for( ; p-->po; )
+        {
+            const char* ps = sep._ptr;
+            for( ; ps<sep._pte; ++ps )
+                if( *p == *ps )
+                    return uint(p - _ptr + 1);
         }
-        return i;
+        return uint(p - _ptr);
     }
 
-    uints count_notinrange_back( char from, char to, uints off=0 ) const
+    uint count_notinrange_back( uchar from, uchar to, uints off=0 ) const
     {
-        uints i=_len;
-        for( ; i>off; )
-        {
-            --i;
+        const char* p = _pte;
+        const char* po = _ptr + off;
 
-            if( _ptr[i] >= from  &&  _ptr[i] <= to )
-                return i+1;
+        for( ; p-->po; )
+        {
+            if( uchar(*p) >= from  &&  uchar(*p) <= to )
+                return uint(p - _ptr + 1);
         }
-        return i;
+        return uint(p - _ptr);
     }
 
-    uints count_notchar_back( char sep, uints off=0 ) const
+    uint count_notchar_back( char sep, uints off=0 ) const
     {
-        uints i=_len;
-        for( ; i>off; )
-        {
-            --i;
+        const char* p = _pte;
+        const char* po = _ptr + off;
 
-            if( _ptr[i] == sep )
-                return i+i;
+        for( ; p-->po; )
+        {
+            if( *p == sep )
+                return uint(p - _ptr + 1);
         }
-        return i;
+        return uint(p - _ptr);
     }
 
-    uints count_ingroup_back( const token& sep, uints off=0 ) const
+    uint count_ingroup_back( const token& sep, uints off=0 ) const
     {
-        uints i=_len;
-        for( ; i>off; )
-        {
-            --i;
+        const char* p = _pte;
+        const char* po = _ptr + off;
 
-            uints j;
-            for( j=0; j<sep._len; ++j )
-                if( _ptr[i] == sep._ptr[j] )
+        for( ; p-->po; )
+        {
+            const char* ps = sep._ptr;
+            for( ; ps<sep._pte; ++ps )
+                if( *p == *ps )
                     break;
 
-            if( j >= sep._len )
-                return i+1;
+            if( ps >= sep._pte )
+                return uint(p - _ptr + 1);
         }
-        return i;
+        return uint(p - _ptr);
     }
 
-    uints count_inrange_back( char from, char to, uints off=0 ) const
+    uint count_inrange_back( uchar from, uchar to, uints off=0 ) const
     {
-        uints i=_len;
-        for( ; i>off; )
-        {
-            --i;
+        const char* p = _pte;
+        const char* po = _ptr + off;
 
-            if( _ptr[i] < from  ||  _ptr[i] > to )
-                return i+1;
+        for( ; p-->po; )
+        {
+            if( uchar(*p) < from  ||  uchar(*p) > to )
+                return uint(p - _ptr + 1);
         }
+
+        return uint(p - _ptr);
     }
 
-    uints count_char_back( char sep, uints off=0 ) const
+    uint count_char_back( char sep, uints off=0 ) const
     {
-        uints i=_len;
-        for( ; i>off; )
-        {
-            --i;
+        const char* p = _pte;
+        const char* po = _ptr + off;
 
-            if( _ptr[i] != sep )
-                return i+1;
+        for( ; p-->po; )
+        {
+            if( *p != sep )
+                return uint(p - _ptr + 1);
         }
-        return i;
+        return uint(p - _ptr);
     }
 
     ///Count characters up to specified substring
-    uints count_until_substring( const substring& sub, uints off=0 ) const
+    uint count_until_substring( const substring& sub, uints off=0 ) const
     {
-        if( off >= _len )  return _len;
+        if( off >= lens() )  return len();
 
-        return sub.find( _ptr+off, _len-off );
+        return (uint)sub.find( _ptr+off, lens()-off );
     }
 
 
     ///Return position where the substring is located
     ///@return substring position, len() if not found
-    uints contains( const substring& sub, uints off=0 ) const       { return count_until_substring(sub,off); }
+    uint contains( const substring& sub, uints off=0 ) const
+    {   return count_until_substring(sub,off); }
 
     ///Return position where the character is located
-    uints contains( char c, uints off=0 ) const                     { return count_notchar(c,off); }
+    uint contains( char c, uints off=0 ) const
+    {   return count_notchar(c,off); }
 
     ///Return position where the character is located, searching from end
-    uints contains_back( char c, uints off=0 ) const
+    uint contains_back( char c, uints off=0 ) const
     {
-        uints n = count_notchar_back(c,off);
+        uint n = count_notchar_back(c,off);
         return ( n > off )
             ? n-1
-            : _len;
+            : len();
     }
 
     ///Returns number of newline sequences found, detects \r \n and \r\n
-    uints count_newlines() const
+    uint count_newlines() const
     {
-        uints n=0;
+        uint n=0;
         char oc=0;
         const char* p = ptr();
         const char* pe = ptre();
@@ -1135,11 +1126,11 @@ struct token
     {
         char c = last_char();
         if( c == '\n' ) {
-            --_len;
+            --_pte;
             c = last_char();
         }
         if( c == '\r' )
-            --_len;
+            --_pte;
 
         return *this;
     }
@@ -1150,12 +1141,10 @@ struct token
         char c = first_char();
         if( c == '\r' ) {
             ++_ptr;
-            --_len;
             c = first_char();
         }
         if( c == '\n' ) {
             ++_ptr;
-            --_len;
         }
         return *this;
     }
@@ -1164,7 +1153,6 @@ struct token
     {
         uints n = count_ingroup( sep, off );
         _ptr += n;
-        _len -= n;
         return *this;
     }
 
@@ -1172,7 +1160,6 @@ struct token
     {
         uints n = count_intable_utf8( tbl, msk, utf8in, off );
         _ptr += n;
-        _len -= n;
         return *this;
     }
 
@@ -1180,7 +1167,6 @@ struct token
     {
         uints n = count_intable( tbl, msk, off );
         _ptr += n;
-        _len -= n;
         return *this;
     }
 
@@ -1188,7 +1174,6 @@ struct token
     {
         uints n = count_inrange( from, to, off );
         _ptr += n;
-        _len -= n;
         return *this;
     }
 
@@ -1196,7 +1181,6 @@ struct token
     {
         uints n = count_char( sep, off );
         _ptr += n;
-        _len -= n;
         return *this;
     }
 
@@ -1204,7 +1188,6 @@ struct token
     {
         uints n = count_notingroup( sep, off );
         _ptr += n;
-        _len -= n;
         return *this;
     }
 
@@ -1212,7 +1195,6 @@ struct token
     {
         uints n = count_notintable_utf8( tbl, msk, utf8in, off );
         _ptr += n;
-        _len -= n;
         return *this;
     }
 
@@ -1220,7 +1202,6 @@ struct token
     {
         uints n = count_notintable( tbl, msk, off );
         _ptr += n;
-        _len -= n;
         return *this;
     }
 
@@ -1228,7 +1209,6 @@ struct token
     {
         uints n = count_notinrange( from, to, off );
         _ptr += n;
-        _len -= n;
         return *this;
     }
 
@@ -1236,7 +1216,6 @@ struct token
     {
         uints n = count_notchar( sep, off );
         _ptr += n;
-        _len -= n;
         return *this;
     }
 
@@ -1244,7 +1223,6 @@ struct token
     {
         uints n = count_until_substring( ss, off );
         _ptr += n;
-        _len -= n;
         return *this;
     }
 
@@ -1254,36 +1232,42 @@ struct token
     {
         token r = cut_left('\n');
         if( r.last_char() == '\r' )
-            --r._len;
+            --r._pte;
         return r;
     }
 
-
+    ///Find first zero in the substring and return truncated substring
     token trim_to_null() const
     {
-        token t = *this;
-        t._len = strnlen( t._ptr, t._len );
-        return t;
+        const char* p = _ptr;
+        for( ; p<_pte; ++p )
+            if(*p == 0)  break;
+
+        return token(_ptr, p);
     }
 
+    ///Trim whitespace from beginning and whitespace and/or newlines from end
     token& trim( bool newline=true, bool whitespace=true )
     {
         if( whitespace ) 
         {
-            for( uints i=_len; i>0; --i )
+            const char* p = _ptr;
+            for( ; p<_pte; ++p )
             {
-                if( *_ptr == ' '  ||  *_ptr == '\t' )
-                    ++_ptr, --_len;
+                if( *p != ' '  &&  *p != '\t' )
+                    break;
             }
+            _ptr = p;
         }
 
-        for( uints i=_len; i>0; )
+        const char* p = _pte;
+
+        for( ; p-->_ptr; )
         {
-            --i;
-            if( newline  &&  (_ptr[i] == '\n'  ||  _ptr[i] == '\r') )
-                _len = i;
-            else if( whitespace  &&  (_ptr[i] == ' '  ||  _ptr[i] == '\t') )
-                _len = i;
+            if( newline  &&  (*p == '\n'  ||  *p == '\r') )
+                --_pte;
+            else if( whitespace  &&  (*p == ' '  ||  *p == '\t') )
+                --_pte;
             else
                 break;
         }
@@ -1302,45 +1286,48 @@ struct token
 
     const char* strchr( char c, uints off=0 ) const
     {
-        uints i;
-        for( i=off; i<_len; ++i )
-            if( _ptr[i] == c )  return _ptr+i;
+        const char* p = _ptr + off;
+        for( ; p<_pte; ++p )
+            if( *p == c )  return p;
         return 0;
     }
 
     const char* strrchr( char c, uints off=0 ) const
     {
-        uints i;
-        for( i=_len; i>off; )
-        {
-            --i;
-            if( _ptr[i] == c )  return _ptr+i;
+        const char* p = _pte;
+        const char* po = _ptr + off;
+
+        for( ; p-->po; ) {
+            if( *p == c )
+                return p;
         }
         return 0;
     }
 
-
+    //@return true if token begins with given string
     bool begins_with( const char* str ) const
     {
-        uints n = _len;
-        for( uints i=0; i<n; ++i )
+        const char* p = _ptr;
+        for( ; p<_pte; ++p, ++str )
         {
-            if( str[i] == 0 )
+            if( *str == 0 )
                 return true;
-            if( str[i] != _ptr[i] )
+            if( *str != *p )
                 return false;
         }
-        return false;
+        return *str == 0;
     }
 
     bool begins_with( const token& tok, uints off=0 ) const
     {
-        if( tok._len+off > _len )
+        if( tok.lens()+off > lens() )
             return false;
-        const char* p = _ptr+off;
-        for( uints i=0; i<tok._len; ++i )
+
+        const char* p = _ptr + off;
+        const char* pt = tok._ptr;
+        for( ; pt<tok._pte; ++p, ++pt )
         {
-            if( tok._ptr[i] != p[i] )
+            if( *pt != *p )
                 return false;
         }
         return true;
@@ -1348,26 +1335,27 @@ struct token
 
     bool begins_with_icase( const char* str ) const
     {
-        uints n = _len;
-        uints i;
-        for( i=0; i<n; ++i )
+        const char* p = _ptr;
+        for( ; p<_pte; ++p, ++str )
         {
-            if( str[i] == 0 )
+            if( *str == 0 )
                 return true;
-            if( tolower(str[i]) != tolower(_ptr[i]) )
+            if( tolower(*str) != tolower(*p) )
                 return false;
         }
-        return str[i] == 0;
+        return *str == 0;
     }
 
     bool begins_with_icase( const token& tok, uints off=0 ) const
     {
-        if( tok._len+off > _len )
+        if( tok.lens()+off > lens() )
             return false;
-        const char* p = _ptr+off;
-        for( uints i=0; i<tok._len; ++i )
+
+        const char* p = _ptr + off;
+        const char* pt = tok._ptr;
+        for( ; pt<tok._pte; ++p, ++pt )
         {
-            if( tolower(tok._ptr[i]) != tolower(p[i]) )
+            if( tolower(*pt) != tolower(*p) )
                 return false;
         }
         return true;
@@ -1375,12 +1363,14 @@ struct token
 
     bool ends_with( const token& tok ) const
     {
-        if( tok._len > _len )
+        if( tok.lens() > lens() )
             return false;
-        const char* p = _ptr + _len - tok.len();
-        for( uints i=0; i<tok._len; ++i )
+
+        const char* p = _pte - tok.lens();
+        const char* pt = tok._ptr;
+        for( ; p<_pte; ++p, ++pt )
         {
-            if( tok._ptr[i] != p[i] )
+            if( *pt != *p )
                 return false;
         }
         return true;
@@ -1388,12 +1378,14 @@ struct token
 
     bool ends_with_icase( const token& tok ) const
     {
-        if( tok._len > _len )
+        if( tok.lens() > lens() )
             return false;
-        const char* p = _ptr + _len - tok.len();
-        for( uints i=0; i<tok._len; ++i )
+
+        const char* p = _pte - tok.lens();
+        const char* pt = tok._ptr;
+        for( ; p<_pte; ++p, ++pt )
         {
-            if( tolower(tok._ptr[i]) != tolower(p[i]) )
+            if( tolower(*pt) != tolower(*p) )
                 return false;
         }
         return true;
@@ -1401,50 +1393,43 @@ struct token
 
     bool consume( const token& tok )
     {
-        if( tok._len > _len )
-            return false;
-        for( uints i=0; i<tok._len; ++i )
-        {
-            if( tok._ptr[i] != _ptr[i] )
-                return false;
+        if( begins_with(tok) ) {
+            _ptr += tok.lens();
+            return true;
         }
-        _ptr += tok._len;
-        _len -= tok._len;
-        return true;
+
+        return false;
     }
 
     bool consume_icase( const token& tok )
     {
-        if( tok._len > _len )
-            return false;
-        for( uints i=0; i<tok._len; ++i )
-        {
-            if( tolower(tok._ptr[i]) != tolower(_ptr[i]) )
-                return false;
+        if( begins_with_icase(tok) ) {
+            _ptr += tok.lens();
+            return true;
         }
-        _ptr += tok._len;
-        _len -= tok._len;
-        return true;
+
+        return false;
     }
     
-    
+    //@return part of the token after a substring
     token get_after_substring( const substring& sub ) const
     {
         uints n = count_until_substring(sub);
 
-        if( n < _len )
+        if( n < lens() )
         {
             n += sub.len();
-            return token( _ptr+n, _len-n );
+            return token(_ptr+n, _pte);
         }
         
         return empty();
     }
 
+    //@return part of the token before a substring
     token get_before_substring( const substring& sub ) const
     {
         uints n = count_until_substring(sub);
-        return token( _ptr, n );
+        return token(_ptr, n);
     }
 
 
@@ -1466,7 +1451,7 @@ struct token
         void get_num_base( token& tok )
         {
             BaseN = 10;
-            if( tok.len()>2  &&  tok[0] == '0' )
+            if( tok.lens()>2  &&  tok[0] == '0' )
             {
                 char c = tok[1];
                 if( c == 'x' )  BaseN=16;
@@ -1491,11 +1476,12 @@ struct token
         {
             success = false;
             T r=0;
-            uints i=0;
+            const char* p = t.ptr();
+            const char* pe = t.ptre();
 
-            for( ; i<t._len; ++i )
+            for( ; p<pe; ++p )
             {
-                char k = t._ptr[i];
+                char k = *p;
                 uchar a = 255;
                 if( k >= '0'  &&  k <= '9' )
                     a = k - '0';
@@ -1511,7 +1497,7 @@ struct token
                 success = true;
             }
 
-            t.shift_start(i);
+            t.shift_start(p - t.ptr());
             return r;
         }
 
@@ -1564,7 +1550,7 @@ struct token
     }
 
     ///Convert the token to unsigned int using as much digits as possible
-    uint64 touint64( ) const
+    uint64 touint64() const
     {
         token t(*this);
         tonum<uint64> conv(10);
@@ -1580,7 +1566,7 @@ struct token
     }
 
     ///Convert the token to unsigned int using as much digits as possible, deducing the numeric base
-    uint64 xtouint64( ) const
+    uint64 xtouint64() const
     {
         token t(*this);
         tonum<uint64> conv;
@@ -1690,7 +1676,7 @@ struct token
     }
 
     //@{ Conversion to numbers, given size of the integer type and a destination address
-    bool toint_any( void* dst, uint size ) const
+    bool toint_any( void* dst, uints size ) const
     {
         token tok = *this;
         switch(size) {
@@ -1704,7 +1690,7 @@ struct token
         return true;
     }
 
-    bool touint_any( void* dst, uint size ) const
+    bool touint_any( void* dst, uints size ) const
     {
         token tok = *this;
         switch(size) {
@@ -1718,7 +1704,7 @@ struct token
         return true;
     }
 
-    bool xtoint_any( void* dst, uint size ) const
+    bool xtoint_any( void* dst, uints size ) const
     {
         token tok = *this;
         switch(size) {
@@ -1732,7 +1718,7 @@ struct token
         return true;
     }
 
-    bool xtouint_any( void* dst, uint size ) const
+    bool xtouint_any( void* dst, uints size ) const
     {
         token tok = *this;
         switch(size) {
@@ -1746,7 +1732,7 @@ struct token
         return true;
     }
 
-    bool toint_any_and_shift( void* dst, uint size )
+    bool toint_any_and_shift( void* dst, uints size )
     {
         switch(size) {
         case sizeof(int8):  { tonum<int8> conv;  *(int8*)dst = conv.toint(*this); } break;
@@ -1759,7 +1745,7 @@ struct token
         return true;
     }
 
-    bool touint_any_and_shift( void* dst, uint size )
+    bool touint_any_and_shift( void* dst, uints size )
     {
         switch(size) {
         case sizeof(uint8):  { tonum<uint8> conv;  *(uint8*)dst = conv.touint(*this); } break;
@@ -1772,7 +1758,7 @@ struct token
         return true;
     }
 
-    bool xtoint_any_and_shift( void* dst, uint size )
+    bool xtoint_any_and_shift( void* dst, uints size )
     {
         switch(size) {
         case sizeof(int8):  { tonum<int8> conv;  *(int8*)dst = conv.xtoint(*this); } break;
@@ -1785,7 +1771,7 @@ struct token
         return true;
     }
 
-    bool xtouint_any_and_shift( void* dst, uint size )
+    bool xtouint_any_and_shift( void* dst, uints size )
     {
         switch(size) {
         case sizeof(uint8):  { tonum<uint8> conv;  *(uint8*)dst = conv.xtouint(*this); } break;
@@ -1812,19 +1798,18 @@ struct token
     double todouble_and_shift()
     {
         bool invsign=false;
-        if( first_char() == '-' ) { ++_ptr; --_len; invsign=true; }
-        else if( first_char() == '+' ) { ++_ptr; --_len; }
+        if( first_char() == '-' ) { ++_ptr; invsign=true; }
+        else if( first_char() == '+' ) { ++_ptr; }
 
         double val = (double)touint_and_shift();
 
         if( first_char() == '.' )
         {
             ++_ptr;
-            --_len;
 
-            uints plen = len();
+            uints plen = lens();
             uints dec = touint_and_shift();
-            plen -= len();
+            plen -= lens();
             if(plen && dec)
                 val += dec * pow( (double)10, -(int)plen );
         }
@@ -1832,7 +1817,6 @@ struct token
         if( first_char() == 'e'  ||  first_char() == 'E' )
         {
             ++_ptr;
-            --_len;
 
             int m = toint_and_shift();
             val *= pow( (double)10, m );
@@ -1924,7 +1908,7 @@ struct token
 
     ///Convert token to array of wchar_t characters
     template<class A>
-    bool utf8_to_wchar_buf( dynarray<wchar_t,A>& dst ) const;
+    bool utf8_to_wchar_buf( dynarray<wchar_t,uint,A>& dst ) const;
 
     ///Convert token to wide stl string
     bool utf8_to_wstring( std::wstring& dst ) const
@@ -1936,7 +1920,7 @@ struct token
     ///Append token to wide stl string
     bool utf8_to_wstring_append( std::wstring& dst ) const
     {
-        uints i=dst.length(), n=len();
+        uints i=dst.length(), n=lens();
         const char* p = ptr();
 
         dst.resize(i+n);
@@ -1985,12 +1969,12 @@ struct key_token : public token {};
 ////////////////////////////////////////////////////////////////////////////////
 inline void substring::set( const token& tok )
 {
-    set( tok.ptr(), tok.len() );
+    set( tok.ptr(), tok.lens() );
 }
 
 inline token substring::get() const
 {
-    return token( (const char*)_subs, _len );
+    return token( (const char*)_subs, len() );
 }
 
 

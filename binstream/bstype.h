@@ -170,7 +170,9 @@ struct kind
     bool is_array_end() const               { return (ctrl & fARRAY_END) != 0; }
 
     //@{ Create array control types from current type
-    kind get_array_begin() const            { kind t=*this; t.ctrl=fARRAY_BEGIN; t.size=sizeof(uints); return t; }
+    template<class COUNT>
+    kind get_array_begin() const            { kind t=*this; t.ctrl=fARRAY_BEGIN; t.size=sizeof(COUNT); return t; }
+    
     kind get_array_end() const              { kind t=*this; t.ctrl=fARRAY_END; t.size=0; return t; }
     
     kind get_array_element() const          { kind t=*this; t.ctrl=fARRAY_ELEMENT; t.size=size; return t; }

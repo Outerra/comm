@@ -1000,7 +1000,7 @@ public:
 
     uint group_id( const token& tok ) const
     {
-        if (tok._len == 0)
+        if (tok.len() == 0)
             return UMAX32;
         for (uint n=0,b=_abmap[(uchar)*tok._ptr]; b; b>>=1,++n)
         {
@@ -1011,16 +1011,16 @@ public:
 
     bool is_group (const token& tok, uchar grp) const
     {
-        if (tok._len == 0)
+        if(tok.is_empty())
             return false;
-        return (_abmap[(uchar)*tok._ptr] & (1<<grp)) != 0;
+        return (_abmap[(uchar)tok.first_char()] & (1<<grp)) != 0;
     }
 
     bool follows_group (const token& tok, uchar grp) const
     {
-        if (tok._ptr[tok._len] == 0)
+        if(*tok.ptre() == 0)
             return false;
-        return (_abmap[(uchar)tok._ptr[tok._len]] & (1<<grp)) != 0;
+        return (_abmap[(uchar)*tok.ptre()] & (1<<grp)) != 0;
     }
 
     ///return next token
@@ -1029,18 +1029,18 @@ public:
         if( tok.is_empty() )
             _specmode = 0;
         
-        tok._ptr += tok._len;
+        tok.shift_start(tok.len());
 
         if(!_specmode)
             tok._ptr += span_group (tok._ptr, ignoregrp);       //skip void characters at the beginning
 
-        if( *tok._ptr == 0 )
+        if( tok.first_char() == 0 )
         {
-            tok._len = 0;
+            tok.set_null();
             _specmode = 0;
             return 0;
         }
-        uchar x = _abmap[(uchar)*tok._ptr];
+        uchar x = _abmap[(uchar)tok.first_char()];
 
         if(_specmode)
         {
@@ -1048,24 +1048,23 @@ public:
                 _specmode = 0;
             else
             {
-                tok._len = span_nogroups (tok._ptr, _specmode, _escape);
+                tok.set( tok.ptr(), span_nogroups(tok.ptr(), _specmode, _escape) );
                 return tok._ptr;
             }
         }
         else if( x & _specf )
             _specmode = x;
 
-        tok._len = span_groups (tok._ptr, x);
+        tok.set( tok.ptr(), span_groups(tok._ptr, x) );
         return tok._ptr;
     }
 
     ///test if the next token exists
     const char * exists_next (token &tok, uchar ignoregrp=0) const
     {
-		const char* tptr;
-        tptr = tok._ptr + tok._len;
-        tptr += span_group (tptr, ignoregrp);       //skip void characters at the beginning
-        if (*tptr == 0) {
+		const char* tptr = tok.ptre();
+        tptr += span_group(tptr, ignoregrp);       //skip void characters at the beginning
+        if(*tptr == 0) {
             return 0;
         }
         return tptr;
@@ -1074,7 +1073,7 @@ public:
     ///Skip characters of group
     const char * skip_group (token& tok, uchar grp) const
     {
-        tok.shift_start( tok._len );
+        tok.shift_start( tok.len() );
         if (grp >= 8)  return 0;
         uint i, msk = 1 << grp;
         for (i=0; tok[i]!=0; ++i) {
@@ -1082,55 +1081,55 @@ public:
             if (_flags & msk)  { ++i; break; }
         }
         tok._ptr += i;
-        tok._len = 0;
+        tok.set_empty();
         return tok._ptr;
     }
 
     ///Skip characters of multiple groups
     const char * skip_groups (token& tok, uint msk) const
     {
-        tok.shift_start( tok._len );
+        tok.shift_start( tok.len() );
         uint i;
         for (i=0; tok[i]!=0; ++i) {
             if (!in_groups (tok[i], msk))  break;
             if (_flags & msk)  { ++i; break; }
         }
         tok._ptr += i;
-        tok._len = 0;
+        tok.set_empty();
         return tok._ptr;
     }
 
     ///Skip characters not belonging to group
     const char * skip_nogroup (token& tok, uchar grp) const
     {
-        tok.shift_start( tok._len );
+        tok.shift_start( tok.len() );
         if (grp >= 8)  return 0;
         uint i, msk = 1 << grp;
         for (i=0; tok[i]!=0; ++i)
             if (in_groups (tok[i], msk))  break;
         tok._ptr += i;
-        tok._len = 0;
+        tok.set_empty();
         return tok._ptr;
     }
 
     ///Skip characters not belonging to multiple groups
     const char * skip_nogroups (token& tok, uint msk) const
     {
-        tok.shift_start( tok._len );
+        tok.shift_start( tok.len() );
         uints i;
         for (i=0; tok[i]!=0; ++i)
         {
             if (in_groups (tok[i], msk))  break;
         }
         tok._ptr += i;
-        tok._len = 0;
+        tok.set_empty();
         return tok._ptr;
     }
 
     ///Skip characters not belonging to multiple groups
     const char * skip_nogroups (token& tok, uint msk, uint esc) const
     {
-        tok.shift_start( tok._len );
+        tok.shift_start( tok.len() );
         uints i;
         for (i=0; tok[i]!=0; ++i)
         {
@@ -1141,7 +1140,7 @@ public:
             else if (in_groups (tok[i], msk))  break;
         }
         tok._ptr += i;
-        tok._len = 0;
+        tok.set_empty();
         return tok._ptr;
     }
 

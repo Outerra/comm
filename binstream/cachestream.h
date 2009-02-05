@@ -414,14 +414,14 @@ public:
             if(pk)
             {
                 if(bout)
-                    add_bin_limited( *bout, limit, t._ptr, pk - t._ptr );
-                _cinread += pk - t._ptr + 1;
+                    add_bin_limited( *bout, limit, t.ptr(), pk - t.ptr() );
+                _cinread += pk - t.ptr() + 1;
                 return 1;
             }
 
             if(bout)
-                add_bin_limited( *bout, limit, t._ptr, t._len );
-            ts += t._len;
+                add_bin_limited( *bout, limit, t.ptr(), t.len() );
+            ts += t.len();
 
             if(bexit) break;
 

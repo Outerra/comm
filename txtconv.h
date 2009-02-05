@@ -119,31 +119,31 @@ public:
 */
 
 
-    static token append_num( char* dst, uints dstsize, int base, uint n, uints minsize=0,
+    static token append_num( char* dst, uint dstsize, int base, uint n, uint minsize=0,
         charstr::EAlignNum align = charstr::ALIGN_NUM_RIGHT )
     {
         return charstr::num<uint>::insert( dst, dstsize, n, base, 0, minsize, align );
     }
 
-    static token append_num( char* dst, uints dstsize, int base, int n, uints minsize=0, 
+    static token append_num( char* dst, uint dstsize, int base, int n, uint minsize=0, 
         charstr::EAlignNum align = charstr::ALIGN_NUM_RIGHT )
     {
         return charstr::num<uint>::insert_signed( dst, dstsize, n, base, minsize, align );
     }
 
-    static token append_num( char* dst, uints dstsize, int base, uint64 n, uints minsize=0,
+    static token append_num( char* dst, uint dstsize, int base, uint64 n, uint minsize=0,
         charstr::EAlignNum align = charstr::ALIGN_NUM_RIGHT )
     {
         return charstr::num<uint64>::insert( dst, dstsize, n, base, 0, minsize, align );
     }
 
-    static token append_num( char* dst, uints dstsize, int base, int64 n, uints minsize=0,
+    static token append_num( char* dst, uint dstsize, int base, int64 n, uint minsize=0,
         charstr::EAlignNum align = charstr::ALIGN_NUM_RIGHT )
     {
         return charstr::num<uint64>::insert_signed( dst, dstsize, n, base, minsize, align );
     }
 
-    static token append_num_int( char* dst, uints dstsize, int base, const void* p, uints bytes, uints minsize=0,
+    static token append_num_int( char* dst, uint dstsize, int base, const void* p, uint bytes, uint minsize=0,
         charstr::EAlignNum align = charstr::ALIGN_NUM_RIGHT )
     {
         switch( bytes )
@@ -157,7 +157,7 @@ public:
         }
     }
 
-    static token append_num_uint( char* dst, uints dstsize, int base, const void* p, uints bytes, uints minsize=0,
+    static token append_num_uint( char* dst, uint dstsize, int base, const void* p, uint bytes, uint minsize=0,
         charstr::EAlignNum align = charstr::ALIGN_NUM_RIGHT )
     {
         switch( bytes )
@@ -174,7 +174,7 @@ public:
 
     ///Append floating point number
     ///@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
-    static token append( char* dst, uints dstsize, double d, int nfrac )
+    static token append( char* dst, uint dstsize, double d, int nfrac )
     {
         double w = floor(d);
         token tokw = append_num( dst, dstsize, 10, (int64)w );

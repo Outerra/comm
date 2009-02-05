@@ -183,7 +183,7 @@ public:
         return 0;
     }
 
-    opcd read_binary( token& tok, binstream_container& c, uints n, uints* count )
+    opcd read_binary( token& tok, binstream_container_base& c, uints n, uints* count )
     {
         uints nr = n;
         if( c.is_continuous() && n!=UMAXS )

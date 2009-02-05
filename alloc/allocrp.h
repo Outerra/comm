@@ -166,7 +166,7 @@ public:
     bool is_in_page( const dynarray<T>& a, uints pg ) const
     {
         ssegpage* spg = get_page(pg);
-        return spg && spg->can_be_valid(a._ptr);
+        return spg && spg->can_be_valid(a.ptr());
     }
     
     uints get_segsize() const        { return _segsize; }

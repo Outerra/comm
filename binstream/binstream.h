@@ -224,8 +224,11 @@ public:
         bin >> (EnumType<sizeof(panel)>::TEnum&)x;
     The template deduces the actual size that the enum type takes.
 **/
-    binstream& operator >> (const char*& x )    { binstream_container_char_array c(UMAXS); xread_array(c); x=c.get(); return *this; }
-    binstream& operator >> (char*& x )          { binstream_container_char_array c(UMAXS); xread_array(c); x=(char*)c.get(); return *this; }
+    binstream& operator >> (const char*& x )
+    { binstream_container_char_array<uint> c(UMAXS); xread_array(c); x=c.get(); return *this; }
+
+    binstream& operator >> (char*& x )
+    { binstream_container_char_array<uint> c(UMAXS); xread_array(c); x=(char*)c.get(); return *this; }
 
 
     binstream& operator >> (key x)              { return xread(&x, bstype::t_type<key>() ); }
@@ -319,35 +322,35 @@ public:
     ///Write character token (substring)
     opcd write_token( const token& x )
     {
-        binstream_container_fixed_array<char> c((char*)x.ptr(), x.len());
+        binstream_container_fixed_array<char,uint> c((char*)x.ptr(), x.len());
         return write_array(c);
     }
 
     ///Write key token
     opcd write_key( const token& x )
     {
-        binstream_container_fixed_array<key> c((key*)x.ptr(), x.len());
+        binstream_container_fixed_array<key,uint> c((key*)x.ptr(), x.len());
         return write_array(c);
     }
 
     ///Write character token (substring)
-    opcd write_token( const char* p, uints len )
+    opcd write_token( const char* p, uint len )
     {
-        binstream_container_fixed_array<char> c((char*)p, len);
+        binstream_container_fixed_array<char,uint> c((char*)p, len);
         return write_array(c);
     }
 
     ///Write key token
-    opcd write_key( const char* p, uints len )
+    opcd write_key( const char* p, uint len )
     {
-        binstream_container_fixed_array<key> c((key*)p, len);
+        binstream_container_fixed_array<key,uint> c((key*)p, len);
         return write_array(c);
     }
 
     binstream& xwrite_token( const token& x )           { opcd e = write_token(x);  if(e) throw e; return *this; }
     binstream& xwrite_key( const token& x )             { opcd e = write_key(x);  if(e) throw e; return *this; }
-    binstream& xwrite_token( const char* p, uints len ) { opcd e = write_token(p,len);  if(e) throw e; return *this; }
-    binstream& xwrite_key( const char* p, uints len )   { opcd e = write_key(p,len);  if(e) throw e; return *this; }
+    binstream& xwrite_token( const char* p, uint len )  { opcd e = write_token(p,len);  if(e) throw e; return *this; }
+    binstream& xwrite_key( const char* p, uint len )    { opcd e = write_key(p,len);  if(e) throw e; return *this; }
 
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -616,13 +619,14 @@ public:
 
     ////////////////////////////////////////////////////////////////////////////////
     ///Write array from container \a c to this binstream
-    opcd write_array( binstream_container& c )
+    template<class COUNT>
+    opcd write_array( binstream_container<COUNT>& c )
     {
         uints n = c._nelements;
         type t = c._type;
 
         //write bgnarray
-        opcd e = write( &n, t.get_array_begin() );
+        opcd e = write( &n, t.get_array_begin<COUNT>() );
         if(e)  return e;
 
         //if container doesn't know number of items in advance, require separators
@@ -639,14 +643,15 @@ public:
     }
 
     ///Read array to container \a c from this binstream
-    opcd read_array( binstream_container& c )
+    template<class COUNT>
+    opcd read_array( binstream_container<COUNT>& c )
     {
         uints na = UMAXS;
         uints n = c._nelements;
         type t = c._type;
 
         //read bgnarray
-        opcd e = read( &na, t.get_array_begin() );
+        opcd e = read( &na, t.get_array_begin<COUNT>() );
         if(e)  return e;
 
         if( na != UMAXS  &&  n != UMAXS  &&  n != na )
@@ -686,7 +691,7 @@ public:
     ///Overloadable method for writing array objects
     /// to binstream.
     ///The default code is for writing a binary representation
-    virtual opcd write_array_content( binstream_container& c, uints* count )
+    virtual opcd write_array_content( binstream_container_base& c, uints* count )
     {
         type t = c._type;
         uints n = c._nelements;
@@ -710,7 +715,7 @@ public:
     ///Overloadable method for reading array of objects
     /// from binstream.
     ///The default code is for reading a binary representation
-    virtual opcd read_array_content( binstream_container& c, uints n, uints* count )
+    virtual opcd read_array_content( binstream_container_base& c, uints n, uints* count )
     {
         type t = c._type;
         //uints n = c._nelements;
@@ -733,7 +738,7 @@ public:
 
 
     ///
-    opcd write_compound_array_content( binstream_container& c, uints* count )
+    opcd write_compound_array_content( binstream_container_base& c, uints* count )
     {
         type tae = c._type.get_array_element();
         uints n = c._nelements, k=0;
@@ -777,7 +782,7 @@ public:
     /** Contrary to its name, it can be used to read a primitive elements too, when
         the container isn't continuous or its size is not known in advance
     **/
-    opcd read_compound_array_content( binstream_container& c, uints n, uints* count )
+    opcd read_compound_array_content( binstream_container_base& c, uints n, uints* count )
     {
         type tae = c._type.get_array_element();
         bool complextype = !c._type.is_primitive();
@@ -815,35 +820,39 @@ public:
 
 
     ///A write_array() wrapper throwing exception on error
-    binstream& xwrite_array( binstream_container& s )      { opcd e = write_array(s);  if(e) throw e;  return *this; }
+    template<class COUNT>
+    binstream& xwrite_array( binstream_container<COUNT>& s )
+    {   opcd e = write_array(s);  if(e) throw e;  return *this; }
 
     ///A read_array() wrapper throwing exception on error
-    binstream& xread_array( binstream_container& s )       { opcd e = read_array(s);  if(e) throw e;  return *this; }
+    template<class COUNT>
+    binstream& xread_array( binstream_container<COUNT>& s )
+    {   opcd e = read_array(s);  if(e) throw e;  return *this; }
 
 
     ///Writes array without storing the count explicitly, reader is expected to know the count
-    template< class T >
-    opcd write_fixed_array( const T* p, uints n )
+    template <class T, class COUNT>
+    opcd write_fixed_array( const T* p, COUNT n )
     {
-        binstream_container_fixed_array<T> c((T*)p,n);
+        binstream_container_fixed_array<T,COUNT> c((T*)p,n);
         uints count;
         return write_array_content(c,&count);
     }
 
     ///Read array that was stored without the count
-    template< class T >
-    opcd read_fixed_array( T* p, uints n )
+    template <class T, class COUNT>
+    opcd read_fixed_array( T* p, COUNT n )
     {
-        binstream_container_fixed_array<T> c(p,n);
+        binstream_container_fixed_array<T,COUNT> c(p,n);
         uints count;
         return read_array_content(c,n,&count);
     }
 
     ///Write linear array (helper function)
-    template< class T >
-    opcd write_linear_array( const T* p, uints n )
+    template <class T, class COUNT>
+    opcd write_linear_array( const T* p, COUNT n )
     {
-        binstream_container_fixed_array<T> c((T*)p,n);
+        binstream_container_fixed_array<T,COUNT> c((T*)p,n);
         return write_array(c);
     }
 

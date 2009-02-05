@@ -57,9 +57,9 @@ struct opcd;
     says whether the storage is continuous so that the pointer returned first can
     be used to address successive objects too.
 **/
-struct binstream_container
+struct binstream_container_base
 {
-    virtual ~binstream_container() {}
+    virtual ~binstream_container_base() {}
 
     ///Provide a pointer to next object that should be streamed
     ///@param n number of objects to allocate the space for
@@ -69,13 +69,15 @@ struct binstream_container
     ///@return true if the storage is continuous in memory
     virtual bool is_continuous() const = 0;
 
-    typedef opcd (*fnc_stream)(binstream&, void*,binstream_container&);
+    typedef opcd (*fnc_stream)(binstream&, void*, binstream_container_base&);
 
 
-    binstream_container( uints n, bstype::kind t, fnc_stream fout, fnc_stream fin )
-        : _stream_in(fin),_stream_out(fout),_type(t),_nelements(n)
-    {
-    }
+    binstream_container_base( uints n, bstype::kind t, fnc_stream fout, fnc_stream fin )
+        : _stream_in(fin)
+        , _stream_out(fout)
+        , _type(t)
+        , _nelements(n)
+    {}
 
     ///Set flag in _type to inform binstream methods that the array didn't specify
     /// its size in advance.
@@ -99,8 +101,20 @@ struct binstream_container
     ///Type information about streamed object
     bstype::kind _type;
 
-    ///Number of objects to stream, UMAX if not known in advance
+    ///Number of objects to stream, UMAXS if not known in advance
     uints _nelements;
+};
+
+
+///
+template<class COUNT>
+struct binstream_container : binstream_container_base
+{
+    typedef COUNT   count_t;
+
+    binstream_container( uints n, bstype::kind t, fnc_stream fout, fnc_stream fin )
+        : binstream_container_base(n, t, fout, fin)
+    {}
 };
 
 
@@ -108,14 +122,14 @@ struct binstream_container
 template<class T>
 struct binstream_streamfunc
 {
-    static opcd stream_in( binstream& bin, void* p, binstream_container& )
+    static opcd stream_in( binstream& bin, void* p, binstream_container_base& )
     {
         try { bin >> *(T*)p; }
         catch( opcd e ) { return e; }
         return 0;
     }
 
-    static opcd stream_out( binstream& bin, void* p, binstream_container& )
+    static opcd stream_out( binstream& bin, void* p, binstream_container_base& )
     {
         try { bin << *(const T*)p; }
         catch( opcd e ) { return e; }
@@ -126,29 +140,33 @@ struct binstream_streamfunc
 ////////////////////////////////////////////////////////////////////////////////
 ///Templatized base container
 ///@param T type held by the container
-template<class T>
-struct binstream_containerT : binstream_container
+///@param COUNT unsigned integer type for storing count
+template<class T, class COUNT=uints>
+struct binstream_containerT : binstream_container<COUNT>
 {
     enum { ELEMSIZE = sizeof(T) };
-    typedef T       TData;
+    typedef T       data_t;
 
-    binstream_containerT( uints n ) : binstream_container(n,bstype::t_type<T>(),
-        &binstream_streamfunc<T>::stream_out,
-        &binstream_streamfunc<T>::stream_in)
+    binstream_containerT( uints n )
+        : binstream_container(n, bstype::t_type<T>(),
+            &binstream_streamfunc<T>::stream_out,
+            &binstream_streamfunc<T>::stream_in)
     {}
+
     binstream_containerT( uints n, fnc_stream fout, fnc_stream fin )
         : binstream_container(n,bstype::t_type<T>(),fout,fin)
     {}
 };
 
 ///
-template<>
-struct binstream_containerT<void> : binstream_container
+template<class COUNT>
+struct binstream_containerT<void,COUNT> : binstream_container<COUNT>
 {
     enum { ELEMSIZE = 1 };
-    typedef void    TData;
+    typedef void    data_t;
 
-    binstream_containerT( uints n ) : binstream_container(n,bstype::kind(bstype::kind::T_BINARY,1),0,0)
+    binstream_containerT( uints n )
+        : binstream_container(n,bstype::kind(bstype::kind::T_BINARY,1),0,0)
     {}
 };
 
@@ -157,47 +175,48 @@ struct binstream_containerT<void> : binstream_container
 /// specific container, for writing to the data container
 ///@param CONT data container
 ///@param BINCONT corresponding binstream container
-template<class CONT, class BINCONT>
+template<class CONTAINER, class BINCONT>
 struct binstream_container_writable
 {
     ///Define following methods when specializing, changing container-type to 
     /// something appropriate
     typedef BINCONT     TBinstreamContainer;
+    typedef typename CONTAINER::count_t count_t;
 
-    static TBinstreamContainer create( CONT& a, uints n = UMAX )
-    {   return TBinstreamContainer(a,n);    }
+    static TBinstreamContainer create( CONTAINER& a, uints n = UMAXS )
+    {   return TBinstreamContainer(a,n); }
 };
 
 ///Adapter class used to retrieve appropriate binstream container type for 
 /// specific container, for reading from the data container
 ///@param CONT data container
 ///@param BINCONT corresponding binstream container
-template<class CONT, class BINCONT>
+template<class CONTAINER, class BINCONT>
 struct binstream_container_readable
 {
     ///Define following methods when specializing, changing container-type to 
     /// something appropriate
     typedef BINCONT     TBinstreamContainer;
 
-    static TBinstreamContainer create( CONT& a )
-    {   return TBinstreamContainer(a);      }
+    static TBinstreamContainer create( CONTAINER& a )
+    {   return TBinstreamContainer(a); }
 };
+
 
 ///this would be declared using the macros below
-template<class CONT>
+template<class CONTAINER>
 struct binstream_adapter_writable
 {
-    typedef CONT        TContainer;
+    typedef CONTAINER   TContainer;
     //typedef BINCONT     TBinstreamContainer;    ///< Override BINCONT here
 };
 
-template<class CONT>
+template<class CONTAINER>
 struct binstream_adapter_readable
 {
-    typedef CONT        TContainer;
+    typedef CONTAINER   TContainer;
     //typedef BINCONT     TBinstreamContainer;    ///< Override BINCONT here
 };
-
 
 #define PAIRUP_CONTAINERS_WRITABLE(CONT) \
     template<class T, class A> struct binstream_adapter_writable< CONT<T,A> > { \
@@ -221,15 +240,18 @@ struct binstream_adapter_readable
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Generic dereferencing container for containers holding pointers
-template<class T>
-struct binstream_dereferencing_containerT : binstream_containerT<T>
+template<class T, class COUNT>
+struct binstream_dereferencing_containerT
+    : binstream_containerT<T,COUNT>
 {
     enum { ELEMSIZE = sizeof(T) };
 
-    typedef binstream_container::fnc_stream    fnc_stream;
+    typedef typename binstream_container::fnc_stream    fnc_stream;
 
 
-    virtual const void* extract( uints n )      { return *(T**)_bc.extract(n); }
+    virtual const void* extract( uints n )
+    {   return *(T**)_bc.extract(n); }
+
     virtual void* insert( uints n )
     {
         T** p = (T**)_bc.insert(n);
@@ -241,21 +263,22 @@ struct binstream_dereferencing_containerT : binstream_containerT<T>
     virtual bool is_continuous() const          { return false; }
 
 
-    binstream_dereferencing_containerT( binstream_container& bc )
-        : binstream_containerT<T>( bc._nelements,
-        &binstream_streamfunc<T>::stream_out,
-        &binstream_streamfunc<T>::stream_in),
-        _bc(bc)
+    binstream_dereferencing_containerT( binstream_container<COUNT>& bc )
+        : binstream_containerT( bc._nelements
+        , &binstream_streamfunc<T>::stream_out
+        , &binstream_streamfunc<T>::stream_in)
+        , _bc(bc)
     {}
 
     binstream_dereferencing_containerT( binstream_container& bc, fnc_stream fout, fnc_stream fin )
-        : binstream_containerT<T>( bc._nelements, fout, fin ), _bc(bc)
+        : binstream_containerT( bc._nelements, fout, fin )
+        , _bc(bc)
     {}
 
 protected:
-    binstream_container& _bc;
+    binstream_container<COUNT>& _bc;
 };
-
+/*
 ///Dereferencing container for containers holding pointers, source container embedded here
 template<class T,class CONT>
 struct binstream_dereferencing_containerTC : binstream_containerT<T>
@@ -291,45 +314,50 @@ struct binstream_dereferencing_containerTC : binstream_containerT<T>
 protected:
     CONT _bc;
 };
-
+*/
 
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Primitive abstract base container
-struct binstream_container_primitive : binstream_container
+template<class COUNT>
+struct binstream_container_primitive : binstream_container<COUNT>
 {
-    binstream_container_primitive( uints n, bstype::kind t ) : binstream_container(n,t,0,0)
+    binstream_container_primitive( uints n, bstype::kind t )
+        : binstream_container(n,t,0,0)
     {}
-
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Container for writting from a prepared array
-template<class T>
-struct binstream_container_fixed_array : binstream_containerT<T>
+template<class T, class COUNT>
+struct binstream_container_fixed_array : binstream_containerT<T,COUNT>
 {
-    const void* extract( uints n )
+    virtual const void* extract( uints n )
     {
         T* p=_ptr;
-        _ptr = ptr_byteshift(_ptr,n*binstream_containerT<T>::ELEMSIZE);
+        _ptr = ptr_byteshift(_ptr,n*binstream_containerT<T,COUNT>::ELEMSIZE);
         return p;
     }
 
-    void* insert( uints n )
+    virtual void* insert( uints n )
     {
         T* p=_ptr;
-        _ptr = ptr_byteshift(_ptr,n*binstream_containerT<T>::ELEMSIZE);
+        _ptr = ptr_byteshift(_ptr,n*binstream_containerT<T,COUNT>::ELEMSIZE);
         return p;
     }
 
     bool is_continuous() const      { return true; }
 
-    typedef binstream_container::fnc_stream    fnc_stream;
+    typedef typename binstream_container::fnc_stream    fnc_stream;
 
-    binstream_container_fixed_array( T* ptr, uints n ) : binstream_containerT<T>(n), _ptr(ptr) {}
-    binstream_container_fixed_array( const T* ptr, uints n ) : binstream_containerT<T>(n), _ptr((T*)ptr) {}
-    binstream_container_fixed_array( T* ptr, uints n, fnc_stream fout, fnc_stream fin ) : binstream_containerT<T>(n,fout,fin), _ptr(ptr) {}
-    binstream_container_fixed_array( const T* ptr, uints n, fnc_stream fout, fnc_stream fin ) : binstream_containerT<T>(n,fout,fin), _ptr((T*)ptr) {}
+    binstream_container_fixed_array( T* ptr, uints n )
+        : binstream_containerT<T,COUNT>(n), _ptr(ptr) {}
+    binstream_container_fixed_array( const T* ptr, uints n )
+        : binstream_containerT<T,COUNT>(n), _ptr((T*)ptr) {}
+    binstream_container_fixed_array( T* ptr, uints n, fnc_stream fout, fnc_stream fin )
+        : binstream_containerT<T,COUNT>(n,fout,fin), _ptr(ptr) {}
+    binstream_container_fixed_array( const T* ptr, uints n, fnc_stream fout, fnc_stream fin )
+        : binstream_containerT<T,COUNT>(n,fout,fin), _ptr((T*)ptr) {}
 
     void set( const T* ptr, uints n )
     {
@@ -344,16 +372,17 @@ protected:
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Container for writting from a prepared array
-struct binstream_container_char_array : binstream_containerT<char>
+template<class COUNT>
+struct binstream_container_char_array : binstream_containerT<char,COUNT>
 {
-    const void* extract( uints n )
+    virtual const void* extract( uints n )
     {
         char* p = _ptr;
         _ptr += n;
         return p;
     }
 
-    void* insert( uints n )
+    virtual void* insert( uints n )
     {
         uints nres = align_value_to_power2( _size, 5 );   //32B blocks
         if( n+_size > nres ) {
@@ -368,13 +397,14 @@ struct binstream_container_char_array : binstream_containerT<char>
 
     bool is_continuous() const      { return true; }
 
-    binstream_container_char_array( uints n ) : binstream_containerT<char>(n)
+    binstream_container_char_array( uints n ) : binstream_containerT(n)
     {
         _ptr = (char*)malloc(1<<5);
         _ptr[0] = 0;
         _size = 1;
     }
-    binstream_container_char_array( const char* ptr, uints n ) : binstream_containerT<char>(n), _ptr((char*)ptr)
+    binstream_container_char_array( const char* ptr, uints n )
+        : binstream_containerT(n), _ptr((char*)ptr)
     {
         _size = 0;
     }

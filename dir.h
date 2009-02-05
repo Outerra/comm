@@ -181,7 +181,7 @@ public:
 
 private:
     charstr     _curpath;
-    uints       _baselen;
+    uint        _baselen;
     struct stat _st;
     charstr     _pattern;
 

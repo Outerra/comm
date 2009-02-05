@@ -97,13 +97,14 @@ public:
 
     void swap( charstr& str )
     {
-        str.takeover(_buf);
+        str.takeover( reinterpret_cast<dynarray<char,uint>&>(_buf) );
         _bgi = 0;
     }
 
-    void swap( dynarray<uchar>& buf )
+    template<class COUNT>
+    void swap( dynarray<uchar,COUNT>& buf )
     {
-        _buf.swap( (dynarray<char>&)buf );
+        _buf.swap( reinterpret_cast<dynarray<char>&>(buf) );
         _bgi = 0;
     }
 
@@ -307,7 +308,7 @@ public:
     binstreambuf() : _bgi(0)     { }
     binstreambuf( const token& str )
     {
-        _buf.copy_bin_from( str._ptr, str._len );
+        _buf.copy_bin_from( str.ptr(), str.len() );
         _bgi = 0;
     }
 
@@ -430,7 +431,7 @@ public:
     binstreamconstbuf( const void* source, uints len )
         : _source((const uchar*)source), _base((const uchar*)source), _len(len) { }
     binstreamconstbuf( const token& t )
-        : _source((const uchar *)t._ptr), _base((const uchar *)t._ptr), _len(t._len) { }
+        : _source((const uchar *)t._ptr), _base((const uchar *)t.ptr()), _len(t.len()) { }
     
     explicit binstreamconstbuf( const binstreambuf& str )
     {

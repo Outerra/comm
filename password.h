@@ -65,7 +65,7 @@ public:
     {
         sha1_ctxt hp;
         sha1_init( &hp );
-        sha1_loop( &hp, (const uint8*)pwd._ptr, pwd._len );
+        sha1_loop( &hp, (const uint8*)pwd.ptr(), pwd.len() );
         sha1_result( &hp, _hp );
     }
 
@@ -148,7 +148,7 @@ struct account_id
 ////////////////////////////////////////////////////////////////////////////////
 inline binstream& operator >> (binstream &in, password& x)
 {
-    binstream_container_fixed_array<void> co(x._hp,SHA1_RESULTLEN);
+    binstream_container_fixed_array<void,uint> co(x._hp,SHA1_RESULTLEN);
     in.xread_array(co);
     //in.xread_raw( x._hp, SHA1_RESULTLEN );
     return in;
@@ -156,7 +156,7 @@ inline binstream& operator >> (binstream &in, password& x)
 
 inline binstream& operator << (binstream &out, const password& x)
 {
-    binstream_container_fixed_array<void> co(x._hp,SHA1_RESULTLEN);
+    binstream_container_fixed_array<void,uint> co(x._hp,SHA1_RESULTLEN);
     out.xwrite_array(co);
     //out.xwrite_raw( x._hp, SHA1_RESULTLEN );
     return out;

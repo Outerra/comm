@@ -305,8 +305,8 @@ public:
 
 
     ///Read array of objects of type T from the currently bound formatting stream
-    template<class T>
-    opcd stream_array_in( binstream_containerT<T>& C, const token& name = token::empty() )
+    template<class T, class COUNT>
+    opcd stream_array_in( binstream_containerT<T,COUNT>& C, const token& name = token::empty() )
     {
         opcd e;
         try {
@@ -332,23 +332,23 @@ public:
     }
 
     ///Write array of objects of type T to the currently bound formatting stream
-    template<class T>
-    opcd stream_array_out( binstream_containerT<T>& C, const token& name = token::empty() )
+    template<class T, class COUNT>
+    opcd stream_array_out( binstream_containerT<T,COUNT>& C, const token& name = token::empty() )
     {
         return stream_or_cache_array_out(C,false,name);
     }
 
     ///Write array of objects of type T to the currently bound formatting stream
-    template<class T>
-    opcd cache_array_out( binstream_containerT<T>& C, bool cache=false, const token& name = token::empty() )
+    template<class T, class COUNT>
+    opcd cache_array_out( binstream_containerT<T,COUNT>& C, bool cache=false, const token& name = token::empty() )
     {
         return stream_or_cache_array_out(C,true,name);
     }
 
     ///Write array of objects of type T to the currently bound formatting stream
     ///@param cache true if the array should be trapped in the cache instead of sending it out through the formatting stream
-    template<class T>
-    opcd stream_or_cache_array_out( binstream_containerT<T>& C, bool cache, const token& name = token::empty() )
+    template<class T, class COUNT>
+    opcd stream_or_cache_array_out( binstream_containerT<T,COUNT>& C, bool cache, const token& name = token::empty() )
     {
         opcd e;
         try {
@@ -866,20 +866,20 @@ private:
         virtual opcd write_raw( const void* p, uints& len )     { return _meta->data_write_raw(p, len); }
         virtual opcd read_raw( void* p, uints& len )            { return _meta->data_read_raw(p, len); }
 
-        virtual opcd write_array_content( binstream_container& c, uints* count ) {
+        virtual opcd write_array_content( binstream_container_base& c, uints* count ) {
             return _meta->data_write_array_content(c,count);
         }
 
-        virtual opcd read_array_content( binstream_container& c, uints n, uints* count ) {
+        virtual opcd read_array_content( binstream_container_base& c, uints n, uints* count ) {
             return _meta->data_read_array_content(c,n,count);
         }
 
 
-        opcd generic_write_array_content( binstream_container& c, uints* count ) {
+        opcd generic_write_array_content( binstream_container_base& c, uints* count ) {
             return binstream::write_array_content(c,count);
         }
 
-        opcd generic_read_array_content( binstream_container& c, uints n, uints* count ) {
+        opcd generic_read_array_content( binstream_container_base& c, uints n, uints* count ) {
             return binstream::read_array_content(c,n,count);
         }
 
@@ -1555,7 +1555,7 @@ protected:
         return _fmtstreamrd->read_raw( p, len );
     }
 
-    opcd data_write_array_content( binstream_container& c, uints* count )
+    opcd data_write_array_content( binstream_container_base& c, uints* count )
     {
         c.set_array_needs_separators();
         type tae = c._type.get_array_element();
@@ -1618,7 +1618,7 @@ protected:
         return e;
     }
 
-    opcd data_read_array_content( binstream_container& c, uints n, uints* count )
+    opcd data_read_array_content( binstream_container_base& c, uints n, uints* count )
     {
         c.set_array_needs_separators();
         type tae = c._type.get_array_element();
@@ -2069,7 +2069,7 @@ protected:
 
 
     ///
-    struct cache_container : public binstream_container
+    struct cache_container : public binstream_container<uints>
     {
         const void* extract( uints n )  { return 0; }
 
@@ -2080,11 +2080,11 @@ protected:
 
 
         cache_container( metastream& meta, MetaDesc& desc )
-            : binstream_container(desc.array_size, desc.array_type(), 0, &stream_in),
+            : binstream_container<uints>(desc.array_size, desc.array_type(), 0, &stream_in),
             meta(meta), element(desc.children[0])
         {}
 
-        static opcd stream_in( binstream& bin, void* p, binstream_container& co ) {
+        static opcd stream_in( binstream& bin, void* p, binstream_container_base& co ) {
             cache_container& me = reinterpret_cast<cache_container&>(co);
             return me.meta.streamvar( me.element );
         }
@@ -2128,14 +2128,14 @@ protected:
     }
 
     ///Read array to container \a c from this binstream
-    opcd cache_read_array( binstream_container& c )
+    opcd cache_read_array( binstream_container_base& c )
     {
         uints na = UMAXS;
         uints n = c._nelements;
         type t = c._type;
 
         //read bgnarray
-        opcd e = data_read_value( &na, t.get_array_begin() );
+        opcd e = data_read_value( &na, t.get_array_begin<cache_container::count_t>() );
         if(e)  return e;
 
         if( na != UMAXS  &&  n != UMAXS  &&  n != na )
