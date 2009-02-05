@@ -994,8 +994,9 @@ struct token
         const char* p = _pte;
         const char* po = _ptr + off;
 
-        for( ; p-->po; )
+        for( ; p>po; )
         {
+            --p;
             const char* ps = sep._ptr;
             for( ; ps<sep._pte; ++ps )
                 if( *p == *ps )
@@ -1009,8 +1010,9 @@ struct token
         const char* p = _pte;
         const char* po = _ptr + off;
 
-        for( ; p-->po; )
+        for( ; p>po; )
         {
+            --p;
             if( uchar(*p) >= from  &&  uchar(*p) <= to )
                 return uint(p - _ptr + 1);
         }
@@ -1022,8 +1024,9 @@ struct token
         const char* p = _pte;
         const char* po = _ptr + off;
 
-        for( ; p-->po; )
+        for( ; p>po; )
         {
+            --p;
             if( *p == sep )
                 return uint(p - _ptr + 1);
         }
@@ -1035,8 +1038,9 @@ struct token
         const char* p = _pte;
         const char* po = _ptr + off;
 
-        for( ; p-->po; )
+        for( ; p>po; )
         {
+            --p;
             const char* ps = sep._ptr;
             for( ; ps<sep._pte; ++ps )
                 if( *p == *ps )
@@ -1053,8 +1057,9 @@ struct token
         const char* p = _pte;
         const char* po = _ptr + off;
 
-        for( ; p-->po; )
+        for( ; p>po; )
         {
+            --p;
             if( uchar(*p) < from  ||  uchar(*p) > to )
                 return uint(p - _ptr + 1);
         }
@@ -1067,8 +1072,9 @@ struct token
         const char* p = _pte;
         const char* po = _ptr + off;
 
-        for( ; p-->po; )
+        for( ; p>po; )
         {
+            --p;
             if( *p != sep )
                 return uint(p - _ptr + 1);
         }
@@ -1262,8 +1268,9 @@ struct token
 
         const char* p = _pte;
 
-        for( ; p-->_ptr; )
+        for( ; p>_ptr; )
         {
+            --p;
             if( newline  &&  (*p == '\n'  ||  *p == '\r') )
                 --_pte;
             else if( whitespace  &&  (*p == ' '  ||  *p == '\t') )
@@ -1297,7 +1304,8 @@ struct token
         const char* p = _pte;
         const char* po = _ptr + off;
 
-        for( ; p-->po; ) {
+        for( ; p>po; ) {
+            --p;
             if( *p == c )
                 return p;
         }
