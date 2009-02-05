@@ -69,10 +69,10 @@ inline bstype::pointer<T> pointer(T* co& p) {
     virtual opcd read( void* p, type t );
     virtual opcd write_raw( const void* p, uints& len ) = 0;
     virtual opcd read_raw( void* p, uints& len ) = 0;
-    virtual opcd write_array_content( binstream_container& c );
-    virtual opcd read_array_content( binstream_container& c, uints n );
+    virtual opcd write_array_content( binstream_container_base& c );
+    virtual opcd read_array_content( binstream_container_base& c, uints n );
 
-    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX ) = 0;
+    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS ) = 0;
 
     virtual opcd open( const token& arg );
     virtual opcd close( bool linger=false );

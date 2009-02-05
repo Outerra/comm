@@ -60,7 +60,8 @@ public:
     virtual opcd write_raw( const void* p, uints& len ) = 0;
     virtual opcd read_raw( void* p, uints& len ) = 0;
 
-    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX ) { return ersUNAVAILABLE; }
+    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS )
+    {   return ersUNAVAILABLE; }
 
     virtual opcd bind( binstream& bin, int io=0 )
     {

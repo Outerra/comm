@@ -108,7 +108,7 @@ struct MetaDesc
 
 
     dynarray<Var> children;             ///< member variables
-    uints array_size;                   ///< array size, UMAX for dynamic arrays, 0 for pointers
+    uints array_size;                   ///< array size, UMAXS for dynamic arrays, 0 for pointers
 
     charstr type_name;                  ///< type name, name of a structure (empty if this is an array or pointer)
     type btype;                         ///< basic type id

@@ -314,10 +314,10 @@ public:
 
     uints size() const { return _ptemp._nused; }
 
-    T* bin_search(const T* psort, uints ufind, uints ufirst=0, uints ulast=UMAX) const {
+    T* bin_search(const T* psort, uints ufind, uints ufirst=0, uints ulast=UMAXS) const {
         uints i, j, m;
         i= ufirst;
-        j= ulast==UMAX ? _ptemp.size() : ulast;
+        j= ulast==UMAXS ? _ptemp.size() : ulast;
         for(;j>i;) {
             m= (i+j)>>1;
             if(*(uints*)(psort+m) == ufind)  return (T*)psort+m;

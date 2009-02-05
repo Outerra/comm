@@ -269,7 +269,7 @@ private:
         }
 
         rlr_bitplane() {
-            //reset(UMAX);
+            //reset(UMAXS);
         }
 
         INT read1()

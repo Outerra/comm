@@ -140,7 +140,7 @@ inline uint64 align_to_chunks_pow2_64( uint64 uval, uchar rsize )
 template< class INT >
 inline INT int_min( INT a, INT b )
 {
-    b = b-a;            // b>a => MSB(o)==1 => (o>>31) == UMAX
+    b = b-a;            // b>a => MSB(o)==1 => (o>>31) == UMAXS
     a += b & ((typename SIGNEDNESS<INT>::SIGNED)b>>(sizeof(INT)*8-1));
     return a;
 }

@@ -107,7 +107,8 @@ public:
         return 0;
     }
 
-    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAX ) { return ersNOT_IMPLEMENTED; }
+    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS )
+    {   return ersNOT_IMPLEMENTED; }
 
     virtual opcd peek_read( uint timeout ) {
         if(timeout)  return ersINVALID_PARAMS;
