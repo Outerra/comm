@@ -94,7 +94,7 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
-			OutputDirectory="$(ProjectDir)\bin"
+			OutputDirectory="$(ProjectDir)\bin\"
 			IntermediateDirectory="$(ProjectDir)\bin\$(PlatformName)\$(ConfigurationName)Static\"
 			ConfigurationType="4"
 			UseOfMFC="0"
@@ -246,7 +246,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
-			OutputDirectory="$(ProjectDir)\bin"
+			OutputDirectory="$(ProjectDir)\bin\"
 			IntermediateDirectory="$(ProjectDir)\bin\$(PlatformName)\$(ConfigurationName)Static\"
 			ConfigurationType="4"
 			UseOfMFC="0"
