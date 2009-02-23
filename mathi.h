@@ -138,42 +138,25 @@ inline uint64 align_to_chunks_pow2_64( uint64 uval, uchar rsize )
 
 ////////////////////////////////////////////////////////////////////////////////
 template< class INT >
-inline INT int_min( INT a, INT b )
-{
-    b = b-a;            // b>a => MSB(o)==1 => (o>>31) == UMAXS
-    a += b & ((typename SIGNEDNESS<INT>::SIGNED)b>>(sizeof(INT)*8-1));
-    return a;
-}
+inline INT int_min( INT a, INT b )      { return a<b ? a : b; }
 
 template< class INT >
-inline INT uint_min( INT a, INT b )
-{
-    return  b + ((a - b) & -(a < b));
-}
+inline INT uint_min( INT a, INT b )     { return a<b ? a : b; } // b + ((a - b) & -(a < b));
 
 ////////////////////////////////////////////////////////////////////////////////
 template< class INT >
-inline INT int_max( INT a, INT b )
-{
-    b = a-b;
-    a -= b & ((typename SIGNEDNESS<INT>::SIGNED)b>>(sizeof(INT)*8-1));
-    return a;
-}
+inline INT int_max( INT a, INT b )      { return a<b ? b : a; }
 
 template< class INT >
-inline INT uint_max( INT a, INT b )
-{
-    return  a - ((a - b) & -(a < b));
-}
+inline INT uint_max( INT a, INT b )     { return a<b ? b : a; } // a - ((a - b) & -(a < b));
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Absolute value of int without branching
 template< class INT >
-inline typename SIGNEDNESS<INT>::UNSIGNED int_abs( INT a )
+inline INT int_abs( INT a )
 {
-    typedef typename SIGNEDNESS<INT>::UNSIGNED UINT;
     typedef typename SIGNEDNESS<INT>::SIGNED SINT;
-    return UINT( a - ((a+a) & ((SINT)a>>(sizeof(INT)*8-1))) );
+    return a - ((a+a) & ((SINT)a>>(sizeof(INT)*8-1)));
 }
 
 ///@return a<0 ? onminus : onplus
