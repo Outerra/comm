@@ -176,7 +176,7 @@ public:
     ///@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
     static token append( char* dst, uint dstsize, double d, int nfrac )
     {
-        double w = floor(d);
+        double w = d>0 ? floor(d) : ceil(d);
         token tokw = append_num( dst, dstsize, 10, (int64)w );
 
         if(nfrac == 0)
@@ -189,7 +189,7 @@ public:
 
         int tfrac = int_min( int(int_abs(nfrac)), int(dstsize-tokw.len()) );
 
-        token tokf = append_fraction( dst+tokw.len(), d-w, nfrac>0 ? tfrac : -tfrac );
+        token tokf = append_fraction( dst+tokw.len(), fabs(d-w), nfrac>0 ? tfrac : -tfrac );
 
         tokw.shift_end( tokf.len() );
         return tokw;

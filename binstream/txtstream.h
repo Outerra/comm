@@ -373,11 +373,8 @@ public:
     ///@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
     void append( double d, int nfrac )
     {
-        double w = d>0 ? floor(d) : ceil(d);
-
         char buf[256];
-        token tok = charstr::num<uint64>::insert_signed( buf, 256, (int64)w, 10 );
-        tok.shift_end( append_fraction( fabs(d-w), nfrac, buf+tok.len() ) );
+        token tok = charstrconv::append( buf, 256, d, nfrac );
 
         _binw->xwrite_token_raw(tok);
     }
@@ -418,33 +415,6 @@ public:
     {
 //        flush ();
     }
-
-protected:
-
-    ///@param ndig number of decimal places: >0 maximum, <0 precisely -ndig places
-    uint append_fraction( double n, int ndig, char* buf )
-    {
-        uint ndiga = int_abs(ndig);
-
-        buf[0] = '.';
-        char* p = buf+1;
-
-        int lastnzero=1;
-        for( uint i=0; i<ndiga; ++i )
-        {
-            n *= 10;
-            double f = floor(n);
-            n -= f;
-            uint8 v = (uint8)f;
-            *p++ = '0' + v;
-
-            if( ndig >= 0  &&  v != 0 )
-                lastnzero = i+1;
-        }
-
-        return 1 + (lastnzero < ndig  ?  lastnzero : ndig);
-    }
-
 };
 
 COID_NAMESPACE_END
