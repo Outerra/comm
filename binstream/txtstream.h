@@ -314,6 +314,75 @@ public:
     }
 
 
+    void append_num( int base, uint n, uints minsize=0, charstr::EAlignNum align=charstr::ALIGN_NUM_RIGHT )
+    {
+        char buf[256];
+        token tok = charstr::num<uint>::insert( buf, 256, n, base, 0, minsize, align );
+        _binw->xwrite_token_raw(tok);
+    }
+
+    void append_num( int base, int n, uints minsize=0, charstr::EAlignNum align=charstr::ALIGN_NUM_RIGHT )
+    {
+        char buf[256];
+        token tok = charstr::num<uint>::insert_signed( buf, 256, n, base, minsize, align );
+        _binw->xwrite_token_raw(tok);
+    }
+
+    void append_num( int base, uint64 n, uints minsize=0, charstr::EAlignNum align=charstr::ALIGN_NUM_RIGHT )
+    {
+        char buf[256];
+        token tok = charstr::num<uint64>::insert( buf, 256, n, base, 0, minsize, align );
+        _binw->xwrite_token_raw(tok);
+    }
+
+    void append_num( int base, int64 n, uints minsize=0, charstr::EAlignNum align=charstr::ALIGN_NUM_RIGHT )
+    {
+        char buf[256];
+        token tok = charstr::num<uint64>::insert_signed( buf, 256, n, base, minsize, align );
+        _binw->xwrite_token_raw(tok);
+    }
+
+
+    void append_num_int( int base, const void* p, uints bytes, uints minsize=0, charstr::EAlignNum align=charstr::ALIGN_NUM_RIGHT )
+    {
+        switch( bytes )
+        {
+        case 1: append_num( base, (int)*(int8*)p, minsize, align );  break;
+        case 2: append_num( base, (int)*(int16*)p, minsize, align );  break;
+        case 4: append_num( base, (int)*(int32*)p, minsize, align );  break;
+        case 8: append_num( base, *(int64*)p, minsize, align );  break;
+        default:
+            throw ersINVALID_TYPE "unsupported size";
+        }
+    }
+
+    void append_num_uint( int base, const void* p, uints bytes, uints minsize=0, charstr::EAlignNum align=charstr::ALIGN_NUM_RIGHT )
+    {
+        switch( bytes )
+        {
+        case 1: append_num( base, (uint)*(uint8*)p, minsize, align );  break;
+        case 2: append_num( base, (uint)*(uint16*)p, minsize, align );  break;
+        case 4: append_num( base, (uint)*(uint32*)p, minsize, align );  break;
+        case 8: append_num( base, *(uint64*)p, minsize, align );  break;
+        default:
+            throw ersINVALID_TYPE "unsupported size";
+        }
+    }
+
+    ///Append floating point number
+    ///@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
+    void append( double d, int nfrac )
+    {
+        double w = d>0 ? floor(d) : ceil(d);
+
+        char buf[256];
+        token tok = charstr::num<uint64>::insert_signed( buf, 256, (int64)w, 10 );
+        tok.shift_end( append_fraction( fabs(d-w), nfrac, buf+tok.len() ) );
+
+        _binw->xwrite_token_raw(tok);
+    }
+
+
     binstreambuf* get_read_buffer() const   { return _readbuf; }
 
 
@@ -349,6 +418,33 @@ public:
     {
 //        flush ();
     }
+
+protected:
+
+    ///@param ndig number of decimal places: >0 maximum, <0 precisely -ndig places
+    uint append_fraction( double n, int ndig, char* buf )
+    {
+        uint ndiga = int_abs(ndig);
+
+        buf[0] = '.';
+        char* p = buf+1;
+
+        int lastnzero=1;
+        for( uint i=0; i<ndiga; ++i )
+        {
+            n *= 10;
+            double f = floor(n);
+            n -= f;
+            uint8 v = (uint8)f;
+            *p++ = '0' + v;
+
+            if( ndig >= 0  &&  v != 0 )
+                lastnzero = i+1;
+        }
+
+        return 1 + (lastnzero < ndig  ?  lastnzero : ndig);
+    }
+
 };
 
 COID_NAMESPACE_END

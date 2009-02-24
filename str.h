@@ -770,10 +770,10 @@ public:
     ///@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
     void append( double d, int nfrac )
     {
-        double w = floor(d);
+        double w = d>0 ? floor(d) : ceil(d);
         append_num( 10, (int64)w );
         append('.');
-        append_fraction( d-w, nfrac );
+        append_fraction( fabs(d-w), nfrac );
     }
 
     ///@param ndig number of decimal places: >0 maximum, <0 precisely -ndig places
