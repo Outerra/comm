@@ -626,8 +626,12 @@ public:
         type t = c._type;
 
         //write bgnarray
-        opcd e = write( &n, t.get_array_begin<COUNT>() );
+        COUNT any = COUNT(-1);
+        COUNT cnt = COUNT(n);
+        opcd e = write( &cnt, t.get_array_begin<COUNT>() );
         if(e)  return e;
+
+        n = cnt==any ? UMAXS : cnt;
 
         //if container doesn't know number of items in advance, require separators
         if( n == UMAXS )
@@ -651,8 +655,12 @@ public:
         type t = c._type;
 
         //read bgnarray
-        opcd e = read( &na, t.get_array_begin<COUNT>() );
+        COUNT any = COUNT(-1);
+        COUNT cnt = any;
+        opcd e = read( &cnt, t.get_array_begin<COUNT>() );
         if(e)  return e;
+
+        na = cnt==any ? UMAXS : cnt;
 
         if( na != UMAXS  &&  n != UMAXS  &&  n != na )
             return ersMISMATCHED "requested and stored count";

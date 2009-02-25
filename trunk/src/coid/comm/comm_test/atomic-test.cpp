@@ -9,7 +9,7 @@
 //#include <stdio.h>
 
 using namespace coid;
-
+/*
 stdoutstream _out;
 
 struct ref_test : ref_base
@@ -110,10 +110,10 @@ int main_atomic(int argc, char * argv[])
 
 	_out.set_flush_token("");
 
-	_rtest = new ref_test();
+	_rtest.create( new ref_test );
 
 	{
-		ref<ref_test> rtest = new ref_test();
+		ref<ref_test> rtest.create( new ref_test );
 	}
 
 	init_pool(_pool_size);
@@ -168,3 +168,4 @@ int main_atomic(int argc, char * argv[])
 
 	return 0;
 }
+*/

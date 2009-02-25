@@ -195,12 +195,17 @@ TYPE_TRIVIAL(uint64);
 
 TYPE_TRIVIAL(char);
 
-#ifdef SYSTYPE_32
+#ifdef SYSTYPE_MSVC
+# ifdef SYSTYPE_32
 TYPE_TRIVIAL(ints);
 TYPE_TRIVIAL(uints);
+# else
+TYPE_TRIVIAL(int);
+TYPE_TRIVIAL(uint);
+# endif
 #else
-//TYPE_TRIVIAL(long);
-//TYPE_TRIVIAL(ulong);
+TYPE_TRIVIAL(long);
+TYPE_TRIVIAL(ulong);
 #endif
 
 TYPE_TRIVIAL(float);
@@ -221,9 +226,6 @@ struct SIGNEDNESS
 template<> struct SIGNEDNESS<T> { typedef S SIGNED; typedef U UNSIGNED; };
 
 
-SIGNEDNESS_MACRO(int,int,uint);
-SIGNEDNESS_MACRO(uint,int,uint);
-
 SIGNEDNESS_MACRO(int8,int8,uint8);
 SIGNEDNESS_MACRO(uint8,int8,uint8);
 SIGNEDNESS_MACRO(int16,int16,uint16);
@@ -232,6 +234,20 @@ SIGNEDNESS_MACRO(int32,int32,uint32);
 SIGNEDNESS_MACRO(uint32,int32,uint32);
 SIGNEDNESS_MACRO(int64,int64,uint64);
 SIGNEDNESS_MACRO(uint64,int64,uint64);
+
+#ifdef SYSTYPE_MSVC
+# ifdef SYSTYPE_32
+SIGNEDNESS_MACRO(ints,ints,uints);
+SIGNEDNESS_MACRO(uints,ints,uints);
+# else
+SIGNEDNESS_MACRO(int,int,uint);
+SIGNEDNESS_MACRO(uint,int,int);
+# endif
+#else
+SIGNEDNESS_MACRO(long,long,ulong);
+SIGNEDNESS_MACRO(ulong,long,ulong);
+#endif
+
 /*
 #ifdef SYSTYPE_MSVC
     //SIGNEDNESS_MACRO(__int64);
@@ -297,40 +313,6 @@ COID_NAMESPACE_END
 #define UMAX32      0xffffffffUL
 #define UMAX64      0xffffffffffffffffULL
 #define WMAX        0xffff
-
-
-////////////////////////////////////////////////////////////////////////////////
-///Maximum default type alignment. Can be overriden for particular type by
-/// specializing alignment_trait for T
-#ifdef SYSTYPE_32
-static const int MaxAlignment = 8;
-#else
-static const int MaxAlignment = 16;
-#endif
-
-template<class T>
-static int alignment_size()
-{
-    int alignment = alignment_trait<T>::alignment;
-
-    if(!alignment)
-        alignment = sizeof(T) > MaxAlignmentPow2
-            ?  MaxAlignment
-            :  sizeof(T);
-
-    return alignment;
-}
-
-///Align pointer to proper boundary, in forward direction
-template<class T>
-static T* align_forward( void* p )
-{
-    int mask = alignment_size<T>() - 1;
-
-    return static_cast<T*>( (static_cast<uints>(p) + mask) &~ mask );
-}
-
-
 
 #include "net_ul.h"
 

@@ -85,9 +85,9 @@ template<class T, class TAIL, class UIDX> binstream& operator >> (binstream&, se
 template <class T, class TAIL = EmptyTail, class UIDX=uint>
 class segarray
 {
+public:
     typedef typename SIGNEDNESS<UIDX>::SIGNED    SIDX;
 
-public:
     struct segment;
 	struct ptr;
 

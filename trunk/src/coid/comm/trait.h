@@ -196,7 +196,6 @@ template<> struct type_trait<t> { \
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
 ///Alignment trait
 template<class T>
 struct alignment_trait
@@ -205,6 +204,41 @@ struct alignment_trait
     /// according to current maximum alignment size and size of T
     static const int alignment = 0;
 };
+
+#define REQUIRE_TYPE_ALIGNMENT(type,size) \
+    template<> struct alignment_trait<type> { static const int alignment = size; }
+
+
+///Maximum default type alignment. Can be overriden for particular type by
+/// specializing alignment_trait for T
+#ifdef SYSTYPE_32
+static const int MaxAlignment = 8;
+#else
+static const int MaxAlignment = 16;
+#endif
+
+template<class T>
+inline int alignment_size()
+{
+    int alignment = alignment_trait<T>::alignment;
+
+    if(!alignment)
+        alignment = sizeof(T) > MaxAlignment
+            ?  MaxAlignment
+            :  sizeof(T);
+
+    return alignment;
+}
+
+///Align pointer to proper boundary, in forward direction
+template<class T>
+inline T* align_forward( void* p )
+{
+    int mask = alignment_size<T>() - 1;
+
+    return static_cast<T*>( (static_cast<uints>(p) + mask) &~ mask );
+}
+
 
 
 COID_NAMESPACE_END
