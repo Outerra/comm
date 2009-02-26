@@ -864,6 +864,13 @@ public:
         return write_array(c);
     }
 
+    template <class T, class COUNT>
+    opcd read_linear_array( T* p, COUNT n )
+    {
+        binstream_container_fixed_array<T,COUNT> c((T*)p,n);
+        return read_array(c);
+    }
+
 
     ////////////////////////////////////////////////////////////////////////////////
     ///Peek at the input if there's anything to read
