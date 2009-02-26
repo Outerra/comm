@@ -491,7 +491,7 @@ netAddress* netSocket::getRemoteAddress( netAddress* addrto ) const
 ////////////////////////////////////////////////////////////////////////////////
 netSocket::netSocket ()
 {
-    handle = -1 ;
+    handle = UMAXS ;
 }
 
 netSocket::~netSocket()
@@ -507,7 +507,7 @@ void netSocket::setHandle( uints _handle )
 
 void netSocket::setHandleInvalid()
 {
-    handle = -1;
+    handle = UMAXS;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -516,13 +516,13 @@ netSocket::open ( bool stream )
 {
     close();
     handle = ::socket( AF_INET, (stream? SOCK_STREAM: SOCK_DGRAM), 0 ) ;
-    return (handle != -1);
+    return (handle != UMAXS);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 void netSocket::setBlocking( bool blocking )
 {
-    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != UMAXS, ersDISCONNECTED );  //invalid handle
 
 #ifdef SYSTYPE_MSVC
 
@@ -544,7 +544,7 @@ void netSocket::setBlocking( bool blocking )
 ////////////////////////////////////////////////////////////////////////////////
 void netSocket::setBroadcast( bool broadcast )
 {
-    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != UMAXS, ersDISCONNECTED );  //invalid handle
     int result;
     int one = 1;
 #ifdef SYSTYPE_WIN
@@ -558,7 +558,7 @@ void netSocket::setBroadcast( bool broadcast )
 ////////////////////////////////////////////////////////////////////////////////
 void netSocket::setBuffers( uint rsize, uint wsize )
 {
-    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != UMAXS, ersDISCONNECTED );  //invalid handle
     int result;
 #ifdef SYSTYPE_WIN
     if(rsize)
@@ -577,7 +577,7 @@ void netSocket::setBuffers( uint rsize, uint wsize )
 ////////////////////////////////////////////////////////////////////////////////
 void netSocket::setNoDelay( bool nodelay )
 {
-    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != UMAXS, ersDISCONNECTED );  //invalid handle
     int result;
 
     int one = nodelay;
@@ -591,7 +591,7 @@ void netSocket::setNoDelay( bool nodelay )
 ////////////////////////////////////////////////////////////////////////////////
 void netSocket::setReuseAddr( bool reuse )
 {
-    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != UMAXS, ersDISCONNECTED );  //invalid handle
     int result;
 
     int one = reuse;
@@ -605,7 +605,7 @@ void netSocket::setReuseAddr( bool reuse )
 ////////////////////////////////////////////////////////////////////////////////
 void netSocket::setLinger( bool blinger, ushort sec )
 {
-    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != UMAXS, ersDISCONNECTED );  //invalid handle
     int result;
 
     struct linger lg;
@@ -622,7 +622,7 @@ void netSocket::setLinger( bool blinger, ushort sec )
 ////////////////////////////////////////////////////////////////////////////////
 int netSocket::bind( const char* host, int port )
 {
-    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != UMAXS, ersDISCONNECTED );  //invalid handle
     netAddress addr ( host, port, true ) ;
     return ::bind(handle,(const sockaddr*)&addr,sizeof(netAddress));
 }
@@ -630,14 +630,14 @@ int netSocket::bind( const char* host, int port )
 ////////////////////////////////////////////////////////////////////////////////
 int netSocket::listen( int backlog )
 {
-    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != UMAXS, ersDISCONNECTED );  //invalid handle
     return ::listen(handle,backlog);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 uints netSocket::accept( netAddress* addr )
 {
-    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != UMAXS, ersDISCONNECTED );  //invalid handle
     socklen_t addr_len = (socklen_t) sizeof(netAddress) ;
     return ::accept(handle,(sockaddr*)addr,&addr_len);
 }
@@ -645,7 +645,7 @@ uints netSocket::accept( netAddress* addr )
 ////////////////////////////////////////////////////////////////////////////////
 int netSocket::connect( const token& host, int port, bool portoverride )
 {
-    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != UMAXS, ersDISCONNECTED );  //invalid handle
     netAddress addr( host, port, portoverride );
 
     if( addr.getBroadcast() )
@@ -657,7 +657,7 @@ int netSocket::connect( const token& host, int port, bool portoverride )
 ////////////////////////////////////////////////////////////////////////////////
 int netSocket::connect( const netAddress& addr )
 {
-    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != UMAXS, ersDISCONNECTED );  //invalid handle
     if ( addr.getBroadcast() ) {
         setBroadcast( true );
     }
@@ -667,28 +667,28 @@ int netSocket::connect( const netAddress& addr )
 ////////////////////////////////////////////////////////////////////////////////
 int netSocket::send( const void * buffer, int size, int flags )
 {
-    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != UMAXS, ersDISCONNECTED );  //invalid handle
     return ::send (handle, (const char*)buffer, size, flags);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 int netSocket::sendto( const void * buffer, int size, int flags, const netAddress* to )
 {
-    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != UMAXS, ersDISCONNECTED );  //invalid handle
     return ::sendto(handle,(const char*)buffer,size,flags,(const sockaddr*)to,sizeof(netAddress));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 int netSocket::recv( void * buffer, int size, int flags )
 {
-    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != UMAXS, ersDISCONNECTED );  //invalid handle
     return ::recv (handle, (char*)buffer, size, flags);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 int netSocket::recvfrom( void * buffer, int size, int flags, netAddress* from )
 {
-    RASSERTE( handle != -1, ersDISCONNECTED );  //invalid handle
+    RASSERTE( handle != UMAXS, ersDISCONNECTED );  //invalid handle
     socklen_t fromlen = (socklen_t) sizeof(netAddress) ;
     return ::recvfrom(handle,(char*)buffer,size,flags,(sockaddr*)from,&fromlen);
 }
@@ -696,21 +696,21 @@ int netSocket::recvfrom( void * buffer, int size, int flags, netAddress* from )
 ////////////////////////////////////////////////////////////////////////////////
 void netSocket::close()
 {
-    if ( handle != -1 )
+    if ( handle != UMAXS )
     {
 #ifdef SYSTYPE_MSVC
         ::closesocket( handle );
 #else
         ::close( handle );
 #endif
-        handle = -1 ;
+        handle = UMAXS ;
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 void netSocket::lingering_close()
 {
-    if( handle != -1 )
+    if( handle != UMAXS )
     {
         ::shutdown( handle, 1/*SD_SEND*/ );
         setBlocking(false);
@@ -756,7 +756,7 @@ bool netSocket::isNonBlockingError()
 ////////////////////////////////////////////////////////////////////////////////
 int netSocket::wait_read( int timeout )
 {
-    if( handle == -1 )
+    if( handle == UMAXS )
         return 0;
 
     ::fd_set fdsr;
@@ -775,7 +775,7 @@ int netSocket::wait_read( int timeout )
 ////////////////////////////////////////////////////////////////////////////////
 int netSocket::wait_write( int timeout )
 {
-    if( handle == -1 )
+    if( handle == UMAXS )
         return 0;
 
     ::fd_set fdsr;

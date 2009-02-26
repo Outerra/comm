@@ -146,15 +146,16 @@ struct binstream_containerT : binstream_container<COUNT>
 {
     enum { ELEMSIZE = sizeof(T) };
     typedef T       data_t;
+    typedef binstream_container_base::fnc_stream    fnc_stream;
 
     binstream_containerT( uints n )
-        : binstream_container(n, bstype::t_type<T>(),
+        : binstream_container<COUNT>(n, bstype::t_type<T>(),
             &binstream_streamfunc<T>::stream_out,
             &binstream_streamfunc<T>::stream_in)
     {}
 
     binstream_containerT( uints n, fnc_stream fout, fnc_stream fin )
-        : binstream_container(n,bstype::t_type<T>(),fout,fin)
+        : binstream_container<COUNT>(n,bstype::t_type<T>(),fout,fin)
     {}
 };
 
@@ -166,7 +167,7 @@ struct binstream_containerT<void,COUNT> : binstream_container<COUNT>
     typedef void    data_t;
 
     binstream_containerT( uints n )
-        : binstream_container(n,bstype::kind(bstype::kind::T_BINARY,1),0,0)
+        : binstream_container<COUNT>(n,bstype::kind(bstype::kind::T_BINARY,1),0,0)
     {}
 };
 
@@ -246,7 +247,7 @@ struct binstream_dereferencing_containerT
 {
     enum { ELEMSIZE = sizeof(T) };
 
-    typedef typename binstream_container::fnc_stream    fnc_stream;
+    typedef binstream_container_base::fnc_stream    fnc_stream;
 
 
     virtual const void* extract( uints n )
@@ -264,14 +265,14 @@ struct binstream_dereferencing_containerT
 
 
     binstream_dereferencing_containerT( binstream_container<COUNT>& bc )
-        : binstream_containerT( bc._nelements
+        : binstream_containerT<T,COUNT>( bc._nelements
         , &binstream_streamfunc<T>::stream_out
         , &binstream_streamfunc<T>::stream_in)
         , _bc(bc)
     {}
 
     binstream_dereferencing_containerT( binstream_container<COUNT>& bc, fnc_stream fout, fnc_stream fin )
-        : binstream_containerT( bc._nelements, fout, fin )
+        : binstream_containerT<T,COUNT>( bc._nelements, fout, fin )
         , _bc(bc)
     {}
 
@@ -323,7 +324,7 @@ template<class COUNT>
 struct binstream_container_primitive : binstream_container<COUNT>
 {
     binstream_container_primitive( uints n, bstype::kind t )
-        : binstream_container(n,t,0,0)
+        : binstream_container<COUNT>(n,t,0,0)
     {}
 };
 
@@ -348,7 +349,7 @@ struct binstream_container_fixed_array : binstream_containerT<T,COUNT>
 
     bool is_continuous() const      { return true; }
 
-    typedef typename binstream_container::fnc_stream    fnc_stream;
+    typedef typename binstream_container_base::fnc_stream    fnc_stream;
 
     binstream_container_fixed_array( T* ptr, uints n )
         : binstream_containerT<T,COUNT>(n), _ptr(ptr) {}
@@ -397,14 +398,14 @@ struct binstream_container_char_array : binstream_containerT<char,COUNT>
 
     bool is_continuous() const      { return true; }
 
-    binstream_container_char_array( uints n ) : binstream_containerT(n)
+    binstream_container_char_array( uints n ) : binstream_containerT<char,COUNT>(n)
     {
         _ptr = (char*)malloc(1<<5);
         _ptr[0] = 0;
         _size = 1;
     }
     binstream_container_char_array( const char* ptr, uints n )
-        : binstream_containerT(n), _ptr((char*)ptr)
+        : binstream_containerT<char,COUNT>(n), _ptr((char*)ptr)
     {
         _size = 0;
     }

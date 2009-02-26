@@ -110,7 +110,7 @@ inline float sysEndianLittleFloat(float x)
     if(sysIsLittleEndian)
         return x;
     else {
-        _sysEndianSwap((uint32*)&x);
+        _sysEndianSwap((uint32*)(void*)&x);
         return x;
     }
 }
@@ -141,7 +141,7 @@ inline void sysEndianLittleArrayFloat( float *x, int length )
         return;
     else {
         for( int i = 0; i < length; ++i )
-            _sysEndianSwap((uint32*)x++);
+            _sysEndianSwap((uint32*)(void*)x++);
     }
 }
 
@@ -171,7 +171,7 @@ inline void sysEndianBigArrayFloat(float *x, int length)
         return;
     else {
         for( int i = 0; i < length; ++i )
-            _sysEndianSwap((uint32*)x++);
+            _sysEndianSwap((uint32*)(void*)x++);
     }
 }
 
@@ -197,7 +197,7 @@ inline float sysEndianBigFloat(float x) {
     if(sysIsBigEndian)
         return x;
     else {
-        _sysEndianSwap((uint32*)&x);
+        _sysEndianSwap((uint32*)(void*)&x);
         return x;
     }
 }
@@ -211,18 +211,18 @@ class sysDynamicLibrary
 #else
     void *handle ;
 #endif
-    
+
 public:
-    
+
     ~sysDynamicLibrary();
     sysDynamicLibrary( const char* libname = 0 );
-    
+
     bool open( const char* libname );
     bool close();
     const char* error() const;
 
     void *getFuncAddress ( const char *funcname );
-    
+
     bool is_valid() {return handle != 0;}
 } ;
 
@@ -230,4 +230,3 @@ public:
 COID_NAMESPACE_END
 
 #endif
-

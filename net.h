@@ -244,7 +244,7 @@ public:
     void setHandle (uints handle) ;
     void setHandleInvalid () ;
 
-    bool isValid () const     { return handle != -1; }
+    bool isValid () const     { return handle != UMAXS; }
 
     bool  open        ( bool stream=true ) ;
     void  close       ( void ) ;

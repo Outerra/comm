@@ -49,12 +49,6 @@
 # include <share.h>
 #else
 # include <unistd.h>
-# define  O_RAW   0
-# define _write     write
-# define _read      read
-# define _close     close
-# define _fileno    fileno
-# define _dup       dup
 #endif
 
 #include <fcntl.h>
@@ -80,7 +74,11 @@ public:
         if(_op>0 )
             upd_rpos();
 
+#ifdef SYSTYPE_MSVC
         uint k = ::_write( _handle, p, (uint)len );
+#else
+        uint k = ::write( _handle, p, (uint)len );
+#endif
         _wpos += k;
         len -= k;
         return 0;
@@ -93,7 +91,11 @@ public:
         if(_op<0)
             upd_wpos();
 
+#ifdef SYSTYPE_MSVC
         uint k = ::_read( _handle, p, (uint)len );
+#else
+        uint k = ::read( _handle, p, (uint)len );
+#endif
         _rpos += k;
         len -= k;
         if( len > 0 )
@@ -223,26 +225,7 @@ public:
         else if( rw == 2 )  flg |= O_WRONLY;
         else                flg |= O_RDONLY;
 
-        flg |= O_RAW;
-
-		/*Handle hfile = CreateFile( 
-			name,
-			GENERIC_READ, // desired access
-			0,                            // share mode (none)
-			0,                         // security attributes
-			OPEN_EXISTING,                // fail if it doesn't exist
-			FILE_FLAG_NO_BUFFERING,    // flags & attributes
-			0);                       // file template
-
-
-		if( hfile == INVALID_HANDLE_VALUE ) {
-            int e = ::lockf( _handle, F_TLOCK, 0 );
-            if( e != 0 )  close();
-		}
-
-		_handle = _open_osfhandle((intptr_t)hfile, 0);*/
-
-		_handle = ::_open( name, flg, 0644 );
+	_handle = ::open( name, flg, 0644 );
 
         if( _handle != -1  &&  sh )
         {
@@ -256,7 +239,11 @@ public:
     virtual opcd close( bool linger=false )
     {
         if( _handle != -1 ) {
+#ifdef SYSTYPE_MSVC
             ::_close(_handle);
+#else
+            ::close(_handle);
+#endif
             _handle = -1;
         }
 
@@ -272,8 +259,11 @@ public:
             return ersIMPROPER_STATE;
 
         dst.close();
+#ifdef SYSTYPE_MSVC
         dst._handle = ::_dup(_handle);
-
+#else
+        dst._handle = ::dup(_handle);
+#endif
         return 0;
     }
 

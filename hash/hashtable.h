@@ -156,7 +156,7 @@ public:
         const _Self* _get_ht() const    { return _ht; }
 
         Ptr( Node* p, const _Self& ht ) : _p(p), _ht(&ht) {}
-        Ptr() {}
+        Ptr() : _p(0), _ht(0) {}
 
         bool operator == (const Ptr& p) const   { return _p == p._p; }
         bool operator != (const Ptr& p) const   { return _p != p._p; }
@@ -201,7 +201,7 @@ public:
         typedef const VAL&              const_reference;
 
         CPtr( const Node* p, const _Self& ht ) : _p(p), _ht(&ht) {}
-        CPtr() {}
+        CPtr() : _p(0), _ht(0) {}
 
         CPtr( const Ptr& p )
         {

@@ -262,7 +262,7 @@ public:
 
     ~localarray()
     {
-        typedef typenamex type_select<USE_MALLOC,alloc_new,alloc_malloc>::type   Ta;
+        typedef typename type_select<USE_MALLOC,alloc_new,alloc_malloc>::type   Ta;
         type_select<NO_DESTROY,alloc_null,Ta>::type::free(&_p);
     }
 

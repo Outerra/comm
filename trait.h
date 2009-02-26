@@ -39,6 +39,7 @@
 #define __COID_COMM_TRAIT__HEADER_FILE__
 
 #include "namespace.h"
+#include "commtypes.h"
 
 COID_NAMESPACE_BEGIN
 
@@ -234,9 +235,9 @@ inline int alignment_size()
 template<class T>
 inline T* align_forward( void* p )
 {
-    int mask = alignment_size<T>() - 1;
+    size_t mask = alignment_size<T>() - 1;
 
-    return static_cast<T*>( (static_cast<uints>(p) + mask) &~ mask );
+    return static_cast<T*>( (static_cast<size_t>(p) + mask) &~ mask );
 }
 
 

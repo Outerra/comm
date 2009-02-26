@@ -36,7 +36,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "sseg.h"
-#include <malloc.h>
+//#include <malloc.h>
 #include <string.h>
 #include <stdio.h>
 

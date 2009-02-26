@@ -41,7 +41,7 @@
 #include "../namespace.h"
 
 #include "container.h"
-#include <malloc.h>
+#include "../alloc/commalloc.h"
 
 COID_NAMESPACE_BEGIN
 
@@ -53,7 +53,7 @@ struct binstream_container_with_new : binstream_containerT<T>
     void* insert( uints n )
     {
         if(_ptr) throw ersIMPROPER_STATE "cannot do a realloc with operator new";
-    
+
         _ptr = new T[n];
         return _ptr;
     }
@@ -90,12 +90,11 @@ struct binstream_container_with_malloc : binstream_containerT<T>
         T* p;
         if(!_ptr)
         {
-            p = _ptr = (T*) malloc( n * sizeof(T) );
-            _n = n;
+            p = _ptr = comm_array_allocator<T>::alloc(n);
         }
         else
         {
-            _ptr = (T*) realloc( _ptr, _n+n );
+            _ptr = comm_array_allocator<T>::realloc( _ptr, _n+n );
             p = _ptr + _n;
         }
 
@@ -113,7 +112,8 @@ struct binstream_container_with_malloc : binstream_containerT<T>
 
     bool is_continuous() const      { return true; }
 
-    binstream_container_with_malloc( uints n ) : binstream_containerT<T>(n), _ptr(0), _n(0) {}
+    binstream_container_with_malloc( uints n )
+        : binstream_containerT<T>(n), _ptr(0), _n(0) {}
 
     void set( uints n )
     {

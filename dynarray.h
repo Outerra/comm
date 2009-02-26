@@ -1260,12 +1260,12 @@ public:
 
     dynarray_binstream_container get_container_to_write( uints n=UMAXS )
     {
-        return binstream_container( *this, n );
+        return dynarray_binstream_container( *this, n );
     }
 
     dynarray_binstream_container get_container_to_read()
     {
-        return binstream_container( *this, size() );
+        return dynarray_binstream_container( *this, size() );
     }
 
 private:

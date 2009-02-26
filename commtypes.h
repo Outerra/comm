@@ -39,7 +39,6 @@
 #define __COID_COMM_COMMTYPES__HEADER_FILE__
 
 #include "namespace.h"
-#include "trait.h"
 
 #if defined(__CYGWIN__)
 
@@ -107,6 +106,7 @@
 //#define _USE_32BIT_TIME_T
 #include <sys/types.h>
 #include <stddef.h>
+#include "trait.h"
 
 /// Operator new for preallocated storage
 inline void * operator new (size_t, const void *p) { return (void*)p; }

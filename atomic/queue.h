@@ -320,7 +320,7 @@ protected:
 public:
 	/// enqueue item
 	template<class T2>
-	void push(ref<T2>& item) { push( static_cast<policy_queue_pooled<T>*>item.add_ref_copy()); }
+	void push(ref<T2>& item) { push( static_cast<policy_queue_pooled<T>*>(item.add_ref_copy())); }
 
 	/// same as previous push but TAKE given ref (no addref is needed) 
 	template<class T2>

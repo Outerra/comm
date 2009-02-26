@@ -902,7 +902,8 @@ public:
         struct tm tm;
         gmtime_s( &tm, &t.t );
 #else
-        struct tm const& tm = *gmtime( (const time_t*)&t.t );
+	time_t tv = (time_t)t.t;
+        struct tm const& tm = *gmtime(&tv);
 #endif
         return append_time( tm, flg, "GMT" );
     }
@@ -921,7 +922,8 @@ public:
             tzbuf[0] = 0;
         return append_time( tm, flg, tzbuf );
 #else
-        struct tm const& tm = *localtime( (const time_t*)&t.t );
+	time_t tv = (time_t)t.t;
+        struct tm const& tm = *localtime(&tv);
         return append_time( tm, flg, tzname[0] );
 #endif
     }
