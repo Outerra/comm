@@ -1,5 +1,5 @@
 DEST = comm.a
-SRC = *.cpp alloc/*.cpp atomic/*.cpp crypt/*.cpp sync/*.cpp metastream/*.cpp
+SRC = *.cpp alloc/_malloc.c alloc/*.cpp atomic/*.cpp crypt/*.cpp sync/*.cpp metastream/*.cpp
 INCLUDE = -I ../..
 #LIBS =
 #STDLIBS =
@@ -8,7 +8,7 @@ IS_SHARED_LIB = 0
 
 
 SRC2 = $(shell ls $(SRC))
-OBJS = $(SRC2:.cpp=.o)
+OBJS = $(SRC2:.cpp=.o) $(SRC2:.c=.o)
 
 
 #IS_DEBUG = $(shell test -f ".debug" && echo 1)
@@ -26,6 +26,7 @@ endif
 all: DELETE_DEPEND2 $(DEST) SUCCESS
 
 
+.c.o:
 .cpp.o:
 	@echo $(<F)
 	@$(CC) -c $(INCLUDE) $(@D)/$(<F) -o $(@D)/$(@F)

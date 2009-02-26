@@ -1569,7 +1569,7 @@ protected:
                 //write to cache
                 DASSERT( !_curvar.var->is_primitive() );
 
-                uints prevoff, i;
+                uints prevoff=UMAXS, i;
                 for( i=0; i<n; ++i )
                 {
                     const void* p = c.extract(1);
@@ -1632,7 +1632,7 @@ protected:
                 DASSERT( _cachevar  ||  n != UMAXS );
                 DASSERT( !_curvar.var->is_primitive() );
 
-                uints i, prevoff;
+                uints i, prevoff=UMAXS;
                 for( i=0; i<n; ++i )
                 {
                     if( _cachevar ) {

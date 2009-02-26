@@ -42,6 +42,7 @@
 
 #include "../commtypes.h"
 #include "chunkpage.h"
+#include "commalloc.h"
 
 COID_NAMESPACE_BEGIN
 
@@ -197,8 +198,10 @@ private:
         ints n = (char*)p-(char*)this;
         DASSERT_RET( n >= (ints)sizeof(chunkblock)  &&  n < (ints)_totalsize, -1 );    //invalid pointer
 
+#ifdef _DEBUG
         ints m = (n<(ints)PAGESIZE) ? (n-align_value(sizeof(chunkblock),sizeof(uint64))) : (n-sizeof(uint64));
         DASSERT_RET( m%item.size == 0, -1 );                                    //misaligned pointer
+#endif
         return n;
     }
 };

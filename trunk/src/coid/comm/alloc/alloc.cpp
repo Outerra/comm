@@ -41,7 +41,7 @@
 
 #include "../dynarray.h"
 
-#include <malloc.h>
+//#include <malloc.h>
 #include <string.h>
 #include <algorithm>
 
@@ -102,10 +102,10 @@ void seg_allocator::discard()
 opcd seg_allocator::save( binstream& bin )
 {
     opcd e;
-    
+
     bin << _segsize;
     page* p = _last;
-    
+
     for( ; p; p=p->prev )
     {
         e = p->spage->write_to_stream(bin);
