@@ -289,7 +289,7 @@ public:
                     ? opcd(0)
                     : ersSYNTAX_ERROR "expected string";
                 if(!e)
-                    *(uints*)p = tok.len()/2;
+                    t.set_count( tok.len()/2, p );
 
                 _tokenizer.push_back();
             }
@@ -298,7 +298,7 @@ public:
                     ? opcd(0)
                     : ersSYNTAX_ERROR "expected string";
                 if(!e)
-                    *(uints*)p = tok.len();
+                    t.set_count( tok.len(), p );
 
                 _tokenizer.push_back();
             }
@@ -310,7 +310,8 @@ public:
                         ? opcd(0)
                         : ersSYNTAX_ERROR "expected identifier";
                 if(!e)
-                    *(uints*)p = tok.len();
+                    t.set_count( tok.len(), p );
+
                 _tokenizer.push_back();
             }
             else if( t.type == type::T_COMPOUND )

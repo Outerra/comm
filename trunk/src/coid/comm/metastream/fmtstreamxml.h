@@ -459,7 +459,8 @@ public:
                 tag* tg = _tagstack.last();
                 
                 _curname = tg->_name;
-                *(uints*)p = _curname.len();
+                t.set_count( _curname.len(), p );
+
                 _tag_read = true;
             }
             else

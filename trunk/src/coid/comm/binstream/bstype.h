@@ -198,6 +198,33 @@ struct kind
     ///Get byte size of primitive element
     ushort get_size() const                 { return size; }
 
+    ///Set count (array size) to integer of proper size, pointed to by \a dst
+    void set_count( uints n, void* dst ) const {
+        switch( get_size() ) {
+        case 1: *(uint8*)dst = (uint8)n; break;
+        case 2: *(uint16*)dst = (uint16)n; break;
+        case 4: *(uint32*)dst = (uint32)n; break;
+        case 8: *(uint64*)dst = (uint64)n; break;
+        default: DASSERT(0);
+        }
+    }
+
+    ///Get number of array elements from location containing the count in integer of currently set size
+    uints get_count( const void* src ) const {
+        switch( get_size() ) {
+        case 0: return *(const uints*)src;
+        case 1: return *(const uint8*)src;
+        case 2: return *(const uint16*)src;
+        case 4: return *(const uint32*)src;
+#ifdef SYSTYPE_64
+        case 8: return *(const uint64*)src;
+#endif
+        }
+        DASSERT(0);
+        return 0;
+    }
+
+    ///Get number from location pointed to by \a data according to current type specification
     int64 value_int( const void* data ) const
     {
         int64 val = 0;
