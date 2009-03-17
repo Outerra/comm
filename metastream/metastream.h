@@ -134,7 +134,10 @@ public:
 
     ///Set current file name (for error reporting)
     void set_file_name( const token& name ) {
-        file_name = name;
+        if(_fmtstreamrd)
+            _fmtstreamrd->fmtstream_file_name(name);
+        if(_fmtstreamwr)
+            _fmtstreamwr->fmtstream_file_name(name);
     }
 
     void enable_meta_write( bool en )   { _disable_meta_write = !en; }
@@ -1142,8 +1145,6 @@ private:
     MetaDesc::Var* _cachevar;           ///< variable being currently cached from input
     MetaDesc::Var* _cacheskip;          ///< set if the variable was not present in input (can be filled with default) or has been already cached
 
-    charstr file_name;                  ///< current file name (for error reporting)
-
 private:
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -1802,7 +1803,7 @@ protected:
                     uints n = _current->get_asize();
                     DASSERT( n != UMAXS  &&  n != 0xcdcdcdcd );
 
-                    *(uints*)p = n;
+                    t.set_count(n, p);
                 }
             }
             else if( t.is_array_end() )
@@ -1811,13 +1812,13 @@ protected:
                     if(_cachevar)
                         e = _fmtstreamrd->read(p,t);
 
-                    uints n = *(const uints*)p;
+                    uints n = t.get_count(p);
                     DASSERT( n != UMAXS  &&  n != 0xcdcdcdcd );
 
                     _current->set_asize(n);
                 }
                 else {
-                    if( _current->get_asize() != *(const uints*)p )
+                    if( _current->get_asize() != t.get_count(p) )
                         return ersMISMATCHED "elements left in cached array";
                 }
 

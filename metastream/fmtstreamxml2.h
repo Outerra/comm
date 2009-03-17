@@ -381,9 +381,9 @@ public:
 			else if( t.type == type::T_CHAR ) {
                 open_tagmode();
 				if( _tagmode!=3 )
-					*(uints*)p = _tokenizer.last().value().len();
-				else 
-					*(uints*)p = 0;
+                    t.set_count( _tokenizer.last().value().len(), p );
+				else
+                    t.set_count( 0, p );
 			}
             else
             {

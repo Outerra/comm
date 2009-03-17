@@ -1306,10 +1306,18 @@ public:
     ///String length counting terminating zero
     uints lent() const                  { return _tstr.size(); }
 
+    ///Set string to empty and discard the memory
     void free()                         { _tstr.discard(); }
 
+    ///Reserve memory for string
     char* reserve( uints len )          { return _tstr.reserve(len, true); }
-    void reset()                        { _tstr.reset();  if(_tstr.size()) _tstr[0]=0; }
+
+    ///Reset string to empty but keep the memory
+    void reset() {
+        if(_tstr.size())
+            _tstr[0] = 0;
+        _tstr.reset();
+    }
 
     ~charstr() {}
 

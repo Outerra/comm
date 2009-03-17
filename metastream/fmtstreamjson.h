@@ -356,20 +356,21 @@ public:
                 e = (_tokenizer.last() == lexstr  ||  _tokenizer.last() == lexid)
                     ? opcd(0) : ersSYNTAX_ERROR "expected string";
                 if(!e)
-                    *(uints*)p =  (t.type == type::T_BINARY) ? tok.len()/2 : tok.len();
+                    t.set_count( (t.type == type::T_BINARY) ? tok.len()/2 : tok.len(), p );
 
                 _tokenizer.push_back();
             }
             else if( t.type == type::T_KEY )
             {
                 if(_tokenizer.last() == lexstr  ||  _tokenizer.last() == lexid)
-                    *(uints*)p = tok.len();
+                    t.set_count( tok.len(), p );
                 else if( tok == char('}')  ||  tok.is_null() )
                     e = ersNO_MORE;
                 else
                     e = ersSYNTAX_ERROR "expected identifier";
                 if(!e)
-                    *(uints*)p = tok.len();
+                    t.set_count( tok.len(), p );
+
                 _tokenizer.push_back();
             }
             else if( t.type == type::T_COMPOUND )
