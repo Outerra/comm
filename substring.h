@@ -106,7 +106,7 @@ public:
                 _from = c;
             }
             if( c > _to ) {
-                ::memset( dist+_to, 0, (c-_to)*sizeof(uints) );
+                ::memset( dist+_to+1, 0, (c-_to-1)*sizeof(uints) );
                 _to = c;
             }
 
