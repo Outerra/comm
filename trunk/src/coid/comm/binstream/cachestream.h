@@ -371,7 +371,7 @@ public:
         uints ts=0;
         while(1)
         {
-            uints n = memcmpseg( sub.ptr(), sub.len() );
+            uints n = memcmpseg( sub.ptr(), slen );
             if( n == slen )
             {
                 _cinread += n;
