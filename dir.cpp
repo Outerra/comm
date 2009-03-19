@@ -129,6 +129,9 @@ opcd directory::copy_current_file_to( const token& dst )
 ////////////////////////////////////////////////////////////////////////////////
 opcd directory::copy_file( const token& src, const token& dst )
 {
+    if( src == dst )
+        return 0;
+
     fileiostream fsrc, fdst;
 
     opcd e = fsrc.open(src);
