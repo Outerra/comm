@@ -1144,6 +1144,26 @@ public:
         return true;
     }
 
+    ///Return position where the substring is located
+    ///@return substring position, len() if not found
+    uint contains( const substring& sub, uints off=0 ) const
+    {   return token(*this).count_until_substring(sub,off); }
+
+    ///Return position where the character is located
+    ///@return substring position, len() if not found
+    uint contains( char c, uints off=0 ) const
+    {   return token(*this).count_notchar(c,off); }
+
+    ///Return position where the character is located, searching from the end
+    ///@return substring position, len() if not found
+    uint contains_back( char c, uints off=0 ) const
+    {
+        uint n = token(*this).count_notchar_back(c,off);
+        return ( n > off )
+            ? n-1
+            : len();
+    }
+
 
     char& operator [] (uints i)                 { return _tstr[i]; }
     
