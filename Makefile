@@ -8,7 +8,8 @@ IS_SHARED_LIB = 0
 
 
 SRC2 = $(shell ls $(SRC))
-OBJS = $(SRC2:.cpp=.o) $(SRC2:.c=.o)
+OBJ1 = $(SRC2:.c=.o)
+OBJS = $(OBJ1:.cpp=.o)
 
 
 #IS_DEBUG = $(shell test -f ".debug" && echo 1)
