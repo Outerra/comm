@@ -1259,6 +1259,21 @@ public:
         return matches(grp, dst);
     }
 
+
+    //@{
+    ///Try to match one of the literals. The list is terminated by an empty token.
+    //@return number of matched rule (base 1) if succesfull. Returns 0 if none were matched.
+    //@note if nothing was matched, the lexer doesn't consume anything from the stream
+    int matches_either( token list[] ) {
+        int i=0;
+        while(list[i]) {
+            if( matches(list[i++]) )  return i;
+        }
+        return 0;
+    }
+    //@}
+
+
     //@{
     ///Try to match one of the rules. The parameters can be either literals (strings or
     /// single characters) or rule identifiers.
@@ -1300,6 +1315,24 @@ public:
     }
     //@}
 
+
+    ///Match one of the literals. The list is terminated by an empty token.
+    ///If no parameter is matched, throws exception (struct lexception).
+    int match_either( token list[] )
+    {
+        int i=0;
+        while(list[i]) {
+            if( matches(list[i++]) )  return i;
+        }
+
+        _err = lexception::ERR_EXTERNAL_ERROR;
+        
+        on_error_prefix(false, _errtext);
+        _errtext << "couldn't match any of " << i << " literals";
+        on_error_suffix(_errtext);
+
+        throw lexception(_err, _errtext);
+    }
 
     //@{
     ///Match one of the rules. The parameters can be either literals (strings or
