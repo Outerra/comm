@@ -757,7 +757,7 @@ bool netSocket::isNonBlockingError()
 int netSocket::wait_read( int timeout )
 {
     if( handle == UMAXS )
-        return 0;
+        return -1;
 
     ::fd_set fdsr;
     FD_ZERO(&fdsr);
@@ -776,7 +776,7 @@ int netSocket::wait_read( int timeout )
 int netSocket::wait_write( int timeout )
 {
     if( handle == UMAXS )
-        return 0;
+        return -1;
 
     ::fd_set fdsr;
     FD_ZERO(&fdsr);
