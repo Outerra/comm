@@ -486,9 +486,13 @@ MAX_RELEASE_CHECK_RATE   default: 255 unless not HAVE_MMAP
 #define MSPACES 1
 #define USE_LOCKS 1
 
+//defined so that operations between different mspaces (different
+// modules) are possible
+#define FOOTERS 1    
+
+
 #ifdef _DEBUG
 #define DEBUG 1
-#define FOOTERS 1
 #define ABORT_ON_ASSERT_FAILURE 0
 #define ABORT do {assert(0); abort();} while(0)
 #endif //_DEBUG
