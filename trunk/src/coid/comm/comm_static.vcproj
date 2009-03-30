@@ -209,7 +209,7 @@
 				PrecompiledHeaderFile="$(IntDir)\comm_static.pch"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
-				DebugInformationFormat="0"
+				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
