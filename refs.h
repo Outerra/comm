@@ -198,6 +198,7 @@ public:
 
 	const ref_t& operator=(const ref_t& r)
 	{
+        release();
 		_p=r.add_ref_copy();
 		_o=r._o;
 		return *this;
