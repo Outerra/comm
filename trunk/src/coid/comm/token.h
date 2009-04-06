@@ -1155,6 +1155,30 @@ struct token
         return *this;
     }
 
+    ///Trim trailing space or tab characters
+    token& trim_space()
+    {
+        while( _ptr < _pte ) {
+            char c = _pte[-1];
+            if( c != ' '  &&  c != '\t' )
+                break;
+            --_pte;
+        }
+        return *this;
+    }
+
+    ///Skip leading space or tab characters
+    token& skip_space()
+    {
+        while( _ptr < _pte ) {
+            char c = *_ptr;
+            if( c != ' '  &&  c != '\t' )
+                break;
+            ++_ptr;
+        }
+        return *this;
+    }
+
     token& skip_ingroup( const token& sep, uints off=0 )
     {
         uints n = count_ingroup( sep, off );
