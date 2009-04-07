@@ -2223,9 +2223,9 @@ inline type_holder<T> get_type_holder(T*) {
 #define MMT(meta, n, t)             { meta.meta_variable<t>(n,0); }
 #define MMP(meta, n, v)             { meta.meta_variable_pointer(n,&(v)); }
 
-#define MMD(meta, n, v, d)          { meta.meta_variable(n,&(v)); meta.meta_cache_default( get_type_holder(&(v)) = d ); }
-#define MMED(meta, n, v, d)			{ meta.meta_variable_enum(n,&(v)); meta.meta_cache_default_enum( get_type_holder(&(v)) = d ); }
-#define MMTD(meta, n, t, d)         { meta.meta_variable<t>(n,0); meta.meta_cache_default( get_type_holder<t>(0) = d ); }
+#define MMD(meta, n, v, d)          { meta.meta_variable(n,&(v)); meta.meta_cache_default( coid::get_type_holder(&(v)) = d ); }
+#define MMED(meta, n, v, d)			{ meta.meta_variable_enum(n,&(v)); meta.meta_cache_default_enum( coid::get_type_holder(&(v)) = d ); }
+#define MMTD(meta, n, t, d)         { meta.meta_variable<t>(n,0); meta.meta_cache_default( coid::get_type_holder<t>(0) = d ); }
 
 #define MMAT(meta, n, t)            { meta.meta_variable_array<t>(n,0,UMAXS); }
 #define MMAF(meta, n, t, s)         { meta.meta_variable_array<t>(n,0,s); }
