@@ -1432,7 +1432,7 @@ protected:
                 fmts_or_cache_write_key();
         }
 
-        //ignore the struct open and close tokens nested in binstream operators,
+        //ignore the struct open and close tokens nested ikn binstream operators,
         // as we follow those within metastream operators instead
         if( t.type == type::T_STRUCTBGN  ||  t.type == type::T_STRUCTEND )
             return 0;
@@ -1924,6 +1924,7 @@ protected:
             if(e) {
                 //no more members under current compound
                 DASSERT( e == ersNO_MORE );
+				e=0;
                 break;
             }
 
