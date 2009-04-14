@@ -186,7 +186,7 @@ public:
     binstream& operator << (int x )             { return xwrite(&x, bstype::t_type<int>() ); }
     binstream& operator << (uint x )            { return xwrite(&x, bstype::t_type<uint>() ); }
 # endif
-#else
+#elif SYSTYPE_32
     binstream& operator << (long x )            { return xwrite(&x, bstype::t_type<long>() ); }
     binstream& operator << (ulong x )           { return xwrite(&x, bstype::t_type<ulong>() ); }
 #endif
@@ -254,7 +254,7 @@ public:
     binstream& operator >> (int& x )            { return xread(&x, bstype::t_type<int>() ); }
     binstream& operator >> (uint& x )           { return xread(&x, bstype::t_type<uint>() ); }
 # endif
-#else
+#elif SYSTYPE_32
     binstream& operator >> (long& x )           { return xread(&x, bstype::t_type<long>() ); }
     binstream& operator >> (ulong& x )          { return xread(&x, bstype::t_type<ulong>() ); }
 #endif  

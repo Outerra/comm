@@ -514,7 +514,7 @@ public:
     metastream& operator << (const int&a)       {meta_primitive( "int", get_type(a) ); return *this;}
     metastream& operator << (const uint&a)      {meta_primitive( "uint", get_type(a) ); return *this;}
 # endif
-#else
+#elif SYSTYPE_32
     metastream& operator << (const long&a)      {meta_primitive( "long", get_type(a) ); return *this;}
     metastream& operator << (const ulong&a)     {meta_primitive( "ulong", get_type(a) ); return *this;}
 #endif
