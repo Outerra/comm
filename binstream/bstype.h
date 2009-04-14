@@ -288,14 +288,19 @@ DEF_TYPE(   int64,              T_INT);
 
 DEF_TYPE(   char,               T_CHAR);
 
-#ifdef _MSC_VER                 
+#ifdef SYSTYPE_MSVC
+# ifdef SYSTYPE_32
+DEF_TYPE(   uints,              T_UINT);
+DEF_TYPE(   ints,               T_INT);
+# else
 DEF_TYPE(   uint,               T_UINT);
 DEF_TYPE(   int,                T_INT);
-#else                           
+# endif
+#elif SYSTYPE_32
 DEF_TYPE(   ulong,              T_UINT);
 DEF_TYPE(   long,               T_INT);
-#endif //_MSC_VER
-                            
+#endif
+
 DEF_TYPE(   float,              T_FLOAT);
 DEF_TYPE(   double,             T_FLOAT);
 DEF_TYPE(   long double,        T_FLOAT);

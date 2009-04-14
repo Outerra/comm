@@ -203,7 +203,7 @@ TYPE_TRIVIAL(uints);
 TYPE_TRIVIAL(int);
 TYPE_TRIVIAL(uint);
 # endif
-#else
+#elif SYSTYPE_32
 TYPE_TRIVIAL(long);
 TYPE_TRIVIAL(ulong);
 #endif
@@ -243,7 +243,7 @@ SIGNEDNESS_MACRO(uints,ints,uints);
 SIGNEDNESS_MACRO(int,int,uint);
 SIGNEDNESS_MACRO(uint,int,int);
 # endif
-#else
+#elif SYSTYPE_32
 SIGNEDNESS_MACRO(long,long,ulong);
 SIGNEDNESS_MACRO(ulong,long,ulong);
 #endif

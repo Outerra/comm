@@ -330,7 +330,7 @@ public:
     charstr& operator = (int i)                 { reset(); append_num(10,i); return *this; }
     charstr& operator = (uint i)                { reset(); append_num(10,i); return *this; }
 # endif
-#else
+#elif SYSTYPE_32
     charstr& operator = (long i)                { reset(); append_num(10,(ints)i);  return *this; }
     charstr& operator = (ulong i)               { reset(); append_num(10,(uints)i); return *this; }
 #endif //SYSTYPE_MSVC
@@ -401,7 +401,7 @@ public:
     charstr& operator += (int i)                { append_num(10,i); return *this; }
     charstr& operator += (uint i)               { append_num(10,i); return *this; }
 # endif
-#else
+#elif SYSTYPE_32
     charstr& operator += (long i)               { append_num(10,(ints)i);  return *this; }
     charstr& operator += (ulong i)              { append_num(10,(uints)i); return *this; }
 #endif //SYSTYPE_MSVC
@@ -487,7 +487,7 @@ public:
     charstr& operator << (int i)                { append_num(10,i); return *this; }
     charstr& operator << (uint i)               { append_num(10,i); return *this; }
 # endif
-#else
+#elif SYSTYPE_32
     charstr& operator << (long i)               { append_num(10,(ints)i);  return *this; }
     charstr& operator << (ulong i)              { append_num(10,(uints)i); return *this; }
 #endif //SYSTYPE_MSVC

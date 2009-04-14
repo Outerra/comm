@@ -123,6 +123,7 @@ template<> struct hash<unsigned long> {
     uints operator()(unsigned long x) const { return x; }
 };
 
+#if defined(SYSTYPE_MSVC) || defined(SYSTYPE_32)
 template<> struct hash<int64> {
     typedef int64 key_type;
     uints operator()(int64 x) const { return (uints)x; }
@@ -131,6 +132,7 @@ template<> struct hash<uint64> {
     typedef uint64 key_type;
     uints operator()(uint64 x) const { return (uints)x; }
 };
+#endif
 
 COID_NAMESPACE_END
 
