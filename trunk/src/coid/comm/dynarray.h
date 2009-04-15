@@ -263,19 +263,21 @@ public:
     }
 
     ///take control over buffer controlled by \a dest dynarray, \a dest ptr will be set to zero
-    dynarray& takeover( dynarray& src )
+    template<class COUNT2>
+    dynarray& takeover( dynarray<T,COUNT2>& src )
     {
         discard();
-        _ptr = src._ptr;
-        src._ptr = 0;
+        _ptr = src.ptr();
+        src.set_dynarray_conforming_ptr(0);
         return *this;
     }
 
     ///Swap content with another dynarray
-    dynarray& swap( dynarray& dest )
+    template<class COUNT2>
+    dynarray& swap( dynarray<T,COUNT2>& dest )
     {
-        T* t = dest._ptr;
-        dest._ptr = _ptr;
+        T* t = dest.ptr();
+        dest.set_dynarray_conforming_ptr(_ptr);
         _ptr = t;
         return *this;
     }
