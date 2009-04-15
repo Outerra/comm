@@ -75,13 +75,18 @@ class logmsg : public charstr
 {
 protected:
 	logger_file_ptr _lf;
+	int _type;
 
 public:
-	void set_log_file(logger_file_ptr& lf) { _lf=lf; }
+	void set_log_file(logger_file_ptr& lf,const int t) { _lf=lf; _type=t; }
 
 	void reset() { coid::charstr::reset(); _lf.release(); }
 
 	void write_to_file() { _lf->write_to_file(*this); }
+
+	int get_type() const { return _type; }
+
+	void set_type(const int t) { _type=t; }
 };
 
 DEFAULT_POLICY(logmsg,policy_queue_pooled);
@@ -104,13 +109,22 @@ typedef ref<logmsg> logmsg_ptr;
 class logger
 {
 public:
+	enum ELogType {
+		Info=0,
+		Warning,
+		Exception,
+		Error,
+		Debug,
+		Last
+	};
+
 	class logmsg_local
 	{
 	protected:
 		logmsg_ptr _lm;
 
 	public:
-		logmsg_local(logger_file_ptr& lf) : _lm(CREATE_ME) { _lm->set_log_file(lf); }
+		logmsg_local(logger_file_ptr& lf,const ELogType t) : _lm(CREATE_ME) { _lm->set_log_file(lf,t); }
 
 		logmsg_local() : _lm() {}
 
@@ -120,14 +134,6 @@ public:
 	};
 
 public:
-	enum ELogType {
-		Info=0,
-		Warning,
-		Exception,
-		Error,
-		Debug,
-		Last
-	};
 
     const token& type2tok( const ELogType t )
 	{
@@ -152,24 +158,24 @@ public:
 
 public:
 	logmsg_local operator()() {
-		logmsg_local lm(_logfile);
+		logmsg_local lm(_logfile,Info);
 		return lm;
 	}
 
 	logmsg_local operator()(const ELogType t) {
-		logmsg_local lm(_logfile);
+		logmsg_local lm(_logfile,t);
 		lm<<type2tok(t);
 		return lm;
 	}
 
 	logmsg_local operator()( const ELogType t,const char* fnc ) {
-		logmsg_local lm(_logfile);
+		logmsg_local lm(_logfile,t);
 		lm<<type2tok(t)<<fnc<<' ';
 		return lm;
 	}
 
 	logmsg_local operator()( const ELogType t,const char* fnc,const int line ) {
-		logmsg_local lm(_logfile);
+		logmsg_local lm(_logfile,t);
 		lm<<type2tok(t)<<fnc<<'('<<line<<')'<<' ';
 		return lm;
 	}
