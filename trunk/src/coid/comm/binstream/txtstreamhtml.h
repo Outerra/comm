@@ -51,8 +51,7 @@ class txtstreamhtml : public txtstream
     static const char* strnchr( const char* p, char c, uints len )
     {
         uints i;
-        //FIXME g++ 4.3.2 warning: array subscript has type ‘char’
-        for (i=0; i<len && (p[c]); ++i)
+        for (i=0; i<len && p[i]; ++i)
             if (p[i] == c)  return p+i;
         return 0;
     }
