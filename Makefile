@@ -19,9 +19,9 @@ else
 	CC = g++ $(CPPFLAGS) -Wall -DNDEBUG
 #	CC = g++ -Wall -DNDEBUG -O3
 endif
-ifeq ($(IS_SHARED_LIB), 1)
+#ifeq ($(IS_SHARED_LIB), 1)
 	CC += -fPIC
-endif
+#endif
 
 
 all: DELETE_DEPEND2 $(DEST) SUCCESS

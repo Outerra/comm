@@ -96,9 +96,24 @@ public:
     }
 
     ///Take control over content of another string, the other string becomes empty
-    charstr& takeover( dynarray<char,uint>& ref )
+    template<class COUNT>
+    charstr& takeover( dynarray<char,COUNT>& ref )
     {
         _tstr.takeover(ref);
+        if( _tstr.size() > 0  &&  _tstr[_tstr.size()-1] != 0 )
+            *_tstr.add() = 0;
+        return *this;
+    }
+
+    ///Take control over content of another string, the other string becomes empty
+    template<class COUNT>
+    charstr& takeover( dynarray<uchar,COUNT>& ref )
+    {
+        _tstr.discard();
+        uchar* p = ref.ptr();
+        ref.set_dynarray_conforming_ptr(0);
+        _tstr.set_dynarray_conforming_ptr((char*)p);
+
         if( _tstr.size() > 0  &&  _tstr[_tstr.size()-1] != 0 )
             *_tstr.add() = 0;
         return *this;
@@ -828,7 +843,8 @@ public:
         char* p = alloc_append_buf( filllen );
         uints n = len > filllen ? filllen : len;
         xmemcpy( p, tok.ptr(), n );
-        memset( p+n, fillchar, filllen - n );
+        if(filllen > n)
+            memset( p+n, fillchar, filllen - n );
     }
 
     ///Append UCS-4 character

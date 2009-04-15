@@ -97,14 +97,23 @@ public:
 
     void swap( charstr& str )
     {
-        str.takeover( reinterpret_cast<dynarray<char,uint>&>(_buf) );
+        str.takeover(_buf);
+        _bgi = 0;
+    }
+
+    template<class COUNT>
+    void swap( dynarray<char,COUNT>& buf )
+    {
+        _buf.swap(buf);
         _bgi = 0;
     }
 
     template<class COUNT>
     void swap( dynarray<uchar,COUNT>& buf )
     {
-        _buf.swap( reinterpret_cast<dynarray<char>&>(buf) );
+        uchar* p = (uchar*)_buf.ptr();
+        _buf.set_dynarray_conforming_ptr((char*)buf.ptr());
+        buf.set_dynarray_conforming_ptr(p);
         _bgi = 0;
     }
 
