@@ -327,7 +327,7 @@ public:
     }
 
     charstr& operator = (char c)                { reset(); append(c); return *this; }
-    
+
     charstr& operator = (int8 i)                { reset(); append_num(10,(int)i);  return *this; }
     charstr& operator = (uint8 i)               { reset(); append_num(10,(uint)i); return *this; }
     charstr& operator = (int16 i)               { reset(); append_num(10,(int)i);  return *this; }
@@ -345,7 +345,7 @@ public:
     charstr& operator = (int i)                 { reset(); append_num(10,i); return *this; }
     charstr& operator = (uint i)                { reset(); append_num(10,i); return *this; }
 # endif
-#elif SYSTYPE_32
+#elif defined(SYSTYPE_32)
     charstr& operator = (long i)                { reset(); append_num(10,(ints)i);  return *this; }
     charstr& operator = (ulong i)               { reset(); append_num(10,(uints)i); return *this; }
 #endif //SYSTYPE_MSVC
@@ -384,7 +384,7 @@ public:
     static uint count_ingroup( const char* str, const char* sep )
     {   return (uint)::strspn( str, sep );   }
 
-    
+
     //concatenation
     charstr& operator += (const char *czstr) {
         if(!czstr) return *this;
@@ -416,7 +416,7 @@ public:
     charstr& operator += (int i)                { append_num(10,i); return *this; }
     charstr& operator += (uint i)               { append_num(10,i); return *this; }
 # endif
-#elif SYSTYPE_32
+#elif defined(SYSTYPE_32)
     charstr& operator += (long i)               { append_num(10,(ints)i);  return *this; }
     charstr& operator += (ulong i)              { append_num(10,(uints)i); return *this; }
 #endif //SYSTYPE_MSVC
@@ -502,7 +502,7 @@ public:
     charstr& operator << (int i)                { append_num(10,i); return *this; }
     charstr& operator << (uint i)               { append_num(10,i); return *this; }
 # endif
-#elif SYSTYPE_32
+#elif defined(SYSTYPE_32)
     charstr& operator << (long i)               { append_num(10,(ints)i);  return *this; }
     charstr& operator << (ulong i)              { append_num(10,(uints)i); return *this; }
 #endif //SYSTYPE_MSVC
@@ -638,7 +638,7 @@ public:
                 {
                     UINT d = n / BaseN;
                     UINT m = n % BaseN;
-        
+
                     if( m>9 )
                         buf[i++] = 'a' + (char)m - 10;
                     else
@@ -679,7 +679,7 @@ public:
                 for( ; fillcnt>0; --fillcnt )
                     *p++ = '0';
             }
-        
+
             for( ; i>0; )
             {
                 --i;
@@ -689,7 +689,7 @@ public:
             if(fillcnt)
             {
                 char fc = (align==ALIGN_NUM_LEFT_PAD_0)  ?  0 : ' ';
-                
+
                 for( ; fillcnt>0; --fillcnt )
                     *p++ = fc;
             }
@@ -839,7 +839,7 @@ public:
         uints len = tok.lens();
         if( filllen == 0 )
             filllen = len;
-        
+
         char* p = alloc_append_buf( filllen );
         uints n = len > filllen ? filllen : len;
         xmemcpy( p, tok.ptr(), n );
@@ -949,7 +949,7 @@ public:
         //RFC 822, updated by RFC 1123
         //Tue, 15 Nov 1994 08:12:31 GMT
         static const char* wday[] = { "Sun, ", "Mon, ", "Tue, ", "Wed, ", "Thu, ", "Fri, ", "Sat, " };
-        
+
         if( flg & DATE_WDAY )
             add_from( wday[tm.tm_wday], 5 );
 
@@ -963,7 +963,7 @@ public:
         };
         if( flg & DATE_MONTH )
             add_from( mon[tm.tm_mon], 4 );
-        
+
         if( flg & DATE_YEAR ) {
             append_num(10, tm.tm_year+1900);
             append(' ');
@@ -1182,7 +1182,7 @@ public:
 
 
     char& operator [] (uints i)                 { return _tstr[i]; }
-    
+
 
     bool operator == (const charstr& str) const
     {
@@ -1455,7 +1455,7 @@ public:
 
     uints touint( uints offs=0 ) const      { return token(ptr()+offs, ptre()).touint(); }
     ints toint( uints offs=0 ) const        { return token(ptr()+offs, ptre()).toint(); }
-    
+
     uints xtouint( uints offs=0 ) const     { return token(ptr()+offs, ptre()).xtouint(); }
     ints xtoint( uints offs=0 ) const       { return token(ptr()+offs, ptre()).xtoint(); }
 
@@ -1754,7 +1754,7 @@ inline bool token::utf8_to_wchar_buf( dynarray<wchar_t,uint,A>& dst ) const
     dst.reset();
     uints n = lens();
     const char* p = ptr();
-    
+
     while(n>0)
     {
         if( (uchar)*p <= 0x7f ) {
@@ -1913,7 +1913,7 @@ struct ndigit_fmt
     ints _i;
     uint _numc;
     charstr::EAlignNum _align;
-    
+
     explicit ndigit_fmt( ints i, uint numc, charstr::EAlignNum align = charstr::ALIGN_NUM_RIGHT )
         : _i(i),_numc(numc),_align(align) { }
 

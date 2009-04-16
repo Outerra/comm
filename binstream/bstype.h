@@ -296,7 +296,7 @@ DEF_TYPE(   ints,               T_INT);
 DEF_TYPE(   uint,               T_UINT);
 DEF_TYPE(   int,                T_INT);
 # endif
-#elif SYSTYPE_32
+#elif defined(SYSTYPE_32)
 DEF_TYPE(   ulong,              T_UINT);
 DEF_TYPE(   long,               T_INT);
 #endif
