@@ -514,7 +514,7 @@ public:
     metastream& operator << (const int&a)       {meta_primitive( "int", get_type(a) ); return *this;}
     metastream& operator << (const uint&a)      {meta_primitive( "uint", get_type(a) ); return *this;}
 # endif
-#elif SYSTYPE_32
+#elif defined(SYSTYPE_32)
     metastream& operator << (const long&a)      {meta_primitive( "long", get_type(a) ); return *this;}
     metastream& operator << (const ulong&a)     {meta_primitive( "ulong", get_type(a) ); return *this;}
 #endif
@@ -540,7 +540,7 @@ public:
     metastream& operator << (const charstr&a)   {meta_array(); meta_primitive( "char", bstype::t_type<char>() ); return *this;}
     metastream& operator << (const token&a)     {meta_array(); meta_primitive( "char", bstype::t_type<char>() ); return *this;}
 
-    
+
     ////////////////////////////////////////////////////////////////////////////////
     //@{ meta_* functions deal with building the description tree
 protected:
@@ -590,7 +590,7 @@ protected:
     bool is_template_name_mode() {
         return _templ_name_stack.size() > 0;
     }
-    
+
     bool handle_template_name_mode( const token& name )
     {
         charstr& k = *_templ_name_stack.last();
@@ -777,7 +777,7 @@ public:
         MetaDesc* d = _map.create_array_desc( 0, _cur_streamfrom_fnc, _cur_streamto_fnc );
 
         _current_var = meta_fill_parent_variable(d);
-        
+
         //create default value for pointers = a null pointer header
         *(uints*)_current_var->defval.add(sizeof(uints)) = sizeof(uints); //dummy offset
         *_current_var->defval.add() = 0;
@@ -839,7 +839,7 @@ public:
         static charstr get_str( metastream& meta )
         {
             const MetaDesc* dsc = meta.get_type_desc( (const T*)0 );
-            
+
             charstr res;
 
             dsc->type_string(res);
@@ -953,7 +953,7 @@ private:
 
     StructureMap _map;
     charstr _err;
-    
+
     // description parsing:
     MetaDesc::Var _root;
     MetaDesc::Var* _current_var;
@@ -973,14 +973,14 @@ private:
 
     dynarray<VarEntry> _stack;          ///< stack for current variable
 
-    VarEntry _curvar;                   ///< currently processed variable (read/write)            
+    VarEntry _curvar;                   ///< currently processed variable (read/write)
 
     charstr _rvarname;                  ///< name of variable that follows in the input stream
     charstr _struct_name;               ///< used during the template name building step
 
     dynarray<charstr> _templ_name_stack;
     bool _templ_arg_rdy;
- 
+
     bool _beseparator;                  ///< true if separator between members should be read or written
 
     bool _disable_meta_write;           ///< disable meta functionality for writting
@@ -1373,7 +1373,7 @@ protected:
                     _current = _cachestack.pop();
                     _cachedefval = 0;
                 }
-                
+
                 if( _curvar.var == _cachequit )
                     invalidate_cache_entry();
             }
@@ -1448,7 +1448,7 @@ protected:
     }
 
     ///This is called from internal binstream when a primitive data or control token is
-    /// read. 
+    /// read.
     opcd data_read( void* p, type t )
     {
         //DASSERT( !t.is_array_control_type() || !_curvar.var || _curvar.var->is_array() );
@@ -1498,7 +1498,7 @@ protected:
                 _current = _cachestack.pop();
                 _cachedefval = 0;
             }
-            
+
             if( _curvar.var == _cachequit )
                 invalidate_cache_entry();
         }*/

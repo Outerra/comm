@@ -186,11 +186,11 @@ public:
     binstream& operator << (int x )             { return xwrite(&x, bstype::t_type<int>() ); }
     binstream& operator << (uint x )            { return xwrite(&x, bstype::t_type<uint>() ); }
 # endif
-#elif SYSTYPE_32
+#elif defined(SYSTYPE_32)
     binstream& operator << (long x )            { return xwrite(&x, bstype::t_type<long>() ); }
     binstream& operator << (ulong x )           { return xwrite(&x, bstype::t_type<ulong>() ); }
 #endif
-    
+
     binstream& operator << (float x )           { return xwrite(&x, bstype::t_type<float>() ); }
     binstream& operator << (double x )          { return xwrite(&x, bstype::t_type<double>() ); }
     binstream& operator << (long double x )     { return xwrite(&x, type(type::T_FLOAT,16) ); }
@@ -209,7 +209,7 @@ public:
     binstream& operator << (const bstype::pointer<T>& p) {
         uint8 valid = (*p.ptr != 0);
         xwrite(&valid, type(type::T_OPTIONAL,sizeof(valid)));
-        
+
         if(valid)
             *this << **p.ptr;
 
@@ -254,10 +254,10 @@ public:
     binstream& operator >> (int& x )            { return xread(&x, bstype::t_type<int>() ); }
     binstream& operator >> (uint& x )           { return xread(&x, bstype::t_type<uint>() ); }
 # endif
-#elif SYSTYPE_32
+#elif defined(SYSTYPE_32)
     binstream& operator >> (long& x )           { return xread(&x, bstype::t_type<long>() ); }
     binstream& operator >> (ulong& x )          { return xread(&x, bstype::t_type<ulong>() ); }
-#endif  
+#endif
 
     binstream& operator >> (float& x )          { return xread(&x, bstype::t_type<float>() ); }
     binstream& operator >> (double& x )         { return xread(&x, bstype::t_type<double>() ); }
@@ -273,7 +273,7 @@ public:
     binstream& operator >> (const bstype::pointer<T>& p) {
         uint8 valid;
         xread(&valid, type(type::T_OPTIONAL,sizeof(valid)));
-        
+
         if(valid) {
             *p.ptr_const = new typename bstype::pointer<T>::Tnc;
             *this >> **p.ptr;
@@ -284,7 +284,7 @@ public:
 
     binstream& operator >> (opcd& x)
     {
-		ushort e;
+        ushort e;
         xread( &e, bstype::t_type<opcd>() );
 		x.set(e);
         return *this;
@@ -294,7 +294,7 @@ public:
     ///Read error code from binstream. Also translates binstream errors to 
     opcd read_error()
     {
-		ushort ec;
+        ushort ec;
         opcd e = read( &ec, bstype::t_type<opcd>() );
         if(!e)
             e.set(ec);
@@ -577,7 +577,7 @@ public:
         uints n=0;
 		const uints BLOCKSIZE=4096;
         uchar buf[BLOCKSIZE];
-		
+
         for ( ;; )
         {
 			uints len = dlen>BLOCKSIZE ? BLOCKSIZE : dlen;
@@ -881,7 +881,7 @@ public:
 
     ///Peek at the output if writing is possible
     virtual opcd peek_write( uint timeout ) = 0;
-    
+
 	////////////////////////////////////////////////////////////////////////////////
     ///Read until @p ss substring is read or @p max_size bytes received
     virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS ) = 0;
@@ -891,7 +891,7 @@ public:
     {
         return read_until( substring::newline(), bout, max_size );
     }
-    
+
 
     //@{ Methods for streams where the medium should be opened before use and closed after.
     /**
@@ -910,7 +910,7 @@ public:
     ///Bind to another binstream (for wrapper and formatting binstreams)
     /// @param io which stream to bind (input or output one), can be ignored if not supported
     virtual opcd bind( binstream& bin, int io=0 )   { return ersNOT_IMPLEMENTED; }
-    
+
     ///io argument to bind method
     /// negative values used to bind input streams, positive values used to bind output streams
     enum {
@@ -918,7 +918,7 @@ public:
         BIND_INPUT      = -1,           ///< bind input path
         BIND_OUTPUT     =  1, };        ///< bind output path
 
-    
+
     ///Flush pending output data. Binstreams that use flush/ack synchronization use it to signal
     /// the end of the current write packet, that must be matched by an acknowledge() when reading
     /// from the binstream.
@@ -968,10 +968,10 @@ public:
         size by subtracting the starting offset from current get_size() value.
         Afterwards use overwrite_raw to write actual size at the placeholder position.
     **/
-    
+
     ///Get written amount of bytes
     virtual uint64 get_written_size() const         { return UMAX64; }
-    
+
     ///Cut to specified length, negative numbers cut abs(len) from the end
     virtual uint64 set_written_size( int64 n )      { return UMAX64; }
 
@@ -986,7 +986,7 @@ public:
     virtual opcd overwrite_raw( uint64 pos, const void* data, uints len ) {
         return ersNOT_IMPLEMENTED;
     }
-    
+
     //@}
 
 
