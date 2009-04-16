@@ -783,10 +783,10 @@ public:
 
     ///Append floating point number
     ///@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
-    void append( double d, int nfrac )
+    void append( double d, int nfrac, int minsize=0)
     {
         double w = d>0 ? floor(d) : ceil(d);
-        append_num( 10, (int64)w );
+        append_num( 10, (int64)w, minsize );
         append('.');
         append_fraction( fabs(d-w), nfrac );
     }
