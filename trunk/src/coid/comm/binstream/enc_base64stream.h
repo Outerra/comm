@@ -319,9 +319,6 @@ private:
     ///@return bytes not read
     uints decode( uint8* p, uints len )
     {
-        if( len > _rrem )
-            len = _rrem;
-
         for( ; _ndec>0 && len>0 && _rrem>0; --len, --_rrem )
         {
             --_ndec;
