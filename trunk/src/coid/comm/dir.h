@@ -66,7 +66,16 @@ public:
     static bool append_path( charstr& dst, token path );
 
     ///Open directory for iterating files using the filter
+    opcd open( token path_and_pattern ) {
+        token pattern = path_and_pattern;
+        token path = pattern.cut_left_back("\\/", token::cut_trait_remove_sep_default_empty());
+        return open(path, pattern);
+    }
+
+    ///Open directory for iterating files using the filter
     opcd open( const token& path, const token& filter );
+
+    ///Open the current directory for iterating files using the filter
     opcd open_cwd( const token& filter )
     {
         charstr path;
