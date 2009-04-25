@@ -56,7 +56,8 @@ protected:
     binstream*  _binw;
 
     local<binstreambuf> _readbuf;
-    token _flush;
+    token _flush;                       ///< token to insert on explicit flush
+    char _autoflush;                    ///< character to catch in input and invoke flush
 
 public:
 
@@ -69,9 +70,12 @@ public:
     }
 
     ///@param s specifies string that should be appended to output upon flush()
-    void set_flush_token( const token& s )
-    {
+    void set_flush_token( const token& s ) {
         _flush = s;
+    }
+
+    void flush_on_character( char c ) {
+        _autoflush = c;
     }
 
     virtual opcd write( const void* p, type t )
@@ -140,7 +144,11 @@ public:
         case type::T_KEY:
         case type::T_CHAR: {
             uints size = t.get_size();
-            return _binw->write_raw( p, size );
+            opcd e = _binw->write_raw( p, size );
+
+            if(*(char*)p == _autoflush)
+                flush();
+            return e;
         }
 
         case type::T_ERRCODE:
@@ -193,10 +201,18 @@ public:
         opcd e;
         if( c.is_continuous()  &&  n != UMAXS )
         {
-            //n *= t.get_size();
-            e = write_raw( c.extract(n), n );
+            const void* pv = c.extract(n);
+            bool bfl = _autoflush
+                ? ::memchr((const char*)pv, _autoflush, n) != 0
+                : false;
 
-            if(!e)  *count = n;
+            //n *= t.get_size();
+            e = write_raw(pv, n);
+
+            if(!e) {
+                *count = n;
+                if(bfl) flush();
+            }
         }
         else
             e = write_compound_array_content(c,count);
@@ -391,17 +407,19 @@ public:
     }
 
     txtstream (binstream& b) : _binr(&b), _binw(&b)
-    {   _flush = ""; }
+    {   _flush = "";  _autoflush=0; }
     txtstream (binstream* br, binstream* bw=0) : _binr(br), _binw(bw == 0 ? br : bw)
-    {   _flush = ""; }
+    {   _flush = "";  _autoflush=0; }
     txtstream ()
-    {   _binr = _binw = 0;  _flush = ""; }
+    {   _binr = _binw = 0;  _flush = "";  _autoflush=0; }
 
     txtstream (charstr& str, binstream* bw = 0)
     {
         _readbuf = new binstreambuf(str);
         _binr = _readbuf;
         _binw = bw ? bw : _binr;
+        _flush = "";
+        _autoflush = 0;
     }
 
     txtstream (const token& str, binstream* bw = 0)
@@ -409,6 +427,8 @@ public:
         _readbuf = new binstreambuf(str);
         _binr = _readbuf;
         _binw = bw ? bw : _binr;
+        _flush = "";
+        _autoflush = 0;
     }
 
     ~txtstream ()
