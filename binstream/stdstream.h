@@ -53,7 +53,6 @@ public:
     stdoutstream()
     {
         create_internal_buffer();
-        set_flush_token("\n");
         flush_on_character('\n');
     }
 
