@@ -1004,16 +1004,6 @@ public:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-
-#define BINSTREAM_FLUSH     binstream::BINSTREAM_FLUSH()
-#define BINSTREAM_ACK       binstream::BINSTREAM_ACK()
-#define BINSTREAM_ACK_EAT   binstream::BINSTREAM_ACK_EAT()
-
-//#define STRUCT_OPEN         binstream::STRUCT_OPEN()
-//#define STRUCT_CLOSE        binstream::STRUCT_CLOSE()
-
-
-////////////////////////////////////////////////////////////////////////////////
 ///Helper template for streaming enum values
 template<int S> struct EnumType     { typedef int      TEnum; };
 template<> struct EnumType<8>       { typedef int64    TEnum; };
@@ -1062,5 +1052,13 @@ struct opcd_formatter
 };
 
 COID_NAMESPACE_END
+
+////////////////////////////////////////////////////////////////////////////////
+
+#define BINSTREAM_FLUSH     coid::binstream::BINSTREAM_FLUSH()
+#define BINSTREAM_ACK       coid::binstream::BINSTREAM_ACK()
+#define BINSTREAM_ACK_EAT   coid::binstream::BINSTREAM_ACK_EAT()
+
+
 
 #endif //__COID_COMM_BINSTREAM__HEADER_FILE__

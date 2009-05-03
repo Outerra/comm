@@ -45,9 +45,12 @@
 #include "./_malloc.h"
 
 #define COIDNEWDELETE \
-    void* operator new( size_t size )   { return dlmalloc(size); } \
+    void* operator new( size_t size ) { \
+        void* p=::dlmalloc(size); \
+        if(p==0) throw std::bad_alloc(); \
+        return p; } \
     void* operator new( size_t, void* p ) { return p; } \
-    void operator delete(void* ptr)     { dlfree(ptr); } \
+    void operator delete(void* ptr)     { ::dlfree(ptr); } \
     void operator delete(void*, void*)  { }
 
 
