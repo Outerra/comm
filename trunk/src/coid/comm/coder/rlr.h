@@ -58,6 +58,9 @@ struct rlr_coder
     rlr_coder() {
         planes.realloc(8*sizeof(INT));
         //reset();
+
+        bits_lossy = 0;
+        bits_full = 0;
     }
 
     ///
@@ -84,6 +87,27 @@ struct rlr_coder
             decodex( maxplane, data, len );
     }
 
+    uints decode_lossy( const INT* rndvals, uint8 cutbits, INT* data, uints len, binstream& bin )
+    {
+        reset(false);
+        uints size = load(bin);
+
+        dataend = data + len;
+
+        if(maxplane == 0)
+            ::memset( data, 0, len*sizeof(INT) );
+        else
+            decodex_lossy( rndvals, cutbits, maxplane, data, len );
+
+        return size;
+    }
+
+    void get_sizes( uints& bits_lossy, uints& bits_full ) const {
+        bits_lossy = this->bits_lossy;
+        bits_full = this->bits_full;
+    }
+
+
 protected:
     void save( binstream& bin )
     {
@@ -96,15 +120,18 @@ protected:
             planes[minplane-1].write_to(bin);
     }
 
-    void load( binstream& bin )
+    uints load( binstream& bin )
     {
+        uints size = sizeof(maxplane);
         bin >> maxplane;
 
         for( int8 i=maxplane; i>minplane; --i )
-            planes[i-1].read_from(bin);
+            size += planes[i-1].read_from(bin);
 
         if(minplane>0)
-            planes[minplane-1].read_from(bin);
+            size += planes[minplane-1].read_from(bin);
+
+        return size;
     }
 
     void reset( bool enc )
@@ -164,13 +191,6 @@ protected:
 
     void decodex( int8 plane, INT* data, uints len )
     {
-/*
-        if(plane == 0) {
-            for(; len>0; --len)
-                *data++ = 0;
-            return;
-        }
-*/
         --plane;
         rlr_bitplane& rp = planes[plane];
 
@@ -179,7 +199,7 @@ protected:
         while(len>0)
         {
             if(n == 0) {
-                *data++ = rp.read1();
+                *data++ = decode_sign( (1 << plane) | rp.read() );
                 --n;
                 --len;
                 rp.zeros(dataend - data);
@@ -198,7 +218,7 @@ protected:
             }
             else if( plane <= minplane ) {
                 while(k-->0)
-                    *data++ = rp.read0();
+                    *data++ = decode_sign( rp.read() );
             }
             else {
                 decodex( plane, data, k );
@@ -206,6 +226,68 @@ protected:
             }
         }
     }
+
+    void decodex_lossy( const INT* rndvals, int8 cutbits, int8 plane, INT* data, uints len )
+    {
+        --plane;
+        rlr_bitplane& rp = planes[plane];
+
+        //mask for random numbers, shifted 1 bit to the left to keep the sign bit
+        int8 cut = int_min(int8(plane-1), cutbits);
+        cut = cut<0 ? 0 : cut;
+        uint padmask = ((1 << cut) - 1) << 1;
+        uint invmask = ~padmask;
+        ints& n = rp.zeros(dataend - data);
+
+        while(len>0)
+        {
+            if(n == 0) {
+                INT lowbits = plane
+                    ? (rp.read(cutbits) & invmask) | (*rndvals++ & padmask)
+                    : 0;
+
+                *data++ = decode_sign( (1 << plane) | lowbits );
+                --n;
+                --len;
+                rp.zeros(dataend - data);
+
+                bits_full += plane;
+                bits_lossy += plane - cut;
+            }
+
+            //n elements encoded in lower planes
+            uints k = int_min(len, uints(n));
+            if(!k) continue;
+
+            len -= k;
+            n -= k;
+
+            if( plane == 0 ) {
+                while(k-->0) {
+                    *data++ = 0;
+                    ++rndvals;
+                }
+            }
+            else if( plane <= minplane ) {
+                while(k-->0) {
+                    *data++ = decode_sign( (rp.read(cutbits) & invmask) | (*rndvals++ & padmask) );
+
+                    bits_full += plane;
+                    bits_lossy += plane - cut;
+                }
+            }
+            else {
+                decodex_lossy(rndvals, cutbits, plane, data, k);
+                data += k;
+                rndvals += k;
+            }
+        }
+    }
+
+    static INT decode_sign( INT v ) {
+        return (INT(v<<BITS)>>BITS) ^ (v>>1);
+    }
+
 
 private:
 
@@ -254,7 +336,7 @@ private:
             bin.xwrite_raw( buf.ptr(), total );
         }
 
-        void read_from( binstream& bin )
+        uints read_from( binstream& bin )
         {
             uint pos;
             bin >> pos;
@@ -266,53 +348,45 @@ private:
             bin.xread_raw(
                 buf.realloc(align_to_chunks(total, sizeof(uint))),
                 total );
+
+            return total;
         }
 
         rlr_bitplane() {
             //reset(UMAXS);
         }
 
-        INT read1()
+        ///Read raw bits from stream
+        UINT read()
         {
-            UINT v = (1<<plane) | read_rem(plane);
-            return (INT(v<<BITS)>>BITS) ^ (v>>1);
-        }
+            UINT v = 0;
 
-        INT read0()
-        {
-            UINT v = read_rem(plane);
-            return (INT(v<<BITS)>>BITS) ^ (v>>1);
-        }
-
-/*
-        void readn( INT* data, uints len )
-        {
-            static const int8 bits = 8*sizeof(INT)-1;
-
-            while(len>0) {
-                if(nzero == 0) {
-                    *data++ = read();
-                    --len;
-                    zeros(len);
-                }
-
-                //n elements encoded in lower planes
-                uints k = int_min(len, uints(nzero));
-
-                nzero -= k;
-                len -= k;
-
-                if( plane == 0 ) {
-                    while(k-->0)
-                        *data++ = 0;
-                }
-                else while(k-->0) {
-                    UINT v = read_rem(plane+1);
-                    *data++ = (INT(v<<bits)>>bits) ^ (v>>1);
-                }
+            for( uint8 i=0; i<plane && bitpos<lastpos; ++i ) {
+                v |= ((buf[bitpos>>5] >> (bitpos&31))&1) << i;
+                ++bitpos;
             }
+
+            return v;
         }
-*/
+
+        ///Read raw bits from stream, filling up the cut bits with random bits
+        INT read( uint cutbits )
+        {
+            UINT v = 0;
+
+            //TODO: do it
+            for( uint8 i=0; i<plane && bitpos<lastpos; ++i ) {
+                v |= ((buf[bitpos>>5] >> (bitpos&31))&1) << i;
+                ++bitpos;
+            }
+
+            //TEMPORARY
+            v &= ~(((1 << cutbits) - 1) << 1);
+
+
+            return v;
+        }
+
         ///Decode count of zeroes followed by 1
         bool decode0()
         {
@@ -450,18 +524,8 @@ private:
             return count;
         }
 
-        UINT read_rem( uint8 nbits ) {
-            UINT v = 0;
-
-            for( uint8 i=0; i<nbits && bitpos<lastpos; ++i ) {
-                v |= ((buf[bitpos>>5] >> (bitpos&31))&1) << i;
-                ++bitpos;
-            }
-
-            return v;
-        }
-
     private:
+
         ints nzero;
         uints lastpos;
 
@@ -482,6 +546,9 @@ private:
     uints pos;
     int8 plane;
     int8 maxplane;
+
+    uints bits_lossy;
+    uints bits_full;
 };
 
 COID_NAMESPACE_END
