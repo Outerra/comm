@@ -2245,8 +2245,8 @@ inline type_holder<T> get_type_holder(T*) {
 
 
 ///TODO: move to dynarray.h:
-template <class T>
-metastream& operator << ( metastream& m, const dynarray<T>& )
+template <class T, class COUNT, class A>
+metastream& operator << ( metastream& m, const dynarray<T,COUNT,A>& )
 {
     m.meta_array();
     m << *(T*)0;

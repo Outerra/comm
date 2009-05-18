@@ -90,11 +90,11 @@ public:
     }
 
 
-    bool is_in_page( const dynarray<T>& a, uints pg ) const
+    bool is_in_page( const T* a, uints pg ) const
     {
         RASSERT( pg < _pages.size() );
         ssegpage* spg = _pages[pg];
-        return spg  &&  spg->can_be_valid(a._ptr);
+        return spg  &&  spg->can_be_valid(a);
     }
 
 
