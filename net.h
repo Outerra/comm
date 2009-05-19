@@ -92,7 +92,10 @@ public:
   	uint32  sin_addr;
 	char 	__pad[8];
 
-    static substring protocol;
+    const substring& protocol() {
+        static substring _protocol("://");
+        return _protocol;
+    }
 
 public:
     netAddress() ;
