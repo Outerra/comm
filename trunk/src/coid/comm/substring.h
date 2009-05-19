@@ -61,11 +61,7 @@ public:
     substring( const token& tok )               { _shf=0; set(tok); }
     explicit substring( char k )                { _shf=0; set(k); }
 
-    ~substring()
-    {
-        if(_shf)
-            delete[] _shf;
-    }
+    ~substring();
 
     substring& operator = ( const token& tok )  { set(tok);  return *this; }
 
@@ -82,57 +78,8 @@ public:
 
 
     ///Initialize with string
-    void set( const char* subs, uints len )
-    {
-        if(len == 1)
-            return set(*subs);
-
-        _subs = (const uchar*)subs;
-        _len = len;
-
-        //create uninitialized distance array, compute range and fill the distances
-        // the dist array stores how many characters remain until the end of the substring
-        // from the last occurence of each of the characters in the substring
-        //note value 0 means that the character isn't there and it's safe to skip
-        // whole substring length as the substring cannot be there
-        _from = _to = *subs++;
-        uints dist[256];
-        dist[_to] = len;
-
-        for( uints i=1; i<len; ++i,++subs ) {
-            uchar c = *subs;
-            if( c < _from ) {
-                ::memset( dist+c+1, 0, (_from-c-1)*sizeof(uints) );
-                _from = c;
-            }
-            if( c > _to ) {
-                ::memset( dist+_to+1, 0, (c-_to-1)*sizeof(uints) );
-                _to = c;
-            }
-
-            dist[c] = len - i;
-        }
-
-        if(_shf)
-            delete[] _shf;
-
-        uints n = (uints)_to+1 - (uints)_from;
-        _shf = new uints[n];
-        ::memcpy(_shf, dist+_from, n*sizeof(uints));
-    }
-
-    void set( char k )
-    {
-        _from = _to = k;
-
-        if(_shf)
-            delete[] _shf;
-        _shf = 0;
-
-        _subs = &_from; //for comparison in find_onechar
-        _len = 1;
-    }
-
+    void set( const char* subs, uints len );
+    void set( char k );
     void set( const token& tok );
 
     ///Length of the contained substring
