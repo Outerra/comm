@@ -33,6 +33,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "substring.h"
+#include "alloc/commalloc.h"
 
 namespace coid {
 
@@ -40,7 +41,7 @@ namespace coid {
 substring::~substring()
 {
     if(_shf)
-        delete[] _shf;
+        dlfree(_shf);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -79,7 +80,7 @@ void substring::set( const char* subs, uints len )
         delete[] _shf;
 
     uints n = (uints)_to+1 - (uints)_from;
-    _shf = new uints[n];
+    _shf = (uints*)dlmalloc(n * sizeof(uints));//new uints[n];
     ::memcpy(_shf, dist+_from, n*sizeof(uints));
 }
 
@@ -89,7 +90,7 @@ void substring::set( char k )
     _from = _to = k;
 
     if(_shf)
-        delete[] _shf;
+        dlfree(_shf);
     _shf = 0;
 
     _subs = &_from; //for comparison in find_onechar
