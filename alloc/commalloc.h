@@ -39,6 +39,7 @@
 
 #include "../namespace.h"
 #include "../singleton.h"
+#include <exception>
 
 #define USE_DL_PREFIX
 #define MSPACES 1

@@ -33,7 +33,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "substring.h"
-#include "alloc/commalloc.h"
+#include "alloc/_malloc.h"
 
 namespace coid {
 
