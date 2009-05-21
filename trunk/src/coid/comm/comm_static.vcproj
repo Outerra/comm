@@ -1005,6 +1005,10 @@
 				RelativePath=".\str-win.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\substring.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="sync"
