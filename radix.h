@@ -39,18 +39,18 @@
 #define __COID_COMM_RADIX__HEADER_FILE__
 
 #include "namespace.h"
-#include <algorithm>
+#include <functional>
 
 #include "dynarray.h"
 
 COID_NAMESPACE_BEGIN
 
 ///Return ptr to int data used for sorting
-template <class INT>
+template <class INT, class T>
 struct T_GET_INT
 {
-    INT operator() (const void* p) const {
-        return *(INT*)p;
+    INT operator() (const T& p) const {
+        return *(INT*)&p;
     }
 };
 
@@ -65,7 +65,7 @@ template<
     class T,
     class INT_IDX = uints,
     class INT_DAT = INT_IDX,
-    class GETINT = T_GET_INT<INT_DAT>
+    class GETINT = T_GET_INT<INT_DAT,T>
 >
 class radixi
 {
@@ -95,7 +95,7 @@ public:
 
     ///Sort integer data
     //@param ascending true for ascending order, false for descending one
-    //@param psort array to sort
+    //@param psort array to sort (random access via [] operator required)
     //@param nitems number of elements in the array
     //@param useindex true if the current index should be used (preserves partial order in the index)
     //@param stride byte size of an array element
