@@ -762,11 +762,17 @@ public:
     }
 
     ///Append time (secs)
-    void append_time_formatted( uint64 n )
+    void append_time_formatted( uint64 n, bool msec=false )
     {
         if(n == 0) {
             *this << "00:00";
             return;
+        }
+
+        uint ms;
+        if(msec) {
+            ms = uint(n % 1000);
+            n /= 1000;
         }
 
         uint hrs = uint(n / 3600);
@@ -779,6 +785,11 @@ public:
         append_num(10, mns, 2, charstr::ALIGN_NUM_RIGHT_FILL_ZEROS);
         append(':');
         append_num(10, sec, 2, charstr::ALIGN_NUM_RIGHT_FILL_ZEROS);
+
+        if(msec) {
+            append('.');
+            append_num(10, ms, 3, charstr::ALIGN_NUM_RIGHT_FILL_ZEROS);
+        }
     }
 
     ///Append floating point number
