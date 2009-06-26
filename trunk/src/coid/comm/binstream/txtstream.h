@@ -329,37 +329,15 @@ public:
         _binr = _readbuf;
     }
 
-
-    void append_num( int base, uint n, uints minsize=0, charstr::EAlignNum align=charstr::ALIGN_NUM_RIGHT )
+    template<class NUM>
+    void append_num( int base, NUM n, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
     {
         char buf[256];
-        token tok = charstr::num<uint>::insert( buf, 256, n, base, 0, minsize, align );
+        token tok = charstrconv::num_formatter<NUM>::insert( buf, 256, n, base, minsize, align );
         _binw->xwrite_token_raw(tok);
     }
 
-    void append_num( int base, int n, uints minsize=0, charstr::EAlignNum align=charstr::ALIGN_NUM_RIGHT )
-    {
-        char buf[256];
-        token tok = charstr::num<uint>::insert_signed( buf, 256, n, base, minsize, align );
-        _binw->xwrite_token_raw(tok);
-    }
-
-    void append_num( int base, uint64 n, uints minsize=0, charstr::EAlignNum align=charstr::ALIGN_NUM_RIGHT )
-    {
-        char buf[256];
-        token tok = charstr::num<uint64>::insert( buf, 256, n, base, 0, minsize, align );
-        _binw->xwrite_token_raw(tok);
-    }
-
-    void append_num( int base, int64 n, uints minsize=0, charstr::EAlignNum align=charstr::ALIGN_NUM_RIGHT )
-    {
-        char buf[256];
-        token tok = charstr::num<uint64>::insert_signed( buf, 256, n, base, minsize, align );
-        _binw->xwrite_token_raw(tok);
-    }
-
-
-    void append_num_int( int base, const void* p, uints bytes, uints minsize=0, charstr::EAlignNum align=charstr::ALIGN_NUM_RIGHT )
+    void append_num_int( int base, const void* p, uints bytes, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
     {
         switch( bytes )
         {
@@ -372,7 +350,7 @@ public:
         }
     }
 
-    void append_num_uint( int base, const void* p, uints bytes, uints minsize=0, charstr::EAlignNum align=charstr::ALIGN_NUM_RIGHT )
+    void append_num_uint( int base, const void* p, uints bytes, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
     {
         switch( bytes )
         {

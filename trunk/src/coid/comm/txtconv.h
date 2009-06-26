@@ -44,6 +44,45 @@
 
 COID_NAMESPACE_BEGIN
 
+
+///Number alignment
+enum EAlignNum {
+    ALIGN_NUM_LEFT_PAD_0            = -2,       ///< align left, pad with the '\0' character
+    ALIGN_NUM_LEFT                  = -1,       ///< align left, pad with space
+    ALIGN_NUM_CENTER                = 0,        ///< align center, pad with space
+    ALIGN_NUM_RIGHT                 = 1,        ///< align right, fill with space
+    ALIGN_NUM_RIGHT_FILL_ZEROS      = 2,        ///< align right, fill with '0' characters
+};
+
+///Helper formatter for numbers, use specialized from below
+template<int WIDTH, int ALIGN, class NUM>
+struct num_fmt {
+    NUM value;
+    num_fmt(NUM value) : value(value) {}
+};
+
+template<int WIDTH, class NUM> inline num_fmt<WIDTH,ALIGN_NUM_LEFT,NUM>
+num_left(NUM n) {
+    return num_fmt<WIDTH,ALIGN_NUM_LEFT,NUM>(n);
+}
+
+template<int WIDTH, class NUM> inline num_fmt<WIDTH,ALIGN_NUM_CENTER,NUM>
+num_center(NUM n) {
+    return num_fmt<WIDTH,ALIGN_NUM_CENTER,NUM>(n);
+}
+
+template<int WIDTH, class NUM> inline num_fmt<WIDTH,ALIGN_NUM_RIGHT,NUM>
+num_right(NUM n) {
+    return num_fmt<WIDTH,ALIGN_NUM_RIGHT,NUM>(n);
+}
+
+template<int WIDTH, class NUM> inline num_fmt<WIDTH,ALIGN_NUM_RIGHT_FILL_ZEROS,NUM>
+num_right0(NUM n) {
+    return num_fmt<WIDTH,ALIGN_NUM_RIGHT_FILL_ZEROS,NUM>(n);
+}
+
+
+
 ////////////////////////////////////////////////////////////////////////////////
 class charstrconv
 {
@@ -118,59 +157,183 @@ public:
     }
 */
 
-
-    static token append_num( char* dst, uint dstsize, int base, uint n, uint minsize=0,
-        charstr::EAlignNum align = charstr::ALIGN_NUM_RIGHT )
+    ////////////////////////////////////////////////////////////////////////////////
+    ///append number in baseN
+    template< class INT >
+    struct num_formatter
     {
-        return charstr::num<uint>::insert( dst, dstsize, n, base, 0, minsize, align );
+        typedef typename SIGNEDNESS<INT>::SIGNED          SINT;
+        typedef typename SIGNEDNESS<INT>::UNSIGNED        UINT;
+
+        static token insert( char* dst, uints dstsize, INT n, int BaseN, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
+        {
+            if( SIGNEDNESS<INT>::isSigned )
+                return s_insert(dst, dstsize, (SINT)n, BaseN, minsize, align);
+            else
+                return u_insert(dst, dstsize, (UINT)n, BaseN, 0, minsize, align);
+        }
+
+        static token insert_zt( char* dst, uints dstsize, INT n, int BaseN, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
+        {
+            if( SIGNEDNESS<INT>::isSigned )
+                return s_insert_zt(dst, dstsize, (SINT)n, BaseN, minsize, align);
+            else
+                return u_insert_zt(dst, dstsize, (UINT)n, BaseN, 0, minsize, align);
+        }
+
+        ///Write signed number
+        static token s_insert( char* dst, uints dstsize, SINT n, int BaseN, uints minsize, EAlignNum align )
+        {
+            if( n < 0 ) return u_insert( dst, dstsize, (UINT)int_abs(n), BaseN, -1, minsize, align );
+            else        return u_insert( dst, dstsize, (UINT)n, BaseN, 0, minsize, align );
+        }
+
+        ///Write signed number, zero terminate the buffer
+        static token s_insert_zt( char* dst, uints dstsize, SINT n, int BaseN, uints minsize, EAlignNum align )
+        {
+            if( n < 0 ) return u_insert_zt( dst, dstsize, (UINT)int_abs(n), BaseN, -1, minsize, align );
+            else        return u_insert_zt( dst, dstsize, (UINT)n, BaseN, 0, minsize, align );
+        }
+
+        ///Write unsigned number, zero terminate the buffer
+        static token u_insert_zt( char* dst, uints dstsize, UINT n, int BaseN, int sgn, uints minsize, EAlignNum align )
+        {
+            char buf[128];
+            uints i = precompute( buf, n, BaseN, sgn );
+
+            uints fc=0;              //fill count
+            if( i < minsize )
+                fc = minsize-i;
+
+            if( dstsize < i+fc+1 )
+                return token::empty();
+
+            char* zt = produce( dst, buf, i, fc, sgn, align );
+            *zt = 0;
+            return token(dst, i+fc);
+        }
+
+        ///Write unsigned number
+        static token u_insert( char* dst, uints dstsize, UINT n, int BaseN, int sgn, uints minsize, EAlignNum align )
+        {
+            char buf[128];
+            uints i = precompute( buf, n, BaseN, sgn );
+
+            uints fc=0;              //fill count
+            if( i < minsize )
+                fc = minsize-i;
+
+            if( dstsize < i+fc )
+                return token::empty();
+
+            produce( dst, buf, i, fc, sgn, align );
+            return token(dst, i+fc);
+        }
+
+        static uints precompute( char* buf, UINT n, int BaseN, int sgn )
+        {
+            uints i=0;
+            if(n)
+            {
+                for( ; n; )
+                {
+                    UINT d = n / BaseN;
+                    UINT m = n % BaseN;
+
+                    if( m>9 )
+                        buf[i++] = 'a' + (char)m - 10;
+                    else
+                        buf[i++] = '0'+(char)m;
+                    n = d;
+                }
+            }
+            else
+                buf[i++] = '0';
+
+            if(sgn) ++i;
+
+            return i;
+        }
+
+        static char* produce( char* p, const char* buf, uints i, uints fillcnt, int sgn, EAlignNum align )
+        {
+            if( align == ALIGN_NUM_RIGHT )
+            {
+                for( ; fillcnt>0; --fillcnt )
+                    *p++ = ' ';
+            }
+            else if( align == ALIGN_NUM_CENTER )
+            {
+                uints mc = fillcnt>>1;
+                for( ; mc>0; --mc )
+                    *p++ = ' ';
+                fillcnt -= mc;
+            }
+
+            if( sgn < 0 )
+                --i,*p++ = '-';
+            else if( sgn > 0 )
+                --i,*p++ = '+';
+
+            if( fillcnt  &&  align == ALIGN_NUM_RIGHT_FILL_ZEROS )
+            {
+                for( ; fillcnt>0; --fillcnt )
+                    *p++ = '0';
+            }
+
+            for( ; i>0; )
+            {
+                --i;
+                *p++ = buf[i];
+            }
+
+            if(fillcnt)
+            {
+                char fc = (align==ALIGN_NUM_LEFT_PAD_0)  ?  0 : ' ';
+
+                for( ; fillcnt>0; --fillcnt )
+                    *p++ = fc;
+            }
+            return p;
+        }
+    };
+
+    ///Append NUM type integer to buffer
+    template<class NUM>
+    static token append_num( char* dst, uint dstsize, int base, NUM n, uint minsize=0, EAlignNum align = ALIGN_NUM_RIGHT ) \
+    {
+        return num_formatter<NUM>::insert( dst, dstsize, n, base, minsize, align );
     }
 
-    static token append_num( char* dst, uint dstsize, int base, int n, uint minsize=0, 
-        charstr::EAlignNum align = charstr::ALIGN_NUM_RIGHT )
-    {
-        return charstr::num<uint>::insert_signed( dst, dstsize, n, base, minsize, align );
-    }
-
-    static token append_num( char* dst, uint dstsize, int base, uint64 n, uint minsize=0,
-        charstr::EAlignNum align = charstr::ALIGN_NUM_RIGHT )
-    {
-        return charstr::num<uint64>::insert( dst, dstsize, n, base, 0, minsize, align );
-    }
-
-    static token append_num( char* dst, uint dstsize, int base, int64 n, uint minsize=0,
-        charstr::EAlignNum align = charstr::ALIGN_NUM_RIGHT )
-    {
-        return charstr::num<uint64>::insert_signed( dst, dstsize, n, base, minsize, align );
-    }
-
+    ///Append signed integer contained in memory pointed to by \a p
     static token append_num_int( char* dst, uint dstsize, int base, const void* p, uint bytes, uint minsize=0,
-        charstr::EAlignNum align = charstr::ALIGN_NUM_RIGHT )
+        EAlignNum align = ALIGN_NUM_RIGHT )
     {
         switch( bytes )
         {
-        case 1: return append_num( dst, dstsize, base, (int)*(int8*)p, minsize, align );  break;
-        case 2: return append_num( dst, dstsize, base, (int)*(int16*)p, minsize, align );  break;
-        case 4: return append_num( dst, dstsize, base, (int)*(int32*)p, minsize, align );  break;
+        case 1: return append_num( dst, dstsize, base, *(int8*)p, minsize, align );  break;
+        case 2: return append_num( dst, dstsize, base, *(int16*)p, minsize, align );  break;
+        case 4: return append_num( dst, dstsize, base, *(int32*)p, minsize, align );  break;
         case 8: return append_num( dst, dstsize, base, *(int64*)p, minsize, align );  break;
         default:
             throw ersINVALID_TYPE "unsupported size";
         }
     }
 
+    ///Append unsigned integer contained in memory pointed to by \a p
     static token append_num_uint( char* dst, uint dstsize, int base, const void* p, uint bytes, uint minsize=0,
-        charstr::EAlignNum align = charstr::ALIGN_NUM_RIGHT )
+        EAlignNum align = ALIGN_NUM_RIGHT )
     {
         switch( bytes )
         {
-        case 1: return append_num( dst, dstsize, base, (uint)*(uint8*)p, minsize, align );  break;
-        case 2: return append_num( dst, dstsize, base, (uint)*(uint16*)p, minsize, align );  break;
-        case 4: return append_num( dst, dstsize, base, (uint)*(uint32*)p, minsize, align );  break;
+        case 1: return append_num( dst, dstsize, base, *(uint8*)p, minsize, align );  break;
+        case 2: return append_num( dst, dstsize, base, *(uint16*)p, minsize, align );  break;
+        case 4: return append_num( dst, dstsize, base, *(uint32*)p, minsize, align );  break;
         case 8: return append_num( dst, dstsize, base, *(uint64*)p, minsize, align );  break;
         default:
             throw ersINVALID_TYPE "unsupported size";
         }
     }
-
 
     ///Append floating point number
     ///@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
@@ -309,51 +472,7 @@ public:
         }
     }
 
-    ///Convert binary data to escaped hexadecimal string
-    //@param src source memory buffer
-    //@param dst destination character buffer capable to hold at least (((itemsize*2) + sep?1:0) * nitems) bytes
-    //@param nitems number of itemsize sized words to convert
-    //@param itemsize number of bytes to write clumped together after prefix
-    //@param prefix before each item
-    static void bin2prehex( const void* src, charstr& dst, uints nitems, uint itemsize, const token& prefix )
-    {
-        if( nitems == 0 )  return;
-
-        static char tbl[] = "0123456789ABCDEF";
-        for( uints i=0;; )
-        {
-            dst.append(prefix);
-            char* pdst = dst.get_append_buf(itemsize * 2);
-
-            if(sysIsLittleEndian)
-            {
-                for( uint j=itemsize; j>0; )
-                {
-                    --j;
-                    pdst[0] = tbl[((uchar*)src)[j] >> 4];
-                    pdst[1] = tbl[((uchar*)src)[j] & 0x0f];
-                    pdst += 2;
-                }
-            }
-            else
-            {
-                for( uint j=0; j<itemsize; ++j )
-                {
-                    pdst[0] = tbl[((uchar*)src)[j] >> 4];
-                    pdst[1] = tbl[((uchar*)src)[j] & 0x0f];
-                    pdst += 2;
-                }
-            }
-
-            src = (uchar*)src + itemsize;
-
-            ++i;
-            if( i>=nitems )  break;
-        }
-    }
-
     ////////////////////////////////////////////////////////////////////////////////
-
     ///Convert bytes to intelhex format output
     static uints write_intelhex_line( char* dst, ushort addr, uchar n, const void* data )
     {

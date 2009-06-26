@@ -222,30 +222,30 @@ struct SIGNEDNESS
     //typedef uint    UNSIGNED;
 };
 
-#define SIGNEDNESS_MACRO(T,S,U) \
-template<> struct SIGNEDNESS<T> { typedef S SIGNED; typedef U UNSIGNED; };
+#define SIGNEDNESS_MACRO(T,S,U,B) \
+template<> struct SIGNEDNESS<T> { typedef S SIGNED; typedef U UNSIGNED; static const int isSigned=B; };
 
 
-SIGNEDNESS_MACRO(int8,int8,uint8);
-SIGNEDNESS_MACRO(uint8,int8,uint8);
-SIGNEDNESS_MACRO(int16,int16,uint16);
-SIGNEDNESS_MACRO(uint16,int16,uint16);
-SIGNEDNESS_MACRO(int32,int32,uint32);
-SIGNEDNESS_MACRO(uint32,int32,uint32);
-SIGNEDNESS_MACRO(int64,int64,uint64);
-SIGNEDNESS_MACRO(uint64,int64,uint64);
+SIGNEDNESS_MACRO(int8,int8,uint8,1);
+SIGNEDNESS_MACRO(uint8,int8,uint8,0);
+SIGNEDNESS_MACRO(int16,int16,uint16,1);
+SIGNEDNESS_MACRO(uint16,int16,uint16,0);
+SIGNEDNESS_MACRO(int32,int32,uint32,1);
+SIGNEDNESS_MACRO(uint32,int32,uint32,0);
+SIGNEDNESS_MACRO(int64,int64,uint64,1);
+SIGNEDNESS_MACRO(uint64,int64,uint64,0);
 
 #ifdef SYSTYPE_MSVC
 # ifdef SYSTYPE_32
-SIGNEDNESS_MACRO(ints,ints,uints);
-SIGNEDNESS_MACRO(uints,ints,uints);
+SIGNEDNESS_MACRO(ints,ints,uints,1);
+SIGNEDNESS_MACRO(uints,ints,uints,0);
 # else
-SIGNEDNESS_MACRO(int,int,uint);
-SIGNEDNESS_MACRO(uint,int,int);
+SIGNEDNESS_MACRO(int,int,uint,1);
+SIGNEDNESS_MACRO(uint,int,int,0);
 # endif
 #elif defined(SYSTYPE_32)
-SIGNEDNESS_MACRO(long,long,ulong);
-SIGNEDNESS_MACRO(ulong,long,ulong);
+SIGNEDNESS_MACRO(long,long,ulong,1);
+SIGNEDNESS_MACRO(ulong,long,ulong,0);
 #endif
 
 /*

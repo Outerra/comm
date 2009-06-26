@@ -352,6 +352,12 @@ public:
 
     charstr& operator = (double d)              { reset(); return operator += (d); }
 
+    ///Formatted numbers
+    template<int WIDTH, int ALIGN, class NUM>
+    charstr& operator = (const num_fmt<WIDTH,ALIGN,NUM> v) {
+        append_num(10, v.value, WIDTH, ALIGN);
+        return *this;
+    }
 
     //@{ retrieve nth character
     char last_char() const                      { uints n=lens(); return n ? _tstr[n-1] : 0; }
@@ -475,6 +481,13 @@ public:
         return *this;
     }
 
+    ///Formatted numbers
+    template<int WIDTH, int ALIGN, class NUM>
+    charstr& operator += (const num_fmt<WIDTH,ALIGN,NUM> v) {
+        append_num(10, v.value, WIDTH, ALIGN);
+        return *this;
+    }
+
     charstr& operator += (const token& tok) {
         _append( tok.ptr(), tok.len() );
         return *this;
@@ -509,6 +522,13 @@ public:
 
     charstr& operator << (double d)             { return operator += (d); }
     charstr& operator << (long double d)        { return operator += (d); }
+
+    ///Formatted numbers
+    template<int WIDTH, int ALIGN, class NUM>
+    charstr& operator << (const num_fmt<WIDTH,ALIGN,NUM> v) {
+        append_num(10, v.value, WIDTH, (EAlignNum)ALIGN);
+        return *this;
+    }
 
     template <class T>
     charstr& operator << (const dynarray<T>& a)
@@ -545,170 +565,40 @@ public:
 
 
 
-    ///Number alignment
-    enum EAlignNum {
-        ALIGN_NUM_LEFT_PAD_0            = -2,       ///< align left, pad with the '\0' character
-        ALIGN_NUM_LEFT                  = -1,       ///< align left, pad with space
-        ALIGN_NUM_CENTER                = 0,        ///< align center, pad with space
-        ALIGN_NUM_RIGHT                 = 1,        ///< align right, fill with space
-        ALIGN_NUM_RIGHT_FILL_ZEROS      = 2,        ///< align right, fill with '0' characters
-    };
-
     ////////////////////////////////////////////////////////////////////////////////
-    ///append number in baseN
-    template< class INT >
-    struct num
+    ///Append signed number
+    template<class NUM>
+    void append_num_signed( NUM n, int BaseN, uints minsize, EAlignNum align )
     {
-        typedef typename SIGNEDNESS<INT>::SIGNED          SINT;
-        typedef typename SIGNEDNESS<INT>::UNSIGNED        UINT;
+        if( n < 0 ) append_num_unsigned( int_abs(n), BaseN, -1, minsize, align );
+        else        append_num_unsigned( n, BaseN, 0, minsize, align );
+    }
 
-        static token insert_signed( char* dst, uints dstsize, SINT n, int BaseN, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
-        {
-            if( n < 0 ) return insert( dst, dstsize, int_abs(n), BaseN, -1, minsize, align );
-            else        return insert( dst, dstsize, n, BaseN, 0, minsize, align );
-        }
+    ///Append unsigned number
+    template<class NUM>
+    void append_num_unsigned( NUM n, int BaseN, int sgn, uints minsize, EAlignNum align )
+    {
+        char buf[128];
+        uints i = charstrconv::num_formatter<NUM>::precompute( buf, n, BaseN, sgn );
 
-        static token insert_signed_zt( char* dst, uints dstsize, SINT n, int BaseN, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
-        {
-            if( n < 0 ) return insert_zt( dst, dstsize, int_abs(n), BaseN, -1, minsize, align );
-            else        return insert_zt( dst, dstsize, n, BaseN, 0, minsize, align );
-        }
+        uints fc=0;              //fill count
+        if( i < minsize )
+            fc = minsize-i;
 
-        static void append_signed( charstr& str, SINT n, int BaseN, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
-        {
-            if( n < 0 ) append( str, int_abs(n), BaseN, -1, minsize, align );
-            else        append( str, n, BaseN, 0, minsize, align );
-        }
+        char* p = get_append_buf( i+fc );
 
-        static token insert_zt( char* dst, uints dstsize, UINT n, int BaseN, int sgn=0, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
-        {
-            char buf[128];
-            uints i = precompute( buf, n, BaseN, sgn );
+        char* zt = charstrconv::num_formatter<NUM>::produce( p, buf, i, fc, sgn, align );
+        *zt = 0;
+    }
 
-            uints fc=0;              //fill count
-            if( i < minsize )
-                fc = minsize-i;
-
-            if( dstsize < i+fc+1 )
-                return token::empty();
-
-            char* zt = produce( dst, buf, i, fc, sgn, align );
-            *zt = 0;
-            return token(dst, i+fc);
-        }
-
-        static token insert( char* dst, uints dstsize, UINT n, int BaseN, int sgn=0, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
-        {
-            char buf[128];
-            uints i = precompute( buf, n, BaseN, sgn );
-
-            uints fc=0;              //fill count
-            if( i < minsize )
-                fc = minsize-i;
-
-            if( dstsize < i+fc )
-                return token::empty();
-
-            produce( dst, buf, i, fc, sgn, align );
-            return token(dst, i+fc);
-        }
-
-        static void append( charstr& str, UINT n, int BaseN, int sgn=0, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
-        {
-            char buf[128];
-            uints i = precompute( buf, n, BaseN, sgn );
-
-            uints fc=0;              //fill count
-            if( i < minsize )
-                fc = minsize-i;
-
-            char* p = str.get_append_buf( i+fc );
-
-            char* zt = produce( p, buf, i, fc, sgn, align );
-            *zt = 0;
-        }
-
-    protected:
-        static uints precompute( char* buf, UINT n, int BaseN, int sgn )
-        {
-            uints i=0;
-            if(n)
-            {
-                for( ; n; )
-                {
-                    UINT d = n / BaseN;
-                    UINT m = n % BaseN;
-
-                    if( m>9 )
-                        buf[i++] = 'a' + (char)m - 10;
-                    else
-                        buf[i++] = '0'+(char)m;
-                    n = d;
-                }
-            }
-            else
-                buf[i++] = '0';
-
-            if(sgn) ++i;
-
-            return i;
-        }
-
-        static char* produce( char* p, const char* buf, uints i, uints fillcnt, int sgn, EAlignNum align )
-        {
-            if( align == ALIGN_NUM_RIGHT )
-            {
-                for( ; fillcnt>0; --fillcnt )
-                    *p++ = ' ';
-            }
-            else if( align == ALIGN_NUM_CENTER )
-            {
-                uints mc = fillcnt>>1;
-                for( ; mc>0; --mc )
-                    *p++ = ' ';
-                fillcnt -= mc;
-            }
-
-            if( sgn < 0 )
-                --i,*p++ = '-';
-            else if( sgn > 0 )
-                --i,*p++ = '+';
-
-            if( fillcnt  &&  align == ALIGN_NUM_RIGHT_FILL_ZEROS )
-            {
-                for( ; fillcnt>0; --fillcnt )
-                    *p++ = '0';
-            }
-
-            for( ; i>0; )
-            {
-                --i;
-                *p++ = buf[i];
-            }
-
-            if(fillcnt)
-            {
-                char fc = (align==ALIGN_NUM_LEFT_PAD_0)  ?  0 : ' ';
-
-                for( ; fillcnt>0; --fillcnt )
-                    *p++ = fc;
-            }
-            return p;
-        }
-    };
-
-    void append_num( int base, uint n, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
-    {   num<uint>::append( *this, n, base, 0, minsize, align ); }
-
-    void append_num( int base, int n, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
-    {   num<uint>::append_signed( *this, n, base, minsize, align ); }
-
-    void append_num( int base, uint64 n, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
-    {   num<uint64>::append( *this, n, base, 0, minsize, align ); }
-
-    void append_num( int base, int64 n, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
-    {   num<uint64>::append_signed( *this, n, base, minsize, align ); }
-
+    template<class NUM>
+    void append_num( int base, NUM n, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT ) \
+    {
+        if( SIGNEDNESS<NUM>::isSigned )
+            return append_num_signed(n, base, minsize, align);
+        else
+            return append_num_unsigned(n, base, 0, minsize, align);
+    }
 
     void append_num_int( int base, const void* p, uints bytes, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
     {
@@ -782,13 +672,13 @@ public:
 
         append_num(10, hrs);
         append(':');
-        append_num(10, mns, 2, charstr::ALIGN_NUM_RIGHT_FILL_ZEROS);
+        append_num(10, mns, 2, ALIGN_NUM_RIGHT_FILL_ZEROS);
         append(':');
-        append_num(10, sec, 2, charstr::ALIGN_NUM_RIGHT_FILL_ZEROS);
+        append_num(10, sec, 2, ALIGN_NUM_RIGHT_FILL_ZEROS);
 
         if(msec) {
             append('.');
-            append_num(10, ms, 3, charstr::ALIGN_NUM_RIGHT_FILL_ZEROS);
+            append_num(10, ms, 3, ALIGN_NUM_RIGHT_FILL_ZEROS);
         }
     }
 
@@ -990,14 +880,14 @@ public:
 		}
 
         if( flg & (DATE_HHMM|DATE_HHMMSS|DATE_ISO8601) ) {
-            append_num(10,tm.tm_hour,2,charstr::ALIGN_NUM_RIGHT_FILL_ZEROS);
+            append_num(10,tm.tm_hour,2,ALIGN_NUM_RIGHT_FILL_ZEROS);
             append(':');
-            append_num(10,tm.tm_min,2,charstr::ALIGN_NUM_RIGHT_FILL_ZEROS);
+            append_num(10,tm.tm_min,2,ALIGN_NUM_RIGHT_FILL_ZEROS);
         }
 
         if( flg & (DATE_HHMMSS|DATE_ISO8601) ) {
             append(':');
-            append_num(10,tm.tm_sec,2,charstr::ALIGN_NUM_RIGHT_FILL_ZEROS);
+            append_num(10,tm.tm_sec,2,ALIGN_NUM_RIGHT_FILL_ZEROS);
         }
 
         if( flg & DATE_TZ ) {
@@ -1018,9 +908,9 @@ public:
 				t = -__timezone;
 #endif
 				if (t > 0) append('+');
-				append_num(10,t/3600,2,charstr::ALIGN_NUM_RIGHT_FILL_ZEROS);
+				append_num(10,t/3600,2,ALIGN_NUM_RIGHT_FILL_ZEROS);
 				append(':');
-				append_num(10,(t%3600)/60,2,charstr::ALIGN_NUM_RIGHT_FILL_ZEROS);
+				append_num(10,(t%3600)/60,2,ALIGN_NUM_RIGHT_FILL_ZEROS);
 			}
 		}
 
@@ -1079,6 +969,53 @@ public:
 
         if(p-ps)
             add_from( ps, p-ps );
+
+        return *this;
+    }
+
+
+    ///Append binary data converted to escaped hexadecimal string
+    //@param src source memory buffer
+    //@param dst destination character buffer capable to hold at least (((itemsize*2) + sep?1:0) * nitems) bytes
+    //@param nitems number of itemsize sized words to convert
+    //@param itemsize number of bytes to write clumped together after prefix
+    //@param prefix before each item
+    charstr& append_prehex( const void* src, uints nitems, uint itemsize, const token& prefix )
+    {
+        if( nitems == 0 )
+            return *this;
+
+        static char tbl[] = "0123456789ABCDEF";
+        for( uints i=0;; )
+        {
+            append(prefix);
+            char* pdst = get_append_buf(itemsize * 2);
+
+            if(sysIsLittleEndian)
+            {
+                for( uint j=itemsize; j>0; )
+                {
+                    --j;
+                    pdst[0] = tbl[((uchar*)src)[j] >> 4];
+                    pdst[1] = tbl[((uchar*)src)[j] & 0x0f];
+                    pdst += 2;
+                }
+            }
+            else
+            {
+                for( uint j=0; j<itemsize; ++j )
+                {
+                    pdst[0] = tbl[((uchar*)src)[j] >> 4];
+                    pdst[1] = tbl[((uchar*)src)[j] & 0x0f];
+                    pdst += 2;
+                }
+            }
+
+            src = (uchar*)src + itemsize;
+
+            ++i;
+            if( i>=nitems )  break;
+        }
 
         return *this;
     }
@@ -1915,29 +1852,6 @@ template<> struct hash<token>
         return __coid_hash_string( tok.ptr(), tok.len() );
     }
 };
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-struct ndigit_fmt
-{
-    ints _i;
-    uint _numc;
-    charstr::EAlignNum _align;
-
-    explicit ndigit_fmt( ints i, uint numc, charstr::EAlignNum align = charstr::ALIGN_NUM_RIGHT )
-        : _i(i),_numc(numc),_align(align) { }
-
-    friend binstream& operator << (binstream& out, const ndigit_fmt& d)
-    {
-        char buf[128];
-        token t = charstr::num<ints>::insert_signed( buf, 128, d._i, 10, d._numc, d._align );
-        //d._buf.append_num( 10, d._i, d._numc, d._align );
-        return out << t;
-    }
-};
-
-
 
 
 ////////////////////////////////////////////////////////////////////////////////
