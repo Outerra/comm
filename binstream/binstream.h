@@ -43,6 +43,7 @@
 
 #include "../retcodes.h"
 #include "../commassert.h"
+#include "../txtconv.h"
 
 COID_NAMESPACE_BEGIN
 
@@ -190,6 +191,16 @@ public:
     binstream& operator << (long x )            { return xwrite(&x, bstype::t_type<long>() ); }
     binstream& operator << (ulong x )           { return xwrite(&x, bstype::t_type<ulong>() ); }
 #endif
+
+    ///Formatted integers, used by text formatting streams, writes as a raw token
+    template<int WIDTH, int ALIGN, class NUM>
+    binstream& operator << (const num_fmt<WIDTH,ALIGN,NUM> v)
+    {
+        char buf[256];
+        token tok = charstrconv::append_num( buf, 256, 10, v.value, WIDTH, (EAlignNum)ALIGN );
+        xwrite_token_raw(tok);
+        return *this;
+    }
 
     binstream& operator << (float x )           { return xwrite(&x, bstype::t_type<float>() ); }
     binstream& operator << (double x )          { return xwrite(&x, bstype::t_type<double>() ); }

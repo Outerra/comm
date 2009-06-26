@@ -194,7 +194,7 @@ public:
                 //write content length
 				if(len() > 0) {
 					uints csize = len() - _hdrpos - 20-4;
-					charstr::num<int64>::insert( pc, 20, csize, 10, 0, 20, charstr::ALIGN_NUM_RIGHT );
+					charstrconv::num_formatter<uints>::insert( pc, 20, csize, 10, 20, ALIGN_NUM_RIGHT );
 				}
             }
 
