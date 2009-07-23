@@ -377,7 +377,7 @@ public:
                 lastnzero = i+1;
         }
 
-        return token(dst, lastnzero);
+        return token(dst, ndig > 0 ? lastnzero : ndiga);
     }
 
     ///Convert hexadecimal string content to binary data. Expects little-endian ordering.

@@ -192,7 +192,8 @@ public:
     binstream& operator << (ulong x )           { return xwrite(&x, bstype::t_type<ulong>() ); }
 #endif
 
-    ///Formatted integers, used by text formatting streams, writes as a raw token
+    ///Formatted integers
+    //@note used by text formatting streams, writes as a raw token
     template<int WIDTH, int ALIGN, class NUM>
     binstream& operator << (const num_fmt<WIDTH,ALIGN,NUM> v)
     {
@@ -200,6 +201,16 @@ public:
         token tok = charstrconv::append_num( buf, 256, 10, v.value, WIDTH, (EAlignNum)ALIGN );
         xwrite_token_raw(tok);
         return *this;
+    }
+
+    ///Append formatted floating point value
+    //@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places 
+    //@note used by text formatting streams, writes as a raw token
+    void append_float( double v, int nfrac = -1 )
+    {
+        char buf[256];
+        token tok = charstrconv::append( buf, 256, v, nfrac );
+        write_token_raw(tok);
     }
 
     binstream& operator << (float x )           { return xwrite(&x, bstype::t_type<float>() ); }
