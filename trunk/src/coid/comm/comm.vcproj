@@ -888,6 +888,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\log\logger.cpp"
+				>
+			</File>
+			<File
 				RelativePath="net.cpp"
 				>
 				<FileConfiguration
@@ -1249,10 +1253,6 @@
 			>
 		</File>
 		<File
-			RelativePath="interfnc.h"
-			>
-		</File>
-		<File
 			RelativePath="keywordt.h"
 			>
 		</File>
@@ -1262,10 +1262,6 @@
 		</File>
 		<File
 			RelativePath="local.h"
-			>
-		</File>
-		<File
-			RelativePath=".\log\logger.cpp"
 			>
 		</File>
 		<File
