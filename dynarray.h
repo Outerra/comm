@@ -1201,8 +1201,6 @@ public:
             xmemcpy( p, buf.ptr(), num*sizeof(T) );
             return p;
         }
-
-        return 0;
     }
 
     ///Delete content but keep the memory reserved

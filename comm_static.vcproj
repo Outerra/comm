@@ -282,7 +282,7 @@
 				RuntimeLibrary="0"
 				BufferSecurityCheck="false"
 				EnableFunctionLevelLinking="false"
-				EnableEnhancedInstructionSet="2"
+				EnableEnhancedInstructionSet="0"
 				RuntimeTypeInfo="false"
 				PrecompiledHeaderFile="$(IntDir)\comm_static.pch"
 				WarningLevel="3"

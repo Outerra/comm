@@ -619,14 +619,14 @@ public:
 
     ///Transfer the content of source binstream to this binstream
     //@param blocksize hint about size of the memory block used for copying
-	virtual uints transfer_from( binstream& src, uints datasize=-1, uints blocksize = 4096 )
+	virtual uints transfer_from( binstream& src, uints datasize=UMAXS, uints blocksize = 4096 )
 	{
 		return src.copy_to(*this,datasize);
 	}
 
     ///Transfer the content of this binstream to the destination binstream
     //@param blocksize hint about size of the memory block used for copying
-	virtual uints transfer_to( binstream& dst, uints datasize=-1, uints blocksize = 4096 )
+	virtual uints transfer_to( binstream& dst, uints datasize=UMAXS, uints blocksize = 4096 )
 	{
 		return copy_to(dst,datasize);
 	}

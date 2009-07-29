@@ -237,7 +237,7 @@ inline T* align_forward( void* p )
 {
     size_t mask = alignment_size<T>() - 1;
 
-    return static_cast<T*>( (static_cast<size_t>(p) + mask) &~ mask );
+    return reinterpret_cast<T*>( (reinterpret_cast<size_t>(p) + mask) &~ mask );
 }
 
 
