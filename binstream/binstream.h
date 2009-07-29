@@ -197,8 +197,8 @@ public:
     template<int WIDTH, int ALIGN, class NUM>
     binstream& operator << (const num_fmt<WIDTH,ALIGN,NUM> v)
     {
-        char buf[256];
-        token tok = charstrconv::append_num( buf, 256, 10, v.value, WIDTH, (EAlignNum)ALIGN );
+        char buf[32];
+        token tok = charstrconv::append_num( buf, 32, 10, v.value, WIDTH, (EAlignNum)ALIGN );
         xwrite_token_raw(tok);
         return *this;
     }
@@ -206,11 +206,13 @@ public:
     ///Append formatted floating point value
     //@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places 
     //@note used by text formatting streams, writes as a raw token
-    void append_float( double v, int nfrac = -1 )
+    template<int WIDTH, int ALIGN>
+    binstream& operator << (const float_fmt<WIDTH,ALIGN>& v)
     {
-        char buf[256];
-        token tok = charstrconv::append( buf, 256, v, nfrac );
-        write_token_raw(tok);
+        char buf[32];
+        token tok = charstrconv::append( buf, 32, v.value, v.nfrac, WIDTH, (EAlignNum)ALIGN);
+        xwrite_token_raw(tok);
+        return *this;
     }
 
     binstream& operator << (float x )           { return xwrite(&x, bstype::t_type<float>() ); }
