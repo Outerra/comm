@@ -311,10 +311,10 @@ public:
     {
         switch( bytes )
         {
-        case 1: return append_num( dst, dstsize, base, *(int8*)p, minsize, align );  break;
-        case 2: return append_num( dst, dstsize, base, *(int16*)p, minsize, align );  break;
-        case 4: return append_num( dst, dstsize, base, *(int32*)p, minsize, align );  break;
-        case 8: return append_num( dst, dstsize, base, *(int64*)p, minsize, align );  break;
+        case 1: return append_num( dst, dstsize, base, *(int8*)p, minsize, align );
+        case 2: return append_num( dst, dstsize, base, *(int16*)p, minsize, align );
+        case 4: return append_num( dst, dstsize, base, *(int32*)p, minsize, align );
+        case 8: return append_num( dst, dstsize, base, *(int64*)p, minsize, align );
         default:
             throw ersINVALID_TYPE "unsupported size";
         }
@@ -326,10 +326,10 @@ public:
     {
         switch( bytes )
         {
-        case 1: return append_num( dst, dstsize, base, *(uint8*)p, minsize, align );  break;
-        case 2: return append_num( dst, dstsize, base, *(uint16*)p, minsize, align );  break;
-        case 4: return append_num( dst, dstsize, base, *(uint32*)p, minsize, align );  break;
-        case 8: return append_num( dst, dstsize, base, *(uint64*)p, minsize, align );  break;
+        case 1: return append_num( dst, dstsize, base, *(uint8*)p, minsize, align );
+        case 2: return append_num( dst, dstsize, base, *(uint16*)p, minsize, align );
+        case 4: return append_num( dst, dstsize, base, *(uint32*)p, minsize, align );
+        case 8: return append_num( dst, dstsize, base, *(uint64*)p, minsize, align );
         default:
             throw ersINVALID_TYPE "unsupported size";
         }
