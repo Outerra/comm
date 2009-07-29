@@ -54,7 +54,7 @@ enum EAlignNum {
     ALIGN_NUM_RIGHT_FILL_ZEROS      = 2,        ///< align right, fill with '0' characters
 };
 
-///Helper formatter for numbers, use specialized from below
+///Helper formatter for integer numbers, use specialized from below
 template<int WIDTH, int ALIGN, class NUM>
 struct num_fmt {
     NUM value;
@@ -81,7 +81,36 @@ num_right0(NUM n) {
     return num_fmt<WIDTH,ALIGN_NUM_RIGHT_FILL_ZEROS,NUM>(n);
 }
 
+///Helper formatter for floating point numbers
+template<int WIDTH, int ALIGN>
+struct float_fmt {
+    double value;
+    int nfrac;
 
+    float_fmt(double value, int nfrac=-1)
+        : value(value), nfrac(nfrac)
+    {}
+};
+
+template<int WIDTH> inline float_fmt<WIDTH,ALIGN_NUM_LEFT>
+float_left(double n, int nfrac=-1) {
+    return float_fmt<WIDTH,ALIGN_NUM_LEFT>(n, nfrac);
+}
+
+template<int WIDTH> inline float_fmt<WIDTH,ALIGN_NUM_CENTER>
+float_center(double n, int nfrac=-1) {
+    return float_fmt<WIDTH,ALIGN_NUM_CENTER>(n, nfrac);
+}
+
+template<int WIDTH> inline float_fmt<WIDTH,ALIGN_NUM_RIGHT>
+float_right(double n, int nfrac=-1) {
+    return float_fmt<WIDTH,ALIGN_NUM_RIGHT>(n, nfrac);
+}
+
+template<int WIDTH> inline float_fmt<WIDTH,ALIGN_NUM_RIGHT_FILL_ZEROS>
+float_right0(double n, int nfrac=-1) {
+    return float_fmt<WIDTH,ALIGN_NUM_RIGHT_FILL_ZEROS>(n, nfrac);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 class charstrconv
@@ -198,8 +227,9 @@ public:
         ///Write unsigned number, zero terminate the buffer
         static token u_insert_zt( char* dst, uints dstsize, UINT n, int BaseN, int sgn, uints minsize, EAlignNum align )
         {
-            char buf[128];
+            char bufx[32];
             uints i = precompute( buf, n, BaseN, sgn );
+            const char* buf = fix_overflow(bufx, i, dstsize);
 
             uints fc=0;              //fill count
             if( i < minsize )
@@ -216,8 +246,9 @@ public:
         ///Write unsigned number
         static token u_insert( char* dst, uints dstsize, UINT n, int BaseN, int sgn, uints minsize, EAlignNum align )
         {
-            char buf[128];
-            uints i = precompute( buf, n, BaseN, sgn );
+            char bufx[32];
+            uints i = precompute( bufx, n, BaseN, sgn );
+            const char* buf = fix_overflow(bufx, i, dstsize);
 
             uints fc=0;              //fill count
             if( i < minsize )
@@ -230,13 +261,36 @@ public:
             return token(dst, i+fc);
         }
 
+    protected:
+
+        friend class charstr;
+
+        static const char* fix_overflow( char* buf, uints size, uints sizemax )
+        {
+            if( size <= sizemax )  return buf;
+
+            uints overflow = size - sizemax > 9  ?  3  :  2;
+
+            if( sizemax <= overflow )  return "!!!";
+            else if( overflow == 3 ) {
+                buf[sizemax - 3] = 'e';
+                buf[sizemax - 2] = '0' + (overflow / 10);
+                buf[sizemax - 1] = '0' + (overflow % 10);
+            }
+            else {
+                buf[sizemax - 2] = 'e';
+                buf[sizemax - 1] = '0' + overflow;
+            }
+
+            return buf;
+        }
+
+        //@return number of characters taken
         static uints precompute( char* buf, UINT n, int BaseN, int sgn )
         {
             uints i=0;
-            if(n)
-            {
-                for( ; n; )
-                {
+            if(n) {
+                for( ; n; ) {
                     UINT d = n / BaseN;
                     UINT m = n % BaseN;
 
@@ -337,10 +391,15 @@ public:
 
     ///Append floating point number
     ///@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
-    static token append( char* dst, uint dstsize, double d, int nfrac )
+    ///@param minsize minimum size of the integer part
+    static token append( char* dst, uint dstsize, double d, int nfrac, uint minsize=0, EAlignNum align = ALIGN_NUM_RIGHT )
     {
+        uint anfrac = nfrac < 0  ?  -nfrac : nfrac;
+        if( minsize>0 && anfrac>0 )
+            minsize = minsize > anfrac+1  ?  minsize-anfrac-1  :  0;
+
         double w = d>0 ? floor(d) : ceil(d);
-        token tokw = append_num( dst, dstsize, 10, (int64)w );
+        token tokw = append_num( dst, dstsize, 10, (int64)w, minsize, align );
 
         if(nfrac == 0)
             return tokw;
