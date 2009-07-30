@@ -269,7 +269,7 @@ public:
         {
             if( size <= sizemax )  return buf;
 
-            uints overflow = size - sizemax > 9  ?  3  :  2;
+            uint8 overflow = size - sizemax > 9  ?  3  :  2;
 
             if( sizemax <= overflow )  return "!!!";
             else if( overflow == 3 ) {
@@ -279,7 +279,7 @@ public:
             }
             else {
                 buf[sizemax - 2] = 'e';
-                buf[sizemax - 1] = '0' + overflow;
+                buf[sizemax - 1] = '0' + (overflow);
             }
 
             return buf;
@@ -297,7 +297,7 @@ public:
                     if( m>9 )
                         buf[i++] = 'a' + (char)m - 10;
                     else
-                        buf[i++] = '0'+(char)m;
+                        buf[i++] = '0' + (char)m;
                     n = d;
                 }
             }
