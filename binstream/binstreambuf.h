@@ -218,7 +218,7 @@ public:
     ///@return number of bytes written
     virtual uints transfer_to( binstream& bin, uints datasize=-1, uints blocksize = 4096 )
     {
-        uints n=0, tlen=uint_min(_buf.size(),datasize);
+        uints n=0, tlen = uint_min(_buf.size(), datasize);
 
         for( ; _bgi<tlen; )
         {
@@ -244,14 +244,14 @@ public:
 
         for( ;; )
         {
-			uints len=datasize>blocksize?blocksize:datasize;
-            uints toread=len;
-            void* ptr=_buf.add(len);
+			uints len = datasize>blocksize ? blocksize : datasize;
+            uints toread = len;
+            void* ptr = _buf.add(len);
             
-            opcd e=bin.read_raw_full( ptr,len );
-			datasize-=toread;
+            opcd e = bin.read_raw_full(ptr, len);
+			datasize -= toread;
 
-            n+=toread-len;
+            n += toread - len;
 
             if( e || len>0 || datasize==0 )
                 break;
