@@ -216,8 +216,9 @@ public:
 
     ///Write raw data to another binstream. Overloadable to avoid excesive copying when not neccessary.
     ///@return number of bytes written
-    virtual uints transfer_to( binstream& bin, uints datasize=-1, uints blocksize = 4096 )
+    virtual opcd transfer_to( binstream& bin, uints datasize=UMAXS, uints* size_written=0, uints blocksize = 4096 )
     {
+        opcd e;
         uints n=0, tlen = uint_min(_buf.size(), datasize);
 
         for( ; _bgi<tlen; )
@@ -225,7 +226,7 @@ public:
 			uints len = uint_min( tlen - _bgi, uints(blocksize) );
             uints oen = len;
             
-            opcd e = bin.write_raw( _buf.ptr()+_bgi, len );
+            e = bin.write_raw( _buf.ptr()+_bgi, len );
 
             n += oen - len;
             _bgi += oen - len;
@@ -234,11 +235,15 @@ public:
                 break;
         }
 
-        return n;
+        if(size_written)
+            *size_written = n;
+
+        return e;
     }
 
-	virtual uints transfer_from( binstream& bin, uints datasize=-1, uints blocksize = 4096 )
+	virtual opcd transfer_from( binstream& bin, uints datasize=UMAXS, uints* size_read=0, uints blocksize = 4096 )
 	{
+        opcd e;
         uints old = _buf.size();
         uints n=0;
 
@@ -248,7 +253,7 @@ public:
             uints toread = len;
             void* ptr = _buf.add(len);
             
-            opcd e = bin.read_raw_full(ptr, len);
+            e = bin.read_raw_full(ptr, len);
 			datasize -= toread;
 
             n += toread - len;
@@ -258,8 +263,10 @@ public:
         }
 
         _buf.resize(old+n);
+        if(size_read)
+            *size_read = n;
 
-        return n;
+        return e == ersNO_MORE ? opcd(0) : e;
 	}
 
 

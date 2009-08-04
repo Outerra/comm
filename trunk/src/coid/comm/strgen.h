@@ -41,6 +41,7 @@
 #include "namespace.h"
 
 #include "token.h"
+#include "local.h"
 #include "str.h"
 #include "dynarray.h"
 

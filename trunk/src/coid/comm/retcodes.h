@@ -174,6 +174,8 @@ struct opcd
 		int code() const                { return _code; }
     };
 
+    typedef const errcode* perrcode_t;
+
     const errcode* _ptr;
 
 
@@ -201,7 +203,10 @@ struct opcd
     void set( uint e );
 
 
-    operator bool () const                              { return _ptr != NULL; }
+    typedef perrcode_t opcd::* unspecified_bool_type;
+
+    ///Automatic cast to bool for checking nerror
+    operator unspecified_bool_type () const             { return _ptr ? &opcd::_ptr : 0; }
     bool operator ! () const                            { return _ptr == NULL; }
 
     bool operator == ( opcd c ) const
