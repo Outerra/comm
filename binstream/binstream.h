@@ -595,7 +595,7 @@ public:
 
     ///Write raw data to another binstream.
     ///@return number of bytes written
-    uints copy_to( binstream& bin, uints dlen, uints blocksize )
+    opcd copy_to( binstream& bin, uints dlen, uints* size_written, uints blocksize )
     {
         opcd e;
         uints n=0;
@@ -622,21 +622,24 @@ public:
                 break;
         }
 
-        return n;
+        if(size_written)
+            *size_written = n;
+
+        return e == ersNO_MORE ? opcd(0) : e;
     }
 
     ///Transfer the content of source binstream to this binstream
     //@param blocksize hint about size of the memory block used for copying
-	virtual uints transfer_from( binstream& src, uints datasize=UMAXS, uints blocksize = 4096 )
+	virtual opcd transfer_from( binstream& src, uints datasize=UMAXS, uints* size_read=0, uints blocksize = 4096 )
 	{
-		return src.copy_to(*this, datasize, blocksize);
+		return src.copy_to(*this, datasize, size_read, blocksize);
 	}
 
     ///Transfer the content of this binstream to the destination binstream
     //@param blocksize hint about size of the memory block used for copying
-	virtual uints transfer_to( binstream& dst, uints datasize=UMAXS, uints blocksize = 4096 )
+	virtual opcd transfer_to( binstream& dst, uints datasize=UMAXS, uints* size_written=0, uints blocksize = 4096 )
 	{
-		return copy_to(dst, datasize, blocksize);
+		return copy_to(dst, datasize, size_written, blocksize);
 	}
 
 
