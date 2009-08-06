@@ -674,7 +674,7 @@ struct token
         return cut_trait(fRETURN_SEPARATOR);
     }
 
-    static cut_trait cut_trait_default_empty() {
+    static cut_trait cut_trait_keep_sep_default_empty() {
         return cut_trait(fON_FAIL_RETURN_EMPTY);
     }
 
