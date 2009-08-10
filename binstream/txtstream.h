@@ -96,7 +96,7 @@ public:
                 while( bytes > 0 )
                 {
                     char* dst = buf;
-                    uint n = int_max(uint(256/2), bytes);
+                    uint n = int_min(uint(256/2), bytes);
 
                     charstrconv::bin2hex( src, dst, 1, n, 0 );
                     uints nd = n*2;
