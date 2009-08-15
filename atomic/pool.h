@@ -51,7 +51,7 @@ protected:
 public:
 	virtual void destroy() { DASSERT(_pool!=0); _pool->destroy(this); }
 
-	static this_t* create() { return SINGLETON(pool_t).create(); }
+	static this_t* create() { return SINGLETON(pool<policy_queue_pooled<T>>).create(); }
 
 	static this_t* create(pool_t* p) { DASSERT(p!=0); return p->create(); }
 

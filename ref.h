@@ -57,7 +57,7 @@ public:
 
 	void release() { _po->destroy(); }
 
-	int32 refcount() { _po->refcount(); }
+	coid::int32 refcount() { _po->refcount(); }
 };
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

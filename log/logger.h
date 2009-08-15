@@ -45,6 +45,12 @@
 #include "../atomic/queue.h"
 #include "../atomic/pool.h"
 
+namespace coid {
+	class logmsg;
+};
+DEFAULT_POLICY(coid::logmsg,policy_queue_pooled);
+
+
 COID_NAMESPACE_BEGIN
 
 class logger;
@@ -89,7 +95,7 @@ public:
 	void set_type(const int t) { _type=t; }
 };
 
-DEFAULT_POLICY(logmsg,policy_queue_pooled);
+//DEFAULT_POLICY(logmsg,policy_queue_pooled);
 typedef ref<logmsg> logmsg_ptr;
 
 /* 
@@ -110,10 +116,10 @@ class logger
 {
 public:
 	enum ELogType {
-		Info=0,
-		Warning,
-		Exception,
+		Exception=0,
 		Error,
+		Warning,
+		Info,
 		Debug,
 		Last
 	};
@@ -138,10 +144,10 @@ public:
     const token& type2tok( const ELogType t )
 	{
 		static token st[]={
-			"INFO: ",
-			"WARNING: ",
 			"EXCEPTION: ",
 			"ERROR: ",
+			"WARNING: ",
+			"INFO: ",
 			"DEBUG: ",
 		};
 		static token ud="userdefined";

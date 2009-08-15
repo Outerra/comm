@@ -52,19 +52,19 @@ template<class T> struct policy_trait { typedef policy_ref_count<T> policy; };
 
 struct atomic_counter
 {
-	static void inc(volatile int32* ptr) { atomic::inc(ptr); }
-	static int32 add(volatile int32* ptr,const int32 v) { return atomic::add(ptr,v); }
-	static int32 dec(volatile int32* ptr) { return atomic::dec(ptr); }
-	static bool b_cas(volatile int32 * ptr,const int32 val,const int32 cmp) { return atomic::b_cas( ptr,val,cmp ); }
+	static void inc(volatile coid::int32* ptr) { atomic::inc(ptr); }
+	static coid::int32 add(volatile coid::int32* ptr,const coid::int32 v) { return atomic::add(ptr,v); }
+	static coid::int32 dec(volatile coid::int32* ptr) { return atomic::dec(ptr); }
+	static bool b_cas(volatile coid::int32 * ptr,const coid::int32 val,const coid::int32 cmp) { return atomic::b_cas( ptr,val,cmp ); }
 };
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 struct simple_counter
 {
-	static void inc(volatile int32* ptr) { ++(*ptr); }
-	static int32 add(volatile int32* ptr,const int32 v) { return (*ptr)+=v; }
-	static int32 dec(volatile int32* ptr) { return --(*ptr); }
-	static bool b_cas(volatile int32 * ptr,const int32 val,const int32 cmp) { DASSERT(false && "should not be used!"); }
+	static void inc(volatile coid::int32* ptr) { ++(*ptr); }
+	static coid::int32 add(volatile coid::int32* ptr,const coid::int32 v) { return (*ptr)+=v; }
+	static coid::int32 dec(volatile coid::int32* ptr) { return --(*ptr); }
+	static bool b_cas(volatile coid::int32 * ptr,const coid::int32 val,const coid::int32 cmp) { DASSERT(false && "should not be used!"); }
 };
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -76,7 +76,7 @@ private:
 	policy_base_( policy_base_ const & );
 	policy_base_ & operator=( policy_base_ const & );
 
-	volatile int32 _count;
+	volatile coid::int32 _count;
 
 public:
 
@@ -89,7 +89,7 @@ public:
 	bool add_ref_lock()
 	{
 		for( ;; ) {
-			int32 tmp = _count;
+			coid::int32 tmp = _count;
 			if( tmp==0 ) return false;
 			if( COUNTER::b_cas( &_count,tmp, tmp+1 ) ) return true;
 		}
@@ -97,7 +97,7 @@ public:
 
 	void release() { if( COUNTER::dec( &_count )==0 ) destroy(); }
 
-	int32 refcount() { return COUNTER::add(&_count,0); }
+	coid::int32 refcount() { return COUNTER::add(&_count,0); }
 };
 
 typedef policy_base_<> policy_base;
@@ -258,7 +258,7 @@ public:
 
 	default_policy_t* give_me() { default_policy_t* tmp=_p; _p=0;_o=0; return tmp; }
 
-	int32 refcount() const { return _p?_p->refcount():0; }
+	coid::int32 refcount() const { return _p?_p->refcount():0; }
 
 	friend coid::binstream& operator<<( coid::binstream& bin,const ref<T>& s ) { return bin<<(*s._o); }
 

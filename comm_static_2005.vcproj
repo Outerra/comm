@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="windows-1250"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9.00"
+	Version="8.00"
 	Name="comm_static"
 	ProjectGUID="{D2F47060-00C0-4A3C-9888-CF663F14D44D}"
 	RootNamespace="comm_static"
-	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -21,7 +20,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="$(ProjectDir)\bin\"
-			IntermediateDirectory="$(ProjectDir)\bin\$(PlatformName)\$(ConfigurationName)Static\"
+			IntermediateDirectory="$(ProjectDir)\bin\$(PlatformName)\$(ConfigurationName)Static2005\"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -72,7 +71,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)comm_staticd.lib"
+				OutputFile="$(OutDir)comm_static2005d.lib"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
@@ -170,7 +169,7 @@
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="$(ProjectDir)\bin\"
-			IntermediateDirectory="$(ProjectDir)\bin\$(PlatformName)\$(ConfigurationName)Static\"
+			IntermediateDirectory="$(ProjectDir)\bin\$(PlatformName)\$(ConfigurationName)Static2005\"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -224,7 +223,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)comm_static.lib"
+				OutputFile="$(OutDir)comm_static2005.lib"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
