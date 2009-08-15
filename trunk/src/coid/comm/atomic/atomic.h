@@ -41,7 +41,6 @@
 
 #if defined(WIN32)
 	#include <intrin.h>
-
 	#pragma intrinsic(_InterlockedIncrement)
 	#pragma intrinsic(_InterlockedDecrement)
 	#pragma intrinsic(_InterlockedExchangeAdd)
@@ -54,29 +53,29 @@
 #endif
 
 namespace atomic {
-	inline int32 inc(volatile int32 * ptr)
+	inline coid::int32 inc(volatile coid::int32 * ptr)
 	{
-		DASSERT(sizeof(int32) == 4 && sizeof(long) == 4);
+		DASSERT(sizeof(coid::int32) == 4 && sizeof(long) == 4);
 #if defined(__GNUC__)
-		return __sync_add_and_fetch(ptr, static_cast<int32>(1));
+		return __sync_add_and_fetch(ptr, static_cast<coid::int32>(1));
 #elif defined(WIN32)
 		return _InterlockedIncrement(reinterpret_cast<volatile long*>(ptr));
 #endif
 	}
 
-	inline int32 dec(volatile int32 * ptr)
+	inline coid::int32 dec(volatile coid::int32 * ptr)
 	{
-		DASSERT(sizeof(int32) == 4 && sizeof(long) == 4);
+		DASSERT(sizeof(coid::int32) == 4 && sizeof(long) == 4);
 #if defined(__GNUC__)
-		return __sync_sub_and_fetch(ptr, static_cast<int32>(1));
+		return __sync_sub_and_fetch(ptr, static_cast<coid::int32>(1));
 #elif defined(WIN32)
 		return _InterlockedDecrement(reinterpret_cast<volatile long*>(ptr));
 #endif
 	}
 
-	inline int32 add(volatile int32 * ptr, const int32 val)
+	inline coid::int32 add(volatile coid::int32 * ptr, const coid::int32 val)
 	{
-		DASSERT(sizeof(int32) == 4 && sizeof(long) == 4);
+		DASSERT(sizeof(coid::int32) == 4 && sizeof(long) == 4);
 #if defined(__GNUC__)
 		return __sync_fetch_and_add(ptr, val);
 #elif defined(WIN32)
@@ -85,10 +84,10 @@ namespace atomic {
 #endif
 	}
 
-	inline int32 cas(
-		volatile int32 * ptr, const int32 val, const int32 cmp) 
+	inline coid::int32 cas(
+		volatile coid::int32 * ptr, const coid::int32 val, const coid::int32 cmp) 
 	{
-		DASSERT(sizeof(int32) == 4 && sizeof(long) == 4);
+		DASSERT(sizeof(coid::int32) == 4 && sizeof(long) == 4);
 #if defined(__GNUC__)
 		return __sync_val_compare_and_swap(ptr, cmp, val);
 #elif defined(WIN32)
@@ -98,9 +97,9 @@ namespace atomic {
 	}
 
 	inline bool b_cas(
-		volatile int32 * ptr, const int32 val, const int32 cmp) 
+		volatile coid::int32 * ptr, const coid::int32 val, const coid::int32 cmp) 
 	{
-		DASSERT(sizeof(int32) == 4 && sizeof(long) == 4);
+		DASSERT(sizeof(coid::int32) == 4 && sizeof(long) == 4);
 #if defined(__GNUC__)
 		return __sync_bool_compare_and_swap(ptr, cmp, val);
 #elif defined(WIN32)
@@ -109,40 +108,40 @@ namespace atomic {
 #endif
 	}
 
-	inline int64 cas(
-		volatile int64 * ptr, const int64 val, const int64 cmp) 
+	inline coid::int64 cas(
+		volatile coid::int64 * ptr, const coid::int64 val, const coid::int64 cmp) 
 	{
-		DASSERT(sizeof(int64) == 8);
+		DASSERT(sizeof(coid::int64) == 8);
 #if defined(__GNUC__)
 		return __sync_val_compare_and_swap(ptr, cmp, val);
 #elif defined(WIN32)
 		return _InterlockedCompareExchange64(
-			reinterpret_cast<volatile int64*>(ptr), val, cmp);
+			reinterpret_cast<volatile coid::int64*>(ptr), val, cmp);
 #endif
 	}
 
 	inline bool b_cas(
-		volatile int64 * ptr, const int64 val, const int64 cmp) 
+		volatile coid::int64 * ptr, const coid::int64 val, const coid::int64 cmp) 
 	{
-		DASSERT(sizeof(int64) == 8);
+		DASSERT(sizeof(coid::int64) == 8);
 #if defined(__GNUC__)
 		return __sync_bool_compare_and_swap(ptr, cmp, val);
 #elif defined(WIN32)
 		return _InterlockedCompareExchange64(
-			reinterpret_cast<volatile int64*>(ptr), val, cmp) == cmp;
+			reinterpret_cast<volatile coid::int64*>(ptr), val, cmp) == cmp;
 #endif
 	}
 
 #ifdef SYSTYPE_64
 /*	inline bool b_cas(
-		int64 * ptr, const int64 valh, const int64 vall, int64 * cmp) 
+		coid::int64 * ptr, const coid::int64 valh, const coid::int64 vall, coid::int64 * cmp) 
 	{
-		DASSERT(sizeof(int64) == 8);
+		DASSERT(sizeof(coid::int64) == 8);
 #if defined(__GNUC__)
 		return __sync_bool_compare_and_swap(ptr, cmp, val);
 #elif defined(WIN32)
 		return _InterlockedCompareExchange128(
-			reinterpret_cast<int64 volatile*>(ptr), 
+			reinterpret_cast<coid::int64 volatile*>(ptr), 
 			valh, vall, 
 			cmp) == cmp;
 #endif
