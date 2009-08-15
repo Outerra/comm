@@ -73,7 +73,7 @@ public:
 
 	explicit iref(T* p) : _p(p) {}
 
-	iref(iref_t& r) : _p(r.add_ref_copy()) {}
+	iref(const iref_t& r) : _p(r.add_ref_copy()) {}
 
 	~iref() { release(); }
 
@@ -98,6 +98,17 @@ public:
 	}
 
 	bool is_empty() const { return (_p==0); }
+
+	friend coid::binstream& operator << (coid::binstream& bin,const iref_t& s) { return bin<<*s.get(); }
+
+	friend coid::binstream& operator >> (coid::binstream& bin,iref_t& s) { s.create(new T); return bin>>*s.get(); }
+
+	friend coid::metastream& operator << (coid::metastream& m,const iref_t& s)
+	{
+		MSTRUCT_OPEN(m,"ref")
+			MMAT(m,"ptr",T)
+		MSTRUCT_CLOSE(m)
+	}
 
 private:
 	T* _p;
