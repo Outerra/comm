@@ -165,8 +165,17 @@ public:
     /// a,+ - append
     virtual opcd open( const token& name, token attr = token::empty() )
     {
-        charstr tmp = name;
-        return open( tmp.c_str(), attr );
+        if(name.last_char() == 0)
+            return open( name.ptr(), attr );
+        else {
+            //zero-terminate
+            charstr tmp = name;
+            return open( tmp.c_str(), attr );
+        }
+    }
+
+    opcd open( const charstr& name, token attr = token::empty() ) {
+        return open( name.c_str(), attr );
     }
 
     ///Open file
@@ -387,6 +396,10 @@ public:
         return filestream::open( name, attr );
     }
 
+    opcd open( const charstr& name, token attr = token::empty() ) {
+        return open( name.c_str(), attr );
+    }
+
     opcd open( const char* name, token attr = token::empty() )
     {
         charstr flg;
@@ -435,6 +448,10 @@ public:
         }
 
         return filestream::open( name, attr );
+    }
+
+    opcd open( const charstr& name, token attr = token::empty() ) {
+        return open( name.c_str(), attr );
     }
 
     opcd open( const char* name, token attr = token::empty() )
