@@ -604,10 +604,10 @@ public:
     {
         switch( bytes )
         {
-        case 1: append_num( base, (int)*(int8*)p, minsize, align );  break;
-        case 2: append_num( base, (int)*(int16*)p, minsize, align );  break;
-        case 4: append_num( base, (int)*(int32*)p, minsize, align );  break;
-        case 8: append_num( base, *(int64*)p, minsize, align );  break;
+        case 1: append_num_signed( *(int8*)p, base, minsize, align );  break;
+        case 2: append_num_signed( *(int16*)p, base, minsize, align );  break;
+        case 4: append_num_signed( *(int32*)p, base, minsize, align );  break;
+        case 8: append_num_signed( *(int64*)p, base, minsize, align );  break;
         default:
             throw ersINVALID_TYPE "unsupported size";
         }
@@ -617,10 +617,10 @@ public:
     {
         switch( bytes )
         {
-        case 1: append_num( base, (uint)*(uint8*)p, minsize, align );  break;
-        case 2: append_num( base, (uint)*(uint16*)p, minsize, align );  break;
-        case 4: append_num( base, (uint)*(uint32*)p, minsize, align );  break;
-        case 8: append_num( base, *(uint64*)p, minsize, align );  break;
+        case 1: append_num_unsigned( *(uint8*)p, base, 0, minsize, align );  break;
+        case 2: append_num_unsigned( *(uint16*)p, base, 0, minsize, align );  break;
+        case 4: append_num_unsigned( *(uint32*)p, base, 0, minsize, align );  break;
+        case 8: append_num_unsigned( *(uint64*)p, base, 0, minsize, align );  break;
         default:
             throw ersINVALID_TYPE "unsupported size";
         }

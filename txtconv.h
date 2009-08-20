@@ -286,13 +286,13 @@ public:
         }
 
         //@return number of characters taken
-        static uints precompute( char* buf, UINT n, int BaseN, int sgn )
+        static uints precompute( char* buf, uint64 n, int BaseN, int sgn )
         {
             uints i=0;
             if(n) {
                 for( ; n; ) {
-                    UINT d = n / BaseN;
-                    UINT m = n % BaseN;
+                    uint64 d = n / BaseN;
+                    uint64 m = n % BaseN;
 
                     if( m>9 )
                         buf[i++] = 'a' + (char)m - 10;
