@@ -289,6 +289,7 @@ public:
         _utf8 = utf8;
         _bomread = false;
         _ntrails = 0;
+        _nkwd_groups = 0;
 
         reset();
 
@@ -441,16 +442,17 @@ public:
     /// the hash value for the token it processed.
     ///Otherwise (when they are heterogenous) they are set up as sequences.
     //@param kwd keyword to add
+    //@param keyword_group 0-based id of distinct keyword group
     //@return ID_KEYWORDS if the keyword consists of homogenous characters from
     /// one character group, or id of a sequence created, or 0 if already defined.
-    int def_keyword( const token& kwd )
+    int def_keyword( const token& kwd, uint keyword_group=0 )
     {
         if( !homogenous(kwd) )
             return def_sequence( "keywords", kwd );
 
-        if( _kwds.add(kwd) ) {
+        if( _kwds.add(kwd, ID_KEYWORDS + keyword_group) ) {
             _abmap[(uchar)_casemap[kwd.first_char()]] |= fGROUP_KEYWORDS;
-            return ID_KEYWORDS;
+            return ID_KEYWORDS + keyword_group;
         }
 
         _err = lexception::ERR_KEYWORD_ALREADY_DEFINED;
@@ -471,7 +473,9 @@ public:
         int grp = 0;
         
         while( !(kwd = kwdlist.cut_left(sep)).is_empty() )
-            grp = def_keyword(kwd);
+            grp = def_keyword(kwd, _nkwd_groups);
+
+        ++_nkwd_groups;
 
         return grp;
     }
@@ -991,8 +995,9 @@ public:
             _last.tok = scan_group( _last.id-1, false, 1 );
 
         //check if it's a keyword
-        if( (x & fGROUP_KEYWORDS)  &&  _kwds.valid( _last.hash.hash, _last.tok ) )
-            _last.id = ID_KEYWORDS;
+        int kwdgrp;
+        if( (x & fGROUP_KEYWORDS)  &&  (kwdgrp = _kwds.valid(_last.hash.hash, _last.tok)) )
+            _last.id = kwdgrp;
 
         return _last;
     }
@@ -1684,7 +1689,7 @@ protected:
     ///Assert valid rule id
     void __assert_valid_rule( int sid ) const
     {
-        if( sid == ID_KEYWORDS )
+        if( sid >= ID_KEYWORDS  &&  sid < ID_KEYWORDS+(int)_nkwd_groups )
             return;
 
         if( sid == 0
@@ -1964,11 +1969,26 @@ protected:
         bool icase;
     };
 
+    ///
+    struct keyword_id {
+        charstr key;
+        int group;
+
+        operator token() const {
+            return key;
+        }
+
+        void swap( keyword_id& v ) {
+            key.swap(v.key);
+            std::swap(group, v.group);
+        }
+    };
+
     ///Keyword map for detection of whether token is a reserved word
     struct keywords : entity
     {
-        hash_set<charstr, hash_keyword, equal_keyword>
-            set;                        ///< hash_set for fast detection if the string is in the list
+        hash_keyset<keyword_id, _Select_Copy<keyword_id,token>, hash_keyword, equal_keyword>
+            set;                        ///< hash_keyset for fast detection if the string is in the list
         int nkwd;                       ///< number of keywords
 
 
@@ -1989,20 +2009,23 @@ protected:
             return nkwd > 0;
         }
 
-        bool add( const token& kwd )
+        bool add( const token& kwd, int group )
         {
-            charstr skwd = kwd;
+            keyword_id kwdid;
+            kwdid.key = kwd;
+            kwdid.group = group;
 
-            bool succ = (0 != set.swap_insert_value(skwd));
-            if (succ)
+            bool succ = (0 != set.swap_insert_value(kwdid));
+            if(succ)
                 ++nkwd;
 
             return succ;
         }
 
-        bool valid( uint hash, const token& kwd ) const
+        int valid( uint hash, const token& kwd ) const
         {
-            return set.find_value( hash, kwd ) != 0;
+            const keyword_id* k = set.find_value(hash, kwd);
+            return k ? k->group : 0;
         }
     };
 
@@ -2110,7 +2133,7 @@ protected:
 
     const entity& get_entity( int id ) const
     {
-        if( id == ID_KEYWORDS )
+        if( id >= ID_KEYWORDS && id < ID_KEYWORDS+(int)_nkwd_groups )
             return _kwds;
         if( id > 0 )
             return *_grpary[id-1];
@@ -2949,6 +2972,7 @@ protected:
     dynarray<escape_rule*> _escary;     ///< escape character replacement pairs
     dynarray<sequence*> _stbary;        ///< string or block delimiters
     keywords _kwds;
+    uint _nkwd_groups;                  ///< number of defined keyword groups
 
     root_block _root;                   ///< root block rule containing initial enable flags
     dynarray<block_rule*> _stack;       ///< stack with open block rules, initially contains &_root
