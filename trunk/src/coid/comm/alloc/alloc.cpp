@@ -36,6 +36,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "alloc.h"
+#include "memtrack.h"
 #include "../sync/mutex.h"
 #include "../commassert.h"
 
@@ -65,7 +66,9 @@ namespace coid {
 ////////////////////////////////////////////////////////////////////////////////
 void* seg_allocator::operator new (size_t size)
 {
-    return ::dlmalloc(size); 
+    MEMTRACK(seg_allocator, size);
+
+    return ::dlmalloc(size);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

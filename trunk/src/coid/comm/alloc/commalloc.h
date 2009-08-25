@@ -39,13 +39,24 @@
 
 #include "../namespace.h"
 #include "../singleton.h"
+#include "memtrack.h"
 #include <exception>
 
 #define USE_DL_PREFIX
 #define MSPACES 1
 #include "./_malloc.h"
 
-#define COIDNEWDELETE \
+#define COIDNEWDELETE(name) \
+    void* operator new( size_t size ) { \
+        void* p=::dlmalloc(size); \
+        if(p==0) throw std::bad_alloc(); \
+        MEMTRACK(name, size); \
+        return p; } \
+    void* operator new( size_t, void* p ) { return p; } \
+    void operator delete(void* ptr)     { ::dlfree(ptr); } \
+    void operator delete(void*, void*)  { }
+
+#define COIDNEWDELETE_NOTRACK \
     void* operator new( size_t size ) { \
         void* p=::dlmalloc(size); \
         if(p==0) throw std::bad_alloc(); \
@@ -53,7 +64,6 @@
     void* operator new( size_t, void* p ) { return p; } \
     void operator delete(void* ptr)     { ::dlfree(ptr); } \
     void operator delete(void*, void*)  { }
-
 
 
 COID_NAMESPACE_BEGIN
@@ -88,7 +98,7 @@ struct comm_array_mspace
 template<class T>
 struct comm_array_allocator
 {
-    COIDNEWDELETE
+    COIDNEWDELETE(comm_array_allocator);
 
 
     static void instance() {

@@ -43,6 +43,7 @@
 #include "../commtypes.h"
 #include "chunkpage.h"
 #include "commalloc.h"
+#include "memtrack.h"
 
 COID_NAMESPACE_BEGIN
 
@@ -96,7 +97,10 @@ private:
     }
 
     void* operator new (uints size, uints total )
-    {   return memaligned_alloc( total, PAGESIZE ); }
+    {
+        MEMTRACK(chunkblock, size);
+        return memaligned_alloc( total, PAGESIZE );
+    }
 
     void operator delete (void *ptr, uints )
     {   memaligned_free( ptr ); }

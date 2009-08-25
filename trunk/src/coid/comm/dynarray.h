@@ -210,7 +210,7 @@ public:
     typedef T                   value_type;
     typedef COUNT               count_t;
 
-    COIDNEWDELETE
+    COIDNEWDELETE(dynarray);
 
     dynarray() {
         A::instance();

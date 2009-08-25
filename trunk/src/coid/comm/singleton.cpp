@@ -43,6 +43,7 @@
 
 namespace coid {
 
+void memtrack_shutdown();
 
 ///Global singleton registrator
 struct GlobalSingleton
@@ -66,8 +67,10 @@ struct GlobalSingleton
 
     void destroy()
     {
-		if (last) {
+		if(last) {
 #ifdef _DEBUG
+            memtrack_shutdown();
+
 			bofstream bof("singleton.log");
 			txtstream tof(bof);
 #endif
