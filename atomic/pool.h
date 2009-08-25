@@ -11,7 +11,14 @@ class pool
 protected:
 	atomic::stack<P> _stack;
 
+	volatile int32 _nitems;
+
 public:
+	pool()
+		: _stack()
+		, _nitems(0)
+	{}
+
 	//! static instance of stack
 	static pool & get() { static pool p; return p; }
 
@@ -20,6 +27,7 @@ public:
 		P* p = _stack.pop();
 		if( p!=0 ) {
 			p->add_ref_copy();
+			atomic::dec(&_nitems);
 			return p;
 		}
 		else {
@@ -30,7 +38,10 @@ public:
 	void destroy( P* p) {
 		p->object_ptr()->reset();
 		_stack.push(p);
+		atomic::inc(&_nitems);
 	}
+
+	int32 items_in_pool() const { return _nitems; }
 };
 
 template<class T>
