@@ -97,6 +97,8 @@ protected:
         Node*   _next;
 
         Node() : _next(0) {}
+
+        COIDNEWDELETE_NOTRACK;
     };
 
 
@@ -663,7 +665,7 @@ public:
     {
         resize( _nelem + 1 );
 
-        Node** ppn = _insert_unique(v);
+        Node** ppn = _copy_insert_unique(v);
         if(!ppn)
             return std::pair<iterator,bool>( end(), false );
         else
@@ -673,7 +675,7 @@ public:
     iterator insert_equal( const VAL& v )
     {
         resize( _nelem + 1 );
-        return iterator( *_insert_equal(v), *this );
+        return iterator( *_copy_insert_equal(v), *this );
     }
 
     void insert_unique( const VAL* f, const VAL* l )
@@ -681,7 +683,7 @@ public:
         size_t n = l - f;
         resize( _nelem + n );
         for( ; n>0; --n, ++f )
-            _insert_unique(*f);
+            _copy_insert_unique(*f);
     }
 
     void insert_equal( const VAL* f, const VAL* l )
@@ -689,7 +691,7 @@ public:
         size_t n = l - f;
         resize( _nelem + n );
         for( ; n>0; --n, ++f )
-            _insert_equal(*f);
+            _copy_insert_equal(*f);
     }
 
     void insert_unique( const_iterator f, const_iterator l )
@@ -698,7 +700,7 @@ public:
         std::distance( f, l, n );
         resize( _nelem + n );
         for( ; n>0; --n, ++f )
-            _insert_unique(*f);
+            _copy_insert_unique(*f);
     }
 
     void insert_equal( const_iterator f, const_iterator l )
@@ -707,7 +709,7 @@ public:
         std::distance( f, l, n );
         resize( _nelem + n );
         for( ; n>0; --n, ++f )
-            _insert_equal(*f);
+            _copy_insert_equal(*f);
     }
     
  

@@ -40,9 +40,10 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "memtrack.h"
+
 #include "../comm.h"
 #include "../commassert.h"
-
 #include "../dynarray.h"
 
 #include <algorithm>
@@ -68,6 +69,9 @@ void* ssegpage::operator new ( size_t, uints segsize )
 {
     segsize = nextpow2(segsize);
     uchar r = ssegpage::block::get_granularity_shift_from_pagesize(segsize);
+
+    MEMTRACK(ssegpage, segsize);
+
     return memaligned_alloc( segsize, 1<<r );
 }
 

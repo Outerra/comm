@@ -114,7 +114,7 @@ public:
     ///stream function prototype
     typedef opcd (*fnc_stream)( const Persist& arg );
 
-    COIDNEWDELETE
+    COIDNEWDELETE(segarray);
 
 protected:
     ///_flags enum
@@ -175,7 +175,7 @@ public:
             return 0;
         }
 
-        COIDNEWDELETE
+        COIDNEWDELETE(segarray::segment);
 
         uint   used_size() const                { return _nitems*_chunksize; }
         uint   free_size() const                { return (_segitems - _nitems)*_chunksize; }
@@ -920,7 +920,7 @@ public:
 
     public:
 
-        COIDNEWDELETE
+        COIDNEWDELETE(segarray::ptr);
 
         typedef T           value_type;
         typedef ptrdiff_t   difference_type;

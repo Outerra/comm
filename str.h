@@ -63,6 +63,8 @@ class charstr
 
 public:
 
+    COIDNEWDELETE(charstr);
+
     struct output_iterator : std::iterator<std::output_iterator_tag, char>
     {
         charstr* _p;                    ///<ptr to the managed item
