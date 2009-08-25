@@ -11,7 +11,7 @@ class pool
 protected:
 	atomic::stack<P> _stack;
 
-	volatile int32 _nitems;
+	volatile coid::int32 _nitems;
 
 public:
 	pool()
