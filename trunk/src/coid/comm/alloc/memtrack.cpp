@@ -118,14 +118,32 @@ uint memtrack_list( memtrack* dst, uint nmax )
     memtrack_hash_t::iterator ie = mtr->hash.end();
 
     uint i=0;
-    for( ; ib!=ie && i<nmax; ++ib,++i ) {
+    for( ; ib!=ie && i<nmax; ++ib ) {
         memtrack& p = *ib;
-        dst[i] = p;
+        if(p.nallocs == 0)
+            continue;
+
+        dst[i++] = p;
         p.nallocs = 0;
         p.size = 0;
     }
 
     return i;
+}
+
+void memtrack_reset()
+{
+    memtrack_registrar* mtr = memtrack_register();
+
+    GUARDTHIS(mtr->mux);
+    memtrack_hash_t::iterator ib = mtr->hash.begin();
+    memtrack_hash_t::iterator ie = mtr->hash.end();
+
+    for( ; ib!=ie; ++ib ) {
+        memtrack& p = *ib;
+        p.nallocs = 0;
+        p.size = 0;
+    }
 }
 
 #else

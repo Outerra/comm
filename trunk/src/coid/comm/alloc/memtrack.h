@@ -59,10 +59,14 @@ void memtrack_alloc( const char* name, uints size );
 ///List allocation request statistics from last call
 uint memtrack_list( memtrack* dst, uint nmax );
 
+///Reset tracking info
+void memtrack_reset();
+
 #else
 
 inline void memtrack_alloc( const char* name, uints size ) { }
 inline uint memtrack_list( memtrack* dst, uint nmax ) { return 0; }
+inline void memtrack_reset() {}
 
 #endif
 
