@@ -106,6 +106,7 @@ void memtrack_alloc( const char* name, uints size )
 
     ++val->nallocs;
     val->size += size;
+    val->total += size;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
