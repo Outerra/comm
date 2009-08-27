@@ -40,16 +40,28 @@
 #include "../namespace.h"
 #include "../commtypes.h"
 
+#include <utility>
+
 
 #define MEMTRACK(name, size) coid::memtrack_alloc(#name, size)
 
-struct memtrack {
-    uints size;
-    uint nallocs;
-    const char* name;
-};
-
 COID_NAMESPACE_BEGIN
+
+struct memtrack {
+    uints size;                         ///< size allocated from last check
+    uints total;                        ///< total allocated size, but doesn't subtract freed memory
+    uint nallocs;                       ///< number of allocations from last call
+    const char* name;                   ///< class identifier
+
+    void swap(memtrack& m) {
+        std::swap(size, m.size);
+        std::swap(total, m.total);
+        std::swap(nallocs, m.nallocs);
+        std::swap(name, m.name);
+    }
+
+    memtrack() : size(0), total(0), nallocs(0), name(0) {}
+};
 
 #ifdef _DEBUG
 
