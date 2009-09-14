@@ -3,7 +3,7 @@
   and released to the public domain, as explained at
   http://creativecommons.org/licenses/publicdomain. 
  
-  last update: Mon Aug 15 08:55:52 2005  Doug Lea  (dl at gee)
+  last update: Wed May 27 14:25:17 2009  Doug Lea  (dl at gee)
 
   This header is for ANSI C/C++ only.  You can set any of
   the following #defines before including:
@@ -30,12 +30,19 @@
 #define MSPACES 1
 //COID>
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include <stddef.h>   /* for size_t */
+
+#ifndef ONLY_MSPACES
+#define ONLY_MSPACES 0     /* define to a value */
+#endif  /* ONLY_MSPACES */
+#ifndef NO_MALLINFO
+#define NO_MALLINFO 0
+#endif  /* NO_MALLINFO */
+
 
 #if !ONLY_MSPACES
 
@@ -56,7 +63,30 @@ extern "C" {
 #define dlindependent_calloc   independent_calloc
 #define dlindependent_comalloc independent_comalloc
 #endif /* USE_DL_PREFIX */
-
+#if !NO_MALLINFO 
+#ifndef HAVE_USR_INCLUDE_MALLOC_H
+#ifndef _MALLOC_H
+#ifndef MALLINFO_FIELD_TYPE
+#define MALLINFO_FIELD_TYPE size_t
+#endif /* MALLINFO_FIELD_TYPE */
+#ifndef STRUCT_MALLINFO_DECLARED
+#define STRUCT_MALLINFO_DECLARED 1
+struct mallinfo {
+  MALLINFO_FIELD_TYPE arena;    /* non-mmapped space allocated from system */
+  MALLINFO_FIELD_TYPE ordblks;  /* number of free chunks */
+  MALLINFO_FIELD_TYPE smblks;   /* always 0 */
+  MALLINFO_FIELD_TYPE hblks;    /* always 0 */
+  MALLINFO_FIELD_TYPE hblkhd;   /* space in mmapped regions */
+  MALLINFO_FIELD_TYPE usmblks;  /* maximum total allocated space */
+  MALLINFO_FIELD_TYPE fsmblks;  /* always 0 */
+  MALLINFO_FIELD_TYPE uordblks; /* total allocated space */
+  MALLINFO_FIELD_TYPE fordblks; /* total free space */
+  MALLINFO_FIELD_TYPE keepcost; /* releasable (via malloc_trim) space */
+};
+#endif /* STRUCT_MALLINFO_DECLARED */
+#endif  /* _MALLOC_H */
+#endif  /* HAVE_USR_INCLUDE_MALLOC_H */
+#endif  /* !NO_MALLINFO */
 
 /*
   malloc(size_t n)
@@ -168,7 +198,7 @@ int dlmallopt(int, int);
   Even if locks are otherwise defined, this function does not use them,
   so results might not be up to date.
 */
-size_t dlmalloc_footprint(void);
+size_t dlmalloc_footprint();
 
 #if !NO_MALLINFO
 /*
@@ -193,25 +223,6 @@ size_t dlmalloc_footprint(void);
   be kept as longs, the reported values may wrap around zero and
   thus be inaccurate.
 */
-#ifndef HAVE_USR_INCLUDE_MALLOC_H
-#ifndef _MALLOC_H
-#ifndef MALLINFO_FIELD_TYPE
-#define MALLINFO_FIELD_TYPE size_t
-#endif /* MALLINFO_FIELD_TYPE */
-struct mallinfo {
-  MALLINFO_FIELD_TYPE arena;    /* non-mmapped space allocated from system */
-  MALLINFO_FIELD_TYPE ordblks;  /* number of free chunks */
-  MALLINFO_FIELD_TYPE smblks;   /* always 0 */
-  MALLINFO_FIELD_TYPE hblks;    /* always 0 */
-  MALLINFO_FIELD_TYPE hblkhd;   /* space in mmapped regions */
-  MALLINFO_FIELD_TYPE usmblks;  /* maximum total allocated space */
-  MALLINFO_FIELD_TYPE fsmblks;  /* always 0 */
-  MALLINFO_FIELD_TYPE uordblks; /* total allocated space */
-  MALLINFO_FIELD_TYPE fordblks; /* total free space */
-  MALLINFO_FIELD_TYPE keepcost; /* releasable (via malloc_trim) space */
-};
-#endif  /* _MALLOC_H */
-#endif  /* HAVE_USR_INCLUDE_MALLOC_H */
 
 struct mallinfo dlmallinfo(void);
 #endif  /* NO_MALLINFO */
@@ -363,22 +374,6 @@ void*  dlpvalloc(size_t);
 int  dlmalloc_trim(size_t);
 
 /*
-  malloc_usable_size(void* p);
-
-  Returns the number of bytes you can actually use in
-  an allocated chunk, which may be more than you requested (although
-  often not) due to alignment and minimum size constraints.
-  You can use this many bytes without worrying about
-  overwriting other allocated objects. This is not a particularly great
-  programming practice. malloc_usable_size can be more useful in
-  debugging and assertions, for example:
-
-  p = malloc(n);
-  assert(malloc_usable_size(p) >= 256);
-*/
-size_t dlmalloc_usable_size(void*);
-
-/*
   malloc_stats();
   Prints on stderr the amount of space obtained from the system (both
   via sbrk and mmap), the maximum amount (which may be more than
@@ -397,9 +392,26 @@ size_t dlmalloc_usable_size(void*);
   malloc_stats prints only the most commonly interesting statistics.
   More information can be obtained by calling mallinfo.
 */
-void  dlmalloc_stats(void);
+void  dlmalloc_stats();
 
 #endif /* !ONLY_MSPACES */
+
+/*
+  malloc_usable_size(void* p);
+
+  Returns the number of bytes you can actually use in
+  an allocated chunk, which may be more than you requested (although
+  often not) due to alignment and minimum size constraints.
+  You can use this many bytes without worrying about
+  overwriting other allocated objects. This is not a particularly great
+  programming practice. malloc_usable_size can be more useful in
+  debugging and assertions, for example:
+
+  p = malloc(n);
+  assert(malloc_usable_size(p) >= 256);
+*/
+size_t dlmalloc_usable_size(void*);
+
 
 #if MSPACES
 
@@ -440,6 +452,19 @@ size_t destroy_mspace(mspace msp);
   space (if possible) but not the initial base.
 */
 mspace create_mspace_with_base(void* base, size_t capacity, int locked, size_t modalign);
+
+/*
+  mspace_track_large_chunks controls whether requests for large chunks
+  are allocated in their own untracked mmapped regions, separate from
+  others in this mspace. By default large chunks are not tracked,
+  which reduces fragmentation. However, such chunks are not
+  necessarily released to the system upon destroy_mspace.  Enabling
+  tracking by setting to true may increase fragmentation, but avoids
+  leakage when relying on destroy_mspace to release all memory
+  allocated using this space.  The function returns the previous
+  setting.
+*/
+int mspace_track_large_chunks(mspace msp, int enable);
 
 /*
   mspace_malloc behaves as malloc, but operates within
@@ -510,6 +535,11 @@ struct mallinfo mspace_mallinfo(mspace msp);
 #endif /* NO_MALLINFO */
 
 /*
+  malloc_usable_size(void* p) behaves the same as malloc_usable_size;
+*/
+ size_t mspace_usable_size(void* mem);
+
+/*
   mspace_malloc_stats behaves as malloc_stats, but reports
   properties of the given space.
 */
@@ -520,11 +550,6 @@ void mspace_malloc_stats(mspace msp);
   operates within the given space.
 */
 int mspace_trim(mspace msp, size_t pad);
-
-/*
-  An alias for malloc_usable_size.
-*/
-size_t mspace_usable_size(void *mem);
 
 /*
   An alias for mallopt.
