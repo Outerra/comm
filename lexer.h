@@ -177,7 +177,7 @@ public:
     {
         token   tok;                    ///< value string, points to input string or to tokbuf
         int     id;                     ///< token id (group type or string type)
-        int     termid;                 ///< terminator id, for strings or blocks with multiple trailing sequences
+        int     termid;                 ///< terminator id, for strings or blocks with multiple trailing sequences, or keyword id for keywords
         int     state;                  ///< >0 leading, <0 trailing, =0 chunked
         charstr tokbuf;                 ///< buffer that keeps processed string in case it had to be altered (escape seq.replacements etc.)
         token_hash hash;                ///< hash value computed for tokens (but not for strings or blocks)
@@ -996,7 +996,7 @@ public:
 
         //check if it's a keyword
         int kwdgrp;
-        if( (x & fGROUP_KEYWORDS)  &&  (kwdgrp = _kwds.valid(_last.hash.hash, _last.tok)) )
+        if( (x & fGROUP_KEYWORDS)  &&  (kwdgrp = _kwds.valid(_last.hash.hash, _last.tok, &_last.termid)) )
             _last.id = kwdgrp;
 
         return _last;
@@ -1973,6 +1973,7 @@ protected:
     struct keyword_id {
         charstr key;
         int group;
+        int ord;
 
         operator token() const {
             return key;
@@ -1981,6 +1982,7 @@ protected:
         void swap( keyword_id& v ) {
             key.swap(v.key);
             std::swap(group, v.group);
+            std::swap(ord, v.ord);
         }
     };
 
@@ -1993,7 +1995,9 @@ protected:
 
 
         keywords() : entity("keywords", entity::KEYWORDLIST, 0)
-        {}
+        {
+            nkwd = 0;
+        }
 
 
         void set_icase( bool icase ) {
@@ -2014,6 +2018,7 @@ protected:
             keyword_id kwdid;
             kwdid.key = kwd;
             kwdid.group = group;
+            kwdid.ord = nkwd;
 
             bool succ = (0 != set.swap_insert_value(kwdid));
             if(succ)
@@ -2022,9 +2027,10 @@ protected:
             return succ;
         }
 
-        int valid( uint hash, const token& kwd ) const
+        int valid( uint hash, const token& kwd, int* ord=0 ) const
         {
             const keyword_id* k = set.find_value(hash, kwd);
+            if(ord && k) *ord = k->ord;
             return k ? k->group : 0;
         }
     };
