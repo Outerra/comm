@@ -696,9 +696,12 @@ struct token
     //@}
 
 
+    //@{ Token cutting methods.
+    ///@note if the separator isn't found and the @a ctr parameter doesn't contain fON_FAIL_RETURN_EMPTY,
+    /// whole token is returned. This applies to cut_right* methods as well.
+
 
     ///Cut a token off, using single character as the delimiter
-    ///@param skipsep zero if separator should remain with the original token, nonzero if it's discarded
     token cut_left( char c, cut_trait ctr = cut_trait(fREMOVE_SEPARATOR) )
     {
         token r;
