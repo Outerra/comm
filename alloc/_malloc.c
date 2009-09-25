@@ -3026,24 +3026,7 @@ static int init_mparams(void) {
 #endif
 
     {
-#if USE_DEV_RANDOM
-      int fd;
-      unsigned char buf[sizeof(size_t)];
-      /* Try to use /dev/urandom, else fall back on using time */
-      if ((fd = open("/dev/urandom", O_RDONLY)) >= 0 &&
-          read(fd, buf, sizeof(buf)) == sizeof(buf)) {
-        magic = *((size_t *) buf);
-        close(fd);
-      }
-      else
-#endif /* USE_DEV_RANDOM */
-#ifdef WIN32
-        magic = (size_t)(GetTickCount() ^ (size_t)0x55555555U);
-#else
-        magic = (size_t)(time(0) ^ (size_t)0x55555555U);
-#endif
-      magic |= (size_t)8U;    /* ensure nonzero */
-      magic &= ~(size_t)7U;   /* improve chances of fault for bad values */
+      magic = (size_t)0xb3a6a9d3f40407d8ULL;
       mparams.magic = magic;
     }
   }
@@ -5166,6 +5149,20 @@ void* mspace_malloc(mspace msp, size_t bytes) {
       mem = chunk2mem(p);
       check_top_chunk(ms, ms->top);
       check_malloced_chunk(ms, mem, nb);
+      {
+        mchunkptr p2  = mem2chunk(mem);
+        #if FOOTERS
+        mstate fm = get_mstate_for(p2);
+        msp = msp; /* placate people compiling -Wunused */
+        #else /* FOOTERS */
+        mstate fm = (mstate)msp;
+        #endif /* FOOTERS */
+        if (!ok_magic(fm)) {
+          USAGE_ERROR_ACTION(fm, p2);
+          return 0;
+        }
+      }
+
       goto postaction;
     }
 
