@@ -37,7 +37,7 @@
 #ifndef __COID_COMM_HTTPSTREAMCOID__HEADER_FILE__
 #define __COID_COMM_HTTPSTREAMCOID__HEADER_FILE__
 
-#include "coid/comm/namespace.h"
+#include "../namespace.h"
 #include "httpstream.h"
 
 

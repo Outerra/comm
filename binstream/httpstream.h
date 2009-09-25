@@ -38,18 +38,16 @@
 #ifndef __COID_COMM_HTTPSTREAM2__HEADER_FILE__
 #define __COID_COMM_HTTPSTREAM2__HEADER_FILE__
 
-#include "coid/comm/namespace.h"
-#include "coid/comm/str.h"
-#include "coid/comm/rnd.h"
-#include "coid/comm/dir.h"
-#include "coid/comm/net.h"
-//#include "coid/comm/txtconv.h"
+#include "../namespace.h"
+#include "../str.h"
+#include "../rnd.h"
+#include "../dir.h"
+#include "../net.h"
 
-#include "coid/comm/binstream/cachestream.h"
-#include "coid/comm/binstream/binstreambuf.h"
-#include "coid/comm/binstream/filestream.h"
-#include "coid/comm/binstream/txtstream.h"
-//#include "coid/comm/binstream/netstreamtcp.h"
+#include "cachestream.h"
+#include "binstreambuf.h"
+#include "filestream.h"
+#include "txtstream.h"
 
 COID_NAMESPACE_BEGIN
 
