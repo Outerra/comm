@@ -2,7 +2,7 @@
 #include "../local.h"
 #include "../commexception.h"
 
-#include "regex.h"
+#include "../regex.h"
 #include "regcomp.h"
 
 COID_NAMESPACE_BEGIN
