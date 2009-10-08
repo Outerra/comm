@@ -555,6 +555,26 @@ struct token
         return read_utf8_seq( _ptr, off );
     }
 
+    ///Find Unicode character
+    const char* find_utf8( ucs4 c )
+    {
+	    if(c < 0x80)
+            return strchr((char)c);
+
+        uints offs=0;
+	    while( offs < len() )
+        {
+            uints shift = offs;
+		    ucs4 k = read_utf8_seq(_ptr, offs);
+
+            if(k == c)
+                return _ptr + shift;
+	    }
+
+        return 0;
+    }
+
+
     ///Cut UTF-8 sequence from the token, returning its UCS-4 code
     ucs4 cut_utf8()
     {

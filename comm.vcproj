@@ -1224,12 +1224,32 @@
 				>
 			</File>
 		</Filter>
+		<Filter
+			Name="regex"
+			>
+			<File
+				RelativePath=".\regex\regcomp.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\regex\regcomp.h"
+				>
+			</File>
+			<File
+				RelativePath=".\regex\regexec.cpp"
+				>
+			</File>
+		</Filter>
 		<File
 			RelativePath="comm.h"
 			>
 		</File>
 		<File
 			RelativePath=".\commassert.h"
+			>
+		</File>
+		<File
+			RelativePath=".\commexception.h"
 			>
 		</File>
 		<File
@@ -1314,6 +1334,10 @@
 		</File>
 		<File
 			RelativePath=".\ref.h"
+			>
+		</File>
+		<File
+			RelativePath=".\regex.h"
 			>
 		</File>
 		<File
