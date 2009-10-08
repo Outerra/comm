@@ -175,6 +175,16 @@ struct thread_key
     void* get() const;
 };
 
+///Get per-thread on-demand created variable 
+template<class T>
+T* thread_object( thread_key tk ) {
+    T* t = (T*)tk.get();
+    if(!t)
+        tk.set( t = new T );
+
+    return t;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 struct thread_semaphore
 {

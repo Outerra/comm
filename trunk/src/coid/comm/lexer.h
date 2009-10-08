@@ -39,6 +39,7 @@
 #define __COID_COMM_LEXER__HEADER_FILE__
 
 #include "namespace.h"
+#include "commexception.h"
 #include "token.h"
 #include "tutf8.h"
 #include "dynarray.h"
@@ -251,13 +252,15 @@ public:
     };
 
     ///Lexer exception
-    struct lexception
+    struct lexception : exception
     {
         int code;
-        charstr text;
 
-        lexception(int e, const charstr& text) : code(e), text(text)
-        {}
+        lexception(int e, charstr& text)
+            : code(e)
+        {
+            _dtext.swap(text);
+        }
 
         /// Error codes
         enum {

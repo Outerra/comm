@@ -203,6 +203,7 @@ class dynarray
     }
 
 protected:
+    friend struct dynarray_relocator;
     T* _ptr;
 
 public:
@@ -1406,6 +1407,34 @@ struct binstream_adapter_readable< dynarray<T,COUNT,A> > {
         TBinstreamContainer;
 };
 */
+
+
+///Relocator helper class for relocating pointers into dynarray when the memory
+/// region changes after call to realloc/add etc.
+struct dynarray_relocator
+{
+    ///Construct & initialize the relocator before resizing 
+    template<class T, class COUNT>
+    dynarray_relocator(dynarray<T,COUNT>& a)
+        : _p(a._ptr), _a((void**)&a._ptr)
+    {}
+
+    ///Relocate pointer after the dynarray memory possibly changed
+    template<class T>
+    T* relocate(const T* p) {
+        return _p
+            ? (T*)ptr_byteshift(p, (ints)*_a - (ints)_p)
+            : (T*)p;
+    }
+
+private:
+
+    void* _p;
+    void** _a;
+};
+
+
+
 COID_NAMESPACE_END
 
 
