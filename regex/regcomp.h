@@ -42,15 +42,15 @@ struct Reinst{
     OP	type;			// < 0200 ==> literal, otherwise action
 
     union	{
-		Reclass	*cp;	// class pointer
-		ucs4	cd;		// character
-		int	subid;		// sub-expression id for RBRA and LBRA
-		Reinst	*right;	// right child of OR 
-	};
-	union {	//regexp relies on these two being in the same union
-		Reinst *left;		// left child of OR
-		Reinst *next;		// next instruction for CAT & LBRA
-	};
+        Reclass	*cp;	// class pointer
+        ucs4	cd;		// character
+        int	subid;		// sub-expression id for RBRA and LBRA
+        Reinst	*right;	// right child of OR 
+    };
+    union {	//regexp relies on these two being in the same union
+        Reinst *left;		// left child of OR
+        Reinst *next;		// next instruction for CAT & LBRA
+    };
 
     Reinst(OP type)
         : type(type)
@@ -70,10 +70,10 @@ struct Reinst{
 ////////////////////////////////////////////////////////////////////////////////
 struct Relist
 {
-	const Reinst* inst;		// Reinstruction of the thread
+    const Reinst* inst;		// Reinstruction of the thread
 
     token match;
-	dynarray<token>	sub;	// matched subexpressions in this thread
+    dynarray<token>	sub;	// matched subexpressions in this thread
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -88,8 +88,8 @@ private:
     /// Parser Information
     struct Node
     {
-	    Reinst*	first;
-	    Reinst*	last;
+        Reinst*	first;
+        Reinst*	last;
 
         void set(Reinst* first, Reinst* last) {
             this->first = first;
@@ -126,18 +126,18 @@ private:
 
     Node* popand(int op)
     {
-	    if(_andstack.size() == 0)
+        if(_andstack.size() == 0)
             throw exception() << "missing operand for " << (char)op;
 
         Node* n = _andstack.last();
         _andstack.resize(-1);
 
-	    return n;
+        return n;
     }
 
     int popator(void)
     {
-	    if(_atorstack.size() == 0)
+        if(_atorstack.size() == 0)
             throw exception() << "can't happen: operator stack underflow";
 
         Ator* a = _atorstack.last();
@@ -172,10 +172,10 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 struct Reljunk
 {
-	dynarray<Relist> relist[2];
+    dynarray<Relist> relist[2];
 
-	int	starttype;
-	ucs4	startchar;
+    int	starttype;
+    ucs4	startchar;
     ucs4    any_except;
 
     enum MatchStyle {
@@ -209,8 +209,8 @@ private:
     friend struct regex_compiler;
     
     Reinst* startinst;	// start pc
-	dynarray<Reclass*> rclass;
-	dynarray<Reinst*> rinst;
+    dynarray<Reclass*> rclass;
+    dynarray<Reinst*> rinst;
 };
 
 
