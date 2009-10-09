@@ -40,7 +40,7 @@
 #include "../namespace.h"
 #include "../commtypes.h"
 
-#include <utility>
+#include <algorithm>
 
 
 #define MEMTRACK(name, size) coid::memtrack_alloc(#name, size)

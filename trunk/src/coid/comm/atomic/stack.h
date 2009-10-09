@@ -55,14 +55,14 @@ private:
 	{
 		ptr_t() : _ptr(0), _pops(0) {}
 
-		ptr_t(stack_node* const ptr, const coid::uint pops) : _ptr(ptr), _pops(pops) {}
+		ptr_t(stack_node* const ptr, const uint pops) : _ptr(ptr), _pops(pops) {}
 
 		union {
 			struct {
 		        stack_node * volatile _ptr;
-			    volatile coid::uint _pops;
+			    volatile uint _pops;
 			};
-			volatile coid::int64 _data;
+			volatile int64 _data;
 		};
 	};
 
