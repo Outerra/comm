@@ -103,7 +103,7 @@ struct exception
 
 
     token text() const {
-        return _dtext.is_empty() ? _stext : _dtext;
+        return _dtext.is_empty() ? _stext : (token)_dtext;
     }
 
 protected:

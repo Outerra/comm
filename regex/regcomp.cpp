@@ -229,8 +229,9 @@ Reinst::OP regex_compiler::lex(int literal, Reinst::OP dot_type)
 		return Reinst::EOL;
 	case L'[':
 		return bldcclass();
+	default:
+		return Reinst::RUNE;
 	}
-	return Reinst::RUNE;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -328,7 +329,7 @@ regex_program* regex_compiler::compile(token s, bool literal, Reinst::OP dot_typ
 	_cursubid = 0;
 
     local<regex_program> prg = new regex_program;
-    _prog = prg.get_ptr();
+    _prog = prg.ptr();
 
 	// Start with a low priority operator to prime parser
 	pushator(Reinst::OP(Reinst::START-1));

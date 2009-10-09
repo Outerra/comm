@@ -56,7 +56,7 @@ struct memtrack_imp : memtrack {
     void operator delete(void* ptr)   { ::dlfree(ptr); } \
 };
 
-typedef hash_keyset<memtrack_imp, _Select_Copy<memtrack_imp,uints>> memtrack_hash_t;
+typedef hash_keyset<memtrack_imp, _Select_Copy<memtrack_imp,uints> > memtrack_hash_t;
 
 struct memtrack_registrar {
     memtrack_hash_t hash;

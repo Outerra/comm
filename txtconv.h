@@ -228,7 +228,7 @@ public:
         static token u_insert_zt( char* dst, uints dstsize, UINT n, int BaseN, int sgn, uints minsize, EAlignNum align )
         {
             char bufx[32];
-            uints i = precompute( buf, n, BaseN, sgn );
+            uints i = precompute( bufx, n, BaseN, sgn );
             const char* buf = fix_overflow(bufx, i, dstsize);
 
             uints fc=0;              //fill count
