@@ -27,19 +27,19 @@ void regex::compile(token rt, bool literal, bool star_match_newline)
 ////////////////////////////////////////////////////////////////////////////////
 token regex::find( token rt, dynarray<token>& sub ) const
 {
-    if(!_prog)  return token(rt.ptr(), 0U);
+    if(!_prog)  return token(rt.ptr(), (uints)0);
     return _prog->match(rt, sub, Reljunk::SEARCH);
 }
 
 token regex::match( token rt, dynarray<token>& sub ) const
 {
-    if(!_prog)  return token(rt.ptr(), 0U);
+    if(!_prog)  return token(rt.ptr(), (uints)0);
     return _prog->match(rt, sub, Reljunk::MATCH);
 }
 
 token regex::leading( token rt, dynarray<token>& sub ) const
 {
-    if(!_prog)  return token(rt.ptr(), 0U);
+    if(!_prog)  return token(rt.ptr(), (uints)0);
     return _prog->match(rt, sub, Reljunk::FOLLOWS);
 }
 
@@ -135,10 +135,10 @@ static Relist* _appendstartstate(
     }
 
     p->sub.need(nsub);
-    p->match.set(ptr, 0U);
+    p->match.set(ptr, (uints)0);
 
 	if(nsub && ptr < p->sub[0].ptr())
-        p->sub[0].set(ptr, 0U);
+        p->sub[0].set(ptr, (uints)0);
     for( uints i=1; i<nsub; ++i )
         p->sub[i].set_null();
 
@@ -225,7 +225,7 @@ token regex_program::regexec(
 					}
 					break;
 				case Reinst::LBRA:
-					tlp->sub[inst->subid].set(s.ptr(), 0U);
+					tlp->sub[inst->subid].set(s.ptr(), (uints)0);
 					continue;
 				case Reinst::RBRA:
 					tlp->sub[inst->subid]._pte = s.ptr();
@@ -296,7 +296,7 @@ token regex_program::regexec(
     // fail with empty token but set the ptr to the remaining part
     if(match && j->style == Reljunk::MATCH
         && !s.is_empty())
-        result.set(s.ptr(), 0U);
+        result.set(s.ptr(), (uints)0);
 
 	return result;
 }
