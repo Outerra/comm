@@ -634,7 +634,7 @@ public:
         if(n == 0)
             return append('0');
 
-        int mods[(64+10-1)/10];
+        int64 mods[(64+10-1)/10];
         uints k=0;
 
         for( ; n>=1000 || n<=-1000; ++k) {

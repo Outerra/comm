@@ -116,6 +116,11 @@ struct comm_array_allocator
         uints* pn = (uints*)::mspace_realloc(SINGLETON(comm_array_mspace).msp,
             p ? (uints*)p - 1 : 0,
             sizeof(uints) + n * sizeof(T));
+		/*if(pn==0) {
+			pn = (uints*)::mspace_realloc(SINGLETON(comm_array_mspace).msp,
+				p ? (uints*)p - 1 : 0,
+				sizeof(uints) + n * sizeof(T));
+		}*/
         pn[0] = n;
         return (T*) (pn + 1);
     }
