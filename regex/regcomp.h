@@ -227,7 +227,7 @@ struct Reljunk
 /// Regex program representation
 struct regex_program
 {
-    token match( token bol, dynarray<token>& sub, Reljunk::MatchStyle style ) const;
+    token match( token bol, token* sub, uint nsub, Reljunk::MatchStyle style ) const;
     
     regex_program()
         : startinst(0)
@@ -237,7 +237,7 @@ struct regex_program
 private:
 
     void optimize();
-    token regexec( token bol, dynarray<token>& sub, Reljunk *j ) const;
+    token regexec( token bol, token* sub, uint nsub, Reljunk *j ) const;
 
 private:
 

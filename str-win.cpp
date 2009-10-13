@@ -2,6 +2,8 @@
 
 #ifdef _WIN32
 
+#define TOKEN_SUPPORT_WSTRING
+#include "token.h"
 #include "str.h"
 
 #define WIN32_LEAN_AND_MEAN

@@ -41,13 +41,21 @@
 
 #include "namespace.h"
 
+#include "regex.h"
 #include "substring.h"
 #include "tutf8.h"
 #include "commtime.h"
-#include <stdlib.h>
+//#include <stdlib.h>
 #include <ctype.h>
 #include <math.h>
+
+
+//Define TOKEN_SUPPORT_WSTRING before including the token.h to support wstring
+// conversions
+
+#ifdef TOKEN_SUPPORT_WSTRING
 #include <string>
+#endif
 
 COID_NAMESPACE_BEGIN
 
@@ -119,7 +127,7 @@ struct token
         else
             _ptr = src._ptr+offs, _pte = src._ptr + len;
     }
-
+/*
     ///Const iterator for token
     struct const_iterator : std::iterator<std::random_access_iterator_tag, char>
     {
@@ -157,7 +165,7 @@ struct token
 
     const_iterator begin() const            { return const_iterator(ptr()); }
     const_iterator end() const              { return const_iterator(ptre()); }
-
+*/
 
     void swap( token& t )
     {
@@ -1965,6 +1973,9 @@ struct token
     template<class A>
     bool utf8_to_wchar_buf( dynarray<wchar_t,uint,A>& dst ) const;
 
+
+#ifdef TOKEN_SUPPORT_WSTRING
+
     ///Convert token to wide stl string
     bool utf8_to_wstring( std::wstring& dst ) const
     {
@@ -2013,8 +2024,9 @@ struct token
 
     ///Append token to wide stl string
     bool codepage_to_wstring_append( uint cp, std::wstring& dst ) const;
-#endif
+#endif //SYSTYPE_WIN
 
+#endif //TOKEN_SUPPORT_WSTRING
 };
 
 ////////////////////////////////////////////////////////////////////////////////

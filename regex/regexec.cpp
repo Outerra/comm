@@ -36,6 +36,7 @@
 
 #include "../token.h"
 #include "../pthreadx.h"
+#include "../dynarray.h"
 
 #include "../regex.h"
 #include "regcomp.h"
@@ -61,28 +62,28 @@ void regex::compile(token rt, bool literal, bool star_match_newline)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-token regex::find( token rt, dynarray<token>& sub ) const
+token regex::find( token rt, token* sub, uint nsub ) const
 {
     if(!_prog)  return token(rt.ptr(), (uints)0);
-    return _prog->match(rt, sub, Reljunk::SEARCH);
+    return _prog->match(rt, sub, nsub, Reljunk::SEARCH);
 }
 
-token regex::match( token rt, dynarray<token>& sub ) const
+token regex::match( token rt, token* sub, uint nsub ) const
 {
     if(!_prog)  return token(rt.ptr(), (uints)0);
-    return _prog->match(rt, sub, Reljunk::MATCH);
+    return _prog->match(rt, sub, nsub, Reljunk::MATCH);
 }
 
-token regex::leading( token rt, dynarray<token>& sub ) const
+token regex::leading( token rt, token* sub, uint nsub ) const
 {
     if(!_prog)  return token(rt.ptr(), (uints)0);
-    return _prog->match(rt, sub, Reljunk::FOLLOWS);
+    return _prog->match(rt, sub, nsub, Reljunk::FOLLOWS);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 token regex_program::match(
     token bol,	            // string to run machine on
-    dynarray<token>& sub,   // subexpression elements
+    token* sub, uint nsub,  // subexpression elements
     Reljunk::MatchStyle style
     ) const
 {
@@ -104,19 +105,19 @@ token regex_program::match(
     j->relist[0].reset();
     j->relist[1].reset();
 
-    return regexec(bol, sub, j);
+    return regexec(bol, sub, nsub, j);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Save a new match in sub
-static void _updatematch(token& match, dynarray<token>& sub, Relist* m)//dynarray<token>& sub, dynarray<token>& sp)
+static void _updatematch(token& match, token* sub, uint nsub, Relist* m)//dynarray<token>& sub, dynarray<token>& sp)
 {
     if( match.is_null() ||
         m->match.ptr() < match.ptr() ||
         (m->match.ptr() == match.ptr()  &&  m->match.ptre() > match.ptre()) )
     {
         match = m->match;
-        sub = m->sub;
+        m->sub.copy_bin_to(sub, nsub);
     }
 }
 
@@ -186,7 +187,7 @@ static Relist* _appendstartstate(
 //@return substring that matches or an empty one
 token regex_program::regexec(
     token bol,	            // string to run machine on
-    dynarray<token>& sub,   // subexpression elements
+    token* sub, uint nsub,  // subexpression elements
     Reljunk *j
 ) const
 {
@@ -198,8 +199,7 @@ token regex_program::regexec(
     bool match = false;
     int checkstart = j->starttype;
 
-    uints ns = sub.size();
-    for( uints i=0; i<ns; ++i )
+    for( uint i=0; i<nsub; ++i )
         sub[i].set_null();
 
     // Execute machine once for each character, including terminal NUL
@@ -240,7 +240,7 @@ token regex_program::regexec(
         // Add first instruction to current list
         if(!match) {
             if(first || j->style == Reljunk::SEARCH)
-                _appendstartstate(tl, startinst, ns, s.ptr());
+                _appendstartstate(tl, startinst, nsub, s.ptr());
             first = false;
         }
 
@@ -311,9 +311,9 @@ token regex_program::regexec(
                 case Reinst::END:	// Match!
                     match = true;
                     tlp->match._pte = s.ptr();
-                    if(ns)
+                    if(nsub)
                         tlp->sub[0]._pte = s.ptr();
-                    _updatematch(result, sub, tlp);
+                    _updatematch(result, sub, nsub, tlp);
                     break;
                 }
                 break;
