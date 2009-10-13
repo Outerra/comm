@@ -38,12 +38,13 @@
 #define __COMM_REGEX__HEADER_FILE__
 
 #include "commtypes.h"
-#include "dynarray.h"
 
 COID_NAMESPACE_BEGIN
 
 struct regex_program;
 struct token;
+
+//template<class T, class COUNT=uints, class A=comm_array_allocator<T> > class dynarray;
 
 ///Regular expression class
 /**
@@ -84,16 +85,13 @@ struct regex
 
 
     ///Match the whole string
-    token match( token bol, dynarray<token>& sub ) const;
-    token match( token bol ) const { dynarray<token> empty; return match(bol, empty); }
+    token match( token bol, token* sub=0, uint nsub=0 ) const;
 
     ///Find occurrence of pattern
-    token find( token bol, dynarray<token>& sub ) const;
-    token find( token bol ) const { dynarray<token> empty; return find(bol, empty); }
+    token find( token bol, token* sub=0, uint nsub=0 ) const;
 
     ///Match leading part 
-    token leading( token bol, dynarray<token>& sub ) const;
-    token leading( token bol ) const { dynarray<token> empty; return leading(bol, empty); }
+    token leading( token bol, token* sub=0, uint nsub=0 ) const;
 
 
 private:
@@ -102,5 +100,7 @@ private:
 };
 
 COID_NAMESPACE_END
+
+#include "token.h"
 
 #endif //__COMM_REGEX__HEADER_FILE__
