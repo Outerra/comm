@@ -633,17 +633,17 @@ public:
     ///Append element to the array through copy constructor
     T* push( const T& v )
     {
-        T* ptr = add(1);
-		*ptr = v;
+        T* ptr = addnc(1);
+        ::new (ptr) T(v);
         return ptr;
     };
 
     ///Append the same element n-times to the array through copy constructor
     T* pushn( const T& v, uints n )
     {
-        T* ptr = add(n);
+        T* ptr = addnc(n);
 		for( T* p=ptr; n>0; --n,++p )
-            *p = v;
+            ::new (p) T(v);
         return ptr;
     };
 
