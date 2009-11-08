@@ -1992,15 +1992,18 @@ protected:
     ///Keyword map for detection of whether token is a reserved word
     struct keywords : entity
     {
+        struct group {
+            int id;
+            int nkwd;
+        };
+
         hash_keyset<keyword_id, _Select_Copy<keyword_id,token>, hash_keyword, equal_keyword>
             set;                        ///< hash_keyset for fast detection if the string is in the list
-        int nkwd;                       ///< number of keywords
+        dynarray<group> nkwds;
 
 
         keywords() : entity("keywords", entity::KEYWORDLIST, 0)
-        {
-            nkwd = 0;
-        }
+        {}
 
 
         void set_icase( bool icase ) {
@@ -2013,7 +2016,7 @@ protected:
         }
 
         bool has_keywords() const {
-            return nkwd > 0;
+            return nkwds.size() > 0;
         }
 
         bool add( const token& kwd, int group )
@@ -2021,13 +2024,11 @@ protected:
             keyword_id kwdid;
             kwdid.key = kwd;
             kwdid.group = group;
-            kwdid.ord = nkwd;
 
-            bool succ = (0 != set.swap_insert_value(kwdid));
-            if(succ)
-                ++nkwd;
+            keyword_id* v = (keyword_id*)set.swap_insert_value(kwdid);
+            if(v)  v->ord = ins_to_group(group);
 
-            return succ;
+            return v!=0;
         }
 
         int valid( uint hash, const token& kwd, int* ord=0 ) const
@@ -2035,6 +2036,19 @@ protected:
             const keyword_id* k = set.find_value(hash, kwd);
             if(ord && k) *ord = k->ord;
             return k ? k->group : 0;
+        }
+
+        int ins_to_group(int gid) {
+            group* pgb = nkwds.ptr();
+            group* pgbe = nkwds.ptre();
+            for( ; pgb!=pgbe; ++pgb )
+                if(pgb->id == gid) break;
+            if(pgb==pgbe) {
+                pgb = nkwds.add();
+                pgb->id = gid;
+                pgb->nkwd = 0;
+            }
+            return pgb->nkwd++;
         }
     };
 
