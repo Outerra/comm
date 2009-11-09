@@ -1123,20 +1123,24 @@ struct token
 
     ///Return position where the substring is located
     ///@return substring position, len() if not found
-    uint contains( const substring& sub, uints off=0 ) const
-    {   return count_until_substring(sub,off); }
+    const char* contains( const substring& sub, uints off=0 ) const {
+        uints k = count_until_substring(sub,off);
+        return k<len() ? _ptr+k : 0;
+    }
 
     ///Return position where the character is located
-    uint contains( char c, uints off=0 ) const
-    {   return count_notchar(c,off); }
+    const char* contains( char c, uints off=0 ) const {
+        uints k = count_notchar(c,off);
+        return k<len() ? _ptr+k : 0;
+    }
 
     ///Return position where the character is located, searching from end
-    uint contains_back( char c, uints off=0 ) const
+    const char* contains_back( char c, uints off=0 ) const
     {
         uint n = count_notchar_back(c,off);
         return ( n > off )
-            ? n-1
-            : len();
+            ? _ptr+n-1
+            : 0;
     }
 
     ///Returns number of newline sequences found, detects \r \n and \r\n
