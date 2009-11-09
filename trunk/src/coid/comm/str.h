@@ -1112,23 +1112,18 @@ public:
 
     ///Return position where the substring is located
     ///@return substring position, len() if not found
-    uint contains( const substring& sub, uints off=0 ) const
-    {   return token(*this).count_until_substring(sub,off); }
+    const char* contains( const substring& sub, uints off=0 ) const
+    {   return token(*this).contains(sub,off); }
 
     ///Return position where the character is located
     ///@return substring position, len() if not found
-    uint contains( char c, uints off=0 ) const
-    {   return token(*this).count_notchar(c,off); }
+    const char* contains( char c, uints off=0 ) const
+    {   return token(*this).contains(c,off); }
 
     ///Return position where the character is located, searching from the end
     ///@return substring position, len() if not found
-    uint contains_back( char c, uints off=0 ) const
-    {
-        uint n = token(*this).count_notchar_back(c,off);
-        return ( n > off )
-            ? n-1
-            : len();
-    }
+    const char* contains_back( char c, uints off=0 ) const
+    {   return token(*this).contains(c,off); }
 
 
     char& operator [] (uints i)                 { return _tstr[i]; }
