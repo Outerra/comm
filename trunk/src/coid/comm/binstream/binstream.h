@@ -872,8 +872,9 @@ public:
 
 
     ///Writes array without storing the count explicitly, reader is expected to know the count
+    //@note do not use in metastream for fixed arrays
     template <class T, class COUNT>
-    opcd write_fixed_array( const T* p, COUNT n )
+    opcd write_fixed_array_content( const T* p, COUNT n )
     {
         binstream_container_fixed_array<T,COUNT> c((T*)p,n);
         uints count;
@@ -881,15 +882,16 @@ public:
     }
 
     ///Read array that was stored without the count
+    //@note do not use in metastream for fixed arrays
     template <class T, class COUNT>
-    opcd read_fixed_array( T* p, COUNT n )
+    opcd read_fixed_array_content( T* p, COUNT n )
     {
         binstream_container_fixed_array<T,COUNT> c(p,n);
         uints count;
         return read_array_content(c,n,&count);
     }
 
-    ///Write linear array (helper function)
+    ///Write linear array
     template <class T, class COUNT>
     opcd write_linear_array( const T* p, COUNT n )
     {
@@ -897,6 +899,7 @@ public:
         return write_array(c);
     }
 
+    ///Read linear array
     template <class T, class COUNT>
     opcd read_linear_array( T* p, COUNT n )
     {
