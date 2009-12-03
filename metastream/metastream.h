@@ -2216,7 +2216,7 @@ inline type_holder<T> get_type_holder(T*) {
     @def MMD(meta,n,d)  specify member metadata providing a default value of member type
     @def MMTD(meta,n,d) specify member metadata providing a default value of specified type
     @def MMAT(meta,n,t) specify that member is an array of type \a t
-    @def MMAF(meta,n,t,s) specify that member is a fixed size array of type \a t
+    @def MMAF(meta,n,t,s) specify that member is a fixed size array of type \a t, written by binstream.write_linear_array
 **/
 #define MSTRUCT_OPEN(meta, n)       if( !meta.meta_struct_open(n) ) {
 #define MM(meta, n, v)              { meta.meta_variable(n,&(v)); }
