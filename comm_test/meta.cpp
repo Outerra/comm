@@ -101,18 +101,18 @@ struct FooB
 };
 
 
-
+//optional separators
 static const char* teststr =
 "a = 100,\n"
 "b = 200,\n"
-"fx = { j=1, fa={i=-1, f=-.77} },\n"
-"af = [  { j=10, fa={i=1, f=3.140}},\n"
-"        { j=11, fa={i=2, f=4.140}},\n"
-"        { j=12, fa={i=3, f=5.140}} ],\n"
-"aaf = [ [ { j=20, fa={i=9, f=8.33} }, { j=21, fa={i=10, f=4.66} }, { j=22, fa={i=11, f=7.66} } ], [] ],\n"
+"fx = { j=1 fa={i=-1 f=-.77} }\n"
+"af = [  { j=10 fa={i=1 f=3.140}}\n"
+"        { j=11 fa={i=2 f=4.140}}\n"
+"        { j=12 fa={i=3 f=5.140}} ],\n"
+"aaf = [ [ { j=20 fa={i=9 f=8.33} }, { j=21 fa={i=10 f=4.66} }, { j=22 fa={i=11 f=7.66} } ] [] ],\n"
 "aaaf = [ [ [ { text=\"\", j=30, fa={i=9, f=8.33} }, { j=31, fa={i=10, f=4.66} }, { j=32, fa={i=11, f=7.66} } ], [] ], [ [ { j=33, fa={i=33, f=0.66} } ] ] ],\n"
-"ai = [ 1, 2, 3, 4, 5 ],\n"
-"aai = [ [1, 2, 3], [4, 5], [6] ],\n"
+"ai = [ 1 2 3 4 5 ],\n"
+"aai = [ [1, 2, 3] [4, 5] [6] ]\n"
 "end = 99\n"
 ;
 
@@ -130,6 +130,21 @@ static const char* teststr1 =
 "end = 99,\n"
 //"p = { j=66, fa={i=6, f=0.998} }\n"
 //",a = 100\n"
+;
+
+//mandatory separators
+static const char* teststr2 =
+"a = 100,\n"
+"b = 200,\n"
+"fx = { j=1, fa={i=-1, f=-.77, } },\n"
+"af = [  { j=10, fa={i=1, f=3.140}},\n"
+"        { j=11, fa={i=2, f=4.140}},\n"
+"        { j=12, fa={i=3, f=5.140}} ],\n"
+"aaf = [ [ { j=20, fa={i=9, f=8.33} }, { j=21, fa={i=10, f=4.66} }, { j=22, fa={i=11, f=7.66} } ], [] ],\n"
+"aaaf = [ [ [ { text=\"\", j=30, fa={i=9, f=8.33} }, { j=31, fa={i=10, f=4.66} }, { j=32, fa={i=11, f=7.66} } ], [] ], [ [ { j=33, fa={i=33, f=0.66} } ] ] ],\n"
+"ai = [ 1, 2, 3, 4, 5 ],\n"
+"aai = [ [1, 2, 3], [4, 5], [6] ],\n"
+"end = 99\n"
 ;
 
 static const char* textxml2 =
@@ -164,6 +179,18 @@ void metastream_test()
     FooB b;
     meta.stream_in(b);
     meta.stream_acknowledge();
+
+    
+    buf.set(teststr);
+    meta.stream_in(b);
+    meta.stream_acknowledge();
+
+
+    buf.set(teststr2);
+    fmt.set_separators_optional(false);
+    meta.stream_in(b);
+    meta.stream_acknowledge();
+
 
     bofstream bof("meta.test");
     fmt.bind(bof);

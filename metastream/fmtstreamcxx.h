@@ -99,11 +99,16 @@ public:
 
         lexcode = _tokenizer.def_string( "class", "(", ")", "" );
 
+        _tokenizer.def_string( ".comment", "//", "\n", "" );
+        _tokenizer.def_string( ".comment", "//", "\r\n", "" );
+
+        _tokenizer.def_block( ".blkcomment", "/*", "*/", ".blkcomment" );
+
 
         //characters that correspond to struct and array control tokens
         _tokenizer.def_group_single( "ctrl", "{}[],=" );
 
-        set_default_separators();
+        set_default_separators(true);
     }
 
     virtual token fmtstream_name()          { return "fmtstreamcxx"; }
@@ -359,8 +364,12 @@ public:
         {
             if( t.is_nameless() )
                 _tokenizer.push_back();
-            else
+            else {
+                if(tok == trSep)    //tolerate dangling separator
+                    tok = _tokenizer.next();
+
                 e = (tok == char('}')) ? opcd(0) : ersSYNTAX_ERROR "expected }";
+            }
         }
         else if( t.type == type::T_STRUCTBGN )
         {
@@ -387,14 +396,22 @@ public:
         {
             if( trSep.is_empty() )
                 _tokenizer.push_back();
-            else if( tok == char('}') ) {
+            else {
+                bool has = tok == trSep;
+                if(has)
+                    tok = _tokenizer.next();
+
                 _tokenizer.push_back();
-                e = ersNO_MORE;
+
+                if( tok == char('}') )
+                    e = ersNO_MORE;
+                else if( _tokenizer.end() )     //no next top-level member
+                    e = ersNO_MORE;
+                else if(!has) {
+                    if(!separators_are_optional)
+                        e = ersSYNTAX_ERROR "missing separator";
+                }
             }
-            else if( _tokenizer.end() )
-                e = ersNO_MORE;
-            else if( tok != trSep )
-                e = ersSYNTAX_ERROR "missing separator";
         }
         else if( tok.is_empty() )
             e = ersSYNTAX_ERROR "empty token read";
@@ -551,24 +568,23 @@ public:
 
     virtual opcd read_array_separator( type t )
     {
+        DASSERT( t.type != type::T_CHAR && t.type != type::T_KEY && t.type != type::T_BINARY );
+
         token tok = _tokenizer.next();
+        bool has = tok == trArraySep;
+        if(has)
+            tok = _tokenizer.next();
+
+        _tokenizer.push_back();
 
         if( tok == char(']') )
-        {
-            _tokenizer.push_back();
             return ersNO_MORE;
-        }
 
-        if( t.is_next_array_element() )
+        if( t.is_next_array_element() && !trArraySep.is_empty() )
         {
-            if( t.type != type::T_CHAR && t.type != type::T_KEY && t.type != type::T_BINARY )
-            {
-                if( tok != tArraySep )
-                    return ersSYNTAX_ERROR "expected array separator";
-            }
+            if(!has && !separators_are_optional)
+                return ersSYNTAX_ERROR "expected array separator";
         }
-        else
-            _tokenizer.push_back();
 
         return 0;
     }
@@ -669,35 +685,47 @@ public:
 
 
     ///Set separators to use
+    /// @param optional_sep set to true if the member and array separators are optional on read
     /// @param eol separator between struct open/close and members
     /// @param tab indentation
     /// @param sep separator between standalone entries (multiple types pushed sequentially)
     /// @param arraysep separator between array elements
-    void set_separators( token eol, token tab, token sep, token arraysep = "," )
+    void set_separators( bool optional_sep, token eol, token tab, token sep, token arraysep = "," )
     {
         tEol = eol;
         tTab = tab;
         trSep = tSep = sep;
-        tArraySep = arraysep;
+        trArraySep = tArraySep = arraysep;
 
         _tokenizer.strip_group( trSep, 1 );
+        _tokenizer.strip_group( trArraySep, 1 );
     }
 
-    void set_default_separators()
+    /// @param optional_sep set to true if the member and array separators are optional on read
+    void set_default_separators(bool optional_sep)
     {
         tEol = "\n";
         tTab = "\t";
         trSep = tSep = ",\n";
-        tArraySep = ",";
+        trArraySep = tArraySep = ",";
+        separators_are_optional = optional_sep;
 
         _tokenizer.strip_group( trSep, 1 );
+        _tokenizer.strip_group( trArraySep, 1 );
     }
+
+    void set_separators_optional(bool optional) {
+        separators_are_optional = optional;
+    }
+
 
 protected:
     token tEol;                 ///< separator between struct open/close and members
     token tTab;                 ///< indentation
     token tSep,trSep;           ///< separator between entries
-    token tArraySep;            ///< separator between array elements
+    token tArraySep,trArraySep; ///< separator between array elements
+
+    bool separators_are_optional;
 
 
     void write_tabs( int indent )
