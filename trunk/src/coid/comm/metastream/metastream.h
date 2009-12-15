@@ -78,8 +78,10 @@ public:
     {
         _root.desc = 0;
 
-        _current = _cachestack.realloc(1);
-        _current->buf = &_cache;
+        //_current = _cachestack.realloc(1);
+        //_current->buf = &_cache;
+        _cachestack.reset();
+        _current = 0;
 
         _cacheroot = 0;
         _cachequit = 0;
@@ -475,8 +477,19 @@ public:
     void cache_reset( bool open )
     {
         _cache.reset();
-        _current = _cachestack.realloc(1);
-        _current->offs = open ? 0 : UMAXS;
+        //_current = _cachestack.realloc(1);
+        //_current->offs = open ? 0 : UMAXS;
+        if(open) {
+            _current = _cachestack.realloc(1);
+            _current->buf = &_cache;
+            _current->offs = 0;
+            _current->ofsz = UMAXS;
+        }
+        else {
+            _cachestack.reset();
+            _current = 0;
+        }
+
         _cachevar = 0;
         _cacheroot = 0;
         _cacheskip = 0;
@@ -701,6 +714,7 @@ public:
         _current = _cachestack.push();
         _current->buf = &_curvar.var->defval;
         _current->offs = 0;
+        _current->ofsz = UMAXS;
 
         //insert a dummy address field
         _current->set_addr( _current->insert_address(), sizeof(uints) );
@@ -1022,13 +1036,33 @@ private:
         //@}
 
         ///Retrieve address (offset) stored at the current offset
-        uints addr() const              { return offs + *(const uints*)(buf->ptr() + offs); }
-        uints addr( uints v ) const     { return v + *(const uints*)(buf->ptr() + v); }
+        uints addr() const {
+            uints v = offs + *(const uints*)(buf->ptr() + offs);
+            DASSERT( v%sizeof(uints) == 0 );    //should be aligned
+            return v;
+        }
+        uints addr( uints v ) const {
+            DASSERT( v%sizeof(uints) == 0 );
+            uints r = v + *(const uints*)(buf->ptr() + v);
+
+            DASSERT( r%sizeof(uints) == 0 );
+            return r;
+        }
 
         ///Set address (offset) at the current offset 
-        void set_addr( uints v )        { *(uints*)(buf->ptr() + offs) = v - offs; }
-        void set_addr( uints adr, uints v ) { *(uints*)(buf->ptr() + adr) = v - adr; }
-        void set_addr_invalid( uints adr )  { *(uints*)(buf->ptr() + adr) = 0; }
+        void set_addr( uints v ) {
+            DASSERT( v%sizeof(uints) == 0 );
+            *(uints*)(buf->ptr() + offs) = v - offs;
+        }
+        void set_addr( uints adr, uints v ) {
+            DASSERT( adr%sizeof(uints) == 0 );
+            DASSERT( v%sizeof(uints) == 0 );
+            *(uints*)(buf->ptr() + adr) = v - adr;
+        }
+        void set_addr_invalid( uints adr ) {
+            DASSERT( adr%sizeof(uints) == 0 );
+            *(uints*)(buf->ptr() + adr) = 0;
+        }
 
         bool valid_addr() const         { return offs != UMAXS  &&  0 != *(const uints*)(buf->ptr() + offs); }
         bool valid_addr( uints adr ) const  { return 0 != *(const uints*)(buf->ptr() + adr); }
@@ -1037,12 +1071,16 @@ private:
         uints extract_offset()
         {
             uints v = addr();
+            DASSERT( v%sizeof(uints) == 0 );    //should be aligned
+
             offs += sizeof(uints);
             return v;
         }
 
         void insert_offset( uints v )
         {
+            DASSERT( v%sizeof(uints) == 0 );    //should be aligned
+
             set_addr(v);
             offs += sizeof(uints);
         }
@@ -1067,6 +1105,8 @@ private:
         uints insert_table( uints n )
         {
             uints k = buf->size();
+            DASSERT( k%sizeof(uints) == 0 );    //should be padded
+
             buf->addc( n*sizeof(uints) );
             return k;
         }
@@ -1231,7 +1271,6 @@ protected:
 
                 ce->buf = &_curvar.var->defval;
                 ce->offs = sizeof(uints);
-                //_cachedefval = _curvar.var;
             }
             else {
                 uints v = _current->extract_member();   //also moves offset to next
@@ -1376,6 +1415,12 @@ protected:
 
                 if( _curvar.var == _cachequit )
                     invalidate_cache_entry();
+
+                if( _curvar.var == _cacheroot ) {
+                    _current = _cachestack.pop();
+                    DASSERT( _current == 0 );
+                    _cacheroot = 0;
+                }
             }
 
             //get next var
@@ -1763,7 +1808,7 @@ protected:
 
 
     bool cache_prepared() const {
-        return _current->offs != UMAXS;
+        return _current != 0  &&  _current->offs != UMAXS;
     }
 
 
@@ -1994,19 +2039,26 @@ protected:
 
 
         uints base;
-        if( _cache.size()>0  ||  par == _cacheroot ) { //_cache.size() > 0 ) {
+        if( _cachestack.size()>0 ) { //_cache.size() > 0 ) {
             //compute base offset
             uints n = _cachestack.size();
             base = n <= 1
                 ? 0
                 : _current->offs - par->desc->get_child_pos(_curvar.var)*sizeof(uints);
+
+            if(_cacheroot == 0) //cache opened in advance
+                _cacheroot = par;
         }
         else {
             //create child offset table for the members of par variable
-            _cache.reset();
             _cacheroot = par;
+            _cache.reset();
 
+            _current = _cachestack.push();
             _current->buf = &_cache;
+            _current->offs = UMAXS;
+            _current->ofsz = UMAXS;
+
             _current->insert_table( par->desc->num_children() );
             base = 0;
         }
@@ -2039,7 +2091,7 @@ protected:
     {
         opcd e;
 
-        DASSERT( _cache.size() == 0 );
+        DASSERT( _cachestack.size() == 0 );
         _cacheroot = &_root;
 
         _current->insert_table(1);
@@ -2160,7 +2212,7 @@ protected:
     ///Find _curvar.var->varname in cache
     bool cache_lookup()
     {
-        if( _cache.size() == 0 )
+        if( _cachestack.size() == 0 )
             return false;
 
         //get child map
@@ -2171,6 +2223,7 @@ protected:
         {
             //found in the cache, set up a cache read
             _current->offs = k;
+            _current->ofsz = UMAXS;
             _current->buf = &_cache;
             _cachequit = _curvar.var;
 

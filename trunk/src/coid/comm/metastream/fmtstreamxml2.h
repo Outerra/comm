@@ -123,7 +123,8 @@ public:
             return 0;
 
         _tokenizer.prepare_exception() << "error parsing the header";
-        throw _tokenizer.final_exception();
+        _tokenizer.append_exception_location();
+        throw _tokenizer.exception();
     }
 
     ///Override to parse custom trailer
@@ -134,7 +135,8 @@ public:
             return 0;
 
         _tokenizer.prepare_exception() << "error parsing the footer";
-        throw _tokenizer.final_exception();
+        _tokenizer.append_exception_location();
+        throw _tokenizer.exception();
     }
 
     ///Override to put custom header
@@ -524,7 +526,8 @@ public:
                     *(bool*)p = false;
                 else {
                     _tokenizer.prepare_exception() << "expecting boolean value";
-                    throw _tokenizer.final_exception();
+                    _tokenizer.append_exception_location();
+                    throw _tokenizer.exception();
                 }
             } break;
 

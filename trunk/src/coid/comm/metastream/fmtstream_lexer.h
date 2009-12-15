@@ -88,7 +88,7 @@ public:
 
         txt << err;
 
-        _tokenizer.final_exception();
+        _tokenizer.append_exception_location();
 
         err.swap(txt);
         txt.reset();

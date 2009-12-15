@@ -1571,12 +1571,12 @@ public:
         return _errtext;
     }
 
-    ///Return exception that was prepared externally, appending suffix
-    lexception final_exception( bool last_token = false )
+    ///Append information about exception location
+    charstr& append_exception_location( bool last_token = false )
     {
         on_error_suffix(_errtext);
 
-        return lexception(_err, _errtext);
+        return _errtext;
     }
 
     //@return lexception object to be thrown
