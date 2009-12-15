@@ -109,6 +109,9 @@ public:
         lexstr = _tokenizer.def_string( "str", "\"", "\"", "esc" );
         lexchr = _tokenizer.def_string( "str", "\'", "\'", "esc" );
 
+        _tokenizer.def_string( ".comment", "#", "\n", "" );
+        _tokenizer.def_string( ".comment", "#", "\r\n", "" );
+
         //characters that correspond to struct and array control tokens
         _tokenizer.def_group_single( "ctrl", "(){}[],:" );
 
@@ -440,12 +443,18 @@ public:
         {
             if( trSep.is_empty() )
                 _tokenizer.push_back();
-            else if( tok == char('}') ) {
+            else {
+                bool has = tok == trSep;
+                if(has)
+                    tok = _tokenizer.next();
+
                 _tokenizer.push_back();
-                e = ersNO_MORE;
+
+                if( tok == char('}') )
+                    e = ersNO_MORE;
+                else if(!has)
+                    e = ersSYNTAX_ERROR "missing separator";
             }
-            else if( tok != trSep )
-                e = ersSYNTAX_ERROR "missing separator";
         }
         else if( tok.is_empty() )
             e = ersSYNTAX_ERROR "empty token read";
@@ -601,24 +610,23 @@ public:
 
     virtual opcd read_array_separator( type t )
     {
+        DASSERT( t.type != type::T_CHAR && t.type != type::T_KEY && t.type != type::T_BINARY );
+
         token tok = _tokenizer.next();
+        bool has = tok == trArraySep;
+        if(has)
+            tok = _tokenizer.next();
+
+        _tokenizer.push_back();
 
         if( tok == char(']') )
-        {
-            _tokenizer.push_back();
             return ersNO_MORE;
-        }
 
-        if( t.is_next_array_element() )
+        if( t.is_next_array_element() && !trArraySep.is_empty() )
         {
-            if( t.type != type::T_CHAR && t.type != type::T_KEY && t.type != type::T_BINARY )
-            {
-                if( tok != tArraySep )
-                    return ersSYNTAX_ERROR "expected array separator";
-            }
+            if(!has)
+                return ersSYNTAX_ERROR "expected array separator";
         }
-        else
-            _tokenizer.push_back();
 
         return 0;
     }
@@ -707,10 +715,11 @@ public:
     {
         tEol = eol;
         tTab = tab;
-        tSep = sep;
-        tArraySep = arraysep;
+        trSep = tSep = sep;
+        trArraySep = tArraySep = arraysep;
 
         _tokenizer.strip_group( trSep, 1 );
+        _tokenizer.strip_group( trArraySep, 1 );
     }
 
     void set_default_separators()
@@ -718,16 +727,17 @@ public:
         tEol = "\n";
         tTab = "\t";
         trSep = tSep = ", ";
-        tArraySep = ",";
+        trArraySep = tArraySep = ",";
 
         _tokenizer.strip_group( trSep, 1 );
+        _tokenizer.strip_group( trArraySep, 1 );
     }
 
 protected:
     token tEol;                 ///< separator between struct open/close and members
     token tTab;                 ///< indentation
     token tSep,trSep;           ///< separator between entries
-    token tArraySep;            ///< separator between array elements
+    token tArraySep,trArraySep; ///< separator between array elements
 
 
     void write_tabs( int indent )
