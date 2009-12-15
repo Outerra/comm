@@ -14,7 +14,7 @@ int main( int argc, char* argv[] )
 {
     //main_atomic(argc, argv);
     //coid::test();
-    //coid::metastream_test();
+    coid::metastream_test();
     regex_test();
     return 0;
 }

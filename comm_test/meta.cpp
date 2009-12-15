@@ -105,7 +105,7 @@ struct FooB
 static const char* teststr =
 "a = 100,\n"
 "b = 200,\n"
-"fx = { j=1, fa={i=-1, f=-.77} }\n"
+"fx = { j=1, fa={i=-1, f=-.77} },\n"
 "af = [  { j=10, fa={i=1, f=3.140}},\n"
 "        { j=11, fa={i=2, f=4.140}},\n"
 "        { j=12, fa={i=3, f=5.140}} ],\n"
@@ -157,7 +157,7 @@ static const char* textxml2 =
 ////////////////////////////////////////////////////////////////////////////////
 void metastream_test()
 {
-    binstreamconstbuf buf(teststr1);
+    binstreamconstbuf buf(teststr);
     fmtstreamcxx fmt(buf);
     metastream meta(fmt);
 
