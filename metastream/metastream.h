@@ -2091,7 +2091,7 @@ protected:
     {
         opcd e;
 
-        DASSERT( _cachestack.size() == 0 );
+        DASSERT( _current && _current->buf->size() == 0 );
         _cacheroot = &_root;
 
         _current->insert_table(1);

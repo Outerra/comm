@@ -702,8 +702,21 @@ struct token
         return cut_trait(fRETURN_SEPARATOR);
     }
 
+
+    static cut_trait cut_trait_keep_sep() {
+        return cut_trait(fKEEP_SEPARATOR);
+    }
+
+    static cut_trait cut_trait_return_with_sep() {
+        return cut_trait(fRETURN_SEPARATOR);
+    }
+
     static cut_trait cut_trait_keep_sep_default_empty() {
-        return cut_trait(fON_FAIL_RETURN_EMPTY);
+        return cut_trait(fKEEP_SEPARATOR|fON_FAIL_RETURN_EMPTY);
+    }
+
+    static cut_trait cut_trait_return_with_sep_default_empty() {
+        return cut_trait(fRETURN_SEPARATOR|fON_FAIL_RETURN_EMPTY);
     }
 
     static cut_trait cut_trait_remove_sep_default_empty() {
