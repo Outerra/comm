@@ -429,59 +429,7 @@ public:
     charstr& operator += (ulong i)              { append_num(10,(uints)i); return *this; }
 #endif //SYSTYPE_MSVC
 
-    charstr& operator += (double d)
-    {
-        int dec;
-        int sig;
-#ifdef SYSTYPE_MSVC8plus
-        char pbuf[32];
-        char* p = pbuf;
-        *p = 0;
-        _fcvt_s( pbuf, 32, d, 3, &dec, &sig );
-#else
-        char* p = fcvt(d, 3, &dec, &sig);
-#endif
-        if (sig)
-            append('-');
-        if (dec > 0)
-            add_from( p, dec );
-        append('.');
-        if (dec < 0)
-        {
-            for (; dec<0; ++dec)
-                append('0');
-        }
-
-        _append( p+dec, ::strlen(p+dec) );
-        return *this;
-    }
-
-    charstr& operator += (long double d)
-    {
-        int dec;
-        int sig;
-#ifdef SYSTYPE_MSVC8plus
-        char pbuf[32];
-        char* p = pbuf;
-        *p = 0;
-        _fcvt_s( pbuf, 32, d, 3, &dec, &sig );
-#else
-        char* p = fcvt(d, 3, &dec, &sig);
-#endif
-        if (sig)
-            append('-');
-        if (dec > 0)
-            add_from( p, dec );
-        append ('.');
-        if (dec < 0)
-        {
-            for (; dec<0; ++dec)
-                append('0');
-        }
-
-        _append( p+dec, ::strlen(p+dec) );
-        return *this;
-    }
+    charstr& operator += (double d)             { append(d,3); return *this; }
 
     ///Formatted numbers
     template<int WIDTH, int ALIGN, class NUM>
@@ -523,7 +471,6 @@ public:
 #endif //SYSTYPE_MSVC
 
     charstr& operator << (double d)             { return operator += (d); }
-    charstr& operator << (long double d)        { return operator += (d); }
 
     ///Formatted numbers
     template<int WIDTH, int ALIGN, class NUM>
@@ -689,7 +636,7 @@ public:
     void append( double d, int nfrac, int minsize=0)
     {
         double w = d>0 ? floor(d) : ceil(d);
-        append_num( 10, (int64)w, minsize );
+        append_num_unsigned( (int64)fabs(w), 10, d<0 ? -1 : 0, minsize, ALIGN_NUM_RIGHT );
         append('.');
         append_fraction( fabs(d-w), nfrac );
     }

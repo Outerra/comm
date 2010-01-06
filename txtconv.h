@@ -399,12 +399,12 @@ public:
             minsize = minsize > anfrac+1  ?  minsize-anfrac-1  :  0;
 
         double w = d>0 ? floor(d) : ceil(d);
-        token tokw = append_num( dst, dstsize, 10, (int64)w, minsize, align );
+        token tokw = num_formatter<int64>::u_insert( dst, dstsize, (int64)fabs(w), 10, d<0 ? -1 : 0, minsize, align );
 
         if(nfrac == 0)
             return tokw;
 
-        if( tokw.len() - dstsize > 0 ) {
+        if( tokw.len() < dstsize ) {
             dst[tokw.len()] = '.';
             tokw++;
         }

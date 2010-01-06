@@ -215,9 +215,6 @@ public:
                     case 8:
                         _bufw += *(const double*)p;
                         break;
-                    case 16:
-                        _bufw += *(const long double*)p;
-                        break;
 
                     default: throw ersSYNTAX_ERROR "unknown type"; break;
                     }
@@ -496,7 +493,6 @@ public:
                         {
                         case 4: *(float*)p = (float)v;  break;
                         case 8: *(double*)p = v;  break;
-                        case 16: *(long double*)p = v;  break;
                         }
                     }
                     break;
