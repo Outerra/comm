@@ -1068,9 +1068,6 @@ token metagen::Varx::write_buf( metagen& mg ) const
             case 8:
                 buf += *(const double*)p;
                 break;
-            case 16:
-                buf += *(const long double*)p;
-                break;
             }
         break;
 

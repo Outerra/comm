@@ -83,7 +83,6 @@ struct exception
 #endif //SYSTYPE_MSVC
 
     exception& operator << (double d)           { _dtext += (d); return *this; }
-    exception& operator << (long double d)      { _dtext += (d); return *this; }
 
     ///Formatted numbers
     template<int WIDTH, int ALIGN, class NUM>

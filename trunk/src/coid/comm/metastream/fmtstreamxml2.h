@@ -286,10 +286,6 @@ public:
                     case 8:
                         _bufw += *(const double*)p;
                         break;
-                    case 16:
-                        _bufw += *(const long double*)p;
-                        break;
-
                     default:
                         return ersSYNTAX_ERROR "unknown type";
                     }
