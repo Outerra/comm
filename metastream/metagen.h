@@ -1037,7 +1037,7 @@ private:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-token metagen::Varx::write_buf( metagen& mg ) const
+inline token metagen::Varx::write_buf( metagen& mg ) const
 {
     typedef bstype::kind    type;
 

@@ -786,7 +786,7 @@ public:
         const block_rule* blk = static_cast<const block_rule*>(seq);
 
         uints off=0;
-        next_read_block( *blk, off, true );
+        next_read_block( *blk, off, true, false );
 
         if(!consume_trailing_seq)
             _tok.shift_start( -(int)blk->trailing[_last.termid].seq.len() );
@@ -827,21 +827,38 @@ public:
         bool enb = enabled(*seq);
         if(!enb) {
             __assert_reachable_sequence(seq);
-            enable(blockid, true);
+            enable(*seq, true);
+        }
+
+        //restore a simple token that was pushed back
+        if(_pushback && _last.tokbuf.is_empty()) {
+            _tok.shift_start(-(ints)_last.tok.len());
+            _rawpos = _tok.ptr();
+            _pushback = 0;
         }
 
         next();
-
-        if(!enb)
-            enable(blockid, false);
 
         if(_last.id == blockid) {
             if(!complete)
                 return _last;
 
             uints off=0;
-            return next_read_block( *(block_rule*)seq, off, true );
+            try {
+                next_read_block( *(block_rule*)seq, off, true, false );
+            }
+            catch(coid::exception) {
+                if(!enb) enable(*seq, false);
+                throw;
+            }
+
+            _stack.pop();
+            if(!enb) enable(*seq, false);
+
+            return _last;
         }
+
+        if(!enb) enable(*seq, false);
 
         _err = lexception::ERR_EXTERNAL_ERROR;
 
@@ -850,6 +867,26 @@ public:
         on_error_suffix(_errtext);
 
         throw lexception(_err, _errtext);
+    }
+
+    ///Skip group, default skipping whitespace group
+    void skip( uint ignoregrp=1 )
+    {
+        if(_pushback)
+            return;
+
+        if(_last.tokbuf)
+            _strings.add()->swap(_last.tokbuf);
+        _last.reset();
+
+        //skip characters from the ignored group
+        if(ignoregrp) {
+            _last.tok = scan_group( ignoregrp-1, true );
+            if( _last.tok.ptr() == 0 )
+                set_end();
+
+            _rawpos = _tok.ptr();
+        }
     }
 
     ///Return the next token from input.
@@ -958,7 +995,7 @@ public:
                         return _last;
                     }
 
-                    next_read_block( *(const block_rule*)seq, off, true );
+                    next_read_block( *(const block_rule*)seq, off, true, true );
                 }
                 else if( seq->type == entity::STRING )
                     next_read_string( *(const string_rule*)seq, off, true );
@@ -1501,7 +1538,7 @@ public:
         }
 
         if( _rawpos > _lines_processed )
-            count_newlines( _lines_processed, _rawpos );
+            count_newlines(_rawpos);
 
         return _rawline + 1;
     }
@@ -1523,7 +1560,7 @@ public:
         token pstr = token(_rawpos, _orig.ptre() - _rawpos);
 
         if( _rawpos > _lines_processed )
-            count_newlines( _lines_processed, _rawpos );
+            count_newlines(_rawpos);
 
         if(text) {
             //find the end of current line
@@ -2134,6 +2171,9 @@ protected:
                 stbignored &= ~(1ULL << id);
         }
 
+        bool enabled( const sequence& seq ) const { return (stbenabled & (1ULL<<seq.id)) != 0; }
+        bool ignored( const sequence& seq ) const { return (stbignored & (1ULL<<seq.id)) != 0; }
+
         bool enabled( int seq ) const   { return (stbenabled & (1ULL<<seq)) != 0; }
         bool ignored( int seq ) const   { return (stbignored & (1ULL<<seq)) != 0; }
 
@@ -2175,6 +2215,13 @@ protected:
     bool enabled( int seq ) const               { return (*_stack.last())->enabled(-1-seq); }
     bool ignored( int seq ) const               { return (*_stack.last())->ignored(-1-seq); }
 
+    void enable( const sequence& seq, bool en ) {
+        (*_stack.last())->enable(seq.id, en);
+    }
+
+    void ignore( const sequence& seq, bool en ) {
+        (*_stack.last())->ignore(seq.id, en);
+    }
 
     ///Enable/disable all entities with the same (common) name.
     void enable_in_block( block_rule* br, token name, bool en )
@@ -2440,7 +2487,7 @@ protected:
 
     ///Read tokens until block terminating sequence is found. Composes single token out of
     /// the block content
-    const lextoken& next_read_block( const block_rule& br, uints& off, bool outermost )
+    const lextoken& next_read_block( const block_rule& br, uints& off, bool outermost, bool ignored )
     {
         while(1)
         {
@@ -2508,18 +2555,25 @@ protected:
                 {
                     //valid & enabled sequence found, nest
                     sequence* sob = dseq[i];
+                    bool ign_seq = br.ignored(*sob);
+
+                    if(ign_seq && !ignored) {
+                        //force dumping to buffer, as this rule will be ignored
+                        _last.tokbuf.add_from( _tok.ptr(), off );
+                        _tok.shift_start(off);
+                        off = 0;
+                    }
+
                     off += sob->leading.len();
 
-                    if( sob->type == entity::BLOCK )
-                        next_read_block(
-                            *(const block_rule*)sob,
-                            off, false
-                        );
-                    else if( sob->type == entity::STRING )
-                        next_read_string(
-                            *(const string_rule*)sob,
-                            off, false
-                        );
+                    if( sob->type == entity::BLOCK ) {
+                        block_rule* brn = reinterpret_cast<block_rule*>(sob);
+                        next_read_block(*brn, off, false, ign_seq);
+                    }
+                    else if( sob->type == entity::STRING ) {
+                        string_rule* srn = reinterpret_cast<string_rule*>(sob);
+                        next_read_string(*srn, off, false);
+                    }
                     
                     continue;
                 }
@@ -2568,16 +2622,18 @@ protected:
     ///Add string or block segment
     void add_stb_segment( const stringorblock& sb, int trailid, uints& off, bool final )
     {
-        uints len = trailid<0  ?  0  :  sb.trailing[trailid].seq.len(); 
+        uints len = trailid<0  ?  0  :  sb.trailing[trailid].seq.len();
+        bool ignore = ignored(sb);
 
+        //if not outermost block, include the terminator in output
         if(!final)
             off += len;
 
         //on the terminating string
-        if( _last.tokbuf.len() > 0 )
+        if( _last.tokbuf.len() > 0 ) //if there's something in the buffer already, append
         {
-            //if there's something in the buffer, append
-            _last.tokbuf.add_from( _tok.ptr(), off );
+            if(!ignore)
+                _last.tokbuf.add_from( _tok.ptr(), off );
             _tok.shift_start(off);
             off = 0;
             if(final)
@@ -2864,7 +2920,7 @@ protected:
         }
         else if( _tok.ptr() + old > _lines_processed )
         {
-            count_newlines( _lines_processed, _tok.ptr() + old );
+            count_newlines(_tok.ptr() + old);
             _lines_processed = _binbuf.ptr();
             _lines_last = _binbuf.ptr() - int(_tok.ptr() + old - _lines_last);
         }
@@ -2938,8 +2994,9 @@ protected:
     }
 
     ///Counts newlines, detects \r \n and \r\n
-    uint count_newlines( const char* p, const char* pe )
+    uint count_newlines( const char* pe )
     {
+        const char* p = _lines_processed;
         uint newlines = 0;
         char oc = _lines_oldchar;
 
@@ -2967,6 +3024,7 @@ protected:
 
         _lines_oldchar = oc;
         _lines += newlines;
+        _lines_processed = p;
 
         if( p == _rawpos ) {
             //mark rawpos line if coming accross it
