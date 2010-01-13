@@ -138,6 +138,35 @@ public:
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+template<class T>
+class policy_dummy
+	: public policy_base
+{
+private:
+	policy_dummy( policy_dummy const & );
+	policy_dummy & operator=( policy_dummy const & );
+
+protected:
+	T* _obj;
+
+	typedef policy_dummy<T> this_t;
+
+public:
+	policy_dummy(T* const obj) : _obj(obj) {}
+
+	virtual ~policy_dummy() {}
+
+	virtual void destroy() { }
+
+	T* object_ptr() const { return _obj; }
+
+	static this_t* create(T*const obj) { return new this_t(obj); }
+
+	static this_t* create() { return new this_t(new T); }
+};
+
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
 struct create_me { };
 
 static create_me CREATE_ME;
