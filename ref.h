@@ -105,7 +105,7 @@ public:
 
 	friend coid::metastream& operator << (coid::metastream& m,const iref_t& s)
 	{
-		MSTRUCT_OPEN(m,"ref")
+		MSTRUCT_OPEN(m,"iref")
 			MMAT(m,"ptr",T)
 		MSTRUCT_CLOSE(m)
 	}
