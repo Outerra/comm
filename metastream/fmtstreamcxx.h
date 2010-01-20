@@ -305,7 +305,7 @@ public:
                 _tokenizer.push_back();
             }
             else if( t.type == type::T_KEY ) {
-                if( tok == char('}')  ||  tok.is_null() )
+                if( tok == char('}')  ||  _tokenizer.end() )
                     e = ersNO_MORE;
                 else
                     e = _tokenizer.last() == lexid

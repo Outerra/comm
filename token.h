@@ -466,7 +466,7 @@ struct token
 
     char last_char() const              { return _pte>_ptr  ?  _pte[-1]  :  0; }
     char first_char() const             { return _pte>_ptr  ?  _ptr[0]  :  0; }
-    char nth_char( ints n ) const       { return n<0 ? (_pte+n<_ptr ? _pte[n] : 0) : (_ptr+n<_pte ? _ptr[n] : 0); }
+    char nth_char( ints n ) const       { return n<0 ? (_pte+n<_ptr ? 0 : _pte[n]) : (_ptr+n<_pte ? _ptr[n] : 0); }
 
 
     token& operator = ( const char *czstr ) {

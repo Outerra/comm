@@ -153,7 +153,7 @@ public:
             if( tok == ')' )
                 tok = _tokenizer.next();
 
-            if( !tok.is_null() )
+            if( !_tokenizer.end() )
                 throw ersIO_ERROR "data left in received block";
         }
         reset_read();
@@ -364,7 +364,7 @@ public:
             {
                 if(_tokenizer.last() == lexstr  ||  _tokenizer.last() == lexid)
                     t.set_count( tok.len(), p );
-                else if( tok == char('}')  ||  tok.is_null() )
+                else if( tok == char('}')  ||  _tokenizer.end() )
                     e = ersNO_MORE;
                 else
                     e = ersSYNTAX_ERROR "expected identifier";
