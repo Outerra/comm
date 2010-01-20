@@ -186,7 +186,7 @@ public:
         return czstr + slen;
     }
 
-    const char* set_from( const char* strbgn, const char* strend )
+    const char* set_from_range( const char* strbgn, const char* strend )
     {
         return set_from( strbgn, strend-strbgn );
     }

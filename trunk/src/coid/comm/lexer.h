@@ -232,7 +232,14 @@ public:
             return tok;
         }
 
+        ///Return token
         token value() const             { return tok; }
+
+        ///Return pointer to the beginning of the current token
+        const char* ptr() const         { return tok.ptr(); }
+
+        ///Return pointer to the end of the current token
+        const char* ptre() const        { return tok.ptre(); }
 
         int group() const               { return id; }
 
@@ -772,7 +779,7 @@ public:
 
     ///Return next token as if the block opening sequence has been already read.
     //@note this explicit request will read the block content even if the
-    /// block is currently disabled
+    /// block is currently disabled, but it will not pop the block stack
     //@param blockid string identifier as returned by def_block() call.
     //@param consume_trailing_seq true if the trailing sequence should be consumed, false if it should be left in input
     const lextoken& next_as_block( int blockid, bool consume_trailing_seq = true )
@@ -881,9 +888,11 @@ public:
 
         //skip characters from the ignored group
         if(ignoregrp) {
-            _last.tok = scan_group( ignoregrp-1, true );
-            if( _last.tok.ptr() == 0 )
+            token tok = scan_group( ignoregrp-1, true );
+            if( tok.ptr() == 0 )
                 set_end();
+            else
+                _last.tok = tok;
 
             _rawpos = _tok.ptr();
         }
@@ -913,9 +922,11 @@ public:
 
         //skip characters from the ignored group
         if(ignoregrp) {
-            _last.tok = scan_group( ignoregrp-1, true );
-            if( _last.tok.ptr() == 0 )
+            token tok = scan_group( ignoregrp-1, true );
+            if( tok.ptr() == 0 )
                 return set_end();
+            else
+                _last.tok = tok;
         }
         else if( _tok.len() == 0 )
         {
@@ -933,7 +944,7 @@ public:
                     _last.state = -1;
                     _last_string = k;
 
-                    _last.tok.set_empty();
+                    _last.tok.set_empty(_last.tok.ptre());
                     return _last;
                 }
 
@@ -1137,6 +1148,25 @@ public:
             dst.takeover( _last.tokbuf );
         else
             dst = _last.tok;
+        return true;
+    }
+
+    ///Match group of characters. Pushes the read token back if not matched.
+    //@return true if next token belongs to the specified group/sequence.
+    //@param grp group/sequence id
+    //@param dst the token read
+    bool matches( int grp, token& dst )
+    {
+        __assert_valid_rule(grp);
+
+        next();
+
+        if( _last != grp ) {
+            push_back();
+            return false;
+        }
+
+        dst = _last.tok;
         return true;
     }
 
@@ -1525,12 +1555,12 @@ public:
     const lextoken& last() const        { return _last; }
 
     ///Return remainder of the input
-    token remainder() const             { return _tok; }
+    token remainder() const             { return _pushback ? _last.tok : _tok; }
 
 
     ///Return current lexer line position
     //@return current line number (from index 1, not 0)
-    uint current_line()
+    virtual uint current_line()
     {
         if( _rawpos - _orig.ptr() < 0 ) {
             //if the beginning of the last token has been already discarded ...
@@ -2989,7 +3019,7 @@ protected:
     const lextoken& set_end()
     {
         _last.id = 0;
-        _last.tok.set_empty();
+        _last.tok.set_empty(_last.tok.ptre());
         return _last;
     }
 
