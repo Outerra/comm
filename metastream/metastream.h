@@ -1832,6 +1832,17 @@ protected:
         opcd e=0;
         if( cache_prepared() )
         {
+            if(R && !_cachevar && !_current->valid_addr()) {
+            //cache is open for reading but the member is not there
+            //this can happen when reading a struct that was cached due to reordered input
+                if( !cache_use_default() ) {
+                    dump_stack(_err,0);
+                    _err << " - variable '" << _curvar.var->varname << "' not found and no default value provided";
+                    fmt_error();
+                    throw e;
+                }
+            }
+
             if( t.is_array_start() )
             {
                 movein_cache_member<R>();
