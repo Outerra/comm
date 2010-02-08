@@ -1263,6 +1263,31 @@ public:
 
     ///Match rule or else throw exception (struct lexception)
     //@param grp group id to match
+    //@param dst destination token that is to receive the matched value
+    //@param peek set to true if the function should return match status instead of throwing the exception
+    //@return match result if @a peek was set to true (otherwise an exception is thrown)
+    bool match( int grp, token& dst, bool peek = false )
+    {
+        bool res = matches(grp, dst);
+                
+        if( !res && !peek ) {
+            _err = lexception::ERR_EXTERNAL_ERROR;
+
+            on_error_prefix(false, _errtext);
+
+            const entity& ent = get_entity(grp);
+            _errtext << "expected a " << ent.entity_type() << " <<" << ent.name << ">>";
+
+            on_error_suffix(_errtext);
+
+            throw lexception(_err, _errtext);
+        }
+
+        return res;
+    }
+
+    ///Match rule or else throw exception (struct lexception)
+    //@param grp group id to match
     //@param peek set to true if the function should return match status instead of throwing the exception
     //@return lextoken result if @a peek was set to true (otherwise an exception is thrown)
     const lextoken& match( int grp, bool peek = false )
