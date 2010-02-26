@@ -32,7 +32,7 @@
 * the terms of any one of the MPL, the GPL or the LGPL.
 *
 * ***** END LICENSE BLOCK ***** */
-
+/*
 #ifndef __COMM_REF_NG_H__
 #define __COMM_REF_NG_H__
 
@@ -152,6 +152,8 @@ protected:
 	typedef policy_dummy<T> this_t;
 
 public:
+	COIDNEWDELETE(policy_dummy);
+
 	policy_dummy(T* const obj) : _obj(obj) {}
 
 	virtual ~policy_dummy() {}
@@ -319,3 +321,4 @@ inline bool operator!=( const ref<T>& a,const ref<T>& b )
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 #endif // __COMM_REF_NG_H__
+*/

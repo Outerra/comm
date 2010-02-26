@@ -36,7 +36,7 @@ public:
 	}
 
 	void destroy( P* p) {
-		p->object_ptr()->reset();
+		p->get()->reset();
 		_stack.push(p);
 		atomic::inc(&_nitems);
 	}
@@ -46,7 +46,7 @@ public:
 
 template<class T>
 class policy_queue_pooled 
-	: public policy_ref_count<T>
+	: public policy_shared<T>
 	, public atomic::stack_node
 	, public atomic::queue_node
 {
@@ -56,7 +56,7 @@ public:
 
 protected:
 	explicit policy_queue_pooled(T* const obj, pool_t* const pl=0) 
-		: policy_ref_count(obj)
+		: policy_shared(obj)
 		, _pool(pl) {}
 
 public:
