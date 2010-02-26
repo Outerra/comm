@@ -36,11 +36,17 @@
 #ifndef __ENG_PTR_H__
 #define __ENG_PTR_H__
 
+
+#include "ref_s.h"
+#include "ref_i.h"
+
+/*
 #include "commassert.h"
 #include "atomic/atomic.h"
 #include "atomic/stack.h"
 #include "binstream/binstreambuf.h"
 #include "metastream/metastream.h"
+
 #include "refs.h"
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -125,5 +131,5 @@ inline bool operator!=( const iref<T>& a,const iref<T>& b ) {
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
+*/
 #endif // __ENG_PTR_H__
