@@ -49,6 +49,7 @@ static create_me CREATE_ME;
 static create_pooled CREATE_POOLED;
 
 template<class T> class pool;
+template<class T> class policy_queue_pooled;
 
 namespace atomic {
 	template<class T> class queue_ng;
@@ -64,6 +65,7 @@ public:
 	typedef ref<T> ref_t;
 	typedef pool<policy_base> pool_t;
 	typedef policy_shared_base policy; 
+    typedef policy_queue_pooled<T> policy_pooled;
 
 	ref() : _p(0), _o(0){}
 
@@ -97,7 +99,7 @@ public:
 	}
 
 	// special constructor from default policy
-	explicit ref( const create_pooled&,pool<T> *po) {
+	explicit ref( const create_pooled&,pool<policy_pooled> *po) {
 		policy_queue_pooled<T> *p=policy_queue_pooled<T>::create(po);
 		_p=p;
 		_o=p->get();
@@ -134,7 +136,7 @@ public:
 		_o=p->get();
 	}
 
-	void create_pooled(pool<T> *po) {
+	void create_pooled(pool<policy_pooled> *po) {
 		release();
 		policy_queue_pooled<T> *p=policy_queue_pooled<T>::create(po);
 		_p=p;
