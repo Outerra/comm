@@ -85,7 +85,7 @@ class metagen //: public binstream
         MtgLexer()
         {
             def_group( "ignore", " \t\n\r" );
-            IDENT   = def_group( "identifier", ".a..zA..Z_", ".a..zA..Z_0..9" );
+            IDENT   = def_group( "identifier", ".a..zA..Z_", ".@a..zA..Z_0..9" );
             NUM     = def_group( "number", "0..9" );
             def_group_single( "separator", "?!=()[]{}/$-" );
 
@@ -120,6 +120,7 @@ class metagen //: public binstream
         const Var* var;             ///< associated variable
         Varx* varparent;
         const uchar* data;          ///< cache position
+        int index;                  ///< current element index for arrays
 
 
         Varx() { var=0; varparent=0; data=0; }
@@ -141,8 +142,8 @@ class metagen //: public binstream
         }
 
         ///Find a descendant variable and its position in the cache
-        //@param last if set, do not treat the last token as child name and return it here, but only after at least one child has been read
-        bool find_descendant( token name, Varx& ch, token* last = 0 ) const
+        //@param last_is_attrib if set, do not treat the last token as child name and return it here, but only after at least one child has been read
+        bool find_descendant( token name, Varx& ch, bool last_is_attrib, token* last = 0 ) const
         {
             const Varx* v = this;
             token part;
@@ -169,14 +170,18 @@ class metagen //: public binstream
             //find descendant
             int nch = 0;
             do {
-                if( last  &&  nch>0  &&  name.len() == 0 ) {
-                    *last = part;
+                if( last_is_attrib  &&  nch>0  &&  name.len() == 0 ) {
+                    if(last)  *last = part;
+                    return true;
+                }
+
+                if( part.first_char() == '@' ) {
+                    if(last)  *last = part;
                     return true;
                 }
 
                 if( !ch.find_child(part, ch) ) {
-                    if(last)
-                        *last = name.cut_right_back('.');
+                    if(last)   *last = name.cut_right_back('.');
                     return false;
                 }
 
@@ -278,11 +283,12 @@ class metagen //: public binstream
             const lextoken& tok = lex.last();
 
             bool condneg = false;
+            bool special = false;
             if( tok == '!' ) {
                 condneg = true;
                 lex.next();
             }
-            
+
             if( tok.id != lex.IDENT )  return false;
             name = tok.tok;
 
@@ -343,7 +349,7 @@ class metagen //: public binstream
             bool defined = true;
 
             if( depth > 0 )
-                defined = var.find_descendant(name, v, &n);
+                defined = var.find_descendant(name, v, true, &n);
             else
                 v = var;
 
@@ -518,11 +524,11 @@ class metagen //: public binstream
 
         virtual ~Tag() {}
 
-        bool find_var( const Varx& par, Varx& var ) const
+        bool find_var( const Varx& par, Varx& var, token& attrib ) const
         {
             return depth<1
                 ? par.find_child( varname, var )
-                : par.find_descendant( varname, var );
+                : par.find_descendant( varname, var, false, &attrib );
         }
 
         void process( metagen& mg, const Varx& var ) const
@@ -611,9 +617,15 @@ class metagen //: public binstream
         ///Process the variable, default code does simple substitution
         virtual void process_content( metagen& mg, const Varx& var ) const
         {
+            token attrib;
             Varx v;
-            if( find_var(var,v) )
-                v.write_var(mg);
+
+            if( find_var(var,v,attrib) ) {
+                if(!attrib.is_empty())
+                    write_special_value(mg, attrib, v);
+                else
+                    v.write_var(mg);
+            }
             else
                 write_default( mg, attr );
         }
@@ -626,6 +638,18 @@ class metagen //: public binstream
                 lex.set_err() << "Simple tags cannot contain open attribute";
                 throw lex.exception();
             }
+        }
+
+        bool write_special_value( metagen& mg, const token& attrib, Varx& v ) const
+        {
+            if(attrib == "@index") {
+                DASSERT( v.is_array() );
+                if(v.is_array())
+                    mg.write_as_string(v.index);
+            }
+            else
+                return false;
+            return true;
         }
     };
 
@@ -793,8 +817,9 @@ class metagen //: public binstream
 
         void process_content( metagen& mg, const Varx& var ) const
         {
+            token attrib;
             Varx v;
-            if( find_var(var,v) )
+            if( find_var(var,v,attrib) )
             {
                 if( !v.var->is_array() )
                     return;
@@ -809,6 +834,8 @@ class metagen //: public binstream
                 int i=0;
                 for( ; n>0; --n,ve.next() )
                 {
+                    v.index = i;
+
                     if( evalcond && !eval_cond(mg, ve) )
                         continue;
 
@@ -908,8 +935,9 @@ class metagen //: public binstream
 
         void process_content( metagen& mg, const Varx& var ) const
         {
+            token attrib;
             Varx v;
-            bool valid = find_var(var,v);
+            bool valid = find_var(var,v,attrib);
 
             if(valid)
                 seq.process( mg, v );
@@ -998,6 +1026,15 @@ public:
     void set_source_path( const token& path ) {
         lex.set_current_file(path);
     }
+
+    ///Write a string value to output
+    template<class T>
+    void write_as_string( T val ) {
+        buf = val;
+        bin->xwrite_raw(buf.ptr(), buf.len());
+        buf.reset();
+    }
+
 
 /*
     const char* error_text() const  { return err_lex; }
