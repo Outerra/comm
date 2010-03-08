@@ -82,6 +82,8 @@ public:
 
     uint ticks() const;
     int usec_to_tick( uint k ) const;
+
+	static uint get_time();
 };
 
 ////////////////////////////////////////////////////////////////////////////////
