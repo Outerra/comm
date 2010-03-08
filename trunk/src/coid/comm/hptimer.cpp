@@ -95,6 +95,11 @@ int MsecTimer::usec_to_tick( uint k ) const
     return int( k*(int64)_period - tend*1000 );
 }
 
+////////////////////////////////////////////////////////////////////////////////
+uint MsecTimer::get_time() {
+	return timeGetTime();
+}
+
 } // namespace coid
 
 #endif //SYSTYPE_MSVC

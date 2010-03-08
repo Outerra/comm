@@ -41,9 +41,9 @@
 
 #ifdef SYSTYPE_WIN
 
-#if _WIN32_WINNT < 0x0400
+#if _WIN32_WINNT < 0x0500
 #	undef _WIN32_WINNT
-#	define _WIN32_WINNT    0x0400
+#	define _WIN32_WINNT    0x0500
 #endif
 
 #include <windows.h>
@@ -65,7 +65,7 @@ _comm_mutex::_comm_mutex (bool recursive)
 void _comm_mutex::init( bool recursive )
 {
 #ifdef SYSTYPE_WIN
-	InitializeCriticalSection( (CRITICAL_SECTION*)&_cs );
+	InitializeCriticalSectionAndSpinCount( (CRITICAL_SECTION*)&_cs,4 );
 #else
     pthread_mutexattr_t m;
     pthread_mutexattr_init(&m);

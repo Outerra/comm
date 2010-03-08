@@ -123,6 +123,21 @@ typedef policy_base_<> policy_base;
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+class policy_intrusive_base
+	: public policy_base
+{
+private:
+	policy_intrusive_base( policy_intrusive_base const & );
+	policy_intrusive_base & operator=( policy_intrusive_base const & );
+
+protected:
+	policy_intrusive_base() {}
+
+	virtual void destroy() { delete this; }
+};
+
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
 class policy_shared_base
 	: public policy_base
 {
