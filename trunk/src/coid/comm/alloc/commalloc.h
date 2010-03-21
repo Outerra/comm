@@ -84,7 +84,7 @@ struct comm_allocator
 struct comm_array_mspace
 {
     comm_array_mspace() {
-        msp = ::create_mspace(0, true, sizeof(uints));
+        msp = ::create_mspace(0, true, 16-sizeof(uints));
     }
 
     ~comm_array_mspace() {
