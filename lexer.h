@@ -121,10 +121,10 @@ public:
     /// the lexer inserts the error information itself.
     //@param rules true if the error occured during parsing the lexer grammar
     //@param dst destination string to fill
-    virtual void on_error_prefix( bool rules, charstr& dst )
+    virtual void on_error_prefix( bool rules, charstr& dst, int line )
     {
         if(!rules)
-            dst << current_line() << " : ";
+            dst << line << " : ";
     }
 
     ///Called before throwing an error exception to finalize the _errtext member, just after
@@ -467,7 +467,7 @@ public:
 
         _err = lexception::ERR_KEYWORD_ALREADY_DEFINED;
 
-        on_error_prefix(true, _errtext);
+        on_error_prefix(true, _errtext, current_line());
         _errtext << "keyword `" << kwd << "' already exists";
 
         throw lexception(_err, _errtext);
@@ -591,7 +591,7 @@ public:
             if( sr->escrule->type != entity::ESCAPE ) {
                 _err = lexception::ERR_ENTITY_BAD_TYPE;
 
-                on_error_prefix(true, _errtext);
+                on_error_prefix(true, _errtext, current_line());
                 _errtext << "bad type of rule <<" << escape << ">>; required an escape rule name here";
 
                 throw lexception(_err, _errtext);
@@ -869,7 +869,7 @@ public:
 
         _err = lexception::ERR_EXTERNAL_ERROR;
 
-        on_error_prefix(false, _errtext);
+        on_error_prefix(false, _errtext, current_line());
         _errtext << "expected block <<" << seq->name << ">>";
         on_error_suffix(_errtext);
 
@@ -1204,7 +1204,7 @@ public:
         {
             _err = lexception::ERR_EXTERNAL_ERROR;
 
-            on_error_prefix(false, _errtext);
+            on_error_prefix(false, _errtext, current_line());
             _errtext << "expected `" << val << "'";
             on_error_suffix(_errtext);
 
@@ -1226,7 +1226,7 @@ public:
         if( !res && !peek ) {
             _err = lexception::ERR_EXTERNAL_ERROR;
             
-            on_error_prefix(false, _errtext);
+            on_error_prefix(false, _errtext, current_line());
             _errtext << "expected `" << c << "'";
             on_error_suffix(_errtext);
 
@@ -1248,7 +1248,7 @@ public:
         if( !res && !peek ) {
             _err = lexception::ERR_EXTERNAL_ERROR;
 
-            on_error_prefix(false, _errtext);
+            on_error_prefix(false, _errtext, current_line());
 
             const entity& ent = get_entity(grp);
             _errtext << "expected a " << ent.entity_type() << " <<" << ent.name << ">>";
@@ -1273,7 +1273,7 @@ public:
         if( !res && !peek ) {
             _err = lexception::ERR_EXTERNAL_ERROR;
 
-            on_error_prefix(false, _errtext);
+            on_error_prefix(false, _errtext, current_line());
 
             const entity& ent = get_entity(grp);
             _errtext << "expected a " << ent.entity_type() << " <<" << ent.name << ">>";
@@ -1297,7 +1297,7 @@ public:
         if( !res && !peek ) {
             _err = lexception::ERR_EXTERNAL_ERROR;
             
-            on_error_prefix(false, _errtext);
+            on_error_prefix(false, _errtext, current_line());
 
             const entity& ent = get_entity(grp);
             _errtext << "expected a " << ent.entity_type() << " <<" << ent.name << ">>";
@@ -1321,7 +1321,7 @@ public:
         if( !res && !peek ) {
             _err = lexception::ERR_EXTERNAL_ERROR;
 
-            on_error_prefix(false, _errtext);
+            on_error_prefix(false, _errtext, current_line());
 
             _errtext << "expected end of file";
 
@@ -1427,7 +1427,7 @@ public:
 
         _err = lexception::ERR_EXTERNAL_ERROR;
         
-        on_error_prefix(false, _errtext);
+        on_error_prefix(false, _errtext, current_line());
         _errtext << "couldn't match any of " << i << " literals";
         on_error_suffix(_errtext);
 
@@ -1446,7 +1446,7 @@ public:
 
         _err = lexception::ERR_EXTERNAL_ERROR;
         
-        on_error_prefix(false, _errtext);
+        on_error_prefix(false, _errtext, current_line());
 
         _errtext << "couldn't match either: ";
         rule_map<T1>::desc(a, *this, _errtext); _errtext << ", ";
@@ -1465,7 +1465,7 @@ public:
 
         _err = lexception::ERR_EXTERNAL_ERROR;
 
-        on_error_prefix(false, _errtext);
+        on_error_prefix(false, _errtext, current_line());
 
         _errtext << "couldn't match either: ";
         rule_map<T1>::desc(a, *this, _errtext); _errtext << ", ";
@@ -1486,7 +1486,7 @@ public:
 
         _err = lexception::ERR_EXTERNAL_ERROR;
         
-        on_error_prefix(false, _errtext);
+        on_error_prefix(false, _errtext, current_line());
 
         _errtext << "couldn't match either: ";
         rule_map<T1>::desc(a, *this, _errtext); _errtext << ", ";
@@ -1508,7 +1508,7 @@ public:
 
         _err = lexception::ERR_EXTERNAL_ERROR;
         
-        on_error_prefix(false, _errtext);
+        on_error_prefix(false, _errtext, current_line());
 
         _errtext << "couldn't match either: ";
         rule_map<T1>::desc(a, *this, _errtext); _errtext << ", ";
@@ -1654,17 +1654,17 @@ public:
     //@return string object that can be used to fill specific info; the string is
     /// already prefilled with whatever the on_error_prefix() handler inserted into it
     //@note 
-    charstr& prepare_exception( bool last_token = false )
+    charstr& prepare_exception( int force_line = -1 )
     {
         _err = lexception::ERR_EXTERNAL_ERROR;
         _errtext.reset();
-        on_error_prefix(false, _errtext);
+        on_error_prefix(false, _errtext, force_line>=0 ? force_line : current_line());
 
         return _errtext;
     }
 
     ///Append information about exception location
-    charstr& append_exception_location( bool last_token = false )
+    charstr& append_exception_location()
     {
         on_error_suffix(_errtext);
 
@@ -1752,7 +1752,7 @@ private:
     {
         _err = lexception::ERR_ENTITY_EXISTS;
         
-        on_error_prefix(true, _errtext);
+        on_error_prefix(true, _errtext, current_line());
         _errtext << "another rule with name '" << name << "' already exists";
 
         throw lexception(_err, _errtext);
@@ -1762,7 +1762,7 @@ private:
     {
         _err = lexception::ERR_DIFFERENT_ENTITY_EXISTS;
         
-        on_error_prefix(true, _errtext);
+        on_error_prefix(true, _errtext, current_line());
         _errtext << "a different type of rule named '" << name << "' already exists";
 
         throw lexception(_err, _errtext);
@@ -1772,7 +1772,7 @@ private:
     {
         _err = lexception::ERR_ENTITY_DOESNT_EXIST;
         
-        on_error_prefix(true, _errtext);
+        on_error_prefix(true, _errtext, current_line());
         _errtext << "a rule named '" << name << "' doesn't exist";
 
         throw lexception(_err, _errtext);
@@ -2354,7 +2354,7 @@ protected:
                 {
                     _err = lexception::ERR_ILL_FORMED_RANGE;
 
-                    on_error_prefix(true, _errtext);
+                    on_error_prefix(true, _errtext, current_line());
                     _errtext << "ill-formed range: " << char(kprev) << ".." << char(k);
 
                     throw lexception(_err, _errtext);
@@ -2448,7 +2448,7 @@ protected:
 
                     _err = lexception::ERR_STRING_TERMINATED_EARLY;
                     
-                    on_error_prefix(false, _errtext);
+                    on_error_prefix(false, _errtext, current_line());
                     _errtext << "string <<" << sr.name << ">> was left unterminated";
                     on_error_suffix(_errtext);
 
@@ -2468,7 +2468,7 @@ protected:
 
                 _err = lexception::ERR_STRING_TERMINATED_EARLY;
                 
-                on_error_prefix(false, _errtext);
+                on_error_prefix(false, _errtext, current_line());
                 _errtext << "string <<" << sr.name << ">> was left unterminated";
                 on_error_suffix(_errtext);
 
@@ -2567,7 +2567,7 @@ protected:
 
                     _err = lexception::ERR_BLOCK_TERMINATED_EARLY;
                     
-                    on_error_prefix(false, _errtext);
+                    on_error_prefix(false, _errtext, current_line());
                     _errtext << "block <<" << br.name << ">> was left unterminated";
                     on_error_suffix(_errtext);
 
