@@ -490,6 +490,21 @@ public:
         return grp;
     }
 
+    ///Define multiple keywords at once
+    //@param kwdlist null-terminated list of keywords
+    //@return group id of the last keyword
+    int def_keywords( const char** kwdlist )
+    {
+        int grp = 0;
+        
+        while(*kwdlist)
+            grp = def_keyword(*kwdlist++, _nkwd_groups);
+
+        ++_nkwd_groups;
+
+        return grp;
+    }
+
     ///Escape sequence processor function prototype.
     ///Used to consume input after escape character and to append translated characters to dst
     //@param src source characters to translate, the token should be advanced by the consumed amount
