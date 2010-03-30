@@ -3,10 +3,11 @@
 {
   'variables': {
     'chromium_code': 1,
+    'msvs_use_common_release': 0,
   },
   'targets': [
     {
-      'target_name': 'comm_static',
+      'target_name': 'comm_static_gyp',
       'type': 'static_library',
       'msvs_guid': 'D2F47060-00C0-4A3C-9888-CF663F14D44D',
       'dependencies': [
@@ -169,7 +170,12 @@
                   'SubSystem': '1', # Set /SUBSYSTEM:CONSOLE.
                 },
                 'VCCLCompilerTool': {
-                  'ExceptionHandling': '1' # /EHsc
+                  'ExceptionHandling': '2', # /EHsc
+                  'AdditionalOptions': [
+                    '/MP',
+                    '/UUNICODE',
+                    '/U_UNICODE'
+				  ],
                 },
               },
             }],
