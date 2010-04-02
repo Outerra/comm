@@ -169,11 +169,21 @@ public:
 
 
     uint64 file_size() const                    { return _st.st_size; }
-    static uint64 file_size( const token& file )
+    static uint64 file_size( const charstr& file )
     {
-        directory d;
-        if( 0 != d.open( file, token::empty() ) )  return 0;
-        return d.file_size();
+        struct stat st;
+        if(stat(file.c_str(), &st)  &&  is_regular(st.st_mode))
+            return st.st_size;
+
+        return 0;
+    }
+    static uint64 file_size( const char* file )
+    {
+        struct stat st;
+        if(stat(file, &st)  &&  is_regular(st.st_mode))
+            return st.st_size;
+
+        return 0;
     }
 
     ///Get next entry in the directory
