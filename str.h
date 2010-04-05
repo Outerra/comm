@@ -667,7 +667,7 @@ public:
 
     void append( char c )
     {
-        *uniadd(1) = c;
+        if(c) *uniadd(1) = c;
     }
 
     ///Append n characters 
