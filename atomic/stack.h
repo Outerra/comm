@@ -40,6 +40,8 @@
 
 namespace atomic {
 
+using coid::uint;
+
 struct stack_node
 {
 	stack_node() : _nexts(0) {}

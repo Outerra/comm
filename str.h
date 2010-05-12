@@ -633,10 +633,10 @@ public:
 
     ///Append floating point number
     ///@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
-    void append( double d, int nfrac, int minsize=0)
+    void append( double d, int nfrac, int minsize=0,bool fillzeros=false)
     {
         double w = d>0 ? floor(d) : ceil(d);
-        append_num_unsigned( (int64)fabs(w), 10, d<0 ? -1 : 0, minsize, ALIGN_NUM_RIGHT );
+        append_num_unsigned( (int64)fabs(w), 10, d<0 ? -1 : 0, minsize, fillzeros?ALIGN_NUM_RIGHT_FILL_ZEROS:ALIGN_NUM_RIGHT );
         append('.');
         append_fraction( fabs(d-w), nfrac );
     }
