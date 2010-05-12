@@ -370,6 +370,11 @@ public:
                     } break;
 
                     /////////////////////////////////////////////////////////////////////////////////////
+                    case type::T_ANGLE: {
+                        _bufw.append_angle( *(const double*)p );
+                    } break;
+
+                    /////////////////////////////////////////////////////////////////////////////////////
                     case type::T_ERRCODE:
                         {
                             opcd e = (const opcd::errcode*)p;
@@ -591,6 +596,13 @@ public:
                 case type::T_TIME: {
                     e = tok.todate_local( *(timet*)p );
                     if( !e && !tok.is_empty() )
+                        e = ersSYNTAX_ERROR "unexpected trailing characters";
+                } break;
+
+                /////////////////////////////////////////////////////////////////////////////////////
+                case type::T_ANGLE: {
+                    *(double*)p = tok.toangle();
+                    if(!tok.is_empty())
                         e = ersSYNTAX_ERROR "unexpected trailing characters";
                 } break;
 
