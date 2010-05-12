@@ -1471,6 +1471,37 @@ struct token
         return true;
     }
 
+    ///Consume leading character if matches the given one, returning 1, otherwise return 0
+    int consume_char( char c ) {
+        if(first_char() == c) {
+            ++_ptr;
+            return 1;
+        }
+        return 0;
+    }
+
+    ///Consume leading character if matches one from string, returning position+1, otherwise return 0
+    int consume_char( const char* cz ) {
+        char c = first_char();
+        const char* p = ::strchr(cz, c);
+        if(!p) return 0;
+        
+        ++_ptr;
+        return p-cz+1;
+    }
+
+    ///Consume leading character if matches one from string, returning position+1, otherwise return 0
+    int consume_char( const token& ct ) {
+        char c = first_char();
+        const char* p = ct.strchr(c);
+        if(!p) return 0;
+
+        ++_ptr;
+        return p-ct.ptr()+1;
+    }
+
+
+    ///Consume leading substring if matches
     bool consume( const token& tok )
     {
         if( begins_with(tok) ) {
@@ -1481,6 +1512,7 @@ struct token
         return false;
     }
 
+    ///Consume leading substring if matches, case insensitive
     bool consume_icase( const token& tok )
     {
         if( begins_with_icase(tok) ) {
@@ -1985,6 +2017,54 @@ struct token
         if( !consume_icase(timezone) )  return ersINVALID_PARAMS "timefmt: time zone";
         return 0;
     }
+
+
+    ///Convert angle string to value, consuming input
+    /// 49°42'32.91"N, +49°42.5485', +49.7091416667°
+    double toangle()
+    {
+        int sgn = consume_char("+-");
+        int deg = touint_and_shift();
+
+        double dec=0;
+        char c = first_char();
+        if(c == '.') {
+            //decimal degrees
+            dec = todouble_and_shift();
+            consume_char('°');
+        }
+        else if(c == '°')
+        {
+            int mnt = touint_and_shift();
+            c = first_char();
+
+            dec = mnt / 60.0;
+            if(c == '.') {
+                //decimal minutes
+                dec += todouble_and_shift() / 60.0;
+                consume_char('\'');
+            }
+            else if(c == '\'')
+            {
+                dec += todouble_and_shift() / 3600.0;
+                consume_char('"');
+            }
+        }
+
+        skip_space();
+        int wos = consume_char("NSEWnsew");
+        if(wos) {
+            //world side overrides the sign, if any
+            sgn = (wos&1)==0  ?  2  :  1;
+        }
+
+        //assemble the value
+        double val = deg + dec;
+        if(sgn==2)
+            val = -val;
+        return val;
+    }
+
 
     ///Convert token to array of wchar_t characters
     template<class A>

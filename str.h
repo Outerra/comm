@@ -48,6 +48,7 @@
 #include <time.h>
 #include "token.h"
 #include "dynarray.h"
+#include "mathf.h"
 
 COID_NAMESPACE_BEGIN
 
@@ -517,15 +518,15 @@ public:
     ////////////////////////////////////////////////////////////////////////////////
     ///Append signed number
     template<class NUM>
-    void append_num_signed( NUM n, int BaseN, uints minsize, EAlignNum align )
+    void append_num_signed( int BaseN, NUM n, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
     {
-        if( n < 0 ) append_num_unsigned( int_abs(n), BaseN, -1, minsize, align );
-        else        append_num_unsigned( n, BaseN, 0, minsize, align );
+        if( n < 0 ) append_num_unsigned( BaseN, int_abs(n), -1, minsize, align );
+        else        append_num_unsigned( BaseN, n, 0, minsize, align );
     }
 
     ///Append unsigned number
     template<class NUM>
-    void append_num_unsigned( NUM n, int BaseN, int sgn, uints minsize, EAlignNum align )
+    void append_num_unsigned( int BaseN, NUM n, int sgn, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
     {
         char buf[128];
         uints i = charstrconv::num_formatter<NUM>::precompute( buf, n, BaseN, sgn );
@@ -544,19 +545,19 @@ public:
     void append_num( int base, NUM n, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT ) \
     {
         if( SIGNEDNESS<NUM>::isSigned )
-            return append_num_signed(n, base, minsize, align);
+            return append_num_signed(base, n, minsize, align);
         else
-            return append_num_unsigned(n, base, 0, minsize, align);
+            return append_num_unsigned(base, n, 0, minsize, align);
     }
 
     void append_num_int( int base, const void* p, uints bytes, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
     {
         switch( bytes )
         {
-        case 1: append_num_signed( *(int8*)p, base, minsize, align );  break;
-        case 2: append_num_signed( *(int16*)p, base, minsize, align );  break;
-        case 4: append_num_signed( *(int32*)p, base, minsize, align );  break;
-        case 8: append_num_signed( *(int64*)p, base, minsize, align );  break;
+        case 1: append_num_signed( base, *( int8*)p, minsize, align );  break;
+        case 2: append_num_signed( base, *(int16*)p, minsize, align );  break;
+        case 4: append_num_signed( base, *(int32*)p, minsize, align );  break;
+        case 8: append_num_signed( base, *(int64*)p, minsize, align );  break;
         default:
             throw ersINVALID_TYPE "unsupported size";
         }
@@ -566,10 +567,10 @@ public:
     {
         switch( bytes )
         {
-        case 1: append_num_unsigned( *(uint8*)p, base, 0, minsize, align );  break;
-        case 2: append_num_unsigned( *(uint16*)p, base, 0, minsize, align );  break;
-        case 4: append_num_unsigned( *(uint32*)p, base, 0, minsize, align );  break;
-        case 8: append_num_unsigned( *(uint64*)p, base, 0, minsize, align );  break;
+        case 1: append_num_unsigned( base, *( uint8*)p, 0, minsize, align );  break;
+        case 2: append_num_unsigned( base, *(uint16*)p, 0, minsize, align );  break;
+        case 4: append_num_unsigned( base, *(uint32*)p, 0, minsize, align );  break;
+        case 8: append_num_unsigned( base, *(uint64*)p, 0, minsize, align );  break;
         default:
             throw ersINVALID_TYPE "unsupported size";
         }
@@ -633,10 +634,10 @@ public:
 
     ///Append floating point number
     ///@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
-    void append( double d, int nfrac, int minsize=0,bool fillzeros=false)
+    void append( double d, int nfrac, int minsize=0, EAlignNum align=ALIGN_NUM_RIGHT)
     {
         double w = d>0 ? floor(d) : ceil(d);
-        append_num_unsigned( (int64)fabs(w), 10, d<0 ? -1 : 0, minsize, fillzeros?ALIGN_NUM_RIGHT_FILL_ZEROS:ALIGN_NUM_RIGHT );
+        append_num_unsigned( 10, (int64)fabs(w), d<0 ? -1 : 0, minsize, align );
         append('.');
         append_fraction( fabs(d-w), nfrac );
     }
@@ -875,6 +876,27 @@ public:
 	{
 		return append_date_local(t, DATE_ISO8601|DATE_ISO8601_GMT);
 	}
+
+
+    ///Append angle value in format +49°42'32.91"
+    charstr& append_angle( double angle )
+    {
+        append(angle>=0 ? '+' : '-');
+        angle = fabs(angle);
+
+        append_num_unsigned(10, fast_ftol(angle), angle>0 ? 1 : (angle<0 ? -1 : 0));
+        append('°');
+
+        angle = (angle - floor(angle)) * 60.0;
+        append_num(10, fast_ftol(angle), 2, ALIGN_NUM_RIGHT_FILL_ZEROS);
+        append('\'');
+
+        angle = (angle - floor(angle)) * 60.0;
+        append(angle, 3, 2, ALIGN_NUM_RIGHT_FILL_ZEROS);
+        append('"');
+
+        return *this;
+    }
 
 
     ///Append string while encoding characters as specified for URL encoding

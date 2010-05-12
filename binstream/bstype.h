@@ -124,6 +124,7 @@ struct kind
         T_CHAR,                         ///< character data - strings
         T_ERRCODE,                      ///< error codes
         T_TIME,                         ///< time values
+        T_ANGLE,                        ///< angles (lat/long etc)
         T_OPTIONAL,                     ///< marking of optional data (streaming pointer members that can be null)
 
         T_KEY,                          ///< unformatted characters (used in formatting streams)
