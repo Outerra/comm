@@ -74,6 +74,7 @@ public:
         _flush = s;
     }
 
+    ///character to catch in input and invoke flush
     void flush_on_character( char c ) {
         _autoflush = c;
     }
