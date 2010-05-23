@@ -63,6 +63,7 @@ inline double exp2( double xx )
 ////////////////////////////////////////////////////////////////////////////////
 inline float approx_fast_sqrt(float fx)
 {
+#ifdef SYSTYPE_32
       float fret;
       __asm {
 
@@ -73,6 +74,9 @@ inline float approx_fast_sqrt(float fx)
           mov [fret], eax
       }
       return fret;
+#else
+	return sqrt(fx);
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -83,26 +87,6 @@ inline float approx_inv_sqrt (float x)
     i = 0x5f3759df - (i >> 1); // This line hides a LOT of math!
     x = *(float*)&i;
     x = x*(1.5f - xhalf*x*x); // repeat this statement for a better approximation
-    return x;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-inline long fast_ftol(float f)
-{
-    long x;
-    float fx = floorf(f);
-	_asm fld fx
-	_asm fistp x
-    return x;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-inline long fast_ftol(double f)
-{
-    long x;
-    double fx = floor(f);
-	_asm fld fx
-	_asm fistp x
     return x;
 }
 
