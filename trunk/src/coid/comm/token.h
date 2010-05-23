@@ -1481,7 +1481,7 @@ struct token
     }
 
     ///Consume leading character if matches one from string, returning position+1, otherwise return 0
-    int consume_char( const char* cz ) {
+    ints consume_char( const char* cz ) {
         char c = first_char();
         const char* p = ::strchr(cz, c);
         if(!p) return 0;
@@ -1491,7 +1491,7 @@ struct token
     }
 
     ///Consume leading character if matches one from string, returning position+1, otherwise return 0
-    int consume_char( const token& ct ) {
+    ints consume_char( const token& ct ) {
         char c = first_char();
         const char* p = ct.strchr(c);
         if(!p) return 0;
@@ -2023,7 +2023,7 @@ struct token
     /// 49°42'32.91"N, +49°42.5485', +49.7091416667°
     double toangle()
     {
-        int sgn = consume_char("+-");
+        ints sgn = consume_char("+-");
         int deg = touint_and_shift();
 
         double dec=0;
@@ -2052,7 +2052,7 @@ struct token
         }
 
         skip_space();
-        int wos = consume_char("NSEWnsew");
+        ints wos = consume_char("NSEWnsew");
         if(wos) {
             //world side overrides the sign, if any
             sgn = (wos&1)==0  ?  2  :  1;

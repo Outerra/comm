@@ -884,11 +884,11 @@ public:
         append(angle>=0 ? '+' : '-');
         angle = fabs(angle);
 
-        append_num_unsigned(10, fast_ftol(angle), angle>0 ? 1 : (angle<0 ? -1 : 0));
+        append_num_unsigned(10, int(angle), angle>0 ? 1 : (angle<0 ? -1 : 0));
         append('°');
 
         angle = (angle - floor(angle)) * 60.0;
-        append_num(10, fast_ftol(angle), 2, ALIGN_NUM_RIGHT_FILL_ZEROS);
+        append_num(10, int(angle), 2, ALIGN_NUM_RIGHT_FILL_ZEROS);
         append('\'');
 
         angle = (angle - floor(angle)) * 60.0;
