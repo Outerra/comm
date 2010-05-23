@@ -99,7 +99,7 @@ public:
 	}
 
 	// special constructor from default policy
-	explicit ref( const create_pooled&,pool<policy_pooled> *po) {
+	explicit ref( const create_pooled&, pool<policy_pooled> *po) {
 		policy_queue_pooled<T> *p=policy_queue_pooled<T>::create(po);
 		_p=p;
 		_o=p->get();
@@ -124,14 +124,14 @@ public:
 
 	void create() {
 		release();
-		policy_trait<T>::policy *p=policy_trait<T>::policy::create();
+		policy_trait<T>::policy *p = policy_trait<T>::policy::create();
 		_p=p;
 		_o=p->get();
 	}
 
 	void create_pooled() {
 		release();
-		policy_queue_pooled<T> *p=policy_queue_pooled<T>::create();
+		policy_queue_pooled<T> *p = policy_queue_pooled<T>::create();
 		_p=p;
 		_o=p->get();
 	}
@@ -164,7 +164,7 @@ public:
 	/// DO NOT USE !!!
 	policy* add_ref_copy() const { if( _p ) _p->add_ref_copy(); return _p; }
 
-	T * operator->() const { DASSERT( _p!=0 && "You are trying to use not uninitialized REF!" ); return _o; }
+	T * operator->() const { DASSERT( _p!=0 && "You are trying to use not initialized REF!" ); return _o; }
 
 	T * operator->() { DASSERT( _p!=0 && "You are trying to use not initialized REF!" ); return _o; }
 
@@ -187,8 +187,8 @@ public:
 
 	void create(pool_t* p) {
 		release();
-		_p=policy_trait<T>::policy::create(p); 
-		_o=_p->object_ptr(); 
+		_p = policy_trait<T>::policy::create(p); 
+		_o = _p->object_ptr(); 
 	}
 
 	T* get() const { return _o; }
@@ -200,8 +200,8 @@ public:
 	template<class T2>
 	void takeover(ref<T2>& p) {
 		release();
-		_o=p.get();
-		_p=p.give_me();
+		_o = p.get();
+		_p = p.give_me();
 		p.forget();
 	}
 
