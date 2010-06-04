@@ -159,27 +159,11 @@
         'version.h',
       ],
       'configurations': {
-        'Common': {
-          'conditions': [
-            ['OS=="win"', {
-              'msvs_configuration_attributes': {
-                'CharacterSet': '2',
-              },
-              'msvs_settings': {
-                'VCLinkerTool': {
-                  'SubSystem': '1', # Set /SUBSYSTEM:CONSOLE.
-                },
-                'VCCLCompilerTool': {
-                  'ExceptionHandling': '2', # /EHsc
-                  'AdditionalOptions': [
-                    '/MP',
-                    '/UUNICODE',
-                    '/U_UNICODE'
-				  ],
-                },
-              },
-            }],
-          ],
+        'Debug' : {
+          'inherit_from': ['comm_debug'],
+        },
+        'Release' : {
+          'inherit_from': ['comm_release'],
         },
       },
     },
