@@ -1,0 +1,36 @@
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "comm_static_gyp", "comm_static_gyp.vcproj", "{D2F47060-00C0-4A3C-9888-CF663F14D44D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		change_out|Win32 = change_out|Win32
+		Debug|Win32 = Debug|Win32
+		Release|x64 = Release|x64
+		Purify|Win32 = Purify|Win32
+		Purify|x64 = Purify|x64
+		Debug|x64 = Debug|x64
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.change_out|Win32.ActiveCfg = change_out|Win32
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.change_out|Win32.Build.0 = change_out|Win32
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Debug|Win32.Build.0 = Debug|Win32
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Release|x64.ActiveCfg = Release|x64
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Release|x64.Build.0 = Release|x64
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Purify|Win32.ActiveCfg = Purify|Win32
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Purify|Win32.Build.0 = Purify|Win32
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Purify|x64.ActiveCfg = Purify|x64
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Purify|x64.Build.0 = Purify|x64
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Debug|x64.ActiveCfg = Debug|x64
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Debug|x64.Build.0 = Debug|x64
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Release|Win32.ActiveCfg = Release|Win32
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+	EndGlobalSection
+EndGlobal
