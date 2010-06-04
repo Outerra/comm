@@ -61,6 +61,26 @@ inline double exp2( double xx )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+///Calculate return value such that x == (retval) * 10^exp10, retval >= 1 and < 10
+inline double frexp10(double x, int *exp10)
+{
+    double xabs = fabs(x);
+    if(x == 0.0) {
+        *exp10=0;
+        return 0.0;
+    }
+
+    double mantissa = log10(xabs);
+    *exp10 = (int)floor(mantissa);
+
+    mantissa = pow(10.0, mantissa - double(*exp10));
+    if(x<0)
+        mantissa = -mantissa;
+
+    return mantissa;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 inline float approx_fast_sqrt(float fx)
 {
 #ifdef SYSTYPE_32
