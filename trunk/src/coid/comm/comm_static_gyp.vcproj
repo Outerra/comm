@@ -1119,14 +1119,6 @@
 			>
 		</File>
 		<File
-			RelativePath="interfnc.h"
-			>
-		</File>
-		<File
-			RelativePath="iref.h"
-			>
-		</File>
-		<File
 			RelativePath="keywordt.h"
 			>
 		</File>
@@ -1163,7 +1155,7 @@
 			>
 		</File>
 		<File
-			RelativePath="password.h"
+			RelativePath="parser.hpassword.h"
 			>
 		</File>
 		<File
@@ -1187,7 +1179,15 @@
 			>
 		</File>
 		<File
-			RelativePath="refs.h"
+			RelativePath="ref_base.h"
+			>
+		</File>
+		<File
+			RelativePath="ref_i.h"
+			>
+		</File>
+		<File
+			RelativePath="ref_s.h"
 			>
 		</File>
 		<File
@@ -1252,6 +1252,10 @@
 		</File>
 		<File
 			RelativePath="tutf8.h"
+			>
+		</File>
+		<File
+			RelativePath="txtconv.cpp"
 			>
 		</File>
 		<File
