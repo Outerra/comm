@@ -95,6 +95,8 @@ private:
 
 public:
 
+    virtual ~policy_base_() {}
+
 	virtual void destroy()=0;
 
 	policy_base_() : _count(1) {}
@@ -132,6 +134,8 @@ private:
 
 protected:
 	policy_intrusive_base() {}
+
+    virtual ~policy_intrusive_base() {}
 
 	virtual void destroy() { delete this; }
 };
