@@ -129,10 +129,10 @@ public:
                 switch( t.get_size() )
                 {
                 case 4:
-                    tok = charstrconv::append( buf, 256, *(const float*)p, -1 );
+                    tok.set(buf, charstrconv::append_float(buf, buf+256, *(const float*)p, -1));
                     break;
                 case 8:
-                    tok = charstrconv::append( buf, 256, *(const double*)p, -2 );
+                    tok.set(buf, charstrconv::append_float(buf, buf+256, *(const double*)p, -2));
                     break;
 
                 default:
@@ -366,10 +366,10 @@ public:
 
     ///Append floating point number
     ///@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
-    void append( double d, int nfrac )
+    void append_float( double d, int nfrac )
     {
         char buf[256];
-        token tok = charstrconv::append( buf, 256, d, nfrac );
+        token tok(buf, charstrconv::append_float(buf, buf+256, d, nfrac));
 
         _binw->xwrite_token_raw(tok);
     }

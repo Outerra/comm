@@ -113,79 +113,8 @@ float_right0(double n, int nfrac=-1) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-class charstrconv
+namespace charstrconv
 {
-public:
-/*
-    ///converts chunk of text to specified type
-    static void strton (const char*& src, void* dst, binstream::type t, ulong num, char sep)
-    {
-        switch (t & binstream::type::xTYPE)
-        {
-        case binstream::type::tTYPE_BINARY:
-            {
-                //binary data are written as hexadecimal numbers tacked together by item size
-                // is=1:  00 56 fa 4e 57 ...
-                // is=2:  0045 faec c77b ...
-                // is=4:  fc29a4b5 84ac4fa3 ...
-                hex2bin (src, dst, t.get_size(num));
-            }
-        case binstream::type::tTYPE_INT:
-            {
-                //signed integers, can be in decimal form (123), hexadecimal (xfa34), octal (o712342)
-                // binary (b01010001)
-            }
-        case binstream::type::tTYPE_UINT:
-            {
-                //unsigned integers, can be in decimal form (123), hexadecimal (xfa34), octal (o712342)
-                // binary (b01010001)
-            }
-        case binstream::type::tTYPE_FLOAT:
-            {
-                //floating point numbers
-            }
-        case binstream::type::tTYPE_CHAR:
-            {
-                //string to string
-            }
-        }
-    }
-
-    ///converts specified type to chunk of text
-    static void ntostr (const void* src, char*& dst, binstream::type t, ulong num, char sep)
-    {
-        switch (t & binstream::type::xTYPE)
-        {
-        case binstream::type::tTYPE_BINARY:
-            {
-                //binary data are written as hexadecimal numbers tacked together by item size
-                // is=1:  00 56 fa 4e 57 ...
-                // is=2:  0045 faec c77b ...
-                // is=4:  fc29a4b5 84ac4fa3 ...
-                hex2bin (src, dst, t.get_size(num));
-            }
-        case binstream::type::tTYPE_INT:
-            {
-                //signed integers, can be in decimal form (123), hexadecimal (xfa34), octal (o712342)
-                // binary (b01010001)
-            }
-        case binstream::type::tTYPE_UINT:
-            {
-                //unsigned integers, can be in decimal form (123), hexadecimal (xfa34), octal (o712342)
-                // binary (b01010001)
-            }
-        case binstream::type::tTYPE_FLOAT:
-            {
-                //floating point numbers
-            }
-        case binstream::type::tTYPE_CHAR:
-            {
-                //string to string
-            }
-        }
-    }
-*/
-
     ////////////////////////////////////////////////////////////////////////////////
     ///append number in baseN
     template< class INT >
@@ -235,8 +164,10 @@ public:
             if( i < minsize )
                 fc = minsize-i;
 
-            if( dstsize < i+fc+1 )
-                return token::empty();
+            if( dstsize < i+fc+1 ) {
+                ::memset(dst, '?', dstsize);
+                return token(dst, dstsize);
+            }
 
             char* zt = produce( dst, buf, i, fc, sgn, align );
             *zt = 0;
@@ -254,8 +185,10 @@ public:
             if( i < minsize )
                 fc = minsize-i;
 
-            if( dstsize < i+fc )
-                return token::empty();
+            if( dstsize < i+fc ) {
+                ::memset(dst, '?', dstsize);
+                return token(dst, dstsize);
+            }
 
             produce( dst, buf, i, fc, sgn, align );
             return token(dst, i+fc);
@@ -269,17 +202,19 @@ public:
         {
             if( size <= sizemax )  return buf;
 
-            uint8 overflow = size - sizemax > 9  ?  3  :  2;
+            uint d = size - sizemax;
+            uint8 overflow = d>9  ?  3  :  2;
 
-            if( sizemax <= overflow )  return "!!!";
+            if( sizemax <= overflow )
+                return "!!!";
             else if( overflow == 3 ) {
-                buf[sizemax - 3] = 'e';
-                buf[sizemax - 2] = '0' + (overflow / 10);
-                buf[sizemax - 1] = '0' + (overflow % 10);
+                buf[2] = 'e';
+                buf[1] = '0' + (d / 10);
+                buf[0] = '0' + (d % 10);
             }
             else {
-                buf[sizemax - 2] = 'e';
-                buf[sizemax - 1] = '0' + (overflow);
+                buf[1] = 'e';
+                buf[0] = '0' + d;
             }
 
             return buf;
@@ -389,55 +324,18 @@ public:
         }
     }
 
-    ///Append floating point number
+    ///Append floating point number with fixed number of characters
     ///@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
-    ///@param minsize minimum size of the integer part
-    static token append( char* dst, uint dstsize, double d, int nfrac, uint minsize=0, EAlignNum align = ALIGN_NUM_RIGHT )
-    {
-        uint anfrac = nfrac < 0  ?  -nfrac : nfrac;
-        if( minsize>0 && anfrac>0 )
-            minsize = minsize > anfrac+1  ?  minsize-anfrac-1  :  0;
+    void append_fixed( char* dst, char* dste, double v, int nfrac, EAlignNum align=ALIGN_NUM_LEFT);
 
-        double w = d>0 ? floor(d) : ceil(d);
-        token tokw = num_formatter<int64>::u_insert( dst, dstsize, (int64)fabs(w), 10, d<0 ? -1 : 0, minsize, align );
+    ///Append floating point number
+    //@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
+    //@param minsize minimum size of the integer part
+    //@return position after the inserted wtring
+    char* append_float( char* dst, char* dste, double d, int nfrac, uint minsize=0 );
 
-        if(nfrac == 0)
-            return tokw;
-
-        if( tokw.len() < dstsize ) {
-            dst[tokw.len()] = '.';
-            tokw++;
-        }
-
-        int tfrac = int_min( int(int_abs(nfrac)), int(dstsize-tokw.len()) );
-
-        token tokf = append_fraction( dst+tokw.len(), fabs(d-w), nfrac>0 ? tfrac : -tfrac );
-
-        tokw.shift_end( tokf.len() );
-        return tokw;
-    }
-
-    ///@param ndig number of decimal places: >0 maximum, <0 precisely -ndig places
-    static token append_fraction( char* dst, double n, int ndig )
-    {
-        uint ndiga = (uint)int_abs(ndig);
-        char* p = dst;
-
-        int lastnzero=1;
-        for( uint i=0; i<ndiga; ++i )
-        {
-            n *= 10;
-            double f = floor(n);
-            n -= f;
-            uint8 v = (uint8)f;
-            *p++ = '0' + v;
-
-            if( ndig >= 0  &&  v != 0 )
-                lastnzero = i+1;
-        }
-
-        return token(dst, ndig > 0 ? lastnzero : ndiga);
-    }
+    //@param ndig number of decimal places: >0 maximum, <0 precisely -ndig places
+    char* append_fraction( char* dst, char* dste, double n, int ndig );
 
     ///Convert hexadecimal string content to binary data. Expects little-endian ordering.
     //@param src input: source string, output: remainder of the input
@@ -447,43 +345,7 @@ public:
     //@return number of bytes remaining to convert
     //@note function returns either after it converted required number of bytes, or it has read
     /// the whole string, or it encountered an invalid character.
-    static uints hex2bin( token& src, void* dst, uints nbytes, char sep )
-    {
-        for( ; !src.is_empty(); )
-        {
-            if( src.first_char() == sep )  { ++src; continue; }
-
-            char base;
-            char c = src.first_char();
-            if( c >= '0'  &&  c <= '9' )        base = '0';
-            else if( c >= 'a'  &&  c <= 'f' )   base = 'a'-10;
-            else if( c >= 'A'  &&  c <= 'F' )   base = 'A'-10;
-            else 
-                break;
-
-            *(uchar*)dst = (c - base) << 4;
-            ++src;
-
-            c = src.first_char();
-            if( c >= '0'  &&  c <= '9' )        base = '0';
-            else if( c >= 'a'  &&  c <= 'f' )   base = 'a'-10;
-            else if( c >= 'A'  &&  c <= 'F' )   base = 'A'-10;
-            else
-            {
-                --src;
-                break;
-            }
-
-            *(uchar*)dst += (c - base);
-            dst = (uchar*)dst + 1;
-            ++src;
-
-            --nbytes;
-            if(!nbytes)  break;
-        }
-
-        return nbytes;
-    }
+    uints hex2bin( token& src, void* dst, uints nbytes, char sep );
 
     ///Convert binary data to hexadecimal string
     //@param src source memory buffer
@@ -491,96 +353,18 @@ public:
     //@param nitems number of itemsize sized words to convert
     //@param itemsize number of bytes to write clumped together before separator
     //@param sep separator character, 0 if none
-    static void bin2hex( const void* src, char*& dst, uints nitems, uint itemsize, char sep=' ' )
-    {
-        if( nitems == 0 )  return;
-
-        static char tbl[] = "0123456789ABCDEF";
-        for( uints i=0;; )
-        {
-            if(sysIsLittleEndian)
-            {
-                for( uint j=itemsize; j>0; )
-                {
-                    --j;
-                    dst[0] = tbl[((uchar*)src)[j] >> 4];
-                    dst[1] = tbl[((uchar*)src)[j] & 0x0f];
-                    dst += 2;
-                }
-            }
-            else
-            {
-                for( uint j=0; j<itemsize; ++j )
-                {
-                    dst[0] = tbl[((uchar*)src)[j] >> 4];
-                    dst[1] = tbl[((uchar*)src)[j] & 0x0f];
-                    dst += 2;
-                }
-            }
-
-            src = (uchar*)src + itemsize;
-
-            ++i;
-            if( i>=nitems )  break;
-
-            if(sep)
-            {
-                dst[0] = sep;
-                ++dst;
-            }
-        }
-    }
+    void bin2hex( const void* src, char*& dst, uints nitems, uint itemsize, char sep=' ' );
 
     ////////////////////////////////////////////////////////////////////////////////
     ///Convert bytes to intelhex format output
-    static uints write_intelhex_line( char* dst, ushort addr, uchar n, const void* data )
-    {
-        *dst++ = ':';
-
-        const char* dstb = dst;
-
-        charstrconv::bin2hex( &n, dst, 1, 1 );
-        charstrconv::bin2hex( &addr, dst, 1, 2 );
-
-        uchar t=0;
-        charstrconv::bin2hex( &t, dst, 1, 1 );
-
-        charstrconv::bin2hex( data, dst, n, 1, 0 );
-
-        uchar sum=0;
-        for( const char* dst1=dstb ; dst1<dst; )
-        {
-            char base;
-            if( *dst1 >= '0'  &&  *dst1 <= '9' )        base = '0';
-            else if( *dst1 >= 'a'  &&  *dst1 <= 'f' )   base = 'a'-10;
-            else if( *dst1 >= 'A'  &&  *dst1 <= 'F')    base = 'A'-10;
-
-            sum += (*dst1++ - base) << 4;        
-
-            if( *dst1 >= '0'  &&  *dst1 <= '9' )        base = '0';
-            else if( *dst1 >= 'a'  &&  *dst1 <= 'f' )   base = 'a'-10;
-            else if( *dst1 >= 'A'  &&  *dst1 <= 'F')    base = 'A'-10;
-
-            sum += *dst1++ - base;        
-        }
-
-        sum = -(schar)sum;
-        charstrconv::bin2hex( &sum, dst, 1, 1 );
-
-        *dst++ = '\r';
-        *dst++ = '\n';
-        *dst++ = 0;
-
-        return dst - dstb;
-    }
+    uints write_intelhex_line( char* dst, ushort addr, uchar n, const void* data );
 
     static token write_intelhex_terminator()
     {
         static token t = ":00000001FF\r\n";
         return t;
     }
-
-};
+} //namespace charstrconv
 
 COID_NAMESPACE_END
 

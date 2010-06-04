@@ -193,6 +193,7 @@ public:
 #endif
 
     ///Formatted integers
+    //@param WIDTH minimum width
     //@note used by text formatting streams, writes as a raw token
     template<int WIDTH, int ALIGN, class NUM>
     binstream& operator << (const num_fmt<WIDTH,ALIGN,NUM> v)
@@ -205,12 +206,13 @@ public:
 
     ///Append formatted floating point value
     //@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places 
+    //@param WIDTH total width
     //@note used by text formatting streams, writes as a raw token
     template<int WIDTH, int ALIGN>
     binstream& operator << (const float_fmt<WIDTH,ALIGN>& v)
     {
         char buf[32];
-        token tok = charstrconv::append( buf, 32, v.value, v.nfrac, WIDTH, (EAlignNum)ALIGN);
+        token tok = charstrconv::append( buf, WIDTH, v.value, v.nfrac, WIDTH, (EAlignNum)ALIGN);
         xwrite_token_raw(tok);
         return *this;
     }

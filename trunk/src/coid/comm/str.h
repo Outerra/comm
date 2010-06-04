@@ -355,12 +355,20 @@ public:
 
     charstr& operator = (double d)              { reset(); return operator += (d); }
 
-    ///Formatted numbers
+    ///Formatted numbers - int/uint
     template<int WIDTH, int ALIGN, class NUM>
     charstr& operator = (const num_fmt<WIDTH,ALIGN,NUM> v) {
         append_num(10, v.value, WIDTH, ALIGN);
         return *this;
     }
+
+    ///Formatted numbers - floats
+    template<int WIDTH, int ALIGN>
+    charstr& operator = (const float_fmt<WIDTH,ALIGN>& v) {
+        token tok = charstrconv::append(get_buf(WIDTH), WIDTH, v.value, v.nfrac, WIDTH, (EAlignNum)ALIGN);
+        return *this;
+    }
+
 
     //@{ retrieve nth character
     char last_char() const                      { uints n=lens(); return n ? _tstr[n-1] : 0; }
@@ -430,12 +438,19 @@ public:
     charstr& operator += (ulong i)              { append_num(10,(uints)i); return *this; }
 #endif //SYSTYPE_MSVC
 
-    charstr& operator += (double d)             { append(d,3); return *this; }
+    charstr& operator += (double d)             { append_float(d,3); return *this; }
 
-    ///Formatted numbers
+    ///Formatted numbers - int/uint
     template<int WIDTH, int ALIGN, class NUM>
     charstr& operator += (const num_fmt<WIDTH,ALIGN,NUM> v) {
         append_num(10, v.value, WIDTH, ALIGN);
+        return *this;
+    }
+
+    ///Formatted numbers - floats
+    template<int WIDTH, int ALIGN>
+    charstr& operator += (const float_fmt<WIDTH,ALIGN>& v) {
+        token tok = charstrconv::append(get_append_buf(WIDTH), WIDTH, v.value, v.nfrac, WIDTH, (EAlignNum)ALIGN);
         return *this;
     }
 
@@ -473,10 +488,17 @@ public:
 
     charstr& operator << (double d)             { return operator += (d); }
 
-    ///Formatted numbers
+    ///Formatted numbers - int/uint
     template<int WIDTH, int ALIGN, class NUM>
     charstr& operator << (const num_fmt<WIDTH,ALIGN,NUM> v) {
         append_num(10, v.value, WIDTH, (EAlignNum)ALIGN);
+        return *this;
+    }
+
+    ///Formatted numbers - floats
+    template<int WIDTH, int ALIGN>
+    charstr& operator << (const float_fmt<WIDTH,ALIGN>& v) {
+        token tok = charstrconv::append(get_append_buf(WIDTH), WIDTH, v.value, v.nfrac, WIDTH, (EAlignNum)ALIGN);
         return *this;
     }
 
@@ -632,16 +654,24 @@ public:
         }
     }
 
-    ///Append floating point number
+    ///Append floating point number with fixed number of characters
     ///@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
-    void append( double d, int nfrac, int minsize=0, EAlignNum align=ALIGN_NUM_RIGHT)
+    void append_fixed( double v, int maxsize, int nfrac=-1, EAlignNum align=ALIGN_NUM_RIGHT)
     {
-        double w = d>0 ? floor(d) : ceil(d);
-        append_num_unsigned( 10, (int64)fabs(w), d<0 ? -1 : 0, minsize, align );
-        append('.');
-        append_fraction( fabs(d-w), nfrac );
+        char* buf = get_append_buf(maxsize);
+        charstrconv::append_fixed(buf, buf+maxsize, v, nfrac, align);
     }
 
+    ///Append floating point number
+    ///@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
+    void append_float( double d, int nfrac, int minsize=0)
+    {
+        char* buf = get_append_buf(32);
+        char* end = charstrconv::append_float(buf, buf+32, d, nfrac, minsize);
+
+        resize(end-ptr());
+    }
+/*
     ///@param ndig number of decimal places: >0 maximum, <0 precisely -ndig places
     void append_fraction( double n, int ndig )
     {
@@ -665,7 +695,7 @@ public:
         if( lastnzero < ndig )
             resize( size + lastnzero );
     }
-
+*/
     void append( char c )
     {
         if(c) *uniadd(1) = c;
@@ -878,7 +908,7 @@ public:
 	}
 
 
-    ///Append angle value in format +49°42'32.91"
+    ///Append angle value in format +49°42'32.912"
     charstr& append_angle( double angle )
     {
         append(angle>=0 ? '+' : '-');
@@ -892,7 +922,7 @@ public:
         append('\'');
 
         angle = (angle - floor(angle)) * 60.0;
-        append(angle, 3, 2, ALIGN_NUM_RIGHT_FILL_ZEROS);
+        append_fixed(angle, 6, -3, ALIGN_NUM_RIGHT_FILL_ZEROS);
         append('"');
 
         return *this;

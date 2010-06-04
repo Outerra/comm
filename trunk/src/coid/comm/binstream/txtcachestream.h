@@ -116,10 +116,10 @@ public:
                 switch( t.get_size() )
                 {
                 case 4:
-                    tok = charstrconv::append( buf, 256, *(const float*)p, -1 );
+                    tok.set(buf, charstrconv::append_float(buf, buf+256, *(const float*)p, -1));
                     break;
                 case 8:
-                    tok = charstrconv::append( buf, 256, *(const double*)p, -2 );
+                    tok.set(buf, charstrconv::append_float( buf, buf+256, *(const double*)p, -2));
                     break;
 
                 default:
