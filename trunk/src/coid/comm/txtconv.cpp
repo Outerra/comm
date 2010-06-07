@@ -59,9 +59,15 @@ char* append_float( char* dst, char* dste, double d, int nfrac, uint minsize )
         d = -d;
     }
 
-    double l = log10(d);
-    double w = floor(l);
-    int e = int(w);
+    double l;
+    int e;
+
+    if(d != 0.0) {
+        l = log10(d);
+        e = int(floor(l));
+    }
+    else
+        e = 0;
 
     //number of characters unnormalized
     int nuc;
