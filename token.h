@@ -1203,7 +1203,7 @@ struct token
         return *this;
     }
 
-    ///Trim trailing space or tab characters
+    ///Trim any trailing space or tab characters
     token& trim_space()
     {
         while( _ptr < _pte ) {
@@ -1215,7 +1215,7 @@ struct token
         return *this;
     }
 
-    ///Skip leading space or tab characters
+    ///Skip any leading space or tab characters
     token& skip_space()
     {
         while( _ptr < _pte ) {
@@ -1226,6 +1226,31 @@ struct token
         }
         return *this;
     }
+
+    ///Trim any trailing space, tab and newline characters
+    token& trim_whitespace()
+    {
+        while( _ptr < _pte ) {
+            char c = _pte[-1];
+            if( c != ' '  &&  c != '\t' && c != '\r' && c != '\n' )
+                break;
+            --_pte;
+        }
+        return *this;
+    }
+
+    ///Skip any leading space, tab and newline characters
+    token& skip_whitespace()
+    {
+        while( _ptr < _pte ) {
+            char c = *_ptr;
+            if( c != ' '  &&  c != '\t' && c != '\r' && c != '\n' )
+                break;
+            ++_ptr;
+        }
+        return *this;
+    }
+
 
     token& skip_ingroup( const token& sep, uints off=0 )
     {
