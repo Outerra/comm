@@ -126,13 +126,17 @@ public:
         this->p = (T*)singleton_register_instance(p, &destroy, 0, 0, 0);
     }
 
+    local_singleton()
+    {
+        this->p = (T*)singleton_register_instance(new T, &destroy, 0, 0, 0);
+    }
 
 private:
 
     T* p;
 
     static void destroy(void* p) {
-        delete (T*)p;
+        delete p;
     }
 };
 
