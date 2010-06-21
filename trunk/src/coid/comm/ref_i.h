@@ -82,6 +82,14 @@ public:
 
 	bool is_empty() const { return (_p==0); }
 
+    typedef T* iref<T>::*unspecified_bool_type;
+
+    ///Automatic cast to unconvertible bool for checking via if
+	operator unspecified_bool_type () const {
+        return _p ? &iref<T>::_p : 0;
+	}
+
+
 	friend coid::binstream& operator << (coid::binstream& bin,const iref_t& s) {
 		return bin<<*s.get(); 
 	}
