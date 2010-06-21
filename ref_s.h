@@ -195,6 +195,15 @@ public:
 
 	bool is_empty() const { return (_p==0); }
 
+
+    typedef T* ref<T>::*unspecified_bool_type;
+
+    ///Automatic cast to unconvertible bool for checking via if
+	operator unspecified_bool_type () const {
+        return _p ? &ref<T>::_p : 0;
+	}
+
+
 	void forget() { _p=0; _o=0; }
 
 	template<class T2>
