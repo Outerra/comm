@@ -50,7 +50,7 @@ void append_fixed( char* dst, char* dste, double v, int nfrac, EAlignNum align)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-char* append_float( char* dst, char* dste, double d, int nfrac, uint minsize )
+char* append_float( char* dst, char* dste, double d, int nfrac )
 {
     char* p = dst;
 
@@ -60,34 +60,52 @@ char* append_float( char* dst, char* dste, double d, int nfrac, uint minsize )
     }
 
     double l;
-    int e;
+    int anfrac = nfrac<0 ? -nfrac : nfrac;
+    int dfrac = anfrac ? 1+anfrac : 0;
+    int e = 0;
 
-    if(d != 0.0) {
+    if(d != 0.0)
+    {
         l = log10(d);
         e = int(floor(l));
-    }
-    else
-        e = 0;
 
-    //number of characters unnormalized
-    int nuc;
-    if(nfrac<0)
-        nuc = 1-nfrac + (e>=0 ? e+2 : -e);
-    else
-        nuc = e>=0 ? e : -e+1;
+        int roundshift;
+        if(e < 0  &&  nfrac < 0)
+            roundshift = anfrac;
+        else if(e >= 0  &&  e+1+dfrac <= dste-dst)
+            roundshift = anfrac;
+        else
+            roundshift = -e + anfrac;
+
+        d += 0.5 * pow(10.0, -double(roundshift));
+
+        if(d != 0) {
+            l = log10(d);
+            e = int(floor(l));
+        }
+        else
+            e = 0;
+    }
+
+    //required number of characters for unnormalized display
+    int nchar = e<0
+        ? 1-e+anfrac
+        : e+dfrac;
 
     if(e<0 && nfrac<0)
     {
-        //always as fraction
+        //fractional numbers with nfrac<0 always as fraction even when below the resolution
         if(p<dste)
             *p++ = '.';
 
-        p = append_fraction(p, dste, d, nfrac);
+        p = append_fraction(p, dste, d, nfrac, false);
     }
-    else if(p+nuc <= dste)
+    else if(nchar <= dste-dst)
     {
+    //req.number of characters fits in
         if(e>=0) {
-            token t = num_formatter<int64>::u_insert(p, dste-p, (int64)d, 10, 0, minsize, ALIGN_NUM_LEFT);
+        //the whole num
+            token t = num_formatter<int64>::u_insert(p, dste-p, (int64)d, 10, 0, 0, ALIGN_NUM_LEFT);
             p += t.len();
 
             d -= floor(d);
@@ -97,16 +115,19 @@ char* append_float( char* dst, char* dste, double d, int nfrac, uint minsize )
             *p++ = '.';
         }
 
-        //if(e<0)
-        //    nfrac += nfrac<0 ? e : -e;
+        if(e<0)
+            nfrac += nfrac<0 ? e : -e;
 
-        p = append_fraction(p, dste, d, nfrac);
+        p = append_fraction(p, dste, d, nfrac, false);
     }
     else
     {
+        //number doesn't fit into the space in unnormalized form
+        // 
+
         double mantissa = pow(10.0, l - double(e)); //>= 1 < 10
 
-        //the part required for exponent
+        //the part required for the exponent
         int eabs = e<0 ? -e : e;
         int nexp = eabs>=10 ? 3 : 2;    //eXX
         if(e<0) ++nexp; //e-XX
@@ -120,7 +141,7 @@ char* append_float( char* dst, char* dste, double d, int nfrac, uint minsize )
         *p++ = '0' + (int)mantissa;
         *p++ = '.';
 
-        for( char* me=dste-nexp; p<me; ) {
+        for( char* me=dste-nexp; p<me && --anfrac>0; ) {
             mantissa -= floor(mantissa);
             mantissa *= 10.0;
 
@@ -141,7 +162,7 @@ char* append_float( char* dst, char* dste, double d, int nfrac, uint minsize )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-char* append_fraction( char* dst, char* dste, double n, int ndig )
+char* append_fraction( char* dst, char* dste, double n, int ndig, bool round )
 {
     int ndiga = int_abs(ndig);
     char* p = dst;
@@ -149,7 +170,8 @@ char* append_fraction( char* dst, char* dste, double n, int ndig )
     if(dste-dst < ndiga)
         ndiga = dste-dst;
 
-    n += 0.5*pow(10.0, -ndiga);
+    if(round)
+        n += 0.5*pow(10.0, -ndiga);
 
     int lastnzero=1;
     for( int i=0; i<ndiga; ++i )

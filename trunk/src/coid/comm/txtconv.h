@@ -332,10 +332,10 @@ namespace charstrconv
     //@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
     //@param minsize minimum size of the integer part
     //@return position after the inserted wtring
-    char* append_float( char* dst, char* dste, double d, int nfrac, uint minsize=0 );
+    char* append_float( char* dst, char* dste, double d, int nfrac );
 
     //@param ndig number of decimal places: >0 maximum, <0 precisely -ndig places
-    char* append_fraction( char* dst, char* dste, double n, int ndig );
+    char* append_fraction( char* dst, char* dste, double n, int ndig, bool round=true );
 
     ///Convert hexadecimal string content to binary data. Expects little-endian ordering.
     //@param src input: source string, output: remainder of the input

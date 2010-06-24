@@ -664,10 +664,12 @@ public:
 
     ///Append floating point number
     ///@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
-    void append_float( double d, int nfrac, int minsize=0)
+    void append_float( double d, int nfrac, uint maxchars=0 )
     {
-        char* buf = get_append_buf(32);
-        char* end = charstrconv::append_float(buf, buf+32, d, nfrac, minsize);
+        if(!maxchars)
+            maxchars = 10;
+        char* buf = get_append_buf(maxchars);
+        char* end = charstrconv::append_float(buf, buf+maxchars, d, nfrac );
 
         resize(end-ptr());
     }
