@@ -177,6 +177,7 @@ public:
     struct lextoken
     {
         token   tok;                    ///< value string, points to input string or to tokbuf
+        token   outok;                  ///< vlaue string, points to string includng its leading and trailing delimiters
         int     id;                     ///< token id (group type or string type)
         int     termid;                 ///< terminator id, for strings or blocks with multiple trailing sequences, or keyword id for keywords
         int     state;                  ///< >0 leading, <0 trailing, =0 chunked
@@ -234,6 +235,11 @@ public:
 
         ///Return token
         token value() const             { return tok; }
+
+        ///Return token including the leading and trailing sequences of strings and blocks
+        token outer() const {
+            return id>=0 ? tok : outok;
+        }
 
         ///Return pointer to the beginning of the current token
         const char* ptr() const         { return tok.ptr(); }
@@ -844,48 +850,58 @@ public:
         uint sid = -1 - blockid;
         sequence* seq = _stbary[sid];
 
-        DASSERT( seq->is_block() );
-
-        bool enb = enabled(*seq);
-        if(!enb) {
-            __assert_reachable_sequence(seq);
-            enable(*seq, true);
-        }
 
         //restore a simple token that was pushed back
-        if(_pushback && _last.tokbuf.is_empty()) {
+        if(_pushback && _last.id != blockid)
+        {
+            DASSERT( _last.id >= 0 );
+            DASSERT( _last.tokbuf.is_empty() );
             _tok.shift_start(-(ints)_last.tok.len());
             _rawpos = _tok.ptr();
             _pushback = 0;
         }
 
-        next();
+        next(1, blockid);
 
         if(_last.id == blockid) {
             if(!complete)
                 return _last;
 
             uints off=0;
-            try {
-                next_read_block( *(block_rule*)seq, off, true, false );
-            }
-            catch(coid::exception) {
-                if(!enb) enable(*seq, false);
-                throw;
-            }
+            next_read_block( *(block_rule*)seq, off, true, false );
 
             _stack.pop();
-            if(!enb) enable(*seq, false);
 
             return _last;
         }
-
-        if(!enb) enable(*seq, false);
 
         _err = lexception::ERR_EXTERNAL_ERROR;
 
         on_error_prefix(false, _errtext, current_line());
         _errtext << "expected block <<" << seq->name << ">>";
+        on_error_suffix(_errtext);
+
+        throw lexception(_err, _errtext);
+    }
+
+    ///Explicitly pop out of a block as if encountering the trailing sequence
+    void pop_block(int blockid)
+    {
+        __assert_valid_sequence(blockid, entity::BLOCK);
+
+        uint sid = -1 - blockid;
+        sequence* seq = _stbary[sid];
+
+        block_rule** br = _stack.last();
+        if(br && (*br)->id == sid) {
+            _stack.pop();
+            return;
+        }
+
+        _err = lexception::ERR_EXTERNAL_ERROR;
+
+        on_error_prefix(false, _errtext, current_line());
+        _errtext << "no block <<" << seq->name << ">> on stack";
         on_error_suffix(_errtext);
 
         throw lexception(_err, _errtext);
@@ -922,8 +938,9 @@ public:
 
         @param ignoregrp id of the group to ignore if found at the beginning, 0 for none.
         This is used mainly to omit the whitespace (group 1), or explicitly to not skip it.
+        @param enable_blockid enable block temporarily if it's not enabled
     **/
-    const lextoken& next( uint ignoregrp=1 )
+    const lextoken& next( uint ignoregrp=1, uint enable_blockid=0 )
     {
         //return last token if instructed
         if(_pushback) {
@@ -997,8 +1014,12 @@ public:
             //this could be a leading string/block delimiter, if we can find it in the register
             const dynarray<sequence*>& dseq = _seqary[((x&xSEQ)>>rSEQ)-1];
             uint i, n = (uint)dseq.size();
-            for( i=0; i<n; ++i )
-                if( enabled(*dseq[i])  &&  follows(dseq[i]->leading, 0) )  break;
+            uint enb = -1 - enable_blockid;
+
+            for( i=0; i<n; ++i ) {
+                if( (enabled(*dseq[i]) || dseq[i]->id == enb)  &&  follows(dseq[i]->leading, 0) )
+                    break;
+            }
 
             if(i<n)
             {
@@ -1008,6 +1029,7 @@ public:
                 _last.state = 1;
                 _last_string = k;
 
+                _last.outok.set(_tok.ptr(), 0U);
                 _last.tok = _tok.cut_left_n( seq->leading.len() );
 
                 //this is a leading string or block delimiter
@@ -1125,7 +1147,8 @@ public:
     ///Match a literal string. Pushes the read token back if not matched.
     //@return true if next token matches literal string
     //@note This won't match a string or block with content equal to @a val, only normal tokens can be matched
-    bool matches( const token& val ) {
+    bool matches( const token& val )
+    {
         bool res = next() == val  &&  !_last.is_content();
 
         if(!res)
@@ -2458,8 +2481,10 @@ protected:
 
                     add_stb_segment( sr, tid, off, outermost );
 
-                    if(tid>=0)
+                    if(tid>=0) {
+                        _last.termid = tid;
                         return _last;
+                    }
 
                     _err = lexception::ERR_STRING_TERMINATED_EARLY;
                     
@@ -2714,6 +2739,7 @@ protected:
 
         if(final) {
             _tok.shift_start(off + len);
+            _last.outok.set(_last.outok.ptr(), _tok.ptr());
             off = 0;
         }
     }
