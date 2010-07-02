@@ -917,7 +917,8 @@ public:
         angle = fabs(angle);
 
         append_num_unsigned(10, int(angle), 0);
-        append('°');
+        //append('°');
+        append("\xc2\xb0"); //utf-8 degree sign
 
         angle = (angle - floor(angle)) * 60.0;
         append_num(10, int(angle), 2, ALIGN_NUM_RIGHT_FILL_ZEROS);
