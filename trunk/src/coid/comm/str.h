@@ -916,7 +916,7 @@ public:
         append(angle>=0 ? '+' : '-');
         angle = fabs(angle);
 
-        append_num_unsigned(10, int(angle), angle>0 ? 1 : (angle<0 ? -1 : 0));
+        append_num_unsigned(10, int(angle), 0);
         append('°');
 
         angle = (angle - floor(angle)) * 60.0;
