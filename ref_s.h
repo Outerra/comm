@@ -200,7 +200,7 @@ public:
 
     ///Automatic cast to unconvertible bool for checking via if
 	operator unspecified_bool_type () const {
-        return _p ? &ref<T>::_p : 0;
+        return _o ? &ref<T>::_o : 0;
 	}
 
 
