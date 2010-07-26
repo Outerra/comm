@@ -90,6 +90,14 @@ public:
 	}
 
 
+    friend bool operator==( const iref<T>& a,const iref<T>& b ) {
+	    return a._p == b._p;
+    }
+
+    friend bool operator!=( const iref<T>& a,const iref<T>& b ) {
+	    return !operator==(a,b);
+    }
+
 	friend coid::binstream& operator << (coid::binstream& bin,const iref_t& s) {
 		return bin<<*s.get(); 
 	}
@@ -107,16 +115,6 @@ public:
 private:
 	T* _p;
 };
-
-template<class T> 
-inline bool operator==( const iref<T>& a,const iref<T>& b ) {
-	return a.get()==b.get();
-}
-
-template<class T> 
-inline bool operator!=( const iref<T>& a,const iref<T>& b ) {
-	return !operator==(a,b);
-}
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
