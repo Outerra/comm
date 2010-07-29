@@ -305,6 +305,7 @@
     <ClCompile Include="log\policy_log.cpp" />
     <ClCompile Include="regex\regcomp.cpp" />
     <ClCompile Include="regex\regexec.cpp" />
+    <ClCompile Include="txtconv.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="atomic\atomic.h" />
