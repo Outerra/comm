@@ -50,6 +50,14 @@ void append_fixed( char* dst, char* dste, double v, int nfrac, EAlignNum align)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+/*
+	nfrac<0 -> preciselly (-nfrac) fractional characters if the space allows it
+			-> smaller numbers truncated
+	nfrac>0 -> at most nfrac fractional characters
+			-> numbers with fractional part containing so many leading zeroes that
+			   the digits would take less than nfrac places are produced as exp
+	large numbers - use the whole available space
+*/
 char* append_float( char* dst, char* dste, double d, int nfrac )
 {
     char* p = dst;
@@ -59,10 +67,13 @@ char* append_float( char* dst, char* dste, double d, int nfrac )
         d = -d;
     }
 
+	int nch = dste - p;
+
     double l;
     int anfrac = nfrac<0 ? -nfrac : nfrac;
     int dfrac = anfrac ? 1+anfrac : 0;
     int e = 0;
+    bool expform = false;
 
     if(d != 0.0)
     {
@@ -70,13 +81,57 @@ char* append_float( char* dst, char* dste, double d, int nfrac )
         e = int(floor(l));
 
         int roundshift;
-        if(e < 0  &&  nfrac < 0)
-            roundshift = anfrac;
-        else if(e >= 0  &&  e+1+dfrac <= dste-dst)
-            roundshift = anfrac;
-        else
-            roundshift = -e + anfrac;
+        if(e < 0)
+        {
+        //fractional numbers
+			if(nfrac < 0) {
+				roundshift = anfrac;
+            }
+			else if(nch+e < anfrac)     //won't have nfrac digits, convert to exponential form
+            {
+                expform = true;
 
+                int naddc = 3 + (-e<10 ? 1 : (-e<100 ? 2 : 3));   //additional chars: dot, e, - and exponent
+                if(anfrac > nch-naddc) {
+                    anfrac = nch-naddc;
+                    dfrac = anfrac ? 1+anfrac : 0;
+                }
+                roundshift = anfrac-e-1;
+            }
+			else
+				roundshift = anfrac-e-1;
+		}
+        else if(e+1+dfrac > nch)    //won't fit into the buffer with the desired number of fractional digits
+        {
+            if(e+1 > nch)   //won't fit into the buffer as a whole number, convert to exponential form
+            {
+                expform = true;
+
+                int naddc = 2 + (e+1<10 ? 1 : (e+1<100 ? 2 : 3));   //additional chars: dot, e and exponent
+                anfrac = dfrac = 0;
+                roundshift = (nch-naddc) - e - 1;
+            }
+            else if(e+1 == nch)     //a whole number without dot
+            {
+                anfrac = 0;
+                dfrac = 0;
+                roundshift = 0;
+            }
+            else
+            {
+                anfrac = nch-e-1 - 1;   //remaining space minus dot
+                roundshift = anfrac;
+            }
+        }
+        else
+            //will fit into the buffer
+            roundshift = anfrac;
+/*
+        if(anfrac < 0) {
+            ::memset(dst, '?', dste-p);
+            return dste;
+        }
+*/
         d += 0.5 * pow(10.0, -double(roundshift));
 
         if(d != 0) {
@@ -100,6 +155,63 @@ char* append_float( char* dst, char* dste, double d, int nfrac )
 
         p = append_fraction(p, dste, d, nfrac, false);
     }
+    else if(expform)
+    {
+        //number doesn't fit into the space in unnormalized form
+        // 
+
+        double mantissa = pow(10.0, l - double(e)); //>= 1 < 10
+
+        //part required for the exponent
+        int eabs = e<0 ? -e : e;
+        int nexp = eabs>=100 ? 4 : (eabs>=10 ? 3 : 2);    //eXX
+        if(e<0) ++nexp; //e-XX
+
+        //if there's no space for the first number and dot ..
+        if(p+nexp+2 > dste) {
+            ::memset(dst, '?', dste-dst);
+            return dste;
+        }
+
+        *p++ = '0' + (int)mantissa;
+        *p++ = '.';
+
+        for( char* me=dste-nexp; p<me; ) {
+            mantissa -= floor(mantissa);
+            mantissa *= 10.0;
+
+            *p++ = '0' + (int)mantissa;
+        }
+
+        *p++ = 'e';
+        if(e<0)
+            *p++ = '-';
+        if(eabs>=10) {
+            *p++ = '0' + eabs/10;
+            eabs = eabs % 10;
+        }
+        *p++ = '0' + eabs;
+    }
+    else    //req.number of characters fits in
+    {
+        if(e>=0) {
+        //the whole num
+            token t = num_formatter<int64>::u_insert(p, dste-p, (int64)d, 10, 0, 0, ALIGN_NUM_LEFT);
+            p += t.len();
+
+            d -= floor(d);
+        }
+
+        if(p<dste && nfrac!=0) {
+            *p++ = '.';
+        }
+
+        //if(e<0)
+        //    nfrac += nfrac<0 ? e : -e;
+
+        p = append_fraction(p, dste, d, nfrac, false);
+    }
+/*
     else if(nchar <= dste-dst)
     {
     //req.number of characters fits in
@@ -157,7 +269,7 @@ char* append_float( char* dst, char* dste, double d, int nfrac )
         }
         *p++ = '0' + eabs;
     }
-
+*/
     return p;
 }
 
