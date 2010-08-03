@@ -283,11 +283,16 @@ protected:
         }
 
         //MSG_PEEK first
-        int n = _socket.recvfrom( 0, 0, 0x2, &_address );
+        //char t;
+        //int n = _socket.recvfrom( &t, 1, 0x2, &_address );
 
+        //if( n == -1 )
+        //    return false;
+
+        int n = 65536;
         n = _socket.recvfrom( _recvbuf.realloc(n), n, 0, &_address );
-        if( n == -1 )
-            return false;
+        if(n>=0)
+            _recvbuf.realloc(n);
 
         return true;
     }
