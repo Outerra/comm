@@ -547,7 +547,7 @@ void netSocket::setBroadcast( bool broadcast )
 {
     RASSERTE( handle != UMAXS, ersDISCONNECTED );  //invalid handle
     int result;
-    int one = 1;
+    int one = broadcast ? 1 : 0;
 #ifdef SYSTYPE_WIN
     result = ::setsockopt( handle, SOL_SOCKET, SO_BROADCAST, (char*)&one, sizeof(one) );
 #else

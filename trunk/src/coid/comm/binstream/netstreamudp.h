@@ -103,7 +103,11 @@ public:
 
     virtual opcd peek_read( uint timeout )
     {
-        return _recvbuf.size() > _roffs  ? opcd(0) : ersTIMEOUT;
+        if( _recvbuf.size() > _roffs )
+            return 0;
+
+        return recv(timeout) ? ersNOERR : ersTIMEOUT;
+
     }
 
     virtual opcd peek_write( uint timeout )
@@ -363,15 +367,25 @@ public:
 
     void set_remote_address( const netAddress& addr )
     {
-        _socket.setBroadcast( false );
+        if(!_socket.isValid()) {
+            _socket.open(false);
+            setup_socket(true);
+        }
+
+        _socket.setBroadcast(false);
         _address = addr;
     }
 
     void set_broadcast_address( ushort port )
     {
-        _socket.setBroadcast( true );
+        if(!_socket.isValid()) {
+            _socket.open(false);
+            setup_socket(true);
+        }
+
+        _socket.setBroadcast(true);
         _address.setBroadcast();
-        _address.setPort( port );
+        _address.setPort(port);
     }
 
 

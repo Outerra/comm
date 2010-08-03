@@ -113,6 +113,16 @@ public:
         return 0;
     }
 
+    opcd wait_write( uint mstimeout )
+    {
+        int ns = _socket.wait_write(mstimeout);
+        if( ns == 0 )
+            return ersTIMEOUT;
+        if( ns < 0 )
+            return ersDISCONNECTED;
+        return 0;
+    }
+
 
     virtual uint binstream_attributes( bool in0out1 ) const
     {
@@ -122,6 +132,14 @@ public:
 	void assign_socket( netSocket& s ) {
 		_socket.setHandle( s.getHandle() );
 		s.setHandleInvalid();
+		_socket.setBlocking( true );
+        _socket.setNoDelay( true );
+        _socket.setReuseAddr( true );
+	}
+
+	void assign_socket( int socket ) {
+		_timeout = UMAX32;
+		_socket.setHandle( socket );
 		_socket.setBlocking( true );
         _socket.setNoDelay( true );
         _socket.setReuseAddr( true );
