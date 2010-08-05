@@ -2045,31 +2045,33 @@ struct token
 
 
     ///Convert angle string to value, consuming input
-    /// 49°42'32.91"N, +49°42.5485', +49.7091416667°
+    /// formats: 49°42'32.91"N, +49°42.5485', +49.7091416667°
     double toangle()
     {
         ints sgn = consume_char("+-");
         int deg = touint_and_shift();
+
+        static const token deg_utf8 = "\xc2\xb0";
 
         double dec=0;
         char c = first_char();
         if(c == '.') {
             //decimal degrees
             dec = todouble_and_shift();
-            consume_char('°');
+            consume(deg_utf8) || consume_char('°');
         }
-        else if(c == '°')
+        else if(consume(deg_utf8) || consume_char('°'))
         {
             int mnt = touint_and_shift();
             c = first_char();
 
             dec = mnt / 60.0;
-            if(c == '.') {
+            if(consume_char('.')) {
                 //decimal minutes
                 dec += todouble_and_shift() / 60.0;
                 consume_char('\'');
             }
-            else if(c == '\'')
+            else if(consume_char('\''))
             {
                 dec += todouble_and_shift() / 3600.0;
                 consume_char('"');
