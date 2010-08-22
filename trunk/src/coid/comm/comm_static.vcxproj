@@ -435,6 +435,7 @@
     <ClCompile Include="log\logger.cpp" />
     <ClCompile Include="regex\regcomp.cpp" />
     <ClCompile Include="regex\regexec.cpp" />
+    <ClCompile Include="txtconv.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

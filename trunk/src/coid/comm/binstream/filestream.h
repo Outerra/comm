@@ -415,15 +415,15 @@ public:
     }
 
     bofstream() { }
-    explicit bofstream( const token& s )
+    explicit bofstream( const token& s, token attr = token::empty() )
     {
-        open(s);
+        open(s, attr);
     }
-    explicit bofstream( const char* s )
+    explicit bofstream( const char* s, token attr = token::empty() )
     {
-        open(s);
+        open(s, attr);
     }
-
+    
     ~bofstream() { }
 };
 
@@ -469,14 +469,14 @@ public:
     }
 
     bifstream() { }
-    explicit bifstream( const token& s )
+    explicit bifstream( const token& s, token attr = token::empty() )
     {
-        open(s);
+        open(s, attr);
     }
 
-    explicit bifstream( const char* s )
+    explicit bifstream( const char* s, token attr = token::empty() )
     {
-        open(s);
+        open(s, attr);
     }
 
     ~bifstream() { }

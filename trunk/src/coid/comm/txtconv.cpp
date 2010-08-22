@@ -11,7 +11,7 @@ void append_fixed( char* dst, char* dste, double v, int nfrac, EAlignNum align)
 {
     char sbuf[32];
     bool doalign = align != ALIGN_NUM_LEFT  &&  align != ALIGN_NUM_LEFT_PAD_0;
-    uint dsize = dste - dst;
+    uints dsize = dste - dst;
 
     char* buf = doalign ? sbuf : dst;
     char* bufend = doalign ? sbuf+dsize : dste;
@@ -19,7 +19,7 @@ void append_fixed( char* dst, char* dste, double v, int nfrac, EAlignNum align)
     char* end = charstrconv::append_float(buf, bufend, v, nfrac);
 
     if(doalign) {
-        int d = (dste-dst) - (end-buf);
+        ints d = (dste-dst) - (end-buf);
         DASSERT(d >= 0);
 
         switch(align) {
@@ -67,7 +67,7 @@ char* append_float( char* dst, char* dste, double d, int nfrac )
         d = -d;
     }
 
-	int nch = dste - p;
+	int nch = int(dste - p);
 
     double l;
     int anfrac = nfrac<0 ? -nfrac : nfrac;
@@ -279,8 +279,8 @@ char* append_fraction( char* dst, char* dste, double n, int ndig, bool round )
     int ndiga = int_abs(ndig);
     char* p = dst;
 
-    if(dste-dst < ndiga)
-        ndiga = dste-dst;
+    if(int(dste-dst) < ndiga)
+        ndiga = int(dste-dst);
 
     if(round)
         n += 0.5*pow(10.0, -ndiga);

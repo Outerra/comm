@@ -378,5 +378,8 @@
     <ClCompile Include="regex\regexec.cpp">
       <Filter>regex</Filter>
     </ClCompile>
+    <ClCompile Include="txtconv.cpp">
+      <Filter>cxx</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
