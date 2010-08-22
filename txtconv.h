@@ -202,19 +202,19 @@ namespace charstrconv
         {
             if( size <= sizemax )  return buf;
 
-            uint d = size - sizemax;
+            uints d = size - sizemax;
             uint8 overflow = d>9  ?  3  :  2;
 
             if( sizemax <= overflow )
                 return "!!!";
             else if( overflow == 3 ) {
                 buf[2] = 'e';
-                buf[1] = '0' + (d / 10);
-                buf[0] = '0' + (d % 10);
+                buf[1] = char('0' + (d / 10));
+                buf[0] = char('0' + (d % 10));
             }
             else {
                 buf[1] = 'e';
-                buf[0] = '0' + d;
+                buf[0] = char('0' + d);
             }
 
             return buf;

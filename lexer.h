@@ -1029,7 +1029,7 @@ public:
                 _last.state = 1;
                 _last_string = k;
 
-                _last.outok.set(_tok.ptr(), 0U);
+                _last.outok.set(_tok.ptr(), _tok.ptr());
                 _last.tok = _tok.cut_left_n( seq->leading.len() );
 
                 //this is a leading string or block delimiter
