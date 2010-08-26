@@ -112,6 +112,11 @@ public:
         _tokenizer.def_string( ".comment", "#", "\n", "" );
         _tokenizer.def_string( ".comment", "#", "\r\n", "" );
 
+        _tokenizer.def_string( ".comment", "//", "\n", "" );
+        _tokenizer.def_string( ".comment", "//", "\r\n", "" );
+
+        _tokenizer.def_block( ".blkcomment", "/*", "*/", ".blkcomment" );
+
         //characters that correspond to struct and array control tokens
         _tokenizer.def_group_single( "ctrl", "(){}[],:" );
 
