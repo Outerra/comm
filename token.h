@@ -1498,7 +1498,7 @@ struct token
 
     ///Consume leading character if matches the given one, returning 1, otherwise return 0
     int consume_char( char c ) {
-        if(first_char() == c) {
+        if(c && first_char() == c) {
             ++_ptr;
             return 1;
         }
@@ -1508,6 +1508,7 @@ struct token
     ///Consume leading character if matches one from string, returning position+1, otherwise return 0
     ints consume_char( const char* cz ) {
         char c = first_char();
+        if(!c) return 0;
         const char* p = ::strchr(cz, c);
         if(!p) return 0;
         
@@ -1518,6 +1519,7 @@ struct token
     ///Consume leading character if matches one from string, returning position+1, otherwise return 0
     ints consume_char( const token& ct ) {
         char c = first_char();
+        if(!c) return 0;
         const char* p = ct.strchr(c);
         if(!p) return 0;
 
@@ -2060,7 +2062,7 @@ struct token
             dec = todouble_and_shift();
             consume(deg_utf8) || consume_char('°');
         }
-        else if(consume(deg_utf8) || consume_char('°'))
+        else if(consume(deg_utf8) || consume_char("°,"))
         {
             int mnt = touint_and_shift();
             c = first_char();
