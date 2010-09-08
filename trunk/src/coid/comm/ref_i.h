@@ -47,6 +47,7 @@ class iref
 {
 private:
 	typedef iref<T> iref_t;
+    typedef coid::pool< coid::policy_pooled_i<T>* > pool_type_t;
 
 public:
 	iref() : _p(0) {}
@@ -58,6 +59,9 @@ public:
 	template< class T2 >
 	iref( const iref<T2>& r ) : _p(r.add_ref_copy()) {}
 
+	// special constructor from default policy
+    explicit iref( const create_pooled&) : _p( coid::policy_pooled_i<T>::create() ) {}
+
 	~iref() { release(); }
 
 	T* add_ref_copy() const { if( _p ) _p->add_ref_copy(); return _p; }
@@ -65,6 +69,16 @@ public:
 	void release() { if( _p!=0 ) { _p->release(); _p=0; } }
 
 	void create(T* const p) { release(); _p=p; }
+
+	void create_pooled() {
+		release();
+        _p=coid::policy_pooled_i<T>::create();
+    }
+
+    void create_pooled(pool_type_t *po) {
+		release();
+		_p=coid::policy_pooled_i<T>::create(po);
+	}
 
 	const iref_t& operator=(const iref_t& r) { _p=r.add_ref_copy(); return *this; }
 
@@ -83,6 +97,17 @@ public:
 	bool is_empty() const { return (_p==0); }
 
     typedef T* iref<T>::*unspecified_bool_type;
+
+	void forget() { _p=0; }
+
+    template<class T2>
+	void takeover(iref<T2>& p) {
+		release();
+		_p=p.get();
+		p.forget();
+	}
+
+	coid::int32 refcount() const { return _p?_p->refcount():0; }
 
     ///Automatic cast to unconvertible bool for checking via if
 	operator unspecified_bool_type () const {

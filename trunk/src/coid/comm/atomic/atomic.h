@@ -48,8 +48,15 @@
 	#pragma intrinsic(_InterlockedCompareExchange64)
 
 	#if defined(SYSTYPE_64)
+		#pragma intrinsic(__movsq)
 		#pragma intrinsic(_InterlockedCompareExchange128)
 	#endif
+#endif
+
+#ifdef SYSTYPE_64
+	#define atomic_align __declspec( align(16) )
+#else 
+	#define atomic_align __declspec( align(8) )
 #endif
 
 namespace atomic {
@@ -133,19 +140,20 @@ namespace atomic {
 	}
 
 #ifdef SYSTYPE_64
-/*	inline bool b_cas(
-		coid::int64 * ptr, const coid::int64 valh, const coid::int64 vall, coid::int64 * cmp) 
+	inline bool b_cas128(
+		volatile coid::int64 * ptr, const coid::int64 valh, const coid::int64 vall, coid::int64 * cmp) 
 	{
 		DASSERT(sizeof(coid::int64) == 8);
 #if defined(__GNUC__)
 		return __sync_bool_compare_and_swap(ptr, cmp, val);
 #elif defined(WIN32)
 		return _InterlockedCompareExchange128(
-			reinterpret_cast<coid::int64 volatile*>(ptr), 
-			valh, vall, 
-			cmp) == cmp;
+			ptr, 
+			valh,
+			vall, 
+			cmp) == 1;
 #endif
-	}*/
+	}
 #endif
 
 	inline void * cas_ptr(void * volatile * pdst, void * pval, void * pcmp) 

@@ -38,6 +38,16 @@
 #include "atomic/atomic.h"
 #include "singleton.h"
 
+struct create_me { };
+
+struct create_pooled { };
+
+struct create_pooled2 { };
+
+static create_me CREATE_ME;
+
+static create_pooled CREATE_POOLED;
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 template<class T> class policy_shared;
@@ -74,16 +84,6 @@ struct simple_counter
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-class policy_destroy
-{
-protected:
-
-	virtual void destroy() { delete this; }
-
-};
-
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
 template<class COUNTER=atomic_counter>
 class policy_base_
 {
@@ -97,14 +97,17 @@ public:
 
     virtual ~policy_base_() {}
 
-	virtual void destroy()=0;
+    virtual void destroy() { 
+        delete this; 
+    }
 
 	policy_base_() : _count(1) {}
 
-	coid::int32 add_ref_copy() { return COUNTER::inc(&_count); }
+	coid::int32 add_ref_copy() { 
+        return COUNTER::inc(&_count); 
+    }
 
-	bool add_ref_lock()
-	{
+	bool add_ref_lock() {
 		for( ;; ) {
 			coid::int32 tmp = _count;
 			if( tmp==0 ) return false;
@@ -122,42 +125,13 @@ public:
 };
 
 typedef policy_base_<> policy_base;
-
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
-class policy_intrusive_base
-	: public policy_base
-{
-private:
-	policy_intrusive_base( policy_intrusive_base const & );
-	policy_intrusive_base & operator=( policy_intrusive_base const & );
-
-protected:
-	policy_intrusive_base() {}
-
-    virtual ~policy_intrusive_base() {}
-
-	virtual void destroy() { delete this; }
-};
-
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
-class policy_shared_base
-	: public policy_base
-{
-private:
-	policy_shared_base( policy_shared_base const & );
-	policy_shared_base & operator=( policy_shared_base const & );
-
-protected:
-	policy_shared_base() {}
-};
+typedef policy_base_<> policy_intrusive_base;
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 template<class T>
 class policy_shared
-	: public policy_shared_base
+	: public policy_base
 {
 private:
 	policy_shared( policy_shared const & );
@@ -171,8 +145,6 @@ protected:
 	virtual ~policy_shared() { if( _obj ) delete _obj; _obj=0; }
 
 	policy_shared(T* const obj) : _obj(obj) {}
-
-	virtual void destroy() { delete this; }
 
 public:
 	static this_t* create(T*const obj) { return new this_t(obj); }
@@ -198,8 +170,6 @@ protected:
 	policy_dummy(T* const obj) : policy_shared(obj) {}
 
 	virtual ~policy_dummy() { _obj=0; }
-
-	virtual void destroy() { delete this; }
 
 public:
 	static this_t* create(T*const obj) { return new this_t(obj); }

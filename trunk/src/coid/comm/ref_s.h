@@ -37,19 +37,14 @@
 
 #include "commassert.h"
 #include "ref_base.h"
+#include "atomic/pool_base.h"
 #include "binstream/binstream.h"
 #include "metastream/metastream.h"
 
-struct create_me { };
 
-struct create_pooled { };
-
-static create_me CREATE_ME;
-
-static create_pooled CREATE_POOLED;
-
-template<class T> class pool;
-template<class T> class policy_queue_pooled;
+namespace coid {
+    template<class T> class policy_pooled;
+}
 
 namespace atomic {
 	template<class T> class queue_ng;
@@ -63,9 +58,9 @@ public:
 
 public:
 	typedef ref<T> ref_t;
-	typedef pool<policy_base> pool_t;
-	typedef policy_shared_base policy; 
-    typedef policy_queue_pooled<T> policy_pooled;
+	typedef policy_base policy; 
+    typedef coid::policy_pooled<T> policy_pooled_t;
+    typedef coid::pool<policy_pooled_t*> pool_type_t;
 
 	ref() : _p(0), _o(0){}
 
@@ -74,9 +69,11 @@ public:
 		: _p( policy_trait<T>::policy::create(o) )
 		, _o(o) {}
 
-	explicit ref( policy_shared<T>* p )
-		: _p( p )
-		, _o(p->get()) {}
+    template<class Y>
+	explicit ref( Y* p )
+		: _p( static_cast<policy_base*>(p) )
+		, _o(p->get()) 
+    {}
 
 	void create(T* const p) { 
 		release();
@@ -93,14 +90,21 @@ public:
 
 	// special constructor from default policy
 	explicit ref( const create_pooled&) {
-		policy_queue_pooled<T> *p=policy_queue_pooled<T>::create();
+		policy_pooled_t *p=policy_pooled_t::create();
 		_p=p;
 		_o=p->get();
 	}
 
 	// special constructor from default policy
-	explicit ref( const create_pooled&, pool<policy_pooled> *po) {
-		policy_queue_pooled<T> *p=policy_queue_pooled<T>::create(po);
+/*	explicit ref( const create_pooled2&) {
+        policy_pooled_t *p=policy_pooled_t::create();
+		_p=p;
+		_o=p->get();
+	}*/
+
+	// special constructor from default policy
+    explicit ref( const create_pooled&, pool_type_t *po) {
+		policy_pooled_t *p=policy_pooled_t::create(po);
 		_p=p;
 		_o=p->get();
 	}
@@ -131,14 +135,14 @@ public:
 
 	void create_pooled() {
 		release();
-		policy_queue_pooled<T> *p = policy_queue_pooled<T>::create();
+		policy_pooled_t *p = policy_pooled_t::create();
 		_p=p;
 		_o=p->get();
 	}
 
-	void create_pooled(pool<policy_pooled> *po) {
+    void create_pooled(pool_type_t *po) {
 		release();
-		policy_queue_pooled<T> *p=policy_queue_pooled<T>::create(po);
+		policy_pooled_t *p=policy_pooled_t::create(po);
 		_p=p;
 		_o=p->get();
 	}
@@ -181,14 +185,8 @@ public:
 
 	void release() {
 		if( _p!=0 ) { 
-			_p->release(); _p=0; _o=0; 
+			_p->release(); _p=0; _o=0;
 		} 
-	}
-
-	void create(pool_t* p) {
-		release();
-		_p = policy_trait<T>::policy::create(p); 
-		_o = _p->object_ptr(); 
 	}
 
 	T* get() const { return _o; }

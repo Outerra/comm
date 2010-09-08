@@ -39,6 +39,7 @@
 
 #include "logwriter.h"
 #include "../atomic/pool.h"
+#include "../atomic/pool_base.h"
 
 using namespace coid;
 
@@ -56,7 +57,7 @@ log_writer::log_writer()
 	: _thread()
 	, _queue() 
 {
-	SINGLETON(policy_queue_pooled<logmsg>::pool_t);
+	SINGLETON(policy_pooled<logmsg>::pool_type);
 	_thread.create( thread_run_fn, this, 0, "log_writer" );
 }
 

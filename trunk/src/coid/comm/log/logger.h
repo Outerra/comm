@@ -42,14 +42,12 @@
 #include "../ref.h"
 #include "../singleton.h"
 #include "policy_log.h"
-#include "../atomic/queue.h"
-#include "../atomic/pool.h"
+#include "../atomic/queue_base.h"
+#include "../atomic/pool_base.h"
 
 namespace coid {
 	class logmsg;
 };
-DEFAULT_POLICY(coid::logmsg,policy_queue_pooled);
-
 
 COID_NAMESPACE_BEGIN
 
@@ -77,26 +75,29 @@ typedef ref<logger_file> logger_file_ptr;
  * Message is written in policy_log::release() upon calling destructor of ref
  * with policy policy_log.
  */
-class logmsg : public charstr
+class logmsg 
+    : public policy_pooled_i<logmsg>
 {
 protected:
 	logger_file_ptr _lf;
 	int _type;
+    charstr _str;
 
 public:
 	void set_log_file(logger_file_ptr& lf,const int t) { _lf=lf; _type=t; }
 
-	void reset() { coid::charstr::reset(); _lf.release(); }
+	void reset() { _str.reset(); _lf.release(); }
 
-	void write_to_file() { _lf->write_to_file(*this); }
+	void write_to_file() { _lf->write_to_file(_str); }
 
 	int get_type() const { return _type; }
 
 	void set_type(const int t) { _type=t; }
+
+    charstr& str() { return _str; }
 };
 
-//DEFAULT_POLICY(logmsg,policy_queue_pooled);
-typedef ref<logmsg> logmsg_ptr;
+typedef iref<logmsg> logmsg_ptr;
 
 /* 
  * USAGE :
@@ -126,17 +127,17 @@ public:
 
 	class logmsg_local
 	{
-	protected:
+    protected:
 		logmsg_ptr _lm;
 
 	public:
-		logmsg_local(logger_file_ptr& lf,const ELogType t) : _lm(CREATE_ME) { _lm->set_log_file(lf,t); }
+		logmsg_local(logger_file_ptr& lf,const ELogType t) : _lm(CREATE_POOLED) { _lm->set_log_file(lf,t); }
 
 		logmsg_local() : _lm() {}
 
 		~logmsg_local();
 
-		template<class T> charstr& operator<<(const T& o) { DASSERT(!_lm.is_empty()); return (*_lm)<<(o); }
+		template<class T> charstr& operator<<(const T& o) { DASSERT(!_lm.is_empty()); return _lm->str()<<(o); }
 	};
 
 public:
