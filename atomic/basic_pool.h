@@ -1,4 +1,3 @@
-
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -33,34 +32,98 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef __COMM_LOGWRITTER_H__
-#define __COMM_LOGWRITTER_H__
+#ifndef __COMM_ATOMIC_BASIC_POOL_H__
+#define __COMM_ATOMIC_BASIC_POOL_H__
 
-#include "logger.h"
-#include "../pthreadx.h"
+#include "atomic.h"
 
-COID_NAMESPACE_BEGIN
+namespace atomic {
 
-class log_writer
+template<class T>
+class basic_pool 
 {
-protected:
-	coid::thread _thread;
-	atomic::queue<logmsg_ptr> _queue;
+#ifdef SYSTYPE_64
+	typedef coid::uint64 tag_t;
+#else 
+	typedef coid::uint32 tag_t;
+#endif
 
 public:
-	log_writer();
+	atomic_align struct ptr_t {
+		union {
+			struct {
+				T* _ptr;
+				tag_t _tag;
+			};
+			struct {
+				coid::int64 _data;
+#ifdef SYSTYPE_64
+				coid::int64 _datah;
+#endif
+			};
+		};
 
-	~log_writer();
+		ptr_t() : _ptr(0), _tag(0) {}
 
-    static void* thread_run_fn( void* p ) { return reinterpret_cast<log_writer*>(p)->thread_run(); }
+		ptr_t(T* const p,const tag_t t) : _ptr(p), _tag(t) {}
 
-	void* thread_run();
+        // is a MUST because we need atomicity on pointers...
+        ptr_t(const ptr_t &p) { *this=p; }
 
-	void addmsg(logmsg_ptr& m) { _queue.push(m,true); }
+		void operator=(const ptr_t &p) {
+#ifdef SYSTYPE_64
+			__movsq((uint64*)&_data,(uint64*)&p._data,2);
+#else
+			_data=p._data;
+#endif
+		}
+	};
 
-	void flush();
+	ptr_t _head;
+
+    ///
+	void push(T* n) 
+	{
+		for(;;) {
+			ptr_t oldhead=_head;
+			n->_next_basic_pool=oldhead._ptr;
+			ptr_t newhead( n,oldhead._tag+1 );
+#ifdef SYSTYPE_64
+		if( b_cas128( &_head._data,newhead._datah,newhead._data,&oldhead._data ) )
+#else 
+		if( b_cas( &_head._data,newhead._data,oldhead._data ) )
+#endif
+			break;
+		}
+	}
+
+    ///
+	T* pop()
+	{
+		for( ;; ) {
+    		ptr_t oldhead=_head;
+
+            if( oldhead._ptr==0 ) return 0;
+
+			ptr_t newhead(oldhead._ptr->_next_basic_pool,oldhead._tag+1);
+#ifdef SYSTYPE_64
+			if( b_cas128( &_head._data,newhead._datah,newhead._data,&oldhead._data ) ) {
+#else 
+			if( b_cas( &_head._data,newhead._data,oldhead._data ) ) {
+#endif
+				return oldhead._ptr;
+			}
+		}
+		return 0;
+	}
+
+    ///
+    T* pop_new() {
+        T* o=pop();
+        return o ? o : new T();
+    }
 };
 
-COID_NAMESPACE_END
+} // end of namespace atomic
 
-#endif // __COMM_LOGWRITTER_H__
+#endif // __COMM_ATOMIC_BASIC_POOL_H__

@@ -33,74 +33,112 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef __COMM_ATOMIC_STACK_H__
-#define __COMM_ATOMIC_STACK_H__
+#ifndef __COMM_ATOMIC_STACK_BASE_H__
+#define __COMM_ATOMIC_STACK_BASE_H__
 
 #include "atomic.h"
-#include "stack_base.h"
+#include "basic_pool.h"
+#include "../alloc/commalloc.h"
 
 namespace atomic {
 
 using coid::uint;
 
-struct stack_node
-{
-	stack_node() : _nexts(0) {}
-
-	stack_node* volatile _nexts;
-};
-
 template <class T>
-class stack
+class stack_base
 {
 private:
-	struct ptr_t
+
+    atomic_align struct node
+    {
+        COIDNEWDELETE(node);
+
+        node* _next_basic_pool;
+        T _item;
+    };
+
+	atomic_align struct ptr_t
 	{
+#ifdef SYSTYPE_64
+		typedef coid::uint64 tag_t;
+#else 
+		typedef coid::uint32 tag_t;
+#endif
 		ptr_t() : _ptr(0), _pops(0) {}
 
-		ptr_t(stack_node* const ptr, const uint pops) : _ptr(ptr), _pops(pops) {}
+		ptr_t(node* const ptr, const tag_t pops) : _ptr(ptr), _pops(pops) {}
 
 		union {
 			struct {
-		        stack_node * volatile _ptr;
-			    volatile uint _pops;
+		        node* _ptr;
+			    tag_t _pops;
 			};
-			volatile int64 _data;
+			struct {
+				coid::int64 _data;
+#ifdef SYSTYPE_64
+				coid::int64 _datah;
+#endif
+			};
 		};
+
+		ptr_t(const ptr_t &p) { *this=p; }
+
+		void operator=(const ptr_t &p) {
+#ifdef SYSTYPE_64
+			__movsq((uint64*)&_data,(uint64*)&p._data,2);
+#else
+			_data=p._data;
+#endif
+		}
 	};
 
 	ptr_t _head;
 
-public:
-	stack()	: _head() {}
+    basic_pool<node> _node_pool;
 
-	void push(T * item)
+public:
+	stack_base()	: _head() {}
+
+	void push(const T& item)
 	{
-		stack_node* node=item;
+		node* n=_node_pool.pop_new();
+        n->_item=item;
 
 		for (;;) {
-			node->_nexts = _head._ptr;
-			if (b_cas_ptr( reinterpret_cast<void*volatile*>(&_head._ptr),node,node->_nexts ) )
+			ptr_t oldhead=_head;
+			n->_next_basic_pool=oldhead._ptr;
+
+			const ptr_t newhead( n, oldhead._pops+1 );
+#ifdef SYSTYPE_64
+			if (b_cas128( &_head._data,newhead._datah,newhead._data,&oldhead._data ) )
+#else 
+			if (b_cas( &_head._data,newhead._data,oldhead._data ) )
+#endif
 				break;
 		}
 	}
 
-	T * pop()
+	bool pop(T& item)
 	{
 		for (;;) {
-			const ptr_t head=_head;
+			ptr_t oldhead=_head;
 
-			if( head._ptr==0 ) return 0;
+			if( oldhead._ptr==0 ) return false;
 
-			const ptr_t next( head._ptr->_nexts, head._pops+1 );
-
-			if( b_cas( &_head._data, next._data, head._data ) ) {
-				return static_cast<T*>(head._ptr);
+			const ptr_t newhead( oldhead._ptr->_next_basic_pool, oldhead._pops+1 );
+#ifdef SYSTYPE_64
+			if( b_cas128( &_head._data, newhead._datah,newhead._data, &oldhead._data ) ) {
+#else 
+			if( b_cas( &_head._data, newhead._data, oldhead._data ) ) {
+#endif
+                item=oldhead._ptr->_item;
+                _node_pool.push(oldhead._ptr);
+				return true;
 			}
 		}
 	}
 };
 
-} // end of namespace atomic
+} // end of namespace
 
-#endif // __COMM_ATOMIC_STACK_H__
+#endif // __COMM_ATOMIC_STACK_BASE_H__

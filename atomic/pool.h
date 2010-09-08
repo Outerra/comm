@@ -1,10 +1,9 @@
 #ifndef __COMM_ATOMIC_POOL_H__
 #define __COMM_ATOMIC_POOL_H__
 
-#include "stack.h"
-#include "queue.h"
-#include "../ref.h"
+#include "pool_base.h"
 
+/*
 template<class P>
 class pool
 {
@@ -70,5 +69,5 @@ public:
 
 	pool_t* _pool;
 };
-
+*/
 #endif // __COMM_ATOMIC_POOL_H__

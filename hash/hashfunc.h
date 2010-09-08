@@ -71,7 +71,6 @@ inline uints __coid_hash_string( const char* s, uints n )
   return uints(h);
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
 template<> struct hash<char*>
 {
