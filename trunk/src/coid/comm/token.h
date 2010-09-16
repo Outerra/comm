@@ -2053,17 +2053,19 @@ struct token
         ints sgn = consume_char("+-");
         int deg = touint_and_shift();
 
-        static const token deg_utf8 = "\xc2\xb0";
+        static const token deg_utf8 = "\xc2\xb0";   //degree sign in utf-8
+        static const token ord_utf8 = "\xc2\xba";   //ordinal sign in utf-8, often confused for the degree sign
 
         double dec=0;
         char c = first_char();
         if(c == '.') {
             //decimal degrees
             dec = todouble_and_shift();
-            consume(deg_utf8) || consume_char('°');
+            consume(deg_utf8) || consume(ord_utf8) || consume_char("°");
         }
-        else if(consume(deg_utf8) || consume_char("°,"))
+        else if(consume(deg_utf8) || consume(ord_utf8) || consume_char("°,"))
         {
+            skip_space();
             int mnt = touint_and_shift();
             c = first_char();
 
@@ -2075,8 +2077,10 @@ struct token
             }
             else if(consume_char('\''))
             {
+                skip_space();
                 dec += todouble_and_shift() / 3600.0;
                 consume_char('"');
+                if(begins_with("''"))  shift_start(2);
             }
         }
 

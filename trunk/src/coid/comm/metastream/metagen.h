@@ -85,7 +85,7 @@ class metagen //: public binstream
         MtgLexer()
         {
             def_group( "ignore", " \t\n\r" );
-            IDENT   = def_group( "identifier", ".a..zA..Z_", ".@a..zA..Z_0..9" );
+            IDENT   = def_group( "identifier", ".@a..zA..Z_", ".@a..zA..Z_0..9" );
             NUM     = def_group( "number", "0..9" );
             def_group_single( "separator", "?!=()[]{}/$-" );
 
@@ -123,13 +123,29 @@ class metagen //: public binstream
         int index;                  ///< current element index for arrays
 
 
-        Varx() { var=0; varparent=0; data=0; }
-        Varx( const Var* v, const uchar* d ) : var(v), varparent(0), data(d) {}
+        Varx() : var(0), varparent(0), data(0), index(-1) {}
+        Varx( const Var* v, const uchar* d ) : var(v), varparent(0), data(d), index(-1) {}
 
+        bool find_containing_array_element( Varx& ch ) const
+        {
+            const Varx* v = this;
+
+            while(v && !v->is_array_element())
+                v = v->varparent;
+
+            if(v)
+                ch = *v;
+            return v != 0;
+        }
 
         ///Find member variable and its position in the cache
-        bool find_child( const token& name, Varx& ch ) const
+        bool find_child( const token& name, Varx& ch, token* last = 0 ) const
         {
+            if(name.first_char() == '@') {
+                *last = name;
+                return find_containing_array_element(ch);
+            }
+
             int i = var->desc->find_child_pos(name);
             if(i<0)  return false;
 
@@ -162,6 +178,11 @@ class metagen //: public binstream
                 v = v->varparent;
             }
             while( !name.is_empty() );
+
+            if(part.first_char() == '@') {
+                *last = part;
+                return v->find_containing_array_element(ch);
+            }
 
             ch = *v;
             if( part.is_empty() )
@@ -213,6 +234,7 @@ class metagen //: public binstream
         }
 
         bool is_array() const      { return var->is_array(); }
+        bool is_array_element() const { return index >= 0; }
     };
 
     ///Array element variable from cache
@@ -527,7 +549,7 @@ class metagen //: public binstream
         bool find_var( const Varx& par, Varx& var, token& attrib ) const
         {
             return depth<1
-                ? par.find_child( varname, var )
+                ? par.find_child( varname, var, &attrib )
                 : par.find_descendant( varname, var, false, &attrib );
         }
 
@@ -646,6 +668,9 @@ class metagen //: public binstream
                 DASSERT( v.is_array() );
                 if(v.is_array())
                     mg.write_as_string(v.index);
+            }
+            else if(attrib == "@value") {
+                v.write_var(mg);
             }
             else
                 return false;
@@ -834,15 +859,15 @@ class metagen //: public binstream
                 int i=0;
                 for( ; n>0; --n,ve.next() )
                 {
-                    v.index = i;
-
                     if( evalcond && !eval_cond(mg, ve) )
                         continue;
 
-                    if(i==0)  atr_first.process( mg, ve );
-                    else      atr_rest.process( mg, ve );
+                    if(i==0)  atr_first.process(mg, ve);
+                    else      atr_rest.process(mg, ve);
 
-                    atr_body.process( mg, ve );
+                    ve.index = i;
+
+                    atr_body.process(mg, ve);
                     ++i;
                 }
 
@@ -1081,8 +1106,11 @@ inline token metagen::Varx::write_buf( metagen& mg ) const
     const uchar* p = data;
     type t = var->desc->btype;
 
-    if( var->is_array() )
-        return token( (const char*)p+sizeof(uint), *(uint*)p );
+    if( var->is_array() ) {
+        if(var->desc->children[0].desc->btype.type == type::T_CHAR)
+            return token( (const char*)p+sizeof(uint), *(const uint*)p );
+        return token::empty();
+    }
 
     charstr& buf = mg.buf;
     buf.reset();

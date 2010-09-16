@@ -511,6 +511,21 @@ public:
         return grp;
     }
 
+    ///@return nonzero if token is a keyword from given keyword group, the return equals keyword id + 1
+    int is_keyword( int kid, const token& tok ) const
+    {
+        DASSERT( kid >= ID_KEYWORDS  &&  kid < ID_KEYWORDS+(int)_nkwd_groups );
+        if( kid < ID_KEYWORDS  ||  kid >= ID_KEYWORDS+(int)_nkwd_groups )
+            return 0;
+
+        int ord;
+        int grp = _kwds.valid(tok, &ord);
+
+        if(grp != kid) return 0;
+        return 1 + ord;
+    }
+
+
     ///Escape sequence processor function prototype.
     ///Used to consume input after escape character and to append translated characters to dst
     //@param src source characters to translate, the token should be advanced by the consumed amount
@@ -2164,6 +2179,13 @@ protected:
         int valid( uint hash, const token& kwd, int* ord=0 ) const
         {
             const keyword_id* k = set.find_value(hash, kwd);
+            if(ord && k) *ord = k->ord;
+            return k ? k->group : 0;
+        }
+
+        int valid( const token& kwd, int* ord=0 ) const
+        {
+            const keyword_id* k = set.find_value(kwd);
             if(ord && k) *ord = k->ord;
             return k ? k->group : 0;
         }
