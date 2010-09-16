@@ -1361,7 +1361,7 @@ protected:
         }
         else
         if( _curvar.var->nameless_root ||
-            _curvar.var->is_pointer()  ||
+            //_curvar.var->is_pointer()  ||
             _curvar.var->is_array_element() )
             return 0;
 
@@ -1466,16 +1466,16 @@ protected:
         if(!_dometa)
             return data_write_nometa(p, t);
 
-        if( !t.is_array_end() )
-            movein_current<WRITE_MODE>();
-
         if( t.type == type::T_OPTIONAL )
         {
             if( *(const uint8*)p == 0 )
                 return moveto_expected_target<WRITE_MODE>();
-            else
-                fmts_or_cache_write_key();
+            //else
+            //    fmts_or_cache_write_key();
         }
+
+        if( !t.is_array_end() )
+            movein_current<WRITE_MODE>();
 
         //ignore the struct open and close tokens nested ikn binstream operators,
         // as we follow those within metastream operators instead
@@ -2163,6 +2163,9 @@ protected:
     ///
     opcd streamvar( const MetaDesc::Var& var )
     {
+        if( var.is_pointer() )
+            int i=1;
+
         if(!_curvar.var->nameless_root)
             movein_process_key<READ_MODE>();
 
@@ -2175,6 +2178,12 @@ protected:
         MetaDesc& desc = *var.desc;
         if( desc.is_primitive() ) {
             return data_read_value( 0, desc.btype );
+        }
+        else if( desc.is_pointer() ) {
+            cache_container cc( *this, desc );
+            uints cnt;
+            return data_read_array_content(cc, 1, &cnt);
+            //return data_read_value(0, desc.btype);
         }
         else if( desc.is_array() ) {
             cache_container cc( *this, desc );
