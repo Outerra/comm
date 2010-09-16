@@ -372,4 +372,90 @@ void thread_semaphore::release()
 }
 
 
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+thread_event::thread_event()
+{
+#ifdef SYSTYPE_WIN
+    _handle = (uints)CreateEvent( 0, FALSE, FALSE, 0 );
+#else
+    _handle = new sem_t;
+    RASSERT( 0 == sem_init( _handle, false, 1 ) );
+    _init = 1;
+#endif
+}
+
+////////////////////////////////////////////////////////////////////////////////
+thread_event::thread_event( NOINIT_t )
+{
+#ifdef SYSTYPE_WIN
+    _handle = (uints)INVALID_HANDLE_VALUE;
+#else
+    _init = 0;
+#endif
+}
+
+////////////////////////////////////////////////////////////////////////////////
+thread_event::~thread_event()
+{
+#ifdef SYSTYPE_WIN
+    if( _handle != (uints)INVALID_HANDLE_VALUE )
+        CloseHandle( (HANDLE)_handle );
+#else
+    if(_init)
+        sem_destroy( _handle );
+    delete _handle;
+#endif
+}
+
+////////////////////////////////////////////////////////////////////////////////
+bool thread_event::init()
+{
+#ifdef SYSTYPE_WIN
+    if( _handle != (uints)INVALID_HANDLE_VALUE )
+        return false;
+    _handle = (uints)CreateEvent( 0, FALSE, FALSE, 0 );
+#else
+    if(_init)
+        return false;
+    _handle = new sem_t;
+    RASSERT( 0 == sem_init( _handle, false, 1 ) );
+    _init = 1;
+#endif
+    return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+bool thread_event::wait()
+{
+#ifdef SYSTYPE_WIN
+    return WAIT_OBJECT_0 == WaitForSingleObject( (HANDLE)_handle, INFINITE );
+#else
+    return 0 == sem_wait( _handle );
+#endif
+}
+
+////////////////////////////////////////////////////////////////////////////////
+bool thread_event::try_wait()
+{
+#ifdef SYSTYPE_WIN
+    return WAIT_OBJECT_0 == WaitForSingleObject( (HANDLE)_handle, 0 );
+#else
+    return 0 == sem_trywait( _handle );
+#endif
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void thread_event::signal()
+{
+#ifdef SYSTYPE_WIN
+    SetEvent( (HANDLE)_handle );
+#else
+    return 0 == sem_post( _handle );
+#endif
+}
+
 COID_NAMESPACE_END

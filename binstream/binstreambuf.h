@@ -471,6 +471,8 @@ public:
         _base = _source;
         _len = t.len();
     }
+
+    uints get_pos() const { return _source-_base; }
 };
 
 
