@@ -205,6 +205,27 @@ struct thread_semaphore
     void release();
 };
 
+////////////////////////////////////////////////////////////////////////////////
+struct thread_event
+{
+#ifdef SYSTYPE_WIN
+    uints _handle;
+#else
+    sem_t* _handle;
+    int _init;
+#endif
+
+    explicit thread_event();
+    explicit thread_event( NOINIT_t );
+    ~thread_event();
+
+    bool init();
+
+    bool wait();
+    bool try_wait();
+    void signal();
+};
+
 COID_NAMESPACE_END
 
 
