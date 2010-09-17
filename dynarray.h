@@ -777,10 +777,31 @@ public:
 
         if( nitems > n  &&  nitems*sizeof(T) > _size() )
         {
+            if(!ikeep) {
+                _destroy();
+                n = 0;
+            }
+
+            _realloc(nitems, n);
+            _set_count(n);
+        }
+        return _ptr;
+    }
+
+    ///Reserve \a nitems of elements
+    /** @param nitems number of items to reserve
+        @param ikeep keep existing elements (true) or do not necessarily keep them (false)
+        @return pointer to the first item of array */
+    T* reserve_bytes( uints size, bool ikeep )
+    {
+        if( size > _size() )
+        {
             if(!ikeep)
                 _destroy();
 
-            _realloc(nitems, n);
+            uints n = _count();
+            uints na = (size + sizeof(T) - 1) / sizeof(T);
+            _realloc(na, n);
             _set_count(n);
         }
         return _ptr;
