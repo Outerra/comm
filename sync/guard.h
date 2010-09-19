@@ -43,14 +43,14 @@
 
 COID_NAMESPACE_BEGIN
 
-#define GUARDME         comm_mutex_guard<comm_mutex> __MXG(_mutex)
+#define GUARDME         coid::comm_mutex_guard<coid::comm_mutex> __MXG(_mutex)
 //#define GUARDME_STATE   comm_mutex_guard<comm_mutex_state> __MXG(_mutex)
-#define GUARDME_RW      comm_mutex_guard<comm_mutex_rw> __MXG(_mutex)
-#define GUARDME_REG     comm_mutex_guard<comm_mutex_reg> __MXG(_mutex)
+#define GUARDME_RW      coid::comm_mutex_guard<coid::comm_mutex_rw> __MXG(_mutex)
+#define GUARDME_REG     coid::comm_mutex_guard<coid::comm_mutex_reg> __MXG(_mutex)
 
-#define GUARDTHIS(m)        comm_mutex_guard<comm_mutex> __MXG(m)
-#define GUARDTHIS_RW(m)     comm_mutex_guard<comm_mutex_rw> __MXG(m)
-#define GUARDTHIS_REG(m)    comm_mutex_guard<comm_mutex_reg> __MXG(m)
+#define GUARDTHIS(m)        coid::comm_mutex_guard<coid::comm_mutex> __MXG(m)
+#define GUARDTHIS_RW(m)     coid::comm_mutex_guard<coid::comm_mutex_rw> __MXG(m)
+#define GUARDTHIS_REG(m)    coid::comm_mutex_guard<coid::comm_mutex_reg> __MXG(m)
 
 
 ////////////////////////////////////////////////////////////////////////////////
