@@ -849,46 +849,24 @@ public:
     }
 
     ///Return current block as single token
-    //@param blockid id of block to match
+    //@param seqid id of block/string/sequence to match
     //@param complete true if the block should be read completely and returned, false if only the leading token should be matched
     //@note This method temporarily enables the block if it was disabled before the call. If the block shares common
     /// leading delimiter with other enabled block, the one that was specified first is evaluated.
+    /// If the block was ignored, it will be matched now.
     /** Finds the end of active block and returns the content as a single token.
         For the top-most, implicit block it processes input to the end. Enabled sequences
         are processed normally: ignored sequences are read but discarded, strings have
         their escape sequences replaced, etc.
     **/
-    const lextoken& match_block( int blockid, bool complete )
+    const lextoken& match_block( int seqid, bool complete )
     {
-        __assert_valid_sequence(blockid, entity::BLOCK);
-
-        uint sid = -1 - blockid;
-        sequence* seq = _stbary[sid];
-
-
-        //restore a simple token that was pushed back
-        if(_pushback && _last.id != blockid)
-        {
-            DASSERT( _last.id >= 0 );
-            DASSERT( _last.tokbuf.is_empty() );
-            _tok.shift_start(-(ints)_last.tok.len());
-            _rawpos = _tok.ptr();
-            _pushback = 0;
-        }
-
-        next(1, blockid);
-
-        if(_last.id == blockid) {
-            if(!complete)
-                return _last;
-
-            uints off=0;
-            next_read_block( *(block_rule*)seq, off, true, false );
-
-            _stack.pop();
-
+        if(matches_block(seqid, complete))
             return _last;
-        }
+
+
+        uint sid = -1 - seqid;
+        sequence* seq = _stbary[sid];
 
         _err = lexception::ERR_EXTERNAL_ERROR;
 
@@ -897,6 +875,53 @@ public:
         on_error_suffix(_errtext);
 
         throw lexception(_err, _errtext);
+    }
+
+    ///Try to match given block type
+    //@param seqid id of block/string/sequence to match
+    //@param complete true if the block should be read completely and returned, false if only the leading token should be matched
+    //@note This method temporarily enables the block if it was disabled before the call. If the block shares common
+    /// leading delimiter with other enabled block, the one that was specified first is evaluated.
+    /// If the block was ignored, it will be matched now.
+    /** Finds the end of active block and returns the content as a single token.
+        For the top-most, implicit block it processes input to the end. Enabled sequences
+        are processed normally: ignored sequences are read but discarded, strings have
+        their escape sequences replaced, etc.
+    **/
+    bool matches_block( int seqid, bool complete )
+    {
+        __assert_valid_ssb(seqid);
+
+        uint sid = -1 - seqid;
+        sequence* seq = _stbary[sid];
+
+
+        //restore a simple token that was pushed back
+        if(_pushback && _last.id != seqid)
+        {
+            DASSERT( _last.id >= 0 );
+            DASSERT( _last.tokbuf.is_empty() );
+            _tok.shift_start(-(ints)_last.tok.len());
+            _rawpos = _tok.ptr();
+            _pushback = 0;
+        }
+
+        next(1, seqid);
+
+        if(_last.id == seqid) {
+            if(!complete || !seq->is_block())
+                return true;
+
+            uints off=0;
+            next_read_block( *(block_rule*)seq, off, true, false );
+
+            _stack.pop();
+
+            return true;
+        }
+
+        push_back();
+        return false;
     }
 
     ///Explicitly pop out of a block as if encountering the trailing sequence
@@ -953,9 +978,9 @@ public:
 
         @param ignoregrp id of the group to ignore if found at the beginning, 0 for none.
         This is used mainly to omit the whitespace (group 1), or explicitly to not skip it.
-        @param enable_blockid enable block temporarily if it's not enabled
+        @param enable_seqid enable block/string/sequence temporarily if it's not enabled
     **/
-    const lextoken& next( uint ignoregrp=1, uint enable_blockid=0 )
+    const lextoken& next( uint ignoregrp=1, uint enable_seqid=0 )
     {
         //return last token if instructed
         if(_pushback) {
@@ -1029,7 +1054,7 @@ public:
             //this could be a leading string/block delimiter, if we can find it in the register
             const dynarray<sequence*>& dseq = _seqary[((x&xSEQ)>>rSEQ)-1];
             uint i, n = (uint)dseq.size();
-            uint enb = -1 - enable_blockid;
+            uint enb = -1 - enable_seqid;
 
             for( i=0; i<n; ++i ) {
                 if( (enabled(*dseq[i]) || dseq[i]->id == enb)  &&  follows(dseq[i]->leading, 0) )
@@ -1063,7 +1088,7 @@ public:
                 else if( seq->type == entity::STRING )
                     next_read_string( *(const string_rule*)seq, off, true );
 
-                if( ignored(*seq) )   //ignored rule
+                if( ignored(*seq) && seq->id != enb )   //ignored rule
                     return next(ignoregrp);
 
                 return _last;
@@ -1878,6 +1903,24 @@ protected:
 
                 throw lexception(_err, _errtext);
             }
+        }
+    }
+
+    ///Assert valid sequence/string/block rule id
+    void __assert_valid_ssb( int sid ) const
+    {
+        if( sid > 0 ) {
+            _err = lexception::ERR_ENTITY_BAD_TYPE;
+            _errtext << "invalid rule type (" << sid << "), a sequence-type expected";
+
+            throw lexception(_err, _errtext);
+        }
+        else if( sid == 0  ||  -sid-1 >= (int)_stbary.size() )
+        {
+            _err = lexception::ERR_INVALID_RULE_ID;
+            _errtext << "invalid rule id (" << sid << ")";
+
+            throw lexception(_err, _errtext);
         }
     }
 
