@@ -919,6 +919,16 @@ public:
             if( _ptr[i] == key )  return i;
         return -1;
     }
+
+    template<class K>
+    ints containsT_deref( const K& key ) const
+    {
+        uints c = _count();
+        for( uints i=0; i<c; ++i )
+            if( *_ptr[i] == key )  return i;
+        return -1;
+    }
+
     //@}
 
     ///Linear search (backwards) whether array contains element comparable with \a key
