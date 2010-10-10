@@ -190,9 +190,9 @@ public:
     ///Find or create an empty entry for value object that will be initialized by the caller afterwards
     ///@note the value object should be initialized so that it would return the same key as the one passed in here
     ///@param key the key under which the value object should be created
-    VAL* find_or_insert_value_slot( const key_type& key )
+    VAL* find_or_insert_value_slot( const key_type& key, bool* isnew=0 )
     {
-        typename _HT::Node** v = _find_or_insert_slot(key);
+        typename _HT::Node** v = _find_or_insert_slot(key, isnew);
         return &(*v)->_val;
     }
 
@@ -347,9 +347,9 @@ public:
         return v  ?  &(*v)->_val  :  0;
     }
 
-    VAL* find_or_insert_value_slot( const key_type& key )
+    VAL* find_or_insert_value_slot( const key_type& key, bool* isnew=0 )
     {
-        typename _HT::Node** v = _find_or_insert_slot(key);
+        typename _HT::Node** v = _find_or_insert_slot(key, isnew);
         return &(*v)->_val;
     }
 

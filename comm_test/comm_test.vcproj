@@ -64,7 +64,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="commd.lib"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -334,6 +333,10 @@
 		</File>
 		<File
 			RelativePath=".\meta.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\meta2.cpp"
 			>
 		</File>
 		<File

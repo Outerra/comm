@@ -825,10 +825,11 @@ protected:
         return 0;
     }
 
-    Node** _find_or_insert_slot( const LOOKUP& k )
+    Node** _find_or_insert_slot( const LOOKUP& k, bool* isnew )
     {
         Node** ppn = find_socket(k);
-        if( *ppn == 0  ||  !_EQFUNC( _GETKEYFUNC((*ppn)->_val), k ) )
+        bool isnew_ = *ppn == 0  ||  !_EQFUNC( _GETKEYFUNC((*ppn)->_val), k );
+        if(isnew_)
         {
             Node* n = new Node;
             n->_next = *ppn;
@@ -836,6 +837,8 @@ protected:
 
             ++_nelem;
         }
+
+        if(isnew) *isnew = isnew_;
 
         return ppn;
     }

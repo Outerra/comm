@@ -6,6 +6,7 @@ void test();
 void metastream_test();
 }
 
+void metastream_test2();
 int main_atomic(int argc, char * argv[]);
 
 void regex_test();
@@ -27,7 +28,8 @@ void float_test()
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
 {
-	float_test();
+    metastream_test2();
+	//float_test();
 
     //main_atomic(argc, argv);
     //coid::test();

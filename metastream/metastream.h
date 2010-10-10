@@ -2163,9 +2163,6 @@ protected:
     ///
     opcd streamvar( const MetaDesc::Var& var )
     {
-        if( var.is_pointer() )
-            int i=1;
-
         if(!_curvar.var->nameless_root)
             movein_process_key<READ_MODE>();
 
