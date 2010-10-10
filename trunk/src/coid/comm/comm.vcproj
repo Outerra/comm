@@ -1019,6 +1019,10 @@
 				RelativePath=".\substring.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\txtconv.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="sync"
