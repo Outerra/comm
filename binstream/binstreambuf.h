@@ -141,6 +141,12 @@ public:
         _buf.reserve(size,true);
     }
 
+    ///resize memory in the buffer
+    void resize( uints size )
+    {
+        _buf.resize(size);
+    }
+
     ///Get pointer to raw data in the buffer
     void* get_raw_available( uints pos, uints& len )
     {
@@ -340,6 +346,17 @@ public:
         _bgi=0;
     }
 
+    bool set_read_pos( uint64 pos ) 
+    {
+        DASSERT(pos<=UINT_MAX);
+
+        if( pos<_buf.size() ) {
+            _bgi=(uints)pos;
+            return true;
+        }
+        else 
+            return false;
+    }
     //binstreambuf (const token& str);
 };
 
@@ -473,6 +490,18 @@ public:
     }
 
     uints get_pos() const { return _source-_base; }
+
+    bool set_read_pos( uint64 pos ) 
+    {
+        DASSERT(pos<=UINT_MAX);
+
+        if( pos<_len ) {
+            _source=_base+(uints)pos;
+            return true;
+        }
+        else 
+            return false;
+    }
 };
 
 
