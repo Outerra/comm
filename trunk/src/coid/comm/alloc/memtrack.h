@@ -63,7 +63,9 @@ struct memtrack {
     memtrack() : size(0), total(0), nallocs(0), name(0) {}
 };
 
-#ifdef _DEBUG
+#if 1//def _DEBUG
+
+#define MEMTRACK_ENABLED
 
 ///Track allocation request for tracker \a p
 void memtrack_alloc( const char* name, uints size );
