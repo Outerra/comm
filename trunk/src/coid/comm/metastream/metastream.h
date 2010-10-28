@@ -683,6 +683,21 @@ public:
         *this << *(const TE*)0;
     }
 
+    ///Define member enum variable
+    template<class T>
+    void meta_variable_array_enum( const token& varname, const T* )
+    {
+        typedef typename EnumType<sizeof(T)>::TEnum TE;
+
+        _cur_variable_name = varname;
+        _cur_streamfrom_fnc = &binstream::streamfunc<TE>::from_stream;
+        _cur_streamto_fnc = &binstream::streamfunc<TE>::to_stream;
+
+        meta_array(n);
+
+        *this << *(const TE*)0;
+    }
+
     template<class T>
     void meta_variable_pointer( const token& varname, const T* )
     {
@@ -2286,6 +2301,7 @@ inline type_holder<T> get_type_holder(T*) {
     @def MMD(meta,n,d)  specify member metadata providing a default value of member type
     @def MMTD(meta,n,d) specify member metadata providing a default value of specified type
     @def MMAT(meta,n,t) specify that member is an array of type \a t
+    @def MMAE(meta,n,t) specify that member is an array of enums \a t
     @def MMAF(meta,n,t,s) specify that member is a fixed size array of type \a t, written by binstream.write_linear_array
 **/
 #define MSTRUCT_OPEN(meta, n)       if( !meta.meta_struct_open(n) ) {
@@ -2299,6 +2315,7 @@ inline type_holder<T> get_type_holder(T*) {
 #define MMTD(meta, n, t, d)         { meta.meta_variable<t>(n,0); meta.meta_cache_default( coid::get_type_holder<t>(0) = d ); }
 
 #define MMAT(meta, n, t)            { meta.meta_variable_array<t>(n,0,UMAXS); }
+#define MMAE(meta, n, t)            { meta.meta_variable_array_enum<t>(n,0,UMAXS); }
 #define MMAF(meta, n, t, s)         { meta.meta_variable_array<t>(n,0,s); }
 
 #define MSTRUCT_CLOSE(meta)         meta.meta_struct_close(); } return meta;
