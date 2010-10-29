@@ -72,8 +72,8 @@ public:
     virtual opcd peek_write( uint timeout )     { return 0; }
 
     virtual bool is_open() const                { return _in->is_open(); }
-    virtual void flush()                        { packed_flush(); }
-    virtual void acknowledge (bool eat=false)   { packed_ack(eat); }
+    virtual void flush()                        { packed_flush(); _out->flush(); }
+    virtual void acknowledge (bool eat=false)   { packed_ack(eat); _in->acknowledge(eat); }
 
     virtual opcd close( bool linger=false )
     {
