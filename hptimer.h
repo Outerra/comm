@@ -83,6 +83,7 @@ public:
     uint ticks() const;
     int usec_to_tick( uint k ) const;
 
+    /// return time in miliseconds
 	static uint get_time();
 };
 
