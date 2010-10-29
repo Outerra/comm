@@ -685,7 +685,7 @@ public:
 
     ///Define member enum variable
     template<class T>
-    void meta_variable_array_enum( const token& varname, const T* )
+    void meta_variable_array_enum( const token& varname, const T*, uints n )
     {
         typedef typename EnumType<sizeof(T)>::TEnum TE;
 
