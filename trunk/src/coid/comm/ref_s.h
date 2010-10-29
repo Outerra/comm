@@ -223,12 +223,12 @@ public:
 	friend coid::binstream& operator>>( coid::binstream& bin,ref<T>& s ) { 
 		s.create(); return bin>>(*s._o); 
 	}
-
+/*
 	friend coid::metastream& operator<<( coid::metastream& m,const ref<T>& s ) {
 		MSTRUCT_OPEN(m,"ref")
-			MMAT(m, "ptr", object)
+			MM(m, "ptr", s)
 		MSTRUCT_CLOSE(m)
-	}
+	}*/
 
 private:
 	policy *_p;
