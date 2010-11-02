@@ -66,23 +66,18 @@ log_writer::log_writer()
 log_writer::~log_writer()
 {
    _thread.cancel_and_wait(10000);
-   flush();
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 void* log_writer::thread_run()
 {
-	logmsg_ptr m;
-
 	for ( ;; ) {
-		while( _queue.pop(m) ) { 
-			m->write_to_file();
-			m.release();
-		}
+        flush();
 		if ( coid::thread::self_should_cancel() ) break;
 		coid::sysMilliSecondSleep(500);
 	}
+    flush();
 
 	return 0;
 }
