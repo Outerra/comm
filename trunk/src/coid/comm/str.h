@@ -539,19 +539,17 @@ public:
 
     ////////////////////////////////////////////////////////////////////////////////
     ///Append signed number
-    template<class NUM>
-    void append_num_signed( int BaseN, NUM n, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
+    void append_num_signed( int BaseN, int64 n, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
     {
-        if( n < 0 ) append_num_unsigned( BaseN, int_abs(n), -1, minsize, align );
-        else        append_num_unsigned( BaseN, n, 0, minsize, align );
+        if(n<0) append_num_unsigned( BaseN, uint64(-n), -1, minsize, align );
+        else    append_num_unsigned( BaseN, n, 0, minsize, align );
     }
 
     ///Append unsigned number
-    template<class NUM>
-    void append_num_unsigned( int BaseN, NUM n, int sgn, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
+    void append_num_unsigned( int BaseN, uint64 n, int sgn, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
     {
         char buf[128];
-        uints i = charstrconv::num_formatter<NUM>::precompute( buf, n, BaseN, sgn );
+        uints i = charstrconv::num_formatter<uint64>::precompute( buf, n, BaseN, sgn );
 
         uints fc=0;              //fill count
         if( i < minsize )
@@ -559,7 +557,7 @@ public:
 
         char* p = get_append_buf( i+fc );
 
-        char* zt = charstrconv::num_formatter<NUM>::produce( p, buf, i, fc, sgn, align );
+        char* zt = charstrconv::num_formatter<uint64>::produce( p, buf, i, fc, sgn, align );
         *zt = 0;
     }
 
