@@ -2063,7 +2063,7 @@ struct token
             dec = todouble_and_shift();
             consume(deg_utf8) || consume(ord_utf8) || consume_char("°");
         }
-        else if(consume(deg_utf8) || consume(ord_utf8) || consume_char("°,"))
+        else if(consume(deg_utf8) || consume(ord_utf8) || consume_char("°, "))
         {
             skip_space();
             int mnt = touint_and_shift();
@@ -2075,7 +2075,7 @@ struct token
                 dec += todouble_and_shift() / 60.0;
                 consume_char('\'');
             }
-            else if(consume_char('\''))
+            else if(consume_char("\' "))
             {
                 skip_space();
                 dec += todouble_and_shift() / 3600.0;
@@ -2084,16 +2084,18 @@ struct token
             }
         }
 
+        bool minus = sgn == 2;
+
         skip_space();
         ints wos = consume_char("NSEWnsew");
         if(wos) {
             //world side overrides the sign, if any
-            sgn = (wos&1)==0  ?  2  :  1;
+            minus = minus != (wos&1)==0;
         }
 
         //assemble the value
         double val = deg + dec;
-        if(sgn==2)
+        if(minus)
             val = -val;
         return val;
     }
