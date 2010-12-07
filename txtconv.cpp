@@ -20,7 +20,7 @@ void append_fixed( char* dst, char* dste, double v, int nfrac, EAlignNum align)
 
     if(doalign) {
         ints d = (dste-dst) - (end-buf);
-        DASSERT(d >= 0);
+        RASSERT(d >= 0);
 
         switch(align) {
             case ALIGN_NUM_RIGHT: {
@@ -29,11 +29,12 @@ void append_fixed( char* dst, char* dste, double v, int nfrac, EAlignNum align)
                 break;
             }
             case ALIGN_NUM_RIGHT_FILL_ZEROS: {
-                if(buf[0] == '-') {
+                if(buf<end  &&  buf[0] == '-') {
                     *dst++ = '-';
                     ++buf;
                 }
                 ::memset(dst, '0', d);
+                RASSERT(end>=buf);
                 ::memcpy(dst+d, buf, end-buf);
                 break;
             }
