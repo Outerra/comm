@@ -165,7 +165,7 @@ class rnd_strong {
 
     uint _mt[N];    // the array for the state vector
     uint _mti;      // _mti==N+1 means _mt[N] is not initialized
-    uint _mag01[2];
+    //uint _mag01[2];
     // _mag01[x] = x * MATRIX_A  for x=0,1
 
 public:
@@ -182,6 +182,7 @@ public:
 
     uint rand() {
         uint y;
+        static unsigned long mag01[2]={0x0UL, MATRIX_A};
 
         if (_mti >= N) { // generate N words at one time */
             uint kk;
@@ -191,14 +192,14 @@ public:
 
             for (kk=0;kk<N-M;kk++) {
                 y= (_mt[kk]&UPPER_MASK) | (_mt[kk+1]&LOWER_MASK);
-                _mt[kk]= _mt[kk+M] ^ (y >> 1) ^ _mag01[y & 0x1];
+                _mt[kk]= _mt[kk+M] ^ (y >> 1) ^ mag01[y & 0x1];
             }
             for (;kk<N-1;kk++) {
                 y= (_mt[kk]&UPPER_MASK) | (_mt[kk+1]&LOWER_MASK);
-                _mt[kk]= _mt[kk+(M-N)] ^ (y >> 1) ^ _mag01[y & 0x1];
+                _mt[kk]= _mt[kk+(M-N)] ^ (y >> 1) ^ mag01[y & 0x1];
             }
             y= (_mt[N-1]&UPPER_MASK) | (_mt[0]&LOWER_MASK);
-            _mt[N-1]= _mt[M-1] ^ (y >> 1) ^ _mag01[y & 0x1];
+            _mt[N-1]= _mt[M-1] ^ (y >> 1) ^ mag01[y & 0x1];
 
             _mti = 0;
         }
@@ -214,6 +215,7 @@ public:
 
     void nrand(uint n, uint *puout) {
         uint i, y;
+        static unsigned long mag01[2]={0x0UL, MATRIX_A};
 
         for(i=0; i<n; ++i) {
             if (_mti >= N) { // generate N words at one time
@@ -224,14 +226,14 @@ public:
 
                 for (kk=0;kk<N-M;kk++) {
                     y= (_mt[kk]&UPPER_MASK) | (_mt[kk+1]&LOWER_MASK);
-                    _mt[kk]= _mt[kk+M] ^ (y >> 1) ^ _mag01[y & 0x1];
+                    _mt[kk]= _mt[kk+M] ^ (y >> 1) ^ mag01[y & 0x1];
                 }
                 for (;kk<N-1;kk++) {
                     y= (_mt[kk]&UPPER_MASK) | (_mt[kk+1]&LOWER_MASK);
-                    _mt[kk]= _mt[kk+(M-N)] ^ (y >> 1) ^ _mag01[y & 0x1];
+                    _mt[kk]= _mt[kk+(M-N)] ^ (y >> 1) ^ mag01[y & 0x1];
                 }
                 y= (_mt[N-1]&UPPER_MASK) | (_mt[0]&LOWER_MASK);
-                _mt[N-1]= _mt[M-1] ^ (y >> 1) ^ _mag01[y & 0x1];
+                _mt[N-1]= _mt[M-1] ^ (y >> 1) ^ mag01[y & 0x1];
 
                 _mti = 0;
             }
