@@ -141,14 +141,41 @@ public:
         return *this;
     }
 */
-    charstr( const char* czstr )            { set (czstr); }
-    charstr( const char* czstr, uints len ) { set_from (czstr, len); }
+
+    charstr( const char* czstr )            { set(czstr); }
+    charstr( const char* czstr, uints len ) { set_from(czstr, len); }
     charstr( const token& tok )
     {
         if( tok.is_empty() ) return;
 		assign( tok.ptr(), tok.len()+1 );
         _tstr[tok.len()] = 0;
     }
+
+    charstr(char c)                { append(c); }
+
+    charstr(int8 i)                { append_num(10,(int)i);  }
+    charstr(uint8 i)               { append_num(10,(uint)i); }
+    charstr(int16 i)               { append_num(10,(int)i);  }
+    charstr(uint16 i)              { append_num(10,(uint)i); }
+    charstr(int32 i)               { append_num(10,(int)i);  }
+    charstr(uint32 i)              { append_num(10,(uint)i); }
+    charstr(int64 i)               { append_num(10,i);       }
+    charstr(uint64 i)              { append_num(10,i);       }
+
+#ifdef SYSTYPE_MSVC
+# ifdef SYSTYPE_32
+    charstr(ints i)                { append_num(10,(ints)i);  }
+    charstr(uints i)               { append_num(10,(uints)i); }
+# else //SYSTYPE_64
+    charstr(int i)                 { append_num(10,i); }
+    charstr(uint i)                { append_num(10,i); }
+# endif
+#elif defined(SYSTYPE_32)
+    charstr(long i)                { append_num(10,(ints)i);  }
+    charstr(ulong i)               { append_num(10,(uints)i); }
+#endif //SYSTYPE_MSVC
+
+    charstr(double d)              { operator += (d); }
 
 
     charstr& set( const char* czstr )
