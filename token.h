@@ -2055,6 +2055,8 @@ struct token
 
         static const token deg_utf8 = "\xc2\xb0";   //degree sign in utf-8
         static const token ord_utf8 = "\xc2\xba";   //ordinal sign in utf-8, often confused for the degree sign
+        static const token min_utf8 = "\xe2\x80\xb2";   //minute (prime) sign in utf-8
+        static const token sec_utf8 = "\xe2\x80\xb3";   //second (double prime) sign in utf-8
 
         double dec=0;
         char c = first_char();
@@ -2073,14 +2075,13 @@ struct token
             if(consume_char('.')) {
                 //decimal minutes
                 dec += todouble_and_shift() / 60.0;
-                consume_char('\'');
+                consume(min_utf8) || consume_char('\'');
             }
-            else if(consume_char("\' "))
+            else if(consume(min_utf8) || consume_char("\' "))
             {
                 skip_space();
                 dec += todouble_and_shift() / 3600.0;
-                consume_char('"');
-                if(begins_with("''"))  shift_start(2);
+                consume(sec_utf8) || consume_char('"') || consume("''");
             }
         }
 
