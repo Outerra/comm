@@ -672,6 +672,10 @@ class metagen //: public binstream
             else if(attrib == "@value") {
                 v.write_var(mg);
             }
+            else if(attrib == "@size") {
+                if(v.is_array())
+                    mg.write_as_string(v.array_size());
+            }
             else
                 return false;
             return true;
