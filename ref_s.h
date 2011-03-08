@@ -161,7 +161,7 @@ public:
 	const ref_t& operator=(const ref<T2>& r) {
         release();
 		_p=r.add_ref_copy();
-		_o=r.get();
+		_o=static_cast<T*>(r.get());
 		return *this;
 	}
 
