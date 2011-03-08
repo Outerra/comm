@@ -80,7 +80,11 @@ public:
 		_p=coid::policy_pooled_i<T>::create(po);
 	}
 
-	const iref_t& operator=(const iref_t& r) { _p=r.add_ref_copy(); return *this; }
+	const iref_t& operator=(const iref_t& r) { 
+        release();
+        _p=r.add_ref_copy(); 
+        return *this; 
+    }
 
 	T* get() const { DASSERT( _p!=0 ); return _p; }
 
