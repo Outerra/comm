@@ -6,6 +6,7 @@ void test();
 void metastream_test();
 }
 
+void metastream_test3();
 void metastream_test2();
 int main_atomic(int argc, char * argv[]);
 
@@ -28,6 +29,7 @@ void float_test()
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
 {
+    metastream_test3();
     metastream_test2();
 	//float_test();
 
