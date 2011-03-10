@@ -239,6 +239,14 @@ public:
         return true;
     }
 
+    opcd send_data( const void* data, uints size )
+    {
+        int n = _socket.sendto(data, (uint)size, 0, &_address);
+        if( n == -1 )
+            return ersFAILED "while sending data";
+
+        return 0;
+    }
 
 protected:
 

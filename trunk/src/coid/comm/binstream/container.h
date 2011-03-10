@@ -279,6 +279,47 @@ struct binstream_dereferencing_containerT
 protected:
     binstream_container<COUNT>& _bc;
 };
+
+///Generic dereferencing container for containers holding ref<T>
+template<class T, class RefT, class COUNT>
+struct binstream_dereferencing_containerRefT
+    : binstream_containerT<T,COUNT>
+{
+    enum { ELEMSIZE = sizeof(T) };
+
+    typedef binstream_container_base::fnc_stream    fnc_stream;
+
+
+    virtual const void* extract( uints n )
+    {   return &(**(RefT*)_bc.extract(n)); }
+
+    virtual void* insert( uints n )
+    {
+        RefT* p = (RefT*)_bc.insert(n);
+        *p = RefT(new T);
+        return &(**p);
+    }
+
+    ///@return true if the storage is continuous in memory
+    virtual bool is_continuous() const          { return false; }
+
+
+    binstream_dereferencing_containerRefT( binstream_container<COUNT>& bc )
+        : binstream_containerT<T,COUNT>( bc._nelements
+        , &binstream_streamfunc<T>::stream_out
+        , &binstream_streamfunc<T>::stream_in)
+        , _bc(bc)
+    {}
+
+    binstream_dereferencing_containerRefT( binstream_container<COUNT>& bc, fnc_stream fout, fnc_stream fin )
+        : binstream_containerT<T,COUNT>( bc._nelements, fout, fin )
+        , _bc(bc)
+    {}
+
+protected:
+    binstream_container<COUNT>& _bc;
+};
+
 /*
 ///Dereferencing container for containers holding pointers, source container embedded here
 template<class T,class CONT>

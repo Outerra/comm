@@ -212,8 +212,9 @@ public:
     binstream& operator << (const float_fmt<WIDTH,ALIGN>& v)
     {
         char buf[32];
-        token tok = charstrconv::append( buf, WIDTH, v.value, v.nfrac, WIDTH, (EAlignNum)ALIGN);
-        xwrite_token_raw(tok);
+        int w = WIDTH>32 ? 32 : WIDTH;
+        charstrconv::append_fixed( buf, buf+w, v.value, v.nfrac, (EAlignNum)ALIGN);
+        xwrite_raw(buf, w);
         return *this;
     }
 
