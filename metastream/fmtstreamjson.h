@@ -57,8 +57,8 @@ protected:
         GROUP_CONTROL                   = 2,
     };
 
-    bool _sesinitr;                         ///< session has been initiated (read or write block, cleared with flush/ack)
-    bool _sesinitw;
+    int8 _sesinitr;                         ///< session has been initiated (read or write block, cleared with flush/ack)
+    int8 _sesinitw;
 
 
 public:
@@ -136,9 +136,12 @@ public:
         if(!_sesinitw)
             throw ersIMPROPER_STATE;
 
+        if(_sesinitw>0)
+            _bufw << "})";
+        else
+            _bufw << ')';
         _sesinitw = false;
         _indent = 0;
-        _bufw << "})";
 
         _binw->xwrite_raw( _bufw.ptr(), _bufw.len() );
 
@@ -185,9 +188,15 @@ public:
     {
         if(!_sesinitw)
         {
-            _bufw << "({";
+            if(t.is_array_start()) {
+                _bufw << '(';
+                _sesinitw = -1;
+            }
+            else {
+                _bufw << "({";
+                _sesinitw = 1;
+            }
             ++_indent;
-            _sesinitw = true;
         }
 
         if( t.is_array_start() )
