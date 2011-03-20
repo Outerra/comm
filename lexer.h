@@ -272,7 +272,7 @@ public:
         lexception(int e, charstr& text)
             : code(e)
         {
-            _dtext.swap(text);
+            _dtext = text;
         }
 
         /// Error codes
