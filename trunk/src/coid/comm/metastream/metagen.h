@@ -68,12 +68,12 @@ class metagen //: public binstream
     {
         int IDENT,NUM,DQSTRING,STEXT;
 
-        virtual void on_error_prefix( bool rules, charstr& dst )
+        virtual void on_error_prefix( bool rules, charstr& dst, int line )
         {
             if(!rules) {
                 uint c;
                 uint l = current_line(0, &c);
-                dst << infile << char(':') << l << char(':') << c << ": ";
+                dst << infile << char('(') << l << char(':') << c << ") : ";
             }
         }
 
@@ -443,7 +443,7 @@ class metagen //: public binstream
         {
             //tag content
             // <name> (attribute)*
-            if( 0 == lex.next(0) )
+            if( 0 == lex.next() )
                 return false;
 
             const lextoken& tok = lex.last();
@@ -451,7 +451,7 @@ class metagen //: public binstream
             flags = 0;
             while( tok.tok == '-' ) {
                 flags += 1 << rEAT_LEFT;
-                lex.next(0);
+                lex.next();
             }
 
             if( tok.tok != '{'  &&  tok.tok != '['  &&  tok.tok != '(' ) {
