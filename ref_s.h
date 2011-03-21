@@ -191,6 +191,8 @@ public:
 
 	T* get() const { return _o; }
 
+    T* const & get_ref() const { return _o; }
+
 	bool is_empty() const { return (_p==0); }
 
 
