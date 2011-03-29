@@ -11,6 +11,7 @@ void metastream_test2();
 int main_atomic(int argc, char * argv[]);
 
 void regex_test();
+void test_malloc();
 
 void float_test()
 {
@@ -29,6 +30,8 @@ void float_test()
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
 {
+    test_malloc();
+
     metastream_test3();
     metastream_test2();
 	//float_test();
