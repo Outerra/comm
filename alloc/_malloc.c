@@ -487,13 +487,14 @@ MAX_RELEASE_CHECK_RATE   default: 4095 unless not HAVE_MMAP
 
 //defined so that operations between different mspaces (different
 // modules) are possible
-#define FOOTERS 1    
+#define FOOTERS 1
 
+void abort_routine();
 
 #ifdef _DEBUG
 #define DEBUG 1
 #define ABORT_ON_ASSERT_FAILURE 0
-#define ABORT do {assert(0); abort();} while(0)
+#define ABORT abort_routine()
 #endif //_DEBUG
 //COID>
 
@@ -2480,7 +2481,7 @@ struct malloc_state {
 #if USE_LOCKS
   MLOCK_T    mutex;     /* locate lock among fields that rarely change */
 #endif /* USE_LOCKS */
-  size_t     modalign;  /* required modulo of 8B alignment */
+  size_t     modalign;  /* required modulo of default alignment */
   msegment   seg;
   void*      extp;      /* Unused but available for extensions */
   size_t     exts;
@@ -4754,7 +4755,7 @@ void dlfree(void* mem) {
         if (!pinuse(p)) {
           size_t prevsize = p->prev_foot;
           if (is_mmapped(p)) {
-            psize += prevsize + MMAP_FOOT_PAD;
+            psize += prevsize + fm->modalign + MMAP_FOOT_PAD;
             if (CALL_MUNMAP((char*)p - prevsize, psize) == 0)
               fm->footprint -= psize;
             goto postaction;
@@ -5199,7 +5200,7 @@ void mspace_free(mspace msp, void* mem) {
         if (!pinuse(p)) {
           size_t prevsize = p->prev_foot;
           if (is_mmapped(p)) {
-            psize += prevsize + MMAP_FOOT_PAD;
+            psize += prevsize + fm->modalign + MMAP_FOOT_PAD;
             if (CALL_MUNMAP((char*)p - prevsize, psize) == 0)
               fm->footprint -= psize;
             goto postaction;
@@ -5718,3 +5719,8 @@ History:
 
 */
 
+void abort_routine()
+{
+    assert(0);
+    abort();
+}

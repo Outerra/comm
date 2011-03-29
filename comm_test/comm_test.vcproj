@@ -332,6 +332,10 @@
 			>
 		</File>
 		<File
+			RelativePath=".\malloc.cpp"
+			>
+		</File>
+		<File
 			RelativePath=".\meta.cpp"
 			>
 		</File>

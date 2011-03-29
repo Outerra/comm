@@ -108,6 +108,7 @@ struct comm_array_allocator
     static T* alloc( uints n ) {
         uints* p = (uints*)::mspace_malloc(SINGLETON(comm_array_mspace).msp,
             sizeof(uints) + n * sizeof(T));
+        if(!p) throw std::bad_alloc();
         p[0] = n;
         return (T*) (p + 1);
     }
@@ -121,6 +122,7 @@ struct comm_array_allocator
 				p ? (uints*)p - 1 : 0,
 				sizeof(uints) + n * sizeof(T));
 		}*/
+        if(!pn) throw std::bad_alloc();
         pn[0] = n;
         return (T*) (pn + 1);
     }
