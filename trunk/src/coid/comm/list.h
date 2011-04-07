@@ -77,12 +77,12 @@ protected:
 		bool operator == (const _list_const_iterator& p) const { return p._node==_node; }
 		bool operator != (const _list_const_iterator& p) const { return p._node!=_node; }
 
-		T& operator *(void) const { return _node->_item; }
+		const T& operator *(void) const { return _node->_item; }
 
 	#ifdef SYSTYPE_MSVC
 	#pragma warning( disable : 4284 )
 	#endif //SYSTYPE_MSVC
-		T* operator ->(void) const { return &_node->_item; }
+		const T* operator ->(void) const { return &_node->_item; }
 
 		_list_const_iterator& operator ++() { _node=_node->_next; return *this; }
 		_list_const_iterator& operator --() { _node=_node->_prev; return *this; }
@@ -191,11 +191,9 @@ public:
 	bool is_empty() const { return _node._next==&_node; }
 
 	T& front() const { DASSERT(!is_empty()); return _node._next->_item; }
-
 	T& back() const { DASSERT(!is_empty()); return _node._prev->_item; }
 
     iterator begin() { return iterator(_node._next); }
-
 	iterator end() { return iterator(&_node); }
 
     const_iterator begin() const { return _list_const_iterator(_node._next); }
