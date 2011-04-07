@@ -128,6 +128,10 @@ bool directory::is_regular( ushort mode )
 ////////////////////////////////////////////////////////////////////////////////
 opcd directory::mkdir( const char* name, uint mode )
 {
+#ifdef SYSTYPE_WIN
+    if(name[1] == ':' && name[2] == 0)
+        return 0;
+#endif
     if(!_mkdir(name))  return 0;
     if( errno == EEXIST )  return 0;
     return ersFAILED;
