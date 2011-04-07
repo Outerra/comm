@@ -147,6 +147,12 @@ struct rlr_coder
             planes[i].reset(i, enc);
     }
 
+    void encodeN( const INT* vals, uint n )
+    {
+        while(n-->0)
+            encode1(*vals++);
+    }
+
     void encode1( INT vs )
     {
         UINT v = (vs<<1) ^ (vs>>BITS);
