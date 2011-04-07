@@ -81,6 +81,14 @@ public:
 
 	ptr_t _head;
 
+	///
+	basic_pool() : _head() {}
+
+	///
+	~basic_pool() { purge(); }
+
+	void purge() { T* p; while((p=pop()) != 0) delete p; }
+
     ///
 	void push(T* n) 
 	{
@@ -121,7 +129,7 @@ public:
     T* pop_new() {
         T* o=pop();
         return o ? o : new T();
-    }
+	}
 };
 
 } // end of namespace atomic
