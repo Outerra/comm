@@ -208,9 +208,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="atomic\atomic.h" />
+    <ClInclude Include="atomic\basic_pool.h" />
     <ClInclude Include="atomic\pool.h" />
+    <ClInclude Include="atomic\pool_base.h" />
     <ClInclude Include="atomic\queue.h" />
+    <ClInclude Include="atomic\queue_base.h" />
     <ClInclude Include="atomic\stack.h" />
+    <ClInclude Include="atomic\stack_base.h" />
     <ClInclude Include="binstream\binstream.h" />
     <ClInclude Include="binstream\binstreambuf.h" />
     <ClInclude Include="binstream\binstreamsegbuf.h" />
@@ -245,6 +249,7 @@
     <ClInclude Include="binstream\txtstream.h" />
     <ClInclude Include="binstream\txtstreamhtml.h" />
     <ClInclude Include="crypt\sha1.h" />
+    <ClInclude Include="list.h" />
     <ClInclude Include="metastream\fmtstream.h" />
     <ClInclude Include="metastream\fmtstream_lexer.h" />
     <ClInclude Include="metastream\fmtstreamcxx.h" />

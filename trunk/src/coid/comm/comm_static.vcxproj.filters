@@ -298,6 +298,11 @@
     <ClInclude Include="txtconv.h" />
     <ClInclude Include="version.h" />
     <ClInclude Include="weak_ref.h" />
+    <ClInclude Include="list.h" />
+    <ClInclude Include="atomic\basic_pool.h" />
+    <ClInclude Include="atomic\pool_base.h" />
+    <ClInclude Include="atomic\queue_base.h" />
+    <ClInclude Include="atomic\stack_base.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="crypt\sha1.cpp">
