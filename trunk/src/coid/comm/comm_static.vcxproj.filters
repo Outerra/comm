@@ -265,7 +265,6 @@
     <ClInclude Include="facility.h" />
     <ClInclude Include="fastdelegate.h" />
     <ClInclude Include="hptimer.h" />
-    <ClInclude Include="interfnc.h" />
     <ClInclude Include="keywordt.h" />
     <ClInclude Include="lexer.h" />
     <ClInclude Include="local.h" />
@@ -297,7 +296,6 @@
     <ClInclude Include="tutf8.h" />
     <ClInclude Include="txtconv.h" />
     <ClInclude Include="version.h" />
-    <ClInclude Include="weak_ref.h" />
     <ClInclude Include="list.h" />
     <ClInclude Include="atomic\basic_pool.h" />
     <ClInclude Include="atomic\pool_base.h" />
