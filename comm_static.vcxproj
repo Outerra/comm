@@ -65,14 +65,14 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)\bin\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)\bin\$(Platform)\$(Configuration)Static\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)\bin\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)\bin\$(Platform)\$(Configuration)Static\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)\bin\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)\bin\$(Platform)\$(Configuration)Static\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)\bin\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)\bin\$(Platform)\$(Configuration)Static\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)bin\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)bin\$(Platform)\$(Configuration)Static\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)bin\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)bin\$(Platform)\$(Configuration)Static\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)bin\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)bin\$(Platform)\$(Configuration)Static\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)bin\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)bin\$(Platform)\$(Configuration)Static\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">comm_static64</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">comm_static64d</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectName)d</TargetName>
@@ -295,7 +295,6 @@
     <ClInclude Include="facility.h" />
     <ClInclude Include="fastdelegate.h" />
     <ClInclude Include="hptimer.h" />
-    <ClInclude Include="interfnc.h" />
     <ClInclude Include="keywordt.h" />
     <ClInclude Include="lexer.h" />
     <ClInclude Include="local.h" />
@@ -327,7 +326,6 @@
     <ClInclude Include="tutf8.h" />
     <ClInclude Include="txtconv.h" />
     <ClInclude Include="version.h" />
-    <ClInclude Include="weak_ref.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="crypt\sha1.cpp">
