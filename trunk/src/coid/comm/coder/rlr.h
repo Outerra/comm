@@ -105,7 +105,7 @@ struct rlr_coder
         bits_full = this->bits_full;
     }
 
-    void save( binstream& bin )
+    uints save( binstream& bin )
     {
         maxplane = planes.size();
         for( ; maxplane>0; --maxplane ) {
@@ -115,11 +115,14 @@ struct rlr_coder
 
         bin << (uint8)maxplane;
 
+        uints bytes = 0;
         for( int i=maxplane; i>minplane; --i )
-            planes[i-1].write_to(bin);
+            bytes += planes[i-1].write_to(bin);
 
         if(minplane>0)
-            planes[minplane-1].write_to(bin);
+            bytes += planes[minplane-1].write_to(bin);
+
+        return bytes;
     }
 
     uints load( binstream& bin )
@@ -312,10 +315,12 @@ private:
 
         void one( UINT v ) {
             encode0();
+            v &= (RUINT(1)<<plane)-1;
             write_bits(v, plane);
         }
 
         void zero( UINT v ) {
+            v &= (RUINT(2)<<plane)-1;
             write_bits(v, plane+1);
         }
 
@@ -348,17 +353,25 @@ private:
             return buf.size() == 0  &&  dataidx == 0  &&  dbit == 0;
         }
 
-        void write_to( binstream& bin )
+        uints write_to( binstream& bin )
         {
-            if(dataidx)
+            uint totalbits = (buf.byte_size() + dataidx*sizeof(RUINT))*8 + dbit;
+            
+            if(dbit > 0) {
+                databuf[dataidx++] = data;
+                data = 0;
+                dbit = 0;
+            }
+            if(dataidx > 0) {
                 buf.add_bin_from(databuf, dataidx);
-
-            uint totalbits = buf.byte_size()*8 + dbit;
-            if(dbit > 0)
-                flush_data();
+                dataidx = 0;
+            }
 
             bin << totalbits;
-            bin.xwrite_raw( buf.ptr(), align_to_chunks(totalbits, 8) );
+            uints bytes = align_to_chunks(totalbits, 8);
+            bin.xwrite_raw(buf.ptr(), bytes);
+
+            return bytes;
         }
 
         uints read_from( binstream& bin )
@@ -468,7 +481,8 @@ private:
             dbit = NBITS;
         }
 
-        void flush_data() {
+        void flush_data()
+        {
             databuf[dataidx++] = data;
             if(dataidx >= 16) {
                 buf.add_bin_from(databuf, dataidx);
@@ -478,7 +492,8 @@ private:
             dbit = 0;
         }
 
-        void write_bits( RUINT v, uint nbits ) {
+        void write_bits( RUINT v, uint nbits )
+        {
             uint nb = NBITS - dbit;
             if(nbits > nb) {
                 data |= v << dbit;
