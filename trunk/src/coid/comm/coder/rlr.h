@@ -240,7 +240,7 @@ protected:
             }
         }
     }
-
+    
     void decodex_lossy( const INT* rndvals, int cutbits, int plane, INT* pdata, uints len )
     {
         --plane;
@@ -494,11 +494,16 @@ private:
 
         void write_bits( RUINT v, uint nbits )
         {
+            DASSERT( (v & ~((1<<nbits)-1)) == 0 );
+            DASSERT( dbit==32 || (data & ~((1<<dbit)-1)) == 0 );
+
             uint nb = NBITS - dbit;
             if(nbits > nb) {
-                data |= v << dbit;
-                v >>= nb;
-                nbits -= nb;
+                if(nb) {
+                    data |= v << dbit;
+                    v >>= nb;
+                    nbits -= nb;
+                }
                 flush_data();
             }
 
