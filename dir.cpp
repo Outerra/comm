@@ -44,7 +44,11 @@ COID_NAMESPACE_BEGIN
 ////////////////////////////////////////////////////////////////////////////////
 bool directory::append_path( charstr& dst, token path )
 {
-    if( path.first_char() == '/'  ||  path.nth_char(1) == ':' )
+#ifdef SYSTYPE_WIN
+    if( path.nth_char(1) == ':' )
+#else
+    if( path.first_char() == '/' )
+#endif
         dst = path;
     else
     {
@@ -63,7 +67,7 @@ bool directory::append_path( charstr& dst, token path )
             if( tdst.is_empty() )
                 return false;       //too many .. in path
 
-            tdst.cut_right_back( separator() );
+            tdst.cut_right_back("\\/");
 
             if( c == 0 ) {
                 dst.resize( tdst.len() );
