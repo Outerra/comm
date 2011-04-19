@@ -67,24 +67,31 @@ public:
 	// from T* constructors
 	explicit ref( T* o )
 		: _p( policy_trait<T>::policy::create(o) )
-		, _o(o) {}
+		, _o(o) 
+	{
+		_p->add_ref_copy();
+	}
 
     template<class Y>
 	explicit ref( Y* p )
 		: _p( static_cast<policy_base*>(p) )
 		, _o(p->get()) 
-    {}
+    {
+		_p->add_ref_copy();
+	}
 
 	void create(T* const p) { 
 		release();
-		_o=p;
 		_p=policy_trait<T>::policy::create(p);
+		_p->add_ref_copy();
+		_o=p;
 	}
 
 	// special constructor from default policy
 	explicit ref( const create_me& ) {
 		policy_trait<T>::policy *p=policy_trait<T>::policy::create();
 		_p=p;
+		_p->add_ref_copy();
 		_o=p->get();
 	}
 
@@ -92,6 +99,7 @@ public:
 	explicit ref( const create_pooled&) {
 		policy_pooled_t *p=policy_pooled_t::create();
 		_p=p;
+		_p->add_ref_copy();
 		_o=p->get();
 	}
 
@@ -99,6 +107,7 @@ public:
 /*	explicit ref( const create_pooled2&) {
         policy_pooled_t *p=policy_pooled_t::create();
 		_p=p;
+		_p->add_ref_copy();
 		_o=p->get();
 	}*/
 
@@ -106,6 +115,7 @@ public:
     explicit ref( const create_pooled&, pool_type_t *po) {
 		policy_pooled_t *p=policy_pooled_t::create(po);
 		_p=p;
+		_p->add_ref_copy();
 		_o=p->get();
 	}
 
@@ -123,6 +133,7 @@ public:
 	void create(policy_shared<T> * const p) {
 		release();
 		_p=p;
+		_p->add_ref_copy();
 		_o=p->get();
 	}
 
@@ -130,6 +141,7 @@ public:
 		release();
 		policy_trait<T>::policy *p = policy_trait<T>::policy::create();
 		_p=p;
+		_p->add_ref_copy();
 		_o=p->get();
 	}
 
@@ -137,6 +149,7 @@ public:
 		release();
 		policy_pooled_t *p = policy_pooled_t::create();
 		_p=p;
+		_p->add_ref_copy();
 		_o=p->get();
 	}
 
@@ -144,6 +157,7 @@ public:
 		release();
 		policy_pooled_t *p=policy_pooled_t::create(po);
 		_p=p;
+		_p->add_ref_copy();
 		_o=p->get();
 	}
 
@@ -195,14 +209,12 @@ public:
 
 	bool is_empty() const { return (_p==0); }
 
-
     typedef T* ref<T>::*unspecified_bool_type;
 
     ///Automatic cast to unconvertible bool for checking via if
 	operator unspecified_bool_type () const {
         return _o ? &ref<T>::_o : 0;
 	}
-
 
 	void forget() { _p=0; _o=0; }
 

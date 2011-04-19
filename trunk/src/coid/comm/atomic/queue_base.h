@@ -38,24 +38,41 @@
 #include "atomic.h"
 #include "basic_pool.h"
 #include "../ref.h"
+#include "../ref_helpers.h"
+
+#include "../list.h"
+#include "../sync/mutex.h"
+#include "../sync/guard.h"
 
 namespace atomic {
 
 template<class T>
-struct queue_helper_trait {
-    static void take(T& dst,T& src) { dst=src; }
+class queue : protected coid::list<T>
+{
+protected:
+
+	coid::comm_mutex _mutex;
+
+public:
+
+	queue()
+		: list()
+		, _mutex()
+	{}
+
+	~queue()
+	{}
+
+	void push(const T& item) { GUARDTHIS(_mutex); push_back(item); }
+
+	void push_take(T& item) { GUARDTHIS(_mutex); push_back_take(item); }
+
+	bool pop(T& item) { GUARDTHIS(_mutex); return pop_front(item); }
+
+	void clear() { GUARDTHIS(_mutex); list::clear(); }
 };
 
-template<class K>
-struct queue_helper_trait<ref<K>> {
-    static void take(ref<K>& dst,ref<K>& src) { dst.takeover(src); }
-};
-
-template<class K>
-struct queue_helper_trait<iref<K>> {
-    static void take(iref<K>& dst,iref<K>& src) { dst.takeover(src); }
-};
-
+/*
 #ifdef SYSTYPE_64
 	typedef coid::uint64 tag_t;
 #else 
@@ -215,7 +232,7 @@ public:
         if( !take )
             newnode->_item=item;
         else
-            queue_helper_trait<T>::take(newnode->_item,item);
+            coid::queue_helper_trait<T>::take(newnode->_item,item);
 
 		newnode->_prev.set(0, 0);
 
@@ -261,7 +278,7 @@ public:
 					}
 					ptr_t np( head._ptr->_prev._ptr,head._tag+1 );
 					if( internal_b_cas( &_head._data,&np._data,&head._data ) ) {
-                        queue_helper_trait<T>::take(item,head._ptr->_item);
+                        coid::queue_helper_trait<T>::take(item,head._ptr->_item);
                         _node_pool.push(head._ptr);
 						return true;
 					}
@@ -282,7 +299,7 @@ public:
 			}
 		}
 	}
-};
+};*/
 
 } // end of namespace atomic
 

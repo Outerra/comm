@@ -4,17 +4,18 @@
 
 #include "atomic/basic_pool.h"
 #include "alloc/commalloc.h"
+#include "ref_helpers.h"
 
 #include <iterator>
 #include <algorithm>
 
 namespace coid {
 
-/// doubly-linkded list
+/// doubly-linked list
 template<class T>
 class list
 {
-protected:
+public:
 
 	///
     struct node
@@ -42,7 +43,7 @@ protected:
 
 	struct _list_iterator : std::iterator<std::bidirectional_iterator_tag,T>
 	{
-		node*  _node;		///<ptr to the managed item
+		node*  _node;
 
 		typedef T          value_type;
 
@@ -65,12 +66,12 @@ protected:
 		T* ptr() const { return &_node->_item; }
 
 		_list_iterator() : _node(0) {}
-		_list_iterator(node* p) : _node(p) {}
+		explicit _list_iterator(node* p) : _node(p) {}
 	};
 
 	struct _list_const_iterator : std::iterator<std::bidirectional_iterator_tag,T>
 	{
-		const node*  _node;		///<ptr to the managed item
+		const node* _node;
 
 		typedef T          value_type;
 
@@ -93,12 +94,13 @@ protected:
 		T* ptr() const { return &_node->_item; }
 
 		_list_const_iterator() : _node(0) {}
-		_list_const_iterator(node* p) : _node(p) {}
+		explicit _list_const_iterator(node* p) : _node(p) {}
 	};
 
 	typedef _list_iterator iterator;
     typedef _list_const_iterator const_iterator;
 
+protected:
 	///
 	atomic::basic_pool<node> _npool;
 
@@ -116,7 +118,20 @@ protected:
 
 		newnode->_next=it;
 		newnode->_prev=it->_prev;
-		newnode->_item=item;
+        newnode->_item=item;
+
+		it->_prev=newnode;
+		newnode->_prev->_next=newnode;
+	}
+
+	///
+	void insert_take(node* it,T &item)
+	{
+		node *newnode=_npool.pop_new();
+
+		newnode->_next=it;
+		newnode->_prev=it->_prev;
+        coid::queue_helper_trait<T>::take(newnode->_item,item);
 
 		it->_prev=newnode;
 		newnode->_prev->_next=newnode;
@@ -131,16 +146,16 @@ public:
 	~list() {}
 
 	///
-	void push_front(const T &item) 
-	{
-		insert(_tail,item);
-	}
+	void push_front(const T &item) { insert(_tail,item); }
 
 	///
-	void push_back(const T &item)
-	{
-		insert(&_node,item);
-	}
+	void push_front_take(const T &item) { insert_take(_tail,item); }
+
+	///
+	void push_back(const T &item) { insert(&_node,item); }
+
+	///
+	void push_back_take(T &item) { insert_take(&_node,item); }
 
 	///
 	void erase(iterator it)

@@ -52,7 +52,7 @@ private:
 public:
 	iref() : _p(0) {}
 
-	explicit iref(T* p) : _p(p) {}
+	explicit iref(T* p) : _p(p) { _p->add_ref_copy(); }
 
 	iref(const iref_t& r) : _p(r.add_ref_copy()) {}
 
@@ -64,25 +64,28 @@ public:
 
 	~iref() { release(); }
 
-	T* add_ref_copy() const { if( _p ) _p->add_ref_copy(); return _p; }
+	T* add_ref_copy() const { DASSERT(_p!=0); _p->add_ref_copy(); return _p; }
 
 	void release() { if( _p!=0 ) { _p->release(); _p=0; } }
 
-	void create(T* const p) { release(); _p=p; }
+	void create(T* const p) { release(); _p=p; _p->add_ref_copy(); }
 
 	void create_pooled() {
 		release();
         _p=coid::policy_pooled_i<T>::create();
+		_p->add_ref_copy();
     }
 
     void create_pooled(pool_type_t *po) {
 		release();
 		_p=coid::policy_pooled_i<T>::create(po);
+		_p->add_ref_copy();
 	}
 
 	const iref_t& operator=(const iref_t& r) { 
         release();
-        _p=r.add_ref_copy(); 
+		if(!r.is_empty())
+			_p=r.add_ref_copy(); 
         return *this; 
     }
 
@@ -117,7 +120,6 @@ public:
 	operator unspecified_bool_type () const {
         return _p ? &iref<T>::_p : 0;
 	}
-
 
     friend bool operator==( const iref<T>& a,const iref<T>& b ) {
 	    return a._p == b._p;

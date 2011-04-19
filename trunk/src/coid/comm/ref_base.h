@@ -101,7 +101,7 @@ public:
         delete this; 
     }
 
-	policy_base_() : _count(1) {}
+	policy_base_() : _count(0) {}
 
 	coid::int32 add_ref_copy() { 
         return COUNTER::inc(&_count); 
