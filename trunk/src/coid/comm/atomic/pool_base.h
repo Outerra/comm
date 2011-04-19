@@ -120,20 +120,24 @@ public:
     }
 
     ///
-	static T* create(pool_type* po) 
+	static T* create(pool_type* po,bool init_counter=false) 
     { 
         DASSERT(po!=0); 
         T* p;
 
         if( !po->create_instance(p) )
             p=new T();
+
+		if(init_counter)
+			p->add_ref_copy();
+
         return p;
     }
 
     ///
-	static T* create()
+	static T* create(bool init_counter=false)
     {
-        return create(&pool_type::global());
+        return create(&pool_type::global(),init_counter);
     }
 };
 
