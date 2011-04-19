@@ -60,7 +60,9 @@ public:
 	iref( const iref<T2>& r ) : _p(r.add_ref_copy()) {}
 
 	// special constructor from default policy
-    explicit iref( const create_pooled&) : _p( coid::policy_pooled_i<T>::create() ) {}
+    explicit iref( const create_pooled&) 
+		: _p( coid::policy_pooled_i<T>::create(true) ) 
+	{}
 
 	~iref() { release(); }
 
