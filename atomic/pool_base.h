@@ -76,9 +76,6 @@ public:
         if( !po->create_instance(p) ) {
             p= new this_type(new T,po);
         }
-        else {
-            p->add_ref_copy();
-        }
         return p;
     }
 
@@ -128,12 +125,8 @@ public:
         DASSERT(po!=0); 
         T* p;
 
-        if( !po->create_instance(p) ) {
+        if( !po->create_instance(p) )
             p=new T();
-        }
-        else {
-            p->add_ref_copy();
-        }
         return p;
     }
 

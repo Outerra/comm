@@ -56,7 +56,7 @@ public:
 
 	void* thread_run();
 
-	void addmsg(logmsg_ptr& m) { _queue.push(m,true); }
+	void addmsg(logmsg_ptr& m) { _queue.push_take(m); }
 
 	void flush();
 };

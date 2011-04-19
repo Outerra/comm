@@ -269,6 +269,7 @@
     <ClInclude Include="alloc\commalloc.h" />
     <ClInclude Include="alloc\memtrack.h" />
     <ClInclude Include="alloc\sseg.h" />
+    <ClInclude Include="ref_helpers.h" />
     <ClInclude Include="sync\_mutex.h" />
     <ClInclude Include="sync\guard.h" />
     <ClInclude Include="sync\mutex.h" />
@@ -328,6 +329,7 @@
     <ClInclude Include="version.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="atomic\atomic.cpp" />
     <ClCompile Include="crypt\sha1.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
