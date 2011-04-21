@@ -171,7 +171,7 @@ public:
 	bool pop_front(T &item)
 	{
 		if(!is_empty()) {
-			item=front();
+	        coid::queue_helper_trait<T>::take(item,front());
 			erase(iterator(_node._next));
 			return true;
 		} 
@@ -182,7 +182,7 @@ public:
 	bool pop_back(T &item)
 	{
 		if(!is_empty()) {
-			item=back();
+	        coid::queue_helper_trait<T>::take(item,back());
 			erase(iterator(_node._prev));
 			return true;
 		} 
@@ -198,6 +198,7 @@ public:
 
 		while(n->_next!=&_node) {
 			n=n->_next;
+			coid::queue_helper_trait<T>::release(n->_prev->_item);
 			_npool.push(n->_prev);
 		}
 	}
