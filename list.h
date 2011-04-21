@@ -27,43 +27,54 @@ public:
 			node *_next;
 		};
 	    node *_prev;
-		T _item;
+		//T _item;
+		uchar _item[sizeof(T)];
 
-	    node() : _next(0),_prev(0),_item() {}
+	    node() : _next(0),_prev(0) {}
 
-	    node(bool) : _item() { _next=_prev=this; }
+	    node(bool) { _next=_prev=this; }
 
         void operator = (const node &n) {
-            _next=n._next;
-            _prev=n._prev;
-            _item=n.item;
-            _next_basic_pool=n._next_basic_pool;
+			DASSERT(false);
+            //_next_basic_pool=n._next_basic_pool;
+            //_next=n._next;
+            //_prev=n._prev;
+            //_item=n.item;
         }
+
+		T& item() { return *reinterpret_cast<T*>(_item); }
+
+		const T& item() const { return *reinterpret_cast<const T*>(_item); }
+
+		T* item_ptr() { return reinterpret_cast<T*>(_item); }
+
+		const T* item_ptr() const { return reinterpret_cast<const T*>(_item); }
     };
 
 	struct _list_iterator : std::iterator<std::bidirectional_iterator_tag,T>
 	{
 		node*  _node;
 
-		typedef T          value_type;
+		typedef T value_type;
 
 		bool operator == (const _list_iterator& p) const { return p._node==_node; }
 		bool operator != (const _list_iterator& p) const { return p._node!=_node; }
 
-		T& operator *(void) const { return _node->_item; }
+		T& operator *(void) const { return _node->item(); }
 
 	#ifdef SYSTYPE_MSVC
 	#pragma warning( disable : 4284 )
 	#endif //SYSTYPE_MSVC
-		T* operator ->(void) const { return &_node->_item; }
+
+		T* ptr() const { return _node->item_ptr(); }
+
+		T* operator ->(void) const { return ptr(); }
 
 		_list_iterator& operator ++() { _node=_node->_next; return *this; }
 		_list_iterator& operator --() { _node=_node->_prev; return *this; }
 
 		_list_iterator  operator ++(int) { _list_iterator x(_node); _node=_node->_next;  return x; }
 		_list_iterator  operator --(int) { _list_iterator x(_node); _node=_node->_prev;  return x; }
-
-		T* ptr() const { return &_node->_item; }
 
 		_list_iterator() : _node(0) {}
 		explicit _list_iterator(node* p) : _node(p) {}
@@ -73,25 +84,25 @@ public:
 	{
 		const node* _node;
 
-		typedef T          value_type;
+		typedef T value_type;
 
 		bool operator == (const _list_const_iterator& p) const { return p._node==_node; }
 		bool operator != (const _list_const_iterator& p) const { return p._node!=_node; }
 
-		const T& operator *(void) const { return _node->_item; }
+		const T& operator *(void) const { return _node->item(); }
 
 	#ifdef SYSTYPE_MSVC
 	#pragma warning( disable : 4284 )
 	#endif //SYSTYPE_MSVC
-		const T* operator ->(void) const { return &_node->_item; }
+		T* ptr() const { return _node->item_ptr(); }
+
+		const T* operator ->(void) const { return ptr(); }
 
 		_list_const_iterator& operator ++() { _node=_node->_next; return *this; }
 		_list_const_iterator& operator --() { _node=_node->_prev; return *this; }
 
 		_list_const_iterator operator ++(int) { _list_const_iterator x(_node); _node=_node->_next;  return x; }
 		_list_const_iterator operator --(int) { _list_const_iterator x(_node); _node=_node->_prev;  return x; }
-
-		T* ptr() const { return &_node->_item; }
 
 		_list_const_iterator() : _node(0) {}
 		explicit _list_const_iterator(node* p) : _node(p) {}
@@ -111,30 +122,39 @@ protected:
 
 protected:
 
-	///
-	void insert(node* it,const T &item)
+	node* new_node(node *itpos,const T &item)
 	{
-		node *newnode=_npool.pop_new();
+		node *nn=_npool.pop_new();
 
-		newnode->_next=it;
-		newnode->_prev=it->_prev;
-        newnode->_item=item;
+		nn->_next=itpos;
+		nn->_prev=itpos->_prev;
+		new (nn->_item) T(item);
 
-		it->_prev=newnode;
-		newnode->_prev->_next=newnode;
+		return nn;
+	}
+
+	void delete_node(node *n)
+	{
+		n->item().~T();
+		_npool.push(n);
 	}
 
 	///
-	void insert_take(node* it,T &item)
+	void insert(node* itpos,const T &item)
 	{
-		node *newnode=_npool.pop_new();
+		node * const nn=new_node(itpos,item);
 
-		newnode->_next=it;
-		newnode->_prev=it->_prev;
-        coid::queue_helper_trait<T>::take(newnode->_item,item);
+		nn->_prev->_next=itpos->_prev=nn;
+	}
 
-		it->_prev=newnode;
-		newnode->_prev->_next=newnode;
+	///
+	void insert_take(node* itpos,T &item)
+	{
+		node * const nn=new_node(itpos,item);
+		
+		nn->_prev->_next=itpos->_prev=nn;
+
+        coid::queue_helper_trait<T>::take(nn->item(),item);
 	}
 
 public:
@@ -163,7 +183,7 @@ public:
 		if(it._node!=&_node) {
 			it._node->_prev->_next=it._node->_next;
 			it._node->_next->_prev=it._node->_prev;
-			_npool.push(it._node);
+			delete_node(it._node);
 		}
 	}
 
@@ -193,21 +213,18 @@ public:
 	void clear()
 	{
 		node* n=_node._next;
-		
 		_node._next=_node._prev=&_node;
-
 		while(n->_next!=&_node) {
 			n=n->_next;
-			coid::queue_helper_trait<T>::release(n->_prev->_item);
-			_npool.push(n->_prev);
+			delete_node(n->_prev);
 		}
 	}
 
 	///
 	bool is_empty() const { return _node._next==&_node; }
 
-	T& front() const { DASSERT(!is_empty()); return _node._next->_item; }
-	T& back() const { DASSERT(!is_empty()); return _node._prev->_item; }
+	T& front() const { DASSERT(!is_empty()); return _node._next->item(); }
+	T& back() const { DASSERT(!is_empty()); return _node._prev->item(); }
 
     iterator begin() { return iterator(_node._next); }
 	iterator end() { return iterator(&_node); }
