@@ -357,7 +357,7 @@ public:
     {
         opcd e;
         try {
-            e = prepare_type_array<WRITE_MODE>( *(const T*)0, C._nelements, name, cache );
+            e = prepare_type_array<WRITE_MODE>( *(const T*)0, UMAXS, name, cache );
             if(e) return e;
 
             if(!cache)
