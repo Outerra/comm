@@ -308,6 +308,9 @@
       <Filter>atomic</Filter>
     </ClInclude>
     <ClInclude Include="ref_helpers.h" />
+    <ClInclude Include="binstream\filestreamgz.h">
+      <Filter>binstream</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="crypt\sha1.cpp">
