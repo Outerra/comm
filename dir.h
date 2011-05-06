@@ -167,6 +167,8 @@ public:
     ///Get program executable directory
     static charstr& get_ped( charstr& buf );
 
+    ///Get current program file path
+    static charstr& get_program_path( charstr& buf );
 
     uint64 file_size() const                    { return _st.st_size; }
     static uint64 file_size( const charstr& file )

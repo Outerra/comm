@@ -147,12 +147,21 @@ charstr& directory::get_cwd( charstr& buf )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-charstr& directory::get_ped( charstr& buf )
+charstr& directory::get_program_path( charstr& buf )
 {
     charstr path = "/proc/";
     path << ::getpid() << "/exe";
 
     ::readlink(path.c_str(), buf.get_buf(PATH_MAX), PATH_MAX);
+
+    buf.correct_size();
+    return buf;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+charstr& directory::get_ped( charstr& buf )
+{
+    get_program_path(buf);
 
     token t = buf.c_str();
     t.cut_right_back('/', token::cut_trait_keep_sep_with_source());

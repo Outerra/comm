@@ -153,7 +153,7 @@ charstr& directory::get_cwd( charstr& buf )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-charstr& directory::get_ped( charstr& buf )
+charstr& directory::get_program_path( charstr& buf )
 {
     uint size = 64, asize;
 
@@ -164,6 +164,13 @@ charstr& directory::get_ped( charstr& buf )
     }
 
     buf.resize(asize);
+    return buf;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+charstr& directory::get_ped( charstr& buf )
+{
+    get_program_path(buf);
 
     token t = buf;
     t.cut_right_back('\\', token::cut_trait_keep_sep_with_source());

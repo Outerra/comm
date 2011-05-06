@@ -241,6 +241,7 @@
     <ClInclude Include="binstream\nullstream.h" />
     <ClInclude Include="binstream\packstream.h" />
     <ClInclude Include="binstream\packstreambzip2.h" />
+    <ClInclude Include="binstream\filestreamgz.h" />
     <ClInclude Include="binstream\packstreamlzo.h" />
     <ClInclude Include="binstream\packstreamzip.h" />
     <ClInclude Include="binstream\stdstream.h" />
