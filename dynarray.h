@@ -591,6 +591,12 @@ public:
         return _ptr + n;
     };
 
+    ///Add memory for n uninitialized elements, without calling the constructor
+    T* add_uninit( uints n=1 )
+    {
+        return addnc(n);
+    }
+
     ///Add n new elements on position where key would be inserted.
     /// Uses either operator T<T or a functor(T,T)
     /// add_sortT() can use a different key type than T, provided an operator T<K exists, or functor(T,K) was provided.
