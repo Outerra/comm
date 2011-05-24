@@ -107,7 +107,7 @@ struct rlr_coder
 
     uints save( binstream& bin )
     {
-        maxplane = planes.size();
+        maxplane = (uint)planes.size();
         for( ; maxplane>0; --maxplane ) {
             if(!planes[maxplane-1].nothing_to_write())
                 break;
@@ -355,7 +355,7 @@ private:
 
         uints write_to( binstream& bin )
         {
-            uint totalbits = (buf.byte_size() + dataidx*sizeof(RUINT))*8 + dbit;
+            uint totalbits = uint((buf.byte_size() + dataidx*sizeof(RUINT))*8 + dbit);
             
             if(dbit > 0) {
                 databuf[dataidx++] = data;

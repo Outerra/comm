@@ -132,7 +132,7 @@ public:
         }
 
         _strout.next_in = (char*)p;
-        _strout.avail_in = len;
+        _strout.avail_in = (uint)len;
 
         while(1)
         {
@@ -174,7 +174,7 @@ public:
         }
 
         _strin.next_out = (char*)p;
-        _strin.avail_out = len;
+        _strin.avail_out = (uint)len;
 
         while(1)
         {
@@ -184,7 +184,7 @@ public:
                 uints rl = BUFFER_SIZE;
                 opcd e = _in->read_raw( _rblockin.ptr(), rl );
                 if( e && e!=ersNO_MORE )  return e;
-                _strin.avail_in = BUFFER_SIZE - rl;
+                _strin.avail_in = uint(BUFFER_SIZE - rl);
                 _strin.next_in = _rblockin.ptr();
             }
 
