@@ -956,6 +956,32 @@ public:
         return *this;
     }
 
+    charstr& append_byte_size(uint64 size)
+    {
+        double v = double(size);
+        int ndigits = size>0
+            ? 0 + (int)log10(v)
+            : 0;
+
+        const char* prefixes = "\0kMGTPEZY";
+        int ngroup = ndigits/3;
+        char prefix = prefixes[ngroup];
+
+        //reduce to 3 digits
+        if(ndigits>2) {
+            v /= pow(10.0, 3*ngroup);
+            append_float(v, 2-(ndigits-3*ngroup), 4);
+            append(' ');
+            append(prefix);
+            append('B');
+        }
+        else {
+            append_num(10, size);
+            append(" B");
+        }
+
+        return *this;
+    }
 
     ///Append string while encoding characters as specified for URL encoding
     charstr& append_encode_url( const token& str )
