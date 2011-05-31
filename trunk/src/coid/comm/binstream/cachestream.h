@@ -250,6 +250,8 @@ public:
     }
 
 
+
+
     virtual opcd open( const token& arg )
     {
         return _bin->open(arg);
@@ -262,15 +264,20 @@ public:
 
     virtual bool is_open() const        { return _bin->is_open(); }
 
-    virtual void flush()
+    void flush_cache(bool final)
     {
-        on_cache_flush( _cot.ptr(), _cot.size(), true );
+        on_cache_flush( _cot.ptr(), _cot.size(), final );
         if(_cot.size())
             _bin->xwrite_raw( _cot.ptr(), _cot.size() );     //throws
 
         _cot.reset();
         _cotwritten = _tcotwritten = 0;
         _bin->flush();
+    }
+
+    virtual void flush()
+    {
+        flush_cache(true);
     }
 
     virtual void acknowledge (bool eat=false)
@@ -307,6 +314,37 @@ public:
     virtual opcd set_timeout( uint ms )
     {
         return _bin->set_timeout(ms);
+    }
+
+    virtual opcd transfer_to( binstream& dst, uints datasize=UMAXS, uints* size_written=0, uints blocksize=4096 ) override
+	{
+        opcd e;
+        uints n=0;
+
+        for( ;; )
+        {
+            uints clen = _cin.size() - _cinread;
+			uints len = datasize>clen ? clen : datasize;
+            uints oen = len;
+
+            e = dst.write_raw( _cin.ptr()+_cinread, len );
+
+            uints dlen = oen - len;
+            datasize -= dlen;
+
+            n += dlen;
+            if(size_written)        //update inside the loop to have a progress feedback
+                *size_written = n;
+
+            if( e || len>0 || datasize==0 )
+                break;
+
+            read_cache_line();
+            if(_cin.size() == 0)
+                break;
+        }
+
+        return e == ersNO_MORE ? opcd(0) : e;
     }
 
 
