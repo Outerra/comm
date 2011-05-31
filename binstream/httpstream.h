@@ -120,6 +120,11 @@ public:
             return size_read() >= size;
         }
 
+        void append_token(const token& tok)
+        {
+            _cot.add_bin_from((const uchar*)tok.ptr(), tok.len());
+        }
+
         opcd chunked_read_raw( void* p, uints& len )
         {
             opcd e;
@@ -180,12 +185,12 @@ public:
 
         opcd on_cache_flush( void* p, uints size, bool final )
         {
-            if(!final)
-                return ersDENIED;   //no multiple packets supported
+            //if(!final)
+            //    return ersDENIED;   //no multiple packets supported
 
             DASSERT( _hdrpos != UMAXS );
 
-            if(_hdrpos) {
+            if(final && _hdrpos) {
                 //write msg len
                 char* pc = (char*) get_raw( _hdrpos, 20 );
 
@@ -196,7 +201,8 @@ public:
 				}
             }
 
-            _hdrpos = UMAXS;
+            if(final)
+                _hdrpos = UMAXS;
 
             return 0;
         }
@@ -335,8 +341,11 @@ public:
         ersIGNORE if the file wasn't modified since the time specified in _hdr->_if_mdf_since
         ersDENIED if the file could not be opened for reading
         or other opcd errors related to the transport stream
+
+        @note with formdata==true, content-type will be "multipart/form-data; boundary=_mime_"
+         and @a mime should contain the boundary string separator
     **/
-    opcd send_file( const charstr& file, const token& mime )
+    opcd send_file( const charstr& file, const token& mime, bool formdata=false, const token& filename=token::empty() )
     {
         if( (_flags & fWSTATUS) != 0 )
             return ersUNAVAILABLE;  //another write in progress
@@ -357,17 +366,51 @@ public:
         if( !bif.is_open() )
             return ersDENIED;
 
-        set_content_type(mime);
+        charstr& ct = get_content_type();
+        if(formdata)
+            ct << "multipart/form-data; boundary=" << mime << "\r\n";
+        else
+            ct << mime << "\r\n";
+
         set_modified( st.st_mtime );
 
-        opcd e = new_write( st.st_size );
+        static const token fd1 = "\r\nContent-Disposition: form-data; name=\"file\"; filename=\"";//test.bin"
+        static const token fd2 = "\"\r\nContent-Type: application/octet-stream\r\n\r\n";
+        static const token fde = "\r\n--";
+        static const token fdh = "--";
+
+        token fn;
+        uints csize = st.st_size;
+
+        if(formdata) {
+            fn = filename ? filename : token(file).cut_right_back("\\/");
+            csize += fdh.len() + mime.len() + fd1.len() + fn.len() + fd2.len() + fde.len() + mime.len() + fdh.len();
+        }
+
+        opcd e = new_write(csize);
         if(e) return e;
 
+        if(formdata) {
+            _cache.append_token(fdh);
+            _cache.append_token(mime);
+
+            _cache.append_token(fd1);
+            _cache.append_token(fn);
+            _cache.append_token(fd2);
+        }
+
         //now flush the headers
-        _cache.flush();
+        _cache.flush_cache(!formdata);
 
         //and write the content
         bif.transfer_to( *_cache.bound() );
+
+        if(formdata) {
+            _cache.append_token(fde);
+            _cache.append_token(mime);
+            _cache.append_token(fdh);
+            _cache.flush_cache(true);
+        }
 
         _flags &= ~fWSTATUS;
 
@@ -432,16 +475,21 @@ public:
         return _cache.set_timeout(ms);
     }
 
+    virtual opcd transfer_to( binstream& dst, uints datasize=UMAXS, uints* size_written=0, uints blocksize = 4096 )
+	{
+        return _cache.transfer_to(dst, datasize, size_written);
+    }
 
 
 
     void set_host( const token& tok )
     {
-        token host = tok;
-        host.cut_left( substring_proto(), token::cut_trait_remove_sep_default_empty() );
+        token uri = tok;
+        uri.cut_left( substring_proto(), token::cut_trait_remove_sep_default_empty() );
 
-        _urihdr = host;
-        (_proxyreq = "Host: ") << host.cut_left('/') << "\r\n";
+        token host = uri.cut_left('/', token::cut_trait_keep_sep_with_source());
+        _urihdr = uri;
+        (_proxyreq = "Host: ") << host << "\r\n";
     }
 /*
     void set_host( const netAddress& addr )
@@ -479,11 +527,7 @@ public:
     ///Set content type for request or query
     void set_content_type( const token& ct )
     {
-        charstr& dst = (_flags & fLISTENER)!=0
-            ? _content_type_rsp
-            : _content_type_qry;
-
-        dst.resize( _content_type_len );
+        charstr& dst = get_content_type();
         dst += !ct.is_empty() ? ct : "text/plain";
         dst += "\r\n";
     }
@@ -529,6 +573,18 @@ public:
     cachestream& get_cache_stream()     { return _cache; }
 
     binstream& text()                   { check_write(); return _tcache; }
+
+
+protected:
+
+    charstr& get_content_type() {
+        charstr& dst = (_flags & fLISTENER)!=0
+            ? _content_type_rsp
+            : _content_type_qry;
+
+        dst.resize(_content_type_len);
+        return dst;
+    }
 
 protected:
 
@@ -592,8 +648,8 @@ protected:
 
         //_cache.set_timeout(0);
 
-        static token _POST( "POST http://" );
-        static token _GET( "GET http://" );
+        static token _POST( "POST " );
+        static token _GET( "GET " );
         static token _POST1(
             " HTTP/1.1\r\n"
             );

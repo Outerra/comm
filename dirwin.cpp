@@ -82,7 +82,7 @@ opcd directory::open( const token& path, const token& filter )
     _pattern << '\\';
     _curpath = _pattern;
     _baselen = _curpath.len();
-    _pattern << filter;
+    _pattern << (filter ? filter : token("*.*"));
 
     return 0;
 }
