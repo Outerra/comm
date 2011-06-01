@@ -736,6 +736,17 @@ public:
             *p++ = c;
     }
 
+    ///Append n strings (or utf8 characters)
+    void appendn( uints n, const token& tok )
+    {
+        uint nc = tok.len();
+        char *p = uniadd(n*nc);
+        for( ; n>0; --n ) {
+            ::memcpy(p, tok.ptr(), nc);
+            p += nc;
+        }
+    }
+
     ///Append n uninitialized characters
     char* appendn_uninitialized( uints n )
     {
@@ -970,7 +981,7 @@ public:
         //reduce to 3 digits
         if(ndigits>2) {
             v /= pow(10.0, 3*ngroup);
-            append_float(v, 2-(ndigits-3*ngroup), 4);
+            append_float(v, (ndigits-3*ngroup)-2, 4);
             append(' ');
             append(prefix);
             append('B');
@@ -1740,6 +1751,16 @@ inline const char* token::set( const charstr& str )
     _pte = str.ptre();
     return _pte;
 }
+
+inline token token::rebase(const charstr& from, const charstr& to) const
+{
+    DASSERT(_ptr>=from.ptr() && _pte<=from.ptre());
+    uint offset = _ptr - from.ptr();
+    DASSERT(offset+len() <= to.len());
+
+    return token(to.ptr()+offset, len());
+}
+
 /*
 inline void token::assign_empty( const charstr& str )
 {
