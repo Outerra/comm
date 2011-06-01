@@ -58,7 +58,7 @@ protected:
     uints _cotwritten, _tcotwritten;
 
     enum {
-        CACHE_SIZE                  = 256,
+        DEFAULT_CACHE_SIZE          = 256,
     };
 
     bool eois;                      ///< end of the input stream already read
@@ -151,7 +151,7 @@ public:
     virtual opcd write_raw( const void* p, uints& len )
     {
         if( _cot.reserved_total() == 0 )
-            _cot.reserve( CACHE_SIZE, false );
+            _cot.reserve( DEFAULT_CACHE_SIZE, false );
 
         opcd e = 0;
 
@@ -484,7 +484,7 @@ private:
     opcd read_cache_line()
     {
         if( _cin.reserved_total() == 0 )
-            _cin.reserve( CACHE_SIZE, false );
+            _cin.reserve( DEFAULT_CACHE_SIZE, false );
 
         uints cs = _cin.reserved_total();
         opcd e = _bin->read_raw_any( _cin.ptr(), cs );
@@ -525,7 +525,7 @@ private:
     uints fetch_forward( uints offs )
     {
         if( _cin.reserved_total() == 0 )
-            _cin.reserve( CACHE_SIZE, false );
+            _cin.reserve( DEFAULT_CACHE_SIZE, false );
 
         uints rm = _cin.size() - _cinread;
         if( rm >= offs )
