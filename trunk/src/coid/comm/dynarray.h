@@ -1193,52 +1193,37 @@ public:
     }
     //@}
 
-    T* move_temp( uints from, uints to, uints num, void* buf )
-    {
-        if (from+num > _count())  return 0;
-        if (to >= _count())  return 0;
-
-        //assume num <= rem (optimize for this case)
-        if (from < to)
-        {
-            if (to < from+num)  return 0;
-            xmemcpy (buf, _ptr+from, num*sizeof(T));
-
-            __move (-(ints)num, _ptr+from+num, to-from-num);
-            return _ptr+to-num;
-        }
-        else if (to < from)
-        {
-            xmemcpy (buf, _ptr+from, num*sizeof(T));
-
-            __move (num, _ptr+to, from-to);
-            return _ptr+to;
-        }
-        return 0;
-    }
-
+    ///Move items up or down in buffer
     T* move( uints from, uints to, uints num )
     {
-        if (from+num > _count())  return 0;
-        if (to >= _count())  return 0;
+        RASSERT(from+num <= _count() &&
+            to+num <= _count());
 
-        if (from < to  &&  to < from+num)  return 0;
+        if(from == to)
+            return _ptr+to;
 
-        if (num < 256)
-        {
-            T buf[256];
-            T* p = move_temp( from, to, num, buf );
-            xmemcpy (p, buf, num*sizeof(T));
-            return p;
+        //TODO: add optimization for num > abs(int(from-to))
+
+        uint8* abuf=0;
+        uint8 sbuf[1024];
+        T* buf = (T*)sbuf;
+        if(num*sizeof(T) > sizeof(sbuf))
+            buf = (T*)(abuf = (uint8*)::malloc(num*sizeof(T)));
+
+        if(from < to) {
+            xmemcpy(buf, _ptr+from, num*sizeof(T));
+            __move(-(ints)num, _ptr+from+num, to-from);
+            xmemcpy(_ptr+to, buf, num*sizeof(T));
         }
-        else
-        {
-            dynarray<uchar,COUNT> buf;
-            buf.alloc( num*sizeof(T) );
-            T* p = move_temp( from, to, num, buf.ptr() );
-            xmemcpy( p, buf.ptr(), num*sizeof(T) );
-            return p;
+        else {
+            xmemcpy(buf, _ptr+from, num*sizeof(T));
+            __move(num, _ptr+to, from-to);
+            xmemcpy(_ptr+to, buf, num*sizeof(T));
         }
+
+        if(abuf)
+            ::free(abuf);
+        return _ptr+to;
     }
 
     ///Delete content but keep the memory reserved
