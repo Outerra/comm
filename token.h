@@ -1943,17 +1943,17 @@ struct token
         if( first_char() == '-' ) { ++_ptr; invsign=true; }
         else if( first_char() == '+' ) { ++_ptr; }
 
-        double val = (double)touint_and_shift();
+        double val = (double)touint64_and_shift();
 
         if( first_char() == '.' )
         {
             ++_ptr;
 
             uints plen = lens();
-            uints dec = touint_and_shift();
+            uint64 dec = touint64_and_shift();
             plen -= lens();
             if(plen && dec)
-                val += dec * pow( (double)10, -(int)plen );
+                val += double(dec) * pow(10.0, -(int)plen);
         }
 
         if( first_char() == 'e'  ||  first_char() == 'E' )
@@ -1961,7 +1961,7 @@ struct token
             ++_ptr;
 
             int m = toint_and_shift();
-            val *= pow( (double)10, m );
+            val *= pow(10.0, m);
         }
 
         return invsign ? -val : val;
