@@ -1051,7 +1051,6 @@ public:
         if( nitems == 0 )
             return *this;
 
-        static char tbl[] = "0123456789ABCDEF";
         for( uints i=0;; )
         {
             append(prefix);
@@ -1062,8 +1061,7 @@ public:
                 for( uint j=itemsize; j>0; )
                 {
                     --j;
-                    pdst[0] = tbl[((uchar*)src)[j] >> 4];
-                    pdst[1] = tbl[((uchar*)src)[j] & 0x0f];
+                    write_hex_code(((uchar*)src)[j], pdst);
                     pdst += 2;
                 }
             }
@@ -1071,8 +1069,7 @@ public:
             {
                 for( uint j=0; j<itemsize; ++j )
                 {
-                    pdst[0] = tbl[((uchar*)src)[j] >> 4];
-                    pdst[1] = tbl[((uchar*)src)[j] & 0x0f];
+                    write_hex_code(((uchar*)src)[j], pdst);
                     pdst += 2;
                 }
             }
@@ -1083,6 +1080,36 @@ public:
             if( i>=nitems )  break;
         }
 
+        return *this;
+    }
+
+    static void write_hex_code(uint8 value, char dst[2])
+    {
+        static char tbl[] = "0123456789ABCDEF";
+        dst[0] = tbl[value >> 4];
+        dst[1] = tbl[value & 0x0f];
+    }
+
+    ///Append HTML color code as #rrggbb
+    charstr& append_color(uint color)
+    {
+        const uint8* pb = (const uint8*)&color;
+        if(!sysIsLittleEndian)
+            ++pb;
+        return append_prehex(pb, 1, 3, "#");
+    }
+
+    ///Append HTML color code as #rrggbb
+    charstr& append_color(const float rgb[3])
+    {
+        char* dst = get_append_buf(7);
+        dst[0] = '#';
+        float r = rgb[0]<0 ? 0 : (rgb[0]>1 ? 255 : 255*rgb[0]);
+        float g = rgb[1]<0 ? 0 : (rgb[1]>1 ? 255 : 255*rgb[1]);
+        float b = rgb[2]<0 ? 0 : (rgb[2]>1 ? 255 : 255*rgb[2]);
+        write_hex_code(uint8(r+0.5), dst+1);
+        write_hex_code(uint8(g+0.5), dst+3);
+        write_hex_code(uint8(b+0.5), dst+5);
         return *this;
     }
 
