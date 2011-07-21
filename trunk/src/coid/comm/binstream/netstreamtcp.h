@@ -206,11 +206,15 @@ public:
 
     virtual opcd peek_read( uint timeout )
     {
+        if(!_socket.isValid())
+            return ersDISCONNECTED;
         return _socket.wait_read(timeout) ? opcd(0) : ersTIMEOUT;
     }
 
     virtual opcd peek_write( uint timeout )
     {
+        if(!_socket.isValid())
+            return ersDISCONNECTED;
         return _socket.wait_write(timeout) ? opcd(0) : ersTIMEOUT;
     }
 
