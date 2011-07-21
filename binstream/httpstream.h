@@ -78,6 +78,9 @@ public:
         token _query;               ///< query part (after ?)
         token _relpath;             ///< relative path
 
+        charstr _set_cookie;
+        charstr _location;
+        charstr _content_encoding;
 
         header()
         {
@@ -147,6 +150,10 @@ public:
                 if( rdchunk>0 )
                     e = ersRETRY;
                 else {
+                    char crlf[2];
+                    uints crlf_len=2;
+                    read_raw(crlf, crlf_len);
+
                     final = true;
                     e = ersNO_MORE;
                 }
@@ -173,6 +180,11 @@ public:
 
                 return write_token_raw( CLheader() );
             }
+            else if( content_len == 0 ) {
+                _hdrpos = 0;
+
+                return write_token_raw("\r\n\r\n");
+            }
             else {
                 _hdrpos = 0;
 
@@ -188,7 +200,7 @@ public:
             //if(!final)
             //    return ersDENIED;   //no multiple packets supported
 
-            DASSERT( _hdrpos != UMAXS );
+            DASSERT( !final || _hdrpos != UMAXS );
 
             if(final && _hdrpos) {
                 //write msg len
@@ -279,7 +291,8 @@ public:
 
     virtual void flush()
     {
-        check_write(0);
+        uints written = _cache.len();
+        check_write(written);
 
         _cache.flush();
         _flags &= ~fWSTATUS;
@@ -320,6 +333,23 @@ public:
     {
         _flags &= ~fWSTATUS;
         _cache.reset_write();
+    }
+
+    opcd consume_body()
+    {
+        uints len = _hdr->_content_length;
+        if(_hdr->is_chunked()) {
+            uint8 buf[256];
+            opcd e;
+            do {
+                uints len=256;
+                e = _cache.chunked_read_raw(buf, len);
+            }
+            while(e==0 || e==ersRETRY);
+            return e;
+        }
+        else
+            return _cache.read_raw_scrap(len);
     }
 
     opcd send_error( const token& errstr )
@@ -482,14 +512,26 @@ public:
 
 
 
-    void set_host( const token& tok )
+    charstr& set_host( const token& tok )
     {
         token uri = tok;
-        uri.cut_left( substring_proto(), token::cut_trait_remove_sep_default_empty() );
 
-        token host = uri.cut_left('/', token::cut_trait_keep_sep_with_source());
-        _urihdr = uri;
-        (_proxyreq = "Host: ") << host << "\r\n";
+        if(uri.first_char() == '?') {
+            _urihdr.resize(token(_urihdr).count_notchar('?'));
+            _urihdr << uri;
+        }
+        else if(uri.first_char() == '/')
+            _urihdr = uri;
+        else {
+            uri.cut_left( substring_proto(), token::cut_trait_remove_sep_default_empty() );
+
+            token host = uri.cut_left('/', token::cut_trait_keep_sep_with_source());
+            _urihdr = uri;
+
+            (_proxyreq = "Host: ") << host << "\r\n";
+        }
+    
+        return _urihdr;
     }
 /*
     void set_host( const netAddress& addr )
@@ -542,6 +584,15 @@ public:
     {
         _opthdr = opt;
         return _opthdr;
+    }
+
+    ///Get optional headers, returns a reference to charstr that can be manipulated
+    charstr& get_optional_header() {
+        return _opthdr;
+    }
+
+    charstr& get_cookie_header() {
+        return _cookie;
     }
 
     ///Set connection type: Close (true) or Keep-Alive (false)
@@ -600,6 +651,7 @@ protected:
     charstr _proxyreq;
     charstr _urihdr;
     charstr _opthdr;
+    charstr _cookie;
 
     charstr _content_type_qry;
     charstr _content_type_rsp;
@@ -648,6 +700,7 @@ protected:
 
         //_cache.set_timeout(0);
 
+        static token _RN( "\r\n" );
         static token _POST( "POST " );
         static token _GET( "GET " );
         static token _POST1(
@@ -678,7 +731,7 @@ protected:
 
                 _tmp.reset();
                 _tmp.append_date_gmt( tmmodif );
-                _tcache << _MDF << _tmp << "\r\n";
+                _tcache << _MDF << _tmp << _RN;
                 tmmodif = 0;
             }
             /*else {
@@ -696,7 +749,16 @@ protected:
 
         _tmp.reset();
         _tmp.append_date_gmt( timet::current() );
-        _tcache << "Date: " << _tmp << "\r\n";
+        _tcache << "Date: " << _tmp << _RN;
+
+        static token _AE( "Accept-Encoding: \r\n" );
+        _tcache << _AE;
+
+        if(_cookie) {
+            _tcache << "Cookie: " << _cookie;
+            if(!_cookie.ends_with(_RN))
+                _tcache << _RN;
+        }
 
         //
         static token _CONC( "Connection: Close\r\n" );
@@ -706,8 +768,8 @@ protected:
         if( !_opthdr.is_empty() ) {
             _tcache << _opthdr;
 
-            if( !_opthdr.ends_with("\r\n") )
-                _tcache << "\r\n";
+            if( !_opthdr.ends_with(_RN) )
+                _tcache << _RN;
         }
 
         _cache.set_hdr_pos( content_len );
@@ -764,6 +826,9 @@ inline opcd httpstream::header::decode( bool is_listener, httpstream& http, bins
     _header_length = 0;
     _content_length = UMAXS;
     _if_mdf_since = 0;
+    _set_cookie.reset();
+    _location.reset();
+    _content_encoding.reset();
 
     //skip any nonsense 
     opcd e;
@@ -884,13 +949,25 @@ inline opcd httpstream::header::decode( bool is_listener, httpstream& http, bins
                     _bclose = false;
             }
         }
+        else if( h1.cmpeqi("Location") )
+        {
+            _location = h;
+        }
         else if( h1.cmpeqi("Content-Length") )
         {
             _content_length = h.toint();
         }
+        else if( h1.cmpeqi("Content-Encoding") )
+        {
+            _content_encoding = h;
+        }
         else if( h1.cmpeqi("If-Modified-Since") )
         {
             h.todate_gmt(_if_mdf_since);
+        }
+        else if( h1.cmpeqi("Set-Cookie") )
+        {
+            _set_cookie = h;
         }
         else {
             e = http.on_extra_header( h1, h );

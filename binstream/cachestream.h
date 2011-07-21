@@ -331,6 +331,7 @@ public:
 
             uints dlen = oen - len;
             datasize -= dlen;
+            _cinread += dlen;
 
             n += dlen;
             if(size_written)        //update inside the loop to have a progress feedback
