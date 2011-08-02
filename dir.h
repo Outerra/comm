@@ -111,7 +111,17 @@ public:
         return stat( dir, &st );
     }
 
+    //@return true if path is a directory, handles trailing path delimiter
+    static bool is_valid_directory( const token& arg ) {
+        charstr args = arg;
+        treat_trailing_separator(args, false);
+        return is_valid_directory(args.c_str());
+    }
+
+    //@return true if path is a directory (must not end with slash/backslash)
     static bool is_valid_directory( const charstr& arg )    { return is_valid_directory( arg.c_str() ); }
+    
+    //@return true if path is a directory (must not end with slash/backslash)
     static bool is_valid_directory( const char* arg )
     {
         struct stat st;
