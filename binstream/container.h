@@ -41,6 +41,7 @@
 #include "../namespace.h"
 
 #include "bstype.h"
+#include "../alloc/_malloc.h"
 
 COID_NAMESPACE_BEGIN
 
@@ -429,7 +430,7 @@ struct binstream_container_char_array : binstream_containerT<char,COUNT>
         uints nres = align_value_to_power2( _size, 5 );   //32B blocks
         if( n+_size > nres ) {
             nres = align_value_to_power2(_size+n,5);
-            _ptr = (char*) realloc(_ptr,nres);
+            _ptr = (char*)::dlrealloc(_ptr,nres);
         }
         char* p = _ptr + _size-1;
         p[n] = 0;
@@ -441,7 +442,7 @@ struct binstream_container_char_array : binstream_containerT<char,COUNT>
 
     binstream_container_char_array( uints n ) : binstream_containerT<char,COUNT>(n)
     {
-        _ptr = (char*)malloc(1<<5);
+        _ptr = (char*)::dlmalloc(1<<5);
         _ptr[0] = 0;
         _size = 1;
     }

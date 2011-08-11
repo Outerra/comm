@@ -167,16 +167,16 @@ private:
 protected:
 	typedef policy_dummy<T> this_t;
 
-	policy_dummy(T* const obj) : policy_shared(obj) {}
+	policy_dummy(T* const obj) : policy_shared<T>(obj) {}
 
-	virtual ~policy_dummy() { _obj=0; }
+	virtual ~policy_dummy() { this->_obj=0; }
 
 public:
 	static this_t* create(T*const obj) { return new this_t(obj); }
 
 	static this_t* create() { return new this_t(new T); }
 
-	T* get() const { return _obj; }
+	T* get() const { return this->_obj; }
 };
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

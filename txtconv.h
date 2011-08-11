@@ -220,6 +220,8 @@ namespace charstrconv
             return buf;
         }
 
+	public:
+	
         //@return number of characters taken
         static uints precompute( char* buf, uint64 n, int BaseN, int sgn )
         {

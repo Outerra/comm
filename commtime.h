@@ -42,6 +42,16 @@
 #include "namespace.h"
 #include <time.h>
 
+#ifdef SYSTYPE_MINGW
+time_t timelocal (struct tm *tm);
+time_t timegm (struct tm *tm);
+
+struct timespec {
+    long tv_sec;
+    long tv_nsec;
+}; 
+#endif
+
 COID_NAMESPACE_BEGIN
 
 ///Time in seconds

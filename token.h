@@ -59,7 +59,7 @@
 
 COID_NAMESPACE_BEGIN
 
-#ifdef SYSTYPE_MSVC8plus
+#ifdef SYSTYPE_MSVC
 # define xstrncasecmp     _strnicmp
 # define xstrcasecmp      _stricmp
 #else
@@ -1975,7 +1975,7 @@ struct token
         opcd e = todate( tmm, token::empty() );
         if(e)  return e;
 
-    #ifdef SYSTYPE_MSVC8plus
+    #ifdef SYSTYPE_MSVC
         dst = _mkgmtime( &tmm );
     #else
         dst = timegm( &tmm );
@@ -1991,7 +1991,7 @@ struct token
         opcd e = todate( tmm, "gmt" );
         if(e)  return e;
 
-    #ifdef SYSTYPE_MSVC8plus
+    #ifdef SYSTYPE_MSVC
         dst = _mkgmtime( &tmm );
     #else
         dst = timegm( &tmm );
@@ -2050,7 +2050,7 @@ struct token
 
 
     ///Convert angle string to value, consuming input
-    /// formats: 49°42'32.91"N, +49°42.5485', +49.7091416667°
+    /// formats: 49Â°42'32.91"N, +49Â°42.5485', +49.7091416667Â°
     double toangle()
     {
         ints sgn = consume_char("+-");
@@ -2066,9 +2066,9 @@ struct token
         if(c == '.') {
             //decimal degrees
             dec = todouble_and_shift();
-            consume(deg_utf8) || consume(ord_utf8) || consume_char("°");
+            consume(deg_utf8) || consume(ord_utf8) || consume_char("Â°");
         }
-        else if(consume(deg_utf8) || consume(ord_utf8) || consume_char("°, "))
+        else if(consume(deg_utf8) || consume(ord_utf8) || consume_char("Â°, "))
         {
             skip_space();
             int mnt = touint_and_shift();

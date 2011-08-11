@@ -56,7 +56,7 @@ protected:
 public:
 
 	queue()
-		: list()
+		: coid::list<T>()
 		, _mutex()
 	{}
 
@@ -69,7 +69,7 @@ public:
 
 	bool pop(T& item) { GUARDTHIS(_mutex); return pop_front(item); }
 
-	void clear() { GUARDTHIS(_mutex); list::clear(); }
+	void clear() { GUARDTHIS(_mutex); coid::list<T>::clear(); }
 };
 
 /*

@@ -40,7 +40,7 @@
 
 
 
-#ifndef SYSTYPE_MSVC
+#ifndef SYSTYPE_WIN
 
 #include <fnmatch.h>
 #include <errno.h>

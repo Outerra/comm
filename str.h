@@ -162,7 +162,7 @@ public:
     charstr(int64 i)               { append_num(10,i);       }
     charstr(uint64 i)              { append_num(10,i);       }
 
-#ifdef SYSTYPE_MSVC
+#ifdef SYSTYPE_WIN
 # ifdef SYSTYPE_32
     charstr(ints i)                { append_num(10,(ints)i);  }
     charstr(uints i)               { append_num(10,(uints)i); }
@@ -173,7 +173,7 @@ public:
 #elif defined(SYSTYPE_32)
     charstr(long i)                { append_num(10,(ints)i);  }
     charstr(ulong i)               { append_num(10,(uints)i); }
-#endif //SYSTYPE_MSVC
+#endif //SYSTYPE_WIN
 
     charstr(double d)              { operator += (d); }
 
@@ -367,7 +367,7 @@ public:
     charstr& operator = (int64 i)               { reset(); append_num(10,i);       return *this; }
     charstr& operator = (uint64 i)              { reset(); append_num(10,i);       return *this; }
 
-#ifdef SYSTYPE_MSVC
+#ifdef SYSTYPE_WIN
 # ifdef SYSTYPE_32
     charstr& operator = (ints i)                { reset(); append_num(10,(ints)i);  return *this; }
     charstr& operator = (uints i)               { reset(); append_num(10,(uints)i); return *this; }
@@ -378,7 +378,7 @@ public:
 #elif defined(SYSTYPE_32)
     charstr& operator = (long i)                { reset(); append_num(10,(ints)i);  return *this; }
     charstr& operator = (ulong i)               { reset(); append_num(10,(uints)i); return *this; }
-#endif //SYSTYPE_MSVC
+#endif //SYSTYPE_WIN
 
     charstr& operator = (double d)              { reset(); return operator += (d); }
 
@@ -392,7 +392,8 @@ public:
     ///Formatted numbers - floats
     template<int WIDTH, int ALIGN>
     charstr& operator = (const float_fmt<WIDTH,ALIGN>& v) {
-        token tok = charstrconv::append(get_buf(WIDTH), WIDTH, v.value, v.nfrac, WIDTH, (EAlignNum)ALIGN);
+		char* buf = get_buf(WIDTH);
+        token tok = charstrconv::append_fixed(buf, buf+WIDTH, v.value, v.nfrac, (EAlignNum)ALIGN);
         return *this;
     }
 
@@ -452,7 +453,7 @@ public:
     charstr& operator += (int64 i)              { append_num(10,i);       return *this; }
     charstr& operator += (uint64 i)             { append_num(10,i);       return *this; }
 
-#ifdef SYSTYPE_MSVC
+#ifdef SYSTYPE_WIN
 # ifdef SYSTYPE_32
     charstr& operator += (ints i)               { append_num(10,(ints)i);  return *this; }
     charstr& operator += (uints i)              { append_num(10,(uints)i); return *this; }
@@ -463,7 +464,7 @@ public:
 #elif defined(SYSTYPE_32)
     charstr& operator += (long i)               { append_num(10,(ints)i);  return *this; }
     charstr& operator += (ulong i)              { append_num(10,(uints)i); return *this; }
-#endif //SYSTYPE_MSVC
+#endif //SYSTYPE_WIN
 
     charstr& operator += (double d)             { append_float(d,3); return *this; }
 
@@ -477,7 +478,8 @@ public:
     ///Formatted numbers - floats
     template<int WIDTH, int ALIGN>
     charstr& operator += (const float_fmt<WIDTH,ALIGN>& v) {
-        token tok = charstrconv::append(get_append_buf(WIDTH), WIDTH, v.value, v.nfrac, WIDTH, (EAlignNum)ALIGN);
+		char* buf = get_append_buf(WIDTH);
+        token tok = charstrconv::append_fixed(buf, buf+WIDTH, v.value, v.nfrac, (EAlignNum)ALIGN);
         return *this;
     }
 
@@ -500,7 +502,7 @@ public:
     charstr& operator << (int64 i)              { append_num(10,i);       return *this; }
     charstr& operator << (uint64 i)             { append_num(10,i);       return *this; }
 
-#ifdef SYSTYPE_MSVC
+#ifdef SYSTYPE_WIN
 # ifdef SYSTYPE_32
     charstr& operator << (ints i)               { append_num(10,(ints)i);  return *this; }
     charstr& operator << (uints i)              { append_num(10,(uints)i); return *this; }
@@ -511,7 +513,7 @@ public:
 #elif defined(SYSTYPE_32)
     charstr& operator << (long i)               { append_num(10,(ints)i);  return *this; }
     charstr& operator << (ulong i)              { append_num(10,(uints)i); return *this; }
-#endif //SYSTYPE_MSVC
+#endif //SYSTYPE_WIN
 
     charstr& operator << (double d)             { return operator += (d); }
 
@@ -525,7 +527,8 @@ public:
     ///Formatted numbers - floats
     template<int WIDTH, int ALIGN>
     charstr& operator << (const float_fmt<WIDTH,ALIGN>& v) {
-        token tok = charstrconv::append(get_append_buf(WIDTH), WIDTH, v.value, v.nfrac, WIDTH, (EAlignNum)ALIGN);
+		char* buf = get_append_buf(WIDTH);
+        token tok = charstrconv::append_fixed(buf, buf+WIDTH, v.value, v.nfrac, (EAlignNum)ALIGN);
         return *this;
     }
 
@@ -833,7 +836,7 @@ public:
     ///Append GMT date string constructed by the flags set
     charstr& append_date_gmt( const timet t, uint flg=UMAX32 )
     {
-#ifdef SYSTYPE_MSVC8plus
+#ifdef SYSTYPE_MSVC
         struct tm tm;
         gmtime_s( &tm, &t.t );
 #else
@@ -845,7 +848,7 @@ public:
 
     charstr& append_date_local( const timet t, uint flg=UMAX32 )
     {
-#ifdef SYSTYPE_MSVC8plus
+#ifdef SYSTYPE_MSVC
         struct tm tm;
         localtime_s( &tm, &t.t );
         char tzbuf[32];
@@ -918,10 +921,12 @@ public:
 				append('Z');
 			} else {
 				int t;
-#ifdef SYSTYPE_MSVC8plus
+#ifdef SYSTYPE_MSVC
                 long tz;
 				_get_timezone(&tz);
 				t = -tz;
+#elif defined(SYSTYPE_MINGW)
+				t = -_timezone;
 #else
 				t = -__timezone;
 #endif
@@ -946,14 +951,14 @@ public:
 	}
 
 
-    ///Append angle value in format +49°42'32.912"
+    ///Append angle value in format +49Â°42'32.912"
     charstr& append_angle( double angle )
     {
         append(angle>=0 ? '+' : '-');
         angle = fabs(angle);
 
         append_num_unsigned(10, int(angle), 0);
-        //append('°');
+        //append('Â°');
         append("\xc2\xb0"); //utf-8 degree sign
 
         angle = (angle - floor(angle)) * 60.0;

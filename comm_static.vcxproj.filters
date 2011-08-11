@@ -394,6 +394,8 @@
     <ClCompile Include="txtconv.cpp">
       <Filter>cxx</Filter>
     </ClCompile>
-    <ClCompile Include="atomic\atomic.cpp" />
+    <ClCompile Include="atomic\atomic.cpp">
+      <Filter>atomic</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -290,7 +290,7 @@ DEF_TYPE(   int64,              T_INT);
 
 DEF_TYPE(   char,               T_CHAR);
 
-#ifdef SYSTYPE_MSVC
+#ifdef SYSTYPE_WIN
 # ifdef SYSTYPE_32
 DEF_TYPE(   uints,              T_UINT);
 DEF_TYPE(   ints,               T_INT);

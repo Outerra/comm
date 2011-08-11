@@ -44,9 +44,12 @@
 #include "binstream.h"
 #include "../str.h"
 
-#ifdef SYSTYPE_MSVC
+#ifdef SYSTYPE_WIN
 # include <io.h>
 # include <share.h>
+# ifdef SYSTYPE_MINGW
+#  include <stdio.h>
+# endif
 #else
 # include <unistd.h>
 #endif
@@ -223,7 +226,7 @@ public:
 
         flg |= O_BINARY;
 
-# ifdef SYSTYPE_MSVC8plus
+# ifdef SYSTYPE_MSVC
         return ::_sopen_s( &_handle, name, flg, sh, af ) ? ersIO_ERROR : opcd(0);
 # else
         _handle = ::_sopen( name, flg, sh, af );
