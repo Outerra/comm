@@ -83,7 +83,7 @@ inline double frexp10(double x, int *exp10)
 ////////////////////////////////////////////////////////////////////////////////
 inline float approx_fast_sqrt(float fx)
 {
-#ifdef SYSTYPE_32
+#if defined(SYSTYPE_32) && defined(SYSTYPE_MSVC)
       float fret;
       __asm {
 

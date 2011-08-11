@@ -129,7 +129,7 @@ public:
     ~chunkpage()
     {
         if(_mem)
-            ::free(_mem);
+            ::dlfree(_mem);
     }
 
     static chunkpage* create( uints itemsize )
@@ -142,12 +142,12 @@ public:
     opcd init( uints pagesize, uints itemsize = sizeof(T) )
     {
         if( _mem && _pagesize != pagesize ) {
-            ::free(_mem);
+            ::dlfree(_mem);
             _mem = 0;
         }
 
         if(!_mem)
-            _mem = ::malloc(pagesize);
+            _mem = ::dlmalloc(pagesize);
         if(!_mem)
             return ersNOT_ENOUGH_MEM;
 

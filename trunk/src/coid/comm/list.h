@@ -166,10 +166,10 @@ public:
 	~list() {}
 
 	///
-	void push_front(const T &item) { insert(_tail,item); }
+	void push_front(const T &item) { insert(this->_tail,item); }
 
 	///
-	void push_front_take(const T &item) { insert_take(_tail,item); }
+	void push_front_take(const T &item) { insert_take(this->_tail,item); }
 
 	///
 	void push_back(const T &item) { insert(&_node,item); }

@@ -14,12 +14,12 @@ struct queue_helper_trait {
 };
 
 template<class K>
-struct queue_helper_trait<ref<K>> {
+struct queue_helper_trait<ref<K> > {
     static void take(ref<K>& dst,ref<K>& src) { dst.takeover(src); }
 };
 
 template<class K>
-struct queue_helper_trait<iref<K>> {
+struct queue_helper_trait<iref<K> > {
     static void take(iref<K>& dst,iref<K>& src) { dst.takeover(src); }
 };
 
@@ -29,7 +29,7 @@ struct queue_helper_trait<coid::charstr> {
 };
 
 template<class K>
-struct queue_helper_trait<coid::dynarray<K>> {
+struct queue_helper_trait<coid::dynarray<K> > {
     static void take(coid::dynarray<K>& dst,coid::dynarray<K>& src) { dst.takeover(src); }
 };
 

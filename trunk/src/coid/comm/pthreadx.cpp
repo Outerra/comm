@@ -34,7 +34,7 @@ thread::thread( thread_t t )
 ////////////////////////////////////////////////////////////////////////////////
 bool thread::operator == (thread_t t) const
 {
-#ifdef SYSTYPE_MSVC
+#ifdef SYSTYPE_WIN
     return _thread == t;
 #else
     return pthread_equal( t, _thread ) != 0;
@@ -44,7 +44,7 @@ bool thread::operator == (thread_t t) const
 ////////////////////////////////////////////////////////////////////////////////
 thread thread::self()
 {
-#ifdef SYSTYPE_MSVC
+#ifdef SYSTYPE_WIN
     return GetCurrentThreadId();
 #else
     return pthread_self();
@@ -54,7 +54,7 @@ thread thread::self()
 ////////////////////////////////////////////////////////////////////////////////
 thread_t thread::invalid()
 {
-#ifdef SYSTYPE_MSVC
+#ifdef SYSTYPE_WIN
     return UMAX32;
 #else
     return 0;
@@ -64,7 +64,7 @@ thread_t thread::invalid()
 ////////////////////////////////////////////////////////////////////////////////
 bool thread::is_invalid() const
 {
-#ifdef SYSTYPE_MSVC
+#ifdef SYSTYPE_WIN
     return _thread == UMAXS;
 #else
     return _thread == 0;
@@ -74,7 +74,7 @@ bool thread::is_invalid() const
 ////////////////////////////////////////////////////////////////////////////////
 void thread::_end( uint v )
 {
-#ifdef SYSTYPE_MSVC
+#ifdef SYSTYPE_WIN
     _endthreadex(v);
 #else
     pthread_exit((void*)v);
@@ -174,7 +174,7 @@ thread thread_manager::thread_start( thread_manager::info* ti )
 {
     thread_t tid;
 
-#ifdef SYSTYPE_MSVC
+#ifdef SYSTYPE_WIN
     ti->handle = (void*) CreateThread( 0, 0, (LPTHREAD_START_ROUTINE)thread_manager::def_thread, ti, 0, (ulong*)&tid );
 #else
     pthread_create( &tid, 0, thread_manager::def_thread, ti );
@@ -198,7 +198,7 @@ typedef struct tagTHREADNAME_INFO
 //! Usage: set_thread_name (-1, "MainThread");
 static void set_thread_name(const uint dwThreadID, const char * const szThreadName)
 {
-#ifdef SYSTYPE_WIN
+#ifdef SYSTYPE_MSVC
 	THREADNAME_INFO info = {0x1000, szThreadName, dwThreadID, 0};
 
 	__try {

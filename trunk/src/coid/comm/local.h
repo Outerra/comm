@@ -49,10 +49,8 @@ COID_NAMESPACE_BEGIN
 
 ////////////////////////////////////////////////////////////////////////////////
 //Forward declarations
-#ifndef SYSTYPE_MSVC6
 template<class T> class str_ptr;
 template<class T> binstream& operator << (binstream&, const str_ptr<T>& );
-#endif //SYSTYPE_MSVC
 
 ///Template class for streaming of objects pointed to by pointers
 template <class T>
@@ -87,7 +85,7 @@ public:
         return *this;
     }
 
-#ifdef SYSTYPE_MSVC8plus
+#ifdef SYSTYPE_MSVC
     template< typename T >
     friend binstream& operator << (binstream &out, const str_ptr<T> &obj);
 #else
@@ -106,11 +104,9 @@ binstream& operator << (binstream &out, const str_ptr<T> &obj)
 
 ////////////////////////////////////////////////////////////////////////////////
 //Forward declarations
-#ifndef SYSTYPE_MSVC6
 template<class T> class local;
 template<class T> binstream& operator << (binstream&, const local<T>& );
 template<class T> binstream& operator >> (binstream&, local<T>& );
-#endif //SYSTYPE_MSVC
 
 ///Template making pointers to any class behave like local objects, that is to be automatically destructed when the maintainer (class or method) is destructed/exited
 template <class T>
@@ -163,7 +159,7 @@ public:
 
     T*& get_ptr () const        { return (T*)_p; }
 
-#ifdef SYSTYPE_MSVC8plus
+#ifdef SYSTYPE_MSVC
     template< typename T >
     friend binstream& operator << (binstream &out, const local<T> &loca);
     template< typename T >
@@ -247,8 +243,8 @@ public:
 
     struct alloc_malloc
     {
-        static T* alloc( T** pp, uints n )   { return (*pp = (T*)::malloc( n * sizeof(T) )); }
-        static void free( T** pp )          { if(*pp) ::free(*pp);  *pp = 0; }
+        static T* alloc( T** pp, uints n )   { return (*pp = (T*)::dlmalloc( n * sizeof(T) )); }
+        static void free( T** pp )          { if(*pp) ::dlfree(*pp);  *pp = 0; }
     };
 
     struct alloc_null

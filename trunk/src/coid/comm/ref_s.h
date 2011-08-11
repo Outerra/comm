@@ -54,7 +54,7 @@ template<class T>
 class ref 
 {
 public:
-	friend atomic::queue_ng<T>;
+	friend class atomic::queue_ng<T>;
 
 public:
 	typedef ref<T> ref_t;
@@ -89,7 +89,7 @@ public:
 
 	// special constructor from default policy
 	explicit ref( const create_me& ) {
-		policy_trait<T>::policy *p=policy_trait<T>::policy::create();
+		typename policy_trait<T>::policy *p=policy_trait<T>::policy::create();
 		_p=p;
 		_p->add_ref_copy();
 		_o=p->get();
@@ -139,7 +139,7 @@ public:
 
 	void create() {
 		release();
-		policy_trait<T>::policy *p = policy_trait<T>::policy::create();
+		typename policy_trait<T>::policy *p = policy_trait<T>::policy::create();
 		_p=p;
 		_p->add_ref_copy();
 		_o=p->get();

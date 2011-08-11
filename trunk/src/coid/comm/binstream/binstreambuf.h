@@ -348,7 +348,7 @@ public:
 
     bool set_read_pos( uint64 pos ) 
     {
-        DASSERT(pos<=UINT_MAX);
+        DASSERT(pos<=UMAX64);
 
         if( pos<_buf.size() ) {
             _bgi=(uints)pos;
@@ -493,7 +493,7 @@ public:
 
     bool set_read_pos( uint64 pos ) 
     {
-        DASSERT(pos<=UINT_MAX);
+        DASSERT(pos<=UMAX64);
 
         if( pos<_len ) {
             _source=_base+(uints)pos;

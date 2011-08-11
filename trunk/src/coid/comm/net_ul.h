@@ -51,7 +51,7 @@
 
 COID_NAMESPACE_BEGIN
 
-#ifdef SYSTYPE_MSVC
+#ifdef SYSTYPE_WIN
 #   define HAVE_STRUCT_TIMESPEC 1
     struct timespec {
         int tv_sec;
@@ -206,7 +206,7 @@ inline float sysEndianBigFloat(float x) {
 ////////////////////////////////////////////////////////////////////////////////
 class sysDynamicLibrary
 {
-#ifdef SYSTYPE_MSVC
+#ifdef SYSTYPE_WIN
     ints handle;
 #else
     void *handle ;

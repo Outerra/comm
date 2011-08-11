@@ -40,7 +40,16 @@
 
 #include "namespace.h"
 
-#if defined(__CYGWIN__)
+#if defined(__MINGW32__)
+
+# define SYSTYPE_WIN        1
+# define SYSTYPE_MINGW      1
+
+# if !defined(NDEBUG) && !defined(_DEBUG)
+#  define _DEBUG
+# endif
+
+#elif defined(__CYGWIN__)
 
 # define SYSTYPE_WIN        1
 # define SYSTYPE_CYGWIN     1
@@ -53,26 +62,6 @@
 
 # define SYSTYPE_WIN        1
 # define SYSTYPE_MSVC       1
-
-# if _MSC_VER >= 1400
-#  define SYSTYPE_MSVC8plus
-# endif
-# if _MSC_VER >= 1300
-#  define SYSTYPE_MSVC7plus
-# endif
-# if _MSC_VER >= 1200
-#  define SYSTYPE_MSVC6plus
-# endif
-
-# if _MSC_VER < 1200
-#  error unsupported compiler
-# elif _MSC_VER < 1300
-#  define SYSTYPE_MSVC6
-# elif _MSC_VER < 1400
-#  define SYSTYPE_MSVC7
-# else
-#  define SYSTYPE_MSVC8
-# endif
 
 # if !defined(_DEBUG) && !defined(NDEBUG)
 #  define NDEBUG
@@ -89,7 +78,7 @@
 #endif
 
 
-#ifdef SYSTYPE_MSVC
+#ifdef SYSTYPE_WIN
 # if defined(_WIN64)
 #  define SYSTYPE_64
 # else
@@ -115,7 +104,7 @@ inline void operator delete (void *, const void *) {}
 
 namespace coid {
 
-#ifdef SYSTYPE_MSVC
+#ifdef SYSTYPE_WIN
 typedef short               __int16_t;
 typedef long                __int32_t;
 typedef __int64             __int64_t;
@@ -195,7 +184,7 @@ TYPE_TRIVIAL(uint64);
 
 TYPE_TRIVIAL(char);
 
-#ifdef SYSTYPE_MSVC
+#ifdef SYSTYPE_WIN
 # ifdef SYSTYPE_32
 TYPE_TRIVIAL(ints);
 TYPE_TRIVIAL(uints);
@@ -235,7 +224,7 @@ SIGNEDNESS_MACRO(uint32,int32,uint32,0);
 SIGNEDNESS_MACRO(int64,int64,uint64,1);
 SIGNEDNESS_MACRO(uint64,int64,uint64,0);
 
-#ifdef SYSTYPE_MSVC
+#ifdef SYSTYPE_WIN
 # ifdef SYSTYPE_32
 SIGNEDNESS_MACRO(ints,ints,uints,1);
 SIGNEDNESS_MACRO(uints,ints,uints,0);

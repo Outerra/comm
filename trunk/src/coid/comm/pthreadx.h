@@ -52,7 +52,7 @@ COID_NAMESPACE_BEGIN
 
 
 ////////////////////////////////////////////////////////////////////////////////
-#ifdef SYSTYPE_MSVC
+#ifdef SYSTYPE_WIN
     typedef uint                thread_t;
 #else
     typedef pthread_t           thread_t;

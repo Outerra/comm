@@ -289,7 +289,7 @@ public:
     const T* ptr() const        { return _ptr; }
     const T* ptre() const       { return _ptr + _count(); }
 
-#ifdef SYSTYPE_MSVC8plus
+#ifdef SYSTYPE_MSVC
     template< typename T, typename C, typename A >
     friend binstream& operator << (binstream &out, const dynarray<T,C,A> &dyna);
     template< typename T, typename C, typename A >

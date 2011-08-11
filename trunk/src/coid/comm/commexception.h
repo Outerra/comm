@@ -69,7 +69,7 @@ struct exception
     exception& operator << (int64 i)            { _dtext.append_num(10,i);       return *this; }
     exception& operator << (uint64 i)           { _dtext.append_num(10,i);       return *this; }
 
-#ifdef SYSTYPE_MSVC
+#ifdef SYSTYPE_WIN
 # ifdef SYSTYPE_32
     exception& operator << (ints i)             { _dtext.append_num(10,(ints)i);  return *this; }
     exception& operator << (uints i)            { _dtext.append_num(10,(uints)i); return *this; }
@@ -80,7 +80,7 @@ struct exception
 #elif defined(SYSTYPE_32)
     exception& operator << (long i)             { _dtext.append_num(10,(ints)i);  return *this; }
     exception& operator << (ulong i)            { _dtext.append_num(10,(uints)i); return *this; }
-#endif //SYSTYPE_MSVC
+#endif //SYSTYPE_WIN
 
     exception& operator << (double d)           { _dtext += (d); return *this; }
 

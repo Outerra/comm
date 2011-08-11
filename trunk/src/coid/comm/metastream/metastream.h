@@ -519,7 +519,7 @@ public:
 
     metastream& operator << (const char&a)      {meta_primitive( "char", get_type(a) ); return *this;}
 
-#ifdef SYSTYPE_MSVC
+#ifdef SYSTYPE_WIN
 # ifdef SYSTYPE_32
     metastream& operator << (const ints&a)      {meta_primitive( "int", get_type(a) ); return *this;}
     metastream& operator << (const uints&a)     {meta_primitive( "uint", get_type(a) ); return *this;}

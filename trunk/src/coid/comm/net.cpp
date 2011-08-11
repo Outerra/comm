@@ -39,7 +39,7 @@
 
 
 ////////////////////////////////////////////////////////////////////////////////
-#ifdef SYSTYPE_MSVC
+#ifdef SYSTYPE_WIN
 
 #ifndef INCL_WINSOCK_API_PROTOTYPES
 #define INCL_WINSOCK_API_PROTOTYPES
@@ -91,7 +91,7 @@
 #endif
 
 
-#if defined(SYSTYPE_MSVC) && !defined(socklen_t)
+#if defined(SYSTYPE_WIN) && !defined(socklen_t)
 #define socklen_t int
 #endif
 
@@ -107,7 +107,7 @@ void sysSleep( int seconds )
 {
     if ( seconds >= 0 )
     {
-#ifdef SYSTYPE_MSVC
+#ifdef SYSTYPE_WIN
         Sleep( 1000 * seconds ) ;
         //SleepEx( 1000 * seconds, true ) ;
 #else
@@ -125,7 +125,7 @@ void sysMilliSecondSleep( int milliseconds )
 {
     if ( milliseconds >= 0 )
     {
-#ifdef SYSTYPE_MSVC
+#ifdef SYSTYPE_WIN
         Sleep( milliseconds ) ;
         //SleepEx( milliseconds, true ) ;
 #else
@@ -157,7 +157,7 @@ sysDynamicLibrary::sysDynamicLibrary( const char* libname )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-#ifdef SYSTYPE_MSVC 
+#ifdef SYSTYPE_WIN
 
 bool sysDynamicLibrary::open( const char* libname )
 {
@@ -525,7 +525,7 @@ void netSocket::setBlocking( bool blocking )
 {
     RASSERTE( handle != UMAXS, ersDISCONNECTED );  //invalid handle
 
-#ifdef SYSTYPE_MSVC
+#ifdef SYSTYPE_WIN
 
     uint32 nblocking = blocking? 0 : 1;
     ::ioctlsocket( handle, FIONBIO, &nblocking );
@@ -699,7 +699,7 @@ void netSocket::close()
 {
     if ( handle != UMAXS )
     {
-#ifdef SYSTYPE_MSVC
+#ifdef SYSTYPE_WIN
         ::closesocket( handle );
 #else
         ::close( handle );
@@ -893,7 +893,7 @@ int netInit( int* argc, char** argv )
 {
     DASSERTX ( sizeof(sockaddr_in) == sizeof(netAddress), "address struct sizes do not match" ) ;
 
-#ifdef SYSTYPE_MSVC
+#ifdef SYSTYPE_WIN
     /* Start up the windows networking */
     WORD version_wanted = MAKEWORD(1,1);
     WSADATA wsaData;

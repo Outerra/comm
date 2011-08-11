@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CodeLite_Project Name="comm_static" InternalType="Library">
+  <Plugins>
+    <Plugin Name="qmake">
+      <![CDATA[00020001N0005Debug0000000000000001N0007Release000000000000]]>
+    </Plugin>
+  </Plugins>
+  <Description/>
+  <Dependencies/>
+  <VirtualDirectory Name="src">
+    <File Name="assert.cpp"/>
+    <File Name="comm.cpp"/>
+    <File Name="dir.cpp"/>
+    <File Name="dirgcc.cpp"/>
+    <File Name="dirwin.cpp"/>
+    <File Name="hptimer.cpp"/>
+    <File Name="hptimeru.cpp"/>
+    <File Name="net.cpp"/>
+    <File Name="pthreadx.cpp"/>
+    <File Name="retcodes.cpp"/>
+    <File Name="singleton.cpp"/>
+    <File Name="str-win.cpp"/>
+    <File Name="substring.cpp"/>
+    <File Name="txtconv.cpp"/>
+  </VirtualDirectory>
+  <VirtualDirectory Name="include">
+    <File Name="comm.h"/>
+    <File Name="commassert.h"/>
+    <File Name="commexception.h"/>
+    <File Name="commtime.h"/>
+    <File Name="commtypes.h"/>
+    <File Name="dir.h"/>
+    <File Name="dynarray.h"/>
+    <File Name="facility.h"/>
+    <File Name="fastdelegate.h"/>
+    <File Name="hptimer.h"/>
+    <File Name="keywordt.h"/>
+    <File Name="lexer.h"/>
+    <File Name="list.h"/>
+    <File Name="local.h"/>
+    <File Name="mathf.h"/>
+    <File Name="mathi.h"/>
+    <File Name="namespace.h"/>
+    <File Name="net.h"/>
+    <File Name="net_ul.h"/>
+    <File Name="parser.h"/>
+    <File Name="password.h"/>
+    <File Name="pthreadx.h"/>
+    <File Name="ptrowner.h"/>
+    <File Name="radix.h"/>
+    <File Name="ref.h"/>
+    <File Name="ref_base.h"/>
+    <File Name="ref_helpers.h"/>
+    <File Name="ref_i.h"/>
+    <File Name="ref_s.h"/>
+    <File Name="refs.h"/>
+    <File Name="regex.h"/>
+    <File Name="retcodes.h"/>
+    <File Name="rnd.h"/>
+    <File Name="roundbuffer.h"/>
+    <File Name="segarray.h"/>
+    <File Name="singleton.h"/>
+    <File Name="str.h"/>
+    <File Name="strgen.h"/>
+    <File Name="substring.h"/>
+    <File Name="token.h"/>
+    <File Name="tokenizer.h"/>
+    <File Name="trait.h"/>
+    <File Name="tutf8.h"/>
+    <File Name="txtconv.h"/>
+    <File Name="version.h"/>
+  </VirtualDirectory>
+  <Settings Type="Static Library">
+    <GlobalSettings>
+      <Compiler Options="" C_Options="">
+        <IncludePath Value="."/>
+      </Compiler>
+      <Linker Options="">
+        <LibraryPath Value="."/>
+      </Linker>
+      <ResourceCompiler Options=""/>
+    </GlobalSettings>
+    <Configuration Name="Debug" CompilerType="gnu g++" DebuggerType="GNU gdb debugger" Type="Static Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
+      <Compiler Options="-g" C_Options="-g" Required="yes" PreCompiledHeader="">
+        <IncludePath Value="."/>
+      </Compiler>
+      <Linker Options="" Required="yes"/>
+      <ResourceCompiler Options="" Required="no"/>
+      <General OutputFile="$(IntermediateDirectory)/lib$(ProjectName).a" IntermediateDirectory="./mingw/Debug" Command="" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes"/>
+      <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;"/>
+      <Debugger IsRemote="no" RemoteHostName="" RemoteHostPort="" DebuggerPath="">
+        <PostConnectCommands/>
+        <StartupCommands/>
+      </Debugger>
+      <PreBuild/>
+      <PostBuild/>
+      <CustomBuild Enabled="no">
+        <RebuildCommand/>
+        <CleanCommand/>
+        <BuildCommand/>
+        <PreprocessFileCommand/>
+        <SingleFileCommand/>
+        <MakefileGenerationCommand/>
+        <ThirdPartyToolName/>
+        <WorkingDirectory/>
+      </CustomBuild>
+      <AdditionalRules>
+        <CustomPostBuild/>
+        <CustomPreBuild/>
+      </AdditionalRules>
+    </Configuration>
+    <Configuration Name="Release" CompilerType="gnu g++" DebuggerType="GNU gdb debugger" Type="Static Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
+      <Compiler Options="" C_Options="" Required="yes" PreCompiledHeader="">
+        <IncludePath Value="."/>
+      </Compiler>
+      <Linker Options="" Required="yes"/>
+      <ResourceCompiler Options="" Required="no"/>
+      <General OutputFile="$(IntermediateDirectory)/lib$(ProjectName).a" IntermediateDirectory="./mingw/Release" Command="" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes"/>
+      <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;"/>
+      <Debugger IsRemote="no" RemoteHostName="" RemoteHostPort="" DebuggerPath="">
+        <PostConnectCommands/>
+        <StartupCommands/>
+      </Debugger>
+      <PreBuild/>
+      <PostBuild/>
+      <CustomBuild Enabled="no">
+        <RebuildCommand/>
+        <CleanCommand/>
+        <BuildCommand/>
+        <PreprocessFileCommand/>
+        <SingleFileCommand/>
+        <MakefileGenerationCommand/>
+        <ThirdPartyToolName/>
+        <WorkingDirectory/>
+      </CustomBuild>
+      <AdditionalRules>
+        <CustomPostBuild/>
+        <CustomPreBuild/>
+      </AdditionalRules>
+    </Configuration>
+  </Settings>
+  <VirtualDirectory Name="alloc">
+    <File Name="alloc/alloc.cpp"/>
+    <File Name="alloc/alloc.h"/>
+    <File Name="alloc/allocrp.h"/>
+    <File Name="alloc/chunkalloc.h"/>
+    <File Name="alloc/chunkblock.h"/>
+    <File Name="alloc/chunkpage.h"/>
+    <File Name="alloc/chunkpool.h"/>
+    <File Name="alloc/commalloc.h"/>
+    <File Name="alloc/memtrack.cpp"/>
+    <File Name="alloc/memtrack.h"/>
+    <File Name="alloc/sseg.cpp"/>
+    <File Name="alloc/sseg.h"/>
+    <File Name="alloc/_malloc.c"/>
+    <File Name="alloc/_malloc.h"/>
+  </VirtualDirectory>
+  <VirtualDirectory Name="atomic">
+    <File Name="atomic/atomic.cpp"/>
+    <File Name="atomic/atomic.h"/>
+    <File Name="atomic/basic_pool.h"/>
+    <File Name="atomic/pool.h"/>
+    <File Name="atomic/pool_base.h"/>
+    <File Name="atomic/queue.h"/>
+    <File Name="atomic/queue_base.h"/>
+    <File Name="atomic/stack.h"/>
+    <File Name="atomic/stack_base.h"/>
+  </VirtualDirectory>
+  <VirtualDirectory Name="binstream">
+    <File Name="binstream/binstream.h"/>
+    <File Name="binstream/binstreambuf.h"/>
+    <File Name="binstream/binstreamsegbuf.h"/>
+    <File Name="binstream/bstype.h"/>
+    <File Name="binstream/cachestream.h"/>
+    <File Name="binstream/circularstreambuf.h"/>
+    <File Name="binstream/container.h"/>
+    <File Name="binstream/container_linear.h"/>
+    <File Name="binstream/enc_base64stream.h"/>
+    <File Name="binstream/enc_hexstream.h"/>
+    <File Name="binstream/exestream.h"/>
+    <File Name="binstream/filestream.h"/>
+    <File Name="binstream/filestreamgz.h"/>
+    <File Name="binstream/forkstream.h"/>
+    <File Name="binstream/httpstream.h"/>
+    <File Name="binstream/httpstreamcoid.h"/>
+    <File Name="binstream/httpstreamtunnel.h"/>
+    <File Name="binstream/inoutstream.h"/>
+    <File Name="binstream/netstream.h"/>
+    <File Name="binstream/netstreamcoid.h"/>
+    <File Name="binstream/netstreamhttp.h"/>
+    <File Name="binstream/netstreamtcp.h"/>
+    <File Name="binstream/netstreamudp.h"/>
+    <File Name="binstream/netstreamudpbuf.h"/>
+    <File Name="binstream/nullstream.h"/>
+    <File Name="binstream/packstream.h"/>
+    <File Name="binstream/packstreambzip2.h"/>
+    <File Name="binstream/packstreamlzo.h"/>
+    <File Name="binstream/packstreamzip.h"/>
+    <File Name="binstream/stdstream.h"/>
+    <File Name="binstream/stlstream.h"/>
+    <File Name="binstream/textstream.h"/>
+    <File Name="binstream/txtcachestream.h"/>
+    <File Name="binstream/txtstream.h"/>
+    <File Name="binstream/txtstreamhtml.h"/>
+  </VirtualDirectory>
+  <VirtualDirectory Name="coder">
+    <File Name="coder/rlr.h"/>
+  </VirtualDirectory>
+  <VirtualDirectory Name="crypt">
+    <File Name="crypt/sha1.cpp"/>
+    <File Name="crypt/sha1.h"/>
+  </VirtualDirectory>
+  <VirtualDirectory Name="hash">
+    <File Name="hash/hashfunc.h"/>
+    <File Name="hash/hashkeyset.h"/>
+    <File Name="hash/hashmap.h"/>
+    <File Name="hash/hashset.h"/>
+    <File Name="hash/hashtable.h"/>
+  </VirtualDirectory>
+  <VirtualDirectory Name="log">
+    <File Name="log/logger.cpp"/>
+    <File Name="log/logger.h"/>
+    <File Name="log/logwriter.h"/>
+    <File Name="log/policy_log.cpp"/>
+    <File Name="log/policy_log.h"/>
+  </VirtualDirectory>
+  <VirtualDirectory Name="metastream">
+    <File Name="metastream/fmtstream.h"/>
+    <File Name="metastream/fmtstreamcxx.h"/>
+    <File Name="metastream/fmtstreamjson.h"/>
+    <File Name="metastream/fmtstreamxml.h"/>
+    <File Name="metastream/fmtstreamxml2.h"/>
+    <File Name="metastream/fmtstream_lexer.h"/>
+    <File Name="metastream/metagen.h"/>
+    <File Name="metastream/metastream.cpp"/>
+    <File Name="metastream/metastream.h"/>
+    <File Name="metastream/metavar.h"/>
+  </VirtualDirectory>
+  <VirtualDirectory Name="regex">
+    <File Name="regex/regcomp.cpp"/>
+    <File Name="regex/regcomp.h"/>
+    <File Name="regex/regexec.cpp"/>
+  </VirtualDirectory>
+  <VirtualDirectory Name="sync">
+    <File Name="sync/guard.h"/>
+    <File Name="sync/mutex.cpp"/>
+    <File Name="sync/mutex.h"/>
+    <File Name="sync/mutex_reg.h"/>
+    <File Name="sync/rw_mutex.h"/>
+    <File Name="sync/rw_mx_core.cpp"/>
+    <File Name="sync/rw_mx_core.h"/>
+    <File Name="sync/rw_mx_core_pthread.cpp"/>
+    <File Name="sync/thread_mgr.h"/>
+    <File Name="sync/_mutex.cpp"/>
+    <File Name="sync/_mutex.h"/>
+  </VirtualDirectory>
+</CodeLite_Project>

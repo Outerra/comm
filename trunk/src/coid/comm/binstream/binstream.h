@@ -179,7 +179,7 @@ public:
 
     binstream& operator << (char x)             { return xwrite(&x, bstype::t_type<char>() ); }
 
-#ifdef SYSTYPE_MSVC
+#ifdef SYSTYPE_WIN
 # ifdef SYSTYPE_32
     binstream& operator << (ints x )            { return xwrite(&x, bstype::t_type<int>() ); }
     binstream& operator << (uints x )           { return xwrite(&x, bstype::t_type<uint>() ); }
@@ -273,7 +273,7 @@ public:
 
     binstream& operator >> (char& x )           { return xread(&x, bstype::t_type<char>() ); }
 
-#ifdef SYSTYPE_MSVC
+#ifdef SYSTYPE_WIN
 # ifdef SYSTYPE_32
     binstream& operator >> (ints& x )           { return xread(&x, bstype::t_type<int>() ); }
     binstream& operator >> (uints& x )          { return xread(&x, bstype::t_type<uint>() ); }

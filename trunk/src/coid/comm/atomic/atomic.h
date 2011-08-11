@@ -39,7 +39,7 @@
 #include "../commtypes.h"
 #include "../commassert.h"
 
-#if defined(WIN32)
+#if defined(SYSTYPE_MSVC)
 	#include <intrin.h>
 	#pragma intrinsic(_InterlockedIncrement)
 	#pragma intrinsic(_InterlockedDecrement)
