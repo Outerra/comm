@@ -32,7 +32,7 @@ public:
 
 	    node() : _next(0),_prev(0) {}
 
-	    node(bool) { _next=_prev=this; }
+	    node(bool) { _next=_prev=this; memset(&_item,0xff,sizeof(_item)); }
 
         void operator = (const node &n) {
 			DASSERT(false);
@@ -133,6 +133,19 @@ protected:
 		return nn;
 	}
 
+	node* new_node_take(node *itpos,T &item)
+	{
+		node *nn=_npool.pop_new();
+
+		nn->_next=itpos;
+		nn->_prev=itpos->_prev;
+		
+		new (nn->_item) T();
+        coid::queue_helper_trait<T>::take(nn->item(),item);
+
+		return nn;
+	}
+
 	void delete_node(node *n)
 	{
 		n->item().~T();
@@ -143,18 +156,14 @@ protected:
 	void insert(node* itpos,const T &item)
 	{
 		node * const nn=new_node(itpos,item);
-
 		nn->_prev->_next=itpos->_prev=nn;
 	}
 
 	///
 	void insert_take(node* itpos,T &item)
 	{
-		node * const nn=new_node(itpos,item);
-		
+		node * const nn=new_node_take(itpos,item);
 		nn->_prev->_next=itpos->_prev=nn;
-
-        coid::queue_helper_trait<T>::take(nn->item(),item);
 	}
 
 public:
@@ -166,10 +175,10 @@ public:
 	~list() {}
 
 	///
-	void push_front(const T &item) { insert(this->_tail,item); }
+	void push_front(const T &item) { insert(_node._next,item); }
 
 	///
-	void push_front_take(const T &item) { insert_take(this->_tail,item); }
+	void push_front_take(T &item) { insert_take(_node._next,item); }
 
 	///
 	void push_back(const T &item) { insert(&_node,item); }
