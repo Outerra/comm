@@ -45,6 +45,12 @@
 # define SYSTYPE_WIN        1
 # define SYSTYPE_MINGW      1
 
+# ifndef __MSVCRT_VERSION__
+#  define __MSVCRT_VERSION__ 0x0800
+# elif __MSVCRT_VERSION__<0x0800
+#  error comm needs 0x0800 version of msvcrt
+# endif
+
 # if !defined(NDEBUG) && !defined(_DEBUG)
 #  define _DEBUG
 # endif

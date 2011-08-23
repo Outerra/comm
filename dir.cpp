@@ -42,6 +42,54 @@ COID_NAMESPACE_BEGIN
 
 
 ////////////////////////////////////////////////////////////////////////////////
+
+bool directory::stat( const char* name, xstat* dst )
+{
+    return 0 == ::_stat64( name, dst );
+}
+
+bool directory::stat( const charstr& name, xstat* dst )
+{
+    return 0 == ::_stat64( name.c_str(), dst );
+}
+
+bool directory::is_valid( const char* dir )
+{
+    xstat st;
+    return _stat64(dir, &st)==0;
+}
+
+bool directory::is_valid_directory( const char* arg )
+{
+    xstat st;
+    return _stat64(arg, &st)==0  &&  is_directory(st.st_mode);
+}
+
+bool directory::is_valid_file( const char* arg )
+{
+    xstat st;
+    return _stat64(arg, &st)==0  &&  is_regular(st.st_mode);
+}
+
+uint64 directory::file_size( const charstr& file )
+{
+    xstat st;
+    if(_stat64(file.c_str(), &st)==0  &&  is_regular(st.st_mode))
+        return st.st_size;
+
+    return 0;
+}
+
+uint64 directory::file_size( const char* file )
+{
+    xstat st;
+    if(_stat64(file, &st)==0  &&  is_regular(st.st_mode))
+        return st.st_size;
+
+    return 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 bool directory::append_path( charstr& dst, token path )
 {
 #ifdef SYSTYPE_WIN

@@ -417,6 +417,7 @@
     <ClCompile Include="singleton.cpp" />
     <ClCompile Include="str-win.cpp" />
     <ClCompile Include="substring.cpp" />
+    <ClCompile Include="sync\thread_mgr.cpp" />
     <ClCompile Include="sync\_mutex.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>

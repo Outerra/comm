@@ -72,7 +72,11 @@ struct timet
     ///Set to current time
     timet& set_now()
     {
+#ifdef SYSTYPE_WIN
+        t = ::_time64(0);
+#else
         t = (int64) ::time(0);
+#endif
         return *this;
     }
 
