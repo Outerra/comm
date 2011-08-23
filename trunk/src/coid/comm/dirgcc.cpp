@@ -79,7 +79,7 @@ opcd directory::open( const token& path, const token& filter )
     _curpath << '/';
     _baselen = _curpath.len();
     
-    stat( _curpath.ptr(), &_st );
+    stat64(_curpath.ptr(), &_st);
 
     _pattern = filter ? filter : token("*");
     return 0;
@@ -176,17 +176,17 @@ int directory::chdir( const char* name )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-const struct stat* directory::next()
+const directory::xstat* directory::next()
 {
     dirent* dire = readdir(_dir);
     if(!dire)
         return 0;
 
-    if( 0 == fnmatch( _pattern.ptr(), dire->d_name, 0 ) )
+    if( 0 == fnmatch(_pattern.ptr(), dire->d_name, 0) )
     {
         _curpath.resize( _baselen );
         _curpath << dire->d_name;
-        if( stat( _curpath.ptr(), &_st ) )
+        if(stat64(_curpath.ptr(), &_st) == 0)
             return &_st;
     }
 

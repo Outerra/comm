@@ -57,6 +57,14 @@ class directory
 {
 public:
 
+#ifdef SYSTYPE_MINGW
+    typedef struct __stat64 xstat;
+#elif defined(SYSTYPE_MSVC)
+	typedef struct _stat64 xstat;
+#else
+    typedef struct stat64 xstat;
+#endif
+
     ~directory();
     directory();
 
@@ -105,11 +113,7 @@ public:
     bool is_entry_regular() const;
 
     static bool is_valid( const charstr& dir )              { return is_valid( dir.c_str() ); }
-    static bool is_valid( const char* dir )
-    {
-        struct stat st;
-        return stat( dir, &st );
-    }
+    static bool is_valid( const char* dir );
 
     //@return true if path is a directory, handles trailing path delimiter
     static bool is_valid_directory( const token& arg ) {
@@ -122,24 +126,16 @@ public:
     static bool is_valid_directory( const charstr& arg )    { return is_valid_directory( arg.c_str() ); }
     
     //@return true if path is a directory (must not end with slash/backslash)
-    static bool is_valid_directory( const char* arg )
-    {
-        struct stat st;
-        return stat( arg, &st )  &&  is_directory(st.st_mode);
-    }
+    static bool is_valid_directory( const char* arg );
 
     static bool is_valid_file( const charstr& arg )         { return is_valid_file( arg.c_str() ); }
-    static bool is_valid_file( const char* arg )
-    {
-        struct stat st;
-        return stat( arg, &st )  &&  is_regular(st.st_mode);
-    }
+    static bool is_valid_file( const char* arg );
 
     static bool is_directory( ushort mode );
     static bool is_regular( ushort mode );
 
-    static bool stat( const char* name, struct stat* dst )  { return 0 == ::stat( name, dst ); }
-    static bool stat( const charstr& name, struct stat* dst )   { return 0 == ::stat( name.c_str(), dst ); }
+    static bool stat( const char* name, xstat* dst );
+    static bool stat( const charstr& name, xstat* dst );
     
     static opcd mkdir( const char* name, uint mode=0750 );
     static opcd mkdir( const charstr& name, uint mode=0750 ){ return mkdir( name.c_str(), mode ); }
@@ -181,27 +177,13 @@ public:
     static charstr& get_program_path( charstr& buf );
 
     uint64 file_size() const                    { return _st.st_size; }
-    static uint64 file_size( const charstr& file )
-    {
-        struct stat st;
-        if(stat(file.c_str(), &st)  &&  is_regular(st.st_mode))
-            return st.st_size;
-
-        return 0;
-    }
-    static uint64 file_size( const char* file )
-    {
-        struct stat st;
-        if(stat(file, &st)  &&  is_regular(st.st_mode))
-            return st.st_size;
-
-        return 0;
-    }
+    static uint64 file_size( const charstr& file );
+    static uint64 file_size( const char* file );
 
     ///Get next entry in the directory
-	const struct stat* next();
+	const xstat* next();
 
-    const struct stat* get_stat() const         { return &_st; }
+    const xstat* get_stat() const               { return &_st; }
 
     ///After a successful call to next(), this function returns full path to the file
     const charstr& get_last_full_path() const   { return _curpath; }
@@ -213,7 +195,7 @@ public:
 private:
     charstr     _curpath;
     uint        _baselen;
-    struct stat _st;
+    xstat 		_st;
     charstr     _pattern;
 
 #ifdef SYSTYPE_MSVC

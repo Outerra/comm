@@ -838,9 +838,9 @@ public:
     {
 #ifdef SYSTYPE_MSVC
         struct tm tm;
-        gmtime_s( &tm, &t.t );
+        _gmtime64_s( &tm, &t.t );
 #else
-	time_t tv = (time_t)t.t;
+	    time_t tv = (time_t)t.t;
         struct tm const& tm = *gmtime(&tv);
 #endif
         return append_time( tm, flg, "GMT" );

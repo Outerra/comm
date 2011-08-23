@@ -397,5 +397,8 @@
     <ClCompile Include="atomic\atomic.cpp">
       <Filter>atomic</Filter>
     </ClCompile>
+    <ClCompile Include="sync\thread_mgr.cpp">
+      <Filter>sync</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

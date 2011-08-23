@@ -173,9 +173,9 @@ public:
             return e;
         }
 
-        opcd set_hdr_pos( uints content_len )
+        opcd set_hdr_pos( uint64 content_len )
         {
-            if( content_len == UMAXS ) {
+            if( content_len == UMAX64 ) {
                 _hdrpos = len() + 16;   //skip "Content-Length: "
 
                 return write_token_raw( CLheader() );
@@ -380,7 +380,7 @@ public:
         if( (_flags & fWSTATUS) != 0 )
             return ersUNAVAILABLE;  //another write in progress
 
-        struct stat st;
+        directory::xstat st;
         if( !directory::stat(file,&st) )
             return ersNOT_FOUND;
 
@@ -410,7 +410,7 @@ public:
         static const token fdh = "--";
 
         token fn;
-        uints csize = st.st_size;
+        uint64 csize = st.st_size;
 
         if(formdata) {
             fn = filename ? filename : token(file).cut_right_back("\\/");
@@ -684,7 +684,7 @@ protected:
         return new_read();
     }
 
-    opcd check_write( uints len=UMAXS )
+    opcd check_write( uint64 len=UMAX64 )
     {
         if( (_flags & fWSTATUS) != 0 )
             return 0;
@@ -693,7 +693,7 @@ protected:
     }
 
     ///
-    opcd new_write( uints content_len )
+    opcd new_write( uint64 content_len )
     {
         if( _flags & fWSTATUS )
             return ersUNAVAILABLE;

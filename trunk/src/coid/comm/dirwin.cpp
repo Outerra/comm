@@ -76,7 +76,7 @@ opcd directory::open( const token& path, const token& filter )
     if( _pattern.last_char() == '\\' || _pattern.last_char() == '/' )
         _pattern.resize(-1);
 
-    if( !stat( _pattern.ptr(), &_st ) )
+    if(_stat64(_pattern.ptr(), &_st) != 0)
         return ersFAILED;
 
     _pattern << '\\';
@@ -185,7 +185,7 @@ int directory::chdir( const char* name )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-const struct stat* directory::next()
+const directory::xstat* directory::next()
 {
     _finddata_t dir;
     
@@ -203,7 +203,7 @@ const struct stat* directory::next()
 
     _curpath.resize( _baselen );
     _curpath << dir.name;
-    if( stat( _curpath.ptr(), &_st ) )
+    if(_stat64(_curpath.ptr(), &_st) == 0)
         return &_st;
 
     return next();

@@ -100,6 +100,12 @@ public:
         return pti ? opcd(0) : ersIMPROPER_STATE;
     }
 
+    typedef void (*thread_beginend_callback)();
+
+    ///Set callbacks to be invoked at the beginning and end of each created thread
+    void set_begin_end_callbacks(thread_beginend_callback begin, thread_beginend_callback end);
+
+
     thread thread_create( void* arg, thread::fnc_entry f, void* context=0, const token& name = token::empty() )
     {
         info* i = new info;
@@ -183,6 +189,8 @@ protected:
     thread_key      _pkey;
 
     mutable comm_mutex  _mutex;
+
+    thread_beginend_callback _cbk_begin, _cbk_end;
 
 
     thread thread_start( info* );
