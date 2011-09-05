@@ -154,6 +154,9 @@ public:
     static opcd delete_file( const char* src );
     static opcd delete_file( const charstr& src )           { return delete_file(src.c_str()); }
 
+    ///delete multiple files using a pattern for file
+    static opcd delete_files( token path_and_pattern );
+
     ///copy file to open directory
     opcd copy_file_from( const token& src, const token& name=token::empty() );
 

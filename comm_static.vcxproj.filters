@@ -311,6 +311,9 @@
     <ClInclude Include="binstream\filestreamgz.h">
       <Filter>binstream</Filter>
     </ClInclude>
+    <ClInclude Include="binstream\hash_sha1stream.h">
+      <Filter>binstream</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="crypt\sha1.cpp">
