@@ -276,6 +276,21 @@ opcd directory::delete_file( const char* src )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+opcd directory::delete_files( token path_and_pattern )
+{
+    directory dir;
+    opcd e = dir.open(path_and_pattern);
+    if(e) return e;
+
+    while(dir.next()) {
+        opcd le = delete_file(dir.get_last_full_path());
+        if(le) e = le;
+    }
+
+    return e;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 opcd directory::mkdir_tree( token name, uint mode )
 {
     while( name.last_char() == '/' || name.last_char() == '\\' )

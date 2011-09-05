@@ -232,6 +232,7 @@
     <ClInclude Include="binstream\exestream.h" />
     <ClInclude Include="binstream\filestream.h" />
     <ClInclude Include="binstream\forkstream.h" />
+    <ClInclude Include="binstream\hash_sha1stream.h" />
     <ClInclude Include="binstream\httpstream.h" />
     <ClInclude Include="binstream\httpstreamcoid.h" />
     <ClInclude Include="binstream\httpstreamtunnel.h" />

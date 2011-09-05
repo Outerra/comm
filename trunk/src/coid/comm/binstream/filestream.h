@@ -126,14 +126,14 @@ public:
     virtual void reset_read()
     {
         _rpos = 0;
-        if(_op>0)
+        if(_op>0 && _handle!=-1)
             setpos(_rpos);
     }
 
     virtual void reset_write()
     {
         _wpos = 0;
-        if(_op<0)
+        if(_op<0 && _handle!=-1)
             setpos(_wpos);
     }
 
