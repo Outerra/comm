@@ -831,10 +831,13 @@ public:
         DATE_TZ             = 0x40,
 		DATE_ISO8601        = 0x80,
 		DATE_ISO8601_GMT	= 0x100,
+
+        //default ISO1123 date
+        DATE_DEFAULT        = DATE_WDAY | DATE_MDAY | DATE_MONTH | DATE_YEAR | DATE_HHMMSS | DATE_TZ,
     };
 
     ///Append GMT date string constructed by the flags set
-    charstr& append_date_gmt( const timet t, uint flg=UMAX32 )
+    charstr& append_date_gmt( const timet t, uint flg=DATE_DEFAULT )
     {
 #ifdef SYSTYPE_MSVC
         struct tm tm;
@@ -846,7 +849,7 @@ public:
         return append_time( tm, flg, "GMT" );
     }
 
-    charstr& append_date_local( const timet t, uint flg=UMAX32 )
+    charstr& append_date_local( const timet t, uint flg=DATE_DEFAULT )
     {
 #ifdef SYSTYPE_MSVC
         struct tm tm;
@@ -891,7 +894,8 @@ public:
             append(' ');
         }
 
-		if( flg & DATE_ISO8601 ) {  // 2008-02-22T15:08:13Z
+        // 2008-02-22T15:08:13Z
+		if( flg & DATE_ISO8601 ) {
 			append_num(10, tm.tm_year+1900);
 			append('-');
 			append_num(10, tm.tm_mon+1);
@@ -917,9 +921,9 @@ public:
         }
 
 		if( flg & DATE_ISO8601 ) {
-			if( flg & DATE_ISO8601_GMT ) {
+			if( flg & DATE_ISO8601_GMT )
 				append('Z');
-			} else {
+			else {
 				int t;
 #ifdef SYSTYPE_MSVC
                 long tz;

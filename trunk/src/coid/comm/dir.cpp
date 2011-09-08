@@ -38,6 +38,8 @@
 #include "dir.h"
 #include "binstream/filestream.h"
 
+#include <sys/utime.h>
+
 COID_NAMESPACE_BEGIN
 
 
@@ -272,6 +274,19 @@ opcd directory::delete_file( const char* src )
     return 0 == _unlink(src)  ?  opcd(0) : ersIO_ERROR;
 #else
     return 0 == unlink(src) ? opcd(0) : ersIO_ERROR;
+#endif
+}
+
+////////////////////////////////////////////////////////////////////////////////
+opcd directory::set_file_times(const char* fname, timet actime, timet modtime)
+{
+#ifdef SYSTYPE_WIN
+    __utimbuf64 ut;
+    ut.actime = actime;
+    ut.modtime = modtime;
+    return _utime64(fname, &ut) ? ersFAILED : ersNOERR;
+#else
+#error TODO
 #endif
 }
 
