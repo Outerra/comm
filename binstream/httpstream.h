@@ -961,7 +961,7 @@ inline opcd httpstream::header::decode( bool is_listener, httpstream& http, bins
         {
             _content_encoding = h;
         }
-        else if( h1.cmpeqi("If-Modified-Since") )
+        else if( h1.cmpeqi("If-Modified-Since") || h1.cmpeqi("Last-Modified") )
         {
             h.todate_gmt(_if_mdf_since);
         }

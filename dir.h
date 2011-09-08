@@ -41,6 +41,7 @@
 #include "namespace.h"
 
 #include "retcodes.h"
+#include "commtime.h"
 #include <sys/stat.h>
 #include "str.h"
 
@@ -169,6 +170,11 @@ public:
 
     opcd move_file_to( const token& dst, const token& name=token::empty() );
     opcd move_current_file_to( const token& dst );
+
+    static opcd set_file_times(const charstr& fname, timet actime, timet modtime) {
+        return set_file_times(fname.c_str(), actime, modtime);
+    }
+    static opcd set_file_times(const char* fname, timet actime, timet modtime);
 
     ///Get current working directory
     static charstr& get_cwd( charstr& buf );
