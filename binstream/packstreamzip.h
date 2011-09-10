@@ -232,7 +232,12 @@ protected:
 
     void packed_ack( bool eat )
     {
-        if( _strin.avail_in > 0  ||  Z_STREAM_END != inflate( &_strin, Z_FINISH ) )
+        int z = Z_OK;
+        if(_strin.avail_in == 0)
+            z = inflate(&_strin, Z_FINISH);
+
+        //accept Z_BUF_ERROR too, an issue with padding
+        if( _strin.avail_in > 0  ||  (z != Z_STREAM_END  &&  z != Z_BUF_ERROR) )
         {
             if(eat) { inflateReset( &_strin );  return; }
             throw ersIO_ERROR "data left in input buffer";
