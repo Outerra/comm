@@ -166,6 +166,18 @@ protected:
 		nn->_prev->_next=itpos->_prev=nn;
 	}
 
+	///
+	T* insert_uninit(node* itpos)
+	{
+		node *nn=_npool.pop_new();
+
+		nn->_next=itpos;
+		nn->_prev=itpos->_prev;
+		nn->_prev->_next=itpos->_prev=nn;
+
+		return &nn->item();
+	}
+
 public:
 
 	///
@@ -181,10 +193,16 @@ public:
 	void push_front_take(T &item) { insert_take(_node._next,item); }
 
 	///
+	T* push_front_uninit() { return insert_uninit(_node._next); }
+
+	///
 	void push_back(const T &item) { insert(&_node,item); }
 
 	///
 	void push_back_take(T &item) { insert_take(&_node,item); }
+
+	///
+	T* push_back_uninit() { return insert_uninit(&_node); }
 
 	///
 	void erase(iterator it)
@@ -208,6 +226,17 @@ public:
 	}
 
 	///
+	T* pop_front_ptr()
+	{
+		if(!is_empty()) {
+			T *item=&front();
+			erase(iterator(_node._next));
+			return item;
+		} 
+		return 0;
+	}
+
+	///
 	bool pop_back(T &item)
 	{
 		if(!is_empty()) {
@@ -216,6 +245,17 @@ public:
 			return true;
 		} 
 		return false;
+	}
+
+	///
+	T* pop_back_ptr()
+	{
+		if(!is_empty()) {
+			T *item=&back();
+			erase(iterator(_node._prev));
+			return item;
+		} 
+		return 0;
 	}
 
 	///
