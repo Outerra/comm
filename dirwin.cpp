@@ -164,6 +164,8 @@ charstr& directory::get_program_path( charstr& buf )
     }
 
     buf.resize(asize);
+    compact_path(buf);
+
     return buf;
 }
 
