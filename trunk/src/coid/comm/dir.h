@@ -70,10 +70,6 @@ public:
     directory();
 
 
-    ///Append \a path to destination buffer. If the path is absolute, previous
-    /// content of \a dst is dicarded.
-    static bool append_path( charstr& dst, token path );
-
     ///Open directory for iterating files using the filter
     opcd open( token path_and_pattern ) {
         token pattern = path_and_pattern;
@@ -108,6 +104,12 @@ public:
             path.append( separator() );
         return path;
     }
+
+#ifdef SYSTYPE_WIN
+#define DIR_SEPARATOR "\\/"
+#else
+#define DIR_SEPARATOR '/'
+#endif
 
     bool is_entry_open() const;
     bool is_entry_directory() const;
@@ -184,6 +186,17 @@ public:
 
     ///Get current program file path
     static charstr& get_program_path( charstr& buf );
+
+    ///Get relative path from src to dst
+    static bool get_relative_path( token src, token dst, charstr& relout );
+
+    ///Append \a path to destination buffer. If the path is absolute, previous
+    /// content of \a dst is dicarded.
+    static bool append_path( charstr& dst, token path );
+
+    ///Remove nested ../ chunks
+    static bool compact_path( charstr& dst );
+
 
     uint64 file_size() const                    { return _st.st_size; }
     static uint64 file_size( const charstr& file );

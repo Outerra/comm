@@ -117,7 +117,7 @@ bool directory::append_path( charstr& dst, token path )
             if( tdst.is_empty() )
                 return false;       //too many .. in path
 
-            tdst.cut_right_back("\\/");
+            tdst.cut_right_back(DIR_SEPARATOR);
 
             if( c == 0 ) {
                 dst.resize( tdst.len() );
@@ -129,7 +129,7 @@ bool directory::append_path( charstr& dst, token path )
 
         dst.resize( tdst.len() );
 
-        if( !is_separator( dst.last_char() ) )
+        if( dst && !is_separator( dst.last_char() ) )
             dst << separator();
 
         dst << path;
@@ -329,6 +329,125 @@ opcd directory::mkdir_tree( token name, uint mode )
     }
 
     return mkdir(path, mode);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+bool directory::get_relative_path( token src, token dst, charstr& relout )
+{
+#ifdef SYSTYPE_WIN
+    bool sf = src.nth_char(1) == ':';
+    bool df = dst.nth_char(1) == ':';
+#else
+    bool sf = src.first_char() == '/';
+    bool df = dst.first_char() == '/';
+#endif
+
+    if(sf != df) return false;
+
+    if(sf) {
+#ifndef SYSTYPE_WIN
+        src.shift_start(1);
+        dst.shift_start(1);
+#endif
+    }
+
+    if(directory::is_separator(src.last_char()))
+        src.shift_end(-1);
+
+    const char* upath=0;
+    while(1)
+    {
+        token st = src.cut_left(DIR_SEPARATOR);
+        token dt = dst.cut_left(DIR_SEPARATOR);
+
+#ifdef SYSTYPE_WIN
+        if(!st.cmpeqi(dt)) {
+#else
+        if(st!=dt) {
+#endif
+            src.set(st.ptr(), src.ptre());
+            dst.set(dt.ptr(), dst.ptre());
+            break;
+        }
+    }
+
+    relout.reset();
+    while(src) {
+        src.cut_left(DIR_SEPARATOR);
+#ifdef SYSTYPE_WIN
+        relout << "..\\";
+#else
+        relout << "../";
+#endif
+    }
+
+    return append_path(relout, dst);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+bool directory::compact_path( charstr& dst )
+{
+    token dtok = dst;
+
+#ifdef SYSTYPE_WIN
+    bool absp = dtok.nth_char(1) == ':';
+    if(absp) dtok.shift_start(3);
+#else
+    bool absp = dtok.first_char() == '/';
+    if(absp) dtok.shift_start(1);
+#endif
+
+    token fwd, rem;
+    fwd.set_empty(dtok.ptr());
+
+    static const token up = "..";
+    int nfwd=0;
+
+    do {
+        bool isup = dtok.cut_left(DIR_SEPARATOR) == up;
+
+        if(!isup) {
+            if(rem.len()) {
+                int rlen = rem.len();
+                dst.del(rem.ptr()-dst.ptr(), rlen);
+                dtok.shift_start(-rlen);
+                dtok.shift_end(-rlen);
+                rem.set_empty();
+            }
+
+            //count forward going tokens
+            ++nfwd;
+            fwd._pte = dtok.first_char() ? (dtok.ptr()-1) : dtok.ptr();
+        }
+        else if(nfwd) {
+            //remove one token from fwd
+            fwd.cut_right_back(DIR_SEPARATOR);
+            rem.set(fwd.ptre(), dtok.first_char() ? (dtok.ptr()-1) : dtok.ptr());
+            --nfwd;
+        }
+        else {
+            //no more forward tokens, remove rem range
+            if(absp)
+                return false;
+
+            if(rem.len()) {
+                int rlen = rem.len();
+                dst.del(rem.ptr()-dst.ptr(), rlen);
+                dtok.shift_start(-rlen);
+                dtok.shift_end(-rlen);
+                rem.set_empty();
+            }
+
+            fwd._ptr = dtok.ptr();
+        }
+
+    }
+    while(dtok);
+
+    if(rem.len())
+        dst.del(rem.ptr()-dst.ptr(), rem.len());
+
+    return true;
 }
 
 
