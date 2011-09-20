@@ -493,6 +493,7 @@ void abort_routine();
 
 #ifdef _DEBUG
 #define DEBUG 1
+#define DEBUG_FILL 0xcd
 #define ABORT_ON_ASSERT_FAILURE 0
 #define ABORT abort_routine()
 #endif //_DEBUG
@@ -4723,6 +4724,9 @@ void* dlmalloc(size_t bytes) {
 
   postaction:
     POSTACTION(gm);
+#ifdef DEBUG_FILL
+    memset(mem, DEBUG_FILL, bytes);
+#endif
     return mem;
   }
 
@@ -5173,6 +5177,9 @@ void* mspace_malloc(mspace msp, size_t bytes) {
 
   postaction:
     POSTACTION(ms);
+#ifdef DEBUG_FILL
+    memset(mem, DEBUG_FILL, bytes);
+#endif
     return mem;
   }
 
