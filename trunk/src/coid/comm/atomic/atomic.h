@@ -51,6 +51,22 @@
 		#pragma intrinsic(__movsq)
 		#pragma intrinsic(_InterlockedCompareExchange128)
 	#endif
+
+    #pragma intrinsic(_InterlockedAnd8)
+    #pragma intrinsic(_InterlockedAnd16)
+    #pragma intrinsic(_InterlockedAnd)
+    #pragma intrinsic(_InterlockedOr8)
+    #pragma intrinsic(_InterlockedOr16)
+    #pragma intrinsic(_InterlockedOr)
+    #pragma intrinsic(_InterlockedXor8)
+    #pragma intrinsic(_InterlockedXor16)
+    #pragma intrinsic(_InterlockedXor)
+
+#ifdef SYSTYPE_64
+    #pragma intrinsic(_InterlockedAnd64)
+    #pragma intrinsic(_InterlockedOr64)
+    #pragma intrinsic(_InterlockedXor64)
+#endif
 #endif
 
 #ifdef SYSTYPE_64
@@ -60,6 +76,9 @@
 #endif
 
 namespace atomic {
+
+
+
 	inline coid::int32 inc(volatile coid::int32 * ptr)
 	{
 		DASSERT(sizeof(coid::int32) == 4 && sizeof(long) == 4);
@@ -69,6 +88,10 @@ namespace atomic {
 		return _InterlockedIncrement(reinterpret_cast<volatile long*>(ptr));
 #endif
 	}
+
+    inline coid::uint32 inc(volatile coid::uint32 * ptr) {
+        return inc(reinterpret_cast<volatile int32*>(ptr));
+    }
 
 	inline coid::int32 dec(volatile coid::int32 * ptr)
 	{
@@ -80,6 +103,11 @@ namespace atomic {
 #endif
 	}
 
+    inline coid::uint32 dec(volatile coid::uint32 * ptr) {
+        return dec(reinterpret_cast<volatile int32*>(ptr));
+    }
+
+
 	inline coid::int32 add(volatile coid::int32 * ptr, const coid::int32 val)
 	{
 		DASSERT(sizeof(coid::int32) == 4 && sizeof(long) == 4);
@@ -90,6 +118,11 @@ namespace atomic {
 			reinterpret_cast<volatile long*>(ptr), val);
 #endif
 	}
+
+    inline coid::uint32 add(volatile coid::uint32 * ptr, const coid::uint32 val) {
+        return add(reinterpret_cast<volatile int32*>(ptr), val);
+    }
+
 
 	inline coid::int32 cas(
 		volatile coid::int32 * ptr, const coid::int32 val, const coid::int32 cmp) 
@@ -185,6 +218,176 @@ namespace atomic {
 			reinterpret_cast<long>(pcmp)) == reinterpret_cast<long>(pcmp);
 #endif
 	}
+
+
+    // AND
+
+#ifdef SYSTYPE_64
+	inline coid::int64 and(volatile coid::int64 * ptr, const coid::int64 val)
+	{
+#if defined(__GNUC__)
+		return __sync_fetch_and_and(ptr, val);
+#elif defined(WIN32)
+		return _InterlockedAnd64(ptr, val);
+#endif
+	}
+
+    inline coid::uint64 and(volatile coid::uint64 * ptr, const coid::uint64 val) {
+        return and(reinterpret_cast<volatile int64*>(ptr), val);
+    }
+#endif
+
+	inline coid::int32 and(volatile coid::int32 * ptr, const coid::int32 val)
+	{
+#if defined(__GNUC__)
+		return __sync_fetch_and_and(ptr, val);
+#elif defined(WIN32)
+		return _InterlockedAnd(
+			reinterpret_cast<volatile long*>(ptr), val);
+#endif
+	}
+
+	inline coid::int16 and(volatile coid::int16 * ptr, const coid::int16 val)
+	{
+#if defined(__GNUC__)
+		return __sync_fetch_and_and(ptr, val);
+#elif defined(WIN32)
+		return _InterlockedAnd16(ptr, val);
+#endif
+	}
+
+	inline coid::int8 and(volatile coid::int8 * ptr, const coid::int8 val)
+	{
+#if defined(__GNUC__)
+		return __sync_fetch_and_and(ptr, val);
+#elif defined(WIN32)
+		return _InterlockedAnd8(
+            reinterpret_cast<volatile char*>(ptr), val);
+#endif
+	}
+
+    inline coid::uint32 and(volatile coid::uint32 * ptr, const coid::uint32 val) {
+        return and(reinterpret_cast<volatile int32*>(ptr), val);
+    }
+    inline coid::uint16 and(volatile coid::uint16 * ptr, const coid::uint16 val) {
+        return and(reinterpret_cast<volatile int16*>(ptr), val);
+    }
+    inline coid::uint8 and(volatile coid::uint8 * ptr, const coid::uint8 val) {
+        return and(reinterpret_cast<volatile int8*>(ptr), val);
+    }
+    
+    // OR
+
+#ifdef SYSTYPE_64
+	inline coid::int64 or(volatile coid::int64 * ptr, const coid::int64 val)
+	{
+#if defined(__GNUC__)
+		return __sync_fetch_and_or(ptr, val);
+#elif defined(WIN32)
+		return _InterlockedOr64(ptr, val);
+#endif
+	}
+
+    inline coid::uint64 or(volatile coid::uint64 * ptr, const coid::uint64 val) {
+        return or(reinterpret_cast<volatile int64*>(ptr), val);
+    }
+#endif
+
+	inline coid::int32 or(volatile coid::int32 * ptr, const coid::int32 val)
+	{
+#if defined(__GNUC__)
+		return __sync_fetch_and_or(ptr, val);
+#elif defined(WIN32)
+		return _InterlockedOr(
+			reinterpret_cast<volatile long*>(ptr), val);
+#endif
+	}
+
+	inline coid::int16 or(volatile coid::int16 * ptr, const coid::int16 val)
+	{
+#if defined(__GNUC__)
+		return __sync_fetch_and_or(ptr, val);
+#elif defined(WIN32)
+		return _InterlockedOr16(ptr, val);
+#endif
+	}
+
+	inline coid::int8 or(volatile coid::int8 * ptr, const coid::int8 val)
+	{
+#if defined(__GNUC__)
+		return __sync_fetch_and_or(ptr, val);
+#elif defined(WIN32)
+		return _InterlockedOr8(
+            reinterpret_cast<volatile char*>(ptr), val);
+#endif
+	}
+
+    inline coid::uint32 or(volatile coid::uint32 * ptr, const coid::uint32 val) {
+        return or(reinterpret_cast<volatile int32*>(ptr), val);
+    }
+    inline coid::uint16 or(volatile coid::uint16 * ptr, const coid::uint16 val) {
+        return or(reinterpret_cast<volatile int16*>(ptr), val);
+    }
+    inline coid::uint8 or(volatile coid::uint8 * ptr, const coid::uint8 val) {
+        return or(reinterpret_cast<volatile int8*>(ptr), val);
+    }
+
+    // XOR
+
+#ifdef SYSTYPE_64
+	inline coid::int64 xor(volatile coid::int64 * ptr, const coid::int64 val)
+	{
+#if defined(__GNUC__)
+		return __sync_fetch_and_xor(ptr, val);
+#elif defined(WIN32)
+		return _InterlockedXor64(ptr, val);
+#endif
+	}
+
+    inline coid::uint64 xor(volatile coid::uint64 * ptr, const coid::uint64 val) {
+        return xor(reinterpret_cast<volatile int64*>(ptr), val);
+    }
+#endif
+
+	inline coid::int32 xor(volatile coid::int32 * ptr, const coid::int32 val)
+	{
+#if defined(__GNUC__)
+		return __sync_fetch_and_xor(ptr, val);
+#elif defined(WIN32)
+		return _InterlockedXor(
+			reinterpret_cast<volatile long*>(ptr), val);
+#endif
+	}
+
+	inline coid::int16 xor(volatile coid::int16 * ptr, const coid::int16 val)
+	{
+#if defined(__GNUC__)
+		return __sync_fetch_and_xor(ptr, val);
+#elif defined(WIN32)
+		return _InterlockedXor16(ptr, val);
+#endif
+	}
+
+	inline coid::int8 xor(volatile coid::int8 * ptr, const coid::int8 val)
+	{
+#if defined(__GNUC__)
+		return __sync_fetch_and_xor(ptr, val);
+#elif defined(WIN32)
+		return _InterlockedXor8(
+            reinterpret_cast<volatile char*>(ptr), val);
+#endif
+	}
+
+    inline coid::uint32 xor(volatile coid::uint32 * ptr, const coid::uint32 val) {
+        return xor(reinterpret_cast<volatile int32*>(ptr), val);
+    }
+    inline coid::uint16 xor(volatile coid::uint16 * ptr, const coid::uint16 val) {
+        return xor(reinterpret_cast<volatile int16*>(ptr), val);
+    }
+    inline coid::uint8 xor(volatile coid::uint8 * ptr, const coid::uint8 val) {
+        return xor(reinterpret_cast<volatile int8*>(ptr), val);
+    }
+
 
 } // end of namespace atomic
 
