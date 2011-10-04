@@ -114,7 +114,7 @@
         'net.cpp',
         'net.h',
         'net_ul.h',
-		'parser.h'
+		'parser.h',
         'password.h',
         'pthreadx.cpp',
         'pthreadx.h',
