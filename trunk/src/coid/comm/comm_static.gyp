@@ -1,8 +1,6 @@
-#
-
 {
   'variables': {
-    'chromium_code': 1,
+    'chromium_code': 0,
     'msvs_use_common_release': 0,
   },
   'targets': [
@@ -116,7 +114,7 @@
         'net.cpp',
         'net.h',
         'net_ul.h',
-	'parser.h'
+		'parser.h'
         'password.h',
         'pthreadx.cpp',
         'pthreadx.h',
@@ -151,21 +149,22 @@
         'sync/rw_mx_core.cpp',
         'sync/rw_mx_core.h',
         'sync/rw_mx_core_pthread.cpp',
+        'sync/thread_mgr.cpp',
         'sync/thread_mgr.h',
         'token.h',
         'tokenizer.h',
         'trait.h',
         'tutf8.h',
         'txtconv.h',
-	'txtconv.cpp',
+		'txtconv.cpp',
         'version.h',
       ],
       'configurations': {
         'Debug' : {
-          'inherit_from': ['comm_debug'],
+          'inherit_from': ['Debug','comm_base'],
         },
         'Release' : {
-          'inherit_from': ['comm_release'],
+          'inherit_from': ['Release','comm_base'],
         },
       },
     },
