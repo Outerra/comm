@@ -90,7 +90,7 @@ namespace atomic {
 	}
 
     inline coid::uint32 inc(volatile coid::uint32 * ptr) {
-        return inc(reinterpret_cast<volatile int32*>(ptr));
+        return inc(reinterpret_cast<volatile coid::int32*>(ptr));
     }
 
 	inline coid::int32 dec(volatile coid::int32 * ptr)
@@ -104,7 +104,7 @@ namespace atomic {
 	}
 
     inline coid::uint32 dec(volatile coid::uint32 * ptr) {
-        return dec(reinterpret_cast<volatile int32*>(ptr));
+        return dec(reinterpret_cast<volatile coid::int32*>(ptr));
     }
 
 
@@ -120,7 +120,7 @@ namespace atomic {
 	}
 
     inline coid::uint32 add(volatile coid::uint32 * ptr, const coid::uint32 val) {
-        return add(reinterpret_cast<volatile int32*>(ptr), val);
+        return add(reinterpret_cast<volatile coid::int32*>(ptr), val);
     }
 
 
@@ -267,13 +267,13 @@ namespace atomic {
 	}
 
     inline coid::uint32 and(volatile coid::uint32 * ptr, const coid::uint32 val) {
-        return and(reinterpret_cast<volatile int32*>(ptr), val);
+        return and(reinterpret_cast<volatile coid::int32*>(ptr), val);
     }
     inline coid::uint16 and(volatile coid::uint16 * ptr, const coid::uint16 val) {
-        return and(reinterpret_cast<volatile int16*>(ptr), val);
+        return and(reinterpret_cast<volatile coid::int16*>(ptr), val);
     }
     inline coid::uint8 and(volatile coid::uint8 * ptr, const coid::uint8 val) {
-        return and(reinterpret_cast<volatile int8*>(ptr), val);
+        return and(reinterpret_cast<volatile coid::int8*>(ptr), val);
     }
     
     // OR
@@ -323,13 +323,13 @@ namespace atomic {
 	}
 
     inline coid::uint32 or(volatile coid::uint32 * ptr, const coid::uint32 val) {
-        return or(reinterpret_cast<volatile int32*>(ptr), val);
+        return or(reinterpret_cast<volatile coid::int32*>(ptr), val);
     }
     inline coid::uint16 or(volatile coid::uint16 * ptr, const coid::uint16 val) {
-        return or(reinterpret_cast<volatile int16*>(ptr), val);
+        return or(reinterpret_cast<volatile coid::int16*>(ptr), val);
     }
     inline coid::uint8 or(volatile coid::uint8 * ptr, const coid::uint8 val) {
-        return or(reinterpret_cast<volatile int8*>(ptr), val);
+        return or(reinterpret_cast<volatile coid::int8*>(ptr), val);
     }
 
     // XOR
@@ -379,13 +379,13 @@ namespace atomic {
 	}
 
     inline coid::uint32 xor(volatile coid::uint32 * ptr, const coid::uint32 val) {
-        return xor(reinterpret_cast<volatile int32*>(ptr), val);
+        return xor(reinterpret_cast<volatile coid::int32*>(ptr), val);
     }
     inline coid::uint16 xor(volatile coid::uint16 * ptr, const coid::uint16 val) {
-        return xor(reinterpret_cast<volatile int16*>(ptr), val);
+        return xor(reinterpret_cast<volatile coid::int16*>(ptr), val);
     }
     inline coid::uint8 xor(volatile coid::uint8 * ptr, const coid::uint8 val) {
-        return xor(reinterpret_cast<volatile int8*>(ptr), val);
+        return xor(reinterpret_cast<volatile coid::int8*>(ptr), val);
     }
 
 
