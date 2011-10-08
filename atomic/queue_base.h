@@ -74,6 +74,8 @@ public:
 	void push_front(const T& item) { GUARDTHIS(_mutex); coid::list<T>::push_front(item); }
 
 	void push_front_take(T& item) { GUARDTHIS(_mutex); coid::list<T>::push_front_take(item); }
+
+    bool is_empty() const { GUARDTHIS(_mutex); return coid::list<T>::is_empty(); }
 };
 
 /*
