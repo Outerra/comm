@@ -59,6 +59,8 @@ public:
 	void addmsg(logmsg_ptr& m) { _queue.push_take(m); }
 
 	void flush();
+
+    bool is_empty() const { return _queue.is_empty(); }
 };
 
 COID_NAMESPACE_END
