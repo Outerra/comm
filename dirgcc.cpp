@@ -193,6 +193,12 @@ const directory::xstat* directory::next()
     return next();
 }
 
+////////////////////////////////////////////////////////////////////////////////
+charstr& directory::get_home_dir( charstr& buf )
+{
+    buf = "~/";
+    return buf;
+}
 
 COID_NAMESPACE_END
 
