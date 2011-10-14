@@ -46,6 +46,12 @@
 
 extern "C" {
 ulong __stdcall GetModuleFileNameA(void*, char*, ulong);
+void* __stdcall GetCurrentProcess();
+long __stdcall OpenProcessToken(void*, long, void**);
+int __stdcall GetUserProfileDirectoryA(void*, char*, ulong*);
+long __stdcall CloseHandle(void*);
+
+#pragma comment(lib, "userenv.lib")
 }
 
 COID_NAMESPACE_BEGIN
@@ -209,6 +215,26 @@ const directory::xstat* directory::next()
         return &_st;
 
     return next();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+charstr& directory::get_home_dir( charstr& path )
+{
+    ulong psize = 260;
+    path.get_buf(psize);
+   
+    void* hToken = 0;
+    if(!OpenProcessToken( GetCurrentProcess(), 0x0008/*TOKEN_QUERY*/, &hToken ))
+        return path;
+   
+    if(!GetUserProfileDirectoryA(hToken, (char*)path.ptr(), &psize))
+        return path;
+   
+    CloseHandle(hToken);
+    
+    path.correct_size();
+    treat_trailing_separator(path, true);
+    return path;
 }
 
 

@@ -187,6 +187,9 @@ public:
     ///Get current program file path
     static charstr& get_program_path( charstr& buf );
 
+    ///Get user home directory
+    static charstr& get_home_dir( charstr& buf );
+
     ///Get relative path from src to dst
     static bool get_relative_path( token src, token dst, charstr& relout );
 
