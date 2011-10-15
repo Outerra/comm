@@ -278,6 +278,16 @@ opcd directory::delete_file( const char* src )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+opcd directory::delete_directory( const char* src )
+{
+#ifdef SYSTYPE_MSVC
+    return 0 == _rmdir(src)  ?  opcd(0) : ersIO_ERROR;
+#else
+    return 0 == rmdir(src) ? opcd(0) : ersIO_ERROR;
+#endif
+}
+
+////////////////////////////////////////////////////////////////////////////////
 opcd directory::set_file_times(const char* fname, timet actime, timet modtime)
 {
 #ifdef SYSTYPE_WIN
@@ -306,7 +316,7 @@ opcd directory::delete_files( token path_and_pattern )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::mkdir_tree( token name, uint mode )
+opcd directory::mkdir_tree( token name, bool last_is_file, uint mode )
 {
     while( name.last_char() == '/' || name.last_char() == '\\' )
         name.shift_end(-1);
@@ -328,7 +338,7 @@ opcd directory::mkdir_tree( token name, uint mode )
         }
     }
 
-    return mkdir(path, mode);
+    return last_is_file ? ersNOERR : mkdir(path, mode);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

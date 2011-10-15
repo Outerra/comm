@@ -143,10 +143,13 @@ public:
     static opcd mkdir( const char* name, uint mode=0750 );
     static opcd mkdir( const charstr& name, uint mode=0750 ){ return mkdir( name.c_str(), mode ); }
 
-    static opcd mkdir_tree( token name, uint mode=0750 );
+    static opcd mkdir_tree( token name, bool last_is_file=false, uint mode=0750 );
 
     static int chdir( const char* name );
     static int chdir( const charstr& name )                 { return chdir(name.c_str()); }
+
+    static opcd delete_directory( const char* src );
+    static opcd delete_directory( const charstr& src )      { return delete_directory(src.c_str()); }
 
     static opcd copy_file( const token& src, const token& dst );
 
