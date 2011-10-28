@@ -84,6 +84,18 @@
 #endif
 
 
+#ifndef FORCEINLINE
+# if defined(_MSC_VER) && (_MSC_VER >= 1200)
+#  define FORCEINLINE __forceinline
+# elif defined(__GNUC__) && ((__GNUC__ > 3) || \
+                            ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 2)))
+#  define FORCEINLINE __attribute__((always_inline))
+# else
+#  define FORCEINLINE inline
+# endif
+#endif
+
+
 #ifdef SYSTYPE_WIN
 # if defined(_WIN64)
 #  define SYSTYPE_64
