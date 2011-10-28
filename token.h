@@ -45,7 +45,8 @@
 #include "substring.h"
 #include "tutf8.h"
 #include "commtime.h"
-//#include <stdlib.h>
+#include "hash/hashfunc.h"
+
 #include <ctype.h>
 #include <math.h>
 
@@ -2204,6 +2205,22 @@ inline void substring::set( const token& tok )
 inline token substring::get() const
 {
     return token( (const char*)_subs, len() );
+}
+
+////////////////////////////////////////////////////////////////////////////////
+template<> struct hash<token>
+{
+    typedef token key_type;
+
+    size_t operator() (const token& tok) const
+    {
+        return __coid_hash_string( tok.ptr(), tok.len() );
+    }
+};
+
+inline string_hash::string_hash(const token& tok)
+{
+    _hash = __coid_hash_string(tok.ptr(), tok.len());
 }
 
 

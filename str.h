@@ -1950,17 +1950,6 @@ template<> struct hash<charstr>
     }
 };
 
-template<> struct hash<token>
-{
-    typedef token key_type;
-
-    size_t operator() (const token& tok) const
-    {
-        return __coid_hash_string( tok.ptr(), tok.len() );
-    }
-};
-
-
 ////////////////////////////////////////////////////////////////////////////////
 inline charstr& opcd_formatter::text( charstr& dst ) const
 {
