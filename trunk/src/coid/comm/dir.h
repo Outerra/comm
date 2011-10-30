@@ -106,9 +106,11 @@ public:
     }
 
 #ifdef SYSTYPE_WIN
-#define DIR_SEPARATOR "\\/"
+#define DIR_SEPARATORS "\\/"
+#define DIR_SEPARATOR_STRING "\\"
 #else
-#define DIR_SEPARATOR '/'
+#define DIR_SEPARATORS '/'
+#define DIR_SEPARATOR_STRING "/"
 #endif
 
     bool is_entry_open() const;

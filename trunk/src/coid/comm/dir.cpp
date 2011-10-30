@@ -117,7 +117,7 @@ bool directory::append_path( charstr& dst, token path )
             if( tdst.is_empty() )
                 return false;       //too many .. in path
 
-            tdst.cut_right_back(DIR_SEPARATOR);
+            tdst.cut_right_back(DIR_SEPARATORS);
 
             if( c == 0 ) {
                 dst.resize( tdst.len() );
@@ -367,8 +367,8 @@ bool directory::get_relative_path( token src, token dst, charstr& relout )
     const char* upath=0;
     while(1)
     {
-        token st = src.cut_left(DIR_SEPARATOR);
-        token dt = dst.cut_left(DIR_SEPARATOR);
+        token st = src.cut_left(DIR_SEPARATORS);
+        token dt = dst.cut_left(DIR_SEPARATORS);
 
 #ifdef SYSTYPE_WIN
         if(!st.cmpeqi(dt)) {
@@ -383,7 +383,7 @@ bool directory::get_relative_path( token src, token dst, charstr& relout )
 
     relout.reset();
     while(src) {
-        src.cut_left(DIR_SEPARATOR);
+        src.cut_left(DIR_SEPARATORS);
 #ifdef SYSTYPE_WIN
         relout << "..\\";
 #else
@@ -414,7 +414,7 @@ bool directory::compact_path( charstr& dst )
     int nfwd=0;
 
     do {
-        bool isup = dtok.cut_left(DIR_SEPARATOR) == up;
+        bool isup = dtok.cut_left(DIR_SEPARATORS) == up;
 
         if(!isup) {
             if(rem.len()) {
@@ -431,7 +431,7 @@ bool directory::compact_path( charstr& dst )
         }
         else if(nfwd) {
             //remove one token from fwd
-            fwd.cut_right_back(DIR_SEPARATOR);
+            fwd.cut_right_back(DIR_SEPARATORS);
             rem.set(fwd.ptre(), dtok.first_char() ? (dtok.ptr()-1) : dtok.ptr());
             --nfwd;
         }
