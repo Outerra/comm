@@ -727,6 +727,7 @@ public:
         _curvar.var = _last_var;
 
         _current = _cachestack.push();
+        _current->var = _curvar.var;
         _current->buf = &_curvar.var->defval;
         _current->offs = 0;
         _current->ofsz = UMAXS;
@@ -1030,9 +1031,10 @@ private:
         dynarray<uchar>* buf;           ///< cache buffer associated with the cache entry
         uints offs;                     ///< offset to the current entry in stored class table
         uints ofsz;                     ///< offset to the count field (only for arrays)
+        const MetaDesc::Var* var;
 
         CacheEntry()
-            : buf(0), offs(UMAXS), ofsz(UMAXS)
+            : buf(0), offs(UMAXS), ofsz(UMAXS), var(0)
         {}
 
         uints size() const              { return buf->size(); }
@@ -1122,7 +1124,7 @@ private:
             uints k = buf->size();
             DASSERT( k%sizeof(uints) == 0 );    //should be padded
 
-            buf->addc( n*sizeof(uints) );
+            buf->addc(n*sizeof(uints));
             return k;
         }
 
@@ -1134,8 +1136,8 @@ private:
         uints pad( uints size = sizeof(uints) )
         {
             uints k = buf->size();
-            uints t = align_offset( k, size>8 ? 8 : size );
-            buf->add( t - k );
+            uints t = align_offset(k, size>8 ? 8 : size);
+            buf->add(t - k);
             return t;
         }
 
@@ -1161,7 +1163,7 @@ private:
             uints k = buf->size();
             DASSERT( k%sizeof(uints) == 0 );    //should be padded
 
-            buf->add( sizeof(uints) );
+            buf->addc(sizeof(uints), true);
             return k;
         }
 
@@ -1177,7 +1179,7 @@ private:
             const uchar* src = indirect();
             offs += sizeof(uints);
 
-            ::memcpy( p, src, size );
+            ::memcpy(p, src, size);
         }
 
         ///Allocate cache entry data, moving to the next cache entry
@@ -1260,6 +1262,8 @@ protected:
     {
         CacheEntry* ce = _cachestack.push();
         _current = ce-1;
+
+        ce->var = _curvar.var;
 
         bool cachewrite = !R || _cachevar;
 
@@ -1975,10 +1979,9 @@ protected:
     //@return ersNO_MORE if no more keys under current compound variable parent
     opcd fmts_or_cache_read_key()
     {
-        //if reading to cache ...
+        //if reading to cache, and if it's been already cached
         if(_cachevar) {
-            //if it's been already cached (during the caching)
-            if( _current->valid_addr() ) {
+            if(_current->valid_addr()) {
                 _cacheskip = _curvar.var;
                 return 0;
             }
@@ -2081,6 +2084,7 @@ protected:
             _cache.reset();
 
             _current = _cachestack.push();
+            _current->var = par;
             _current->buf = &_cache;
             _current->offs = UMAXS;
             _current->ofsz = UMAXS;
@@ -2133,7 +2137,7 @@ protected:
 
         _current->offs = offs;
 
-        //pointer-type members
+        //pointer-type members 
         if( crv->is_pointer() )
             crv = crv->desc->first_child();
 
@@ -2204,10 +2208,14 @@ protected:
 
         movein_struct<READ_MODE>();
 
+        uints offs = _current->offs;
         uints n = desc.children.size();
         for( uints i=0; i<n; ++i )
         {
             streamvar( desc.children[i] );
+
+            offs += sizeof(uints);
+            _current->offs = offs;
         }
 
         return 0;
@@ -2271,6 +2279,7 @@ protected:
         if( !_curvar.var->has_default() )  return false;
 
         _current = _cachestack.push();
+        _current->var = _curvar.var;
         _current->offs = 0;
         _current->buf = &_curvar.var->defval;
         _cachedefval = _curvar.var;

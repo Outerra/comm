@@ -30,7 +30,7 @@ void float_test()
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
 {
-    test_malloc();
+    //test_malloc();
 
     metastream_test3();
     metastream_test2();
