@@ -255,6 +255,7 @@
     <ClInclude Include="binstream\txtstream.h" />
     <ClInclude Include="binstream\txtstreamhtml.h" />
     <ClInclude Include="crypt\sha1.h" />
+    <ClInclude Include="dbg_location.h" />
     <ClInclude Include="list.h" />
     <ClInclude Include="metastream\fmtstream.h" />
     <ClInclude Include="metastream\fmtstream_lexer.h" />
