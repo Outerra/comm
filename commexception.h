@@ -41,12 +41,13 @@
 
 #include "namespace.h"
 #include "str.h"
+#include "dbg_location.h"
 
 COID_NAMESPACE_BEGIN
 
 struct exception
 {
-    exception( token stext )
+    explicit exception( token stext )
         : _stext(stext)
     {}
 
@@ -54,6 +55,10 @@ struct exception
         : _stext("unknown exception")
     {}
 
+	explicit exception(const dbg::location &loc)
+        : _stext()
+		, _location(loc)
+    {}
 
     exception& operator << (const char *czstr)  { _dtext += (czstr); return *this; }
     exception& operator << (const token& tok)   { _dtext += (tok);   return *this; }
@@ -109,6 +114,7 @@ protected:
 
     token _stext;
     charstr _dtext;
+	dbg::location _location;
 };
 
 
