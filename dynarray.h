@@ -1413,22 +1413,22 @@ inline binstream& operator >> ( binstream &in, dynarray<T*,COUNT,A>& dyna )
     return in.xread_array(dc);
 }
 
-/*
+
 ////////////////////////////////////////////////////////////////////////////////
+
 template <class T, class COUNT, class A>
 struct binstream_adapter_writable< dynarray<T,COUNT,A> > {
     typedef dynarray<T,COUNT,A>   TContainer;
-    typedef typename dynarray<T,COUNT,A>::binstream_container
+    typedef typename dynarray<T,COUNT,A>::dynarray_binstream_container
         TBinstreamContainer;
 };
 
 template <class T, class COUNT, class A>
 struct binstream_adapter_readable< dynarray<T,COUNT,A> > {
     typedef dynarray<T,COUNT,A>   TContainer;
-    typedef typename dynarray<T,COUNT,A>::binstream_container
+    typedef typename dynarray<T,COUNT,A>::dynarray_binstream_container
         TBinstreamContainer;
 };
-*/
 
 
 ///Relocator helper class for relocating pointers into dynarray when the memory
