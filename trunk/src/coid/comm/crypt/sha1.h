@@ -64,7 +64,7 @@ struct sha1_ctxt {
 
 extern void sha1_init(struct sha1_ctxt *);
 extern void sha1_pad(struct sha1_ctxt *);
-extern void sha1_loop(struct sha1_ctxt *, const uint8 *, size_t);
+extern void sha1_loop(struct sha1_ctxt *, const void*, size_t);
 extern void sha1_result(struct sha1_ctxt *, char* );
 
 #define	SHA1_RESULTLEN	(160/8)

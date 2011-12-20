@@ -41,6 +41,7 @@
 
 #include "namespace.h"
 #include <time.h>
+#include <limits.h>
 
 #ifdef SYSTYPE_MINGW
 time_t timelocal (struct tm *tm);
@@ -85,6 +86,13 @@ struct timet
     {
         timet t;
         t.set_now();
+        return t;
+    }
+
+    static timet last()
+    {
+        timet t;
+        t.t = LLONG_MAX;
         return t;
     }
 

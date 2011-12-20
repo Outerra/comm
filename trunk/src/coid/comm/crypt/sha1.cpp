@@ -227,7 +227,7 @@ sha1_pad( struct sha1_ctxt *ctxt )
 void
 sha1_loop(
 	struct sha1_ctxt *ctxt,
-	const uint8 *input,
+	const void* input_,
 	size_t len
     )
 {
@@ -236,6 +236,7 @@ sha1_loop(
 	size_t off;
 	size_t copysiz;
 
+    const uint8* input = (const uint8*)input_;
 	off = 0;
 
 	while (off < len) {
