@@ -186,6 +186,8 @@ public:
 		lm<<type2tok(t)<<fnc<<'('<<line<<')'<<' ';
 		return lm;
 	}
+
+	void flush();
 };
 
 COID_NAMESPACE_END

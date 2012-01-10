@@ -88,6 +88,8 @@ void log_writer::flush()
 {
 	logmsg_ptr m;
 
+	int maxloop = 3000 / 20;
+
 	while( _queue.pop(m) ) { 
 		m->write_to_file();
 		m.release();
@@ -100,6 +102,15 @@ logger::logmsg_local::~logmsg_local()
 {
 	if( !_lm.is_empty() && _lm.refcount()==1 )
 		SINGLETON(log_writer).addmsg(_lm);
+}
+
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+void logger::flush()
+{
+    int maxloop = 3000 / 20;
+    while(!SINGLETON(log_writer).is_empty() && maxloop-- > 0)
+        sysMilliSecondSleep(20);
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

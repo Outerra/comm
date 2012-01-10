@@ -1431,6 +1431,7 @@ struct binstream_adapter_readable< dynarray<T,COUNT,A> > {
 };
 
 
+
 ///Relocator helper class for relocating pointers into dynarray when the memory
 /// region changes after call to realloc/add etc.
 struct dynarray_relocator

@@ -27,20 +27,13 @@ public:
 			node *_next;
 		};
 	    node *_prev;
-		//T _item;
 		uchar _item[sizeof(T)];
 
-	    node() : _next(0),_prev(0) {}
+	    node() : _next(0), _prev(0) {}
 
-	    node(bool) { _next=_prev=this; memset(&_item,0xff,sizeof(_item)); }
+	    node(bool) { _next = _prev = this; memset(&_item, 0xff, sizeof(_item)); }
 
-        void operator = (const node &n) {
-			DASSERT(false);
-            //_next_basic_pool=n._next_basic_pool;
-            //_next=n._next;
-            //_prev=n._prev;
-            //_item=n.item;
-        }
+        void operator = (const node &n) { DASSERT(false); }
 
 		T& item() { return *reinterpret_cast<T*>(_item); }
 
@@ -51,24 +44,32 @@ public:
 		const T* item_ptr() const { return reinterpret_cast<const T*>(_item); }
     };
 
-	struct _list_iterator : std::iterator<std::bidirectional_iterator_tag,T>
-	{
+	struct _list_iterator_base
+        : std::iterator<std::bidirectional_iterator_tag,T>
+    {
 		node*  _node;
 
-		typedef T value_type;
+		bool operator == (const _list_iterator_base& p) const { return p._node==_node; }
+		bool operator != (const _list_iterator_base& p) const { return p._node!=_node; }
 
-		bool operator == (const _list_iterator& p) const { return p._node==_node; }
-		bool operator != (const _list_iterator& p) const { return p._node!=_node; }
-
-		T& operator *(void) const { return _node->item(); }
-
-	#ifdef SYSTYPE_MSVC
-	#pragma warning( disable : 4284 )
-	#endif //SYSTYPE_MSVC
+    	T& operator *(void) const { return _node->item(); }
 
 		T* ptr() const { return _node->item_ptr(); }
 
 		T* operator ->(void) const { return ptr(); }
+
+		_list_iterator_base() : _node(0) {}
+		explicit _list_iterator_base(node* p) : _node(p) {}
+    };
+
+	struct _list_iterator
+        : public _list_iterator_base
+	{
+		typedef T value_type;
+
+	#ifdef SYSTYPE_MSVC
+	#pragma warning( disable : 4284 )
+	#endif //SYSTYPE_MSVC
 
 		_list_iterator& operator ++() { _node=_node->_next; return *this; }
 		_list_iterator& operator --() { _node=_node->_prev; return *this; }
@@ -76,27 +77,37 @@ public:
 		_list_iterator  operator ++(int) { _list_iterator x(_node); _node=_node->_next;  return x; }
 		_list_iterator  operator --(int) { _list_iterator x(_node); _node=_node->_prev;  return x; }
 
-		_list_iterator() : _node(0) {}
-		explicit _list_iterator(node* p) : _node(p) {}
+		_list_iterator() : _list_iterator_base() {}
+		explicit _list_iterator(node* p) : _list_iterator_base(p) {}
 	};
 
-	struct _list_const_iterator : std::iterator<std::bidirectional_iterator_tag,T>
+	struct _list_reverse_iterator
+        : public _list_iterator_base
 	{
-		const node* _node;
-
 		typedef T value_type;
-
-		bool operator == (const _list_const_iterator& p) const { return p._node==_node; }
-		bool operator != (const _list_const_iterator& p) const { return p._node!=_node; }
-
-		const T& operator *(void) const { return _node->item(); }
 
 	#ifdef SYSTYPE_MSVC
 	#pragma warning( disable : 4284 )
 	#endif //SYSTYPE_MSVC
-		T* ptr() const { return _node->item_ptr(); }
 
-		const T* operator ->(void) const { return ptr(); }
+		_list_reverse_iterator& operator ++() { _node=_node->_prev; return *this; }
+		_list_reverse_iterator& operator --() { _node=_node->_next; return *this; }
+
+		_list_reverse_iterator operator ++(int) { _list_reverse_iterator x(_node); _node=_node->_prev;  return x; }
+		_list_reverse_iterator operator --(int) { _list_reverse_iterator x(_node); _node=_node->_next;  return x; }
+
+		_list_reverse_iterator() : _list_iterator_base() {}
+		explicit _list_reverse_iterator(node* p) : _list_iterator_base(p) {}
+	};
+
+	struct _list_const_iterator
+        : public _list_iterator_base
+	{
+		typedef T value_type;
+
+	#ifdef SYSTYPE_MSVC
+	#pragma warning( disable : 4284 )
+	#endif //SYSTYPE_MSVC
 
 		_list_const_iterator& operator ++() { _node=_node->_next; return *this; }
 		_list_const_iterator& operator --() { _node=_node->_prev; return *this; }
@@ -108,8 +119,29 @@ public:
 		explicit _list_const_iterator(node* p) : _node(p) {}
 	};
 
-	typedef _list_iterator iterator;
+	struct _list_const_reverse_iterator 
+        : public _list_iterator_base
+	{
+		typedef T value_type;
+
+    #ifdef SYSTYPE_MSVC
+	#pragma warning( disable : 4284 )
+	#endif //SYSTYPE_MSVC
+
+		_list_const_reverse_iterator& operator ++() { _node=_node->_prev; return *this; }
+		_list_const_reverse_iterator& operator --() { _node=_node->_next; return *this; }
+
+		_list_const_reverse_iterator operator ++(int) { _list_const_reverse_iterator x(_node); _node=_node->_prev;  return x; }
+		_list_const_reverse_iterator operator --(int) { _list_const_reverse_iterator x(_node); _node=_node->_next;  return x; }
+
+		_list_const_reverse_iterator() : _list_iterator_base() {}
+		explicit _list_const_reverse_iterator(node* p) : _list_iterator_base(p) {}
+	};
+
+    typedef _list_iterator iterator;
+	typedef _list_reverse_iterator reverse_iterator;
     typedef _list_const_iterator const_iterator;
+    typedef _list_const_reverse_iterator const_reverse_iterator;
 
 protected:
 	///
@@ -204,8 +236,19 @@ public:
 	///
 	T* push_back_uninit() { return insert_uninit(&_node); }
 
-	///
-	void erase(iterator it)
+    ///
+    void insert(_list_iterator_base &it, const T &item) {
+        insert(it._node->_next, item);
+    }
+
+    ///
+	void insert_before(_list_iterator_base &it, const T &item)
+	{
+        insert(it._node, item);
+	}
+
+    ///
+	void erase(_list_iterator_base &it)
 	{
 		if(it._node!=&_node) {
 			it._node->_prev->_next=it._node->_next;
@@ -279,7 +322,31 @@ public:
 	iterator end() { return iterator(&_node); }
 
     const_iterator begin() const { return _list_const_iterator(_node._next); }
-    const_iterator end() const { return _list_const_iterator(_node._prev); }
+    const_iterator end() const { return _list_const_iterator(_node); }
+
+    reverse_iterator rbegin() { return reverse_iterator(_node._prev); }
+	reverse_iterator rend() { return reverse_iterator(&_node); }
+
+    const_reverse_iterator rbegin() const { return const_reverse_iterator(_node._prev); }
+    const_reverse_iterator rend() const { return const_reverse_iterator(_&node); }
+
+    iterator find(const T &item)
+    {
+        auto i = begin(), e = end();
+        for(; *i != item && i != e; ++i);
+        return i;
+    }
+
+    const_iterator find(const T &item) const
+    {
+        return find(item);
+    }
+
+    void erase(const T &item)
+    {
+        auto i = find(item);
+        if(i != end()) erase(i);
+    }
 };
 
 } //end of namespace coid
