@@ -45,8 +45,8 @@ using namespace coid;
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-logger::logger(const token& filename)
-	: _logfile(new logger_file(filename))
+logger::logger()
+	: _logfile(new logger_file)
 {
 	SINGLETON(log_writer);
 }

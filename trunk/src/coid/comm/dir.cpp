@@ -92,13 +92,20 @@ uint64 directory::file_size( const char* file )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool directory::append_path( charstr& dst, token path )
+bool directory::is_absolute_path( const token& path )
 {
 #ifdef SYSTYPE_WIN
-    if( path.nth_char(1) == ':' )
+    return path.nth_char(1) == ':' || path.begins_with("\\\\");
 #else
-    if( path.first_char() == '/' )
+    return path.first_char() == '/';
 #endif
+}
+
+////////////////////////////////////////////////////////////////////////////////
+bool directory::append_path( charstr& dst, token path )
+{
+
+    if(is_absolute_path(path))
         dst = path;
     else
     {

@@ -202,6 +202,8 @@ public:
     /// content of \a dst is dicarded.
     static bool append_path( charstr& dst, token path );
 
+    static bool is_absolute_path( const token& path );
+
     ///Remove nested ../ chunks
     static bool compact_path( charstr& dst );
 

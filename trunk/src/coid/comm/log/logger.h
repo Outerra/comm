@@ -45,27 +45,47 @@
 #include "../atomic/queue_base.h"
 #include "../atomic/pool_base.h"
 
-namespace coid {
-	class logmsg;
-};
-
 COID_NAMESPACE_BEGIN
 
+class logmsg;
 class logger;
 
 class logger_file
 {
 	bofstream _logfile;
-	txtstream _logtxt;
+    charstr _logbuf;
+    charstr _logpath;
+
+    bool check_file_open()
+    {
+        if(_logfile.is_open() || !_logpath)
+            return _logfile.is_open();
+
+        opcd e = _logfile.open(_logpath);
+        if(!e) {
+            _logfile.xwrite_token_raw(_logbuf);
+            _logbuf.free();
+        }
+
+        return e==0;
+    }
 
 public:
-	logger_file(const token& filename)
-	{
-		_logfile.open(filename);
-		_logtxt.bind(_logfile);
-	}
+    logger_file() {}
+    logger_file(const token& path) : _logpath(path)
+    {}
+        
+    ///Open physical log file. @note Only notes the file name, the file is opened with the next log msg because of potential MT clashes
+    void open(charstr filename) {
+        _logpath.swap(filename);
+    }
 
-	void write_to_file(const charstr& lm) { _logtxt<<lm; }
+	void write_to_file(const charstr& lm) {
+        if(check_file_open())
+            _logfile.xwrite_token_raw(lm);
+        else
+            _logbuf << lm;
+    }
 };
 
 typedef ref<logger_file> logger_file_ptr;
@@ -161,7 +181,9 @@ protected:
 	logger_file_ptr _logfile;
 
 public:
-	logger(const token& filename);
+	logger();
+
+    void open(const token& filename) { _logfile->open(filename); }
 
 public:
 	logmsg_local operator()() {
