@@ -57,7 +57,7 @@ protected:
         GROUP_CONTROL                   = 2,
     };
 
-    int8 _sesinitr;                         ///< session has been initiated (read or write block, cleared with flush/ack)
+    int8 _sesinitr;                        ///< session has been initiated (read or write block, cleared with flush/ack)
     int8 _sesinitw;
 
 
@@ -137,10 +137,10 @@ public:
             throw ersIMPROPER_STATE;
 
         if(_sesinitw>0)
-            _bufw << "})";
-        else
-            _bufw << ')';
-        _sesinitw = false;
+            _bufw << '}';//"})";
+        //else
+        //    _bufw << ')';
+        _sesinitw = 0;
         _indent = 0;
 
         _binw->xwrite_raw( _bufw.ptr(), _bufw.len() );
@@ -154,7 +154,7 @@ public:
         if(!eat)
         {
             token tok = _tokenizer.next();
-            if( tok != '}' )
+            if( _sesinitr>0 && tok != '}' )
                 throw ersSYNTAX_ERROR "closing } not found";
 
             tok = _tokenizer.next();
@@ -189,11 +189,11 @@ public:
         if(!_sesinitw)
         {
             if(t.is_array_start()) {
-                _bufw << '(';
+                //_bufw << '(';
                 _sesinitw = -1;
             }
             else {
-                _bufw << "({";
+                _bufw << '{';//"({";
                 _sesinitw = 1;
             }
             ++_indent;
@@ -359,10 +359,15 @@ public:
             if( tok == '(' )
                 tok = _tokenizer.next();
 
-            if( tok != '{' )
-                return ersSYNTAX_ERROR "opening { not found";
-            
-            _sesinitr = true;
+            if( !t.is_array_start() ) {
+                if(tok != '{')
+                    return ersSYNTAX_ERROR "opening { not found";
+                _sesinitr = 1;
+            }
+            else {
+                _tokenizer.push_back();
+                _sesinitr = -1;
+            }
         }
 
         token tok = _tokenizer.next();
