@@ -273,11 +273,23 @@ public:
         insert_unique( f, l );
     }
 
-    static metastream& stream_meta( metastream& m )
+    static metastream& stream_meta_def( metastream& m )
     {
         m.meta_array();
         m << *(const VAL*)0;
         return m;
+    }
+
+    opcd meta_stream_out( metastream& m, const token& name = token::empty() ) const
+    {
+        hashtable_binstream_container bc(*this);
+        return m.stream_array_out(bc, name);
+    }
+
+    opcd meta_stream_in( metastream& m, const token& name = token::empty() )
+    {
+        hashtable_binstream_container bc(*this);
+        return m.stream_array_in(bc, name);
     }
 };
 
