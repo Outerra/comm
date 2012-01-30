@@ -321,20 +321,58 @@ public:
             return true;
         }
 
-		dynarray_binstream_container( dynarray& v, uints n=UMAXS )
-            : binstream_containerT<T,COUNT>(n), _v(v)
+		dynarray_binstream_container( const dynarray<T,COUNT,A>& v, uints n=UMAXS )
+            : binstream_containerT<T,COUNT>(n), _v(const_cast<dynarray<T,COUNT,A>&>(v))
         {
             _pos = 0;
         }
 
-		dynarray_binstream_container( dynarray& v, uints n, fnc_stream fout, fnc_stream fin )
-            : binstream_containerT<T,COUNT>(n,fout,fin), _v(v)
+		dynarray_binstream_container( const dynarray<T,COUNT,A>& v, uints n, fnc_stream fout, fnc_stream fin )
+            : binstream_containerT<T,COUNT>(n,fout,fin), _v(const_cast<dynarray<T,COUNT,A>&>(v))
         {
             _pos = 0;
         }
 
     protected:
-        dynarray& _v;
+        dynarray<T,COUNT,A>& _v;
+        uints _pos;
+    };
+
+    ///
+    struct dynarray_binstream_dereferencing_container : public binstream_containerT<T,COUNT>
+    {
+        virtual const void* extract( uints n )
+        {
+            DASSERT(n==1);
+            const T* p = _v[_pos];
+            _pos += n;
+            return p;
+        }
+
+        virtual void* insert( uints n )
+        {
+            DASSERT(n==1);
+            return new(_v.add()) T;
+        }
+
+        virtual bool is_continuous() const {
+            return false;
+        }
+
+		dynarray_binstream_dereferencing_container( const dynarray<T*>& v, uints n=UMAXS )
+            : binstream_containerT<T,COUNT>(n), _v(const_cast<dynarray<T*>&>(v))
+        {
+            _pos = 0;
+        }
+
+		dynarray_binstream_dereferencing_container( const dynarray<T*>& v, uints n, fnc_stream fout, fnc_stream fin )
+            : binstream_containerT<T,COUNT>(n,fout,fin), _v(const_cast<dynarray<T*>&>(v))
+        {
+            _pos = 0;
+        }
+
+    protected:
+        dynarray<T*>& _v;
         uints _pos;
     };
 
@@ -1424,8 +1462,8 @@ struct binstream_adapter_writable< dynarray<T,COUNT,A> > {
 };
 
 template <class T, class COUNT, class A>
-struct binstream_adapter_readable< dynarray<T,COUNT,A> > {
-    typedef dynarray<T,COUNT,A>   TContainer;
+struct binstream_adapter_readable< const dynarray<T,COUNT,A> > {
+    typedef const dynarray<T,COUNT,A>   TContainer;
     typedef typename dynarray<T,COUNT,A>::dynarray_binstream_container
         TBinstreamContainer;
 };
