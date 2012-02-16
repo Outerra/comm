@@ -210,10 +210,10 @@ public:
                 case type::T_FLOAT:
                     switch( t.get_size() ) {
                     case 4:
-                        _bufw += *(const float*)p;
+                        _bufw.append_float(*(const float*)p, 6);
                         break;
                     case 8:
-                        _bufw += *(const double*)p;
+                        _bufw.append_float(*(const double*)p, 10);
                         break;
 
                     default: throw ersSYNTAX_ERROR "unknown type"; break;

@@ -466,7 +466,7 @@ public:
     charstr& operator += (ulong i)              { append_num(10,(uints)i); return *this; }
 #endif //SYSTYPE_WIN
 
-    charstr& operator += (double d)             { append_float(d,3); return *this; }
+    charstr& operator += (double d)             { append_float(d,6); return *this; }
 
     ///Formatted numbers - int/uint
     template<int WIDTH, int ALIGN, class NUM>
