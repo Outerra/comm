@@ -83,9 +83,10 @@ public:
    
     virtual opcd write( const void* p, type t )
     {
-        opcd e = _outa->write( p, t );
-        if(!e)
-            e = _outb->write( p, t );
+        opcd e;
+
+        if(_outa) e = _outa->write(p, t);
+        if(_outb) e = _outb->write(p, t);
 
         return e;
     }
@@ -98,8 +99,9 @@ public:
 	virtual opcd write_raw( const void* p, uints& len )
 	{
         uints lenb = len;
-        opcd e = _outa->write_raw( p, len );
-        if(!e) e = _outb->write_raw( p, lenb );
+        opcd e;
+        if(_outa) e = _outa->write_raw(p, len);
+        if(_outb) e = _outb->write_raw(p, lenb);
 
         return e;
     }
@@ -108,8 +110,9 @@ public:
 
     virtual opcd write_array_separator( type t, uchar end )
     {
-        opcd e = _outa->write_array_separator( t, end );
-        if(!e)  e = _outb->write_array_separator( t, end );
+        opcd e;
+        if(_outa) e = _outa->write_array_separator(t, end);
+        if(_outb) e = _outb->write_array_separator(t, end);
         return e;
     }
     virtual opcd read_array_separator( type t )                         { return _in->read_array_separator(t); }
@@ -117,8 +120,9 @@ public:
 
     virtual opcd write_array_content( binstream_container_base& c, uints* count )
     {
-        opcd e = _outa->write_array_content(c,count);
-        if(!e)  e = _outb->write_array_content(c,count);
+        opcd e;
+        if(_outa) e = _outa->write_array_content(c,count);
+        if(_outb) e = _outb->write_array_content(c,count);
         return e;
     }
 
@@ -155,7 +159,7 @@ public:
         return 0;
     }
 
-	virtual void flush()                        { _outa->flush();  _outb->flush(); }
+	virtual void flush()                        { if(_outa) _outa->flush();  if(_outb) _outb->flush(); }
 	virtual void acknowledge( bool eat )        { _in->acknowledge(eat); }
 
     virtual void reset_read()
@@ -165,8 +169,8 @@ public:
 
     virtual void reset_write()
     {
-        _outa->reset_write();
-        _outb->reset_write();
+        if(_outa) _outa->reset_write();
+        if(_outb) _outb->reset_write();
     }
 
     virtual opcd set_timeout( uint ms )         { return _in->set_timeout(ms); }
@@ -178,18 +182,26 @@ public:
             e = _in->seek( seektype, pos );
         else if( seektype & fSEEK_WRITE )
         {
-            e = _outa->seek( seektype, pos );
-            if(!e) e = _outb->seek( seektype, pos );
+            if(_outa) e = _outa->seek( seektype, pos );
+            if(_outb) e = _outb->seek( seektype, pos );
         }
         return e;
     }
 
-    virtual uint64 get_written_size() const     { return _outa->get_written_size(); }
-    virtual uint64 set_written_size( int64 n )  { return _outa->set_written_size(n); }
+    virtual uint64 get_written_size() const     { return _outa ? _outa->get_written_size() : (_outb ? _outb->get_written_size() : 0); }
+    virtual uint64 set_written_size( int64 n )  {
+        uint64 v=0;
+        if(_outa) v = _outa->set_written_size(n);
+        if(_outb) v = _outb->set_written_size(n);
+        return v;
+    }
 
     virtual opcd overwrite_raw( uint64 pos, const void* data, uints len )
     {
-        return _outa->overwrite_raw( pos, data, len );
+        opcd e;
+        if(_outa) e = _outa->overwrite_raw(pos, data, len);
+        if(_outb) e = _outb->overwrite_raw(pos, data, len);
+        return e;
     }
 };
 
