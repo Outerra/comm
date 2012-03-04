@@ -139,13 +139,7 @@ public:
         return token::empty();
     }
 
-    void thread_name( thread_t tid, const token& name )
-    {
-        GUARDME;
-        info*const* pti = _hash.find_value(tid);
-        if(pti)
-            (*pti)->name = name;
-    }
+    void thread_name( thread_t tid, const token& name );
 
     opcd request_cancellation( thread_t tid )
     {

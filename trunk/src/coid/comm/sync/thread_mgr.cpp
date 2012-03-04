@@ -42,6 +42,17 @@ static void set_thread_name(DWORD dwThreadID, const char* threadName)
 namespace coid {
 
 ////////////////////////////////////////////////////////////////////////////////
+void thread_manager::thread_name( thread_t tid, const token& name )
+{
+    GUARDME;
+    info*const* pti = _hash.find_value(tid);
+    if(pti && (*pti)->name != name) {
+        (*pti)->name = name;
+		set_thread_name(-1, (*pti)->name.c_str());
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
 thread thread_manager::thread_start( thread_manager::info* ti )
 {
     thread_t tid;
