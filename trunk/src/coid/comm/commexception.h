@@ -110,6 +110,12 @@ struct exception
         return _dtext.is_empty() ? _stext : (token)_dtext;
     }
 
+    const char* c_str() const {
+        if(_dtext.is_empty())
+            const_cast<charstr&>(_dtext) = _stext;
+        return _dtext.c_str();
+    }
+
 protected:
 
     token _stext;
