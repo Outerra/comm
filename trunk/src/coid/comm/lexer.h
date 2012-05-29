@@ -1496,7 +1496,7 @@ public:
 
     ///Match one of the literals. The list is terminated by an empty token.
     ///If no parameter is matched, throws exception (struct lexception).
-    int match_either( token list[] )
+    int match_either( const token list[] )
     {
         int i=0;
         while(list[i]) {
