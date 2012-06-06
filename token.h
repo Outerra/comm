@@ -231,6 +231,7 @@ struct token
     }
 
     bool operator == (const char* str) const {
+        if(!str) return _pte==_ptr;
         const char* p = _ptr;
         for( ; p<_pte; ++p, ++str ) {
             if( *str != *p )  return false;
@@ -251,6 +252,7 @@ struct token
     }
 
     bool operator != (const char* str) const {
+        if(!str) return _pte!=_ptr;
         const char* p = _ptr;
         for( ; p<_pte; ++p, ++str ) {
             if( *str != *p )  return true;
