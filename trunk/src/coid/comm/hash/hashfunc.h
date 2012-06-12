@@ -58,79 +58,79 @@ inline uint __coid_hash_string( const char* s )
         h = (h ^ *s)*16777619u;
         //h = (h ^ *s) + (h<<26) + (h>>6);
 
-    return uints(h);
+    return h;
 }
 
 
-inline uints __coid_hash_string( const char* s, uints n )
+inline uint __coid_hash_string( const char* s, uints n )
 {
     uint h = 2166136261u;
     for( ; n>0; ++s,--n)
         h = (h ^ *s)*16777619u;
         //h = (h ^ *s) + (h<<26) + (h>>6);
 
-    return uints(h);
+    return h;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 template<> struct hash<char*>
 {
     typedef char* key_type;
-    uints operator()(const char* s) const { return __coid_hash_string(s); }
+    uint operator()(const char* s) const { return __coid_hash_string(s); }
 };
 
 template<> struct hash<const char*>
 {
     typedef const char* key_type;
-    uints operator()(const char* s) const { return __coid_hash_string(s); }
+    uint operator()(const char* s) const { return __coid_hash_string(s); }
 };
 
 template<> struct hash<char> {
     typedef char key_type;
-    uints operator()(char x) const { return x; }
+    uint operator()(char x) const { return x; }
 };
 template<> struct hash<unsigned char> {
     typedef unsigned char key_type;
-    uints operator()(unsigned char x) const { return x; }
+    uint operator()(unsigned char x) const { return x; }
 };
 template<> struct hash<signed char> {
     typedef signed char key_type;
-    uints operator()(unsigned char x) const { return x; }
+    uint operator()(unsigned char x) const { return x; }
 };
 
 template<> struct hash<short> {
     typedef short key_type;
-    uints operator()(short x) const { return x; }
+    uint operator()(short x) const { return x; }
 };
 template<> struct hash<unsigned short> {
     typedef unsigned short key_type;
-    uints operator()(unsigned short x) const { return x; }
+    uint operator()(unsigned short x) const { return x; }
 };
 template<> struct hash<int> {
     typedef int key_type;
-    uints operator()(int x) const { return x; }
+    uint operator()(int x) const { return x; }
 };
 template<> struct hash<unsigned int> {
     typedef unsigned int key_type;
-    uints operator()(unsigned int x) const { return x; }
+    uint operator()(unsigned int x) const { return x; }
 };
 template<> struct hash<long> {
     typedef long key_type;
-    uints operator()(long x) const { return x; }
+    uint operator()(long x) const { return x; }
 };
 template<> struct hash<unsigned long> {
     typedef unsigned long key_type;
-    uints operator()(unsigned long x) const { return x; }
+    uint operator()(unsigned long x) const { return x; }
 };
 
 #if defined(SYSTYPE_MSVC) || defined(SYSTYPE_32)
 template<> struct hash<int64> {
     typedef int64 key_type;
-    uints operator()(int64 x) const { return (uints)x; }
+    uint operator()(int64 x) const { return (uint)x; }
 };
 template<> struct hash<uint64> {
     typedef uint64 key_type;
-    uints operator()(uint64 x) const { return (uints)x; }
+    uint operator()(uint64 x) const { return (uint)x; }
 };
 #endif
 
@@ -170,7 +170,7 @@ public:
 
     string_hash(const token& t);
 
-    operator uints() const {
+    operator uint() const {
         return _hash;
     }
 

@@ -1791,7 +1791,7 @@ inline const char* token::set( const charstr& str )
 inline token token::rebase(const charstr& from, const charstr& to) const
 {
     DASSERT(_ptr>=from.ptr() && _pte<=from.ptre());
-    uint offset = _ptr - from.ptr();
+    uints offset = _ptr - from.ptr();
     DASSERT(offset+len() <= to.len());
 
     return token(to.ptr()+offset, len());

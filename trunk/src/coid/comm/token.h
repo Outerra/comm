@@ -1132,11 +1132,11 @@ struct token
     }
 
     ///Count characters up to specified substring
-    uint count_until_substring( const substring& sub, uints off=0 ) const
+    uints count_until_substring( const substring& sub, uints off=0 ) const
     {
         if(off >= lens())  return len();
 
-        return (uint)sub.find(_ptr+off, lens()-off) + off;
+        return sub.find(_ptr+off, lens()-off) + off;
     }
 
 
@@ -1416,7 +1416,7 @@ struct token
     }
 
     //@return the length of common prefix between two strings
-    uint common_prefix(const char* str) const
+    uints common_prefix(const char* str) const
     {
         const char* p = _ptr;
         for( ; p<_pte; ++p, ++str )
