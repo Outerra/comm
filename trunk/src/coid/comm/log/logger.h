@@ -142,7 +142,8 @@ public:
 		Warning,
 		Info,
 		Debug,
-		Last
+		Last,
+        None,
 	};
 
 	class logmsg_local
@@ -171,10 +172,9 @@ public:
 			"INFO: ",
 			"DEBUG: ",
 		};
-		static token ud="userdefined";
-		
-		if (t<Last) return st[t];
-		return ud;
+        static token empty = token::empty();
+
+		return t<Last ? st[t] : empty;
 	}
 
 protected:

@@ -123,6 +123,9 @@
     <ClCompile Include="txtconv.cpp">
       <Filter>cxx</Filter>
     </ClCompile>
+    <ClCompile Include="sync\thread_mgr.cpp">
+      <Filter>sync</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="atomic\atomic.h">

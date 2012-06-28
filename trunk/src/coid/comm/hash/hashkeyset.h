@@ -288,7 +288,7 @@ public:
 
     opcd meta_stream_in( metastream& m, const token& name = token::empty() )
     {
-        hashtable_binstream_container bc(*this);
+        hashtable_binstream_container bc(*this, UMAXS);
         return m.stream_array_in(bc, name);
     }
 };

@@ -189,6 +189,9 @@ public:
     ///Get program executable directory
     static charstr& get_ped( charstr& buf );
 
+    ///Get temp directory
+    static charstr& get_tmp( charstr& buf );
+
     ///Get current program file path
     static charstr& get_program_path( charstr& buf );
 
