@@ -73,6 +73,7 @@
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)\bin\$(Platform)\$(Configuration)\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">comm64d</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">comm64</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectName)d</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -94,7 +95,7 @@
       <Culture>0x041b</Culture>
     </ResourceCompile>
     <Lib>
-      <OutputFile>$(OutDir)commd.lib</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
     </Lib>
     <Bscmake>
@@ -121,7 +122,7 @@
       <Culture>0x041b</Culture>
     </ResourceCompile>
     <Lib>
-      <OutputFile>$(OutDir)comm.lib</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
     </Lib>
     <Bscmake>
@@ -274,6 +275,7 @@
     <ClCompile Include="singleton.cpp" />
     <ClCompile Include="str-win.cpp" />
     <ClCompile Include="substring.cpp" />
+    <ClCompile Include="sync\thread_mgr.cpp" />
     <ClCompile Include="sync\_mutex.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>

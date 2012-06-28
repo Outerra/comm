@@ -50,6 +50,7 @@ void* __stdcall GetCurrentProcess();
 long __stdcall OpenProcessToken(void*, long, void**);
 int __stdcall GetUserProfileDirectoryA(void*, char*, ulong*);
 long __stdcall CloseHandle(void*);
+ulong __stdcall GetTempPathA(ulong, char*);
 
 #pragma comment(lib, "userenv.lib")
 }
@@ -184,6 +185,13 @@ charstr& directory::get_ped( charstr& buf )
     t.cut_right_back('\\', token::cut_trait_keep_sep_with_source());
 
     return buf.resize( t.len() );
+}
+
+////////////////////////////////////////////////////////////////////////////////
+charstr& directory::get_tmp( charstr& buf )
+{
+    GetTempPathA(244, buf.get_buf(244));
+    return buf;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
