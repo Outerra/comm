@@ -665,8 +665,8 @@ class metagen //: public binstream
         bool write_special_value( metagen& mg, const token& attrib, Varx& v ) const
         {
             if(attrib == "@index") {
-                DASSERT( v.is_array() );
-                if(v.is_array())
+                DASSERT( v.is_array_element() );
+                if(v.is_array_element())
                     mg.write_as_string(v.index);
             }
             else if(attrib == "@value") {
