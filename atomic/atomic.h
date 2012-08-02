@@ -46,6 +46,7 @@
 	#pragma intrinsic(_InterlockedExchangeAdd)
 	#pragma intrinsic(_InterlockedCompareExchange)
 	#pragma intrinsic(_InterlockedCompareExchange64)
+	#pragma intrinsic(_InterlockedExchange)
 
 	#if defined(SYSTYPE_64)
 		#pragma intrinsic(__movsq)
@@ -218,6 +219,46 @@ namespace atomic {
 			reinterpret_cast<long>(pcmp)) == reinterpret_cast<long>(pcmp);
 #endif
 	}
+
+    // SWAP
+
+    inline coid::int32 exchange(volatile coid::int32 * ptr, const coid::int32 val)
+	{
+#if defined(__GNUC__)
+		return __sync_lock_test_and_set(ptr, val);
+#elif defined(WIN32)
+		return _InterlockedExchange(reinterpret_cast<volatile long*>(ptr), val);
+#endif
+	}
+
+    inline coid::uint32 exchange(volatile coid::uint32 * ptr, const coid::uint32 val)
+	{
+#if defined(__GNUC__)
+		return __sync_lock_test_and_set(ptr, val);
+#elif defined(WIN32)
+		return _InterlockedExchange(reinterpret_cast<volatile long*>(ptr), val);
+#endif
+	}
+
+#ifdef SYSTYPE_64
+    inline coid::int64 exchange(volatile coid::int64 * ptr, const coid::int64 val)
+	{
+#if defined(__GNUC__)
+		return __sync_lock_test_and_set(ptr, val);
+#elif defined(WIN32)
+		return _InterlockedExchange(reinterpret_cast<__int64*>(ptr), val);
+#endif
+	}
+
+    inline coid::uint64 exchange(volatile coid::uint64 * ptr, const coid::uint64 val)
+	{
+#if defined(__GNUC__)
+		return __sync_lock_test_and_set(ptr, val);
+#elif defined(WIN32)
+		return _InterlockedExchange(reinterpret_cast<__int64*>(ptr), val);
+#endif
+	}
+#endif
 
 
     // AND
