@@ -2097,7 +2097,7 @@ struct token
             dec = todouble_and_shift();
             consume(deg_utf8) || consume(ord_utf8) || consume_char("°");
         }
-        else if(consume(deg_utf8) || consume(ord_utf8) || consume_char("°, "))
+        else if(consume(deg_utf8) || consume(ord_utf8) || consume_char("°*, "))
         {
             skip_space();
             int mnt = touint_and_shift();

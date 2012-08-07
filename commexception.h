@@ -60,44 +60,46 @@ struct exception
 		, _location(loc)
     {}
 
-    exception& operator << (const char *czstr)  { _dtext += (czstr); return *this; }
-    exception& operator << (const token& tok)   { _dtext += (tok);   return *this; }
-    exception& operator << (const charstr& str) { _dtext += (str);   return *this; }
-    exception& operator << (char c)             { _dtext += (c);     return *this; }
+    exception& operator << (const char *czstr)  { S2D(); _dtext += (czstr); return *this; }
+    exception& operator << (const token& tok)   { S2D(); _dtext += (tok);   return *this; }
+    exception& operator << (const charstr& str) { S2D(); _dtext += (str);   return *this; }
+    exception& operator << (char c)             { S2D(); _dtext += (c);     return *this; }
 
-    exception& operator << (int8 i)             { _dtext.append_num(10,(int)i);  return *this; }
-    exception& operator << (uint8 i)            { _dtext.append_num(10,(uint)i); return *this; }
-    exception& operator << (int16 i)            { _dtext.append_num(10,(int)i);  return *this; }
-    exception& operator << (uint16 i)           { _dtext.append_num(10,(uint)i); return *this; }
-    exception& operator << (int32 i)            { _dtext.append_num(10,(int)i);  return *this; }
-    exception& operator << (uint32 i)           { _dtext.append_num(10,(uint)i); return *this; }
-    exception& operator << (int64 i)            { _dtext.append_num(10,i);       return *this; }
-    exception& operator << (uint64 i)           { _dtext.append_num(10,i);       return *this; }
+    exception& operator << (int8 i)             { S2D(); _dtext.append_num(10,(int)i);  return *this; }
+    exception& operator << (uint8 i)            { S2D(); _dtext.append_num(10,(uint)i); return *this; }
+    exception& operator << (int16 i)            { S2D(); _dtext.append_num(10,(int)i);  return *this; }
+    exception& operator << (uint16 i)           { S2D(); _dtext.append_num(10,(uint)i); return *this; }
+    exception& operator << (int32 i)            { S2D(); _dtext.append_num(10,(int)i);  return *this; }
+    exception& operator << (uint32 i)           { S2D(); _dtext.append_num(10,(uint)i); return *this; }
+    exception& operator << (int64 i)            { S2D(); _dtext.append_num(10,i);       return *this; }
+    exception& operator << (uint64 i)           { S2D(); _dtext.append_num(10,i);       return *this; }
 
 #ifdef SYSTYPE_WIN
 # ifdef SYSTYPE_32
-    exception& operator << (ints i)             { _dtext.append_num(10,(ints)i);  return *this; }
-    exception& operator << (uints i)            { _dtext.append_num(10,(uints)i); return *this; }
+    exception& operator << (ints i)             { S2D(); _dtext.append_num(10,(ints)i);  return *this; }
+    exception& operator << (uints i)            { S2D(); _dtext.append_num(10,(uints)i); return *this; }
 # else //SYSTYPE_64
-    exception& operator << (int i)              { _dtext.append_num(10,i); return *this; }
-    exception& operator << (uint i)             { _dtext.append_num(10,i); return *this; }
+    exception& operator << (int i)              { S2D(); _dtext.append_num(10,i); return *this; }
+    exception& operator << (uint i)             { S2D(); _dtext.append_num(10,i); return *this; }
 # endif
 #elif defined(SYSTYPE_32)
-    exception& operator << (long i)             { _dtext.append_num(10,(ints)i);  return *this; }
-    exception& operator << (ulong i)            { _dtext.append_num(10,(uints)i); return *this; }
+    exception& operator << (long i)             { S2D(); _dtext.append_num(10,(ints)i);  return *this; }
+    exception& operator << (ulong i)            { S2D(); _dtext.append_num(10,(uints)i); return *this; }
 #endif //SYSTYPE_WIN
 
-    exception& operator << (double d)           { _dtext += (d); return *this; }
+    exception& operator << (double d)           { S2D(); _dtext += (d); return *this; }
 
     ///Formatted numbers
     template<int WIDTH, int ALIGN, class NUM>
     exception& operator << (const num_fmt<WIDTH,ALIGN,NUM> v) {
+        S2D();
         append_num(10, v.value, WIDTH, (EAlignNum)ALIGN);
         return *this;
     }
 
     exception& operator << (const opcd_formatter& f)
     {
+        S2D();
         _dtext << f.e.error_desc();
         if( f.e.text() && f.e.text()[0] )
             _dtext << " : " << f.e.text();
@@ -117,6 +119,13 @@ struct exception
     }
 
 protected:
+
+    void S2D() {
+        if(_stext) {
+            _dtext = _stext;
+            _stext.set_empty();
+        }
+    }
 
     token _stext;
     charstr _dtext;
