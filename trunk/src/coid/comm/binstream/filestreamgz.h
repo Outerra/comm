@@ -119,9 +119,9 @@ public:
 
     virtual opcd seek( int seektype, int64 pos )
     {
-        gzseek(_gz, (ints)pos,
-            (seektype&fSEEK_CURRENT)!=0 ? SEEK_CUR : SEEK_SET);
-        return 0;
+        return gzseek(_gz, (ints)pos, (seektype&fSEEK_CURRENT)!=0 ? SEEK_CUR : SEEK_SET) >= 0
+            ? ersNOERR
+            : ersFAILED;
     }
 
 
@@ -163,6 +163,22 @@ public:
     virtual void reset_write()
     {
         seek(0, 0);
+    }
+
+    bool set_pos( int64 pos ) {
+        return setpos(pos);
+    }
+
+protected:
+
+    bool setpos( int64 pos )
+    {
+        return -1 != gzseek(_gz, pos, SEEK_SET );
+    }
+
+    int64 getpos() const
+    {
+        return gztell(_gz);
     }
 
 protected:
