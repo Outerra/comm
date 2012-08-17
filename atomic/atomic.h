@@ -246,7 +246,7 @@ namespace atomic {
 #if defined(__GNUC__)
 		return __sync_lock_test_and_set(ptr, val);
 #elif defined(WIN32)
-		return _InterlockedExchange(reinterpret_cast<__int64*>(ptr), val);
+		return _InterlockedExchange64(ptr, val);
 #endif
 	}
 
@@ -255,7 +255,7 @@ namespace atomic {
 #if defined(__GNUC__)
 		return __sync_lock_test_and_set(ptr, val);
 #elif defined(WIN32)
-		return _InterlockedExchange(reinterpret_cast<__int64*>(ptr), val);
+		return _InterlockedExchange64(reinterpret_cast<volatile __int64*>(ptr), val);
 #endif
 	}
 #endif
