@@ -80,13 +80,16 @@ opcd directory::open( const token& path, const token& filter )
     close();
 
     _pattern = path;
-    if( _pattern.last_char() == '\\' || _pattern.last_char() == '/' )
+    if(_pattern.len() > 1  &&  _pattern.len() <= 3  &&  _pattern.nth_char(1) == ':')
+        treat_trailing_separator(_pattern, true);
+    else if( _pattern.last_char() == '\\' || _pattern.last_char() == '/' )
         _pattern.resize(-1);
 
     if(_stat64(_pattern.ptr(), &_st) != 0)
         return ersFAILED;
 
-    _pattern << '\\';
+    if(_pattern.last_char() != '\\')
+        _pattern << '\\';
     _curpath = _pattern;
     _baselen = _curpath.len();
     _pattern << (filter ? filter : token("*.*"));
