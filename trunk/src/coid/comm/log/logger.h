@@ -163,7 +163,7 @@ public:
 
 public:
 
-    const token& type2tok( const ELogType t )
+    static const token& type2tok( const ELogType t )
 	{
 		static token st[]={
 			"EXCEPTION: ",
