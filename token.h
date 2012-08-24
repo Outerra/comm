@@ -700,45 +700,54 @@ struct token
     };
 
     //@{ Most used traits
+    ///Keep the separator with the source string, return the whole string if no separator found
     static cut_trait cut_trait_keep_sep_with_source() {
         return cut_trait(fKEEP_SEPARATOR);
     }
 
+    ///Return the separator with the returned string, return the whole string if no separator found
     static cut_trait cut_trait_keep_sep_with_returned() {
         return cut_trait(fRETURN_SEPARATOR);
     }
 
-
+    ///Keep the separator with the source string, return the whole string if no separator found
     static cut_trait cut_trait_keep_sep() {
         return cut_trait(fKEEP_SEPARATOR);
     }
 
+    ///Return the separator with the returned string, return the whole string if no separator found
     static cut_trait cut_trait_return_with_sep() {
         return cut_trait(fRETURN_SEPARATOR);
     }
 
-    static cut_trait cut_trait_keep_sep_default_empty() {
-        return cut_trait(fKEEP_SEPARATOR|fON_FAIL_RETURN_EMPTY);
-    }
-
-    static cut_trait cut_trait_return_with_sep_default_empty() {
-        return cut_trait(fRETURN_SEPARATOR|fON_FAIL_RETURN_EMPTY);
-    }
-
-    static cut_trait cut_trait_remove_sep_default_empty() {
-        return cut_trait(fREMOVE_SEPARATOR|fON_FAIL_RETURN_EMPTY);
-    }
-
-    static cut_trait cut_trait_remove_all_default_empty() {
-        return cut_trait(fREMOVE_ALL_SEPARATORS|fON_FAIL_RETURN_EMPTY);
-    }
-
+    ///Remove the separator from both the source and the returned string, return the whole string if no separator found
     static cut_trait cut_trait_remove_sep() {
         return cut_trait(fREMOVE_SEPARATOR);
     }
 
+    ///Remove all contiguous separators from both the source and the returned string, return the whole string if no separator found
     static cut_trait cut_trait_remove_all() {
         return cut_trait(fREMOVE_ALL_SEPARATORS);
+    }
+
+    ///Keep the separator with the source string, return an empty string if no separator found
+    static cut_trait cut_trait_keep_sep_default_empty() {
+        return cut_trait(fKEEP_SEPARATOR|fON_FAIL_RETURN_EMPTY);
+    }
+
+    ///Return the separator with the returned string, return an empty string if no separator found
+    static cut_trait cut_trait_return_with_sep_default_empty() {
+        return cut_trait(fRETURN_SEPARATOR|fON_FAIL_RETURN_EMPTY);
+    }
+
+    ///Remove the separator from both the source and the returned string, return an empty string if no separator found
+    static cut_trait cut_trait_remove_sep_default_empty() {
+        return cut_trait(fREMOVE_SEPARATOR|fON_FAIL_RETURN_EMPTY);
+    }
+
+    ///Remove all contiguous separators from both the source and the returned string, return an empty string if no separator found
+    static cut_trait cut_trait_remove_all_default_empty() {
+        return cut_trait(fREMOVE_ALL_SEPARATORS|fON_FAIL_RETURN_EMPTY);
     }
     //@}
 
@@ -749,7 +758,7 @@ struct token
 
 
     ///Cut a token off, using single character as the delimiter
-    token cut_left( char c, cut_trait ctr = cut_trait(fREMOVE_SEPARATOR) )
+    token cut_left( char c, cut_trait ctr = cut_trait_remove_sep() )
     {
         token r;
         const char* p = strchr(c);
@@ -762,7 +771,7 @@ struct token
     }
 
     ///Cut a token off, using group of single characters as delimiters
-    token cut_left( const token& separators, cut_trait ctr = cut_trait(fREMOVE_SEPARATOR) )
+    token cut_left( const token& separators, cut_trait ctr = cut_trait_remove_sep() )
     {
         token r;
         const char* p = _ptr + count_notingroup(separators);
@@ -780,7 +789,7 @@ struct token
 
     ///Cut left substring
     ///@param skipsep zero if the separator should remain with the original token, nonzero if it's discarded
-    token cut_left( const substring& ss, cut_trait ctr = cut_trait(fREMOVE_SEPARATOR) )
+    token cut_left( const substring& ss, cut_trait ctr = cut_trait_remove_sep() )
     {
         token r;
         const char* p = _ptr + count_until_substring(ss);
@@ -797,7 +806,7 @@ struct token
 
     ///Cut left substring, searching for separator backwards
     ///@param skipsep zero if the separator should remain with the original token, nonzero if it's discarded
-    token cut_left_back( const char c, cut_trait ctr = cut_trait(fREMOVE_SEPARATOR) )
+    token cut_left_back( const char c, cut_trait ctr = cut_trait_remove_sep() )
     {
         token r;
         const char* p = strrchr(c);
@@ -811,7 +820,7 @@ struct token
     }
 
     ///Cut left substring, searching for separator backwards
-    token cut_left_back( const token& separators, cut_trait ctr = cut_trait(fREMOVE_SEPARATOR) )
+    token cut_left_back( const token& separators, cut_trait ctr = cut_trait_remove_sep() )
     {
         token r;
         uints off = count_notingroup_back(separators);
@@ -831,7 +840,7 @@ struct token
     }
 
     ///Cut left substring, searching for separator backwards
-    token cut_left_back( const substring& ss, cut_trait ctr = cut_trait(fREMOVE_SEPARATOR) )
+    token cut_left_back( const substring& ss, cut_trait ctr = cut_trait_remove_sep() )
     {
         token r;
         uints off=0;
@@ -859,37 +868,37 @@ struct token
 
 
     ///Cut right substring
-    token cut_right( const char c, cut_trait ctr = cut_trait(fREMOVE_SEPARATOR) )
+    token cut_right( const char c, cut_trait ctr = cut_trait_remove_sep() )
     {
         return cut_left(c, ctr.make_swap());
     }
 
     ///Cut right substring
-    token cut_right( const token& separators, cut_trait ctr = cut_trait(fREMOVE_SEPARATOR) )
+    token cut_right( const token& separators, cut_trait ctr = cut_trait_remove_sep() )
     {
         return cut_left(separators, ctr.make_swap());
     }
 
     ///Cut right substring
-    token cut_right( const substring& ss, cut_trait ctr = cut_trait(fREMOVE_SEPARATOR) )
+    token cut_right( const substring& ss, cut_trait ctr = cut_trait_remove_sep() )
     {
         return cut_left(ss, ctr.make_swap());
     }
 
     ///Cut right substring, searching for separator backwards
-    token cut_right_back( const char c, cut_trait ctr = cut_trait(fREMOVE_SEPARATOR) )
+    token cut_right_back( const char c, cut_trait ctr = cut_trait_remove_sep() )
     {
         return cut_left_back(c, ctr.make_swap());
     }
 
     ///Cut right substring, searching for separator backwards
-    token cut_right_back( const token& separators, cut_trait ctr = cut_trait(fREMOVE_SEPARATOR) )
+    token cut_right_back( const token& separators, cut_trait ctr = cut_trait_remove_sep() )
     {
         return cut_left_back(separators, ctr.make_swap());
     }
 
     ///Cut right substring, searching for separator backwards
-    token cut_right_back( const substring& ss, cut_trait ctr = cut_trait(fREMOVE_SEPARATOR) )
+    token cut_right_back( const substring& ss, cut_trait ctr = cut_trait_remove_sep() )
     {
         return cut_left_back(ss, ctr.make_swap());
     }
