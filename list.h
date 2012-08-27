@@ -115,8 +115,8 @@ public:
 		_list_const_iterator operator ++(int) { _list_const_iterator x(_node); _node=_node->_next;  return x; }
 		_list_const_iterator operator --(int) { _list_const_iterator x(_node); _node=_node->_prev;  return x; }
 
-		_list_const_iterator() : _node(0) {}
-		explicit _list_const_iterator(node* p) : _node(p) {}
+		_list_const_iterator() {}
+		explicit _list_const_iterator(node* p) : _list_iterator_base(p) {}
 	};
 
 	struct _list_const_reverse_iterator 
@@ -262,7 +262,8 @@ public:
 	{
 		if(!is_empty()) {
 	        coid::queue_helper_trait<T>::take(item,front());
-			erase(iterator(_node._next));
+			iterator eit(_node._next);
+			erase(eit);
 			return true;
 		} 
 		return false;
@@ -273,7 +274,8 @@ public:
 	{
 		if(!is_empty()) {
 			T *item=&front();
-			erase(iterator(_node._next));
+			iterator eit(_node._next);
+			erase(eit);
 			return item;
 		} 
 		return 0;
@@ -284,7 +286,8 @@ public:
 	{
 		if(!is_empty()) {
 	        coid::queue_helper_trait<T>::take(item,back());
-			erase(iterator(_node._prev));
+			iterator eit(_node._prev);
+			erase(eit);
 			return true;
 		} 
 		return false;
@@ -295,7 +298,8 @@ public:
 	{
 		if(!is_empty()) {
 			T *item=&back();
-			erase(iterator(_node._prev));
+			iterator eit(_node._prev);
+			erase(eit);
 			return item;
 		} 
 		return 0;
@@ -328,11 +332,11 @@ public:
 	reverse_iterator rend() { return reverse_iterator(&_node); }
 
     const_reverse_iterator rbegin() const { return const_reverse_iterator(_node._prev); }
-    const_reverse_iterator rend() const { return const_reverse_iterator(_&node); }
+    const_reverse_iterator rend() const { return const_reverse_iterator(&_node); }
 
     iterator find(const T &item)
     {
-        auto i = begin(), e = end();
+        iterator i = begin(), e = end();
         for(; *i != item && i != e; ++i);
         return i;
     }
@@ -344,7 +348,7 @@ public:
 
     void erase(const T &item)
     {
-        auto i = find(item);
+        iterator i = find(item);
         if(i != end()) erase(i);
     }
 };
