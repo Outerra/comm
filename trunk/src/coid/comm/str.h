@@ -58,7 +58,6 @@ class charstr
 {
     friend binstream& operator >> (binstream &in, charstr& x);
     friend binstream& operator << (binstream &out, const charstr& x);
-    friend opcd binstream_read_key( binstream &in, charstr& x );
     
     struct CHUNK { uchar a[4]; };
 
@@ -147,8 +146,7 @@ public:
     charstr( const token& tok )
     {
         if( tok.is_empty() ) return;
-		assign( tok.ptr(), tok.len()+1 );
-        _tstr[tok.len()] = 0;
+		assign(tok.ptr(), tok.len());
     }
 
     charstr(char c)                { append(c); }
@@ -181,7 +179,7 @@ public:
     charstr& set( const char* czstr )
     {
         if(czstr)
-            assign( czstr, strlen(czstr) + 1 );
+            assign(czstr, strlen(czstr));
         else
             free();
         return *this;
@@ -189,16 +187,14 @@ public:
 
     charstr& set( const charstr& str )
     {
-        assign( str.ptr(), str.lent() );
+        assign(str.ptr(), str.len());
         return *this;
     }
 
 
     const char* set_from( const token& tok )
     {
-        if( tok.is_empty() )  { reset(); return tok.ptr(); }
-        assign( tok.ptr(), tok.len()+1 );
-        _tstr[tok.len()] = 0;
+        assign(tok.ptr(), tok.len());
         return tok.ptre();
     }
 
@@ -209,8 +205,7 @@ public:
 
         DASSERT( slen <= UMAX32 );
 
-        assign(czstr, slen+1);
-        _tstr[slen] = 0;
+        assign(czstr, slen);
         return czstr + slen;
     }
 
@@ -279,8 +274,7 @@ public:
     {
         uints len = count_ingroup( czstr, chars );
         if( czstr[len] != 0 ) {
-            assign( czstr, len+1 );
-            _tstr[len] = 0;
+            assign(czstr, len);
             return czstr + len;
         }
         return czstr;
@@ -338,12 +332,12 @@ public:
 
     //assignment
     charstr& operator = (const char *czstr) {
-        uints len = czstr ? (strlen(czstr)+1) : 0;
+        uints len = czstr ? strlen(czstr) : 0;
         assign(czstr, len);
         return *this;
     }
     charstr& operator = (const charstr& str) {
-        assign (str.ptr(), str.lent());
+        assign(str.ptr(), str.len());
         return *this;
     }
 
@@ -352,7 +346,7 @@ public:
         if( tok.is_empty() )
             reset();
         else
-            assign( tok.ptr(), tok.len()+1 );
+            assign(tok.ptr(), tok.len());
         return *this;
     }
 
@@ -1414,10 +1408,9 @@ protected:
 
         DASSERT( len <= UMAX32 );
 
-        _tstr.alloc(len);
-        xmemcpy( _tstr.ptr(), czstr, len );
-        termzero();
-        //fill_align();
+        char* p = _tstr.alloc(len+1);
+        xmemcpy(p, czstr, len);
+        p[len] = 0;
     }
 
     void _append( const char *czstr, uints len )
@@ -1868,7 +1861,7 @@ inline binstream& operator >> (binstream &out, token& x)
     RASSERT(0);
     return out;
 }
-
+/*
 ////////////////////////////////////////////////////////////////////////////////
 ///Wrappers for making key-type out of std charstr and token classes
 namespace bstype {
@@ -1912,32 +1905,26 @@ inline binstream& operator << (binstream &out, const t_key<token>& x)
 }
 
 } //namespace bstype
-
+*/
 
 ////////////////////////////////////////////////////////////////////////////////
-inline opcd binstream_read_key( binstream &in, charstr& x )
+inline opcd binstream::read_key( charstr& key, int kmember, const token& expected_key )
 {
-    x.reset();
-    dynarray<bstype::key,uint>::dynarray_binstream_container
-        c(reinterpret_cast<dynarray<bstype::key,uint>&>(x.dynarray_ref()));
+    if(kmember > 0) {
+        opcd e = read_separator();
+        if(e) return e;
+    }
 
-    opcd e = in.read_array(c);
-    if( x._tstr.size() )
-        *x._tstr.add() = 0;
+    key.reset();
+    dynarray<bstype::key,uint>::dynarray_binstream_container
+        c(reinterpret_cast<dynarray<bstype::key,uint>&>(key.dynarray_ref()));
+
+    opcd e = read_array(c);
+    if(key.lent())
+        key.appendn_uninitialized(1);
 
     return e;
 }
-
-inline opcd binstream_write_key( binstream &out, const charstr& x )
-{
-    return out.write_key( x.ptr(), x.len() );
-}
-
-inline opcd binstream_write_token( binstream &out, const token& x )
-{
-    return out.write_key(x);
-}
-
 
 ////////////////////////////////////////////////////////////////////////////////
 template<> struct hash<charstr>

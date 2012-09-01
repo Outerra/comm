@@ -48,6 +48,26 @@ COID_NAMESPACE_BEGIN
 class fmtstream : public binstream
 {
 public:
+
+    fmtstream()
+    { init(0,0); }
+    
+    fmtstream( binstream& b )
+    { init(&b, &b); }
+    
+    fmtstream( binstream* br, binstream* bw )
+    { init(br, bw); }
+
+    ~fmtstream() {}
+
+    void init( binstream* br, binstream* bw )
+    {
+        _binr = _binw = 0;
+        if(bw)  bind( *bw, BIND_OUTPUT );
+        if(br)  bind( *br, BIND_INPUT );
+    }
+
+
     /// Formatting stream name
     virtual token fmtstream_name() = 0;
 
@@ -58,6 +78,123 @@ public:
 
     ///Called to provide prefix for error reporting
     virtual void fmtstream_file_name( const token& file_name ) = 0;
+
+
+    virtual uint binstream_attributes( bool in0out1 ) const {
+        return fATTR_OUTPUT_FORMATTING;
+    }
+
+    virtual opcd read_until( const substring& ss, binstream * bout, uints max_size=UMAXS ) {
+        return ersNOT_IMPLEMENTED;
+    }
+
+    virtual opcd peek_read( uint timeout )  { return _binr->peek_read(timeout); }
+    virtual opcd peek_write( uint timeout ) { return _binw->peek_write(timeout); }
+
+
+    virtual opcd bind( binstream& bin, int io=0 )
+    {
+        if( io<0 )
+            _binr = &bin;
+        else if( io>0 )
+            _binw = &bin;
+        else
+            _binr = _binw = &bin;
+        
+        return 0;
+    }
+
+    virtual void flush()
+    {
+        if( _binw == NULL )
+            return;
+
+        write_buffer(true);
+
+        _binw->flush();
+    }
+
+    virtual void reset_read()
+    {
+        _binr->reset_read();
+    }
+
+    virtual void reset_write()
+    {
+        _binw->reset_write();
+        _bufw.reset();
+    }
+
+    virtual opcd open( const token & arg )  { return _binw->open(arg); }
+    virtual opcd close( bool linger=false ) { return _binw->close(linger); }
+    virtual bool is_open() const            { return _binr->is_open(); }
+
+
+    virtual opcd write_raw( const void* p, uints& len )
+    {
+        return _binw->write_raw(p, len);
+    }
+
+    virtual opcd read_raw( void* p, uints& len )
+    {
+        return _binr->read_raw(p, len);
+    }
+
+
+    opcd write_binary( const void* data, uints n )
+    {
+        char* buf = _bufw.get_append_buf(n*2);
+        charstrconv::bin2hex( data, buf, n, 1, 0 );
+        //_bufw.append_num_uint( 16, data, n, n*2, charstr::ALIGN_NUM_FILL_WITH_ZEROS );
+        return 0;
+    }
+
+    opcd read_binary( token& tok, binstream_container_base& c, uints n, uints* count )
+    {
+        uints nr = n;
+        if( c.is_continuous() && n!=UMAXS )
+            nr = charstrconv::hex2bin( tok, c.insert(n), n, ' ' );
+        else {
+            for( ; nr>0; --nr )
+                if( charstrconv::hex2bin( tok, c.insert(1), 1, ' ' ) ) break;
+        }
+
+        *count = n - nr;
+
+        if( n != UMAXS  &&  nr>0 )
+            return ersMISMATCHED "not enough array elements";
+
+        tok.skip_char(' ');
+        if( !tok.is_empty() )
+            return ersMISMATCHED "more characters after array elements read";
+
+        return 0;
+    }
+
+protected:
+
+    opcd write_buffer( bool force = false )
+    {
+        opcd e = 0;
+        uints len = _bufw.len();
+
+        if( len == 0 )
+            return 0;
+
+        if( force || len >= 2048 ) {
+            e = write_raw( _bufw.ptr(), len );
+            _bufw.reset();
+        }
+
+        return e;
+    }
+
+
+
+    binstream* _binr;                   ///< bound reading stream
+    binstream* _binw;                   ///< bound writing stream
+
+    charstr _bufw;                      ///< caching write buffer
 };
 
 

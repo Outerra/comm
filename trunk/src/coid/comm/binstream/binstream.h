@@ -337,6 +337,21 @@ public:
         return i;
     }
 
+    ////////////////////////////////////////////////////////////////////////////////
+    ///Write the key for named values, used with formatting streams & metastream
+    virtual opcd write_key( const token& key, int kmember )
+    {
+        if(kmember > 0)
+            write_separator();
+
+        binstream_container_fixed_array<bstype::key,uint> c((bstype::key*)key.ptr(), key.len());
+        return write_array(c);
+    }
+
+    ///Read the following key for named values, used with formatting streams & metastream
+    //@note definition in str.h
+    virtual opcd read_key( charstr& key, int kmember, const token& expected_key );
+
 
     ////////////////////////////////////////////////////////////////////////////////
     opcd write_separator()              { return write( 0, type( type::T_SEPARATOR, 0 ) ); }
@@ -353,13 +368,6 @@ public:
         return write_array(c);
     }
 
-    ///Write key token
-    opcd write_key( const token& x )
-    {
-        binstream_container_fixed_array<key,uint> c((key*)x.ptr(), x.len());
-        return write_array(c);
-    }
-
     ///Write character token (substring)
     opcd write_token( const char* p, uint len )
     {
@@ -367,17 +375,8 @@ public:
         return write_array(c);
     }
 
-    ///Write key token
-    opcd write_key( const char* p, uint len )
-    {
-        binstream_container_fixed_array<key,uint> c((key*)p, len);
-        return write_array(c);
-    }
-
     binstream& xwrite_token( const token& x )           { opcd e = write_token(x);  if(e) throw e; return *this; }
-    binstream& xwrite_key( const token& x )             { opcd e = write_key(x);  if(e) throw e; return *this; }
     binstream& xwrite_token( const char* p, uint len )  { opcd e = write_token(p,len);  if(e) throw e; return *this; }
-    binstream& xwrite_key( const char* p, uint len )    { opcd e = write_key(p,len);  if(e) throw e; return *this; }
 
 
     ////////////////////////////////////////////////////////////////////////////////

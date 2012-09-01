@@ -37,6 +37,7 @@
 
 #include "singleton.h"
 #include "sync/mutex.h"
+#include "hash/hashkeyset.h"
 
 #include "binstream/filestream.h"
 #include "binstream/txtstream.h"
@@ -143,6 +144,56 @@ void singletons_destroy()
 {
     global().destroy();
 }
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+struct interface_register_entry
+{
+    ints id;
+    void* creator;
+
+    operator ints() const { return id; }
+};
+
+struct interface_register_impl
+{
+    hash_keyset<interface_register_entry, _Select_Copy<interface_register_entry,ints>> _hash;
+    _comm_mutex _mx;
+
+    static interface_register_impl& get() {
+        static interface_register_impl _this;
+        return _this;
+    }
+};
+
+
+
+
+void* interface_register::get_interface_creator( ints interface_creator_id )
+{
+    interface_register_impl& reg = interface_register_impl::get();
+    comm_mutex_guard<_comm_mutex> mxg(reg._mx);
+
+    const interface_register_entry* entry = reg._hash.find_value(interface_creator_id);
+
+    return entry ? entry->creator : 0;
+}
+
+void interface_register::register_interface_creator( ints interface_creator_id, void* creator )
+{
+    interface_register_impl& reg = interface_register_impl::get();
+    comm_mutex_guard<_comm_mutex> mxg(reg._mx);
+
+    interface_register_entry* entry = reg._hash.insert_value_slot(interface_creator_id);
+    if(entry) {
+        entry->creator = creator;
+        entry->id = interface_creator_id;
+    }
+}
+
+
 
 
 } //namespace coid

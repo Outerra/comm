@@ -116,6 +116,68 @@ public:
     uint get_indent() const                 { return _indent; }
     void set_indent( uint indent )          { _indent = indent; }
 
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
+    opcd write_key( const token& key, int kmember )
+    {
+        if(kmember > 0)
+            _bufw << tSep;
+
+        write_tabs(_indent);
+
+        _bufw << key << " = ";
+        
+        opcd e = write_token_raw(_bufw.ptr());
+        _bufw.reset();
+        return e;
+    }
+
+    opcd read_key( charstr& key, int kmember, const token& expected_key )
+    {
+        opcd e;
+
+        //read separator if needed
+        if(kmember > 0) {
+            token tok = _tokenizer.next();
+
+            if( trSep.is_empty() )
+                _tokenizer.push_back();
+            else {
+                bool has = tok == trSep;
+                if(has)
+                    tok = _tokenizer.next();
+
+                _tokenizer.push_back();
+
+                if( tok == char('}') )
+                    e = ersNO_MORE;
+                else if( _tokenizer.end() )     //no next top-level member
+                    e = ersNO_MORE;
+                else if(!has) {
+                    if(!separators_are_optional)
+                        e = ersSYNTAX_ERROR "missing separator";
+                }
+            }
+            if(e) return e;
+        }
+
+        token tok = _tokenizer.next();
+
+        if( tok == char('}')  ||  _tokenizer.end() )
+            e = ersNO_MORE;
+        else
+            e = _tokenizer.last() == lexid
+                ? opcd(0)
+                : ersSYNTAX_ERROR "expected identifier";
+
+        if(!e) {
+            key = tok;
+
+            tok = _tokenizer.next();
+            e = (tok == char('='))  ?  opcd(0) : ersSYNTAX_ERROR "expected =";
+        }
+
+        return e;
+    }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     opcd write( const void* p, type t )
@@ -277,8 +339,7 @@ public:
             }
         }
 
-        uints len = _bufw.len();
-        opcd e = write_raw( _bufw.ptr(), len );
+        opcd e = write_token_raw(_bufw.ptr());
         _bufw.reset();
 
         return e;

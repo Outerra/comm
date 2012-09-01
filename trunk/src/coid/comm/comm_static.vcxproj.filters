@@ -262,10 +262,8 @@
     <ClInclude Include="commtypes.h" />
     <ClInclude Include="dir.h" />
     <ClInclude Include="dynarray.h" />
-    <ClInclude Include="facility.h" />
     <ClInclude Include="fastdelegate.h" />
     <ClInclude Include="hptimer.h" />
-    <ClInclude Include="keywordt.h" />
     <ClInclude Include="lexer.h" />
     <ClInclude Include="local.h" />
     <ClInclude Include="mathf.h" />
