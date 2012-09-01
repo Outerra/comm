@@ -1496,7 +1496,7 @@ protected:
         if( !t.is_array_end() )
             movein_current<WRITE_MODE>();
 
-        //ignore the struct open and close tokens nested ikn binstream operators,
+        //ignore the struct open and close tokens nested in binstream operators,
         // as we follow those within metastream operators instead
         if( t.type == type::T_STRUCTBGN  ||  t.type == type::T_STRUCTEND )
             return 0;
@@ -1933,21 +1933,7 @@ protected:
     ///Read key from input
     opcd fmts_read_key()
     {
-        opcd e;
-        if( !is_first_var() )
-        {
-            e = _fmtstreamrd->read_separator();
-
-            if( e  &&  e != ersNO_MORE ) {
-                dump_stack(_err,0);
-                _err << " - error reading the variable separator: " << opcd_formatter(e);
-                fmt_error();
-                throw e;
-            }
-        }
-
-        if(!e)
-            e = binstream_read_key( *_fmtstreamrd, _rvarname );
+        opcd e = _fmtstreamrd->read_key(_rvarname, _curvar.kth, _curvar.var->varname);
 
         ++_curvar.kth;
 
@@ -2020,18 +2006,7 @@ protected:
         if( cache_prepared() )
             return 0;
 
-        opcd e;
-        if( !is_first_var() )
-        {
-            e = _fmtstreamwr->write_separator();
-            if(e) {
-                dump_stack(_err,0);
-                _err << " - error writing the variable separator: " << opcd_formatter(e);
-                throw e;
-            }
-        }
-
-        e = _fmtstreamwr->write_key( _curvar.var->varname );
+        opcd e = _fmtstreamwr->write_key(_curvar.var->varname, _curvar.kth);
         if(e) {
             dump_stack(_err,0);
             _err << " - error while writing the variable name '" << _curvar.var->varname << "': " << opcd_formatter(e);
