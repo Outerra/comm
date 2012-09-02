@@ -123,7 +123,7 @@ public:
     //@return true if path is a directory, handles trailing path delimiter
     static bool is_valid_directory( const token& arg ) {
         charstr args = arg;
-        treat_trailing_separator(args, false);
+        treat_trailing_separator(args, args.len()==2 && args[1]==':');
         return is_valid_directory(args.c_str());
     }
 
