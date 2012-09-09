@@ -121,10 +121,11 @@ class metagen //: public binstream
         Varx* varparent;
         const uchar* data;          ///< cache position
         int index;                  ///< current element index for arrays
+        int order;                  ///< current filtered element index for arrays
 
 
-        Varx() : var(0), varparent(0), data(0), index(-1) {}
-        Varx( const Var* v, const uchar* d ) : var(v), varparent(0), data(d), index(-1) {}
+        Varx() : var(0), varparent(0), data(0), index(-1), order(-1) {}
+        Varx( const Var* v, const uchar* d ) : var(v), varparent(0), data(d), index(-1), order(-1) {}
 
         bool find_containing_array_element( Varx& ch ) const
         {
@@ -449,15 +450,21 @@ class metagen //: public binstream
             const lextoken& tok = lex.last();
 
             flags = 0;
+            brace = 0;
+            depth = 0;
+
+            if(tok == '$') {
+                varname = tok.tok;  // $$ -> literal $
+                return true;
+            }
+
             while( tok.tok == '-' ) {
                 flags += 1 << rEAT_LEFT;
                 lex.next();
             }
 
-            if( tok.tok != '{'  &&  tok.tok != '['  &&  tok.tok != '(' ) {
-                brace = 0;
+            if( tok.tok != '{'  &&  tok.tok != '['  &&  tok.tok != '(' )
                 lex.push_back();
-            }
             else
                 brace = tok.tok[0];
 
@@ -474,7 +481,6 @@ class metagen //: public binstream
             }
             varname = tok.tok;
 
-            depth = 0;
             const char* p = tok.tok.ptr();
             const char* pe = tok.tok.ptre();
             for( ; p<pe; ++p )
@@ -669,6 +675,11 @@ class metagen //: public binstream
                 if(v.is_array_element())
                     mg.write_as_string(v.index);
             }
+            else if(attrib == "@order") {
+                DASSERT( v.is_array_element() );
+                if(v.is_array_element())
+                    mg.write_as_string(v.order);
+            }
             else if(attrib == "@value") {
                 v.write_var(mg);
             }
@@ -719,6 +730,16 @@ class metagen //: public binstream
             if(!succ) return succ;
 
             do {
+                if(lex.matches('$')) {
+                    (*sequence.last())->stext.shift_end(1);
+
+                    TagEmpty* etag = new TagEmpty;
+                    *sequence.add() = etag;
+
+                    bool succ = etag->parse( lex, tout.eat_right() );
+                    if(!succ) return succ;
+                }
+
                 if(!tout.parse(lex))
                     break;
 
@@ -860,7 +881,7 @@ class metagen //: public binstream
 
                 bool evalcond = cond.size()>0;
 
-                int i=0;
+                int i=0,fi=0;
                 for( ; n>0; --n,ve.next() )
                 {
                     if( evalcond && !eval_cond(mg, ve) )
@@ -870,6 +891,7 @@ class metagen //: public binstream
                     else      atr_rest.process(mg, ve);
 
                     ve.index = i;
+                    ve.order = fi++;
 
                     atr_body.process(mg, ve);
                     ++i;

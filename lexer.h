@@ -683,6 +683,12 @@ public:
             token ne = nested.cut_left(' ');
             if(ne.is_empty())  break;
 
+            if(ne == "*.") {
+                //enable all global rules
+                br->stbenabled = UMAX64;
+                br->stbignored = _root.stbignored;
+                continue;
+            }
             if(ne == '*') {
                 //inherit all global rules
                 br->stbenabled = _root.stbenabled;
@@ -1211,14 +1217,16 @@ public:
     //@return true if next token belongs to the specified group/sequence.
     //@param grp group/sequence id
     //@param dst the token read
+    //@note Since the group is asked for explicitly, it will be returned even if it is currently set to be ignored
     bool matches( int grp, charstr& dst )
     {
         __assert_valid_rule(grp);
 
-        next();
+        next(1,grp);
 
         if( _last != grp ) {
-            push_back();
+            if(!ignored(grp))
+                push_back();
             return false;
         }
 
@@ -1233,14 +1241,16 @@ public:
     //@return true if next token belongs to the specified group/sequence.
     //@param grp group/sequence id
     //@param dst the token read
+    //@note Since the group is asked for explicitly, it will be returned even if it is currently set to be ignored
     bool matches( int grp, token& dst )
     {
         __assert_valid_rule(grp);
 
-        next();
+        next(1,grp);
 
         if( _last != grp ) {
-            push_back();
+            if(!ignored(grp))
+                push_back();
             return false;
         }
 
@@ -1251,13 +1261,14 @@ public:
     ///Match group of characters. Pushes the read token back if not matched.
     //@return true if next token belongs to the specified group/sequence.
     //@param grp group/sequence id
+    //@note Since the group is asked for explicitly, it will be returned even if it is currently set to be ignored
     bool matches( int grp )
     {
         __assert_valid_rule(grp);
 
-        bool res = next() == grp;
+        bool res = next(1,grp) == grp;
 
-        if(!res)
+        if(!res && !ignored(grp))
             push_back();
         return res;
     }
@@ -1274,11 +1285,11 @@ public:
     //@param val literal string to match
     //@param peek set to true if the function should return match status instead of throwing the exception
     //@return match result if @a peek was set to true (otherwise an exception is thrown)
-    bool match( const token& val, bool peek = false )
+    bool match( const token& val, const char* errmsg=0 )
     {
         bool res = matches(val);
         
-        if( !res && !peek )
+        if(!res)
         {
             _err = lexception::ERR_EXTERNAL_ERROR;
 
@@ -1297,15 +1308,18 @@ public:
     //@param c literal character to match
     //@param peek set to true if the function should return match status instead of throwing the exception
     //@return match result if @a peek was set to true (otherwise an exception is thrown)
-    bool match( char c, bool peek = false )
+    bool match( char c, const char* errmsg=0 )
     {
         bool res = matches(c);
         
-        if( !res && !peek ) {
+        if(!res) {
             _err = lexception::ERR_EXTERNAL_ERROR;
             
             on_error_prefix(false, _errtext, current_line());
-            _errtext << "expected `" << c << "'";
+            if(errmsg)
+                _errtext << errmsg;
+            else
+                _errtext << "expected `" << c << "'";
             on_error_suffix(_errtext);
 
             throw lexception(_err, _errtext);
@@ -1319,17 +1333,20 @@ public:
     //@param dst destination string that is to receive the matched value
     //@param peek set to true if the function should return match status instead of throwing the exception
     //@return match result if @a peek was set to true (otherwise an exception is thrown)
-    bool match( int grp, charstr& dst, bool peek = false )
+    bool match( int grp, charstr& dst, const char* errmsg=0 )
     {
         bool res = matches(grp, dst);
                 
-        if( !res && !peek ) {
+        if(!res) {
             _err = lexception::ERR_EXTERNAL_ERROR;
 
             on_error_prefix(false, _errtext, current_line());
 
             const entity& ent = get_entity(grp);
-            _errtext << "expected a " << ent.entity_type() << " <<" << ent.name << ">>";
+            if(errmsg)
+                _errtext << errmsg;
+            else
+                _errtext << "expected a " << ent.entity_type() << " <<" << ent.name << ">>";
 
             on_error_suffix(_errtext);
 
@@ -1344,17 +1361,20 @@ public:
     //@param dst destination token that is to receive the matched value
     //@param peek set to true if the function should return match status instead of throwing the exception
     //@return match result if @a peek was set to true (otherwise an exception is thrown)
-    bool match( int grp, token& dst, bool peek = false )
+    bool match( int grp, token& dst, const char* errmsg=0 )
     {
         bool res = matches(grp, dst);
                 
-        if( !res && !peek ) {
+        if(!res) {
             _err = lexception::ERR_EXTERNAL_ERROR;
 
             on_error_prefix(false, _errtext, current_line());
 
             const entity& ent = get_entity(grp);
-            _errtext << "expected a " << ent.entity_type() << " <<" << ent.name << ">>";
+            if(errmsg)
+                _errtext << errmsg;
+            else
+                _errtext << "expected a " << ent.entity_type() << " <<" << ent.name << ">>";
 
             on_error_suffix(_errtext);
 
@@ -1368,17 +1388,20 @@ public:
     //@param grp group id to match
     //@param peek set to true if the function should return match status instead of throwing the exception
     //@return lextoken result if @a peek was set to true (otherwise an exception is thrown)
-    const lextoken& match( int grp, bool peek = false )
+    const lextoken& match( int grp, const char* errmsg=0 )
     {
         bool res = matches(grp);
         
-        if( !res && !peek ) {
+        if(!res) {
             _err = lexception::ERR_EXTERNAL_ERROR;
             
             on_error_prefix(false, _errtext, current_line());
 
             const entity& ent = get_entity(grp);
-            _errtext << "expected a " << ent.entity_type() << " <<" << ent.name << ">>";
+            if(errmsg)
+                _errtext << errmsg;
+            else
+                _errtext << "expected a " << ent.entity_type() << " <<" << ent.name << ">>";
 
             on_error_suffix(_errtext);
 
@@ -1392,16 +1415,19 @@ public:
     }
 
     //@return true if end of file was matched
-    bool match_end( bool peek = false )
+    bool match_end( const char* errmsg=0 )
     {
         bool res = matches_end();
                 
-        if( !res && !peek ) {
+        if(!res) {
             _err = lexception::ERR_EXTERNAL_ERROR;
 
             on_error_prefix(false, _errtext, current_line());
 
-            _errtext << "expected end of file";
+            if(errmsg)
+                _errtext << errmsg;
+            else
+                _errtext << "expected end of file";
 
             on_error_suffix(_errtext);
 
@@ -1656,6 +1682,7 @@ public:
 
     //@return last token read
     const lextoken& last() const        { return _last; }
+    lextoken& last()                    { return _last; }
 
     ///Return remainder of the input
     token remainder() const             { return _pushback ? _last.tok : _tok; }
@@ -1723,6 +1750,11 @@ public:
     ///Return error text
     const charstr& err() const {
         return _errtext;
+    }
+
+    void clear_err() {
+        _err = 0;
+        _errtext.reset();
     }
 
     ///Prepare to throw an external lexer exception.
@@ -2370,8 +2402,8 @@ protected:
     bool enabled( const sequence& seq ) const   { return (*_stack.last())->enabled(seq.id); }
     bool ignored( const sequence& seq ) const   { return (*_stack.last())->ignored(seq.id); }
 
-    bool enabled( int seq ) const               { return (*_stack.last())->enabled(-1-seq); }
-    bool ignored( int seq ) const               { return (*_stack.last())->ignored(-1-seq); }
+    bool enabled( int seq ) const               { return seq<0 ? (*_stack.last())->enabled(-1-seq) : true; }
+    bool ignored( int seq ) const               { return seq<0 ? (*_stack.last())->ignored(-1-seq) : false; }
 
     void enable( const sequence& seq, bool en ) {
         (*_stack.last())->enable(seq.id, en);

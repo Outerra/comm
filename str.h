@@ -1179,28 +1179,37 @@ public:
     }
 
 
-    ///Insert character at position
-    bool ins( uints pos, char c )
+    ///Insert character at position, a negative offset goes counts from the end
+    bool ins( int pos, char c )
     {
-        if( pos > lens() )  return false;
-        *_tstr.ins(pos) = c;
+        uint slen = len();
+        uint npos = pos<0 ? slen+pos : pos;
+
+        if(npos > slen)  return false;
+        *_tstr.ins(npos) = c;
         return true;
     }
 
-    ///Insert substring at position
-    bool ins( uints pos, const token& t )
+    ///Insert substring at position, a negative offset goes counts from the end
+    bool ins( int pos, const token& t )
     {
-        uints len = t.len();
-        if( pos > len )  return false;
-        xmemcpy( _tstr.ins(pos,len), t.ptr(), len );
+        uint slen = len();
+        uint npos = pos<0 ? slen+pos : pos;
+
+        if(npos > slen)  return false;
+        xmemcpy( _tstr.ins(npos,t.len()), t.ptr(), t.len() );
         return true;
     }
 
-    ///Delete character(s) at position
-    bool del( uints pos, uints n=1 )
+    ///Delete character(s) at position, a negative offset goes counts from the end
+    //@param n number of bytes to delete, will be clamped
+    bool del( int pos, uint n=1 )
     {
-        if( pos+n > lens() )  return false;
-        _tstr.del(pos, n);
+        uint slen = len();
+        uint npos = pos<0 ? slen+pos : pos;
+
+        if(npos+n > slen)  return false;
+        _tstr.del(pos, n>slen-npos ? slen-npos : n);
         return true;
     }
 
