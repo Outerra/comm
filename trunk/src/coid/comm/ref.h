@@ -33,103 +33,40 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef __ENG_PTR_H__
-#define __ENG_PTR_H__
+#ifndef __COID_REF_H__
+#define __COID_REF_H__
 
 
 #include "ref_s.h"
 #include "ref_i.h"
 
-/*
-#include "commassert.h"
-#include "atomic/atomic.h"
-#include "atomic/stack.h"
-#include "binstream/binstreambuf.h"
-#include "metastream/metastream.h"
+COID_NAMESPACE_BEGIN
 
-#include "refs.h"
-
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
-class iref_base_policy
-{
-private:
-	policy_base* _po;
-
+///Helper function for moving references or pointers without touching the ref.count
+template<class T>
+class ref_takeover {
 public:
-	virtual ~iref_base_policy() { _po->destroy(); }
-
-	void add_ref_copy() { _po->add_ref_copy(); }
-
-	void release() { _po->destroy(); }
-
-	coid::int32 refcount() { _po->refcount(); }
+    void operator()(T& dst, T& src) {
+        dst = src;
+        src = 0;
+    }
 };
 
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-template<class T> 
-class iref
-{
-private:
-	typedef iref<T> iref_t;
-
+template<class M>
+class ref_takeover< iref<M> > {
 public:
-	iref() : _p(0) {}
-
-	explicit iref(T* p) : _p(p) {}
-
-	iref(const iref_t& r) : _p(r.add_ref_copy()) {}
-
-	~iref() { release(); }
-
-	T* add_ref_copy() const { if( _p ) _p->add_ref_copy(); return _p; }
-
-	void release() { if( _p!=0 ) { _p->release(); _p=0; } }
-
-	void create(T* const p) { release(); _p=p; }
-
-	const iref_t& operator=(const iref_t& r) { _p=r.add_ref_copy(); return *this; }
-
-	T* get() const { DASSERT( _p!=0 ); return _p; }
-
-	T& operator*() const { DASSERT( _p!=0 ); return *_p; }
-
-	T* operator->() const { DASSERT( _p!=0 ); return _p; }
-
-	void swap(iref_t& r) {
-		T* tmp=_p;
-		_p=r._p;
-		r._p=tmp;
-	}
-
-	bool is_empty() const { return (_p==0); }
-
-	friend coid::binstream& operator << (coid::binstream& bin,const iref_t& s) { return bin<<*s.get(); }
-
-	friend coid::binstream& operator >> (coid::binstream& bin,iref_t& s) { s.create(new T); return bin>>*s.get(); }
-
-	friend coid::metastream& operator << (coid::metastream& m,const iref_t& s)
-	{
-		MSTRUCT_OPEN(m,"iref")
-			MMAT(m,"ptr",T)
-		MSTRUCT_CLOSE(m)
-	}
-
-private:
-	T* _p;
+    void operator()(iref<M>& dst, iref<M>& src) { dst.takeover(src); }
 };
 
-template<class T> 
-inline bool operator==( const iref<T>& a,const iref<T>& b ) {
-	return a.get()==b.get();
-}
+template<class M>
+class ref_takeover< ref<M> > {
+public:
+    void operator()(ref<M>& dst, ref<M>& src) { dst.takeover(src); }
+};
 
-template<class T> 
-inline bool operator!=( const iref<T>& a,const iref<T>& b ) {
-	return !operator==(a,b);
-}
 
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-*/
-#endif // __ENG_PTR_H__
+COID_NAMESPACE_END
+
+
+#endif // __COID_REF_H__

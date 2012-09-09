@@ -100,7 +100,7 @@ public:
         if( is_separator(c) ) {
             if(!shouldbe)  path.resize(-1);
         }
-        else if(shouldbe)
+        else if(shouldbe && c!=0)   //don't add separator to an empty path, that would make it absolute
             path.append( separator() );
         return path;
     }
