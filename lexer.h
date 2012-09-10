@@ -854,6 +854,27 @@ public:
         return dst;
     }
 
+    ///Read a complete block for which the opening token was just read
+    const lextoken& complete_block()
+    {
+        int blockid = _last.id;
+
+        __assert_valid_sequence(blockid, entity::BLOCK);
+
+        uint sid = -1 - blockid;
+        sequence* seq = _stbary[sid];
+
+        DASSERT( seq->is_block() );
+        const block_rule* blk = static_cast<const block_rule*>(seq);
+
+        uints off=0;
+        next_read_block( *blk, off, true, false );
+
+        _stack.pop();
+
+        return _last;
+    }
+
     ///Return current block as single token
     //@param seqid id of block/string/sequence to match
     //@param complete true if the block should be read completely and returned, false if only the leading token should be matched

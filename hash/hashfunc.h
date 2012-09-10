@@ -143,7 +143,7 @@ struct FnvHash
 {
     FORCEINLINE static uint hash(const char (&str)[N])
     {
-        return (FnvHash<N, I-1>::Hash(str) ^ str[I-1])*16777619u;
+        return (FnvHash<N, I-1>::hash(str) ^ str[I-1])*16777619u;
     }
 };
  
@@ -165,7 +165,7 @@ public:
     ///String literal constructor
     template <unsigned int N>
     FORCEINLINE string_hash(const char (&str)[N])
-        : _hash(FnvHash<N,N>::Hash(str))
+        : _hash(FnvHash<N,N>::hash(str))
     {}
 
     string_hash(const token& t);

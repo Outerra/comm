@@ -434,7 +434,7 @@ bool directory::compact_path( charstr& dst )
 
             //count forward going tokens
             ++nfwd;
-            fwd._pte = dtok.first_char() ? (dtok.ptr()-1) : dtok.ptr();
+            fwd._pte = dtok ? (dtok.ptr()-1) : dtok.ptr();
         }
         else if(nfwd) {
             //remove one token from fwd
@@ -448,10 +448,14 @@ bool directory::compact_path( charstr& dst )
                 return false;
 
             if(rem.len()) {
+                if(rem.ptr() > dst.ptr())
+                    rem.shift_start(-1);
+                else if(rem.ptre() < dst.ptre())
+                    rem.shift_end(1);
+                    
                 int rlen = rem.len();
-                int shf  = rem.ptr() > dst.ptr() ? 1 : 0;
-                rlen += shf;
-                dst.del(rem.ptr()-dst.ptr()-shf, rlen);
+
+                dst.del(rem.ptr()-dst.ptr(), rlen);
                 dtok.shift_start(-rlen);
                 dtok.shift_end(-rlen);
                 rem.set_empty();
