@@ -1226,7 +1226,7 @@ public:
     ///Return position where the character is located, searching from the end
     ///@return substring position, len() if not found
     const char* contains_back( char c, uints off=0 ) const
-    {   return token(*this).contains(c,off); }
+    {   return token(*this).contains_back(c,off); }
 
 
     char& operator [] (uints i)                 { return _tstr[i]; }
