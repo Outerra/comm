@@ -986,7 +986,7 @@ public:
         This is used mainly to omit the whitespace (group 1), or explicitly to not skip it.
         @param enable_seqid enable block/string/sequence temporarily if it's not enabled
     **/
-    const lextoken& next( uint ignoregrp=1, uint enable_seqid=0 )
+    const lextoken& next( uint ignoregrp=1, int enable_seqid=0 )
     {
         //return last token if instructed
         if(_pushback) {
@@ -1225,7 +1225,7 @@ public:
         next(1,grp);
 
         if( _last != grp ) {
-            if(!ignored(grp))
+            if(!ignored(_last.group()))
                 push_back();
             return false;
         }
@@ -1249,7 +1249,7 @@ public:
         next(1,grp);
 
         if( _last != grp ) {
-            if(!ignored(grp))
+            if(!ignored(_last.group()))
                 push_back();
             return false;
         }
@@ -1268,7 +1268,7 @@ public:
 
         bool res = next(1,grp) == grp;
 
-        if(!res && !ignored(grp))
+        if(!res && !ignored(_last.group()))
             push_back();
         return res;
     }

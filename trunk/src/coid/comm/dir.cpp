@@ -449,7 +449,9 @@ bool directory::compact_path( charstr& dst )
 
             if(rem.len()) {
                 int rlen = rem.len();
-                dst.del(rem.ptr()-dst.ptr(), rlen);
+                int shf  = rem.ptr() > dst.ptr() ? 1 : 0;
+                rlen += shf;
+                dst.del(rem.ptr()-dst.ptr()-shf, rlen);
                 dtok.shift_start(-rlen);
                 dtok.shift_end(-rlen);
                 rem.set_empty();
