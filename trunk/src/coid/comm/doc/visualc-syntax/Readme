@@ -1,0 +1,2 @@
+Copy the coid section from autoexp.dat to \Microsoft Visual Studio 10\Common7\Packages\Debugger\autoexp.dat file.
+Copy the usertype.dat to \Microsoft Visual Studio 10.0\Common7\IDE\usertype.dat
