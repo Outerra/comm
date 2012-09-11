@@ -148,6 +148,7 @@ void singletons_destroy()
 
 
 ////////////////////////////////////////////////////////////////////////////////
+//Interface registration code
 
 struct interface_register_entry
 {
@@ -169,11 +170,30 @@ struct interface_register_impl
 };
 
 
+#ifdef _DEBUG
+#define INTERGEN_GLOBAL_REGISTRAR iglo_registrard
+#else
+#define INTERGEN_GLOBAL_REGISTRAR iglo_registrar
+#endif
+
+/// This method returns a reference to module global interface register
+#ifdef SYSTYPE_WIN
+extern "C" inline __declspec(dllexport) interface_register_impl& INTERGEN_GLOBAL_REGISTRAR()
+{
+    return SINGLETON(interface_register_impl);
+}
+#else
+extern "C" inline __attribute__ ((visibility("default"))) interface_register_impl& INTERGEN_GLOBAL_REGISTRAR()
+{
+    return SINGLETON(interface_register_impl);
+}
+#endif 
 
 
+////////////////////////////////////////////////////////////////////////////////
 void* interface_register::get_interface_creator( ints interface_creator_id )
 {
-    interface_register_impl& reg = interface_register_impl::get();
+    interface_register_impl& reg = INTERGEN_GLOBAL_REGISTRAR();
     comm_mutex_guard<_comm_mutex> mxg(reg._mx);
 
     const interface_register_entry* entry = reg._hash.find_value(interface_creator_id);
@@ -183,7 +203,7 @@ void* interface_register::get_interface_creator( ints interface_creator_id )
 
 void interface_register::register_interface_creator( ints interface_creator_id, void* creator )
 {
-    interface_register_impl& reg = interface_register_impl::get();
+    interface_register_impl& reg = INTERGEN_GLOBAL_REGISTRAR();
     comm_mutex_guard<_comm_mutex> mxg(reg._mx);
 
     interface_register_entry* entry = reg._hash.insert_value_slot(interface_creator_id);
@@ -192,8 +212,6 @@ void interface_register::register_interface_creator( ints interface_creator_id, 
         entry->id = interface_creator_id;
     }
 }
-
-
 
 
 } //namespace coid
