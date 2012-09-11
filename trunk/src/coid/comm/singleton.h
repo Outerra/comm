@@ -141,20 +141,6 @@ private:
     }
 };
 
-
-////////////////////////////////////////////////////////////////////////////////
-
-///A global register for interfaces, used by intergen
-class interface_register
-{
-public:
-
-    static void* get_interface_creator( ints interface_creator_id );
-
-    static void register_interface_creator( ints interface_creator_id, void* creator );
-};
-
-
 COID_NAMESPACE_END
 
 #endif //__COID_COMM_SINGLETON__HEADER_FILE__

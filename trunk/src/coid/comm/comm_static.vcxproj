@@ -255,6 +255,7 @@
     <ClInclude Include="binstream\txtstreamhtml.h" />
     <ClInclude Include="crypt\sha1.h" />
     <ClInclude Include="dbg_location.h" />
+    <ClInclude Include="interface.h" />
     <ClInclude Include="list.h" />
     <ClInclude Include="metastream\fmtstream.h" />
     <ClInclude Include="metastream\fmtstream_lexer.h" />
@@ -340,6 +341,7 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <ClCompile Include="interface.cpp" />
     <ClCompile Include="metastream\metastream.cpp" />
     <ClCompile Include="alloc\_malloc.c" />
     <ClCompile Include="alloc\alloc.cpp" />

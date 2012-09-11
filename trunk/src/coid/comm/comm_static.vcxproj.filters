@@ -313,6 +313,7 @@
       <Filter>binstream</Filter>
     </ClInclude>
     <ClInclude Include="dbg_location.h" />
+    <ClInclude Include="interface.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="crypt\sha1.cpp">
@@ -401,6 +402,9 @@
     </ClCompile>
     <ClCompile Include="sync\thread_mgr.cpp">
       <Filter>sync</Filter>
+    </ClCompile>
+    <ClCompile Include="interface.cpp">
+      <Filter>cxx</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
