@@ -411,34 +411,36 @@ class metagen //: public binstream
     {
         token varname;
         dynarray<Attribute> attr;
-        uint16 flags;
+
+        uint16 trailing : 1;
+        uint16 eat_left : 4;
+        uint16 eat_right : 4;
+
         char brace;                     ///< brace type (character)
         int8 depth;                     ///< tag depth from current level (number of dots before name)
 
-        enum { fTRAILING = 1, rEAT_LEFT = 8, rEAT_RIGHT = 12, xEAT = 0xf };
 
-        ParsedTag() : flags(0) {}
-
-        uint eat_left() const {
-            return (flags >> rEAT_LEFT) & xEAT;
-        }
-
-        uint eat_right() const {
-            return (flags >> rEAT_RIGHT) & xEAT;
-        }
+        ParsedTag() : trailing(0), eat_left(0), eat_right(0)
+        {}
 
         bool same_group( const ParsedTag& p ) const
         {
             if( p.brace == '(' ) {
                 return brace == p.brace
-                    && (((flags&fTRAILING) && varname == "if") || varname == "elif");
+                    && ((trailing && varname == "if") || varname == "elif");
             }
 
             return brace == p.brace
                 && varname == p.varname;
         }
 
-        void set_empty()    { varname.set_empty();  flags=0;  brace=0;  depth=0; }
+        void set_empty() {
+            varname.set_empty();
+            trailing=0;
+            eat_left = eat_right = 0;
+            brace=0;
+            depth=0;
+        }
 
         bool parse( MtgLexer& lex )
         {
@@ -449,7 +451,8 @@ class metagen //: public binstream
 
             const lextoken& tok = lex.last();
 
-            flags = 0;
+            trailing = 0;
+            eat_left = eat_right = 0;
             brace = 0;
             depth = 0;
 
@@ -459,7 +462,7 @@ class metagen //: public binstream
             }
 
             while( tok.tok == '-' ) {
-                flags += 1 << rEAT_LEFT;
+                ++eat_left;
                 lex.next();
             }
 
@@ -471,7 +474,7 @@ class metagen //: public binstream
             lex.next();
 
             if( tok.tok == '/' ) {
-                flags |= fTRAILING;
+                trailing = 1;
                 lex.next();
             }
 
@@ -529,7 +532,7 @@ class metagen //: public binstream
             }
 
             while( tok.tok == '-' ) {
-                flags += 1 << rEAT_RIGHT;
+                ++eat_right;
                 lex.next(0);
             }
 
@@ -582,7 +585,7 @@ class metagen //: public binstream
 
             stext = lex.last().tok;
 
-            uint nr = hdr.eat_right();
+            uint nr = hdr.eat_right;
             while(nr--) {
                 stext.skip_ingroup(" \t");
 
@@ -726,7 +729,7 @@ class metagen //: public binstream
             TagEmpty* etag = new TagEmpty;
             *sequence.add() = etag;
 
-            bool succ = etag->parse( lex, tout.eat_right() );
+            bool succ = etag->parse( lex, tout.eat_right );
             if(!succ) return succ;
 
             do {
@@ -736,14 +739,14 @@ class metagen //: public binstream
                     TagEmpty* etag = new TagEmpty;
                     *sequence.add() = etag;
 
-                    bool succ = etag->parse( lex, tout.eat_right() );
+                    bool succ = etag->parse( lex, tout.eat_right );
                     if(!succ) return succ;
                 }
 
                 if(!tout.parse(lex))
                     break;
 
-                uint nl = tout.eat_left();
+                uint nl = tout.eat_left;
                 while(nl--) {
                     token& stext = (*sequence.last())->stext;
                     stext.truncate( stext.count_ingroup_back(" \t") );
@@ -754,7 +757,7 @@ class metagen //: public binstream
                         break;
                 }
 
-                if( tout.flags & ParsedTag::fTRAILING ) {
+                if( tout.trailing ) {
                     if( !tout.same_group(par) ) {
                         lex.set_err() << "Mismatched closing tag";
                         throw lex.exception();
@@ -832,7 +835,7 @@ class metagen //: public binstream
 
             ParsedTag tmp;
             tmp.attr.swap( hdr.attr );
-            tmp.flags = hdr.flags;
+            tmp.eat_right = hdr.eat_right;
 
             do {
                 Clause* c = clause.add();
@@ -840,10 +843,12 @@ class metagen //: public binstream
 
                 c->rng.parse( lex, tmp, hdr );
 
-                if( tmp.flags & ParsedTag::fTRAILING )
+                if( tmp.trailing )
                     break;
             }
             while(1);
+
+            hdr.eat_right = tmp.eat_right;
         }
     };
 
@@ -907,19 +912,18 @@ class metagen //: public binstream
         {
             ParsedTag tmp;
             tmp.attr.swap( hdr.attr );
-            tmp.flags = hdr.flags;
+            tmp.eat_right = hdr.eat_right;
 
             do {
                 TagRange& rng = bind_attributes( lex, tmp.attr );
 
                 rng.parse( lex, tmp, hdr );
-                if( tmp.flags & ParsedTag::fTRAILING ) {
-                    hdr.flags &= ~(ParsedTag::fTRAILING | (ParsedTag::xEAT<<ParsedTag::rEAT_RIGHT));
-                    hdr.flags = tmp.flags & (ParsedTag::xEAT<<ParsedTag::rEAT_RIGHT);
+                if( tmp.trailing )
                     break;
-                }
             }
             while(1);
+
+            hdr.eat_right = tmp.eat_right;
         }
 
     private:
@@ -998,7 +1002,7 @@ class metagen //: public binstream
         {
             ParsedTag tmp;
             tmp.attr.swap( hdr.attr );
-            tmp.flags = hdr.flags;
+            tmp.eat_right = hdr.eat_right;
 
             do {
                 if( tmp.attr.size() > 0 ) {
@@ -1008,7 +1012,7 @@ class metagen //: public binstream
 
                 TagRange rng;
                 rng.parse( lex, tmp, hdr );
-                if( tmp.flags & ParsedTag::fTRAILING )
+                if( tmp.trailing )
                     break;
             }
             while(1);

@@ -1116,7 +1116,7 @@ public:
                     next_read_string( *(const string_rule*)seq, off, true );
 
                 if( ignored(*seq) && seq->id != enb )   //ignored rule
-                    return next(ignoregrp);
+                    return next(ignoregrp, enable_seqid);
 
                 return _last;
             }
@@ -1653,6 +1653,7 @@ public:
     void push_back() {
         _pushback = 1;
     }
+
 
     ///Mark a backtrackable point
     //@param overwrite overwrite last backtrack point
