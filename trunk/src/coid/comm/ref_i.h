@@ -46,18 +46,24 @@ template<class T>
 class iref
 {
 private:
+	T* _p;
+
 	typedef iref<T> iref_t;
 	typedef coid::pool< coid::policy_pooled_i<T>* > pool_type_t;
+
+    T* add_ref_copy() const { if(_p) _p->add_ref_copy(); return _p; }
 
 public:
 	iref() : _p(0) {}
 
-	explicit iref(T* p) : _p(p) { if (_p) _p->add_ref_copy(); }
+	explicit iref(T* p) : _p(p) { add_ref_copy(); }
 
 	iref(const iref_t& r) : _p(r.add_ref_copy()) {}
 
 	template< class T2 >
-	iref( const iref<T2>& r ) : _p(r.add_ref_copy()) {}
+	iref( const iref<T2>& r ) : _p(0) {
+        create(r.get());
+    }
 
 	// special constructor from default policy
 	explicit iref( const create_pooled&) 
@@ -66,34 +72,37 @@ public:
 
 	~iref() { release(); }
 
-	T* add_ref_copy() const { if (_p) _p->add_ref_copy(); return _p; }
+	void release() { if(_p) _p->release(); _p=0;  }
 
-	void release() { if (_p) _p->release(); _p=0;  }
-
-	void create(T* const p) 
+	void create(T* const p)
 	{
+        DASSERT_RETVOID(p!=_p);
 		release();
-		_p=p; _p->add_ref_copy(); 
+		_p = p;
+        _p->add_ref_copy(); 
 	}
 
 	void create_pooled() {
+        T* p = coid::policy_pooled_i<T>::create();
+        DASSERT(p!=_p);
 		release();
-		_p=coid::policy_pooled_i<T>::create();
-		_p->add_ref_copy();
+		_p = p;
+		add_ref_copy();
 	}
 
 	void create_pooled(pool_type_t *po) {
-		DASSERT(po!=_p);
+        T* p = coid::policy_pooled_i<T>::create(po);
+		DASSERT(p!=_p);
 		release();
-		_p=coid::policy_pooled_i<T>::create(po);
-		_p->add_ref_copy();
+		_p = p;
+		add_ref_copy();
 	}
 
-	const iref_t& operator=(const iref_t& r) { 
-		T *source = r.get();
-		if (source) source->add_ref_copy();
+	const iref_t& operator = (const iref_t& r) {
+		T* p = r.get();
+		r.add_ref_copy();
 		release();
-		_p=source;
+		_p = p;
 		return *this; 
 	}
 
@@ -117,9 +126,9 @@ public:
 
 	template<class T2>
 	void takeover(iref<T2>& p) {
-		// Check for taking over the same pointer address
-		if (p.get()!=_p) release();
-		_p=p.get();
+        DASSERT_RETVOID(&p != this);
+		release();
+		_p = p.get();
 		p.forget();
 	}
 
@@ -151,9 +160,6 @@ public:
 			MMAT(m,"ptr",T)
 		MSTRUCT_CLOSE(m)
 	}
-
-private:
-	T* _p;
 };
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
