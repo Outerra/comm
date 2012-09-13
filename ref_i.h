@@ -47,12 +47,20 @@ class iref
 {
 private:
 	typedef iref<T> iref_t;
-    typedef coid::pool< coid::policy_pooled_i<T>* > pool_type_t;
+	typedef coid::pool< coid::policy_pooled_i<T>* > pool_type_t;
 
 public:
+	// For self assignment.
+	struct irefs
+	{
+		T *_ptr;
+		irefs(T *ptr):_ptr(ptr){};
+		~irefs(){if (_ptr) _ptr->release; }
+	};
+
 	iref() : _p(0) {}
 
-	explicit iref(T* p) : _p(p) { _p->add_ref_copy(); }
+	explicit iref(T* p) : _p(p) { if (_p) _p->add_ref_copy(); }
 
 	iref(const iref_t& r) : _p(r.add_ref_copy()) {}
 
@@ -60,42 +68,45 @@ public:
 	iref( const iref<T2>& r ) : _p(r.add_ref_copy()) {}
 
 	// special constructor from default policy
-    explicit iref( const create_pooled&) 
+	explicit iref( const create_pooled&) 
 		: _p( coid::policy_pooled_i<T>::create(true) ) 
 	{}
 
 	~iref() { release(); }
 
-	T* add_ref_copy() const { DASSERT(_p!=0); _p->add_ref_copy(); return _p; }
+	T* add_ref_copy() const { if (_p) _p->add_ref_copy(); return _p; }
 
-	void release() { if( _p!=0 ) { _p->release(); _p=0; } }
+	void release() { if (_p) _p->release(); _p=0;  }
 
-	void create(T* const p) { release(); _p=p; _p->add_ref_copy(); }
+	void create(T* const p) 
+	{
+		irefs(_p);
+		_p=p; _p->add_ref_copy(); 
+	}
 
 	void create_pooled() {
-		release();
-        _p=coid::policy_pooled_i<T>::create();
+		irefs(_p);
+		_p=coid::policy_pooled_i<T>::create();
 		_p->add_ref_copy();
-    }
+	}
 
-    void create_pooled(pool_type_t *po) {
-		release();
+	void create_pooled(pool_type_t *po) {
+		irefs(_p);
 		_p=coid::policy_pooled_i<T>::create(po);
 		_p->add_ref_copy();
 	}
 
 	const iref_t& operator=(const iref_t& r) { 
-        release();
-		if(!r.is_empty())
-			_p=r.add_ref_copy(); 
-        return *this; 
-    }
+		irefs(_p);
+		_p=r.add_ref_copy(); 
+		return *this; 
+	}
 
-	T* get() const { DASSERT( _p!=0 ); return _p; }
+	T* get() const { return _p; }
 
-	T& operator*() const { DASSERT( _p!=0 ); return *_p; }
+	T& operator*() const { return *_p; }
 
-	T* operator->() const { DASSERT( _p!=0 ); return _p; }
+	T* operator->() const {  return _p; }
 
 	void swap(iref_t& r) {
 		T* tmp=_p;
@@ -105,31 +116,32 @@ public:
 
 	bool is_empty() const { return (_p==0); }
 
-    typedef T* iref<T>::*unspecified_bool_type;
+	typedef T* iref<T>::*unspecified_bool_type;
 
 	void forget() { _p=0; }
 
-    template<class T2>
+	template<class T2>
 	void takeover(iref<T2>& p) {
-		release();
+		// Check for taking over the same pointer address
+		if (p.get()!=_p) release();
 		_p=p.get();
 		p.forget();
 	}
 
 	coid::int32 refcount() const { return _p?_p->refcount():0; }
 
-    ///Automatic cast to unconvertible bool for checking via if
+	///Automatic cast to unconvertible bool for checking via if
 	operator unspecified_bool_type () const {
-        return _p ? &iref<T>::_p : 0;
+	return _p ? &iref<T>::_p : 0;
 	}
 
-    friend bool operator==( const iref<T>& a,const iref<T>& b ) {
-	    return a._p == b._p;
-    }
+	friend bool operator==( const iref<T>& a,const iref<T>& b ) {
+	return a._p == b._p;
+	}
 
-    friend bool operator!=( const iref<T>& a,const iref<T>& b ) {
-	    return !operator==(a,b);
-    }
+	friend bool operator!=( const iref<T>& a,const iref<T>& b ) {
+		return !operator==(a,b);
+	}
 
 	friend coid::binstream& operator << (coid::binstream& bin,const iref_t& s) {
 		return bin<<*s.get(); 
