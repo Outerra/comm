@@ -55,7 +55,7 @@ public:
 	{
 		T *_ptr;
 		irefs(T *ptr):_ptr(ptr){};
-		~irefs(){if (_ptr) _ptr->release; }
+		~irefs(){if (_ptr) _ptr->release(); }
 	};
 
 	iref() : _p(0) {}
