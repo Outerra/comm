@@ -50,14 +50,6 @@ private:
 	typedef coid::pool< coid::policy_pooled_i<T>* > pool_type_t;
 
 public:
-	// For self assignment.
-	struct irefs
-	{
-		T *_ptr;
-		irefs(T *ptr):_ptr(ptr){};
-		~irefs(){if (_ptr) _ptr->release(); }
-	};
-
 	iref() : _p(0) {}
 
 	explicit iref(T* p) : _p(p) { if (_p) _p->add_ref_copy(); }
@@ -80,33 +72,36 @@ public:
 
 	void create(T* const p) 
 	{
-		irefs(_p);
+		release();
 		_p=p; _p->add_ref_copy(); 
 	}
 
 	void create_pooled() {
-		irefs(_p);
+		release();
 		_p=coid::policy_pooled_i<T>::create();
 		_p->add_ref_copy();
 	}
 
 	void create_pooled(pool_type_t *po) {
-		irefs(_p);
+		DASSERT(po!=_p);
+		release();
 		_p=coid::policy_pooled_i<T>::create(po);
 		_p->add_ref_copy();
 	}
 
 	const iref_t& operator=(const iref_t& r) { 
-		irefs(_p);
-		_p=r.add_ref_copy(); 
+		T *source = r.get();
+		if (source) source->add_ref_copy();
+		release();
+		_p=source;
 		return *this; 
 	}
 
 	T* get() const { return _p; }
 
-	T& operator*() const { return *_p; }
+	T& operator*() const { DASSERT( _p!=0 ); return *_p; }
 
-	T* operator->() const {  return _p; }
+	T* operator->() const { DASSERT( _p!=0 ); return _p; }
 
 	void swap(iref_t& r) {
 		T* tmp=_p;
