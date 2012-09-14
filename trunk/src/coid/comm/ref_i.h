@@ -51,8 +51,6 @@ private:
 	typedef iref<T> iref_t;
 	typedef coid::pool< coid::policy_pooled_i<T>* > pool_type_t;
 
-    T* add_ref_copy() const { if(_p) _p->add_ref_copy(); return _p; }
-
 public:
 	iref() : _p(0) {}
 
@@ -64,6 +62,9 @@ public:
 	iref( const iref<T2>& r ) : _p(0) {
         create(r.get());
     }
+
+    T* add_ref_copy() const { if(_p) _p->add_ref_copy(); return _p; }
+
 
 	// special constructor from default policy
 	explicit iref( const create_pooled&) 
@@ -126,7 +127,6 @@ public:
 
 	template<class T2>
 	void takeover(iref<T2>& p) {
-        DASSERT_RETVOID(&p != this);
 		release();
 		_p = p.get();
 		p.forget();
