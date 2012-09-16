@@ -183,7 +183,7 @@ public:
     ///@param key the key under which the value object should be created
     VAL* insert_value_slot( const key_type& key )
     {
-        typename _HT::Node** v = _insert_unique_slot(key);
+        typename _HT::Node** v = _HT::_insert_unique_slot(key);
         return v  ?  &(*v)->_val  :  0;
     }
 
@@ -192,7 +192,7 @@ public:
     ///@param key the key under which the value object should be created
     VAL* find_or_insert_value_slot( const key_type& key, bool* isnew=0 )
     {
-        typename _HT::Node** v = _find_or_insert_slot(key, isnew);
+        typename _HT::Node** v = _HT::_find_or_insert_slot(key, isnew);
         return &(*v)->_val;
     }
 
@@ -200,14 +200,14 @@ public:
     ///Find value object corresponding to given key
     const VAL* find_value( const key_type& k ) const
     {
-        const typename _HT::Node* v = find_node(k);
+        const typename _HT::Node* v = _HT::find_node(k);
         return v ? &v->_val : 0;
     }
 
     ///Find value object corresponding to given key
     const VAL* find_value( uint hash, const key_type& k ) const
     {
-        const typename _HT::Node* v = find_node(hash,k);
+        const typename _HT::Node* v = _HT::find_node(hash,k);
         return v ? &v->_val : 0;
     }
 

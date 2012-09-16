@@ -58,7 +58,7 @@ class interface_register
         operator const token&() const { return ifcname; }
     };
 
-    hash_keyset<entry, _Select_GetRef<entry,token>> _hash;
+    hash_keyset<entry, _Select_GetRef<entry,token> > _hash;
     comm_mutex _mx;
 
 public:

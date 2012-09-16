@@ -125,7 +125,7 @@ public:
         _bufw.reset();
     }
 
-    virtual opcd open( const token & arg )  { return _binw->open(arg); }
+    virtual opcd open( const token& name, token arg ) { return _binw->open(arg); }
     virtual opcd close( bool linger=false ) { return _binw->close(linger); }
     virtual bool is_open() const            { return _binr->is_open(); }
 

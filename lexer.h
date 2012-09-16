@@ -148,12 +148,12 @@ public:
                 col -= start;
             }
 
-            dst << "\r\n" << text;
-            dst << "\r\n";
+            dst << "\n" << text;
+            dst << "\n";
 
             if( col < text.len() ) {
                 dst.appendn(col, ' ');
-                dst << "^\r\n";
+                dst << "^\n";
             }
         }
     }

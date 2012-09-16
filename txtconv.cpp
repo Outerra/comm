@@ -44,6 +44,7 @@ void append_fixed( char* dst, char* dste, double v, int nfrac, EAlignNum align)
                 ::memset(dste-(d-d/2), ' ', d-d/2);
                 break;
             }
+			default:;
         }
     }
     else
