@@ -372,7 +372,7 @@ class metagen //: public binstream
             bool defined = true;
 
             if( depth > 0 )
-                defined = var.find_descendant(name, v, true, &n);
+                defined = var.find_descendant(name, v, value.value.is_empty(), &n);
             else
                 v = var;
 

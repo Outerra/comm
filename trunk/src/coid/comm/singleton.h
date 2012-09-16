@@ -137,7 +137,7 @@ private:
     T* p;
 
     static void destroy(void* p) {
-        delete p;
+        delete static_cast<T*>(p);
     }
 };
 

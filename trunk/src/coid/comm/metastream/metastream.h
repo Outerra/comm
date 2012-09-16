@@ -893,11 +893,11 @@ private:
 
         void set_meta( metastream& m ) {_meta = &m;}
 
-        virtual opcd write( const void* p, type t )             { return _meta->data_write(p, t); }
-        virtual opcd read( void* p, type t )                    { return _meta->data_read(p, t); }
+        virtual opcd write( const void* p, type t ) 	{ return _meta->data_write(p, t); }
+        virtual opcd read( void* p, type t )            { return _meta->data_read(p, t); }
 
-        virtual opcd write_raw( const void* p, uints& len )     { return _meta->data_write_raw(p, len); }
-        virtual opcd read_raw( void* p, uints& len )            { return _meta->data_read_raw(p, len); }
+        virtual opcd write_raw( const void* p, uints& len ) { return _meta->data_write_raw(p, len); }
+        virtual opcd read_raw( void* p, uints& len )    { return _meta->data_read_raw(p, len); }
 
         virtual opcd write_array_content( binstream_container_base& c, uints* count ) {
             return _meta->data_write_array_content(c,count);
@@ -917,22 +917,22 @@ private:
         }
 
         virtual opcd write_array_separator( type t, uchar end ) { return _meta->data_write_array_separator(t,end); }
-        virtual opcd read_array_separator( type t )             { return _meta->data_read_array_separator(t); }
+        virtual opcd read_array_separator( type t )     { return _meta->data_read_array_separator(t); }
 
         virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS )
         {   return ersNOT_IMPLEMENTED;}
 
-        virtual opcd peek_read( uint timeout )                  { return 0; }
-        virtual opcd peek_write( uint timeout )                 { return 0; }
+        virtual opcd peek_read( uint timeout )          { return 0; }
+        virtual opcd peek_write( uint timeout )         { return 0; }
 
-        virtual opcd bind( binstream& bin ) {return ersNOT_IMPLEMENTED;}
+        virtual opcd bind( binstream& bin, int io=0 )   { return ersNOT_IMPLEMENTED; }
 
-        virtual bool is_open() const                            { return _meta != 0; }
-        virtual void flush()                                    { _meta->stream_flush(); }
-        virtual void acknowledge( bool eat=false )              { _meta->stream_acknowledge(eat); }
+        virtual bool is_open() const                    { return _meta != 0; }
+        virtual void flush()                            { _meta->stream_flush(); }
+        virtual void acknowledge( bool eat=false )      { _meta->stream_acknowledge(eat); }
 
-        virtual void reset_read()                               { _meta->stream_reset(1, _meta->cache_prepared()); }
-        virtual void reset_write()                              { _meta->stream_reset(-1, _meta->cache_prepared()); }
+        virtual void reset_read()                       { _meta->stream_reset(1, _meta->cache_prepared()); }
+        virtual void reset_write()                      { _meta->stream_reset(-1, _meta->cache_prepared()); }
 
         virtual uint binstream_attributes( bool in0out1 ) const {return 0;} //fATTR_SIMPLEX
     };
@@ -2324,9 +2324,49 @@ metastream& operator << ( metastream& m, const dynarray<T,COUNT,A>& )
     return m;
 }
 
-
-
 COID_NAMESPACE_END
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+///Helper macros for structs
+
+#define COID_METABIN_OP2(TYPE,P0,P1) namespace coid {\
+    inline binstream& operator << (binstream& bin, const TYPE& v) {\
+        return bin << v.P0 << v.P1;}\
+    inline binstream& operator >> (binstream& bin, TYPE& v) {\
+        return bin >> v.P0 >> v.P1;}\
+    inline metastream& operator << (metastream& m, const TYPE& v) {\
+        MSTRUCT_OPEN(m,#TYPE)\
+        MM(m,#P0,v.P0)\
+        MM(m,#P1,v.P1)\
+        MSTRUCT_CLOSE(m)}}
+
+#define COID_METABIN_OP3(TYPE,P0,P1,P2) namespace coid {\
+    inline binstream& operator << (binstream& bin, const TYPE& v) {\
+        return bin << v.P0 << v.P1 << v.P2;}\
+    inline binstream& operator >> (binstream& bin, TYPE& v) {\
+        return bin >> v.P0 >> v.P1 >> v.P2;}\
+    inline metastream& operator << (metastream& m, const TYPE& v) {\
+        MSTRUCT_OPEN(m,#TYPE)\
+        MM(m,#P0,v.P0)\
+        MM(m,#P1,v.P1)\
+        MM(m,#P2,v.P2)\
+        MSTRUCT_CLOSE(m)}}
+
+#define COID_METABIN_OP4(TYPE,P0,P1,P2,P3) namespace coid {\
+    inline binstream& operator << (binstream& bin, const TYPE& v) {\
+        return bin << v.P0 << v.P1 << v.P2 << v.P3;}\
+    inline binstream& operator >> (binstream& bin, TYPE& v) {\
+        return bin >> v.P0 >> v.P1 >> v.P2 >> v.P3;}\
+    inline metastream& operator << (metastream& m, const TYPE& v) {\
+        MSTRUCT_OPEN(m,#TYPE)\
+        MM(m,#P0,v.P0)\
+        MM(m,#P1,v.P1)\
+        MM(m,#P2,v.P2)\
+        MM(m,#P3,v.P3)\
+        MSTRUCT_CLOSE(m)}}
+
 
 
 #endif //__COID_COMM_METASTREAM__HEADER_FILE__

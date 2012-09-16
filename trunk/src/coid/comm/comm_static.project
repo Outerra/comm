@@ -22,6 +22,7 @@
     <File Name="str-win.cpp"/>
     <File Name="substring.cpp"/>
     <File Name="txtconv.cpp"/>
+    <File Name="interface.cpp"/>
   </VirtualDirectory>
   <VirtualDirectory Name="include">
     <File Name="comm.h"/>
@@ -186,6 +187,8 @@
     <File Name="sync/_mutex.h"/>
     <File Name="sync/thread_mgr.cpp"/>
   </VirtualDirectory>
+  <Dependencies Name="Debug"/>
+  <Dependencies Name="Release"/>
   <Settings Type="Static Library">
     <GlobalSettings>
       <Compiler Options="" C_Options="">
@@ -227,13 +230,13 @@
         <CustomPostBuild/>
         <CustomPreBuild/>
       </AdditionalRules>
-      <Completion>
+      <Completion EnableCpp11="no">
         <ClangCmpFlags/>
         <ClangPP/>
         <SearchPaths/>
       </Completion>
     </Configuration>
-    <Configuration Name="Release" CompilerType="gnu g++" DebuggerType="GNU gdb debugger" Type="Static Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
+    <Configuration Name="Release" CompilerType="clang" DebuggerType="GNU gdb debugger" Type="Static Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
       <Compiler Options="-fno-operator-names" C_Options="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" UseDifferentPCHFlags="no" PCHFlags="">
         <IncludePath Value="."/>
         <Preprocessor Value="__MSVCRT_VERSION__=0x0800"/>
@@ -264,7 +267,7 @@
         <CustomPostBuild/>
         <CustomPreBuild/>
       </AdditionalRules>
-      <Completion>
+      <Completion EnableCpp11="no">
         <ClangCmpFlags/>
         <ClangPP/>
         <SearchPaths/>
