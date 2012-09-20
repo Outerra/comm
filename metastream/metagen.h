@@ -456,11 +456,6 @@ class metagen //: public binstream
             brace = 0;
             depth = 0;
 
-            if(tok == '$') {
-                varname = tok.tok;  // $$ -> literal $
-                return true;
-            }
-
             while( tok.tok == '-' ) {
                 ++eat_left;
                 lex.next();
@@ -738,6 +733,8 @@ class metagen //: public binstream
 
                     TagEmpty* etag = new TagEmpty;
                     *sequence.add() = etag;
+                    
+                    tout.eat_right = 0;
 
                     bool succ = etag->parse( lex, tout.eat_right );
                     if(!succ) return succ;
