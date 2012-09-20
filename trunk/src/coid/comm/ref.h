@@ -36,9 +36,11 @@
 #ifndef __COID_REF_H__
 #define __COID_REF_H__
 
+//include non-intrusive and intrusive ref counted pointers
 
 #include "ref_s.h"
 #include "ref_i.h"
+#include "local.h"
 
 COID_NAMESPACE_BEGIN
 

@@ -59,11 +59,12 @@ class str_ptr
     T* _p;
 
 public:
-    str_ptr()  {}
-    str_ptr(const T* p) {_p= p;}
+    str_ptr() : _p(0) {}
+    str_ptr(const T* p) {_p = p;}
 
     operator T*(void) const     { return _p; }
     operator T**(void) const    { return &_p; }
+
 
     int operator==(const T* ptr) const  { return ptr==_p; }
     T& operator*(void) const    { return *_p; }
@@ -101,6 +102,44 @@ binstream& operator << (binstream &out, const str_ptr<T> &obj)
     out << *obj._p;
     return out;
 }
+
+
+///
+///A simple wrapper to have the pointer initialized to 0
+template <class T>
+class clean_ptr
+{
+    T* _p;
+
+public:
+    clean_ptr() : _p(0) {}
+    clean_ptr(const T* p) {_p = p;}
+
+    typedef T* clean_ptr<T>::*unspecified_bool_type;
+
+    ///Automatic cast to unconvertible bool for checking via if
+    operator unspecified_bool_type () const {
+	    return _p ? &clean_ptr<T>::_p : 0;
+	}
+
+    int operator==(const T* ptr) const  { return ptr==_p; }
+
+    T& operator*(void) const    { return *_p; }
+    T* operator->(void) const   { return _p; }
+    T** operator&(void) const   { return (T**)&_p; }
+
+    clean_ptr& operator=(const str_ptr<T> &p) {
+        _p= p._p;
+        return *this;
+    }
+    clean_ptr& operator=(const T* p) {
+        _p= (T*)p;
+        return *this;
+    }
+
+	bool is_set() const		    { return _p != 0; }
+};
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //Forward declarations

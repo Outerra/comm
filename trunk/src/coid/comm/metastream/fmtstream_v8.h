@@ -51,12 +51,20 @@ COID_NAMESPACE_BEGIN
 ///token wrapper for v8
 class v8_token : public v8::String::ExternalAsciiStringResource
 {
-    const token& _tok;
+    token _tok;
 
 public:
 
+    ~v8_token() {}
+
+    v8_token()
+    {}
     v8_token( const token& tok ) : _tok(tok)
     {}
+
+    void set( const token& tok ) {
+        _tok = tok;
+    }
 
     const char* data() const { return _tok.ptr(); }
 
