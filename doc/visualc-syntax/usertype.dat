@@ -21,7 +21,9 @@ dynarray
 segarray
 
 ifc_class
+ifc_class_var
 ifc_fn
+ifc_event
 ifc_in
 ifc_out
 ifc_inout

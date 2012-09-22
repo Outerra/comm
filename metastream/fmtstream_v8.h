@@ -173,9 +173,7 @@ public:
     opcd read_key( charstr& key, int kmember, const token& expected_key )
     {
         //looks up the variable in the current object
-        v8_token v8_key(expected_key);
-        
-        _top->value = _top->object->Get(v8::String::NewExternal(&v8_key));
+        _top->value = _top->object->Get(v8::String::NewSymbol(expected_key.ptr(), expected_key.len()));
 
         if(_top->value.IsEmpty())
             return ersNO_MORE;
