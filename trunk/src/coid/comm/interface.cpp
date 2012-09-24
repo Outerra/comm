@@ -1,5 +1,6 @@
 
 #include "interface.h"
+#include "commexception.h"
 
 COID_NAMESPACE_BEGIN
 
@@ -30,11 +31,11 @@ void interface_register::register_interface_creator( const token& ifcname, void*
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifdef _DEBUG
-#define INTERGEN_GLOBAL_REGISTRAR iglo_registrard
-#else
+//#ifdef _DEBUG
+//#define INTERGEN_GLOBAL_REGISTRAR iglo_registrard
+//#else
 #define INTERGEN_GLOBAL_REGISTRAR iglo_registrar
-#endif
+//#endif
 
 
 
@@ -61,6 +62,7 @@ interface_register& interface_register::get()
     if(!_this) {
         const char* s = MAKESTR(INTERGEN_GLOBAL_REGISTRAR);
         ireg_t p = (ireg_t)GetProcAddress(0, s);
+        if(!p) throw exception() << "no intergen entry point found";
         _this = p();
     }
 
