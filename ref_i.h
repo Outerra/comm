@@ -54,7 +54,7 @@ private:
 public:
 	iref() : _p(0) {}
 
-	explicit iref(T* p) : _p(p) { add_ref_copy(); }
+	iref(T* p) : _p(p) { add_ref_copy(); }
 
 	iref(const iref_t& r) : _p(r.add_ref_copy()) {}
 
@@ -161,6 +161,70 @@ public:
 		MSTRUCT_CLOSE(m)
 	}
 };
+
+// Alpha simple intrusive weak pointer.
+class policy_intrusive_base_weak;
+
+class iwtracker : public policy_intrusive_base
+{
+   policy_intrusive_base_weak *_track;
+public:
+   iwtracker(policy_intrusive_base_weak *track):_track(track){}
+   virtual ~iwtracker(){}
+   void SetTrack(policy_intrusive_base_weak *track){_track = track;}
+   policy_intrusive_base_weak *GetTrack(){return _track;}
+};
+
+// weak intrusive reference pointer that uses a tracker.
+template<class T> 
+class iwref
+{
+   iref<iwtracker> _tracker;
+public:
+   iwref(){}
+   iwref(T *type)
+   {
+      if (type && !type->GetTracker()) type->SetTracker(new iwtracker(type));
+      if (type) _tracker = iref<iwtracker>(type->GetTracker());     
+   }
+
+   T *GetObject()
+   {
+      return _tracker ? (T*) _tracker->GetTrack() : NULL;
+   }
+   T* operator->() const { return (T*) _tracker->GetTrack(); }
+   operator bool () const { return _tracker ? _tracker->GetTrack() != 0 : 0; }
+};
+
+// If the class requires a weak reference counter, then it will required
+// to inherit from this class.
+class policy_intrusive_base_weak
+{
+   iref<iwtracker> _tracker;
+public:
+   policy_intrusive_base_weak(){};
+   ~policy_intrusive_base_weak()
+   {
+      // Release if any the tracker
+      _tracker = NULL;
+   }
+   void ForceTracker()
+   {
+      // Force create the tracker.
+      if (!_tracker) SetTracker(new iwtracker(this));
+   }
+   void SetTracker(iwtracker *track)
+   {
+      _tracker = track;
+      _tracker->SetTrack(this);
+   }
+   iwtracker *GetTracker()
+   {
+      return _tracker.get();
+   }
+};
+
+
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
