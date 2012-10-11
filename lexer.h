@@ -2589,7 +2589,7 @@ protected:
             off = count_notescape(off);
             if( off >= _tok.len() )
             {
-                if( !_bin || (off=0, 0 == fetch_page(0, false)) )
+                if( !_bin || off == fetch_page(off, false) )
                 {
                     //end of input
 
@@ -2710,7 +2710,7 @@ protected:
             off = count_notleading(off);
             if( off >= _tok.len() )
             {
-                if( !_bin || (off=0, 0 == fetch_page(0, false)) )
+                if( !_bin || 0 == fetch_page(off=0, false) )
                 {
                     //verify if the trailing set contains empty string, which would mean
                     // that end of file is a valid terminator of the block
@@ -3122,7 +3122,7 @@ protected:
 
         if(!_bin) {
             _tok.shift_start( _tok.len() - nkeep );
-            return 0;
+            return nkeep;
         }
 
         //count _lines being discarded
