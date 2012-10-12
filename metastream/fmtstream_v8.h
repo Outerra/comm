@@ -610,8 +610,8 @@ public:
             return read_compound_array_content(c,n,count);
         }
 
-        if(!_top->value->IsString())
-            return ersSYNTAX_ERROR "expected string";
+        //if(!_top->value->IsString())
+        //    return ersSYNTAX_ERROR "expected string";
 
         v8::String::Utf8Value str(_top->value);
         token tok(*str, str.length());

@@ -52,7 +52,7 @@ struct exception
     {}
 
     exception()
-        : _stext("unknown exception")
+        : _stext(def_text())
     {}
 
 	explicit exception(const dbg::location &loc)
@@ -120,9 +120,15 @@ struct exception
 
 protected:
 
+    static const token& def_text() {
+        static token def = "Unknown Exception";
+        return def;
+    }
+
     void S2D() {
-        if(_stext) {
+        if(_stext && _stext.ptr()!=def_text().ptr()) {
             _dtext = _stext;
+            _dtext << ": ";
             _stext.set_empty();
         }
     }
