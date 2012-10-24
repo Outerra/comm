@@ -125,7 +125,8 @@ public:
         if(!_top) return v8::Null();
 
         v8::Handle<v8::Value> v = _top->value;
-        _top = _stack.pop();
+        _top = _stack.alloc(1);
+        _top->element = 0;
 
         return v;
     }
