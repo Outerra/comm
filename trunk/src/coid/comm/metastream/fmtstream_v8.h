@@ -176,7 +176,7 @@ public:
         //looks up the variable in the current object
         _top->value = _top->object->Get(v8::String::NewSymbol(expected_key.ptr(), expected_key.len()));
 
-        if(_top->value.IsEmpty())
+        if(_top->value->IsUndefined())
             return ersNO_MORE;
 
         key = expected_key;
