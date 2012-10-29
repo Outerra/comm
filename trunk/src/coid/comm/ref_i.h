@@ -65,9 +65,13 @@ public:
 
     T* add_ref_copy() const { if(_p) _p->add_ref_copy(); return _p; }
 
+    //
+	explicit iref( const create_me& )
+        : _p(new T())
+    { add_ref_copy(); }
 
 	// special constructor from default policy
-	explicit iref( const create_pooled&) 
+	explicit iref( const create_pooled& ) 
 		: _p( coid::policy_pooled_i<T>::create(true) ) 
 	{}
 
