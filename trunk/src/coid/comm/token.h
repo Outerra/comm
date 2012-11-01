@@ -89,7 +89,7 @@ class charstr;
 ///Token structure describing a part of a string.
 struct token
 {
-    const char *_ptr;                   ///< ptr to the beginning of current string part
+    const char* _ptr;                   ///< ptr to the beginning of current string part
     const char* _pte;                   ///< pointer past the end
 
     token() {
@@ -756,6 +756,27 @@ struct token
     ///@note if the separator isn't found and the @a ctr parameter doesn't contain fON_FAIL_RETURN_EMPTY,
     /// whole token is returned. This applies to cut_right* methods as well.
 
+    ///Cut the string that follows. The first character is assumed to be the string delimiter (usually ' or "). If the
+    /// same character is not found, a null-token is returned.
+    //@param escchar character used to escape the next character so that it's not interpreted as a terminating one.
+    //@note The returned token doesn't contain the delimiters. Escape character is used only to skip an escaped terminating character, otherwise the escape characters are preserved in the output
+    token cut_left_string( char escchar )
+    {
+        char c = first_char();
+        
+        for( const char* p = _ptr+1; p<_pte; ++p ) {
+            if(*p == escchar)
+                ++p;
+            else if(*p == c) {
+                token r(_ptr+1, p);
+                _ptr = p+1;
+                return r;
+            }
+        }
+
+        //null token on error
+        return token();
+    }
 
     ///Cut a token off, using single character as the delimiter
     token cut_left( char c, cut_trait ctr = cut_trait_remove_sep() )
@@ -802,7 +823,6 @@ struct token
         else
             return ctr.process_notfound(*this, r);
     }
-
 
     ///Cut left substring, searching for separator backwards
     ///@param skipsep zero if the separator should remain with the original token, nonzero if it's discarded
