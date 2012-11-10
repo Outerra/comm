@@ -173,6 +173,9 @@ public:
 
     opcd read_key( charstr& key, int kmember, const token& expected_key )
     {
+        if(_top->object.IsEmpty())
+            return ersNO_MORE;
+
         //looks up the variable in the current object
         _top->value = _top->object->Get(v8::String::NewSymbol(expected_key.ptr(), expected_key.len()));
 
@@ -356,7 +359,8 @@ public:
         }
         else if( t.type == type::T_STRUCTBGN )
         {
-            if(!_top->value->IsObject())
+            bool undef = _top->value->IsUndefined();
+            if(!undef && !_top->value->IsObject())
                 e = ersSYNTAX_ERROR "expected object";
             else {
                 entry* le = _stack.add(1);
