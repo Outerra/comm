@@ -153,12 +153,14 @@ public:
 		_o=p->get();
 	}
 
-    void create_pooled(pool_type_t *po) {
+    void create_pooled(pool_type_t *po, bool nonew=false) {
 		release();
-		policy_pooled_t *p=policy_pooled_t::create(po);
-		_p=p;
-		_p->add_ref_copy();
-		_o=p->get();
+		policy_pooled_t *p=policy_pooled_t::create(po, nonew);
+        if(p) {
+		    _p=p;
+		    _p->add_ref_copy();
+		    _o=p->get();
+        }
 	}
 
 	// standard destructor
