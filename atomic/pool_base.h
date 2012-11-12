@@ -68,14 +68,13 @@ public:
     }
 
     ///
-	static this_type* create(pool_type* po) 
+	static this_type* create( pool_type* po, bool nonew=false ) 
     { 
         DASSERT(po!=0); 
-        this_type* p;
+        this_type* p=0;
 
-        if( !po->create_instance(p) ) {
-            p= new this_type(new T,po);
-        }
+        if(!po->create_instance(p) && !nonew)
+            p = new this_type(new T,po);
         return p;
     }
 
