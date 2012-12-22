@@ -168,66 +168,70 @@ public:
 
 // Alpha simple intrusive weak pointer.
 class policy_intrusive_base_weak;
-
-class iwtracker : public policy_intrusive_base
+class ireftracker : public  policy_intrusive_base
 {
    policy_intrusive_base_weak *_track;
 public:
-   iwtracker(policy_intrusive_base_weak *track):_track(track){}
-   virtual ~iwtracker(){}
+   ireftracker(policy_intrusive_base_weak *track):_track(track){}
+   virtual ~ireftracker(){}
    void SetTrack(policy_intrusive_base_weak *track){_track = track;}
    policy_intrusive_base_weak *GetTrack(){return _track;}
 };
 
-// weak intrusive reference pointer that uses a tracker.
+// Weak intrusive reference pointer that uses a tracker.
 template<class T> 
 class iwref
 {
-   iref<iwtracker> _tracker;
+   iref<ireftracker> _tracker;
+
+   // Release the the RefTracker if we're no longer using it
+   T* GetTrack()
+   {
+      if (_tracker && !_tracker->GetTrack()) _tracker = NULL;
+      return _tracker ? (T*) _tracker->GetTrack() : NULL;      
+   }
 public:
    iwref(){}
    iwref(T *type)
    {
-      if (type && !type->GetTracker()) type->SetTracker(new iwtracker(type));
-      if (type) _tracker = iref<iwtracker>(type->GetTracker());     
+      if (type && !type->GetTracker()) type->SetTracker(new ireftracker(type));
+      if (type) _tracker = type->GetTracker();
    }
 
-   T *GetObject()
-   {
-      return _tracker ? (T*) _tracker->GetTrack() : NULL;
-   }
-   T* operator->() const { return (T*) _tracker->GetTrack(); }
-   operator bool () const { return _tracker ? _tracker->GetTrack() != 0 : 0; }
+	T* GetObject(){ return GetTrack(); }
+	operator T*() { return GetTrack(); }
+   T* operator->() { return GetTrack(); }
+   operator bool () { return GetTrack() != NULL; }
 };
 
-// If the class requires a weak reference counter, then it will required
-// to inherit from this class.
+/*
+  Classes that want to have weak pointer to them, require to inherit from
+  TrackBase that enables a WRef (WeakRef) to be used on them.
+*/
 class policy_intrusive_base_weak
 {
-   iref<iwtracker> _tracker;
+   iref<ireftracker> _tracker;
 public:
-   policy_intrusive_base_weak(){};
-   ~policy_intrusive_base_weak()
+   virtual ~policy_intrusive_base_weak()
    {
-      // Release if any the tracker
-      _tracker = NULL;
+      // If we have a tracker, then set it that we no longer exist
+      if (_tracker) _tracker->SetTrack(NULL);
    }
    void ForceTracker()
    {
-      // Force create the tracker.
-      if (!_tracker) SetTracker(new iwtracker(this));
+      // Force creation of a tracker.
+      if (!_tracker) SetTracker(new ireftracker(this));
    }
-   void SetTracker(iwtracker *track)
+   void SetTracker(ireftracker *track)
    {
       _tracker = track;
       _tracker->SetTrack(this);
    }
-   iwtracker *GetTracker()
+   ireftracker *GetTracker()
    {
       return _tracker.get();
    }
 };
-
 
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
