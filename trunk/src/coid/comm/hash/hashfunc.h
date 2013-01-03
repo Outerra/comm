@@ -40,13 +40,26 @@
 
 
 #include "../namespace.h"
-//#include "../dynarray.h"
+#include <ctype.h>
+#include <functional>
 
 
 COID_NAMESPACE_BEGIN
 
+
 ////////////////////////////////////////////////////////////////////////////////
-template<class KEY> struct hash
+template<class KEYSTORE, class KEYLOOKUP=KEYSTORE>
+struct equal_to	: public std::binary_function<KEYSTORE, KEYLOOKUP, bool>
+{
+	bool operator()(const KEYSTORE& _Left, const KEYLOOKUP& _Right) const
+    {
+        return (_Left == _Right);
+    }
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+template<class KEY, bool INSENSITIVE=false> struct hash
 {
     typedef KEY     key_type;
 };
@@ -72,17 +85,46 @@ inline uint __coid_hash_string( const char* s, uints n )
     return h;
 }
 
+inline uint __coid_hash_string_insensitive( const char* s )
+{
+    uint h = 2166136261u;
+    for( ; *s; ++s)
+        h = (h ^ ::tolower(*s))*16777619u;
+        //h = (h ^ *s) + (h<<26) + (h>>6);
+
+    return h;
+}
+
+
+inline uint __coid_hash_string_insensitive( const char* s, uints n )
+{
+    uint h = 2166136261u;
+    for( ; n>0; ++s,--n)
+        h = (h ^ ::tolower(*s))*16777619u;
+        //h = (h ^ *s) + (h<<26) + (h>>6);
+
+    return h;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
-template<> struct hash<char*>
+template<bool INSENSITIVE> struct hash<char*, INSENSITIVE>
 {
     typedef char* key_type;
-    uint operator()(const char* s) const { return __coid_hash_string(s); }
+    uint operator()(const char* s) const {
+        return INSENSITIVE
+            ? __coid_hash_string_insensitive(s)
+            : __coid_hash_string(s);
+    }
 };
 
-template<> struct hash<const char*>
+template<bool INSENSITIVE> struct hash<const char*, INSENSITIVE>
 {
     typedef const char* key_type;
-    uint operator()(const char* s) const { return __coid_hash_string(s); }
+    uint operator()(const char* s) const {
+        return INSENSITIVE
+            ? __coid_hash_string_insensitive(s)
+            : __coid_hash_string(s);
+    }
 };
 
 template<> struct hash<char> {
