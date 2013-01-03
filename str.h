@@ -46,6 +46,8 @@
 //#include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <functional>
+
 #include "token.h"
 #include "dynarray.h"
 #include "mathf.h"
@@ -1936,13 +1938,39 @@ inline opcd binstream::read_key( charstr& key, int kmember, const token& expecte
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-template<> struct hash<charstr>
+///Hasher for charstr
+template<bool INSENSITIVE> struct hash<charstr, INSENSITIVE>
 {
     typedef charstr key_type;
 
     size_t operator() (const charstr& str) const
     {
-        return __coid_hash_string( str.ptr(), str.len() );
+        return INSENSITIVE
+            ? __coid_hash_string( str.ptr(), str.len() )
+            : __coid_hash_string_insensitive( str.ptr(), str.len() );
+    }
+};
+
+///Equality operator for hashes with token keys
+template<>
+struct equal_to<charstr,token> : public std::binary_function<charstr,token,bool>
+{
+    typedef token key_type;
+
+	bool operator()(const charstr& _Left, const token& _Right) const
+    {
+        return (_Left == _Right);
+    }
+};
+
+///Case-insensitive equality operators for hashes with token keys
+struct equal_to_insensitive : public std::binary_function<charstr,token,bool>
+{
+    typedef token key_type;
+
+	bool operator()(const charstr& _Left, const token& _Right) const
+    {
+        return _Left.cmpeqi(_Right);
     }
 };
 

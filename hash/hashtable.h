@@ -44,7 +44,6 @@
 #include "../dynarray.h"
 #include "../metastream/metastream.h"
 #include <algorithm>
-#include <functional>
 
 #include "hashfunc.h"
 
@@ -65,16 +64,6 @@ struct _Select_pair1st
     typedef const LOOKUP&  ret_type;
 
     ret_type operator() (const PAIR& __x) const  { return __x.first; }
-};
-
-////////////////////////////////////////////////////////////////////////////////
-template<class KEYSTORE, class KEYLOOKUP=KEYSTORE>
-struct equal_to	: public std::binary_function<KEYSTORE, KEYLOOKUP, bool>
-{
-	bool operator()(const KEYSTORE& _Left, const KEYLOOKUP& _Right) const
-    {
-        return (_Left == _Right);
-    }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
