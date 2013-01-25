@@ -68,6 +68,12 @@ struct atomic_counter
 	static bool b_cas(volatile coid::int32 * ptr,const coid::int32 val,const coid::int32 cmp) { 
 		return atomic::b_cas( ptr,val,cmp ); 
 	}
+
+    static coid::uint32 add(volatile coid::uint32* ptr,const coid::uint32 v) { return atomic::add(ptr,v); }
+	static coid::uint32 aor(volatile coid::uint32* ptr, const coid::uint32 val) { return atomic::aor(ptr, val); }
+	static coid::uint32 aand(volatile coid::uint32* ptr, const coid::uint32 val) { return atomic::aand(ptr, val); }
+	static coid::uint32 inc(volatile coid::uint32* ptr) { return atomic::inc(ptr); }
+	static coid::uint32 dec(volatile coid::uint32* ptr) { return atomic::dec(ptr); }
 };
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -92,8 +98,10 @@ private:
 	policy_base_ & operator=( policy_base_ const & );
 
 	volatile coid::int32 _count;
+    volatile coid::uint32 *_weaks;
 
 public:
+    typedef COUNTER counter_t;
 
     virtual ~policy_base_() {}
 
@@ -101,7 +109,7 @@ public:
         delete this; 
     }
 
-	policy_base_() : _count(0) {}
+	policy_base_() : _count(0), _weaks(0) {}
 
 	coid::int32 add_ref_copy() { 
         return COUNTER::inc(&_count); 
@@ -111,17 +119,65 @@ public:
 		for( ;; ) {
 			coid::int32 tmp = _count;
 			if( tmp==0 ) return false;
-			if( COUNTER::b_cas( &_count,tmp, tmp+1 ) ) return true;
+			if( COUNTER::b_cas( &_count,tmp+1, tmp ) ) return true;
 		}
 	}
 
 	coid::int32 release() { 
-		coid::int32 c=COUNTER::dec( &_count );
-		if( c==0 ) destroy();
-		return c;
+		coid::int32 count = COUNTER::dec(&_count);
+		if(count == 0) {
+            if(_weaks) {
+                coid::uint32 weaks = COUNTER::aor(_weaks, 0x80000000);
+                count = COUNTER::add(&_count, 0); // double check
+                if(count == 0) {
+                    weaks = COUNTER::dec(_weaks) & ~0x80000000;
+                    if(weaks == 0)
+                        delete _weaks;
+                    destroy();
+                }
+                else
+                    COUNTER::aand(_weaks, 0x7fffffff); // remove destroy flag
+            }
+            else
+                destroy();
+        }
+		return count;
 	}
 
 	coid::int32 refcount() { return COUNTER::add(&_count,0); }
+
+    volatile coid::uint32* add_weak_copy() {
+        if(!_weaks)
+            _weaks = new coid::uint32(1);
+
+        COUNTER::inc(_weaks);
+
+        return _weaks;
+    }
+
+    static volatile coid::uint32* add_weak_copy(volatile coid::uint32 *weaks) {
+        return COUNTER::inc(weaks);
+    }
+
+	static coid::uint32 get_weak_count(volatile coid::uint32 *weaks) {
+        return COUNTER::add(weaks, 0);
+    }
+
+    static bool add_weak_lock(volatile coid::uint32 *weaks) {
+        for(;;) {
+			coid::int32 tmp = weaks;
+            if(tmp & 0x80000000)
+                if(tmp == COUNTER::add(weaks, 0))
+                    return false;
+            else
+                if(tmp == COUNTER::add(weaks, 0)) {
+
+                    return true;
+                }
+        }
+
+        return COUNTER::dec(weaks);
+    }
 };
 
 typedef policy_base_<> policy_base;

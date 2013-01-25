@@ -42,9 +42,15 @@
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+template<class T> class irefw;
+
+struct create_lock {};
+
 template<class T> 
 class iref
 {
+    friend irefw<T>;
+
 private:
 	T* _p;
 
@@ -55,6 +61,7 @@ public:
 	iref() : _p(0) {}
 
 	iref(T* p) : _p(p) { add_ref_copy(); }
+	iref(T *p, const create_lock&) : _p(r.add_ref_lock()) {}
 
 	iref(const iref_t& r) : _p(r.add_ref_copy()) {}
 
@@ -64,6 +71,7 @@ public:
     }
 
     T* add_ref_copy() const { if(_p) _p->add_ref_copy(); return _p; }
+    T* add_ref_lock() const { if(_p && _p->add_ref_lock()) return _p; else return 0; }
 
     //
 	explicit iref( const create_me& )
@@ -86,6 +94,16 @@ public:
 		_p = p;
         _p->add_ref_copy(); 
 	}
+
+	bool create_lock(T *p) {
+        release();
+        if(p && p->add_ref_lock()) {
+            _p = p;
+            return true;
+        }
+        else
+            return false;
+    }
 
 	void create_pooled() {
         T* p = coid::policy_pooled_i<T>::create();
@@ -166,73 +184,63 @@ public:
 	}
 };
 
-// Alpha simple intrusive weak pointer.
-class policy_intrusive_base_weak;
-class ireftracker : public  policy_intrusive_base
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+template<class T>
+class irefw
 {
-   policy_intrusive_base_weak *_track;
+protected:
+
+    T *_p;
+    volatile coid::uint32 *_weaks;
+
 public:
-   ireftracker(policy_intrusive_base_weak *track):_track(track){}
-   virtual ~ireftracker(){}
-   void SetTrack(policy_intrusive_base_weak *track){_track = track;}
-   policy_intrusive_base_weak *GetTrack(){return _track;}
+    irefw() : _p(0), _weaks(0) {}
+
+    irefw(const iref<T> &o)
+        : _p(o._p)
+        , _weaks(o._p ? _p->add_weak_copy() : 0)
+    {}
+
+    irefw(const irefw<T> &o)
+        : _p(p._p)
+        , _weaks(o._p ? T::add_weak_copy(o._weaks) : 0)
+    {}
+
+    ~irefw() { if(_p) release(); }
+
+    void release() {
+        if(_p) {
+            const coid::uint32 weaks =
+                T::counter_t::dec(_weaks) & ~0x8000000;
+
+            if(weaks == 0)
+                delete _weaks;
+
+            _p = 0;
+            _weaks = 0;
+        }        
+    }
+
+    bool lock(iref<T> &newref) {
+        if(_p)
+            for(;;) {
+			    coid::int32 tmp = *_weaks;
+                if(tmp & 0x80000000) {
+                    if(tmp == T::counter_t::add(_weaks, 0))
+                        return false;
+                }
+                else {
+                    if(!newref.create_lock(_p) || tmp != T::counter_t::add(_weaks, 0))
+                        newref.forget();
+                    else
+                        return true;
+                }
+            }
+        else
+            return false;
+    }
 };
-
-// Weak intrusive reference pointer that uses a tracker.
-template<class T> 
-class iwref
-{
-   iref<ireftracker> _tracker;
-
-   // Release the the RefTracker if we're no longer using it
-   T* GetTrack()
-   {
-      if (_tracker && !_tracker->GetTrack()) _tracker = NULL;
-      return _tracker ? (T*) _tracker->GetTrack() : NULL;      
-   }
-public:
-   iwref(){}
-   iwref(T *type)
-   {
-      if (type && !type->GetTracker()) type->SetTracker(new ireftracker(type));
-      if (type) _tracker = type->GetTracker();
-   }
-
-	T* GetObject(){ return GetTrack(); }
-	operator T*() { return GetTrack(); }
-   T* operator->() { return GetTrack(); }
-   operator bool () { return GetTrack() != NULL; }
-};
-
-/*
-  Classes that want to have weak pointer to them, require to inherit from
-  TrackBase that enables a WRef (WeakRef) to be used on them.
-*/
-class policy_intrusive_base_weak
-{
-   iref<ireftracker> _tracker;
-public:
-   virtual ~policy_intrusive_base_weak()
-   {
-      // If we have a tracker, then set it that we no longer exist
-      if (_tracker) _tracker->SetTrack(NULL);
-   }
-   void ForceTracker()
-   {
-      // Force creation of a tracker.
-      if (!_tracker) SetTracker(new ireftracker(this));
-   }
-   void SetTracker(ireftracker *track)
-   {
-      _tracker = track;
-      _tracker->SetTrack(this);
-   }
-   ireftracker *GetTracker()
-   {
-      return _tracker.get();
-   }
-};
-
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
