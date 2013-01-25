@@ -223,7 +223,7 @@ public:
     }
 
     bool lock(iref<T> &newref) {
-        if(_p)
+        if(_p && newref._p != _p)
             for(;;) {
 			    coid::int32 tmp = *_weaks;
                 if(tmp & 0x80000000) {

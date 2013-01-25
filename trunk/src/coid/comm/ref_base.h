@@ -97,8 +97,9 @@ private:
 	policy_base_( policy_base_ const & );
 	policy_base_ & operator=( policy_base_ const & );
 
+protected:
+
 	volatile coid::int32 _count;
-    volatile coid::uint32 *_weaks;
 
 public:
     typedef COUNTER counter_t;
@@ -109,7 +110,7 @@ public:
         delete this; 
     }
 
-	policy_base_() : _count(0), _weaks(0) {}
+	policy_base_() : _count(0) {}
 
 	coid::int32 add_ref_copy() { 
         return COUNTER::inc(&_count); 
@@ -119,9 +120,38 @@ public:
 		for( ;; ) {
 			coid::int32 tmp = _count;
 			if( tmp==0 ) return false;
-			if( COUNTER::b_cas( &_count,tmp+1, tmp ) ) return true;
+			if( COUNTER::b_cas( &_count, tmp+1, tmp ) ) return true;
 		}
 	}
+
+	coid::int32 release() { 
+		coid::int32 count = COUNTER::dec(&_count);
+		if(count == 0) {
+            destroy();
+        }
+		return count;
+	}
+
+	coid::int32 refcount() { return COUNTER::add(&_count, 0); }
+};
+
+template<class COUNTER=atomic_counter>
+class policy_base_weak_
+    : public policy_base_<COUNTER>
+{
+private:
+
+    volatile coid::uint32 *_weaks;
+
+public:
+
+    virtual ~policy_base_weak_() {}
+
+    virtual void destroy() { 
+        delete this; 
+    }
+
+	policy_base_weak_() : policy_base_(), _weaks(0) {}
 
 	coid::int32 release() { 
 		coid::int32 count = COUNTER::dec(&_count);
@@ -143,8 +173,6 @@ public:
         }
 		return count;
 	}
-
-	coid::int32 refcount() { return COUNTER::add(&_count,0); }
 
     volatile coid::uint32* add_weak_copy() {
         if(!_weaks)
@@ -182,6 +210,7 @@ public:
 
 typedef policy_base_<> policy_base;
 typedef policy_base_<> policy_intrusive_base;
+typedef policy_base_weak_<> policy_intrusive_base_weak;
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
