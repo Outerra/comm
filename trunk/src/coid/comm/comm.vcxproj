@@ -389,7 +389,6 @@
     <ClInclude Include="dynarray.h" />
     <ClInclude Include="fastdelegate.h" />
     <ClInclude Include="hptimer.h" />
-    <ClInclude Include="keywordt.h" />
     <ClInclude Include="lexer.h" />
     <ClInclude Include="local.h" />
     <ClInclude Include="log\logwriter.h" />
