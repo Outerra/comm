@@ -44,6 +44,7 @@
 #include "../namespace.h"
 #include "../dynarray.h"
 #include "../str.h"
+#include "../commexception.h"
 
 #include "fmtstream.h"
 #include "metavar.h"
@@ -173,7 +174,7 @@ public:
 
             if(e) {
                 _err << "error writing separator";
-                throw e;
+                throw exception(_err);
             }
             return false;
         }
@@ -184,7 +185,7 @@ public:
 
             if(e) {
                 _err << "error reading separator";
-                throw e;
+                throw exception(_err);
             }
             return false;
         }
@@ -410,19 +411,19 @@ public:
 
     template<class T>
     void xstream_in( T& x, const token& name = token::empty() )
-    {   opcd e = stream_in(x,name);  if(e) throw e; }
+    {   opcd e = stream_in(x,name);  if(e) throw exception(e); }
 
     template<class T>
     void xcache_in( T& x, const token& name = token::empty() )
-    {   opcd e = cache_in(x,name);  if(e) throw e; }
+    {   opcd e = cache_in(x,name);  if(e) throw exception(e); }
 
     template<class T>
     void xstream_out( T& x, const token& name = token::empty() )
-    {   opcd e = stream_out(x,name);  if(e) throw e; }
+    {   opcd e = stream_out(x,name);  if(e) throw exception(e); }
 
     template<class T>
     void xcache_out( T& x, const token& name = token::empty() )
-    {   opcd e = stream_out(x,name);  if(e) throw e; }
+    {   opcd e = stream_out(x,name);  if(e) throw exception(e); }
 
 
     void stream_acknowledge( bool eat = false )
@@ -1321,7 +1322,7 @@ protected:
                 _err << " - error " << (R?"reading":"writing") << " struct opening token\n";
                 if(R)
                     fmt_error();
-                throw e;
+                throw exception(_err);
                 return e;
             }
         }
@@ -1358,7 +1359,7 @@ protected:
                 _err << " - error " << (R?"reading":"writing") << " struct closing token";
                 if(R)
                     fmt_error();
-                throw e;
+                throw exception(_err);
                 return e;
             }
         }
@@ -1546,7 +1547,7 @@ protected:
             dump_stack(_err,0);
             _err << " - error reading variable '" << _curvar.var->varname << "', error: " << opcd_formatter(e);
             fmt_error();
-            throw e;
+            throw exception(_err);
             return e;
         }
 
@@ -1595,7 +1596,7 @@ protected:
                 dump_stack(_err,0);
                 _err << " - error reading separator: " << opcd_formatter(e);
                 fmt_error();
-                throw e;
+                throw exception(_err);
                 return e;
             }
         }
@@ -1801,7 +1802,7 @@ protected:
         if(e) {
             dump_stack(_err,0);
             _err << " - error writing array separator: " << opcd_formatter(e);
-            throw e;
+            throw exception(_err);
         }
     }
 
@@ -1819,7 +1820,7 @@ protected:
             dump_stack(_err,0);
             _err << " - error reading array separator: " << opcd_formatter(e);
             fmt_error();
-            throw e;
+            throw exception(_err);
         }
 
         return true;
@@ -1858,7 +1859,7 @@ protected:
                     dump_stack(_err,0);
                     _err << " - variable '" << _curvar.var->varname << "' not found and no default value provided";
                     fmt_error();
-                    throw e;
+                    throw exception(_err);
                 }
             }
 
@@ -1947,14 +1948,14 @@ protected:
                 dump_stack(_err,0);
                 _err << " - variable '" << _curvar.var->varname << "' not found and no default value provided";
                 fmt_error();
-                throw e;
+                throw exception(_err);
             }
         }
         else if(e) {
             dump_stack(_err,0);
             _err << " - error while seeking for variable '" << _curvar.var->varname << "': " << opcd_formatter(e);
             fmt_error();
-            throw e;
+            throw exception(_err);
         }
 
 
@@ -2010,7 +2011,7 @@ protected:
         if(e) {
             dump_stack(_err,0);
             _err << " - error while writing the variable name '" << _curvar.var->varname << "': " << opcd_formatter(e);
-            throw e;
+            throw exception(_err);
         }
 
         ++_curvar.kth;
@@ -2038,7 +2039,7 @@ protected:
             _err << " - expected variable: " << _curvar.var->varname;
             fmt_error();
             e = ersNOT_FOUND "no such variable";
-            throw e;
+            throw exception(_err);
         }
 
 
@@ -2074,7 +2075,7 @@ protected:
             _err << " - member variable: " << _rvarname << " not defined";
             fmt_error();
             e = ersNOT_FOUND "no such member variable";
-            throw e;
+            throw exception(_err);
             //return e;
         }
 
@@ -2084,7 +2085,7 @@ protected:
             _err << " - data for member: " << _rvarname << " specified more than once";
             fmt_error();
             e = ersMISMATCHED "redundant member data";
-            throw e;
+            throw exception(_err);
             //return e;
         }
 
@@ -2367,6 +2368,44 @@ COID_NAMESPACE_END
         MM(m,#P3,v.P3)\
         MSTRUCT_CLOSE(m)}}
 
+
+
+
+#define COID_METABIN_OP2D(TYPE,P0,P1,D0,D1) namespace coid {\
+    inline binstream& operator << (binstream& bin, const TYPE& v) {\
+        return bin << v.P0 << v.P1;}\
+    inline binstream& operator >> (binstream& bin, TYPE& v) {\
+        return bin >> v.P0 >> v.P1;}\
+    inline metastream& operator << (metastream& m, const TYPE& v) {\
+        MSTRUCT_OPEN(m,#TYPE)\
+        MMD(m,#P0,v.P0,D0)\
+        MMD(m,#P1,v.P1,D1)\
+        MSTRUCT_CLOSE(m)}}
+
+#define COID_METABIN_OP3D(TYPE,P0,P1,P2,D0,D1,D2) namespace coid {\
+    inline binstream& operator << (binstream& bin, const TYPE& v) {\
+        return bin << v.P0 << v.P1 << v.P2;}\
+    inline binstream& operator >> (binstream& bin, TYPE& v) {\
+        return bin >> v.P0 >> v.P1 >> v.P2;}\
+    inline metastream& operator << (metastream& m, const TYPE& v) {\
+        MSTRUCT_OPEN(m,#TYPE)\
+        MMD(m,#P0,v.P0,D0)\
+        MMD(m,#P1,v.P1,D1)\
+        MMD(m,#P2,v.P2,D2)\
+        MSTRUCT_CLOSE(m)}}
+
+#define COID_METABIN_OP4D(TYPE,P0,P1,P2,P3,D0,D1,D2,D3) namespace coid {\
+    inline binstream& operator << (binstream& bin, const TYPE& v) {\
+        return bin << v.P0 << v.P1 << v.P2 << v.P3;}\
+    inline binstream& operator >> (binstream& bin, TYPE& v) {\
+        return bin >> v.P0 >> v.P1 >> v.P2 >> v.P3;}\
+    inline metastream& operator << (metastream& m, const TYPE& v) {\
+        MSTRUCT_OPEN(m,#TYPE)\
+        MMD(m,#P0,v.P0,D0)\
+        MMD(m,#P1,v.P1,D1)\
+        MMD(m,#P2,v.P2,D2)\
+        MMD(m,#P3,v.P3,D3)\
+        MSTRUCT_CLOSE(m)}}
 
 
 #endif //__COID_COMM_METASTREAM__HEADER_FILE__

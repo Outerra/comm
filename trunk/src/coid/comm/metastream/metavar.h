@@ -82,7 +82,6 @@ struct MetaDesc
 
         charstr& dump( charstr& dst ) const
         {
-            dst << desc->type_name;
             if( !varname.is_empty() )
                 dst << char('.') << varname;
 
@@ -92,6 +91,9 @@ struct MetaDesc
                 else
                     dst << char('[') << desc->array_size << char(']');
             }
+
+            dst << ':' << desc->type_name;
+
             return dst;
         }
 

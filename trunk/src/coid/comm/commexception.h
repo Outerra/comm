@@ -47,17 +47,27 @@ COID_NAMESPACE_BEGIN
 
 struct exception
 {
-    explicit exception( token stext )
+    explicit exception( const char* stext )
         : _stext(stext)
     {}
+
+    explicit exception( const token& dtext )
+        : _dtext(dtext)
+    {}
+
+    explicit exception( opcd e )
+    {
+        _dtext << e.error_desc();
+        if(e.text() && e.text()[0])
+            _dtext << " : " << e.text();
+    }
 
     exception()
         : _stext(def_text())
     {}
 
 	explicit exception(const dbg::location &loc)
-        : _stext()
-		, _location(loc)
+        : _location(loc)
     {}
 
     exception& operator << (const char *czstr)  { S2D(); _dtext += (czstr); return *this; }
@@ -97,12 +107,12 @@ struct exception
         return *this;
     }
 
-    exception& operator << (const opcd_formatter& f)
+    exception& operator << (opcd e)
     {
         S2D();
-        _dtext << f.e.error_desc();
-        if( f.e.text() && f.e.text()[0] )
-            _dtext << " : " << f.e.text();
+        _dtext << e.error_desc();
+        if(e.text() && e.text()[0] )
+            _dtext << " : " << e.text();
         return *this;
     }
 
