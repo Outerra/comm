@@ -122,7 +122,7 @@ public:
 	struct _list_const_reverse_iterator 
         : public _list_iterator_base
 	{
-		typedef T value_type;
+		typedef const T value_type;
 
     #ifdef SYSTYPE_MSVC
 	#pragma warning( disable : 4284 )
@@ -135,7 +135,7 @@ public:
 		_list_const_reverse_iterator operator --(int) { _list_const_reverse_iterator x(_node); _node=_node->_next;  return x; }
 
 		_list_const_reverse_iterator() : _list_iterator_base() {}
-		explicit _list_const_reverse_iterator(node* p) : _list_iterator_base(p) {}
+		explicit _list_const_reverse_iterator(const node* p) : _list_iterator_base(const_cast<node*>(p)) {}
 	};
 
     typedef _list_iterator iterator;
