@@ -771,21 +771,27 @@ public:
         trSep = tSep = sep;
         trArraySep = tArraySep = arraysep;
 
-        _tokenizer.strip_group( trSep, 1 );
-        _tokenizer.strip_group( trArraySep, 1 );
+        _tokenizer.strip_group(trSep, 1);
+        _tokenizer.strip_group(trArraySep, 1);
     }
 
     /// @param optional_sep set to true if the member and array separators are optional on read
     void set_default_separators(bool optional_sep)
     {
+#ifdef SYSTYPE_WIN
+        tEol = "\r\n";
+        tSep = ",\r\n";
+#else
         tEol = "\n";
+        tSep = ",\n";
+#endif
         tTab = "\t";
-        trSep = tSep = ",\n";
+        trSep = tSep;
         trArraySep = tArraySep = ",";
         separators_are_optional = optional_sep;
 
-        _tokenizer.strip_group( trSep, 1 );
-        _tokenizer.strip_group( trArraySep, 1 );
+        _tokenizer.strip_group(trSep, 1);
+        _tokenizer.strip_group(trArraySep, 1);
     }
 
     void set_separators_optional(bool optional) {
