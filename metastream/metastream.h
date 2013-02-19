@@ -2332,6 +2332,16 @@ COID_NAMESPACE_END
 ////////////////////////////////////////////////////////////////////////////////
 ///Helper macros for structs
 
+#define COID_METABIN_OP1(TYPE,P0) namespace coid {\
+    inline binstream& operator << (binstream& bin, const TYPE& v) {\
+        return bin << v.P0;}\
+    inline binstream& operator >> (binstream& bin, TYPE& v) {\
+        return bin >> v.P0;}\
+    inline metastream& operator << (metastream& m, const TYPE& v) {\
+        MSTRUCT_OPEN(m,#TYPE)\
+        MM(m,#P0,v.P0)\
+        MSTRUCT_CLOSE(m)}}
+
 #define COID_METABIN_OP2(TYPE,P0,P1) namespace coid {\
     inline binstream& operator << (binstream& bin, const TYPE& v) {\
         return bin << v.P0 << v.P1;}\
@@ -2370,6 +2380,16 @@ COID_NAMESPACE_END
 
 
 
+
+#define COID_METABIN_OP1D(TYPE,P0,P1,D0,D1) namespace coid {\
+    inline binstream& operator << (binstream& bin, const TYPE& v) {\
+        return bin << v.P0;}\
+    inline binstream& operator >> (binstream& bin, TYPE& v) {\
+        return bin >> v.P0;}\
+    inline metastream& operator << (metastream& m, const TYPE& v) {\
+        MSTRUCT_OPEN(m,#TYPE)\
+        MMD(m,#P0,v.P0,D0)\
+        MSTRUCT_CLOSE(m)}}
 
 #define COID_METABIN_OP2D(TYPE,P0,P1,D0,D1) namespace coid {\
     inline binstream& operator << (binstream& bin, const TYPE& v) {\
