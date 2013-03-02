@@ -156,8 +156,8 @@ typedef double              flt64;
 #endif
 
 
-typedef unsigned char       uchar;
-typedef signed char         schar;
+typedef uint8               uchar;
+typedef int8                schar;
 
 ///Integer types with the same size as pointer on the platform
 typedef size_t              uints;
