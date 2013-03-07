@@ -58,6 +58,9 @@ private:
 	typedef coid::pool< coid::policy_pooled_i<T>* > pool_type_t;
 
 public:
+
+    typedef T base_t;
+
 	iref() : _p(0) {}
 
 	iref(T* p) : _p(p) { add_ref_copy(); }
