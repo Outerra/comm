@@ -151,14 +151,14 @@ public:
         delete this; 
     }
 
-	policy_base_weak_() : policy_base_(), _weaks(0) {}
+	policy_base_weak_() : policy_base_<COUNTER>(), _weaks(0) {}
 
 	coid::int32 release() { 
-		coid::int32 count = COUNTER::dec(&_count);
+		coid::int32 count = COUNTER::dec(&this->_count);
 		if(count == 0) {
             if(_weaks) {
                 coid::uint32 weaks = COUNTER::aor(_weaks, 0x80000000);
-                count = COUNTER::add(&_count, 0); // double check
+                count = COUNTER::add(&this->_count, 0); // double check
                 if(count == 0) {
                     weaks = COUNTER::dec(_weaks) & ~0x80000000;
                     if(weaks == 0)
@@ -193,7 +193,7 @@ public:
 
     static bool add_weak_lock(volatile coid::uint32 *weaks) {
         for(;;) {
-			coid::int32 tmp = weaks;
+			coid::uint32 tmp = *weaks;
             if(tmp & 0x80000000)
                 if(tmp == COUNTER::add(weaks, 0))
                     return false;

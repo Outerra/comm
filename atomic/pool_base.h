@@ -3,6 +3,7 @@
 
 #include "../namespace.h"
 #include "../alloc/commalloc.h"
+#include "../ref_base.h"
 #include "stack_base.h"
 
 COID_NAMESPACE_BEGIN
@@ -22,13 +23,13 @@ public:
 
 	/// create instance or take one from pool
 	bool create_instance(T& o) {
-		return pop(o);
+		return this->pop(o);
 	}
 
     /// return isntance to pool
 	void release_instance( T& o) {
 		// create trait for reset !!!
-		push(o);
+		this->push(o);
 	}
 };
 
@@ -64,7 +65,8 @@ public:
     { 
         DASSERT(_pool!=0); 
         _obj->reset();
-        _pool->release_instance(static_cast<this_type*>(this)); 
+		this_type* t = static_cast<this_type*>(this);
+        _pool->release_instance(t); 
     }
 
     ///

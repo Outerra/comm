@@ -41,7 +41,7 @@
 #include "../namespace.h"
 
 #include "packstream.h"
-#include "zlib.h"
+#include <zlib.h>
 
 COID_NAMESPACE_BEGIN
 

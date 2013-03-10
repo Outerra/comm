@@ -157,7 +157,7 @@ public:
 		release();
 		policy_pooled_t *p=policy_pooled_t::create(po, nonew);
         if(p) {
-		    _p=p;
+		    _p = static_cast<policy*>(p);
 		    _p->add_ref_copy();
 		    _o=p->get();
         }

@@ -49,7 +49,7 @@ struct create_lock {};
 template<class T> 
 class iref
 {
-    friend irefw<T>;
+    friend class irefw<T>;
 
 private:
 	T* _p;
@@ -64,7 +64,7 @@ public:
 	iref() : _p(0) {}
 
 	iref(T* p) : _p(p) { add_ref_copy(); }
-	iref(T *p, const create_lock&) : _p(r.add_ref_lock()) {}
+	iref(T *p, const create_lock&) : _p(p->add_ref_lock()) {}
 
 	iref(const iref_t& r) : _p(r.add_ref_copy()) {}
 
@@ -206,7 +206,7 @@ public:
     {}
 
     irefw(const irefw<T> &o)
-        : _p(p._p)
+        : _p(o._p)
         , _weaks(o._p ? T::add_weak_copy(o._weaks) : 0)
     {}
 
