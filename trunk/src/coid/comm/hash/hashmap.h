@@ -131,13 +131,13 @@ public:
 
     VAL* find_value( const key_type& k ) const
     {
-        typename _HT::Node* v = find_node(k);
+        typename _HT::Node* v = this->find_node(k);
         return v ? &v->_val.second : 0;
     }
 
     VAL* find_value( uint hash, const key_type& k ) const
     {
-        typename _HT::Node* v = find_node(hash,k);
+        typename _HT::Node* v = this->find_node(hash,k);
         return v ? &v->_val.second : 0;
     }
 

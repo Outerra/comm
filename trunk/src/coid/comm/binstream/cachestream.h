@@ -252,9 +252,9 @@ public:
 
 
 
-    virtual opcd open( const token& arg )
+    virtual opcd open( const token& name, token arg=token::empty() )
     {
-        return _bin->open(arg);
+        return _bin->open(name, arg);
     }
     virtual opcd close( bool linger=false )
     {

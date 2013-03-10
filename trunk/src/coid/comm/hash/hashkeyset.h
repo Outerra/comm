@@ -368,7 +368,7 @@ public:
 
     const VAL* find_value( const key_type& k ) const
     {
-        const typename _HT::Node* v = find_node(k);
+        const typename _HT::Node* v = this->find_node(k);
         return v ? &v->_val : 0;
     }
 

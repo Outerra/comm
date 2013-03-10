@@ -196,7 +196,7 @@ public:
         return *this;
     }
 
-    T*& get_ptr () const        { return (T*)_p; }
+    T*& get_ptr () const        { return (T*&)_p; }
 
 #ifdef SYSTYPE_MSVC
     template< typename T >

@@ -2152,7 +2152,7 @@ struct token
         ints wos = consume_char("NSEWnsew");
         if(wos) {
             //world side overrides the sign, if any
-            minus = minus != (wos&1)==0;
+            minus = minus != ((wos&1)==0);
         }
 
         //assemble the value

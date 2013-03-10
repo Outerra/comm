@@ -54,7 +54,7 @@ protected:
         fmt_lexer( bool utf8 ) : lexer(utf8)
         {}
 
-        virtual void on_error_prefix( bool rules, charstr& dst )
+        virtual void on_error_prefix( bool rules, charstr& dst, int line ) override
         {
             if(!rules)
                 dst << file_name << ":" << current_line() << " : ";

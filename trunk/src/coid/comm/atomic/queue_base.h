@@ -63,11 +63,11 @@ public:
 	~queue()
 	{}
 
-	void push(const T& item) { GUARDTHIS(_mutex); push_back(item); }
+	void push(const T& item) { GUARDTHIS(_mutex); this->push_back(item); }
 
-	void push_take(T& item) { GUARDTHIS(_mutex); push_back_take(item); }
+	void push_take(T& item) { GUARDTHIS(_mutex); this->push_back_take(item); }
 
-	bool pop(T& item) { GUARDTHIS(_mutex); return pop_front(item); }
+	bool pop(T& item) { GUARDTHIS(_mutex); return this->pop_front(item); }
 
 	void clear() { GUARDTHIS(_mutex); coid::list<T>::clear(); }
 
