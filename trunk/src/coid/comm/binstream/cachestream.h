@@ -252,7 +252,7 @@ public:
 
 
 
-    virtual opcd open( const token& name, token arg=token::empty() )
+    virtual opcd open( const zstring& name, const zstring& arg=zstring(0) )
     {
         return _bin->open(name, arg);
     }

@@ -2033,8 +2033,6 @@ struct command_tokens
     }
 };
 
-
-
 COID_NAMESPACE_END
 
 #endif //__COID_COMM_CHARSTR__HEADER_FILE__

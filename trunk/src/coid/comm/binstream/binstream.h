@@ -75,7 +75,7 @@ inline bstype::pointer<T> pointer(T* co& p) {
 
     virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS ) = 0;
 
-    virtual opcd open( const token& arg );
+    virtual opcd open( const zstring& arg );
     virtual opcd close( bool linger=false );
     virtual bool is_open() const = 0;
     virtual opcd bind( binstream& bin, int io );
@@ -936,7 +936,7 @@ public:
     /**
     **/
     ///Open underlying medium
-    virtual opcd open( const token& name, token arg = token::empty() ) {
+    virtual opcd open( const zstring& name, const zstring& arg=zstring(0) ) {
         return ersNOT_IMPLEMENTED;
     }
     ///Close the underlying medium

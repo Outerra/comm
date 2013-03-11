@@ -74,22 +74,6 @@ public:
     virtual void acknowledge (bool eat=false)   { }
 
 
-    virtual opcd open( const token& name, token attr = token::empty() )
-    {
-        //zero-terminate
-        charstr tmp = name;
-        tmp.append('\0');
-        uint len = tmp.len();
-        tmp << attr;
-
-        return open( tmp.c_str(), tmp.ptr()+len );
-    }
-
-    opcd open( const charstr& name, const char* attr = "rb" ) {
-        return open(name.c_str(), attr);
-    }
-
-
     /* The mode parameter is as
         in fopen ("rb" or "wb") but can also include a compression level ("wb9") or
         a strategy: 'f' for filtered data as in "wb6f", 'h' for Huffman-only
@@ -98,9 +82,9 @@ public:
         deflateInit2 for more information about the strategy parameter.) Also "a"
         can be used instead of "w" to request that the gzip stream that will be
         written be appended to the file. */
-    opcd open( const char* name, const char* attr = "rb" )
+    virtual opcd open( const zstring& name, const zstring& attr = zstring("rb") )
     {
-        _gz = gzopen(name, attr);
+        _gz = gzopen(name.c_str(), attr.c_str());
         if(!_gz)
             return ersFAILED;
 

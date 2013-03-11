@@ -141,7 +141,9 @@ public:
     virtual opcd peek_write( uint timeout )     { return 0; }
 
 
-    virtual opcd open( const token& arg )       { return _in->open(arg); }
+    virtual opcd open( const zstring& name, const zstring& arg = zstring(0) ) {
+        return _in->open(name, arg);
+    }
     virtual opcd close( bool linger )           { return _in ? _in->close(linger) : opcd(0); }
     virtual bool is_open() const                { return _in ? _in->is_open() : false; }
     virtual opcd bind( binstream& bin, int io )

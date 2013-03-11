@@ -37,6 +37,8 @@
 
 #include "dir.h"
 #include "binstream/filestream.h"
+#include "str.h"
+#include "pthreadx.h"
 
 #include <sys/utime.h>
 
@@ -44,48 +46,56 @@ COID_NAMESPACE_BEGIN
 
 
 ////////////////////////////////////////////////////////////////////////////////
-
-bool directory::stat( const char* name, xstat* dst )
-{
-    return 0 == ::_stat64( name, dst );
-}
-
-bool directory::stat( const charstr& name, xstat* dst )
+bool directory::stat( const zstring& name, xstat* dst )
 {
     return 0 == ::_stat64( name.c_str(), dst );
 }
 
-bool directory::is_valid( const char* dir )
+////////////////////////////////////////////////////////////////////////////////
+bool directory::is_valid( const zstring& dir )
 {
     xstat st;
-    return _stat64(dir, &st)==0;
+    return _stat64(dir.c_str(), &st)==0;
 }
 
-bool directory::is_valid_directory( const char* arg )
+////////////////////////////////////////////////////////////////////////////////
+static bool _is_valid_directory( const char* arg )
+{
+    directory::xstat st;
+    return _stat64(arg, &st)==0  &&  directory::is_directory(st.st_mode);
+}
+
+bool directory::is_valid_directory( const zstring& arg )
+{
+    token tok = arg.get_token();
+
+    bool dosdrive = tok.len()==2 && tok[1]==':';
+    bool lastsep = tok.last_char() == '\\' || tok.last_char() == '/';
+
+    if(!dosdrive && lastsep) {
+        charstr& tmp = arg.get_str();
+        tmp.resize(-1);
+    }
+    else if(dosdrive && !lastsep) {
+        charstr& tmp = arg.get_str();
+        tmp << separator();
+    }
+
+    return _is_valid_directory(arg.c_str());
+}
+
+////////////////////////////////////////////////////////////////////////////////
+bool directory::is_valid_file( const zstring& arg )
 {
     xstat st;
-    return _stat64(arg, &st)==0  &&  is_directory(st.st_mode);
+    return _stat64(arg.c_str(), &st)==0  &&  is_regular(st.st_mode);
 }
 
-bool directory::is_valid_file( const char* arg )
-{
-    xstat st;
-    return _stat64(arg, &st)==0  &&  is_regular(st.st_mode);
-}
-
-uint64 directory::file_size( const charstr& file )
+////////////////////////////////////////////////////////////////////////////////
+uint64 directory::file_size( const zstring& file )
 {
     xstat st;
     if(_stat64(file.c_str(), &st)==0  &&  is_regular(st.st_mode))
-        return st.st_size;
-
-    return 0;
-}
-
-uint64 directory::file_size( const char* file )
-{
-    xstat st;
-    if(_stat64(file, &st)==0  &&  is_regular(st.st_mode))
         return st.st_size;
 
     return 0;
@@ -188,9 +198,9 @@ opcd directory::copy_current_file_to( const token& dst )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::copy_file( const token& src, const token& dst )
+opcd directory::copy_file( const zstring& src, const zstring& dst )
 {
-    if( src == dst )
+    if( src.get_token() == dst.get_token() )
         return 0;
 
     fileiostream fsrc, fdst;
@@ -225,14 +235,14 @@ opcd directory::copy_file( const token& src, const token& dst )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::move_file_from( const token& src, const token& name )
+opcd directory::move_file_from( const zstring& src, const token& name )
 {
     _curpath.resize(_baselen);
 
     if( name.is_empty() )
     {
         //extract name from the source path
-        token srct = src;
+        token srct = src.get_token();
         token srcfn = srct.cut_right_back( separator() );
         _curpath << srcfn;
     }
@@ -243,14 +253,14 @@ opcd directory::move_file_from( const token& src, const token& name )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::move_file_to( const token& dst, const token& name )
+opcd directory::move_file_to( const zstring& dst, const token& name )
 {
     _curpath.resize(_baselen);
 
     if( name.is_empty() )
     {
         //extract name from the destination path
-        token dstt = dst;
+        token dstt = dst.get_token();
         token srcfn = dstt.cut_right_back( separator() );
         _curpath << srcfn;
     }
@@ -261,47 +271,47 @@ opcd directory::move_file_to( const token& dst, const token& name )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::move_current_file_to( const token& dst )
+opcd directory::move_current_file_to( const zstring& dst )
 {
     return move_file( _curpath, dst );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::move_file( const char* src, const char* dst )
+opcd directory::move_file( const zstring& src, const zstring& dst )
 {
-    if( 0 == rename(src,dst) )
+    if( 0 == ::rename(src.c_str(), dst.c_str()) )
         return 0;
     return ersIO_ERROR;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::delete_file( const char* src )
+opcd directory::delete_file( const zstring& src )
 {
 #ifdef SYSTYPE_MSVC
-    return 0 == _unlink(src)  ?  opcd(0) : ersIO_ERROR;
+    return 0 == _unlink(src.c_str())  ?  opcd(0) : ersIO_ERROR;
 #else
-    return 0 == unlink(src) ? opcd(0) : ersIO_ERROR;
+    return 0 == unlink(src.c_str()) ? opcd(0) : ersIO_ERROR;
 #endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::delete_directory( const char* src )
+opcd directory::delete_directory( const zstring& src )
 {
 #ifdef SYSTYPE_MSVC
-    return 0 == _rmdir(src)  ?  opcd(0) : ersIO_ERROR;
+    return 0 == _rmdir(src.c_str())  ?  opcd(0) : ersIO_ERROR;
 #else
-    return 0 == rmdir(src) ? opcd(0) : ersIO_ERROR;
+    return 0 == rmdir(src.c_str()) ? opcd(0) : ersIO_ERROR;
 #endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::set_file_times(const char* fname, timet actime, timet modtime)
+opcd directory::set_file_times( const zstring& fname, timet actime, timet modtime )
 {
 #ifdef SYSTYPE_WIN
     __utimbuf64 ut;
     ut.actime = actime;
     ut.modtime = modtime;
-    return _utime64(fname, &ut) ? ersFAILED : ersNOERR;
+    return _utime64(fname.c_str(), &ut) ? ersFAILED : ersNOERR;
 #else
 #error TODO
 #endif

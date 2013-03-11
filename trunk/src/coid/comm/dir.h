@@ -117,50 +117,31 @@ public:
     bool is_entry_directory() const;
     bool is_entry_regular() const;
 
-    static bool is_valid( const charstr& dir )              { return is_valid( dir.c_str() ); }
-    static bool is_valid( const char* dir );
+    static bool is_valid( const zstring& dir );
 
-    //@return true if path is a directory, handles trailing path delimiter
-    static bool is_valid_directory( const token& arg ) {
-        charstr args = arg;
-        treat_trailing_separator(args, args.len()==2 && args[1]==':');
-        return is_valid_directory(args.c_str());
-    }
+    //@return true if path is a directory
+    static bool is_valid_directory( const zstring& arg );
 
-    //@return true if path is a directory (must not end with slash/backslash)
-    static bool is_valid_directory( const charstr& arg )    { return is_valid_directory( arg.c_str() ); }
-    
-    //@return true if path is a directory (must not end with slash/backslash)
-    static bool is_valid_directory( const char* arg );
-
-    static bool is_valid_file( const charstr& arg )         { return is_valid_file( arg.c_str() ); }
-    static bool is_valid_file( const char* arg );
+    static bool is_valid_file( const zstring& arg );
 
     static bool is_directory( ushort mode );
     static bool is_regular( ushort mode );
 
-    static bool stat( const char* name, xstat* dst );
-    static bool stat( const charstr& name, xstat* dst );
+    static bool stat( const zstring& name, xstat* dst );
     
-    static opcd mkdir( const char* name, uint mode=0750 );
-    static opcd mkdir( const charstr& name, uint mode=0750 ){ return mkdir( name.c_str(), mode ); }
+    static opcd mkdir( const zstring& name, uint mode=0750 );
 
     static opcd mkdir_tree( token name, bool last_is_file=false, uint mode=0750 );
 
-    static int chdir( const char* name );
-    static int chdir( const charstr& name )                 { return chdir(name.c_str()); }
+    static int chdir( const zstring& name );
 
-    static opcd delete_directory( const char* src );
-    static opcd delete_directory( const charstr& src )      { return delete_directory(src.c_str()); }
+    static opcd delete_directory( const zstring& src );
 
-    static opcd copy_file( const token& src, const token& dst );
+    static opcd copy_file( const zstring& src, const zstring& dst );
 
-    static opcd move_file( const char* src, const char* dst );
-    static opcd move_file( const charstr& src, const charstr& dst )
-    {   return move_file( src.c_str(), dst.c_str() ); }
+    static opcd move_file( const zstring& src, const zstring& dst );
 
-    static opcd delete_file( const char* src );
-    static opcd delete_file( const charstr& src )           { return delete_file(src.c_str()); }
+    static opcd delete_file( const zstring& src );
 
     ///delete multiple files using a pattern for file
     static opcd delete_files( token path_and_pattern );
@@ -173,15 +154,12 @@ public:
 
 
     ///move file to open directory
-    opcd move_file_from( const token& src, const token& name=token::empty() );
+    opcd move_file_from( const zstring& src, const token& name=token::empty() );
 
-    opcd move_file_to( const token& dst, const token& name=token::empty() );
-    opcd move_current_file_to( const token& dst );
+    opcd move_file_to( const zstring& dst, const token& name=token::empty() );
+    opcd move_current_file_to( const zstring& dst );
 
-    static opcd set_file_times(const charstr& fname, timet actime, timet modtime) {
-        return set_file_times(fname.c_str(), actime, modtime);
-    }
-    static opcd set_file_times(const char* fname, timet actime, timet modtime);
+    static opcd set_file_times( const zstring& fname, timet actime, timet modtime );
 
     ///Get current working directory
     static charstr& get_cwd( charstr& buf );
@@ -212,8 +190,7 @@ public:
 
 
     uint64 file_size() const                    { return _st.st_size; }
-    static uint64 file_size( const charstr& file );
-    static uint64 file_size( const char* file );
+    static uint64 file_size( const zstring& file );
 
     ///Get next entry in the directory
 	const xstat* next();

@@ -166,36 +166,12 @@ public:
     /// c - create
     /// t,- - truncate
     /// a,+ - append
-    virtual opcd open( const token& name, token attr = token::empty() )
-    {
-        if(name.last_char() == 0)
-            return open( name.ptr(), attr );
-        else {
-            //zero-terminate
-            charstr tmp = name;
-            return open( tmp.c_str(), attr );
-        }
-    }
-
-    opcd open( const charstr& name, token attr = token::empty() ) {
-        return open( name.c_str(), attr );
-    }
-
-    ///Open file
-    //@param name file name
-    //@param attr open attributes
-    /// r - open for reading
-    /// w - open for writing
-    /// l - lock file
-    /// e - fail if file already exists
-    /// c - create
-    /// t,- - truncate
-    /// a,+ - append
-    opcd open( const char* name, token attr = token::empty() )
+    virtual opcd open( const zstring& name, const zstring& attrz = zstring(0) )
     {
         int flg=0;
         int rw=0,sh=0;
         
+        token attr = attrz.get_token();
         while( !attr.is_empty() )
         {
             if( attr[0] == 'r' )       rw |= 1;
@@ -227,9 +203,9 @@ public:
         flg |= O_BINARY;
 
 # ifdef SYSTYPE_MSVC
-        return ::_sopen_s( &_handle, name, flg, sh, af ) ? ersIO_ERROR : opcd(0);
+        return ::_sopen_s( &_handle, name.c_str(), flg, sh, af ) ? ersIO_ERROR : opcd(0);
 # else
-        _handle = ::_sopen( name, flg, sh, af );
+        _handle = ::_sopen( name.c_str(), flg, sh, af );
         return _handle != -1  ?  opcd(0)  :  ersIO_ERROR;
 # endif
 #else
@@ -237,7 +213,7 @@ public:
         else if( rw == 2 )  flg |= O_WRONLY;
         else                flg |= O_RDONLY;
 
-	_handle = ::open( name, flg, 0644 );
+	    _handle = ::open( name.c_str(), flg, 0644 );
 
         if( _handle != -1  &&  sh )
         {
@@ -385,46 +361,22 @@ public:
         return in0out1 ? 0 : fATTR_NO_INPUT_FUNCTION;
     }
 
-    virtual opcd open( const token& name, token attr = token::empty() )
+    virtual opcd open( const zstring& name, const zstring& attrz = zstring(0) )
     {
-        charstr flg;
+        charstr& attr = attrz.get_str();
 
         if( attr.is_empty() )
             attr = "wct";
-        else {
-            flg << attr << char('w');
-            attr = flg;
-        }
+        else
+            attr << char('w');
 
-        return filestream::open( name, attr );
-    }
-
-    opcd open( const charstr& name, token attr = token::empty() ) {
-        return open( name.c_str(), attr );
-    }
-
-    opcd open( const char* name, token attr = token::empty() )
-    {
-        charstr flg;
-
-        if( attr.is_empty() )
-            attr = "wct";
-        else {
-            flg << attr << char('w');
-            attr = flg;
-        }
-
-        return filestream::open( name, attr );
+        return filestream::open(name, attr);
     }
 
     bofstream() { }
-    explicit bofstream( const token& s, token attr = token::empty() )
+    explicit bofstream( const zstring& name, const zstring& attr = zstring(0) )
     {
-        open(s, attr);
-    }
-    explicit bofstream( const char* s, token attr = token::empty() )
-    {
-        open(s, attr);
+        open(name, attr);
     }
     
     ~bofstream() { }
@@ -439,47 +391,23 @@ public:
         return in0out1 ? 0 : fATTR_NO_OUTPUT_FUNCTION;
     }
 
-    virtual opcd open( const token& name, token attr = token::empty() )
+    virtual opcd open( const zstring& name, const zstring& attrz = zstring(0) )
     {
-        charstr flg;
+        charstr& attr = attrz.get_str();
 
         if( attr.is_empty() )
             attr = "r";
-        else {
-            flg << attr << char('r');
-            attr = flg;
-        }
+        else
+            attr << char('r');
 
-        return filestream::open( name, attr );
+        return filestream::open(name, attr);
     }
 
-    opcd open( const charstr& name, token attr = token::empty() ) {
-        return open( name.c_str(), attr );
-    }
-
-    opcd open( const char* name, token attr = token::empty() )
-    {
-        charstr flg;
-
-        if( attr.is_empty() )
-            attr = "r";
-        else {
-            flg << attr << char('r');
-            attr = flg;
-        }
-
-        return filestream::open( name, attr );
-    }
 
     bifstream() { }
-    explicit bifstream( const token& s, token attr = token::empty() )
+    explicit bifstream( const zstring& name, const zstring& attr = zstring(0) )
     {
-        open(s, attr);
-    }
-
-    explicit bifstream( const char* s, token attr = token::empty() )
-    {
-        open(s, attr);
+        open(name, attr);
     }
 
     ~bifstream() { }

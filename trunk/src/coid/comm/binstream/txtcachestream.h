@@ -232,7 +232,7 @@ public:
         return _cache.bind( bin, io );
     }
 
-    virtual opcd open( const token& name, token arg=token::empty() )
+    virtual opcd open( const zstring& name, const zstring& arg = zstring(0) )
     {
         return _cache.open(name, arg);
     }

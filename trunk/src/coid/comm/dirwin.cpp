@@ -136,13 +136,14 @@ bool directory::is_regular( ushort mode )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::mkdir( const char* name, uint mode )
+opcd directory::mkdir( const zstring& name, uint mode )
 {
 #ifdef SYSTYPE_WIN
-    if(name[1] == ':' && name[2] == 0)
+    const char* p = name.c_str();
+    if(p[0] && p[1] == ':' && p[2] == 0)
         return 0;
 #endif
-    if(!_mkdir(name))  return 0;
+    if(!_mkdir(name.c_str()))  return 0;
     if( errno == EEXIST )  return 0;
     return ersFAILED;
 }
@@ -198,9 +199,9 @@ charstr& directory::get_tmp( charstr& buf )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int directory::chdir( const char* name )
+int directory::chdir( const zstring& name )
 {
-    return ::_chdir(name);
+    return ::_chdir(name.c_str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////

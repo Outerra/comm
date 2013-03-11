@@ -41,3 +41,104 @@ COID_NAMESPACE_END
 
 
 #endif //_WIN32
+
+////////////////////////////////////////////////////////////////////////////////
+
+#include "str.h"
+#include "pthreadx.h"
+#include "atomic/stack_base.h"
+
+COID_NAMESPACE_BEGIN
+
+
+typedef atomic::stack_base<charstr*> pool_t;
+
+////////////////////////////////////////////////////////////////////////////////
+static atomic::stack_base<charstr*>& zeroterm_pool()
+{
+    static thread_key _TK;
+
+    pool_t* p = (pool_t*)_TK.get();
+    if(p)
+        return *p;
+        
+    p = new pool_t;
+    _TK.set(p);
+
+    return *p;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+zstring::~zstring()
+{
+    if(_buf) {
+        zeroterm_pool().push(_buf);
+        _buf = 0;
+    }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+zstring::zstring(const char* sz)
+    : _zptr(sz), _zend(0), _buf(0)
+{
+}
+
+////////////////////////////////////////////////////////////////////////////////
+zstring::zstring(const token& tok)
+    : _zptr(0), _zend(0)
+{
+    pool_t& pool = zeroterm_pool();
+    if(!pool.pop(_buf))
+        _buf = new charstr;
+    else
+        _buf->reset();
+
+    *_buf = tok;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+zstring::zstring(const charstr& str)
+    : _zptr(str.ptr()), _zend(str.ptre()), _buf(0)
+{
+}
+
+////////////////////////////////////////////////////////////////////////////////
+const char* zstring::c_str() const
+{
+    return _buf ? _buf->c_str() : _zptr;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+token zstring::get_token() const
+{
+    if(_buf)
+        return token(*_buf);
+    else if(!_zend)
+        _zend = _zptr + ::strlen(_zptr);
+
+    return token(_zptr, _zend);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+///Get modifiable string
+charstr& zstring::get_str() const
+{
+    if(!_buf) {
+        pool_t& pool = zeroterm_pool();
+        if(!pool.pop(_buf))
+            _buf = new charstr;
+        else
+            _buf->reset();
+
+        if(_zend)
+            _buf->set_from_range(_zptr, _zend);
+        else
+            _buf->set(_zptr);
+    }
+
+    return *_buf;
+}
+
+
+COID_NAMESPACE_END
