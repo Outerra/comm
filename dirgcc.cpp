@@ -124,9 +124,9 @@ bool directory::is_regular( ushort mode )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::mkdir( const char* name, mode_t mode )
+opcd directory::mkdir( const zstring& name, mode_t mode )
 {
-    if(!::mkdir(name,mode))  return 0;
+    if(!::mkdir(name.c_str(), mode))  return 0;
     if( errno == EEXIST )  return 0;
     return ersFAILED;
 }
@@ -170,9 +170,9 @@ charstr& directory::get_ped( charstr& buf )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int directory::chdir( const char* name )
+int directory::chdir( const zstring& name )
 {
-    return ::chdir(name);
+    return ::chdir(name.c_str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////

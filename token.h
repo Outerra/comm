@@ -2255,6 +2255,41 @@ inline string_hash::string_hash(const token& tok)
 }
 
 
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+///Wrapper class for providing zero-terminated strings to os api funcions
+class zstring
+{
+    const char* _zptr;
+    mutable const char* _zend;
+    mutable charstr* _buf;
+
+public:
+
+    zstring(const char* sz);
+    zstring(const token& tok);
+    zstring(const charstr& str);
+
+    ~zstring();
+
+    ///Get zero terminated string
+    const char* c_str() const;
+
+    ///Get token
+    token get_token() const;
+
+    ///Get modifiable string
+    charstr& get_str() const;
+};
+
+
+
+
 COID_NAMESPACE_END
 
 #endif //__COID_COMM_TOKEN__HEADER_FILE__
