@@ -1757,6 +1757,22 @@ struct token
         return conv.touint(t);
     }
 
+    ///Convert a hexadecimal, decimal, octal or binary token to unsigned int using as much digits as possible
+    uint touint_base( uint base ) const
+    {
+        token t(*this);
+        tonum<uint> conv(base);
+        return conv.touint(t);
+    }
+
+    ///Convert a hexadecimal, decimal, octal or binary token to unsigned int using as much digits as possible
+    uint64 touint64_base( uint base ) const
+    {
+        token t(*this);
+        tonum<uint64> conv(base);
+        return conv.touint(t);
+    }
+
     ///Convert the token to unsigned int using as much digits as possible, deducing the numeric base
     uint xtouint() const
     {
@@ -1802,14 +1818,14 @@ struct token
     }
 
     ///Convert a hexadecimal, decimal, octal or binary token to unsigned int using as much digits as possible
-    uint touint_and_shift_base( uint base )
+    uint touint_base_and_shift( uint base )
     {
         tonum<uint> conv(base);
         return conv.touint(*this);
     }
 
     ///Convert a hexadecimal, decimal, octal or binary token to unsigned int using as much digits as possible
-    uint64 touint64_and_shift_base( uint base )
+    uint64 touint64_base_and_shift( uint base )
     {
         tonum<uint64> conv(base);
         return conv.touint(*this);

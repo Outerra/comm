@@ -69,7 +69,7 @@ public:
 		: _p( policy_trait<T>::policy::create(o) )
 		, _o(o) 
 	{
-		_p->add_ref_copy();
+		_p->add_refcount();
 	}
 
     template<class Y>
@@ -77,13 +77,13 @@ public:
 		: _p( static_cast<policy_base*>(p) )
 		, _o(p->get()) 
     {
-		_p->add_ref_copy();
+		_p->add_refcount();
 	}
 
 	void create(T* const p) { 
 		release();
 		_p=policy_trait<T>::policy::create(p);
-		_p->add_ref_copy();
+		_p->add_refcount();
 		_o=p;
 	}
 
@@ -91,7 +91,7 @@ public:
 	explicit ref( const create_me& ) {
 		typename policy_trait<T>::policy *p=policy_trait<T>::policy::create();
 		_p=p;
-		_p->add_ref_copy();
+		_p->add_refcount();
 		_o=p->get();
 	}
 
@@ -99,7 +99,7 @@ public:
 	explicit ref( const create_pooled&) {
 		policy_pooled_t *p=policy_pooled_t::create();
 		_p=p;
-		_p->add_ref_copy();
+		_p->add_refcount();
 		_o=p->get();
 	}
 
@@ -107,7 +107,7 @@ public:
 /*	explicit ref( const create_pooled2&) {
         policy_pooled_t *p=policy_pooled_t::create();
 		_p=p;
-		_p->add_ref_copy();
+		_p->add_refcount();
 		_o=p->get();
 	}*/
 
@@ -115,25 +115,25 @@ public:
     explicit ref( const create_pooled&, pool_type_t *po) {
 		policy_pooled_t *p=policy_pooled_t::create(po);
 		_p=p;
-		_p->add_ref_copy();
+		_p->add_refcount();
 		_o=p->get();
 	}
 
 	// copy constructors
 	ref( const ref<T>& p )
-		: _p( p.add_ref_copy() )
+		: _p( p.add_refcount() )
 		, _o( p.get() ) {}
 
 	// constructor from inherited object
 	template< class T2 >
 	explicit ref( const ref<T2>& p )
-		: _p( p.add_ref_copy() )
+		: _p( p.add_refcount() )
 		, _o( p.get() ) {}
 
 	void create(policy_shared<T> * const p) {
 		release();
 		_p=p;
-		_p->add_ref_copy();
+		_p->add_refcount();
 		_o=p->get();
 	}
 
@@ -141,7 +141,7 @@ public:
 		release();
 		typename policy_trait<T>::policy *p = policy_trait<T>::policy::create();
 		_p=p;
-		_p->add_ref_copy();
+		_p->add_refcount();
 		_o=p->get();
 	}
 
@@ -149,7 +149,7 @@ public:
 		release();
 		policy_pooled_t *p = policy_pooled_t::create();
 		_p=p;
-		_p->add_ref_copy();
+		_p->add_refcount();
 		_o=p->get();
 	}
 
@@ -158,17 +158,17 @@ public:
 		policy_pooled_t *p=policy_pooled_t::create(po, nonew);
         if(p) {
 		    _p = static_cast<policy*>(p);
-		    _p->add_ref_copy();
+		    _p->add_refcount();
 		    _o=p->get();
         }
 	}
 
 	// standard destructor
-	~ref() { if( _p ) { _p->release(); _p=0; _o=0; } }
+	~ref() { release(); }
 
 	const ref_t& operator=(const ref_t& r) {
         release();
-		_p=r.add_ref_copy();
+		_p=r.add_refcount();
 		_o=r._o;
 		return *this;
 	}
@@ -176,13 +176,13 @@ public:
 	template< class T2 >
 	const ref_t& operator=(const ref<T2>& r) {
         release();
-		_p=r.add_ref_copy();
+		_p=r.add_refcount();
 		_o=static_cast<T*>(r.get());
 		return *this;
 	}
 
 	/// DO NOT USE !!!
-	policy* add_ref_copy() const { if( _p ) _p->add_ref_copy(); return _p; }
+	policy* add_refcount() const { if( _p ) _p->add_refcount(); return _p; }
 
 	T * operator->() const { DASSERT( _p!=0 && "You are trying to use not initialized REF!" ); return _o; }
 
@@ -201,7 +201,7 @@ public:
 
 	void release() {
 		if( _p!=0 ) { 
-			_p->release(); _p=0; _o=0;
+			_p->release_refcount(); _p=0; _o=0;
 		} 
 	}
 

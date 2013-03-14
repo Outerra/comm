@@ -130,7 +130,7 @@ public:
             p=new T();
 
 		if(init_counter)
-			p->add_ref_copy();
+			p->add_refcount();
 
         return p;
     }

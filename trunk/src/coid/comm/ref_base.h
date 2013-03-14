@@ -101,30 +101,30 @@ protected:
 
 	volatile coid::int32 _count;
 
+    virtual void destroy() { 
+        delete this; 
+    }
+
 public:
     typedef COUNTER counter_t;
 
     virtual ~policy_base_() {}
 
-    virtual void destroy() { 
-        delete this; 
-    }
-
 	policy_base_() : _count(0) {}
 
-	coid::int32 add_ref_copy() { 
+	coid::int32 add_refcount() { 
         return COUNTER::inc(&_count); 
     }
-
+/*
 	bool add_ref_lock() {
 		for( ;; ) {
 			coid::int32 tmp = _count;
 			if( tmp==0 ) return false;
 			if( COUNTER::b_cas( &_count, tmp+1, tmp ) ) return true;
 		}
-	}
+	}*/
 
-	coid::int32 release() { 
+	coid::int32 release_refcount() {
 		coid::int32 count = COUNTER::dec(&_count);
 		if(count == 0) {
             destroy();
@@ -135,6 +135,7 @@ public:
 	coid::int32 refcount() { return COUNTER::add(&_count, 0); }
 };
 
+///
 template<class COUNTER=atomic_counter>
 class policy_base_weak_
     : public policy_base_<COUNTER>
@@ -143,13 +144,15 @@ private:
 
     volatile coid::uint32 *_weaks;
 
-public:
-
-    virtual ~policy_base_weak_() {}
+protected:
 
     virtual void destroy() { 
         delete this; 
     }
+
+public:
+
+    virtual ~policy_base_weak_() {}
 
 	policy_base_weak_() : policy_base_<COUNTER>(), _weaks(0) {}
 
