@@ -81,8 +81,7 @@ zstring::~zstring()
 ////////////////////////////////////////////////////////////////////////////////
 zstring::zstring(const char* sz)
     : _zptr(sz), _zend(0), _buf(0)
-{
-}
+{}
 
 ////////////////////////////////////////////////////////////////////////////////
 zstring::zstring(const token& tok)
@@ -100,8 +99,7 @@ zstring::zstring(const token& tok)
 ////////////////////////////////////////////////////////////////////////////////
 zstring::zstring(const charstr& str)
     : _zptr(str.ptr()), _zend(str.ptre()), _buf(0)
-{
-}
+{}
 
 ////////////////////////////////////////////////////////////////////////////////
 const char* zstring::c_str() const
@@ -114,7 +112,7 @@ token zstring::get_token() const
 {
     if(_buf)
         return token(*_buf);
-    else if(!_zend)
+    else if(_zptr && !_zend)
         _zend = _zptr + ::strlen(_zptr);
 
     return token(_zptr, _zend);
