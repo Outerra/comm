@@ -63,23 +63,23 @@ public:
 
 	iref() : _p(0) {}
 
-	iref(T* p) : _p(p) { add_ref_copy(); }
-	iref(T *p, const create_lock&) : _p(p->add_ref_lock()) {}
+	iref(T* p) : _p(p) { add_refcount(); }
+	//iref(T *p, const create_lock&) : _p(p->add_refcount_lock()) {}
 
-	iref(const iref_t& r) : _p(r.add_ref_copy()) {}
+	iref(const iref_t& r) : _p(r.add_refcount()) {}
 
 	template< class T2 >
 	iref( const iref<T2>& r ) : _p(0) {
         create(r.get());
     }
 
-    T* add_ref_copy() const { if(_p) _p->add_ref_copy(); return _p; }
-    T* add_ref_lock() const { if(_p && _p->add_ref_lock()) return _p; else return 0; }
+    T* add_refcount() const { if(_p) _p->add_refcount(); return _p; }
+    //T* add_refcount_lock() const { if(_p && _p->add_refcount_lock()) return _p; else return 0; }
 
     //
 	explicit iref( const create_me& )
         : _p(new T())
-    { add_ref_copy(); }
+    { add_refcount(); }
 
 	// special constructor from default policy
 	explicit iref( const create_pooled& ) 
@@ -88,19 +88,19 @@ public:
 
 	~iref() { release(); }
 
-	void release() { if(_p) _p->release(); _p=0;  }
+	void release() { if(_p) _p->release_refcount(); _p=0;  }
 
 	void create(T* const p)
 	{
         DASSERT_RETVOID(p!=_p);
 		release();
 		_p = p;
-        _p->add_ref_copy(); 
+        _p->add_refcount(); 
 	}
 
 	bool create_lock(T *p) {
         release();
-        if(p && p->add_ref_lock()) {
+        if(p && p->add_refcount_lock()) {
             _p = p;
             return true;
         }
@@ -113,7 +113,7 @@ public:
         DASSERT(p!=_p);
 		release();
 		_p = p;
-		add_ref_copy();
+		add_refcount();
 	}
 
 	void create_pooled(pool_type_t *po) {
@@ -121,12 +121,12 @@ public:
 		DASSERT(p!=_p);
 		release();
 		_p = p;
-		add_ref_copy();
+		add_refcount();
 	}
 
 	const iref_t& operator = (const iref_t& r) {
 		T* p = r.get();
-		r.add_ref_copy();
+		r.add_refcount();
 		release();
 		_p = p;
 		return *this; 
@@ -210,7 +210,7 @@ public:
         , _weaks(o._p ? T::add_weak_copy(o._weaks) : 0)
     {}
 
-    ~irefw() { if(_p) release(); }
+    ~irefw() { release(); }
 
     void release() {
         if(_p) {

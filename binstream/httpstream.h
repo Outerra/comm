@@ -145,7 +145,7 @@ public:
                 } while( buf.is_empty() );
 
                 token chunk = buf;
-                rdchunk = chunk.touint_and_shift_base(16);
+                rdchunk = chunk.touint_base_and_shift(16);
 
                 if( rdchunk>0 )
                     e = ersRETRY;
