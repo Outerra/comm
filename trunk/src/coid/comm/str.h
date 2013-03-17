@@ -175,6 +175,7 @@ public:
     charstr(ulong i)               { append_num(10,(uints)i); }
 #endif //SYSTYPE_WIN
 
+    charstr(float d)               { operator += (d); }
     charstr(double d)              { operator += (d); }
 
 
@@ -376,6 +377,7 @@ public:
     charstr& operator = (ulong i)               { reset(); append_num(10,(uints)i); return *this; }
 #endif //SYSTYPE_WIN
 
+    charstr& operator = (float d)               { reset(); return operator += (d); }
     charstr& operator = (double d)              { reset(); return operator += (d); }
 
     ///Formatted numbers - int/uint
@@ -462,7 +464,8 @@ public:
     charstr& operator += (ulong i)              { append_num(10,(uints)i); return *this; }
 #endif //SYSTYPE_WIN
 
-    charstr& operator += (double d)             { append_float(d,6); return *this; }
+    charstr& operator += (float d)              { append_float(d,6); return *this; }
+    charstr& operator += (double d)             { append_float(d,10); return *this; }
 
     ///Formatted numbers - int/uint
     template<int WIDTH, int ALIGN, class NUM>
@@ -511,6 +514,7 @@ public:
     charstr& operator << (ulong i)              { append_num(10,(uints)i); return *this; }
 #endif //SYSTYPE_WIN
 
+    charstr& operator << (float d)              { return operator += (d); }
     charstr& operator << (double d)             { return operator += (d); }
 
     ///Formatted numbers - int/uint
