@@ -49,7 +49,7 @@ class stack_base
 {
 private:
 
-    atomic_align struct node
+    struct atomic_align node
     {
         COIDNEWDELETE(node);
 
@@ -57,7 +57,7 @@ private:
         T _item;
     };
 
-	atomic_align struct ptr_t
+	struct atomic_align ptr_t
 	{
 #ifdef SYSTYPE_64
 		typedef coid::uint64 tag_t;
@@ -85,7 +85,11 @@ private:
 
 		void operator=(const ptr_t &p) {
 #ifdef SYSTYPE_64
+#ifdef SYSTYPE_MSVC
 			__movsq((uint64*)&_data,(uint64*)&p._data,2);
+#else
+            *((__int128_t*)_data) = __sync_add_and_fetch((__int128_t*)&p._data, 0);
+#endif
 #else
 			_data=p._data;
 #endif

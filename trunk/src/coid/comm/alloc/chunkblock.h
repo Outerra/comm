@@ -96,13 +96,13 @@ private:
         _first = 0;
     }
 
-    void* operator new (uints size, uints total )
+    void* operator new (uints size, uints total, bool )
     {
         MEMTRACK(chunkblock, size);
         return memaligned_alloc( total, PAGESIZE );
     }
 
-    void operator delete (void *ptr, uints )
+    void operator delete (void *ptr, uints, bool )
     {   memaligned_free( ptr ); }
 
 
@@ -113,7 +113,7 @@ public:
     {
         DASSERT( IS_2_POW_N(PAGESIZE) );    //keep PAGESIZE a power of 2
         uints totalmem = pages*PAGESIZE;
-        chunkblock* p = new(totalmem) chunkblock;
+        chunkblock* p = new(totalmem,true) chunkblock;
         p->construct(itemsize,totalmem);
         return p;
     }

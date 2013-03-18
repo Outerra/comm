@@ -47,10 +47,12 @@
 time_t timelocal (struct tm *tm);
 time_t timegm (struct tm *tm);
 
+#ifndef _TIMESPEC_DEFINED
 struct timespec {
     long tv_sec;
     long tv_nsec;
-}; 
+};
+#endif
 #endif
 
 COID_NAMESPACE_BEGIN

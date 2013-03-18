@@ -303,20 +303,21 @@ public:
     uints get_segsize() const               { return uints(1)<<_rsegsize; }
     uints get_used_size() const             { return _used; }
 
+    void* operator new (size_t size, uints segsize, bool );
+    void operator delete (void * ptr, uints segsize, bool );
+
+
     static ssegpage* create( bool mutex, uints segsize = 65536 )
     {
-        return new(segsize) ssegpage( mutex, segsize );
+        return new(segsize, true) ssegpage(mutex, segsize);
     }
 
     static ssegpage* create( void* addr, bool mutex, uints segsize )
     {
-        return ::new(addr) ssegpage( mutex, segsize );
+        return ::new(addr) ssegpage(mutex, segsize);
     }
 
     
-
-    void* operator new (size_t size, uints segsize );
-    void operator delete (void * ptr, uints segsize );
 
     uints usable_size() const
     {

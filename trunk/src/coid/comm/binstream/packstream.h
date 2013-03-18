@@ -80,7 +80,7 @@ public:
 
     virtual opcd close( bool linger=false ) = 0;
 
-    packstream() : _out(0),_in(0)       { }
+    packstream() : _in(0),_out(0)       { }
     packstream( binstream* bin, binstream* bout )
     {
         _in = bin;

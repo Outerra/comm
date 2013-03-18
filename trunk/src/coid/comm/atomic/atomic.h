@@ -179,7 +179,7 @@ namespace atomic {
 	{
 		DASSERT(sizeof(coid::int64) == 8);
 #if defined(__GNUC__)
-		return __sync_bool_compare_and_swap(ptr, cmp, val);
+		return (coid::int64*)__sync_bool_compare_and_swap((__int128_t*)ptr, (__int128_t*)cmp, (__int128_t(valh)<<64)+vall);
 #elif defined(WIN32)
 		return _InterlockedCompareExchange128(
 			ptr, 
@@ -274,7 +274,7 @@ namespace atomic {
 	}
 
     inline coid::uint64 aand(volatile coid::uint64 * ptr, const coid::uint64 val) {
-        return and(reinterpret_cast<volatile int64*>(ptr), val);
+        return aand(reinterpret_cast<volatile coid::int64*>(ptr), val);
     }
 #endif
 
@@ -329,8 +329,8 @@ namespace atomic {
 #endif
 	}
 
-    inline coid::uint64 or(volatile coid::uint64 * ptr, const coid::uint64 val) {
-        return or(reinterpret_cast<volatile int64*>(ptr), val);
+    inline coid::uint64 aor(volatile coid::uint64 * ptr, const coid::uint64 val) {
+        return aor(reinterpret_cast<volatile int64*>(ptr), val);
     }
 #endif
 
@@ -386,7 +386,7 @@ namespace atomic {
 	}
 
     inline coid::uint64 axor(volatile coid::uint64 * ptr, const coid::uint64 val) {
-        return xor(reinterpret_cast<volatile int64*>(ptr), val);
+        return axor(reinterpret_cast<volatile int64*>(ptr), val);
     }
 #endif
 

@@ -337,7 +337,7 @@ class metagen //: public binstream
 
                 if( tok.id != lex.DQSTRING ) {
                     lex.set_err() << "expected attribute value string";
-                    throw lex.exception();
+                    throw lex.exc();
                 }
 
                 value.value = const_cast<lextoken&>(tok).swap_to_token_or_string( value.valuebuf );
@@ -357,7 +357,7 @@ class metagen //: public binstream
                 if( cond == INLINE )  cond = DEFAULT;
                 else if( cond != OPEN ) {
                     lex.set_err() << "'default' attribute can only be open or inline";
-                    throw lex.exception();
+                    throw lex.exc();
                 }
             }
 
@@ -475,7 +475,7 @@ class metagen //: public binstream
 
             if( tok.id != lex.IDENT ) {
                 lex.set_err() << "Expected identifier";
-                throw lex.exception();
+                throw lex.exc();
             }
             varname = tok.tok;
 
@@ -496,7 +496,7 @@ class metagen //: public binstream
             {
                 if(lastopen) {
                     lex.set_err() << "An open attribute followed by another";
-                    throw lex.exception();
+                    throw lex.exc();
                 }
 
                 lastopen = at.is_open();
@@ -512,15 +512,15 @@ class metagen //: public binstream
             {
                 if( brace == '('  &&  tok.tok != ')' ) {
                     lex.set_err() << "Expecting )";
-                    throw lex.exception();
+                    throw lex.exc();
                 }
                 if( brace == '{'  &&  tok.tok != '}' ) {
                     lex.set_err() << "Expecting }";
-                    throw lex.exception();
+                    throw lex.exc();
                 }
                 if( brace == '['  &&  tok.tok != ']' ) {
                     lex.set_err() << "Expecting ]";
-                    throw lex.exception();
+                    throw lex.exc();
                 }
 
                 lex.next(0);
@@ -533,7 +533,7 @@ class metagen //: public binstream
 
             if( tok.tok != '$' ) {
                 lex.set_err() << "Expecting end of tag $";
-                throw lex.exception();
+                throw lex.exc();
             }
 
             return true;
@@ -662,7 +662,7 @@ class metagen //: public binstream
 
             if( attr.size()>0 && attr.last()->is_open() ) {
                 lex.set_err() << "Simple tags cannot contain open attribute";
-                throw lex.exception();
+                throw lex.exc();
             }
         }
 
@@ -757,7 +757,7 @@ class metagen //: public binstream
                 if( tout.trailing ) {
                     if( !tout.same_group(par) ) {
                         lex.set_err() << "Mismatched closing tag";
-                        throw lex.exception();
+                        throw lex.exc();
                     }
                     return succ;
                 }
@@ -782,7 +782,7 @@ class metagen //: public binstream
 
             if( !par.varname.is_empty() ) {
                 lex.set_err() << "End of file before the closing tag";
-                throw lex.exception();
+                throw lex.exc();
             }
             return succ;
         }
@@ -827,7 +827,7 @@ class metagen //: public binstream
         {
             if( hdr.varname != "if" ) {
                 lex.set_err() << "Unknown code block: " << hdr.varname;
-                throw lex.exception();
+                throw lex.exc();
             }
 
             ParsedTag tmp;
@@ -950,12 +950,12 @@ class metagen //: public binstream
 
                 if(!tr) {
                     lex.set_err() << "Unknown attribute of an array tag: " << p->name;
-                    throw lex.exception();
+                    throw lex.exc();
                 }
 
                 if( tr->is_set() ) {
                     lex.set_err() << "Section already assigned";
-                    throw lex.exception();
+                    throw lex.exc();
                 }
 
                 if( p->cond == Attribute::INLINE )
@@ -964,14 +964,14 @@ class metagen //: public binstream
                     sec = tr;
                 else {
                     lex.set_err() << "Array attribute can be only inline or open";
-                    throw lex.exception();
+                    throw lex.exc();
                 }
             }
 
             if(!sec) {
                 if( atr_body.is_set() ) {
                     lex.set_err() << "Section already assigned";
-                    throw lex.exception();
+                    throw lex.exc();
                 }
                 sec = &atr_body;
             }
@@ -1004,7 +1004,7 @@ class metagen //: public binstream
             do {
                 if( tmp.attr.size() > 0 ) {
                     lex.set_err() << "Unknown attribute for structural tag";
-                    throw lex.exception();
+                    throw lex.exc();
                 }
 
                 TagRange rng;

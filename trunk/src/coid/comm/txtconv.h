@@ -291,13 +291,13 @@ namespace charstrconv
 
     ///Append NUM type integer to buffer
     template<class NUM>
-    static token append_num( char* dst, uint dstsize, int base, NUM n, uint minsize=0, EAlignNum align = ALIGN_NUM_RIGHT ) \
+    inline token append_num( char* dst, uint dstsize, int base, NUM n, uint minsize=0, EAlignNum align = ALIGN_NUM_RIGHT ) \
     {
         return num_formatter<NUM>::insert( dst, dstsize, n, base, minsize, align );
     }
 
     ///Append signed integer contained in memory pointed to by \a p
-    static token append_num_int( char* dst, uint dstsize, int base, const void* p, uint bytes, uint minsize=0,
+    inline token append_num_int( char* dst, uint dstsize, int base, const void* p, uint bytes, uint minsize=0,
         EAlignNum align = ALIGN_NUM_RIGHT )
     {
         switch( bytes )
@@ -312,7 +312,7 @@ namespace charstrconv
     }
 
     ///Append unsigned integer contained in memory pointed to by \a p
-    static token append_num_uint( char* dst, uint dstsize, int base, const void* p, uint bytes, uint minsize=0,
+    inline token append_num_uint( char* dst, uint dstsize, int base, const void* p, uint bytes, uint minsize=0,
         EAlignNum align = ALIGN_NUM_RIGHT )
     {
         switch( bytes )
@@ -361,7 +361,7 @@ namespace charstrconv
     ///Convert bytes to intelhex format output
     uints write_intelhex_line( char* dst, ushort addr, uchar n, const void* data );
 
-    static token write_intelhex_terminator()
+    inline token write_intelhex_terminator()
     {
         static token t = ":00000001FF\r\n";
         return t;
