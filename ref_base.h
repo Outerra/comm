@@ -44,9 +44,8 @@ struct create_pooled { };
 
 struct create_pooled2 { };
 
-static create_me CREATE_ME;
-
-static create_pooled CREATE_POOLED;
+extern create_me CREATE_ME;
+extern create_pooled CREATE_POOLED;
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
@@ -84,7 +83,8 @@ struct simple_counter
 	static coid::int32 add(volatile coid::int32* ptr,const coid::int32 v) { return (*ptr)+=v; }
 	static coid::int32 dec(volatile coid::int32* ptr) { return --(*ptr); }
 	static bool b_cas(volatile coid::int32 * ptr,const coid::int32 val,const coid::int32 cmp) { 
-		DASSERT(false && "should not be used!"); 
+		DASSERT(false && "should not be used!");
+        return false;
 	}
 };
 
@@ -197,14 +197,13 @@ public:
     static bool add_weak_lock(volatile coid::uint32 *weaks) {
         for(;;) {
 			coid::uint32 tmp = *weaks;
-            if(tmp & 0x80000000)
+            if(tmp & 0x80000000) {
                 if(tmp == COUNTER::add(weaks, 0))
                     return false;
-            else
-                if(tmp == COUNTER::add(weaks, 0)) {
-
-                    return true;
-                }
+            }
+            else if(tmp == COUNTER::add(weaks, 0)) {
+                return true;
+            }
         }
 
         return COUNTER::dec(weaks);

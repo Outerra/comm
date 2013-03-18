@@ -1804,7 +1804,7 @@ public:
     }
 
     //@return lexception object to be thrown
-    lexception exception() const
+    lexception exc() const
     {
         return lexception(_err, _errtext);
     }

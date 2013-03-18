@@ -391,7 +391,7 @@ public:
     template<int WIDTH, int ALIGN>
     charstr& operator = (const float_fmt<WIDTH,ALIGN>& v) {
 		char* buf = get_buf(WIDTH);
-        token tok = charstrconv::append_fixed(buf, buf+WIDTH, v.value, v.nfrac, (EAlignNum)ALIGN);
+        charstrconv::append_fixed(buf, buf+WIDTH, v.value, v.nfrac, (EAlignNum)ALIGN);
         return *this;
     }
 
@@ -478,7 +478,7 @@ public:
     template<int WIDTH, int ALIGN>
     charstr& operator += (const float_fmt<WIDTH,ALIGN>& v) {
 		char* buf = get_append_buf(WIDTH);
-        token tok = charstrconv::append_fixed(buf, buf+WIDTH, v.value, v.nfrac, (EAlignNum)ALIGN);
+        charstrconv::append_fixed(buf, buf+WIDTH, v.value, v.nfrac, (EAlignNum)ALIGN);
         return *this;
     }
 

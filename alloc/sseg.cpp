@@ -65,7 +65,7 @@ namespace coid {
 //#define CHECK_OVERLAP
 
 ////////////////////////////////////////////////////////////////////////////////
-void* ssegpage::operator new ( size_t, uints segsize )
+void* ssegpage::operator new ( size_t, uints segsize, bool )
 {
     segsize = nextpow2(segsize);
     uchar r = ssegpage::block::get_granularity_shift_from_pagesize(segsize);
@@ -76,7 +76,7 @@ void* ssegpage::operator new ( size_t, uints segsize )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ssegpage::operator delete (void * ptr, uints segsize )
+void ssegpage::operator delete (void * ptr, uints segsize, bool )
 {
     memaligned_free( ptr );
 }

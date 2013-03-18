@@ -92,7 +92,9 @@ void seg_allocator::discard()
     _last = 0;
     for( ; p; )
     {
-        delete p->spage;
+        p->spage->~ssegpage();
+        operator delete (p->spage);
+        
         page* pp = p;
         p = p->prev;
         SINGLETON( chunk_allocator<page> ).free(pp);

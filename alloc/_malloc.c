@@ -744,7 +744,7 @@ struct mallinfo {
 
 #ifndef FORCEINLINE
   #if defined(__GNUC__)
-#define FORCEINLINE __inline __attribute__ ((always_inline))
+    #define FORCEINLINE __inline __attribute__ ((always_inline))
   #elif defined(_MSC_VER)
     #define FORCEINLINE __forceinline
   #endif
@@ -1525,20 +1525,20 @@ static int dev_zero_fd = -1; /* Cached file descriptor for /dev/zero. */
 #else /* WIN32 */
 
 /* Win32 MMAP via VirtualAlloc */
-static FORCEINLINE void* win32mmap(size_t size) {
+FORCEINLINE void* win32mmap(size_t size) {
   void* ptr = VirtualAlloc(0, size, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
   return (ptr != 0)? ptr: MFAIL;
 }
 
 /* For direct MMAP, use MEM_TOP_DOWN to minimize interference */
-static FORCEINLINE void* win32direct_mmap(size_t size) {
+FORCEINLINE void* win32direct_mmap(size_t size) {
   void* ptr = VirtualAlloc(0, size, MEM_RESERVE|MEM_COMMIT|MEM_TOP_DOWN,
                            PAGE_READWRITE);
   return (ptr != 0)? ptr: MFAIL;
 }
 
 /* This function supports releasing coalesed segments */
-static FORCEINLINE int win32munmap(void* ptr, size_t size) {
+FORCEINLINE int win32munmap(void* ptr, size_t size) {
   MEMORY_BASIC_INFORMATION minfo;
   char* cptr = (char*)ptr;
   while (size) {
@@ -1786,7 +1786,7 @@ struct win32_mlock_t {
 
 static MLOCK_T malloc_global_mutex = { 0, 0, 0};
 
-static FORCEINLINE int win32_acquire_lock (MLOCK_T *sl) {
+FORCEINLINE int win32_acquire_lock (MLOCK_T *sl) {
   int spins = 0;
   for (;;) {
     if (sl->l != 0) {
@@ -1808,7 +1808,7 @@ static FORCEINLINE int win32_acquire_lock (MLOCK_T *sl) {
   }
 }
 
-static FORCEINLINE void win32_release_lock (MLOCK_T *sl) {
+FORCEINLINE void win32_release_lock (MLOCK_T *sl) {
   assert(sl->threadid == CURRENT_THREAD);
   assert(sl->l != 0);
   if (--sl->c == 0) {
@@ -1817,7 +1817,7 @@ static FORCEINLINE void win32_release_lock (MLOCK_T *sl) {
   }
 }
 
-static FORCEINLINE int win32_try_lock (MLOCK_T *sl) {
+FORCEINLINE int win32_try_lock (MLOCK_T *sl) {
   if (sl->l != 0) {
     if (sl->threadid == CURRENT_THREAD) {
       ++sl->c;
