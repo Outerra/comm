@@ -71,9 +71,9 @@
 #endif
 
 #ifdef SYSTYPE_64
-	#define atomic_align __declspec( align(16) )
+	#define atomic_align ALIGNOF(16)
 #else 
-	#define atomic_align __declspec( align(8) )
+	#define atomic_align ALIGNOF(8)
 #endif
 
 namespace atomic {
