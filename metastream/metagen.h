@@ -223,8 +223,10 @@ class metagen //: public binstream
 
         token write_buf( metagen& mg ) const;
 
-        void write_var( metagen& mg ) const {
-            mg.bin->xwrite_token_raw( write_buf(mg) );
+        bool write_var( metagen& mg ) const {
+            token b = write_buf(mg);
+            mg.bin->xwrite_token_raw(b);
+            return !b.is_empty();
         }
 
         bool is_nonzero() const
@@ -596,8 +598,12 @@ class metagen //: public binstream
         ///Write inline default attribute if there's one
         static void write_default( metagen& mg, const dynarray<Attribute>& attr )
         {
-            if( attr.size()>0  &&  attr[0].cond == Attribute::DEFAULT )
-                mg.bin->xwrite_raw( attr[0].value.value.ptr(), attr[0].value.value.len() );
+            const Attribute* pb = attr.ptr();
+            const Attribute* pe = attr.ptre();
+            for(; pb<pe; ++pb) {
+                if(pb->cond == Attribute::DEFAULT)
+                    mg.bin->xwrite_raw( pb->value.value.ptr(), pb->value.value.len() );
+            }
         }
 
         virtual void process_content( metagen& mg, const Varx& var ) const = 0;
@@ -649,11 +655,11 @@ class metagen //: public binstream
             if( find_var(var,v,attrib) ) {
                 if(!attrib.is_empty())
                     write_special_value(mg, attrib, v);
-                else
-                    v.write_var(mg);
+                else if(!v.write_var(mg))
+                    write_default(mg, attr);
             }
             else
-                write_default( mg, attr );
+                write_default(mg, attr);
         }
 
         virtual void parse_content( MtgLexer& lex, ParsedTag& hdr )

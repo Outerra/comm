@@ -311,6 +311,15 @@ bool cdcd_memcheck( const uchar* a, const uchar* ae, const uchar* b, const uchar
 
 COID_NAMESPACE_END
 
+
+#ifdef SYSTYPE_MSVC
+#define ALIGNOF(k) __declspec( align(k) )
+#else
+#define ALIGNOF(k) __attribute__((__aligned__(k)))
+#endif
+
+
+
 #ifdef SYSTYPE_64 
 	#define UMAXS       static_cast<coid::uints>(0xffffffffffffffffULL)
 #else
