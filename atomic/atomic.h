@@ -71,9 +71,9 @@
 #endif
 
 #ifdef SYSTYPE_64
-	#define atomic_align ALIGNOF(16)
+	#define atomic_align ALIGNAS(16)
 #else 
-	#define atomic_align ALIGNOF(8)
+	#define atomic_align ALIGNAS(8)
 #endif
 
 namespace atomic {
