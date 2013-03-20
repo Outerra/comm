@@ -313,9 +313,9 @@ COID_NAMESPACE_END
 
 
 #ifdef SYSTYPE_MSVC
-#define ALIGNOF(k) __declspec( align(k) )
+#define ALIGNAS(k) __declspec( align(k) )
 #else
-#define ALIGNOF(k) __attribute__((__aligned__(k)))
+#define ALIGNAS(k) __attribute__((__aligned__(k)))
 #endif
 
 
