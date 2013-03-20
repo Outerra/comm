@@ -311,11 +311,12 @@ bool cdcd_memcheck( const uchar* a, const uchar* ae, const uchar* b, const uchar
 
 COID_NAMESPACE_END
 
-
-#ifdef SYSTYPE_MSVC
-#define ALIGNAS(k) __declspec( align(k) )
-#else
-#define ALIGNAS(k) __attribute__((__aligned__(k)))
+#ifndef COMM_NO_ALIGNAS
+    #ifdef SYSTYPE_MSVC
+        #define ALIGNAS(k) __declspec( align(k) )
+    #else
+        #define ALIGNAS(k) __attribute__((__aligned__(k)))
+    #endif
 #endif
 
 
