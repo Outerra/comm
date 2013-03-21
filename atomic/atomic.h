@@ -70,26 +70,10 @@
 #endif
 #endif
 
-#ifndef COMM_NO_ALIGNAS
-    #ifdef SYSTYPE_64
-	    #define atomic_align ALIGNAS(16)
-    #else 
-	    #define atomic_align ALIGNAS(8)
-    #endif
-#else
-    #ifdef SYSTYPE_MSVC
-        #ifdef SYSTYPE_64
-	        #define atomic_align __declspec( align(16) )
-        #else 
-	        #define atomic_align __declspec( align(8) )
-        #endif
-    #else
-        #ifdef SYSTYPE_64
-	        #define atomic_align __attribute__((__aligned__(16)))
-        #else 
-	        #define atomic_align __attribute__((__aligned__(8)))
-        #endif
-    #endif
+#ifdef SYSTYPE_64
+	#define atomic_align COMM_ALIGNAS(16)
+#else 
+	#define atomic_align COMM_ALIGNAS(8)
 #endif
 
 
