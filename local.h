@@ -138,6 +138,8 @@ public:
     }
 
 	bool is_set() const		    { return _p != 0; }
+
+    T* get() const              { return _p; }
 };
 
 
