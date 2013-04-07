@@ -62,6 +62,8 @@ class seg_allocator
 {
 public:
 
+    COIDNEWDELETE(seg_allocator);
+
     static const char* class_name()     { return "seg_allocator"; }
 
     typedef ssegpage::block      block;
@@ -70,9 +72,6 @@ public:
         //uints   _size;          //byte size
         uints   _count;         //item count
     };
-
-    void* operator new (size_t size);
-    void operator delete (void * ptr);
 
     HEADER* alloc (uints count, uints chunk);
     HEADER* realloc (HEADER* p, uints count, uints chunk, bool keep);

@@ -50,10 +50,12 @@
     void* operator new( size_t size ) { \
         void* p=::dlmalloc(size); \
         if(p==0) throw std::bad_alloc(); \
-        MEMTRACK(name, size); \
+        MEMTRACK_ALLOC(name, dlmalloc_usable_size(p)); \
         return p; } \
     void* operator new( size_t, void* p ) { return p; } \
-    void operator delete(void* ptr)     { ::dlfree(ptr); } \
+    void operator delete(void* p) { \
+        MEMTRACK_FREE(name, dlmalloc_usable_size(p)); \
+        ::dlfree(p); } \
     void operator delete(void*, void*)  { }
 
 #define COIDNEWDELETE_NOTRACK \
@@ -108,12 +110,19 @@ struct comm_array_allocator
     static T* alloc( uints n ) {
         uints* p = (uints*)::mspace_malloc(SINGLETON(comm_array_mspace).msp,
             sizeof(uints) + n * sizeof(T));
+
+        MEMTRACK_ALLOC(dynarray.data, ::mspace_usable_size(p));
+
         if(!p) throw std::bad_alloc();
         p[0] = n;
         return (T*) (p + 1);
     }
 
     static T* realloc( T* p, uints n ) {
+
+        if(p)
+            MEMTRACK_FREE(dynarray.data, ::mspace_usable_size((uints*)p - 1));
+
         uints* pn = (uints*)::mspace_realloc(SINGLETON(comm_array_mspace).msp,
             p ? (uints*)p - 1 : 0,
             sizeof(uints) + n * sizeof(T));
@@ -123,12 +132,17 @@ struct comm_array_allocator
 				sizeof(uints) + n * sizeof(T));
 		}*/
         if(!pn) throw std::bad_alloc();
+
+        MEMTRACK_ALLOC(dynarray.data, ::mspace_usable_size(pn));
+
         pn[0] = n;
         return (T*) (pn + 1);
     }
 
     static void free( T* p ) {
         if(!p)  return;
+
+        MEMTRACK_FREE(dynarray.data, ::mspace_usable_size((uints*)p - 1));
         ::mspace_free(SINGLETON(comm_array_mspace).msp, (uints*)p - 1);
     }
 

@@ -91,7 +91,7 @@ void memtrack_shutdown()
     memtrack_registrar* mtr = memtrack_register();
     reg = -2;
 
-    delete mtr;
+    //delete mtr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -105,12 +105,29 @@ void memtrack_alloc( const char* name, uints size )
     val->name = name;
 
     ++val->nallocs;
+    ++val->ntotalallocs;
     val->size += size;
     val->total += size;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-uint memtrack_list( memtrack* dst, uint nmax )
+void memtrack_free( const char* name, uints size )
+{
+    if(reg < -1)
+        return;
+
+    memtrack_registrar* mtr = memtrack_register();
+    if(!mtr) return;
+
+    GUARDTHIS(mtr->mux);
+    memtrack_imp* val = const_cast<memtrack_imp*>(mtr->hash.find_value((uints)name));
+
+    if(val)
+        val->total -= size;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+uint memtrack_list( memtrack* dst, uint nmax ) 
 {
     memtrack_registrar* mtr = memtrack_register();
 
@@ -132,6 +149,16 @@ uint memtrack_list( memtrack* dst, uint nmax )
     return i;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+uint memtrack_count()
+{
+    memtrack_registrar* mtr = memtrack_register();
+    GUARDTHIS(mtr->mux);
+
+    return mtr->hash.size();
+}
+
+////////////////////////////////////////////////////////////////////////////////
 void memtrack_reset()
 {
     memtrack_registrar* mtr = memtrack_register();

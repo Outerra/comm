@@ -43,43 +43,53 @@
 #include <algorithm>
 
 
-#define MEMTRACK(name, size) coid::memtrack_alloc(#name, size)
+#define MEMTRACK_ALLOC(name, size) coid::memtrack_alloc(#name, size)
+#define MEMTRACK_FREE(name, size) coid::memtrack_free(#name, size)
 
 COID_NAMESPACE_BEGIN
 
 struct memtrack {
-    uints size;                         ///< size allocated from last check
-    uints total;                        ///< total allocated size, but doesn't subtract freed memory
-    uint nallocs;                       ///< number of allocations from last call
+    uints size;                         ///< size allocated since the last memtrack_list call
+    uints total;                        ///< total allocated size
+    uint nallocs;                       ///< number of allocations since the last memtrack_list call
+    uint ntotalallocs;
     const char* name;                   ///< class identifier
 
     void swap(memtrack& m) {
         std::swap(size, m.size);
         std::swap(total, m.total);
         std::swap(nallocs, m.nallocs);
+        std::swap(ntotalallocs, m.ntotalallocs);
         std::swap(name, m.name);
     }
 
-    memtrack() : size(0), total(0), nallocs(0), name(0) {}
+    memtrack() : size(0), total(0), nallocs(0), ntotalallocs(0), name(0) {}
 };
 
 #if 1//def _DEBUG
 
 #define MEMTRACK_ENABLED
 
-///Track allocation request for tracker \a p
+///Track allocation request for name
 void memtrack_alloc( const char* name, uints size );
+
+///Track allocation request for name
+void memtrack_free( const char* name, uints size );
 
 ///List allocation request statistics from last call
 uint memtrack_list( memtrack* dst, uint nmax );
+
+uint memtrack_count();
 
 ///Reset tracking info
 void memtrack_reset();
 
 #else
 
-inline void memtrack_alloc( const char* name, uints size ) { }
+inline void memtrack_alloc( const char* name, uints size ) {}
+inline void memtrack_free( const char* name, uints size ) {}
 inline uint memtrack_list( memtrack* dst, uint nmax ) { return 0; }
+uint memtrack_count() { return 0; }
 inline void memtrack_reset() {}
 
 #endif

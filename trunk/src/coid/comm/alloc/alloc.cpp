@@ -64,20 +64,6 @@ namespace coid {
 #define IFGUARD(m)     comm_mutex_guard<comm_mutex> __guard(1);  if(m.is_set())  __guard.inject(*m)
 
 ////////////////////////////////////////////////////////////////////////////////
-void* seg_allocator::operator new (size_t size)
-{
-    MEMTRACK(seg_allocator, size);
-
-    return ::dlmalloc(size);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-void  seg_allocator::operator delete (void * ptr)
-{
-    ::dlfree(ptr);
-}
-
-////////////////////////////////////////////////////////////////////////////////
 seg_allocator::~seg_allocator()
 {
     discard();
