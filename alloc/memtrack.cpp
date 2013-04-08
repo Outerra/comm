@@ -57,6 +57,7 @@ struct memtrack_imp : memtrack {
 };
 
 
+
 typedef hash_keyset<memtrack_imp, _Select_Copy<memtrack_imp,uints> > memtrack_hash_t;
 
 struct memtrack_registrar
@@ -64,41 +65,56 @@ struct memtrack_registrar
     memtrack_hash_t hash;
     comm_mutex mux;
 
-    bool shutdown;
+    static int reg;
 
-    memtrack_registrar() : shutdown(false)
+    memtrack_registrar()
     {}
+
+    ~memtrack_registrar() {
+        reg = -2;
+    }
 };
 
+int memtrack_registrar::reg = 0;
 
 ////////////////////////////////////////////////////////////////////////////////
 #ifdef MEMTRACK_ENABLED
 
-static int reg=0;
-
 ////////////////////////////////////////////////////////////////////////////////
 static memtrack_registrar* memtrack_register()
 {
-    //avoid stack overflow
-    static memtrack_registrar* mtr=0;
-    if(reg < 0)
-        return 0;
-    if(!reg) {
-        reg = -1;
-        mtr = new memtrack_registrar;
-        reg = 1;
-    }
+    struct closer
+    {
+        memtrack_registrar* mtr;
 
-    return mtr;
+        closer() : mtr(0)
+        {}
+
+        ~closer() {
+            memtrack_registrar::reg = -2;
+        }
+    };
+
+    //avoid stack overflow
+    if(memtrack_registrar::reg < 0)
+        return 0;
+
+    if(!memtrack_registrar::reg)
+        memtrack_registrar::reg = -1;
+ 
+    static closer _C;
+    if(!_C.mtr)
+        _C.mtr = new memtrack_registrar;
+
+    memtrack_registrar::reg = 1;
+
+    return _C.mtr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 void memtrack_shutdown()
 {
-    memtrack_registrar* mtr = memtrack_register();
-
-    GUARDTHIS(mtr->mux);
-    mtr->shutdown = true;
+    memtrack_registrar::reg = -2;
 
     //delete mtr;
 }
@@ -107,7 +123,7 @@ void memtrack_shutdown()
 void memtrack_alloc( const char* name, uints size )
 {
     memtrack_registrar* mtr = memtrack_register();
-    if(!mtr || mtr->shutdown) return;
+    if(!mtr || mtr->reg<0) return;
 
     GUARDTHIS(mtr->mux);
     memtrack* val = mtr->hash.find_or_insert_value_slot((uints)name);
@@ -123,7 +139,7 @@ void memtrack_alloc( const char* name, uints size )
 void memtrack_free( const char* name, uints size )
 {
     memtrack_registrar* mtr = memtrack_register();
-    if(!mtr || mtr->shutdown) return;
+    if(!mtr || mtr->reg<0) return;
 
     GUARDTHIS(mtr->mux);
     memtrack_imp* val = const_cast<memtrack_imp*>(mtr->hash.find_value((uints)name));
@@ -136,6 +152,8 @@ void memtrack_free( const char* name, uints size )
 uint memtrack_list( memtrack* dst, uint nmax ) 
 {
     memtrack_registrar* mtr = memtrack_register();
+    if(!mtr || mtr->reg<0)
+        return 0;
 
     GUARDTHIS(mtr->mux);
     memtrack_hash_t::iterator ib = mtr->hash.begin();
@@ -159,6 +177,8 @@ uint memtrack_list( memtrack* dst, uint nmax )
 uint memtrack_count()
 {
     memtrack_registrar* mtr = memtrack_register();
+    if(!mtr) return 0;
+
     GUARDTHIS(mtr->mux);
 
     return mtr->hash.size();

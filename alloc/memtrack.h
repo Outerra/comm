@@ -94,6 +94,8 @@ inline void memtrack_reset() {}
 
 #endif
 
+void memtrack_shutdown();
+
 COID_NAMESPACE_END
 
 #endif //#ifndef __COID_MEMTRACK__HEADER_FILE__
