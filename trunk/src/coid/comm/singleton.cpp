@@ -142,6 +142,7 @@ void* singleton_register_instance( void* p, void (*fn_destroy)(void*),
 ////////////////////////////////////////////////////////////////////////////////
 void singletons_destroy()
 {
+    memtrack_shutdown();
     global().destroy();
 }
 
