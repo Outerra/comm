@@ -54,6 +54,9 @@
 
 #endif
 
+#define SINGLETON_EXISTS(T) \
+    (coid::singleton<T>::ptr() != 0)
+
 ///Used for function-local static objects.
 /// LOCAL_SINGLETON(class) name = initialization
 #define LOCAL_SINGLETON(T) \
@@ -82,7 +85,7 @@ public:
 
 	static T& instance()
 	{
-		static T* node = 0;
+		T*& node = ptr();
 
 		if(node)
 			return *node;
@@ -93,7 +96,7 @@ public:
 
 	static T& instance(const char* type, const char* file, int line)
 	{
-		static T* node = 0;
+		T*& node = ptr();
 
 		if(node)
 			return *node;
@@ -102,7 +105,13 @@ public:
         return *node;
 	}
 
+    static T*& ptr() {
+        static T* node = 0;
+        return node;
+    }
+
 private:
+
     static void destroy(void* p) {
         delete (T*)p;
     }
