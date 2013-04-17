@@ -97,7 +97,8 @@ public:
 
     void swap( charstr& str )
     {
-        str.takeover(_buf);
+        str.swap(_buf);
+        if(_buf.size()>0) _buf.resize(-1);  //cut trailing zero
         _bgi = 0;
     }
 

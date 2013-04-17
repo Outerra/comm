@@ -134,6 +134,28 @@ public:
     {
         _tstr.swap( ref._tstr );
     }
+
+    template<class COUNT>
+    charstr& swap( dynarray<char,COUNT>& ref )
+    {
+        _tstr.swap(ref);
+        if( _tstr.size() > 0  &&  _tstr[_tstr.size()-1] != 0 )
+            *_tstr.add() = 0;
+        return *this;
+    }
+
+    template<class COUNT>
+    charstr& swap( dynarray<uchar,COUNT>& ref )
+    {
+        uchar* p = ref.ptr();
+        ref.set_dynarray_conforming_ptr(_tstr.ptr());
+        _tstr.set_dynarray_conforming_ptr((char*)p);
+
+        if( _tstr.size() > 0  &&  _tstr[_tstr.size()-1] != 0 )
+            *_tstr.add() = 0;
+        return *this;
+    }
+
 /*
     ///Share content with another string
     charstr& share( charstr& ref )
