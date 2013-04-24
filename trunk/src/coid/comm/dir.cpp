@@ -72,16 +72,17 @@ bool directory::is_valid_directory( const zstring& arg )
     bool dosdrive = tok.len()==2 && tok[1]==':';
     bool lastsep = tok.last_char() == '\\' || tok.last_char() == '/';
 
+    zstring marg = arg;
     if(!dosdrive && lastsep) {
-        charstr& tmp = arg.get_str();
+        charstr& tmp = marg.get_str();
         tmp.resize(-1);
     }
     else if(dosdrive && !lastsep) {
-        charstr& tmp = arg.get_str();
+        charstr& tmp = marg.get_str();
         tmp << separator();
     }
 
-    return _is_valid_directory(arg.c_str());
+    return _is_valid_directory(marg.c_str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
