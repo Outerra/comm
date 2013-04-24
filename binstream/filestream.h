@@ -363,14 +363,15 @@ public:
 
     virtual opcd open( const zstring& name, const zstring& attrz = zstring(0) )
     {
-        charstr& attr = attrz.get_str();
+        zstring mattr = attrz;
+        charstr& attr = mattr.get_str();
 
         if( attr.is_empty() )
             attr = "wct";
         else
             attr << char('w');
 
-        return filestream::open(name, attr);
+        return filestream::open(name, mattr);
     }
 
     bofstream() { }
@@ -393,14 +394,15 @@ public:
 
     virtual opcd open( const zstring& name, const zstring& attrz = zstring(0) )
     {
-        charstr& attr = attrz.get_str();
+        zstring mattr = attrz;
+        charstr& attr = mattr.get_str();
 
         if( attr.is_empty() )
             attr = "r";
         else
             attr << char('r');
 
-        return filestream::open(name, attr);
+        return filestream::open(name, mattr);
     }
 
 

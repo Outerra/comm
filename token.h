@@ -2291,6 +2291,8 @@ public:
     zstring(const token& tok);
     zstring(const charstr& str);
 
+    zstring(const zstring& s);
+
     ~zstring();
 
     ///Get zero terminated string
@@ -2299,8 +2301,13 @@ public:
     ///Get token
     token get_token() const;
 
+    ///Implicit conversion to token
+    operator token() const {
+        return get_token();
+    }
+
     ///Get modifiable string
-    charstr& get_str() const;
+    charstr& get_str();
 };
 
 

@@ -77,6 +77,19 @@ zstring::~zstring()
     }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+zstring::zstring(const zstring& s)
+{
+    _buf = 0;
+    if(s._buf) {
+        _zptr = s._buf->ptr();
+        _zend = s._buf->ptre();
+    }
+    else {
+        _zptr = s._zptr;
+        _zend = s._zend;
+    }
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 zstring::zstring(const char* sz)
@@ -120,7 +133,7 @@ token zstring::get_token() const
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Get modifiable string
-charstr& zstring::get_str() const
+charstr& zstring::get_str()
 {
     if(!_buf) {
         pool_t& pool = zeroterm_pool();
