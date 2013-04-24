@@ -92,10 +92,10 @@ public:
         _tokenizer.def_escape_pair( er, "0", token("\0",1) );
 
         lexstre = _tokenizer.def_string( "str", "\\\"", "\"", "esc" );
-        lexchre = _tokenizer.def_string( "str", "\\\'", "\'", "esc" );
+        lexchre = _tokenizer.def_string( "str", "\\'", "'", "esc" );
 
         lexstr = _tokenizer.def_string( "str", "\"", "\"", "" );
-        lexchr = _tokenizer.def_string( "str", "\'", "\'", "" );
+        lexchr = _tokenizer.def_string( "str", "'", "'", "" );
 
         lexcode = _tokenizer.def_string( "class", "(", ")", "" );
 
@@ -687,7 +687,7 @@ public:
                 _bufw << "\\\"";
 
                 token t( (const char*)c.extract(n), n );
-                if( !_tokenizer.synthesize_string( lexstre, t, _bufw ) ) {
+                if( !_tokenizer.synthesize_string(lexstre, t, _bufw, true) ) {
                     _bufw.reset();
                     _bufw << char('"');
                     _bufw += t;
