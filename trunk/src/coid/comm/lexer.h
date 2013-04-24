@@ -1861,8 +1861,9 @@ public:
     //@param string id of the string type as returned by def_string
     //@param tok string to synthesize
     //@param dst destination storage where altered string is appended (if not altered it's not used)
+    //@param skip_selfescape do not escape the string if all escaped characters are the esc chars themselves
     //@return true if the string has been altered
-    bool synthesize_string( int string, token tok, charstr& dst ) const
+    bool synthesize_string( int string, token tok, charstr& dst, bool skip_selfescape=false ) const
     {
         __assert_valid_sequence(string, entity::STRING);
 
@@ -1875,7 +1876,7 @@ public:
         const string_rule* sr = reinterpret_cast<string_rule*>(seq);
         if(!sr)  return false;
 
-        return sr->escrule->synthesize_string(tok, dst);
+        return sr->escrule->synthesize_string(tok, dst, skip_selfescape);
     }
 
 
@@ -2144,7 +2145,7 @@ protected:
 
         //@return true if some replacements were made and \a dst is filled,
         /// or false if no processing was required and \a dst was not filled
-        bool synthesize_string( token tok, charstr& dst ) const;
+        bool synthesize_string( const token& src, charstr& dst, bool skip_selfescape ) const;
 
         bool is_escaped_char( char c ) {
             init_backmap();
@@ -3310,11 +3311,14 @@ protected:
 ////////////////////////////////////////////////////////////////////////////////
 //@return true if some replacements were made and \a dst is filled,
 /// or false if no processing was required and \a dst was not filled
-inline bool lexer::escape_rule::synthesize_string( token tok, charstr& dst ) const
+inline bool lexer::escape_rule::synthesize_string( const token& src, charstr& dst, bool skip_selfescape ) const
 {
     init_backmap();
+
+    token tok = src;
     const char* copied = tok.ptr();
     bool altered = false;
+    int nself=0;
 
     for( ; !tok.is_empty(); )
     {
@@ -3322,6 +3326,15 @@ inline bool lexer::escape_rule::synthesize_string( token tok, charstr& dst ) con
         const escpair* pair = backmap->find(tok);
 
         if(pair) {
+            if(skip_selfescape && pair->code == esc) {
+                ++nself;
+                ++tok;
+                continue;
+            }
+
+            if(nself>0)
+                return synthesize_string(src, dst, false);
+
             dst.add_from_range( copied, p );
             tok.shift_start( pair->replace.len() );
             copied = tok.ptr();
