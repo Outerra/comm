@@ -317,6 +317,9 @@
     <ClInclude Include="metastream\fmtstream_v8.h">
       <Filter>metastream</Filter>
     </ClInclude>
+    <ClInclude Include="metastream\fmtstreamnull.h">
+      <Filter>metastream</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="crypt\sha1.cpp">

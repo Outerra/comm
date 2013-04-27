@@ -47,6 +47,7 @@
 #include "../commexception.h"
 
 #include "fmtstream.h"
+#include "fmtstreamnull.h"
 #include "metavar.h"
 
 COID_NAMESPACE_BEGIN
@@ -738,9 +739,39 @@ public:
 
         _dometa = true;
 
-        //movein_process_key<WRITE_MODE>();
-        //movein_current<WRITE_MODE>();
         _hook << *defval;
+
+        _cachestack.pop();
+        _current = _cachestack.last();
+
+        _dometa = 0;
+        _curvar.var = 0;
+    }
+
+    ///Default value coming from the metastream operator, assumed all members have default values
+    template<class T>
+    void meta_cache_default_stream( const T* )
+    {
+        _curvar.var = _last_var;
+
+        _current = _cachestack.push();
+        _current->var = _curvar.var;
+        _current->buf = &_curvar.var->defval;
+        _current->offs = 0;
+        _current->ofsz = UMAXS;
+
+        //insert a dummy address field
+        _current->set_addr( _current->insert_address(), sizeof(uints) );
+
+        _dometa = true;
+
+        T def;
+
+        fmtstreamnull null;
+        metastream m(null);
+        m.xstream_in(def);
+
+        _hook << def;
 
         _cachestack.pop();
         _current = _cachestack.last();
@@ -2265,10 +2296,15 @@ protected:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+///Helper class for conversion of default values
 template<class T>
 struct type_holder {
-    const T* operator = (const T& val) {
+    const T* operator = (const T& val) const {
         return &val;
+    }
+
+    const T* operator * () const {
+        return (const T*)0;
     }
 };
 
@@ -2285,6 +2321,7 @@ inline type_holder<T> get_type_holder(T*) {
     @def MMP(meta,n,t)  specify a pointer-type member
     @def MMD(meta,n,d)  specify member metadata providing a default value of member type
     @def MMTD(meta,n,d) specify member metadata providing a default value of specified type
+    @def MMDS(meta,n)   specify member metadata, with default value obtained by streaming defaults from a nullstream
     @def MMAT(meta,n,t) specify that member is an array of type \a t
     @def MMAE(meta,n,t) specify that member is an array of enums \a t
     @def MMAF(meta,n,t,s) specify that member is a fixed size array of type \a t, written by binstream.write_linear_array
@@ -2298,6 +2335,7 @@ inline type_holder<T> get_type_holder(T*) {
 #define MMD(meta, n, v, d)          { meta.meta_variable(n,&(v)); meta.meta_cache_default( coid::get_type_holder(&(v)) = d ); }
 #define MMED(meta, n, v, d)			{ meta.meta_variable_enum(n,&(v)); meta.meta_cache_default_enum( coid::get_type_holder(&(v)) = d ); }
 #define MMTD(meta, n, t, d)         { meta.meta_variable<t>(n,0); meta.meta_cache_default( coid::get_type_holder<t>(0) = d ); }
+#define MMDS(meta, n, v)            { meta.meta_variable(n,&(v)); meta.meta_cache_default_stream( *coid::get_type_holder(&(v)) ); }
 
 #define MMAT(meta, n, t)            { meta.meta_variable_array<t>(n,0,UMAXS); }
 #define MMAE(meta, n, t)            { meta.meta_variable_array_enum<t>(n,0,UMAXS); }
