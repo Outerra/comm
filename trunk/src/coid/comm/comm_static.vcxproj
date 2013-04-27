@@ -258,6 +258,7 @@
     <ClInclude Include="interface.h" />
     <ClInclude Include="list.h" />
     <ClInclude Include="metastream\fmtstream.h" />
+    <ClInclude Include="metastream\fmtstreamnull.h" />
     <ClInclude Include="metastream\fmtstream_lexer.h" />
     <ClInclude Include="metastream\fmtstreamcxx.h" />
     <ClInclude Include="metastream\fmtstreamjson.h" />

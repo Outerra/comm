@@ -406,6 +406,35 @@ public:
         return !operator == (a);
     }
 
+    ///Invoke functor on each element
+    template<typename Func>
+    void for_each( Func f )
+    {
+        count_t n = size();
+        for(count_t i=0; i<n; ++i)
+            f(_ptr[i]);
+    }
+
+    ///Invoke functor on each element
+    template<typename Func>
+    void for_each( Func f ) const
+    {
+        count_t n = size();
+        for(count_t i=0; i<n; ++i)
+            f(_ptr[i]);
+    }
+
+    ///Find first element for which the predicate returns true
+    //@return pointer to the element or null
+    template<typename Func>
+    T* find_if(Func f) const
+    {
+        count_t n = size();
+        for(count_t i=0; i<n; ++i)
+            if(f(_ptr[i])) return _ptr+i;
+        return 0;
+    }
+
     ///Get fresh array with \a nitems of elements
     /** Destroys all elements of array and adjusts the array to the required size
         @param nitems number of items to resize to
@@ -1324,7 +1353,7 @@ public:
         return dynarray_binstream_container( *this, n );
     }
 
-    dynarray_binstream_container get_container_to_read()
+    dynarray_binstream_container get_container_to_read() const
     {
         return dynarray_binstream_container( *this, size() );
     }

@@ -375,5 +375,8 @@
     <ClInclude Include="tutf8.h" />
     <ClInclude Include="txtconv.h" />
     <ClInclude Include="version.h" />
+    <ClInclude Include="metastream\fmtstreamnull.h">
+      <Filter>metastream</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
