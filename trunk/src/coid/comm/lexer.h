@@ -811,7 +811,7 @@ public:
         const string_rule* str = static_cast<const string_rule*>(seq);
 
         uints off=0;
-        next_read_string( *str, off, true );
+        next_read_string(*str, off, true, false);
 
         if(!consume_trailing_seq)
             _tok.shift_start( -(int)str->trailing[_last.termid].seq.len() );
@@ -1101,21 +1101,22 @@ public:
 
                 //this is a leading string or block delimiter
                 uints off=0;
+                bool ign = ignored(*seq) && seq->id != enb;
 
                 if( seq->type == entity::BLOCK )
                 {
-                    if( !ignored(*seq) )
+                    if(!ign)
                     {
                         _stack.push( reinterpret_cast<block_rule*>(seq) );
                         return _last;
                     }
 
-                    next_read_block( *(const block_rule*)seq, off, true, true );
+                    next_read_block(*(const block_rule*)seq, off, true, ign);
                 }
                 else if( seq->type == entity::STRING )
-                    next_read_string( *(const string_rule*)seq, off, true );
+                    next_read_string(*(const string_rule*)seq, off, true, ign);
 
-                if( ignored(*seq) && seq->id != enb )   //ignored rule
+                if(ign)
                     return next(ignoregrp, enable_seqid);
 
                 return _last;
@@ -2577,7 +2578,7 @@ protected:
     //@note Also consumes the trailing string sequence, but it's not included in the
     /// returned lextoken if @a outermost is set. The lextoken contains the id member
     /// to distinguish between strings and literals.
-    const lextoken& next_read_string( const string_rule& sr, uints& off, bool outermost )
+    const lextoken& next_read_string( const string_rule& sr, uints& off, bool outermost, bool ignored )
     {
         const escape_rule* er = sr.escrule;
 
@@ -2599,7 +2600,7 @@ protected:
                     int tid = sr.trailing.last()->seq.is_empty()
                         ?  int(sr.trailing.size())-1  :  -1;
 
-                    add_stb_segment( sr, tid, off, outermost );
+                    add_stb_segment( sr, tid, off, outermost, ignored );
 
                     if(tid>=0) {
                         _last.termid = tid;
@@ -2624,7 +2625,7 @@ protected:
             {
                 DASSERT(0);
                 //this is a syntax error, since the string wasn't properly terminated
-                add_stb_segment( sr, -1, off, outermost );
+                add_stb_segment( sr, -1, off, outermost, ignored );
 
                 _err = lexception::ERR_STRING_TERMINATED_EARLY;
                 
@@ -2687,7 +2688,7 @@ protected:
                 int k = match_trail( sr.trailing, off );
                 if(k>=0)
                 {
-                    add_stb_segment( sr, k, off, outermost );
+                    add_stb_segment( sr, k, off, outermost, ignored );
 
                     _last.termid = k;
                     return _last;
@@ -2718,7 +2719,7 @@ protected:
                     int tid = br.trailing.last()->seq.is_empty()
                         ?  int(br.trailing.size())-1  :  -1;
 
-                    add_stb_segment( br, tid, off, outermost );
+                    add_stb_segment( br, tid, off, outermost, ignored );
 
                     if(tid>=0) {
                         _last.state = 0;
@@ -2746,7 +2747,7 @@ protected:
             if( (x & fSEQ_TRAILING) && (k = match_trail(br.trailing, off)) >= 0 )
             {
                 //trailing string found
-                add_stb_segment( br, k, off, outermost );
+                add_stb_segment( br, k, off, outermost, ignored );
 
                 _last.termid = k;
                 if(outermost)
@@ -2787,7 +2788,7 @@ protected:
                     }
                     else if( sob->type == entity::STRING ) {
                         string_rule* srn = reinterpret_cast<string_rule*>(sob);
-                        next_read_string(*srn, off, false);
+                        next_read_string(*srn, off, false, ign_seq);
                     }
                     
                     continue;
@@ -2835,10 +2836,10 @@ protected:
 
 
     ///Add string or block segment
-    void add_stb_segment( const stringorblock& sb, int trailid, uints& off, bool final )
+    void add_stb_segment( const stringorblock& sb, int trailid, uints& off, bool final, bool ignored )
     {
         uints len = trailid<0  ?  0  :  sb.trailing[trailid].seq.len();
-        bool ignore = ignored(sb);
+        //bool ignored = ignored(sb);
 
         //if not outermost block, include the terminator in output
         if(!final)
@@ -2847,7 +2848,7 @@ protected:
         //on the terminating string
         if( _last.tokbuf.len() > 0 ) //if there's something in the buffer already, append
         {
-            if(!ignore)
+            if(!ignored)
                 _last.tokbuf.add_from( _tok.ptr(), off );
             _tok.shift_start(off);
             off = 0;
