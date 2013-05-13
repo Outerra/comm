@@ -126,9 +126,9 @@ public:
 
 	// constructor from inherited object
 	template< class T2 >
-	explicit ref( const ref<T2>& p )
+	/*explicit */ref( const ref<T2>& p )
 		: _p( p.add_refcount() )
-		, _o( p.get() ) {}
+		, _o( static_cast<T*>(p.get()) ) {}
 
 	void create(policy_shared<T> * const p) {
 		release();
