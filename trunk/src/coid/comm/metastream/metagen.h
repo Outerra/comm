@@ -734,7 +734,7 @@ class metagen //: public binstream
             if(!succ) return succ;
 
             do {
-                if(lex.matches('$')) {
+                while(lex.matches('$')) {
                     (*sequence.last())->stext.shift_end(1);
 
                     TagEmpty* etag = new TagEmpty;
@@ -1040,8 +1040,7 @@ public:
             ParsedTag empty;
             empty.set_empty();
 
-            tags.parse( lex, tmp, empty );
-            return true;
+            return tags.parse( lex, tmp, empty );
         }
         catch( const lexer::lexception& ) {
             return false;

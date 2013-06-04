@@ -44,10 +44,114 @@
 #include "fmtstream.h"
 #include <v8/v8.h>
 
+#include "metastream.h"
+#include "../str.h"
+
 //@file formatting stream for V8 javascript engine
 
 COID_NAMESPACE_BEGIN
 
+////////////////////////////////////////////////////////////////////////////////
+class fmtstream_v8;
+
+///Helper class to stream types to/from v8 objects
+template<class T>
+class v8_streamer
+{
+    metastream* _meta;
+    fmtstream_v8* _fmt;
+
+public:
+    v8_streamer<T>( fmtstream_v8* fmt, metastream* meta )
+        : _fmt(fmt), _meta(meta)
+    {}
+
+    ///Generic generator from a type to its v8 representation
+    v8::Handle<v8::Value> operator << (const T& v);
+
+    ///Generic parser from v8 type representation
+    T operator >> ( v8::Handle<v8::Value> src );
+};
+
+//@{ Fast v8_streamer specializations for base types
+
+#define V8_STREAMER(T,V8T,CT) \
+template<> class v8_streamer<T> { public: \
+    v8_streamer<T>(fmtstream_v8* fmt=0, metastream* meta=0) {} \
+    v8::Handle<v8::Value> operator << (const T& v) { return v8::V8T::New(CT(v)); } \
+    T operator >> ( v8::Handle<v8::Value> src ) { return (T)src->V8T##Value(); } \
+}
+
+V8_STREAMER(int8,  Int32, int32);
+V8_STREAMER(int16, Int32, int32);
+V8_STREAMER(int32, Int32, int32);
+V8_STREAMER(int64, Number, double);     //can lose data in conversion
+
+V8_STREAMER(uint8,  Uint32, uint32);
+V8_STREAMER(uint16, Uint32, uint32);
+V8_STREAMER(uint32, Uint32, uint32);
+V8_STREAMER(uint64, Number, double);    //can lose data in conversion
+
+#ifdef SYSTYPE_WIN
+# ifdef SYSTYPE_32
+V8_STREAMER(ints,  Int32,  int32);
+V8_STREAMER(uints, Uint32, uint32);
+# else //SYSTYPE_64
+V8_STREAMER(int,   Number, double);
+V8_STREAMER(uint,  Number, double);
+# endif
+#elif defined(SYSTYPE_32)
+V8_STREAMER(long,  Int32,  int32);
+V8_STREAMER(ulong, Uint32, uint32);
+#endif
+
+V8_STREAMER(float,  Number, double);
+V8_STREAMER(double, Number, double);
+
+V8_STREAMER(bool, Boolean, bool);
+
+///Date/time
+template<> class v8_streamer<timet> {
+public:
+    v8_streamer<timet>(fmtstream_v8* fmt=0, metastream* meta=0) {}
+
+    v8::Handle<v8::Value> operator << (const timet& v) {
+        return v8::Date::New(double(v.t));
+    }
+    
+    timet operator >> ( v8::Handle<v8::Value> src ) {
+        return timet((int64)src->NumberValue());
+    }
+};
+
+///Strings
+template<> class v8_streamer<charstr> {
+public:
+    v8_streamer<charstr>(fmtstream_v8* fmt=0, metastream* meta=0) {}
+
+    v8::Handle<v8::Value> operator << (const charstr& v) {
+        return v8::String::New(v.ptr(), v.len());
+    }
+    
+    v8::Handle<v8::Value> operator << (const token& v) {
+        return v8::String::New(v.ptr(), v.len());
+    }
+    
+    v8::Handle<v8::Value> operator << (const char* v) {
+        return v8::String::New(v);
+    }
+    
+    charstr operator >> ( v8::Handle<v8::Value> src ) {
+        v8::String::Utf8Value str(src);
+        return charstr(*str, str.length());
+    }
+};
+
+
+//@}
+
+
+////////////////////////////////////////////////////////////////////////////////
 ///token wrapper for v8
 class v8_token : public v8::String::ExternalAsciiStringResource
 {
@@ -226,32 +330,22 @@ public:
             switch( t.type )
             {
                 case type::T_INT:
-                    if(t.get_size() == 8)
-                        _top->value = v8::Number::New(double(*(int64*)p));
-                    else {
-                        int32 v=0;
-                        switch( t.get_size() )
-                        {
-                        case 1: v = *(int8*)p;  break;
-                        case 2: v = *(int16*)p; break;
-                        case 4: v = *(int32*)p; break;
-                        }
-                        _top->value = v8::Int32::New(v);
+                    switch( t.get_size() )
+                    {
+                    case 1: _top->value = v8_streamer<int8>()  << *(int8*)p; break;
+                    case 2: _top->value = v8_streamer<int16>() << *(int16*)p; break;
+                    case 4: _top->value = v8_streamer<int32>() << *(int32*)p; break;
+                    case 8: _top->value = v8_streamer<int64>() << *(int64*)p; break;
                     }
                     break;
 
                 case type::T_UINT:
-                    if(t.get_size() == 8)
-                        _top->value = v8::Number::New(double(*(uint64*)p));
-                    else {
-                        uint32 v=0;
-                        switch( t.get_size() )
-                        {
-                        case 1: v = *(uint8*)p;  break;
-                        case 2: v = *(uint16*)p; break;
-                        case 4: v = *(uint32*)p; break;
-                        }
-                        _top->value = v8::Uint32::NewFromUnsigned(v);
+                    switch( t.get_size() )
+                    {
+                    case 1: _top->value = v8_streamer<uint8>()  << *(uint8*)p; break;
+                    case 2: _top->value = v8_streamer<uint16>() << *(uint16*)p; break;
+                    case 4: _top->value = v8_streamer<uint32>() << *(uint32*)p; break;
+                    case 8: _top->value = v8_streamer<uint64>() << *(uint64*)p; break;
                     }
                     break;
 
@@ -267,32 +361,26 @@ public:
                 } break;
 
                 /////////////////////////////////////////////////////////////////////////////////////
-                case type::T_FLOAT: {
-                    double v=0;
+                case type::T_FLOAT:
                     switch( t.get_size() ) {
-                    case 4:
-                        v = *(const float*)p;
-                        break;
-                    case 8:
-                        v = *(const double*)p;
-                        break;
+                    case 4: _top->value = v8_streamer<float>() << *(float*)p; break;
+                    case 8: _top->value = v8_streamer<double>() << *(double*)p; break;
                     }
-                    _top->value = v8::Number::New(v);
-                } break;
+                    break;
 
                 /////////////////////////////////////////////////////////////////////////////////////
                 case type::T_BOOL:
-                    _top->value = v8::Boolean::New(*(bool*)p);
+                    _top->value = v8_streamer<bool>() << *(bool*)p;
                 break;
 
                 /////////////////////////////////////////////////////////////////////////////////////
                 case type::T_TIME: {
-                    _top->value = v8::Date::New( (double) ((const timet*)p)->t );
+                    _top->value = v8_streamer<timet>() << *(timet*)p;
                 } break;
 
                 /////////////////////////////////////////////////////////////////////////////////////
                 case type::T_ANGLE: {
-                    _top->value = v8::Number::New(*(const double*)p);
+                    _top->value = v8_streamer<double>() << *(double*)p; break;
                 } break;
 
                 /////////////////////////////////////////////////////////////////////////////////////
@@ -376,19 +464,13 @@ public:
             {
                 case type::T_INT:
                     {
-                        int64 v;
                         try {
-                            v = _top->value->IntegerValue();
-
-                            if( !valid_int_range(v,t.get_size()) )
-                                return ersINTEGER_OVERFLOW;
-
                             switch( t.get_size() )
                             {
-                            case 1: *(int8*)p = (int8)v;  break;
-                            case 2: *(int16*)p = (int16)v;  break;
-                            case 4: *(int32*)p = (int32)v;  break;
-                            case 8: *(int64*)p = (int64)v;  break;
+                            case 1: *(int8*)p  = v8_streamer<int8>()  >> _top->value; break;
+                            case 2: *(int16*)p = v8_streamer<int16>() >> _top->value; break;
+                            case 4: *(int32*)p = v8_streamer<int32>() >> _top->value; break;
+                            case 8: *(int64*)p = v8_streamer<int64>() >> _top->value; break;
                             }
                         }
                         catch(v8::Exception) {
@@ -399,19 +481,13 @@ public:
                 
                 case type::T_UINT:
                     {
-                        int64 v;
                         try {
-                            v = _top->value->IntegerValue();
-
-                            if( !valid_uint_range(v,t.get_size()) )
-                                return ersINTEGER_OVERFLOW;
-
                             switch( t.get_size() )
                             {
-                            case 1: *(uint8*)p = (uint8)v;  break;
-                            case 2: *(uint16*)p = (uint16)v;  break;
-                            case 4: *(uint32*)p = (uint32)v;  break;
-                            case 8: *(uint64*)p = (uint64)v;  break;
+                            case 1: *(uint8*)p  = v8_streamer<uint8>()  >> _top->value; break;
+                            case 2: *(uint16*)p = v8_streamer<uint16>() >> _top->value; break;
+                            case 4: *(uint32*)p = v8_streamer<uint32>() >> _top->value; break;
+                            case 8: *(uint64*)p = v8_streamer<uint64>() >> _top->value; break;
                             }
                         }
                         catch(v8::Exception) {
@@ -443,14 +519,11 @@ public:
                 
                 case type::T_FLOAT:
                     {
-                        double v;
                         try {
-                            v = _top->value->NumberValue();
-
                             switch( t.get_size() )
                             {
-                            case 4: *(float*)p = (float)v;  break;
-                            case 8: *(double*)p = v;  break;
+                            case 4: *(float*)p  = v8_streamer<float>()  >> _top->value; break;
+                            case 8: *(double*)p = v8_streamer<double>() >> _top->value; break;
                             }
                         } catch(v8::Exception) {
                             e = ersSYNTAX_ERROR "expected number";
@@ -651,6 +724,27 @@ public:
 
 protected:
 };
+
+////////////////////////////////////////////////////////////////////////////////
+template<class T>
+inline v8::Handle<v8::Value> v8_streamer<T>::operator << (const T& v)
+{
+    if(!_meta || !_fmt) throw exception("metastream not bound");
+    _meta->xstream_out(v);
+    return _fmt->get();
+}
+
+
+template<class T>
+inline T v8_streamer<T>::operator >> ( v8::Handle<v8::Value> src )
+{
+    if(!_meta || !_fmt) throw exception("metastream not bound");
+    T val;
+    _fmt->set(src);
+    _meta->xstream_in(val);
+    return val;
+}
+
 
 
 COID_NAMESPACE_END
