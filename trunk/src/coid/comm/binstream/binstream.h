@@ -45,6 +45,8 @@
 #include "../commassert.h"
 #include "../txtconv.h"
 
+#include <type_traits>
+
 COID_NAMESPACE_BEGIN
 
 
@@ -162,7 +164,8 @@ public:
 
     binstream& operator << (key x)              { return xwrite(&x, bstype::t_type<key>() ); }
 
-    binstream& operator << (bool x)             { return xwrite(&x, bstype::t_type<bool>() ); }
+
+    binstream& operator << (const bool& x)      { return xwrite(&x, bstype::t_type<bool>() ); }
 
     binstream& operator << (const char* x )     { return xwrite_token(x); }
     binstream& operator << (const unsigned char* x) { return xwrite_token((const char*)x); }
@@ -1098,6 +1101,31 @@ COID_NAMESPACE_END
 #define BINSTREAM_ACK       coid::binstream::BINSTREAM_ACK()
 #define BINSTREAM_ACK_EAT   coid::binstream::BINSTREAM_ACK_EAT()
 
+
+///A helper to check if a type has binstream operator defined
+/// Usage: CHECK::bin_operator_out_exists<T>::value (for << operator)
+///        CHECK::bin_operator_in_exists<T>::value (for >> operator)
+
+namespace CHECK  // namespace to not let "operator <<" become global
+{
+    typedef char no[7];
+    template<typename T> no& operator << (coid::binstream&, const T&);
+    template<typename T> no& operator >> (coid::binstream&, T&);
+
+    template <typename T>
+    struct meta_operator_out_exists
+    {
+        typedef typename std::remove_reference<T>::type B;
+        enum { value = (sizeof(*(metastream*)(0) << *(const B*)(0)) != sizeof(no)) };
+    };
+
+    template <typename T>
+    struct meta_operator_in_exists
+    {
+        typedef typename std::remove_reference<T>::type B;
+        enum { value = (sizeof(*(metastream*)(0) >> *(B*)(0)) != sizeof(no)) };
+    };
+}
 
 
 #endif //__COID_COMM_BINSTREAM__HEADER_FILE__
