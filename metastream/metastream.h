@@ -50,6 +50,8 @@
 #include "fmtstreamnull.h"
 #include "metavar.h"
 
+#include <type_traits>
+
 COID_NAMESPACE_BEGIN
 
 /** \class metastream
@@ -652,52 +654,28 @@ public:
     template<class T>
     void meta_variable( const token& varname, const T* )
     {
-        _cur_variable_name = varname;
-        _cur_streamfrom_fnc = &binstream::streamfunc<T>::from_stream;
-        _cur_streamto_fnc = &binstream::streamfunc<T>::to_stream;
+        typedef typename std::conditional<std::is_enum<T>::value, typename EnumType<sizeof(T)>::TEnum, T>::type B;
 
-        *this << *(const T*)0;
+        _cur_variable_name = varname;
+        _cur_streamfrom_fnc = &binstream::streamfunc<B>::from_stream;
+        _cur_streamto_fnc = &binstream::streamfunc<B>::to_stream;
+
+        *this << *(const B*)this;
     }
 
     ///Define member array variable
     template<class T>
     void meta_variable_array( const token& varname, const T*, uints n )
     {
+        typedef typename std::conditional<std::is_enum<T>::value, typename EnumType<sizeof(T)>::TEnum, T>::type B;
+
         _cur_variable_name = varname;
-        _cur_streamfrom_fnc = &binstream::streamfunc<T>::from_stream;
-        _cur_streamto_fnc = &binstream::streamfunc<T>::to_stream;
+        _cur_streamfrom_fnc = &binstream::streamfunc<B>::from_stream;
+        _cur_streamto_fnc = &binstream::streamfunc<B>::to_stream;
 
         meta_array(n);
 
-        *this << *(const T*)0;
-    }
-
-    ///Define member enum variable
-    template<class T>
-    void meta_variable_enum( const token& varname, const T* )
-    {
-        typedef typename EnumType<sizeof(T)>::TEnum TE;
-
-        _cur_variable_name = varname;
-        _cur_streamfrom_fnc = &binstream::streamfunc<TE>::from_stream;
-        _cur_streamto_fnc = &binstream::streamfunc<TE>::to_stream;
-
-        *this << *(const TE*)0;
-    }
-
-    ///Define member enum variable
-    template<class T>
-    void meta_variable_array_enum( const token& varname, const T*, uints n )
-    {
-        typedef typename EnumType<sizeof(T)>::TEnum TE;
-
-        _cur_variable_name = varname;
-        _cur_streamfrom_fnc = &binstream::streamfunc<TE>::from_stream;
-        _cur_streamto_fnc = &binstream::streamfunc<TE>::to_stream;
-
-        meta_array(n);
-
-        *this << *(const TE*)0;
+        *this << *(const B*)0;
     }
 
     template<class T>
@@ -715,17 +693,10 @@ public:
     }
 
     template<class T>
-    void meta_cache_default_enum( const T* enum_val )
-    {
-        typedef typename EnumType<sizeof(T)>::TEnum TE;
-        TE v = *enum_val;
-
-        meta_cache_default(&v);
-    }
-
-    template<class T>
     void meta_cache_default( const T* defval )
     {
+        typedef typename std::conditional<std::is_enum<T>::value, typename EnumType<sizeof(T)>::TEnum, T>::type B;
+
         _curvar.var = _last_var;
 
         _current = _cachestack.push();
@@ -739,7 +710,7 @@ public:
 
         _dometa = true;
 
-        _hook << *defval;
+        _hook << *(const B*)defval;
 
         _cachestack.pop();
         _current = _cachestack.last();
@@ -2316,29 +2287,24 @@ inline type_holder<T> get_type_holder(T*) {
 /// struct-related defines:
 /**
     @def MM(meta,n,v)   specify member metadata providing member name
-    @def MME(meta,n,v)  specify an enum-type member
     @def MMT(meta,n,t)  specify member metadata providing member type
     @def MMP(meta,n,t)  specify a pointer-type member
     @def MMD(meta,n,d)  specify member metadata providing a default value of member type
     @def MMTD(meta,n,d) specify member metadata providing a default value of specified type
     @def MMDS(meta,n)   specify member metadata, with default value obtained by streaming defaults from a nullstream
     @def MMAT(meta,n,t) specify that member is an array of type \a t
-    @def MMAE(meta,n,t) specify that member is an array of enums \a t
     @def MMAF(meta,n,t,s) specify that member is a fixed size array of type \a t, written by binstream.write_linear_array
 **/
 #define MSTRUCT_OPEN(meta, n)       if( !meta.meta_struct_open(n) ) {
 #define MM(meta, n, v)              { meta.meta_variable(n,&(v)); }
-#define MME(meta, n, v)				{ meta.meta_variable_enum(n,&(v)); }
 #define MMT(meta, n, t)             { meta.meta_variable<t>(n,0); }
 #define MMP(meta, n, v)             { meta.meta_variable_pointer(n,&(v)); }
 
 #define MMD(meta, n, v, d)          { meta.meta_variable(n,&(v)); meta.meta_cache_default( coid::get_type_holder(&(v)) = d ); }
-#define MMED(meta, n, v, d)			{ meta.meta_variable_enum(n,&(v)); meta.meta_cache_default_enum( coid::get_type_holder(&(v)) = d ); }
 #define MMTD(meta, n, t, d)         { meta.meta_variable<t>(n,0); meta.meta_cache_default( coid::get_type_holder<t>(0) = d ); }
 #define MMDS(meta, n, v)            { meta.meta_variable(n,&(v)); meta.meta_cache_default_stream( *coid::get_type_holder(&(v)) ); }
 
 #define MMAT(meta, n, t)            { meta.meta_variable_array<t>(n,0,UMAXS); }
-#define MMAE(meta, n, t)            { meta.meta_variable_array_enum<t>(n,0,UMAXS); }
 #define MMAF(meta, n, t, s)         { meta.meta_variable_array<t>(n,0,s); }
 
 #define MSTRUCT_CLOSE(meta)         meta.meta_struct_close(); } return meta;
@@ -2464,6 +2430,29 @@ COID_NAMESPACE_END
         MMD(m,#P2,v.P2,D2)\
         MMD(m,#P3,v.P3,D3)\
         MSTRUCT_CLOSE(m)}}
+
+
+///A helper to check if a type has metastream operator defined
+/// Usage: CHECK::meta_operator_exists<T>::value
+
+namespace CHECK  // namespace to not let "operator <<" become global
+{
+    typedef char no[7];
+    template<typename T> no& operator << (coid::metastream&, const T&);
+
+    template <typename T>
+    struct meta_operator_exists
+    {
+        typedef typename std::remove_reference<T>::type B;
+        enum { value = std::is_enum<B>::value
+            || (sizeof(*(metastream*)(0) << *(const B*)(0)) != sizeof(no)) };
+    };
+
+    template<>
+    struct meta_operator_exists<bool> {
+        enum { value = true };
+    };
+}
 
 
 #endif //__COID_COMM_METASTREAM__HEADER_FILE__
