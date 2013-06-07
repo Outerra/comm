@@ -113,6 +113,7 @@ class metagen //: public binstream
 
     typedef lexer::lextoken         lextoken;
 
+    struct Attribute;
 
     ///Variable from cache
     struct Varx
@@ -221,10 +222,12 @@ class metagen //: public binstream
             return *(uint*)data;
         }
 
-        token write_buf( metagen& mg ) const;
+        token write_buf( metagen& mg, const dynarray<Attribute>* attr, bool root ) const;
 
-        bool write_var( metagen& mg ) const {
-            token b = write_buf(mg);
+        bool write_var( metagen& mg, const dynarray<Attribute>* attr ) const
+        {
+            token b = write_buf(mg, attr, true);
+
             mg.bin->xwrite_token_raw(b);
             return !b.is_empty();
         }
@@ -247,12 +250,12 @@ class metagen //: public binstream
 
 
         ///First array element, return count
-        uint first( Varx& ary )
+        uint first( const Varx& ary )
         {
             DASSERT( ary.var->is_array() );
             var = ary.var->element();
             data = ary.data + sizeof(uint);
-            varparent = &ary;
+            varparent = const_cast<Varx*>(&ary);
 
             prepare();
             return *(uint*)ary.data;
@@ -297,6 +300,8 @@ class metagen //: public binstream
         Value value;
         int depth;
 
+
+        operator const token& () const  { return name; }
 
         bool is_condition() const       { return cond >= COND_POS; }
         bool is_open() const            { return cond == OPEN; }
@@ -386,7 +391,7 @@ class metagen //: public binstream
             bool val;
 
             if( !value.value.is_empty() )
-                val = defined  &&  value.value == v.write_buf(mg);
+                val = defined  &&  value.value == v.write_buf(mg, 0, true);
             else if( n == "defined" )
                 val = defined;
             else if( n.is_empty()  ||  n == "nonzero"  ||  n == "true" )
@@ -655,7 +660,7 @@ class metagen //: public binstream
             if( find_var(var,v,attrib) ) {
                 if(!attrib.is_empty())
                     write_special_value(mg, attrib, v);
-                else if(!v.write_var(mg))
+                else if(!v.write_var(mg, &attr))
                     write_default(mg, attr);
             }
             else
@@ -685,7 +690,7 @@ class metagen //: public binstream
                     mg.write_as_string(v.order);
             }
             else if(attrib == "@value") {
-                v.write_var(mg);
+                v.write_var(mg, &attr);
             }
             else if(attrib == "@size") {
                 if(v.is_array())
@@ -1131,21 +1136,51 @@ private:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-inline token metagen::Varx::write_buf( metagen& mg ) const
+inline token metagen::Varx::write_buf( metagen& mg, const dynarray<Attribute>* attr, bool root ) const
 {
     typedef bstype::kind    type;
 
     const uchar* p = data;
     type t = var->desc->btype;
 
-    if( var->is_array() ) {
-        if(var->desc->children[0].desc->btype.type == type::T_CHAR)
-            return token( (const char*)p+sizeof(uint), *(const uint*)p );
-        return token::empty();
-    }
-
     charstr& buf = mg.buf;
-    buf.reset();
+    if(root)
+        buf.reset();
+
+    if( var->is_array() ) {
+        if(var->desc->children[0].desc->btype.type == type::T_CHAR) {
+            token t = token( (const char*)p+sizeof(uint), *(const uint*)p );
+            buf << t;
+            return t;
+        }
+        else {
+            VarxElement element;
+            uint n = element.first(*this);
+            if(!n) return token::empty();
+
+            static const token first = "first";
+            static const token rest = "rest";
+            static const token after = "after";
+
+            int i;
+            const token& prefix = attr && (i=attr->containsT(first))>=0 ? (*attr)[i].value.value : token::empty();
+            const token& infix  = attr && (i=attr->containsT(rest)) >=0 ? (*attr)[i].value.value : token::empty();
+            const token& suffix = attr && (i=attr->containsT(after))>=0 ? (*attr)[i].value.value : token::empty();
+
+            buf << prefix;
+
+            for(uint k=0; k<n; ++k) {
+                if(k>0)
+                    buf << infix;
+
+                element.write_buf(mg, 0, false);
+                element.next();
+            }
+
+            buf << suffix;
+        }
+        return buf;
+    }
 
     switch(t.type)
     {

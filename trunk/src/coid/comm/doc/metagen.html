@@ -3,18 +3,11 @@
 
 
 
-  
-  
-  
-  <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
-
-
 
   
   
   
-  <title>Code generator</title></head>
-<body>
+  <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type"><title>Code generator</title></head><body>
 
 
 
@@ -909,6 +902,86 @@ Special array variables:<br>
 @size - return the array size<br>
 
 
+<br>
+<br>
+For simple processing of arrays of strings also the simple tag can be
+used. Let's say stuff is an array of strings, then $stuff$ will simply
+output a string concatenated from the individual elements.
+Additionally, the first/rest/after attributes can be used with the
+simple tag as well:<br>
+
+
+
+
+<code></code>
+<table style="text-align: left; width: 640px;" border="1" cellpadding="2" cellspacing="2">
+
+
+
+
+  <tbody>
+
+
+
+    <tr>
+      <td style="vertical-align: top;">attribute<br>
+      </td>
+      <td style="vertical-align: top;">example<br>
+      </td>
+      <td style="vertical-align: top;">description<br>
+      </td>
+    </tr>
+<tr>
+
+
+
+      <td style="background-color: rgb(255, 255, 204); text-align: center; font-family: monospace;" nowrap="nowrap"><code><br>
+</code></td><td style="vertical-align: top; background-color: rgb(255, 255, 204); text-align: center; font-family: monospace;"><code>$stuff$</code></td>
+      <td style="vertical-align: top;">a tightly concatenated string made of array elements<br>
+      <br>
+      </td>
+
+
+
+
+    </tr><tr>
+      <td style="vertical-align: top; background-color: rgb(255, 255, 204); text-align: center; font-family: monospace;">first<br>
+      </td>
+      <td style="vertical-align: top; background-color: rgb(255, 255, 204); text-align: center; font-family: monospace;">$stuff first="-"$<br>
+      </td>
+      <td style="vertical-align: top;">prefix the first element by given string (only for non-empty arrays)<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top; text-align: center; background-color: rgb(255, 255, 204); font-family: monospace;">rest<br>
+      </td>
+      <td style="vertical-align: top; text-align: center; background-color: rgb(255, 255, 204); font-family: monospace;">$stuff rest="."$</td>
+      <td style="vertical-align: top;">infix separator, a string to put before all elements but the first one<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top; text-align: center; background-color: rgb(255, 255, 204); font-family: monospace;">after<br>
+      </td>
+      <td style="vertical-align: top; text-align: center; background-color: rgb(255, 255, 204); font-family: monospace;">$stuff after=";"$<br>
+      </td>
+      <td style="vertical-align: top;">suffix after the last element, if the array is not empty<br>
+      </td>
+    </tr>
+
+
+
+
+  
+  
+  
+  </tbody>
+</table>
+
+
+
+
+<code></code><br>
+The attributes can be freely combined.<br>
 <br>
 
 
