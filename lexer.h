@@ -3327,7 +3327,7 @@ inline bool lexer::escape_rule::synthesize_string( const token& src, charstr& ds
         const escpair* pair = backmap->find(tok);
 
         if(pair) {
-            if(skip_selfescape && pair->code == esc) {
+            if(!altered && skip_selfescape && pair->code == esc) {
                 ++nself;
                 ++tok;
                 continue;
