@@ -61,7 +61,7 @@ protected:
 public:
 
     ///
-	virtual void destroy() 
+	virtual void _destroy() override
     { 
         DASSERT(_pool!=0); 
         _obj->reset();
@@ -112,7 +112,7 @@ public:
     {}
 
     ///
-	virtual void destroy() 
+	virtual void _destroy() override
     { 
         DASSERT(_pool!=0); 
         T* o=static_cast<T*>(this);
