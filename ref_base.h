@@ -101,8 +101,8 @@ protected:
 
 	volatile coid::int32 _count;
 
-    virtual void destroy() { 
-        delete this; 
+    virtual void _destroy() {
+        delete this;
     }
 
 public:
@@ -112,8 +112,8 @@ public:
 
 	policy_base_() : _count(0) {}
 
-	coid::int32 add_refcount() { 
-        return COUNTER::inc(&_count); 
+	coid::int32 add_refcount() {
+        return COUNTER::inc(&_count);
     }
 /*
 	bool add_ref_lock() {
@@ -127,7 +127,7 @@ public:
 	coid::int32 release_refcount() {
 		coid::int32 count = COUNTER::dec(&_count);
 		if(count == 0) {
-            destroy();
+            _destroy();
         }
 		return count;
 	}
@@ -146,7 +146,7 @@ private:
 
 protected:
 
-    virtual void destroy() { 
+    virtual void _destroy() override { 
         delete this; 
     }
 
@@ -166,13 +166,13 @@ public:
                     weaks = COUNTER::dec(_weaks) & ~0x80000000;
                     if(weaks == 0)
                         delete _weaks;
-                    destroy();
+                    _destroy();
                 }
                 else
                     COUNTER::aand(_weaks, 0x7fffffff); // remove destroy flag
             }
             else
-                destroy();
+                _destroy();
         }
 		return count;
 	}
