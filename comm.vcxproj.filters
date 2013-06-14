@@ -34,6 +34,9 @@
     <Filter Include="regex">
       <UniqueIdentifier>{91f4ad86-d880-4815-adb2-c7fa2f0729f7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="intergen">
+      <UniqueIdentifier>{48906725-6d3e-4a41-9723-a66f32495883}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="atomic\atomic.cpp">
@@ -377,6 +380,12 @@
     <ClInclude Include="version.h" />
     <ClInclude Include="metastream\fmtstreamnull.h">
       <Filter>metastream</Filter>
+    </ClInclude>
+    <ClInclude Include="intergen\ifc.h">
+      <Filter>intergen</Filter>
+    </ClInclude>
+    <ClInclude Include="intergen\ifc.js.h">
+      <Filter>intergen</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

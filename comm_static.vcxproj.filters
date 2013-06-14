@@ -34,6 +34,9 @@
     <Filter Include="regex">
       <UniqueIdentifier>{17dc812b-6176-4ae7-9661-594432f694ba}</UniqueIdentifier>
     </Filter>
+    <Filter Include="intergen">
+      <UniqueIdentifier>{ef7c566f-3d1a-4dd1-b1f5-ce2957c39ee4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="atomic\atomic.h">
@@ -319,6 +322,12 @@
     </ClInclude>
     <ClInclude Include="metastream\fmtstreamnull.h">
       <Filter>metastream</Filter>
+    </ClInclude>
+    <ClInclude Include="intergen\ifc.h">
+      <Filter>intergen</Filter>
+    </ClInclude>
+    <ClInclude Include="intergen\ifc.js.h">
+      <Filter>intergen</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
