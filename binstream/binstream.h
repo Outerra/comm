@@ -1113,17 +1113,17 @@ namespace CHECK  // namespace to not let "operator <<" become global
     template<typename T> no& operator >> (coid::binstream&, T&);
 
     template <typename T>
-    struct meta_operator_out_exists
+    struct bin_operator_out_exists
     {
         typedef typename std::remove_reference<T>::type B;
-        enum { value = (sizeof(*(metastream*)(0) << *(const B*)(0)) != sizeof(no)) };
+        enum { value = (sizeof(*(coid::binstream*)(0) << *(const B*)(0)) != sizeof(no)) };
     };
 
     template <typename T>
-    struct meta_operator_in_exists
+    struct bin_operator_in_exists
     {
         typedef typename std::remove_reference<T>::type B;
-        enum { value = (sizeof(*(metastream*)(0) >> *(B*)(0)) != sizeof(no)) };
+        enum { value = (sizeof(*(coid::binstream*)(0) >> *(B*)(0)) != sizeof(no)) };
     };
 }
 
