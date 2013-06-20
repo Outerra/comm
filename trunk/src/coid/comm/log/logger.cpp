@@ -88,7 +88,7 @@ void log_writer::flush()
 {
 	logmsg_ptr m;
 
-	int maxloop = 3000 / 20;
+	//int maxloop = 3000 / 20;
 
 	while( _queue.pop(m) ) { 
 		m->write_to_file();

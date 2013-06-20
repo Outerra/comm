@@ -2445,7 +2445,7 @@ namespace CHECK  // namespace to not let "operator <<" become global
     {
         typedef typename std::remove_reference<T>::type B;
         enum { value = std::is_enum<B>::value
-            || (sizeof(*(metastream*)(0) << *(const B*)(0)) != sizeof(no)) };
+            || (sizeof(*(coid::metastream*)(0) << *(const B*)(0)) != sizeof(no)) };
     };
 
     template<>
