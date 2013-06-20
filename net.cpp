@@ -579,13 +579,12 @@ void netSocket::setBuffers( uint rsize, uint wsize )
 void netSocket::setNoDelay( bool nodelay )
 {
     RASSERTE( handle != UMAXS, ersDISCONNECTED );  //invalid handle
-    int result;
 
     int one = nodelay;
 #ifdef SYSTYPE_WIN
-    result = ::setsockopt( handle, SOL_SOCKET, TCP_NODELAY, (char*)&one, sizeof(one) );
+    ::setsockopt( handle, SOL_SOCKET, TCP_NODELAY, (char*)&one, sizeof(one) );
 #else
-    result = ::setsockopt( handle, SOL_SOCKET, TCP_NODELAY, &one, sizeof(one) );
+    ::setsockopt( handle, SOL_SOCKET, TCP_NODELAY, &one, sizeof(one) );
 #endif
 }
 
@@ -593,13 +592,12 @@ void netSocket::setNoDelay( bool nodelay )
 void netSocket::setReuseAddr( bool reuse )
 {
     RASSERTE( handle != UMAXS, ersDISCONNECTED );  //invalid handle
-    int result;
 
     int one = reuse;
 #ifdef SYSTYPE_WIN
-    result = ::setsockopt( handle, SOL_SOCKET, SO_REUSEADDR, (char*)&one, sizeof(one) );
+    ::setsockopt( handle, SOL_SOCKET, SO_REUSEADDR, (char*)&one, sizeof(one) );
 #else
-    result = ::setsockopt( handle, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one) );
+    ::setsockopt( handle, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one) );
 #endif
 }
 
@@ -607,16 +605,15 @@ void netSocket::setReuseAddr( bool reuse )
 void netSocket::setLinger( bool blinger, ushort sec )
 {
     RASSERTE( handle != UMAXS, ersDISCONNECTED );  //invalid handle
-    int result;
 
     struct linger lg;
     lg.l_onoff = blinger;
     lg.l_linger = sec;
 
 #ifdef SYSTYPE_WIN
-    result = ::setsockopt( handle, SOL_SOCKET, SO_LINGER, (char*)&lg, sizeof(lg) );
+    ::setsockopt( handle, SOL_SOCKET, SO_LINGER, (char*)&lg, sizeof(lg) );
 #else
-    result = ::setsockopt( handle, SOL_SOCKET, SO_LINGER, &lg, sizeof(lg) );
+    ::setsockopt( handle, SOL_SOCKET, SO_LINGER, &lg, sizeof(lg) );
 #endif
 }
 

@@ -31,13 +31,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <LibraryPath>$(ProjectDir)..\bin;$(LibraryPath)</LibraryPath>
-    <OutDir>$(ProjectDir)\..\bin</OutDir>
+    <OutDir>$(ProjectDir)\..\bin\</OutDir>
     <IntDir>$(ProjectDir)\..\out\intergen\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <LibraryPath>$(ProjectDir)..\bin;$(LibraryPath)</LibraryPath>
-    <OutDir>$(ProjectDir)\..\bin</OutDir>
+    <OutDir>$(ProjectDir)\..\bin\</OutDir>
     <IntDir>$(ProjectDir)\..\out\intergen\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

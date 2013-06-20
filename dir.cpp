@@ -382,7 +382,6 @@ bool directory::get_relative_path( token src, token dst, charstr& relout )
     if(directory::is_separator(src.last_char()))
         src.shift_end(-1);
 
-    const char* upath=0;
     while(1)
     {
         token st = src.cut_left(DIR_SEPARATORS);
