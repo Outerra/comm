@@ -186,11 +186,11 @@ v8::Handle<v8::Value> $..name$_js_dispatcher::v8_$name$$@index$(const v8::Argume
     if(args.Length() != $ninargs_nondef$)  //in/inout arguments
         return v8::ThrowException(v8::String::New("Wrong number of arguments"));
 
-    v8::HandleScope handle_scope;
-    v8::Local<v8::Object> obj = args.Holder();
+    v8::HandleScope _handle_scope_;
+    v8::Local<v8::Object> _obj_ = args.Holder();
 
     $..ns rest="::" after="::"$js::$..name$_js_dispatcher* ifc = static_cast<$..ns rest="::" after="::"$js::$..name$_js_dispatcher*>
-        (v8::Handle<v8::External>::Cast(obj->GetInternalField(0))->Value());
+        (v8::Handle<v8::External>::Cast(_obj_->GetInternalField(0))->Value());
 
     v8::Context::Scope context_scope(ifc->_context);
 
@@ -284,7 +284,7 @@ $(/if)-$
 
     ifc->_meta.stream_flush();
 
-    return handle_scope.Close(_r_);
+    return _handle_scope_.Close(_r_);
 }
 
 $-[/method]$
@@ -353,15 +353,15 @@ $-(if hasprops?)$
 ////////////////////////////////////////////////////////////////////////////////
 v8::Handle<v8::Value> $name$_js_dispatcher::_getter(v8::Local<v8::String> property, const v8::AccessorInfo &info)
 {
-    v8::HandleScope handle_scope;
-    v8::Local<v8::Object> obj = info.Holder();
+    v8::HandleScope _handle_scope_;
+    v8::Local<v8::Object> _obj_ = info.Holder();
 
-    v8::Local<v8::Value> intobj = obj->GetInternalField(0);
-    if(!intobj->IsExternal())
+    v8::Local<v8::Value> _intobj_ = _obj_->GetInternalField(0);
+    if(!_intobj_->IsExternal())
         return v8::Handle<v8::Value>();
 
     $ns rest="::" after="::"$js::$name$_js_dispatcher* ifc = static_cast<$ns rest="::" after="::"$js::$name$_js_dispatcher*>
-        (v8::Handle<v8::External>::Cast(intobj)->Value());
+        (v8::Handle<v8::External>::Cast(_intobj_)->Value());
 
     v8::Context::Scope context_scope(ifc->_context);
 
@@ -381,21 +381,21 @@ $-(elif)$
     v8::Handle<v8::Object> _r_ = js_$getter.fulltype$_create_wrapper(value, ifc->_context);
 $-(/if)$
 
-    return handle_scope.Close(_r_);
+    return _handle_scope_.Close(_r_);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 v8::Handle<v8::Value> $name$_js_dispatcher::_setter(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::AccessorInfo &info)
 {
-    v8::HandleScope handle_scope;
-    v8::Local<v8::Object> obj = info.Holder();
+    v8::HandleScope _handle_scope_;
+    v8::Local<v8::Object> _obj_ = info.Holder();
 
-    v8::Local<v8::Value> intobj = obj->GetInternalField(0);
-    if(!intobj->IsExternal())
+    v8::Local<v8::Value> _intobj_ = _obj_->GetInternalField(0);
+    if(!_intobj_->IsExternal())
         return v8::Handle<v8::Value>();
 
     $ns rest="::" after="::"$js::$name$_js_dispatcher* ifc = static_cast<$ns rest="::" after="::"$js::$name$_js_dispatcher*>
-        (v8::Handle<v8::External>::Cast(intobj)->Value());
+        (v8::Handle<v8::External>::Cast(_intobj_)->Value());
 
     v8::Context::Scope context_scope(ifc->_context);
 
@@ -410,7 +410,7 @@ $-(elif)$
     ifc->_real()(*key, val);
 $-(/if)$
 
-    return handle_scope.Close(value);
+    return _handle_scope_.Close(value);
 }
 
 $-(/if)$
@@ -420,7 +420,7 @@ v8::Handle<v8::Value> $name$_js_dispatcher::v8query_interface(const v8::Argument
     if(args.Length() < 1)
         return v8::ThrowException(v8::String::New("interface creator name required"));
 
-    v8::HandleScope handle_scope;
+    v8::HandleScope _handle_scope_;
     v8::String::AsciiValue key(args[0]);
     
     typedef v8::Handle<v8::Value> (*fn_get)(const v8::Arguments& args);
@@ -430,7 +430,7 @@ v8::Handle<v8::Value> $name$_js_dispatcher::v8query_interface(const v8::Argument
     if(!get)
         return v8::ThrowException(v8::String::New("interface creator not found"));
 
-    return handle_scope.Close(get(args));
+    return _handle_scope_.Close(get(args));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -635,20 +635,44 @@ v8::Handle<v8::Value> $..name$_js_dispatcher::v8creator_$name$$@order$(const v8:
     if(args.Length() != 1+$ninargs$)  //fnc name + in/inout arguments
         return v8::ThrowException(v8::String::New("Wrong number of arguments"));
 
-    v8::HandleScope handle_scope;
-    v8::Local<v8::Object> obj = args.Holder();
+    v8::HandleScope _handle_scope_;
+    v8::Local<v8::Object> _obj_ = args.Holder();
 
     $..ns rest="::" after="::"$js::$..name$_js_dispatcher* ifc = static_cast<$..ns rest="::" after="::"$js::$..name$_js_dispatcher*>
-        (v8::Handle<v8::External>::Cast(obj->GetInternalField(0))->Value());
+        (v8::Handle<v8::External>::Cast(_obj_->GetInternalField(0))->Value());
 
     v8::Context::Scope context_scope(ifc->_context);
 
     //stream the arguments in
-$-[args inarg?]$
+$-[args inarg? !nojs?]$
+ $-(if iref.true?)$
+  $-(if !defval.empty?)$
+    $basetype$ $name$;
+    if($@order$ < args.Length())
+        $name$ = js_unwrap_object<typename $basetype$::base_t>(args[$@order$]);
+    else
+        $name$ = $defval$;
+  $-(elif)$
+    $basetype$ $name$ = js_unwrap_object<typename $basetype$::base_t>(args[$@order$]);
+  $-(/if)$
+ $-(elif enum?)$
+  $-(if !defval.empty?)$
+    $basetype$ $name$ = $@order$ < args.Length()
+        ? static_cast<$basetype$>( v8_streamer<int>(&ifc->_fmtv8, &ifc->_meta) >> args[$@order$] )
+        : $defval$;
+  $-(elif)$
+    $basetype$ $name$ = static_cast<$basetype$>( v8_streamer<int>(&ifc->_fmtv8, &ifc->_meta) >> args[$@order$] );
+  $-(/if)$
+ $-(elif)$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator << for type '$basetype$'" );
-$-[/args]$
-$-[args inarg?]$
-    $basetype$ $name$ = v8_streamer<$basetype$>(&ifc->_fmtv8, &ifc->_meta) >> args[1+$@order$];
+  $-(if !defval.empty?)$
+    $basetype$ $name$ = $@order$ < args.Length()
+        ? v8_streamer<$basetype$>(&ifc->_fmtv8, &ifc->_meta) >> args[$@order$]
+        : $defval$;
+  $-(elif)$
+    $basetype$ $name$ = v8_streamer<$basetype$>(&ifc->_fmtv8, &ifc->_meta) >> args[$@order$];
+  $-(/if)$
+ $-(/if)$
 $[/args]-$
 
     ifc->_meta.stream_acknowledge();
@@ -681,7 +705,7 @@ $[/args]-$
 
     ifc->_meta.stream_flush();
 
-    return handle_scope.Close(_r_);
+    return _handle_scope_.Close(_r_);
 }
 
 $-(/if)$

@@ -137,7 +137,10 @@ int generate_rl( const File& cgf, charstr& patfile, const token& outfile )
 
     if( cgf.classes.size() > 0 ) {
         out << "writing " << outfile << " ...\n";
-        mtg.generate( cgf.classes[0], bof );
+        cgf.classes.for_each([&](const Class& c) {
+            if(c.method.size())
+                mtg.generate(c, bof);
+        });
     }
     else
         out << "no rl_cmd's found\n";
