@@ -136,7 +136,7 @@ $(if !comments.empty?)$$[comments]-$
     //$@value$
 $[/comments]$$(/if)-$
     static iref<$..name$_js_dispatcher> $name$( const script_handle& scriptpath
-        $-[args]$, $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$, const coid::token& bindname, v8::Handle<v8::Context>* );
+        $-[args]$, $type$ $name$$size$$[/args]$, const coid::token& bindname, v8::Handle<v8::Context>* );
 
     $-(if !internal?)$
     static v8::Handle<v8::Value> v8creator_$name$$@order$(const v8::Arguments& args);
@@ -537,7 +537,7 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
     //iref<policy_intrusive_base> extref;
 
     // create interface object
-    iref<$..name$_js_dispatcher> ifc = $..ns rest="::" after="::"$$..name$::$name$($[args rest=", " after=", "]$$name$$[/args]$new $..name$_js_dispatcher);
+    iref<$..name$_js_dispatcher> ifc = $..ns rest="::" after="::"$$..name$::$name$(new $..name$_js_dispatcher$[args]$, $name$$[/args]$);
 
     // check if an external context provider is required
     if(script.is_path()) {
@@ -649,28 +649,28 @@ $-[args inarg? !nojs?]$
   $-(if !defval.empty?)$
     $basetype$ $name$;
     if($@order$ < args.Length())
-        $name$ = js_unwrap_object<typename $basetype$::base_t>(args[$@order$]);
+        $name$ = js_unwrap_object<typename $basetype$::base_t>(args[1+$@order$]);
     else
         $name$ = $defval$;
   $-(elif)$
-    $basetype$ $name$ = js_unwrap_object<typename $basetype$::base_t>(args[$@order$]);
+    $basetype$ $name$ = js_unwrap_object<typename $basetype$::base_t>(args[1+$@order$]);
   $-(/if)$
  $-(elif enum?)$
   $-(if !defval.empty?)$
     $basetype$ $name$ = $@order$ < args.Length()
-        ? static_cast<$basetype$>( v8_streamer<int>(&ifc->_fmtv8, &ifc->_meta) >> args[$@order$] )
+        ? static_cast<$basetype$>( v8_streamer<int>(&ifc->_fmtv8, &ifc->_meta) >> args[1+$@order$] )
         : $defval$;
   $-(elif)$
-    $basetype$ $name$ = static_cast<$basetype$>( v8_streamer<int>(&ifc->_fmtv8, &ifc->_meta) >> args[$@order$] );
+    $basetype$ $name$ = static_cast<$basetype$>( v8_streamer<int>(&ifc->_fmtv8, &ifc->_meta) >> args[1+$@order$] );
   $-(/if)$
  $-(elif)$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator << for type '$basetype$'" );
   $-(if !defval.empty?)$
     $basetype$ $name$ = $@order$ < args.Length()
-        ? v8_streamer<$basetype$>(&ifc->_fmtv8, &ifc->_meta) >> args[$@order$]
+        ? v8_streamer<$basetype$>(&ifc->_fmtv8, &ifc->_meta) >> args[1+$@order$]
         : $defval$;
   $-(elif)$
-    $basetype$ $name$ = v8_streamer<$basetype$>(&ifc->_fmtv8, &ifc->_meta) >> args[$@order$];
+    $basetype$ $name$ = v8_streamer<$basetype$>(&ifc->_fmtv8, &ifc->_meta) >> args[1+$@order$];
   $-(/if)$
  $-(/if)$
 $[/args]-$
@@ -682,7 +682,7 @@ $-[args outarg? !inarg?]$
     $basetype$ $name$;
 $[/args]-$
 
-    iref<$..name$_js_dispatcher> nifc = $..ns rest="::" after="::"$$..name$::$name$($[args rest=", " after=", "]$$name$$[/args]$new $..name$_js_dispatcher);
+    iref<$..name$_js_dispatcher> nifc = $..ns rest="::" after="::"$$..name$::$name$(new $..name$_js_dispatcher$[args]$, $name$$[/args]$);
     nifc->_context = v8::Persistent<v8::Context>::New(ifc->_context);
 
     //stream out
