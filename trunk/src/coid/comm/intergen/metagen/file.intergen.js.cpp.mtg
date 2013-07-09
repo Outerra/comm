@@ -66,10 +66,8 @@ $-(if !comments.empty?)$$[comments]$
 //$@value$
 $-[/comments]$$(/if)$
 class $name$_js_dispatcher
-    : public $ns rest="::"$::$name$
+    : public ::js::interface_wrapper_base<$ns rest="::"$::$name$>
 {
-    iref<$ns rest="::"$::$name$> _base;
-
     v8::Persistent<v8::Context> _context;
     v8::Persistent<v8::Script> _script;
     v8::Persistent<v8::Object> _object;
@@ -82,8 +80,6 @@ $-(/if)$
     coid::fmtstream_v8 _fmtv8;
     
     //iref<policy_intrusive_base> _extref;
-    
-    $ns rest="::"$::$name$& _real() { return _base ? *_base : *this; }
     
 $-(if hasprops?)$
     static v8::Handle<v8::Value> _getter(v8::Local<v8::String> property, const v8::AccessorInfo &info);
@@ -109,15 +105,8 @@ $-(/if)$
         _base = orig;
         _context = v8::Persistent<v8::Context>::New(context);
         _meta.bind_formatting_stream(_fmtv8);
-/*
-        $name$_js_dispatcher* disp = static_cast<$name$_js_dispatcher*>(orig.get());
-        //_host.swap(disp->_host);
-        //_vtable = disp->_vtable;
-$-(if varname?)$
-        _cleaner = disp->_cleaner;
-        disp->_cleaner = 0;
-        _cleaner(this, this);
-$-(/if)$*/
+		
+		_host = _base->host();
     }
 
     ~$name$_js_dispatcher() {
@@ -200,11 +189,11 @@ $-[args inarg? !nojs?]$
   $-(if !defval.empty?)$
     $basetype$ $name$;
     if($@order$ < args.Length())
-        $name$ = js_unwrap_object<typename $basetype$::base_t>(args[$@order$]);
+        $name$ = ::js::unwrap_object<typename $basetype$::base_t>(args[$@order$]);
     else
         $name$ = $defval$;
   $-(elif)$
-    $basetype$ $name$ = js_unwrap_object<typename $basetype$::base_t>(args[$@order$]);
+    $basetype$ $name$ = ::js::unwrap_object<typename $basetype$::base_t>(args[$@order$]);
   $-(/if)$
  $-(elif enum?)$
   $-(if !defval.empty?)$
@@ -233,7 +222,7 @@ $-[args outarg? !inarg?]$
     $basetype$ $name$;
 $[/args]-$
 
-    $(if return.type!="void")$$return.type$ _rval_ = $(/if)$ifc->_real().$name$($[args rest=", "]$ $-(if nojs?)$$defval$$(elif)$$name$$base2arg$$(/if)$$[/args]$);
+    $(if return.type!="void")$$return.type$ _rval_ = $(/if)$ifc->_real()->$name$($[args rest=", "]$ $-(if nojs?)$$defval$$(elif)$$name$$base2arg$$(/if)$$[/args]$);
 
     //stream out
 $-(if return.type!="void")$
@@ -367,9 +356,9 @@ v8::Handle<v8::Value> $name$_js_dispatcher::_getter(v8::Local<v8::String> proper
 
     v8::String::AsciiValue key(property);
 $-(if getter.token?)$    
-    $getter.basetype$ value = ifc->_real()(coid::token(*key, key.length()));
+    $getter.basetype$ value = (*ifc->_real())(coid::token(*key, key.length()));
 $-(elif)$
-    $getter.basetype$ value = ifc->_real()(*key);
+    $getter.basetype$ value = (*ifc->_real())(*key);
 $-(/if)$
     
     //stream out
@@ -405,9 +394,9 @@ v8::Handle<v8::Value> $name$_js_dispatcher::_setter(v8::Local<v8::String> proper
     
     v8::String::AsciiValue key(property);
 $-(if setter.token?)$
-    ifc->_real()(coid::token(*key, key.length()), val);
+    (*ifc->_real())(coid::token(*key, key.length()), val);
 $-(elif)$
-    ifc->_real()(*key, val);
+    (*ifc->_real())(*key, val);
 $-(/if)$
 
     return _handle_scope_.Close(value);
@@ -649,11 +638,11 @@ $-[args inarg? !nojs?]$
   $-(if !defval.empty?)$
     $basetype$ $name$;
     if($@order$ < args.Length())
-        $name$ = js_unwrap_object<typename $basetype$::base_t>(args[1+$@order$]);
+        $name$ = ::js::unwrap_object<typename $basetype$::base_t>(args[1+$@order$]);
     else
         $name$ = $defval$;
   $-(elif)$
-    $basetype$ $name$ = js_unwrap_object<typename $basetype$::base_t>(args[1+$@order$]);
+    $basetype$ $name$ = ::js::unwrap_object<typename $basetype$::base_t>(args[1+$@order$]);
   $-(/if)$
  $-(elif enum?)$
   $-(if !defval.empty?)$
