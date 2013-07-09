@@ -65,25 +65,40 @@ private:
     v8::Handle<v8::Context> _context;
 };
 
+namespace js {
 
+////////////////////////////////////////////////////////////////////////////////
+template<class T>
+class interface_wrapper_base
+    : public T
+{
+public:
+    iref<T> _base;
+
+    T* _real() { return _base ? _base.get() : this; }
+};	
+
+////////////////////////////////////////////////////////////////////////////////
 ///Unwrap interface object from JS object
 template<class T>
-inline iref<T> js_unwrap_object( const v8::Handle<v8::Value> &arg )
+inline T* unwrap_object( const v8::Handle<v8::Value> &arg )
 {
-    iref<T> empty;
-
-    if(arg.IsEmpty()) return empty;
-    if(!arg->IsObject()) return empty;
+    if(arg.IsEmpty()) return 0;
+    if(!arg->IsObject()) return 0;
     
     v8::Handle<v8::Object> obj = arg->ToObject();
-    if(obj->InternalFieldCount() != 2) return empty;
+    if(obj->InternalFieldCount() != 2) return 0;
     
     int hashid = (int)(ints)v8::Handle<v8::External>::Cast(obj->GetInternalField(1))->Value();
     if(hashid != T::hashid)
-        return empty;
+        return 0;
 
-    return iref<T>(static_cast<T*>(v8::Handle<v8::External>::Cast(obj->GetInternalField(0))->Value()));
+    interface_wrapper_base<T>* p = static_cast<interface_wrapper_base<T>*>(
+        v8::Handle<v8::External>::Cast(obj->GetInternalField(0))->Value());
+    return p->_real();
 }
+
+} //namespace js
 
 
 #endif //__INTERGEN_IFC_JS_H__
