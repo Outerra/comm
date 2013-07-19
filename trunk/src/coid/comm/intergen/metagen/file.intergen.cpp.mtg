@@ -57,12 +57,6 @@ $-[method static?]$
     {
         iref<$....ns default=" "$::$....class$> host = $....ns$::$....class$::$intname$($[args rest=", "]$$name$$[/args]$);
 
-        $-(if ..varname?)$
-        //remove cleaner from previously bound client
-        if(host->$..varname$)
-            static_cast<$..name$_dispatcher&>(*host->$..varname$)._cleaner = 0;
-
-        $-(/if)$
         $..name$_dispatcher* __disp__ = static_cast<$..name$_dispatcher*>(__here__);
         if(!__disp__)
             __disp__ = new $..name$_dispatcher;
@@ -71,9 +65,10 @@ $-[method static?]$
         __disp__->_vtable = get_vtable();
         
         $--(if ..varname?)$
-        __disp__->_cleaner = &_cleaner_callback;
-        
-        host->$..varname$ = __disp__;
+        if(!host->$..varname$) {
+            __disp__->_cleaner = &_cleaner_callback;
+            host->$..varname$ = __disp__;
+        }
         $-(/if)$
         
         $-(if ..oncreateev?)$
