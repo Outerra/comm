@@ -70,7 +70,7 @@ public:
 
 	template< class T2 >
 	iref( const iref<T2>& r ) : _p(0) {
-        create(r.get());
+        if(r.get()) create(r.get());
     }
 
     T* add_refcount() const { if(_p) _p->add_refcount(); return _p; }
