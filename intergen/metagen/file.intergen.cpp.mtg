@@ -56,6 +56,8 @@ $-[method static?]$
     static iref<$..name$> $name$( $..name$* __here__$[args]$, $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$ )
     {
         iref<$....ns default=" "$::$....class$> host = $....ns$::$....class$::$intname$($[args rest=", "]$$name$$[/args]$);
+        if(!host)
+            return 0;
 
         $..name$_dispatcher* __disp__ = static_cast<$..name$_dispatcher*>(__here__);
         if(!__disp__)
