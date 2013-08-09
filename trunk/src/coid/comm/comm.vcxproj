@@ -310,6 +310,7 @@
     <ClCompile Include="txtconv.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="alloc\slotalloc.h" />
     <ClInclude Include="atomic\atomic.h" />
     <ClInclude Include="atomic\queue.h" />
     <ClInclude Include="binstream\binstream.h" />
@@ -344,6 +345,7 @@
     <ClInclude Include="binstream\txtcachestream.h" />
     <ClInclude Include="binstream\txtstream.h" />
     <ClInclude Include="binstream\txtstreamhtml.h" />
+    <ClInclude Include="binstring.h" />
     <ClInclude Include="crypt\sha1.h" />
     <ClInclude Include="hash\hashfunc.h" />
     <ClInclude Include="hash\hashkeyset.h" />

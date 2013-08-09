@@ -350,9 +350,9 @@ opcd directory::mkdir_tree( token name, bool last_is_file, uint mode )
             pc[i] = 0;
 
             opcd e = mkdir(path, mode);
-            if(e)  return e;
-
             pc[i] = c;
+
+            if(e)  return e;
         }
     }
 

@@ -61,8 +61,6 @@ class charstr
     friend binstream& operator >> (binstream &in, charstr& x);
     friend binstream& operator << (binstream &out, const charstr& x);
     
-    struct CHUNK { uchar a[4]; };
-
 public:
 
     COIDNEWDELETE(charstr);
