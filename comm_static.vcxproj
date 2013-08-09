@@ -210,6 +210,7 @@
     </Bscmake>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="alloc\slotalloc.h" />
     <ClInclude Include="atomic\atomic.h" />
     <ClInclude Include="atomic\basic_pool.h" />
     <ClInclude Include="atomic\pool.h" />
@@ -253,6 +254,7 @@
     <ClInclude Include="binstream\txtcachestream.h" />
     <ClInclude Include="binstream\txtstream.h" />
     <ClInclude Include="binstream\txtstreamhtml.h" />
+    <ClInclude Include="binstring.h" />
     <ClInclude Include="crypt\sha1.h" />
     <ClInclude Include="dbg_location.h" />
     <ClInclude Include="interface.h" />

@@ -387,5 +387,9 @@
     <ClInclude Include="intergen\ifc.js.h">
       <Filter>intergen</Filter>
     </ClInclude>
+    <ClInclude Include="binstring.h" />
+    <ClInclude Include="alloc\slotalloc.h">
+      <Filter>alloc</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
