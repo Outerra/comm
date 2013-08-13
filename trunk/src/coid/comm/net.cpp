@@ -790,6 +790,27 @@ int netSocket::wait_write( int timeout )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+int netSocket::connected() const
+{
+    fd_set w,e;
+
+    w.fd_count = e.fd_count = 1;
+    w.fd_array[0] = e.fd_array[0] = handle;
+
+    struct timeval tv ;
+    tv.tv_sec = 0;
+    tv.tv_usec = 0;
+
+    ::select(FD_SETSIZE, 0, &w, &e, &tv);
+
+    if(w.fd_count > 0)
+        return 1;
+    if(e.fd_count > 0)
+        return -1;
+    return 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 int netSocket::select( netSocket** reads, netSocket** writes, int timeout )
 {
     fd_set r,w;
@@ -829,11 +850,6 @@ int netSocket::select( netSocket** reads, netSocket** writes, int timeout )
     // It bothers me that select()'s first argument does not appear to
     // work as advertised... [it hangs like this if called with
     // anything less than FD_SETSIZE, which seems wasteful?]
-
-    // Note: we ignore the 'exception' fd_set - I have never had a
-    // need to use it.  The name is somewhat misleading - the only
-    // thing I have ever seen it used for is to detect urgent data -
-    // which is an unportable feature anyway.
 
     ::select (FD_SETSIZE, &r, &w, 0, &tv);
 
