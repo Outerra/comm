@@ -262,6 +262,9 @@ public:
     int   recv        ( void* buffer, int size, int flags = 0 ) ;
     int   recvfrom    ( void* buffer, int size, int flags, netAddress* from ) ;
 
+    //@return 1 if connected, 0 if unknow yet, -1 if connection failed
+    int   connected() const;
+
     netAddress* getLocalAddress (netAddress* adrrto) const;	/// local IP
     netAddress* getRemoteAddress (netAddress* adrrto) const;	/// remote IP
 
