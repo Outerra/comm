@@ -131,6 +131,13 @@ public:
         return *this;
     }
 
+
+    ///Allocate buffer and reset the reading offset
+    uint8* alloc( uints len ) {
+        uint8* p = _tstr.alloc(len);
+        _offset = 0;
+        return p;
+    }
     
     //@return pointer to the string beginning
     const uint8* ptr() const            { return _tstr.ptr(); }
@@ -140,7 +147,7 @@ public:
 
 
     ///String length
-    uints len() const                   { return _tstr.sizes() ? (_tstr.sizes() - 1) : 0; }
+    uints len() const                   { return _tstr.size(); }
 
     //@return true if binstring still has data available for reading
     bool has_data() const               { return _offset < _tstr.size(); }
