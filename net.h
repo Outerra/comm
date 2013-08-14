@@ -247,6 +247,11 @@ public:
     void setHandle (uints handle) ;
     void setHandleInvalid () ;
 
+    void takeover( netSocket& socket ) {
+        handle = socket.handle;
+        socket.handle = UMAXS;
+    }
+
     bool isValid () const     { return handle != UMAXS; }
 
     bool  open        ( bool stream=true ) ;

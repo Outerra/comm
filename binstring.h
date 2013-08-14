@@ -152,6 +152,9 @@ public:
     //@return true if binstring still has data available for reading
     bool has_data() const               { return _offset < _tstr.size(); }
 
+    //@return current reading offset
+    uints offset() const                { return _offset; }
+
     ///Set string to empty and discard the memory
     void free()                         { _tstr.discard(); }
 
