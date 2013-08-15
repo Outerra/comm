@@ -110,7 +110,7 @@ public:
     //@note 
     T* get_or_create( uints id ) {
         if(id == _array.size())
-            return append_new_items(1);
+            return new(append_new_items(1)) T;
         else if(id > _array.size()) {
             //insert extra items into the free queue
             uint n = id - _array.size();
@@ -123,7 +123,7 @@ public:
                 punused = reinterpret_cast<T**>(p+i);
             }
             *punused = unused;
-            return p+n;
+            return new(p+n) T;
         }
         else {
             //find in the free queue
@@ -133,7 +133,7 @@ public:
                 if(*punused - _array.ptr() == id) {
                     T* p = *punused;
                     *punused = *reinterpret_cast<T**>(p);
-                    return p;
+                    return new(p) T;
                 }
                 else
                     punused = reinterpret_cast<T**>(*punused);
