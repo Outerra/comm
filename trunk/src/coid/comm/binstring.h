@@ -182,7 +182,7 @@ protected:
     template<class T>
     const T* seek() {
         uints offset = align_offset(_offset, __alignof(T));
-        if(offset >= _tstr.size())
+        if(offset+sizeof(T) > _tstr.size())
             throw exception("error reading buffer");
 
         const T* p = reinterpret_cast<const T*>(_tstr.ptr() + offset);
