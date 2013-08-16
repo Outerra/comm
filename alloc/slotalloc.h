@@ -245,7 +245,7 @@ private:
         T* oldarray = _array.ptr();
         T* p = _array.add_uninit(n);
 
-        if(oldarray != _array.ptr())
+        if(oldarray && oldarray != _array.ptr())
             rebase_free_items(oldarray);
 
         return p;
