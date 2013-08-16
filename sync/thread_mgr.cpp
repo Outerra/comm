@@ -99,10 +99,10 @@ void* thread_manager::def_thread( void* pinfo )
 	catch(thread::CancelException &) {
 		res = 0;
 	}
-    catch(...) {
+    /*catch(...) {
 		DASSERT(false && "unknown exception thrown!");
         res = 0;
-    }
+    }*/
 
     //invoke end callback
     if(ti->mgr->_cbk_end)
