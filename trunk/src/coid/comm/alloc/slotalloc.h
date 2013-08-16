@@ -56,6 +56,10 @@ public:
 
     void reset()
     {
+        //destroy occupied slots
+        for_each([](T& p) {destroy(p);});
+
+        _count = 0;
         _unused = reinterpret_cast<T*>(this);   //used as a terminator
         _array.reset();
     }
@@ -63,6 +67,11 @@ public:
     slotalloc()
     {
         DASSERT(sizeof(T) >= sizeof(uints));
+        _count = 0;
+        _unused = reinterpret_cast<T*>(this);   //used as a terminator
+    }
+
+    ~slotalloc() {
         reset();
     }
 
@@ -89,7 +98,11 @@ public:
         p->~T();
         *reinterpret_cast<T**>(p) = _unused;
         _unused = p;
+        --_count;
     }
+
+    //@return number of used slots in the container
+    uints count() const { return _count; }
 
     ///Return an item given id
     //@param id id of the item
@@ -109,8 +122,10 @@ public:
     ///Get a particular free slot
     //@note 
     T* get_or_create( uints id ) {
-        if(id == _array.size())
+        if(id == _array.size()) {
+            ++_count;
             return new(append_new_items(1)) T;
+        }
         else if(id > _array.size()) {
             //insert extra items into the free queue
             uint n = id - _array.size();
@@ -123,6 +138,7 @@ public:
                 punused = reinterpret_cast<T**>(p+i);
             }
             *punused = unused;
+            ++_count;
             return new(p+n) T;
         }
         else {
@@ -133,6 +149,7 @@ public:
                 if(*punused - _array.ptr() == id) {
                     T* p = *punused;
                     *punused = *reinterpret_cast<T**>(p);
+                    ++_count;
                     return new(p) T;
                 }
                 else
@@ -159,10 +176,11 @@ public:
     {
         T const* pb = _array.ptr();
         T const* pe = _array.ptre();
+        T const* terminator = reinterpret_cast<T const*>(this);
 
         for(T const* p=pb; p<pe; ++p) {
             T const* x = *(T const**)p;
-            if(x < pb || x >= pe)
+            if(x != terminator && (x < pb || x >= pe))
                 f(*p);
         }
     }
@@ -174,10 +192,11 @@ public:
     {
         T* pb = _array.ptr();
         T* pe = _array.ptre();
+        T* terminator = reinterpret_cast<T*>(this);
 
         for(T* p=pb; p<pe; ++p) {
             T* x = *reinterpret_cast<T**>(p);
-            if(x < pb || x >= pe)
+            if(x != terminator && (x < pb || x >= pe))
                 f(*p);
         }
     }
@@ -190,10 +209,11 @@ public:
     {
         T const* pb = _array.ptr();
         T const* pe = _array.ptre();
+        T const* terminator = reinterpret_cast<T const*>(this);
 
         for(T const* p=pb; p<pe; ++p) {
             T const* x = *(T const**)p;
-            if((x < pb || x >= pe) && f(*p))
+            if(x != terminator && (x < pb || x >= pe) && f(*p))
                 return p;
         }
         return 0;
@@ -209,6 +229,7 @@ private:
 
     dynarray<T> _array;
     T* _unused;                 ///< ptr to the first unused slot, ptr to this if the array needs to be enlarged
+    uints _count;
 
     void rebase_free_items( T* oldarray )
     {
@@ -234,9 +255,11 @@ private:
             T* punused = _unused;
             _unused = nextunused;
 
+            ++_count;
             return punused;
         }
 
+        ++_count;
         return append_new_items(1);
     }
 
@@ -250,6 +273,9 @@ private:
 
         return p;
     }
+
+    //WA for lambda template error
+    void static destroy(T& p) {p.~T();}
 };
 
 
