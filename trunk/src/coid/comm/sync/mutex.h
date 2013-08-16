@@ -161,19 +161,7 @@ struct MX_REGISTER_ITERATOR
 
 #define MUTEX_ITERATOR(mxit)    MX_REGISTER_ITERATOR  mxit(SINGLETON(MX_REGISTER))
 
-
 #endif	// _DEBUG
-
-
-
-#define MXGUARD(mut)                    comm_mutex_guard<comm_mutex> ___mxg (mut)
-#define MXGUARD_TIMED(mut,dly)          comm_mutex_guard<comm_mutex> ___mxg (mut, dly)
-
-#define MXGUARDRW(mut)                  comm_mutex_guard<comm_mutex_rw> ___mxg (mut)
-#define MXGUARDRW_TIMED(mut,dly)        comm_mutex_guard<comm_mutex_rw> ___mxg (mut, dly)
-
-#define MXGUARDREG(mut)                 comm_mutex_guard<comm_mutex_eg::refmutex> ___mxg (mut)
-#define MXGUARDREG_TIMED(mut,dly)       comm_mutex_guard<comm_mutex_eg::refmutex> ___mxg (mut, dly)
 
 
 COID_NAMESPACE_END
