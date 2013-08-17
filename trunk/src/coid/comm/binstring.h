@@ -85,6 +85,14 @@ public:
         return *this;
     }
 
+    ///Add buffer with specified leading alignment
+    binstring& append( uint alignment, const void* p, uints len ) {
+        uints size = _tstr.size();
+        uints align = align_offset(size, alignment) - size;
+
+        ::memcpy(_tstr.add(align + len) + align, p, len);
+        return *this;
+    }
 
     ///Fetch reference to a typed value from the binary stream
     template<class T>
