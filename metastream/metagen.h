@@ -250,15 +250,15 @@ class metagen //: public binstream
 
 
         ///First array element, return count
-        uint first( const Varx& ary )
+        uints first( const Varx& ary )
         {
             DASSERT( ary.var->is_array() );
             var = ary.var->element();
-            data = ary.data + sizeof(uint);
+            data = ary.data + sizeof(uints);
             varparent = const_cast<Varx*>(&ary);
 
             prepare();
-            return *(uint*)ary.data;
+            return *(uints*)ary.data;
         }
 
         VarxElement& next()
@@ -888,7 +888,7 @@ class metagen //: public binstream
                     return;
 
                 VarxElement ve;
-                uint n = ve.first(v);
+                uints n = ve.first(v);
                 if(!n)
                     return;
 
@@ -1149,27 +1149,27 @@ inline token metagen::Varx::write_buf( metagen& mg, const dynarray<Attribute>* a
 
     if( var->is_array() ) {
         if(var->desc->children[0].desc->btype.type == type::T_CHAR) {
-            token t = token( (const char*)p+sizeof(uint), *(const uint*)p );
+            token t = token( (const char*)p+sizeof(uints), *(const uints*)p );
             buf << t;
             return t;
         }
         else {
             VarxElement element;
-            uint n = element.first(*this);
+            uints n = element.first(*this);
             if(!n) return token::empty();
 
             static const token first = "first";
             static const token rest = "rest";
             static const token after = "after";
 
-            int i;
+            ints i;
             const token& prefix = attr && (i=attr->containsT(first))>=0 ? (*attr)[i].value.value : token::empty();
             const token& infix  = attr && (i=attr->containsT(rest)) >=0 ? (*attr)[i].value.value : token::empty();
             const token& suffix = attr && (i=attr->containsT(after))>=0 ? (*attr)[i].value.value : token::empty();
 
             buf << prefix;
 
-            for(uint k=0; k<n; ++k) {
+            for(uints k=0; k<n; ++k) {
                 if(k>0)
                     buf << infix;
 

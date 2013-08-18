@@ -181,7 +181,7 @@ uint memtrack_count()
 
     GUARDTHIS(mtr->mux);
 
-    return mtr->hash.size();
+    return (uint)mtr->hash.size();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

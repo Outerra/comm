@@ -137,7 +137,7 @@ public:
         _socket.setReuseAddr( true );
 	}
 
-	void assign_socket( int socket ) {
+	void assign_socket( uints socket ) {
 		_timeout = UMAX32;
 		_socket.setHandle( socket );
 		_socket.setBlocking( true );

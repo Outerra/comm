@@ -263,9 +263,9 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                         }
 
                         if(m->bconst)
-                            ifc->oper_get = ifc->method.size()-1;
+                            ifc->oper_get = int(ifc->method.size()-1);
                         else
-                            ifc->oper_set = ifc->method.size()-1;
+                            ifc->oper_set = int(ifc->method.size()-1);
                     }
 
                     if(!m->bstatic)

@@ -91,7 +91,7 @@ public:
     ///Delete object in the container
     void del( T* p )
     {
-        uint id = p - _array.ptr();
+        uints id = p - _array.ptr();
         if(id >= _array.size())
             throw exception("object outside of bounds");
 
@@ -128,7 +128,7 @@ public:
         }
         else if(id > _array.size()) {
             //insert extra items into the free queue
-            uint n = id - _array.size();
+            uints n = id - _array.size();
             T* p = append_new_items(n+1);
             
             T** punused = &_unused;
@@ -160,13 +160,13 @@ public:
         }
     }
 
-    //@return id of given item, or UMAX32 if the item is not managed here
-    uint get_item_id( const T* p ) const
+    //@return id of given item, or UMAXS if the item is not managed here
+    uints get_item_id( const T* p ) const
     {
         uints id = p - _array.ptr();
         return id < _array.size()
             ? id
-            : UMAX32;
+            : UMAXS;
     }
 
     ///Invoke a functor on each used item.

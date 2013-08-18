@@ -210,7 +210,7 @@ void generate_ig( File& file, charstr& tdir, charstr& fdir  )
                 return;
 
             //interface.js.h
-            fdir.ins(fdir.contains_back('.') - fdir.ptr(), ".js");
+            fdir.ins(int(fdir.contains_back('.') - fdir.ptr()), ".js");
 
             tdir.ins(-6, ".js");
 
