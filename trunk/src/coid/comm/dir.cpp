@@ -436,7 +436,7 @@ bool directory::compact_path( charstr& dst )
         if(!isup) {
             if(rem.len()) {
                 int rlen = rem.len();
-                dst.del(rem.ptr()-dst.ptr(), rlen);
+                dst.del(int(rem.ptr()-dst.ptr()), rlen);
                 dtok.shift_start(-rlen);
                 dtok.shift_end(-rlen);
                 rem.set_empty();
@@ -465,7 +465,7 @@ bool directory::compact_path( charstr& dst )
                     
                 int rlen = rem.len();
 
-                dst.del(rem.ptr()-dst.ptr(), rlen);
+                dst.del(int(rem.ptr()-dst.ptr()), rlen);
                 dtok.shift_start(-rlen);
                 dtok.shift_end(-rlen);
                 rem.set_empty();
@@ -478,7 +478,7 @@ bool directory::compact_path( charstr& dst )
     while(dtok);
 
     if(rem.len())
-        dst.del(rem.ptr()-dst.ptr(), rem.len());
+        dst.del(int(rem.ptr()-dst.ptr()), rem.len());
 
     return true;
 }

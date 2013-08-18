@@ -303,7 +303,7 @@ public:
             else
                 _bufw << char('[');*/
             if(t.type != type::T_BINARY && t.type != type::T_CHAR)
-                _top->array = v8::Array::New(t.get_count(p));
+                _top->array = v8::Array::New((int)t.get_count(p));
         }
         else if( t.is_array_end() )
         {
