@@ -151,6 +151,16 @@ $-[/event]$
 $-[event]$
     virtual bool is_implemented_$name$() override { return !unbound_event($@index$); }
 $-[/event]$
+$-(if event.empty!)$
+
+    virtual void force_bind_script_events() {
+        v8::Context::Scope context_scope(_context);
+        v8::HandleScope __handle_scope;
+        v8::TryCatch __trycatch;
+
+        bind_events(_context, true);
+    }
+$-(/if)$
 
 private:
     bool unbound_event( int id )
