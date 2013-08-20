@@ -90,6 +90,10 @@ $-[/event]$
 $-[event !static?]$
     virtual bool is_implemented_$name$() { return true; }
 $-[/event]$
+$-(if event.empty!)$
+
+    virtual void force_bind_script_events() {}
+$-(/if)$
 };
 
 $-[method static?]$
