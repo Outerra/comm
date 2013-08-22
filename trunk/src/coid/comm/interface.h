@@ -40,36 +40,20 @@
 #define __COID_COMM_INTERFACE__HEADER_FILE__
 
 #include "namespace.h"
-#include "hash/hashkeyset.h"
-#include "sync/mutex.h"
 
 
 COID_NAMESPACE_BEGIN
 
+struct token;
 
 ///A global register for interfaces, used by intergen
 class interface_register
 {
-    struct entry
-    {
-        token ifcname;
-        void* creator;
-
-        operator const token&() const { return ifcname; }
-    };
-
-    hash_keyset<entry, _Select_GetRef<entry,token> > _hash;
-    comm_mutex _mx;
-
 public:
 
     static void* get_interface_creator( const token& ifcname );
 
     static void register_interface_creator( const token& ifcname, void* creator );
-
-protected:
-
-    static interface_register& get();
 };
 
 

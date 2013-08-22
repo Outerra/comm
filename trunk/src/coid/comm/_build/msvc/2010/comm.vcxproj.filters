@@ -391,5 +391,6 @@
     <ClInclude Include="..\..\..\alloc\slotalloc.h">
       <Filter>alloc</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\interface.h" />
   </ItemGroup>
 </Project>

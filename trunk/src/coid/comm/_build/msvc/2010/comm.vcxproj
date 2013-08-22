@@ -352,6 +352,7 @@
     <ClInclude Include="..\..\..\hash\hashmap.h" />
     <ClInclude Include="..\..\..\hash\hashset.h" />
     <ClInclude Include="..\..\..\hash\hashtable.h" />
+    <ClInclude Include="..\..\..\interface.h" />
     <ClInclude Include="..\..\..\intergen\ifc.h" />
     <ClInclude Include="..\..\..\intergen\ifc.js.h" />
     <ClInclude Include="..\..\..\metastream\fmtstream.h" />
