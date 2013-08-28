@@ -1526,11 +1526,11 @@ protected:
         //move to the first primitive member in input, caching the unordered siblings
         if( !t.is_array_end() )
             movein_current<READ_MODE>();
-
+/*
         if( t.type == type::T_OPTIONAL )
         {
             fmts_or_cache_read_key();
-        }
+        }*/
 
         //ignore the struct open and close tokens nested in binstream operators,
         // as we follow those within metastream operators instead

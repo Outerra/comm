@@ -124,7 +124,7 @@ public:
 
         _tokenizer.prepare_exception() << "error parsing the header";
         _tokenizer.append_exception_location();
-        throw _tokenizer.exception();
+        throw _tokenizer.exc();
     }
 
     ///Override to parse custom trailer
@@ -136,7 +136,7 @@ public:
 
         _tokenizer.prepare_exception() << "error parsing the footer";
         _tokenizer.append_exception_location();
-        throw _tokenizer.exception();
+        throw _tokenizer.exc();
     }
 
     ///Override to put custom header
@@ -528,7 +528,7 @@ public:
                 else {
                     _tokenizer.prepare_exception() << "expecting boolean value";
                     _tokenizer.append_exception_location();
-                    throw _tokenizer.exception();
+                    throw _tokenizer.exc();
                 }
             } break;
 
