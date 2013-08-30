@@ -37,6 +37,9 @@
     <Filter Include="intergen">
       <UniqueIdentifier>{ef7c566f-3d1a-4dd1-b1f5-ce2957c39ee4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="net">
+      <UniqueIdentifier>{41c97189-69c2-4e94-a810-6da366ed3775}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="atomic\atomic.h">
@@ -333,6 +336,9 @@
       <Filter>alloc</Filter>
     </ClInclude>
     <ClInclude Include="binstring.h" />
+    <ClInclude Include="net\asyncrcv.h">
+      <Filter>net</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="crypt\sha1.cpp">
@@ -424,6 +430,9 @@
     </ClCompile>
     <ClCompile Include="interface.cpp">
       <Filter>cxx</Filter>
+    </ClCompile>
+    <ClCompile Include="net\asyncrcv.cpp">
+      <Filter>net</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

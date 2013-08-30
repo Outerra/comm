@@ -37,6 +37,9 @@
     <Filter Include="intergen">
       <UniqueIdentifier>{48906725-6d3e-4a41-9723-a66f32495883}</UniqueIdentifier>
     </Filter>
+    <Filter Include="net">
+      <UniqueIdentifier>{895d0799-3eae-458e-8efd-e542baedf2b3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="atomic\atomic.cpp">
@@ -128,6 +131,9 @@
     </ClCompile>
     <ClCompile Include="sync\thread_mgr.cpp">
       <Filter>sync</Filter>
+    </ClCompile>
+    <ClCompile Include="net\asyncrcv.cpp">
+      <Filter>net</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -390,6 +396,9 @@
     <ClInclude Include="binstring.h" />
     <ClInclude Include="alloc\slotalloc.h">
       <Filter>alloc</Filter>
+    </ClInclude>
+    <ClInclude Include="net\asyncrcv.h">
+      <Filter>net</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

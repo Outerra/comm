@@ -282,6 +282,7 @@
     <ClInclude Include="alloc\commalloc.h" />
     <ClInclude Include="alloc\memtrack.h" />
     <ClInclude Include="alloc\sseg.h" />
+    <ClInclude Include="net\asyncrcv.h" />
     <ClInclude Include="ref_helpers.h" />
     <ClInclude Include="sync\_mutex.h" />
     <ClInclude Include="sync\guard.h" />
@@ -409,6 +410,7 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <ClCompile Include="net\asyncrcv.cpp" />
     <ClCompile Include="pthreadx.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
