@@ -1365,10 +1365,12 @@ struct token
     }
 
 
-
-    token get_line()
+    ///Cut line terminated by \r\n or \n
+    //@param terminated_only if true, it won't return a line that wasn't terminated by EOL (will keep it)
+    token get_line( bool terminated_only = false )
     {
-        token r = cut_left('\n');
+        token r = cut_left('\n',
+            terminated_only ? cut_trait_remove_sep_default_empty() : cut_trait_remove_sep());
         if( r.last_char() == '\r' )
             --r._pte;
         return r;
