@@ -70,20 +70,25 @@ protected:
         netSocket socket;
         netAddress addr;
 
+        ///send reply back to client
+        bool send( const token& data );
+
     private:
         friend class async_receiver;
         dynarray<uint8> buf;
     };
 
-
+    ///Overload to handle/log new connections
     virtual void on_new_connection( client& c ) {}
 
+    ///Overload to handle connection termination
+    //@param closed true if the connection was closed gracefully, false for hard disconnect (informative)
     virtual void on_connection_closed( client& c, bool closed ) {}
 
     ///Invoked on arrived data from client
     //@param data token with client data
     //@return true if all input has been consumed, false if none or just a part, in which case the @a data was shifted and points to the non-consumed part
-    virtual bool on_client_data( token& data ) {
+    virtual bool on_client_data( client& c, token& data ) {
         return true;
     }
 

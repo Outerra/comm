@@ -51,17 +51,17 @@ async_receiver::~async_receiver()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool async_receiver::send_data( client& c, const void* data, uints len )
+bool async_receiver::client::send( const token& data )
 {
-    int n = c.socket.send(data, len);
+    int n = socket.send(data.ptr(), data.len());
     if(n < 0) {
         //client disconnected
-        c.socket.lingering_close();
+        socket.lingering_close();
         return false;
     }
-    else if(uints(n) < len) {
+    else if(uints(n) < data.len()) {
         //failed to send the data to client, not caching it here - close
-        c.socket.lingering_close();
+        socket.lingering_close();
         return false;
     }
 
@@ -138,7 +138,7 @@ bool async_receiver::process_client( client& c )
     while(recv_data(c))
     {
         token td = token((const char*)c.buf.ptr(), (const char*)c.buf.ptre());
-        if(on_client_data(td))
+        if(on_client_data(c, td))
             c.buf.reset();
         else {
             uints consumed = (const uint8*)td.ptr() - c.buf.ptr();
