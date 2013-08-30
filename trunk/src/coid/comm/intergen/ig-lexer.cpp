@@ -55,10 +55,9 @@ iglexer::iglexer()
 ////////////////////////////////////////////////////////////////////////////////
 int iglexer::find_method( const token& classname, dynarray<charstr>& commlist )
 {
-    const lextoken& tok = last();
-
     DASSERT( ignored(CURLY) ); //not to catch nested {}
 
+    const lextoken& tok = last();
     uint nv=0;
 
     do {
