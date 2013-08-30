@@ -1006,8 +1006,9 @@ public:
         @param ignoregrp id of the group to ignore if found at the beginning, 0 for none.
         This is used mainly to omit the whitespace (group 1), or explicitly to not skip it.
         @param enable_seqid enable block/string/sequence temporarily if it's not enabled
+        @param no_pop don't pop up the stack unless the next token equals the *no_pop token
     **/
-    const lextoken& next( uint ignoregrp=1, int enable_seqid=0 )
+    const lextoken& next( uint ignoregrp=1, int enable_seqid=0, const token* no_pop=0 )
     {
         //return last token if instructed
         if(_pushback) {
@@ -1070,8 +1071,13 @@ public:
             _last.state = -1;
             _last_string = k;
 
-            _last.tok = _tok.cut_left_n( br.trailing[kt].seq.len() );
-            _stack.pop();
+            if(no_pop && *no_pop != br.trailing[kt].seq) {
+                _last.tok.set(_tok.ptr(), br.trailing[kt].seq.len());
+            }
+            else {
+                _last.tok = _tok.cut_left_n(br.trailing[kt].seq.len());
+                _stack.pop();
+            }
 
             return _last;
         }
@@ -1117,7 +1123,7 @@ public:
                     next_read_string(*(const string_rule*)seq, off, true, ign);
 
                 if(ign)
-                    return next(ignoregrp, enable_seqid);
+                    return next(ignoregrp, enable_seqid, no_pop);
 
                 return _last;
             }
@@ -1217,7 +1223,7 @@ public:
     //@note This won't match a string or block with content equal to @a val, only normal tokens can be matched
     bool matches( const token& val )
     {
-        bool res = next() == val  &&  !_last.is_content();
+        bool res = next_equals(val)  &&  !_last.is_content();
 
         if(!res)
             push_back();
@@ -1228,7 +1234,7 @@ public:
     //@return true if next token matches literal character
     //@note This won't match a string or block with content equal to @a val, only normal tokens can be matched
     bool matches( char c ) {
-        bool res = next() == c  &&  !_last.is_content();
+        bool res = next_equals(token(c))  &&  !_last.is_content();
 
         if(!res)
             push_back();
@@ -1914,6 +1920,10 @@ private:
 
 
 protected:
+
+    bool next_equals( const token& val ) {
+        return next(1,0,&val) == val;
+    }
 
     ///Assert valid rule id
     void __assert_valid_rule( int sid ) const
