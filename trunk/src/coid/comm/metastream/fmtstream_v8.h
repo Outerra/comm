@@ -302,8 +302,10 @@ public:
                 ;//postpone writing until the escape status is known
             else
                 _bufw << char('[');*/
-            if(t.type != type::T_BINARY && t.type != type::T_CHAR)
+            if(t.type != type::T_BINARY && t.type != type::T_CHAR) {
                 _top->array = v8::Array::New((int)t.get_count(p));
+                _top->element = 0;
+            }
         }
         else if( t.is_array_end() )
         {
@@ -435,6 +437,7 @@ public:
                     e = ersSYNTAX_ERROR "expected array";
                 else {
                     _top->array = v8::Local<v8::Array>(v8::Array::Cast(*_top->value));
+                    _top->element = 0;
                 }
             }
         }
