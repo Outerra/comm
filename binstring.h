@@ -41,6 +41,7 @@
 #include "namespace.h"
 
 #include "token.h"
+#include "str.h"
 #include "dynarray.h"
 
 COID_NAMESPACE_BEGIN

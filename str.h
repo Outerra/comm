@@ -1825,12 +1825,8 @@ inline token token::rebase(const charstr& from, const charstr& to) const
     return token(to.ptr()+offset, len());
 }
 
-/*
-inline void token::assign_empty( const charstr& str )
-{
-    _pte = _ptr = str.ptr();
-}
-*/
+////////////////////////////////////////////////////////////////////////////////
+
 template<class A>
 inline bool token::utf8_to_wchar_buf( dynarray<wchar_t,uint,A>& dst ) const
 {
@@ -1847,7 +1843,7 @@ inline bool token::utf8_to_wchar_buf( dynarray<wchar_t,uint,A>& dst ) const
         else
         {
             uints ne = get_utf8_seq_expected_bytes(p);
-            if( ne > n )  return false;
+            if(ne > n)  return false;
 
             *dst.add() = (wchar_t)read_utf8_seq(p);
             p += ne;
