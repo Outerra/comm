@@ -995,6 +995,17 @@ struct token
         return uint(p - _ptr);
     }
 
+    uint count_notchars( char sep1, char sep2, uints off=0 ) const
+    {
+        const char* p = _ptr + off;
+        for( ; p<_pte; ++p )
+        {
+            if(*p == sep1 || *p == sep2)
+                break;
+        }
+        return uint(p - _ptr);
+    }
+
     uint count_ingroup( const token& sep, uints off=0 ) const
     {
         const char* p = _ptr + off;
@@ -1112,6 +1123,20 @@ struct token
         return uint(p - _ptr);
     }
 
+    uint count_notchars_back( char sep1, char sep2, uints off=0 ) const
+    {
+        const char* p = _pte;
+        const char* po = _ptr + off;
+
+        for( ; p>po; )
+        {
+            --p;
+            if( *p == sep1 || *p == sep2 )
+                return uint(p - _ptr + 1);
+        }
+        return uint(p - _ptr);
+    }
+
     uint count_ingroup_back( const token& sep, uints off=0 ) const
     {
         const char* p = _pte;
@@ -1180,6 +1205,31 @@ struct token
     const char* contains( char c, uints off=0 ) const {
         uints k = count_notchar(c,off);
         return k<len() ? _ptr+k : 0;
+    }
+
+    const char* contains( const token& str, uints off=0 ) const {
+        char c = str.first_char();
+        uints tot = len() - str.len() - 1;
+
+        while(off < tot && (off=count_notchar(c, off)) < tot) {
+            if(0 == ::memcmp(_ptr+off, str._ptr, str.len()))
+                return _ptr+off;
+            ++off;
+        }
+        return 0;
+    }
+
+    const char* contains_icase( const token& str, uints off=0 ) const {
+        char c = tolower(str.first_char());
+        char C = toupper(str.first_char());
+        uints tot = len() - str.len() - 1;
+
+        while((off = count_notchars(c, C, off)) < tot) {
+            if(0 == xstrncasecmp(_ptr+off, str._ptr, str.len()))
+                return _ptr+off;
+            ++off;
+        }
+        return 0;
     }
 
     ///Return position where the character is located, searching from end
@@ -1352,14 +1402,21 @@ struct token
 
     token& skip_notchar( char sep, uints off=0 )
     {
-        uints n = count_notchar( sep, off );
+        uints n = count_notchar(sep, off);
+        _ptr += n;
+        return *this;
+    }
+
+    token& skip_notchars( char sep1, char sep2, uints off=0 )
+    {
+        uints n = count_notchars(sep1, sep2, off);
         _ptr += n;
         return *this;
     }
 
     token& skip_until_substring( const substring& ss, uints off=0 )
     {
-        uints n = count_until_substring( ss, off );
+        uints n = count_until_substring(ss, off);
         _ptr += n;
         return *this;
     }
@@ -2182,6 +2239,8 @@ struct token
 
 
     ///Convert token to array of wchar_t characters
+    bool utf8_to_wchar_buf( wchar_t* dst, uints maxlen ) const;
+
     template<class A>
     bool utf8_to_wchar_buf( dynarray<wchar_t,uint,A>& dst ) const;
 

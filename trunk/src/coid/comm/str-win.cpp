@@ -37,6 +37,37 @@ bool token::codepage_to_wstring_append( uint cp, std::wstring& dst ) const
     return n>0;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+bool token::utf8_to_wchar_buf( wchar_t* dst, uints maxlen ) const
+{
+    if(maxlen) --maxlen;
+    const char* p = ptr();
+    bool succ = true;
+
+    uints i=0;
+    for(; i<maxlen; ++i)
+    {
+        if( (uchar)*p <= 0x7f ) {
+            dst[i] = *p++;
+        }
+        else
+        {
+            uints ne = get_utf8_seq_expected_bytes(p);
+            if(p+ne > _pte) {
+                //error in input
+                succ = false;
+                break;
+            }
+
+            dst[i] = (wchar_t)read_utf8_seq(p);
+            p += ne;
+        }
+    }
+
+    dst[i] = 0;
+    return succ;
+}
+
 COID_NAMESPACE_END
 
 
