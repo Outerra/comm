@@ -1439,7 +1439,7 @@ protected:
                 if( _curvar.var == _cachedefval ) {
                     _cachedefval = 0;
                     _current = _cachestack.pop();
-                    _current->next_offset();
+                    if(_current) _current->next_offset();
                 }
 
                 if( _curvar.var == _cachequit )
