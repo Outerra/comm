@@ -1105,6 +1105,12 @@ private:
             offs += sizeof(uints);
         }
 
+        uints next_offset() {
+            if(offs != UMAXS)
+                offs += sizeof(uints);
+            return offs;
+        }
+
         uints get_asize() const         { return *(const uints*)data(ofsz); }
         void set_asize( uints n )       { *(uints*)data(ofsz) = n; }
 
@@ -1431,8 +1437,9 @@ protected:
             }
             else {
                 if( _curvar.var == _cachedefval ) {
-                    _current = _cachestack.pop();
                     _cachedefval = 0;
+                    _current = _cachestack.pop();
+                    _current->next_offset();
                 }
 
                 if( _curvar.var == _cachequit )
