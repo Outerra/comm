@@ -29,7 +29,7 @@ $[/comments]$$(/if)-$
         
         if(!binder) {
             binder = reinterpret_cast<fn_bind>(
-                coid::interface_register::get_interface_creator("$..ns rest="::" after="::"$js::$..name$::$name$@creator"));
+                coid::interface_register::get_interface_creator("$..ns rest="::" after="::"$js::$..name$.$name$@creator"));
         }
 
         if(!binder)

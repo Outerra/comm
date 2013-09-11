@@ -3,6 +3,8 @@
 #define __INTERGEN_IFC_JS_H__
 
 #include <comm/token.h>
+#include <comm/metastream/metastream.h>
+#include <comm/metastream/fmtstream_v8.h>
 #include <v8/v8.h>
 
 ///Helper for script loading
@@ -68,9 +70,21 @@ private:
 namespace js {
 
 ////////////////////////////////////////////////////////////////////////////////
+struct interface_context
+{
+    coid::metastream _meta;
+    coid::fmtstream_v8 _fmtv8;
+
+    v8::Persistent<v8::Context> _context;
+    v8::Persistent<v8::Script> _script;
+    v8::Persistent<v8::Object> _object;
+};
+
+////////////////////////////////////////////////////////////////////////////////
 template<class T>
 class interface_wrapper_base
     : public T
+    , public interface_context
 {
 public:
     iref<T> _base;
