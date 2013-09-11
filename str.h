@@ -1240,17 +1240,27 @@ public:
     }
 
     ///Return position where the substring is located
-    ///@return substring position, len() if not found
+    ///@return substring position, 0 if not found
     const char* contains( const substring& sub, uints off=0 ) const
     {   return token(*this).contains(sub,off); }
 
+    ///Return position where the substring is located
+    ///@return substring position, 0 if not found
+    const char* contains( const token& tok, uints off=0 ) const
+    {   return token(*this).contains(tok,off); }
+
+    ///Return position where the substring is located
+    ///@return substring position, 0 if not found
+    const char* contains_icase( const token& tok, uints off=0 ) const
+    {   return token(*this).contains_icase(tok,off); }
+
     ///Return position where the character is located
-    ///@return substring position, len() if not found
+    ///@return substring position, 0 if not found
     const char* contains( char c, uints off=0 ) const
     {   return token(*this).contains(c,off); }
 
     ///Return position where the character is located, searching from the end
-    ///@return substring position, len() if not found
+    ///@return substring position, 0 if not found
     const char* contains_back( char c, uints off=0 ) const
     {   return token(*this).contains_back(c,off); }
 

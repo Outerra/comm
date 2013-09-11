@@ -40,20 +40,32 @@
 #define __COID_COMM_INTERFACE__HEADER_FILE__
 
 #include "namespace.h"
-
+#include "str.h"
+#include "dynarray.h"
+#include "regex.h"
 
 COID_NAMESPACE_BEGIN
-
-struct token;
 
 ///A global register for interfaces, used by intergen
 class interface_register
 {
 public:
 
+    static void register_interface_creator( const token& ifcname, void* creator );
+
     static void* get_interface_creator( const token& ifcname );
 
-    static void register_interface_creator( const token& ifcname, void* creator );
+    struct creator {
+        token name;
+        void* creator_ptr;
+    };
+
+    ///Get interface creators matching the given name
+    //@param name interface creator name in the format [ns1::[ns2:: ...]]::class[.creator]
+    static dynarray<creator>& get_interface_creators( const token& name, dynarray<creator>& dst );
+
+    ///Find interfaces containing given string
+    static dynarray<creator>& find_interface_creators( const regex& str, dynarray<creator>& dst );
 };
 
 

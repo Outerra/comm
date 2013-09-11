@@ -90,7 +90,7 @@ $-[/method]$
     {
 $-[method static?]$
         interface_register::register_interface_creator(
-            "$..ns rest="::" after="::"$$..name$::$name$@$..hash$", (void*)&$name$);
+            "$..ns rest="::" after="::"$$..name$.$name$@$..hash$", (void*)&$name$);
 $-[/method]$
 
         return (void*)&register_interfaces;

@@ -108,7 +108,7 @@ inline iref<T> $..name$::$name$( T* _subclass_
 
     if(!create) {
         create = reinterpret_cast<fn_creator>(
-            coid::interface_register::get_interface_creator("$..ns rest="::" after="::"$$..name$::$name$@$..hash$"));
+            coid::interface_register::get_interface_creator("$..ns rest="::" after="::"$$..name$.$name$@$..hash$"));
     }
 
     if(!create)
