@@ -297,7 +297,7 @@ $-(/if)$
 $-[args inarg?]$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator << for type '$basetype$'" );
 $-[/args]$
-$-(if args?)$
+$-(if ninargs?)$
     v8::Handle<v8::Value> __inargs[] = {
 $-[args inarg?]$
         v8_streamer<$basetype$>(&_fmtv8, &_meta) << $name$,
@@ -307,7 +307,7 @@ $-[/args]$
 $-(/if)$
     _meta.stream_flush();
 
-    v8::Local<v8::Value> _r_ = _events[$@index$]->Call(_object, $(if args?)$sizeof(__inargs)/sizeof(v8::Handle<v8::Value>), __inargs$(elif)$0, 0$(/if)$);
+    v8::Local<v8::Value> _r_ = _events[$@index$]->Call(_object, $(if ninargs?)$$ninargs$, __inargs$(elif)$0, 0$(/if)$);
 
     if(__trycatch.HasCaught())
         throw_js_error(__trycatch, "$..ns rest="::" after="::"$js::$..name$.$name$(): ");
@@ -328,7 +328,12 @@ $-(elif)$
  $-(/if)$
  $-[args outarg?]$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator << for type '$basetype$'" );
+   $-(if ptr?)$
+    if($name$)
+        *$name$ = v8_streamer<$basetype$>(&_fmtv8, &_meta) >> _obj_->Get(v8::String::NewSymbol("$name$"));
+   $-(elif)$
     $name$ = v8_streamer<$basetype$>(&_fmtv8, &_meta) >> _obj_->Get(v8::String::NewSymbol("$name$"));
+   $-(/if)$
  $-[/args]$
 $(/if)-$
 
