@@ -683,7 +683,7 @@ $-[args outarg? !inarg?]$
     $basetype$ $name$;
 $[/args]-$
 
-    iref<$..name$_js_dispatcher> nifc = $..ns rest="::" after="::"$$..name$::$name$(new $..name$_js_dispatcher$[args]$, $name$$[/args]$);
+    iref<$..name$_js_dispatcher> nifc = $..ns rest="::" after="::"$$..name$::$name$(new $..name$_js_dispatcher$[args]$, $name$$base2arg$$[/args]$);
     nifc->_context = v8::Persistent<v8::Context>::New(ifc->_context);
 
     //stream out
