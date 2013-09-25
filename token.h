@@ -1208,10 +1208,12 @@ struct token
     }
 
     const char* contains( const token& str, uints off=0 ) const {
+        if (len() < str.len())
+            return 0;
+        uints tot = len() - str.len();
         char c = str.first_char();
-        uints tot = len() - str.len() - 1;
 
-        while(off < tot && (off=count_notchar(c, off)) < tot) {
+        while(off <= tot && (off=count_notchar(c, off)) <= tot) {
             if(0 == ::memcmp(_ptr+off, str._ptr, str.len()))
                 return _ptr+off;
             ++off;
@@ -1220,11 +1222,13 @@ struct token
     }
 
     const char* contains_icase( const token& str, uints off=0 ) const {
+        if (len() < str.len())
+            return 0;
+        uints tot = len() - str.len();
         char c = tolower(str.first_char());
         char C = toupper(str.first_char());
-        uints tot = len() - str.len() - 1;
 
-        while((off = count_notchars(c, C, off)) < tot) {
+        while(off <= tot && (off=count_notchars(c, C, off)) <= tot) {
             if(0 == xstrncasecmp(_ptr+off, str._ptr, str.len()))
                 return _ptr+off;
             ++off;
