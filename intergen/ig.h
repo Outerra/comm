@@ -236,7 +236,8 @@ struct MethodIG
     bool biref;                         ///< iref instead of ref
     bool bconst;                        ///< const method
     bool boperator;
-    bool binternal;                     ///< internal method, invisible to scripts (starts with underscore)
+    bool binternal;                     ///< internal method, invisible to scripts (starts with an underscore)
+    bool bcapture;                      ///< method captured when interface is in capturing mode
     bool bimplicit;                     ///< an implicit event
     bool bdestroy;                      ///< a method to call on interface destroy
 
@@ -251,7 +252,8 @@ struct MethodIG
 
 
     MethodIG()
-        : bstatic(false), bdestroy(false), bptr(false), biref(true), bconst(false), boperator(false), binternal(false)
+        : bstatic(false), bdestroy(false), bptr(false), biref(true), bconst(false)
+        , boperator(false) , binternal(false), bcapture(false)
         , bimplicit(false), ninargs(0), ninargs_nondef(0), noutargs(0), index(-1)
     {}
 
@@ -261,12 +263,14 @@ struct MethodIG
 
 
     friend binstream& operator << (binstream& bin, const MethodIG& m)
-    {   return bin << m.templarg << m.templsub << m.ret << m.name << m.intname << m.storage << m.boperator << m.binternal <<
-        m.bstatic << m.bptr << m.biref << m.bconst << m.bimplicit << m.bdestroy << m.args << m.ninargs << m.ninargs_nondef
+    {   return bin << m.templarg << m.templsub << m.ret << m.name << m.intname << m.storage
+        << m.boperator << m.binternal << m.bcapture << m.bstatic << m.bptr << m.biref
+        << m.bconst << m.bimplicit << m.bdestroy << m.args << m.ninargs << m.ninargs_nondef
         << m.noutargs << m.comments << m.index; }
     friend binstream& operator >> (binstream& bin, MethodIG& m)
-    {   return bin >> m.templarg >> m.templsub >> m.ret >> m.name >> m.intname >> m.storage >> m.boperator >> m.binternal <<
-        m.bstatic >> m.bptr >> m.biref >> m.bconst >> m.bimplicit >> m.bdestroy >> m.args >> m.ninargs >> m.ninargs_nondef
+    {   return bin >> m.templarg >> m.templsub >> m.ret >> m.name >> m.intname >> m.storage
+        >> m.boperator >> m.binternal >> m.bcapture >> m.bstatic >> m.bptr >> m.biref
+        >> m.bconst >> m.bimplicit >> m.bdestroy >> m.args >> m.ninargs >> m.ninargs_nondef
         >> m.noutargs >> m.comments >> m.index; }
     friend metastream& operator << (metastream& m, const MethodIG& p)
     {
@@ -279,6 +283,7 @@ struct MethodIG
         MM(m,"storage",p.storage)
         MM(m,"operator",p.boperator)
         MM(m,"internal",p.binternal)
+        MM(m,"capture",p.bcapture)
         MM(m,"static",p.bstatic)
         MM(m,"ptr",p.bptr)
         MM(m,"iref",p.biref)
@@ -314,6 +319,7 @@ struct Interface
     dynarray<MethodIG> event;
 
     MethodIG destroy;
+    MethodIG default_creator;
 
     int oper_get;
     int oper_set;
@@ -333,9 +339,9 @@ struct Interface
     dynarray<charstr> comments;
 
     bool bvirtual;
+    bool bdefaultcapture;
 
-
-    Interface() : oper_get(-1), oper_set(-1), bvirtual(false)
+    Interface() : oper_get(-1), oper_set(-1), bvirtual(false), bdefaultcapture(false)
     {}
 
     void compute_hash();
@@ -353,7 +359,7 @@ struct Interface
     {   return bin << m.nss << m.name << m.relpath << m.relpathjs << m.hdrfile << m.storage << m.method
         << m.getter << m.setter << m.on_create << m.on_create_ev << bool(m.oper_get>=0) << m.nifc_methods
         << m.varname << m.event << m.destroy << m.hash << m.comments << m.pasters << *m.srcfile << *m.srcclass
-        << m.base << m.baseclass << m.basepath << m.bvirtual; }
+        << m.base << m.baseclass << m.basepath << m.bvirtual << m.default_creator; }
     friend binstream& operator >> (binstream& bin, Interface& m)
     {   return bin; }
     friend metastream& operator << (metastream& m, const Interface& p)
@@ -384,6 +390,7 @@ struct Interface
         MM(m,"baseclass",p.baseclass)
         MM(m,"basepath",p.basepath)
         MM(m,"virtual",p.bvirtual)
+        MM(m,"default_creator",p.default_creator)
         MSTRUCT_CLOSE(m)
     }
 };

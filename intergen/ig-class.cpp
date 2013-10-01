@@ -106,7 +106,9 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                 bool extev = tok == lex.IFC_EVENTX;
                 bool bimplicit = false;
                 bool bdestroy = false;
-                bool binternal = false;
+                int8 binternal = 0;
+                int8 bnocapture = 0;
+                int8 bcapture = 0;
 
                 charstr extname, implname;
                 if(extev || extfn) {
@@ -116,7 +118,11 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                     if(extfn && lex.matches('~'))
                         bdestroy = true;
                     else {
-                        binternal = lex.matches('!');
+                        while(int k = lex.matches_either('!', '-', '+'))
+                            (&binternal)[k-1]++;
+
+                        lex.matches(lex.IDENT, extname);
+                        /*binternal = lex.matches('!');
                         bimplicit = lex.matches('@');
                         if(bimplicit) {
                             lex.match(lex.IDENT, implname);
@@ -127,7 +133,7 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                             bimplicit = lex.matches('@');
                             if(bimplicit)
                                 lex.match(lex.IDENT, implname);
-                        }
+                        }*/
                     }
                     lex.match(')');
                 }
@@ -144,6 +150,7 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                     ifc->bvirtual = classvirtual;
 
                     lex.match('(');
+                    ifc->bdefaultcapture = lex.matches_either('+', '-') == 1;
                     ifc->name = lex.match(lex.IDENT);
 
                     while(lex.matches("::")) {
@@ -238,10 +245,21 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                     MethodIG* m = ifc->method.add();
 
                     m->comments.takeover(commlist);
-                    m->binternal = binternal;
+                    m->binternal = binternal>0;
 
                     if(!m->parse(lex, classname, namespc, irefargs))
                         ++ncontinuable_errors;
+
+                    int capture = ifc->bdefaultcapture ? 1 : 0;
+                    capture -= bnocapture;
+                    capture += bcapture;
+
+                    m->bcapture = capture>0 && !m->bconst && !m->bstatic;
+
+                    if(bcapture>bnocapture && !m->bcapture) {
+                        out << (lex.prepare_exception() << "warning: const and static methods aren't captured\n");
+                        lex.clear_err();
+                    }
 
                     if(extname) {
                         m->intname.takeover(m->name);
@@ -303,6 +321,9 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                         ifc->destroy = *m;
                         ifc->method.move(m-ifc->method.ptr(), 0, 1);
                     }
+
+                    if(m->bstatic && m->args.size() == 0 && ifc->default_creator.name.is_empty())
+                        ifc->default_creator = *m;
                 }
                 else {
                     //produce a warning for other misplaced keywords
