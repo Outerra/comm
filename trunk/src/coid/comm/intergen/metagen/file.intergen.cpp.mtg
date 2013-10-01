@@ -8,6 +8,7 @@ $-[/iface]$$[/class]$
 
 #include <comm/ref.h>
 #include <comm/singleton.h>
+#include <comm/binstring.h>
 #include <type_traits>
 
 using namespace coid;
@@ -27,17 +28,84 @@ class $name$_dispatcher : public $name$
 {
 private:
 
+    static coid::binstring* _capture;
+    static uint16 _instid;
+    static ifn_t* _vtable1;
+    static ifn_t* _vtable2;
+
     static ifn_t* get_vtable()
     {
-        static ifn_t* vtable = 0;
-        if(vtable) return vtable;
+        if(_vtable1) return _vtable1;
 
-        vtable = new ifn_t[$nifcmethods$];
+        _vtable1 = new ifn_t[$nifcmethods$];
 $-[method !static?]$
-        vtable[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$$type$$[/args]$)$(if const?)$const$(/if)$>(&$....ns$::$....class$::$intname$));
+        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$$type$$[/args]$)$(if const?)$const$(/if)$>(&$....ns$::$....class$::$intname$));
 $-[/method]-$
 
-        return vtable;
+        return _vtable1;
+    }
+    
+    #define VT_CALL2(R,F,I) ((*reinterpret_cast<policy_intrusive_base*>(this)).*(reinterpret_cast<R(policy_intrusive_base::*)F>(_vtable1[I])))
+    
+$-[method capture?]$
+
+    $return.type$ __capture__$(if operator?)$operator$(elif)$$name$$index$$(/if)$($[args rest=", "]$$type$ $name$$[/args]$)$(if const?)$ const$(/if)$
+    {
+        (*_capture) << uint16(_instid | $index$) $-[args inarg?]$ << $name$$[/args]$;
+        return VT_CALL2($return.type$,($[args rest=","]$$type$$[/args]$),$index$)($[args rest=","]$$name$$[/args]$);
+    }
+$-[/method]$
+
+    static ifn_t* get_vtable_intercept()
+    {
+        if(_vtable2) return _vtable2;
+        ifn_t* vtable1 = get_vtable();
+
+        _vtable2 = new ifn_t[$nifcmethods$];
+$-[method !static?]$
+    $-(if capture? operator?)$
+        _vtable2[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$$type$$[/args]$)$(if const?)$const$(/if)$>(&__capture__operator));
+    $-(elif capture?)$
+        _vtable2[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$$type$$[/args]$)$(if const?)$const$(/if)$>(&__capture__$name$$index$));
+    $-(elif)$
+        _vtable2[$@order$] = vtable1[$@order$];
+    $-(/if)$
+$-[/method]-$
+
+        return _vtable2;
+    }
+    
+protected:
+
+    $name$_dispatcher()
+    {}
+    
+    bool intergen_bind_capture( coid::binstring* capture, uint instid ) override
+    {
+        if(instid >= 0xffU)
+            return false;
+    
+        _instid = uint16(instid << 8U);
+        _capture = capture;
+        _vtable = _capture ? get_vtable_intercept() : get_vtable();
+        return true;
+    }    
+
+    void intergen_capture_dispatch( uint mid, coid::binstring& bin ) override
+    {
+        switch(mid) {
+        $-[method capture?]$
+        case $index$: {
+            $-[args inarg?]$
+            const $basetype$& $name$ = bin.fetch<$basetype$>();
+            $-[/args]$
+            VT_CALL($return.type$,($[args rest=","]$$type$$[/args]$),$index$)($[args rest=","]$$name$$[/args]$);
+            break;
+        }
+        $-[/method]$
+        case UMAX32:
+        default: throw coid::exception("unknown method id in $name$ capture dispatcher");
+        }
     }
 $-(if varname?)$
 
@@ -47,7 +115,7 @@ $-(if varname?)$
         if(host) static_cast<$..ns default=" "$::$..class$*>(host)->$varname$ = ifc;
     }
 $-(/if)$
-    
+
 public:
 
     // creator methods
@@ -64,7 +132,7 @@ $-[method static?]$
             __disp__ = new $..name$_dispatcher;
 
         __disp__->_host.create(host.get());
-        __disp__->_vtable = get_vtable();
+        __disp__->_vtable = _capture ? get_vtable_intercept() : get_vtable();
         
         $--(if ..varname?)$
         if(!host->$..varname$) {
@@ -85,7 +153,7 @@ $-[method static?]$
     }
 
 $-[/method]$
-    ///Register interface creators to a global registry
+    ///Register interface creators in the global registry
     static void* register_interfaces()
     {
 $-[method static?]$
@@ -96,6 +164,12 @@ $-[/method]$
         return (void*)&register_interfaces;
     }
 };
+
+coid::binstring* $name$_dispatcher::_capture = 0;
+uint16 $name$_dispatcher::_instid = 0xffffU;
+intergen_interface::ifn_t* $name$_dispatcher::_vtable2 = 0;
+intergen_interface::ifn_t* $name$_dispatcher::_vtable1 = 0;
+
 
 //auto-register the available interface creators
 static void* $name$_autoregger = $name$_dispatcher::register_interfaces();

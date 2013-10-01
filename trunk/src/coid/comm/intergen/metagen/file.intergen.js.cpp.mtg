@@ -109,7 +109,17 @@ $-[/event]$
         _script.Dispose();
         _context.Dispose();
     }
+    
+    bool intergen_bind_capture( coid::binstring* capture, uint instid ) override
+    {
+        return _real()->intergen_bind_capture(capture, instid);
+    }
 
+    void intergen_capture_dispatch( uint mid, coid::binstring& bin ) override
+    {
+        _real()->intergen_capture_dispatch(mid, bin);
+    }
+    
     // --- creators ---
 
 $-[method static?]$

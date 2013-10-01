@@ -50,8 +50,19 @@ $-(if varname? destroy.name.empty?)$
     }
 $-(/if)$
 
-    ///class id
-    static const int hashid = $hash$;
+    ///interface hash id
+    static const int HASHID = $hash$;
+    
+    int intergen_hash_id() const override { return HASHID; }
+
+    const coid::token& intergen_default_creator() const override {
+$-(if default_creator.name.empty?)$
+        static const coid::token _DC("");
+$-(elif)$
+        static const coid::token _DC("$ns rest="::" after="::"$$name$.$default_creator.name$@$hash$");
+$-(/if)$
+        return _DC;
+    }
 
     // --- creators ---
 
