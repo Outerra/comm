@@ -104,6 +104,8 @@ public:
     ///Fetch string from the binary stream
     token string() {
         const uints& size = fetch<uints>();
+        if(_tstr.size()-_offset < size)
+            throw exception("buffer overflow");
         const uint8* p = _tstr.ptr() + _offset;
         _offset += size;
         return token((const char*)p, size);
