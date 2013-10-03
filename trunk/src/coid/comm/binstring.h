@@ -98,7 +98,13 @@ public:
     ///Fetch reference to a typed value from the binary stream
     template<class T>
     const T& fetch() {
-        return *seek<T>();
+        return *seek<T>(_offset);
+    }
+
+    ///Return position of data given starting offset in buffer
+    template<class T>
+    T* data( uints offset ) {
+        return seek<T>(offset);
     }
 
     ///Fetch string from the binary stream
@@ -191,13 +197,13 @@ protected:
     }
 
     template<class T>
-    const T* seek() {
-        uints offset = align_offset(_offset, __alignof(T));
-        if(offset+sizeof(T) > _tstr.size())
+    T* seek( uints& offset ) {
+        uints off = align_offset(offset, __alignof(T));
+        if(off+sizeof(T) > _tstr.size())
             throw exception("error reading buffer");
 
-        const T* p = reinterpret_cast<const T*>(_tstr.ptr() + offset);
-        _offset = offset + sizeof(T);
+        T* p = reinterpret_cast<T*>(_tstr.ptr() + off);
+        offset = off + sizeof(T);
         return p;
     }
 
