@@ -95,6 +95,13 @@ public:
         return *this;
     }
 
+    ///Align the reader offset to the specified alignment
+    //@return true if data are available
+    bool align( uint alignment ) {
+        _offset = align_offset(_offset, alignment);
+        return has_data();
+    }
+
     ///Fetch reference to a typed value from the binary stream
     template<class T>
     const T& fetch() {
