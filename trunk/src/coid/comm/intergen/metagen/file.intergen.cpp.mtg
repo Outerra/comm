@@ -97,7 +97,11 @@ protected:
         $-[method capture?]$
         case $index$: {
             $-[args inarg?]$
+            $-(if token?)$
+            coid::token $name$ = bin.string();
+            $-(elif)$
             const $basetype$& $name$ = bin.fetch<$basetype$>();
+            $-(/if)$
             $-[/args]$
             VT_CALL($return.type$,($[args rest=","]$$type$$[/args]$),$index$)($[args rest=","]$$name$$[/args]$);
             break;
