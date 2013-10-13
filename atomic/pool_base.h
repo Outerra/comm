@@ -97,8 +97,8 @@ class policy_pooled_i
 public:
     COIDNEWDELETE(policy_pooled_i);
 
-    typedef policy_pooled<T> this_type;
-	typedef pool<T*> pool_type;
+    typedef policy_pooled_i<T> this_type;
+	typedef pool<this_type*> pool_type;
 
 protected:
     pool_type* _pool;
@@ -115,30 +115,32 @@ public:
 	virtual void _destroy() override
     { 
         DASSERT(_pool!=0); 
-        T* o=static_cast<T*>(this);
-        o->reset();
-        _pool->release_instance(o);
+        static_cast<T*>(this)->reset();
+        this_type* t = this;
+        _pool->release_instance(t);
     }
 
     ///
-	static T* create(pool_type* po,bool init_counter=false) 
+	static T* create(pool_type* po) 
     { 
         DASSERT(po!=0); 
-        T* p;
+        this_type* p = 0;
 
-        if( !po->create_instance(p) )
-            p=new T();
+        if( !po->create_instance(p) ) {
+            p = new T;
+            p->_pool = po;
+        }
 
-		if(init_counter)
-			p->add_refcount();
+		//if(init_counter)
+		p->add_refcount();
 
-        return p;
+        return static_cast<T*>(p);
     }
 
     ///
-	static T* create(bool init_counter=false)
+	static T* create()
     {
-        return create(&pool_type::global(),init_counter);
+        return create(&pool_type::global());
     }
 };
 
