@@ -83,7 +83,7 @@ public:
 
 	// special constructor from default policy
 	explicit iref( const create_pooled& ) 
-		: _p( coid::policy_pooled_i<T>::create(true) ) 
+		: _p( coid::policy_pooled_i<T>::create() ) 
 	{}
 
 	~iref() { release(); }
@@ -113,7 +113,7 @@ public:
         DASSERT(p!=_p);
 		release();
 		_p = p;
-		add_refcount();
+		//add_refcount();
 	}
 
 	void create_pooled(pool_type_t *po) {
@@ -121,7 +121,7 @@ public:
 		DASSERT(p!=_p);
 		release();
 		_p = p;
-		add_refcount();
+		//add_refcount();
 	}
 
 	const iref_t& operator = (const iref_t& r) {
