@@ -179,6 +179,14 @@ public:
     //@return current reading offset
     uints offset() const                { return _offset; }
 
+    ///Set the reading offset
+    uints set_offset( uints offs ) {
+        if(offs >= _tstr.size())
+            offs = _tstr.size();
+
+        return _offset = offs;
+    }
+
     ///Set string to empty and discard the memory
     void free()                         { _tstr.discard(); }
 
