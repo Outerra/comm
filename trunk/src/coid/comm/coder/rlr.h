@@ -45,7 +45,7 @@ COID_NAMESPACE_BEGIN
 
 
 ///Run-length Rice encoder/decoder
-template<class INT, int minplane=0>
+template<class INT, int MINPLANE=0>
 struct rlr_coder
 {
     typedef typename SIGNEDNESS<INT>::UNSIGNED      UINT;
@@ -72,19 +72,25 @@ struct rlr_coder
         save(bin);
     }
 
+    template<int STRIDE>
     void decode( INT* data, uints len, binstream& bin )
     {
         reset(false);
         load(bin);
 
-        dataend = data + len;
+        dataend = data + len*STRIDE;
 
-        if(maxplane == 0)
-            ::memset( data, 0, len*sizeof(INT) );
+        if(maxplane == 0) {
+            if(STRIDE == 1)
+                ::memset( data, 0, len*sizeof(INT) );
+            else
+                for(uints i=0; i<len; ++i) data[i*STRIDE] = 0;
+        }
         else
-            decodex( maxplane, data, len );
+            decodex<STRIDE>(maxplane, data, len);
     }
 
+    template<int STRIDE>
     uints decode_lossy( const INT* rndvals, uint cutbits, INT* data, uints len, binstream& bin )
     {
         reset(false);
@@ -95,7 +101,7 @@ struct rlr_coder
         if(maxplane == 0)
             ::memset( data, 0, len*sizeof(INT) );
         else
-            decodex_lossy( rndvals, cutbits, maxplane, data, len );
+            decodex_lossy<STRIDE>( rndvals, cutbits, maxplane, data, len );
 
         return size;
     }
@@ -116,11 +122,11 @@ struct rlr_coder
         bin << (uint8)maxplane;
 
         uints bytes = 0;
-        for( int i=maxplane; i>minplane; --i )
+        for( int i=maxplane; i>MINPLANE; --i )
             bytes += planes[i-1].write_to(bin);
 
-        if(minplane>0)
-            bytes += planes[minplane-1].write_to(bin);
+        if(MINPLANE>0)
+            bytes += planes[MINPLANE-1].write_to(bin);
 
         return bytes;
     }
@@ -132,11 +138,11 @@ struct rlr_coder
         bin >> maxp;
         maxplane = maxp;
 
-        for( int i=maxplane; i>minplane; --i )
+        for( int i=maxplane; i>MINPLANE; --i )
             size += planes[i-1].read_from(bin);
 
-        if(minplane>0)
-            size += planes[minplane-1].read_from(bin);
+        if(MINPLANE>0)
+            size += planes[MINPLANE-1].read_from(bin);
 
         return size;
     }
@@ -144,7 +150,7 @@ struct rlr_coder
     void reset( bool enc )
     {
         pos = 0;
-        maxplane = plane = minplane;
+        maxplane = plane = MINPLANE;
 
         for( uint i=0; i<8*sizeof(INT); ++i )
             planes[i].reset(i, enc);
@@ -176,21 +182,21 @@ struct rlr_coder
         else if(v>>(plane-1))
         {
             //in the plane
-            if(plane>minplane)
+            if(plane>MINPLANE)
                 planes[plane-1].one(v);
             else if(plane>0)
                 planes[plane-1].zero(v);
         }
-        else if(plane>minplane)
+        else if(plane>MINPLANE)
         {
             //below the current plane
             do {
                 --plane;
                 planes[plane].down(pos);
             }
-            while( plane>minplane && !(v>>(plane-1)) );
+            while( plane>MINPLANE && !(v>>(plane-1)) );
 
-            if(plane>minplane)
+            if(plane>MINPLANE)
                 planes[plane-1].one(v);
             else if(plane>0)
                 planes[plane-1].zero(v);
@@ -203,20 +209,22 @@ struct rlr_coder
 
 protected:
 
+    template<int STRIDE>
     void decodex( int plane, INT* pdata, uints len )
     {
         --plane;
         rlr_bitplane& rp = planes[plane];
 
-        ints& n = rp.zeros(dataend - pdata);
+        ints& n = rp.zeros((dataend - pdata)/STRIDE);
 
         while(len>0)
         {
             if(n == 0) {
-                *pdata++ = decode_sign( (1 << plane) | rp.read() );
+                *pdata = decode_sign( (1 << plane) | rp.read() );
+                pdata += STRIDE;
                 --n;
                 --len;
-                rp.zeros(dataend - pdata);
+                rp.zeros((dataend - pdata)/STRIDE);
             }
 
             //n elements encoded in lower planes
@@ -227,20 +235,25 @@ protected:
             n -= k;
 
             if( plane == 0 ) {
-                while(k-->0)
-                    *pdata++ = 0;
+                while(k-->0) {
+                    *pdata = 0;
+                    pdata += STRIDE;
+                }
             }
-            else if( plane <= minplane ) {
-                while(k-->0)
-                    *pdata++ = decode_sign( rp.read() );
+            else if( plane <= MINPLANE ) {
+                while(k-->0) {
+                    *pdata = decode_sign( rp.read() );
+                    pdata += STRIDE;
+                }
             }
             else {
-                decodex( plane, pdata, k );
-                pdata += k;
+                decodex(plane, pdata, k);
+                pdata += k*STRIDE;
             }
         }
     }
     
+    template<int STRIDE>
     void decodex_lossy( const INT* rndvals, int cutbits, int plane, INT* pdata, uints len )
     {
         --plane;
@@ -251,7 +264,7 @@ protected:
         cut = cut<0 ? 0 : cut;
         uint padmask = ((1 << cut) - 1) << 1;
         uint invmask = ~padmask;
-        ints& n = rp.zeros(dataend - pdata);
+        ints& n = rp.zeros((dataend - pdata)/STRIDE);
 
         while(len>0)
         {
@@ -260,10 +273,11 @@ protected:
                     ? (rp.read(cutbits) & invmask) | (*rndvals++ & padmask)
                     : 0;
 
-                *pdata++ = decode_sign( (1 << plane) | lowbits );
+                *pdata = decode_sign( (1 << plane) | lowbits );
+                pdate += STRIDE;
                 --n;
                 --len;
-                rp.zeros(dataend - pdata);
+                rp.zeros((dataend - pdata)/STRIDE);
 
                 bits_full += plane;
                 bits_lossy += plane - cut;
@@ -278,13 +292,15 @@ protected:
 
             if( plane == 0 ) {
                 while(k-->0) {
-                    *pdata++ = 0;
+                    *pdata = 0;
+                    pdata += STRIDE;
                     ++rndvals;
                 }
             }
-            else if( plane <= minplane ) {
+            else if( plane <= MINPLANE ) {
                 while(k-->0) {
-                    *pdata++ = decode_sign( (rp.read(cutbits) & invmask) | (*rndvals++ & padmask) );
+                    *pdata = decode_sign( (rp.read(cutbits) & invmask) | (*rndvals++ & padmask) );
+                    pdata += STRIDE;
 
                     bits_full += plane;
                     bits_lossy += plane - cut;
@@ -292,7 +308,7 @@ protected:
             }
             else {
                 decodex_lossy(rndvals, cutbits, plane, pdata, k);
-                pdata += k;
+                pdata += k*STRIDE;
                 rndvals += k;
             }
         }
