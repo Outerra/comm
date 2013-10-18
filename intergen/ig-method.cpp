@@ -116,7 +116,7 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
     int isPR=0,wasPR;
     int isCV=0;
 
-    while(wasPR = lex.matches_either('*', '&'))
+    while((wasPR = lex.matches_either('*', '&')))
     {
         isPR = wasPR;
         if(bconst) {
@@ -127,7 +127,7 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
 
         type << lex.last().value();
 
-        if(isCV = lex.matches_either("const", "volatile"))
+        if((isCV = lex.matches_either("const", "volatile")))
             type << ' ' << lex.last().value();
     }
 
