@@ -247,7 +247,7 @@ protected:
                 }
             }
             else {
-                decodex(plane, pdata, k);
+                decodex<STRIDE>(plane, pdata, k);
                 pdata += k*STRIDE;
             }
         }
@@ -307,7 +307,7 @@ protected:
                 }
             }
             else {
-                decodex_lossy(rndvals, cutbits, plane, pdata, k);
+                decodex_lossy<STRIDE>(rndvals, cutbits, plane, pdata, k);
                 pdata += k*STRIDE;
                 rndvals += k;
             }
