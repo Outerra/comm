@@ -328,15 +328,27 @@ $-(if !noutargs?)$
     $return.type$ _rval_ = v8_streamer<$return.type$>(&_fmtv8, &_meta) >> _r_;
  $-(/if)$
 $-(elif)$
+ $-(if return.type?="void" noutargs?="1")$
+ 
+  $-[args outarg?]$
+    static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator << for type '$basetype$'" );
+   $-(if ptr?)$
+    if($name$)
+        *$name$ = v8_streamer<$basetype$>(&_fmtv8, &_meta) >> _r_;
+   $-(elif)$
+    $name$ = v8_streamer<$basetype$>(&_fmtv8, &_meta) >> _r_;
+   $-(/if)$
+  $-[/args]$
+ $-(elif)$
 
     if(!_r_->IsObject()) throw coid::exception("invalid params");
     v8::Local<v8::Object> _obj_ = _r_->ToObject();
- $-(if return.type!="void")$
+  $-(if return.type!="void")$
     //return value
     static_assert( CHECK::meta_operator_exists<$return.type$>::value, "missing metastream operator << for type '$return.type$'" );
     $return.type$ _rval_ = v8_streamer<$return.type$>(&_fmtv8, &_meta) >> _obj_->Get(v8::String::NewSymbol("$$ret"));
- $-(/if)$
- $-[args outarg?]$
+  $-(/if)$
+  $-[args outarg?]$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator << for type '$basetype$'" );
    $-(if ptr?)$
     if($name$)
@@ -344,7 +356,8 @@ $-(elif)$
    $-(elif)$
     $name$ = v8_streamer<$basetype$>(&_fmtv8, &_meta) >> _obj_->Get(v8::String::NewSymbol("$name$"));
    $-(/if)$
- $-[/args]$
+  $-[/args]$
+ $-(/if)$
 $(/if)-$
 
     _meta.stream_acknowledge();
