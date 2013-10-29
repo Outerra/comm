@@ -37,6 +37,7 @@
 
 #include "commassert.h"
 #include "ref_base.h"
+#include "hash/hashfunc.h"
 #include "binstream/binstreambuf.h"
 #include "metastream/metastream.h"
 
@@ -161,15 +162,19 @@ public:
 
 	///Automatic cast to unconvertible bool for checking via if
 	operator unspecified_bool_type () const {
-	return _p ? &iref<T>::_p : 0;
+	    return _p ? &iref<T>::_p : 0;
 	}
 
-	friend bool operator==( const iref<T>& a,const iref<T>& b ) {
-	return a._p == b._p;
+	friend bool operator == ( const iref<T>& a,const iref<T>& b ) {
+    	return a._p == b._p;
 	}
 
-	friend bool operator!=( const iref<T>& a,const iref<T>& b ) {
+	friend bool operator != ( const iref<T>& a,const iref<T>& b ) {
 		return !operator==(a,b);
+	}
+
+	friend bool operator < ( const iref<T>& a,const iref<T>& b ) {
+    	return a._p < b._p;
 	}
 
 	friend coid::binstream& operator << (coid::binstream& bin,const iref_t& s) {
@@ -246,5 +251,14 @@ public:
 };
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+namespace coid {
+
+template<typename T> struct hash<iref<T>> {
+    typedef iref<T> key_type;
+    uint operator()(const key_type& x) const { return (uint)x.get(); }
+};
+
+} //namespace coid
 
 #endif // __COMM_REF_I_H__
