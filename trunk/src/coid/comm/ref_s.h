@@ -38,6 +38,7 @@
 #include "commassert.h"
 #include "ref_base.h"
 #include "atomic/pool_base.h"
+#include "hash/hashfunc.h"
 #include "binstream/binstream.h"
 #include "metastream/metastream.h"
 
@@ -232,11 +233,23 @@ public:
 
 	coid::int32 refcount() const { return _p?_p->refcount():0; }
 
-	friend coid::binstream& operator<<( coid::binstream& bin,const ref<T>& s ) {
+	friend bool operator == ( const ref<T>& a, const ref<T>& b ) {
+    	return a._p == b._p;
+	}
+
+	friend bool operator != ( const ref<T>& a, const ref<T>& b ) {
+		return !operator==(a,b);
+	}
+
+	friend bool operator < ( const ref<T>& a, const ref<T>& b ) {
+    	return a._p < b._p;
+	}
+
+	friend coid::binstream& operator<<( coid::binstream& bin, const ref<T>& s ) {
 		return bin<<(*s._o); 
 	}
 
-	friend coid::binstream& operator>>( coid::binstream& bin,ref<T>& s ) { 
+	friend coid::binstream& operator>>( coid::binstream& bin, ref<T>& s ) { 
 		s.create(); return bin>>(*s._o); 
 	}
 /*
@@ -262,5 +275,15 @@ inline bool operator!=( const ref<T>& a,const ref<T>& b ){
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+namespace coid {
+
+template<typename T> struct hash<ref<T>> {
+    typedef ref<T> key_type;
+    uint operator()(const key_type& x) const { return (uint)x.get(); }
+};
+
+} //namespace coid
+
 
 #endif // __COMM_REF_S_H__
