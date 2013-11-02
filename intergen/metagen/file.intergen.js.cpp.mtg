@@ -44,7 +44,7 @@ $-(if irefargs?)$
 
 // forward declarations for used iref arguments
 $-[irefargs]$
-v8::Handle<v8::Object> js_$fulltype$_create_wrapper( $type$&, v8::Handle<v8::Context> );
+v8::Handle<v8::Object> js_$fulltype$_create_wrapper( const $type$&, v8::Handle<v8::Context> );
 
 $-[/irefargs]$
 $-(/if)$
@@ -93,7 +93,7 @@ $-(/if)$
         _meta.bind_formatting_stream(_fmtv8);
     }
 
-    $name$_js_dispatcher( v8::Handle<v8::Context> context, iref<$ns rest="::" after="::"$$name$>& orig ) $(if event?)$: _bound_events(false) $(/if)${
+    $name$_js_dispatcher( v8::Handle<v8::Context> context, const iref<$ns rest="::" after="::"$$name$>& orig ) $(if event?)$: _bound_events(false) $(/if)${
         _base = orig;
         _context = v8::Persistent<v8::Context>::New(context);
         _meta.bind_formatting_stream(_fmtv8);
@@ -304,13 +304,17 @@ $-(if return.type?="void" !noutargs?)$
         return;
 
 $-(/if)$
-$-[args inarg?]$
+$-[args inarg? iref.false?]$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator << for type '$basetype$'" );
 $-[/args]$
 $-(if ninargs?)$
     v8::Handle<v8::Value> __inargs[] = {
 $-[args inarg?]$
+    $-(if iref.true?)$
+        js_$fulltype$_create_wrapper($name$, _context)
+    $-(elif)$
         v8_streamer<$basetype$>(&_fmtv8, &_meta) << $name$,
+    $-(/if)$
 $-[/args]$
     };
 
@@ -759,7 +763,7 @@ $-[/ns]$
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Create JS wrapper from existing interface object
-v8::Handle<v8::Object> js_$ns rest="_" after="_"-$ $name$_create_wrapper( iref<$ns rest="::" after="::"$$name$>& orig, v8::Handle<v8::Context> context )
+v8::Handle<v8::Object> js_$ns rest="_" after="_"-$ $name$_create_wrapper( const iref<$ns rest="::" after="::"$$name$>& orig, v8::Handle<v8::Context> context )
 {
     // check that the orig points to an object
     if(!orig) return v8::Handle<v8::Object>();
