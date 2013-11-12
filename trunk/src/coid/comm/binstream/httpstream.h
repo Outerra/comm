@@ -183,7 +183,7 @@ public:
             else if( content_len == 0 ) {
                 _hdrpos = 0;
 
-                return write_token_raw("\r\n\r\n");
+                return write_token_raw("\r\n");
             }
             else {
                 _hdrpos = 0;
@@ -719,8 +719,10 @@ protected:
             );
 
         _flags |= fWSTATUS;
+        bool is_listener = (_flags & fLISTENER) != 0;
 
-        if( _flags & fLISTENER ) {
+        if(is_listener)
+        {
             _tcache << "HTTP/1.1 " << _errcode << _RESP;
             
             if(content_len)
@@ -763,7 +765,8 @@ protected:
         //
         static token _CONC( "Connection: Close\r\n" );
         static token _CONKA( "Connection: Keep-Alive\r\n" );
-        _tcache << ( _hdr->_bclose ? _CONC : _CONKA );
+        bool close = (is_listener && _hdr->_bclose) || (!is_listener && (_flags & fCLOSE_CONN)!=0);
+        _tcache << (close ? _CONC : _CONKA );
 
         if( !_opthdr.is_empty() ) {
             _tcache << _opthdr;
