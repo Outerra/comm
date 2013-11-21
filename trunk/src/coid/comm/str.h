@@ -134,8 +134,11 @@ public:
     }
 
     template<class COUNT>
-    charstr& swap( dynarray<char,COUNT>& ref )
+    charstr& swap( dynarray<char,COUNT>& ref, bool removetermzero )
     {
+        if(removetermzero && _tstr.size() > 0)
+            _tstr.resize(-1);   //remove terminating zero
+
         _tstr.swap(ref);
         if( _tstr.size() > 0  &&  _tstr[_tstr.size()-1] != 0 )
             *_tstr.add() = 0;
@@ -143,10 +146,13 @@ public:
     }
 
     template<class COUNT>
-    charstr& swap( dynarray<uchar,COUNT>& ref )
+    charstr& swap( dynarray<uchar,COUNT>& ref, bool removetermzero )
     {
+        if(removetermzero && _tstr.size() > 0)
+            _tstr.resize(-1);   //remove terminating zero
+
         uchar* p = ref.ptr();
-        ref.set_dynarray_conforming_ptr(_tstr.ptr());
+        ref.set_dynarray_conforming_ptr((uchar*)_tstr.ptr());
         _tstr.set_dynarray_conforming_ptr((char*)p);
 
         if( _tstr.size() > 0  &&  _tstr[_tstr.size()-1] != 0 )
