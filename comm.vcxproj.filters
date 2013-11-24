@@ -40,6 +40,9 @@
     <Filter Include="net">
       <UniqueIdentifier>{895d0799-3eae-458e-8efd-e542baedf2b3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="coder\lz4">
+      <UniqueIdentifier>{42c68022-4318-452e-9387-d1e5c830c712}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="atomic\atomic.cpp">
@@ -134,6 +137,15 @@
     </ClCompile>
     <ClCompile Include="net\asyncrcv.cpp">
       <Filter>net</Filter>
+    </ClCompile>
+    <ClCompile Include="coder\lz4\lz4.c">
+      <Filter>coder\lz4</Filter>
+    </ClCompile>
+    <ClCompile Include="coder\lz4\lz4hc.c">
+      <Filter>coder\lz4</Filter>
+    </ClCompile>
+    <ClCompile Include="coder\lz4\xxhash.c">
+      <Filter>coder\lz4</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -399,6 +411,15 @@
     </ClInclude>
     <ClInclude Include="net\asyncrcv.h">
       <Filter>net</Filter>
+    </ClInclude>
+    <ClInclude Include="coder\lz4\lz4.h">
+      <Filter>coder\lz4</Filter>
+    </ClInclude>
+    <ClInclude Include="coder\lz4\lz4hc.h">
+      <Filter>coder\lz4</Filter>
+    </ClInclude>
+    <ClInclude Include="coder\lz4\xxhash.h">
+      <Filter>coder\lz4</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
