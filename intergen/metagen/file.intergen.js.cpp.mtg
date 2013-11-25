@@ -234,7 +234,7 @@ $-[args outarg? !inarg?]$
     $basetype$ $name$;
 $[/args]-$
 
-    $(if return.type!="void")$$return.type$ _rval_ = $(/if)$ifc->_real()->$name$($[args rest=", "]$ $-(if nojs?)$$defval$$(elif)$$name$$base2arg$$(/if)$$[/args]$);
+    $(if return.type!="void")$$return.type$ _rval_ = $(/if)$ifc->_real()->$name$($[args rest=", "]$ $-(if ptr?)$&$(/if)$ $-(if nojs?)$$defval$$(elif)$$name$$base2arg$$(/if)$$[/args]$);
 
     //stream out
 $-(if return.type!="void")$
