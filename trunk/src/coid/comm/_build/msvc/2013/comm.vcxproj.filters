@@ -40,6 +40,9 @@
     <Filter Include="net">
       <UniqueIdentifier>{6e77811d-e79f-4ce4-a39d-9ee0d1bbafa7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="coder\lz4">
+      <UniqueIdentifier>{d018964f-d4a5-44ce-ada8-1b87570254f7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\atomic\atomic.cpp">
@@ -135,6 +138,15 @@
     <ClCompile Include="..\..\..\net\asyncrcv.cpp">
       <Filter>net</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\coder\lz4\lz4.c">
+      <Filter>coder\lz4</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\coder\lz4\lz4hc.c">
+      <Filter>coder\lz4</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\coder\lz4\xxhash.c">
+      <Filter>coder\lz4</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\atomic\atomic.h">
@@ -216,9 +228,6 @@
       <Filter>binstream</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\binstream\packstream.h">
-      <Filter>binstream</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\binstream\packstreamlzo.h">
       <Filter>binstream</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\binstream\packstreamzip.h">
@@ -399,6 +408,18 @@
     </ClInclude>
     <ClInclude Include="..\..\..\net\asyncrcv.h">
       <Filter>net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\coder\lz4\lz4.h">
+      <Filter>coder\lz4</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\coder\lz4\lz4hc.h">
+      <Filter>coder\lz4</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\coder\lz4\xxhash.h">
+      <Filter>coder\lz4</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\binstream\packstreamlz4.h">
+      <Filter>binstream</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -65,17 +65,17 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)bin\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)out\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)bin\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)out\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)bin\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)out\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)bin\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)out\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">comm64d</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">comm64</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectName)d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectName)</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectName)</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectName)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -194,6 +194,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\atomic\atomic.cpp" />
+    <ClCompile Include="..\..\..\coder\lz4\lz4.c" />
+    <ClCompile Include="..\..\..\coder\lz4\lz4hc.c" />
+    <ClCompile Include="..\..\..\coder\lz4\xxhash.c" />
     <ClCompile Include="..\..\..\crypt\sha1.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -341,7 +344,7 @@
     <ClInclude Include="..\..\..\binstream\netstreamudpbuf.h" />
     <ClInclude Include="..\..\..\binstream\nullstream.h" />
     <ClInclude Include="..\..\..\binstream\packstream.h" />
-    <ClInclude Include="..\..\..\binstream\packstreamlzo.h" />
+    <ClInclude Include="..\..\..\binstream\packstreamlz4.h" />
     <ClInclude Include="..\..\..\binstream\packstreamzip.h" />
     <ClInclude Include="..\..\..\binstream\stdstream.h" />
     <ClInclude Include="..\..\..\binstream\stlstream.h" />
@@ -349,6 +352,9 @@
     <ClInclude Include="..\..\..\binstream\txtstream.h" />
     <ClInclude Include="..\..\..\binstream\txtstreamhtml.h" />
     <ClInclude Include="..\..\..\binstring.h" />
+    <ClInclude Include="..\..\..\coder\lz4\lz4.h" />
+    <ClInclude Include="..\..\..\coder\lz4\lz4hc.h" />
+    <ClInclude Include="..\..\..\coder\lz4\xxhash.h" />
     <ClInclude Include="..\..\..\crypt\sha1.h" />
     <ClInclude Include="..\..\..\hash\hashfunc.h" />
     <ClInclude Include="..\..\..\hash\hashkeyset.h" />
