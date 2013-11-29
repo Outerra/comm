@@ -778,6 +778,18 @@ struct token
         return token();
     }
 
+    ///Cut space-separated arguments. Handles strings enclosed in '' or ""
+    token cut_left_argument()
+    {
+        skip_whitespace();
+
+        char c = first_char();
+        if(c == '\'' || c == '"')
+            return cut_left_string(0);
+
+        return cut_left(' ');
+    }
+
     ///Cut a token off, using single character as the delimiter
     token cut_left( char c, cut_trait ctr = cut_trait_remove_sep() )
     {
