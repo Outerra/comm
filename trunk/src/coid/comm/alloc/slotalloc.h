@@ -75,6 +75,10 @@ public:
         reset();
     }
 
+    void reserve( uint nitems ) {
+        _array.reserve(nitems, true);
+    }
+
     ///Insert object
     //@return pointer to the newly inserted object
     T* push( const T& v ) {
