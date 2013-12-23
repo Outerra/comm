@@ -2439,6 +2439,50 @@ COID_NAMESPACE_END
         MSTRUCT_CLOSE(m)}}
 
 
+
+
+#define COID_METABIN_OP1A(TYPE,ELEM) namespace coid {\
+    inline binstream& operator << (binstream& bin, const TYPE& v) {\
+        return bin << v[0];}\
+    inline binstream& operator >> (binstream& bin, TYPE& v) {\
+        return bin >> v[0];}\
+    inline metastream& operator << (metastream& m, const TYPE& v) {\
+        MSTRUCT_OPEN(m,#TYPE)\
+        MMAF(m,"col",ELEM,1)\
+        MSTRUCT_CLOSE(m)}}
+
+#define COID_METABIN_OP2A(TYPE,ELEM) namespace coid {\
+    inline binstream& operator << (binstream& bin, const TYPE& v) {\
+        return bin << v[0] << v[1];}\
+    inline binstream& operator >> (binstream& bin, TYPE& v) {\
+        return bin >> v[0] >> v[1];}\
+    inline metastream& operator << (metastream& m, const TYPE& v) {\
+        MSTRUCT_OPEN(m,#TYPE)\
+        MMAF(m,"col",ELEM,2)\
+        MSTRUCT_CLOSE(m)}}
+
+#define COID_METABIN_OP3A(TYPE,ELEM) namespace coid {\
+    inline binstream& operator << (binstream& bin, const TYPE& v) {\
+        return bin << v[0] << v[1] << v[2];}\
+    inline binstream& operator >> (binstream& bin, TYPE& v) {\
+        return bin >> v[0] >> v[1] >> v[2];}\
+    inline metastream& operator << (metastream& m, const TYPE& v) {\
+        MSTRUCT_OPEN(m,#TYPE)\
+        MMAF(m,"col",ELEM,3)\
+        MSTRUCT_CLOSE(m)}}
+
+#define COID_METABIN_OP4A(TYPE,ELEM) namespace coid {\
+    inline binstream& operator << (binstream& bin, const TYPE& v) {\
+        return bin << v[0] << v[1] << v[2] << v[3];}\
+    inline binstream& operator >> (binstream& bin, TYPE& v) {\
+        return bin >> v[0] >> v[1] >> v[2] >> v[3];}\
+    inline metastream& operator << (metastream& m, const TYPE& v) {\
+        MSTRUCT_OPEN(m,#TYPE)\
+        MMAF(m,"col",ELEM,4)\
+        MSTRUCT_CLOSE(m)}}
+
+
+
 ///A helper to check if a type has metastream operator defined
 /// Usage: CHECK::meta_operator_exists<T>::value
 
