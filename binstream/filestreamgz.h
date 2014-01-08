@@ -41,6 +41,8 @@
 #include "../namespace.h"
 
 #include "binstream.h"
+
+#define _LARGEFILE64_SOURCE
 #include "zlib.h"
 
 COID_NAMESPACE_BEGIN
@@ -157,12 +159,12 @@ protected:
 
     bool setpos( int64 pos )
     {
-        return -1 != gzseek(_gz, pos, SEEK_SET );
+        return -1 != gzseek64(_gz, pos, SEEK_SET );
     }
 
     int64 getpos() const
     {
-        return gztell(_gz);
+        return gztell64(_gz);
     }
 
 protected:
