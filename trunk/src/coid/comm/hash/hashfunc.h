@@ -127,52 +127,31 @@ template<bool INSENSITIVE> struct hash<const char*, INSENSITIVE>
     }
 };
 
-template<> struct hash<char> {
-    typedef char key_type;
-    uint operator()(char x) const { return x; }
-};
-template<> struct hash<unsigned char> {
-    typedef unsigned char key_type;
-    uint operator()(unsigned char x) const { return x; }
-};
-template<> struct hash<signed char> {
-    typedef signed char key_type;
-    uint operator()(unsigned char x) const { return x; }
-};
+#define DIRECT_HASH_FUNC(TYPE) template<> struct hash<TYPE> { typedef TYPE key_type;  uint operator()(TYPE x) const { return (uint)x; } }
 
-template<> struct hash<short> {
-    typedef short key_type;
-    uint operator()(short x) const { return x; }
-};
-template<> struct hash<unsigned short> {
-    typedef unsigned short key_type;
-    uint operator()(unsigned short x) const { return x; }
-};
-template<> struct hash<int> {
-    typedef int key_type;
-    uint operator()(int x) const { return x; }
-};
-template<> struct hash<unsigned int> {
-    typedef unsigned int key_type;
-    uint operator()(unsigned int x) const { return x; }
-};
-template<> struct hash<long> {
-    typedef long key_type;
-    uint operator()(long x) const { return x; }
-};
-template<> struct hash<unsigned long> {
-    typedef unsigned long key_type;
-    uint operator()(unsigned long x) const { return x; }
-};
+DIRECT_HASH_FUNC(bool);
+DIRECT_HASH_FUNC(uint8);
+DIRECT_HASH_FUNC(int8);
+DIRECT_HASH_FUNC(int16);
+DIRECT_HASH_FUNC(uint16);
+DIRECT_HASH_FUNC(int32);
+DIRECT_HASH_FUNC(uint32);
+DIRECT_HASH_FUNC(int64);
+DIRECT_HASH_FUNC(uint64);
+DIRECT_HASH_FUNC(char);
 
-template<> struct hash<int64> {
-    typedef int64 key_type;
-    uint operator()(int64 x) const { return (uint)x; }
-};
-template<> struct hash<uint64> {
-    typedef uint64 key_type;
-    uint operator()(uint64 x) const { return (uint)x; }
-};
+#ifdef SYSTYPE_WIN
+# ifdef SYSTYPE_32
+DIRECT_HASH_FUNC(ints);
+DIRECT_HASH_FUNC(uints);
+# else //SYSTYPE_64
+DIRECT_HASH_FUNC(int);
+DIRECT_HASH_FUNC(uint);
+# endif
+#elif defined(SYSTYPE_32)
+DIRECT_HASH_FUNC(long);
+DIRECT_HASH_FUNC(ulong);
+#endif
 
 
 

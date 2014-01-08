@@ -5,6 +5,7 @@ INCLUDE = -I ../..
 #STDLIBS =
 IS_LIB = 1
 IS_SHARED_LIB = 0
+CPPFLAGS = -std=c++11
 
 
 SRC2 = $(shell ls $(SRC))
