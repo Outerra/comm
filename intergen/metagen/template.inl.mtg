@@ -4,14 +4,17 @@
 
 public:
 $-[method]$
+#define rl_$name$(r$(if !static? !ptr? !iref?)$,t$(/if)$ $-[args !retarg? !sizearg?]$,p$@index$$[/args]$)\
+    rl_$name$_(__FILE__,__LINE__,r$(if !static? !ptr? !iref?)$,t$(/if)$ $-[args !retarg? !sizearg?]$,p$@index$$[/args]$)
+
     $(if templarg.nonzero?)$template<$templarg$>
     $(/if)-$
     $-(if static?)$static $(/if)-$
-$-(if name?="create")$static ref<$..class$> rl_create(
-$-(elif sizearg?)$void rl_$name$(
-$-(elif)$$rettype$ rl_$name$(
+$-(if name?="create")$static ref<$..class$> rl_create_(
+$-(elif sizearg?)$void rl_$name$_(
+$-(elif)$$rettype$ rl_$name$_(
 $-(/if)$
-        const rl_ref& rl
+        const char* __file__, int __line__, const rl_ref& rl
 $-(if !static?)-$
 $-(if !ptr? !iref?)$,
         const ref<$..class$>& that
@@ -28,14 +31,14 @@ $-(/if)$
     {
 $-(if name?="create")$
         ref<$..class$> obj = new $..class$;
-        new(rl.get()) cmd_$name$$overload$$templsub$(obj$[args !retarg? !sizearg?]$, $name$$[/args]$);
+        new(rl.get()) cmd_$name$$overload$$templsub$(__file__,__line__,obj$[args !retarg? !sizearg?]$, $name$$[/args]$);
         return obj;
 $-(elif !static?)$
-        new(rl.get()) cmd_$name$$overload$$templsub$(
+        new(rl.get()) cmd_$name$$overload$$templsub$(__file__,__line__,
         $-(if ptr?)-$this$(elif iref?)$this$(elif)$that$(/if)-$
         $-[args !retarg? !sizearg?]$, $name$$[/args]$);
 $-(elif)$
-        new(rl.get()) cmd_$name$$overload$$templsub$($[args rest=", " !retarg? !sizearg?]$$name$$[/args]$);
+        new(rl.get()) cmd_$name$$overload$$templsub$(__file__,__line__$[args !retarg? !sizearg?]$, $name$$[/args]$);
 $-(/if)$
 $(if retexpr? !sizearg?)$
         return ($rettype$)rl->add_raw($retexpr$);
@@ -87,9 +90,14 @@ $[method]$
       $-(/if)$
     $-[/args]$ 
 
+        const char* __file__;
+        int __line__;
+        
     public:
         cmd_$name$$overload$(
-$-(if !static?)$
+            const char* __file__,
+            int __line__
+$-(if !static?)$,
   $-(if ptr?)$
             $..class$* obj
   $-(elif iref?)$
@@ -99,16 +107,16 @@ $-(if !static?)$
   $-(/if)$
             $-[args !retarg? !sizearg?]-$,
             $type$$ptr$$ref$ $-(if const?)$ const$(/if)$ $name$ $-(if size?)$[$size$]$(/if)$ $-[/args]$)
-            : obj(obj) $-[args !retarg? !sizearg? !size?]$
+            : __file__(__file__), __line__(__line__), obj(obj) $-[args !retarg? !sizearg? !size?]$
             , $name$($name$) $-[/args]$ {
   $-[args size?]$
             {for( uint n=($size$),i=0; i<n; ++i )  this->$name$[i] = $name$[i];}
   $-[/args]$
         }
 $-(elif)$
-            $-[args rest="," !retarg? !sizearg?]$
+            $-[args !retarg? !sizearg?]$,
             $type$$ptr$$ref$ $-(if const?)$ const$(/if)$ $name$ $-(if size?)$[$size$]$(/if)$ $-[/args]$)
-            $[args first=":" rest="," !retarg? !sizearg? !size?]$ $name$($name$)
+            : __file__(__file__), __line__(__line__)$[args !retarg? !sizearg? !size?]$, $name$($name$)
             $[/args]${
   $-[args size?]$
             {for( uint n=($size$),i=0; i<n; ++i )  this->$name$[i] = $name$[i];}

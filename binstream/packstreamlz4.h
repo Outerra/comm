@@ -54,7 +54,7 @@ class packstreamlz4 : public packstream
 public:
     virtual ~packstreamlz4()
     {
-        if(_wrkbuf.size() > _leadbuf)
+        if(_writebuf.size() > _wlead)
             flush();
         LZ4_free(_LZ4_Data);
     }
@@ -76,14 +76,14 @@ public:
     virtual void reset_write()
     {
         _out->reset_write();
-        init_streams();
+        init_wstream();
     }
 
     virtual bool is_open() const        { return _in && _in->is_open(); }
 
     virtual void flush()
     {
-        if(_wrkbuf.size() > _leadbuf)
+        if(_writebuf.size() > _wlead)
             write_block(true);
 
         _out->flush();
@@ -98,23 +98,21 @@ public:
         return 0;
     }
 
-    packstreamlz4() : _LZ4_Data(0), _leadbuf(0)
-    {
-        init_streams();
-    }
+    packstreamlz4() : _LZ4_Data(0), _wlead(0), _rlead(0)
+    {}
     packstreamlz4( binstream* bin, binstream* bout )
-        : packstream(bin,bout), _LZ4_Data(0), _leadbuf(0)
-    {
-        init_streams();
-    }
+        : packstream(bin,bout), _LZ4_Data(0), _wlead(0), _rlead(0)
+    {}
 
     ///
     virtual opcd write_raw( const void* p, uints& len )
     {
-        while(_wrkbuf.size() + len >= BLOCKSIZE)
+        if(_outbuf.size() == 0) init_wstream();
+
+        while(_writebuf.size() + len >= BLOCKSIZE)
         {
-            uint rem = BLOCKSIZE - _wrkbuf.size();
-            ::memcpy(_wrkbuf.add(rem), p, rem);
+            uint rem = BLOCKSIZE - _writebuf.size();
+            ::memcpy(_writebuf.add(rem), p, rem);
             p = ptr_byteshift(p, rem);
             len -= rem;
 
@@ -122,7 +120,7 @@ public:
         }
 
         if(len) {
-            ::memcpy(_wrkbuf.add(len), p, len);
+            ::memcpy(_writebuf.add(len), p, len);
             len = 0;
         }
 
@@ -137,44 +135,64 @@ public:
 
 protected:
 
-    void init_streams()
+    void init_wstream()
     {
-        _wrkbuf.reserve(BLOCKSIZE, false);
+        _writebuf.reserve(BLOCKSIZE, false);
         _outbuf.alloc(LZ4_compressBound(BLOCKSIZE));
 
         if(_LZ4_Data)
             LZ4_free(_LZ4_Data);
-        _LZ4_Data = LZ4_create(_wrkbuf.ptr());
-        _leadbuf = 0;
+        _LZ4_Data = LZ4_create(_writebuf.ptr());
+        _wlead = 0;
     }
 
     void write_block( bool final )
     {
         int written = LZ4_compress_continue(_LZ4_Data,
-            _wrkbuf.ptr() + _leadbuf,
+            _writebuf.ptr() + _wlead,
             _outbuf.ptr(),
-            _wrkbuf.size() - _leadbuf);
+            _writebuf.size() - _wlead);
 
         if(written)
             _out->xwrite_raw(_outbuf.ptr(), written);
 
         if(final) {
-            _wrkbuf.reset();
-            init_streams();
+            _writebuf.reset();
+            init_wstream();
         }
         else {
             char* p = LZ4_slideInputBuffer(_LZ4_Data);
-            _leadbuf = p - _wrkbuf.ptr();
-            _wrkbuf.resize(_leadbuf);
+            _wlead = p - _writebuf.ptr();
+            _writebuf.resize(_wlead);
         }
+    }
+
+    void read_block()
+    {
+        if(_readbuf.size() == 0) {
+            _inbuf.reserve(BLOCKSIZE, false);
+            _readbuf.alloc(BLOCKSIZE);
+            _rlead = 0;
+        }
+
+        _inbuf.del(_ilead, _inbuf.size()-_ilead);
+
+        uints ts = BLOCKSIZE - _inbuf.size();
+        uints rs = ts;
+        _in->read_raw_full(_inbuf.ptre(), rs);
+        _inbuf.set_size(BLOCKSIZE - rs);
+
+        int iread = LZ4_decompress_safe_withPrefix64k(
+            _inbuf.ptr(), _readbuf.ptr()+_rlead, _inbuf.size(), _readbuf.size() - _rlead);
     }
 
 
 private:
 
-    dynarray<char> _wrkbuf, _outbuf;
+    dynarray<char> _writebuf, _outbuf;
+    dynarray<char> _readbuf, _inbuf;
     void* _LZ4_Data;
-    uint _leadbuf;
+    uint _wlead, _rlead, _ilead;
 };
 
 COID_NAMESPACE_END
