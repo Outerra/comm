@@ -88,6 +88,9 @@ bool directory::is_valid_directory( const zstring& arg )
 ////////////////////////////////////////////////////////////////////////////////
 bool directory::is_valid_file( const zstring& arg )
 {
+    if(!arg.c_str())
+        return false;
+
     xstat st;
     return _stat64(arg.c_str(), &st)==0  &&  is_regular(st.st_mode);
 }
@@ -95,6 +98,9 @@ bool directory::is_valid_file( const zstring& arg )
 ////////////////////////////////////////////////////////////////////////////////
 uint64 directory::file_size( const zstring& file )
 {
+    if(!file.c_str())
+        return 0;
+
     xstat st;
     if(_stat64(file.c_str(), &st)==0  &&  is_regular(st.st_mode))
         return st.st_size;
