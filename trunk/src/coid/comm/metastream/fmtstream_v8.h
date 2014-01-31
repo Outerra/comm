@@ -142,6 +142,8 @@ public:
     }
     
     charstr operator >> ( v8::Handle<v8::Value> src ) {
+        if(src->IsUndefined())
+            return charstr();
         v8::String::Utf8Value str(src);
         return charstr(*str, str.length());
     }

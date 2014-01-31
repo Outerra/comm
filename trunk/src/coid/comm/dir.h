@@ -147,16 +147,16 @@ public:
     static opcd delete_files( token path_and_pattern );
 
     ///copy file to open directory
-    opcd copy_file_from( const token& src, const token& name=token::empty() );
+    opcd copy_file_from( const token& src, const token& name=token() );
 
-    opcd copy_file_to( const token& dst, const token& name=token::empty() );
+    opcd copy_file_to( const token& dst, const token& name=token() );
     opcd copy_current_file_to( const token& dst );
 
 
     ///move file to open directory
-    opcd move_file_from( const zstring& src, const token& name=token::empty() );
+    opcd move_file_from( const zstring& src, const token& name=token() );
 
-    opcd move_file_to( const zstring& dst, const token& name=token::empty() );
+    opcd move_file_to( const zstring& dst, const token& name=token() );
     opcd move_current_file_to( const zstring& dst );
 
     static opcd set_file_times( const zstring& fname, timet actime, timet modtime );

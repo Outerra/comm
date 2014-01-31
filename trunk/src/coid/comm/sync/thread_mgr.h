@@ -106,7 +106,7 @@ public:
     void set_begin_end_callbacks(thread_beginend_callback begin, thread_beginend_callback end);
 
 
-    thread thread_create( void* arg, thread::fnc_entry f, void* context=0, const token& name = token::empty() )
+    thread thread_create( void* arg, thread::fnc_entry f, void* context=0, const token& name = token() )
     {
         info* i = new info;
         i->context = context;
@@ -136,7 +136,7 @@ public:
         if(pti)
             return (*pti)->name;
 
-        return token::empty();
+        return token();
     }
 
     void thread_name( thread_t tid, const token& name );

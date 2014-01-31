@@ -280,13 +280,13 @@ public:
         return m;
     }
 
-    opcd meta_stream_out( metastream& m, const token& name = token::empty() ) const
+    opcd meta_stream_out( metastream& m, const token& name = token() ) const
     {
         typename _HT::hashtable_binstream_container bc(*this);
         return m.stream_array_out(bc, name);
     }
 
-    opcd meta_stream_in( metastream& m, const token& name = token::empty() )
+    opcd meta_stream_in( metastream& m, const token& name = token() )
     {
         typename _HT::hashtable_binstream_container bc(*this, UMAXS);
         return m.stream_array_in(bc, name);

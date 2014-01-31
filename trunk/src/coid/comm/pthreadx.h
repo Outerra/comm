@@ -99,14 +99,14 @@ public:
 
 
     ///Spawn new thread, setting up this object with reference to the new thread
-    thread& create( fnc_entry f, void* arg, void* context=0, const token& name = token::empty() )
+    thread& create( fnc_entry f, void* arg, void* context=0, const token& name = token() )
     {
         _thread = create_new( f, arg, context, name );
         return *this;
     }
 
     ///Spawn new thread, returning the thread object
-    static thread create_new( fnc_entry f, void* arg, void* context=0, const token& name = token::empty() );
+    static thread create_new( fnc_entry f, void* arg, void* context=0, const token& name = token() );
 
 
     //@{ Static methods dealing with the thread currently running

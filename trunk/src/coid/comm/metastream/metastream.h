@@ -250,7 +250,7 @@ public:
 
     ///Read object of type T from the currently bound formatting stream
     template<class T>
-    opcd stream_in( T& x, const token& name = token::empty() )
+    opcd stream_in( T& x, const token& name = token() )
     {
         opcd e;
         try {
@@ -265,7 +265,7 @@ public:
 
     ///Read object of type T from the currently bound formatting stream into the cache
     template<class T>
-    opcd cache_in( const token& name = token::empty() )
+    opcd cache_in( const token& name = token() )
     {
         opcd e;
         try {
@@ -277,14 +277,14 @@ public:
 
     ///Write object of type T to the currently bound formatting stream
     template<class T>
-    opcd stream_out( const T& x, const token& name = token::empty() )
+    opcd stream_out( const T& x, const token& name = token() )
     {
         return stream_or_cache_out( x, false, name );
     }
 
     ///Write object of type T to the cache
     template<class T>
-    opcd cache_out( const T& x, const token& name = token::empty() )
+    opcd cache_out( const T& x, const token& name = token() )
     {
         return stream_or_cache_out( x, true, name );
     }
@@ -292,7 +292,7 @@ public:
     ///Write object of type T to the currently bound formatting stream
     ///@param cache true if the object should be trapped in the cache instead of sending it out through the formatting stream
     template<class T>
-    opcd stream_or_cache_out( const T& x, bool cache, const token& name = token::empty() )
+    opcd stream_or_cache_out( const T& x, bool cache, const token& name = token() )
     {
         opcd e;
         try {
@@ -315,7 +315,7 @@ public:
 
     ///Read array of objects of type T from the currently bound formatting stream
     template<class T, class COUNT>
-    opcd stream_array_in( binstream_containerT<T,COUNT>& C, const token& name = token::empty() )
+    opcd stream_array_in( binstream_containerT<T,COUNT>& C, const token& name = token() )
     {
         opcd e;
         try {
@@ -330,7 +330,7 @@ public:
 
     ///Read array of objects of type T from the currently bound formatting stream into the cache
     template<class T>
-    opcd cache_array_in( const token& name = token::empty(), uints n=UMAXS )
+    opcd cache_array_in( const token& name = token(), uints n=UMAXS )
     {
         opcd e;
         try {
@@ -342,14 +342,14 @@ public:
 
     ///Write array of objects of type T to the currently bound formatting stream
     template<class T, class COUNT>
-    opcd stream_array_out( binstream_containerT<T,COUNT>& C, const token& name = token::empty() )
+    opcd stream_array_out( binstream_containerT<T,COUNT>& C, const token& name = token() )
     {
         return stream_or_cache_array_out(C,false,name);
     }
 
     ///Write array of objects of type T to the currently bound formatting stream
     template<class T, class COUNT>
-    opcd cache_array_out( binstream_containerT<T,COUNT>& C, bool cache=false, const token& name = token::empty() )
+    opcd cache_array_out( binstream_containerT<T,COUNT>& C, bool cache=false, const token& name = token() )
     {
         return stream_or_cache_array_out(C,true,name);
     }
@@ -357,7 +357,7 @@ public:
     ///Write array of objects of type T to the currently bound formatting stream
     ///@param cache true if the array should be trapped in the cache instead of sending it out through the formatting stream
     template<class T, class COUNT>
-    opcd stream_or_cache_array_out( binstream_containerT<T,COUNT>& C, bool cache, const token& name = token::empty() )
+    opcd stream_or_cache_array_out( binstream_containerT<T,COUNT>& C, bool cache, const token& name = token() )
     {
         opcd e;
         try {
@@ -373,7 +373,7 @@ public:
 
     ///Read container of objects of type T from the currently bound formatting stream
     template<class CONT>
-    opcd stream_container_in( CONT& C, const token& name = token::empty() )
+    opcd stream_container_in( CONT& C, const token& name = token() )
     {
         typedef typename binstream_adapter_writable<CONT>::TBinstreamContainer     BC;
 
@@ -383,7 +383,7 @@ public:
 
     ///Read container of objects of type T from the currently bound formatting stream into the cache
     template<class CONT>
-    opcd cache_container_in( CONT& C, const token& name = token::empty() )
+    opcd cache_container_in( CONT& C, const token& name = token() )
     {
         typedef typename binstream_adapter_writable<CONT>::TBinstreamContainer     BC;
 
@@ -393,7 +393,7 @@ public:
 
     ///Write container of objects of type T to the currently bound formatting stream
     template<class CONT>
-    opcd stream_container_out( CONT& C, const token& name = token::empty() )
+    opcd stream_container_out( CONT& C, const token& name = token() )
     {
         typedef typename binstream_adapter_readable<CONT>::TBinstreamContainer     BC;
 
@@ -403,7 +403,7 @@ public:
 
     ///Write container of objects of type T to the cache
     template<class CONT>
-    opcd cache_container_out( CONT& C, const token& name = token::empty() )
+    opcd cache_container_out( CONT& C, const token& name = token() )
     {
         typedef typename binstream_adapter_readable<CONT>::TBinstreamContainer     BC;
 
@@ -413,19 +413,19 @@ public:
 
 
     template<class T>
-    void xstream_in( T& x, const token& name = token::empty() )
+    void xstream_in( T& x, const token& name = token() )
     {   opcd e = stream_in(x,name);  if(e) throw exception(e); }
 
     template<class T>
-    void xcache_in( T& x, const token& name = token::empty() )
+    void xcache_in( T& x, const token& name = token() )
     {   opcd e = cache_in(x,name);  if(e) throw exception(e); }
 
     template<class T>
-    void xstream_out( T& x, const token& name = token::empty() )
+    void xstream_out( T& x, const token& name = token() )
     {   opcd e = stream_out(x,name);  if(e) throw exception(e); }
 
     template<class T>
-    void xcache_out( T& x, const token& name = token::empty() )
+    void xcache_out( T& x, const token& name = token() )
     {   opcd e = stream_out(x,name);  if(e) throw exception(e); }
 
 

@@ -49,6 +49,7 @@
 
 #include <ctype.h>
 #include <math.h>
+#include <iosfwd>
 
 
 //Define TOKEN_SUPPORT_WSTRING before including the token.h to support wstring
@@ -213,8 +214,6 @@ struct token
             _pte = _ptr + n;
     }
 
-
-    static token empty()                    { static token _tk(0,(const char*)0);  return _tk; }
 
     static const token& TK_whitespace()     { static token _tk(" \t\n\r");  return _tk; }
     static const token& TK_newlines()       { static token _tk("\n\r");  return _tk; }
@@ -1697,7 +1696,7 @@ struct token
             return token(_ptr+n, _pte);
         }
         
-        return empty();
+        return token();
     }
 
     //@return part of the token before a substring
@@ -2121,7 +2120,7 @@ struct token
     {
         struct tm tmm;
 
-        opcd e = todate( tmm, token::empty() );
+        opcd e = todate( tmm, token() );
         if(e)  return e;
 
     #ifdef SYSTYPE_MSVC
@@ -2348,11 +2347,6 @@ inline string_hash::string_hash(const token& tok)
 }
 
 
-
-
-
-
-
 ////////////////////////////////////////////////////////////////////////////////
 
 ///Wrapper class for providing zero-terminated strings to os api funcions
@@ -2388,9 +2382,20 @@ public:
 };
 
 
-
-
 COID_NAMESPACE_END
 
-#endif //__COID_COMM_TOKEN__HEADER_FILE__
 
+////////////////////////////////////////////////////////////////////////////////
+
+// STL IOS interop
+
+namespace std {
+
+ostream& operator << (ostream& ost, const coid::token& tok);
+ostringstream& operator << (ostringstream& ost, const coid::token& tok);
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+#endif //__COID_COMM_TOKEN__HEADER_FILE__
