@@ -1,5 +1,4 @@
 
-
 #ifdef _WIN32
 
 #define TOKEN_SUPPORT_WSTRING
@@ -10,7 +9,6 @@
     #define WIN32_LEAN_AND_MEAN
 #endif
 #include <windows.h>
-//#include <crtdefs.h>
 
 COID_NAMESPACE_BEGIN
 
@@ -78,6 +76,40 @@ COID_NAMESPACE_END
 #include "str.h"
 #include "pthreadx.h"
 #include "atomic/stack_base.h"
+
+///////////////////////////////////////////////////////////////////////////////
+
+#include <sstream>
+
+namespace std {
+
+ostream& operator << (ostream& ost, const coid::charstr& str)
+{
+    ost.write(str.c_str(), str.len());
+    return ost;
+}
+
+ostringstream& operator << (ostringstream& ost, const coid::charstr& str)
+{
+    ost.write(str.c_str(), str.len());
+    return ost;
+}
+
+ostream& operator << (ostream& ost, const coid::token& str)
+{
+    ost.write(str.ptr(), str.len());
+    return ost;
+}
+
+ostringstream& operator << (ostringstream& ost, const coid::token& str)
+{
+    ost.write(str.ptr(), str.len());
+    return ost;
+}
+
+} //namespace std
+
+///////////////////////////////////////////////////////////////////////////////
 
 COID_NAMESPACE_BEGIN
 

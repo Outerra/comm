@@ -22,7 +22,7 @@ $(if !comments.empty?)$$[comments]-$
 $[/comments]$$(/if)-$
     //@param scriptpath path to js script to bind to
     static iref<$..ns rest="::"$::$..name$> $name$( const script_handle& script
-        $-[args]$, $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$, const coid::token& bindvar = coid::token::empty(), v8::Handle<v8::Context>* ctx=0 )
+        $-[args]$, $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$, const coid::token& bindvar = coid::token(), v8::Handle<v8::Context>* ctx=0 )
     {
         typedef iref<$..ns rest="::"$::$..name$> (*fn_bind)(const script_handle&$[args]$, $type$$[/args]$, const coid::token&, v8::Handle<v8::Context>*);
         static fn_bind binder = 0;

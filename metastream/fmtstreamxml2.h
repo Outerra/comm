@@ -751,8 +751,7 @@ protected:
             DASSERT(0);
         }
 
-        static token empty = token::empty();
-        return empty;
+        return token();
     }
 
     void close_previous_tag( bool end_attr_mode )

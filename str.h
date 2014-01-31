@@ -82,8 +82,6 @@ public:
 
     charstr() {}
 
-    static charstr empty()  { return charstr(); }
-
     //void * operator new (size_t size)   { return (charstr*) SINGLETON(segchunk_manager).alloc_hook(); }
     //void operator delete (void * ptr)   { SINGLETON(segchunk_manager).free_hook(ptr); }
 
@@ -1908,8 +1906,10 @@ inline binstream& operator >> (binstream &out, token& x)
     RASSERT(0);
     return out;
 }
-/*
+
 ////////////////////////////////////////////////////////////////////////////////
+
+/*
 ///Wrappers for making key-type out of std charstr and token classes
 namespace bstype {
 
@@ -2070,5 +2070,20 @@ struct command_tokens
 };
 
 COID_NAMESPACE_END
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+// STL IOS interop
+
+namespace std {
+
+ostream& operator << (ostream& ost, const coid::charstr& str);
+ostringstream& operator << (ostringstream& ost, const coid::charstr& str);
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 
 #endif //__COID_COMM_CHARSTR__HEADER_FILE__

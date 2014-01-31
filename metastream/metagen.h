@@ -1156,16 +1156,16 @@ inline token metagen::Varx::write_buf( metagen& mg, const dynarray<Attribute>* a
         else {
             VarxElement element;
             uints n = element.first(*this);
-            if(!n) return token::empty();
+            if(!n) return token();
 
             static const token first = "first";
             static const token rest = "rest";
             static const token after = "after";
 
             ints i;
-            const token& prefix = attr && (i=attr->containsT(first))>=0 ? (*attr)[i].value.value : token::empty();
-            const token& infix  = attr && (i=attr->containsT(rest)) >=0 ? (*attr)[i].value.value : token::empty();
-            const token& suffix = attr && (i=attr->containsT(after))>=0 ? (*attr)[i].value.value : token::empty();
+            const token& prefix = attr && (i=attr->containsT(first))>=0 ? (*attr)[i].value.value : token();
+            const token& infix  = attr && (i=attr->containsT(rest)) >=0 ? (*attr)[i].value.value : token();
+            const token& suffix = attr && (i=attr->containsT(after))>=0 ? (*attr)[i].value.value : token();
 
             buf << prefix;
 

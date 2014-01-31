@@ -5,6 +5,8 @@
 #include "comm/metastream/fmtstreamcxx.h"
 #include "comm/metastream/fmtstreamxml2.h"
 
+#include <sstream>
+
 namespace coid {
 
 struct STLMIX {
@@ -39,6 +41,12 @@ struct STLMIX {
 
 void test()
 {
+    {
+    token t = "fashion";
+    std::ostringstream ost;
+    ost << t;
+    }
+
     //binstream out and in test
 
     bofstream bof("stl.test");

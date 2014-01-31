@@ -405,7 +405,7 @@ public:
     //@param trailset optional character set to match after the first character from the
     /// set was found. This can be used to allow different characters after the first
     /// letter matched
-    int def_group( const token& name, const token& set, const token& trailset = token::empty() )
+    int def_group( const token& name, const token& set, const token& trailset = token() )
     {
         uint g = (uint)_grpary.size();
 
@@ -2413,7 +2413,7 @@ protected:
     struct root_block : block_rule
     {
         root_block()
-        : block_rule(token::empty(),WMAX)
+        : block_rule(token(),WMAX)
         { stbenabled = UMAX64; }
     };
 
@@ -3065,7 +3065,7 @@ protected:
             // return special terminating token if we are in ignore mode
             // or there is nothing in the buffer and in input
             if( ignore || (off==0 && _last.tokbuf.len()>0) )
-                return token::empty();
+                return token();
         }
 
         // if there was something in the buffer, append this to it
@@ -3104,7 +3104,7 @@ protected:
             // return special terminating token if we are in ignore mode
             // or there is nothing in the buffer and in input
             if( ignore || (off==0 && _last.tokbuf.len()>0) )
-                return token::empty();
+                return token();
         }
 
         // if there was something in the buffer, append this to it

@@ -172,7 +172,7 @@ public:
 			"INFO: ",
 			"DEBUG: ",
 		};
-        static token empty = token::empty();
+        static token empty = token();
 
 		return t<Last ? st[t] : empty;
 	}

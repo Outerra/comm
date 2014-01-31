@@ -375,7 +375,7 @@ public:
         @note with formdata==true, content-type will be "multipart/form-data; boundary=_mime_"
          and @a mime should contain the boundary string separator
     **/
-    opcd send_file( const charstr& file, const token& mime, bool formdata=false, const token& filename=token::empty() )
+    opcd send_file( const charstr& file, const token& mime, bool formdata=false, const token& filename=token() )
     {
         if( (_flags & fWSTATUS) != 0 )
             return ersUNAVAILABLE;  //another write in progress

@@ -30,6 +30,7 @@ void float_test()
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
 {
+    coid::test();
     //test_malloc();
 
     metastream_test3();
