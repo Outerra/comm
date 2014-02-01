@@ -89,19 +89,7 @@ ostream& operator << (ostream& ost, const coid::charstr& str)
     return ost;
 }
 
-ostringstream& operator << (ostringstream& ost, const coid::charstr& str)
-{
-    ost.write(str.c_str(), str.len());
-    return ost;
-}
-
 ostream& operator << (ostream& ost, const coid::token& str)
-{
-    ost.write(str.ptr(), str.len());
-    return ost;
-}
-
-ostringstream& operator << (ostringstream& ost, const coid::token& str)
 {
     ost.write(str.ptr(), str.len());
     return ost;

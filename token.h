@@ -2392,7 +2392,6 @@ COID_NAMESPACE_END
 namespace std {
 
 ostream& operator << (ostream& ost, const coid::token& tok);
-ostringstream& operator << (ostringstream& ost, const coid::token& tok);
 
 }
 
