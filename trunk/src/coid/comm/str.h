@@ -2079,7 +2079,6 @@ COID_NAMESPACE_END
 namespace std {
 
 ostream& operator << (ostream& ost, const coid::charstr& str);
-ostringstream& operator << (ostringstream& ost, const coid::charstr& str);
 
 }
 

@@ -43,8 +43,10 @@ void test()
 {
     {
     token t = "fashion";
+    const char* v = "test";
+
     std::ostringstream ost;
-    ost << t;
+    ost << t << v;
     }
 
     //binstream out and in test

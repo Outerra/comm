@@ -751,7 +751,8 @@ protected:
             DASSERT(0);
         }
 
-        return token();
+        static token empty;
+        return empty;
     }
 
     void close_previous_tag( bool end_attr_mode )
