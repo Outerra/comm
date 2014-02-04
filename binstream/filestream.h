@@ -181,7 +181,7 @@ public:
             else if( attr[0] == 'c' )  flg |= O_CREAT;
             else if( attr[0] == 't' || attr[0] == '-' )  flg |= O_TRUNC;
             else if( attr[0] == 'a' || attr[0] == '+' )  flg |= O_APPEND;
-            //else if( m[0] == 'n' )  flg |= O_NONBLOCK;
+            else if( attr[0] == 'b' );  //ignored - always binary mode
             else if( attr[0] != ' ' )
                 return ersINVALID_PARAMS;
 
