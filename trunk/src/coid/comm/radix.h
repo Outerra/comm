@@ -69,6 +69,16 @@ template<
 >
 class radixi
 {
+    static const int NB = sizeof(INT_DAT);
+
+    uints _aucnts[NB][256];
+    uchar _min[NB], _max[NB];
+
+    dynarray<INT_IDX> _puidx;
+    INT_IDX* _puidxa;
+    INT_IDX* _puidxb;
+    GETINT  _getint;
+
 public:
     radixi() {
         memset(_aucnts, 0, sizeof(_aucnts) );
@@ -257,40 +267,23 @@ private:
     {
         uints nit = _puidx.size() >> 1;
 
-        _min[0] = _min[1] = _min[2] = _min[3] = 255;
-        _max[0] = _max[1] = _max[2] = _max[3] = 0;
+        ::memset(_min, 255, sizeof(_min));
+        ::memset(_max,   0, sizeof(_max));
 
         for( uints i=0; i<nit; ++i )
         {
             INT_DAT v = _getint( psrc[i] );
 
-            count_val(0, v);
-
-            if(sizeof(INT_DAT) > 1)
-                count_val(1, v>>8);
-
-            if(sizeof(INT_DAT) > 2) {
-                count_val(2, v>>16);
-                count_val(3, v>>24);
-            }
+            for(int b=0; b<NB; ++b)
+                count_val(b, uint8(v>>(8*b)));
         }
     }
 
-    void count_val( uchar i, uchar v ) {
+    void count_val( uint8 i, uint8 v ) {
         ++_aucnts[i][v];
         _min[i] = uint_min(_min[i], v);
         _max[i] = uint_max(_max[i], v);
     }
-
-private:
-
-    uints _aucnts[4][256];
-    uchar _min[4], _max[4];
-
-    dynarray<INT_IDX> _puidx;
-    INT_IDX* _puidxa;
-    INT_IDX* _puidxb;
-    GETINT  _getint;
 };
 
 

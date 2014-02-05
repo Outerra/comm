@@ -1,5 +1,7 @@
 
 #include "../str.h"
+#include "../radix.h"
+
 
 namespace coid {
 void test();
@@ -30,6 +32,8 @@ void float_test()
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
 {
+    coid::radixi<uint64, uint, uint64> rx;
+
     coid::test();
     //test_malloc();
 
