@@ -32,7 +32,9 @@ void float_test()
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
 {
+    uint64 stuff[] = {7000, 45, 2324, 11, 0, 222};
     coid::radixi<uint64, uint, uint64> rx;
+    const uint* idx = rx.sort(true, stuff, sizeof(stuff)/sizeof(stuff[0]));
 
     coid::test();
     //test_malloc();

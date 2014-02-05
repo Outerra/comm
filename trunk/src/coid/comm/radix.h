@@ -72,7 +72,7 @@ class radixi
     static const int NB = sizeof(INT_DAT);
 
     uints _aucnts[NB][256];
-    uchar _min[NB], _max[NB];
+    uint8 _min[NB], _max[NB];
 
     dynarray<INT_IDX> _puidx;
     INT_IDX* _puidxa;
@@ -120,14 +120,8 @@ public:
 
         count_frequency(psort);
 
-        useindex |= _sort(psort, 0, ascending, useindex);
-        useindex |= _sort(psort, 8, ascending, useindex);
-        
-        if(sizeof(INT_DAT) > 2)
-        {
-            useindex |= _sort(psort, 16, ascending, useindex);
-            useindex |= _sort(psort, 24, ascending, useindex);
-        }
+        for(int b=0; b<NB; ++b)
+            useindex |= _sort(psort, 8*b, ascending, useindex);
 
         if(!useindex) {
             for( uint i=0; i<nitems; ++i ) 
@@ -213,8 +207,8 @@ private:
     template<class CONTAINER>
     bool _sort( const CONTAINER& psrc, uints uoffs, bool ascending, bool useindex )
     {
-        uchar vmin = _min[uoffs >> 3];
-        uchar vmax = _max[uoffs >> 3];
+        uint8 vmin = _min[uoffs >> 3];
+        uint8 vmax = _max[uoffs >> 3];
         uints* count = _aucnts[uoffs >> 3];
 
         if( vmin == vmax ) { //nothing to do
@@ -243,7 +237,7 @@ private:
 
         if(useindex) {
             for( uints i=0; i<nit; ++i ) {
-                uchar k = (_getint( psrc[_puidxa[i]] )
+                uint8 k = (_getint( psrc[_puidxa[i]] )
                     >> uoffs) & 0xff;
                 _puidxb[audsti[k]] = _puidxa[i];
                 ++audsti[k];
@@ -251,7 +245,7 @@ private:
         }
         else {
             for( uints i=0; i<nit; ++i ) {
-                uchar k = (_getint( psrc[i] )
+                uint8 k = (_getint( psrc[i] )
                     >> uoffs) & 0xff;
                 _puidxb[audsti[k]] = (INT_IDX)i;
                 ++audsti[k];
