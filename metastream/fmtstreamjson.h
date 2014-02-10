@@ -73,11 +73,11 @@ public:
 
     ~fmtstreamjson()
     {
-        if(_sesinitr)
+        /*if(_sesinitr)
             acknowledge();
 
         if(_sesinitw)
-            flush();
+            flush();*/
     }
 
     void init( binstream* br, binstream* bw )
