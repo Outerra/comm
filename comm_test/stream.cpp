@@ -69,7 +69,7 @@ void test()
     bif >> t >> y;
     bif.close();
 
-    ::free((void*)t);
+    //::free((void*)t);
 
     
     //metastream out and in test
