@@ -36,7 +36,7 @@ int main( int argc, char* argv[] )
     coid::radixi<uint64, uint, uint64> rx;
     const uint* idx = rx.sort(true, stuff, sizeof(stuff)/sizeof(stuff[0]));
 
-    coid::test();
+    //coid::test();
     //test_malloc();
 
     metastream_test3();
