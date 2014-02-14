@@ -59,10 +59,11 @@ struct MetaDesc
 
         dynarray<uchar> defval;         ///< default value for reading if not found in input stream
         bool nameless_root;             ///< true if the variable is a nameless root
+        bool obsolete;                  ///< variable is only read, not written
 
 
         Var()
-            : desc(0), nameless_root(false)
+            : desc(0), nameless_root(false), obsolete(false)
         {}
 
         bool is_array() const           { return desc->is_array(); }
@@ -135,18 +136,29 @@ struct MetaDesc
     ///Get first member
     Var* first_child() const
     {
-        //DASSERT( children.size() > 0 );
-        return (Var*)children.ptr();
+        Var* c = (Var*)children.ptr();
+        Var* l = children.last();
+        while(c<=l && c->obsolete)
+            ++c;
+
+        return c>l ? 0 : c;
     }
 
     ///Get next member from given one
     Var* next_child( Var* c ) const
     {
         if(!c)  return 0;
+        
+        Var* l = children.last();
 
-        DASSERT( c>=children.ptr() && c<=children.last() );
-        if( !c || c >= children.last() )  return 0;
-        return c+1;
+        DASSERT( c>=children.ptr() && c<=l );
+        if( !c || c >= l )  return 0;
+
+        ++c;
+        while(c<=l && c->obsolete)
+            ++c;
+
+        return c>l ? 0 : c;
     }
 
     ///Linear search for specified member
