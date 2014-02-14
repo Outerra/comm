@@ -104,7 +104,8 @@ public:
 
         _hook.set_meta( *this );
 
-        _dometa = 0;
+        _dometa = false;
+        _obsolete = false;
         _fmtstreamwr = _fmtstreamrd = 0;
     }
 
@@ -233,7 +234,7 @@ public:
         if( !meta_find(type) )
             return ersNOT_FOUND;
 
-        return prepare_type_final<R>(name,cache);
+        return prepare_type_final<R>(name, cache);
     }
 
     template<int R, class T>
@@ -244,7 +245,7 @@ public:
         meta_array(n);
         *this << *(const T*)0;     // build description
 
-        return prepare_type_final<R>(name,cache);
+        return prepare_type_final<R>(name, cache);
     }
 
 
@@ -562,7 +563,7 @@ public:
     //@{ meta_* functions deal with building the description tree
 protected:
 
-    MetaDesc::Var* meta_fill_parent_variable( MetaDesc* d, bool is_hidden=false )
+    MetaDesc::Var* meta_fill_parent_variable( MetaDesc* d )
     {
         MetaDesc::Var* var;
 
@@ -574,6 +575,7 @@ protected:
         else
             var = _current_var->add_child( d, _cur_variable_name );
 
+        var->obsolete = _obsolete;
         _cur_variable_name.set_empty();
 
         return var;
@@ -661,6 +663,17 @@ public:
         _cur_streamto_fnc = &binstream::streamfunc<B>::to_stream;
 
         *this << *(const B*)this;
+    }
+
+    template<class T>
+    void meta_variable_obsolete( const token& varname, const T* v )
+    {
+        bool old = _obsolete;
+        _obsolete = true;
+
+        meta_variable<T>(varname, v);
+
+        _obsolete = old;
     }
 
     ///Define member array variable
@@ -982,7 +995,6 @@ private:
     };
 
     ////////////////////////////////////////////////////////////////////////////////
-    bool _dometa;                       ///< true if shoud stream metadata, false if only the values
 
     StructureMap _map;
     charstr _err;
@@ -1013,6 +1025,9 @@ private:
 
     dynarray<charstr> _templ_name_stack;
     bool _templ_arg_rdy;
+
+    bool _dometa;                       ///< true if shoud stream metadata, false if only the values
+    bool _obsolete;                     ///< true if var being defined is obsolete (read, don't write)
 
     bool _beseparator;                  ///< true if separator between members should be read or written
 
@@ -2240,8 +2255,12 @@ protected:
         if( _cachestack.size() == 0 )
             return false;
 
+        MetaDesc::Var* parvar = parent_var();
+        if(_current->var != parvar)
+            return false;
+
         //get child map
-        MetaDesc* par = parent_var()->desc;
+        MetaDesc* par = parvar->desc;
 
         uints k = par->get_child_pos(_curvar.var) * sizeof(uints);
         if( _current->valid_addr(k) )
@@ -2310,6 +2329,8 @@ inline type_holder<T> get_type_holder(T*) {
 #define MMD(meta, n, v, d)          { meta.meta_variable(n,&(v)); meta.meta_cache_default( coid::get_type_holder(&(v)) = d ); }
 #define MMTD(meta, n, t, d)         { meta.meta_variable<t>(n,0); meta.meta_cache_default( coid::get_type_holder<t>(0) = d ); }
 #define MMDS(meta, n, v)            { meta.meta_variable(n,&(v)); meta.meta_cache_default_stream( *coid::get_type_holder(&(v)) ); }
+
+#define MMT_OBSOLETE(meta, n, t)    { meta.meta_variable_obsolete<t>(n,0); }
 
 #define MMAT(meta, n, t)            { meta.meta_variable_array<t>(n,0,UMAXS); }
 #define MMAF(meta, n, t, s)         { meta.meta_variable_array<t>(n,0,s); }
