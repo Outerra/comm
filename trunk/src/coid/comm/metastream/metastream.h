@@ -255,12 +255,10 @@ public:
     {
         opcd e;
         try {
-            e = prepare_type<READ_MODE>( x, name, false );
-            if(e) return e;
-
-            _hook >> x;
+            xstream_in(x, name);
         }
-        catch(opcd ee) {e=ee;}
+        catch(opcd ee) {e = ee;}
+        catch(exception&) {e = ersEXCEPTION;}
         return e;
     }
 
@@ -270,9 +268,10 @@ public:
     {
         opcd e;
         try {
-            e = prepare_type<READ_MODE>( *(const T*)0, name, true );
+            xcache_in<T>(name);
         }
-        catch(opcd ee) {e=ee;}
+        catch(opcd ee) {e = ee;}
+        catch(exception&) {e = ersEXCEPTION;}
         return e;
     }
 
@@ -297,13 +296,10 @@ public:
     {
         opcd e;
         try {
-            e = prepare_type<WRITE_MODE>( x, name, cache );
-            if(e) return e;
-
-            if(!cache)
-                _hook << x;
+            xstream_or_cache_out(x, cache, name);
         }
-        catch(opcd ee) {e=ee;}
+        catch(opcd ee) {e = ee;}
+        catch(exception&) {e = ersEXCEPTION;}
         return e;
     }
 
@@ -326,6 +322,7 @@ public:
             return _hook.read_array(C);
         }
         catch(opcd ee) {e=ee;}
+        catch(exception&) {e = ersEXCEPTION;}
         return e;
     }
 
@@ -338,6 +335,7 @@ public:
             e = prepare_type_array<READ_MODE>( *(const T*)0, n, name, true );
         }
         catch(opcd ee) {e=ee;}
+        catch(exception&) {e = ersEXCEPTION;}
         return e;
     }
 
@@ -368,7 +366,8 @@ public:
             if(!cache)
                 return _hook.write_array(C);
         }
-        catch(opcd ee) {e=ee;}
+        catch(opcd ee) {e = ee;}
+        catch(exception&) {e = ersEXCEPTION;}
         return e;
     }
 
@@ -415,19 +414,37 @@ public:
 
     template<class T>
     void xstream_in( T& x, const token& name = token() )
-    {   opcd e = stream_in(x,name);  if(e) throw exception(e); }
+    {
+        opcd e = prepare_type<READ_MODE>( x, name, false );
+        if(e) throw exception(e);
+
+        _hook >> x;
+    }
 
     template<class T>
-    void xcache_in( T& x, const token& name = token() )
-    {   opcd e = cache_in(x,name);  if(e) throw exception(e); }
+    void xcache_in( const token& name = token() )
+    {
+        opcd e = prepare_type<READ_MODE>(*(const T*)0, name, true);
+        if(e) throw exception(e);
+    }
+
+    template<class T>
+    void xstream_or_cache_out( const T& x, bool cache, const token& name = token() )
+    {
+        opcd e = prepare_type<WRITE_MODE>(x, name, cache);
+        if(e) throw exception(e);
+
+        if(!cache)
+            _hook << x;
+    }
 
     template<class T>
     void xstream_out( T& x, const token& name = token() )
-    {   opcd e = stream_out(x,name);  if(e) throw exception(e); }
+    { xstream_or_cache_out(x, false, name); }
 
     template<class T>
     void xcache_out( T& x, const token& name = token() )
-    {   opcd e = stream_out(x,name);  if(e) throw exception(e); }
+    { xstream_or_cache_out(x, true, name); }
 
 
     void stream_acknowledge( bool eat = false )
