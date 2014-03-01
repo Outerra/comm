@@ -86,7 +86,7 @@ char* append_float( char* dst, char* dste, double d, int nfrac )
         if(e < 0)
         {
         //fractional numbers
-			if(nfrac < 0) {
+			if(nfrac <= 0) {
 				roundshift = anfrac;
             }
 			else if(nch+e < anfrac)     //won't have nfrac digits, convert to exponential form
