@@ -336,6 +336,7 @@
     <ClInclude Include="str.h" />
     <ClInclude Include="strgen.h" />
     <ClInclude Include="substring.h" />
+    <ClInclude Include="tests\tests.h" />
     <ClInclude Include="token.h" />
     <ClInclude Include="tokenizer.h" />
     <ClInclude Include="trait.h" />
@@ -464,6 +465,7 @@
     <ClCompile Include="log\logger.cpp" />
     <ClCompile Include="regex\regcomp.cpp" />
     <ClCompile Include="regex\regexec.cpp" />
+    <ClCompile Include="tests\tests.cpp" />
     <ClCompile Include="txtconv.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

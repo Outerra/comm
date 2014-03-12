@@ -43,6 +43,9 @@
     <Filter Include="coder\lz4">
       <UniqueIdentifier>{9f5df711-2002-4eb1-8416-86eaa53b8916}</UniqueIdentifier>
     </Filter>
+    <Filter Include="tests">
+      <UniqueIdentifier>{40928546-e32f-446c-adc0-8ee96a76df39}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="atomic\atomic.h">
@@ -351,6 +354,9 @@
     <ClInclude Include="coder\lz4\xxhash.h">
       <Filter>coder\lz4</Filter>
     </ClInclude>
+    <ClInclude Include="tests\tests.h">
+      <Filter>tests</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="crypt\sha1.cpp">
@@ -454,6 +460,9 @@
     </ClCompile>
     <ClCompile Include="coder\lz4\xxhash.c">
       <Filter>coder\lz4</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\tests.cpp">
+      <Filter>tests</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
