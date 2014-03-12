@@ -9,6 +9,7 @@ namespace coid {
         void example_dynarray_queue();
         void example_list_queue();
         void example_ref_counting();
+        void example_threads();
 
     } //end of namespace test
 } // end of namespace coid

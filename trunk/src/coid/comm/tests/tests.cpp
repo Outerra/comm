@@ -2,6 +2,7 @@
 
 #include "../dynarray.h"
 #include "../list.h"
+#include "../pthreadx.h"
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
@@ -10,6 +11,7 @@ void coid::test::run_all()
     example_dynarray_queue();
     example_list_queue();
     example_ref_counting();
+    example_threads();
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -107,6 +109,37 @@ void coid::test::example_ref_counting()
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+volatile uint init = 0;
+coid::thread_event init_evt;
 
+void* thread_fnc(void *arg)
+{
+    DASSERT(arg == reinterpret_cast<void*>(0xbaadf00d));
+
+    uint counter = 0;
+
+    init_evt.signal();
+    init++;
+
+    while(!coid::thread::self_should_cancel()) {
+        counter++;
+        coid::sysMilliSecondSleep(10);
+    }
+
+    return 0;
+}
+
+void coid::test::example_threads()
+{
+    coid::thread t;
+
+    t.create(thread_fnc, (void*)0xbaadf00d, 0, "test thread");
+
+    while(!init_evt.try_wait()) {
+        coid::sysMilliSecondSleep(10);
+    }
+
+    t.cancel_and_wait(1000);
+}
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
