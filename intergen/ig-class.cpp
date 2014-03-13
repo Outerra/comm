@@ -202,6 +202,7 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                     MethodIG* m = ifc->event.add();
 
                     m->comments.takeover(commlist);
+                    m->binternal = binternal>0;
                     m->bimplicit = bimplicit;
 
                     if(bimplicit) {
