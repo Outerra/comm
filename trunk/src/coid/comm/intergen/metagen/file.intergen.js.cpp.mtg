@@ -289,7 +289,7 @@ $(/if)-$
 }
 
 $-[/method]$
-$-[event]$
+$-[event !internal?]$
 ////////////////////////////////////////////////////////////////////////////////
 $return.type$ $..name$_js_dispatcher::$name$($[args rest="," after=" "]$ $type$ $name$$size$$[/args]$)
 {
