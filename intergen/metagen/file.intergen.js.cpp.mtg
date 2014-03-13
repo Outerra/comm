@@ -289,10 +289,13 @@ $(/if)-$
 }
 
 $-[/method]$
-$-[event !internal?]$
+$-[event]$
 ////////////////////////////////////////////////////////////////////////////////
 $return.type$ $..name$_js_dispatcher::$name$($[args rest="," after=" "]$ $type$ $name$$size$$[/args]$)
 {
+$-(if internal?)$
+    throw coid::exception("method not marked for scripting");
+$-(elif)$
     v8::Context::Scope context_scope(_context);
     v8::HandleScope __handle_scope;
     v8::TryCatch __trycatch;
@@ -368,6 +371,7 @@ $(/if)-$
 $-(if return.type!="void")$
 
     return _rval_;
+$-(/if)$
 $-(/if)$
 }
 
