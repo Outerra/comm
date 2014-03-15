@@ -19,7 +19,7 @@ $-[/ns]$
 
 ////////////////////////////////////////////////////////////////////////////////
 $-(if !comments.empty?)$$[comments]$
-//$@value$
+$@value$
 $-[/comments]$$(/if)$
 class $name$
     : public $(if base?)$$base$$(elif)$intergen_interface$(/if)$
@@ -68,7 +68,7 @@ $-(/if)$
 
 $-[method static?]$
 $(if !comments.empty?)$$[comments]-$
-    //$@value$
+    $@value$
 $[/comments]$$(/if)-$
     static iref<$..name$> $name$(
         $-[args rest="," after=" "]$ $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$) {
@@ -83,7 +83,7 @@ $-[/method]$
 
 $-[method !static? !destroy?]$
 $(if !comments.empty?)$$[comments]-$
-    //$@value$
+    $@value$
 $[/comments]$$(/if)-$
     $(if ..virtual?)$virtual $(/if)$$return.type$ $name$($[args rest="," after=" "]$ $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$) $-(if const?)$ const$(/if)$;
 $[/method]-$
@@ -91,8 +91,8 @@ $[/method]-$
     // --- interface events ---
 
 $-[event !static?]$
-$(if !comments.empty?)$$[comments]-$
-    //$@value$
+$(if !comments.empty?)$$[comments]$
+    $@value$
 $[/comments]$$(/if)-$
     virtual $return.type$ $name$($[args rest="," after=" "]$ $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$)
     $-(if return.type?="void")$ {}$(elif)$ {throw coid::exception("handler not implemented");}$(/if)$

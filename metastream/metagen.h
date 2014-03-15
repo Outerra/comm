@@ -68,7 +68,7 @@ class metagen //: public binstream
     {
         int IDENT,NUM,DQSTRING,STEXT;
 
-        virtual void on_error_prefix( bool rules, charstr& dst, int line )
+        virtual void on_error_prefix( bool rules, charstr& dst, int line ) override
         {
             if(!rules) {
                 uint c;
