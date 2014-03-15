@@ -18,7 +18,7 @@ class iglexer : public lexer
 {
 public:
     int IDENT,NUM,CURLY,ROUND,SQUARE,ANGLE,SQSTRING,DQSTRING,RLCMD,IGKWD;
-    int IFC1,IFC2,SLCOM;
+    int IFC1,IFC2,SLCOM,MLCOM;
 
     static const token MARK;
     static const token MARKP;

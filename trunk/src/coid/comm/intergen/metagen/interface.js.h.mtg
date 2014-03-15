@@ -18,7 +18,7 @@ public:
 $-[method static?]$
 
 $(if !comments.empty?)$$[comments]-$
-    //$@value$
+    $@value$
 $[/comments]$$(/if)-$
     //@param scriptpath path to js script to bind to
     static iref<$..ns rest="::"$::$..name$> $name$( const script_handle& script

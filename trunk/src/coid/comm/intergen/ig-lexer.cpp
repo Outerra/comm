@@ -44,7 +44,7 @@ iglexer::iglexer()
     IFC1 = def_block( "ifc1", "//ifc{", "//}ifc", "" );
     IFC2 = def_block( "ifc2", "/*ifc{", "}ifc*/", "" );
 
-    def_block( ".blkcomment", "/*", "*/", "" );
+    MLCOM = def_block( ".blkcomment", "/*", "*/", "" );
 
     ANGLE = def_block( "!angle", "<", ">", "angle .comment .blkcomment" );    //by default disabled
     SQUARE = def_block( "!square", "[", "]", "square .comment .blkcomment" );
@@ -61,12 +61,29 @@ int iglexer::find_method( const token& classname, dynarray<charstr>& commlist )
     uint nv=0;
 
     do {
-        if(matches(SLCOM)) {
-            last().swap_to_string( commlist.get_or_add(nv++) );
+        ignore(MLCOM, false);
+        int c = matches_either(SLCOM,MLCOM);
+        if(c == 2)
+            complete_block();
+        ignore(MLCOM, true);
+
+        if(c) {
+            charstr& txt = commlist.get_or_add(nv++);
+            txt.reset();
+
+            token t = last().tok;
+            char k = t.first_char();
+
+            if(c == 2 && (k == '*' || k == '!'))
+                txt << "/*" << t << "*/";
+            else if(c == 1 && (k == '/' || k == '@' || k == '!'))
+                txt << "//" << t;
+
             continue;
         }
-        else if(matches(RLCMD))
+        else if(matches(RLCMD)) {
             return tok.termid+1;
+        }
         else if(matches(IGKWD)) {
             commlist.resize(nv);
             return -1-tok.termid;
