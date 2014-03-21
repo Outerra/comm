@@ -147,6 +147,9 @@
     <ClCompile Include="..\..\..\coder\lz4\xxhash.c">
       <Filter>coder\lz4</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\interface.cpp">
+      <Filter>cxx</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\atomic\atomic.h">
@@ -421,5 +424,7 @@
     <ClInclude Include="..\..\..\binstream\packstreamlz4.h">
       <Filter>binstream</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\dbg_location.h" />
+    <ClInclude Include="..\..\..\interface.h" />
   </ItemGroup>
 </Project>
