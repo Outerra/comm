@@ -201,6 +201,7 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <ClCompile Include="interface.cpp" />
     <ClCompile Include="metastream\metastream.cpp" />
     <ClCompile Include="alloc\_malloc.c" />
     <ClCompile Include="alloc\alloc.cpp" />
@@ -354,11 +355,13 @@
     <ClInclude Include="coder\lz4\lz4hc.h" />
     <ClInclude Include="coder\lz4\xxhash.h" />
     <ClInclude Include="crypt\sha1.h" />
+    <ClInclude Include="dbg_location.h" />
     <ClInclude Include="hash\hashfunc.h" />
     <ClInclude Include="hash\hashkeyset.h" />
     <ClInclude Include="hash\hashmap.h" />
     <ClInclude Include="hash\hashset.h" />
     <ClInclude Include="hash\hashtable.h" />
+    <ClInclude Include="interface.h" />
     <ClInclude Include="intergen\ifc.h" />
     <ClInclude Include="intergen\ifc.js.h" />
     <ClInclude Include="metastream\fmtstream.h" />
