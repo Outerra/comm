@@ -1072,6 +1072,94 @@ public:
         return *this;
     }
 
+    ///Append token encoded in base64
+    void append_encode_base64( token str )
+    {
+        static const char* table_ = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+        char* buf = alloc_append_buf(((str.len()+2)/3) * 4);
+
+        while(str.len() >= 3)
+        {
+            uint w = (str._ptr[0] << 16) | (str._ptr[1] << 8) | str._ptr[2];
+            str.shift_start(3);
+
+            *buf++ = table_[uint8((w>>18)&0x3f)];
+            *buf++ = table_[uint8((w>>12)&0x3f)];
+            *buf++ = table_[uint8((w>> 6)&0x3f)];
+            *buf++ = table_[uint8( w     &0x3f)];
+        }
+
+        if(str.len() == 1)    //2 bytes missing
+        {
+            uint w = (str._ptr[0] << 16);
+            *buf++ = table_[uint8((w>>18)&0x3f)];
+            *buf++ = table_[uint8((w>>12)&0x3f)];
+            *buf++ = '=';
+            *buf++ = '=';
+        }
+        else if(str.len() == 2)
+        {
+            uint w = (str._ptr[0] << 16) | (str._ptr[1] << 8);
+            *buf++ = table_[uint8((w>>18)&0x3f)];
+            *buf++ = table_[uint8((w>>12)&0x3f)];
+            *buf++ = table_[uint8((w>> 6)&0x3f)];
+            *buf++ = '=';
+        }
+    }
+
+    ///Append token decoded from base64
+    bool append_decode_base64( token str )
+    {
+        int na = ((str.len()+3)/4) * 3;
+        char* buf = alloc_append_buf(na);
+
+        int cut=0;
+        uint r=0, n=4;
+        while(!str.is_empty())
+        {
+            char c = *str._ptr++;
+            --n;
+
+            if( c >= 'A' && c <= 'Z' )      r |= (c-'A')<<(n*6);
+            else if( c >= 'a' && c <= 'z' ) r |= (c-'a'+26)<<(n*6);
+            else if( c >= '0' && c <= '9' ) r |= (c-'0'+2*26)<<(n*6);
+            else if( c == '+' )             r |= 62<<(n*6);
+            else if( c == '/' )             r |= 63<<(n*6);
+            else if( c == '=' ) {
+                //end of input
+                const char* pe = str._ptr + n;
+                if(n > 1 || str._pte != pe) {
+                    resize(-na);
+                    return false; //malformed input
+                }
+                cut = n==0 ? 1 : 2;
+                n = 0;
+                str._ptr = pe;
+            }
+            else {
+                resize(-na);
+                return false; //unrecognized char
+            }
+
+            if(n == 0) {
+                *buf++ = r >> 16;
+                *buf++ = (r >> 8) & 0xff;
+                *buf++ = r & 0xff;
+                n = 4;
+                r = 0;
+            }
+        }
+
+        if(n < 4) {
+            resize(-na);
+            return false; //truncated input
+        }
+
+        if(cut)
+            resize(-cut);
+        return true;
+    }
+
 
     ///Append binary data converted to escaped hexadecimal string
     //@param src source memory buffer
