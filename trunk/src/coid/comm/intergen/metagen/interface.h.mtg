@@ -91,7 +91,7 @@ $[/method]-$
     // --- interface events ---
 
 $-[event !static?]$
-$(if !comments.empty?)$$[comments]$
+$(if !comments.empty?)$$[comments]-$
     $@value$
 $[/comments]$$(/if)-$
     virtual $return.type$ $name$($[args rest="," after=" "]$ $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$)
