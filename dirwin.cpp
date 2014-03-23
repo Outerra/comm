@@ -118,6 +118,16 @@ bool directory::is_entry_directory() const
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+bool directory::is_entry_subdirectory() const
+{
+    if(!is_entry_directory()) return false;
+
+    static token up = "..";
+    token name = get_last_file_name_token();
+    return name != '.' && name != up;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 bool directory::is_entry_regular() const
 {
     return (_S_IFREG & _st.st_mode) != 0;
