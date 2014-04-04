@@ -86,7 +86,7 @@ namespace atomic {
 		DASSERT(sizeof(coid::int32) == 4 && sizeof(long) == 4);
 #if defined(__GNUC__)
 		return __sync_add_and_fetch(ptr, static_cast<coid::int32>(1));
-#elif defined(WIN32)
+#elif defined(SYSTYPE_WIN)
 		return _InterlockedIncrement(reinterpret_cast<volatile long*>(ptr));
 #endif
 	}
@@ -100,7 +100,7 @@ namespace atomic {
 		DASSERT(sizeof(coid::int32) == 4 && sizeof(long) == 4);
 #if defined(__GNUC__)
 		return __sync_sub_and_fetch(ptr, static_cast<coid::int32>(1));
-#elif defined(WIN32)
+#elif defined(SYSTYPE_WIN)
 		return _InterlockedDecrement(reinterpret_cast<volatile long*>(ptr));
 #endif
 	}
@@ -115,7 +115,7 @@ namespace atomic {
 		DASSERT(sizeof(coid::int32) == 4 && sizeof(long) == 4);
 #if defined(__GNUC__)
 		return __sync_fetch_and_add(ptr, val);
-#elif defined(WIN32)
+#elif defined(SYSTYPE_WIN)
 		return _InterlockedExchangeAdd(
 			reinterpret_cast<volatile long*>(ptr), val);
 #endif
@@ -132,7 +132,7 @@ namespace atomic {
 		DASSERT(sizeof(coid::int32) == 4 && sizeof(long) == 4);
 #if defined(__GNUC__)
 		return __sync_val_compare_and_swap(ptr, cmp, val);
-#elif defined(WIN32)
+#elif defined(SYSTYPE_WIN)
 		return _InterlockedCompareExchange(
 			reinterpret_cast<volatile long*>(ptr), val, cmp);
 #endif
@@ -144,7 +144,7 @@ namespace atomic {
 		DASSERT(sizeof(coid::int32) == 4 && sizeof(long) == 4);
 #if defined(__GNUC__)
 		return __sync_bool_compare_and_swap(ptr, cmp, val);
-#elif defined(WIN32)
+#elif defined(SYSTYPE_WIN)
 		return _InterlockedCompareExchange(
 			reinterpret_cast<volatile long*>(ptr), val, cmp) == cmp;
 #endif
@@ -156,7 +156,7 @@ namespace atomic {
 		DASSERT(sizeof(coid::int64) == 8);
 #if defined(__GNUC__)
 		return __sync_val_compare_and_swap(ptr, cmp, val);
-#elif defined(WIN32)
+#elif defined(SYSTYPE_WIN)
 		return _InterlockedCompareExchange64(
 			reinterpret_cast<volatile coid::int64*>(ptr), val, cmp);
 #endif
@@ -168,7 +168,7 @@ namespace atomic {
 		DASSERT(sizeof(coid::int64) == 8);
 #if defined(__GNUC__)
 		return __sync_bool_compare_and_swap(ptr, cmp, val);
-#elif defined(WIN32)
+#elif defined(SYSTYPE_WIN)
 		return _InterlockedCompareExchange64(
 			reinterpret_cast<volatile coid::int64*>(ptr), val, cmp) == cmp;
 #endif
@@ -181,7 +181,7 @@ namespace atomic {
 		DASSERT(sizeof(coid::int64) == 8);
 #if defined(__GNUC__)
 		return (coid::int64*)__sync_bool_compare_and_swap((__int128_t*)ptr, (__int128_t*)cmp, (__int128_t(valh)<<64)+vall);
-#elif defined(WIN32)
+#elif defined(SYSTYPE_WIN)
 		return _InterlockedCompareExchange128(
 			ptr, 
 			valh,
@@ -198,7 +198,7 @@ namespace atomic {
 			reinterpret_cast<volatile ints*>(pdst),
 			reinterpret_cast<ints>(pcmp), 
 			reinterpret_cast<ints>(pval)));
-#elif defined(WIN32)
+#elif defined(SYSTYPE_WIN)
 		return reinterpret_cast<void*>(_InterlockedCompareExchange(
 			reinterpret_cast<volatile long *>(pdst),
 			reinterpret_cast<long>(pval),
@@ -213,7 +213,7 @@ namespace atomic {
 			reinterpret_cast<volatile ints*>(pdst),
 			reinterpret_cast<ints>(pcmp), 
 			reinterpret_cast<ints>(pval));
-#elif defined(WIN32)
+#elif defined(SYSTYPE_WIN)
 		return _InterlockedCompareExchange(
 			reinterpret_cast<volatile long *>(pdst),
 			reinterpret_cast<long>(pval),
@@ -227,7 +227,7 @@ namespace atomic {
 	{
 #if defined(__GNUC__)
 		return __sync_lock_test_and_set(ptr, val);
-#elif defined(WIN32)
+#elif defined(SYSTYPE_WIN)
 		return _InterlockedExchange(reinterpret_cast<volatile long*>(ptr), val);
 #endif
 	}
@@ -236,7 +236,7 @@ namespace atomic {
 	{
 #if defined(__GNUC__)
 		return __sync_lock_test_and_set(ptr, val);
-#elif defined(WIN32)
+#elif defined(SYSTYPE_WIN)
 		return _InterlockedExchange(reinterpret_cast<volatile long*>(ptr), val);
 #endif
 	}
@@ -246,7 +246,7 @@ namespace atomic {
 	{
 #if defined(__GNUC__)
 		return __sync_lock_test_and_set(ptr, val);
-#elif defined(WIN32)
+#elif defined(SYSTYPE_WIN)
 		return _InterlockedExchange64(ptr, val);
 #endif
 	}
@@ -255,7 +255,7 @@ namespace atomic {
 	{
 #if defined(__GNUC__)
 		return __sync_lock_test_and_set(ptr, val);
-#elif defined(WIN32)
+#elif defined(SYSTYPE_WIN)
 		return _InterlockedExchange64(reinterpret_cast<volatile __int64*>(ptr), val);
 #endif
 	}
@@ -269,7 +269,7 @@ namespace atomic {
 	{
 #if defined(__GNUC__)
 		return __sync_fetch_and_and(ptr, val);
-#elif defined(WIN32)
+#elif defined(SYSTYPE_WIN)
 		return _InterlockedAnd64(ptr, val);
 #endif
 	}
@@ -283,7 +283,7 @@ namespace atomic {
 	{
 #if defined(__GNUC__)
 		return __sync_fetch_and_and(ptr, val);
-#elif defined(WIN32)
+#elif defined(SYSTYPE_WIN)
 		return _InterlockedAnd(
 			reinterpret_cast<volatile long*>(ptr), val);
 #endif
@@ -293,7 +293,7 @@ namespace atomic {
 	{
 #if defined(__GNUC__)
 		return __sync_fetch_and_and(ptr, val);
-#elif defined(WIN32)
+#elif defined(SYSTYPE_WIN)
 		return _InterlockedAnd16(ptr, val);
 #endif
 	}
@@ -302,7 +302,7 @@ namespace atomic {
 	{
 #if defined(__GNUC__)
 		return __sync_fetch_and_and(ptr, val);
-#elif defined(WIN32)
+#elif defined(SYSTYPE_WIN)
 		return _InterlockedAnd8(
             reinterpret_cast<volatile char*>(ptr), val);
 #endif
@@ -325,7 +325,7 @@ namespace atomic {
 	{
 #if defined(__GNUC__)
 		return __sync_fetch_and_or(ptr, val);
-#elif defined(WIN32)
+#elif defined(SYSTYPE_WIN)
 		return _InterlockedOr64(ptr, val);
 #endif
 	}
@@ -339,7 +339,7 @@ namespace atomic {
 	{
 #if defined(__GNUC__)
 		return __sync_fetch_and_or(ptr, val);
-#elif defined(WIN32)
+#elif defined(SYSTYPE_WIN)
 		return _InterlockedOr(
 			reinterpret_cast<volatile long*>(ptr), val);
 #endif
@@ -349,7 +349,7 @@ namespace atomic {
 	{
 #if defined(__GNUC__)
 		return __sync_fetch_and_or(ptr, val);
-#elif defined(WIN32)
+#elif defined(SYSTYPE_WIN)
 		return _InterlockedOr16(ptr, val);
 #endif
 	}
@@ -358,7 +358,7 @@ namespace atomic {
 	{
 #if defined(__GNUC__)
 		return __sync_fetch_and_or(ptr, val);
-#elif defined(WIN32)
+#elif defined(SYSTYPE_WIN)
 		return _InterlockedOr8(
             reinterpret_cast<volatile char*>(ptr), val);
 #endif
@@ -381,7 +381,7 @@ namespace atomic {
 	{
 #if defined(__GNUC__)
 		return __sync_fetch_and_xor(ptr, val);
-#elif defined(WIN32)
+#elif defined(SYSTYPE_WIN)
 		return _InterlockedXor64(ptr, val);
 #endif
 	}
@@ -395,7 +395,7 @@ namespace atomic {
 	{
 #if defined(__GNUC__)
 		return __sync_fetch_and_xor(ptr, val);
-#elif defined(WIN32)
+#elif defined(SYSTYPE_WIN)
 		return _InterlockedXor(
 			reinterpret_cast<volatile long*>(ptr), val);
 #endif
@@ -405,7 +405,7 @@ namespace atomic {
 	{
 #if defined(__GNUC__)
 		return __sync_fetch_and_xor(ptr, val);
-#elif defined(WIN32)
+#elif defined(SYSTYPE_WIN)
 		return _InterlockedXor16(ptr, val);
 #endif
 	}
@@ -414,7 +414,7 @@ namespace atomic {
 	{
 #if defined(__GNUC__)
 		return __sync_fetch_and_xor(ptr, val);
-#elif defined(WIN32)
+#elif defined(SYSTYPE_WIN)
 		return _InterlockedXor8(
             reinterpret_cast<volatile char*>(ptr), val);
 #endif
