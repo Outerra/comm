@@ -2332,11 +2332,15 @@ inline type_holder<T> get_type_holder(T*) {
     @def MM(meta,n,v)   specify member metadata providing member name
     @def MMT(meta,n,t)  specify member metadata providing member type
     @def MMP(meta,n,t)  specify a pointer-type member
+
     @def MMD(meta,n,d)  specify member metadata providing a default value of member type
     @def MMTD(meta,n,d) specify member metadata providing a default value of specified type
     @def MMDS(meta,n)   specify member metadata, with default value obtained by streaming defaults from a nullstream
+
     @def MMAT(meta,n,t) specify that member is an array of type \a t
     @def MMAF(meta,n,t,s) specify that member is a fixed size array of type \a t, written by binstream.write_linear_array
+
+    @def MMT_OBSOLETE(meta,n,t) an obsolete member that should be read but not written. @note: must not be present in binstream operators
 **/
 #define MSTRUCT_OPEN(meta, n)       if( !meta.meta_struct_open(n) ) {
 #define MM(meta, n, v)              { meta.meta_variable(n,&(v)); }
