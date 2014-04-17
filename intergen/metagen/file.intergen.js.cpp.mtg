@@ -184,7 +184,7 @@ $-[method !static? !destroy? !internal? !operator?]$
 ////////////////////////////////////////////////////////////////////////////////
 v8::Handle<v8::Value> $..name$_js_dispatcher::v8_$name$$@index$(const v8::Arguments& args)
 {
-    if(args.Length() != $ninargs_nondef$)  //in/inout arguments
+    if(args.Length() < $ninargs_nondef$ || args.Length() > $ninargs$)  //in/inout arguments
         return v8::ThrowException(v8::String::New("Wrong number of arguments"));
 
     v8::HandleScope _handle_scope_;
@@ -664,7 +664,7 @@ $-(if !internal?)$
 ///Creator methods for access from JS
 v8::Handle<v8::Value> $..name$_js_dispatcher::v8creator_$name$$@order$(const v8::Arguments& args, interface_context* ifc)
 {
-    if(args.Length() != 1+$ninargs$)  //fnc name + in/inout arguments
+    if(args.Length() < 1+$ninargs_nondef$ || args.Length() > 1+$ninargs$)  //fnc name + in/inout arguments
         return v8::ThrowException(v8::String::New("Wrong number of arguments"));
 
     v8::HandleScope _handle_scope_;
