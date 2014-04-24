@@ -92,6 +92,12 @@ public:
         return new(p) T;
     }
 
+    ///Add new object, uninitialized
+    T* add_uninit() {
+        T* p = alloc(0);
+        return p;
+    }
+
     ///Delete object in the container
     void del( T* p )
     {
