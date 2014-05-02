@@ -48,8 +48,9 @@ struct script_handle
 {
     ///Provide path or direct script
     //@param is_path true if path_or_script is a path to the script file, false if it's the script itself
-    script_handle( const coid::token& path_or_script, bool is_path )
-    : _str(path_or_script), _is_path(is_path)
+    //@param context 
+    script_handle( const coid::token& path_or_script, bool is_path, v8::Handle<v8::Context> context = v8::Handle<v8::Context>() )
+    : _str(path_or_script), _is_path(is_path), _context(context)
     {}
 
     script_handle( v8::Handle<v8::Context> context )
@@ -60,10 +61,10 @@ struct script_handle
     : _is_path(true)
     {}
 
-    void set( const coid::token& path_or_script, bool is_path ) {
-        _context.Clear();
+    void set( const coid::token& path_or_script, bool is_path, v8::Handle<v8::Context> context = v8::Handle<v8::Context>() ) {
         _str = path_or_script;
         _is_path = is_path;
+        _context = context;
     }
 
     void set( v8::Handle<v8::Context> context ) {
@@ -80,9 +81,10 @@ struct script_handle
     const coid::token& prefix() const { return _prefix; }
 
 
-    bool is_context() const { return !_context.IsEmpty(); }
     bool is_path() const { return _is_path; }
-    bool is_script() const { return !_str.is_null() && !_is_path; }
+    bool is_script() const { return !_is_path && !_str.is_null(); }
+    bool is_context() const { return _str.is_null(); }
+    bool has_context() const { return !_context.IsEmpty(); }
     
     
     const coid::token& str() const {

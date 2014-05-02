@@ -595,7 +595,7 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
     bool extctx = !context.IsEmpty();
     
     if(!extctx) {
-        if(script.is_context())
+        if(script.has_context())
             context = script.context();
         else
             context = v8::Context::New();
@@ -604,17 +604,10 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
     v8::Context::Scope context_scope(context);
     ifc->_context = v8::Persistent<v8::Context>::New(context);
 
-    //if(!script.is_context())
-    //    context->Global()->Set(v8::String::NewSymbol("$$query_interface"), v8::FunctionTemplate::New(&v8query_interface)->GetFunction());
-
     if(extctx || script.is_context()) {
-        //ifc = $..ns rest="::" after="::"$$..name$::$name$($[args rest=", " after=", "]$$name$$[/args]$new $..name$_js_dispatcher(context));
-        
         ifc->_object = v8::Persistent<v8::Object>::New(ifc->create_interface_object(false));
     }
     else {
-        //ifc = $..ns rest="::" after="::"$$..name$::$name$($[args rest=", " after=", "]$$name$$[/args]$new $..name$_js_dispatcher(context_per));
-
         coid::token script_tok, script_path;
         coid::charstr script_tmp;
         if(script.is_path()) {
@@ -647,9 +640,6 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
         ifc->_script = v8::Persistent<v8::Script>::New(compiled_script);
         ifc->_object = v8::Persistent<v8::Object>::New(ifc->create_interface_object(false));
     }
-
-    //if(extref)
-    //    extref.swap(ifc->_extref);
 
     if(bindname)
         context->Global()->Set(v8::String::New(bindname.ptr(), bindname.len()), ifc->_object);
