@@ -143,17 +143,23 @@ public:
             return new(append_new_items(1)) T;
         }
         else if(id > _array.size()) {
-            //insert extra items into the free queue
+            //insert extra items
             uints n = id - _array.size();
             T* p = append_new_items(n+1);
-            
+/*
             T** punused = &_unused;
             T* unused = _unused;
             for(uint i=0; i<n; ++i) {
                 *punused = p + i;
                 punused = reinterpret_cast<T**>(p+i);
             }
-            *punused = unused;
+            *punused = unused;*/
+
+            for(uints i=0; i<n; ++i) {
+                ++_count;
+                new(p+i) T;
+            }
+
             ++_count;
             return new(p+n) T;
         }
