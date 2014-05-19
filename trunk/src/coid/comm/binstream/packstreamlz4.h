@@ -40,8 +40,11 @@
 #include "../namespace.h"
 
 #include "packstream.h"
+
+extern "C" {
 #include "../coder/lz4/lz4.h"
 //#include "../coder/lz4/lz4hc.h"
+}
 
 COID_NAMESPACE_BEGIN
 

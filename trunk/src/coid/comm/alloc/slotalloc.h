@@ -98,6 +98,13 @@ public:
         return p;
     }
 
+    //@return id of the next object that will be allocated with add/push methods
+    uints get_next_id() const {
+        return _unused != reinterpret_cast<const T*>(this)
+            ? _unused - _array.ptr()
+            : _array.size();
+    }
+
     ///Delete object in the container
     void del( T* p )
     {
@@ -130,7 +137,6 @@ public:
     }
 
     ///Get a particular free slot
-    //@note 
     T* get_or_create( uints id ) {
         if(id == _array.size()) {
             ++_count;
@@ -268,6 +274,9 @@ private:
             ++_count;
             return punused;
         }
+
+        if(id)
+            *id = _array.size();
 
         ++_count;
         return append_new_items(1);
