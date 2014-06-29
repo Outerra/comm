@@ -177,7 +177,7 @@ public:
     struct lextoken
     {
         token   tok;                    ///< value string, points to input string or to tokbuf
-        token   outok;                  ///< vlaue string, points to string includng its leading and trailing delimiters
+        token   outok;                  ///< value string, points to string includng its leading and trailing delimiters
         int     id;                     ///< token id (group type or string type)
         int     termid;                 ///< terminator id, for strings or blocks with multiple trailing sequences, or keyword id for keywords
         int     state;                  ///< >0 leading, <0 trailing, =0 chunked
@@ -204,6 +204,27 @@ public:
 
         //@return true if this is end-of-file token
         bool end() const                { return id == 0; }
+
+        //@return leading token of matched sequence, string or block
+        const charstr& leading_token( lexer& lex ) const {
+            static charstr empty;
+            if(id >= 0) return empty;
+
+            const sequence* seq = lex._stbary[-id-1];
+            return seq->leading;
+        }
+
+        //@return trailing token of matched string or block
+        const charstr& trailing_token( lexer& lex ) const {
+            static charstr empty;
+            if(id >= 0) return empty;
+
+            const sequence* seq = lex._stbary[-id-1];
+            if(!seq->is_block() && !seq->is_string())
+                return empty;
+
+            return static_cast<const stringorblock*>(seq)->trailing[termid].seq;
+        }
 
         //@return true if this is leading token of specified sequence
         bool leading(int i) const       { return state>0 && id==i; }
@@ -2498,7 +2519,7 @@ protected:
 
         //default sizes
         BASIC_UTF8_CHARS            = 128,
-        BINSTREAM_BUFFER_SIZE       = 256,
+        BINSTREAM_BUFFER_SIZE       = 8192,
     };
 
 

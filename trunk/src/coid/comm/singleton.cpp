@@ -51,6 +51,7 @@ struct GlobalSingleton
 {
     GlobalSingleton() {
         last = 0;
+        count = 0;
         shutting_down = false;
     }
 
@@ -64,10 +65,13 @@ struct GlobalSingleton
         k->next = last;
 
         last = k;
+        ++count;
     }
 
     void destroy()
     {
+        uint n = count;
+
 		if(last) {
 #ifdef _DEBUG
             memtrack_shutdown();
@@ -82,7 +86,7 @@ struct GlobalSingleton
 				Kill* tmp = last->next;
 
 #ifdef _DEBUG
-				tof << "destroying '" << last->type << "' singleton created at "
+				tof << (n--) << " destroying '" << last->type << "' singleton created at "
 					<< last->file << ":" << last->line << "\r\n";
 				tof.flush();
 #endif
@@ -120,6 +124,8 @@ private:
 
     _comm_mutex mx;
     Kill* last;
+
+    uint count;
 
     bool shutting_down;
 };
