@@ -2622,8 +2622,7 @@ protected:
             off = count_notescape(off);
             if( off >= _tok.len() )
             {
-                uint outsize = sr.leading.len();
-                uint nkeep = _tok.len() + outsize;
+                uint nkeep = _tok.len();
                 //off = nkeep;
 
                 if( !_bin || nkeep == fetch_page(nkeep, false) )
@@ -2650,8 +2649,6 @@ protected:
 
                     throw lexception(_err, _errtext);
                 }
-                else
-                    _last.outok._ptr = _tok._ptr - outsize;
 
                 continue;
             }
@@ -2749,8 +2746,7 @@ protected:
             off = count_notleading(off);
             if( off >= _tok.len() )
             {
-                uint outsize = br.leading.len();
-                uint nkeep = _tok.len() + outsize;
+                uint nkeep = _tok.len();
                 //off = nkeep;
 
                 if( !_bin || nkeep == fetch_page(nkeep, false) )
@@ -2775,8 +2771,6 @@ protected:
 
                     throw lexception(_err, _errtext);
                 }
-                else
-                    _last.outok._ptr = _tok._ptr - outsize;
 
                 continue;
             }
