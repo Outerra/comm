@@ -2601,7 +2601,11 @@ protected:
             off = count_notescape(off);
             if( off >= _tok.len() )
             {
-                if( !_bin || off == fetch_page(off, false) )
+                uint outsize = sr.leading.len();
+                uint nkeep = _tok.len() + outsize;
+                //off = nkeep;
+
+                if( !_bin || nkeep == fetch_page(nkeep, false) )
                 {
                     //end of input
 
@@ -2625,6 +2629,8 @@ protected:
 
                     throw lexception(_err, _errtext);
                 }
+                else
+                    _last.outok._ptr = _tok._ptr - outsize;
 
                 continue;
             }
@@ -2663,7 +2669,7 @@ protected:
                 if(er->replfn)
                 {
                     //a function was provided for translation, we should prefetch as much data as possible
-                    fetch_page(_tok.len(), false);
+                    fetch_page(off, false);
 
                     replaced = er->replfn( _tok, _last.tokbuf );
 
@@ -2722,7 +2728,11 @@ protected:
             off = count_notleading(off);
             if( off >= _tok.len() )
             {
-                if( !_bin || 0 == fetch_page(off=0, false) )
+                uint outsize = br.leading.len();
+                uint nkeep = _tok.len() + outsize;
+                //off = nkeep;
+
+                if( !_bin || nkeep == fetch_page(nkeep, false) )
                 {
                     //verify if the trailing set contains empty string, which would mean
                     // that end of file is a valid terminator of the block
@@ -2744,6 +2754,8 @@ protected:
 
                     throw lexception(_err, _errtext);
                 }
+                else
+                    _last.outok._ptr = _tok._ptr - outsize;
 
                 continue;
             }
@@ -3128,12 +3140,15 @@ protected:
     uints fetch_page( uints nkeep, bool ignore )
     {
         //save skipped data to buffer if there is already something or if instructed to do so
-        uints old = _tok.len() - nkeep;
+        ints old = _tok.len() - nkeep;
+        ints pold = old>0 ? old : 0;
+        ints mold = old<0 ? -old : 0;
+
         if( _last.tokbuf.len() > 0  ||  !ignore )
-            _last.tokbuf.add_from( _tok.ptr(), old );
+            _last.tokbuf.add_from( _tok.ptr(), pold );
 
         if(!_bin) {
-            _tok.shift_start( _tok.len() - nkeep );
+            _tok.shift_start(pold);
             return nkeep;
         }
 
@@ -3145,24 +3160,29 @@ protected:
             _lines_last = _lines_processed;
             _rawpos = _rawlast = _lines_last;
         }
-        else if( _tok.ptr() + old > _lines_processed )
+        else if( _tok.ptr() + pold > _lines_processed )
         {
-            count_newlines(_tok.ptr() + old);
+            count_newlines(_tok.ptr() + pold);
             _lines_processed = _binbuf.ptr();
-            _lines_last = _binbuf.ptr() - int(_tok.ptr() + old - _lines_last);
+            _lines_last = _binbuf.ptr() - int(_tok.ptr() + pold - _lines_last);
         }
 
-        _rawpos -= old;
-        _rawlast -= old;
+        _rawpos -= pold;
+        _rawlast -= pold;
 
         if(nkeep)
             xmemcpy( _binbuf.ptr(), _tok.ptr() + old, nkeep );
 
-        uints rl = BINSTREAM_BUFFER_SIZE - nkeep;
+        uints BS = _binbuf.size();
+        if(nkeep >= BS) 
+            _binbuf.resize(BS = 2*BS);
+
+        uints rl = BS - nkeep;
         uints rla = rl;
         opcd e = _bin->read_raw_full( _binbuf.ptr()+nkeep, rla );
 
-        _tok.set( _binbuf.ptr(), rl-rla+nkeep );
+        uint size = rl-rla+nkeep-mold;
+        _tok.set( _binbuf.ptr()+mold, size );
 
         static const token BOM = "\xEF\xBB\xBF";
         if( _utf8 && !_bomread && _tok.begins_with(BOM) ) {
