@@ -191,7 +191,8 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
             const lexer::lextoken& tok = lex.next();
             
             if( tok == lex.SQUARE || tok == lex.ROUND ) {
-                defval << lex.complete_block().outer();
+                lex.complete_block();
+                defval << tok.leading_token(lex) << tok << tok.trailing_token(lex);
                 continue;
             }
             if( tok == ','  ||  tok == ')'  ||  tok.end() ) {
