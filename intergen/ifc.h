@@ -99,7 +99,10 @@ protected:
 
 public:
     
-    policy_intrusive_base* host() const { return _host.get(); }
+    //@return host class pointer
+    //@note T derived from policy_intrusive_base
+    template<typename T=policy_intrusive_base>
+    T* host() const { return static_cast<T*>(_host.get()); }
 
     //@return hash of interface definition, serving for version checks
     virtual int intergen_hash_id() const = 0;

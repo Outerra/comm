@@ -115,8 +115,8 @@ $-(if varname?)$
 
     ///Cleanup routine called from ~$name$()
     static void _cleaner_callback( $name$* m, intergen_interface* ifc ) {
-        policy_intrusive_base* host = static_cast<$name$_dispatcher*>(m)->_host.get();
-        if(host) static_cast<$..ns default=" "$::$..class$*>(host)->$varname$ = ifc;
+        $..ns default=" "$::$..class$* host = m->host<$..ns$::$..class$>();
+        if(host) host->$varname$ = ifc;
     }
 $-(/if)$
 

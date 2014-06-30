@@ -74,6 +74,8 @@ int generate( const T& t, const token& patfile, const token& outfile )
 {
     directory::mkdir_tree(outfile, true);
 
+    directory::set_writable(outfile, true);
+
     bifstream bit(patfile);
     bofstream bof(outfile);
 
@@ -100,6 +102,10 @@ int generate( const T& t, const token& patfile, const token& outfile )
 
     out << "writing " << outfile << " ...\n";
     mtg.generate(t, bof);
+
+    bof.close();
+
+    directory::set_writable(outfile, false);
 
     return 0;
 }

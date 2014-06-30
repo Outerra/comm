@@ -334,6 +334,18 @@ opcd directory::set_file_times( const zstring& fname, timet actime, timet modtim
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+bool directory::is_writable( const zstring& fname )
+{
+    return 0 == _access(fname.c_str(), 2);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+bool directory::set_writable( const zstring& fname, bool writable )
+{
+    return 0 == _chmod(fname.c_str(), writable ? (_S_IREAD | _S_IWRITE) : _S_IREAD);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 opcd directory::delete_files( token path_and_pattern )
 {
     directory dir;

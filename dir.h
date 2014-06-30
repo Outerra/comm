@@ -162,6 +162,11 @@ public:
 
     static opcd set_file_times( const zstring& fname, timet actime, timet modtime );
 
+    //@{ tests and sets file write access flags
+    static bool is_writable( const zstring& fname );
+    static bool set_writable( const zstring& fname, bool writable );
+    //@}
+
     ///Get current working directory
     static charstr& get_cwd( charstr& buf );
 
