@@ -98,7 +98,7 @@ $-(/if)$
         _context = v8::Persistent<v8::Context>::New(context);
         _meta.bind_formatting_stream(_fmtv8);
 		
-		_host = _base->host();
+		_host = _base->host<policy_intrusive_base>();
     }
 
     ~$name$_js_dispatcher() {
