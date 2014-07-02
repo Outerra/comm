@@ -47,7 +47,7 @@
 #   endif
 
 #	include "../singleton.h"
-#	include "../hptimer.h"
+#	include "../timer.h"
 #endif
 
 
@@ -55,9 +55,9 @@ namespace coid {
 
 
 #ifdef _DEBUG
-static MsecTimer& get_msec_timer()
+static msec_timer& get_msec_timer()
 {
-    static MsecTimer _mst;
+    static msec_timer _mst;
     return _mst;
 }
 #endif

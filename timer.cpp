@@ -35,7 +35,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include "hptimer.h"
+#include "timer.h"
 
 
 #ifdef SYSTYPE_MSVC
@@ -47,26 +47,82 @@
 namespace coid {
 
 ////////////////////////////////////////////////////////////////////////////////
-void MsecTimer::reset()
+nsec_timer::nsec_timer()
+{
+	LARGE_INTEGER freq;
+	QueryPerformanceFrequency(&freq);
+
+	_freq = freq.QuadPart;
+	_freqd = 1.0 / double(_freq);
+
+    reset();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void nsec_timer::reset()
+{
+	QueryPerformanceCounter((LARGE_INTEGER*)&_start);
+    _dtns = 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+double nsec_timer::time()
+{
+	return time_ns() * 1e-9;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+uint64 nsec_timer::time_ns()
+{
+	LARGE_INTEGER stop;
+	QueryPerformanceCounter(&stop);
+
+    uint64 d = stop.QuadPart - _start;
+    uint64 w = d / _freq;
+    uint64 f = d % _freq;
+
+    static const uint64 NS = 1000000000;
+
+    return w*NS + (f*NS)/_freq + _dtns;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+void msec_timer::reset()
 {
     _tstart = timeGetTime();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void MsecTimer::set( uint msec )
+void msec_timer::set( uint msec )
 {
     _tstart = timeGetTime() - (uint64)msec;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-uint MsecTimer::time() const
+uint msec_timer::time() const
 {
     uint tend = timeGetTime();
     return uint(tend - _tstart);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-uint MsecTimer::time_reset()
+uint msec_timer::time_reset()
 {
 	uint tend = timeGetTime();
 	uint t = uint(tend - _tstart);
@@ -75,28 +131,28 @@ uint MsecTimer::time_reset()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-uint MsecTimer::time_usec() const
+uint msec_timer::time_usec() const
 {
     uint tend = timeGetTime();
     return uint( 1000 * (tend - _tstart) );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-uint MsecTimer::ticks() const
+uint msec_timer::ticks() const
 {
     uint64 tend = timeGetTime();
     return uint( (1000 * (tend - _tstart)) / _period );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int MsecTimer::usec_to_tick( uint k ) const
+int msec_timer::usec_to_tick( uint k ) const
 {
     uint64 tend = timeGetTime() - _tstart;
     return int( k*(int64)_period - tend*1000 );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-uint MsecTimer::get_time() {
+uint msec_timer::get_time() {
 	return timeGetTime();
 }
 
