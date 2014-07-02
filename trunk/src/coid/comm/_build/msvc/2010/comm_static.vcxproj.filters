@@ -269,7 +269,6 @@
     <ClInclude Include="..\..\..\dir.h" />
     <ClInclude Include="..\..\..\dynarray.h" />
     <ClInclude Include="..\..\..\fastdelegate.h" />
-    <ClInclude Include="..\..\..\hptimer.h" />
     <ClInclude Include="..\..\..\lexer.h" />
     <ClInclude Include="..\..\..\local.h" />
     <ClInclude Include="..\..\..\mathf.h" />
@@ -339,6 +338,7 @@
     <ClInclude Include="..\..\..\net\asyncrcv.h">
       <Filter>net</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\timer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\crypt\sha1.cpp">
@@ -372,12 +372,6 @@
       <Filter>cxx</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\dirwin.cpp">
-      <Filter>cxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\hptimer.cpp">
-      <Filter>cxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\hptimeru.cpp">
       <Filter>cxx</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\net.cpp">
@@ -433,6 +427,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\net\asyncrcv.cpp">
       <Filter>net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\timer.cpp">
+      <Filter>cxx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\timeru.cpp">
+      <Filter>cxx</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

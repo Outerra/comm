@@ -125,7 +125,7 @@ $-(elif)$
 $-(/if)$
 
         virtual void onCommand(renderer* const r__) {
-            uint t0 = time();
+            uint64 t0 = time_ns();
             $(if ..class?="renderer")$r__->$(elif !static?)$obj->$(/if)-$$..class$::$name$(
             $-[args rest=", "]-$
 $-(if retarg?)-$(const $..rettype$)data_ptr(this)

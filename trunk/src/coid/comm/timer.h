@@ -1,4 +1,4 @@
-/* ***** BEGIN LICENSE BLOCK *****
+ /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Mozilla Public License Version
@@ -14,7 +14,7 @@
  * The Original Code is COID/comm module.
  *
  * The Initial Developer of the Original Code is
- * PosAm.
+ * Brano Kemen.
  * Portions created by the Initial Developer are Copyright (C) 2003
  * the Initial Developer. All Rights Reserved.
  *
@@ -35,74 +35,90 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include "hptimer.h"
+#ifndef __COID_COMM_HPTIMER__HEADER_FILE__
+#define __COID_COMM_HPTIMER__HEADER_FILE__
 
-#ifndef SYSTYPE_MSVC
+#include "namespace.h"
+#include "commtypes.h"
 
-#include <sys/time.h>
-
-namespace coid {
-
-
-////////////////////////////////////////////////////////////////////////////////
-struct timezone tz;
+COID_NAMESPACE_BEGIN
 
 ////////////////////////////////////////////////////////////////////////////////
-void MsecTimer::reset()
+
+class nsec_timer
 {
-    struct timeval ts;
-    gettimeofday(&ts,&tz);
-    _tstart = uint64(ts.tv_sec)*1000*1000 + ts.tv_usec;
-}
+	uint64 _freq;
+	double _freqd;
+    uint64 _start;
+    int64 _dtns;
+
+public:
+
+    nsec_timer();
+
+    //@return elapsed time in seconds
+	double time();
+
+    //@return elapsed time in nanoseconds
+	uint64 time_ns();
+
+    ///Adjust returned time
+    void adjust_time_ns( int64 dtns ) {
+        _dtns += dtns;
+    }
+
+	void reset();
+};
+
+
 
 ////////////////////////////////////////////////////////////////////////////////
-void MsecTimer::set( uint msec )
-{
-    struct timeval ts;
-    gettimeofday(&ts,&tz);
-    _tstart = uint64(ts.tv_sec)*1000*1000 + ts.tv_usec - uint64(msec)*1000;
+#ifdef SYSTYPE_WIN
+extern "C" {
+    __declspec(dllimport) uint __stdcall timeBeginPeriod( uint );
+    __declspec(dllimport) uint __stdcall timeEndPeriod( uint );
+    __declspec(dllimport) ulong __stdcall timeGetTime();
 }
+#endif
+
+
+class msec_timer
+{
+    uint64 _tstart;
+    uint _period;
+
+public:
+    msec_timer()            { _tstart = 0; _period = 1000; }
+    ~msec_timer()           {}
+
+    void set_period_usec( uint usec )   { _period = usec; }
+    uint get_period_usec() const        { return _period; }
+
+#ifdef SYSTYPE_WIN
+    static void init()      { timeBeginPeriod(1); }
+    static void term()      { timeEndPeriod(1); }
+#else
+    static void init()      {}
+    static void term()      {}
+#endif
+
+    void reset();
+    void set( uint msec );
+
+    uint time() const;
+    uint time_usec() const;
+	uint time_reset();
+
+    uint ticks() const;
+    int usec_to_tick( uint k ) const;
+
+    /// return time in miliseconds
+	static uint get_time();
+};
 
 ////////////////////////////////////////////////////////////////////////////////
-uint MsecTimer::time() const
-{
-    struct timeval ts;
-    gettimeofday(&ts,&tz);
 
-    uint64 t = uint64(ts.tv_sec)*1000*1000 + ts.tv_usec;
-    return uint((t - _tstart) / 1000);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-uint MsecTimer::time_usec() const
-{
-    struct timeval ts;
-    gettimeofday(&ts,&tz);
-
-    return uint64(ts.tv_sec)*1000*1000 + ts.tv_usec - _tstart;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-uint MsecTimer::ticks() const
-{
-    struct timeval ts;
-    gettimeofday(&ts,&tz);
-
-    uint64 usec = uint64(ts.tv_sec)*1000*1000 + ts.tv_usec - _tstart;
-    return uint( usec / _period );
-}
-
-////////////////////////////////////////////////////////////////////////////////
-int MsecTimer::usec_to_tick( uint k ) const
-{
-    struct timeval ts;
-    gettimeofday(&ts,&tz);
-
-    uint64 usec = uint64(ts.tv_sec)*1000*1000 + ts.tv_usec - _tstart;
-    return int( k*uint64(_period) - usec );
-}
-
-} // namespace coid
+COID_NAMESPACE_END
 
 
-#endif //SYSTYPE_MSVC
+#endif //#ifndef __COID_COMM_HPTIMER__HEADER_FILE__
