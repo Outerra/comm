@@ -1047,12 +1047,31 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Helper template for streaming enum values
-template<int S> struct EnumType     { typedef int      TEnum; };
-template<> struct EnumType<8>       { typedef int64    TEnum; };
-template<> struct EnumType<2>       { typedef short    TEnum; };
-template<> struct EnumType<1>       { typedef char     TEnum; };
+#if defined(SYSTYPE_WIN) && _MSC_VER < 1800
+    template<typename T>
+    struct underlying_enum_type {
+        template<int S> struct EnumType     { typedef int      type; };
+        template<> struct EnumType<8>       { typedef int64    type; };
+        template<> struct EnumType<2>       { typedef int16    type; };
+        template<> struct EnumType<1>       { typedef int8     type; };
 
-#define ENUM_TYPE(x)  (*(coid::EnumType<sizeof(x)>::TEnum*)(void*)&x)
+        typedef typename EnumType<sizeof(T)>::type type;
+    };
+
+    template<typename T>
+    struct resolve_enum {
+        typedef typename std::conditional<std::is_enum<T>::value, typename underlying_enum_type<T>::type, T>::type type;
+    };
+#else
+    template<typename T>
+    struct resolve_enum {
+        enum dummy {};
+        typedef typename std::conditional<std::is_enum<T>::value, T, dummy>::type enum_type;
+        typedef typename std::conditional<std::is_enum<T>::value, typename std::underlying_type<enum_type>::type, T>::type type;
+    };
+#endif
+
+#define ENUM_TYPE(x)  (*(coid::resolve_enum<std::remove_reference<decltype(x)>::type>::type*)(void*)&x)
 
 ////////////////////////////////////////////////////////////////////////////////
 struct opcd_formatter

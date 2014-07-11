@@ -4,7 +4,7 @@
 #include <comm/ref.h>
 #include <comm/str.h>
 #include <comm/pthreadx.h>
-#include <comm/hptimer.h>
+#include <comm/timer.h>
 #include <comm/binstream/stdstream.h>
 //#include <stdio.h>
 

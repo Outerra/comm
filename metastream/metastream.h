@@ -63,6 +63,17 @@ COID_NAMESPACE_BEGIN
 class metastream
 {
 public:
+
+    //@{ currently active binary streams, when metastream is in transfer mode
+    binstream* _binw;
+    binstream* _binr;
+    //@}
+
+    bool streaming() const { return _binw || _binr; }
+
+    typedef bstype::kind            type;
+
+
     metastream() {
         init();
     }
@@ -76,10 +87,166 @@ public:
     virtual ~metastream() {}
 
 
-    typedef bstype::kind            type;
+    ///Define struct streaming scheme
+    template<typename Fn>
+    void compound( const token& name, Fn fn )
+    {
+        if(streaming()) {
+            fn();
+        }
+        else if(!meta_insert(name))
+        {
+            fn();
+
+            _last_var = _map.pop();
+            _current_var = _map.last();
+
+            meta_exit();
+        }
+    }
+
+    ///Define struct streaming scheme
+    template<typename Fn, typename A>
+    void compound( const token& name, Fn fn )
+    {
+        if(streaming()) {
+            fn();
+        }
+        else {
+            charstr& k = *_templ_name_stack.add();
+            k.append('<');
+        
+            *this || *(T*)0;
+
+            k.append('>');
+
+            if(!handle_template_name_mode(name))
+            {
+                fn();
+
+                _last_var = _map.pop();
+                _current_var = _map.last();
+
+                meta_exit();
+            }
+        }
+    }
+
+    ///Stream a member variable
+    template<typename T>
+    metastream& member( const token& name, T& v )
+    {
+        if(streaming())
+            *this || v;
+        else
+            meta_variable2<T>(name, &v);
+        return *this;
+    }
+
+    ///Stream a member variable with default value to use if missing in stream
+    template<typename T, typename D>
+    metastream& member( const token& name, T& v, const D& defval )
+    {
+        if(streaming())
+            *this || v;
+        else {
+            meta_variable2<T>(name, &v);
+            meta_cache_default2(defval);
+        }
+        return *this;
+    }
+
+    ///Stream a member variable
+    ///If the member is missing from input, use default value for the object, constructed by streaming the default value object from nullstream
+    //@note obviously, T's metastream declaration must be made of members with default values
+    template<typename T, typename D>
+    metastream& member_stream_default( const token& name, T& v )
+    {
+        if(streaming())
+            *this || v;
+        else {
+            meta_variable2<T>(name, &v);
+            meta_cache_default_stream2<T>(&v);
+        }
+        return *this;
+    }
+
+    ///Stream variable of given type
+    template<typename T, typename FnIn, typename FnOut>
+    metastream& member_type( const token& name, FnIn fi, FnOut fo )
+    {
+        if(_binw)
+            *this || const_cast<T&>(fo());
+        else if(_binr) {
+            T val;
+            *this || val;
+            fi(val);
+        }
+        else
+            meta_variable2<T>(name, 0);
+        return *this;
+    }
+
+    ///Stream variable of given type
+    template<typename T, typename D, typename FnIn, typename FnOut>
+    metastream& member_type( const token& name, const D& defval, FnIn fi, FnOut fo )
+    {
+        if(_binw)
+            *this || const_cast<T&>(fo());
+        else if(_binr) {
+            T val;
+            *this || val;
+            fi(val);
+        }
+        else {
+            meta_variable2<T>(name, 0);
+            meta_cache_default2(defval);
+        }
+        return *this;
+    }
+
+    ///Stream a pointer-type variable
+    template<typename T>
+    metastream& member_pointer( const token& name, T*& v )
+    {
+        if(streaming())
+            *this || v;
+        else
+            meta_variable_pointer2<T>(name, v);
+        return *this;
+    }
+
+    ///Stream an obsolete member - not present in the class, but doesn't fail when present in the input stream
+    template<typename T>
+    metastream& member_obsolete( const token& name )
+    {
+        if(!streaming())
+            meta_variable_obsolete2<T>(name, 0);
+        return *this;
+    }
+
+    ///Stream a fixed size array member
+    template<typename T>
+    metastream& member_array( const token& name, T* v, uints size )
+    {
+        if(_binw) {
+            binstream_container_fixed_array<T,int> bc(v, size);
+            write_container(bc);
+        }
+        else if(_binr) {
+            binstream_container_fixed_array<T,int> bc(v, size);
+            read_container(bc);
+        }
+        else
+            meta_variable_array2<T>(name, 0, size);
+        return *this;
+    }
+
+
 
     void init()
     {
+        _binw = _binr = 0;
         _root.desc = 0;
 
         //_current = _cachestack.realloc(1);
@@ -149,6 +316,52 @@ public:
 
     void enable_meta_write( bool en )   { _disable_meta_write = !en; }
     void enable_meta_read( bool en )    { _disable_meta_read = !en; }
+
+    template<class COUNT>
+    metastream& read_container( binstream_container<COUNT>& a ) {
+        _hook.read_array(a);
+        return *this;
+    }
+
+    template<class COUNT>
+    metastream& write_container( binstream_container<COUNT>& a ) {
+        _hook.write_array(a);
+        return *this;
+    }
+
+    metastream& write_token( const token& tok ) {
+        _hook.xwrite_token(tok);
+        return *this;
+    }
+
+    ///Used in metastream operators for templated containers
+    template<class T, class COUNT>
+    metastream& meta_container( binstream_containerT<T,COUNT>& a )
+    {
+        if(_binr)
+            _hook.read_array(a);
+        else if(_binw)
+            _hook.write_array(a);
+        else {
+            meta_decl_array();
+            *this << *(T*)0;
+        }
+        return *this;
+    }
+
+    ///Used in metastream operators to define primitive types 
+    template<class T>
+    metastream& meta_base_type(const char* type_name, T& v)
+    {
+        if(_binr)
+            *_binr >> v;
+        else if(_binw)
+            *_binw << v;
+        else
+            meta_def_primitive<T>(type_name);
+
+        return *this;
+    }
 
     ////////////////////////////////////////////////////////////////////////////////
     //@{ methods to physically stream the data utilizing the metastream
@@ -242,7 +455,7 @@ public:
     {
         if( !prepare_type_common<R>(cache) )  return 0;
 
-        meta_array(n);
+        meta_decl_array(n);
         *this << *(const T*)0;     // build description
 
         return prepare_type_final<R>(name, cache);
@@ -422,6 +635,17 @@ public:
     }
 
     template<class T>
+    void xstream_in2( T& x, const token& name = token() )
+    {
+        opcd e = prepare_type<READ_MODE>( x, name, false );
+        if(e) throw exception(e);
+
+        _binr = &_hook;
+        *this << *(T*)0;
+        _binr = 0;
+    }
+
+    template<class T>
     void xcache_in( const token& name = token() )
     {
         opcd e = prepare_type<READ_MODE>(*(const T*)0, name, true);
@@ -436,6 +660,19 @@ public:
 
         if(!cache)
             _hook << x;
+    }
+
+    template<class T>
+    void xstream_or_cache_out2( const T& x, bool cache, const token& name = token() )
+    {
+        opcd e = prepare_type<WRITE_MODE>(x, name, cache);
+        if(e) throw exception(e);
+
+        if(!cache) {
+            _binw = &_hook;
+            *this << *(T*)0;
+            _binw = 0;
+        }
     }
 
     template<class T>
@@ -525,6 +762,96 @@ public:
 
     const charstr& error_string() const         { return _err; }
 
+    // new streaming operators
+
+    metastream& operator || (bool&a)            { return meta_base_type("bool", a); }
+    metastream& operator || (int8&a)            { return meta_base_type("int8", a); }
+    metastream& operator || (uint8&a)           { return meta_base_type("uint8", a); }
+    metastream& operator || (int16&a)           { return meta_base_type("int16", a); }
+    metastream& operator || (uint16&a)          { return meta_base_type("uint16", a); }
+    metastream& operator || (int32&a)           { return meta_base_type("int32", a); }
+    metastream& operator || (uint32&a)          { return meta_base_type("uint32", a); }
+    metastream& operator || (int64&a)           { return meta_base_type("int64", a); }
+    metastream& operator || (uint64&a)          { return meta_base_type("uint64", a); }
+
+    metastream& operator || (char&a)            { return meta_base_type("char", a); }
+
+#ifdef SYSTYPE_WIN
+# ifdef SYSTYPE_32
+    metastream& operator || (ints&a)            { return meta_base_type("int", a); }
+    metastream& operator || (uints&a)           { return meta_base_type("uint", a); }
+# else //SYSTYPE_64
+    metastream& operator || (int&a)             { return meta_base_type("int", a); }
+    metastream& operator || (uint&a)            { return meta_base_type("uint", a); }
+# endif
+#elif defined(SYSTYPE_32)
+    metastream& operator || (long&a)            { return meta_base_type("long", a); }
+    metastream& operator || (ulong&a)           { return meta_base_type("ulong", a); }
+#endif
+
+    metastream& operator || (float&a)           { return meta_base_type("float", a); }
+    metastream& operator || (double&a)          { return meta_base_type("double", a); }
+    metastream& operator || (long double&a)     { return meta_base_type("long double", a); }
+
+
+    metastream& operator || (const char*& a)
+    {
+        if(_binr) {
+            throw exception("unsupported");
+        }
+        else if(_binw) {
+            write_token(a);
+        }
+        else {
+            meta_decl_array();
+            meta_def_primitive<char>("char");
+        }
+        return *this;
+    }
+
+    metastream& operator || (timet&a)           { return meta_base_type("time", a); }
+
+    metastream& operator || (opcd&a)            { return meta_base_type("opcd", a); }
+
+    metastream& operator || (charstr&a)
+    {
+        if(_binr) {
+            auto& dyn = a.dynarray_ref();
+            dyn.reset();
+            dynarray<char,uint>::dynarray_binstream_container c(dyn);
+            read_container(c);
+
+            if(dyn.size())
+                *dyn.add() = 0;
+        }
+        else if(_binw) {
+            write_token(a);
+        }
+        else {
+            meta_decl_array();
+            meta_def_primitive<char>("char");
+        }
+        return *this;
+    }
+
+    metastream& operator || (token&a)
+    {
+        if(_binr) {
+            throw exception("unsupported");
+        }
+        else if(_binw) {
+            write_token(a);
+        }
+        else {
+            meta_decl_array();
+            meta_def_primitive<char>("char");
+        }
+        return *this;
+    }
+
+
+
+
     template<class T>
     static type get_type(const T&)              { return bstype::t_type<T>(); }
 
@@ -560,7 +887,7 @@ public:
 
 
     metastream& operator << (const char* const& a) {
-        meta_array(); meta_primitive( "char", bstype::t_type<char>() ); return *this;
+        meta_decl_array(); meta_primitive( "char", bstype::t_type<char>() ); return *this;
     }
     //metastream& operator << (const unsigned char* const&a)  {meta_primitive( "const unsigned char *", binstream::t_type<char>() ); return *this;}
 
@@ -572,8 +899,8 @@ public:
 
     metastream& operator << (const opcd&)       {meta_primitive( "opcd", bstype::t_type<opcd>() ); return *this;}
 
-    metastream& operator << (const charstr&a)   {meta_array(); meta_primitive( "char", bstype::t_type<char>() ); return *this;}
-    metastream& operator << (const token&a)     {meta_array(); meta_primitive( "char", bstype::t_type<char>() ); return *this;}
+    metastream& operator << (const charstr&a)   {meta_decl_array(); meta_primitive( "char", bstype::t_type<char>() ); return *this;}
+    metastream& operator << (const token&a)     {meta_decl_array(); meta_primitive( "char", bstype::t_type<char>() ); return *this;}
 
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -673,7 +1000,8 @@ public:
     template<class T>
     void meta_variable( const token& varname, const T* )
     {
-        typedef typename std::conditional<std::is_enum<T>::value, typename EnumType<sizeof(T)>::TEnum, T>::type B;
+        //typedef typename std::conditional<std::is_enum<T>::value, typename EnumType<sizeof(T)>::TEnum, T>::type B;
+        typedef typename resolve_enum<T>::type B;
 
         _cur_variable_name = varname;
         _cur_streamfrom_fnc = &binstream::streamfunc<B>::from_stream;
@@ -697,13 +1025,14 @@ public:
     template<class T>
     void meta_variable_array( const token& varname, const T*, uints n )
     {
-        typedef typename std::conditional<std::is_enum<T>::value, typename EnumType<sizeof(T)>::TEnum, T>::type B;
+        //typedef typename std::conditional<std::is_enum<T>::value, typename EnumType<sizeof(T)>::TEnum, T>::type B;
+        typedef typename resolve_enum<T>::type B;
 
         _cur_variable_name = varname;
         _cur_streamfrom_fnc = &binstream::streamfunc<B>::from_stream;
         _cur_streamto_fnc = &binstream::streamfunc<B>::to_stream;
 
-        meta_array(n);
+        meta_decl_array(n);
 
         *this << *(const B*)0;
     }
@@ -717,15 +1046,77 @@ public:
         _cur_streamfrom_fnc = &binstream::streamfunc<BT>::from_stream;
         _cur_streamto_fnc = &binstream::streamfunc<BT>::to_stream;
 
-        meta_pointer();
+        meta_decl_pointer();
 
         *this << *(T)0;
     }
 
+
+
+
+    template<class T>
+    void meta_variable2( const token& varname, const T* )
+    {
+        //typedef typename std::conditional<std::is_enum<T>::value, typename EnumType<sizeof(T)>::TEnum, T>::type B;
+        typedef typename resolve_enum<T>::type B;
+
+        _cur_variable_name = varname;
+        _cur_streamfrom_fnc = &binstream::streamfunc<B>::from_stream;
+        _cur_streamto_fnc = &binstream::streamfunc<B>::to_stream;
+
+        *this || *(B*)0;
+    }
+
+    template<class T>
+    void meta_variable_obsolete2( const token& varname, const T* v )
+    {
+        bool old = _obsolete;
+        _obsolete = true;
+
+        meta_variable2<T>(varname, v);
+
+        _obsolete = old;
+    }
+
+    ///Define member array variable
+    template<class T>
+    void meta_variable_array2( const token& varname, const T*, uints n )
+    {
+        //typedef typename std::conditional<std::is_enum<T>::value, typename EnumType<sizeof(T)>::TEnum, T>::type B;
+        typedef typename resolve_enum<T>::type B;
+
+        _cur_variable_name = varname;
+        _cur_streamfrom_fnc = &binstream::streamfunc<B>::from_stream;
+        _cur_streamto_fnc = &binstream::streamfunc<B>::to_stream;
+
+        meta_decl_array(n);
+
+        *this || *(B*)0;
+    }
+
+    template<class T>
+    void meta_variable_pointer2( const token& varname, const T* )
+    {
+        typedef typename type_base<T>::type BT;
+
+        _cur_variable_name = varname;
+        _cur_streamfrom_fnc = &binstream::streamfunc<BT>::from_stream;
+        _cur_streamto_fnc = &binstream::streamfunc<BT>::to_stream;
+
+        meta_decl_pointer();
+
+        *this || *(T)0;
+    }
+
+
+
+
+
     template<class T>
     void meta_cache_default( const T* defval )
     {
-        typedef typename std::conditional<std::is_enum<T>::value, typename EnumType<sizeof(T)>::TEnum, T>::type B;
+        //typedef typename std::conditional<std::is_enum<T>::value, typename EnumType<sizeof(T)>::TEnum, T>::type B;
+        typedef typename resolve_enum<T>::type B;
 
         _curvar.var = _last_var;
 
@@ -741,6 +1132,37 @@ public:
         _dometa = true;
 
         _hook << *(const B*)defval;
+
+        _cachestack.pop();
+        _current = _cachestack.last();
+
+        _dometa = 0;
+        _curvar.var = 0;
+    }
+
+    template<class T>
+    void meta_cache_default2( const T& defval )
+    {
+        //typedef typename std::conditional<std::is_enum<T>::value, typename EnumType<sizeof(T)>::TEnum, T>::type B;
+        typedef typename resolve_enum<T>::type B;
+
+        _curvar.var = _last_var;
+
+        _current = _cachestack.push();
+        _current->var = _curvar.var;
+        _current->buf = &_curvar.var->defval;
+        _current->offs = 0;
+        _current->ofsz = UMAXS;
+
+        //insert a dummy address field
+        _current->set_addr( _current->insert_address(), sizeof(uints) );
+
+        _dometa = true;
+
+        //_hook << *(const B*)defval;
+        _binw = &_hook;
+        *this << *(B*)&defval;
+        _binw = 0;
 
         _cachestack.pop();
         _current = _cachestack.last();
@@ -781,8 +1203,49 @@ public:
         _curvar.var = 0;
     }
 
+    ///Default value coming from the metastream operator, assumed all members have default values
+    template<class T>
+    void meta_cache_default_stream2( const T* )
+    {
+        _curvar.var = _last_var;
+
+        _current = _cachestack.push();
+        _current->var = _curvar.var;
+        _current->buf = &_curvar.var->defval;
+        _current->offs = 0;
+        _current->ofsz = UMAXS;
+
+        //insert a dummy address field
+        _current->set_addr( _current->insert_address(), sizeof(uints) );
+
+        _dometa = true;
+
+        T def;
+
+        fmtstreamnull null;
+        metastream m(null);
+        m.xstream_in(def);
+
+        _binw = &_hook;
+        *this << def;
+        _binw = 0;
+
+        _cachestack.pop();
+        _current = _cachestack.last();
+
+        _dometa = 0;
+        _curvar.var = 0;
+    }
+
+
+
+
+
     bool meta_struct_open( const token& name )
     {
+        if(_binr || _binw)
+            return false;
+
         if( is_template_name_mode() )
             return handle_template_name_mode(name);
 
@@ -791,6 +1254,9 @@ public:
 
     void meta_struct_close()
     {
+        if(_binr || _binw)
+            return;
+
         _last_var = _map.pop();
         _current_var = _map.last();
 
@@ -813,7 +1279,7 @@ public:
 
     ///Signal that the primitive or compound type coming is an array
     ///@param n array element count, UMAXS if unknown or varying
-    void meta_array( uints n = UMAXS )
+    void meta_decl_array( uints n = UMAXS )
     {
         if( is_template_name_mode() ) {
             static token tarray = "@";
@@ -829,7 +1295,7 @@ public:
     }
 
     ///Signal that the primitive or compound type coming is a pointer/reference
-    void meta_pointer()
+    void meta_decl_pointer()
     {
         if( is_template_name_mode() ) {
             static token tpointer = "*";
@@ -851,6 +1317,27 @@ public:
     ///Only for primitive types
     void meta_primitive( const char* type_name, type t )
     {
+        DASSERT( t.is_primitive() );
+
+        //if we are in template name assembly mode, take the type name and get out
+        if( is_template_name_mode() )
+        {
+            handle_template_name_mode(type_name);
+            return;
+        }
+
+        MetaDesc* d = _map.find_or_create( type_name, t, _cur_streamfrom_fnc, _cur_streamto_fnc );
+        _last_var = meta_fill_parent_variable(d);
+
+        meta_exit();
+    }
+
+
+    ///Only for primitive types
+    template<class T>
+    void meta_def_primitive( const char* type_name )
+    {
+        type t = bstype::t_type<T>();
         DASSERT( t.is_primitive() );
 
         //if we are in template name assembly mode, take the type name and get out
@@ -2331,7 +2818,7 @@ inline type_holder<T> get_type_holder(T*) {
 /**
     @def MM(meta,n,v)   specify member metadata providing member name
     @def MMT(meta,n,t)  specify member metadata providing member type
-    @def MMP(meta,n,t)  specify a pointer-type member
+    @def MMP(meta,n,t)  specify a pointer-type member, can be optional
 
     @def MMD(meta,n,d)  specify member metadata providing a default value of member type
     @def MMTD(meta,n,d) specify member metadata providing a default value of specified type
@@ -2373,8 +2860,28 @@ inline type_holder<T> get_type_holder(T*) {
 template <class T, class COUNT, class A>
 metastream& operator << ( metastream& m, const dynarray<T,COUNT,A>& )
 {
-    m.meta_array();
+    m.meta_decl_array();
     m << *(T*)0;
+    return m;
+}
+
+
+template <class T, class COUNT, class A>
+metastream& operator || ( metastream& m, dynarray<T,COUNT,A>& a )
+{
+    if(m._binr) {
+        a.reset();
+        typename dynarray<T,COUNT,A>::dynarray_binstream_container c(a);
+        m.read_container(c);
+    }
+    else if(m._binw) {
+        typename dynarray<T,COUNT,A>::dynarray_binstream_container c(a);
+        m.write_container(c);
+    }
+    else {
+        m.meta_decl_array();
+        m << *(T*)0;
+    }
     return m;
 }
 
@@ -2393,7 +2900,10 @@ COID_NAMESPACE_END
     inline metastream& operator << (metastream& m, const TYPE& v) {\
         MSTRUCT_OPEN(m,#TYPE)\
         MM(m,#P0,v.P0)\
-        MSTRUCT_CLOSE(m)}}
+        MSTRUCT_CLOSE(m)}\
+    inline metastream& operator || (metastream& m, TYPE& v) {\
+        m.compound(#TYPE, [&]() { m.member(#P0, v.P0); });\
+        return m; }}
 
 #define COID_METABIN_OP2(TYPE,P0,P1) namespace coid {\
     inline binstream& operator << (binstream& bin, const TYPE& v) {\
@@ -2404,7 +2914,10 @@ COID_NAMESPACE_END
         MSTRUCT_OPEN(m,#TYPE)\
         MM(m,#P0,v.P0)\
         MM(m,#P1,v.P1)\
-        MSTRUCT_CLOSE(m)}}
+        MSTRUCT_CLOSE(m)}\
+    inline metastream& operator || (metastream& m, TYPE& v) {\
+        m.compound(#TYPE, [&]() { m.member(#P0, v.P0); m.member(#P1, v.P1); });\
+        return m; }}
 
 #define COID_METABIN_OP3(TYPE,P0,P1,P2) namespace coid {\
     inline binstream& operator << (binstream& bin, const TYPE& v) {\
@@ -2416,7 +2929,10 @@ COID_NAMESPACE_END
         MM(m,#P0,v.P0)\
         MM(m,#P1,v.P1)\
         MM(m,#P2,v.P2)\
-        MSTRUCT_CLOSE(m)}}
+        MSTRUCT_CLOSE(m)}\
+    inline metastream& operator || (metastream& m, TYPE& v) {\
+        m.compound(#TYPE, [&]() { m.member(#P0, v.P0); m.member(#P1, v.P1); m.member(#P2, v.P2); });\
+        return m; }}
 
 #define COID_METABIN_OP4(TYPE,P0,P1,P2,P3) namespace coid {\
     inline binstream& operator << (binstream& bin, const TYPE& v) {\
@@ -2429,7 +2945,10 @@ COID_NAMESPACE_END
         MM(m,#P1,v.P1)\
         MM(m,#P2,v.P2)\
         MM(m,#P3,v.P3)\
-        MSTRUCT_CLOSE(m)}}
+        MSTRUCT_CLOSE(m)}\
+    inline metastream& operator || (metastream& m, TYPE& v) {\
+        m.compound(#TYPE, [&]() { m.member(#P0, v.P0); m.member(#P1, v.P1); m.member(#P2, v.P2); m.member(#P3, v.P3); });\
+        return m; }}
 
 
 
@@ -2442,7 +2961,10 @@ COID_NAMESPACE_END
     inline metastream& operator << (metastream& m, const TYPE& v) {\
         MSTRUCT_OPEN(m,#TYPE)\
         MMD(m,#P0,v.P0,D0)\
-        MSTRUCT_CLOSE(m)}}
+        MSTRUCT_CLOSE(m)}\
+    inline metastream& operator || (metastream& m, TYPE& v) {\
+        m.compound(#TYPE, [&]() { m.member(#P0, v.P0, D0); });\
+        return m; }}
 
 #define COID_METABIN_OP2D(TYPE,P0,P1,D0,D1) namespace coid {\
     inline binstream& operator << (binstream& bin, const TYPE& v) {\
@@ -2453,7 +2975,10 @@ COID_NAMESPACE_END
         MSTRUCT_OPEN(m,#TYPE)\
         MMD(m,#P0,v.P0,D0)\
         MMD(m,#P1,v.P1,D1)\
-        MSTRUCT_CLOSE(m)}}
+        MSTRUCT_CLOSE(m)}\
+    inline metastream& operator || (metastream& m, TYPE& v) {\
+        m.compound(#TYPE, [&]() { m.member(#P0, v.P0, D0); m.member(#P1, v.P1, D1); });\
+        return m; }}
 
 #define COID_METABIN_OP3D(TYPE,P0,P1,P2,D0,D1,D2) namespace coid {\
     inline binstream& operator << (binstream& bin, const TYPE& v) {\
@@ -2465,7 +2990,10 @@ COID_NAMESPACE_END
         MMD(m,#P0,v.P0,D0)\
         MMD(m,#P1,v.P1,D1)\
         MMD(m,#P2,v.P2,D2)\
-        MSTRUCT_CLOSE(m)}}
+        MSTRUCT_CLOSE(m)}\
+    inline metastream& operator || (metastream& m, TYPE& v) {\
+        m.compound(#TYPE, [&]() { m.member(#P0, v.P0, D0); m.member(#P1, v.P1, D1); m.member(#P2, v.P2, D2); });\
+        return m; }}
 
 #define COID_METABIN_OP4D(TYPE,P0,P1,P2,P3,D0,D1,D2,D3) namespace coid {\
     inline binstream& operator << (binstream& bin, const TYPE& v) {\
@@ -2478,7 +3006,10 @@ COID_NAMESPACE_END
         MMD(m,#P1,v.P1,D1)\
         MMD(m,#P2,v.P2,D2)\
         MMD(m,#P3,v.P3,D3)\
-        MSTRUCT_CLOSE(m)}}
+        MSTRUCT_CLOSE(m)}\
+    inline metastream& operator || (metastream& m, TYPE& v) {\
+        m.compound(#TYPE, [&]() { m.member(#P0, v.P0, D0); m.member(#P1, v.P1, D1); m.member(#P2, v.P2, D2); m.member(#P3, v.P3, D3); });\
+        return m; }}
 
 
 
@@ -2491,7 +3022,10 @@ COID_NAMESPACE_END
     inline metastream& operator << (metastream& m, const TYPE& v) {\
         MSTRUCT_OPEN(m,#TYPE)\
         MMAF(m,"col",ELEM,1)\
-        MSTRUCT_CLOSE(m)}}
+        MSTRUCT_CLOSE(m)}\
+    inline metastream& operator || (metastream& m, TYPE& v) {\
+        m.compound(#TYPE, [&]() { m.member_array("col", &v[0], 1); });\
+        return m; }}
 
 #define COID_METABIN_OP2A(TYPE,ELEM) namespace coid {\
     inline binstream& operator << (binstream& bin, const TYPE& v) {\
@@ -2501,7 +3035,10 @@ COID_NAMESPACE_END
     inline metastream& operator << (metastream& m, const TYPE& v) {\
         MSTRUCT_OPEN(m,#TYPE)\
         MMAF(m,"col",ELEM,2)\
-        MSTRUCT_CLOSE(m)}}
+        MSTRUCT_CLOSE(m)}\
+    inline metastream& operator || (metastream& m, TYPE& v) {\
+        m.compound(#TYPE, [&]() { m.member_array("col", &v[0], 2); });\
+        return m; }}
 
 #define COID_METABIN_OP3A(TYPE,ELEM) namespace coid {\
     inline binstream& operator << (binstream& bin, const TYPE& v) {\
@@ -2511,7 +3048,10 @@ COID_NAMESPACE_END
     inline metastream& operator << (metastream& m, const TYPE& v) {\
         MSTRUCT_OPEN(m,#TYPE)\
         MMAF(m,"col",ELEM,3)\
-        MSTRUCT_CLOSE(m)}}
+        MSTRUCT_CLOSE(m)}\
+    inline metastream& operator || (metastream& m, TYPE& v) {\
+        m.compound(#TYPE, [&]() { m.member_array("col", &v[0], 3); });\
+        return m; }}
 
 #define COID_METABIN_OP4A(TYPE,ELEM) namespace coid {\
     inline binstream& operator << (binstream& bin, const TYPE& v) {\
@@ -2521,7 +3061,10 @@ COID_NAMESPACE_END
     inline metastream& operator << (metastream& m, const TYPE& v) {\
         MSTRUCT_OPEN(m,#TYPE)\
         MMAF(m,"col",ELEM,4)\
-        MSTRUCT_CLOSE(m)}}
+        MSTRUCT_CLOSE(m)}\
+    inline metastream& operator || (metastream& m, TYPE& v) {\
+        m.compound(#TYPE, [&]() { m.member_array("col", &v[0], 4); });\
+        return m; }}
 
 
 

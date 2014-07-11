@@ -113,8 +113,6 @@ template <
 class hash_keyset
     : public hashtable<VAL,HASHFUNC,EQFUNC,EXTRACTKEY,ALLOC>
 {
-    typedef hashtable<VAL,HASHFUNC,EQFUNC,EXTRACTKEY,ALLOC>  _HT;
-
 public:
 
     typedef typename _HT::LOOKUP                    key_type;
@@ -275,7 +273,7 @@ public:
 
     static metastream& stream_meta_def( metastream& m )
     {
-        m.meta_array();
+        m.meta_decl_array();
         m << *(const VAL*)0;
         return m;
     }
@@ -290,6 +288,18 @@ public:
     {
         typename _HT::hashtable_binstream_container bc(*this, UMAXS);
         return m.stream_array_in(bc, name);
+    }
+
+    opcd stream_out( binstream& m ) const
+    {
+        typename _HT::hashtable_binstream_container bc(*this);
+        return m.write_array(bc);
+    }
+
+    opcd stream_in( binstream& m )
+    {
+        typename _HT::hashtable_binstream_container bc(*this, UMAXS);
+        return m.read_array(bc);
     }
 };
 
@@ -312,8 +322,6 @@ template <
 class hash_multikeyset
     : public hashtable<VAL,HASHFUNC,EQFUNC,EXTRACTKEY,ALLOC>
 {
-    typedef hashtable<VAL,HASHFUNC,EQFUNC,EXTRACTKEY,ALLOC>  _HT;
-
 public:
 
     typedef typename _HT::LOOKUP                    key_type;
@@ -434,11 +442,23 @@ public:
         insert_unique( f, l );
     }
 
-    static metastream& stream_meta( metastream& m )
+    static metastream& stream_meta_def( metastream& m )
     {
-        m.meta_array();
+        m.meta_decl_array();
         m << *(const VAL*)0;
         return m;
+    }
+
+    opcd stream_out( binstream& m ) const
+    {
+        typename _HT::hashtable_binstream_container bc(*this);
+        return m.write_array(bc);
+    }
+
+    opcd stream_in( binstream& m )
+    {
+        typename _HT::hashtable_binstream_container bc(*this, UMAXS);
+        return m.read_array(bc);
     }
 };
 
@@ -446,32 +466,91 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, class ALLOC>
 inline binstream& operator << ( binstream& bin, const hash_keyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
-{   return a.stream_out(bin);    }
+{
+    opcd e = a.stream_out(bin);
+    if(e) throw exception(e);
+    return bin;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, class ALLOC>
 inline binstream& operator >> ( binstream& bin, hash_keyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
-{   return a.stream_in(bin);    }
+{
+    opcd e = a.stream_in(bin);
+    if(e) throw exception(e);
+
+    return bin;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, class ALLOC>
 inline binstream& operator << ( binstream& bin, const hash_multikeyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
-{   return a.stream_out(bin);    }
+{
+    opcd e = a.stream_out(bin);
+    if(e) throw exception(e);
+    return bin;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, class ALLOC>
 inline binstream& operator >> ( binstream& bin, hash_multikeyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
-{   return a.stream_in(bin);    }
+{
+    opcd e = a.stream_in(bin);
+    if(e) throw exception(e);
+
+    return bin;
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
 template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, class ALLOC>
-inline metastream& operator << ( metastream& bin, const hash_keyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
-{   return a.stream_meta(bin);    }
+inline metastream& operator << ( metastream& m, const hash_keyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
+{   return a.stream_meta_def(m);    }
+
+////////////////////////////////////////////////////////////////////////////////
+template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, class ALLOC>
+inline metastream& operator || ( metastream& m, hash_keyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
+{
+    typedef typename hash_keyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC> _HT;
+
+    if(m._binr) {
+        a.clear();
+        typename _HT::hashtable_binstream_container bc(a);
+        return m.read_container(bc);
+    }
+    else if(m._binw) {
+        typename _HT::hashtable_binstream_container bc(a);
+        return m.write_container(bc);
+    }
+    else {
+        m.meta_decl_array();
+        m || *(VAL*)0;
+    }
+}
 
 template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, class ALLOC>
-inline metastream& operator << ( metastream& bin, const hash_multikeyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
-{   return a.stream_meta(bin);    }
+inline metastream& operator << ( metastream& m, const hash_multikeyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
+{   return a.stream_meta_def(m);    }
+
+template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, class ALLOC>
+inline metastream& operator || ( metastream& m, hash_multikeyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
+{
+    typedef typename hash_keyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC> _HT;
+
+    if(m._binr) {
+        a.clear();
+        typename _HT::hashtable_binstream_container bc(a);
+        return m.read_container(bc);
+    }
+    else if(m._binw) {
+        typename _HT::hashtable_binstream_container bc(a);
+        return m.write_container(bc);
+    }
+    else {
+        m.meta_decl_array();
+        m || *(VAL*)0;
+    }
+}
 
 
 COID_NAMESPACE_END

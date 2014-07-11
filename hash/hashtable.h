@@ -76,6 +76,9 @@ template <class VAL, class HASHFUNC, class EQFUNC, class GETKEYFUNC, class ALLOC
 class hashtable
 {
 public:
+
+    typedef hashtable<VAL,HASHFUNC,EQFUNC,GETKEYFUNC,ALLOC> _HT;
+
     ///Type used for lookups is deduced from the hash template
     typedef typename HASHFUNC::key_type         LOOKUP;
 
@@ -243,8 +246,6 @@ public:
     typedef std::pair<CPtr, CPtr>       range_const_iterator;
     typedef std::pair<Ptr, Ptr>         range_iterator;
 
-protected:
-
     struct hashtable_binstream_container : public binstream_containerT<VAL>
     {
         virtual const void* extract( uints n )
@@ -295,6 +296,8 @@ protected:
         const_iterator _begin, _end;
         dynarray<Node*> _newnode;
     };
+
+protected:
 
     ///Find first node that matches the key, provided hash value is given
     Node* find_node( uint hash, const LOOKUP& k ) const
