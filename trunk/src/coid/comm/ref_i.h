@@ -187,7 +187,7 @@ public:
 
 	friend coid::metastream& operator << (coid::metastream& m,const iref_t& s) {
 		MSTRUCT_OPEN(m,"ref")
-			MMAT(m,"ptr",T)
+		MMP(m,"ptr",s.get())
 		MSTRUCT_CLOSE(m)
 	}
 };

@@ -192,7 +192,7 @@ template<class T, class A> inline binstream& operator >> (binstream& out, CONT<T
     out.xread_array(c); \
 	return out; } \
 template<class T, class A> inline metastream& operator << (metastream& m, const CONT<T,A>& ) \
-{   m.meta_array();  m<<*(typename CONT<T,A>::value_type*)0;  return m; } \
+{   m.meta_decl_array();  m<<*(typename CONT<T,A>::value_type*)0;  return m; } \
 PAIRUP_CONTAINERS_WRITABLE2( CONT, binstream_container_stl_insert_iterator ) \
 PAIRUP_CONTAINERS_READABLE2( CONT, binstream_container_stl_input_iterator )
 
@@ -208,7 +208,7 @@ template<class T, class A> inline binstream& operator >> (binstream& out, CONT<T
     out.xread_array(c); \
 	return out; } \
 template<class T, class A> inline metastream& operator << (metastream& m, const CONT<T,A>& ) \
-{   m.meta_array();  m<<*(typename CONT<T,A>::value_type*)0;  return m; } \
+{   m.meta_decl_array();  m<<*(typename CONT<T,A>::value_type*)0;  return m; } \
 PAIRUP_CONTAINERS_WRITABLE2( CONT, binstream_container_stl_assoc_iterator ) \
 PAIRUP_CONTAINERS_READABLE2( CONT, binstream_container_stl_input_iterator )
 
@@ -274,7 +274,14 @@ template<class T, class A> inline binstream& operator >> (binstream& in, std::ve
 }
 
 template<class T, class A> inline metastream& operator << (metastream& m, const std::vector<T,A>& )
-{   m.meta_array();  m<<*(T*)0;  return m; }
+{   m.meta_decl_array();  m<<*(T*)0;  return m; }
+
+template<class T, class A>
+inline metastream& operator || (metastream& m, std::vector<T,A>& a )
+{
+    typedef std::vector<T,A> C;
+    return m.meta_container<C,T>(a);
+}
 
 
 
@@ -299,8 +306,27 @@ inline binstream& operator >> (binstream& in, std::string& p)
 
 inline metastream& operator << (metastream& meta, const std::string&)
 {
-    meta.meta_array();
+    meta.meta_decl_array();
     meta.meta_primitive( "char", bstype::t_type<char>() );
+    return meta;
+}
+
+inline metastream& operator || (metastream& meta, std::string& p)
+{
+    if(meta._binr) {
+        dynarray<char> tmp;
+        dynarray<char,uint>::dynarray_binstream_container c(tmp);
+        meta.read_container(c);
+
+        p.assign(tmp.ptr(), tmp.size());
+    }
+    else if(meta._binw) {
+        meta.write_token(token(p.c_str(), p.size()));
+    }
+    else {
+        meta.meta_decl_array();
+        meta.meta_def_primitive<char>("char");
+    }
     return meta;
 }
 
