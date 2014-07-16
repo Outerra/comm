@@ -171,7 +171,7 @@ struct binstream_containerT<void,COUNT> : binstream_container<COUNT>
         : binstream_container<COUNT>(n,bstype::kind(bstype::kind::T_BINARY,1),0,0)
     {}
 };
-
+/*
 ////////////////////////////////////////////////////////////////////////////////
 ///Adapter class used to retrieve appropriate binstream container type for 
 /// specific container, for writing to the data container
@@ -182,6 +182,7 @@ struct binstream_container_writable
 {
     ///Define following methods when specializing, changing container-type to 
     /// something appropriate
+    typedef CONTAINER   TContainer;
     typedef BINCONT     TBinstreamContainer;
     typedef typename CONTAINER::count_t count_t;
 
@@ -198,11 +199,12 @@ struct binstream_container_readable
 {
     ///Define following methods when specializing, changing container-type to 
     /// something appropriate
+    typedef CONTAINER   TContainer;
     typedef BINCONT     TBinstreamContainer;
 
     static TBinstreamContainer create( CONTAINER& a )
     {   return TBinstreamContainer(a); }
-};
+};*/
 
 
 ///this would be declared using the macros below
@@ -219,7 +221,7 @@ struct binstream_adapter_readable
     typedef CONTAINER   TContainer;
     //typedef BINCONT     TBinstreamContainer;    ///< Override BINCONT here
 };
-
+/*
 #define PAIRUP_CONTAINERS_WRITABLE(CONT) \
     template<class T, class A> struct binstream_adapter_writable< CONT<T,A> > { \
     typedef CONT<T,A>   TContainer; \
@@ -228,7 +230,7 @@ struct binstream_adapter_readable
 #define PAIRUP_CONTAINERS_READABLE(CONT) \
     template<class T> struct binstream_adapter_readable< CONT<T> > { \
     typedef CONT<T,A>   TContainer; \
-    typedef typename CONT<T,A>::binstream_container TBinstreamContainer; };
+    typedef typename CONT<T,A>::binstream_container TBinstreamContainer; };*/
 
 #define PAIRUP_CONTAINERS_WRITABLE2(CONT,BINCONT) \
     template<class T, class A> struct binstream_adapter_writable< CONT<T,A> > { \

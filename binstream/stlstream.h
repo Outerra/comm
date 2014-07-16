@@ -82,8 +82,11 @@ struct binstream_container_stl_input_iterator : binstream_containerT<typename St
     bool is_continuous() const      { return false; }
 
 
-    binstream_container_stl_input_iterator( const StlContainer& cont, uints n )
+    binstream_container_stl_input_iterator( const StlContainer& cont, uints n=UMAXS )
         : binstream_containerT<T>(n), inpi(cont.begin()), endi(cont.end()) {}
+
+    binstream_container_stl_input_iterator( const StlContainer& cont, fnc_stream fout, fnc_stream fin, uints n=UMAXS )
+        : binstream_containerT<T>(n,fout,fin), inpi(cont.begin()), endi(cont.end()) {}
 
     void set( const StlContainer& cont, uints n )
     {
@@ -113,8 +116,15 @@ struct binstream_container_stl_insert_iterator : binstream_container<uints>
     virtual bool is_continuous() const          { return false; }
 
 
-    binstream_container_stl_insert_iterator( StlContainer& cont, uints n )
+    binstream_container_stl_insert_iterator( StlContainer& cont, uints n=UMAXS )
         : binstream_container<uints>(n,bstype::t_type<T>(),0,&stream_in)
+        , outpi(std::back_inserter<StlContainer>(cont))
+    {
+        cont.clear();
+    }
+
+    binstream_container_stl_insert_iterator( StlContainer& cont, fnc_stream fout, fnc_stream fin, uints n=UMAXS )
+        : binstream_container<uints>(n,bstype::t_type<T>(),fout,fin)
         , outpi(std::back_inserter<StlContainer>(cont))
     {
         cont.clear();
@@ -155,8 +165,15 @@ struct binstream_container_stl_assoc_iterator : binstream_container<uints>
     virtual bool is_continuous() const          { return false; }
 
 
-    binstream_container_stl_assoc_iterator( StlContainer& cont, uints n )
+    binstream_container_stl_assoc_iterator( StlContainer& cont, uints n=UMAXS )
         : binstream_container<uints>(n,bstype::t_type<T>(),0,&stream_in)
+        , container(cont)
+    {
+        cont.clear();
+    }
+
+    binstream_container_stl_assoc_iterator( StlContainer& cont, fnc_stream fout, fnc_stream fin, uints n=UMAXS )
+        : binstream_container<uints>(n,bstype::t_type<T>(),fout,fin)
         , container(cont)
     {
         cont.clear();
@@ -193,6 +210,8 @@ template<class T, class A> inline binstream& operator >> (binstream& out, CONT<T
 	return out; } \
 template<class T, class A> inline metastream& operator << (metastream& m, const CONT<T,A>& ) \
 {   m.meta_decl_array();  m<<*(typename CONT<T,A>::value_type*)0;  return m; } \
+template<class T, class A> inline metastream& operator || (metastream& m, CONT<T,A>& ) \
+{   m.meta_decl_array();  m || *(typename CONT<T,A>::value_type*)0;  return m; } \
 PAIRUP_CONTAINERS_WRITABLE2( CONT, binstream_container_stl_insert_iterator ) \
 PAIRUP_CONTAINERS_READABLE2( CONT, binstream_container_stl_input_iterator )
 
@@ -209,6 +228,8 @@ template<class T, class A> inline binstream& operator >> (binstream& out, CONT<T
 	return out; } \
 template<class T, class A> inline metastream& operator << (metastream& m, const CONT<T,A>& ) \
 {   m.meta_decl_array();  m<<*(typename CONT<T,A>::value_type*)0;  return m; } \
+template<class T, class A> inline metastream& operator || (metastream& m, CONT<T,A>& ) \
+{   m.meta_decl_array();  m || *(typename CONT<T,A>::value_type*)0;  return m; } \
 PAIRUP_CONTAINERS_WRITABLE2( CONT, binstream_container_stl_assoc_iterator ) \
 PAIRUP_CONTAINERS_READABLE2( CONT, binstream_container_stl_input_iterator )
 
@@ -316,7 +337,7 @@ inline metastream& operator || (metastream& meta, std::string& p)
     if(meta._binr) {
         dynarray<char> tmp;
         dynarray<char,uint>::dynarray_binstream_container c(tmp);
-        meta.read_container(c);
+        meta.read_container<char>(c);
 
         p.assign(tmp.ptr(), tmp.size());
     }

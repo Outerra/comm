@@ -327,7 +327,7 @@ public:
             _pos = 0;
         }
 
-		dynarray_binstream_container( const dynarray<T,COUNT,A>& v, uints n, fnc_stream fout, fnc_stream fin )
+		dynarray_binstream_container( const dynarray<T,COUNT,A>& v, fnc_stream fout, fnc_stream fin, uints n=UMAXS )
             : binstream_containerT<T,COUNT>(n,fout,fin), _v(const_cast<dynarray<T,COUNT,A>&>(v))
         {
             _pos = 0;
@@ -365,7 +365,7 @@ public:
             _pos = 0;
         }
 
-		dynarray_binstream_dereferencing_container( const dynarray<T*>& v, uints n, fnc_stream fout, fnc_stream fin )
+		dynarray_binstream_dereferencing_container( const dynarray<T*>& v, fnc_stream fout, fnc_stream fin, uints n=UMAXS )
             : binstream_containerT<T,COUNT>(n,fout,fin), _v(const_cast<dynarray<T*>&>(v))
         {
             _pos = 0;
@@ -1353,16 +1353,26 @@ public:
     const_iterator begin() const        { return _dynarray_const_eptr<T>(_ptr); }
     const_iterator end() const          { return _dynarray_const_eptr<T>(_ptr+_count()); }
 
-
+    /*
     dynarray_binstream_container get_container_to_write( uints n=UMAXS )
     {
         return dynarray_binstream_container( *this, n );
+    }
+
+    dynarray_binstream_container get_container_to_write( uints n, typename dynarray_binstream_container::fnc_stream fout, typename dynarray_binstream_container::fnc_stream fin )
+    {
+        return dynarray_binstream_container(*this, n, fout, fin);
     }
 
     dynarray_binstream_container get_container_to_read() const
     {
         return dynarray_binstream_container( *this, size() );
     }
+
+    dynarray_binstream_container get_container_to_read( typename dynarray_binstream_container::fnc_stream fout, typename dynarray_binstream_container::fnc_stream fin ) const
+    {
+        return dynarray_binstream_container( *this, size(), fout, fin );
+    }*/
 
 private:
     void _destroy() {
@@ -1497,7 +1507,7 @@ struct binstream_adapter_writable< dynarray<T,COUNT,A> > {
 };
 
 template <class T, class COUNT, class A>
-struct binstream_adapter_readable< const dynarray<T,COUNT,A> > {
+struct binstream_adapter_readable< dynarray<T,COUNT,A> > {
     typedef const dynarray<T,COUNT,A>   TContainer;
     typedef typename dynarray<T,COUNT,A>::dynarray_binstream_container
         TBinstreamContainer;
