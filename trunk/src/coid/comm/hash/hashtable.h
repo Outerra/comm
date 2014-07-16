@@ -248,6 +248,8 @@ public:
 
     struct hashtable_binstream_container : public binstream_containerT<VAL>
     {
+        typedef binstream_containerT<VAL>::fnc_stream    fnc_stream;
+
         virtual const void* extract( uints n )
         {
             DASSERT( _begin != _end );
@@ -274,6 +276,20 @@ public:
 
         hashtable_binstream_container( _Self& ht, uints n )
             : binstream_containerT<VAL>(n), _ht(ht)
+        {
+            _begin = _ht.begin();
+            _end = _ht.end();
+        }
+
+        hashtable_binstream_container( const _Self& ht, fnc_stream fout, fnc_stream fin )
+            : binstream_containerT<VAL>(ht.size(), fout, fin), _ht((_Self&)ht)
+        {
+            _begin = _ht.begin();
+            _end = _ht.end();
+        }
+
+        hashtable_binstream_container( _Self& ht, fnc_stream fout, fnc_stream fin, uints n )
+            : binstream_containerT<VAL>(n, fout, fin), _ht(ht)
         {
             _begin = _ht.begin();
             _end = _ht.end();
@@ -424,6 +440,22 @@ public:
         bin.xread_array( bc );
 
         return bin;
+    }
+
+    metastream& stream_out( metastream& m ) const
+    {
+        hashtable_binstream_container bc(*this, 0, 0);
+        m.write_container<VAL>(bc);
+
+        return m;
+    }
+
+    metastream& stream_in( metastream& m )
+    {
+        hashtable_binstream_container bc(*this, UMAXS, 0, 0);
+        m.read_container<VAL>(bc);
+
+        return m;
     }
 
 

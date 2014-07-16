@@ -70,6 +70,8 @@ public:
     //@}
 
     bool streaming() const { return _binw || _binr; }
+    binstream* stream_reading() const { return _binr; }
+    binstream* stream_writing() const { return _binw; }
 
     typedef bstype::kind            type;
 
@@ -89,7 +91,7 @@ public:
 
     ///Define struct streaming scheme
     template<typename Fn>
-    void compound( const token& name, Fn fn )
+    metastream& compound( const token& name, Fn fn )
     {
         if(streaming()) {
             fn();
@@ -103,11 +105,12 @@ public:
 
             meta_exit();
         }
+        return *this;
     }
 
     ///Define struct streaming scheme
     template<typename Fn, typename A>
-    void compound( const token& name, Fn fn )
+    metastream& compound( const token& name, Fn fn )
     {
         if(streaming()) {
             fn();
@@ -130,6 +133,7 @@ public:
                 meta_exit();
             }
         }
+        return *this;
     }
 
     ///Stream a member variable
@@ -137,7 +141,7 @@ public:
     metastream& member( const token& name, T& v )
     {
         if(streaming())
-            *this || v;
+            *this || (resolve_enum<T>::type&)v;
         else
             meta_variable2<T>(name, &v);
         return *this;
@@ -148,7 +152,7 @@ public:
     metastream& member( const token& name, T& v, const D& defval )
     {
         if(streaming())
-            *this || v;
+            *this || (resolve_enum<T>::type&)v;
         else {
             meta_variable2<T>(name, &v);
             meta_cache_default2(defval);
@@ -159,11 +163,11 @@ public:
     ///Stream a member variable
     ///If the member is missing from input, use default value for the object, constructed by streaming the default value object from nullstream
     //@note obviously, T's metastream declaration must be made of members with default values
-    template<typename T, typename D>
+    template<typename T>
     metastream& member_stream_default( const token& name, T& v )
     {
         if(streaming())
-            *this || v;
+            *this || (resolve_enum<T>::type&)v;
         else {
             meta_variable2<T>(name, &v);
             meta_cache_default_stream2<T>(&v);
@@ -175,8 +179,10 @@ public:
     template<typename T, typename FnIn, typename FnOut>
     metastream& member_type( const token& name, FnIn fi, FnOut fo )
     {
-        if(_binw)
-            *this || const_cast<T&>(fo());
+        if(_binw) {
+            T tmp(fo());
+            *this || tmp;
+        }
         else if(_binr) {
             T val;
             *this || val;
@@ -191,8 +197,10 @@ public:
     template<typename T, typename D, typename FnIn, typename FnOut>
     metastream& member_type( const token& name, const D& defval, FnIn fi, FnOut fo )
     {
-        if(_binw)
-            *this || const_cast<T&>(fo());
+        if(_binw) {
+            T tmp(fo());
+            *this || tmp;
+        }
         else if(_binr) {
             T val;
             *this || val;
@@ -230,12 +238,12 @@ public:
     metastream& member_array( const token& name, T* v, uints size )
     {
         if(_binw) {
-            binstream_container_fixed_array<T,int> bc(v, size);
-            write_container(bc);
+            binstream_container_fixed_array<T,ints> bc(v, size);
+            write_container<T>(bc);
         }
         else if(_binr) {
-            binstream_container_fixed_array<T,int> bc(v, size);
-            read_container(bc);
+            binstream_container_fixed_array<T,ints> bc(v, size);
+            read_container<T>(bc);
         }
         else
             meta_variable_array2<T>(name, 0, size);
@@ -317,15 +325,80 @@ public:
     void enable_meta_write( bool en )   { _disable_meta_write = !en; }
     void enable_meta_read( bool en )    { _disable_meta_read = !en; }
 
-    template<class COUNT>
-    metastream& read_container( binstream_container<COUNT>& a ) {
-        _hook.read_array(a);
+
+    ////////////////////////////////////////////////////////////////////////////////
+    template<class T, class C>
+    struct container : binstream_container<uints>
+    {
+        enum { ELEMSIZE = sizeof(T) };
+        typedef T       data_t;
+        typedef binstream_container_base::fnc_stream    fnc_stream;
+
+        C& _container;
+        metastream& _m;
+
+        container( C& container, metastream& m )
+            : binstream_container<uints>(UMAXS, bstype::t_type<T>(), &stream, &stream)
+            , _container(container)
+            , _m(m)
+        {
+            _type = _container._type;
+            _nelements = _container._nelements;
+        }
+
+        ///Provide a pointer to next object that should be streamed
+        ///@param n number of objects to allocate the space for
+        virtual const void* extract( uints n ) { return _container.extract(n); }
+        virtual void* insert( uints n ) { return _container.insert(n); }
+
+        ///@return true if the storage is continuous in memory
+        virtual bool is_continuous() const { return _container.is_continuous(); }
+
+
+    protected:
+
+        static opcd stream( binstream& bin, void* p, binstream_container_base& bc )
+        {
+            container<T,C>& me = static_cast<container<T,C>&>(bc);
+            try {
+                me._m || *(T*)p;
+            }
+            catch(const exception&) {
+                return ersEXCEPTION;
+            }
+            catch(opcd e) {
+                return e;
+            }
+            return 0;
+        }
+    };
+
+
+    template<class T, class C>
+    opcd read_container( C& a ) {
+        container<T,C> mc(a, *this);
+        return _hook.read_array(mc);
+    }
+
+    template<class T, class C>
+    opcd write_container( C& a ) {
+        container<T,C> mc(a, *this);
+        return _hook.write_array(mc);
+    }
+
+    template<class T, class C>
+    metastream& xread_container( C& a ) {
+        container<T,C> mc(a, *this);
+        opcd e = _hook.read_array(mc);
+        if(e) throw exception(e);
         return *this;
     }
 
-    template<class COUNT>
-    metastream& write_container( binstream_container<COUNT>& a ) {
-        _hook.write_array(a);
+    template<class T, class C>
+    metastream& xwrite_container( C& a ) {
+        container<T,C> mc(a, *this);
+        opcd e = _hook.write_array(mc);
+        if(e) throw exception(e);
         return *this;
     }
 
@@ -439,6 +512,16 @@ public:
         return prepare_type_final<R>(name, cache);
     }
 
+    template<int R, class T>
+    opcd prepare_type2( T&, const token& name, bool cache )
+    {
+        if( !prepare_type_common<R>(cache) )  return 0;
+
+        *this || *(T*)0;     // build description
+
+        return prepare_type_final<R>(name, cache);
+    }
+
     template<int R>
     opcd prepare_named_type( const token& type, const token& name, bool cache )
     {
@@ -461,6 +544,17 @@ public:
         return prepare_type_final<R>(name, cache);
     }
 
+    template<int R, class T>
+    opcd prepare_type_array2( T&, uints n, const token& name, bool cache )
+    {
+        if( !prepare_type_common<R>(cache) )  return 0;
+
+        meta_decl_array(n);
+        *this || *(T*)0;     // build description
+
+        return prepare_type_final<R>(name, cache);
+    }
+
 
     ///Read object of type T from the currently bound formatting stream
     template<class T>
@@ -469,6 +563,19 @@ public:
         opcd e;
         try {
             xstream_in(x, name);
+        }
+        catch(opcd ee) {e = ee;}
+        catch(exception&) {e = ersEXCEPTION;}
+        return e;
+    }
+
+    ///Read object of type T from the currently bound formatting stream
+    template<class T>
+    opcd stream_in2( T& x, const token& name = token() )
+    {
+        opcd e;
+        try {
+            xstream_in2(x, name);
         }
         catch(opcd ee) {e = ee;}
         catch(exception&) {e = ersEXCEPTION;}
@@ -495,11 +602,25 @@ public:
         return stream_or_cache_out( x, false, name );
     }
 
+    ///Write object of type T to the currently bound formatting stream
+    template<class T>
+    opcd stream_out2( const T& x, const token& name = token() )
+    {
+        return stream_or_cache_out2( x, false, name );
+    }
+
     ///Write object of type T to the cache
     template<class T>
     opcd cache_out( const T& x, const token& name = token() )
     {
         return stream_or_cache_out( x, true, name );
+    }
+
+    ///Write object of type T to the cache
+    template<class T>
+    opcd cache_out2( const T& x, const token& name = token() )
+    {
+        return stream_or_cache_out2( x, true, name );
     }
 
     ///Write object of type T to the currently bound formatting stream
@@ -510,6 +631,20 @@ public:
         opcd e;
         try {
             xstream_or_cache_out(x, cache, name);
+        }
+        catch(opcd ee) {e = ee;}
+        catch(exception&) {e = ersEXCEPTION;}
+        return e;
+    }
+
+    ///Write object of type T to the currently bound formatting stream
+    ///@param cache true if the object should be trapped in the cache instead of sending it out through the formatting stream
+    template<class T>
+    opcd stream_or_cache_out2( const T& x, bool cache, const token& name = token() )
+    {
+        opcd e;
+        try {
+            xstream_or_cache_out2(x, cache, name);
         }
         catch(opcd ee) {e = ee;}
         catch(exception&) {e = ersEXCEPTION;}
@@ -552,6 +687,38 @@ public:
         return e;
     }
 
+    ///Read array of objects of type T from the currently bound formatting stream
+    template<class T, class COUNT>
+    opcd stream_array_in2( binstream_containerT<T,COUNT>& C, const token& name = token() )
+    {
+        opcd e;
+        try {
+            e = prepare_type_array2<READ_MODE>( *(T*)0, C._nelements, name, false );
+            if(e) return e;
+
+            _binr = &_hook;
+            e = read_container<T>(C);
+            _binr = 0;
+            //return _hook.read_array(C);
+        }
+        catch(opcd ee) {e=ee;}
+        catch(exception&) {e = ersEXCEPTION;}
+        return e;
+    }
+
+    ///Read array of objects of type T from the currently bound formatting stream into the cache
+    template<class T>
+    opcd cache_array_in2( const token& name = token(), uints n=UMAXS )
+    {
+        opcd e;
+        try {
+            e = prepare_type_array2<READ_MODE>( *(T*)0, n, name, true );
+        }
+        catch(opcd ee) {e=ee;}
+        catch(exception&) {e = ersEXCEPTION;}
+        return e;
+    }
+
     ///Write array of objects of type T to the currently bound formatting stream
     template<class T, class COUNT>
     opcd stream_array_out( binstream_containerT<T,COUNT>& C, const token& name = token() )
@@ -584,14 +751,50 @@ public:
         return e;
     }
 
+    ///Write array of objects of type T to the currently bound formatting stream
+    template<class T, class COUNT>
+    opcd stream_array_out2( binstream_containerT<T,COUNT>& C, const token& name = token() )
+    {
+        return stream_or_cache_array_out2(C,false,name);
+    }
+
+    ///Write array of objects of type T to the currently bound formatting stream
+    template<class T, class COUNT>
+    opcd cache_array_out2( binstream_containerT<T,COUNT>& C, bool cache=false, const token& name = token() )
+    {
+        return stream_or_cache_array_out2(C,true,name);
+    }
+
+    ///Write array of objects of type T to the currently bound formatting stream
+    ///@param cache true if the array should be trapped in the cache instead of sending it out through the formatting stream
+    template<class T, class COUNT>
+    opcd stream_or_cache_array_out2( binstream_containerT<T,COUNT>& C, bool cache, const token& name = token() )
+    {
+        opcd e;
+        try {
+            e = prepare_type_array2<WRITE_MODE>( *(T*)0, UMAXS, name, cache );
+            if(e) return e;
+
+            if(!cache) {
+                _binw = &_hook;
+                e = write_container<T>(C);
+                _binw = 0;
+            }
+                //return _hook.write_array(C);
+        }
+        catch(opcd ee) {e = ee;}
+        catch(exception&) {e = ersEXCEPTION;}
+        return e;
+    }
+
     ///Read container of objects of type T from the currently bound formatting stream
     template<class CONT>
     opcd stream_container_in( CONT& C, const token& name = token() )
     {
         typedef typename binstream_adapter_writable<CONT>::TBinstreamContainer     BC;
 
-        BC bc = binstream_container_writable<CONT,BC>::create(C);
-        return stream_array_in( bc, name );
+        BC bc = BC(C,0,0);
+        return stream_array_in2( bc, name );
     }
 
     ///Read container of objects of type T from the currently bound formatting stream into the cache
@@ -600,28 +803,28 @@ public:
     {
         typedef typename binstream_adapter_writable<CONT>::TBinstreamContainer     BC;
 
-        BC bc = binstream_container_writable<CONT,BC>::create(C);
-        return cache_array_in( bc, name );
+        BC bc = BC(C,0,0);//binstream_container_writable<CONT,BC>::create(C);
+        return cache_array_in2( bc, name );
     }
 
     ///Write container of objects of type T to the currently bound formatting stream
     template<class CONT>
-    opcd stream_container_out( CONT& C, const token& name = token() )
+    opcd stream_container_out( const CONT& C, const token& name = token() )
     {
         typedef typename binstream_adapter_readable<CONT>::TBinstreamContainer     BC;
 
-        BC bc = binstream_container_readable<CONT,BC>::create(C);
-        return stream_array_out( bc, name );
+        BC bc = BC(C,0,0);//binstream_container_readable<CONT,BC>::create(C);
+        return stream_array_out2( bc, name );
     }
 
     ///Write container of objects of type T to the cache
     template<class CONT>
-    opcd cache_container_out( CONT& C, const token& name = token() )
+    opcd cache_container_out( const CONT& C, const token& name = token() )
     {
         typedef typename binstream_adapter_readable<CONT>::TBinstreamContainer     BC;
 
-        BC bc = binstream_container_readable<CONT,BC>::create(C);
-        return cache_array_out( bc, name );
+        BC bc = BC(C,0,0);//binstream_container_readable<CONT,BC>::create(C);
+        return cache_array_out2( bc, name );
     }
 
 
@@ -637,11 +840,11 @@ public:
     template<class T>
     void xstream_in2( T& x, const token& name = token() )
     {
-        opcd e = prepare_type<READ_MODE>( x, name, false );
+        opcd e = prepare_type2<READ_MODE>( x, name, false );
         if(e) throw exception(e);
 
         _binr = &_hook;
-        *this << *(T*)0;
+        *this || x;
         _binr = 0;
     }
 
@@ -665,12 +868,12 @@ public:
     template<class T>
     void xstream_or_cache_out2( const T& x, bool cache, const token& name = token() )
     {
-        opcd e = prepare_type<WRITE_MODE>(x, name, cache);
+        opcd e = prepare_type2<WRITE_MODE>((resolve_enum<T>::type&)x, name, cache);
         if(e) throw exception(e);
 
         if(!cache) {
             _binw = &_hook;
-            *this << *(T*)0;
+            *this || (resolve_enum<T>::type&)x;
             _binw = 0;
         }
     }
@@ -682,6 +885,14 @@ public:
     template<class T>
     void xcache_out( T& x, const token& name = token() )
     { xstream_or_cache_out(x, true, name); }
+
+    template<class T>
+    void xstream_out2( T& x, const token& name = token() )
+    { xstream_or_cache_out2(x, false, name); }
+
+    template<class T>
+    void xcache_out2( T& x, const token& name = token() )
+    { xstream_or_cache_out2(x, true, name); }
 
 
     void stream_acknowledge( bool eat = false )
@@ -794,7 +1005,7 @@ public:
     metastream& operator || (long double&a)     { return meta_base_type("long double", a); }
 
 
-    metastream& operator || (const char*& a)
+    metastream& operator || (const char* a)
     {
         if(_binr) {
             throw exception("unsupported");
@@ -819,7 +1030,7 @@ public:
             auto& dyn = a.dynarray_ref();
             dyn.reset();
             dynarray<char,uint>::dynarray_binstream_container c(dyn);
-            read_container(c);
+            read_container<char>(c);
 
             if(dyn.size())
                 *dyn.add() = 0;
@@ -1061,8 +1272,8 @@ public:
         typedef typename resolve_enum<T>::type B;
 
         _cur_variable_name = varname;
-        _cur_streamfrom_fnc = &binstream::streamfunc<B>::from_stream;
-        _cur_streamto_fnc = &binstream::streamfunc<B>::to_stream;
+        _cur_streamfrom_fnc = 0;//&binstream::streamfunc<B>::from_stream;
+        _cur_streamto_fnc = 0;//&binstream::streamfunc<B>::to_stream;
 
         *this || *(B*)0;
     }
@@ -1161,7 +1372,7 @@ public:
 
         //_hook << *(const B*)defval;
         _binw = &_hook;
-        *this << *(B*)&defval;
+        *this || *(B*)&defval;
         _binw = 0;
 
         _cachestack.pop();
@@ -1224,10 +1435,10 @@ public:
 
         fmtstreamnull null;
         metastream m(null);
-        m.xstream_in(def);
+        m.xstream_in2(def);
 
         _binw = &_hook;
-        *this << def;
+        *this || def;
         _binw = 0;
 
         _cachestack.pop();
@@ -1412,6 +1623,7 @@ private:
         binstreamhook() : _meta(0) {}
 
         void set_meta( metastream& m ) {_meta = &m;}
+        metastream& get_meta() const { return *_meta; }
 
         virtual opcd write( const void* p, type t ) 	{ return _meta->data_write(p, t); }
         virtual opcd read( void* p, type t )            { return _meta->data_read(p, t); }
@@ -2871,19 +3083,20 @@ metastream& operator || ( metastream& m, dynarray<T,COUNT,A>& a )
 {
     if(m._binr) {
         a.reset();
-        typename dynarray<T,COUNT,A>::dynarray_binstream_container c(a);
-        m.read_container(c);
+        typename dynarray<T,COUNT,A>::dynarray_binstream_container c(a,0,0);
+        m.read_container<T>(c);
     }
     else if(m._binw) {
-        typename dynarray<T,COUNT,A>::dynarray_binstream_container c(a);
-        m.write_container(c);
+        typename dynarray<T,COUNT,A>::dynarray_binstream_container c(a,0,0);
+        m.write_container<T>(c);
     }
     else {
         m.meta_decl_array();
-        m << *(T*)0;
+        m || *(T*)0;
     }
     return m;
 }
+
 
 COID_NAMESPACE_END
 
@@ -3074,14 +3287,16 @@ COID_NAMESPACE_END
 namespace CHECK  // namespace to not let "operator <<" become global
 {
     typedef char no[7];
-    template<typename T> no& operator << (coid::metastream&, const T&);
+    template<typename T> no& operator || (coid::metastream&, T&);
 
     template <typename T>
     struct meta_operator_exists
     {
         typedef typename std::remove_reference<T>::type B;
-        enum { value = std::is_enum<B>::value
-            || (sizeof(*(coid::metastream*)(0) << *(const B*)(0)) != sizeof(no)) };
+        typedef typename std::remove_const<B>::type C;
+
+        enum { value = std::is_enum<C>::value
+            || (sizeof(*(coid::metastream*)(0) || *(C*)(0)) != sizeof(no)) };
     };
 
     template<>

@@ -735,7 +735,7 @@ template<class T>
 inline v8::Handle<v8::Value> v8_streamer<T>::operator << (const T& v)
 {
     if(!_meta || !_fmt) throw exception("metastream not bound");
-    _meta->xstream_out(v);
+    _meta->xstream_out2(v);
     return _fmt->get();
 }
 
@@ -746,7 +746,7 @@ inline T v8_streamer<T>::operator >> ( v8::Handle<v8::Value> src )
     if(!_meta || !_fmt) throw exception("metastream not bound");
     T val;
     _fmt->set(src);
-    _meta->xstream_in(val);
+    _meta->xstream_in2(val);
     return val;
 }
 
