@@ -155,7 +155,7 @@ public:
             *this || (resolve_enum<T>::type&)v;
         else {
             meta_variable2<T>(name, &v);
-            meta_cache_default2(defval);
+            meta_cache_default2(T(defval));
         }
         return *this;
     }
@@ -208,7 +208,7 @@ public:
         }
         else {
             meta_variable2<T>(name, 0);
-            meta_cache_default2(defval);
+            meta_cache_default2(T(defval));
         }
         return *this;
     }
@@ -427,9 +427,9 @@ public:
     metastream& meta_base_type(const char* type_name, T& v)
     {
         if(_binr)
-            *_binr >> v;
+            data_read(&v, bstype::t_type<T>());
         else if(_binw)
-            *_binw << v;
+            data_write(&v, bstype::t_type<T>());
         else
             meta_def_primitive<T>(type_name);
 
