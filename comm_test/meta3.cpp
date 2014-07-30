@@ -83,6 +83,19 @@ struct rec
 			MM(m, "weight", w.weight)
 		MSTRUCT_CLOSE(m)
 	}
+
+    friend metastream& operator || (metastream& m, rec& w)
+    {
+        return m.compound("flight_path_waypoint", [&]()
+        {
+            m.member("pos", w.pos);
+            m.member("rot", w.rot);
+            m.member_obsolete<float>("speed");
+            m.member("dir", w.dir);
+            m.member("weight", w.weight, 1);
+            m.member("speed", w.speed, 10.0f);
+        });
+    }
 };
 
 
@@ -164,10 +177,8 @@ void metastream_test3()
     dynarray<ref<FooA>> ar;
     ar.add()->create(new FooA(1, 2));
 
-    dynarray<ref<FooA>>::dynarray_binstream_container bc =
-        ar.get_container_to_read();
-    binstream_dereferencing_containerT<FooA,uints>
-        dc(bc);
+    dynarray<ref<FooA>>::dynarray_binstream_container bc(ar, ar.size());
+    binstream_dereferencing_containerT<FooA,uints> dc(bc);
 
     binstreambuf txt;
     fmtstreamjson fmt(txt);

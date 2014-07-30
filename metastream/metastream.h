@@ -55,7 +55,39 @@
 COID_NAMESPACE_BEGIN
 
 /** \class metastream
-    @see http://coid.sourceforge.net/doc/metastream.html for description
+Declaring metastream operator for custom types allows to persist objects from/to
+various format sources. Example:
+
+struct waypoint
+{
+    double3 pos;
+    float4 rot;
+    float3 dir;
+    float weight;
+    float speed;
+
+    friend metastream& operator || (metastream& m, waypoint& w)
+    {
+        m.compound("waypoint", [&]()
+        {
+            m.member("pos", w.pos);
+            m.member("rot", w.rot);
+            m.member_obsolete<float>("speed");
+            m.member("dir", w.dir);
+            m.member("weight", w.weight, 1);
+            m.member("speed", w.speed, 10.0f);
+        });
+    }
+};
+
+Then using metastream class and one of the formatting streams to stream in/out the object:
+
+    bifstream bif("waypoint.cfg");
+    fmtstreamcxx fmt(bif);
+    metastream m(fmt);
+
+    waypoint x;
+    m.stream_in2(x);
 **/
 
 ////////////////////////////////////////////////////////////////////////////////
