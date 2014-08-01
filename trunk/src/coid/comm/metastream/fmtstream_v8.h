@@ -149,6 +149,15 @@ public:
     }
 };
 
+template<> class v8_streamer<token> {
+public:
+    v8_streamer<token>(fmtstream_v8* fmt=0, metastream* meta=0) {}
+
+    v8::Handle<v8::Value> operator << (const token& v) {
+        return v8::String::New(v.ptr(), v.len());
+    }
+};
+
 
 //@}
 
@@ -731,10 +740,27 @@ protected:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+template<bool ISENUM, class T>
+struct v8_enum_helper {
+    int operator << (const T&) const { return 0; }
+    T operator >> (int) const { return T(); }
+};
+
+template<class T>
+struct v8_enum_helper<true,T> {
+    int operator << (const T& v) const { return int(v); }
+    T operator >> (int v) const { return T(v); }
+};
+
 template<class T>
 inline v8::Handle<v8::Value> v8_streamer<T>::operator << (const T& v)
 {
     if(!_meta || !_fmt) throw exception("metastream not bound");
+
+    v8_enum_helper<std::is_enum<T>::value, T> en;
+    if(std::is_enum<T>::value)
+        return v8::Int32::New(en << v);
+
     _meta->xstream_out2(v);
     return _fmt->get();
 }
@@ -744,6 +770,11 @@ template<class T>
 inline T v8_streamer<T>::operator >> ( v8::Handle<v8::Value> src )
 {
     if(!_meta || !_fmt) throw exception("metastream not bound");
+
+    v8_enum_helper<std::is_enum<T>::value, T> en;
+    if(std::is_enum<T>::value)
+        return en >> src->Int32Value();
+
     T val;
     _fmt->set(src);
     _meta->xstream_in2(val);

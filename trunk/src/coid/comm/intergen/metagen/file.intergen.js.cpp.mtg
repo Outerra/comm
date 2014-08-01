@@ -207,14 +207,6 @@ $-[args inarg? !nojs?]$
   $-(elif)$
     $basetype$ $name$ = ::js::unwrap_object<typename $basetype$::base_t>(args[$@order$]);
   $-(/if)$
- $-(elif enum?)$
-  $-(if !defval.empty?)$
-    $basetype$ $name$ = $@order$ < args.Length()
-        ? static_cast<$basetype$>( v8_streamer<int>(&ifc->_fmtv8, &ifc->_meta) >> args[$@order$] )
-        : $defval$;
-  $-(elif)$
-    $basetype$ $name$ = static_cast<$basetype$>( v8_streamer<int>(&ifc->_fmtv8, &ifc->_meta) >> args[$@order$] );
-  $-(/if)$
  $-(elif)$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator << for type '$basetype$'" );
   $-(if !defval.empty?)$
@@ -676,14 +668,6 @@ $-[args inarg? !nojs?]$
         $name$ = $defval$;
   $-(elif)$
     $basetype$ $name$ = ::js::unwrap_object<typename $basetype$::base_t>(args[1+$@order$]);
-  $-(/if)$
- $-(elif enum?)$
-  $-(if !defval.empty?)$
-    $basetype$ $name$ = $@order$ < args.Length()
-        ? static_cast<$basetype$>( v8_streamer<int>(&ifc->_fmtv8, &ifc->_meta) >> args[1+$@order$] )
-        : $defval$;
-  $-(elif)$
-    $basetype$ $name$ = static_cast<$basetype$>( v8_streamer<int>(&ifc->_fmtv8, &ifc->_meta) >> args[1+$@order$] );
   $-(/if)$
  $-(elif)$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator << for type '$basetype$'" );
