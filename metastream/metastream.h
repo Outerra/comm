@@ -549,7 +549,7 @@ public:
     {
         if( !prepare_type_common<R>(cache) )  return 0;
 
-        *this || *(T*)0;     // build description
+        *this || *(resolve_enum<T>::type*)0;     // build description
 
         return prepare_type_final<R>(name, cache);
     }
@@ -582,7 +582,7 @@ public:
         if( !prepare_type_common<R>(cache) )  return 0;
 
         meta_decl_array(n);
-        *this || *(T*)0;     // build description
+        *this || *(resolve_enum<T>::type*)0;     // build description
 
         return prepare_type_final<R>(name, cache);
     }
@@ -876,7 +876,7 @@ public:
         if(e) throw exception(e);
 
         _binr = &_hook;
-        *this || x;
+        *this || (resolve_enum<T>::type&)x;
         _binr = 0;
     }
 
@@ -3119,7 +3119,7 @@ metastream& operator || ( metastream& m, dynarray<T,COUNT,A>& a )
         m.read_container<T>(c);
     }
     else if(m._binw) {
-        typename dynarray<T,COUNT,A>::dynarray_binstream_container c(a,0,0);
+        typename dynarray<T,COUNT,A>::dynarray_binstream_container c(a,0,0,a.size());
         m.write_container<T>(c);
     }
     else {
