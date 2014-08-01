@@ -141,8 +141,8 @@ public:
     }
 
     ///Define struct streaming scheme
-    template<typename Fn, typename A>
-    metastream& compound( const token& name, Fn fn )
+    template<typename A, typename Fn>
+    metastream& compound_templated( const token& name, Fn fn )
     {
         if(streaming()) {
             fn();
@@ -151,7 +151,7 @@ public:
             charstr& k = *_templ_name_stack.add();
             k.append('<');
         
-            *this || *(T*)0;
+            *this || *(A*)0;
 
             k.append('>');
 
@@ -250,7 +250,7 @@ public:
     metastream& member_pointer( const token& name, T*& v )
     {
         if(streaming())
-            *this || v;
+            *this || *v;
         else
             meta_variable_pointer2<T>(name, v);
         return *this;
@@ -270,11 +270,11 @@ public:
     metastream& member_array( const token& name, T* v, uints size )
     {
         if(_binw) {
-            binstream_container_fixed_array<T,ints> bc(v, size);
+            binstream_container_fixed_array<T,ints> bc(v, size, 0, 0);
             write_container<T>(bc);
         }
         else if(_binr) {
-            binstream_container_fixed_array<T,ints> bc(v, size);
+            binstream_container_fixed_array<T,ints> bc(v, size, 0, 0);
             read_container<T>(bc);
         }
         else
@@ -1329,8 +1329,8 @@ public:
         typedef typename resolve_enum<T>::type B;
 
         _cur_variable_name = varname;
-        _cur_streamfrom_fnc = &binstream::streamfunc<B>::from_stream;
-        _cur_streamto_fnc = &binstream::streamfunc<B>::to_stream;
+        _cur_streamfrom_fnc = 0;//&binstream::streamfunc<B>::from_stream;
+        _cur_streamto_fnc = 0;//&binstream::streamfunc<B>::to_stream;
 
         meta_decl_array(n);
 
@@ -1343,12 +1343,12 @@ public:
         typedef typename type_base<T>::type BT;
 
         _cur_variable_name = varname;
-        _cur_streamfrom_fnc = &binstream::streamfunc<BT>::from_stream;
-        _cur_streamto_fnc = &binstream::streamfunc<BT>::to_stream;
+        _cur_streamfrom_fnc = 0;//&binstream::streamfunc<BT>::from_stream;
+        _cur_streamto_fnc = 0;//&binstream::streamfunc<BT>::to_stream;
 
         meta_decl_pointer();
 
-        *this || *(T)0;
+        *this || *(T*)0;
     }
 
 
@@ -3129,7 +3129,6 @@ metastream& operator || ( metastream& m, dynarray<T,COUNT,A>& a )
     return m;
 }
 
-
 COID_NAMESPACE_END
 
 
@@ -3138,59 +3137,21 @@ COID_NAMESPACE_END
 ///Helper macros for structs
 
 #define COID_METABIN_OP1(TYPE,P0) namespace coid {\
-    inline binstream& operator << (binstream& bin, const TYPE& v) {\
-        return bin << v.P0;}\
-    inline binstream& operator >> (binstream& bin, TYPE& v) {\
-        return bin >> v.P0;}\
-    inline metastream& operator << (metastream& m, const TYPE& v) {\
-        MSTRUCT_OPEN(m,#TYPE)\
-        MM(m,#P0,v.P0)\
-        MSTRUCT_CLOSE(m)}\
     inline metastream& operator || (metastream& m, TYPE& v) {\
         m.compound(#TYPE, [&]() { m.member(#P0, v.P0); });\
         return m; }}
 
 #define COID_METABIN_OP2(TYPE,P0,P1) namespace coid {\
-    inline binstream& operator << (binstream& bin, const TYPE& v) {\
-        return bin << v.P0 << v.P1;}\
-    inline binstream& operator >> (binstream& bin, TYPE& v) {\
-        return bin >> v.P0 >> v.P1;}\
-    inline metastream& operator << (metastream& m, const TYPE& v) {\
-        MSTRUCT_OPEN(m,#TYPE)\
-        MM(m,#P0,v.P0)\
-        MM(m,#P1,v.P1)\
-        MSTRUCT_CLOSE(m)}\
     inline metastream& operator || (metastream& m, TYPE& v) {\
         m.compound(#TYPE, [&]() { m.member(#P0, v.P0); m.member(#P1, v.P1); });\
         return m; }}
 
 #define COID_METABIN_OP3(TYPE,P0,P1,P2) namespace coid {\
-    inline binstream& operator << (binstream& bin, const TYPE& v) {\
-        return bin << v.P0 << v.P1 << v.P2;}\
-    inline binstream& operator >> (binstream& bin, TYPE& v) {\
-        return bin >> v.P0 >> v.P1 >> v.P2;}\
-    inline metastream& operator << (metastream& m, const TYPE& v) {\
-        MSTRUCT_OPEN(m,#TYPE)\
-        MM(m,#P0,v.P0)\
-        MM(m,#P1,v.P1)\
-        MM(m,#P2,v.P2)\
-        MSTRUCT_CLOSE(m)}\
     inline metastream& operator || (metastream& m, TYPE& v) {\
         m.compound(#TYPE, [&]() { m.member(#P0, v.P0); m.member(#P1, v.P1); m.member(#P2, v.P2); });\
         return m; }}
 
 #define COID_METABIN_OP4(TYPE,P0,P1,P2,P3) namespace coid {\
-    inline binstream& operator << (binstream& bin, const TYPE& v) {\
-        return bin << v.P0 << v.P1 << v.P2 << v.P3;}\
-    inline binstream& operator >> (binstream& bin, TYPE& v) {\
-        return bin >> v.P0 >> v.P1 >> v.P2 >> v.P3;}\
-    inline metastream& operator << (metastream& m, const TYPE& v) {\
-        MSTRUCT_OPEN(m,#TYPE)\
-        MM(m,#P0,v.P0)\
-        MM(m,#P1,v.P1)\
-        MM(m,#P2,v.P2)\
-        MM(m,#P3,v.P3)\
-        MSTRUCT_CLOSE(m)}\
     inline metastream& operator || (metastream& m, TYPE& v) {\
         m.compound(#TYPE, [&]() { m.member(#P0, v.P0); m.member(#P1, v.P1); m.member(#P2, v.P2); m.member(#P3, v.P3); });\
         return m; }}
@@ -3199,59 +3160,21 @@ COID_NAMESPACE_END
 
 
 #define COID_METABIN_OP1D(TYPE,P0,P1,D0,D1) namespace coid {\
-    inline binstream& operator << (binstream& bin, const TYPE& v) {\
-        return bin << v.P0;}\
-    inline binstream& operator >> (binstream& bin, TYPE& v) {\
-        return bin >> v.P0;}\
-    inline metastream& operator << (metastream& m, const TYPE& v) {\
-        MSTRUCT_OPEN(m,#TYPE)\
-        MMD(m,#P0,v.P0,D0)\
-        MSTRUCT_CLOSE(m)}\
     inline metastream& operator || (metastream& m, TYPE& v) {\
         m.compound(#TYPE, [&]() { m.member(#P0, v.P0, D0); });\
         return m; }}
 
 #define COID_METABIN_OP2D(TYPE,P0,P1,D0,D1) namespace coid {\
-    inline binstream& operator << (binstream& bin, const TYPE& v) {\
-        return bin << v.P0 << v.P1;}\
-    inline binstream& operator >> (binstream& bin, TYPE& v) {\
-        return bin >> v.P0 >> v.P1;}\
-    inline metastream& operator << (metastream& m, const TYPE& v) {\
-        MSTRUCT_OPEN(m,#TYPE)\
-        MMD(m,#P0,v.P0,D0)\
-        MMD(m,#P1,v.P1,D1)\
-        MSTRUCT_CLOSE(m)}\
     inline metastream& operator || (metastream& m, TYPE& v) {\
         m.compound(#TYPE, [&]() { m.member(#P0, v.P0, D0); m.member(#P1, v.P1, D1); });\
         return m; }}
 
 #define COID_METABIN_OP3D(TYPE,P0,P1,P2,D0,D1,D2) namespace coid {\
-    inline binstream& operator << (binstream& bin, const TYPE& v) {\
-        return bin << v.P0 << v.P1 << v.P2;}\
-    inline binstream& operator >> (binstream& bin, TYPE& v) {\
-        return bin >> v.P0 >> v.P1 >> v.P2;}\
-    inline metastream& operator << (metastream& m, const TYPE& v) {\
-        MSTRUCT_OPEN(m,#TYPE)\
-        MMD(m,#P0,v.P0,D0)\
-        MMD(m,#P1,v.P1,D1)\
-        MMD(m,#P2,v.P2,D2)\
-        MSTRUCT_CLOSE(m)}\
     inline metastream& operator || (metastream& m, TYPE& v) {\
         m.compound(#TYPE, [&]() { m.member(#P0, v.P0, D0); m.member(#P1, v.P1, D1); m.member(#P2, v.P2, D2); });\
         return m; }}
 
 #define COID_METABIN_OP4D(TYPE,P0,P1,P2,P3,D0,D1,D2,D3) namespace coid {\
-    inline binstream& operator << (binstream& bin, const TYPE& v) {\
-        return bin << v.P0 << v.P1 << v.P2 << v.P3;}\
-    inline binstream& operator >> (binstream& bin, TYPE& v) {\
-        return bin >> v.P0 >> v.P1 >> v.P2 >> v.P3;}\
-    inline metastream& operator << (metastream& m, const TYPE& v) {\
-        MSTRUCT_OPEN(m,#TYPE)\
-        MMD(m,#P0,v.P0,D0)\
-        MMD(m,#P1,v.P1,D1)\
-        MMD(m,#P2,v.P2,D2)\
-        MMD(m,#P3,v.P3,D3)\
-        MSTRUCT_CLOSE(m)}\
     inline metastream& operator || (metastream& m, TYPE& v) {\
         m.compound(#TYPE, [&]() { m.member(#P0, v.P0, D0); m.member(#P1, v.P1, D1); m.member(#P2, v.P2, D2); m.member(#P3, v.P3, D3); });\
         return m; }}
@@ -3260,53 +3183,21 @@ COID_NAMESPACE_END
 
 
 #define COID_METABIN_OP1A(TYPE,ELEM) namespace coid {\
-    inline binstream& operator << (binstream& bin, const TYPE& v) {\
-        return bin << v[0];}\
-    inline binstream& operator >> (binstream& bin, TYPE& v) {\
-        return bin >> v[0];}\
-    inline metastream& operator << (metastream& m, const TYPE& v) {\
-        MSTRUCT_OPEN(m,#TYPE)\
-        MMAF(m,"col",ELEM,1)\
-        MSTRUCT_CLOSE(m)}\
     inline metastream& operator || (metastream& m, TYPE& v) {\
         m.compound(#TYPE, [&]() { m.member_array("col", &v[0], 1); });\
         return m; }}
 
 #define COID_METABIN_OP2A(TYPE,ELEM) namespace coid {\
-    inline binstream& operator << (binstream& bin, const TYPE& v) {\
-        return bin << v[0] << v[1];}\
-    inline binstream& operator >> (binstream& bin, TYPE& v) {\
-        return bin >> v[0] >> v[1];}\
-    inline metastream& operator << (metastream& m, const TYPE& v) {\
-        MSTRUCT_OPEN(m,#TYPE)\
-        MMAF(m,"col",ELEM,2)\
-        MSTRUCT_CLOSE(m)}\
     inline metastream& operator || (metastream& m, TYPE& v) {\
         m.compound(#TYPE, [&]() { m.member_array("col", &v[0], 2); });\
         return m; }}
 
 #define COID_METABIN_OP3A(TYPE,ELEM) namespace coid {\
-    inline binstream& operator << (binstream& bin, const TYPE& v) {\
-        return bin << v[0] << v[1] << v[2];}\
-    inline binstream& operator >> (binstream& bin, TYPE& v) {\
-        return bin >> v[0] >> v[1] >> v[2];}\
-    inline metastream& operator << (metastream& m, const TYPE& v) {\
-        MSTRUCT_OPEN(m,#TYPE)\
-        MMAF(m,"col",ELEM,3)\
-        MSTRUCT_CLOSE(m)}\
     inline metastream& operator || (metastream& m, TYPE& v) {\
         m.compound(#TYPE, [&]() { m.member_array("col", &v[0], 3); });\
         return m; }}
 
 #define COID_METABIN_OP4A(TYPE,ELEM) namespace coid {\
-    inline binstream& operator << (binstream& bin, const TYPE& v) {\
-        return bin << v[0] << v[1] << v[2] << v[3];}\
-    inline binstream& operator >> (binstream& bin, TYPE& v) {\
-        return bin >> v[0] >> v[1] >> v[2] >> v[3];}\
-    inline metastream& operator << (metastream& m, const TYPE& v) {\
-        MSTRUCT_OPEN(m,#TYPE)\
-        MMAF(m,"col",ELEM,4)\
-        MSTRUCT_CLOSE(m)}\
     inline metastream& operator || (metastream& m, TYPE& v) {\
         m.compound(#TYPE, [&]() { m.member_array("col", &v[0], 4); });\
         return m; }}

@@ -190,6 +190,13 @@ public:
 		MMP(m,"ptr",s.get())
 		MSTRUCT_CLOSE(m)
 	}
+
+	friend coid::metastream& operator || (coid::metastream& m, iref_t& s) {
+		return m.compound_templated<T>("ref", [&]()
+        {
+            m.member_pointer("ptr", s._p);
+        });
+	}
 };
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
