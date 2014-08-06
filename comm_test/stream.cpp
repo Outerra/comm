@@ -17,7 +17,7 @@ struct STLMIX {
     std::multiset<std::string> x4;
     std::map<std::string,uint> x5;
     std::multimap<std::string,uint> x6;
-
+/*
     inline friend binstream& operator << (binstream& bin, const STLMIX& x)
     {   return bin << x.x0 << x.x1 << x.x2 << x.x3 << x.x4 << x.x5 << x.x6; }
     
@@ -35,6 +35,19 @@ struct STLMIX {
         MM(m,"map",x.x5)
         MM(m,"multimap",x.x6)
         MSTRUCT_CLOSE(m)
+    }*/
+    inline friend metastream& operator || (metastream& m, STLMIX& x)
+    {
+        return m.compound("STLMIX", [&]()
+        {
+            m.member("vector",x.x0);
+            m.member("list",x.x1);
+            m.member("deque",x.x2);
+            m.member("set",x.x3);
+            m.member("multiset",x.x4);
+            //m.member("map",x.x5);
+            //m.member("multimap",x.x6);
+        });
     }
 };
 
@@ -50,7 +63,7 @@ void test()
     }
 
     //binstream out and in test
-
+/*
     bofstream bof("stl.test");
 
     const char* t = "some string";
@@ -67,27 +80,29 @@ void test()
     bifstream bif("stl.test");
 
     bif >> t >> y;
-    bif.close();
+    bif.close();*/
 
     //::free((void*)t);
 
     
     //metastream out and in test
 
-    bof.open("stl_meta.test");
+    bofstream bof("stl_meta.test");
     fmtstreamxml2 txpo(bof);
     metastream meta(txpo);
 
+    STLMIX x;
     meta.stream_out(x);
 
     bof.close();
 
 
-    bif.open("stl_meta.test");
+    bifstream bif("stl_meta.test");
 
     fmtstreamxml2 txpi(bif);
     meta.bind_formatting_stream(txpi);
 
+    STLMIX y;
     meta.stream_in(y);
 
     bif.close();

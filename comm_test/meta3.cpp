@@ -21,7 +21,7 @@ struct FooA
         this->i = i;
         this->f = f;
     }
-
+/*
     friend binstream& operator << (binstream& bin, const FooA& s)
     {   return bin << s.i << s.f;   }
     friend binstream& operator >> (binstream& bin, FooA& s)
@@ -32,6 +32,14 @@ struct FooA
             MMD(m, "i", s.i, 4)
             MMD(m, "f", s.f, 3.3f)
         MSTRUCT_CLOSE(m)
+    }*/
+    friend metastream& operator || (metastream& m, FooA& s)
+    {
+        return m.compound("FooA", [&]()
+        {
+            m.member("i", s.i, 4);
+            m.member("f", s.f, 3.3f);
+        });
     }
 };
 
@@ -63,7 +71,7 @@ struct rec
     float3 dir;
     float weight;
     float speed;
-
+/*
 	friend binstream& operator << (binstream& bin, const rec& w) {
 		return bin << w.pos << w.rot << w.dir << w.speed << w.weight;
 	}
@@ -82,7 +90,7 @@ struct rec
             MM(m, "speed", w.speed)
 			MM(m, "weight", w.weight)
 		MSTRUCT_CLOSE(m)
-	}
+	}*/
 
     friend metastream& operator || (metastream& m, rec& w)
     {
@@ -177,8 +185,8 @@ void metastream_test3()
     dynarray<ref<FooA>> ar;
     ar.add()->create(new FooA(1, 2));
 
-    dynarray<ref<FooA>>::dynarray_binstream_container bc(ar, ar.size());
-    binstream_dereferencing_containerT<FooA,uints> dc(bc);
+    dynarray<ref<FooA>>::dynarray_binstream_container bc(ar, 0, 0, ar.size());
+    binstream_dereferencing_containerT<FooA,uints> dc(bc,0,0);
 
     binstreambuf txt;
     fmtstreamjson fmt(txt);

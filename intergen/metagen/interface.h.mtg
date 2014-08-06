@@ -24,60 +24,7 @@ $-[/comments]$$(/if)$
 class $name$
     : public $(if base?)$$base$$(elif)$intergen_interface$(/if)$
 {
-protected:
-$-(if varname?)$
-    typedef void (*cleanup_fn)($name$*, intergen_interface*);
-    cleanup_fn _cleaner;
-$-(/if)$
-
-    $name$()$(if varname?)$ : _cleaner(0)$(/if)$
-    {}
-    
-$-(if destroy.name.empty!)$
-    ~$name$() {
-        VT_CALL($destroy.return.type$,($[destroy.args rest=","]$$type$$[/destroy.args]$),0)($[destroy.args rest=","]$$name$$[/destroy.args]$);
-$-(if varname?)$
-        if(_cleaner) _cleaner(this,0);
-$-(/if)$
-    }
-$(/if)-$
-
 public:
-$-(if varname? destroy.name.empty?)$
-
-    virtual ~$name$() {
-        if(_cleaner) _cleaner(this,0);
-    }
-$-(/if)$
-
-    ///interface hash id
-    static const int HASHID = $hash$;
-    
-    int intergen_hash_id() const override { return HASHID; }
-
-    const coid::token& intergen_default_creator() const override {
-$-(if default_creator.name.empty?)$
-        static const coid::token _DC("");
-$-(elif)$
-        static const coid::token _DC("$ns rest="::" after="::"$$name$.$default_creator.name$@$hash$");
-$-(/if)$
-        return _DC;
-    }
-
-    // --- creators ---
-
-$-[method static?]$
-$(if !comments.empty?)$$[comments]-$
-    $@value$
-$[/comments]$$(/if)-$
-    static iref<$..name$> $name$(
-        $-[args rest="," after=" "]$ $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$) {
-        return $name$<$..name$>(0$[args]$, $name$$[/args]$);
-    }
-
-    template<class T>
-    static iref<T> $name$( T* _subclass_$[args]$, $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$ );
-$-[/method]$
 
     // --- interface methods ---
 
@@ -85,7 +32,7 @@ $-[method !static? !destroy?]$
 $(if !comments.empty?)$$[comments]-$
     $@value$
 $[/comments]$$(/if)-$
-    $(if ..virtual?)$virtual $(/if)$$return.type$ $name$($[args rest="," after=" "]$ $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$) $-(if const?)$ const$(/if)$;
+    $(if ..virtual?)$virtual $(/if)$$return.type$ $name$($[args rest="," after=" "]$ $(if outarg?)$$(if inarg?)$ifc_inout$(elif)$ifc_out$(/if)$ $(/if)-$ $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$) $-(if const?)$ const$(/if)$;
 $[/method]-$
 
     // --- interface events ---
@@ -105,6 +52,61 @@ $-(if event.empty!)$
 
     virtual void force_bind_script_events() {}
 $-(/if)$
+
+    // --- creators ---
+
+$-[method static?]$
+$(if !comments.empty?)$$[comments]-$
+    $@value$
+$[/comments]$$(/if)-$
+    static iref<$..name$> $name$(
+        $-[args rest="," after=" "]$ $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$) {
+        return $name$<$..name$>(0$[args]$, $name$$[/args]$);
+    }
+
+    template<class T>
+    static iref<T> $name$( T* _subclass_$[args]$, $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$ );
+$-[/method]$
+
+    // --- internal helpers ---
+$-(if varname? destroy.name.empty?)$
+
+    virtual ~$name$() {
+        if(_cleaner) _cleaner(this,0);
+    }
+$-(/if)$
+
+    static const int HASHID = $hash$;
+    
+    int intergen_hash_id() const override { return HASHID; }
+
+    const coid::token& intergen_default_creator() const override {
+$-(if default_creator.name.empty?)$
+        static const coid::token _DC("");
+$-(elif)$
+        static const coid::token _DC("$ns rest="::" after="::"$$name$.$default_creator.name$@$hash$");
+$-(/if)$
+        return _DC;
+    }
+
+protected:
+$-(if varname?)$
+
+    typedef void (*cleanup_fn)($name$*, intergen_interface*);
+    cleanup_fn _cleaner;
+$-(/if)$
+$-(if destroy.name.empty!)$
+
+    ~$name$() {
+        VT_CALL($destroy.return.type$,($[destroy.args rest=","]$$type$$[/destroy.args]$),0)($[destroy.args rest=","]$$name$$[/destroy.args]$);
+$-(if varname?)$
+        if(_cleaner) _cleaner(this,0);
+$-(/if)$
+    }
+$-(/if)$
+
+    $name$()$(if varname?)$ : _cleaner(0)$(/if)$
+    {}
 };
 
 $-[method static?]$

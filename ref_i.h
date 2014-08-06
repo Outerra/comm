@@ -184,18 +184,22 @@ public:
 	friend coid::binstream& operator >> (coid::binstream& bin,iref_t& s) { 
 		s.create(new T); return bin>>*s.get(); 
 	}
-
+/*
 	friend coid::metastream& operator << (coid::metastream& m,const iref_t& s) {
 		MSTRUCT_OPEN(m,"ref")
 		MMP(m,"ptr",s.get())
 		MSTRUCT_CLOSE(m)
-	}
+	}*/
 
-	friend coid::metastream& operator || (coid::metastream& m, iref_t& s) {
-		return m.compound_templated<T>("ref", [&]()
-        {
-            m.member_pointer("ptr", s._p);
-        });
+	friend coid::metastream& operator || (coid::metastream& m, iref_t& s)
+    {
+        if(m.stream_writing())
+            m.write_optional(s.get());
+        else if(m.stream_reading())
+            s.create(m.read_optional<T>());
+        else
+            m || *(T*)0;
+        return m;
 	}
 };
 
