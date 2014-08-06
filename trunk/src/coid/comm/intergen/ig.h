@@ -94,7 +94,7 @@ struct Method
 
 
         bool parse( iglexer& lex );
-
+/*
         friend binstream& operator << (binstream& bin, const Arg& m)
         {   return bin << m.type << m.name << m.size << m.defval << m.bconst << m.bptr << m.bref << m.bretarg << m.bsizearg; }
         friend binstream& operator >> (binstream& bin, Arg& m)
@@ -112,6 +112,21 @@ struct Method
             MM(m,"retarg",p.bretarg)
             MM(m,"sizearg",p.bsizearg)
             MSTRUCT_CLOSE(m)
+        }*/
+        friend metastream& operator || (metastream& m, Arg& p)
+        {
+            return m.compound("Arg", [&]()
+            {
+                m.member("type", p.type);
+                m.member("name", p.name);
+                m.member("size", p.size);
+                m.member("defval", p.defval);
+                m.member("const", p.bconst);
+                m.member("ptr", p.bptr);
+                m.member("ref", p.bref);
+                m.member("retarg", p.bretarg);
+                m.member("sizearg", p.bsizearg);
+            });
         }
     };
 
@@ -136,7 +151,7 @@ struct Method
 
     bool generate_h( binstream& bin );
 
-
+/*
     friend binstream& operator << (binstream& bin, const Method& m)
     {   return bin << m.retexpr << m.retparm << m.templarg << m.templsub << m.rettype
     << m.name << m.bstatic << m.bsizearg << m.bptr << m.biref << m.overload << m.args; }
@@ -159,6 +174,24 @@ struct Method
         MM(m,"overload",p.overload)
         MM(m,"args",p.args)
         MSTRUCT_CLOSE(m)
+    }*/
+    friend metastream& operator || (metastream& m, Method& p)
+    {
+        return m.compound("Method", [&]()
+        {
+            m.member("retexpr", p.retexpr);
+            m.member("retparm", p.retparm);
+            m.member("templarg", p.templarg);
+            m.member("templsub", p.templsub);
+            m.member("rettype", p.rettype);
+            m.member("name", p.name);
+            m.member("static", p.bstatic);
+            m.member("sizearg", p.bsizearg);
+            m.member("ptr", p.bptr);
+            m.member("iref", p.biref);
+            m.member("overload", p.overload);
+            m.member("args", p.args);
+        });
     }
 };
 
@@ -194,7 +227,7 @@ struct MethodIG
 
         void add_unique( dynarray<Arg>& irefargs );
 
-
+/*
         friend binstream& operator << (binstream& bin, const Arg& m)
         {   return bin << m.type << m.basetype << m.base2arg << m.name << m.size << m.defval << m.fulltype
             << m.bconst << m.benum << m.bptr << m.bref << m.biref << m.binarg << m.boutarg << m.tokenpar << m.bnojs; }
@@ -220,6 +253,28 @@ struct MethodIG
             MM(m,"token",p.tokenpar)
             MM(m,"nojs",p.bnojs)
             MSTRUCT_CLOSE(m)
+        }*/
+        friend metastream& operator || (metastream& m, Arg& p)
+        {
+            return m.compound("MethodIG::Arg", [&]()
+            {
+                m.member("type",p.type);
+                m.member("basetype",p.basetype);
+                m.member("base2arg",p.base2arg);
+                m.member("name",p.name);
+                m.member("size",p.size);
+                m.member("defval",p.defval);
+                m.member("fulltype",p.fulltype);
+                m.member("const",p.bconst);
+                m.member("enum",p.benum);
+                m.member("ptr",p.bptr);
+                m.member("ref",p.bref);
+                m.member("iref",p.biref);
+                m.member("inarg",p.binarg);
+                m.member("outarg",p.boutarg);
+                m.member("token",p.tokenpar);
+                m.member("nojs",p.bnojs);
+            });
         }
     };
 
@@ -261,7 +316,7 @@ struct MethodIG
 
     bool generate_h( binstream& bin );
 
-
+/*
     friend binstream& operator << (binstream& bin, const MethodIG& m)
     {   return bin << m.templarg << m.templsub << m.ret << m.name << m.intname << m.storage
         << m.boperator << m.binternal << m.bcapture << m.bstatic << m.bptr << m.biref
@@ -297,6 +352,33 @@ struct MethodIG
         MM(m,"comments",p.comments)
         MM(m,"index",p.index)
         MSTRUCT_CLOSE(m)
+    }*/
+    friend metastream& operator || (metastream& m, MethodIG& p)
+    {
+        return m.compound("MethodIG", [&]()
+        {
+            m.member("templarg",p.templarg);
+            m.member("templsub",p.templsub);
+            m.member("return",p.ret);
+            m.member("name",p.name);
+            m.member("intname",p.intname);
+            m.member("storage",p.storage);
+            m.member("operator",p.boperator);
+            m.member("internal",p.binternal);
+            m.member("capture",p.bcapture);
+            m.member("static",p.bstatic);
+            m.member("ptr",p.bptr);
+            m.member("iref",p.biref);
+            m.member("const",p.bconst);
+            m.member("implicit",p.bimplicit);
+            m.member("destroy",p.bdestroy);
+            m.member("args",p.args);
+            m.member("ninargs",p.ninargs);
+            m.member("ninargs_nondef",p.ninargs_nondef);
+            m.member("noutargs",p.noutargs);
+            m.member("comments",p.comments);
+            m.member("index",p.index);
+        });
     }
 };
 
@@ -354,7 +436,7 @@ struct Interface
     }
 
     int check_interface( iglexer& lex );
-
+/*
     friend binstream& operator << (binstream& bin, const Interface& m)
     {   return bin << m.nss << m.name << m.relpath << m.relpathjs << m.hdrfile << m.storage << m.method
         << m.getter << m.setter << m.on_create << m.on_create_ev << bool(m.oper_get>=0) << m.nifc_methods
@@ -392,6 +474,38 @@ struct Interface
         MM(m,"virtual",p.bvirtual)
         MM(m,"default_creator",p.default_creator)
         MSTRUCT_CLOSE(m)
+    }*/
+    friend metastream& operator || (metastream& m, Interface& p)
+    {
+        return m.compound("Interface", [&]()
+        {
+            m.member("ns",p.nss);
+            m.member("name",p.name);
+            m.member("relpath",p.relpath);
+            m.member("relpathjs",p.relpathjs);
+            m.member("hdrfile",p.hdrfile);
+            m.member("storage",p.storage);
+            m.member("method",p.method);
+            m.member("getter",p.getter);
+            m.member("setter",p.setter);
+            m.member("oncreate",p.on_create);
+            m.member("oncreateev",p.on_create_ev);
+            m.member_type<bool>("hasprops", [](bool){}, [&]() { return p.oper_get>=0;});
+            m.member("nifcmethods",p.nifc_methods);
+            m.member("varname",p.varname);
+            m.member("event",p.event);
+            m.member("destroy",p.destroy);
+            m.member("hash",p.hash);
+            m.member("comments",p.comments);
+            m.member("pasters",p.pasters);
+            m.member_type<charstr>("srcfile", [](const charstr&){}, [&](){ return *p.srcfile;} );
+            m.member_type<charstr>("class", [](const charstr&){}, [&](){ return *p.srcclass;} );
+            m.member("base",p.base);
+            m.member("baseclass",p.baseclass);
+            m.member("basepath",p.basepath);
+            m.member("virtual",p.bvirtual);
+            m.member("default_creator",p.default_creator);
+        });
     }
 };
 
@@ -412,7 +526,7 @@ struct Class
 
 
     bool parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& namespcs, dynarray<paste_block>* pasters, dynarray<MethodIG::Arg>& irefargs );
-
+/*
     friend binstream& operator << (binstream& bin, const Class& m)
     {   return bin << m.classname << m.templarg << m.templsub << m.ns << m.namespc
         << m.noref << m.method << m.iface << m.namespaces; }
@@ -432,6 +546,21 @@ struct Class
         MM(m,"iface",p.iface)
         MM(m,"nss",p.namespaces)
         MSTRUCT_CLOSE(m)
+    }*/
+    friend metastream& operator || (metastream& m, Class& p)
+    {
+        return m.compound("Class", [&]()
+        {
+            m.member("class",p.classname);
+            m.member("templarg",p.templarg);
+            m.member("templsub",p.templsub);
+            m.member("ns",p.ns);
+            m.member("nsx",p.namespc);
+            m.member("noref",p.noref);
+            m.member("method",p.method);
+            m.member("iface",p.iface);
+            m.member("nss",p.namespaces);
+        });
     }
 };
 

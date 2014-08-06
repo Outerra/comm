@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Express 2013 for Windows Desktop
-VisualStudioVersion = 12.0.20623.1 VSUPREVIEW
+VisualStudioVersion = 12.0.30501.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "comm", "comm.vcxproj", "{67F94DBD-39F3-4ED5-B02D-EA5A62C69F26}"
 EndProject
@@ -15,6 +15,7 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "comm_test", "comm_test.vcxproj", "{A76C8D9E-BDDF-4BE5-9266-453F55E6AEFC}"
 	ProjectSection(ProjectDependencies) = postProject
 		{D2F47060-00C0-4A3C-9888-CF663F14D44D} = {D2F47060-00C0-4A3C-9888-CF663F14D44D}
+		{650FD8CC-0A36-4DF2-A81C-045ABA3194F0} = {650FD8CC-0A36-4DF2-A81C-045ABA3194F0}
 	EndProjectSection
 EndProject
 Global

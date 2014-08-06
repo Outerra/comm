@@ -761,7 +761,7 @@ inline v8::Handle<v8::Value> v8_streamer<T>::operator << (const T& v)
     if(std::is_enum<T>::value)
         return v8::Int32::New(en << v);
 
-    _meta->xstream_out2(v);
+    _meta->xstream_out(v);
     return _fmt->get();
 }
 
@@ -777,7 +777,7 @@ inline T v8_streamer<T>::operator >> ( v8::Handle<v8::Value> src )
 
     T val;
     _fmt->set(src);
-    _meta->xstream_in2(val);
+    _meta->xstream_in(val);
     return val;
 }
 

@@ -21,7 +21,7 @@ struct FooA
         this->i = i;
         this->f = f;
     }
-
+/*
     friend binstream& operator << (binstream& bin, const FooA& s)
     {   return bin << s.i << s.f;   }
     friend binstream& operator >> (binstream& bin, FooA& s)
@@ -32,6 +32,14 @@ struct FooA
             MMD(m, "i", s.i, 4)
             MMD(m, "f", s.f, 3.3f)
         MSTRUCT_CLOSE(m)
+    }*/
+    friend metastream& operator || (metastream& m, FooA& s)
+    {
+        return  m.compound("FooA", [&]()
+        {
+            m.member("i", s.i, 4);
+            m.member("f", s.f, 3.3f);
+        });
     }
 };
 
@@ -48,7 +56,7 @@ struct FooAA
         fa.f = f;
     }
 
-    friend binstream& operator << (binstream& bin, const FooAA& s)
+    /*friend binstream& operator << (binstream& bin, const FooAA& s)
     {   return bin << s.text << s.j << s.fa;   }
     friend binstream& operator >> (binstream& bin, FooAA& s)
     {   return bin >> s.text >> s.j >> s.fa;   }
@@ -59,6 +67,15 @@ struct FooAA
             MM(m, "j", s.j)
             MMD(m, "fa", s.fa, FooA(47, 47.47f) )
         MSTRUCT_CLOSE(m)
+    }*/
+    friend metastream& operator || (metastream& m, FooAA& s)
+    {
+        return m.compound("FooAA", [&]()
+        {
+            m.member("text", s.text, "def");
+            m.member("j", s.j);
+            m.member("fa", s.fa, FooA(47, 47.47f));
+        });
     }
 };
 
@@ -78,7 +95,7 @@ struct FooB
 
     FooB() : pfo(0)
     {}
-
+/*
     friend binstream& operator << (binstream& bin, const FooB& s)
     {   return bin << s.a << s.b << s.fx << s.af << s.aaf << s.aaaf << s.ai << s.aai << pointer(s.pfo) << s.end;   }
     friend binstream& operator >> (binstream& bin, FooB& s)
@@ -97,6 +114,25 @@ struct FooB
             MMP(m, "p", s.pfo)
             MM(m, "end", s.end)
         MSTRUCT_CLOSE(m)
+    }*/
+    friend metastream& operator || (metastream& m, FooB& s)
+    {
+        return m.compound("FooB", [&]()
+        {
+            m.member("a", s.a, 8);
+            m.member("b", s.b);
+            m.member("fx", s.fx);
+            m.member("af", s.af);
+            m.member("aaf", s.aaf);
+            m.member("aaaf", s.aaaf);
+            m.member("ai", s.ai);
+            m.member("aai", s.aai);
+            m.member_optional<FooAA>("p",
+                [&](const FooAA* v) {if(v) s.pfo = new FooAA(*v); },
+                [&]() { return s.pfo; }
+                );
+            m.member("end", s.end);
+        });
     }
 };
 
@@ -112,8 +148,8 @@ static const char* teststr =
 "aaf = [ [ { j=20 fa={i=9 f=8.33} }, { j=21 fa={i=10 f=4.66} }, { j=22 fa={i=11 f=7.66} } ] [] ],\n"
 "aaaf = [ [ [ { text=\"\", j=30, fa={i=9, f=8.33} }, { j=31, fa={i=10, f=4.66} }, { j=32, fa={i=11, f=7.66} } ], [] ], [ [ { j=33, fa={i=33, f=0.66} } ] ] ],\n"
 "ai = [ 1 2 3 4 5 ],\n"
-"aai = [ [1, 2, 3] [4, 5] [6] ]\n"
 "p = { j=66, fa={i=6, f=0.998} }\n"
+"aai = [ [1, 2, 3] [4, 5] [6] ]\n"
 "end = 99\n"
 ;
 
@@ -177,21 +213,43 @@ void metastream_test()
     fmtstreamcxx fmt(buf);
     metastream meta(fmt);
 
+    {
+        FooB b;
+        meta.stream_in(b);
+        meta.stream_acknowledge();
+
+        buf.set(teststr);
+        meta.stream_in(b);
+        meta.stream_acknowledge();
+
+        binstreambuf bof;
+        fmt.bind(bof);
+        meta.stream_out(b);
+        meta.stream_flush();
+
+        charstr tmp;
+        bof.swap(tmp);
+    }
+
+    {
+        FooB b;
+        buf.set(teststr2);
+        fmt.bind(buf);
+        fmt.set_separators_optional(false);
+
+        meta.stream_in(b);
+        meta.stream_acknowledge();
+
+        binstreambuf bof;
+        fmt.bind(bof);
+        meta.stream_out(b);
+        meta.stream_flush();
+
+        charstr tmp;
+        bof.swap(tmp);
+    }
+
     FooB b;
-    meta.stream_in(b);
-    meta.stream_acknowledge();
-
-    
-    buf.set(teststr);
-    meta.stream_in(b);
-    meta.stream_acknowledge();
-
-
-    buf.set(teststr2);
-    fmt.set_separators_optional(false);
-    meta.stream_in(b);
-    meta.stream_acknowledge();
-
 
     bofstream bof("meta.test");
     fmt.bind(bof);

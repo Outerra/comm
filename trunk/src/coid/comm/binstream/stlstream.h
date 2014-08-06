@@ -208,10 +208,22 @@ template<class T, class A> inline binstream& operator >> (binstream& out, CONT<T
     binstream_container_stl_insert_iterator< CONT<T,A> > c( v, UMAXS ); \
     out.xread_array(c); \
 	return out; } \
-template<class T, class A> inline metastream& operator << (metastream& m, const CONT<T,A>& ) \
-{   m.meta_decl_array();  m<<*(typename CONT<T,A>::value_type*)0;  return m; } \
-template<class T, class A> inline metastream& operator || (metastream& m, CONT<T,A>& ) \
-{   m.meta_decl_array();  m || *(typename CONT<T,A>::value_type*)0;  return m; } \
+template<class T, class A> inline metastream& operator || (metastream& m, CONT<T,A>& v ) \
+{\
+    if(m.stream_reading()) {\
+        binstream_container_stl_input_iterator<CONT<T,A>> c(v, 0, 0, UMAXS);\
+        m.read_container<T>(c);\
+    }\
+    else if(m.stream_writing()) {\
+        binstream_container_stl_insert_iterator<CONT<T,A>> c(v, 0, 0, UMAXS);\
+        m.write_container<T>(c);\
+    }\
+    else {\
+        m.meta_decl_array();\
+        m || *(typename CONT<T,A>::value_type*)0;\
+    }\
+    return m;\
+}\
 PAIRUP_CONTAINERS_WRITABLE2( CONT, binstream_container_stl_insert_iterator ) \
 PAIRUP_CONTAINERS_READABLE2( CONT, binstream_container_stl_input_iterator )
 
@@ -226,10 +238,22 @@ template<class T, class A> inline binstream& operator >> (binstream& out, CONT<T
     binstream_container_stl_assoc_iterator< CONT<T,A> > c( v, UMAXS ); \
     out.xread_array(c); \
 	return out; } \
-template<class T, class A> inline metastream& operator << (metastream& m, const CONT<T,A>& ) \
-{   m.meta_decl_array();  m<<*(typename CONT<T,A>::value_type*)0;  return m; } \
-template<class T, class A> inline metastream& operator || (metastream& m, CONT<T,A>& ) \
-{   m.meta_decl_array();  m || *(typename CONT<T,A>::value_type*)0;  return m; } \
+template<class T, class A> inline metastream& operator || (metastream& m, CONT<T,A>& v ) \
+{\
+    if(m.stream_reading()) {\
+        binstream_container_stl_input_iterator<CONT<T,A>> c(v, 0, 0, UMAXS);\
+        m.read_container<T>(c);\
+    }\
+    else if(m.stream_writing()) {\
+        binstream_container_stl_assoc_iterator<CONT<T,A>> c(v, 0, 0, UMAXS);\
+        m.write_container<T>(c);\
+    }\
+    else {\
+        m.meta_decl_array();\
+        m || *(typename CONT<T,A>::value_type*)0;\
+    }\
+    return m;\
+}\
 PAIRUP_CONTAINERS_WRITABLE2( CONT, binstream_container_stl_assoc_iterator ) \
 PAIRUP_CONTAINERS_READABLE2( CONT, binstream_container_stl_input_iterator )
 
@@ -274,6 +298,13 @@ struct std_vector_binstream_container : public binstream_containerT<T,uints>
         _pos = 0;
     }
 
+    std_vector_binstream_container( std::vector<T,A>& v, fnc_stream fout, fnc_stream fin )
+        : binstream_containerT<T,uints>(UMAXS,fout,fin), _v(v)
+    {
+        v.clear();
+        _pos = 0;
+    }
+
 protected:
     uints _pos;
     std::vector<T,A>& _v;
@@ -294,16 +325,26 @@ template<class T, class A> inline binstream& operator >> (binstream& in, std::ve
     return in;
 }
 
-template<class T, class A> inline metastream& operator << (metastream& m, const std::vector<T,A>& )
-{   m.meta_decl_array();  m<<*(T*)0;  return m; }
+//template<class T, class A> inline metastream& operator << (metastream& m, const std::vector<T,A>& )
+//{   m.meta_decl_array();  m<<*(T*)0;  return m; }
 
 template<class T, class A>
-inline metastream& operator || (metastream& m, std::vector<T,A>& a )
+inline metastream& operator || (metastream& m, std::vector<T,A>& v )
 {
-    typedef std::vector<T,A> C;
-    return m.meta_container<C,T>(a);
+    if(m.stream_reading()) {
+        binstream_container_fixed_array<T,uints> c(v.empty() ? 0 : &v[0], v.size(), 0, 0);
+        m.read_container<T>(c);
+    }
+    else if(m.stream_writing()) {
+        std_vector_binstream_container<T,A> c(v, 0, 0);
+        m.write_container<T>(c);
+    }
+    else {
+        m.meta_decl_array();
+        m || *(T*)0;
+    }
+    return m;
 }
-
 
 
 
@@ -325,23 +366,16 @@ inline binstream& operator >> (binstream& in, std::string& p)
 	return in;
 }
 
-inline metastream& operator << (metastream& meta, const std::string&)
-{
-    meta.meta_decl_array();
-    meta.meta_primitive( "char", bstype::t_type<char>() );
-    return meta;
-}
-
 inline metastream& operator || (metastream& meta, std::string& p)
 {
-    if(meta._binr) {
+    if(meta.stream_reading()) {
         dynarray<char> tmp;
         dynarray<char,uint>::dynarray_binstream_container c(tmp);
         meta.read_container<char>(c);
 
         p.assign(tmp.ptr(), tmp.size());
     }
-    else if(meta._binw) {
+    else if(meta.stream_writing()) {
         meta.write_token(token(p.c_str(), p.size()));
     }
     else {
@@ -368,16 +402,14 @@ template <class F, class S> inline binstream& operator >> (binstream& in, std::p
 	return in >> (F&)p.first >> p.second;
 }
 
-template <class F, class S> inline metastream& operator << (metastream& m, const std::pair<F,S>& p)
+template <class F, class S>
+inline metastream& operator || (metastream& m, std::pair<F,S>& p)
 {
-    MTEMPL_OPEN(m)
-        MT(m, F)
-        MT(m, S)
-    MTEMPL_CLOSE(m)
-    MSTRUCT_OPEN(m, "std::pair");
-        MM(m, "key", p.first );
-        MM(m, "value", p.second );
-    MSTRUCT_CLOSE(m);
+    return m.compound_templated<std::pair<F,S>>("std::pair", [&]()
+    {
+        m.member("key", p.first);
+        m.member("value", p.second);
+    });
 }
 
 

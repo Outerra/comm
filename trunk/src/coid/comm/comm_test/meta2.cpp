@@ -19,7 +19,7 @@ protected:
 	bool _continuos;			    //< send key event every frame if button is pressed
 
 public:
-
+/*
 	friend coid::binstream& operator << (coid::binstream& bin,const device_mapping& e) {   
 		return bin
 			<<e._devicename
@@ -51,7 +51,19 @@ public:
 			MMD(m,"continuos",e._continuos,false)
             MMD(m,"modifiers",e._modifiername,coid::charstr())
 		MSTRUCT_CLOSE(m)
+	}*/
+	friend coid::metastream& operator || (coid::metastream& m, device_mapping& e) {
+		return m.compound("device_mapping", [&]()
+        {
+			m.member("device_name",e._devicename);
+			m.member("event_name",e._eventname);
+			m.member("invert",e._invert,false);
+			m.member("pressed",e._pressed,false);
+			m.member("continuos",e._continuos,false);
+            m.member("modifiers",e._modifiername,"");
+        });
 	}
+
 };
 
 
@@ -70,7 +82,7 @@ protected:
 public:
 
     operator const coid::token () const { return _name; }
-
+/*
     friend coid::binstream& operator << (coid::binstream& bin,const event_source_mapping& e) {   
 		return bin
 			<<e._name
@@ -93,6 +105,14 @@ public:
             MMD(m,"desc",e._desc,coid::charstr())
             MMAT(m,"mappings",device_mapping)
 		MSTRUCT_CLOSE(m)
+	}*/
+	friend coid::metastream& operator || (coid::metastream& m, event_source_mapping& e) {
+		return m.compound("event_src", [&]()
+        {
+			m.member("name", e._name);
+            m.member("desc", e._desc, "");
+            m.member("mappings", e._mappings);
+        });
 	}
 };
 
@@ -107,7 +127,7 @@ class io_man
 
 public:
 
-
+/*
 	friend coid::binstream& operator << (coid::binstream& bin,const io_man& iom) {
 		return bin<<iom._map;
 	}
@@ -120,6 +140,12 @@ public:
 		MSTRUCT_OPEN(m,"io_man")
 			MMAT(m,"io_src_map",event_source_mapping)
 		MSTRUCT_CLOSE(m)
+	}*/
+	friend coid::metastream& operator || (coid::metastream& m, io_man& iom) {
+		return m.compound("io_man", [&]()
+        {
+			m.member("io_src_map", iom._map);
+        });
 	}
 };
 

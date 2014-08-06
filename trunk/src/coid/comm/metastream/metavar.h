@@ -45,6 +45,8 @@
 
 COID_NAMESPACE_BEGIN
 
+class metastream;
+
 ////////////////////////////////////////////////////////////////////////////////
 ///Descriptor structure for type
 struct MetaDesc
@@ -54,23 +56,23 @@ struct MetaDesc
     ///Member variable descriptor
     struct Var
     {
-        MetaDesc* desc;                 ///< ptr to descriptor for the type of the variable
-        charstr varname;                ///< name of the variable (empty if this is an array element)
+        MetaDesc* desc;                 //< ptr to descriptor for the type of the variable
+        charstr varname;                //< name of the variable (empty if this is an array element)
 
-        dynarray<uchar> defval;         ///< default value for reading if not found in input stream
-        bool nameless_root;             ///< true if the variable is a nameless root
-        bool obsolete;                  ///< variable is only read, not written
+        dynarray<uchar> defval;         //< default value for reading if not found in input stream
+        bool nameless_root;             //< true if the variable is a nameless root
+        bool obsolete;                  //< variable is only read, not written
+        bool optional;                  //< variable is optional
 
 
         Var()
-            : desc(0), nameless_root(false), obsolete(false)
+            : desc(0), nameless_root(false), obsolete(false), optional(false)
         {}
 
         bool is_array() const           { return desc->is_array(); }
         bool is_array_element() const   { return varname.is_empty() && !nameless_root; }
         bool is_primitive() const       { return desc->is_primitive(); }
         bool is_compound() const        { return desc->is_compound(); }
-        bool is_pointer() const         { return desc->is_pointer(); }
 
         bool has_default() const        { return defval.size() > 0; }
 
@@ -110,21 +112,24 @@ struct MetaDesc
     };
 
 
-    dynarray<Var> children;             ///< member variables
-    uints array_size;                   ///< array size, UMAXS for dynamic arrays, 0 for pointers
+    dynarray<Var> children;             //< member variables
+    uints array_size;                   //< array size, UMAXS for dynamic arrays
 
-    charstr type_name;                  ///< type name, name of a structure (empty if this is an array or pointer)
-    type btype;                         ///< basic type id
-
+    charstr type_name;                  //< type name, name of a structure (empty if this is an array)
+    type btype;                         //< basic type id
+/*
     binstream::fnc_from_stream
-        stream_from;                    ///< binstream streaming function used to read data from stream
+        stream_from;                    //< binstream streaming function used to read data from stream
     binstream::fnc_to_stream
-        stream_to;                      ///< binstream streaming function used to write data to stream
+        stream_to;                      //< binstream streaming function used to write data to stream
+*/
+    typedef void (*stream_func)(metastream*, void*);
+
+    stream_func fnstream;               //< metastream streaming function
 
 
 
     bool is_array() const               { return type_name.is_empty(); }
-    bool is_pointer() const             { return type_name.is_empty()  &&  array_size==0; }
     bool is_primitive() const           { return btype.is_primitive(); }
     bool is_compound() const            { return !btype.is_primitive() && !is_array(); }
     
@@ -201,8 +206,8 @@ struct MetaDesc
     uints size() const                  { return children.size(); }
 
 
-    MetaDesc() : array_size(UMAXS), stream_from(0), stream_to(0) {}
-    MetaDesc( const token& n ) : array_size(UMAXS), type_name(n), stream_from(0), stream_to(0) {}
+    MetaDesc() : array_size(UMAXS), fnstream(0) {}
+    MetaDesc( const token& n ) : array_size(UMAXS), type_name(n), fnstream(0) {}
 
     Var* add_desc_var( MetaDesc* d, const token& n )
     {

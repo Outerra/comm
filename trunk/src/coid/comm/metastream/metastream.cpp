@@ -98,7 +98,7 @@ MetaDesc* metastream::StructureMap::find( const token& k ) const
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-MetaDesc* metastream::StructureMap::create_array_desc( uints size, binstream::fnc_from_stream fnfrom, binstream::fnc_to_stream fnto )
+MetaDesc* metastream::StructureMap::create_array_desc( uints size, MetaDesc::stream_func fn )
 {
     //SMReg& smr = SINGLETON(SMReg);
     //GUARDTHIS(smr._mutex);
@@ -106,8 +106,7 @@ MetaDesc* metastream::StructureMap::create_array_desc( uints size, binstream::fn
 
     MetaDesc* d = *smr._arrays.add() = new MetaDesc;
     d->array_size = size;
-    d->stream_from = fnfrom;
-    d->stream_to = fnto;
+    d->fnstream = fn;
     return d;
 }
 

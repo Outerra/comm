@@ -46,20 +46,29 @@ struct File
     dynarray<paste_block> pasters;
     dynarray<MethodIG::Arg> irefargs;
 
-
+/*
     friend binstream& operator << (binstream& bin, const File& m)
-    {   return bin << m.fnameext << m.hdrname << m.classes << /*m.pasters << */m.irefargs; }
+    {   return bin << m.fnameext << m.hdrname << m.classes << m.irefargs; }
     friend binstream& operator >> (binstream& bin, File& m)
-    {   return bin >> m.fnameext >> m.hdrname >> m.classes >> /*m.pasters >> */m.irefargs; }
+    {   return bin >> m.fnameext >> m.hdrname >> m.classes >> m.irefargs; }
     friend metastream& operator << (metastream& m, const File& p)
     {
         MSTRUCT_OPEN(m,"File")
         MM(m,"hdr",p.fnameext)          ///< file name
         MM(m,"HDR",p.hdrname)           ///< file name without extension, uppercase
         MM(m,"class",p.classes)
-        //MM(m,"pasters",p.pasters)
         MM(m,"irefargs",p.irefargs)
         MSTRUCT_CLOSE(m)
+    }*/
+    friend metastream& operator || (metastream& m, File& p)
+    {
+        return m.compound("File", [&]()
+        {
+            m.member("hdr",p.fnameext);          ///< file name
+            m.member("HDR",p.hdrname);           ///< file name without extension, uppercase
+            m.member("class",p.classes);
+            m.member("irefargs",p.irefargs);
+        });
     }
 
 
