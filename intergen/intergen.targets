@@ -82,4 +82,10 @@
     <MakeDir
       Directories="@(hppDirsToMake-&gt;'%(RootDir)%(Directory)')" />
   </Target>
+  
+  <Target
+    Name = "Clean"
+    Condition="'@(hpp)' != ''">
+      <Delete Files="%(hpp.RootDir)%(hpp.Directory)%(hpp.Filename).inl;$(IntDir)$(ProjectName).read.1.tlog" />
+  </Target>   
 </Project>
