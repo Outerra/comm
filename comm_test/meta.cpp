@@ -88,12 +88,13 @@ struct FooB
     dynarray< dynarray< dynarray<FooAA> > > aaaf;
     dynarray<int> ai;
     dynarray< dynarray<int> > aai;
+    bool flag;
 
     FooAA* pfo;
     int end;
 
 
-    FooB() : pfo(0)
+    FooB() : pfo(0), a(0), b(0), flag(false)
     {}
 /*
     friend binstream& operator << (binstream& bin, const FooB& s)
@@ -125,6 +126,7 @@ struct FooB
             m.member("af", s.af);
             m.member("aaf", s.aaf);
             m.member("aaaf", s.aaaf);
+            m.member("flag", s.flag, false);
             m.member("ai", s.ai);
             m.member("aai", s.aai);
             m.member_optional<FooAA>("p",
@@ -145,6 +147,7 @@ static const char* teststr =
 "af = [  { j=10 fa={i=1 f=3.140}}\n"
 "        { j=11 fa={i=2 f=4.140}}\n"
 "        { j=12 fa={i=3 f=5.140}} ],\n"
+"flag = true\n"
 "aaf = [ [ { j=20 fa={i=9 f=8.33} }, { j=21 fa={i=10 f=4.66} }, { j=22 fa={i=11 f=7.66} } ] [] ],\n"
 "aaaf = [ [ [ { text=\"\", j=30, fa={i=9, f=8.33} }, { j=31, fa={i=10, f=4.66} }, { j=32, fa={i=11, f=7.66} } ], [] ], [ [ { j=33, fa={i=33, f=0.66} } ] ] ],\n"
 "ai = [ 1 2 3 4 5 ],\n"
