@@ -969,6 +969,7 @@ public:
         if(open) {
             _current = _cachestack.realloc(1);
             _current->buf = &_cache;
+            _current->base = 0;
             _current->offs = 0;
             _current->ofsz = UMAXS;
         }
@@ -1287,6 +1288,7 @@ public:
         _current = _cachestack.push();
         _current->var = _curvar.var;
         _current->buf = &_curvar.var->defval;
+        _current->base = 0;
         _current->offs = 0;
         _current->ofsz = UMAXS;
 
@@ -1315,6 +1317,7 @@ public:
         _current = _cachestack.push();
         _current->var = _curvar.var;
         _current->buf = &_curvar.var->defval;
+        _current->base = 0;
         _current->offs = 0;
         _current->ofsz = UMAXS;
 
@@ -1526,9 +1529,10 @@ private:
         uints offs;                     //< offset to the current entry in stored class table
         uints ofsz;                     //< offset to the count field (only for arrays)
         const MetaDesc::Var* var;
+        uints base;
 
         CacheEntry()
-            : buf(0), offs(UMAXS), ofsz(UMAXS), var(0)
+            : buf(0), offs(UMAXS), ofsz(UMAXS), var(0), base(0)
         {}
 
         uints size() const              { return buf->size(); }
@@ -1847,7 +1851,7 @@ protected:
         pop_var();
         if(read) _rvarname.reset();
 
-        if(_current)
+        if(_current && _current->var == _curvar.var)
         {
             _current = _cachestack.pop();
 
@@ -2390,7 +2394,7 @@ protected:
     {
         MetaDesc* desc = _stack.last()->var->desc;
 
-        uints k = desc->get_child_pos(_cachequit) * sizeof(uints);
+        uints k = desc->get_child_pos(_cachequit) * sizeof(uints) + _current->base;
         DASSERT( k!=UMAXS  &&  _current->valid_addr(k) );
 
         _current->set_addr_invalid(k);
@@ -2601,9 +2605,9 @@ protected:
         uints base;
         if(_cachestack.size() > 0 && _cachestack.last()->var == par) { //_cache.size() > 0 ) {
             //compute base offset
-            base = _cachestack.size() <= 1
-                ? 0
-                : _current->offs - par->desc->get_child_pos(_curvar.var)*sizeof(uints);
+            base = _current->offs == UMAXS
+                ? _current->base
+                : _current->offs - par->desc->get_child_pos(_curvar.var) * sizeof(uints);
 
             if(_cacheroot == 0) //cache opened in advance
                 _cacheroot = par;
@@ -2620,9 +2624,9 @@ protected:
             _current->var = par;
             _current->buf = &_cache;
 
-            base = _current->pad();
+            base = _current->base = _current->pad();
 
-            _current->offs = newroot ? UMAXS : base;
+            _current->offs = UMAXS;//newroot ? UMAXS : base;
             _current->ofsz = UMAXS;
 
             _current->insert_table( par->desc->num_children() );
@@ -2715,7 +2719,7 @@ protected:
     ///
     opcd streamvar( const MetaDesc::Var& var )
     {
-        if(!_curvar.var->nameless_root)
+        if(!_curvar.var->nameless_root && !_curvar.var->is_array_element())
             movein_process_key(READ_MODE);
 
         //set if reading to cache, when the current variable has been already read or its default value will be used
@@ -2766,7 +2770,7 @@ protected:
         //get child map
         MetaDesc* par = parvar->desc;
 
-        uints k = par->get_child_pos(_curvar.var) * sizeof(uints);
+        uints k = par->get_child_pos(_curvar.var) * sizeof(uints) + _current->base;
         if( _current->valid_addr(k) )
         {
             //found in the cache, set up a cache read
@@ -2788,6 +2792,7 @@ protected:
 
         _current = _cachestack.push();
         _current->var = _curvar.var;
+        _current->base = 0;
         _current->offs = 0;
         _current->buf = &_curvar.var->defval;
         _cachedefval = _curvar.var;
