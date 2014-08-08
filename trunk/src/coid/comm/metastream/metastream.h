@@ -1938,7 +1938,7 @@ protected:
 
         //if(!_curvar.var->is_array_element())
             _curvar.var = next;
-        if(read) _rvarname.reset();
+        //if(read) _rvarname.reset();
 
         return 0;
     }
@@ -2599,10 +2599,9 @@ protected:
 
 
         uints base;
-        if( _cachestack.size()>0 ) { //_cache.size() > 0 ) {
+        if(_cachestack.size() > 0 && _cachestack.last()->var == par) { //_cache.size() > 0 ) {
             //compute base offset
-            uints n = _cachestack.size();
-            base = n <= 1
+            base = _cachestack.size() <= 1
                 ? 0
                 : _current->offs - par->desc->get_child_pos(_curvar.var)*sizeof(uints);
 
@@ -2611,17 +2610,22 @@ protected:
         }
         else {
             //create child offset table for the members of par variable
-            _cacheroot = par;
-            _cache.reset();
+            bool newroot = _cacheroot == 0;
+            if(newroot) {
+                _cacheroot = par;
+                _cache.reset();
+            }
 
             _current = _cachestack.push();
             _current->var = par;
             _current->buf = &_cache;
-            _current->offs = UMAXS;
+
+            base = _current->pad();
+
+            _current->offs = newroot ? UMAXS : base;
             _current->ofsz = UMAXS;
 
             _current->insert_table( par->desc->num_children() );
-            base = 0;
         }
 
         MetaDesc::Var* crv = par->desc->find_child(_rvarname);
