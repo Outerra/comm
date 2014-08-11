@@ -405,9 +405,9 @@ public:
     charstr& operator = (double d)              { reset(); return operator += (d); }
 
     ///Formatted numbers - int/uint
-    template<int WIDTH, int ALIGN, class NUM>
-    charstr& operator = (const num_fmt<WIDTH,ALIGN,NUM> v) {
-        append_num(10, v.value, WIDTH, ALIGN);
+    template<int WIDTH, int BASE, int ALIGN, class NUM>
+    charstr& operator = (const num_fmt<WIDTH,BASE,ALIGN,NUM> v) {
+        append_num(BASE, v.value, WIDTH, ALIGN);
         return *this;
     }
 
@@ -492,9 +492,9 @@ public:
     charstr& operator += (double d)             { append_float(d,10); return *this; }
 
     ///Formatted numbers - int/uint
-    template<int WIDTH, int ALIGN, class NUM>
-    charstr& operator += (const num_fmt<WIDTH,ALIGN,NUM> v) {
-        append_num(10, v.value, WIDTH, ALIGN);
+    template<int WIDTH, int BASE, int ALIGN, class NUM>
+    charstr& operator += (const num_fmt<WIDTH,BASE,ALIGN,NUM> v) {
+        append_num(BASE, v.value, WIDTH, ALIGN);
         return *this;
     }
 
@@ -542,9 +542,9 @@ public:
     charstr& operator << (double d)             { return operator += (d); }
 
     ///Formatted numbers - int/uint
-    template<int WIDTH, int ALIGN, class NUM>
-    charstr& operator << (const num_fmt<WIDTH,ALIGN,NUM> v) {
-        append_num(10, v.value, WIDTH, (EAlignNum)ALIGN);
+    template<int WIDTH, int BASE, int ALIGN, class NUM>
+    charstr& operator << (const num_fmt<WIDTH,BASE,ALIGN,NUM> v) {
+        append_num(BASE, v.value, WIDTH, (EAlignNum)ALIGN);
         return *this;
     }
 
