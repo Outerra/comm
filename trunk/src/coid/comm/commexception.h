@@ -100,10 +100,10 @@ struct exception
     exception& operator << (double d)           { S2D(); _dtext += (d); return *this; }
 
     ///Formatted numbers
-    template<int WIDTH, int ALIGN, class NUM>
-    exception& operator << (const num_fmt<WIDTH,ALIGN,NUM> v) {
+    template<int WIDTH, int BASE, int ALIGN, class NUM>
+    exception& operator << (const num_fmt<WIDTH,BASE,ALIGN,NUM> v) {
         S2D();
-        append_num(10, v.value, WIDTH, (EAlignNum)ALIGN);
+        append_num(BASE, v.value, WIDTH, (EAlignNum)ALIGN);
         return *this;
     }
 

@@ -198,11 +198,11 @@ public:
     ///Formatted integers
     //@param WIDTH minimum width
     //@note used by text formatting streams, writes as a raw token
-    template<int WIDTH, int ALIGN, class NUM>
-    binstream& operator << (const num_fmt<WIDTH,ALIGN,NUM> v)
+    template<int WIDTH, int BASE, int ALIGN, class NUM>
+    binstream& operator << (const num_fmt<WIDTH,BASE,ALIGN,NUM> v)
     {
         char buf[32];
-        token tok = charstrconv::append_num( buf, 32, 10, v.value, WIDTH, (EAlignNum)ALIGN );
+        token tok = charstrconv::append_num( buf, 32, BASE, v.value, WIDTH, (EAlignNum)ALIGN );
         xwrite_token_raw(tok);
         return *this;
     }
