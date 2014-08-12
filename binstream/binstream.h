@@ -660,7 +660,7 @@ public:
     template<class COUNT>
     opcd write_array( binstream_container<COUNT>& c )
     {
-        uints n = c._nelements;
+        uints n = c.count();
         type t = c._type;
 
         //write bgnarray
@@ -676,10 +676,10 @@ public:
             t = c.set_array_needs_separators();
 
         uints count=0;
-        e = write_array_content( c, &count );
+        e = write_array_content(c, &count);
 
         if(!e)
-            e = write( &count, t.get_array_end() );
+            e = write(&count, t.get_array_end());
 
         return e;
     }
@@ -688,8 +688,6 @@ public:
     template<class COUNT>
     opcd read_array( binstream_container<COUNT>& c )
     {
-        uints na = UMAXS;
-        uints n = c._nelements;
         type t = c._type;
 
         //read bgnarray
@@ -698,21 +696,17 @@ public:
         opcd e = read( &cnt, t.get_array_begin<COUNT>() );
         if(e)  return e;
 
-        na = cnt==any ? UMAXS : cnt;
+        uints n = cnt==any ? UMAXS : cnt;
 
-        if( na != UMAXS  &&  n != UMAXS  &&  n != na )
-            return ersMISMATCHED "requested and stored count";
-        if( na != UMAXS )
-            n = na;
-        else
+        if(n == UMAXS)
             t = c.set_array_needs_separators();
 
         uints count=0;
-        e = read_array_content( c, n, &count );
+        e = read_array_content(c, n, &count);
 
         //read endarray
         if(!e)
-            e = read( &count, t.get_array_end() );
+            e = read(&count, t.get_array_end());
 
         return e;
     }
@@ -740,7 +734,7 @@ public:
     virtual opcd write_array_content( binstream_container_base& c, uints* count )
     {
         type t = c._type;
-        uints n = c._nelements;
+        uints n = c.count();
 
         opcd e;
         if( t.is_primitive()  &&  c.is_continuous()  &&  n != UMAXS )
@@ -764,7 +758,6 @@ public:
     virtual opcd read_array_content( binstream_container_base& c, uints n, uints* count )
     {
         type t = c._type;
-        //uints n = c._nelements;
 
         opcd e;
         if( t.is_primitive()  &&  c.is_continuous()  &&  n != UMAXS )
@@ -787,7 +780,7 @@ public:
     opcd write_compound_array_content( binstream_container_base& c, uints* count )
     {
         type tae = c._type.get_array_element();
-        uints n = c._nelements, k=0;
+        uints n = c.count(), k=0;
         bool complextype = !c._type.is_primitive();
         bool needpeek = c.array_needs_separators();
 

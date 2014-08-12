@@ -65,11 +65,16 @@ struct binstream_container_with_new : binstream_containerT<T>
 
     bool is_continuous() const      { return true; }
 
-    binstream_container_with_new( uints n ) : binstream_containerT<T>(n), _ptr(0) {}
+    uints count() const             { return _count; }
+
+    binstream_container_with_new( uints n )
+        : _ptr(0)
+        , _count(n)
+    {}
 
     void set( uints n )
     {
-        this->_nelements = n;
+        _count = n;
         _ptr = 0;
     }
 
@@ -77,11 +82,12 @@ struct binstream_container_with_new : binstream_containerT<T>
 
 protected:
     T* _ptr;
+    uints _count;
 };
 
 
 ////////////////////////////////////////////////////////////////////////////////
-///Container for writting to an array allocated by the new operator
+///Container for writting to an array allocated by comm_array_allocator
 template<class T>
 struct binstream_container_with_malloc : binstream_containerT<T>
 {
@@ -112,15 +118,17 @@ struct binstream_container_with_malloc : binstream_containerT<T>
 
     bool is_continuous() const      { return true; }
 
-    binstream_container_with_malloc( uints n )
-        : binstream_containerT<T>(n), _ptr(0), _n(0) {}
+    uints count() const             { return 0; }
 
+    binstream_container_with_malloc()
+        : _ptr(0), _n(0)
+    {}
+/*
     void set( uints n )
     {
-        this->_nelements = n;
+        _n = n;
         _ptr = 0;
-        _n = 0;
-    }
+    }*/
 
     T* ptr() const                  { return _ptr; }
 

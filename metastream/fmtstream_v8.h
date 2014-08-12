@@ -652,7 +652,7 @@ public:
     virtual opcd write_array_content( binstream_container_base& c, uints* count )
     {
         type t = c._type;
-        uints n = c._nelements;
+        uints n = c.count();
         //c.set_array_needs_separators();
 
         if( t.type != type::T_CHAR  &&  t.type != type::T_KEY && t.type != type::T_BINARY )

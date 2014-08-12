@@ -103,7 +103,7 @@ public:
 
     virtual opcd write_array_content( binstream_container_base& c, uints* count )
     {
-        *count = c._nelements;
+        *count = c.count();
         return 0;
     }
 
