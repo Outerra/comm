@@ -101,6 +101,9 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
     bconst = lex.matches("const");
     benum = lex.matches("enum");
 
+    if(lex.matches("unsigned"))
+        type << "unsigned" << ' ';
+
     bool nested;
     do {
         type << lex.match(lex.IDENT, "expected type name");
