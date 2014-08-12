@@ -264,32 +264,34 @@ public:
             return &p->_val;
         }
 
-        virtual bool is_continuous() const      { return false; }
+        virtual bool is_continuous() const { return false; }
+
+        virtual uints count() const { return _ht.size(); }
 
 
         hashtable_binstream_container( const _Self& ht )
-            : binstream_containerT<VAL>(ht.size()), _ht((_Self&)ht)
+            : _ht((_Self&)ht)
         {
             _begin = _ht.begin();
             _end = _ht.end();
         }
 
-        hashtable_binstream_container( _Self& ht, uints n )
-            : binstream_containerT<VAL>(n), _ht(ht)
+        hashtable_binstream_container( _Self& ht )
+            : _ht(ht)
         {
             _begin = _ht.begin();
             _end = _ht.end();
         }
 
         hashtable_binstream_container( const _Self& ht, fnc_stream fout, fnc_stream fin )
-            : binstream_containerT<VAL>(ht.size(), fout, fin), _ht((_Self&)ht)
+            : binstream_containerT<VAL>(fout, fin), _ht((_Self&)ht)
         {
             _begin = _ht.begin();
             _end = _ht.end();
         }
 
-        hashtable_binstream_container( _Self& ht, fnc_stream fout, fnc_stream fin, uints n )
-            : binstream_containerT<VAL>(n, fout, fin), _ht(ht)
+        hashtable_binstream_container( _Self& ht, fnc_stream fout, fnc_stream fin )
+            : binstream_containerT<VAL>(fout, fin), _ht(ht)
         {
             _begin = _ht.begin();
             _end = _ht.end();

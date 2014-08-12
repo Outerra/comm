@@ -306,6 +306,7 @@ public:
     {
         virtual const void* extract( uints n )
         {
+            DASSERT( _pos+n <= _v.size() );
             const T* p = &_v[_pos];
             _pos += n;
             return p;
@@ -317,18 +318,19 @@ public:
             return _v.add(COUNT(n));
         }
 
-        virtual bool is_continuous() const {
-            return true;
-        }
+        virtual bool is_continuous() const { return true; }
 
-		dynarray_binstream_container( const dynarray<T,COUNT,A>& v, uints n=UMAXS )
-            : binstream_containerT<T,COUNT>(n), _v(const_cast<dynarray<T,COUNT,A>&>(v))
+        virtual uints count() const { return _v.size(); }
+
+		dynarray_binstream_container( const dynarray<T,COUNT,A>& v )
+            : _v(const_cast<dynarray<T,COUNT,A>&>(v))
         {
             _pos = 0;
         }
 
-		dynarray_binstream_container( const dynarray<T,COUNT,A>& v, fnc_stream fout, fnc_stream fin, uints n=UMAXS )
-            : binstream_containerT<T,COUNT>(n,fout,fin), _v(const_cast<dynarray<T,COUNT,A>&>(v))
+		dynarray_binstream_container( const dynarray<T,COUNT,A>& v, fnc_stream fout, fnc_stream fin )
+            : binstream_containerT<T,COUNT>(fout,fin)
+            , _v(const_cast<dynarray<T,COUNT,A>&>(v))
         {
             _pos = 0;
         }
@@ -359,14 +361,17 @@ public:
             return false;
         }
 
-		dynarray_binstream_dereferencing_container( const dynarray<T*>& v, uints n=UMAXS )
-            : binstream_containerT<T,COUNT>(n), _v(const_cast<dynarray<T*>&>(v))
+        virtual uints count() const { return _v.size(); }
+
+		dynarray_binstream_dereferencing_container( const dynarray<T*>& v )
+            : _v(const_cast<dynarray<T*>&>(v))
         {
             _pos = 0;
         }
 
-		dynarray_binstream_dereferencing_container( const dynarray<T*>& v, fnc_stream fout, fnc_stream fin, uints n=UMAXS )
-            : binstream_containerT<T,COUNT>(n,fout,fin), _v(const_cast<dynarray<T*>&>(v))
+		dynarray_binstream_dereferencing_container( const dynarray<T*>& v, fnc_stream fout, fnc_stream fin )
+            : binstream_containerT<T,COUNT>(fout, fin)
+            , _v(const_cast<dynarray<T*>&>(v))
         {
             _pos = 0;
         }

@@ -479,7 +479,7 @@ inline metastream& operator || ( metastream& m, hash_keyset<VAL,EXTRACTKEY,HASHF
 
     if(m.stream_reading()) {
         a.clear();
-        typename _HT::hashtable_binstream_container bc(a,0,0,UMAXS);
+        typename _HT::hashtable_binstream_container bc(a,0,0);
         return m.read_container<VAL>(bc);
     }
     else if(m.stream_writing()) {
@@ -509,7 +509,7 @@ inline metastream& operator || ( metastream& m, hash_multikeyset<VAL,EXTRACTKEY,
 
     if(m._binr) {
         a.clear();
-        typename _HT::hashtable_binstream_container bc(a,0,0,UMAXS);
+        typename _HT::hashtable_binstream_container bc(a,0,0);
         return m.xread_container<VAL>(bc);
     }
     else if(m._binw) {

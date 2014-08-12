@@ -174,7 +174,7 @@ public:
     virtual opcd write_array_content( binstream_container_base& c, uints* count )
     {
         type t = c._type;
-        uints n = c._nelements;
+        uints n = c.count();
 
         //types other than char and key must be written by elements
         if( t.type != type::T_CHAR  &&  t.type != type::T_KEY )
@@ -193,14 +193,12 @@ public:
     virtual opcd read_array_content( binstream_container_base& c, uints n, uints* count )
     {
         type t = c._type;
-        //uints n = c._nelements;
 
         if( t.type != type::T_CHAR  &&  t.type != type::T_KEY )
             return ersUNAVAILABLE;
 
         if( c.is_continuous()  &&  n != UMAXS )
         {
-            //uints na = n * t.get_size();
             *count = n;
             return read_raw( c.insert(n), n );
         }

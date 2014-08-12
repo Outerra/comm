@@ -473,7 +473,6 @@ public:
     template<class T, class C>
     struct container : binstream_container<uints>
     {
-        enum { ELEMSIZE = sizeof(T) };
         typedef T       data_t;
         typedef binstream_container_base::fnc_stream    fnc_stream;
 
@@ -481,12 +480,11 @@ public:
         metastream& _m;
 
         container( C& container, metastream& m )
-            : binstream_container<uints>(UMAXS, bstype::t_type<T>(), &stream, &stream)
+            : binstream_container<uints>(bstype::t_type<T>(), &stream, &stream)
             , _container(container)
             , _m(m)
         {
             _type = _container._type;
-            _nelements = _container._nelements;
         }
 
         ///Provide a pointer to next object that should be streamed
@@ -497,6 +495,7 @@ public:
         ///@return true if the storage is continuous in memory
         virtual bool is_continuous() const { return _container.is_continuous(); }
 
+        virtual uints count() const { return _container.count(); }
 
     protected:
 
@@ -536,18 +535,13 @@ public:
 
     metastream& read_container_body( binstream_container_base& c, MetaDesc::stream_func fn )
     {
-        uints na = UMAXS;
-        uints n = c._nelements;
+        uints n = UMAXS;
         type t = c._type;
 
         //read bgnarray
-        _xthrow(data_value(&na, t.get_array_begin<uints>(), READ_MODE));
+        _xthrow(data_value(&n, t.get_array_begin<uints>(), READ_MODE));
 
-        if( na != UMAXS  &&  n != UMAXS  &&  n != na )
-            throw exception(ersMISMATCHED "requested and stored count");
-        if( na != UMAXS )
-            n = na;
-        else
+        if( n == UMAXS )
             t = c.set_array_needs_separators();
 
         uints count=0;
@@ -575,15 +569,12 @@ public:
     {
         _xthrow(movein_process_key(WRITE_MODE));
 
-        uints n = c._nelements;
+        uints n = c.count();
         type t = c._type;
 
         //write bgnarray
         uints any = UMAXS;
-        uints cnt = n;
-        _xthrow(data_value(&cnt, t.get_array_begin<uints>(), WRITE_MODE));
-
-        n = cnt==any ? UMAXS : cnt;
+        _xthrow(data_value(&n, t.get_array_begin<uints>(), WRITE_MODE));
 
         //if container doesn't know number of items in advance, require separators
         if( n == UMAXS )
@@ -766,11 +757,11 @@ public:
 
     ///Read array of objects of type T from the currently bound formatting stream
     template<class T, class COUNT>
-    opcd stream_array_in( binstream_containerT<T,COUNT>& C, const token& name = token() )
+    opcd stream_array_in( binstream_containerT<T,COUNT>& C, const token& name = token(), uints n=UMAXS )
     {
         opcd e;
         try {
-            e = prepare_type_array( *(T*)0, C._nelements, name, false, READ_MODE );
+            e = prepare_type_array( *(T*)0, n, name, false, READ_MODE );
             if(e) return e;
 
             _binr = true;
@@ -2068,7 +2059,7 @@ protected:
     {
         c.set_array_needs_separators();
         type tae = c._type.get_array_element();
-        uints n = c._nelements;
+        uints n = c.count();
 
         opcd e=0;
         if( !tae.is_primitive() )
@@ -2122,7 +2113,7 @@ protected:
             else
             {
                 type t = c._type;
-                uints n = c._nelements;
+                uints n = c.count();
 
                 if( t.is_primitive()  &&  c.is_continuous()  &&  n != UMAXS )
                 {
@@ -2146,7 +2137,7 @@ protected:
     opcd data_write_compound_array_content( binstream_container_base& c, uints* count, void (*fnstream)(metastream*, void*) )
     {
         type tae = c._type.get_array_element();
-        uints n = c._nelements, k=0;
+        uints n = c.count(), k=0;
         bool complextype = !c._type.is_primitive();
         bool needpeek = c.array_needs_separators();
 
@@ -2695,20 +2686,23 @@ protected:
 
         bool is_continuous() const      { return true; }    //for primitive types it's continuous
 
+        uints count() const             { return desc.array_size; }
+
 
         cache_container( metastream& meta, MetaDesc& desc )
-            : binstream_container<uints>(desc.array_size, desc.array_type(), 0, &stream_in),
-            meta(meta), element(desc.children[0])
+            : binstream_container<uints>(desc.array_type(), 0, &stream_in)
+            , meta(meta)
+            , desc(desc)
         {}
 
         static opcd stream_in( binstream& bin, void* p, binstream_container_base& co ) {
             cache_container& me = reinterpret_cast<cache_container&>(co);
-            return me.meta.streamvar( me.element );
+            return me.meta.streamvar( me.desc.children[0] );
         }
 
     protected:
         metastream& meta;
-        const MetaDesc::Var& element;
+        const MetaDesc& desc;
     };
 
     static void stream_element(metastream* m, void*)
@@ -2841,7 +2835,7 @@ metastream& operator || ( metastream& m, dynarray<T,COUNT,A>& a )
         m.read_container(c, &metastream::fnstream<T>);
     }
     else if(m.stream_writing()) {
-        typename dynarray<T,COUNT,A>::dynarray_binstream_container c(a,0,0,a.size());
+        typename dynarray<T,COUNT,A>::dynarray_binstream_container c(a,0,0);
         m.write_container(c, &metastream::fnstream<T>);
     }
     else {
