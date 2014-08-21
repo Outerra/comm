@@ -427,8 +427,6 @@ public:
         _templ_arg_rdy = false;
 
         _dometa = false;
-        _obsolete = false;
-        _optional = false;
         _fmtstreamwr = _fmtstreamrd = 0;
     }
 
@@ -1139,8 +1137,6 @@ protected:
         else
             var = _current_var->add_child( d, _cur_variable_name );
 
-        var->obsolete = _obsolete;
-        var->optional = _optional;
         _cur_variable_name.set_empty();
 
         return var;
@@ -1232,23 +1228,17 @@ public:
     template<class T>
     void meta_variable_optional( const token& varname )
     {
-        bool old = _optional;
-        _optional = true;
-
         meta_variable<T>(varname, (const T*)0);
 
-        _optional = old;
+        _last_var->optional = true;
     }
 
     template<class T>
     void meta_variable_obsolete( const token& varname, const T* v )
     {
-        bool old = _obsolete;
-        _obsolete = true;
-
         meta_variable<T>(varname, v);
 
-        _obsolete = old;
+        _last_var->obsolete = true;
     }
 
     ///Define member array variable
@@ -1498,11 +1488,7 @@ private:
 
     bool _binw;
     bool _binr;
-
     bool _dometa;                       //< true if shoud stream metadata, false if only the values
-    bool _obsolete;                     //< true if var being defined is obsolete (read, don't write)
-    bool _optional;                     //< true if var being defined should be optional
-
     bool _beseparator;                  //< true if separator between members should be read or written
 
     fmtstream* _fmtstreamrd;            //< bound formatting front-end binstream
@@ -1985,11 +1971,6 @@ protected:
         if(t.is_array_start())
             return 0;
 
-/*
-        if( t.type == type::T_OPTIONAL  &&  *(const uint8*)p != 0 ) {
-            return 0;
-        }*/
-
         return moveto_expected_target(read);
     }
 
@@ -2465,14 +2446,6 @@ protected:
                     ::memcpy( _current->alloc_cache(tsize), p, tsize );
             }
         }
-        /*else if( t.type == type::T_OPTIONAL ) {
-            if(read) {
-                *(uint8*)p = 1;
-                push_var();
-            }
-            else if( *(const uint8*)p )
-                push_var();
-        }*/
         else
             e = read ? _fmtstreamrd->read(p,t) : _fmtstreamwr->write(p,t);
 
