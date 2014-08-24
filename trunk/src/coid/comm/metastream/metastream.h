@@ -329,6 +329,8 @@ public:
     {
         if(!streaming())
             meta_variable_obsolete<T>(name, 0);
+        else if(cache_prepared())
+            _current->offs += sizeof(uints);
         return *this;
     }
 
@@ -2712,7 +2714,8 @@ protected:
         uints n = desc.children.size();
         for( uints i=0; i<n; ++i )
         {
-            streamvar( desc.children[i] );
+            _curvar.var = &desc.children[i];
+            streamvar(*_curvar.var);
 
             offs += sizeof(uints);
             _current->offs = offs;
