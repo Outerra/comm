@@ -1037,6 +1037,7 @@ public:
 
     ///Binary search whether sorted array contains element comparable to \a key
     /// Uses operator T<K or functor(T,K) to search for the element, and operator T==K for equality comparison
+    //@return element position if found, or (-1 - insert_pos)
     //@{
     ints contains_sorted( const T& key ) const {
         return contains_sortedT<T>(key);
@@ -1052,7 +1053,7 @@ public:
     {
         uints lb = lower_boundT<K>(key);
         if( lb >= size()
-            || !(_ptr[lb] == key) )  return -1;
+            || !(_ptr[lb] == key) )  return -1 - ints(lb);
         return lb;
     }
 
@@ -1061,7 +1062,7 @@ public:
     {
         uints lb = lower_boundT<K,FUNC>(key,fn);
         if( lb >= size()
-            || !(_ptr[lb] == key) )  return -1;
+            || !(_ptr[lb] == key) )  return -1 - ints(lb);
         return lb;
     }
     //@}
