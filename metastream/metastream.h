@@ -305,7 +305,7 @@ public:
             int i=0;
             while(names[i] != 0 && !(values[i] == v))
                 ++i;
-            write_optional(names[i]);
+            write_optional(&names[i]);
         }
         else if(_binr) {
             if(read_optional(_convbuf)) {
