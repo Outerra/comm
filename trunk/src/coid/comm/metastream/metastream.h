@@ -124,6 +124,8 @@ public:
     {
         if(streaming()) {
             _xthrow(movein_process_key(_binr != 0 ? READ_MODE : WRITE_MODE));
+            _rvarname.reset();
+
             movein_struct(_binr != 0);
             fn();
             moveout_struct(_binr != 0);
@@ -148,6 +150,8 @@ public:
     {
         if(streaming()) {
             _xthrow(movein_process_key(_binr != 0 ? READ_MODE : WRITE_MODE));
+            _rvarname.reset();
+
             movein_struct(_binr != 0);
             fn();
             moveout_struct(_binr != 0);
@@ -529,6 +533,7 @@ public:
     metastream& read_container( binstream_container_base& c, MetaDesc::stream_func fn )
     {
         _xthrow(movein_process_key(READ_MODE));
+        _rvarname.reset();
 
         return read_container_body(c, fn);
     }
@@ -1919,9 +1924,10 @@ protected:
             }*/
         }
 
-        //if(!_curvar.var->is_array_element())
-            _curvar.var = next;
-        //if(read) _rvarname.reset();
+        _curvar.var = next;
+
+        if(read)
+            _rvarname.reset();
 
         return 0;
     }
@@ -2519,7 +2525,7 @@ protected:
             if(outoforder)
                 cache_fill_member();
 
-            _rvarname.reset();
+            //_rvarname.reset();
         }
         while(outoforder);
 
