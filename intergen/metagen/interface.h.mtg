@@ -118,14 +118,14 @@ inline iref<T> $..name$::$name$( T* _subclass_
     typedef iref<T> (*fn_creator)($..name$*$[args]$, $type$$[/args]$);
 
     static fn_creator create = 0;
-
-    if(!create) {
-        create = reinterpret_cast<fn_creator>(
-            coid::interface_register::get_interface_creator("$..ns rest="::" after="::"$$..name$.$name$@$..hash$"));
-    }
+    static const coid::token ifckey = "$..ns rest="::" after="::"$$..name$.$name$@$..hash$";
 
     if(!create)
-        throw coid::exception("interface creator inaccessible");
+        create = reinterpret_cast<fn_creator>(
+            coid::interface_register::get_interface_creator(ifckey));
+
+    if(!create)
+        throw coid::exception("interface creator inaccessible: ") << ifckey;
 
     return create(_subclass_$[args]$, $name$$[/args]$);
 }
