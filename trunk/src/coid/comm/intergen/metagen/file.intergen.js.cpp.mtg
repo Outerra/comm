@@ -443,11 +443,15 @@ v8::Handle<v8::Value> $name$_js_dispatcher::v8query_interface(const v8::Argument
     v8::String::AsciiValue key(args[0]);
     
     typedef v8::Handle<v8::Value> (*fn_get)(const v8::Arguments&, interface_context*);
+    coid::token tokey(*key, key.length());
     fn_get get = reinterpret_cast<fn_get>(
-        coid::interface_register::get_interface_creator(coid::token(*key, key.length())));
+        coid::interface_register::get_interface_creator(tokey));
 
-    if(!get)
-        return v8::ThrowException(v8::String::New("interface creator not found"));
+    if(!get) {
+        coid::charstr tmp = "interface creator ";
+        tmp << tokey << " not found";
+        return v8::ThrowException(v8::String::New(tmp.c_str()));
+    }
         
     v8::Local<v8::Object> _obj_ = args.Holder();
 
