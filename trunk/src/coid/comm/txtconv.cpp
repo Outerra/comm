@@ -401,7 +401,7 @@ uints write_intelhex_line( char* dst, ushort addr, uchar n, const void* data )
     uchar sum=0;
     for( const char* dst1=dstb ; dst1<dst; )
     {
-        char base;
+        char base = *dst1;
         if( *dst1 >= '0'  &&  *dst1 <= '9' )        base = '0';
         else if( *dst1 >= 'a'  &&  *dst1 <= 'f' )   base = 'a'-10;
         else if( *dst1 >= 'A'  &&  *dst1 <= 'F')    base = 'A'-10;

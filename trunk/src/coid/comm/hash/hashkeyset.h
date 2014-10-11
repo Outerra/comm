@@ -113,6 +113,8 @@ template <
 class hash_keyset
     : public hashtable<VAL,HASHFUNC,EQFUNC,EXTRACTKEY,ALLOC>
 {
+    typedef hashtable<VAL,HASHFUNC,EQFUNC,EXTRACTKEY,ALLOC> _HT;
+
 public:
 
     typedef typename _HT::LOOKUP                    key_type;
@@ -291,6 +293,8 @@ template <
 class hash_multikeyset
     : public hashtable<VAL,HASHFUNC,EQFUNC,EXTRACTKEY,ALLOC>
 {
+    typedef hashtable<VAL,HASHFUNC,EQFUNC,EXTRACTKEY,ALLOC> _HT;
+
 public:
 
     typedef typename _HT::LOOKUP                    key_type;
@@ -475,7 +479,7 @@ inline metastream& operator << ( metastream& m, const hash_keyset<VAL,EXTRACTKEY
 template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, class ALLOC>
 inline metastream& operator || ( metastream& m, hash_keyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
 {
-    typedef typename hash_keyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC> _HT;
+    typedef hash_keyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC> _HT;
 
     if(m.stream_reading()) {
         a.clear();

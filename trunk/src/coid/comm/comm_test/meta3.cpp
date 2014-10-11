@@ -185,7 +185,7 @@ void metastream_test3()
     dynarray<ref<FooA>> ar;
     ar.add()->create(new FooA(1, 2));
 
-    dynarray<ref<FooA>>::dynarray_binstream_container bc(ar, 0, 0, ar.size());
+    dynarray<ref<FooA>>::dynarray_binstream_container bc(ar, 0, 0);
     binstream_dereferencing_containerT<FooA,uints> dc(bc,0,0);
 
     binstreambuf txt;

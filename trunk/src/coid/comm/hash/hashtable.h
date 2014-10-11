@@ -77,8 +77,6 @@ class hashtable
 {
 public:
 
-    typedef hashtable<VAL,HASHFUNC,EQFUNC,GETKEYFUNC,ALLOC> _HT;
-
     ///Type used for lookups is deduced from the hash template
     typedef typename HASHFUNC::key_type         LOOKUP;
 
@@ -248,7 +246,7 @@ public:
 
     struct hashtable_binstream_container : public binstream_containerT<VAL>
     {
-        typedef binstream_containerT<VAL>::fnc_stream    fnc_stream;
+        typedef typename binstream_containerT<VAL>::fnc_stream    fnc_stream;
 
         virtual const void* extract( uints n )
         {
