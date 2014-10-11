@@ -184,7 +184,7 @@ public:
     metastream& member( const token& name, T& v )
     {
         if(streaming())
-            *this || (resolve_enum<T>::type&)v;
+            *this || (typename resolve_enum<T>::type&)v;
         else
             meta_variable<T>(name, &v);
         return *this;
@@ -198,7 +198,7 @@ public:
     metastream& member( const token& name, T& v, const D& defval )
     {
         if(streaming())
-            *this || (resolve_enum<T>::type&)v;
+            *this || (typename resolve_enum<T>::type&)v;
         else {
             meta_variable<T>(name, &v);
             meta_cache_default(T(defval));
@@ -214,7 +214,7 @@ public:
     metastream& member_stream_default( const token& name, T& v )
     {
         if(streaming())
-            *this || (resolve_enum<T>::type&)v;
+            *this || (typename resolve_enum<T>::type&)v;
         else {
             meta_variable<T>(name, &v);
             meta_cache_default_stream<T>(&v);
@@ -521,7 +521,7 @@ public:
 
     template<class T>
     static void fnstream(metastream* m, void* p) {
-        *m || *static_cast<resolve_enum<T>::type*>(p);
+        *m || *static_cast<typename resolve_enum<T>::type*>(p);
     }
 
     template<class T>
@@ -578,7 +578,6 @@ public:
         type t = c._type;
 
         //write bgnarray
-        uints any = UMAXS;
         _xthrow(data_value(&n, t.get_array_begin<uints>(), WRITE_MODE));
 
         //if container doesn't know number of items in advance, require separators
@@ -670,7 +669,7 @@ protected:
     {
         if( !prepare_type_common(cache, read) )  return 0;
 
-        *this || *(resolve_enum<T>::type*)0;     // build description
+        *this || *(typename resolve_enum<T>::type*)0;     // build description
 
         return prepare_type_final(name, cache, read);
     }
@@ -691,7 +690,7 @@ protected:
         if( !prepare_type_common(cache, read) )  return 0;
 
         meta_decl_array(n);
-        *this || *(resolve_enum<T>::type*)0;     // build description
+        *this || *(typename resolve_enum<T>::type*)0;     // build description
 
         return prepare_type_final(name, cache, read);
     }
@@ -874,7 +873,7 @@ public:
         _xthrow(prepare_type( x, name, false, READ_MODE ));
 
         _binr = true;
-        *this || (resolve_enum<T>::type&)x;
+        *this || (typename resolve_enum<T>::type&)x;
         _binr = false;
     }
 
@@ -888,11 +887,11 @@ public:
     template<class T>
     void xstream_or_cache_out( const T& x, bool cache, const token& name = token() )
     {
-        _xthrow(prepare_type((resolve_enum<T>::type&)x, name, cache, WRITE_MODE));
+        _xthrow(prepare_type((typename resolve_enum<T>::type&)x, name, cache, WRITE_MODE));
 
         if(!cache) {
             _binw = true;
-            *this || (resolve_enum<T>::type&)x;
+            *this || (typename resolve_enum<T>::type&)x;
             _binw = false;
         }
     }

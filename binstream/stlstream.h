@@ -63,8 +63,10 @@ template<class StlContainer>
 struct binstream_container_stl_input_iterator : binstream_containerT<typename StlContainer::value_type>
 {
     typedef typename StlContainer::value_type       T;
+    typedef typename binstream_containerT<typename StlContainer::value_type>::fnc_stream
+        fnc_stream;
 
-    const void* extract( uints n )
+    const void* extract( uints n ) override
     {
         if( inpi == endi )  return 0;
 
@@ -73,27 +75,29 @@ struct binstream_container_stl_input_iterator : binstream_containerT<typename St
         return p;
     }
 
-    void* insert( uints n )
+    void* insert( uints n ) override
     {
         DASSERT(0); //not defined for input
         return 0;
     }
 
-    bool is_continuous() const      { return false; }
+    bool is_continuous() const override { return false; }
+
+    uints count() const override { return UMAXS; }
 
 
-    binstream_container_stl_input_iterator( const StlContainer& cont, uints n=UMAXS )
-        : binstream_containerT<T>(n), inpi(cont.begin()), endi(cont.end()) {}
+    binstream_container_stl_input_iterator( const StlContainer& cont )
+        : inpi(cont.begin()), endi(cont.end()) {}
 
-    binstream_container_stl_input_iterator( const StlContainer& cont, fnc_stream fout, fnc_stream fin, uints n=UMAXS )
-        : binstream_containerT<T>(n,fout,fin), inpi(cont.begin()), endi(cont.end()) {}
-
+    binstream_container_stl_input_iterator( const StlContainer& cont, fnc_stream fout, fnc_stream fin )
+        : binstream_containerT<T>(fout,fin), inpi(cont.begin()), endi(cont.end()) {}
+/*
     void set( const StlContainer& cont, uints n )
     {
         inpi = cont.begin();
         endi = cont.end();
         this->_nelements = n;
-    }
+    }*/
 
 protected:
     typename StlContainer::const_iterator inpi, endi;
@@ -104,27 +108,31 @@ template<class StlContainer>
 struct binstream_container_stl_insert_iterator : binstream_container<uints>
 {
     typedef typename StlContainer::value_type       T;
+    typedef typename binstream_container<uints>::fnc_stream
+        fnc_stream;
     enum { ELEMSIZE = sizeof(T) };
 
-    virtual const void* extract( uints n )
+    virtual const void* extract( uints n ) override
     {
         DASSERT(0); //not defined for output
         return 0;
     }
-    virtual void* insert( uints n )             { return &temp; }
+    virtual void* insert( uints n ) override { return &temp; }
 
-    virtual bool is_continuous() const          { return false; }
+    virtual bool is_continuous() const override { return false; }
+
+    virtual uints count() const override { return UMAXS; }
 
 
-    binstream_container_stl_insert_iterator( StlContainer& cont, uints n=UMAXS )
-        : binstream_container<uints>(n,bstype::t_type<T>(),0,&stream_in)
+    binstream_container_stl_insert_iterator( StlContainer& cont )
+        : binstream_container<uints>(bstype::t_type<T>(),0,&stream_in)
         , outpi(std::back_inserter<StlContainer>(cont))
     {
         cont.clear();
     }
 
-    binstream_container_stl_insert_iterator( StlContainer& cont, fnc_stream fout, fnc_stream fin, uints n=UMAXS )
-        : binstream_container<uints>(n,bstype::t_type<T>(),fout,fin)
+    binstream_container_stl_insert_iterator( StlContainer& cont, fnc_stream fout, fnc_stream fin )
+        : binstream_container<uints>(bstype::t_type<T>(),fout,fin)
         , outpi(std::back_inserter<StlContainer>(cont))
     {
         cont.clear();
@@ -153,27 +161,31 @@ template<class StlContainer>
 struct binstream_container_stl_assoc_iterator : binstream_container<uints>
 {
     typedef typename StlContainer::value_type       T;
+    typedef typename binstream_container<uints>::fnc_stream
+        fnc_stream;
     enum { ELEMSIZE = sizeof(T) };
 
-    virtual const void* extract( uints n )
+    virtual const void* extract( uints n ) override
     {
         DASSERT(0); //not defined for output
         return 0;
     }
-    virtual void* insert( uints n )             { return &temp; }
+    virtual void* insert( uints n ) override { return &temp; }
 
-    virtual bool is_continuous() const          { return false; }
+    virtual bool is_continuous() const override { return false; }
+
+    virtual uints count() const override { return UMAXS; }
 
 
-    binstream_container_stl_assoc_iterator( StlContainer& cont, uints n=UMAXS )
-        : binstream_container<uints>(n,bstype::t_type<T>(),0,&stream_in)
+    binstream_container_stl_assoc_iterator( StlContainer& cont )
+        : binstream_container<uints>(bstype::t_type<T>(),0,&stream_in)
         , container(cont)
     {
         cont.clear();
     }
 
-    binstream_container_stl_assoc_iterator( StlContainer& cont, fnc_stream fout, fnc_stream fin, uints n=UMAXS )
-        : binstream_container<uints>(n,bstype::t_type<T>(),fout,fin)
+    binstream_container_stl_assoc_iterator( StlContainer& cont, fnc_stream fout, fnc_stream fin )
+        : binstream_container<uints>(bstype::t_type<T>(),fout,fin)
         , container(cont)
     {
         cont.clear();
@@ -200,22 +212,22 @@ protected:
 ////////////////////////////////////////////////////////////////////////////////
 #define STD_BINSTREAM(CONT) \
 template<class T, class A> inline binstream& operator << (binstream& out, const CONT<T,A>& v) \
-{   binstream_container_stl_input_iterator< CONT<T,A> > c( v, UMAXS ); \
+{   binstream_container_stl_input_iterator< CONT<T,A> > c(v); \
     out.xwrite_array(c); \
     return out; } \
 template<class T, class A> inline binstream& operator >> (binstream& out, CONT<T,A>& v) \
 {   v.clear(); \
-    binstream_container_stl_insert_iterator< CONT<T,A> > c( v, UMAXS ); \
+    binstream_container_stl_insert_iterator< CONT<T,A> > c(v); \
     out.xread_array(c); \
 	return out; } \
 template<class T, class A> inline metastream& operator || (metastream& m, CONT<T,A>& v ) \
 {\
     if(m.stream_reading()) {\
-        binstream_container_stl_input_iterator<CONT<T,A>> c(v, 0, 0, UMAXS);\
+        binstream_container_stl_input_iterator<CONT<T,A>> c(v, 0, 0);\
         m.read_container<T>(c);\
     }\
     else if(m.stream_writing()) {\
-        binstream_container_stl_insert_iterator<CONT<T,A>> c(v, 0, 0, UMAXS);\
+        binstream_container_stl_insert_iterator<CONT<T,A>> c(v, 0, 0);\
         m.write_container<T>(c);\
     }\
     else {\
@@ -230,22 +242,22 @@ PAIRUP_CONTAINERS_READABLE2( CONT, binstream_container_stl_input_iterator )
 
 #define STD_ASSOC_BINSTREAM(CONT) \
 template<class T, class A> inline binstream& operator << (binstream& out, const CONT<T,A>& v) \
-{   binstream_container_stl_input_iterator< CONT<T,A> > c( v, UMAXS ); \
+{   binstream_container_stl_input_iterator< CONT<T,A> > c(v); \
     out.xwrite_array(c); \
 	return out; } \
 template<class T, class A> inline binstream& operator >> (binstream& out, CONT<T,A>& v) \
 {   v.clear(); \
-    binstream_container_stl_assoc_iterator< CONT<T,A> > c( v, UMAXS ); \
+    binstream_container_stl_assoc_iterator< CONT<T,A> > c(v); \
     out.xread_array(c); \
 	return out; } \
 template<class T, class A> inline metastream& operator || (metastream& m, CONT<T,A>& v ) \
 {\
     if(m.stream_reading()) {\
-        binstream_container_stl_input_iterator<CONT<T,A>> c(v, 0, 0, UMAXS);\
+        binstream_container_stl_input_iterator<CONT<T,A>> c(v, 0, 0);\
         m.read_container<T>(c);\
     }\
     else if(m.stream_writing()) {\
-        binstream_container_stl_assoc_iterator<CONT<T,A>> c(v, 0, 0, UMAXS);\
+        binstream_container_stl_assoc_iterator<CONT<T,A>> c(v, 0, 0);\
         m.write_container<T>(c);\
     }\
     else {\
@@ -257,7 +269,6 @@ template<class T, class A> inline metastream& operator || (metastream& m, CONT<T
 PAIRUP_CONTAINERS_WRITABLE2( CONT, binstream_container_stl_assoc_iterator ) \
 PAIRUP_CONTAINERS_READABLE2( CONT, binstream_container_stl_input_iterator )
 
-
 STD_BINSTREAM(std::list)
 STD_BINSTREAM(std::deque)
 
@@ -266,49 +277,6 @@ STD_ASSOC_BINSTREAM(std::multiset)
 STD_ASSOC_BINSTREAM(std::map)
 STD_ASSOC_BINSTREAM(std::multimap)
 
-
-
-////////////////////////////////////////////////////////////////////////////////
-///Binstream container for vector, this one can be optimized more
-template<class T, class A>
-struct std_vector_binstream_container : public binstream_containerT<T,uints>
-{
-    virtual const void* extract( uints n )
-    {
-        DASSERT( _pos+n <= _v.size() );
-        const T* p = &_v[_pos];
-        _pos += n;
-        return p;
-    }
-
-    virtual void* insert( uints n )
-    {
-        _v.resize( _pos+n );
-        T* p = &_v[_pos];
-        _pos += n;
-        return p;
-    }
-
-    virtual bool is_continuous() const      { return true; }
-
-    std_vector_binstream_container( std::vector<T,A>& v )
-        : binstream_containerT<T,uints>(UMAXS), _v(v)
-    {
-        v.clear();
-        _pos = 0;
-    }
-
-    std_vector_binstream_container( std::vector<T,A>& v, fnc_stream fout, fnc_stream fin )
-        : binstream_containerT<T,uints>(UMAXS,fout,fin), _v(v)
-    {
-        v.clear();
-        _pos = 0;
-    }
-
-protected:
-    uints _pos;
-    std::vector<T,A>& _v;
-};
 
 
 template<class T, class A> inline binstream& operator << (binstream& out, const std::vector<T,A>& v)
@@ -324,9 +292,6 @@ template<class T, class A> inline binstream& operator >> (binstream& in, std::ve
     in.xread_array(c);
     return in;
 }
-
-//template<class T, class A> inline metastream& operator << (metastream& m, const std::vector<T,A>& )
-//{   m.meta_decl_array();  m<<*(T*)0;  return m; }
 
 template<class T, class A>
 inline metastream& operator || (metastream& m, std::vector<T,A>& v )
@@ -346,6 +311,52 @@ inline metastream& operator || (metastream& m, std::vector<T,A>& v )
     return m;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+///Binstream container for vector, this one can be optimized more
+template<class T, class A>
+struct std_vector_binstream_container : public binstream_containerT<T,uints>
+{
+    typedef typename binstream_containerT<T,uints>::fnc_stream
+        fnc_stream;
+
+    virtual const void* extract( uints n ) override
+    {
+        DASSERT( _pos+n <= _v.size() );
+        const T* p = &_v[_pos];
+        _pos += n;
+        return p;
+    }
+
+    virtual void* insert( uints n ) override
+    {
+        _v.resize( _pos+n );
+        T* p = &_v[_pos];
+        _pos += n;
+        return p;
+    }
+
+    virtual bool is_continuous() const override { return true; }
+
+    virtual uints count() const override { return _v.size(); }
+
+    std_vector_binstream_container( std::vector<T,A>& v )
+        : _v(v)
+    {
+        v.clear();
+        _pos = 0;
+    }
+
+    std_vector_binstream_container( std::vector<T,A>& v, fnc_stream fout, fnc_stream fin )
+        : binstream_containerT<T,uints>(fout,fin), _v(v)
+    {
+        v.clear();
+        _pos = 0;
+    }
+
+protected:
+    uints _pos;
+    std::vector<T,A>& _v;
+};
 
 
 ////////////////////////////////////////////////////////////////////////////////

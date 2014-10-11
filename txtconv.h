@@ -231,7 +231,7 @@ namespace charstrconv
 
     protected:
 
-        friend class charstr;
+        friend class coid::charstr;
 
         static const char* fix_overflow( char* buf, uints size, uints sizemax )
         {

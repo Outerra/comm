@@ -85,7 +85,7 @@ struct pointer
         Tnc** ptr;
     };
 private:
-    friend class binstream;
+    friend class coid::binstream;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
