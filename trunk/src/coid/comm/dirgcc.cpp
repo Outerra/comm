@@ -200,6 +200,14 @@ charstr& directory::get_home_dir( charstr& buf )
     return buf;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+opcd directory::truncate( const zstring& fname, uint64 size )
+{
+    return truncate(fname.c_str(), (off_t)size) == 0
+        ? 0
+        : ersFAILED;
+}
+
 COID_NAMESPACE_END
 
 
