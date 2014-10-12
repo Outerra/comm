@@ -162,6 +162,8 @@ public:
 
     static opcd set_file_times( const zstring& fname, timet actime, timet modtime );
 
+    static opcd truncate( const zstring& fname, uint64 size );
+
     //@{ tests and sets file write access flags
     static bool is_writable( const zstring& fname );
     static bool set_writable( const zstring& fname, bool writable );

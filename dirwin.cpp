@@ -44,13 +44,15 @@
 #include <io.h>
 #include <errno.h>
 
+#include <Windows.h>
+
 extern "C" {
-ulong __stdcall GetModuleFileNameA(void*, char*, ulong);
-void* __stdcall GetCurrentProcess();
-long __stdcall OpenProcessToken(void*, long, void**);
+//ulong __stdcall GetModuleFileNameA(void*, char*, ulong);
+//void* __stdcall GetCurrentProcess();
+//long __stdcall OpenProcessToken(void*, long, void**);
 int __stdcall GetUserProfileDirectoryA(void*, char*, ulong*);
-long __stdcall CloseHandle(void*);
-ulong __stdcall GetTempPathA(ulong, char*);
+//long __stdcall CloseHandle(void*);
+//ulong __stdcall GetTempPathA(ulong, char*);
 
 #pragma comment(lib, "userenv.lib")
 }
@@ -259,6 +261,24 @@ charstr& directory::get_home_dir( charstr& path )
     return path;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+opcd directory::truncate( const zstring& fname, uint64 size )
+{
+    HANDLE f = CreateFile(fname.c_str(), GENERIC_WRITE, FILE_SHARE_READ, 0,
+        OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+
+    if(!f) return ersNOT_FOUND;
+
+    LARGE_INTEGER fs;
+    fs.QuadPart = size;
+
+    BOOL r = SetFilePointerEx(f, fs, 0, FILE_BEGIN);
+    if(r) r = SetEndOfFile(f);
+
+    CloseHandle(f);
+
+    return r ? ersNOERR : ersFAILED;
+}
 
 COID_NAMESPACE_END
 
