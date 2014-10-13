@@ -101,7 +101,7 @@ public:
     
     //@return host class pointer
     //@note T derived from policy_intrusive_base
-    template<typename T=policy_intrusive_base>
+    template<typename T>
     T* host() const { return static_cast<T*>(_host.get()); }
 
     //@return hash of interface definition, serving for version checks
