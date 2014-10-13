@@ -55,6 +55,7 @@ int __stdcall GetUserProfileDirectoryA(void*, char*, ulong*);
 //ulong __stdcall GetTempPathA(ulong, char*);
 
 #pragma comment(lib, "userenv.lib")
+#pragma comment(lib, "advapi32.lib")
 }
 
 COID_NAMESPACE_BEGIN
