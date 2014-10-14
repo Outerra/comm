@@ -73,6 +73,11 @@
 #define ifc_event
 #define ifc_eventx(extname)
 
+///Statement to fill in as the default implementation of an event, in case the client doesn't implement the event handling.
+///Optionally, should be specified after an ifc_event method declaration:
+/// ifc_event bool event() const ifc_evbody(return false;);
+#define ifc_evbody(x)
+
 ///Interface functon argument decoration keywords
 #define ifc_in
 #define ifc_inout
