@@ -83,7 +83,8 @@ bool MethodIG::parse( iglexer& lex, const charstr& host, const charstr& ns, dyna
     bconst = lex.matches("const");
 
     //optional default event impl
-    if(lex.matches(lex.IFC_EVBODY))
+    bool evbody = lex.matches(lex.IFC_EVBODY);
+    if(evbody)
     {
         default_event_body = lex.match_block(lex.ROUND, true);
 
@@ -98,8 +99,10 @@ bool MethodIG::parse( iglexer& lex, const charstr& host, const charstr& ns, dyna
             default_event_body << '}';
         }
     }
-    else
-        default_event_body = "{ throw coid::exception(\"handler not implemented\"); }";
+    //else
+    //    default_event_body = "{ throw coid::exception(\"handler not implemented\"); }";
+
+    bmandatory = !evbody && (ret.type != "void" || noutargs > 0);
 
     //declaration parsed succesfully
     return lex.no_err();
