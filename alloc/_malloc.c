@@ -639,7 +639,7 @@ void abort_routine();
 #endif  /* ONLY_MSPACES */
 #endif  /* MSPACES */
 #ifndef MALLOC_ALIGNMENT
-#define MALLOC_ALIGNMENT ((size_t)(2 * sizeof(void *)))
+#define MALLOC_ALIGNMENT 16 //((size_t)(2 * sizeof(void *)))
 #endif  /* MALLOC_ALIGNMENT */
 #ifndef FOOTERS
 #define FOOTERS 0
@@ -2751,6 +2751,7 @@ static int has_segment_link(mstate m, msegmentptr ss) {
   TOP_FOOT_SIZE is padding at the end of a segment, including space
   that may be needed to place segment records and fenceposts when new
   noncontiguous segments are added.
+  M is modulo of alignment, as specified in mstate->modalign
 */
 #define TOP_FOOT_SIZE(M)\
   (align_offset(TWO_SIZE_T_SIZES,M)+pad_request(sizeof(struct malloc_segment))+MIN_CHUNK_SIZE)
@@ -5443,6 +5444,7 @@ static mstate init_user_mstate(char* tbase, size_t tsize, size_t modalign) {
   m->mflags = mparams.default_mflags;
   m->extp = 0;
   m->exts = 0;
+  m->modalign = modalign;
   disable_contiguous(m);
   init_bins(m);
   mn = next_chunk(mem2chunk(m));
