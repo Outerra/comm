@@ -151,7 +151,7 @@ $-[event]$
 $-[/event]$
 
 $-[event]$
-    virtual bool is_implemented_$name$() override { return !unbound_event($@index$); }
+    virtual bool is_implemented_$name$() override { return is_event_bound($@index$); }
 $-[/event]$
 $-(if event.empty!)$
 
@@ -165,7 +165,7 @@ $-(if event.empty!)$
 $-(/if)$
 
 private:
-    bool unbound_event( int id )
+    bool is_event_bound( int id )
     {
         if(!_bound_events) {
             v8::Context::Scope context_scope(_context);
@@ -175,7 +175,7 @@ private:
             bind_events(_context, false);
         }
 
-        return _events[id].IsEmpty() || _events[id]->IsUndefined();
+        return !_events[id].IsEmpty() && !_events[id]->IsUndefined();
     }
 $-(/if)$
 };
@@ -294,9 +294,10 @@ $-(elif)$
 
     bind_events(_context, false);
 
-$-(if return.type?="void" !noutargs?)$
+$-(if !mandatory?)$
     if(_events[$@index$].IsEmpty() || _events[$@index$]->IsUndefined())
-        return;
+    $(if default_event_body?)$$default_event_body$$(elif)-$
+        return;$(/if)$
 
 $-(/if)$
 $-[args inarg? iref.false?]$
@@ -528,7 +529,7 @@ $-[/event]$
     };
     static bool mandatory[] = {
 $-[event]$
-        $(if return.type?="void" !noutargs?)$false$(elif)$true$(/if)$,
+        $(if mandatory?)$false$(elif)$true$(/if)$,
 $-[/event]$
     };
 

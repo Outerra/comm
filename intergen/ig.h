@@ -270,6 +270,7 @@ struct MethodIG
     bool bcapture;                      ///< method captured when interface is in capturing mode
     bool bimplicit;                     ///< an implicit event
     bool bdestroy;                      ///< a method to call on interface destroy
+    bool bmandatory;                    ///< mandatory event
 
     Arg ret;
     dynarray<Arg> args;
@@ -310,6 +311,7 @@ struct MethodIG
             m.member("const",p.bconst);
             m.member("implicit",p.bimplicit);
             m.member("destroy",p.bdestroy);
+            m.member("mandatory",p.bmandatory);
             m.member("args",p.args);
             m.member("ninargs",p.ninargs);
             m.member("ninargs_nondef",p.ninargs_nondef);
