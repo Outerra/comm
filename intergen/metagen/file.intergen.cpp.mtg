@@ -196,8 +196,9 @@ $[/..nss]-$
 $-[event !implicit?]$
 $return.type$ $....class$::$intname$($[args rest="," after=" "]$ $type$ $name$$size$$[/args]$)
 {
-	if(!$..varname$) throw coid::exception("interface client not connected");
-    return static_cast<$..ns rest="::" after="::"$$..name$&>(*$..varname$).$name$($[args rest=", "]$$name$$[/args]$);
+	if(!$..varname$) $default_event_body$
+    else
+        return static_cast<$..ns rest="::" after="::"$$..name$&>(*$..varname$).$name$($[args rest=", "]$$name$$[/args]$);
 }
 $[/event]-$
 

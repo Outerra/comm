@@ -602,6 +602,9 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
 
     if(extctx || script.is_context()) {
         ifc->_object = v8::Persistent<v8::Object>::New(ifc->create_interface_object(false));
+
+        if(bindname)
+            context->Global()->Set(v8::String::New(bindname.ptr(), bindname.len()), ifc->_object);
     }
     else {
         coid::token script_tok, script_path;
@@ -631,14 +634,15 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
             script_path = "$..name$";
         }
 
+        ifc->_object = v8::Persistent<v8::Object>::New(ifc->create_interface_object(false));
+        if(bindname)
+            context->Global()->Set(v8::String::New(bindname.ptr(), bindname.len()), ifc->_object);
+        
         v8::Handle<v8::Script> compiled_script = load_script(script_tok, script_path);
 
         ifc->_script = v8::Persistent<v8::Script>::New(compiled_script);
-        ifc->_object = v8::Persistent<v8::Object>::New(ifc->create_interface_object(false));
     }
 
-    if(bindname)
-        context->Global()->Set(v8::String::New(bindname.ptr(), bindname.len()), ifc->_object);
 
     if(ctx) *ctx = context;
 

@@ -122,6 +122,7 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                             (&binternal)[k-1]++;
 
                         lex.matches(lex.IDENT, extname);
+
                         /*binternal = lex.matches('!');
                         bimplicit = lex.matches('@');
                         if(bimplicit) {
