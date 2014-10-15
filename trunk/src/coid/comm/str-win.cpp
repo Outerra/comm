@@ -104,6 +104,8 @@ COID_NAMESPACE_BEGIN
 
 typedef atomic::stack_base<charstr*> pool_t;
 
+static const char* nullstring = "";
+
 ////////////////////////////////////////////////////////////////////////////////
 static atomic::stack_base<charstr*>& zeroterm_pool()
 {
@@ -122,6 +124,12 @@ static atomic::stack_base<charstr*>& zeroterm_pool()
 ////////////////////////////////////////////////////////////////////////////////
 zstring::~zstring()
 {
+    free_string();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void zstring::free_string()
+{
     if(_buf) {
         zeroterm_pool().push(_buf);
         _buf = 0;
@@ -130,11 +138,11 @@ zstring::~zstring()
 
 ////////////////////////////////////////////////////////////////////////////////
 zstring::zstring(const zstring& s)
+    : _buf(0)
 {
-    _buf = 0;
     if(s._buf) {
-        _zptr = s._buf->ptr();
-        _zend = s._buf->ptre();
+        get_str() = *s._buf;
+        _zptr = _zend = nullstring;
     }
     else {
         _zptr = s._zptr;
@@ -143,32 +151,93 @@ zstring::zstring(const zstring& s)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+zstring::zstring()
+    : _zptr(nullstring), _zend(nullstring), _buf(0)
+{}
+
+////////////////////////////////////////////////////////////////////////////////
 zstring::zstring(const char* sz)
     : _zptr(sz), _zend(0), _buf(0)
 {}
 
 ////////////////////////////////////////////////////////////////////////////////
 zstring::zstring(const token& tok)
-    : _zptr(0), _zend(0)
+    : _buf(0)
 {
-    pool_t& pool = zeroterm_pool();
-    if(!pool.pop(_buf))
-        _buf = new charstr;
-    else
-        _buf->reset();
-
-    *_buf = tok;
+    if(tok.len() == 0)
+        _zptr = _zend = nullstring;
+    else {
+        _zptr = tok.ptr();
+        _zend = tok.ptre() - 1;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 zstring::zstring(const charstr& str)
-    : _zptr(str.ptr()), _zend(str.ptre()), _buf(0)
-{}
+    : _buf(0)
+{
+    if(str.len() == 0)
+        _zptr = _zend = nullstring;
+    else {
+        _zptr = str.ptr();
+        _zend = str.ptre();
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+zstring& zstring::operator = (const char* sz)
+{
+    free_string();
+    new(this) zstring(sz);
+
+    return *this;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+zstring& zstring::operator = (const token& tok)
+{
+    free_string();
+    new(this) zstring(tok);
+
+    return *this;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+zstring& zstring::operator = (const charstr& str)
+{
+    free_string();
+    new(this) zstring(str);
+
+    return *this;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+zstring& zstring::operator = (const zstring& s)
+{
+    if(s._buf) {
+        get_str() = *s._buf;
+        _zptr = _zend = nullstring;
+    }
+    else {
+        free_string();
+        _zptr = s._zptr;
+        _zend = s._zend;
+    }
+
+    return *this;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 const char* zstring::c_str() const
 {
-    return _buf ? _buf->c_str() : _zptr;
+    if(_buf)
+        return _buf->c_str();
+    if(_zend == 0)
+        return _zptr;
+    
+    return *_zend
+        ? const_cast<zstring*>(this)->get_str().c_str()
+        : _zptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -176,10 +245,10 @@ token zstring::get_token() const
 {
     if(_buf)
         return token(*_buf);
-    else if(_zptr && !_zend)
+    else if(!_zend)
         _zend = _zptr + ::strlen(_zptr);
 
-    return token(_zptr, _zend);
+    return token(_zptr, *_zend ? _zend+1 : _zend);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -194,9 +263,11 @@ charstr& zstring::get_str()
             _buf->reset();
 
         if(_zend)
-            _buf->set_from_range(_zptr, _zend);
+            _buf->set_from_range(_zptr, *_zend ? _zend+1 : _zend);
         else
             _buf->set(_zptr);
+
+        _zptr = _zend = nullstring;
     }
 
     return *_buf;

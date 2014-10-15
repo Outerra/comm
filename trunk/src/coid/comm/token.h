@@ -2349,15 +2349,16 @@ inline string_hash::string_hash(const token& tok)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-///Wrapper class for providing zero-terminated strings to os api funcions
+///Wrapper class for providing zero-terminated strings to os api functions
 class zstring
 {
-    const char* _zptr;
-    mutable const char* _zend;
-    mutable charstr* _buf;
+    const char* _zptr;                  //< pointer to the first character of the string
+    mutable const char* _zend;          //< pointer to the last character of token, to the trailing zero of a c-string, or zero if it was not resolved but the string is zero-terminated
+    mutable charstr* _buf;              //< thread pool storage
 
 public:
 
+    zstring();
     zstring(const char* sz);
     zstring(const token& tok);
     zstring(const charstr& str);
@@ -2365,6 +2366,11 @@ public:
     zstring(const zstring& s);
 
     ~zstring();
+
+    zstring& operator = (const char* sz);
+    zstring& operator = (const token& tok);
+    zstring& operator = (const charstr& str);
+    zstring& operator = (const zstring& s);
 
     ///Get zero terminated string
     const char* c_str() const;
@@ -2379,6 +2385,8 @@ public:
 
     ///Get modifiable string
     charstr& get_str();
+
+    void free_string();
 };
 
 
