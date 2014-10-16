@@ -166,7 +166,7 @@ public:
     /// c - create
     /// t,- - truncate
     /// a,+ - append
-    virtual opcd open( const zstring& name, const zstring& attrz = zstring(0) )
+    virtual opcd open( const zstring& name, const zstring& attrz = zstring() )
     {
         int flg=0;
         int rw=0,sh=0;
@@ -361,7 +361,7 @@ public:
         return in0out1 ? 0 : fATTR_NO_INPUT_FUNCTION;
     }
 
-    virtual opcd open( const zstring& name, const zstring& attrz = zstring(0) )
+    virtual opcd open( const zstring& name, const zstring& attrz = zstring() )
     {
         zstring mattr = attrz;
         charstr& attr = mattr.get_str();
@@ -375,7 +375,7 @@ public:
     }
 
     bofstream() { }
-    explicit bofstream( const zstring& name, const zstring& attr = zstring(0) )
+    explicit bofstream( const zstring& name, const zstring& attr = zstring() )
     {
         open(name, attr);
     }
@@ -392,7 +392,7 @@ public:
         return in0out1 ? 0 : fATTR_NO_OUTPUT_FUNCTION;
     }
 
-    virtual opcd open( const zstring& name, const zstring& attrz = zstring(0) )
+    virtual opcd open( const zstring& name, const zstring& attrz = zstring() )
     {
         zstring mattr = attrz;
         charstr& attr = mattr.get_str();
@@ -407,7 +407,7 @@ public:
 
 
     bifstream() { }
-    explicit bifstream( const zstring& name, const zstring& attr = zstring(0) )
+    explicit bifstream( const zstring& name, const zstring& attr = zstring() )
     {
         open(name, attr);
     }

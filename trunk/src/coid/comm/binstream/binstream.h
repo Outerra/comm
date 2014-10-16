@@ -932,7 +932,7 @@ public:
     /**
     **/
     ///Open underlying medium
-    virtual opcd open( const zstring& name, const zstring& arg=zstring(0) ) {
+    virtual opcd open( const zstring& name, const zstring& arg=zstring() ) {
         return ersNOT_IMPLEMENTED;
     }
     ///Close the underlying medium

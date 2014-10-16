@@ -66,7 +66,7 @@ public:
     virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS )
     {   return ersUNAVAILABLE; }
 
-    virtual opcd open( const zstring& arg, const zstring& attr = zstring(0) )
+    virtual opcd open( const zstring& arg, const zstring& attr = zstring() )
     {
         return connect(arg.get_token());
     }
