@@ -252,7 +252,7 @@ public:
 
 
 
-    virtual opcd open( const zstring& name, const zstring& arg=zstring(0) )
+    virtual opcd open( const zstring& name, const zstring& arg=zstring() )
     {
         return _bin->open(name, arg);
     }

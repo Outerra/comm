@@ -230,7 +230,7 @@ public:
         return _cache.bind( bin, io );
     }
 
-    virtual opcd open( const zstring& name, const zstring& arg = zstring(0) )
+    virtual opcd open( const zstring& name, const zstring& arg = zstring() )
     {
         return _cache.open(name, arg);
     }

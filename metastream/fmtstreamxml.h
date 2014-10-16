@@ -184,7 +184,7 @@ public:
         return 0;
     }
 
-    virtual opcd open( const zstring& name, const zstring& arg = zstring(0) ) {
+    virtual opcd open( const zstring& name, const zstring& arg = zstring() ) {
         return _binw->open(name, arg);
     }
     virtual opcd close( bool linger=false ) {return _binw->close( linger );}
