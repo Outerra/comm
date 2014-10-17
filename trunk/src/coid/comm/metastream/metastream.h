@@ -113,7 +113,13 @@ public:
         bind_formatting_stream(bin);
     }
 
-    virtual ~metastream() {}
+    ~metastream()
+    {
+        if(_sesopen > 0)
+            stream_flush();
+        else if(_sesopen < 0)
+            stream_acknowledge(true);
+    }
 
 
     ///Define struct streaming scheme
