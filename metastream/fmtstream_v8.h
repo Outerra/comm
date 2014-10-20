@@ -158,6 +158,17 @@ public:
     }
 };
 
+///V8 values
+template<typename V> class v8_streamer<v8::Handle<V>> { public: \
+    typedef v8::Handle<V> T; \
+    v8_streamer<T>(fmtstream_v8* fmt=0, metastream* meta=0) {} \
+    v8::Handle<v8::Value> operator << (T v) { return v; } \
+    T operator >> ( v8::Handle<v8::Value> src ) { return src.Cast<T>(src); } \
+};
+
+//dummy metastream operator for v8::Handle
+template<typename V>
+inline metastream& operator || (metastream& m, v8::Handle<V>) { RASSERT(0); return m; }
 
 //@}
 
