@@ -116,12 +116,12 @@ public:
 
     virtual void reset_read()
     {
-        _binr->reset_read();
+        if(_binr) _binr->reset_read();
     }
 
     virtual void reset_write()
     {
-        _binw->reset_write();
+        if(_binw) _binw->reset_write();
         _bufw.reset();
     }
 
