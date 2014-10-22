@@ -83,18 +83,18 @@ public:
     bool operator == (thread_t t) const;
     bool operator != (thread_t t) const  { return !(*this == t); }
 
-    ///@return true if the object contains invalid thread id value (not that the thread is invalid)
+    //@return true if the object contains invalid thread id value (not that the thread is invalid)
     bool is_invalid() const;
 
-    ///@return true if thread exists
+    //@return true if thread exists
     bool exists() const {
         return exists(_thread);
     }
 
-    ///@return true if thread exists
+    //@return true if thread exists
     static bool exists( thread_t tid );
 
-    ///@return invalid thread id
+    //@return invalid thread id
     static thread_t invalid();
 
 
@@ -111,7 +111,7 @@ public:
 
     //@{ Static methods dealing with the thread currently running
 
-    ///@return thread object for the thread we are currently in
+    //@return thread object for the thread we are currently in
     static thread self();
 
     ///Exit from current thread
@@ -120,7 +120,7 @@ public:
     ///Cancel the current thread
     static void self_cancel();
 
-    ///@return true if the current thread should be cancelled
+    //@return true if the current thread should be cancelled
     static bool self_should_cancel();
 
     ///Cancel current thread if it was signalled to cancel
@@ -133,12 +133,12 @@ public:
     //@note the thread must check itself if it should be cancelled
     opcd cancel();
 
-    ///@return true if the thread referred by this object should be cancelled
+    //@return true if the thread referred by this object should be cancelled
     bool should_cancel() const;
 
     ///Request cancellation of referred thread and wait for it to cancel itself
-    ///@param mstimeout maximum time to wait for the thread to end
-    ///@return true if thread was successfully terminated in time
+    //@param mstimeout maximum time to wait for the thread to end
+    //@return true if thread was successfully terminated in time
     bool cancel_and_wait( uint mstimeout );
 
     ///Wait for thread to end

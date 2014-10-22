@@ -200,7 +200,7 @@ public:
 
 
     ///Pack outgoing packet before send()
-    ///@param nocompressoffs size at the beginning of the packet to left uncompressed
+    //@param nocompressoffs size at the beginning of the packet to left uncompressed
     void pack( uint nocompressoffs )
     {
         uint ss = (uint)_sendbuf.size();
@@ -219,8 +219,8 @@ public:
     }
 
     ///Unpack received packet before reading further data
-    ///@param nocompressoffs size at the beginning of the packet to left uncompressed
-    ///@note [nocompressoffs] bytes of input can be read from compressed packet before uncompressing
+    //@param nocompressoffs size at the beginning of the packet to left uncompressed
+    //@note [nocompressoffs] bytes of input can be read from compressed packet before uncompressing
     bool unpack( uint nocompressoffs )
     {
         uint ss = (uint)_recvbuf.size();
@@ -280,7 +280,7 @@ protected:
     }
 
     ///Receive an udp packet
-    ///@return true if message received
+    //@return true if message received
     bool recv( uint timeout )
     {
         if( timeout != UMAX32 )

@@ -316,7 +316,7 @@ private:
         return n>0;
     }
 */
-    ///@return bytes not read
+    //@return bytes not read
     uints decode( uint8* p, uints len )
     {
         for( ; _ndec>0 && len>0 && _rrem>0; --len, --_rrem )
@@ -369,7 +369,7 @@ private:
     }
 
 
-    ///@return remaining bytes
+    //@return remaining bytes
     int decode_prefetch( uint n=4 )
     {
         if( _rptr >= _rbuf + RBUFFER_SIZE )

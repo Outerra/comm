@@ -69,7 +69,7 @@ public:
         return f;
     }
 
-    ///@param s specifies string that should be appended to output upon flush()
+    //@param s specifies string that should be appended to output upon flush()
     void set_flush_token( const token& s ) {
         _flush = s;
     }
@@ -363,7 +363,7 @@ public:
     }
 
     ///Append floating point number
-    ///@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
+    //@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
     void append_float( double d, int nfrac )
     {
         char buf[256];

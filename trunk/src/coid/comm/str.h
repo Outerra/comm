@@ -707,7 +707,7 @@ public:
     }
 
     ///Append floating point number with fixed number of characters
-    ///@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
+    //@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
     void append_fixed( double v, int maxsize, int nfrac=-1, EAlignNum align=ALIGN_NUM_RIGHT)
     {
         char* buf = get_append_buf(maxsize);
@@ -715,7 +715,7 @@ public:
     }
 
     ///Append floating point number
-    ///@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
+    //@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
     void append_float( double d, int nfrac, uint maxchars=0 )
     {
         if(!maxchars)
@@ -726,7 +726,7 @@ public:
         resize(end-ptr());
     }
 /*
-    ///@param ndig number of decimal places: >0 maximum, <0 precisely -ndig places
+    //@param ndig number of decimal places: >0 maximum, <0 precisely -ndig places
     void append_fraction( double n, int ndig )
     {
         uint ndiga = int_abs(ndig);
@@ -794,7 +794,7 @@ public:
     }
 
     ///Append UCS-4 character
-    ///@return number of bytes written
+    //@return number of bytes written
     uint append_ucs4( ucs4 c )
     {
         if( c <= 0x7f ) {
@@ -811,9 +811,9 @@ public:
     }
 
     ///Append wchar (UCS-2) buffer, converting it to the UTF-8 on the fly
-    ///@param src pointer to the source buffer
-    ///@param nchars number of characters in the source buffer, -1 if zero terminated
-    ///@return number of bytes appended
+    //@param src pointer to the source buffer
+    //@param nchars number of characters in the source buffer, -1 if zero terminated
+    //@return number of bytes appended
     uint append_wchar_buf( const wchar_t* src, uints nchars )
     {
         uints nold = lens();
@@ -839,8 +839,8 @@ public:
 
 #ifdef SYSTYPE_WIN
     ///Append wchar (UCS-2) buffer, converting it to the ANSI on the fly
-    ///@param src pointer to the source buffer
-    ///@param nchars number of characters in the source buffer, -1 if zero-terminated
+    //@param src pointer to the source buffer
+    //@param nchars number of characters in the source buffer, -1 if zero-terminated
     uint append_wchar_buf_ansi( const wchar_t* src, uints nchars );
 #endif
 
@@ -1332,27 +1332,27 @@ public:
     }
 
     ///Return position where the substring is located
-    ///@return substring position, 0 if not found
+    //@return substring position, 0 if not found
     const char* contains( const substring& sub, uints off=0 ) const
     {   return token(*this).contains(sub,off); }
 
     ///Return position where the substring is located
-    ///@return substring position, 0 if not found
+    //@return substring position, 0 if not found
     const char* contains( const token& tok, uints off=0 ) const
     {   return token(*this).contains(tok,off); }
 
     ///Return position where the substring is located
-    ///@return substring position, 0 if not found
+    //@return substring position, 0 if not found
     const char* contains_icase( const token& tok, uints off=0 ) const
     {   return token(*this).contains_icase(tok,off); }
 
     ///Return position where the character is located
-    ///@return substring position, 0 if not found
+    //@return substring position, 0 if not found
     const char* contains( char c, uints off=0 ) const
     {   return token(*this).contains(c,off); }
 
     ///Return position where the character is located, searching from the end
-    ///@return substring position, 0 if not found
+    //@return substring position, 0 if not found
     const char* contains_back( char c, uints off=0 ) const
     {   return token(*this).contains_back(c,off); }
 

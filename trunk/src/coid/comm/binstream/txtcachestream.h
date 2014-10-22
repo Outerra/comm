@@ -60,7 +60,7 @@ public:
         return fATTR_IO_FORMATTING | _cache.binstream_attributes(in0out1);
     }
 
-    ///@param s specifies string that should be appended to output upon flush()
+    //@param s specifies string that should be appended to output upon flush()
     void set_flush_token( const token& s )
     {
         _flush = s;

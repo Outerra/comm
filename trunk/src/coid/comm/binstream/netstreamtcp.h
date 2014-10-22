@@ -85,9 +85,9 @@ public:
     }
 
     ///Connect to host
-    ///@param host address in the format [proto://]server[:port]
-    ///@param port port number to use
-    ///@param portoverride If false, the port parameter is used as a default
+    //@param host address in the format [proto://]server[:port]
+    //@param port port number to use
+    //@param portoverride If false, the port parameter is used as a default
     ///       value when it's not specified in the \a host argument.
     ///       If true, the port number specified in the \a port argument 
     ///       overrides any potential port number specified in the \a host.

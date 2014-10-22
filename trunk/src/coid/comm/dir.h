@@ -88,8 +88,8 @@ public:
     }
     void close();
 
-    ///@return true if the character is allowed path separator
-    ///@note on windows it's both / and \ characters
+    //@return true if the character is allowed path separator
+    //@note on windows it's both / and \ characters
     static bool is_separator( char c )      { return c == '/'  ||  c == separator(); }
 
     static char separator();

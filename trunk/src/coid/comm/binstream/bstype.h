@@ -165,7 +165,7 @@ struct kind
 
     bool is_nameless() const                { return (ctrl & fNAMELESS) != 0; }
 
-    ///@return true if the type is array control token
+    //@return true if the type is array control token
     bool is_array_control_type() const      { return (ctrl & (fARRAY_BEGIN|fARRAY_END)) != 0; }
 
     bool is_array_start() const             { return (ctrl & fARRAY_BEGIN) != 0; }
