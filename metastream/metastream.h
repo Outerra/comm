@@ -944,9 +944,10 @@ public:
                 _fmtstreamrd->reset_read();
             else if(_sesopen > 0)
                 _fmtstreamwr->reset_write();
+
+            _sesopen = 0;
+            _beseparator = false;
         }
-        _sesopen = 0;
-        _beseparator = false;
 
         _stack.reset();
         cache_reset(cache_open);
