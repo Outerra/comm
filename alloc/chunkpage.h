@@ -203,8 +203,8 @@ public:
     }
 
     ///Return item pointer or NULL if it never was used
-    ///@note the method doesn't check if the item wasn't freed already, it returns the item only if
-    /// it was allocated some time from last reset()
+    //@note the method doesn't check if the item wasn't freed already, it returns the item only if
+    //@ it was allocated some time from last reset()
     T* get_item_safe( uints n ) const
     {
         if( n >= _used )  return 0;

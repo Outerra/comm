@@ -311,7 +311,7 @@ void *_xmemcpy( void *dest, const void *src, size_t count );
 
 
 ///Find occurence of 0xcdcd in a two-part buffer
-///@return true if not found (use with ASSERT)
+//@return true if not found (use with ASSERT)
 bool cdcd_memcheck( const uchar* a, const uchar* ae, const uchar* b, const uchar* be );
 
 

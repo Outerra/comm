@@ -64,11 +64,11 @@ struct binstream_container_base
     virtual ~binstream_container_base() {}
 
     ///Provide a pointer to next object that should be streamed
-    ///@param n number of objects to allocate the space for
+    //@param n number of objects to allocate the space for
     virtual const void* extract( uints n ) = 0;
     virtual void* insert( uints n ) = 0;
 
-    ///@return true if the storage is continuous in memory
+    //@return true if the storage is continuous in memory
     virtual bool is_continuous() const = 0;
 
     //@return number of items in container (for reading), UMAXS if unknown in advance
@@ -140,8 +140,8 @@ struct binstream_streamfunc
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Templatized base container
-///@param T type held by the container
-///@param COUNT unsigned integer type for storing count
+//@param T type held by the container
+//@param COUNT unsigned integer type for storing count
 template<class T, class COUNT=uints>
 struct binstream_containerT : binstream_container<COUNT>
 {
@@ -214,7 +214,7 @@ struct binstream_dereferencing_containerT
         return *p;
     }
 
-    ///@return true if the storage is continuous in memory
+    //@return true if the storage is continuous in memory
     virtual bool is_continuous() const      { return false; }
 
     virtual uints count() const             { return _bc.count(); }
@@ -252,7 +252,7 @@ struct binstream_dereferencing_containerRefT
         return &(**p);
     }
 
-    ///@return true if the storage is continuous in memory
+    //@return true if the storage is continuous in memory
     virtual bool is_continuous() const      { return false; }
 
     virtual uints count() const             { return _bc.count(); }

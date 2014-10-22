@@ -514,26 +514,26 @@ public:
 
     ////////////////////////////////////////////////////////////////////////////////
     ///Write raw data
-    /// @p len contains number of bytes to write, on return the number of bytes remaining to write
-    /// @return 0 (no error), ersNO_MORE when not all data could be read
+    //@param len contains number of bytes to write, on return the number of bytes remaining to write
+    //@return 0 (no error), ersNO_MORE when not all data could be read
     virtual opcd write_raw( const void* p, uints& len ) = 0;
 
     ///Read raw data
-    /// @p len contains number of bytes to read, on return the number of bytes remaining to read
-    /// @return 0 (no error), ersRETRY when only partial chunk was returned and the method should be called again, ersNO_MORE when not
-    ///         all data has been read
+    //@param len contains number of bytes to read, on return the number of bytes remaining to read
+    //@return 0 (no error), ersRETRY when only partial chunk was returned and the method should be called again, ersNO_MORE when not
+    //@         all data has been read
     virtual opcd read_raw( void* p, uints& len ) = 0;
 
     ///Write raw data.
-    /// @note This method is provided just for the symetry, write_raw specification doesn't allow returning ersRETRY error code
-    ///       to specify that only partial data has been written, this may change in the future if it turns out being needed
+    //@note This method is provided just for the symetry, write_raw specification doesn't allow returning ersRETRY error code
+    //@      to specify that only partial data has been written, this may change in the future if it turns out being needed
     opcd write_raw_full( const void* p, uints& len )
     {
         return write_raw(p,len);
     }
 
     ///Read raw data repeatedly while ersRETRY is returned from read_raw
-    ///@note tries to read complete buffer as requested, thus cannot return with ersRETRY
+    //@note tries to read complete buffer as requested, thus cannot return with ersRETRY
     opcd read_raw_full( void* p, uints& len )
     {
         for(;;) {
@@ -546,8 +546,8 @@ public:
     }
 
     ///Read raw data until at least something is returned from read_raw
-    ///@note read_raw() can return ersRETRY while not reading anything, whereas this method either returns a different error than
-    /// ersRETRY or it has read something
+    //@note read_raw() can return ersRETRY while not reading anything, whereas this method either returns a different error than
+    //@ ersRETRY or it has read something
     opcd read_raw_any( void* p, uints& len )
     {
         uints olen = len;
@@ -559,7 +559,7 @@ public:
     }
 
     ///A write_raw() wrapper throwing exception on error
-    ///@return number of bytes remaining to write
+    //@return number of bytes remaining to write
     uints xwrite_raw( const void* p, uints len )
     {
         opcd e = write_raw( p, len );
@@ -568,7 +568,7 @@ public:
     }
 
     ///A read_raw() wrapper throwing exception on error
-    ///@return number of bytes remaining to read
+    //@return number of bytes remaining to read
     uints xread_raw( void* p, uints len )
     {
         opcd e = read_raw_full( p, len );
@@ -599,7 +599,7 @@ public:
     }
 
     ///Write raw data to another binstream.
-    ///@return number of bytes written
+    //@return number of bytes written
     opcd copy_to( binstream& bin, uints dlen, uints* size_written, uints blocksize )
     {
         opcd e;
@@ -964,7 +964,7 @@ public:
     /// Note that in such streams, reading more data than the packet contains will result in
     /// the read() methods returning error ersNO_MORE, or xread() methods throwing the exception
     /// (opcd) ersNO_MORE.
-    ///@param eat forces the binstream to eat all remaining data from the packet
+    //@param eat forces the binstream to eat all remaining data from the packet
     virtual void acknowledge( bool eat=false ) = 0;
 
     ///Completely reset the binstream. By default resets both reading and writing pipe, but can do more.

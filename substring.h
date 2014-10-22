@@ -95,7 +95,7 @@ public:
     ///Return how many characters can be skipped upon encountering particular character
 
     ///Find the substring within the provided data
-    ///@return position of the substring or \a len if not found
+    //@return position of the substring or \a len if not found
     uints find( const char* ptr, uints len ) const
     {
         if( _len == 1 )

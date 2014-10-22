@@ -752,7 +752,7 @@ struct token
 
 
     //@{ Token cutting methods.
-    ///@note if the separator isn't found and the @a ctr parameter doesn't contain fON_FAIL_RETURN_EMPTY,
+    //@note if the separator isn't found and the @a ctr parameter doesn't contain fON_FAIL_RETURN_EMPTY,
     /// whole token is returned. This applies to cut_right* methods as well.
 
     ///Cut the string that follows. The first character is assumed to be the string delimiter (usually ' or "). If the
@@ -820,7 +820,7 @@ struct token
     }
 
     ///Cut left substring
-    ///@param skipsep zero if the separator should remain with the original token, nonzero if it's discarded
+    //@param skipsep zero if the separator should remain with the original token, nonzero if it's discarded
     token cut_left( const substring& ss, cut_trait ctr = cut_trait_remove_sep() )
     {
         token r;
@@ -836,7 +836,7 @@ struct token
     }
 
     ///Cut left substring, searching for separator backwards
-    ///@param skipsep zero if the separator should remain with the original token, nonzero if it's discarded
+    //@param skipsep zero if the separator should remain with the original token, nonzero if it's discarded
     token cut_left_back( const char c, cut_trait ctr = cut_trait_remove_sep() )
     {
         token r;
@@ -1206,7 +1206,7 @@ struct token
 
 
     ///Return position where the substring is located
-    ///@return substring position, len() if not found
+    //@return substring position, len() if not found
     const char* contains( const substring& sub, uints off=0 ) const {
         uints k = count_until_substring(sub,off);
         return k<len() ? _ptr+k : 0;
@@ -1718,7 +1718,7 @@ struct token
 
         tonum( uint BaseN=10 ) : BaseN(BaseN) {}
 
-        ///@return true if the conversion failed
+        //@return true if the conversion failed
         bool failed() const             { return !success; }
 
         ///Deduce the numeric base (0x, 0o, 0b or decimal)

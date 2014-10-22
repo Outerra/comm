@@ -221,7 +221,7 @@ public:
 
 
     ///Write raw data to another binstream. Overloadable to avoid excesive copying when not neccessary.
-    ///@return number of bytes written
+    //@return number of bytes written
     virtual opcd transfer_to( binstream& bin, uints datasize=UMAXS, uints* size_written=0, uints blocksize = 4096 )
     {
         opcd e;

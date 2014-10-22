@@ -498,11 +498,11 @@ public:
         }
 
         ///Provide a pointer to next object that should be streamed
-        ///@param n number of objects to allocate the space for
+        //@param n number of objects to allocate the space for
         virtual const void* extract( uints n ) { return _container.extract(n); }
         virtual void* insert( uints n ) { return _container.insert(n); }
 
-        ///@return true if the storage is continuous in memory
+        //@return true if the storage is continuous in memory
         virtual bool is_continuous() const { return _container.is_continuous(); }
 
         virtual uints count() const { return _container.count(); }
@@ -745,7 +745,7 @@ public:
     }
 
     ///Write object of type T to the currently bound formatting stream
-    ///@param cache true if the object should be trapped in the cache instead of sending it out through the formatting stream
+    //@param cache true if the object should be trapped in the cache instead of sending it out through the formatting stream
     template<class T>
     opcd stream_or_cache_out( const T& x, bool cache, const token& name = token() )
     {
@@ -812,7 +812,7 @@ public:
     }
 
     ///Write array of objects of type T to the currently bound formatting stream
-    ///@param cache true if the array should be trapped in the cache instead of sending it out through the formatting stream
+    //@param cache true if the array should be trapped in the cache instead of sending it out through the formatting stream
     template<class T, class COUNT>
     opcd stream_or_cache_array_out( binstream_containerT<T,COUNT>& C, bool cache, const token& name = token() )
     {
@@ -935,14 +935,18 @@ public:
         }
     }
 
-    ///@param fmts_reset >0 reset reading pipe, <0 reset writing pipe
-    ///@param cache_open leave cache open or closed
-    void stream_reset( int fmts_reset, bool cache_open )
+    //@param fmts_reset reset formatting stream
+    //@param cache_open leave cache open or closed
+    void stream_reset( bool fmts_reset, bool cache_open )
     {
         if(fmts_reset) {
-            _sesopen = 0;
-            _beseparator = false;
+            if(_sesopen < 0)
+                _fmtstreamrd->reset_read();
+            else if(_sesopen > 0)
+                _fmtstreamwr->reset_write();
         }
+        _sesopen = 0;
+        _beseparator = false;
 
         _stack.reset();
         cache_reset(cache_open);
@@ -953,10 +957,6 @@ public:
         _rvarname.reset();
 
         _err.reset();
-        if( fmts_reset>0 )
-            _fmtstreamrd->reset_read();
-        else if( fmts_reset<0 )
-            _fmtstreamwr->reset_write();
     }
 
 //@}
@@ -1341,7 +1341,7 @@ public:
 
 
     ///Signal that the primitive or compound type coming is an array
-    ///@param n array element count, UMAXS if unknown or varying
+    //@param n array element count, UMAXS if unknown or varying
     void meta_decl_array( uints n = UMAXS )
     {
         if( is_template_name_mode() ) {
@@ -1635,7 +1635,7 @@ private:
         }
 
         ///Allocate space in the buffer, aligning the buffer position according to the \a size
-        ///@return position where inserted
+        //@return position where inserted
         uints insert_void( uints size )
         {
             uints k = pad();
@@ -1650,7 +1650,7 @@ private:
         }
 
         ///Append a field that will contain an address (offset)
-        ///@note expects padded data
+        //@note expects padded data
         uints insert_address()
         {
             uints k = buf->size();
@@ -2349,7 +2349,7 @@ protected:
         }
     }
 
-    ///@return false if no more elements
+    //@return false if no more elements
     bool read_array_separator( type t )
     {
         if( cache_prepared() && !_cachevar )

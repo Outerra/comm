@@ -532,7 +532,7 @@ public:
         return grp;
     }
 
-    ///@return nonzero if token is a keyword from given keyword group, the return equals keyword id + 1
+    //@return nonzero if token is a keyword from given keyword group, the return equals keyword id + 1
     int is_keyword( int kid, const token& tok ) const
     {
         DASSERT( kid >= ID_KEYWORDS  &&  kid < ID_KEYWORDS+(int)_nkwd_groups );

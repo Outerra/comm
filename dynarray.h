@@ -678,8 +678,8 @@ public:
     ///Add n new elements on position where key would be inserted.
     /// Uses either operator T<T or a functor(T,T)
     /// add_sortT() can use a different key type than T, provided an operator T<K exists, or functor(T,K) was provided.
-    ///@param key key to use to find the element position in sorted array
-    ///@param n number of elements to insert
+    //@param key key to use to find the element position in sorted array
+    //@param n number of elements to insert
     /** this uses the provided \a key just to find the position, doesn't insert the key
         @see push_sort() **/
     //@{
@@ -989,7 +989,7 @@ public:
     //@}
 
     ///Linear search whether array contains element comparable with \a key
-    ///@return -1 if not contained, otherwise index to the key
+    //@return -1 if not contained, otherwise index to the key
     //@{
     ints contains( const T& key ) const {
         return containsT<T>(key);
@@ -1016,7 +1016,7 @@ public:
     //@}
 
     ///Linear search (backwards) whether array contains element comparable with \a key
-    ///@return -1 if not contained, otherwise index to the key
+    //@return -1 if not contained, otherwise index to the key
     //@{
     ints contains_back( const T& key ) const {
         return contains_backT<T>(key);
@@ -1080,7 +1080,7 @@ public:
     }
 
     ///Binary search sorted array using different type of key
-    ///@note there must exist < operator able to do (T < K) comparison
+    //@note there must exist < operator able to do (T < K) comparison
     template<class K>
     count_t lower_boundT( const K& key ) const
     {
@@ -1230,9 +1230,9 @@ public:
 
     ///Delete element in sorted array
     /// Uses either operator T<K or a functor(T,K) for binary search, and operator T==K for equality comparison
-    ///@return number of deleted items
-    ///@param key key to localize the first item to delete
-    ///@param n maximum number of items to delete
+    //@return number of deleted items
+    //@param key key to localize the first item to delete
+    //@param n maximum number of items to delete
     //@{
     count_t del_sort( const T& key, uints n=1 ) {
         return del_sortT<T>(key,n);
@@ -1306,7 +1306,7 @@ public:
     }
 
     ///Delete content but keep the memory reserved
-    ///@return previous size of the array
+    //@return previous size of the array
     count_t reset()
     {
         count_t n = size();

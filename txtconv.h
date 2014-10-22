@@ -362,7 +362,7 @@ namespace charstrconv
     }
 
     ///Append floating point number with fixed number of characters
-    ///@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
+    //@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
     void append_fixed( char* dst, char* dste, double v, int nfrac, EAlignNum align=ALIGN_NUM_LEFT);
 
     ///Append floating point number
