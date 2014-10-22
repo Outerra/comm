@@ -79,9 +79,10 @@ struct regex
     regex();
     regex(token rt,
         bool literal = false,
-        bool star_match_newline = false);
+        bool star_match_newline = false,
+        bool icase = false);
 
-    void compile(token rt, bool literal, bool star_match_newline);
+    void compile(token rt, bool literal, bool star_match_newline, bool icase);
 
 
     ///Match the whole string

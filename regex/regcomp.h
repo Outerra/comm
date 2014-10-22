@@ -116,7 +116,7 @@ struct regex_program;
 
 struct regex_compiler
 {
-    regex_program* compile(token s, bool literal, Reinst::OP dot_type);
+    regex_program* compile(token s, bool literal, bool icase, Reinst::OP dot_type);
 
 private:
 
@@ -146,7 +146,7 @@ private:
 
     Reinst* create( Reinst::OP type );
 
-    void operand(Reinst::OP t);
+    void operand(Reinst::OP t, bool icase);
     void xoperator(Reinst::OP t);
 
     void evaluntil(Reinst::OP pri);
@@ -182,8 +182,8 @@ private:
     }
 
     int nextc(ucs4 *rp);
-    Reinst::OP lex(int literal, Reinst::OP dot_type);
-    Reinst::OP bldcclass();
+    Reinst::OP lex(int literal, Reinst::OP dot_type, bool icase);
+    Reinst::OP bldcclass(bool icase);
 
 private:
 
@@ -229,8 +229,8 @@ struct regex_program
 {
     token match( token bol, token* sub, uint nsub, Reljunk::MatchStyle style ) const;
     
-    regex_program()
-        : startinst(0)
+    regex_program( bool icase )
+        : startinst(0), icase(icase)
     {}
 
 
@@ -246,6 +246,7 @@ private:
     Reinst* startinst;	// start pc
     dynarray<Reclass*> rclass;
     dynarray<Reinst*> rinst;
+    bool icase;
 };
 
 

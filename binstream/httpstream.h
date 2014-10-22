@@ -243,7 +243,7 @@ public:
 
     static const substring& substring_proto()
     {
-        static substring _ss( "://" );
+        static substring _ss("://", false);
         return _ss;
     }
 

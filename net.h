@@ -93,7 +93,7 @@ public:
 	char 	__pad[8];
 
     const substring& protocol() {
-        static substring _protocol("://");
+        static substring _protocol("://", false);
         return _protocol;
     }
 
