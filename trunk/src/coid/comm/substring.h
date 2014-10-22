@@ -36,8 +36,9 @@
 #define __COID_COMM_SUBSTRING__HEADER_FILE__
 
 #include "namespace.h"
-
 #include "commassert.h"
+
+#include <ctype.h>
 
 COID_NAMESPACE_BEGIN
 
@@ -51,15 +52,16 @@ class substring
     //mutable uchar _shf[256];
     uints* _shf;
     uchar _from, _to;
+    uchar _icase;
 
     const uchar* _subs;
     uints _len;
 public:
 
-    substring()                                 { _shf=0; set(0); }
-    substring( const char* subs, uints len )    { _shf=0; set(subs,len); }
-    substring( const token& tok )               { _shf=0; set(tok); }
-    explicit substring( char k )                { _shf=0; set(k); }
+    substring()                                          : _shf(0) { set(0, false); }
+    substring( const char* subs, uints len, bool icase ) : _shf(0) { set(subs, len, icase); }
+    substring( const token& tok, bool icase )            : _shf(0) { set(tok, icase); }
+    substring( char k, bool icase )                      : _shf(0) { set(k, icase); }
 
     ~substring();
 
@@ -67,20 +69,20 @@ public:
 
     //@{ Predefined substrings
     ///CRLF sequence
-    static substring& crlf()                    { static substring _S("\r\n",2);  return _S; }
+    static substring& crlf()                    { static substring _S("\r\n",2,false);  return _S; }
 
     ///Character \n
-    static substring& newline()                 { static substring _S("\n",1);  return _S; }
+    static substring& newline()                 { static substring _S("\n",1,false);  return _S; }
 
     ///Character 0 (end of string)
-    static substring& zero()                    { static substring _S("",1);  return _S; }
+    static substring& zero()                    { static substring _S("",1,false);  return _S; }
     //@}
 
 
     ///Initialize with string
-    void set( const char* subs, uints len );
-    void set( char k );
-    void set( const token& tok );
+    void set( const char* subs, uints len, bool icase=false );
+    void set( char k, bool icase=false );
+    void set( const token& tok, bool icase=false );
 
     ///Length of the contained substring
     uints len() const               { return _len; }
@@ -91,8 +93,6 @@ public:
     ///Get substring as token
     token get() const;
 
-
-    ///Return how many characters can be skipped upon encountering particular character
 
     ///Find the substring within the provided data
     //@return position of the substring or \a len if not found
@@ -108,7 +108,10 @@ public:
         {
             if( rlen >= _len )
             {
-                if( 0 == ::memcmp( ptr+off, _subs, _len ) )
+                int cmp = _icase
+                    ? ::_strnicmp(ptr+off, (const char*)_subs, _len)
+                    : ::memcmp(ptr+off, _subs, _len);
+                if(cmp == 0)
                     return off;
             }
             
@@ -123,6 +126,8 @@ public:
             // substring at all, we can skip substring length + 1
 
             uchar o = ptr[off+_len];
+            if(_icase) o = ::tolower(o);
+
             uints sk = (o<_from || o>_to)
                 ? _len+1
                 : _shf[o-_from];
@@ -133,15 +138,9 @@ public:
             rlen -= sk;
         }
     }
-/*
-    ///Compare with string and return length of matching byte sequence
-    uints memcmplen( const char* a ) const
-    {
-        uints off=0;
-        for( ; off<_len && a[off] == _subs[off]; ++off );
-        return off;
-    }
-*/
+
+
+    ///Return how many characters can be skipped upon encountering particular character
     uints get_skip( uchar k ) const
     {
         uints n = (k<_from || k>_to)
@@ -157,7 +156,7 @@ protected:
         char c = _subs[0];
         uints i;
         for( i=0; i<len; ++i)
-            if( ptr[i] == c )
+            if( ptr[i] == c || (_icase && ::tolower(ptr[i]) == c) )
                 break;
 
         return i;

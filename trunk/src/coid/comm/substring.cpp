@@ -45,11 +45,12 @@ substring::~substring()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void substring::set( const char* subs, uints len )
+void substring::set( const char* subs, uints len, bool icase )
 {
     if(len == 1)
-        return set(*subs);
+        return set(*subs, icase);
 
+    _icase = icase;
     _subs = (const uchar*)subs;
     _len = len;
 
@@ -64,6 +65,8 @@ void substring::set( const char* subs, uints len )
 
     for( uints i=1; i<len; ++i,++subs ) {
         uchar c = *subs;
+        if(_icase) c = ::tolower(c);
+
         if( c < _from ) {
             ::memset( dist+c+1, 0, (_from-c-1)*sizeof(uints) );
             _from = c;
@@ -85,9 +88,10 @@ void substring::set( const char* subs, uints len )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void substring::set( char k )
+void substring::set( char k, bool icase )
 {
-    _from = _to = k;
+    _icase = icase;
+    _from = _to = _icase ? ::tolower(k) : k;
 
     if(_shf)
         dlfree(_shf);

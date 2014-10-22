@@ -116,7 +116,7 @@ public:
 		_list_const_iterator operator --(int) { _list_const_iterator x(_node); _node=_node->_prev;  return x; }
 
 		_list_const_iterator() {}
-		explicit _list_const_iterator(node* p) : _list_iterator_base(p) {}
+		explicit _list_const_iterator(const node* p) : _list_iterator_base(const_cast<node*>(p)) {}
 	};
 
 	struct _list_const_reverse_iterator 
@@ -325,8 +325,8 @@ public:
     iterator begin() { return iterator(_node._next); }
 	iterator end() { return iterator(&_node); }
 
-    const_iterator begin() const { return _list_const_iterator(_node._next); }
-    const_iterator end() const { return _list_const_iterator(_node); }
+    const_iterator begin() const { return const_iterator(_node._next); }
+    const_iterator end() const { return const_iterator(&_node); }
 
     reverse_iterator rbegin() { return reverse_iterator(_node._prev); }
 	reverse_iterator rend() { return reverse_iterator(&_node); }

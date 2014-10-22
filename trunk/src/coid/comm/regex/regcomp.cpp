@@ -51,7 +51,7 @@ Reinst* regex_compiler::create( Reinst::OP type ) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void regex_compiler::operand(Reinst::OP t)
+void regex_compiler::operand(Reinst::OP t, bool icase)
 {
     if(_lastwasand)
         xoperator(Reinst::CAT);	// catenate is implicit
@@ -61,7 +61,7 @@ void regex_compiler::operand(Reinst::OP t)
     if(t == Reinst::CCLASS || t == Reinst::NCCLASS)
         i->cp = _yyclassp;
     if(t == Reinst::RUNE)
-        i->cd = _yyrune;
+        i->cd = icase ? ::tolower(_yyrune) : _yyrune;
 
     pushand(i, i);
     _lastwasand = 1;
@@ -231,7 +231,7 @@ int regex_compiler::nextc(ucs4 *rp)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-Reinst::OP regex_compiler::lex(int literal, Reinst::OP dot_type)
+Reinst::OP regex_compiler::lex(int literal, Reinst::OP dot_type, bool icase)
 {
     int quoted;
 
@@ -264,14 +264,14 @@ Reinst::OP regex_compiler::lex(int literal, Reinst::OP dot_type)
     case L'$':
         return Reinst::EOL;
     case L'[':
-        return bldcclass();
+        return bldcclass(icase);
     default:
         return Reinst::RUNE;
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-Reinst::OP regex_compiler::bldcclass()
+Reinst::OP regex_compiler::bldcclass(bool icase)
 {
     Reinst::OP type;
     dynarray<ucs4> runes;
@@ -312,14 +312,23 @@ Reinst::OP regex_compiler::bldcclass()
                 throw exception() << "malformed '[]'";
             }
             *runes.last() = rune;
-        } else {
+
+            if(icase && ::isalpha(rune) && ::isalpha(runes.last()[-1])) {
+                ucs4* p = runes.add(2) - 2;
+                p[0] = ::tolower(p[0]);
+                p[1] = ::tolower(p[1]);
+                p[2] = ::toupper(p[0]);
+                p[3] = ::toupper(p[1]);
+            }
+        }
+        else {
             *runes.add() = rune;
             *runes.add() = rune;
         }
         quoted = nextc(&rune);
     }
 
-    // sort on span start
+    // sort by span start
     ucs4* rend = runes.ptre();
     for( ucs4* p = runes.ptr(); p < rend; p+=2) {
         for( ucs4* np=p; np<rend; np+=2)
@@ -356,7 +365,7 @@ Reinst::OP regex_compiler::bldcclass()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-regex_program* regex_compiler::compile(token s, bool literal, Reinst::OP dot_type)
+regex_program* regex_compiler::compile(token s, bool literal, bool icase, Reinst::OP dot_type)
 {
     // go compile the sucker
     _string = s;
@@ -364,26 +373,26 @@ regex_program* regex_compiler::compile(token s, bool literal, Reinst::OP dot_typ
     _lastwasand = 0;
     _cursubid = 0;
 
-    local<regex_program> prg = new regex_program;
+    local<regex_program> prg = new regex_program(icase);
     _prog = prg.ptr();
 
     // Start with a low priority operator to prime parser
     pushator(Reinst::OP(Reinst::START-1));
 
     Reinst::OP tk;
-    while((tk = lex(literal, dot_type)) != Reinst::END)
+    while((tk = lex(literal, dot_type, icase)) != Reinst::END)
     {
         if((tk & 0300) == Reinst::OPERATOR)
             xoperator(tk);
         else
-            operand(tk);
+            operand(tk, icase);
     }
 
     // Close with a low priority operator
     evaluntil(Reinst::START);
 
     // Force END
-    operand(Reinst::END);
+    operand(Reinst::END, icase);
     evaluntil(Reinst::START);
 
 #ifdef DEBUG

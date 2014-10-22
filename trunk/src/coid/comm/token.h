@@ -2320,9 +2320,9 @@ struct token
 struct key_token : public token {};
 
 ////////////////////////////////////////////////////////////////////////////////
-inline void substring::set( const token& tok )
+inline void substring::set( const token& tok, bool icase )
 {
-    set( tok.ptr(), tok.lens() );
+    set(tok.ptr(), tok.lens(), icase);
 }
 
 inline token substring::get() const

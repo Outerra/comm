@@ -50,15 +50,15 @@ regex::regex() {
     _prog = 0;
 }
 
-regex::regex(token rt, bool literal, bool star_match_newline) {
-    compile(rt, literal, star_match_newline);
+regex::regex(token rt, bool literal, bool star_match_newline, bool icase) {
+    compile(rt, literal, icase, star_match_newline);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void regex::compile(token rt, bool literal, bool star_match_newline)
+void regex::compile(token rt, bool literal, bool star_match_newline, bool icase)
 {
     Reljunk* j = thread_object<Reljunk>(tk_regex);
-    _prog = j->comp.compile(rt, literal, star_match_newline ? Reinst::ANYNL : Reinst::ANY);
+    _prog = j->comp.compile(rt, literal, icase, star_match_newline ? Reinst::ANYNL : Reinst::ANY);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -256,7 +256,7 @@ token regex_program::regexec(
             {
                 switch(inst->type){
                 case Reinst::RUNE:	// regular character
-                    if(inst->cd == r) {
+                    if(inst->cd == r || (icase && inst->cd == ::tolower(r) )) {
                         _appendfollowstate(nl, inst->next, tlp);
                     }
                     break;
