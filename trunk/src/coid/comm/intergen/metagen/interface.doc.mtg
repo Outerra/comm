@@ -1,0 +1,66 @@
+{
+    "name" : "$name$",
+    "base" : "$base$",
+    "namespace" : [$[ns rest=", "]$"$@value$"$[/ns]$],
+    "comments" : "$[comments rest="\\n"]$$@value$$[/comments]$",
+    "creators" : [
+$-[method static? rest=",\n"]$
+        {
+            "comments" : "$[comments rest="\\n"]$$@value$$[/comments]$",
+            "return" : "$return.type$",
+            "name" : "$name$",
+            "args" : [
+$[args rest=",\n"]-$
+                {
+                    "name" : "$name$",
+                    "type" : "$type$",
+                    "inarg" : $inarg$,
+                    "outarg" : $outarg$,
+                    "size" : "$size$",
+                    "defval" : "$defval$"
+                }$[/args]$
+            ],
+            "const" : $const$
+        }$[/method]-$
+    ],
+    "methods" : [
+$-[method !static? !destroy? rest=",\n"]$
+        {
+            "comments" : "$[comments rest="\\n"]$$@value$$[/comments]$",
+            "return" : "$return.type$",
+            "name" : "$name$",
+            "args" : [
+$[args rest=",\n"]-$
+                {
+                    "name" : "$name$",
+                    "type" : "$type$",
+                    "inarg" : $inarg$,
+                    "outarg" : $outarg$,
+                    "size" : "$size$",
+                    "defval" : "$defval$"
+                }$[/args]$
+            ],
+            "const" : $const$
+        }$[/method]-$
+    ],
+    "events" : [
+$-[event !static? !destroy? rest=",\n"]$
+        {
+            "comments" : "$[comments rest="\\n"]$$@value$$[/comments]$",
+            "return" : "$return.type$",
+            "name" : "$name$",
+            "args" : [
+$[args rest=",\n"]-$
+                {
+                    "name" : "$name$",
+                    "type" : "$type$",
+                    "inarg" : $inarg$,
+                    "outarg" : $outarg$,
+                    "size" : "$size$",
+                    "defval" : "$defval$"
+                }$[/args]$
+            ],
+            "const" : $const$
+        }$[/event]-$
+    ]
+}

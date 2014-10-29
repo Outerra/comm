@@ -233,6 +233,18 @@ void generate_ig( File& file, charstr& tdir, charstr& fdir  )
             if( generate(ifc, tdir, fdir) < 0 )
                 return;
 
+
+            tdir.resize(tlen);
+            tdir << "interface.doc.mtg";
+
+            charstr docpath = ifc.basepath;
+            docpath << "/docs";
+            directory::mkdir(docpath);
+
+            docpath << '/' << ifc.name << ".json";
+
+            generate(ifc, tdir, docpath);
+
             ++nifc;
         }
     }
