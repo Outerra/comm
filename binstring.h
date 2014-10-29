@@ -56,8 +56,14 @@ public:
     COIDNEWDELETE(binstring);
 
     binstring()
-        : _offset(0)
+        : _offset(0), _packing(UMAXS)
     {}
+
+    ///Set the maximum packing alignment
+    //@note resulting alignment is the minimum of this value and __alignof(type)
+    void set_packing( uints pack ) {
+        _packing = pack;
+    }
 
 
     ///
@@ -143,7 +149,7 @@ public:
     {
         uchar* p = ref.ptr();
         ref.set_dynarray_conforming_ptr(_tstr.ptr());
-        _tstr.set_dynarray_conforming_ptr((char*)p);
+        _tstr.set_dynarray_conforming_ptr(p);
 
         return *this;
     }
@@ -206,14 +212,14 @@ protected:
     template<class T>
     T* pad_alloc() {
         uints size = _tstr.size();
-        uints align = align_offset(size, __alignof(T)) - size;
+        uints align = align_offset(size, _packing<__alignof(T) ? _packing : __alignof(T)) - size;
 
         return reinterpret_cast<T*>(_tstr.add(align + sizeof(T)) + align);
     }
 
     template<class T>
     T* seek( uints& offset ) {
-        uints off = align_offset(offset, __alignof(T));
+        uints off = align_offset(offset, _packing<__alignof(T) ? _packing : __alignof(T));
         if(off+sizeof(T) > _tstr.size())
             throw exception("error reading buffer");
 
@@ -226,6 +232,7 @@ protected:
 
     dynarray<uint8> _tstr;
     uints _offset;
+    uint _packing;
 };
 
 

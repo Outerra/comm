@@ -63,7 +63,7 @@ namespace js {
 
 ////////////////////////////////////////////////////////////////////////////////
 $-(if !comments.empty?)$$[comments]$
-//$@value$
+$@value$
 $-[/comments]$$(/if)$
 class $name$_js_dispatcher
     : public ::js::interface_wrapper_base<$ns rest="::"$::$name$>
@@ -124,7 +124,7 @@ $-[/event]$
 
 $-[method static?]$
 $(if !comments.empty?)$$[comments]-$
-    //$@value$
+    $@value$
 $[/comments]$$(/if)-$
     static iref<$..name$_js_dispatcher> $name$( const script_handle& scriptpath
         $-[args]$, $type$ $name$$size$$[/args]$, const coid::token& bindname, v8::Handle<v8::Context>* );
