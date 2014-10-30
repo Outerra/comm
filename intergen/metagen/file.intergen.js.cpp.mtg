@@ -44,7 +44,7 @@ $-(if irefargs?)$
 
 // forward declarations for used iref arguments
 $-[irefargs]$
-v8::Handle<v8::Object> js_$fulltype$_create_wrapper( const $type$&, v8::Handle<v8::Context> );
+v8::Handle<v8::Value> js_$fulltype$_create_wrapper( const $type$&, v8::Handle<v8::Context> );
 
 $-[/irefargs]$
 $-(/if)$
@@ -405,7 +405,7 @@ $-(if getter.iref.false?)$
     v8::Handle<v8::Value> _r_ = v8_streamer<$getter.basetype$>(&ifc->_fmtv8, &ifc->_meta) << value;
     ifc->_meta.stream_flush();
 $-(elif)$
-    v8::Handle<v8::Object> _r_ = js_$getter.fulltype$_create_wrapper(value, ifc->_context);
+    v8::Handle<v8::Value> _r_ = js_$getter.fulltype$_create_wrapper(value, ifc->_context);
 $-(/if)$
 
     return _handle_scope_.Close(_r_);
@@ -757,10 +757,10 @@ $-[/ns]$
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Create JS wrapper from existing interface object
-v8::Handle<v8::Object> js_$ns rest="_" after="_"-$ $name$_create_wrapper( const iref<$ns rest="::" after="::"$$name$>& orig, v8::Handle<v8::Context> context )
+v8::Handle<v8::Value> js_$ns rest="_" after="_"-$ $name$_create_wrapper( const iref<$ns rest="::" after="::"$$name$>& orig, v8::Handle<v8::Context> context )
 {
     // check that the orig points to an object
-    if(!orig) return v8::Handle<v8::Object>();
+    if(!orig) return v8::Null();
 
     // create interface object
     iref<$ns rest="::" after="::"$js::$name$_js_dispatcher> ifc;
