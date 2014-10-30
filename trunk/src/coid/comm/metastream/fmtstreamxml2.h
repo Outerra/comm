@@ -864,17 +864,17 @@ protected:
 
     dynarray<Parent> _stackw;
     dynarray<Parent> _stackr;
-    charstr _tagw;                      ///< tag to be written
-    charstr _tagr;                      ///< tag being read
+    charstr _tagw;                      //< tag to be written
+    charstr _tagr;                      //< tag being read
 
-    int _tagmode;                       ///< 0 between tags, 1 attribute, 2 value, 3 array element
+    int _tagmode;                       //< 0 between tags, 1 attribute, 2 value, 3 array element
 
-    bool _attrmodew;                    ///< attribute setting mode at the current level
-    bool _attrmoder;                    ///< attribute reading mode
-    bool _emptytag;                     ///< true if empty tag was read <tag/>
+    bool _attrmodew;                    //< attribute setting mode at the current level
+    bool _attrmoder;                    //< attribute reading mode
+    bool _emptytag;                     //< true if empty tag was read <tag/>
 
-    token tkBoolTrue, tkBoolFalse;      ///< symbols for bool type for reading and writting
-    token tkrBoolTrue, tkrBoolFalse;    ///< additional symbols for bool type for reading
+    token tkBoolTrue, tkBoolFalse;      //< symbols for bool type for reading and writting
+    token tkrBoolTrue, tkrBoolFalse;    //< additional symbols for bool type for reading
 };
 
 COID_NAMESPACE_END

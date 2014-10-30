@@ -50,27 +50,27 @@ COID_NAMESPACE_BEGIN
 class enc_base64stream : public binstream
 {
     enum {
-        WBUFFER_SIZE = 64,      ///< @note MIME requires lines with <76 characters
+        WBUFFER_SIZE = 64,      //< @note MIME requires lines with <76 characters
         RBUFFER_SIZE = 64,
     };
 
-    binstream* _bin;            ///< bound io binstream
+    binstream* _bin;            //< bound io binstream
 
-    uchar _wbuf[WBUFFER_SIZE+4];///< output buffer, last 4 bytes are for quotes and newline characters
-    uchar* _wptr;               ///< current position in the output buffer
+    uchar _wbuf[WBUFFER_SIZE+4];//< output buffer, last 4 bytes are for quotes and newline characters
+    uchar* _wptr;               //< current position in the output buffer
     union {
-        uchar _wtar[4];         ///< temp.output buffer
+        uchar _wtar[4];         //< temp.output buffer
         uint _wval;
     };
-    uint _nreq;                 ///< requested bytes for _wval
+    uint _nreq;                 //< requested bytes for _wval
     bool _use_quotes;
 
 
-    uint _rrem;                 ///< remaining bytes in input
-    uchar _rbuf[RBUFFER_SIZE];  ///< input buffer
-    uchar* _rptr;               ///< current position in the input buffer
+    uint _rrem;                 //< remaining bytes in input
+    uchar _rbuf[RBUFFER_SIZE];  //< input buffer
+    uchar* _rptr;               //< current position in the input buffer
     union {
-        uchar _rtar[4];         ///< temp.input buffer
+        uchar _rtar[4];         //< temp.input buffer
         uint _rval;
     };
     uint _ndec;

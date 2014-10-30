@@ -56,8 +56,8 @@ protected:
     binstream*  _binw;
 
     local<binstreambuf> _readbuf;
-    token _flush;                       ///< token to insert on explicit flush
-    char _autoflush;                    ///< character to catch in input and invoke flush
+    token _flush;                       //< token to insert on explicit flush
+    char _autoflush;                    //< character to catch in input and invoke flush
 
 public:
 

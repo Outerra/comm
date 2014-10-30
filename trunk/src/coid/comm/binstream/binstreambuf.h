@@ -50,8 +50,8 @@ COID_NAMESPACE_BEGIN
 ///Binary streaming class working over a contiguous memory buffer
 class binstreambuf : public binstream
 {
-    dynarray<char>  _buf;                   ///<memory buffer
-    uints           _bgi;                   ///<beginning of data
+    dynarray<char>  _buf;                   //<memory buffer
+    uints           _bgi;                   //<beginning of data
 
 public:
 

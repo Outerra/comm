@@ -61,7 +61,7 @@ protected:
         DEFAULT_CACHE_SIZE          = 256,
     };
 
-    bool eois;                      ///< end of the input stream already read
+    bool eois;                      //< end of the input stream already read
 
 public:
 

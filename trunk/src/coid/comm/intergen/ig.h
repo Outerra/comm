@@ -83,37 +83,19 @@ struct Method
     ///Argument descriptor
     struct Arg
     {
-        charstr type;                   ///< parameter type (stripped of const qualifier and last reference)
-        charstr name;                   ///< parameter name
-        charstr size;                   ///< size expression if the parameter is an array, including [ ]
+        charstr type;                   //< parameter type (stripped of const qualifier and last reference)
+        charstr name;                   //< parameter name
+        charstr size;                   //< size expression if the parameter is an array, including [ ]
         charstr defval;
-        char bptr;                      ///< '*' if the type was pointer-type
-        char bref;                      ///< '&' if the type is a reference
-        bool bretarg;                   ///< true if this is the return argument
-        bool bsizearg;                  ///< true if this is the size argument
-        bool bconst;                    ///< true if the type had const qualifier
+        char bptr;                      //< '*' if the type was pointer-type
+        char bref;                      //< '&' if the type is a reference
+        bool bretarg;                   //< true if this is the return argument
+        bool bsizearg;                  //< true if this is the size argument
+        bool bconst;                    //< true if the type had const qualifier
 
 
         bool parse( iglexer& lex );
-/*
-        friend binstream& operator << (binstream& bin, const Arg& m)
-        {   return bin << m.type << m.name << m.size << m.defval << m.bconst << m.bptr << m.bref << m.bretarg << m.bsizearg; }
-        friend binstream& operator >> (binstream& bin, Arg& m)
-        {   return bin >> m.type >> m.name >> m.size >> m.defval >> m.bconst >> m.bptr >> m.bref >> m.bretarg >> m.bsizearg; }
-        friend metastream& operator << (metastream& m, const Arg& p)
-        {
-            MSTRUCT_OPEN(m,"Arg")
-            MM(m,"type",p.type)
-            MM(m,"name",p.name)
-            MM(m,"size",p.size)
-            MM(m,"defval",p.defval)
-            MM(m,"const",p.bconst)
-            MM(m,"ptr",p.bptr)
-            MM(m,"ref",p.bref)
-            MM(m,"retarg",p.bretarg)
-            MM(m,"sizearg",p.bsizearg)
-            MSTRUCT_CLOSE(m)
-        }*/
+
         friend metastream& operator || (metastream& m, Arg& p)
         {
             return m.compound("Arg", [&]()
@@ -131,19 +113,19 @@ struct Method
         }
     };
 
-    charstr retexpr;                    ///< expression for rl_cmd_p() for methods returning void* or T*
-    charstr retparm;                    ///< parameter name associated with the return expression (pointer-type)
-    charstr sizeparm;                   ///< parameter name that will receive command's payload length (bytes)
-    charstr templarg;                   ///< template arguments (optional)
-    charstr templsub;                   ///< template arguments for substitution
-    charstr rettype;                    ///< return type
-    charstr name;                       ///< method name
+    charstr retexpr;                    //< expression for rl_cmd_p() for methods returning void* or T*
+    charstr retparm;                    //< parameter name associated with the return expression (pointer-type)
+    charstr sizeparm;                   //< parameter name that will receive command's payload length (bytes)
+    charstr templarg;                   //< template arguments (optional)
+    charstr templsub;                   //< template arguments for substitution
+    charstr rettype;                    //< return type
+    charstr name;                       //< method name
     charstr overload;
 
-    bool bstatic;                       ///< static method
-    bool bsizearg;                      ///< has size-argument
-    bool bptr;                          ///< ptr instead of ref
-    bool biref;                         ///< iref instead of ref
+    bool bstatic;                       //< static method
+    bool bsizearg;                      //< has size-argument
+    bool bptr;                          //< ptr instead of ref
+    bool biref;                         //< iref instead of ref
 
     dynarray<Arg> args;
 
@@ -152,30 +134,7 @@ struct Method
 
     bool generate_h( binstream& bin );
 
-/*
-    friend binstream& operator << (binstream& bin, const Method& m)
-    {   return bin << m.retexpr << m.retparm << m.templarg << m.templsub << m.rettype
-    << m.name << m.bstatic << m.bsizearg << m.bptr << m.biref << m.overload << m.args; }
-    friend binstream& operator >> (binstream& bin, Method& m)
-    {   return bin >> m.retexpr >> m.retparm >> m.templarg >> m.templsub >> m.rettype
-    >> m.name >> m.bstatic >> m.bsizearg >> m.bptr >> m.biref >> m.overload >> m.args; }
-    friend metastream& operator << (metastream& m, const Method& p)
-    {
-        MSTRUCT_OPEN(m,"Method")
-        MM(m,"retexpr",p.retexpr)
-        MM(m,"retparm",p.retparm)
-        MM(m,"templarg",p.templarg)
-        MM(m,"templsub",p.templsub)
-        MM(m,"rettype",p.rettype)
-        MM(m,"name",p.name)
-        MM(m,"static",p.bstatic)
-        MM(m,"sizearg",p.bsizearg)
-        MM(m,"ptr",p.bptr)
-        MM(m,"iref",p.biref)
-        MM(m,"overload",p.overload)
-        MM(m,"args",p.args)
-        MSTRUCT_CLOSE(m)
-    }*/
+
     friend metastream& operator || (metastream& m, Method& p)
     {
         return m.compound("Method", [&]()
@@ -202,22 +161,22 @@ struct MethodIG
     ///Argument descriptor
     struct Arg
     {
-        charstr type;                   ///< parameter type (stripped of const qualifier)
-        token basetype;                 ///< base type (stripped of the last ptr/ref)
-        charstr base2arg;               ///< suffix to convert from base (storage) type to type parameter
-        charstr name;                   ///< parameter name
-        charstr size;                   ///< size expression if the parameter is an array, including [ ]
+        charstr type;                   //< parameter type (stripped of const qualifier)
+        token basetype;                 //< base type (stripped of the last ptr/ref)
+        charstr base2arg;               //< suffix to convert from base (storage) type to type parameter
+        charstr name;                   //< parameter name
+        charstr size;                   //< size expression if the parameter is an array, including [ ]
         charstr defval;
         charstr fulltype;
-        bool bptr;                      ///< true if the type is a pointer
-        bool bref;                      ///< true if the type is a reference
+        bool bptr;                      //< true if the type is a pointer
+        bool bref;                      //< true if the type is a reference
         bool biref;
-        bool bconst;                    ///< true if the type had const qualifier
+        bool bconst;                    //< true if the type had const qualifier
         bool benum;
-        bool binarg;                    ///< input type argument
-        bool boutarg;                   ///< output type argument
-        bool tokenpar;                  ///< input argument that accepts token (token or charstr)
-        bool bnojs;                     ///< not used in JS, use default val
+        bool binarg;                    //< input type argument
+        bool boutarg;                   //< output type argument
+        bool tokenpar;                  //< input argument that accepts token (token or charstr)
+        bool bnojs;                     //< not used in JS, use default val
 
 
         Arg()
@@ -252,34 +211,34 @@ struct MethodIG
         }
     };
 
-    charstr templarg;                   ///< template arguments (optional)
-    charstr templsub;                   ///< template arguments for substitution
-    charstr name;                       ///< method name
-    charstr intname;                    ///< internal name
-    charstr storage;                    ///< storage for host class, iref<type>, ref<type> or type*
+    charstr templarg;                   //< template arguments (optional)
+    charstr templsub;                   //< template arguments for substitution
+    charstr name;                       //< method name
+    charstr intname;                    //< internal name
+    charstr storage;                    //< storage for host class, iref<type>, ref<type> or type*
     charstr default_event_body;
 
     int index;
 
-    bool bstatic;                       ///< a static (creator) method
-    bool bptr;                          ///< ptr instead of ref
-    bool biref;                         ///< iref instead of ref
-    bool bconst;                        ///< const method
+    bool bstatic;                       //< a static (creator) method
+    bool bptr;                          //< ptr instead of ref
+    bool biref;                         //< iref instead of ref
+    bool bconst;                        //< const method
     bool boperator;
-    bool binternal;                     ///< internal method, invisible to scripts (starts with an underscore)
-    bool bcapture;                      ///< method captured when interface is in capturing mode
-    bool bimplicit;                     ///< an implicit event
-    bool bdestroy;                      ///< a method to call on interface destroy
-    bool bmandatory;                    ///< mandatory event
+    bool binternal;                     //< internal method, invisible to scripts (starts with an underscore)
+    bool bcapture;                      //< method captured when interface is in capturing mode
+    bool bimplicit;                     //< an implicit event
+    bool bdestroy;                      //< a method to call on interface destroy
+    bool bmandatory;                    //< mandatory event
 
     Arg ret;
     dynarray<Arg> args;
 
-    int ninargs;                        ///< number of input arguments
+    int ninargs;                        //< number of input arguments
     int ninargs_nondef;
-    int noutargs;                       ///< number of output arguments
+    int noutargs;                       //< number of output arguments
 
-    dynarray<charstr> comments;         ///< comments preceding the method declaration
+    dynarray<charstr> comments;         //< comments preceding the method declaration
 
 
     MethodIG()
@@ -419,8 +378,8 @@ struct Class
     charstr classname;
     charstr templarg;
     charstr templsub;
-    charstr namespc;                    ///< namespace with the trailing :: (if not empty)
-    charstr ns;                         ///< namespace without the trailing ::
+    charstr namespc;                    //< namespace with the trailing :: (if not empty)
+    charstr ns;                         //< namespace without the trailing ::
     bool noref;
 
     dynarray<charstr> namespaces;

@@ -61,8 +61,8 @@ protected:
     charstr _bufw;
     tokenizer _tokenizer;
 
-    token tkBoolTrue, tkBoolFalse;          ///< symbols for bool type for reading and writting
-    token tkrBoolTrue, tkrBoolFalse;        ///< additional symbols for bool type for reading
+    token tkBoolTrue, tkBoolFalse;          //< symbols for bool type for reading and writting
+    token tkrBoolTrue, tkrBoolFalse;        //< additional symbols for bool type for reading
 
     int _indent;
 
@@ -71,9 +71,9 @@ protected:
         GROUP_CONTROL                   = 2,
     };
 
-    //bool _structend_on_stack;               ///< a struct end token was read during member reading phase
-    bool _tag_read;                         ///< tag was read by previous key read (andnot yet consumed)
-    bool _sesinitr;                         ///< session has been initiated (read or write block, cleared with flush/ack)
+    //bool _structend_on_stack;               //< a struct end token was read during member reading phase
+    bool _tag_read;                         //< tag was read by previous key read (andnot yet consumed)
+    bool _sesinitr;                         //< session has been initiated (read or write block, cleared with flush/ack)
     bool _sesinitw;
 
 
@@ -948,7 +948,7 @@ protected:
         T_UINT,
         T_FLOAT,
         T_BOOL,
-        T_CHAR,                                     ///< character data - strings
+        T_CHAR,                                     //< character data - strings
         T_ERRCODE,
 */
         token* p=_tk;

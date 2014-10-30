@@ -49,7 +49,7 @@ COID_NAMESPACE_BEGIN
 ///Binary streaming class working over a segmented memory buffer
 class binstreamsegbuf : public binstream
 {
-    segarray<char>  _buf;                   ///<memory buffer
+    segarray<char>  _buf;                   //<memory buffer
 
 public:
 

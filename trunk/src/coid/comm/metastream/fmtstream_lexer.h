@@ -137,7 +137,7 @@ public:
 
 protected:
 
-    fmt_lexer _tokenizer;               ///< lexer for the format
+    fmt_lexer _tokenizer;               //< lexer for the format
 };
 
 

@@ -75,8 +75,8 @@ public:
         charstr _method;
         charstr _fullpath;
 
-        token _query;               ///< query part (after ?)
-        token _relpath;             ///< relative path
+        token _query;               //< query part (after ?)
+        token _relpath;             //< relative path
 
         charstr _set_cookie;
         charstr _location;
@@ -662,15 +662,15 @@ protected:
     netAddress _addr;
     uint _flags;
     enum {
-        fRSTATUS                = 0x01,         ///< closed/transm.open
-        fWSTATUS                = 0x02,         ///< reading/all read
-        fLISTENER               = 0x04,         ///< request/response header mode
+        fRSTATUS                = 0x01,         //< closed/transm.open
+        fWSTATUS                = 0x02,         //< reading/all read
+        fLISTENER               = 0x04,         //< request/response header mode
 
         fSKIP_HEADER            = 0x20,
         fCLOSE_CONN             = 0x40,
 
-        REQUEST_NEW             = 0xba,         ///< new connection request
-        REQUEST_OLD             = 0xc9,         ///< estabilished conn.req.
+        REQUEST_NEW             = 0xba,         //< new connection request
+        REQUEST_OLD             = 0xc9,         //< estabilished conn.req.
     };
 
 

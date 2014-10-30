@@ -63,7 +63,7 @@ public:
     struct block
     {
         enum {
-            fBIG_CHUNK          = 0x80000000,   ///< a big block, containing just the size shifted
+            fBIG_CHUNK          = 0x80000000,   //< a big block, containing just the size shifted
             xBIG_SIZE_SHIFTED   = ~fBIG_CHUNK,
             MAXPAGESHIFT        = 12
         };

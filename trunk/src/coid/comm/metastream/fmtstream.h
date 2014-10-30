@@ -193,10 +193,10 @@ protected:
 
 
 
-    binstream* _binr;                   ///< bound reading stream
-    binstream* _binw;                   ///< bound writing stream
+    binstream* _binr;                   //< bound reading stream
+    binstream* _binw;                   //< bound writing stream
 
-    charstr _bufw;                      ///< caching write buffer
+    charstr _bufw;                      //< caching write buffer
 };
 
 

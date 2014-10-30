@@ -55,9 +55,9 @@ COID_NAMESPACE_BEGIN
 ///version info
 struct version
 {
-    char    _ver[8];                    ///< 8-char version string for display
-    uint32  _majorminor;                ///< major + minor (3 + 1 B)
-    uint32  _build;                     ///< build number
+    char    _ver[8];                    //< 8-char version string for display
+    uint32  _majorminor;                //< major + minor (3 + 1 B)
+    uint32  _build;                     //< build number
 
     uint get_major() const              { return _majorminor >> 8; }
     uint get_minor() const              { return _majorminor & 0xff; }

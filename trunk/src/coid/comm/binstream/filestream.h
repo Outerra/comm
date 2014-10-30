@@ -311,7 +311,7 @@ public:
 private:
 
     int   _handle;
-    int   _op;                          ///< >0 reading, <0 writing
+    int   _op;                          //< >0 reading, <0 writing
     int64 _rpos, _wpos;
 
     bool setpos( int64 pos )

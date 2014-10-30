@@ -67,14 +67,14 @@ COID_NAMESPACE_BEGIN
 template<class T, class EXTEND=void, unsigned PAGESIZE=8192>
 class chunkblock
 {
-    chunkblock* _me;            ///< copy of this pointer
-    uints _first;               ///< first free chunk offset or zero when none free
-    uint _numfree;              ///< number of free chunks
-    ints _used;                 ///< first never used chunk number or -1 when all already used
-    uints _totalsize;           ///< total size of used memory, PAGESIZE * npages created
-    ElementCreator<T> item;     ///< item size info, takes no space for non-void T
+    chunkblock* _me;            //< copy of this pointer
+    uints _first;               //< first free chunk offset or zero when none free
+    uint _numfree;              //< number of free chunks
+    ints _used;                 //< first never used chunk number or -1 when all already used
+    uints _totalsize;           //< total size of used memory, PAGESIZE * npages created
+    ElementCreator<T> item;     //< item size info, takes no space for non-void T
 public:
-    ExtendClassMember<EXTEND> ext;   ///< space to reserve for extended member
+    ExtendClassMember<EXTEND> ext;   //< space to reserve for extended member
 
 private:
     chunkblock() {}

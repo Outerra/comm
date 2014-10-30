@@ -47,11 +47,11 @@ COID_NAMESPACE_BEGIN
 
 ///Number alignment
 enum EAlignNum {
-    ALIGN_NUM_LEFT_PAD_0            = -2,       ///< align left, pad with the '\0' character
-    ALIGN_NUM_LEFT                  = -1,       ///< align left, pad with space
-    ALIGN_NUM_CENTER                = 0,        ///< align center, pad with space
-    ALIGN_NUM_RIGHT                 = 1,        ///< align right, fill with space
-    ALIGN_NUM_RIGHT_FILL_ZEROS      = 2,        ///< align right, fill with '0' characters
+    ALIGN_NUM_LEFT_PAD_0            = -2,       //< align left, pad with the '\0' character
+    ALIGN_NUM_LEFT                  = -1,       //< align left, pad with space
+    ALIGN_NUM_CENTER                = 0,        //< align center, pad with space
+    ALIGN_NUM_RIGHT                 = 1,        //< align right, fill with space
+    ALIGN_NUM_RIGHT_FILL_ZEROS      = 2,        //< align right, fill with '0' characters
 };
 
 ///Helper formatter for integer numbers, use specialized from below

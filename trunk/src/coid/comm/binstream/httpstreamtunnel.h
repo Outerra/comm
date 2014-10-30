@@ -190,7 +190,7 @@ public:
 
 protected:
 
-    code6stream_ex _c6;             ///< helper encoding stream
+    code6stream_ex _c6;             //< helper encoding stream
 
 };
 

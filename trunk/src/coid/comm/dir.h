@@ -115,7 +115,7 @@ public:
 
     bool is_entry_open() const;
     bool is_entry_directory() const;
-    bool is_entry_subdirectory() const;     ///< a directory, but not . or ..
+    bool is_entry_subdirectory() const;     //< a directory, but not . or ..
     bool is_entry_regular() const;
 
     static bool is_valid( const zstring& dir );

@@ -250,7 +250,7 @@ public:
 private:
 
     dynarray<T> _array;
-    T* _unused;                 ///< ptr to the first unused slot, ptr to this if the array needs to be enlarged
+    T* _unused;                 //< ptr to the first unused slot, ptr to this if the array needs to be enlarged
     uints _count;
 
     void rebase_free_items( T* oldarray )

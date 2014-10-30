@@ -49,11 +49,11 @@
 COID_NAMESPACE_BEGIN
 
 struct memtrack {
-    uints size;                         ///< size allocated since the last memtrack_list call
-    uints total;                        ///< total allocated size
-    uint nallocs;                       ///< number of allocations since the last memtrack_list call
+    uints size;                         //< size allocated since the last memtrack_list call
+    uints total;                        //< total allocated size
+    uint nallocs;                       //< number of allocations since the last memtrack_list call
     uint ntotalallocs;
-    const char* name;                   ///< class identifier
+    const char* name;                   //< class identifier
 
     void swap(memtrack& m) {
         std::swap(size, m.size);

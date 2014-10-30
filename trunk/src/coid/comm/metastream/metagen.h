@@ -118,11 +118,11 @@ class metagen //: public binstream
     ///Variable from cache
     struct Varx
     {
-        const Var* var;             ///< associated variable
+        const Var* var;             //< associated variable
         Varx* varparent;
-        const uchar* data;          ///< cache position
-        int index;                  ///< current element index for arrays
-        int order;                  ///< current filtered element index for arrays
+        const uchar* data;          //< cache position
+        int index;                  //< current element index for arrays
+        int order;                  //< current filtered element index for arrays
 
 
         Varx() : var(0), varparent(0), data(0), index(-1), order(-1) {}
@@ -246,7 +246,7 @@ class metagen //: public binstream
     ///Array element variable from cache
     struct VarxElement : Varx
     {
-        uint size;                      ///< element byte size
+        uint size;                      //< element byte size
 
 
         ///First array element, return count
@@ -283,8 +283,8 @@ class metagen //: public binstream
     struct Attribute
     {
         struct Value {
-            token value;                ///< value pointer
-            charstr valuebuf;           ///< buffer for value if needed
+            token value;                //< value pointer
+            charstr valuebuf;           //< buffer for value if needed
 
             void swap( Value& other )
             {
@@ -423,8 +423,8 @@ class metagen //: public binstream
         uint16 eat_left : 4;
         uint16 eat_right : 4;
 
-        char brace;                     ///< brace type (character)
-        int8 depth;                     ///< tag depth from current level (number of dots before name)
+        char brace;                     //< brace type (character)
+        int8 depth;                     //< tag depth from current level (number of dots before name)
 
 
         ParsedTag() : trailing(0), eat_left(0), eat_right(0)
@@ -550,9 +550,9 @@ class metagen //: public binstream
     ///Basic tag definition
     struct Tag
     {
-        token varname;              ///< variable name
-        int depth;                  ///< variable depth from parent
-        token stext;                ///< static text after the tag
+        token varname;              //< variable name
+        int depth;                  //< variable depth from parent
+        token stext;                //< static text after the tag
 
 
         virtual ~Tag() {}
@@ -649,7 +649,7 @@ class metagen //: public binstream
     ///Simple substitution tag
     struct TagSimple : Tag
     {
-        dynarray<Attribute> attr;       ///< conditions and attributes
+        dynarray<Attribute> attr;       //< conditions and attributes
 
         ///Process the variable, default code does simple substitution
         virtual void process_content( metagen& mg, const Varx& var ) const
@@ -706,8 +706,8 @@ class metagen //: public binstream
     struct TagRange
     {
         typedef local<Tag>              LTag;
-        dynarray<LTag> sequence;        ///< either a tag sequence to apply
-        Attribute::Value value;         ///< or an attribute string
+        dynarray<LTag> sequence;        //< either a tag sequence to apply
+        Attribute::Value value;         //< or an attribute string
 
 
         void set_attribute( Attribute& at )
@@ -822,7 +822,7 @@ class metagen //: public binstream
             }
         };
 
-        dynarray<Clause> clause;        ///< conditional sections
+        dynarray<Clause> clause;        //< conditional sections
 
 
         virtual void process_content( metagen& mg, const Varx& var ) const
@@ -1120,10 +1120,10 @@ public:
     }
 */
 private:
-    charstr buf;                    ///< helper buffer
-    binstream* bin;                 ///< output stream
+    charstr buf;                    //< helper buffer
+    binstream* bin;                 //< output stream
 
-    binstreambuf patbuf;            ///< buffered pattern file
+    binstreambuf patbuf;            //< buffered pattern file
 
     metastream meta;
     binstreambuf tmpx;
@@ -1131,8 +1131,8 @@ private:
 
     //const char* err_lex;
 
-    MtgLexer lex;                   ///< lexer used to parse the template file
-    TagRange tags;                  ///< top level tag array
+    MtgLexer lex;                   //< lexer used to parse the template file
+    TagRange tags;                  //< top level tag array
 };
 
 ////////////////////////////////////////////////////////////////////////////////

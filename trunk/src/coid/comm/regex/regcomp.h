@@ -192,14 +192,14 @@ private:
 
     regex_program* _prog;
 
-    bool _lastwasand;	                ///< Last token was operand
-    ucs4 _yyrune;		                ///< last lex'd rune
-    Reclass* _yyclassp;	                ///< last lex'd class
+    bool _lastwasand;	                //< Last token was operand
+    ucs4 _yyrune;		                //< last lex'd rune
+    Reclass* _yyclassp;	                //< last lex'd class
 
-    int	_cursubid;		                ///< id of current subexpression
+    int	_cursubid;		                //< id of current subexpression
     int	_nopenbraces;
 
-    token _string;		                ///< next character in source expression
+    token _string;		                //< next character in source expression
 };
 
 
@@ -214,9 +214,9 @@ struct Reljunk
     ucs4    any_except;
 
     enum MatchStyle {
-        SEARCH      = 0,            ///< search the string and report the first occurrence
-        MATCH       = 1,            ///< match whole string
-        FOLLOWS     = 2,            ///< match leading part of the string
+        SEARCH      = 0,            //< search the string and report the first occurrence
+        MATCH       = 1,            //< match whole string
+        FOLLOWS     = 2,            //< match leading part of the string
     };
     MatchStyle style;
 

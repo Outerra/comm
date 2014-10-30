@@ -800,10 +800,10 @@ public:
 
 
 protected:
-    token tEol;                 ///< separator between struct open/close and members
-    token tTab;                 ///< indentation
-    token tSep,trSep;           ///< separator between entries
-    token tArraySep,trArraySep; ///< separator between array elements
+    token tEol;                 //< separator between struct open/close and members
+    token tTab;                 //< indentation
+    token tSep,trSep;           //< separator between entries
+    token tArraySep,trArraySep; //< separator between array elements
 
     bool separators_are_optional;
 

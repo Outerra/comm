@@ -90,8 +90,8 @@ class charstr;
 ///Token structure describing a part of a string.
 struct token
 {
-    const char* _ptr;                   ///< ptr to the beginning of current string part
-    const char* _pte;                   ///< pointer past the end
+    const char* _ptr;                   //< ptr to the beginning of current string part
+    const char* _pte;                   //< pointer past the end
 
     token() {
         _ptr = _pte = 0;
@@ -632,12 +632,12 @@ struct token
 
     ///Flags for cut_xxx methods concerning the treating of separator
     enum ESeparatorTreat {
-        fKEEP_SEPARATOR         = 0,    ///< do not remove the separator if found
-        fREMOVE_SEPARATOR       = 1,    ///< remove the separator from source token after the cutting
-        fREMOVE_ALL_SEPARATORS  = 3,    ///< remove all continuous separators from the source token
-        fRETURN_SEPARATOR       = 4,    ///< if neither fREMOVE_SEPARATOR nor fREMOVE_ALL_SEPARATORS is set, return the separator with the cut token, otherwise keep with the source
-        fON_FAIL_RETURN_EMPTY   = 8,    ///< if the separator is not found, return an empty token. If not set, whole source token is cut and returned.
-        fSWAP                   = 16,   ///< swap resulting source and destination tokens. Note fRETURN_SEPARATOR and fON_FAIL_RETURN_EMPTY flags concern the actual returned value, i.e. after swap.
+        fKEEP_SEPARATOR         = 0,    //< do not remove the separator if found
+        fREMOVE_SEPARATOR       = 1,    //< remove the separator from source token after the cutting
+        fREMOVE_ALL_SEPARATORS  = 3,    //< remove all continuous separators from the source token
+        fRETURN_SEPARATOR       = 4,    //< if neither fREMOVE_SEPARATOR nor fREMOVE_ALL_SEPARATORS is set, return the separator with the cut token, otherwise keep with the source
+        fON_FAIL_RETURN_EMPTY   = 8,    //< if the separator is not found, return an empty token. If not set, whole source token is cut and returned.
+        fSWAP                   = 16,   //< swap resulting source and destination tokens. Note fRETURN_SEPARATOR and fON_FAIL_RETURN_EMPTY flags concern the actual returned value, i.e. after swap.
     };
 
     ///Behavior of the cut operation. Constructed using ESeparatorTreat flags or-ed.
