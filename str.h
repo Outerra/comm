@@ -67,7 +67,7 @@ public:
 
     struct output_iterator : std::iterator<std::output_iterator_tag, char>
     {
-        charstr* _p;                    ///<ptr to the managed item
+        charstr* _p;                    //<ptr to the managed item
 
         char& operator *(void) const {
             return *_p->uniadd(1);
@@ -2113,10 +2113,10 @@ inline charstr& opcd_formatter::text( charstr& dst ) const
 /// actually do something
 struct command_tokens
 {
-    token  _cmd;                ///< command line
-    token  _rtok;               ///< remaining token
-    token  _ctok;               ///< current token
-    int _tokn;                  ///< current token number
+    token  _cmd;                //< command line
+    token  _rtok;               //< remaining token
+    token  _ctok;               //< current token
+    int _tokn;                  //< current token number
 
     token operator[] (ints i)
     {

@@ -77,7 +77,7 @@ template <> inline void* __del(void* &ptr, uints nfrom, uints nlen, uints ndel) 
 template<class T>
 struct _dynarray_eptr : std::iterator<std::random_access_iterator_tag, T>
 {
-    T*  _p;             ///<ptr to the managed item
+    T*  _p;             //<ptr to the managed item
 
     typedef T          value_type;
     typedef ptrdiff_t  difference_type;
@@ -126,7 +126,7 @@ struct _dynarray_eptr : std::iterator<std::random_access_iterator_tag, T>
 template<class T>
 struct _dynarray_const_eptr : std::iterator<std::random_access_iterator_tag, T>
 {
-    const T*  _p;             ///<ptr to the managed item
+    const T*  _p;             //<ptr to the managed item
 
     typedef T          value_type;
     typedef ptrdiff_t  difference_type;

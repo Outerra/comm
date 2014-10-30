@@ -52,10 +52,10 @@ class string_maker
 {
     struct subst
     {
-        charstr key;                ///< name of the substitution variable
+        charstr key;                //< name of the substitution variable
 
-        token value;                ///< currently bound key value
-        charstr buf;                ///< owned value content for converted values
+        token value;                //< currently bound key value
+        charstr buf;                //< owned value content for converted values
 
 
         subst(){}
@@ -68,14 +68,14 @@ class string_maker
 
     struct chunk
     {
-        token prefix;               ///< static text to insert before
-        subst* var;                 ///< variable to insert after
+        token prefix;               //< static text to insert before
+        subst* var;                 //< variable to insert after
     };
 
     typedef local<subst>            Lsubst;
 
-    dynarray<Lsubst> keys;          ///< sorted array of substitution tokens
-    dynarray<chunk> blks;           ///< substitution blocks 
+    dynarray<Lsubst> keys;          //< sorted array of substitution tokens
+    dynarray<chunk> blks;           //< substitution blocks 
 
     struct sort_subst
     {

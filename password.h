@@ -119,10 +119,10 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 struct account_id
 {
-    charstr     _name;              ///< account name (username)
-    charstr     _domain;            ///< account domain
-    password    _pwd;               ///< password
-    uint        _uniqid;            ///< unique id of account
+    charstr     _name;              //< account name (username)
+    charstr     _domain;            //< account domain
+    password    _pwd;               //< password
+    uint        _uniqid;            //< unique id of account
 
     bool operator == ( const account_id& a ) const
     {   return _name == a._name  &&  _domain == a._domain;    }

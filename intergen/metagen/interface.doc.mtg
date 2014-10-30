@@ -7,13 +7,15 @@
 $-[method static? rest=",\n"]$
         {
             "comments" : "$[comments rest="\\n"]$$@value$$[/comments]$",
-            "return" : "$return.type$",
+            "return" : { "type" : "$return.type$", "basetype" : "$return.basetype$" },
             "name" : "$name$",
             "args" : [
 $[args rest=",\n"]-$
                 {
                     "name" : "$name$",
                     "type" : "$type$",
+                    "basetype" : "$basetype$",
+                    "string" : $token$,
                     "inarg" : $inarg$,
                     "outarg" : $outarg$,
                     "size" : "$size$",
@@ -27,13 +29,15 @@ $[args rest=",\n"]-$
 $-[method !static? !destroy? rest=",\n"]$
         {
             "comments" : "$[comments rest="\\n"]$$@value$$[/comments]$",
-            "return" : "$return.type$",
+            "return" : { "type" : "$return.type$", "basetype" : "$return.basetype$" },
             "name" : "$name$",
             "args" : [
 $[args rest=",\n"]-$
                 {
                     "name" : "$name$",
                     "type" : "$type$",
+                    "basetype" : "$basetype$",
+                    "string" : $token$,
                     "inarg" : $inarg$,
                     "outarg" : $outarg$,
                     "size" : "$size$",
@@ -47,13 +51,15 @@ $[args rest=",\n"]-$
 $-[event !static? !destroy? rest=",\n"]$
         {
             "comments" : "$[comments rest="\\n"]$$@value$$[/comments]$",
-            "return" : "$return.type$",
+            "return" : { "type" : "$return.type$", "basetype" : "$return.basetype$" },
             "name" : "$name$",
             "args" : [
 $[args rest=",\n"]-$
                 {
                     "name" : "$name$",
                     "type" : "$type$",
+                    "basetype" : "$basetype$",
+                    "string" : $token$,
                     "inarg" : $inarg$,
                     "outarg" : $outarg$,
                     "size" : "$size$",

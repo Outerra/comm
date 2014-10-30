@@ -57,7 +57,7 @@ protected:
         GROUP_CONTROL                   = 2,
     };
 
-    int8 _sesinitr;                        ///< session has been initiated (read or write block, cleared with flush/ack)
+    int8 _sesinitr;                        //< session has been initiated (read or write block, cleared with flush/ack)
     int8 _sesinitw;
 
 
@@ -766,10 +766,10 @@ public:
     }
 
 protected:
-    token tEol;                 ///< separator between struct open/close and members
-    token tTab;                 ///< indentation
-    token tSep,trSep;           ///< separator between entries
-    token tArraySep,trArraySep; ///< separator between array elements
+    token tEol;                 //< separator between struct open/close and members
+    token tTab;                 //< indentation
+    token tSep,trSep;           //< separator between entries
+    token tArraySep,trArraySep; //< separator between array elements
 
 
     void write_tabs( int indent )

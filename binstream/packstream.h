@@ -93,8 +93,8 @@ public:
     }
 
 protected:
-    binstream* _in;                         ///< underlying input (source) binstream
-    binstream* _out;                        ///< underlying output (destination) binstream
+    binstream* _in;                         //< underlying input (source) binstream
+    binstream* _out;                        //< underlying output (destination) binstream
 };
 
 COID_NAMESPACE_END

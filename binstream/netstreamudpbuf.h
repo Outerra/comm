@@ -424,8 +424,8 @@ protected:
             rID                     = 2,
         };
 
-        ushort  _pckid;     ///< packet id: see flags
-        ushort  _trsmid;    ///< transmission id
+        ushort  _pckid;     //< packet id: see flags
+        ushort  _trsmid;    //< transmission id
 
         void set_packet_id( ushort n, bool final, ushort transmid )
         {
@@ -826,9 +826,9 @@ private:
     uint                _flags;
     enum {
         fFOREIGN_SOCKET             = 1,
-        fPACK_PACKETS               = 2,        ///< should compress packets
-        fPACKED_READY               = 4,        ///< precompressed packet ready
-        fPACKETS_OUT_OF_ORDER       = 8,        ///< packets were received out-of-order
+        fPACK_PACKETS               = 2,        //< should compress packets
+        fPACKED_READY               = 4,        //< precompressed packet ready
+        fPACKETS_OUT_OF_ORDER       = 8,        //< packets were received out-of-order
     };
 
     netSocket           _socket;
@@ -839,23 +839,23 @@ private:
 
     dynarray<uchar>     _sendbuf;
     ushort              _strsmid;
-    ushort              _sstate;    ///< 0-writing, >0 closed, and meaning next segment id to send
+    ushort              _sstate;    //< 0-writing, >0 closed, and meaning next segment id to send
     dynarray<uchar>     _packbuf;
     dynarray<uchar>     _packwrkbuf;
 
     typedef dynarray<uchar> packet;
 
     dynarray<packet>    _recvbuf;
-    uints               _rsize;     ///< remaining size to read
-    uints               _rtotsize;  ///< total usable size
-    ushort              _rpckid;    ///< current segment id
-    ushort              _roffs;     ///< offset in the current segment
-    ushort              _rtrsmid;   ///< transmission id
-    ushort              _rpcknum;   ///< number of packets in transmission (0 if undecided)
+    uints               _rsize;     //< remaining size to read
+    uints               _rtotsize;  //< total usable size
+    ushort              _rpckid;    //< current segment id
+    ushort              _roffs;     //< offset in the current segment
+    ushort              _rtrsmid;   //< transmission id
+    ushort              _rpcknum;   //< number of packets in transmission (0 if undecided)
 
     uints               _sendsize;
 
-    bool                _recvd;     ///< true if full data received
+    bool                _recvd;     //< true if full data received
 };
 
 COID_NAMESPACE_END

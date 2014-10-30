@@ -264,8 +264,8 @@ protected:
         reset_read();
     }
 
-    dynarray<char> _wblockout;              ///< write buffer
-    dynarray<char> _rblockin;               ///< read buffer
+    dynarray<char> _wblockout;              //< write buffer
+    dynarray<char> _rblockin;               //< read buffer
     bz_stream _strin, _strout;
     int _rstate, _wstate;
 };

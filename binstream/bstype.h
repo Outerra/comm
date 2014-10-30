@@ -110,27 +110,27 @@ struct BINSTREAM_ACK_EAT    { };
 ///Object type descriptor
 struct kind
 {
-    ushort size;                       ///<byte size of the element
-    uchar  type;                       ///<type enum
-    uchar  ctrl;                       ///<control flags
+    ushort size;                        //<byte size of the element
+    uchar  type;                        //<type enum
+    uchar  ctrl;                        //<control flags
 
     ///Type enum
     enum {
-        T_BINARY=0,                     ///< binary data
-        T_INT,                          ///< signed integer
-        T_UINT,                         ///< unsigned integer
-        T_FLOAT,                        ///< floating point number
-        T_BOOL,                         ///< boolean value
-        T_CHAR,                         ///< character data - strings
-        T_ERRCODE,                      ///< error codes
-        T_TIME,                         ///< time values
-        T_ANGLE,                        ///< angles (lat/long etc)
-        T_OPTIONAL,                     ///< marking of optional data (streaming pointer members that can be null)
+        T_BINARY=0,                     //< binary data
+        T_INT,                          //< signed integer
+        T_UINT,                         //< unsigned integer
+        T_FLOAT,                        //< floating point number
+        T_BOOL,                         //< boolean value
+        T_CHAR,                         //< character data - strings
+        T_ERRCODE,                      //< error codes
+        T_TIME,                         //< time values
+        T_ANGLE,                        //< angles (lat/long etc)
+        T_OPTIONAL,                     //< marking of optional data (streaming pointer members that can be null)
 
-        T_KEY,                          ///< unformatted characters (used in formatting streams)
-        T_STRUCTBGN,                    ///< opening struct tag (used in formatting streams)
-        T_STRUCTEND,                    ///< closing struct tag (used in formatting streams)
-        T_SEPARATOR,                    ///< member separator (used in formatting streams)
+        T_KEY,                          //< unformatted characters (used in formatting streams)
+        T_STRUCTBGN,                    //< opening struct tag (used in formatting streams)
+        T_STRUCTEND,                    //< closing struct tag (used in formatting streams)
+        T_SEPARATOR,                    //< member separator (used in formatting streams)
 
         COUNT,
 
@@ -140,14 +140,14 @@ struct kind
     ///Control flags
     enum {
         xELEMENT                = 0x0f,
-        fARRAY_ELEMENT          = 0x01, ///< array element flag
-        fARRAY_ELEMENT_NEXT     = 0x02, ///< always in addition to fARRAY_ELEMENT, all after first
-        fARRAY_UNSPECIFIED_SIZE = 0x04, ///< size of the array is not specified in advance
+        fARRAY_ELEMENT          = 0x01, //< array element flag
+        fARRAY_ELEMENT_NEXT     = 0x02, //< always in addition to fARRAY_ELEMENT, all after first
+        fARRAY_UNSPECIFIED_SIZE = 0x04, //< size of the array is not specified in advance
 
-        fARRAY_BEGIN            = 0x10, ///< array start mark
-        fARRAY_END              = 0x20, ///< array end mark
+        fARRAY_BEGIN            = 0x10, //< array start mark
+        fARRAY_END              = 0x20, //< array end mark
 
-        fNAMELESS               = 0x40, ///< nameless compound, for T_STRUCTBGN and T_STRUCTEND
+        fNAMELESS               = 0x40, //< nameless compound, for T_STRUCTBGN and T_STRUCTEND
     };
 
 

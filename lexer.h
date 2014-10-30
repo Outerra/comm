@@ -176,14 +176,14 @@ public:
     ///Lexer output token
     struct lextoken
     {
-        token   tok;                    ///< value string, points to input string or to tokbuf
-        token   outok;                  ///< value string, points to string includng its leading and trailing delimiters
-        int     id;                     ///< token id (group type or string type)
-        int     termid;                 ///< terminator id, for strings or blocks with multiple trailing sequences, or keyword id for keywords
-        int     state;                  ///< >0 leading, <0 trailing, =0 chunked
-        charstr tokbuf;                 ///< buffer that keeps processed string in case it had to be altered (escape seq.replacements etc.)
-        token_hash hash;                ///< hash value computed for tokens (but not for strings or blocks)
-        bool icase;                     ///< case-insensitive string
+        token   tok;                    //< value string, points to input string or to tokbuf
+        token   outok;                  //< value string, points to string includng its leading and trailing delimiters
+        int     id;                     //< token id (group type or string type)
+        int     termid;                 //< terminator id, for strings or blocks with multiple trailing sequences, or keyword id for keywords
+        int     state;                  //< >0 leading, <0 trailing, =0 chunked
+        charstr tokbuf;                 //< buffer that keeps processed string in case it had to be altered (escape seq.replacements etc.)
+        token_hash hash;                //< hash value computed for tokens (but not for strings or blocks)
+        bool icase;                     //< case-insensitive string
 
 
         bool operator == (int i) const  { return i == id; }
@@ -307,7 +307,7 @@ public:
             ERR_STRING_TERMINATED_EARLY = 7,
             ERR_UNRECOGNIZED_ESCAPE_SEQ = 8,
             ERR_BLOCK_TERMINATED_EARLY  = 9,
-            ERR_EXTERNAL_ERROR          = 10,       ///< the error was set from outside
+            ERR_EXTERNAL_ERROR          = 10,       //< the error was set from outside
             ERR_KEYWORD_ALREADY_DEFINED = 11,
             ERR_INVALID_RULE_ID         = 12,
             ERR_INTERNAL_ERROR          = 13,
@@ -2016,8 +2016,8 @@ protected:
 
     ///
     struct backtrack_point {
-        token tok;                      ///< remaining part of the input
-        uints stack_size;               ///< stack size at the point
+        token tok;                      //< remaining part of the input
+        uints stack_size;               //< stack size at the point
     };
 
     ///Lexer entity base class
@@ -2025,18 +2025,18 @@ protected:
     {
         ///Known enity types
         enum EType {
-            GROUP = 1,                  ///< character group
-            ESCAPE,                     ///< escape character(s)
-            KEYWORDLIST,                ///< keywords (matched by a group but having a different class when returned)
-            SEQUENCE,                   ///< sequences (for string and block matching or keywords that span multiple groups)
-            STRING,                     ///< sequence specialization with simple content (with escape sequences processing)
-            BLOCK,                      ///< sequence specialization with recursive content
+            GROUP = 1,                  //< character group
+            ESCAPE,                     //< escape character(s)
+            KEYWORDLIST,                //< keywords (matched by a group but having a different class when returned)
+            SEQUENCE,                   //< sequences (for string and block matching or keywords that span multiple groups)
+            STRING,                     //< sequence specialization with simple content (with escape sequences processing)
+            BLOCK,                      //< sequence specialization with recursive content
         };
 
-        charstr name;                   ///< entity name
-        uchar type;                     ///< EType values
-        uchar status;                   ///< 
-        ushort id;                      ///< entity id, index to containers by entity type
+        charstr name;                   //< entity name
+        uchar type;                     //< EType values
+        uchar status;                   //< 
+        ushort id;                      //< entity id, index to containers by entity type
 
 
         entity( const token& name, uchar type, ushort id )
@@ -2077,8 +2077,8 @@ protected:
     ///Character group descriptor
     struct group_rule : entity
     {
-        short bitmap;                   ///< trailing bit map id, or -1
-        bool single;                    ///< true if single characters are emitted instead of chunks
+        short bitmap;                   //< trailing bit map id, or -1
+        bool single;                    //< true if single characters are emitted instead of chunks
 
         group_rule( const token& name, ushort id, bool bsingle )
         : entity(name,entity::GROUP,id)
@@ -2093,8 +2093,8 @@ protected:
     ///Escape tuple for substitutions
     struct escpair
     {
-        charstr code;                   ///< escape sequence (without the escape char itself)
-        charstr replace;                ///< substituted string
+        charstr code;                   //< escape sequence (without the escape char itself)
+        charstr replace;                //< substituted string
 
         bool operator <  ( const token& k ) const {
             return code.len() > k.len();
@@ -2110,17 +2110,17 @@ protected:
     ///Escape sequence translator descriptor 
     struct escape_rule : entity
     {
-        char esc;                       ///< escape character
-        fn_replace_esc_seq  replfn;     ///< custom replacement function
+        char esc;                       //< escape character
+        fn_replace_esc_seq  replfn;     //< custom replacement function
 
-        dynarray<escpair> pairs;        ///< static replacement pairs
+        dynarray<escpair> pairs;        //< static replacement pairs
 
         ///Backward mapping from replacement to escape strings
         class back_map {
             enum { BITBLK = 8*sizeof(uint32) };
 
             dynarray<const escpair*>
-                map;                    ///< reverted mapping of escaped symbols for synthesizer
+                map;                    //< reverted mapping of escaped symbols for synthesizer
 
             /// bit map for fast lookups whether replacement sequence can start with given character
             uint32 fastlookup[256/BITBLK];
@@ -2166,7 +2166,7 @@ protected:
         };
 
         mutable local<back_map>
-            backmap;                    ///< backmap object, created on demand
+            backmap;                    //< backmap object, created on demand
 
 
 
@@ -2273,7 +2273,7 @@ protected:
         };
 
         hash_keyset<keyword_id, _Select_Copy<keyword_id,token>, hash_keyword, equal_keyword>
-            set;                        ///< hash_keyset for fast detection if the string is in the list
+            set;                        //< hash_keyset for fast detection if the string is in the list
         dynarray<group> nkwds;
 
 
@@ -2337,7 +2337,7 @@ protected:
     ///Character sequence descriptor.
     struct sequence : entity
     {
-        charstr leading;                ///< sequence of characters to be detected
+        charstr leading;                //< sequence of characters to be detected
 
         sequence( const token& name, ushort id, uchar type=entity::SEQUENCE )
         : entity(name,type,id)
@@ -2360,7 +2360,7 @@ protected:
             }
         };
 
-        dynarray<trail> trailing;       ///< at least one trailing string/block delimiter
+        dynarray<trail> trailing;       //< at least one trailing string/block delimiter
 
 
         void add_trailing( const token& t )
@@ -2382,7 +2382,7 @@ protected:
     /// sequences as one token, with additional escape sequence processing.
     struct string_rule : stringorblock
     {
-        escape_rule* escrule;           ///< escape rule to use within the string
+        escape_rule* escrule;           //< escape rule to use within the string
 
         string_rule( const token& name, ushort id ) : stringorblock(name,id,entity::STRING)
         { escrule = 0; }
@@ -2391,8 +2391,8 @@ protected:
     ///Block descriptor.
     struct block_rule : stringorblock
     {
-        uint64 stbenabled;              ///< bit map with sequences allowed to nest (enabled)
-        uint64 stbignored;              ///< bit map with sequences skipped (ignored)
+        uint64 stbenabled;              //< bit map with sequences allowed to nest (enabled)
+        uint64 stbignored;              //< bit map with sequences skipped (ignored)
 
         ///Make the specified S/S/B enabled or disabled within this block.
         ///If this very same block is enabled it means that it can nest in itself.
@@ -2504,17 +2504,17 @@ protected:
 
     ///Character flags
     enum {
-        xGROUP                      = 0x000f,   ///< mask for the primary character group id
-        fGROUP_KEYWORDS             = 0x0010,   ///< set if there are any keywords defined for the group with this leading character
-        fGROUP_ESCAPE               = 0x0020,   ///< set if the character is an escape character
-        fGROUP_SINGLE               = 0x0040,   ///< set if this is a single-character token emitting group
-        fGROUP_TRAILSET             = 0x0080,   ///< set if the group the char belongs to has a specific trailing set defined
+        xGROUP                      = 0x000f,   //< mask for the primary character group id
+        fGROUP_KEYWORDS             = 0x0010,   //< set if there are any keywords defined for the group with this leading character
+        fGROUP_ESCAPE               = 0x0020,   //< set if the character is an escape character
+        fGROUP_SINGLE               = 0x0040,   //< set if this is a single-character token emitting group
+        fGROUP_TRAILSET             = 0x0080,   //< set if the group the char belongs to has a specific trailing set defined
 
-        GROUP_UNASSIGNED            = xGROUP,   ///< character group with characters that weren't assigned
+        GROUP_UNASSIGNED            = xGROUP,   //< character group with characters that weren't assigned
 
-        fSEQ_TRAILING               = 0x8000,   ///< set if this character can start a trailing sequence
+        fSEQ_TRAILING               = 0x8000,   //< set if this character can start a trailing sequence
         
-        xSEQ                        = 0x7f00,   ///< mask for id of group of sequences that can start with this character (zero if none)
+        xSEQ                        = 0x7f00,   //< mask for id of group of sequences that can start with this character (zero if none)
         rSEQ                        = 8,
 
         //default sizes
@@ -3303,54 +3303,54 @@ protected:
 
 protected:
 
-    dynarray<ushort> _abmap;            ///< group flag array, fGROUP_xxx
-    dynarray<char> _casemap;            ///< mapping to deal with case-sensitiveness
-    dynarray<uchar> _trail;             ///< mask arrays for customized group's trailing set
-    uint _ntrails;                      ///< number of trailing sets defined
+    dynarray<ushort> _abmap;            //< group flag array, fGROUP_xxx
+    dynarray<char> _casemap;            //< mapping to deal with case-sensitiveness
+    dynarray<uchar> _trail;             //< mask arrays for customized group's trailing set
+    uint _ntrails;                      //< number of trailing sets defined
 
     typedef dynarray<sequence*> TAsequence;
-    dynarray<TAsequence> _seqary;       ///< sequence (or string or block) groups with common leading character
+    dynarray<TAsequence> _seqary;       //< sequence (or string or block) groups with common leading character
 
-    dynarray<group_rule*> _grpary;      ///< character groups
-    dynarray<escape_rule*> _escary;     ///< escape character replacement pairs
-    dynarray<sequence*> _stbary;        ///< string or block delimiters
+    dynarray<group_rule*> _grpary;      //< character groups
+    dynarray<escape_rule*> _escary;     //< escape character replacement pairs
+    dynarray<sequence*> _stbary;        //< string or block delimiters
     keywords _kwds;
-    uint _nkwd_groups;                  ///< number of defined keyword groups
+    uint _nkwd_groups;                  //< number of defined keyword groups
 
-    root_block _root;                   ///< root block rule containing initial enable flags
-    dynarray<block_rule*> _stack;       ///< stack with open block rules, initially contains &_root
+    root_block _root;                   //< root block rule containing initial enable flags
+    dynarray<block_rule*> _stack;       //< stack with open block rules, initially contains &_root
 
-    lextoken _last;                     ///< last token read
-    int _last_string;                   ///< last string type read
-    mutable int _err;                   ///< last error code, see ERR_* enums
-    mutable charstr _errtext;           ///< error text
+    lextoken _last;                     //< last token read
+    int _last_string;                   //< last string type read
+    mutable int _err;                   //< last error code, see ERR_* enums
+    mutable charstr _errtext;           //< error text
 
-    bool _utf8;                         ///< utf-8 mode
-    bool _bomread;                      ///< utf-8 BOM reading phase passed
+    bool _utf8;                         //< utf-8 mode
+    bool _bomread;                      //< utf-8 BOM reading phase passed
 
-    char _lines_oldchar;                ///< last character processed
-    uint _lines;                        ///< number of _lines counted until _lines_processed
-    const char* _lines_last;            ///< current line start
-    const char* _lines_processed;       ///< characters processed in search for newlines
+    char _lines_oldchar;                //< last character processed
+    uint _lines;                        //< number of _lines counted until _lines_processed
+    const char* _lines_last;            //< current line start
+    const char* _lines_processed;       //< characters processed in search for newlines
 
-    const char* _rawpos;                ///< original position of last token in _orig
-    const char* _rawlast;               ///< line on which the last token lies
-    int _rawline;                       ///< original starting line of last token
+    const char* _rawpos;                //< original position of last token in _orig
+    const char* _rawlast;               //< line on which the last token lies
+    int _rawline;                       //< original starting line of last token
 
-    token _tok;                         ///< source string to process, can point to an external source or into the _binbuf
-    binstream* _bin;                    ///< source stream
-    dynarray<char> _binbuf;             ///< source stream cache buffer
-    token _orig;                        ///< original token
-    dynarray<charstr> _strings;         ///< parsed strings
+    token _tok;                         //< source string to process, can point to an external source or into the _binbuf
+    binstream* _bin;                    //< source stream
+    dynarray<char> _binbuf;             //< source stream cache buffer
+    token _orig;                        //< original token
+    dynarray<charstr> _strings;         //< parsed strings
 
-    int _pushback;                      ///< true if the lexer should return the previous token again (was pushed back)
+    int _pushback;                      //< true if the lexer should return the previous token again (was pushed back)
 
-    dynarray<backtrack_point> _btpoint; ///< backtrack stack
+    dynarray<backtrack_point> _btpoint; //< backtrack stack
 
     typedef hash_multikeyset<entity*, _Select_CopyPtr<entity,token> >
         Tentmap;
 
-    Tentmap _entmap;                    ///< entity map, maps names to groups, strings, blocks etc.
+    Tentmap _entmap;                    //< entity map, maps names to groups, strings, blocks etc.
 };
 
 

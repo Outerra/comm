@@ -55,8 +55,8 @@ struct File
     friend metastream& operator << (metastream& m, const File& p)
     {
         MSTRUCT_OPEN(m,"File")
-        MM(m,"hdr",p.fnameext)          ///< file name
-        MM(m,"HDR",p.hdrname)           ///< file name without extension, uppercase
+        MM(m,"hdr",p.fnameext)          //< file name
+        MM(m,"HDR",p.hdrname)           //< file name without extension, uppercase
         MM(m,"class",p.classes)
         MM(m,"irefargs",p.irefargs)
         MSTRUCT_CLOSE(m)
@@ -65,8 +65,8 @@ struct File
     {
         return m.compound("File", [&]()
         {
-            m.member("hdr",p.fnameext);          ///< file name
-            m.member("HDR",p.hdrname);           ///< file name without extension, uppercase
+            m.member("hdr",p.fnameext);          //< file name
+            m.member("HDR",p.hdrname);           //< file name without extension, uppercase
             m.member("class",p.classes);
             m.member("irefargs",p.irefargs);
         });

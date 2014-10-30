@@ -165,14 +165,14 @@ template<class CONTAINER>
 struct binstream_adapter_writable
 {
     typedef CONTAINER   TContainer;
-    //typedef BINCONT     TBinstreamContainer;    ///< Override BINCONT here
+    //typedef BINCONT     TBinstreamContainer;    //< Override BINCONT here
 };
 
 template<class CONTAINER>
 struct binstream_adapter_readable
 {
     typedef CONTAINER   TContainer;
-    //typedef BINCONT     TBinstreamContainer;    ///< Override BINCONT here
+    //typedef BINCONT     TBinstreamContainer;    //< Override BINCONT here
 };
 /*
 #define PAIRUP_CONTAINERS_WRITABLE(CONT) \

@@ -113,18 +113,18 @@ public:
     virtual ~binstream()        { }
 
     enum {
-        fATTR_NO_INPUT_FUNCTION         = 0x01,     ///< cannot use input (read) functions
-        fATTR_NO_OUTPUT_FUNCTION        = 0x01,     ///< cannot use output (write) functions
+        fATTR_NO_INPUT_FUNCTION         = 0x01,     //< cannot use input (read) functions
+        fATTR_NO_OUTPUT_FUNCTION        = 0x01,     //< cannot use output (write) functions
 
         fATTR_IO_FORMATTING             = 0x02,
-        fATTR_OUTPUT_FORMATTING         = 0x02,     ///< formatting stream wrapper (text)
-        fATTR_INPUT_FORMATTING          = 0x02,     ///< parsing stream wrapper
+        fATTR_OUTPUT_FORMATTING         = 0x02,     //< formatting stream wrapper (text)
+        fATTR_INPUT_FORMATTING          = 0x02,     //< parsing stream wrapper
         
-        fATTR_SIMPLEX                   = 0x04,     ///< cannot simultaneously use input and output
-        fATTR_HANDSHAKING               = 0x08,     ///< uses flush/acknowledge semantic
+        fATTR_SIMPLEX                   = 0x04,     //< cannot simultaneously use input and output
+        fATTR_HANDSHAKING               = 0x08,     //< uses flush/acknowledge semantic
 
-        fATTR_REVERTABLE                = 0x10,     ///< output can be revertable (until flushed)
-        fATTR_READ_UNTIL                = 0x20,     ///< supports read_until() function
+        fATTR_REVERTABLE                = 0x10,     //< output can be revertable (until flushed)
+        fATTR_READ_UNTIL                = 0x20,     //< supports read_until() function
     };
     virtual uint binstream_attributes( bool in0out1 ) const = 0;
 
@@ -949,9 +949,9 @@ public:
     ///io argument to bind method
     /// negative values used to bind input streams, positive values used to bind output streams
     enum {
-        BIND_ALL        = 0,            ///< bind all bindable paths to given binstream
-        BIND_INPUT      = -1,           ///< bind input path
-        BIND_OUTPUT     =  1, };        ///< bind output path
+        BIND_ALL        = 0,            //< bind all bindable paths to given binstream
+        BIND_INPUT      = -1,           //< bind input path
+        BIND_OUTPUT     =  1, };        //< bind output path
 
 
     ///Flush pending output data. Binstreams that use flush/ack synchronization use it to signal

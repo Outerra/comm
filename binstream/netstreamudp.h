@@ -411,8 +411,8 @@ private:
     netAddress      _address;
     dynarray<uchar> _sendbuf;
     dynarray<uchar> _recvbuf;
-    uints           _roffs;     ///< offset in the _recvbuf
-    dynarray<uchar> _wrkbuf;    ///< working buffer for compression
+    uints           _roffs;     //< offset in the _recvbuf
+    dynarray<uchar> _wrkbuf;    //< working buffer for compression
     bool            _foreign;
 };
 

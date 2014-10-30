@@ -385,7 +385,7 @@ private:
     netSocket           _socket;
 
     ushort              _size;
-    short               _flg;   ///< 0=last (or the only) packet, 1=more to come, -1=end of turn - not open
+    short               _flg;   //< 0=last (or the only) packet, 1=more to come, -1=end of turn - not open
     char                _outbuf[PACKET_LENGTH];
 };
 

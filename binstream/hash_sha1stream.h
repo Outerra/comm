@@ -52,7 +52,7 @@ class hash_sha1stream : public binstream
 {
     sha1_ctxt _wrsha1;
     sha1_ctxt _rdsha1;
-    binstream* _bin;            ///< bound io binstream
+    binstream* _bin;            //< bound io binstream
 
 public:
 

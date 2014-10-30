@@ -294,7 +294,7 @@ ssegpage::block* ssegpage::alloc (
 ////////////////////////////////////////////////////////////////////////////////
 ///Realloc block if possible, that means when space immediatelly following the block is enough, fail otherwise
 ssegpage::block* ssegpage::realloc (
-        block* bi,           ///<structure specifying offset and page of the block, gets new block's size
+        block* bi,           //<structure specifying offset and page of the block, gets new block's size
         uints size,
         bool keep_content
         )
@@ -314,7 +314,7 @@ ssegpage::block* ssegpage::realloc (
 
 ////////////////////////////////////////////////////////////////////////////////
 ssegpage::block* ssegpage::_realloc (
-        block* bi,           ///<structure specifying offset and page of the block, gets new block's size
+        block* bi,           //<structure specifying offset and page of the block, gets new block's size
         uints rqsize,
         bool keep_content
         )
@@ -486,7 +486,7 @@ opcd ssegpage::free( block* b )
 ////////////////////////////////////////////////////////////////////////////////
 ///Free block
 opcd ssegpage::_free(
-        block* bi     ///<structure with page and offset of the block, gets its size
+        block* bi     //<structure with page and offset of the block, gets its size
         )
 {
 	DASSERT( _me == this );
@@ -532,10 +532,10 @@ opcd ssegpage::_free(
 ////////////////////////////////////////////////////////////////////////////////
 ///Sort block in the free blocks chain
 void ssegpage::sortf (
-        void* b,                ///<block to sort
+        void* b,                //<block to sort
         uints size,
-        fblock* fl,             ///<offset to free block immediatelly under the sorted block
-        fblock* fu              ///<offset to free block immediatelly above the sorted block
+        fblock* fl,             //<offset to free block immediatelly under the sorted block
+        fblock* fu              //<offset to free block immediatelly above the sorted block
         )
 {
     //DASSERT( fl ? ( fl->check_size()  &&  (char*)fl + fl->_sizea == (char*)b )  : 1 );

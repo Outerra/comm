@@ -56,16 +56,16 @@ public:
     };
 
 protected:
-    dynarray<uints> _offs;          ///< offset array for separate packets
-    dynarray<uints> _lens;          ///< packet lenghts array
-    dynarray<uchar> _buf;           ///< data buffer
-    uint  _begpck;                  ///< first packet id in _offs
-    uint  _endpck;                  ///< next packet id in _offs
-    uints  _size;                   ///< total data size
-    uints  _sizewr;                 ///< size written to open packet
-    uints  _sizerd;                 ///< size remaining to read from open packet
+    dynarray<uints> _offs;          //< offset array for separate packets
+    dynarray<uints> _lens;          //< packet lenghts array
+    dynarray<uchar> _buf;           //< data buffer
+    uint  _begpck;                  //< first packet id in _offs
+    uint  _endpck;                  //< next packet id in _offs
+    uints  _size;                   //< total data size
+    uints  _sizewr;                 //< size written to open packet
+    uints  _sizerd;                 //< size remaining to read from open packet
     uchar* _ptrrd;
-    uint  _ralign;                  ///< packet alignment
+    uint  _ralign;                  //< packet alignment
 
 
     opcd get_packet( uint pck, pckdata& a, pckdata& b )

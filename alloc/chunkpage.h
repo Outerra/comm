@@ -88,9 +88,9 @@ template<class T, class E = ElementCreator<T> >
 class chunkpage
 {
     void* _mem;
-    ints _first;                ///< first free chunk offset or zero when none free
-    uint _numfree;              ///< number of free chunks
-    uints _used;                ///< contains either non-negative value pointing to the first free chunk or -1 when working as list
+    ints _first;                //< first free chunk offset or zero when none free
+    uint _numfree;              //< number of free chunks
+    uints _used;                //< contains either non-negative value pointing to the first free chunk or -1 when working as list
     uints _pagesize;
 
     E item;

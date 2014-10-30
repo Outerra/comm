@@ -247,8 +247,8 @@ protected:
         inflateReset( &_strin );
     }
 
-    dynarray<uchar> _wblockout;             ///< write buffer
-    dynarray<uchar> _rblockin;              ///< read buffer
+    dynarray<uchar> _wblockout;             //< write buffer
+    dynarray<uchar> _rblockin;              //< read buffer
     z_stream    _strin, _strout;
 };
 

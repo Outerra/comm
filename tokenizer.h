@@ -108,34 +108,34 @@ class tokenizer
         USABLE_GROUPS               = 5,
 
         fGROUP_IGNORE               = 0x01,
-        fGROUP_SINGLE               = 0x10, ///< the group of characters that are returned as single-letter tokens
-        fGROUP_STRING               = 0x20, ///< the group with leading string delimiters
-        fGROUP_ESCAPE               = 0x40, ///< the group with escape characters and trailing string delimiters
-        fGROUP_BACKSCAPE            = 0x80, ///< the group that should be made to escape seq when synthesizing string
+        fGROUP_SINGLE               = 0x10, //< the group of characters that are returned as single-letter tokens
+        fGROUP_STRING               = 0x20, //< the group with leading string delimiters
+        fGROUP_ESCAPE               = 0x40, //< the group with escape characters and trailing string delimiters
+        fGROUP_BACKSCAPE            = 0x80, //< the group that should be made to escape seq when synthesizing string
 
         BINSTREAM_BUFFER_SIZE       = 256,
     };
 
     dynarray<uchar> _abmap;
-//    uchar _subseqm[8];              ///< subsequently allowed groups
+//    uchar _subseqm[8];              //< subsequently allowed groups
 
-    dynarray<escpair> _escary;      ///< escape character replacement pairs
-    dynarray<charpair> _strdel;     ///< string delimiters
+    dynarray<escpair> _escary;      //< escape character replacement pairs
+    dynarray<charpair> _strdel;     //< string delimiters
 
-    uchar _escchar;                 ///< escape character
-    uchar _singlechar;              ///< single char group masks
-    uchar _utf8group;               ///< group mask for utf8 characters, 0 for only allowing utf8 ext.characters in strings
-    uchar _last_mask;               ///< mask of the last read token
+    uchar _escchar;                 //< escape character
+    uchar _singlechar;              //< single char group masks
+    uchar _utf8group;               //< group mask for utf8 characters, 0 for only allowing utf8 ext.characters in strings
+    uchar _last_mask;               //< mask of the last read token
 
-    charstr _strbuf;                ///< buffer for preprocessed strings
-    ucs4 _last_strdel;              ///< last leading string delimiter
+    charstr _strbuf;                //< buffer for preprocessed strings
+    ucs4 _last_strdel;              //< last leading string delimiter
 
-    binstream* _bin;                ///< source stream
-    dynarray<char> _binbuf;         ///< source stream cache buffer
-    token _tok;                     ///< source string to process, can point to an external source or into the _strbuf
+    binstream* _bin;                //< source stream
+    dynarray<char> _binbuf;         //< source stream cache buffer
+    token _tok;                     //< source string to process, can point to an external source or into the _strbuf
 
-    token _result;                  ///< last returned token
-    int _pushback;                  ///< true if the tokenizer should return the previous token again (was pushed back)
+    token _result;                  //< last returned token
+    int _pushback;                  //< true if the tokenizer should return the previous token again (was pushed back)
 
     ///Reverted mapping of escaped symbols for synthesizer
     hash_keyset< const escpair*, _Select_CopyPtr<escpair,ucs4> >
@@ -947,10 +947,10 @@ protected:
 class chartokenizer
 {
     uchar _abmap[256];
-    uchar _flags;           ///< bit flags marking particular group as single-char tokens or escape chars
-    uchar _specf;           ///< bit flags marking particular group as special mode switchers
-    uchar _specmode;        ///< tokenizer state
-    uchar _escape;          ///< bit flags marking particular group as escape characters
+    uchar _flags;           //< bit flags marking particular group as single-char tokens or escape chars
+    uchar _specf;           //< bit flags marking particular group as special mode switchers
+    uchar _specmode;        //< tokenizer state
+    uchar _escape;          //< bit flags marking particular group as escape characters
 public:
 
     chartokenizer()

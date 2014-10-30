@@ -95,20 +95,20 @@ public:
     {
         segarray<T,TAIL,UIDX>* array;
 
-        void* context;                  ///< context pointer
-        void* segdata;                  ///< pointer to raw segment start
-        uint  segsize;                  ///< raw segment size
+        void* context;                  //< context pointer
+        void* segdata;                  //< pointer to raw segment start
+        uint  segsize;                  //< raw segment size
 
-        T*   data;                      ///< ptr to useful data in the segment
-        uint chunksize;                 ///< size of one element in bytes (for dynamic TAILs)
-        UIDX first;                     ///< index of the first element in the segment
-        uint count;                     ///< number of useful elements in the segment
+        T*   data;                      //< ptr to useful data in the segment
+        uint chunksize;                 //< size of one element in bytes (for dynamic TAILs)
+        UIDX first;                     //< index of the first element in the segment
+        uint count;                     //< number of useful elements in the segment
 
-        uint segmentno;                 ///< segment ordinal
-        uint fileblock;                 ///< file block number the segment should be persisted to
+        uint segmentno;                 //< segment ordinal
+        uint fileblock;                 //< file block number the segment should be persisted to
 
-        bool bdestroy;                  ///< set if the segment is going to be destroyed after saving
-        bool bprimeload;                ///< set if the segment is to be loaded from persistent storage (1st time load)
+        bool bdestroy;                  //< set if the segment is going to be destroyed after saving
+        bool bprimeload;                //< set if the segment is to be loaded from persistent storage (1st time load)
     };
 
     ///stream function prototype
@@ -119,14 +119,14 @@ public:
 protected:
     ///_flags enum
     enum {
-        fSEQ_INSERT                 = 1,    ///< hint: sequential insert
-        fSIZE_ZERO                  = 2,    ///< size of T should be zero
+        fSEQ_INSERT                 = 1,    //< hint: sequential insert
+        fSIZE_ZERO                  = 2,    //< size of T should be zero
         fTRIVIAL_CONSTRUCTOR        = 4,
         fTRIVIAL_DESTRUCTOR         = 8,
 
         fSEG_PRIMELOAD              = 0x100,
 
-        DEF_RSEGSIZE                = 12,   ///< default segment size, 4k
+        DEF_RSEGSIZE                = 12,   //< default segment size, 4k
     };
 
 public:
@@ -139,19 +139,19 @@ public:
         friend class segarray;
 		friend struct ptr;
     private:
-        segarray*   _array;                     ///<shared segment array
-        char*       _pseg;                      ///<segment start
-        uint        _usdpos;                    ///<used block position
-        UIDX        _begidx;                    ///<first item global index
-        uint        _nitems;                    ///<no.of items present
-        uint        _segitems;                  ///<number of items in segment
-        uint        _chunksize;                 ///<item byte size
-        uint        _ntail;                     ///<tail element count per record
-        uint        _flags;                     ///<flags from segarray::_flags
+        segarray*   _array;                     //<shared segment array
+        char*       _pseg;                      //<segment start
+        uint        _usdpos;                    //<used block position
+        UIDX        _begidx;                    //<first item global index
+        uint        _nitems;                    //<no.of items present
+        uint        _segitems;                  //<number of items in segment
+        uint        _chunksize;                 //<item byte size
+        uint        _ntail;                     //<tail element count per record
+        uint        _flags;                     //<flags from segarray::_flags
 
-        mutable uint _lrui;                     ///<last recently used iteration
-        uint        _nref;                      ///<no.of references to the segment
-        uint        _swapid;                    ///<id of corresponding swap segemnt
+        mutable uint _lrui;                     //<last recently used iteration
+        uint        _nref;                      //<no.of references to the segment
+        uint        _swapid;                    //<id of corresponding swap segemnt
 
         size_t sizeof_T() const                 { return (_flags & fSIZE_ZERO) ? 0 : sizeof(T); }
         
@@ -602,12 +602,12 @@ public:
     friend struct segment;
 
 private:
-    dynarray< local<segment> >  _segments;  ///<segment array
-    uint  _segitems;                        ///<number of items per page
-    uint  _rsegsize;                        ///<segment size in bytes, two's exponent
+    dynarray< local<segment> >  _segments;  //<segment array
+    uint  _segitems;                        //<number of items per page
+    uint  _rsegsize;                        //<segment size in bytes, two's exponent
     uint  _flags;
-    UIDX  _lastidx;                         ///<number of items total
-    uint  _ntail;                           ///<number of tail TAIL-type elements per record
+    UIDX  _lastidx;                         //<number of items total
+    uint  _ntail;                           //<number of tail TAIL-type elements per record
 
 
     //swapping
@@ -634,18 +634,18 @@ private:
 
     typedef radixi< local<segment>, uint, uint, GET_INT_FROM_SEG >  t_radix;
 
-    mutable uint        _usg_iter;      ///<usage iteration number
+    mutable uint        _usg_iter;      //<usage iteration number
     t_radix             _radix;
-    uint                _nsegmapped;    ///<number of segments mapped
-    uint                _nsegmapmax;    ///<max.number of segments to map
-    uint                _swapsegcount;  ///<number of swapped segments
+    uint                _nsegmapped;    //<number of segments mapped
+    uint                _nsegmapmax;    //<max.number of segments to map
+    uint                _swapsegcount;  //<number of swapped segments
 
     typedef chunkpage<void>             Tpage_allocator;
-    Tpage_allocator     _segmem;        ///< allocator used to allocate segment structures
+    Tpage_allocator     _segmem;        //< allocator used to allocate segment structures
     
-    void*               _stream_context;///<context value to pass to the streaming functions
-    fnc_stream          _fnc_stream_out;///<function for streaming out a segment
-    fnc_stream          _fnc_stream_in; ///<function for streaming in a segment
+    void*               _stream_context;//<context value to pass to the streaming functions
+    fnc_stream          _fnc_stream_out;//<function for streaming out a segment
+    fnc_stream          _fnc_stream_in; //<function for streaming in a segment
 
     uint                _usg_iter_last;
     dynarray<uint>      _pages_to_swap;
@@ -912,10 +912,10 @@ public:
     struct ptr : std::iterator<std::random_access_iterator_tag, T>
     {
     private:
-        T*  _p;                     ///<ptr to the managed item
+        T*  _p;                     //<ptr to the managed item
         union {
-            segment*    _seg;       ///<IF(_p!=0) ptr to the segment where the item occurs
-            segarray*   _array;     ///<IF(_p==0) ptr to the segarray
+            segment*    _seg;       //<IF(_p!=0) ptr to the segment where the item occurs
+            segarray*   _array;     //<IF(_p==0) ptr to the segarray
         };
 
     public:
@@ -1577,8 +1577,8 @@ public:
 
 
     uint item_size() const              { return uint( sizeof_T() + _ntail*sizeof(TAIL) ); }
-    UIDX size() const                   { return _lastidx; }        ///<size of whole array in items
-    uint items_in_seg() const           { return _segitems; }       ///<size of segment in items
+    UIDX size() const                   { return _lastidx; }        //<size of whole array in items
+    uint items_in_seg() const           { return _segitems; }       //<size of segment in items
     uint tail_element_count() const     { return _ntail; }
 
     bool is_trivial_destructor() const  { return (_flags & fTRIVIAL_DESTRUCTOR) != 0; }

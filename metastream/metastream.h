@@ -1687,14 +1687,14 @@ private:
     };
 
     dynarray<CacheEntry>
-        _cachestack;                    ///< cache table stack
-    CacheEntry* _current;               ///< currently processed cache entry
+        _cachestack;                    //< cache table stack
+    CacheEntry* _current;               //< currently processed cache entry
 
-    MetaDesc::Var* _cacheroot;          ///< root of the cache, whose members are going to be cached
-    MetaDesc::Var* _cachequit;          ///< member variable being read from cache
-    MetaDesc::Var* _cachedefval;        ///< variable whose default value is currently being read
-    MetaDesc::Var* _cachevar;           ///< variable being currently cached from input
-    MetaDesc::Var* _cacheskip;          ///< set if the variable was not present in input (can be filled with default) or has been already cached
+    MetaDesc::Var* _cacheroot;          //< root of the cache, whose members are going to be cached
+    MetaDesc::Var* _cachequit;          //< member variable being read from cache
+    MetaDesc::Var* _cachedefval;        //< variable whose default value is currently being read
+    MetaDesc::Var* _cachevar;           //< variable being currently cached from input
+    MetaDesc::Var* _cacheskip;          //< set if the variable was not present in input (can be filled with default) or has been already cached
 
 private:
 
