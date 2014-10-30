@@ -4,7 +4,7 @@
     "namespace" : [$[ns rest=", "]$"$@value$"$[/ns]$],
     "comments" : "$[comments rest="\\n"]$$@value$$[/comments]$",
     "creators" : [
-$-[method static? rest=",\n"]$
+$[method static? rest=",\n"]-$
         {
             "comments" : "$[comments rest="\\n"]$$@value$$[/comments]$",
             "return" : { "type" : "$return.type$", "basetype" : "$return.basetype$" },
@@ -23,10 +23,10 @@ $[args rest=",\n"]-$
                 }$[/args]$
             ],
             "const" : $const$
-        }$[/method]-$
+        }$[/method]$
     ],
     "methods" : [
-$-[method !static? !destroy? rest=",\n"]$
+$[method !static? !destroy? rest=",\n"]-$
         {
             "comments" : "$[comments rest="\\n"]$$@value$$[/comments]$",
             "return" : { "type" : "$return.type$", "basetype" : "$return.basetype$" },
@@ -45,10 +45,10 @@ $[args rest=",\n"]-$
                 }$[/args]$
             ],
             "const" : $const$
-        }$[/method]-$
+        }$[/method]$
     ],
     "events" : [
-$-[event !static? !destroy? rest=",\n"]$
+$[event !static? !destroy? rest=",\n"]-$
         {
             "comments" : "$[comments rest="\\n"]$$@value$$[/comments]$",
             "return" : { "type" : "$return.type$", "basetype" : "$return.basetype$" },
@@ -67,6 +67,6 @@ $[args rest=",\n"]-$
                 }$[/args]$
             ],
             "const" : $const$
-        }$[/event]-$
+        }$[/event]$
     ]
 }
