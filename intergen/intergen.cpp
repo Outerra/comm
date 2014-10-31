@@ -90,12 +90,12 @@ int generate( const T& t, const token& patfile, const token& outfile )
     bofstream bof(outfile);
 
     if( !bit.is_open() ) {
-        out << "can't open the template file '" << patfile << "'\n";
+        out << "error: can't open the template file '" << patfile << "'\n";
         return -5;
     }
 
     if( !bof.is_open() ) {
-        out << "can't create the output file '" << outfile << "'\n";
+        out << "error: can't create the output file '" << outfile << "'\n";
         return -5;
     }
 
@@ -103,7 +103,7 @@ int generate( const T& t, const token& patfile, const token& outfile )
     mtg.set_source_path(patfile);
 
     if( !mtg.parse(bit) ) {
-        out << "error parsing the document template:\n";
+        out << "error: error parsing the document template:\n";
         out << mtg.err() << '\n';
         out.flush();
 
@@ -135,17 +135,17 @@ int generate_rl( const File& cgf, charstr& patfile, const token& outfile )
     patfile.resize(l);
 
     if( !bit.is_open() ) {
-        out << "can't open the template file '" << patfile << "'\n";
+        out << "error: can't open the template file '" << patfile << "'\n";
         return -5;
     }
 
     if( !bof.is_open() ) {
-        out << "can't create the output file '" << outfile << "'\n";
+        out << "error: can't create the output file '" << outfile << "'\n";
         return -5;
     }
 
     if( !mtg.parse(bit) ) {
-        out << "error parsing the document template:\n";
+        out << "error: error parsing the document template:\n";
         out << mtg.err();
 
         return -6;
@@ -237,13 +237,13 @@ void generate_ig( File& file, charstr& tdir, charstr& fdir  )
             tdir.resize(tlen);
             tdir << "interface.doc.mtg";
 
-            charstr docpath = ifc.basepath;
-            docpath << "/docs";
-            directory::mkdir(docpath);
+            fdir.resize(-int(token(fdir).cut_right_back("\\/").len()));
+            fdir << "/docs";
+            directory::mkdir(fdir);
 
-            docpath << '/' << ifc.name << ".json";
+            fdir << '/' << ifc.name << ".json";
 
-            generate(ifc, tdir, docpath);
+            generate(ifc, tdir, fdir);
 
             ++nifc;
         }

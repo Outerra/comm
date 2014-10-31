@@ -109,6 +109,65 @@ bool MethodIG::parse( iglexer& lex, const charstr& host, const charstr& ns, dyna
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+void MethodIG::parse_docs()
+{
+    auto b = comments.ptr();
+    auto e = comments.ptre();
+    charstr doc;
+    charstr* paramdoc = 0;
+
+    for(; b!=e; ++b)
+    {
+        token line = *b;
+
+        line.trim();
+        line.skip_char('/');
+        if(!line)
+            continue;
+
+        if(line.first_char() != '@') {
+            charstr& target = paramdoc ? *paramdoc : doc;
+            if(!target.is_empty())
+                target << ' ';
+            target.append_escaped(line);
+        }
+        else {
+            //close previous string
+            if(paramdoc)
+                paramdoc = 0;
+            else if(doc)
+                docs.add()->swap(doc);
+
+            token paramline = line;
+            if(paramline.consume("@param ")) {
+                token param = paramline.cut_left(token::TK_whitespace());
+                Arg* a = find_arg(param);
+
+                if(a) {
+                    paramdoc = &a->doc;
+                    if(!paramdoc->is_empty())
+                        *paramdoc << '\n';
+                    paramdoc->append_escaped(paramline);
+                }
+                else {
+                    doc.append_escaped(line);
+                }
+            }
+            else if(paramline.consume("@return ")) {
+                if(ret.doc)
+                    ret.doc << '\n';
+                ret.doc.append_escaped(paramline);
+            }
+            else
+                doc.append_escaped(line);
+        }
+    }
+
+    if(doc)
+        docs.add()->swap(doc);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 bool MethodIG::Arg::parse( iglexer& lex, bool argname )
 {
     //arg: [ifc_in|ifc_out|ifc_inout|] [const] type  

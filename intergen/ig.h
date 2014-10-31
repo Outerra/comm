@@ -168,6 +168,7 @@ struct MethodIG
         charstr size;                   //< size expression if the parameter is an array, including [ ]
         charstr defval;
         charstr fulltype;
+        charstr doc;
         bool bptr;                      //< true if the type is a pointer
         bool bref;                      //< true if the type is a reference
         bool biref;
@@ -198,6 +199,7 @@ struct MethodIG
                 m.member("size",p.size);
                 m.member("defval",p.defval);
                 m.member("fulltype",p.fulltype);
+                m.member("doc",p.doc);
                 m.member("const",p.bconst);
                 m.member("enum",p.benum);
                 m.member("ptr",p.bptr);
@@ -239,6 +241,7 @@ struct MethodIG
     int noutargs;                       //< number of output arguments
 
     dynarray<charstr> comments;         //< comments preceding the method declaration
+    dynarray<charstr> docs;             //< doc paragraphs
 
 
     MethodIG()
@@ -248,6 +251,14 @@ struct MethodIG
     {}
 
     bool parse( iglexer& lex, const charstr& host, const charstr& ns, dynarray<Arg>& irefargs );
+
+    void parse_docs();
+
+    Arg* find_arg( const coid::token& name ) {
+        return args.find_if([&](const Arg& a) {
+            return a.name == name;
+        });
+    }
 
     bool generate_h( binstream& bin );
 
@@ -276,6 +287,7 @@ struct MethodIG
             m.member("ninargs_nondef",p.ninargs_nondef);
             m.member("noutargs",p.noutargs);
             m.member("comments",p.comments);
+            m.member("docs",p.docs);
             m.member("index",p.index);
             m.member("default_event_body", p.default_event_body);
         });
@@ -319,6 +331,7 @@ struct Interface
     uint hash;
 
     dynarray<charstr> comments;
+    dynarray<charstr> docs;
 
     bool bvirtual;
     bool bdefaultcapture;
@@ -327,6 +340,8 @@ struct Interface
     {}
 
     void compute_hash();
+
+    void parse_docs();
 
     bool full_name_equals(token name) const {
         bool hasns = nss.find_if([&name](const charstr& v) { return !(name.consume(v) && name.consume("::")); }) == 0;
@@ -359,6 +374,7 @@ struct Interface
             m.member("destroy",p.destroy);
             m.member("hash",p.hash);
             m.member("comments",p.comments);
+            m.member("docs",p.docs);
             m.member("pasters",p.pasters);
             m.member_type<charstr>("srcfile", [](const charstr&){}, [&](){ return *p.srcfile;} );
             m.member_type<charstr>("class", [](const charstr&){}, [&](){ return *p.srcclass;} );

@@ -112,7 +112,14 @@ public:
     //@return hash of interface definition, serving for version checks
     virtual int intergen_hash_id() const = 0;
 
+    //@return interface name
+    virtual const coid::token& intergen_interface_name() const = 0;
+
+    //@return name of default creator
     virtual const coid::token& intergen_default_creator() const = 0;
+
+    //@return js wrapper creator for underlying object
+    virtual void* intergen_wrapper_js() const = 0;
 
     ///Bind or unbind interface call interceptor handler for current interface and all future instances of the same interface class
     //@param capture capture buffer, 0 to turn the capture off
