@@ -1072,6 +1072,44 @@ public:
         return *this;
     }
 
+    ///Append string while escaping the control characters in it
+    charstr& append_escaped( const token& str )
+    {
+        const char* p = str.ptr();
+        const char* pe = str.ptre();
+        const char* ps = p;
+
+        for( ; p<pe; ++p ) {
+            char c = *p,v;
+            switch(c) {
+            case '\a': v='a'; break;
+            case '\b': v='b'; break;
+            case '\t': v='t'; break;
+            case '\n': v='n'; break;
+            case '\v': v='v'; break;
+            case '\f': v='f'; break;
+            case '\r': v='r'; break;
+            case '\"': v='"'; break;
+            case '\\': v='\\'; break;
+            default: v=0;
+            }
+
+            if(v) {
+                uint len = p - ps;
+                char* dst = alloc_append_buf(len + 2);
+                xmemcpy(dst, ps, len);
+                dst += len;
+                dst[0] = '\\';
+                dst[1] = v;
+                ps = p+1;
+            }
+        }
+
+        if(p > ps)
+            add_from(ps, p-ps);
+        return *this;
+    }
+
     ///Append token encoded in base64
     void append_encode_base64( token str )
     {

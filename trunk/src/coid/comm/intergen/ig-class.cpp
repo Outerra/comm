@@ -180,6 +180,8 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
 
                     lex.match(')');
 
+                    ifc->parse_docs();
+
                     pasters->for_each( [ifc](paste_block& b){
                         if(b.cond.is_empty() || ifc->full_name_equals(b.cond))
                             *ifc->pasters.add() = b.block;
@@ -237,6 +239,8 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                             ++ncontinuable_errors;
                         }
                     }
+ 
+                    m->parse_docs();
                 }
                 else if(extfn || tok == lex.IFC_FN) {
                     //parse function declaration
@@ -251,6 +255,8 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
 
                     if(!m->parse(lex, classname, namespc, irefargs))
                         ++ncontinuable_errors;
+
+                    m->parse_docs();
 
                     int capture = ifc->bdefaultcapture ? 1 : 0;
                     capture -= bnocapture;
@@ -392,4 +398,39 @@ void Interface::compute_hash()
     {
         ps->index = indexm++;
     }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void Interface::parse_docs()
+{
+    auto b = comments.ptr();
+    auto e = comments.ptre();
+    charstr doc;
+
+    for(; b!=e; ++b)
+    {
+        token line = *b;
+
+        line.trim();
+        line.skip_char('/');
+        if(!line) {
+            if(doc) //paragraph
+                docs.add()->swap(doc);
+            continue;
+        }
+
+        if(line.first_char() != '@') {
+            if(!doc.is_empty())
+                doc << ' ';
+            doc.append_escaped(line);
+        }
+        else {
+            //close previous string
+            docs.add()->swap(doc);
+            doc.append_escaped(line);
+        }
+    }
+
+    if(doc)
+        docs.add()->swap(doc);
 }

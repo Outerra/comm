@@ -150,6 +150,19 @@ inline T* unwrap_object( const v8::Handle<v8::Value> &arg )
     return p->_real();
 }
 
+////////////////////////////////////////////////////////////////////////////////
+inline v8::Handle<v8::Value> wrap_object( intergen_interface* orig, v8::Handle<v8::Context> context )
+{
+    if(!orig) return v8::Null();
+
+    typedef v8::Handle<v8::Value> (*fn_wrapper)(intergen_interface*, v8::Handle<v8::Context>);
+    fn_wrapper fn = static_cast<fn_wrapper>(orig->intergen_wrapper_js());
+
+    if(fn)
+        return fn(orig, context);
+    return v8::Undefined();
+}
+
 } //namespace js
 
 

@@ -79,22 +79,38 @@ $-(/if)$
     static const int HASHID = $hash$;
     
     int intergen_hash_id() const override { return HASHID; }
+    
+    const coid::token& intergen_interface_name() const override {
+        static const coid::token _name = "$ns rest="::" after="::"$$name$";
+        return _name;
+    }
 
     const coid::token& intergen_default_creator() const override {
 $-(if default_creator.name.empty?)$
-        static const coid::token _DC("");
+        static const coid::token _dc("");
 $-(elif)$
-        static const coid::token _DC("$ns rest="::" after="::"$$name$.$default_creator.name$@$hash$");
+        static const coid::token _dc("$ns rest="::" after="::"$$name$.$default_creator.name$@$hash$");
 $-(/if)$
-        return _DC;
+        return _dc;
     }
 
+    void* intergen_wrapper_js() const override {
+        if(_js_create_wrapper)
+            return _js_create_wrapper;
+
+        static const coid::token _js_wrapper_key = "$ns rest="::" after="::"$js::$name$@wrapper";
+        _js_create_wrapper = coid::interface_register::get_interface_creator(_js_wrapper_key);
+        return _js_create_wrapper;
+    }
+    
 protected:
 $-(if varname?)$
 
     typedef void (*cleanup_fn)($name$*, intergen_interface*);
     cleanup_fn _cleaner;
 $-(/if)$
+
+    static void* _js_create_wrapper;
 $-(if destroy.name.empty!)$
 
     ~$name$() {

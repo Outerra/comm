@@ -45,7 +45,6 @@ $-(if irefargs?)$
 // forward declarations for used iref arguments
 $-[irefargs]$
 v8::Handle<v8::Value> js_$fulltype$_create_wrapper( const $type$&, v8::Handle<v8::Context> );
-
 $-[/irefargs]$
 $-(/if)$
 
@@ -87,14 +86,14 @@ $-(if event?)$
     void bind_events( v8::Handle<v8::Context> context, bool force );
 $-(/if)$
 
-    $name$_js_dispatcher() $(if event?)$: _bound_events(false) $(/if)$
+    $name$_js_dispatcher() $-(if event?)$ : _bound_events(false)$(/if)$
     {
         //_context = context;
         _meta.bind_formatting_stream(_fmtv8);
     }
 
-    $name$_js_dispatcher( v8::Handle<v8::Context> context, const iref<$ns rest="::" after="::"$$name$>& orig ) $(if event?)$: _bound_events(false) $(/if)${
-        _base = orig;
+    $name$_js_dispatcher( v8::Handle<v8::Context> context, $ns rest="::" after="::"$$name$* orig ) $(if event?)$: _bound_events(false) $(/if)${
+        _base.create(orig);
         _context = v8::Persistent<v8::Context>::New(context);
         _meta.bind_formatting_stream(_fmtv8);
 		
@@ -732,6 +731,27 @@ $[/args]-$
 
 $-(/if)$
 $-[/method]$
+$-(if virtual!)$
+////////////////////////////////////////////////////////////////////////////////
+///Create JS wrapper from an existing interface object
+v8::Handle<v8::Value> create_wrapper_$name$( $ns rest="::" after="::"$$name$* orig, v8::Handle<v8::Context> context )
+{
+    // check that the orig points to an object
+    if(!orig) return v8::Null();
+
+    // create interface object
+    iref<$ns rest="::" after="::"$js::$name$_js_dispatcher> ifc;
+    ifc.create(new $ns rest="::" after="::"$js::$name$_js_dispatcher(context, static_cast<::$ns rest="::" after="::"$$name$*>(orig)));
+
+    v8::Context::Scope context_scope(context);
+    v8::HandleScope scope;
+
+    v8::Handle<v8::Object> obj = ifc->create_interface_object(true);
+
+    return scope.Close(obj);
+}
+
+$-(/if)$
 ////////////////////////////////////////////////////////////////////////////////
 void* register_binders_for_$name$()
 {
@@ -743,7 +763,11 @@ $-(if !internal?)$
         "$..ns rest="::" after="::"$js::$..name$.$name$", (void*)&$..name$_js_dispatcher::v8creator_$name$$@order$);
 $-(/if)$
 $-[/method]$
+$-(if virtual!)$
+    interface_register::register_interface_creator(
+        "$ns rest="::" after="::"$js::$name$@wrapper", (void*)&create_wrapper_$name$);
 
+$-(/if)$
     return (void*)&register_binders_for_$name$;
 }
 
@@ -756,22 +780,13 @@ $-[ns]$
 $-[/ns]$
 
 ////////////////////////////////////////////////////////////////////////////////
-///Create JS wrapper from existing interface object
+///Create JS wrapper from an existing interface object
 v8::Handle<v8::Value> js_$ns rest="_" after="_"-$ $name$_create_wrapper( const iref<$ns rest="::" after="::"$$name$>& orig, v8::Handle<v8::Context> context )
 {
-    // check that the orig points to an object
-    if(!orig) return v8::Null();
-
-    // create interface object
-    iref<$ns rest="::" after="::"$js::$name$_js_dispatcher> ifc;
-    ifc.create(new $ns rest="::" after="::"$js::$name$_js_dispatcher(context, orig));
-
-    v8::Context::Scope context_scope(context);
-    v8::HandleScope scope;
-
-    v8::Handle<v8::Object> obj = ifc->create_interface_object(true);
-
-    return scope.Close(obj);
+$-(if !virtual?)$
+    return $ns rest="::" after="::"$js::create_wrapper_$name$(orig.get(), context);
+$-(elif)$
+    return ::js::wrap_object(orig.get(), context);
+$-(/if)$
 }
-
 $-[/iface]$$[/class]$
