@@ -241,7 +241,7 @@ void generate_ig( File& file, charstr& tdir, charstr& fdir  )
             fdir << "/docs";
             directory::mkdir(fdir);
 
-            fdir << '/' << ifc.name << ".json";
+            fdir << '/' << ifc.name << ".html";
 
             generate(ifc, tdir, fdir);
 
