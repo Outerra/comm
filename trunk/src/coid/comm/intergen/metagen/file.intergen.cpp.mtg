@@ -184,7 +184,7 @@ void* force_register_$name$() {
 }
 
 $-[ns]$
-} //namespace
+} //namespace $@value$
 $-[/ns]$
 
 $-(if event?)$
@@ -203,7 +203,7 @@ $return.type$ $....class$::$intname$($[args rest="," after=" "]$ $type$ $name$$s
 }
 $[/event]-$
 
-$[..nss]$} //namespace
+$[..nss]$} //namespace $@value$
 $[/..nss]-$
 $(/if)-$
 
