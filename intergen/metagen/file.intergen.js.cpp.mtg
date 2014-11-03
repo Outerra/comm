@@ -776,7 +776,7 @@ static void* autoregger_$name$ = register_binders_for_$name$();
 
 } //namespace js
 $-[ns]$
-} //namespace
+} //namespace $@value$
 $-[/ns]$
 
 ////////////////////////////////////////////////////////////////////////////////
