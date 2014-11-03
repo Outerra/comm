@@ -414,8 +414,12 @@ public:
     ///Formatted numbers - floats
     template<int WIDTH, int ALIGN>
     charstr& operator = (const float_fmt<WIDTH,ALIGN>& v) {
-		char* buf = get_buf(WIDTH);
-        charstrconv::append_fixed(buf, buf+WIDTH, v.value, v.nfrac, (EAlignNum)ALIGN);
+        if(WIDTH == 0)
+            append_float(v.value, v.nfrac);
+        else {
+		    char* buf = get_buf(WIDTH);
+            charstrconv::append_fixed(buf, buf+WIDTH, v.value, v.nfrac, (EAlignNum)ALIGN);
+        }
         return *this;
     }
 
@@ -501,8 +505,12 @@ public:
     ///Formatted numbers - floats
     template<int WIDTH, int ALIGN>
     charstr& operator += (const float_fmt<WIDTH,ALIGN>& v) {
-		char* buf = get_append_buf(WIDTH);
-        charstrconv::append_fixed(buf, buf+WIDTH, v.value, v.nfrac, (EAlignNum)ALIGN);
+        if(WIDTH == 0)
+            append_float(v.value, v.nfrac);
+        else {
+		    char* buf = get_append_buf(WIDTH);
+            charstrconv::append_fixed(buf, buf+WIDTH, v.value, v.nfrac, (EAlignNum)ALIGN);
+        }
         return *this;
     }
 
@@ -551,8 +559,12 @@ public:
     ///Formatted numbers - floats
     template<int WIDTH, int ALIGN>
     charstr& operator << (const float_fmt<WIDTH,ALIGN>& v) {
-		char* buf = get_append_buf(WIDTH);
-        charstrconv::append_fixed(buf, buf+WIDTH, v.value, v.nfrac, (EAlignNum)ALIGN);
+        if(WIDTH == 0)
+            append_float(v.value, v.nfrac);
+        else {
+		    char* buf = get_append_buf(WIDTH);
+            charstrconv::append_fixed(buf, buf+WIDTH, v.value, v.nfrac, (EAlignNum)ALIGN);
+        }
         return *this;
     }
 

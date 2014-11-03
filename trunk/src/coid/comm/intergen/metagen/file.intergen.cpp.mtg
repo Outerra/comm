@@ -24,8 +24,6 @@ $[ns]$
 namespace $@value$ {
 $-[/ns]$
 
-void* $name$::_js_create_wrapper = 0;
-
 ///
 class $name$_dispatcher : public $name$
 {

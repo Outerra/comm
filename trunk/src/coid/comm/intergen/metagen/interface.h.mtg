@@ -95,6 +95,7 @@ $-(/if)$
     }
 
     void* intergen_wrapper_js() const override {
+        static void* _js_create_wrapper=0;
         if(_js_create_wrapper)
             return _js_create_wrapper;
 
@@ -109,8 +110,6 @@ $-(if varname?)$
     typedef void (*cleanup_fn)($name$*, intergen_interface*);
     cleanup_fn _cleaner;
 $-(/if)$
-
-    static void* _js_create_wrapper;
 $-(if destroy.name.empty!)$
 
     ~$name$() {
