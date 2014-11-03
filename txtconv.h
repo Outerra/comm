@@ -147,6 +147,11 @@ float_right0(double n, int nfrac=-1) {
     return float_fmt<WIDTH,ALIGN_NUM_RIGHT_FILL_ZEROS>(n, nfrac);
 }
 
+inline float_fmt<0,ALIGN_NUM_LEFT>
+float_nfrac(double n, int nfrac) {
+    return float_fmt<0,ALIGN_NUM_LEFT>(n, nfrac);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 namespace charstrconv
 {

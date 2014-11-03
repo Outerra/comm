@@ -142,6 +142,7 @@ public:
 		Warning,
 		Info,
 		Debug,
+        Perf,
 		Last,
         None,
 	};
@@ -171,6 +172,7 @@ public:
 			"WARNING: ",
 			"INFO: ",
 			"DEBUG: ",
+            "PERF: ",
 		};
         static token empty = token();
 
