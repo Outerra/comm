@@ -57,7 +57,7 @@ template <
     class VAL,
     class HASHFUNC=hash<VAL>,
     class EQFUNC=equal_to<VAL,typename HASHFUNC::key_type>,
-    class ALLOC=comm_allocator<VAL>
+    template<class> class ALLOC=AllocStd
     >
 class hash_set
     : public hashtable<VAL,HASHFUNC,EQFUNC,_Select_Itself<VAL>,ALLOC>
@@ -188,7 +188,7 @@ template <
     class VAL,
     class HASHFUNC=hash<VAL>,
     class EQFUNC=equal_to<VAL,typename HASHFUNC::key_type>,
-    class ALLOC=comm_allocator<VAL>
+    template<class> class ALLOC=AllocStd
     >
 class hash_multiset
     : public hashtable<VAL,HASHFUNC,EQFUNC,_Select_Itself<VAL>,ALLOC>
@@ -303,32 +303,32 @@ public:
 
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class VAL, class HASHFUNC, class EQFUNC, class ALLOC>
+template <class VAL, class HASHFUNC, class EQFUNC, template<class> class ALLOC>
 inline binstream& operator << ( binstream& bin, const hash_set<VAL,HASHFUNC,EQFUNC,ALLOC>& a )
 {   return a.stream_out(bin);    }
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class VAL, class HASHFUNC, class EQFUNC, class ALLOC>
+template <class VAL, class HASHFUNC, class EQFUNC, template<class> class ALLOC>
 inline binstream& operator >> ( binstream& bin, hash_set<VAL,HASHFUNC,EQFUNC,ALLOC>& a )
 {   return a.stream_in(bin);    }
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class VAL, class HASHFUNC, class EQFUNC, class ALLOC>
+template <class VAL, class HASHFUNC, class EQFUNC, template<class> class ALLOC>
 inline binstream& operator << ( binstream& bin, const hash_multiset<VAL,HASHFUNC,EQFUNC,ALLOC>& a )
 {   return a.stream_out(bin);    }
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class VAL, class HASHFUNC, class EQFUNC, class ALLOC>
+template <class VAL, class HASHFUNC, class EQFUNC, template<class> class ALLOC>
 inline binstream& operator >> ( binstream& bin, hash_multiset<VAL,HASHFUNC,EQFUNC,ALLOC>& a )
 {   return a.stream_in(bin);    }
 
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class VAL, class HASHFUNC, class EQFUNC, class ALLOC>
+template <class VAL, class HASHFUNC, class EQFUNC, template<class> class ALLOC>
 inline metastream& operator << ( metastream& bin, const hash_set<VAL,HASHFUNC,EQFUNC,ALLOC>& a )
 {   return a.stream_meta(bin);    }
 
-template <class VAL, class HASHFUNC, class EQFUNC, class ALLOC>
+template <class VAL, class HASHFUNC, class EQFUNC, template<class> class ALLOC>
 inline metastream& operator << ( metastream& bin, const hash_multiset<VAL,HASHFUNC,EQFUNC,ALLOC>& a )
 {   return a.stream_meta(bin);    }
 

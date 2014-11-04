@@ -42,6 +42,7 @@
 
 #include "../namespace.h"
 #include "../dynarray.h"
+#include "../alloc/slotalloc.h"
 #include "../metastream/metastream.h"
 #include <algorithm>
 
@@ -67,12 +68,38 @@ struct _Select_pair1st
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+template<class T>
+struct AllocStd {
+    T* alloc() { return new T; }
+    void free(T* p) { delete p; }
+
+    uints index(const T* p) const { return (uints)p; }
+    T* pointer(uints id) const { return (T*)id; }
+
+    ints reserve(uints count) { return 0; }
+};
+
+template<class T>
+struct AllocSlot {
+    T* alloc() { return _slots.add(); }
+    void free(T* p) { _slots.del(p); }
+
+    uints index(const T* p) const { return _slots.get_item_id(p); }
+    T* pointer(uints id) const { return (T*)_slots.get_item(id); }
+
+    ints reserve(uints count) { return _slots.reserve(count); }
+
+private:
+    slotalloc<T> _slots;
+};
+
+////////////////////////////////////////////////////////////////////////////////
 ///Base class for hash containers
 //@param VAL value type stored at hashtable nodes
 //@param HASHFUNC hash functor, should define type of the key as key_type
 //@param EQFUNC equality functor
 //@param GETKEYFUNC key extractor from VAL
-template <class VAL, class HASHFUNC, class EQFUNC, class GETKEYFUNC, class ALLOC>
+template <class VAL, class HASHFUNC, class EQFUNC, class GETKEYFUNC, template<class> class ALLOC=AllocStd>
 class hashtable
 {
 public:
@@ -80,7 +107,6 @@ public:
     ///Type used for lookups is deduced from the hash template
     typedef typename HASHFUNC::key_type         LOOKUP;
 
-protected:
     struct Node
     {
         VAL     _val;
@@ -91,6 +117,15 @@ protected:
         COIDNEWDELETE_NOTRACK;
     };
 
+    //@return value index
+    uints get_value_index(const VAL* v) const {
+        return _ALLOC.index((Node*)v);
+    }
+
+    //@return object by index
+    const VAL* get_value( uints id ) const {
+        return (const VAL*)_ALLOC.pointer(id);
+    }
 
 private:
     dynarray<Node*> _table;
@@ -102,7 +137,7 @@ protected:
 
     void add( Node** n, const VAL& v )
     {
-        Node* r = new Node;
+        Node* r = _ALLOC.alloc();
         r->_next = *n;
         r->_val = v;
         *n = r;
@@ -111,6 +146,7 @@ protected:
     HASHFUNC    _HASHFUNC;
     EQFUNC      _EQFUNC;
     GETKEYFUNC  _GETKEYFUNC;
+    ALLOC<Node> _ALLOC;
 
     uints bucket( const LOOKUP& v ) const              { return _HASHFUNC(v) % _table.size(); }
     uints bucketn( const LOOKUP& v, uints n ) const    { return _HASHFUNC(v) % n; }
@@ -258,7 +294,7 @@ public:
 
         virtual void* insert( uints n )
         {
-            Node* p = *_newnode.add() = new Node;
+            Node* p = *_newnode.add() = _ht._ALLOC.alloc();
             return &p->_val;
         }
 
@@ -396,7 +432,7 @@ protected:
         while( n  &&  _EQFUNC( _GETKEYFUNC(n->_val), k ) )
         {
             Node* t = n->_next;
-            delete n;
+            _ALLOC.free(n);
             n = t;
             ++c;
         }
@@ -620,7 +656,7 @@ public:
 
         Node* n = *pn;
         *pn = n->_next;
-        delete n;
+        _ALLOC.free(n);
         --_nelem;
     }
 
@@ -636,7 +672,7 @@ public:
             n = n->_next;
             if(!n)
                 n = get_next(t);
-            delete t;
+            _ALLOC.free(t);
             --_nelem;
         }
     }
@@ -647,15 +683,18 @@ public:
         uints ts = _table.size();
         if( bucketn > ts )
         {
+            uint n = nextpow2(bucketn);
+
             dynarray<Node*> temp;
-            temp.need_newc( nextpow2(bucketn) );
+            temp.need_newc(n);
+            ints offset = _ALLOC.reserve(n);
 
             for( uints i=0; i<ts; ++i )
             {
                 Node* n = _table[i];
                 while(n)
                 {
-                    Node* t = n->_next;
+                    Node* t = ptr_byteshift(n->_next, offset);
                     Node** pn = find_socket( temp, _GETKEYFUNC(n->_val) );
                     n->_next = *pn;
                     *pn = n;
@@ -675,7 +714,7 @@ public:
             while(n)
             {
                 Node* t = n->_next;
-                delete n;
+                _ALLOC.free(n);
                 n = t;
             }
         }
@@ -737,14 +776,15 @@ public:
     }
     
  
-    hashtable( uints n, const HASHFUNC& hf, const EQFUNC& eqf, const GETKEYFUNC& gkf )
+    hashtable( uints n, const HASHFUNC& hf, const EQFUNC& eqf, const GETKEYFUNC& gkf, uint reserve=64 )
     :
         _HASHFUNC(hf),
         _EQFUNC(eqf),
         _GETKEYFUNC(gkf)
     {
         _nelem = 0;
-        _table.need_newc(64);
+        _table.need_newc(reserve);
+        _ALLOC.reserve(reserve);
     }
 /*
     hashtable( uints n, const HASHFUNC& hf, const EQFUNC& eqf )
@@ -780,7 +820,8 @@ private:
     void copy_from( const _Self& ht )
     {
         uints n = ht._table.size();
-        _table.need_newc( ht._table.size() );
+        _table.need_newc(n);
+        _ALLOC.reserve(n);
 
         for( uints h=0; h<n; ++h )
         {
@@ -788,7 +829,7 @@ private:
             const Node* cn = ht._table[h];
             while(cn)
             {
-                Node* n = new Node(*cn);
+                Node* n = new(_ALLOC.alloc()) Node(*cn);
                 *pn = n;
                 pn = &n->_next;
                 cn = cn->_next;
@@ -838,7 +879,7 @@ protected:
         Node** ppn = find_socket(k);
         if( *ppn == 0  ||  !_EQFUNC( _GETKEYFUNC((*ppn)->_val), k ) )
         {
-            Node* n = new Node;
+            Node* n = _ALLOC.alloc();
             n->_next = *ppn;
             *ppn = n;
 
@@ -855,7 +896,7 @@ protected:
         bool isnew_ = *ppn == 0  ||  !_EQFUNC( _GETKEYFUNC((*ppn)->_val), k );
         if(isnew_)
         {
-            Node* n = new Node;
+            Node* n = _ALLOC.alloc();
             n->_next = *ppn;
             *ppn = n;
 
@@ -871,7 +912,7 @@ protected:
     {
         Node** ppn = find_socket(k);
 
-        Node* n = new Node;
+        Node* n = _ALLOC.alloc();
         n->_next = *ppn;
         *ppn = n;
 
@@ -892,7 +933,7 @@ private:
         *pn = n->_next;
         if(dst)
             type_copier_swapper<VAL,SWAP>::assign( *dst, n->_val );
-        delete n;
+        _ALLOC.free(n);
         --_nelem;
 
         return true;
@@ -905,7 +946,7 @@ private:
         Node** ppn = find_socket(k);
         if( *ppn == 0  ||  !_EQFUNC( _GETKEYFUNC((*ppn)->_val), k ) )
         {
-            Node* n = new Node;
+            Node* n = _ALLOC.alloc();
             n->_next = *ppn;
             type_copier_swapper<VAL,SWAP>::assign( n->_val, v );
             *ppn = n;
@@ -927,7 +968,7 @@ private:
             n = *ppn;
         }
         else {
-            n = new Node;
+            n = _ALLOC.alloc();
             n->_next = *ppn;
             *ppn = n;
             ++_nelem;
@@ -944,7 +985,7 @@ private:
         typename GETKEYFUNC::ret_type k = _GETKEYFUNC(v);
         Node** ppn = find_socket(k);
 
-        Node* n = new Node;
+        Node* n = _ALLOC.alloc();
         n->_next = *ppn;
         type_copier_swapper<VAL,SWAP>::assign( n->_val, v );
         *ppn = n;

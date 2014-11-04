@@ -75,8 +75,18 @@ public:
         reset();
     }
 
-    void reserve( uint nitems ) {
-        _array.reserve(nitems, true);
+    void swap( slotalloc<T>& other ) {
+        _array.swap(other._array);
+        std::swap(_unused, other._unused);
+        std::swap(_count, other._count);
+    }
+
+    //@return byte offset to the newly rebased array
+    ints reserve( uint nitems ) {
+        T* old = _array.ptr();
+        T* p = _array.reserve(nitems, true);
+
+        return (uints)p - (uints)old;
     }
 
     ///Insert object
