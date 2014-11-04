@@ -108,7 +108,7 @@ template <
     class EXTRACTKEY,
     class HASHFUNC=hash<typename type_base<typename EXTRACTKEY::ret_type>::type>,
     class EQFUNC=equal_to<typename type_base<typename EXTRACTKEY::ret_type>::type, typename HASHFUNC::key_type>,
-    class ALLOC=comm_allocator<VAL>
+    template<class> class ALLOC=AllocStd
     >
 class hash_keyset
     : public hashtable<VAL,HASHFUNC,EQFUNC,EXTRACTKEY,ALLOC>
@@ -288,7 +288,7 @@ template <
     class EXTRACTKEY,
     class HASHFUNC=hash<typename type_base<typename EXTRACTKEY::ret_type>::type>,
     class EQFUNC=equal_to<typename type_base<typename EXTRACTKEY::ret_type>::type, typename HASHFUNC::key_type>,
-    class ALLOC=comm_allocator<VAL>
+    template<class> class ALLOC=AllocStd
     >
 class hash_multikeyset
     : public hashtable<VAL,HASHFUNC,EQFUNC,EXTRACTKEY,ALLOC>
@@ -418,7 +418,7 @@ public:
 
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, class ALLOC>
+template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, template<class> class ALLOC>
 inline binstream& operator << ( binstream& bin, const hash_keyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
 {
     typedef hash_keyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC> HT;
@@ -430,7 +430,7 @@ inline binstream& operator << ( binstream& bin, const hash_keyset<VAL,EXTRACTKEY
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, class ALLOC>
+template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, template<class> class ALLOC>
 inline binstream& operator >> ( binstream& bin, hash_keyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
 {
     typedef hash_keyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC> HT;
@@ -442,7 +442,7 @@ inline binstream& operator >> ( binstream& bin, hash_keyset<VAL,EXTRACTKEY,HASHF
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, class ALLOC>
+template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, template<class> class ALLOC>
 inline binstream& operator << ( binstream& bin, const hash_multikeyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
 {
     typedef hash_keyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC> HT;
@@ -454,7 +454,7 @@ inline binstream& operator << ( binstream& bin, const hash_multikeyset<VAL,EXTRA
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, class ALLOC>
+template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, template<class> class ALLOC>
 inline binstream& operator >> ( binstream& bin, hash_multikeyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
 {
     typedef hash_keyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC> HT;
@@ -467,7 +467,7 @@ inline binstream& operator >> ( binstream& bin, hash_multikeyset<VAL,EXTRACTKEY,
 
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, class ALLOC>
+template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, template<class> class ALLOC>
 inline metastream& operator << ( metastream& m, const hash_keyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
 {
     m.meta_decl_array();
@@ -476,7 +476,7 @@ inline metastream& operator << ( metastream& m, const hash_keyset<VAL,EXTRACTKEY
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, class ALLOC>
+template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, template<class> class ALLOC>
 inline metastream& operator || ( metastream& m, hash_keyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
 {
     typedef hash_keyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC> _HT;
@@ -498,7 +498,7 @@ inline metastream& operator || ( metastream& m, hash_keyset<VAL,EXTRACTKEY,HASHF
     return m;
 }
 
-template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, class ALLOC>
+template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, template<class> class ALLOC>
 inline metastream& operator << ( metastream& m, const hash_multikeyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
 {
     m.meta_decl_array();
@@ -506,7 +506,7 @@ inline metastream& operator << ( metastream& m, const hash_multikeyset<VAL,EXTRA
     return m;
 }
 
-template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, class ALLOC>
+template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, template<class> class ALLOC>
 inline metastream& operator || ( metastream& m, hash_multikeyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
 {
     typedef typename hash_keyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC> _HT;
