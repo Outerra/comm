@@ -339,7 +339,7 @@ struct Interface
     Interface() : oper_get(-1), oper_set(-1), bvirtual(false), bdefaultcapture(false)
     {}
 
-    void compute_hash();
+    void compute_hash( int version );
 
     void parse_docs();
 

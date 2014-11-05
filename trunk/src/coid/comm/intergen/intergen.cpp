@@ -12,6 +12,8 @@
 
 stdoutstream out;
 
+static const int VERSION = 4;
+
 ////////////////////////////////////////////////////////////////////////////////
 const token iglexer::MARK = "rl_cmd";
 const token iglexer::MARKP = "rl_cmd_p";
@@ -47,28 +49,16 @@ struct File
     dynarray<paste_block> pasters;
     dynarray<MethodIG::Arg> irefargs;
 
-/*
-    friend binstream& operator << (binstream& bin, const File& m)
-    {   return bin << m.fnameext << m.hdrname << m.classes << m.irefargs; }
-    friend binstream& operator >> (binstream& bin, File& m)
-    {   return bin >> m.fnameext >> m.hdrname >> m.classes >> m.irefargs; }
-    friend metastream& operator << (metastream& m, const File& p)
-    {
-        MSTRUCT_OPEN(m,"File")
-        MM(m,"hdr",p.fnameext)          //< file name
-        MM(m,"HDR",p.hdrname)           //< file name without extension, uppercase
-        MM(m,"class",p.classes)
-        MM(m,"irefargs",p.irefargs)
-        MSTRUCT_CLOSE(m)
-    }*/
     friend metastream& operator || (metastream& m, File& p)
     {
         return m.compound("File", [&]()
         {
+            int version = VERSION;
             m.member("hdr",p.fnameext);          //< file name
             m.member("HDR",p.hdrname);           //< file name without extension, uppercase
             m.member("class",p.classes);
             m.member("irefargs",p.irefargs);
+            m.member("version",version);
         });
     }
 
@@ -186,7 +176,7 @@ void generate_ig( File& file, charstr& tdir, charstr& fdir  )
         {
             Interface& ifc = cls.iface[i];
 
-            ifc.compute_hash();
+            ifc.compute_hash(VERSION);
 
             fdir.resize(flen);
             tdir.resize(tlen);
