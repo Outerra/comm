@@ -3182,6 +3182,7 @@ static int init_mparams(void) {
 #endif
 
     {
+#if 0
 #if USE_DEV_RANDOM
       int fd;
       unsigned char buf[sizeof(size_t)];
@@ -3202,6 +3203,9 @@ static int init_mparams(void) {
 #endif
       magic |= (size_t)8U;    /* ensure nonzero */
       magic &= ~(size_t)7U;   /* improve chances of fault for bad values */
+#endif
+      //needed for dll interoperability
+      magic = (size_t)0x451d92ec560b19adULL;
       /* Until memory modes commonly available, use volatile-write */
       (*(volatile size_t *)(&(mparams.magic))) = magic;
     }

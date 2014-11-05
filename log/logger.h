@@ -159,7 +159,10 @@ public:
 
 		~logmsg_local();
 
-		template<class T> charstr& operator<<(const T& o) { DASSERT(!_lm.is_empty()); return _lm->str()<<(o); }
+        template<class T> charstr& operator << (const T& o) {
+            DASSERT(!_lm.is_empty());
+            return _lm->str() << (o);
+        }
 	};
 
 public:
@@ -188,28 +191,28 @@ public:
     void open(const token& filename) { _logfile->open(filename); }
 
 public:
-	logmsg_local operator()() {
-		logmsg_local lm(_logfile,Info);
-		return lm;
-	}
+    logmsg_local operator()() {
+        logmsg_local lm(_logfile, Info);
+        return lm;
+    }
 
-	logmsg_local operator()(const ELogType t) {
-		logmsg_local lm(_logfile,t);
-		lm<<type2tok(t);
-		return lm;
-	}
+    logmsg_local operator()(const ELogType t) {
+        logmsg_local lm(_logfile, t);
+        lm << type2tok(t);
+        return lm;
+    }
 
-	logmsg_local operator()( const ELogType t,const char* fnc ) {
-		logmsg_local lm(_logfile,t);
-		lm<<type2tok(t)<<fnc<<' ';
-		return lm;
-	}
+    logmsg_local operator()(const ELogType t, const char* fnc) {
+        logmsg_local lm(_logfile, t);
+        lm << type2tok(t) << fnc << ' ';
+        return lm;
+    }
 
-	logmsg_local operator()( const ELogType t,const char* fnc,const int line ) {
-		logmsg_local lm(_logfile,t);
-		lm<<type2tok(t)<<fnc<<'('<<line<<')'<<' ';
-		return lm;
-	}
+    logmsg_local operator()(const ELogType t, const char* fnc, const int line) {
+        logmsg_local lm(_logfile, t);
+        lm << type2tok(t) << fnc << '(' << line << ')' << ' ';
+        return lm;
+    }
 
 	void flush();
 };
