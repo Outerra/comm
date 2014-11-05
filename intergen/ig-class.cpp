@@ -364,7 +364,7 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void Interface::compute_hash()
+void Interface::compute_hash( int version )
 {
     charstr mash;
 
@@ -387,6 +387,8 @@ void Interface::compute_hash()
             mash << pas->type << pas->size << (pas->binarg?'i':' ') << (pas->boutarg?'o':' ');
         }
     }
+
+    mash << 'v' << version;
 
     hash = __coid_hash_string(mash.ptr(), mash.len());
 
