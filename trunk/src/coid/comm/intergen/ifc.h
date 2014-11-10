@@ -109,6 +109,8 @@ public:
     template<typename T>
     T* host() const { return static_cast<T*>(_host.get()); }
 
+    ifn_t* vtable() const { return _vtable; }
+
     //@return hash of interface definition, serving for version checks
     virtual int intergen_hash_id() const = 0;
 

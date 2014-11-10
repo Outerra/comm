@@ -94,6 +94,7 @@ $-(/if)$
 
     $name$_js_dispatcher( v8::Handle<v8::Context> context, $ns rest="::" after="::"$$name$* orig ) $(if event?)$: _bound_events(false) $(/if)${
         _base.create(orig);
+        _vtable = _base->vtable();
         _context = v8::Persistent<v8::Context>::New(context);
         _meta.bind_formatting_stream(_fmtv8);
 		
