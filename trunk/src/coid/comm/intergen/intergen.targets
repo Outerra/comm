@@ -87,9 +87,10 @@
     Name = "Clean"
     Condition="'@(hpp)' != ''">
       <ItemGroup>
-          <FilesToDelete Include="%(hpp.RootDir)%(hpp.Directory)%(hpp.Filename).inl;%(hpp.RootDir)%(hpp.Directory)%(hpp.Filename).intergen.cpp;%(hpp.RootDir)%(hpp.Directory)%(hpp.Filename).intergen.js.cpp;$(IntDir)$(ProjectName).read.1.tlog"/>
+          <FilesToDelete Include="%(hpp.RootDir)%(hpp.Directory)%(hpp.Filename).inl;%(hpp.RootDir)%(hpp.Directory)%(hpp.Filename).intergen.cpp;%(hpp.RootDir)%(hpp.Directory)%(hpp.Filename).intergen.js.cpp"/>
       </ItemGroup>
 
-      <Delete Files="@(FilesToDelete)" TreatErrorsAsWarnings="true" />
+      <!--<Delete Files="@(FilesToDelete)" TreatErrorsAsWarnings="true" />-->
+      <Exec Command="del /F /Q &quot;@(FilesToDelete,'&quot; &quot;')&quot;"/>
   </Target>   
 </Project>
