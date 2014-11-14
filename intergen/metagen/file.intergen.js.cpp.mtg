@@ -705,15 +705,17 @@ $-[args outarg? !inarg?]$
 $[/args]-$
 
     iref<$..name$_js_dispatcher> nifc = $..ns rest="::" after="::"$$..name$::$name$(new $..name$_js_dispatcher$[args]$, $name$$base2arg$$[/args]$);
-    nifc->_context = v8::Persistent<v8::Context>::New(ifc->_context);
+    if(nifc)
+        nifc->_context = v8::Persistent<v8::Context>::New(ifc->_context);
 
     //stream out
 $-(if return.type!="void")$
+    v8::Handle<v8::Value> Null = v8::Null();
  $-(if noutargs?)$
     v8::Handle<v8::Object> _r_ = v8::Object::New();
-    _r_->Set(v8::String::NewSymbol("$$ret"), nifc->create_interface_object(true));
+    _r_->Set(v8::String::NewSymbol("$$ret"), !nifc ? Null : nifc->create_interface_object(true));
  $-(elif)$
-    v8::Handle<v8::Value> _r_ = nifc->create_interface_object(true);
+    v8::Handle<v8::Value> _r_ = !nifc ? Null : nifc->create_interface_object(true);
  $-(/if)$
 $(/if)-$
 $-[args outarg?]$
