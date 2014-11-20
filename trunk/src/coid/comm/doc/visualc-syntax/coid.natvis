@@ -2,7 +2,7 @@
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
 <Type Name="coid::charstr">
-    <DisplayString>size={((unsigned int*)_ptr)[-1]} {_ptr,s}</DisplayString>
+    <DisplayString>size={((unsigned int*)_tstr._ptr)[-1]} {_tstr._ptr,s}</DisplayString>
 </Type>
 
 <Type Name="coid::token">
