@@ -32,7 +32,7 @@ $-[method !static? !destroy?]$
 $(if !comments.empty?)$$[comments]-$
     $@value$
 $[/comments]$$(/if)-$
-    $(if ..virtual?)$virtual $(/if)$$return.type$ $name$($[args rest="," after=" "]$ $(if outarg?)$$(if inarg?)$ifc_inout$(elif)$ifc_out$(/if)$ $(/if)-$ $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$) $-(if const?)$ const$(/if)$;
+    $(if ..virtual?)$virtual $(/if)$$return.type$ $name$($[args rest="," after=" "]$ $(if outarg?)$$(if inarg?)$ifc_inout$(elif)$ifc_out$(/if)$ $(/if)-$ $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$) $-(if const?)$ const$(/if)$ $-(if ..virtual?)$ = 0$(/if)$;
 $[/method]-$
 
     // --- interface events ---
@@ -124,6 +124,7 @@ $-(/if)$
     {}
 };
 
+$-(if !virtual?)$
 $-[method static?]$
 ////////////////////////////////////////////////////////////////////////////////
 template<class T>
@@ -151,6 +152,7 @@ $-[method !static? !destroy?]$
 inline $return.type$ $..name$::$name$($[args rest="," after=" "]$ $type$ $name$$size$$[/args]$) $-(if const?)$ const$(/if)$
 { return VT_CALL($return.type$,($[args rest=","]$$type$$[/args]$),$index$)($[args rest=","]$$name$$[/args]$); }
 $[/method]-$
+$(/if)-$
 
 $-[ns]$
 } //namespace

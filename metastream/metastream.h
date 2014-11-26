@@ -953,6 +953,8 @@ public:
         cache_reset(cache_open);
 
         _dometa = 0;
+        _binr = _binw = 0;
+
         _curvar.var = 0;
         _cur_variable_name.set_empty();
         _rvarname.reset();
