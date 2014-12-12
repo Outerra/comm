@@ -16,8 +16,6 @@ using namespace coid;
 ////////////////////////////////////////////////////////////////////////////////
 static void throw_js_error( v8::TryCatch& tc, const char* str )
 {
-    v8::String::Utf8Value error(tc.Exception());
-
     v8::HandleScope handle_scope;
     v8::String::Utf8Value exc(tc.Exception());
 
