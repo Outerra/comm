@@ -1739,14 +1739,14 @@ struct token
         }
 
         ///Convert part of the token to unsigned integer deducing the numeric base (0x, 0o, 0b or decimal)
-        T xtouint( token& t )
+        T xtouint( token& t, T defval=0 )
         {
             get_num_base(t);
-            return touint(t);
+            return touint(t, defval);
         }
 
         ///Convert part of the token to unsigned integer
-        T touint( token& t )
+        T touint( token& t, T defval=0 )
         {
             success = false;
             T r=0;
@@ -1772,197 +1772,197 @@ struct token
             }
 
             t.shift_start(p - t.ptr());
-            return r;
+            return success ? r : defval;
         }
 
         ///Convert part of the token to signed integer deducing the numeric base (0x, 0o, 0b or decimal)
-        T xtoint( token& t )
+        T xtoint( token& t, T defval=0 )
         {
             if(t.is_empty()) {
                 success = false;
                 return 0;
             }
             char c = t[0];
-            if(c == '-')  return -(T)xtouint(t.shift_start(1));
-            if(c == '+')  return (T)xtouint(t.shift_start(1));
-            return (T)xtouint(t);
+            if(c == '-')  return -(T)xtouint(t.shift_start(1), defval);
+            if(c == '+')  return (T)xtouint(t.shift_start(1), defval);
+            return (T)xtouint(t, defval);
         }
 
         ///Convert part of the token to signed integer
-        T toint( token& t )
+        T toint( token& t, T defval=0 )
         {
             if(t.is_empty()) {
                 success = false;
                 return 0;
             }
             char c = t[0];
-            if(c == '-')  return -(T)touint(t.shift_start(1));
-            if(c == '+')  return (T)touint(t.shift_start(1));
-            return (T)touint(t);
+            if(c == '-')  return -(T)touint(t.shift_start(1), defval);
+            if(c == '+')  return (T)touint(t.shift_start(1), defval);
+            return (T)touint(t, defval);
         }
 
-        T touint( const char* s )
+        T touint( const char* s, T defval=0 )
         {
             token t(s, UMAXS);
-            return touint(t);
+            return touint(t, defval);
         }
 
-        T toint( const char* s )
+        T toint( const char* s, T defval=0 )
         {
             if( *s == 0 )  return 0;
             token t(s, UMAXS);
-            return toint(t);
+            return toint(t, defval);
         }
     };
 
     ///Convert the token to unsigned int using as much digits as possible
-    uint touint() const
+    uint touint(uint defval=0) const
     {
         token t(*this);
         tonum<uint> conv(10);
-        return conv.touint(t);
+        return conv.touint(t, defval);
     }
 
     ///Convert the token to unsigned int using as much digits as possible
-    uint64 touint64() const
+    uint64 touint64(uint64 defval=0) const
     {
         token t(*this);
         tonum<uint64> conv(10);
-        return conv.touint(t);
+        return conv.touint(t, defval);
     }
 
     ///Convert a hexadecimal, decimal, octal or binary token to unsigned int using as much digits as possible
-    uint touint_base( uint base ) const
+    uint touint_base( uint base, uint defval=0 ) const
     {
         token t(*this);
         tonum<uint> conv(base);
-        return conv.touint(t);
+        return conv.touint(t, defval);
     }
 
     ///Convert a hexadecimal, decimal, octal or binary token to unsigned int using as much digits as possible
-    uint64 touint64_base( uint base ) const
+    uint64 touint64_base( uint base, uint64 defval=0 ) const
     {
         token t(*this);
         tonum<uint64> conv(base);
-        return conv.touint(t);
+        return conv.touint(t, defval);
     }
 
     ///Convert the token to unsigned int using as much digits as possible, deducing the numeric base
-    uint xtouint() const
+    uint xtouint(uint defval=0) const
     {
         token t(*this);
         tonum<uint> conv;
-        return conv.xtouint(t);
+        return conv.xtouint(t, defval);
     }
 
     ///Convert the token to unsigned int using as much digits as possible, deducing the numeric base
-    uint64 xtouint64() const
+    uint64 xtouint64(uint64 defval=0) const
     {
         token t(*this);
         tonum<uint64> conv;
-        return conv.xtouint(t);
+        return conv.xtouint(t, defval);
     }
 
     ///Convert the token to unsigned int using as much digits as possible
-    uint touint_and_shift()
+    uint touint_and_shift(uint defval=0)
     {
         tonum<uint> conv(10);
-        return conv.touint(*this);
+        return conv.touint(*this, defval);
     }
 
     ///Convert the token to unsigned int using as much digits as possible
-    uint64 touint64_and_shift()
+    uint64 touint64_and_shift(uint64 defval=0)
     {
         tonum<uint64> conv(10);
-        return conv.touint(*this);
+        return conv.touint(*this, defval);
     }
 
     ///Convert a hexadecimal, decimal, octal or binary token to unsigned int using as much digits as possible
-    uint xtouint_and_shift()
+    uint xtouint_and_shift(uint defval=0)
     {
         tonum<uint> conv;
-        return conv.xtouint(*this);
+        return conv.xtouint(*this, defval);
     }
 
     ///Convert a hexadecimal, decimal, octal or binary token to unsigned int using as much digits as possible
-    uint64 xtouint64_and_shift()
+    uint64 xtouint64_and_shift(uint64 defval=0)
     {
-        tonum<uint> conv;
-        return conv.xtouint(*this);
+        tonum<uint64> conv;
+        return conv.xtouint(*this, defval);
     }
 
     ///Convert a hexadecimal, decimal, octal or binary token to unsigned int using as much digits as possible
-    uint touint_base_and_shift( uint base )
+    uint touint_base_and_shift( uint base, uint defval=0 )
     {
         tonum<uint> conv(base);
-        return conv.touint(*this);
+        return conv.touint(*this, defval);
     }
 
     ///Convert a hexadecimal, decimal, octal or binary token to unsigned int using as much digits as possible
-    uint64 touint64_base_and_shift( uint base )
+    uint64 touint64_base_and_shift( uint base, uint64 defval=0 )
     {
         tonum<uint64> conv(base);
-        return conv.touint(*this);
+        return conv.touint(*this, defval);
     }
 
     ///Convert the token to signed int using as much digits as possible
-    int toint() const
+    int toint(int defval=0) const
     {
         token t(*this);
         tonum<int> conv(10);
-        return conv.toint(t);
+        return conv.toint(t, defval);
     }
 
     ///Convert the token to signed int using as much digits as possible
-    int64 toint64() const
+    int64 toint64(int64 defval=0) const
     {
         token t(*this);
         tonum<int64> conv(10);
-        return conv.toint(t);
+        return conv.toint(t, defval);
     }
 
     ///Convert the token to signed int using as much digits as possible, deducing the numeric base
-    int xtoint() const
+    int xtoint(int defval=0) const
     {
         token t(*this);
         tonum<int> conv;
-        return conv.xtoint(t);
+        return conv.xtoint(t, defval);
     }
 
     ///Convert the token to signed int using as much digits as possible, deducing the numeric base
-    int64 xtoint64() const
+    int64 xtoint64(int64 defval=0) const
     {
         token t(*this);
         tonum<int64> conv;
-        return conv.xtoint(t);
+        return conv.xtoint(t, defval);
     }
 
     ///Convert the token to signed int using as much digits as possible
-    int toint_and_shift()
+    int toint_and_shift(int defval=0)
     {
         tonum<int> conv(10);
-        return conv.toint(*this);
+        return conv.toint(*this, defval);
     }
 
     ///Convert the token to signed int using as much digits as possible
-    int64 toint64_and_shift()
+    int64 toint64_and_shift(int64 defval=0)
     {
         tonum<int64> conv(10);
-        return conv.toint(*this);
+        return conv.toint(*this, defval);
     }
 
     ///Convert a hexadecimal, decimal, octal or binary token to unsigned int using as much digits as possible
-    int xtoint_and_shift()
+    int xtoint_and_shift(int defval=0)
     {
         tonum<int> conv;
-        return conv.xtoint(*this);
+        return conv.xtoint(*this, defval);
     }
 
     ///Convert a hexadecimal, decimal, octal or binary token to unsigned int using as much digits as possible
-    int64 xtoint64_and_shift()
+    int64 xtoint64_and_shift(int64 defval=0)
     {
         tonum<int64> conv;
-        return conv.xtoint(*this);
+        return conv.xtoint(*this, defval);
     }
 
     //@{ Conversion to numbers, given size of the integer type and a destination address
@@ -2116,6 +2116,7 @@ struct token
     }
 
     ///Convert string (in local time) to datetime value
+    //@note format Tue, 15 Nov 1994 08:12:31
     opcd todate_local( timet& dst )
     {
         struct tm tmm;
@@ -2132,6 +2133,7 @@ struct token
     }
 
     ///Convert string (in gmt time) to datetime value
+    //@note format Tue, 15 Nov 1994 08:12:31 GMT
     opcd todate_gmt( timet& dst )
     {
         struct tm tmm;
@@ -2148,54 +2150,84 @@ struct token
     }
 
     ///Convert string (in specified timezone) to datetime value
+    //@note format [Tue,] [15 Nov] 1994[:10:15] [08:12:31] [GMT]
     opcd todate( struct tm& tmm, const token& timezone )
     {
-        //Tue, 15 Nov 1994 08:12:31 GMT
-
         cut_trait ctr(fREMOVE_SEPARATOR|fON_FAIL_RETURN_EMPTY);
 
-        //skip the day name
-        cut_left(',', ctr);
-        cut_left(' ', ctr);
-
-        tmm.tm_mday = touint_and_shift();
-        if( tmm.tm_mday == 0 || tmm.tm_mday > 31 )  return ersINVALID_PARAMS;
-        cut_left(' ', ctr);
-
-        token monstr = cut_left(' ', ctr);
+        static const char* wday[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
         static const char* mons[] = {
-            "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
         };
-        uint mon;
-        for( mon=0; mon<12; ++mon )  if( monstr.cmpeqi(mons[mon]) )  break;
-        if( mon >= 12 )  return ersINVALID_PARAMS "timefmt: month name";
-        tmm.tm_mon = mon;
 
-        tmm.tm_year = touint_and_shift() - 1900;
-        cut_left(' ', ctr);
 
-        token h = cut_left(':', ctr);
-        tmm.tm_hour = h.touint_and_shift();
-        if( !h.is_empty() || tmm.tm_hour > 23 )  return ersINVALID_PARAMS "timefmt: hours";
+        //skip the day name
+        char c = tolower(first_char());
+        if(c == 's' || c == 'm' || c == 't' || c == 'w' || c == 'f')
+            cut_left(',', ctr);
 
-        token m = cut_left(':', ctr);
-        tmm.tm_min = m.touint_and_shift();
-        if( !m.is_empty() || tmm.tm_min > 59 )  return ersINVALID_PARAMS "timefmt: minutes";
+        skip_space();
+        tmm.tm_mday = touint_and_shift();
 
-        uint fctr = fREMOVE_SEPARATOR;
-        if(!timezone.is_empty())
-            fctr |= fON_FAIL_RETURN_EMPTY;
+        skip_space();
 
-        token s = cut_left(' ', cut_trait(fctr));
-        tmm.tm_sec = s.touint_and_shift();
-        if( !s.is_empty() || tmm.tm_sec > 59 )  return ersINVALID_PARAMS "timefmt: seconds";
+        //if no month name follows, it was a year
+        if(!char_is_alpha(0)) {
+            tmm.tm_year = tmm.tm_mday - 1900;
+            tmm.tm_mday = tmm.tm_mon = -1;
+        }
+        else {
+            token monstr = cut_left(' ', ctr);
 
-        tmm.tm_isdst = 0;//-(int)timezone.is_empty();
+            uint mon;
+            for( mon=0; mon<12; ++mon )  if( monstr.cmpeqi(mons[mon]) )  break;
+            tmm.tm_mon = mon>=12 ? -1 : mon;
 
-        if( !consume_icase(timezone) )  return ersINVALID_PARAMS "timefmt: time zone";
+            skip_space();
+            tmm.tm_year = touint_and_shift() - 1900;
+        }
+
+        c = first_char();
+        if(c == '-' || c == ':') {
+            //year followed by month-day
+            shift_start(1);
+            tmm.tm_mon = touint_and_shift() - 1;
+
+            c = first_char();
+            if(c == '-' || c == ':') {
+                shift_start(1);
+                tmm.tm_mday = touint_and_shift();
+            }
+        }
+
+        skip_space();
+
+        if(char_is_number(0)) {
+            tmm.tm_hour = toint_and_shift(-1);
+            consume_char(':');
+            tmm.tm_min = toint_and_shift(-1);
+            consume_char(':');
+            tmm.tm_sec = toint_and_shift(-1);
+
+            skip_space();
+        }
+
+        tmm.tm_isdst = 0;
+
+        if(timezone)
+            consume_icase(timezone);
+
+        if(tmm.tm_mon < 0 || tmm.tm_mon > 12)
+            return ersINVALID_PARAMS;
+
+        if(tmm.tm_mday <= 0 || tmm.tm_mday > 31)
+            return ersINVALID_PARAMS;
+
+        if(tmm.tm_hour < 0 || tmm.tm_min < 0 || tmm.tm_sec < 0)
+            return ersINVALID_PARAMS;
+
         return 0;
     }
-
 
     ///Convert angle string to value, consuming input
     /// formats: 49°42'32.91"N, +49°42.5485', +49.7091416667°
