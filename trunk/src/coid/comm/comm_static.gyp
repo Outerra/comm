@@ -5,7 +5,7 @@
   },
   'targets': [
     {
-      'target_name': 'comm_static_gyp',
+      'target_name': 'comm_static',
       'type': 'static_library',
       'msvs_guid': 'D2F47060-00C0-4A3C-9888-CF663F14D44D',
       'dependencies': [
@@ -160,11 +160,30 @@
         'version.h',
       ],
       'configurations': {
-        'Debug' : {
-          'inherit_from': ['Debug','comm_base'],
-        },
-        'Release' : {
-          'inherit_from': ['Release','comm_base'],
+        'Debug_Base': {
+          'msvs_settings': {
+            'VCLinkerTool': {
+              'LinkIncremental': '<(msvs_large_module_debug_link_mode)',
+            },
+            'conditions': [
+              ['OS=="win"', {
+                'msvs_configuration_attributes': {
+                  'CharacterSet': '2',
+                },
+                'msvs_settings': {
+                  'VCLinkerTool': {
+                    'SubSystem': '1',
+                  },
+                  'VCCLCompilerTool': {
+                    'ExceptionHandling': '1', # /EHsc
+                    'AdditionalOptions': [
+                      '/MP',
+                    ],
+                  },
+                },
+              }],
+            ],
+          },
         },
       },
     },

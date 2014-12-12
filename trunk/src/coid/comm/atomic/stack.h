@@ -65,7 +65,7 @@ private:
 		        stack_node * volatile _ptr;
 			    volatile uint _pops;
 			};
-			volatile int64 _data;
+			volatile coid::int64 _data;
 		};
 	};
 

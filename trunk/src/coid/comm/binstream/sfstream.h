@@ -26,8 +26,7 @@
 #include <direct.h>
 #include "../retcodes.h"
 #include "binstream.h"
-#include "binstreamf.h"
-#include "txtparstream.h"
+#include "binstreambuf.h"
 #include "../dynarray.h"
 
 COID_NAMESPACE_BEGIN
@@ -80,7 +79,7 @@ public:
         return 0;
 	}
 
-	bool sf_exist() { return !_access(work_name, 0); }
+	bool sf_exist() { return !_access(work_name.c_str(), 0); }
 	bool identify(const char* _s_) { return (sf_name == _s_); }
 
 	charstr& get_name() { return work_name; }
@@ -119,11 +118,11 @@ public:
 	}
 
     const char* Get_O_name(){
-        return (const char *)sf_name;
+        return sf_name.c_str();
     }
 
     operator const char *() {
-        return (const char*)work_name;
+        return work_name.c_str();
     }
 
     safname& operator = (const char * __s_) {
@@ -212,8 +211,8 @@ class safos : public binstream
     //safe_group* _sg_;   //pointer na gruppu do ktorej patri
     FILE* str;
 
-	int exist_wf()  { return !_access(_ori_p, 0); }
-	int exist_old() { return !_access(_old_p, 0); }
+	int exist_wf()  { return !_access(_ori_p.c_str(), 0); }
+	int exist_old() { return !_access(_old_p.c_str(), 0); }
 
 public:
 
