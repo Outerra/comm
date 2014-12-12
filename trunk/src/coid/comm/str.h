@@ -858,21 +858,23 @@ public:
 
     ///Date element codes
     enum {
-        DATE_WDAY           = 0x01,
-        DATE_MDAY           = 0x02,
-        DATE_MONTH          = 0x04,
-        DATE_YEAR           = 0x08,
-        DATE_HHMM           = 0x10,
-        DATE_HHMMSS         = 0x20,
-        DATE_TZ             = 0x40,
-		DATE_ISO8601        = 0x80,
-		DATE_ISO8601_GMT	= 0x100,
+        DATE_WDAY           = 0x001,
+        DATE_MDAY           = 0x002,
+        DATE_MONTH          = 0x004,
+        DATE_YEAR           = 0x008,
+        DATE_YYYYMMDD       = 0x200,    //< YYYY:MM:DD
+        DATE_HHMM           = 0x010,
+        DATE_HHMMSS         = 0x020,
+        DATE_TZ             = 0x040,
+		DATE_ISO8601        = 0x080,    //< RFC 822/1123 format, YYYY-MM-DDTHH:MM:SS
+		DATE_ISO8601_GMT	= 0x100,    //< RFC 822/1123 format, YYYY-MM-DDTHH:MM:SSZxx
 
         //default ISO1123 date
         DATE_DEFAULT        = DATE_WDAY | DATE_MDAY | DATE_MONTH | DATE_YEAR | DATE_HHMMSS | DATE_TZ,
     };
 
     ///Append GMT date string constructed by the flags set
+    //@note default format: Tue, 15 Nov 1994 08:12:31 GMT
     charstr& append_date_gmt( const timet t, uint flg=DATE_DEFAULT )
     {
 #ifdef SYSTYPE_MSVC
@@ -885,6 +887,8 @@ public:
         return append_time( tm, flg, "GMT" );
     }
 
+    ///Append local time zone date string constructed by the flags set
+    //@note default format: Tue, 15 Nov 1994 08:12:31 GMT
     charstr& append_date_local( const timet t, uint flg=DATE_DEFAULT )
     {
 #ifdef SYSTYPE_MSVC
@@ -905,28 +909,26 @@ public:
 #endif
     }
 
+    ///Append time according to formatting flags
     charstr& append_time( struct tm const& tm, uint flg, const token& tz )
     {
-        //RFC 822, updated by RFC 1123
-        //Tue, 15 Nov 1994 08:12:31 GMT
-        static const char* wday[] = { "Sun, ", "Mon, ", "Tue, ", "Wed, ", "Thu, ", "Fri, ", "Sat, " };
+        static const char* wday[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+        static const char* mons[] = {
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        };
 
-        if( flg & DATE_WDAY )
-            add_from( wday[tm.tm_wday], 5 );
+        if( flg & DATE_WDAY ) {
+            add_from(wday[tm.tm_wday], 3);
+            add_from(", ", 2);
+        }
 
         if( flg & DATE_MDAY ) {
             append_num(10, tm.tm_mday);
             append(' ');
         }
 
-        static const char* mon[] = {
-            "Jan ", "Feb ", "Mar ", "Apr ", "May ", "Jun ", "Jul ", "Aug ", "Sep ", "Oct ", "Nov ", "Dec "
-        };
-        if( flg & DATE_MONTH )
-            add_from( mon[tm.tm_mon], 4 );
-
-        if( flg & DATE_YEAR ) {
-            append_num(10, tm.tm_year+1900);
+        if( flg & DATE_MONTH ) {
+            add_from(mons[tm.tm_mon], 3);
             append(' ');
         }
 
@@ -939,8 +941,19 @@ public:
 			append_num(10, tm.tm_mday);
 			append('T');
 		}
+        else if( flg & DATE_YYYYMMDD ) {
+            append_num(10, tm.tm_year+1900, 4, coid::ALIGN_NUM_RIGHT_FILL_ZEROS);
+            append(':');
+            append_num(10, tm.tm_mon+1, 2, coid::ALIGN_NUM_RIGHT_FILL_ZEROS);
+            append(':');
+            append_num(10, tm.tm_mday, 2, coid::ALIGN_NUM_RIGHT_FILL_ZEROS);
+        }
+        else if( flg & DATE_YEAR ) {
+            append_num(10, tm.tm_year+1900);
+        }
 
         if( flg & (DATE_HHMM|DATE_HHMMSS|DATE_ISO8601) ) {
+            append((flg & DATE_ISO8601) ? 'T' : ' ');
             append_num(10,tm.tm_hour,2,ALIGN_NUM_RIGHT_FILL_ZEROS);
             append(':');
             append_num(10,tm.tm_min,2,ALIGN_NUM_RIGHT_FILL_ZEROS);
@@ -989,6 +1002,7 @@ public:
 	{
 		return append_date_local(t, DATE_ISO8601|DATE_ISO8601_GMT);
 	}
+
 
 
     ///Append angle value in format +49°42'32.912"
