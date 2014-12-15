@@ -564,7 +564,9 @@ void abort_routine();
 #endif /* _WIN32_WCE */
 #endif  /* WIN32 */
 #ifdef WIN32
-#define WIN32_LEAN_AND_MEAN
+#ifndef WIN32_LEAN_AND_MEAN
+    #define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
 #include <tchar.h>
 #define HAVE_MMAP 1
