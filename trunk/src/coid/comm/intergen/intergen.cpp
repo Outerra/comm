@@ -419,5 +419,10 @@ int File::parse( token path )
         return -1;
     }
 
+    if(pasters.size() > 0 && classes.size() == 0) {
+        out << lex.prepare_exception() << "warning: ifc preprocessor tokens found, but no interface declared\n";
+        lex.clear_err();
+    }
+
     return 0;
 }
