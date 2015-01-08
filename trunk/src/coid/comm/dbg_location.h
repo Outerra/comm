@@ -6,7 +6,7 @@
 
 COID_NAMESPACE_BEGIN
 
-namespace dbg {
+namespace debug {
 
 class location
 {
@@ -55,6 +55,6 @@ private:
 
 COID_NAMESPACE_END
 
-#define LOCATION coid::dbg::location(__FUNCTION__, __FILE__, __LINE__)
+#define LOCATION coid::debug::location(__FUNCTION__, __FILE__, __LINE__)
 
 #endif // __COMM_DBG_LOCATION_H__

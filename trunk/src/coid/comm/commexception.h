@@ -66,7 +66,7 @@ struct exception
         : _stext(def_text())
     {}
 
-	explicit exception(const dbg::location &loc)
+	explicit exception(const debug::location &loc)
         : _location(loc)
     {}
 
@@ -145,7 +145,7 @@ protected:
 
     token _stext;
     charstr _dtext;
-	dbg::location _location;
+	debug::location _location;
 };
 
 
