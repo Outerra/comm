@@ -222,11 +222,15 @@ $[/args]-$
     ifc->_meta.stream_acknowledge();
 
     //invoke
+    auto R_ = ifc->_real();
+    if(!R_)
+        return v8::ThrowException(v8::Exception::ReferenceError(v8::String::New("null host object in $..name$.$name$()")));
+    
 $-[args outarg? !inarg?]$
     $basetype$ $name$;
 $[/args]-$
 
-    $(if return.type!="void")$$return.type$ _rval_ = $(/if)$ifc->_real()->$name$($[args rest=", "]$ $-(if ptr?)$&$(/if)$ $-(if nojs?)$$defval$$(elif)$$name$$base2arg$$(/if)$$[/args]$);
+    $(if return.type!="void")$$return.type$ _rval_ = $(/if)$R_->$name$($[args rest=", "]$ $-(if ptr?)$&$(/if)$ $-(if nojs?)$$defval$$(elif)$$name$$base2arg$$(/if)$$[/args]$);
 
     //stream out
 $-(if return.type!="void")$
@@ -388,13 +392,17 @@ v8::Handle<v8::Value> $name$_js_dispatcher::_getter(v8::Local<v8::String> proper
     $ns rest="::" after="::"$js::$name$_js_dispatcher* ifc = static_cast<$ns rest="::" after="::"$js::$name$_js_dispatcher*>
         (v8::Handle<v8::External>::Cast(_intobj_)->Value());
 
+    auto R_ = ifc->_real();
+    if(!R_)
+        return v8::ThrowException(v8::Exception::ReferenceError(v8::String::New("null host object in $..name$[]")));
+
     v8::Context::Scope context_scope(ifc->_context);
 
     v8::String::AsciiValue key(property);
 $-(if getter.token?)$    
-    $getter.basetype$ value = (*ifc->_real())(coid::token(*key, key.length()));
+    $getter.basetype$ value = (*R_)(coid::token(*key, key.length()));
 $-(elif)$
-    $getter.basetype$ value = (*ifc->_real())(*key);
+    $getter.basetype$ value = (*R_)(*key);
 $-(/if)$
     
     //stream out
@@ -428,11 +436,15 @@ v8::Handle<v8::Value> $name$_js_dispatcher::_setter(v8::Local<v8::String> proper
     $setter.basetype$ val = v8_streamer<$setter.basetype$>(&ifc->_fmtv8, &ifc->_meta) >> value;
     ifc->_meta.stream_acknowledge();
     
+    auto R_ = ifc->_real();
+    if(!R_)
+        return v8::ThrowException(v8::Exception::ReferenceError(v8::String::New("null host object in $..name$[] = ...")));
+    
     v8::String::AsciiValue key(property);
 $-(if setter.token?)$
-    (*ifc->_real())(coid::token(*key, key.length()), val);
+    (*R_)(coid::token(*key, key.length()), val);
 $-(elif)$
-    (*ifc->_real())(*key, val);
+    (*R_)(*key, val);
 $-(/if)$
 
     return _handle_scope_.Close(value);
