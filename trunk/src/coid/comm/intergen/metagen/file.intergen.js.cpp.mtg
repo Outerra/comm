@@ -67,6 +67,7 @@ class $name$_js_dispatcher
 {
 $-(if event?)$
     v8::Persistent<v8::Function> _events[$event.@size$];
+    v8::Persistent<v8::Object> _eventobj;
     bool _bound_events;
 
 $-(/if)$
@@ -81,7 +82,7 @@ public:
 
     static v8::Handle<v8::Script> load_script( const coid::token& scriptfile, const coid::token& file_name );
 $-(if event?)$
-    void bind_events( v8::Handle<v8::Context> context, bool force );
+    void bind_events( v8::Handle<v8::Context> context, bool force, v8::Handle<v8::Value> ref );
 $-(/if)$
 
     $name$_js_dispatcher() $-(if event?)$ : _bound_events(false)$(/if)$
@@ -100,6 +101,9 @@ $-(/if)$
     }
 
     ~$name$_js_dispatcher() {
+$-(if event?)$
+        _eventobj.Dispose();
+$-(/if)$
 $-[event]$
         _events[$@index$].Dispose();
 $-[/event]$
@@ -134,6 +138,7 @@ $[/comments]$$(/if)-$
 $-[/method]$
     ///Handler for generic $$query_interface javascript method
     static v8::Handle<v8::Value> v8query_interface( const v8::Arguments& args );
+    static v8::Handle<v8::Value> v8rebind_events( const v8::Arguments& args );
     
     // --- method wrappers ---
 
@@ -151,16 +156,14 @@ $-[/event]$
 $-[event]$
     virtual bool is_implemented_$name$() override { return is_event_bound($@index$); }
 $-[/event]$
-$-(if event.empty!)$
 
     virtual void force_bind_script_events() {
         v8::Context::Scope context_scope(_context);
         v8::HandleScope __handle_scope;
         v8::TryCatch __trycatch;
 
-        bind_events(_context, true);
+        bind_events(_context, true, v8::Undefined());
     }
-$-(/if)$
 
 private:
     bool is_event_bound( int id )
@@ -170,7 +173,7 @@ private:
             v8::HandleScope __handle_scope;
             v8::TryCatch __trycatch;
 
-            bind_events(_context, false);
+            bind_events(_context, false, v8::Undefined());
         }
 
         return !_events[id].IsEmpty() && !_events[id]->IsUndefined();
@@ -301,7 +304,7 @@ $-(elif)$
     v8::HandleScope __handle_scope;
     v8::TryCatch __trycatch;
 
-    bind_events(_context, false);
+    bind_events(_context, false, v8::Undefined());
 
 $-(if !mandatory?)$
     if(_events[$@index$].IsEmpty() || _events[$@index$]->IsUndefined())
@@ -326,7 +329,7 @@ $-[/args]$
 $-(/if)$
     _meta.stream_flush();
 
-    v8::Local<v8::Value> _r_ = _events[$@index$]->Call(_object, $(if ninargs?)$$ninargs$, __inargs$(elif)$0, 0$(/if)$);
+    v8::Local<v8::Value> _r_ = _events[$@index$]->Call(_eventobj.IsEmpty() || _eventobj->IsUndefined() ? _object : _eventobj, $(if ninargs?)$$ninargs$, __inargs$(elif)$0, 0$(/if)$);
 
     if(__trycatch.HasCaught())
         throw_js_error(__trycatch, "$..ns rest="::" after="::"$js::$..name$.$name$(): ");
@@ -480,6 +483,27 @@ v8::Handle<v8::Value> $name$_js_dispatcher::v8query_interface(const v8::Argument
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+v8::Handle<v8::Value> $name$_js_dispatcher::v8rebind_events(const v8::Arguments& args)
+{
+$-(if event?)$
+    v8::HandleScope _handle_scope_;
+    v8::Local<v8::Object> _obj_ = args.Holder();
+
+    $ns rest="::" after="::"$js::$name$_js_dispatcher* ifc = static_cast<$ns rest="::" after="::"$js::$name$_js_dispatcher*>
+        (v8::Handle<v8::External>::Cast(_obj_->GetInternalField(0))->Value());
+
+    if(ifc) {
+        v8::Local<v8::Value> val;
+        if(args.Length() > 0)
+            val = args[0];
+        ifc->bind_events(ifc->_context, true, val);
+    }
+
+$-(/if)$
+    return v8::Undefined();
+}
+
+////////////////////////////////////////////////////////////////////////////////
 v8::Handle<v8::Object> $name$_js_dispatcher::create_interface_object( bool make_weak )
 {
     static v8::Persistent<v8::ObjectTemplate> _objtempl;
@@ -492,6 +516,7 @@ $-[method !static? !destroy? !internal? !operator?]$
         _objtempl->Set(v8::String::NewSymbol("$name$"), v8::FunctionTemplate::New(&v8_$name$$@index$));
 $-[/method]$
         _objtempl->Set(v8::String::NewSymbol("$$query_interface"), v8::FunctionTemplate::New(&v8query_interface));
+        _objtempl->Set(v8::String::NewSymbol("$$rebind_events"), v8::FunctionTemplate::New(&v8rebind_events));
 $-(if hasprops?)$
 
         _objtempl->SetNamedPropertyHandler(&_getter, &_setter);
@@ -532,9 +557,9 @@ v8::Handle<v8::Script> $name$_js_dispatcher::load_script( const coid::token& scr
     return compiled_script;
 }
 
-$-(if event?)$
+$-(if event.empty!)$
 ////////////////////////////////////////////////////////////////////////////////
-void $name$_js_dispatcher::bind_events( v8::Handle<v8::Context> context, bool force )
+void $name$_js_dispatcher::bind_events( v8::Handle<v8::Context> context, bool force, v8::Handle<v8::Value> ref )
 {
     if(!force && _bound_events)
         return;
@@ -546,22 +571,33 @@ $-[/event]$
     };
     static bool mandatory[] = {
 $-[event]$
-        $(if mandatory?)$false$(elif)$true$(/if)$,
+        $(if mandatory?)$true$(elif)$false$(/if)$,
 $-[/event]$
     };
 
+    v8::HandleScope _scope_;
     v8::TryCatch __trycatch;
-    v8::Local<v8::Object> global = context->Global();
+    v8::Local<v8::Object> global;
+    if(ref.IsEmpty() || ref->IsUndefined()) {
+        global = context->Global();
+        _eventobj.Dispose();
+    }
+    else {
+        global = ref->ToObject();
+        _eventobj = v8::Persistent<v8::Object>::New(global);
+    }
 
     for(int i=0; i<$event.@size$; ++i) {
         v8::Local<v8::Value> var = global->Get(v8::String::New(names[i].ptr(), names[i].len()));
-        if(__trycatch.HasCaught()) {
+        if(__trycatch.HasCaught() || var->IsUndefined()) {
             if(!mandatory[i]) continue;
             throw_js_error(__trycatch, "$ns rest="::" after="::"$js::$name$::bind_events(): ");
         }
 
         v8::Local<v8::Function> foo = v8::Local<v8::Function>::Cast(var);
-        if(__trycatch.HasCaught() && mandatory[i])
+        bool failed = __trycatch.HasCaught() || foo->IsUndefined();
+        
+        if(failed && mandatory[i])
             throw_js_error(__trycatch, "$ns rest="::" after="::"$js::$name$::bind_events(): ");
 
         _events[i] = v8::Persistent<v8::Function>::New(foo);
