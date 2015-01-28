@@ -591,14 +591,19 @@ $-[/event]$
         v8::Local<v8::Value> var = global->Get(v8::String::New(names[i].ptr(), names[i].len()));
         if(__trycatch.HasCaught() || var->IsUndefined()) {
             if(!mandatory[i]) continue;
-            throw_js_error(__trycatch, "$ns rest="::" after="::"$js::$name$::bind_events(): ");
+            charstr err = "$ns rest="::" after="::"$js::$name$::bind_events(): ";
+            err << names[i] << " not defined";
+            throw_js_error(__trycatch, err.c_str());
         }
 
         v8::Local<v8::Function> foo = v8::Local<v8::Function>::Cast(var);
         bool failed = __trycatch.HasCaught() || foo->IsUndefined();
         
-        if(failed && mandatory[i])
-            throw_js_error(__trycatch, "$ns rest="::" after="::"$js::$name$::bind_events(): ");
+        if(failed && mandatory[i]) {
+            charstr err = "$ns rest="::" after="::"$js::$name$::bind_events(): ";
+            err << names[i] << " not defined";
+            throw_js_error(__trycatch, err.c_str());
+        }
 
         _events[i] = v8::Persistent<v8::Function>::New(foo);
     }
