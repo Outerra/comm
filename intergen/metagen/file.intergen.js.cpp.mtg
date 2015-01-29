@@ -103,13 +103,23 @@ $-(/if)$
     ~$name$_js_dispatcher() {
 $-(if event?)$
         _eventobj.Dispose();
+        _eventobj.Clear();
 $-(/if)$
 $-[event]$
         _events[$@index$].Dispose();
+        _events[$@index$].Clear();
 $-[/event]$
+        if(!_object.IsEmpty() && _object->IsObject()) {
+            v8::HandleScope scope;
+            _object->SetInternalField(0, v8::External::New(0));
+        }
+
         _object.Dispose();
+        _object.Clear();
         _script.Dispose();
+        _script.Clear();
         _context.Dispose();
+        _context.Clear();
     }
     
     bool intergen_bind_capture( coid::binstring* capture, uint instid ) override
@@ -190,12 +200,20 @@ v8::Handle<v8::Value> $..name$_js_dispatcher::v8_$name$$@index$(const v8::Argume
 
     v8::HandleScope _handle_scope_;
     v8::Local<v8::Object> _obj_ = args.Holder();
+    
+    v8::Local<v8::Value> _intobj_ = _obj_->GetInternalField(0);
+    if(!_intobj_->IsExternal())
+        return v8::Undefined();
 
     ::js::interface_wrapper_base<$..ns rest="::"$::$..name$>* ifc = static_cast<::js::interface_wrapper_base<$..ns rest="::"$::$..name$>*>
-        (v8::Handle<v8::External>::Cast(_obj_->GetInternalField(0))->Value());
+        (v8::Handle<v8::External>::Cast(_intobj_)->Value());
+
+    auto R_ = ifc ? ifc->_real() : 0;
+    if(!R_)
+        return v8::ThrowException(v8::Exception::ReferenceError(v8::String::New("null interface object in $..name$.$name$()")));
 
     v8::Context::Scope context_scope(ifc->_context);
-    
+
     try {
 
     //stream the arguments in
@@ -225,10 +243,6 @@ $[/args]-$
     ifc->_meta.stream_acknowledge();
 
     //invoke
-    auto R_ = ifc->_real();
-    if(!R_)
-        return v8::ThrowException(v8::Exception::ReferenceError(v8::String::New("null host object in $..name$.$name$()")));
-    
 $-[args outarg? !inarg?]$
     $basetype$ $name$;
 $[/args]-$
@@ -390,14 +404,14 @@ v8::Handle<v8::Value> $name$_js_dispatcher::_getter(v8::Local<v8::String> proper
 
     v8::Local<v8::Value> _intobj_ = _obj_->GetInternalField(0);
     if(!_intobj_->IsExternal())
-        return v8::Handle<v8::Value>();
+        return v8::Undefined();
 
     $ns rest="::" after="::"$js::$name$_js_dispatcher* ifc = static_cast<$ns rest="::" after="::"$js::$name$_js_dispatcher*>
         (v8::Handle<v8::External>::Cast(_intobj_)->Value());
 
-    auto R_ = ifc->_real();
+    auto R_ = ifc ? ifc->_real() : 0;
     if(!R_)
-        return v8::ThrowException(v8::Exception::ReferenceError(v8::String::New("null host object in $..name$[]")));
+        return v8::ThrowException(v8::Exception::ReferenceError(v8::String::New("null interface object in $..name$[]")));
 
     v8::Context::Scope context_scope(ifc->_context);
 
@@ -428,20 +442,20 @@ v8::Handle<v8::Value> $name$_js_dispatcher::_setter(v8::Local<v8::String> proper
 
     v8::Local<v8::Value> _intobj_ = _obj_->GetInternalField(0);
     if(!_intobj_->IsExternal())
-        return v8::Handle<v8::Value>();
+        return v8::Undefined();
 
     $ns rest="::" after="::"$js::$name$_js_dispatcher* ifc = static_cast<$ns rest="::" after="::"$js::$name$_js_dispatcher*>
         (v8::Handle<v8::External>::Cast(_intobj_)->Value());
+
+    auto R_ = ifc ? ifc->_real() : 0;
+    if(!R_)
+        return v8::ThrowException(v8::Exception::ReferenceError(v8::String::New("null interface object in $..name$[] = ...")));
 
     v8::Context::Scope context_scope(ifc->_context);
 
     static_assert( CHECK::meta_operator_exists<$setter.basetype$>::value, "missing metastream operator << for type '$setter.basetype$'" );
     $setter.basetype$ val = v8_streamer<$setter.basetype$>(&ifc->_fmtv8, &ifc->_meta) >> value;
     ifc->_meta.stream_acknowledge();
-    
-    auto R_ = ifc->_real();
-    if(!R_)
-        return v8::ThrowException(v8::Exception::ReferenceError(v8::String::New("null host object in $..name$[] = ...")));
     
     v8::String::AsciiValue key(property);
 $-(if setter.token?)$
@@ -476,8 +490,15 @@ v8::Handle<v8::Value> $name$_js_dispatcher::v8query_interface(const v8::Argument
         
     v8::Local<v8::Object> _obj_ = args.Holder();
 
+    v8::Local<v8::Value> _intobj_ = _obj_->GetInternalField(0);
+    if(!_intobj_->IsExternal())
+        return v8::Undefined();
+
     $ns rest="::" after="::"$js::$name$_js_dispatcher* ifc = static_cast<$ns rest="::" after="::"$js::$name$_js_dispatcher*>
-        (v8::Handle<v8::External>::Cast(_obj_->GetInternalField(0))->Value());
+        (v8::Handle<v8::External>::Cast(_intobj_)->Value());
+
+    if(!ifc)
+        return v8::ThrowException(v8::Exception::ReferenceError(v8::String::New("null interface object in $$query_interface")));
 
     return _handle_scope_.Close(get(args, ifc));
 }
@@ -489,8 +510,12 @@ $-(if event?)$
     v8::HandleScope _handle_scope_;
     v8::Local<v8::Object> _obj_ = args.Holder();
 
+    v8::Local<v8::Value> _intobj_ = _obj_->GetInternalField(0);
+    if(!_intobj_->IsExternal())
+        return v8::Undefined();
+    
     $ns rest="::" after="::"$js::$name$_js_dispatcher* ifc = static_cast<$ns rest="::" after="::"$js::$name$_js_dispatcher*>
-        (v8::Handle<v8::External>::Cast(_obj_->GetInternalField(0))->Value());
+        (v8::Handle<v8::External>::Cast(_intobj_)->Value());
 
     if(ifc) {
         v8::Local<v8::Value> val;
