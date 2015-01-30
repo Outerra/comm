@@ -61,7 +61,7 @@ public:
 
         _count = 0;
         _unused = reinterpret_cast<T*>(this);   //used as a terminator
-        _array.reset();
+        _array.set_size(0);
     }
 
     slotalloc()
