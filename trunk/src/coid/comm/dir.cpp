@@ -439,16 +439,28 @@ bool directory::get_relative_path( token src, token dst, charstr& relout )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool directory::compact_path( charstr& dst )
+bool directory::compact_path( charstr& dst, char tosep )
 {
     token dtok = dst;
 
 #ifdef SYSTYPE_WIN
     bool absp = dtok.nth_char(1) == ':';
-    if(absp) dtok.shift_start(3);
+    if(absp) {
+        char c2 = dtok.nth_char(2);
+        if(c2 != '/' && c2 != '\\' && c2 != 0)
+            return false;
+        if(!c2)
+            return true;
+        dst[2] = tosep;
+        dtok.shift_start(3);
+    }
 #else
     bool absp = dtok.first_char() == '/';
-    if(absp) dtok.shift_start(1);
+    if(absp) {
+        if(tosep)
+            dst[0] = tosep;
+        dtok.shift_start(1);
+    }
 #endif
 
     token fwd, rem;
@@ -458,7 +470,20 @@ bool directory::compact_path( charstr& dst )
     int nfwd=0;
 
     do {
-        bool isup = dtok.cut_left(DIR_SEPARATORS) == up;
+        token seg = dtok.cut_left(DIR_SEPARATORS);
+        bool isup = seg == up;
+
+        int d = dtok.ptr() - seg.ptre();
+        if(d > 1) {
+            //remove extra path separators
+            dst.del(seg.ptre() - dst.ptr(), d-1);
+            dtok.shift_start(1-d);
+            dtok.shift_end(1-d);
+        }
+
+        //normalize path separator
+        if(d > 0 && tosep)
+            *(char*)seg.ptre() = tosep;
 
         if(!isup) {
             if(rem.len()) {

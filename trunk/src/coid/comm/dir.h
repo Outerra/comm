@@ -193,8 +193,9 @@ public:
 
     static bool is_absolute_path( const token& path );
 
-    ///Remove nested ../ chunks
-    static bool compact_path( charstr& dst );
+    ///Remove nested ../ chunks, remove extra path separator characters
+    //@param tosep replace separators with given character (usually '/' or '\\')
+    static bool compact_path( charstr& dst, char tosep=0 );
 
 
     uint64 file_size() const                    { return _st.st_size; }

@@ -336,24 +336,21 @@ public:
         return *this;
     }
 
-    ///Cut trailing newlines (both \n and \r)
+    ///Trim leading and trailing newlines (both \n and \r)
     charstr& trim( bool newline=true, bool whitespace=true )
     {
         if (_tstr.size() <= 1)  return *this;
 
-        uints n = _tstr.sizes() - 1;  //without the trailing zero
-        for( uints i=n; i>0; )
-        {
-            --i;
-            if( newline  &&  (_tstr[i] == '\n'  ||  _tstr[i] == '\r') )
-                n = i;
-            else if( whitespace  &&  (_tstr[i] == ' '  ||  _tstr[i] == '\t') )
-                n = i;
-            else
-                break;
-        }
-        _tstr.realloc(n+1);
-        _tstr[n] = 0;
+        token tok = *this;
+        tok.trim(newline, whitespace);
+
+        int lead = tok.ptr() - ptr();
+        int trail = ptre() - tok.ptre();
+
+        if(lead > 0)
+            del(0, lead);
+        if(trail)
+            resize(-trail);
         return *this;
     }
 
