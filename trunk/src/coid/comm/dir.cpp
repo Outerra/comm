@@ -451,7 +451,8 @@ bool directory::compact_path( charstr& dst, char tosep )
             return false;
         if(!c2)
             return true;
-        dst[2] = tosep;
+        if(tosep)
+            dst[2] = tosep;
         dtok.shift_start(3);
     }
 #else
