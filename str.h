@@ -684,6 +684,31 @@ public:
         }
     }
 
+    ///Append number with metric suffix
+    charstr& append_num_metric( uint64 size )
+    {
+        double v = double(size);
+        int ndigits = size>0
+            ? 0 + (int)log10(v)
+            : 0;
+
+        const char* prefixes = "\0kMGTPEZY";
+        int ngroup = ndigits/3;
+        char prefix = prefixes[ngroup];
+
+        //reduce to 3 digits
+        if(ndigits>2) {
+            v /= pow(10.0, 3*ngroup);
+            append_float(v, (ndigits-3*ngroup)-2, 4);
+            append(' ');
+            append(prefix);
+        }
+        else
+            append_num(10, size);
+
+        return *this;
+    }
+
     ///Append time (secs)
     void append_time_formatted( uint64 n, bool msec=false )
     {
@@ -1019,33 +1044,6 @@ public:
         angle = (angle - floor(angle)) * 60.0;
         append_fixed(angle, 6, -3, ALIGN_NUM_RIGHT_FILL_ZEROS);
         append('"');
-
-        return *this;
-    }
-
-    charstr& append_byte_size(uint64 size)
-    {
-        double v = double(size);
-        int ndigits = size>0
-            ? 0 + (int)log10(v)
-            : 0;
-
-        const char* prefixes = "\0kMGTPEZY";
-        int ngroup = ndigits/3;
-        char prefix = prefixes[ngroup];
-
-        //reduce to 3 digits
-        if(ndigits>2) {
-            v /= pow(10.0, 3*ngroup);
-            append_float(v, (ndigits-3*ngroup)-2, 4);
-            append(' ');
-            append(prefix);
-            append('B');
-        }
-        else {
-            append_num(10, size);
-            append(" B");
-        }
 
         return *this;
     }
