@@ -782,9 +782,11 @@ public:
     }
 
     ///Append copy of another array to the end
-    dynarray& append( const dynarray& a )
+    dynarray& append( const dynarray& a, uints maxitems = UMAXS )
     {
         uints c = a.size();
+        if(c > maxitems)
+            c = maxitems;
         T* p = add(c);
         for (uints i=0; i<c; ++i)
             p[i] = a._ptr[i];
