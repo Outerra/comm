@@ -320,12 +320,15 @@ $-(elif)$
 
     bind_events(_context, false, v8::Undefined());
 
-$-(if !mandatory?)$
     if(_events[$@index$].IsEmpty() || _events[$@index$]->IsUndefined())
-    $(if default_event_body?)$$default_event_body$$(elif)-$
-        return;$(/if)$
+  $-(if default_event_body?)$
+    $default_event_body$
+  $-(elif !mandatory?)$
+        return;
+  $-(elif)$
+        throw coid::exception("handler not implemented");
+  $-(/if)$
 
-$-(/if)$
 $-[args inarg? iref.false?]$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator << for type '$basetype$'" );
 $-[/args]$
@@ -594,11 +597,6 @@ $-[event]$
         "$name$",
 $-[/event]$
     };
-    static bool mandatory[] = {
-$-[event]$
-        $(if mandatory?)$true$(elif)$false$(/if)$,
-$-[/event]$
-    };
 
     v8::HandleScope _scope_;
     v8::TryCatch __trycatch;
@@ -612,25 +610,20 @@ $-[/event]$
         _eventobj = v8::Persistent<v8::Object>::New(global);
     }
 
-    for(int i=0; i<$event.@size$; ++i) {
+    for(int i=0; i<$event.@size$; ++i)
+    {
+        _events[i].Dispose();
+        _events[i].Clear();
+    
         v8::Local<v8::Value> var = global->Get(v8::String::New(names[i].ptr(), names[i].len()));
-        if(__trycatch.HasCaught() || var->IsUndefined()) {
-            if(!mandatory[i]) continue;
-            charstr err = "$ns rest="::" after="::"$js::$name$::bind_events(): ";
-            err << names[i] << " not defined";
-            throw_js_error(__trycatch, err.c_str());
-        }
+        if(var->IsUndefined())
+            continue;
 
         v8::Local<v8::Function> foo = v8::Local<v8::Function>::Cast(var);
         bool failed = __trycatch.HasCaught() || foo->IsUndefined();
         
-        if(failed && mandatory[i]) {
-            charstr err = "$ns rest="::" after="::"$js::$name$::bind_events(): ";
-            err << names[i] << " not defined";
-            throw_js_error(__trycatch, err.c_str());
-        }
-
-        _events[i] = v8::Persistent<v8::Function>::New(foo);
+        if(!failed)
+            _events[i] = v8::Persistent<v8::Function>::New(foo);
     }
 
     _bound_events = true;

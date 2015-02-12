@@ -77,15 +77,9 @@ int generate( const T& t, const token& patfile, const token& outfile )
     directory::set_writable(outfile, true);
 
     bifstream bit(patfile);
-    bofstream bof(outfile);
 
     if( !bit.is_open() ) {
-        out << "error: can't open the template file '" << patfile << "'\n";
-        return -5;
-    }
-
-    if( !bof.is_open() ) {
-        out << "error: can't create the output file '" << outfile << "'\n";
+        out << "error: can't open template file '" << patfile << "'\n";
         return -5;
     }
 
@@ -93,11 +87,17 @@ int generate( const T& t, const token& patfile, const token& outfile )
     mtg.set_source_path(patfile);
 
     if( !mtg.parse(bit) ) {
-        out << "error: error parsing the document template:\n";
+        //out << "error: error parsing the document template:\n";
         out << mtg.err() << '\n';
         out.flush();
 
         return -6;
+    }
+
+    bofstream bof(outfile);
+    if( !bof.is_open() ) {
+        out << "error: can't create output file '" << outfile << "'\n";
+        return -5;
     }
 
     out << "writing " << outfile << " ...\n";
@@ -117,7 +117,6 @@ int generate_rl( const File& cgf, charstr& patfile, const token& outfile )
     patfile << "template.inl.mtg";
 
     bifstream bit(patfile);
-    bofstream bof(outfile);
 
     metagen mtg;
     mtg.set_source_path(patfile);
@@ -125,12 +124,7 @@ int generate_rl( const File& cgf, charstr& patfile, const token& outfile )
     patfile.resize(l);
 
     if( !bit.is_open() ) {
-        out << "error: can't open the template file '" << patfile << "'\n";
-        return -5;
-    }
-
-    if( !bof.is_open() ) {
-        out << "error: can't create the output file '" << outfile << "'\n";
+        out << "error: can't open template file '" << patfile << "'\n";
         return -5;
     }
 
@@ -141,7 +135,15 @@ int generate_rl( const File& cgf, charstr& patfile, const token& outfile )
         return -6;
     }
 
-    if( cgf.classes.size() > 0 ) {
+    if( cgf.classes.size() > 0 )
+    {
+        bofstream bof(outfile);
+
+        if( !bof.is_open() ) {
+            out << "error: can't create output file '" << outfile << "'\n";
+            return -5;
+        }
+
         out << "writing " << outfile << " ...\n";
         cgf.classes.for_each([&](const Class& c) {
             if(c.method.size())
@@ -292,7 +294,7 @@ int main( int argc, char* argv[] )
 
     //parse
     int rv = cgf.parse(argv[1]);
-    if(rv)  return rv;
+    if(rv)  return 0;
 
 
     //generate
