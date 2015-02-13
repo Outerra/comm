@@ -158,6 +158,111 @@ public:
     }
 };
 
+///Helper to fill dynarray from V8 array
+template<class T>
+inline void v8_write_dynarray( v8::Handle<v8::Value> src, dynarray<T>& a, fmtstream_v8* fmt, metastream* meta )
+{
+    if(!src->IsArray())
+        return;
+
+    v8::Local<v8::Object> obj = src->ToObject();
+    uint n = obj->Get(v8::String::NewSymbol("length"))->Uint32Value();
+    a.alloc(n);
+
+    v8_streamer<T> estreamer(fmt, meta);
+    for(uint i=0; i<n; ++i) {
+        a[i] = estreamer >> obj->Get(i);
+    }
+}
+
+///Generic dynarray<T> partial specialization
+template<class T> class v8_streamer<dynarray<T>> {
+public:
+    v8_streamer<dynarray<T>>(fmtstream_v8* fmt=0, metastream* meta=0)
+        : _fmt(fmt), _meta(meta)
+    {}
+
+    v8::Handle<v8::Value> operator << (const dynarray<T>& v) {
+        uint n = v.size();
+        v8::Local<v8::Array> a = v8::Array::New(n);
+        
+        v8_streamer<T> estreamer(_fmt, _meta);
+        for(uint i=0; i<n; ++i) {
+            a->Set(i, estreamer << v[i]);
+        }
+
+        return a;
+    }
+    
+    dynarray<T> operator >> ( v8::Handle<v8::Value> src ) {
+        dynarray<T> a;
+        v8_write_dynarray(src, a, _fmt, _meta);
+        return a;
+    }
+
+private:
+    fmtstream_v8* _fmt;
+    metastream* _meta;
+};
+
+
+///Helper to map typed array from C++ to V8
+template<class T>
+inline v8::Handle<v8::Value> v8_map_typed_array( const T* ptr, uints count, v8::ExternalArrayType type )
+{
+    v8::Handle<v8::Object> a = v8::Object::New();
+    a->SetIndexedPropertiesToExternalArrayData((void*)ptr, type, count);
+
+    return a;
+}
+
+///Macro for direct array mapping to V8
+#define V8_STREAMER_MAPARRAY(T, V8EXT) \
+template<> class v8_streamer<dynarray<T>> {\
+public:\
+    v8_streamer<dynarray<T>>(fmtstream_v8* fmt=0, metastream* meta=0) \
+        : _fmt(fmt), _meta(meta) \
+    {} \
+ \
+    v8::Handle<v8::Value> operator << (const dynarray<T>& v) { \
+        return v8_map_typed_array(v.ptr(), v.reserved_total(), V8EXT); \
+    } \
+ \
+    dynarray<T> operator >> ( v8::Handle<v8::Value> src ) { \
+        dynarray<T> a; \
+        v8_write_dynarray(src, a, _fmt, _meta); \
+        return a; \
+    } \
+ \
+private: \
+    fmtstream_v8* _fmt; \
+    metastream* _meta; \
+};
+
+V8_STREAMER_MAPARRAY(int8, v8::kExternalByteArray)
+V8_STREAMER_MAPARRAY(uint8, v8::kExternalUnsignedByteArray)
+V8_STREAMER_MAPARRAY(int16, v8::kExternalShortArray)
+V8_STREAMER_MAPARRAY(uint16, v8::kExternalUnsignedShortArray)
+V8_STREAMER_MAPARRAY(int32, v8::kExternalIntArray)
+V8_STREAMER_MAPARRAY(uint32, v8::kExternalUnsignedIntArray)
+V8_STREAMER_MAPARRAY(float, v8::kExternalFloatArray)
+V8_STREAMER_MAPARRAY(double, v8::kExternalDoubleArray)
+
+#ifdef SYSTYPE_WIN
+# ifdef SYSTYPE_32
+V8_STREAMER_MAPARRAY(ints, v8::kExternalIntArray)
+V8_STREAMER_MAPARRAY(uints, v8::kExternalUnsignedIntArray)
+# else //SYSTYPE_64
+V8_STREAMER_MAPARRAY(int, v8::kExternalIntArray)
+V8_STREAMER_MAPARRAY(uint, v8::kExternalUnsignedIntArray)
+# endif
+#elif defined(SYSTYPE_32)
+V8_STREAMER_MAPARRAY(long, v8::kExternalIntArray)
+V8_STREAMER_MAPARRAY(ulong, v8::kExternalUnsignedIntArray)
+#endif
+
+
+
 ///V8 values
 template<typename V> class v8_streamer<v8::Handle<V>> { public: \
     typedef v8::Handle<V> T; \
