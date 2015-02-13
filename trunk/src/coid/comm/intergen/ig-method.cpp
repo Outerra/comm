@@ -223,6 +223,10 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
     bptr = isPR == 1;
     bref = isPR == 2;
 
+    if(boutarg && ((!bptr && !bref) || type.begins_with("const "))) {
+        lex.set_err() << "out argument must be a ref or ptr and cannot be const\n";
+    }
+
     basetype = type;
     if(isPR)
         basetype.shift_end(-1);
@@ -255,7 +259,7 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
     }
 
     if(!argname)
-        return true;
+        return lex.no_err();
 
 
     lex.match(lex.IDENT, name, "expecting argument name");
@@ -293,7 +297,7 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
         bnojs = name.first_char() == '_';
     }
 
-    return true;
+    return lex.no_err();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
