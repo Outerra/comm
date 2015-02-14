@@ -212,6 +212,7 @@ inline v8::Handle<v8::Value> v8_map_typed_array( const T* ptr, uints count, v8::
 {
     v8::Handle<v8::Object> a = v8::Object::New();
     a->SetIndexedPropertiesToExternalArrayData((void*)ptr, type, count);
+    a->Set(v8::String::NewSymbol("length", 6), v8::Uint32::NewFromUnsigned(count));
 
     return a;
 }
@@ -225,7 +226,7 @@ public:\
     {} \
  \
     v8::Handle<v8::Value> operator << (const dynarray<T>& v) { \
-        return v8_map_typed_array(v.ptr(), v.reserved_total(), V8EXT); \
+        return v8_map_typed_array(v.ptr(), v.size(), V8EXT); \
     } \
  \
     dynarray<T> operator >> ( v8::Handle<v8::Value> src ) { \
