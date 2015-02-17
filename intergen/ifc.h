@@ -83,6 +83,10 @@
 #define ifc_inout
 #define ifc_out
 
+///Parameter hint that the storage for the type (usually array) may be external and valid only for the duration
+/// of the call or limited
+#define ifc_volatile
+
 ////////////////////////////////////////////////////////////////////////////////
 
 ///Base class for intergen interfaces

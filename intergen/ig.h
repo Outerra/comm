@@ -176,6 +176,7 @@ struct MethodIG
         bool benum;
         bool binarg;                    //< input type argument
         bool boutarg;                   //< output type argument
+        bool bvolatile;
         bool tokenpar;                  //< input argument that accepts token (token or charstr)
         bool bnojs;                     //< not used in JS, use default val
 
@@ -207,6 +208,7 @@ struct MethodIG
                 m.member("iref",p.biref);
                 m.member("inarg",p.binarg);
                 m.member("outarg",p.boutarg);
+                m.member("volatile",p.bvolatile);
                 m.member("token",p.tokenpar);
                 m.member("nojs",p.bnojs);
             });
