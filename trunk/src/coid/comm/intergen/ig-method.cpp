@@ -179,6 +179,8 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
     binarg = (io&1) != 0;
     boutarg = (io&2) != 0;
 
+    bvolatile = lex.matches("ifc_volatile");
+
     bconst = lex.matches("const");
     benum = lex.matches("enum");
 
