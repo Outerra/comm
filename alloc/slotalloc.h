@@ -201,6 +201,15 @@ public:
             : UMAXS;
     }
 
+    //@return true if item is valid
+    //@note this assumes that the managed items do not contain a pointer to other slotalloc items at offset 0, as it's used to discern between the free and allocated items
+    bool is_valid_item( uints id ) const
+    {
+        uints p = (uints)get_item(id);
+        return p != (uints)this
+            && (p < (uints)_array.ptr() || p >= (uints)_array.ptre());
+    }
+
     ///Invoke a functor on each used item.
     //@note this assumes that the managed items do not contain a pointer to other slotalloc items at offset 0, as it's used to discern between the free and allocated items
     template<typename Func>
