@@ -198,7 +198,7 @@ $return.type$ $....class$::$intname$($[args rest="," after=" "]$ $type$ $name$$s
 	if(!$..varname$) $(if default_event_body?)$$default_event_body$$(elif)$
         throw coid::exception("handler not implemented");$(/if)$
     else
-        return static_cast<$..ns rest="::" after="::"$$..name$&>(*$..varname$).$name$($[args rest=", "]$$name$$[/args]$);
+        return $..varname$->iface<$..ns rest="::" after="::"$$..name$>()->$name$($[args rest=", "]$$name$$[/args]$);
 }
 $[/event]-$
 

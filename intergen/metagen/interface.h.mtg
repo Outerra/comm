@@ -11,7 +11,12 @@ $-(if base?)$#include "$baseclass$.h"$(/if)$
 
 $-[pasters]-$
 $@value$
-$-[/pasters]-$
+$-[/pasters]$
+
+$-[classnsx after="    "]$namespace $@value$ {
+$[/classnsx]-$
+class $class$;
+$[classnsx]$}$[/classnsx]$
 
 $-[ns]$
 namespace $@value$ {
@@ -34,8 +39,13 @@ $(if !comments.empty?)$$[comments]-$
 $[/comments]$$(/if)-$
     $(if ..virtual?)$virtual $(/if)$$return.type$ $name$($[args rest="," after=" "]$ $(if outarg?)$$(if inarg?)$ifc_inout$(elif)$ifc_out$(/if)$ $(/if)-$ $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$) $-(if const?)$ const$(/if)$ $-(if ..virtual?)$ = 0$(/if)$;
 $[/method]-$
+$-(if !event.empty?)$
 
-    // --- interface events ---
+protected:
+    // --- interface events (callbacks from host to client) ---
+    // ---       overload these to handle host events       ---
+    
+    friend class ::$classnsx rest="::" after="::"$$class$;
 
 $-[event !static?]$
 $(if !comments.empty?)$$[comments]-$
@@ -45,14 +55,10 @@ $[/comments]$$(/if)-$
     $-(if return.type?="void")$ {}$(elif default_event_body?)$$default_event_body$$(elif)${ throw coid::exception("handler not implemented"); }$(/if)$
 $-[/event]$
 
-$-[event !static?]$
-    virtual bool is_implemented_$name$() { return true; }
-$-[/event]$
-$-(if event.empty!)$
-
     virtual void force_bind_script_events() {}
-$-(/if)$
 
+public:
+$-(/if)$
     // --- creators ---
 
 $-[method static?]$
@@ -103,6 +109,13 @@ $-(/if)$
         _js_create_wrapper = coid::interface_register::get_interface_creator(_js_wrapper_key);
         return _js_create_wrapper;
     }
+    
+private:
+    // --- host helpers to check presence of handlers in scripts ---
+
+$-[event !static?]$
+    virtual bool is_bound_$name$() { return true; }
+$-[/event]$
     
 protected:
 $-(if varname?)$

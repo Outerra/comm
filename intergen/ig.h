@@ -329,6 +329,7 @@ struct Interface
     dynarray<charstr> pasters;
     charstr* srcfile;
     charstr* srcclass;
+    dynarray<charstr>* srcnamespc;
 
     uint hash;
 
@@ -378,8 +379,9 @@ struct Interface
             m.member("comments",p.comments);
             m.member("docs",p.docs);
             m.member("pasters",p.pasters);
-            m.member_type<charstr>("srcfile", [](const charstr&){}, [&](){ return *p.srcfile;} );
-            m.member_type<charstr>("class", [](const charstr&){}, [&](){ return *p.srcclass;} );
+            m.member("srcfile",p.srcfile);
+            m.member("class",p.srcclass);
+            m.member("classnsx",p.srcnamespc);
             m.member("base",p.base);
             m.member("baseclass",p.baseclass);
             m.member("basepath",p.basepath);

@@ -113,6 +113,14 @@ public:
     template<typename T>
     T* host() const { return static_cast<T*>(_host.get()); }
 
+    //@return interface class pointer
+    template<typename T>
+    const T* iface() const { return static_cast<const T*>(this); }
+
+    //@return interface class pointer
+    template<typename T>
+    T* iface() { return static_cast<T*>(this); }
+
     ifn_t* vtable() const { return _vtable; }
 
     //@return hash of interface definition, serving for version checks

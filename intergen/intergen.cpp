@@ -205,6 +205,7 @@ void generate_ig( File& file, charstr& tdir, charstr& fdir  )
 
             ifc.srcfile = &file.fnameext;
             ifc.srcclass = &cls.classname;
+            ifc.srcnamespc = &cls.namespaces;
 
             uints nm = ifc.method.size();
             for(uints m=0; m<nm; ++m) {
