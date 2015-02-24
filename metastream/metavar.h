@@ -81,7 +81,7 @@ struct MetaDesc
         type get_type() const           { return desc->btype; }
 
 
-        Var* element() const            { DASSERT( is_array() );  return desc->first_child(); }
+        Var* element() const            { DASSERT( is_array() );  return desc->first_child(true); }
 
         charstr& dump( charstr& dst ) const
         {
@@ -139,18 +139,18 @@ struct MetaDesc
     type array_type() const             { return children[0].desc->btype; }
 
     ///Get first member
-    Var* first_child() const
+    Var* first_child( bool read ) const
     {
         Var* c = (Var*)children.ptr();
         Var* l = children.last();
-        while(c<=l && c->obsolete)
+        if(!read) while(c<=l && c->obsolete)
             ++c;
 
         return c>l ? 0 : c;
     }
 
     ///Get next member from given one
-    Var* next_child( Var* c ) const
+    Var* next_child( Var* c, bool read ) const
     {
         if(!c)  return 0;
         
@@ -160,7 +160,7 @@ struct MetaDesc
         if( !c || c >= l )  return 0;
 
         ++c;
-        while(c<=l && c->obsolete)
+        if(!read) while(c<=l && c->obsolete)
             ++c;
 
         return c>l ? 0 : c;
