@@ -190,7 +190,7 @@ public:
     metastream& member( const token& name, T& v )
     {
         if(streaming())
-            *this || (typename resolve_enum<T>::type&)v;
+            *this || *(typename resolve_enum<T>::type*)&v;
         else
             meta_variable<T>(name, &v);
         return *this;
@@ -204,13 +204,27 @@ public:
     metastream& member( const token& name, T& v, const D& defval )
     {
         if(streaming())
-            *this || (typename resolve_enum<T>::type&)v;
+            *this || *(typename resolve_enum<T>::type*)&v;
         else {
             meta_variable<T>(name, &v);
             meta_cache_default(T(defval));
         }
         return *this;
     }
+
+    ///Define a member variable pointer
+    //@param name variable name, used as a key in output formats
+    //@param v pointer to variable to read/write to
+    template<typename T>
+    metastream& member( const token& name, T*& v )
+    {
+        if(streaming())
+            *this || *(typename resolve_enum<T>::type*)v;
+        else
+            meta_variable<T>(name, (T*)0);
+        return *this;
+    }
+
 
     ///Define a member variable, with default value constructed by streaming the value object from nullstream
     //@note obviously, T's metastream declaration must be made only of members with default values
@@ -339,8 +353,19 @@ public:
     {
         if(!streaming())
             meta_variable_obsolete<T>(name, 0);
+        else if(stream_reading()) {
+            if(cache_prepared()) {
+                _current->offs += sizeof(uints);
+                moveto_expected_target(true);
+            }
+            else {
+                T temp;
+                read_optional(temp);
+            }
+        }
         else if(cache_prepared())
             _current->offs += sizeof(uints);
+
         return *this;
     }
 
@@ -1254,6 +1279,7 @@ public:
         meta_variable<T>(varname, v);
 
         _last_var->obsolete = true;
+        _last_var->optional = true;
     }
 
     ///Define member array variable
@@ -1704,9 +1730,9 @@ private:
     MetaDesc::Var* last_var() const     { return _stack.last()->var; }
     void pop_var()                      { EASSERT( _stack.pop(_curvar) ); }
 
-    void push_var() {
+    void push_var( bool read ) {
         _stack.push(_curvar);
-        _curvar.var = _curvar.var->desc->first_child();
+        _curvar.var = _curvar.var->desc->first_child(read);
         _curvar.kth = 0;
     }
 
@@ -1831,7 +1857,7 @@ protected:
         }
 
         if(read) _rvarname.reset();
-        push_var();
+        push_var(read);
 
         return 0;
     }
@@ -1906,7 +1932,7 @@ protected:
             return 0;
         }
 
-        MetaDesc::Var* next = par->desc->next_child(_curvar.var);
+        MetaDesc::Var* next = par->desc->next_child(_curvar.var, read);
 
         //find what should come next
         if( _curvar.var == _cachevar ) {
@@ -2080,7 +2106,7 @@ protected:
                         _current->set_addr( prevoff, off );
                     prevoff = _current->insert_address();
 
-                    push_var();
+                    push_var(false);
 
                     fnstream(this, const_cast<void*>(p));
 
@@ -2150,7 +2176,7 @@ protected:
             if( needpeek && (e = data_write_array_separator(tae,0)) )
                 return e;
 
-            push_var();
+            push_var(false);
 
             if(complextype)
                 fnstream(this, const_cast<void*>(p));
@@ -2214,7 +2240,7 @@ protected:
                     else
                         off = _current->extract_offset();
 
-                    push_var();
+                    push_var(true);
 
                     fnstream(this, p);
 
@@ -2288,7 +2314,7 @@ protected:
             if(!p)
                 return ersNOT_ENOUGH_MEM;
 
-            push_var();
+            push_var(true);
 
             if(complextype)
                 fnstream(this, p);
@@ -2511,7 +2537,7 @@ protected:
         }
         //already reading from the cache or the required key has been found in the cache
         else if( cache_prepared() || cache_lookup() )
-            return 0;
+            return !_curvar.var->optional || _current->valid_addr() ? 0 : ersNO_MORE;
 
         opcd e;
         bool outoforder;
@@ -2587,7 +2613,7 @@ protected:
             //compute base offset
             base = _current->offs == UMAXS
                 ? _current->base
-                : _current->offs - par->desc->get_child_pos(_curvar.var) * sizeof(uints);
+                : _current->offs - par->desc->get_child_pos(_curvar.var) * sizeof(uints);   //restore from cur var
 
             if(_cacheroot == 0) //cache opened in advance
                 _cacheroot = par;
