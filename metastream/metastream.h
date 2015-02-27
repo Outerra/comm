@@ -212,6 +212,26 @@ public:
         return *this;
     }
 
+    ///Define a member variable with default value to use if missing in stream
+    //@param name variable name, used as a key in output formats
+    //@param v variable to read/write to
+    //@param defval value to use if the variable is missing from the stream, convertible to T
+    //@param write_default if false, does not write value that equals the defval into output stream
+    template<typename T, typename D>
+    metastream& member( const token& name, T& v, const D& defval, bool write_default )
+    {
+        if(_binw) {
+            write_optional(!write_default && v == defval ? 0 : &v);
+        }
+        else if(_binr) {
+            if(!read_optional(v))
+                v = defval;
+        }
+        else
+            meta_variable_optional<T>(name);
+        return *this;
+    }
+
     ///Define a member variable pointer
     //@param name variable name, used as a key in output formats
     //@param v pointer to variable to read/write to
@@ -316,16 +336,21 @@ public:
     //@param values array of possible values
     //@param names array of names corresponding to the values array, terminated by nullptr
     //@param defval value to use if no input string matches
+    //@param write_default if false, does not write value that equals the defval into output stream
     //@note if written value is not present in the list, nothing is written out
     //@note if read string doesn't match any string from the set, defval is set
     template<typename T>
-    metastream& member_enum( const token& name, T& v, const T values[], const char* names[], const T& defval )
+    metastream& member_enum( const token& name, T& v, const T values[], const char* names[], const T& defval, bool write_default=true )
     {
         if(_binw) {
-            int i=0;
-            while(names[i] != 0 && !(values[i] == v))
-                ++i;
-            write_optional(&names[i]);
+            if(!write_default && v == defval)
+                write_optional((const char**)0);
+            else {
+                int i=0;
+                while(names[i] != 0 && !(values[i] == v))
+                    ++i;
+                write_optional(names[i] ? &names[i] : 0);
+            }
         }
         else if(_binr) {
             if(read_optional(_convbuf)) {
