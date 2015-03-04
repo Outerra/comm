@@ -205,7 +205,8 @@ public:
     //@note this assumes that the managed items do not contain a pointer to other slotalloc items at offset 0, as it's used to discern between the free and allocated items
     bool is_valid_item( uints id ) const
     {
-        uints p = (uints)get_item(id);
+        const T* pit = get_item(id);
+        uints p = *(uints*)pit;
         return p != (uints)this
             && (p < (uints)_array.ptr() || p >= (uints)_array.ptre());
     }
