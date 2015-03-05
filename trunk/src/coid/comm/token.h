@@ -2404,6 +2404,11 @@ public:
     zstring& operator = (const charstr& str);
     zstring& operator = (const zstring& s);
 
+    typedef const char* zstring::*unspecified_bool_type;
+
+    ///Automatic cast to bool for checking emptiness
+	operator unspecified_bool_type () const;
+
     ///Get zero terminated string
     const char* c_str() const;
 
