@@ -109,6 +109,7 @@ $-(/if)$
         _js_create_wrapper = coid::interface_register::get_interface_creator(_js_wrapper_key);
         return _js_create_wrapper;
     }
+$-(if event.empty!)$
     
 private:
     // --- host helpers to check presence of handlers in scripts ---
@@ -116,6 +117,7 @@ private:
 $-[event !static?]$
     virtual bool is_bound_$name$() { return true; }
 $-[/event]$
+$-(/if)$
     
 protected:
 $-(if varname?)$

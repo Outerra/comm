@@ -55,7 +55,7 @@ iglexer::iglexer()
 ////////////////////////////////////////////////////////////////////////////////
 int iglexer::find_method( const token& classname, dynarray<charstr>& commlist )
 {
-    DASSERT( ignored(CURLY) ); //not to catch nested {}
+    //DASSERT( ignored(CURLY) ); //not to catch nested {}
 
     const lextoken& tok = last();
     uint nv=0;
@@ -87,6 +87,10 @@ int iglexer::find_method( const token& classname, dynarray<charstr>& commlist )
         else if(matches(IGKWD)) {
             commlist.resize(nv);
             return -1-tok.termid;
+        }
+        else if(matches('{')) {
+            complete_block();
+            continue;
         }
         else
             nv=0;
