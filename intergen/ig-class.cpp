@@ -88,7 +88,7 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
         }
 
         //ignore nested blocks
-        lex.ignore(lex.CURLY, true);
+        //lex.ignore(lex.CURLY, true);
 
         dynarray<charstr> commlist;
 

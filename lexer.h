@@ -782,26 +782,28 @@ public:
 
     ///Enable or disable specified sequence, string or block. Disabled construct is not detected in input.
     //@note for s/s/b with same name, this applies only to the specific one
-    void enable( int seqid, bool en )
+    //@return previous state
+    bool enable( int seqid, bool en )
     {
         __assert_valid_sequence(seqid, 0);
 
         uint sid = -1 - seqid;
         const sequence* seq = _stbary[sid];
 
-        (*_stack.last())->enable(seq->id, en);
+        return (*_stack.last())->enable(seq->id, en);
     }
 
     ///Make sequence, string or block ignored or not. Ignored constructs are detected but skipped and not returned.
     //@note for s/s/b with same name, this applies only to the specific one
-    void ignore( int seqid, bool ig )
+    //@return previous state
+    bool ignore( int seqid, bool ig )
     {
         __assert_valid_sequence(seqid, 0);
 
         uint sid = -1 - seqid;
         const sequence* seq = _stbary[sid];
 
-        (*_stack.last())->ignore(seq->id, ig);
+        return (*_stack.last())->ignore(seq->id, ig);
     }
 
     ///Enable/disable all entities with the same (common) name.
@@ -2396,24 +2398,34 @@ protected:
 
         ///Make the specified S/S/B enabled or disabled within this block.
         ///If this very same block is enabled it means that it can nest in itself.
-        void enable( int id, bool en )
+        //@return previous state
+        bool enable( int id, bool en )
         {
             DASSERT( id < 64 );
+            uint64 mask = 1ULL << id;
+            bool was = (stbignored & mask) != 0;
+
             if(en)
-                stbenabled |= 1ULL << id;
+                stbenabled |= mask;
             else
-                stbenabled &= ~(1ULL << id);
+                stbenabled &= ~mask;
+            return was;
         }
 
         ///Make the specified S/S/B ignored or not ignored within this block.
         ///Ignored sequences are still analyzed for correctness, but are not returned.
-        void ignore( int id, bool ig )
+        //@return previous state
+        bool ignore( int id, bool ig )
         {
             DASSERT( id < 64 );
+            uint64 mask = 1ULL << id;
+            bool was = (stbignored & mask) != 0;
+
             if(ig)
-                stbignored |= 1ULL << id;
+                stbignored |= mask;
             else
-                stbignored &= ~(1ULL << id);
+                stbignored &= ~mask;
+            return was;
         }
 
         bool enabled( const sequence& seq ) const { return (stbenabled & (1ULL<<seq.id)) != 0; }
