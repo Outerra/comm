@@ -94,6 +94,87 @@ struct script_handle
     v8::Handle<v8::Context> context() const {
         return _context;
     }
+
+    ///Load and run script
+    v8::Handle<v8::Script> load_script()
+    {
+        v8::HandleScope scope;
+        v8::Handle<v8::Context> context = has_context()
+            ? _context
+            : v8::Context::New();
+    
+        v8::Context::Scope context_scope(context);
+
+        coid::token script_tok, script_path;
+        coid::charstr script_tmp;
+        if(is_path()) {
+            script_path = _str;
+            coid::bifstream bif(script_path);
+            if(!bif.is_open())
+                throw coid::exception() << script_path << " not found";
+                
+            script_tmp = _prefix;
+
+            coid::binstreambuf buf;
+            buf.swap(script_tmp);
+            buf.transfer_from(bif);
+            buf.swap(script_tmp);
+            
+            script_tok = script_tmp;
+        }
+        else if(_prefix) {
+            script_tmp << _prefix << _str;
+            script_tok = script_tmp;
+            script_path = "";
+        }
+        else {
+            script_tok = _str;
+            script_path = "";
+        }
+
+        //v8::Handle<v8::Script> compiled_script = load_script(script_tok, script_path);
+        v8::Local<v8::String> scriptv8 = v8::String::New(script_tok.ptr(), script_tok.len());
+
+        // set up an error handler to catch any exceptions the script might throw.
+        v8::TryCatch __trycatch;
+
+        v8::Handle<v8::Script> compiled_script =
+            v8::Script::Compile(scriptv8, v8::String::New(script_path.ptr(), script_path.len()));
+        if(__trycatch.HasCaught())
+            throw_js_error(__trycatch);
+
+        compiled_script->Run();
+        if(__trycatch.HasCaught())
+            throw_js_error(__trycatch);
+
+        return scope.Close(compiled_script);
+    }
+
+public:
+
+    static void throw_js_error( v8::TryCatch& tc, const coid::zstring& str = 0 )
+    {
+        v8::HandleScope handle_scope;
+        v8::String::Utf8Value exc(tc.Exception());
+
+        v8::Handle<v8::Message> message = tc.Message();
+        coid::exception cexc;
+        if(message.IsEmpty()) {
+            cexc << *exc;
+        }
+        else {
+            v8::String::Utf8Value filename(message->GetScriptResourceName());
+            const char* filename_string = *filename;
+            int linenum = message->GetLineNumber();
+
+            cexc << filename_string << '(' << linenum << "): " << *exc;
+        }
+
+        if(str)
+            cexc << " (" << str.get_token() << ')';
+        throw cexc;
+    }
+
     
 private:
 
