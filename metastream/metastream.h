@@ -307,6 +307,28 @@ public:
         return *this;
     }
 
+    ///Define a variable of given type, with explicit set/get functors and a default value, with optional writing of default value
+    //@param name variable name, used as a key in output formats
+    //@param defval value to use if the variable is missing from the stream, convertible to T
+    //@param set void function(const T&) receiving object from stream
+    //@param get const T& function() returning object to stream
+    //@param write_default if false, does not write value that equals the defval into output stream
+    template<typename T, typename D, typename FnIn, typename FnOut>
+    metastream& member_type( const token& name, const D& defval, FnIn set, FnOut get, bool write_default )
+    {
+        if(_binw) {
+            T tmp(get());
+            write_optional(!write_default && tmp == defval ? 0 : &v);
+        }
+        else if(_binr) {
+            T val;
+            set(read_optional(val) ? val : defval);
+        }
+        else
+            meta_variable_optional<T>(name);
+        return *this;
+    }
+
     ///Define an optional variable, with explicit set/get functors
     //@param name variable name, used as a key in output formats
     //@param set void function(const T*) receiving streamed object, or nullptr if the object wasn't present in the stream
