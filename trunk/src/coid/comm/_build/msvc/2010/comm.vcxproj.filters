@@ -401,5 +401,8 @@
       <Filter>net</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\timer.h" />
+    <ClInclude Include="..\..\..\alloc\alloc2d.h">
+      <Filter>alloc</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

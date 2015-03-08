@@ -302,6 +302,7 @@
     <ClCompile Include="..\..\..\txtconv.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\alloc\alloc2d.h" />
     <ClInclude Include="..\..\..\alloc\slotalloc.h" />
     <ClInclude Include="..\..\..\atomic\atomic.h" />
     <ClInclude Include="..\..\..\atomic\queue.h" />
