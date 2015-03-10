@@ -3,7 +3,7 @@
 #define __OUTERRA_ENG3_VT_ALLOC_H__
 
 #include <comm/commtypes.h>
-#include <comm/atomic/basic_pool.h>
+#include <comm/alloc/slotalloc_bmp.h>
 
 #include <ot/glm/glm_ext.h>
 
@@ -11,7 +11,7 @@ COID_NAMESPACE_BEGIN
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-template<typename T>
+template<typename T, typename D>
 class alloc_2d
 {
 public:
@@ -22,21 +22,28 @@ public:
 private:
 
     class node_pool
-	    : public atomic::basic_pool<node>
     {
+    private:
+        slotalloc_bmp<node> _nodes;
+
     public:
-	    node* new_node(const type_t &pos, const type_t &size, node * const parent)
+	    uint new_node(const type_t &pos, const type_t &size, const uint parent)
         {
-	        node * const n = pop();
-	        return n
-                ? new (n) node(pos, size, parent)
-                : new node(pos, size, parent);
+            node * const n = new (_nodes.add_uninit()) node(pos, size, parent);
+            const uint id = _nodes.get_item_id(n);
+            return id;
         }
 	
-        void delete_node(node * const n)
+        void delete_node(const uint id)
         {
-    	    push(n);
+            _nodes.del(id);
         }
+
+        node* ptr(const uint id) { return _nodes.get_item(id); }
+
+        uint id(const node* const ptr) const { return _nodes.get_item_id(ptr); }
+
+        uint next(const uint id) const { return _nodes.next(id); }
     };
 
 public:
@@ -44,151 +51,168 @@ public:
     class node 
     {
         friend alloc_2d;
-        friend atomic::basic_pool<node>;
 
     private:
-        union {
-    	    node *_next_basic_pool;
-            struct {
-	            type_t _pos;
-	            type_t _size;
-	            node *_child[2];
-	            node *_parent;
-            };
-        };
+	    type_t _pos;
+	    type_t _size;
+	    uint2 _child;
+	    uint _parent;
+        uint _flags;
     
     public:
-	    void* _id;
+        D _data;
 
         const type_t& get_pos() const { return _pos; }
         const type_t& get_size() const { return _size; }
+        bool is_leaf() const { return _child[0] == -1; }
+        bool has_data() const { return _flags != 0; }
 
     protected:
-	    node(const type_t &pos, const type_t &size, node * const parent)
+
+	    node(const type_t &pos, const type_t &size, const uint parent)
 		    : _pos(pos)
 		    , _size(size)
-		    , _id(0)
+            , _child(-1)
 		    , _parent(parent)
-        {
-		    _child[0] = _child[1] = 0;
-	    }
+            , _flags(0)
+            , _data()
+        {}
 
-	    bool is_leaf() const { return _child[0] == 0; }
-
-	    node* insert(const type_t &size, node_pool &pool)
+	    static uint insert(const uint id, const type_t &size, node_pool &pool)
         {
-		    if(!is_leaf()) {
-			    node * const n = _child[0]->insert(size, pool);
-			    return n ? n : _child[1]->insert(size, pool);
+            node * const n = pool.ptr(id);
+            uint2 _child = n->_child;
+            const T _size = n->_size;
+            const uint _flags = n->_flags;
+
+            if (!pool.ptr(id)->is_leaf()) {
+                uint n = insert(_child[0], size, pool);
+                if (n == -1)
+                    n = insert(_child[1], size, pool);
+                return n;
 		    }
 		    else {
-			    if(_id != 0 || size.x > _size.x || size.y > _size.y)
-                    return 0;
+                if (_flags != 0 || size.x > _size.x || size.y > _size.y)
+                    return -1;
 
-			    if(size.x == _size.x && size.y == _size.y)
-				    return this;
+                if (size.x == _size.x && size.y == _size.y) {
+                    pool.ptr(id)->_flags = 1;
+                    return id;
+                }
 		
-			    split(size, pool);
+			    _child = split(id, size, pool);
 
-			    return _child[0]->insert(size, pool);
+                return insert(_child[0], size, pool);
 		    }
 	    }
 
-	    void divide(const type_t &size, node_pool &pool, int &n)
+	    static void divide(const uint id, const type_t &size, node_pool &pool, int &depth)
         {
-		    if(!is_leaf()) {
-			    _child[0]->divide(size, pool, n);
-			    _child[1]->divide(size, pool, n);
+            node * n = pool.ptr(id);
+            const T _size = n->_size;
+            uint2 _child = n->_child;
+
+            if (!n->is_leaf()) {
+                divide(_child[0], size, pool, depth);
+                divide(_child[1], size, pool, depth);
 		    }
 		    else {
-			    if(_id != 0 || size.x > _size.x || size.y > _size.y) return;
+                if (n->_flags != 0 || size.x > _size.x || size.y > _size.y)
+                    return;
 
-			    if(size.x == _size.x && size.y == _size.y) { ++n; return; }
+                if (size.x == _size.x && size.y == _size.y) {
+			        ++depth;
+                    return;
+			    }
 
-			    split(size, pool);
+			    _child = split(id, size, pool);
 
-			    _child[0]->divide(size, pool, n);
-			    _child[1]->divide(size, pool, n);
+                divide(_child[0], size, pool, depth);
+                divide(_child[1], size, pool, depth);
 		    }
 	    }
 
-	    void split(const T &size, node_pool &pool)
+	    static uint2 split(const uint id, const T &size, node_pool &pool)
         {
-		    const type_t d = _size - size;
+            node * n = pool.ptr(id);
+            const T _pos = n->_pos;
+            const T _size = n->_size;
+            const type_t d = _size - size;
 
-		    if(d.x > d.y) {
-			    _child[0] = pool.new_node(
-				    _pos,
-				    type_t(size.x, _size.y),
-				    this);
-			    _child[1] = pool.new_node(
-				    type_t(_pos.x + size.x, _pos.y),
-				    type_t(_size.x - size.x, _size.y),
-				    this);
+            uint2 child;
+            if (d.x > d.y) {
+			    child[0] = pool.new_node(_pos, type_t(size.x, _size.y), id);
+			    child[1] = pool.new_node( type_t(_pos.x + size.x, _pos.y), type_t(_size.x - size.x, _size.y), id);
 		    }
 		    else {
-			    _child[0] = pool.new_node(
-				    _pos,
-				    type_t(_size.x, size.y),
-				    this);
-			    _child[1] = pool.new_node(
-				    type_t(_pos.x, _pos.y + size.y),
-				    type_t(_size.x, _size.y - size.y),
-				    this);
+			    child[0] = pool.new_node(_pos, type_t(_size.x, size.y), id);
+			    child[1] = pool.new_node(type_t(_pos.x, _pos.y + size.y), type_t(_size.x, _size.y - size.y), id);
 		    }
+
+            n = pool.ptr(id);
+
+            return n->_child = child;
 	    }
 
-	    bool merge_up(node_pool &pool)
+	    /*bool merge_up(node_pool &pool)
         {
-		    if(_child[0] != 0) {
-			    if(_child[0]->merge_up(pool) && _child[1]->merge_up(pool)) {
+		    if(_child[0] != -1) {
+			    if(node_ptr(_child[0], pool)->merge_up(pool) && _child[1]->merge_up(pool)) {
 				    pool.delete_node(_child[0]);
 				    pool.delete_node(_child[1]);
-				    _child[0] = _child[1] = 0;
+				    _child[0] = _child[1] = -1;
 			    }
 			    else {
 				    return false;
 			    }
 		    }
 		
-		    return _id == 0 && _child[0] == 0 && _child[1] == 0;
-	    }
+		    return _child[0] == 0 && _child[1] == 0;
+	    }*/
     };
 
 private:
 
     node_pool _node_pool;
-	node * const _root;
+	uint const _root;
 	const int _initial_split_size;
 
 public:
 
 	alloc_2d(const int size, const int initial_split_size)
 		: _node_pool()
-		, _root(_node_pool.new_node(type_t(0), type_t(size), 0))
+		, _root(_node_pool.new_node(type_t(0), type_t(size), -1))
 		, _initial_split_size(initial_split_size)
 	{
 		if(initial_split_size > 0) {
-            int n = 0;
-		    _root->divide(type_t(initial_split_size), _node_pool, n);
+            int depth = 0;
+            node::divide(_root, type_t(initial_split_size), _node_pool, depth);
         }
 	}
 
 	~alloc_2d() {}
 
 	/// return position in virtual 2D space
-	node* alloc_space(const T &size)
+	uint alloc_space(const T &size)
     { 
-		return _root->insert(size, _node_pool); 
+        const uint id = node::insert(_root, size, _node_pool);
+        return id;
 	}
 
 	///
-	void free_space(node * n)
+	void free_space(uint n)
     {
-		n->_id = 0;
-		while(n->_size.x <= _initial_split_size && n->merge_up(_node_pool))
+		while(n->_size.x <= _initial_split_size && _node_pool.ptr(n)->merge_up(_node_pool))
             n = n->_parent;
 	}
+
+    ///
+    D* get_ptr(const uint id) { return &_node_pool.ptr(id)->_data; }
+
+    ///
+    uint get_next(const uint id) const { return _node_pool.next(id); }
+
+    const node* get_node_ptr(uint id) { return _node_pool.ptr(id); }
 };
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
