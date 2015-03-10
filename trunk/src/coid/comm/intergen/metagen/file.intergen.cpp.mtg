@@ -39,7 +39,11 @@ private:
 
         _vtable1 = new ifn_t[$nifcmethods$];
 $-[method !static?]$
+ $-(if hasifc?)$
+        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$$type$$[/args]$)$(if const?)$const$(/if)$>(&$name$__ifc_wrapper));
+ $-(elif)$
         _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$$type$$[/args]$)$(if const?)$const$(/if)$>(&$....ns$::$....class$::$intname$));
+ $-(/if)$
 $-[/method]-$
 
         return _vtable1;
@@ -55,6 +59,21 @@ $-[method capture?]$
         return VT_CALL2($return.type$,($[args rest=","]$$type$$[/args]$),$index$)($[args rest=","]$$name$$[/args]$);
     }
 $-[/method]$
+
+$-[method hasifc?]$
+    $return.type$ $name$__ifc_wrapper($[args rest=", "]$$type$ $name$$[/args]$)$(if const?)$const$(/if)$
+    {
+        iref<$return.ifc$> __ret__ = $name$($[args rest=","]$$name$$[/args]$);
+        if(!__ret__)
+            return 0;
+
+        typedef iref<$return.ifc$> (*fn_wrap)(policy_intrusive_base*, intergen_interface*);
+        static fn_wrap wrapper = reinterpret_cast<fn_wrap>(
+            coid::interface_register::get_interface_creator("$ns rest="::" after="::"$$name$@wrapper"));
+
+        return wrapper ? wrapper(__ret__.get(), new $..name$_dispatcher) : 0;
+    }
+$[/method]-$
 
     static ifn_t* get_vtable_intercept()
     {
@@ -119,6 +138,36 @@ $-(if varname?)$
         if(host) host->$varname$ = ifc;
     }
 $-(/if)$
+$-(if virtual!)$
+
+    static iref<$name$> _generic_interface_creator($..ns default=" "$::$..class$* host, $name$* __here__)
+    {
+        //cast to dispatch to sidestep protected access restrictions
+        $name$_dispatcher* __disp__ = static_cast<$name$_dispatcher*>(__here__);
+        if(!__disp__)
+            __disp__ = new $name$_dispatcher;
+
+        __disp__->_host.create(host);
+        __disp__->_vtable = _capture ? get_vtable_intercept() : get_vtable();
+        
+        $--(if varname?)$
+        if(!host->$varname$) {
+            __disp__->_cleaner = &_cleaner_callback;
+            host->$varname$ = __disp__;
+        }
+        $-(/if)$
+        
+        $-(if oncreateev?)$
+        __disp__->$oncreateev$();
+
+        $-(/if)$
+        $-(if oncreate?)$
+        host->$oncreate$();
+
+        $-(/if)$
+        return __disp__;
+    }
+$-(/if)$
 
 public:
 
@@ -127,39 +176,21 @@ public:
 $-[method static?]$
     static iref<$..name$> $name$( $..name$* __here__$[args]$, $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$ )
     {
-        iref<$....ns default=" "$::$....class$> host = $....ns$::$....class$::$intname$($[args rest=", "]$$name$$[/args]$);
-        if(!host)
+        iref<$....ns default=" "$::$....class$> __host__ = $....ns$::$....class$::$intname$($[args rest=", "]$$name$$[/args]$);
+        if(!__host__)
             return 0;
-
-        $..name$_dispatcher* __disp__ = static_cast<$..name$_dispatcher*>(__here__);
-        if(!__disp__)
-            __disp__ = new $..name$_dispatcher;
-
-        __disp__->_host.create(host.get());
-        __disp__->_vtable = _capture ? get_vtable_intercept() : get_vtable();
-        
-        $--(if ..varname?)$
-        if(!host->$..varname$) {
-            __disp__->_cleaner = &_cleaner_callback;
-            host->$..varname$ = __disp__;
-        }
-        $-(/if)$
-        
-        $-(if ..oncreateev?)$
-        __disp__->$..oncreateev$();
-
-        $-(/if)$
-        $-(if ..oncreate?)$
-        host->$..oncreate$();
-
-        $-(/if)$
-        return iref<$..name$>(__disp__);
+        return _generic_interface_creator(__host__.get(), __here__);
     }
 
 $-[/method]$
     ///Register interface creators in the global registry
     static void* register_interfaces()
     {
+$-(if virtual!)$    
+        interface_register::register_interface_creator(
+            "$ns rest="::" after="::"$$name$@wrapper", (void*)&_generic_interface_creator);
+
+$-(/if)$
 $-[method static?]$
         interface_register::register_interface_creator(
             "$..ns rest="::" after="::"$$..name$.$name$@$..hash$", (void*)&$name$);

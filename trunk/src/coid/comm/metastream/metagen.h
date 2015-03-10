@@ -87,7 +87,7 @@ class metagen //: public binstream
             def_group( "ignore", " \t\n\r" );
             IDENT   = def_group( "identifier", ".@a..zA..Z_", ".@a..zA..Z_0..9" );
             NUM     = def_group( "number", "0..9" );
-            def_group_single( "separator", "?!=()[]{}/$-" );
+            def_group_single( "separator", "?!=()[]{}/\\$-" );
 
             int ie = def_escape( "escape", '\\', 0 );
             def_escape_pair( ie, "\\", "\\" );
@@ -222,11 +222,11 @@ class metagen //: public binstream
             return *(uint*)data;
         }
 
-        token write_buf( metagen& mg, const dynarray<Attribute>* attr, bool root ) const;
+        token write_buf( metagen& mg, const dynarray<Attribute>* attr, bool root, char escape ) const;
 
-        bool write_var( metagen& mg, const dynarray<Attribute>* attr ) const
+        bool write_var( metagen& mg, const dynarray<Attribute>* attr, char escape ) const
         {
-            token b = write_buf(mg, attr, true);
+            token b = write_buf(mg, attr, true, escape);
 
             mg.bin->xwrite_token_raw(b);
             return !b.is_empty();
@@ -391,7 +391,7 @@ class metagen //: public binstream
             bool val;
 
             if( !value.value.is_empty() )
-                val = defined  &&  value.value == v.write_buf(mg, 0, true);
+                val = defined  &&  value.value == v.write_buf(mg, 0, true, 0);
             else if( n == "defined" )
                 val = defined;
             else if( n.is_empty()  ||  n == "nonzero"  ||  n == "true" )
@@ -424,10 +424,11 @@ class metagen //: public binstream
         uint16 eat_right : 4;
 
         char brace;                     //< brace type (character)
+        char escape;                    //< escape given char and all special ones
         int8 depth;                     //< tag depth from current level (number of dots before name)
 
 
-        ParsedTag() : trailing(0), eat_left(0), eat_right(0)
+        ParsedTag() : trailing(0), eat_left(0), eat_right(0), brace(0), escape(0), depth(0)
         {}
 
         bool same_group( const ParsedTag& p ) const
@@ -515,6 +516,8 @@ class metagen //: public binstream
                     attr.add()->swap(at);
             }
 
+            escape = 0;
+
             if(brace)
             {
                 if( brace == '('  &&  tok.tok != ')' ) {
@@ -530,6 +533,16 @@ class metagen //: public binstream
                     throw lex.exc();
                 }
 
+                lex.next(0);
+            }
+            else if(tok.tok == '\\') {
+                //read the escape char
+                bool en = lex.enable(lex.DQSTRING, false);
+                
+                lex.next(0);
+                escape = tok.tok.first_char();
+
+                lex.enable(lex.DQSTRING, en);
                 lex.next(0);
             }
 
@@ -551,9 +564,8 @@ class metagen //: public binstream
     struct Tag
     {
         token varname;              //< variable name
-        int depth;                  //< variable depth from parent
         token stext;                //< static text after the tag
-
+        int depth;                  //< variable depth from parent
 
         virtual ~Tag() {}
 
@@ -650,6 +662,7 @@ class metagen //: public binstream
     struct TagSimple : Tag
     {
         dynarray<Attribute> attr;       //< conditions and attributes
+        char escape;
 
         ///Process the variable, default code does simple substitution
         virtual void process_content( metagen& mg, const Varx& var ) const
@@ -660,7 +673,7 @@ class metagen //: public binstream
             if( find_var(var,v,attrib) ) {
                 if(!attrib.is_empty())
                     write_special_value(mg, attrib, v);
-                else if(!v.write_var(mg, &attr))
+                else if(!v.write_var(mg, &attr, escape))
                     write_default(mg, attr);
             }
             else
@@ -669,6 +682,8 @@ class metagen //: public binstream
 
         virtual void parse_content( MtgLexer& lex, ParsedTag& hdr )
         {
+            escape = hdr.escape;
+
             attr.swap( hdr.attr );
 
             if( attr.size()>0 && attr.last()->is_open() ) {
@@ -690,7 +705,7 @@ class metagen //: public binstream
                     mg.write_as_string(v.order);
             }
             else if(attrib == "@value") {
-                v.write_var(mg, &attr);
+                v.write_var(mg, &attr, escape);
             }
             else if(attrib == "@size") {
                 if(v.is_array())
@@ -1136,12 +1151,11 @@ private:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-inline token metagen::Varx::write_buf( metagen& mg, const dynarray<Attribute>* attr, bool root ) const
+inline token metagen::Varx::write_buf( metagen& mg, const dynarray<Attribute>* attr, bool root, char escape ) const
 {
     typedef bstype::kind    type;
 
     const uchar* p = data;
-    type t = var->desc->btype;
 
     charstr& buf = mg.buf;
     if(root)
@@ -1150,8 +1164,14 @@ inline token metagen::Varx::write_buf( metagen& mg, const dynarray<Attribute>* a
     if( var->is_array() ) {
         if(var->desc->children[0].desc->btype.type == type::T_CHAR) {
             token t = token( (const char*)p+sizeof(uints), *(const uints*)p );
-            buf << t;
-            return t;
+            if(!t) return t;
+
+            if(escape)
+                buf.append_escaped(t);
+            else if(root)
+                return t;
+            else
+                buf << t;
         }
         else {
             VarxElement element;
@@ -1167,20 +1187,27 @@ inline token metagen::Varx::write_buf( metagen& mg, const dynarray<Attribute>* a
             const token& infix  = attr && (i=attr->containsT(rest)) >=0 ? (*attr)[i].value.value : token();
             const token& suffix = attr && (i=attr->containsT(after))>=0 ? (*attr)[i].value.value : token();
 
-            buf << prefix;
+            if(escape) buf.append_escaped(prefix, escape); else buf << prefix;
 
             for(uints k=0; k<n; ++k) {
-                if(k>0)
-                    buf << infix;
+                if(k>0) {
+                    if(escape)
+                        buf.append_escaped(infix, escape);
+                    else
+                        buf << infix;
+                }
 
-                element.write_buf(mg, 0, false);
+                element.write_buf(mg, 0, false, escape);
                 element.next();
             }
 
-            buf << suffix;
+            if(escape) buf.append_escaped(suffix, escape); else buf << suffix;
         }
+
         return buf;
     }
+
+    type t = var->desc->btype;
 
     switch(t.type)
     {

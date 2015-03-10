@@ -1093,27 +1093,51 @@ public:
         return *this;
     }
 
+    //@return c if it should be escaped, otherwise 0
+    static char escape_char( char c, char strdel=0 )
+    {
+        char v;
+        switch(c) {
+        case '\a': v='a'; break;
+        case '\b': v='b'; break;
+        case '\t': v='t'; break;
+        case '\n': v='n'; break;
+        case '\v': v='v'; break;
+        case '\f': v='f'; break;
+        case '\r': v='r'; break;
+        case '\"': if(strdel=='"' || strdel==0) v='"'; break;
+        case '\'': if(strdel=='\'' || strdel==0) v='\''; break;
+        case '\\': v='\\'; break;
+        default: v=0;
+        }
+        return v;
+    }
+
+    ///Append character, escaping it if it's a control character
+    //@param strdel string delimiter to escape (', ", or both if 0)
+    charstr& append_escaped( char c, char strdel=0 )
+    {
+        char v = escape_char(c, strdel);
+        if(v) {
+            char* dst = alloc_append_buf(2);
+            dst[0] = '\\';
+            dst[1] = v;
+        }
+        else
+            append(c);
+    }
+
     ///Append string while escaping the control characters in it
-    charstr& append_escaped( const token& str )
+    //@param str source string
+    //@param strdel string delimiter to escape (', ", or both if 0)
+    charstr& append_escaped( const token& str, char strdel=0 )
     {
         const char* p = str.ptr();
         const char* pe = str.ptre();
         const char* ps = p;
 
         for( ; p<pe; ++p ) {
-            char c = *p,v;
-            switch(c) {
-            case '\a': v='a'; break;
-            case '\b': v='b'; break;
-            case '\t': v='t'; break;
-            case '\n': v='n'; break;
-            case '\v': v='v'; break;
-            case '\f': v='f'; break;
-            case '\r': v='r'; break;
-            case '\"': v='"'; break;
-            case '\\': v='\\'; break;
-            default: v=0;
-            }
+            char v = escape_char(*p, strdel);
 
             if(v) {
                 uint len = p - ps;
@@ -1378,7 +1402,8 @@ public:
         return true;
     }
 
-    ///Delete character(s) at position, a negative offset goes counts from the end
+    ///Delete character(s) at position
+    //@param pos offset to delete from, a negative offset counts from the end
     //@param n number of bytes to delete, will be clamped
     bool del( int pos, uint n=1 )
     {
@@ -1386,7 +1411,7 @@ public:
         uint npos = pos<0 ? slen+pos : pos;
 
         if(npos+n > slen)  return false;
-        _tstr.del(pos, n>slen-npos ? slen-npos : n);
+        _tstr.del(npos, n>slen-npos ? slen-npos : n);
         return true;
     }
 
