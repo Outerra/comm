@@ -12,6 +12,8 @@ bool MethodIG::parse( iglexer& lex, const charstr& host, const charstr& ns, dyna
     if(!ret.parse(lex, false))
         throw lex.exc();
 
+    bhasifctargets = !ret.ifctarget.is_empty();
+
     if(!bstatic && ret.biref)
         ret.add_unique(irefargs);
 
@@ -74,6 +76,9 @@ bool MethodIG::parse( iglexer& lex, const charstr& host, const charstr& ns, dyna
 
             if(!bstatic && arg->biref && arg->boutarg)
                 arg->add_unique(irefargs);
+
+            if(arg->ifctarget)
+                bhasifctargets = true;
         }
         while(lex.matches(','));
         
@@ -168,13 +173,40 @@ void MethodIG::parse_docs()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+charstr& MethodIG::Arg::match_type( iglexer& lex, charstr& type )
+{
+    bool nested;
+    do {
+        type << lex.match(lex.IDENT, "expected type name");
+
+        if(lex.matches('<'))
+            type << char('<') << lex.next_as_block(lex.ANGLE) << char('>');
+
+        nested = lex.matches("::");
+        if(nested)
+            type << "::";
+    } while(nested);
+
+    return type;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 bool MethodIG::Arg::parse( iglexer& lex, bool argname )
 {
     //arg: [ifc_in|ifc_out|ifc_inout|] [const] type  
     //type: [class[<templarg>]::]* type[<templarg>] [[*|&] [const]]*
 
-    int io = lex.matches_either("ifc_in","ifc_out","ifc_inout");
+    int io = lex.matches_either("ifc_in","ifc_out","ifc_inout","ifc_ret");
     if(!io) io=1;
+
+    //ifc_return(ifcname)
+    if(io == 4) {
+        lex.match('(');
+        match_type(lex, ifctarget);
+        lex.match(')');
+
+        io = 2;
+    }
 
     binarg = (io&1) != 0;
     boutarg = (io&2) != 0;
@@ -187,17 +219,7 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
     if(lex.matches("unsigned"))
         type << "unsigned" << ' ';
 
-    bool nested;
-    do {
-        type << lex.match(lex.IDENT, "expected type name");
-
-        if(lex.matches('<'))
-            type << char('<') << lex.next_as_block(lex.ANGLE) << char('>');
-
-        nested = lex.matches("::");
-        if(nested)
-            type << "::";
-    } while(nested);
+    match_type(lex, type);
 
     int isPR=0,wasPR;
     int isCV=0;
@@ -225,7 +247,7 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
     bptr = isPR == 1;
     bref = isPR == 2;
 
-    if(boutarg && ((!bptr && !bref) || type.begins_with("const "))) {
+    if(boutarg && ((!bptr && !bref && !ifctarget) || type.begins_with("const "))) {
         lex.set_err() << "out argument must be a ref or ptr and cannot be const\n";
     }
 
@@ -259,6 +281,20 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
         }
         while(bs);
     }
+    else if(ifctarget)
+        lex.set_err() << "ifc_ret argument must be an iref<>\n";
+
+    if(ifctarget) {
+        type.swap(ifctarget);
+        type.ins(0, "iref<");
+        type.append('>');
+        basetype.set(type.ptr()+5, type.ptre()-1);
+
+        //remove iref from ifctarget
+        ifctarget.del(0, 5);
+        ifctarget.del(-1, 1);
+    }
+
 
     if(!argname)
         return lex.no_err();

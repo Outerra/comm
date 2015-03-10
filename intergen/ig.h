@@ -168,6 +168,7 @@ struct MethodIG
         charstr size;                   //< size expression if the parameter is an array, including [ ]
         charstr defval;
         charstr fulltype;
+        charstr ifctarget;
         charstr doc;
         bool bptr;                      //< true if the type is a pointer
         bool bref;                      //< true if the type is a reference
@@ -187,6 +188,8 @@ struct MethodIG
 
         bool parse( iglexer& lex, bool argname );
 
+        static charstr& match_type( iglexer& lex, charstr& dst );
+
         void add_unique( dynarray<Arg>& irefargs );
 
         friend metastream& operator || (metastream& m, Arg& p)
@@ -200,6 +203,7 @@ struct MethodIG
                 m.member("size",p.size);
                 m.member("defval",p.defval);
                 m.member("fulltype",p.fulltype);
+                m.member("ifc",p.ifctarget);
                 m.member("doc",p.doc);
                 m.member("const",p.bconst);
                 m.member("enum",p.benum);
@@ -234,6 +238,7 @@ struct MethodIG
     bool bimplicit;                     //< an implicit event
     bool bdestroy;                      //< a method to call on interface destroy
     bool bmandatory;                    //< mandatory event
+    bool bhasifctargets;
 
     Arg ret;
     dynarray<Arg> args;
@@ -284,6 +289,7 @@ struct MethodIG
             m.member("implicit",p.bimplicit);
             m.member("destroy",p.bdestroy);
             m.member("mandatory",p.bmandatory);
+            m.member("hasifc",p.bhasifctargets);
             m.member("args",p.args);
             m.member("ninargs",p.ninargs);
             m.member("ninargs_nondef",p.ninargs_nondef);

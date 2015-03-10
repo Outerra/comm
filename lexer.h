@@ -2403,7 +2403,7 @@ protected:
         {
             DASSERT( id < 64 );
             uint64 mask = 1ULL << id;
-            bool was = (stbignored & mask) != 0;
+            bool was = (stbenabled & mask) != 0;
 
             if(en)
                 stbenabled |= mask;

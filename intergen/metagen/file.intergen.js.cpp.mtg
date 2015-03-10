@@ -32,6 +32,46 @@ static void throw_js_error( v8::TryCatch& tc, const char* str )
     }
 }
 
+static v8::Handle<v8::Value> js_local_include(const v8::Arguments& args)
+{
+    if(args.Length() < 1)
+        return v8::Undefined();
+
+    v8::String::Utf8Value str(args[0]);
+    coid::token path = coid::token(*str, str.length());
+    path.trim_whitespace();
+    
+    if(coid::directory::is_separator(path.first_char()))
+        return v8::Undefined();
+
+    coid::charstr dst = path;
+    coid::directory::compact_path(dst);
+    
+    char c = dst.first_char();
+    if(c == '.' || c == '/' || c == '\\')   //path outside 
+        return v8::ThrowException(v8::Exception::Error(v8::String::New("invalid path")));
+
+    if(!dst.ends_with(".js"))
+        dst << ".js";
+
+    coid::bifstream bif(dst);
+    if(!bif.is_open())
+        return v8::ThrowException(v8::Exception::Error(v8::String::New("error opening include file")));
+
+    coid::binstreambuf buf;
+    buf.transfer_from(bif);
+    
+    coid::token js = buf;
+
+    v8::HandleScope scope;
+    v8::Handle<v8::String> source = v8::String::New(js.ptr(), js.len());
+    v8::Handle<v8::String> spath  = v8::String::New(dst.ptr(), dst.len());
+    v8::Handle<v8::Script> script = v8::Script::Compile(source, spath);
+
+    script->Run();
+    return scope.Close(spath);
+}
+
 static void _js_release_callback(v8::Persistent<v8::Value> object, void* p)
 {
     if(p)
@@ -693,6 +733,9 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
             context->Global()->Set(v8::String::New(bindname.ptr(), bindname.len()), ifc->_object);
     }
     else {
+        if(!script.has_context())
+            context->Global()->Set(v8::String::New("$$include"), v8::FunctionTemplate::New(&js_local_include)->GetFunction());
+
         coid::token script_tok, script_path;
         coid::charstr script_tmp;
         if(script.is_path()) {

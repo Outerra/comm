@@ -39,6 +39,7 @@
 #define __INTERGEN_IFC_JS_H__
 
 #include <comm/token.h>
+#include <comm/dir.h>
 #include <comm/metastream/metastream.h>
 #include <comm/metastream/fmtstream_v8.h>
 #include <v8/v8.h>
@@ -95,6 +96,40 @@ struct script_handle
         return _context;
     }
 
+    ///Get absolute path from the provided path that's relative to given JS stack frame
+    //@param path relative path (an include path)
+    //@param frame v8 stack frame number to be made relative to
+    //@param root root directory (for absolute paths)
+    //@param dst [out] resulting path, using / for directory separators
+    //@return 0 if succeeded, 1 invalid stack frame, 2 invalid path
+    static int get_target_path( const coid::token& path, uint frame, const coid::token& root, coid::charstr& dst )
+    {
+        if(path.first_char() != '/' && path.first_char() != '\\')
+        {
+            v8::Local<v8::StackTrace> trace = v8::StackTrace::CurrentStackTrace(frame+1, v8::StackTrace::kScriptName);
+            if((int)frame >= trace->GetFrameCount())
+                return 1;
+
+            v8::String::AsciiValue uber(trace->GetFrame(frame)->GetScriptName());
+
+            if(!path)
+                dst = coid::token(*uber, uber.length());
+            else {
+                dst = coid::token(*uber, uber.length()).cut_left_back("\\/");
+                coid::directory::append_path(dst, path);
+            }
+        }
+        else {
+            dst = root;
+            coid::directory::append_path(dst, coid::token(path.ptr()+1, path.ptre()));
+        }
+
+        if(!coid::directory::compact_path(dst, '/'))
+            return 2;
+
+        return 0;
+    }
+
     ///Load and run script
     v8::Handle<v8::Script> load_script()
     {
@@ -132,7 +167,6 @@ struct script_handle
             script_path = "";
         }
 
-        //v8::Handle<v8::Script> compiled_script = load_script(script_tok, script_path);
         v8::Local<v8::String> scriptv8 = v8::String::New(script_tok.ptr(), script_tok.len());
 
         // set up an error handler to catch any exceptions the script might throw.

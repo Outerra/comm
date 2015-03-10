@@ -9,15 +9,15 @@ var interface_def = {
     name : "$name$",
     base : "$base$",
     namespace : [$[ns rest=", "]$"$@value$"$[/ns]$],
-    comments : [$[docs rest=", "]$"$@value$"$[/docs]$],
+    comments : [$[docs rest=", "]$"$@value\"$"$[/docs]$],
     creators : [
 $[method static? rest=",\n"]-$
         {
-            comments : [$[docs rest=", "]$"$@value$"$[/docs]$],
+            comments : [$[docs rest=", "]$"$@value\"$"$[/docs]$],
             return_value : {
                 type : "iref<$..ns rest="::" after="::"$$..name$>",
                 basetype : "iref<$..ns rest="::" after="::"$$..name$>",
-                comment : "$return.doc$"
+                comment : "$return.doc\"$"
             },
             name : "$name$",
             args : [
@@ -26,7 +26,7 @@ $[args rest=",\n"]-$
                     name : "$name$",
                     type : "$type$",
                     basetype : "$basetype$",
-                    comment : "$doc$",
+                    comment : "$doc\"$",
                     string : $token$,
                     inarg : $inarg$,
                     outarg : $outarg$,
@@ -41,11 +41,11 @@ $[args rest=",\n"]-$
     methods : [
 $[method !static? !destroy? rest=",\n"]-$
         {
-            comments : [$[docs rest=", "]$"$@value$"$[/docs]$],
+            comments : [$[docs rest=", "]$"$@value\"$"$[/docs]$],
             return_value : {
                 type : "$return.type$",
                 basetype : "$return.basetype$",
-                comment : "$return.doc$"
+                comment : "$return.doc\"$"
             },
             name : "$name$",
             args : [
@@ -54,7 +54,7 @@ $[args rest=",\n"]-$
                     name : "$name$",
                     type : "$type$",
                     basetype : "$basetype$",
-                    comment : "$doc$",
+                    comment : "$doc\"$",
                     string : $token$,
                     inarg : $inarg$,
                     outarg : $outarg$,
@@ -68,11 +68,11 @@ $[args rest=",\n"]-$
     "events" : [
 $[event !static? !destroy? rest=",\n"]-$
         {
-            comments : [$[docs rest=", "]$"$@value$"$[/docs]$],
+            comments : [$[docs rest=", "]$"$@value\"$"$[/docs]$],
             return_value : {
                 type : "$return.type$",
                 basetype : "$return.basetype$",
-                comment : "$return.doc$"
+                comment : "$return.doc\"$"
             },
             name : "$name$",
             args : [
@@ -81,7 +81,7 @@ $[args rest=",\n"]-$
                     name : "$name$",
                     type : "$type$",
                     basetype : "$basetype$",
-                    comment : "$doc$",
+                    comment : "$doc\"$",
                     string : $token$,
                     inarg : $inarg$,
                     outarg : $outarg$,
