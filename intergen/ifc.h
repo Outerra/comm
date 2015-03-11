@@ -51,7 +51,7 @@
 //@param name desired name of the interface class, optionally with namespace
 //@param path relative path (and optional file name) of the interface header file
 //@param var name for the variable representing the connected client
-#define ifc_class_var(name,path,var) coid::clean_ptr<intergen_interface> var
+#define ifc_class_var(name,path,var) iref<intergen_interface> var
 
 ///Virtual base interface class decoration keyword
 //@param name desired name of the interface class, optionally with namespace
