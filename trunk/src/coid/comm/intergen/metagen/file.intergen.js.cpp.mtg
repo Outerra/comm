@@ -40,15 +40,15 @@ static v8::Handle<v8::Value> js_local_include(const v8::Arguments& args)
     v8::String::Utf8Value str(args[0]);
     coid::token path = coid::token(*str, str.length());
     path.trim_whitespace();
-    
+
     if(coid::directory::is_separator(path.first_char()))
         return v8::Undefined();
 
     coid::charstr dst = path;
     coid::directory::compact_path(dst);
-    
+
     char c = dst.first_char();
-    if(c == '.' || c == '/' || c == '\\')   //path outside 
+    if(c == '.' || c == '/' || c == '\\')   //path outside
         return v8::ThrowException(v8::Exception::Error(v8::String::New("invalid path")));
 
     if(!dst.ends_with(".js"))
@@ -60,7 +60,7 @@ static v8::Handle<v8::Value> js_local_include(const v8::Arguments& args)
 
     coid::binstreambuf buf;
     buf.transfer_from(bif);
-    
+
     coid::token js = buf;
 
     v8::HandleScope scope;
@@ -136,7 +136,7 @@ $-(/if)$
         _vtable = _base->vtable();
         _context = v8::Persistent<v8::Context>::New(context);
         _meta.bind_formatting_stream(_fmtv8);
-		
+
 		_host = _base->host<policy_intrusive_base>();
     }
 
@@ -161,7 +161,7 @@ $-[/event]$
         _context.Dispose();
         _context.Clear();
     }
-    
+
     bool intergen_bind_capture( coid::binstring* capture, uint instid ) override
     {
         return _real()->intergen_bind_capture(capture, instid);
@@ -171,7 +171,7 @@ $-[/event]$
     {
         _real()->intergen_capture_dispatch(mid, bin);
     }
-    
+
     // --- creators ---
 
 $-[method static?]$
@@ -189,7 +189,7 @@ $-[/method]$
     ///Handler for generic $$query_interface javascript method
     static v8::Handle<v8::Value> v8query_interface( const v8::Arguments& args );
     static v8::Handle<v8::Value> v8rebind_events( const v8::Arguments& args );
-    
+
     // --- method wrappers ---
 
 $-[method !static? !destroy? !internal? !operator?]$
@@ -240,7 +240,7 @@ v8::Handle<v8::Value> $..name$_js_dispatcher::v8_$name$$@index$(const v8::Argume
 
     v8::HandleScope _handle_scope_;
     v8::Local<v8::Object> _obj_ = args.Holder();
-    
+
     v8::Local<v8::Value> _intobj_ = _obj_->GetInternalField(0);
     if(!_intobj_->IsExternal())
         return v8::Undefined();
@@ -339,7 +339,7 @@ $-(elif)$
 $(/if)-$
 
     ifc->_meta.stream_flush();
-    
+
     return _handle_scope_.Close(_r_);
 
     } catch(const coid::exception& e) {
@@ -405,7 +405,7 @@ $-(if !noutargs?)$
  $-(/if)$
 $-(elif)$
  $-(if return.type?="void" noutargs?="1")$
- 
+
   $-[args outarg?]$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator << for type '$basetype$'" );
    $-(if ptr?)$
@@ -467,12 +467,12 @@ v8::Handle<v8::Value> $name$_js_dispatcher::_getter(v8::Local<v8::String> proper
     v8::Context::Scope context_scope(ifc->_context);
 
     v8::String::AsciiValue key(property);
-$-(if getter.token?)$    
+$-(if getter.token?)$
     $getter.basetype$ value = (*R_)(coid::token(*key, key.length()));
 $-(elif)$
     $getter.basetype$ value = (*R_)(*key);
 $-(/if)$
-    
+
     //stream out
 $-(if getter.iref.false?)$
     static_assert( CHECK::meta_operator_exists<$getter.basetype$>::value, "missing metastream operator << for type '$getter.basetype$'" );
@@ -508,7 +508,7 @@ v8::Handle<v8::Value> $name$_js_dispatcher::_setter(v8::Local<v8::String> proper
     $setter.basetype$ val;
     v8_streamer<$setter.basetype$>(&ifc->_fmtv8, &ifc->_meta).from_v8(value, val);
     ifc->_meta.stream_acknowledge();
-    
+
     v8::String::AsciiValue key(property);
 $-(if setter.token?)$
     (*R_)(coid::token(*key, key.length()), val);
@@ -528,7 +528,7 @@ v8::Handle<v8::Value> $name$_js_dispatcher::v8query_interface(const v8::Argument
 
     v8::HandleScope _handle_scope_;
     v8::String::AsciiValue key(args[0]);
-    
+
     typedef v8::Handle<v8::Value> (*fn_get)(const v8::Arguments&, interface_context*);
     coid::token tokey(*key, key.length());
     fn_get get = reinterpret_cast<fn_get>(
@@ -539,7 +539,7 @@ v8::Handle<v8::Value> $name$_js_dispatcher::v8query_interface(const v8::Argument
         tmp << tokey << " not found";
         return v8::ThrowException(v8::String::New(tmp.c_str()));
     }
-        
+
     v8::Local<v8::Object> _obj_ = args.Holder();
 
     v8::Local<v8::Value> _intobj_ = _obj_->GetInternalField(0);
@@ -565,7 +565,7 @@ $-(if event?)$
     v8::Local<v8::Value> _intobj_ = _obj_->GetInternalField(0);
     if(!_intobj_->IsExternal())
         return v8::Undefined();
-    
+
     $ns rest="::" after="::"$js::$name$_js_dispatcher* ifc = static_cast<$ns rest="::" after="::"$js::$name$_js_dispatcher*>
         (v8::Handle<v8::External>::Cast(_intobj_)->Value());
 
@@ -663,14 +663,14 @@ $-[/event]$
     {
         _events[i].Dispose();
         _events[i].Clear();
-    
+
         v8::Local<v8::Value> var = global->Get(v8::String::New(names[i].ptr(), names[i].len()));
         if(var->IsUndefined())
             continue;
 
         v8::Local<v8::Function> foo = v8::Local<v8::Function>::Cast(var);
         bool failed = __trycatch.HasCaught() || foo->IsUndefined();
-        
+
         if(!failed)
             _events[i] = v8::Persistent<v8::Function>::New(foo);
     }
@@ -697,7 +697,7 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
     if(script.is_path()) {
         coid::token path = script.str();
         path.cut_right('?', coid::token::cut_trait_remove_sep_default_empty());
-        
+
         bool ispage = path.begins_with("http://") || path.begins_with("https://") || path.ends_with(".html");
         bool isscript = path.ends_with(".js");
 
@@ -715,14 +715,16 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
     }
 
     bool extctx = !context.IsEmpty();
-    
+
     if(!extctx) {
         if(script.has_context())
             context = script.context();
         else
             context = v8::Context::New();
     }
-    
+
+    if(ctx) *ctx = context;
+
     v8::Context::Scope context_scope(context);
     ifc->_context = v8::Persistent<v8::Context>::New(context);
 
@@ -743,14 +745,14 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
             coid::bifstream bif(script_path);
             if(!bif.is_open())
                 throw coid::exception() << script_path << " not found";
-                
+
             script_tmp = script.prefix();
 
             coid::binstreambuf buf;
             buf.swap(script_tmp);
             buf.transfer_from(bif);
             buf.swap(script_tmp);
-            
+
             script_tok = script_tmp;
         }
         else if(script.prefix()) {
@@ -766,14 +768,11 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
         ifc->_object = v8::Persistent<v8::Object>::New(ifc->create_interface_object(false));
         if(bindname)
             context->Global()->Set(v8::String::New(bindname.ptr(), bindname.len()), ifc->_object);
-        
+
         v8::Handle<v8::Script> compiled_script = load_script(script_tok, script_path);
 
         ifc->_script = v8::Persistent<v8::Script>::New(compiled_script);
     }
-
-
-    if(ctx) *ctx = context;
 
     return ifc;
 }
