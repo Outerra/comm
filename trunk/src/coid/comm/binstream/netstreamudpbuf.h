@@ -82,7 +82,7 @@ public:
         return fATTR_HANDSHAKING | fATTR_SIMPLEX;
     }
 
-
+/*
     virtual uint64 get_written_size() const             { return _sendbuf.size(); }
     virtual uint64 set_written_size( int64 n )
     {
@@ -138,7 +138,7 @@ public:
                 data = (const uchar*)data + rem;
                 rem = _packetsize - sizeof(udp_hdr);//udp_seg::DATA_SIZE;
             }
-        }
+        }*/
 
         return 0;
     }

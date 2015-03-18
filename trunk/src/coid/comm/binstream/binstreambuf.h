@@ -60,9 +60,9 @@ public:
         return fATTR_REVERTABLE | fATTR_READ_UNTIL;
     }
 
-
-    virtual uint64 get_size() const         { return _buf.size() - _bgi; }
-    virtual uint64 set_size( int64 n )
+/*
+    virtual uint64 get_written_size() const override        { return _buf.size() - _bgi; }
+    virtual uint64 set_written_size( int64 n ) override
     {
         if( n < 0 )
         {
@@ -78,14 +78,14 @@ public:
         return _buf.size() - _bgi;
     }
 
-    virtual opcd overwrite_raw( uint64 pos, const void* data, uints len )
+    virtual opcd overwrite_raw( uint64 pos, const void* data, uints len ) override
     {
         if( pos + len > _buf.size() - _bgi )
             return ersOUT_OF_RANGE;
 
         xmemcpy( _buf.ptr() + _bgi + pos, data, len );
         return 0;
-    }
+    }*/
 
     
     operator token() const                  { return token( _buf.ptr()+_bgi, _buf.size() - _bgi ); }
@@ -346,18 +346,25 @@ public:
         _bgi=0;
     }
 
-    bool set_read_pos( uint64 pos ) 
-    {
-        DASSERT(pos<=UMAX64);
+    uint64 get_read_pos() const         { return _bgi; }
+    uint64 get_write_pos() const        { return _buf.size(); }
 
-        if( pos<_buf.size() ) {
-            _bgi=(uints)pos;
-            return true;
-        }
-        else 
-            return false;
+    bool set_read_pos( uint64 pos )     {
+        bool over = pos > _buf.size();
+        if(over)
+            pos = _buf.size();
+
+        _bgi = uints(pos);
+        return !over;
     }
-    //binstreambuf (const token& str);
+
+    bool set_write_pos( uint64 pos )     {
+        if(pos > UMAXS)
+            return false;
+
+        _buf.realloc(uints(pos));
+        return true;
+    }
 };
 
 ////////////////////////////////////////////////////////////////////////////////

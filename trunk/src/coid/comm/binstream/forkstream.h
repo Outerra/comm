@@ -189,7 +189,7 @@ public:
         }
         return e;
     }
-
+/*
     virtual uint64 get_written_size() const     { return _outa ? _outa->get_written_size() : (_outb ? _outb->get_written_size() : 0); }
     virtual uint64 set_written_size( int64 n )  {
         uint64 v=0;
@@ -204,7 +204,7 @@ public:
         if(_outa) e = _outa->overwrite_raw(pos, data, len);
         if(_outb) e = _outb->overwrite_raw(pos, data, len);
         return e;
-    }
+    }*/
 };
 
 
