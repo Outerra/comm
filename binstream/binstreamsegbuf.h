@@ -58,7 +58,7 @@ public:
         return 0;
     }
 
-
+/*
     virtual uint64 get_size() const         { return _buf.size(); }
     virtual uint64 set_size( int64 n )
     {
@@ -90,7 +90,7 @@ public:
         p.copy_raw_from( (const char*)data, len );
         
         return 0;
-    }
+    }*/
 
     virtual opcd write_raw( const void* p, uints& len )
     {

@@ -87,6 +87,11 @@ thread thread::create_new( fnc_entry f, void* arg, void* context, const token& n
     return SINGLETON(thread_manager).thread_create( arg, f, context, name );
 }
 
+void* thread::context()
+{
+    return SINGLETON(thread_manager).thread_context(self());
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 void thread::self_exit( uint code )
 {

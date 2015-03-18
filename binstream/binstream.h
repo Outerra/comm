@@ -993,7 +993,7 @@ public:
     ///Seek within the binstream
     virtual opcd seek( int seektype, int64 pos )    { return ersNOT_IMPLEMENTED; }
 
-    //@{ Methods for revertable streams
+    //@{ Methods for revertable streams --OBSOLETE--
     /**
         These methods are supported on binstreams that can manipulate data already pushed into the
         stream. For example, some protocol may require the size of body written in a header, before
@@ -1005,10 +1005,10 @@ public:
     **/
 
     ///Get written amount of bytes
-    virtual uint64 get_written_size() const         { return UMAX64; }
+    virtual uint64 get_written_size() const         { throw ersNOT_IMPLEMENTED; }
 
     ///Cut to specified length, negative numbers cut abs(len) from the end
-    virtual uint64 set_written_size( int64 n )      { return UMAX64; }
+    virtual uint64 set_written_size( int64 n )      { throw ersNOT_IMPLEMENTED; }
 
     ///Return actual pure data size written from specified offset
     ///This can be overwritten by binstreams that insert additional data into stream (like packet headers etc.)
@@ -1019,7 +1019,7 @@ public:
 
     ///Overwrite stream at position \a pos with data from \a data of length \a len
     virtual opcd overwrite_raw( uint64 pos, const void* data, uints len ) {
-        return ersNOT_IMPLEMENTED;
+        throw ersNOT_IMPLEMENTED;
     }
 
     //@}

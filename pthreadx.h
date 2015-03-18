@@ -99,6 +99,9 @@ public:
 
 
     ///Spawn new thread, setting up this object with reference to the new thread
+    //@param f function to execute
+    //@param arg argument given to the function
+    //@param context thread context, queryable from thread
     thread& create( fnc_entry f, void* arg, void* context=0, const token& name = token() )
     {
         _thread = create_new( f, arg, context, name );
@@ -110,6 +113,9 @@ public:
 
 
     //@{ Static methods dealing with the thread currently running
+
+    //@return context info given when current thread was created
+    static void* context();
 
     //@return thread object for the thread we are currently in
     static thread self();
