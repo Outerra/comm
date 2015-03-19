@@ -114,6 +114,29 @@ public:
         return *seek<T>(_offset);
     }
 
+    ///Fetch google protobuf varint from the binary stream
+    template<class T>
+    T varint()
+    {
+        const uint8* buffer = _tstr.ptr() + _offset;
+
+        uint64 result = 0;
+        int count = 0;
+        uint8 b;
+
+        do {
+            b = buffer[count];
+            result |= uint64(b & 0x7F) << (7 * count);
+            ++count;
+        } while((b & 0x80) && (count < (sizeof(T) * 8 + 6) / 7));
+
+        _offset += count;
+
+        return std::is_unsigned<T>::value
+            ? T(result)
+            : T((result >> 1) ^ -static_cast<T>(result & 1));
+    }
+
     ///Return position of data given starting offset in buffer
     template<class T>
     T* data( uints offset ) {
@@ -132,8 +155,7 @@ public:
 
 
     ///Swap strings
-    void swap( binstring& ref )
-    {
+    void swap( binstring& ref ) {
         _tstr.swap( ref._tstr );
     }
 
