@@ -41,6 +41,7 @@
 #include "../ref.h"
 #include "../interface.h"
 #include "../binstring.h"
+#include "../local.h"
 
 ///Interface class decoration keyword
 //@param name desired name of the interface class, optionally with namespace. With + prefix generates also the capture code for non-const methods by default
@@ -51,7 +52,8 @@
 //@param name desired name of the interface class, optionally with namespace
 //@param path relative path (and optional file name) of the interface header file
 //@param var name for the variable representing the connected client
-#define ifc_class_var(name,path,var) iref<intergen_interface> var
+//@note clean_ptr is an intentional weak link, since interface already holds ref to the host
+#define ifc_class_var(name,path,var) coid::clean_ptr<intergen_interface> var
 
 ///Virtual base interface class decoration keyword
 //@param name desired name of the interface class, optionally with namespace
