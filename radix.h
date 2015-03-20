@@ -293,10 +293,10 @@ public:
 
     void sort(T* psort, uints nitems) {
         _ptemp.alloc(nitems);
-        sortone(psort, _ptemp, 0);
-        sortone(_ptemp, psort, 8);
-        sortone(psort, _ptemp, 16);
-        sortone(_ptemp, psort, 24);
+        sortone(psort, _ptemp.ptr(), 0);
+        sortone(_ptemp.ptr(), psort, 8);
+        sortone(psort, _ptemp.ptr(), 16);
+        sortone(_ptemp.ptr(), psort, 24);
     }
 
     uints size() const { return _ptemp._nused; }

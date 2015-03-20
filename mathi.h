@@ -206,6 +206,60 @@ inline int ismod3eq0(unsigned int x) {
     return (x < 0x55555556);
 }
 
+////////////////////////////////////////////////////////////////////////////////
+//insert 0 bit after each bit in low 16 bits
+inline uint32 part_bits1(uint32 x)
+{
+    x &= 0x0000ffff;                 // x = ---- ---- ---- ---- fedc ba98 7654 3210
+    x = (x ^ (x << 8)) & 0x00ff00ff; // x = ---- ---- fedc ba98 ---- ---- 7654 3210
+    x = (x ^ (x << 4)) & 0x0f0f0f0f; // x = ---- fedc ---- ba98 ---- 7654 ---- 3210
+    x = (x ^ (x << 2)) & 0x33333333; // x = --fe --dc --ba --98 --76 --54 --32 --10
+    x = (x ^ (x << 1)) & 0x55555555; // x = -f-e -d-c -b-a -9-8 -7-6 -5-4 -3-2 -1-0
+    return x;
+}
+
+//insert 0 bit after each bit in low 32 bits
+inline uint64 part_bits1(uint64 x)
+{
+    x &= 0xffffffffULL;
+    x = (x ^ (x << 16)) & 0x0000ffff0000ffffULL;
+    x = (x ^ (x <<  8)) & 0x00ff00ff00ff00ffULL;
+    x = (x ^ (x <<  4)) & 0x0f0f0f0f0f0f0f0fULL;
+    x = (x ^ (x <<  2)) & 0x3333333333333333ULL;
+    x = (x ^ (x <<  1)) & 0x5555555555555555ULL;
+    return x;
+}
+
+//compact bits, removing every even bit
+inline uint32 compact_bits1(uint32 x)
+{
+    x &= 0x55555555;                 // x = -f-e -d-c -b-a -9-8 -7-6 -5-4 -3-2 -1-0
+    x = (x ^ (x >> 1)) & 0x33333333; // x = --fe --dc --ba --98 --76 --54 --32 --10
+    x = (x ^ (x >> 2)) & 0x0f0f0f0f; // x = ---- fedc ---- ba98 ---- 7654 ---- 3210
+    x = (x ^ (x >> 4)) & 0x00ff00ff; // x = ---- ---- fedc ba98 ---- ---- 7654 3210
+    x = (x ^ (x >> 8)) & 0x0000ffff; // x = ---- ---- ---- ---- fedc ba98 7654 3210
+    return x;
+}
+
+inline uint64 compact_bits1(uint64 x)
+{
+    x &= 0x5555555555555555ULL;
+    x = (x ^ (x >> 1)) & 0x3333333333333333ULL;
+    x = (x ^ (x >> 2)) & 0x0f0f0f0f0f0f0f0fULL;
+    x = (x ^ (x >> 4)) & 0x00ff00ff00ff00ffULL;
+    x = (x ^ (x >> 8)) & 0x0000ffff0000ffffULL;
+    x = (x ^ (x >> 8)) & 0x00000000ffffffffULL;
+    return x;
+}
+
+inline uint32 interleave_bits(uint16 a, uint16 b) {
+    return (part_bits1(uint32(a)) << 1) + part_bits1(uint32(b));
+}
+
+inline uint64 interleave_bits(uint32 a, uint32 b) {
+    return (part_bits1(uint64(a)) << 1) + part_bits1(uint64(b));
+}
+
 
 COID_NAMESPACE_END
 
