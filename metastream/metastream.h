@@ -318,7 +318,7 @@ public:
     {
         if(_binw) {
             T tmp(get());
-            write_optional(!write_default && tmp == defval ? 0 : &v);
+            write_optional(!write_default && tmp == defval ? 0 : &tmp);
         }
         else if(_binr) {
             T val;
