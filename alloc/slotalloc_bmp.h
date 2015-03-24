@@ -27,7 +27,19 @@ public:
         _items.add_uninit(sizeof(BLOCK_TYPE) * 8);
     }
 
-    ~slotalloc_bmp() {}
+    ~slotalloc_bmp() { clear(); }
+
+    /// have to call this in destructor because we have item allocated with add_uninit...
+    void clear()
+    {
+        uint id = first();
+        while (id != -1) {
+            get_item(id)->~T();
+            id = next(id);
+        }
+
+        _items.set_size(0);
+    }
 
     T* add_uninit()
     {
@@ -94,11 +106,17 @@ public:
         _items[id].~T();        
     }
 
+    uint first() const
+    {
+        uint id = 0;
+        while (id < _items.size() && !is_valid(id)) ++id;
+        return id < _items.size() ? id : -1;
+    }
+
     uint next(uint id) const
     {
         ++id;
-        while (id < _items.size() && !is_valid(id))
-            ++id;
+        while (id < _items.size() && !is_valid(id)) ++id;
         return id < _items.size() ? id : -1;
     }
 };
