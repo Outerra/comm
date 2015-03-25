@@ -1183,9 +1183,9 @@ inline token metagen::Varx::write_buf( metagen& mg, const dynarray<Attribute>* a
             static const token after = "after";
 
             ints i;
-            const token& prefix = attr && (i=attr->containsT(first))>=0 ? (*attr)[i].value.value : token();
-            const token& infix  = attr && (i=attr->containsT(rest)) >=0 ? (*attr)[i].value.value : token();
-            const token& suffix = attr && (i=attr->containsT(after))>=0 ? (*attr)[i].value.value : token();
+            const token& prefix = attr && (i=attr->contains(first))>=0 ? (*attr)[i].value.value : token();
+            const token& infix  = attr && (i=attr->contains(rest)) >=0 ? (*attr)[i].value.value : token();
+            const token& suffix = attr && (i=attr->contains(after))>=0 ? (*attr)[i].value.value : token();
 
             if(escape) buf.append_escaped(prefix, escape); else buf << prefix;
 

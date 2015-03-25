@@ -592,7 +592,7 @@ public:
         DASSERT_RET( escrule >= 0  &&  escrule < (int)_escary.size(), false );
 
         //add escape pairs, longest codes first
-        escpair* ep = _escary[escrule]->pairs.add_sortT(code);
+        escpair* ep = _escary[escrule]->pairs.add_sort(code);
         ep->assign( code, replacewith );
 
         return true;
@@ -2139,7 +2139,7 @@ protected:
             void insert( const escpair* pair ) {
                 uchar c = pair->replace.first_char();
                 fastlookup[c/BITBLK] |= 1<<(c%BITBLK);
-                *map.add_sortT(pair->replace, func()) = pair;
+                *map.add_sort(pair->replace, func()) = pair;
             }
 
             ///
@@ -2153,7 +2153,7 @@ protected:
                 if( !(fastlookup[t[0]/BITBLK] & (1<<(t[0]%BITBLK))) )
                     return 0;
 
-                uints i = map.lower_boundT(t, func());
+                uints i = map.lower_bound(t, func());
                 uints j, n = map.size();
                 for( j=i ; j<n; ++j ) {
                     if( !t.begins_with( map[j]->replace ) )
