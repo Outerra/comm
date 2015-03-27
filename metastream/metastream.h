@@ -462,8 +462,11 @@ public:
             *this || val;
             return true;
         }
-        else
+        else {
+            if(cache_prepared())
+                _current->offs += sizeof(uints);
             moveto_expected_target(READ_MODE);
+        }
         
         return false;
     }
