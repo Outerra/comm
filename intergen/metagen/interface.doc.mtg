@@ -98,7 +98,7 @@ $[args rest=",\n"]-$
 <body>
   <script>
     (function() {
-      if(location.search == '') window.location.href = "index.html?iface=$name$"; else build_interface_markup();
+      if(location.search == '') window.location.href = "../index.html?iface=$name$"; else build_interface_markup();
     })();
   </script>
 </body>
