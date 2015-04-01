@@ -144,16 +144,11 @@ char* append_float( char* dst, char* dste, double d, int nfrac )
             e = 0;
     }
 
-    //required number of characters for unnormalized display
-    int nchar = e<0
-        ? 1-e+anfrac
-        : e+dfrac;
-
     if(e<0 && nfrac<0)
     {
         //fractional numbers with nfrac<0 always as fraction even when below the resolution
-        if(p<dste)
-            *p++ = '.';
+        if(p<dste) *p++ = '0';
+        if(p<dste) *p++ = '.';
 
         p = append_fraction(p, dste, d, nfrac, false);
     }
@@ -208,70 +203,9 @@ char* append_float( char* dst, char* dste, double d, int nfrac )
             *p++ = '.';
         }
 
-        //if(e<0)
-        //    nfrac += nfrac<0 ? e : -e;
-
         p = append_fraction(p, dste, d, nfrac, false);
     }
-/*
-    else if(nchar <= dste-dst)
-    {
-    //req.number of characters fits in
-        if(e>=0) {
-        //the whole num
-            token t = num_formatter<int64>::u_insert(p, dste-p, (int64)d, 10, 0, 0, ALIGN_NUM_LEFT);
-            p += t.len();
 
-            d -= floor(d);
-        }
-
-        if(p<dste && nfrac!=0) {
-            *p++ = '.';
-        }
-
-        if(e<0)
-            nfrac += nfrac<0 ? e : -e;
-
-        p = append_fraction(p, dste, d, nfrac, false);
-    }
-    else
-    {
-        //number doesn't fit into the space in unnormalized form
-        // 
-
-        double mantissa = pow(10.0, l - double(e)); //>= 1 < 10
-
-        //the part required for the exponent
-        int eabs = e<0 ? -e : e;
-        int nexp = eabs>=10 ? 3 : 2;    //eXX
-        if(e<0) ++nexp; //e-XX
-
-        //if there's a place for the first number and dot
-        if(p+nexp+2 > dste) {
-            ::memset(dst, '?', dste-dst);
-            return dste;
-        }
-
-        *p++ = '0' + (int)mantissa;
-        *p++ = '.';
-
-        for( char* me=dste-nexp; p<me && --anfrac>0; ) {
-            mantissa -= floor(mantissa);
-            mantissa *= 10.0;
-
-            *p++ = '0' + (int)mantissa;
-        }
-
-        *p++ = 'e';
-        if(e<0)
-            *p++ = '-';
-        if(eabs>=10) {
-            *p++ = '0' + eabs/10;
-            eabs = eabs % 10;
-        }
-        *p++ = '0' + eabs;
-    }
-*/
     return p;
 }
 
