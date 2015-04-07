@@ -65,7 +65,8 @@ public:
         // find empty slot
         const uchar slots = *b_char;
         int i = 0;
-        for (; i < 8 && (slots & (1 << i)) != 0; ++i);
+        while (i < 8 && (slots & (1 << i)) != 0)
+            ++i;
         const uint slot = ((b_char - reinterpret_cast<uchar*>(_bmp.ptr())) << 3) + i;
         
         // return pointer to free slot
@@ -87,7 +88,7 @@ public:
     bool is_valid(const uint id) const
     {
         const uint s0 = id >> 3;
-        const uchar slots = reinterpret_cast<const uchar*>(_bmp.ptr())[s0];
+        const uchar slots = s0 < (_bmp.size() << 2) ? reinterpret_cast<const uchar*>(_bmp.ptr())[s0] : 0;
         return (slots & (1 << (id & 7))) != 0;
     }
 
