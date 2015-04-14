@@ -1096,7 +1096,7 @@ public:
     //@return c if it should be escaped, otherwise 0
     static char escape_char( char c, char strdel=0 )
     {
-        char v;
+        char v=0;
         switch(c) {
         case '\a': v='a'; break;
         case '\b': v='b'; break;
@@ -1108,7 +1108,6 @@ public:
         case '\"': if(strdel=='"' || strdel==0) v='"'; break;
         case '\'': if(strdel=='\'' || strdel==0) v='\''; break;
         case '\\': v='\\'; break;
-        default: v=0;
         }
         return v;
     }

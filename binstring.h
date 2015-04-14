@@ -134,7 +134,7 @@ public:
 
         return std::is_unsigned<T>::value
             ? T(result)
-            : T((result >> 1) ^ -static_cast<T>(result & 1));
+            : T((result >> 1) ^ -int64(result & 1));
     }
 
     ///Return position of data given starting offset in buffer
