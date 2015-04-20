@@ -99,13 +99,13 @@ private:
     void* operator new (uints size, uints total, bool )
     {
         void* p = memaligned_alloc( total, PAGESIZE );
-        MEMTRACK_ALLOC(chunkblock, total);
+        MEMTRACK_ALLOC("chunkblock", total);
         return p;
     }
 
     void operator delete (void *ptr, uints total, bool )
     {
-        MEMTRACK_FREE(chunkblock, total);
+        MEMTRACK_FREE("chunkblock", total);
         memaligned_free(ptr);
     }
 

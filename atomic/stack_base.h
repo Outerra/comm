@@ -51,7 +51,7 @@ private:
 
     struct atomic_align node
     {
-        COIDNEWDELETE(node);
+        COIDNEWDELETE("stack_base::node");
 
         node* _next_basic_pool;
         T _item;

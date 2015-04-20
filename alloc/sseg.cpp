@@ -70,7 +70,7 @@ void* ssegpage::operator new ( size_t, uints segsize, bool )
     segsize = nextpow2(segsize);
     uchar r = ssegpage::block::get_granularity_shift_from_pagesize(segsize);
 
-    MEMTRACK_ALLOC(ssegpage, segsize);
+    MEMTRACK_ALLOC("ssegpage", segsize);
 
     return memaligned_alloc( segsize, 1<<r );
 }
@@ -78,7 +78,7 @@ void* ssegpage::operator new ( size_t, uints segsize, bool )
 ////////////////////////////////////////////////////////////////////////////////
 void ssegpage::operator delete (void * ptr, uints segsize, bool )
 {
-    MEMTRACK_FREE(ssegpage, segsize);
+    MEMTRACK_FREE("ssegpage", segsize);
     memaligned_free( ptr );
 }
 

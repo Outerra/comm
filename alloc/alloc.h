@@ -62,7 +62,7 @@ class seg_allocator
 {
 public:
 
-    COIDNEWDELETE(seg_allocator);
+    COIDNEWDELETE("seg_allocator");
 
     static const char* class_name()     { return "seg_allocator"; }
 

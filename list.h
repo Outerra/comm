@@ -20,7 +20,7 @@ public:
 	///
     struct node
     {
-		COIDNEWDELETE(list::node);
+		COIDNEWDELETE("list::node");
 
 		union {
 			node *_next_basic_pool;

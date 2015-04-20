@@ -40,6 +40,8 @@
 #include "../atomic/atomic.h"
 #include "../sync/mutex.h"
 
+#include "../binstream/filestream.h"
+
 namespace coid {
 
 struct memtrack_imp : memtrack {
@@ -171,6 +173,47 @@ uint memtrack_list( memtrack* dst, uint nmax )
     }
 
     return i;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void memtrack_dump( const char* file )
+{
+    memtrack_registrar* mtr = memtrack_register();
+    if(!mtr || mtr->reg<0)
+        return;
+
+    GUARDTHIS(mtr->mux);
+    memtrack_hash_t::iterator ib = mtr->hash.begin();
+    memtrack_hash_t::iterator ie = mtr->hash.end();
+
+    bofstream bof(file);
+    if(!bof.is_open())
+        return;
+
+    charstr buf;
+    buf.reserve(8000);
+
+    buf << "    total   | #alloc |  type\n";
+
+    uint i=0;
+    for( ; ib!=ie; ++ib ) {
+        memtrack& p = *ib;
+        if(p.total == 0)
+            continue;
+
+        buf.append_num(10, p.total, 12);
+        buf.append_num(10, p.ntotalallocs, 9);
+        buf << '\t' << p.name << '\n';
+
+        if(buf.len() > 7900) {
+            bof.xwrite_token_raw(buf);
+            buf.reset();
+        }
+    }
+
+    if(buf)
+        bof.xwrite_token_raw(buf);
+    bof.close();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

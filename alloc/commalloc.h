@@ -112,7 +112,7 @@ struct comm_array_mspace
 template<class T>
 struct comm_array_allocator
 {
-    COIDNEWDELETE(comm_array_allocator);
+    COIDNEWDELETE("comm_array_allocator");
 
 
     static void instance() {
@@ -123,7 +123,7 @@ struct comm_array_allocator
         uints* p = (uints*)::mspace_malloc(SINGLETON(comm_array_mspace).msp,
             sizeof(uints) + n * sizeof(T));
 
-        MEMTRACK_ALLOC(dynarray.data, ::mspace_usable_size(p));
+        MEMTRACK_ALLOC(typeid(T).name(), ::mspace_usable_size(p));
 
         if(!p) throw std::bad_alloc();
         p[0] = n;
@@ -133,7 +133,7 @@ struct comm_array_allocator
     static T* realloc( T* p, uints n ) {
 
         if(p)
-            MEMTRACK_FREE(dynarray.data, ::mspace_usable_size((uints*)p - 1));
+            MEMTRACK_FREE(typeid(T).name(), ::mspace_usable_size((uints*)p - 1));
 
         uints* pn = (uints*)::mspace_realloc(SINGLETON(comm_array_mspace).msp,
             p ? (uints*)p - 1 : 0,
@@ -145,7 +145,7 @@ struct comm_array_allocator
 		}*/
         if(!pn) throw std::bad_alloc();
 
-        MEMTRACK_ALLOC(dynarray.data, ::mspace_usable_size(pn));
+        MEMTRACK_ALLOC(typeid(T).name(), ::mspace_usable_size(pn));
 
         pn[0] = n;
         return (T*) (pn + 1);
@@ -154,7 +154,7 @@ struct comm_array_allocator
     static void free( T* p ) {
         if(!p)  return;
 
-        MEMTRACK_FREE(dynarray.data, ::mspace_usable_size((uints*)p - 1));
+        MEMTRACK_FREE(typeid(T).name(), ::mspace_usable_size((uints*)p - 1));
         ::mspace_free(SINGLETON(comm_array_mspace).msp, (uints*)p - 1);
     }
 
