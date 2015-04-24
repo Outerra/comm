@@ -109,7 +109,7 @@ bool MethodIG::parse( iglexer& lex, const charstr& host, const charstr& ns, dyna
 
     bmandatory = !evbody && (ret.type != "void" || noutargs > 0);
 
-    //declaration parsed succesfully
+    //declaration parsed successfully
     return lex.no_err();
 }
 

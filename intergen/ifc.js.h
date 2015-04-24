@@ -42,6 +42,7 @@
 #include <comm/dir.h>
 #include <comm/metastream/metastream.h>
 #include <comm/metastream/fmtstream_v8.h>
+#include <comm/binstream/filestream.h>
 #include <v8/v8.h>
 
 ///Helper for script loading

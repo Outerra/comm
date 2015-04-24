@@ -214,6 +214,33 @@ public:
         return lm;
     }
 
+    void post(token msg)
+    {
+        static token ERR = "error:";
+        static token WARN = "warning:";
+        static token INFO = "info:";
+        static token DBG1 = "dbg:";
+        static token DBG2 = "debug:";
+        static token PERF = "perf:";
+
+        ELogType t = Info;
+        if(msg.consume_icase(ERR))
+            t = Error;
+        else if(msg.consume_icase(WARN))
+            t = Warning;
+        else if(msg.consume_icase(INFO))
+            t = Info;
+        else if(msg.consume_icase(DBG1) || msg.consume_icase(DBG2))
+            t = Debug;
+        else if(msg.consume_icase(PERF))
+            t = Perf;
+
+        msg.skip_whitespace();
+
+        logmsg_local lm(_logfile, t);
+	    lm << type2tok(t) << msg;
+    }
+
 	void flush();
 };
 

@@ -133,7 +133,7 @@ bool Method::parse( iglexer& lex, int prefix )
         bsizearg = true;
     }
 
-    //declaration parsed succesfully
+    //declaration parsed successfully
     return lex.no_err();
 }
 
