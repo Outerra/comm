@@ -41,14 +41,8 @@ static v8::Handle<v8::Value> js_local_include(const v8::Arguments& args)
     coid::token path = coid::token(*str, str.length());
     path.trim_whitespace();
 
-    if(coid::directory::is_separator(path.first_char()))
-        return v8::Undefined();
-
-    coid::charstr dst = path;
-    coid::directory::compact_path(dst);
-
-    char c = dst.first_char();
-    if(c == '.' || c == '/' || c == '\\')   //path outside
+    coid::charstr dst;
+    if(0 != script_handle::get_target_path(path, 0, "", dst, true))
         return v8::ThrowException(v8::Exception::Error(v8::String::New("invalid path")));
 
     if(!dst.ends_with(".js"))

@@ -100,10 +100,10 @@ struct script_handle
     ///Get absolute path from the provided path that's relative to given JS stack frame
     //@param path relative path (an include path)
     //@param frame v8 stack frame number to be made relative to
-    //@param root root directory (for absolute paths)
+    //@param root root directory (for absolute paths). If empty, frame path is used as the root
     //@param dst [out] resulting path, using / for directory separators
-    //@return 0 if succeeded, 1 invalid stack frame, 2 invalid path
-    static int get_target_path( const coid::token& path, uint frame, const coid::token& root, coid::charstr& dst )
+    //@return 0 if succeeded, 1 invalid stack frame, 2 invalid path, 3 outside the root or bad path
+    static int get_target_path( const coid::token& path, uint frame, const coid::token& root, coid::charstr& dst, bool constraint_root )
     {
         if(path.first_char() != '/' && path.first_char() != '\\')
         {
@@ -117,12 +117,24 @@ struct script_handle
                 dst = coid::token(*uber, uber.length());
             else {
                 dst = coid::token(*uber, uber.length()).cut_left_back("\\/");
-                coid::directory::append_path(dst, path);
+                if(!coid::directory::append_path(dst, path, constraint_root))
+                    return 3;
             }
         }
         else {
-            dst = root;
-            coid::directory::append_path(dst, coid::token(path.ptr()+1, path.ptre()));
+            if(!root) {
+                v8::Local<v8::StackTrace> trace = v8::StackTrace::CurrentStackTrace(frame+1, v8::StackTrace::kScriptName);
+                if((int)frame >= trace->GetFrameCount())
+                    return 1;
+
+                v8::String::AsciiValue uber(trace->GetFrame(frame)->GetScriptName());
+                dst = coid::token(*uber, uber.length()).cut_left_back("\\/");
+            }
+            else
+                dst = root;
+
+            if(!coid::directory::append_path(dst, coid::token(path.ptr()+1, path.ptre()), constraint_root))
+                return 3;
         }
 
         if(!coid::directory::compact_path(dst, '/'))

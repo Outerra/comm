@@ -3208,7 +3208,7 @@ protected:
         uints rla = rl;
         opcd e = _bin->read_raw_full( _binbuf.ptr()+nkeep, rla );
 
-        uint size = rl-rla+nkeep-mold;
+        uints size = rl-rla+nkeep-mold;
         _tok.set( _binbuf.ptr()+mold, size );
 
         static const token BOM = "\xEF\xBB\xBF";

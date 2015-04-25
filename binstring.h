@@ -56,12 +56,12 @@ public:
     COIDNEWDELETE("binstring");
 
     binstring()
-        : _offset(0), _packing(UMAXS)
+        : _offset(0), _packing(UMAX32)
     {}
 
     ///Set the maximum packing alignment
     //@note resulting alignment is the minimum of this value and __alignof(type)
-    void set_packing( uints pack ) {
+    void set_packing( uint pack ) {
         _packing = pack;
     }
 

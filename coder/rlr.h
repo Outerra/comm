@@ -156,7 +156,7 @@ struct rlr_coder
             planes[i].reset(i, enc);
     }
 
-    void encodeN( const INT* vals, uint n )
+    void encodeN( const INT* vals, uints n )
     {
         while(n-->0)
             encode1(*vals++);
@@ -482,7 +482,7 @@ private:
             }
 
             //encode run of count 0's followed by a 1
-            write_run(n0, nzero);
+            write_run(n0, uint(nzero));
             
             if(runbits>0) {
                 --runbits;
@@ -527,14 +527,14 @@ private:
             dbit += nbits;
         }
 
-        void write_run( uints n0, uints count )
+        void write_run( uints n0, uint count )
         {
             //run of 0's
             while(NBITS-dbit < n0) {
                 n0 -= NBITS - dbit;
                 flush_data();
             }
-            dbit += n0;
+            dbit += uint(n0);
 
             //trailing 1
             if(NBITS-dbit == 0)
@@ -580,7 +580,7 @@ private:
     private:
 
         RUINT data;
-        uints dbit;
+        uint dbit;
 
         RUINT databuf[16];
         uints dataidx;

@@ -187,9 +187,11 @@ public:
     ///Get relative path from src to dst
     static bool get_relative_path( token src, token dst, charstr& relout );
 
-    ///Append \a path to destination buffer. If the path is absolute, previous
-    /// content of \a dst is dicarded.
-    static bool append_path( charstr& dst, token path );
+    ///Append \a path to the destination buffer
+    //@param dst path to append to, also receives the result
+    //@param path relative path to append; an absolute path replaces the content of dst
+    //@param keep_below if true, only allows relative paths that cannot get out of the input path
+    static bool append_path( charstr& dst, token path, bool keep_below = false );
 
     static bool is_absolute_path( const token& path );
 

@@ -119,11 +119,13 @@ bool directory::is_absolute_path( const token& path )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool directory::append_path( charstr& dst, token path )
+bool directory::append_path( charstr& dst, token path, bool keep_below )
 {
-
-    if(is_absolute_path(path))
+    if(is_absolute_path(path)) {
+        if(keep_below)
+            return false;
         dst = path;
+    }
     else
     {
         token tdst = dst;
@@ -132,6 +134,9 @@ bool directory::append_path( charstr& dst, token path )
 
         while( path.begins_with("..") )
         {
+            if(keep_below)
+                return false;
+
             path.shift_start(2);
             char c = path.first_char();
 
@@ -149,6 +154,22 @@ bool directory::append_path( charstr& dst, token path )
             }
 
             ++path;
+        }
+
+        if(keep_below) {
+            //check if the appended path doesn't escape out
+            int rdepth=0;
+            token rp = path;
+            while(token v = rp.cut_left(DIR_SEPARATORS)) {
+                if(v == '.');
+                else if(v == "..")
+                    rdepth--;
+                else
+                    rdepth++;
+
+                if(rdepth < 0)
+                    return false;
+            }
         }
 
         dst.resize( tdst.len() );
@@ -474,10 +495,10 @@ bool directory::compact_path( charstr& dst, char tosep )
         token seg = dtok.cut_left(DIR_SEPARATORS);
         bool isup = seg == up;
 
-        int d = dtok.ptr() - seg.ptre();
+        ints d = dtok.ptr() - seg.ptre();
         if(d > 1) {
             //remove extra path separators
-            dst.del(seg.ptre() - dst.ptr(), d-1);
+            dst.del(int(seg.ptre() - dst.ptr()), uint(d-1));
             dtok.shift_start(1-d);
             dtok.shift_end(1-d);
         }
@@ -486,7 +507,13 @@ bool directory::compact_path( charstr& dst, char tosep )
         if(d > 0 && tosep)
             *(char*)seg.ptre() = tosep;
 
-        if(!isup) {
+        if(seg == '.') {
+            int d = int(dtok.ptr() - seg.ptr());
+            dst.del(int(seg.ptr() - dst.ptr()), d);
+            dtok.shift_start(-d);
+            dtok.shift_end(-d);
+        }
+        else if(!isup) {
             if(rem.len()) {
                 int rlen = rem.len();
                 dst.del(int(rem.ptr()-dst.ptr()), rlen);
@@ -526,7 +553,6 @@ bool directory::compact_path( charstr& dst, char tosep )
 
             fwd._ptr = dtok.ptr();
         }
-
     }
     while(dtok);
 

@@ -119,7 +119,8 @@ public:
     ///
     virtual opcd write_raw( const void* p, uints& len )
     {
-        int sr = gzwrite(_gz, p, len);
+        RASSERT(len <= UINT_MAX);
+        int sr = gzwrite(_gz, p, uint(len));
         if(sr<0)
             return ersFAILED;
 
@@ -130,7 +131,8 @@ public:
     ///
     virtual opcd read_raw( void* p, uints& len )
     {
-        int sr = gzread(_gz, p, len);
+        RASSERT(len <= UINT_MAX);
+        int sr = gzread(_gz, p, uint(len));
         if(sr<0)
             return ersFAILED;
 

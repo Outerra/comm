@@ -380,7 +380,7 @@ inline binstream& operator >> (binstream& in, std::string& p)
 inline metastream& operator || (metastream& meta, std::string& p)
 {
     if(meta.stream_reading()) {
-        dynarray<char> tmp;
+        dynarray<char,uint> tmp;
         dynarray<char,uint>::dynarray_binstream_container c(tmp);
         meta.read_container<char>(c);
 

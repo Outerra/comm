@@ -344,11 +344,11 @@ public:
         token tok = *this;
         tok.trim(newline, whitespace);
 
-        int lead = tok.ptr() - ptr();
-        int trail = ptre() - tok.ptre();
+        ints lead = tok.ptr() - ptr();
+        ints trail = ptre() - tok.ptre();
 
         if(lead > 0)
-            del(0, lead);
+            del(0, uint(lead));
         if(trail)
             resize(-trail);
         return *this;
@@ -1139,7 +1139,7 @@ public:
             char v = escape_char(*p, strdel);
 
             if(v) {
-                uint len = p - ps;
+                ints len = p - ps;
                 char* dst = alloc_append_buf(len + 2);
                 xmemcpy(dst, ps, len);
                 dst += len;

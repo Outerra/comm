@@ -233,7 +233,7 @@ public:
 
 ///Helper to map typed array from C++ to V8
 template<class T>
-inline v8::Handle<v8::Value> v8_map_typed_array( const T* ptr, uints count, v8::ExternalArrayType type )
+inline v8::Handle<v8::Value> v8_map_typed_array( const T* ptr, uint count, v8::ExternalArrayType type )
 {
     v8::Handle<v8::Object> a = v8::Object::New();
     a->SetIndexedPropertiesToExternalArrayData((void*)ptr, type, count);
@@ -251,7 +251,7 @@ public:\
     {} \
  \
     v8::Handle<v8::Value> to_v8(const dynarray<T>& v) { \
-        return v8_map_typed_array(v.ptr(), v.size(), V8EXT); \
+        return v8_map_typed_array(v.ptr(), (uint)v.size(), V8EXT); \
     } \
  \
     bool from_v8( v8::Handle<v8::Value> src, dynarray<T>& res ) { \

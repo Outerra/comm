@@ -74,7 +74,7 @@ bool async_receiver::recv_data( client& c )
     bool rcvd = false;
     while(c.socket.wait_read(0))
     {
-        uints batch = 2048;
+        int batch = 2048;
         uint8* p = c.buf.add(batch);
 
         int n = c.socket.recv(p, batch, 0);
@@ -93,7 +93,7 @@ bool async_receiver::recv_data( client& c )
 
         rcvd = true;
 
-        if(uints(n) < batch) {
+        if(n < batch) {
             c.buf.resize(-ints(batch-n));
             break;
         }
