@@ -153,9 +153,15 @@ public:
 		logmsg_ptr _lm;
 
 	public:
-		logmsg_local(logger_file_ptr& lf,const ELogType t) : _lm(CREATE_POOLED) { _lm->set_log_file(lf,t); }
+		logmsg_local(logger_file_ptr& lf,const ELogType t)
+            : _lm(CREATE_POOLED)
+        {
+            _lm->set_log_file(lf, t);
+        }
 
-		logmsg_local() : _lm() {}
+		logmsg_local()
+            : _lm()
+        {}
 
 		~logmsg_local();
 

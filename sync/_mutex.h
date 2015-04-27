@@ -98,7 +98,11 @@ public:
 #ifdef SYSTYPE_WIN
     struct critical_section
     {
-        enum { CS_SIZE = 16*4, };
+#ifdef SYSTYPE_64
+        static const size_t CS_SIZE = 40;
+#else
+        static const size_t CS_SIZE = 24;
+#endif
 
         uint8   _tmp[CS_SIZE];
     };

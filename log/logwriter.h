@@ -52,15 +52,21 @@ public:
 
 	~log_writer();
 
-    static void* thread_run_fn( void* p ) { return reinterpret_cast<log_writer*>(p)->thread_run(); }
+    static void* thread_run_fn( void* p ) {
+        return reinterpret_cast<log_writer*>(p)->thread_run();
+    }
 
 	void* thread_run();
 
-	void addmsg(logmsg_ptr& m) { _queue.push_take(m); }
+	void addmsg(logmsg_ptr& m) {
+        _queue.push_take(m);
+    }
 
 	void flush();
 
-    bool is_empty() const { return _queue.is_empty(); }
+    bool is_empty() const {
+        return _queue.is_empty();
+    }
 };
 
 COID_NAMESPACE_END

@@ -64,8 +64,14 @@ _comm_mutex::_comm_mutex (bool recursive)
 ////////////////////////////////////////////////////////////////////////////////
 void _comm_mutex::init( bool recursive )
 {
+    _owner_thread = 0;
+
 #ifdef SYSTYPE_WIN
-	InitializeCriticalSectionAndSpinCount( (CRITICAL_SECTION*)&_cs,4 );
+
+    static const int k = sizeof(CRITICAL_SECTION);
+    static_assert( sizeof(_cs) == k, "mismatched size" );
+
+	InitializeCriticalSectionAndSpinCount( (CRITICAL_SECTION*)&_cs, 4 );
 #else
     pthread_mutexattr_t m;
     pthread_mutexattr_init(&m);

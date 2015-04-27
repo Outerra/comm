@@ -57,7 +57,10 @@ log_writer::log_writer()
 	: _thread()
 	, _queue() 
 {
-	SINGLETON(policy_pooled<logmsg>::pool_type);
+    //make sure the dependent singleton gets created
+    logmsg::pool();
+	//SINGLETON(policy_pooled<logmsg>::pool_type);
+
 	_thread.create( thread_run_fn, this, 0, "log_writer" );
 }
 
@@ -90,7 +93,8 @@ void log_writer::flush()
 
 	//int maxloop = 3000 / 20;
 
-	while( _queue.pop(m) ) { 
+	while( _queue.pop(m) ) {
+        DASSERT( m->str() );
 		m->write_to_file();
 		m.release();
 	}

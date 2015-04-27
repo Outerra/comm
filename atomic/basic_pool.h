@@ -40,100 +40,111 @@
 namespace atomic {
 
 template<class T>
-class basic_pool 
+class basic_pool
 {
 #ifdef SYSTYPE_64
-	typedef coid::uint64 tag_t;
+    typedef coid::uint64 tag_t;
 #else 
-	typedef coid::uint32 tag_t;
+    typedef coid::uint32 tag_t;
 #endif
 
 public:
-	struct atomic_align ptr_t {
-		union {
-			struct {
-				T* _ptr;
-				tag_t _tag;
-			};
-			struct {
-				coid::int64 _data;
+    struct atomic_align ptr_t {
+        union {
+            struct {
+                T* _ptr;
+                tag_t _tag;
+            };
+            struct {
+                coid::int64 _data;
 #ifdef SYSTYPE_64
-				coid::int64 _datah;
+                coid::int64 _datah;
 #endif
-			};
-		};
+            };
+        };
 
-		ptr_t() : _ptr(0), _tag(0) {}
+        ptr_t()
+            : _ptr(0)
+            , _tag(0)
+        {}
 
-		ptr_t(T* const p,const tag_t t) : _ptr(p), _tag(t) {}
+        ptr_t(T* const p, const tag_t t)
+            : _ptr(p)
+            , _tag(t)
+        {}
 
         // is a MUST because we need atomicity on pointers...
-        ptr_t(const ptr_t &p) { *this=p; }
+        ptr_t(const ptr_t &p) { *this = p; }
 
-		void operator=(const ptr_t &p) {
+        void operator = (const ptr_t &p) {
 #ifdef SYSTYPE_64
 #ifdef SYSTYPE_MSVC
-			__movsq((uint64*)&_data,(uint64*)&p._data,2);
+            //b_cas128(&_data, p._datah, p._data, const_cast<const int64*>(&_data));
+            __movsq((uint64*)&_data, (uint64*)&p._data, 2);
+            DASSERT( _data == p._data );
+            DASSERT( _datah == p._datah );
 #else
             *((__int128_t*)_data) = __sync_add_and_fetch((__int128_t*)&p._data, 0);
 #endif
 #else
-			_data=p._data;
+            _data = p._data;
 #endif
-		}
-	};
+        }
+    };
 
-	ptr_t _head;
-
-	///
-	basic_pool() : _head() {}
-
-	///
-	~basic_pool() { purge(); }
-
-	void purge() { T* p; while((p=pop()) != 0) delete p; }
+    volatile ptr_t _head;
 
     ///
-	void push(T* n) 
-	{
-		for(;;) {
-			ptr_t oldhead=_head;
-			n->_next_basic_pool=oldhead._ptr;
-			ptr_t newhead( n,oldhead._tag+1 );
-#ifdef SYSTYPE_64
-		if( b_cas128( &_head._data,newhead._datah,newhead._data,&oldhead._data ) )
-#else 
-		if( b_cas( &_head._data,newhead._data,oldhead._data ) )
-#endif
-			break;
-		}
-	}
+    basic_pool() {}
 
     ///
-	T* pop()
-	{
-		for( ;; ) {
-    		ptr_t oldhead=_head;
+    ~basic_pool() { purge(); }
 
-            if( oldhead._ptr==0 ) return 0;
+    void purge() { T* p; while((p = pop()) != 0) delete p; }
 
-			ptr_t newhead(oldhead._ptr->_next_basic_pool,oldhead._tag+1);
+    ///
+    void push(T* n)
+    {
+        for(;;) {
+            ptr_t oldhead = const_cast<const ptr_t&>(_head);
+            n->_next_basic_pool = oldhead._ptr;
+            ptr_t newhead(n, oldhead._tag + 1);
 #ifdef SYSTYPE_64
-			if( b_cas128( &_head._data,newhead._datah,newhead._data,&oldhead._data ) ) {
+            if(b_cas128(&_head._data, newhead._datah, newhead._data, &oldhead._data))
 #else 
-			if( b_cas( &_head._data,newhead._data,oldhead._data ) ) {
+            if(b_cas(&_head._data, newhead._data, oldhead._data))
 #endif
-				return oldhead._ptr;
-			}
-		}
-		return 0;
-	}
+                break;
+        }
+    }
+
+    ///
+    T* pop()
+    {
+        for(;;) {
+            ptr_t oldhead = const_cast<const ptr_t&>(_head);
+
+            T* ptr = oldhead._ptr;
+            if(ptr == 0) return 0;
+
+            ptr_t newhead(ptr->_next_basic_pool, oldhead._tag + 1);
+
+#ifdef SYSTYPE_64
+            if(b_cas128(&_head._data, newhead._datah, newhead._data, &oldhead._data)) {
+#else 
+            if(b_cas(&_head._data, newhead._data, oldhead._data)) {
+#endif
+                return ptr;
+            }
+        }
+        return 0;
+    }
 
     ///
     T* pop_new() {
-        T* o=pop();
+        T* o = pop();
         return o ? o : new T();
-	}
+    }
 };
 
 } // end of namespace atomic

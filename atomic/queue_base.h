@@ -65,7 +65,10 @@ public:
 
 	void push(const T& item) { GUARDTHIS(_mutex); this->push_back(item); }
 
-	void push_take(T& item) { GUARDTHIS(_mutex); this->push_back_take(item); }
+	void push_take(T& item) {
+        GUARDTHIS(_mutex);
+        this->push_back_take(item);
+    }
 
 	bool pop(T& item) { GUARDTHIS(_mutex); return this->pop_front(item); }
 

@@ -57,90 +57,90 @@ private:
         T _item;
     };
 
-	struct atomic_align ptr_t
-	{
+    struct atomic_align ptr_t
+    {
 #ifdef SYSTYPE_64
-		typedef coid::uint64 tag_t;
+        typedef coid::uint64 tag_t;
 #else 
-		typedef coid::uint32 tag_t;
+        typedef coid::uint32 tag_t;
 #endif
-		ptr_t() : _ptr(0), _pops(0) {}
+        ptr_t() : _ptr(0), _pops(0) {}
 
-		ptr_t(node* const ptr, const tag_t pops) : _ptr(ptr), _pops(pops) {}
+        ptr_t(node* const ptr, const tag_t pops) : _ptr(ptr), _pops(pops) {}
 
-		union {
-			struct {
-		        node* _ptr;
-			    tag_t _pops;
-			};
-			struct {
-				coid::int64 _data;
+        union {
+            struct {
+                node* _ptr;
+                tag_t _pops;
+            };
+            struct {
+                coid::int64 _data;
 #ifdef SYSTYPE_64
-				coid::int64 _datah;
+                coid::int64 _datah;
 #endif
-			};
-		};
+            };
+        };
 
-		ptr_t(const ptr_t &p) { *this=p; }
+        ptr_t(const ptr_t &p) { *this = p; }
 
-		void operator=(const ptr_t &p) {
+        void operator=(const ptr_t &p) {
 #ifdef SYSTYPE_64
 #ifdef SYSTYPE_MSVC
-			__movsq((uint64*)&_data,(uint64*)&p._data,2);
+            __movsq((uint64*)&_data, (uint64*)&p._data, 2);
 #else
             *((__int128_t*)_data) = __sync_add_and_fetch((__int128_t*)&p._data, 0);
 #endif
 #else
-			_data=p._data;
+            _data=p._data;
 #endif
-		}
-	};
+        }
+    };
 
-	ptr_t _head;
+    ptr_t _head;
 
     basic_pool<node> _node_pool;
 
 public:
-	stack_base()	: _head() {}
+    stack_base() : _head() {}
 
-	void push(const T& item)
-	{
-		node* n=_node_pool.pop_new();
-        n->_item=item;
+    void push(const T& item)
+    {
+        node* n = _node_pool.pop_new();
+        n->_item = item;
 
-		for (;;) {
-			ptr_t oldhead=_head;
-			n->_next_basic_pool=oldhead._ptr;
+        for(;;) {
+            ptr_t oldhead = _head;
+            n->_next_basic_pool = oldhead._ptr;
 
-			const ptr_t newhead( n, oldhead._pops+1 );
+            const ptr_t newhead(n, oldhead._pops + 1);
 #ifdef SYSTYPE_64
-			if (b_cas128( &_head._data,newhead._datah,newhead._data,&oldhead._data ) )
+            if(b_cas128(&_head._data, newhead._datah, newhead._data, &oldhead._data))
 #else 
-			if (b_cas( &_head._data,newhead._data,oldhead._data ) )
+            if(b_cas(&_head._data,newhead._data,oldhead._data))
 #endif
-				break;
-		}
-	}
+                break;
+        }
+    }
 
-	bool pop(T& item)
-	{
-		for (;;) {
-			ptr_t oldhead=_head;
+    bool pop(T& item)
+    {
+        for(;;) {
+            ptr_t oldhead = _head;
 
-			if( oldhead._ptr==0 ) return false;
+            if(oldhead._ptr == 0) return false;
 
-			const ptr_t newhead( oldhead._ptr->_next_basic_pool, oldhead._pops+1 );
+            const ptr_t newhead(oldhead._ptr->_next_basic_pool, oldhead._pops + 1);
 #ifdef SYSTYPE_64
-			if( b_cas128( &_head._data, newhead._datah,newhead._data, &oldhead._data ) ) {
+            if(b_cas128(&_head._data, newhead._datah, newhead._data, &oldhead._data)) {
 #else 
-			if( b_cas( &_head._data, newhead._data, oldhead._data ) ) {
+            if(b_cas(&_head._data, newhead._data, oldhead._data)) {
 #endif
-                item=oldhead._ptr->_item;
+                item = oldhead._ptr->_item;
                 _node_pool.push(oldhead._ptr);
-				return true;
-			}
-		}
-	}
+                return true;
+            }
+        }
+    }
 };
 
 } // end of namespace

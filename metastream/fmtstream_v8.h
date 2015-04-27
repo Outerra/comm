@@ -187,7 +187,7 @@ public:
     {}
 
     v8::Handle<v8::Value> to_v8(const dynarray<T>& v) {
-        uint n = v.size();
+        uint n = (uint)v.size();
         v8::Local<v8::Array> a = v8::Array::New(n);
         
         v8_streamer<T> estreamer(_fmt, _meta);

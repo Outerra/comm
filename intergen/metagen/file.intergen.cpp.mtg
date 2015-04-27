@@ -113,7 +113,7 @@ protected:
     void intergen_capture_dispatch( uint mid, coid::binstring& bin ) override
     {
         switch(mid) {
-        $-[method capture? return.type?="void" noutargs!]$
+        $-[method capture? noutargs!]$
         case $index$: {
             $-[args inarg?]$
             $-(if token?)$

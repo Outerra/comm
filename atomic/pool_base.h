@@ -60,6 +60,8 @@ protected:
 
 public:
 
+    T* get() const { return _obj; }
+
     ///
 	virtual void _destroy() override
     { 
@@ -83,10 +85,10 @@ public:
     ///
 	static this_type* create()
     {
-        return create(&pool_type::global());
+        return create(&pool());
     }
 
-    T* get() const { return _obj; }
+    static pool_type& pool() { return pool_type::global(); }
 };
 
 ///
@@ -108,7 +110,7 @@ public:
     ///
 	policy_pooled_i() 
 		: policy_base()
-        , _pool(&pool_type::global()) 
+        , _pool(&pool()) 
     {}
 
     ///
@@ -140,8 +142,10 @@ public:
     ///
 	static T* create()
     {
-        return create(&pool_type::global());
+        return create(&pool());
     }
+
+    static pool_type& pool() { return pool_type::global(); }
 };
 
 COID_NAMESPACE_END
