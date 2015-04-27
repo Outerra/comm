@@ -135,6 +135,8 @@ typedef iref<logmsg> logmsg_ptr;
  */
 class logger
 {
+    friend class logmsg_local;
+
 public:
 	enum ELogType {
 		Exception=0,
@@ -151,16 +153,18 @@ public:
 	{
     protected:
 		logmsg_ptr _lm;
+        bool _stdout;
 
 	public:
-		logmsg_local(logger_file_ptr& lf,const ELogType t)
+		logmsg_local(logger& lf, const ELogType t)
             : _lm(CREATE_POOLED)
+            , _stdout(lf._stdout && t != Debug)
         {
-            _lm->set_log_file(lf, t);
+            _lm->set_log_file(lf._logfile, t);
         }
 
 		logmsg_local()
-            : _lm()
+            : _lm(), _stdout(false)
         {}
 
 		~logmsg_local();
@@ -191,31 +195,35 @@ public:
 protected:
 	logger_file_ptr _logfile;
 
-public:
-	logger();
+    bool _stdout;
 
-    void open(const token& filename) { _logfile->open(filename); }
+public:
+	logger( bool std_out=false );
+
+    void open(const token& filename) {
+        _logfile->open(filename);
+    }
 
 public:
     logmsg_local operator()() {
-        logmsg_local lm(_logfile, Info);
+        logmsg_local lm(*this, Info);
         return lm;
     }
 
     logmsg_local operator()(const ELogType t) {
-        logmsg_local lm(_logfile, t);
+        logmsg_local lm(*this, t);
         lm << type2tok(t);
         return lm;
     }
 
     logmsg_local operator()(const ELogType t, const char* fnc) {
-        logmsg_local lm(_logfile, t);
+        logmsg_local lm(*this, t);
         lm << type2tok(t) << fnc << ' ';
         return lm;
     }
 
     logmsg_local operator()(const ELogType t, const char* fnc, const int line) {
-        logmsg_local lm(_logfile, t);
+        logmsg_local lm(*this, t);
         lm << type2tok(t) << fnc << '(' << line << ')' << ' ';
         return lm;
     }
@@ -243,7 +251,7 @@ public:
 
         msg.skip_whitespace();
 
-        logmsg_local lm(_logfile, t);
+        logmsg_local lm(*this, t);
 	    lm << type2tok(t) << msg;
     }
 

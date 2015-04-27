@@ -41,12 +41,15 @@
 #include "../atomic/pool.h"
 #include "../atomic/pool_base.h"
 
+#include "../binstream/stdstream.h"
+
 using namespace coid;
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-logger::logger()
+logger::logger( bool std_out )
 	: _logfile(new logger_file)
+    , _stdout(std_out)
 {
 	SINGLETON(log_writer);
 }
@@ -55,7 +58,7 @@ logger::logger()
 
 log_writer::log_writer() 
 	: _thread()
-	, _queue() 
+	, _queue()
 {
     //make sure the dependent singleton gets created
     logmsg::pool();
@@ -104,8 +107,12 @@ void log_writer::flush()
 
 logger::logmsg_local::~logmsg_local()
 {
-	if( !_lm.is_empty() && _lm.refcount()==1 )
-		SINGLETON(log_writer).addmsg(_lm);
+	if(!_lm.is_empty() && _lm.refcount() == 1) {
+        if(_stdout)
+            fwrite(_lm->str().ptr(), 1, _lm->str().len(), stdout);
+
+        SINGLETON(log_writer).addmsg(_lm);
+    }
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
