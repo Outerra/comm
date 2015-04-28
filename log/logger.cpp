@@ -45,6 +45,45 @@
 
 using namespace coid;
 
+#ifdef SYSTYPE_WIN
+#define WIN32_MEAN_AND_LEAN
+#include <Windows.h>
+
+static void write_console_text( const charstr& text, int type )
+{
+    static HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
+    static int curtype = logger::Info;
+
+    if(type != curtype) {
+        uint flg;
+
+        switch(type) {
+        case logger::Exception: flg = FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY; break;
+        case logger::Error:     flg = FOREGROUND_RED | FOREGROUND_INTENSITY; break;
+        case logger::Warning:   flg = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY; break;
+        case logger::Info:      flg = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE; break;
+        case logger::Highlight: flg = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY; break;
+        case logger::Debug:     flg = FOREGROUND_GREEN | FOREGROUND_BLUE; break;
+        case logger::Perf:      flg = FOREGROUND_GREEN | FOREGROUND_INTENSITY; break;
+        default:                flg = BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE;
+        }
+
+        curtype = type;
+        SetConsoleTextAttribute(hstdout, flg);
+    }
+
+    fwrite(text.ptr(), 1, text.len(), stdout);
+}
+
+#else
+
+static void write_console_text( const charstr& text, int type )
+{
+    fwrite(text.ptr(), 1, text.len(), stdout);
+}
+
+#endif
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 logger::logger( bool std_out )
@@ -109,7 +148,7 @@ logger::logmsg_local::~logmsg_local()
 {
 	if(!_lm.is_empty() && _lm.refcount() == 1) {
         if(_stdout)
-            fwrite(_lm->str().ptr(), 1, _lm->str().len(), stdout);
+            write_console_text(_lm->str(), _lm->get_type());
 
         SINGLETON(log_writer).addmsg(_lm);
     }

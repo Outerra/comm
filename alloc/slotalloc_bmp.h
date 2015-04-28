@@ -50,7 +50,7 @@ public:
             b++;
 
         if (b == be) {
-            const uint size = _bmp.size();
+            const uints size = _bmp.size();
             b = _bmp.add_uninit(size);
             memset(b, 0, size * sizeof(BLOCK_TYPE));
             _items.add_uninit(size * sizeof(BLOCK_TYPE) * 8);
@@ -67,7 +67,7 @@ public:
         int i = 0;
         while (i < 8 && (slots & (1 << i)) != 0)
             ++i;
-        const uint slot = ((b_char - reinterpret_cast<uchar*>(_bmp.ptr())) << 3) + i;
+        const uints slot = ((b_char - reinterpret_cast<uchar*>(_bmp.ptr())) << 3) + i;
         
         // return pointer to free slot
         *b_char |= 1 << i;
@@ -77,7 +77,7 @@ public:
     uint get_item_id(const T * const ptr) const
     {
         DASSERT(ptr < _items.ptre());
-        const uint id = ptr - _items.ptr();
+        const uints id = ptr - _items.ptr();
 
         return is_valid(id) ? id : -1;
     }

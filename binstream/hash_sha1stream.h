@@ -166,6 +166,10 @@ public:
         ::memcpy(dst, _result, SHA1_RESULTLEN);
     }
 
+    void set_result(const char src[SHA1_RESULTLEN]) {
+        ::memcpy(_result, src, SHA1_RESULTLEN);
+    }
+
 protected:
 
     char _result[SHA1_RESULTLEN];

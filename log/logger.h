@@ -143,6 +143,7 @@ public:
 		Error,
 		Warning,
 		Info,
+        Highlight,
 		Debug,
         Perf,
 		Last,
@@ -184,6 +185,7 @@ public:
 			"ERROR: ",
 			"WARNING: ",
 			"INFO: ",
+            "INFO: ",
 			"DEBUG: ",
             "PERF: ",
 		};
@@ -233,6 +235,7 @@ public:
         static token ERR = "error:";
         static token WARN = "warning:";
         static token INFO = "info:";
+        static token MSG = "msg:";
         static token DBG1 = "dbg:";
         static token DBG2 = "debug:";
         static token PERF = "perf:";
@@ -244,6 +247,8 @@ public:
             t = Warning;
         else if(msg.consume_icase(INFO))
             t = Info;
+        else if(msg.consume_icase(MSG))
+            t = Highlight;
         else if(msg.consume_icase(DBG1) || msg.consume_icase(DBG2))
             t = Debug;
         else if(msg.consume_icase(PERF))

@@ -57,9 +57,8 @@ class packstreamlz4 : public packstream
 public:
     virtual ~packstreamlz4()
     {
-        if(_writebuf.size() > _wlead)
+        if(_outbuf.size())
             flush();
-        LZ4_free(_LZ4_Data);
     }
 
     virtual uint binstream_attributes( bool in0out1 ) const
@@ -79,15 +78,16 @@ public:
     virtual void reset_write()
     {
         _out->reset_write();
-        init_wstream();
+        _outbuf.reset();
     }
 
     virtual bool is_open() const        { return _in && _in->is_open(); }
 
     virtual void flush()
     {
-        if(_writebuf.size() > _wlead)
-            write_block(true);
+        if(_outbuf.size())
+            _out->xwrite_raw(_outbuf.ptr(), _outbuf.byte_size());
+        _outbuf.reset();
 
         _out->flush();
     }
@@ -101,31 +101,32 @@ public:
         return 0;
     }
 
-    packstreamlz4() : _LZ4_Data(0), _wlead(0), _rlead(0)
-    {}
+    packstreamlz4()
+    {
+        LZ4_resetStream(&_stream);
+    }
     packstreamlz4( binstream* bin, binstream* bout )
-        : packstream(bin,bout), _LZ4_Data(0), _wlead(0), _rlead(0)
-    {}
+        : packstream(bin,bout)
+    {
+        LZ4_resetStream(&_stream);
+    }
 
     ///
     virtual opcd write_raw( const void* p, uints& len )
     {
-        if(_outbuf.size() == 0) init_wstream();
+        if(len == 0)
+            return 0;
 
-        while(_writebuf.size() + len >= BLOCKSIZE)
-        {
-            uint rem = BLOCKSIZE - _writebuf.size();
-            ::memcpy(_writebuf.add(rem), p, rem);
-            p = ptr_byteshift(p, rem);
-            len -= rem;
+        if(_outbuf.size() == 0)
+            init_wstream();
 
-            write_block(false);
+        while(len > INT_MAX) {
+            int n = INT_MAX;
+            write_block(p, n);
+            p = (uint8*)p + n;
+            len -= n;
         }
-
-        if(len) {
-            ::memcpy(_writebuf.add(len), p, len);
-            len = 0;
-        }
+        write_block(p, int(len));
 
         return 0;
     }
@@ -140,62 +141,32 @@ protected:
 
     void init_wstream()
     {
-        _writebuf.reserve(BLOCKSIZE, false);
-        _outbuf.alloc(LZ4_compressBound(BLOCKSIZE));
-
-        if(_LZ4_Data)
-            LZ4_free(_LZ4_Data);
-        _LZ4_Data = LZ4_create(_writebuf.ptr());
-        _wlead = 0;
+        LZ4_resetStream(&_stream);
     }
 
-    void write_block( bool final )
+    void write_block( const void* data, int size )
     {
-        int written = LZ4_compress_continue(_LZ4_Data,
-            _writebuf.ptr() + _wlead,
-            _outbuf.ptr(),
-            _writebuf.size() - _wlead);
+        int bs = LZ4_compressBound(size);
+        _outbuf.add(bs);
+        
+        int written = LZ4_compress_continue(&_stream,
+            (const char*)data,
+            (char*)_outbuf.ptr(),
+            size);
 
-        if(written)
-            _out->xwrite_raw(_outbuf.ptr(), written);
-
-        if(final) {
-            _writebuf.reset();
-            init_wstream();
-        }
-        else {
-            char* p = LZ4_slideInputBuffer(_LZ4_Data);
-            _wlead = p - _writebuf.ptr();
-            _writebuf.resize(_wlead);
-        }
+        _outbuf.resize(written-bs);
     }
 
     void read_block()
     {
-        if(_readbuf.size() == 0) {
-            _inbuf.reserve(BLOCKSIZE, false);
-            _readbuf.alloc(BLOCKSIZE);
-            _rlead = 0;
-        }
-
-        _inbuf.del(_ilead, _inbuf.size()-_ilead);
-
-        uints ts = BLOCKSIZE - _inbuf.size();
-        uints rs = ts;
-        _in->read_raw_full(_inbuf.ptre(), rs);
-        _inbuf.set_size(BLOCKSIZE - rs);
-
-        int iread = LZ4_decompress_safe_withPrefix64k(
-            _inbuf.ptr(), _readbuf.ptr()+_rlead, _inbuf.size(), _readbuf.size() - _rlead);
     }
 
 
 private:
 
-    dynarray<char> _writebuf, _outbuf;
-    dynarray<char> _readbuf, _inbuf;
-    void* _LZ4_Data;
-    uint _wlead, _rlead, _ilead;
+    dynarray<uint8> _outbuf;
+    dynarray<uint8> _inbuf;
+    LZ4_stream_t _stream;
 };
 
 COID_NAMESPACE_END
