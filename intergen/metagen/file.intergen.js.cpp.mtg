@@ -457,7 +457,7 @@ v8::Handle<v8::Value> $..name$_js_dispatcher::v8_evback_$name$$@index$(const v8:
     if(!_intobj_->IsExternal())
         return v8::Undefined();
 
-    $..name$_js_dispatcher* ifc = static_cast<$..name$_js_dispatcher*>
+    $..ns rest="::" after="::"$js::$..name$_js_dispatcher* ifc = static_cast<$..ns rest="::" after="::"$js::$..name$_js_dispatcher*>
         (v8::Handle<v8::External>::Cast(_intobj_)->Value());
 
     v8::Context::Scope context_scope(ifc->_context);
@@ -466,7 +466,7 @@ v8::Handle<v8::Value> $..name$_js_dispatcher::v8_evback_$name$$@index$(const v8:
     ifc->bind_events(ifc->_context, false, v8::Undefined());
     
     if(ifc->_events[$@index$].IsEmpty() || ifc->_events[$@index$]->IsUndefined())
-        throw_js_error(__trycatch, "event not available");
+        v8::ThrowException(v8::Exception::ReferenceError(v8::String::New("event not available")));
 $-(if ninargs.nonzero?)$
         
     v8::Local<v8::Value> largs[$ninargs$];
