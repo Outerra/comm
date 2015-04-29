@@ -138,11 +138,13 @@ $-(/if)$
 $-(if event?)$
         _eventobj.Dispose();
         _eventobj.Clear();
+        
+        for(int i=0; i<$event.@size$; ++i) {
+            _events[i].Dispose();
+            _events[i].Clear();
+        }
+        
 $-(/if)$
-$-[event]$
-        _events[$@index$].Dispose();
-        _events[$@index$].Clear();
-$-[/event]$
         if(!_object.IsEmpty() && _object->IsObject()) {
             v8::HandleScope scope;
             _object->SetInternalField(0, v8::External::New(0));
@@ -183,6 +185,7 @@ $-[/method]$
     ///Handler for generic $$query_interface javascript method
     static v8::Handle<v8::Value> v8query_interface( const v8::Arguments& args );
     static v8::Handle<v8::Value> v8rebind_events( const v8::Arguments& args );
+    static v8::Handle<v8::Value> v8current_global( const v8::Arguments& args );
 
     // --- method wrappers ---
 
@@ -222,6 +225,11 @@ private:
 
         return !_events[id].IsEmpty() && !_events[id]->IsUndefined();
     }
+    
+    //event wrappers for event invocation from js
+$-[event]$
+    static v8::Handle<v8::Value> v8_evback_$name$$@index$(const v8::Arguments& args);
+$-[/event]$
 $-(/if)$
 };
 
@@ -439,6 +447,43 @@ $-(/if)$
 $-(/if)$
 }
 
+////////////////////////////////////////////////////////////////////////////////
+v8::Handle<v8::Value> $..name$_js_dispatcher::v8_evback_$name$$@index$(const v8::Arguments& args)
+{
+    v8::HandleScope _handle_scope_;
+    v8::Local<v8::Object> _obj_ = args.Holder();
+
+    v8::Local<v8::Value> _intobj_ = _obj_->GetInternalField(0);
+    if(!_intobj_->IsExternal())
+        return v8::Undefined();
+
+    $..name$_js_dispatcher* ifc = static_cast<$..name$_js_dispatcher*>
+        (v8::Handle<v8::External>::Cast(_intobj_)->Value());
+
+    v8::Context::Scope context_scope(ifc->_context);
+    v8::TryCatch __trycatch;
+
+    ifc->bind_events(ifc->_context, false, v8::Undefined());
+    
+    if(ifc->_events[$@index$].IsEmpty() || ifc->_events[$@index$]->IsUndefined())
+        throw_js_error(__trycatch, "event not available");
+$-(if ninargs.nonzero?)$
+        
+    v8::Local<v8::Value> largs[$ninargs$];
+    int nargs = args.Length();
+    if(nargs > $ninargs$)
+        nargs = $ninargs$;
+    for(int i=0; i<nargs; ++i)
+        largs[i] = args[i];
+$-(/if)$
+
+    v8::Local<v8::Value> _r_ = ifc->_events[$@index$]->Call(
+        ifc->_eventobj.IsEmpty() || ifc->_eventobj->IsUndefined() ? ifc->_object : ifc->_eventobj,
+        $(if ninargs?)$nargs, largs$(elif)$0, 0$(/if)$);
+
+    return _handle_scope_.Close(_r_);
+}
+
 $-[/event]$
 $-(if hasprops?)$
 ////////////////////////////////////////////////////////////////////////////////
@@ -461,20 +506,22 @@ v8::Handle<v8::Value> $name$_js_dispatcher::_getter(v8::Local<v8::String> proper
     v8::Context::Scope context_scope(ifc->_context);
 
     v8::String::AsciiValue key(property);
-$-(if getter.token?)$
-    $getter.basetype$ value = (*R_)(coid::token(*key, key.length()));
-$-(elif)$
+    coid::token tok(*key, key.length());
+    
+ $-(if getter.token?)$
+    $getter.basetype$ value = (*R_)(tok);
+ $-(elif)$
     $getter.basetype$ value = (*R_)(*key);
-$-(/if)$
+ $-(/if)$
 
     //stream out
-$-(if getter.iref.false?)$
+ $-(if getter.iref.false?)$
     static_assert( CHECK::meta_operator_exists<$getter.basetype$>::value, "missing metastream operator << for type '$getter.basetype$'" );
     v8::Handle<v8::Value> _r_ = v8_streamer<$getter.basetype$>(&ifc->_fmtv8, &ifc->_meta).to_v8(value);
     ifc->_meta.stream_flush();
-$-(elif)$
+ $-(elif)$
     v8::Handle<v8::Value> _r_ = js_$getter.fulltype$_create_wrapper(value, ifc->_context);
-$-(/if)$
+ $-(/if)$
 
     return _handle_scope_.Close(_r_);
 }
@@ -512,8 +559,8 @@ $-(/if)$
 
     return _handle_scope_.Close(value);
 }
-
 $-(/if)$
+
 ////////////////////////////////////////////////////////////////////////////////
 v8::Handle<v8::Value> $name$_js_dispatcher::v8query_interface(const v8::Arguments& args)
 {
@@ -575,6 +622,22 @@ $-(/if)$
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+v8::Handle<v8::Value> $name$_js_dispatcher::v8current_global(const v8::Arguments& args)
+{
+    v8::HandleScope _handle_scope_;
+    v8::Local<v8::Object> _obj_ = args.Holder();
+
+    v8::Local<v8::Value> _intobj_ = _obj_->GetInternalField(0);
+    if(!_intobj_->IsExternal())
+        return v8::Undefined();
+
+    $ns rest="::" after="::"$js::$name$_js_dispatcher* ifc = static_cast<$ns rest="::" after="::"$js::$name$_js_dispatcher*>
+        (v8::Handle<v8::External>::Cast(_intobj_)->Value());
+
+    return _handle_scope_.Close(ifc->_context->Global());
+}
+
+////////////////////////////////////////////////////////////////////////////////
 v8::Handle<v8::Object> $name$_js_dispatcher::create_interface_object( bool make_weak )
 {
     static v8::Persistent<v8::ObjectTemplate> _objtempl;
@@ -586,11 +649,21 @@ v8::Handle<v8::Object> $name$_js_dispatcher::create_interface_object( bool make_
 $-[method !static? !destroy? !internal? !operator?]$
         _objtempl->Set(v8::String::NewSymbol("$name$"), v8::FunctionTemplate::New(&v8_$name$$@index$));
 $-[/method]$
+
         _objtempl->Set(v8::String::NewSymbol("$$query_interface"), v8::FunctionTemplate::New(&v8query_interface));
         _objtempl->Set(v8::String::NewSymbol("$$rebind_events"), v8::FunctionTemplate::New(&v8rebind_events));
+        _objtempl->Set(v8::String::NewSymbol("$$ctx"), v8::FunctionTemplate::New(&v8current_global));
+
 $-(if hasprops?)$
 
         _objtempl->SetNamedPropertyHandler(&_getter, &_setter);
+$-(/if)$
+$-(if event.nonzero?)$
+    
+        //event wrappers for event invocation from outside js
+$-[event]$
+        _objtempl->Set(v8::String::NewSymbol("$name$"), v8::FunctionTemplate::New(&v8_evback_$name$$@index$));
+$-[/event]$
 $-(/if)$
     }
 
@@ -600,7 +673,7 @@ $-(/if)$
     obj->SetInternalField(0, map_ptr);
     v8::Handle<v8::External> hash_ptr = v8::External::New((void*)$hash$);
     obj->SetInternalField(1, hash_ptr);
-
+    
     if(make_weak) {
         v8::Persistent<v8::Object>::New(obj).MakeWeak(this, _js_release_callback);
         add_refcount();
@@ -717,8 +790,6 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
             context = v8::Context::New();
     }
 
-    if(ctx) *ctx = context;
-
     v8::Context::Scope context_scope(context);
     ifc->_context = v8::Persistent<v8::Context>::New(context);
 
@@ -766,6 +837,11 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
         v8::Handle<v8::Script> compiled_script = load_script(script_tok, script_path);
 
         ifc->_script = v8::Persistent<v8::Script>::New(compiled_script);
+    }
+
+    if(ctx) {
+        *ctx = context;
+        scope.Close(*ctx);
     }
 
     return ifc;

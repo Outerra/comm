@@ -387,6 +387,11 @@ struct token
         return (c >= 'a' && c <= 'z') || (c >='A' && c <= 'Z') || (c >= '0' && c <= '9') ? c : 0;
     }
 
+    char char_is_whitespace( ints n ) const {
+        char c = nth_char(n);
+        return (c == ' ' || c == '\t' || c == '\r' || c == '\r') ? c : 0;
+    }
+
 
     ////////////////////////////////////////////////////////////////////////////////
     //@return this token if not empty, otherwise the second one
@@ -1668,6 +1673,28 @@ struct token
     {
         if( begins_with(tok) ) {
             _ptr += tok.lens();
+            return true;
+        }
+
+        return false;
+    }
+
+    ///Consume leading word if matches and is followed by whitespace, which is also consumed
+    //@param tok leading string to consume if matches, which must be followed by end or by whitespace characters
+    bool consume_word( const token& tok )
+    {
+        if(begins_with(tok)) {
+            uints n = tok.lens();
+            if(_ptr+n >= _pte) {
+                _ptr = _pte;
+                return true;
+            }
+
+            if(!char_is_whitespace(n))
+                return false;
+
+            _ptr += n;
+            skip_whitespace();
             return true;
         }
 

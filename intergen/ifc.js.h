@@ -283,12 +283,28 @@ inline v8::Handle<v8::Value> wrap_object( intergen_interface* orig, v8::Handle<v
 {
     if(!orig) return v8::Null();
 
+    v8::HandleScope hs;
+
     typedef v8::Handle<v8::Value> (*fn_wrapper)(intergen_interface*, v8::Handle<v8::Context>);
     fn_wrapper fn = static_cast<fn_wrapper>(orig->intergen_wrapper_js());
 
     if(fn)
-        return fn(orig, context);
+        return hs.Close(fn(orig, context));
+
     return v8::Undefined();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+inline bool bind_object( const coid::token& bindname, intergen_interface* orig, v8::Handle<v8::Context> context )
+{
+    if(!orig) return false;
+
+    v8::HandleScope hs;
+
+    typedef v8::Handle<v8::Value> (*fn_wrapper)(intergen_interface*, v8::Handle<v8::Context>);
+    fn_wrapper fn = static_cast<fn_wrapper>(orig->intergen_wrapper_js());
+
+    return fn && context->Global()->Set(v8::String::New(bindname.ptr(), bindname.len()), fn(orig, context));
 }
 
 } //namespace js

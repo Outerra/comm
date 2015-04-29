@@ -435,7 +435,7 @@ class metagen //: public binstream
         {
             if( p.brace == '(' ) {
                 return brace == p.brace
-                    && ((trailing && varname == "if") || varname == "elif");
+                    && ((trailing && varname == "if") || (!trailing && varname == "elif"));
             }
 
             return brace == p.brace
