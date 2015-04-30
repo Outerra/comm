@@ -127,6 +127,7 @@ struct float_fmt {
     {}
 };
 
+//@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
 template<int WIDTH> inline float_fmt<WIDTH,ALIGN_NUM_LEFT>
 float_left(double n, int nfrac=-1) {
     return float_fmt<WIDTH,ALIGN_NUM_LEFT>(n, nfrac);

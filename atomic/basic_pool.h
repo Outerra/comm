@@ -81,8 +81,6 @@ public:
 #ifdef SYSTYPE_MSVC
             //b_cas128(&_data, p._datah, p._data, const_cast<const int64*>(&_data));
             __movsq((uint64*)&_data, (uint64*)&p._data, 2);
-            DASSERT( _data == p._data );
-            DASSERT( _datah == p._datah );
 #else
             *((__int128_t*)_data) = __sync_add_and_fetch((__int128_t*)&p._data, 0);
 #endif
