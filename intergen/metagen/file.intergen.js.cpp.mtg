@@ -634,7 +634,7 @@ v8::Handle<v8::Value> $name$_js_dispatcher::v8current_global(const v8::Arguments
     $ns rest="::" after="::"$js::$name$_js_dispatcher* ifc = static_cast<$ns rest="::" after="::"$js::$name$_js_dispatcher*>
         (v8::Handle<v8::External>::Cast(_intobj_)->Value());
 
-    return _handle_scope_.Close(ifc->_context->Global());
+    return _handle_scope_.Close(ifc->_context->Global()->GetPrototype());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
