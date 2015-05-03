@@ -387,7 +387,7 @@ opcd directory::mkdir_tree( token name, bool last_is_file, uint mode )
     while( name.last_char() == '/' || name.last_char() == '\\' )
         name.shift_end(-1);
 
-    charstr path = name;
+    zstring path = name;
     char* pc = (char*)path.c_str();
 
     for( uint i=0; i<name.len(); ++i )

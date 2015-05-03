@@ -602,14 +602,17 @@ public:
 
     ////////////////////////////////////////////////////////////////////////////////
     ///Append signed number
-    void append_num_signed( int BaseN, int64 n, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
+    //@return offset past the last non-padding character
+    uint append_num_signed( int BaseN, int64 n, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
     {
-        if(n<0) append_num_unsigned( BaseN, uint64(-n), -1, minsize, align );
-        else    append_num_unsigned( BaseN, n, 0, minsize, align );
+        return n<0
+            ? append_num_unsigned( BaseN, uint64(-n), -1, minsize, align )
+            : append_num_unsigned( BaseN, n, 0, minsize, align );
     }
 
     ///Append unsigned number
-    void append_num_unsigned( int BaseN, uint64 n, int sgn, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
+    //@return offset past the last non-padding character
+    uint append_num_unsigned( int BaseN, uint64 n, int sgn, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
     {
         char buf[128];
         uints i = charstrconv::num_formatter<uint64>::precompute( buf, n, BaseN, sgn );
@@ -620,43 +623,49 @@ public:
 
         char* p = get_append_buf( i+fc );
 
-        char* zt = charstrconv::num_formatter<uint64>::produce( p, buf, i, fc, sgn, align );
+        char* end;
+        char* zt = charstrconv::num_formatter<uint64>::produce( p, buf, i, fc, sgn, align, &end );
         *zt = 0;
+
+        return uint(end - ptr());
     }
 
     template<class NUM>
-    void append_num( int base, NUM n, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT ) \
+    uint append_num( int base, NUM n, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT ) \
     {
-        if( SIGNEDNESS<NUM>::isSigned )
-            return append_num_signed(base, n, minsize, align);
-        else
-            return append_num_unsigned(base, n, 0, minsize, align);
+        return SIGNEDNESS<NUM>::isSigned
+            ? append_num_signed(base, n, minsize, align)
+            : append_num_unsigned(base, n, 0, minsize, align);
     }
 
-    void append_num_int( int base, const void* p, uints bytes, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
+    uint append_num_int( int base, const void* p, uints bytes, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
     {
+        uint e;
         switch( bytes )
         {
-        case 1: append_num_signed( base, *( int8*)p, minsize, align );  break;
-        case 2: append_num_signed( base, *(int16*)p, minsize, align );  break;
-        case 4: append_num_signed( base, *(int32*)p, minsize, align );  break;
-        case 8: append_num_signed( base, *(int64*)p, minsize, align );  break;
+        case 1: e = append_num_signed( base, *( int8*)p, minsize, align );  break;
+        case 2: e = append_num_signed( base, *(int16*)p, minsize, align );  break;
+        case 4: e = append_num_signed( base, *(int32*)p, minsize, align );  break;
+        case 8: e = append_num_signed( base, *(int64*)p, minsize, align );  break;
         default:
             throw ersINVALID_TYPE "unsupported size";
         }
+        return e;
     }
 
-    void append_num_uint( int base, const void* p, uints bytes, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
+    uint append_num_uint( int base, const void* p, uints bytes, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
     {
+        uint e;
         switch( bytes )
         {
-        case 1: append_num_unsigned( base, *( uint8*)p, 0, minsize, align );  break;
-        case 2: append_num_unsigned( base, *(uint16*)p, 0, minsize, align );  break;
-        case 4: append_num_unsigned( base, *(uint32*)p, 0, minsize, align );  break;
-        case 8: append_num_unsigned( base, *(uint64*)p, 0, minsize, align );  break;
+        case 1: e = append_num_unsigned( base, *( uint8*)p, 0, minsize, align );  break;
+        case 2: e = append_num_unsigned( base, *(uint16*)p, 0, minsize, align );  break;
+        case 4: e = append_num_unsigned( base, *(uint32*)p, 0, minsize, align );  break;
+        case 8: e = append_num_unsigned( base, *(uint64*)p, 0, minsize, align );  break;
         default:
             throw ersINVALID_TYPE "unsupported size";
         }
+        return e;
     }
 
     ///Append number with thousands separated
@@ -685,28 +694,34 @@ public:
     }
 
     ///Append number with metric suffix
-    charstr& append_num_metric( uint64 size )
+    //@return offset past the last non-padding character
+    uint append_num_metric( uint64 size, uint minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
     {
         double v = double(size);
         int ndigits = size>0
             ? 0 + (int)log10(v)
             : 0;
 
+        if(minsize != 0 && minsize < 7)
+            minsize = 7;
+
         const char* prefixes = "\0kMGTPEZY";
         int ngroup = ndigits/3;
         char prefix = prefixes[ngroup];
 
         //reduce to 3 digits
-        if(ndigits>2) {
+        if(ndigits > 3) {
             v /= pow(10.0, 3*ngroup);
-            append_float(v, (ndigits-3*ngroup)-2, 4);
-            append(' ');
-            append(prefix);
+            uint offs = append_fixed(v, minsize ? minsize-2 : 4, (ndigits-3*ngroup)-3, align);
+            appendn(2, ' ');
+            _tstr[offs+1] = prefix;
+            return offs + 2;
         }
-        else
-            append_num(10, size);
-
-        return *this;
+        else {
+            uint offs = append_num(10, size, minsize ? minsize-1 : 0, align);
+            append(' ');
+            return offs + 1;
+        }
     }
 
     ///Append time (secs)
@@ -742,10 +757,11 @@ public:
 
     ///Append floating point number with fixed number of characters
     //@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
-    void append_fixed( double v, int maxsize, int nfrac=-1, EAlignNum align=ALIGN_NUM_RIGHT)
+    //@return offset past the last non-padding char
+    uint append_fixed( double v, int maxsize, int nfrac=-1, EAlignNum align=ALIGN_NUM_RIGHT)
     {
         char* buf = get_append_buf(maxsize);
-        charstrconv::append_fixed(buf, buf+maxsize, v, nfrac, align);
+        return uint(charstrconv::append_fixed(buf, buf+maxsize, v, nfrac, align) - ptr());
     }
 
     ///Append floating point number

@@ -41,6 +41,44 @@
 
 #include "commtypes.h"
 
+////////////////////////////////////////////////////////////////////////////////
+///Bit scan
+
+#ifdef SYSTYPE_MSVC
+#include <intrin.h>
+#pragma intrinsic(_BitScanForward)
+#pragma intrinsic(_BitScanReverse)
+
+#ifdef SYSTYPE_64
+#pragma intrinsic(_BitScanForward64)
+#pragma intrinsic(_BitScanReverse64)
+#else
+inline void _BitScanForward64(ulong* idx, uint64 v) {
+    if(!_BitScanForward(idx, uint(v))) {
+        _BitScanForward(idx, uint(v>>32));
+        idx += 32;
+    }
+}
+inline void _BitScanReverse64(ulong* idx, uint64 v) {
+    if(!_BitScanReverse(idx, uint(v>>32)))
+        _BitScanReverse(idx, uint(v));
+    else
+        idx += 32;
+}
+#endif
+
+inline uint8 lsb_bit_set( uint v )   { ulong idx; _BitScanForward(&idx, v);   return uint8(idx); }
+inline uint8 lsb_bit_set( uint64 v ) { ulong idx; _BitScanForward64(&idx, v); return uint8(idx); }
+inline uint8 msb_bit_set( uint v )   { ulong idx; _BitScanReverse(&idx, v);   return uint8(idx); }
+inline uint8 msb_bit_set( uint64 v ) { ulong idx; _BitScanReverse64(&idx, v); return uint8(idx); }
+#else
+inline uint8 lsb_bit_set( uint v )   { return __builtin_ctzll(v); }
+inline uint8 lsb_bit_set( uint64 v ) { return __builtin_ctzll(v); }
+inline uint8 msb_bit_set( uint v )   { return 31-__builtin_clzll(v); }
+inline uint8 msb_bit_set( uint64 v ) { return 63-__builtin_clzll(v); }
+#endif
+
+
 COID_NAMESPACE_BEGIN
 
 

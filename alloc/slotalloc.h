@@ -57,28 +57,27 @@ public:
     void reset()
     {
         //destroy occupied slots
-        for_each([](T& p) {destroy(p);});
+        if(!_pool)
+            for_each([](T& p) {destroy(p);});
 
         _count = 0;
-        _unused = reinterpret_cast<T*>(this);   //used as a terminator
         _array.set_size(0);
+        _allocated.set_size(0);
     }
 
-    slotalloc()
-    {
-        DASSERT(sizeof(T) >= sizeof(uints));
-        _count = 0;
-        _unused = reinterpret_cast<T*>(this);   //used as a terminator
-    }
+    slotalloc( bool pool = false ) : _count(0), _pool(pool)
+    {}
 
     ~slotalloc() {
-        reset();
+        if(!_pool)
+            reset();
     }
 
     void swap( slotalloc<T>& other ) {
         _array.swap(other._array);
-        std::swap(_unused, other._unused);
+        _allocated.swap(other._allocated);
         std::swap(_count, other._count);
+        std::swap(_pool, other._pool);
     }
 
     //@return byte offset to the newly rebased array
@@ -92,28 +91,37 @@ public:
     ///Insert object
     //@return pointer to the newly inserted object
     T* push( const T& v ) {
-        T* p = alloc(0);
-        return new(p) T(v);
+        if(_count < _array.size()) {
+            T* p = alloc(0);
+            if(_pool) destroy(*p);
+            return new(p) T(v);
+        }
+        return new(append()) T(v);
     }
 
     ///Add new object initialized with default constructor
     T* add() {
-        T* p = alloc(0);
-        return new(p) T;
+        return _count < _array.size()
+            ? (_pool ? alloc(0) : new(alloc(0)) T)
+            : new(append()) T;
     }
 
     ///Add new object, uninitialized
     T* add_uninit() {
-        T* p = alloc(0);
-        return p;
+        if(_count < _array.size()) {
+            T* p = alloc(0);
+            if(_pool) destroy(*p);
+            return p;
+        }
+        return append();
     }
-
+/*
     //@return id of the next object that will be allocated with add/push methods
     uints get_next_id() const {
         return _unused != reinterpret_cast<const T*>(this)
             ? _unused - _array.ptr()
             : _array.size();
-    }
+    }*/
 
     ///Delete object in the container
     void del( T* p )
@@ -122,9 +130,11 @@ public:
         if(id >= _array.size())
             throw exception("object outside of bounds");
 
-        p->~T();
-        *reinterpret_cast<T**>(p) = _unused;
-        _unused = p;
+        DASSERT( get_bit(id) );
+
+        if(!_pool)
+            p->~T();
+        clear_bit(id);
         --_count;
     }
 
@@ -133,63 +143,34 @@ public:
 
     ///Return an item given id
     //@param id id of the item
-    //@note it's not guaranteed that the returned item is not a freed slot
     const T* get_item( uints id ) const
     {
-        DASSERT( id < _array.size() );
+        DASSERT( id < _array.size() && get_bit(id) );
         return id < _array.size() ? _array.ptr() + id : 0;
     }
 
     T* get_item( uints id )
     {
-        DASSERT( id < _array.size() );
+        DASSERT( id < _array.size() && get_bit(id) );
         return id < _array.size() ? _array.ptr() + id : 0;
     }
 
     ///Get a particular free slot
-    T* get_or_create( uints id ) {
-        if(id == _array.size()) {
+    T* get_or_create( uints id )
+    {
+        if(id < _array.size()) {
+            if(get_bit(id))
+                return _array.ptr() + id;
+            set_bit(id);
             ++_count;
-            return new(append_new_items(1)) T;
+            return _array.ptr() + id;
         }
-        else if(id > _array.size()) {
-            //insert extra items
-            uints n = id - _array.size();
-            T* p = append_new_items(n+1);
-/*
-            T** punused = &_unused;
-            T* unused = _unused;
-            for(uint i=0; i<n; ++i) {
-                *punused = p + i;
-                punused = reinterpret_cast<T**>(p+i);
-            }
-            *punused = unused;*/
 
-            for(uints i=0; i<n; ++i) {
-                ++_count;
-                new(p+i) T;
-            }
+        _array.add_uninit(id+1 - _array.size());
 
-            ++_count;
-            return new(p+n) T;
-        }
-        else {
-            //find in the free queue
-            T** punused = &_unused;
-            T* terminator = reinterpret_cast<T*>(this);
-            while(*punused != terminator) {
-                if(*punused - _array.ptr() == id) {
-                    T* p = *punused;
-                    *punused = *reinterpret_cast<T**>(p);
-                    ++_count;
-                    return new(p) T;
-                }
-                else
-                    punused = reinterpret_cast<T**>(*punused);
-            }
-
-            throw exception("attempt to allocate a non-free block");
-        }
+        set_bit(id);
+        ++_count;
+        return _array.ptr() + id;
     }
 
     //@return id of given item, or UMAXS if the item is not managed here
@@ -202,62 +183,77 @@ public:
     }
 
     //@return true if item is valid
-    //@note this assumes that the managed items do not contain a pointer to other slotalloc items at offset 0, as it's used to discern between the free and allocated items
     bool is_valid_item( uints id ) const
     {
-        const T* pit = get_item(id);
-        uints p = *(uints*)pit;
-        return p != (uints)this
-            && (p < (uints)_array.ptr() || p >= (uints)_array.ptre());
+        return get_bit(id);
     }
 
     ///Invoke a functor on each used item.
-    //@note this assumes that the managed items do not contain a pointer to other slotalloc items at offset 0, as it's used to discern between the free and allocated items
     template<typename Func>
     void for_each( Func f ) const
     {
-        T const* pb = _array.ptr();
-        T const* pe = _array.ptre();
-        T const* terminator = reinterpret_cast<T const*>(this);
+        T const* d = _array.ptr();
+        uints const* b = _allocated.ptr();
+        uints const* e = _allocated.ptre();
 
-        for(T const* p=pb; p<pe; ++p) {
-            T const* x = *(T const**)p;
-            if(x != terminator && (x < pb || x >= pe))
-                f(*p);
+        for(uints const* p=b; p!=e; ++p) {
+            uints m = *p;
+            if(!m) continue;
+
+            uints s = (p - b) * 8 * sizeof(uints);
+
+            for(int i=0; m && i<8*sizeof(uints); ++i, m>>=1) {
+                if(m&1)
+                    f(d[s + i]);
+            }
         }
     }
 
     ///Invoke a functor on each used item.
-    //@note this assumes that the managed items do not contain a pointer to other slotalloc items at offset 0, as it's used to discern between the free and allocated items
     template<typename Func>
     void for_each( Func f )
     {
-        T* pb = _array.ptr();
-        T* pe = _array.ptre();
-        T* terminator = reinterpret_cast<T*>(this);
+        T* d = _array.ptr();
+        uints const* b = _allocated.ptr();
+        uints const* e = _allocated.ptre();
 
-        for(T* p=pb; p<pe; ++p) {
-            T* x = *reinterpret_cast<T**>(p);
-            if(x != terminator && (x < pb || x >= pe))
-                f(*p);
+        for(uints const* p=b; p!=e; ++p) {
+            uints m = *p;
+            if(!m) continue;
+
+            uints s = (p - b) * 8 * sizeof(uints);
+
+            for(int i=0; m && i<8*sizeof(uints); ++i, m>>=1) {
+                if(m&1)
+                    f(d[s + i]);
+            }
         }
     }
 
     ///Find first element for which the predicate returns true
     //@return pointer to the element or null
-    //@note this assumes that the managed items do not contain a pointer to other slotalloc items at offset 0, as it's used to discern between the free and allocated items
     template<typename Func>
     const T* find_if(Func f) const
     {
-        T const* pb = _array.ptr();
-        T const* pe = _array.ptre();
-        T const* terminator = reinterpret_cast<T const*>(this);
+        T const* d = _array.ptr();
+        uints const* b = _allocated.ptr();
+        uints const* e = _allocated.ptre();
 
-        for(T const* p=pb; p<pe; ++p) {
-            T const* x = *(T const**)p;
-            if(x != terminator && (x < pb || x >= pe) && f(*p))
-                return p;
+        for(uints const* p=b; p!=e; ++p) {
+            uints m = *p;
+            if(!m) continue;
+
+            uints s = (p - b) * 8 * sizeof(uints);
+
+            for(int i=0; m && i<8*sizeof(uints); ++i, m>>=1) {
+                if(m&1) {
+                    const T& v = d[s + i];
+                    if(f(v))
+                        return &v;
+                }
+            }
         }
+
         return 0;
     }
 
@@ -270,53 +266,62 @@ public:
 private:
 
     dynarray<T> _array;
-    T* _unused;                 //< ptr to the first unused slot, ptr to this if the array needs to be enlarged
+    dynarray<uints> _allocated;     //< bit mask for allocated/free items
+    //T* _unused;                 //< ptr to the first unused slot, ptr to this if the array needs to be enlarged
     uints _count;
-
-    void rebase_free_items( T* oldarray )
-    {
-        T* terminator = reinterpret_cast<T*>(this);
-        T** punused = &_unused;
-        while(*punused != terminator) {
-            *punused = _array.ptr() + (*punused - oldarray);
-            punused = reinterpret_cast<T**>(*punused);
-        }
-    }
+    bool _pool;                     //< if true, do not call destructors on deletion
 
     ///Return allocated slot
     T* alloc( uints* id )
     {
-        if(_unused != reinterpret_cast<T*>(this)) {
-            T* nextunused = *reinterpret_cast<T**>(_unused);
-            DASSERT(uints(nextunused - _array.ptr()) < _array.size()
-                || nextunused == reinterpret_cast<T*>(this));
+        DASSERT( _count < _array.size() );
 
-            if(id)
-                *id = _unused - _array.ptr();
-            
-            T* punused = _unused;
-            _unused = nextunused;
+        uints* p = _allocated.ptr();
+        uints* e = _allocated.ptre();
+        for(; p!=e && *p==UMAXS; ++p);
 
-            ++_count;
-            return punused;
-        }
+        if(p == e)
+            *(p = _allocated.add()) = 0;
+
+        uint8 bit = lsb_bit_set((uints)~*p);
+        uints slot = ((uints)p - (uints)_allocated.ptr()) * 8;
+
+        DASSERT( !get_bit(slot+bit) );
 
         if(id)
-            *id = _array.size();
+            *id = slot + bit;
+        *p |= uints(1) << bit;
 
         ++_count;
-        return append_new_items(1);
+        return _array.ptr() + slot + bit;
     }
 
-    T* append_new_items( uints n )
+    T* append()
     {
-        T* oldarray = _array.ptr();
-        T* p = _array.add_uninit(n);
+        DASSERT( _count == _array.size() );
+        set_bit(_count++);
+        return _array.add_uninit(1);
+    }
 
-        if(oldarray && oldarray != _array.ptr())
-            rebase_free_items(oldarray);
+    void set_bit( uints k )
+    {
+        uints s = k / (8*sizeof(uints));
+        uints b = k % (8*sizeof(uints));
+        _allocated.get_or_addc(s) |= uints(1) << b;
+    }
 
-        return p;
+    void clear_bit( uints k )
+    {
+        uints s = k / (8*sizeof(uints));
+        uints b = k % (8*sizeof(uints));
+        _allocated.get_or_addc(s) &= ~(uints(1) << b);
+    }
+
+    bool get_bit( uints k ) const
+    {
+        uints s = k / (8*sizeof(uints));
+        uints b = k % (8*sizeof(uints));
+        return s < _allocated.size() && (_allocated[s] & (uints(1) << b)) != 0;
     }
 
     //WA for lambda template error

@@ -287,7 +287,7 @@ namespace charstrconv
             return i;
         }
 
-        static char* produce( char* p, const char* buf, uints i, uints fillcnt, int sgn, EAlignNum align )
+        static char* produce( char* p, const char* buf, uints i, uints fillcnt, int sgn, EAlignNum align, char** last=0 )
         {
             if( align == ALIGN_NUM_RIGHT )
             {
@@ -319,6 +319,9 @@ namespace charstrconv
                 *p++ = buf[i];
             }
 
+            if(last)
+                *last = p;
+
             if(fillcnt)
             {
                 char fc = (align==ALIGN_NUM_LEFT_PAD_0)  ?  0 : ' ';
@@ -326,6 +329,7 @@ namespace charstrconv
                 for( ; fillcnt>0; --fillcnt )
                     *p++ = fc;
             }
+
             return p;
         }
     };
@@ -369,7 +373,8 @@ namespace charstrconv
 
     ///Append floating point number with fixed number of characters
     //@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
-    void append_fixed( char* dst, char* dste, double v, int nfrac, EAlignNum align=ALIGN_NUM_LEFT);
+    //@return position between dst and dste where last non-padding character is
+    char* append_fixed( char* dst, char* dste, double v, int nfrac, EAlignNum align=ALIGN_NUM_LEFT);
 
     ///Append floating point number
     //@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places

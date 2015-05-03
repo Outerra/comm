@@ -7,7 +7,7 @@ namespace coid {
 namespace charstrconv {
 
 ////////////////////////////////////////////////////////////////////////////////
-void append_fixed( char* dst, char* dste, double v, int nfrac, EAlignNum align)
+char* append_fixed( char* dst, char* dste, double v, int nfrac, EAlignNum align)
 {
     char sbuf[32];
     bool doalign = align != ALIGN_NUM_LEFT  &&  align != ALIGN_NUM_LEFT_PAD_0;
@@ -26,7 +26,7 @@ void append_fixed( char* dst, char* dste, double v, int nfrac, EAlignNum align)
             case ALIGN_NUM_RIGHT: {
                 ::memset(dst, ' ', d);
                 ::memcpy(dst+d, buf, end-buf);
-                break;
+                return dste;
             }
             case ALIGN_NUM_RIGHT_FILL_ZEROS: {
                 if(buf<end  &&  buf[0] == '-') {
@@ -36,19 +36,21 @@ void append_fixed( char* dst, char* dste, double v, int nfrac, EAlignNum align)
                 ::memset(dst, '0', d);
                 RASSERT(end>=buf);
                 ::memcpy(dst+d, buf, end-buf);
-                break;
+                return dste;
             }
             case ALIGN_NUM_CENTER: {
                 ::memset(dst, ' ', d/2);
                 ::memcpy(dst+d/2, buf, end-buf);
                 ::memset(dste-(d-d/2), ' ', d-d/2);
-                break;
+                return dst+d/2;
             }
-			default:;
+			default: return dst;
         }
     }
-    else
+    else {
         ::memset(end, align==ALIGN_NUM_LEFT ? ' ' : '\0', bufend-end);
+        return end;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
