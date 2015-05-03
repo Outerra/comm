@@ -66,7 +66,7 @@ static v8::Handle<v8::Value> js_local_include(const v8::Arguments& args)
     return scope.Close(spath);
 }
 
-static void _js_release_callback(v8::Persistent<v8::Value> object, void* p)
+static void _js_release_callback(/*v8::Isolate *isolate,*/ v8::Persistent<v8::Value> object, void* p)
 {
     if(p)
         static_cast<intergen_interface*>(p)->release_refcount();
@@ -675,7 +675,7 @@ $-(/if)$
     obj->SetInternalField(1, hash_ptr);
     
     if(make_weak) {
-        v8::Persistent<v8::Object>::New(obj).MakeWeak(this, _js_release_callback);
+        v8::Persistent<v8::Object>::New(/*v8::Isolate::GetCurrent(),*/ obj).MakeWeak(this, /*reinterpret_cast<void(__cdecl *)(v8::Isolate *, v8::Persistent<v8::Object> *, $name$_js_dispatcher *)>(*/_js_release_callback);
         add_refcount();
     }
 
@@ -723,7 +723,7 @@ $-[/event]$
     }
     else {
         global = ref->ToObject();
-        _eventobj = v8::Persistent<v8::Object>::New(global);
+        _eventobj = v8::Persistent<v8::Object>::New(/*v8::Isolate::GetCurrent(),*/ global);
     }
 
     for(int i=0; i<$event.@size$; ++i)
@@ -794,7 +794,7 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
     ifc->_context = v8::Persistent<v8::Context>::New(context);
 
     if(extctx || script.is_context()) {
-        ifc->_object = v8::Persistent<v8::Object>::New(ifc->create_interface_object(false));
+        ifc->_object = v8::Persistent<v8::Object>::New(/*v8::Isolate::GetCurrent(),*/ ifc->create_interface_object(false));
 
         if(bindname)
             context->Global()->Set(v8::String::New(bindname.ptr(), bindname.len()), ifc->_object);
@@ -830,7 +830,7 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
             script_path = "$..name$";
         }
 
-        ifc->_object = v8::Persistent<v8::Object>::New(ifc->create_interface_object(false));
+        ifc->_object = v8::Persistent<v8::Object>::New(/*v8::Isolate::GetCurrent(),*/ ifc->create_interface_object(false));
         if(bindname)
             context->Global()->Set(v8::String::New(bindname.ptr(), bindname.len()), ifc->_object);
 
