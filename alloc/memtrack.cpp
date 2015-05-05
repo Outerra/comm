@@ -192,8 +192,9 @@ void memtrack_dump( const char* file )
 
     static charstr buf;
     buf.reserve(8000);
+    buf.reset();
 
-    buf << "====== total | #alloc |  type ======\n";
+    buf << "======== total | #alloc |  type ======\n";
 
     uint64 total=0, count=0;
     uint i=0;
@@ -205,7 +206,7 @@ void memtrack_dump( const char* file )
         total += p.total;
         count += p.ntotalallocs;
 
-        buf.append_num(10, p.total, 12);
+        buf.append_num_thousands(p.total, ',', 12);
         buf.append_num(10, p.ntotalallocs, 9);
         buf << '\t' << p.name << '\n';
 
@@ -215,16 +216,16 @@ void memtrack_dump( const char* file )
         }
     }
 
-    buf << "====== total | #alloc |  type ======\n";
-    buf.append_num_metric(total, 12);
+    buf << "======== total | #alloc |  type ======\n";
+    buf.append_num_metric(total, 14);
     buf << 'B';
-    buf.append_num(10, count, 8);
+    buf.append_num_thousands(count, ',', 8);
     buf << "\t (total)\n";
 
     mallinfo mi = mspace_mallinfo(SINGLETON(comm_array_mspace).msp);
 
     buf << "\nnon-mmapped space allocated from system: "; buf.append_num_metric(mi.arena, 8);    buf << 'B';
-    buf << "\nnumber of free chunks:                   "; buf.append_num_metric(mi.ordblks, 8);
+    buf << "\nnumber of free chunks:                   "; buf.append_num_metric(mi.ordblks, 7);
     buf << "\nmaximum total allocated space:           "; buf.append_num_metric(mi.usmblks, 8);  buf << 'B';
     buf << "\ntotal allocated space:                   "; buf.append_num_metric(mi.uordblks, 8); buf << 'B';
     buf << "\ntotal free space:                        "; buf.append_num_metric(mi.fordblks, 8); buf << 'B';

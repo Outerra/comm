@@ -116,6 +116,26 @@ num_right0(NUM n) {
 }
 
 
+
+///Helper for thousands-separated numbers
+template<int WIDTH, int ALIGN, class NUM>
+struct num_fmt_thousands
+{
+    NUM value;
+    char sep;
+    num_fmt_thousands(NUM value, char sep) : value(value), sep(sep)
+    {}
+};
+
+template<int WIDTH, int ALIGN, class NUM>
+inline num_fmt_thousands<WIDTH,ALIGN,NUM>
+num_thousands(NUM n, char sep) {
+    return num_fmt_thousands<WIDTH,ALIGN,NUM>(n, sep);
+}
+
+
+
+
 ///Helper formatter for floating point numbers
 template<int WIDTH, int ALIGN>
 struct float_fmt {
@@ -263,7 +283,34 @@ namespace charstrconv
 
 	public:
 	
+        ///Write number to buffer with padding
+        static uints write( char* buf, uints size, uint64 n, int BaseN, char fill )
+        {
+            char* p = buf + size;
+            for(; p>buf; ) {
+                --p;
+                
+                uint64 d = n / BaseN;
+                uint64 m = n % BaseN;
+
+                if( m>9 )
+                    *p = 'a' + (char)m - 10;
+                else
+                    *p = '0' + (char)m;
+                n = d;
+
+                if(n == 0)
+                    break;
+            }
+
+            for(; p>buf; )
+                *--p = fill;
+
+            return size;
+        }
+
         //@return number of characters taken
+        //@note writes a reversed buffer
         static uints precompute( char* buf, uint64 n, int BaseN, int sgn )
         {
             uints i=0;
@@ -313,11 +360,14 @@ namespace charstrconv
                     *p++ = '0';
             }
 
-            for( ; i>0; )
-            {
-                --i;
-                *p++ = buf[i];
+            if(buf) {
+                for( ; i>0; ) {
+                    --i;
+                    *p++ = buf[i];
+                }
             }
+            else
+                p += i;
 
             if(last)
                 *last = p;

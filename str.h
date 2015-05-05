@@ -553,6 +553,13 @@ public:
         return *this;
     }
 
+    ///Thousands separated numbers
+    template<int WIDTH, int ALIGN, class NUM>
+    charstr& operator << (const num_fmt_thousands<WIDTH,ALIGN,NUM>& v) {
+        append_num_thousands(v.value, v.sep, WIDTH, (EAlignNum)ALIGN);
+        return *this;
+    }
+
     ///Formatted numbers - floats
     template<int WIDTH, int ALIGN>
     charstr& operator << (const float_fmt<WIDTH,ALIGN>& v) {
@@ -669,33 +676,58 @@ public:
     }
 
     ///Append number with thousands separated
-    void append_num_formatted( int64 n, char thousand_sep = ' ' )
+    //@return offset past the last non-padding character
+    uint append_num_thousands( int64 n, char thousand_sep = ' ', uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
     {
         if(n == 0)
-            return append('0');
+            return append_num(10, n, minsize, align);
 
         int64 mods[(64+10-1)/10];
         uints k=0;
+        uint64 v = n<0 ? -n : n;
 
-        for( ; n>=1000 || n<=-1000; ++k) {
-            mods[k] = n % 1000;
-            n = n / 1000;
+        for( ; v>=1000; ++k) {
+            mods[k] = v % 1000;
+            v = v / 1000;
         }
 
-        append_num( 10, n );
+        //compute resulting size
+        uints size = n<0 ? 1 : 0;
+        uint nlead = v>=100 ? 3 : (v>=10 ? 2 : 1);
+        size += nlead;
+        size += 3*k;
+
+        if(thousand_sep)
+            size += k;
+
+        if(minsize < size)
+            minsize = size;
+
+        char* dst = alloc_append_buf(minsize);
+        char* buf;
+        charstrconv::num_formatter<uint64>::produce(dst, 0, size, minsize-size, 0, align, &buf);
+
+        buf -= size;
+
+        if(n<0)
+            *buf++ = '-';
+
+        buf += charstrconv::num_formatter<uint64>::write(buf, nlead, v, 10, ' ');
 
         for( ; k>0; ) {
             --k;
             if(thousand_sep)
-                append(thousand_sep);
+                *buf++ = thousand_sep;
 
-            append_num( 10, int_abs(mods[k]), 3, ALIGN_NUM_RIGHT_FILL_ZEROS );
+            buf += charstrconv::num_formatter<uint64>::write(buf, 3, int_abs(mods[k]), 10, '0');
         }
+
+        return uint(buf - dst);
     }
 
     ///Append number with metric suffix
     //@return offset past the last non-padding character
-    uint append_num_metric( uint64 size, uint minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
+    uint append_num_metric( uint64 size, uints minsize=0, EAlignNum align=ALIGN_NUM_RIGHT )
     {
         double v = double(size);
         int ndigits = size>0
@@ -758,7 +790,7 @@ public:
     ///Append floating point number with fixed number of characters
     //@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
     //@return offset past the last non-padding char
-    uint append_fixed( double v, int maxsize, int nfrac=-1, EAlignNum align=ALIGN_NUM_RIGHT)
+    uint append_fixed( double v, uints maxsize, int nfrac=-1, EAlignNum align=ALIGN_NUM_RIGHT)
     {
         char* buf = get_append_buf(maxsize);
         return uint(charstrconv::append_fixed(buf, buf+maxsize, v, nfrac, align) - ptr());
@@ -766,12 +798,12 @@ public:
 
     ///Append floating point number
     //@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
-    void append_float( double d, int nfrac, uint maxchars=0 )
+    void append_float( double d, int nfrac, uints maxsize=0 )
     {
-        if(!maxchars)
-            maxchars = 10;
-        char* buf = get_append_buf(maxchars);
-        char* end = charstrconv::append_float(buf, buf+maxchars, d, nfrac );
+        if(!maxsize)
+            maxsize = 10;
+        char* buf = get_append_buf(maxsize);
+        char* end = charstrconv::append_float(buf, buf+maxsize, d, nfrac );
 
         resize(end-ptr());
     }
