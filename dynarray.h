@@ -834,15 +834,45 @@ public:
         return ::memset( dst, v, size );
     }
 
-/*
-    void clear( uints nitems=UMAXS, uints ufrm=0 )
+    ///Save transposed array data
+    ///Destination buffer will contain 1st bytes of every array element, followed by 2nd bytes and so on
+    void transpose_to( dynarray<uint8>& buf ) const
     {
-        RASSERTX( ufrm*sizeof(T) < _size(), "offset out of range" );
-        if( (nitems+ufrm)*sizeof(T) > _size() )
-            nitems = _size() - ufrm*sizeof(T);
-        ::memset (_ptr+ufrm, 0, nitems);
+        uint8* dst = buf.alloc(byte_size());
+        uints stride = size();
+
+        auto p = ptr();
+        auto e = ptre();
+        for(; p != e; ++p) {
+            const uint8* bytes = reinterpret_cast<const uint8*>(p);
+
+            for(int i=0; i<sizeof(T); ++i)
+                dst[stride*i] = bytes[i];
+
+            dst++;
+        }
     }
-*/
+
+    ///Load transposed array data
+    ///Source data contain 1st bytes of every array element, followed by 2nd bytes and so on
+    void transpose_from( const uint8* src, uints size )
+    {
+        uints stride = size / sizeof(T);
+        alloc(stride);
+
+        auto p = ptr();
+        auto e = ptre();
+        for(; p != e; ++p) {
+            uint8* bytes = reinterpret_cast<uint8*>(p);
+
+            for(int i=0; i<sizeof(T); ++i)
+                bytes[i] = src[stride*i];
+
+            src++;
+        }
+    }
+
+
 
     ///Reserve \a nitems of elements
     /** @param nitems number of items to reserve

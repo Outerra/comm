@@ -123,13 +123,11 @@ class local_singleton
 {
 public:
 
-    T* operator -> () {
-        return p;
-    }
+    T* operator -> () { return p; }
 
-    T& operator * () {
-        return *p;
-    }
+    T& operator * () { return *p; }
+
+    T* get() { return p; }
 
     local_singleton(T* p)
     {

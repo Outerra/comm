@@ -32,7 +32,7 @@ public:
     /// have to call this in destructor because we have item allocated with add_uninit...
     void clear()
     {
-        uint id = first();
+        uints id = first();
         while (id != -1) {
             get_item(id)->~T();
             id = next(id);
@@ -74,7 +74,7 @@ public:
         return _items.ptr() + slot;
     }
 
-    uint get_item_id(const T * const ptr) const
+    uints get_item_id(const T * const ptr) const
     {
         DASSERT(ptr < _items.ptre());
         const uints id = ptr - _items.ptr();
@@ -85,18 +85,18 @@ public:
     T* get_item(const uint id) { DASSERT(is_valid(id) && id < _items.size());  return _items.ptr() + id; }
     const T* get_item(const uint id) const { DASSERT(is_valid(id) && id < _items.size());  return _items.ptr() + id; }
 
-    bool is_valid(const uint id) const
+    bool is_valid(const uints id) const
     {
-        const uint s0 = id >> 3;
+        const uints s0 = id >> 3;
         const uchar slots = s0 < (_bmp.size() << 2) ? reinterpret_cast<const uchar*>(_bmp.ptr())[s0] : 0;
         return (slots & (1 << (id & 7))) != 0;
     }
 
-    void del(const uint id)
+    void del(const uints id)
     {        
         DASSERT((id >> 5) <_bmp.size() && _items.size() != 0);
 
-        const uint s0 = id >> 3;
+        const uints s0 = id >> 3;
         const uchar block = reinterpret_cast<uchar*>(_bmp.ptr())[s0];
         const uchar slot = 1 << (id & 7);
         
@@ -107,14 +107,14 @@ public:
         _items[id].~T();        
     }
 
-    uint first() const
+    uints first() const
     {
-        uint id = 0;
+        uints id = 0;
         while (id < _items.size() && !is_valid(id)) ++id;
         return id < _items.size() ? id : -1;
     }
 
-    uint next(uint id) const
+    uints next(uints id) const
     {
         ++id;
         while (id < _items.size() && !is_valid(id)) ++id;

@@ -50,10 +50,6 @@ COID_NAMESPACE_BEGIN
 /// binary sequences and representing them as one 8-bit character on output
 class hash_xxhashstream : public binstream
 {
-    XXH32_state_t _wrhash;
-    XXH32_state_t _rdhash;
-    binstream* _bin;            //< bound io binstream
-
 public:
 
     virtual uint binstream_attributes( bool in0out1 ) const
@@ -72,6 +68,11 @@ public:
         uints oldlen = len;
         opcd e = _bin->write_raw(p, len);
 
+        if(_reset_on_write) {
+            XXH32_reset(&_wrhash, _seed);
+            _reset_on_write = false;
+        }
+
         XXH32_update(&_wrhash, p, oldlen-len);
 
         return e;
@@ -85,6 +86,11 @@ public:
         uints oldlen = len;
         opcd e = _bin->read_raw(p, len);
 
+        if(_reset_on_read) {
+            XXH32_reset(&_rdhash, _seed);
+            _reset_on_read = false;
+        }
+
         XXH32_update(&_rdhash, p, oldlen-len);
 
         return e;
@@ -93,11 +99,13 @@ public:
     virtual void flush()
     {
         _bin->flush();
+        _reset_on_write = true;
     }
 
     virtual void acknowledge( bool eat=false )
     {
         _bin->acknowledge(eat);
+        _reset_on_read = true;
     }
 
 
@@ -145,6 +153,7 @@ public:
     void init( uint seed )
     {
         _seed = seed;
+        _reset_on_read = _reset_on_write = false;
         XXH32_reset(&_wrhash, _seed);
         XXH32_reset(&_rdhash, _seed);
     }
@@ -173,6 +182,12 @@ public:
 
 protected:
     uint _seed;
+    bool _reset_on_read : 1;
+    bool _reset_on_write : 1;
+
+    XXH32_state_t _wrhash;
+    XXH32_state_t _rdhash;
+    binstream* _bin;            //< bound io binstream
 };
 
 

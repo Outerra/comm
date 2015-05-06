@@ -102,10 +102,58 @@ ostream& operator << (ostream& ost, const coid::token& str)
 COID_NAMESPACE_BEGIN
 
 
-typedef atomic::stack_base<charstr*> pool_t;
+struct zstring::zpool
+{
+    atomic::stack_base<charstr*> pool;
+
+    void free( charstr* str ) {
+        pool.push(str);
+    }
+
+    charstr* alloc() {
+        charstr* str = 0;
+        if(!pool.pop(str))
+            str = new charstr;
+        return str;
+    }
+
+    static void destroy(void* p) {
+        delete static_cast<zstring::zpool*>(p);
+    }
+};
+
+zstring::zpool* zstring::global_pool()
+{
+    LOCAL_SINGLETON(zstring::zpool) _pool;
+    return _pool.get();
+}
+
+zstring::zpool* zstring::thread_local_pool()
+{
+    static thread_key _TK;
+
+    zstring::zpool* p = (zstring::zpool*)_TK.get();
+    if(p)
+        return p;
+        
+    p = new zstring::zpool;
+    _TK.set(p);
+
+    return p;
+}
+
+zstring::zpool* zstring::local_pool()
+{
+    return (zstring::zpool*)singleton_register_instance(
+        new zstring::zpool,
+        &zstring::zpool::destroy,
+        0, 0, 0);
+}
+
+
 
 static const char* nullstring = "";
-
+/*
 ////////////////////////////////////////////////////////////////////////////////
 static atomic::stack_base<charstr*>& zeroterm_pool()
 {
@@ -119,7 +167,7 @@ static atomic::stack_base<charstr*>& zeroterm_pool()
     _TK.set(p);
 
     return *p;
-}
+}*/
 
 ////////////////////////////////////////////////////////////////////////////////
 zstring::~zstring()
@@ -131,7 +179,7 @@ zstring::~zstring()
 void zstring::free_string()
 {
     if(_buf) {
-        zeroterm_pool().push(_buf);
+        _pool->free(_buf);
         _buf = 0;
     }
 }
@@ -139,6 +187,7 @@ void zstring::free_string()
 ////////////////////////////////////////////////////////////////////////////////
 zstring::zstring(const zstring& s)
     : _buf(0)
+    , _pool(s._pool)
 {
     if(s._buf) {
         get_str() = *s._buf;
@@ -153,16 +202,24 @@ zstring::zstring(const zstring& s)
 ////////////////////////////////////////////////////////////////////////////////
 zstring::zstring()
     : _zptr(nullstring), _zend(nullstring), _buf(0)
+    , _pool(0)
 {}
 
 ////////////////////////////////////////////////////////////////////////////////
-zstring::zstring(const char* sz)
-    : _zptr(sz?sz:nullstring), _zend(0), _buf(0)
+zstring::zstring( zpool* pool )
+    : _zptr(nullstring), _zend(nullstring), _buf(0)
+    , _pool(pool)
+{}
+
+////////////////////////////////////////////////////////////////////////////////
+zstring::zstring( const char* sz )
+    : _zptr(sz?sz:nullstring), _zend(0), _buf(0), _pool(0)
 {}
 
 ////////////////////////////////////////////////////////////////////////////////
 zstring::zstring(const token& tok)
     : _buf(0)
+    , _pool(0)
 {
     if(tok.len() == 0)
         _zptr = _zend = nullstring;
@@ -175,6 +232,7 @@ zstring::zstring(const token& tok)
 ////////////////////////////////////////////////////////////////////////////////
 zstring::zstring(const charstr& str)
     : _buf(0)
+    , _pool(0)
 {
     if(str.len() == 0)
         _zptr = _zend = nullstring;
@@ -236,6 +294,22 @@ zstring::operator zstring::unspecified_bool_type () const {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+const char* zstring::ptr() const
+{
+    return _buf
+        ? _buf->ptr()
+        : _zptr;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+uints zstring::len() const
+{
+    return _buf
+        ? _buf->len()
+        : (_zend ? _zend - _zptr : ::strlen(_zptr));
+}
+
+////////////////////////////////////////////////////////////////////////////////
 const char* zstring::c_str() const
 {
     if(_buf)
@@ -261,14 +335,16 @@ token zstring::get_token() const
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Get modifiable string
-charstr& zstring::get_str()
+charstr& zstring::get_str( zpool* pool )
 {
     if(!_buf) {
-        pool_t& pool = zeroterm_pool();
-        if(!pool.pop(_buf))
-            _buf = new charstr;
-        else
-            _buf->reset();
+        if(pool)
+            _pool = pool;
+        if(!_pool)
+            _pool = thread_local_pool();
+
+        _buf = _pool->alloc();
+        _buf->reset();
 
         if(_zend)
             _buf->set_from_range(_zptr, *_zend ? _zend+1 : _zend);

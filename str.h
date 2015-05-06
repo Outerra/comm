@@ -1655,6 +1655,9 @@ public:
     ///Reserve memory for string
     char* reserve( uints len )          { return _tstr.reserve(len, true); }
 
+    //@return number of reserved bytes
+    uints reserved() const              { return _tstr.reserved_total(); }
+
     ///Reset string to empty but keep the memory
     void reset() {
         if(_tstr.size())

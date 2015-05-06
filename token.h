@@ -2408,21 +2408,38 @@ inline string_hash::string_hash(const token& tok)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-///Wrapper class for providing zero-terminated strings to os api functions
+///Wrapper class for providing optimized string storage
+/**
+    zstring can hold constant (C-style) strings, tokens (not zero-terminated), or
+    allocated charstr strings. When a zero terminated string is required, it converts
+    to a new buffer only when necessary. Strings are allocated from pools, reused
+    after freeing. By default zstring uses thread-local string pool, but it can be
+    given a global pool, or a local one, created as follows:
+
+        //keep function-local buffer pool
+        static zstring::zpool* pool = zstring::local_pool();
+
+        //any strings given the pool are using it to allocate and free buffers 
+        zstring str1(pool);
+        zstring str2(pool);
+**/
 class zstring
 {
-    const char* _zptr;                  //< pointer to the first character of the string
-    mutable const char* _zend;          //< pointer to the last character of token, to the trailing zero of a c-string, or zero if it was not resolved but the string is zero-terminated
-    mutable charstr* _buf;              //< thread pool storage
-
 public:
 
-    zstring();
-    zstring(const char* sz);
-    zstring(const token& tok);
-    zstring(const charstr& str);
+    ///zstring buffer pool
+    struct zpool;
+    static zpool* global_pool();        //< global (process wide) buffer pool
+    static zpool* thread_local_pool();  //< thread local buffer pool
+    static zpool* local_pool();         //< local pool (registers as a local singleton, keep in a static var)
 
-    zstring(const zstring& s);
+    explicit zstring( zpool* pool );
+    zstring();
+    zstring( const char* sz );
+    zstring( const token& tok );
+    zstring( const charstr& str );
+
+    zstring( const zstring& s );
 
     ~zstring();
 
@@ -2448,9 +2465,23 @@ public:
     }
 
     ///Get modifiable string
-    charstr& get_str();
+    charstr& get_str( zpool* pool=0 );
+
+    //@return pointer to first char
+    //@note doesn't have to be zero-terminated, use c_str() if you need one
+    const char* ptr() const;
+
+    //@return string length
+    uints len() const;
 
     void free_string();
+
+private:
+
+    const char* _zptr;                  //< pointer to the first character of the string
+    mutable const char* _zend;          //< pointer to the last character of token, to the trailing zero of a c-string, or zero if it was not resolved but the string is zero-terminated
+    mutable charstr* _buf;              //< thread pool storage
+    zpool* _pool;
 };
 
 
