@@ -138,12 +138,12 @@ $-(/if)$
 $-(if event?)$
         _eventobj.Dispose();
         _eventobj.Clear();
-        
+
         for(int i=0; i<$event.@size$; ++i) {
             _events[i].Dispose();
             _events[i].Clear();
         }
-        
+
 $-(/if)$
         if(!_object.IsEmpty() && _object->IsObject()) {
             v8::HandleScope scope;
@@ -225,7 +225,7 @@ private:
 
         return !_events[id].IsEmpty() && !_events[id]->IsUndefined();
     }
-    
+
     //event wrappers for event invocation from js
 $-[event]$
     static v8::Handle<v8::Value> v8_evback_$name$$@index$(const v8::Arguments& args);
@@ -464,11 +464,11 @@ v8::Handle<v8::Value> $..name$_js_dispatcher::v8_evback_$name$$@index$(const v8:
     v8::TryCatch __trycatch;
 
     ifc->bind_events(ifc->_context, false, v8::Undefined());
-    
+
     if(ifc->_events[$@index$].IsEmpty() || ifc->_events[$@index$]->IsUndefined())
         v8::ThrowException(v8::Exception::ReferenceError(v8::String::New("event not available")));
 $-(if ninargs.nonzero?)$
-        
+
     v8::Local<v8::Value> largs[$ninargs$];
     int nargs = args.Length();
     if(nargs > $ninargs$)
@@ -507,7 +507,7 @@ v8::Handle<v8::Value> $name$_js_dispatcher::_getter(v8::Local<v8::String> proper
 
     v8::String::AsciiValue key(property);
     coid::token tok(*key, key.length());
-    
+
  $-(if getter.token?)$
     $getter.basetype$ value = (*R_)(tok);
  $-(elif)$
@@ -659,7 +659,7 @@ $-(if hasprops?)$
         _objtempl->SetNamedPropertyHandler(&_getter, &_setter);
 $-(/if)$
 $-(if event.nonzero?)$
-    
+
         //event wrappers for event invocation from outside js
 $-[event]$
         _objtempl->Set(v8::String::NewSymbol("$name$"), v8::FunctionTemplate::New(&v8_evback_$name$$@index$));
@@ -673,7 +673,7 @@ $-(/if)$
     obj->SetInternalField(0, map_ptr);
     v8::Handle<v8::External> hash_ptr = v8::External::New((void*)$hash$);
     obj->SetInternalField(1, hash_ptr);
-    
+
     if(make_weak) {
         v8::Persistent<v8::Object>::New(/*v8::Isolate::GetCurrent(),*/ obj).MakeWeak(this, /*reinterpret_cast<void(__cdecl *)(v8::Isolate *, v8::Persistent<v8::Object> *, $name$_js_dispatcher *)>(*/_js_release_callback);
         add_refcount();
@@ -790,6 +790,9 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
             context = v8::Context::New();
     }
 
+    if(ctx)
+        *ctx = context;
+
     v8::Context::Scope context_scope(context);
     ifc->_context = v8::Persistent<v8::Context>::New(context);
 
@@ -839,10 +842,8 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
         ifc->_script = v8::Persistent<v8::Script>::New(compiled_script);
     }
 
-    if(ctx) {
-        *ctx = context;
+    if(ctx)
         scope.Close(*ctx);
-    }
 
     return ifc;
 }

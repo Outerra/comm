@@ -122,7 +122,7 @@ bool Method::parse( iglexer& lex, int prefix )
             token rv = pa->type;  //can be [const] <type>
             rv.consume("const ");
 
-            if( rv != "uint"  &&  rv != "unsigned int" ) {
+            if( rv != "uint"  &&  rv != "unsigned int"  &&  rv != "uints"  &&  rv != "size_t" ) {
                 lex.set_err() << "size argument '" << sizeparm << "' must be an unsigned integer";
                 throw lex.exc();
             }

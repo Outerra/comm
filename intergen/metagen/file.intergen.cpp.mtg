@@ -48,9 +48,9 @@ $-[/method]-$
 
         return _vtable1;
     }
-    
+
     #define VT_CALL2(R,F,I) ((*reinterpret_cast<policy_intrusive_base*>(this)).*(reinterpret_cast<R(policy_intrusive_base::*)F>(_vtable1[I])))
-    
+
 $-[method capture?]$
 
     $return.type$ __capture__$(if operator?)$operator$(elif)$$name$$index$$(/if)$($[args rest=", "]$$type$ $name$$[/args]$)$(if const?)$ const$(/if)$
@@ -93,22 +93,22 @@ $-[/method]-$
 
         return _vtable2;
     }
-    
+
 protected:
 
     $name$_dispatcher()
     {}
-    
+
     bool intergen_bind_capture( coid::binstring* capture, uint instid ) override
     {
         if(instid >= 0xffU)
             return false;
-    
+
         _instid = uint16(instid << 8U);
         _capture = capture;
         _vtable = _capture ? get_vtable_intercept() : get_vtable();
         return true;
-    }    
+    }
 
     void intergen_capture_dispatch( uint mid, coid::binstring& bin ) override
     {
@@ -149,14 +149,14 @@ $-(if virtual!)$
 
         __disp__->_host.create(host);
         __disp__->_vtable = _capture ? get_vtable_intercept() : get_vtable();
-        
+
         $--(if varname?)$
         if(!host->$varname$) {
             __disp__->_cleaner = &_cleaner_callback;
             host->$varname$ = __disp__;
         }
         $-(/if)$
-        
+
         $-(if oncreateev?)$
         __disp__->$oncreateev$();
 
@@ -172,7 +172,7 @@ $-(/if)$
 public:
 
     // creator methods
-    
+
 $-[method static?]$
     static iref<$..name$> $name$( $..name$* __here__$[args]$, $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$ )
     {
@@ -186,7 +186,7 @@ $-[/method]$
     ///Register interface creators in the global registry
     static void* register_interfaces()
     {
-$-(if virtual!)$    
+$-(if virtual!)$
         interface_register::register_interface_creator(
             "$ns rest="::" after="::"$$name$@wrapper", (void*)&_generic_interface_creator);
 
@@ -227,7 +227,7 @@ $-[event !implicit?]$
 $return.type$ $....class$::$intname$($[args rest="," after=" "]$ $type$ $name$$size$$[/args]$)
 {
 	if(!$..varname$) $(if default_event_body?)$$default_event_body$$(elif)$
-        throw coid::exception("handler not implemented");$(/if)$
+        throw coid::exception() << "$name$" << " handler not implemented";$(/if)$
     else
         return $..varname$->iface<$..ns rest="::" after="::"$$..name$>()->$name$($[args rest=", "]$$name$$[/args]$);
 }
