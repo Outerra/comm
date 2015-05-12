@@ -18,13 +18,14 @@ private:
 
 public:
 
-    slotalloc_bmp()
+    /// size: preallocated size
+    slotalloc_bmp(const uint size = 32)
         : _bmp()
         , _items()
     {
-        _bmp.add_uninit();
+        _bmp.add_uninit(size);
         memset(_bmp.ptr(), 0, _bmp.byte_size());
-        _items.add_uninit(sizeof(BLOCK_TYPE) * 8);
+        _items.add_uninit(_bmp.size() * sizeof(BLOCK_TYPE) * 8);
     }
 
     ~slotalloc_bmp() { clear(); }
@@ -41,6 +42,8 @@ public:
         _items.set_size(0);
     }
 
+    /// TODO use SSE for faster iteration to free block?
+    /// SSE can do 16bytes at once our array is aligned
     T* add_uninit()
     {
         // find empty block 32bit
