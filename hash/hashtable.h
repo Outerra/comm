@@ -71,6 +71,7 @@ struct _Select_pair1st
 template<class T>
 struct AllocStd {
     T* alloc() { return new T; }
+    T* alloc_uninit() { return (T*)::malloc(sizeof(T)); }
     void free(T* p) { delete p; }
 
     uints index(const T* p) const { return (uints)p; }
@@ -82,6 +83,7 @@ struct AllocStd {
 template<class T>
 struct AllocSlot {
     T* alloc() { return _slots.add(); }
+    T* alloc_uninit() { return _slots.add_uninit(); }
     void free(T* p) { _slots.del(p); }
 
     uints index(const T* p) const { return _slots.get_item_id(p); }
@@ -880,6 +882,22 @@ protected:
         if( *ppn == 0  ||  !_EQFUNC( _GETKEYFUNC((*ppn)->_val), k ) )
         {
             Node* n = _ALLOC.alloc();
+            n->_next = *ppn;
+            *ppn = n;
+
+            ++_nelem;
+            return ppn;
+        }
+
+        return 0;
+    }
+
+    Node** _insert_unique_slot_uninit( const LOOKUP& k )
+    {
+        Node** ppn = find_socket(k);
+        if( *ppn == 0  ||  !_EQFUNC( _GETKEYFUNC((*ppn)->_val), k ) )
+        {
+            Node* n = _ALLOC.alloc_uninit();
             n->_next = *ppn;
             *ppn = n;
 

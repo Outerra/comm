@@ -178,12 +178,21 @@ public:
         return v  ?  &(*v)->_val  :  0;
     }
 
-    ///Create an empty entry for value object that will be initialized by the caller afterwards
+    ///Create a default-constructed entry for value object that will be initialized by the caller afterwards
     //@note the value object should be initialized so that it would return the same key as the one passed in here
     //@param key the key under which the value object should be created
     VAL* insert_value_slot( const key_type& key )
     {
         typename _HT::Node** v = _HT::_insert_unique_slot(key);
+        return v  ?  &(*v)->_val  :  0;
+    }
+
+    ///Create an uninitialized entry for value object that will be initialized by the caller afterwards
+    //@note the value object should be initialized so that it would return the same key as the one passed in here
+    //@param key the key under which the value object should be created
+    VAL* insert_value_slot_uninit( const key_type& key )
+    {
+        typename _HT::Node** v = _HT::_insert_unique_slot_uninit(key);
         return v  ?  &(*v)->_val  :  0;
     }
 

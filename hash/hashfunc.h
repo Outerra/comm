@@ -64,46 +64,47 @@ template<class KEY, bool INSENSITIVE=false> struct hash
     typedef KEY     key_type;
 };
 
-inline uint __coid_hash_string( const char* s )
+///FNV-1a hash
+inline uint __coid_hash_c_string( const char* s, uint seed = 2166136261u )
 {
-    uint h = 2166136261u;
     for( ; *s; ++s)
-        h = (h ^ *s)*16777619u;
-        //h = (h ^ *s) + (h<<26) + (h>>6);
+        seed = (seed ^ *s)*16777619u;
 
-    return h;
+    return seed;
 }
 
 
-inline uint __coid_hash_string( const char* s, uints n )
+inline uint __coid_hash_string( const char* s, uints n, uint seed = 2166136261u )
 {
-    uint h = 2166136261u;
-    for( ; n>0; ++s,--n)
-        h = (h ^ *s)*16777619u;
-        //h = (h ^ *s) + (h<<26) + (h>>6);
+    //for( ; n>0; ++s,--n)
+    //    seed = (seed ^ *s)*16777619u;
 
-    return h;
+    //unrolled
+    for(uints i=0; i < (n&-2); i+=2) {
+        seed = (seed ^ s[i])   * 16777619u;
+        seed = (seed ^ s[i+1]) * 16777619u;
+    }
+    if(n&1)
+        seed = (seed ^ s[n-1])*16777619u;
+
+    return seed;
 }
 
-inline uint __coid_hash_string_insensitive( const char* s )
+inline uint __coid_hash_c_string_insensitive( const char* s, uint seed = 2166136261u )
 {
-    uint h = 2166136261u;
     for( ; *s; ++s)
-        h = (h ^ ::tolower(*s))*16777619u;
-        //h = (h ^ *s) + (h<<26) + (h>>6);
+        seed = (seed ^ ::tolower(*s))*16777619u;
 
-    return h;
+    return seed;
 }
 
 
-inline uint __coid_hash_string_insensitive( const char* s, uints n )
+inline uint __coid_hash_string_insensitive( const char* s, uints n, uint seed = 2166136261u )
 {
-    uint h = 2166136261u;
     for( ; n>0; ++s,--n)
-        h = (h ^ ::tolower(*s))*16777619u;
-        //h = (h ^ *s) + (h<<26) + (h>>6);
+        seed = (seed ^ ::tolower(*s))*16777619u;
 
-    return h;
+    return seed;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -112,8 +113,8 @@ template<bool INSENSITIVE> struct hash<char*, INSENSITIVE>
     typedef char* key_type;
     uint operator()(const char* s) const {
         return INSENSITIVE
-            ? __coid_hash_string_insensitive(s)
-            : __coid_hash_string(s);
+            ? __coid_hash_c_string_insensitive(s)
+            : __coid_hash_c_string(s);
     }
 };
 
@@ -122,8 +123,8 @@ template<bool INSENSITIVE> struct hash<const char*, INSENSITIVE>
     typedef const char* key_type;
     uint operator()(const char* s) const {
         return INSENSITIVE
-            ? __coid_hash_string_insensitive(s)
-            : __coid_hash_string(s);
+            ? __coid_hash_c_string_insensitive(s)
+            : __coid_hash_c_string(s);
     }
 };
 
