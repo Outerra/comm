@@ -312,9 +312,9 @@ void *_xmemcpy( void *dest, const void *src, size_t count );
 ////////////////////////////////////////////////////////////////////////////////
 
 //used to detect char ptr types
-template<typename T> struct is_char_ptr {};
-template<> struct is_char_ptr<const char *> { struct dummy {}; typedef dummy* type; };
-template<> struct is_char_ptr<char *> { struct dummy {}; typedef dummy* type; };
+template<typename T, typename R> struct is_char_ptr {};
+template<typename R> struct is_char_ptr<const char *, R> { typedef R type; };
+template<typename R> struct is_char_ptr<char *, R>       { typedef R type; };
 
 
 COID_NAMESPACE_END

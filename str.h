@@ -82,18 +82,37 @@ public:
 
     charstr() {}
 
-    charstr( const char* czstr, uints len ) { set_from(czstr, len); }
-
     charstr( const token& tok )
     {
         if( tok.is_empty() ) return;
 		assign(tok.ptr(), tok.len());
     }
 
-    charstr( const char* czstr )
+    ///String literal constructor, optimization to have fast literal strings available as tokens
+    //@note tries to detect and if passed in a char array instead of string literal, by checking if the last char is 0
+    // and the preceding char is not 0
+    // Call token(&*array) to force treating the array as a zero-terminated string
+    template <int N>
+    charstr(const char (&str)[N])
     {
-        if(czstr)
-            assign(czstr, ::strlen(czstr));
+        set(token::from_literal(str, N-1));
+    }
+
+    ///String literal constructor, optimization to have fast literal strings available as tokens
+    //@note tries to detect and if passed in a char array instead of string literal, by checking if the last char is 0
+    // and the preceding char is not 0
+    // Call token(&*array) to force treating the array as a zero-terminated string
+    template <int N>
+    charstr(char (&str)[N])
+    {
+        set(token::from_literal(str, N-1));
+    }
+
+    ///Constructor from const char*, artificially lowered precedence to allow catching literals above
+    template<typename T>
+    charstr(T czstr, typename is_char_ptr<T,ints>::type len=-1)
+    {
+        set_from(czstr, len<0 ? (czstr ? ::strlen(czstr) : 0) : len);
     }
 
 
@@ -365,15 +384,19 @@ public:
             assign(str.ptr(), str.len());
         return *this;
     }
+/*
+    template <int N>
+    charstr& operator = (const char (&str)[N]) const    { return set(token::from_literal(str, N-1)); }
 
-    charstr& operator = (const char* sz)
-    {
-        if(!sz)
-            reset();
-        else
-            assign(sz, ::strlen(sz));
-        return *this;
-    }
+    template <int N>
+    charstr& operator = (char (&str)[N]) const          { return set(token::from_literal(str, N-1)); }
+
+    template<typename T>
+    typename is_char_ptr<T,charstr&>::type operator = (T czstr) const {
+        return set(token::from_cstring(czstr));
+    }*/
+
+    charstr& operator = (const char* czstr)     { return set(token::from_cstring(czstr)); }
 
     charstr& operator = (char c)                { reset(); append(c); return *this; }
 
@@ -1467,9 +1490,10 @@ public:
     {   return token(*this).contains_back(c,off); }
 
 
+    char operator [] (uints i) const            { return _tstr[i]; }
     char& operator [] (uints i)                 { return _tstr[i]; }
 
-/*
+    //@return true if strings are equal
     bool operator == (const charstr& str) const
     {
         if( ptr() == str.ptr() )
@@ -1480,7 +1504,8 @@ public:
         //return _tbuf.operator == (str._tbuf);
     }
     bool operator != (const charstr& str) const     { return !operator == (str); }
-*/
+
+    //@return true if strings are equal
     bool operator == (const token& tok) const {
         if (tok.len() != len())  return false;
         return strncmp(_tstr.ptr(), tok.ptr(), tok.len()) == 0;
@@ -1491,6 +1516,7 @@ public:
         return strncmp(_tstr.ptr(), tok.ptr(), tok.len()) != 0;
     }
 
+    //@return true if string contains only the given character
     bool operator == (const char c) const {
         if (len() != 1)  return false;
         return _tstr[0] == c;
@@ -1499,6 +1525,24 @@ public:
         if (len() != 1)  return true;
         return _tstr[0] != c;
     }
+
+///Define operators for string literals and c-strings based on tokens
+#define TOKEN_COMPARISON_OP_STR(op) \
+    template <int N> \
+    bool operator op (const char (&str)[N]) const   { return *this op token::from_literal(str, N-1); } \
+ \
+    template <int N> \
+    bool operator op (char (&str)[N]) const         { return *this op token::from_literal(str, N-1); } \
+ \
+    template<typename T> \
+    typename is_char_ptr<T,bool>::type operator op (T czstr) const { \
+        return *this op token::from_cstring(czstr); \
+    }
+
+    TOKEN_COMPARISON_OP_STR(==);
+    TOKEN_COMPARISON_OP_STR(!=);
+
+
 
     bool operator > (const charstr& str) const {
         if( !len() )  return 0;
@@ -1547,6 +1591,11 @@ public:
     {
         return !operator < (tok);
     }
+
+    TOKEN_COMPARISON_OP_STR(>);
+    TOKEN_COMPARISON_OP_STR(<);
+    TOKEN_COMPARISON_OP_STR(>=);
+    TOKEN_COMPARISON_OP_STR(<=);
 
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -1905,13 +1954,6 @@ public:
     {
         charstr res = *this;
         res += tok;
-        return res;
-    }
-
-    charstr operator + (const charstr& p) const
-    {
-        charstr res = *this;
-        res += p;
         return res;
     }
 

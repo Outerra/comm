@@ -127,7 +127,7 @@ struct token
 
     ///Constructor from const char*, artificially lowered precedence to allow catching literals above
     template<typename T>
-    token(T czstr, typename is_char_ptr<T>::type=0)
+    token(T czstr, typename is_char_ptr<T,bool>::type=0)
     {
         set(czstr, czstr ? ::strlen(czstr) : 0);
     }
@@ -153,6 +153,13 @@ struct token
     static token from_cstring( const char* czstr, uints maxlen = UMAXS )
     {
         return token( czstr, strnlen(czstr,maxlen) );
+    }
+
+    static token from_literal( const char* czstr, uints len )
+    {
+        token tok(czstr, len);
+        tok.fix_literal_length();
+        return tok;
     }
 
     token( const token& src, uints offs, uints len )
@@ -264,7 +271,9 @@ struct token
         return ::memcmp( _ptr, tok._ptr, _pte-_ptr ) == 0;
     }
 
-    //friend bool operator == (const token& tok, const charstr& str );
+    friend bool operator == (const char* sz, const token& tok) {
+        return tok == sz;
+    }
 
     bool operator == (char c) const {
         if( 1 != lens() ) return 0;
@@ -276,7 +285,9 @@ struct token
         return ::memcmp( _ptr, tok._ptr, _pte-_ptr ) != 0;
     }
 
-    //friend bool operator != (const token& tok, const charstr& str );
+    friend bool operator != (const char* sz, const token& tok) {
+        return tok == sz;
+    }
 
     bool operator != (char c) const {
         if(1 != lens()) return true;
