@@ -71,7 +71,7 @@ struct _Select_pair1st
 template<class T>
 struct AllocStd {
     T* alloc() { return new T; }
-    T* alloc_uninit() { return (T*)::malloc(sizeof(T)); }
+    T* alloc_uninit() { return (T*)::dlmalloc(sizeof(T)); }
     void free(T* p) { delete p; }
 
     uints index(const T* p) const { return (uints)p; }

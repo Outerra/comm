@@ -309,13 +309,18 @@ void *_xmemcpy( void *dest, const void *src, size_t count );
 #define xmemcpy     ::memcpy
 #endif
 
+////////////////////////////////////////////////////////////////////////////////
 
-///Find occurence of 0xcdcd in a two-part buffer
-//@return true if not found (use with ASSERT)
-bool cdcd_memcheck( const uchar* a, const uchar* ae, const uchar* b, const uchar* be );
+//used to detect char ptr types
+template<typename T> struct is_char_ptr {};
+template<> struct is_char_ptr<const char *> { struct dummy {}; typedef dummy* type; };
+template<> struct is_char_ptr<char *> { struct dummy {}; typedef dummy* type; };
 
 
 COID_NAMESPACE_END
+
+
+
 
 #ifdef SYSTYPE_MSVC
     #define COMM_ALIGNAS(k) __declspec( align(k) )
@@ -333,6 +338,7 @@ COID_NAMESPACE_END
 #define UMAX32      0xffffffffUL
 #define UMAX64      0xffffffffffffffffULL
 #define WMAX        0xffff
+
 
 #include "net_ul.h"
 

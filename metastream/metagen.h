@@ -93,7 +93,7 @@ class metagen //: public binstream
             def_escape_pair( ie, "\\", "\\" );
             def_escape_pair( ie, "n", "\n" );
             def_escape_pair( ie, "t", "    " );
-            def_escape_pair( ie, "\n", 0 );
+            def_escape_pair( ie, "\n", nullptr );
 
             DQSTRING = def_string( "dqstring", "\"", "\"", "escape" );
 

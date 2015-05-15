@@ -93,27 +93,62 @@ struct token
     const char* _ptr;                   //< ptr to the beginning of current string part
     const char* _pte;                   //< pointer past the end
 
-    token() {
-        _ptr = _pte = 0;
+    token()
+        : _ptr(0), _pte(0)
+    {}
+
+    token(std::nullptr_t)
+        : _ptr(0), _pte(0)
+    {}
+
+    ///String literal constructor, optimization to have fast literal strings available as tokens
+    //@note tries to detect and if passed in a char array instead of string literal, by checking if the last char is 0
+    // and the preceding char is not 0
+    // Call token(&*array) to force treating the array as a zero-terminated string
+    template <int N>
+    token(const char (&str)[N])
+        : _ptr(str), _pte(str+N-1)
+    {
+        //correct if invoked on char arrays
+        fix_literal_length();
     }
 
-    token( const char *czstr )
-    {   set(czstr); }
+    ///String literal constructor, optimization to have fast literal strings available as tokens
+    //@note tries to detect and if passed in a char array instead of string literal, by checking if the last char is 0
+    // and the preceding char is not 0
+    // Call token(&*array) to force treating the array as a zero-terminated string
+    template <int N>
+    token(char (&str)[N])
+        : _ptr(str), _pte(str+N-1)
+    {
+        //correct if invoked on char arrays
+        fix_literal_length();
+    }
+
+    ///Constructor from const char*, artificially lowered precedence to allow catching literals above
+    template<typename T>
+    token(T czstr, typename is_char_ptr<T>::type=0)
+    {
+        set(czstr);
+    }
 
     token( const charstr& str );
 
     token( const char* ptr, uints len )
-    {
-        DASSERT( len <= UMAX32 );
-        _ptr = ptr;
-        _pte = ptr + len;
-    }
+        : _ptr(ptr), _pte(ptr+len)
+    {}
+
+    token( char* ptr, uints len )
+        : _ptr(ptr), _pte(ptr+len)
+    {}
 
     token( const char* ptr, const char* ptre )
-    {
-        _ptr = ptr;
-        _pte = ptre;
-    }
+        : _ptr(ptr), _pte(ptre)
+    {}
+
+    token( char* ptr, char* ptre )
+        : _ptr(ptr), _pte(ptre)
+    {}
 
     static token from_cstring( const char* czstr, uints maxlen = UMAXS )
     {
@@ -305,19 +340,38 @@ struct token
     ////////////////////////////////////////////////////////////////////////////////
     bool cmpeq( const token& str ) const
     {
-        if( lens() != str.lens() )
+        if(lens() != str.lens())
             return 0;
-        return 0 == memcmp( ptr(), str.ptr(), lens() );
+        return 0 == memcmp(ptr(), str.ptr(), lens());
+    }
+
+    bool cmpeq( const char* str ) const
+    {
+        uints n = lens();
+        if(n == 0)  return str == 0  ||  str[0] == 0;
+        return 0 == strncmp(ptr(), str, n) && str[n] == 0;
     }
 
     bool cmpeqi( const token& str ) const
     {
         if( lens() != str.lens() )
             return 0;
-        return 0 == xstrncasecmp( ptr(), str.ptr(), lens() );
+        return 0 == xstrncasecmp(ptr(), str.ptr(), lens());
+    }
+
+    bool cmpeqi( const char* str ) const
+    {
+        uints n = lens();
+        if(n == 0)  return str == 0  ||  str[0] == 0;
+        return 0 == xstrncasecmp(ptr(), str, n) && str[n] == 0;
     }
 
     bool cmpeqc( const token& str, bool casecmp ) const
+    {
+        return casecmp ? cmpeq(str) : cmpeqi(str);
+    }
+
+    bool cmpeqc( const char* str, bool casecmp ) const
     {
         return casecmp ? cmpeq(str) : cmpeqi(str);
     }
@@ -337,7 +391,9 @@ struct token
         return r;
     }
 
-    ///Compare strings, longer first
+    int cmp( const char* str ) const { return cmp(token(str,0U)); }
+
+    ///Compare strings, longer one becomes lower if the common part is equal
     int cmplf( const token& str ) const
     {
         uints lex = str.lens();
@@ -349,6 +405,8 @@ struct token
         }
         return r;
     }
+
+    int cmplf( const char* str ) const { return cmplf(token(str,0U)); }
 
     int cmpi( const token& str ) const
     {
@@ -362,10 +420,14 @@ struct token
         return r;
     }
 
+    int cmpi( const char* str ) const { return cmpi(token(str, 0U)); }
+
     int cmpc( const token& str, bool casecmp ) const
     {
         return casecmp ? cmp(str) : cmpi(str);
     }
+
+    int cmpc( const char* str, bool casecmp ) const { return cmpc(str, casecmp); }
 
 
 
@@ -2372,6 +2434,18 @@ struct token
 #endif //SYSTYPE_WIN
 
 #endif //TOKEN_SUPPORT_WSTRING
+
+private:
+
+    void fix_literal_length()
+    {
+        //if 0 is not at _pte or there's a zero before, recount
+        if(*_pte != 0 || (_pte>_ptr && _pte[-1] == 0)) {
+            const char* p = _ptr;
+            for(; p<_pte && *p; ++p);
+            _pte = p;
+        }
+    }
 };
 
 ////////////////////////////////////////////////////////////////////////////////

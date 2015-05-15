@@ -82,11 +82,21 @@ public:
 
     charstr() {}
 
-    //void * operator new (size_t size)   { return (charstr*) SINGLETON(segchunk_manager).alloc_hook(); }
-    //void operator delete (void * ptr)   { SINGLETON(segchunk_manager).free_hook(ptr); }
+    charstr( const char* czstr )   { set(czstr); }
+    charstr( const char* czstr, uints len ) { set_from(czstr, len); }
+
+    charstr( const token& tok )
+    {
+        if( tok.is_empty() ) return;
+		assign(tok.ptr(), tok.len());
+    }
+
+
 
     ///copy constructor
-    charstr (const charstr& str) : _tstr(str._tstr)          { }
+    charstr( const charstr& str )
+        : _tstr(str._tstr)
+    {}
 
     ///Take control over content of another string, the other string becomes empty
     charstr& takeover( charstr& ref )
@@ -166,14 +176,6 @@ public:
         return *this;
     }
 */
-
-    charstr( const char* czstr )            { set(czstr); }
-    charstr( const char* czstr, uints len ) { set_from(czstr, len); }
-    charstr( const token& tok )
-    {
-        if( tok.is_empty() ) return;
-		assign(tok.ptr(), tok.len());
-    }
 
     charstr(char c)                { append(c); }
 
