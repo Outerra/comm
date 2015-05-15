@@ -82,7 +82,6 @@ public:
 
     charstr() {}
 
-    charstr( const char* czstr )   { set(czstr); }
     charstr( const char* czstr, uints len ) { set_from(czstr, len); }
 
     charstr( const token& tok )
@@ -91,12 +90,22 @@ public:
 		assign(tok.ptr(), tok.len());
     }
 
+    charstr( const char* czstr )
+    {
+        if(czstr)
+            assign(czstr, ::strlen(czstr));
+    }
 
 
     ///copy constructor
     charstr( const charstr& str )
         : _tstr(str._tstr)
     {}
+
+
+    operator token() const { return token(ptr(), ptre()); }
+
+
 
     ///Take control over content of another string, the other string becomes empty
     charstr& takeover( charstr& ref )
@@ -205,18 +214,9 @@ public:
     charstr(double d)              { operator += (d); }
 
 
-    charstr& set( const char* czstr )
+    charstr& set( const token& tok )
     {
-        if(czstr)
-            assign(czstr, strlen(czstr));
-        else
-            free();
-        return *this;
-    }
-
-    charstr& set( const charstr& str )
-    {
-        assign(str.ptr(), str.len());
+        assign(tok.ptr(), tok.len());
         return *this;
     }
 
@@ -242,6 +242,7 @@ public:
     {
         return set_from( strbgn, strend-strbgn );
     }
+
 
     
     const char* add_from( const token& tok )
@@ -299,16 +300,6 @@ public:
         return lt;
     }
 
-    const char* set_group( const char* czstr, const char* chars )
-    {
-        uints len = count_ingroup( czstr, chars );
-        if( czstr[len] != 0 ) {
-            assign(czstr, len);
-            return czstr + len;
-        }
-        return czstr;
-    }
-
 
     ///Cut to specified length, negative numbers cut abs(len) from the end
     charstr& resize( ints length )
@@ -357,22 +348,30 @@ public:
     }
 
     //assignment
-    charstr& operator = (const char *czstr) {
-        uints len = czstr ? strlen(czstr) : 0;
-        assign(czstr, len);
-        return *this;
-    }
-    charstr& operator = (const charstr& str) {
-        assign(str.ptr(), str.len());
-        return *this;
-    }
-
     charstr& operator = (const token& tok)
     {
         if( tok.is_empty() )
             reset();
         else
             assign(tok.ptr(), tok.len());
+        return *this;
+    }
+
+    charstr& operator = (const charstr& str)
+    {
+        if( str.is_empty() )
+            reset();
+        else
+            assign(str.ptr(), str.len());
+        return *this;
+    }
+
+    charstr& operator = (const char* sz)
+    {
+        if(!sz)
+            reset();
+        else
+            assign(sz, ::strlen(sz));
         return *this;
     }
 
@@ -447,26 +446,13 @@ public:
     }
     //@}
 
-
-    static uint count_notingroup( const char* str, const char* sep )
-    {   return (uint)::strcspn( str, sep );   }
-
-    static uint count_ingroup( const char* str, const char* sep )
-    {   return (uint)::strspn( str, sep );   }
-
-
     //concatenation
-    charstr& operator += (const char *czstr) {
-        if(!czstr) return *this;
-        uints len = ::strlen(czstr);
-        _append( czstr, len );
+    charstr& operator += (const token& tok) {
+        if(!tok) return *this;
+        _append(tok.ptr(), tok.len());
         return *this;
     }
-    charstr& operator += (const charstr& str) {
-        if( str.len() == 0 ) return *this;
-        _append( str.ptr(), str.len() );
-        return *this;
-    }
+
     charstr& operator += (char c)               { append(c); return *this; }
 
     charstr& operator += (int8 i)               { append_num(10,(int)i);  return *this; }
@@ -513,14 +499,8 @@ public:
         return *this;
     }
 
-    charstr& operator += (const token& tok) {
-        _append( tok.ptr(), tok.len() );
-        return *this;
-    }
-
     //
-    charstr& operator << (const char *czstr)    { return operator += (czstr); }
-    charstr& operator << (const charstr& str)   { return operator += (str); }
+    charstr& operator << (const token& tok)     { return operator += (tok); }
     charstr& operator << (char c)               { return operator += (c); }
 
     charstr& operator << (int8 i)               { append_num(10,(int)i);  return *this; }
@@ -603,9 +583,6 @@ public:
             out << " : " << f.e.text();
         return out;
     }
-
-    charstr& operator << (const token& tok)                 { return operator += (tok); }
-    charstr& operator <<= (const token& tok)                { return operator += (tok); }
 
 
 
@@ -1492,7 +1469,7 @@ public:
 
     char& operator [] (uints i)                 { return _tstr[i]; }
 
-
+/*
     bool operator == (const charstr& str) const
     {
         if( ptr() == str.ptr() )
@@ -1503,15 +1480,7 @@ public:
         //return _tbuf.operator == (str._tbuf);
     }
     bool operator != (const charstr& str) const     { return !operator == (str); }
-
-    bool operator == (const char *czstr) const {
-        if( _tstr.ptr() == czstr )  return 1;
-        if( !_tstr.ptr() )
-            return czstr[0] == 0;
-        return strcmp(_tstr.ptr(), czstr) == 0;
-    }
-    bool operator != (const char *czstr) const      { return !operator == (czstr); }
-
+*/
     bool operator == (const token& tok) const {
         if (tok.len() != len())  return false;
         return strncmp(_tstr.ptr(), tok.ptr(), tok.len()) == 0;
@@ -1548,22 +1517,6 @@ public:
         return !operator > (str);
     }
 
-    bool operator > (const char *czstr) const {
-        if( !len() )  return 0;
-        if( !czstr || czstr[0] == 0 )  return 1;
-        return strcmp( _tstr.ptr(), czstr ) > 0;
-    }
-    bool operator < (const char *czstr) const {
-        if( !czstr || czstr[0] == 0 )  return 0;
-        if( !len() )  return 1;
-        return strcmp( _tstr.ptr(), czstr ) < 0;
-    }
-    bool operator >= (const char *czstr) const {
-        return !operator < (czstr);
-    }
-    bool operator <= (const char *czstr) const {
-        return !operator > (czstr);
-    }
 
     bool operator > (const token& tok) const
     {
@@ -1726,22 +1679,10 @@ protected:
 public:
 
 
-    bool begins_with( const char* str ) const
-    {
-        token me = *this;
-        return me.begins_with(str);
-    }
-
     bool begins_with( const token& tok ) const
     {
         token me = *this;
         return me.begins_with(tok);
-    }
-
-    bool begins_with_icase( const char* str ) const
-    {
-        token me = *this;
-        return me.begins_with_icase(str);
     }
 
     bool begins_with_icase( const token& tok ) const
@@ -1779,11 +1720,6 @@ public:
             return 0;
         return 0 == memcmp( _tstr.ptr(), str.ptr(), str.len() );
     }
-    bool cmpeq( const char* str ) const
-    {
-        if( _tstr.size() == 0 )  return str == 0  ||  str[0] == 0;
-        return 0 == strcmp( _tstr.ptr(), str );
-    }
 
     bool cmpeqi( const token& str ) const
     {
@@ -1791,14 +1727,8 @@ public:
             return 0;
         return 0 == xstrncasecmp( _tstr.ptr(), str.ptr(), str.len() );
     }
-    bool cmpeqi( const char* str ) const
-    {
-        if( _tstr.size() == 0 )  return str == 0  ||  str[0] == 0;
-        return 0 == xstrcasecmp( _tstr.ptr(), str );
-    }
 
     bool cmpeqc( const token& str, bool casecmp ) const      { return casecmp ? cmpeq(str) : cmpeqi(str); }
-    bool cmpeqc( const char* str, bool casecmp ) const       { return casecmp ? cmpeq(str) : cmpeqi(str); }
 
     ////////////////////////////////////////////////////////////////////////////////
     ///Compare strings
@@ -1815,7 +1745,6 @@ public:
         }
         return r;
     }
-    int cmp( const char* str ) const        { return strcmp( _tstr.ptr(), str ); }
 
     ///Compare strings, longer first
     int cmplf( const token& str ) const
@@ -1843,10 +1772,8 @@ public:
         }
         return r;
     }
-    int cmpi( const char* str ) const       { return xstrcasecmp( _tstr.ptr(), str ); }
 
     int cmpc( const token& str, bool casecmp ) const      { return casecmp ? cmp(str) : cmpi(str); }
-    int cmpc( const char* str, bool casecmp ) const       { return casecmp ? cmp(str) : cmpi(str); }
 
     char char_is_alpha( int n ) const
     {
@@ -1974,7 +1901,7 @@ public:
     }
 
 
-    charstr  operator + (const token& tok) const
+    charstr operator + (const token& tok) const
     {
         charstr res = *this;
         res += tok;
@@ -1982,13 +1909,6 @@ public:
     }
 
     charstr operator + (const charstr& p) const
-    {
-        charstr res = *this;
-        res += p;
-        return res;
-    }
-
-    charstr operator + (const char* p) const
     {
         charstr res = *this;
         res += p;
@@ -2027,7 +1947,7 @@ protected:
 
 ////////////////////////////////////////////////////////////////////////////////
 inline token::token( const charstr& str )       { set(str); }
-
+/*
 inline token& token::operator = ( const charstr& t )
 {
     _ptr = t.ptr();
@@ -2052,7 +1972,7 @@ inline const char* token::set( const charstr& str )
     _ptr = str.ptr();
     _pte = str.ptre();
     return _pte;
-}
+}*/
 
 inline token token::rebase(const charstr& from, const charstr& to) const
 {

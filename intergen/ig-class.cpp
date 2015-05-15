@@ -212,7 +212,7 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                         lex.match(';', "error: implicit events must not be declared");
 
                         if(implname == "on_create") {
-                            m->name = ifc->on_create_ev = extname ? extname : "on_create";
+                            m->name = ifc->on_create_ev = extname ? token(extname) : "on_create";
 
                             m->ret.type = m->ret.basetype = m->ret.fulltype = "void";
                         }

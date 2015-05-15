@@ -303,6 +303,8 @@ class metagen //: public binstream
 
         operator const token& () const  { return name; }
 
+        bool operator == (const token& tok) const { return tok == name; }
+
         bool is_condition() const       { return cond >= COND_POS; }
         bool is_open() const            { return cond == OPEN; }
 

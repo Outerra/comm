@@ -129,10 +129,10 @@ struct token
     template<typename T>
     token(T czstr, typename is_char_ptr<T>::type=0)
     {
-        set(czstr);
+        set(czstr, czstr ? ::strlen(czstr) : 0);
     }
 
-    token( const charstr& str );
+    explicit token( const charstr& str );
 
     token( const char* ptr, uints len )
         : _ptr(ptr), _pte(ptr+len)
@@ -264,16 +264,7 @@ struct token
         return ::memcmp( _ptr, tok._ptr, _pte-_ptr ) == 0;
     }
 
-    bool operator == (const char* str) const {
-        if(!str) return _pte==_ptr;
-        const char* p = _ptr;
-        for( ; p<_pte; ++p, ++str ) {
-            if( *str != *p )  return false;
-        }
-        return *str == 0;
-    }
-
-    friend bool operator == (const token& tok, const charstr& str );
+    //friend bool operator == (const token& tok, const charstr& str );
 
     bool operator == (char c) const {
         if( 1 != lens() ) return 0;
@@ -285,16 +276,7 @@ struct token
         return ::memcmp( _ptr, tok._ptr, _pte-_ptr ) != 0;
     }
 
-    bool operator != (const char* str) const {
-        if(!str) return _pte!=_ptr;
-        const char* p = _ptr;
-        for( ; p<_pte; ++p, ++str ) {
-            if( *str != *p )  return true;
-        }
-        return *str != 0;
-    }
-
-    friend bool operator != (const token& tok, const charstr& str );
+    //friend bool operator != (const token& tok, const charstr& str );
 
     bool operator != (char c) const {
         if(1 != lens()) return true;
@@ -345,13 +327,6 @@ struct token
         return 0 == memcmp(ptr(), str.ptr(), lens());
     }
 
-    bool cmpeq( const char* str ) const
-    {
-        uints n = lens();
-        if(n == 0)  return str == 0  ||  str[0] == 0;
-        return 0 == strncmp(ptr(), str, n) && str[n] == 0;
-    }
-
     bool cmpeqi( const token& str ) const
     {
         if( lens() != str.lens() )
@@ -359,19 +334,7 @@ struct token
         return 0 == xstrncasecmp(ptr(), str.ptr(), lens());
     }
 
-    bool cmpeqi( const char* str ) const
-    {
-        uints n = lens();
-        if(n == 0)  return str == 0  ||  str[0] == 0;
-        return 0 == xstrncasecmp(ptr(), str, n) && str[n] == 0;
-    }
-
     bool cmpeqc( const token& str, bool casecmp ) const
-    {
-        return casecmp ? cmpeq(str) : cmpeqi(str);
-    }
-
-    bool cmpeqc( const char* str, bool casecmp ) const
     {
         return casecmp ? cmpeq(str) : cmpeqi(str);
     }
@@ -391,8 +354,6 @@ struct token
         return r;
     }
 
-    int cmp( const char* str ) const { return cmp(token(str,0U)); }
-
     ///Compare strings, longer one becomes lower if the common part is equal
     int cmplf( const token& str ) const
     {
@@ -406,8 +367,6 @@ struct token
         return r;
     }
 
-    int cmplf( const char* str ) const { return cmplf(token(str,0U)); }
-
     int cmpi( const token& str ) const
     {
         uints lex = str.lens();
@@ -420,14 +379,10 @@ struct token
         return r;
     }
 
-    int cmpi( const char* str ) const { return cmpi(token(str, 0U)); }
-
     int cmpc( const token& str, bool casecmp ) const
     {
         return casecmp ? cmp(str) : cmpi(str);
     }
-
-    int cmpc( const char* str, bool casecmp ) const { return cmpc(str, casecmp); }
 
 
 
@@ -554,7 +509,7 @@ struct token
         return *this;
     }
 
-    token& operator = ( const charstr& t );
+    //token& operator = ( const charstr& t );
 /*
     ///Assigns string to token, initially setting up the token as empty, allowing for subsequent calls to token() method to retrieve next token.
     void assign_empty( const char *czstr ) {
@@ -569,13 +524,16 @@ struct token
     ///Assigns string to token, initially setting up the token as empty, allowing for subsequent calls to token() method to retrieve next token.
     void assign_empty( const charstr& str );
 */
-    ///Set token from zero-terminated string
+    ///Set token from token
     //@return pointer past the end
-    const char* set( const char* czstr ) {
-        _ptr = czstr;
-        _pte = czstr + (czstr ? ::strlen(czstr) : 0);
+    const char* set( const token& tok ) {
+        _ptr = tok._ptr;
+        _pte = tok._pte;
         return _pte;
     }
+
+    ///Set token from string
+    //const char* set( const charstr& str );
 
     ///Set token from string and length.
     //@note use set_empty(ptr) to avoid conflict with overloads when len==0
@@ -595,10 +553,6 @@ struct token
         _pte = strend;
         return strend;
     }
-
-    ///Set token from string
-    const char* set( const charstr& str );
-
 
     ///Copy to buffer, terminate with zero
     char* copy_to( char* str, uints maxbufsize ) const
@@ -1586,18 +1540,6 @@ struct token
     }
 
     //@return the length of common prefix between two strings
-    uints common_prefix(const char* str) const
-    {
-        const char* p = _ptr;
-        for( ; p<_pte; ++p, ++str )
-        {
-            if(*str == 0 || *str != *p)
-                break;
-        }
-        return p-_ptr;
-    }
-
-    //@return the length of common prefix between two strings
     uint common_prefix(const token& t) const
     {
         const char* p = _ptr;
@@ -1612,19 +1554,6 @@ struct token
     }
 
     //@return true if token begins with given string
-    bool begins_with( const char* str ) const
-    {
-        const char* p = _ptr;
-        for( ; p<_pte; ++p, ++str )
-        {
-            if( *str == 0 )
-                return true;
-            if( *str != *p )
-                return false;
-        }
-        return *str == 0;
-    }
-
     bool begins_with( const token& tok, uints off=0 ) const
     {
         if( tok.lens()+off > lens() )
@@ -1638,19 +1567,6 @@ struct token
                 return false;
         }
         return true;
-    }
-
-    bool begins_with_icase( const char* str ) const
-    {
-        const char* p = _ptr;
-        for( ; p<_pte; ++p, ++str )
-        {
-            if( *str == 0 )
-                return true;
-            if( tolower(*str) != tolower(*p) )
-                return false;
-        }
-        return *str == 0;
     }
 
     bool begins_with_icase( const token& tok, uints off=0 ) const
@@ -1707,18 +1623,7 @@ struct token
         return 0;
     }
 
-    ///Consume leading character if matches one from string, returning position+1, otherwise return 0
-    ints consume_char( const char* cz ) {
-        char c = first_char();
-        if(!c) return 0;
-        const char* p = ::strchr(cz, c);
-        if(!p) return 0;
-        
-        ++_ptr;
-        return p-cz+1;
-    }
-
-    ///Consume leading character if matches one from string, returning position+1, otherwise return 0
+    ///Consume leading character if matches any one from the givenstring, returning position+1, otherwise return 0
     ints consume_char( const token& ct ) {
         char c = first_char();
         if(!c) return 0;
@@ -1728,7 +1633,6 @@ struct token
         ++_ptr;
         return p-ct.ptr()+1;
     }
-
 
     ///Consume leading substring if matches
     bool consume( const token& tok )
@@ -2440,7 +2344,13 @@ private:
     void fix_literal_length()
     {
         //if 0 is not at _pte or there's a zero before, recount
-        if(*_pte != 0 || (_pte>_ptr && _pte[-1] == 0)) {
+        if(*_pte != 0 || (_pte>_ptr && _pte[-1] == 0))
+        {
+            //an assert here means token is likely being constructed from
+            // a character array, but detected as a string literal
+            // please add &* before such strings to avoid the need for this fix
+            DASSERT(0);
+
             const char* p = _ptr;
             for(; p<_pte && *p; ++p);
             _pte = p;
