@@ -118,21 +118,30 @@ num_right0(NUM n) {
 
 
 ///Helper for thousands-separated numbers
-template<int WIDTH, int ALIGN, class NUM>
-struct num_fmt_thousands
+struct num_thousands
 {
-    NUM value;
+    uint64 value;
+    int width;
+    EAlignNum align;
     char sep;
-    num_fmt_thousands(NUM value, char sep) : value(value), sep(sep)
+
+    num_thousands(uint64 value, char sep, int width=0, EAlignNum align=ALIGN_NUM_RIGHT)
+        : value(value), sep(sep), width(width), align(align)
     {}
 };
 
-template<int WIDTH, int ALIGN, class NUM>
-inline num_fmt_thousands<WIDTH,ALIGN,NUM>
-num_thousands(NUM n, char sep) {
-    return num_fmt_thousands<WIDTH,ALIGN,NUM>(n, sep);
-}
 
+///Helper for metric formatted numbers
+struct num_metric
+{
+    uint64 value;
+    int width;
+    EAlignNum align;
+
+    num_metric(uint64 value, int width=0, EAlignNum align=ALIGN_NUM_RIGHT)
+        : value(value), width(width), align(align)
+    {}
+};
 
 
 

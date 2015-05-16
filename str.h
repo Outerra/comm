@@ -559,9 +559,14 @@ public:
     }
 
     ///Thousands separated numbers
-    template<int WIDTH, int ALIGN, class NUM>
-    charstr& operator << (const num_fmt_thousands<WIDTH,ALIGN,NUM>& v) {
-        append_num_thousands(v.value, v.sep, WIDTH, (EAlignNum)ALIGN);
+    charstr& operator << (const num_thousands& v) {
+        append_num_thousands(v.value, v.sep, v.width, v.align);
+        return *this;
+    }
+
+    ///Metric formatted numbers
+    charstr& operator << (const num_metric& v) {
+        append_num_metric(v.value, v.width, v.align);
         return *this;
     }
 
@@ -834,6 +839,22 @@ public:
             resize( size + lastnzero );
     }
 */
+
+    ///Append text aligned within a box of given width
+    //@return index past the last non-filling char
+    uint append_aligned( const token& tok, uint width, EAlignNum align )
+    {
+        uint len = tok.len();
+        if(len > width)
+            len = width;
+
+        char* dst = alloc_append_buf(width);
+        char* buf;
+        charstrconv::num_formatter<uint64>::produce(dst, 0, width, width-len, 0, align, &buf);
+
+        return buf - ptr();
+    }
+
     void append( char c )
     {
         if(c) *uniadd(1) = c;
