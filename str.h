@@ -852,6 +852,8 @@ public:
         char* buf;
         charstrconv::num_formatter<uint64>::produce(dst, 0, width, width-len, 0, align, &buf);
 
+        ::memcpy(buf-len, tok.ptr(), len);
+
         return buf - ptr();
     }
 
