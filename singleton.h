@@ -41,26 +41,42 @@
 #include "namespace.h"
 #include "commtypes.h"
 
+#include "pthreadx.h"
 
 #ifdef _DEBUG
 
+///Retrieves process-global singleton object of given type T
 # define SINGLETON(T) \
     coid::singleton<T>::instance(#T,__FILE__,__LINE__)
 
 #else
 
+///Retrieves process-global singleton object of given type T
 # define SINGLETON(T) \
     coid::singleton<T>::instance()
 
 #endif
 
+///Evaluates to true if a global singleton of given type 
 #define SINGLETON_EXISTS(T) \
     (coid::singleton<T>::ptr() != 0)
 
-///Used for function-local static objects.
-/// LOCAL_SINGLETON(class) name = initialization
+///Used for function-local singleton objects 
+/// usage:
+/// LOCAL_SINGLETON(class) name = new class;
 #define LOCAL_SINGLETON(T) \
-    static coid::local_singleton<T>
+    static coid::singleton<T>
+
+
+///Returns thread-global singleton (the same one when called from different code)
+#define THREAD_SINGLETON(T) \
+    coid::thread_singleton<T>::instance()
+
+///Used for function-local thread singleton objects
+/// usage:
+/// THREAD_LOCAL_SINGLETON(class) name = new class;
+#define THREAD_LOCAL_SINGLETON(T) \
+    static coid::thread_singleton<T>
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -76,13 +92,13 @@ void* singleton_register_instance(
 void singletons_destroy();
 
 ////////////////////////////////////////////////////////////////////////////////
+///Class for global and local singletons
 template <class T>
 class singleton
 {
-	singleton()    { }
-
 public:
 
+    //@return global singleton
 	static T& instance()
 	{
 		T*& node = ptr();
@@ -94,6 +110,7 @@ public:
         return *node;
 	}
 
+    //@return global singleton, registering the place of birth
 	static T& instance(const char* type, const char* file, int line)
 	{
 		T*& node = ptr();
@@ -105,48 +122,89 @@ public:
         return *node;
 	}
 
+    //@return global singleton reference
     static T*& ptr() {
         static T* node = 0;
         return node;
     }
 
+    ///Local singleton constructor, use through LOCAL_SINGLETON macro
+    singleton() {
+        _p = (T*)singleton_register_instance(new T, &destroy, 0, 0, 0);
+    }
+
+    ///Local singleton constructor, use through LOCAL_SINGLETON macro
+    singleton(T* obj) {
+        _p = (T*)singleton_register_instance(obj, &destroy, 0, 0, 0);
+    }
+
+    T* operator -> () { return _p; }
+
+    T& operator * () { return *_p; }
+
+    T* get() { return _p; }
+
 private:
+
+    T* _p;
 
     static void destroy(void* p) {
         delete (T*)p;
     }
 };
 
+
 ////////////////////////////////////////////////////////////////////////////////
+///Class for global and local thread singletons
 template<class T>
-class local_singleton
+class thread_singleton
 {
 public:
 
-    T* operator -> () { return p; }
-
-    T& operator * () { return *p; }
-
-    T* get() { return p; }
-
-    local_singleton(T* p)
+    //@return global thread singleton (always the same one from multiple places where used)
+    static T& instance()
     {
-        this->p = (T*)singleton_register_instance(p, &destroy, 0, 0, 0);
+        thread_key& ts = get_key();
+        T* p = reinterpret_cast<T*>(ts.get());
+        if(!p) {
+            p = (T*)singleton_register_instance(new T, &destroy, 0, 0, 0);
+            ts.set(p);
+        }
+        return *p;
     }
 
-    local_singleton()
-    {
-        this->p = (T*)singleton_register_instance(new T, &destroy, 0, 0, 0);
+    ///Local thread singleton constructor, use through LOCAL_THREAD_SINGLETON macro
+    thread_singleton() {
+        _tkey.set(singleton_register_instance(new T, &destroy, 0, 0, 0));
     }
+
+    ///Local thread singleton constructor, use through LOCAL_THREAD_SINGLETON macro
+    thread_singleton(T* obj) {
+        _tkey.set(singleton_register_instance(obj, &destroy, 0, 0, 0));
+    }
+
+
+    T* operator -> () { return static_cast<T*>(_tkey.get()); }
+
+    T& operator * () { return static_cast<T*>(_tkey.get()); }
+
+    T* get() { return static_cast<T*>(_tkey.get()); }
 
 private:
 
-    T* p;
+    //@return global thread key
+    static thread_key& get_key() {
+        static thread_key _tkey;
+        return _tkey;
+    }
+
+    thread_key _tkey;                   //< local thread key
 
     static void destroy(void* p) {
         delete static_cast<T*>(p);
     }
 };
+
 
 COID_NAMESPACE_END
 

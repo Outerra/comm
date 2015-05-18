@@ -854,7 +854,7 @@ public:
 
         ::memcpy(buf-len, tok.ptr(), len);
 
-        return buf - ptr();
+        return uint(buf - ptr());
     }
 
     void append( char c )

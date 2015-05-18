@@ -120,16 +120,12 @@ $-(if event?)$
 $-(/if)$
 
     $name$_js_dispatcher() $-(if event?)$ : _bound_events(false)$(/if)$
-    {
-        //_context = context;
-        _meta.bind_formatting_stream(_fmtv8);
-    }
+    {}
 
     $name$_js_dispatcher( v8::Handle<v8::Context> context, $ns rest="::" after="::"$$name$* orig ) $(if event?)$: _bound_events(false) $(/if)${
         _base.create(orig);
         _vtable = _base->vtable();
         _context = v8::Persistent<v8::Context>::New(context);
-        _meta.bind_formatting_stream(_fmtv8);
 
 		_host = _base->host<policy_intrusive_base>();
     }
@@ -257,6 +253,7 @@ v8::Handle<v8::Value> $..name$_js_dispatcher::v8_$name$$@index$(const v8::Argume
     v8::Context::Scope context_scope(ifc->_context);
 
     try {
+    THREAD_SINGLETON(v8_streamer_context).reset();
 
     //stream the arguments in
 $-[args inarg? !nojs?]$
@@ -275,16 +272,14 @@ $-[args inarg? !nojs?]$
     $basetype$ $name$;
   $-(if !defval.empty?)$
     if($@order$ < args.Length())
-        v8_streamer<$basetype$>(&ifc->_fmtv8, &ifc->_meta).from_v8(args[$@order$], $name$);
+        v8_streamer<$basetype$>::from_v8(args[$@order$], $name$);
     else
         $name$ = $defval$;
   $-(elif)$
-    v8_streamer<$basetype$>(&ifc->_fmtv8, &ifc->_meta).from_v8(args[$@order$], $name$);
+    v8_streamer<$basetype$>::from_v8(args[$@order$], $name$);
   $-(/if)$
  $-(/if)$
 $[/args]-$
-
-    ifc->_meta.stream_acknowledge();
 
     //invoke
 $-[args outarg? !inarg?]$
@@ -298,13 +293,13 @@ $-(if return.type!="void")$
  $-(if return.iref.false? noutargs?)$
     static_assert( CHECK::meta_operator_exists<$return.type$>::value, "missing metastream operator << for type '$return.type$'" );
     v8::Handle<v8::Object> _r_ = v8::Object::New();
-    _r_->Set(v8::String::NewSymbol("$$ret"), v8_streamer<$return.type$>(&ifc->_fmtv8, &ifc->_meta).to_v8(_rval_));
+    _r_->Set(v8::String::NewSymbol("$$ret"), v8_streamer<$return.type$>::to_v8(_rval_));
  $-(elif noutargs?)$
     v8::Handle<v8::Object> _r_ = v8::Object::New();
     _r_->Set(v8::String::NewSymbol("$$ret"), js_$return.fulltype$_create_wrapper(_rval_, ifc->_context));
  $-(elif return.iref.false?)$
     static_assert( CHECK::meta_operator_exists<$return.type$>::value, "missing metastream operator << for type '$return.type$'" );
-    v8::Handle<v8::Value> _r_ = v8_streamer<$return.type$>(&ifc->_fmtv8, &ifc->_meta).to_v8(_rval_);
+    v8::Handle<v8::Value> _r_ = v8_streamer<$return.type$>::to_v8(_rval_);
  $-(elif)$
     v8::Handle<v8::Value> _r_ = js_$return.fulltype$_create_wrapper(_rval_, ifc->_context);
  $-(/if)$
@@ -312,7 +307,7 @@ $-(if return.type!="void")$
  $-[args outarg?]$
   $-(if iref.false?)$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator << for type '$basetype$'" );
-    _r_->Set(v8::String::NewSymbol("$name$"), v8_streamer<$basetype$>(&ifc->_fmtv8, &ifc->_meta).to_v8($name$));
+    _r_->Set(v8::String::NewSymbol("$name$"), v8_streamer<$basetype$>::to_v8($name$));
   $-(elif)$
     _r_->Set(v8::String::NewSymbol("$name$"), js_$fulltype$_create_wrapper($name$, ifc->_context));
   $-(/if)$
@@ -321,7 +316,7 @@ $-(elif noutargs?="1")$
  $-[args outarg?]$
   $-(if iref.false?)$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator << for type '$basetype$'" );
-    v8::Handle<v8::Value> _r_ = v8_streamer<$basetype$>(&ifc->_fmtv8, &ifc->_meta).to_v8($name$);
+    v8::Handle<v8::Value> _r_ = v8_streamer<$basetype$>::to_v8($name$);
   $-(elif)$
     v8::Handle<v8::Value> _r_ = js_$fulltype$_create_wrapper(_rval_, ifc->_context);
   $-(/if)$
@@ -331,7 +326,7 @@ $-(elif noutargs?)$
  $-[args outarg?]$
   $-(if iref.false?)$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator << for type '$basetype$'" );
-    _r_->Set(v8::String::NewSymbol("$name$"), v8_streamer<$basetype$>(&ifc->_fmtv8, &ifc->_meta).to_v8($name$));
+    _r_->Set(v8::String::NewSymbol("$name$"), v8_streamer<$basetype$>::to_v8($name$));
   $-(elif)$
     _r_->Set(v8::String::NewSymbol("$name$"), js_$fulltype$_create_wrapper($name$, ifc->_context));
   $-(/if)$
@@ -340,12 +335,9 @@ $-(elif)$
     v8::Handle<v8::Object> _r_;
 $(/if)-$
 
-    ifc->_meta.stream_flush();
-
     return _handle_scope_.Close(_r_);
 
     } catch(const coid::exception& e) {
-        ifc->_meta.stream_reset(true, false);
         return v8::ThrowException(v8::Exception::TypeError(v8::String::New(e.text().ptr(), e.text().len())));
     }
 }
@@ -373,6 +365,8 @@ $-(elif)$
         throw coid::exception("handler not implemented");
   $-(/if)$
 
+    THREAD_SINGLETON(v8_streamer_context).reset();
+  
 $-[args inarg? iref.false?]$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator << for type '$basetype$'" );
 $-[/args]$
@@ -382,14 +376,12 @@ $-[args inarg?]$
     $-(if iref.true?)$
         js_$fulltype$_create_wrapper($name$, _context)
     $-(elif)$
-        v8_streamer$(if volatile?)$_volatile$(/if)$<$basetype$>(&_fmtv8, &_meta).to_v8($name$),
+        v8_streamer$(if volatile?)$_volatile$(/if)$<$basetype$>::to_v8($name$),
     $-(/if)$
 $-[/args]$
     };
 
 $-(/if)$
-    _meta.stream_flush();
-
     v8::Local<v8::Value> _r_ = _events[$@index$]->Call(_eventobj.IsEmpty() || _eventobj->IsUndefined() ? _object : _eventobj, $(if ninargs?)$$ninargs$, __inargs$(elif)$0, 0$(/if)$);
 
 $-[args inarg?]$$(if volatile?)$
@@ -403,7 +395,7 @@ $-(if !noutargs?)$
  $-(if return.type!="void")$
     static_assert( CHECK::meta_operator_exists<$return.type$>::value, "missing metastream operator << for type '$return.type$'" );
     $return.type$ _rval_;
-    v8_streamer<$return.type$>(&_fmtv8, &_meta).from_v8(_r_, _rval_);
+    v8_streamer<$return.type$>::from_v8(_r_, _rval_);
  $-(/if)$
 $-(elif)$
  $-(if return.type?="void" noutargs?="1")$
@@ -412,9 +404,9 @@ $-(elif)$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator << for type '$basetype$'" );
    $-(if ptr?)$
     if($name$)
-        v8_streamer<$basetype$>(&_fmtv8, &_meta).from_v8(_r_, *$name$);
+        v8_streamer<$basetype$>::from_v8(_r_, *$name$);
    $-(elif)$
-    v8_streamer<$basetype$>(&_fmtv8, &_meta).from_v8(_r_, $name$);
+    v8_streamer<$basetype$>::from_v8(_r_, $name$);
    $-(/if)$
   $-[/args]$
  $-(elif)$
@@ -425,21 +417,20 @@ $-(elif)$
     //return value
     static_assert( CHECK::meta_operator_exists<$return.type$>::value, "missing metastream operator << for type '$return.type$'" );
     $return.type$ _rval_;
-    v8_streamer<$return.type$>(&_fmtv8, &_meta).from_v8(_obj_->Get(v8::String::NewSymbol("$$ret")), _rval_);
+    v8_streamer<$return.type$>::from_v8(_obj_->Get(v8::String::NewSymbol("$$ret")), _rval_);
   $-(/if)$
   $-[args outarg?]$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator << for type '$basetype$'" );
    $-(if ptr?)$
     if($name$)
-        v8_streamer<$basetype$>(&_fmtv8, &_meta).from_v8(_obj_->Get(v8::String::NewSymbol("$name$")), *$name$);
+        v8_streamer<$basetype$>::from_v8(_obj_->Get(v8::String::NewSymbol("$name$")), *$name$);
    $-(elif)$
-    v8_streamer<$basetype$>(&_fmtv8, &_meta).from_v8(_obj_->Get(v8::String::NewSymbol("$name$")), $name$);
+    v8_streamer<$basetype$>::from_v8(_obj_->Get(v8::String::NewSymbol("$name$")), $name$);
    $-(/if)$
   $-[/args]$
  $-(/if)$
 $(/if)-$
 
-    _meta.stream_acknowledge();
 $-(if return.type!="void")$
 
     return _rval_;
@@ -516,9 +507,10 @@ v8::Handle<v8::Value> $name$_js_dispatcher::_getter(v8::Local<v8::String> proper
 
     //stream out
  $-(if getter.iref.false?)$
+    THREAD_SINGLETON(v8_streamer_context).reset();
+ 
     static_assert( CHECK::meta_operator_exists<$getter.basetype$>::value, "missing metastream operator << for type '$getter.basetype$'" );
-    v8::Handle<v8::Value> _r_ = v8_streamer<$getter.basetype$>(&ifc->_fmtv8, &ifc->_meta).to_v8(value);
-    ifc->_meta.stream_flush();
+    v8::Handle<v8::Value> _r_ = v8_streamer<$getter.basetype$>::to_v8(value);
  $-(elif)$
     v8::Handle<v8::Value> _r_ = js_$getter.fulltype$_create_wrapper(value, ifc->_context);
  $-(/if)$
@@ -544,11 +536,11 @@ v8::Handle<v8::Value> $name$_js_dispatcher::_setter(v8::Local<v8::String> proper
         return v8::ThrowException(v8::Exception::ReferenceError(v8::String::New("null interface object in $..name$[] = ...")));
 
     v8::Context::Scope context_scope(ifc->_context);
+    THREAD_SINGLETON(v8_streamer_context).reset();
 
     static_assert( CHECK::meta_operator_exists<$setter.basetype$>::value, "missing metastream operator << for type '$setter.basetype$'" );
     $setter.basetype$ val;
-    v8_streamer<$setter.basetype$>(&ifc->_fmtv8, &ifc->_meta).from_v8(value, val);
-    ifc->_meta.stream_acknowledge();
+    v8_streamer<$setter.basetype$>::from_v8(value, val);
 
     v8::String::AsciiValue key(property);
 $-(if setter.token?)$
@@ -865,6 +857,8 @@ v8::Handle<v8::Value> $..name$_js_dispatcher::v8creator_$name$$@order$(const v8:
     v8::Context::Scope context_scope(ifc->_context);
 
     //stream the arguments in
+    THREAD_SINGLETON(v8_streamer_context).reset();
+    
 $-[args inarg? !nojs?]$
  $-(if iref.true?)$
   $-(if !defval.empty?)$
@@ -881,16 +875,14 @@ $-[args inarg? !nojs?]$
     $basetype$ $name$;
   $-(if !defval.empty?)$
     if($@order$ < args.Length())
-        v8_streamer<$basetype$>(&ifc->_fmtv8, &ifc->_meta).from_v8(args[1+$@order$], $name$);
+        v8_streamer<$basetype$>::from_v8(args[1+$@order$], $name$);
     else
         $name$ = $defval$;
   $-(elif)$
-    v8_streamer<$basetype$>(&ifc->_fmtv8, &ifc->_meta).from_v8(args[1+$@order$], $name$);
+    v8_streamer<$basetype$>::from_v8(args[1+$@order$], $name$);
   $-(/if)$
  $-(/if)$
 $[/args]-$
-
-    ifc->_meta.stream_acknowledge();
 
     //invoke
 $-[args outarg? !inarg?]$
@@ -914,13 +906,11 @@ $(/if)-$
 $-[args outarg?]$
  $-(if iref.false?)$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator << for type '$basetype$'" );
-    _r_->Set(v8::String::NewSymbol("$name$"), v8_streamer<$basetype$>(&ifc->_fmtv8, &ifc->_meta).to_v8($name$));
+    _r_->Set(v8::String::NewSymbol("$name$"), v8_streamer<$basetype$>::to_v8($name$));
  $-(elif)$
     _r_->Set(v8::String::NewSymbol("$name$"), js_$fulltype$_create_wrapper($name$, ifc->_context));
  $-(/if)$
 $[/args]-$
-
-    ifc->_meta.stream_flush();
 
     return _handle_scope_.Close(_r_);
 }

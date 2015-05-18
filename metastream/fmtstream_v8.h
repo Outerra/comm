@@ -58,28 +58,20 @@ class fmtstream_v8;
 template<class T>
 class v8_streamer
 {
-    metastream* _meta;
-    fmtstream_v8* _fmt;
-
 public:
-    v8_streamer<T>( fmtstream_v8* fmt, metastream* meta )
-        : _fmt(fmt), _meta(meta)
-    {}
-
     ///Generic generator from a type to its v8 representation
-    v8::Handle<v8::Value> to_v8(const T& v);
+    static v8::Handle<v8::Value> to_v8(const T& v);
 
     ///Generic parser from v8 type representation
-    bool from_v8( v8::Handle<v8::Value> src, T& res );
+    static bool from_v8( v8::Handle<v8::Value> src, T& res );
 };
 
 //@{ Fast v8_streamer specializations for base types
 
 #define V8_STREAMER(T,V8T,CT) \
 template<> class v8_streamer<T> { public: \
-    v8_streamer<T>(fmtstream_v8* fmt=0, metastream* meta=0) {} \
-    v8::Handle<v8::Value> to_v8(const T& v) { return v8::V8T::New(CT(v)); } \
-    bool from_v8( v8::Handle<v8::Value> src, T& res ) { res = (T)src->V8T##Value(); return true; } \
+    static v8::Handle<v8::Value> to_v8(const T& v) { return v8::V8T::New(CT(v)); } \
+    static bool from_v8( v8::Handle<v8::Value> src, T& res ) { res = (T)src->V8T##Value(); return true; } \
 }
 
 V8_STREAMER(int8,  Int32, int32);
@@ -113,13 +105,11 @@ V8_STREAMER(bool, Boolean, bool);
 ///Date/time
 template<> class v8_streamer<timet> {
 public:
-    v8_streamer<timet>(fmtstream_v8* fmt=0, metastream* meta=0) {}
-
-    v8::Handle<v8::Value> to_v8( const timet& v ) {
+    static v8::Handle<v8::Value> to_v8( const timet& v ) {
         return v8::Date::New(double(v.t));
     }
     
-    bool from_v8( v8::Handle<v8::Value> src, timet& res ) {
+    static bool from_v8( v8::Handle<v8::Value> src, timet& res ) {
         res = timet((int64)src->NumberValue());
         return true;
     }
@@ -128,21 +118,19 @@ public:
 ///Strings
 template<> class v8_streamer<charstr> {
 public:
-    v8_streamer<charstr>(fmtstream_v8* fmt=0, metastream* meta=0) {}
-
-    v8::Handle<v8::Value> to_v8(const charstr& v) {
+    static v8::Handle<v8::Value> to_v8(const charstr& v) {
         return v8::String::New(v.ptr(), v.len());
     }
     
-    v8::Handle<v8::Value> to_v8(const token& v) {
+    static v8::Handle<v8::Value> to_v8(const token& v) {
         return v8::String::New(v.ptr(), v.len());
     }
     
-    v8::Handle<v8::Value> to_v8(const char* v) {
+    static v8::Handle<v8::Value> to_v8(const char* v) {
         return v8::String::New(v);
     }
     
-    bool from_v8( v8::Handle<v8::Value> src, charstr& res ) {
+    static bool from_v8( v8::Handle<v8::Value> src, charstr& res ) {
         if(src->IsUndefined() || src->IsNull())
             return false;
         v8::String::Utf8Value str(src);
@@ -153,16 +141,14 @@ public:
 
 template<> class v8_streamer<token> {
 public:
-    v8_streamer<token>(fmtstream_v8* fmt=0, metastream* meta=0) {}
-
-    v8::Handle<v8::Value> to_v8(const token& v) {
+    static v8::Handle<v8::Value> to_v8(const token& v) {
         return v8::String::New(v.ptr(), v.len());
     }
 };
 
 ///Helper to fill dynarray from V8 array
 template<class T>
-inline bool v8_write_dynarray( v8::Handle<v8::Value> src, dynarray<T>& a, fmtstream_v8* fmt, metastream* meta )
+inline bool v8_write_dynarray( v8::Handle<v8::Value> src, dynarray<T>& a )
 {
     if(!src->IsArray())
         return false;
@@ -171,9 +157,8 @@ inline bool v8_write_dynarray( v8::Handle<v8::Value> src, dynarray<T>& a, fmtstr
     uint n = obj->Get(v8::String::NewSymbol("length"))->Uint32Value();
     a.alloc(n);
 
-    v8_streamer<T> estreamer(fmt, meta);
     for(uint i=0; i<n; ++i) {
-        estreamer.from_v8(obj->Get(i), a[i]);
+        v8_streamer<T>::from_v8(obj->Get(i), a[i]);
     }
 
     return true;
@@ -182,29 +167,20 @@ inline bool v8_write_dynarray( v8::Handle<v8::Value> src, dynarray<T>& a, fmtstr
 ///Generic dynarray<T> partial specialization
 template<class T> class v8_streamer<dynarray<T>> {
 public:
-    v8_streamer<dynarray<T>>(fmtstream_v8* fmt=0, metastream* meta=0)
-        : _fmt(fmt), _meta(meta)
-    {}
-
-    v8::Handle<v8::Value> to_v8(const dynarray<T>& v) {
+    static v8::Handle<v8::Value> to_v8(const dynarray<T>& v) {
         uint n = (uint)v.size();
         v8::Local<v8::Array> a = v8::Array::New(n);
         
-        v8_streamer<T> estreamer(_fmt, _meta);
         for(uint i=0; i<n; ++i) {
-            a->Set(i, estreamer.to_v8(v[i]));
+            a->Set(i, v8_streamer<T>::to_v8(v[i]));
         }
 
         return a;
     }
     
-    bool from_v8( v8::Handle<v8::Value> src, dynarray<T>& res ) {
-        return v8_write_dynarray(src, res, _fmt, _meta);
+    static bool from_v8( v8::Handle<v8::Value> src, dynarray<T>& res ) {
+        return v8_write_dynarray(src, res);
     }
-
-protected:
-    fmtstream_v8* _fmt;
-    metastream* _meta;
 };
 
 
@@ -214,17 +190,13 @@ template<class T>
 class v8_streamer_volatile : public v8_streamer<T>
 {
 public:
-    v8_streamer_volatile<T>( fmtstream_v8* fmt, metastream* meta )
-        : v8_streamer<T>(fmt, meta)
-    {}
-
     ///Generic generator from a type to its v8 representation
-    v8::Handle<v8::Value> to_v8(const T& v) {
+    static v8::Handle<v8::Value> to_v8(const T& v) {
         return v8_streamer<T>::to_v8(v);
     }
 
     ///Generic parser from v8 type representation
-    bool from_v8( v8::Handle<v8::Value> src, T& res ) {
+    static bool from_v8( v8::Handle<v8::Value> src, T& res ) {
         return v8_streamer<T>::from_v8(src, res);
     }
 
@@ -246,16 +218,12 @@ inline v8::Handle<v8::Value> v8_map_typed_array( const T* ptr, uint count, v8::E
 #define V8_STREAMER_MAPARRAY(T, V8EXT) \
 template<> class v8_streamer_volatile<dynarray<T>> : public v8_streamer<dynarray<T>> {\
 public:\
-    v8_streamer_volatile(fmtstream_v8* fmt=0, metastream* meta=0) \
-        : v8_streamer<dynarray<T>>(fmt, meta) \
-    {} \
- \
-    v8::Handle<v8::Value> to_v8(const dynarray<T>& v) { \
+    static v8::Handle<v8::Value> to_v8(const dynarray<T>& v) { \
         return v8_map_typed_array(v.ptr(), (uint)v.size(), V8EXT); \
     } \
  \
-    bool from_v8( v8::Handle<v8::Value> src, dynarray<T>& res ) { \
-        return v8_write_dynarray(src, res, this->_fmt, this->_meta); \
+    static bool from_v8( v8::Handle<v8::Value> src, dynarray<T>& res ) { \
+        return v8_write_dynarray(src, res); \
     } \
     static void cleanup( v8::Handle<v8::Value> val ) { \
         val->ToObject()->SetIndexedPropertiesToExternalArrayData(0, V8EXT, 0); \
@@ -289,9 +257,8 @@ V8_STREAMER_MAPARRAY(ulong, v8::kExternalUnsignedIntArray)
 ///V8 values
 template<typename V> class v8_streamer<v8::Handle<V>> { public: \
     typedef v8::Handle<V> T; \
-    v8_streamer<T>(fmtstream_v8* fmt=0, metastream* meta=0) {} \
-    v8::Handle<v8::Value> to_v8(T v) { return v; } \
-    bool from_v8( v8::Handle<v8::Value> src, T& res ) { res = src.Cast<T>(src); return true; } \
+    static v8::Handle<v8::Value> to_v8(T v) { return v; } \
+    static bool from_v8( v8::Handle<v8::Value> src, T& res ) { res = src.Cast<T>(src); return true; } \
 };
 
 //dummy metastream operator for v8::Handle
@@ -879,6 +846,22 @@ protected:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+///
+struct v8_streamer_context
+{
+    metastream meta;
+    fmtstream_v8 fmtv8;
+
+    v8_streamer_context() {
+        meta.bind_formatting_stream(fmtv8);
+    }
+
+    void reset() {
+        meta.stream_reset(true, false);
+    }
+};
+
+////////////////////////////////////////////////////////////////////////////////
 template<bool ISENUM, class T>
 struct v8_enum_helper {
     int operator << (const T&) const { return 0; }
@@ -894,30 +877,26 @@ struct v8_enum_helper<true,T> {
 template<class T>
 inline v8::Handle<v8::Value> v8_streamer<T>::to_v8(const T& v)
 {
-    if(!_meta || !_fmt)
-        throw exception("metastream not bound");
-
     v8_enum_helper<std::is_enum<T>::value, T> en;
     if(std::is_enum<T>::value)
         return v8::Int32::New(en << v);
 
-    _meta->xstream_out(v);
-    return _fmt->get();
+    auto& streamer = THREAD_SINGLETON(v8_streamer_context);
+    streamer.meta.xstream_out(v);
+    return streamer.fmtv8.get();
 }
 
 
 template<class T>
 inline bool v8_streamer<T>::from_v8( v8::Handle<v8::Value> src, T& res )
 {
-    if(!_meta || !_fmt)
-        throw exception("metastream not bound");
-
     v8_enum_helper<std::is_enum<T>::value, T> en;
     if(std::is_enum<T>::value)
         res = en >> src->Int32Value();
     else {
-        _fmt->set(src);
-        _meta->xstream_in(res);
+        auto& streamer = THREAD_SINGLETON(v8_streamer_context);
+        streamer.fmtv8.set(src);
+        streamer.meta.xstream_in(res);
     }
     return true;
 }

@@ -238,9 +238,6 @@ namespace js {
 ////////////////////////////////////////////////////////////////////////////////
 struct interface_context
 {
-    coid::metastream _meta;
-    coid::fmtstream_v8 _fmtv8;
-
     v8::Persistent<v8::Context> _context;
     v8::Persistent<v8::Script> _script;
     v8::Persistent<v8::Object> _object;
