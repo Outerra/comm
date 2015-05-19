@@ -46,10 +46,12 @@ namespace coid {
 
 void memtrack_shutdown();
 
+
+////////////////////////////////////////////////////////////////////////////////
 ///Global singleton registrator
-struct GlobalSingleton
+struct global_singleton_manager
 {
-    GlobalSingleton() {
+    global_singleton_manager() {
         last = 0;
         count = 0;
         shutting_down = false;
@@ -61,7 +63,7 @@ struct GlobalSingleton
 
         comm_mutex_guard<_comm_mutex> mxg(mx);
 
-        Kill* k = new Kill(ptr, fn_destroy, type, file, line);
+        killer* k = new killer(ptr, fn_destroy, type, file, line);
         k->next = last;
 
         last = k;
@@ -83,7 +85,7 @@ struct GlobalSingleton
             shutting_down = true;
 
 			while(last) {
-				Kill* tmp = last->next;
+				killer* tmp = last->next;
 
 #ifdef _DEBUG
 				tof << (n--) << " destroying '" << last->type << "' singleton created at "
@@ -99,31 +101,33 @@ struct GlobalSingleton
 		}
     }
 
-    ~GlobalSingleton() {
+    ~global_singleton_manager() {
         destroy();
     }
 
+    static global_singleton_manager& get();
+
 private:
-    struct Kill {
+    struct killer {
         void* ptr;
         void (*fn_destroy)(void*);
         const char* type;
         const char* file;
         int line;
 
-        Kill* next;
+        killer* next;
 
         void destroy() {
             fn_destroy(ptr);
         }
 
-        Kill( void* ptr, void (*fn_destroy)(void*), const char* type, const char* file, int line )
+        killer( void* ptr, void (*fn_destroy)(void*), const char* type, const char* file, int line )
             : ptr(ptr), fn_destroy(fn_destroy), type(type), file(file), line(line)
         {}
     };
 
     _comm_mutex mx;
-    Kill* last;
+    killer* last;
 
     uint count;
 
@@ -132,24 +136,84 @@ private:
 
 
 ////////////////////////////////////////////////////////////////////////////////
-static GlobalSingleton& global() {
-    static GlobalSingleton globs;
-    return globs;
-}
-
-////////////////////////////////////////////////////////////////////////////////
 void* singleton_register_instance( void* p, void (*fn_destroy)(void*),
     const char* type, const char* file, int line )
 {
-    global().add(p, fn_destroy, type, file, line);
+    auto& gsm = global_singleton_manager::get();
+
+    gsm.add(p, fn_destroy, type, file, line);
     return p;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 void singletons_destroy()
 {
+    auto& gsm = global_singleton_manager::get();
+
     memtrack_shutdown();
-    global().destroy();
+    gsm.destroy();
 }
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//code for process-wide singletons
+
+#define GLOBAL_SINGLETON_REGISTRAR sglo_registrar
+
+#ifdef SYSTYPE_WIN
+typedef int (__stdcall *proc_t)();
+
+extern "C"
+__declspec(dllimport) proc_t __stdcall GetProcAddress (
+    void* hmodule,
+    const char* procname
+    );
+
+typedef global_singleton_manager* (*ireg_t)();
+
+#define MAKESTR(x) STR(x)
+#define STR(x) #x
+
+global_singleton_manager& global_singleton_manager::get()
+{
+    static global_singleton_manager* _this=0;
+
+    if(!_this) {
+        //retrieve process-wide singleton from exported fn
+        const char* s = MAKESTR(GLOBAL_SINGLETON_REGISTRAR);
+        ireg_t p = (ireg_t)GetProcAddress(0, s);
+        if(!p) throw exception() << "entry point not found";
+
+        _this = p();
+    }
+
+    return *_this;
+}
+
+
+extern "C" __declspec(dllexport) global_singleton_manager* GLOBAL_SINGLETON_REGISTRAR()
+{
+    static global_singleton_manager _gsm;
+    return &_gsm;
+}
+
+
+#else
+/*
+extern "C" __attribute__ ((visibility("default"))) interface_register_impl* INTERGEN_GLOBAL_REGISTRAR();
+{
+    return &SINGLETON(interface_register_impl);
+}*/
+
+global_singleton_manager& global_singleton_manager::get()
+{
+    static global_singleton_manager _this;
+
+    return _this;
+}
+
+#endif
 
 } //namespace coid

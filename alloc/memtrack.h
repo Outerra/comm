@@ -43,8 +43,20 @@
 #include <algorithm>
 
 
+#if defined(_DEBUG) || COID_USE_MEMTRACK
+
 #define MEMTRACK_ALLOC(name, size) coid::memtrack_alloc(name, size)
 #define MEMTRACK_FREE(name, size) coid::memtrack_free(name, size)
+
+#define MEMTRACK_ENABLED
+
+#else
+
+#define MEMTRACK_ALLOC(name, size)
+#define MEMTRACK_FREE(name, size)
+
+#endif
+
 
 COID_NAMESPACE_BEGIN
 
@@ -66,9 +78,6 @@ struct memtrack {
     memtrack() : size(0), total(0), nallocs(0), ntotalallocs(0), name(0) {}
 };
 
-#ifdef _DEBUG
-
-#define MEMTRACK_ENABLED
 
 ///Track allocation request for name
 void memtrack_alloc( const char* name, uints size );
@@ -86,17 +95,6 @@ void memtrack_dump( const char* file );
 
 ///Reset tracking info
 void memtrack_reset();
-
-#else
-
-inline void memtrack_alloc( const char* name, uints size ) {}
-inline void memtrack_free( const char* name, uints size ) {}
-inline uint memtrack_list( memtrack* dst, uint nmax ) { return 0; }
-inline uint memtrack_count() { return 0; }
-inline void memtrack_dump( const char* file ) {}
-inline void memtrack_reset() {}
-
-#endif
 
 void memtrack_shutdown();
 

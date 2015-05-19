@@ -80,9 +80,6 @@ struct memtrack_registrar
 int memtrack_registrar::reg = 0;
 
 ////////////////////////////////////////////////////////////////////////////////
-#ifdef MEMTRACK_ENABLED
-
-////////////////////////////////////////////////////////////////////////////////
 static memtrack_registrar* memtrack_register()
 {
     struct closer
@@ -262,9 +259,5 @@ void memtrack_reset()
         p.size = 0;
     }
 }
-
-#else
-void memtrack_shutdown() {}
-#endif //_DEBUG
 
 } //namespace coid

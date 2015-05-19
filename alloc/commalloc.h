@@ -132,8 +132,10 @@ struct comm_array_allocator
 
     static T* realloc( T* p, uints n ) {
 
-        if(p)
-            MEMTRACK_FREE(typeid(T).name(), ::mspace_usable_size((uints*)p - 1));
+        if(!p)
+            return alloc(n);
+        
+        MEMTRACK_FREE(typeid(T).name(), ::mspace_usable_size((uints*)p - 1));
 
         uints* pn = (uints*)::mspace_realloc(SINGLETON(comm_array_mspace).msp,
             p ? (uints*)p - 1 : 0,
