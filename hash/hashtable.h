@@ -926,6 +926,24 @@ protected:
         return ppn;
     }
 
+    Node** _find_or_insert_slot_uninit( const LOOKUP& k, bool* isnew )
+    {
+        Node** ppn = find_socket(k);
+        bool isnew_ = *ppn == 0  ||  !_EQFUNC( _GETKEYFUNC((*ppn)->_val), k );
+        if(isnew_)
+        {
+            Node* n = _ALLOC.alloc_uninit();
+            n->_next = *ppn;
+            *ppn = n;
+
+            ++_nelem;
+        }
+
+        if(isnew) *isnew = isnew_;
+
+        return ppn;
+    }
+
     Node** _insert_equal_slot( const LOOKUP& k )
     {
         Node** ppn = find_socket(k);

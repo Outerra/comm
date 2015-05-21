@@ -205,6 +205,15 @@ public:
         return &(*v)->_val;
     }
 
+    ///Find or create an empty entry for value object that will be initialized by the caller afterwards
+    //@note the value object should be initialized so that it would return the same key as the one passed in here
+    //@param key the key under which the value object should be created
+    VAL* find_or_insert_value_slot_uninit( const key_type& key, bool* isnew=0 )
+    {
+        typename _HT::Node** v = _HT::_find_or_insert_slot_uninit(key, isnew);
+        return &(*v)->_val;
+    }
+
 
     ///Find value object corresponding to given key
     const VAL* find_value( const key_type& k ) const
@@ -223,6 +232,9 @@ public:
 
     hash_keyset()
         : _HT( 128, hasher(), key_equal(), extractor() ) {}
+
+    explicit hash_keyset(size_type n)
+        : _HT( n, hasher(), key_equal(), extractor() ) {}
 
     explicit hash_keyset( const extractor& ex, size_type n=128 )
         : _HT( n, hasher(), key_equal(), ex ) {}
@@ -365,6 +377,9 @@ public:
 
     hash_multikeyset()
         : _HT( 128, hasher(), key_equal(), extractor() ) {}
+
+    explicit hash_multikeyset(size_type n)
+        : _HT( n, hasher(), key_equal(), extractor() ) {}
 
     explicit hash_multikeyset( const extractor& ex, size_type n=128 )
         : _HT( n, hasher(), key_equal(), ex ) {}
