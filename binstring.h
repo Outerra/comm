@@ -153,6 +153,34 @@ public:
         return token((const char*)p, size);
     }
 
+    ///Read/append data from binstream
+    //@return size read
+    uints load_from_binstream( binstream& bin, uints datasize=UMAXS )
+    {
+        uints old = _tstr.size();
+        uints n=0;
+
+        while(1)
+        {
+            static const uints packet = 4096;
+			const uints len = datasize<packet ? datasize : packet;
+            uint8* ptr = _tstr.add(len);
+            
+            uints toread = len;
+            opcd e = bin.read_raw_full(ptr, toread);
+
+            uints d = len - toread;
+			datasize -= d;
+            n += d;
+
+            if(e || toread>0 || datasize==0)
+                break;
+        }
+
+        _tstr.resize(old + n);
+        return n;
+    }
+
 
     ///Swap strings
     void swap( binstring& ref ) {

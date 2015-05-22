@@ -260,9 +260,10 @@ public:
             void* ptr = _buf.add(len);
             
             e = bin.read_raw_full(ptr, len);
-			datasize -= toread;
 
-            n += toread - len;
+            uints d = toread - len;
+			datasize -= d;
+            n += d;
 
             if( e || len>0 || datasize==0 )
                 break;

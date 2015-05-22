@@ -166,7 +166,7 @@ public:
             return _array.ptr() + id;
         }
 
-        _array.add_uninit(id+1 - _array.size());
+        _array.add(id+1 - _array.size());
 
         set_bit(id);
         ++_count;
@@ -267,7 +267,6 @@ private:
 
     dynarray<T> _array;
     dynarray<uints> _allocated;     //< bit mask for allocated/free items
-    //T* _unused;                 //< ptr to the first unused slot, ptr to this if the array needs to be enlarged
     uints _count;
     bool _pool;                     //< if true, do not call destructors on deletion
 
