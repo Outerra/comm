@@ -126,7 +126,7 @@ struct num_thousands
     char sep;
 
     num_thousands(uint64 value, char sep, int width=0, EAlignNum align=ALIGN_NUM_RIGHT)
-        : value(value), sep(sep), width(width), align(align)
+        : value(value), width(width), align(align), sep(sep)
     {}
 };
 

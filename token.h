@@ -132,7 +132,7 @@ struct token
         set(czstr, czstr ? ::strlen(czstr) : 0);
     }
 
-    explicit token( const charstr& str );
+    token( const charstr& str );
 
     token( const char* ptr, uints len )
         : _ptr(ptr), _pte(ptr+len)
@@ -520,7 +520,7 @@ struct token
         return *this;
     }
 
-    //token& operator = ( const charstr& t );
+    token& operator = ( const charstr& t );
 /*
     ///Assigns string to token, initially setting up the token as empty, allowing for subsequent calls to token() method to retrieve next token.
     void assign_empty( const char *czstr ) {
@@ -535,16 +535,6 @@ struct token
     ///Assigns string to token, initially setting up the token as empty, allowing for subsequent calls to token() method to retrieve next token.
     void assign_empty( const charstr& str );
 */
-    ///Set token from token
-    //@return pointer past the end
-    const char* set( const token& tok ) {
-        _ptr = tok._ptr;
-        _pte = tok._pte;
-        return _pte;
-    }
-
-    ///Set token from string
-    //const char* set( const charstr& str );
 
     ///Set token from string and length.
     //@note use set_empty(ptr) to avoid conflict with overloads when len==0
@@ -2159,7 +2149,7 @@ struct token
     {
         cut_trait ctr(fREMOVE_SEPARATOR|fON_FAIL_RETURN_EMPTY);
 
-        static const char* wday[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+        //static const char* wday[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
         static const char* mons[] = {
             "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
         };

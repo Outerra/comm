@@ -70,7 +70,7 @@ struct exception
         : _location(loc)
     {}
 
-    exception& operator << (const char *czstr)  { S2D(); _dtext += (czstr); return *this; }
+    TOKEN_OP_STR_NONCONST(exception&, <<)
     exception& operator << (const token& tok)   { S2D(); _dtext += (tok);   return *this; }
     exception& operator << (const charstr& str) { S2D(); _dtext += (str);   return *this; }
     exception& operator << (char c)             { S2D(); _dtext += (c);     return *this; }

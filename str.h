@@ -122,7 +122,7 @@ public:
     {}
 
 
-    operator token() const { return token(ptr(), ptre()); }
+    //operator token() const { return token(ptr(), ptre()); }
 
 
 
@@ -384,6 +384,32 @@ public:
             assign(str.ptr(), str.len());
         return *this;
     }
+
+///Define operators for string literals and c-strings based on tokens
+#define TOKEN_OP_STR_CONST(ret,op) \
+    template <int N> \
+    ret operator op (const char (&str)[N]) const    { return (*this op token::from_literal(str, N-1)); } \
+ \
+    template <int N> \
+    ret operator op (char (&str)[N]) const          { return (*this op token::from_literal(str, N-1)); } \
+ \
+    template<typename T> \
+    typename is_char_ptr<T,ret>::type operator op (T czstr) const { \
+        return (*this op token::from_cstring(czstr)); \
+    }
+
+#define TOKEN_OP_STR_NONCONST(ret,op) \
+    template <int N> \
+    ret operator op (const char (&str)[N])          { return (*this op token::from_literal(str, N-1)); } \
+ \
+    template <int N> \
+    ret operator op (char (&str)[N])                { return (*this op token::from_literal(str, N-1)); } \
+ \
+    template<typename T> \
+    typename is_char_ptr<T,ret>::type operator op (T czstr) { \
+        return (*this op token::from_cstring(czstr)); \
+    }
+
 /*
     template <int N>
     charstr& operator = (const char (&str)[N]) const    { return set(token::from_literal(str, N-1)); }
@@ -470,9 +496,17 @@ public:
     //@}
 
     //concatenation
+    TOKEN_OP_STR_NONCONST(charstr&, +=);
+
     charstr& operator += (const token& tok) {
         if(!tok) return *this;
         _append(tok.ptr(), tok.len());
+        return *this;
+    }
+
+    charstr& operator += (const charstr& str) {
+        if(str.is_empty()) return *this;
+        _append(str.ptr(), str.len());
         return *this;
     }
 
@@ -523,7 +557,10 @@ public:
     }
 
     //
+    TOKEN_OP_STR_NONCONST(charstr&, <<);
+
     charstr& operator << (const token& tok)     { return operator += (tok); }
+    charstr& operator << (const charstr& tok)   { return operator += (tok); }
     charstr& operator << (char c)               { return operator += (c); }
 
     charstr& operator << (int8 i)               { append_num(10,(int)i);  return *this; }
@@ -1197,6 +1234,7 @@ public:
         }
         else
             append(c);
+        return *this;
     }
 
     ///Append string while escaping the control characters in it
@@ -1549,21 +1587,8 @@ public:
         return _tstr[0] != c;
     }
 
-///Define operators for string literals and c-strings based on tokens
-#define TOKEN_COMPARISON_OP_STR(op) \
-    template <int N> \
-    bool operator op (const char (&str)[N]) const   { return *this op token::from_literal(str, N-1); } \
- \
-    template <int N> \
-    bool operator op (char (&str)[N]) const         { return *this op token::from_literal(str, N-1); } \
- \
-    template<typename T> \
-    typename is_char_ptr<T,bool>::type operator op (T czstr) const { \
-        return *this op token::from_cstring(czstr); \
-    }
-
-    TOKEN_COMPARISON_OP_STR(==);
-    TOKEN_COMPARISON_OP_STR(!=);
+    TOKEN_OP_STR_CONST(bool,==);
+    TOKEN_OP_STR_CONST(bool,!=);
 
 
 
@@ -1615,10 +1640,10 @@ public:
         return !operator < (tok);
     }
 
-    TOKEN_COMPARISON_OP_STR(>);
-    TOKEN_COMPARISON_OP_STR(<);
-    TOKEN_COMPARISON_OP_STR(>=);
-    TOKEN_COMPARISON_OP_STR(<=);
+    TOKEN_OP_STR_CONST(bool,>);
+    TOKEN_OP_STR_CONST(bool,<);
+    TOKEN_OP_STR_CONST(bool,>=);
+    TOKEN_OP_STR_CONST(bool,<=);
 
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -2011,8 +2036,10 @@ protected:
 
 
 ////////////////////////////////////////////////////////////////////////////////
-inline token::token( const charstr& str )       { set(str); }
-/*
+inline token::token( const charstr& str )
+    : _ptr(str.ptr()), _pte(str.ptre())
+{}
+
 inline token& token::operator = ( const charstr& t )
 {
     _ptr = t.ptr();
@@ -2020,6 +2047,7 @@ inline token& token::operator = ( const charstr& t )
     return *this;
 }
 
+/*
 inline bool operator == (const token& tok, const charstr& str )
 {
     if( tok.len() != str.len() ) return 0;
