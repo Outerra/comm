@@ -115,7 +115,7 @@ struct MetaDesc
     dynarray<Var> children;             //< member variables
     uints array_size;                   //< array size, UMAXS for dynamic arrays
 
-    charstr type_name;                  //< type name, name of a structure (empty if this is an array)
+    token type_name;                    //< type name, name of a structure (empty if this is an array)
     type btype;                         //< basic type id
 /*
     binstream::fnc_from_stream
@@ -202,7 +202,7 @@ struct MetaDesc
         return dst;
     }
 
-    operator token() const              { return type_name; }
+    operator const token&() const       { return type_name; }
     uints size() const                  { return children.size(); }
 
 

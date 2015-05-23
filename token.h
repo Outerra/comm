@@ -132,7 +132,7 @@ struct token
         set(czstr, czstr ? ::strlen(czstr) : 0);
     }
 
-    token( const charstr& str );
+    explicit token( const charstr& str );
 
     token( const char* ptr, uints len )
         : _ptr(ptr), _pte(ptr+len)
@@ -276,8 +276,10 @@ struct token
     }
 
     bool operator == (char c) const {
-        if( 1 != lens() ) return 0;
-        return c == *_ptr;
+        uints n = lens();
+        if(n == 0 && c == 0)
+            return true;
+        return n == 1 && c == *_ptr;
     }
 
     bool operator != (const token& tok) const {
@@ -290,8 +292,7 @@ struct token
     }
 
     bool operator != (char c) const {
-        if(1 != lens()) return true;
-        return c != *_ptr;
+        return !(*this == c);
     }
 
     bool operator > (const token& tok) const

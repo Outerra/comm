@@ -302,7 +302,7 @@ public:
                 _bufw << " name=\"" << _name << char('"');
             
             if(p) {
-                correct_typename(*(const charstr*)p);
+                correct_typename(*(const token*)p);
                 _bufw << " type=\"" << _typename << "\">";
             }
             else
@@ -1013,7 +1013,7 @@ protected:
     }
 
 
-    const charstr& correct_typename( const charstr& t )
+    const charstr& correct_typename( const token& t )
     {
         uints n = t.len();
         char* dst = _typename.get_buf(n);

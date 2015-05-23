@@ -222,7 +222,7 @@ public:
                 ++_indent;
 
                 if(p)
-                    _bufw << char('(') << *(const charstr*)p << ") ";
+                    _bufw << char('(') << *(const token*)p << ") ";
                 _bufw << char('{');
                 _bufw << tEol;
             }
@@ -445,10 +445,8 @@ public:
                 {
                     //optional class name found
                     if(p) {
-                        charstr& s = *(charstr*)p;
-                        if(s.is_empty())        //return the class type if empty
-                            s = tok;
-                        else if( s != tok )     //otherwise compare
+                        token& s = *(token*)p;
+                        if(!s.is_empty() && s != tok)
                             return ersSYNTAX_ERROR "class name mismatch";
                     }
                     tok = _tokenizer.next();

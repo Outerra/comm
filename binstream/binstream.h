@@ -459,30 +459,30 @@ public:
 
 
     ///Write struct open token. Normally ignored by any but formatting binstream.
-    opcd write_struct_open( bool nameless, const charstr* name=0 ) {
+    opcd write_struct_open( bool nameless, const token* name=0 ) {
         type t( type::T_STRUCTBGN, 0, nameless?type::fNAMELESS:0 );
         return write( name, t );
     }
 
     ///Write struct close token. Normally ignored by any but formatting binstream.
-    opcd write_struct_close( bool nameless, const charstr* name=0 ) {
+    opcd write_struct_close( bool nameless, const token* name=0 ) {
         type t( type::T_STRUCTEND, 0, nameless?type::fNAMELESS:0 );
         return write( name, t );
     }
 
     ///Read struct open token. Normally ignored by any but formatting binstream.
-    opcd read_struct_open( bool nameless, charstr* name=0 ) {
+    opcd read_struct_open( bool nameless, const token* name=0 ) {
         type t( type::T_STRUCTBGN, 0, nameless?type::fNAMELESS:0 );
-        return read( name, t );
+        return read( const_cast<token*>(name), t );
     }
 
     ///Read struct close token. Normally ignored by any but formatting binstream.
-    opcd read_struct_close( bool nameless, charstr* name=0 ) {
+    opcd read_struct_close( bool nameless, const token* name=0 ) {
         type t( type::T_STRUCTEND, 0, nameless?type::fNAMELESS:0 );
-        return read( name, t );
+        return read( const_cast<token*>(name), t );
     }
 
-
+/*
     ///Write compound array open token. Normally ignored by any but formatting binstream.
     opcd write_compound_array_open( bool nameless, const charstr* name=0 ) {
         type t( type::T_COMPOUND, 0,
@@ -510,7 +510,7 @@ public:
             nameless?type::fNAMELESS|type::fARRAY_BEGIN:type::fARRAY_END );
         return read( name, t );
     }
-
+*/
 
     ////////////////////////////////////////////////////////////////////////////////
     ///Write raw data

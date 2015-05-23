@@ -122,7 +122,7 @@ public:
     {}
 
 
-    //operator token() const { return token(ptr(), ptre()); }
+    operator token() const { return token(ptr(), ptre()); }
 
 
 
@@ -879,7 +879,7 @@ public:
 
     ///Append text aligned within a box of given width
     //@return index past the last non-filling char
-    uint append_aligned( const token& tok, uint width, EAlignNum align )
+    uint append_aligned( const token& tok, uint width, EAlignNum align = ALIGN_NUM_LEFT )
     {
         uint len = tok.len();
         if(len > width)
@@ -887,28 +887,31 @@ public:
 
         char* dst = alloc_append_buf(width);
         char* buf;
-        charstrconv::num_formatter<uint64>::produce(dst, 0, width, width-len, 0, align, &buf);
+        charstrconv::num_formatter<uint64>::produce(dst, 0, len, width-len, 0, align, &buf);
 
         ::memcpy(buf-len, tok.ptr(), len);
 
         return uint(buf - ptr());
     }
 
-    void append( char c )
+    charstr& append( char c )
     {
-        if(c) *uniadd(1) = c;
+        if(c)
+            *uniadd(1) = c;
+        return *this;
     }
 
     ///Append n characters 
-    void appendn( uints n, char c )
+    charstr& appendn( uints n, char c )
     {
         char *p = uniadd(n);
         for( ; n>0; --n )
             *p++ = c;
+        return *this;
     }
 
     ///Append n strings (or utf8 characters)
-    void appendn( uints n, const token& tok )
+    charstr& appendn( uints n, const token& tok )
     {
         uint nc = tok.len();
         char *p = uniadd(n*nc);
@@ -916,6 +919,7 @@ public:
             ::memcpy(p, tok.ptr(), nc);
             p += nc;
         }
+        return *this;
     }
 
     ///Append n uninitialized characters
@@ -924,17 +928,23 @@ public:
         return uniadd(n);
     }
 
-    void append( const token& tok, uints filllen = 0, char fillchar=' ' )
+    ///Append string
+    charstr& append( const token& tok )//, uints filllen = 0, char fillchar=' ' )
     {
-        uints len = tok.lens();
-        if( filllen == 0 )
-            filllen = len;
+        xmemcpy(alloc_append_buf(tok.len()), tok.ptr(), tok.len());
+        return *this;
+    }
 
-        char* p = alloc_append_buf( filllen );
-        uints n = len > filllen ? filllen : len;
-        xmemcpy( p, tok.ptr(), n );
-        if(filllen > n)
-            memset( p+n, fillchar, filllen - n );
+    ///Append string, replacing characters
+    charstr& append_replace( const token& tok, char from, char to )
+    {
+        uint n = tok.len();
+        char* p = alloc_append_buf(n);
+        const char* s = tok.ptr();
+
+        for(uint i=0; i<n; ++i)
+            p[i] = s[i] == from ? to : s[i];
+        return *this;
     }
 
     ///Append UCS-4 character

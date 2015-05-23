@@ -240,9 +240,9 @@ public:
 
             close_previous_tag(true);
 
-            const charstr* name = (const charstr*)p;
+            const token* name = (const token*)p;
             token tok = _tagw.is_empty()
-                ? (name ? token(*name) : array_element)
+                ? (name ? *name : array_element)
                 : token(_tagw);
 
             _bufw << char('<') << tok;
@@ -463,9 +463,9 @@ public:
 
             if( _tagr.is_empty() ) {
                 //struct within an array
-                const charstr* name = (const charstr*)p;
+                const token* name = (const token*)p;
                 _tokenizer.match('<');
-                _tokenizer.match( name ? token(*name) : array_element );
+                _tokenizer.match( name ? *name : array_element );
 
                 //not reading the trailing '>' here, attributes may follow
                 _attrmoder = true;

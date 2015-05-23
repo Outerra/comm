@@ -8,7 +8,7 @@ COID_NAMESPACE_BEGIN
 
 struct entry
 {
-    charstr ifcname;
+    token ifcname;
     token classname;
     token creatorname;
     token ns;
@@ -16,7 +16,7 @@ struct entry
     void* creator_ptr;
     bool script_creator;
 
-    operator const charstr&() const { return ifcname; }
+    operator const token&() const { return ifcname; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -24,7 +24,7 @@ class interface_register_impl : public interface_register
 {
 public:
 
-    hash_keyset<entry, _Select_GetRef<entry,charstr> > _hash;
+    hash_keyset<entry, _Select_GetRef<entry,token> > _hash;
     comm_mutex _mx;
 
     static interface_register_impl& get();
@@ -107,8 +107,7 @@ void interface_register::register_interface_creator( const token& ifcname, void*
 {
     static token SEP = "::";
 
-    charstr ifc = ifcname;
-    token ns = ifc;
+    token ns = ifcname;
     token classname = ns.cut_right_back(SEP);
     token creatorname = classname.cut_right('.');
     token script = creatorname.cut_right('@', token::cut_trait_remove_sep_default_empty());
@@ -119,7 +118,7 @@ void interface_register::register_interface_creator( const token& ifcname, void*
     entry* en = reg._hash.insert_value_slot(ifcname);
     if(en) {
         en->creator_ptr = creator_ptr;
-        en->ifcname.takeover(ifc);
+        en->ifcname = ifcname;
         en->ns = ns;
         en->classname = classname;
         en->creatorname = creatorname;
