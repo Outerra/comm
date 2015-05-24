@@ -113,17 +113,11 @@ struct token
         fix_literal_length();
     }
 
-    ///String literal constructor, optimization to have fast literal strings available as tokens
-    //@note tries to detect and if passed in a char array instead of string literal, by checking if the last char is 0
-    // and the preceding char is not 0
-    // Call token(&*array) to force treating the array as a zero-terminated string
+    ///Character array constructor
     template <int N>
     token(char (&str)[N])
-        : _ptr(str), _pte(str+N-1)
-    {
-        //correct if invoked on char arrays
-        fix_literal_length();
-    }
+        : _ptr(str), _pte(str+strlen(str))
+    {}
 
     ///Constructor from const char*, artificially lowered precedence to allow catching literals above
     template<typename T>
@@ -152,7 +146,7 @@ struct token
 
     static token from_cstring( const char* czstr, uints maxlen = UMAXS )
     {
-        return token( czstr, strnlen(czstr,maxlen) );
+        return token(czstr, czstr ? strnlen(czstr, maxlen) : 0);
     }
 
     static token from_literal( const char* czstr, uints len )

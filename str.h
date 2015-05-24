@@ -98,14 +98,11 @@ public:
         set(token::from_literal(str, N-1));
     }
 
-    ///String literal constructor, optimization to have fast literal strings available as tokens
-    //@note tries to detect and if passed in a char array instead of string literal, by checking if the last char is 0
-    // and the preceding char is not 0
-    // Call token(&*array) to force treating the array as a zero-terminated string
+    ///Character array constructor
     template <int N>
     charstr(char (&str)[N])
     {
-        set(token::from_literal(str, N-1));
+        set_from(czstr, czstr ? token::strnlen(czstr, N-1) : 0);
     }
 
     ///Constructor from const char*, artificially lowered precedence to allow catching literals above
@@ -391,7 +388,7 @@ public:
     ret operator op (const char (&str)[N]) const    { return (*this op token::from_literal(str, N-1)); } \
  \
     template <int N> \
-    ret operator op (char (&str)[N]) const          { return (*this op token::from_literal(str, N-1)); } \
+    ret operator op (char (&str)[N]) const          { return (*this op token::from_cstring(str, N-1)); } \
  \
     template<typename T> \
     typename is_char_ptr<T,ret>::type operator op (T czstr) const { \
@@ -403,7 +400,7 @@ public:
     ret operator op (const char (&str)[N])          { return (*this op token::from_literal(str, N-1)); } \
  \
     template <int N> \
-    ret operator op (char (&str)[N])                { return (*this op token::from_literal(str, N-1)); } \
+    ret operator op (char (&str)[N])                { return (*this op token::from_cstring(str, N-1)); } \
  \
     template<typename T> \
     typename is_char_ptr<T,ret>::type operator op (T czstr) { \
@@ -415,7 +412,7 @@ public:
     charstr& operator = (const char (&str)[N]) const    { return set(token::from_literal(str, N-1)); }
 
     template <int N>
-    charstr& operator = (char (&str)[N]) const          { return set(token::from_literal(str, N-1)); }
+    charstr& operator = (char (&str)[N]) const          { return set(token::from_cstring(str, N-1)); }
 
     template<typename T>
     typename is_char_ptr<T,charstr&>::type operator = (T czstr) const {
