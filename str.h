@@ -100,7 +100,7 @@ public:
 
     ///Character array constructor
     template <int N>
-    charstr(char (&str)[N])
+    charstr(char (&czstr)[N])
     {
         set_from(czstr, czstr ? token::strnlen(czstr, N-1) : 0);
     }
