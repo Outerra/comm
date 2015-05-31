@@ -166,26 +166,25 @@ public:
     /// c - create
     /// t,- - truncate
     /// a,+ - append
-    virtual opcd open( const zstring& name, const zstring& attrz = zstring() )
+    virtual opcd open( const zstring& name, const token& attr = "" ) override
     {
         int flg=0;
         int rw=0,sh=0;
         
-        token attr = attrz.get_token();
-        while( !attr.is_empty() )
+        token attrx = attr;
+        while(attrx)
         {
-            if( attr[0] == 'r' )       rw |= 1;
-            else if( attr[0] == 'w' )  rw |= 2;
-            else if( attr[0] == 'l' )  sh |= 1;
-            else if( attr[0] == 'e' )  flg |= O_EXCL;
-            else if( attr[0] == 'c' )  flg |= O_CREAT;
-            else if( attr[0] == 't' || attr[0] == '-' )  flg |= O_TRUNC;
-            else if( attr[0] == 'a' || attr[0] == '+' )  flg |= O_APPEND;
-            else if( attr[0] == 'b' );  //ignored - always binary mode
-            else if( attr[0] != ' ' )
+            char c = ++attrx;
+            if(c == 'r')       rw |= 1;
+            else if(c == 'w')  rw |= 2;
+            else if(c == 'l')  sh |= 1;
+            else if(c == 'e')  flg |= O_EXCL;
+            else if(c == 'c')  flg |= O_CREAT;
+            else if(c == 't' || c == '-')  flg |= O_TRUNC;
+            else if(c == 'a' || c == '+')  flg |= O_APPEND;
+            else if(c == 'b');  //ignored - always binary mode
+            else if(c != ' ')
                 return ersINVALID_PARAMS;
-
-            ++attr;
         }
 
         _rpos = _wpos = 0;
@@ -193,9 +192,10 @@ public:
 #ifdef SYSTYPE_WIN
         int af;
 
-        if( rw == 3 )       flg |= O_RDWR,      af = S_IREAD | S_IWRITE;
-        else if( rw == 2 )  flg |= O_WRONLY,    af = S_IWRITE;
-        else                flg |= O_RDONLY,    af = S_IREAD;
+        if( rw == 2 )       flg |= O_WRONLY,    af = S_IWRITE;
+        else if( rw == 1 )  flg |= O_RDONLY,    af = S_IREAD;
+        else /*( rw == 3 )*/flg |= O_RDWR,      af = S_IREAD | S_IWRITE;
+
 
         if( sh == 1 )       sh = _SH_DENYWR;
         else                sh = _SH_DENYNO;
@@ -291,18 +291,18 @@ public:
         open(s);
     }
 
-    filestream( const token& s, token attr )
+    filestream( const token& s, const token& attr )
     {
         _handle = -1;
         _rpos = _wpos = 0;
-        open(s,attr);
+        open(s, attr);
     }
 
-    filestream( const char* s, token attr )
+    filestream( const char* s, const token& attr )
     {
         _handle = -1;
         _rpos = _wpos = 0;
-        open(s,attr);
+        open(s, attr);
     }
 
     ~filestream() { close(); }
@@ -361,21 +361,13 @@ public:
         return in0out1 ? 0 : fATTR_NO_INPUT_FUNCTION;
     }
 
-    virtual opcd open( const zstring& name, const zstring& attrz = zstring() )
+    virtual opcd open( const zstring& name, const token& attr = "wct" ) override
     {
-        zstring mattr = attrz;
-        charstr& attr = mattr.get_str();
-
-        if( attr.is_empty() )
-            attr = "wct";
-        else
-            attr << char('w');
-
-        return filestream::open(name, mattr);
+        return filestream::open(name, attr);
     }
 
     bofstream() { }
-    explicit bofstream( const zstring& name, const zstring& attr = zstring() )
+    explicit bofstream( const zstring& name, const token& attr = "wct" )
     {
         open(name, attr);
     }
@@ -392,22 +384,14 @@ public:
         return in0out1 ? 0 : fATTR_NO_OUTPUT_FUNCTION;
     }
 
-    virtual opcd open( const zstring& name, const zstring& attrz = zstring() )
+    virtual opcd open( const zstring& name, const token& attr = "r" ) override
     {
-        zstring mattr = attrz;
-        charstr& attr = mattr.get_str();
-
-        if( attr.is_empty() )
-            attr = "r";
-        else
-            attr << char('r');
-
-        return filestream::open(name, mattr);
+        return filestream::open(name, attr);
     }
 
 
     bifstream() { }
-    explicit bifstream( const zstring& name, const zstring& attr = zstring() )
+    explicit bifstream( const zstring& name, const token& attr = "r" )
     {
         open(name, attr);
     }
