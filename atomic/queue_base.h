@@ -57,7 +57,7 @@ public:
 
 	queue()
 		: coid::list<T>()
-		, _mutex()
+		, _mutex(500, false)
 	{}
 
 	~queue()

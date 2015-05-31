@@ -55,14 +55,14 @@
 COID_NAMESPACE_BEGIN
 
 ////////////////////////////////////////////////////////////////////////////////
-_comm_mutex::_comm_mutex (bool recursive)
+_comm_mutex::_comm_mutex( uint spincount, bool recursive )
 {
     //DASSERT( _comm_mutex::critical_section::CS_SIZE >= sizeof(CRITICAL_SECTION) );
-    init(recursive);
+    init(spincount, recursive);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void _comm_mutex::init( bool recursive )
+void _comm_mutex::init( uint spincount, bool recursive )
 {
     _owner_thread = 0;
 
@@ -70,8 +70,10 @@ void _comm_mutex::init( bool recursive )
 
     static const int k = sizeof(CRITICAL_SECTION);
     static_assert( sizeof(_cs) == k, "mismatched size" );
+    
+    DASSERT( (uints(&_cs) & 7) == 0 );
 
-	InitializeCriticalSectionAndSpinCount( (CRITICAL_SECTION*)&_cs, 4 );
+	InitializeCriticalSectionAndSpinCount( (CRITICAL_SECTION*)&_cs, 400 );
 #else
     pthread_mutexattr_t m;
     pthread_mutexattr_init(&m);

@@ -76,12 +76,12 @@ public:
 
 //    bool timed_lock( uint msec );
 
-    comm_mutex( bool recursive = true, const char * name=NULL );
+    comm_mutex( uint spincount, bool recursive, const char * name=NULL );
     explicit comm_mutex( NOINIT_t );
 
     ~comm_mutex();
 
-    void init( bool recursive = true );
+    void init( uint spincount, bool recursive );
 
     void rd_lock()                      { lock(); }
     void wr_lock()                      { lock(); }
@@ -132,6 +132,9 @@ struct MX_REGISTER
 		comm_mutex_guard<_comm_mutex> mxg( _mx );
         _reg.remove( (const void *) m );
 	}
+
+    MX_REGISTER() : _mx(500, false)
+    {}
 };
 
 

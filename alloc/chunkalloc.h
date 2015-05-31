@@ -53,7 +53,13 @@ COID_NAMESPACE_BEGIN
 template<class T>
 class chunk_allocator
 {
-    typedef chunkblock<T,comm_mutex>    block;
+    struct mutex : comm_mutex
+    {
+        mutex() : comm_mutex(500, false)
+        {}
+    };
+
+    typedef chunkblock<T,mutex>    block;
 
     struct page
     {
@@ -68,7 +74,7 @@ class chunk_allocator
 
 public:
 
-    chunk_allocator()
+    chunk_allocator() : _mutex(500, false)
     {
         _last = 0;
 		_mutex.set_name( "chunk_allocator" );

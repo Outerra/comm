@@ -51,7 +51,8 @@ void memtrack_shutdown();
 ///Global singleton registrator
 struct global_singleton_manager
 {
-    global_singleton_manager() {
+    global_singleton_manager() : mx(500, false)
+    {
         last = 0;
         count = 0;
         shutting_down = false;

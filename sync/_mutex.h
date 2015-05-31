@@ -96,7 +96,7 @@ class _comm_mutex
 {
 public:
 #ifdef SYSTYPE_WIN
-    struct critical_section
+    __declspec(align(8)) struct critical_section
     {
 #ifdef SYSTYPE_64
         static const size_t CS_SIZE = 40;
@@ -130,12 +130,12 @@ public:
 
     bool timed_lock( uint msec );
 
-    _comm_mutex( bool recursive = true );
+    _comm_mutex( uint spincount, bool recursive );
     explicit _comm_mutex( NOINIT_t );
 
     ~_comm_mutex();
 
-    void init( bool recursive = true );
+    void init( uint spincount, bool recursive );
 
     //this is for interchangeability with comm_mutex_rw
     void rd_lock ()                     { lock(); }

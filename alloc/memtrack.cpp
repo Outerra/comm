@@ -69,7 +69,7 @@ struct memtrack_registrar
 
     static int reg;
 
-    memtrack_registrar()
+    memtrack_registrar() : mux(500, false)
     {}
 
     ~memtrack_registrar() {

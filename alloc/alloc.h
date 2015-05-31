@@ -97,7 +97,7 @@ public:
         _last_succ = 0;
         if(usemutex)
         {
-            _pgcreatemutex = new comm_mutex;
+            _pgcreatemutex = new comm_mutex(100, false);
             _pgcreatemutex->set_name( "seg_allocator (_pgcreatemutex)" );
         }
     }

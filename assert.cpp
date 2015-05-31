@@ -67,6 +67,9 @@ struct AssertLog
     bool is_open() const {
         return _file.is_open();
     }
+
+    AssertLog() : _mutex(10, false)
+    {}
 };
 
 static binstream& bin = SINGLETON(AssertLog)._text;

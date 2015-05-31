@@ -64,7 +64,8 @@ static msec_timer& get_msec_timer()
 
 ////////////////////////////////////////////////////////////////////////////////
 #ifdef _DEBUG
-comm_mutex::comm_mutex (bool recursive, const char * name) : _comm_mutex(recursive)
+comm_mutex::comm_mutex( uint spincount, bool recursive, const char * name)
+    : _comm_mutex(spincount, recursive)
 {
 	SINGLETON(MX_REGISTER).add( this );
 	_locktime = 0;
@@ -72,7 +73,8 @@ comm_mutex::comm_mutex (bool recursive, const char * name) : _comm_mutex(recursi
     _name = name;
 }
 #else
-comm_mutex::comm_mutex (bool recursive, const char *) : _comm_mutex(recursive)
+comm_mutex::comm_mutex( uint spincount, bool recursive, const char *)
+    : _comm_mutex(spincount, recursive)
 {
 }
 #endif

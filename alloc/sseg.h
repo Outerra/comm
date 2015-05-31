@@ -292,7 +292,7 @@ public:
     void initialize_mutex()
     {
         if( !_mutex.is_set() ) {
-            _mutex = new comm_mutex;
+            _mutex = new comm_mutex(100, false);
             _mutex->set_name( "ssegpage" );
 		}
     }

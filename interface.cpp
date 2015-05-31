@@ -28,6 +28,9 @@ public:
     comm_mutex _mx;
 
     static interface_register_impl& get();
+
+    interface_register_impl() : _mx(500, false)
+    {}
 };
 
 ////////////////////////////////////////////////////////////////////////////////
