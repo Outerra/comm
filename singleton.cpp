@@ -177,6 +177,12 @@ typedef global_singleton_manager* (*ireg_t)();
 #define MAKESTR(x) STR(x)
 #define STR(x) #x
 
+extern "C" __declspec(dllexport) global_singleton_manager* GLOBAL_SINGLETON_REGISTRAR()
+{
+    static global_singleton_manager _gsm;
+    return &_gsm;
+}
+
 global_singleton_manager& global_singleton_manager::get()
 {
     static global_singleton_manager* _this=0;
@@ -185,21 +191,17 @@ global_singleton_manager& global_singleton_manager::get()
         //retrieve process-wide singleton from exported fn
         const char* s = MAKESTR(GLOBAL_SINGLETON_REGISTRAR);
         ireg_t p = (ireg_t)GetProcAddress(0, s);
-        if(!p) throw exception() << "entry point not found";
-
-        _this = p();
+        if(!p) {
+            //entry point for global singleton not found in exe
+            //probably a 3rd party exe
+            _this = GLOBAL_SINGLETON_REGISTRAR();
+        }
+        else
+            _this = p();
     }
 
     return *_this;
 }
-
-
-extern "C" __declspec(dllexport) global_singleton_manager* GLOBAL_SINGLETON_REGISTRAR()
-{
-    static global_singleton_manager _gsm;
-    return &_gsm;
-}
-
 
 #else
 /*
