@@ -58,10 +58,15 @@ public:
             memset(b, 0, size * sizeof(BLOCK_TYPE));
             _items.add_uninit(size * sizeof(BLOCK_TYPE) * 8);
         }
+        else {
+            // in this case we now new block is empty we could skip search phase
+        }
+
+        //TODO use intrisic _BitScanForward 
 
         // find empty block 8bit
         uchar * b_char = reinterpret_cast<uchar*>(b);
-        uchar * const be_char = reinterpret_cast<uchar*>(b + sizeof(BLOCK_TYPE));
+        uchar * const be_char = b_char + sizeof(BLOCK_TYPE);
         while (b_char != be_char && *b_char == 0xff)
             ++b_char;
 
