@@ -160,6 +160,10 @@ public:
 //#ifdef _DEBUG
     thread_t get_owner() const          { return _owner_thread; }
 //#endif
+
+private:
+
+    _comm_mutex(const _comm_mutex&);
 };
 
 

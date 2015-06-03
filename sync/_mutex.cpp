@@ -73,7 +73,7 @@ void _comm_mutex::init( uint spincount, bool recursive )
     
     DASSERT( (uints(&_cs) & 7) == 0 );
 
-	InitializeCriticalSectionAndSpinCount( (CRITICAL_SECTION*)&_cs, 400 );
+	InitializeCriticalSectionAndSpinCount( (CRITICAL_SECTION*)&_cs, spincount );
 #else
     pthread_mutexattr_t m;
     pthread_mutexattr_init(&m);
