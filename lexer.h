@@ -495,7 +495,7 @@ public:
         _err = lexception::ERR_KEYWORD_ALREADY_DEFINED;
 
         on_error_prefix(true, _errtext, current_line());
-        _errtext << "keyword `" << kwd << "' already exists";
+        _errtext << "error: " << "keyword `" << kwd << "' already exists";
 
         throw lexception(_err, _errtext);
     }
@@ -649,7 +649,7 @@ public:
                 _err = lexception::ERR_ENTITY_BAD_TYPE;
 
                 on_error_prefix(true, _errtext, current_line());
-                _errtext << "bad type of rule <<" << escape << ">>; required an escape rule name here";
+                _errtext << "error: " << "bad type of rule <<" << escape << ">>; required an escape rule name here";
 
                 throw lexception(_err, _errtext);
             }
@@ -921,7 +921,7 @@ public:
         _err = lexception::ERR_EXTERNAL_ERROR;
 
         on_error_prefix(false, _errtext, current_line());
-        _errtext << "expected block <<" << seq->name << ">>";
+        _errtext << "error: " << "expected block <<" << seq->name << ">>";
         on_error_suffix(_errtext);
 
         throw lexception(_err, _errtext);
@@ -991,7 +991,7 @@ public:
         _err = lexception::ERR_EXTERNAL_ERROR;
 
         on_error_prefix(false, _errtext, current_line());
-        _errtext << "no block <<" << seq->name << ">> on stack";
+        _errtext << "error: " << "no block <<" << seq->name << ">> on stack";
         on_error_suffix(_errtext);
 
         throw lexception(_err, _errtext);
@@ -1345,7 +1345,7 @@ public:
             _err = lexception::ERR_EXTERNAL_ERROR;
 
             on_error_prefix(false, _errtext, current_line());
-            _errtext << "expected `" << val << "'";
+            _errtext << "error: " << "expected `" << val << "'";
             on_error_suffix(_errtext);
 
             throw lexception(_err, _errtext);
@@ -1367,6 +1367,8 @@ public:
             _err = lexception::ERR_EXTERNAL_ERROR;
             
             on_error_prefix(false, _errtext, current_line());
+            _errtext << "error: ";
+
             if(errmsg)
                 _errtext << errmsg;
             else
@@ -1392,6 +1394,7 @@ public:
             _err = lexception::ERR_EXTERNAL_ERROR;
 
             on_error_prefix(false, _errtext, current_line());
+            _errtext << "error: ";
 
             const entity& ent = get_entity(grp);
             if(errmsg)
@@ -1420,6 +1423,7 @@ public:
             _err = lexception::ERR_EXTERNAL_ERROR;
 
             on_error_prefix(false, _errtext, current_line());
+            _errtext << "error: ";
 
             const entity& ent = get_entity(grp);
             if(errmsg)
@@ -1447,6 +1451,7 @@ public:
             _err = lexception::ERR_EXTERNAL_ERROR;
             
             on_error_prefix(false, _errtext, current_line());
+            _errtext << "error: ";
 
             const entity& ent = get_entity(grp);
             if(errmsg)
@@ -1474,6 +1479,7 @@ public:
             _err = lexception::ERR_EXTERNAL_ERROR;
 
             on_error_prefix(false, _errtext, current_line());
+            _errtext << "error: ";
 
             if(errmsg)
                 _errtext << errmsg;
@@ -1583,7 +1589,7 @@ public:
         _err = lexception::ERR_EXTERNAL_ERROR;
         
         on_error_prefix(false, _errtext, current_line());
-        _errtext << "couldn't match any of " << i << " literals";
+        _errtext << "error: " << "couldn't match any of " << i << " literals";
         on_error_suffix(_errtext);
 
         throw lexception(_err, _errtext);
@@ -1603,7 +1609,7 @@ public:
         
         on_error_prefix(false, _errtext, current_line());
 
-        _errtext << "couldn't match either: ";
+        _errtext << "error: " << "couldn't match either: ";
         rule_map<T1>::desc(a, *this, _errtext); _errtext << ", ";
         rule_map<T2>::desc(b, *this, _errtext);
 
@@ -1622,7 +1628,7 @@ public:
 
         on_error_prefix(false, _errtext, current_line());
 
-        _errtext << "couldn't match either: ";
+        _errtext << "error: " << "couldn't match either: ";
         rule_map<T1>::desc(a, *this, _errtext); _errtext << ", ";
         rule_map<T2>::desc(b, *this, _errtext); _errtext << ", ";
         rule_map<T3>::desc(c, *this, _errtext);
@@ -1643,7 +1649,7 @@ public:
         
         on_error_prefix(false, _errtext, current_line());
 
-        _errtext << "couldn't match either: ";
+        _errtext << "error: " << "couldn't match either: ";
         rule_map<T1>::desc(a, *this, _errtext); _errtext << ", ";
         rule_map<T2>::desc(b, *this, _errtext); _errtext << ", ";
         rule_map<T3>::desc(c, *this, _errtext); _errtext << ", ";
@@ -1665,7 +1671,7 @@ public:
         
         on_error_prefix(false, _errtext, current_line());
 
-        _errtext << "couldn't match either: ";
+        _errtext << "error: " << "couldn't match either: ";
         rule_map<T1>::desc(a, *this, _errtext); _errtext << ", ";
         rule_map<T2>::desc(b, *this, _errtext); _errtext << ", ";
         rule_map<T3>::desc(c, *this, _errtext); _errtext << ", ";
@@ -1916,7 +1922,7 @@ private:
         _err = lexception::ERR_ENTITY_EXISTS;
         
         on_error_prefix(true, _errtext, current_line());
-        _errtext << "another rule with name '" << name << "' already exists";
+        _errtext << "error: " << "another rule with name '" << name << "' already exists";
 
         throw lexception(_err, _errtext);
     }
@@ -1926,7 +1932,7 @@ private:
         _err = lexception::ERR_DIFFERENT_ENTITY_EXISTS;
         
         on_error_prefix(true, _errtext, current_line());
-        _errtext << "a different type of rule named '" << name << "' already exists";
+        _errtext << "error: " << "a different type of rule named '" << name << "' already exists";
 
         throw lexception(_err, _errtext);
     }
@@ -1936,7 +1942,7 @@ private:
         _err = lexception::ERR_ENTITY_DOESNT_EXIST;
         
         on_error_prefix(true, _errtext, current_line());
-        _errtext << "a rule named '" << name << "' doesn't exist";
+        _errtext << "error: " << "a rule named '" << name << "' doesn't exist";
 
         throw lexception(_err, _errtext);
     }
@@ -1959,7 +1965,7 @@ protected:
             || ( sid<0  &&  -sid-1 >= (int)_stbary.size() ) )
         {
             _err = lexception::ERR_INVALID_RULE_ID;
-            _errtext << "invalid rule id (" << sid << ")";
+            _errtext << "error: " << "invalid rule id (" << sid << ")";
 
             throw lexception(_err, _errtext);
         }
@@ -1970,14 +1976,14 @@ protected:
     {
         if( sid > 0 ) {
             _err = lexception::ERR_ENTITY_BAD_TYPE;
-            _errtext << "invalid rule type (" << sid << "), a sequence-type expected";
+            _errtext << "error: " << "invalid rule type (" << sid << "), a sequence-type expected";
 
             throw lexception(_err, _errtext);
         }
         else if( sid == 0  ||  -sid-1 >= (int)_stbary.size() )
         {
             _err = lexception::ERR_INVALID_RULE_ID;
-            _errtext << "invalid rule id (" << sid << ")";
+            _errtext << "error: " << "invalid rule id (" << sid << ")";
 
             throw lexception(_err, _errtext);
         }
@@ -1986,7 +1992,7 @@ protected:
             const sequence* seq = _stbary[-sid-1];
             if( seq->type != type ) {
                 _err = lexception::ERR_ENTITY_BAD_TYPE;
-                _errtext << "invalid rule type: " << seq->entity_type()
+                _errtext << "error: " << "invalid rule type: " << seq->entity_type()
                     << " <<" << seq->name << ">>, a "
                     << entity::entity_type(type) << " expected";
 
@@ -2000,14 +2006,14 @@ protected:
     {
         if( sid > 0 ) {
             _err = lexception::ERR_ENTITY_BAD_TYPE;
-            _errtext << "invalid rule type (" << sid << "), a sequence-type expected";
+            _errtext << "error: " << "invalid rule type (" << sid << "), a sequence-type expected";
 
             throw lexception(_err, _errtext);
         }
         else if( sid == 0  ||  -sid-1 >= (int)_stbary.size() )
         {
             _err = lexception::ERR_INVALID_RULE_ID;
-            _errtext << "invalid rule id (" << sid << ")";
+            _errtext << "error: " << "invalid rule id (" << sid << ")";
 
             throw lexception(_err, _errtext);
         }
@@ -2557,7 +2563,7 @@ protected:
                     _err = lexception::ERR_ILL_FORMED_RANGE;
 
                     on_error_prefix(true, _errtext, current_line());
-                    _errtext << "ill-formed range: " << char(kprev) << ".." << char(k);
+                    _errtext << "error: " << "ill-formed range: " << char(kprev) << ".." << char(k);
 
                     throw lexception(_err, _errtext);
                 }
@@ -2656,7 +2662,7 @@ protected:
                     _err = lexception::ERR_STRING_TERMINATED_EARLY;
                     
                     on_error_prefix(false, _errtext, current_line());
-                    _errtext << "string <<" << sr.name << ">> was left unterminated";
+                    _errtext << "error: " << "string <<" << sr.name << ">> was left unterminated";
                     on_error_suffix(_errtext);
 
                     throw lexception(_err, _errtext);
@@ -2676,7 +2682,7 @@ protected:
                 _err = lexception::ERR_STRING_TERMINATED_EARLY;
                 
                 on_error_prefix(false, _errtext, current_line());
-                _errtext << "string <<" << sr.name << ">> was left unterminated";
+                _errtext << "error: " << "string <<" << sr.name << ">> was left unterminated";
                 on_error_suffix(_errtext);
 
                 throw lexception(_err, _errtext);
@@ -2778,7 +2784,7 @@ protected:
                     _err = lexception::ERR_BLOCK_TERMINATED_EARLY;
                     
                     on_error_prefix(false, _errtext, current_line());
-                    _errtext << "block <<" << br.name << ">> was left unterminated";
+                    _errtext << "error: " << "block <<" << br.name << ">> was left unterminated";
                     on_error_suffix(_errtext);
 
                     throw lexception(_err, _errtext);
@@ -2856,7 +2862,7 @@ protected:
 
         if(shield) {
             _err = lexception::ERR_INTERNAL_ERROR;
-            _errtext << "sequence <<" << seq->name << ">> cannot ever be matched because it's shielded by rule <<"
+            _errtext << "error: " << "sequence <<" << seq->name << ">> cannot ever be matched because it's shielded by rule <<"
                 << shield->name << ">> with the same leading delimiter, specified first in the rules";
 
             throw lexception(_err, _errtext);
