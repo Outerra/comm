@@ -64,7 +64,7 @@ public:
 
         const type_t& get_pos() const { return _pos; }
         const type_t& get_size() const { return _size; }
-        bool is_leaf() const { return _child[0] == -1; }
+        bool is_leaf() const { return _child[0] == -1 && _child[1] == -1; }
         bool has_data() const { return _flags != 0; }
 
     protected:
@@ -153,22 +153,6 @@ public:
 
             return n->_child = child;
 	    }
-
-	    /*bool merge_up(node_pool &pool)
-        {
-		    if(_child[0] != -1) {
-			    if(node_ptr(_child[0], pool)->merge_up(pool) && _child[1]->merge_up(pool)) {
-				    pool.delete_node(_child[0]);
-				    pool.delete_node(_child[1]);
-				    _child[0] = _child[1] = -1;
-			    }
-			    else {
-				    return false;
-			    }
-		    }
-		
-		    return _child[0] == 0 && _child[1] == 0;
-	    }*/
     };
 
 private:
@@ -196,14 +180,35 @@ public:
 	uint alloc_space(const T &size)
     { 
         const uint id = node::insert(_root, size, _node_pool);
+
+        DASSERT(_node_pool.ptr(id)->has_data());
+
         return id;
 	}
 
 	///
-	void free_space(uint n)
+	void free_space(uint id, const bool leaf = true)
     {
-		while(n->_size.x <= _initial_split_size && _node_pool.ptr(n)->merge_up(_node_pool))
-            n = n->_parent;
+        node * const n = _node_pool.ptr(id);
+
+        const uint parent_id = n->_parent;
+
+        if (parent_id != -1) {
+            node * const parent = _node_pool.ptr(n->_parent);
+            node * const child0 = _node_pool.ptr(parent->_child.x);
+            node * const child1 = _node_pool.ptr(parent->_child.y);
+
+            if (leaf)
+                n->_flags = 0; // clean data flag
+
+            if (child0->is_leaf() && child1->is_leaf()
+                && !child0->has_data() && !child1->has_data()) {
+                _node_pool.delete_node(parent->_child.x);
+                _node_pool.delete_node(parent->_child.y);
+                parent->_child.x = parent->_child.y = -1;
+                free_space(parent_id, false);
+            }
+        }
 	}
 
     ///
