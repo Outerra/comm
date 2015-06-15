@@ -181,7 +181,7 @@ public:
     { 
         const uint id = node::insert(_root, size, _node_pool);
 
-        DASSERT(_node_pool.ptr(id)->has_data());
+        //DASSERT(_node_pool.ptr(id)->has_data());
 
         return id;
 	}
