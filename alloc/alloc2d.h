@@ -11,6 +11,8 @@ COID_NAMESPACE_BEGIN
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+#define InvalidImage UMAX32
+
 template<typename T, typename D>
 class alloc_2d
 {
@@ -63,7 +65,7 @@ public:
 
         const type_t& get_pos() const { return _pos; }
         const type_t& get_size() const { return _size; }
-        bool is_leaf() const { return _child[0] == UMAX32 && _child[1] == UMAX32; }
+        bool is_leaf() const { return _child[0] == InvalidImage && _child[1] == InvalidImage; }
         bool has_data() const { return _flags != 0; }
         bool can_release() const { return is_leaf() && !has_data(); }
 
@@ -72,7 +74,7 @@ public:
         node(const type_t &pos, const type_t &size, const handle_t parent)
 		    : _pos(pos)
 		    , _size(size)
-            , _child(UMAX32)
+            , _child(InvalidImage)
 		    , _parent(parent)
             , _flags(0)
             , _data()
@@ -87,13 +89,13 @@ public:
 
             if (!pool.ptr(id)->is_leaf()) {
                 handle_t n = insert(_child[0], size, pool);
-                if (n == UMAX32)
+                if (n == InvalidImage)
                     n = insert(_child[1], size, pool);
                 return n;
 		    }
 		    else {
                 if (_flags != 0 || size.x > _size.x || size.y > _size.y)
-                    return UMAX32;
+                    return InvalidImage;
 
                 if (size.x == _size.x && size.y == _size.y) {
                     pool.ptr(id)->_flags = 1;
@@ -165,7 +167,7 @@ public:
 
 	alloc_2d(const int size, const int initial_split_size)
 		: _node_pool()
-        , _root(_node_pool.new_node(type_t(0), type_t(size), UMAX32))
+        , _root(_node_pool.new_node(type_t(0), type_t(size), InvalidImage))
 		, _initial_split_size(initial_split_size)
 	{
 		if(initial_split_size > 0) {
@@ -190,7 +192,7 @@ public:
 
         const handle_t parent_id = n->_parent;
 
-        if (parent_id != UMAX32) {
+        if (parent_id != InvalidImage) {
             node * const parent = _node_pool.ptr(n->_parent);
             const node * const child0 = _node_pool.ptr(parent->_child.x);
             const node * const child1 = _node_pool.ptr(parent->_child.y);
@@ -201,7 +203,7 @@ public:
             if (child0->can_release() && child1->can_release()) {
                 _node_pool.delete_node(parent->_child.x);
                 _node_pool.delete_node(parent->_child.y);
-                parent->_child.x = parent->_child.y = UMAX32;
+                parent->_child.x = parent->_child.y = InvalidImage;
                 free_space(parent_id, false);
             }
         }

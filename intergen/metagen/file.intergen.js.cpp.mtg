@@ -874,7 +874,7 @@ $-[args inarg? !nojs?]$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator << for type '$basetype$'" );
     $basetype$ $name$;
   $-(if !defval.empty?)$
-    if($@order$ < args.Length())
+    if(1 + $@order$ < args.Length())
         v8_streamer<$basetype$>::from_v8(args[1+$@order$], $name$);
     else
         $name$ = $defval$;
