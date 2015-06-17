@@ -682,10 +682,14 @@ public:
             {
                 DASSERT(_bufw.is_empty());
 
+                // a string starting with \" is used to denote escaped string
+                // a string starting with simple " is interpreted literally (no escapes)
+
                 _bufw << "\\\"";
 
                 token t( (const char*)c.extract(n), n );
                 if( !_tokenizer.synthesize_string(lexstre, t, _bufw, true) ) {
+                    //there was no need to escape anything, revert to simple strings
                     _bufw.reset();
                     _bufw << char('"');
                     _bufw += t;

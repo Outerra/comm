@@ -74,10 +74,17 @@ int iglexer::find_method( const token& classname, dynarray<charstr>& commlist )
             token t = last().tok;
             char k = t.first_char();
 
-            if(c == 2 && (k == '*' || k == '!'))
-                txt << "/*" << t << "*/";
-            else if(c == 1 && (k == '/' || k == '@' || k == '!'))
-                txt << "//" << t;
+            if(c == 2 && (k == '*' || k == '!')) {
+                ++t;
+                t.trim_char('*');
+                txt << "/**" << t << "**/";
+            }
+            else if(c == 1 && (k == '/' || k == '@' || k == '!')) {
+                ++t;
+                if(k == '!')
+                    k = '@';
+                txt << "//" << k << t;
+            }
 
             continue;
         }

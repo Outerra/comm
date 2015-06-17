@@ -1368,6 +1368,18 @@ struct token
         return *this;
     }
 
+    ///Trim given trailing character
+    token& trim_char( char c )
+    {
+        while( _ptr < _pte ) {
+            char k = _pte[-1];
+            if(k != c)
+                break;
+            --_pte;
+        }
+        return *this;
+    }
+
 
     token& skip_ingroup( const token& sep, uints off=0 )
     {

@@ -127,14 +127,22 @@ void MethodIG::parse_docs()
 
         line.trim();
         line.skip_char('/');
-        if(!line)
+        line.trim();
+
+        if(!line) {
+            if(paramdoc)
+                *paramdoc << "\n\n";
+            else if(doc)
+                doc << "\n\n";
             continue;
+        }
 
         if(line.first_char() != '@') {
             charstr& target = paramdoc ? *paramdoc : doc;
             if(!target.is_empty())
                 target << ' ';
-            target.append_escaped(line);
+            //target.append_escaped(line);
+            target << line;
         }
         else {
             //close previous string
@@ -152,19 +160,24 @@ void MethodIG::parse_docs()
                     paramdoc = &a->doc;
                     if(!paramdoc->is_empty())
                         *paramdoc << '\n';
-                    paramdoc->append_escaped(paramline);
+                    //paramdoc->append_escaped(paramline);
+                    *paramdoc << paramline;
                 }
                 else {
-                    doc.append_escaped(line);
+                    //doc.append_escaped(line);
+                    doc << line;
                 }
             }
             else if(paramline.consume("@return ")) {
                 if(ret.doc)
                     ret.doc << '\n';
-                ret.doc.append_escaped(paramline);
+                //ret.doc.append_escaped(paramline);
+                ret.doc << paramline;
             }
-            else
-                doc.append_escaped(line);
+            else {
+                //doc.append_escaped(line);
+                doc << line;
+            }
         }
     }
 

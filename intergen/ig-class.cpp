@@ -414,7 +414,16 @@ void Interface::parse_docs()
         token line = *b;
 
         line.trim();
-        line.skip_char('/');
+        if(line.consume("/**")) {
+            line.skip_whitespace();
+            line.shift_end(-3);
+            line.trim_whitespace();
+        }
+        else {
+            line.skip_char('/');
+            line.trim_whitespace();
+        }
+
         if(!line) {
             if(doc) //paragraph
                 docs.add()->swap(doc);
@@ -424,12 +433,14 @@ void Interface::parse_docs()
         if(line.first_char() != '@') {
             if(!doc.is_empty())
                 doc << ' ';
-            doc.append_escaped(line);
+            //doc.append_escaped(line);
+            doc << line;
         }
         else {
             //close previous string
             docs.add()->swap(doc);
-            doc.append_escaped(line);
+            //doc.append_escaped(line);
+            doc << line;
         }
     }
 
