@@ -188,7 +188,14 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                     });
                     //ifc->pasters = pasters;
                 }
-                else if(extev || tok == lex.IFC_EVENT) {
+                else if(extev || tok == lex.IFC_EVENT)
+                {
+                    //event declaration may be commented out if the method is a duplicate (with multiple interfaces)
+                    bool slcom = lex.enable(lex.SLCOM, false);
+                    bool mlcom = lex.ignore(lex.MLCOM, false);
+                    int duplicate = lex.matches_either("//", "/*");
+                    lex.enable(lex.SLCOM, slcom);
+
                     //parse event declaration
                     if(iface.size() == 0) {
                         out << (lex.prepare_exception() << "error: no preceding interface declared\n");
@@ -226,6 +233,13 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                         if(!m->parse(lex, classname, namespc, irefargs))
                             ++ncontinuable_errors;
 
+                        if(duplicate == 2) {
+                            lex.match(';');
+                            lex.match("*/");
+                        }
+                        lex.ignore(lex.MLCOM, mlcom);
+
+
                         if(extname) {
                             m->intname.takeover(m->name);
                             m->name.takeover(extname);
@@ -242,7 +256,15 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
  
                     m->parse_docs();
                 }
-                else if(extfn || tok == lex.IFC_FN) {
+                else if(extfn || tok == lex.IFC_FN)
+                {
+                    //method declaration may be commented out if the method is a duplicate (with multiple interfaces)
+                    bool slcom = lex.enable(lex.SLCOM, false);
+                    bool mlcom = lex.ignore(lex.MLCOM, false);
+                    int duplicate = lex.matches_either("//", "/*");
+                    lex.enable(lex.SLCOM, slcom);
+
+
                     //parse function declaration
                     if(iface.size() == 0)
                         throw lex.set_err() << "error: no preceding interface declared\n";
@@ -255,6 +277,13 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
 
                     if(!m->parse(lex, classname, namespc, irefargs))
                         ++ncontinuable_errors;
+
+                    if(duplicate == 2) {
+                        lex.match(';');
+                        lex.match("*/");
+                    }
+                    lex.ignore(lex.MLCOM, mlcom);
+
 
                     m->parse_docs();
 

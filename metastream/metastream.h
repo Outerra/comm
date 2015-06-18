@@ -2722,7 +2722,7 @@ protected:
     }
 
     ///
-    void cache_fill( MetaDesc::Var* crv, uints offs )
+    opcd cache_fill( MetaDesc::Var* crv, uints offs )
     {
         MetaDesc::Var* old_var = _curvar.var;
         MetaDesc::Var* old_cvar = _cachevar;
@@ -2733,11 +2733,13 @@ protected:
         //force reading to cache
         _cachevar = _curvar.var = crv;
 
-        streamvar(*crv);
+        opcd e = streamvar(*crv);
 
         _current->offs = old_offs;
         _cachevar = old_cvar;
         _curvar.var = old_var;
+
+        return e;
     }
 
 

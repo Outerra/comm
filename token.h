@@ -101,6 +101,13 @@ struct token
         : _ptr(0), _pte(0)
     {}
 
+    ///Constructor from a single char
+    //@note beware that this may point to the stack and get invalidated outside the scope
+    token( const char& c )
+        : _ptr(&c), _pte(&c+1)
+    {}
+
+
     ///String literal constructor, optimization to have fast literal strings available as tokens
     //@note tries to detect and if passed in a char array instead of string literal, by checking if the last char is 0
     // and the preceding char is not 0

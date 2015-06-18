@@ -99,7 +99,7 @@ public:
         fmtstream::bind(bin, io);
         
         if(_binr)
-            return _tokenizer.bind( *_binr );
+            _tokenizer.bind( *_binr );
         return 0;
     }
 

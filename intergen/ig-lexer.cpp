@@ -23,8 +23,8 @@ iglexer::iglexer()
     def_escape_pair( ie, "\"", "\"" );
     def_escape_pair( ie, "\'", "\'" );
     def_escape_pair( ie, "n", "\n" );
-    def_escape_pair( ie, "\r\n", 0 );
-    def_escape_pair( ie, "\n", 0 );
+    def_escape_pair( ie, "\r\n", token() );
+    def_escape_pair( ie, "\n", token() );
 
     SQSTRING = def_string( ".sqstring", "'", "'", "escape" );
     DQSTRING = def_string( ".dqstring", "\"", "\"", "escape" );
