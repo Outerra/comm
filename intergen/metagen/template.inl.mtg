@@ -71,22 +71,22 @@ $[method]$
     private:
     $-(if !static?)$
       $-(if ptr?)$
-        $..class$* obj;
+        $..class$* _obj;
       $-(elif iref?)$
-        iref<$..class$> obj;
+        iref<$..class$> _obj;
       $-(elif)$
-        ref<$..class$> obj;
+        ref<$..class$> _obj;
       $-(/if)$
     $(/if)$
     $-[args !retarg? !sizearg?]$
       $-(if ptr?)$
         $-(if type?="texture")$
-        ref<$type$> $name$;
+        ref<$type$> _$name$;
         $-(elif)$
-        $type$$ptr$ $name$ $-(if size?)$[$size$]$(/if)$;
+        $type$$ptr$ _$name$ $-(if size?)$[$size$]$(/if)$;
         $-(/if)$
       $-(elif)$
-        $type$ $name$ $-(if size?)$[$size$]$(/if)$;
+        $type$ _$name$ $-(if size?)$[$size$]$(/if)$;
       $-(/if)$
     $-[/args]$ 
 
@@ -107,30 +107,30 @@ $-(if !static?)$,
   $-(/if)$
             $-[args !retarg? !sizearg?]-$,
             $type$$ptr$$ref$ $-(if const?)$ const$(/if)$ $name$ $-(if size?)$[$size$]$(/if)$ $-[/args]$)
-            : __file__(__file__), __line__(__line__), obj(obj) $-[args !retarg? !sizearg? !size?]$
-            , $name$($name$) $-[/args]$ {
+            : __file__(__file__), __line__(__line__), _obj(obj) $-[args !retarg? !sizearg? !size?]$
+            , _$name$($name$) $-[/args]$ {
   $-[args size?]$
-            {for( uint n=($size$),i=0; i<n; ++i )  this->$name$[i] = $name$[i];}
+            {for( uint n=($size$),i=0; i<n; ++i )  _$name$[i] = $name$[i];}
   $-[/args]$
         }
 $-(elif)$
             $-[args !retarg? !sizearg?]$,
             $type$$ptr$$ref$ $-(if const?)$ const$(/if)$ $name$ $-(if size?)$[$size$]$(/if)$ $-[/args]$)
-            : __file__(__file__), __line__(__line__)$[args !retarg? !sizearg? !size?]$, $name$($name$)
+            : __file__(__file__), __line__(__line__)$[args !retarg? !sizearg? !size?]$, _$name$($name$)
             $[/args]${
   $-[args size?]$
-            {for( uint n=($size$),i=0; i<n; ++i )  this->$name$[i] = $name$[i];}
+            {for( uint n=($size$),i=0; i<n; ++i )  _$name$[i] = $name$[i];}
   $-[/args]$
         }
 $-(/if)$
 
         virtual void onCommand(renderer* const r__) {
             uint64 t0 = time_ns();
-            $(if ..class?="renderer")$r__->$(elif !static?)$obj->$(/if)-$$..class$::$name$(
+            $(if ..class?="renderer")$r__->$(elif !static?)$_obj->$(/if)-$$..class$::$name$(
             $-[args rest=", "]-$
 $-(if retarg?)-$(const $..rettype$)data_ptr(this)
 $-(elif sizearg?)-$data_size(this)
-$-(elif)-$$name$
+$-(elif)-$_$name$
 $-(/if)-$
             $-[/args]$);
             log_time(__file__, __line__, "$name$", t0);

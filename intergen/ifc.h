@@ -71,7 +71,8 @@
 //@note ifc_fnx(+) or ifc_fnx(+name) marks an interface method that is captured by an interceptor (for net replication etc) if default was off
 #define ifc_fnx(extname)
 
-///Interface callback decoration
+///Interface event callback decoration
+//@note events are defined in the generated dispatcher code, so the method after this keyword should be just a declaration
 #define ifc_event
 #define ifc_eventx(extname)
 
