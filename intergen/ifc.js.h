@@ -116,7 +116,7 @@ struct script_handle
             if(!path)
                 dst = coid::token(*uber, uber.length());
             else {
-                dst = coid::token(*uber, uber.length()).cut_left_back("\\/");
+                dst = coid::token(*uber, uber.length()).cut_left_group_back("\\/");
                 if(!coid::directory::append_path(dst, path, constraint_root))
                     return 3;
             }
@@ -128,7 +128,7 @@ struct script_handle
                     return 1;
 
                 v8::String::AsciiValue uber(trace->GetFrame(frame)->GetScriptName());
-                dst = coid::token(*uber, uber.length()).cut_left_back("\\/");
+                dst = coid::token(*uber, uber.length()).cut_left_group_back("\\/");
             }
             else
                 dst = root;

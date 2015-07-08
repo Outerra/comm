@@ -738,6 +738,8 @@ $-[/event]$
 }
 
 $-(/if)$
+// --- creators ---
+
 $-[method static?]$
 ////////////////////////////////////////////////////////////////////////////////
 iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle& script
@@ -751,6 +753,8 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
 
     // create interface object
     iref<$..name$_js_dispatcher> ifc = $..ns rest="::" after="::"$$..name$::$name$(new $..name$_js_dispatcher$[args]$, $name$$[/args]$);
+    if(!ifc)
+        throw coid::exception() << "failed to create interface object";
 
     // check if an external context provider is required
     if(script.is_path()) {

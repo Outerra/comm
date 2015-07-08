@@ -813,28 +813,28 @@ struct token
         return cut_left(' ');
     }
 
-    ///Cut a token off, using single character as the delimiter
+    ///Cut left token up to specified character delimiter
     token cut_left( char c, cut_trait ctr = cut_trait_remove_sep() )
     {
         token r;
-        const char* p = strchr(c);
+        const char* p = c ? strchr(c) : _pte;
         if(p) {
-            token sep(p, 1);
+            token sep(p, c ? 1 : 0);
             return ctr.process_found(*this, r, sep);
         }
         else
             return ctr.process_notfound(*this, r);
     }
 
-    ///Cut a token off, using group of single characters as delimiters
-    token cut_left( const token& separators, cut_trait ctr = cut_trait_remove_sep() )
+    ///Cut left token, up to a character from specified group of single characters as delimiters
+    token cut_left_group( const token& separators, cut_trait ctr = cut_trait_remove_sep() )
     {
         token r;
         const char* p = _ptr + count_notingroup(separators);
-        if( p < _pte )         //if not all is not separator
+        if(p < _pte)         //if not all is not separator
         {
             token sep(p, ctr.consume_other_separators()
-                ? _ptr + count_ingroup(separators, p-_ptr)
+                ? _ptr + count_ingroup(separators, p - _ptr)
                 : p + 1);
 
             return ctr.process_found(*this, r, sep);
@@ -843,15 +843,30 @@ struct token
             return ctr.process_notfound(*this, r);
     }
 
-    ///Cut left substring
-    //@param skipsep zero if the separator should remain with the original token, nonzero if it's discarded
+    ///Cut left token up to the substring
+    //@param icase true if case should be ignored
+    token cut_left( const token& ss, bool icase, cut_trait ctr = cut_trait_remove_sep() )
+    {
+        token r;
+        const char* p = _ptr + count_until_substring(ss, icase);
+        if(p < _pte)
+        {
+            token sep(p, p + ss.len());
+
+            return ctr.process_found(*this, r, sep);
+        }
+        else
+            return ctr.process_notfound(*this, r);
+    }
+
+    ///Cut left token up to the substring
     token cut_left( const substring& ss, cut_trait ctr = cut_trait_remove_sep() )
     {
         token r;
         const char* p = _ptr + count_until_substring(ss);
-        if( p < _pte )
+        if(p < _pte)
         {
-            token sep(p, p+ss.len());
+            token sep(p, p + ss.len());
 
             return ctr.process_found(*this, r, sep);
         }
@@ -860,7 +875,6 @@ struct token
     }
 
     ///Cut left substring, searching for separator backwards
-    //@param skipsep zero if the separator should remain with the original token, nonzero if it's discarded
     token cut_left_back( const char c, cut_trait ctr = cut_trait_remove_sep() )
     {
         token r;
@@ -874,8 +888,8 @@ struct token
             return ctr.process_notfound(*this, r);
     }
 
-    ///Cut left substring, searching for separator backwards
-    token cut_left_back( const token& separators, cut_trait ctr = cut_trait_remove_sep() )
+    ///Cut left substring, searching backwards for a character from specified group of single characters as delimiters
+    token cut_left_group_back( const token& separators, cut_trait ctr = cut_trait_remove_sep() )
     {
         token r;
         uints off = count_notingroup_back(separators);
@@ -894,26 +908,54 @@ struct token
             return ctr.process_notfound(*this, r);
     }
 
-    ///Cut left substring, searching for separator backwards
-    token cut_left_back( const substring& ss, cut_trait ctr = cut_trait_remove_sep() )
+    ///Cut left token, searching for a substring separator backwards
+    //@param icase true if case should be ignored
+    token cut_left_back( const token& ss, bool icase, cut_trait ctr = cut_trait_remove_sep() )
     {
         token r;
-        uints off=0;
+        uints off = 0;
         uints lastss = lens();    //position of the last substring found
 
         for(;;)
         {
-            uints us = count_until_substring( ss, off );
-            if( us >= lens() )
+            uints us = count_until_substring(ss, icase, off);
+            if(us >= lens())
                 break;
 
             lastss = us;
             off = us + ss.len();
         }
 
-        if( lastss < lens() )
+        if(lastss < lens())
         {
-            token sep(_ptr+lastss, ss.len());
+            token sep(_ptr + lastss, ss.len());
+
+            return ctr.process_found(*this, r, sep);
+        }
+        else
+            return ctr.process_notfound(*this, r);
+    }
+
+    ///Cut left token, searching for a substring separator backwards
+    token cut_left_back( const substring& ss, cut_trait ctr = cut_trait_remove_sep() )
+    {
+        token r;
+        uints off = 0;
+        uints lastss = lens();    //position of the last substring found
+
+        for(;;)
+        {
+            uints us = count_until_substring(ss, off);
+            if(us >= lens())
+                break;
+
+            lastss = us;
+            off = us + ss.len();
+        }
+
+        if(lastss < lens())
+        {
+            token sep(_ptr + lastss, ss.len());
 
             return ctr.process_found(*this, r, sep);
         }
@@ -922,34 +964,46 @@ struct token
     }
 
 
-    ///Cut right substring
+    ///Cut right token, searching for specified character delimiter
     token cut_right( const char c, cut_trait ctr = cut_trait_remove_sep() )
     {
         return cut_left(c, ctr.make_swap());
     }
 
-    ///Cut right substring
-    token cut_right( const token& separators, cut_trait ctr = cut_trait_remove_sep() )
+    ///Cut right token, searching for a character from specified group of single characters as delimiters
+    token cut_right_group( const token& separators, cut_trait ctr = cut_trait_remove_sep() )
     {
-        return cut_left(separators, ctr.make_swap());
+        return cut_left_group(separators, ctr.make_swap());
     }
 
-    ///Cut right substring
+    ///Cut right token up to the specified substring
+    token cut_right( const token& ss, bool icase, cut_trait ctr = cut_trait_remove_sep() )
+    {
+        return cut_left(ss, icase, ctr.make_swap());
+    }
+
+    ///Cut right token up to the specified substring
     token cut_right( const substring& ss, cut_trait ctr = cut_trait_remove_sep() )
     {
         return cut_left(ss, ctr.make_swap());
     }
 
-    ///Cut right substring, searching for separator backwards
+    ///Cut right token, searching for the specified character separator backwards
     token cut_right_back( const char c, cut_trait ctr = cut_trait_remove_sep() )
     {
         return cut_left_back(c, ctr.make_swap());
     }
 
-    ///Cut right substring, searching for separator backwards
-    token cut_right_back( const token& separators, cut_trait ctr = cut_trait_remove_sep() )
+    ///Cut right token, searching backwards for a character from specified group of single characters as delimiters
+    token cut_right_group_back( const token& separators, cut_trait ctr = cut_trait_remove_sep() )
     {
-        return cut_left_back(separators, ctr.make_swap());
+        return cut_left_group_back(separators, ctr.make_swap());
+    }
+
+    ///Cut right substring, searching for separator backwards
+    token cut_right_back( const token& ss, bool icase, cut_trait ctr = cut_trait_remove_sep() )
+    {
+        return cut_left_back(ss, icase, ctr.make_swap());
     }
 
     ///Cut right substring, searching for separator backwards
@@ -1218,6 +1272,15 @@ struct token
                 return uint(p - _ptr + 1);
         }
         return uint(p - _ptr);
+    }
+
+    ///Count characters up to specified substring
+    uints count_until_substring( const token& sub, bool icase, uints off=0 ) const
+    {
+        if(off >= lens())  return len();
+
+        const char* p = icase ? contains_icase(sub, off) : contains(sub, off);
+        return p ? p - _ptr : len();
     }
 
     ///Count characters up to specified substring

@@ -413,7 +413,7 @@ public:
         uint64 csize = st.st_size;
 
         if(formdata) {
-            fn = filename ? filename : token(file).cut_right_back("\\/");
+            fn = filename ? filename : token(file).cut_right_group_back("\\/");
             csize += fdh.len() + mime.len() + fd1.len() + fn.len() + fd2.len() + fde.len() + mime.len() + fdh.len();
         }
 
@@ -924,7 +924,7 @@ inline opcd httpstream::header::decode( bool is_listener, httpstream& http, bins
         {
             for(;;)
             {
-                token k = h.cut_left(", ", token::cut_trait_remove_all() );
+                token k = h.cut_left_group(", ", token::cut_trait_remove_all() );
                 if( k.is_empty() )  break;
 
                 if( k.cmpeqi("deflate") )
@@ -943,7 +943,7 @@ inline opcd httpstream::header::decode( bool is_listener, httpstream& http, bins
         {
             for(;;)
             {
-                token k = h.cut_left(", ", token::cut_trait_remove_all() );
+                token k = h.cut_left_group(", ", token::cut_trait_remove_all() );
                 if( k.is_empty() )  break;
 
                 if( k.cmpeqi("close") )

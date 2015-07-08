@@ -230,7 +230,7 @@ void generate_ig( File& file, charstr& tdir, charstr& fdir  )
             tdir.resize(tlen);
             tdir << "interface.doc.mtg";
 
-            fdir.resize(-int(token(fdir).cut_right_back("\\/").len()));
+            fdir.resize(-int(token(fdir).cut_right_group_back("\\/").len()));
             fdir << "/docs";
             directory::mkdir(fdir);
 
@@ -289,7 +289,7 @@ int main( int argc, char* argv[] )
     }
     directory::treat_trailing_separator(tdir, true);
 
-    charstr fdir = token(argv[1]).cut_left_back("\\/", token::cut_trait_return_with_sep_default_empty());
+    charstr fdir = token(argv[1]).cut_left_group_back("\\/", token::cut_trait_return_with_sep_default_empty());
 
     File cgf;
 
@@ -390,7 +390,7 @@ int File::parse( token path )
     out << "processing " << path << " file ...\n";
 
     token name = path;
-    name.cut_left_back("\\/", token::cut_trait_remove_sep_default_empty());
+    name.cut_left_group_back("\\/", token::cut_trait_remove_sep_default_empty());
     
     fpath = path;
     fnameext = name;

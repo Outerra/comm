@@ -146,7 +146,7 @@ bool directory::append_path( charstr& dst, token path, bool keep_below )
             if( tdst.is_empty() )
                 return false;       //too many .. in path
 
-            tdst.cut_right_back(DIR_SEPARATORS);
+            tdst.cut_right_group_back(DIR_SEPARATORS);
 
             if( c == 0 ) {
                 dst.resize( tdst.len() );
@@ -160,7 +160,7 @@ bool directory::append_path( charstr& dst, token path, bool keep_below )
             //check if the appended path doesn't escape out
             int rdepth=0;
             token rp = path;
-            while(token v = rp.cut_left(DIR_SEPARATORS)) {
+            while(token v = rp.cut_left_group(DIR_SEPARATORS)) {
                 if(v == '.');
                 else if(v == "..")
                     rdepth--;
@@ -432,8 +432,8 @@ bool directory::get_relative_path( token src, token dst, charstr& relout )
 
     while(1)
     {
-        token st = src.cut_left(DIR_SEPARATORS);
-        token dt = dst.cut_left(DIR_SEPARATORS);
+        token st = src.cut_left_group(DIR_SEPARATORS);
+        token dt = dst.cut_left_group(DIR_SEPARATORS);
 
 #ifdef SYSTYPE_WIN
         if(!st.cmpeqi(dt)) {
@@ -448,7 +448,7 @@ bool directory::get_relative_path( token src, token dst, charstr& relout )
 
     relout.reset();
     while(src) {
-        src.cut_left(DIR_SEPARATORS);
+        src.cut_left_group(DIR_SEPARATORS);
 #ifdef SYSTYPE_WIN
         relout << "..\\";
 #else
@@ -492,7 +492,7 @@ bool directory::compact_path( charstr& dst, char tosep )
     int nfwd=0;
 
     do {
-        token seg = dtok.cut_left(DIR_SEPARATORS);
+        token seg = dtok.cut_left_group(DIR_SEPARATORS);
         bool isup = seg == up;
 
         ints d = dtok.ptr() - seg.ptre();
@@ -528,7 +528,7 @@ bool directory::compact_path( charstr& dst, char tosep )
         }
         else if(nfwd) {
             //remove one token from fwd
-            fwd.cut_right_back(DIR_SEPARATORS);
+            fwd.cut_right_group_back(DIR_SEPARATORS);
             rem.set(fwd.ptre(), dtok.first_char() ? (dtok.ptr()-1) : dtok.ptr());
             --nfwd;
         }

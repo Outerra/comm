@@ -153,7 +153,7 @@ void MethodIG::parse_docs()
 
             token paramline = line;
             if(paramline.consume("@param ")) {
-                token param = paramline.cut_left(token::TK_whitespace());
+                token param = paramline.cut_left_group(token::TK_whitespace());
                 Arg* a = find_arg(param);
 
                 if(a) {
@@ -287,7 +287,7 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
         bs.cut_right_back('>');
 
         do {
-            token p = bs.cut_left("::");
+            token p = bs.cut_left("::", false);
             fulltype << p;
             if(bs)
                 fulltype << '_';

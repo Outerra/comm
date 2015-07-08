@@ -51,7 +51,7 @@ dynarray<interface_register::creator>& interface_register::get_interface_creator
     // [ns1::[ns2:: ...]]::class.creator
     static token SEP = "::";
     token ns = name;
-    token classname = ns.cut_right_back(SEP);
+    token classname = ns.cut_right_group_back(SEP);
     token creatorname = classname.cut_right('.', token::cut_trait_remove_sep_default_empty());
 
     interface_register_impl& reg = interface_register_impl::get();
@@ -111,7 +111,7 @@ void interface_register::register_interface_creator( const token& ifcname, void*
     static token SEP = "::";
 
     token ns = ifcname;
-    token classname = ns.cut_right_back(SEP);
+    token classname = ns.cut_right_group_back(SEP);
     token creatorname = classname.cut_right('.');
     token script = creatorname.cut_right('@', token::cut_trait_remove_sep_default_empty());
 
