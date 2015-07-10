@@ -46,9 +46,21 @@
 COID_NAMESPACE_BEGIN
 
 ////////////////////////////////////////////////////////////////////////////////
-///Allocator for efficient slot allocation/deletion.
-///Keeps a linked list of freed objects in places where the objects have been
-/// allocated (objects must be >= sizeof(void*)
+/**
+@brief Allocator for efficient slot allocation/deletion of objects.
+
+Allocates array of slots for given object type, and allows efficient allocation and deallocation of objects without
+having to resort to expensive system memory allocators.
+Objects within the array have a unique slot id that can be used to retrieve the objects by id or to have an id of the 
+object during its lifetime.
+The allocator has for_each and find_if methods that can run functors on each object managed by the allocator.
+
+Optionally can be constructed in pool mode, in which case the removed/freed objects aren't destroyed, and subsequent
+allocation can return one of these without having to call the constructor. This is good when the objects allocate
+their own memory buffers and it's desirable to avoid unnecessary freeing and allocations there as well. Obviously,
+care must be taken to initialize the initial state of allocated objects in this mode.
+All objects are destroyed with the destruction of the allocator object.
+**/
 template<class T>
 class slotalloc
 {
@@ -65,6 +77,8 @@ public:
         _allocated.set_size(0);
     }
 
+    ///Construct slotalloc container
+    //@param pool true for pool mode, in which removed objects do not have destructors invoked
     slotalloc( bool pool = false ) : _count(0), _pool(pool)
     {}
 
@@ -106,7 +120,7 @@ public:
             : new(append()) T;
     }
 
-    ///Add new object, uninitialized
+    ///Add new object, uninitialized (no constructor invoked on the object)
     T* add_uninit() {
         if(_count < _array.size()) {
             T* p = alloc(0);
