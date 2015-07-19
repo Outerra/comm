@@ -22,7 +22,10 @@ bool MethodIG::parse( iglexer& lex, const charstr& host, const charstr& ns, dyna
     if(bstatic) {
         charstr tmp;
 
-        if(ret.type == ((tmp="iref<")<<host<<'>')) {
+        if(ret.bptr && ret.type == ((tmp=host)<<'*')) {
+            (ret.type="iref<")<<ns<<host<<'>';
+        }
+        else if(ret.type == ((tmp="iref<")<<host<<'>')) {
             biref = true;
             (ret.type="iref<")<<ns<<host<<'>';
         }
@@ -33,7 +36,7 @@ bool MethodIG::parse( iglexer& lex, const charstr& host, const charstr& ns, dyna
         //else if(ret.type == ((tmp=ns)<<host<<'*'))
         //    bptr = true;
         else {
-            lex.set_err() << "invalid return type for static interface method\n"
+            lex.set_err() << "invalid return type for static interface creator method\n"
                 "  should be iref<" << host << ">";
             throw lex.exc();
         }
