@@ -4,9 +4,7 @@
 
 #include "../dynarray.h"
 
-#include <intrin.h>
-#pragma intrinsic(_BitScanForward)
-#pragma intrinsic(_bittest)
+#include "../mathi.h"
 
 COID_NAMESPACE_BEGIN
 
@@ -66,30 +64,11 @@ public:
             // in this case we now new block is empty we could skip search phase
         }
 
-        ulong index;
-        
-        _BitScanForward(&index, ~*b);
+        uchar index = lsb_bit_set(~*b);
 
         *b |= 1 << index;
 
         return _items.ptr() + (b - _bmp.ptr()) * 32 + index;
-        
-        /*// find empty block 8bit
-        uchar * b_char = reinterpret_cast<uchar*>(b);
-        uchar * const be_char = b_char + sizeof(BLOCK_TYPE);
-        while (b_char != be_char && *b_char == 0xff)
-            ++b_char;
-
-        // find empty slot
-        const uchar slots = *b_char;
-        int i = 0;
-        while (i < 8 && (slots & (1 << i)) != 0)
-            ++i;
-        const uints slot = ((b_char - reinterpret_cast<uchar*>(_bmp.ptr())) << 3) + i;
-        
-        // return pointer to free slot
-        *b_char |= 1 << i;
-        return _items.ptr() + slot;*/
     }
 
     uints get_item_id(const T * const ptr) const
@@ -129,13 +108,12 @@ public:
     {
         const BLOCK_TYPE * b = _bmp.ptr();
         const BLOCK_TYPE * const be = _bmp.ptre();
-        ulong index;
 
         while (b != be && *b == 0)
             ++b;
         if (b == be) return -1;
 
-        _BitScanForward(&index, *b);
+        uchar index = lsb_bit_set(*b);
 
         return (b - _bmp.ptr()) * 32 + index;
     }
@@ -148,14 +126,16 @@ public:
 
         const BLOCK_TYPE * b = _bmp.ptr() + (id >> 5);
         const BLOCK_TYPE * const be = _bmp.ptre();
-        ulong index = id & 31;
+        uchar index = id & 31;
 
         if (b == be)
             return -1;
 
         if (index != 0) {
-            while (index < 32 && !_bittest((const long*)b, index))
-                ++index;
+            const uint tmp = *b & ~((1 << index) - 1);
+            index = tmp != 0
+                ? lsb_bit_set(tmp)
+                : 32;
         }
 
         if (index == 32) {
@@ -166,7 +146,7 @@ public:
             if (b == be)
                 return -1;
 
-            _BitScanForward(&index, *b);
+            index = lsb_bit_set(*b);
         }
 
         return (b - _bmp.ptr()) * 32 + index;
