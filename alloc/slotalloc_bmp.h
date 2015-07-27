@@ -4,6 +4,10 @@
 
 #include "../dynarray.h"
 
+#include <intrin.h>
+#pragma intrinsic(_BitScanForward)
+#pragma intrinsic(_bittest)
+
 COID_NAMESPACE_BEGIN
 
 typedef uint BLOCK_TYPE;
@@ -62,9 +66,15 @@ public:
             // in this case we now new block is empty we could skip search phase
         }
 
-        //TODO use intrisic _BitScanForward 
+        ulong index;
+        
+        _BitScanForward(&index, ~*b);
 
-        // find empty block 8bit
+        *b |= 1 << index;
+
+        return _items.ptr() + (b - _bmp.ptr()) * 32 + index;
+        
+        /*// find empty block 8bit
         uchar * b_char = reinterpret_cast<uchar*>(b);
         uchar * const be_char = b_char + sizeof(BLOCK_TYPE);
         while (b_char != be_char && *b_char == 0xff)
@@ -79,7 +89,7 @@ public:
         
         // return pointer to free slot
         *b_char |= 1 << i;
-        return _items.ptr() + slot;
+        return _items.ptr() + slot;*/
     }
 
     uints get_item_id(const T * const ptr) const
@@ -117,16 +127,49 @@ public:
 
     uints first() const
     {
-        uints id = 0;
-        while (id < _items.size() && !is_valid(id)) ++id;
-        return id < _items.size() ? id : -1;
+        const BLOCK_TYPE * b = _bmp.ptr();
+        const BLOCK_TYPE * const be = _bmp.ptre();
+        ulong index;
+
+        while (b != be && *b == 0)
+            ++b;
+        if (b == be) return -1;
+
+        _BitScanForward(&index, *b);
+
+        return (b - _bmp.ptr()) * 32 + index;
     }
 
     uints next(uints id) const
     {
         ++id;
-        while (id < _items.size() && !is_valid(id)) ++id;
-        return id < _items.size() ? id : -1;
+
+        DASSERT(id != -1 && id <= _bmp.size() * 32);
+
+        const BLOCK_TYPE * b = _bmp.ptr() + (id >> 5);
+        const BLOCK_TYPE * const be = _bmp.ptre();
+        ulong index = id & 31;
+
+        if (b == be)
+            return -1;
+
+        if (index != 0) {
+            while (index < 32 && !_bittest((const long*)b, index))
+                ++index;
+        }
+
+        if (index == 32) {
+            ++b;
+            while (b != be && *b == 0)
+                ++b;
+
+            if (b == be)
+                return -1;
+
+            _BitScanForward(&index, *b);
+        }
+
+        return (b - _bmp.ptr()) * 32 + index;
     }
 };
 
