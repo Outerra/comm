@@ -67,15 +67,23 @@ inline void _BitScanReverse64(ulong* idx, uint64 v) {
 }
 #endif
 
+//@{
+//@return position of the lowest or highest bit set
+//@note return value is undefined when the input is 0
 inline uint8 lsb_bit_set( uint v )   { ulong idx; _BitScanForward(&idx, v);   return uint8(idx); }
 inline uint8 lsb_bit_set( uint64 v ) { ulong idx; _BitScanForward64(&idx, v); return uint8(idx); }
 inline uint8 msb_bit_set( uint v )   { ulong idx; _BitScanReverse(&idx, v);   return uint8(idx); }
 inline uint8 msb_bit_set( uint64 v ) { ulong idx; _BitScanReverse64(&idx, v); return uint8(idx); }
+//@}
 #else
-inline uint8 lsb_bit_set( uint v )   { return __builtin_ctzll(v); }
+//@{
+//@return position of the lowest or highest bit set
+//@note return value is undefined when the input is 0
+inline uint8 lsb_bit_set( uint v )   { return __builtin_ctzl(v); }
 inline uint8 lsb_bit_set( uint64 v ) { return __builtin_ctzll(v); }
-inline uint8 msb_bit_set( uint v )   { return 31-__builtin_clzll(v); }
+inline uint8 msb_bit_set( uint v )   { return 31-__builtin_clzl(v); }
 inline uint8 msb_bit_set( uint64 v ) { return 63-__builtin_clzll(v); }
+//@}
 #endif
 
 
