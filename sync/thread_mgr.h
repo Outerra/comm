@@ -56,10 +56,7 @@ struct thread_manager
         void* arg;
 
         thread_t tid;
-        uint flags;
-        enum {
-            fREQUESTED_CANCELLATION             = 1,
-        };
+        volatile int cancel;
 
         charstr name;
         thread_manager* mgr;
@@ -115,7 +112,7 @@ public:
         i->arg = arg;
 
         i->tid = thread::invalid();
-        i->flags = 0;
+        i->cancel = 0;
 
         i->name = name;
         i->mgr = this;
@@ -147,7 +144,7 @@ public:
         info*const* pti = _hash.find_value(tid);
         if(pti)
         {
-            (*pti)->flags |= info::fREQUESTED_CANCELLATION;
+            (*pti)->cancel = 1;
             return 0;
         }
 
@@ -158,7 +155,7 @@ public:
     {
         GUARDME;
         info*const* pti = _hash.find_value(tid);
-        return  pti  &&  ((*pti)->flags & info::fREQUESTED_CANCELLATION);
+        return  pti && (*pti)->cancel;
     }
 
 	const info * tls_info()
@@ -170,7 +167,7 @@ public:
 	{
 		const info * const ti = tls_info();
 
-		return ti != 0  &&  (ti->flags & info::fREQUESTED_CANCELLATION);
+		return ti != 0 && ti->cancel;
 	}
 
 
