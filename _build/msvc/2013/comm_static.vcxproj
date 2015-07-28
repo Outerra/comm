@@ -546,6 +546,7 @@
     <ClInclude Include="..\..\..\version.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\alloc\slotalloc_bmp.cpp" />
     <ClCompile Include="..\..\..\atomic\atomic.cpp" />
     <ClCompile Include="..\..\..\coder\lz4\lz4.c" />
     <ClCompile Include="..\..\..\coder\lz4\lz4hc.c" />

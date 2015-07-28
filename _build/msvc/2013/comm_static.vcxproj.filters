@@ -464,5 +464,8 @@
     <ClCompile Include="..\..\..\timeru.cpp">
       <Filter>cxx</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\alloc\slotalloc_bmp.cpp">
+      <Filter>alloc</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

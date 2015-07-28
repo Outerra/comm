@@ -21,11 +21,11 @@ private:
 public:
 
     /// size: preallocated size
-    slotalloc_bmp(const uint size = 32)
+    slotalloc_bmp(const uint size = 32 * 32)
         : _bmp()
         , _items()
     {
-        _bmp.add_uninit(size);
+        _bmp.add_uninit(size >> 5);
         memset(_bmp.ptr(), 0, _bmp.byte_size());
         _items.add_uninit(_bmp.size() * sizeof(BLOCK_TYPE) * 8);
     }
@@ -84,22 +84,21 @@ public:
 
     bool is_valid(const uints id) const
     {
-        const uints s0 = id >> 3;
-        const uchar slots = s0 < (_bmp.size() << 2) ? reinterpret_cast<const uchar*>(_bmp.ptr())[s0] : 0;
-        return (slots & (1 << (id & 7))) != 0;
+        const uints index = id >> 5;
+        const uint block = index < _bmp.size() ? _bmp[index] : 0;
+        return (block & (1 << (id & 31))) != 0;
     }
 
     void del(const uints id)
     {        
         DASSERT((id >> 5) <_bmp.size() && _items.size() != 0);
 
-        const uints s0 = id >> 3;
-        const uchar block = reinterpret_cast<uchar*>(_bmp.ptr())[s0];
-        const uchar slot = 1 << (id & 7);
+        BLOCK_TYPE * const block = _bmp.ptr() + (id >> 5);
+        const uint slot = 1 << (id & 31);
         
-        DASSERT((block & slot) != 0);
+        DASSERT((*block & slot) != 0);
 
-        reinterpret_cast<uchar*>(_bmp.ptr())[s0] ^= slot;
+        *block ^= slot;
         
         _items[id].~T();        
     }
@@ -131,12 +130,10 @@ public:
         if (b == be)
             return -1;
 
-        if (index != 0) {
-            const uint tmp = *b & ~((1 << index) - 1);
-            index = tmp != 0
-                ? lsb_bit_set(tmp)
-                : 32;
-        }
+        const uint tmp = *b & ~((1 << index) - 1);
+        index = tmp != 0
+            ? lsb_bit_set(tmp)
+            : 32;
 
         if (index == 32) {
             ++b;
@@ -152,6 +149,11 @@ public:
         return (b - _bmp.ptr()) * 32 + index;
     }
 };
+
+namespace test
+{
+    void slotalloc_bmp();
+}
 
 COID_NAMESPACE_END
 
