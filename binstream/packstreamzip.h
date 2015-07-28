@@ -118,6 +118,9 @@ public:
     ///
     virtual opcd write_raw( const void* p, uints& len )
     {
+        if(len == 0)
+            return 0;
+
         if( _wblockout.size() == 0 )
         {
             _wblockout.need_new(BUFFER_SIZE);
@@ -155,6 +158,9 @@ public:
     ///
     virtual opcd read_raw( void* p, uints& len )
     {
+        if(len == 0)
+            return 0;
+
         if( _rblockin.size() == 0 )
         {
             _rblockin.need_new(BUFFER_SIZE);
