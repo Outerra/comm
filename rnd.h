@@ -149,7 +149,7 @@ private:
 #define TEMPERING_SHIFT_T(y)  (y << 15)
 #define TEMPERING_SHIFT_L(y)  (y >> 18)
 
-/// unsigned long random generator
+/// unsigned long random generator (mersenne twister)
 class rnd_strong {
     enum {
         // Period parameters
@@ -169,81 +169,99 @@ class rnd_strong {
     // _mag01[x] = x * MATRIX_A  for x=0,1
 
 public:
-    // initializing the array with a NONZERO seed
-    void seed(uint seed) {
+
+    ///initializing with a NONZERO seed
+    void seed(uint seed)
+    {
+        _mt[0] = seed;
+        for(_mti=1; _mti<N; ++_mti) {
+            _mt[_mti] =
+                (1812433253UL * (_mt[_mti-1] ^ (_mt[_mti-1] >> 30)) + _mti);
+            /* See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. */
+            /* In the previous versions, MSBs of the seed affect   */
+            /* only MSBs of the array mt[].                        */
+            /* 2002/01/09 modified by Makoto Matsumoto             */
+        }
+    }
+
+    ///initializing with a NONZERO seed
+    //@note obsolete, compatibility
+    void seed_old(uint seed) {
         // setting initial seeds to _mt[N] using
         // the generator Line 25 of Table 1 in
         // [KNUTH 1981, The Art of Computer Programming
         //    Vol. 2 (2nd Ed.), pp102]
         _mt[0]= seed;
-        for (_mti=1; _mti<N; ++_mti)
+        for(_mti=1; _mti<N; ++_mti)
             _mt[_mti] = 69069 * _mt[_mti-1];
     }
 
-    uint rand() {
+    uint rand()
+    {
         uint y;
         static unsigned long mag01[2]={0x0UL, MATRIX_A};
 
-        if (_mti >= N) { // generate N words at one time */
+        if(_mti >= N) { // generate N words at one time */
             uint kk;
 
-            if (_mti == N+1)   // if seed() has not been called
+            if(_mti == N+1)   // if seed() has not been called
                 seed(4357); // a default initial seed is used
 
-            for (kk=0;kk<N-M;kk++) {
-                y= (_mt[kk]&UPPER_MASK) | (_mt[kk+1]&LOWER_MASK);
-                _mt[kk]= _mt[kk+M] ^ (y >> 1) ^ mag01[y & 0x1];
+            for(kk=0; kk<N-M; kk++) {
+                y = (_mt[kk]&UPPER_MASK) | (_mt[kk+1]&LOWER_MASK);
+                _mt[kk] = _mt[kk+M] ^ (y >> 1) ^ mag01[y & 0x1];
             }
-            for (;kk<N-1;kk++) {
-                y= (_mt[kk]&UPPER_MASK) | (_mt[kk+1]&LOWER_MASK);
-                _mt[kk]= _mt[kk+(M-N)] ^ (y >> 1) ^ mag01[y & 0x1];
+            for(; kk<N-1; kk++) {
+                y = (_mt[kk]&UPPER_MASK) | (_mt[kk+1]&LOWER_MASK);
+                _mt[kk] = _mt[kk+(M-N)] ^ (y >> 1) ^ mag01[y & 0x1];
             }
-            y= (_mt[N-1]&UPPER_MASK) | (_mt[0]&LOWER_MASK);
-            _mt[N-1]= _mt[M-1] ^ (y >> 1) ^ mag01[y & 0x1];
+            y = (_mt[N-1]&UPPER_MASK) | (_mt[0]&LOWER_MASK);
+            _mt[N-1] = _mt[M-1] ^ (y >> 1) ^ mag01[y & 0x1];
 
             _mti = 0;
         }
 
-        y= _mt[_mti++];
-        y^= TEMPERING_SHIFT_U(y);
-        y^= TEMPERING_SHIFT_S(y) & TEMPERING_MASK_B;
-        y^= TEMPERING_SHIFT_T(y) & TEMPERING_MASK_C;
-        y^= TEMPERING_SHIFT_L(y);
+        y = _mt[_mti++];
+        y ^= TEMPERING_SHIFT_U(y);
+        y ^= TEMPERING_SHIFT_S(y) & TEMPERING_MASK_B;
+        y ^= TEMPERING_SHIFT_T(y) & TEMPERING_MASK_C;
+        y ^= TEMPERING_SHIFT_L(y);
 
         return y;
     }
 
-    void nrand(uint n, uint *puout) {
+    void nrand(uint n, uint *puout)
+    {
         uint i, y;
         static unsigned long mag01[2]={0x0UL, MATRIX_A};
 
         for(i=0; i<n; ++i) {
-            if (_mti >= N) { // generate N words at one time
+            if(_mti >= N) { // generate N words at one time
                 uint kk;
 
-                if (_mti == N+1)   // if seed() has not been called,
+                if(_mti == N+1)   // if seed() has not been called,
                     seed(4357); // a default initial seed is used
 
-                for (kk=0;kk<N-M;kk++) {
-                    y= (_mt[kk]&UPPER_MASK) | (_mt[kk+1]&LOWER_MASK);
-                    _mt[kk]= _mt[kk+M] ^ (y >> 1) ^ mag01[y & 0x1];
+                for(kk=0; kk<N-M; kk++) {
+                    y = (_mt[kk]&UPPER_MASK) | (_mt[kk+1]&LOWER_MASK);
+                    _mt[kk] = _mt[kk+M] ^ (y >> 1) ^ mag01[y & 0x1];
                 }
-                for (;kk<N-1;kk++) {
-                    y= (_mt[kk]&UPPER_MASK) | (_mt[kk+1]&LOWER_MASK);
-                    _mt[kk]= _mt[kk+(M-N)] ^ (y >> 1) ^ mag01[y & 0x1];
+                for(; kk<N-1; kk++) {
+                    y = (_mt[kk]&UPPER_MASK) | (_mt[kk+1]&LOWER_MASK);
+                    _mt[kk] = _mt[kk+(M-N)] ^ (y >> 1) ^ mag01[y & 0x1];
                 }
-                y= (_mt[N-1]&UPPER_MASK) | (_mt[0]&LOWER_MASK);
-                _mt[N-1]= _mt[M-1] ^ (y >> 1) ^ mag01[y & 0x1];
+                y = (_mt[N-1]&UPPER_MASK) | (_mt[0]&LOWER_MASK);
+                _mt[N-1] = _mt[M-1] ^ (y >> 1) ^ mag01[y & 0x1];
 
                 _mti = 0;
             }
 
-            y= _mt[_mti++];
-            y^= TEMPERING_SHIFT_U(y);
-            y^= TEMPERING_SHIFT_S(y) & TEMPERING_MASK_B;
-            y^= TEMPERING_SHIFT_T(y) & TEMPERING_MASK_C;
-            y^= TEMPERING_SHIFT_L(y);
-            puout[i]= y;
+            y = _mt[_mti++];
+            y ^= TEMPERING_SHIFT_U(y);
+            y ^= TEMPERING_SHIFT_S(y) & TEMPERING_MASK_B;
+            y ^= TEMPERING_SHIFT_T(y) & TEMPERING_MASK_C;
+            y ^= TEMPERING_SHIFT_L(y);
+            puout[i] = y;
         }
     }
 
