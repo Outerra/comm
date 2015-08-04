@@ -117,9 +117,10 @@ log_writer::~log_writer()
 
 void* log_writer::thread_run()
 {
-	for ( ;; ) {
+	while(1) {
         flush();
-		if ( coid::thread::self_should_cancel() ) break;
+		if(coid::thread::self_should_cancel())
+            break;
 		coid::sysMilliSecondSleep(500);
 	}
     flush();

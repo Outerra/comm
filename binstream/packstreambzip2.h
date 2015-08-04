@@ -41,7 +41,7 @@
 #include "../namespace.h"
 
 #include "packstream.h"
-#include "bzlib.h"
+#include <bzlib.h>
 
 COID_NAMESPACE_BEGIN
 
@@ -182,7 +182,7 @@ public:
             if( _strin.avail_in == 0 )
             {
                 uints rl = BUFFER_SIZE;
-                opcd e = _in->read_raw( _rblockin.ptr(), rl );
+                opcd e = _in->read_raw_full( _rblockin.ptr(), rl );
                 if( e && e!=ersNO_MORE )  return e;
                 _strin.avail_in = uint(BUFFER_SIZE - rl);
                 _strin.next_in = _rblockin.ptr();
