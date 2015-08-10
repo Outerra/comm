@@ -121,6 +121,15 @@ public:
             stream_acknowledge(true);
     }
 
+    ///Initialize object from its metastream operator, assuming all members have defaults
+    template<class T>
+    static void initialize_from_defaults(T* that) {
+        fmtstreamnull fmt;
+        metastream meta(fmt);
+
+        meta.stream_out(*that);
+    }
+
 
     ///Define struct streaming scheme
     //@param name struct type name
