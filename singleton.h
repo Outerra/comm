@@ -82,14 +82,20 @@
 ////////////////////////////////////////////////////////////////////////////////
 COID_NAMESPACE_BEGIN
 
+typedef void* (*fn_singleton_creator)();
+typedef void (*fn_singleton_destroyer)(void*);
+
 void* singleton_register_instance(
-    void* p,
-    void (*fn_destroy)(void*),
+    fn_singleton_creator create,
+    fn_singleton_destroyer destroy,
     const char* type,
     const char* file,
-    int line);
+    int line,
+    bool invisible);
 
 void singletons_destroy();
+
+fn_singleton_creator singleton_local_creator( void* p );
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Class for global and local singletons
@@ -106,7 +112,7 @@ public:
 		if(node)
 			return *node;
 
-        node = (T*)singleton_register_instance(new T, &destroy, 0, 0, 0);
+        node = (T*)singleton_register_instance(&create, &destroy, typeid(T).name(), 0, 0, false);
         return *node;
 	}
 
@@ -118,7 +124,7 @@ public:
 		if(node)
 			return *node;
 
-        node = (T*)singleton_register_instance(new T, &destroy, type, file, line);
+        node = (T*)singleton_register_instance(&create, &destroy, typeid(T).name(), file, line, false);
         return *node;
 	}
 
@@ -130,12 +136,14 @@ public:
 
     ///Local singleton constructor, use through LOCAL_SINGLETON macro
     singleton() {
-        _p = (T*)singleton_register_instance(new T, &destroy, 0, 0, 0);
+        _p = (T*)singleton_register_instance(&create, &destroy, typeid(T).name(), 0, 0, true);
     }
 
     ///Local singleton constructor, use through LOCAL_SINGLETON macro
     singleton(T* obj) {
-        _p = (T*)singleton_register_instance(obj, &destroy, 0, 0, 0);
+        _p = (T*)singleton_register_instance(
+            singleton_local_creator(obj),
+            &destroy, typeid(T).name(), 0, 0, true);
     }
 
     T* operator -> () { return _p; }
@@ -150,6 +158,10 @@ private:
 
     static void destroy(void* p) {
         delete (T*)p;
+    }
+
+    static void* create() {
+        return new T;
     }
 };
 
@@ -167,7 +179,7 @@ public:
         thread_key& ts = get_key();
         T* p = reinterpret_cast<T*>(ts.get());
         if(!p) {
-            p = (T*)singleton_register_instance(new T, &destroy, 0, 0, 0);
+            p = (T*)singleton_register_instance(&create, &destroy, typeid(T).name(), 0, 0, false);
             ts.set(p);
         }
         return *p;
@@ -175,12 +187,14 @@ public:
 
     ///Local thread singleton constructor, use through LOCAL_THREAD_SINGLETON macro
     thread_singleton() {
-        _tkey.set(singleton_register_instance(new T, &destroy, 0, 0, 0));
+        _tkey.set(singleton_register_instance(&create, &destroy, typeid(T).name(), 0, 0, true));
     }
 
     ///Local thread singleton constructor, use through LOCAL_THREAD_SINGLETON macro
     thread_singleton(T* obj) {
-        _tkey.set(singleton_register_instance(obj, &destroy, 0, 0, 0));
+        _tkey.set(singleton_register_instance(
+            singleton_local_creator(obj),
+            &destroy, typeid(T).name(), 0, 0, true));
     }
 
 
@@ -202,6 +216,9 @@ private:
 
     static void destroy(void* p) {
         delete static_cast<T*>(p);
+    }
+    static void* create() {
+        return new T;
     }
 };
 

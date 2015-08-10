@@ -127,7 +127,7 @@ public:
         fmtstreamnull fmt;
         metastream meta(fmt);
 
-        meta.stream_out(*that);
+        meta.xstream_in(*that);
     }
 
 

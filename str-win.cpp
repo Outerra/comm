@@ -117,9 +117,8 @@ struct zstring::zpool
         return str;
     }
 
-    static void destroy(void* p) {
-        delete static_cast<zstring::zpool*>(p);
-    }
+    static void destroy(void* p) { delete static_cast<zstring::zpool*>(p); }
+    static void* create() { return new zstring::zpool; }
 };
 
 zstring::zpool* zstring::global_pool()
@@ -145,9 +144,9 @@ zstring::zpool* zstring::thread_local_pool()
 zstring::zpool* zstring::local_pool()
 {
     return (zstring::zpool*)singleton_register_instance(
-        new zstring::zpool,
+        &zstring::zpool::create,
         &zstring::zpool::destroy,
-        0, 0, 0);
+        0, 0, 0, true);
 }
 
 

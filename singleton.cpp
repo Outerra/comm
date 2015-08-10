@@ -48,9 +48,48 @@ void memtrack_shutdown();
 
 
 ////////////////////////////////////////////////////////////////////////////////
-///Global singleton registrator
-struct global_singleton_manager
+static thread_key _t_creator_key;
+
+static void* local_creator()
 {
+    return _t_creator_key.get();
+}
+
+fn_singleton_creator singleton_local_creator( void* p )
+{
+    _t_creator_key.set(p);
+    return &local_creator;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+///Global singleton registrator
+class global_singleton_manager
+{
+    struct killer
+    {
+        void* ptr;
+        void (*fn_destroy)(void*);
+        token type;
+        const char* file;
+        int line;
+        bool invisible;
+
+        killer* next;
+
+        void destroy() {
+            fn_destroy(ptr);
+        }
+
+        killer( void* ptr, void (*fn_destroy)(void*), const token& type, const char* file, int line, bool invisible )
+            : ptr(ptr), fn_destroy(fn_destroy), type(type), file(file), line(line), invisible(invisible)
+        {
+            DASSERT(ptr);
+        }
+    };
+
+public:
+
     global_singleton_manager() : mx(500, false)
     {
         last = 0;
@@ -58,17 +97,27 @@ struct global_singleton_manager
         shutting_down = false;
     }
 
-    void add( void* ptr, void (*fn_destroy)(void*), const char* type, const char* file, int line )
+    void* find_or_add_singleton( fn_singleton_creator create, fn_singleton_destroyer destroy, const token& type, const char* file, int line, bool invisible )
     {
         RASSERT( !shutting_down );
-
         comm_mutex_guard<_comm_mutex> mxg(mx);
 
-        killer* k = new killer(ptr, fn_destroy, type, file, line);
-        k->next = last;
+        //look for singletons registered in different module
+        killer* k = invisible ? 0 : last;
+        while(k && (k->invisible || k->type != type))
+            k = k->next;
 
-        last = k;
-        ++count;
+        if(!k) {
+            k = new killer(create(), destroy, type, file, line, invisible);
+            k->next = last;
+
+            last = k;
+            ++count;
+        }
+
+        _t_creator_key.set(0);
+
+        return k->ptr;
     }
 
     void destroy()
@@ -109,24 +158,6 @@ struct global_singleton_manager
     static global_singleton_manager& get();
 
 private:
-    struct killer {
-        void* ptr;
-        void (*fn_destroy)(void*);
-        const char* type;
-        const char* file;
-        int line;
-
-        killer* next;
-
-        void destroy() {
-            fn_destroy(ptr);
-        }
-
-        killer( void* ptr, void (*fn_destroy)(void*), const char* type, const char* file, int line )
-            : ptr(ptr), fn_destroy(fn_destroy), type(type), file(file), line(line)
-        {}
-    };
-
     _comm_mutex mx;
     killer* last;
 
@@ -137,13 +168,14 @@ private:
 
 
 ////////////////////////////////////////////////////////////////////////////////
-void* singleton_register_instance( void* p, void (*fn_destroy)(void*),
-    const char* type, const char* file, int line )
+void* singleton_register_instance(
+    fn_singleton_creator fn_create,
+    fn_singleton_destroyer fn_destroy,
+    const char* type, const char* file, int line, bool invisible )
 {
     auto& gsm = global_singleton_manager::get();
 
-    gsm.add(p, fn_destroy, type, file, line);
-    return p;
+    return gsm.find_or_add_singleton(fn_create, fn_destroy, type, file, line, invisible);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -154,9 +186,6 @@ void singletons_destroy()
     memtrack_shutdown();
     gsm.destroy();
 }
-
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 //code for process-wide singletons
