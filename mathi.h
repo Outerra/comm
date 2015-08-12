@@ -153,7 +153,13 @@ inline uint64 align_value( uint64 val, uint64 size )
 inline uints align_offset( uints val, uints size )
 { return ((val+size-1)/size)*size; }
 
-
+/// Align pointer
+template<class T>
+inline T* align_ptr(T * ptr, const uints align = 0x10)
+{
+    return const_cast<T*>(reinterpret_cast<const T*>(
+        reinterpret_cast<const uchar*>(ptr)+align - (uints(ptr) & (align - 1))));
+}
 
 /// Aligns value to given chunk size (enlarges to next chunk boundary)
 inline uints align_to_chunks( uints uval, uints usize )
