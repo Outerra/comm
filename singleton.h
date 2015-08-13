@@ -99,58 +99,56 @@ void singletons_destroy();
 
 fn_singleton_creator singleton_local_creator( void* p );
 
+
+///This will run singleton_initialize_module() static method if T has one
+template< typename T>
+struct has_singleton_initialize_module_method
+{
+    // SFINAE foo-has-correct-sig
+    template<typename A>
+    static std::true_type test( void (A::*)() ) {
+        return std::true_type();
+    }
+
+    // SFINAE foo-exists
+    template <typename A>
+    static decltype(test(&A::singleton_initialize_module))
+    test( decltype(&A::singleton_initialize_module), void* ) {
+        // foo exists. check sig
+        typedef decltype(test(&A::singleton_initialize_module)) return_type;
+        return return_type();
+        //return std::true_type();
+    }
+
+    // SFINAE game over 
+    template<typename A>
+    static std::false_type test(...) {
+        return std::false_type(); 
+    }
+
+    // This will be either `std::true_type` or `std::false_type`
+    typedef decltype(test<T>(0,0)) type;
+
+    static const bool value = type::value;
+
+    static void evalfn(T* p, std::true_type) {
+        p->singleton_initialize_module();
+    }
+
+    static void evalfn(...){
+    }
+
+    static void eval( void* p ) {
+        evalfn(static_cast<T*>(p), type());
+    }
+};
+
+
 ////////////////////////////////////////////////////////////////////////////////
 ///Class for global and local singletons
 template <class T>
 class singleton
 {
-    /*! The template `has_void_foo_no_args_const<T>` exports a
-        boolean constant `value` that is true iff `T` provides
-        `void foo() const`
-
-        It also provides `static void eval(T const & t)`, which
-        invokes void `T::foo() const` upon `t` if such a public member
-        function exists and is a no-op if there is no such member.
-    */ 
-    template< typename T>
-    struct has_singleton_initialize_module_method
-    {
-        // SFINAE foo-has-correct-sig
-        template<typename A>
-        static std::true_type test(void (A::*)(void*)) {
-            return std::true_type();
-        }
-
-        // SFINAE foo-exists
-        template <typename A>
-        static decltype(test(&A::singleton_initialize_module))
-        test(decltype(&A::singleton_initialize_module),void *) {
-            // foo exists. check sig
-            typedef decltype(test(&A::singleton_initialize_module)) return_type;
-            return return_type();
-        }
-
-        // SFINAE game over 
-        template<typename A>
-        static std::false_type test(...) {
-            return std::false_type(); 
-        }
-
-        // This will be either `std::true_type` or `std::false_type`
-        typedef decltype(test<T>(0,0)) type;
-
-        static void evalfn(T* p, std::true_type) {
-            T::singleton_initialize_module(p);
-        }
-
-        static void evalfn(...){
-        }
-
-        static void eval( void* p ) {
-            evalfn(static_cast<T*>(p), type());
-        }
-    };
-
 public:
 
     static void init_module( void* p ) {

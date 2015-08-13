@@ -86,8 +86,6 @@ void* memaligned_alloc( size_t size, size_t alignment );
 void memaligned_free( void* p );
 uints memaligned_used();
 
-void dlmalloc_ensure_initialization();
-
 ////////////////////////////////////////////////////////////////////////////////
 template<class T>
 struct comm_allocator
@@ -107,12 +105,16 @@ struct comm_array_mspace
         ::destroy_mspace(msp);
     }
 
-    static void singleton_initialize_module(void*) {
+    void singleton_initialize_module() {
         dlmalloc_ensure_initialization();
     }
 
     ::mspace msp;
 };
+
+static_assert(
+    has_singleton_initialize_module_method<comm_array_mspace>::value != 0,
+    "error" );
 
 ////////////////////////////////////////////////////////////////////////////////
 template<class T>

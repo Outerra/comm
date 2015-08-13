@@ -525,6 +525,10 @@ void  dlmalloc_stats(void);
 */
 size_t dlmalloc_usable_size(const void*);
 
+
+void dlmalloc_ensure_initialization();
+
+
 #if MSPACES
 
 /*
