@@ -84,10 +84,12 @@ COID_NAMESPACE_BEGIN
 
 typedef void* (*fn_singleton_creator)();
 typedef void (*fn_singleton_destroyer)(void*);
+typedef void (*fn_singleton_initmod)(void*);    //< optional initialization of singleton in different module
 
 void* singleton_register_instance(
     fn_singleton_creator create,
     fn_singleton_destroyer destroy,
+    fn_singleton_initmod initmod,
     const char* type,
     const char* file,
     int line,
@@ -102,7 +104,59 @@ fn_singleton_creator singleton_local_creator( void* p );
 template <class T>
 class singleton
 {
+    /*! The template `has_void_foo_no_args_const<T>` exports a
+        boolean constant `value` that is true iff `T` provides
+        `void foo() const`
+
+        It also provides `static void eval(T const & t)`, which
+        invokes void `T::foo() const` upon `t` if such a public member
+        function exists and is a no-op if there is no such member.
+    */ 
+    template< typename T>
+    struct has_singleton_initialize_module_method
+    {
+        // SFINAE foo-has-correct-sig
+        template<typename A>
+        static std::true_type test(void (A::*)(void*)) {
+            return std::true_type();
+        }
+
+        // SFINAE foo-exists
+        template <typename A>
+        static decltype(test(&A::singleton_initialize_module))
+        test(decltype(&A::singleton_initialize_module),void *) {
+            // foo exists. check sig
+            typedef decltype(test(&A::singleton_initialize_module)) return_type;
+            return return_type();
+        }
+
+        // SFINAE game over 
+        template<typename A>
+        static std::false_type test(...) {
+            return std::false_type(); 
+        }
+
+        // This will be either `std::true_type` or `std::false_type`
+        typedef decltype(test<T>(0,0)) type;
+
+        static void evalfn(std::true_type) {
+            T::singleton_initialize_module();
+        }
+
+        static void evalfn(...){
+        }
+
+        static void eval() {
+            evalfn(type());
+        }
+    };
+
 public:
+
+    static void init_module( void* p ) {
+        has_singleton_initialize_module_method<T>::eval();
+    }
+
 
     //@return global singleton
 	static T& instance()
@@ -112,7 +166,9 @@ public:
 		if(node)
 			return *node;
 
-        node = (T*)singleton_register_instance(&create, &destroy, typeid(T).name(), 0, 0, false);
+        node = (T*)singleton_register_instance(
+            &create, &destroy, &init_module,
+            typeid(T).name(), 0, 0, false);
         return *node;
 	}
 
@@ -124,7 +180,12 @@ public:
 		if(node)
 			return *node;
 
-        node = (T*)singleton_register_instance(&create, &destroy, typeid(T).name(), file, line, false);
+        node = (T*)singleton_register_instance(
+            &create, &destroy, &init_module,
+            typeid(T).name(), file, line, false);
+
+        has_singleton_initialize_module_method<T>::eval();
+
         return *node;
 	}
 
@@ -136,14 +197,16 @@ public:
 
     ///Local singleton constructor, use through LOCAL_SINGLETON macro
     singleton() {
-        _p = (T*)singleton_register_instance(&create, &destroy, typeid(T).name(), 0, 0, true);
+        _p = (T*)singleton_register_instance(
+            &create, &destroy, &init_module,
+            typeid(T).name(), 0, 0, true);
     }
 
     ///Local singleton constructor, use through LOCAL_SINGLETON macro
     singleton(T* obj) {
         _p = (T*)singleton_register_instance(
-            singleton_local_creator(obj),
-            &destroy, typeid(T).name(), 0, 0, true);
+            singleton_local_creator(obj), &destroy, &init_module,
+            typeid(T).name(), 0, 0, true);
     }
 
     T* operator -> () { return _p; }
@@ -179,7 +242,9 @@ public:
         thread_key& ts = get_key();
         T* p = reinterpret_cast<T*>(ts.get());
         if(!p) {
-            p = (T*)singleton_register_instance(&create, &destroy, typeid(T).name(), 0, 0, false);
+            p = (T*)singleton_register_instance(
+                &create, &destroy, &singleton<T>::init_module,
+                typeid(T).name(), 0, 0, false);
             ts.set(p);
         }
         return *p;
@@ -187,14 +252,16 @@ public:
 
     ///Local thread singleton constructor, use through LOCAL_THREAD_SINGLETON macro
     thread_singleton() {
-        _tkey.set(singleton_register_instance(&create, &destroy, typeid(T).name(), 0, 0, true));
+        _tkey.set(singleton_register_instance(
+            &create, &destroy, &singleton<T>::init_module,
+            typeid(T).name(), 0, 0, true));
     }
 
     ///Local thread singleton constructor, use through LOCAL_THREAD_SINGLETON macro
     thread_singleton(T* obj) {
         _tkey.set(singleton_register_instance(
-            singleton_local_creator(obj),
-            &destroy, typeid(T).name(), 0, 0, true));
+            singleton_local_creator(obj), &destroy, &singleton<T>::init_module,
+            typeid(T).name(), 0, 0, true));
     }
 
 

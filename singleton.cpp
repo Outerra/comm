@@ -97,7 +97,11 @@ public:
         shutting_down = false;
     }
 
-    void* find_or_add_singleton( fn_singleton_creator create, fn_singleton_destroyer destroy, const token& type, const char* file, int line, bool invisible )
+    void* find_or_add_singleton(
+        fn_singleton_creator create,
+        fn_singleton_destroyer destroy,
+        fn_singleton_initmod initmod,
+        const token& type, const char* file, int line, bool invisible )
     {
         RASSERT( !shutting_down );
         comm_mutex_guard<_comm_mutex> mxg(mx);
@@ -114,6 +118,8 @@ public:
             last = k;
             ++count;
         }
+        else
+            initmod(k->ptr);
 
         _t_creator_key.set(0);
 
@@ -171,11 +177,17 @@ private:
 void* singleton_register_instance(
     fn_singleton_creator fn_create,
     fn_singleton_destroyer fn_destroy,
-    const char* type, const char* file, int line, bool invisible )
+    fn_singleton_initmod fn_initmod,
+    const char* type,
+    const char* file,
+    int line,
+    bool invisible )
 {
     auto& gsm = global_singleton_manager::get();
 
-    return gsm.find_or_add_singleton(fn_create, fn_destroy, type, file, line, invisible);
+    return gsm.find_or_add_singleton(
+        fn_create, fn_destroy, fn_initmod,
+        type, file, line, invisible);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
