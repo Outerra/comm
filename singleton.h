@@ -139,22 +139,22 @@ class singleton
         // This will be either `std::true_type` or `std::false_type`
         typedef decltype(test<T>(0,0)) type;
 
-        static void evalfn(std::true_type) {
-            T::singleton_initialize_module();
+        static void evalfn(T* p, std::true_type) {
+            T::singleton_initialize_module(p);
         }
 
         static void evalfn(...){
         }
 
-        static void eval() {
-            evalfn(type());
+        static void eval( void* p ) {
+            evalfn(static_cast<T*>(p), type());
         }
     };
 
 public:
 
     static void init_module( void* p ) {
-        has_singleton_initialize_module_method<T>::eval();
+        has_singleton_initialize_module_method<T>::eval(p);
     }
 
 
@@ -169,6 +169,7 @@ public:
         node = (T*)singleton_register_instance(
             &create, &destroy, &init_module,
             typeid(T).name(), 0, 0, false);
+
         return *node;
 	}
 
@@ -183,8 +184,6 @@ public:
         node = (T*)singleton_register_instance(
             &create, &destroy, &init_module,
             typeid(T).name(), file, line, false);
-
-        has_singleton_initialize_module_method<T>::eval();
 
         return *node;
 	}

@@ -146,6 +146,7 @@ zstring::zpool* zstring::local_pool()
     return (zstring::zpool*)singleton_register_instance(
         &zstring::zpool::create,
         &zstring::zpool::destroy,
+        0,
         0, 0, 0, true);
 }
 

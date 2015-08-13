@@ -118,7 +118,7 @@ public:
             last = k;
             ++count;
         }
-        else
+        else if(initmod)
             initmod(k->ptr);
 
         _t_creator_key.set(0);

@@ -5492,6 +5492,11 @@ mspace create_mspace_with_base(void* base, size_t capacity, int locked, size_t m
   return (mspace)m;
 }
 
+void dlmalloc_ensure_initialization()
+{
+    ensure_initialization();
+}
+
 int mspace_track_large_chunks(mspace msp, int enable) {
   int ret = 0;
   mstate ms = (mstate)msp;
