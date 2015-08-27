@@ -974,7 +974,7 @@ public:
     //@return -1 if not contained, otherwise index to the key
     //@{
     template<class K>
-    ints contains_backT( const K& key ) const
+    ints contains_back( const K& key ) const
     {
         uints c = _count();
         for(; c>0; )
