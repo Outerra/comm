@@ -73,7 +73,7 @@ class metagen //: public binstream
             if(!rules) {
                 uint c;
                 uint l = current_line(0, &c);
-                dst << infile << char('(') << l << char(':') << c << ") : ";
+                dst << infile << char('(') << l << ") : ";
             }
         }
 

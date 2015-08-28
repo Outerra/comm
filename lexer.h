@@ -1821,8 +1821,9 @@ public:
     }
 
     //@return lexception object to be thrown
-    lexception exc() const
+    lexception exc()
     {
+        append_exception_location();
         return lexception(_err, _errtext);
     }
 
