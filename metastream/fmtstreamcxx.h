@@ -569,8 +569,13 @@ public:
                         *(bool*)p = true;
                     else if( tok.cmpeqi("false") )
                         *(bool*)p = false;
-                    else
-                        return ersSYNTAX_ERROR "unexpected char";
+                    else {
+                        int64 num = tok.toint64_and_shift();
+                        *(bool*)p = num != 0;
+
+                        if(!tok.is_empty())
+                            return ersSYNTAX_ERROR "unexpected char";
+                    }
                 } break;
 
                 /////////////////////////////////////////////////////////////////////////////////////
