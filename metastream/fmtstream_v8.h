@@ -856,6 +856,10 @@ struct v8_streamer_context
         meta.bind_formatting_stream(fmtv8);
     }
 
+    ~v8_streamer_context() {
+        meta.stream_reset(true, false);
+    }
+
     void reset() {
         meta.stream_reset(true, false);
     }
