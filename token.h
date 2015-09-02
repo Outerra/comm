@@ -593,10 +593,10 @@ struct token
     }
 
     ///Find Unicode character
-    const char* find_utf8( ucs4 c )
+    const char* find_utf8( ucs4 c, bool icase=false ) const
     {
 	    if(c < 0x80)
-            return strchr((char)c);
+            return icase ? strichr((char)c) : strchr((char)c);
 
         uints offs=0;
 	    while( offs < len() )
@@ -1614,6 +1614,14 @@ struct token
             if( *p == c )
                 return p;
         }
+        return 0;
+    }
+
+    const char* strichr( char c, uints off=0 ) const
+    {
+        const char* p = _ptr + off;
+        for( ; p<_pte; ++p )
+            if(::tolower(*p) == c)  return p;
         return 0;
     }
 

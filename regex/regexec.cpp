@@ -210,7 +210,7 @@ token regex_program::regexec(
         if(checkstart) {
             switch(j->starttype) {
             case Reinst::RUNE: {
-                const char* p = s.find_utf8(j->startchar);
+                const char* p = s.find_utf8(j->startchar, icase);
                 if(p == 0)
                     return result;
                 s._ptr = p;
