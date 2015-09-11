@@ -233,7 +233,7 @@ opcd directory::copy_file( const zstring& src, const zstring& dst )
 
     fileiostream fsrc, fdst;
 
-    opcd e = fsrc.open(src);
+    opcd e = fsrc.open(src, "r");
     if(e)
         return e;
 
