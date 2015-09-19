@@ -212,11 +212,15 @@ public:
     template<typename T, typename D>
     metastream& member( const token& name, T& v, const D& defval )
     {
-        if(streaming())
+        if(_binw) {
             *this || *(typename resolve_enum<T>::type*)&v;
+        }
+        else if(_binr) {
+            if(!read_optional(v))
+                v = T(defval);
+        }
         else {
-            meta_variable<T>(name, &v);
-            meta_cache_default(T(defval));
+            meta_variable_optional<T>(name);
         }
         return *this;
     }
@@ -230,7 +234,8 @@ public:
     metastream& member( const token& name, T& v, const D& defval, bool write_default )
     {
         if(_binw) {
-            write_optional(!write_default && v == defval ? 0 : &v);
+            write_optional(!cache_prepared() && !write_default && v == defval
+                ? 0 : (typename resolve_enum<T>::type*)&v);
         }
         else if(_binr) {
             if(!read_optional(v))
@@ -327,7 +332,7 @@ public:
     {
         if(_binw) {
             T tmp(get());
-            write_optional(!write_default && tmp == defval ? 0 : &tmp);
+            write_optional(!cache_prepared() && !write_default && tmp == defval ? 0 : &tmp);
         }
         else if(_binr) {
             T val;
@@ -374,7 +379,7 @@ public:
     metastream& member_enum( const token& name, T& v, const T values[], const char* names[], const T& defval, bool write_default=true )
     {
         if(_binw) {
-            if(!write_default && v == defval)
+            if(!cache_prepared() && !write_default && v == defval)
                 write_optional((const char**)0);
             else {
                 int i=0;
@@ -468,7 +473,7 @@ public:
     {
         opcd e = movein_process_key(READ_MODE);
         if(!e) {
-            *this || val;
+            *this || *(typename resolve_enum<T>::type*)&val;
             return true;
         }
         else {
@@ -1368,6 +1373,7 @@ public:
 
         _current = _cachestack.push();
         _current->var = _curvar.var;
+        _current->olddef = _cachedefval;
         _current->buf = &_curvar.var->defval;
         _current->base = 0;
         _current->offs = 0;
@@ -1382,6 +1388,7 @@ public:
         *this || *(B*)&defval;
         _binw = false;
 
+        _cachedefval = _cachestack.last()->olddef;
         _cachestack.pop();
         _current = _cachestack.last();
 
@@ -1397,6 +1404,7 @@ public:
 
         _current = _cachestack.push();
         _current->var = _curvar.var;
+        _current->olddef = _cachedefval;
         _current->buf = &_curvar.var->defval;
         _current->base = 0;
         _current->offs = 0;
@@ -1417,6 +1425,7 @@ public:
         *this || def;
         _binw = false;
 
+        _cachedefval = _cachestack.last()->olddef;
         _cachestack.pop();
         _current = _cachestack.last();
 
@@ -1606,10 +1615,11 @@ private:
         uints offs;                     //< offset to the current entry in stored class table
         uints ofsz;                     //< offset to the count field (only for arrays)
         const MetaDesc::Var* var;
+        MetaDesc::Var* olddef;
         uints base;
 
         CacheEntry()
-            : buf(0), offs(UMAXS), ofsz(UMAXS), var(0), base(0)
+            : buf(0), offs(UMAXS), ofsz(UMAXS), var(0), olddef(0), base(0)
         {}
 
         uints size() const              { return buf->size(); }
@@ -1930,6 +1940,8 @@ protected:
 
         if(_current && _current->var == _curvar.var)
         {
+            if(_cachestack.last()->olddef)
+                _cachedefval = _cachestack.last()->olddef;
             _current = _cachestack.pop();
 
             if(_curvar.var == _cacheroot) {
@@ -2002,7 +2014,7 @@ protected:
         else if(_current)
         {
             if( _curvar.var == _cachedefval ) {
-                _cachedefval = 0;
+                _cachedefval = _cachestack.last()->olddef;
                 _current = _cachestack.pop();
                 if(_current) _current->next_offset();
             }
@@ -2528,6 +2540,8 @@ protected:
                         return ersMISMATCHED "elements left in cached array";
                 }
 
+                if(_cachestack.last()->olddef)
+                    _cachedefval = _cachestack.last()->olddef;
                 _current = _cachestack.pop();
             }
             else    //data reads
@@ -2863,6 +2877,7 @@ protected:
 
         _current = _cachestack.push();
         _current->var = _curvar.var;
+        _current->olddef = _cachedefval;
         _current->base = 0;
         _current->offs = 0;
         _current->buf = &_curvar.var->defval;
