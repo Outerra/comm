@@ -247,7 +247,7 @@ public:
 					}
 				}
 				else if (dir.is_entry_subdirectory()) {
-					directory::list_files(dir.get_last_full_path(), extension, f, recursive);
+					directory::list_file_paths(dir.get_last_full_path(), extension, recursive,f);
 				}
 			}
 		}
