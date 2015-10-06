@@ -218,7 +218,7 @@ public:
 	///Lists all files with extension (exstension = "*" if all files) in directory with path using func functor.
 	///if recursive is true, lists also subdirectories.
 	template<typename Func>
-	static void list_file_paths(const token& path, const token& extension, Func f, bool recursive = false){
+	static void list_file_paths( const token& path, const token& extension, bool recursive,Func f){
 		directory dir;
 		
 		if (recursive){
@@ -242,7 +242,7 @@ public:
 			}
 			else{
 				if (dir.is_entry_regular()){
-					if (extension == "*" || dir.get_last_file_name_token().cut_right_back('.').cmpeqi(extension)) {
+					if (extension == '*' || dir.get_last_file_name_token().cut_right_back('.').cmpeqi(extension)) {
 						f(dir.get_last_full_path());
 					}
 				}
