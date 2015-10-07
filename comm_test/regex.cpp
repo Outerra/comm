@@ -18,7 +18,7 @@ void regex_test()
 
     dynarray<token> sub;
     sub.need(4);
-    EASSERT( regex("([0-9]+)-([0-9]+)-([0-9]+)").find("acb628-x325-141-423-123", sub.ptr(), sub.size()) == "325-141-423" );
+    EASSERT( regex("([0-9]+)-([0-9]+)-([0-9]+)").find("acb628-x325-141-423-123", sub.ptr(), (uint)sub.size()) == "325-141-423" );
     EASSERT(sub[1] == "325");
     EASSERT(sub[2] == "141");
     EASSERT(sub[3] == "423");

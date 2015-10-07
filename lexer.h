@@ -1936,7 +1936,7 @@ protected:
     {
         //preserve old token position if there's no match
         const char* old = _tok.ptr();
-        uint oldstacksize = _stack.size();
+        uints oldstacksize = _stack.size();
 
         bool equals = _pushback
             ? _last == val

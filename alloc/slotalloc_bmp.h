@@ -79,8 +79,8 @@ public:
         return is_valid(id) ? id : -1;
     }
 
-    T* get_item(const uint id) { DASSERT(is_valid(id) && id < _items.size());  return _items.ptr() + id; }
-    const T* get_item(const uint id) const { DASSERT(is_valid(id) && id < _items.size());  return _items.ptr() + id; }
+    T* get_item(const uints id) { DASSERT(is_valid(id) && id < _items.size());  return _items.ptr() + id; }
+    const T* get_item(const uints id) const { DASSERT(is_valid(id) && id < _items.size());  return _items.ptr() + id; }
 
     bool is_valid(const uints id) const
     {
