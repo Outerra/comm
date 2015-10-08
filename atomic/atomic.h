@@ -199,10 +199,17 @@ namespace atomic {
 			reinterpret_cast<ints>(pcmp), 
 			reinterpret_cast<ints>(pval)));
 #elif defined(SYSTYPE_WIN)
+#if _MSC_VER < 1900
+        return reinterpret_cast<void*>(_InterlockedCompareExchange(
+            reinterpret_cast<volatile long *>(pdst),
+            reinterpret_cast<long>(pval),
+            reinterpret_cast<long>(pcmp)));
+#else
 		return reinterpret_cast<void*>(_InterlockedCompareExchangePointer(
 			pdst,
 			pval,
 			pcmp));
+#endif
 #endif
 	}
 
@@ -214,10 +221,17 @@ namespace atomic {
 			reinterpret_cast<ints>(pcmp), 
 			reinterpret_cast<ints>(pval));
 #elif defined(SYSTYPE_WIN)
+#if _MSC_VER < 1900
+        return _InterlockedCompareExchange(
+            reinterpret_cast<volatile long *>(pdst),
+            reinterpret_cast<long>(pval),
+            reinterpret_cast<long>(pcmp)) == reinterpret_cast<long>(pcmp);
+#else
 		return _InterlockedCompareExchangePointer(
 			pdst,
 			pval,
 			pcmp) == pcmp;
+#endif
 #endif
 	}
 
