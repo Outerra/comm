@@ -670,7 +670,7 @@ $-(/if)$
 
     v8::Handle<v8::External> map_ptr = v8::External::New(this);
     obj->SetInternalField(0, map_ptr);
-    v8::Handle<v8::External> hash_ptr = v8::External::New((void*)$hash$);
+    v8::Handle<v8::External> hash_ptr = v8::External::New((void*)ints($hash$));
     obj->SetInternalField(1, hash_ptr);
 
     if(make_weak) {

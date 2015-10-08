@@ -199,7 +199,7 @@ public:
     uint rand()
     {
         uint y;
-        static unsigned long mag01[2]={0x0UL, MATRIX_A};
+        static unsigned long mag01[2]={0x0UL, ulong(MATRIX_A)};
 
         if(_mti >= N) { // generate N words at one time */
             uint kk;
@@ -233,7 +233,7 @@ public:
     void nrand(uint n, uint *puout)
     {
         uint i, y;
-        static unsigned long mag01[2]={0x0UL, MATRIX_A};
+        static unsigned long mag01[2]={0x0UL, ulong(MATRIX_A)};
 
         for(i=0; i<n; ++i) {
             if(_mti >= N) { // generate N words at one time
