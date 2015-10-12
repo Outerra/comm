@@ -298,6 +298,7 @@
       <ForcedIncludeFiles>
       </ForcedIncludeFiles>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
