@@ -323,10 +323,31 @@ opcd directory::delete_file( const zstring& src )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::delete_directory( const zstring& src )
+opcd directory::delete_directory( const zstring& src, bool recursive )
 {
+    opcd firstError = NULL;
+    
+    list_file_paths(src, "*", true, [&firstError](const charstr& path, bool isDirectory) {
+        opcd result;
+        
+        if (isDirectory) {
+            result = delete_directory(path);
+        }
+        else {
+            result = delete_file(path);
+        }
+        
+        if ((firstError == NULL) && (result != opcd(0))) {
+            firstError = result;
+        }
+    });
+
+    if (firstError != NULL) {
+        return firstError;
+    }
+
 #ifdef SYSTYPE_MSVC
-    return 0 == _rmdir(src.c_str())  ?  opcd(0) : ersIO_ERROR;
+    return 0 == _rmdir(src.c_str()) ? opcd(0) : ersIO_ERROR;
 #else
     return 0 == rmdir(src.c_str()) ? opcd(0) : ersIO_ERROR;
 #endif

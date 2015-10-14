@@ -61,7 +61,7 @@ public:
 #ifdef SYSTYPE_MINGW
     typedef struct __stat64 xstat;
 #elif defined(SYSTYPE_MSVC)
-	typedef struct _stat64 xstat;
+    typedef struct _stat64 xstat;
 #else
     typedef struct stat64 xstat;
 #endif
@@ -71,37 +71,37 @@ public:
 
 
     ///Open directory for iterating files using the filter
-    opcd open( token path_and_pattern ) {
+    opcd open(token path_and_pattern) {
         token pattern = path_and_pattern;
         token path = pattern.cut_left_group_back("\\/", token::cut_trait_remove_sep_default_empty());
         return open(path, pattern);
     }
 
     ///Open directory for iterating files using the filter
-    opcd open( const token& path, const token& filter );
+    opcd open(const token& path, const token& filter);
 
     ///Open the current directory for iterating files using the filter
-    opcd open_cwd( const token& filter )
+    opcd open_cwd(const token& filter)
     {
         charstr path;
-        return open( get_cwd(path), filter );
+        return open(get_cwd(path), filter);
     }
     void close();
 
     //@return true if the character is allowed path separator
     //@note on windows it's both / and \ characters
-    static bool is_separator( char c )      { return c == '/'  ||  c == separator(); }
+    static bool is_separator(char c) { return c == '/' || c == separator(); }
 
     static char separator();
     static const char* separator_str();
-    static charstr& treat_trailing_separator( charstr& path, bool shouldbe )
+    static charstr& treat_trailing_separator(charstr& path, bool shouldbe)
     {
         char c = path.last_char();
-        if( is_separator(c) ) {
-            if(!shouldbe)  path.resize(-1);
+        if (is_separator(c)) {
+            if (!shouldbe)  path.resize(-1);
         }
-        else if(shouldbe && c!=0)   //don't add separator to an empty path, that would make it absolute
-            path.append( separator() );
+        else if (shouldbe && c != 0)   //don't add separator to an empty path, that would make it absolute
+            path.append(separator());
         return path;
     }
 
@@ -118,135 +118,136 @@ public:
     bool is_entry_subdirectory() const;     //< a directory, but not . or ..
     bool is_entry_regular() const;
 
-    static bool is_valid( const zstring& dir );
+    static bool is_valid(const zstring& dir);
 
     //@return true if path is a directory
-    static bool is_valid_directory( const zstring& arg );
+    static bool is_valid_directory(const zstring& arg);
 
-    static bool is_valid_file( const zstring& arg );
+    static bool is_valid_file(const zstring& arg);
 
-    static bool is_directory( ushort mode );
-    static bool is_regular( ushort mode );
+    static bool is_directory(ushort mode);
+    static bool is_regular(ushort mode);
 
-    static bool stat( const zstring& name, xstat* dst );
-    
-    static opcd mkdir( const zstring& name, uint mode=0750 );
+    static bool stat(const zstring& name, xstat* dst);
 
-    static opcd mkdir_tree( token name, bool last_is_file=false, uint mode=0750 );
+    static opcd mkdir(const zstring& name, uint mode = 0750);
 
-    static int chdir( const zstring& name );
+    static opcd mkdir_tree(token name, bool last_is_file = false, uint mode = 0750);
 
-    static opcd delete_directory( const zstring& src );
+    static int chdir(const zstring& name);
 
-    static opcd copy_file( const zstring& src, const zstring& dst );
+    static opcd delete_directory(const zstring& src, bool recursive = false);
 
-    static opcd move_file( const zstring& src, const zstring& dst );
+    static opcd copy_file(const zstring& src, const zstring& dst);
 
-    static opcd delete_file( const zstring& src );
+    static opcd move_file(const zstring& src, const zstring& dst);
+
+    static opcd delete_file(const zstring& src);
 
     ///delete multiple files using a pattern for file
-    static opcd delete_files( token path_and_pattern );
+    static opcd delete_files(token path_and_pattern);
 
     ///copy file to open directory
-    opcd copy_file_from( const token& src, const token& name=token() );
+    opcd copy_file_from(const token& src, const token& name = token());
 
-    opcd copy_file_to( const token& dst, const token& name=token() );
-    opcd copy_current_file_to( const token& dst );
+    opcd copy_file_to(const token& dst, const token& name = token());
+    opcd copy_current_file_to(const token& dst);
 
 
     ///move file to open directory
-    opcd move_file_from( const zstring& src, const token& name=token() );
+    opcd move_file_from(const zstring& src, const token& name = token());
 
-    opcd move_file_to( const zstring& dst, const token& name=token() );
-    opcd move_current_file_to( const zstring& dst );
+    opcd move_file_to(const zstring& dst, const token& name = token());
+    opcd move_current_file_to(const zstring& dst);
 
-    static opcd set_file_times( const zstring& fname, timet actime, timet modtime );
+    static opcd set_file_times(const zstring& fname, timet actime, timet modtime);
 
-    static opcd truncate( const zstring& fname, uint64 size );
+    static opcd truncate(const zstring& fname, uint64 size);
 
     //@{ tests and sets file write access flags
-    static bool is_writable( const zstring& fname );
-    static bool set_writable( const zstring& fname, bool writable );
+    static bool is_writable(const zstring& fname);
+    static bool set_writable(const zstring& fname, bool writable);
     //@}
 
     ///Get current working directory
-    static charstr& get_cwd( charstr& buf );
+    static charstr& get_cwd(charstr& buf);
 
     ///Get program executable directory
-    static charstr& get_ped( charstr& buf );
+    static charstr& get_ped(charstr& buf);
 
     ///Get temp directory
-    static charstr& get_tmp( charstr& buf );
+    static charstr& get_tmp(charstr& buf);
 
     ///Get current program file path
-    static charstr& get_program_path( charstr& buf );
+    static charstr& get_program_path(charstr& buf);
 
     ///Get user home directory
-    static charstr& get_home_dir( charstr& buf );
+    static charstr& get_home_dir(charstr& buf);
 
     ///Get relative path from src to dst
-    static bool get_relative_path( token src, token dst, charstr& relout );
+    static bool get_relative_path(token src, token dst, charstr& relout);
 
     ///Append \a path to the destination buffer
     //@param dst path to append to, also receives the result
     //@param path relative path to append; an absolute path replaces the content of dst
     //@param keep_below if true, only allows relative paths that cannot get out of the input path
-    static bool append_path( charstr& dst, token path, bool keep_below = false );
+    static bool append_path(charstr& dst, token path, bool keep_below = false);
 
-    static bool is_absolute_path( const token& path );
+    static bool is_absolute_path(const token& path);
 
     ///Remove nested ../ chunks, remove extra path separator characters
     //@param tosep replace separators with given character (usually '/' or '\\')
-    static bool compact_path( charstr& dst, char tosep=0 );
+    static bool compact_path(charstr& dst, char tosep = 0);
 
 
-    uint64 file_size() const                    { return _st.st_size; }
-    static uint64 file_size( const zstring& file );
+    uint64 file_size() const { return _st.st_size; }
+    static uint64 file_size(const zstring& file);
 
     ///Get next entry in the directory
-	const xstat* next();
+    const xstat* next();
 
-    const xstat* get_stat() const               { return &_st; }
+    const xstat* get_stat() const { return &_st; }
 
     ///After a successful call to next(), this function returns full path to the file
-    const charstr& get_last_full_path() const   { return _curpath; }
-    token get_last_dir() const                  { return token( _curpath.ptr(), _baselen ); }
+    const charstr& get_last_full_path() const { return _curpath; }
+    token get_last_dir() const { return token(_curpath.ptr(), _baselen); }
 
-    const char* get_last_file_name() const      { return _curpath.c_str() + _baselen; }
-    token get_last_file_name_token() const      { return token(_curpath.c_str()+_baselen,_curpath.len()-_baselen); }
+    const char* get_last_file_name() const { return _curpath.c_str() + _baselen; }
+    token get_last_file_name_token() const { return token(_curpath.c_str() + _baselen, _curpath.len() - _baselen); }
 
-	///Lists all files with extension (exstension = "*" if all files) in directory with path using func functor.
-	///if recursive is true, lists also subdirectories.
-	template<typename Func>
-	static void list_file_paths( const token& path, const token& extension, bool recursive, Func fn){
-		directory dir;
+    ///Lists all files with extension (exstension = "*" if all files) in directory with path using func functor.
+    ///if recursive is true, lists also subdirectories.
+    template<typename Func>
+    static void list_file_paths(const token& path, const token& extension, bool recursive, Func fn) {
+        directory dir;
 
-        if(recursive) {
-            if(dir.open(path, "*.*") != ersNOERR)
+        if (recursive) {
+            if (dir.open(path, "*.*") != ersNOERR)
                 return;
         }
         else {
             coid::charstr filter = "*.";
             filter << extension;
-            if(dir.open(path, filter) != ersNOERR)
+            if (dir.open(path, filter) != ersNOERR)
                 return;
         }
 
-        while(dir.next()) {
-            if(!recursive) {
-                if(dir.is_entry_regular())
-                    fn(dir.get_last_full_path());
-            }
-            else {
-                if(dir.is_entry_regular()) {
-                    if(extension == '*' || dir.get_last_file_name_token().cut_right_back('.').cmpeqi(extension))
-                        fn(dir.get_last_full_path());
+        while (dir.next()) {
+            if (dir.is_entry_regular()) {
+
+                if ((!recursive) || (extension == '*') || dir.get_last_file_name_token().cut_right_back('.').cmpeqi(extension)) {
+                    fn(dir.get_last_full_path(), false);
                 }
-                else if(dir.is_entry_subdirectory())
-					directory::list_file_paths(dir.get_last_full_path(), extension, recursive, fn);
+            }
+            else if (dir.is_entry_subdirectory()) {
+                if (recursive) {
+                    directory::list_file_paths(dir.get_last_full_path(), extension, recursive, fn);
+                }
+
+                fn(dir.get_last_full_path(), true);
             }
         }
-	}
+    }
 
 private:
     charstr     _curpath;
@@ -257,7 +258,7 @@ private:
 #ifdef SYSTYPE_MSVC
     ints        _handle;
 #else
-	DIR*        _dir;
+    DIR*        _dir;
 #endif
 
 };
