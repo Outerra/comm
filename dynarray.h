@@ -190,7 +190,7 @@ binstream& operator >> (binstream&, dynarray<T,COUNT,A>& );
 //@param A array allocator to use
 //@param COUNT count type, also restricts maximum array size. Mainly used to have arrays
 /// that return 32bit uint types and stream compatibly with 32bit apps
-template< class T, class COUNT=uints, class A=comm_array_allocator<T> >
+template< class T, class COUNT=uints, class A=comm_array_allocator>
 class dynarray
 {
     uints _count() const        { return A::count(_ptr); }
@@ -210,6 +210,7 @@ public:
 
     typedef T                   value_type;
     typedef COUNT               count_t;
+    typedef A                   allocator_type;
 
     COIDNEWDELETE("dynarray");
 
@@ -462,9 +463,9 @@ public:
             if( nalloc < 2*n )
                 nalloc = 2*n;
 
-            A::free(_ptr);
+            A::free<T>(_ptr);
 
-            _ptr = A::alloc(nalloc);
+            _ptr = A::alloc<T>(nalloc);
         }
 
         if(nitems) {
@@ -497,9 +498,8 @@ public:
             if( nalloc < 2*n )
                 nalloc = 2*n;
 
-            A::free(_ptr);
-
-            _ptr = A::alloc(nalloc);
+            A::free<T>(_ptr);
+            _ptr = A::alloc<T>(nalloc);
         }
 
         if(nitems) {
@@ -1282,7 +1282,7 @@ public:
     void discard() {
         if(_ptr) {
             _destroy();
-            A::free(_ptr);
+            A::free<T>(_ptr);
             _ptr=0;
         }
     }
@@ -1357,7 +1357,7 @@ private:
             nalloc = 2 * oldsize;
 
         T* op = _ptr;
-        _ptr = A::realloc(_ptr, nalloc);
+        _ptr = A::realloc<T>(_ptr, nalloc);
         _set_count(newsize);
 
         if( !type_trait<T>::trivial_moving_constr  &&  op != _ptr )
@@ -1369,27 +1369,14 @@ private:
         return nalloc;
     }
 
-protected:
     ///Add \a nitems of elements on the end but do not initialize them with default constructor
-    /** @param nitems count of items to add
-        @param toones fill memory with ones (true) or zeros (false) before calling default constructor of element
-        @return pointer to the first added element */
+    //@param nitems count of items to add
+    //@return pointer to the first added element
     T* addnc( uints nitems )
     {
         uints n = _count();
-        DASSERT( n+nitems <= count_t(-1) );
+        _ptr = A::add(_ptr, nitems);
 
-        if(!nitems)
-            return _ptr + n;
-
-        uints nto = nitems + n;
-        uints nalloc = nto;
-        _assert_allowed_size(nto);
-
-        if( nalloc*sizeof(T) > _size() )
-            nalloc = _realloc(nalloc, n);
-
-        _set_count(nto);
         return _ptr + n;
     };
 };

@@ -60,8 +60,10 @@ allocation can return one of these without having to call the constructor. This 
 their own memory buffers and it's desirable to avoid unnecessary freeing and allocations there as well. Obviously,
 care must be taken to initialize the initial state of allocated objects in this mode.
 All objects are destroyed with the destruction of the allocator object.
+
+@param POOL if true, do not call destructors on item deletion, only on container deletion
 **/
-template<class T>
+template<class T, bool POOL=false>
 class slotalloc
 {
 public:
@@ -69,35 +71,62 @@ public:
     void reset()
     {
         //destroy occupied slots
-        if(!_pool)
+        if(!POOL)
             for_each([](T& p) {destroy(p);});
 
         _count = 0;
+
+        _relarrays.for_each([&](relarray& ra) {
+            ra.set_count(0);
+        });
+
         _array.set_size(0);
         _allocated.set_size(0);
     }
 
     ///Construct slotalloc container
     //@param pool true for pool mode, in which removed objects do not have destructors invoked
-    slotalloc( bool pool = false ) : _count(0), _pool(pool)
+    slotalloc() : _count(0)
     {}
 
     ~slotalloc() {
-        if(!_pool)
+        if(!POOL)
             reset();
+    }
+
+    ///Append related array of type R which will be managed alongside the main array of type T
+    //@return array index
+    //@note types aren't initialized when allocated
+    template<typename R>
+    uints append_relarray() {
+        uints idx = _relarrays.size();
+        auto p = _relarrays.add();
+        p->elemsize = sizeof(T);
+        return idx;
+    }
+
+    //@return value from related array
+    template<typename R>
+    R* value( const T* v, uints index ) const {
+        return reinterpret_cast<R*>(_relarrays[index].item(get_item_id(v)));
     }
 
     void swap( slotalloc<T>& other ) {
         _array.swap(other._array);
         _allocated.swap(other._allocated);
         std::swap(_count, other._count);
-        std::swap(_pool, other._pool);
+
+        _relarrays.swap(other._relarrays);
     }
 
     //@return byte offset to the newly rebased array
     ints reserve( uint nitems ) {
         T* old = _array.ptr();
         T* p = _array.reserve(nitems, true);
+
+        _relarrays.for_each([&](relarray& ra) {
+            ra.reserve(nitems);
+        });
 
         return (uints)p - (uints)old;
     }
@@ -107,7 +136,7 @@ public:
     T* push( const T& v ) {
         if(_count < _array.size()) {
             T* p = alloc(0);
-            if(_pool) destroy(*p);
+            if(POOL) destroy(*p);
             return new(p) T(v);
         }
         return new(append()) T(v);
@@ -116,7 +145,7 @@ public:
     ///Add new object initialized with default constructor
     T* add() {
         return _count < _array.size()
-            ? (_pool ? alloc(0) : new(alloc(0)) T)
+            ? (POOL ? alloc(0) : new(alloc(0)) T)
             : new(append()) T;
     }
 
@@ -124,7 +153,7 @@ public:
     T* add_uninit() {
         if(_count < _array.size()) {
             T* p = alloc(0);
-            if(_pool) destroy(*p);
+            if(POOL) destroy(*p);
             return p;
         }
         return append();
@@ -146,7 +175,7 @@ public:
 
         DASSERT( get_bit(id) );
 
-        if(!_pool)
+        if(!POOL)
             p->~T();
         clear_bit(id);
         --_count;
@@ -180,7 +209,14 @@ public:
             return _array.ptr() + id;
         }
 
-        _array.add(id+1 - _array.size());
+        uints n = id+1 - _array.size();
+
+        _relarrays.for_each([&](relarray& ra) {
+            DASSERT( ra.count() == _count );
+            ra.add(n);
+        });
+
+        _array.add(n);
 
         set_bit(id);
         ++_count;
@@ -282,7 +318,37 @@ private:
     dynarray<T> _array;
     dynarray<uints> _allocated;     //< bit mask for allocated/free items
     uints _count;
-    bool _pool;                     //< if true, do not call destructors on deletion
+
+    ///Related data array that's maintained together with the main one
+    struct relarray {
+        void* data;                 //< dynarray-conformant pointer
+        uint elemsize;              //< element size
+
+        relarray() : data(0), elemsize(0)
+        {}
+
+        uints count() const { return comm_array_allocator::count(data); }
+
+        void set_count( uints n ) {
+            comm_array_allocator::set_count(data, n);
+        }
+        
+        void add( uints n ) {
+            data = comm_array_allocator::add(data, n, elemsize);
+        }
+
+        void reserve( uints n ) {
+            uints curn = comm_array_allocator::count(data);
+            comm_array_allocator::realloc(data, n, elemsize);
+            comm_array_allocator::set_count(data, curn);
+        }
+
+        void* item( uints index ) const {
+            return (uint8*)data + index * elemsize;
+        }
+    };
+
+    dynarray<relarray> _relarrays;  //< related data arrays
 
     ///Return allocated slot
     T* alloc( uints* id )
@@ -312,7 +378,15 @@ private:
     T* append()
     {
         DASSERT( _count == _array.size() );
-        set_bit(_count++);
+        set_bit(_count);
+
+        _relarrays.for_each([&](relarray& ra) {
+            DASSERT( ra.count() == _count );
+            ra.add(1);
+        });
+
+        ++_count;
+
         return _array.add_uninit(1);
     }
 

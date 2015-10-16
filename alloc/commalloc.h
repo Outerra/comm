@@ -117,7 +117,6 @@ static_assert(
     "error" );
 
 ////////////////////////////////////////////////////////////////////////////////
-template<class T>
 struct comm_array_allocator
 {
     COIDNEWDELETE("comm_array_allocator");
@@ -127,61 +126,104 @@ struct comm_array_allocator
         SINGLETON(comm_array_mspace);
     }
 
-    static T* alloc( uints n ) {
-        uints* p = (uints*)::mspace_malloc(SINGLETON(comm_array_mspace).msp,
-            sizeof(uints) + n * sizeof(T));
+    ///Typed array alloc
+    template<class T>
+    static T* alloc( uints n ) { return (T*)alloc(n, sizeof(T), typeid(T).name()); }
 
-        MEMTRACK_ALLOC(typeid(T).name(), ::mspace_usable_size(p));
+    ///Typed array realloc
+    template<class T>
+    static T* realloc( const T* p, uints n ) { return (T*)realloc(p, n, sizeof(T), typeid(T).name()); }
+
+    ///Typed array add
+    template<class T>
+    static T* add( const T* p, uints n ) { return (T*)add(p, n, sizeof(T), typeid(T).name()); }
+
+    ///Typed array free
+    template<class T>
+    static void free( const T* p ) { return free(p, typeid(T).name()); }
+
+
+
+    ///Untyped array alloc
+    static void* alloc( uints n, uints elemsize, const char* trackname = "comm_array_allocator.untyped" ) {
+        uints* p = (uints*)::mspace_malloc(SINGLETON(comm_array_mspace).msp,
+            sizeof(uints) + n * elemsize);
+
+        MEMTRACK_ALLOC(trackname, ::mspace_usable_size(p));
 
         if(!p) throw std::bad_alloc();
         p[0] = n;
-        return (T*) (p + 1);
+        return p + 1;
     }
 
-    static T* realloc( T* p, uints n ) {
+    ///Untyped array realloc
+    static void* realloc( const void* p, uints n, uints elemsize, const char* trackname = "comm_array_allocator.untyped" ) {
 
         if(!p)
-            return alloc(n);
-        
-        MEMTRACK_FREE(typeid(T).name(), ::mspace_usable_size((uints*)p - 1));
+            return alloc(n, elemsize, trackname);
+
+        MEMTRACK_FREE(trackname, ::mspace_usable_size((uints*)p - 1));
 
         uints* pn = (uints*)::mspace_realloc(SINGLETON(comm_array_mspace).msp,
             p ? (uints*)p - 1 : 0,
-            sizeof(uints) + n * sizeof(T));
-		/*if(pn==0) {
-			pn = (uints*)::mspace_realloc(SINGLETON(comm_array_mspace).msp,
-				p ? (uints*)p - 1 : 0,
-				sizeof(uints) + n * sizeof(T));
-		}*/
+            sizeof(uints) + n * elemsize);
         if(!pn) throw std::bad_alloc();
 
-        MEMTRACK_ALLOC(typeid(T).name(), ::mspace_usable_size(pn));
+        MEMTRACK_ALLOC(trackname, ::mspace_usable_size(pn));
 
         pn[0] = n;
-        return (T*) (pn + 1);
+        return pn + 1;
     }
 
-    static void free( T* p ) {
+    ///Untyped array free
+    static void free( const void* p, const char* trackname = "comm_array_allocator.untyped" ) {
         if(!p)  return;
 
-        MEMTRACK_FREE(typeid(T).name(), ::mspace_usable_size((uints*)p - 1));
+        MEMTRACK_FREE(trackname, ::mspace_usable_size((uints*)p - 1));
         ::mspace_free(SINGLETON(comm_array_mspace).msp, (uints*)p - 1);
     }
 
+    ///Untyped uninitialized add
+    //@return pointer to array
+    static void* add( const void* p, uints nitems, uints elemsize, const char* trackname = "comm_array_allocator.untyped" )
+    {
+        uints n = count(p);
+        DASSERT( n+nitems <= UMAXS );
 
-    static uints size( T* p ) {
+        if(!nitems)
+            return const_cast<void*>(p);
+
+        uints nto = nitems + n;
+        uints nalloc = nto;
+        uints s = size(p);
+
+        void* np = const_cast<void*>(p);
+
+        if(nalloc*elemsize > s) {
+            if( nalloc < 2 * n )
+                nalloc = 2 * n;
+
+            np = realloc(p, nalloc, elemsize, trackname);
+        }
+
+        set_count(np, nto);
+        return np;
+    };
+
+
+    static uints size( const void* p ) {
         return p
-            ? (dlmalloc_usable_size( (uints*)p - 1 ) - sizeof(uints))
+            ? (dlmalloc_usable_size( (const uints*)p - 1 ) - sizeof(uints))
             : 0;
     }
 
-    static uints count( T* p ) {
+    static uints count( const void* p ) {
         return p
-            ? *((uints*)p - 1)
+            ? *((const uints*)p - 1)
             : 0;
     }
 
-    static uints set_count( T* p, uints n )
+    static uints set_count( const void* p, uints n )
     {
         *((uints*)p - 1) = n;
         return n;

@@ -96,11 +96,11 @@ struct binstream_container_with_malloc : binstream_containerT<T>
         T* p;
         if(!_ptr)
         {
-            p = _ptr = comm_array_allocator<T>::alloc(n);
+            p = _ptr = comm_array_allocator::alloc<T>(n);
         }
         else
         {
-            _ptr = comm_array_allocator<T>::realloc( _ptr, _n+n );
+            _ptr = comm_array_allocator::realloc<T>(_ptr, _n+n);
             p = _ptr + _n;
         }
 
