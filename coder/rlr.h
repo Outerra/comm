@@ -361,7 +361,6 @@ private:
             dataidx = 0;
 
             buf.reset();
-            buf.reserve(256, false);
             this->plane = plane;
         }
 
@@ -371,7 +370,7 @@ private:
 
         uints write_to( binstream& bin )
         {
-            uint totalbits = uint((buf.byte_size() + dataidx*sizeof(RUINT))*8 + dbit);
+            uint64 totalbits = (buf.byte_size() + dataidx*sizeof(RUINT))*8ULL + dbit;
             
             if(dbit > 0) {
                 databuf[dataidx++] = data;
@@ -383,8 +382,12 @@ private:
                 dataidx = 0;
             }
 
-            bin << totalbits;
-            uints bytes = align_to_chunks(totalbits, 8);
+            DASSERT( totalbits <= UMAX32 );
+
+            bin << (uint)totalbits;
+            uints bytes = align_to_chunks((uints)totalbits, 8);
+
+            DASSERT( buf.byte_size() >= bytes );
             bin.xwrite_raw(buf.ptr(), bytes);
 
             return bytes;
@@ -408,6 +411,7 @@ private:
         }
 
         rlr_bitplane() {
+            buf.reserve(1024, false);
         }
 
         ///Read raw bits from stream
@@ -511,7 +515,7 @@ private:
         void write_bits( RUINT v, uint nbits )
         {
             DASSERT( (v & ~((1<<nbits)-1)) == 0 );
-            DASSERT( dbit==32 || (data & ~((1<<dbit)-1)) == 0 );
+            DASSERT( dbit==NBITS || (data & ~((1<<dbit)-1)) == 0 );
 
             uint nb = NBITS - dbit;
             if(nbits > nb) {
