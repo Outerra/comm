@@ -467,5 +467,8 @@
     <ClCompile Include="..\..\..\alloc\slotalloc_bmp.cpp">
       <Filter>alloc</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\binstream\stdstream.cpp">
+      <Filter>cxx</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

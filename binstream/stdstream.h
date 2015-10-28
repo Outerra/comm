@@ -64,12 +64,19 @@ public:
     virtual void flush()
     {
         txtstream::flush();
+        binstreambuf& buf = *get_read_buffer();
 
-        token t = *get_read_buffer();
+#if defined(SYSTYPE_WIN) && !defined(_CONSOLE)
+        *(char*)buf.add_raw(1) = 0;
+        win_debug_out(buf.get_buf().ptr());
+#endif
+        token t = buf;
 
-        fwrite( t.ptr(), 1, t.len(), stdout );
+        fwrite(t.ptr(), 1, t.len(), stdout);
         reset_write();
     }
+
+    void win_debug_out( const char* );
 };
 
 COID_NAMESPACE_END

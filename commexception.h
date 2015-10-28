@@ -43,10 +43,14 @@
 #include "str.h"
 #include "dbg_location.h"
 
+#include <exception>
+
 COID_NAMESPACE_BEGIN
 
-struct exception
+struct exception : public std::exception
 {
+    virtual ~exception() {}
+
     explicit exception( const char* stext )
         : _stext(stext)
     {}
@@ -69,6 +73,9 @@ struct exception
 	explicit exception(const debug::location &loc)
         : _location(loc)
     {}
+
+    virtual const char* what() const { return c_str(); }
+
 
     TOKEN_OP_STR_NONCONST(exception&, <<)
     exception& operator << (const token& tok)   { S2D(); _dtext += (tok);   return *this; }

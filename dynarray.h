@@ -675,6 +675,18 @@ public:
         return addnc(n);
     }
 
+    ///Add, throwing exception if the array rebases
+    T* add_norebase( uints n=1 )
+    {
+        T* oldbase = _ptr;
+        T* p = add(n);
+
+        if(oldbase != _ptr)
+            throw exception() << "array rebased";
+
+        return p;
+    }
+
     ///Add n new elements on position where key would be inserted.
     /// Uses either operator T<T or a functor(T,T)
     /// add_sortT() can use a different key type than T, provided an operator T<K exists, or functor(T,K) was provided.
