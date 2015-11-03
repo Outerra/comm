@@ -73,6 +73,10 @@ static void write_console_text( const charstr& text, int type )
     }
 
     fwrite(text.ptr(), 1, text.len(), stdout);
+
+#ifdef _DEBUG
+    stdoutstream::debug_out(text.c_str());
+#endif
 }
 
 #else
