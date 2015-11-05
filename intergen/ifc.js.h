@@ -107,11 +107,16 @@ struct script_handle
     {
         if(path.first_char() != '/' && path.first_char() != '\\')
         {
+#ifdef V8_MAJOR_VERSION
+            v8::Local<v8::StackTrace> trace = v8::StackTrace::CurrentStackTrace(v8::Isolate::GetCurrent(),
+                frame+1, v8::StackTrace::kScriptName);
+#else
             v8::Local<v8::StackTrace> trace = v8::StackTrace::CurrentStackTrace(frame+1, v8::StackTrace::kScriptName);
+#endif
             if((int)frame >= trace->GetFrameCount())
                 return 1;
 
-            v8::String::AsciiValue uber(trace->GetFrame(frame)->GetScriptName());
+            v8::String::Utf8Value uber(trace->GetFrame(frame)->GetScriptName());
 
             if(!path)
                 dst = coid::token(*uber, uber.length());
@@ -123,11 +128,16 @@ struct script_handle
         }
         else {
             if(!root) {
+#ifdef V8_MAJOR_VERSION
+                v8::Local<v8::StackTrace> trace = v8::StackTrace::CurrentStackTrace(v8::Isolate::GetCurrent(),
+                    frame+1, v8::StackTrace::kScriptName);
+#else
                 v8::Local<v8::StackTrace> trace = v8::StackTrace::CurrentStackTrace(frame+1, v8::StackTrace::kScriptName);
+#endif
                 if((int)frame >= trace->GetFrameCount())
                     return 1;
 
-                v8::String::AsciiValue uber(trace->GetFrame(frame)->GetScriptName());
+                v8::String::Utf8Value uber(trace->GetFrame(frame)->GetScriptName());
                 dst = coid::token(*uber, uber.length()).cut_left_group_back("\\/");
             }
             else
@@ -146,10 +156,17 @@ struct script_handle
     ///Load and run script
     v8::Handle<v8::Script> load_script()
     {
+#ifdef V8_MAJOR_VERSION
+        v8::EscapableHandleScope scope(v8::Isolate::GetCurrent());
+        v8::Handle<v8::Context> context = has_context()
+            ? _context
+            : v8::Context::New(v8::Isolate::GetCurrent());
+#else
         v8::HandleScope scope;
         v8::Handle<v8::Context> context = has_context()
             ? _context
             : v8::Context::New();
+#endif
     
         v8::Context::Scope context_scope(context);
 
@@ -180,13 +197,24 @@ struct script_handle
             script_path = "";
         }
 
+#ifdef V8_MAJOR_VERSION
+        v8::Local<v8::String> scriptv8 = v8::String::NewFromUtf8(v8::Isolate::GetCurrent(),
+            script_tok.ptr(), v8::String::kNormalString, script_tok.len());
+#else
         v8::Local<v8::String> scriptv8 = v8::String::New(script_tok.ptr(), script_tok.len());
+#endif
 
         // set up an error handler to catch any exceptions the script might throw.
         v8::TryCatch __trycatch;
 
+#ifdef V8_MAJOR_VERSION
+        v8::Handle<v8::Script> compiled_script =
+            v8::Script::Compile(scriptv8, v8::String::NewFromUtf8(v8::Isolate::GetCurrent(),
+                script_path.ptr(), v8::String::kNormalString, script_path.len()));
+#else
         v8::Handle<v8::Script> compiled_script =
             v8::Script::Compile(scriptv8, v8::String::New(script_path.ptr(), script_path.len()));
+#endif
         if(__trycatch.HasCaught())
             throw_js_error(__trycatch);
 
@@ -194,14 +222,22 @@ struct script_handle
         if(__trycatch.HasCaught())
             throw_js_error(__trycatch);
 
+#ifdef V8_MAJOR_VERSION
+        return scope.Escape(compiled_script);
+#else
         return scope.Close(compiled_script);
+#endif
     }
 
 public:
 
     static void throw_js_error( v8::TryCatch& tc, const coid::zstring& str = 0 )
     {
+#ifdef V8_MAJOR_VERSION
+        v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
+#else
         v8::HandleScope handle_scope;
+#endif
         v8::String::Utf8Value exc(tc.Exception());
 
         v8::Handle<v8::Message> message = tc.Message();
@@ -278,17 +314,25 @@ inline T* unwrap_object( const v8::Handle<v8::Value> &arg )
 ////////////////////////////////////////////////////////////////////////////////
 inline v8::Handle<v8::Value> wrap_object( intergen_interface* orig, v8::Handle<v8::Context> context )
 {
+#ifdef V8_MAJOR_VERSION
+    if(!orig) return v8::Null(v8::Isolate::GetCurrent());
+    v8::EscapableHandleScope handle_scope(v8::Isolate::GetCurrent());
+#else
     if(!orig) return v8::Null();
-
-    v8::HandleScope hs;
+    v8::HandleScope handle_scope;
+#endif
 
     typedef v8::Handle<v8::Value> (*fn_wrapper)(intergen_interface*, v8::Handle<v8::Context>);
     fn_wrapper fn = static_cast<fn_wrapper>(orig->intergen_wrapper_js());
 
     if(fn)
-        return hs.Close(fn(orig, context));
-
+#ifdef V8_MAJOR_VERSION
+        return handle_scope.Escape(fn(orig, context));
+    return v8::Undefined(v8::Isolate::GetCurrent());
+#else
+        return handle_scope.Close(fn(orig, context));
     return v8::Undefined();
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -296,12 +340,21 @@ inline bool bind_object( const coid::token& bindname, intergen_interface* orig, 
 {
     if(!orig) return false;
 
-    v8::HandleScope hs;
+#ifdef V8_MAJOR_VERSION
+    v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
+#else
+    v8::HandleScope handle_scope;
+#endif
 
     typedef v8::Handle<v8::Value> (*fn_wrapper)(intergen_interface*, v8::Handle<v8::Context>);
     fn_wrapper fn = static_cast<fn_wrapper>(orig->intergen_wrapper_js());
 
+#ifdef V8_MAJOR_VERSION
+    return fn && context->Global()->Set(v8::String::NewFromOneByte(v8::Isolate::GetCurrent(),
+        (const uint8*)bindname.ptr(), v8::String::kNormalString, bindname.len()), fn(orig, context));
+#else
     return fn && context->Global()->Set(v8::String::New(bindname.ptr(), bindname.len()), fn(orig, context));
+#endif
 }
 
 } //namespace js

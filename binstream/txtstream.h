@@ -383,6 +383,14 @@ public:
         _binw = bw ? bw : _binr;
     }
 
+    void destroy_internal_buffer()
+    {
+        if(_binr == _readbuf.ptr()) _binr = 0;
+        if(_binw == _readbuf.ptr()) _binw = 0;
+
+        _readbuf.eject();
+    }
+
     txtstream (binstream& b) : _binr(&b), _binw(&b)
     {   _flush = "";  _autoflush=0; }
     txtstream (binstream* br, binstream* bw=0) : _binr(br), _binw(bw == 0 ? br : bw)
