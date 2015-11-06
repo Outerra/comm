@@ -47,6 +47,50 @@
 #include "metastream.h"
 #include "../str.h"
 
+
+namespace v8 {
+
+#ifdef V8_MAJOR_VERSION
+
+    inline v8::Local<v8::String> symbol( const coid::token& tok ) {
+        return String::NewFromOneByte(Isolate::GetCurrent(), (const uint8*)tok.ptr(), String::kInternalizedString, tok.len());
+    }
+
+    inline v8::Local<v8::String> string_utf8( const coid::token& tok ) {
+        return String::NewFromUtf8(Isolate::GetCurrent(), tok.ptr(), String::kNormalString, tok.len());
+    }
+
+    template<class T>
+    inline auto new_object() -> decltype(T::New(v8::Isolate::GetCurrent())) {
+        return T::New(v8::Isolate::GetCurrent());
+    }
+
+    template<class T, class P1>
+    inline auto new_object( const P1& p1 ) -> decltype(T::New(v8::Isolate::GetCurrent(), p1)) {
+        return T::New(v8::Isolate::GetCurrent(), p1);
+    }
+
+#else
+
+    inline v8::Local<v8::String> symbol( const coid::token& tok ) {
+        return String::NewSymbol(tok.ptr(), tok.len());
+    }
+
+    inline v8::Local<v8::String> string_utf8( const coid::token& tok ) {
+        return String::New(tok.ptr(), tok.len());
+    }
+
+    template<class T>
+    inline auto new_object() -> decltype(T::New()) { return T::New(); }
+
+    template<class T, class P1>
+    inline auto new_object( const P1& p1 ) -> decltype(T::New(p1)) { return T::New(p1); }
+
+#endif
+
+} //namespace v8
+
+
 //@file formatting stream for V8 javascript engine
 
 COID_NAMESPACE_BEGIN
@@ -68,23 +112,11 @@ public:
 
 //@{ Fast v8_streamer specializations for base types
 
-#ifdef V8_MAJOR_VERSION
-
 #define V8_STREAMER(T,V8T,CT) \
 template<> class v8_streamer<T> { public: \
-    static v8::Handle<v8::Value> to_v8(const T& v) { return v8::V8T::New(v8::Isolate::GetCurrent(), CT(v)); } \
+    static v8::Handle<v8::Value> to_v8(const T& v) { return v8::new_object<v8::V8T>(CT(v)); } \
     static bool from_v8( v8::Handle<v8::Value> src, T& res ) { res = (T)src->V8T##Value(); return true; } \
 }
-
-#else
-
-#define V8_STREAMER(T,V8T,CT) \
-template<> class v8_streamer<T> { public: \
-    static v8::Handle<v8::Value> to_v8(const T& v) { return v8::V8T::New(CT(v)); } \
-    static bool from_v8( v8::Handle<v8::Value> src, T& res ) { res = (T)src->V8T##Value(); return true; } \
-}
-
-#endif
 
 
 V8_STREAMER(int8,  Int32, int32);
@@ -135,29 +167,11 @@ public:
 ///Strings
 template<> class v8_streamer<charstr> {
 public:
-    static v8::Handle<v8::Value> to_v8(const charstr& v) {
-#ifdef V8_MAJOR_VERSION
-        return v8::String::NewFromUtf8(v8::Isolate::GetCurrent(), v.ptr(), v8::NewStringType::kNormal, v.len()).ToLocalChecked();
-#else
-        return v8::String::New(v.ptr(), v.len());
-#endif
-    }
+    static v8::Handle<v8::Value> to_v8(const charstr& v) { return v8::string_utf8(v); }
     
-    static v8::Handle<v8::Value> to_v8(const token& v) {
-#ifdef V8_MAJOR_VERSION
-        return v8::String::NewFromUtf8(v8::Isolate::GetCurrent(), v.ptr(), v8::NewStringType::kNormal, v.len()).ToLocalChecked();
-#else
-        return v8::String::New(v.ptr(), v.len());
-#endif
-    }
+    static v8::Handle<v8::Value> to_v8(const token& v) { return v8::string_utf8(v); }
     
-    static v8::Handle<v8::Value> to_v8(const char* v) {
-#ifdef V8_MAJOR_VERSION
-        return v8::String::NewFromUtf8(v8::Isolate::GetCurrent(), v, v8::NewStringType::kNormal).ToLocalChecked();
-#else
-        return v8::String::New(v);
-#endif
-    }
+    static v8::Handle<v8::Value> to_v8(const char* v) { return v8::string_utf8(v); }
     
     static bool from_v8( v8::Handle<v8::Value> src, charstr& res ) {
         if(src->IsUndefined() || src->IsNull())
@@ -170,13 +184,7 @@ public:
 
 template<> class v8_streamer<token> {
 public:
-    static v8::Handle<v8::Value> to_v8(const token& v) {
-#ifdef V8_MAJOR_VERSION
-        return v8::String::NewFromUtf8(v8::Isolate::GetCurrent(), v.ptr(), v8::NewStringType::kNormal, v.len()).ToLocalChecked();
-#else
-        return v8::String::New(v.ptr(), v.len());
-#endif
-    }
+    static v8::Handle<v8::Value> to_v8(const token& v) { return v8::string_utf8(v); }
 };
 
 ///Helper to fill dynarray from V8 array
@@ -187,7 +195,7 @@ inline bool v8_write_dynarray( v8::Handle<v8::Value> src, dynarray<T>& a )
         return false;
 
     v8::Local<v8::Object> obj = src->ToObject();
-    uint n = obj->Get(v8::String::NewSymbol("length"))->Uint32Value();
+    uint n = obj->Get(v8::symbol("length"))->Uint32Value();
     a.alloc(n);
 
     for(uint i=0; i<n; ++i) {
@@ -216,7 +224,7 @@ template<class T> class v8_streamer<dynarray<T>> {
 public:
     static v8::Handle<v8::Value> to_v8(const dynarray<T>& v) {
         uint n = (uint)v.size();
-        v8::Local<v8::Array> a = v8::Array::New(n);
+        v8::Local<v8::Array> a = v8::new_object<v8::Array>(n);
         
         for(uint i=0; i<n; ++i) {
             a->Set(i, v8_streamer<T>::to_v8(v[i]));
@@ -309,7 +317,7 @@ inline v8::Handle<v8::Value> v8_map_typed_array( const T* ptr, uint count, v8::E
 {
     v8::Handle<v8::Object> a = v8::Object::New();
     a->SetIndexedPropertiesToExternalArrayData((void*)ptr, type, count);
-    a->Set(v8::String::NewSymbol("length", 6), v8::Uint32::NewFromUnsigned(count));
+    a->Set(v8::symbol("length"), v8::Uint32::NewFromUnsigned(count));
 
     return a;
 }
@@ -486,12 +494,7 @@ public:
     {
         if(kmember > 0) {
             //attach the previous property
-#ifdef V8_MAJOR_VERSION
-            _top->object->Set(v8::String::NewFromOneByte(v8::Isolate::GetCurrent(),
-                (const uint8*)_top->key.ptr(), v8::String::kInternalizedString, _top->key.len()), _top->value);
-#else
-            _top->object->Set(v8::String::New(_top->key.ptr(), _top->key.len()), _top->value);
-#endif
+            _top->object->Set(v8::symbol(key), _top->value);
         }
 
         _top->key = key;
@@ -504,12 +507,7 @@ public:
             return ersNO_MORE;
 
         //looks up the variable in the current object
-#ifdef V8_MAJOR_VERSION
-        _top->value = _top->object->Get(v8::String::NewFromOneByte(v8::Isolate::GetCurrent(),
-            (const uint8*)expected_key.ptr(), v8::String::kInternalizedString, expected_key.len()));
-#else
-        _top->value = _top->object->Get(v8::String::NewSymbol(expected_key.ptr(), expected_key.len()));
-#endif
+        _top->value = _top->object->Get(v8::symbol(expected_key));
 
         if(_top->value->IsUndefined())
             return ersNO_MORE;
@@ -531,11 +529,7 @@ public:
             else
                 _bufw << char('[');*/
             if(t.type != type::T_BINARY && t.type != type::T_CHAR) {
-#ifdef V8_MAJOR_VERSION
-                _top->array = v8::Array::New(v8::Isolate::GetCurrent(), (int)t.get_count(p));
-#else
-                _top->array = v8::Array::New((int)t.get_count(p));
-#endif
+                _top->array = v8::new_object<v8::Array>((int)t.get_count(p));
                 _top->element = 0;
             }
         }
@@ -548,12 +542,7 @@ public:
         {
             //attach the last property
             if(_top->key)
-#ifdef V8_MAJOR_VERSION
-                _top->object->Set(v8::String::NewFromOneByte(v8::Isolate::GetCurrent(),
-                    (const uint8*)_top->key.ptr(), v8::String::kInternalizedString, _top->key.len()), _top->value);
-#else
-                _top->object->Set(v8::String::New(_top->key.ptr(), _top->key.len()), _top->value);
-#endif
+                _top->object->Set(v8::symbol(_top->key), _top->value);
 
             DASSERT(_stack.size() > 1);
             _top[-1].value = _top->object;
@@ -562,11 +551,7 @@ public:
         else if( t.type == type::T_STRUCTBGN )
         {
             _top = _stack.push();
-#ifdef V8_MAJOR_VERSION
-            _top->object = v8::Object::New(v8::Isolate::GetCurrent());
-#else
-            _top->object = v8::Object::New();
-#endif
+            _top->object = v8::new_object<v8::Object>();
         }
         else
         {
@@ -595,12 +580,7 @@ public:
                 case type::T_CHAR: {
 
                     if( !t.is_array_element() ) {
-#ifdef V8_MAJOR_VERSION
-                        _top->value = v8::String::NewFromOneByte(v8::Isolate::GetCurrent(),
-                            (const uint8*)p, v8::String::kNormalString, 1);
-#else
-                        _top->value = v8::String::New((const char*)p, 1);
-#endif
+                        _top->value = v8::symbol(token((const char*)p, 1));
                     }
                     else {
                         DASSERT(0); //should not get here - optimized in write_array
