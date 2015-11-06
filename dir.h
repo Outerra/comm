@@ -118,31 +118,31 @@ public:
     bool is_entry_subdirectory() const;     //< a directory, but not . or ..
     bool is_entry_regular() const;
 
-    static bool is_valid(const zstring& dir);
+    static bool is_valid(zstring dir);
 
     //@return true if path is a directory
-    static bool is_valid_directory(const zstring& arg);
+    static bool is_valid_directory(zstring arg);
 
-    static bool is_valid_file(const zstring& arg);
+    static bool is_valid_file(zstring arg);
 
     static bool is_directory(ushort mode);
     static bool is_regular(ushort mode);
 
-    static bool stat(const zstring& name, xstat* dst);
+    static bool stat(zstring name, xstat* dst);
 
-    static opcd mkdir(const zstring& name, uint mode = 0750);
+    static opcd mkdir(zstring name, uint mode = 0750);
 
     static opcd mkdir_tree(token name, bool last_is_file = false, uint mode = 0750);
 
-    static int chdir(const zstring& name);
+    static int chdir(zstring name);
 
-    static opcd delete_directory(const zstring& src, bool recursive = false);
+    static opcd delete_directory(zstring src, bool recursive = false);
 
-    static opcd copy_file(const zstring& src, const zstring& dst);
+    static opcd copy_file(zstring src, zstring dst);
 
-    static opcd move_file(const zstring& src, const zstring& dst);
+    static opcd move_file(zstring src, zstring dst);
 
-    static opcd delete_file(const zstring& src);
+    static opcd delete_file(zstring src);
 
     ///delete multiple files using a pattern for file
     static opcd delete_files(token path_and_pattern);
@@ -155,18 +155,18 @@ public:
 
 
     ///move file to open directory
-    opcd move_file_from(const zstring& src, const token& name = token());
+    opcd move_file_from(zstring src, const token& name = token());
 
-    opcd move_file_to(const zstring& dst, const token& name = token());
-    opcd move_current_file_to(const zstring& dst);
+    opcd move_file_to(zstring dst, const token& name = token());
+    opcd move_current_file_to(zstring dst);
 
-    static opcd set_file_times(const zstring& fname, timet actime, timet modtime);
+    static opcd set_file_times(zstring fname, timet actime, timet modtime);
 
-    static opcd truncate(const zstring& fname, uint64 size);
+    static opcd truncate(zstring fname, uint64 size);
 
     //@{ tests and sets file write access flags
-    static bool is_writable(const zstring& fname);
-    static bool set_writable(const zstring& fname, bool writable);
+    static bool is_writable(zstring fname);
+    static bool set_writable(zstring fname, bool writable);
     //@}
 
     ///Get current working directory
@@ -201,7 +201,7 @@ public:
 
 
     uint64 file_size() const { return _st.st_size; }
-    static uint64 file_size(const zstring& file);
+    static uint64 file_size(zstring file);
 
     ///Get next entry in the directory
     const xstat* next();
@@ -221,7 +221,7 @@ public:
     static void list_file_paths(const token& path, const token& extension, bool recursive, Func fn) {
         directory dir;
 
-        if (recursive) {
+        if(recursive) {
             if (dir.open(path, "*.*") != ersNOERR)
                 return;
         }
@@ -232,15 +232,15 @@ public:
                 return;
         }
 
-        while (dir.next()) {
-            if (dir.is_entry_regular()) {
+        while(dir.next()) {
+            if(dir.is_entry_regular()) {
 
-                if ((!recursive) || (extension == '*') || dir.get_last_file_name_token().cut_right_back('.').cmpeqi(extension)) {
+                if((!recursive) || (extension == '*') || dir.get_last_file_name_token().cut_right_back('.').cmpeqi(extension)) {
                     fn(dir.get_last_full_path(), false);
                 }
             }
-            else if (dir.is_entry_subdirectory()) {
-                if (recursive) {
+            else if(dir.is_entry_subdirectory()) {
+                if(recursive) {
                     directory::list_file_paths(dir.get_last_full_path(), extension, recursive, fn);
                 }
 
@@ -248,6 +248,10 @@ public:
             }
         }
     }
+
+protected:
+
+    static const char* no_trail_sep( zstring& name );
 
 private:
     charstr     _curpath;

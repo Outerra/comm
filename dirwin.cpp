@@ -149,14 +149,16 @@ bool directory::is_regular( ushort mode )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::mkdir( const zstring& name, uint mode )
+opcd directory::mkdir( zstring name, uint mode )
 {
+    const char* p = no_trail_sep(name);
+
 #ifdef SYSTYPE_WIN
-    const char* p = name.c_str();
     if(p[0] && p[1] == ':' && p[2] == 0)
         return 0;
 #endif
-    if(!_mkdir(name.c_str()))  return 0;
+
+    if(!_mkdir(p))  return 0;
     if( errno == EEXIST )  return 0;
     return ersFAILED;
 }
@@ -212,9 +214,9 @@ charstr& directory::get_tmp( charstr& buf )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int directory::chdir( const zstring& name )
+int directory::chdir( zstring name )
 {
-    return ::_chdir(name.c_str());
+    return ::_chdir(no_trail_sep(name));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -263,9 +265,9 @@ charstr& directory::get_home_dir( charstr& path )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::truncate( const zstring& fname, uint64 size )
+opcd directory::truncate( zstring fname, uint64 size )
 {
-    HANDLE f = CreateFile(fname.c_str(), GENERIC_WRITE, FILE_SHARE_READ, 0,
+    HANDLE f = CreateFile(no_trail_sep(fname), GENERIC_WRITE, FILE_SHARE_READ, 0,
         OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 
     if(!f) return ersNOT_FOUND;

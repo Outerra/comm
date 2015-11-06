@@ -190,8 +190,10 @@ zstring::zstring(const zstring& s)
     , _pool(s._pool)
 {
     if(s._buf) {
-        get_str() = *s._buf;
-        _zptr = _zend = nullstring;
+        _zptr = s._buf->ptr();
+        _zend = s._buf->ptre();
+        //_zptr = _zend = nullstring;
+        //get_str() = *s._buf;
     }
     else {
         _zptr = s._zptr;
