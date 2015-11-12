@@ -151,11 +151,7 @@ V8_STREAMER(bool, Boolean, bool);
 template<> class v8_streamer<timet> {
 public:
     static v8::Handle<v8::Value> to_v8( const timet& v ) {
-#ifdef V8_MAJOR_VERSION
-        return v8::Date::New(v8::Isolate::GetCurrent(), double(v.t));
-#else
-        return v8::Date::New(double(v.t));
-#endif
+        return v8::new_object<v8::Date>(double(v.t));
     }
     
     static bool from_v8( v8::Handle<v8::Value> src, timet& res ) {
@@ -494,7 +490,7 @@ public:
     {
         if(kmember > 0) {
             //attach the previous property
-            _top->object->Set(v8::symbol(key), _top->value);
+            _top->object->Set(v8::symbol(_top->key), _top->value);
         }
 
         _top->key = key;
@@ -598,11 +594,7 @@ public:
 
                 /////////////////////////////////////////////////////////////////////////////////////
                 case type::T_BOOL:
-#ifdef V8_MAJOR_VERSION
-                    _top->value = v8::Boolean::New(v8::Isolate::GetCurrent(), *(bool*)p);
-#else
-                    _top->value = v8::Boolean::New(*(bool*)p);
-#endif
+                    _top->value = v8::new_object<v8::Boolean>(*(bool*)p);
                 break;
 
                 /////////////////////////////////////////////////////////////////////////////////////
@@ -619,11 +611,7 @@ public:
                 case type::T_ERRCODE:
                     {
                         opcd e = (const opcd::errcode*)p;
-#ifdef V8_MAJOR_VERSION
-                        _top->value = v8::Integer::New(v8::Isolate::GetCurrent(), e.code());
-#else
-                        _top->value = v8::Integer::New(e.code());
-#endif
+                        _top->value = v8::new_object<v8::Integer>(e.code());
                     }
                 break;
 
@@ -903,12 +891,7 @@ public:
             }
 
             if(!e) {
-#ifdef V8_MAJOR_VERSION
-                _top->value = v8::String::NewFromUtf8(v8::Isolate::GetCurrent(),
-                    tok.ptr(), v8::String::kNormalString, tok.len());
-#else
-                _top->value = v8::String::New(tok.ptr(), tok.len());
-#endif
+                _top->value = v8::string_utf8(tok);
                 *count = n;
             }
         }
