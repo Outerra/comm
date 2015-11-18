@@ -464,5 +464,8 @@
     <ClCompile Include="..\..\..\timeru.cpp">
       <Filter>cxx</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\binstream\stdstream.cpp">
+      <Filter>cxx</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
