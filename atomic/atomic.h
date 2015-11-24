@@ -39,6 +39,8 @@
 #include "../commtypes.h"
 #include "../commassert.h"
 
+//#define _WIN32_WINNT 0x0602
+
 #if defined(SYSTYPE_MSVC)
 	#include <intrin.h>
 	#pragma intrinsic(_InterlockedIncrement)
@@ -64,6 +66,8 @@
     #pragma intrinsic(_InterlockedXor)
 
 #ifdef SYSTYPE_64
+	#pragma intrinsic(_InterlockedIncrement64)
+	#pragma intrinsic(_InterlockedDecrement64)
     #pragma intrinsic(_InterlockedAnd64)
     #pragma intrinsic(_InterlockedOr64)
     #pragma intrinsic(_InterlockedXor64)
@@ -107,6 +111,52 @@ namespace atomic {
 
     inline coid::uint32 dec(volatile coid::uint32 * ptr) {
         return dec(reinterpret_cast<volatile coid::int32*>(ptr));
+    }
+
+#ifdef SYSTYPE_64
+
+    inline coid::int64 inc(volatile coid::int64 * ptr)
+    {
+#if defined(__GNUC__)
+        return __sync_add_and_fetch(ptr, static_cast<coid::int64>(1));
+#elif defined(SYSTYPE_WIN)
+        return InterlockedIncrement64(reinterpret_cast<volatile __int64*>(ptr));
+#endif
+    }
+
+    inline coid::uint64 inc(volatile coid::uint64 * ptr) {
+        return inc(reinterpret_cast<volatile coid::int64*>(ptr));
+    }
+
+    inline coid::int64 dec(volatile coid::int64 * ptr)
+    {
+#if defined(__GNUC__)
+        return __sync_sub_and_fetch(ptr, static_cast<coid::int64>(1));
+#elif defined(SYSTYPE_WIN)
+        return InterlockedDecrement64(reinterpret_cast<volatile __int64*>(ptr));
+#endif
+    }
+
+    inline coid::uint64 dec(volatile coid::uint64 * ptr) {
+        return dec(reinterpret_cast<volatile coid::int64*>(ptr));
+    }
+
+#endif
+
+    inline coid::uints inc(volatile coid::uints * ptr) {
+#ifdef SYSTYPE_64
+        return inc(reinterpret_cast<volatile coid::int64*>(ptr));
+#else
+        return inc(reinterpret_cast<volatile coid::int32*>(ptr));
+#endif
+    }
+
+    inline coid::uints dec(volatile coid::uints * ptr) {
+#ifdef SYSTYPE_64
+        return dec(reinterpret_cast<volatile coid::int64*>(ptr));
+#else
+        return dec(reinterpret_cast<volatile coid::int32*>(ptr));
+#endif
     }
 
 
@@ -275,6 +325,15 @@ namespace atomic {
 	}
 #endif
 
+    inline coid::uints exchange(volatile coid::uints * ptr, const coid::uints val)
+    {
+#ifdef SYSTYPE_64
+        return exchange(reinterpret_cast<volatile coid::uint64*>(ptr), val);
+#else
+        return exchange(reinterpret_cast<volatile coid::uint32*>(ptr), val);
+#endif
+    }
+
 
     // AND
 
@@ -332,6 +391,15 @@ namespace atomic {
         return aand(reinterpret_cast<volatile coid::int8*>(ptr), val);
     }
     
+    inline coid::uints aand(volatile coid::uints * ptr, const coid::uints val) {
+#ifdef SYSTYPE_64
+        return aand(reinterpret_cast<volatile int64*>(ptr), val);
+#else
+        return aand(reinterpret_cast<volatile int32*>(ptr), val);
+#endif
+    }
+
+
     // OR
 
 #ifdef SYSTYPE_64
@@ -387,6 +455,15 @@ namespace atomic {
     inline coid::uint8 aor(volatile coid::uint8 * ptr, const coid::uint8 val) {
         return aor(reinterpret_cast<volatile coid::int8*>(ptr), val);
     }
+
+    inline coid::uints aor(volatile coid::uints * ptr, const coid::uints val) {
+#ifdef SYSTYPE_64
+        return aor(reinterpret_cast<volatile int64*>(ptr), val);
+#else
+        return aor(reinterpret_cast<volatile int32*>(ptr), val);
+#endif
+    }
+
 
     // XOR
 
@@ -444,6 +521,13 @@ namespace atomic {
         return axor(reinterpret_cast<volatile coid::int8*>(ptr), val);
     }
 
+    inline coid::uints axor(volatile coid::uints * ptr, const coid::uints val) {
+#ifdef SYSTYPE_64
+        return axor(reinterpret_cast<volatile int64*>(ptr), val);
+#else
+        return axor(reinterpret_cast<volatile int32*>(ptr), val);
+#endif
+    }
 
 } // end of namespace atomic
 

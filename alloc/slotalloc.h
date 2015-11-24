@@ -39,6 +39,7 @@
 #define __COID_COMM_SLOTALLOC__HEADER_FILE__
 
 #include <new>
+#include "../atomic/atomic.h"
 #include "../namespace.h"
 #include "../commexception.h"
 #include "../dynarray.h"
@@ -61,6 +62,9 @@ their own memory buffers and it's desirable to avoid unnecessary freeing and all
 care must be taken to initialize the initial state of allocated objects in this mode.
 All objects are destroyed with the destruction of the allocator object.
 
+Safe to use from a single producer / single consumer threading mode, as long as the working set is
+reserved in advance.
+
 @param POOL if true, do not call destructors on item deletion, only on container deletion
 **/
 template<class T, bool POOL=false>
@@ -74,7 +78,8 @@ public:
         if(!POOL)
             for_each([](T& p) {destroy(p);});
 
-        _count = 0;
+        //_count = 0;
+        atomic::exchange(&_count, 0);
 
         _relarrays.for_each([&](relarray& ra) {
             ra.set_count(0);
@@ -150,12 +155,18 @@ public:
     }
 
     ///Add new object, uninitialized (no constructor invoked on the object)
-    T* add_uninit() {
+    //@param newitem optional variable that receives whether the object slot was newly created (true) or reused from the pool (false)
+    //@note if newitem == 0 within the pool mode and thus no way to indicate the item has been reused, the reused objects have destructors called
+    T* add_uninit( bool* newitem = 0 ) {
         if(_count < _array.size()) {
             T* p = alloc(0);
-            if(POOL) destroy(*p);
+            if(POOL) {
+                if(!newitem) destroy(*p);
+                else *newitem = false;
+            }
             return p;
         }
+        if(newitem) *newitem = true;
         return append();
     }
 /*
@@ -178,11 +189,15 @@ public:
         if(!POOL)
             p->~T();
         clear_bit(id);
-        --_count;
+        //--_count;
+        atomic::dec(&_count);
     }
 
     //@return number of used slots in the container
     uints count() const { return _count; }
+
+    //@return true if next allocation would rebase the array
+    bool full() const { return (_count + 1)*sizeof(T) > _array.reserved_total(); }
 
     ///Return an item given id
     //@param id id of the item
@@ -205,7 +220,8 @@ public:
             if(get_bit(id))
                 return _array.ptr() + id;
             set_bit(id);
-            ++_count;
+            //++_count;
+            atomic::inc(&_count);
             return _array.ptr() + id;
         }
 
@@ -219,7 +235,8 @@ public:
         _array.add(n);
 
         set_bit(id);
-        ++_count;
+        //++_count;
+        atomic::inc(&_count);
         return _array.ptr() + id;
     }
 
@@ -317,7 +334,7 @@ private:
 
     dynarray<T> _array;
     dynarray<uints> _allocated;     //< bit mask for allocated/free items
-    uints _count;
+    volatile uints _count;
 
     ///Related data array that's maintained together with the main one
     struct relarray {
@@ -355,8 +372,8 @@ private:
     {
         DASSERT( _count < _array.size() );
 
-        uints* p = _allocated.ptr();
-        uints* e = _allocated.ptre();
+        volatile uints* p = _allocated.ptr();
+        volatile uints* e = _allocated.ptre();
         for(; p!=e && *p==UMAXS; ++p);
 
         if(p == e)
@@ -369,23 +386,26 @@ private:
 
         if(id)
             *id = slot + bit;
-        *p |= uints(1) << bit;
+        //*p |= uints(1) << bit;
+        atomic::aor(p, uints(1) << bit);
 
-        ++_count;
+        atomic::inc(&_count);
         return _array.ptr() + slot + bit;
     }
 
     T* append()
     {
-        DASSERT( _count == _array.size() );
-        set_bit(_count);
+        uints count = _count;
+
+        DASSERT( count == _array.size() );
+        set_bit(count);
 
         _relarrays.for_each([&](relarray& ra) {
-            DASSERT( ra.count() == _count );
+            DASSERT( ra.count() == count );
             ra.add(1);
         });
 
-        ++_count;
+        atomic::inc(&_count);
 
         return _array.add_uninit(1);
     }
@@ -394,21 +414,25 @@ private:
     {
         uints s = k / (8*sizeof(uints));
         uints b = k % (8*sizeof(uints));
-        _allocated.get_or_addc(s) |= uints(1) << b;
+        atomic::aor(const_cast<volatile uints*>(&_allocated.get_or_addc(s)), uints(1) << b);
+        //_allocated.get_or_addc(s) |= uints(1) << b;
     }
 
     void clear_bit( uints k )
     {
         uints s = k / (8*sizeof(uints));
         uints b = k % (8*sizeof(uints));
-        _allocated.get_or_addc(s) &= ~(uints(1) << b);
+        //_allocated.get_or_addc(s) &= ~(uints(1) << b);
+        atomic::aand(const_cast<volatile uints*>(&_allocated.get_or_addc(s)), ~(uints(1) << b));
     }
 
     bool get_bit( uints k ) const
     {
         uints s = k / (8*sizeof(uints));
         uints b = k % (8*sizeof(uints));
-        return s < _allocated.size() && (_allocated[s] & (uints(1) << b)) != 0;
+        //return s < _allocated.size() && (_allocated[s] & (uints(1) << b)) != 0;
+        return s < _allocated.size()
+            && (*const_cast<volatile uints*>(_allocated.ptr()+s) & (uints(1) << b)) != 0;
     }
 
     //WA for lambda template error
