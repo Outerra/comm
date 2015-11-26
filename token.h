@@ -2518,6 +2518,13 @@ public:
     zstring& operator = (const charstr& str);
     zstring& operator = (const zstring& s);
 
+    void swap( zstring& x ) {
+        std::swap(_zptr, x._zptr);
+        std::swap(_zend, x._zend);
+        std::swap(_buf, x._buf);
+        std::swap(_pool, x._pool);
+    }
+
     typedef const char* zstring::*unspecified_bool_type;
 
     ///Automatic cast to bool for checking emptiness
