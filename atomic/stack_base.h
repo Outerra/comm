@@ -98,6 +98,8 @@ private:
 
     ptr_t _head;
 
+    friend class basic_pool<node>;
+
     basic_pool<node> _node_pool;
 
 public:

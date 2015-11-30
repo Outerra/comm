@@ -98,7 +98,11 @@ public:
     ///
     ~basic_pool() { purge(); }
 
-    void purge() { T* p; while((p = pop()) != 0) delete p; }
+    void purge() {
+        T* p;
+        while((p = pop()) != 0)
+            delete p;
+    }
 
     ///
     void push(T* n)
