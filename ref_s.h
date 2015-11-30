@@ -146,22 +146,26 @@ public:
 		_o=p->get();
 	}
 
-	void create_pooled() {
+	bool create_pooled() {
 		release();
-		policy_pooled_t *p = policy_pooled_t::create();
+        bool isnew;
+		policy_pooled_t *p = policy_pooled_t::create(&isnew);
 		_p=p;
 		_p->add_refcount();
 		_o=p->get();
+        return isnew;
 	}
 
-    void create_pooled(pool_type_t *po, bool nonew=false) {
+    bool create_pooled(pool_type_t *po, bool nonew=false) {
 		release();
-		policy_pooled_t *p=policy_pooled_t::create(po, nonew);
+        bool isnew;
+		policy_pooled_t *p=policy_pooled_t::create(po, nonew, &isnew);
         if(p) {
 		    _p = static_cast<policy*>(p);
 		    _p->add_refcount();
 		    _o=p->get();
         }
+        return isnew;
 	}
 
 	// standard destructor

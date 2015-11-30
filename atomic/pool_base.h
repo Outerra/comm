@@ -72,20 +72,23 @@ public:
     }
 
     ///
-	static this_type* create( pool_type* po, bool nonew=false ) 
+	static this_type* create( pool_type* po, bool nonew=false, bool* isnew=0 ) 
     { 
         DASSERT(po!=0); 
         this_type* p=0;
 
-        if(!po->create_instance(p) && !nonew)
+        bool make = !po->create_instance(p) && !nonew;
+        if(make)
             p = new this_type(new T,po);
+        if(isnew)
+            *isnew = make;
         return p;
     }
 
     ///
-	static this_type* create()
+	static this_type* create( bool* isnew=0 )
     {
-        return create(&pool());
+        return create(&pool(), false, isnew);
     }
 
     static pool_type& pool() { return pool_type::global(); }

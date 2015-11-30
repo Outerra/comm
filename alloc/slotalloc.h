@@ -94,6 +94,10 @@ public:
     slotalloc() : _count(0)
     {}
 
+    explicit slotalloc( uints reserve_items ) : _count(0) {
+        reserve(reserve_items);
+    }
+
     ~slotalloc() {
         if(!POOL)
             reset();
@@ -125,7 +129,7 @@ public:
     }
 
     //@return byte offset to the newly rebased array
-    ints reserve( uint nitems ) {
+    ints reserve( uints nitems ) {
         T* old = _array.ptr();
         T* p = _array.reserve(nitems, true);
 
