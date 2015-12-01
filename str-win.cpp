@@ -229,6 +229,8 @@ zstring::zstring(const token& tok)
         _zptr = tok.ptr();
         _zend = tok.ptre() - 1;
     }
+
+    get_str();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -242,6 +244,8 @@ zstring::zstring(const charstr& str)
         _zptr = str.ptr();
         _zend = str.ptre();
     }
+
+    get_str();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -274,15 +278,8 @@ zstring& zstring::operator = (const charstr& str)
 ////////////////////////////////////////////////////////////////////////////////
 zstring& zstring::operator = (const zstring& s)
 {
-    if(s._buf) {
-        get_str() = *s._buf;
-        _zptr = _zend = nullstring;
-    }
-    else {
-        free_string();
-        _zptr = s._zptr;
-        _zend = s._zend;
-    }
+    get_str() = s.get_token();
+    _zptr = _zend = nullstring;
 
     return *this;
 }
