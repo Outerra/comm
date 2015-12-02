@@ -163,7 +163,8 @@ public:
         destroy();
     }
 
-    static global_singleton_manager& get();
+    static global_singleton_manager& get_global();
+    static global_singleton_manager& get_local();
 
 private:
     _comm_mutex mx;
@@ -185,7 +186,9 @@ void* singleton_register_instance(
     int line,
     bool invisible )
 {
-    auto& gsm = global_singleton_manager::get();
+    auto& gsm = invisible
+        ? global_singleton_manager::get_local()
+        : global_singleton_manager::get_global();
 
     return gsm.find_or_add_singleton(
         fn_create, fn_destroy, fn_initmod,
@@ -195,7 +198,7 @@ void* singleton_register_instance(
 ////////////////////////////////////////////////////////////////////////////////
 void singletons_destroy()
 {
-    auto& gsm = global_singleton_manager::get();
+    auto& gsm = global_singleton_manager::get_local();
 
     memtrack_shutdown();
     gsm.destroy();
@@ -226,7 +229,7 @@ extern "C" __declspec(dllexport) global_singleton_manager* GLOBAL_SINGLETON_REGI
     return &_gsm;
 }
 
-global_singleton_manager& global_singleton_manager::get()
+global_singleton_manager& global_singleton_manager::get_global()
 {
     static global_singleton_manager* _this=0;
 
@@ -253,7 +256,7 @@ extern "C" __attribute__ ((visibility("default"))) interface_register_impl* INTE
     return &SINGLETON(interface_register_impl);
 }*/
 
-global_singleton_manager& global_singleton_manager::get()
+global_singleton_manager& global_singleton_manager::get_global()
 {
     static global_singleton_manager _this;
 
@@ -261,5 +264,12 @@ global_singleton_manager& global_singleton_manager::get()
 }
 
 #endif
+
+global_singleton_manager& global_singleton_manager::get_local()
+{
+    static global_singleton_manager _this;
+
+    return _this;
+}
 
 } //namespace coid

@@ -45,21 +45,25 @@
 
 #ifdef _DEBUG
 
-///Retrieves process-global singleton object of given type T
+///Retrieves module singleton object of given type T
 # define SINGLETON(T) \
-    coid::singleton<T>::instance(#T,__FILE__,__LINE__)
+    coid::singleton<T>::instance(true, __FILE__,__LINE__)
+
+///Retrieves process-global singleton object of given type T
+# define GLOBAL_SINGLETON(T) \
+    coid::singleton<T>::instance(false, __FILE__,__LINE__)
 
 #else
 
-///Retrieves process-global singleton object of given type T
+///Retrieves module singleton object of given type T
 # define SINGLETON(T) \
-    coid::singleton<T>::instance()
+    coid::singleton<T>::instance(true)
+
+///Retrieves process-global singleton object of given type T
+# define GLOBAL_SINGLETON(T) \
+    coid::singleton<T>::instance(false)
 
 #endif
-
-///Evaluates to true if a global singleton of given type 
-#define SINGLETON_EXISTS(T) \
-    (coid::singleton<T>::ptr() != 0)
 
 ///Used for function-local singleton objects 
 /// usage:
@@ -68,15 +72,25 @@
     static coid::singleton<T>
 
 
-///Returns thread-global singleton (the same one when called from different code)
+///Returns thread singleton (the same one when called from different code within module)
 #define THREAD_SINGLETON(T) \
-    coid::thread_singleton<T>::instance()
+    coid::thread_singleton<T>::instance(true)
+
+///Returns a global thread singleton
+#define THREAD_GLOBAL_SINGLETON(T) \
+    coid::thread_singleton<T>::instance(false)
 
 ///Used for function-local thread singleton objects
 /// usage:
 /// THREAD_LOCAL_SINGLETON(class) name = new class;
 #define THREAD_LOCAL_SINGLETON(T) \
     static coid::thread_singleton<T>
+
+
+
+///Evaluates to true if a singleton of given type exists
+#define SINGLETON_EXISTS(T) \
+    (coid::singleton<T>::ptr() != 0)
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -156,23 +170,9 @@ public:
     }
 
 
-    //@return global singleton
-	static T& instance()
-	{
-		T*& node = ptr();
-
-		if(node)
-			return *node;
-
-        node = (T*)singleton_register_instance(
-            &create, &destroy, &init_module,
-            typeid(T).name(), 0, 0, false);
-
-        return *node;
-	}
-
     //@return global singleton, registering the place of birth
-	static T& instance(const char* type, const char* file, int line)
+    //@param module_local create a singleton that's local to the current module
+	static T& instance( bool module_local, const char* file=0, int line=0 )
 	{
 		T*& node = ptr();
 
@@ -181,7 +181,7 @@ public:
 
         node = (T*)singleton_register_instance(
             &create, &destroy, &init_module,
-            typeid(T).name(), file, line, false);
+            typeid(T).name(), file, line, module_local);
 
         return *node;
 	}
@@ -234,14 +234,14 @@ class thread_singleton
 public:
 
     //@return global thread singleton (always the same one from multiple places where used)
-    static T& instance()
+    static T& instance( bool module_local )
     {
         thread_key& ts = get_key();
         T* p = reinterpret_cast<T*>(ts.get());
         if(!p) {
             p = (T*)singleton_register_instance(
                 &create, &destroy, &singleton<T>::init_module,
-                typeid(T).name(), 0, 0, false);
+                typeid(T).name(), 0, 0, module_local);
             ts.set(p);
         }
         return *p;
