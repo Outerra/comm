@@ -2630,7 +2630,7 @@ protected:
             off = count_notescape(off);
             if(off >= _tok.len())
             {
-                uint nkeep = _tok.len();
+                //uint nkeep = _tok.len();
 
                 //end of input
 
@@ -2747,7 +2747,7 @@ protected:
             off = count_notleading(off);
             if(off >= _tok.len())
             {
-                uint nkeep = _tok.len();
+                //uint nkeep = _tok.len();
 
                 //end of input
 

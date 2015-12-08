@@ -65,12 +65,12 @@ class filestream : public binstream
 {
 public:
 
-    virtual uint binstream_attributes( bool in0out1 ) const
+    virtual uint binstream_attributes( bool in0out1 ) const override
     {
         return 0;
     }
 
-    virtual opcd write_raw( const void* p, uints& len )
+    virtual opcd write_raw( const void* p, uints& len ) override
     {
         DASSERT( _handle != -1 );
 
@@ -87,7 +87,7 @@ public:
         return 0;
     }
 
-    virtual opcd read_raw( void* p, uints& len )
+    virtual opcd read_raw( void* p, uints& len ) override
     {
         DASSERT( _handle != -1 );
 
@@ -106,31 +106,31 @@ public:
         return 0;
     }
 
-    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS )
+    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS ) override
     {   return ersUNAVAILABLE; }
 
-    virtual opcd peek_read( uint timeout ) {
+    virtual opcd peek_read( uint timeout ) override {
         if(timeout)  return ersINVALID_PARAMS;
         return (uint64)_rpos < get_size()  ?  opcd(0) : ersNO_MORE;
     }
 
-    virtual opcd peek_write( uint timeout ) {
+    virtual opcd peek_write( uint timeout ) override {
         return 0;
     }
 
 
-    virtual bool is_open() const        { return _handle != -1; }
-    virtual void flush()                { }
-    virtual void acknowledge( bool eat=false )  { }
+    virtual bool is_open() const        override { return _handle != -1; }
+    virtual void flush()                override { }
+    virtual void acknowledge( bool eat=false ) override { }
 
-    virtual void reset_read()
+    virtual void reset_read() override
     {
         _rpos = 0;
         if(_op>0 && _handle!=-1)
             setpos(_rpos);
     }
 
-    virtual void reset_write()
+    virtual void reset_write() override
     {
         _wpos = 0;
         if(_op<0 && _handle!=-1)
@@ -178,10 +178,10 @@ public:
             if(c == 'r')       rw |= 1;
             else if(c == 'w')  rw |= 2;
             else if(c == 'l')  sh |= 1;
-            else if(c == 'e')  flg |= O_EXCL;
-            else if(c == 'c')  flg |= O_CREAT;
-            else if(c == 't' || c == '-')  flg |= O_TRUNC;
-            else if(c == 'a' || c == '+')  flg |= O_APPEND;
+            else if(c == 'e')  flg |= _O_EXCL;
+            else if(c == 'c')  flg |= _O_CREAT;
+            else if(c == 't' || c == '-')  flg |= _O_TRUNC;
+            else if(c == 'a' || c == '+')  flg |= _O_APPEND;
             else if(c == 'b');  //ignored - always binary mode
             else if(c != ' ')
                 return ersINVALID_PARAMS;
@@ -192,15 +192,15 @@ public:
 #ifdef SYSTYPE_WIN
         int af;
 
-        if( rw == 2 )       flg |= O_WRONLY,    af = S_IWRITE;
-        else if( rw == 1 )  flg |= O_RDONLY,    af = S_IREAD;
-        else /*( rw == 3 )*/flg |= O_RDWR,      af = S_IREAD | S_IWRITE;
+        if( rw == 2 )       flg |= _O_WRONLY,    af = _S_IWRITE;
+        else if( rw == 1 )  flg |= _O_RDONLY,    af = _S_IREAD;
+        else /*( rw == 3 )*/flg |= _O_RDWR,      af = _S_IREAD | _S_IWRITE;
 
 
         if( sh == 1 )       sh = _SH_DENYWR;
         else                sh = _SH_DENYNO;
 
-        flg |= O_BINARY;
+        flg |= _O_BINARY;
 
 # ifdef SYSTYPE_MSVC
         return ::_sopen_s( &_handle, name.c_str(), flg, sh, af ) ? ersIO_ERROR : opcd(0);
@@ -224,7 +224,7 @@ public:
 #endif
     }
 
-    virtual opcd close( bool linger=false )
+    virtual opcd close( bool linger=false ) override
     {
         if( _handle != -1 ) {
 #ifdef SYSTYPE_MSVC
@@ -255,7 +255,7 @@ public:
         return 0;
     }
 
-    virtual opcd seek( int type, int64 pos )
+    virtual opcd seek( int type, int64 pos ) override
     {
         if( type & fSEEK_CURRENT )
             pos += (type & fSEEK_READ) ? _rpos : _wpos;
@@ -276,8 +276,8 @@ public:
     ///Get file size
     uint64 get_size() const
 	{
-		struct stat s;
-        if( 0 == ::fstat( _handle, &s ) )
+		struct _stat64 s;
+        if( 0 == ::_fstat64(_handle, &s) )
             return s.st_size;
 		return 0;
 	}
@@ -356,7 +356,7 @@ class bofstream : public filestream
 {
 public:
 
-    virtual uint binstream_attributes( bool in0out1 ) const
+    virtual uint binstream_attributes( bool in0out1 ) const override
     {
         return in0out1 ? 0 : fATTR_NO_INPUT_FUNCTION;
     }
@@ -379,7 +379,7 @@ public:
 class bifstream : public filestream
 {
 public:
-    virtual uint binstream_attributes( bool in0out1 ) const
+    virtual uint binstream_attributes( bool in0out1 ) const override
     {
         return in0out1 ? 0 : fATTR_NO_OUTPUT_FUNCTION;
     }

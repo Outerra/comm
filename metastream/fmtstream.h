@@ -80,19 +80,19 @@ public:
     virtual void fmtstream_file_name( const token& file_name ) = 0;
 
 
-    virtual uint binstream_attributes( bool in0out1 ) const {
+    virtual uint binstream_attributes( bool in0out1 ) const override {
         return fATTR_OUTPUT_FORMATTING;
     }
 
-    virtual opcd read_until( const substring& ss, binstream * bout, uints max_size=UMAXS ) {
+    virtual opcd read_until( const substring& ss, binstream * bout, uints max_size=UMAXS ) override {
         return ersNOT_IMPLEMENTED;
     }
 
-    virtual opcd peek_read( uint timeout )  { return _binr->peek_read(timeout); }
-    virtual opcd peek_write( uint timeout ) { return _binw->peek_write(timeout); }
+    virtual opcd peek_read( uint timeout )  override { return _binr->peek_read(timeout); }
+    virtual opcd peek_write( uint timeout ) override { return _binw->peek_write(timeout); }
 
 
-    virtual opcd bind( binstream& bin, int io=0 )
+    virtual opcd bind( binstream& bin, int io=0 ) override
     {
         if( io<0 )
             _binr = &bin;
@@ -104,7 +104,7 @@ public:
         return 0;
     }
 
-    virtual void flush()
+    virtual void flush() override
     {
         if( _binw == NULL )
             return;
@@ -114,30 +114,30 @@ public:
         _binw->flush();
     }
 
-    virtual void reset_read()
+    virtual void reset_read() override
     {
         if(_binr) _binr->reset_read();
     }
 
-    virtual void reset_write()
+    virtual void reset_write() override
     {
         if(_binw) _binw->reset_write();
         _bufw.reset();
     }
 
-    virtual opcd open( const zstring& name, const zstring& arg = zstring() ) {
+    virtual opcd open( const zstring& name, const token& arg = "" ) override {
         return _binw->open(name, arg);
     }
-    virtual opcd close( bool linger=false ) { return _binw->close(linger); }
-    virtual bool is_open() const            { return _binr->is_open(); }
+    virtual opcd close( bool linger=false ) override { return _binw->close(linger); }
+    virtual bool is_open() const            override { return _binr->is_open(); }
 
 
-    virtual opcd write_raw( const void* p, uints& len )
+    virtual opcd write_raw( const void* p, uints& len ) override
     {
         return _binw->write_raw(p, len);
     }
 
-    virtual opcd read_raw( void* p, uints& len )
+    virtual opcd read_raw( void* p, uints& len ) override
     {
         return _binr->read_raw(p, len);
     }

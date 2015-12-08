@@ -41,8 +41,9 @@
 
 //#define _WIN32_WINNT 0x0602
 
-#if defined(SYSTYPE_MSVC)
+#if defined(SYSTYPE_MSVC) 
 	#include <intrin.h>
+#ifndef SYSTYPE_CLANG
 	#pragma intrinsic(_InterlockedIncrement)
 	#pragma intrinsic(_InterlockedDecrement)
 	#pragma intrinsic(_InterlockedExchangeAdd)
@@ -71,6 +72,7 @@
     #pragma intrinsic(_InterlockedAnd64)
     #pragma intrinsic(_InterlockedOr64)
     #pragma intrinsic(_InterlockedXor64)
+#endif
 #endif
 #endif
 

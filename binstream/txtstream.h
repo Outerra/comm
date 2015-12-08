@@ -61,7 +61,7 @@ protected:
 
 public:
 
-    virtual uint binstream_attributes( bool in0out1 ) const
+    virtual uint binstream_attributes( bool in0out1 ) const override
     {
         uint f = fATTR_IO_FORMATTING;
         if(_binr)
@@ -79,7 +79,7 @@ public:
         _autoflush = c;
     }
 
-    virtual opcd write( const void* p, type t )
+    virtual opcd write( const void* p, type t ) override
     {
         //does no special formatting of arrays
         if( t.is_array_control_type() )
@@ -164,7 +164,7 @@ public:
         return 0;
     }
 
-    virtual opcd read( void* p, type t )
+    virtual opcd read( void* p, type t ) override
     {
         ASSERT_RET( _binr, ersUNAVAILABLE "underlying binstream not set" );
 
@@ -182,15 +182,15 @@ public:
             return ersUNAVAILABLE;
     }
 
-    virtual opcd write_raw( const void* p, uints& len ) {
+    virtual opcd write_raw( const void* p, uints& len ) override {
         return _binw->write_raw( p, len );
     }
 
-    virtual opcd read_raw( void* p, uints& len ) {
+    virtual opcd read_raw( void* p, uints& len ) override {
         return _binr->read_raw( p, len );
     }
 
-    virtual opcd write_array_content( binstream_container_base& c, uints* count )
+    virtual opcd write_array_content( binstream_container_base& c, uints* count ) override
     {
         type t = c._type;
         uints n = c.count();
@@ -221,7 +221,7 @@ public:
         return e;
     }
 
-    virtual opcd read_array_content( binstream_container_base& c, uints n, uints* count )
+    virtual opcd read_array_content( binstream_container_base& c, uints n, uints* count ) override
     {
         type t = c._type;
 
@@ -254,15 +254,15 @@ public:
         return e;
     }
 
-    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS )
+    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS ) override
     {
         return _binr->read_until( ss, bout, max_size );
     }
 
-    virtual opcd peek_read( uint timeout )  { return _binr->peek_read(timeout); }
-    virtual opcd peek_write( uint timeout ) { return _binw->peek_write(timeout); }
+    virtual opcd peek_read( uint timeout )  override { return _binr->peek_read(timeout); }
+    virtual opcd peek_write( uint timeout ) override { return _binw->peek_write(timeout); }
 
-    virtual opcd bind( binstream& bin, int io=0 )
+    virtual opcd bind( binstream& bin, int io=0 ) override
     {
         if( io<0 )
             _binr = &bin;
@@ -273,18 +273,18 @@ public:
         return 0;
     }
 
-    virtual opcd open( const zstring& name, const zstring& arg = zstring() )
+    virtual opcd open( const zstring& name, const token& arg = "" ) override
     {
         return _binw->open(name, arg);
     }
 
-    virtual opcd close( bool linger=false )
+    virtual opcd close( bool linger=false ) override
     {
         return _binw->close(linger);
     }
 
-    virtual bool is_open() const    { return _binr->is_open (); }
-    virtual void flush()
+    virtual bool is_open() const override   { return _binr->is_open (); }
+    virtual void flush() override
     {
         if(_binw)
         {
@@ -293,18 +293,18 @@ public:
             _binw->flush();
         }
     }
-    virtual void acknowledge (bool eat=false)
+    virtual void acknowledge(bool eat=false) override
     {
         if(_binr)
             _binr->acknowledge(eat);
     }
 
-    virtual void reset_read()
+    virtual void reset_read() override
     {
         _binr->reset_read();
     }
 
-    virtual void reset_write()
+    virtual void reset_write() override
     {
         _binw->reset_write();
     }

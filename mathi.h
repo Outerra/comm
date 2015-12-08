@@ -46,13 +46,20 @@
 
 #ifdef SYSTYPE_MSVC
 #include <intrin.h>
+#ifndef SYSTYPE_CLANG
 #pragma intrinsic(_BitScanForward)
 #pragma intrinsic(_BitScanReverse)
+#endif
 
 #ifdef SYSTYPE_64
+
+#ifndef SYSTYPE_CLANG
 #pragma intrinsic(_BitScanForward64)
 #pragma intrinsic(_BitScanReverse64)
-#else
+#endif
+
+#elif !defined SYSTYPE_CLANG
+
 inline void _BitScanForward64(ulong* idx, uint64 v) {
     if(!_BitScanForward(idx, uint(v))) {
         _BitScanForward(idx, uint(v>>32));

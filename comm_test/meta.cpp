@@ -94,7 +94,7 @@ struct FooB
     int end;
 
 
-    FooB() : pfo(0), a(0), b(0), flag(false)
+    FooB() : a(0), b(0), flag(false), pfo(0)
     {}
 /*
     friend binstream& operator << (binstream& bin, const FooB& s)

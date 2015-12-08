@@ -463,9 +463,9 @@ public:
             if( nalloc < 2*n )
                 nalloc = 2*n;
 
-            A::free<T>(_ptr);
+            A::template free<T>(_ptr);
 
-            _ptr = A::alloc<T>(nalloc);
+            _ptr = A::template alloc<T>(nalloc);
         }
 
         if(nitems) {
@@ -498,8 +498,8 @@ public:
             if( nalloc < 2*n )
                 nalloc = 2*n;
 
-            A::free<T>(_ptr);
-            _ptr = A::alloc<T>(nalloc);
+            A::template free<T>(_ptr);
+            _ptr = A::template alloc<T>(nalloc);
         }
 
         if(nitems) {
@@ -1294,7 +1294,7 @@ public:
     void discard() {
         if(_ptr) {
             _destroy();
-            A::free<T>(_ptr);
+            A::template free<T>(_ptr);
             _ptr=0;
         }
     }
@@ -1369,7 +1369,7 @@ private:
             nalloc = 2 * oldsize;
 
         T* op = _ptr;
-        _ptr = A::realloc<T>(_ptr, nalloc);
+        _ptr = A::template realloc<T>(_ptr, nalloc);
         _set_count(newsize);
 
         if( !type_trait<T>::trivial_moving_constr  &&  op != _ptr )

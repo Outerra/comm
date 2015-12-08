@@ -796,7 +796,7 @@ protected:
             _tokenizer.match('>');
     }
 
-    void read_key( type t )
+    void read_key_type( type t )
     {
         if(_attrmoder  &&  _tokenizer.matches(lexid, _tagr)) {
             _tokenizer.match('=');

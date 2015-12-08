@@ -69,6 +69,10 @@
 # define SYSTYPE_WIN        1
 # define SYSTYPE_MSVC       1
 
+#ifdef __clang__
+# define SYSTYPE_CLANG      //clang under msvc
+#endif
+
 # if !defined(_DEBUG) && !defined(NDEBUG)
 #  define NDEBUG
 # endif
