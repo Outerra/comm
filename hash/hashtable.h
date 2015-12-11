@@ -719,10 +719,11 @@ public:
                 _ALLOC.free(n);
                 n = t;
             }
+            _table[i] = 0;
         }
 
         _nelem = 0;
-        _table.need_newc(64);
+        //_table.need_newc(64);
     }
 
 
