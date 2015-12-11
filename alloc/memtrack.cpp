@@ -102,10 +102,10 @@ static memtrack_registrar* memtrack_register()
         memtrack_registrar::reg = -1;
  
     static closer _C;
-    if(!_C.mtr)
+    if(!_C.mtr) {
         _C.mtr = new memtrack_registrar;
-
-    memtrack_registrar::reg = 1;
+        memtrack_registrar::reg = 1;
+    }
 
     return _C.mtr;
 }
@@ -125,7 +125,12 @@ void memtrack_alloc( const char* name, uints size )
     if(!mtr || mtr->reg<0) return;
 
     GUARDTHIS(mtr->mux);
+    if(mtr->reg > 1)
+        return;     //avoid stack overlow from hashmap
+    mtr->reg = 2;
     memtrack* val = mtr->hash.find_or_insert_value_slot((uints)name);
+    mtr->reg = 1;
+
     val->name = name;
 
     ++val->nallocs;

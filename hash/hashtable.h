@@ -685,7 +685,7 @@ public:
         uints ts = _table.size();
         if( bucketn > ts )
         {
-            uint n = nextpow2(bucketn);
+            uints n = nextpow2(bucketn);
 
             dynarray<Node*> temp;
             temp.need_newc(n);
@@ -729,7 +729,7 @@ public:
 
     std::pair<iterator, bool> insert_unique( const VAL& v )
     {
-        resize( _nelem + 1 );
+        adjust(1);
 
         Node** ppn = _copy_insert_unique(v);
         if(!ppn)
@@ -740,14 +740,14 @@ public:
 
     iterator insert_equal( const VAL& v )
     {
-        resize( _nelem + 1 );
+        adjust(1);
         return iterator( *_copy_insert_equal(v), *this );
     }
 
     void insert_unique( const VAL* f, const VAL* l )
     {
         size_t n = l - f;
-        resize( _nelem + n );
+        adjust(n);
         for( ; n>0; --n, ++f )
             _copy_insert_unique(*f);
     }
@@ -755,7 +755,7 @@ public:
     void insert_equal( const VAL* f, const VAL* l )
     {
         size_t n = l - f;
-        resize( _nelem + n );
+        adjust(n);
         for( ; n>0; --n, ++f )
             _copy_insert_equal(*f);
     }
@@ -764,7 +764,8 @@ public:
     {
         size_t n = 0;
         std::distance( f, l, n );
-        resize( _nelem + n );
+        adjust(n);
+
         for( ; n>0; --n, ++f )
             _copy_insert_unique(*f);
     }
@@ -773,7 +774,8 @@ public:
     {
         size_t n = 0;
         std::distance( f, l, n );
-        resize( _nelem + n );
+        adjust(n);
+
         for( ; n>0; --n, ++f )
             _copy_insert_equal(*f);
     }
@@ -844,6 +846,10 @@ private:
     }
 
 protected:
+
+    void adjust( uint n ) {
+        resize(_nelem + n);
+    }
 
     Node** _swap_insert_unique( VAL& v ) {
         return __insert_unique<true>(v);

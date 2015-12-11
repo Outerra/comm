@@ -93,12 +93,14 @@ public:
 
     const VAL* insert_value( const value_type& val )
     {
+        adjust(1);
         typename _HT::Node** v = this->_copy_insert_unique(val);
         return v  ?  &(*v)->_val  :  0;
     }
 
     const VAL* swap_insert_value( value_type& val )
     {
+        adjust(1);
         typename _HT::Node** v = this->_swap_insert_unique(val);
         return v  ?  &(*v)->_val  :  0;
     }
@@ -224,12 +226,14 @@ public:
 
     const VAL* insert_value( const value_type& val )
     {
+        adjust(1);
         typename _HT::Node** v = this->_copy_insert_equal(val);
         return v  ?  &(*v)->_val  :  0;
     }
     
     const VAL* swap_insert_value( value_type& val )
     {
+        adjust(1);
         typename _HT::Node** v = this->_swap_insert_equal(val);
         return v  ?  &(*v)->_val  :  0;
     }

@@ -104,18 +104,21 @@ public:
 
     const VAL* insert_value( const value_type& val )
     {
+        adjust(1);
         typename _HT::Node** v = this->_copy_insert_unique(val);
         return v  ?  &(*v)->_val.second  :  0;
     }
 
     const VAL* swap_insert_value( value_type& val )
     {
+        adjust(1);
         typename _HT::Node** v = this->_swap_insert_unique(val);
         return v  ?  &(*v)->_val.second  :  0;
     }
 
     const VAL* insert_key_value( const key_type& k, const VAL& v )
     {
+        adjust(1);
         std::pair<KEY,VAL> val(k,v);
         typename _HT::Node** n = this->_copy_insert_unique(val);
         return n  ?  &(*n)->_val.second  :  0;
@@ -123,6 +126,7 @@ public:
 
     const VAL* swap_insert_key_value( const key_type& k, VAL& v )
     {
+        adjust(1);
         std::pair<KEY,VAL> val(k,v);
         typename _HT::Node** n = this->_swap_insert_unique(val);
         return n  ?  &(*n)->_val.second  :  0;
@@ -257,18 +261,21 @@ public:
     
     const VAL* insert_value( const value_type& val )
     {
+        adjust(1);
         typename _HT::Node** v = this->_copy_insert_equal(val);
         return v  ?  &(*v)->_val.second  :  0;
     }
 
     const VAL* swap_insert_value( value_type& val )
     {
+        adjust(1);
         typename _HT::Node** v = this->_swap_insert_equal(val);
         return v  ?  &(*v)->_val.second  :  0;
     }
 
     const VAL* insert_key_value( const key_type& k, const VAL& v )
     {
+        adjust(1);
         std::pair<KEY,VAL> val(k,v);
         typename _HT::Node** n = this->_copy_insert_unique(val);
         return n  ?  &(*n)->_val.second  :  0;
@@ -276,6 +283,7 @@ public:
 
     const VAL* swap_insert_key_value( const key_type& k, VAL& v )
     {
+        adjust(1);
         std::pair<KEY,VAL> val(k,v);
         typename _HT::Node** n = this->_swap_insert_unique(val);
         return n  ?  &(*n)->_val.second  :  0;
