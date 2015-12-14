@@ -59,6 +59,8 @@ protected:
     token _flush;                       //< token to insert on explicit flush
     char _autoflush;                    //< character to catch in input and invoke flush
 
+    int precision = -1;
+
 public:
 
     virtual uint binstream_attributes( bool in0out1 ) const override
@@ -129,10 +131,8 @@ public:
                 switch( t.get_size() )
                 {
                 case 4:
-                    tok.set(buf, charstrconv::append_float(buf, buf+256, *(const float*)p, -1));
-                    break;
                 case 8:
-                    tok.set(buf, charstrconv::append_float(buf, buf+256, *(const double*)p, -2));
+                    tok.set(buf, charstrconv::append_float(buf, buf+256, *(const double*)p, precision));
                     break;
 
                 default:
@@ -326,6 +326,10 @@ public:
     {
         _readbuf = new binstreambuf(str);
         _binr = _readbuf;
+    }
+
+    void set_precision(int nfrac) {
+        precision = nfrac;
     }
 
     template<class NUM>
