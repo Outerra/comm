@@ -59,7 +59,7 @@ protected:
     token _flush;                       //< token to insert on explicit flush
     char _autoflush;                    //< character to catch in input and invoke flush
 
-    int precision = -1;
+    int _precision;
 
 public:
 
@@ -132,7 +132,7 @@ public:
                 {
                 case 4:
                 case 8:
-                    tok.set(buf, charstrconv::append_float(buf, buf+256, *(const double*)p, precision));
+                    tok.set(buf, charstrconv::append_float(buf, buf+256, *(const double*)p, _precision));
                     break;
 
                 default:
@@ -329,7 +329,7 @@ public:
     }
 
     void set_precision(int nfrac) {
-        precision = nfrac;
+        _precision = nfrac;
     }
 
     template<class NUM>
@@ -395,14 +395,14 @@ public:
         _readbuf.eject();
     }
 
-    txtstream (binstream& b) : _binr(&b), _binw(&b)
+    txtstream(binstream& b) : _binr(&b), _binw(&b), _precision(-1)
     {   _flush = "";  _autoflush=0; }
-    txtstream (binstream* br, binstream* bw=0) : _binr(br), _binw(bw == 0 ? br : bw)
+    txtstream(binstream* br, binstream* bw=0) : _binr(br), _binw(bw == 0 ? br : bw), _precision(-1)
     {   _flush = "";  _autoflush=0; }
-    txtstream ()
-    {   _binr = _binw = 0;  _flush = "";  _autoflush=0; }
+    txtstream() : _binr(0), _binw(0), _precision(-1)
+    {   _flush = "";  _autoflush=0; }
 
-    txtstream (charstr& str, binstream* bw = 0)
+    txtstream(charstr& str, binstream* bw = 0) : _precision(-1)
     {
         _readbuf = new binstreambuf(str);
         _binr = _readbuf;
@@ -411,7 +411,7 @@ public:
         _autoflush = 0;
     }
 
-    txtstream (const token& str, binstream* bw = 0)
+    txtstream(const token& str, binstream* bw = 0) : _precision(-1)
     {
         _readbuf = new binstreambuf(str);
         _binr = _readbuf;
@@ -420,7 +420,7 @@ public:
         _autoflush = 0;
     }
 
-    ~txtstream ()
+    ~txtstream()
     {
 //        flush ();
     }
