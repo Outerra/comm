@@ -95,7 +95,7 @@ inline float approx_fast_sqrt(float fx)
       }
       return fret;
 #else
-	return sqrt(fx);
+	return ::sqrtf(fx);
 #endif
 }
 

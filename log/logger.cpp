@@ -52,9 +52,8 @@ using namespace coid;
 static void write_console_text( const charstr& text, int type )
 {
     static HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
-    static int curtype = logger::Info;
 
-    if(type != curtype) {
+    if(type != logger::Info) {
         uint flg;
 
         switch(type) {
@@ -68,11 +67,13 @@ static void write_console_text( const charstr& text, int type )
         default:                flg = BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE;
         }
 
-        curtype = type;
         SetConsoleTextAttribute(hstdout, flg);
     }
 
     fwrite(text.ptr(), 1, text.len(), stdout);
+
+    if(type != logger::Info)
+        SetConsoleTextAttribute(hstdout, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
 
 #ifdef _DEBUG
     stdoutstream::debug_out(text.c_str());
