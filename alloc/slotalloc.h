@@ -91,10 +91,10 @@ public:
 
     ///Construct slotalloc container
     //@param pool true for pool mode, in which removed objects do not have destructors invoked
-    slotalloc() : _count(0)
+    slotalloc() : _count(0), _version(0)
     {}
 
-    explicit slotalloc( uints reserve_items ) : _count(0) {
+    explicit slotalloc( uints reserve_items ) : _count(0), _version(0) {
         reserve(reserve_items);
     }
 
@@ -195,6 +195,7 @@ public:
         clear_bit(id);
         //--_count;
         atomic::dec(&_count);
+        atomic::inc(&_version);
     }
 
     //@return number of used slots in the container
@@ -226,6 +227,7 @@ public:
             set_bit(id);
             //++_count;
             atomic::inc(&_count);
+            atomic::inc(&_version);
             return _array.ptr() + id;
         }
 
@@ -241,6 +243,7 @@ public:
         set_bit(id);
         //++_count;
         atomic::inc(&_count);
+        atomic::inc(&_version);
         return _array.ptr() + id;
     }
 
@@ -287,6 +290,7 @@ public:
         T* d = _array.ptr();
         uints const* b = _allocated.ptr();
         uints const* e = _allocated.ptre();
+        uints version = _version;
 
         for(uints const* p=b; p!=e; ++p) {
             uints m = *p;
@@ -294,9 +298,18 @@ public:
 
             uints s = (p - b) * 8 * sizeof(uints);
 
-            for(int i=0; m && i<8*sizeof(uints); ++i, m>>=1) {
-                if(m&1)
+            for(int i=0; m && i<8*sizeof(uints); ++i) {
+                if(m & (uints(1)<<i)) {
                     f(d[s + i]);
+                    if(version != _version) {
+                        //handle alterations and rebase
+                        d = _array.ptr();
+                        b = _allocated.ptr() + (p - b);
+                        e = _allocated.ptre();
+                        m = *p;
+                        version = _version;
+                    }
+                }
             }
         }
     }
@@ -339,6 +352,7 @@ private:
     dynarray<T> _array;
     dynarray<uints> _allocated;     //< bit mask for allocated/free items
     volatile uints _count;
+    volatile uints _version;
 
     ///Related data array that's maintained together with the main one
     struct relarray {
@@ -394,6 +408,7 @@ private:
         atomic::aor(p, uints(1) << bit);
 
         atomic::inc(&_count);
+        atomic::inc(&_version);
         return _array.ptr() + slot + bit;
     }
 
@@ -410,6 +425,7 @@ private:
         });
 
         atomic::inc(&_count);
+        atomic::inc(&_version);
 
         return _array.add_uninit(1);
     }
