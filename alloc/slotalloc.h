@@ -263,6 +263,7 @@ public:
     }
 
     ///Invoke a functor on each used item.
+    //@note const version doesn't handle array insertions/deletions during iteration
     template<typename Func>
     void for_each( Func f ) const
     {
@@ -278,12 +279,13 @@ public:
 
             for(int i=0; m && i<8*sizeof(uints); ++i, m>>=1) {
                 if(m&1)
-                    f(d[s + i]);
+                    f(d[s+i]);
             }
         }
     }
 
     ///Invoke a functor on each used item.
+    //@note non-const version handles array insertions/deletions during iteration
     template<typename Func>
     void for_each( Func f )
     {
@@ -298,15 +300,17 @@ public:
 
             uints s = (p - b) * 8 * sizeof(uints);
 
-            for(int i=0; m && i<8*sizeof(uints); ++i) {
-                if(m & (uints(1)<<i)) {
-                    f(d[s + i]);
+            for(int i=0; m && i<8*sizeof(uints); ++i, m>>=1) {
+                if(m&1) {
+                    f(d[s+i]);
                     if(version != _version) {
                         //handle alterations and rebase
                         d = _array.ptr();
-                        b = _allocated.ptr() + (p - b);
+                        ints x = p - b;
+                        b = _allocated.ptr();
                         e = _allocated.ptre();
-                        m = *p;
+                        p = b + x;
+                        m = *p >> i;
                         version = _version;
                     }
                 }
