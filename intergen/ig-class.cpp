@@ -266,8 +266,10 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
 
 
                     //parse function declaration
-                    if(iface.size() == 0)
-                        throw lex.set_err() << "error: no preceding interface declared\n";
+                    if(iface.size() == 0) {
+                        lex.set_err() << "error: no preceding interface declared\n";
+                        throw lex.exc();
+                    }
 
                     Interface* ifc = iface.last();
                     MethodIG* m = ifc->method.add();
