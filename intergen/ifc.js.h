@@ -105,7 +105,9 @@ struct script_handle
     //@return 0 if succeeded, 1 invalid stack frame, 2 invalid path, 3 outside the root or bad path
     static int get_target_path( const coid::token& path, uint frame, const coid::token& root, coid::charstr& dst, bool constraint_root )
     {
-        if(path.first_char() != '/' && path.first_char() != '\\')
+        bool slash = path.first_char() == '/' || path.first_char() == '\\';
+
+        if(!slash && !coid::directory::is_absolute_path(path))
         {
 #ifdef V8_MAJOR_VERSION
             v8::Local<v8::StackTrace> trace = v8::StackTrace::CurrentStackTrace(v8::Isolate::GetCurrent(),
@@ -143,7 +145,11 @@ struct script_handle
             else
                 dst = root;
 
-            if(!coid::directory::append_path(dst, coid::token(path.ptr()+1, path.ptre()), constraint_root))
+            coid::token append = path;
+            if(slash)
+                ++append;
+
+            if(!coid::directory::append_path(dst, append, constraint_root))
                 return 3;
         }
 
