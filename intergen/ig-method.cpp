@@ -191,6 +191,11 @@ void MethodIG::parse_docs()
 ////////////////////////////////////////////////////////////////////////////////
 charstr& MethodIG::Arg::match_type( iglexer& lex, charstr& type )
 {
+    if(lex.matches("::"))
+        type = "::";
+    else
+        type.reset();
+
     bool nested;
     do {
         type << lex.match(lex.IDENT, "expected type name");
