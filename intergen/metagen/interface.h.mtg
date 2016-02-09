@@ -111,7 +111,7 @@ $-(/if)$
     }
 $-(if event.empty!)$
     
-private:
+public:
     // --- host helpers to check presence of handlers in scripts ---
 
 $-[event !static?]$
