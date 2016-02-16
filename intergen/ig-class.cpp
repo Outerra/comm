@@ -415,7 +415,7 @@ void Interface::compute_hash( int version )
 
         for(; pas<pae; ++pas)
         {
-            mash << pas->type << pas->size << (pas->binarg?'i':' ') << (pas->boutarg?'o':' ');
+            mash << pas->type << pas->arsize << (pas->binarg?'i':' ') << (pas->boutarg?'o':' ');
         }
     }
 

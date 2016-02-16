@@ -165,7 +165,7 @@ struct MethodIG
         token basetype;                 //< base type (stripped of the last ptr/ref)
         charstr base2arg;               //< suffix to convert from base (storage) type to type parameter
         charstr name;                   //< parameter name
-        charstr size;                   //< size expression if the parameter is an array, including [ ]
+        charstr arsize;                 //< size expression if the parameter is an array, including [ ]
         charstr defval;
         charstr fulltype;
         charstr ifctarget;
@@ -200,7 +200,7 @@ struct MethodIG
                 m.member("basetype",p.basetype);
                 m.member("base2arg",p.base2arg);
                 m.member("name",p.name);
-                m.member("size",p.size);
+                m.member("size",p.arsize);
                 m.member("defval",p.defval);
                 m.member("fulltype",p.fulltype);
                 m.member("ifc",p.ifctarget);

@@ -147,7 +147,7 @@ public:
     //@return NULL if the value could not be inserted, or a constant pointer to the value
     const VAL* insert_value( const value_type& val )
     {
-        adjust(1);
+        this->adjust(1);
         typename _HT::Node** v = this->_copy_insert_unique(val);
         return v  ?  &(*v)->_val  :  0;
     }
@@ -157,7 +157,7 @@ public:
     //@return NULL if the value could not be inserted, or a constant pointer to the value
     const VAL* swap_insert_value( value_type& val )
     {
-        adjust(1);
+        this->adjust(1);
         typename _HT::Node** v = this->_swap_insert_unique(val);
         return v  ?  &(*v)->_val  :  0;
     }
@@ -167,7 +167,7 @@ public:
     //@return constant pointer to the value
     const VAL* insert_or_replace_value( const value_type& val )
     {
-        adjust(1);
+        this->adjust(1);
         typename _HT::Node** v = this->_copy_insert_unique__replace(val);
         return v  ?  &(*v)->_val  :  0;
     }
@@ -177,7 +177,7 @@ public:
     //@return constant pointer to the value
     const VAL* swap_insert_or_replace_value( value_type& val )
     {
-        adjust(1);
+        this->adjust(1);
         typename _HT::Node** v = this->_swap_insert_unique__replace(val);
         return v  ?  &(*v)->_val  :  0;
     }
@@ -187,7 +187,7 @@ public:
     //@param key the key under which the value object should be created
     VAL* insert_value_slot( const key_type& key )
     {
-        adjust(1);
+        this->adjust(1);
         typename _HT::Node** v = _HT::_insert_unique_slot(key);
         return v  ?  &(*v)->_val  :  0;
     }
@@ -197,7 +197,7 @@ public:
     //@param key the key under which the value object should be created
     VAL* insert_value_slot_uninit( const key_type& key )
     {
-        adjust(1);
+        this->adjust(1);
         typename _HT::Node** v = _HT::_insert_unique_slot_uninit(key);
         return v  ?  &(*v)->_val  :  0;
     }
@@ -207,7 +207,7 @@ public:
     //@param key the key under which the value object should be created
     VAL* find_or_insert_value_slot( const key_type& key, bool* isnew=0 )
     {
-        adjust(1);
+        this->adjust(1);
         typename _HT::Node** v = _HT::_find_or_insert_slot(key, isnew);
         return &(*v)->_val;
     }
@@ -217,7 +217,7 @@ public:
     //@param key the key under which the value object should be created
     VAL* find_or_insert_value_slot_uninit( const key_type& key, bool* isnew=0 )
     {
-        adjust(1);
+        this->adjust(1);
         typename _HT::Node** v = _HT::_find_or_insert_slot_uninit(key, isnew);
         return &(*v)->_val;
     }
@@ -353,28 +353,28 @@ public:
 
     const VAL* insert_value( const value_type& val )
     {
-        adjust(1);
+        this->adjust(1);
         typename _HT::Node** v = this->_copy_insert_equal(val);
         return v  ?  &(*v)->_val  :  0;
     }
 
     const VAL* swap_insert_value( value_type& val )
     {
-        adjust(1);
+        this->adjust(1);
         typename _HT::Node** v = this->_swap_insert_equal(val);
         return v  ?  &(*v)->_val  :  0;
     }
 
     VAL* insert_value_slot( const key_type& key )
     {
-        adjust(1);
+        this->adjust(1);
         typename _HT::Node** v = _insert_equal_slot(key);
         return v  ?  &(*v)->_val  :  0;
     }
 
     VAL* find_or_insert_value_slot( const key_type& key, bool* isnew=0 )
     {
-        adjust(1);
+        this->adjust(1);
         typename _HT::Node** v = _find_or_insert_slot(key, isnew);
         return &(*v)->_val;
     }

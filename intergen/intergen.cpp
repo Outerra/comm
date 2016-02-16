@@ -190,8 +190,10 @@ void generate_ig( File& file, charstr& tdir, charstr& fdir  )
                 fdir << ifc.relpath;    //contains the file name already
             else if(ifc.relpath.last_char() == '/' || ifc.relpath.last_char() == '\\')
                 fdir << ifc.relpath << ifc.name << ".h";
-            else
+            else if(ifc.relpath)
                 fdir << ifc.relpath << '/' << ifc.name << ".h";
+            else
+                fdir << ifc.name << ".h";
 
             ifc.relpath.set_from_range(fdir.ptr()+flen, fdir.ptre());
             directory::compact_path(ifc.relpath);

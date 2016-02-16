@@ -40,9 +40,9 @@ private:
         _vtable1 = new ifn_t[$nifcmethods$];
 $-[method !static?]$
  $-(if hasifc?)$
-        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$$type$$[/args]$)$(if const?)$const$(/if)$>(&$name$__ifc_wrapper));
+        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$$type$$size$$[/args]$)$(if const?)$const$(/if)$>(&$name$__ifc_wrapper));
  $-(elif)$
-        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$$type$$[/args]$)$(if const?)$const$(/if)$>(&$....ns$::$....class$::$intname$));
+        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$$type$$size$$[/args]$)$(if const?)$const$(/if)$>(&$....ns$::$....class$::$intname$));
  $-(/if)$
 $-[/method]-$
 
