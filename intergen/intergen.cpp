@@ -135,10 +135,10 @@ int generate_rl( const File& cgf, charstr& patfile, const token& outfile )
         return -6;
     }
 
+    bofstream bof(outfile);
+
     if( cgf.classes.size() > 0 )
     {
-        bofstream bof(outfile);
-
         if( !bof.is_open() ) {
             out << "error: can't create output file '" << outfile << "'\n";
             return -5;
