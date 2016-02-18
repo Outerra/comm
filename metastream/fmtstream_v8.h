@@ -366,6 +366,12 @@ template<typename V> class v8_streamer<v8::Handle<V>> { public: \
     static bool from_v8( v8::Handle<v8::Value> src, T& res ) { res = src.Cast<T>(src); return true; } \
 };
 
+template<> class v8_streamer<v8::Handle<v8::Function>> { public: \
+    typedef v8::Handle<v8::Function> T; \
+    static v8::Handle<v8::Value> to_v8(T v) { return v; } \
+    static bool from_v8( v8::Handle<v8::Value> src, T& res ) { res = v8::Handle<v8::Function>::Cast(src); return true; } \
+};
+
 //dummy metastream operator for v8::Handle
 template<typename V>
 inline metastream& operator || (metastream& m, v8::Handle<V>) { RASSERT(0); return m; }
