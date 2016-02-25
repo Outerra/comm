@@ -216,6 +216,11 @@ public:
     handle_t get_next(const handle_t id) const { return _node_pool.next(id); }
 
     const node* get_node_ptr(handle_t id) { return _node_pool.ptr(id); }
+
+    void clear()
+	{
+	    
+	}
 };
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
