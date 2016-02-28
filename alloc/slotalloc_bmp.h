@@ -42,6 +42,7 @@ public:
         }
 
         _items.set_size(0);
+        memset(_bmp.ptr(), 0, _bmp.byte_size());
     }
 
     /// TODO use SSE for faster iteration to free block?
@@ -148,6 +149,7 @@ public:
 
         return (b - _bmp.ptr()) * 32 + index;
     }
+
 };
 
 namespace test

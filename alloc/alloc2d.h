@@ -45,6 +45,8 @@ private:
         handle_t id(const node* const ptr) const { return _nodes.get_item_id(ptr); }
 
         handle_t next(const handle_t id) const { return _nodes.next(id); }
+
+        void clear() { _nodes.clear(); }
     };
 
 public:
@@ -160,8 +162,9 @@ public:
 private:
 
     node_pool _node_pool;
-    handle_t const _root;
+    handle_t _root;
 	const int _initial_split_size;
+    const uint _size;
 
 public:
 
@@ -169,6 +172,7 @@ public:
 		: _node_pool()
         , _root(_node_pool.new_node(type_t(0), type_t(size), InvalidImage))
 		, _initial_split_size(initial_split_size)
+        , _size(size)
 	{
 		if(initial_split_size > 0) {
             int depth = 0;
@@ -219,7 +223,8 @@ public:
 
     void clear()
 	{
-	    
+        _node_pool.clear();
+        _root = _node_pool.new_node(type_t(0), type_t(_size), InvalidImage);
 	}
 };
 
