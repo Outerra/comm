@@ -30,7 +30,11 @@ public:
         _items.add_uninit(_bmp.size() * sizeof(BLOCK_TYPE) * 8);
     }
 
-    ~slotalloc_bmp() { clear(); }
+    ~slotalloc_bmp()
+    {
+        clear();
+        _items.set_size(0); // to avoid call destructor on each items ~T() was called in clear
+    }
 
     /// have to call this in destructor because we have item allocated with add_uninit...
     void clear()
@@ -41,7 +45,6 @@ public:
             id = next(id);
         }
 
-        _items.set_size(0);
         memset(_bmp.ptr(), 0, _bmp.byte_size());
     }
 
