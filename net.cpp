@@ -560,7 +560,7 @@ namespace coid {
     void netSocket::setBuffers(uint rsize, uint wsize)
     {
         RASSERTE(handle != UMAXS, ersDISCONNECTED);  //invalid handle
-        int result;
+        int result = -1;
 #ifdef SYSTYPE_WIN
         if(rsize)
             result = ::setsockopt(handle, SOL_SOCKET, SO_RCVBUF, (char*)&rsize, sizeof(rsize));
