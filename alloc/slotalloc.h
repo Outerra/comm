@@ -67,7 +67,7 @@ reserved in advance.
 
 @param POOL if true, do not call destructors on item deletion, only on container deletion
 **/
-template<class T, bool POOL=false>
+template<class T, bool POOL=false, bool ATOMIC=false>
 class slotalloc
 {
 public:
@@ -79,7 +79,10 @@ public:
             for_each([](T& p) {destroy(p);});
 
         //_count = 0;
-        atomic::exchange(&_count, 0);
+        if(ATOMIC)
+            atomic::exchange(&_count, 0);
+        else
+            _count = 0;
 
         _relarrays.for_each([&](relarray& ra) {
             ra.set_count(0);
@@ -194,8 +197,14 @@ public:
             p->~T();
         clear_bit(id);
         //--_count;
-        atomic::dec(&_count);
-        atomic::inc(&_version);
+        if(ATOMIC) {
+            atomic::dec(&_count);
+            atomic::inc(&_version);
+        }
+        else {
+            --_count;
+            ++_version;
+        }
     }
 
     //@return number of used slots in the container
@@ -226,8 +235,14 @@ public:
                 return _array.ptr() + id;
             set_bit(id);
             //++_count;
-            atomic::inc(&_count);
-            atomic::inc(&_version);
+            if(ATOMIC) {
+                atomic::inc(&_count);
+                atomic::inc(&_version);
+            }
+            else {
+                ++_count;
+                ++_version;
+            }
             return _array.ptr() + id;
         }
 
@@ -242,8 +257,14 @@ public:
 
         set_bit(id);
         //++_count;
-        atomic::inc(&_count);
-        atomic::inc(&_version);
+        if(ATOMIC) {
+            atomic::inc(&_count);
+            atomic::inc(&_version);
+        }
+        else {
+            ++_count;
+            --_version;
+        }
         return _array.ptr() + id;
     }
 
@@ -353,10 +374,12 @@ public:
 
 private:
 
+    typedef typename std::conditional<ATOMIC, volatile uints, uints>::type uint_type;
+
     dynarray<T> _array;
     dynarray<uints> _allocated;     //< bit mask for allocated/free items
-    volatile uints _count;
-    volatile uints _version;
+    uint_type _count;
+    uint_type _version;
 
     ///Related data array that's maintained together with the main one
     struct relarray {
@@ -394,8 +417,8 @@ private:
     {
         DASSERT( _count < _array.size() );
 
-        volatile uints* p = _allocated.ptr();
-        volatile uints* e = _allocated.ptre();
+        uint_type* p = _allocated.ptr();
+        uint_type* e = _allocated.ptre();
         for(; p!=e && *p==UMAXS; ++p);
 
         if(p == e)
@@ -409,10 +432,17 @@ private:
         if(id)
             *id = slot + bit;
         //*p |= uints(1) << bit;
-        atomic::aor(p, uints(1) << bit);
+        if(ATOMIC) {
+            atomic::aor(p, uints(1) << bit);
 
-        atomic::inc(&_count);
-        atomic::inc(&_version);
+            atomic::inc(&_count);
+            atomic::inc(&_version);
+        }
+        else {
+            *p |= uints(1) << bit;
+            ++_count;
+            ++_version;
+        }
         return _array.ptr() + slot + bit;
     }
 
@@ -428,8 +458,14 @@ private:
             ra.add(1);
         });
 
-        atomic::inc(&_count);
-        atomic::inc(&_version);
+        if(ATOMIC) {
+            atomic::inc(&_count);
+            atomic::inc(&_version);
+        }
+        else {
+            ++_count;
+            ++_version;
+        }
 
         return _array.add_uninit(1);
     }
@@ -438,25 +474,34 @@ private:
     {
         uints s = k / (8*sizeof(uints));
         uints b = k % (8*sizeof(uints));
-        atomic::aor(const_cast<volatile uints*>(&_allocated.get_or_addc(s)), uints(1) << b);
-        //_allocated.get_or_addc(s) |= uints(1) << b;
+
+        if(ATOMIC)
+            atomic::aor(const_cast<uint_type*>(&_allocated.get_or_addc(s)), uints(1) << b);
+        else
+            _allocated.get_or_addc(s) |= uints(1) << b;
     }
 
     void clear_bit( uints k )
     {
         uints s = k / (8*sizeof(uints));
         uints b = k % (8*sizeof(uints));
-        //_allocated.get_or_addc(s) &= ~(uints(1) << b);
-        atomic::aand(const_cast<volatile uints*>(&_allocated.get_or_addc(s)), ~(uints(1) << b));
+        
+        if(ATOMIC)
+            atomic::aand(const_cast<uint_type*>(&_allocated.get_or_addc(s)), ~(uints(1) << b));
+        else
+            _allocated.get_or_addc(s) &= ~(uints(1) << b);
     }
 
     bool get_bit( uints k ) const
     {
         uints s = k / (8*sizeof(uints));
         uints b = k % (8*sizeof(uints));
-        //return s < _allocated.size() && (_allocated[s] & (uints(1) << b)) != 0;
-        return s < _allocated.size()
-            && (*const_cast<volatile uints*>(_allocated.ptr()+s) & (uints(1) << b)) != 0;
+
+        if(ATOMIC)
+            return s < _allocated.size()
+                && (*const_cast<uint_type*>(_allocated.ptr()+s) & (uints(1) << b)) != 0;
+        else
+            return s < _allocated.size() && (_allocated[s] & (uints(1) << b)) != 0;
     }
 
     //WA for lambda template error
