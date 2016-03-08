@@ -80,42 +80,6 @@ inline double frexp10(double x, int *exp10)
     return mantissa;
 }
 
-union ieee_float
-{
-    struct {
-        uint base : 23;
-        uint exponent : 8;
-        uint sign : 1;
-    };
-    float f;
-};
-
-union ieee_double
-{
-    struct {
-        uint64 base : 52;
-        uint64 exponent : 11;
-        uint64 sign : 1;
-    };
-    double f;
-};
-
-inline float ldexp_fast( float v, int exp )
-{
-    ieee_float u;
-    u.f = 2.0f;
-    u.exponent += exp - 1;
-    return v * u.f;
-}
-
-inline double ldexp_fast( double v, int exp )
-{
-    ieee_double u;
-    u.f = 2.0;
-    u.exponent += exp - 1;
-    return v * u.f;
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 inline float approx_fast_sqrt(float fx)
 {

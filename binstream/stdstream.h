@@ -67,8 +67,10 @@ public:
         binstreambuf& buf = *get_read_buffer();
 
 #if defined(SYSTYPE_WIN) && !defined(_CONSOLE)
-        *(char*)buf.add_raw(1) = 0;
-        debug_out(buf.get_buf().ptr());
+        dynarray<char>& dyn = buf.get_buf();
+        *dyn.add() = 0;
+        debug_out(dyn.ptr());
+        dyn.resize(-1);
 #endif
         token t = buf;
 
