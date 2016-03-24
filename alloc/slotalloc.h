@@ -366,6 +366,33 @@ public:
         return 0;
     }
 
+    ///Find first element for which the predicate returns true
+    //@return pointer to the element or null
+    template<typename Func>
+    const T* find_if(Func f)
+    {
+        T* d = _array.ptr();
+        uints const* b = _allocated.ptr();
+        uints const* e = _allocated.ptre();
+
+        for(uints const* p=b; p!=e; ++p) {
+            uints m = *p;
+            if(!m) continue;
+
+            uints s = (p - b) * 8 * sizeof(uints);
+
+            for(int i=0; m && i<8*sizeof(uints); ++i, m>>=1) {
+                if(m&1) {
+                    T& v = d[s + i];
+                    if(f(v))
+                        return &v;
+                }
+            }
+        }
+
+        return 0;
+    }
+
     //@{ Get internal array directly
     //@note altering the array directly may invalidate the internal structure
     dynarray<T>& get_array() { return _array; }

@@ -283,6 +283,44 @@ opcd directory::truncate( zstring fname, uint64 size )
     return r ? ersNOERR : ersFAILED;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+static void timet_to_filetime( timet t, FILETIME* ft )
+{
+    struct tm tm;
+    _gmtime64_s(&tm, &t.t);
+
+    SYSTEMTIME systime;
+    systime.wYear = 1900 + tm.tm_year;
+    systime.wMonth = 1 + tm.tm_mon;
+    systime.wDayOfWeek = 0;
+    systime.wDay = tm.tm_mday;
+    systime.wHour = tm.tm_hour;
+    systime.wMinute = tm.tm_min;
+    systime.wSecond = tm.tm_sec;
+    systime.wMilliseconds = 0;
+
+    SystemTimeToFileTime(&systime, ft);
+}
+
+opcd directory::set_file_times(zstring fname, timet actime, timet modtime)
+{
+    FILETIME ftacc, ftmod;
+
+    timet_to_filetime(actime, &ftacc);
+    timet_to_filetime(modtime, &ftmod);
+
+    HANDLE h = CreateFile(fname.c_str(), GENERIC_WRITE, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+    if(!h)
+        return ersIO_ERROR;
+
+    BOOL r = SetFileTime(h, NULL, &ftacc, &ftmod);
+
+    CloseHandle(h);
+    
+    return r ? ersNOERR : ersFAILED;
+}
+
+
 COID_NAMESPACE_END
 
 

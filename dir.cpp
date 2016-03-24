@@ -360,28 +360,6 @@ opcd directory::delete_directory(zstring src, bool recursive)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::set_file_times(zstring fname, timet actime, timet modtime)
-{
-#ifdef SYSTYPE_WIN
-#if _MSC_VER == 1800
-    //fix for VS2013 bug
-    // http://connect.microsoft.com/VisualStudio/feedback/details/811534/utime-sometimes-fails-to-set-the-correct-file-times-in-visual-c-2013
-    long tzo;
-    _get_dstbias(&tzo);
-    actime.t -= tzo;
-    modtime.t -= tzo;
-#endif
-
-    __utimbuf64 ut;
-    ut.actime = actime;
-    ut.modtime = modtime;
-    return _utime64(no_trail_sep(fname), &ut) ? ersFAILED : ersNOERR;
-#else
-#error TODO
-#endif
-}
-
-////////////////////////////////////////////////////////////////////////////////
 bool directory::is_writable(zstring fname)
 {
     return 0 == _access(no_trail_sep(fname), 2);

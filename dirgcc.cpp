@@ -208,6 +208,12 @@ opcd directory::truncate( const zstring& fname, uint64 size )
         : ersFAILED;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+opcd directory::set_file_times(zstring fname, timet actime, timet modtime)
+{
+#error TODO
+}
+
 COID_NAMESPACE_END
 
 
