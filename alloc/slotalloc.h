@@ -369,7 +369,7 @@ public:
     ///Find first element for which the predicate returns true
     //@return pointer to the element or null
     template<typename Func>
-    const T* find_if(Func f)
+    T* find_if(Func f)
     {
         T* d = _array.ptr();
         uints const* b = _allocated.ptr();
