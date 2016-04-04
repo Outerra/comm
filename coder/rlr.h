@@ -472,7 +472,7 @@ private:
         ///Encode count of zeroes followed by 1
         void encode0()
         {
-            ints run = 1<<runbits;
+            ints run = ints(1)<<runbits;
 
             uints n0=0;
             while(nzero >= run)
