@@ -227,6 +227,14 @@ public:
         return id < _array.size() ? _array.ptr() + id : 0;
     }
 
+    const T& operator [] (uints idx) const {
+        return *get_item(idx);
+    }
+
+    T& operator [] (uints idx) {
+        return *get_item(idx);
+    }
+
     ///Get a particular free slot
     T* get_or_create( uints id )
     {
