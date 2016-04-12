@@ -742,6 +742,17 @@ public:
         return ptr;
     };
 
+    ///Push element into array if it's not already there, linear search
+    //@return 0 if already exists, pointer to the new item at the end otherwise
+    T* push_key( const T& v )
+    {
+        uints c = _count();
+        for(uints i=0; i<c; ++i)
+            if(_ptr[i] == v) return 0;
+
+        return push(v);
+    }
+
     ///Insert an element to the array at sorted position (using < operator)
     T* push_sort( const T& v )
     {
@@ -971,12 +982,13 @@ public:
         return -1;
     }
 
-    template<class K>
-    ints contains_deref( const K& key ) const
+    ///Linear search whether array contains element comparable with \a key via equality functor
+    template<class K, class EQ>
+    ints contains( const K& key, const EQ& eq ) const
     {
         uints c = _count();
         for( uints i=0; i<c; ++i )
-            if( *_ptr[i] == key )  return i;
+            if(eq(_ptr[i], key))  return i;
         return -1;
     }
 
@@ -1183,27 +1195,29 @@ public:
         _set_count( _count() - nitems );
     }
 
-    ///Test whether array contains given element \a key and delete it
+    ///Linear search for given element \a key and delete it
     /// @return number of deleted items
-    count_t del_key( const T& key, uints n=1 )
+    template<class K>
+    count_t del_key( const K& key, uints n=1 )
     {
         uints c = _count();
         uints m = 0;
         for( uints i=0; i<c; ++i )
-            if (key == _ptr[i])  { ++m;  del(i);  if(!--n) return count_t(m);  --i; }
+            if(_ptr[i] == key)  { ++m;  del(i);  if(!--n) return count_t(m);  --i; }
         return count_t(m);
     }
 
-    ///Test whether array contains given element \a key and delete it
+    ///Linear search given element \a key from end and delete it
     /// @return number of deleted items
-    count_t del_key_back( const T& key, uints n=1 )
+    template<class K>
+    count_t del_key_back( const K& key, uints n=1 )
     {
         uints c = _count();
         uints m = 0;
         for( ; c>0; )
         {
             --c;
-            if( key == _ptr[c] )  { ++m;  del(c);  if(!--n) return count_t(m); }
+            if(_ptr[c] == key)  { ++m;  del(c);  if(!--n) return count_t(m); }
         }
         return count_t(m);
     }

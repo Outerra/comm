@@ -72,7 +72,7 @@ void* ssegpage::operator new ( size_t, uints segsize, bool )
 
     MEMTRACK_ALLOC("ssegpage", segsize);
 
-    return memaligned_alloc( segsize, 1<<r );
+    return memaligned_alloc( segsize, uints(1) << r );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
