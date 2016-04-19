@@ -864,21 +864,41 @@ public:
         uint8* dst = buf.alloc(byte_size());
         uints stride = size();
 
-        auto p = ptr();
+        auto b = ptr();
         auto e = ptre();
-        for(; p != e; ++p) {
-            const uint8* bytes = reinterpret_cast<const uint8*>(p);
+        for(int i=0; i<sizeof(T); ++i)
+        {
+            for(auto p=b; p<e; ++p) {
+                const uint8* bytes = reinterpret_cast<const uint8*>(p);
+                *dst++ = bytes[i];
+            }
+        }
+    }
 
-            for(int i=0; i<sizeof(T); ++i)
-                dst[stride*i] = bytes[i];
+    ///Save transposed and differentiated array data
+    ///Destination buffer will contain 1st bytes of every array element, followed by 2nd bytes and so on
+    void transpose_diff_to( dynarray<int8>& buf ) const
+    {
+        int8* dst = buf.alloc(byte_size());
+        uints stride = size();
 
-            dst++;
+        auto b = ptr();
+        auto e = ptre();
+        for(int i=0; i<sizeof(T); ++i)
+        {
+            int8 old=0;
+            for(auto p=b; p<e; ++p) {
+                const int8* bytes = reinterpret_cast<const int8*>(p);
+                int8 v = bytes[i] - old;
+                *dst++ = v;
+                old = bytes[i];
+            }
         }
     }
 
     ///Load transposed array data
     ///Source data contain 1st bytes of every array element, followed by 2nd bytes and so on
-    void transpose_from( const uint8* src, uints size )
+    T* transpose_from( const uint8* src, uints size )
     {
         uints stride = size / sizeof(T);
         alloc(stride);
@@ -893,8 +913,33 @@ public:
 
             src++;
         }
+
+        return ptr();
     }
 
+    ///Load transposed and differentiated array data
+    ///Source data contain 1st bytes of every array element, followed by 2nd bytes and so on
+    T* transpose_diff_from( const int8* src, uints size )
+    {
+        uints stride = size / sizeof(T);
+        alloc(stride);
+
+        auto b = ptr();
+        auto e = ptre();
+
+        for(int i=0; i<sizeof(T); ++i)
+        {
+            int8 old=0;
+            for(auto p=b; p<e; ++p) {
+                int8* bytes = reinterpret_cast<int8*>(p);
+
+                int8 v = old + *src++;
+                old = bytes[i] = v;
+            }
+        }
+
+        return b;
+    }
 
 
     ///Reserve \a nitems of elements

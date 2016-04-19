@@ -98,7 +98,7 @@ struct script_handle
     }
 
     ///Get absolute path from the provided path that's relative to given JS stack frame
-    //@param path relative path (an include path)
+    //@param path relative path (an include path) or absolute path from root
     //@param frame v8 stack frame number to be made relative to
     //@param root root directory (for absolute paths). If empty, frame path is used as the root
     //@param dst [out] resulting path, using / for directory separators

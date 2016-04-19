@@ -53,6 +53,15 @@
 
 COID_NAMESPACE_BEGIN
 
+#ifdef SYSTYPE_WIN
+static const token DIR_SEPARATORS = "\\/";
+static const token DIR_SEPARATOR_STRING = "\\";
+#else
+static const char DIR_SEPARATORS = '/';
+static const token DIR_SEPARATOR_STRING = "/";
+#endif
+
+
 ////////////////////////////////////////////////////////////////////////////////
 class directory
 {
@@ -104,14 +113,6 @@ public:
             path.append(separator());
         return path;
     }
-
-#ifdef SYSTYPE_WIN
-#define DIR_SEPARATORS "\\/"
-#define DIR_SEPARATOR_STRING "\\"
-#else
-#define DIR_SEPARATORS '/'
-#define DIR_SEPARATOR_STRING "/"
-#endif
 
     bool is_entry_open() const;
     bool is_entry_directory() const;
@@ -194,6 +195,10 @@ public:
     static bool append_path(charstr& dst, token path, bool keep_below = false);
 
     static bool is_absolute_path(const token& path);
+
+    //@return true if path is under or equals root
+    //@note paths must be compact
+    static bool is_subpath( token root, token path );
 
     ///Remove nested ../ chunks, remove extra path separator characters
     //@param tosep replace separators with given character (usually '/' or '\\')
