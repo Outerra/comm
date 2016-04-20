@@ -417,13 +417,6 @@ int File::parse( token path )
             if(!pc->parse(lex,templarg,namespc,&pasters,irefargs)
                 || pc->method.size() == 0 && pc->iface.size() == 0) {
                 classes.resize(-1);
-                ++nerr;
-            }
-
-            if(!lex.no_err()) {
-                out << lex.err() << '\n';
-                lex.clear_err();
-                ++nerr;
             }
         }
     }

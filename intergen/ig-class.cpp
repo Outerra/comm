@@ -200,10 +200,9 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
 
                     //parse event declaration
                     if(iface.size() == 0) {
-                        out << (lex.prepare_exception()
-                            << "error: no preceding interface declared\n");
-                        lex.clear_err();
-                        ++ncontinuable_errors;
+                        lex.prepare_exception()
+                            << "error: no preceding interface declared\n";
+                        throw lex.exc();
                     }
                     else if(iface.last()->varname.is_empty()) {
                         out << (lex.prepare_exception()
@@ -286,20 +285,6 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                     if(!m->parse(lex, classname, namespc, irefargs))
                         ++ncontinuable_errors;
 
-                    if(!binternal) {
-                        //check if another public method with the same name exists
-                        MethodIG* mdup = ifc->method.find_if([&](const MethodIG& mi) {
-                            return mi.name == m->name;
-                        });
-                        if(mdup != m) {
-                            out << (lex.prepare_exception()
-                                << "error: overloaded methods not supported for scripting interface\n");
-                            lex.clear_err();
-                            ++ncontinuable_errors;
-                        }
-                    }
-
-
                     if(duplicate == 2) {
                         lex.match(';');
                         lex.match("*/");
@@ -381,11 +366,25 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                         }
 
                         ifc->destroy = *m;
-                        ifc->method.move(m-ifc->method.ptr(), 0, 1);
+                        ifc->method.move(m - ifc->method.ptr(), 0, 1);
+                        m = ifc->method.ptr();
                     }
 
                     if(m->bstatic && m->args.size() == 0 && ifc->default_creator.name.is_empty())
                         ifc->default_creator = *m;
+
+                    if(!binternal && !m->boperator) {
+                        //check if another public method with the same name exists
+                        MethodIG* mdup = ifc->method.find_if([&](const MethodIG& mi) {
+                            return mi.name == m->name;
+                        });
+                        if(mdup != m) {
+                            out << (lex.prepare_exception()
+                                << "error: overloaded methods not supported for scripting interface\n");
+                            lex.clear_err();
+                            ++ncontinuable_errors;
+                        }
+                    }
                 }
                 else {
                     //produce a warning for other misplaced keywords
