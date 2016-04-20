@@ -66,7 +66,7 @@ class metagen //: public binstream
     ///Lexer for tokenizing tags
     struct MtgLexer : lexer
     {
-        int IDENT,NUM,DQSTRING,STEXT;
+        int IDENT,NUM,DQSTRING,STEXT,COMMTAG;
 
         virtual void on_error_prefix( bool rules, charstr& dst, int line ) override
         {
@@ -101,6 +101,8 @@ class metagen //: public binstream
             STEXT = def_string( "stext", "$", "$", "" );
             def_string( "stext", "$", "", "" );
             enable( STEXT, false );
+
+            COMMTAG = def_string( "!commtag", "#", "#", "" );
         }
 
         charstr& set_err() {
@@ -471,56 +473,64 @@ class metagen //: public binstream
                 lex.next();
             }
 
-            if( tok.tok != '{'  &&  tok.tok != '['  &&  tok.tok != '(' )
+            if( tok.tok != '{'  &&  tok.tok != '['  &&  tok.tok != '(' && tok.tok != '#' )
                 lex.push_back();
             else
                 brace = tok.tok[0];
 
-            lex.next();
-
-            if( tok.tok == '/' ) {
-                trailing = 1;
+            if(brace == '#') {
+                lex.next_as_string(lex.COMMTAG, true);
+            }
+            else {
                 lex.next();
-            }
 
-            if( tok.id != lex.IDENT ) {
-                lex.set_err() << "Expected identifier";
-                throw lex.exc();
-            }
-            varname = tok.tok;
-
-            const char* p = tok.tok.ptr();
-            const char* pe = tok.tok.ptre();
-            for( ; p<pe; ++p )
-                if( *p == '.' )  ++depth;
-
-            lex.next();
-
-            int def = -1;
-            bool lastopen = false;
-
-            attr.reset();
-
-            Attribute at;
-            while( at.parse(lex) )
-            {
-                if(lastopen) {
-                    lex.set_err() << "An open attribute followed by another";
-                    throw lex.exc();
+                if( tok.tok == '/' ) {
+                    trailing = 1;
+                    lex.next();
                 }
 
-                lastopen = at.is_open();
+                if( tok.id != lex.IDENT ) {
+                    lex.set_err() << "Expected identifier";
+                    throw lex.exc();
+                }
+                varname = tok.tok;
 
-                //place default attribute on the beginning
-                if( at.cond == Attribute::DEFAULT )
-                    attr.ins(0)->swap(at);
-                else
-                    attr.add()->swap(at);
+                const char* p = tok.tok.ptr();
+                const char* pe = tok.tok.ptre();
+                for( ; p<pe; ++p )
+                    if( *p == '.' )  ++depth;
+
+                lex.next();
+
+                int def = -1;
+                bool lastopen = false;
+
+                attr.reset();
+
+                Attribute at;
+                while( at.parse(lex) )
+                {
+                    if(lastopen) {
+                        lex.set_err() << "An open attribute followed by another";
+                        throw lex.exc();
+                    }
+
+                    lastopen = at.is_open();
+
+                    //place default attribute on the beginning
+                    if( at.cond == Attribute::DEFAULT )
+                        attr.ins(0)->swap(at);
+                    else
+                        attr.add()->swap(at);
+                }
+
+                escape = 0;
             }
 
-            escape = 0;
-
-            if(brace)
+            if(brace == '#') {
+                lex.next(0);
+            }
+            else if(brace)
             {
                 if( brace == '('  &&  tok.tok != ')' ) {
                     lex.set_err() << "Expecting )";
@@ -657,6 +667,19 @@ class metagen //: public binstream
             }
 
             return true;
+        }
+    };
+
+    ///Dummy tag for metagen comments, versions etc
+    struct TagComment : Tag
+    {
+        ///Process the variable, default code does simple substitution
+        virtual void process_content( metagen& mg, const Varx& var ) const
+        {
+        }
+
+        virtual void parse_content( MtgLexer& lex, ParsedTag& hdr )
+        {
         }
     };
 
@@ -800,6 +823,8 @@ class metagen //: public binstream
                     ptag = new TagStruct;
                 else if( tout.brace == '[' )
                     ptag = new TagArray;
+                else if( tout.brace == '#' )
+                    ptag = new TagComment;
                 else
                     ptag = new TagSimple;
 

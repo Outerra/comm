@@ -59,14 +59,14 @@ bool Method::parse( iglexer& lex, int prefix )
     //rettype fncname '(' ...
     
     if( !lex.matches(lex.IDENT, rettype) )
-        lex.set_err() << "expecting return type\n";
+        lex.syntax_err() << "expecting return type\n";
     else if( lex.matches('*') )
         rettype << char('*');
 
     if( !lex.matches(lex.IDENT, name) )
-        lex.set_err() << "expecting method name\n";
+        lex.syntax_err() << "expecting method name\n";
     else if( !lex.matches('(') )
-        lex.set_err() << "expecting '('\n";
+        lex.syntax_err() << "expecting '('\n";
     else {
         while( lex.next() != ')' ) {
             lex.push_back();
@@ -89,11 +89,11 @@ bool Method::parse( iglexer& lex, int prefix )
         }
 
         if(pa==pe) {
-            lex.set_err() << "return argument '" << retparm << "' not found within method's arguments";
+            lex.syntax_err() << "return argument '" << retparm << "' not found within method's arguments";
             throw lex.exc();
         }
         else if(!pa->bptr) {
-            lex.set_err() << "return argument '" << retparm << "' must be a pointer";
+            lex.syntax_err() << "return argument '" << retparm << "' must be a pointer";
             throw lex.exc();
         }
         else {
@@ -115,7 +115,7 @@ bool Method::parse( iglexer& lex, int prefix )
         }
 
         if(pa==pe) {
-            lex.set_err() << "size argument '" << sizeparm << "' not found within method's arguments";
+            lex.syntax_err() << "size argument '" << sizeparm << "' not found within method's arguments";
             throw lex.exc();
         }
         else {
@@ -123,7 +123,7 @@ bool Method::parse( iglexer& lex, int prefix )
             rv.consume("const ");
 
             if( rv != "uint"  &&  rv != "unsigned int"  &&  rv != "uints"  &&  rv != "size_t" ) {
-                lex.set_err() << "size argument '" << sizeparm << "' must be an unsigned integer";
+                lex.syntax_err() << "size argument '" << sizeparm << "' must be an unsigned integer";
                 throw lex.exc();
             }
 
@@ -150,7 +150,7 @@ bool Method::Arg::parse( iglexer& lex )
 
     do {
         if( !lex.matches(lex.IDENT, type) )
-            lex.set_err() << "expecting argument type\n";
+            lex.syntax_err() << "expecting argument type\n";
         else if( lex.matches('<') )
             type << char('<') << lex.next_as_block(lex.ANGLE) << char('>');
 
@@ -185,7 +185,7 @@ bool Method::Arg::parse( iglexer& lex )
     }
 
     if( !lex.matches(lex.IDENT, name) ) {
-        lex.set_err() << "expecting argument name\n";
+        lex.syntax_err() << "expecting argument name\n";
         return false;
     }
     
@@ -217,6 +217,6 @@ bool Method::Arg::parse( iglexer& lex )
         return true;
     }
 
-    lex.set_err() << "expecting ',' or ')'\n";
+    lex.syntax_err() << "expecting ',' or ')'\n";
     return false;
 }

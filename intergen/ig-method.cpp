@@ -18,6 +18,7 @@ bool MethodIG::parse( iglexer& lex, const charstr& host, const charstr& ns, dyna
         ret.add_unique(irefargs);
 
     biref=bptr=false;
+    int ncontinuable_errors = 0;
 
     if(bstatic) {
         charstr tmp;
@@ -36,9 +37,11 @@ bool MethodIG::parse( iglexer& lex, const charstr& host, const charstr& ns, dyna
         //else if(ret.type == ((tmp=ns)<<host<<'*'))
         //    bptr = true;
         else {
-            lex.set_err() << "invalid return type for static interface creator method\n"
-                "  should be iref<" << host << ">";
-            throw lex.exc();
+            out << (lex.prepare_exception()
+                << "invalid return type for static interface creator method\n  should be iref<"
+                << host << ">");
+            lex.clear_err();
+            ++ncontinuable_errors;
         }
 
         storage = ret.type;
@@ -113,7 +116,7 @@ bool MethodIG::parse( iglexer& lex, const charstr& host, const charstr& ns, dyna
     bmandatory = !evbody && (ret.type != "void" || noutargs > 0);
 
     //declaration parsed successfully
-    return lex.no_err();
+    return lex.no_err() && ncontinuable_errors == 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

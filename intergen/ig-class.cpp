@@ -11,7 +11,8 @@ int Interface::check_interface( iglexer& lex )
     int nerr=0;
 
     if((oper_get >= 0) != (oper_set >= 0)) {
-        out << (lex.prepare_exception() << "warning: both setter and getter operator() must be defined for use with scripts\n");
+        out << (lex.prepare_exception()
+            << "warning: both setter and getter operator() must be defined for use with scripts\n");
         lex.clear_err();
 
         oper_get = oper_set = -1;
@@ -25,7 +26,8 @@ int Interface::check_interface( iglexer& lex )
 
     //TODO: check types
     if(get.args.size() < 1  ||  set.args.size() < 2) {
-        out << (lex.prepare_exception() << "warning: insufficient number of arguments in getter/setter operator()\n");
+        out << (lex.prepare_exception()
+            << "warning: insufficient number of arguments in getter/setter operator()\n");
         lex.clear_err();
 
         oper_get = oper_set = -1;
@@ -70,7 +72,7 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
     int ncontinuable_errors = 0;
 
     if( !lex.matches(lex.IDENT, classname) )
-        lex.set_err() << "expecting class name\n";
+        lex.syntax_err() << "expecting class name\n";
     else {
         const lexer::lextoken& tok = lex.last();
 
@@ -78,7 +80,7 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
 
         while( lex.next() != '{' ) {
             if( tok.end() ) {
-                lex.set_err() << "unexpected end of file\n";
+                lex.syntax_err() << "unexpected end of file\n";
                 return false;
             }
             if( tok == ';' )
@@ -198,12 +200,14 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
 
                     //parse event declaration
                     if(iface.size() == 0) {
-                        out << (lex.prepare_exception() << "error: no preceding interface declared\n");
+                        out << (lex.prepare_exception()
+                            << "error: no preceding interface declared\n");
                         lex.clear_err();
                         ++ncontinuable_errors;
                     }
                     else if(iface.last()->varname.is_empty()) {
-                        out << (lex.prepare_exception() << "error: events can be used only with bidirectional interfaces\n");
+                        out << (lex.prepare_exception()
+                            << "error: events can be used only with bidirectional interfaces\n");
                         lex.clear_err();
                         ++ncontinuable_errors;
                     }
@@ -224,7 +228,8 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                             m->ret.type = m->ret.basetype = m->ret.fulltype = "void";
                         }
                         else {
-                            out << (lex.prepare_exception() << "error: unrecognized implicit event\n");
+                            out << (lex.prepare_exception()
+                                << "error: unrecognized implicit event\n");
                             lex.clear_err();
                             ++ncontinuable_errors;
                         }
@@ -248,7 +253,8 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                             m->intname = m->name;
 
                         if(m->bstatic) {
-                            out << (lex.prepare_exception() << "error: interface event cannot be static\n");
+                            out << (lex.prepare_exception()
+                                << "error: interface event cannot be static\n");
                             lex.clear_err();
                             ++ncontinuable_errors;
                         }
@@ -267,7 +273,7 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
 
                     //parse function declaration
                     if(iface.size() == 0) {
-                        lex.set_err() << "error: no preceding interface declared\n";
+                        lex.syntax_err() << "no preceding interface declared\n";
                         throw lex.exc();
                     }
 
@@ -279,6 +285,20 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
 
                     if(!m->parse(lex, classname, namespc, irefargs))
                         ++ncontinuable_errors;
+
+                    if(!binternal) {
+                        //check if another public method with the same name exists
+                        MethodIG* mdup = ifc->method.find_if([&](const MethodIG& mi) {
+                            return mi.name == m->name;
+                        });
+                        if(mdup != m) {
+                            out << (lex.prepare_exception()
+                                << "error: overloaded methods not supported for scripting interface\n");
+                            lex.clear_err();
+                            ++ncontinuable_errors;
+                        }
+                    }
+
 
                     if(duplicate == 2) {
                         lex.match(';');
@@ -296,7 +316,8 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                     m->bcapture = capture>0 && !m->bconst && !m->bstatic;
 
                     if(bcapture>bnocapture && !m->bcapture) {
-                        out << (lex.prepare_exception() << "warning: const and static methods aren't captured\n");
+                        out << (lex.prepare_exception()
+                            << "warning: const and static methods aren't captured\n");
                         lex.clear_err();
                     }
 
@@ -337,7 +358,8 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                     if(bimplicit) {
                         if(m->name == "on_create") {
                             if(m->ret.type != "void" && m->args.size() != 0) {
-                                out << (lex.prepare_exception() << "error: invalid format for an on_create method\n");
+                                out << (lex.prepare_exception()
+                                    << "error: invalid format for an on_create method\n");
                                 lex.clear_err();
                                 ++ncontinuable_errors;
                             }
@@ -352,7 +374,8 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                     if(bdestroy) {
                         //mark and move to the first pos
                         if(ifc->destroy.name) {
-                            out << (lex.prepare_exception() << "error: interface release method already specified\n");
+                            out << (lex.prepare_exception()
+                                << "error: interface release method already specified\n");
                             lex.clear_err();
                             ++ncontinuable_errors;
                         }
@@ -366,7 +389,8 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                 }
                 else {
                     //produce a warning for other misplaced keywords
-                    out << (lex.prepare_exception() << "warning: misplaced keyword\n");
+                    out << (lex.prepare_exception()
+                        << "warning: misplaced keyword\n");
                     lex.clear_err();
                 }
             }

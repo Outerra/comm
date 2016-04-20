@@ -408,24 +408,36 @@ int File::parse( token path )
     charstr templarg;
     dynarray<charstr> namespc;
 
+    int nerr = 0;
+
     try {
         for( ; 0 != (mt=find_class(lex,namespc,templarg)); ++nm )
         {
             Class* pc = classes.add();
-            if( !pc->parse(lex,templarg,namespc,&pasters,irefargs)  ||  pc->method.size() == 0 && pc->iface.size() == 0 )
+            if(!pc->parse(lex,templarg,namespc,&pasters,irefargs)
+                || pc->method.size() == 0 && pc->iface.size() == 0) {
                 classes.resize(-1);
+                ++nerr;
+            }
+
+            if(!lex.no_err()) {
+                out << lex.err() << '\n';
+                lex.clear_err();
+                ++nerr;
+            }
         }
     }
     catch( lexer::lexception& ) {}
 
-    if( !lex.no_err() ) {
+    if(!lex.no_err()) {
         out << lex.err() << '\n';
         out.flush();
         return -1;
     }
 
-    if(pasters.size() > 0 && classes.size() == 0) {
-        out << lex.prepare_exception() << "warning: ifc preprocessor tokens found, but no interface declared\n";
+    if(!nerr && pasters.size() > 0 && classes.size() == 0) {
+        out << (lex.prepare_exception()
+            << "warning: ifc tokens found, but no interface declared\n");
         lex.clear_err();
     }
 

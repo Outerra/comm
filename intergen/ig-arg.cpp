@@ -83,7 +83,9 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
     bref = isPR == 2;
 
     if(boutarg && ((!bptr && !bref && !ifctarget) || type.begins_with("const "))) {
-        lex.set_err() << "out argument must be a ref or ptr and cannot be const\n";
+        out << (lex.prepare_exception()
+            << "out argument must be a ref or ptr and cannot be const\n");
+        lex.clear_err();
     }
 
     basetype = type;
@@ -116,8 +118,11 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
         }
         while(bs);
     }
-    else if(ifctarget)
-        lex.set_err() << "ifc_ret argument must be an iref<>\n";
+    else if(ifctarget) {
+        out << (lex.prepare_exception()
+            << "ifc_ret argument must be an iref<>\n");
+        lex.clear_err();
+    }
 
     if(ifctarget) {
         type.swap(ifctarget);

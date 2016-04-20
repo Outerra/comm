@@ -57,8 +57,8 @@ public:
     ///Find method mark within current class declaration
     int find_method( const token& classname, dynarray<charstr>& commlist );
 
-    charstr& set_err() {
-        prepare_exception() << "syntax error: ";
+    charstr& syntax_err() {
+        prepare_exception(true) << "syntax error: ";
         return _errtext;
     }
 

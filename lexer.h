@@ -605,7 +605,7 @@ public:
     ///If the leading sequence was already defined for another string, only the trailing sequence is
     /// inserted into its trailing set, and the escape definition is ignored.
     //@return string id (a negative number) or 0 on error, error id is stored in the _err variable
-    //@param name string rule name. Name prefixed with . (dot) makes the block content ignored in global scope.
+    //@param name string rule name. Name prefixed with . (dot) makes the block content ignored in global scope, prefixed with (!) makes it disabled.
     //@param leading the leading string delimiter
     //@param trailing the trailing string delimiter. An empty string means end of file.
     //@param escape name of the escape rule to use for processing of escape sequences within strings
