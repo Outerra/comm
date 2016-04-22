@@ -373,10 +373,10 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                     if(m->bstatic && m->args.size() == 0 && ifc->default_creator.name.is_empty())
                         ifc->default_creator = *m;
 
-                    if(!binternal && !m->boperator) {
+                    if(!m->bstatic && !binternal && !m->boperator) {
                         //check if another public method with the same name exists
                         MethodIG* mdup = ifc->method.find_if([&](const MethodIG& mi) {
-                            return mi.name == m->name;
+                            return !mi.bstatic && mi.name == m->name;
                         });
                         if(mdup != m) {
                             out << (lex.prepare_exception()
