@@ -1049,10 +1049,10 @@ v8::Handle<v8::Value> create_wrapper_$name$( ::$ns rest="::" after="::"$$name$* 
     iref<$ns rest="::" after="::"$js::$name$_js_dispatcher> ifc;
     v8::Handle<v8::Object> obj;
 
-    if(orig->intergen_backend() == intergen_interface::IFC_BACKEND_JS) {
+    if(orig->intergen_backend() == intergen_interface::IFC_BACKEND_JS)
         obj = static_cast<$name$_js_dispatcher*>(orig)->_object;
-    }
-    else {
+    
+    if(obj.IsEmpty()) {
         // create interface object
         ifc.create(new $ns rest="::" after="::"$js::$name$_js_dispatcher(context, static_cast<::$ns rest="::" after="::"$$name$*>(orig)));
 
