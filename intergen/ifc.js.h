@@ -329,7 +329,7 @@ inline v8::Handle<v8::Value> wrap_object( intergen_interface* orig, v8::Handle<v
 #endif
 
     typedef v8::Handle<v8::Value> (*fn_wrapper)(intergen_interface*, v8::Handle<v8::Context>);
-    fn_wrapper fn = static_cast<fn_wrapper>(orig->intergen_wrapper_js());
+    fn_wrapper fn = static_cast<fn_wrapper>(orig->intergen_wrapper(intergen_interface::IFC_BACKEND_JS));
 
     if(fn)
 #ifdef V8_MAJOR_VERSION
@@ -353,7 +353,7 @@ inline bool bind_object( const coid::token& bindname, intergen_interface* orig, 
 #endif
 
     typedef v8::Handle<v8::Value> (*fn_wrapper)(intergen_interface*, v8::Handle<v8::Context>);
-    fn_wrapper fn = static_cast<fn_wrapper>(orig->intergen_wrapper_js());
+    fn_wrapper fn = static_cast<fn_wrapper>(orig->intergen_wrapper(intergen_interface::IFC_BACKEND_JS));
 
 #ifdef V8_MAJOR_VERSION
     return fn && context->Global()->Set(v8::String::NewFromOneByte(v8::Isolate::GetCurrent(),

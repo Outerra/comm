@@ -98,7 +98,7 @@ protected:
 
     $name$_dispatcher()
     {}
-
+    
     bool intergen_bind_capture( coid::binstring* capture, uint instid ) override
     {
         if(instid >= 0xffU)

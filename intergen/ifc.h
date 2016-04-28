@@ -136,11 +136,19 @@ public:
     //@return interface name
     virtual const coid::token& intergen_interface_name() const = 0;
 
-    //@return name of default creator
-    virtual const coid::token& intergen_default_creator() const = 0;
+    enum EBackend {
+        IFC_BACKEND_CXX,
+        IFC_BACKEND_JS,
+    };
 
-    //@return js wrapper creator for underlying object
-    virtual void* intergen_wrapper_js() const = 0;
+    //@return back-end implementation
+    virtual EBackend intergen_backend() const = 0;
+
+    //@return wrapper creator for given back-end
+    virtual void* intergen_wrapper( EBackend bck ) const = 0;
+
+    //@return name of default creator
+    virtual const coid::token& intergen_default_creator( EBackend bck ) const = 0;
 
     ///Bind or unbind interface call interceptor handler for current interface and all future instances of the same interface class
     //@param capture capture buffer, 0 to turn the capture off
