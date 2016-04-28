@@ -109,17 +109,19 @@ $-(/if)$
     }
 
 
-    template<enum EBackend>
-    void* intergen_wrapper_cache( const coid::token& key ) const {
+    template<enum EBackend B>
+    static void* intergen_wrapper_cache() {
         static void* _cached_wrapper=0;
-        if(!_cached_wrapper)
-            _cached_wrapper = coid::interface_register::get_interface_creator(key);
+        if(!_cached_wrapper) {
+            const coid::token& tok = intergen_default_creator_static(B);
+            _cached_wrapper = coid::interface_register::get_interface_creator(tok);
+        }
         return _cached_wrapper;
     }
     
     void* intergen_wrapper( EBackend bck ) const override {
         switch(bck) {
-        case IFC_BACKEND_JS: return intergen_wrapper_cache<IFC_BACKEND_JS>("$ns rest="::" after="::"$js::$name$@wrapper");
+        case IFC_BACKEND_JS: return intergen_wrapper_cache<IFC_BACKEND_JS>();
         default: return 0;
         }
     }
