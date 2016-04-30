@@ -1050,7 +1050,7 @@ v8::Handle<v8::Value> create_wrapper_$name$( ::$ns rest="::" after="::"$$name$* 
     v8::Handle<v8::Object> obj;
 
     if(orig->intergen_backend() == intergen_interface::IFC_BACKEND_JS)
-        obj = static_cast<$name$_js_dispatcher*>(orig)->_object;
+        obj = LOCAL(static_cast<$name$_js_dispatcher*>(orig)->_object);
     
     if(obj.IsEmpty()) {
         // create interface object
