@@ -88,15 +88,19 @@ static CBK_RET js_local_include(const ARGUMENTS& args)
     path.trim_whitespace();
 
     coid::charstr dst;
-    if(0 != script_handle::get_target_path(path, 0, "", dst, true))
-        return (CBK_RET)THROW(Error, "invalid path");
+    if(0 != script_handle::get_target_path(path, 0, "", dst, true)) {
+        (dst = "invalid path ") << path;
+        return (CBK_RET)THROW2(Error, dst.c_str(), dst.len());
+    }
 
     if(!dst.ends_with(".js"))
         dst << ".js";
 
     coid::bifstream bif(dst);
-    if(!bif.is_open())
-        return (CBK_RET)THROW(Error, "error opening include file");
+    if(!bif.is_open()) {
+        dst.ins(0, coid::token("error opening file "));
+        return (CBK_RET)THROW2(Error, dst.c_str(), dst.len());
+    }
 
     coid::binstreambuf buf;
     buf.transfer_from(bif);
@@ -296,8 +300,11 @@ $-[method !static? !destroy? !internal? !operator?]$
 ////////////////////////////////////////////////////////////////////////////////
 CBK_RET $..name$_js_dispatcher::v8_$name$$@index$( const ARGUMENTS& args )
 {
-    if(args.Length() < $ninargs_nondef$ || args.Length() > $ninargs$)  //in/inout arguments
-        return (CBK_RET)THROW(SyntaxError, "Wrong number of arguments");
+    if(args.Length() < $ninargs_nondef$ || args.Length() > $ninargs$) { //in/inout arguments
+        coid::charstr tmp = "Wrong number of arguments in ";
+        tmp << "$..name$.$name$";
+        return (CBK_RET)THROW2(SyntaxError, tmp.c_str(), tmp.len());
+    }
 
     ESCAPABLE_SCOPE(handle_scope__);
     v8::Local<v8::Object> obj__ = args.Holder();
@@ -310,8 +317,11 @@ CBK_RET $..name$_js_dispatcher::v8_$name$$@index$( const ARGUMENTS& args )
         (v8::Handle<v8::External>::Cast(intobj__)->Value());
 
     auto R_ = ifc ? ifc->_real() : 0;
-    if(!R_)
-        return (CBK_RET)THROW(ReferenceError, "null interface object in $..name$.$name$()");
+    if(!R_) {
+        coid::charstr tmp = "Null interface object in ";
+        tmp << "$..name$.$name$";
+        return (CBK_RET)THROW2(ReferenceError, tmp.c_str(), tmp.len());
+    }
 
     v8::Context::Scope context_scope(LOCAL(ifc->_context));
 
@@ -535,8 +545,11 @@ CBK_RET $..name$_js_dispatcher::v8_evback_$name$$@index$( const ARGUMENTS& args 
     ifc->bind_events(ctx, false, UNDEFINED);
     auto ev__ = LOCAL(ifc->_events[$@index$]);
 
-    if(ifc->_events[$@index$].IsEmpty() || ev__->IsUndefined())
-        return (CBK_RET)THROW(ReferenceError, "event not available");
+    if(ifc->_events[$@index$].IsEmpty() || ev__->IsUndefined()) {
+        coid::charstr tmp = "Event not available: ";
+        tmp << "$name$";
+        return (CBK_RET)THROW2(ReferenceError, tmp.c_str(), tmp.len());
+    }
 $-(if ninargs.nonzero?)$
 
     v8::Local<v8::Value> largs[$ninargs$];
@@ -574,8 +587,11 @@ v8::Handle<v8::Value> $name$_js_dispatcher::_getter(v8::Local<v8::String> proper
         (v8::Handle<v8::External>::Cast(intobj__)->Value());
 
     auto R_ = ifc ? ifc->_real() : 0;
-    if(!R_)
-        return THROW(ReferenceError, "null interface object in $..name$[]");
+    if(!R_) {
+        coid::charstr tmp = "Null interface object in ";
+        tmp << "$..name$[]";
+        return THROW2(ReferenceError, tmp.c_str(), tmp.len());
+    }
 
     v8::Context::Scope context_scope(LOCAL(ifc->_context));
 
@@ -615,8 +631,11 @@ v8::Handle<v8::Value> $name$_js_dispatcher::_setter(v8::Local<v8::String> proper
         (v8::Handle<v8::External>::Cast(intobj__)->Value());
 
     auto R_ = ifc ? ifc->_real() : 0;
-    if(!R_)
-        return THROW(ReferenceError, "null interface object in $..name$[] = ...");
+    if(!R_) {
+        coid::charstr tmp = "Null interface object in ";
+        tmp << "$..name$[] = ...";
+        return THROW2(ReferenceError, tmp.c_str(), tmp.len());
+    }    
 
     v8::Context::Scope context_scope(LOCAL(ifc->_context));
     THREAD_SINGLETON(v8_streamer_context).reset();
@@ -640,7 +659,7 @@ $-(/if)$
 CBK_RET $name$_js_dispatcher::v8query_interface( const ARGUMENTS& args )
 {
     if(args.Length() < 1)
-        return (CBK_RET)THROW(Error, "interface creator name required");
+        return (CBK_RET)THROW(Error, "Interface creator name missing");
 
     ESCAPABLE_SCOPE(handle_scope__);
     v8::String::Utf8Value key(args[0]);
@@ -666,7 +685,7 @@ CBK_RET $name$_js_dispatcher::v8query_interface( const ARGUMENTS& args )
         (v8::Handle<v8::External>::Cast(intobj__)->Value());
 
     if(!ifc)
-        return (CBK_RET)THROW(ReferenceError, "null interface object in $$query_interface");
+        return (CBK_RET)THROW(ReferenceError, "Null interface object in $$query_interface");
 
 #ifdef V8_MAJOR_VERSION
     args.GetReturnValue().Set(get(args, ifc));
@@ -948,8 +967,11 @@ $-(if !internal?)$
 ///Creator methods for access from JS
 v8::Handle<v8::Value> $..name$_js_dispatcher::v8creator_$name$$@order$( const ARGUMENTS& args, interface_context* ifc )
 {
-    if(args.Length() < 1+$ninargs_nondef$ || args.Length() > 1+$ninargs$)  //fnc name + in/inout arguments
-        return THROW(Error, "Wrong number of arguments");
+    if(args.Length() < 1+$ninargs_nondef$ || args.Length() > 1+$ninargs$) { //fnc name + in/inout arguments
+        coid::charstr tmp = "Wrong number of arguments in ";
+        tmp << "$name$";
+        return THROW2(Error, tmp.c_str(), tmp.len());
+    }
 
     ESCAPABLE_SCOPE(handle_scope__);
     v8::Local<v8::Object> obj__ = args.Holder();
