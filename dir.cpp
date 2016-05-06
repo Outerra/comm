@@ -127,7 +127,13 @@ bool directory::is_absolute_path(const token& path)
 ////////////////////////////////////////////////////////////////////////////////
 bool directory::is_subpath( token root, token path )
 {
-    while(root || path) {
+    return subpath(root, path);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+bool directory::subpath( token root, token& path )
+{
+    while(root && path) {
         token r = root.cut_left_group(DIR_SEPARATORS);
         token p = path.cut_left_group(DIR_SEPARATORS);
 

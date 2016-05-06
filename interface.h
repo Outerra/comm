@@ -55,6 +55,16 @@ public:
 
     static void* get_interface_creator( const token& ifcname );
 
+    static bool include_path( const token& curpath, const token& incpath, charstr& dst );
+
+    static void log( const token& msg );
+
+
+    typedef void (*fn_log_t)(const token&);
+    typedef bool (*fn_acc_t)(const token&);
+
+    static void setup( const token& path, fn_log_t log, fn_acc_t access );
+
     struct creator {
         token name;
         void* creator_ptr;

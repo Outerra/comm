@@ -3,6 +3,9 @@
 #include "commexception.h"
 #include "hash/hashkeyset.h"
 #include "sync/mutex.h"
+#include "dir.h"
+
+#include <cstdio>
 
 COID_NAMESPACE_BEGIN
 
@@ -19,6 +22,12 @@ struct entry
     operator const token&() const { return ifcname; }
 };
 
+static void _default_log( const token& msg )
+{
+    fwrite(msg.ptr(), 1, msg.len(), stdout);
+    fflush(stdout);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 class interface_register_impl : public interface_register
 {
@@ -27,10 +36,63 @@ public:
     hash_keyset<entry, _Select_GetRef<entry,token> > _hash;
     comm_mutex _mx;
 
+    charstr _root_path;
+    interface_register::fn_log_t _fn_log;
+    interface_register::fn_acc_t _fn_acc;
+
     static interface_register_impl& get();
 
     interface_register_impl() : _mx(500, false)
+        , _fn_log(0)
+        , _fn_acc(0)
     {}
+
+    bool current_dir( token curpath, charstr& dst )
+    {
+        if(directory::is_absolute_path(curpath))
+            dst = curpath;
+        else {
+            curpath.consume_icase("file:///");
+            dst = _root_path;
+            
+            return directory::append_path(dst, curpath, true);
+        }
+
+        return true;
+    }
+
+    bool include_path( const token& curpath, const token& incpath, charstr& dst )
+    {
+        bool slash = incpath.first_char() == '/' || incpath.first_char() == '\\';
+        DASSERT( !_root_path.is_empty() );
+
+        if(!slash)
+        {
+            //relative
+            if(!current_dir(curpath, dst) || !directory::append_path(dst, incpath, true))
+                return false;
+        }
+        else {
+            //absolute
+            dst = _root_path;
+
+            token append = incpath;
+            if(slash)
+                ++append;
+
+            if(!directory::append_path(dst, append, true))
+                return false;
+        }
+
+        if(!directory::compact_path(dst, '/'))
+            return false;
+
+        token relpath = dst;
+        if(!directory::subpath(_root_path, relpath))
+            return false;
+
+        return _fn_acc ? _fn_acc(relpath) : true;
+    }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -42,6 +104,40 @@ void* interface_register::get_interface_creator( const token& ifcname )
     const entry* en = reg._hash.find_value(ifcname);
 
     return en ? en->creator_ptr : 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+bool interface_register::include_path( const token& curpath, const token& incpath, charstr& dst )
+{
+    interface_register_impl& reg = interface_register_impl::get();
+    return reg.include_path(curpath, incpath, dst);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void interface_register::log( const token& msg )
+{
+    fn_log_t logfn = interface_register_impl::get()._fn_log;
+
+    if(logfn)
+        logfn(msg);
+    else
+        _default_log(msg);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void interface_register::setup( const token& path, fn_log_t log, fn_acc_t access )
+{
+    interface_register_impl& reg = interface_register_impl::get();
+    if(!reg._root_path) {
+        reg._root_path = path;
+        directory::treat_trailing_separator(reg._root_path, true);
+    }
+
+    if(log)
+        reg._fn_log = log;
+
+    if(access)
+        reg._fn_acc = access;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

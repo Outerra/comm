@@ -45,6 +45,29 @@
 #include <comm/binstream/filestream.h>
 #include <v8/v8.h>
 
+namespace js {
+
+#ifdef V8_MAJOR_VERSION
+typedef v8::FunctionCallbackInfo<v8::Value>     ARGUMENTS;
+typedef void                                    CBK_RET;
+
+inline void THROW( v8::Isolate* iso, v8::Local<v8::Value> (*err)(v8::Local<v8::String>), const coid::token& s ) {
+    iso->ThrowException((*err)(v8::String::NewFromUtf8(iso, s.ptr(), v8::String::kNormalString, s.len())));
+}
+
+#else
+
+typedef v8::Arguments                           ARGUMENTS;
+typedef v8::Handle<v8::Value>                   CBK_RET;
+
+inline v8::Handle<v8::Value> THROW( v8::Isolate* iso, v8::Local<v8::Value> (*err)(v8::Handle<v8::String>), const coid::token& s ) {
+    return v8::ThrowException(err(v8::String::New(s.ptr(), s.len())));
+}
+#endif
+
+} //namespace js
+
+
 ///Helper for script loading
 struct script_handle
 {
@@ -100,63 +123,23 @@ struct script_handle
     ///Get absolute path from the provided path that's relative to given JS stack frame
     //@param path relative path (an include path) or absolute path from root
     //@param frame v8 stack frame number to be made relative to
-    //@param root root directory (for absolute paths). If empty, frame path is used as the root
     //@param dst [out] resulting path, using / for directory separators
-    //@return 0 if succeeded, 1 invalid stack frame, 2 invalid path, 3 outside the root or bad path
-    static int get_target_path( const coid::token& path, uint frame, const coid::token& root, coid::charstr& dst, bool constraint_root )
+    //@return 0 if succeeded, 1 invalid stack frame, 2 invalid path
+    static int get_target_path( const coid::token& path, uint frame, coid::charstr& dst )
     {
-        bool slash = path.first_char() == '/' || path.first_char() == '\\';
-
-        if(!slash && !coid::directory::is_absolute_path(path))
-        {
 #ifdef V8_MAJOR_VERSION
-            v8::Local<v8::StackTrace> trace = v8::StackTrace::CurrentStackTrace(v8::Isolate::GetCurrent(),
-                frame+1, v8::StackTrace::kScriptName);
+        v8::Local<v8::StackTrace> trace = v8::StackTrace::CurrentStackTrace(v8::Isolate::GetCurrent(),
+            frame+1, v8::StackTrace::kScriptName);
 #else
-            v8::Local<v8::StackTrace> trace = v8::StackTrace::CurrentStackTrace(frame+1, v8::StackTrace::kScriptName);
+        v8::Local<v8::StackTrace> trace = v8::StackTrace::CurrentStackTrace(frame+1, v8::StackTrace::kScriptName);
 #endif
-            if((int)frame >= trace->GetFrameCount())
-                return 1;
+        if((int)frame >= trace->GetFrameCount())
+            return 1;
 
-            v8::String::Utf8Value uber(trace->GetFrame(frame)->GetScriptName());
+        v8::String::Utf8Value uber(trace->GetFrame(frame)->GetScriptName());
+        coid::token curpath = coid::token(*uber, uber.length());
 
-            if(!path)
-                dst = coid::token(*uber, uber.length());
-            else {
-                dst = coid::token(*uber, uber.length()).cut_left_group_back("\\/");
-                if(!coid::directory::append_path(dst, path, constraint_root))
-                    return 3;
-            }
-        }
-        else {
-            if(!root) {
-#ifdef V8_MAJOR_VERSION
-                v8::Local<v8::StackTrace> trace = v8::StackTrace::CurrentStackTrace(v8::Isolate::GetCurrent(),
-                    frame+1, v8::StackTrace::kScriptName);
-#else
-                v8::Local<v8::StackTrace> trace = v8::StackTrace::CurrentStackTrace(frame+1, v8::StackTrace::kScriptName);
-#endif
-                if((int)frame >= trace->GetFrameCount())
-                    return 1;
-
-                v8::String::Utf8Value uber(trace->GetFrame(frame)->GetScriptName());
-                dst = coid::token(*uber, uber.length()).cut_left_group_back("\\/");
-            }
-            else
-                dst = root;
-
-            coid::token append = path;
-            if(slash)
-                ++append;
-
-            if(!coid::directory::append_path(dst, append, constraint_root))
-                return 3;
-        }
-
-        if(!coid::directory::compact_path(dst, '/'))
-            return 2;
-
-        return 0;
+        return coid::interface_register::include_path(curpath, path, dst) ? 0 : 2;
     }
 
     ///Load and run script
@@ -237,7 +220,7 @@ struct script_handle
 
 public:
 
-    static void throw_js_error( v8::TryCatch& tc, const coid::zstring& str = 0 )
+    static void throw_js_error( v8::TryCatch& tc, const coid::token& str = coid::token() )
     {
 #ifdef V8_MAJOR_VERSION
         v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
@@ -260,10 +243,59 @@ public:
         }
 
         if(str)
-            cexc << " (" << str.get_token() << ')';
+            cexc << " (" << str << ')';
         throw cexc;
     }
 
+    static js::CBK_RET js_include(const js::ARGUMENTS& args)
+    {
+        if(args.Length() < 1)
+            return js::CBK_RET();
+
+        v8::Isolate* iso = v8::Isolate::GetCurrent();
+
+        v8::String::Utf8Value str(args[0]);
+        coid::token path = coid::token(*str, str.length());
+        path.trim_whitespace();
+
+        coid::charstr dst;
+        if(0 != script_handle::get_target_path(path, 0, dst)) {
+            (dst = "invalid path ") << path;
+            return (js::CBK_RET)js::THROW(iso, v8::Exception::Error, dst);
+        }
+
+        if(!dst.ends_with(".js"))
+            dst << ".js";
+
+        coid::bifstream bif(dst);
+        if(!bif.is_open()) {
+            dst.ins(0, coid::token("error opening file "));
+            return (js::CBK_RET)js::THROW(iso, v8::Exception::Error, dst);
+        }
+
+        coid::binstreambuf buf;
+        buf.transfer_from(bif);
+
+        coid::token js = buf;
+
+#ifdef V8_MAJOR_VERSION
+        v8::EscapableHandleScope scope(v8::Isolate::GetCurrent());
+#else
+        v8::HandleScope scope;
+#endif
+
+        v8::Handle<v8::String> source = v8::string_utf8(js);
+        v8::Handle<v8::String> spath  = v8::string_utf8(dst);
+        v8::Handle<v8::Script> script = v8::Script::Compile(source, spath);
+
+        script->Run();
+
+#ifdef V8_MAJOR_VERSION
+        args.GetReturnValue().Set(spath);
+#else
+        return scope.Close(spath);
+#endif
+    }
     
 private:
 
@@ -274,6 +306,8 @@ private:
     
     v8::Handle<v8::Context> _context;
 };
+
+
 
 namespace js {
 

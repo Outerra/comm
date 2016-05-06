@@ -200,6 +200,10 @@ public:
     //@note paths must be compact
     static bool is_subpath( token root, token path );
 
+    //@return true if path is under or equals root, if true path is modified to contain the relative path
+    //@note paths must be compact
+    static bool subpath( token root, token& path );
+
     ///Remove nested ../ chunks, remove extra path separator characters
     //@param tosep replace separators with given character (usually '/' or '\\')
     static bool compact_path(charstr& dst, char tosep = 0);
