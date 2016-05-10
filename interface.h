@@ -57,6 +57,8 @@ public:
 
     static bool include_path( const token& curpath, const token& incpath, charstr& dst );
 
+    static const charstr& root_path();
+
     static void log( const token& msg );
 
 

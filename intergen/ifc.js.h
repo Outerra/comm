@@ -72,10 +72,17 @@ inline v8::Handle<v8::Value> THROW( v8::Isolate* iso, v8::Local<v8::Value> (*err
 struct script_handle
 {
     ///Provide path or direct script
+    //@param path_or_script path or script content
     //@param is_path true if path_or_script is a path to the script file, false if it's the script itself
+    //@param url string to use when identifying script origin
     //@param context 
-    script_handle( const coid::token& path_or_script, bool is_path, v8::Handle<v8::Context> context = v8::Handle<v8::Context>() )
-    : _str(path_or_script), _is_path(is_path), _context(context)
+    script_handle(
+        const coid::token& path_or_script,
+        bool is_path,
+        const coid::token& url = coid::token(),
+        v8::Handle<v8::Context> context = v8::Handle<v8::Context>()
+        )
+    : _str(path_or_script), _is_path(is_path), _context(context), _url(url)
     {}
 
     script_handle( v8::Handle<v8::Context> context )
@@ -86,10 +93,17 @@ struct script_handle
     : _is_path(true)
     {}
 
-    void set( const coid::token& path_or_script, bool is_path, v8::Handle<v8::Context> context = v8::Handle<v8::Context>() ) {
+    void set(
+        const coid::token& path_or_script,
+        bool is_path,
+        const coid::token& url = coid::token(),
+        v8::Handle<v8::Context> context = v8::Handle<v8::Context>()
+        )
+    {
         _str = path_or_script;
         _is_path = is_path;
         _context = context;
+        _url = url;
     }
 
     void set( v8::Handle<v8::Context> context ) {
@@ -115,6 +129,8 @@ struct script_handle
     const coid::token& str() const {
         return _str;
     }
+
+    const coid::token& url() const { return _url ? _url : (_is_path ? _str : _url); }
     
     v8::Handle<v8::Context> context() const {
         return _context;
@@ -125,7 +141,7 @@ struct script_handle
     //@param frame v8 stack frame number to be made relative to
     //@param dst [out] resulting path, using / for directory separators
     //@return 0 if succeeded, 1 invalid stack frame, 2 invalid path
-    static int get_target_path( const coid::token& path, uint frame, coid::charstr& dst )
+    static int get_target_path( coid::token path, uint frame, coid::charstr& dst )
     {
 #ifdef V8_MAJOR_VERSION
         v8::Local<v8::StackTrace> trace = v8::StackTrace::CurrentStackTrace(v8::Isolate::GetCurrent(),
@@ -138,6 +154,9 @@ struct script_handle
 
         v8::String::Utf8Value uber(trace->GetFrame(frame)->GetScriptName());
         coid::token curpath = coid::token(*uber, uber.length());
+
+        if(path.consume("file:///"))
+            --path;
 
         return coid::interface_register::include_path(curpath, path, dst) ? 0 : 2;
     }
@@ -159,13 +178,15 @@ struct script_handle
     
         v8::Context::Scope context_scope(context);
 
-        coid::token script_tok, script_path;
+        coid::token script_tok, script_path = _url;
         coid::charstr script_tmp;
         if(is_path()) {
-            script_path = _str;
-            coid::bifstream bif(script_path);
+            if(!script_path)
+                script_path = _str;
+
+            coid::bifstream bif(_str);
             if(!bif.is_open())
-                throw coid::exception() << script_path << " not found";
+                throw coid::exception() << _str << " not found";
                 
             script_tmp = _prefix;
 
@@ -179,11 +200,9 @@ struct script_handle
         else if(_prefix) {
             script_tmp << _prefix << _str;
             script_tok = script_tmp;
-            script_path = "";
         }
         else {
             script_tok = _str;
-            script_path = "";
         }
 
 #ifdef V8_MAJOR_VERSION
@@ -303,6 +322,7 @@ private:
     bool _is_path;
 
     coid::token _prefix;
+    coid::token _url;
     
     v8::Handle<v8::Context> _context;
 };

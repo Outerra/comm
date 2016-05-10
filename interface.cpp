@@ -66,7 +66,7 @@ public:
         bool slash = incpath.first_char() == '/' || incpath.first_char() == '\\';
         DASSERT( !_root_path.is_empty() );
 
-        if(!slash)
+        if(!slash && !directory::is_absolute_path(incpath))
         {
             //relative
             if(!current_dir(curpath, dst) || !directory::append_path(dst, incpath, true))
@@ -111,6 +111,12 @@ bool interface_register::include_path( const token& curpath, const token& incpat
 {
     interface_register_impl& reg = interface_register_impl::get();
     return reg.include_path(curpath, incpath, dst);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+const charstr& interface_register::root_path()
+{
+    return interface_register_impl::get()._root_path;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

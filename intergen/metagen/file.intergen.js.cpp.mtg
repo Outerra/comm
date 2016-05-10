@@ -899,13 +899,12 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
             context->Global()->Set(v8::string_utf8("$$log"), NEWTYPE2(iso, FunctionTemplate, &$..name$_js_dispatcher::v8log)->GetFunction());
         }
 
-        coid::token script_tok, script_path;
+        coid::token script_tok;
         coid::charstr script_tmp;
         if(script.is_path()) {
-            script_path = script.str();
-            coid::bifstream bif(script_path);
+            coid::bifstream bif(script.str());
             if(!bif.is_open())
-                throw coid::exception() << script_path << " not found";
+                throw coid::exception() << script.str() << " not found";
 
             script_tmp = script.prefix();
 
@@ -919,18 +918,16 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
         else if(script.prefix()) {
             script_tmp << script.prefix() << script.str();
             script_tok = script_tmp;
-            script_path = "$..name$";
         }
         else {
             script_tok = script.str();
-            script_path = "$..name$";
         }
 
         PERSISTENT(iso, ifc->_object, ifc->create_interface_object(false));
         if(bindname)
             context->Global()->Set(v8::string_utf8(bindname), LOCAL(iso, ifc->_object));
 
-        v8::Handle<v8::Script> compiled_script = load_script(script_tok, script_path);
+        v8::Handle<v8::Script> compiled_script = load_script(script_tok, script.url());
 
         PERSISTENT(iso, ifc->_script, compiled_script);
     }
