@@ -895,8 +895,8 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
     else {
         if(!script.has_context()) {
             context->Global()->Set(v8::string_utf8("$$include"), NEWTYPE2(iso, FunctionTemplate, &script_handle::js_include)->GetFunction());
-            context->Global()->Set(v8::string_utf8("$$include"), NEWTYPE2(iso, FunctionTemplate, &$..name$_js_dispatcher::v8query_interface)->GetFunction());
-            context->Global()->Set(v8::string_utf8("$$include"), NEWTYPE2(iso, FunctionTemplate, &$..name$_js_dispatcher::v8log)->GetFunction());
+            context->Global()->Set(v8::string_utf8("$$query_interface"), NEWTYPE2(iso, FunctionTemplate, &$..name$_js_dispatcher::v8query_interface)->GetFunction());
+            context->Global()->Set(v8::string_utf8("$$log"), NEWTYPE2(iso, FunctionTemplate, &$..name$_js_dispatcher::v8log)->GetFunction());
         }
 
         coid::token script_tok, script_path;
