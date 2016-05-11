@@ -61,7 +61,7 @@ public:
         return true;
     }
 
-    bool include_path( const token& curpath, const token& incpath, charstr& dst )
+    bool include_path( const token& curpath, const token& incpath, charstr& dst, token& relpath )
     {
         bool slash = incpath.first_char() == '/' || incpath.first_char() == '\\';
         DASSERT( !_root_path.is_empty() );
@@ -87,7 +87,7 @@ public:
         if(!directory::compact_path(dst, '/'))
             return false;
 
-        token relpath = dst;
+        relpath = dst;
         if(!directory::subpath(_root_path, relpath))
             return false;
 
@@ -107,10 +107,10 @@ void* interface_register::get_interface_creator( const token& ifcname )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool interface_register::include_path( const token& curpath, const token& incpath, charstr& dst )
+bool interface_register::include_path( const token& curpath, const token& incpath, charstr& dst, token& relpath )
 {
     interface_register_impl& reg = interface_register_impl::get();
-    return reg.include_path(curpath, incpath, dst);
+    return reg.include_path(curpath, incpath, dst, relpath);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

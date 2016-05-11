@@ -140,8 +140,9 @@ struct script_handle
     //@param path relative path (an include path) or absolute path from root
     //@param frame v8 stack frame number to be made relative to
     //@param dst [out] resulting path, using / for directory separators
+    //@param relpath [out] path relative 
     //@return 0 if succeeded, 1 invalid stack frame, 2 invalid path
-    static int get_target_path( coid::token path, uint frame, coid::charstr& dst )
+    static int get_target_path( coid::token path, uint frame, coid::charstr& dst, coid::token& relpath )
     {
 #ifdef V8_MAJOR_VERSION
         v8::Local<v8::StackTrace> trace = v8::StackTrace::CurrentStackTrace(v8::Isolate::GetCurrent(),
@@ -158,7 +159,7 @@ struct script_handle
         if(path.consume("file:///"))
             --path;
 
-        return coid::interface_register::include_path(curpath, path, dst) ? 0 : 2;
+        return coid::interface_register::include_path(curpath, path, dst, relpath) ? 0 : 2;
     }
 
     ///Load and run script
@@ -278,13 +279,14 @@ public:
         path.trim_whitespace();
 
         coid::charstr dst;
-        if(0 != script_handle::get_target_path(path, 0, dst)) {
+        coid::token relpath;
+        if(0 != script_handle::get_target_path(path, 0, dst, relpath)) {
             (dst = "invalid path ") << path;
             return (js::CBK_RET)js::THROW(iso, v8::Exception::Error, dst);
         }
 
-        if(!dst.ends_with(".js"))
-            dst << ".js";
+        //if(!dst.ends_with(".js"))
+        //    dst << ".js";
 
         coid::bifstream bif(dst);
         if(!bif.is_open()) {
@@ -303,8 +305,11 @@ public:
         v8::HandleScope scope;
 #endif
 
+        coid::zstring filepath;
+        filepath.get_str() << "file:///" << relpath;
+
         v8::Handle<v8::String> source = v8::string_utf8(js);
-        v8::Handle<v8::String> spath  = v8::string_utf8(dst);
+        v8::Handle<v8::String> spath  = v8::string_utf8(filepath);
         v8::Handle<v8::Script> script = v8::Script::Compile(source, spath);
 
         script->Run();

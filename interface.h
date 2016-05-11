@@ -55,7 +55,7 @@ public:
 
     static void* get_interface_creator( const token& ifcname );
 
-    static bool include_path( const token& curpath, const token& incpath, charstr& dst );
+    static bool include_path( const token& curpath, const token& incpath, charstr& dst, token& relpath );
 
     static const charstr& root_path();
 
