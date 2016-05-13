@@ -66,23 +66,30 @@ public:
         bool slash = incpath.first_char() == '/' || incpath.first_char() == '\\';
         DASSERT( !_root_path.is_empty() );
 
-        if(!slash && !directory::is_absolute_path(incpath))
+        bool relative = !slash && !directory::is_absolute_path(incpath);
+
+        if(relative)
         {
-            //relative
-            if(!current_dir(curpath, dst) || !directory::append_path(dst, incpath, true))
+            uint dlen;
+            if(!current_dir(curpath, dst) || (dlen=dst.len(), !directory::append_path(dst, incpath, true)))
                 return false;
-        }
-        else {
-            //absolute
-            dst = _root_path;
 
-            token append = incpath;
-            if(slash)
-                ++append;
-
-            if(!directory::append_path(dst, append, true))
+            if(!directory::compact_path(dst, '/'))
                 return false;
+
+            relpath = token(dst.ptr()+dlen, dst.ptre());
+            return true;
         }
+
+        //absolute
+        dst = _root_path;
+
+        token append = incpath;
+        if(slash)
+            ++append;
+
+        if(!directory::append_path(dst, append, true))
+            return false;
 
         if(!directory::compact_path(dst, '/'))
             return false;
