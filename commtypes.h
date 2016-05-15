@@ -193,6 +193,7 @@ using coid::ushort;
 COID_NAMESPACE_BEGIN
 
 ////////////////////////////////////////////////////////////////////////////////
+/*
 TYPE_TRIVIAL(bool);
 
 TYPE_TRIVIAL(uint8);
@@ -221,7 +222,7 @@ TYPE_TRIVIAL(ulong);
 
 TYPE_TRIVIAL(float);
 TYPE_TRIVIAL(double);
-TYPE_TRIVIAL(long double);
+TYPE_TRIVIAL(long double);*/
 
 
 

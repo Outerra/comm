@@ -60,7 +60,6 @@ COID_NAMESPACE_BEGIN
 class metagen //: public binstream
 {
     struct Tag;
-    typedef local<Tag>      Ltag;
     typedef MetaDesc::Var   Var;
 
     ///Lexer for tokenizing tags

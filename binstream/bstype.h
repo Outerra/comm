@@ -43,7 +43,8 @@
 #include "../comm.h"
 #include "../commtime.h"
 #include "../commassert.h"
-//#include "../token.h"
+
+#include <type_traits>
 
 
 
@@ -69,7 +70,7 @@ struct binary {
 template<class T>
 struct pointer
 {
-    typedef typename type_deconst<T>::type
+    typedef typename std::remove_const<T>::type
         Tnc;
 
 
@@ -336,7 +337,7 @@ struct t_key : public T
 } //namespace bstype
 
 
-TYPE_TRIVIAL(bstype::key);
+//TYPE_TRIVIAL(bstype::key);
 
 
 COID_NAMESPACE_END

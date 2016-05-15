@@ -29,11 +29,21 @@ void float_test()
     }
 }
 
+using namespace coid;
+
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
 {
+#if 0
+    static_assert( std::is_trivially_move_constructible<dynarray<char>>::value, "non-trivial move");
+    static_assert( std::is_trivially_move_constructible<charstr>::value, "non-trivial move");
+    static_assert( std::is_trivially_move_constructible<dynarray<int>>::value, "non-trivial move");
+    static_assert( std::is_trivially_move_constructible<dynarray<charstr>>::value, "non-trivial move");
+    static_assert( std::is_trivially_move_constructible<dynarray<dynarray<int>>>::value, "non-trivial move");
+#endif
+
     uint64 stuff[] = {7000, 45, 2324, 11, 0, 222};
-    coid::radixi<uint64, uint, uint64> rx;
+    radixi<uint64, uint, uint64> rx;
     const uint* idx = rx.sort(true, stuff, sizeof(stuff)/sizeof(stuff[0]));
 
     //coid::test();
@@ -45,7 +55,7 @@ int main( int argc, char* argv[] )
 
     //main_atomic(argc, argv);
     //coid::test();
-    coid::metastream_test();
+    metastream_test();
     regex_test();
     return 0;
 }

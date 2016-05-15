@@ -118,6 +118,10 @@ public:
         : _tstr(str._tstr)
     {}
 
+    ///move constructor
+    charstr(charstr&& str) {
+        takeover(str);
+    }
 
     operator token() const { return token(ptr(), ptre()); }
 
@@ -382,6 +386,10 @@ public:
         else
             assign(str.ptr(), str.len());
         return *this;
+    }
+
+    charstr& operator = (charstr&& str) {
+        return takeover(str);
     }
 
     ///Define operators for string literals and c-strings based on tokens
@@ -1222,8 +1230,6 @@ public:
         const char* ps = src.ptr();
 
         for(; !src.is_empty(); ) {
-            uchar c = src.first_char();
-
             if(++src != '%')
                 continue;
 

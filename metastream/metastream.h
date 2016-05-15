@@ -252,7 +252,7 @@ public:
     template<typename T>
     metastream& member( const token& name, T*& v )
     {
-        typedef std::remove_const<T>::type TNC;
+        typedef typename std::remove_const<T>::type TNC;
 
         if(streaming())
             *this || *(typename resolve_enum<TNC>::type*)v;

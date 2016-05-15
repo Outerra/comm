@@ -244,6 +244,10 @@ public:
         }
     }
 
+    dynarray( dynarray&& p ) : _ptr(0) {
+        takeover(p);
+    }
+
     ///assignment operator - duplicate
     dynarray& operator = ( const dynarray& p )
     {
@@ -254,6 +258,10 @@ public:
             _ptr[i] = p._ptr[i];
 
         return *this;
+    }
+
+    dynarray& operator = ( dynarray&& p ) {
+        return takeover(p);
     }
 
     ///Assign a pointer that fulfills dynarray ptr requirements.
@@ -469,7 +477,7 @@ public:
         }
 
         if(nitems) {
-            if( !type_trait<T>::trivial_constr )
+            if( !has_trivial_default_constructor<T>::value )
                 for( uints i=0; i<nitems; ++i )  ::new(_ptr+i) T;
         }
 
@@ -505,7 +513,7 @@ public:
         if(nitems) {
             ::memset( _ptr, toones ? 0xff : 0x00, nitems * sizeof(T) );
 
-            if( !type_trait<T>::trivial_constr )
+            if( !has_trivial_default_constructor<T>::value )
                 for( uints i=0; i<nitems; ++i )  ::new(_ptr+i) T;
         }
 
@@ -530,7 +538,7 @@ public:
 
         if( nitems == n )  return _ptr;
         if( nitems < n ) {
-            if( !type_trait<T>::trivial_constr )
+            if( !std::is_trivially_destructible<T>::value )
                 for( uints i=n-1; i>nitems; --i )  _ptr[i].~T();
             _set_count(nitems);
             return _ptr;
@@ -544,7 +552,7 @@ public:
         ::memset( _ptr+n, 0xcd, (nalloc - n)*sizeof(T) );
 #endif
 
-        if( !type_trait<T>::trivial_constr )
+        if( !has_trivial_default_constructor<T>::value )
             for( uints i=n; i<nitems; ++i )  ::new(_ptr+i) T;
 
         if(_ptr)  _set_count(nitems);
@@ -581,7 +589,7 @@ public:
         ::memset( _ptr+nitems, 0xcd, (nalloc - nitems)*sizeof(T) );
 #endif
 
-        if( !type_trait<T>::trivial_constr )
+        if( !has_trivial_default_constructor<T>::value )
             for( uints i=n; i<nitems; ++i )  ::new(_ptr+i) T;
 
         if(_ptr)  _set_count(nitems);
@@ -633,7 +641,7 @@ public:
 #if defined(_DEBUG) && !defined(NO_DYNARRAY_DEBUG_FILL)
         ::memset( _ptr+n, 0xcd, (nalloc-n)*sizeof(T) );
 #endif
-        if( !type_trait<T>::trivial_constr )
+        if( !has_trivial_default_constructor<T>::value )
             for( uints i=n; i<nto; ++i )  ::new(_ptr+i) T;
 
         _set_count(nto);
@@ -662,7 +670,7 @@ public:
         ::memset( _ptr+nto, 0xcd, (nalloc-nto)*sizeof(T) );
 #endif
 
-        if( !type_trait<T>::trivial_constr )
+        if( !has_trivial_default_constructor<T>::value )
             for( uints i=n; i<nto; ++i )  ::new(_ptr+i) T;
 
         _set_count(nto);
@@ -1187,7 +1195,7 @@ public:
         addnc(nitems);
         T* p = __ins( _ptr, pos, _count()-nitems, nitems );
         
-        if( !type_trait<T>::trivial_constr )
+        if( !has_trivial_default_constructor<T>::value )
             for(; nitems>0; --nitems, ++p)  ::new (p) T;
         return _ptr + pos;
     }
@@ -1233,7 +1241,7 @@ public:
             return;
 
         uints i = nitems;
-        if( !type_trait<T>::trivial_constr )
+        if( !has_trivial_destructor<T>::value )
             for( T* p = _ptr+pos; i>0; --i, ++p )  p->~T();
 
         __del( _ptr, pos, _count(), nitems );
@@ -1417,7 +1425,7 @@ private:
             throw ersEXCEPTION "invalid pointer";
 #endif
         uints c = _count();
-        if( !type_trait<T>::trivial_constr )
+        if( !std::is_trivially_destructible<T>::value )
             for( uints i=0; i<c; ++i )  _ptr[i].~T();
     }
 
@@ -1431,10 +1439,12 @@ private:
         _ptr = A::template realloc<T>(_ptr, nalloc);
         _set_count(newsize);
 
-        if( !type_trait<T>::trivial_moving_constr  &&  op != _ptr )
+        if(op != _ptr)
+            rebase<has_trivial_rebase<T>::value, T>::perform(op, op+oldsize, _ptr);
         {
-            for( uints i=0; i<oldsize; ++i )
-                type_trait<T>::moving::move( _ptr[i], op+i );
+            for( uints i=0; i<oldsize; ++i ) {
+                //type_trait<T>::moving::move( _ptr[i], op+i );
+            }
         }
 
         return nalloc;
@@ -1565,6 +1575,5 @@ private:
 
 
 COID_NAMESPACE_END
-
 
 #endif // __COID_COMM_DYNARRAY__HEADER_FILE__

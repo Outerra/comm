@@ -41,9 +41,22 @@
 #include "namespace.h"
 #include "commtypes.h"
 
+#include <type_traits>
+
+
+#ifdef SYSTYPE_MSVC
+#if _MSC_VER < 1700
+namespace std {
+template<class T> struct is_trivially_default_constructible { static const bool value = false; };
+template<class T> struct is_trivially_destructible { static const bool value = false; };
+} //namespace std
+#endif
+#endif
+
+
 COID_NAMESPACE_BEGIN
 
-
+/*
 ////////////////////////////////////////////////////////////////////////////////
 #if defined(_MSC_VER) && _MSC_VER < 1300
 
@@ -90,7 +103,7 @@ struct type_deconst {typedef T type; typedef const T type_const;};
 
 template<class K>
 struct type_deconst<const K> {typedef K type; typedef const K type_const;};
-
+*/
 ////////////////////////////////////////////////////////////////////////////////
 template<class T>
 struct type_base
@@ -124,14 +137,14 @@ struct type_base<const K&> {
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class T>
-struct type_moving_constructor_trivial
+/*template <class T>
+struct type_rebasing_constructor_trivial
 {
     static void move( T& dst, T* oldp )     { }
 };
 
 template <class T>
-struct type_moving_constructor
+struct type_rebasing_constructor
 {
     static void move( T& dst, T* oldp ) {
         //if object of type T cannot be trivially copied to a new memory
@@ -139,7 +152,7 @@ struct type_moving_constructor
         // its state after being copied
         dst.rebase(oldp);
     }
-};
+};*/
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Template that either copies or swaps values according to the template argument
@@ -158,42 +171,79 @@ struct type_copier_swapper<T,true> {
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class T>
+/*template <class T>
 struct type_trait
 {
     enum {
-        trivial_constr = false,
-        trivial_moving_constr = true,
+        trivial_constr = std::has_trivial_default_constructor<T>::value,
+        trivial_zero_constr = false,
+        trivial_rebase_constr = true,
     };
 
-    typedef typename type_select< trivial_moving_constr,
-        type_moving_constructor_trivial<T>,
-        type_moving_constructor<T> >::type  moving;
+    typedef typename type_select< trivial_rebase_constr,
+        type_rebasing_constructor_trivial<T>,
+        type_rebasing_constructor<T> >::type  moving;
 };
 
-#define TYPE_TRIVIAL(t) \
+///Macro to declare types that are already properly default-constructed as long as the memory was zeroed
+#define TYPE_TRIVIAL_ZERO_CONSTRUCTOR(t) \
 template<> struct type_trait<t> { \
-    enum { trivial_constr = true, trivial_moving_constr = true, }; \
-    typedef type_select< trivial_moving_constr, \
-        type_moving_constructor_trivial<t>, \
-        type_moving_constructor<t> >::type  moving; \
+    enum { trivial_zero_constr = true, trivial_rebase_constr = true, }; \
+    typedef type_select< trivial_rebase_constr, \
+        trivial_constr = std::has_trivial_default_constructor<T>::value,
+        type_rebasing_constructor_trivial<t>, \
+        type_rebasing_constructor<t> >::type  moving; \
 }
 
-#define COID_TYPE_TRIVIAL(t) namespace coid { \
+///Macro to declare types that are already properly default-constructed as long as the memory was zeroed
+#define COID_TYPE_TRIVIAL_ZERO_CONSTRUCTOR(t) namespace coid { \
 template<> struct type_trait<t> { \
-    enum { trivial_constr = true, trivial_moving_constr = true, }; \
-    typedef type_select< trivial_moving_constr, \
-        type_moving_constructor_trivial<t>, \
-        type_moving_constructor<t> >::type  moving; \
+    enum { trivial_zero_constr = true, trivial_rebase_constr = true, }; \
+    typedef type_select< trivial_rebase_constr, \
+        type_rebasing_constructor_trivial<t>, \
+        type_rebasing_constructor<t> >::type  moving; \
+}; }
+*/
+
+template<class T>
+struct has_trivial_default_constructor {
+    static const bool value = std::is_trivially_default_constructible<T>::value;
+};
+
+template<class T>
+struct has_trivial_destructor {
+    static const bool value = std::is_trivially_destructible<T>::value;
+};
+
+template<class T>
+struct has_trivial_rebase {
+    static const bool value = true;
+};
+
+
+template<bool V, class T> struct rebase {};
+
+template<class T> struct rebase<true,T> {
+    static void perform( T* src, T* srcend, T* dst )
+    {}
+};
+
+template<class T> struct rebase<false,T> {
+    static void perform( T* src, T* srcend, T* dst ) {
+        for(; src < srcend; ++src, ++dst) {
+            *dst = std::move(*src);
+            src->~T();
+        }
+    }
+};
+
+
+///Macro to declare types that have a non-trivial rebase constructor and need to do something on memmove
+#define COID_TYPE_NONTRIVIAL_REBASE(T) namespace coid { \
+template<> struct has_trivial_rebase<T> { \
+    static const bool value = false; \
 }; }
 
-#define COID_TYPE_NONTRIVIAL_REBASE(t) namespace coid { \
-template<> struct type_trait<t> { \
-    enum { trivial_constr = false, trivial_moving_constr = false, }; \
-    typedef type_select< trivial_moving_constr, \
-        type_moving_constructor_trivial<t>, \
-        type_moving_constructor<t> >::type  moving; \
-}; }
 
 ////////////////////////////////////////////////////////////////////////////////
 

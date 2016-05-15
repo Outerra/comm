@@ -160,10 +160,10 @@ public:
     
     local(T* p) {_p= p;}
     
-    local( const local& p )
+    local( local&& p )
     {
-//        throw ersUNAVAILABLE "can't copy local<> (just move)";
-        _p = new T(*p._p);
+        _p = p._p;//new T(*p._p);
+        p._p = 0;
     }
 
     T* ptr() const                      { return _p; }
@@ -185,16 +185,20 @@ public:
 #pragma warning (default : 4284)
 #endif //SYSTYPE_MSVC
 
-    local& operator=(const local& p)
-    {
-//        throw ersUNAVAILABLE "can't copy local<> (just move)";
-        if(_p) {delete _p;  _p=0;}
-        _p = new T(*p._p);
-        return *this;
-    }
-    local& operator=(const T* p) {
+    local& operator = (const T* p) {
         if(_p) delete _p;
         _p= (T*)p;
+        return *this;
+    }
+
+    local& operator = (local&& p)
+    {
+        if(_p) {
+            delete _p;
+            _p = 0;
+        }
+        _p = p._p;//new T(*p._p);
+        p._p = 0;
         return *this;
     }
 

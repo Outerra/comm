@@ -6,6 +6,7 @@
     <ClCompile Include="..\..\..\intergen\ig-class.cpp" />
     <ClCompile Include="..\..\..\intergen\ig-lexer.cpp" />
     <ClCompile Include="..\..\..\intergen\rl-method.cpp" />
+    <ClCompile Include="..\..\..\intergen\ig-arg.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="metagen">
