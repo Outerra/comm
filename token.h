@@ -801,8 +801,8 @@ struct token
         return token();
     }
 
-    ///Cut space-separated arguments. Handles strings enclosed in '' or ""
-    token cut_left_argument()
+    ///Cut sep-character separated arguments. Handles strings enclosed in '' or ""
+    token cut_left_argument( char sep = ' ' )
     {
         skip_whitespace();
 
@@ -810,7 +810,7 @@ struct token
         if(c == '\'' || c == '"')
             return cut_left_string(0);
 
-        return cut_left(' ');
+        return cut_left(sep);
     }
 
     ///Cut left token up to specified character delimiter
