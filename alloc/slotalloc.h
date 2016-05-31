@@ -66,6 +66,7 @@ Safe to use from a single producer / single consumer threading mode, as long as 
 reserved in advance.
 
 @param POOL if true, do not call destructors on item deletion, only on container deletion
+@param ATOMIC if true, ins/del operations and versioning are done as atomic operations
 **/
 template<class T, bool POOL=false, bool ATOMIC=false>
 class slotalloc
@@ -110,10 +111,14 @@ public:
     //@return array index
     //@note types aren't initialized when allocated
     template<typename R>
-    uints append_relarray() {
+    uints append_relarray( dynarray<R>** parray = 0 ) {
         uints idx = _relarrays.size();
         auto p = _relarrays.add();
         p->elemsize = sizeof(T);
+
+        if(parray)
+            *parray = &dynarray<R>::from_dynarray_conforming_ptr(p->data);
+
         return idx;
     }
 

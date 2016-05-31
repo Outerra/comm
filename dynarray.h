@@ -272,6 +272,12 @@ public:
         return *this;
     }
 
+    ///Cast dynarray-conforming pointer to a dynarray object
+    static dynarray& from_dynarray_conforming_ptr( void*& ptr )
+    {
+        return *reinterpret_cast<dynarray*>(&ptr);
+    }
+
     ///take control over buffer controlled by \a dest dynarray, \a dest ptr will be set to zero
     template<class COUNT2>
     dynarray& takeover( dynarray<T,COUNT2>& src )
