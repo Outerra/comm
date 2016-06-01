@@ -407,5 +407,8 @@
     <ClInclude Include="..\..\..\alloc\alloc2d.h">
       <Filter>alloc</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\alloc\slotalloc_hash.h">
+      <Filter>alloc</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

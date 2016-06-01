@@ -426,6 +426,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\alloc\alloc2d.h" />
     <ClInclude Include="..\..\..\alloc\slotalloc.h" />
+    <ClInclude Include="..\..\..\alloc\slotalloc_hash.h" />
     <ClInclude Include="..\..\..\atomic\atomic.h" />
     <ClInclude Include="..\..\..\atomic\queue.h" />
     <ClInclude Include="..\..\..\binstream\binstream.h" />
