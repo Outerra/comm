@@ -39,6 +39,8 @@ template<
 >
 class slotalloc_hash : public slotalloc<T, POOL>
 {
+    typedef slotalloc<T, POOL> base;
+
 public:
 
     T* push( const T& v ) = delete;
@@ -48,7 +50,7 @@ public:
     slotalloc_hash()
     {
         //append related array for hash table sequences
-        append_relarray<uint>(&_seqtable);
+        base::append_relarray(&_seqtable);
 
         _buckets.calloc(32, true);
     }
@@ -66,10 +68,10 @@ public:
         uint id;
         if(find_or_insert_value_slot_uninit_(key, &id)) {
             if(isnew) *isnew = true;
-            return new(get_item(id)) T;
+            return new(base::get_item(id)) T;
         }
         
-        return get_item(id);
+        return base::get_item(id);
     }
 
     T* find_or_insert_value_slot_uninit( const KEY& key, bool* isnew=0 )
@@ -100,7 +102,7 @@ public:
 
         *n = (*_seqtable)[id];
 
-        slotalloc::del(p);
+        base::del(p);
     }
 
 
@@ -118,7 +120,7 @@ public:
             uint id = *n;
             *n = (*_seqtable)[id];
 
-            slotalloc::del(get_item(id));
+            base::del(get_item(id));
             ++c;
         }
 
@@ -135,7 +137,7 @@ protected:
         uint n = _buckets[bucket];
         while(n != UMAX32)
         {
-            if(_EXTRACTOR(*get_item(n)) == k)
+            if(_EXTRACTOR(*base::get_item(n)) == k)
                 return n;
             n = (*_seqtable)[n];
         }
@@ -148,7 +150,7 @@ protected:
         uint* n = &_buckets[bucket];
         while(*n != UMAX32)
         {
-            if(_EXTRACTOR(*get_item(*n)) == k)
+            if(_EXTRACTOR(*base::get_item(*n)) == k)
                 return n;
             n = &(*_seqtable)[*n];
         }
@@ -163,8 +165,8 @@ protected:
 
         bool isnew = id == UMAX32;
         if(isnew) {
-            T* p = slotalloc::add_uninit();
-            id = (uint)get_item_id(p);
+            T* p = base::add_uninit();
+            id = (uint)base::get_item_id(p);
 
             (*_seqtable)[id] = _buckets[b];
             _buckets[b] = id;
@@ -177,7 +179,7 @@ protected:
 
     T* insert_value_( T* p )
     {
-        uint id = (uint)get_item_id(p);
+        uint id = (uint)base::get_item_id(p);
 
         uint b = bucket(key);
         uint fid = find_object(b, key);

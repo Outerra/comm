@@ -1,7 +1,7 @@
 
 #include "../str.h"
 #include "../radix.h"
-
+#include "../alloc/slotalloc_hash.h"
 
 namespace coid {
 void test();
@@ -31,6 +31,12 @@ void float_test()
 
 using namespace coid;
 
+struct value {
+    charstr key;
+
+    operator token() const { return key; }
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
 {
@@ -41,6 +47,12 @@ int main( int argc, char* argv[] )
     static_assert( std::is_trivially_move_constructible<dynarray<charstr>>::value, "non-trivial move");
     static_assert( std::is_trivially_move_constructible<dynarray<dynarray<int>>>::value, "non-trivial move");
 #endif
+
+    slotalloc_hash<value, token> hash;
+    bool isnew;
+    hash.find_or_insert_value_slot("foo", &isnew);
+    hash.find_or_insert_value_slot("foo", &isnew);
+    hash.find_or_insert_value_slot("bar", &isnew);
 
     uint64 stuff[] = {7000, 45, 2324, 11, 0, 222};
     radixi<uint64, uint, uint64> rx;
