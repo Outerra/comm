@@ -101,6 +101,7 @@ public:
 
         _tokenizer.def_string( ".comment", "//", "\n", "" );
         _tokenizer.def_string( ".comment", "//", "\r\n", "" );
+        _tokenizer.def_string( ".comment", "//", "", "" );
 
         _tokenizer.def_block( ".blkcomment", "/*", "*/", ".blkcomment" );
 
