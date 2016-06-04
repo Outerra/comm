@@ -73,26 +73,6 @@ class slotalloc
 {
 public:
 
-    void reset()
-    {
-        //destroy occupied slots
-        if(!POOL)
-            for_each([](T& p) {destroy(p);});
-
-        //_count = 0;
-        if(ATOMIC)
-            atomic::exchange(&_count, 0);
-        else
-            _count = 0;
-
-        _relarrays.for_each([&](relarray& ra) {
-            ra.set_count(0);
-        });
-
-        _array.set_size(0);
-        _allocated.set_size(0);
-    }
-
     ///Construct slotalloc container
     //@param pool true for pool mode, in which removed objects do not have destructors invoked
     slotalloc() : _count(0), _version(0)
@@ -106,6 +86,55 @@ public:
         if(!POOL)
             reset();
     }
+
+    ///Reset content. Destructors aren't invoked in the pool mode, as the objects may still be reused.
+    void reset()
+    {
+        //destroy occupied slots
+        if(!POOL)
+            for_each([](T& p) {destroy(p);});
+
+        if(ATOMIC)
+            atomic::exchange(&_count, 0);
+        else
+            _count = 0;
+
+        _relarrays.for_each([&](relarray& ra) {
+            ra.set_count(0);
+        });
+
+        _array.set_size(0);
+        _allocated.set_size(0);
+    }
+
+    ///Discard content. Also destroys pooled objects and frees memory
+    void discard()
+    {
+        //destroy occupied slots
+        if(!POOL) {
+            for_each([](T& p) {destroy(p);});
+
+            _relarrays.for_each([&](relarray& ra) {
+                ra.set_count(0);
+            });
+
+            _array.set_size(0);
+            _allocated.set_size(0);
+        }
+
+        if(ATOMIC)
+            atomic::exchange(&_count, 0);
+        else
+            _count = 0;
+
+        _array.discard();
+        _allocated.discard();
+
+        _relarrays.for_each([&](relarray& ra) {
+            ra.discard();
+        });
+    }
+
 
     ///Append related array of type R which will be managed alongside the main array of type T
     //@return array index
@@ -429,7 +458,15 @@ private:
         relarray() : data(0), elemsize(0)
         {}
 
+        ~relarray() {
+            discard();
+        }
+
         uints count() const { return comm_array_allocator::count(data); }
+
+        void discard() {
+            comm_array_allocator::free(data);
+        }
 
         void set_count( uints n ) {
             comm_array_allocator::set_count(data, n);
