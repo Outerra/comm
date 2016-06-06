@@ -91,8 +91,13 @@ public:
     void reset()
     {
         //destroy occupied slots
-        if(!POOL)
+        if(!POOL) {
             for_each([](T& p) {destroy(p);});
+
+            _relarrays.for_each([&](relarray& ra) {
+                ra.reset();
+            });
+        }
 
         if(ATOMIC)
             atomic::exchange(&_count, 0);
@@ -142,7 +147,8 @@ public:
     template<typename R>
     uints append_relarray( dynarray<R>** parray = 0 ) {
         uints idx = _relarrays.size();
-        auto p = _relarrays.add();
+        relarray* p = new(_relarrays.add_uninit())
+            relarray(&type_creator<R>::constructor, &type_creator<R>::destructor);
         p->elemsize = sizeof(T);
 
         if(parray)
@@ -454,8 +460,13 @@ private:
     struct relarray {
         void* data;                 //< dynarray-conformant pointer
         uint elemsize;              //< element size
+        void (*destructor)(void*);
+        void (*constructor)(void*);
 
-        relarray() : data(0), elemsize(0)
+        relarray(
+            void (*constructor)(void*),
+            void (*destructor)(void*))
+            : data(0), elemsize(0), constructor(constructor), destructor(destructor)
         {}
 
         ~relarray() {
@@ -464,7 +475,18 @@ private:
 
         uints count() const { return comm_array_allocator::count(data); }
 
+        void reset() {
+            uints n = comm_array_allocator::count(data);
+            if(destructor) {
+                uint8* p = (uint8*)data;
+                for(uints i=0; i<n; ++i, p+=elemsize)
+                    destructor(p);
+            }
+            comm_array_allocator::set_count(data, 0);
+        }
+
         void discard() {
+            reset();
             comm_array_allocator::free(data);
         }
 
@@ -472,8 +494,15 @@ private:
             comm_array_allocator::set_count(data, n);
         }
         
-        void add( uints n ) {
-            data = comm_array_allocator::add(data, n, elemsize);
+        void add( uints addn ) {
+            uints curn = comm_array_allocator::count(data);
+            data = comm_array_allocator::add(data, addn, elemsize);
+
+            if(constructor) {
+                uint8* p = (uint8*)data + curn * elemsize;
+                for(uints i=0; i<addn; ++i, p+=elemsize)
+                    constructor(p);
+            }
         }
 
         void reserve( uints n ) {

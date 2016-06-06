@@ -246,6 +246,28 @@ template<> struct has_trivial_rebase<T> { \
 
 
 ////////////////////////////////////////////////////////////////////////////////
+template<class T>
+struct type_creator {
+    typedef void (*destructor_fn)(void*);
+    typedef void (*constructor_fn)(void*);
+
+    static void destructor(void* p) { delete (T*)p; }
+    static void constructor(void* p) { new(p) T; }
+
+    static constructor_fn nontrivial_constructor() {
+        return std::is_trivially_constructible<T>::value
+            ? 0
+            : &constructor;
+    }
+
+    static destructor_fn nontrivial_destructor() {
+        return std::is_trivially_constructible<T>::value
+            ? 0
+            : &destructor;
+    }
+};
+
+////////////////////////////////////////////////////////////////////////////////
 
 ///Alignment trait
 template<class T>
