@@ -128,7 +128,7 @@ template<bool INSENSITIVE> struct hash<const char*, INSENSITIVE>
     }
 };
 
-#define DIRECT_HASH_FUNC(TYPE) template<> struct hash<TYPE> { typedef TYPE key_type;  uint operator()(TYPE x) const { return (uint)x; } }
+#define DIRECT_HASH_FUNC(TYPE) template<> struct hash<TYPE> { typedef TYPE key_type;  uint operator()(TYPE x) const { return (uint)(uints)x; } }
 
 DIRECT_HASH_FUNC(bool);
 DIRECT_HASH_FUNC(uint8);
