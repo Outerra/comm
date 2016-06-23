@@ -64,16 +64,20 @@ typedef hash_keyset<memtrack_imp, _Select_Copy<memtrack_imp,uints> > memtrack_ha
 
 struct memtrack_registrar
 {
-    memtrack_hash_t hash;
-    comm_mutex mux;
+    memtrack_hash_t* hash;
+    comm_mutex* mux;
 
     static int reg;
 
-    memtrack_registrar() : mux(500, false)
-    {}
+    memtrack_registrar() : mux(0), hash(0)
+    {
+        mux = new comm_mutex(500, false);
+        hash = new memtrack_hash_t;
+    }
 
     ~memtrack_registrar() {
         reg = -2;
+        //not deleting the hash&mux, dedlocks
     }
 };
 
@@ -103,7 +107,8 @@ static memtrack_registrar* memtrack_register()
  
     static closer _C;
     if(!_C.mtr) {
-        _C.mtr = new memtrack_registrar;
+        GLOBAL_SINGLETON(memtrack_registrar);
+        _C.mtr = &GLOBAL_SINGLETON(memtrack_registrar);//new memtrack_registrar;
         memtrack_registrar::reg = 1;
     }
 
@@ -124,11 +129,11 @@ void memtrack_alloc( const char* name, uints size )
     memtrack_registrar* mtr = memtrack_register();
     if(!mtr || mtr->reg<0) return;
 
-    GUARDTHIS(mtr->mux);
+    GUARDTHIS(*mtr->mux);
     if(mtr->reg > 1)
         return;     //avoid stack overlow from hashmap
     mtr->reg = 2;
-    memtrack* val = mtr->hash.find_or_insert_value_slot((uints)name);
+    memtrack* val = mtr->hash->find_or_insert_value_slot((uints)name);
     mtr->reg = 1;
 
     val->name = name;
@@ -145,8 +150,8 @@ void memtrack_free( const char* name, uints size )
     memtrack_registrar* mtr = memtrack_register();
     if(!mtr || mtr->reg<0) return;
 
-    GUARDTHIS(mtr->mux);
-    memtrack_imp* val = const_cast<memtrack_imp*>(mtr->hash.find_value((uints)name));
+    GUARDTHIS(*mtr->mux);
+    memtrack_imp* val = const_cast<memtrack_imp*>(mtr->hash->find_value((uints)name));
 
     if(val)
         val->total -= size;
@@ -159,9 +164,9 @@ uint memtrack_list( memtrack* dst, uint nmax )
     if(!mtr || mtr->reg<0)
         return 0;
 
-    GUARDTHIS(mtr->mux);
-    memtrack_hash_t::iterator ib = mtr->hash.begin();
-    memtrack_hash_t::iterator ie = mtr->hash.end();
+    GUARDTHIS(*mtr->mux);
+    memtrack_hash_t::iterator ib = mtr->hash->begin();
+    memtrack_hash_t::iterator ie = mtr->hash->end();
 
     uint i=0;
     for( ; ib!=ie && i<nmax; ++ib ) {
@@ -184,9 +189,9 @@ void memtrack_dump( const char* file )
     if(!mtr || mtr->reg<0)
         return;
 
-    GUARDTHIS(mtr->mux);
-    memtrack_hash_t::iterator ib = mtr->hash.begin();
-    memtrack_hash_t::iterator ie = mtr->hash.end();
+    GUARDTHIS(*mtr->mux);
+    memtrack_hash_t::iterator ib = mtr->hash->begin();
+    memtrack_hash_t::iterator ie = mtr->hash->end();
 
     bofstream bof(file);
     if(!bof.is_open())
@@ -244,9 +249,9 @@ uint memtrack_count()
     memtrack_registrar* mtr = memtrack_register();
     if(!mtr) return 0;
 
-    GUARDTHIS(mtr->mux);
+    GUARDTHIS(*mtr->mux);
 
-    return (uint)mtr->hash.size();
+    return (uint)mtr->hash->size();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -254,9 +259,9 @@ void memtrack_reset()
 {
     memtrack_registrar* mtr = memtrack_register();
 
-    GUARDTHIS(mtr->mux);
-    memtrack_hash_t::iterator ib = mtr->hash.begin();
-    memtrack_hash_t::iterator ie = mtr->hash.end();
+    GUARDTHIS(*mtr->mux);
+    memtrack_hash_t::iterator ib = mtr->hash->begin();
+    memtrack_hash_t::iterator ie = mtr->hash->end();
 
     for( ; ib!=ie; ++ib ) {
         memtrack& p = *ib;
