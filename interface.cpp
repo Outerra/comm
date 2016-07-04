@@ -70,11 +70,12 @@ public:
 
         if(relative)
         {
-            uint dlen;
-            if(!current_dir(curpath, dst) || (dlen=dst.len(), !directory::append_path(dst, incpath, true)))
+            if(!current_dir(curpath, dst) || !directory::compact_path(dst, '/'))
                 return false;
 
-            if(!directory::compact_path(dst, '/'))
+            uint dlen = dst.len();
+
+            if(!directory::append_path(dst, incpath, true))
                 return false;
 
             relpath = token(dst.ptr()+dlen, dst.ptre());
