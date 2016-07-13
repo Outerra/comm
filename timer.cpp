@@ -37,7 +37,6 @@
 
 #include "timer.h"
 
-
 #ifdef SYSTYPE_MSVC
 #include <windows.h>
 
@@ -46,14 +45,13 @@
 
 namespace coid {
 
+    uint64 nsec_timer::_freq = 0;
+    double  nsec_timer::_freqd = 0.0;
 ////////////////////////////////////////////////////////////////////////////////
 nsec_timer::nsec_timer()
 {
-	LARGE_INTEGER freq;
-	QueryPerformanceFrequency(&freq);
-
-	_freq = freq.QuadPart;
-	_freqd = 1.0 / double(_freq);
+    //just for initializing static members
+    nsec_timer::current_time_ns();
 
     reset();
 }
@@ -78,12 +76,35 @@ uint64 nsec_timer::time_ns()
 	QueryPerformanceCounter(&stop);
 
     uint64 d = stop.QuadPart - _start;
-    uint64 w = d / _freq;
-    uint64 f = d % _freq;
+    uint64 w = d / nsec_timer::_freq;
+    uint64 f = d % nsec_timer::_freq;
 
     static const uint64 NS = 1000000000;
 
-    return w*NS + (f*NS)/_freq + _dtns;
+    return w*NS + (f*NS)/ nsec_timer::_freq + _dtns;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+uint64 nsec_timer::current_time_ns()
+{
+    if (nsec_timer::_freq == 0) {
+        LARGE_INTEGER freq;
+        QueryPerformanceFrequency(&freq);
+
+        nsec_timer::_freq = freq.QuadPart;
+        nsec_timer::_freqd = 1.0 / double(nsec_timer::_freq);
+    }
+    
+    LARGE_INTEGER stop;
+    QueryPerformanceCounter(&stop);
+
+    uint64 d = stop.QuadPart;
+    uint64 w = d / nsec_timer::_freq;
+    uint64 f = d % nsec_timer::_freq;
+
+    static const uint64 NS = 1000000000;
+
+    return w*NS + (f*NS) / nsec_timer::_freq;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

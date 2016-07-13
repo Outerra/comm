@@ -47,8 +47,8 @@ COID_NAMESPACE_BEGIN
 
 class nsec_timer
 {
-	uint64 _freq;
-	double _freqd;
+	static uint64 _freq;
+    static double _freqd;
     uint64 _start;
     int64 _dtns;
 
@@ -61,6 +61,9 @@ public:
 
     //@return elapsed time in nanoseconds
 	uint64 time_ns();
+    
+    //@return current time in nanoseconds
+    static uint64 nsec_timer::current_time_ns();
 
     ///Adjust returned time
     void adjust_time_ns( int64 dtns ) {
