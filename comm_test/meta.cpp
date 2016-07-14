@@ -21,18 +21,7 @@ struct FooA
         this->i = i;
         this->f = f;
     }
-/*
-    friend binstream& operator << (binstream& bin, const FooA& s)
-    {   return bin << s.i << s.f;   }
-    friend binstream& operator >> (binstream& bin, FooA& s)
-    {   return bin >> s.i >> s.f;   }
-    friend metastream& operator << (metastream& m, const FooA& s)
-    {
-        MSTRUCT_OPEN(m,"FooA")
-            MMD(m, "i", s.i, 4)
-            MMD(m, "f", s.f, 3.3f)
-        MSTRUCT_CLOSE(m)
-    }*/
+
     friend metastream& operator || (metastream& m, FooA& s)
     {
         return  m.compound("FooA", [&]()
@@ -56,18 +45,6 @@ struct FooAA
         fa.f = f;
     }
 
-    /*friend binstream& operator << (binstream& bin, const FooAA& s)
-    {   return bin << s.text << s.j << s.fa;   }
-    friend binstream& operator >> (binstream& bin, FooAA& s)
-    {   return bin >> s.text >> s.j >> s.fa;   }
-    friend metastream& operator << (metastream& m, const FooAA& s)
-    {
-        MSTRUCT_OPEN(m,"FooAA")
-            MMD(m, "text", s.text, "def")
-            MM(m, "j", s.j)
-            MMD(m, "fa", s.fa, FooA(47, 47.47f) )
-        MSTRUCT_CLOSE(m)
-    }*/
     friend metastream& operator || (metastream& m, FooAA& s)
     {
         return m.compound("FooAA", [&]()
@@ -96,26 +73,7 @@ struct FooB
 
     FooB() : a(0), b(0), flag(false), pfo(0)
     {}
-/*
-    friend binstream& operator << (binstream& bin, const FooB& s)
-    {   return bin << s.a << s.b << s.fx << s.af << s.aaf << s.aaaf << s.ai << s.aai << pointer(s.pfo) << s.end;   }
-    friend binstream& operator >> (binstream& bin, FooB& s)
-    {   return bin >> s.a >> s.b >> s.fx >> s.af >> s.aaf >> s.aaaf >> s.ai >> s.aai >> pointer(s.pfo) >> s.end;   }
-    friend metastream& operator << (metastream& m, const FooB& s)
-    {
-        MSTRUCT_OPEN(m,"FooB")
-            MMD(m, "a", s.a, 8)
-            MM(m, "b", s.b)
-            MM(m, "fx", s.fx)
-            MM(m, "af", s.af)
-            MM(m, "aaf", s.aaf)
-            MM(m, "aaaf", s.aaaf)
-            MM(m, "ai", s.ai)
-            MM(m, "aai", s.aai)
-            MMP(m, "p", s.pfo)
-            MM(m, "end", s.end)
-        MSTRUCT_CLOSE(m)
-    }*/
+
     friend metastream& operator || (metastream& m, FooB& s)
     {
         return m.compound("FooB", [&]()

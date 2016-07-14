@@ -21,18 +21,7 @@ struct FooA
         this->i = i;
         this->f = f;
     }
-/*
-    friend binstream& operator << (binstream& bin, const FooA& s)
-    {   return bin << s.i << s.f;   }
-    friend binstream& operator >> (binstream& bin, FooA& s)
-    {   return bin >> s.i >> s.f;   }
-    friend metastream& operator << (metastream& m, const FooA& s)
-    {
-        MSTRUCT_OPEN(m,"FooA")
-            MMD(m, "i", s.i, 4)
-            MMD(m, "f", s.f, 3.3f)
-        MSTRUCT_CLOSE(m)
-    }*/
+
     friend metastream& operator || (metastream& m, FooA& s)
     {
         return m.compound("FooA", [&]()
@@ -71,26 +60,6 @@ struct rec
     float3 dir;
     float weight;
     float speed;
-/*
-	friend binstream& operator << (binstream& bin, const rec& w) {
-		return bin << w.pos << w.rot << w.dir << w.speed << w.weight;
-	}
-
-	friend binstream& operator >> (binstream& bin, rec& w) {
-		return bin >> w.pos >> w.rot >> w.dir >> w.speed >> w.weight;
-	}
-
-	friend metastream& operator << (metastream& m, const rec& w)
-	{
-		MSTRUCT_OPEN(m, "flight_path_waypoint")
-			MM(m, "pos", w.pos)
-			MM(m, "rot", w.rot)
-            //MMT_OBSOLETE(m, "speed", float)
-            MM(m, "dir", w.dir)
-            MM(m, "speed", w.speed)
-			MM(m, "weight", w.weight)
-		MSTRUCT_CLOSE(m)
-	}*/
 
     friend metastream& operator || (metastream& m, rec& w)
     {

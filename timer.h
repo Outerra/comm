@@ -124,4 +124,13 @@ public:
 COID_NAMESPACE_END
 
 
+
+#define COID_TIME_POINT(name) uint64 ___timer_point_##name = coid::nsec_timer::current_time_ns()
+
+#define COID_TIME_SINCE(name) \
+    float(double(coid::nsec_timer::current_time_ns() - ___timer_point_##name) * 1e-9)
+#define COID_TIME_BETWEEN(name1, name2) \
+    float(fabs(double(int64(___timer_point_##name1 - ___timer_point_##name2)) * 1e-9))
+
+
 #endif //#ifndef __COID_COMM_HPTIMER__HEADER_FILE__
