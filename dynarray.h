@@ -214,15 +214,13 @@ public:
 
     COIDNEWDELETE("dynarray");
 
-    dynarray() {
+    dynarray() : _ptr(0) {
         A::instance();
-        _ptr = 0;
     }
 
     ///Reserve specified number of items in constructor
-    explicit dynarray( uints reserve_count ) {
+    explicit dynarray( uints reserve_count ) : _ptr(0) {
         A::instance();
-        _ptr = 0;
         reserve( reserve_count, false );
     }
 
@@ -231,11 +229,8 @@ public:
     }
 
     ///copy constructor
-    dynarray( const dynarray& p )
+    dynarray( const dynarray& p ) : _ptr(0)
     {
-        //A::instance();
-        //_ptr = p._ptr;
-        _ptr = 0;
         uints n = p.sizes();
         alloc(n);
 
