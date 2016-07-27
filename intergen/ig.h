@@ -239,6 +239,7 @@ struct MethodIG
     bool bdestroy;                      //< a method to call on interface destroy
     bool bmandatory;                    //< mandatory event
     bool bhasifctargets;
+    bool bduplicate;                    //< a duplicate method/event from another interface of the host
 
     Arg ret;
     dynarray<Arg> args;
@@ -290,6 +291,7 @@ struct MethodIG
             m.member("destroy",p.bdestroy);
             m.member("mandatory",p.bmandatory);
             m.member("hasifc",p.bhasifctargets);
+            m.member("duplicate",p.bduplicate);
             m.member("args",p.args);
             m.member("ninargs",p.ninargs);
             m.member("ninargs_nondef",p.ninargs_nondef);

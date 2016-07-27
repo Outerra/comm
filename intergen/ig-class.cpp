@@ -217,6 +217,7 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                     m->comments.takeover(commlist);
                     m->binternal = binternal>0;
                     m->bimplicit = bimplicit;
+                    m->bduplicate = duplicate != 0;
 
                     if(bimplicit) {
                         lex.match(';', "error: implicit events must not be declared");
@@ -281,6 +282,7 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
 
                     m->comments.takeover(commlist);
                     m->binternal = binternal>0;
+                    m->bduplicate = duplicate != 0;
 
                     if(!m->parse(lex, classname, namespc, irefargs))
                         ++ncontinuable_errors;
