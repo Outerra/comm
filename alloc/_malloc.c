@@ -4710,6 +4710,9 @@ void* dlmalloc(size_t bytes) {
 
   postaction:
     POSTACTION(gm);
+#ifdef DEBUG_FILL
+    if(mem) memset(mem, DEBUG_FILL, bytes);
+#endif
     return mem;
   }
 
@@ -5650,6 +5653,9 @@ void* mspace_malloc(mspace msp, size_t bytes) {
 
   postaction:
     POSTACTION(ms);
+#ifdef DEBUG_FILL
+    if(mem) memset(mem, DEBUG_FILL, bytes);
+#endif
     return mem;
   }
 

@@ -224,8 +224,9 @@ public:
     const char* get_last_file_name() const { return _curpath.c_str() + _baselen; }
     token get_last_file_name_token() const { return token(_curpath.c_str() + _baselen, _curpath.len() - _baselen); }
 
-    ///Lists all files with extension (exstension = "*" if all files) in directory with path using func functor.
+    ///Lists all files with extension (extension = "*" if all files) in directory with path using func functor.
     ///if recursive is true, lists also subdirectories.
+    //@param fn callback function(const charstr& name, bool dir)
     template<typename Func>
     static void list_file_paths(const token& path, const token& extension, bool recursive, Func fn) {
         directory dir;
@@ -235,7 +236,7 @@ public:
                 return;
         }
         else {
-            coid::charstr filter = "*.";
+            charstr filter = "*.";
             filter << extension;
             if (dir.open(path, filter) != ersNOERR)
                 return;
