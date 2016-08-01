@@ -55,6 +55,7 @@ public:
         _buckets.calloc(32, true);
     }
 
+    //@return object with given key or null if no matching object was found
     const T* find_value( const KEY& key ) const
     {
         uint b = bucket(key);
@@ -63,6 +64,11 @@ public:
         return id != UMAX32 ? get_item(id) : 0;
     }
 
+    ///Find item by key or insert a new slot for item with such key
+    //@param key lookup key
+    //@param isnew [out] set to true if the item was newly created
+    //@return found object or pointer to a newly created one
+    //@note if isnew is true, caller has to set the object pointed to by the return value
     T* find_or_insert_value_slot( const KEY& key, bool* isnew=0 )
     {
         uint id;
@@ -74,6 +80,11 @@ public:
         return base::get_item(id);
     }
 
+    ///Find item by key or insert a new uninitialized slot for item with such key
+    //@param key lookup key
+    //@param isnew [out] set to true if the item was newly created
+    //@return found object or pointer to a newly created one
+    //@note if isnew is true, caller has to in-place construct the object pointed to by the return value
     T* find_or_insert_value_slot_uninit( const KEY& key, bool* isnew=0 )
     {
         uint id;
