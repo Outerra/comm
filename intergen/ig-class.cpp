@@ -259,7 +259,24 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                             ++ncontinuable_errors;
                         }
                     }
- 
+
+                    if(m->bduplicate) {
+                        //find original in previous interface
+                        int nmiss=0;
+
+                        Interface* fi = iface.ptr();
+                        for(; fi < ifc; ++fi) {
+                            if(fi->has_mismatched_method(*m, fi->event))
+                                ++nmiss;
+                        }
+
+                        if(nmiss) {
+                            out << (lex.prepare_exception()
+                                << "warning: a matching duplicate event " << m->name << " not found in previous interfaces\n");
+                            lex.clear_err();
+                        }
+                    }
+
                     m->parse_docs();
                 }
                 else if(extfn || tok == lex.IFC_FN)
@@ -334,7 +351,7 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                     }
 
                     if(!m->bstatic)
-                        ++iface.last()->nifc_methods;
+                        ++ifc->nifc_methods;
 
                     if(m->bstatic && bdestroy) {
                         out << "error: method to call on interface release cannot be static\n";
@@ -385,6 +402,23 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                                 << "error: overloaded methods not supported for scripting interface\n");
                             lex.clear_err();
                             ++ncontinuable_errors;
+                        }
+                    }
+
+                    if(m->bduplicate) {
+                        //find original in previous interface
+                        int nmiss=0;
+
+                        Interface* fi = iface.ptr();
+                        for(; fi < ifc; ++fi) {
+                            if(fi->has_mismatched_method(*m, fi->method))
+                                ++nmiss;
+                        }
+
+                        if(nmiss) {
+                            out << (lex.prepare_exception()
+                                << "warning: a matching duplicate method " << m->name << " not found in previous interfaces\n");
+                            lex.clear_err();
                         }
                     }
                 }

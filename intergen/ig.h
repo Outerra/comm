@@ -186,6 +186,11 @@ struct MethodIG
             : bptr(false), bref(false), biref(false), bconst(false), binarg(true), boutarg(false), tokenpar(false)
         {}
 
+        bool operator == (const Arg& a) const {
+            return fulltype == a.fulltype
+                && arsize == a.arsize;
+        }
+
         bool parse( iglexer& lex, bool argname );
 
         static charstr& match_type( iglexer& lex, charstr& dst );
@@ -266,6 +271,21 @@ struct MethodIG
         return args.find_if([&](const Arg& a) {
             return a.name == name;
         });
+    }
+
+    bool matches_args( const MethodIG& m ) const {
+        if(ninargs != m.ninargs || noutargs != m.noutargs)
+            return false;
+
+        const Arg* a1 = args.ptr();
+        const Arg* a2 = m.args.ptr();
+        const Arg* e1 = args.ptre();
+
+        for(; a1<e1; ++a1,++a2) {
+            if(!(*a1 == *a2)) break;
+        }
+
+        return a1 == e1;
     }
 
     bool generate_h( binstream& bin );
@@ -359,6 +379,19 @@ struct Interface
         if(hasns && name.consume(this->name))
             return name.is_empty();
         return false;
+    }
+
+    static bool has_mismatched_method( const MethodIG& m, const dynarray<MethodIG>& methods ) {
+        int nmatch=0, nmiss=0;
+        methods.for_each([&](const MethodIG& ms) {
+            if(m.name == ms.name) {
+                ++nmatch;
+                if(!m.matches_args(ms))
+                    ++nmiss;
+            }
+        });
+
+        return nmatch > 0 && nmiss == nmatch;
     }
 
     int check_interface( iglexer& lex );
