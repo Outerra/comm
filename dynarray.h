@@ -690,7 +690,7 @@ public:
         T* oldbase = _ptr;
         T* p = add(n);
 
-        if(oldbase != _ptr)
+        if(oldbase && oldbase != _ptr)
             throw exception() << "array rebased";
 
         return p;
