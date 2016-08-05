@@ -47,12 +47,13 @@ public:
     T* add() = delete;
     T* add_uninit( bool* newitem = 0 ) = delete;
 
-    slotalloc_hash()
+    slotalloc_hash( uint reserve_items = 64 )
+        : base(reserve_items)
     {
         //append related array for hash table sequences
         base::append_relarray(&_seqtable);
 
-        _buckets.calloc(32, true);
+        _buckets.calloc(reserve_items, true);
     }
 
     //@return object with given key or null if no matching object was found
