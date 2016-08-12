@@ -48,12 +48,16 @@
 namespace js {
 
 #ifdef V8_MAJOR_VERSION
+
 typedef v8::FunctionCallbackInfo<v8::Value>     ARGUMENTS;
 typedef void                                    CBK_RET;
 
 inline void THROW( v8::Isolate* iso, v8::Local<v8::Value> (*err)(v8::Local<v8::String>), const coid::token& s ) {
     iso->ThrowException((*err)(v8::String::NewFromUtf8(iso, s.ptr(), v8::String::kNormalString, s.len())));
 }
+
+#define v8_Undefined(iso)   v8::Undefined(iso)
+#define v8_Null(iso)        v8::Null(iso)
 
 #else
 
@@ -63,6 +67,10 @@ typedef v8::Handle<v8::Value>                   CBK_RET;
 inline v8::Handle<v8::Value> THROW( v8::Isolate* iso, v8::Local<v8::Value> (*err)(v8::Handle<v8::String>), const coid::token& s ) {
     return v8::ThrowException(err(v8::String::New(s.ptr(), s.len())));
 }
+
+#define v8_Undefined(iso)   v8::Undefined()
+#define v8_Null(iso)        v8::Null()
+
 #endif
 
 } //namespace js
@@ -167,10 +175,11 @@ struct script_handle
     v8::Handle<v8::Script> load_script()
     {
 #ifdef V8_MAJOR_VERSION
-        v8::EscapableHandleScope scope(v8::Isolate::GetCurrent());
+        v8::Isolate* iso = v8::Isolate::GetCurrent();
+        v8::EscapableHandleScope scope(iso);
         v8::Handle<v8::Context> context = has_context()
             ? _context
-            : v8::Context::New(v8::Isolate::GetCurrent());
+            : v8::Context::New(iso);
 #else
         v8::HandleScope scope;
         v8::Handle<v8::Context> context = has_context()
@@ -208,7 +217,7 @@ struct script_handle
         }
 
 #ifdef V8_MAJOR_VERSION
-        v8::Local<v8::String> scriptv8 = v8::String::NewFromUtf8(v8::Isolate::GetCurrent(),
+        v8::Local<v8::String> scriptv8 = v8::String::NewFromUtf8(iso,
             script_tok.ptr(), v8::String::kNormalString, script_tok.len());
 #else
         v8::Local<v8::String> scriptv8 = v8::String::New(script_tok.ptr(), script_tok.len());
@@ -219,7 +228,7 @@ struct script_handle
 
 #ifdef V8_MAJOR_VERSION
         v8::Handle<v8::Script> compiled_script =
-            v8::Script::Compile(scriptv8, v8::String::NewFromUtf8(v8::Isolate::GetCurrent(),
+            v8::Script::Compile(scriptv8, v8::String::NewFromUtf8(iso,
                 script_path.ptr(), v8::String::kNormalString, script_path.len()));
 #else
         v8::Handle<v8::Script> compiled_script =
@@ -303,15 +312,15 @@ public:
         coid::token js = buf;
 
 #ifdef V8_MAJOR_VERSION
-        v8::EscapableHandleScope scope(v8::Isolate::GetCurrent());
+        v8::EscapableHandleScope scope(iso);
         v8::Local<v8::Context> ctx = iso->GetCurrentContext();
 #else
         v8::HandleScope scope;
         v8::Local<v8::Context> ctx = v8::Context::GetCurrent();
 #endif
         v8::TryCatch trycatch;
-        v8::Handle<v8::String> result = v8::String::New("$result");
-        ctx->Global()->Set(result, v8::Undefined());
+        v8::Handle<v8::String> result = v8::string_utf8("$result");
+        ctx->Global()->Set(result, v8_Undefined(iso));
 
         coid::zstring filepath;
         filepath.get_str() << "file:///" << relpath;
@@ -329,7 +338,7 @@ public:
             throw_js_error(trycatch, "js_include: ");
 
         v8::Handle<v8::Value> rval = ctx->Global()->Get(result);
-        ctx->Global()->Set(result, v8::Undefined());
+        ctx->Global()->Set(result, v8_Undefined(iso));
 
 #ifdef V8_MAJOR_VERSION
         args.GetReturnValue().Set(rval);
@@ -397,8 +406,9 @@ inline T* unwrap_object( const v8::Handle<v8::Value> &arg )
 inline v8::Handle<v8::Value> wrap_object( intergen_interface* orig, v8::Handle<v8::Context> context )
 {
 #ifdef V8_MAJOR_VERSION
-    if(!orig) return v8::Null(v8::Isolate::GetCurrent());
-    v8::EscapableHandleScope handle_scope(v8::Isolate::GetCurrent());
+    v8::Isolate* iso = v8::Isolate::GetCurrent();
+    if(!orig) return v8::Null(iso);
+    v8::EscapableHandleScope handle_scope(iso);
 #else
     if(!orig) return v8::Null();
     v8::HandleScope handle_scope;
@@ -410,11 +420,10 @@ inline v8::Handle<v8::Value> wrap_object( intergen_interface* orig, v8::Handle<v
     if(fn)
 #ifdef V8_MAJOR_VERSION
         return handle_scope.Escape(fn(orig, context));
-    return v8::Undefined(v8::Isolate::GetCurrent());
 #else
         return handle_scope.Close(fn(orig, context));
-    return v8::Undefined();
 #endif
+    return v8_Undefined(iso);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -423,7 +432,8 @@ inline bool bind_object( const coid::token& bindname, intergen_interface* orig, 
     if(!orig) return false;
 
 #ifdef V8_MAJOR_VERSION
-    v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
+    v8::Isolate* iso = v8::Isolate::GetCurrent();
+    v8::HandleScope handle_scope(iso);
 #else
     v8::HandleScope handle_scope;
 #endif
@@ -432,7 +442,7 @@ inline bool bind_object( const coid::token& bindname, intergen_interface* orig, 
     fn_wrapper fn = static_cast<fn_wrapper>(orig->intergen_wrapper(intergen_interface::IFC_BACKEND_JS));
 
 #ifdef V8_MAJOR_VERSION
-    return fn && context->Global()->Set(v8::String::NewFromOneByte(v8::Isolate::GetCurrent(),
+    return fn && context->Global()->Set(v8::String::NewFromOneByte(iso,
         (const uint8*)bindname.ptr(), v8::String::kNormalString, bindname.len()), fn(orig, context));
 #else
     return fn && context->Global()->Set(v8::String::New(bindname.ptr(), bindname.len()), fn(orig, context));
