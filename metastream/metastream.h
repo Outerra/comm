@@ -239,7 +239,7 @@ public:
         }
         else if(_binr) {
             if(!read_optional(v))
-                v = defval;
+                v = T(defval);
         }
         else
             meta_variable_optional<T>(name);

@@ -154,9 +154,13 @@ bool directory::append_path(charstr& dst, token path, bool keep_below)
     }
     else
     {
+        char sep = separator();
+
         token tdst = dst;
-        if(directory::is_separator(tdst.last_char()))
+        if(directory::is_separator(tdst.last_char())) {
+            sep = tdst.last_char();
             tdst--;
+        }
 
         while(path.begins_with(".."))
         {
@@ -172,7 +176,9 @@ bool directory::append_path(charstr& dst, token path, bool keep_below)
             if(tdst.is_empty())
                 return false;       //too many .. in path
 
-            tdst.cut_right_group_back(DIR_SEPARATORS);
+            token cut = tdst.cut_right_group_back(DIR_SEPARATORS, token::cut_trait_keep_sep_with_returned());
+            if(directory::is_separator(cut.first_char()))
+                sep = cut.first_char();
 
             if(c == 0) {
                 dst.resize(tdst.len());
@@ -201,7 +207,7 @@ bool directory::append_path(charstr& dst, token path, bool keep_below)
         dst.resize(tdst.len());
 
         if(dst && !is_separator(dst.last_char()))
-            dst << separator();
+            dst << sep;
 
         dst << path;
     }

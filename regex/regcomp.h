@@ -118,6 +118,15 @@ struct regex_compiler
 {
     regex_program* compile(token s, bool literal, bool icase, Reinst::OP dot_type);
 
+    regex_compiler()
+        : _prog(0)
+        , _lastwasand(false)
+        , _yyrune(0)
+        , _yyclassp(0)
+        , _cursubid(0)
+        , _nopenbraces(0)
+    {}
+
 private:
 
     /// Parser Information
@@ -221,6 +230,13 @@ struct Reljunk
     MatchStyle style;
 
     regex_compiler comp;
+
+    Reljunk()
+        : starttype(0)
+        , startchar(0)
+        , any_except(0)
+        , style(SEARCH)
+    {}
 };
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -73,27 +73,20 @@ public:
             if(!current_dir(curpath, dst) || !directory::compact_path(dst, '/'))
                 return false;
 
-            uint dlen = dst.len();
-
             if(!directory::append_path(dst, incpath, true))
                 return false;
-
-            relpath = token(dst.ptr()+dlen, dst.ptre());
-            return true;
         }
+        else {
+            //absolute
+            dst = _root_path;
 
-        //absolute
-        dst = _root_path;
+            token append = incpath;
+            if(slash)
+                ++append;
 
-        token append = incpath;
-        if(slash)
-            ++append;
-
-        if(!directory::append_path(dst, append, true))
-            return false;
-
-        if(!directory::compact_path(dst, '/'))
-            return false;
+            if(!directory::append_path(dst, append, true) || !directory::compact_path(dst, '/'))
+                return false;
+        }
 
         relpath = dst;
         if(!directory::subpath(_root_path, relpath))

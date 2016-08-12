@@ -90,8 +90,6 @@ token regex_program::match(
     Reljunk* j = thread_object<Reljunk>(tk_regex);
 
     j->style = style;
-    j->starttype = 0;
-    j->startchar = 0;
     if(style == Reljunk::SEARCH) {
         if(startinst->type == Reinst::RUNE /*&& startinst.r.r < Runeself*/) {
             j->starttype = Reinst::RUNE;

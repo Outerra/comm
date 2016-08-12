@@ -241,6 +241,7 @@ struct script_handle
 
 public:
 
+    ///
     static void throw_js_error( v8::TryCatch& tc, const coid::token& str = coid::token() )
     {
 #ifdef V8_MAJOR_VERSION
@@ -268,6 +269,7 @@ public:
         throw cexc;
     }
 
+    ///
     static js::CBK_RET js_include(const js::ARGUMENTS& args)
     {
         if(args.Length() < 1)
@@ -302,9 +304,14 @@ public:
 
 #ifdef V8_MAJOR_VERSION
         v8::EscapableHandleScope scope(v8::Isolate::GetCurrent());
+        v8::Local<v8::Context> ctx = iso->GetCurrentContext();
 #else
         v8::HandleScope scope;
+        v8::Local<v8::Context> ctx = v8::Context::GetCurrent();
 #endif
+        v8::TryCatch trycatch;
+        v8::Handle<v8::String> result = v8::String::New("$result");
+        ctx->Global()->Set(result, v8::Undefined());
 
         coid::zstring filepath;
         filepath.get_str() << "file:///" << relpath;
@@ -313,12 +320,20 @@ public:
         v8::Handle<v8::String> spath  = v8::string_utf8(filepath);
         v8::Handle<v8::Script> script = v8::Script::Compile(source, spath);
 
+        if(trycatch.HasCaught())
+            throw_js_error(trycatch, "js_include: ");
+
         script->Run();
 
+        if(trycatch.HasCaught())
+            throw_js_error(trycatch, "js_include: ");
+
+        v8::Handle<v8::Value> rval = ctx->Global()->Get(result);
+
 #ifdef V8_MAJOR_VERSION
-        args.GetReturnValue().Set(spath);
+        args.GetReturnValue().Set(rval);
 #else
-        return scope.Close(spath);
+        return scope.Close(rval);
 #endif
     }
     
