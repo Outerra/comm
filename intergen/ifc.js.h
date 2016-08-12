@@ -329,6 +329,7 @@ public:
             throw_js_error(trycatch, "js_include: ");
 
         v8::Handle<v8::Value> rval = ctx->Global()->Get(result);
+        ctx->Global()->Set(result, v8::Undefined());
 
 #ifdef V8_MAJOR_VERSION
         args.GetReturnValue().Set(rval);
