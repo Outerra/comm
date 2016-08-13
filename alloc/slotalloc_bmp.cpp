@@ -70,7 +70,7 @@ void coid::test::slotalloc_bmp()
             data.is_valid(item);
         }
 
-        printf("%zu %s\n", item, data.get_item(item)->_name);
+        printf("%zu %s\n", item, data.get_item(item)->_name.c_str());
         item = data.next(item);
     }
 }
