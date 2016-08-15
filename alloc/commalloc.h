@@ -225,7 +225,11 @@ struct comm_array_allocator
 
     static uints set_count( const void* p, uints n )
     {
-        *((uints*)p - 1) = n;
+        DASSERT(n == 0 || p != 0);
+
+        if (p)
+            *((uints*)p - 1) = n;
+        
         return n;
     }
 };

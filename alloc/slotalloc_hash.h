@@ -139,6 +139,13 @@ public:
         return c;
     }
 
+    ///Reset content. Destructors aren't invoked in the pool mode, as the objects may still be reused.
+    void reset()
+    {
+        slotalloc::reset();
+        memset(_buckets.begin().ptr(), 0xff, _buckets.byte_size());
+    }
+
 protected:
 
     uint bucket( const KEY& k ) const       { return uint(_HASHFUNC(k) % _buckets.size()); }
