@@ -251,7 +251,7 @@ struct type_creator {
     typedef void (*destructor_fn)(void*);
     typedef void (*constructor_fn)(void*);
 
-    static void destructor(void* p) { delete (T*)p; }
+    static void destructor(void* p) { ((T*)p)->~T(); }
     static void constructor(void* p) { new(p) T; }
 
     static constructor_fn nontrivial_constructor() {
