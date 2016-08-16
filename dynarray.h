@@ -422,12 +422,18 @@ public:
     }
 
     ///Invoke functor on each element
+    //@note handles the case when current element is deleted from the array
     template<typename Func>
-    void for_each( Func f )
+    void for_each(Func f)
     {
         count_t n = size();
-        for(count_t i=0; i<n; ++i)
+        for (count_t i = 0; i < n; ++i) {
             f(_ptr[i]);
+            if (n > size()) {    //deleted element, ensure continuing with the next
+                --i;
+                n = size();
+            }
+        }
     }
 
     ///Invoke functor on each element
