@@ -478,9 +478,7 @@ void Interface::compute_hash( int version )
         }
     }
 
-    mash << 'v' << version;
-
-    hash = __coid_hash_string(mash.ptr(), mash.len());
+    mash << ':';
 
     ps = event.ptr();
     pe = event.ptre();
@@ -489,7 +487,21 @@ void Interface::compute_hash( int version )
     for(; ps<pe; ++ps)
     {
         ps->index = indexm++;
+
+        mash << ps->name << ps->ret.type;
+
+        const MethodIG::Arg* pas = ps->args.ptr();
+        const MethodIG::Arg* pae = ps->args.ptre();
+
+        for(; pas<pae; ++pas)
+        {
+            mash << pas->type << pas->arsize << (pas->binarg?'i':' ') << (pas->boutarg?'o':' ');
+        }
     }
+
+    mash << 'v' << version;
+
+    hash = __coid_hash_string(mash.ptr(), mash.len());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
