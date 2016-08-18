@@ -151,8 +151,11 @@ public:
             relarray(&type_creator<R>::constructor, &type_creator<R>::destructor);
         p->elemsize = sizeof(T);
 
+        auto& dyn = dynarray<R>::from_dynarray_conforming_ptr(p->data);
+        dyn.reserve(_array.reserved_total() / sizeof(T), true);
+
         if(parray)
-            *parray = &dynarray<R>::from_dynarray_conforming_ptr(p->data);
+            *parray = &dyn;
 
         return idx;
     }
@@ -457,7 +460,8 @@ private:
     uint_type _version;
 
     ///Related data array that's maintained together with the main one
-    struct relarray {
+    struct relarray
+    {
         void* data;                 //< dynarray-conformant pointer
         uint elemsize;              //< element size
         void (*destructor)(void*);
