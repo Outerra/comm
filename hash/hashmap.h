@@ -198,7 +198,7 @@ public:
 
     static metastream& stream_meta( metastream& m )
     {
-        m.meta_array();
+        m.meta_decl_array();
         m << *(const value_type*)0;
         return m;
     }
@@ -350,7 +350,7 @@ public:
 
     static metastream& stream_meta( metastream& m )
     {
-        m.meta_array();
+        m.meta_decl_array();
         m << *(const value_type*)0;
         return m;
     }

@@ -1,9 +1,16 @@
 
 #include "stdstream.h"
 
-#ifdef SYSTYPE_WIN
-#include <windows.h>
-#endif
+extern "C" {
+
+__declspec(dllimport)
+void
+__stdcall
+OutputDebugStringA(
+    const char* lpOutputString
+);
+
+}
 
 COID_NAMESPACE_BEGIN
 
@@ -12,7 +19,7 @@ COID_NAMESPACE_BEGIN
 void stdoutstream::debug_out( const char* str )
 {
 #ifdef SYSTYPE_WIN
-    OutputDebugString(str);
+    OutputDebugStringA(str);
 #endif
 }
 

@@ -36,8 +36,6 @@ void coid::test::slotalloc_bmp()
             handles.push(handle);
         }
 
-        auto i = handles.ptr();
-        auto e = handles.ptre();
         uints hn = handles.size() / 2;
 
         while (hn--) {
@@ -63,8 +61,6 @@ void coid::test::slotalloc_bmp()
 
     item = data.first();
     while (item != -1) {
-        if (item == 123)
-            int a = 0;
         if (!data.is_valid(item)) {
             DASSERT(false && "this should not happen!");
             data.is_valid(item);

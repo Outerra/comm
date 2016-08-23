@@ -62,7 +62,7 @@ public:
         uint b = bucket(key);
         uint id = find_object(b, key);
 
-        return id != UMAX32 ? get_item(id) : 0;
+        return id != UMAX32 ? base::get_item(id) : 0;
     }
 
     ///Find item by key or insert a new slot for item with such key
@@ -93,12 +93,12 @@ public:
         if(isnew)
             *isnew = isnew_;
 
-        return get_item(id);
+        return base::get_item(id);
     }
 
-    T* insert_value_slot( const KEY& key ) { return insert_value_(add(), key); }
+    T* insert_value_slot( const KEY& key ) { return insert_value_(base::add(), key); }
 
-    T* insert_value_slot_uninit( const KEY& key ) { return insert_value_(add_uninit(), key); }
+    T* insert_value_slot_uninit( const KEY& key ) { return insert_value_(base::add_uninit(), key); }
 
     ///Delete item from hash map
     void del( T* p )
@@ -126,13 +126,13 @@ public:
 
         uint* n = find_object_entry(b, key);
         while(*n != UMAX32) {
-            if(!(_EXTRACTOR(*get_item(*n)) == key))
+            if(!(_EXTRACTOR(*base::get_item(*n)) == key))
                 break;
 
             uint id = *n;
             *n = (*_seqtable)[id];
 
-            base::del(get_item(id));
+            base::del(base::get_item(id));
             ++c;
         }
 
@@ -142,7 +142,7 @@ public:
     ///Reset content. Destructors aren't invoked in the pool mode, as the objects may still be reused.
     void reset()
     {
-        slotalloc::reset();
+        base::reset();
         memset(_buckets.begin().ptr(), 0xff, _buckets.byte_size());
     }
 
@@ -199,6 +199,7 @@ protected:
     T* insert_value_( T* p )
     {
         uint id = (uint)base::get_item_id(p);
+        const KEY& key = _EXTRACTOR(*p);
 
         uint b = bucket(key);
         uint fid = find_object(b, key);

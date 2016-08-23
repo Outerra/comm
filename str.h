@@ -40,6 +40,7 @@
 
 #include "namespace.h"
 
+#include "alloc/commalloc.h"
 #include "binstream/bstype.h"
 #include "hash/hashfunc.h"
 
@@ -51,6 +52,7 @@
 #include "token.h"
 #include "dynarray.h"
 #include "mathf.h"
+#include "txtconv.h"
 
 COID_NAMESPACE_BEGIN
 
@@ -136,7 +138,7 @@ public:
 
     ///Take control over content of another string, the other string becomes empty
     template<class COUNT>
-    charstr& takeover(dynarray<char, COUNT>& ref)
+    charstr& takeover(dynarray<char,COUNT>& ref)
     {
         _tstr.takeover(ref);
         if(_tstr.size() > 0 && _tstr[_tstr.size() - 1] != 0)
@@ -146,7 +148,7 @@ public:
 
     ///Take control over content of another string, the other string becomes empty
     template<class COUNT>
-    charstr& takeover(dynarray<uchar, COUNT>& ref)
+    charstr& takeover(dynarray<uchar,COUNT>& ref)
     {
         _tstr.discard();
         uchar* p = ref.ptr();
@@ -159,7 +161,7 @@ public:
     }
 
     ///Hand control over to the given dynarray<char> object
-    void handover(dynarray<char, uint>& dst)
+    void handover(dynarray<char,uint>& dst)
     {
         dst.takeover(_tstr);
     }
@@ -171,7 +173,7 @@ public:
     }
 
     template<class COUNT>
-    charstr& swap(dynarray<char, COUNT>& ref, bool removetermzero)
+    charstr& swap(dynarray<char,COUNT>& ref, bool removetermzero)
     {
         if(removetermzero && _tstr.size() > 0)
             _tstr.resize(-1);   //remove terminating zero
@@ -183,7 +185,7 @@ public:
     }
 
     template<class COUNT>
-    charstr& swap(dynarray<uchar, COUNT>& ref, bool removetermzero)
+    charstr& swap(dynarray<uchar,COUNT>& ref, bool removetermzero)
     {
         if(removetermzero && _tstr.size() > 0)
             _tstr.resize(-1);   //remove terminating zero

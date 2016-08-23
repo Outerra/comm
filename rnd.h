@@ -151,16 +151,16 @@ private:
 
 /// unsigned long random generator (mersenne twister)
 class rnd_strong {
-    enum {
+    enum : uint {
         // Period parameters
         N= 624,
         M= 397,
-        MATRIX_A= 0x9908b0df,   // constant vector a
+        MATRIX_A= 0x9908b0dfU,   // constant vector a
         UPPER_MASK= 0x80000000, // most significant w-r bits
         LOWER_MASK= 0x7fffffff, // least significant r bits
         // Tempering parameters
-        TEMPERING_MASK_B= 0x9d2c5680,
-        TEMPERING_MASK_C= 0xefc60000,
+        TEMPERING_MASK_B= 0x9d2c5680U,
+        TEMPERING_MASK_C= 0xefc60000U,
     };
 
     uint _mt[N];    // the array for the state vector

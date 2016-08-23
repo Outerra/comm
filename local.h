@@ -253,69 +253,6 @@ binstream& operator >> (binstream &in, local<T> &loca) {
     return in;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-///Template making pointers to any class behave like local objects, that is to be
-/// automatically destructed when the maintainer (class or method) is destructed/exited
-template <class T, bool USE_MALLOC=false, bool NO_DESTROY=false>
-class localarray
-{
-    T* _p;
-public:
-    localarray()  {_p=0;}
-
-    operator T*(void) const { return _p; }
-
-    int operator==(const T* ptr) const { return ptr==_p; }
-    int operator!=(const T* ptr) const { return ptr!=_p; }
-
-    T& operator*(void)                  { return *_p; }
-    const T& operator*(void) const      { return *_p; }
-
-#ifdef SYSTYPE_MSVC
-#pragma warning (disable : 4284)
-#endif //SYSTYPE_MSVC
-    T* operator->(void)                 { return _p; }
-    const T* operator->(void) const     { return _p; }
-#ifdef SYSTYPE_MSVC
-#pragma warning (default : 4284)
-#endif //SYSTYPE_MSVC
-
-    struct alloc_new
-    {
-        static T* alloc( T** pp, uints n )   { return (*pp = new T[n]); }
-        static void free( T** pp )          { if(*pp) delete[] *pp;  *pp = 0; }
-    };
-
-    struct alloc_malloc
-    {
-        static T* alloc( T** pp, uints n )   { return (*pp = (T*)::dlmalloc( n * sizeof(T) )); }
-        static void free( T** pp )          { if(*pp) ::dlfree(*pp);  *pp = 0; }
-    };
-
-    struct alloc_null
-    {
-        static T* alloc( T** pp, uints n )   { return 0; }
-        static void free( T** pp )          { *pp = 0; }
-    };
-
-    T* alloc( uints n )  { return type_select<USE_MALLOC,alloc_new,alloc_malloc>::type::alloc( &_p, n ); }
-    void free()         { return type_select<USE_MALLOC,alloc_new,alloc_malloc>::type::free( &_p ); }
-
-    ~localarray()
-    {
-        typedef typename type_select<USE_MALLOC,alloc_new,alloc_malloc>::type   Ta;
-        type_select<NO_DESTROY,alloc_null,Ta>::type::free(&_p);
-    }
-
-    T*& get_ptr () const{ return (T*)_p; }
-
-    bool is_set() const	{ return _p != 0; }
-
-    T* eject()          { T* tmp=_p;  _p=0;  return tmp; }
-};
-
-
-
 COID_NAMESPACE_END
 
 #endif // __COID_COMM_LOCAL__HEADER_FILE__

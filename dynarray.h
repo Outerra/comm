@@ -697,7 +697,7 @@ public:
         T* p = add(n);
 
         if(oldbase && oldbase != _ptr)
-            throw exception() << "array rebased";
+            throw std::exception("array rebased");  //no dependency on coid::exception wanted here
 
         return p;
     }
@@ -877,7 +877,6 @@ public:
     void transpose_to( dynarray<uint8>& buf ) const
     {
         uint8* dst = buf.alloc(byte_size());
-        uints stride = size();
 
         auto b = ptr();
         auto e = ptre();
@@ -895,7 +894,6 @@ public:
     void transpose_diff_to( dynarray<int8>& buf ) const
     {
         int8* dst = buf.alloc(byte_size());
-        uints stride = size();
 
         auto b = ptr();
         auto e = ptre();

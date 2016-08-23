@@ -278,40 +278,6 @@ STD_ASSOC_BINSTREAM(std::map)
 STD_ASSOC_BINSTREAM(std::multimap)
 
 
-
-template<class T, class A> inline binstream& operator << (binstream& out, const std::vector<T,A>& v)
-{
-    binstream_container_fixed_array<T,uints> c( v.empty() ? 0 : &v[0], v.size() );
-    out.xwrite_array(c);
-	return out;
-}
-
-template<class T, class A> inline binstream& operator >> (binstream& in, std::vector<T,A>& v)
-{
-    std_vector_binstream_container<T,A> c(v);
-    in.xread_array(c);
-    return in;
-}
-
-template<class T, class A>
-inline metastream& operator || (metastream& m, std::vector<T,A>& v )
-{
-    if(m.stream_reading()) {
-        binstream_container_fixed_array<T,uints> c(v.empty() ? 0 : &v[0], v.size(), 0, 0);
-        m.read_container<T>(c);
-    }
-    else if(m.stream_writing()) {
-        std_vector_binstream_container<T,A> c(v, 0, 0);
-        m.write_container<T>(c);
-    }
-    else {
-        m.meta_decl_array();
-        m || *(T*)0;
-    }
-    return m;
-}
-
-////////////////////////////////////////////////////////////////////////////////
 ///Binstream container for vector, this one can be optimized more
 template<class T, class A>
 struct std_vector_binstream_container : public binstream_containerT<T,uints>
@@ -358,6 +324,39 @@ protected:
     std::vector<T,A>& _v;
 };
 
+////////////////////////////////////////////////////////////////////////////////
+
+template<class T, class A> inline binstream& operator << (binstream& out, const std::vector<T,A>& v)
+{
+    binstream_container_fixed_array<T,uints> c( v.empty() ? 0 : &v[0], v.size() );
+    out.xwrite_array(c);
+	return out;
+}
+
+template<class T, class A> inline binstream& operator >> (binstream& in, std::vector<T,A>& v)
+{
+    std_vector_binstream_container<T,A> c(v);
+    in.xread_array(c);
+    return in;
+}
+
+template<class T, class A>
+inline metastream& operator || (metastream& m, std::vector<T,A>& v )
+{
+    if(m.stream_reading()) {
+        binstream_container_fixed_array<T,uints> c(v.empty() ? 0 : &v[0], v.size(), 0, 0);
+        m.read_container<T>(c);
+    }
+    else if(m.stream_writing()) {
+        std_vector_binstream_container<T,A> c(v, 0, 0);
+        m.write_container<T>(c);
+    }
+    else {
+        m.meta_decl_array();
+        m || *(T*)0;
+    }
+    return m;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Other stl stuff

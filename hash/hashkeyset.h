@@ -545,16 +545,16 @@ inline metastream& operator << ( metastream& m, const hash_multikeyset<VAL,EXTRA
 template <class VAL, class EXTRACTKEY, class HASHFUNC, class EQFUNC, template<class> class ALLOC>
 inline metastream& operator || ( metastream& m, hash_multikeyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC>& a )
 {
-    typedef typename hash_keyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC> _HT;
+    typedef hash_keyset<VAL,EXTRACTKEY,HASHFUNC,EQFUNC,ALLOC> _HT;
 
-    if(m._binr) {
+    if(m.stream_reading()) {
         a.clear();
         typename _HT::hashtable_binstream_container bc(a,0,0);
-        return m.xread_container<VAL>(bc);
+        return m.read_container<VAL>(bc);
     }
-    else if(m._binw) {
+    else if(m.stream_writing()) {
         typename _HT::hashtable_binstream_container bc(a,0,0);
-        return m.xwrite_container<VAL>(bc);
+        return m.write_container<VAL>(bc);
     }
     else {
         m.meta_decl_array();

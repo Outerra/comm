@@ -93,14 +93,14 @@ public:
 
     const VAL* insert_value( const value_type& val )
     {
-        adjust(1);
+        this->adjust(1);
         typename _HT::Node** v = this->_copy_insert_unique(val);
         return v  ?  &(*v)->_val  :  0;
     }
 
     const VAL* swap_insert_value( value_type& val )
     {
-        adjust(1);
+        this->adjust(1);
         typename _HT::Node** v = this->_swap_insert_unique(val);
         return v  ?  &(*v)->_val  :  0;
     }
@@ -172,7 +172,7 @@ public:
 
     static metastream& stream_meta( metastream& m )
     {
-        m.meta_array();
+        m.meta_decl_array();
         m << *(const VAL*)0;
         return m;
     }
@@ -226,14 +226,14 @@ public:
 
     const VAL* insert_value( const value_type& val )
     {
-        adjust(1);
+        this->adjust(1);
         typename _HT::Node** v = this->_copy_insert_equal(val);
         return v  ?  &(*v)->_val  :  0;
     }
     
     const VAL* swap_insert_value( value_type& val )
     {
-        adjust(1);
+        this->adjust(1);
         typename _HT::Node** v = this->_swap_insert_equal(val);
         return v  ?  &(*v)->_val  :  0;
     }
@@ -299,7 +299,7 @@ public:
 
     static metastream& stream_meta( metastream& m )
     {
-        m.meta_array();
+        m.meta_decl_array();
         m << *(const VAL*)0;
         return m;
     }
