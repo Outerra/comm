@@ -112,7 +112,7 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                 int8 bnocapture = 0;
                 int8 bcapture = 0;
 
-                charstr extname, implname;
+                charstr extname;//, implname;
                 if(extev || extfn) {
                     //parse external name
                     lex.match('(');
@@ -122,6 +122,8 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                     else {
                         while(int k = lex.matches_either('!', '-', '+'))
                             (&binternal)[k-1]++;
+
+                        bimplicit = lex.matches('@');
 
                         lex.matches(lex.IDENT, extname);
 
@@ -219,22 +221,7 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                     m->bimplicit = bimplicit;
                     m->bduplicate = duplicate != 0;
 
-                    if(bimplicit) {
-                        lex.match(';', "error: implicit events must not be declared");
-
-                        if(implname == "on_create") {
-                            m->name = ifc->on_create_ev = extname ? token(extname) : "on_create";
-
-                            m->ret.type = m->ret.basetype = m->ret.fulltype = "void";
-                        }
-                        else {
-                            out << (lex.prepare_exception()
-                                << "error: unrecognized implicit event\n");
-                            lex.clear_err();
-                            ++ncontinuable_errors;
-                        }
-                    }
-                    else {
+                    {
                         if(!m->parse(lex, classname, namespc, irefargs))
                             ++ncontinuable_errors;
 
@@ -255,6 +242,23 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                         if(m->bstatic) {
                             out << (lex.prepare_exception()
                                 << "error: interface event cannot be static\n");
+                            lex.clear_err();
+                            ++ncontinuable_errors;
+                        }
+                    }
+
+                    if(m->bimplicit) {
+                        //lex.match(';', "error: implicit events must not be declared");
+
+                        if(m->name == "connect") {
+                            //@connect invoked on successfull interface connection
+                            ifc->on_connect_ev = m->name = m->intname;
+
+                            //m->ret.type = m->ret.basetype = m->ret.fulltype = "void";
+                        }
+                        else {
+                            out << (lex.prepare_exception()
+                                << "error: unrecognized implicit event\n");
                             lex.clear_err();
                             ++ncontinuable_errors;
                         }
@@ -300,6 +304,7 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                     m->comments.takeover(commlist);
                     m->binternal = binternal>0;
                     m->bduplicate = duplicate != 0;
+                    m->bimplicit = bimplicit;
 
                     if(!m->parse(lex, classname, namespc, irefargs))
                         ++ncontinuable_errors;
@@ -359,18 +364,25 @@ bool Class::parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& na
                         ++ncontinuable_errors;
                     }
 
-                    if(bimplicit) {
-                        if(m->name == "on_create") {
+                    if(m->bimplicit) {
+                        if(m->name == "connect") {
+                            //@connect called when interface connects successfully
                             if(m->ret.type != "void" && m->args.size() != 0) {
                                 out << (lex.prepare_exception()
-                                    << "error: invalid format for an on_create method\n");
+                                    << "error: invalid format for connect method\n");
                                 lex.clear_err();
                                 ++ncontinuable_errors;
                             }
-                            ifc->on_create = m->intname;
+                            ifc->on_connect = m->name = m->intname;
+                        }
+                        else {
+                            out << (lex.prepare_exception()
+                                << "error: unrecognized implicit method\n");
+                            lex.clear_err();
+                            ++ncontinuable_errors;
                         }
 
-                        ifc->method.pop();
+                        //ifc->method.pop();
                     }
 
                     m->bdestroy = bdestroy;

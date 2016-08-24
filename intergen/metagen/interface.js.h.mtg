@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef __INTERGEN_GENERATED__$name$_JS_H__
 #define __INTERGEN_GENERATED__$name$_JS_H__

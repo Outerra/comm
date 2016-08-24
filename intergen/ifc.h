@@ -65,14 +65,17 @@
 
 ///Interface function decoration keyword
 //@param extname an alternative name for the method used in the interface
-//@note special symbols: ifc_fnx(~) marks a method that is invoked when the interface is being detached (client destroying)
+//@note special symbols:
+//@note ifc_fnx(~) marks a method that is invoked when the interface is being detached (client destroying)
 //@note ifc_fnx(!) or ifc_fnx(!name) marks an interface method that's not available to script clients
 //@note ifc_fnx(-) or ifc_fnx(-name) marks an interface method that is not captured by an interceptor (for net replication etc) if default was on
 //@note ifc_fnx(+) or ifc_fnx(+name) marks an interface method that is captured by an interceptor (for net replication etc) if default was off
+//@note ifc_fnx(@connect) marks a method that gets called upon successfull interface connection
 #define ifc_fnx(extname)
 
 ///Interface event callback decoration
 //@note events are defined in the generated dispatcher code, so the method after this keyword should be just a declaration
+//@note ifc_eventx(@connect) marks an event that gets called upon successfull interface connection
 #define ifc_event
 #define ifc_eventx(extname)
 

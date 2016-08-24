@@ -350,7 +350,7 @@ struct Interface
 
     MethodIG::Arg getter, setter;
 
-    charstr on_create, on_create_ev;
+    charstr on_connect, on_connect_ev;
 
     uint nifc_methods;
 
@@ -409,8 +409,8 @@ struct Interface
             m.member("method",p.method);
             m.member("getter",p.getter);
             m.member("setter",p.setter);
-            m.member("oncreate",p.on_create);
-            m.member("oncreateev",p.on_create_ev);
+            m.member("onconnect",p.on_connect);
+            m.member("onconnectev",p.on_connect_ev);
             m.member_type<bool>("hasprops", [](bool){}, [&]() { return p.oper_get>=0;});
             m.member("nifcmethods",p.nifc_methods);
             m.member("varname",p.varname);

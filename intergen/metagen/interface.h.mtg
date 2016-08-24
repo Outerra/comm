@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef __INTERGEN_GENERATED__$name$_H__
 #define __INTERGEN_GENERATED__$name$_H__
@@ -59,6 +60,13 @@ $[/event]-$
 
     virtual void force_bind_script_events() {}
 
+public:
+    // --- host helpers to check presence of handlers in scripts ---
+
+$-[event !static?]$
+    virtual bool is_bound_$name$() { return true; }
+$-[/event]$
+    
 public:
 $-(/if)$
     // --- creators ---
@@ -132,15 +140,6 @@ $-(/if)$
     const coid::token& intergen_default_creator( EBackend bck ) const override {
         return intergen_default_creator_static(bck);
     }
-$-(if event.empty!)$
-
-public:
-    // --- host helpers to check presence of handlers in scripts ---
-
-$-[event !static?]$
-    virtual bool is_bound_$name$() { return true; }
-$-[/event]$
-$-(/if)$
 
 protected:
 $-(if varname?)$

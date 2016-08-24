@@ -158,12 +158,12 @@ $-(if virtual!)$
         }
         $-(/if)$
 
-        $-(if oncreateev?)$
-        __disp__->$oncreateev$();
+        $-(if onconnect?)$
+        host->$onconnect$();
 
         $-(/if)$
-        $-(if oncreate?)$
-        host->$oncreate$();
+        $-(if onconnectev?)$
+        __disp__->$onconnectev$();
 
         $-(/if)$
         return __disp__;
