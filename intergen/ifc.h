@@ -117,6 +117,12 @@ protected:
     }
 
 public:
+
+    ///Log message
+    //@param msg message with optional prefix (error: warn: warning: info: debug:)
+    void log( const coid::token& msg ) {
+        coid::interface_register::log(msg);
+    }
     
     //@return host class pointer
     //@note T derived from policy_intrusive_base
