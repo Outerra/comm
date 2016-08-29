@@ -360,8 +360,8 @@
     <ClInclude Include="..\..\..\binstream\hash_xxhashstream.h">
       <Filter>binstream</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\alloc\slotalloc_hash.h">
-      <Filter>alloc</Filter>
+    <ClInclude Include="..\..\..\hash\slothash.h">
+      <Filter>hash</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

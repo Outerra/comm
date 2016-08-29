@@ -511,7 +511,7 @@ private:
 
         void reserve( uints n ) {
             uints curn = comm_array_allocator::count(data);
-            comm_array_allocator::realloc(data, n, elemsize);
+            data = comm_array_allocator::realloc(data, n, elemsize);
             comm_array_allocator::set_count(data, curn);
         }
 

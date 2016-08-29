@@ -1,6 +1,6 @@
 #pragma once
 
-#include "slotalloc.h"
+#include "../alloc/slotalloc.h"
 #include <type_traits>
 
 COID_NAMESPACE_BEGIN
@@ -37,7 +37,7 @@ template<
     class HASHFUNC = hash<KEY>,
     bool POOL=false
 >
-class slotalloc_hash : public slotalloc<T, POOL>
+class slothash : public slotalloc<T, POOL>
 {
     typedef slotalloc<T, POOL> base;
 
@@ -47,7 +47,7 @@ public:
     T* add() = delete;
     T* add_uninit( bool* newitem = 0 ) = delete;
 
-    slotalloc_hash( uint reserve_items = 64 )
+    slothash( uint reserve_items = 64 )
         : base(reserve_items)
     {
         //append related array for hash table sequences

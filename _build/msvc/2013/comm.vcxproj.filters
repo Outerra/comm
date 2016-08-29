@@ -426,5 +426,8 @@
     <ClInclude Include="..\..\..\dbg_location.h" />
     <ClInclude Include="..\..\..\interface.h" />
     <ClInclude Include="..\..\..\timer.h" />
+    <ClInclude Include="..\..\..\hash\slothash.h">
+      <Filter>hash</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

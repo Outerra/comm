@@ -1444,14 +1444,6 @@ private:
         _ptr = A::template realloc<T>(_ptr, nalloc);
         _set_count(newsize);
 
-        if(op != _ptr)
-            rebase<has_trivial_rebase<T>::value, T>::perform(op, op+oldsize, _ptr);
-        {
-            for( uints i=0; i<oldsize; ++i ) {
-                //type_trait<T>::moving::move( _ptr[i], op+i );
-            }
-        }
-
         return nalloc;
     }
 

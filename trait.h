@@ -42,6 +42,7 @@
 #include "commtypes.h"
 
 #include <type_traits>
+#include <functional>
 
 
 #ifdef SYSTYPE_MSVC
@@ -231,6 +232,7 @@ template<class T> struct rebase<true,T> {
 template<class T> struct rebase<false,T> {
     static void perform( T* src, T* srcend, T* dst ) {
         for(; src < srcend; ++src, ++dst) {
+            new(dst) T;
             *dst = std::move(*src);
             src->~T();
         }
@@ -312,8 +314,16 @@ inline T* align_forward( void* p )
     return reinterpret_cast<T*>( (reinterpret_cast<size_t>(p) + mask) &~ mask );
 }
 
-
-
 COID_NAMESPACE_END
+
+////////////////////////////////////////////////////////////////////////////////
+
+//std function is known to have a non-trivial rebase
+namespace coid {
+    template<class F>
+    struct has_trivial_rebase<std::function<F>> {
+        static const bool value = false;
+    };
+}
 
 #endif //__COID_COMM_TRAIT__HEADER_FILE__

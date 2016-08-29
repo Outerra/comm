@@ -128,19 +128,42 @@ struct comm_array_allocator
 
     ///Typed array alloc
     template<class T>
-    static T* alloc( uints n ) { return (T*)alloc(n, sizeof(T), typeid(T).name()); }
+    static T* alloc( uints n ) {
+        return (T*)alloc(n, sizeof(T), typeid(T).name());
+    }
 
     ///Typed array realloc
     template<class T>
-    static T* realloc( const T* p, uints n ) { return (T*)realloc(p, n, sizeof(T), typeid(T).name()); }
+    static T* realloc( const T* p, uints n ) {
+        if(has_trivial_rebase<T>::value) {
+            return (T*)realloc(p, n, sizeof(T), typeid(T).name());
+        }
+        else {
+            //non-trivial rebase, needs to copy old array into new
+            T* pn = (T*)realloc_in_place(p, n, sizeof(T), typeid(T).name());
+            if(!pn) {
+                pn = (T*)alloc(n, sizeof(T), typeid(T).name());
+                uints co = count(p);
+
+                rebase<has_trivial_rebase<T>::value, T>::perform((T*)p, (T*)p+co, pn);
+
+                free(p);
+            }
+            return pn;
+        }
+    }
 
     ///Typed array add
     template<class T>
-    static T* add( const T* p, uints n ) { return (T*)add(p, n, sizeof(T), typeid(T).name()); }
+    static T* add( const T* p, uints n ) {
+        return (T*)add(p, n, sizeof(T), typeid(T).name());
+    }
 
     ///Typed array free
     template<class T>
-    static void free( const T* p ) { return free(p, typeid(T).name()); }
+    static void free( const T* p ) {
+        return free(p, typeid(T).name());
+    }
 
 
 
@@ -169,6 +192,28 @@ struct comm_array_allocator
             sizeof(uints) + n * elemsize);
         if(!pn) throw std::bad_alloc();
 
+        MEMTRACK_ALLOC(trackname, ::mspace_usable_size(pn));
+
+        pn[0] = n;
+        return pn + 1;
+    }
+
+    ///Untyped array realloc
+    static void* realloc_in_place( const void* p, uints n, uints elemsize, const char* trackname = "comm_array_allocator.untyped" ) {
+
+        if(!p)
+            return alloc(n, elemsize, trackname);
+
+        uints* po = (uints*)p - 1;
+        uints so = ::mspace_usable_size(po);
+
+        uints* pn = (uints*)::mspace_realloc_in_place(SINGLETON(comm_array_mspace).msp,
+            po,
+            sizeof(uints) + n * elemsize);
+        if(!pn)
+            return 0;
+
+        MEMTRACK_FREE(trackname, so);
         MEMTRACK_ALLOC(trackname, ::mspace_usable_size(pn));
 
         pn[0] = n;
@@ -227,7 +272,7 @@ struct comm_array_allocator
     {
         DASSERT(n == 0 || p != 0);
 
-        if (p)
+        if(p)
             *((uints*)p - 1) = n;
         
         return n;
