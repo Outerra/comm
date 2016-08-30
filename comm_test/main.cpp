@@ -1,7 +1,7 @@
 
 #include "../str.h"
 #include "../radix.h"
-#include "../alloc/slotalloc_hash.h"
+#include "../hash/slothash.h"
 
 namespace coid {
 void test();
@@ -48,7 +48,7 @@ int main( int argc, char* argv[] )
     static_assert( std::is_trivially_move_constructible<dynarray<dynarray<int>>>::value, "non-trivial move");
 #endif
 
-    slotalloc_hash<value, token> hash;
+    slothash<value, token> hash;
     bool isnew;
     hash.find_or_insert_value_slot("foo", &isnew);
     hash.find_or_insert_value_slot("foo", &isnew);
