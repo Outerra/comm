@@ -200,6 +200,11 @@ char* append_float( char* dst, char* dste, double d, int nfrac )
 
             d -= floor(d);
         }
+        else { 
+            // required for Json compliant format (leading 0 for all real numbers) 
+            if(p < dste)
+                *p++ = '0'; 
+        } 
 
         if(p<dste && nfrac!=0) {
             *p++ = '.';
