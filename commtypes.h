@@ -100,6 +100,17 @@
 #endif
 
 
+#if SYSTYPE_MSVC
+# if _MSC_VER >= 1800
+#  define COID_VARIADIC_TEMPLATES
+# endif
+#elif defined(__has_cpp_attribute)
+# if __has_cpp_attribute(__cpp_variable_templates)
+#  define COID_VARIADIC_TEMPLATES
+# endif
+#endif
+
+
 #ifdef SYSTYPE_WIN
 # if defined(_WIN64)
 #  define SYSTYPE_64
@@ -193,40 +204,7 @@ using coid::ushort;
 COID_NAMESPACE_BEGIN
 
 ////////////////////////////////////////////////////////////////////////////////
-/*
-TYPE_TRIVIAL(bool);
 
-TYPE_TRIVIAL(uint8);
-TYPE_TRIVIAL(int8);
-TYPE_TRIVIAL(int16);
-TYPE_TRIVIAL(uint16);
-TYPE_TRIVIAL(int32);
-TYPE_TRIVIAL(uint32);
-TYPE_TRIVIAL(int64);
-TYPE_TRIVIAL(uint64);
-
-TYPE_TRIVIAL(char);
-
-#ifdef SYSTYPE_WIN
-# ifdef SYSTYPE_32
-TYPE_TRIVIAL(ints);
-TYPE_TRIVIAL(uints);
-# else
-TYPE_TRIVIAL(int);
-TYPE_TRIVIAL(uint);
-# endif
-#elif defined(SYSTYPE_32)
-TYPE_TRIVIAL(long);
-TYPE_TRIVIAL(ulong);
-#endif
-
-TYPE_TRIVIAL(float);
-TYPE_TRIVIAL(double);
-TYPE_TRIVIAL(long double);*/
-
-
-
-////////////////////////////////////////////////////////////////////////////////
 template<class INT>
 struct SIGNEDNESS
 {
@@ -260,21 +238,6 @@ SIGNEDNESS_MACRO(long,long,ulong,1);
 SIGNEDNESS_MACRO(ulong,long,ulong,0);
 #endif
 
-/*
-#ifdef SYSTYPE_MSVC
-    //SIGNEDNESS_MACRO(__int64);
-    template<> struct SIGNEDNESS<int32> { typedef int32 SIGNED; typedef uint32 UNSIGNED; };
-    template<> struct SIGNEDNESS<uint32> { typedef int32 SIGNED; typedef uint32 UNSIGNED; };
-    template<> struct SIGNEDNESS<int64> { typedef int64 SIGNED; typedef uint64 UNSIGNED; };
-    template<> struct SIGNEDNESS<uint64> { typedef int64 SIGNED; typedef uint64 UNSIGNED; };
-#else
-    SIGNEDNESS_MACRO(int);
-# if (__WORDSIZE==32)
-    template<> struct SIGNEDNESS<__S64_TYPE> { typedef __S64_TYPE SIGNED; typedef __U64_TYPE UNSIGNED; };
-    template<> struct SIGNEDNESS<__U64_TYPE> { typedef __S64_TYPE SIGNED; typedef __U64_TYPE UNSIGNED; };
-# endif
-#endif //_MSC_VER
-*/
 
 ////////////////////////////////////////////////////////////////////////////////
 #ifdef SYSTYPE_MSVC
@@ -323,8 +286,6 @@ template<typename R> struct is_char_ptr<char *, R>       { typedef R type; };
 
 
 COID_NAMESPACE_END
-
-
 
 
 #ifdef SYSTYPE_MSVC

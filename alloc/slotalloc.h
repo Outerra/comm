@@ -1,3 +1,5 @@
+#pragma once
+
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -189,6 +191,17 @@ public:
     ///Insert object
     //@return pointer to the newly inserted object
     T* push( const T& v ) {
+        if(_count < _array.size()) {
+            T* p = alloc(0);
+            if(POOL) destroy(*p);
+            return new(p) T(v);
+        }
+        return new(append()) T(v);
+    }
+
+    ///Insert object
+    //@return pointer to the newly inserted object
+    T* push( T&& v ) {
         if(_count < _array.size()) {
             T* p = alloc(0);
             if(POOL) destroy(*p);

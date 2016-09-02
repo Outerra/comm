@@ -69,6 +69,10 @@ public:
 
 	iref(const iref_t& r) : _p(r.add_refcount()) {}
 
+    iref( iref_t&& r ) : _p(0) {
+        takeover(r);
+    }
+
 	template< class T2 >
 	iref( const iref<T2>& r ) : _p(0) {
         if(r.get()) create(r.get());

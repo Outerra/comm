@@ -412,6 +412,7 @@
     <ClInclude Include="..\..\..\alloc\slotalloc.h" />
     <ClInclude Include="..\..\..\alloc\alloc2d.h" />
     <ClInclude Include="..\..\..\alloc\slotalloc_bmp.h" />
+    <ClInclude Include="..\..\..\alloc\slotring.h" />
     <ClInclude Include="..\..\..\atomic\atomic.h" />
     <ClInclude Include="..\..\..\atomic\basic_pool.h" />
     <ClInclude Include="..\..\..\atomic\pool.h" />

@@ -47,9 +47,6 @@
 #include <iterator>
 #include <algorithm>
 
-//define NO_DYNARRAY_DEBUG_FILL symbol in projects when you don't want additional
-// memset
-
 
 COID_NAMESPACE_BEGIN
 
@@ -488,10 +485,6 @@ public:
                 for( uints i=0; i<nitems; ++i )  ::new(_ptr+i) T;
         }
 
-#if defined(_DEBUG) && !defined(NO_DYNARRAY_DEBUG_FILL)
-        ::memset( _ptr+nitems, 0xcd, (nalloc - nitems)*sizeof(T) );
-#endif
-
         if(_ptr)  _set_count(nitems);
         return _ptr;
     };
@@ -524,10 +517,6 @@ public:
                 for( uints i=0; i<nitems; ++i )  ::new(_ptr+i) T;
         }
 
-#if defined(_DEBUG) && !defined(NO_DYNARRAY_DEBUG_FILL)
-        ::memset( _ptr+nitems, 0xcd, (nalloc - nitems)*sizeof(T) );
-#endif
-
         if(_ptr)  _set_count(nitems);
         return _ptr;
     };
@@ -554,10 +543,6 @@ public:
 
         if( nalloc*sizeof(T) > _size() )
             nalloc = _realloc(nalloc, n);
-
-#if defined(_DEBUG) && !defined(NO_DYNARRAY_DEBUG_FILL)
-        ::memset( _ptr+n, 0xcd, (nalloc - n)*sizeof(T) );
-#endif
 
         if( !has_trivial_default_constructor<T>::value )
             for( uints i=n; i<nitems; ++i )  ::new(_ptr+i) T;
@@ -592,10 +577,6 @@ public:
 
         ::memset( _ptr+n, toones ? 0xff : 0x00, (nitems - n)*sizeof(T) );
 
-#if defined(_DEBUG) && !defined(NO_DYNARRAY_DEBUG_FILL)
-        ::memset( _ptr+nitems, 0xcd, (nalloc - nitems)*sizeof(T) );
-#endif
-
         if( !has_trivial_default_constructor<T>::value )
             for( uints i=n; i<nitems; ++i )  ::new(_ptr+i) T;
 
@@ -629,10 +610,33 @@ public:
         return *this;
     }
 
-
+#ifdef COID_VARIADIC_TEMPLATES
     ///Add \a nitems of elements on the end
-    /** @param nitems count of items to add
-        @return pointer to the first added element */
+    //@param nitems count of items to add
+    //@return pointer to the first added element
+    template<class ...Args>
+    T* add( uints nitems=1, Args... args )
+    {
+        uints n = _count();
+
+        if(!nitems)  return _ptr + n;
+        uints nto = nitems + n;
+        uints nalloc = nto;
+        DASSERT( nto <= COUNT(-1) );
+
+        if( nalloc*sizeof(T) > _size() )
+            nalloc = _realloc(nalloc, n);
+
+        if( !has_trivial_default_constructor<T>::value )
+            for( uints i=n; i<nto; ++i )  ::new(_ptr+i) T(args...);
+
+        _set_count(nto);
+        return _ptr + n;
+    };
+#else
+    ///Add \a nitems of elements on the end
+    //@param nitems count of items to add
+    //@return pointer to the first added element
     T* add( uints nitems=1 )
     {
         uints n = _count();
@@ -645,15 +649,13 @@ public:
         if( nalloc*sizeof(T) > _size() )
             nalloc = _realloc(nalloc, n);
 
-#if defined(_DEBUG) && !defined(NO_DYNARRAY_DEBUG_FILL)
-        ::memset( _ptr+n, 0xcd, (nalloc-n)*sizeof(T) );
-#endif
         if( !has_trivial_default_constructor<T>::value )
             for( uints i=n; i<nto; ++i )  ::new(_ptr+i) T;
 
         _set_count(nto);
         return _ptr + n;
     };
+#endif
 
     ///Add \a nitems of elements on the end and clear the memory
     /** @param nitems count of items to add
@@ -672,10 +674,6 @@ public:
             nalloc = _realloc(nto, n);
 
         ::memset( _ptr+n, toones ? 0xff : 0, (nto-n)*sizeof(T) );
-
-#if defined(_DEBUG) && !defined(NO_DYNARRAY_DEBUG_FILL)
-        ::memset( _ptr+nto, 0xcd, (nalloc-nto)*sizeof(T) );
-#endif
 
         if( !has_trivial_default_constructor<T>::value )
             for( uints i=n; i<nto; ++i )  ::new(_ptr+i) T;
@@ -740,6 +738,14 @@ public:
         return ptr;
     };
 
+    ///Append element to the array through copy constructor
+    T* push( T&& v )
+    {
+        T* ptr = addnc(1);
+        ::new (ptr) T(v);
+        return ptr;
+    };
+
     ///Append the same element n-times to the array through copy constructor
     T* pushn( const T& v, uints n )
     {
@@ -768,11 +774,30 @@ public:
         return push(v);
     }
 
+    ///Push element into array if it's not already there, linear search
+    //@return 0 if already exists, pointer to the new item at the end otherwise
+    T* push_key( const T&& v )
+    {
+        uints c = _count();
+        for(uints i=0; i<c; ++i)
+            if(_ptr[i] == v) return 0;
+
+        return push(v);
+    }
+
     ///Insert an element to the array at sorted position (using < operator)
     T* push_sort( const T& v )
     {
         uints i = lower_bound(v);
-        ins( i, v );
+        ins_value(i, v);
+        return _ptr+i;
+    }
+
+    ///Insert an element to the array at sorted position (using < operator)
+    T* push_sort( T&& v )
+    {
+        uints i = lower_bound(v);
+        ins_value(i, v);
         return _ptr+i;
     }
 
@@ -1220,22 +1245,34 @@ public:
         return p;
     }
 
-    void ins_value( uints pos, const T& v )
+    T* ins_value( uints pos, const T& v )
     {
         DASSERT( pos != UMAXS );
-        T* p;
         if( pos > sizes() )
         {
             uints ov = pos - _count();
-            p = add(ov+1) + ov;
+            add(ov);
         }
-        else
-        {
-            addnc(1);
-            p = __ins( _ptr, pos, _count()-1, 1 );
-        }
+
+        addnc(1);
+        T* p = __ins( _ptr, pos, _count()-1, 1 );
         
-        *p = v;
+        return new(p) T(v);
+    }
+
+    T* ins_value( uints pos, T&& v )
+    {
+        DASSERT( pos != UMAXS );
+        if( pos > sizes() )
+        {
+            uints ov = pos - _count();
+            add(ov);
+        }
+
+        addnc(1);
+        T* p = __ins( _ptr, pos, _count()-1, 1 );
+
+        return new(p) T(v);
     }
 
     ///Delete elements from given position
