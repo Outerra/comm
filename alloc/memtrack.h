@@ -61,21 +61,21 @@
 COID_NAMESPACE_BEGIN
 
 struct memtrack {
-    uints size;                         //< size allocated since the last memtrack_list call
-    uints total;                        //< total allocated size
+    ints size;                          //< size allocated since the last memtrack_list call
+    uints totalsize;                    //< total allocated size
     uint nallocs;                       //< number of allocations since the last memtrack_list call
-    uint ntotalallocs;
+    uint ntotalallocs;                  //< total number of allocations since beginning
     const char* name;                   //< class identifier
 
     void swap(memtrack& m) {
         std::swap(size, m.size);
-        std::swap(total, m.total);
+        std::swap(totalsize, m.totalsize);
         std::swap(nallocs, m.nallocs);
         std::swap(ntotalallocs, m.ntotalallocs);
         std::swap(name, m.name);
     }
 
-    memtrack() : size(0), total(0), nallocs(0), ntotalallocs(0), name(0) {}
+    memtrack() : size(0), totalsize(0), nallocs(0), ntotalallocs(0), name(0) {}
 };
 
 
@@ -85,16 +85,20 @@ void memtrack_alloc( const char* name, uints size );
 ///Track allocation request for name
 void memtrack_free( const char* name, uints size );
 
-///List allocation request statistics from last call
+///List allocation request statistics since the last call
 uint memtrack_list( memtrack* dst, uint nmax );
 
 uint memtrack_count();
 
 ///Dump info into file
-void memtrack_dump( const char* file );
+//@param diff if true, list only the allocations since the last reset or list call, otherwise all
+void memtrack_dump( const char* file, bool diff );
 
 ///Reset tracking info
 void memtrack_reset();
+
+///Enable/disable tracking
+void memtrack_enable( bool en );
 
 void memtrack_shutdown();
 

@@ -67,9 +67,11 @@ struct memtrack_registrar
     memtrack_hash_t* hash;
     comm_mutex* mux;
 
+    bool enabled;
+
     static int reg;
 
-    memtrack_registrar() : mux(0), hash(0)
+    memtrack_registrar() : mux(0), hash(0), enabled(true)
     {
         mux = new comm_mutex(500, false);
         hash = new memtrack_hash_t;
@@ -116,6 +118,13 @@ static memtrack_registrar* memtrack_register()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+void memtrack_enable( bool en )
+{
+    memtrack_registrar* mtr = memtrack_register();
+    mtr->enabled = en;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 void memtrack_shutdown()
 {
     memtrack_registrar::reg = -2;
@@ -127,7 +136,7 @@ void memtrack_shutdown()
 void memtrack_alloc( const char* name, uints size )
 {
     memtrack_registrar* mtr = memtrack_register();
-    if(!mtr || mtr->reg<0) return;
+    if(!mtr || !mtr->enabled || mtr->reg<0) return;
 
     GUARDTHIS(*mtr->mux);
     if(mtr->reg > 1)
@@ -141,20 +150,22 @@ void memtrack_alloc( const char* name, uints size )
     ++val->nallocs;
     ++val->ntotalallocs;
     val->size += size;
-    val->total += size;
+    val->totalsize += size;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 void memtrack_free( const char* name, uints size )
 {
     memtrack_registrar* mtr = memtrack_register();
-    if(!mtr || mtr->reg<0) return;
+    if(!mtr || !mtr->enabled || mtr->reg<0) return;
 
     GUARDTHIS(*mtr->mux);
     memtrack_imp* val = const_cast<memtrack_imp*>(mtr->hash->find_value((uints)name));
 
-    if(val)
-        val->total -= size;
+    if(val) {
+        val->size -= size;
+        val->totalsize -= size;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -183,7 +194,7 @@ uint memtrack_list( memtrack* dst, uint nmax )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void memtrack_dump( const char* file )
+void memtrack_dump( const char* file, bool diff )
 {
     memtrack_registrar* mtr = memtrack_register();
     if(!mtr || mtr->reg<0)
@@ -201,20 +212,24 @@ void memtrack_dump( const char* file )
     buf.reserve(8000);
     buf.reset();
 
-    buf << "======== total | #alloc |  type ======\n";
+    buf << "======== bytes | #alloc |  type ======\n";
 
-    uint64 total=0, count=0;
-    uint i=0;
+    int64 totalsize=0;
+    uints totalcount=0;
+
     for( ; ib!=ie; ++ib ) {
         memtrack& p = *ib;
-        if(p.total == 0)
+        if(p.totalsize == 0 || (diff && p.size == 0))
             continue;
 
-        total += p.total;
-        count += p.ntotalallocs;
+        ints size = diff ? p.size : ints(p.totalsize);
+        uint count = diff ? p.nallocs : p.ntotalallocs;
 
-        buf.append_num_thousands(p.total, ',', 12);
-        buf.append_num(10, p.ntotalallocs, 9);
+        totalsize += size;
+        totalcount += count;
+
+        buf.append_num_thousands(size, ',', 12);
+        buf.append_num(10, count, 9);
         buf << '\t' << p.name << '\n';
 
         if(buf.len() > 7900) {
@@ -223,10 +238,10 @@ void memtrack_dump( const char* file )
         }
     }
 
-    buf << "======== total | #alloc |  type ======\n";
-    buf.append_num_metric(total, 14);
+    buf << "======== bytes | #alloc |  type ======\n";
+    buf.append_num_metric(totalsize, 14);
     buf << 'B';
-    buf.append_num_thousands(count, ',', 8);
+    buf.append_num_thousands(totalcount, ',', 8);
     buf << "\t (total)\n";
 
     mallinfo mi = mspace_mallinfo(SINGLETON(comm_array_mspace).msp);

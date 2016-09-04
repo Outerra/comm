@@ -124,6 +124,8 @@ $-(if event?)$
     void bind_events( v8::Handle<v8::Context> context, bool force, v8::Handle<v8::Value> ref );
 $-(/if)$
 
+    COIDNEWDELETE("$[ns]$$@value$::$[/ns]$$name$_js_dispatcher");
+
     $name$_js_dispatcher() $-(if event?)$ : _bound_events(false)$(/if)$
     {}
 
