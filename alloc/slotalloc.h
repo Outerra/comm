@@ -505,6 +505,7 @@ private:
         void discard() {
             reset();
             comm_array_allocator::free(data);
+            data = 0;
         }
 
         void set_count( uints n ) {
