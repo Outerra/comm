@@ -18,7 +18,7 @@
 *
 * The Initial Developer of the Original Code is
 * Outerra.
-* Portions created by the Initial Developer are Copyright (C) 2013
+* Portions created by the Initial Developer are Copyright (C) 2016
 * the Initial Developer. All Rights Reserved.
 *
 * Contributor(s):
@@ -46,11 +46,11 @@ COID_NAMESPACE_BEGIN
 /**
 @brief Slot allocator with internal ring structure allowing to keep several layers and track changes.
 
-For active layer records whether the individual items were created, deleted or possibly modified.
+For the active layer it records whether the individual items were created, deleted or possibly modified.
 **/
 
 template<class T, bool POOL=false, bool ATOMIC=false>
-class slotring : public slotalloc<T, POOL, ATOMIC>
+class slotring : protected slotalloc<T, POOL, ATOMIC>
 {
     typedef slotalloc<T, POOL, ATOMIC>
         slotalloc_t;
@@ -65,6 +65,15 @@ public:
         _ring.alloc(ring_size - 1);
     }
 
+    ///Reset content. Destructors aren't invoked in the pool mode, as the objects may still be reused.
+    void reset()
+    {
+        mark_all_modified();
+    }
+
+    ///Discard content. Also destroys pooled objects and frees memory
+    void discard()
+
     ///Return an item given id
     //@param id id of the item
     const T* get_item( uints id ) const
@@ -73,12 +82,15 @@ public:
         return id < _array.size() ? _array.ptr() + id : 0;
     }
 
+    ///Return an item given id
+    //@param id id of the item
+    //@note non-const access assumes the data will be modified, sets the modification flag
     T* get_item( uints id )
     {
         DASSERT( id < _array.size() && get_bit(id) );
 
         //mark write access as potentially modifying
-        set_modified_bit(id);
+        set_modified(id);
         return id < _array.size() ? _array.ptr() + id : 0;
     }
 
@@ -93,18 +105,26 @@ public:
 
 protected:
 
-    void set_modified_bit( uints k )
+    void set_modified( uints k )
     {
+        //current frame is always at bit position 0
         _changeset[k] |= 1;
     }
 
     void update_changeset()
     {
+        //the changeset keeps n bits per each element, marking if there was a change in data
+        // half of the bits correspond to the given number of most recent frames
+        // older frames will be coalesced, containing flags that tell if there was a change in any of the
+        // coalesced frames
+        //frame aggregation:
+        //      8844222211111111 (MSb to LSb)
+
         changeset_t* chb = _changeset.ptr();
         changeset_t* che = _changeset.ptre();
 
-        //make space for new frame
-        // bit aggregation: 8844222211111111
+        //make space for a new frame
+        
 
         bool b8 = (_frame & 7) == 0;
         bool b4 = (_frame & 3) == 0;
@@ -125,14 +145,35 @@ protected:
         }
     }
 
+    ///mark all used objects as modified
+    void mark_all_modified()
+    {
+        uints const* b = _allocated.ptr();
+        uints const* e = _allocated.ptre();
+        changeset_t* d = _changeset.ptr();
+        constexpr int NBITS = 8*sizeof(uints);
+
+        for(uints const* p=b; p!=e; ++p, d+=NBITS) {
+            uints m = *p;
+            if(!m) continue;
+
+            uints s = (p - b) * NBITS;
+
+            for(int i=0; m && i<NBITS; ++i, m>>=1) {
+                if(m&1)
+                    *d |= 1;
+            }
+        }
+    }
+
 private:
 
-    dynarray<slotalloc_t> _ring;
+    dynarray<slotalloc_t> _ring;        //< ring of currently inactive arrays 
 
-    dynarray<changeset_t> _changeset;
-    uint _frame;
+    dynarray<changeset_t> _changeset;   //< bit set per item that marks whether the item possibly changed
+    uint _frame;                        //< current frame number
 
-    dynarray<binstring> _ops;
+    dynarray<binstring> _ops;           //< ringbuffer with create/delete operations for each tracked frame
 };
 
 COID_NAMESPACE_END

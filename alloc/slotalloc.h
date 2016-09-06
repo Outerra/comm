@@ -292,11 +292,16 @@ public:
     }
 
     ///Get a particular free slot
-    T* get_or_create( uints id )
+    //@param id item id
+    //@param is_new optional if not null, receives true if the item was newly created
+    T* get_or_create( uints id, bool* is_new=0 )
     {
         if(id < _array.size()) {
-            if(get_bit(id))
+            if(get_bit(id)) {
+                if(is_new) *is_new = false;
                 return _array.ptr() + id;
+            }
+
             set_bit(id);
             //++_count;
             if(ATOMIC) {
@@ -307,6 +312,8 @@ public:
                 ++_count;
                 ++_version;
             }
+
+            if(is_new) *is_new = true;
             return _array.ptr() + id;
         }
 
@@ -329,6 +336,8 @@ public:
             ++_count;
             --_version;
         }
+
+        if(is_new) *is_new = true;
         return _array.ptr() + id;
     }
 
