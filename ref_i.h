@@ -64,22 +64,31 @@ public:
 
 	iref() : _p(0) {}
 
-	iref(T* p) : _p(p) { add_refcount(); }
-	//iref(T *p, const create_lock&) : _p(p->add_refcount_lock()) {}
+    iref( nullptr_t ) : _p(0) {}
 
-	iref(const iref_t& r) : _p(r.add_refcount()) {}
+	iref( const iref_t& r ) : _p(r.add_refcount()) {}
 
     iref( iref_t&& r ) : _p(0) {
         takeover(r);
     }
 
-	template< class T2 >
-	iref( const iref<T2>& r ) : _p(0) {
+    ///Constructor from pointer, artificially removed priority to resolve ambiguity
+    template<class T>
+    iref( T* p, typename std::remove_const<T>::type* = 0 ) : _p(p) {
+        add_refcount();
+    }
+
+    ///Constructor from a convertible type
+#if SYSTYPE_MSVC && _MSC_VER >= 1800
+    template<class T2, class = typename std::enable_if<std::is_convertible<T2*, T*>::value>::type>
+#else
+    template<class T2>
+#endif
+    iref( const iref<T2>& r ) : _p(0) {
         if(r.get()) create(r.get());
     }
 
     T* add_refcount() const { if(_p) _p->add_refcount(); return _p; }
-    //T* add_refcount_lock() const { if(_p && _p->add_refcount_lock()) return _p; else return 0; }
 
     //
 	explicit iref( const create_me& )
