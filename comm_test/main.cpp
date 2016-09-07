@@ -48,11 +48,13 @@ int main( int argc, char* argv[] )
     static_assert( std::is_trivially_move_constructible<dynarray<dynarray<int>>>::value, "non-trivial move");
 #endif
 
+#if _MSC_VER >= 1800
     slothash<value, token> hash;
     bool isnew;
     hash.find_or_insert_value_slot("foo", &isnew);
     hash.find_or_insert_value_slot("foo", &isnew);
     hash.find_or_insert_value_slot("bar", &isnew);
+#endif
 
     uint64 stuff[] = {7000, 45, 2324, 11, 0, 222};
     radixi<uint64, uint, uint64> rx;

@@ -273,15 +273,8 @@
     <ClInclude Include="..\..\..\metastream\metastream.h" />
     <ClInclude Include="..\..\..\metastream\metavar.h" />
     <ClInclude Include="..\..\..\alloc\_malloc.h" />
-    <ClInclude Include="..\..\..\alloc\alloc.h" />
-    <ClInclude Include="..\..\..\alloc\allocrp.h" />
-    <ClInclude Include="..\..\..\alloc\chunkalloc.h" />
-    <ClInclude Include="..\..\..\alloc\chunkblock.h" />
-    <ClInclude Include="..\..\..\alloc\chunkpage.h" />
-    <ClInclude Include="..\..\..\alloc\chunkpool.h" />
     <ClInclude Include="..\..\..\alloc\commalloc.h" />
     <ClInclude Include="..\..\..\alloc\memtrack.h" />
-    <ClInclude Include="..\..\..\alloc\sseg.h" />
     <ClInclude Include="..\..\..\net\asyncrcv.h" />
     <ClInclude Include="..\..\..\ref_helpers.h" />
     <ClInclude Include="..\..\..\sync\_mutex.h" />
@@ -351,9 +344,7 @@
     <ClCompile Include="..\..\..\interface.cpp" />
     <ClCompile Include="..\..\..\metastream\metastream.cpp" />
     <ClCompile Include="..\..\..\alloc\_malloc.c" />
-    <ClCompile Include="..\..\..\alloc\alloc.cpp" />
     <ClCompile Include="..\..\..\alloc\memtrack.cpp" />
-    <ClCompile Include="..\..\..\alloc\sseg.cpp" />
     <ClCompile Include="..\..\..\assert.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>

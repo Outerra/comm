@@ -1,22 +1,18 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.23107.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "comm", "comm.vcxproj", "{67F94DBD-39F3-4ED5-B02D-EA5A62C69F26}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "comm_static", "comm_static.vcxproj", "{D2F47060-00C0-4A3C-9888-CF663F14D44D}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "intergen", "intergen.vcxproj", "{650FD8CC-0A36-4DF2-A81C-045ABA3194F0}"
-	ProjectSection(ProjectDependencies) = postProject
-		{D2F47060-00C0-4A3C-9888-CF663F14D44D} = {D2F47060-00C0-4A3C-9888-CF663F14D44D}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "comm_test", "comm_test.vcxproj", "{A76C8D9E-BDDF-4BE5-9266-453F55E6AEFC}"
 	ProjectSection(ProjectDependencies) = postProject
-		{D2F47060-00C0-4A3C-9888-CF663F14D44D} = {D2F47060-00C0-4A3C-9888-CF663F14D44D}
 		{650FD8CC-0A36-4DF2-A81C-045ABA3194F0} = {650FD8CC-0A36-4DF2-A81C-045ABA3194F0}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "comm_static", "comm_static.vcxproj", "{D2F47060-00C0-4A3C-9888-CF663F14D44D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -46,22 +42,6 @@ Global
 		{67F94DBD-39F3-4ED5-B02D-EA5A62C69F26}.ReleaseLTCG|Win32.Build.0 = ReleaseLTCG|Win32
 		{67F94DBD-39F3-4ED5-B02D-EA5A62C69F26}.ReleaseLTCG|x64.ActiveCfg = ReleaseLTCG|x64
 		{67F94DBD-39F3-4ED5-B02D-EA5A62C69F26}.ReleaseLTCG|x64.Build.0 = ReleaseLTCG|x64
-		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Debug|Win32.ActiveCfg = Debug|Win32
-		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Debug|Win32.Build.0 = Debug|Win32
-		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Debug|x64.ActiveCfg = Debug|x64
-		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Debug|x64.Build.0 = Debug|x64
-		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Debug-clang|Win32.ActiveCfg = Debug-clang|Win32
-		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Debug-clang|Win32.Build.0 = Debug-clang|Win32
-		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Debug-clang|x64.ActiveCfg = Debug-clang|x64
-		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Debug-clang|x64.Build.0 = Debug-clang|x64
-		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Release|Win32.ActiveCfg = Release|Win32
-		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Release|Win32.Build.0 = Release|Win32
-		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Release|x64.ActiveCfg = Release|x64
-		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Release|x64.Build.0 = Release|x64
-		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.ReleaseLTCG|Win32.ActiveCfg = ReleaseLTCG|Win32
-		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.ReleaseLTCG|Win32.Build.0 = ReleaseLTCG|Win32
-		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.ReleaseLTCG|x64.ActiveCfg = ReleaseLTCG|x64
-		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.ReleaseLTCG|x64.Build.0 = ReleaseLTCG|x64
 		{650FD8CC-0A36-4DF2-A81C-045ABA3194F0}.Debug|Win32.ActiveCfg = Debug|Win32
 		{650FD8CC-0A36-4DF2-A81C-045ABA3194F0}.Debug|Win32.Build.0 = Debug|Win32
 		{650FD8CC-0A36-4DF2-A81C-045ABA3194F0}.Debug|x64.ActiveCfg = Debug|x64
@@ -94,6 +74,22 @@ Global
 		{A76C8D9E-BDDF-4BE5-9266-453F55E6AEFC}.ReleaseLTCG|Win32.Build.0 = ReleaseLTCG|Win32
 		{A76C8D9E-BDDF-4BE5-9266-453F55E6AEFC}.ReleaseLTCG|x64.ActiveCfg = ReleaseLTCG|x64
 		{A76C8D9E-BDDF-4BE5-9266-453F55E6AEFC}.ReleaseLTCG|x64.Build.0 = ReleaseLTCG|x64
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Debug|Win32.Build.0 = Debug|Win32
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Debug|x64.ActiveCfg = Debug|x64
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Debug|x64.Build.0 = Debug|x64
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Debug-clang|Win32.ActiveCfg = Debug-clang|Win32
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Debug-clang|Win32.Build.0 = Debug-clang|Win32
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Debug-clang|x64.ActiveCfg = Debug-clang|x64
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Debug-clang|x64.Build.0 = Debug-clang|x64
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Release|Win32.ActiveCfg = Release|Win32
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Release|Win32.Build.0 = Release|Win32
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Release|x64.ActiveCfg = Release|x64
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.Release|x64.Build.0 = Release|x64
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.ReleaseLTCG|Win32.ActiveCfg = ReleaseLTCG|Win32
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.ReleaseLTCG|Win32.Build.0 = ReleaseLTCG|Win32
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.ReleaseLTCG|x64.ActiveCfg = ReleaseLTCG|x64
+		{D2F47060-00C0-4A3C-9888-CF663F14D44D}.ReleaseLTCG|x64.Build.0 = ReleaseLTCG|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
