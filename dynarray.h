@@ -1477,7 +1477,6 @@ private:
         if( nalloc < 2 * oldsize )
             nalloc = 2 * oldsize;
 
-        T* op = _ptr;
         _ptr = A::template realloc<T>(_ptr, nalloc);
         _set_count(newsize);
 

@@ -2,6 +2,7 @@
 #include "../str.h"
 #include "../radix.h"
 #include "../hash/slothash.h"
+#include "../alloc/slotring.h"
 
 namespace coid {
 void test();
@@ -54,6 +55,10 @@ int main( int argc, char* argv[] )
     hash.find_or_insert_value_slot("foo", &isnew);
     hash.find_or_insert_value_slot("foo", &isnew);
     hash.find_or_insert_value_slot("bar", &isnew);
+
+
+    slotring<value> ring(8);
+
 #endif
 
     uint64 stuff[] = {7000, 45, 2324, 11, 0, 222};

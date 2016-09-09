@@ -486,8 +486,8 @@ private:
     {
         void* data;                 //< dynarray-conformant pointer
         uint elemsize;              //< element size
-        void (*destructor)(void*);
         void (*constructor)(void*);
+        void (*destructor)(void*);
 
         relarray(
             void (*constructor)(void*),
