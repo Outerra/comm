@@ -257,6 +257,78 @@ public:
 
 // TYPED ARRAYS
 
+template<class T>
+struct typed_array
+{
+    typed_array( const T* ptr, uints size ) : _ptr(ptr), _size(size)
+    {}
+
+    const T* ptr() const { return _ptr; }
+    uints size() const { return _size; }
+
+    struct typed_array_binstream_container : public binstream_containerT<T>
+    {
+        virtual const void* extract( uints n )
+        {
+            DASSERT( _pos+n <= _v.size() );
+            const T* p = &_v.ptr()[_pos];
+            _pos += n;
+            return p;
+        }
+
+        virtual void* insert( uints n ) {
+            throw exception() << "unsupported";
+        }
+
+        virtual bool is_continuous() const { return true; }
+
+        virtual uints count() const { return _v.size(); }
+
+        typed_array_binstream_container( const typed_array<T>& v )
+            : _v(const_cast<dynarray<T>&>(v))
+        {
+            _pos = 0;
+        }
+
+        typed_array_binstream_container( const typed_array<T>& v, fnc_stream fout, fnc_stream fin )
+            : binstream_containerT<T>(fout,fin)
+            , _v(const_cast<typed_array<T>&>(v))
+        {
+            _pos = 0;
+        }
+
+    protected:
+        typed_array<T>& _v;
+        uints _pos;
+    };
+
+private:
+
+    const T* _ptr;
+    uints _size;
+};
+
+template <class T>
+metastream& operator || ( metastream& m, typed_array<T>& a )
+{
+    if(m.stream_reading()) {
+        a.reset();
+        typename typed_array<T>::typed_array_binstream_container c(a,0,0);
+        m.read_container(c, &metastream::fnstream<T>);
+    }
+    else if(m.stream_writing()) {
+        typename typed_array<T>::typed_array_binstream_container c(a,0,0);
+        m.write_container(c, &metastream::fnstream<T>);
+    }
+    else {
+        m.meta_decl_array();
+        m || *(T*)0;
+    }
+    return m;
+}
+
+
+
 #ifdef V8_MAJOR_VERSION
 
 ///Helper to map typed array from C++ to V8
@@ -277,6 +349,19 @@ public:\
  \
     static bool from_v8( v8::Handle<v8::Value> src, dynarray<T>& res ) { \
         return v8_write_dynarray(v8::TypedArray::Cast(*src), res); \
+    } \
+    static void cleanup( v8::Handle<v8::Value> val ) { \
+        v8::ArrayBufferView::Cast(*val)->Buffer()->Neuter(); \
+    } \
+}; \
+template<> class v8_streamer_volatile<typed_array<T>> : public v8_streamer<typed_array<T>> {\
+public:\
+    static v8::Handle<v8::Value> to_v8(const typed_array<T>& v) { \
+        return v8_map_array_view<T, V8AT>(v.ptr(), (uint)v.size()); \
+    } \
+ \
+    static bool from_v8( v8::Handle<v8::Value> src, dynarray<T>& res ) { \
+        throw exception() << "reading into a typed_array not supported"; \
     } \
     static void cleanup( v8::Handle<v8::Value> val ) { \
         v8::ArrayBufferView::Cast(*val)->Buffer()->Neuter(); \
@@ -328,6 +413,19 @@ public:\
  \
     static bool from_v8( v8::Handle<v8::Value> src, dynarray<T>& res ) { \
         return v8_write_dynarray(src, res); \
+    } \
+    static void cleanup( v8::Handle<v8::Value> val ) { \
+        val->ToObject()->SetIndexedPropertiesToExternalArrayData(0, V8EXT, 0); \
+    } \
+}; \
+template<> class v8_streamer_volatile<typed_array<T>> : public v8_streamer<typed_array<T>> {\
+public:\
+    static v8::Handle<v8::Value> to_v8(const typed_array<T>& v) { \
+        return v8_map_typed_array(v.ptr(), (uint)v.size(), V8EXT); \
+    } \
+\
+    static bool from_v8( v8::Handle<v8::Value> src, typed_array<T>& res ) { \
+        throw exception() << "reading into a typed_array not supported"; \
     } \
     static void cleanup( v8::Handle<v8::Value> val ) { \
         val->ToObject()->SetIndexedPropertiesToExternalArrayData(0, V8EXT, 0); \
