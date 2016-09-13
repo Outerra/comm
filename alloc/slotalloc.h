@@ -46,6 +46,8 @@
 #include "../commexception.h"
 #include "../dynarray.h"
 
+#include "slotalloc_tracker.h"
+
 COID_NAMESPACE_BEGIN
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -70,18 +72,24 @@ reserved in advance.
 @param POOL if true, do not call destructors on item deletion, only on container deletion
 @param ATOMIC if true, ins/del operations and versioning are done as atomic operations
 **/
-template<class T, bool POOL=false, bool ATOMIC=false>
+template<class T, bool POOL=false, bool ATOMIC=false, bool TRACKING=false>
 class slotalloc
+    : protected slotalloc_tracker_base<TRACKING>
 {
+    typedef typename slotalloc_tracker_base<TRACKING>
+        tracker_t;
+
 public:
 
     ///Construct slotalloc container
     //@param pool true for pool mode, in which removed objects do not have destructors invoked
-    slotalloc() : _count(0), _version(0)
-    {}
+    slotalloc() : _count(0), _version(0) {
+        initialize_tracker();
+    }
 
     explicit slotalloc( uints reserve_items ) : _count(0), _version(0) {
         reserve(reserve_items);
+        initialize_tracker();
     }
 
     ~slotalloc() {
@@ -89,9 +97,14 @@ public:
             reset();
     }
 
+    
+
     ///Reset content. Destructors aren't invoked in the pool mode, as the objects may still be reused.
     void reset()
     {
+        if(TRACKING)
+            mark_all_modified(*tracker_t::get_changeset(), _allocated.ptr(), _allocated.ptre());
+
         //destroy occupied slots
         if(!POOL) {
             for_each([](T& p) {destroy(p);});
@@ -249,6 +262,9 @@ public:
 
         DASSERT( get_bit(id) );
 
+        if(TRACKING)
+            tracker_t::set_modified(id);
+
         if(!POOL)
             p->~T();
         clear_bit(id);
@@ -280,6 +296,8 @@ public:
     T* get_item( uints id )
     {
         DASSERT( id < _array.size() && get_bit(id) );
+        if(TRACKING)
+            tracker_t::set_modified(id);
         return id < _array.size() ? _array.ptr() + id : 0;
     }
 
@@ -297,6 +315,9 @@ public:
     T* get_or_create( uints id, bool* is_new=0 )
     {
         if(id < _array.size()) {
+            if(TRACKING)
+                tracker_t::set_modified(id);
+
             if(get_bit(id)) {
                 if(is_new) *is_new = false;
                 return _array.ptr() + id;
@@ -325,6 +346,9 @@ public:
         });
 
         _array.add(n);
+
+        if(TRACKING)
+            tracker_t::set_modified(id);
 
         set_bit(id);
         //++_count;
@@ -412,6 +436,43 @@ public:
         }
     }
 
+    ///Invoke a functor on each item that was modified between two frames
+    //@note const version doesn't handle array insertions/deletions during iteration
+    //@param rel_frame relative frame from which to count the modifications, should be <= 0
+    template<typename Func>
+    std::enable_if<TRACKING, void>
+     for_each_modified( int rel_frame, Func f ) const
+    {
+        uint mask = modified_mask(rel_frame);
+        if(!mask)
+            return;
+
+        if(mask == UMAX32)
+            return for_each(f);     //too old, everything needs to be considered as potentially modified
+
+        T const* d = _array.ptr();
+        uints const* b = _allocated.ptr();
+        uints const* e = _allocated.ptre();
+
+        auto chs = tracker_t::get_changeset();
+        DASSERT( chs->size() >= e - b );
+
+        const tracker_t::changeset_t* ch = chs->ptr();
+
+        for(uints const* p=b; p!=e; ++p, ++ch) {
+            uints m = *p;
+            if(!m) continue;
+
+            uints s = (p - b) * 8 * sizeof(uints);
+
+            for(int i=0; m && i<8*sizeof(uints); ++i, m>>=1) {
+                if((m&1) != 0 && (*ch & mask) != 0)
+                    f(d[s+i]);
+            }
+        }
+    }
+
+
     ///Find first element for which the predicate returns true
     //@return pointer to the element or null
     template<typename Func>
@@ -471,6 +532,21 @@ public:
     dynarray<T>& get_array() { return _array; }
     const dynarray<T>& get_array() const { return _array; }
     //@}
+
+    ///Advance to the next tracking frame, updating changeset
+    //@return new frame number
+    std::enable_if<TRACKING, uint>
+     advance_frame()
+    {
+        if(!TRACKING)
+            return 0;
+
+        auto changeset = tracker_t::get_changeset();
+        update_changeset(*changeset);
+
+        uint* frame = tracker_t::get_frame();
+        return ++*frame;
+    }
 
 private:
 
@@ -545,8 +621,18 @@ private:
 
     dynarray<relarray> _relarrays;  //< related data arrays
 
+    void initialize_tracker()
+    {
+        if(TRACKING) {
+            dynarray<tracker_t::changeset_t>* track;
+            append_relarray(&track);
+
+            tracker_t::initialize(track);
+        }
+    }
+
     ///Return allocated slot
-    T* alloc( uints* id )
+    T* alloc( uints* pid )
     {
         DASSERT( _count < _array.size() );
 
@@ -560,10 +646,14 @@ private:
         uint8 bit = lsb_bit_set((uints)~*p);
         uints slot = ((uints)p - (uints)_allocated.ptr()) * 8;
 
-        DASSERT( !get_bit(slot+bit) );
+        uint id = slot + bit;
+        if(TRACKING)
+            tracker_t::set_modified(id);
 
-        if(id)
-            *id = slot + bit;
+        DASSERT( !get_bit(id) );
+
+        if(pid)
+            *pid = id;
         //*p |= uints(1) << bit;
         if(ATOMIC) {
             atomic::aor(p, uints(1) << bit);
@@ -576,7 +666,7 @@ private:
             ++_count;
             ++_version;
         }
-        return _array.ptr() + slot + bit;
+        return _array.ptr() + id;
     }
 
     T* append()
@@ -599,6 +689,9 @@ private:
             ++_count;
             ++_version;
         }
+
+        if(TRACKING)
+            tracker_t::set_modified(count);
 
         return _array.add_uninit(1);
     }
@@ -639,6 +732,83 @@ private:
 
     //WA for lambda template error
     void static destroy(T& p) {p.~T();}
+
+
+    static void update_changeset( dynarray<changeset_t>& changeset )
+    {
+        //the changeset keeps n bits per each element, marking if there was a change in data
+        // half of the bits correspond to the given number of most recent frames
+        // older frames will be coalesced, containing flags that tell if there was a change in any of the
+        // coalesced frames
+        //frame aggregation:
+        //      8844222211111111 (MSb to LSb)
+
+        changeset_t* chb = changeset->ptr();
+        changeset_t* che = changeset->ptre();
+
+        //make space for a new frame
+
+        bool b8 = (_frame & 7) == 0;
+        bool b4 = (_frame & 3) == 0;
+        bool b2 = (_frame & 1) == 0;
+
+        for(changeset_t* ch = chb; ch < che; ++ch) {
+            changeset_t v = *ch;
+            changeset_t vs = (v << 1) & 0xaeff;                 //shifted bits
+            changeset_t va = ((v << 1) | (v << 2)) & 0x5100;    //aggregated bits
+            changeset_t vx = vs | va;
+
+            changeset_t xc000 = (b8 ? vx : v) & (3<<14);
+            changeset_t x3000 = (b4 ? vx : v) & (3<<12);
+            changeset_t x0f00 = (b2 ? vx : v) & (15<<8);
+            changeset_t x00ff = vs & 0xff;
+
+            *ch = xc000 | x3000 | x0f00 | x00ff;
+        }
+    }
+
+    ///Mark all objects that have the corresponding bit set as modified in current frame
+    static void mark_all_modified( dynarray<changeset_t>& changeset, uints const* b, uints const* e )
+    {
+        changeset_t* d = changeset.realloc(e - b);
+        static const int NBITS = 8*sizeof(uints);
+
+        for(uints const* p=b; p!=e; ++p, d+=NBITS) {
+            uints m = *p;
+            if(!m) continue;
+
+            for(int i=0; m && i<NBITS; ++i, m>>=1) {
+                if(m&1)
+                    d[i] |= 1;
+            }
+        }
+    }
+
+    static uint modified_mask( int rel_frame )
+    {
+        if(rel_frame > 0)
+            return 0;
+
+        if(rel_frame <= -5*8)
+            return UMAX32;     //too old, everything needs to be considered as modified
+
+        //frame changes aggregated like this: 8844222211111111 (MSb to LSb)
+        // compute the bit plane of the relative frame
+        int r = -rel_frame;
+        int bitplane = 0;
+
+        for(int g=0; r>0 && g<4; ++g) {
+            int b = r >= 8 ? 8 : r;
+            r -= 8;
+
+            bitplane += b >> g;
+        }
+
+        if(r > 0)
+            ++bitplane;
+
+        return uint(1 << bitplane) - 1;
+    }
 };
 
 

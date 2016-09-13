@@ -35,11 +35,13 @@ template<
     class KEY,
     class EXTRACTOR = extractor<T, KEY>,
     class HASHFUNC = hash<KEY>,
-    bool POOL=false
+    bool POOL=false,
+    bool TRACKING=false
 >
-class slothash : public slotalloc<T, POOL>
+class slothash
+    : public slotalloc<T,POOL,false,TRACKING>
 {
-    typedef slotalloc<T, POOL> base;
+    typedef slotalloc<T,POOL,false,TRACKING> base;
 
 public:
 
