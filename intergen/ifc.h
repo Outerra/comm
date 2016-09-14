@@ -170,6 +170,40 @@ public:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+template<class T>
+class ifc_creator
+{
+public:
+    T* create() {
+        _target.create(_create());
+    }
+
+    template<class S>
+    ifc_creator( const iref<S>& s )
+        : _create(reinterpret_cast<T*(*)()>(&creator_helper<S>::create))
+        , _target(s)
+    {
+        static_assert( std::is_base_of<T,S>::value, "unrelated types" );
+    }
+
+protected:
+
+    template<class T>
+    struct creator_helper {
+        static T* create() { return new T; }
+    };
+
+    T* (*_create)();
+    iref<T> _target;
+};
+/*
+template<class T>
+ifc_creator<T> ifc_extend( iref<T>& ref ) {
+    return ifc_creator<T>(ref);
+}
+*/
+
+////////////////////////////////////////////////////////////////////////////////
 
 ///Call interface vtable method
 #define VT_CALL(R,F,I) ((*_host).*(reinterpret_cast<R(policy_intrusive_base::*)F>(_vtable[I])))

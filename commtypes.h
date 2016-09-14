@@ -67,7 +67,7 @@
 #elif defined(_MSC_VER)
 
 # define SYSTYPE_WIN        1
-# define SYSTYPE_MSVC       1
+# define SYSTYPE_MSVC       _MSC_VER
 
 #ifdef __clang__
 # define SYSTYPE_CLANG      //clang under msvc
@@ -110,6 +110,21 @@
 # endif
 #endif
 
+#if SYSTYPE_MSVC
+# if _MSC_VER >= 1900
+#  define COID_CONSTEXPR
+#  define coid_constexpr constexpr
+# else
+#  define coid_constexpr const
+# endif
+#elif defined(__has_cpp_attribute)
+# if __has_cpp_attribute(__cpp_constexpr)
+#  define COID_CONSTEXPR
+#  define coid_constexpr constexpr
+# else
+#  define coid_constexpr const
+# endif
+#endif
 
 #ifdef SYSTYPE_WIN
 # if defined(_WIN64)

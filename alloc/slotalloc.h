@@ -71,28 +71,33 @@ reserved in advance.
 
 @param POOL if true, do not call destructors on item deletion, only on container deletion
 @param ATOMIC if true, ins/del operations and versioning are done as atomic operations
+@param TRACKING if true, slotalloc will contain data and methods needed for tracking modifications
 **/
-template<class T, bool POOL=false, bool ATOMIC=false, bool TRACKING=false>
-class slotalloc
-    : protected slotalloc_tracker_base<TRACKING>
+template<class T, bool POOL=false, bool ATOMIC=false, bool TRACKING=false, class ...Es>
+class slotalloc_base
+    : protected slotalloc_tracker_base<TRACKING, Es...>
 {
-    typedef typename slotalloc_tracker_base<TRACKING>
+    typedef slotalloc_tracker_base<TRACKING, Es...>
         tracker_t;
+
+    typedef typename tracker_t::extarray_t
+        extarray_t;
+
+    typedef typename tracker_t::changeset_t
+        changeset_t;
 
 public:
 
     ///Construct slotalloc container
     //@param pool true for pool mode, in which removed objects do not have destructors invoked
-    slotalloc() : _count(0), _version(0) {
-        initialize_tracker();
-    }
+    slotalloc_base() : _count(0), _version(0)
+    {}
 
-    explicit slotalloc( uints reserve_items ) : _count(0), _version(0) {
+    explicit slotalloc_base( uints reserve_items ) : _count(0), _version(0) {
         reserve(reserve_items);
-        initialize_tracker();
     }
 
-    ~slotalloc() {
+    ~slotalloc_base() {
         if(!POOL)
             reset();
     }
@@ -109,9 +114,10 @@ public:
         if(!POOL) {
             for_each([](T& p) {destroy(p);});
 
-            _relarrays.for_each([&](relarray& ra) {
-                ra.reset();
-            });
+            extarray_reset();
+            //_relarrays.for_each([&](relarray& ra) {
+            //    ra.reset();
+            //});
         }
 
         if(ATOMIC)
@@ -119,9 +125,10 @@ public:
         else
             _count = 0;
 
-        _relarrays.for_each([&](relarray& ra) {
-            ra.set_count(0);
-        });
+        extarray_reset_count();
+        //_relarrays.for_each([&](relarray& ra) {
+        //    ra.set_count(0);
+        //});
 
         _array.set_size(0);
         _allocated.set_size(0);
@@ -134,9 +141,10 @@ public:
         if(!POOL) {
             for_each([](T& p) {destroy(p);});
 
-            _relarrays.for_each([&](relarray& ra) {
-                ra.set_count(0);
-            });
+            extarray_reset_count();
+            //_relarrays.for_each([&](relarray& ra) {
+            //    ra.set_count(0);
+            //});
 
             _array.set_size(0);
             _allocated.set_size(0);
@@ -150,12 +158,13 @@ public:
         _array.discard();
         _allocated.discard();
 
-        _relarrays.for_each([&](relarray& ra) {
-            ra.discard();
-        });
+        extarray_discard();
+        //_relarrays.for_each([&](relarray& ra) {
+        //    ra.discard();
+        //});
     }
 
-
+/*
     ///Append related array of type R which will be managed alongside the main array of type T
     //@return array index
     //@note types aren't initialized when allocated
@@ -179,14 +188,50 @@ public:
     template<typename R>
     R* value( const T* v, uints index ) const {
         return reinterpret_cast<R*>(_relarrays[index].item(get_item_id(v)));
+    }*/
+
+    template<int V>
+    typename std::tuple_element<V,extarray_t>::type::value_type&
+        assoc_value( const T* p ) {
+        return std::get<V>(*this)[get_item_id(p)];
     }
 
-    void swap( slotalloc<T>& other ) {
+    template<int V>
+    const typename std::tuple_element<V,extarray_t>::type::value_type&
+        assoc_value( const T* p ) const {
+        return std::get<V>(*this)[get_item_id(p)];
+    }
+
+    template<int V>
+    typename std::tuple_element<V,extarray_t>::type::value_type&
+        value( uints index ) {
+        return std::get<V>(*this)[index];
+    }
+
+    template<int V>
+    const typename std::tuple_element<V,extarray_t>::type::value_type&
+        value( uints index ) const {
+        return std::get<V>(*this)[index];
+    }
+
+    template<int V>
+    typename std::tuple_element<V,extarray_t>::type&
+        value_array() {
+        return std::get<V>(*this);
+    }
+
+    template<int V>
+    const typename std::tuple_element<V,extarray_t>::type&
+        value_array() const {
+        return std::get<V>(*this);
+    }
+
+    void swap( slotalloc_base<T>& other ) {
         _array.swap(other._array);
         _allocated.swap(other._allocated);
         std::swap(_count, other._count);
 
-        _relarrays.swap(other._relarrays);
+        static_cast<tracker_t*>(this)->swap(other);
     }
 
     //@return byte offset to the newly rebased array
@@ -194,9 +239,10 @@ public:
         T* old = _array.ptr();
         T* p = _array.reserve(nitems, true);
 
-        _relarrays.for_each([&](relarray& ra) {
-            ra.reserve(nitems);
-        });
+        extarray_reserve(nitems);
+        //_relarrays.for_each([&](relarray& ra) {
+        //    ra.reserve(nitems);
+        //});
 
         return (uints)p - (uints)old;
     }
@@ -340,10 +386,11 @@ public:
 
         uints n = id+1 - _array.size();
 
-        _relarrays.for_each([&](relarray& ra) {
-            DASSERT( ra.count() == _count );
-            ra.add(n);
-        });
+        extarray_expand();
+        //_relarrays.for_each([&](relarray& ra) {
+        //    DASSERT( ra.count() == _count );
+        //    ra.add(n);
+        //});
 
         _array.add(n);
 
@@ -457,7 +504,7 @@ public:
         auto chs = tracker_t::get_changeset();
         DASSERT( chs->size() >= e - b );
 
-        const tracker_t::changeset_t* ch = chs->ptr();
+        const changeset_t* ch = chs->ptr();
 
         for(uints const* p=b; p!=e; ++p, ++ch) {
             uints m = *p;
@@ -466,7 +513,7 @@ public:
             uints s = (p - b) * 8 * sizeof(uints);
 
             for(int i=0; m && i<8*sizeof(uints); ++i, m>>=1) {
-                if((m&1) != 0 && (*ch & mask) != 0)
+                if((m&1) != 0 && (ch->mask & mask) != 0)
                     f(d[s+i]);
             }
         }
@@ -542,9 +589,10 @@ public:
             return 0;
 
         auto changeset = tracker_t::get_changeset();
-        update_changeset(*changeset);
-
         uint* frame = tracker_t::get_frame();
+
+        update_changeset(*frame, *changeset);
+
         return ++*frame;
     }
 
@@ -556,7 +604,7 @@ private:
     dynarray<uints> _allocated;     //< bit mask for allocated/free items
     uint_type _count;
     uint_type _version;
-
+/*
     ///Related data array that's maintained together with the main one
     struct relarray
     {
@@ -620,16 +668,63 @@ private:
     };
 
     dynarray<relarray> _relarrays;  //< related data arrays
+*/
 
-    void initialize_tracker()
-    {
-        if(TRACKING) {
-            dynarray<tracker_t::changeset_t>* track;
-            append_relarray(&track);
-
-            tracker_t::initialize(track);
-        }
+    ///Helper to expand all ext arrays
+    template<size_t... Index>
+    void extarray_expand_( coid::index_sequence<Index...> ) {
+        extarray_t& ext = *this;
+        int dummy[] = { 0, ((void)std::get<Index>(ext).add(1), 0)... };
     }
+
+    void extarray_expand() {
+        extarray_expand_(coid::make_index_sequence<tracker_t::extarray_size>());
+    }
+
+    ///Helper to reset all ext arrays
+    template<size_t... Index>
+    void extarray_reset_( coid::index_sequence<Index...> ) {
+        extarray_t& ext = *this;
+        int dummy[] = { 0, ((void)std::get<Index>(ext).reset(), 0)... };
+    }
+
+    void extarray_reset() {
+        extarray_reset_(coid::make_index_sequence<tracker_t::extarray_size>());
+    }
+
+    ///Helper to set_count(0) all ext arrays
+    template<size_t... Index>
+    void extarray_reset_count_( coid::index_sequence<Index...> ) {
+        extarray_t& ext = *this;
+        int dummy[] = { 0, ((void)std::get<Index>(ext).set_size(0), 0)... };
+    }
+
+    void extarray_reset_count() {
+        extarray_reset_count_(coid::make_index_sequence<tracker_t::extarray_size>());
+    }
+
+    ///Helper to discard all ext arrays
+    template<size_t... Index>
+    void extarray_discard_( coid::index_sequence<Index...> ) {
+        extarray_t& ext = *this;
+        int dummy[] = { 0, ((void)std::get<Index>(ext).discard(), 0)... };
+    }
+
+    void extarray_discard() {
+        extarray_discard_(coid::make_index_sequence<tracker_t::extarray_size>());
+    }
+
+    ///Helper to reserve all ext arrays
+    template<size_t... Index>
+    void extarray_reserve_( coid::index_sequence<Index...>, uints size ) {
+        extarray_t& ext = *this;
+        int dummy[] = { 0, ((void)std::get<Index>(ext).reserve(size, true), 0)... };
+    }
+
+    void extarray_reserve( uints size ) {
+        extarray_reserve_(coid::make_index_sequence<tracker_t::extarray_size>(), size);
+    }
+
 
     ///Return allocated slot
     T* alloc( uints* pid )
@@ -676,10 +771,12 @@ private:
         DASSERT( count == _array.size() );
         set_bit(count);
 
+        extarray_expand();
+/*
         _relarrays.for_each([&](relarray& ra) {
             DASSERT( ra.count() == count );
             ra.add(1);
-        });
+        });*/
 
         if(ATOMIC) {
             atomic::inc(&_count);
@@ -734,7 +831,7 @@ private:
     void static destroy(T& p) {p.~T();}
 
 
-    static void update_changeset( dynarray<changeset_t>& changeset )
+    static void update_changeset( uint frame, dynarray<changeset_t>& changeset )
     {
         //the changeset keeps n bits per each element, marking if there was a change in data
         // half of the bits correspond to the given number of most recent frames
@@ -748,12 +845,12 @@ private:
 
         //make space for a new frame
 
-        bool b8 = (_frame & 7) == 0;
-        bool b4 = (_frame & 3) == 0;
-        bool b2 = (_frame & 1) == 0;
+        bool b8 = (frame & 7) == 0;
+        bool b4 = (frame & 3) == 0;
+        bool b2 = (frame & 1) == 0;
 
         for(changeset_t* ch = chb; ch < che; ++ch) {
-            changeset_t v = *ch;
+            changeset_t v = ch->mask;
             changeset_t vs = (v << 1) & 0xaeff;                 //shifted bits
             changeset_t va = ((v << 1) | (v << 2)) & 0x5100;    //aggregated bits
             changeset_t vx = vs | va;
@@ -763,14 +860,16 @@ private:
             changeset_t x0f00 = (b2 ? vx : v) & (15<<8);
             changeset_t x00ff = vs & 0xff;
 
-            *ch = xc000 | x3000 | x0f00 | x00ff;
+            ch->mask = xc000 | x3000 | x0f00 | x00ff;
         }
     }
 
     ///Mark all objects that have the corresponding bit set as modified in current frame
     static void mark_all_modified( dynarray<changeset_t>& changeset, uints const* b, uints const* e )
     {
-        changeset_t* d = changeset.realloc(e - b);
+        DASSERT( changeset.size() == e - b );
+
+        changeset_t* d = changeset.ptr();
         static const int NBITS = 8*sizeof(uints);
 
         for(uints const* p=b; p!=e; ++p, d+=NBITS) {
@@ -779,7 +878,7 @@ private:
 
             for(int i=0; m && i<NBITS; ++i, m>>=1) {
                 if(m&1)
-                    d[i] |= 1;
+                    d[i].mask |= 1;
             }
         }
     }
@@ -811,6 +910,31 @@ private:
     }
 };
 
+//variants of slotalloc
+
+template<class T, class ...Es>
+using slotalloc = slotalloc_base<T,false,false,false,Es...>;
+
+template<class T, class ...Es>
+using slotalloc_pool = slotalloc_base<T,true,false,false,Es...>;
+
+template<class T, class ...Es>
+using slotalloc_atomic_pool = slotalloc_base<T,true,true,false,Es...>;
+
+template<class T, class ...Es>
+using slotalloc_tracking_pool = slotalloc_base<T,true,false,true,Es...>;
+
+template<class T, class ...Es>
+using slotalloc_tracking_atomic_pool = slotalloc_base<T,true,true,true,Es...>;
+
+template<class T, class ...Es>
+using slotalloc_atomic = slotalloc_base<T,false,true,false,Es...>;
+
+template<class T, class ...Es>
+using slotalloc_tracking_atomic = slotalloc_base<T,false,true,true,Es...>;
+
+template<class T, class ...Es>
+using slotalloc_tracking = slotalloc_base<T,false,false,true,Es...>;
 
 
 COID_NAMESPACE_END

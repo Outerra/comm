@@ -314,6 +314,48 @@ inline T* align_forward( void* p )
     return reinterpret_cast<T*>( (reinterpret_cast<size_t>(p) + mask) &~ mask );
 }
 
+////////////////////////////////////////////////////////////////////////////////
+#if SYSTYPE_MSVC > 0 && SYSTYPE_MSVC < 1900
+//replacement for make_index_sequence
+template <size_t... Ints>
+struct index_sequence
+{
+    using type = index_sequence;
+    using value_type = size_t;
+    //static coid_constexpr std::size_t size() { return sizeof...(Ints); }
+};
+
+// --------------------------------------------------------------
+
+template <class Sequence1, class Sequence2>
+struct _merge_and_renumber;
+
+template <size_t... I1, size_t... I2>
+struct _merge_and_renumber<index_sequence<I1...>, index_sequence<I2...>>
+    : index_sequence<I1..., (sizeof...(I1)+I2)...>
+{ };
+
+// --------------------------------------------------------------
+
+template <size_t N>
+struct make_index_sequence
+    : _merge_and_renumber<typename make_index_sequence<N/2>::type,
+    typename make_index_sequence<N - N/2>::type>
+{ };
+
+template<> struct make_index_sequence<0> : index_sequence<> { };
+template<> struct make_index_sequence<1> : index_sequence<0> { };
+
+#else
+
+template<size_t Size>
+using make_index_sequence = std::make_integer_sequence<size_t, Size>;
+
+template<size_t... Ints>
+using index_sequence = std::index_sequence<Ints...>;
+
+#endif
+
 COID_NAMESPACE_END
 
 ////////////////////////////////////////////////////////////////////////////////

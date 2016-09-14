@@ -274,7 +274,7 @@ protected:
                     : 0;
 
                 *pdata = decode_sign( (1 << plane) | lowbits );
-                pdate += STRIDE;
+                pdata += STRIDE;
                 --n;
                 --len;
                 rp.zeros((dataend - pdata)/STRIDE);

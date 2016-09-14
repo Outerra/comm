@@ -36,12 +36,24 @@ template<
     class EXTRACTOR = extractor<T, KEY>,
     class HASHFUNC = hash<KEY>,
     bool POOL=false,
-    bool TRACKING=false
+    bool TRACKING=false,
+    class...Es
 >
 class slothash
-    : public slotalloc<T,POOL,false,TRACKING>
+    : public slotalloc_base<T,POOL,false,TRACKING,Es...,uint>
 {
-    typedef slotalloc<T,POOL,false,TRACKING> base;
+    typedef slotalloc_base<T,POOL,false,TRACKING,Es...,uint> base;
+
+    //static constexpr int SEQTABLE_ID = sizeof...(Es);
+
+    //@return table with ids pointing to the next object in hash socket chain
+    dynarray<uint>& seqtable() {
+        return this->value_array<sizeof...(Es)>();
+    }
+
+    const dynarray<uint>& seqtable() const {
+        return this->value_array<sizeof...(Es)>();
+    }
 
 public:
 
@@ -53,7 +65,7 @@ public:
         : base(reserve_items)
     {
         //append related array for hash table sequences
-        base::append_relarray(&_seqtable);
+        //base::append_relarray(&_seqtable);
 
         _buckets.calloc(reserve_items, true);
     }
@@ -114,7 +126,7 @@ public:
         uint* n = find_object_entry(b, key);
         DASSERT( *n == id );
 
-        *n = (*_seqtable)[id];
+        *n = seqtable()[id];
 
         base::del(p);
     }
@@ -132,7 +144,7 @@ public:
                 break;
 
             uint id = *n;
-            *n = (*_seqtable)[id];
+            *n = seqtable()[id];
 
             base::del(base::get_item(id));
             ++c;
@@ -160,7 +172,7 @@ protected:
         {
             if(_EXTRACTOR(*base::get_item(n)) == k)
                 return n;
-            n = (*_seqtable)[n];
+            n = seqtable()[n];
         }
 
         return n;
@@ -173,7 +185,7 @@ protected:
         {
             if(_EXTRACTOR(*base::get_item(*n)) == k)
                 return n;
-            n = &(*_seqtable)[*n];
+            n = &seqtable()[*n];
         }
 
         return n;
@@ -189,7 +201,7 @@ protected:
             T* p = base::add_uninit();
             id = (uint)base::get_item_id(p);
 
-            (*_seqtable)[id] = _buckets[b];
+            seqtable()[id] = _buckets[b];
             _buckets[b] = id;
         }
 
@@ -206,9 +218,9 @@ protected:
         uint b = bucket(key);
         uint fid = find_object(b, key);
 
-        _seqtable[id] = fid != UMAX32 ? fid : _buckets[b];
+        seqtable()[id] = fid != UMAX32 ? fid : _buckets[b];
 
-        if(_buckets[b] == _seqtable[id])
+        if(_buckets[b] == seqtable()[id])
             _buckets[b] = id;
 
         return p;
@@ -220,7 +232,7 @@ private:
     HASHFUNC _HASHFUNC;
 
     coid::dynarray<uint> _buckets;      //< table with ids of first objects belonging to the given hash socket
-    coid::dynarray<uint>* _seqtable;    //< table with ids pointing to the next object in hash socket chain
+    //coid::dynarray<uint>* _seqtable;    //< table with ids pointing to the next object in hash socket chain
 };
 
 COID_NAMESPACE_END

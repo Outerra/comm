@@ -44,53 +44,81 @@
 COID_NAMESPACE_BEGIN
 
 
-/**
-@brief Slot allocator with internal ring structure allowing to keep several layers and track changes.
-
-For the active layer it records whether the individual items were created, deleted or possibly modified.
-**/
-template<bool TRACKING>
-struct slotalloc_tracker_base
+////////////////////////////////////////////////////////////////////////////////
+struct slotalloc_changeset
 {
-    typedef uint16 changeset_t;
+    uint16 mask;
 
-    void initialize( dynarray<changeset_t>* ch ) {}
+    slotalloc_changeset() : mask(0)
+    {}
+};
+
+
+
+/**
+@brief Slot allocator base with optional modification tracking. Adds an extra array with change masks per item.
+**/
+template<bool TRACKING, class...Es>
+struct slotalloc_tracker_base
+    : public std::tuple<dynarray<Es>...>
+{
+    typedef slotalloc_changeset
+        changeset_t;
+    typedef std::tuple<dynarray<Es>...>
+        extarray_t;
+
+    enum : size_t { extarray_size = sizeof...(Es) };
+
+    void swap( slotalloc_tracker_base& other ) {
+        static_cast<extarray_t*>(this)->swap(other);
+    }
 
     void set_modified( uints k ) {}
 
-    dynarray<changeset_t>* get_changeset() { return 0; }
-    const dynarray<changeset_t>* get_changeset() const { return 0; }
+    dynarray<slotalloc_changeset>* get_changeset() { return 0; }
+    const dynarray<slotalloc_changeset>* get_changeset() const { return 0; }
     uint* get_frame() { return 0; }
 };
 
-template<>
-struct slotalloc_tracker_base<true>
+///
+template<class...Es>
+struct slotalloc_tracker_base<true, Es...>
+    : public std::tuple<dynarray<Es>..., dynarray<slotalloc_changeset>>
 {
-    typedef uint16 changeset_t;
+    typedef slotalloc_changeset
+        changeset_t;
+    typedef std::tuple<dynarray<Es>..., dynarray<slotalloc_changeset>>
+        extarray_t;
+
+    enum : size_t { extarray_size = sizeof...(Es) + 1 };
 
     slotalloc_tracker_base()
-        : _changeset(0), _frame(0)
+        : _frame(0)
     {}
 
-    void initialize( dynarray<changeset_t>* ch ) {
-        _changeset = ch;
-        _frame = 0;
+    void swap( slotalloc_tracker_base& other ) {
+        static_cast<extarray_t*>(this)->swap(other);
+        std::swap(_frame, other._frame);
     }
 
     void set_modified( uints k )
     {
         //current frame is always at bit position 0
-        (*_changeset)[k] |= 1;
+        dynarray<slotalloc_changeset>& changeset = std::get<sizeof...(Es)>(*this);
+        changeset[k].mask |= 1;
     }
 
-    dynarray<changeset_t>* get_changeset() { return _changeset; }
-    const dynarray<changeset_t>* get_changeset() const { return _changeset; }
+    dynarray<slotalloc_changeset>* get_changeset() { return &std::get<sizeof...(Es)>(*this); }
+    const dynarray<slotalloc_changeset>* get_changeset() const { return &std::get<sizeof...(Es)>(*this); }
     uint* get_frame() { return &_frame; }
 
 private:
 
-    dynarray<changeset_t>* _changeset;  //< bit set per item that marks whether the item possibly changed
+    ///Position of the changeset within ext arrays
+    //static constexpr int CHANGESET_POS = sizeof...(Es);
+
     uint _frame;                        //< current frame number
 };
+
 
 COID_NAMESPACE_END

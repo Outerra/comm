@@ -92,7 +92,7 @@ struct AllocSlot {
     ints reserve(uints count) { return _slots.reserve(count); }
 
 private:
-    slotalloc<T> _slots;
+    slotalloc_base<T> _slots;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

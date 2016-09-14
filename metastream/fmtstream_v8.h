@@ -260,6 +260,8 @@ public:
 template<class T>
 struct typed_array
 {
+    typedef binstream_container_base::fnc_stream    fnc_stream;
+
     typed_array( const T* ptr, uints size ) : _ptr(ptr), _size(size)
     {}
 
