@@ -15,7 +15,7 @@
  *
  * The Initial Developer of the Original Code is
  * Outerra.
- * Portions created by the Initial Developer are Copyright (C) 2013
+ * Portions created by the Initial Developer are Copyright (C) 2013-2016
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -48,19 +48,19 @@
 //@param path relative path (and optional file name) of the interface header file
 #define ifc_class(name,path)
 
-///Interface class decoration keyword with callback hook
+///Interface class decoration keyword for bi-directional interfaces with event methods that can be overriden by the client.
 //@param name desired name of the interface class, optionally with namespace
 //@param path relative path (and optional file name) of the interface header file
 //@param var name for the variable representing the connected client
 //@note clean_ptr is an intentional weak link, since interface already holds ref to the host
 #define ifc_class_var(name,path,var) coid::clean_ptr<intergen_interface> var
 
-///Virtual base interface class decoration keyword
+///Virtual base interface class decoration keyword for declaration of abstrac base interfaces
 //@param name desired name of the interface class, optionally with namespace
 //@param path relative path (and optional file name) of the interface header file
 #define ifc_class_virtual(name,path)
 
-///Interface function decoration keyword
+///Interface function decoration keyword: such decorated method will be added into the interface
 #define ifc_fn
 
 ///Interface function decoration keyword

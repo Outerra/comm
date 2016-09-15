@@ -427,8 +427,40 @@ public:
         return get_bit(id);
     }
 
+protected:
+    ///Helper functions for for_each to allow calling with optional index argument
+    template<typename T, typename Callable>
+    static auto funccall(Callable c, const T& v, size_t index)
+        -> decltype(c(v, index))
+    {
+        return c(v, index);
+    }
+
+    template<typename T, typename Callable>
+    static auto funccall(Callable c, const T& v, size_t index)
+        -> decltype(c(v))
+    {
+        return c(v);
+    }
+
+    template<typename T, typename Callable>
+    static auto funccall(Callable c, T& v, size_t index)
+        -> decltype(c(v, index))
+    {
+        return c(v, index);
+    }
+
+    template<typename T, typename Callable>
+    static auto funccall(Callable c, T& v, size_t index)
+        -> decltype(c(v))
+    {
+        return c(v);
+    }
+
+public:
     ///Invoke a functor on each used item.
     //@note const version doesn't handle array insertions/deletions during iteration
+    //@param f functor with ([const] T&) or ([const] T&, size_t index) arguments
     template<typename Func>
     void for_each( Func f ) const
     {
@@ -444,13 +476,15 @@ public:
 
             for(int i=0; m && i<8*sizeof(uints); ++i, m>>=1) {
                 if(m&1)
-                    f(d[s+i]);
+                    //f(d[s+i]);
+                    funccall(f, d[s+i], s+i);
             }
         }
     }
 
     ///Invoke a functor on each used item.
     //@note non-const version handles array insertions/deletions during iteration
+    //@param f functor with ([const] T&) or ([const] T&, size_t index) arguments
     template<typename Func>
     void for_each( Func f )
     {
@@ -467,7 +501,9 @@ public:
 
             for(int i=0; m && i<8*sizeof(uints); ++i, m>>=1) {
                 if(m&1) {
-                    f(d[s+i]);
+                    //f(d[s+i]);
+                    funccall(f, d[s+i], s+i);
+
                     if(version != _version) {
                         //handle alterations and rebase
                         d = _array.ptr();
@@ -483,9 +519,35 @@ public:
         }
     }
 
+    ///Invoke a functor on each used item in given ext array
+    //@note const version doesn't handle array insertions/deletions during iteration
+    //@param K ext array id
+    //@param f functor with ([const] T&) or ([const] T&, size_t index) arguments, with T being the type of given value array
+    template<int K, typename Func>
+    void for_each_ext( Func f ) const
+    {
+        auto d = value_array<K>().ptr();
+        uints const* b = _allocated.ptr();
+        uints const* e = _allocated.ptre();
+
+        for(uints const* p=b; p!=e; ++p) {
+            uints m = *p;
+            if(!m) continue;
+
+            uints s = (p - b) * 8 * sizeof(uints);
+
+            for(int i=0; m && i<8*sizeof(uints); ++i, m>>=1) {
+                if(m&1)
+                    //f(d[s+i]);
+                    funccall(f, d[s+i], s+i);
+            }
+        }
+    }
+
     ///Invoke a functor on each item that was modified between two frames
     //@note const version doesn't handle array insertions/deletions during iteration
     //@param rel_frame relative frame from which to count the modifications, should be <= 0
+    //@param f functor with ([const] T&) or ([const] T&, size_t index) arguments
     template<typename Func>
     std::enable_if<TRACKING, void>
      for_each_modified( int rel_frame, Func f ) const
@@ -514,7 +576,8 @@ public:
 
             for(int i=0; m && i<8*sizeof(uints); ++i, m>>=1) {
                 if((m&1) != 0 && (ch->mask & mask) != 0)
-                    f(d[s+i]);
+                    //f(d[s+i]);
+                    funccall(f, d[s+i], s+i);
             }
         }
     }
@@ -522,6 +585,7 @@ public:
 
     ///Find first element for which the predicate returns true
     //@return pointer to the element or null
+    //@param f functor with ([const] T&) or ([const] T&, size_t index) arguments
     template<typename Func>
     const T* find_if(Func f) const
     {
@@ -537,8 +601,8 @@ public:
 
             for(int i=0; m && i<8*sizeof(uints); ++i, m>>=1) {
                 if(m&1) {
-                    const T& v = d[s + i];
-                    if(f(v))
+                    const T& v = d[s+i];
+                    if(funccall(f, v, s+i))
                         return &v;
                 }
             }
@@ -549,6 +613,7 @@ public:
 
     ///Find first element for which the predicate returns true
     //@return pointer to the element or null
+    //@param f functor with ([const] T&) or ([const] T&, size_t index) arguments
     template<typename Func>
     T* find_if(Func f)
     {
@@ -564,8 +629,8 @@ public:
 
             for(int i=0; m && i<8*sizeof(uints); ++i, m>>=1) {
                 if(m&1) {
-                    T& v = d[s + i];
-                    if(f(v))
+                    T& v = d[s+i];
+                    if(funccall(f, v, s+i))
                         return &v;
                 }
             }
