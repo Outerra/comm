@@ -104,12 +104,13 @@ public:
 
 	void release() { if(_p) _p->release_refcount(); _p=0;  }
 
-	void create(T* const p)
+    T* create(T* const p)
 	{
-        DASSERT_RETVOID(p!=_p);
+        DASSERT_RET(p!=_p, _p);
 		release();
 		_p = p;
-        _p->add_refcount(); 
+        _p->add_refcount();
+        return _p;
 	}
 
 	bool create_lock(T *p) {
@@ -122,20 +123,20 @@ public:
             return false;
     }
 
-	void create_pooled() {
+    T* create_pooled() {
         T* p = coid::policy_pooled_i<T>::create();
-        DASSERT(p!=_p);
+        DASSERT_RET(p!=_p, _p);
 		release();
 		_p = p;
-		//add_refcount();
+		return _p;
 	}
 
-	void create_pooled(pool_type_t *po) {
+    T* create_pooled(pool_type_t *po) {
         T* p = coid::policy_pooled_i<T>::create(po);
-		DASSERT(p!=_p);
+		DASSERT_RET(p!=_p, _p);
 		release();
 		_p = p;
-		//add_refcount();
+		return _p;
 	}
 
 	const iref_t& operator = (const iref_t& r) {

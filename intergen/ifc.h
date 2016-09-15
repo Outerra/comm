@@ -170,18 +170,34 @@ public:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+///Helper class for interface methods to return a derived class of interface client, when
+/// the interface contains events that can/should be overriden by the client
+/**
+    Usage, host class:
+        ifc_fnx(!) void get_client( ifc_creator<someinterface>&& res );
+
+    client:
+        class extclient : public someinterface { ... }
+
+        iref<extclient> nc;
+        host->get_client(nc);
+**/
 template<class T>
 class ifc_creator
 {
 public:
     T* create() {
         _target.create(_create());
+        return _target.get();
     }
 
+    iref<T>& get_ref() { return _target; }
+    const iref<T>& get_ref() const { return _target; }
+
     template<class S>
-    ifc_creator( const iref<S>& s )
+    ifc_creator( iref<S>& s )
         : _create(reinterpret_cast<T*(*)()>(&creator_helper<S>::create))
-        , _target(s)
+        , _target(reinterpret_cast<iref<T>&>(s))
     {
         static_assert( std::is_base_of<T,S>::value, "unrelated types" );
     }
@@ -194,14 +210,8 @@ protected:
     };
 
     T* (*_create)();
-    iref<T> _target;
+    iref<T>& _target;
 };
-/*
-template<class T>
-ifc_creator<T> ifc_extend( iref<T>& ref ) {
-    return ifc_creator<T>(ref);
-}
-*/
 
 ////////////////////////////////////////////////////////////////////////////////
 

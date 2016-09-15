@@ -172,6 +172,7 @@ struct MethodIG
         charstr doc;
         bool bptr;                      //< true if the type is a pointer
         bool bref;                      //< true if the type is a reference
+        bool bxref;                     //< true if the type is xvalue reference
         bool biref;
         bool bconst;                    //< true if the type had const qualifier
         bool benum;
@@ -214,6 +215,7 @@ struct MethodIG
                 m.member("enum",p.benum);
                 m.member("ptr",p.bptr);
                 m.member("ref",p.bref);
+                m.member("xref",p.bxref);
                 m.member("iref",p.biref);
                 m.member("inarg",p.binarg);
                 m.member("outarg",p.boutarg);

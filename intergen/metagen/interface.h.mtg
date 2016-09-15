@@ -187,7 +187,7 @@ $-[/method]$
 
 $-[method !static? !destroy?]$
 inline $return.type$ $..name$::$name$($[args rest="," after=" "]$ $type$ $name$$size$$[/args]$) $-(if const?)$ const$(/if)$
-{ return VT_CALL($return.type$,($[args rest=","]$$type$$size$$[/args]$),$index$)($[args rest=","]$$name$$[/args]$); }
+{ return VT_CALL($return.type$,($[args rest=","]$$type$$size$$[/args]$),$index$)($[args rest=","]$ $-(if xref?)$std::forward<$basetype$>($(/if)-$ $name$ $-(if xref?)$)$(/if)-$ $[/args]$); }
 $[/method]-$
 $(/if)-$
 

@@ -59,19 +59,23 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
     int isPR=0,wasPR;
     int isCV=0;
 
+    //parse a sequence of pointer and reference specifications
     while((wasPR = lex.matches_either('*', '&')))
     {
-        isPR = wasPR;
+        isPR = isPR==2 && wasPR==2 ? 3 : wasPR;
+
         if(bconst) {
-            //const is a part of the inner type
+            //const was a part of the inner type, move to the beginning
             type.ins(0, "const ");
             bconst = 0;
         }
 
         type << lex.last().value();
 
-        if((isCV = lex.matches_either("const", "volatile")))
+        if((isCV = lex.matches_either("const", "volatile"))) {
             type << ' ' << lex.last().value();
+            isPR = 0;
+        }
     }
 
     if(isCV == 1)   //ends with const
@@ -79,8 +83,9 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
     if(isCV)
         type.resize(isCV==1 ? 6 : 9);   //strip the last const and volatile
 
+    bxref = isPR == 3;
     bptr = isPR == 1;
-    bref = isPR == 2;
+    bref = bxref || isPR == 2;
 
     if(boutarg && ((!bptr && !bref && !ifctarget) || type.begins_with("const "))) {
         out << (lex.prepare_exception()
@@ -90,7 +95,7 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
 
     basetype = type;
     if(isPR)
-        basetype.shift_end(-1);
+        basetype.shift_end(isPR==3 ? -2 : -1);
 
     if(basetype.begins_with("const ")) basetype.shift_start(6);
     else if(basetype.ends_with(" const")) basetype.shift_end(-6);

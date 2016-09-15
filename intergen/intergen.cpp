@@ -7,8 +7,10 @@
 #include "../dir.h"
 
 #include "../hash/hashkeyset.h"
-
 #include "ig.h"
+
+//debug string:
+// [inputs] $(ProjectDir)..\..\..\intergen\metagen
 
 stdoutstream out;
 
@@ -297,7 +299,8 @@ int main( int argc, char* argv[] )
 
     //parse
     int rv = cgf.parse(argv[1]);
-    if(rv)  return 0;
+    if(rv)
+        return 0;
 
 
     //generate
