@@ -114,6 +114,16 @@ public:
 
     T* insert_value_slot_uninit( const KEY& key ) { return insert_value_(base::add_uninit(), key); }
 
+    ///Push value into slothash
+    //@return newly inserted item or nullptr if the key was already taken
+    T* push( T&& val ) {
+        const KEY& key = _EXTRACTOR(val);
+        T* p = insert_value_slot_uninit(key);
+        if(p)
+            new(p) T(std::move(val));
+        return p;
+    }
+
     ///Delete item from hash map
     void del( T* p )
     {
@@ -129,6 +139,12 @@ public:
         *n = seqtable()[id];
 
         base::del(p);
+    }
+
+    ///Delete object by id
+    void del( uints id )
+    {
+        return del(get_array().ptr() + id);
     }
 
 
@@ -158,6 +174,12 @@ public:
     {
         base::reset();
         memset(_buckets.begin().ptr(), 0xff, _buckets.byte_size());
+    }
+
+    void swap( slothash& other )
+    {
+        base::swap(static_cast<base&>(other));
+        _buckets.swap(other._buckets);
     }
 
 protected:
@@ -210,15 +232,17 @@ protected:
         return isnew;
     }
 
-    T* insert_value_( T* p )
+    T* insert_value_( T* p, const KEY& key )
     {
         uint id = (uint)base::get_item_id(p);
-        const KEY& key = _EXTRACTOR(*p);
+        //const KEY& key = _EXTRACTOR(*p);
 
         uint b = bucket(key);
         uint fid = find_object(b, key);
 
-        seqtable()[id] = fid != UMAX32 ? fid : _buckets[b];
+        bool isnew = fid == UMAX32;
+
+        seqtable()[id] = isnew ? _buckets[b] : fid;
 
         if(_buckets[b] == seqtable()[id])
             _buckets[b] = id;

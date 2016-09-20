@@ -108,7 +108,7 @@ public:
     void reset()
     {
         if(TRACKING)
-            mark_all_modified(*tracker_t::get_changeset(), _allocated.ptr(), _allocated.ptre());
+            mark_all_modified<void>(false);
 
         //destroy occupied slots
         if(!POOL) {
@@ -226,12 +226,13 @@ public:
         return std::get<V>(*this);
     }
 
-    void swap( slotalloc_base<T>& other ) {
+    void swap( slotalloc_base& other ) {
         _array.swap(other._array);
         _allocated.swap(other._allocated);
         std::swap(_count, other._count);
+        std::swap(_version, other._version);
 
-        static_cast<tracker_t*>(this)->swap(other);
+        extarray_swap(other);
     }
 
     //@return byte offset to the newly rebased array
@@ -323,6 +324,12 @@ public:
             --_count;
             ++_version;
         }
+    }
+
+    ///Delete object by id
+    void del( uints id )
+    {
+        return del(_array.ptr() + id);
     }
 
     //@return number of used slots in the container
@@ -524,7 +531,7 @@ public:
     //@param K ext array id
     //@param f functor with ([const] T&) or ([const] T&, size_t index) arguments, with T being the type of given value array
     template<int K, typename Func>
-    void for_each_ext( Func f ) const
+    void for_each_in_array( Func f ) const
     {
         auto d = value_array<K>().ptr();
         uints const* b = _allocated.ptr();
@@ -547,24 +554,22 @@ public:
     ///Invoke a functor on each item that was modified between two frames
     //@note const version doesn't handle array insertions/deletions during iteration
     //@param rel_frame relative frame from which to count the modifications, should be <= 0
-    //@param f functor with ([const] T&) or ([const] T&, size_t index) arguments
-    template<typename Func>
-    std::enable_if<TRACKING, void>
-     for_each_modified( int rel_frame, Func f ) const
+    //@param f functor with ([const] T* ptr) or ([const] T* ptr, size_t index) arguments; ptr can be null if item was deleted
+    template<typename Func, typename = std::enable_if_t<TRACKING>>
+    void for_each_modified( int rel_frame, Func f ) const
     {
-        uint mask = modified_mask(rel_frame);
+        bool all_modified = rel_frame < -5*8;
+
+        uint mask = all_modified ? UMAX32 : modified_mask(rel_frame);
         if(!mask)
             return;
-
-        if(mask == UMAX32)
-            return for_each(f);     //too old, everything needs to be considered as potentially modified
 
         T const* d = _array.ptr();
         uints const* b = _allocated.ptr();
         uints const* e = _allocated.ptre();
 
         auto chs = tracker_t::get_changeset();
-        DASSERT( chs->size() >= e - b );
+        DASSERT( chs->size() >= uints(e - b) );
 
         const changeset_t* ch = chs->ptr();
 
@@ -575,9 +580,10 @@ public:
             uints s = (p - b) * 8 * sizeof(uints);
 
             for(int i=0; m && i<8*sizeof(uints); ++i, m>>=1) {
-                if((m&1) != 0 && (ch->mask & mask) != 0)
-                    //f(d[s+i]);
-                    funccall(f, d[s+i], s+i);
+                if(all_modified || (ch->mask & mask) != 0) {
+                    T const* p = (m&1) != 0 ? d+s+i : 0;
+                    funccall(f, p, s+i);
+                }
             }
         }
     }
@@ -647,8 +653,8 @@ public:
 
     ///Advance to the next tracking frame, updating changeset
     //@return new frame number
-    std::enable_if<TRACKING, uint>
-     advance_frame()
+    template<typename = std::enable_if_t<TRACKING>>
+    uint advance_frame()
     {
         if(!TRACKING)
             return 0;
@@ -659,6 +665,33 @@ public:
         update_changeset(*frame, *changeset);
 
         return ++*frame;
+    }
+
+    ///Mark all objects that have the corresponding bit set as modified in current frame
+    //@param clear_old if true, old change bits are cleared
+    template<typename = std::enable_if_t<TRACKING>>
+    void mark_all_modified( bool clear_old )
+    {
+        dynarray<changeset_t>& changeset = *tracker_t::get_changeset();
+        uints const* b = _allocated.ptr();
+        uints const* e = _allocated.ptre();
+
+        DASSERT( changeset.size() == e - b );
+
+        uint16 preserve = clear_old ? 0xfffeU : 0U;
+
+        changeset_t* d = changeset.ptr();
+        static const int NBITS = 8*sizeof(uints);
+
+        for(uints const* p=b; p!=e; ++p, d+=NBITS) {
+            uints m = *p;
+            if(!m) continue;
+
+            for(int i=0; m && i<NBITS; ++i, m>>=1) {
+                if(m&1)
+                    d[i].mask = (d[i].mask & preserve) | 1;
+            }
+        }
     }
 
 private:
@@ -790,6 +823,31 @@ private:
         extarray_reserve_(coid::make_index_sequence<tracker_t::extarray_size>(), size);
     }
 
+    ///Helper to swap all ext arrays
+    template<size_t... Index>
+    void extarray_swap_( coid::index_sequence<Index...>, slotalloc_base& other ) {
+        extarray_t& ext = *this;
+        extarray_t& exto = other;
+        int dummy[] = { 0, ((void)std::get<Index>(ext).swap(std::get<Index>(exto)), 0)... };
+    }
+
+    void extarray_swap( slotalloc_base& other ) {
+        extarray_swap_(coid::make_index_sequence<tracker_t::extarray_size>(), other);
+    }
+
+
+    ///Helper to iterate over all ext arrays
+    template<typename F, size_t... Index>
+    void extarray_iterate_( coid::index_sequence<Index...>, F fn ) {
+        extarray_t& ext = *this;
+        int dummy[] = { 0, ((void)fn(std::get<Index>(ext)), 0)... };
+    }
+
+    template<typename F>
+    void extarray_iterate( F fn ) {
+        extarray_iterate_(coid::make_index_sequence<tracker_t::extarray_size>(), fn);
+    }
+
 
     ///Return allocated slot
     T* alloc( uints* pid )
@@ -905,8 +963,8 @@ private:
         //frame aggregation:
         //      8844222211111111 (MSb to LSb)
 
-        changeset_t* chb = changeset->ptr();
-        changeset_t* che = changeset->ptre();
+        changeset_t* chb = changeset.ptr();
+        changeset_t* che = changeset.ptre();
 
         //make space for a new frame
 
@@ -915,36 +973,17 @@ private:
         bool b2 = (frame & 1) == 0;
 
         for(changeset_t* ch = chb; ch < che; ++ch) {
-            changeset_t v = ch->mask;
-            changeset_t vs = (v << 1) & 0xaeff;                 //shifted bits
-            changeset_t va = ((v << 1) | (v << 2)) & 0x5100;    //aggregated bits
-            changeset_t vx = vs | va;
+            uint16 v = ch->mask;
+            uint16 vs = (v << 1) & 0xaeff;                 //shifted bits
+            uint16 va = ((v << 1) | (v << 2)) & 0x5100;    //aggregated bits
+            uint16 vx = vs | va;
 
-            changeset_t xc000 = (b8 ? vx : v) & (3<<14);
-            changeset_t x3000 = (b4 ? vx : v) & (3<<12);
-            changeset_t x0f00 = (b2 ? vx : v) & (15<<8);
-            changeset_t x00ff = vs & 0xff;
+            uint16 xc000 = (b8 ? vx : v) & (3<<14);
+            uint16 x3000 = (b4 ? vx : v) & (3<<12);
+            uint16 x0f00 = (b2 ? vx : v) & (15<<8);
+            uint16 x00ff = vs & 0xff;
 
             ch->mask = xc000 | x3000 | x0f00 | x00ff;
-        }
-    }
-
-    ///Mark all objects that have the corresponding bit set as modified in current frame
-    static void mark_all_modified( dynarray<changeset_t>& changeset, uints const* b, uints const* e )
-    {
-        DASSERT( changeset.size() == e - b );
-
-        changeset_t* d = changeset.ptr();
-        static const int NBITS = 8*sizeof(uints);
-
-        for(uints const* p=b; p!=e; ++p, d+=NBITS) {
-            uints m = *p;
-            if(!m) continue;
-
-            for(int i=0; m && i<NBITS; ++i, m>>=1) {
-                if(m&1)
-                    d[i].mask |= 1;
-            }
         }
     }
 
@@ -953,7 +992,7 @@ private:
         if(rel_frame > 0)
             return 0;
 
-        if(rel_frame <= -5*8)
+        if(rel_frame < -5*8)
             return UMAX32;     //too old, everything needs to be considered as modified
 
         //frame changes aggregated like this: 8844222211111111 (MSb to LSb)

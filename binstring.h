@@ -43,6 +43,8 @@
 #include "token.h"
 #include "str.h"
 #include "dynarray.h"
+#include <limits>
+#include <type_traits>
 
 COID_NAMESPACE_BEGIN
 
@@ -92,8 +94,33 @@ public:
         return *this;
     }
 
+    ///Append string with optionally specified size type (uint8, uint16, uint32 ...)
+    template<class SIZE = uint>
+    binstring& append_string( const token& tok ) {
+        uints size = write_size<SIZE>(tok.len());
+        _tstr.add_bin_from((const uint8*)tok.ptr(), size);
+        return *this;
+    }
+
+    ///Append string with optionally specified size type (uint8, uint16, uint32 ...)
+    template<class SIZE = uint>
+    binstring& append_string( const char* czstr ) {
+        token tok(czstr);
+        uints size = write_size<SIZE>(tok.len());
+        _tstr.add_bin_from((const uint8*)tok.ptr(), size);
+        return *this;
+    }
+
+    ///Append string with optionally specified size type (uint8, uint16, uint32 ...)
+    template<class SIZE = uint>
+    binstring& append_string( const charstr& str ) {
+        uints size = write_size<SIZE>(str.len());
+        _tstr.add_bin_from((const uint8*)str.ptr(), size);
+        return *this;
+    }
+
     ///Add buffer with specified leading alignment
-    binstring& append( uint alignment, const void* p, uints len ) {
+    binstring& append_buffer( uint alignment, const void* p, uints len ) {
         uints size = _tstr.size();
         uints align = align_offset(size, alignment) - size;
 
@@ -144,19 +171,10 @@ public:
     }
 
     ///Fetch string from the binary stream
+    template<class SIZE = uint>
     token string() {
-        const uint& size = fetch<uint>();
+        const SIZE& size = fetch<SIZE>();
         if(_tstr.size()-_offset < size)
-            throw exception("buffer overflow");
-        const uint8* p = _tstr.ptr() + _offset;
-        _offset += size;
-        return token((const char*)p, size);
-    }
-
-    ///Fetch string from the binary stream
-    token string16() {
-        const uint16& size = fetch<uint16>();
-        if (_tstr.size() - _offset < size)
             throw exception("buffer overflow");
         const uint8* p = _tstr.ptr() + _offset;
         _offset += size;
@@ -270,6 +288,15 @@ public:
     ~binstring() {}
 
 protected:
+
+    template<class S>
+    uints write_size( uints size ) {
+        static_assert( std::is_unsigned<S>::value, "unsigned type expected" );
+        DASSERT( size <= std::numeric_limits<S>::max() );
+        size = std::min(size, (uints)std::numeric_limits<S>::max());
+        *pad_alloc<S>() = S(size);
+        return size;
+    }
 
     template<class T>
     T* pad_alloc() {
