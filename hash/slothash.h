@@ -35,6 +35,7 @@ template<
     class KEY,
     class EXTRACTOR = extractor<T, KEY>,
     class HASHFUNC = hash<KEY>,
+    bool MULTIKEY=false,
     bool POOL=false,
     bool TRACKING=false,
     class...Es
@@ -57,9 +58,10 @@ class slothash
 
 public:
 
-    T* push( const T& v ) = delete;
     T* add() = delete;
-    T* add_uninit( bool* newitem = 0 ) = delete;
+    T* add_uninit( bool* ) = delete;
+    template<class...Ps> T* add_init( Ps... ) = delete;
+    T* get_or_create( uints, bool* ) = delete;
 
     slothash( uint reserve_items = 64 )
         : base(reserve_items)
@@ -110,17 +112,54 @@ public:
         return base::get_item(id);
     }
 
-    T* insert_value_slot( const KEY& key ) { return insert_value_(base::add(), key); }
+    ///Insert a new slot for the key
+    //@return pointer to the new item or nullptr if the key already exists and MULTIKEY is false
+    template<class...Ps>
+    T* construct_value( Ps... ps ) {
+        T* p = base::add_init(std::forward<Ps>(ps)...);
+        return insert_value_(p);
+    }
 
-    T* insert_value_slot_uninit( const KEY& key ) { return insert_value_(base::add_uninit(), key); }
+    ///Insert a new uninitialized slot for the key
+    //@param id requested slot id; if occupied it will be destroyed first
+    //@return pointer to the uninitialized slot for the key or nullptr if the key already exists and MULTIKEY is false
+    template<class...Ps>
+    T* construct_value_in_slot( uint id, Ps... ps )
+    {
+        bool isnew;
+        T* p = base::get_or_create(id, &isnew);
+
+        if(!isnew)
+            //destroy old hash links
+            destroy_value_(id);
+
+        slotalloc_detail::constructor<POOL, T>::construct_object(p, isnew, ps...);
+
+        return insert_value_(p);
+    }
+
 
     ///Push value into slothash
     //@return newly inserted item or nullptr if the key was already taken
-    T* push( T&& val ) {
+    T* push( const T& val )
+    {
         const KEY& key = _EXTRACTOR(val);
-        T* p = insert_value_slot_uninit(key);
+        bool isnew;
+        T* p = insert_value_slot_uninit_(key, &isnew);
         if(p)
-            new(p) T(std::move(val));
+            slotalloc_detail::constructor<POOL, T>::copy_object(p, isnew, val);
+        return p;
+    }
+
+    ///Push value into slothash
+    //@return newly inserted item or nullptr if the key was already taken
+    T* push( T&& val )
+    {
+        const KEY& key = _EXTRACTOR(val);
+        bool isnew;
+        T* p = insert_value_slot_uninit_(key, &isnew);
+        if(p)
+            slotalloc_detail::constructor<POOL, T>::copy_object(p, isnew, std::forward<T>(val));
         return p;
     }
 
@@ -128,27 +167,24 @@ public:
     void del( T* p )
     {
         uint id = (uint)get_item_id(p);
+        DASSERT_RETVOID( id != UMAX32 );
 
-        const KEY& key = _EXTRACTOR(*p);
-        uint b = bucket(key);
-
-        //remove id from the bucket list
-        uint* n = find_object_entry(b, key);
-        DASSERT( *n == id );
-
-        *n = seqtable()[id];
-
+        destroy_value_(id);
         base::del(p);
     }
 
     ///Delete object by id
     void del( uints id )
     {
-        return del(get_array().ptr() + id);
+        DASSERT_RETVOID( id != UMAX32 );
+        
+        T* p = destroy_value_(id);
+        base::del(p);
     }
 
 
     ///Delete all items that match the key
+    //@return number of deleted items
     uints erase( const KEY& key )
     {
         uint b = bucket(key);
@@ -232,21 +268,65 @@ protected:
         return isnew;
     }
 
-    T* insert_value_( T* p, const KEY& key )
+    ///Find uint* where the new id should be written
+    uint* get_object_entry( const KEY& key )
+    {
+        uint b = bucket(key);
+        uint* fid = find_object_entry(b, key);
+
+        bool isnew = *fid == UMAX32;
+        return isnew
+            ? &_buckets[b]          //new key, add to the beginning of the bucket
+            : (MULTIKEY ? fid : 0);
+    }
+
+    T* init_value_slot_( uint id, const KEY& key )
+    {
+        uint* fid = get_object_entry(key);
+        if(!fid)
+            return 0;   //item with the same key exists, not a multi-key map
+
+        seqtable()[id] = *fid;
+        *fid = id;
+
+        return get_item(id);
+    }
+
+    T* insert_value_( T* p )
     {
         uint id = (uint)base::get_item_id(p);
-        //const KEY& key = _EXTRACTOR(*p);
+        const KEY& key = _EXTRACTOR(*p);
 
+        return init_value_slot_(id, key);
+    }
+
+    T* insert_value_slot_uninit_( const KEY& key, bool* isnew )
+    {
+        uint* fid = get_object_entry(key);
+        if(!fid)
+            return 0;
+
+        T* p = base::add_uninit(isnew);
+
+        uint id = (uint)base::get_item_id(p);
+        
+        seqtable()[id] = *fid;
+        *fid = id;
+
+        return p;
+    }
+
+    T* destroy_value_( uints id )
+    {
+        T* p = get_item(id);
+        const KEY& key = _EXTRACTOR(*p);
         uint b = bucket(key);
-        uint fid = find_object(b, key);
 
-        bool isnew = fid == UMAX32;
+        //remove id from the bucket list
+        uint* n = find_object_entry(b, key);
+        DASSERT( *n == id );
 
-        seqtable()[id] = isnew ? _buckets[b] : fid;
-
-        if(_buckets[b] == seqtable()[id])
-            _buckets[b] = id;
-
+        *n = seqtable()[id];
         return p;
     }
 

@@ -65,6 +65,7 @@ struct waypoint
     float3 dir;
     float weight;
     float speed;
+    uint color;
 
     friend metastream& operator || (metastream& m, waypoint& w)
     {
@@ -72,10 +73,17 @@ struct waypoint
         {
             m.member("pos", w.pos);
             m.member("rot", w.rot);
-            m.member_obsolete<float>("speed");
+            m.member_obsolete<float>("speed");      //use member_obsolete for data that were removed from the struct but can still exist in stream
             m.member("dir", w.dir);
             m.member("weight", w.weight, 1);
             m.member("speed", w.speed, 10.0f);
+
+            //to format color as a string, use get/set lambdas
+            m.member_type<coid::charstr>("color", "#ffff",
+                [&](const coid::charstr& v) { w.color = str2color(v); },
+                [&]() { return color2str(w.color); }
+                );
+
         });
     }
 };

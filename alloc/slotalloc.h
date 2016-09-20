@@ -75,9 +75,9 @@ reserved in advance.
 **/
 template<class T, bool POOL=false, bool ATOMIC=false, bool TRACKING=false, class ...Es>
 class slotalloc_base
-    : protected slotalloc_tracker_base<TRACKING, Es...>
+    : protected slotalloc_detail::base<TRACKING, Es...>
 {
-    typedef slotalloc_tracker_base<TRACKING, Es...>
+    typedef slotalloc_detail::base<TRACKING, Es...>
         tracker_t;
 
     typedef typename tracker_t::extarray_t
@@ -251,30 +251,32 @@ public:
     ///Insert object
     //@return pointer to the newly inserted object
     T* push( const T& v ) {
-        if(_count < _array.size()) {
-            T* p = alloc(0);
-            if(POOL) destroy(*p);
-            return new(p) T(v);
-        }
-        return new(append()) T(v);
+        bool isold = _count < _array.size();
+
+        return slotalloc_detail::constructor<POOL, T>::copy_object(
+            isold ? alloc(0) : append(),
+            !POOL || !isold,
+            v);
     }
 
     ///Insert object
     //@return pointer to the newly inserted object
     T* push( T&& v ) {
-        if(_count < _array.size()) {
-            T* p = alloc(0);
-            if(POOL) destroy(*p);
-            return new(p) T(v);
-        }
-        return new(append()) T(v);
+        bool isold = _count < _array.size();
+
+        return slotalloc_detail::constructor<POOL, T>::copy_object(
+            isold ? alloc(0) : append(),
+            !POOL || !isold,
+            std::forward<T>(v));
     }
 
     ///Add new object initialized with default constructor
     T* add() {
-        return _count < _array.size()
-            ? (POOL ? alloc(0) : new(alloc(0)) T)
-            : new(append()) T;
+        bool isold = _count < _array.size();
+
+        return slotalloc_detail::constructor<POOL, T>::construct_object(
+            isold ? alloc(0) : append(),
+            !POOL || !isold);
     }
 
     ///Add new object, uninitialized (no constructor invoked on the object)
@@ -292,6 +294,19 @@ public:
         if(newitem) *newitem = true;
         return append();
     }
+
+    ///Add new object initialized with constructor matching the arguments
+    template<class...Ps>
+    T* add_init( Ps... ps )
+    {
+        bool isold = _count < _array.size();
+
+        return slotalloc_detail::constructor::construct_object<POOL>(
+            isold ? alloc(0) : append(),
+            !POOL || !isold,
+            std::forward<Ps>(ps)...);
+    }
+
 /*
     //@return id of the next object that will be allocated with add/push methods
     uints get_next_id() const {
@@ -362,19 +377,31 @@ public:
         return *get_item(idx);
     }
 
-    ///Get a particular free slot
-    //@param id item id
+    ///Get a particular item from given slot or default-construct a new one there
+    //@param id item id, reverts to add() if UMAXS
     //@param is_new optional if not null, receives true if the item was newly created
     T* get_or_create( uints id, bool* is_new=0 )
     {
+        if(id == UMAXS) {
+            if(is_new) *is_new = true;
+            return add();
+        }
+
         if(id < _array.size()) {
+            //within allocated space
             if(TRACKING)
                 tracker_t::set_modified(id);
 
+            T* p = _array.ptr() + id;
+
             if(get_bit(id)) {
+                //existing object
                 if(is_new) *is_new = false;
-                return _array.ptr() + id;
+                return p;
             }
+
+            if(!POOL)
+                new(p) T;
 
             set_bit(id);
             //++_count;
@@ -388,18 +415,25 @@ public:
             }
 
             if(is_new) *is_new = true;
-            return _array.ptr() + id;
+            return p;
         }
 
+        //extra space needed
         uints n = id+1 - _array.size();
 
-        extarray_expand();
-        //_relarrays.for_each([&](relarray& ra) {
-        //    DASSERT( ra.count() == _count );
-        //    ra.add(n);
-        //});
-
-        _array.add(n);
+        //in POOL mode unallocated items in between valid ones are assumed to be constructed
+        if(POOL) {
+            extarray_expand(n);
+            _array.add(n);
+        }
+        else {
+            if(n > 1) {
+                extarray_expand_uninit(n-1);
+                _array.add_uninit(n-1);
+            }
+            extarray_expand(1);
+            _array.add(1);
+        }
 
         if(TRACKING)
             tracker_t::set_modified(id);
@@ -428,6 +462,17 @@ public:
             : UMAXS;
     }
 
+    //@return if of given item in ext array or UMAXS if the item is not managed here
+    template<int V, class T>
+    uints get_array_item_id( const T* p ) const
+    {
+        auto& array = value_array<V>();
+        uints id = p - array.ptr();
+        return id < array.size()
+            ? id
+            : UMAXS;
+    }
+
     //@return true if item is valid
     bool is_valid_item( uints id ) const
     {
@@ -438,16 +483,25 @@ protected:
     ///Helper functions for for_each to allow calling with optional index argument
     template<typename T, typename Callable>
     static auto funccall(Callable c, const T& v, size_t index)
-        -> decltype(c(v, index))
+        -> decltype(c(v))
     {
-        return c(v, index);
+        return c(v);
     }
 
+    template<typename T, typename Callable>
+    static auto funccall(Callable c, T& v, size_t index)
+        -> decltype(c(v))
+    {
+        return c(v);
+    }
+
+    //needs proper support for trailing return type SFINAE vs callable lambda signature (requires VS2015 patch 3)
+#if SYSTYPE_MSVC >= 1900
     template<typename T, typename Callable>
     static auto funccall(Callable c, const T& v, size_t index)
-        -> decltype(c(v))
+        -> decltype(c(v, index))
     {
-        return c(v);
+        return c(v, index);
     }
 
     template<typename T, typename Callable>
@@ -456,13 +510,7 @@ protected:
     {
         return c(v, index);
     }
-
-    template<typename T, typename Callable>
-    static auto funccall(Callable c, T& v, size_t index)
-        -> decltype(c(v))
-    {
-        return c(v);
-    }
+#endif
 
 public:
     ///Invoke a functor on each used item.
@@ -770,13 +818,24 @@ private:
 
     ///Helper to expand all ext arrays
     template<size_t... Index>
-    void extarray_expand_( coid::index_sequence<Index...> ) {
+    void extarray_expand_( coid::index_sequence<Index...>, uints n ) {
         extarray_t& ext = *this;
-        int dummy[] = { 0, ((void)std::get<Index>(ext).add(1), 0)... };
+        int dummy[] = { 0, ((void)std::get<Index>(ext).add(n), 0)... };
     }
 
-    void extarray_expand() {
-        extarray_expand_(coid::make_index_sequence<tracker_t::extarray_size>());
+    void extarray_expand( uints n = 1 ) {
+        extarray_expand_(coid::make_index_sequence<tracker_t::extarray_size>(), n);
+    }
+
+    ///Helper to expand all ext arrays
+    template<size_t... Index>
+    void extarray_expand_uninit_( coid::index_sequence<Index...>, uints n ) {
+        extarray_t& ext = *this;
+        int dummy[] = { 0, ((void)std::get<Index>(ext).add(n), 0)... };
+    }
+
+    void extarray_expand_uninit( uints n = 1 ) {
+        extarray_expand_uninit_(coid::make_index_sequence<tracker_t::extarray_size>(), n);
     }
 
     ///Helper to reset all ext arrays

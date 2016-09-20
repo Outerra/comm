@@ -43,13 +43,14 @@
 
 COID_NAMESPACE_BEGIN
 
+namespace slotalloc_detail {
 
 ////////////////////////////////////////////////////////////////////////////////
-struct slotalloc_changeset
+struct changeset
 {
     uint16 mask;
 
-    slotalloc_changeset() : mask(0)
+    changeset() : mask(0)
     {}
 };
 
@@ -59,44 +60,44 @@ struct slotalloc_changeset
 @brief Slot allocator base with optional modification tracking. Adds an extra array with change masks per item.
 **/
 template<bool TRACKING, class...Es>
-struct slotalloc_tracker_base
+struct base
     : public std::tuple<dynarray<Es>...>
 {
-    typedef slotalloc_changeset
+    typedef changeset
         changeset_t;
     typedef std::tuple<dynarray<Es>...>
         extarray_t;
 
     enum : size_t { extarray_size = sizeof...(Es) };
 
-    void swap( slotalloc_tracker_base& other ) {
+    void swap( base& other ) {
         static_cast<extarray_t*>(this)->swap(other);
     }
 
     void set_modified( uints k ) {}
 
-    dynarray<slotalloc_changeset>* get_changeset() { return 0; }
-    const dynarray<slotalloc_changeset>* get_changeset() const { return 0; }
+    dynarray<changeset>* get_changeset() { return 0; }
+    const dynarray<changeset>* get_changeset() const { return 0; }
     uint* get_frame() { return 0; }
 };
 
 ///
 template<class...Es>
-struct slotalloc_tracker_base<true, Es...>
-    : public std::tuple<dynarray<Es>..., dynarray<slotalloc_changeset>>
+struct base<true, Es...>
+    : public std::tuple<dynarray<Es>..., dynarray<changeset>>
 {
-    typedef slotalloc_changeset
+    typedef changeset
         changeset_t;
-    typedef std::tuple<dynarray<Es>..., dynarray<slotalloc_changeset>>
+    typedef std::tuple<dynarray<Es>..., dynarray<changeset>>
         extarray_t;
 
     enum : size_t { extarray_size = sizeof...(Es) + 1 };
 
-    slotalloc_tracker_base()
+    base()
         : _frame(0)
     {}
 
-    void swap( slotalloc_tracker_base& other ) {
+    void swap( base& other ) {
         static_cast<extarray_t*>(this)->swap(other);
         std::swap(_frame, other._frame);
     }
@@ -104,12 +105,12 @@ struct slotalloc_tracker_base<true, Es...>
     void set_modified( uints k )
     {
         //current frame is always at bit position 0
-        dynarray<slotalloc_changeset>& changeset = std::get<sizeof...(Es)>(*this);
+        dynarray<changeset>& changeset = std::get<sizeof...(Es)>(*this);
         changeset[k].mask |= 1;
     }
 
-    dynarray<slotalloc_changeset>* get_changeset() { return &std::get<sizeof...(Es)>(*this); }
-    const dynarray<slotalloc_changeset>* get_changeset() const { return &std::get<sizeof...(Es)>(*this); }
+    dynarray<changeset>* get_changeset() { return &std::get<sizeof...(Es)>(*this); }
+    const dynarray<changeset>* get_changeset() const { return &std::get<sizeof...(Es)>(*this); }
     uint* get_frame() { return &_frame; }
 
 private:
@@ -120,5 +121,77 @@ private:
     uint _frame;                        //< current frame number
 };
 
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+/*@{
+Copy objects to a target that can be either initialized or uninitialized.
+In non-POOL mode it assumes that targets are always uninitialized (new), and uses
+the in-place invoked copy constructor.
+
+In POOL mode it can also use operator = on reuse, when the target poins to
+an uninitialized memory.
+
+Used by containers that can operate both in pooling and non-pooling mode.
+**/
+template<bool POOL, class T>
+struct constructor {};
+
+
+///constructor helpers for pooling mode
+template<class T>
+struct constructor<true, T>
+{
+    static T* copy_object( T* dst, bool isnew, const T& v ) {
+        if(isnew)
+            new(dst) T(v);
+        else
+            *dst = v;
+        return dst;
+    }
+
+    static T* copy_object( T* dst, bool isnew, T&& v ) {
+        if(isnew)
+            new(dst) T(std::forward<T>(v));
+        else
+            *dst = std::move(v);
+        return dst;
+    }
+
+    template<class...Ps>
+    static T* construct_object( T* dst, bool isnew, Ps... ps ) {
+        if(isnew)
+            new(dst) T(std::forward<Ps>(ps)...);
+        else
+            *dst = T(ps...);
+        return dst;
+    }
+};
+
+///constructor helpers for non-pooling mode (assumes targets are always uninitialized = isnew)
+template<class T>
+struct constructor<false, T>
+{
+    static T* copy_object( T* dst, bool isnew, const T& v ) {
+        DASSERT(isnew);
+        return new(dst) T(v);
+    }
+
+    static T* copy_object( T* dst, bool isnew, T&& v ) {
+        DASSERT(isnew);
+        return new(dst) T(std::forward<T>(v));
+    }
+
+    template<class...Ps>
+    static T* construct_object( T* dst, bool isnew, Ps... ps ) {
+        DASSERT(isnew);
+        return new(dst) T(std::forward<Ps>(ps)...);
+    }
+};
+//@}
+
+} //namespace slotalloc_detail
 
 COID_NAMESPACE_END

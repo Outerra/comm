@@ -106,7 +106,7 @@ private:
     //charstr _host, _name, _tmp;
 
     netSocket _listener;
-    slotalloc_base<client> _slaves;
+    slotalloc<client> _slaves;
 };
 
 
