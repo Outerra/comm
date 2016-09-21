@@ -141,6 +141,12 @@ public:
         return *seek<T>(_offset);
     }
 
+    ///Read (copy) data into target variable
+    template<class T>
+    T& read( T& dst ) {
+        return dst = fetch<T>();
+    }
+
     ///Fetch google protobuf varint from the binary stream
     template<class T>
     T varint()

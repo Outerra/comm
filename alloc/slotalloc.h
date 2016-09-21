@@ -102,94 +102,6 @@ public:
             reset();
     }
 
-    
-
-    ///Reset content. Destructors aren't invoked in the pool mode, as the objects may still be reused.
-    void reset()
-    {
-        if(TRACKING)
-            mark_all_modified<void>(false);
-
-        //destroy occupied slots
-        if(!POOL) {
-            for_each([](T& p) {destroy(p);});
-
-            extarray_reset();
-            //_relarrays.for_each([&](relarray& ra) {
-            //    ra.reset();
-            //});
-        }
-
-        if(ATOMIC)
-            atomic::exchange(&_count, 0);
-        else
-            _count = 0;
-
-        extarray_reset_count();
-        //_relarrays.for_each([&](relarray& ra) {
-        //    ra.set_count(0);
-        //});
-
-        _array.set_size(0);
-        _allocated.set_size(0);
-    }
-
-    ///Discard content. Also destroys pooled objects and frees memory
-    void discard()
-    {
-        //destroy occupied slots
-        if(!POOL) {
-            for_each([](T& p) {destroy(p);});
-
-            extarray_reset_count();
-            //_relarrays.for_each([&](relarray& ra) {
-            //    ra.set_count(0);
-            //});
-
-            _array.set_size(0);
-            _allocated.set_size(0);
-        }
-
-        if(ATOMIC)
-            atomic::exchange(&_count, 0);
-        else
-            _count = 0;
-
-        _array.discard();
-        _allocated.discard();
-
-        extarray_discard();
-        //_relarrays.for_each([&](relarray& ra) {
-        //    ra.discard();
-        //});
-    }
-
-/*
-    ///Append related array of type R which will be managed alongside the main array of type T
-    //@return array index
-    //@note types aren't initialized when allocated
-    template<typename R>
-    uints append_relarray( dynarray<R>** parray = 0 ) {
-        uints idx = _relarrays.size();
-        relarray* p = new(_relarrays.add_uninit())
-            relarray(&type_creator<R>::constructor, &type_creator<R>::destructor);
-        p->elemsize = sizeof(T);
-
-        auto& dyn = dynarray<R>::from_dynarray_conforming_ptr(p->data);
-        dyn.reserve(_array.reserved_total() / sizeof(T), true);
-
-        if(parray)
-            *parray = &dyn;
-
-        return idx;
-    }
-
-    //@return value from related array
-    template<typename R>
-    R* value( const T* v, uints index ) const {
-        return reinterpret_cast<R*>(_relarrays[index].item(get_item_id(v)));
-    }*/
-
     template<int V>
     typename std::tuple_element<V,extarray_t>::type::value_type&
         assoc_value( const T* p ) {
@@ -479,6 +391,78 @@ public:
         return get_bit(id);
     }
 
+    bool operator == (const slotalloc_base& other) const {
+        if(_count != other._count)
+            return false;
+
+        const T* dif = find_if([&](const T& v, uints id) {
+            return !(v == other[id]);
+        });
+
+        return dif == 0;
+    }
+
+
+    ///Reset content. Destructors aren't invoked in the pool mode, as the objects may still be reused.
+    void reset()
+    {
+        if(TRACKING)
+            mark_all_modified<void>(false);
+
+        //destroy occupied slots
+        if(!POOL) {
+            for_each([](T& p) {destroy(p);});
+
+            extarray_reset();
+            //_relarrays.for_each([&](relarray& ra) {
+            //    ra.reset();
+            //});
+        }
+
+        if(ATOMIC)
+            atomic::exchange(&_count, 0);
+        else
+            _count = 0;
+
+        extarray_reset_count();
+        //_relarrays.for_each([&](relarray& ra) {
+        //    ra.set_count(0);
+        //});
+
+        _array.set_size(0);
+        _allocated.set_size(0);
+    }
+
+    ///Discard content. Also destroys pooled objects and frees memory
+    void discard()
+    {
+        //destroy occupied slots
+        if(!POOL) {
+            for_each([](T& p) {destroy(p);});
+
+            extarray_reset_count();
+            //_relarrays.for_each([&](relarray& ra) {
+            //    ra.set_count(0);
+            //});
+
+            _array.set_size(0);
+            _allocated.set_size(0);
+        }
+
+        if(ATOMIC)
+            atomic::exchange(&_count, 0);
+        else
+            _count = 0;
+
+        _array.discard();
+        _allocated.discard();
+
+        extarray_discard();
+        //_relarrays.for_each([&](relarray& ra) {
+        //    ra.discard();
+        //});
+    }
+
 protected:
     ///Helper functions for for_each to allow calling with optional index argument
     template<typename T, typename Callable>
@@ -527,9 +511,9 @@ public:
             uints m = *p;
             if(!m) continue;
 
-            uints s = (p - b) * 8 * sizeof(uints);
+            uints s = (p - b) * 8 * sizeof(*b);
 
-            for(int i=0; m && i<8*sizeof(uints); ++i, m>>=1) {
+            for(int i=0; m && i<8*sizeof(*b); ++i, m>>=1) {
                 if(m&1)
                     //f(d[s+i]);
                     funccall(f, d[s+i], s+i);
@@ -552,9 +536,9 @@ public:
             uints m = *p;
             if(!m) continue;
 
-            uints s = (p - b) * 8 * sizeof(uints);
+            uints s = (p - b) * 8 * sizeof(*b);
 
-            for(int i=0; m && i<8*sizeof(uints); ++i, m>>=1) {
+            for(int i=0; m && i<8*sizeof(*b); ++i, m>>=1) {
                 if(m&1) {
                     //f(d[s+i]);
                     funccall(f, d[s+i], s+i);
@@ -589,9 +573,9 @@ public:
             uints m = *p;
             if(!m) continue;
 
-            uints s = (p - b) * 8 * sizeof(uints);
+            uints s = (p - b) * 8 * sizeof(*b);
 
-            for(int i=0; m && i<8*sizeof(uints); ++i, m>>=1) {
+            for(int i=0; m && i<8*sizeof(*b); ++i, m>>=1) {
                 if(m&1)
                     //f(d[s+i]);
                     funccall(f, d[s+i], s+i);
@@ -615,19 +599,19 @@ public:
         T const* d = _array.ptr();
         uints const* b = _allocated.ptr();
         uints const* e = _allocated.ptre();
+        uints const* p = b;
 
         auto chs = tracker_t::get_changeset();
         DASSERT( chs->size() >= uints(e - b) );
 
-        const changeset_t* ch = chs->ptr();
+        const changeset_t* chb = chs->ptr();
+        const changeset_t* che = chs->ptre();
 
-        for(uints const* p=b; p!=e; ++p, ++ch) {
-            uints m = *p;
-            if(!m) continue;
+        for(const changeset_t* ch=chb; ch<che; p+=8*sizeof(*b)) {
+            uints m = p<e ? *p : 0U;
+            uints s = (p - b) * 8 * sizeof(*b);
 
-            uints s = (p - b) * 8 * sizeof(uints);
-
-            for(int i=0; m && i<8*sizeof(uints); ++i, m>>=1) {
+            for(int i=0; ch<che && i<8*sizeof(*b); ++i, m>>=1, ++ch) {
                 if(all_modified || (ch->mask & mask) != 0) {
                     T const* p = (m&1) != 0 ? d+s+i : 0;
                     funccall(f, p, s+i);
@@ -651,9 +635,9 @@ public:
             uints m = *p;
             if(!m) continue;
 
-            uints s = (p - b) * 8 * sizeof(uints);
+            uints s = (p - b) * 8 * sizeof(*b);
 
-            for(int i=0; m && i<8*sizeof(uints); ++i, m>>=1) {
+            for(int i=0; m && i<8*sizeof(*b); ++i, m>>=1) {
                 if(m&1) {
                     const T& v = d[s+i];
                     if(funccall(f, v, s+i))
@@ -679,9 +663,9 @@ public:
             uints m = *p;
             if(!m) continue;
 
-            uints s = (p - b) * 8 * sizeof(uints);
+            uints s = (p - b) * 8 * sizeof(*b);
 
-            for(int i=0; m && i<8*sizeof(uints); ++i, m>>=1) {
+            for(int i=0; m && i<8*sizeof(*b); ++i, m>>=1) {
                 if(m&1) {
                     T& v = d[s+i];
                     if(funccall(f, v, s+i))
