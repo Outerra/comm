@@ -797,14 +797,14 @@ $-(/if)$
     obj->SetInternalField(1, hash_ptr);
 
     if(make_weak) {
-        v8::Persistent<v8::Object> persobj;
-        PERSISTENT(iso, persobj, obj);
+        //v8::Persistent<v8::Object> persobj;
+        PERSISTENT(iso, _object, obj);
         
 #ifdef V8_MAJOR_VERSION
         void* p = this;
-        persobj.SetWeak(&p, _js_release_callback);
+        _object.SetWeak(&p, _js_release_callback);
 #else
-        persobj.MakeWeak(this, _js_release_callback);
+        _object.MakeWeak(this, _js_release_callback);
 #endif
         add_refcount();
     }
@@ -933,13 +933,8 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
     v8::Context::Scope context_scope(context);
     PERSISTENT(iso, ifc->_context, context);
 
-    if(extctx || script.is_context()) {
-        PERSISTENT(iso, ifc->_object, ifc->create_interface_object(false));
-
-        if(bindname)
-            context->Global()->Set(v8::string_utf8(bindname), LOCAL(iso, ifc->_object));
-    }
-    else {
+    if(!extctx && !script.is_context())
+    {
         if(!script.has_context()) {
             context->Global()->Set(v8::string_utf8("$$include"), NEWTYPE2(iso, FunctionTemplate, &script_handle::js_include)->GetFunction());
             context->Global()->Set(v8::string_utf8("$$query_interface"), NEWTYPE2(iso, FunctionTemplate, &$..name$_js_dispatcher::v8query_interface_global)->GetFunction());
@@ -979,6 +974,11 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
         PERSISTENT(iso, ifc->_script, compiled_script);
     }
 
+    PERSISTENT(iso, ifc->_object, ifc->create_interface_object(false));
+
+    if(bindname)
+        context->Global()->Set(v8::string_utf8(bindname), LOCAL(iso, ifc->_object));
+    
     if(ctx)
         ESCAPE(handle_scope__, *ctx);
 

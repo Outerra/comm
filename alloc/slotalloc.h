@@ -708,8 +708,6 @@ public:
         uints const* b = _allocated.ptr();
         uints const* e = _allocated.ptre();
 
-        DASSERT( changeset.size() == e - b );
-
         uint16 preserve = clear_old ? 0xfffeU : 0U;
 
         changeset_t* d = changeset.ptr();
