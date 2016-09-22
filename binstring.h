@@ -61,6 +61,14 @@ public:
         : _offset(0), _packing(UMAX32)
     {}
 
+    binstring( binstring&& other )
+        : _offset(other._offset)
+        , _packing(other._packing)
+        , _tstr(std::move(other._tstr))
+    {
+        other._offset = 0;
+    }
+
     ///Set the maximum packing alignment
     //@note resulting alignment is the minimum of this value and __alignof(type)
     void set_packing( uint pack ) {
@@ -120,7 +128,7 @@ public:
     }
 
     ///Add buffer with specified leading alignment
-    binstring& append_buffer( uint alignment, const void* p, uints len ) {
+    binstring& append_buffer( const void* p, uints len, uint alignment=1 ) {
         uints size = _tstr.size();
         uints align = align_offset(size, alignment) - size;
 
@@ -147,6 +155,13 @@ public:
         return dst = fetch<T>();
     }
 
+    ///Read a block of data
+    const void* read_buffer( uints size, uint alignment=1 ) {
+        uints offset = align_offset(_offset, alignment);
+        _offset += size;
+        return ptr() + offset;
+    }
+
     ///Fetch google protobuf varint from the binary stream
     template<class T>
     T varint()
@@ -170,7 +185,7 @@ public:
             : T((result >> 1) ^ -int64(result & 1));
     }
 
-    ///Return position of data given starting offset in buffer
+    ///Return position of data given a starting offset in buffer
     template<class T>
     T* data( uints offset ) {
         return seek<T>(offset);
@@ -240,6 +255,9 @@ public:
         return *this;
     }
 
+    dynarray<uint8>& get_buf() { return _tstr; }
+    const dynarray<uint8>& get_buf() const { return _tstr; }
+
 
     ///Cut to specified length, negative numbers cut abs(len) from the end
     binstring& resize( ints len ) {
@@ -259,11 +277,14 @@ public:
     const uint8* ptr() const            { return _tstr.ptr(); }
 
     //@return pointer past the string end
-    const uint8* ptre() const           { return _tstr.ptr() + len(); }
+    const uint8* ptre() const           { return _tstr.ptre(); }
 
 
-    ///String length
+    //@return total binstring length
     uints len() const                   { return _tstr.size(); }
+
+    //@return the remaining (unread) length
+    uints remaining_len() const         { return _tstr.size() - _offset; }
 
     //@return true if binstring still has data available for reading
     bool has_data() const               { return _offset < _tstr.size(); }

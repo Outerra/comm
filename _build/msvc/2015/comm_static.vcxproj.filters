@@ -446,5 +446,8 @@
     <ClCompile Include="..\..\..\alloc\slotalloc_bmp.cpp">
       <Filter>alloc</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\coder\bufpack_lz4.h">
+      <Filter>coder</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

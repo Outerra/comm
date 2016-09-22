@@ -905,7 +905,7 @@ private:
         uint8 bit = lsb_bit_set((uints)~*p);
         uints slot = ((uints)p - (uints)_allocated.ptr()) * 8;
 
-        uint id = slot + bit;
+        uints id = slot + bit;
         if(TRACKING)
             tracker_t::set_modified(id);
 

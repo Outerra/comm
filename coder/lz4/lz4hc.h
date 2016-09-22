@@ -31,45 +31,48 @@
    - LZ4 source repository : https://github.com/Cyan4973/lz4
    - LZ4 public forum : https://groups.google.com/forum/#!forum/lz4c
 */
-#pragma once
+#ifndef LZ4_HC_H_19834876238432
+#define LZ4_HC_H_19834876238432
 
 
 #if defined (__cplusplus)
 extern "C" {
 #endif
 
-/*****************************
+/*-***************************
 *  Includes
 *****************************/
 #include <stddef.h>   /* size_t */
 
 
-/**************************************
+#define LZ4HC_MIN_CLEVEL        3
+#define LZ4HC_DEFAULT_CLEVEL    9
+#define LZ4HC_MAX_CLEVEL        16
+
+/*-************************************
 *  Block Compression
 **************************************/
-int LZ4_compress_HC (const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel);
-/*
-LZ4_compress_HC :
-    Destination buffer 'dst' must be already allocated.
-    Compression completion is guaranteed if 'dst' buffer is sized to handle worst circumstances (data not compressible)
+/*!
+LZ4_compress_HC() :
+    Destination buffer `dst` must be already allocated.
+    Compression success is guaranteed if `dst` buffer is sized to handle worst circumstances (data not compressible)
     Worst size evaluation is provided by function LZ4_compressBound() (see "lz4.h")
-      srcSize  : Max supported value is LZ4_MAX_INPUT_SIZE (see "lz4.h")
-      compressionLevel : Recommended values are between 4 and 9, although any value between 0 and 16 will work.
-                         0 means "use default value" (see lz4hc.c).
-                         Values >16 behave the same as 16.
-      return : the number of bytes written into buffer 'dst'
-            or 0 if compression fails.
+      `srcSize`  : Max supported value is LZ4_MAX_INPUT_SIZE (see "lz4.h")
+      `compressionLevel` : Recommended values are between 4 and 9, although any value between 0 and LZ4HC_MAX_CLEVEL will work.
+                           0 means "use default value" (see lz4hc.c).
+                           Values >LZ4HC_MAX_CLEVEL behave the same as 16.
+      @return : the number of bytes written into buffer 'dst'
+             or 0 if compression fails.
 */
+int LZ4_compress_HC (const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel);
 
 
 /* Note :
-   Decompression functions are provided within LZ4 source code (see "lz4.h") (BSD license)
+   Decompression functions are provided within "lz4.h" (BSD license)
 */
 
 
-int LZ4_sizeofStateHC(void);
-int LZ4_compress_HC_extStateHC(void* state, const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel);
-/*
+/*!
 LZ4_compress_HC_extStateHC() :
    Use this function if you prefer to manually allocate memory for compression tables.
    To know how much memory must be allocated for the compression tables, use :
@@ -81,9 +84,11 @@ LZ4_compress_HC_extStateHC() :
    LZ4_compress_HC_extStateHC() is equivalent to previously described function.
    It just uses externally allocated memory for stateHC.
 */
+int LZ4_compress_HC_extStateHC(void* state, const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel);
+int LZ4_sizeofStateHC(void);
 
 
-/**************************************
+/*-************************************
 *  Streaming Compression
 **************************************/
 #define LZ4_STREAMHCSIZE        262192
@@ -99,15 +104,15 @@ typedef struct { size_t table[LZ4_STREAMHCSIZE_SIZET]; } LZ4_streamHC_t;
 */
 
 
-LZ4_streamHC_t* LZ4_createStreamHC(void);
-int             LZ4_freeStreamHC (LZ4_streamHC_t* streamHCPtr);
-/*
+/*! LZ4_createStreamHC() and LZ4_freeStreamHC() :
   These functions create and release memory for LZ4 HC streaming state.
   Newly created states are already initialized.
   Existing state space can be re-used anytime using LZ4_resetStreamHC().
   If you use LZ4 as a DLL, use these functions instead of static structure allocation,
   to avoid size mismatch between different versions.
 */
+LZ4_streamHC_t* LZ4_createStreamHC(void);
+int             LZ4_freeStreamHC (LZ4_streamHC_t* streamHCPtr);
 
 void LZ4_resetStreamHC (LZ4_streamHC_t* streamHCPtr, int compressionLevel);
 int  LZ4_loadDictHC (LZ4_streamHC_t* streamHCPtr, const char* dictionary, int dictSize);
@@ -119,7 +124,7 @@ int LZ4_saveDictHC (LZ4_streamHC_t* streamHCPtr, char* safeBuffer, int maxDictSi
 /*
   These functions compress data in successive blocks of any size, using previous blocks as dictionary.
   One key assumption is that previous blocks (up to 64 KB) remain read-accessible while compressing next blocks.
-  There is an exception for ring buffers, which can be smaller 64 KB.
+  There is an exception for ring buffers, which can be smaller than 64 KB.
   Such case is automatically detected and correctly handled by LZ4_compress_HC_continue().
 
   Before starting compression, state must be properly initialized, using LZ4_resetStreamHC().
@@ -137,7 +142,7 @@ int LZ4_saveDictHC (LZ4_streamHC_t* streamHCPtr, char* safeBuffer, int maxDictSi
 
 
 
-/**************************************
+/*-************************************
 *  Deprecated Functions
 **************************************/
 /* Deprecate Warnings */
@@ -159,22 +164,22 @@ int LZ4_saveDictHC (LZ4_streamHC_t* streamHCPtr, char* safeBuffer, int maxDictSi
 #    pragma message("WARNING: You need to implement LZ4_DEPRECATED for this compiler")
 #    define LZ4_DEPRECATED(message)
 #  endif
-#endif // LZ4_DEPRECATE_WARNING_DEFBLOCK
+#endif /* LZ4_DEPRECATE_WARNING_DEFBLOCK */
 
-/* compression functions */
-/* these functions are planned to trigger warning messages by r131 approximately */
+/* deprecated compression functions */
+/* these functions will trigger warning messages in future releases */
 int LZ4_compressHC                (const char* source, char* dest, int inputSize);
 int LZ4_compressHC_limitedOutput  (const char* source, char* dest, int inputSize, int maxOutputSize);
-int LZ4_compressHC2               (const char* source, char* dest, int inputSize, int compressionLevel);
-int LZ4_compressHC2_limitedOutput (const char* source, char* dest, int inputSize, int maxOutputSize, int compressionLevel);
+LZ4_DEPRECATED("use LZ4_compress_HC() instead") int LZ4_compressHC2 (const char* source, char* dest, int inputSize, int compressionLevel);
+LZ4_DEPRECATED("use LZ4_compress_HC() instead") int LZ4_compressHC2_limitedOutput (const char* source, char* dest, int inputSize, int maxOutputSize, int compressionLevel);
 int LZ4_compressHC_withStateHC               (void* state, const char* source, char* dest, int inputSize);
 int LZ4_compressHC_limitedOutput_withStateHC (void* state, const char* source, char* dest, int inputSize, int maxOutputSize);
-int LZ4_compressHC2_withStateHC              (void* state, const char* source, char* dest, int inputSize, int compressionLevel);
-int LZ4_compressHC2_limitedOutput_withStateHC(void* state, const char* source, char* dest, int inputSize, int maxOutputSize, int compressionLevel);
+LZ4_DEPRECATED("use LZ4_compress_HC_extStateHC() instead") int LZ4_compressHC2_withStateHC (void* state, const char* source, char* dest, int inputSize, int compressionLevel);
+LZ4_DEPRECATED("use LZ4_compress_HC_extStateHC() instead") int LZ4_compressHC2_limitedOutput_withStateHC(void* state, const char* source, char* dest, int inputSize, int maxOutputSize, int compressionLevel);
 int LZ4_compressHC_continue               (LZ4_streamHC_t* LZ4_streamHCPtr, const char* source, char* dest, int inputSize);
 int LZ4_compressHC_limitedOutput_continue (LZ4_streamHC_t* LZ4_streamHCPtr, const char* source, char* dest, int inputSize, int maxOutputSize);
 
-/* Streaming functions following the older model; should no longer be used */
+/* Deprecated Streaming functions using older model; should no longer be used */
 LZ4_DEPRECATED("use LZ4_createStreamHC() instead") void* LZ4_createHC (char* inputBuffer);
 LZ4_DEPRECATED("use LZ4_saveDictHC() instead")     char* LZ4_slideInputBufferHC (void* LZ4HC_Data);
 LZ4_DEPRECATED("use LZ4_freeStreamHC() instead")   int   LZ4_freeHC (void* LZ4HC_Data);
@@ -187,3 +192,5 @@ LZ4_DEPRECATED("use LZ4_resetStreamHC() instead")  int   LZ4_resetStreamStateHC(
 #if defined (__cplusplus)
 }
 #endif
+
+#endif /* LZ4_HC_H_19834876238432 */

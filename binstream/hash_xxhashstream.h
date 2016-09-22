@@ -69,11 +69,11 @@ public:
         opcd e = _bin->write_raw(p, len);
 
         if(_reset_on_write) {
-            XXH32_reset(&_wrhash, _seed);
+            XXH32_reset(_wrhash, _seed);
             _reset_on_write = false;
         }
 
-        XXH32_update(&_wrhash, p, oldlen-len);
+        XXH32_update(_wrhash, p, oldlen-len);
 
         return e;
     }
@@ -87,11 +87,11 @@ public:
         opcd e = _bin->read_raw(p, len);
 
         if(_reset_on_read) {
-            XXH32_reset(&_rdhash, _seed);
+            XXH32_reset(_rdhash, _seed);
             _reset_on_read = false;
         }
 
-        XXH32_update(&_rdhash, p, oldlen-len);
+        XXH32_update(_rdhash, p, oldlen-len);
 
         return e;
     }
@@ -130,32 +130,42 @@ public:
     virtual void reset_read()
     {
         if(_bin) _bin->reset_read();
-        XXH32_reset(&_rdhash, _seed);
+        XXH32_reset(_rdhash, _seed);
     }
 
     virtual void reset_write()
     {
         if(_bin) _bin->reset_write();
-        XXH32_reset(&_wrhash, _seed);
+        XXH32_reset(_wrhash, _seed);
     }
 
     hash_xxhashstream( uint seed = 47 )
     {
+        _wrhash = XXH32_createState();
+        _rdhash = XXH32_createState();
         init(seed);
     }
 
     hash_xxhashstream( binstream& bin, uint seed = 47 )
     {
+        _wrhash = XXH32_createState();
+        _rdhash = XXH32_createState();
         init(seed);
         bind(bin);
+    }
+
+    ~hash_xxhashstream()
+    {
+        XXH32_freeState(_wrhash);
+        XXH32_freeState(_rdhash);
     }
 
     void init( uint seed )
     {
         _seed = seed;
         _reset_on_read = _reset_on_write = false;
-        XXH32_reset(&_wrhash, _seed);
-        XXH32_reset(&_rdhash, _seed);
+        XXH32_reset(_wrhash, _seed);
+        XXH32_reset(_rdhash, _seed);
     }
 
     virtual opcd bind( binstream& bin, int io=0 )
@@ -168,25 +178,25 @@ public:
     ///Return digest
     uint get_digest( bool wr ) const {
         return wr
-            ? XXH32_digest(&_wrhash)
-            : XXH32_digest(&_rdhash);
+            ? XXH32_digest(_wrhash)
+            : XXH32_digest(_rdhash);
     }
 
-    const XXH32_state_t& get_state() const {
-        return _wrhash;
-    }
+    //const XXH32_state_t& get_state() const {
+    //    return *_wrhash;
+    //}
 
-    void set_state( const XXH32_state_t& src ) {
-        _wrhash = src;
-    }
+    //void set_state( const XXH32_state_t& src ) {
+    //    _wrhash = src;
+    //}
 
 protected:
     uint _seed;
     bool _reset_on_read : 1;
     bool _reset_on_write : 1;
 
-    XXH32_state_t _wrhash;
-    XXH32_state_t _rdhash;
+    XXH32_state_t* _wrhash;
+    XXH32_state_t* _rdhash;
     binstream* _bin;            //< bound io binstream
 };
 

@@ -283,6 +283,9 @@ inline T* ptr_advance( T* p, ints i ) { return p+i; }
 template<>
 inline void* ptr_advance( void* p, ints i ) { return (uint8*)p + i; }
 
+template<>
+inline const void* ptr_advance( const void* p, ints i ) { return (const uint8*)p + i; }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 void *_xmemcpy( void *dest, const void *src, size_t count );
