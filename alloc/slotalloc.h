@@ -646,23 +646,24 @@ public:
         if(!TRACKING)
             return;
 
-        dynarray<changeset_t>& changeset = *tracker_t::get_changeset();
-        uints const* b = _allocated.ptr();
-        uints const* e = _allocated.ptre();
+        uint_type const* b = const_cast<uint_type const*>(_allocated.ptr());
+        uint_type const* e = const_cast<uint_type const*>(_allocated.ptre());
+        uint_type const* p = b;
 
-        uint16 preserve = clear_old ? 0xfffeU : 0U;
+        const uint16 preserve = clear_old ? 0xfffeU : 0U;
 
-        changeset_t* d = changeset.ptr();
-        static const int NBITS = 8*sizeof(uints);
+        auto chs = tracker_t::get_changeset();
+        DASSERT( chs->size() >= uints(e - b) );
 
-        for(uints const* p=b; p!=e; ++p, d+=NBITS) {
-            uints m = *p;
-            if(!m) continue;
+        changeset_t* chb = chs->ptr();
+        changeset_t* che = chs->ptre();
 
-            for(int i=0; m && i<NBITS; ++i, m>>=1) {
-                if(m&1)
-                    d[i].mask = (d[i].mask & preserve) | 1;
-            }
+        for(changeset_t* ch=chb; ch<che; p+=MASK_BITS) {
+            uints m = p<e ? *p : 0U;
+            uints s = (p - b) * MASK_BITS;
+
+            for(int i=0; ch<che && i<MASK_BITS; ++i, m>>=1, ++ch)
+                ch->mask = (ch->mask & preserve) | (m & 1);
         }
     }
 
