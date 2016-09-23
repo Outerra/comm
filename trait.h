@@ -356,6 +356,35 @@ using index_sequence = std::index_sequence<Ints...>;
 
 #endif
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+// http://stackoverflow.com/a/28213747/2435594
+
+template <typename T>
+struct closure_traits : closure_traits<decltype(&T::operator())> {};
+
+#define COID_REM_CTOR(...) __VA_ARGS__
+#define COID_CLOSURE_TRAIT(cv, var, is_var)                                \
+template <typename C, typename R, typename... Args>                        \
+struct closure_traits<R (C::*) (Args... COID_REM_CTOR var) cv>             \
+{                                                                          \
+    using arity = std::integral_constant<std::size_t, sizeof...(Args) >;   \
+    using is_variadic = std::integral_constant<bool, is_var>;              \
+    using is_const    = std::is_const<int cv>;                             \
+                                                                           \
+    using result_type = R;                                                 \
+                                                                           \
+    template <std::size_t i>                                               \
+    using arg = typename std::tuple_element<i, std::tuple<Args...>>::type; \
+};
+
+COID_CLOSURE_TRAIT(const, (,...), 1)
+COID_CLOSURE_TRAIT(const, (), 0)
+COID_CLOSURE_TRAIT(, (,...), 1)
+COID_CLOSURE_TRAIT(, (), 0)
+
+
 COID_NAMESPACE_END
 
 ////////////////////////////////////////////////////////////////////////////////

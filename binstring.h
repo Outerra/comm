@@ -62,9 +62,9 @@ public:
     {}
 
     binstring( binstring&& other )
-        : _offset(other._offset)
+        : _tstr(std::move(other._tstr))
+        , _offset(other._offset)
         , _packing(other._packing)
-        , _tstr(std::move(other._tstr))
     {
         other._offset = 0;
     }

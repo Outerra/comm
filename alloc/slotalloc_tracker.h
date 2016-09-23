@@ -63,10 +63,11 @@ template<bool TRACKING, class...Es>
 struct base
     : public std::tuple<dynarray<Es>...>
 {
-    typedef changeset
-        changeset_t;
+    typedef changeset changeset_t;
     typedef std::tuple<dynarray<Es>...>
         extarray_t;
+    typedef std::tuple<Es...>
+        extarray_element_t;
 
     enum : size_t { extarray_size = sizeof...(Es) };
 
@@ -74,7 +75,7 @@ struct base
         static_cast<extarray_t*>(this)->swap(other);
     }
 
-    void set_modified( uints k ) {}
+    void set_modified( uints k ) const {}
 
     dynarray<changeset>* get_changeset() { return 0; }
     const dynarray<changeset>* get_changeset() const { return 0; }
@@ -86,10 +87,11 @@ template<class...Es>
 struct base<true, Es...>
     : public std::tuple<dynarray<Es>..., dynarray<changeset>>
 {
-    typedef changeset
-        changeset_t;
+    typedef changeset changeset_t;
     typedef std::tuple<dynarray<Es>..., dynarray<changeset>>
         extarray_t;
+    typedef std::tuple<Es..., changeset>
+        extarray_element_t;
 
     enum : size_t { extarray_size = sizeof...(Es) + 1 };
 
@@ -102,11 +104,12 @@ struct base<true, Es...>
         std::swap(_frame, other._frame);
     }
 
-    void set_modified( uints k )
+    void set_modified( uints k ) const
     {
         //current frame is always at bit position 0
-        dynarray<changeset>& changeset = std::get<sizeof...(Es)>(*this);
-        changeset[k].mask |= 1;
+        dynarray<changeset>& mods = const_cast<dynarray<changeset>&>(
+            std::get<sizeof...(Es)>(*this));
+        mods[k].mask |= 1;
     }
 
     dynarray<changeset>* get_changeset() { return &std::get<sizeof...(Es)>(*this); }

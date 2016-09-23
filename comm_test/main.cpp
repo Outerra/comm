@@ -1,8 +1,8 @@
 
 #include "../str.h"
 #include "../radix.h"
+#include "../trait.h"
 #include "../hash/slothash.h"
-//#include "../alloc/slotring.h"
 
 namespace coid {
 void test();
@@ -38,6 +38,7 @@ struct value {
     operator token() const { return key; }
 };
 
+
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
 {
@@ -49,18 +50,33 @@ int main( int argc, char* argv[] )
     static_assert( std::is_trivially_move_constructible<dynarray<dynarray<int>>>::value, "non-trivial move");
 #endif
 
-#if _MSC_VER >= 1800
-    slothash<value, token> hash;
-    bool isnew;
-    hash.find_or_insert_value_slot("foo", &isnew);
-    hash.find_or_insert_value_slot("foo", &isnew);
-    hash.find_or_insert_value_slot("bar", &isnew);
+    {
+        auto amx = [](value& x) {};
+        auto ami = [](value& x, uints i) {};
+        auto axx = [](const value& x) {};
+        auto axi = [](const value& x, uints i) {};
+
+        using tamx = coid::closure_traits<decltype(amx)>;
+        using tami = coid::closure_traits<decltype(ami)>;
+        using taxx = coid::closure_traits<decltype(axx)>;
+        using taxi = coid::closure_traits<decltype(axi)>;
+
+        static_assert( !std::is_const<tamx::arg<0>>::value && tamx::arity::value == 1, "fail" );
+        static_assert( !std::is_const<tami::arg<0>>::value && tami::arity::value > 1, "fail" );
+        static_assert( std::is_const<std::remove_reference_t<taxx::arg<0>>>::value && taxx::arity::value == 1, "fail" );
+        static_assert( std::is_const<std::remove_reference_t<taxi::arg<0>>>::value && taxi::arity::value > 1, "fail" );
 
 
-    slotalloc_tracking<value> ring;
+        slothash<value, token> hash;
+        bool isnew;
+        hash.find_or_insert_value_slot("foo", &isnew);
+        hash.find_or_insert_value_slot("foo", &isnew);
+        hash.find_or_insert_value_slot("bar", &isnew);
 
-#endif
 
+        slotalloc_tracking<value> ring;
+    }
+ 
     uint64 stuff[] = {7000, 45, 2324, 11, 0, 222};
     radixi<uint64, uint, uint64> rx;
     const uint* idx = rx.sort(true, stuff, sizeof(stuff)/sizeof(stuff[0]));

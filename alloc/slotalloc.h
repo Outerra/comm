@@ -45,6 +45,7 @@
 #include "../namespace.h"
 #include "../commexception.h"
 #include "../dynarray.h"
+#include "../trait.h"
 
 #include "slotalloc_tracker.h"
 
@@ -90,10 +91,10 @@ public:
 
     ///Construct slotalloc container
     //@param pool true for pool mode, in which removed objects do not have destructors invoked
-    slotalloc_base() : _count(0), _version(0)
+    slotalloc_base() : _count(0)
     {}
 
-    explicit slotalloc_base( uints reserve_items ) : _count(0), _version(0) {
+    explicit slotalloc_base( uints reserve_items ) : _count(0) {
         reserve(reserve_items);
     }
 
@@ -142,7 +143,6 @@ public:
         _array.swap(other._array);
         _allocated.swap(other._allocated);
         std::swap(_count, other._count);
-        std::swap(_version, other._version);
 
         extarray_swap(other);
     }
@@ -213,7 +213,7 @@ public:
     {
         bool isold = _count < _array.size();
 
-        return slotalloc_detail::constructor::construct_object<POOL>(
+        return slotalloc_detail::constructor<POOL, T>::construct_object(
             isold ? alloc(0) : append(),
             !POOL || !isold,
             std::forward<Ps>(ps)...);
@@ -243,14 +243,10 @@ public:
             p->~T();
         clear_bit(id);
         //--_count;
-        if(ATOMIC) {
+        if(ATOMIC)
             atomic::dec(&_count);
-            atomic::inc(&_version);
-        }
-        else {
+        else
             --_count;
-            ++_version;
-        }
     }
 
     ///Delete object by id
@@ -317,14 +313,10 @@ public:
 
             set_bit(id);
             //++_count;
-            if(ATOMIC) {
+            if(ATOMIC)
                 atomic::inc(&_count);
-                atomic::inc(&_version);
-            }
-            else {
+            else
                 ++_count;
-                ++_version;
-            }
 
             if(is_new) *is_new = true;
             return p;
@@ -352,14 +344,10 @@ public:
 
         set_bit(id);
         //++_count;
-        if(ATOMIC) {
+        if(ATOMIC)
             atomic::inc(&_count);
-            atomic::inc(&_version);
-        }
-        else {
+        else
             ++_count;
-            --_version;
-        }
 
         if(is_new) *is_new = true;
         return _array.ptr() + id;
@@ -407,7 +395,7 @@ public:
     void reset()
     {
         if(TRACKING)
-            mark_all_modified<void>(false);
+            mark_all_modified(false);
 
         //destroy occupied slots
         if(!POOL) {
@@ -464,37 +452,48 @@ public:
     }
 
 protected:
+
+
     ///Helper functions for for_each to allow calling with optional index argument
-    template<typename T, typename Callable>
-    static auto funccall(Callable c, const T& v, size_t index)
-        -> decltype(c(v))
+    template<class Callable>
+    using arg0 = typename std::remove_reference<typename closure_traits<Callable>::template arg<0>>::type;
+
+    template<class Callable>
+    using is_const = std::is_const<arg0<Callable>>;
+
+    template<class Callable>
+    using has_index = std::integral_constant<bool, !(closure_traits<Callable>::arity::value <= 1)>;
+
+
+    template<typename Callable, typename = std::enable_if_t<is_const<Callable>::value && !has_index<Callable>::value>>
+    auto funccall(Callable c, const arg0<Callable>& v, size_t&& index) const -> decltype(c(v))
     {
         return c(v);
     }
 
-    template<typename T, typename Callable>
-    static auto funccall(Callable c, T& v, size_t index)
-        -> decltype(c(v))
+    template<typename Callable, typename = std::enable_if_t<!is_const<Callable>::value && !has_index<Callable>::value>>
+    auto funccall(Callable c, arg0<Callable>& v, size_t&& index) const -> decltype(c(v))
     {
+        if(TRACKING)
+            tracker_t::set_modified(index);
+
         return c(v);
     }
 
-    //needs proper support for trailing return type SFINAE vs callable lambda signature (requires VS2015 patch 3)
-#if SYSTYPE_MSVC >= 1900
-    template<typename T, typename Callable>
-    static auto funccall(Callable c, const T& v, size_t index)
-        -> decltype(c(v, index))
+    template<typename Callable, typename = std::enable_if_t<is_const<Callable>::value && has_index<Callable>::value>>
+    auto funccall(Callable c, const arg0<Callable>& v, size_t index) const -> decltype(c(v, index))
     {
         return c(v, index);
     }
 
-    template<typename T, typename Callable>
-    static auto funccall(Callable c, T& v, size_t index)
-        -> decltype(c(v, index))
+    template<typename Callable, typename = std::enable_if_t<!is_const<Callable>::value && has_index<Callable>::value>>
+    auto funccall(Callable c, arg0<Callable>& v, size_t index) const -> decltype(c(v, index))
     {
+        if(TRACKING)
+            tracker_t::set_modified(index);
+
         return c(v, index);
     }
-#endif
 
 public:
     ///Invoke a functor on each used item.
@@ -503,57 +502,22 @@ public:
     template<typename Func>
     void for_each( Func f ) const
     {
-        T const* d = _array.ptr();
-        uints const* b = _allocated.ptr();
-        uints const* e = _allocated.ptre();
+        typedef std::remove_reference_t<closure_traits<Func>::arg<0>> Tx;
+        Tx* d = (Tx*)_array.ptr();
+        uint_type const* b = const_cast<uint_type const*>(_allocated.ptr());
+        uint_type const* e = const_cast<uint_type const*>(_allocated.ptre());
+        uints s = 0;
 
-        for(uints const* p=b; p!=e; ++p) {
-            uints m = *p;
-            if(!m) continue;
+        for(uint_type const* p=b; p!=e; ++p, s+=MASK_BITS) {
+            if(*p == 0)
+                continue;
 
-            uints s = (p - b) * 8 * sizeof(*b);
-
-            for(int i=0; m && i<8*sizeof(*b); ++i, m>>=1) {
-                if(m&1)
-                    //f(d[s+i]);
+            uints m = 1;
+            for(int i=0; i<MASK_BITS; ++i, m<<=1) {
+                if(*p & m)
                     funccall(f, d[s+i], s+i);
-            }
-        }
-    }
-
-    ///Invoke a functor on each used item.
-    //@note non-const version handles array insertions/deletions during iteration
-    //@param f functor with ([const] T&) or ([const] T&, size_t index) arguments
-    template<typename Func>
-    void for_each( Func f )
-    {
-        T* d = _array.ptr();
-        uints const* b = _allocated.ptr();
-        uints const* e = _allocated.ptre();
-        uints version = _version;
-
-        for(uints const* p=b; p!=e; ++p) {
-            uints m = *p;
-            if(!m) continue;
-
-            uints s = (p - b) * 8 * sizeof(*b);
-
-            for(int i=0; m && i<8*sizeof(*b); ++i, m>>=1) {
-                if(m&1) {
-                    //f(d[s+i]);
-                    funccall(f, d[s+i], s+i);
-
-                    if(version != _version) {
-                        //handle alterations and rebase
-                        d = _array.ptr();
-                        ints x = p - b;
-                        b = _allocated.ptr();
-                        e = _allocated.ptre();
-                        p = b + x;
-                        m = *p >> i;
-                        version = _version;
-                    }
-                }
+                else if((*p & ~(m-1)) == 0)
+                    break;
             }
         }
     }
@@ -566,19 +530,21 @@ public:
     void for_each_in_array( Func f ) const
     {
         auto d = value_array<K>().ptr();
-        uints const* b = _allocated.ptr();
-        uints const* e = _allocated.ptre();
 
-        for(uints const* p=b; p!=e; ++p) {
-            uints m = *p;
-            if(!m) continue;
+        uint_type const* b = const_cast<uint_type const*>(_allocated.ptr());
+        uint_type const* e = const_cast<uint_type const*>(_allocated.ptre());
+        uints s = 0;
 
-            uints s = (p - b) * 8 * sizeof(*b);
+        for(uint_type const* p=b; p!=e; ++p, s+=MASK_BITS) {
+            if(*p == 0)
+                continue;
 
-            for(int i=0; m && i<8*sizeof(*b); ++i, m>>=1) {
-                if(m&1)
-                    //f(d[s+i]);
+            uints m = 1;
+            for(int i=0; i<MASK_BITS; ++i, m<<=1) {
+                if(*p & m)
                     funccall(f, d[s+i], s+i);
+                else if((*p & ~(m-1)) == 0)
+                    break;
             }
         }
     }
@@ -587,7 +553,7 @@ public:
     //@note const version doesn't handle array insertions/deletions during iteration
     //@param rel_frame relative frame from which to count the modifications, should be <= 0
     //@param f functor with ([const] T* ptr) or ([const] T* ptr, size_t index) arguments; ptr can be null if item was deleted
-    template<typename Func, typename = std::enable_if_t<TRACKING>>
+    template<typename Func, bool T1=TRACKING, typename = std::enable_if_t<T1>>
     void for_each_modified( int rel_frame, Func f ) const
     {
         bool all_modified = rel_frame < -5*8;
@@ -596,10 +562,11 @@ public:
         if(!mask)
             return;
 
-        T const* d = _array.ptr();
-        uints const* b = _allocated.ptr();
-        uints const* e = _allocated.ptre();
-        uints const* p = b;
+        typedef std::remove_pointer_t<std::remove_reference_t<closure_traits<Func>::arg<0>>> Tx;
+        Tx* d = (Tx*)_array.ptr();
+        uint_type const* b = const_cast<uint_type const*>(_allocated.ptr());
+        uint_type const* e = const_cast<uint_type const*>(_allocated.ptre());
+        uint_type const* p = b;
 
         auto chs = tracker_t::get_changeset();
         DASSERT( chs->size() >= uints(e - b) );
@@ -607,75 +574,49 @@ public:
         const changeset_t* chb = chs->ptr();
         const changeset_t* che = chs->ptre();
 
-        for(const changeset_t* ch=chb; ch<che; p+=8*sizeof(*b)) {
+        for(const changeset_t* ch=chb; ch<che; p+=MASK_BITS) {
             uints m = p<e ? *p : 0U;
-            uints s = (p - b) * 8 * sizeof(*b);
+            uints s = (p - b) * MASK_BITS;
 
-            for(int i=0; ch<che && i<8*sizeof(*b); ++i, m>>=1, ++ch) {
+            for(int i=0; ch<che && i<MASK_BITS; ++i, m>>=1, ++ch) {
                 if(all_modified || (ch->mask & mask) != 0) {
-                    T const* p = (m&1) != 0 ? d+s+i : 0;
+                    Tx* p = (m&1) != 0 ? d+s+i : 0;
                     funccall(f, p, s+i);
                 }
             }
         }
     }
 
-
     ///Find first element for which the predicate returns true
     //@return pointer to the element or null
     //@param f functor with ([const] T&) or ([const] T&, size_t index) arguments
     template<typename Func>
-    const T* find_if(Func f) const
+    T* find_if(Func f) const
     {
-        T const* d = _array.ptr();
-        uints const* b = _allocated.ptr();
-        uints const* e = _allocated.ptre();
+        typedef std::remove_reference_t<closure_traits<Func>::arg<0>> Tx;
+        Tx* d = (Tx*)_array.ptr();
+        uint_type const* b = const_cast<uint_type const*>(_allocated.ptr());
+        uint_type const* e = const_cast<uint_type const*>(_allocated.ptre());
+        uints s = 0;
 
-        for(uints const* p=b; p!=e; ++p) {
-            uints m = *p;
-            if(!m) continue;
+        for(uint_type const* p=b; p!=e; ++p, s+=MASK_BITS) {
+            if(*p == 0)
+                continue;
 
-            uints s = (p - b) * 8 * sizeof(*b);
-
-            for(int i=0; m && i<8*sizeof(*b); ++i, m>>=1) {
-                if(m&1) {
-                    const T& v = d[s+i];
-                    if(funccall(f, v, s+i))
-                        return &v;
+            uints m = 1;
+            for(int i=0; i<MASK_BITS; ++i, m<<=1) {
+                if(*p & m) {
+                    if(funccall(f, d[s+i], s+i))
+                        return const_cast<T*>(d) + (s+i);
                 }
+                else if((*p & ~(m-1)) == 0)
+                    break;
             }
         }
 
         return 0;
     }
 
-    ///Find first element for which the predicate returns true
-    //@return pointer to the element or null
-    //@param f functor with ([const] T&) or ([const] T&, size_t index) arguments
-    template<typename Func>
-    T* find_if(Func f)
-    {
-        T* d = _array.ptr();
-        uints const* b = _allocated.ptr();
-        uints const* e = _allocated.ptre();
-
-        for(uints const* p=b; p!=e; ++p) {
-            uints m = *p;
-            if(!m) continue;
-
-            uints s = (p - b) * 8 * sizeof(*b);
-
-            for(int i=0; m && i<8*sizeof(*b); ++i, m>>=1) {
-                if(m&1) {
-                    T& v = d[s+i];
-                    if(funccall(f, v, s+i))
-                        return &v;
-                }
-            }
-        }
-
-        return 0;
-    }
 
     //@{ Get internal array directly
     //@note altering the array directly may invalidate the internal structure
@@ -685,7 +626,6 @@ public:
 
     ///Advance to the next tracking frame, updating changeset
     //@return new frame number
-    template<typename = std::enable_if_t<TRACKING>>
     uint advance_frame()
     {
         if(!TRACKING)
@@ -701,9 +641,11 @@ public:
 
     ///Mark all objects that have the corresponding bit set as modified in current frame
     //@param clear_old if true, old change bits are cleared
-    template<typename = std::enable_if_t<TRACKING>>
     void mark_all_modified( bool clear_old )
     {
+        if(!TRACKING)
+            return;
+
         dynarray<changeset_t>& changeset = *tracker_t::get_changeset();
         uints const* b = _allocated.ptr();
         uints const* e = _allocated.ptre();
@@ -728,75 +670,12 @@ private:
 
     typedef typename std::conditional<ATOMIC, volatile uints, uints>::type uint_type;
 
-    dynarray<T> _array;
-    dynarray<uints> _allocated;     //< bit mask for allocated/free items
-    uint_type _count;
-    uint_type _version;
-/*
-    ///Related data array that's maintained together with the main one
-    struct relarray
-    {
-        void* data;                 //< dynarray-conformant pointer
-        uint elemsize;              //< element size
-        void (*constructor)(void*);
-        void (*destructor)(void*);
+    dynarray<T> _array;                 //< main data array
+    dynarray<uints> _allocated;         //< bit mask for allocated/free items
+    uint_type _count;                   //< active element count
 
-        relarray(
-            void (*constructor)(void*),
-            void (*destructor)(void*))
-            : data(0), elemsize(0), constructor(constructor), destructor(destructor)
-        {}
+    static const int MASK_BITS = 8 * sizeof(uints);
 
-        ~relarray() {
-            discard();
-        }
-
-        uints count() const { return comm_array_allocator::count(data); }
-
-        void reset() {
-            uints n = comm_array_allocator::count(data);
-            if(destructor) {
-                uint8* p = (uint8*)data;
-                for(uints i=0; i<n; ++i, p+=elemsize)
-                    destructor(p);
-            }
-            comm_array_allocator::set_count(data, 0);
-        }
-
-        void discard() {
-            reset();
-            comm_array_allocator::free(data);
-            data = 0;
-        }
-
-        void set_count( uints n ) {
-            comm_array_allocator::set_count(data, n);
-        }
-        
-        void add( uints addn ) {
-            uints curn = comm_array_allocator::count(data);
-            data = comm_array_allocator::add(data, addn, elemsize);
-
-            if(constructor) {
-                uint8* p = (uint8*)data + curn * elemsize;
-                for(uints i=0; i<addn; ++i, p+=elemsize)
-                    constructor(p);
-            }
-        }
-
-        void reserve( uints n ) {
-            uints curn = comm_array_allocator::count(data);
-            data = comm_array_allocator::realloc(data, n, elemsize);
-            comm_array_allocator::set_count(data, curn);
-        }
-
-        void* item( uints index ) const {
-            return (uint8*)data + index * elemsize;
-        }
-    };
-
-    dynarray<relarray> _relarrays;  //< related data arrays
-*/
 
     ///Helper to expand all ext arrays
     template<size_t... Index>
@@ -918,12 +797,10 @@ private:
             atomic::aor(p, uints(1) << bit);
 
             atomic::inc(&_count);
-            atomic::inc(&_version);
         }
         else {
             *p |= uints(1) << bit;
             ++_count;
-            ++_version;
         }
         return _array.ptr() + id;
     }
@@ -942,14 +819,10 @@ private:
             ra.add(1);
         });*/
 
-        if(ATOMIC) {
+        if(ATOMIC)
             atomic::inc(&_count);
-            atomic::inc(&_version);
-        }
-        else {
+        else
             ++_count;
-            ++_version;
-        }
 
         if(TRACKING)
             tracker_t::set_modified(count);

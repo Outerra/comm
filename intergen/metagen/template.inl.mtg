@@ -69,6 +69,9 @@ $[method]$
         : public renderer_cmd
     {
     private:
+        const char* __file__;
+        int __line__;
+
     $-(if !static?)$
       $-(if ptr?)$
         $..class$* _obj;
@@ -90,9 +93,6 @@ $[method]$
       $-(/if)$
     $-[/args]$ 
 
-        const char* __file__;
-        int __line__;
-        
     public:
         cmd_$name$$overload$(
             const char* __file__,

@@ -49,11 +49,11 @@ class slothash
 
     //@return table with ids pointing to the next object in hash socket chain
     dynarray<uint>& seqtable() {
-        return this->value_array<sizeof...(Es)>();
+        return base::value_array<sizeof...(Es)>();
     }
 
     const dynarray<uint>& seqtable() const {
-        return this->value_array<sizeof...(Es)>();
+        return base::value_array<sizeof...(Es)>();
     }
 
 public:
@@ -289,7 +289,7 @@ protected:
         seqtable()[id] = *fid;
         *fid = id;
 
-        return get_item(id);
+        return base::get_item(id);
     }
 
     T* insert_value_( T* p )
@@ -318,7 +318,7 @@ protected:
 
     T* destroy_value_( uints id )
     {
-        T* p = get_item(id);
+        T* p = base::get_item(id);
         const KEY& key = _EXTRACTOR(*p);
         uint b = bucket(key);
 
