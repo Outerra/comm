@@ -342,6 +342,9 @@
     <ClInclude Include="..\..\..\hash\slothash.h">
       <Filter>hash</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\coder\bufpack_zstd.h">
+      <Filter>coder</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\crypt\sha1.cpp">

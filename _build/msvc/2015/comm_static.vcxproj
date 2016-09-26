@@ -457,6 +457,7 @@
     <ClInclude Include="..\..\..\binstream\txtstream.h" />
     <ClInclude Include="..\..\..\binstream\txtstreamhtml.h" />
     <ClInclude Include="..\..\..\binstring.h" />
+    <ClInclude Include="..\..\..\coder\bufpack_zstd.h" />
     <ClInclude Include="..\..\..\coder\lz4\lz4.h" />
     <ClInclude Include="..\..\..\coder\lz4\lz4hc.h" />
     <ClInclude Include="..\..\..\coder\lz4\xxhash.h" />
