@@ -70,6 +70,7 @@ public:
         _dtns += dtns;
     }
 
+    ///Reset timer (sets current time as the base for elapsed time methods)
 	void reset();
 };
 
