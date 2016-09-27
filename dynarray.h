@@ -260,6 +260,7 @@ public:
     ///If you don't know what it means, do not use it.
     dynarray& set_dynarray_conforming_ptr( T* ptr )
     {
+        discard();
         _ptr = ptr;
         return *this;
     }
@@ -276,7 +277,7 @@ public:
     {
         discard();
         _ptr = src.ptr();
-        src.set_dynarray_conforming_ptr(0);
+        src._ptr = 0;
         return *this;
     }
 
@@ -284,9 +285,7 @@ public:
     template<class COUNT2>
     dynarray& swap( dynarray<T,COUNT2>& dest )
     {
-        T* t = dest.ptr();
-        dest.set_dynarray_conforming_ptr(_ptr);
-        _ptr = t;
+        std::swap(_ptr, dest._ptr);
         return *this;
     }
 
