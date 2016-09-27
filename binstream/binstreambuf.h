@@ -111,9 +111,7 @@ public:
     template<class COUNT>
     void swap( dynarray<uchar,COUNT>& buf )
     {
-        uchar* p = (uchar*)_buf.ptr();
-        _buf.set_dynarray_conforming_ptr((char*)buf.ptr());
-        buf.set_dynarray_conforming_ptr(p);
+        _buf.swap(reinterpret_cast<dynarray<char>&>(buf));
         _bgi = 0;
     }
 

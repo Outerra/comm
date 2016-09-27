@@ -247,10 +247,7 @@ public:
     template<class COUNT>
     binstring& swap( dynarray<uchar,COUNT>& ref )
     {
-        uchar* p = ref.ptr();
-        ref.set_dynarray_conforming_ptr(_tstr.ptr());
-        _tstr.set_dynarray_conforming_ptr(p);
-        
+        _tstr.swap(ref);
         _offset = 0;
         return *this;
     }

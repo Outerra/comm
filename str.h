@@ -151,9 +151,7 @@ public:
     charstr& takeover(dynarray<uchar,COUNT>& ref)
     {
         _tstr.discard();
-        uchar* p = ref.ptr();
-        ref.set_dynarray_conforming_ptr(0);
-        _tstr.set_dynarray_conforming_ptr((char*)p);
+        _tstr.swap(reinterpret_cast<dynarray<char>&>(ref));
 
         if(_tstr.size() > 0 && _tstr[_tstr.size() - 1] != 0)
             *_tstr.add() = 0;
@@ -190,9 +188,7 @@ public:
         if(removetermzero && _tstr.size() > 0)
             _tstr.resize(-1);   //remove terminating zero
 
-        uchar* p = ref.ptr();
-        ref.set_dynarray_conforming_ptr((uchar*)_tstr.ptr());
-        _tstr.set_dynarray_conforming_ptr((char*)p);
+        _tstr.swap(reinterpret_cast<dynarray<char>&>(ref));
 
         if(_tstr.size() > 0 && _tstr[_tstr.size() - 1] != 0)
             *_tstr.add() = 0;

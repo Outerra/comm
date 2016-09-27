@@ -182,6 +182,18 @@ public:
             std::forward<T>(v));
     }
 
+    ///Add new object initialized with constructor matching the arguments
+    template<class...Ps>
+    T* push_construct( Ps... ps )
+    {
+        bool isold = _count < _array.size();
+
+        return slotalloc_detail::constructor<POOL, T>::construct_object(
+            isold ? alloc(0) : append(),
+            !POOL || !isold,
+            std::forward<Ps>(ps)...);
+    }
+
     ///Add new object initialized with default constructor
     T* add() {
         bool isold = _count < _array.size();
@@ -205,18 +217,6 @@ public:
         }
         if(newitem) *newitem = true;
         return append();
-    }
-
-    ///Add new object initialized with constructor matching the arguments
-    template<class...Ps>
-    T* add_init( Ps... ps )
-    {
-        bool isold = _count < _array.size();
-
-        return slotalloc_detail::constructor<POOL, T>::construct_object(
-            isold ? alloc(0) : append(),
-            !POOL || !isold,
-            std::forward<Ps>(ps)...);
     }
 
 /*
