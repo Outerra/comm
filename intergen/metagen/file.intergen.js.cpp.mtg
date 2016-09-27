@@ -69,7 +69,8 @@ static void _js_release_callback(v8::Persistent<v8::Value> object, void* p)
 {
     if(p)
         static_cast<intergen_interface*>(p)->release_refcount();
-    object.Dispose();
+    if(!object.IsWeak())
+        object.Dispose();
 }
 
 #endif
