@@ -289,6 +289,15 @@ public:
         return *this;
     }
 
+    ///Swap content with another dynarray
+    dynarray& swap_pointer(T*& dest)
+    {
+        T* t = dest;
+        dest = _ptr;
+        _ptr = t;
+        return *this;
+    }
+
     T* ptr()                    { return _ptr; }
     T* ptre()                   { return _ptr + _count(); }
 
@@ -742,6 +751,13 @@ public:
     {
         T* ptr = addnc(1);
         ::new (ptr) T(v);
+        return ptr;
+    };
+
+    template<class...Ps>
+    T* push_construct(Ps... ps) {
+        T* ptr = addnc(1);
+        ::new(ptr) T(std::forward<Ps>(ps)...);
         return ptr;
     };
 

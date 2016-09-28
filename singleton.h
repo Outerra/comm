@@ -206,6 +206,12 @@ public:
             typeid(T).name(), 0, 0, true);
     }
 
+    singleton(T&& obj) {
+        _p = (T*)singleton_register_instance(
+            singleton_local_creator(new T(std::forward<T>(obj))), &destroy, &init_module,
+            typeid(T).name(), 0, 0, true);
+    }
+
     T* operator -> () { return _p; }
 
     T& operator * () { return *_p; }

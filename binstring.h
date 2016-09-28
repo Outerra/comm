@@ -96,6 +96,11 @@ public:
         return *this;
     }
 
+    template<class T, class...Ps>
+    T& push(Ps... ps) {
+        return *new(pad_alloc<T>()) T(std::forward<Ps>(ps)...);
+    }
+
     template<class T>
     binstring& operator << (const T& v) {
         *pad_alloc<T>() = v;
@@ -248,6 +253,14 @@ public:
     binstring& swap( dynarray<uchar,COUNT>& ref )
     {
         _tstr.swap(ref);
+        _offset = 0;
+        return *this;
+    }
+
+    binstring& swap_pointer(uchar *& dest)
+    {
+        _tstr.swap_pointer(dest);
+
         _offset = 0;
         return *this;
     }

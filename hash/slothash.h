@@ -115,7 +115,7 @@ public:
     //@return pointer to the new item or nullptr if the key already exists and MULTIKEY is false
     template<class...Ps>
     T* push_construct( Ps... ps ) {
-        T* p = base::add_init(std::forward<Ps>(ps)...);
+        T* p = base::push_construct(std::forward<Ps>(ps)...);
         return insert_value_(p);
     }
 
