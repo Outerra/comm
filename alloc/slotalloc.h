@@ -904,28 +904,7 @@ private:
 
     static uint modified_mask( int rel_frame )
     {
-        if(rel_frame > 0)
-            return 0;
-
-        if(rel_frame < -5*8)
-            return UMAX32;     //too old, everything needs to be considered as modified
-
-        //frame changes aggregated like this: 8844222211111111 (MSb to LSb)
-        // compute the bit plane of the relative frame
-        int r = -rel_frame;
-        int bitplane = 0;
-
-        for(int g=0; r>0 && g<4; ++g) {
-            int b = r >= 8 ? 8 : r;
-            r -= 8;
-
-            bitplane += b >> g;
-        }
-
-        if(r > 0)
-            ++bitplane;
-
-        return uint(1 << bitplane) - 1;
+        return uint(1 << slotalloc_detail::changeset::bitplane(rel_frame)) - 1;
     }
 };
 
