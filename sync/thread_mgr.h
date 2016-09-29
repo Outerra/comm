@@ -70,7 +70,7 @@ public:
     thread_manager()
         : _pkey(), _cbk_begin(0), _cbk_end(0), _mutex(100, false)
     {
-        _mutex.set_name( "comm/thread::manager" );
+        //_mutex.set_name( "comm/thread::manager" );
     }
 
     void* thread_context( thread tid ) const

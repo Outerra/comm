@@ -61,14 +61,6 @@ COID_NAMESPACE_BEGIN
 class comm_mutex : public _comm_mutex
 {
 public:
-#ifdef _DEBUG
-	const char* _name;
-	uint       _objid;
-	uint       _locktime;
-#endif
-
-
-public:
     void lock ();
     void unlock ();
 
@@ -104,71 +96,7 @@ public:
         out->tv_sec = delaymsec/1000 + (uint)tb.time;
         out->tv_nsec = (delaymsec%1000 + tb.millitm) * 1000000;
     }
-
-#ifdef _DEBUG
-	void set_objid( uint id )           { _objid = id; }
-	uint get_objid() const              { return _objid; }
-	void set_name( const char * name )  { _name = name; }
-	const char * get_name() const       { return _name; }
-	time_t get_locktime() const         { return _locktime; }
-#else
-	void set_objid( uint id ) {}
-	void set_name( const char * ) {}
-#endif
 };
-
-
-#ifdef _DEBUG
-
-////////////////////////////////////////////////////////////////////////////////
-struct MX_REGISTER
-{
-	_comm_mutex       _mx;
-	std::list<const void *> _reg;
-	//std::list<const void *>::iterator _it;
-
-	void add( const comm_mutex * m ) {
-		comm_mutex_guard<_comm_mutex> mxg( _mx );
-		_reg.push_back( (const void *) m );
-	}
-	void del( const comm_mutex * m ) {
-		comm_mutex_guard<_comm_mutex> mxg( _mx );
-        _reg.remove( (const void *) m );
-	}
-
-    MX_REGISTER() : _mx(500, false)
-    {}
-};
-
-
-////////////////////////////////////////////////////////////////////////////////
-struct MX_REGISTER_ITERATOR
-{
-	MX_REGISTER & _reg;
-	std::list<const void *>::iterator _it;
-
-
-	MX_REGISTER_ITERATOR( MX_REGISTER & reg ) : _reg(reg)
-	{
-		_reg._mx.lock();
-		reset();
-	}
-	~MX_REGISTER_ITERATOR() {_reg._mx.unlock();}
-
-	void reset() {_it = _reg._reg.begin();}
-	const comm_mutex * next() {
-		_it++;
-		if( _it == _reg._reg.end() ) return NULL;
-		return (const comm_mutex *) (*_it);
-	}
-	uint size() const                   {return (uint)_reg._reg.size();}
-};
-
-
-#define MUTEX_ITERATOR(mxit)    MX_REGISTER_ITERATOR  mxit(SINGLETON(MX_REGISTER))
-
-#endif	// _DEBUG
-
 
 COID_NAMESPACE_END
 
