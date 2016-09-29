@@ -905,7 +905,7 @@ private:
     static uint modified_mask( int rel_frame )
     {
         int bitplane = slotalloc_detail::changeset::bitplane(rel_frame);
-        if (bitplane == INT_MAX)
+        if (bitplane == slotalloc_detail::changeset::BITPLANE_COUNT + 1)
             return UMAX32;
 
         return uint(1 << bitplane) - 1;

@@ -60,7 +60,7 @@ struct changeset
             return 0;
 
         if (rel_frame < -5 * 8)
-            return INT_MAX;     //too old, everything needs to be considered as modified
+            return BITPLANE_COUNT + 1;     //too old, everything needs to be considered as modified
 
                                //frame changes aggregated like this: 8844222211111111 (MSb to LSb)
                                // compute the bit plane of the relative frame
