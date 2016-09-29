@@ -556,11 +556,12 @@ public:
     template<typename Func, bool T1=TRACKING, typename = std::enable_if_t<T1>>
     void for_each_modified( int rel_frame, Func f ) const
     {
-        bool all_modified = rel_frame < -5*8;
-
-        uint mask = all_modified ? UMAX32 : modified_mask(rel_frame);
-        if(!mask)
+        int bitplane = slotalloc_detail::changeset::bitplane(rel_frame);
+        if(bitplane < 0)
             return;
+
+        const uint mask = uint(2 << bitplane) - 1;
+        const bool all_modified = bitplane >= slotalloc_detail::changeset::BITPLANE_COUNT;
 
         typedef std::remove_pointer_t<std::remove_reference_t<closure_traits<Func>::arg<0>>> Tx;
         Tx* d = (Tx*)_array.ptr();
@@ -900,15 +901,6 @@ private:
 
             ch->mask = xc000 | x3000 | x0f00 | x00ff;
         }
-    }
-
-    static uint modified_mask( int rel_frame )
-    {
-        int bitplane = slotalloc_detail::changeset::bitplane(rel_frame);
-        if (bitplane == slotalloc_detail::changeset::BITPLANE_COUNT + 1)
-            return UMAX32;
-
-        return uint(1 << bitplane) - 1;
     }
 };
 

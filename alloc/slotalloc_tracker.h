@@ -54,16 +54,17 @@ struct changeset
     changeset() : mask(0)
     {}
 
+    //@return bit plane number where the relative frame is tracked
     static int bitplane(int rel_frame)
     {
-        if (rel_frame > 0)
-            return 0;
+        if (rel_frame >= 0)
+            return -1;
 
         if (rel_frame < -5 * 8)
-            return BITPLANE_COUNT + 1;     //too old, everything needs to be considered as modified
+            return BITPLANE_COUNT;     //too old, everything needs to be considered as modified
 
-                               //frame changes aggregated like this: 8844222211111111 (MSb to LSb)
-                               // compute the bit plane of the relative frame
+        //frame changes aggregated like this: 8844222211111111 (MSb to LSb)
+        // compute the bit plane of the relative frame
         int r = -rel_frame;
         int bitplane = 0;
 
@@ -77,7 +78,7 @@ struct changeset
         if (r > 0)
             ++bitplane;
 
-        return bitplane;
+        return bitplane - 1;
     }
 };
 
