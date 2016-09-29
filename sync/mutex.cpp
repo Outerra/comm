@@ -40,109 +40,38 @@
 #include "../pthreadx.h"
 
 
-#ifdef _DEBUG
-
-#   ifdef SYSTYPE_WIN
-//#	    include <windows.h>
-#   endif
-
-#	include "../singleton.h"
-#	include "../timer.h"
-#endif
-
-
 namespace coid {
 
-
-#ifdef _DEBUG
-static msec_timer& get_msec_timer()
-{
-    static msec_timer _mst;
-    return _mst;
-}
-#endif
-
 ////////////////////////////////////////////////////////////////////////////////
-#ifdef _DEBUG
-comm_mutex::comm_mutex( uint spincount, bool recursive, const char * name)
-    : _comm_mutex(spincount, recursive)
-{
-	SINGLETON(MX_REGISTER).add( this );
-	_locktime = 0;
-	_objid = UMAX32;
-    _name = name;
-}
-#else
 comm_mutex::comm_mutex( uint spincount, bool recursive, const char *)
     : _comm_mutex(spincount, recursive)
 {
 }
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 comm_mutex::comm_mutex( NOINIT_t n ) : _comm_mutex(n)
-{
-#ifdef _DEBUG
-	SINGLETON(MX_REGISTER).add( this );
-	_locktime = 0;
-	_name = NULL;
-    _objid = UMAX32;
-#endif
-}
+{}
 
 ////////////////////////////////////////////////////////////////////////////////
 comm_mutex::~comm_mutex()
-{
-#ifdef _DEBUG
-	SINGLETON(MX_REGISTER).del( this );
-#endif
-}
+{}
 
 ////////////////////////////////////////////////////////////////////////////////
 void comm_mutex::lock()
 {
     _comm_mutex::lock();
-
-#ifdef _DEBUG
-	_locktime = get_msec_timer().time();
-#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 void comm_mutex::unlock()
 {
-#ifdef _DEBUG
-	_locktime = 0;
-#endif
     _comm_mutex::unlock();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 bool comm_mutex::try_lock()
 {
-#ifdef _DEBUG
-	bool r = _comm_mutex::try_lock();
-    if(r)
-		_locktime = get_msec_timer().time();
-    return r;
-#else
     return _comm_mutex::try_lock();
-#endif
 }
-
-/*
-////////////////////////////////////////////////////////////////////////////////
-bool comm_mutex::timed_lock (uint delaymsec)
-{
-//#ifdef _MSC_VER
-#ifndef SYSTYPE_CYGWIN
-    timespec ts;
-    get_abstime( delaymsec, &ts );
-    return 0 == pthread_mutex_timedlock( &_mutex, &ts );
-#else
-    return false;
-#endif
-}
-*/
 
 } // namespace coid
