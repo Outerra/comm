@@ -551,17 +551,12 @@ public:
 
     ///Invoke a functor on each item that was modified between two frames
     //@note const version doesn't handle array insertions/deletions during iteration
-    //@param rel_frame relative frame from which to count the modifications, should be <= 0
+    //@param bitplane_mask changeset bitplane mask (slotalloc_detail::changeset::bitplane_mask)
     //@param f functor with ([const] T* ptr) or ([const] T* ptr, size_t index) arguments; ptr can be null if item was deleted
     template<typename Func, bool T1=TRACKING, typename = std::enable_if_t<T1>>
-    void for_each_modified( int rel_frame, Func f ) const
+    void for_each_modified( uint bitplane_mask, Func f ) const
     {
-        int bitplane = slotalloc_detail::changeset::bitplane(rel_frame);
-        if(bitplane < 0)
-            return;
-
-        const uint mask = uint(2 << bitplane) - 1;
-        const bool all_modified = bitplane >= slotalloc_detail::changeset::BITPLANE_COUNT;
+        const bool all_modified = bitplane_mask > slotalloc_detail::changeset::BITPLANE_MASK;
 
         typedef std::remove_pointer_t<std::remove_reference_t<closure_traits<Func>::arg<0>>> Tx;
         Tx* d = (Tx*)_array.ptr();
@@ -580,7 +575,7 @@ public:
             uints s = (p - b) * MASK_BITS;
 
             for(int i=0; ch<che && i<MASK_BITS; ++i, m>>=1, ++ch) {
-                if(all_modified || (ch->mask & mask) != 0) {
+                if(all_modified || (ch->mask & bitplane_mask) != 0) {
                     Tx* p = (m&1) != 0 ? d+s+i : 0;
                     funccall(f, p, s+i);
                 }

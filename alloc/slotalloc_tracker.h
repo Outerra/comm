@@ -50,12 +50,13 @@ struct changeset
 {
     uint16 mask;
     static const int BITPLANE_COUNT = sizeof(decltype(mask)) << 3;
+    static const uint BITPLANE_MASK = (1U << BITPLANE_COUNT) - 1;
 
     changeset() : mask(0)
     {}
 
     //@return bit plane number where the relative frame is tracked
-    static int bitplane(int rel_frame)
+    static int bitplane( int rel_frame )
     {
         if (rel_frame >= 0)
             return -1;
@@ -79,6 +80,20 @@ struct changeset
             ++bitplane;
 
         return bitplane - 1;
+    }
+
+    //@return bitplane mask for use with for_each_modified
+    static uint bitplane_mask( int bitplane )
+    {
+        return (2U << bitplane) - 1U;
+    }
+
+    //@return bitplane mask for use with for_each_modified
+    static uint bitplane_mask( int bitplane1, int bitplane2 )
+    {
+        DASSERT( bitplane1 >= bitplane2 );
+        return ((2U << bitplane1) - 1U)
+            && ~((2U << bitplane2) - 1U);
     }
 };
 
