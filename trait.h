@@ -154,7 +154,7 @@ struct type_rebasing_constructor
         dst.rebase(oldp);
     }
 };*/
-
+/*
 ////////////////////////////////////////////////////////////////////////////////
 ///Template that either copies or swaps values according to the template argument
 template<class T, bool SWAP>
@@ -172,7 +172,7 @@ struct type_copier_swapper<T,true> {
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-/*template <class T>
+template <class T>
 struct type_trait
 {
     enum {

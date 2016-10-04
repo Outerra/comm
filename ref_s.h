@@ -206,13 +206,14 @@ public:
 
     T & operator*() const { return *_o; }
 
+    friend void swap( ref_t& a, ref_t& b ) {
+        std::swap(a._p, b._p);
+        std::swap(a._o, b._o);
+    }
+
     void swap(ref_t& rhs) {
-        policy* tmp_p = _p;
-        T* tmp_o = _o;
-        _p = rhs._p;
-        _o = rhs._o;
-        rhs._p = tmp_p;
-        rhs._o = tmp_o;
+        std::swap(_p, rhs._p);
+        std::swap(_o, rhs._o);
     }
 
     void release() {

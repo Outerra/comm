@@ -226,9 +226,11 @@ public:
 
     void swap( local<T>& other )
     {
-        T* t = _p;
-        _p = other._p;
-        other.p = t;
+        std::swap(_p, other._p);
+    }
+
+    friend void swap( local& a, local& b ) {
+        std::swap(a._p, b._p);
     }
 };
 

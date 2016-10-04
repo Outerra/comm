@@ -214,6 +214,24 @@ protected:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+///Helper struct for interface registration
+struct ifc_autoregger
+{
+    typedef void (*register_fn)(bool);
+
+    ifc_autoregger( register_fn fn ) : _fn(fn) {
+        _fn(true);
+    }
+
+    ~ifc_autoregger() {
+        _fn(false);
+    }
+
+private:
+    register_fn _fn;
+};
+
+////////////////////////////////////////////////////////////////////////////////
 
 ///Call interface vtable method
 #define VT_CALL(R,F,I) ((*_host).*(reinterpret_cast<R(policy_intrusive_base::*)F>(_vtable[I])))

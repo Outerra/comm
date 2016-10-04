@@ -154,10 +154,12 @@ public:
 	T* operator->() const { DASSERT( _p!=0 ); return _p; }
 
 	void swap(iref_t& r) {
-		T* tmp=_p;
-		_p=r._p;
-		r._p=tmp;
+		std::swap(_p, r._p);
 	}
+
+    friend void swap( iref_t& a, iref_t& b ) {
+        std::swap(a._p, b._p);
+    }
 
 	bool is_empty() const { return (_p==0); }
 

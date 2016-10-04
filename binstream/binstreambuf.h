@@ -115,10 +115,10 @@ public:
         _bgi = 0;
     }
 
-    void swap( binstreambuf& buf )
+    friend void swap( binstreambuf& a, binstreambuf& b )
     {
-        _buf.swap( buf._buf );
-        std::swap(_bgi, buf._bgi);
+        std::swap(a._buf, b._buf);
+        std::swap(a._bgi, b._bgi);
     }
 
     ///Reserve raw space in the buffer

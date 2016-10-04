@@ -2308,7 +2308,7 @@ protected:
             kwdid.key = kwd;
             kwdid.group = group;
 
-            keyword_id* v = (keyword_id*)set.swap_insert_value(kwdid);
+            keyword_id* v = (keyword_id*)set.insert_value(kwdid);
             if(v)  v->ord = ins_to_group(group);
 
             return v != 0;

@@ -1115,26 +1115,25 @@ v8::Handle<v8::Value> create_wrapper_$name$( ::$ns rest="::" after="::"$$name$* 
 
 $-(/if)$
 ////////////////////////////////////////////////////////////////////////////////
-void* register_binders_for_$name$()
+static void register_binders_for_$name$( bool on )
 {
 $-[method static?]$
     interface_register::register_interface_creator(
-        "$..ns rest="::" after="::"$js::$..name$.$name$@creator", (void*)&$..name$_js_dispatcher::$name$);
+        "$..ns rest="::" after="::"$js::$..name$.$name$@creator", on ? (void*)&$..name$_js_dispatcher::$name$ : nullptr);
 $-(if !internal?)$
     interface_register::register_interface_creator(
-        "$..ns rest="::" after="::"$js::$..name$.$name$", (void*)&$..name$_js_dispatcher::v8creator_$name$$@order$);
+        "$..ns rest="::" after="::"$js::$..name$.$name$", on ? (void*)&$..name$_js_dispatcher::v8creator_$name$$@order$ : nullptr);
 $-(/if)$
 $-[/method]$
 $-(if virtual!)$
     interface_register::register_interface_creator(
-        "$ns rest="::" after="::"$js::$name$@wrapper", (void*)&create_wrapper_$name$);
+        "$ns rest="::" after="::"$js::$name$@wrapper", on ? (void*)&create_wrapper_$name$ : nullptr);
 
 $-(/if)$
-    return (void*)&register_binders_for_$name$;
 }
 
 //auto-register the bind function
-static void* autoregger_$name$ = register_binders_for_$name$();
+LOCAL_SINGLETON_DEF(ifc_autoregger) $name$_autoregger = new ifc_autoregger(&register_binders_for_$name$);
 
 } //namespace js
 $-[ns]$

@@ -221,14 +221,18 @@ void interface_register::register_interface_creator( const token& ifcname, void*
     interface_register_impl& reg = interface_register_impl::get();
     GUARDTHIS(reg._mx);
 
-    entry* en = reg._hash.insert_value_slot(ifcname);
-    if(en) {
-        en->creator_ptr = creator_ptr;
-        en->ifcname = ifcname;
-        en->ns = ns;
-        en->classname = classname;
-        en->creatorname = creatorname;
-        en->script_creator = !script.is_empty();
+    if(!creator_ptr)
+        reg._hash.erase_value(ifcname, 0);
+    else {
+        entry* en = reg._hash.insert_value_slot(ifcname);
+        if(en) {
+            en->creator_ptr = creator_ptr;
+            en->ifcname = ifcname;
+            en->ns = ns;
+            en->classname = classname;
+            en->creatorname = creatorname;
+            en->script_creator = !script.is_empty();
+        }
     }
 }
 

@@ -281,12 +281,15 @@ public:
         return *this;
     }
 
-    ///Swap content with another dynarray
-    template<class COUNT2>
-    dynarray& swap( dynarray<T,COUNT2>& dest )
-    {
-        std::swap(_ptr, dest._ptr);
-        return *this;
+    ///Swap content with another dynarray, with possibly different counter type
+    template<class COUNT2 = COUNT>
+    friend void swap( dynarray<T,COUNT,A>& a, dynarray<T,COUNT2,A>& b ) {
+        a.swap(b);
+    }
+
+    template<class COUNT2 = COUNT>
+    void swap( dynarray<T,COUNT2,A>& other ) {
+        std::swap(_ptr, other._ptr);
     }
 
     ///Swap content with another dynarray

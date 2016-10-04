@@ -214,7 +214,7 @@ public:
             ::memcpy( _wrkbuf.ptr(), _sendbuf.ptr(), nocompressoffs );
             *(ushort*)(_wrkbuf.ptr()+nocompressoffs) = (ushort)sz;
 
-            _sendbuf.swap( _wrkbuf );
+            std::swap(_sendbuf, _wrkbuf);
         }
     }
 
@@ -234,7 +234,7 @@ public:
 
             ::memcpy( _wrkbuf.ptr(), _recvbuf.ptr(), nocompressoffs );
 
-            _recvbuf.swap( _wrkbuf );
+            std::swap(_recvbuf, _wrkbuf);
         }
         return true;
     }

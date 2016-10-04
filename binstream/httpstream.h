@@ -471,7 +471,7 @@ public:
 
         _hdr = &hdr;
         _cache.bind( *cache.bound() );
-        _cache.swap(cache);
+        cache.swap(_cache);
         _tcache.bind(_cache);
 
         set_defaults();

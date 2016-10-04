@@ -90,7 +90,7 @@ public:
 
         _tokenizer.append_exception_location();
 
-        err.swap(txt);
+        std::swap(err, txt);
         txt.reset();
     }
 

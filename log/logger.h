@@ -77,7 +77,7 @@ public:
         
     ///Open physical log file. @note Only notes the file name, the file is opened with the next log msg because of potential MT clashes
     void open(charstr filename) {
-        _logpath.swap(filename);
+        std::swap(_logpath, filename);
     }
 
 	void write_to_file(const charstr& lm) {

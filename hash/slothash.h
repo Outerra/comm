@@ -211,10 +211,10 @@ public:
         memset(_buckets.begin().ptr(), 0xff, _buckets.byte_size());
     }
 
-    void swap( slothash& other )
+    friend void swap( slothash& a, slothash& b )
     {
-        base::swap(static_cast<base&>(other));
-        _buckets.swap(other._buckets);
+        base::swap(a, b);
+        std::swap(a._buckets, b._buckets);
     }
 
 protected:

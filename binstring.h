@@ -236,6 +236,10 @@ public:
     }
 
 
+    friend void swap( binstring& a, binstring& b ) {
+        a._tstr.swap(b._tstr);
+    }
+
     ///Swap strings
     void swap( binstring& ref ) {
         _tstr.swap( ref._tstr );

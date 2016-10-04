@@ -139,12 +139,14 @@ public:
         return std::get<V>(*this);
     }
 
-    void swap( slotalloc_base& other ) {
-        _array.swap(other._array);
-        _allocated.swap(other._allocated);
-        std::swap(_count, other._count);
+    friend void swap( slotalloc_base& a, slotalloc_base& b ) {
+        std::swap(a._array, b._array);
+        std::swap(a._allocated, b._allocated);
+        std::swap(a._count, b._count);
 
-        extarray_swap(other);
+        extarray_t& exta = a;
+        extarray_t& extb = b;
+        std::swap(a, b);
     }
 
     //@return byte offset to the newly rebased array
@@ -738,18 +740,6 @@ private:
 
     void extarray_reserve( uints size ) {
         extarray_reserve_(coid::make_index_sequence<tracker_t::extarray_size>(), size);
-    }
-
-    ///Helper to swap all ext arrays
-    template<size_t... Index>
-    void extarray_swap_( coid::index_sequence<Index...>, slotalloc_base& other ) {
-        extarray_t& ext = *this;
-        extarray_t& exto = other;
-        int dummy[] = { 0, ((void)std::get<Index>(ext).swap(std::get<Index>(exto)), 0)... };
-    }
-
-    void extarray_swap( slotalloc_base& other ) {
-        extarray_swap_(coid::make_index_sequence<tracker_t::extarray_size>(), other);
     }
 
 

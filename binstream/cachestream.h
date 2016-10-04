@@ -83,16 +83,16 @@ public:
         other.eois = false;
     }
 
-    void swap( cachestream& other )
+    void swap( cachestream& b )
     {
-        std::swap( _bin, other._bin );
-        std::swap( _cinread, other._cinread );
-        std::swap( _tcinread, other._tcinread );
-        std::swap( _cotwritten, other._cotwritten );
-        std::swap( _tcotwritten, other._tcotwritten );
-        _cin.swap(other._cin);
-        _cot.swap(other._cot);
-        std::swap( eois, other.eois );
+        std::swap(_bin, b._bin);
+        std::swap(_cinread, b._cinread);
+        std::swap(_tcinread, b._tcinread);
+        std::swap(_cotwritten, b._cotwritten);
+        std::swap(_tcotwritten, b._tcotwritten);
+        std::swap(_cin, b._cin);
+        std::swap(_cot, b._cot);
+        std::swap(eois, b.eois);
     }
 
     virtual uint binstream_attributes( bool in0out1 ) const

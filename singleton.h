@@ -67,23 +67,26 @@
 
 ///Used for function-local singleton objects 
 /// usage:
-/// LOCAL_SINGLETON(class) name = new class;
-#define LOCAL_SINGLETON(T) \
+/// LOCAL_SINGLETON_DEF(class) name = new class;
+#define LOCAL_SINGLETON_DEF(T) \
     static coid::singleton<T>
 
+///Same as LOCAL_SINGLETON_DEF (compatibility)
+#define LOCAL_SINGLETON(T) LOCAL_SINGLETON_DEF(T)
 
-///Returns thread singleton (the same one when called from different code within module)
+
+///Returns thread singleton instance (the same one when called from different code within module)
 #define THREAD_SINGLETON(T) \
     coid::thread_singleton<T>::instance(true)
 
-///Returns a global thread singleton
+///Returns a global thread singleton instance
 #define THREAD_GLOBAL_SINGLETON(T) \
     coid::thread_singleton<T>::instance(false)
 
 ///Used for function-local thread singleton objects
 /// usage:
-/// THREAD_LOCAL_SINGLETON(class) name = new class;
-#define THREAD_LOCAL_SINGLETON(T) \
+/// THREAD_LOCAL_SINGLETON_DEF(class) name = new class;
+#define THREAD_LOCAL_SINGLETON_DEF(T) \
     static coid::thread_singleton<T>
 
 

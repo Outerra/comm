@@ -145,20 +145,30 @@ public:
     ///Insert value if it's got an unique key
     //@note the key needed for the insertion is extracted from the value using the extractor object provided in the constructor
     //@return NULL if the value could not be inserted, or a constant pointer to the value
-    const VAL* insert_value( const value_type& val )
+    const VAL* insert_value( value_type&& val )
     {
         this->adjust(1);
-        typename _HT::Node** v = this->_copy_insert_unique(val);
+        typename _HT::Node** v = this->__insert_unique(std::forward<value_type>(val));
         return v  ?  &(*v)->_val  :  0;
     }
 
-    ///Insert value if it's got an unique key, swapping the provided value
+    ///Insert value if it's got an unique key
     //@note the key needed for the insertion is extracted from the value using the extractor object provided in the constructor
     //@return NULL if the value could not be inserted, or a constant pointer to the value
-    const VAL* swap_insert_value( value_type& val )
+    const VAL* insert_value( const value_type& val )
     {
         this->adjust(1);
-        typename _HT::Node** v = this->_swap_insert_unique(val);
+        typename _HT::Node** v = this->__insert_unique(val);
+        return v  ?  &(*v)->_val  :  0;
+    }
+
+    ///Insert new value or override the existing one under the same key.
+    //@note the key needed for the insertion is extracted from the value using the extractor object provided in the constructor
+    //@return constant pointer to the value
+    const VAL* insert_or_replace_value( value_type&& val )
+    {
+        this->adjust(1);
+        typename _HT::Node** v = this->__insert_unique__replace(std::forward<value_type>(val));
         return v  ?  &(*v)->_val  :  0;
     }
 
@@ -168,17 +178,7 @@ public:
     const VAL* insert_or_replace_value( const value_type& val )
     {
         this->adjust(1);
-        typename _HT::Node** v = this->_copy_insert_unique__replace(val);
-        return v  ?  &(*v)->_val  :  0;
-    }
-
-    ///Insert new value or override the existing one under the same key, swapping the content.
-    //@note the key needed for the insertion is extracted from the value using the extractor object provided in the constructor
-    //@return constant pointer to the value
-    const VAL* swap_insert_or_replace_value( value_type& val )
-    {
-        this->adjust(1);
-        typename _HT::Node** v = this->_swap_insert_unique__replace(val);
+        typename _HT::Node** v = this->__insert_unique__replace(val);
         return v  ?  &(*v)->_val  :  0;
     }
 
@@ -351,17 +351,17 @@ public:
     void insert( const_iterator f, const_iterator l ) 
     {   insert_equal( f, l );   }
 
-    const VAL* insert_value( const value_type& val )
+    const VAL* insert_value( value_type&& val )
     {
         this->adjust(1);
-        typename _HT::Node** v = this->_copy_insert_equal(val);
+        typename _HT::Node** v = this->__insert_equal(std::forward<value_type>(val));
         return v  ?  &(*v)->_val  :  0;
     }
 
-    const VAL* swap_insert_value( value_type& val )
+    const VAL* insert_value( const value_type& val )
     {
         this->adjust(1);
-        typename _HT::Node** v = this->_swap_insert_equal(val);
+        typename _HT::Node** v = this->__insert_equal(val);
         return v  ?  &(*v)->_val  :  0;
     }
 

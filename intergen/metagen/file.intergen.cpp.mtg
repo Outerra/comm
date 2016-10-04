@@ -187,19 +187,17 @@ $-[method static?]$
 
 $-[/method]$
     ///Register interface creators in the global registry
-    static void* register_interfaces()
+    static void register_interfaces( bool on )
     {
 $-(if virtual!)$
         interface_register::register_interface_creator(
-            "$ns rest="::" after="::"$$name$@wrapper", (void*)&_generic_interface_creator);
+            "$ns rest="::" after="::"$$name$@wrapper", on ? (void*)&_generic_interface_creator : nullptr);
 
 $-(/if)$
 $-[method static?]$
         interface_register::register_interface_creator(
-            "$..ns rest="::" after="::"$$..name$.$name$@$..hash$", (void*)&$name$);
+            "$..ns rest="::" after="::"$$..name$.$name$@$..hash$", on ? (void*)&$name$ : nullptr);
 $-[/method]$
-
-        return (void*)&register_interfaces;
     }
 };
 
@@ -210,10 +208,11 @@ intergen_interface::ifn_t* $name$_dispatcher::_vtable1 = 0;
 
 
 //auto-register the available interface creators
-static void* $name$_autoregger = $name$_dispatcher::register_interfaces();
+LOCAL_SINGLETON_DEF(ifc_autoregger) $name$_autoregger = new ifc_autoregger(&$name$_dispatcher::register_interfaces);
 
 void* force_register_$name$() {
-    return $name$_dispatcher::register_interfaces();
+    LOCAL_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&$name$_dispatcher::register_interfaces);
+    return autoregger.get();
 }
 
 $-[ns]$

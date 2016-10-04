@@ -165,9 +165,13 @@ public:
     }
 
     ///Swap strings
-    void swap(charstr& ref)
+    friend void swap( charstr& a, charstr& b )
     {
-        _tstr.swap(ref._tstr);
+        std::swap(a._tstr, b._tstr);
+    }
+
+    void swap( charstr& other ) {
+        std::swap(_tstr, other._tstr);
     }
 
     template<class COUNT>

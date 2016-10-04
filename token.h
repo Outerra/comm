@@ -176,11 +176,14 @@ struct token
             _ptr = src._ptr+offs, _pte = src._ptr + len;
     }
 
-
-    void swap( token& t )
+    friend void swap( token& a, token& b )
     {
-        const char* pr = t._ptr; t._ptr = _ptr;  _ptr = pr;
-        const char* pe = t._pte; t._pte = _pte;  _pte = pe;
+        a.swap(b);
+    }
+
+    void swap( token& other ) {
+        std::swap(_ptr, other._ptr);
+        std::swap(_pte, other._pte);
     }
 
     ///Rebase token pointing into one string to point into the same region in another string
@@ -2490,6 +2493,10 @@ public:
         std::swap(_zend, x._zend);
         std::swap(_buf, x._buf);
         std::swap(_pool, x._pool);
+    }
+
+    friend void swap( zstring& a, zstring& b ) {
+        a.swap(b);
     }
 
     typedef const char* zstring::*unspecified_bool_type;
