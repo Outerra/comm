@@ -124,7 +124,9 @@ $-(elif)$
         }
 $-(/if)$
 
-        virtual void onCommand(renderer* const r__) {
+        virtual coid::token command_name() const override { return "cmd_$name$$overload$"; }
+
+        virtual void onCommand(renderer* const r__) override {
             uint64 t0 = time_ns();
             $(if ..class?="renderer")$r__->$(elif !static?)$_obj->$(/if)-$$..class$::$name$(
             $-[args rest=", "]-$

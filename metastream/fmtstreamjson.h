@@ -15,7 +15,7 @@
  *
  * The Initial Developer of the Original Code is
  * PosAm.
- * Portions created by the Initial Developer are Copyright (C) 2003
+ * Portions created by the Initial Developer are Copyright (C) 2003-2016
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -137,9 +137,8 @@ public:
             throw ersIMPROPER_STATE;
 
         if(_sesinitw>0)
-            _bufw << '}';//"})";
-        //else
-        //    _bufw << ')';
+            _bufw << '}';
+
         _sesinitw = 0;
         _indent = 0;
 
@@ -188,12 +187,11 @@ public:
     {
         if(!_sesinitw)
         {
-            if(t.is_array_start()) {
-                //_bufw << '(';
+            if(!t.is_struct_start()) {
                 _sesinitw = -1;
             }
             else {
-                _bufw << '{';//"({";
+                _bufw << '{';
                 _sesinitw = 1;
             }
             ++_indent;
@@ -359,14 +357,14 @@ public:
             if( tok == '(' )
                 tok = _tokenizer.next();
 
-            if( !t.is_array_start() ) {
+            if(!t.is_struct_start()) {
+                _tokenizer.push_back();
+                _sesinitr = -1;
+            }
+            else {
                 if(tok != '{')
                     return ersSYNTAX_ERROR "opening { not found";
                 _sesinitr = 1;
-            }
-            else {
-                _tokenizer.push_back();
-                _sesinitr = -1;
             }
         }
 

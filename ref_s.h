@@ -44,238 +44,245 @@
 
 
 namespace coid {
-    template<class T> class policy_pooled;
+template<class T> class policy_pooled;
 }
 
 namespace atomic {
-	template<class T> class queue_ng;
+template<class T> class queue_ng;
 }
 
 template<class T>
-class ref 
+class ref
 {
 public:
-	friend class atomic::queue_ng<T>;
+    friend class atomic::queue_ng<T>;
 
 public:
-	typedef ref<T> ref_t;
-	typedef policy_base policy; 
+    typedef ref<T> ref_t;
+    typedef policy_base policy;
     typedef coid::policy_pooled<T> policy_pooled_t;
     typedef coid::pool<policy_pooled_t*> pool_type_t;
 
-	ref() : _p(0), _o(0){}
+    ref() : _p(0), _o(0) {}
 
-	// from T* constructors
-	explicit ref( T* o )
-		: _p( policy_trait<T>::policy::create(o) )
-		, _o(o) 
-	{
-		_p->add_refcount();
-	}
+    // from T* constructors
+    explicit ref(T* o)
+        : _p(policy_trait<T>::policy::create(o))
+        , _o(o)
+    {
+        _p->add_refcount();
+    }
 
     template<class Y>
-	explicit ref( Y* p )
-		: _p( static_cast<policy_base*>(p) )
-		, _o(p->get()) 
+    explicit ref(Y* p)
+        : _p(static_cast<policy_base*>(p))
+        , _o(p->get())
     {
-		_p->add_refcount();
-	}
+        _p->add_refcount();
+    }
 
-	void create(T* const p) { 
-		release();
-		_p=policy_trait<T>::policy::create(p);
-		_p->add_refcount();
-		_o=p;
-	}
+    void create(T* const p) {
+        release();
+        _p = policy_trait<T>::policy::create(p);
+        _p->add_refcount();
+        _o = p;
+    }
 
-	// special constructor from default policy
-	explicit ref( const create_me& ) {
-		typename policy_trait<T>::policy *p=policy_trait<T>::policy::create();
-		_p=p;
-		_p->add_refcount();
-		_o=p->get();
-	}
+    // special constructor from default policy
+    explicit ref(const create_me&) {
+        typename policy_trait<T>::policy *p = policy_trait<T>::policy::create();
+        _p = p;
+        _p->add_refcount();
+        _o = p->get();
+    }
 
-	// special constructor from default policy
-	explicit ref( const create_pooled&) {
-		policy_pooled_t *p=policy_pooled_t::create();
-		_p=p;
-		_p->add_refcount();
-		_o=p->get();
-	}
+    // special constructor from default policy
+    explicit ref(const create_pooled&) {
+        policy_pooled_t *p = policy_pooled_t::create();
+        _p = p;
+        _p->add_refcount();
+        _o = p->get();
+    }
 
-	// special constructor from default policy
+    // special constructor from default policy
 /*	explicit ref( const create_pooled2&) {
         policy_pooled_t *p=policy_pooled_t::create();
-		_p=p;
-		_p->add_refcount();
-		_o=p->get();
-	}*/
+        _p=p;
+        _p->add_refcount();
+        _o=p->get();
+    }*/
 
-	// special constructor from default policy
-    explicit ref( const create_pooled&, pool_type_t *po) {
-		policy_pooled_t *p=policy_pooled_t::create(po);
-		_p=p;
-		_p->add_refcount();
-		_o=p->get();
-	}
+    // special constructor from default policy
+    explicit ref(const create_pooled&, pool_type_t *po) {
+        policy_pooled_t *p = policy_pooled_t::create(po);
+        _p = p;
+        _p->add_refcount();
+        _o = p->get();
+    }
 
-	// copy constructors
-	ref( const ref<T>& p )
-		: _p( p.add_refcount() )
-		, _o( p.get() ) {}
+    // copy constructors
+    ref(const ref<T>& p)
+        : _p(p.add_refcount())
+        , _o(p.get()) {}
 
-	// constructor from inherited object
-	template< class T2 >
-	/*explicit */ref( const ref<T2>& p )
-		: _p( p.add_refcount() )
-		, _o( static_cast<T*>(p.get()) ) {}
+    ref(ref<T>&& other) : _p(0), _o(0) {
+        swap(other);
+    }
 
-	void create(policy_shared<T> * const p) {
-		release();
-		_p=p;
-		_p->add_refcount();
-		_o=p->get();
-	}
+    // constructor from inherited object
+    template< class T2 >
+    /*explicit */ref(const ref<T2>& p)
+        : _p(p.add_refcount())
+        , _o(static_cast<T*>(p.get())) {}
 
-	void create() {
-		release();
-		typename policy_trait<T>::policy *p = policy_trait<T>::policy::create();
-		_p=p;
-		_p->add_refcount();
-		_o=p->get();
-	}
+    void create(policy_shared<T> * const p) {
+        release();
+        _p = p;
+        _p->add_refcount();
+        _o = p->get();
+    }
 
-	bool create_pooled() {
-		release();
+    void create() {
+        release();
+        typename policy_trait<T>::policy *p = policy_trait<T>::policy::create();
+        _p = p;
+        _p->add_refcount();
+        _o = p->get();
+    }
+
+    bool create_pooled() {
+        release();
         bool isnew;
-		policy_pooled_t *p = policy_pooled_t::create(&isnew);
-		_p=p;
-		_p->add_refcount();
-		_o=p->get();
+        policy_pooled_t *p = policy_pooled_t::create(&isnew);
+        _p = p;
+        _p->add_refcount();
+        _o = p->get();
         return isnew;
-	}
+    }
 
-    bool create_pooled(pool_type_t *po, bool nonew=false) {
-		release();
+    bool create_pooled(pool_type_t *po, bool nonew = false) {
+        release();
         bool isnew;
-		policy_pooled_t *p=policy_pooled_t::create(po, nonew, &isnew);
+        policy_pooled_t *p = policy_pooled_t::create(po, nonew, &isnew);
         if(p) {
-		    _p = static_cast<policy*>(p);
-		    _p->add_refcount();
-		    _o=p->get();
+            _p = static_cast<policy*>(p);
+            _p->add_refcount();
+            _o = p->get();
         }
         return isnew;
-	}
+    }
 
-	// standard destructor
-	~ref() { release(); }
+    ///Make a reference with dummy policy that doesn't delete the object (it's owned by someone else)
+    static ref_t make_dummy(T* const p) {
+        ref x;
+        x._o = p;
+        return x;
+    }
 
-	const ref_t& operator=(const ref_t& r) {
+    // standard destructor
+    ~ref() { release(); }
+
+    const ref_t& operator=(const ref_t& r) {
         release();
-		_p=r.add_refcount();
-		_o=r._o;
-		return *this;
-	}
+        _p = r.add_refcount();
+        _o = r._o;
+        return *this;
+    }
 
-	template< class T2 >
-	const ref_t& operator=(const ref<T2>& r) {
+    template< class T2 >
+    const ref_t& operator=(const ref<T2>& r) {
         release();
-		_p=r.add_refcount();
-		_o=static_cast<T*>(r.get());
-		return *this;
-	}
+        _p = r.add_refcount();
+        _o = static_cast<T*>(r.get());
+        return *this;
+    }
 
-	/// DO NOT USE !!!
-	policy* add_refcount() const { if( _p ) _p->add_refcount(); return _p; }
+    /// DO NOT USE !!!
+    policy* add_refcount() const { if(_p) _p->add_refcount(); return _p; }
 
-	T * operator->() const { DASSERT( _p!=0 && "You are trying to use not initialized REF!" ); return _o; }
+    T * operator->() const { DASSERT(_o != 0 && "You are trying to use not initialized REF!"); return _o; }
 
-	T * operator->() { DASSERT( _p!=0 && "You are trying to use not initialized REF!" ); return _o; }
+    T * operator->() { DASSERT(_o != 0 && "You are trying to use not initialized REF!"); return _o; }
 
-	T & operator*() const { return *_o; }
+    T & operator*() const { return *_o; }
 
-	void swap(ref_t& rhs) {
-		policy* tmp_p = _p;
-		T* tmp_o = _o;
-		_p = rhs._p;
-		_o = rhs._o;
-		rhs._p = tmp_p;
-		rhs._o = tmp_o;
-	}
+    void swap(ref_t& rhs) {
+        policy* tmp_p = _p;
+        T* tmp_o = _o;
+        _p = rhs._p;
+        _o = rhs._o;
+        rhs._p = tmp_p;
+        rhs._o = tmp_o;
+    }
 
-	void release() {
-		if( _p!=0 ) { 
-			_p->release_refcount(); _p=0; _o=0;
-		} 
-	}
+    void release() {
+        if(_p != 0) {
+            _p->release_refcount();
+            _p = 0;
+        }
+        _o = 0;
+    }
 
-	T* get() const { return _o; }
+    T* get() const { return _o; }
 
     T* const & get_ref() const { return _o; }
 
-	bool is_empty() const { return (_p==0); }
+    bool is_empty() const { return (_o == 0); }
 
     typedef T* ref<T>::*unspecified_bool_type;
 
     ///Automatic cast to unconvertible bool for checking via if
-	operator unspecified_bool_type () const {
+    operator unspecified_bool_type () const {
         return _o ? &ref<T>::_o : 0;
-	}
+    }
 
-	void forget() { _p=0; _o=0; }
+    void forget() { _p = 0; _o = 0; }
 
-	template<class T2>
-	void takeover(ref<T2>& p) {
-		release();
-		_o = p.get();
-		_p = p.give_me();
-		p.forget();
-	}
+    template<class T2>
+    void takeover(ref<T2>& p) {
+        release();
+        _o = p.get();
+        _p = p.give_me();
+        p.forget();
+    }
 
-	policy* give_me() { policy* tmp=_p; _p=0;_o=0; return tmp; }
+    policy* give_me() { policy* tmp = _p; _p = 0; _o = 0; return tmp; }
 
-	coid::int32 refcount() const { return _p?_p->refcount():0; }
+    coid::int32 refcount() const { return _p ? _p->refcount() : 0; }
 
-	friend bool operator == ( const ref<T>& a, const ref<T>& b ) {
-    	return a._p == b._p;
-	}
+    friend bool operator == (const ref<T>& a, const ref<T>& b) {
+        return a._o == b._o;
+    }
 
-	friend bool operator != ( const ref<T>& a, const ref<T>& b ) {
-		return !operator==(a,b);
-	}
+    friend bool operator != (const ref<T>& a, const ref<T>& b) {
+        return !operator==(a, b);
+    }
 
-	friend bool operator < ( const ref<T>& a, const ref<T>& b ) {
-    	return a._p < b._p;
-	}
+    friend bool operator < (const ref<T>& a, const ref<T>& b) {
+        return a._o < b._o;
+    }
 
-	friend coid::binstream& operator<<( coid::binstream& bin, const ref<T>& s ) {
-		return bin<<(*s._o); 
-	}
+    friend coid::binstream& operator<<(coid::binstream& bin, const ref<T>& s) {
+        return bin << (*s._o);
+    }
 
-	friend coid::binstream& operator>>( coid::binstream& bin, ref<T>& s ) { 
-		s.create(); return bin>>(*s._o); 
-	}
-/*
-	friend coid::metastream& operator<<( coid::metastream& m,const ref<T>& s ) {
-		MSTRUCT_OPEN(m,"ref")
-			MM(m, "ptr", s)
-		MSTRUCT_CLOSE(m)
-	}*/
+    friend coid::binstream& operator >> (coid::binstream& bin, ref<T>& s) {
+        s.create(); return bin >> (*s._o);
+    }
 
 private:
-	policy *_p;
-	T *_o;
+    policy *_p;
+    T *_o;
 };
 
-template<class T> 
-inline bool operator==( const ref<T>& a,const ref<T>& b ) {
-	return a.get()==b.get();
+template<class T>
+inline bool operator==(const ref<T>& a, const ref<T>& b) {
+    return a.get() == b.get();
 }
 
-template<class T> 
-inline bool operator!=( const ref<T>& a,const ref<T>& b ){
-	return !operator==(a,b);
+template<class T>
+inline bool operator!=(const ref<T>& a, const ref<T>& b) {
+    return !operator==(a, b);
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
