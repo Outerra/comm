@@ -139,14 +139,17 @@ public:
         return std::get<V>(*this);
     }
 
-    friend void swap( slotalloc_base& a, slotalloc_base& b ) {
-        std::swap(a._array, b._array);
-        std::swap(a._allocated, b._allocated);
-        std::swap(a._count, b._count);
+    void swap( slotalloc_base& other ) {
+        std::swap(_array, other._array);
+        std::swap(_allocated, other._allocated);
+        std::swap(_count, other._count);
 
-        extarray_t& exta = a;
-        extarray_t& extb = b;
-        std::swap(a, b);
+        extarray_t& exto = other;
+        static_cast<extarray_t*>(this)->swap(exto);
+    }
+
+    friend void swap( slotalloc_base& a, slotalloc_base& b ) {
+        a.swap(b);
     }
 
     //@return byte offset to the newly rebased array

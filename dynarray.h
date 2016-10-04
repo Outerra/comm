@@ -282,8 +282,7 @@ public:
     }
 
     ///Swap content with another dynarray, with possibly different counter type
-    template<class COUNT2 = COUNT>
-    friend void swap( dynarray<T,COUNT,A>& a, dynarray<T,COUNT2,A>& b ) {
+    friend void swap( dynarray& a, dynarray& b ) {
         a.swap(b);
     }
 
