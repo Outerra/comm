@@ -575,8 +575,9 @@ public:
 
         const changeset_t* chb = chs->ptr();
         const changeset_t* che = chs->ptre();
+        uints s = 0;
 
-        for(const changeset_t* ch=chb; ch<che; p+=MASK_BITS) {
+        for(const changeset_t* ch=chb; ch<che; ++p) {
             uints m = p<e ? *p : 0U;
             uints s = (p - b) * MASK_BITS;
 
