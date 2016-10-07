@@ -232,8 +232,7 @@ template<class T> struct rebase<true,T> {
 template<class T> struct rebase<false,T> {
     static void perform( T* src, T* srcend, T* dst ) {
         for(; src < srcend; ++src, ++dst) {
-            new(dst) T;
-            *dst = std::move(*src);
+            new(dst) T(std::move(*src));
             src->~T();
         }
     }
@@ -359,8 +358,8 @@ using index_sequence = std::index_sequence<Ints...>;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// http://stackoverflow.com/a/28213747/2435594
-
+///Helper to get types and count of lambda arguments
+/// http://stackoverflow.com/a/28213747/2435594
 template <typename T>
 struct closure_traits : closure_traits<decltype(&T::operator())> {};
 

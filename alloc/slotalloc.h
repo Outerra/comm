@@ -459,7 +459,7 @@ public:
 protected:
 
 
-    ///Helper functions for for_each to allow calling with optional index argument
+    //@{Helper functions for for_each to allow calling with optional index argument
     template<class Callable>
     using arg0 = typename std::remove_reference<typename closure_traits<Callable>::template arg<0>>::type;
 
@@ -499,6 +499,7 @@ protected:
 
         return c(v, index);
     }
+    //@}
 
 public:
     ///Invoke a functor on each used item.
@@ -507,8 +508,8 @@ public:
     template<typename Func>
     void for_each( Func f ) const
     {
-        typedef std::remove_reference_t<closure_traits<Func>::arg<0>> Tx;
-        Tx* d = (Tx*)_array.ptr();
+        typedef std::remove_reference_t<typename closure_traits<Func>::template arg<0>> Tx;
+        Tx* d = const_cast<Tx*>(_array.ptr());
         uint_type const* b = const_cast<uint_type const*>(_allocated.ptr());
         uint_type const* e = const_cast<uint_type const*>(_allocated.ptre());
         uints s = 0;
@@ -563,8 +564,8 @@ public:
     {
         const bool all_modified = bitplane_mask > slotalloc_detail::changeset::BITPLANE_MASK;
 
-        typedef std::remove_pointer_t<std::remove_reference_t<closure_traits<Func>::arg<0>>> Tx;
-        Tx* d = (Tx*)_array.ptr();
+        typedef std::remove_pointer_t<std::remove_reference_t<typename closure_traits<Func>::template arg<0>>> Tx;
+        Tx* d = const_cast<Tx*>(_array.ptr());
         uint_type const* b = const_cast<uint_type const*>(_allocated.ptr());
         uint_type const* e = const_cast<uint_type const*>(_allocated.ptre());
         uint_type const* p = b;
@@ -594,8 +595,8 @@ public:
     template<typename Func>
     T* find_if(Func f) const
     {
-        typedef std::remove_reference_t<closure_traits<Func>::arg<0>> Tx;
-        Tx* d = (Tx*)_array.ptr();
+        typedef std::remove_reference_t<typename closure_traits<Func>::arg<0>> Tx;
+        Tx* d = const_cast<Tx*>(_array.ptr());
         uint_type const* b = const_cast<uint_type const*>(_allocated.ptr());
         uint_type const* e = const_cast<uint_type const*>(_allocated.ptre());
         uints s = 0;
@@ -661,7 +662,6 @@ public:
 
         for(changeset_t* ch=chb; ch<che; p+=MASK_BITS) {
             uints m = p<e ? *p : 0U;
-            uints s = (p - b) * MASK_BITS;
 
             for(int i=0; ch<che && i<MASK_BITS; ++i, m>>=1, ++ch)
                 ch->mask = (ch->mask & preserve) | (m & 1);

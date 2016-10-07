@@ -63,7 +63,7 @@ public:
 	uint64 time_ns();
     
     //@return current time in nanoseconds
-    static uint64 nsec_timer::current_time_ns();
+    static uint64 current_time_ns();
 
     ///Adjust returned time
     void adjust_time_ns( int64 dtns ) {

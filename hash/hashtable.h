@@ -528,7 +528,7 @@ public:
         std::swap( a._HASHFUNC, b._HASHFUNC );
         std::swap( a._EQFUNC, b._EQFUNC );
         std::swap( a._GETKEYFUNC, b._GETKEYFUNC );
-        std::swap( a._table b._table );
+        std::swap( a._table, b._table );
         std::swap( a._nelem, b._nelem );
     }
 
