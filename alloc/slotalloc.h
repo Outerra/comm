@@ -239,7 +239,7 @@ public:
         if(id >= _array.size())
             throw exception("object outside of bounds");
 
-        DASSERT( get_bit(id) );
+        DASSERT_RETVOID( get_bit(id) );
 
         if(TRACKING)
             tracker_t::set_modified(id);
@@ -270,16 +270,16 @@ public:
     //@param id id of the item
     const T* get_item( uints id ) const
     {
-        DASSERT( id < _array.size() && get_bit(id) );
-        return id < _array.size() ? _array.ptr() + id : 0;
+        DASSERT_RET( id < _array.size() && get_bit(id), 0 );
+        return _array.ptr() + id;
     }
 
     T* get_item( uints id )
     {
-        DASSERT( id < _array.size() && get_bit(id) );
+        DASSERT_RET( id < _array.size() && get_bit(id), 0 );
         if(TRACKING)
             tracker_t::set_modified(id);
-        return id < _array.size() ? _array.ptr() + id : 0;
+        return _array.ptr() + id;
     }
 
     const T& operator [] (uints idx) const {
