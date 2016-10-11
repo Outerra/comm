@@ -2440,10 +2440,57 @@ template<> struct hash<token>
     }
 };
 
-inline string_hash::string_hash(const token& tok)
-{
-    _hash = __coid_hash_string(tok.ptr(), tok.len());
+inline uint string_hash( const token& tok ) {
+    return __coid_hash_string(tok.ptr(), tok.len());
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+///Token with hash value, compile-time hash if computed from literals
+class tokenhash : public token
+{
+public:
+    tokenhash() 
+    {}
+
+    tokenhash(std::nullptr_t) : token(nullptr)
+    {}
+
+    ///String literal constructor, optimization to have fast literal strings available as tokens
+    //@note tries to detect and if passed in a char array instead of string literal, by checking if the last char is 0
+    // and the preceding char is not 0
+    // Call token(&*array) to force treating the array as a zero-terminated string
+    template <int N>
+    tokenhash(const char (&str)[N])
+        : token(str), _hash(literal_hash(str))
+    {}
+
+    ///Character array constructor
+    template <int N>
+    tokenhash(char (&str)[N])
+        : token(str), _hash(literal_hash(str))
+    {}
+
+    ///Constructor from const char*, artificially lowered precedence to allow catching literals above
+    template<typename T>
+    tokenhash(T czstr, typename is_char_ptr<T,bool>::type=0)
+    {
+        set(czstr, czstr ? ::strlen(czstr) : 0);
+        _hash = __coid_hash_string(ptr(), len());
+    }
+
+    tokenhash( const token& tok )
+        : token(tok), _hash(__coid_hash_string(tok.ptr(), tok.len()))
+    {}
+
+
+    uint hash() const { return _hash; }
+
+private:
+
+    uint _hash;
+};
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
