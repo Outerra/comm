@@ -575,7 +575,6 @@ public:
 
         const changeset_t* chb = chs->ptr();
         const changeset_t* che = chs->ptre();
-        uints s = 0;
 
         for(const changeset_t* ch=chb; ch<che; ++p) {
             uints m = p<e ? *p : 0U;
@@ -596,7 +595,7 @@ public:
     template<typename Func>
     T* find_if(Func f) const
     {
-        typedef std::remove_reference_t<typename closure_traits<Func>::arg<0>> Tx;
+        typedef std::remove_reference_t<typename closure_traits<Func>::template arg<0>> Tx;
         Tx* d = const_cast<Tx*>(_array.ptr());
         uint_type const* b = const_cast<uint_type const*>(_allocated.ptr());
         uint_type const* e = const_cast<uint_type const*>(_allocated.ptre());

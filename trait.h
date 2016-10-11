@@ -355,6 +355,29 @@ using index_sequence = std::index_sequence<Ints...>;
 
 #endif
 
+////////////////////////////////////////////////////////////////////////////////
+
+template <typename Func, typename A, typename ...Args> struct variadic_caller
+{
+    static void call(Func& f, A&& a, Args&& ...args) {
+        f(std::forward<A>(a));
+        variadic_caller<Func, Args...>::call(f, args...);
+    }
+};
+
+template <typename Func, typename A> struct variadic_caller<Func, A>
+{
+    static void call(Func& f, A&& a) {
+        f(std::forward<A>(a));
+    }
+};
+
+//template <typename Func, typename ...Args>
+//void Call(Func & f, Args && ...args)
+//{
+//    variadic_caller<Func, Args...>::call(f, std::forward<Args>(args)...);
+//}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 

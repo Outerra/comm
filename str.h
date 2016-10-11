@@ -944,6 +944,14 @@ public:
         return *this;
     }
 
+    ///Append a variadic block of arguments using << operator
+    template<typename ...Args>
+    void append_var(Args&& ...args)
+    {
+        auto fn = [this](auto v) { (*this) << v; };
+        variadic_caller<decltype(fn), Args...>::call(fn, std::forward<Args>(args)...);
+    }
+
     ///Append string, replacing characters
     charstr& append_replace(const token& tok, char from, char to)
     {
