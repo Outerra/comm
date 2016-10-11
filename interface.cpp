@@ -25,6 +25,7 @@ struct entry
 static void _default_log( const token& msg )
 {
     fwrite(msg.ptr(), 1, msg.len(), stdout);
+    fputc('\n', stdout);
     fflush(stdout);
 }
 
