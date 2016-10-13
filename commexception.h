@@ -74,8 +74,11 @@ struct exception : public std::exception
         : _location(loc)
     {}
 
+#if _MSC_VER==0 || _MSC_VER >= 1900
     virtual const char* what() const noexcept { return c_str(); }
-
+#else
+    virtual const char* what() const { return c_str(); }
+#endif
 
     TOKEN_OP_STR_NONCONST(exception&, <<)
     exception& operator << (const token& tok)   { S2D(); _dtext += (tok);   return *this; }
