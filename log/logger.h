@@ -47,48 +47,22 @@
 
 COID_NAMESPACE_BEGIN
 
-class logmsg;
-class logger;
-
-class logger_file
-{
-	bofstream _logfile;
-    charstr _logbuf;
-    charstr _logpath;
-
-    bool check_file_open()
-    {
-        if(_logfile.is_open() || !_logpath)
-            return _logfile.is_open();
-
-        opcd e = _logfile.open(_logpath);
-        if(!e) {
-            _logfile.xwrite_token_raw(_logbuf);
-            _logbuf.free();
-        }
-
-        return e==0;
-    }
-
-public:
-    logger_file() {}
-    logger_file(const token& path) : _logpath(path)
-    {}
-        
-    ///Open physical log file. @note Only notes the file name, the file is opened with the next log msg because of potential MT clashes
-    void open(charstr filename) {
-        std::swap(_logpath, filename);
-    }
-
-	void write_to_file(const charstr& lm) {
-        if(check_file_open())
-            _logfile.xwrite_token_raw(lm);
-        else
-            _logbuf << lm;
-    }
+enum class ELogType {
+    None = -1,
+    Exception=0,
+    Error,
+    Warning,
+    Info,
+    Highlight,
+    Debug,
+    Perf,
+    Last,
 };
 
-typedef ref<logger_file> logger_file_ptr;
+class logger_file;
+class logger;
+class logmsg;
+class policy_msg;
 
 /* 
  * Log message object, returned by the logger.
@@ -96,28 +70,110 @@ typedef ref<logger_file> logger_file_ptr;
  * with policy policy_log.
  */
 class logmsg 
-    : public policy_pooled_i<logmsg>
+    //: public policy_pooled<logmsg>
 {
 protected:
-	logger_file_ptr _lf;
-	int _type;
+
+    friend class policy_msg;
+
+    logger* _logger;
+    ref<logger_file> _logger_file;
+
+    ELogType _type;
     charstr _str;
 
 public:
-	void set_log_file(logger_file_ptr& lf,const int t) { _lf=lf; _type=t; }
 
-	void reset() { _str.reset(); _lf.release(); }
+    logmsg() : _logger(0), _type(ELogType::None)
+    {}
 
-	void write_to_file() { _lf->write_to_file(_str); }
+    logmsg( logmsg&& other )
+        : _type(other._type)
+    {
+        _logger = other._logger;
+        other._logger = 0;
 
-	int get_type() const { return _type; }
+        _logger_file.takeover(other._logger_file);
+        _str.takeover(other._str);
+    }
 
-	void set_type(const int t) { _type=t; }
+    void set_logger( logger* l ) { _logger = l; }
+
+	void reset() {
+        _str.reset();
+        _logger = 0;
+        _logger_file.release();
+    }
+
+    void write();
+
+    ///Consume type prefix from the message
+    static ELogType consume_type( token& msg )
+    {
+        static token ERR = "error:";
+        static token WARN = "warning:";
+        static token INFO = "info:";
+        static token MSG = "msg:";
+        static token DBG1 = "dbg:";
+        static token DBG2 = "debug:";
+        static token PERF = "perf:";
+
+        ELogType t = ELogType::Info;
+        if(msg.consume_icase("error:"))
+            t = ELogType::Error;
+        else if(msg.consume_icase("warn:") || msg.consume_icase("warning:"))
+            t = ELogType::Warning;
+        else if(msg.consume_icase("info:"))
+            t = ELogType::Info;
+        else if(msg.consume_icase("msg:"))
+            t = ELogType::Highlight;
+        else if(msg.consume_icase("dbg:") || msg.consume_icase("debug:"))
+            t = ELogType::Debug;
+        else if(msg.consume_icase("perf:"))
+            t = ELogType::Perf;
+
+        msg.skip_whitespace();
+        return t;
+    }
+
+    static const token& type2tok( ELogType t )
+    {
+        static token st[1 + int(ELogType::Last)]={
+            "",
+            "FATAL: ",
+            "ERROR: ",
+            "WARNING: ",
+            "INFO: ",
+            "INFO: ",
+            "DEBUG: ",
+            "PERF: ",
+        };
+        static token empty;
+
+        return t<ELogType::Last ? st[1 + int(t)] : empty;
+    }
+
+    ELogType deduce_type() {
+        token tok = _str;
+        ELogType t = consume_type(tok);
+        //if(tok.ptr() > _str.ptr())
+        //    _str.del(0, tok.ptr() - _str.ptr());
+        return t;
+    }
+
+    ELogType get_type() const { return _type; }
+
+	void set_type(ELogType t) { _type = t; }
 
     charstr& str() { return _str; }
+    const charstr& str() const { return _str; }
+
+protected:
+
+    void finalize( policy_msg* p );
 };
 
-typedef iref<logmsg> logmsg_ptr;
+typedef ref<logmsg> logmsg_ptr;
 
 /* 
  * USAGE :
@@ -135,130 +191,59 @@ typedef iref<logmsg> logmsg_ptr;
  */
 class logger
 {
-    friend class logmsg_local;
-
-public:
-	enum ELogType {
-		Exception=0,
-		Error,
-		Warning,
-		Info,
-        Highlight,
-		Debug,
-        Perf,
-		Last,
-        None,
-	};
-
-	class logmsg_local
-	{
-    protected:
-		logmsg_ptr _lm;
-        bool _stdout;
-
-	public:
-		logmsg_local(logger& lf, const ELogType t)
-            : _lm(CREATE_POOLED)
-            , _stdout(lf._stdout && t != Debug)
-        {
-            _lm->set_log_file(lf._logfile, t);
-        }
-
-		logmsg_local()
-            : _lm(), _stdout(false)
-        {}
-
-		~logmsg_local();
-
-        template<class T> charstr& operator << (const T& o) {
-            DASSERT(!_lm.is_empty());
-            return _lm->str() << (o);
-        }
-	};
-
-public:
-
-    static const token& type2tok( const ELogType t )
-	{
-		static token st[]={
-			"EXCEPTION: ",
-			"ERROR: ",
-			"WARNING: ",
-			"INFO: ",
-            "INFO: ",
-			"DEBUG: ",
-            "PERF: ",
-		};
-        static token empty = token();
-
-		return t<Last ? st[t] : empty;
-	}
-
 protected:
-	logger_file_ptr _logfile;
+
+	ref<logger_file> _logfile;
 
     bool _stdout;
 
 public:
+
 	logger( bool std_out=false );
 
-    void open(const token& filename) {
-        _logfile->open(filename);
+    void open(const token& filename);
+
+    void post( token msg );
+
+    template<class ...Vs>
+    void print( token msg, Vs&&... vs ) {
+        ref<logmsg> msgr = create_msg(ELogType::None);
+        if(!msgr)
+            return;
+
+        charstr& str = msgr->str();
+        str.print(msg, std::forward<Vs>(vs)...);
     }
 
-public:
-    logmsg_local operator()() {
-        logmsg_local lm(*this, Info);
-        return lm;
-    }
-
-    logmsg_local operator()(const ELogType t) {
-        logmsg_local lm(*this, t);
-        lm << type2tok(t);
-        return lm;
-    }
-
-    logmsg_local operator()(const ELogType t, const char* fnc) {
-        logmsg_local lm(*this, t);
-        lm << type2tok(t) << fnc << ' ';
-        return lm;
-    }
-
-    logmsg_local operator()(const ELogType t, const char* fnc, const int line) {
-        logmsg_local lm(*this, t);
-        lm << type2tok(t) << fnc << '(' << line << ')' << ' ';
-        return lm;
-    }
-
-    void post(token msg)
+    template<class ...Vs>
+    void print( ELogType type, const tokenhash& hash, const void* inst, token msg, Vs&&... vs )
     {
-        static token ERR = "error:";
-        static token WARN = "warning:";
-        static token INFO = "info:";
-        static token MSG = "msg:";
-        static token DBG1 = "dbg:";
-        static token DBG2 = "debug:";
-        static token PERF = "perf:";
+        ref<logmsg> msgr = create_msg(type, hash, inst);
+        if(!msgr)
+            return;
 
-        ELogType t = Info;
-        if(msg.consume_icase(ERR))
-            t = Error;
-        else if(msg.consume_icase(WARN))
-            t = Warning;
-        else if(msg.consume_icase(INFO))
-            t = Info;
-        else if(msg.consume_icase(MSG))
-            t = Highlight;
-        else if(msg.consume_icase(DBG1) || msg.consume_icase(DBG2))
-            t = Debug;
-        else if(msg.consume_icase(PERF))
-            t = Perf;
-
-        msg.skip_whitespace();
-
-        logmsg_local lm(*this, t);
-	    lm << type2tok(t) << msg;
+        charstr& str = msgr->str();
+        str.print(msg, std::forward<Vs>(vs)...);
     }
+
+    //@return logmsg, filling the prefix by the log type (e.g. ERROR: )
+    ref<logmsg> operator()( ELogType type = ELogType::Info );
+
+    //@return an empty logmsg object
+    ref<logmsg> create_msg( ELogType type );
+
+    ///Creates logmsg object if given log message type is enabled
+    //@param type log level
+    //@param hash tokenhash identifying the client (interface) name
+    //@param inst optional instance id
+    //@return logmsg reference or null if not enabled
+    ref<logmsg> create_msg( ELogType type, const tokenhash& hash, const void* inst );
+
+    const ref<logger_file>& file() const { return _logfile; }
+
+    virtual void enqueue( ref<logmsg>& msg );
+
+    virtual void write( const logmsg& msg );
 
 	void flush();
 };

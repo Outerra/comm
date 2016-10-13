@@ -201,6 +201,8 @@ class dynarray
 
 protected:
     friend struct dynarray_relocator;
+    template<typename,typename,typename> friend class dynarray;
+
     T* _ptr;
 
 public:

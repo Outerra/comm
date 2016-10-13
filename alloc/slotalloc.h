@@ -368,8 +368,8 @@ public:
     }
 
     //@return if of given item in ext array or UMAXS if the item is not managed here
-    template<int V, class T>
-    uints get_array_item_id( const T* p ) const
+    template<int V, class K>
+    uints get_array_item_id( const K* p ) const
     {
         auto& array = value_array<V>();
         uints id = p - array.ptr();
@@ -681,81 +681,81 @@ private:
 
     ///Helper to expand all ext arrays
     template<size_t... Index>
-    void extarray_expand_( coid::index_sequence<Index...>, uints n ) {
+    void extarray_expand_( index_sequence<Index...>, uints n ) {
         extarray_t& ext = *this;
         int dummy[] = { 0, ((void)std::get<Index>(ext).add(n), 0)... };
     }
 
     void extarray_expand( uints n = 1 ) {
-        extarray_expand_(coid::make_index_sequence<tracker_t::extarray_size>(), n);
+        extarray_expand_(make_index_sequence<tracker_t::extarray_size>(), n);
     }
 
     ///Helper to expand all ext arrays
     template<size_t... Index>
-    void extarray_expand_uninit_( coid::index_sequence<Index...>, uints n ) {
+    void extarray_expand_uninit_( index_sequence<Index...>, uints n ) {
         extarray_t& ext = *this;
         int dummy[] = { 0, ((void)std::get<Index>(ext).add(n), 0)... };
     }
 
     void extarray_expand_uninit( uints n = 1 ) {
-        extarray_expand_uninit_(coid::make_index_sequence<tracker_t::extarray_size>(), n);
+        extarray_expand_uninit_(make_index_sequence<tracker_t::extarray_size>(), n);
     }
 
     ///Helper to reset all ext arrays
     template<size_t... Index>
-    void extarray_reset_( coid::index_sequence<Index...> ) {
+    void extarray_reset_( index_sequence<Index...> ) {
         extarray_t& ext = *this;
         int dummy[] = { 0, ((void)std::get<Index>(ext).reset(), 0)... };
     }
 
     void extarray_reset() {
-        extarray_reset_(coid::make_index_sequence<tracker_t::extarray_size>());
+        extarray_reset_(make_index_sequence<tracker_t::extarray_size>());
     }
 
     ///Helper to set_count(0) all ext arrays
     template<size_t... Index>
-    void extarray_reset_count_( coid::index_sequence<Index...> ) {
+    void extarray_reset_count_( index_sequence<Index...> ) {
         extarray_t& ext = *this;
         int dummy[] = { 0, ((void)std::get<Index>(ext).set_size(0), 0)... };
     }
 
     void extarray_reset_count() {
-        extarray_reset_count_(coid::make_index_sequence<tracker_t::extarray_size>());
+        extarray_reset_count_(make_index_sequence<tracker_t::extarray_size>());
     }
 
     ///Helper to discard all ext arrays
     template<size_t... Index>
-    void extarray_discard_( coid::index_sequence<Index...> ) {
+    void extarray_discard_( index_sequence<Index...> ) {
         extarray_t& ext = *this;
         int dummy[] = { 0, ((void)std::get<Index>(ext).discard(), 0)... };
     }
 
     void extarray_discard() {
-        extarray_discard_(coid::make_index_sequence<tracker_t::extarray_size>());
+        extarray_discard_(make_index_sequence<tracker_t::extarray_size>());
     }
 
     ///Helper to reserve all ext arrays
     template<size_t... Index>
-    void extarray_reserve_( coid::index_sequence<Index...>, uints size ) {
+    void extarray_reserve_( index_sequence<Index...>, uints size ) {
         extarray_t& ext = *this;
         int dummy[] = { 0, ((void)std::get<Index>(ext).reserve(size, true), 0)... };
     }
 
     void extarray_reserve( uints size ) {
-        extarray_reserve_(coid::make_index_sequence<tracker_t::extarray_size>(), size);
+        extarray_reserve_(make_index_sequence<tracker_t::extarray_size>(), size);
     }
 
 
     ///Helper to iterate over all ext arrays
     template<typename F, size_t... Index>
-    void extarray_iterate_( coid::index_sequence<Index...>, F fn ) {
+    void extarray_iterate_( index_sequence<Index...>, F fn ) {
         extarray_t& ext = *this;
         int dummy[] = { 0, ((void)fn(std::get<Index>(ext)), 0)... };
     }
 
     template<typename F>
     void extarray_iterate( F fn ) {
-        extarray_iterate_(coid::make_index_sequence<tracker_t::extarray_size>(), fn);
+        extarray_iterate_(make_index_sequence<tracker_t::extarray_size>(), fn);
     }
 
 

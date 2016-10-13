@@ -122,14 +122,15 @@ const charstr& interface_register::root_path()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void interface_register::log( const token& msg )
+ref<logmsg> interface_register::canlog( ELogType type, const tokenhash& hash, const void* inst )
 {
-    fn_log_t logfn = interface_register_impl::get()._fn_log;
+    fn_log_t canlogfn = interface_register_impl::get()._fn_log;
+    ref<logmsg> msg;
 
-    if(logfn)
-        logfn(msg);
-    else
-        _default_log(msg);
+    if(canlogfn)
+        msg = canlogfn(type, hash, inst);
+
+    return msg;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

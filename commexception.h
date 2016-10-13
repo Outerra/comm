@@ -74,7 +74,7 @@ struct exception : public std::exception
         : _location(loc)
     {}
 
-    virtual const char* what() const { return c_str(); }
+    virtual const char* what() const noexcept { return c_str(); }
 
 
     TOKEN_OP_STR_NONCONST(exception&, <<)

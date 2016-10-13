@@ -43,6 +43,8 @@
 #include "str.h"
 #include "dynarray.h"
 #include "regex.h"
+#include "log/logger.h"
+
 
 COID_NAMESPACE_BEGIN
 
@@ -59,10 +61,8 @@ public:
 
     static const charstr& root_path();
 
-    static void log( const token& msg );
 
-
-    typedef void (*fn_log_t)(const token&);
+    typedef ref<logmsg> (*fn_log_t)(ELogType, const tokenhash&, const void*);
     typedef bool (*fn_acc_t)(const token&);
 
     static void setup( const token& path, fn_log_t log, fn_acc_t access );
@@ -78,6 +78,8 @@ public:
 
     ///Find interfaces containing given string
     static dynarray<creator>& find_interface_creators( const regex& str, dynarray<creator>& dst );
+
+    static ref<logmsg> canlog( ELogType type, const tokenhash& hash, const void* inst );
 };
 
 

@@ -159,12 +159,12 @@ DIRECT_HASH_FUNC(ulong);
 
 template<size_t I>
 inline coid_constexpr uint literal_hash( const char* str ) {
-    return (literal_hash<I-1>(str) ^ str[I]) * 16777619ULL;
+    return (literal_hash<I-1>(str) ^ str[I-1]) * 16777619ULL;
 }
  
 template<>
 inline coid_constexpr uint literal_hash<0>( const char* str ) {
-    return str[0] * 16777619ULL;
+    return 2166136261U;
 }
 
 template<size_t N>

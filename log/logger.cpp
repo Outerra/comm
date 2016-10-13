@@ -49,22 +49,132 @@ using namespace coid;
 #define WIN32_MEAN_AND_LEAN
 #include <Windows.h>
 
-static void write_console_text( const charstr& text, int type )
+
+////////////////////////////////////////////////////////////////////////////////
+
+namespace coid {
+
+class policy_msg : public policy_base
 {
+public:
+    COIDNEWDELETE("policy_msg");
+
+    typedef pool<policy_msg*> pool_type;
+
+protected:
+
+    pool_type* _pool;
+    logmsg* _obj;
+
+protected:
+
+    ///
+    explicit policy_msg(logmsg* const obj, pool_type* const p=0) 
+        : _pool(p)
+        , _obj(obj)
+    {}
+
+public:
+
+    logmsg* get() const { return _obj; }
+
+    virtual void _destroy() override
+    { 
+        DASSERT(_pool != 0); 
+        
+        if(!_obj->_logger_file) {
+            //first destroy just queues the message
+            _obj->finalize(this);
+        }
+        else {
+            //_obj->_logger->write(*_obj);
+            //_obj->reset();
+
+            //back to the pool
+            policy_msg* t = this;
+            _pool->release_instance(t);
+        }
+    }
+
+    ///
+    static policy_msg* create() 
+    {
+        auto po = &pool_type::global();
+        policy_msg* p=0;
+
+        bool make = !po->create_instance(p);
+        if(make)
+            p = new policy_msg(new logmsg, po);
+        else
+            p->get()->reset();
+
+        return p;
+    }
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+class logger_file
+{
+    bofstream _logfile;
+    charstr _logbuf;
+    charstr _logpath;
+
+    bool check_file_open()
+    {
+        if(_logfile.is_open() || !_logpath)
+            return _logfile.is_open();
+
+        opcd e = _logfile.open(_logpath);
+        if(!e) {
+            _logfile.xwrite_token_raw(_logbuf);
+            _logbuf.free();
+        }
+
+        return e==0;
+    }
+
+public:
+    logger_file() {}
+    logger_file(const token& path) : _logpath(path)
+    {}
+
+    ///Open physical log file. @note Only notes the file name, the file is opened with the next log msg because of potential MT clashes
+    void open(charstr filename) {
+        std::swap(_logpath, filename);
+    }
+
+    void write_to_file( const logmsg& lm )
+    {
+        if(check_file_open())
+            _logfile.xwrite_token_raw(lm.str());
+        else
+            _logbuf << lm.str();
+    }
+};
+
+} //namespace coid
+
+////////////////////////////////////////////////////////////////////////////////
+static void write_console_text( const logmsg& msg )
+{
+    const charstr& text = msg.str();
+    ELogType type = msg.get_type();
+
     static HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
 
-    if(type != logger::Info) {
+    if(type != ELogType::Info) {
         uint flg;
 
         switch(type) {
-        case logger::Exception: flg = FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY; break;
-        case logger::Error:     flg = FOREGROUND_RED | FOREGROUND_INTENSITY; break;
-        case logger::Warning:   flg = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY; break;
-        case logger::Info:      flg = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE; break;
-        case logger::Highlight: flg = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY; break;
-        case logger::Debug:     flg = FOREGROUND_GREEN | FOREGROUND_BLUE; break;
-        case logger::Perf:      flg = FOREGROUND_GREEN | FOREGROUND_INTENSITY; break;
-        default:                flg = BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE;
+        case ELogType::Exception: flg = FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY; break;
+        case ELogType::Error:     flg = FOREGROUND_RED | FOREGROUND_INTENSITY; break;
+        case ELogType::Warning:   flg = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY; break;
+        case ELogType::Info:      flg = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE; break;
+        case ELogType::Highlight: flg = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY; break;
+        case ELogType::Debug:     flg = FOREGROUND_GREEN | FOREGROUND_BLUE; break;
+        case ELogType::Perf:      flg = FOREGROUND_GREEN | FOREGROUND_INTENSITY; break;
+        default:                  flg = BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE;
         }
 
         SetConsoleTextAttribute(hstdout, flg);
@@ -72,7 +182,7 @@ static void write_console_text( const charstr& text, int type )
 
     fwrite(text.ptr(), 1, text.len(), stdout);
 
-    if(type != logger::Info)
+    if(type != ELogType::Info)
         SetConsoleTextAttribute(hstdout, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
 
 #ifdef _DEBUG
@@ -82,15 +192,37 @@ static void write_console_text( const charstr& text, int type )
 
 #else
 
-static void write_console_text( const charstr& text, int type )
+static void write_console_text( const charstr& text, ELogType type )
 {
     fwrite(text.ptr(), 1, text.len(), stdout);
 }
 
 #endif
 
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+////////////////////////////////////////////////////////////////////////////////
+void logmsg::write()
+{
+    if(!_str.ends_with('\n'))
+        _str.append('\n');
 
+    _logger_file->write_to_file(*this);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void logmsg::finalize( policy_msg* p )
+{
+    if(_type == ELogType::None)
+        deduce_type();
+
+    _logger_file = _logger->file();
+    _logger->enqueue(ref<logmsg>(p));
+    _logger = 0;
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
 logger::logger( bool std_out )
 	: _logfile(new logger_file)
     , _stdout(std_out)
@@ -98,28 +230,94 @@ logger::logger( bool std_out )
 	SINGLETON(log_writer);
 }
 
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+////////////////////////////////////////////////////////////////////////////////
+ref<logmsg> logger::create_msg( ELogType type, const tokenhash& hash, const void* inst )
+{
+    //TODO check hash, inst
 
+    ref<logmsg> rmsg = operator()(type);
+    rmsg->str() << '[' << hash << "] ";
+
+    return rmsg;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+ref<logmsg> logger::operator()( ELogType t )
+{
+    ref<logmsg> msg = create_msg(t);
+    msg->str() << logmsg::type2tok(t);
+
+    return msg;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+ref<logmsg> logger::create_msg( ELogType type )
+{
+    ref<logmsg> msg = ref<logmsg>(policy_msg::create());
+    msg->set_type(type);
+    msg->set_logger(this);
+
+    return msg;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void logger::enqueue( ref<logmsg>& msg )
+{
+    SINGLETON(log_writer).addmsg(msg);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void logger::write( const logmsg& msg )
+{
+    if(_stdout)
+        write_console_text(msg);
+
+    _logfile->write_to_file(msg);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void logger::post( token msg )
+{
+    ref<logmsg> rmsg = ref<logmsg>(policy_msg::create());
+    rmsg->set_type(logmsg::consume_type(msg));
+    rmsg->str() = msg;
+
+    //enqueue(rmsg);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void logger::open(const token& filename)
+{
+    _logfile->open(filename);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void logger::flush()
+{
+    int maxloop = 3000 / 20;
+    while(!SINGLETON(log_writer).is_empty() && maxloop-- > 0)
+        sysMilliSecondSleep(20);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 log_writer::log_writer() 
 	: _thread()
 	, _queue()
 {
     //make sure the dependent singleton gets created
-    logmsg::pool();
-	//SINGLETON(policy_pooled<logmsg>::pool_type);
+    //logmsg::pool();
+	policy_pooled<logmsg>::pool();
 
 	_thread.create( thread_run_fn, this, 0, "log_writer" );
 }
 
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
+////////////////////////////////////////////////////////////////////////////////
 log_writer::~log_writer()
 {
    _thread.cancel_and_wait(10000);
 }
 
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
+////////////////////////////////////////////////////////////////////////////////
 void* log_writer::thread_run()
 {
 	while(1) {
@@ -133,40 +331,16 @@ void* log_writer::thread_run()
 	return 0;
 }
 
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
+////////////////////////////////////////////////////////////////////////////////
 void log_writer::flush()
 {
-	logmsg_ptr m;
+	ref<logmsg> m;
 
 	//int maxloop = 3000 / 20;
 
 	while( _queue.pop(m) ) {
         DASSERT( m->str() );
-		m->write_to_file();
+		m->write();
 		m.release();
 	}
 }
-
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
-logger::logmsg_local::~logmsg_local()
-{
-	if(!_lm.is_empty() && _lm.refcount() == 1) {
-        if(_stdout)
-            write_console_text(_lm->str(), _lm->get_type());
-
-        SINGLETON(log_writer).addmsg(_lm);
-    }
-}
-
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
-void logger::flush()
-{
-    int maxloop = 3000 / 20;
-    while(!SINGLETON(log_writer).is_empty() && maxloop-- > 0)
-        sysMilliSecondSleep(20);
-}
-
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

@@ -944,12 +944,35 @@ public:
         return *this;
     }
 
-    ///Append a variadic block of arguments using << operator
+    ///Append a variadic block of arguments with format string
+    //@param str format string, with {} for variable substitutions, e.g. "foo {} bar {} end"
+    //@param args variadic parameters
     template<typename ...Args>
-    void append_var(Args&& ...args)
+    void print( token str, Args&& ...args )
     {
-        auto fn = [this](auto v) { (*this) << v; };
-        variadic_caller<decltype(fn), Args...>::call(fn, std::forward<Args>(args)...);
+        coid_constexpr int N = sizeof...(args);
+        token substrings[N];
+
+        int n = 0;
+        do {
+            token p = str.cut_left("{}", false);
+            if(str)
+                substrings[n++] = p;
+            else {
+                //no more {} in the string
+                str = p;
+                break;
+            }
+        }
+        while(n<N);
+
+        auto fn = [&](int k, auto&& v) {
+            if(k < n)
+                (*this) << substrings[k] << v;
+        };
+        variadic_call(fn, std::forward<Args>(args)...);
+
+        *this << str;
     }
 
     ///Append string, replacing characters

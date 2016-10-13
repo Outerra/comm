@@ -357,27 +357,27 @@ using index_sequence = std::index_sequence<Ints...>;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-template <typename Func, typename A, typename ...Args> struct variadic_caller
+template <typename Func, int K, typename A, typename ...Args> struct variadic_call_helper
 {
-    static void call(Func& f, A&& a, Args&& ...args) {
-        f(std::forward<A>(a));
-        variadic_caller<Func, Args...>::call(f, args...);
+    static void call(const Func& f, A&& a, Args&& ...args) {
+        f(K, std::forward<A>(a));
+        variadic_call_helper<Func, K+1, Args...>::call(f, args...);
     }
 };
 
-template <typename Func, typename A> struct variadic_caller<Func, A>
+template <typename Func, int K, typename A> struct variadic_call_helper<Func, K, A>
 {
-    static void call(Func& f, A&& a) {
-        f(std::forward<A>(a));
+    static void call(const Func& f, A&& a) {
+        f(K, std::forward<A>(a));
     }
 };
 
-//template <typename Func, typename ...Args>
-//void Call(Func & f, Args && ...args)
-//{
-//    variadic_caller<Func, Args...>::call(f, std::forward<Args>(args)...);
-//}
-
+///Invoke function on variadic arguments
+//@param fn function to invoke, in the form (int k, auto&& p)
+template<typename Func, typename ...Args>
+inline void variadic_call( const Func& fn, Args&&... args ) {
+    variadic_call_helper<Func, 0, Args...>::call(fn, std::forward<Args>(args)...);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 

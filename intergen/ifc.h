@@ -42,6 +42,7 @@
 #include "../interface.h"
 #include "../binstring.h"
 #include "../local.h"
+#include "../log/logger.h"
 
 ///Interface class decoration keyword
 //@param name desired name of the interface class, optionally with namespace. With + prefix generates also the capture code for non-const methods by default
@@ -118,12 +119,6 @@ protected:
 
 public:
 
-    ///Log message
-    //@param msg message with optional prefix (error: warn: warning: info: debug:)
-    static void log( const coid::token& msg ) {
-        coid::interface_register::log(msg);
-    }
-    
     //@return host class pointer
     //@note T derived from policy_intrusive_base
     template<typename T>
@@ -143,7 +138,7 @@ public:
     virtual int intergen_hash_id() const = 0;
 
     //@return interface name
-    virtual const coid::token& intergen_interface_name() const = 0;
+    virtual const coid::tokenhash& intergen_interface_name() const = 0;
 
     enum EBackend {
         IFC_BACKEND_CXX,
@@ -167,6 +162,29 @@ public:
 
     ///Dispatch a captured call
     virtual void intergen_capture_dispatch( uint mid, coid::binstring& bin ) {}
+
+    ///Interface log function with formatting
+    //@param type log type
+    //@param fmt format @see charstr.print
+    //@param vs variadic parameters 
+    template<class ...Vs>
+    void ifclog( coid::ELogType type, coid::token fmt, Vs&& ...vs ) {
+        ref<coid::logmsg> msgr = coid::interface_register::canlog(type, intergen_interface_name(), this);
+        if(!msgr)
+            return;
+
+        msgr->str().print(fmt, std::forward<Vs>(vs)...);
+    }
+
+protected:
+
+    static void ifclog_ext( coid::ELogType type, const coid::tokenhash& hash, const void* inst, const coid::token& txt ) {
+        ref<coid::logmsg> msgr = coid::interface_register::canlog(type, hash, inst);
+        if(!msgr)
+            return;
+
+        msgr->str() << txt;
+    }
 };
 
 ////////////////////////////////////////////////////////////////////////////////

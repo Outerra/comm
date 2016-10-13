@@ -100,31 +100,17 @@
 #endif
 
 
-#if SYSTYPE_MSVC
-# if _MSC_VER >= 1800
-#  define COID_VARIADIC_TEMPLATES
-# endif
-#elif defined(__has_cpp_attribute)
-# if __has_cpp_attribute(__cpp_variable_templates)
-#  define COID_VARIADIC_TEMPLATES
-# endif
+#if defined(__cpp_variadic_templates) || _MSC_VER >= 1800
+# define COID_VARIADIC_TEMPLATES
 #endif
 
-#if SYSTYPE_MSVC
-# if _MSC_VER >= 1900
-#  define COID_CONSTEXPR
-#  define coid_constexpr constexpr
-# else
-#  define coid_constexpr const
-# endif
-#elif defined(__has_cpp_attribute)
-# if __has_cpp_attribute(__cpp_constexpr)
-#  define COID_CONSTEXPR
-#  define coid_constexpr constexpr
-# else
-#  define coid_constexpr const
-# endif
+#if defined(__cpp_constexpr) || _MSC_VER >= 1900
+# define coid_constexpr constexpr
+# define COID_CONSTEXPR
+#else
+# define coid_constexpr const
 #endif
+
 
 #ifdef SYSTYPE_WIN
 # if defined(_WIN64)

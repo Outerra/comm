@@ -79,7 +79,7 @@ public:
 
         bool make = !po->create_instance(p) && !nonew;
         if(make)
-            p = new this_type(new T,po);
+            p = new this_type(new T, po);
         if(isnew)
             *isnew = make;
         return p;

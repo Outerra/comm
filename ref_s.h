@@ -200,9 +200,9 @@ public:
     /// DO NOT USE !!!
     policy* add_refcount() const { if(_p) _p->add_refcount(); return _p; }
 
-    T * operator->() const { DASSERT(_o != 0 && "You are trying to use not initialized REF!"); return _o; }
+    T * operator->() const { DASSERT(_o != 0 && "unitialized reference"); return _o; }
 
-    T * operator->() { DASSERT(_o != 0 && "You are trying to use not initialized REF!"); return _o; }
+    T * operator->() { DASSERT(_o != 0 && "unitialized reference"); return _o; }
 
     T & operator*() const { return *_o; }
 

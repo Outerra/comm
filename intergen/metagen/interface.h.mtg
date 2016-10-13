@@ -96,8 +96,8 @@ $-(/if)$
 
     int intergen_hash_id() const override { return HASHID; }
 
-    const coid::token& intergen_interface_name() const override {
-        static const coid::token _name = "$ns rest="::" after="::"$$name$";
+    const coid::tokenhash& intergen_interface_name() const override {
+        static const coid::tokenhash _name = "$ns rest="::" after="::"$$name$";
         return _name;
     }
 
