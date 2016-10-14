@@ -469,6 +469,9 @@ protected:
     template<class Fn>
     using has_index = std::integral_constant<bool, !(closure_traits<Fn>::arity::value <= 1)>;
 
+    template<class Fn>
+    using returns_void = std::integral_constant<bool, closure_traits<Fn>::returns_void::value>;
+
 
     template<typename Fn, typename = std::enable_if_t<is_const<Fn>::value && !has_index<Fn>::value>>
     bool funccall(const Fn& fn, const arg0<Fn>& v, size_t&& index) const
@@ -477,8 +480,8 @@ protected:
         return false;
     }
 
-    template<typename Fn, typename = std::enable_if_t<!is_const<Fn>::value && !has_index<Fn>::value>>
-    auto funccall(const Fn& fn, arg0<Fn>& v, size_t&& index) const -> std::enable_if_t<std::is_void<decltype(fn(v))>::value, bool>
+    template<typename Fn, typename = std::enable_if_t<!is_const<Fn>::value && !has_index<Fn>::value && returns_void<Fn>::value>>
+    bool funccall(const Fn& fn, arg0<Fn>& v, const size_t&& index) const
     {
         fn(v);
         if(TRACKING)
@@ -487,8 +490,8 @@ protected:
         return TRACKING;
     }
 
-    template<typename Fn, typename = std::enable_if_t<!is_const<Fn>::value && !has_index<Fn>::value>>
-    auto funccall(const Fn& fn, arg0<Fn>& v, size_t&& index) const -> std::enable_if_t<!std::is_void<decltype(fn(v))>::value, bool>
+    template<typename Fn, typename = std::enable_if_t<!is_const<Fn>::value && !has_index<Fn>::value && !returns_void<Fn>::value>>
+    bool funccall(const Fn& fn, arg0<Fn>& v, size_t&& index) const
     {
         bool rval = static_cast<bool>(fn(v));
         if(rval && TRACKING)
@@ -504,8 +507,8 @@ protected:
         return false;
     }
 
-    template<typename Fn, typename = std::enable_if_t<!is_const<Fn>::value && has_index<Fn>::value>>
-    auto funccall(const Fn& fn, arg0<Fn>& v, size_t index) const -> std::enable_if_t<std::is_void<decltype(fn(v, index))>::value, bool>
+    template<typename Fn, typename = std::enable_if_t<!is_const<Fn>::value && has_index<Fn>::value && returns_void<Fn>::value>>
+    bool funccall(const Fn& fn, arg0<Fn>& v, const size_t& index) const
     {
         fn(v, index);
         if(TRACKING)
@@ -514,8 +517,8 @@ protected:
         return TRACKING;
     }
 
-    template<typename Fn, typename = std::enable_if_t<!is_const<Fn>::value && has_index<Fn>::value>>
-    auto funccall(const Fn& fn, arg0<Fn>& v, size_t index) const -> std::enable_if_t<!std::is_void<decltype(fn(v, index))>::value, bool>
+    template<typename Fn, typename = std::enable_if_t<!is_const<Fn>::value && has_index<Fn>::value && !returns_void<Fn>::value>>
+    bool funccall(const Fn& fn, arg0<Fn>& v, size_t index) const
     {
         bool rval = static_cast<bool>(fn(v, index));
         if(rval && TRACKING)

@@ -65,9 +65,9 @@ public:
 
 	void push(const T& item) { GUARDTHIS(_mutex); this->push_back(item); }
 
-	void push_take(T& item) {
+	void push(T&& item) {
         GUARDTHIS(_mutex);
-        this->push_back_take(item);
+        this->push_back(std::forward<T>(item));
     }
 
 	bool pop(T& item) { GUARDTHIS(_mutex); return this->pop_front(item); }
@@ -76,7 +76,7 @@ public:
 
 	void push_front(const T& item) { GUARDTHIS(_mutex); coid::list<T>::push_front(item); }
 
-	void push_front_take(T& item) { GUARDTHIS(_mutex); coid::list<T>::push_front_take(item); }
+	void push_front(T&& item) { GUARDTHIS(_mutex); coid::list<T>::push_front(std::forward<T>(item)); }
 
     bool is_empty() const { GUARDTHIS(_mutex); return coid::list<T>::is_empty(); }
 };

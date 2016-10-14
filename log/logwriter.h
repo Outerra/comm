@@ -58,8 +58,8 @@ public:
 
 	void* thread_run();
 
-	void addmsg(logmsg_ptr& m) {
-        _queue.push_take(m);
+	void addmsg(logmsg_ptr&& m) {
+        _queue.push(std::forward<logmsg_ptr>(m));
     }
 
 	void flush();

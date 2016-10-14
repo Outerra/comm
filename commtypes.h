@@ -126,6 +126,16 @@
 # endif
 #endif
 
+
+#ifdef SYSTYPE_MSVC
+# define xstrncasecmp     _strnicmp
+# define xstrcasecmp      _stricmp
+#else
+# define xstrncasecmp     strncasecmp
+# define xstrcasecmp      strcasecmp
+#endif
+
+
 //#define _USE_32BIT_TIME_T
 #include <sys/types.h>
 #include <stddef.h>

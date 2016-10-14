@@ -379,6 +379,9 @@ inline void variadic_call( const Func& fn, Args&&... args ) {
     variadic_call_helper<Func, 0, Args...>::call(fn, std::forward<Args>(args)...);
 }
 
+template<typename Func>
+inline void variadic_call( const Func& fn ) {}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 ///Helper to get types and count of lambda arguments
@@ -394,6 +397,7 @@ struct closure_traits<R (C::*) (Args... COID_REM_CTOR var) cv>             \
     using arity = std::integral_constant<std::size_t, sizeof...(Args) >;   \
     using is_variadic = std::integral_constant<bool, is_var>;              \
     using is_const    = std::is_const<int cv>;                             \
+    using returns_void = std::is_void<R>;                                  \
                                                                            \
     using result_type = R;                                                 \
                                                                            \

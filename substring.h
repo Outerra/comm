@@ -109,7 +109,7 @@ public:
             if( rlen >= _len )
             {
                 int cmp = _icase
-                    ? ::_strnicmp(ptr+off, (const char*)_subs, _len)
+                    ? xstrncasecmp(ptr+off, (const char*)_subs, _len)
                     : ::memcmp(ptr+off, _subs, _len);
                 if(cmp == 0)
                     return off;

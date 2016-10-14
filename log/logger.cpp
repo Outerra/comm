@@ -46,116 +46,9 @@
 using namespace coid;
 
 #ifdef SYSTYPE_WIN
-#define WIN32_MEAN_AND_LEAN
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
-
-////////////////////////////////////////////////////////////////////////////////
-
-namespace coid {
-
-class policy_msg : public policy_base
-{
-public:
-    COIDNEWDELETE("policy_msg");
-
-    typedef pool<policy_msg*> pool_type;
-
-protected:
-
-    pool_type* _pool;
-    logmsg* _obj;
-
-protected:
-
-    ///
-    explicit policy_msg(logmsg* const obj, pool_type* const p=0) 
-        : _pool(p)
-        , _obj(obj)
-    {}
-
-public:
-
-    logmsg* get() const { return _obj; }
-
-    virtual void _destroy() override
-    { 
-        DASSERT(_pool != 0); 
-        
-        if(!_obj->_logger_file) {
-            //first destroy just queues the message
-            _obj->finalize(this);
-        }
-        else {
-            //_obj->_logger->write(*_obj);
-            //_obj->reset();
-
-            //back to the pool
-            policy_msg* t = this;
-            _pool->release_instance(t);
-        }
-    }
-
-    ///
-    static policy_msg* create() 
-    {
-        auto po = &pool_type::global();
-        policy_msg* p=0;
-
-        bool make = !po->create_instance(p);
-        if(make)
-            p = new policy_msg(new logmsg, po);
-        else
-            p->get()->reset();
-
-        return p;
-    }
-};
-
-
-////////////////////////////////////////////////////////////////////////////////
-class logger_file
-{
-    bofstream _logfile;
-    charstr _logbuf;
-    charstr _logpath;
-
-    bool check_file_open()
-    {
-        if(_logfile.is_open() || !_logpath)
-            return _logfile.is_open();
-
-        opcd e = _logfile.open(_logpath);
-        if(!e) {
-            _logfile.xwrite_token_raw(_logbuf);
-            _logbuf.free();
-        }
-
-        return e==0;
-    }
-
-public:
-    logger_file() {}
-    logger_file(const token& path) : _logpath(path)
-    {}
-
-    ///Open physical log file. @note Only notes the file name, the file is opened with the next log msg because of potential MT clashes
-    void open(charstr filename) {
-        std::swap(_logpath, filename);
-    }
-
-    void write_to_file( const logmsg& lm )
-    {
-        if(check_file_open())
-            _logfile.xwrite_token_raw(lm.str());
-        else
-            _logbuf << lm.str();
-    }
-};
-
-} //namespace coid
-
-////////////////////////////////////////////////////////////////////////////////
 static void write_console_text( const logmsg& msg )
 {
     const charstr& text = msg.str();
@@ -192,12 +85,119 @@ static void write_console_text( const logmsg& msg )
 
 #else
 
-static void write_console_text( const charstr& text, ELogType type )
+static void write_console_text( const logmsg& msg )
 {
-    fwrite(text.ptr(), 1, text.len(), stdout);
+    fwrite(msg.str().ptr(), 1, msg.str().len(), stdout);
 }
 
 #endif
+
+////////////////////////////////////////////////////////////////////////////////
+
+namespace coid {
+
+class policy_msg : public policy_base
+{
+public:
+    COIDNEWDELETE("policy_msg");
+
+    typedef pool<policy_msg*> pool_type;
+
+protected:
+
+    pool_type* _pool;
+    logmsg* _obj;
+
+protected:
+
+    ///
+    explicit policy_msg(logmsg* const obj, pool_type* const p=0) 
+        : _pool(p)
+        , _obj(obj)
+    {}
+
+public:
+
+    logmsg* get() const { return _obj; }
+
+    virtual void _destroy() override
+    { 
+        DASSERT(_pool != 0); 
+        
+        if(_obj->_logger) {
+            //first destroy just queues the message
+            _obj->finalize(this);
+        }
+        else {
+            //back to the pool
+            policy_msg* t = this;
+            _pool->release_instance(t);
+        }
+    }
+
+    ///
+    static policy_msg* create() 
+    {
+        auto po = &pool_type::global();
+        policy_msg* p=0;
+
+        bool make = !po->create_instance(p);
+        if(make)
+            p = new policy_msg(new logmsg, po);
+        else
+            p->get()->reset();
+
+        return p;
+    }
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+class logger_file
+{
+    bofstream _logfile;
+    charstr _logbuf;
+    charstr _logpath;
+    bool _stdout;
+
+    bool check_file_open()
+    {
+        if(_logfile.is_open() || !_logpath)
+            return _logfile.is_open();
+
+        opcd e = _logfile.open(_logpath);
+        if(!e) {
+            _logfile.xwrite_token_raw(_logbuf);
+            _logbuf.free();
+        }
+
+        return e==0;
+    }
+
+public:
+    logger_file() : _stdout(true) {}
+    logger_file( const token& path, bool std ) : _logpath(path), _stdout(std)
+    {}
+
+    ///Open physical log file. @note Only notes the file name, the file is opened with the next log msg because of potential MT clashes
+    void open( charstr filename, bool std ) {
+        std::swap(_logpath, filename);
+        _stdout = std;
+    }
+
+    void write_to_file( const logmsg& lm )
+    {
+        if(check_file_open())
+            _logfile.xwrite_token_raw(lm.str());
+        else
+            _logbuf << lm.str();
+
+        if(_stdout)
+            write_console_text(lm);
+    }
+};
+
+} //namespace coid
 
 ////////////////////////////////////////////////////////////////////////////////
 void logmsg::write()
@@ -205,7 +205,10 @@ void logmsg::write()
     if(!_str.ends_with('\n'))
         _str.append('\n');
 
-    _logger_file->write_to_file(*this);
+    if(_logger_file)
+        _logger_file->write_to_file(*this);
+    else
+        write_console_text(*this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -261,18 +264,9 @@ ref<logmsg> logger::create_msg( ELogType type )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void logger::enqueue( ref<logmsg>& msg )
+void logger::enqueue( ref<logmsg>&& msg )
 {
-    SINGLETON(log_writer).addmsg(msg);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-void logger::write( const logmsg& msg )
-{
-    if(_stdout)
-        write_console_text(msg);
-
-    _logfile->write_to_file(msg);
+    SINGLETON(log_writer).addmsg(std::forward<ref<logmsg>>(msg));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -288,7 +282,7 @@ void logger::post( token msg )
 ////////////////////////////////////////////////////////////////////////////////
 void logger::open(const token& filename)
 {
-    _logfile->open(filename);
+    _logfile->open(filename, _stdout);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

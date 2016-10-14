@@ -45,7 +45,9 @@
 #define INCL_WINSOCK_API_PROTOTYPES
 #endif
 
+#define WIN32_LEAN_AND_MEAN
 //#include <windows.h>
+
 #include <winsock.h>
 #include <stdarg.h>
 #include <process.h>

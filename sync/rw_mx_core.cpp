@@ -43,6 +43,7 @@
 /// only win
 #ifdef SYSTYPE_WIN
 
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 #define comm_mutex_rw_LOCK_IN				EnterCriticalSection( (CRITICAL_SECTION*)&_mxIN )

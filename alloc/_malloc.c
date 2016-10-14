@@ -1850,7 +1850,11 @@ static FORCEINLINE int win32munmap(void* ptr, size_t size) {
 /* First, define CAS_LOCK and CLEAR_LOCK on ints */
 /* Note CAS_LOCK defined to return 0 on success */
 
-#if defined(__GNUC__)&& (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1))
+#if defined(_MSC_VER)
+#define CAS_LOCK(sl)     interlockedexchange(sl, (LONG)1)
+#define CLEAR_LOCK(sl)   interlockedexchange (sl, (LONG)0)
+
+#elif defined(__GNUC__)&& (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1))
 #define CAS_LOCK(sl)     __sync_lock_test_and_set(sl, 1)
 #define CLEAR_LOCK(sl)   __sync_lock_release(sl)
 
@@ -1879,10 +1883,6 @@ static FORCEINLINE void x86_clear_lock(int* sl) {
 
 #define CAS_LOCK(sl)     x86_cas_lock(sl)
 #define CLEAR_LOCK(sl)   x86_clear_lock(sl)
-
-#else /* Win32 MSC */
-#define CAS_LOCK(sl)     interlockedexchange(sl, (LONG)1)
-#define CLEAR_LOCK(sl)   interlockedexchange (sl, (LONG)0)
 
 #endif /* ... gcc spins locks ... */
 

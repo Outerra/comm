@@ -38,8 +38,9 @@
 #include "timer.h"
 
 #ifdef SYSTYPE_MSVC
-#include <windows.h>
 
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 
 #pragma comment(lib, "winmm.lib")
 

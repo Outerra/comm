@@ -44,6 +44,7 @@
 #include <io.h>
 #include <errno.h>
 
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
 extern "C" {
@@ -267,18 +268,18 @@ charstr& directory::get_home_dir( charstr& path )
 ////////////////////////////////////////////////////////////////////////////////
 opcd directory::truncate( zstring fname, uint64 size )
 {
-    HANDLE f = CreateFile(no_trail_sep(fname), GENERIC_WRITE, FILE_SHARE_READ, 0,
+    void* handle = CreateFile(no_trail_sep(fname), GENERIC_WRITE, FILE_SHARE_READ, 0,
         OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 
-    if(!f) return ersNOT_FOUND;
+    if(!handle) return ersNOT_FOUND;
 
     LARGE_INTEGER fs;
     fs.QuadPart = size;
 
-    BOOL r = SetFilePointerEx(f, fs, 0, FILE_BEGIN);
-    if(r) r = SetEndOfFile(f);
+    BOOL r = SetFilePointerEx(handle, fs, 0, FILE_BEGIN);
+    if(r) r = SetEndOfFile(handle);
 
-    CloseHandle(f);
+    CloseHandle(handle);
 
     return r ? ersNOERR : ersFAILED;
 }

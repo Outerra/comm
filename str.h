@@ -945,15 +945,17 @@ public:
     }
 
     ///Append a variadic block of arguments with format string
-    //@param str format string, with {} for variable substitutions, e.g. "foo {} bar {} end"
+    //@param fmt msg and format string, with {} for variable substitutions, e.g. "foo {} bar {} end"
     //@param args variadic parameters
     template<typename ...Args>
-    void print( token str, Args&& ...args )
+    void print( const token& fmt, Args&& ...args )
     {
         coid_constexpr int N = sizeof...(args);
-        token substrings[N];
+        token substrings[N+1];
 
         int n = 0;
+        token str = fmt;
+
         do {
             token p = str.cut_left("{}", false);
             if(str)

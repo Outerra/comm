@@ -168,8 +168,20 @@ public:
     //@param fmt format @see charstr.print
     //@param vs variadic parameters 
     template<class ...Vs>
-    void ifclog( coid::ELogType type, coid::token fmt, Vs&& ...vs ) {
+    void ifclog( coid::ELogType type, const coid::token& fmt, Vs&& ...vs ) {
         ref<coid::logmsg> msgr = coid::interface_register::canlog(type, intergen_interface_name(), this);
+        if(!msgr)
+            return;
+
+        msgr->str().print(fmt, std::forward<Vs>(vs)...);
+    }
+
+    ///Interface log function with formatting, log type inferred from message text prefix
+    //@param fmt format @see charstr.print
+    //@param vs variadic parameters 
+    template<class ...Vs>
+    void ifclog( const coid::token& fmt, Vs&& ...vs ) {
+        ref<coid::logmsg> msgr = coid::interface_register::canlog(coid::ELogType::None, intergen_interface_name(), this);
         if(!msgr)
             return;
 

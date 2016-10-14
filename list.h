@@ -154,7 +154,7 @@ protected:
 
 protected:
 
-    node* new_node(node *itpos, const T &item)
+    node* new_node(node *itpos, const T& item)
     {
         node *nn = _npool.pop_new();
 
@@ -165,15 +165,14 @@ protected:
         return nn;
     }
 
-    node* new_node_take(node *itpos, T &item)
+    node* new_node(node *itpos, T&& item)
     {
         node *nn = _npool.pop_new();
 
         nn->_next = itpos;
         nn->_prev = itpos->_prev;
 
-        new (nn->_item) T();
-        coid::queue_helper_trait<T>::take(nn->item(), item);
+        new (nn->_item) T(std::move(item));
 
         return nn;
     }
@@ -192,9 +191,9 @@ protected:
     }
 
     ///
-    void insert_take(node* itpos, T &item)
+    void insert(node* itpos, T&& item)
     {
-        node * const nn = new_node_take(itpos, item);
+        node * const nn = new_node(itpos, std::forward<T>(item));
         nn->_prev->_next = itpos->_prev = nn;
     }
 
@@ -219,19 +218,19 @@ public:
     ~list() {}
 
     ///
-    void push_front(const T &item) { insert(_node._next, item); }
+    void push_front(const T& item) { insert(_node._next, item); }
 
     ///
-    void push_front_take(T &item) { insert_take(_node._next, item); }
+    void push_front(T&& item) { insert(_node._next, std::forward<T>(item)); }
 
     ///
     T* push_front_uninit() { return insert_uninit(_node._next); }
 
     ///
-    void push_back(const T &item) { insert(&_node, item); }
+    void push_back(const T& item) { insert(&_node, item); }
 
     ///
-    void push_back_take(T &item) { insert_take(&_node, item); }
+    void push_back(T&& item) { insert(&_node, std::forward<T>(item)); }
 
     ///
     T* push_back_uninit() { return insert_uninit(&_node); }
@@ -261,7 +260,7 @@ public:
     bool pop_front(T &item)
     {
         if(!is_empty()) {
-            coid::queue_helper_trait<T>::take(item, front());
+            item = std::move(front());
             iterator eit(_node._next);
             erase(eit);
             return true;
@@ -285,7 +284,7 @@ public:
     bool pop_back(T &item)
     {
         if(!is_empty()) {
-            coid::queue_helper_trait<T>::take(item, back());
+            item = std::move(back());
             iterator eit(_node._prev);
             erase(eit);
             return true;

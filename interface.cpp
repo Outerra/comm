@@ -22,13 +22,6 @@ struct entry
     operator const token&() const { return ifcname; }
 };
 
-static void _default_log( const token& msg )
-{
-    fwrite(msg.ptr(), 1, msg.len(), stdout);
-    fputc('\n', stdout);
-    fflush(stdout);
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 class interface_register_impl : public interface_register
 {
@@ -129,6 +122,8 @@ ref<logmsg> interface_register::canlog( ELogType type, const tokenhash& hash, co
 
     if(canlogfn)
         msg = canlogfn(type, hash, inst);
+    else
+        msg = SINGLETON(stdoutlogger).create_msg(type, hash, inst);
 
     return msg;
 }

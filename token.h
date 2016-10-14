@@ -61,14 +61,6 @@
 
 COID_NAMESPACE_BEGIN
 
-#ifdef SYSTYPE_MSVC
-# define xstrncasecmp     _strnicmp
-# define xstrcasecmp      _stricmp
-#else
-# define xstrncasecmp     strncasecmp
-# define xstrcasecmp      strcasecmp
-#endif
-
 
 ///Copy max n characters from src to dst, append 0 only if src length < n
 inline void xstrncpy( char* dst, const char* src, uints n )

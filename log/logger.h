@@ -110,14 +110,6 @@ public:
     ///Consume type prefix from the message
     static ELogType consume_type( token& msg )
     {
-        static token ERR = "error:";
-        static token WARN = "warning:";
-        static token INFO = "info:";
-        static token MSG = "msg:";
-        static token DBG1 = "dbg:";
-        static token DBG2 = "debug:";
-        static token PERF = "perf:";
-
         ELogType t = ELogType::Info;
         if(msg.consume_icase("error:"))
             t = ELogType::Error;
@@ -200,30 +192,33 @@ protected:
 public:
 
 	logger( bool std_out=false );
+    virtual ~logger() {}
 
-    void open(const token& filename);
+    void open( const token& filename );
 
     void post( token msg );
 
+    ///Formatted log message
     template<class ...Vs>
-    void print( token msg, Vs&&... vs ) {
+    void print( const token& fmt, Vs&&... vs ) {
         ref<logmsg> msgr = create_msg(ELogType::None);
         if(!msgr)
             return;
 
         charstr& str = msgr->str();
-        str.print(msg, std::forward<Vs>(vs)...);
+        str.print(fmt, std::forward<Vs>(vs)...);
     }
 
+    ///Formatted log message
     template<class ...Vs>
-    void print( ELogType type, const tokenhash& hash, const void* inst, token msg, Vs&&... vs )
+    void print( ELogType type, const tokenhash& hash, const void* inst, const token& fmt, Vs&&... vs )
     {
         ref<logmsg> msgr = create_msg(type, hash, inst);
         if(!msgr)
             return;
 
         charstr& str = msgr->str();
-        str.print(msg, std::forward<Vs>(vs)...);
+        str.print(fmt, std::forward<Vs>(vs)...);
     }
 
     //@return logmsg, filling the prefix by the log type (e.g. ERROR: )
@@ -241,12 +236,22 @@ public:
 
     const ref<logger_file>& file() const { return _logfile; }
 
-    virtual void enqueue( ref<logmsg>& msg );
-
-    virtual void write( const logmsg& msg );
+    virtual void enqueue( ref<logmsg>&& msg );
 
 	void flush();
 };
+
+
+////////////////////////////////////////////////////////////////////////////////
+///
+class stdoutlogger : public logger
+{
+public:
+
+    stdoutlogger() : logger(true)
+    {}
+};
+
 
 COID_NAMESPACE_END
 
