@@ -460,44 +460,68 @@ protected:
 
 
     //@{Helper functions for for_each to allow calling with optional index argument
-    template<class Callable>
-    using arg0 = typename std::remove_reference<typename closure_traits<Callable>::template arg<0>>::type;
+    template<class Fn>
+    using arg0 = typename std::remove_reference<typename closure_traits<Fn>::template arg<0>>::type;
 
-    template<class Callable>
-    using is_const = std::is_const<arg0<Callable>>;
+    template<class Fn>
+    using is_const = std::is_const<arg0<Fn>>;
 
-    template<class Callable>
-    using has_index = std::integral_constant<bool, !(closure_traits<Callable>::arity::value <= 1)>;
+    template<class Fn>
+    using has_index = std::integral_constant<bool, !(closure_traits<Fn>::arity::value <= 1)>;
 
 
-    template<typename Callable, typename = std::enable_if_t<is_const<Callable>::value && !has_index<Callable>::value>>
-    auto funccall(Callable c, const arg0<Callable>& v, size_t&& index) const -> decltype(c(v))
+    template<typename Fn, typename = std::enable_if_t<is_const<Fn>::value && !has_index<Fn>::value>>
+    bool funccall(const Fn& fn, const arg0<Fn>& v, size_t&& index) const
     {
-        return c(v);
+        fn(v);
+        return false;
     }
 
-    template<typename Callable, typename = std::enable_if_t<!is_const<Callable>::value && !has_index<Callable>::value>>
-    auto funccall(Callable c, arg0<Callable>& v, size_t&& index) const -> decltype(c(v))
+    template<typename Fn, typename = std::enable_if_t<!is_const<Fn>::value && !has_index<Fn>::value>>
+    auto funccall(const Fn& fn, arg0<Fn>& v, size_t&& index) const -> std::enable_if_t<std::is_void<decltype(fn(v))>::value, bool>
     {
+        fn(v);
         if(TRACKING)
             tracker_t::set_modified(index);
 
-        return c(v);
+        return TRACKING;
     }
 
-    template<typename Callable, typename = std::enable_if_t<is_const<Callable>::value && has_index<Callable>::value>>
-    auto funccall(Callable c, const arg0<Callable>& v, size_t index) const -> decltype(c(v, index))
+    template<typename Fn, typename = std::enable_if_t<!is_const<Fn>::value && !has_index<Fn>::value>>
+    auto funccall(const Fn& fn, arg0<Fn>& v, size_t&& index) const -> std::enable_if_t<!std::is_void<decltype(fn(v))>::value, bool>
     {
-        return c(v, index);
+        bool rval = static_cast<bool>(fn(v));
+        if(rval && TRACKING)
+            tracker_t::set_modified(index);
+
+        return rval && TRACKING;
     }
 
-    template<typename Callable, typename = std::enable_if_t<!is_const<Callable>::value && has_index<Callable>::value>>
-    auto funccall(Callable c, arg0<Callable>& v, size_t index) const -> decltype(c(v, index))
+    template<typename Fn, typename = std::enable_if_t<is_const<Fn>::value && has_index<Fn>::value>>
+    bool funccall(const Fn& fn, const arg0<Fn>& v, size_t index) const
     {
+        fn(v, index);
+        return false;
+    }
+
+    template<typename Fn, typename = std::enable_if_t<!is_const<Fn>::value && has_index<Fn>::value>>
+    auto funccall(const Fn& fn, arg0<Fn>& v, size_t index) const -> std::enable_if_t<std::is_void<decltype(fn(v, index))>::value, bool>
+    {
+        fn(v, index);
         if(TRACKING)
             tracker_t::set_modified(index);
 
-        return c(v, index);
+        return TRACKING;
+    }
+
+    template<typename Fn, typename = std::enable_if_t<!is_const<Fn>::value && has_index<Fn>::value>>
+    auto funccall(const Fn& fn, arg0<Fn>& v, size_t index) const -> std::enable_if_t<!std::is_void<decltype(fn(v, index))>::value, bool>
+    {
+        bool rval = static_cast<bool>(fn(v, index));
+        if(rval && TRACKING)
+            tracker_t::set_modified(index);
+
+        return rval && TRACKING;
     }
     //@}
 
