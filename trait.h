@@ -361,7 +361,7 @@ template <typename Func, int K, typename A, typename ...Args> struct variadic_ca
 {
     static void call(const Func& f, A&& a, Args&& ...args) {
         f(K, std::forward<A>(a));
-        variadic_call_helper<Func, K+1, Args...>::call(f, args...);
+        variadic_call_helper<Func, K+1, Args...>::call(f, std::forward<Args>(args)...);
     }
 };
 
