@@ -79,7 +79,22 @@ public:
     ///Find interfaces containing given string
     static dynarray<creator>& find_interface_creators( const regex& str, dynarray<creator>& dst );
 
-    static ref<logmsg> canlog( ELogType type, const tokenhash& hash, const void* inst );
+    static ref<logmsg> canlog( ELogType type, const tokenhash& hash, const void* inst = 0 );
+
+    ///Formatted log message
+    //@param type log level
+    //@param hash source identifier (used for filtering)
+    //@param fmt @see charstr.print
+    template<class ...Vs>
+    static void print( ELogType type, const tokenhash& hash, const token& fmt, Vs&&... vs )
+    {
+        ref<logmsg> msgr = canlog(type, hash);
+        if(!msgr)
+            return;
+
+        charstr& str = msgr->str();
+        str.print(fmt, std::forward<Vs>(vs)...);
+    }
 };
 
 
