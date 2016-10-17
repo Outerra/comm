@@ -36,8 +36,9 @@
 #ifndef __COMM_LOGWRITTER_H__
 #define __COMM_LOGWRITTER_H__
 
+#include "../atomic/queue.h"
 #include "logger.h"
-#include "../pthreadx.h"
+//#include "../pthreadx.h"
 
 COID_NAMESPACE_BEGIN
 

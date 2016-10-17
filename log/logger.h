@@ -36,14 +36,8 @@
 #ifndef __COMM_LOGGER_H__
 #define __COMM_LOGGER_H__
 
-#include "../binstream/filestream.h"
-#include "../binstream/txtstream.h"
 #include "../str.h"
 #include "../ref.h"
-#include "../singleton.h"
-#include "policy_log.h"
-#include "../atomic/queue_base.h"
-#include "../atomic/pool_base.h"
 
 COID_NAMESPACE_BEGIN
 

@@ -41,6 +41,7 @@
 #include "../atomic/pool.h"
 #include "../atomic/pool_base.h"
 
+#include "../binstream/filestream.h"
 #include "../binstream/stdstream.h"
 
 using namespace coid;

@@ -1562,11 +1562,35 @@ public:
     }
 
     ///Replace every occurence of character \a from to character \a to
-    void replace(char from, char to)
+    uint replace(char from, char to)
     {
+        uint n = 0;
         char* pe = (char*)ptre();
-        for(char* p = (char*)ptr(); p < pe; ++p)
-            if(*p == from)  *p = to;
+        for(char* p = (char*)ptr(); p < pe; ++p) {
+            if(*p == from) {
+                *p = to;
+                ++n;
+            }
+        }
+
+        return n;
+    }
+
+    ///Replace all occurrences of substring by another
+    uint replace( const token& from, const token& to, charstr& dst, bool icase = false )
+    {
+        uint n = 0;
+        token str = *this, tok;
+        while(str) {
+            token tok = str.cut_left(from, icase);
+            dst.append(tok);
+
+            if(tok.ptre() != str.ptr()) {
+                dst.append(to);
+                ++n;
+            }
+        }
+        return n;
     }
 
 
