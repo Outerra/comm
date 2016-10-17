@@ -240,7 +240,8 @@ ref<logmsg> logger::create_msg( ELogType type, const tokenhash& hash, const void
     //TODO check hash, inst
 
     ref<logmsg> rmsg = operator()(type);
-    rmsg->str() << '[' << hash << "] ";
+    if(hash)
+        rmsg->str() << '[' << hash << "] ";
 
     return rmsg;
 }

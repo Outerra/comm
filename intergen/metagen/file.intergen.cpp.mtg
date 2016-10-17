@@ -228,7 +228,7 @@ $[/..nss]-$
 $-[event !implicit?]$
 $return.type$ $....class$::$intname$($[args rest="," after=" "]$ $type$ $name$$size$$[/args]$) $-(if const?)$ const$(/if)$
 {
-	if(!$..varname$) $(if default_event_body?)$$default_event_body$$(elif)$
+	if(!$..varname$) $(if default_event_body?)${ $default_event_body$ }$(elif)$
         throw coid::exception() << "$name$" << " handler not implemented";$(/if)$
     else
         return $..varname$->iface<$..ns rest="::" after="::"$$..name$>()->$name$($[args rest=", "]$$name$$[/args]$);

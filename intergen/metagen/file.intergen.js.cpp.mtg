@@ -388,8 +388,11 @@ $-(elif)$
     auto ev__ = LOCAL(iso, _events[$@index$]);
 
     if(_events[$@index$].IsEmpty() || ev__->IsUndefined())
-  $-(if default_event_body?)$
-    $default_event_body$
+  $-(if default_event_body?)$ {
+        $default_event_body$; $-(if return.type?="void")$
+        return;
+        $-(/if)$
+    }
   $-(elif !mandatory?)$
         return;
   $-(elif)$
@@ -622,28 +625,29 @@ CBK_RET $name$_js_dispatcher::v8log( const ARGUMENTS& args )
 
     if(args.Length() == 0)
         return CBK_UNDEFINED;
-    
+        
+    const void* inst = 0;
+
     v8::Local<v8::Object> obj__ = args.Holder();
-    if(obj__.IsEmpty())
-        return CBK_UNDEFINED;
+    if(!obj__.IsEmpty()) {
+        v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
+        if(intobj__->IsExternal()) {
+            $ns rest="::" after="::"$js::$name$_js_dispatcher* ifc = static_cast<$ns rest="::" after="::"$js::$name$_js_dispatcher*>
+                (v8::Handle<v8::External>::Cast(intobj__)->Value());
 
-    v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
-    if(!intobj__->IsExternal())
-        return CBK_UNDEFINED;
-
-    $ns rest="::" after="::"$js::$name$_js_dispatcher* ifc = static_cast<$ns rest="::" after="::"$js::$name$_js_dispatcher*>
-        (v8::Handle<v8::External>::Cast(intobj__)->Value());
-
-    if(!ifc)
-        return (CBK_RET)::js::THROW(iso, &v8::Exception::ReferenceError, "Null interface object in $$log");
-    
+            inst = ifc;
+            if(!ifc)
+                return (CBK_RET)::js::THROW(iso, &v8::Exception::ReferenceError, "Null interface object in $$log");
+        }
+    }
 
     ESCAPABLE_SCOPE(iso, handle_scope__);
     v8::String::Utf8Value key(args[0]);
 
     coid::token tokey(*key, key.length());
+
     intergen_interface::ifclog_ext(coid::ELogType::None, coid::tokenhash("$ns rest="::" after="::"$$name$"),
-        ifc, tokey);
+        inst, tokey);
     
     return CBK_UNDEFINED;
 }

@@ -107,11 +107,11 @@ bool MethodIG::parse( iglexer& lex, const charstr& host, const charstr& ns, dyna
             if(default_event_body.last_char() == '"')
                 default_event_body.resize(-1);
         }
-
+/*
         if(default_event_body.first_char() != '{') {
             default_event_body.ins(0, '{');
             default_event_body << '}';
-        }
+        }*/
     }
     //else
     //    default_event_body = "{ throw coid::exception(\"handler not implemented\"); }";

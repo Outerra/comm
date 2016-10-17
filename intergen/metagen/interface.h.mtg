@@ -55,7 +55,7 @@ $(if !comments.empty?)$$[comments]-$
     $@value$
 $[/comments]$$(/if)-$
     virtual $return.type$ $name$($[args rest="," after=" "]$ $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$)
-    $-(if return.type?="void")$ {}$(elif default_event_body?)$$default_event_body$$(elif)${ throw coid::exception("handler not implemented"); }$(/if)$
+    $-(if return.type?="void")$ {}$(elif default_event_body?)$ { $default_event_body$ }$(elif)${ throw coid::exception("handler not implemented"); }$(/if)$
 $[/event]-$
 
     virtual void force_bind_script_events() {}
