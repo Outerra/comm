@@ -99,14 +99,15 @@ bool MethodIG::parse( iglexer& lex, const charstr& host, const charstr& ns, dyna
     {
         default_event_body = lex.match_block(lex.ROUND, true);
 
-        if(!default_event_body)
-            default_event_body = ';';   //needs at least one statement when wrapped in {}
-
         if(default_event_body.first_char() == '"') {
             default_event_body.del(0, 1);
             if(default_event_body.last_char() == '"')
                 default_event_body.resize(-1);
         }
+
+        if(!default_event_body)
+            default_event_body = ';';   //needs at least one statement when wrapped in {}
+
 /*
         if(default_event_body.first_char() != '{') {
             default_event_body.ins(0, '{');
