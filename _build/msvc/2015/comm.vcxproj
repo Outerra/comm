@@ -547,7 +547,6 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\log\policy_log.cpp" />
     <ClCompile Include="..\..\..\regex\regcomp.cpp" />
     <ClCompile Include="..\..\..\regex\regexec.cpp" />
     <ClCompile Include="..\..\..\timer.cpp" />
@@ -637,7 +636,6 @@
     <ClInclude Include="..\..\..\sync\thread_mgr.h" />
     <ClInclude Include="..\..\..\coder\rlr.h" />
     <ClInclude Include="..\..\..\log\logger.h" />
-    <ClInclude Include="..\..\..\log\policy_log.h" />
     <ClInclude Include="..\..\..\regex\regcomp.h" />
     <ClInclude Include="..\..\..\comm.h" />
     <ClInclude Include="..\..\..\commassert.h" />

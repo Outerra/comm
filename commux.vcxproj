@@ -74,7 +74,6 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
-    <ClCompile Include="alloc\malloc.c" />
     <ClCompile Include="alloc\memtrack.cpp" />
     <ClCompile Include="alloc\slotalloc_bmp.cpp" />
     <ClCompile Include="alloc\_malloc.c">
@@ -95,7 +94,6 @@
     <ClCompile Include="dirgcc.cpp" />
     <ClCompile Include="interface.cpp" />
     <ClCompile Include="log\logger.cpp" />
-    <ClCompile Include="log\policy_log.cpp" />
     <ClCompile Include="metastream\metastream.cpp" />
     <ClCompile Include="net.cpp" />
     <ClCompile Include="net\asyncrcv.cpp" />
@@ -203,7 +201,6 @@
     <ClInclude Include="local.h" />
     <ClInclude Include="log\logger.h" />
     <ClInclude Include="log\logwriter.h" />
-    <ClInclude Include="log\policy_log.h" />
     <ClInclude Include="mathf.h" />
     <ClInclude Include="mathi.h" />
     <ClInclude Include="metastream\fmtstream.h" />

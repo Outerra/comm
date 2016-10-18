@@ -45,9 +45,6 @@
     <ClCompile Include="alloc\_malloc.c">
       <Filter>alloc</Filter>
     </ClCompile>
-    <ClCompile Include="alloc\malloc.c">
-      <Filter>alloc</Filter>
-    </ClCompile>
     <ClCompile Include="alloc\memtrack.cpp">
       <Filter>alloc</Filter>
     </ClCompile>
@@ -79,9 +76,6 @@
       <Filter>crypt</Filter>
     </ClCompile>
     <ClCompile Include="log\logger.cpp">
-      <Filter>log</Filter>
-    </ClCompile>
-    <ClCompile Include="log\policy_log.cpp">
       <Filter>log</Filter>
     </ClCompile>
     <ClCompile Include="metastream\metastream.cpp">
@@ -344,9 +338,6 @@
       <Filter>log</Filter>
     </ClInclude>
     <ClInclude Include="log\logwriter.h">
-      <Filter>log</Filter>
-    </ClInclude>
-    <ClInclude Include="log\policy_log.h">
       <Filter>log</Filter>
     </ClInclude>
     <ClInclude Include="metastream\fmtstream.h">

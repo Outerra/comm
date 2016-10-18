@@ -75,9 +75,6 @@
     <ClCompile Include="..\..\..\dirwin.cpp">
       <Filter>cxx</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\log\logger.cpp">
-      <Filter>cxx</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\net.cpp">
       <Filter>cxx</Filter>
     </ClCompile>
@@ -107,9 +104,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\sync\rw_mx_core_pthread.cpp">
       <Filter>sync</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\log\policy_log.cpp">
-      <Filter>log</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\regex\regcomp.cpp">
       <Filter>regex</Filter>
@@ -143,6 +137,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\timeru.cpp">
       <Filter>cxx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\log\logger.cpp">
+      <Filter>log</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -326,9 +323,6 @@
     <ClInclude Include="..\..\..\log\logger.h">
       <Filter>log</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\log\policy_log.h">
-      <Filter>log</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\regex\regcomp.h">
       <Filter>regex</Filter>
     </ClInclude>
@@ -342,7 +336,6 @@
     <ClInclude Include="..\..\..\fastdelegate.h" />
     <ClInclude Include="..\..\..\lexer.h" />
     <ClInclude Include="..\..\..\local.h" />
-    <ClInclude Include="..\..\..\log\logwriter.h" />
     <ClInclude Include="..\..\..\mathf.h" />
     <ClInclude Include="..\..\..\mathi.h" />
     <ClInclude Include="..\..\..\namespace.h" />
@@ -401,6 +394,9 @@
     <ClInclude Include="..\..\..\timer.h" />
     <ClInclude Include="..\..\..\hash\slothash.h">
       <Filter>hash</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\log\logwriter.h">
+      <Filter>log</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
