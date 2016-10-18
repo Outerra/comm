@@ -178,10 +178,10 @@ public:
             if(c == 'r')       rw |= 1;
             else if(c == 'w')  rw |= 2;
             else if(c == 'l')  sh |= 1;
-            else if(c == 'e')  flg |= _O_EXCL;
-            else if(c == 'c')  flg |= _O_CREAT;
-            else if(c == 't' || c == '-')  flg |= _O_TRUNC;
-            else if(c == 'a' || c == '+')  flg |= _O_APPEND;
+            else if(c == 'e')  flg |= O_EXCL;
+            else if(c == 'c')  flg |= O_CREAT;
+            else if(c == 't' || c == '-')  flg |= O_TRUNC;
+            else if(c == 'a' || c == '+')  flg |= O_APPEND;
             else if(c == 'b');  //ignored - always binary mode
             else if(c != ' ')
                 return ersINVALID_PARAMS;
@@ -276,9 +276,15 @@ public:
     ///Get file size
     uint64 get_size() const
 	{
-		struct _stat64 s;
+#ifdef SYSTYPE_MSVC
+        struct _stat64 s;
         if( 0 == ::_fstat64(_handle, &s) )
             return s.st_size;
+#else
+        struct stat64 s;
+        if( 0 == ::fstat64(_handle, &s) )
+            return s.st_size;
+#endif
 		return 0;
 	}
 

@@ -73,8 +73,8 @@ public:
     }
 
     ///Constructor from pointer, artificially removed priority to resolve ambiguity
-    template<class T>
-    iref( T* p, typename std::remove_const<T>::type* = 0 ) : _p(p) {
+    template<class K>
+    iref( K* p, typename std::remove_const<K>::type* = 0 ) : _p(p) {
         add_refcount();
     }
 

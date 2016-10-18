@@ -35,14 +35,25 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#ifdef _MSC_VER
+#undef __STDC__
+#pragma warning(disable:4996)
+#endif
+
 #include "dir.h"
 #include "binstream/filestream.h"
 #include "str.h"
 #include "pthreadx.h"
 
-#include <sys/utime.h>
+//#include <sys/utime.h>
 
 COID_NAMESPACE_BEGIN
+
+#if defined(SYSTYPE_MSVC)
+#define xstat64 _stat64
+#else
+#define xstat64 stat64
+#endif
 
 
 const char* directory::no_trail_sep(zstring& name)
@@ -57,21 +68,21 @@ const char* directory::no_trail_sep(zstring& name)
 ////////////////////////////////////////////////////////////////////////////////
 bool directory::stat(zstring name, xstat* dst)
 {
-    return 0 == ::_stat64(no_trail_sep(name), dst);
+    return 0 == ::xstat64(no_trail_sep(name), dst);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 bool directory::is_valid(zstring dir)
 {
     xstat st;
-    return _stat64(no_trail_sep(dir), &st) == 0;
+    return xstat64(no_trail_sep(dir), &st) == 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 static bool _is_valid_directory(const char* arg)
 {
     directory::xstat st;
-    return _stat64(arg, &st) == 0 && directory::is_directory(st.st_mode);
+    return xstat64(arg, &st) == 0 && directory::is_directory(st.st_mode);
 }
 
 bool directory::is_valid_directory(zstring arg)
@@ -98,7 +109,7 @@ bool directory::is_valid_file(zstring arg)
         return false;
 
     xstat st;
-    return _stat64(no_trail_sep(arg), &st) == 0 && is_regular(st.st_mode);
+    return xstat64(no_trail_sep(arg), &st) == 0 && is_regular(st.st_mode);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -108,7 +119,7 @@ uint64 directory::file_size(zstring file)
         return 0;
 
     xstat st;
-    if(_stat64(file.c_str(), &st) == 0 && is_regular(st.st_mode))
+    if(xstat64(file.c_str(), &st) == 0 && is_regular(st.st_mode))
         return st.st_size;
 
     return 0;
@@ -378,23 +389,19 @@ opcd directory::delete_directory(zstring src, bool recursive)
         return firstError;
     }
 
-#ifdef SYSTYPE_MSVC
-    return 0 == _rmdir(no_trail_sep(src)) ? opcd(0) : ersIO_ERROR;
-#else
-    return 0 == rmdir(no_trail_sep(src)) ? opcd(0) : ersIO_ERROR;
-#endif
+    return 0 == ::rmdir(no_trail_sep(src)) ? opcd(0) : ersIO_ERROR;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 bool directory::is_writable(zstring fname)
 {
-    return 0 == _access(no_trail_sep(fname), 2);
+    return 0 == ::access(no_trail_sep(fname), 2);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 bool directory::set_writable(zstring fname, bool writable)
 {
-    return 0 == _chmod(no_trail_sep(fname), writable ? (_S_IREAD | _S_IWRITE) : _S_IREAD);
+    return 0 == ::chmod(no_trail_sep(fname), writable ? (S_IREAD | S_IWRITE) : S_IREAD);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

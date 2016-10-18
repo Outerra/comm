@@ -88,10 +88,10 @@ public:
     ///
 	static this_type* create( bool* isnew=0 )
     {
-        return create(&pool(), false, isnew);
+        return create(&default_pool(), false, isnew);
     }
 
-    static pool_type& pool() { return pool_type::global(); }
+    static pool_type& default_pool() { return pool_type::global(); }
 };
 
 ///
@@ -113,7 +113,7 @@ public:
     ///
 	policy_pooled_i() 
 		: policy_base()
-        , _pool(&pool()) 
+        , _pool(&default_pool()) 
     {}
 
     ///
@@ -145,10 +145,10 @@ public:
     ///
 	static T* create()
     {
-        return create(&pool());
+        return create(&default_pool());
     }
 
-    static pool_type& pool() { return pool_type::global(); }
+    static pool_type& default_pool() { return pool_type::global(); }
 };
 
 COID_NAMESPACE_END

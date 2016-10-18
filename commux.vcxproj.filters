@@ -54,9 +54,6 @@
     <ClCompile Include="atomic\atomic.cpp">
       <Filter>atomic</Filter>
     </ClCompile>
-    <ClCompile Include="binstream\sfstream.cpp">
-      <Filter>binstream</Filter>
-    </ClCompile>
     <ClCompile Include="binstream\stdstream.cpp">
       <Filter>binstream</Filter>
     </ClCompile>
@@ -260,9 +257,6 @@
       <Filter>binstream</Filter>
     </ClInclude>
     <ClInclude Include="binstream\packstreamzip.h">
-      <Filter>binstream</Filter>
-    </ClInclude>
-    <ClInclude Include="binstream\sfstream.h">
       <Filter>binstream</Filter>
     </ClInclude>
     <ClInclude Include="binstream\stdstream.h">

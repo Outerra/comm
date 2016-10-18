@@ -124,7 +124,7 @@ bool directory::is_regular( ushort mode )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::mkdir( const zstring& name, mode_t mode )
+opcd directory::mkdir( zstring name, mode_t mode )
 {
     if(!::mkdir(name.c_str(), mode))  return 0;
     if( errno == EEXIST )  return 0;
@@ -170,7 +170,7 @@ charstr& directory::get_ped( charstr& buf )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int directory::chdir( const zstring& name )
+int directory::chdir( zstring name )
 {
     return ::chdir(name.c_str());
 }
@@ -201,7 +201,7 @@ charstr& directory::get_home_dir( charstr& buf )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::truncate( const zstring& fname, uint64 size )
+opcd directory::truncate( zstring fname, uint64 size )
 {
     return truncate(fname.c_str(), (off_t)size) == 0
         ? 0

@@ -42,8 +42,6 @@
 
 namespace atomic {
 
-using coid::uint;
-
 template <class T>
 class stack_base
 {

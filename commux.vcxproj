@@ -82,7 +82,6 @@
     </ClCompile>
     <ClCompile Include="assert.cpp" />
     <ClCompile Include="atomic\atomic.cpp" />
-    <ClCompile Include="binstream\sfstream.cpp" />
     <ClCompile Include="binstream\stdstream.cpp" />
     <ClCompile Include="coder\lz4\lz4.c" />
     <ClCompile Include="coder\lz4\lz4frame.c" />
@@ -161,7 +160,6 @@
     <ClInclude Include="binstream\packstreamlz4.h" />
     <ClInclude Include="binstream\packstreamlzo.h" />
     <ClInclude Include="binstream\packstreamzip.h" />
-    <ClInclude Include="binstream\sfstream.h" />
     <ClInclude Include="binstream\stdstream.h" />
     <ClInclude Include="binstream\stlstream.h" />
     <ClInclude Include="binstream\textstream.h" />

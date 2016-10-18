@@ -417,7 +417,7 @@ struct closure_traits_base
             return fn(std::forward<Args>(args)...);
         }
 
-        callable_base* clone() const override { return new callable(fn); }
+        callbase* clone() const override { return new callable<Fn>(fn); }
 
     private:
         Fn fn;

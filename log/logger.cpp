@@ -302,7 +302,7 @@ log_writer::log_writer()
 {
     //make sure the dependent singleton gets created
     //logmsg::pool();
-	policy_pooled<logmsg>::pool();
+	policy_pooled<logmsg>::default_pool();
 
 	_thread.create( thread_run_fn, this, 0, "log_writer" );
 }

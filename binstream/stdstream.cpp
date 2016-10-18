@@ -1,6 +1,7 @@
 
 #include "stdstream.h"
 
+#ifdef SYSTYPE_WIN
 extern "C" {
 
 __declspec(dllimport)
@@ -11,6 +12,7 @@ OutputDebugStringA(
 );
 
 }
+#endif
 
 COID_NAMESPACE_BEGIN
 

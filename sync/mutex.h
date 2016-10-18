@@ -87,11 +87,12 @@ public:
 
     static void get_abstime( uint delaymsec, timespec* out )
     {
-        struct ::__timeb64 tb;
 #ifdef SYSTYPE_MSVC
+        struct ::__timeb64 tb;
         _ftime64_s(&tb);
 #else
-        _ftime64(&tb);
+        struct ::timeb tb;
+        ftime(&tb);
 #endif
         out->tv_sec = delaymsec/1000 + (uint)tb.time;
         out->tv_nsec = (delaymsec%1000 + tb.millitm) * 1000000;
