@@ -386,29 +386,114 @@ inline void variadic_call( const Func& fn ) {}
 
 ///Helper to get types and count of lambda arguments
 /// http://stackoverflow.com/a/28213747/2435594
+
+template <typename R, typename ...Args>
+struct callable_base {
+    virtual ~callable_base() {}
+    virtual R operator()( Args&& ...args ) const = 0;
+    virtual callable_base* clone() const = 0;
+};
+
+template <bool Const, bool Variadic, typename R, typename... Args>
+struct closure_traits_base
+{
+    using arity = std::integral_constant<size_t, sizeof...(Args) >;
+    using is_variadic = std::integral_constant<bool, Variadic>;
+    using is_const    = std::integral_constant<bool, Const>;
+    using returns_void = std::is_void<R>;
+
+    using result_type = R;
+
+    template <size_t i>
+    using arg = typename std::tuple_element<i, std::tuple<Args...>>::type;
+
+    using callbase = callable_base<result_type, Args...>;
+
+    template <typename Fn>
+    struct callable : callbase {
+        callable(const Fn& fn) : fn(fn) {}
+
+        R operator()( Args&& ...args ) const override {
+            return fn(std::forward<Args>(args)...);
+        }
+
+        callable_base* clone() const override { return new callable(fn); }
+
+    private:
+        Fn fn;
+    };
+
+    struct function
+    {
+        template <typename F>
+        function( const F& fn ) : c(0) { c = new callable<F>(fn); }
+
+        function() : c(0) {}
+        function(nullptr_t) : c(0) {}
+
+        function( const function& other ) : c(0) {
+            if(other.c)
+            c = other.c->clone();
+        }
+
+        function( function&& other ) : c(0) {
+            c = other.c;
+            other.c = 0;
+        }
+
+        ~function() { if(c) delete c; }
+
+        function& operator = (const function& other) {
+            if(c) delete c;
+            if(other.c)
+                c = other.c->clone();
+            return *this;
+        }
+
+        function& operator = (function&& other) {
+            if(c) delete c;
+            c = other.c;
+            other.c = 0;
+            return *this;
+        }
+
+        R operator()( Args ...args ) const {
+            return (*c)(std::forward<Args>(args)...);
+        }
+
+        typedef callbase* function::*unspecified_bool_type;
+
+        ///Automatic cast to unconvertible bool for checking via if
+        operator unspecified_bool_type() const { return c ? &function::c : 0; }
+
+    protected:
+        callbase* c;
+    };
+};
+
 template <typename T>
 struct closure_traits : closure_traits<decltype(&T::operator())> {};
 
+template <class R, class... Args>
+struct closure_traits<R(Args...)> : closure_traits_base<false,false,R,Args...>
+{};
+
 #define COID_REM_CTOR(...) __VA_ARGS__
-#define COID_CLOSURE_TRAIT(cv, var, is_var)                                \
-template <typename C, typename R, typename... Args>                        \
-struct closure_traits<R (C::*) (Args... COID_REM_CTOR var) cv>             \
-{                                                                          \
-    using arity = std::integral_constant<std::size_t, sizeof...(Args) >;   \
-    using is_variadic = std::integral_constant<bool, is_var>;              \
-    using is_const    = std::is_const<int cv>;                             \
-    using returns_void = std::is_void<R>;                                  \
-                                                                           \
-    using result_type = R;                                                 \
-                                                                           \
-    template <std::size_t i>                                               \
-    using arg = typename std::tuple_element<i, std::tuple<Args...>>::type; \
-};
+
+#define COID_CLOSURE_TRAIT(cv, var, is_var)                                 \
+template <typename C, typename R, typename... Args>                         \
+struct closure_traits<R (C::*) (Args... COID_REM_CTOR var) cv>              \
+    : closure_traits_base<std::is_const<int cv>::value, is_var, R, Args...>        \
+{};
 
 COID_CLOSURE_TRAIT(const, (,...), 1)
 COID_CLOSURE_TRAIT(const, (), 0)
 COID_CLOSURE_TRAIT(, (,...), 1)
 COID_CLOSURE_TRAIT(, (), 0)
+
+
+template <typename Fn>
+using function = typename closure_traits<Fn>::function;
 
 
 COID_NAMESPACE_END
