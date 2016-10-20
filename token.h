@@ -1799,16 +1799,16 @@ struct token
                 char k = *p;
                 uchar a = 255;
                 if( k >= '0'  &&  k <= '9' )
-                    a = k - '0';
+                    a = uchar(k - '0');
                 else if( k >= 'a' && k <= 'z' )
-                    a = k - 'a' + 10;
+                    a = uchar(k - 'a' + 10);
                 else if( k >= 'A' && k <= 'Z' )
-                    a = k - 'A' + 10;
+                    a = uchar(k - 'A' + 10);
 
                 if( a >= BaseN )
                     break;
 
-                r = r*BaseN + a;
+                r = T(r*BaseN + a);
                 success = true;
             }
 
@@ -1824,7 +1824,7 @@ struct token
                 return 0;
             }
             char c = t[0];
-            if(c == '-')  return -(T)xtouint(t.shift_start(1), defval, maxchars);
+            if(c == '-')  return (T)-xtouint(t.shift_start(1), defval, maxchars);
             if(c == '+')  return (T)xtouint(t.shift_start(1), defval, maxchars);
             return (T)xtouint(t, defval, maxchars);
         }
@@ -1837,7 +1837,7 @@ struct token
                 return 0;
             }
             char c = t[0];
-            if(c == '-')  return -(T)touint(t.shift_start(1), defval, maxchars);
+            if(c == '-')  return (T)-touint(t.shift_start(1), defval, maxchars);
             if(c == '+')  return (T)touint(t.shift_start(1), defval, maxchars);
             return (T)touint(t, defval, maxchars);
         }

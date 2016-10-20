@@ -378,7 +378,7 @@ void thread_event::signal()
 #ifdef SYSTYPE_WIN
     SetEvent( (HANDLE)_handle );
 #else
-    return 0 == sem_post( _handle );
+    sem_post( _handle );
 #endif
 }
 

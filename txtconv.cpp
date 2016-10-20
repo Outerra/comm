@@ -172,24 +172,24 @@ char* append_float( char* dst, char* dste, double d, int nfrac )
             return dste;
         }
 
-        *p++ = '0' + (int)mantissa;
+        *p++ = char('0' + (int)mantissa);
         *p++ = '.';
 
         for( char* me=dste-nexp; p<me; ) {
             mantissa -= floor(mantissa);
             mantissa *= 10.0;
 
-            *p++ = '0' + (int)mantissa;
+            *p++ = char('0' + (int)mantissa);
         }
 
         *p++ = 'e';
         if(e<0)
             *p++ = '-';
         if(eabs>=10) {
-            *p++ = '0' + eabs/10;
+            *p++ = char('0' + eabs/10);
             eabs = eabs % 10;
         }
-        *p++ = '0' + eabs;
+        *p++ = char('0' + eabs);
     }
     else    //req.number of characters fits in
     {
@@ -235,7 +235,7 @@ char* append_fraction( char* dst, char* dste, double n, int ndig, bool round )
         double f = floor(n);
         n -= f;
         uint8 v = (uint8)f;
-        *p++ = '0' + v;
+        *p++ = char('0' + v);
 
         if( ndig >= 0  &&  v != 0 )
             lastnzero = i+1;
@@ -259,7 +259,7 @@ uints hex2bin( token& src, void* dst, uints nbytes, char sep )
         else 
             break;
 
-        *(uchar*)dst = (c - base) << 4;
+        *(uchar*)dst = uchar((c - base) << 4);
         ++src;
 
         c = src.first_char();
@@ -272,7 +272,7 @@ uints hex2bin( token& src, void* dst, uints nbytes, char sep )
             break;
         }
 
-        *(uchar*)dst += (c - base);
+        *(uchar*)dst += uchar(c - base);
         dst = (uchar*)dst + 1;
         ++src;
 
@@ -347,13 +347,13 @@ uints write_intelhex_line( char* dst, ushort addr, uchar n, const void* data )
         else if( *dst1 >= 'a'  &&  *dst1 <= 'f' )   base = 'a'-10;
         else if( *dst1 >= 'A'  &&  *dst1 <= 'F')    base = 'A'-10;
 
-        sum += (*dst1++ - base) << 4;        
+        sum += uchar((*dst1++ - base) << 4);
 
         if( *dst1 >= '0'  &&  *dst1 <= '9' )        base = '0';
         else if( *dst1 >= 'a'  &&  *dst1 <= 'f' )   base = 'a'-10;
         else if( *dst1 >= 'A'  &&  *dst1 <= 'F')    base = 'A'-10;
 
-        sum += *dst1++ - base;        
+        sum += uchar(*dst1++ - base);
     }
 
     sum = -(schar)sum;

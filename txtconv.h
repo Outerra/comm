@@ -303,9 +303,9 @@ namespace charstrconv
                 uint64 m = n % BaseN;
 
                 if( m>9 )
-                    *p = 'a' + (char)m - 10;
+                    *p = char('a' + (char)m - 10);
                 else
-                    *p = '0' + (char)m;
+                    *p = char('0' + (char)m);
                 n = d;
 
                 if(n == 0)
@@ -329,9 +329,9 @@ namespace charstrconv
                     uint64 m = n % BaseN;
 
                     if( m>9 )
-                        buf[i++] = 'a' + (char)m - 10;
+                        buf[i++] = char('a' + (char)m - 10);
                     else
-                        buf[i++] = '0' + (char)m;
+                        buf[i++] = char('0' + (char)m);
                     n = d;
                 }
             }

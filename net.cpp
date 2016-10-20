@@ -796,8 +796,10 @@ namespace coid {
     {
         fd_set w, e;
 
-        w.fd_count = e.fd_count = 1;
-        w.fd_array[0] = e.fd_array[0] = handle;
+        FD_ZERO(&w);
+        FD_ZERO(&e);
+        FD_SET(handle, &w);
+        FD_SET(handle, &e);
 
         struct timeval tv;
         tv.tv_sec = 0;
@@ -805,9 +807,9 @@ namespace coid {
 
         ::select(FD_SETSIZE, 0, &w, &e, &tv);
 
-        if(w.fd_count > 0)
+        if(FD_ISSET(handle, &w))
             return 1;
-        if(e.fd_count > 0)
+        if(FD_ISSET(handle, &e))
             return -1;
         return 0;
     }

@@ -37,6 +37,10 @@ static void set_thread_name(DWORD dwThreadID, const char* threadName)
 #endif
 }
 
+#else
+
+static void set_thread_name(int dwThreadID, const char* threadName) {}
+
 #endif //SYSTYPE_WIN
 
 

@@ -44,6 +44,7 @@
 
 #include <fnmatch.h>
 #include <errno.h>
+#include <utime.h>
 
 COID_NAMESPACE_BEGIN
 
@@ -211,7 +212,11 @@ opcd directory::truncate( zstring fname, uint64 size )
 ////////////////////////////////////////////////////////////////////////////////
 opcd directory::set_file_times(zstring fname, timet actime, timet modtime)
 {
-#error TODO
+    struct utimbuf ut;
+    ut.actime = actime.t;
+    ut.modtime = modtime.t;
+
+    return utime(fname.c_str(), &ut) == 0 ? 0 : ersFAILED;
 }
 
 COID_NAMESPACE_END

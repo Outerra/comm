@@ -80,13 +80,13 @@ inline ucs4 read_utf8_seq( const char* utf8, uints& off )
 
     ////////////////////////////////////////////////////////////////////////////////
     /// values to substract from code to get rid of leading 10xxxxxx of trailing UTF-8 bytes
-    static const unsigned long gUTF8_SV[6] = {
+    static const ucs4 gUTF8_SV[6] = {
     0x00000000UL,
     (0xc0UL<<6) + 0x80UL,
     (0xe0UL<<12) + (0x80UL<<6) + 0x80UL,
     (0xf0UL<<18) + (0x80UL<<12) + (0x80UL<<6) + 0x80UL,
     (0xf8UL<<24) + (0x80UL<<18) + (0x80UL<<12) + (0x80UL<<6) + 0x80UL,
-    (0xfcUL<<30) + (0x80UL<<24) + (0x80UL<<18) + (0x80UL<<12) + (0x80UL<<6) + 0x80UL,
+    /*(0xfcUL<<30)*/ + (0x80UL<<24) + (0x80UL<<18) + (0x80UL<<12) + (0x80UL<<6) + 0x80UL,
     };
 
     if( cd < 0xc0  ||  cd >= 254 )
@@ -116,13 +116,13 @@ inline ucs4 read_utf8_seq( const char* utf8 )
     static const uchar gUTF8_TB[16] = { 1,1,1,1,1,1,1,1,2,2,2,2,3,3,4,5 };
 
     /// values to substract from code to get rid of leading 10xxxxxx of trailing UTF-8 bytes
-    static const unsigned long gUTF8_SV[6] = {
+    static const ucs4 gUTF8_SV[6] = {
     0x00000000UL,
     (0xc0UL<<6) + 0x80UL,
     (0xe0UL<<12) + (0x80UL<<6) + 0x80UL,
     (0xf0UL<<18) + (0x80UL<<12) + (0x80UL<<6) + 0x80UL,
     (0xf8UL<<24) + (0x80UL<<18) + (0x80UL<<12) + (0x80UL<<6) + 0x80UL,
-    (0xfcUL<<30) + (0x80UL<<24) + (0x80UL<<18) + (0x80UL<<12) + (0x80UL<<6) + 0x80UL,
+    /*(0xfcUL<<30)*/ + (0x80UL<<24) + (0x80UL<<18) + (0x80UL<<12) + (0x80UL<<6) + 0x80UL,
     };
 
     if( cd < 0xc0  ||  cd >= 254 )
@@ -150,13 +150,13 @@ inline ucs4 read_utf8_seq_partial( const char* utf8, uint len, char* buf6, uints
 
     ////////////////////////////////////////////////////////////////////////////////
     /// values to substract from code to get rid of leading 10xxxxxx of trailing UTF-8 bytes
-    static const unsigned long gUTF8_SV[6] = {
+    static const ucs4 gUTF8_SV[6] = {
     0x00000000UL,
     (0xc0UL<<6) + 0x80UL,
     (0xe0UL<<12) + (0x80UL<<6) + 0x80UL,
     (0xf0UL<<18) + (0x80UL<<12) + (0x80UL<<6) + 0x80UL,
     (0xf8UL<<24) + (0x80UL<<18) + (0x80UL<<12) + (0x80UL<<6) + 0x80UL,
-    (0xfcUL<<30) + (0x80UL<<24) + (0x80UL<<18) + (0x80UL<<12) + (0x80UL<<6) + 0x80UL,
+    /*(0xfcUL<<30)*/ + (0x80UL<<24) + (0x80UL<<18) + (0x80UL<<12) + (0x80UL<<6) + 0x80UL,
     };
 
     if( len == 0 )
@@ -188,7 +188,7 @@ inline ucs4 read_utf8_seq_partial( const char* utf8, uint len, char* buf6, uints
         //there's not enough input data
         // setup the buf6 buffer to signal the need to fetch next page
         // first byte marks number of bytes loaded, and total bytes
-        *buf6++ = (nb<<4) | (len+sh);
+        *buf6++ = char((nb<<4) | (len+sh));
         //copy what's available from this page
         buf6 += sh;
         --off;
