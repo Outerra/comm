@@ -90,10 +90,6 @@
 
 namespace coid {
 
-    //static token _LOCALHOST_("localhost:");
-    static token _LOCALHOST("localhost");
-    static token _BROADCAST("<broadcast>");
-
     ////////////////////////////////////////////////////////////////////////////////
     void sysSleep(int seconds)
     {
@@ -299,7 +295,7 @@ namespace coid {
             return;
         }
 
-        if(host == _BROADCAST)
+        if(host == "<broadcast>")
         {
             sin_addr = UMAX32;//INADDR_BROADCAST;
         }
@@ -324,7 +320,7 @@ namespace coid {
                     port = p;
             }
 
-            if(name == _LOCALHOST)
+            if(name == "localhost")
                 sin_addr = htonl(0x7f000001);
             else
             {
@@ -373,7 +369,7 @@ namespace coid {
     {
         if(sin_addr == htonl(0x7f000001))
         {
-            buf = _LOCALHOST;
+            buf = "localhost";
             if(useport)
                 buf << ':' << ntohs(sin_port);
             return buf;

@@ -103,36 +103,42 @@ public:
             reset();
     }
 
+    //@return value from ext array associated with given main array object
     template<int V>
     typename std::tuple_element<V,extarray_t>::type::value_type&
         assoc_value( const T* p ) {
         return std::get<V>(*this)[get_item_id(p)];
     }
 
+    //@return value from ext array associated with given main array object
     template<int V>
     const typename std::tuple_element<V,extarray_t>::type::value_type&
         assoc_value( const T* p ) const {
         return std::get<V>(*this)[get_item_id(p)];
     }
 
+    //@return value from ext array for given index
     template<int V>
     typename std::tuple_element<V,extarray_t>::type::value_type&
         value( uints index ) {
         return std::get<V>(*this)[index];
     }
 
+    //@return value from ext array for given index
     template<int V>
     const typename std::tuple_element<V,extarray_t>::type::value_type&
         value( uints index ) const {
         return std::get<V>(*this)[index];
     }
 
+    //@return ext array
     template<int V>
     typename std::tuple_element<V,extarray_t>::type&
         value_array() {
         return std::get<V>(*this);
     }
 
+    //@return ext array
     template<int V>
     const typename std::tuple_element<V,extarray_t>::type&
         value_array() const {
