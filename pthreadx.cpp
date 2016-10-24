@@ -83,11 +83,21 @@ void thread::_end( uint v )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-thread thread::create_new( fnc_entry f, void* arg, void* context, const token& name )
+thread thread::create_new( fnc_entry fn, void* arg, void* context, const token& name )
 {
-    return SINGLETON(thread_manager).thread_create( arg, f, context, name );
+    return SINGLETON(thread_manager).thread_create(
+        [fn,arg]() { return fn(arg); },
+        context,
+        name );
 }
 
+////////////////////////////////////////////////////////////////////////////////
+thread thread::create_new( const coid::function<void*()>& fn, void* context, const token& name )
+{
+    return SINGLETON(thread_manager).thread_create(fn, context, name);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 void* thread::context()
 {
     return SINGLETON(thread_manager).thread_context(self());

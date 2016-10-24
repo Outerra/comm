@@ -52,8 +52,9 @@ struct thread_manager
     {
         void* handle;
         void* context;
-        thread::fnc_entry entry;
-        void* arg;
+        //thread::fnc_entry entry;
+        //void* arg;
+        coid::function<void*()> entry;
 
         thread_t tid;
         volatile int cancel;
@@ -103,13 +104,13 @@ public:
     void set_begin_end_callbacks(thread_beginend_callback begin, thread_beginend_callback end);
 
 
-    thread thread_create( void* arg, thread::fnc_entry f, void* context=0, const token& name = token() )
+    thread thread_create( const coid::function<void*()>& fn, void* context=0, const token& name = token() )
     {
         info* i = new info;
         i->context = context;
         i->handle = 0;
-        i->entry = f;
-        i->arg = arg;
+        i->entry = fn;
+        //i->arg = arg;
 
         i->tid = thread::invalid();
         i->cancel = 0;

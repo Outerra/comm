@@ -99,7 +99,7 @@ void* thread_manager::def_thread( void* pinfo )
 
     void* res;
     try {
-        res = ti->entry( ti->arg );
+        res = ti->entry();
     }
 	catch(thread::CancelException &) {
 		res = 0;
