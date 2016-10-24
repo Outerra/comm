@@ -250,7 +250,7 @@ CBK_RET $..name$_js_dispatcher::v8_$name$$@index$( const ARGUMENTS& args )
 
     ESCAPABLE_SCOPE(iso, handle_scope__);
     v8::Local<v8::Object> obj__ = args.Holder();
-    if(obj__.IsEmpty())
+    if(obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
         return CBK_UNDEFINED;
 
     v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
@@ -482,7 +482,7 @@ CBK_RET $..name$_js_dispatcher::v8_evback_$name$$@index$( const ARGUMENTS& args 
 
     ESCAPABLE_SCOPE(iso, handle_scope__);
     v8::Local<v8::Object> obj__ = args.Holder();
-    if(obj__.IsEmpty())
+    if(obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
         return CBK_UNDEFINED;
 
     v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
@@ -535,7 +535,7 @@ v8::Handle<v8::Value> $name$_js_dispatcher::_getter(v8::Local<v8::String> proper
 
     ESCAPABLE_SCOPE(iso, handle_scope__);
     v8::Local<v8::Object> obj__ = info.Holder();
-    if(obj__.IsEmpty())
+    if(obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
         return CBK_UNDEFINED;
 
     v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
@@ -583,7 +583,7 @@ v8::Handle<v8::Value> $name$_js_dispatcher::_setter(v8::Local<v8::String> proper
 
     ESCAPABLE_SCOPE(iso, handle_scope__);
     v8::Local<v8::Object> obj__ = info.Holder();
-    if(obj__.IsEmpty())
+    if(obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
         return CBK_UNDEFINED;
 
     v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
@@ -629,7 +629,7 @@ CBK_RET $name$_js_dispatcher::v8log( const ARGUMENTS& args )
     const void* inst = 0;
 
     v8::Local<v8::Object> obj__ = args.Holder();
-    if(!obj__.IsEmpty()) {
+    if(!obj__.IsEmpty() && obj__->InternalFieldCount() > 0) {
         v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
         if(intobj__->IsExternal()) {
             $ns rest="::" after="::"$js::$name$_js_dispatcher* ifc = static_cast<$ns rest="::" after="::"$js::$name$_js_dispatcher*>
@@ -675,7 +675,7 @@ CBK_RET $name$_js_dispatcher::v8query_interface( const ARGUMENTS& args )
     }
 
     v8::Local<v8::Object> obj__ = args.Holder();
-    if(obj__.IsEmpty())
+    if(obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
         return CBK_UNDEFINED;
 
     v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
@@ -731,7 +731,7 @@ $-(if event?)$
     v8::Isolate* iso = args.GetIsolate();
     HANDLE_SCOPE(iso, handle_scope__);
     v8::Local<v8::Object> obj__ = args.Holder();
-    if(obj__.IsEmpty())
+    if(obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
         return CBK_UNDEFINED;
 
     v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
@@ -759,7 +759,7 @@ CBK_RET $name$_js_dispatcher::v8current_global( const ARGUMENTS& args )
     
     ESCAPABLE_SCOPE(iso, handle_scope__);
     v8::Local<v8::Object> obj__ = args.Holder();
-    if(obj__.IsEmpty())
+    if(obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
         return CBK_UNDEFINED;
 
     v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
