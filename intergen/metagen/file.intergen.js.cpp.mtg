@@ -874,6 +874,9 @@ $-[/event]$
         global = context->Global();
         //RESET(_eventobj);
     }
+    else if(ref->IsNull()) {
+        global = ref;
+    }
     else {
         global = ref->ToObject();
         //PERSISTENT(iso, _eventobj, global);
@@ -882,6 +885,9 @@ $-[/event]$
     for(int i=0; i<$event.@size$; ++i)
     {
         RESET(_events[i]);
+
+        if(global->IsNull())
+            continue;
 
         v8::Local<v8::Value> var = global->Get(v8::string_utf8(names[i]));
         if(var->IsUndefined())
