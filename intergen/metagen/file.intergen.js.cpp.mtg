@@ -874,9 +874,6 @@ $-[/event]$
         global = context->Global();
         //RESET(_eventobj);
     }
-    else if(ref->IsNull()) {
-        global = ref;
-    }
     else {
         global = ref->ToObject();
         //PERSISTENT(iso, _eventobj, global);
