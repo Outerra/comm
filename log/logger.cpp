@@ -272,11 +272,15 @@ void logger::enqueue( ref<logmsg>&& msg )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void logger::post( token msg )
+void logger::post( const token& txt, const token& prefix )
 {
+    token msg = txt;
+    ELogType type = logmsg::consume_type(msg);
+
     ref<logmsg> rmsg = ref<logmsg>(policy_msg::create());
-    rmsg->set_type(logmsg::consume_type(msg));
-    rmsg->str() = msg;
+    rmsg->set_logger(this);
+    rmsg->set_type(type);
+    rmsg->str() << logmsg::type2tok(type) << prefix << msg;
 
     //enqueue(rmsg);
 }

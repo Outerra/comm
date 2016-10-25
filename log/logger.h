@@ -190,7 +190,7 @@ public:
 
     void open( const token& filename );
 
-    void post( token msg );
+    void post( const token& msg, const token& prefix = token() );
 
     ///Formatted log message
     template<class ...Vs>
