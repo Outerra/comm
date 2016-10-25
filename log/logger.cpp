@@ -280,7 +280,13 @@ void logger::post( const token& txt, const token& prefix )
     ref<logmsg> rmsg = ref<logmsg>(policy_msg::create());
     rmsg->set_logger(this);
     rmsg->set_type(type);
-    rmsg->str() << logmsg::type2tok(type) << prefix << msg;
+    
+    charstr& str = rmsg->str();
+    str = logmsg::type2tok(type);
+    
+    if(prefix)
+        str << '[' << prefix << "] ";
+    str << msg;
 
     //enqueue(rmsg);
 }
