@@ -123,7 +123,7 @@ public:
 
     virtual void _destroy() override
     { 
-        DASSERT(_pool != 0); 
+        DASSERT(_pool != 0);
         
         if(_obj->_logger) {
             //first destroy just queues the message
@@ -216,7 +216,7 @@ void logmsg::write()
 void logmsg::finalize( policy_msg* p )
 {
     if(_type == ELogType::None)
-        deduce_type();
+        _type = deduce_type();
 
     _logger_file = _logger->file();
     _logger->enqueue(ref<logmsg>(p));

@@ -139,7 +139,7 @@ public:
         return t<ELogType::Last ? st[1 + int(t)] : empty;
     }
 
-    ELogType deduce_type() {
+    ELogType deduce_type() const {
         token tok = _str;
         ELogType t = consume_type(tok);
         //if(tok.ptr() > _str.ptr())
