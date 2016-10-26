@@ -322,8 +322,15 @@ $-(if return.type!="void")$
     v8::Handle<v8::Object> r__ = NEWTYPE(iso, Object);
     r__->Set(v8::symbol("$$ret"), js_$return.fulltype$_create_wrapper(_rval_, LOCAL(iso, ifc->_context)));
  $-(elif return.iref.false?)$
-    static_assert( CHECK::meta_operator_exists<$return.type$>::value, "missing metastream operator << for type '$return.type$'" );
-    v8::Handle<v8::Value> r__ = v8_streamer<$return.type$>::to_v8(_rval_);
+    v8::Handle<v8::Value> r__;
+  $-(if return.ptr.true?)$
+    static_assert( CHECK::meta_operator_exists<$return.basetype$>::value, "missing metastream operator for '$return.basetype$'" );
+    if(_rval_)
+        r__ = v8_streamer<$return.basetype$>::to_v8(*_rval_);
+  $-(elif)$
+    static_assert( CHECK::meta_operator_exists<$return.basetype$>::value, "missing metastream operator for '$return.basetype$'" );
+    r__ = v8_streamer<$return.basetype$>::to_v8(_rval_);
+  $-(/if)$
  $-(elif)$
     v8::Handle<v8::Value> r__ = js_$return.fulltype$_create_wrapper(_rval_, LOCAL(iso, ifc->_context));
  $-(/if)$

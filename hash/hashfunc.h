@@ -62,6 +62,10 @@ struct equal_to	: public std::binary_function<KEYSTORE, KEYLOOKUP, bool>
 template<class KEY, bool INSENSITIVE=false> struct hash
 {
     typedef KEY     key_type;
+
+    uint operator()(const KEY& k) const {
+        return KEY::hash(k);
+    }
 };
 
 ///FNV-1a hash
@@ -128,7 +132,9 @@ template<bool INSENSITIVE> struct hash<const char*, INSENSITIVE>
     }
 };
 
-#define DIRECT_HASH_FUNC(TYPE) template<> struct hash<TYPE> { typedef TYPE key_type;  uint operator()(TYPE x) const { return (uint)(uints)x; } }
+#define DIRECT_HASH_FUNC(TYPE) template<> struct hash<TYPE> {\
+    typedef TYPE key_type;\
+    uint operator()(TYPE x) const { return uint(16777619u * (uints)x); } }
 
 DIRECT_HASH_FUNC(bool);
 DIRECT_HASH_FUNC(uint8);
