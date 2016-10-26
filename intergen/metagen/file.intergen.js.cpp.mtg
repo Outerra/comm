@@ -880,8 +880,10 @@ $-[/event]$
     bool clear = false;
     if(ref.IsEmpty() || ref->IsUndefined())
         global = context->Global();
-    else
+    else if(ref->IsNull())
         clear = true;
+    else
+        global = ref->ToObject();
 
     for(int i=0; i<$event.@size$; ++i)
     {
