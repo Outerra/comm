@@ -877,20 +877,17 @@ $-[/event]$
     HANDLE_SCOPE(iso, handle_scope__);
     v8::TryCatch trycatch__;
     v8::Local<v8::Object> global;
-    if(ref.IsEmpty() || ref->IsUndefined()) {
+    bool clear = false;
+    if(ref.IsEmpty() || ref->IsUndefined())
         global = context->Global();
-        //RESET(_eventobj);
-    }
-    else {
-        global = ref->ToObject();
-        //PERSISTENT(iso, _eventobj, global);
-    }
+    else
+        clear = true;
 
     for(int i=0; i<$event.@size$; ++i)
     {
         RESET(_events[i]);
 
-        if(global->IsNull())
+        if(clear)
             continue;
 
         v8::Local<v8::Value> var = global->Get(v8::string_utf8(names[i]));
