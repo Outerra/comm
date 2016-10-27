@@ -59,8 +59,12 @@ struct memtrack_imp : memtrack {
 };
 
 
+struct hash_memtrack {
+    typedef uints key_type;
+    uint operator()(uints x) const { return (uint)x; }
+};
 
-typedef hash_keyset<memtrack_imp, _Select_Copy<memtrack_imp,uints> > memtrack_hash_t;
+typedef hash_keyset<memtrack_imp, _Select_Copy<memtrack_imp,uints>, hash_memtrack> memtrack_hash_t;
 
 struct memtrack_registrar
 {
