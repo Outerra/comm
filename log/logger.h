@@ -78,8 +78,9 @@ protected:
 
 public:
 
-    logmsg() : _logger(0), _type(ELogType::None)
-    {}
+    COIDNEWDELETE("logmsg");
+
+    logmsg();
 
     logmsg( logmsg&& other )
         : _type(other._type)

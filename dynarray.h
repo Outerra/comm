@@ -1002,8 +1002,9 @@ public:
     ///Reserve \a nitems of elements
     /** @param nitems number of items to reserve
         @param ikeep keep existing elements (true) or do not necessarily keep them (false)
+        @param m [optional] memory space to use (fresh alloc only)
         @return pointer to the first item of array */
-    T* reserve( uints nitems, bool ikeep )
+    T* reserve( uints nitems, bool ikeep, mspace m = 0 )
     {
         uints n = _count();
 
@@ -1014,7 +1015,7 @@ public:
                 n = 0;
             }
 
-            _realloc(nitems, n);
+            _realloc(nitems, n, m);
             _set_count(n);
         }
         return _ptr;
@@ -1490,13 +1491,13 @@ private:
             for( uints i=0; i<c; ++i )  _ptr[i].~T();
     }
 
-    uints _realloc( uints newsize, uints oldsize )
+    uints _realloc( uints newsize, uints oldsize, mspace m = 0 )
     {
         uints nalloc = newsize;
         if( nalloc < 2 * oldsize )
             nalloc = 2 * oldsize;
 
-        _ptr = A::template realloc<T>(_ptr, nalloc);
+        _ptr = A::template realloc<T>(_ptr, nalloc, m);
         _set_count(newsize);
 
         return nalloc;

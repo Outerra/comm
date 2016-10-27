@@ -43,33 +43,27 @@
 
 #include "pthreadx.h"
 
-#ifdef _DEBUG
-
-///Retrieves module singleton object of given type T
+///Retrieves module (current dll/exe) singleton object of given type T
 # define SINGLETON(T) \
     coid::singleton<T>::instance(true, __FILE__,__LINE__)
 
-///Retrieves process-global singleton object of given type T
-# define GLOBAL_SINGLETON(T) \
+///Retrieves process-wide global singleton object of given type T
+# define PROCWIDE_SINGLETON(T) \
     coid::singleton<T>::instance(false, __FILE__,__LINE__)
 
-#else
 
-///Retrieves module singleton object of given type T
-# define SINGLETON(T) \
-    coid::singleton<T>::instance(true)
-
-///Retrieves process-global singleton object of given type T
-# define GLOBAL_SINGLETON(T) \
-    coid::singleton<T>::instance(false)
-
-#endif
-
-///Used for function-local singleton objects 
+///Used for function-local singleton objects, unique for each module (dll)
 /// usage:
 /// LOCAL_SINGLETON_DEF(class) name = new class;
 #define LOCAL_SINGLETON_DEF(T) \
     static coid::singleton<T>
+
+///Used for function-local singleton objects returning process-wide singleton
+/// usage:
+/// LOCAL_PROCWIDE_SINGLETON_DEF(class) name = new class;
+#define LOCAL_PROCWIDE_SINGLETON_DEF(T) \
+    static coid::singleton<T,false>
+
 
 ///Same as LOCAL_SINGLETON_DEF (compatibility)
 #define LOCAL_SINGLETON(T) LOCAL_SINGLETON_DEF(T)
@@ -163,7 +157,8 @@ struct has_singleton_initialize_module_method
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Class for global and local singletons
-template <class T>
+//@param Module true if locally created singletons should be unique in each module (dll), false if process-wide
+template <class T, bool Module = true>
 class singleton
 {
 public:
@@ -199,20 +194,20 @@ public:
     singleton() {
         _p = (T*)singleton_register_instance(
             &create, &destroy, &init_module,
-            typeid(T).name(), 0, 0, true);
+            typeid(T).name(), 0, 0, Module);
     }
 
     ///Local singleton constructor, use through LOCAL_SINGLETON macro
     singleton(T* obj) {
         _p = (T*)singleton_register_instance(
             singleton_local_creator(obj), &destroy, &init_module,
-            typeid(T).name(), 0, 0, true);
+            typeid(T).name(), 0, 0, Module);
     }
 
     singleton(T&& obj) {
         _p = (T*)singleton_register_instance(
             singleton_local_creator(new T(std::forward<T>(obj))), &destroy, &init_module,
-            typeid(T).name(), 0, 0, true);
+            typeid(T).name(), 0, 0, Module);
     }
 
     T* operator -> () { return _p; }

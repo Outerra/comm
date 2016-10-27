@@ -139,12 +139,12 @@ public:
     ///
     static policy_msg* create() 
     {
-        auto po = &pool_type::global();
+        LOCAL_PROCWIDE_SINGLETON_DEF(pool_type) pool;
         policy_msg* p=0;
 
-        bool make = !po->create_instance(p);
+        bool make = !pool->create_instance(p);
         if(make)
-            p = new policy_msg(new logmsg, po);
+            p = new policy_msg(new logmsg, pool.get());
         else
             p->get()->reset();
 
@@ -199,6 +199,14 @@ public:
 };
 
 } //namespace coid
+
+////////////////////////////////////////////////////////////////////////////////
+logmsg::logmsg()
+    : _logger(0), _type(ELogType::None)
+{
+    //reserve memory from process allocator
+    _str.reserve(128, PROCWIDE_SINGLETON(comm_array_mspace).msp);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 void logmsg::write()

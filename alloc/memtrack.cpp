@@ -113,8 +113,7 @@ static memtrack_registrar* memtrack_register()
  
     static closer _C;
     if(!_C.mtr) {
-        GLOBAL_SINGLETON(memtrack_registrar);
-        _C.mtr = &GLOBAL_SINGLETON(memtrack_registrar);//new memtrack_registrar;
+        _C.mtr = &PROCWIDE_SINGLETON(memtrack_registrar);//new memtrack_registrar;
         memtrack_registrar::reg = 1;
     }
 

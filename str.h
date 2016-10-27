@@ -1819,7 +1819,11 @@ public:
     void free() { _tstr.discard(); }
 
     ///Reserve memory for string
-    char* reserve(uints len) { return _tstr.reserve(len, true); }
+    //@param len min size for string to reserve (incl. term zero)
+    //@param m [optional] memory space to use
+    char* reserve( uints len, mspace m = 0 ) {
+        return _tstr.reserve(len, true, m);
+    }
 
     //@return number of reserved bytes
     uints reserved() const { return _tstr.reserved_total(); }

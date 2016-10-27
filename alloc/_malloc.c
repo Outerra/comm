@@ -1355,7 +1355,7 @@ DLMALLOC_EXPORT void* mspace_malloc(mspace msp, size_t bytes);
   free may be called instead of mspace_free because freed chunks from
   any space are handled by their originating spaces.
 */
-DLMALLOC_EXPORT void mspace_free(mspace msp, void* mem);
+DLMALLOC_EXPORT void mspace_free(/*mspace msp,*/ void* mem);
 
 /*
   mspace_realloc behaves as realloc, but operates within
@@ -5261,7 +5261,8 @@ void* dlrealloc(void* oldmem, size_t bytes) {
         if (mem != 0) {
           size_t oc = chunksize(oldp) - overhead_for(oldp);
           memcpy(mem, oldmem, (oc < bytes)? oc : bytes);
-          internal_free(m, oldmem);
+          //internal_free(m, oldmem);
+          mspace_free(oldmem);
         }
       }
     }
@@ -5662,12 +5663,12 @@ void* mspace_malloc(mspace msp, size_t bytes) {
   return 0;
 }
 
-void mspace_free(mspace msp, void* mem) {
+void mspace_free(/*mspace msp,*/ void* mem) {
   if (mem != 0) {
     mchunkptr p  = mem2chunk(mem);
 #if FOOTERS
     mstate fm = get_mstate_for(p);
-    (void)msp; /* placate people compiling -Wunused */
+    //(void)msp; /* placate people compiling -Wunused */
 #else /* FOOTERS */
     mstate fm = (mstate)msp;
 #endif /* FOOTERS */
@@ -5820,7 +5821,7 @@ void* mspace_realloc(mspace msp, void* oldmem, size_t bytes) {
         if (mem != 0) {
           size_t oc = chunksize(oldp) - overhead_for(oldp);
           memcpy(mem, oldmem, (oc < bytes)? oc : bytes);
-          mspace_free(m, oldmem);
+          mspace_free(/*m,*/ oldmem);
         }
       }
     }
@@ -5828,7 +5829,7 @@ void* mspace_realloc(mspace msp, void* oldmem, size_t bytes) {
   return mem;
 }
 
-void* mspace_realloc_in_place(mspace msp, void* oldmem, size_t bytes) {
+void* mspace_realloc_in_place(/*mspace msp,*/ void* oldmem, size_t bytes) {
   void* mem = 0;
   if (oldmem != 0) {
     if (bytes >= MAX_REQUEST) {
@@ -5841,7 +5842,7 @@ void* mspace_realloc_in_place(mspace msp, void* oldmem, size_t bytes) {
       mstate m = (mstate)msp;
 #else /* FOOTERS */
       mstate m = get_mstate_for(oldp);
-      (void)msp; /* placate people compiling -Wunused */
+      //(void)msp; /* placate people compiling -Wunused */
       if (!ok_magic(m)) {
         USAGE_ERROR_ACTION(m, oldmem);
         return 0;
@@ -6015,6 +6016,12 @@ size_t mspace_usable_size(const void* mem) {
       return chunksize(p) - overhead_for(p);
   }
   return 0;
+}
+
+mspace mspace_from_ptr(const void* mem) {
+    if(!mem) return 0;
+    mchunkptr p  = mem2chunk(mem);
+    return get_mstate_for(p);
 }
 
 int mspace_mallopt(int param_number, int value) {
