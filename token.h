@@ -379,7 +379,7 @@ struct token
 
     char char_is_whitespace( ints n ) const {
         char c = nth_char(n);
-        return (c == ' ' || c == '\t' || c == '\r' || c == '\r') ? c : 0;
+        return (c == ' ' || c == '\t' || c == '\r' || c == '\n') ? c : 0;
     }
 
 
