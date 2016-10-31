@@ -532,6 +532,20 @@ protected:
 
         return rval && TRACKING;
     }
+
+
+    ///func call for for_each_modified (with ptr argument)
+    template<typename Fn, typename = std::enable_if_t<!has_index<Fn>::value>>
+    void funccallp(const Fn& fn, const arg0<Fn>& v, size_t&& index) const
+    {
+        fn(v);
+    }
+
+    template<typename Fn, typename = std::enable_if_t<has_index<Fn>::value>>
+    void funccallp(const Fn& fn, const arg0<Fn>& v, size_t index) const
+    {
+        fn(v, index);
+    }
     //@}
 
 public:
@@ -616,7 +630,7 @@ public:
             for(int i=0; ch<che && i<MASK_BITS; ++i, m>>=1, ++ch) {
                 if(all_modified || (ch->mask & bitplane_mask) != 0) {
                     Tx* p = (m&1) != 0 ? d+s+i : 0;
-                    funccall(f, p, s+i);
+                    funccallp(f, p, s+i);
                 }
             }
         }
