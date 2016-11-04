@@ -41,6 +41,36 @@ public:
         , _fn_acc(0)
     {}
 
+    virtual ~interface_register_impl()
+    {}
+
+    //virtual in order to invoke code from the main exe module when calling from dlls
+    virtual void register_interface_creator(
+        const coid::token& ifcname,
+        void* creator_ptr)
+    {
+        token ns = ifcname;
+        token classname = ns.cut_right_group_back("::");
+        token creatorname = classname.cut_right('.');
+        token script = creatorname.cut_right('@', token::cut_trait_remove_sep_default_empty());
+
+        GUARDTHIS(_mx);
+
+        if(!creator_ptr)
+            _hash.erase_value(ifcname, 0);
+        else {
+            entry* en = _hash.insert_value_slot(ifcname);
+            if(en) {
+                en->creator_ptr = creator_ptr;
+                en->ifcname = ifcname;
+                en->ns = ns;
+                en->classname = classname;
+                en->creatorname = creatorname;
+                en->script_creator = !script.is_empty();
+            }
+        }
+    }
+
     bool current_dir( token curpath, charstr& dst )
     {
         if(directory::is_absolute_path(curpath))
@@ -208,29 +238,8 @@ dynarray<interface_register::creator>& interface_register::find_interface_creato
 ////////////////////////////////////////////////////////////////////////////////
 void interface_register::register_interface_creator( const token& ifcname, void* creator_ptr )
 {
-    static token SEP = "::";
-
-    token ns = ifcname;
-    token classname = ns.cut_right_group_back(SEP);
-    token creatorname = classname.cut_right('.');
-    token script = creatorname.cut_right('@', token::cut_trait_remove_sep_default_empty());
-
     interface_register_impl& reg = interface_register_impl::get();
-    GUARDTHIS(reg._mx);
-
-    if(!creator_ptr)
-        reg._hash.erase_value(ifcname, 0);
-    else {
-        entry* en = reg._hash.insert_value_slot(ifcname);
-        if(en) {
-            en->creator_ptr = creator_ptr;
-            en->ifcname = ifcname;
-            en->ns = ns;
-            en->classname = classname;
-            en->creatorname = creatorname;
-            en->script_creator = !script.is_empty();
-        }
-    }
+    return reg.register_interface_creator(ifcname, creator_ptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
