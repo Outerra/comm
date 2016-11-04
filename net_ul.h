@@ -216,8 +216,6 @@ class sysDynamicLibrary
 
 public:
 
-    static handle load( const char* libname );
-
     ~sysDynamicLibrary();
     sysDynamicLibrary( const char* libname = 0 );
 
@@ -228,7 +226,9 @@ public:
     void *getFuncAddress ( const char *funcname );
 
     bool is_valid() {return _handle != 0;}
-} ;
+
+    static handle load_library( const char* libname );
+};
 
 
 COID_NAMESPACE_END

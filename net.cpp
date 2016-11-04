@@ -147,7 +147,7 @@ namespace coid {
     ////////////////////////////////////////////////////////////////////////////////
 #ifdef SYSTYPE_WIN
 
-    sysDynamicLibrary::handle sysDynamicLibrary::load(const char* libname)
+    sysDynamicLibrary::handle sysDynamicLibrary::load_library(const char* libname)
     {
         return (ints)LoadLibrary(libname);
     }
@@ -184,7 +184,7 @@ namespace coid {
 
 #else //////////////////////////////////////////////////////////////////////////
 
-    sysDynamicLibrary::handle sysDynamicLibrary::load( const char* libname )
+    sysDynamicLibrary::handle sysDynamicLibrary::load_library( const char* libname )
     {
         return (void *) dlopen(libname, RTLD_NOW | RTLD_GLOBAL);
     }
