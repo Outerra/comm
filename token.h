@@ -1283,8 +1283,8 @@ struct token
         if (len() < str.len())
             return 0;
         uints tot = len() - str.len();
-        char c = tolower(str.first_char());
-        char C = toupper(str.first_char());
+        char c = (char) tolower(str.first_char());
+        char C = (char) toupper(str.first_char());
 
         while(off <= tot && (off=count_notchars(c, C, off)) <= tot) {
             if(0 == xstrncasecmp(_ptr+off, str._ptr, str.len()))
@@ -2203,7 +2203,7 @@ struct token
 
 
         //skip the day name
-        char c = tolower(first_char());
+        char c = (char) tolower(first_char());
         if(c == 's' || c == 'm' || c == 't' || c == 'w' || c == 'f')
             cut_left(',', ctr);
 

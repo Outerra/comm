@@ -1270,7 +1270,7 @@ public:
 
             add_from(ps, src.ptr() - 1 - ps);
 
-            char v = src.touint_base_and_shift(16, 0, 2);
+            char v = (char) src.touint_base_and_shift(16, 0, 2);
             if(v)
                 *uniadd(1) = v;
 
@@ -1530,7 +1530,7 @@ public:
     {
         char* pe = (char*)ptre();
         for(char* p = (char*)ptr(); p < pe; ++p)
-            *p = ::tolower(*p);
+            *p = (char) ::tolower(*p);
     }
 
     ///Convert range within string to lowercase
@@ -1540,7 +1540,7 @@ public:
 
         char* pe = (char*)ptr() + to;
         for(char* p = (char*)ptr() + from; p < pe; ++p)
-            *p = ::tolower(*p);
+            *p = (char) ::tolower(*p);
     }
 
     ///Convert string to uppercase
@@ -1548,7 +1548,7 @@ public:
     {
         char* pe = (char*)ptre();
         for(char* p = (char*)ptr(); p < pe; ++p)
-            *p = ::toupper(*p);
+            *p = (char) ::toupper(*p);
     }
 
     ///Convert range within string to uppercase
@@ -1558,7 +1558,7 @@ public:
 
         char* pe = (char*)ptr() + to;
         for(char* p = (char*)ptr() + from; p < pe; ++p)
-            *p = ::toupper(*p);
+            *p = (char) ::toupper(*p);
     }
 
     ///Replace every occurence of character \a from to character \a to
