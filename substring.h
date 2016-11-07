@@ -126,7 +126,7 @@ public:
             // substring at all, we can skip substring length + 1
 
             uchar o = ptr[off+_len];
-            if(_icase) o = ::tolower(o);
+            if(_icase) o = (uchar)::tolower(o);
 
             uints sk = (o<_from || o>_to)
                 ? _len+1
