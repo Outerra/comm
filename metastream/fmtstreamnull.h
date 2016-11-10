@@ -54,29 +54,29 @@ public:
     ~fmtstreamnull()
     {}
 
-    virtual token fmtstream_name()          { return "fmtstreamnull"; }
-    virtual void fmtstream_file_name( const token& file_name ) {}
+    virtual token fmtstream_name() override { return "fmtstreamnull"; }
+    virtual void fmtstream_file_name( const token& file_name ) override {}
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
-    opcd write_key( const token& key, int kmember )
+    opcd write_key( const token& key, int kmember ) override
     {
         return 0;
     }
 
-    opcd read_key( charstr& key, int kmember, const token& expected_key )
+    opcd read_key( charstr& key, int kmember, const token& expected_key ) override
     {
         return ersNO_MORE;
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
-    opcd write( const void* p, type t )
+    opcd write( const void* p, type t ) override
     {
         return 0;
     }
 
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
-    opcd read( void* p, type t )
+    opcd read( void* p, type t ) override
     {
         if( t.type == type::T_STRUCTEND )
             return 0;
@@ -90,30 +90,30 @@ public:
     }
 
 
-    virtual opcd write_array_separator( type t, uchar end )
+    virtual opcd write_array_separator( type t, uchar end ) override
     {
         return 0;
     }
 
-    virtual opcd read_array_separator( type t )
+    virtual opcd read_array_separator( type t ) override
     {
         DASSERT(0); //should not get here
         return ersIMPROPER_STATE;
     }
 
-    virtual opcd write_array_content( binstream_container_base& c, uints* count )
+    virtual opcd write_array_content( binstream_container_base& c, uints* count, metastream* m ) override
     {
         *count = c.count();
         return 0;
     }
 
-    virtual opcd read_array_content( binstream_container_base& c, uints n, uints* count )
+    virtual opcd read_array_content( binstream_container_base& c, uints n, uints* count, metastream* m ) override
     {
         DASSERT(0); //should not get here
         return ersIMPROPER_STATE;
     }
 
-    virtual void acknowledge( bool eat = false )
+    virtual void acknowledge( bool eat = false ) override
     {
     }
 };

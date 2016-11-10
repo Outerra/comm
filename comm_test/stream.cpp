@@ -10,100 +10,70 @@
 namespace coid {
 
 struct STLMIX {
-    std::vector<std::string> x0;
-    std::list<std::string> x1;
-    std::deque<std::string> x2;
-    std::set<std::string> x3;
-    std::multiset<std::string> x4;
-    std::map<std::string,uint> x5;
-    std::multimap<std::string,uint> x6;
-/*
-    inline friend binstream& operator << (binstream& bin, const STLMIX& x)
-    {   return bin << x.x0 << x.x1 << x.x2 << x.x3 << x.x4 << x.x5 << x.x6; }
-    
-    inline friend binstream& operator >> (binstream& bin, STLMIX& x)
-    {   return bin >> x.x0 >> x.x1 >> x.x2 >> x.x3 >> x.x4 >> x.x5 >> x.x6; }
+    std::vector<std::string> vector;
+    std::list<std::string> list;
+    std::deque<std::string> deque;
+    std::set<std::string> set;
+    std::multiset<std::string> multiset;
+    std::map<std::string,uint> map;
+    std::multimap<std::string,uint> multimap;
 
-    inline friend metastream& operator << (metastream& m, const STLMIX& x)
-    {
-        MSTRUCT_OPEN(m,"STLMIX")
-        MM(m,"vector",x.x0)
-        MM(m,"list",x.x1)
-        MM(m,"deque",x.x2)
-        MM(m,"set",x.x3)
-        MM(m,"multiset",x.x4)
-        MM(m,"map",x.x5)
-        MM(m,"multimap",x.x6)
-        MSTRUCT_CLOSE(m)
-    }*/
     inline friend metastream& operator || (metastream& m, STLMIX& x)
     {
         return m.compound("STLMIX", [&]()
         {
-            m.member("vector",x.x0);
-            m.member("list",x.x1);
-            m.member("deque",x.x2);
-            m.member("set",x.x3);
-            m.member("multiset",x.x4);
-            //m.member("map",x.x5);
-            //m.member("multimap",x.x6);
+            m.member("vector", x.vector);
+            m.member("list", x.list);
+            m.member("deque", x.deque);
+            m.member("set", x.set);
+            m.member("multiset", x.multiset);
+            //m.member("map", x.map);
+            //m.member("multimap", x.multimap);
         });
     }
 };
 
 
-void test()
+void std_test()
 {
     {
-    token t = "fashion";
-    const char* v = "test";
+        token t = "fashion";
+        const char* v = "test";
 
-    std::ostringstream ost;
-    ost << t << v;
+        std::ostringstream ost;
+        ost << t << v;
     }
-
-    //binstream out and in test
-/*
-    bofstream bof("stl.test");
-
-    const char* t = "some string";
-
-    STLMIX x;
-    x.x1.push_back("hallo");
-    x.x1.push_back("co sa stallo");
-
-    bof << t << x;
-    bof.close();
-
-
-    STLMIX y;
-    bifstream bif("stl.test");
-
-    bif >> t >> y;
-    bif.close();*/
-
-    //::free((void*)t);
 
     
     //metastream out and in test
 
     bofstream bof("stl_meta.test");
-    fmtstreamxml2 txpo(bof);
+    fmtstreamcxx txpo(bof);
     metastream meta(txpo);
 
     STLMIX x;
+    x.vector.push_back("abc");
+    x.vector.push_back("def");
+    x.list.push_back("ghi");
+    x.deque.push_back("ijk");
+    x.set.insert("lmn");
+    x.multiset.insert("opq");
+    x.map.insert(std::pair<std::string,uint>("rst",1));
+
     meta.stream_out(x);
+    meta.stream_flush();
 
     bof.close();
 
 
     bifstream bif("stl_meta.test");
 
-    fmtstreamxml2 txpi(bif);
+    fmtstreamcxx txpi(bif);
     meta.bind_formatting_stream(txpi);
 
     STLMIX y;
     meta.stream_in(y);
+    meta.stream_acknowledge();
 
     bif.close();
 }

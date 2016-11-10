@@ -47,6 +47,7 @@
 COID_NAMESPACE_BEGIN
 
 class binstream;
+class metastream;
 struct opcd;
 
 
@@ -74,7 +75,7 @@ struct binstream_container_base
     //@return number of items in container (for reading), UMAXS if unknown in advance
     virtual uints count() const = 0;
 
-    typedef opcd (*fnc_stream)(binstream&, void*, binstream_container_base&);
+    typedef void (*fnc_stream)(metastream*, void*, binstream_container_base*);
 
 
     binstream_container_base( bstype::kind t, fnc_stream fout, fnc_stream fin )
@@ -98,6 +99,18 @@ struct binstream_container_base
         return _type.is_array_unspecified_size();
     }
 
+    opcd stream_in( metastream* m, void* p ) {
+        try { _stream_in(m, p, this); }
+        catch( const std::exception&) { return ersEXCEPTION; }
+        return 0;
+    }
+
+    opcd stream_out( metastream* m, void* p ) {
+        try { _stream_out(m, p, this); }
+        catch( const std::exception&) { return ersEXCEPTION; }
+        return 0;
+    }
+
 
     fnc_stream _stream_in;
     fnc_stream _stream_out;
@@ -118,7 +131,7 @@ struct binstream_container : binstream_container_base
     {}
 };
 
-
+/*
 ///Structure with streaming functions for abstract type
 template<class T>
 struct binstream_streamfunc
@@ -136,9 +149,22 @@ struct binstream_streamfunc
         catch( opcd e ) { return e; }
         return 0;
     }
-};
+};*/
 
 ////////////////////////////////////////////////////////////////////////////////
+template<class T>
+struct type_streamer {
+    static void fn( metastream* m, void* p, binstream_container_base* );
+};
+/*
+template<>
+struct type_streamer<bstype::key> {
+    static void fn( metastream* m, void* p, binstream_container_base& ) {
+        *m || *static_cast<char*>(p);
+    }
+};*/
+
+
 ///Templatized base container
 //@param T type held by the container
 //@param COUNT unsigned integer type for storing count
@@ -150,13 +176,18 @@ struct binstream_containerT : binstream_container<COUNT>
 
     binstream_containerT()
         : binstream_container<COUNT>(bstype::t_type<T>(),
-            &binstream_streamfunc<T>::stream_out,
-            &binstream_streamfunc<T>::stream_in)
+            &type_streamer<T>::fn,
+            &type_streamer<T>::fn)
     {}
 
     binstream_containerT( fnc_stream fout, fnc_stream fin )
         : binstream_container<COUNT>(bstype::t_type<T>(),fout,fin)
     {}
+/*
+    //template<class T>
+    static void fnstream( metastream* m, void* p, binstream_container_base& bc ) {
+        *m || *static_cast<typename resolve_enum<T>::type*>(p);
+    }*/
 };
 
 
@@ -221,7 +252,7 @@ struct binstream_dereferencing_containerT
 
 
     binstream_dereferencing_containerT( binstream_container<COUNT>& bc )
-        : binstream_containerT<T,COUNT>(&binstream_streamfunc<T>::stream_out, &binstream_streamfunc<T>::stream_in)
+        : binstream_containerT<T,COUNT>()
         , _bc(bc)
     {}
 
@@ -259,7 +290,7 @@ struct binstream_dereferencing_containerRefT
 
 
     binstream_dereferencing_containerRefT( binstream_container<COUNT>& bc )
-        : binstream_containerT<T,COUNT>(&binstream_streamfunc<T>::stream_out, &binstream_streamfunc<T>::stream_in)
+        : binstream_containerT<T,COUNT>()
         , _bc(bc)
     {}
 

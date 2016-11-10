@@ -51,6 +51,7 @@
 COID_NAMESPACE_BEGIN
 
 class binstream;
+class metastream;
 
 namespace bstype {
 
@@ -335,6 +336,8 @@ struct t_key : public T
 
     friend binstream& operator >> (binstream& in, t_key<T>& )           { return in; }
     friend binstream& operator << (binstream& out, const t_key<T>& )    { return out; }
+
+    friend metastream& operator || (metastream& m, t_key<T>& )          { return m; }
 };
 
 } //namespace bstype

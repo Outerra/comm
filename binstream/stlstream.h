@@ -91,13 +91,6 @@ struct binstream_container_stl_input_iterator : binstream_containerT<typename St
 
     binstream_container_stl_input_iterator( const StlContainer& cont, fnc_stream fout, fnc_stream fin )
         : binstream_containerT<T>(fout,fin), inpi(cont.begin()), endi(cont.end()) {}
-/*
-    void set( const StlContainer& cont, uints n )
-    {
-        inpi = cont.begin();
-        endi = cont.end();
-        this->_nelements = n;
-    }*/
 
 protected:
     typename StlContainer::const_iterator inpi, endi;
@@ -139,16 +132,13 @@ struct binstream_container_stl_insert_iterator : binstream_container<uints>
     }
 
 protected:
-    static opcd stream_in( binstream& bin, void* p, binstream_container_base& cont )
+
+    static void stream_in( metastream* m, void* p, binstream_container_base* cont )
     {
-        binstream_container_stl_insert_iterator<StlContainer>& contc =
-            (binstream_container_stl_insert_iterator<StlContainer>&)cont;
-        try {
-            bin >> contc.temp;
-            *contc.outpi++ = contc.temp;
-        }
-        catch( opcd e ) { return e; }
-        return 0;
+        auto contc = static_cast<binstream_container_stl_insert_iterator<StlContainer>*>(cont);
+
+        *m || contc->temp;
+        *contc->outpi++ = std::move(contc->temp);
     }
 
     T temp;
@@ -192,16 +182,13 @@ struct binstream_container_stl_assoc_iterator : binstream_container<uints>
     }
 
 protected:
-    static opcd stream_in( binstream& bin, void* p, binstream_container_base& cont )
+
+    static void stream_in( metastream* m, void* p, binstream_container_base* cont )
     {
-        binstream_container_stl_assoc_iterator<StlContainer>& contc =
-            (binstream_container_stl_assoc_iterator<StlContainer>&)cont;
-        try {
-            bin >> contc.temp;
-            contc.container.insert( contc.temp );
-        }
-        catch( opcd e ) { return e; }
-        return 0;
+        auto contc = static_cast<binstream_container_stl_assoc_iterator<StlContainer>*>(cont);
+
+        *m || contc->temp;
+        contc->container.insert(std::move(contc->temp));
     }
 
     T temp;
@@ -223,12 +210,12 @@ template<class T, class A> inline binstream& operator >> (binstream& out, CONT<T
 template<class T, class A> inline metastream& operator || (metastream& m, CONT<T,A>& v ) \
 {\
     if(m.stream_reading()) {\
-        binstream_container_stl_input_iterator<CONT<T,A>> c(v, 0, 0);\
-        m.read_container<T>(c);\
+        binstream_container_stl_insert_iterator<CONT<T,A>> c(v);\
+        m.read_container(c);\
     }\
     else if(m.stream_writing()) {\
-        binstream_container_stl_insert_iterator<CONT<T,A>> c(v, 0, 0);\
-        m.write_container<T>(c);\
+        binstream_container_stl_input_iterator<CONT<T,A>> c(v);\
+        m.write_container(c);\
     }\
     else {\
         m.meta_decl_array();\
@@ -253,12 +240,12 @@ template<class T, class A> inline binstream& operator >> (binstream& out, CONT<T
 template<class T, class A> inline metastream& operator || (metastream& m, CONT<T,A>& v ) \
 {\
     if(m.stream_reading()) {\
-        binstream_container_stl_input_iterator<CONT<T,A>> c(v, 0, 0);\
-        m.read_container<T>(c);\
+        binstream_container_stl_assoc_iterator<CONT<T,A>> c(v);\
+        m.read_container(c);\
     }\
     else if(m.stream_writing()) {\
-        binstream_container_stl_assoc_iterator<CONT<T,A>> c(v, 0, 0);\
-        m.write_container<T>(c);\
+        binstream_container_stl_input_iterator<CONT<T,A>> c(v);\
+        m.write_container(c);\
     }\
     else {\
         m.meta_decl_array();\
@@ -344,12 +331,12 @@ template<class T, class A>
 inline metastream& operator || (metastream& m, std::vector<T,A>& v )
 {
     if(m.stream_reading()) {
-        binstream_container_fixed_array<T,uints> c(v.empty() ? 0 : &v[0], v.size(), 0, 0);
-        m.read_container<T>(c);
+        std_vector_binstream_container<T,A> c(v);
+        m.read_container(c);
     }
     else if(m.stream_writing()) {
-        std_vector_binstream_container<T,A> c(v, 0, 0);
-        m.write_container<T>(c);
+        binstream_container_fixed_array<T,uints> c(v.empty() ? 0 : &v[0], v.size());
+        m.write_container(c);
     }
     else {
         m.meta_decl_array();
@@ -381,7 +368,7 @@ inline metastream& operator || (metastream& meta, std::string& p)
     if(meta.stream_reading()) {
         dynarray<char,uint> tmp;
         dynarray<char,uint>::dynarray_binstream_container c(tmp);
-        meta.read_container<char>(c);
+        meta.read_container(c);
 
         p.assign(tmp.ptr(), tmp.size());
     }

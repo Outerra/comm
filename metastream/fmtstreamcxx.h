@@ -112,13 +112,13 @@ public:
         set_default_separators(true);
     }
 
-    virtual token fmtstream_name()          { return "fmtstreamcxx"; }
+    virtual token fmtstream_name() override { return "fmtstreamcxx"; }
 
     uint get_indent() const                 { return _indent; }
     void set_indent( uint indent )          { _indent = indent; }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
-    opcd write_key( const token& key, int kmember )
+    opcd write_key( const token& key, int kmember ) override
     {
         if(kmember > 0)
             _bufw << tSep;
@@ -132,7 +132,7 @@ public:
         return e;
     }
 
-    opcd read_key( charstr& key, int kmember, const token& expected_key )
+    opcd read_key( charstr& key, int kmember, const token& expected_key ) override
     {
         opcd e;
 
@@ -181,7 +181,7 @@ public:
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
-    opcd write( const void* p, type t )
+    opcd write( const void* p, type t ) override
     {
         if( t.is_array_start() )
         {
@@ -348,7 +348,7 @@ public:
 
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
-    opcd read( void* p, type t )
+    opcd read( void* p, type t ) override
     {
         token tok = _tokenizer.next();
 
@@ -634,7 +634,7 @@ public:
     }
 
 
-    virtual opcd write_array_separator( type t, uchar end )
+    virtual opcd write_array_separator( type t, uchar end ) override
     {
         if( !end && t.is_next_array_element() )
         {
@@ -644,7 +644,7 @@ public:
         return 0;
     }
 
-    virtual opcd read_array_separator( type t )
+    virtual opcd read_array_separator( type t ) override
     {
         DASSERT( t.type != type::T_CHAR && t.type != type::T_KEY && t.type != type::T_BINARY );
 
@@ -667,14 +667,14 @@ public:
         return 0;
     }
 
-    virtual opcd write_array_content( binstream_container_base& c, uints* count )
+    virtual opcd write_array_content( binstream_container_base& c, uints* count, metastream* m ) override
     {
         type t = c._type;
         uints n = c.count();
         c.set_array_needs_separators();
 
         if( t.type != type::T_CHAR  &&  t.type != type::T_KEY && t.type != type::T_BINARY )
-            return write_compound_array_content(c,count);
+            return write_compound_array_content(c, count, m);
 
         opcd e;
         //optimized for character and key strings
@@ -709,19 +709,19 @@ public:
             if(!e)  *count = n;
         }
         else
-            e = write_compound_array_content(c,count);
+            e = write_compound_array_content(c, count, m);
 
         return e;
     }
 
-    virtual opcd read_array_content( binstream_container_base& c, uints n, uints* count )
+    virtual opcd read_array_content( binstream_container_base& c, uints n, uints* count, metastream* m ) override
     {
         type t = c._type;
         //uints n = c._nelements;
         c.set_array_needs_separators();
 
         if( t.type != type::T_CHAR  &&  t.type != type::T_KEY && t.type != type::T_BINARY )
-            return read_compound_array_content(c,n,count);
+            return read_compound_array_content(c, n, count, m);
 
         token tok = _tokenizer.next();
 

@@ -315,12 +315,12 @@ metastream& operator || ( metastream& m, typed_array<T>& a )
 {
     if(m.stream_reading()) {
         a.reset();
-        typename typed_array<T>::typed_array_binstream_container c(a,0,0);
-        m.read_container(c, &metastream::fnstream<T>);
+        typename typed_array<T>::typed_array_binstream_container c(a);
+        m.read_container(c);
     }
     else if(m.stream_writing()) {
-        typename typed_array<T>::typed_array_binstream_container c(a,0,0);
-        m.write_container(c, &metastream::fnstream<T>);
+        typename typed_array<T>::typed_array_binstream_container c(a);
+        m.write_container(c);
     }
     else {
         m.meta_decl_array();
@@ -619,7 +619,7 @@ public:
     }
 
     ////////////////////////////////////////////////////////////////////////////////
-    opcd write( const void* p, type t )
+    opcd write( const void* p, type t ) override
     {
         if( t.is_array_start() )
         {
@@ -747,7 +747,7 @@ public:
 
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
-    opcd read( void* p, type t )
+    opcd read( void* p, type t ) override
     {
         opcd e=0;
         if( t.is_array_start() )
@@ -954,7 +954,7 @@ public:
     }
 
 
-    virtual opcd write_array_separator( type t, uchar end )
+    virtual opcd write_array_separator( type t, uchar end ) override
     {
         if(_top->element > 0)
             _top->array->Set(_top->element-1, _top->value);
@@ -963,7 +963,7 @@ public:
         return 0;
     }
 
-    virtual opcd read_array_separator( type t )
+    virtual opcd read_array_separator( type t ) override
     {
         if(_top->element >= _top->array->Length())
             return ersNO_MORE;
@@ -972,14 +972,14 @@ public:
         return 0;
     }
 
-    virtual opcd write_array_content( binstream_container_base& c, uints* count )
+    virtual opcd write_array_content( binstream_container_base& c, uints* count, metastream* m ) override
     {
         type t = c._type;
         uints n = c.count();
         //c.set_array_needs_separators();
 
         if( t.type != type::T_CHAR  &&  t.type != type::T_KEY && t.type != type::T_BINARY )
-            return write_compound_array_content(c,count);
+            return write_compound_array_content(c, count, m);
 
         opcd e;
         //optimized for character and key strings
@@ -1010,7 +1010,7 @@ public:
         return e;
     }
 
-    virtual opcd read_array_content( binstream_container_base& c, uints n, uints* count )
+    virtual opcd read_array_content( binstream_container_base& c, uints n, uints* count, metastream* m ) override
     {
         type t = c._type;
         
@@ -1022,7 +1022,7 @@ public:
             else if(n != na)
                 return ersMISMATCHED "array size";
 
-            return read_compound_array_content(c,n,count);
+            return read_compound_array_content(c, n, count, m);
         }
 
         //if(!_top->value->IsString())

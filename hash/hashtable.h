@@ -482,16 +482,16 @@ public:
 
     metastream& stream_out( metastream& m ) const
     {
-        hashtable_binstream_container bc(*this, 0, 0);
-        m.write_container<VAL>(bc);
+        hashtable_binstream_container bc(*this);
+        m.write_container(bc);
 
         return m;
     }
 
     metastream& stream_in( metastream& m )
     {
-        hashtable_binstream_container bc(*this, UMAXS, 0, 0);
-        m.read_container<VAL>(bc);
+        hashtable_binstream_container bc(*this, UMAXS);
+        m.read_container(bc);
 
         return m;
     }

@@ -190,14 +190,14 @@ public:
         return _binr->read_raw( p, len );
     }
 
-    virtual opcd write_array_content( binstream_container_base& c, uints* count ) override
+    virtual opcd write_array_content( binstream_container_base& c, uints* count, metastream* m ) override
     {
         type t = c._type;
         uints n = c.count();
 
         //types other than char and key must be written by elements
         if( t.type != type::T_CHAR  &&  t.type != type::T_KEY )
-            return write_compound_array_content(c,count);
+            return write_compound_array_content(c, count, m);
 
         opcd e;
         if( c.is_continuous()  &&  n != UMAXS )
@@ -216,12 +216,12 @@ public:
             }
         }
         else
-            e = write_compound_array_content(c,count);
+            e = write_compound_array_content(c, count, m);
 
         return e;
     }
 
-    virtual opcd read_array_content( binstream_container_base& c, uints n, uints* count ) override
+    virtual opcd read_array_content( binstream_container_base& c, uints n, uints* count, metastream* m ) override
     {
         type t = c._type;
 

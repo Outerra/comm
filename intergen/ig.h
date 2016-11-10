@@ -260,9 +260,9 @@ struct MethodIG
 
 
     MethodIG()
-        : bstatic(false), bdestroy(false), bptr(false), biref(true), bconst(false)
+        : bstatic(false), bptr(false), bdestroy(false), biref(true), bconst(false)
         , boperator(false) , binternal(false), bcapture(false)
-        , bimplicit(false), ninargs(0), ninargs_nondef(0), noutargs(0), index(-1)
+        , bimplicit(false), ninargs(0), ninargs_nondef(0), index(-1), noutargs(0)
     {}
 
     bool parse( iglexer& lex, const charstr& host, const charstr& ns, dynarray<Arg>& irefargs );

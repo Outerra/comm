@@ -519,12 +519,12 @@ inline metastream& operator || ( metastream& m, hash_keyset<VAL,EXTRACTKEY,HASHF
 
     if(m.stream_reading()) {
         a.clear();
-        typename _HT::hashtable_binstream_container bc(a,0,0);
-        return m.read_container<VAL>(bc);
+        typename _HT::hashtable_binstream_container bc(a);
+        return m.read_container(bc);
     }
     else if(m.stream_writing()) {
-        typename _HT::hashtable_binstream_container bc(a,0,0);
-        return m.write_container<VAL>(bc);
+        typename _HT::hashtable_binstream_container bc(a);
+        return m.write_container(bc);
     }
     else {
         m.meta_decl_array();
@@ -549,12 +549,12 @@ inline metastream& operator || ( metastream& m, hash_multikeyset<VAL,EXTRACTKEY,
 
     if(m.stream_reading()) {
         a.clear();
-        typename _HT::hashtable_binstream_container bc(a,0,0);
-        return m.read_container<VAL>(bc);
+        typename _HT::hashtable_binstream_container bc(a);
+        return m.read_container(bc);
     }
     else if(m.stream_writing()) {
-        typename _HT::hashtable_binstream_container bc(a,0,0);
-        return m.write_container<VAL>(bc);
+        typename _HT::hashtable_binstream_container bc(a);
+        return m.write_container(bc);
     }
     else {
         m.meta_decl_array();

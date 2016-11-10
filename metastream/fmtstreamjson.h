@@ -661,14 +661,14 @@ public:
         return 0;
     }
 
-    virtual opcd write_array_content( binstream_container_base& c, uints* count )
+    virtual opcd write_array_content( binstream_container_base& c, uints* count, metastream* m ) override
     {
         type t = c._type;
         uints n = c.count();
         c.set_array_needs_separators();
 
         if( t.type != type::T_CHAR  &&  t.type != type::T_KEY && t.type != type::T_BINARY )
-            return write_compound_array_content(c,count);
+            return write_compound_array_content(c, count, m);
 
         //optimized for character and key strings
         opcd e;
@@ -692,19 +692,19 @@ public:
             if(!e)  *count = n;
         }
         else
-            e = write_compound_array_content(c,count);
+            e = write_compound_array_content(c, count, m);
 
         return e;
     }
 
-    virtual opcd read_array_content( binstream_container_base& c, uints n, uints* count )
+    virtual opcd read_array_content( binstream_container_base& c, uints n, uints* count, metastream* m ) override
     {
         type t = c._type;
         //uints n = c._nelements;
         c.set_array_needs_separators();
 
         if( t.type != type::T_CHAR  &&  t.type != type::T_KEY && t.type != type::T_BINARY )
-            return read_compound_array_content(c,n,count);
+            return read_compound_array_content(c, n, count, m);
 
         token tok = _tokenizer.next();
 

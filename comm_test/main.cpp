@@ -5,7 +5,7 @@
 #include "../hash/slothash.h"
 
 namespace coid {
-void test();
+void std_test();
 void metastream_test();
 }
 
@@ -42,6 +42,8 @@ struct value {
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
 {
+    std_test();
+
 #if 0
     static_assert( std::is_trivially_move_constructible<dynarray<char>>::value, "non-trivial move");
     static_assert( std::is_trivially_move_constructible<charstr>::value, "non-trivial move");

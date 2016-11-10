@@ -49,7 +49,6 @@
 
 COID_NAMESPACE_BEGIN
 
-
 void* dynarray_new( void* p, uints nitems, uints itemsize, uints ralign = 0 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -347,7 +346,11 @@ public:
         if(kmember > 0)
             write_separator();
 
-        binstream_container_fixed_array<bstype::key,uint> c((bstype::key*)key.ptr(), key.len());
+        binstream_container_fixed_array<bstype::key,uint> c(
+            (bstype::key*)key.ptr(),
+            key.len(),
+            &type_streamer<char>::fn,
+            &type_streamer<char>::fn);
         return write_array(c);
     }
 
@@ -658,7 +661,7 @@ public:
     ////////////////////////////////////////////////////////////////////////////////
     ///Write array from container \a c to this binstream
     template<class COUNT>
-    opcd write_array( binstream_container<COUNT>& c )
+    opcd write_array( binstream_container<COUNT>& c, metastream* m = 0 )
     {
         uints n = c.count();
         type t = c._type;
@@ -676,7 +679,7 @@ public:
             t = c.set_array_needs_separators();
 
         uints count=0;
-        e = write_array_content(c, &count);
+        e = write_array_content(c, &count, m);
 
         if(!e)
             e = write(&count, t.get_array_end());
@@ -686,7 +689,7 @@ public:
 
     ///Read array to container \a c from this binstream
     template<class COUNT>
-    opcd read_array( binstream_container<COUNT>& c )
+    opcd read_array( binstream_container<COUNT>& c, metastream* m = 0 )
     {
         type t = c._type;
 
@@ -702,7 +705,7 @@ public:
             t = c.set_array_needs_separators();
 
         uints count=0;
-        e = read_array_content(c, n, &count);
+        e = read_array_content(c, n, &count, m);
 
         //read endarray
         if(!e)
@@ -731,7 +734,7 @@ public:
     ///Overloadable method for writing array objects
     /// to binstream.
     ///The default code is for writing a binary representation
-    virtual opcd write_array_content( binstream_container_base& c, uints* count )
+    virtual opcd write_array_content( binstream_container_base& c, uints* count, metastream* m )
     {
         type t = c._type;
         uints n = c.count();
@@ -747,7 +750,7 @@ public:
             if(!e)  *count = n;
         }
         else
-            e = write_compound_array_content(c,count);
+            e = write_compound_array_content(c, count, m);
 
         return e;
     }
@@ -755,7 +758,7 @@ public:
     ///Overloadable method for reading array of objects
     /// from binstream.
     ///The default code is for reading a binary representation
-    virtual opcd read_array_content( binstream_container_base& c, uints n, uints* count )
+    virtual opcd read_array_content( binstream_container_base& c, uints n, uints* count, metastream* m )
     {
         type t = c._type;
 
@@ -770,14 +773,14 @@ public:
             if(!e)  *count = n;
         }
         else
-            e = read_compound_array_content( c, n, count );
+            e = read_compound_array_content(c, n, count, m);
 
         return e;
     }
 
 
     ///
-    opcd write_compound_array_content( binstream_container_base& c, uints* count )
+    opcd write_compound_array_content( binstream_container_base& c, uints* count, metastream* m )
     {
         type tae = c._type.get_array_element();
         uints n = c.count(), k=0;
@@ -797,9 +800,9 @@ public:
                 return e;
 
             if(complextype)
-                e = c._stream_out( *this, (void*)p, c );
+                e = c.stream_out(m, (void*)p);
             else
-                e = write( p, tae );
+                e = write(p, tae);
 
             if(e)
                 return e;
@@ -821,7 +824,7 @@ public:
     /** Contrary to its name, it can be used to read a primitive elements too, when
         the container isn't continuous or its size is not known in advance
     **/
-    opcd read_compound_array_content( binstream_container_base& c, uints n, uints* count )
+    opcd read_compound_array_content( binstream_container_base& c, uints n, uints* count, metastream* m )
     {
         type tae = c._type.get_array_element();
         bool complextype = !c._type.is_primitive();
@@ -842,9 +845,9 @@ public:
                 return ersNOT_ENOUGH_MEM;
 
             if(complextype)
-                e = c._stream_in( *this, p, c );
+                e = c.stream_in(m, p);
             else
-                e = read( p, tae );
+                e = read(p, tae);
 
             if(e)
                 return e;
@@ -872,21 +875,21 @@ public:
     ///Writes array without storing the count explicitly, reader is expected to know the count
     //@note do not use in metastream for fixed arrays
     template <class T, class COUNT>
-    opcd write_fixed_array_content( const T* p, COUNT n )
+    opcd write_fixed_array_content( const T* p, COUNT n, metastream* m )
     {
         binstream_container_fixed_array<T,COUNT> c((T*)p,n);
         uints count;
-        return write_array_content(c,&count);
+        return write_array_content(c, &count, m);
     }
 
     ///Read array that was stored without the count
     //@note do not use in metastream for fixed arrays
     template <class T, class COUNT>
-    opcd read_fixed_array_content( T* p, COUNT n )
+    opcd read_fixed_array_content( T* p, COUNT n, metastream* m )
     {
         binstream_container_fixed_array<T,COUNT> c(p,n);
         uints count;
-        return read_array_content(c,n,&count);
+        return read_array_content(c, n, &count, m);
     }
 
     ///Write linear array
@@ -1037,34 +1040,6 @@ public:
         return dst;
     }
 };
-
-////////////////////////////////////////////////////////////////////////////////
-///Helper template for streaming enum values
-#if defined(SYSTYPE_WIN) && _MSC_VER < 1800
-    template<typename T>
-    struct underlying_enum_type {
-        template<int S> struct EnumType     { typedef int      type; };
-        template<> struct EnumType<8>       { typedef int64    type; };
-        template<> struct EnumType<2>       { typedef int16    type; };
-        template<> struct EnumType<1>       { typedef int8     type; };
-
-        typedef typename EnumType<sizeof(T)>::type type;
-    };
-
-    template<typename T>
-    struct resolve_enum {
-        typedef typename std::conditional<std::is_enum<T>::value, typename underlying_enum_type<T>::type, T>::type type;
-    };
-#else
-    template<typename T>
-    struct resolve_enum {
-        enum dummy {};
-        typedef typename std::conditional<std::is_enum<T>::value, T, dummy>::type enum_type;
-        typedef typename std::conditional<std::is_enum<T>::value, typename std::underlying_type<enum_type>::type, T>::type type;
-    };
-#endif
-
-#define ENUM_TYPE(x)  (*(coid::resolve_enum<std::remove_reference<decltype(x)>::type>::type*)(void*)&x)
 
 ////////////////////////////////////////////////////////////////////////////////
 struct opcd_formatter

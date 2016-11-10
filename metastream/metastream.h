@@ -448,12 +448,12 @@ public:
     metastream& member_array( const token& name, T* v, uints size )
     {
         if(_binw) {
-            binstream_container_fixed_array<T,ints> bc(v, size, 0, 0);
-            write_container(bc, &fnstream<T>);
+            binstream_container_fixed_array<T,ints> bc(v, size);
+            write_container(bc);
         }
         else if(_binr) {
-            binstream_container_fixed_array<T,ints> bc(v, size, 0, 0);
-            read_container(bc, &fnstream<T>);
+            binstream_container_fixed_array<T,ints> bc(v, size);
+            read_container(bc);
         }
         else
             meta_variable_array<T>(name, 0, size);
@@ -624,26 +624,15 @@ public:
         }
     };
 
-    template<class T>
-    static void fnstream(metastream* m, void* p) {
-        *m || *static_cast<typename resolve_enum<T>::type*>(p);
-    }
-
-    template<class T>
     metastream& read_container( binstream_container_base& c )
-    {
-        return read_container(c, &fnstream<T>);
-    }
-
-    metastream& read_container( binstream_container_base& c, MetaDesc::stream_func fn )
     {
         _xthrow(movein_process_key(READ_MODE));
         _rvarname.reset();
 
-        return read_container_body(c, fn);
+        return read_container_body(c);
     }
 
-    metastream& read_container_body( binstream_container_base& c, MetaDesc::stream_func fn )
+    metastream& read_container_body( binstream_container_base& c )
     {
         uints n = UMAXS;
         type t = c._type;
@@ -655,7 +644,7 @@ public:
             t = c.set_array_needs_separators();
 
         uints count=0;
-        _xthrow(data_read_array_content(c, n, &count, fn));
+        _xthrow(data_read_array_content(c, n, &count));
 
         //read endarray
         _xthrow(data_value(&count, t.get_array_end(), READ_MODE));
@@ -666,16 +655,16 @@ public:
 
     metastream& write_token( const token& tok ) {
         binstream_container_fixed_array<char,uint> c((char*)tok.ptr(), tok.len());
-        return write_container(c, &fnstream<char>);
+        return write_container(c);
     }
 
     template<class T>
     metastream& write_container( binstream_container_base& c )
     {
-        return write_container(c, &fnstream<T>);
+        return write_container(c);
     }
 
-    metastream& write_container( binstream_container_base& c, MetaDesc::stream_func fn )
+    metastream& write_container( binstream_container_base& c )
     {
         _xthrow(movein_process_key(WRITE_MODE));
 
@@ -690,7 +679,7 @@ public:
             t = c.set_array_needs_separators();
 
         uints count=0;
-        _xthrow(data_write_array_content(c, &count, fn));
+        _xthrow(data_write_array_content(c, &count));
 
         _xthrow(data_value(&count, t.get_array_end(), WRITE_MODE));
 
@@ -703,9 +692,9 @@ public:
     metastream& meta_container( binstream_containerT<T,COUNT>& a )
     {
         if(_binr)
-            read_container(a, &fnstream<T>);
+            read_container(a);
         else if(_binw)
-            write_container(a, &fnstream<T>);
+            write_container(a);
         else {
             meta_decl_array();
             *this << *(T*)0;
@@ -874,7 +863,7 @@ public:
             if(e) return e;
 
             _binr = true;
-            read_container<T>(C);
+            read_container(C);
             _binr = false;
         }
         catch(opcd ee) {e=ee;}
@@ -937,8 +926,8 @@ public:
     {
         typedef typename binstream_adapter_writable<CONT>::TBinstreamContainer     BC;
 
-        BC bc = BC(C,0,0);
-        return stream_array_in( bc, name );
+        BC bc = BC(C);
+        return stream_array_in(bc, name);
     }
 
     ///Read container of objects of type T from the currently bound formatting stream into the cache
@@ -947,8 +936,8 @@ public:
     {
         typedef typename binstream_adapter_writable<CONT>::TBinstreamContainer     BC;
 
-        BC bc = BC(C,0,0);//binstream_container_writable<CONT,BC>::create(C);
-        return cache_array_in( bc, name );
+        BC bc = BC(C);//binstream_container_writable<CONT,BC>::create(C);
+        return cache_array_in(bc, name);
     }
 
     ///Write container of objects of type T to the currently bound formatting stream
@@ -957,8 +946,8 @@ public:
     {
         typedef typename binstream_adapter_readable<CONT>::TBinstreamContainer     BC;
 
-        BC bc = BC(C,0,0);//binstream_container_readable<CONT,BC>::create(C);
-        return stream_array_out( bc, name );
+        BC bc = BC(C);//binstream_container_readable<CONT,BC>::create(C);
+        return stream_array_out(bc, name);
     }
 
     ///Write container of objects of type T to the cache
@@ -967,8 +956,8 @@ public:
     {
         typedef typename binstream_adapter_readable<CONT>::TBinstreamContainer     BC;
 
-        BC bc = BC(C,0,0);//binstream_container_readable<CONT,BC>::create(C);
-        return cache_array_out( bc, name );
+        BC bc = BC(C);//binstream_container_readable<CONT,BC>::create(C);
+        return cache_array_out(bc, name);
     }
 
 
@@ -1096,6 +1085,8 @@ public:
 
     // new streaming operators
 
+    metastream& operator || (bstype::key& a)    { return meta_base_type("bstype::key", a.k); }
+
     metastream& operator || (bool&a)            { return meta_base_type("bool", a); }
     metastream& operator || (int8&a)            { return meta_base_type("int8", a); }
     metastream& operator || (uint8&a)           { return meta_base_type("uint8", a); }
@@ -1151,7 +1142,7 @@ public:
             auto& dyn = a.dynarray_ref();
             dyn.reset();
             dynarray<char,uint>::dynarray_binstream_container c(dyn);
-            read_container(c, &fnstream<char>);
+            read_container(c);
 
             if(dyn.size())
                 *dyn.add() = 0;
@@ -1334,7 +1325,7 @@ public:
         typedef typename resolve_enum<T>::type B;
 
         _cur_variable_name = varname;
-        _cur_stream_fn = &fnstream<T>;
+        _cur_stream_fn = &type_streamer<T>::fn;
 
         *this || *(B*)0;
     }
@@ -1363,7 +1354,7 @@ public:
         typedef typename resolve_enum<T>::type B;
 
         _cur_variable_name = varname;
-        _cur_stream_fn = &fnstream<T>;
+        _cur_stream_fn = &type_streamer<T>::fn;
 
         meta_decl_array(n);
 
@@ -2159,7 +2150,7 @@ protected:
     }
 
 
-    opcd data_write_array_content( binstream_container_base& c, uints* count, void (*fnstream)(metastream*, void*) )
+    opcd data_write_array_content( binstream_container_base& c, uints* count )
     {
         c.set_array_needs_separators();
         type tae = c._type.get_array_element();
@@ -2189,7 +2180,7 @@ protected:
 
                     push_var(false);
 
-                    fnstream(this, const_cast<void*>(p));
+                    c.stream_out(this, const_cast<void*>(p));
 
                     pop_var();
                 }
@@ -2202,7 +2193,7 @@ protected:
                 *count = i;
             }
             else                    //uncached compound array
-                e = data_write_compound_array_content(c, count, fnstream);
+                e = data_write_compound_array_content(c, count);
         }
         else if( cache_prepared() ) //cache with a primitive array
         {
@@ -2229,16 +2220,16 @@ protected:
                     if(!e)  *count = n;
                 }
                 else
-                    e = data_write_compound_array_content(c, count, fnstream);
+                    e = data_write_compound_array_content(c, count);
             }
         }
         else
-            e = _fmtstreamwr->write_array_content(c,count);
+            e = _fmtstreamwr->write_array_content(c, count, this);
 
         return e;
     }
 
-    opcd data_write_compound_array_content( binstream_container_base& c, uints* count, void (*fnstream)(metastream*, void*) )
+    opcd data_write_compound_array_content( binstream_container_base& c, uints* count )
     {
         type tae = c._type.get_array_element();
         uints n = c.count(), k=0;
@@ -2260,7 +2251,7 @@ protected:
             push_var(false);
 
             if(complextype)
-                fnstream(this, const_cast<void*>(p));
+                e = c.stream_out(this, const_cast<void*>(p));
             else
                 e = data_write(p, tae);
 
@@ -2282,7 +2273,7 @@ protected:
         return e;
     }
 
-    opcd data_read_array_content( binstream_container_base& c, uints n, uints* count, MetaDesc::stream_func fnstream )
+    opcd data_read_array_content( binstream_container_base& c, uints n, uints* count )
     {
         c.set_array_needs_separators();
         type tae = c._type.get_array_element();
@@ -2323,7 +2314,7 @@ protected:
 
                     push_var(true);
 
-                    fnstream(this, p);
+                    c.stream_in(this, p);
 
                     pop_var();
 
@@ -2340,7 +2331,7 @@ protected:
                 *count = i;
             }
             else                    //uncached compound array
-                e = data_read_compound_array_content(c, n, count, fnstream);
+                e = data_read_compound_array_content(c, n, count);
         }
         else if( cache_prepared() ) //cache with a primitive array
         {
@@ -2366,16 +2357,16 @@ protected:
                     if(!e)  *count = n;
                 }
                 else
-                    e = data_read_compound_array_content(c, n, count, fnstream);
+                    e = data_read_compound_array_content(c, n, count);
             }
         }
         else                        //primitive uncached array
-            e = _fmtstreamrd->read_array_content(c,n,count);
+            e = _fmtstreamrd->read_array_content(c, n, count, this);
 
         return e;
     }
 
-    opcd data_read_compound_array_content( binstream_container_base& c, uints n, uints* count, void (*fnstream)(metastream*, void*) )
+    opcd data_read_compound_array_content( binstream_container_base& c, uints n, uints* count )
     {
         type tae = c._type.get_array_element();
         bool complextype = !c._type.is_primitive();
@@ -2398,7 +2389,7 @@ protected:
             push_var(true);
 
             if(complextype)
-                fnstream(this, p);
+                e = c.stream_in(this, p);
             else
                 e = data_value(p, tae, READ_MODE);
 
@@ -2795,20 +2786,20 @@ protected:
             , desc(desc)
         {}
 
-        static opcd stream_in( binstream& bin, void* p, binstream_container_base& co ) {
-            cache_container& me = reinterpret_cast<cache_container&>(co);
-            return me.meta.streamvar( me.desc.children[0] );
+        static void stream_in( metastream* m, void* p, binstream_container_base* co ) {
+            cache_container* me = static_cast<cache_container*>(co);
+            m->streamvar( me->desc.children[0] );
         }
 
     protected:
         metastream& meta;
         const MetaDesc& desc;
     };
-
+    /*
     static void stream_element(metastream* m, void*)
     {
         m->streamvar(*m->_curvar.var);
-    }
+    }*/
 
     ///
     opcd streamvar( const MetaDesc::Var& var )
@@ -2829,7 +2820,7 @@ protected:
         }
         else if( desc.is_array() ) {
             cache_container cc(*this, desc);
-            read_container_body(cc, stream_element);
+            read_container_body(cc);//, stream_element);
             return 0;
         }
 
@@ -2917,6 +2908,12 @@ inline type_holder<T> get_type_holder(T*) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+template<class T>
+void type_streamer<T>::fn( metastream* m, void* p, binstream_container_base* ) {
+    *m || *static_cast<typename resolve_enum<T>::type*>(p);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 ///TODO: move to dynarray.h:
 template <class T, class COUNT, class A>
@@ -2933,12 +2930,12 @@ metastream& operator || ( metastream& m, dynarray<T,COUNT,A>& a )
 {
     if(m.stream_reading()) {
         a.reset();
-        typename dynarray<T,COUNT,A>::dynarray_binstream_container c(a,0,0);
-        m.read_container(c, &metastream::fnstream<T>);
+        typename dynarray<T,COUNT,A>::dynarray_binstream_container c(a);
+        m.read_container(c);
     }
     else if(m.stream_writing()) {
-        typename dynarray<T,COUNT,A>::dynarray_binstream_container c(a,0,0);
-        m.write_container(c, &metastream::fnstream<T>);
+        typename dynarray<T,COUNT,A>::dynarray_binstream_container c(a);
+        m.write_container(c);
     }
     else {
         m.meta_decl_array();

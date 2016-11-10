@@ -75,9 +75,9 @@ struct exception : public std::exception
     {}
 
 #if _MSC_VER==0 || _MSC_VER >= 1900
-    virtual const char* what() const noexcept { return c_str(); }
+    virtual const char* what() const noexcept override { return c_str(); }
 #else
-    virtual const char* what() const { return c_str(); }
+    virtual const char* what() const override { return c_str(); }
 #endif
 
     TOKEN_OP_STR_NONCONST(exception&, <<)

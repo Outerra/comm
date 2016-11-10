@@ -123,7 +123,7 @@ struct MetaDesc
     binstream::fnc_to_stream
         stream_to;                      //< binstream streaming function used to write data to stream
 */
-    typedef void (*stream_func)(metastream*, void*);
+    typedef void (*stream_func)(metastream*, void*, binstream_container_base*);
 
     stream_func fnstream;               //< metastream streaming function
 

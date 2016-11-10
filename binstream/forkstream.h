@@ -81,7 +81,7 @@ public:
     }
 
    
-    virtual opcd write( const void* p, type t )
+    virtual opcd write( const void* p, type t ) override
     {
         opcd e;
 
@@ -91,12 +91,12 @@ public:
         return e;
     }
 
-    virtual opcd read( void* p, type t )
+    virtual opcd read( void* p, type t ) override
     {
         return _in->read( p, t );
     }
 
-	virtual opcd write_raw( const void* p, uints& len )
+	virtual opcd write_raw( const void* p, uints& len ) override
 	{
         uints lenb = len;
         opcd e;
@@ -105,7 +105,7 @@ public:
 
         return e;
     }
-	virtual opcd read_raw( void* p, uints& len )                        { return _in->read_raw( p, len ); }
+	virtual opcd read_raw( void* p, uints& len ) override               { return _in->read_raw( p, len ); }
 
 
     virtual opcd write_array_separator( type t, uchar end )
@@ -115,20 +115,20 @@ public:
         if(_outb) e = _outb->write_array_separator(t, end);
         return e;
     }
-    virtual opcd read_array_separator( type t )                         { return _in->read_array_separator(t); }
+    virtual opcd read_array_separator( type t ) override                { return _in->read_array_separator(t); }
 
 
-    virtual opcd write_array_content( binstream_container_base& c, uints* count )
+    virtual opcd write_array_content( binstream_container_base& c, uints* count, metastream* m ) override
     {
         opcd e;
-        if(_outa) e = _outa->write_array_content(c,count);
-        if(_outb) e = _outb->write_array_content(c,count);
+        if(_outa) e = _outa->write_array_content(c, count, m);
+        if(_outb) e = _outb->write_array_content(c, count, m);
         return e;
     }
 
-    virtual opcd read_array_content( binstream_container_base& c, uints n, uints* count )
+    virtual opcd read_array_content( binstream_container_base& c, uints n, uints* count, metastream* m ) override
     {
-        return _in->read_array_content(c,n,count);
+        return _in->read_array_content(c, n, count, m);
     }
 
 
