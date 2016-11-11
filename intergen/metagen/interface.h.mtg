@@ -184,11 +184,15 @@ inline iref<T> $..name$::$name$( T* _subclass_
 }
 $-[/method]$
 
+#pragma warning(push)
+#pragma warning(disable : 4191)
 
 $-[method !static? !destroy?]$
 inline $return.type$ $..name$::$name$($[args rest="," after=" "]$ $type$ $name$$size$$[/args]$) $-(if const?)$ const$(/if)$
 { return VT_CALL($return.type$,($[args rest=","]$$type$$size$$[/args]$) $-(if const?)$ const$(/if)$,$index$)($[args rest=","]$ $-(if xref?)$std::forward<$basetype$>($(/if)-$ $name$ $-(if xref?)$)$(/if)-$ $[/args]$); }
 $[/method]-$
+
+#pragma warning(pop)
 $(/if)-$
 
 $-[ns]$
