@@ -73,6 +73,7 @@ reserved in advance.
 @param POOL if true, do not call destructors on item deletion, only on container deletion
 @param ATOMIC if true, ins/del operations and versioning are done as atomic operations
 @param TRACKING if true, slotalloc will contain data and methods needed for tracking modifications
+@param Es variadic types for optional parallel arrays which will be managed along with the main array
 **/
 template<class T, bool POOL=false, bool ATOMIC=false, bool TRACKING=false, class ...Es>
 class slotalloc_base
@@ -164,9 +165,6 @@ public:
         T* p = _array.reserve(nitems, true);
 
         extarray_reserve(nitems);
-        //_relarrays.for_each([&](relarray& ra) {
-        //    ra.reserve(nitems);
-        //});
 
         return (uints)p - (uints)old;
     }
@@ -253,7 +251,7 @@ public:
         if(!POOL)
             p->~T();
         clear_bit(id);
-        //--_count;
+
         if(ATOMIC)
             atomic::dec(&_count);
         else
@@ -323,7 +321,7 @@ public:
                 new(p) T;
 
             set_bit(id);
-            //++_count;
+
             if(ATOMIC)
                 atomic::inc(&_count);
             else
@@ -354,7 +352,7 @@ public:
             tracker_t::set_modified(id);
 
         set_bit(id);
-        //++_count;
+
         if(ATOMIC)
             atomic::inc(&_count);
         else
@@ -413,9 +411,6 @@ public:
             for_each([](T& p) {destroy(p);});
 
             extarray_reset();
-            //_relarrays.for_each([&](relarray& ra) {
-            //    ra.reset();
-            //});
         }
 
         if(ATOMIC)
@@ -424,9 +419,6 @@ public:
             _count = 0;
 
         extarray_reset_count();
-        //_relarrays.for_each([&](relarray& ra) {
-        //    ra.set_count(0);
-        //});
 
         _array.set_size(0);
         _allocated.set_size(0);
@@ -440,9 +432,6 @@ public:
             for_each([](T& p) {destroy(p);});
 
             extarray_reset_count();
-            //_relarrays.for_each([&](relarray& ra) {
-            //    ra.set_count(0);
-            //});
 
             _array.set_size(0);
             _allocated.set_size(0);
@@ -457,9 +446,6 @@ public:
         _allocated.discard();
 
         extarray_discard();
-        //_relarrays.for_each([&](relarray& ra) {
-        //    ra.discard();
-        //});
     }
 
 protected:
@@ -829,7 +815,7 @@ private:
 
         if(pid)
             *pid = id;
-        //*p |= uints(1) << bit;
+
         if(ATOMIC) {
             atomic::aor(p, uints(1) << bit);
 
@@ -850,11 +836,6 @@ private:
         set_bit(count);
 
         extarray_expand();
-/*
-        _relarrays.for_each([&](relarray& ra) {
-            DASSERT( ra.count() == count );
-            ra.add(1);
-        });*/
 
         if(ATOMIC)
             atomic::inc(&_count);
