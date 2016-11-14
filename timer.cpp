@@ -73,7 +73,15 @@ double nsec_timer::time()
 ////////////////////////////////////////////////////////////////////////////////
 uint64 nsec_timer::time_ns()
 {
-	LARGE_INTEGER stop;
+    if (nsec_timer::_freq == 0) {
+        LARGE_INTEGER freq;
+        QueryPerformanceFrequency(&freq);
+
+        nsec_timer::_freq = freq.QuadPart;
+        nsec_timer::_freqd = 1.0 / double(nsec_timer::_freq);
+    }
+
+    LARGE_INTEGER stop;
 	QueryPerformanceCounter(&stop);
 
     uint64 d = stop.QuadPart - _start;

@@ -135,7 +135,7 @@ public:
     ///Add buffer with specified leading alignment
     binstring& append_buffer( const void* p, uints len, uint alignment=1 ) {
         uints size = _tstr.size();
-        uints align = align_offset(size, alignment) - size;
+        uints align = align_value_up(size, alignment) - size;
 
         ::memcpy(_tstr.add(align + len) + align, p, len);
         return *this;
@@ -144,7 +144,7 @@ public:
     ///Align the reader offset to the specified alignment
     //@return true if data are available
     bool align( uint alignment ) {
-        _offset = align_offset(_offset, alignment);
+        _offset = align_value_up(_offset, alignment);
         return has_data();
     }
 
@@ -162,7 +162,7 @@ public:
 
     ///Read a block of data
     const void* read_buffer( uints size, uint alignment=1 ) {
-        uints offset = align_offset(_offset, alignment);
+        uints offset = align_value_up(_offset, alignment);
         _offset += size;
         return ptr() + offset;
     }
@@ -342,14 +342,14 @@ protected:
     template<class T>
     T* pad_alloc() {
         uints size = _tstr.size();
-        uints align = align_offset(size, _packing<__alignof(T) ? _packing : __alignof(T)) - size;
+        uints align = align_value_up(size, _packing<__alignof(T) ? _packing : __alignof(T)) - size;
 
         return reinterpret_cast<T*>(_tstr.add(align + sizeof(T)) + align);
     }
 
     template<class T>
     T* seek( uints& offset ) {
-        uints off = align_offset(offset, _packing<__alignof(T) ? _packing : __alignof(T));
+        uints off = align_value_up(offset, _packing<__alignof(T) ? _packing : __alignof(T));
         if(off+sizeof(T) > _tstr.size())
             throw exception("error reading buffer");
 

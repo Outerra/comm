@@ -217,7 +217,7 @@ public:
     }
 
     //@return logmsg, filling the prefix by the log type (e.g. ERROR: )
-    ref<logmsg> operator()( ELogType type = ELogType::Info );
+    ref<logmsg> operator()( ELogType type = ELogType::Info, const int* opttime = 0 );
 
     //@return an empty logmsg object
     ref<logmsg> create_msg( ELogType type );
@@ -227,7 +227,7 @@ public:
     //@param hash tokenhash identifying the client (interface) name
     //@param inst optional instance id
     //@return logmsg reference or null if not enabled
-    ref<logmsg> create_msg( ELogType type, const tokenhash& hash, const void* inst );
+    ref<logmsg> create_msg( ELogType type, const tokenhash& hash, const void* inst, const int* mstime = 0 );
 
     const ref<logger_file>& file() const { return _logfile; }
 

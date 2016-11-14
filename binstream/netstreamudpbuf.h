@@ -120,7 +120,7 @@ public:
         else {  DASSERT( d >= sizeof(udp_hdr) );   }
 
         //uints rem = align_value_to_power2(pos,udp_seg::rPACKLEN) - pos;
-        uints rem = uints( align_value( pos, _packetsize ) - pos );
+        uints rem = uints( align_value_up( pos, _packetsize ) - pos );
         while( len )
         {
             DASSERT( pos+len <= _sendbuf.size() );

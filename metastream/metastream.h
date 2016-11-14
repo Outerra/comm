@@ -1728,7 +1728,7 @@ private:
         uints pad( uints size = sizeof(uints) )
         {
             uints k = buf->size();
-            uints t = align_offset(k, size>8 ? 8 : size);
+            uints t = align_value_up(k, size>8 ? 8 : size);
             buf->add(t - k);
             return t;
         }

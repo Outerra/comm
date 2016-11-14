@@ -151,19 +151,20 @@ inline uchar int_high_pow2( uints x )       { uchar i; --x; for(i=0; x; ++i) x>>
 
 
 /// Align value to the nearest greater multiplier of specified chunk size
-inline uint align_value( uint val, uint size )
-{ return ((val+size-1)/size)*size; }
-
-inline uint64 align_value( uint64 val, uint64 size )
-{ return ((val+size-1)/size)*size; }
-
 template<class Tsize>
-inline uint align_offset( uint val, Tsize size )
+inline uint align_value_up( uint val, Tsize size )
 { return uint(((val+size-1)/size) * size); }
 
 template<class Tsize>
-inline uint64 align_offset( uint64 val, Tsize size )
+inline uint64 align_value_up( uint64 val, Tsize size )
 { return ((val+size-1)/size) * size; }
+
+inline uint align_value_down( uint val, uint size )
+{ return (val/size) * size; }
+
+inline uint64 align_value_down( uint64 val, uint64 size )
+{ return (val/size) * size; }
+
 
 /// Align pointer
 template<class T>
