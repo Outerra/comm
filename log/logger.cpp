@@ -139,16 +139,21 @@ public:
     ///
     static policy_msg* create() 
     {
-        LOCAL_PROCWIDE_SINGLETON_DEF(pool_type) pool;
+        pool_type& pool = pool_singleton();
         policy_msg* p=0;
 
-        bool make = !pool->create_instance(p);
+        bool make = !pool.create_instance(p);
         if(make)
-            p = new policy_msg(new logmsg, pool.get());
+            p = new policy_msg(new logmsg, &pool);
         else
             p->get()->reset();
 
         return p;
+    }
+
+    static pool_type& pool_singleton() {
+        LOCAL_PROCWIDE_SINGLETON_DEF(pool_type) pool;
+        return *pool;
     }
 };
 
@@ -243,6 +248,12 @@ logger::logger( bool std_out )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+void logger::terminate()
+{
+    SINGLETON(log_writer).terminate();
+}
+
+////////////////////////////////////////////////////////////////////////////////
 ref<logmsg> logger::create_msg( ELogType type, const tokenhash& hash, const void* inst, const int64* mstime )
 {
     //TODO check hash, inst
@@ -327,8 +338,8 @@ log_writer::log_writer()
 	, _queue()
 {
     //make sure the dependent singleton gets created
-    //logmsg::pool();
-	policy_pooled<logmsg>::default_pool();
+    policy_msg::pool_singleton();
+	//policy_pooled<logmsg>::default_pool();
 
 	_thread.create( thread_run_fn, this, 0, "log_writer" );
 }
@@ -336,7 +347,14 @@ log_writer::log_writer()
 ////////////////////////////////////////////////////////////////////////////////
 log_writer::~log_writer()
 {
-   _thread.cancel_and_wait(10000);
+    terminate();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void log_writer::terminate()
+{
+    flush();
+    _thread.cancel_and_wait(10000);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

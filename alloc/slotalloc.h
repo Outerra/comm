@@ -278,7 +278,19 @@ public:
         return _array.ptr() + id;
     }
 
+    ///Return an item given id
+    //@param id id of the item
+    //@note non-const operator [] disabled on tracking allocators, use explicit get_mutable_item to indicate the element will be modified
+    template <bool T1=TRACKING, typename = std::enable_if_t<!T1>>
     T* get_item( uints id )
+    {
+        DASSERT_RET( id < _array.size() && get_bit(id), 0 );
+        return _array.ptr() + id;
+    }
+
+    ///Return an item given id
+    //@param id id of the item
+    T* get_mutable_item( uints id )
     {
         DASSERT_RET( id < _array.size() && get_bit(id), 0 );
         if(TRACKING)
@@ -290,8 +302,10 @@ public:
         return *get_item(idx);
     }
 
+    //@note non-const operator [] disabled on tracking allocators, use explicit get_mutable_item to indicate the element will be modified
+    template <bool T1=TRACKING, typename = std::enable_if_t<!T1>>
     T& operator [] (uints idx) {
-        return *get_item(idx);
+        return *get_mutable_item(idx);
     }
 
     ///Get a particular item from given slot or default-construct a new one there

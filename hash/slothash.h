@@ -90,10 +90,10 @@ public:
         uint id;
         if(find_or_insert_value_slot_uninit_(key, &id)) {
             if(isnew) *isnew = true;
-            return new(base::get_item(id)) T;
+            return new(base::get_mutable_item(id)) T;
         }
         
-        return base::get_item(id);
+        return base::get_mutable_item(id);
     }
 
     ///Find item by key or insert a new uninitialized slot for item with such key
@@ -108,7 +108,7 @@ public:
         if(isnew)
             *isnew = isnew_;
 
-        return base::get_item(id);
+        return base::get_mutable_item(id);
     }
 
     ///Insert a new slot for the key
@@ -191,7 +191,7 @@ public:
 
         uint* n = find_object_entry(b, key);
         while(*n != UMAX32) {
-            if(!(_EXTRACTOR(*base::get_item(*n)) == key))
+            if(!(_EXTRACTOR(*base::get_mutable_item(*n)) == key))
                 break;
 
             uint id = *n;
@@ -291,7 +291,7 @@ protected:
         seqtable()[id] = *fid;
         *fid = id;
 
-        return base::get_item(id);
+        return base::get_mutable_item(id);
     }
 
     T* insert_value_( T* p )
@@ -320,7 +320,7 @@ protected:
 
     T* destroy_value_( uints id )
     {
-        T* p = base::get_item(id);
+        T* p = base::get_mutable_item(id);
         const KEY& key = _EXTRACTOR(*p);
         uint b = bucket(key);
 

@@ -65,6 +65,8 @@ public:
 
 	void flush();
 
+    void terminate();
+
     bool is_empty() const {
         return _queue.is_empty();
     }

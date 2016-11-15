@@ -189,6 +189,8 @@ public:
 	logger( bool std_out=false );
     virtual ~logger() {}
 
+    static void terminate();
+
     void open( const token& filename );
 
     void post( const token& msg, const token& prefix = token() );
