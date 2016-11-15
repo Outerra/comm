@@ -809,14 +809,14 @@ public:
         }
     }
 
-    ///Append time (secs)
-    void append_time_formatted(uint64 n, bool msec = false)
+    ///Append time duration
+    //@param n seconds, or miliseconds if msec==true
+    //@param msec true if given time is in miliseconds, else seconds
+    //@param maxlev max time unit to show: 0 msec, 1 sec, 2 min, 3 hours, 4 days
+    //@note for maxlev==3 (hours but no days), the whole number of hours will be printed
+    //@note for maxlev<3 only the fractional number of minutes/seconds will be printed
+    void append_time_formatted(uint64 n, bool msec = false, int maxlev = 3)
     {
-        if(n == 0) {
-            *this << "00:00";
-            return;
-        }
-
         uint ms;
         if(msec) {
             ms = uint(n % 1000);
@@ -828,13 +828,28 @@ public:
         uint mns = hs / 60;
         uint sec = hs % 60;
 
-        append_num(10, hrs);
-        append(':');
-        append_num(10, mns, 2, ALIGN_NUM_RIGHT_FILL_ZEROS);
-        append(':');
-        append_num(10, sec, 2, ALIGN_NUM_RIGHT_FILL_ZEROS);
+        if(maxlev >= 4) {
+            uint days = hrs / 24;
+            hrs = hrs % 24;
+            append_num(10, days);
+            append('d');
+        }
 
-        if(msec) {
+        if(maxlev >= 3) {
+            if(maxlev >= 4)
+                append_num(10, hrs, 2, ALIGN_NUM_RIGHT_FILL_ZEROS);
+            else
+                append_num(10, hrs);
+            append(':');
+        }
+        if(maxlev >= 2) {
+            append_num(10, mns, 2, ALIGN_NUM_RIGHT_FILL_ZEROS);
+            append(':');
+        }
+        if(maxlev >= 1)
+            append_num(10, sec, 2, ALIGN_NUM_RIGHT_FILL_ZEROS);
+
+        if(msec && maxlev >= 0) {
             append('.');
             append_num(10, ms, 3, ALIGN_NUM_RIGHT_FILL_ZEROS);
         }
@@ -1055,6 +1070,7 @@ public:
 
         //default ISO1123 date
         DATE_DEFAULT = DATE_WDAY | DATE_MDAY | DATE_MONTH | DATE_YEAR | DATE_HHMMSS | DATE_TZ,
+        DATE_NOWEEK = DATE_MDAY | DATE_MONTH | DATE_YEAR | DATE_HHMMSS | DATE_TZ,
     };
 
     ///Append GMT date string constructed by the flags set

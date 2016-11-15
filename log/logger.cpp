@@ -243,7 +243,7 @@ logger::logger( bool std_out )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-ref<logmsg> logger::create_msg( ELogType type, const tokenhash& hash, const void* inst, const int* mstime )
+ref<logmsg> logger::create_msg( ELogType type, const tokenhash& hash, const void* inst, const int64* mstime )
 {
     //TODO check hash, inst
 
@@ -255,13 +255,14 @@ ref<logmsg> logger::create_msg( ELogType type, const tokenhash& hash, const void
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-ref<logmsg> logger::operator()( ELogType t, const int* opttime )
+ref<logmsg> logger::operator()( ELogType t, const int64* time_ms )
 {
     ref<logmsg> msg = create_msg(t);
     charstr& str = msg->str();
 
-    if(opttime) {
-        str.append_num(10, *opttime, 6);
+    if(time_ms) {
+        //str.append_fixed(*time_ms * 1e-3, 9, -3, coid::ALIGN_NUM_RIGHT_FILL_ZEROS);
+        str.append_time_formatted(*time_ms, true, 2);
         str.append(' ');
     }
 
