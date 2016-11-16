@@ -107,6 +107,28 @@ public:
         return *this;
     }
 
+    ///Write data
+    //@return position in buffer
+    template<class T>
+    uints write(const T& v) {
+        T* p = pad_alloc<T>();
+        *p = v;
+        return (uint8*)p - _tstr.ptr();
+    }
+
+    template<class T>
+    uints write_space() {
+        T* p = pad_alloc<T>();
+        return (uint8*)p - _tstr.ptr();
+    }
+
+    template<class T>
+    void write_to_offset( uints offset, const T& v ) {
+        DASSERT( offset + sizeof(T) <= _tstr.size() );
+        *(T*)(_tstr.ptr() + offset) = v;
+    }
+
+
     ///Append string with optionally specified size type (uint8, uint16, uint32 ...)
     template<class SIZE = uint>
     binstring& append_string( const token& tok ) {

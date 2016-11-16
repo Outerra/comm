@@ -673,6 +673,45 @@ public:
     const dynarray<T>& get_array() const { return _array; }
     //@}
 
+    //@return bit array with marked item allocations
+    const dynarray<uints>& get_bitarray() const { return _allocated; }
+
+    //@{ functions for bit array
+    static void set_bit( dynarray<uints>& bitarray, uints k )
+    {
+        uints s = k / (8*sizeof(uints));
+        uints b = k % (8*sizeof(uints));
+
+        if(ATOMIC)
+            atomic::aor(const_cast<uint_type*>(&bitarray.get_or_addc(s)), uints(1) << b);
+        else
+            bitarray.get_or_addc(s) |= uints(1) << b;
+    }
+
+    static void clear_bit( dynarray<uints>& bitarray, uints k )
+    {
+        uints s = k / (8*sizeof(uints));
+        uints b = k % (8*sizeof(uints));
+
+        if(ATOMIC)
+            atomic::aand(const_cast<uint_type*>(&bitarray.get_or_addc(s)), ~(uints(1) << b));
+        else
+            bitarray.get_or_addc(s) &= ~(uints(1) << b);
+    }
+
+    static bool get_bit( const dynarray<uints>& bitarray, uints k )
+    {
+        uints s = k / (8*sizeof(uints));
+        uints b = k % (8*sizeof(uints));
+
+        if(ATOMIC)
+            return s < bitarray.size()
+            && (*const_cast<uint_type*>(bitarray.ptr()+s) & (uints(1) << b)) != 0;
+        else
+            return s < bitarray.size() && (bitarray[s] & (uints(1) << b)) != 0;
+    }
+    //@}
+
     ///Advance to the next tracking frame, updating changeset
     //@return new frame number
     uint advance_frame()
@@ -862,39 +901,9 @@ private:
         return _array.add_uninit(1);
     }
 
-    void set_bit( uints k )
-    {
-        uints s = k / (8*sizeof(uints));
-        uints b = k % (8*sizeof(uints));
-
-        if(ATOMIC)
-            atomic::aor(const_cast<uint_type*>(&_allocated.get_or_addc(s)), uints(1) << b);
-        else
-            _allocated.get_or_addc(s) |= uints(1) << b;
-    }
-
-    void clear_bit( uints k )
-    {
-        uints s = k / (8*sizeof(uints));
-        uints b = k % (8*sizeof(uints));
-        
-        if(ATOMIC)
-            atomic::aand(const_cast<uint_type*>(&_allocated.get_or_addc(s)), ~(uints(1) << b));
-        else
-            _allocated.get_or_addc(s) &= ~(uints(1) << b);
-    }
-
-    bool get_bit( uints k ) const
-    {
-        uints s = k / (8*sizeof(uints));
-        uints b = k % (8*sizeof(uints));
-
-        if(ATOMIC)
-            return s < _allocated.size()
-                && (*const_cast<uint_type*>(_allocated.ptr()+s) & (uints(1) << b)) != 0;
-        else
-            return s < _allocated.size() && (_allocated[s] & (uints(1) << b)) != 0;
-    }
+    void set_bit( uints k ) { return set_bit(_allocated, k); }
+    void clear_bit( uints k ) { return clear_bit(_allocated, k); }
+    bool get_bit( uints k ) const { return get_bit(_allocated, k); }
 
     //WA for lambda template error
     void static destroy(T& p) {p.~T();}
