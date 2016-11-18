@@ -210,6 +210,9 @@ public:
 
     charstr(char c) { append(c); }
 
+    template<class Enum, typename = std::enable_if_t<std::is_enum<T>::value>>
+    charstr(Enum v) { *this = (typename resolve_enum<Enum>::type)v; }
+
     charstr(int8 i) { append_num(10, (int)i); }
     charstr(uint8 i) { append_num(10, (uint)i); }
     charstr(int16 i) { append_num(10, (int)i); }
@@ -435,6 +438,9 @@ public:
 
     charstr& operator = (char c) { reset(); append(c); return *this; }
 
+    template<class Enum, typename = std::enable_if_t<std::is_enum<T>::value>>
+    charstr& operator = (Enum v) { return (*this = (typename resolve_enum<Enum>::type)v); }
+
     charstr& operator = (int8 i) { reset(); append_num(10, (int)i);  return *this; }
     charstr& operator = (uint8 i) { reset(); append_num(10, (uint)i); return *this; }
     charstr& operator = (int16 i) { reset(); append_num(10, (int)i);  return *this; }
@@ -521,6 +527,9 @@ public:
 
     charstr& operator += (char c) { append(c); return *this; }
 
+    template<class Enum, typename = std::enable_if_t<std::is_enum<T>::value>>
+    charstr& operator += (Enum v) { return (*this += (typename resolve_enum<Enum>::type)v); }
+
     charstr& operator += (int8 i) { append_num(10, (int)i);  return *this; }
     charstr& operator += (uint8 i) { append_num(10, (uint)i); return *this; }
     charstr& operator += (int16 i) { append_num(10, (int)i);  return *this; }
@@ -571,6 +580,9 @@ public:
     charstr& operator << (const token& tok) { return operator += (tok); }
     charstr& operator << (const charstr& tok) { return operator += (tok); }
     charstr& operator << (char c) { return operator += (c); }
+
+    template<class Enum, typename = std::enable_if_t<std::is_enum<T>::value>>
+    charstr& operator << (Enum v) { return (*this << (typename resolve_enum<Enum>::type)v); }
 
     charstr& operator << (int8 i) { append_num(10, (int)i);  return *this; }
     charstr& operator << (uint8 i) { append_num(10, (uint)i); return *this; }
@@ -869,7 +881,7 @@ public:
     void append_float(double d, int nfrac, uints maxsize = 0)
     {
         if(!maxsize)
-            maxsize = 10;
+            maxsize = nfrac + 4;
         char* buf = get_append_buf(maxsize);
         char* end = charstrconv::append_float(buf, buf + maxsize, d, nfrac);
 
