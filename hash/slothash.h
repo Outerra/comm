@@ -208,7 +208,7 @@ public:
     void reset()
     {
         base::reset();
-        memset(_buckets.begin().ptr(), 0xff, _buckets.byte_size());
+        memset(_buckets.ptr(), 0xff, _buckets.byte_size());
     }
 
     void swap( slothash& other ) {

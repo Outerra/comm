@@ -44,8 +44,9 @@
 #include "fmtstream.h"
 #include <v8/v8.h>
 
-#include "metastream.h"
+#include "../range.h"
 #include "../str.h"
+#include "metastream.h"
 
 
 namespace v8 {
@@ -234,6 +235,20 @@ public:
     }
 };
 
+///Generic range<T> partial specialization
+template<class T> class v8_streamer<range<T>> {
+public:
+    static v8::Handle<v8::Value> to_v8(const range<T>& v) {
+        uint n = (uint)v.size();
+        v8::Local<v8::Array> a = v8::new_object<v8::Array>(n);
+
+        for(uint i=0; i<n; ++i) {
+            a->Set(i, v8_streamer<T>::to_v8(v[i]));
+        }
+
+        return a;
+    }
+};
 
 
 ///Helper class to stream types to/from v8 objects for volatile data (ifc_volatile)
@@ -254,7 +269,7 @@ public:
     static void cleanup( v8::Handle<v8::Value> val ) {}
 };
 
-
+/*
 // TYPED ARRAYS
 
 template<class T>
@@ -308,18 +323,18 @@ private:
 
     const T* _ptr;
     uints _size;
-};
+};*/
 
 template <class T>
-metastream& operator || ( metastream& m, typed_array<T>& a )
+metastream& operator || ( metastream& m, range<T>& a )
 {
     if(m.stream_reading()) {
         a.reset();
-        typename typed_array<T>::typed_array_binstream_container c(a);
+        typename range<T>::range_binstream_container c(a);
         m.read_container(c);
     }
     else if(m.stream_writing()) {
-        typename typed_array<T>::typed_array_binstream_container c(a);
+        typename range<T>::range_binstream_container c(a);
         m.write_container(c);
     }
     else {
@@ -396,7 +411,7 @@ V8_STREAMER_MAPARRAY(ulong, v8::Uint32Array)
 
 ///Helper to map typed array from C++ to V8
 template<class T>
-inline v8::Handle<v8::Value> v8_map_typed_array( const T* ptr, uint count, v8::ExternalArrayType type )
+inline v8::Handle<v8::Value> v8_map_range( const T* ptr, uint count, v8::ExternalArrayType type )
 {
     v8::Handle<v8::Object> a = v8::Object::New();
     a->SetIndexedPropertiesToExternalArrayData((void*)ptr, type, count);
@@ -410,7 +425,7 @@ inline v8::Handle<v8::Value> v8_map_typed_array( const T* ptr, uint count, v8::E
 template<> class v8_streamer_volatile<dynarray<T>> : public v8_streamer<dynarray<T>> {\
 public:\
     static v8::Handle<v8::Value> to_v8(const dynarray<T>& v) { \
-        return v8_map_typed_array(v.ptr(), (uint)v.size(), V8EXT); \
+        return v8_map_range(v.ptr(), (uint)v.size(), V8EXT); \
     } \
  \
     static bool from_v8( v8::Handle<v8::Value> src, dynarray<T>& res ) { \
@@ -420,14 +435,14 @@ public:\
         val->ToObject()->SetIndexedPropertiesToExternalArrayData(0, V8EXT, 0); \
     } \
 }; \
-template<> class v8_streamer_volatile<typed_array<T>> : public v8_streamer<typed_array<T>> {\
+template<> class v8_streamer_volatile<range<T>> : public v8_streamer<range<T>> {\
 public:\
-    static v8::Handle<v8::Value> to_v8(const typed_array<T>& v) { \
-        return v8_map_typed_array(v.ptr(), (uint)v.size(), V8EXT); \
+    static v8::Handle<v8::Value> to_v8(const range<T>& v) { \
+        return v8_map_range(v.ptr(), (uint)v.size(), V8EXT); \
     } \
 \
-    static bool from_v8( v8::Handle<v8::Value> src, typed_array<T>& res ) { \
-        throw exception() << "reading into a typed_array not supported"; \
+    static bool from_v8( v8::Handle<v8::Value> src, range<T>& res ) { \
+        throw exception() << "reading into a range not supported"; \
     } \
     static void cleanup( v8::Handle<v8::Value> val ) { \
         val->ToObject()->SetIndexedPropertiesToExternalArrayData(0, V8EXT, 0); \

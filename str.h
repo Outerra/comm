@@ -210,7 +210,7 @@ public:
 
     charstr(char c) { append(c); }
 
-    template<class Enum, typename = std::enable_if_t<std::is_enum<T>::value>>
+    template<class Enum, typename = std::enable_if_t<std::is_enum<Enum>::value>>
     charstr(Enum v) { *this = (typename resolve_enum<Enum>::type)v; }
 
     charstr(int8 i) { append_num(10, (int)i); }
@@ -438,7 +438,7 @@ public:
 
     charstr& operator = (char c) { reset(); append(c); return *this; }
 
-    template<class Enum, typename = std::enable_if_t<std::is_enum<T>::value>>
+    template<class Enum, typename = std::enable_if_t<std::is_enum<Enum>::value>>
     charstr& operator = (Enum v) { return (*this = (typename resolve_enum<Enum>::type)v); }
 
     charstr& operator = (int8 i) { reset(); append_num(10, (int)i);  return *this; }
@@ -527,7 +527,7 @@ public:
 
     charstr& operator += (char c) { append(c); return *this; }
 
-    template<class Enum, typename = std::enable_if_t<std::is_enum<T>::value>>
+    template<class Enum, typename = std::enable_if_t<std::is_enum<Enum>::value>>
     charstr& operator += (Enum v) { return (*this += (typename resolve_enum<Enum>::type)v); }
 
     charstr& operator += (int8 i) { append_num(10, (int)i);  return *this; }
@@ -581,7 +581,7 @@ public:
     charstr& operator << (const charstr& tok) { return operator += (tok); }
     charstr& operator << (char c) { return operator += (c); }
 
-    template<class Enum, typename = std::enable_if_t<std::is_enum<T>::value>>
+    template<class Enum, typename = std::enable_if_t<std::is_enum<Enum>::value>>
     charstr& operator << (Enum v) { return (*this << (typename resolve_enum<Enum>::type)v); }
 
     charstr& operator << (int8 i) { append_num(10, (int)i);  return *this; }
