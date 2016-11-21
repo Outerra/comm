@@ -881,7 +881,7 @@ public:
     void append_float(double d, int nfrac, uints maxsize = 0)
     {
         if(!maxsize)
-            maxsize = nfrac + 4;
+            maxsize = std::abs(nfrac) + 4;
         char* buf = get_append_buf(maxsize);
         char* end = charstrconv::append_float(buf, buf + maxsize, d, nfrac);
 
