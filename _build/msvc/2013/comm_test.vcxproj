@@ -371,13 +371,14 @@
     <ClCompile Include="..\..\..\comm_test\meta3.cpp" />
     <ClCompile Include="..\..\..\comm_test\regex.cpp" />
     <ClCompile Include="..\..\..\comm_test\stream.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <hpp Include="..\..\..\comm_test\intergen\interface.hpp" />
+    <ClCompile Include="..\..\..\intergen\test\test.intergen.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\comm_test\intergen\ifc\client.h" />
     <ClInclude Include="..\..\..\comm_test\intergen\ifc\client.js.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <hpp Include="..\..\..\intergen\test\test.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

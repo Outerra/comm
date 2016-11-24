@@ -2,8 +2,8 @@
 #ifndef __INTERGEN_TEST__HPP__
 #define __INTERGEN_TEST__HPP__
 
-#include <intergen/ifc.h>
-#include <comm/str.h>
+#include "../intergen/ifc.h"
+#include "../str.h"
 
 namespace xx {
     class yy;
@@ -29,8 +29,9 @@ public:
     ifc_fnx(~) void destroy()
     {}
 
-    ifc_fn int hallo( int a, const coid::token& b, ifc_out coid::charstr& c )
-    {}
+    ifc_fn int hallo( int a, const coid::token& b, ifc_out coid::charstr& c ) {
+        return 0;
+    }
 
     ifc_fn coid::charstr fallo( bool b, const char* str ) { return str; }
 

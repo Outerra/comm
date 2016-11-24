@@ -4,6 +4,7 @@
 #include "hash/hashkeyset.h"
 #include "sync/mutex.h"
 #include "dir.h"
+#include "intergen/ifc.h"
 
 #include <cstdio>
 
@@ -34,9 +35,14 @@ public:
     interface_register::fn_log_t _fn_log;
     interface_register::fn_acc_t _fn_acc;
 
+    const int _intergen_version;
+
+
     static interface_register_impl& get();
 
-    interface_register_impl() : _mx(500, false)
+    interface_register_impl()
+        : _intergen_version(intergen_interface::VERSION)
+        , _mx(500, false)
         , _fn_log(0)
         , _fn_acc(0)
     {}
@@ -45,7 +51,7 @@ public:
     {}
 
     //virtual in order to invoke code from the main exe module when calling from dlls
-    virtual void register_interface_creator(
+    virtual bool register_interface_creator(
         const coid::token& ifcname,
         void* creator_ptr)
     {
@@ -56,8 +62,9 @@ public:
 
         GUARDTHIS(_mx);
 
-        if(!creator_ptr)
-            _hash.erase_value(ifcname, 0);
+        if(!creator_ptr) {
+            return _hash.erase_value(ifcname, 0);
+        }
         else {
             entry* en = _hash.insert_value_slot(ifcname);
             if(en) {
@@ -67,8 +74,11 @@ public:
                 en->classname = classname;
                 en->creatorname = creatorname;
                 en->script_creator = !script.is_empty();
+                return true;
             }
         }
+
+        return false;
     }
 
     bool current_dir( token curpath, charstr& dst )
@@ -118,12 +128,22 @@ public:
 
         return _fn_acc ? _fn_acc(relpath) : true;
     }
+
+    bool check_version() const { return _intergen_version == intergen_interface::VERSION; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 void* interface_register::get_interface_creator( const token& ifcname )
 {
     interface_register_impl& reg = interface_register_impl::get();
+    if(!reg.check_version()) {
+        ref<logmsg> msg = canlog(coid::ELogType::Error, "ifcreg", 0);
+        msg->str() << "mismatched intergen version for " << ifcname;
+        //print requires VS2015
+        //print(coid::ELogType::Error, "ifcreg", "mismatched intergen version for {}", ifcname);
+        return 0;
+    }
+
     GUARDTHIS(reg._mx);
 
     const entry* en = reg._hash.find_value(ifcname);
@@ -236,9 +256,19 @@ dynarray<interface_register::creator>& interface_register::find_interface_creato
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void interface_register::register_interface_creator( const token& ifcname, void* creator_ptr )
+bool interface_register::register_interface_creator( const token& ifcname, void* creator_ptr )
 {
     interface_register_impl& reg = interface_register_impl::get();
+
+    if(!reg.check_version()) {
+        if(creator_ptr) {
+            //print(coid::ELogType::Error, "ifcreg", "declining interface registration for {}, mismatched intergen version", ifcname);
+            ref<logmsg> msg = canlog(coid::ELogType::Error, "ifcreg", 0);
+            msg->str() << "declining interface registration for " << ifcname << ", mismatched intergen version";
+        }
+        return false;
+    }
+
     return reg.register_interface_creator(ifcname, creator_ptr);
 }
 

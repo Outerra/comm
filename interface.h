@@ -53,7 +53,7 @@ class interface_register
 {
 public:
 
-    static void register_interface_creator( const token& ifcname, void* creator );
+    static bool register_interface_creator( const token& ifcname, void* creator );
 
     static void* get_interface_creator( const token& ifcname );
 

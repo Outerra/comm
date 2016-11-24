@@ -119,6 +119,8 @@ protected:
 
 public:
 
+    static const int VERSION = 5;
+
     //@return host class pointer
     //@note T derived from policy_intrusive_base
     template<typename T>
@@ -136,6 +138,9 @@ public:
 
     //@return hash of interface definition, serving for version checks
     virtual int intergen_hash_id() const = 0;
+
+    //@return true if this interface is derived from interface with given hash
+    virtual bool iface_is_derived( int hash ) const = 0;
 
     //@return interface name
     virtual const coid::tokenhash& intergen_interface_name() const = 0;
@@ -162,6 +167,9 @@ public:
 
     ///Dispatch a captured call
     virtual void intergen_capture_dispatch( uint mid, coid::binstring& bin ) {}
+
+    //@return real interface in case this is a wrapper around an existing interface object
+    virtual intergen_interface* intergen_real_interface() { return this; }
 
     ///Interface log function with formatting
     //@param type log type

@@ -210,6 +210,12 @@ public:
             typeid(T).name(), 0, 0, Module);
     }
 
+    ~singleton() {
+        if(_p)
+            delete _p;
+        _p = 0;
+    }
+
     T* operator -> () { return _p; }
 
     T& operator * () { return *_p; }

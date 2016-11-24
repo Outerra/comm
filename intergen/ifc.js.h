@@ -377,9 +377,12 @@ class interface_wrapper_base
     , public interface_context
 {
 public:
-    iref<T> _base;
+    iref<T> _base;                      //< original c++ interface object
 
-    T* _real() { return _base ? _base.get() : this; }
+    //T* _real() { return _base ? _base.get() : this; }
+    intergen_interface* intergen_real_interface() override final { return _base ? _base.get() : this; }
+
+    T* _real() { return static_cast<T*>(intergen_real_interface()); }
 };	
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -392,14 +395,18 @@ inline T* unwrap_object( const v8::Handle<v8::Value> &arg )
     
     v8::Handle<v8::Object> obj = arg->ToObject();
     if(obj->InternalFieldCount() != 2) return 0;
-    
+
+    intergen_interface* p = static_cast<intergen_interface*>(
+        v8::Handle<v8::External>::Cast(obj->GetInternalField(0))->Value());
+
     int hashid = (int)(ints)v8::Handle<v8::External>::Cast(obj->GetInternalField(1))->Value();
-    if(hashid != T::HASHID)
+    if(hashid != p->intergen_hash_id())    //sanity check
         return 0;
 
-    interface_wrapper_base<T>* p = static_cast<interface_wrapper_base<T>*>(
-        v8::Handle<v8::External>::Cast(obj->GetInternalField(0))->Value());
-    return p->_real();
+    if(!p->iface_is_derived(T::HASHID))
+        return 0;
+
+    return static_cast<T*>(p->intergen_real_interface());
 }
 
 ////////////////////////////////////////////////////////////////////////////////

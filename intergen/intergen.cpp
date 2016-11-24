@@ -5,6 +5,7 @@
 #include "../metastream/metagen.h"
 #include "../metastream/fmtstreamcxx.h"
 #include "../dir.h"
+#include "../intergen/ifc.h"
 
 #include "../hash/hashkeyset.h"
 #include "ig.h"
@@ -13,8 +14,6 @@
 // [inputs] $(ProjectDir)..\..\..\intergen\metagen
 
 stdoutstream out;
-
-static const int VERSION = 4;
 
 ////////////////////////////////////////////////////////////////////////////////
 const token iglexer::MARK = "rl_cmd";
@@ -55,7 +54,7 @@ struct File
     {
         return m.compound("File", [&]()
         {
-            int version = VERSION;
+            int version = intergen_interface::VERSION;
             m.member("hdr",p.fnameext);          //< file name
             m.member("HDR",p.hdrname);           //< file name without extension, uppercase
             m.member("class",p.classes);
@@ -180,7 +179,7 @@ void generate_ig( File& file, charstr& tdir, charstr& fdir  )
         {
             Interface& ifc = cls.iface[i];
 
-            ifc.compute_hash(VERSION);
+            ifc.compute_hash(intergen_interface::VERSION);
 
             fdir.resize(flen);
             tdir.resize(tlen);

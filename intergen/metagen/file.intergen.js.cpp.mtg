@@ -1149,15 +1149,18 @@ static void register_binders_for_$name$( bool on )
 {
 $-[method static?]$
     interface_register::register_interface_creator(
-        "$..ns rest="::" after="::"$js::$..name$.$name$@creator", on ? (void*)&$..name$_js_dispatcher::$name$ : nullptr);
+        "$..ns rest="::" after="::"$js::$..name$.$name$@creator",
+        on ? (void*)&$..name$_js_dispatcher::$name$ : nullptr);
 $-(if !internal?)$
     interface_register::register_interface_creator(
-        "$..ns rest="::" after="::"$js::$..name$.$name$", on ? (void*)&$..name$_js_dispatcher::v8creator_$name$$@order$ : nullptr);
+        "$..ns rest="::" after="::"$js::$..name$.$name$",
+        on ? (void*)&$..name$_js_dispatcher::v8creator_$name$$@order$ : nullptr);
 $-(/if)$
 $-[/method]$
 $-(if virtual!)$
     interface_register::register_interface_creator(
-        "$ns rest="::" after="::"$js::$name$@wrapper", on ? (void*)&create_wrapper_$name$ : nullptr);
+        "$ns rest="::" after="::"$js::$name$@wrapper",
+        on ? (void*)&create_wrapper_$name$ : nullptr);
 
 $-(/if)$
 }

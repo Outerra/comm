@@ -81,6 +81,7 @@ class global_singleton_manager
 
         void destroy() {
             fn_destroy(ptr);
+            ptr = 0;
         }
 
         killer( void* ptr, void (*fn_destroy)(void*), const token& type, const char* file, int line, bool invisible )

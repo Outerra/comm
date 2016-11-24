@@ -12,9 +12,13 @@ $-[/iface]$$[/class]$
 #include <comm/binstring.h>
 #include <type_traits>
 
+
+static_assert(intergen_interface::VERSION == $version$, "interface must be rebuilt with a different intergen version");
+
 using namespace coid;
 
 $-[class iface.empty!]$
+static_assert( std::is_base_of<policy_intrusive_base, $nss rest="::" after="::"$$class$>::value, "class '$class$' must be derived from coid::policy_intrusive_base");
 static_assert( std::is_base_of<policy_intrusive_base, $nss rest="::" after="::"$$class$>::value, "class '$class$' must be derived from coid::policy_intrusive_base");
 
 $-[iface]$
@@ -191,12 +195,14 @@ $-[/method]$
     {
 $-(if virtual!)$
         interface_register::register_interface_creator(
-            "$ns rest="::" after="::"$$name$@wrapper", on ? (void*)&_generic_interface_creator : nullptr);
+            "$ns rest="::" after="::"$$name$@wrapper",
+            on ? (void*)&_generic_interface_creator : nullptr);
 
 $-(/if)$
 $-[method static?]$
         interface_register::register_interface_creator(
-            "$..ns rest="::" after="::"$$..name$.$name$@$..hash$", on ? (void*)&$name$ : nullptr);
+            "$..ns rest="::" after="::"$$..name$.$name$@$..hash$",
+            on ? (void*)&$name$ : nullptr);
 $-[/method]$
     }
 };

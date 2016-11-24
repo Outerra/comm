@@ -985,7 +985,7 @@ public:
 
         do {
             token p = str.cut_left("{}", false);
-            if(str)
+            if(p.ptre() < str.ptr())
                 substrings[n++] = p;
             else {
                 //no more {} in the string
