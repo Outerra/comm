@@ -173,7 +173,7 @@ public:
     ///Fetch reference to a typed value from the binary stream
     template<class T>
     const T& fetch() {
-        return *seek<T>(_offset);
+        return *seek<std::remove_reference_t<T>>(_offset);
     }
 
     ///Read (copy) data into target variable

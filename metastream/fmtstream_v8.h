@@ -371,14 +371,14 @@ public:\
         v8::ArrayBufferView::Cast(*val)->Buffer()->Neuter(); \
     } \
 }; \
-template<> class v8_streamer_volatile<typed_array<T>> : public v8_streamer<typed_array<T>> {\
+template<> class v8_streamer_volatile<range<T>> : public v8_streamer<range<T>> {\
 public:\
-    static v8::Handle<v8::Value> to_v8(const typed_array<T>& v) { \
+    static v8::Handle<v8::Value> to_v8(const range<T>& v) { \
         return v8_map_array_view<T, V8AT>(v.ptr(), (uint)v.size()); \
     } \
  \
     static bool from_v8( v8::Handle<v8::Value> src, dynarray<T>& res ) { \
-        throw exception() << "reading into a typed_array not supported"; \
+        throw exception() << "reading into a range not supported"; \
     } \
     static void cleanup( v8::Handle<v8::Value> val ) { \
         v8::ArrayBufferView::Cast(*val)->Buffer()->Neuter(); \
