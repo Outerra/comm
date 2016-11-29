@@ -2442,10 +2442,10 @@ inline uint string_hash( const token& tok ) {
 class tokenhash : public token
 {
 public:
-    tokenhash() 
+    tokenhash() : _hash(0)
     {}
 
-    tokenhash(std::nullptr_t) : token(nullptr)
+    tokenhash(std::nullptr_t) : token(nullptr), _hash(0)
     {}
 
     ///String literal constructor, optimization to have fast literal strings available as tokens
