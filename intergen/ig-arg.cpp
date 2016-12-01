@@ -100,9 +100,14 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
     if(basetype.begins_with("const ")) basetype.shift_start(6);
     else if(basetype.ends_with(" const")) basetype.shift_end(-6);
 
+    bspecptr = false;
+
     //special handling for strings and tokens
-    /*
     if(type == "const char*") {
+        basetype = type;
+        bspecptr = true;
+    }
+    /*if(type == "const char*") {
         basetype = "coid::charstr";
         base2arg = ".c_str()";
     }

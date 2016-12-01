@@ -163,13 +163,14 @@ struct MethodIG
     {
         charstr type;                   //< parameter type (stripped of const qualifier)
         token basetype;                 //< base type (stripped of the last ptr/ref)
-        charstr base2arg;               //< suffix to convert from base (storage) type to type parameter
+        //charstr base2arg;               //< suffix to convert from base (storage) type to type parameter
         charstr name;                   //< parameter name
         charstr arsize;                 //< size expression if the parameter is an array, including [ ]
         charstr defval;
         charstr fulltype;
         charstr ifctarget;
         charstr doc;
+        bool bspecptr;                  //< special type where pointer is not separated (e.g const char*)
         bool bptr;                      //< true if the type is a pointer
         bool bref;                      //< true if the type is a reference
         bool bxref;                     //< true if the type is xvalue reference
@@ -204,7 +205,7 @@ struct MethodIG
             {
                 m.member("type",p.type);
                 m.member("basetype",p.basetype);
-                m.member("base2arg",p.base2arg);
+                //m.member("base2arg",p.base2arg);
                 m.member("name",p.name);
                 m.member("size",p.arsize);
                 m.member("defval",p.defval);
@@ -213,6 +214,7 @@ struct MethodIG
                 m.member("doc",p.doc);
                 m.member("const",p.bconst);
                 m.member("enum",p.benum);
+                m.member("specptr",p.bspecptr);
                 m.member("ptr",p.bptr);
                 m.member("ref",p.bref);
                 m.member("xref",p.bxref);

@@ -294,6 +294,11 @@ struct threadcached
         return *this;
     }
 
+    threadcached& operator = (const T& val) {
+        _val = val;
+        return *this;
+    }
+
 private:
 
     T _val;

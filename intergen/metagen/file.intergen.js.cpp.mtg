@@ -311,7 +311,7 @@ $-[args outarg? !inarg?]$
     $basetype$ $name$;
 $[/args]-$
 
-    $(if return.type!="void")$$return.type$ _rval_ = $(/if)$R_->$name$($[args rest=", "]$ $-(if ptr? outarg?)$&$-(elif ptr? defval.empty? base2arg.empty?)$&$(/if)$ $-(if nojs?)$$defval$$(elif)$$name$$base2arg$$(/if)$$[/args]$);
+    $(if return.type!="void")$$return.type$ _rval_ = $(/if)$R_->$name$($[args rest=", "]$ $-(if ptr? outarg?)$&$-(elif ptr? defval.empty? !specptr?)$&$(/if)$ $-(if nojs?)$$defval$$(elif)$$name$$(/if)$$[/args]$);
 
     //stream out
 $-(if return.type!="void")$
@@ -1089,7 +1089,7 @@ $-[args outarg? !inarg?]$
     $basetype$ $name$;
 $[/args]-$
 
-    iref<$..name$_js_dispatcher> nifc = $..ns rest="::" after="::"$$..name$::$name$(new $..name$_js_dispatcher$[args]$, $(if ptr? outarg?)$&$(elif ptr? defval.empty? base2arg.empty?)$&$(/if)$$name$$base2arg$$[/args]$);
+    iref<$..name$_js_dispatcher> nifc = $..ns rest="::" after="::"$$..name$::$name$(new $..name$_js_dispatcher$[args]$, $(if ptr? outarg?)$&$(elif ptr? defval.empty? !specptr?)$&$(/if)$$name$$[/args]$);
     if(nifc)
         PERSISTENT(iso, nifc->_context, ctx);//ifc->_context);
 

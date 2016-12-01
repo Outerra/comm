@@ -2174,6 +2174,11 @@ struct threadcached<charstr> : public threadcached_charstr<charstr>
         _val.get_str() = std::move(val);
         return *this;
     }
+
+    threadcached& operator = (const token& val) {
+        _val = val;
+        return *this;
+    }
 };
 
 
