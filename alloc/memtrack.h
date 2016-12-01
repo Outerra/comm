@@ -38,8 +38,6 @@
 #define __COID_MEMTRACK__HEADER_FILE__
 
 #include "../namespace.h"
-#include "../commtypes.h"
-
 #include <algorithm>
 
 
@@ -58,13 +56,48 @@
 #endif
 
 
+#define COIDNEWDELETE(name) \
+    void* operator new( size_t size ) { \
+        void* p=::dlmalloc(size); \
+        if(p==0) throw std::bad_alloc(); \
+        MEMTRACK_ALLOC(name, dlmalloc_usable_size(p)); \
+        return p; } \
+    void* operator new( size_t, void* p ) { return p; } \
+    void operator delete(void* p) { \
+        MEMTRACK_FREE(name, dlmalloc_usable_size(p)); \
+        ::dlfree(p); } \
+    void operator delete(void*, void*)  { }
+
+#define COIDNEWDELETE_ALIGN(name,alignment) \
+    void* operator new( size_t size ) { \
+        void* p=::dlmemalign(alignment,size); \
+        if(p==0) throw std::bad_alloc(); \
+        MEMTRACK_ALLOC(name, dlmalloc_usable_size(p)); \
+        return p; } \
+    void* operator new( size_t, void* p ) { return p; } \
+    void operator delete(void* p) { \
+        MEMTRACK_FREE(name, dlmalloc_usable_size(p)); \
+        ::dlfree(p); } \
+    void operator delete(void*, void*)  { }
+
+#define COIDNEWDELETE_NOTRACK \
+    void* operator new( size_t size ) { \
+        void* p=::dlmalloc(size); \
+        if(p==0) throw std::bad_alloc(); \
+        return p; } \
+    void* operator new( size_t, void* p ) { return p; } \
+    void operator delete(void* ptr)     { ::dlfree(ptr); } \
+    void operator delete(void*, void*)  { }
+
+
+
 COID_NAMESPACE_BEGIN
 
 struct memtrack {
-    ints size;                          //< size allocated since the last memtrack_list call
-    uints totalsize;                    //< total allocated size
-    uint nallocs;                       //< number of allocations since the last memtrack_list call
-    uint ntotalallocs;                  //< total number of allocations since beginning
+    ptrdiff_t size;                     //< size allocated since the last memtrack_list call
+    size_t totalsize;                   //< total allocated size
+    unsigned int nallocs;               //< number of allocations since the last memtrack_list call
+    unsigned int ntotalallocs;          //< total number of allocations since beginning
     const char* name;                   //< class identifier
 
     void swap(memtrack& m) {
@@ -80,15 +113,15 @@ struct memtrack {
 
 
 ///Track allocation request for name
-void memtrack_alloc( const char* name, uints size );
+void memtrack_alloc( const char* name, size_t size );
 
 ///Track allocation request for name
-void memtrack_free( const char* name, uints size );
+void memtrack_free( const char* name, size_t size );
 
 ///List allocation request statistics since the last call
-uint memtrack_list( memtrack* dst, uint nmax );
+unsigned int memtrack_list( memtrack* dst, unsigned int nmax );
 
-uint memtrack_count();
+unsigned int memtrack_count();
 
 ///Dump info into file
 //@param diff if true, list only the allocations since the last reset or list call, otherwise all

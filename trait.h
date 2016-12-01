@@ -40,6 +40,7 @@
 
 #include "namespace.h"
 #include "commtypes.h"
+#include "alloc/memtrack.h"
 
 #include <type_traits>
 #include <functional>
@@ -138,73 +139,6 @@ struct type_base<const K&> {
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-/*template <class T>
-struct type_rebasing_constructor_trivial
-{
-    static void move( T& dst, T* oldp )     { }
-};
-
-template <class T>
-struct type_rebasing_constructor
-{
-    static void move( T& dst, T* oldp ) {
-        //if object of type T cannot be trivially copied to a new memory
-        // location, it must provide rebase(T*) method to autocorrect 
-        // its state after being copied
-        dst.rebase(oldp);
-    }
-};*/
-/*
-////////////////////////////////////////////////////////////////////////////////
-///Template that either copies or swaps values according to the template argument
-template<class T, bool SWAP>
-struct type_copier_swapper {
-    static void assign( T& dst, const T& src ) {
-        dst = src;
-    }
-};
-
-template<class T>
-struct type_copier_swapper<T,true> {
-    static void assign( T& dst, const T& src ) {
-        dst.swap( const_cast<T&>(src) );
-    }
-};
-
-////////////////////////////////////////////////////////////////////////////////
-template <class T>
-struct type_trait
-{
-    enum {
-        trivial_constr = std::has_trivial_default_constructor<T>::value,
-        trivial_zero_constr = false,
-        trivial_rebase_constr = true,
-    };
-
-    typedef typename type_select< trivial_rebase_constr,
-        type_rebasing_constructor_trivial<T>,
-        type_rebasing_constructor<T> >::type  moving;
-};
-
-///Macro to declare types that are already properly default-constructed as long as the memory was zeroed
-#define TYPE_TRIVIAL_ZERO_CONSTRUCTOR(t) \
-template<> struct type_trait<t> { \
-    enum { trivial_zero_constr = true, trivial_rebase_constr = true, }; \
-    typedef type_select< trivial_rebase_constr, \
-        trivial_constr = std::has_trivial_default_constructor<T>::value,
-        type_rebasing_constructor_trivial<t>, \
-        type_rebasing_constructor<t> >::type  moving; \
-}
-
-///Macro to declare types that are already properly default-constructed as long as the memory was zeroed
-#define COID_TYPE_TRIVIAL_ZERO_CONSTRUCTOR(t) namespace coid { \
-template<> struct type_trait<t> { \
-    enum { trivial_zero_constr = true, trivial_rebase_constr = true, }; \
-    typedef type_select< trivial_rebase_constr, \
-        type_rebasing_constructor_trivial<t>, \
-        type_rebasing_constructor<t> >::type  moving; \
-}; }
-*/
 
 template<class T>
 struct has_trivial_default_constructor {
@@ -342,6 +276,31 @@ inline T* align_forward( void* p )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+///Helper struct for types that may want to be cached in thread local storage
+///Specializations should be defined for strings, dynarrays, otherwise it's just
+/// a normal type
+template <class T>
+struct threadcached
+{
+    typedef T storage_type;
+
+    operator T& () { return _val; }
+
+    T& operator* () { return _val; }
+    T* operator& () { return &_val; }
+
+    threadcached& operator = (T&& val) {
+        _val = std::move(val);
+        return *this;
+    }
+
+private:
+
+    T _val;
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
 #if SYSTYPE_MSVC > 0 && SYSTYPE_MSVC < 1900
 //replacement for make_index_sequence
 template <size_t... Ints>
@@ -438,7 +397,10 @@ struct closure_traits_base
     using callbase = callable_base<result_type, Args...>;
 
     template <typename Fn>
-    struct callable : callbase {
+    struct callable : callbase
+    {
+        COIDNEWDELETE("callable");
+
         callable(const Fn& fn) : fn(fn) {}
 
         R operator()( Args&& ...args ) const override {
@@ -461,7 +423,7 @@ struct closure_traits_base
 
         function( const function& other ) : c(0) {
             if(other.c)
-            c = other.c->clone();
+                c = other.c->clone();
         }
 
         function( function&& other ) : c(0) {

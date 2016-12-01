@@ -28,6 +28,8 @@ class interface_register_impl : public interface_register
 {
 public:
 
+    COIDNEWDELETE("interface_register_impl");
+
     hash_keyset<entry, _Select_GetRef<entry,token> > _hash;
     comm_mutex _mx;
 

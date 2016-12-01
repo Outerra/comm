@@ -101,13 +101,14 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
     else if(basetype.ends_with(" const")) basetype.shift_end(-6);
 
     //special handling for strings and tokens
+    /*
     if(type == "const char*") {
         basetype = "coid::charstr";
         base2arg = ".c_str()";
     }
     else if(basetype == "token" || basetype == "coid::token") {
         basetype = "coid::charstr";
-    }
+    }*/
 
     biref = basetype.begins_with("iref<");
     if(biref) {

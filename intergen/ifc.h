@@ -255,6 +255,8 @@ protected:
 ///Helper struct for interface registration
 struct ifc_autoregger
 {
+    COIDNEWDELETE("ifc_autoregger");
+
     typedef void (*register_fn)(bool);
 
     ifc_autoregger( register_fn fn ) : _fn(fn) {

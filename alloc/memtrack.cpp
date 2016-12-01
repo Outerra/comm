@@ -45,12 +45,12 @@
 namespace coid {
 
 struct memtrack_imp : memtrack {
-    bool operator == (uints k) const {
-        return (uints)name == k;
+    bool operator == (size_t k) const {
+        return (size_t)name == k;
     }
 
-    operator uints() const {
-        return (uints)name;
+    operator size_t() const {
+        return (size_t)name;
     }
 
     //don't track this
@@ -60,11 +60,11 @@ struct memtrack_imp : memtrack {
 
 
 struct hash_memtrack {
-    typedef uints key_type;
-    uint operator()(uints x) const { return (uint)x; }
+    typedef size_t key_type;
+    uint operator()(size_t x) const { return (uint)x; }
 };
 
-typedef hash_keyset<memtrack_imp, _Select_Copy<memtrack_imp,uints>, hash_memtrack> memtrack_hash_t;
+typedef hash_keyset<memtrack_imp, _Select_Copy<memtrack_imp,size_t>, hash_memtrack> memtrack_hash_t;
 
 struct memtrack_registrar
 {
@@ -136,16 +136,18 @@ void memtrack_shutdown()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void memtrack_alloc( const char* name, uints size )
+void memtrack_alloc( const char* name, size_t size )
 {
     memtrack_registrar* mtr = memtrack_register();
     if(!mtr || !mtr->enabled || mtr->reg<0) return;
+
+    //DASSERT( name != "$GLOBAL" );
 
     GUARDTHIS(*mtr->mux);
     if(mtr->reg > 1)
         return;     //avoid stack overlow from hashmap
     mtr->reg = 2;
-    memtrack* val = mtr->hash->find_or_insert_value_slot((uints)name);
+    memtrack* val = mtr->hash->find_or_insert_value_slot((size_t)name);
     mtr->reg = 1;
 
     val->name = name;
@@ -157,13 +159,13 @@ void memtrack_alloc( const char* name, uints size )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void memtrack_free( const char* name, uints size )
+void memtrack_free( const char* name, size_t size )
 {
     memtrack_registrar* mtr = memtrack_register();
     if(!mtr || !mtr->enabled || mtr->reg<0) return;
 
     GUARDTHIS(*mtr->mux);
-    memtrack_imp* val = const_cast<memtrack_imp*>(mtr->hash->find_value((uints)name));
+    memtrack_imp* val = const_cast<memtrack_imp*>(mtr->hash->find_value((size_t)name));
 
     if(val) {
         val->size -= size;
@@ -218,7 +220,7 @@ void memtrack_dump( const char* file, bool diff )
     buf << "======== bytes | #alloc |  type ======\n";
 
     int64 totalsize=0;
-    uints totalcount=0;
+    size_t totalcount=0;
 
     for( ; ib!=ie; ++ib ) {
         memtrack& p = *ib;

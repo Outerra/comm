@@ -36,6 +36,7 @@
 #define __COMM_REF_BASE_H__
 
 #include "atomic/atomic.h"
+#include "alloc/memtrack.h"
 #include "singleton.h"
 
 struct create_me { };
@@ -228,6 +229,8 @@ protected:
 	T* _obj;
 
 	typedef policy_shared<T> this_t;
+
+    COIDNEWDELETE("policy_shared");
 
 	virtual ~policy_shared() { if( _obj ) delete _obj; _obj=0; }
 

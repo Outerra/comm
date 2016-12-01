@@ -44,8 +44,10 @@
 COID_NAMESPACE_BEGIN
 
 
-struct AssertLog
+struct coid_assert_log
 {
+    COIDNEWDELETE("coid_assert_log");
+
     bofstream _file;
     txtstream _text;
     comm_mutex _mutex;
@@ -68,23 +70,24 @@ struct AssertLog
         return _file.is_open();
     }
 
-    AssertLog() : _mutex(10, false)
+    coid_assert_log() : _mutex(10, false)
     {}
 };
 
-static binstream& bin = SINGLETON(AssertLog)._text;
+static binstream& bin = SINGLETON(coid_assert_log)._text;
 
 static int __assert_throws = 1;
 
 ////////////////////////////////////////////////////////////////////////////////
 opcd __rassert( const char* txt, opcd exc, const char* file, int line, const char* expr )
 {
-    AssertLog& asl = SINGLETON(AssertLog);
+    coid_assert_log& asl = SINGLETON(coid_assert_log);
     {
         comm_mutex_guard<comm_mutex> _guard( asl._mutex );
         asl.get_file();
 
-        bin << "Assertion failed in " << file << ":" << line << " expression:\n    "
+        if(&bin)
+            bin << "Assertion failed in " << file << ":" << line << " expression:\n    "
 		    << expr << "\n    " << (txt ? txt : "") << "\n\n"
             << BINSTREAM_FLUSH;
     }

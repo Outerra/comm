@@ -1845,6 +1845,7 @@ public:
 
     ///Set string to empty and discard the memory
     void free() { _tstr.discard(); }
+    void discard() { _tstr.discard(); }
 
     ///Reserve memory for string
     //@param len min size for string to reserve (incl. term zero)
@@ -2101,26 +2102,6 @@ inline token& token::operator = (const charstr& t)
     return *this;
 }
 
-/*
-inline bool operator == (const token& tok, const charstr& str )
-{
-    if( tok.len() != str.len() ) return 0;
-    return memcmp( tok.ptr(), str.ptr(), tok.len()) == 0;
-}
-
-inline bool operator != (const token& tok, const charstr& str )
-{
-    if( tok.len() != str.len() ) return 1;
-    return memcmp( tok.ptr(), str.ptr(), tok.len()) != 0;
-}
-
-inline const char* token::set( const charstr& str )
-{
-    _ptr = str.ptr();
-    _pte = str.ptre();
-    return _pte;
-}*/
-
 inline token token::rebase(const charstr& from, const charstr& to) const
 {
     DASSERT(_ptr >= from.ptr() && _pte <= from.ptre());
@@ -2160,6 +2141,68 @@ inline bool token::utf8_to_wchar_buf(dynarray<wchar_t, uint, A>& dst) const
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+template <class T>
+struct threadcached_charstr
+{
+    typedef charstr storage_type;
+
+    charstr& operator* () { return _val.get_str(); }
+    charstr* operator& () { return &_val.get_str(); }
+
+    static zstring::zpool* pool() {
+        bool init = false;
+        static zstring::zpool* _pool = init = true, zstring::local_pool();
+
+        if(init)
+            zstring::set_max_size(_pool, 64);
+        return _pool;
+    }
+
+protected:
+
+    zstring _val;
+};
+
+
+///
+template <>
+struct threadcached<charstr> : public threadcached_charstr<charstr>
+{
+    operator charstr& () { return _val.get_str(); }
+
+    threadcached& operator = (charstr&& val) {
+        _val.get_str() = std::move(val);
+        return *this;
+    }
+};
+
+
+///
+template <>
+struct threadcached<token> : public threadcached_charstr<token>
+{
+    operator token () { return _val.get_token(); }
+
+    threadcached& operator = (const token& val) {
+        _val = val;
+        return *this;
+    }
+};
+
+
+///
+template <>
+struct threadcached<const char*> : public threadcached_charstr<const char*>
+{
+    operator const char* () { return _val.c_str(); }
+
+    threadcached& operator = (const char* val) {
+        _val = val;
+        return *this;
+    }
+};
+
+////////////////////////////////////////////////////////////////////////////////
 inline binstream& operator >> (binstream &bin, charstr& x)
 {
     x._tstr.reset();
@@ -2197,53 +2240,6 @@ inline binstream& operator >> (binstream &out, token& x)
     RASSERT(0);
     return out;
 }
-
-////////////////////////////////////////////////////////////////////////////////
-
-/*
-///Wrappers for making key-type out of std charstr and token classes
-namespace bstype {
-
-template<>
-struct t_key<charstr> : public charstr
-{
-    friend binstream& operator >> (binstream &in, t_key<charstr>& x);
-    friend binstream& operator << (binstream &out, const t_key<charstr>& x);
-};
-
-template<>
-struct t_key<token> : public token
-{
-    friend binstream& operator << (binstream &out, const t_key<token>& x);
-};
-
-
-////////////////////////////////////////////////////////////////////////////////
-inline binstream& operator >> (binstream &in, t_key<charstr>& x)
-{
-    x.reset();
-    dynarray<key,uint>::dynarray_binstream_container
-        c(reinterpret_cast<dynarray<key,uint>&>(x.dynarray_ref()));
-
-    in.xread_array(c);
-    if( x._tstr.size() )
-        *x._tstr.add() = 0;
-
-    return in;
-}
-
-inline binstream& operator << (binstream &out, const t_key<charstr>& x)
-{
-    return out.xwrite_key( x.ptr(), x.len() );
-}
-
-inline binstream& operator << (binstream &out, const t_key<token>& x)
-{
-    return out.xwrite_key(x);
-}
-
-} //namespace bstype
-*/
 
 ////////////////////////////////////////////////////////////////////////////////
 inline opcd binstream::read_key(charstr& key, int kmember, const token& expected_key)
@@ -2311,54 +2307,6 @@ inline charstr& opcd_formatter::text(charstr& dst) const
     return dst;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-/// This is lazy command tokenizer, expecting that no one will ever want him to
-/// actually do something
-struct command_tokens
-{
-    token  _cmd;                //< command line
-    token  _rtok;               //< remaining token
-    token  _ctok;               //< current token
-    int _tokn;                  //< current token number
-
-    token operator[] (ints i)
-    {
-        if(i < _tokn)
-        {
-            _rtok = _cmd;
-            _tokn = -1;
-            _ctok._pte = _ctok._ptr = _cmd._ptr;
-        }
-
-        if(i == _tokn)
-            return _ctok;
-
-        for(; _tokn < i; ++_tokn)
-        {
-            _ctok = _rtok.cut_left_group(token::TK_whitespace(), token::cut_trait(token::fREMOVE_ALL_SEPARATORS));
-            if(_ctok.is_empty()) { ++_tokn; break; }
-        }
-
-        return _ctok;
-    }
-
-    command_tokens()
-    {
-        _cmd.set_empty();
-        _tokn = -1;
-        _rtok = _cmd;
-        _ctok.set_empty();
-    }
-
-    command_tokens(const token& str)
-    {
-        _cmd = str;
-        _cmd.skip_ingroup(token::TK_whitespace());
-        _tokn = -1;
-        _rtok = _cmd;
-        _ctok.set_empty();
-    }
-};
 
 COID_NAMESPACE_END
 

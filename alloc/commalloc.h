@@ -46,40 +46,6 @@
 #define MSPACES 1
 #include "./_malloc.h"
 
-#define COIDNEWDELETE(name) \
-    void* operator new( size_t size ) { \
-        void* p=::dlmalloc(size); \
-        if(p==0) throw std::bad_alloc(); \
-        MEMTRACK_ALLOC(name, dlmalloc_usable_size(p)); \
-        return p; } \
-    void* operator new( size_t, void* p ) { return p; } \
-    void operator delete(void* p) { \
-        MEMTRACK_FREE(name, dlmalloc_usable_size(p)); \
-        ::dlfree(p); } \
-    void operator delete(void*, void*)  { }
-
-#define COIDNEWDELETE_ALIGN(name,alignment) \
-    void* operator new( size_t size ) { \
-        void* p=::dlmemalign(alignment,size); \
-        if(p==0) throw std::bad_alloc(); \
-        MEMTRACK_ALLOC(name, dlmalloc_usable_size(p)); \
-        return p; } \
-    void* operator new( size_t, void* p ) { return p; } \
-    void operator delete(void* p) { \
-        MEMTRACK_FREE(name, dlmalloc_usable_size(p)); \
-        ::dlfree(p); } \
-    void operator delete(void*, void*)  { }
-
-#define COIDNEWDELETE_NOTRACK \
-    void* operator new( size_t size ) { \
-        void* p=::dlmalloc(size); \
-        if(p==0) throw std::bad_alloc(); \
-        return p; } \
-    void* operator new( size_t, void* p ) { return p; } \
-    void operator delete(void* ptr)     { ::dlfree(ptr); } \
-    void operator delete(void*, void*)  { }
-
-
 COID_NAMESPACE_BEGIN
 
 void* memaligned_alloc( size_t size, size_t alignment );

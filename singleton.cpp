@@ -68,6 +68,8 @@ class global_singleton_manager
 {
     struct killer
     {
+        COIDNEWDELETE("coid_singleton_killer");
+
         void* ptr;
         void (*fn_destroy)(void*);
         const char* type_name;

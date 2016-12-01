@@ -111,42 +111,43 @@ public:
     static bool from_v8( v8::Handle<v8::Value> src, T& res );
 };
 
+
 //@{ Fast v8_streamer specializations for base types
 
-#define V8_STREAMER(T,V8T,CT) \
+#define V8_FAST_STREAMER(T,V8T,CT) \
 template<> class v8_streamer<T> { public: \
     static v8::Handle<v8::Value> to_v8(const T& v) { return v8::new_object<v8::V8T>(CT(v)); } \
     static bool from_v8( v8::Handle<v8::Value> src, T& res ) { res = (T)src->V8T##Value(); return true; } \
 }
 
 
-V8_STREAMER(int8,  Int32, int32);
-V8_STREAMER(int16, Int32, int32);
-V8_STREAMER(int32, Int32, int32);
-V8_STREAMER(int64, Number, double);     //can lose data in conversion
+V8_FAST_STREAMER(int8,  Int32, int32);
+V8_FAST_STREAMER(int16, Int32, int32);
+V8_FAST_STREAMER(int32, Int32, int32);
+V8_FAST_STREAMER(int64, Number, double);     //can lose data in conversion
 
-V8_STREAMER(uint8,  Uint32, uint32);
-V8_STREAMER(uint16, Uint32, uint32);
-V8_STREAMER(uint32, Uint32, uint32);
-V8_STREAMER(uint64, Number, double);    //can lose data in conversion
+V8_FAST_STREAMER(uint8,  Uint32, uint32);
+V8_FAST_STREAMER(uint16, Uint32, uint32);
+V8_FAST_STREAMER(uint32, Uint32, uint32);
+V8_FAST_STREAMER(uint64, Number, double);    //can lose data in conversion
 
 #ifdef SYSTYPE_WIN
 # ifdef SYSTYPE_32
-V8_STREAMER(ints,  Int32,  int32);
-V8_STREAMER(uints, Uint32, uint32);
+V8_FAST_STREAMER(ints,  Int32,  int32);
+V8_FAST_STREAMER(uints, Uint32, uint32);
 # else //SYSTYPE_64
-V8_STREAMER(int,   Number, double);
-V8_STREAMER(uint,  Number, double);
+V8_FAST_STREAMER(int,   Number, double);
+V8_FAST_STREAMER(uint,  Number, double);
 # endif
 #elif defined(SYSTYPE_32)
-V8_STREAMER(long,  Int32,  int32);
-V8_STREAMER(ulong, Uint32, uint32);
+V8_FAST_STREAMER(long,  Int32,  int32);
+V8_FAST_STREAMER(ulong, Uint32, uint32);
 #endif
 
-V8_STREAMER(float,  Number, double);
-V8_STREAMER(double, Number, double);
+V8_FAST_STREAMER(float,  Number, double);
+V8_FAST_STREAMER(double, Number, double);
 
-V8_STREAMER(bool, Boolean, bool);
+V8_FAST_STREAMER(bool, Boolean, bool);
 
 ///Date/time
 template<> class v8_streamer<timet> {
@@ -785,7 +786,7 @@ public:
                 if(!_top->value->IsArray())
                     e = ersSYNTAX_ERROR "expected array";
                 else {
-                    _top->array = v8::Array::Cast(*_top->value);
+                    _top->array = v8::Local<v8::Array>::New(v8::Isolate::GetCurrent(), _top->value.As<v8::Array>());
                     _top->element = 0;
                 }
             }
@@ -1137,6 +1138,21 @@ inline bool v8_streamer<T>::from_v8( v8::Handle<v8::Value> src, T& res )
     return true;
 }
 
+
+template<class T>
+inline bool from_v8( v8::Handle<v8::Value> src, threadcached<T>& tc ) {
+    return v8_streamer<typename threadcached<T>::storage_type>::from_v8(src, *tc);
+}
+
+template<class T>
+inline bool from_v8( v8::Handle<v8::Value> src, T& t ) {
+    return v8_streamer<T>::from_v8(src, t);
+}
+
+template<class T>
+inline v8::Handle<v8::Value> to_v8( const T& v ) {
+    return v8_streamer<typename threadcached<T>::storage_type>::to_v8(v);
+}
 
 
 COID_NAMESPACE_END

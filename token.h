@@ -2512,6 +2512,10 @@ public:
     static zpool* thread_local_pool();  //< thread local buffer pool
     static zpool* local_pool();         //< local pool (registers as a local singleton, keep in a static var)
 
+    ///Set max size of strings in the pool (default no limit)
+    //@return previous size
+    static uints max_size_in_pool( zpool*, uints maxsize );
+
     explicit zstring( zpool* pool );
     zstring();
     zstring( const char* sz );
