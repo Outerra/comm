@@ -221,6 +221,7 @@
     <ClInclude Include="pthreadx.h" />
     <ClInclude Include="ptrowner.h" />
     <ClInclude Include="radix.h" />
+    <ClInclude Include="range.h" />
     <ClInclude Include="ref.h" />
     <ClInclude Include="refs.h" />
     <ClInclude Include="ref_base.h" />

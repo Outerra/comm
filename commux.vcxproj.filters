@@ -440,5 +440,6 @@
     <ClInclude Include="tutf8.h" />
     <ClInclude Include="txtconv.h" />
     <ClInclude Include="version.h" />
+    <ClInclude Include="range.h" />
   </ItemGroup>
 </Project>
