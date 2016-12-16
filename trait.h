@@ -208,9 +208,9 @@ struct type_creator {
 template<typename T>
 struct underlying_enum_type {
     template<int S> struct EnumType     { typedef int      type; };
-    template<> struct EnumType<8>       { typedef int64    type; };
-    template<> struct EnumType<2>       { typedef int16    type; };
-    template<> struct EnumType<1>       { typedef int8     type; };
+    template<> struct EnumType<8>       { typedef __int64  type; };
+    template<> struct EnumType<2>       { typedef short    type; };
+    template<> struct EnumType<1>       { typedef char     type; };
 
     typedef typename EnumType<sizeof(T)>::type type;
 };
@@ -306,6 +306,8 @@ private:
 
 
 ////////////////////////////////////////////////////////////////////////////////
+#ifdef COID_VARIADIC_TEMPLATES
+
 #if SYSTYPE_MSVC > 0 && SYSTYPE_MSVC < 1900
 //replacement for make_index_sequence
 template <size_t... Ints>
@@ -490,6 +492,7 @@ COID_CLOSURE_TRAIT(, (), 0)
 template <typename Fn>
 using function = typename closure_traits<Fn>::function;
 
+#endif //COID_VARIADIC_TEMPLATES
 
 COID_NAMESPACE_END
 

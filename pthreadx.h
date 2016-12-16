@@ -97,15 +97,17 @@ public:
     //@return invalid thread id
     static thread_t invalid();
 
-
     ///Spawn new thread, setting up this object with reference to the new thread
     //@param fn function to execute
     //@param context thread context, queryable from thread
-    thread& create( const coid::function<void*()>& fn, void* context=0, const token& name = token() )
+    thread& create( const std::function<void*()>& fn, void* context=0, const token& name = token() )
     {
         _thread = create_new(fn, context, name);
         return *this;
     }
+
+    ///Spawn new thread, returning the thread object
+    static thread create_new( const std::function<void*()>& fn, void* context=0, const token& name = token() );
 
     ///Spawn new thread, setting up this object with reference to the new thread
     //@param f function to execute
@@ -116,10 +118,6 @@ public:
         _thread = create_new( f, arg, context, name );
         return *this;
     }
-
-
-    ///Spawn new thread, returning the thread object
-    static thread create_new( const coid::function<void*()>& fn, void* context=0, const token& name = token() );
 
     ///Spawn new thread, returning the thread object
     static thread create_new( fnc_entry f, void* arg, void* context=0, const token& name = token() );

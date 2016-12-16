@@ -92,7 +92,7 @@ thread thread::create_new( fnc_entry fn, void* arg, void* context, const token& 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-thread thread::create_new( const coid::function<void*()>& fn, void* context, const token& name )
+thread thread::create_new( const std::function<void*()>& fn, void* context, const token& name )
 {
     return SINGLETON(thread_manager).thread_create(fn, context, name);
 }

@@ -186,7 +186,7 @@ public:
         a.swap(b);
     }
 
-    template<class COUNT2 = COUNT>
+    template<class COUNT2 COID_DEFAULT_OPT(COUNT)>
     void swap( dynarray<T,COUNT2,A>& other ) {
         std::swap(_ptr, other._ptr);
     }
@@ -656,12 +656,14 @@ public:
         return ptr;
     };
 
+#ifdef COID_VARIADIC_TEMPLATES
     template<class...Ps>
     T* push_construct(Ps... ps) {
         T* ptr = addnc(1);
         ::new(ptr) T(std::forward<Ps>(ps)...);
         return ptr;
     };
+#endif //COID_VARIADIC_TEMPLATES
 
     ///Append the same element n-times to the array through copy constructor
     T* pushn( const T& v, uints n )

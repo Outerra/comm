@@ -43,6 +43,8 @@
 #include "token.h"
 #include "str.h"
 #include "dynarray.h"
+#include "binstream/binstream.h"
+
 #include <limits>
 #include <type_traits>
 
@@ -96,10 +98,12 @@ public:
         return *this;
     }
 
+#ifdef COID_VARIADIC_TEMPLATES
     template<class T, class...Ps>
     T& push(Ps... ps) {
         return *new(pad_alloc<T>()) T(std::forward<Ps>(ps)...);
     }
+#endif //COID_VARIADIC_TEMPLATES
 
     template<class T>
     binstring& operator << (const T& v) {
@@ -128,9 +132,8 @@ public:
         *(T*)(_tstr.ptr() + offset) = v;
     }
 
-
     ///Append string with optionally specified size type (uint8, uint16, uint32 ...)
-    template<class SIZE = uint>
+    template<class SIZE COID_DEFAULT_OPT(uint)>
     binstring& append_string( const token& tok ) {
         uints size = write_size<SIZE>(tok.len());
         _tstr.add_bin_from((const uint8*)tok.ptr(), size);
@@ -138,7 +141,7 @@ public:
     }
 
     ///Append string with optionally specified size type (uint8, uint16, uint32 ...)
-    template<class SIZE = uint>
+    template<class SIZE COID_DEFAULT_OPT(uint)>
     binstring& append_string( const char* czstr ) {
         token tok(czstr);
         uints size = write_size<SIZE>(tok.len());
@@ -147,7 +150,7 @@ public:
     }
 
     ///Append string with optionally specified size type (uint8, uint16, uint32 ...)
-    template<class SIZE = uint>
+    template<class SIZE COID_DEFAULT_OPT(uint)>
     binstring& append_string( const charstr& str ) {
         uints size = write_size<SIZE>(str.len());
         _tstr.add_bin_from((const uint8*)str.ptr(), size);
@@ -219,7 +222,7 @@ public:
     }
 
     ///Fetch string from the binary stream
-    template<class SIZE = uint>
+    template<class SIZE COID_DEFAULT_OPT(uint)>
     token string() {
         const SIZE& size = fetch<SIZE>();
         if(_tstr.size()-_offset < size)

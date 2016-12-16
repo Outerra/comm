@@ -100,6 +100,14 @@
 #endif
 
 
+#if !defined(_MSC_VER) || _MSC_VER >= 1800
+# define COID_DEFAULT_FUNCTION_TEMPLATE_ARGS
+# define COID_DEFAULT_OPT(x) = x
+#else
+# define COID_DEFAULT_OPT(x)
+#endif
+
+
 #if defined(__cpp_variadic_templates) || _MSC_VER >= 1800
 # define COID_VARIADIC_TEMPLATES
 #endif

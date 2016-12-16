@@ -522,8 +522,9 @@ MAX_RELEASE_CHECK_RATE   default: 4095 unless not HAVE_MMAP
 */
 
 //<COID:
-#define USE_DL_PREFIX
-#define MSPACES 1
+//#define USE_DL_PREFIX
+//#define MSPACES 1
+#include "_malloc.h"
 #define USE_LOCKS 1
 
 //defined so that operations between different mspaces (different
@@ -1283,7 +1284,7 @@ DLMALLOC_EXPORT void  dlmalloc_stats(void);
   p = malloc(n);
   assert(malloc_usable_size(p) >= 256);
 */
-size_t dlmalloc_usable_size(void*);
+size_t dlmalloc_usable_size(const void*);
 
 #endif /* ONLY_MSPACES */
 
@@ -1293,7 +1294,7 @@ size_t dlmalloc_usable_size(void*);
   mspace is an opaque type representing an independent
   region of space that supports mspace_malloc, etc.
 */
-typedef void* mspace;
+//typedef void* mspace;
 
 /*
   create_mspace creates and returns a new independent space with the
@@ -5424,7 +5425,7 @@ int dlmallopt(int param_number, int value) {
   return change_mparam(param_number, value);
 }
 
-size_t dlmalloc_usable_size(void* mem) {
+size_t dlmalloc_usable_size(const void* mem) {
   if (mem != 0) {
     mchunkptr p = mem2chunk(mem);
     if (is_inuse(p))
@@ -6019,9 +6020,11 @@ size_t mspace_usable_size(const void* mem) {
 }
 
 mspace mspace_from_ptr(const void* mem) {
-    if(!mem) return 0;
-    mchunkptr p  = mem2chunk(mem);
-    return get_mstate_for(p);
+    if (mem) {
+        mchunkptr p  = mem2chunk(mem);
+        return get_mstate_for(p);
+    }
+    return 0;
 }
 
 int mspace_mallopt(int param_number, int value) {

@@ -210,8 +210,10 @@ public:
 
     charstr(char c) { append(c); }
 
-    template<class Enum, typename = std::enable_if_t<std::is_enum<Enum>::value>>
-    charstr(Enum v) { *this = (typename resolve_enum<Enum>::type)v; }
+    template<class Enum>
+    charstr(typename std::enable_if<std::is_enum<Enum>::value>::type v) {
+        *this = (typename resolve_enum<Enum>::type)v;
+    }
 
     charstr(int8 i) { append_num(10, (int)i); }
     charstr(uint8 i) { append_num(10, (uint)i); }
@@ -438,8 +440,10 @@ public:
 
     charstr& operator = (char c) { reset(); append(c); return *this; }
 
-    template<class Enum, typename = std::enable_if_t<std::is_enum<Enum>::value>>
-    charstr& operator = (Enum v) { return (*this = (typename resolve_enum<Enum>::type)v); }
+    template<class Enum>
+    charstr& operator = (typename std::enable_if<std::is_enum<Enum>::value>::type v) {
+        return (*this = (typename resolve_enum<Enum>::type)v);
+    }
 
     charstr& operator = (int8 i) { reset(); append_num(10, (int)i);  return *this; }
     charstr& operator = (uint8 i) { reset(); append_num(10, (uint)i); return *this; }
@@ -527,8 +531,10 @@ public:
 
     charstr& operator += (char c) { append(c); return *this; }
 
-    template<class Enum, typename = std::enable_if_t<std::is_enum<Enum>::value>>
-    charstr& operator += (Enum v) { return (*this += (typename resolve_enum<Enum>::type)v); }
+    template<class Enum>
+    charstr& operator += (typename std::enable_if<std::is_enum<Enum>::value>::type v) {
+        return (*this += (typename resolve_enum<Enum>::type)v);
+    }
 
     charstr& operator += (int8 i) { append_num(10, (int)i);  return *this; }
     charstr& operator += (uint8 i) { append_num(10, (uint)i); return *this; }
@@ -581,8 +587,10 @@ public:
     charstr& operator << (const charstr& tok) { return operator += (tok); }
     charstr& operator << (char c) { return operator += (c); }
 
-    template<class Enum, typename = std::enable_if_t<std::is_enum<Enum>::value>>
-    charstr& operator << (Enum v) { return (*this << (typename resolve_enum<Enum>::type)v); }
+    template<class Enum>
+    charstr& operator << (typename std::enable_if<std::is_enum<Enum>::value>::type v) {
+        return (*this << (typename resolve_enum<Enum>::type)v);
+    }
 
     charstr& operator << (int8 i) { append_num(10, (int)i);  return *this; }
     charstr& operator << (uint8 i) { append_num(10, (uint)i); return *this; }
@@ -971,6 +979,8 @@ public:
         return *this;
     }
 
+#ifdef COID_VARIADIC_TEMPLATES
+
     ///Append a variadic block of arguments with format string
     //@param fmt msg and format string, with {} for variable substitutions, e.g. "foo {} bar {} end"
     //@param args variadic parameters
@@ -1003,6 +1013,8 @@ public:
 
         *this << str;
     }
+
+#endif //COID_VARIADIC_TEMPLATES
 
     ///Append string, replacing characters
     charstr& append_replace(const token& tok, char from, char to)

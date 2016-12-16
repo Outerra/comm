@@ -42,11 +42,14 @@
 
 #include "../namespace.h"
 #include "../dynarray.h"
-#include "../alloc/slotalloc.h"
 #include "../metastream/metastream.h"
 #include <algorithm>
 
 #include "hashfunc.h"
+
+#if !defined(_MSC_VER) || _MSC_VER >= 1800
+#include "../alloc/slotalloc.h"
+#endif
 
 COID_NAMESPACE_BEGIN
 
@@ -80,6 +83,8 @@ struct AllocStd {
     ints reserve(uints count) { return 0; }
 };
 
+#if !defined(_MSC_VER) || _MSC_VER >= 1800
+
 template<class T>
 struct AllocSlot {
     T* alloc() { return _slots.add(); }
@@ -94,6 +99,8 @@ struct AllocSlot {
 private:
     slotalloc_base<T> _slots;
 };
+
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Base class for hash containers

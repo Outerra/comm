@@ -41,16 +41,26 @@
 
 COID_NAMESPACE_BEGIN
 
-enum class ELogType {
-    None = -1,
-    Exception=0,
-    Error,
-    Warning,
-    Info,
-    Highlight,
-    Debug,
-    Perf,
-    Last,
+struct ELogType {
+    enum etype {
+        None = -1,
+        Exception=0,
+        Error,
+        Warning,
+        Info,
+        Highlight,
+        Debug,
+        Perf,
+        Last,
+    } value;
+
+    operator etype() const { return value; }
+    
+    ELogType( etype t ) : value(t)
+    {}
+
+    explicit ELogType( int t ) : value((etype)t)
+    {}
 };
 
 class logger_file;
@@ -195,6 +205,8 @@ public:
 
     void post( const token& msg, const token& prefix = token() );
 
+#ifdef COID_VARIADIC_TEMPLATES
+
     ///Formatted log message
     template<class ...Vs>
     void print( const token& fmt, Vs&&... vs ) {
@@ -217,6 +229,8 @@ public:
         charstr& str = msgr->str();
         str.print(fmt, std::forward<Vs>(vs)...);
     }
+
+#endif
 
     //@return logmsg, filling the prefix by the log type (e.g. ERROR: )
     ref<logmsg> operator()( ELogType type = ELogType::Info, const int64* time_ms = 0 );

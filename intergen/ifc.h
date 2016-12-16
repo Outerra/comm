@@ -40,9 +40,12 @@
 
 #include "../ref.h"
 #include "../interface.h"
-#include "../binstring.h"
 #include "../local.h"
 #include "../log/logger.h"
+
+namespace coid {
+    class binstring;
+}
 
 ///Interface class decoration keyword
 //@param name desired name of the interface class, optionally with namespace. With + prefix generates also the capture code for non-const methods by default

@@ -290,6 +290,7 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <ClCompile Include="..\..\..\log\logger.cpp" />
     <ClCompile Include="..\..\..\metastream\metastream.cpp" />
     <ClCompile Include="..\..\..\alloc\_malloc.c" />
     <ClCompile Include="..\..\..\alloc\memtrack.cpp" />
@@ -339,7 +340,6 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\log\logger.cpp" />
     <ClCompile Include="..\..\..\net.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -348,15 +348,7 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\net\asyncrcv.cpp" />
-    <ClCompile Include="..\..\..\pthreadx.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    </ClCompile>
+    <ClCompile Include="..\..\..\pthreadx.cpp" />
     <ClCompile Include="..\..\..\retcodes.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -407,7 +399,6 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\log\policy_log.cpp" />
     <ClCompile Include="..\..\..\regex\regcomp.cpp" />
     <ClCompile Include="..\..\..\regex\regexec.cpp" />
     <ClCompile Include="..\..\..\timer.cpp" />
@@ -423,7 +414,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\alloc\alloc2d.h" />
-    <ClInclude Include="..\..\..\alloc\slotalloc.h" />
     <ClInclude Include="..\..\..\atomic\atomic.h" />
     <ClInclude Include="..\..\..\atomic\queue.h" />
     <ClInclude Include="..\..\..\binstream\binstream.h" />
@@ -469,6 +459,7 @@
     <ClInclude Include="..\..\..\interface.h" />
     <ClInclude Include="..\..\..\intergen\ifc.h" />
     <ClInclude Include="..\..\..\intergen\ifc.js.h" />
+    <ClInclude Include="..\..\..\log\logger.h" />
     <ClInclude Include="..\..\..\metastream\fmtstream.h" />
     <ClInclude Include="..\..\..\metastream\fmtstreamnull.h" />
     <ClInclude Include="..\..\..\metastream\fmtstream_lexer.h" />
@@ -482,17 +473,14 @@
     <ClInclude Include="..\..\..\alloc\_malloc.h" />
     <ClInclude Include="..\..\..\alloc\commalloc.h" />
     <ClInclude Include="..\..\..\alloc\memtrack.h" />
-    <ClInclude Include="..\..\..\net\asyncrcv.h" />
+    <ClInclude Include="..\..\..\sync\thread_mgr.h" />
     <ClInclude Include="..\..\..\sync\_mutex.h" />
     <ClInclude Include="..\..\..\sync\guard.h" />
     <ClInclude Include="..\..\..\sync\mutex.h" />
     <ClInclude Include="..\..\..\sync\mutex_reg.h" />
     <ClInclude Include="..\..\..\sync\rw_mutex.h" />
     <ClInclude Include="..\..\..\sync\rw_mx_core.h" />
-    <ClInclude Include="..\..\..\sync\thread_mgr.h" />
     <ClInclude Include="..\..\..\coder\rlr.h" />
-    <ClInclude Include="..\..\..\log\logger.h" />
-    <ClInclude Include="..\..\..\log\policy_log.h" />
     <ClInclude Include="..\..\..\regex\regcomp.h" />
     <ClInclude Include="..\..\..\comm.h" />
     <ClInclude Include="..\..\..\commassert.h" />
