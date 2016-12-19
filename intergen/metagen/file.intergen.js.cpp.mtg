@@ -1004,8 +1004,8 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
 
         PERSISTENT(iso, ifc->_script, compiled_script);
     }
-
-    PERSISTENT(iso, ifc->_object, ifc->create_interface_object(false));
+    else
+        PERSISTENT(iso, ifc->_object, ifc->create_interface_object(false));
 
     if(bindname)
         context->Global()->Set(v8::string_utf8(bindname), LOCAL(iso, ifc->_object));
