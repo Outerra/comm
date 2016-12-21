@@ -81,6 +81,8 @@ public:
 
     static ref<logmsg> canlog( ELogType type, const tokenhash& hash, const void* inst = 0 );
 
+#ifdef COID_VARIADIC_TEMPLATES
+
     ///Formatted log message
     //@param type log level
     //@param hash source identifier (used for filtering)
@@ -95,6 +97,8 @@ public:
         charstr& str = msgr->str();
         str.print(fmt, std::forward<Vs>(vs)...);
     }
+
+#endif //COID_VARIADIC_TEMPLATES
 };
 
 

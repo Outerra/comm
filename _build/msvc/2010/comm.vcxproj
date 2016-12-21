@@ -290,6 +290,7 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <ClCompile Include="..\..\..\interface.cpp" />
     <ClCompile Include="..\..\..\log\logger.cpp" />
     <ClCompile Include="..\..\..\metastream\metastream.cpp" />
     <ClCompile Include="..\..\..\alloc\_malloc.c" />

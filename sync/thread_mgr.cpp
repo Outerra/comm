@@ -1,5 +1,6 @@
 
 #include "thread_mgr.h"
+#include "../log/logger.h"
 
 #ifdef SYSTYPE_WIN
 #define WIN32_LEAN_AND_MEAN
@@ -104,6 +105,11 @@ void* thread_manager::def_thread( void* pinfo )
 	catch(thread::CancelException &) {
 		res = 0;
 	}
+    catch(const std::exception& e) {
+        auto log = canlog(ELogType::Exception, "threadmgr");
+        if(log)
+            log->str() << "exception in thread " << ti->name << ": " << e.what();
+    }
     /*catch(...) {
 		DASSERT(false && "unknown exception thrown!");
         res = 0;

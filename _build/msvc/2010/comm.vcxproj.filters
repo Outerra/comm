@@ -123,6 +123,9 @@
     <ClCompile Include="..\..\..\sync\thread_mgr.cpp">
       <Filter>sync</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\interface.cpp">
+      <Filter>cxx</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\atomic\atomic.h">

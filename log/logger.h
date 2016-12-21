@@ -68,6 +68,34 @@ class logger;
 class logmsg;
 class policy_msg;
 
+////////////////////////////////////////////////////////////////////////////////
+
+//@return logmsg object if given log type and source is currently allowed to log
+ref<logmsg> canlog( ELogType type, const tokenhash& hash = tokenhash(), const void* inst = 0 );
+
+
+#ifdef COID_VARIADIC_TEMPLATES
+
+///Formatted log message
+//@param type log level
+//@param hash source identifier (used for filtering)
+//@param fmt @see charstr.print
+template<class ...Vs>
+inline void printlog( ELogType type, const tokenhash& hash, const token& fmt, Vs&&... vs)
+{
+
+    ref<logmsg> msgr = canlog(type, hash);
+    if (!msgr)
+        return;
+
+    charstr& str = msgr->str();
+    str.print(fmt, std::forward<Vs>(vs)...);
+}
+
+#endif //COID_VARIADIC_TEMPLATES
+
+////////////////////////////////////////////////////////////////////////////////
+
 /* 
  * Log message object, returned by the logger.
  * Message is written in policy_log::release() upon calling destructor of ref

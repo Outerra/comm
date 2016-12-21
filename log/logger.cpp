@@ -44,6 +44,8 @@
 #include "../binstream/filestream.h"
 #include "../binstream/stdstream.h"
 
+#include "../interface.h"
+
 using namespace coid;
 
 #ifdef SYSTYPE_WIN
@@ -96,6 +98,13 @@ static void write_console_text( const logmsg& msg )
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace coid {
+
+ref<logmsg> canlog(ELogType type, const tokenhash & hash, const void * inst)
+{
+    return interface_register::canlog(type, hash, inst);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 class policy_msg : public policy_base
 {

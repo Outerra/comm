@@ -175,6 +175,8 @@ public:
     //@return real interface in case this is a wrapper around an existing interface object
     virtual intergen_interface* intergen_real_interface() { return this; }
 
+#ifdef COID_VARIADIC_TEMPLATES
+
     ///Interface log function with formatting
     //@param type log type
     //@param fmt format @see charstr.print
@@ -199,6 +201,8 @@ public:
 
         msgr->str().print(fmt, std::forward<Vs>(vs)...);
     }
+
+#endif //COID_VARIADIC_TEMPLATES
 
 protected:
 
