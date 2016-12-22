@@ -727,7 +727,12 @@ public:
         uints n = _count();
         if( n > 0 ) {
             dest = *last();
-            realloc(n-1);
+
+            if (!std::is_trivially_destructible<T>::value)
+                _ptr[n - 1].~T();
+
+            _set_count(n - 1);
+
             return true;
         }
         return false;
@@ -740,7 +745,10 @@ public:
         uints cnt = _count();
         if(!cnt)  return 0;
 
-        realloc(cnt-1);
+        if (!std::is_trivially_destructible<T>::value)
+            _ptr[cnt - 1].~T();
+
+        _set_count(cnt - 1);
 
         return last();
     }
