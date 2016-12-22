@@ -39,6 +39,7 @@
 #define __INTERGEN_IFC_LUA_H__
 
 #include <comm/interface.h>
+#include <comm/intergen/ifc.h>
 #include <comm/token.h>
 #include <comm/dir.h>
 #include <comm/metastream/metastream.h>
@@ -48,14 +49,19 @@
 #include <luaJIT/lua.hpp>
 #include <luaJIT/luaext.h>
 
+#include "lua_utils.h"
+
 namespace lua {
 
-    static const char * _lua_class_register_key = "__ifc_class_register";
-    static const char * _lua_mt_index_key = "__index";
-    static const char * _lua_global_table_key = "_G";
-    static const char * _lua_implements_fn_name = "$implements";
+    static const coid::token _lua_class_register_key = "__ifc_class_register";
+    static const coid::token _lua_parent_index_key = "__index";
+    static const coid::token _lua_new_index_key = "__newindex";
+    static const coid::token _lua_member_count_key = "__memcount";
+    static const coid::token _lua_global_ctx_key = "__ctx_mt";
+    static const coid::token _lua_global_table_key = "_G";
+    static const coid::token _lua_implements_fn_name = "implements";
 
-////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////
     inline void register_class_to_lua(lua_State * L, const coid::token& class_name) {
         coid::charstr class_registrar_name;
         class_registrar_name << "lua::" << class_name << "_ifc.register_class";
@@ -67,33 +73,123 @@ namespace lua {
         reg_fn(L);
     }
 
+    inline int lua_class_new_index_fn(lua_State * L) {
+        // -3 = table
+        // -2 = key
+        // -1 = value
+        
+        lua_pushvalue(L, -2);
+        lua_rawget(L, -4);
+        if (lua_isnil(L, -1)) {
+            lua_pop(L, 1);
+
+            if (lua_isnil(L , -1)) {
+                return 0;
+            }
+
+            lua_getmetatable(L, -3);
+            lua_pushtoken(L, _lua_member_count_key);
+            lua_pushvalue(L, -1);
+            lua_rawget(L, -3);
+            int mcount = lua_tointeger(L, -1);
+            lua_pop(L, 1);
+            lua_pushinteger(L, mcount + 1);
+            lua_rawset(L, -3);
+            lua_pop(L, 1);
+            
+            lua_rawset(L,-3);
+        }
+        else {
+            lua_pop(L, 1);
+
+            if (lua_isnil(L, -1)) {
+                lua_getmetatable(L, -3);
+                lua_pushtoken(L, _lua_member_count_key);
+                lua_pushvalue(L, -1);
+                lua_rawget(L, -1);
+                int mcount = lua_tointeger(L, -1);
+                lua_pushinteger(L, mcount - 1);
+                lua_rawset(L, -3);
+                lua_pop(L, 1);
+            }
+
+            lua_rawset(L, -3);
+        }
+
+        return 0;
+    }
+
+    inline int lua_classlen(lua_State * L, int idx) {
+        lua_getmetatable(L,idx);
+        lua_pushtoken(L,_lua_member_count_key);
+        lua_rawget(L, -2);
+        int res = lua_tointeger(L, -1);
+        lua_pop(L, 2);
+        return res;
+    }
+
+    inline void lua_create_class_table(lua_State * L, int mcount = 0, int parent_idx = 0) {
+        lua_createtable(L, 0, mcount); // create table
+        lua_createtable(L, 0, 3); // metatable
+
+        lua_pushtoken(L, _lua_member_count_key);
+        lua_pushnumber(L, 0);
+        lua_rawset(L, -3);
+
+        lua_pushtoken(L, _lua_new_index_key);
+        lua_pushcfunction(L, lua_class_new_index_fn);
+        lua_rawset(L, -3);
+
+
+        if (parent_idx != 0) {
+            lua_pushtoken(L, _lua_parent_index_key);
+            lua_pushvalue(L, parent_idx);
+            lua_rawset(L, -3);
+        }
+
+        lua_setmetatable(L, -2);
+    }
+
 ////////////////////////////////////////////////////////////////////////////////
-    inline int script_implements(lua_State * L) {
+    
+    inline int lua_log(lua_State * L) {
+        coid::fmtstream_lua_capi fs(L);
         coid::metastream ms;
-        ms.bind_formatting_stream(coid::fmtstream_lua_capi(L));
+        ms.bind_formatting_stream(fs);
+        coid::charstr massage;
+        ms.stream_in(massage);
+    }
+
+///////////////////////////////////////////////////////////////////////////////
+    inline int script_implements(lua_State * L) {
+        coid::fmtstream_lua_capi fs(L);
+        coid::metastream ms;
+        ms.bind_formatting_stream(fs);
         coid::charstr class_name;
-        ms.stream_out(class_name);
+        ms.stream_in(class_name);
         lua_getglobal(L, _lua_class_register_key);
         lua_getfield(L, -1, class_name.c_str());
         
         // class is not registered so try to register class.
         if (lua_isnil(L, -1)) {
             register_class_to_lua(L, class_name);
+            lua_pop(L,1);
         }
 
-        lua_getfield(L, -1, class_name.c_str());
+        lua_getfield(L, -1, class_name);
 
-        int32 tlen = lua_objlen(L, -1);
+        int32 tlen = lua_classlen(L, -1);
         lua_createtable(L, 0, tlen);
         lua_pushnil(L);
 
-        while (lua_next(L, -2)) {
+        while (lua_next(L, -3)) {
             lua_pushvalue(L, -2);
             lua_insert(L, -2);
             lua_settable(L, -4);
         }
 
         lua_setfield(L, LUA_ENVIRONINDEX, class_name.c_str());
+        lua_pop(L, 2);
 
         return 0;
     }
@@ -117,27 +213,24 @@ namespace lua {
             return _lua_handle == 0;
         }
 
-        void create_new_handle(lua_State * L) {
-            if (!is_empty()) {
-                release();
-            }
-            _L = L;
-            _lua_handle = lua_ref(L, LUA_REGISTRYINDEX);
-        }
+        void set_state(lua_State * L) { _L = L; };
 
-        lua_State * get_state() { return _L; }
+        lua_State * get_state() const { return _L; }
 
         void release() {
             if (_lua_handle) {
-                lua_unref(_L, _lua_handle);
+                luaL_unref(_L, LUA_REGISTRYINDEX, _lua_handle);
+                _lua_handle = 0;
             }
         }
 
         // set handle to reference object on the top of the stack and pop the object
         void set_ref() {
             if (!is_empty()) {
-                lua_rawseti(_L, LUA_REGISTRYINDEX, _lua_handle);
+                release();
             }
+
+            _lua_handle = luaL_ref(_L, LUA_REGISTRYINDEX);
         }
 
         // push the referenced object onto top of the stack
@@ -156,9 +249,10 @@ namespace lua {
             , _L(nullptr)
         {};
 
-        registry_handle(lua_State * L) {
-            _L = L;
-            create_new_handle(L);
+        registry_handle(lua_State * L)
+            : _L(L)
+            , _lua_handle(0)
+        {
         };
     protected:
         int32 _lua_handle;
@@ -185,16 +279,18 @@ namespace lua {
             _L = lua_open();
             luaL_openlibs(_L);
             
-            _throw_fnc_handle.create_new_handle(_L);
+            _throw_fnc_handle.set_state(_L);
             lua_pushcfunction(_L, &throw_lua_error);
             _throw_fnc_handle.set_ref();
-            
-            lua_pushcfunction(_L, &script_implements);
-            lua_setglobal(_L, _lua_implements_fn_name);
 
+            _global_context.set_state(_L);
             lua_getglobal(_L, _lua_global_table_key);
-            _global_context.create_new_handle(_L);
             _global_context.set_ref();
+
+            lua_createtable(_L, 0, 0);
+            lua_setglobal(_L, _lua_class_register_key);
+
+            lua_atpanic(_L,&throw_lua_error);
         }
     protected:
         lua_State * _L;
@@ -214,11 +310,13 @@ namespace lua {
             :registry_handle(L)
         {
             lua_newtable(_L);
-            lua_getmetatable(L,-1);
-            lua_pushnumber(L, LUA_GLOBALSINDEX);
-            lua_setfield(L, -1, _lua_mt_index_key);
-            lua_pop(L, 1);
-            lua_rawseti(L, LUA_REGISTRYINDEX, _lua_handle);
+
+            lua_pushcfunction(_L, &script_implements);
+            lua_pushvalue(L, -2);
+            lua_setfenv(L,-2);
+            lua_setfield(_L, -2, _lua_implements_fn_name);
+            
+            set_ref();
         };
 
         lua_context(const lua_context& ctx) {
@@ -239,28 +337,40 @@ namespace lua {
         }
 
         void compile(const coid::token& script_code, const coid::token& script_path) {
-            if (!has_context) {
+            if (!has_context()) {
                 coid::exception ex;
                 ex << "Can't compile LUA script without context!";
                 throw ex;
             }
             
-            lua_State * L = _context->get_state();
-
-            int res = luaL_loadbuffer(L,script_code._ptr,script_code.len(),script_path);
+            int res = luaL_loadbuffer(_L,script_code._ptr,script_code.len(),script_path);
             if (res != 0) {
-                throw_lua_error(L);
+                throw_lua_error(_L);
             }
+
+            set_ref();
             
-            create_new_handle(L);
-            lua_rawseti(L,LUA_REGISTRYINDEX,_lua_handle);
+            get_ref();
+            _context->get_ref();
+            lua_setfenv(_L, -2);
+            lua_pop(_L, 1);
         };
 
         void run() {
-            if (is_empty()) {
-               
-
+            if (!has_context()) {
+                coid::exception ex;
+                ex << "Can't run LUA script without context!";
+                throw ex;
             }
+            
+            lua_pushcfunction(_L,&throw_lua_error);
+            get_ref();
+            int res = lua_pcall(_L,0,0,0);
+            if (res != 0) {
+                throw_lua_error(_L);
+            }
+
+            lua_pop(_L, 1);
         }
 
         bool has_context() {
@@ -269,6 +379,7 @@ namespace lua {
 
         void set_context(lua_context * ctx) {
             _context = ctx;
+            _L = ctx->get_state();
         }
     protected:
         iref<lua_context> _context;
@@ -287,7 +398,7 @@ namespace lua {
             const coid::token& path_or_script,
             bool is_path,
             const coid::token& url = coid::token(),
-            lua_context* ctx = new lua_context(lua_state_wrap::get_lua_state()->get_raw_state())
+            iref<lua_context> ctx = nullptr
         )
             : _str(path_or_script), _is_path(is_path), _context(ctx), _url(url)
         {}
@@ -304,7 +415,7 @@ namespace lua {
             const coid::token& path_or_script,
             bool is_path,
             const coid::token& url = coid::token(),
-            lua_context * ctx = new lua_context(lua_state_wrap::get_lua_state()->get_raw_state())
+            iref<lua_context> ctx = nullptr
         )
         {
             _str = path_or_script;
@@ -313,7 +424,7 @@ namespace lua {
             _url = url;
         }
 
-        void set(lua_context * ctx) {
+        void set(iref<lua_context> ctx) {
             _context = ctx;
             _is_path = false;
             _str.set_null();
@@ -344,10 +455,10 @@ namespace lua {
         }
 
         ///Load and run script
-        lua_script load_script()
+        iref<lua_script> load_script()
         {
             
-            iref<lua_state_wrap> state = lua_state_wrap::get_lua_state();
+            /*lua_state_wrap* state = lua_state_wrap::get_lua_state();
             if (!has_context()) {
                 _context = new lua_context(state->get_raw_state());
             }
@@ -383,7 +494,9 @@ namespace lua {
             lua_script script;
             script.set_context(_context.get());
             script.compile(script_tok, script_path);
-            script.run();
+            script.run();*/
+
+            return nullptr;
         }
 
     private:
@@ -415,7 +528,10 @@ namespace lua {
         iref<T> _base;                      //< original c++ interface object
 
                                             //T* _real() { return _base ? _base.get() : this; }
-        intergen_interface* intergen_real_interface() override final { return _base ? _base.get() : this; }
+        intergen_interface* intergen_real_interface() override final 
+        { 
+            return _base ? _base.get() : this; 
+        }
 
         T* _real() { return static_cast<T*>(intergen_real_interface()); }
     };
