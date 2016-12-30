@@ -115,7 +115,7 @@ struct token
     ///Character array constructor
     template <int N>
     token(char (&str)[N])
-        : _ptr(str), _pte(str+strlen(str))
+        : _ptr(str), _pte(str+strnlen(str,N))
     {}
 
     ///Constructor from const char*, artificially lowered precedence to allow catching literals above

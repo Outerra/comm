@@ -58,11 +58,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 #ifdef SYSTYPE_MSVC
-# ifdef _DEBUG
 #define XASSERT(e)                  if(__assert_e) __debugbreak()
-# else
-#define XASSERT(e)                  if(__assert_e) throw e
-# endif
 #else
 #include <assert.h>
 #define XASSERT                     assert(__assert_e);
