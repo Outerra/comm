@@ -155,8 +155,7 @@ struct token
         return tok;
     }
 
-    token( const token& src ) : _ptr(src._ptr), _pte(src._pte)
-    {}
+    token( const token& src ) : _ptr(src._ptr), _pte(src._pte) {}
 
     token( const token& src, uints offs, uints len )
     {
@@ -2397,7 +2396,7 @@ private:
             //an assert here means token is likely being constructed from
             // a character array, but detected as a string literal
             // please add &* before such strings to avoid the need for this fix
-            DASSERT(0);
+            //DASSERT(0);
 
             const char* p = _ptr;
             for(; p<_pte && *p; ++p);
