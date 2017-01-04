@@ -163,7 +163,7 @@ public:
     }
 
     ~global_singleton_manager() {
-        destroy();
+        //destroy();
     }
 
     static global_singleton_manager& get_global();
