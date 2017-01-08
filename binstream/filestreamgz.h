@@ -84,9 +84,11 @@ public:
         deflateInit2 for more information about the strategy parameter.) Also "a"
         can be used instead of "w" to request that the gzip stream that will be
         written be appended to the file. */
-    virtual opcd open( const zstring& name, const zstring& attr = zstring("rb") )
+    virtual opcd open( const zstring& name, const token& attr = "rb" ) override
     {
-        _gz = gzopen(name.c_str(), attr.c_str());
+        zstring zattr = attr;
+
+        _gz = gzopen(name.c_str(), zattr.c_str());
         if(!_gz)
             return ersFAILED;
 
