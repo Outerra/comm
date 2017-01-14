@@ -917,11 +917,8 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
 {
     v8::Isolate* iso = v8::Isolate::GetCurrent();
 
-    //v8::Persistent<v8::Context> context_per;
     ESCAPABLE_SCOPE(iso, handle_scope__);
     v8::Handle<v8::Context> context;
-
-    //iref<policy_intrusive_base> extref;
 
     // create interface object
     iref<$..name$_js_dispatcher> ifc = $..ns rest="::" after="::"$$..name$::$name$(new $..name$_js_dispatcher$[args]$, $name$$[/args]$);
@@ -959,7 +956,7 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
     }
 
     if(ctx)
-        *ctx = context;
+        *ctx = ESCAPE(handle_scope__, context);
 
     v8::Context::Scope context_scope(context);
     PERSISTENT(iso, ifc->_context, context);
@@ -1010,9 +1007,6 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
     if(bindname)
         context->Global()->Set(v8::string_utf8(bindname), LOCAL(iso, ifc->_object));
     
-    if(ctx)
-        ESCAPE(handle_scope__, *ctx);
-
     return ifc;
 }
 
