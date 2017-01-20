@@ -15,7 +15,7 @@
  *
  * The Initial Developer of the Original Code is
  * Brano Kemen
- * Portions created by the Initial Developer are Copyright (C) 2003
+ * Portions created by the Initial Developer are Copyright (C) 2003-2017
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -37,9 +37,10 @@
 #ifndef __COID_COMM_PACKSTREAMRLR__HEADER_FILE__
 #define __COID_COMM_PACKSTREAMRLR__HEADER_FILE__
 
-#include "comm/binstream/binstream.h"
-#include "comm/mathi.h"
-#include "comm/dynarray.h"
+#include "../binstream/binstream.h"
+#include "../mathi.h"
+#include "../dynarray.h"
+#include "../commexception.h"
 
 COID_NAMESPACE_BEGIN
 
@@ -138,10 +139,13 @@ struct rlr_coder
         bin >> maxp;
         maxplane = maxp;
 
-        for( int i=maxplane; i>MINPLANE; --i )
+        if (maxplane > planes.size())
+            throw exception() << "malformed data";
+
+        for ( int i=maxplane; i>MINPLANE; --i )
             size += planes[i-1].read_from(bin);
 
-        if(MINPLANE>0)
+        if (MINPLANE>0)
             size += planes[MINPLANE-1].read_from(bin);
 
         return size;
