@@ -139,7 +139,7 @@ struct rlr_coder
         bin >> maxp;
         maxplane = maxp;
 
-        if (maxplane > planes.size())
+        if (maxp > planes.size())
             throw exception() << "malformed data";
 
         for ( int i=maxplane; i>MINPLANE; --i )

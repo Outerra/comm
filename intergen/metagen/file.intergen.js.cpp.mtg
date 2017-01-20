@@ -826,14 +826,15 @@ $-(/if)$
     obj->SetInternalField(1, hash_ptr);
 
     if(make_weak) {
-        //v8::Persistent<v8::Object> persobj;
         PERSISTENT(iso, _object, obj);
         
 #ifdef V8_MAJOR_VERSION
         void* p = this;
         _object.SetWeak(&p, _js_release_callback, v8::WeakCallbackType::kParameter);
+        _context.SetWeak();
 #else
         _object.MakeWeak(this, _js_release_callback);
+        _context.MakeWeak(0, _js_release_callback);
 #endif
         add_refcount();
     }
@@ -1001,11 +1002,12 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
 
         PERSISTENT(iso, ifc->_script, compiled_script);
     }
-    else
+    else {
         PERSISTENT(iso, ifc->_object, ifc->create_interface_object(false));
 
-    if(bindname)
-        context->Global()->Set(v8::string_utf8(bindname), LOCAL(iso, ifc->_object));
+        if(bindname)
+            context->Global()->Set(v8::string_utf8(bindname), LOCAL(iso, ifc->_object));
+    }
     
     return ifc;
 }
