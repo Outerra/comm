@@ -365,7 +365,7 @@ namespace js {
 struct interface_context
 {
     v8::Persistent<v8::Context> _context;
-    v8::Persistent<v8::Script> _script;
+    //v8::Persistent<v8::Script> _script;
     v8::Persistent<v8::Object> _object;
 };
 

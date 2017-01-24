@@ -149,7 +149,7 @@ $-(/if)$
         RESET(_object);
         
         //tmp force releasing context
-        if(1) {
+        if(0) {
             v8::Isolate* iso = v8::Isolate::GetCurrent();
             HANDLE_SCOPE(iso, handle_scope__);
             v8::Handle<v8::Context> ctx = LOCAL(iso, _context);
@@ -164,7 +164,7 @@ $-(/if)$
             }
         }
 
-        RESET(_script);
+        //RESET(_script);
         RESET(_context);
     }
     
@@ -1014,7 +1014,7 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
 
         v8::Handle<v8::Script> compiled_script = load_script(script_tok, script.url());
 
-        PERSISTENT(iso, ifc->_script, compiled_script);
+        //PERSISTENT(iso, ifc->_script, compiled_script);
     }
     else {
         PERSISTENT(iso, ifc->_object, ifc->create_interface_object(false));
