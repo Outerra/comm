@@ -46,31 +46,11 @@ using namespace coid;
 #define NEWTYPE(iso,t)      v8::t::New()
 #define NEWTYPE2(iso,t,a)   v8::t::New(a)
 #define PERSISTENT(iso,o,n) o = o.New(iso,n)
-#define RESET(o)            o.Dispose(); o.Clear()
+#define RESET(o)            do { if(!o.IsWeak()) o.Dispose(); o.Clear(); } while(0)
 #define LOCAL(iso,o)        o
 
 #endif
 
-
-#ifdef V8_MAJOR_VERSION
-
-static void _js_release_callback(const v8::WeakCallbackData<v8::Object, void*>& data)
-{
-    void* p = data.GetParameter();
-    if(p)
-        static_cast<intergen_interface*>(p)->release_refcount();
-}
-
-#else
-
-static void _js_release_callback(v8::Persistent<v8::Value> object, void* p)
-{
-    if(p)
-        static_cast<intergen_interface*>(p)->release_refcount();
-    //object.Dispose();
-}
-
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -90,6 +70,28 @@ class thingface_js_dispatcher
     //v8::Persistent<v8::Object> _eventobj;
     bool _bound_events;
 
+#ifdef V8_MAJOR_VERSION
+    static void _js_release_callback(const v8::WeakCallbackInfo<void*>& data)
+    {
+        void* p = data.GetParameter();
+        thingface_js_dispatcher* ifc = static_cast<thingface_js_dispatcher*>(p);
+        ifc->_object.Empty();
+        ifc->release_refcount();
+    }
+
+#else
+
+    static void _js_release_callback(v8::Persistent<v8::Value> object, void* p)
+    {
+        thingface_js_dispatcher* ifc = static_cast<thingface_js_dispatcher*>(p);
+        DASSERT( ifc->_object == object );
+        ifc->_object.Clear();
+        ifc->release_refcount();
+
+        object.Dispose();
+    }
+#endif
+
 protected:
 
     EBackend intergen_backend() const override { return IFC_BACKEND_JS; }
@@ -106,10 +108,10 @@ public:
     thingface_js_dispatcher() : _bound_events(false)
     {}
 
-    thingface_js_dispatcher( v8::Handle<v8::Context> context, ifc1::ifc2::thingface* orig ) : _bound_events(false) {
+    thingface_js_dispatcher( ifc1::ifc2::thingface* orig ) : _bound_events(false) {
         _base.create(orig);
         _vtable = _base->vtable();
-        PERSISTENT(v8::Isolate::GetCurrent(), _context, context);
+        //PERSISTENT(v8::Isolate::GetCurrent(), _context, context);
 
 		_host = _base->host<policy_intrusive_base>();
     }
@@ -121,14 +123,10 @@ public:
             RESET(_events[i]);
         }
 
-        //if(!_object.IsEmpty()/* && _object->IsObject()*/) {
-        //    HANDLE_SCOPE(scope);
-        //    _object->SetInternalField(0, v8::External::New(0));
-        //}
-
         RESET(_object);
-        RESET(_script);
-        RESET(_context);
+
+        //RESET(_script);
+        //RESET(_context);
     }
     
     bool intergen_bind_capture( coid::binstring* capture, uint instid ) override
@@ -167,11 +165,11 @@ public:
 
     virtual void force_bind_script_events() {
         v8::Isolate* iso = v8::Isolate::GetCurrent();
-        v8::Context::Scope context_scope(LOCAL(iso, _context));
+        //v8::Context::Scope context_scope(LOCAL(iso, _context));
         HANDLE_SCOPE(iso, handle_scope__);
         v8::TryCatch trycatch__;
 
-        bind_events(LOCAL(iso, _context), true, v8::Local<v8::Value>());
+        bind_events(context(iso), true, v8::Local<v8::Value>());
     }
 
 private:
@@ -180,11 +178,11 @@ private:
         v8::Isolate* iso = v8::Isolate::GetCurrent();
         
         if(!_bound_events) {
-            v8::Context::Scope context_scope(LOCAL(iso, _context));
+            //v8::Context::Scope context_scope(LOCAL(iso, _context));
             HANDLE_SCOPE(iso, handle_scope__);
             v8::TryCatch trycatch__;
 
-            bind_events(LOCAL(iso, _context), false, UNDEFINED);
+            bind_events(context(iso), false, UNDEFINED);
         }
 
         return !_events[id].IsEmpty() && !LOCAL(iso, _events[id])->IsUndefined();
@@ -224,19 +222,19 @@ CBK_RET thingface_js_dispatcher::v8_hallo0( const ARGUMENTS& args )
         return (CBK_RET)::js::THROW(iso, &v8::Exception::ReferenceError, tmp);
     }
 
-    v8::Context::Scope context_scope(LOCAL(iso, ifc->_context));
+    v8::Context::Scope context_scope(ifc->context(iso));
 
     try {
     THREAD_SINGLETON(v8_streamer_context).reset();
 
     //stream the arguments in
     static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator 'int'" );
-    int a;
-    v8_streamer<int>::from_v8(args[0], a);
+    threadcached<int> a;
+    from_v8(args[0], a);
 
-    static_assert( CHECK::meta_operator_exists<coid::charstr>::value, "missing metastream operator 'coid::charstr'" );
-    coid::charstr b;
-    v8_streamer<coid::charstr>::from_v8(args[1], b);
+    static_assert( CHECK::meta_operator_exists<coid::token>::value, "missing metastream operator 'coid::token'" );
+    threadcached<coid::token> b;
+    from_v8(args[1], b);
 
     //invoke
     coid::charstr c;
@@ -246,10 +244,10 @@ CBK_RET thingface_js_dispatcher::v8_hallo0( const ARGUMENTS& args )
     //stream out
     static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'" );
     v8::Handle<v8::Object> r__ = NEWTYPE(iso, Object);
-    r__->Set(v8::symbol("$ret"), v8_streamer<int>::to_v8(_rval_));
+    r__->Set(v8::symbol("$ret"), to_v8(_rval_));
 
     static_assert( CHECK::meta_operator_exists<coid::charstr>::value, "missing metastream operator for 'coid::charstr'" );
-    r__->Set(v8::symbol("c"), v8_streamer<coid::charstr>::to_v8(c));
+    r__->Set(v8::symbol("c"), to_v8(c));
  
 #ifdef V8_MAJOR_VERSION
     args.GetReturnValue().Set(r__);
@@ -292,27 +290,27 @@ CBK_RET thingface_js_dispatcher::v8_fallo1( const ARGUMENTS& args )
         return (CBK_RET)::js::THROW(iso, &v8::Exception::ReferenceError, tmp);
     }
 
-    v8::Context::Scope context_scope(LOCAL(iso, ifc->_context));
+    v8::Context::Scope context_scope(ifc->context(iso));
 
     try {
     THREAD_SINGLETON(v8_streamer_context).reset();
 
     //stream the arguments in
     static_assert( CHECK::meta_operator_exists<bool>::value, "missing metastream operator 'bool'" );
-    bool b;
-    v8_streamer<bool>::from_v8(args[0], b);
+    threadcached<bool> b;
+    from_v8(args[0], b);
 
-    static_assert( CHECK::meta_operator_exists<coid::charstr>::value, "missing metastream operator 'coid::charstr'" );
-    coid::charstr str;
-    v8_streamer<coid::charstr>::from_v8(args[1], str);
+    static_assert( CHECK::meta_operator_exists<const char*>::value, "missing metastream operator 'const char*'" );
+    threadcached<const char*> str;
+    from_v8(args[1], str);
 
     //invoke
-    coid::charstr _rval_ = R_->fallo(b, str.c_str());
+    coid::charstr _rval_ = R_->fallo(b, str);
 
     //stream out
     v8::Handle<v8::Value> r__;
     static_assert( CHECK::meta_operator_exists<coid::charstr>::value, "missing metastream operator for 'coid::charstr'" );
-    r__ = v8_streamer<coid::charstr>::to_v8(_rval_);
+    r__ = to_v8(_rval_);
 
 #ifdef V8_MAJOR_VERSION
     args.GetReturnValue().Set(r__);
@@ -330,11 +328,11 @@ void thingface_js_dispatcher::boo( const char* key )
 {
     v8::Isolate* iso = v8::Isolate::GetCurrent();
     
-    v8::Context::Scope context_scope(LOCAL(iso, _context));
     HANDLE_SCOPE(iso, handle_scope__);
+    v8::Context::Scope context_scope__(context(iso));
     v8::TryCatch trycatch__;
 
-    bind_events(LOCAL(iso, _context), false, UNDEFINED);
+    bind_events(context(iso), false, UNDEFINED);
     auto ev__ = LOCAL(iso, _events[0]);
 
     if(_events[0].IsEmpty() || ev__->IsUndefined())
@@ -342,9 +340,9 @@ void thingface_js_dispatcher::boo( const char* key )
 
     THREAD_SINGLETON(v8_streamer_context).reset();
   
-    static_assert( CHECK::meta_operator_exists<coid::charstr>::value, "missing metastream operator for 'coid::charstr'" );
+    static_assert( CHECK::meta_operator_exists<const char*>::value, "missing metastream operator for 'const char*'" );
     v8::Handle<v8::Value> __inargs[] = {
-        v8_streamer<coid::charstr>::to_v8(key),
+        v8_streamer<const char*>::to_v8(key),
     };
 
     v8::Local<v8::Value> r__ = ev__->Call(
@@ -375,7 +373,7 @@ CBK_RET thingface_js_dispatcher::v8_evback_boo0( const ARGUMENTS& args )
     ifc1::ifc2::js::thingface_js_dispatcher* ifc = static_cast<ifc1::ifc2::js::thingface_js_dispatcher*>
         (v8::Handle<v8::External>::Cast(intobj__)->Value());
 
-    v8::Handle<v8::Context> ctx = LOCAL(iso, ifc->_context);
+    v8::Handle<v8::Context> ctx = ifc->context(iso);
     v8::Context::Scope context_scope(ctx);
     v8::TryCatch trycatch__;
 
@@ -534,7 +532,7 @@ CBK_RET thingface_js_dispatcher::v8rebind_events( const ARGUMENTS& args )
         v8::Local<v8::Value> val;
         if(args.Length() > 0)
             val = args[0];
-        ifc->bind_events(LOCAL(iso, ifc->_context), true, val);
+        ifc->bind_events(ifc->context(iso), true, val);
     }
 
     return CBK_UNDEFINED;
@@ -558,9 +556,9 @@ CBK_RET thingface_js_dispatcher::v8current_global( const ARGUMENTS& args )
         (v8::Handle<v8::External>::Cast(intobj__)->Value());
         
 #ifdef V8_MAJOR_VERSION
-    args.GetReturnValue().Set(LOCAL(iso, ifc->_context)->Global()->GetPrototype());
+    args.GetReturnValue().Set(ifc->context(iso)->Global()->GetPrototype());
 #else
-    return ESCAPE(handle_scope__, LOCAL(iso, ifc->_context)->Global()->GetPrototype());
+    return ESCAPE(handle_scope__, ifc->context(iso)->Global()->GetPrototype());
 #endif
 }
 
@@ -597,14 +595,15 @@ v8::Handle<v8::Object> thingface_js_dispatcher::create_interface_object( bool ma
     obj->SetInternalField(1, hash_ptr);
 
     if(make_weak) {
-        //v8::Persistent<v8::Object> persobj;
         PERSISTENT(iso, _object, obj);
         
 #ifdef V8_MAJOR_VERSION
         void* p = this;
-        _object.SetWeak(&p, _js_release_callback);
+        _object.SetWeak(&p, _js_release_callback, v8::WeakCallbackType::kParameter);
+        //_context.SetWeak();
 #else
         _object.MakeWeak(this, _js_release_callback);
+        //_context.MakeWeak(0, _js_release_callback);
 #endif
         add_refcount();
     }
@@ -644,6 +643,7 @@ void thingface_js_dispatcher::bind_events( v8::Handle<v8::Context> context, bool
     };
 
     HANDLE_SCOPE(iso, handle_scope__);
+    v8::Context::Scope context_scope__(context);
     v8::TryCatch trycatch__;
     v8::Local<v8::Object> global;
     bool clear = false;
@@ -682,11 +682,8 @@ iref<thingface_js_dispatcher> thingface_js_dispatcher::get( const script_handle&
 {
     v8::Isolate* iso = v8::Isolate::GetCurrent();
 
-    //v8::Persistent<v8::Context> context_per;
     ESCAPABLE_SCOPE(iso, handle_scope__);
     v8::Handle<v8::Context> context;
-
-    //iref<policy_intrusive_base> extref;
 
     // create interface object
     iref<thingface_js_dispatcher> ifc = ifc1::ifc2::thingface::get(new thingface_js_dispatcher);
@@ -724,10 +721,10 @@ iref<thingface_js_dispatcher> thingface_js_dispatcher::get( const script_handle&
     }
 
     if(ctx)
-        *ctx = context;
+        *ctx = ESCAPE(handle_scope__, context);
 
     v8::Context::Scope context_scope(context);
-    PERSISTENT(iso, ifc->_context, context);
+    //PERSISTENT(iso, ifc->_context, context);
 
     if(!extctx && !script.is_context())
     {
@@ -767,17 +764,15 @@ iref<thingface_js_dispatcher> thingface_js_dispatcher::get( const script_handle&
 
         v8::Handle<v8::Script> compiled_script = load_script(script_tok, script.url());
 
-        PERSISTENT(iso, ifc->_script, compiled_script);
+        //PERSISTENT(iso, ifc->_script, compiled_script);
     }
+    else {
+        PERSISTENT(iso, ifc->_object, ifc->create_interface_object(false));
 
-    PERSISTENT(iso, ifc->_object, ifc->create_interface_object(false));
-
-    if(bindname)
-        context->Global()->Set(v8::string_utf8(bindname), LOCAL(iso, ifc->_object));
+        if(bindname)
+            context->Global()->Set(v8::string_utf8(bindname), LOCAL(iso, ifc->_object));
+    }
     
-    if(ctx)
-        ESCAPE(handle_scope__, *ctx);
-
     return ifc;
 }
 
@@ -801,12 +796,12 @@ v8::Handle<v8::Value> thingface_js_dispatcher::v8creator_get0( const ARGUMENTS& 
     //    (v8::Handle<v8::External>::Cast(obj__->GetInternalField(0))->Value());
     
 #if V8_MAJOR_VERSION
-    v8::Local<v8::Context> ctx = ifc
-        ? v8::Local<v8::Context>::New(iso, ifc->_context)
+    v8::Local<v8::Context> ctx = ifc && !ifc->_object.IsEmpty()
+        ? ifc->context(iso)//v8::Local<v8::Context>::New(iso, ifc->_context)
         : iso->GetCurrentContext();
 #else
-    v8::Local<v8::Context> ctx = ifc
-        ? *ifc->_context
+    v8::Local<v8::Context> ctx = ifc && !ifc->_object.IsEmpty()
+        ? ifc->context(iso)//*ifc->_context
         : v8::Context::GetCurrent();
 #endif
 
@@ -817,8 +812,8 @@ v8::Handle<v8::Value> thingface_js_dispatcher::v8creator_get0( const ARGUMENTS& 
     
     //invoke
     iref<thingface_js_dispatcher> nifc = ifc1::ifc2::thingface::get(new thingface_js_dispatcher);
-    if(nifc)
-        PERSISTENT(iso, nifc->_context, ctx);//ifc->_context);
+    //if(nifc)
+    //    PERSISTENT(iso, nifc->_context, ctx);//ifc->_context);
 
     //stream out
     v8::Handle<v8::Value> r__ = nifc ? v8::Handle<v8::Value>(nifc->create_interface_object(true)) : NULLv8(iso);
@@ -846,7 +841,7 @@ v8::Handle<v8::Value> create_wrapper_thingface( ::ifc1::ifc2::thingface* orig, v
     
     if(obj.IsEmpty()) {
         // create interface object
-        ifc.create(new ifc1::ifc2::js::thingface_js_dispatcher(context, static_cast<::ifc1::ifc2::thingface*>(orig)));
+        ifc.create(new ifc1::ifc2::js::thingface_js_dispatcher(static_cast<::ifc1::ifc2::thingface*>(orig)));
 
         obj = ifc->create_interface_object(true);
     }

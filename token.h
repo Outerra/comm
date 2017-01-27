@@ -2583,6 +2583,19 @@ COID_NAMESPACE_END
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifdef COID_USER_DEFINED_LITERALS
+
+///String literal returning token (_T suffix)
+inline coid::token operator "" _T( const char* s, size_t len )
+{
+    return coid::token(s, len);
+}
+
+#endif //COID_USER_DEFINED_LITERALS
+
+
+////////////////////////////////////////////////////////////////////////////////
+
 // STL IOS interop
 
 namespace std {

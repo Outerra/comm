@@ -15,8 +15,8 @@ static_assert(intergen_interface::VERSION == 5, "interface must be rebuilt with 
 
 using namespace coid;
 
-static_assert( std::is_base_of<policy_intrusive_base, n1::n2::thing>::value, "class 'thing' must be derived from coid::policy_intrusive_base");
-static_assert( std::is_base_of<policy_intrusive_base, n1::n2::thing>::value, "class 'thing' must be derived from coid::policy_intrusive_base");
+static_assert( std::is_base_of<policy_intrusive_base, n1::n2::thing>::value, "class 'thing' must be derived from policy_intrusive_base");
+static_assert( std::is_base_of<policy_intrusive_base, n1::n2::thing>::value, "class 'thing' must be derived from policy_intrusive_base");
 
 ////////////////////////////////////////////////////////////////////////////////
 // interface thingface of class thing

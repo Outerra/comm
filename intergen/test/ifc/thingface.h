@@ -60,10 +60,13 @@ public:
 
     static const int HASHID = 1521478720;
 
-    int intergen_hash_id() const override final{ return HASHID; }
+    int intergen_hash_id() const override final { return HASHID; }
     
+    bool iface_is_derived( int hash ) const override final {
+        return hash == HASHID;
+    }
 
-    const coid::tokenhash& intergen_interface_name() const override final{
+    const coid::tokenhash& intergen_interface_name() const override final {
         static const coid::tokenhash _name = "ifc1::ifc2::thingface";
         return _name;
     }
@@ -91,7 +94,7 @@ public:
         return _cached_wrapper;
     }
     
-    void* intergen_wrapper( EBackend bck ) const override final{
+    void* intergen_wrapper( EBackend bck ) const override final {
         switch(bck) {
         case IFC_BACKEND_JS: return intergen_wrapper_cache<IFC_BACKEND_JS>();
         default: return 0;
@@ -100,7 +103,7 @@ public:
     
     EBackend intergen_backend() const override { return IFC_BACKEND_CXX; }
     
-    const coid::token& intergen_default_creator( EBackend bck ) const override final{
+    const coid::token& intergen_default_creator( EBackend bck ) const override final {
         return intergen_default_creator_static(bck);
     }
 
