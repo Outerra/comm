@@ -140,6 +140,31 @@ public:
 
 
     ///Define struct streaming scheme
+    //@param fn functor with member functions defining the struct layout
+    template<typename T, typename Fn>
+    metastream& compound_type( T&, Fn fn )
+    {
+        if(streaming()) {
+            _xthrow(movein_process_key(_binr != 0 ? READ_MODE : WRITE_MODE));
+            _rvarname.reset();
+
+            movein_struct(_binr != 0);
+            fn();
+            moveout_struct(_binr != 0);
+        }
+        else if(!meta_insert(typeid(T).name()))
+        {
+            fn();
+
+            _last_var = smap().pop();
+            _current_var = smap().last();
+
+            meta_exit();
+        }
+        return *this;
+    }
+
+    ///Define struct streaming scheme
     //@param name struct type name
     //@param fn functor with member functions defining the struct layout
     template<typename Fn>
@@ -157,8 +182,8 @@ public:
         {
             fn();
 
-            _last_var = _map.pop();
-            _current_var = _map.last();
+            _last_var = smap().pop();
+            _current_var = smap().last();
 
             meta_exit();
         }
@@ -191,8 +216,8 @@ public:
             {
                 fn();
 
-                _last_var = _map.pop();
-                _current_var = _map.last();
+                _last_var = smap().pop();
+                _current_var = smap().last();
 
                 meta_exit();
             }
@@ -1249,7 +1274,7 @@ protected:
 
     bool meta_find( const token& name )
     {
-        MetaDesc* d = _map.find(name);
+        MetaDesc* d = smap().find(name);
         if(!d)
             return false;
 
@@ -1263,10 +1288,10 @@ protected:
         if( meta_find(name) )
             return true;
 
-        MetaDesc* d = _map.create(name, type(), _cur_stream_fn);
+        MetaDesc* d = smap().create(name, type(), _cur_stream_fn);
 
         _current_var = meta_fill_parent_variable(d);
-        _map.push( _current_var );
+        smap().push( _current_var );
 
         return false;
     }
@@ -1449,10 +1474,10 @@ public:
         }
 
         DASSERT( n != 0 );
-        MetaDesc* d = _map.create_array_desc(n, _cur_stream_fn);
+        MetaDesc* d = smap().create_array_desc(n, _cur_stream_fn);
 
         _current_var = meta_fill_parent_variable(d);
-        _map.push( _current_var );
+        smap().push( _current_var );
     }
 
     ///Only for primitive types
@@ -1469,7 +1494,7 @@ public:
             return;
         }
 
-        MetaDesc* d = _map.find_or_create(type_name, t, _cur_stream_fn);
+        MetaDesc* d = smap().find_or_create(type_name, t, _cur_stream_fn);
         _last_var = meta_fill_parent_variable(d);
 
         meta_exit();
@@ -1479,8 +1504,8 @@ public:
     void meta_exit()
     {
         while( _current_var && _current_var->is_array() ) {
-            _last_var = _map.pop();
-            _current_var = _map.last();
+            _last_var = smap().pop();
+            _current_var = smap().last();
         }
     }
 
@@ -1519,15 +1544,15 @@ public:
         }
     };
 
-    const MetaDesc* get_type_info( const token& type ) const    { return _map.find(type); }
+    const MetaDesc* get_type_info( const token& type ) const    { return smap().find(type); }
 
-    void get_type_info_all( dynarray<const MetaDesc*>& dst )    { return _map.get_all_types(dst); }
+    void get_type_info_all( dynarray<const MetaDesc*>& dst )    { return smap().get_all_types(dst); }
 
 private:
 
     ////////////////////////////////////////////////////////////////////////////////
     ///Interface for holding built descriptors
-    struct StructureMap
+    struct structure_map
     {
         MetaDesc* find( const token& k ) const;
         MetaDesc* create_array_desc( uints n, MetaDesc::stream_func fn );
@@ -1552,8 +1577,8 @@ private:
         MetaDesc::Var* pop()                { MetaDesc::Var* p;  return _stack.pop(p) ? p : 0; }
         void push( MetaDesc::Var* v )       { _stack.push(v); }
 
-        StructureMap();
-        ~StructureMap();
+        structure_map();
+        ~structure_map();
 
     protected:
         MetaDesc* insert( const MetaDesc& v );
@@ -1562,9 +1587,13 @@ private:
         void* pimpl;
     };
 
+    static structure_map& smap() {
+        THREAD_LOCAL_SINGLETON_DEF(structure_map) _map;
+        return *_map;
+    }
+
     ////////////////////////////////////////////////////////////////////////////////
 
-    StructureMap _map;
     charstr _err;
 
     // description parsing:

@@ -268,7 +268,7 @@ public:
 
     T* operator -> () { return static_cast<T*>(_tkey.get()); }
 
-    T& operator * () { return static_cast<T*>(_tkey.get()); }
+    T& operator * () { return *static_cast<T*>(_tkey.get()); }
 
     T* get() { return static_cast<T*>(_tkey.get()); }
 
