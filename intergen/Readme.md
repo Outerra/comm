@@ -210,14 +210,21 @@ Host instance can detect whether a client is connected by testing the value of v
 
 ### Interface inheritance
 
-TBD:
-ifc_class_virtual(ot::base, …
-ifc_class_var(ot::derived1 : ot::base, …
+Interface can be declared virtual using `ifc_class_virtual` decoration:
 
+```c++
+    ifc_class_virtual(ot::object, "ifc/");
+    
+    //normal ifc_fn/ifc_event methods
+```
+A virtual interface doesn't have creators, and can be used to provide an abstract base for other derived interfaces. A derived interface must implement all base interface methods.
+To declare a derived interface, use the following syntax:
 
-
-
-
+```c++
+    ifc_class_var(ot::derived : ot::base, "ifc/")
+    
+    //declare all base methods + any extra ones
+```
 
 ### Additional constructs recognized by intergen
 
