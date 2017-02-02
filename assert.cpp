@@ -46,7 +46,7 @@ COID_NAMESPACE_BEGIN
 
 struct coid_assert_log
 {
-    COIDNEWDELETE("coid_assert_log");
+    COIDNEWDELETE_NOTRACK
 
     bofstream _file;
     txtstream _text;

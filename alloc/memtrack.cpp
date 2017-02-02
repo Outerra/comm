@@ -42,8 +42,16 @@
 
 #include "../binstream/filestream.h"
 
+#ifdef _DEBUG
+static const bool default_enabled = true;
+#else
+static const bool default_enabled = false;
+#endif
+
+
 namespace coid {
 
+///
 struct memtrack_imp : memtrack {
     bool operator == (size_t k) const {
         return (size_t)name == k;
@@ -58,66 +66,44 @@ struct memtrack_imp : memtrack {
     void operator delete(void* ptr)   { ::dlfree(ptr); } \
 };
 
-
+///
 struct hash_memtrack {
     typedef size_t key_type;
     uint operator()(size_t x) const { return (uint)x; }
 };
 
-typedef hash_keyset<memtrack_imp, _Select_Copy<memtrack_imp,size_t>, hash_memtrack> memtrack_hash_t;
+typedef hash_keyset<memtrack_imp, _Select_Copy<memtrack_imp,size_t>, hash_memtrack>
+    memtrack_hash_t;
 
+///
 struct memtrack_registrar
 {
     memtrack_hash_t* hash;
     comm_mutex* mux;
 
     bool enabled;
+    bool ready;
+    volatile bool running;
 
-    static int reg;
-
-    memtrack_registrar() : mux(0), hash(0), enabled(true)
+    memtrack_registrar() : mux(0), hash(0), enabled(default_enabled), ready(false)
     {
         mux = new comm_mutex(500, false);
         hash = new memtrack_hash_t;
     }
-
-    ~memtrack_registrar() {
-        reg = -2;
-        //not deleting the hash&mux, dedlocks
-    }
 };
-
-int memtrack_registrar::reg = 0;
 
 ////////////////////////////////////////////////////////////////////////////////
 static memtrack_registrar* memtrack_register()
 {
-    struct closer
-    {
-        memtrack_registrar* mtr;
-
-        closer() : mtr(0)
-        {}
-
-        ~closer() {
-            memtrack_registrar::reg = -2;
-        }
-    };
-
-    //avoid stack overflow
-    if(memtrack_registrar::reg < 0)
+    static bool reentry = false;
+    if (reentry)
         return 0;
 
-    if(!memtrack_registrar::reg)
-        memtrack_registrar::reg = -1;
- 
-    static closer _C;
-    if(!_C.mtr) {
-        _C.mtr = &PROCWIDE_SINGLETON(memtrack_registrar);//new memtrack_registrar;
-        memtrack_registrar::reg = 1;
-    }
+    reentry = true;
+    LOCAL_PROCWIDE_SINGLETON_DEF(memtrack_registrar) reg;
+    reentry = false;
 
-    return _C.mtr;
+    return reg.get();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -125,30 +111,31 @@ void memtrack_enable( bool en )
 {
     memtrack_registrar* mtr = memtrack_register();
     mtr->enabled = en;
+    mtr->running = en & mtr->ready;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 void memtrack_shutdown()
 {
-    memtrack_registrar::reg = -2;
-
-    //delete mtr;
+    memtrack_registrar* mtr = memtrack_register();
+    mtr->running = mtr->enabled = mtr->ready = false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 void memtrack_alloc( const char* name, size_t size )
 {
     memtrack_registrar* mtr = memtrack_register();
-    if(!mtr || !mtr->enabled || mtr->reg<0) return;
+    if(!mtr || !mtr->running) return;
 
     //DASSERT( name != "$GLOBAL" );
+    static bool inside = false;
+    if (inside)
+        return;     //avoid stack overlow from hashmap
 
     GUARDTHIS(*mtr->mux);
-    if(mtr->reg > 1)
-        return;     //avoid stack overlow from hashmap
-    mtr->reg = 2;
+    inside = true;
     memtrack* val = mtr->hash->find_or_insert_value_slot((size_t)name);
-    mtr->reg = 1;
+    inside = false;
 
     val->name = name;
 
@@ -162,7 +149,7 @@ void memtrack_alloc( const char* name, size_t size )
 void memtrack_free( const char* name, size_t size )
 {
     memtrack_registrar* mtr = memtrack_register();
-    if(!mtr || !mtr->enabled || mtr->reg<0) return;
+    if (!mtr || !mtr->running) return;
 
     GUARDTHIS(*mtr->mux);
     memtrack_imp* val = const_cast<memtrack_imp*>(mtr->hash->find_value((size_t)name));
@@ -177,7 +164,7 @@ void memtrack_free( const char* name, size_t size )
 uint memtrack_list( memtrack* dst, uint nmax ) 
 {
     memtrack_registrar* mtr = memtrack_register();
-    if(!mtr || mtr->reg<0)
+    if(!mtr || !mtr->ready)
         return 0;
 
     GUARDTHIS(*mtr->mux);
@@ -202,7 +189,7 @@ uint memtrack_list( memtrack* dst, uint nmax )
 void memtrack_dump( const char* file, bool diff )
 {
     memtrack_registrar* mtr = memtrack_register();
-    if(!mtr || mtr->reg<0)
+    if(!mtr || !mtr->ready)
         return;
 
     GUARDTHIS(*mtr->mux);
