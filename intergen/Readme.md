@@ -226,6 +226,15 @@ To declare a derived interface, use the following syntax:
     //declare all base methods + any extra ones
 ```
 
+
+### Asynchronous access, multithreading
+
+WIP:
+Client context running in different thread, process or remotely
+Methods with no out-type arguments can be invoked asynchronously (blocking/non-blocking versions?)
+Methods marked thread-safe can be invoked in non-blocking mode from contexts in separate threads
+
+
 ### Additional constructs recognized by intergen
 
 The intergen parser recognizes the following constructs that help in controlling what should be included in the generated interface header files:
