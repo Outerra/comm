@@ -323,3 +323,9 @@ Sometimes it’s not desirable to expose all interface creator methods to Javasc
 ```
 
 
+## Using Intergen with Visual Studio
+
+- Right click on the project -> build customizations, add intergen props file (comm/intergen/intergen.props) and enable it
+- Add a header file file into the project (can use hpp or hxx to differentiate from other headers), and click properties, and set the item type to intergen interface generator
+- From that moment whenever the header file is modified, intergen runs and produces interface files, if it finds any interface declarations within the header
+- Add the intergen generated *.intergen.cpp files into the project. If you add the *.js.intergen.cpp" file as well for Javascript interface support, you'll need to include v8.lib into link dependencies (or any other lib/dll that includes it)
