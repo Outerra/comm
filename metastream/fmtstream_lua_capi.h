@@ -226,7 +226,7 @@ public:
                 DASSERT(0);
             }
             else if (t.type == type::T_CHAR) {
-                uint len;
+                uints len;
                 const char * str = lua_tolstring(_state, -1, &len);
                 if (str == 0)
                     e = ersSYNTAX_ERROR "expected string";
@@ -513,7 +513,7 @@ public:
         //if(!_top->value->IsString())
         //    return ersSYNTAX_ERROR "expected string";
 
-        uint len = 0;
+        uints len = 0;
         const char * str = lua_tolstring(_state, -1, &len);
         token tok(str, len);
 
@@ -546,6 +546,13 @@ public:
     }
 };
 
+template<class T>
+class lua_streamer {
+public:
+    static void to_lua(const T& val);
+    static void from_lua(T& val);
+};
+
 struct lua_streamer_context {
     metastream meta;
     fmtstream_lua_capi fmt_lua;
@@ -563,5 +570,27 @@ struct lua_streamer_context {
         fmt_lua.set_lua_state(L);
     }
 };
+
+template<class T>
+inline void lua_streamer<T>::to_lua(const T& v) {
+    auto& streamer = THREAD_SINGLETON(lua_streamer_context);
+    streamer.meta.xstream_in(res);
+}
+
+template<class T>
+inline void lua_streamer<T>::from_lua(T& v) {
+    auto& streamer = THREAD_SINGLETON(lua_streamer_context);
+    streamer.meta.xstream_out(res);
+}
+
+template<class T>
+inline void from_lua (threadcached<T>& tc) {
+    lua_streamer<typename threadcached<T>::storage_type>::from_lua(src, *tc);
+}
+
+template<class T> 
+inline void to_lua(const T& v) {
+    lua_streamer<T>::to_lua(v);
+}
 
 COID_NAMESPACE_END
