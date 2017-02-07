@@ -15,7 +15,7 @@
  *
  * The Initial Developer of the Original Code is
  * Robert Strycek.
- * Portions created by the Initial Developer are Copyright (C) 2003-2007
+ * Portions created by the Initial Developer are Copyright (C) 2003-2017
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -1772,6 +1772,12 @@ private:
             return k;
         }
 
+        void* insert_void_padded(uints size)
+        {
+            pad();
+            return buf->add(size);
+        }
+
         void* insert_void_unpadded( uints size )
         {
             return buf->add(size);
@@ -2583,12 +2589,18 @@ protected:
 
                 uints tsize = t.get_size();
 
-                if(read && _cachevar)
-                    e = _fmtstreamrd->read( _current->alloc_cache(tsize), t );
-                else if(read)
+                if (read && !_cachevar)
                     _current->read_cache(p, tsize);
-                else
-                    ::memcpy( _current->alloc_cache(tsize), p, tsize );
+                else {
+                    void* dst = !_curvar.var->is_array_element()
+                        ? _current->alloc_cache(tsize)
+                        : _current->insert_void_padded(tsize);
+
+                    if (read && _cachevar)
+                        e = _fmtstreamrd->read(dst, t);
+                    else
+                        ::memcpy(dst, p, tsize);
+                }
             }
         }
         else

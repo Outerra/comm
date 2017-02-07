@@ -51,6 +51,33 @@ static const bool default_enabled = false;
 
 namespace coid {
 
+
+static void name_filter( charstr& dst, token name )
+{
+    //remove struct, class
+    static const token _struct = "struct";
+    static const token _class = "class";
+    static const token _array = "[0]";
+
+    do {
+        token x = name.cut_left(' ');
+
+        if (x.ends_with(_struct))
+            x.shift_end(-int(_struct.len()));
+        else if (x.ends_with(_class))
+            x.shift_end(-int(_class.len()));
+        else if (x == _array) {
+            dst.append("[]");
+            x.set_empty();
+        }
+        else if (name)
+            x.shift_end(1); //give space back
+
+        dst.append(x);
+    }
+    while(name);
+}
+
 ///
 struct memtrack_imp : memtrack {
     bool operator == (size_t k) const {
@@ -85,10 +112,13 @@ struct memtrack_registrar
     bool ready;
     volatile bool running;
 
-    memtrack_registrar() : mux(0), hash(0), enabled(default_enabled), ready(false)
+    memtrack_registrar() : mux(0), hash(0), enabled(default_enabled),
+        ready(false), running(false)
     {
         mux = new comm_mutex(500, false);
         hash = new memtrack_hash_t;
+
+        ready = true;
     }
 };
 
@@ -222,7 +252,9 @@ void memtrack_dump( const char* file, bool diff )
 
         buf.append_num_thousands(size, ',', 12);
         buf.append_num(10, count, 9);
-        buf << '\t' << p.name << '\n';
+        buf << '\t';
+        name_filter(buf, p.name);
+        buf << '\n';
 
         if(buf.len() > 7900) {
             bof.xwrite_token_raw(buf);

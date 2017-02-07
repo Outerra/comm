@@ -86,7 +86,7 @@ int main( int argc, char* argv[] )
     //coid::test();
     //test_malloc();
 
-    //metastream_test3();
+    metastream_test3();
     //metastream_test2();
 	//float_test();
 
