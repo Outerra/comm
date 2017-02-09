@@ -16,7 +16,7 @@ using namespace coid;
 $-(if irefargs?)$
 // forward declarations for used iref arguments
 $-[irefargs]$
-iref<::lua::registry_handle> lua_$fulltype$_create_wrapper(const $type$&, iref<::lua::lua_context>);
+iref<::lua::registry_handle> lua_$fulltype$_create_wrapper(const $type$&, iref<::lua::registry_handle>);
 $-[/irefargs]$
 $-(/if)$
 
