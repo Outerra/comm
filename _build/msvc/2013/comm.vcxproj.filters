@@ -398,5 +398,8 @@
     <ClInclude Include="..\..\..\log\logwriter.h">
       <Filter>log</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\intergen\ifc.lua.h">
+      <Filter>intergen</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
