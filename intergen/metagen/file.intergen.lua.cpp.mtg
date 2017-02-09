@@ -40,7 +40,13 @@ class $name$_lua_dispatcher
     : public ::lua::interface_wrapper_base<$ns rest="::"$::$name$>
 {
 $-(if event?)$
-    lua_CFunction _events[$event.@size$];
+    iref<::lua::weak_registry_handle> _events[$event.@size$];
+    
+    void init_event_registry() {
+        for (int i = 0; i < $event.@size$; i++) {
+            _events[i] = new ::lua::weak_registry_handle;
+        }
+    }
     bool _bound_events;
 
 $-(/if)$
@@ -56,13 +62,17 @@ public:
 
     iref<::lua::registry_handle> create_interface_object(bool make_weak);
 $-(if event?)$
-    void bind_events( bool force, iref<lua::registry_handle> ref );
+    void bind_events( bool force, iref<::lua::registry_handle> ref );
 $-(/if)$
 
     COIDNEWDELETE("$[ns]$$@value$::$[/ns]$$name$_lua_dispatcher");
 
     $name$_lua_dispatcher() $-(if event?)$ : _bound_events(false)$(/if)$
-    {}
+    {
+$-(if event?)$
+        init_event_registry();
+$(/if)-$
+    }
 
     $name$_lua_dispatcher(iref<::lua::registry_handle> context, $ns rest="::" after="::"$$name$* orig ) $(if event?)$: _bound_events(false) $(/if)${
         _base.create(orig);
@@ -73,6 +83,10 @@ $-(/if)$
         _context->set_ref();
 
         _host = _base->host<policy_intrusive_base>();
+
+$-(if event?)$
+        init_event_registry();
+$(/if)-$
     }
 
     ~$name$_lua_dispatcher() {
@@ -90,8 +104,8 @@ $-(/if)$
     }
 
     // --- registrar ---
-
-    static int register_to_lua_$name$(lua_State * L);
+    /// expects context table on the top of the stack
+    static int register_to_context_$name$(lua_State * L);
 
     // --- creators ---
 
@@ -169,7 +183,7 @@ __declspec(noinline) int $..name$_lua_dispatcher::lua_$name$$@index$_exc( lua_St
             throw coid::exception(tmp);
         }
 
-        if (!lua_istable(L, 1) || lua_hasfield(L, 1, ::lua::_lua_cthis_key)) {
+        if (!lua_istable(L, 1) || !lua_hasfield(L, 1, ::lua::_lua_cthis_key)) {
             coid::charstr tmp = "Caller is not valid object in ";
             tmp << "$..name$.$name$";
             throw coid::exception(tmp);
@@ -327,11 +341,11 @@ $return.type$ $..name$_lua_dispatcher::$name$($[args rest="," after=" "]$ $type$
 $-(if internal?)$
     throw coid::exception("method not marked for scripting");
 $-(elif)$
-    bind_events(false, nullptr);
+    bind_events(false, ::lua::registry_handle::get_empty());
     lua_State * L = _context->get_state();
-    lua_CFunction ev__ = _events[$@index$];
+    iref<::lua::weak_registry_handle> ev__ = _events[$@index$];
 
-    if(ev__ == nullptr)
+    if(ev__->is_empty())
   $-(if default_event_body?)$ {
         $default_event_body$; $-(if return.type?="void")$
         return;
@@ -345,8 +359,8 @@ $-(elif)$
 
     THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
   
-  lua_pushcfunction(L,ev__);
-  _object->get_ref();
+    ev__->get_ref();
+    _object->get_ref();
 
 $-[args inarg? iref.false?]$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'" );
@@ -363,14 +377,12 @@ $-[/args]$
 
 $-(/if)$
 $-(if return.type != "void")$
-    const uint nres = 0; 
+    const uint nres = 1; 
 $-(elif)$
-    const uint nres = 1;
+    const uint nres = 0;
 $(/if)-$
 
-    
-    int res = lua_pcall(L,$ninargs$,nres,0);
-    
+    int res = lua_pcall(L,$ninargs$ + 1,nres,0);
 $-[args inarg?]$$(if volatile?)$
     // TODO: some volatile cleanup was here
 $(/if)$
@@ -554,7 +566,7 @@ $-(if event?)$
         if(!lua_istable(L,-1) || !lua_hasfield(L, -1, ::lua::_lua_cthis_key))
             return 0;
 
-        lua_getfield(L, -1, _lua_cthis_key);
+        lua_getfield(L, -1, ::lua::_lua_cthis_key);
         if(!lua_isuserdata(L,-1))
             return 0;
 
@@ -594,12 +606,12 @@ int $name$_lua_dispatcher::luarebind_events(lua_State * L) {
 iref<::lua::registry_handle> $name$_lua_dispatcher::create_interface_object( bool make_weak )
 {
     lua_State * L = _context->get_state();
-    static bool _is_registered = false;
-    if(!_is_registered)
+    _context->get_ref();
+    if (!lua_hasfield(L, -1, lua_class_name()))
     {
-        register_to_lua_$name$(L);
-        _is_registered = true;
+        register_to_context_$name$(L);
     }
+    lua_pop(L, 1);
 
     lua_createtable(L, 0, 3);
     lua_pushvalue(L, -1);
@@ -612,11 +624,16 @@ iref<::lua::registry_handle> $name$_lua_dispatcher::create_interface_object( boo
     lua_pushnumber(L, ints($hash$));
     lua_setfield(L, -2, ::lua::_lua_class_hash_key);
 
+    _context->get_ref();
+    lua_getfield(L, -1, lua_class_name());
+    lua_setfield(L, -3, ::lua::_lua_parent_index_key);
+    lua_pop(L, 1);
+
     iref<::lua::registry_handle> obj;
 
     if(make_weak) {
         obj = new ::lua::weak_registry_handle(L);
-        lua_getfield(L, -2, ::lua::_lua_cthis_key);
+        lua_getfield(L, -1, ::lua::_lua_cthis_key);
         lua_rawgeti(L, LUA_REGISTRYINDEX, ::lua::LUA_WEAK_IFC_MT_INDEX);
         lua_setmetatable(L,-2);
         lua_pop(L, 1);
@@ -666,22 +683,22 @@ $-[/event]$
 
     for (int i = 0; i<$event.@size$; ++i)
     {
-        _events[i] = nullptr;
+        _events[i]->release();
 
         if (clear) {
             continue;
         }
-
+        _events[i]->set_state(L);
         lua_getfield(L, -1, names[i]);
-        if (!lua_iscfunction(L, -1)) {
+        if (!lua_isfunction(L, -1)) {
             lua_pop(L, 1);
             continue;
         }
 
-        lua_CFunction fun = lua_tocfunction(L, -1);
-        lua_pop(L, 1);
-        _events[i] = fun;
+        _events[i]->set_ref();
     }
+
+    lua_pop(L, 1);
 
     _bound_events = true;
 }
@@ -689,27 +706,26 @@ $-[/event]$
 $-(/if)$
 
 // --- registrar ---
-int $name$_lua_dispatcher::register_to_lua_$name$(lua_State * L) {
-    lua_getglobal(L, ::lua::_lua_class_register_key);
+int $name$_lua_dispatcher::register_to_context_$name$(lua_State * L) {
+    //lua_getglobal(L, ::lua::_lua_class_register_key);
 
-    if (lua_isnil(L, -1)) {
-        throw coid::exception() << "Given lua_State is not valid!(use lua_state_wrapper to create valid lua_State)";
-    }
+   // if (lua_isnil(L, -1)) {
+   //     throw coid::exception() << "Given lua_State is not valid!(use lua_state_wrapper to create valid lua_State)";
+  //  }
 
     //const uint methods_count = $-[method !static ? !destroy ? !internal ? !operator? after="$@order$"]$$[/method]$ 
 
-    lua_create_class_table(L, 0, 0);
+    lua_createtable(L, 0, 0);
 $-[method !static? !destroy ? !internal? !operator?]$
     lua_pushcfunction(L, &$..name$_lua_dispatcher::lua_$name$$@index$);
     lua_setfield(L, -2, "$name$");
 $[/method]$
 $-[event]$
-    lua_pushnil(L);
+    lua_pushtoken(L,"empty_event");
     lua_setfield(L, -2, "$name$");
 $[/event]-$
 
     lua_setfield(L, -2, lua_class_name());
-    lua_pop(L, 1);
     
     return 0;
 }
@@ -726,7 +742,7 @@ iref<$..name$_lua_dispatcher> $..name$_lua_dispatcher::$name$(lua_State * L, con
     if(!ifc)
         throw coid::exception() << "failed to create interface object";
 
-    iref<::lua::lua_context> context = nullptr;
+    iref<::lua::registry_handle> context = nullptr;
 
     if(script.has_context()){
         context = script.context();
@@ -767,6 +783,9 @@ iref<$..name$_lua_dispatcher> $..name$_lua_dispatcher::$name$(lua_State * L, con
         ::lua::load_script(context, script_tok, script.url());
     }
     
+    ifc->_context = new ::lua::weak_registry_handle(L);
+    context->get_ref();
+    ifc->_context->set_ref();
     ifc->_object = ifc->create_interface_object(false);
 
     if (bindname) {
@@ -901,8 +920,8 @@ $-(/if)$
 static void register_binders_for_$name$( bool on )
 {
     interface_register::register_interface_creator(
-        "$..ns rest="::" after="::"$lua::$name$.register_class",
-        on ? (void*)&$name$_lua_dispatcher::register_to_lua_$name$
+        "lua::register_class.$ns rest="_" after="_"$$name$",
+        on ? (void*)&$name$_lua_dispatcher::register_to_context_$name$
         : nullptr);
 
 $-[method static?]$
@@ -938,7 +957,7 @@ $-[/ns]$
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Create LUA wrapper from an existing interface object
-iref<::lua::registry_handle> lua_$ns rest="_" after="_"-$ $name$_create_wrapper( const iref<$ns rest="::" after="::"$$name$>& orig, iref<::lua::lua_context> context )
+iref<::lua::registry_handle> lua_$ns rest="_" after="_"-$ $name$_create_wrapper( const iref<$ns rest="::" after="::"$$name$>& orig, iref<::lua::registry_handle> context )
 {
 $-(if !virtual?)$
     return $ns rest="::" after="::"$lua::create_wrapper_$name$(orig.get(), context);
