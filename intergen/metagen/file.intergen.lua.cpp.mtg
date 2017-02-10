@@ -237,15 +237,15 @@ $-[args inarg? !nojs?]$
         from_lua($name$);
         $-(/if)$
     $-(/if)$
-$[/args]-$
+$-[/args]$
 
 //out params
 $-[args outarg? !inarg?]$
         $basetype$ $name$;
-$[/args]-$
+$-[/args]$
 
 // invoke
-$(if return.type!="void")$$return.type$ _rval_ = $(/if)$R_->$name$($[args rest=", "]$ $-(if ptr? outarg?)$&$-(elif ptr? defval.empty? !specptr?)$&$(/if)$ $-(if nojs?)$$defval$$(elif)$$name$$(/if)$$[/args]$);
+        $(if return.type!="void")$$return.type$ _rval_ = $(/if)$R_->$name$($[args rest=", "]$ $-(if ptr? outarg?)$&$-(elif ptr? defval.empty? !specptr?)$&$(/if)$ $-(if nojs?)$$defval$$(elif)$$name$$(/if)$$[/args]$);
     
 //stream out
 
@@ -265,9 +265,9 @@ $-(if return.type!="void")$
         $-(if return.iref.false?)$
             $-(if return.ptr.true?)$
         static_assert(CHECK::meta_operator_exists<$return.basetype$>::value, "missing metastream operator for '$return.basetype$'");
-        if (_rval_)
+                if (_rval_)
             to_lua(*_rval_);
-            $-(elif)$
+                $-(elif)$
         static_assert(CHECK::meta_operator_exists<$return.basetype$>::value, "missing metastream operator for '$return.basetype$'");
         to_lua(_rval_);
             $-(/if)$
@@ -281,9 +281,8 @@ $-(if return.type!="void")$
         static_assert(CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'");
         to_lua($name$);
         $-(elif)$
-        lua_$fulltype$_create_wrapper($name$, icf->context)->get_ref();
+        lua_$fulltype$_create_wrapper($name$, ifc->_context)->get_ref();
         $-(/if)$
-        
         lua_setfield(L, -2, "$name$");
 
     $[/args]-$
@@ -293,7 +292,7 @@ $-(elif noutargs?="1")$
         static_assert(CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'");
         to_lua($name$);
         $-(elif)$
-        lua_$fulltype$_create_wrapper($name$, icf->context)->get_ref();
+        lua_$fulltype$_create_wrapper($name$, ifc->_context)->get_ref();
         $-(/if)$
     $[/args]-$
 $-(elif noutargs?)$
@@ -302,9 +301,9 @@ $-(elif noutargs?)$
     $-[args outarg?]$
         $-(if iref.false?)$
         static_assert(CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'");
-        to_lua($name$)
+        to_lua($name$);
         $-(elif)$
-        lua_$fulltype$_create_wrapper($name$, ifc->context)->get_ref();
+        lua_$fulltype$_create_wrapper($name$, ifc->_context)->get_ref();
         $ - (/ if)$
         lua_setfield(L, -2, "$name$");
     $[/args]-$
@@ -365,13 +364,12 @@ $-(elif)$
 $-[args inarg? iref.false?]$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'" );
 $-[/args]$
-$-(if ninargs?)$
-    
+$(if ninargs?)$
 $-[args inarg?]$
     $-(if iref.true?)$
-        lua_$fulltype$_create_wrapper($name$, _context)->get_ref();
+    lua_$fulltype$_create_wrapper($name$, _context)->get_ref();
 $-(elif)$
-        lua_streamer<$basetype$>::to_lua($name$); // TODO: volatile streamers
+    lua_streamer<$basetype$>::to_lua($name$); // TODO: volatile streamers
     $-(/if)$
 $-[/args]$
 
@@ -812,7 +810,7 @@ int $..name$_lua_dispatcher::luacreator_$name$$@order$(lua_State * L, interface_
     }
 
     //stream the arguments in
-        THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
+    THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
 $-[args inarg? !nojs?]$
     lua_pushvalue(L, $@order$ + 2);
