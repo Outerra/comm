@@ -2279,7 +2279,7 @@ inline opcd binstream::read_key(charstr& key, int kmember, const token& expected
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Hasher for charstr
-template<bool INSENSITIVE> struct hash<charstr, INSENSITIVE>
+template<bool INSENSITIVE> struct hasher<charstr, INSENSITIVE>
 {
     typedef charstr key_type;
 

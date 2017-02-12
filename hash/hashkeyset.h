@@ -106,7 +106,7 @@ struct _Select_DeRef
 template <
     class VAL,
     class EXTRACTKEY,
-    class HASHFUNC=hash<typename type_base<typename EXTRACTKEY::ret_type>::type>,
+    class HASHFUNC=hasher<typename type_base<typename EXTRACTKEY::ret_type>::type>,
     class EQFUNC=equal_to<typename type_base<typename EXTRACTKEY::ret_type>::type, typename HASHFUNC::key_type>,
     template<class> class ALLOC=AllocStd
     >
@@ -315,7 +315,7 @@ public:
 template <
     class VAL,
     class EXTRACTKEY,
-    class HASHFUNC=hash<typename type_base<typename EXTRACTKEY::ret_type>::type>,
+    class HASHFUNC=hasher<typename type_base<typename EXTRACTKEY::ret_type>::type>,
     class EQFUNC=equal_to<typename type_base<typename EXTRACTKEY::ret_type>::type, typename HASHFUNC::key_type>,
     template<class> class ALLOC=AllocStd
     >

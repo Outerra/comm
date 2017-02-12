@@ -57,14 +57,17 @@ struct equal_to	: public std::binary_function<KEYSTORE, KEYLOOKUP, bool>
     }
 };
 
+//template<class KEY>
+//uint hash(const KEY& key);
 
 ////////////////////////////////////////////////////////////////////////////////
-template<class KEY, bool INSENSITIVE=false> struct hash
+template<class KEY, bool INSENSITIVE=false> struct hasher
 {
     typedef KEY     key_type;
 
-    uint operator()(const KEY& k) const {
-        return KEY::hash(k);
+    template<class FKEY>
+    uint operator()(const FKEY& k) const {
+        return hash(k);
     }
 };
 
@@ -111,8 +114,13 @@ inline uint __coid_hash_string_insensitive( const char* s, uints n, uint seed = 
     return seed;
 }
 
+inline uint __coid_hash_string( char c, uint seed = 2166136261u )
+{
+    return (seed ^ c)*16777619u;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
-template<bool INSENSITIVE> struct hash<char*, INSENSITIVE>
+template<bool INSENSITIVE> struct hasher<char*, INSENSITIVE>
 {
     typedef char* key_type;
     uint operator()(const char* s) const {
@@ -122,7 +130,7 @@ template<bool INSENSITIVE> struct hash<char*, INSENSITIVE>
     }
 };
 
-template<bool INSENSITIVE> struct hash<const char*, INSENSITIVE>
+template<bool INSENSITIVE> struct hasher<const char*, INSENSITIVE>
 {
     typedef const char* key_type;
     uint operator()(const char* s) const {
@@ -132,7 +140,7 @@ template<bool INSENSITIVE> struct hash<const char*, INSENSITIVE>
     }
 };
 
-#define DIRECT_HASH_FUNC(TYPE) template<> struct hash<TYPE> {\
+#define DIRECT_HASH_FUNC(TYPE) template<> struct hasher<TYPE> {\
     typedef TYPE key_type;\
     uint operator()(TYPE x) const { return uint(16777619u * (uints)x); } }
 

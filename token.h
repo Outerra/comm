@@ -177,6 +177,14 @@ struct token
         std::swap(_pte, other._pte);
     }
 
+    friend uint hash( const token& tok ) {
+        return tok.hash();
+    }
+
+    uint hash() const {
+        return __coid_hash_string(ptr(), len());
+    }
+
     ///Rebase token pointing into one string to point into the same region in another string
     token rebase(const charstr& from, const charstr& to) const;
 
@@ -2421,13 +2429,12 @@ inline token substring::get() const
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-template<> struct hash<token>
+template<> struct hasher<token>
 {
     typedef token key_type;
 
-    size_t operator() (const token& tok) const
-    {
-        return __coid_hash_string( tok.ptr(), tok.len() );
+    size_t operator() (const token& tok) const {
+        return tok.hash();
     }
 };
 

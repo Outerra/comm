@@ -58,7 +58,7 @@ COID_NAMESPACE_BEGIN
 template <
     class KEY,
     class VAL,
-    class HASHFUNC=hash<KEY>,
+    class HASHFUNC=hasher<KEY>,
     class EQFUNC=equal_to<KEY,typename HASHFUNC::key_type>,
     template<class> class ALLOC=AllocStd
     >
@@ -216,7 +216,7 @@ public:
 template <
     class KEY,
     class VAL,
-    class HASHFUNC=hash<KEY>,
+    class HASHFUNC=hasher<KEY>,
     class EQFUNC=equal_to<KEY,typename HASHFUNC::key_type>,
     template<class> class ALLOC=AllocStd
     >

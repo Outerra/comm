@@ -34,7 +34,7 @@ template<
     class T,
     class KEY,
     class EXTRACTOR = extractor<T, KEY>,
-    class HASHFUNC = hash<KEY>,
+    class HASHFUNC = hasher<KEY>,
     bool MULTIKEY=false,
     bool POOL=false,
     bool TRACKING=false,
@@ -72,7 +72,8 @@ public:
     }
 
     //@return object with given key or null if no matching object was found
-    const T* find_value( const KEY& key ) const
+    template<class FKEY = KEY>
+    const T* find_value( const FKEY& key ) const
     {
         uint b = bucket(key);
         uint id = find_object(b, key);
@@ -85,15 +86,17 @@ public:
     //@param isnew [out] set to true if the item was newly created
     //@return found object or pointer to a newly created one
     //@note if isnew is true, caller has to set the object pointed to by the return value
-    T* find_or_insert_value_slot( const KEY& key, bool* isnew=0 )
+    template<class FKEY = KEY>
+    T* find_or_insert_value_slot( const FKEY& key, bool* isnew=0 )
     {
         uint id;
-        if(find_or_insert_value_slot_uninit_(key, &id)) {
-            if(isnew) *isnew = true;
-            return new(base::get_mutable_item(id)) T;
-        }
-        
-        return base::get_mutable_item(id);
+        bool isnew_ = find_or_insert_value_slot_uninit_(key, &id);
+        if(isnew)
+            *isnew = isnew_;
+
+        return isnew_
+            ? new(base::get_mutable_item(id)) T
+            : base::get_mutable_item(id);
     }
 
     ///Find item by key or insert a new uninitialized slot for item with such key
@@ -101,7 +104,8 @@ public:
     //@param isnew [out] set to true if the item was newly created
     //@return found object or pointer to a newly created one
     //@note if isnew is true, caller has to in-place construct the object pointed to by the return value
-    T* find_or_insert_value_slot_uninit( const KEY& key, bool* isnew=0 )
+    template<class FKEY = KEY>
+    T* find_or_insert_value_slot_uninit( const FKEY& key, bool* isnew=0 )
     {
         uint id;
         bool isnew_ = find_or_insert_value_slot_uninit_(key, &id);
@@ -184,7 +188,8 @@ public:
 
     ///Delete all items that match the key
     //@return number of deleted items
-    uints erase( const KEY& key )
+    template<class FKEY = KEY>
+    uints erase( const FKEY& key )
     {
         uint b = bucket(key);
         uint c = 0;
@@ -222,10 +227,14 @@ public:
 
 protected:
 
-    uint bucket( const KEY& k ) const       { return uint(_HASHFUNC(k) % _buckets.size()); }
+    template<class FKEY = KEY>
+    uint bucket( const FKEY& k ) const {
+        return uint(_HASHFUNC(k) % _buckets.size());
+    }
 
     ///Find first node that matches the key
-    uint find_object( uint bucket, const KEY& k ) const
+    template<class FKEY = KEY>
+    uint find_object( uint bucket, const FKEY& k ) const
     {
         uint n = _buckets[bucket];
         while(n != UMAX32)
@@ -238,7 +247,8 @@ protected:
         return n;
     }
 
-    uint* find_object_entry( uint bucket, const KEY& k )
+    template<class FKEY = KEY>
+    uint* find_object_entry( uint bucket, const FKEY& k )
     {
         uint* n = &_buckets[bucket];
         while(*n != UMAX32)
@@ -251,7 +261,8 @@ protected:
         return n;
     }
 
-    bool find_or_insert_value_slot_uninit_( const KEY& key, uint* pid )
+    template<class FKEY = KEY>
+    bool find_or_insert_value_slot_uninit_( const FKEY& key, uint* pid )
     {
         uint b = bucket(key);
         uint id = find_object(b, key);
@@ -271,7 +282,8 @@ protected:
     }
 
     ///Find uint* where the new id should be written
-    uint* get_object_entry( const KEY& key )
+    template<class FKEY = KEY>
+    uint* get_object_entry( const FKEY& key )
     {
         uint b = bucket(key);
         uint* fid = find_object_entry(b, key);
@@ -282,7 +294,8 @@ protected:
             : (MULTIKEY ? fid : 0);
     }
 
-    T* init_value_slot_( uint id, const KEY& key )
+    template<class FKEY = KEY>
+    T* init_value_slot_( uint id, const FKEY& key )
     {
         uint* fid = get_object_entry(key);
         if(!fid)
@@ -302,7 +315,8 @@ protected:
         return init_value_slot_(id, key);
     }
 
-    T* insert_value_slot_uninit_( const KEY& key, bool* isnew )
+    template<class FKEY = KEY>
+    T* insert_value_slot_uninit_( const FKEY& key, bool* isnew )
     {
         uint* fid = get_object_entry(key);
         if(!fid)
