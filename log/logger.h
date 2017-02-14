@@ -74,13 +74,14 @@ class policy_msg;
 ref<logmsg> canlog( ELogType type, const tokenhash& hash = tokenhash(), const void* inst = 0 );
 
 
-#define log_debug(msg)   do{ ref<coid::logmsg> q = coid::canlog(coid::ELogType::Debug); if(q) {q->str() << msg; }} while(0)
-#define log_perf(msg)    do{ ref<coid::logmsg> q = coid::canlog(coid::ELogType::Perf); if(q) {q->str() << msg; }} while(0)
-#define log_info(msg)    do{ ref<coid::logmsg> q = coid::canlog(coid::ELogType::Info); if(q) {q->str() << msg; }} while(0)
-#define log_msg(msg)     do{ ref<coid::logmsg> q = coid::canlog(coid::ELogType::Highlight); if(q) {q->str() << msg; }} while(0)
-#define log_warn(msg)    do{ ref<coid::logmsg> q = coid::canlog(coid::ELogType::Warning); if(q) {q->str() << msg; }} while(0)
-#define log_warning(msg) do{ ref<coid::logmsg> q = coid::canlog(coid::ELogType::Warning); if(q) {q->str() << msg; }} while(0)
-#define log_error(msg)   do{ ref<coid::logmsg> q = coid::canlog(coid::ELogType::Error); if(q) {q->str() << msg; }} while(0)
+#define coidlog_none(src, msg)    do{ ref<coid::logmsg> q = coid::canlog(coid::ELogType::None, src ); if(q) {q->str() << msg; }} while(0)
+#define coidlog_debug(src, msg)   do{ ref<coid::logmsg> q = coid::canlog(coid::ELogType::Debug, src ); if(q) {q->str() << msg; }} while(0)
+#define coidlog_perf(src, msg)    do{ ref<coid::logmsg> q = coid::canlog(coid::ELogType::Perf, src ); if(q) {q->str() << msg; }} while(0)
+#define coidlog_info(src, msg)    do{ ref<coid::logmsg> q = coid::canlog(coid::ELogType::Info, src ); if(q) {q->str() << msg; }} while(0)
+#define coidlog_msg(src, msg)     do{ ref<coid::logmsg> q = coid::canlog(coid::ELogType::Highlight, src ); if(q) {q->str() << msg; }} while(0)
+#define coidlog_warn(src, msg)    do{ ref<coid::logmsg> q = coid::canlog(coid::ELogType::Warning, src ); if(q) {q->str() << msg; }} while(0)
+#define coidlog_warning(src, msg) do{ ref<coid::logmsg> q = coid::canlog(coid::ELogType::Warning, src ); if(q) {q->str() << msg; }} while(0)
+#define coidlog_error(src, msg)   do{ ref<coid::logmsg> q = coid::canlog(coid::ELogType::Error, src ); if(q) {q->str() << msg; }} while(0)
 
 
 #ifdef COID_VARIADIC_TEMPLATES
