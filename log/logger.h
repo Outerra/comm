@@ -74,7 +74,6 @@ class policy_msg;
 ref<logmsg> canlog( ELogType type, const tokenhash& hash = tokenhash(), const void* inst = 0 );
 
 
-#define log_dbg(msg)     do{ ref<coid::logmsg> q = coid::canlog(coid::ELogType::Debug); if(q) {q->str() << msg; }} while(0)
 #define log_debug(msg)   do{ ref<coid::logmsg> q = coid::canlog(coid::ELogType::Debug); if(q) {q->str() << msg; }} while(0)
 #define log_perf(msg)    do{ ref<coid::logmsg> q = coid::canlog(coid::ELogType::Perf); if(q) {q->str() << msg; }} while(0)
 #define log_info(msg)    do{ ref<coid::logmsg> q = coid::canlog(coid::ELogType::Info); if(q) {q->str() << msg; }} while(0)
