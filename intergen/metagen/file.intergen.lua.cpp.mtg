@@ -258,7 +258,7 @@ $-(if return.type!="void")$
         static_assert(CHECK::meta_operator_exists<$return.type$>::value, "missing metastream operator for '$return.type$'");
         to_lua(_rval_);
         $-(elif)$
-        iref<::lua::register_handle> _rval_lua_handle = lua_$return.fulltype$_create_wrapper(_rval_, ifc->_context));
+        iref<::lua::registry_handle> _rval_lua_handle = lua_$return.fulltype$_create_wrapper(_rval_, ifc->_context));
         _rval_lua_handle->get_ref();
         $-(/if)$
         lua_setfield(L, -2, "_ret");
