@@ -1,6 +1,6 @@
 #pragma once
 
-#include <luaJIT/lua.hpp>
+#include "../intergen/ifc.lua.h"
 #include "fmtstream.h"
 #include "metastream.h"
 #include "../str.h"
@@ -46,6 +46,8 @@ public:
         _state = L;
         _init_stack_size = lua_gettop(_state);
     }
+
+    lua_State * get_cur_state() { return _state; }
 
     virtual token fmtstream_name() { return "fmtstream_lua_capi"; }
 
@@ -546,13 +548,6 @@ public:
     }
 };
 
-template<class T>
-class lua_streamer {
-public:
-    static void to_lua(const T& val);
-    static void from_lua(T& val);
-};
-
 struct lua_streamer_context {
     metastream meta;
     fmtstream_lua_capi fmt_lua;
@@ -569,28 +564,89 @@ struct lua_streamer_context {
         meta.stream_reset(true, false);
         fmt_lua.set_lua_state(L);
     }
+
+    lua_State * get_cur_state() { return fmt_lua.get_cur_state(); }
+};
+
+
+template<class T>
+class lua_streamer {
+public:
+    static void to_lua(const T& val) {
+        auto& streamer = THREAD_SINGLETON(lua_streamer_context);
+        streamer.meta.xstream_out(val);
+    };
+    static void from_lua(T& val) {
+        auto& streamer = THREAD_SINGLETON(lua_streamer_context);
+        streamer.meta.xstream_in(val);
+    };
 };
 
 template<class T>
-inline void lua_streamer<T>::to_lua(const T& v) {
-    auto& streamer = THREAD_SINGLETON(lua_streamer_context);
-    streamer.meta.xstream_in(res);
-}
+class lua_streamer<iref<T>> {
+public:
+    static void to_lua(const iref<T>& val) {
+        typedef ifc_create_wrapper_fn(const iref<T>& , iref<lua::registry_handle>);
+        reinterpret_cast<ifc_create_wrapper_fn>(val->itergern_wrapper(IFC_BACKEND_LUA))(val, context)->get_ref();
+    };
+    static void from_lua(iref<T>& val) {
+        auto& streamer = THREAD_SINGLETON(lua_streamer_context);
+        lua_State * L = streamer.get_cur_state();
+        if (lua_isnil(L, -1)) {
+            val = nullptr;
+            return;
+        }
+
+        if (!lua_istable(L, -1) || !lua_hasfield(L, -1, ::lua::_lua_cthis_key)) {
+            throw coid::exception("Object on the top of the stack is not LUA class instance!");
+        }
+
+        lua_getfield(L, -1, ::lua::_lua_cthis_key);
+
+        val = reinterpret_cast<T*>(*static_cast<size_t*>(lua_touserdata(L, -1)));
+    };
+};
+
+
 
 template<class T>
-inline void lua_streamer<T>::from_lua(T& v) {
-    auto& streamer = THREAD_SINGLETON(lua_streamer_context);
-    streamer.meta.xstream_out(res);
+inline void from_lua(T& v) {
+    lua_streamer<T>::from_lua(v);
 }
+
 
 template<class T>
 inline void from_lua (threadcached<T>& tc) {
-    lua_streamer<typename threadcached<T>::storage_type>::from_lua(src, *tc);
+    lua_streamer<typename threadcached<T>::storage_type>::from_lua(*tc);
 }
 
 template<class T> 
 inline void to_lua(const T& v) {
     lua_streamer<T>::to_lua(v);
 }
+
+/*
+template<class T>
+inline void from_lua<iref<T>>(iref<T>& ref) {
+    lua_State * L = context->get_state();
+    if (lua_isnil(L, -1)) {
+        ref = nullptr;
+        return;
+    }
+
+    if (lua_istable(L, -1) || !lua_hasfield(L, -1, ::lua::_lua_cthis_key)) {
+        throw coid::exception("Object on the top of the stack is not LUA class instance!");
+    }
+
+    ref = reinterpret_cast<T*>(*static_cast<size_t*>(lua_touserdata(L, -1)));
+}
+
+template<class T>
+inline void to_lua<iref<T>>(const iref<T>& ref) {
+    typedef ifc_create_wrapper_fn(const iref<T>& ref, iref<lua::registry_handle> context);
+    reinterpret_cast<ifc_create_wrapper_fn>(ref->itergern_wrapper(IFC_BACKEND_LUA))(ref, context)->get_ref();
+}*/
+
+
 
 COID_NAMESPACE_END

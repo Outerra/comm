@@ -117,7 +117,7 @@ $[/comments]$$(/if)-$
         $-[args]$, $type$ $name$$size$$[/args]$, const coid::token& bindname, iref<::lua::registry_handle>* );
 
     $-(if !internal?)$
-    static int luacreator_$name$$@order$(lua_State * L, interface_context* ifc);
+    static int luacreator_$name$$@order$(lua_State * L, ::lua::interface_context* ifc);
     $-(/if)$
 $-[/method]$
 
@@ -248,6 +248,7 @@ $-[/args]$
         $(if return.type!="void")$$return.type$ _rval_ = $(/if)$R_->$name$($[args rest=", "]$ $-(if ptr? outarg?)$&$-(elif ptr? defval.empty? !specptr?)$&$(/if)$ $-(if nojs?)$$defval$$(elif)$$name$$(/if)$$[/args]$);
     
 //stream out
+        THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
 $-(if return.type!="void")$
     $-(if noutargs?)$
@@ -345,25 +346,29 @@ $-(elif)$
     iref<::lua::weak_registry_handle> ev__ = _events[$@index$];
 
     if(ev__->is_empty())
-  $-(if default_event_body?)$ {
-        $default_event_body$; $-(if return.type?="void")$
+    $-(if default_event_body?)$ {
+        $default_event_body$; 
+        $-(if return.type?="void")$
         return;
         $-(/if)$
     }
-  $-(elif !mandatory?)$
+    $-(elif !mandatory?)$
         return;
-  $-(elif)$
+    $-(elif)$
         throw coid::exception("handler not implemented");
-  $-(/if)$
+    $-(/if)$
 
     THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
-  
-    ev__->get_ref();
-    _object->get_ref();
 
+// check if metastream operator exists for non iref args
 $-[args inarg? iref.false?]$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'" );
 $-[/args]$
+
+// stream in args and lua function for event call
+    ev__->get_ref();
+    _object->get_ref();
+
 $(if ninargs?)$
 $-[args inarg?]$
     $-(if iref.true?)$
@@ -374,12 +379,13 @@ $-(elif)$
 $-[/args]$
 
 $-(/if)$
-$-(if return.type != "void")$
-    const uint nres = 1; 
+$-(if return.type?="void" !noutargs?)$
+    const uint nres = 0; 
 $-(elif)$
-    const uint nres = 0;
+    const uint nres = 1;
 $(/if)-$
 
+// call event
     int res = lua_pcall(L,$ninargs$ + 1,nres,0);
 $-[args inarg?]$$(if volatile?)$
     // TODO: some volatile cleanup was here
@@ -390,50 +396,66 @@ $-[/args]$
         ::lua::throw_lua_error(L, "$..ns rest="::" after="::"$lua::$..name$.$name$(): ");
     }
 
-$-(if !noutargs?)$
- $-(if return.type!="void")$
-    static_assert( CHECK::meta_operator_exists<$return.type$>::value, "missing metastream operator for '$return.type$'" );
-    threadcached<$return.type$> _rval_;
-    from_lua(_rval_);
- $-(/if)$
-$-(elif)$
- $-(if return.type?="void" noutargs?="1")$
+// gather results
+    THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
-  $-[args outarg?]$
+$-(if !noutargs?)$
+    $-(if return.type!="void")$
+        $-(if return.iref?)$
+    $return.type$ _rval_;
+        $-(elif)$
+    static_assert(CHECK::meta_operator_exists<$return.type$>::value, "missing metastream operator for '$return.type$'");
+    threadcached<$return.type$> _rval_;
+        $-(/if)$
+    from_lua(_rval_);
+    $-(/if)$
+$-(elif)$
+    $-(if return.type?="void" noutargs?="1")$
+        $-(if !return.iref?)$
+            $-[args outarg?]$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'" );
-   $-(if ptr?)$
+            $-[/args]$
+        $-(/if)$
+    $-[args outarg?]$
+        $-(if ptr?)$
     if($name$)
         from_lua(*$name$);
-   $-(elif)$
+        $-(elif)$
     from_lua($name$);
-   $-(/if)$
-  $-[/args]$
- $-(elif)$
-
+        $-(/if)$
+    $-[/args]$
+    $-(elif)$
     if(!lua_istable(L,-1)) throw coid::exception("invalid params");
-  $-(if return.type!="void")$
-    //return value
-    static_assert( CHECK::meta_operator_exists<$return.type$>::value, "missing metastream operator for '$return.type$'" );
+
+        $-(if return.type!="void")$
+            $-(if return.iref?)$
+    $return.type$ _rval_;
+            $-(elif)$
+    static_assert(CHECK::meta_operator_exists<$return.type$>::value, "missing metastream operator for '$return.type$'");
     threadcached<$return.type$> _rval_;
+            $-(/if)$
     lua_getfield(L, -1, "_ret");
     from_lua(_rval_);
-  $-(/if)$
-  $-[args outarg?]$
+        $(/if)-$
+
+    $-[args outarg? iref.false?]$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'" );
-   $-(if ptr?)$
-    lua_getfield(L, -1, "$name$");
+    $-[/args]$
+    $-[args outarg?]$
+    
+    lua_getfield(L,-1,"$name$");
+        $-(if ptr?)$
     if($name$)
         from_lua(*$name$);
-   $-(elif)$
+        $-(elif)$
     from_lua($name$);
-   $-(/if)$
-  $-[/args]$
- $-(/if)$
-$(/if)-$
-
-$-(if return.type!="void")$
-    return _rval_;
+        $-(/if)$
+    $-[/args]$
+    $-(/if)$
 $-(/if)$
+    $-(if return.type!="void")$
+    return _rval_;
+    $-(/if)$
 $-(/if)$
 }
 
@@ -506,7 +528,7 @@ __declspec(noinline) int $name$_lua_dispatcher::luaquery_interface_exc( lua_Stat
 
         lua_getfield(L, -1, ::lua::_lua_cthis_key);
 
-        if (lua_isuserdata(L,-1))
+        if (!lua_isuserdata(L,-1))
             return 0;
 
         $ns rest = "::" after = "::"$lua::$name$_lua_dispatcher* ifc = reinterpret_cast<$ns rest = "::" after = "::"$lua::$name$_lua_dispatcher*>
@@ -522,7 +544,7 @@ __declspec(noinline) int $name$_lua_dispatcher::luaquery_interface_exc( lua_Stat
 
         coid::token tokey = lua_totoken(L, -1);
 
-        typedef iref<::lua::registry_handle>(*fn_get)(lua_State * L, interface_context*);
+        typedef int(*fn_get)(lua_State * L, ::lua::interface_context*);
         fn_get get = reinterpret_cast<fn_get>(
             coid::interface_register::get_interface_creator(tokey));
 
@@ -534,7 +556,7 @@ __declspec(noinline) int $name$_lua_dispatcher::luaquery_interface_exc( lua_Stat
 
         lua_pop(L, 3); // pop redundant data from stack
 
-        get(L, ifc)->get_ref();
+        get(L, ifc);
         return 1;
     }
     catch (coid::exception e) {
@@ -714,6 +736,13 @@ int $name$_lua_dispatcher::register_to_context_$name$(lua_State * L) {
     //const uint methods_count = $-[method !static ? !destroy ? !internal ? !operator? after="$@order$"]$$[/method]$ 
 
     lua_createtable(L, 0, 0);
+
+    lua_pushcfunction(L, &$name$_lua_dispatcher::lualog);
+    lua_setfield(L, -2, ::lua::_lua_log_key);
+
+    lua_pushcfunction(L, &$name$_lua_dispatcher::luaquery_interface);
+    lua_setfield(L, -2, ::lua::_lua_query_interface_key);
+
 $-[method !static? !destroy ? !internal? !operator?]$
     lua_pushcfunction(L, &$..name$_lua_dispatcher::lua_$name$$@index$);
     lua_setfield(L, -2, "$name$");
@@ -747,6 +776,18 @@ iref<$..name$_lua_dispatcher> $..name$_lua_dispatcher::$name$(lua_State * L, con
     }
     else{
         context = new ::lua::lua_context(L);
+
+        if (script.is_path()) {
+            coid::token script_info;
+            script_info = script.str();
+            if (script_info.contains_back('\\') || script_info.contains_back('/')) {
+                script_info.cut_left_group_back(coid::DIR_SEPARATORS);
+            }
+            context->get_ref();
+            lua_pushtoken(L, script_info);
+            lua_setfield(L, -2, ::lua::_lua_context_info_key);
+            lua_pop(L, 1);
+        }
     }
 
     if(ctx)
@@ -799,9 +840,9 @@ iref<$..name$_lua_dispatcher> $..name$_lua_dispatcher::$name$(lua_State * L, con
 $-(if !internal?)$
 ////////////////////////////////////////////////////////////////////////////////
 ///Creator methods for access from LUA
-int $..name$_lua_dispatcher::luacreator_$name$$@order$(lua_State * L, interface_context* ifc )
+int $..name$_lua_dispatcher::luacreator_$name$$@order$(lua_State * L, ::lua::interface_context* ifc )
 {
-    const int args_count = lua_gettop(L) - 1;
+    const int args_count = lua_gettop(L);
 
     if (args_count < $ninargs_nondef$ || args_count > $ninargs$) { //in/inout arguments
         coid::charstr tmp = "Wrong number of arguments in ";
@@ -813,7 +854,7 @@ int $..name$_lua_dispatcher::luacreator_$name$$@order$(lua_State * L, interface_
     THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
 $-[args inarg? !nojs?]$
-    lua_pushvalue(L, $@order$ + 2);
+    lua_pushvalue(L, $@order$ + 1);
     $-(if iref.true?)$
         $-(if !defval.empty?)$
     $basetype$ $name$;
@@ -857,6 +898,15 @@ $[/args]-$
 $-(if noutargs?)$
     lua_createtable(L, 0, $noutargs$ + 1);
     if (nifc) {
+        if (ifc) {
+            nifc->_context = ifc->_context;
+        }
+        else {
+            nifc->_context->set_state(L);
+            lua_pushvalue(L, LUA_ENVIRONINDEX);
+            nifc->_context->set_ref();
+        }
+
         nifc->create_interface_object(true)->get_ref();
     }
     else {
@@ -877,6 +927,15 @@ $-(if noutargs?)$
     $[/args]-$
 $-(elif)$
     if (nifc) {
+        if (ifc) {
+            nifc->_context = ifc->_context;
+        }
+        else {
+            nifc->_context->set_state(L);
+            lua_pushvalue(L, LUA_ENVIRONINDEX);
+            nifc->_context->set_ref();
+        }
+
         nifc->create_interface_object(true)->get_ref();
     }
     else {

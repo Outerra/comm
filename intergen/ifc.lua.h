@@ -43,7 +43,7 @@
 #include <comm/token.h>
 #include <comm/dir.h>
 #include <comm/metastream/metastream.h>
-#include <comm/metastream/fmtstream_lua_capi.h>
+#include <comm/log/logger.h>
 #include <comm/binstream/filestream.h>
 #include <comm/singleton.h>
 #include <luaJIT/lua.hpp>
@@ -52,6 +52,8 @@
 //#include "lua_utils.h"
 
 namespace lua {
+    int ctx_query_interface(lua_State * L);
+
 
 //    static const coid::token _lua_class_register_key = "__ifc_class_register";
     static const coid::token _lua_parent_index_key = "__index";
@@ -64,6 +66,9 @@ namespace lua {
     static const coid::token _lua_class_hash_key = "__class_hash";
     static const coid::token _lua_gc_key = "__gc";
     static const coid::token _lua_weak_meta_key = "__weak_object_meta";
+    static const coid::token _lua_log_key = "log";
+    static const coid::token _lua_context_info_key = "__ctx_inf";
+    static const coid::token _lua_query_interface_key = "query_interface";
 
     const uint32 LUA_WEAK_REGISTRY_INDEX = 1;
     const uint32 LUA_WEAK_IFC_MT_INDEX = 2;
@@ -147,15 +152,6 @@ namespace lua {
         lua_setmetatable(L, -2);
     }
 
-////////////////////////////////////////////////////////////////////////////////
-    inline int lua_log(lua_State * L) {
-        coid::fmtstream_lua_capi fs(L);
-        coid::metastream ms;
-        ms.bind_formatting_stream(fs);
-        coid::charstr massage;
-        ms.stream_in(massage);
-    }
-
 ///////////////////////////////////////////////////////////////////////////////
     inline int catch_lua_error(lua_State * L) {
         luaL_where_ext(L, 1);
@@ -190,11 +186,30 @@ namespace lua {
     }
 
 ////////////////////////////////////////////////////////////////////////////////
+    inline int ctx_log(lua_State * L) {
+        lua_pushvalue(L,LUA_ENVIRONINDEX);
+        coid::token hash;
+        lua_getfield(L, -1, _lua_context_info_key);
+        if (lua_isnil(L,-1)) {
+            hash = "Unknown script";
+        }
+        else {
+            hash = lua_totoken(L, -1);
+        }
+        lua_pop(L, 2);
+
+        coid::token msg = lua_totoken(L, -1);
+        coidlog_none(hash,msg);
+        return 0;
+    }
+
+////////////////////////////////////////////////////////////////////////////////
+   
     inline int lua_iref_release_callback(lua_State * L) {
-        /*if (lua_isuserdata(L, -1)) {
+        if (lua_isuserdata(L, -1)) {
             policy_intrusive_base * obj = reinterpret_cast<policy_intrusive_base *>(*static_cast<size_t*>(lua_touserdata(L,-1)));
             obj->release_refcount();
-        }*/
+        }
         
         return 0;
     }
@@ -329,6 +344,11 @@ namespace lua {
     }
 
 ////////////////////////////////////////////////////////////////////////////////
+    inline int lua_log(lua_State * L) {
+  
+    }
+
+////////////////////////////////////////////////////////////////////////////////
     class lua_state_wrap {
     public:
         static lua_state_wrap * get_lua_state() {
@@ -391,11 +411,19 @@ namespace lua {
             lua_pushvalue(L, -2);
             lua_setfenv(L,-2);
             lua_setfield(_L, -2, _lua_implements_fn_name);
-            set_ref();
 
-#ifdef _DEBUG
-            printf("Lua context created!\n");
-#endif
+            lua_pushcfunction(_L, &ctx_log);
+            lua_pushvalue(L, -2);
+            lua_setfenv(L, -2);
+            lua_setfield(_L, -2, _lua_log_key);
+
+            lua_pushcfunction(_L, &ctx_query_interface);
+            lua_pushvalue(L, -2);
+            lua_setfenv(L, -2);
+            lua_setfield(_L, -2, _lua_query_interface_key);
+
+
+            set_ref();
         };
 
         lua_context(const lua_context& ctx) {
@@ -404,9 +432,6 @@ namespace lua {
         }
 
         ~lua_context() {
-#ifdef _DEBUG
-            printf("Lua context destroyed!\n");
-#endif
         };
     };
 
@@ -711,6 +736,57 @@ inline iref<registry_handle> wrap_object(intergen_interface* orig, iref<lua_cont
         return fn && context->Global()->Set(v8::String::New(bindname.ptr(), bindname.len()), fn(orig, context));
 #endif
     }*/
+
+    ////////////////////////////////////////////////////////////////////////////////
+
+inline __declspec(noinline) int ctx_query_interface_exc(lua_State * L) {
+    try {
+
+        if (lua_gettop(L) < 1) {
+            throw coid::exception("Invalid params!");
+        }
+
+        lua_pushbot(L); // move creator key onto top of the stack
+
+        if (!lua_isstring(L, -1))
+            throw coid::exception("Interface creator name missing.");
+
+        coid::token tokey = lua_totoken(L, -1);
+
+        typedef int(*fn_get)(lua_State * L, interface_context*);
+        fn_get get = reinterpret_cast<fn_get>(
+            coid::interface_register::get_interface_creator(tokey));
+
+        if (!get) {
+            coid::charstr tmp = "interface creator ";
+            tmp << tokey << " not found";
+            throw coid::exception(tmp);
+        }
+
+        lua_pop(L, 1); // pop redundant data from stack
+
+        get(L, nullptr);
+        return 1;
+    }
+    catch (coid::exception e) {
+        lua_pushtoken(L, e.text());
+        catch_lua_error(L);
+    }
+
+    return -1;
+}
+
+inline int ctx_query_interface(lua_State * L) {
+    int res = ctx_query_interface_exc(L);
+    if (res == -1) {
+        lua_error(L);
+    }
+
+    return res;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 } //namespace lua
 
 

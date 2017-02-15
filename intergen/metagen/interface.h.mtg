@@ -111,11 +111,13 @@ $-(elif)$
         static const coid::token _dc("$ns rest="::" after="::"$$name$.$default_creator.name$@$hash$");
 $-(/if)$
         static const coid::token _djs("$ns rest="::" after="::"$js::$name$@wrapper");
+        static const coid::token _dlua("$ns rest="::" after="::"$lua::$name$@wrapper");
         static const coid::token _dnone;
 
         switch(bck) {
         case IFC_BACKEND_CXX: return _dc;
         case IFC_BACKEND_JS:  return _djs;
+        case IFC_BACKEND_LUA: return _dlua;
         default: return _dnone;
         }
     }
@@ -134,6 +136,7 @@ $-(/if)$
     void* intergen_wrapper( EBackend bck ) const override $-(if !virtual?)$ final$(/if)$ {
         switch(bck) {
         case IFC_BACKEND_JS: return intergen_wrapper_cache<IFC_BACKEND_JS>();
+        case IFC_BACKEND_LUA: return intergen_wrapper_cache<IFC_BACKEND_LUA>();
         default: return 0;
         }
     }
