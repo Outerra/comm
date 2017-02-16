@@ -597,6 +597,52 @@ public:
     };
 };
 
+#define LUA_FAST_STREAMER(CTYPE,LTYPE) \
+template<> \
+class lua_streamer<CTYPE>{\
+public:\
+    static void to_lua(const CTYPE val) {\
+        auto& streamer = THREAD_SINGLETON(lua_streamer_context);\
+        lua_State * L = streamer.get_cur_state();\
+        lua_push##LTYPE(L,val);\
+    }\
+\
+    static void from_lua(CTYPE& val){\
+        auto& streamer = THREAD_SINGLETON(lua_streamer_context);\
+        lua_State * L = streamer.get_cur_state();\
+        val = lua_to##LTYPE(L,-1);\
+        lua_pop(L,1);\
+    }\
+}
+
+LUA_FAST_STREAMER(int8, integer);
+LUA_FAST_STREAMER(int16, integer);
+LUA_FAST_STREAMER(int32, integer);
+LUA_FAST_STREAMER(int64, integer);     //can lose data in conversion
+
+LUA_FAST_STREAMER(uint8, integer);
+LUA_FAST_STREAMER(uint16, integer);
+LUA_FAST_STREAMER(uint32, integer);
+LUA_FAST_STREAMER(uint64, integer);    //can lose data in conversion
+
+#ifdef SYSTYPE_WIN
+# ifdef SYSTYPE_32
+LUA_FAST_STREAMER(ints, integer);
+LUA_FAST_STREAMER(uints, integer);
+# else //SYSTYPE_64
+LUA_FAST_STREAMER(int, integer);
+LUA_FAST_STREAMER(uint, integer);
+# endif
+#elif defined(SYSTYPE_32)
+LUA_FAST_STREAMER(long, integer);
+LUA_FAST_STREAMER(ulong, integer);
+#endif
+
+LUA_FAST_STREAMER(float, number);
+LUA_FAST_STREAMER(double, number);
+
+LUA_FAST_STREAMER(bool, boolean);
+
 
 
 template<class T>
