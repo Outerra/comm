@@ -592,18 +592,8 @@ public:
     static void from_lua(iref<T>& val) {
         auto& streamer = THREAD_SINGLETON(lua_streamer_context);
         lua_State * L = streamer.get_cur_state();
-        if (lua_isnil(L, -1)) {
-            val = nullptr;
-            return;
-        }
-
-        if (!lua_istable(L, -1) || !lua_hasfield(L, -1, ::lua::_lua_cthis_key)) {
-            throw coid::exception("Object on the top of the stack is not LUA class instance!");
-        }
-
-        lua_getfield(L, -1, ::lua::_lua_cthis_key);
-
-        val = reinterpret_cast<T*>(*static_cast<size_t*>(lua_touserdata(L, -1)));
+        val = ::lua::unwrap_object<T>(L);
+        lua_pop(L, 1);
     };
 };
 

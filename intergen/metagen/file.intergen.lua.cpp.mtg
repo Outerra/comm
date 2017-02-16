@@ -170,6 +170,9 @@ $-(/if)$
 
 $-[method !static? !destroy? !internal? !operator?]$
 ////////////////////////////////////////////////////////////////////////////////
+//
+//  $return.type$ $..ns rest="::" after="::"$$..name$::$name$($[args rest=","]$ $type$ $name$$[/args]$)
+//
 __declspec(noinline) int $..name$_lua_dispatcher::lua_$name$$@index$_exc( lua_State * L )
 {
     bool exception_thrown = false;
@@ -206,16 +209,17 @@ __declspec(noinline) int $..name$_lua_dispatcher::lua_$name$$@index$_exc( lua_St
 
         //stream the arguments in
 $-[args inarg? !nojs?]$
+
         lua_pushvalue(L, $@order$ + 2);
     $-(if iref.true?)$
-        $-(if !defval.empty?)$
         $basetype$ $name$;
+        $-(if !defval.empty?)$
         if ($@order$ < args_count)
             $name$ = ::lua::unwrap_object<typename $basetype$::base_t>(L);
         else
             $name$ = $defval$;
         $-(elif)$
-        $basetype$ $name$ = ::lua::unwrap_object<typename $basetype$::base_t>(T);
+        from_lua($name$);
         $-(/if)$
     $-(elif)$
         static_assert(CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator '$basetype$'");
@@ -840,6 +844,10 @@ iref<$..name$_lua_dispatcher> $..name$_lua_dispatcher::$name$(lua_State * L, con
 $-(if !internal?)$
 ////////////////////////////////////////////////////////////////////////////////
 ///Creator methods for access from LUA
+///
+///  iref<$..ns rest="::" after="::"$$..name$> $..ns rest="::" after="::"$$..name$::$name$($[args rest=","]$ $type$ $name$$[/args]$)
+///
+
 int $..name$_lua_dispatcher::luacreator_$name$$@order$(lua_State * L, ::lua::interface_context* ifc )
 {
     const int args_count = lua_gettop(L);
