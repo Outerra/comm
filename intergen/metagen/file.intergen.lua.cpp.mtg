@@ -215,7 +215,7 @@ $-[args inarg? !nojs?]$
         $basetype$ $name$;
         $-(if !defval.empty?)$
         if ($@order$ < args_count)
-            $name$ = ::lua::unwrap_object<typename $basetype$::base_t>(L);
+            from_lua($name$);
         else
             $name$ = $defval$;
         $-(elif)$
@@ -226,7 +226,7 @@ $-[args inarg? !nojs?]$
         $-(if !defval.empty? ptr.true?)$
         threadcached<$basetype$> $name$__tmp;
         $basetype$ *$name$ = &$name$__tmp;
-        if ($@order$ < args.Length())
+        if ($@order$ < args_count)
             from_lua($name$__tmp);
         else
             $name$ = $defval$;
@@ -262,7 +262,7 @@ $-(if return.type!="void")$
         static_assert(CHECK::meta_operator_exists<$return.type$>::value, "missing metastream operator for '$return.type$'");
         to_lua(_rval_);
         $-(elif)$
-        iref<::lua::registry_handle> _rval_lua_handle = lua_$return.fulltype$_create_wrapper(_rval_, ifc->_context));
+        iref<::lua::registry_handle> _rval_lua_handle = lua_$return.fulltype$_create_wrapper(_rval_, ifc->_context);
         _rval_lua_handle->get_ref();
         $-(/if)$
         lua_setfield(L, -2, "_ret");
@@ -864,27 +864,27 @@ int $..name$_lua_dispatcher::luacreator_$name$$@order$(lua_State * L, ::lua::int
 $-[args inarg? !nojs?]$
     lua_pushvalue(L, $@order$ + 1);
     $-(if iref.true?)$
+        $basetype$ $name$;
         $-(if !defval.empty?)$
-    $basetype$ $name$;
     if ($@order$ < args_count)
-        $name$ = ::lua::unwrap_object<typename $basetype$::base_t>(L);
+        from_lua($name$);
     else
         $name$ = $defval$;
         $-(elif)$
-    $basetype$ $name$ = ::lua::unwrap_object<typename $basetype$::base_t>(T);
+    from_lua($name$);
         $-(/if)$
     $-(elif)$
     static_assert(CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator '$basetype$'");
         $-(if !defval.empty? ptr.true?)$
     threadcached<$basetype$> $name$__tmp;
     $basetype$ *$name$ = &$name$__tmp;
-    if ($@order$ < args.Length())
+    if ($@order$ < args_count)
         from_lua($name$__tmp);
     else
         $name$ = $defval$;
         $-(elif !defval.empty?)$
     threadcached<$basetype$> $name$;
-    if ($@order$ < args.Length())
+    if ($@order$ < args_count)
         from_lua($name$);
     else
         $name$ = $defval$;
@@ -928,7 +928,7 @@ $-(if noutargs?)$
         static_assert(CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'");
         to_lua($name$);
         $-(elif)$
-        lua_$fulltype$_create_wrapper($name$, icf->context)->get_ref();
+        lua_$fulltype$_create_wrapper($name$, ifc->_context)->get_ref();
         $-(/if)$
 
         lua_setfield(L, -2, "$name$");

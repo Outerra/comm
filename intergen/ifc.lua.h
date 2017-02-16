@@ -677,11 +677,11 @@ namespace lua {
     inline T* unwrap_object(lua_State * L)
     {
         if (!lua_istable(L,-1)) return 0;
-
-        if (!lua_hasfield(L,-1,_lua_cthis_key) || !lua_hasfield(_lua_class_hash_key)) return 0;
+        
+        if (!lua_hasfield(L,-1,_lua_cthis_key) || !lua_hasfield(L, -1, _lua_class_hash_key)) return 0;
 
         lua_getfield(L, -1, _lua_cthis_key);
-        intergen_interface* p = static_cast<intergen_interface*>(lua_touserdata(L,-1));
+        intergen_interface* p = reinterpret_cast<intergen_interface*>(*static_cast<size_t*>(lua_touserdata(L,-1)));
         lua_pop(L, 1);
 
         lua_getfield(L, -1, _lua_class_hash_key);
