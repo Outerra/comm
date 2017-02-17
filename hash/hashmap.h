@@ -79,7 +79,7 @@ public:
 
     typedef typename _HT::LOOKUP                    key_type;
     typedef std::pair<KEY,VAL>                      value_type;
-    typedef HASHFUNC                                hasher;
+    typedef HASHFUNC                                hasherfn;
     typedef EQFUNC                                  key_equal;
 
     typedef size_t                                  size_type;
@@ -146,30 +146,30 @@ public:
     }
 
     hash_map()
-        : _HT( 128, hasher(), key_equal(), _SEL()) {}
+        : _HT( 128, hasherfn(), key_equal(), _SEL()) {}
 
     explicit hash_map( size_type n )
-        : _HT( n, hasher(), key_equal(), _SEL()) {}
-    hash_map( size_type n, const hasher& hf )
+        : _HT( n, hasherfn(), key_equal(), _SEL()) {}
+    hash_map( size_type n, const hasherfn& hf )
         : _HT( n, hf, key_equal(), _SEL()) {}
-    hash_map( size_type n, const hasher& hf, const key_equal& eql)
+    hash_map( size_type n, const hasherfn& hf, const key_equal& eql)
         : _HT( n, hf, eql, _SEL()) {}
 
 
 
     hash_map( const value_type* f, const value_type* l, size_type n=128 )
-        : _HT( n, hasher(), key_equal(), _SEL())
+        : _HT( n, hasherfn(), key_equal(), _SEL())
     {
         insert_unique( f, l );
     }
     hash_map( const value_type* f, const value_type* l, size_type n,
-        const hasher& hf )
+        const hasherfn& hf )
         : _HT( n, hf, key_equal(), _SEL())
     {
         insert_unique( f, l );
     }
     hash_map( const value_type* f, const value_type* l, size_type n,
-        const hasher& hf,
+        const hasherfn& hf,
         const key_equal& eqf )
         : _HT( n, hf, eqf, _SEL())
     {
@@ -178,18 +178,18 @@ public:
 
 
     hash_map( const_iterator* f, const_iterator* l, size_type n=128 )
-        : _HT( n, hasher(), key_equal(), _SEL())
+        : _HT( n, hasherfn(), key_equal(), _SEL())
     {
         insert_unique( f, l );
     }
     hash_map( const_iterator* f, const_iterator* l, size_type n,
-        const hasher& hf )
+        const hasherfn& hf )
         : _HT( n, hf, key_equal(), _SEL())
     {
         insert_unique( f, l );
     }
     hash_map( const_iterator* f, const_iterator* l, size_type n,
-        const hasher& hf,
+        const hasherfn& hf,
         const key_equal& eqf )
         : _HT( n, hf, eqf, _SEL())
     {
@@ -237,7 +237,7 @@ public:
 
     typedef typename _HT::LOOKUP                    key_type;
     typedef std::pair<KEY,VAL>                      value_type;
-    typedef HASHFUNC                                hasher;
+    typedef HASHFUNC                                hasherfn;
     typedef EQFUNC                                  key_equal;
 
     typedef size_t                                  size_type;
@@ -298,30 +298,30 @@ public:
 
 
     hash_multimap()
-        : _HT( 128, hasher(), key_equal(), _SEL()) {}
+        : _HT( 128, hasherfn(), key_equal(), _SEL()) {}
 
     explicit hash_multimap( size_type n )
-        : _HT( n, hasher(), key_equal(), _SEL()) {}
-    hash_multimap( size_type n, const hasher& hf )
+        : _HT( n, hasherfn(), key_equal(), _SEL()) {}
+    hash_multimap( size_type n, const hasherfn& hf )
         : _HT( n, hf, key_equal(), _SEL()) {}
-    hash_multimap( size_type n, const hasher& hf, const key_equal& eql)
+    hash_multimap( size_type n, const hasherfn& hf, const key_equal& eql)
         : _HT( n, hf, eql, _SEL()) {}
 
 
 
     hash_multimap( const value_type* f, const value_type* l, size_type n=128 )
-        : _HT( n, hasher(), key_equal(), _SEL())
+        : _HT( n, hasherfn(), key_equal(), _SEL())
     {
         insert_equal( f, l );
     }
     hash_multimap( const value_type* f, const value_type* l, size_type n,
-        const hasher& hf )
+        const hasherfn& hf )
         : _HT( n, hf, key_equal(), _SEL())
     {
         insert_equal( f, l );
     }
     hash_multimap( const value_type* f, const value_type* l, size_type n,
-        const hasher& hf,
+        const hasherfn& hf,
         const key_equal& eqf )
         : _HT( n, hf, eqf, _SEL())
     {
@@ -330,18 +330,18 @@ public:
 
 
     hash_multimap( const_iterator* f, const_iterator* l, size_type n=128 )
-        : _HT( n, hasher(), key_equal(), _SEL())
+        : _HT( n, hasherfn(), key_equal(), _SEL())
     {
         insert_equal( f, l );
     }
     hash_multimap( const_iterator* f, const_iterator* l, size_type n,
-        const hasher& hf )
+        const hasherfn& hf )
         : _HT( n, hf, key_equal(), _SEL())
     {
         insert_equal( f, l );
     }
     hash_multimap( const_iterator* f, const_iterator* l, size_type n,
-        const hasher& hf,
+        const hasherfn& hf,
         const key_equal& eqf )
         : _HT( n, hf, eqf, _SEL())
     {
