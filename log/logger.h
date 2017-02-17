@@ -79,7 +79,6 @@ ref<logmsg> canlog( ELogType type, const tokenhash& hash = tokenhash(), const vo
 #define coidlog_perf(src, msg)    do{ ref<coid::logmsg> q = coid::canlog(coid::ELogType::Perf, src ); if(q) {q->str() << msg; }} while(0)
 #define coidlog_info(src, msg)    do{ ref<coid::logmsg> q = coid::canlog(coid::ELogType::Info, src ); if(q) {q->str() << msg; }} while(0)
 #define coidlog_msg(src, msg)     do{ ref<coid::logmsg> q = coid::canlog(coid::ELogType::Highlight, src ); if(q) {q->str() << msg; }} while(0)
-#define coidlog_warn(src, msg)    do{ ref<coid::logmsg> q = coid::canlog(coid::ELogType::Warning, src ); if(q) {q->str() << msg; }} while(0)
 #define coidlog_warning(src, msg) do{ ref<coid::logmsg> q = coid::canlog(coid::ELogType::Warning, src ); if(q) {q->str() << msg; }} while(0)
 #define coidlog_error(src, msg)   do{ ref<coid::logmsg> q = coid::canlog(coid::ELogType::Error, src ); if(q) {q->str() << msg; }} while(0)
 
