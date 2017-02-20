@@ -49,7 +49,7 @@
 #include <luaJIT/lua.hpp>
 #include <luaJIT/luaext.h>
 
-//#include "lua_utils.h"
+#include "lua_utils.h"
 
 namespace lua {
     int ctx_query_interface(lua_State * L);
@@ -741,7 +741,6 @@ inline iref<registry_handle> wrap_object(intergen_interface* orig, iref<lua_cont
 
 inline __declspec(noinline) int ctx_query_interface_exc(lua_State * L) {
     try {
-
         if (lua_gettop(L) < 1) {
             throw coid::exception("Invalid params!");
         }

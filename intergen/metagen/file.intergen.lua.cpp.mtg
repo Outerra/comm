@@ -926,11 +926,8 @@ $-(if noutargs?)$
     $-[args outarg?]$
         $-(if iref.false?)$
         static_assert(CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'");
-        to_lua($name$);
-        $-(elif)$
-        lua_$fulltype$_create_wrapper($name$, ifc->_context)->get_ref();
         $-(/if)$
-
+        to_lua($name$);
         lua_setfield(L, -2, "$name$");
     $[/args]-$
 $-(elif)$

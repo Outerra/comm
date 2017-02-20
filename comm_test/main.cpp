@@ -3,6 +3,7 @@
 #include "../radix.h"
 #include "../trait.h"
 #include "../hash/slothash.h"
+#include "lua_test.h"
 
 namespace coid {
 void std_test();
@@ -94,5 +95,6 @@ int main( int argc, char* argv[] )
     //coid::test();
     metastream_test();
     regex_test();
+    lua_test::lua_test();
     return 0;
 }
