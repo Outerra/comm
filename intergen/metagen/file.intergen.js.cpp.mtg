@@ -405,6 +405,7 @@ $-(elif)$
         throw coid::exception("handler not implemented");
   $-(/if)$
 
+// prepare in arguments
     THREAD_SINGLETON(v8_streamer_context).reset();
 
 $-[args inarg? iref.false?]$
@@ -412,16 +413,13 @@ $-[args inarg? iref.false?]$
 $-[/args]$
 $-(if ninargs?)$
     v8::Handle<v8::Value> __inargs[] = {
-$-[args inarg?]$
-    $-(if iref.true?)$
-        js_$fulltype$_create_wrapper($name$, context(iso))
-    $-(elif)$
-        v8_streamer$(if volatile?)$_volatile$(/if)$<$basetype$>::to_v8($name$),
-    $-(/if)$
+$-[args inarg? rest=","]$
+        v8_streamer$(if volatile ? )$_volatile$(/ if)$<$basetype$>::to_v8($name$)
 $-[/args]$
     };
 
 $-(/if)$
+//  event call
     v8::Local<v8::Value> r__ = ev__->Call(
         LOCAL(iso, _object),
         //_eventobj.IsEmpty() || LOCAL(iso,_eventobj)->IsUndefined() ? LOCAL(iso,_object) : LOCAL(iso,_eventobj),
@@ -433,18 +431,25 @@ $-[/args]$
 
     if (trycatch__.HasCaught())
         script_handle::throw_js_error(trycatch__, "$..ns rest="::" after="::"$js::$..name$.$name$(): ");
+// gather results
 $-(if !noutargs?)$
 
  $-(if return.type!="void")$
+  $-(if return.iref.true?)$
+    $return.type$ _rval_;
+  $-(elif)$
     static_assert( CHECK::meta_operator_exists<$return.type$>::value, "missing metastream operator for '$return.type$'" );
     threadcached<$return.type$> _rval_;
+  $-(/if)$
     from_v8(r__, _rval_);
  $-(/if)$
 $-(elif)$
  $-(if return.type?="void" noutargs?="1")$
 
   $-[args outarg?]$
+   $-(if !iref?)$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'" );
+   $-(/if)$
    $-(if ptr?)$
     if ($name$)
         from_v8(r__, *$name$);
@@ -457,13 +462,21 @@ $-(elif)$
     if (!r__->IsObject()) throw coid::exception("invalid params");
     v8::Local<v8::Object> obj__ = r__->ToObject();
   $-(if return.type!="void")$
+
     //return value
+   $-(if return.iref.true?)$
+    $return.type$ _rval_;
+   $-(elif)$
     static_assert( CHECK::meta_operator_exists<$return.type$>::value, "missing metastream operator for '$return.type$'" );
     threadcached<$return.type$> _rval_;
-    from_v8(obj__->Get(v8::symbol("$$ret")), _rval_);
+   $-(/if)$
+    from_v8(r__, _rval_);
   $-(/if)$
   $-[args outarg?]$
+
+   $-(if iref.false?)$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'" );
+   $-(/if)$
    $-(if ptr?)$
     if ($name$)
         from_v8(obj__->Get(v8::symbol("$name$")), *$name$);
@@ -475,7 +488,6 @@ $-(elif)$
 $(/if)-$
 
 $-(if return.type!="void")$
-
     return _rval_;
 $-(/if)$
 $-(/if)$
@@ -1102,7 +1114,7 @@ $-[args outarg?]$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'" );
     r__->Set(v8::symbol("$name$"), to_v8($name$));
  $-(elif)$
-    r__->Set(v8::symbol("$name$"), js_$fulltype$_create_wrapper($name$, ifc->context(iso)));
+    r__->Set(v8::symbol("$name$"), js_$fulltype$_create_wrapper($name$, ifc?ifc->context(iso):iso->GetCurrentContext()));
  $-(/if)$
 $[/args]-$
 
@@ -1120,6 +1132,10 @@ v8::Handle<v8::Value> create_wrapper_$name$( ::$ns rest="::" after="::"$$name$* 
 
     // check that the orig points to an object
     if (!orig) return NULLv8(iso);
+
+    if (context.IsEmpty()) {
+        context = iso->GetCurrentContext();
+    }
 
     v8::Context::Scope context_scope(context);
     ESCAPABLE_SCOPE(iso, scope);
