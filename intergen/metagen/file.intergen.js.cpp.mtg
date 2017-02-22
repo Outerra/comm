@@ -31,6 +31,7 @@ using namespace coid;
 #define PERSISTENT(iso,o,n) o.Reset(iso, n)
 #define RESET(o)            o.Reset()
 #define LOCAL(iso,o)        o.Get(iso)
+#define CUR_CONTEXT(iso)    iso->GetCurrentContext()
 
 #else
 
@@ -50,6 +51,7 @@ using namespace coid;
 #define PERSISTENT(iso,o,n) o = o.New(iso,n)
 #define RESET(o)            do { if (!o.IsWeak()) o.Dispose(); o.Clear(); } while(0)
 #define LOCAL(iso,o)        o
+#define CUR_CONTEXT(iso)    v8::Context::GetCurrent()
 
 #endif
 
@@ -1043,16 +1045,9 @@ v8::Handle<v8::Value> $..name$_js_dispatcher::v8creator_$name$$@order$( const AR
     //$..ns rest="::" after="::"$js::$..name$_js_dispatcher* ifc = static_cast<$..ns rest="::" after="::"$js::$..name$_js_dispatcher*>
     //    (v8::Handle<v8::External>::Cast(obj__->GetInternalField(0))->Value());
 
-#if V8_MAJOR_VERSION
     v8::Local<v8::Context> ctx = ifc && !ifc->_object.IsEmpty()
-        ? ifc->context(iso)//v8::Local<v8::Context>::New(iso, ifc->_context)
-        : iso->GetCurrentContext();
-#else
-    v8::Local<v8::Context> ctx = ifc && !ifc->_object.IsEmpty()
-        ? ifc->context(iso)//*ifc->_context
-        : v8::Context::GetCurrent();
-#endif
-
+        ? ifc->context(iso)
+        : CUR_CONTEXT(iso);
     v8::Context::Scope context_scope(ctx);
 
     //stream the arguments in
@@ -1114,7 +1109,7 @@ $-[args outarg?]$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'" );
     r__->Set(v8::symbol("$name$"), to_v8($name$));
  $-(elif)$
-    r__->Set(v8::symbol("$name$"), js_$fulltype$_create_wrapper($name$, ifc?ifc->context(iso):iso->GetCurrentContext()));
+    r__->Set(v8::symbol("$name$"), js_$fulltype$_create_wrapper($name$, ifc&&!ifc->_object.IsEmpty()?ifc->context(iso):CUR_CONTEXT(iso)));
  $-(/if)$
 $[/args]-$
 
@@ -1134,7 +1129,7 @@ v8::Handle<v8::Value> create_wrapper_$name$( ::$ns rest="::" after="::"$$name$* 
     if (!orig) return NULLv8(iso);
 
     if (context.IsEmpty()) {
-        context = iso->GetCurrentContext();
+        context = CUR_CONTEXT(iso);
     }
 
     v8::Context::Scope context_scope(context);
