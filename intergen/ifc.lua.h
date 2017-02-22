@@ -49,7 +49,7 @@
 #include <luaJIT/lua.hpp>
 #include <luaJIT/luaext.h>
 
-#include "lua_utils.h"
+//#include "lua_utils.h"
 
 namespace lua {
     int ctx_query_interface(lua_State * L);
