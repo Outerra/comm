@@ -190,6 +190,7 @@ CBK_RET other_js_dispatcher::v8_get_str0( const ARGUMENTS& args )
     THREAD_SINGLETON(v8_streamer_context).reset();
 
     //stream the arguments in
+
     //invoke
     const coid::charstr& _rval_ = R_->get_str();
 
@@ -245,7 +246,8 @@ CBK_RET other_js_dispatcher::v8_set_str1( const ARGUMENTS& args )
     THREAD_SINGLETON(v8_streamer_context).reset();
 
     //stream the arguments in
-    static_assert( CHECK::meta_operator_exists<coid::token>::value, "missing metastream operator 'coid::token'" );
+    static_assert(CHECK::meta_operator_exists<coid::token>::value, "missing metastream operator 'coid::token'");
+
     threadcached<coid::token> new_str;
     from_v8(args[0], new_str);
 
@@ -302,11 +304,13 @@ CBK_RET other_js_dispatcher::v8_some_fun12( const ARGUMENTS& args )
     THREAD_SINGLETON(v8_streamer_context).reset();
 
     //stream the arguments in
-    static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator 'int'" );
+    static_assert(CHECK::meta_operator_exists<int>::value, "missing metastream operator 'int'");
+
     threadcached<int> a;
     from_v8(args[0], a);
 
-    iref<ns::other> b = ::js::unwrap_object<typename iref<ns::other>::base_t>(args[1]);
+    threadcached<iref<ns::other>> b;
+    from_v8(args[1], b);
 
     //invoke
     int c;
@@ -665,7 +669,7 @@ v8::Handle<v8::Value> other_js_dispatcher::v8creator_create0( const ARGUMENTS& a
     //stream the arguments in
     THREAD_SINGLETON(v8_streamer_context).reset();
 
-    static_assert( CHECK::meta_operator_exists<coid::charstr>::value, "missing metastream operator for 'coid::charstr'" );
+    static_assert(CHECK::meta_operator_exists<coid::charstr>::value, "missing metastream operator for 'coid::charstr'");
     threadcached<coid::charstr> str;
     from_v8(args[1+0], str);
 
@@ -676,7 +680,7 @@ v8::Handle<v8::Value> other_js_dispatcher::v8creator_create0( const ARGUMENTS& a
 
     //stream out
     v8::Handle<v8::Value> r__ = nifc ? v8::Handle<v8::Value>(nifc->create_interface_object(true)) : NULLv8(iso);
-
+    
     return ESCAPE(handle_scope__, r__);
 }
 
@@ -940,6 +944,7 @@ CBK_RET main_js_dispatcher::v8_some_get0( const ARGUMENTS& args )
     THREAD_SINGLETON(v8_streamer_context).reset();
 
     //stream the arguments in
+
     //invoke
     coid::charstr a;
 
@@ -999,6 +1004,7 @@ CBK_RET main_js_dispatcher::v8_get_a1( const ARGUMENTS& args )
     THREAD_SINGLETON(v8_streamer_context).reset();
 
     //stream the arguments in
+
     //invoke
     int _rval_ = R_->get_a();
 
@@ -1054,7 +1060,8 @@ CBK_RET main_js_dispatcher::v8_set_a2( const ARGUMENTS& args )
     THREAD_SINGLETON(v8_streamer_context).reset();
 
     //stream the arguments in
-    static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator 'int'" );
+    static_assert(CHECK::meta_operator_exists<int>::value, "missing metastream operator 'int'");
+
     threadcached<int> a;
     from_v8(args[0], a);
 
@@ -1111,19 +1118,20 @@ CBK_RET main_js_dispatcher::v8_fun13( const ARGUMENTS& args )
     THREAD_SINGLETON(v8_streamer_context).reset();
 
     //stream the arguments in
-    static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator 'int'" );
+    static_assert(CHECK::meta_operator_exists<int>::value, "missing metastream operator 'int'");
+    static_assert(CHECK::meta_operator_exists<ns1::dummy>::value, "missing metastream operator 'ns1::dummy'");
+    static_assert(CHECK::meta_operator_exists<float>::value, "missing metastream operator 'float'");
+    static_assert(CHECK::meta_operator_exists<coid::charstr>::value, "missing metastream operator 'coid::charstr'");
+
     threadcached<int> a;
     from_v8(args[0], a);
 
-    static_assert( CHECK::meta_operator_exists<ns1::dummy>::value, "missing metastream operator 'ns1::dummy'" );
     threadcached<ns1::dummy> b;
     from_v8(args[1], b);
 
-    static_assert( CHECK::meta_operator_exists<float>::value, "missing metastream operator 'float'" );
     threadcached<float> c;
     from_v8(args[2], c);
 
-    static_assert( CHECK::meta_operator_exists<coid::charstr>::value, "missing metastream operator 'coid::charstr'" );
     threadcached<coid::charstr> g;
     from_v8(args[3], g);
 
@@ -1162,7 +1170,7 @@ CBK_RET main_js_dispatcher::v8_fun24( const ARGUMENTS& args )
 {
     v8::Isolate* iso = args.GetIsolate();
 
-    if (args.Length() < 5 || args.Length() > 5) { //in/inout arguments
+    if (args.Length() < 2 || args.Length() > 2) { //in/inout arguments
         coid::charstr tmp = "Wrong number of arguments in ";
         tmp << "main.fun2";
         return (CBK_RET)::js::THROW(iso, v8::Exception::SyntaxError, tmp);
@@ -1193,45 +1201,30 @@ CBK_RET main_js_dispatcher::v8_fun24( const ARGUMENTS& args )
     THREAD_SINGLETON(v8_streamer_context).reset();
 
     //stream the arguments in
-    static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator 'int'" );
+    static_assert(CHECK::meta_operator_exists<int>::value, "missing metastream operator 'int'");
+
     threadcached<int> a;
     from_v8(args[0], a);
 
-    static_assert( CHECK::meta_operator_exists<ns1::dummy>::value, "missing metastream operator 'ns1::dummy'" );
-    threadcached<ns1::dummy> b;
+    threadcached<iref<ns::other>> b;
     from_v8(args[1], b);
 
-    static_assert( CHECK::meta_operator_exists<float>::value, "missing metastream operator 'float'" );
-    threadcached<float> c;
-    from_v8(args[2], c);
-
-    static_assert( CHECK::meta_operator_exists<coid::charstr>::value, "missing metastream operator 'coid::charstr'" );
-    threadcached<coid::charstr> g;
-    from_v8(args[3], g);
-
-    iref<ns::other> h = ::js::unwrap_object<typename iref<ns::other>::base_t>(args[4]);
-
     //invoke
-    ns1::dummy d;
+    int c;
 
-    int e;
+    iref<ns::other> d;
 
-    iref<ns::other> f;
-
-    coid::charstr _rval_ = R_->fun2(a, b, &c, d, &e, f, g, h);
+    coid::charstr _rval_ = R_->fun2(a, b, c, d);
 
     //stream out
     static_assert( CHECK::meta_operator_exists<coid::charstr>::value, "missing metastream operator for 'coid::charstr'" );
     v8::Handle<v8::Object> r__ = NEWTYPE(iso, Object);
     r__->Set(v8::symbol("$ret"), to_v8(_rval_));
 
-    static_assert( CHECK::meta_operator_exists<ns1::dummy>::value, "missing metastream operator for 'ns1::dummy'" );
-    r__->Set(v8::symbol("d"), to_v8(d));
- 
     static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'" );
-    r__->Set(v8::symbol("e"), to_v8(e));
+    r__->Set(v8::symbol("c"), to_v8(c));
  
-    r__->Set(v8::symbol("f"), js_ns_other_create_wrapper(f, ifc->context(iso)));
+    r__->Set(v8::symbol("d"), js_ns_other_create_wrapper(d, ifc->context(iso)));
  
 #ifdef V8_MAJOR_VERSION
     args.GetReturnValue().Set(r__);
@@ -1825,7 +1818,7 @@ v8::Handle<v8::Object> main_js_dispatcher::create_interface_object( bool make_we
 
     v8::Handle<v8::External> map_ptr = NEWTYPE2(iso, External, this);
     obj->SetInternalField(0, map_ptr);
-    v8::Handle<v8::External> hash_ptr = NEWTYPE2(iso, External, (void*)ints(1355134241));
+    v8::Handle<v8::External> hash_ptr = NEWTYPE2(iso, External, (void*)ints(3221005457));
     obj->SetInternalField(1, hash_ptr);
 
     if (make_weak) {
@@ -2047,7 +2040,7 @@ v8::Handle<v8::Value> main_js_dispatcher::v8creator_create0( const ARGUMENTS& ar
 
     //stream out
     v8::Handle<v8::Value> r__ = nifc ? v8::Handle<v8::Value>(nifc->create_interface_object(true)) : NULLv8(iso);
-
+    
     return ESCAPE(handle_scope__, r__);
 }
 
@@ -2177,13 +2170,14 @@ v8::Handle<v8::Value> main_js_dispatcher::v8creator_create_special1( const ARGUM
     //stream the arguments in
     THREAD_SINGLETON(v8_streamer_context).reset();
 
-    static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'" );
+    static_assert(CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'");
+    static_assert(CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'");
     threadcached<int> a;
     from_v8(args[1+0], a);
 
-    iref<ns::other> b = ::js::unwrap_object<typename iref<ns::other>::base_t>(args[1+1]);
+    threadcached<iref<ns::other>> b;
+    from_v8(args[1+1], b);
 
-    static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'" );
     threadcached<int> e;
     if (1 + 2 < args.Length())
         from_v8(args[1+2], e);
@@ -2203,11 +2197,11 @@ v8::Handle<v8::Value> main_js_dispatcher::v8creator_create_special1( const ARGUM
     v8::Handle<v8::Object> r__ = NEWTYPE(iso, Object);
     r__->Set(v8::symbol("$ret"), nifc ? v8::Handle<v8::Value>(nifc->create_interface_object(true)) : NULLv8(iso));
 
-    static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'" );
+    static_assert(CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'");
     r__->Set(v8::symbol("c"), to_v8(c));
 
-    r__->Set(v8::symbol("d"), js_ns_other_create_wrapper(d, ifc&&!ifc->_object.IsEmpty()?ifc->context(iso):CUR_CONTEXT(iso)));
-
+    r__->Set(v8::symbol("d"), to_v8(d));
+    
     return ESCAPE(handle_scope__, r__);
 }
 
@@ -2337,15 +2331,15 @@ v8::Handle<v8::Value> main_js_dispatcher::v8creator_create_wp2( const ARGUMENTS&
     //stream the arguments in
     THREAD_SINGLETON(v8_streamer_context).reset();
 
-    static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'" );
+    static_assert(CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'");
+    static_assert(CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'");
+    static_assert(CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'");
     threadcached<int> a;
     from_v8(args[1+0], a);
 
-    static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'" );
     threadcached<int> b;
     from_v8(args[1+1], b);
 
-    static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'" );
     threadcached<int> d;
     if (1 + 2 < args.Length())
         from_v8(args[1+2], d);
@@ -2363,12 +2357,12 @@ v8::Handle<v8::Value> main_js_dispatcher::v8creator_create_wp2( const ARGUMENTS&
     v8::Handle<v8::Object> r__ = NEWTYPE(iso, Object);
     r__->Set(v8::symbol("$ret"), nifc ? v8::Handle<v8::Value>(nifc->create_interface_object(true)) : NULLv8(iso));
 
-    static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'" );
+    static_assert(CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'");
     r__->Set(v8::symbol("b"), to_v8(b));
 
-    static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'" );
+    static_assert(CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'");
     r__->Set(v8::symbol("c"), to_v8(c));
-
+    
     return ESCAPE(handle_scope__, r__);
 }
 

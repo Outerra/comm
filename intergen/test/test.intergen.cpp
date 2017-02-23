@@ -36,7 +36,7 @@ private:
 
     static ifn_t* get_vtable()
     {
-        if(_vtable1) return _vtable1;
+        if (_vtable1) return _vtable1;
 
         _vtable1 = new ifn_t[3];
         _vtable1[0] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&n1::n2::thing::destroy));
@@ -50,7 +50,7 @@ private:
 
     static ifn_t* get_vtable_intercept()
     {
-        if(_vtable2) return _vtable2;
+        if (_vtable2) return _vtable2;
         ifn_t* vtable1 = get_vtable();
 
         _vtable2 = new ifn_t[3];
@@ -66,10 +66,10 @@ protected:
 
     thingface_dispatcher()
     {}
-    
+
     bool intergen_bind_capture( coid::binstring* capture, uint instid ) override
     {
-        if(instid >= 0xffU)
+        if (instid >= 0xffU)
             return false;
 
         _instid = uint16(instid << 8U);
@@ -89,19 +89,19 @@ protected:
     ///Cleanup routine called from ~thingface()
     static void _cleaner_callback( thingface* m, intergen_interface* ifc ) {
         n1::n2::thing* host = m->host<n1::n2::thing>();
-        if(host) host->_ifc = ifc;
+        if (host) host->_ifc = ifc;
     }
 
     static iref<thingface> _generic_interface_creator(n1::n2::thing* host, thingface* __here__)
     {
         //cast to dispatch to sidestep protected access restrictions
         thingface_dispatcher* __disp__ = static_cast<thingface_dispatcher*>(__here__);
-        if(!__disp__)
+        if (!__disp__)
             __disp__ = new thingface_dispatcher;
 
         __disp__->_host.create(host);
         __disp__->_vtable = _capture ? get_vtable_intercept() : get_vtable();
-        if(!host->_ifc) {
+        if (!host->_ifc) {
             __disp__->_cleaner = &_cleaner_callback;
             host->_ifc = __disp__;
         }
@@ -116,7 +116,7 @@ public:
     static iref<thingface> get( thingface* __here__ )
     {
         iref<n1::n2::thing> __host__ = n1::n2::thing::get_thing();
-        if(!__host__)
+        if (!__host__)
             return 0;
         return _generic_interface_creator(__host__.get(), __here__);
     }
@@ -158,7 +158,7 @@ namespace n2 {
 
 void thing::boo( const char* key )
 {
-	if(!_ifc) 
+	if (!_ifc) 
         throw coid::exception() << "boo" << " handler not implemented";
     else
         return _ifc->iface<ifc1::ifc2::thingface>()->boo(key);

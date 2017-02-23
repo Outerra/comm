@@ -274,18 +274,12 @@ CBK_RET $..name$_js_dispatcher::v8_$name$$@index$( const ARGUMENTS& args )
 
     //stream the arguments in
 $-[args inarg? !nojs?]$
- $-(if iref.true?)$
-  $-(if !defval.empty?)$
-    $basetype$ $name$;
-    if ($@order$ < args.Length())
-        $name$ = ::js::unwrap_object<typename $basetype$::base_t>(args[$@order$]);
-    else
-        $name$ = $defval$;
-  $-(elif)$
-    $basetype$ $name$ = ::js::unwrap_object<typename $basetype$::base_t>(args[$@order$]);
-  $-(/if)$
- $-(elif)$
-    static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator '$basetype$'" );
+ $-(if iref.false?)$
+    static_assert(CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator '$basetype$'");
+ $-(/if)$
+$-[/args]$
+
+$-[args inarg? !nojs?]$
   $-(if !defval.empty? ptr.true?)$
     threadcached<$basetype$> $name$__tmp;
     $basetype$ *$name$ = &$name$__tmp;
@@ -303,7 +297,6 @@ $-[args inarg? !nojs?]$
     threadcached<$basetype$> $name$;
     from_v8(args[$@order$], $name$);
   $-(/if)$
- $-(/if)$
 $[/args]-$
 
     //invoke
@@ -449,7 +442,7 @@ $-(elif)$
  $-(if return.type?="void" noutargs?="1")$
 
   $-[args outarg?]$
-   $-(if !iref?)$
+   $-(if iref.false?)$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'" );
    $-(/if)$
    $-(if ptr?)$
@@ -1054,35 +1047,27 @@ v8::Handle<v8::Value> $..name$_js_dispatcher::v8creator_$name$$@order$( const AR
     THREAD_SINGLETON(v8_streamer_context).reset();
 
 $-[args inarg? !nojs?]$
- $-(if iref.true?)$
-  $-(if !defval.empty?)$
-    $basetype$ $name$;
-    if ($@order$ < args.Length())
-        $name$ = ::js::unwrap_object<typename $basetype$::base_t>(args[1+$@order$]);
-    else
-        $name$ = $defval$;
-  $-(elif)$
-    $basetype$ $name$ = ::js::unwrap_object<typename $basetype$::base_t>(args[1+$@order$]);
-  $-(/if)$
- $-(elif)$
-    static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'" );
-  $-(if ptr? !defval.empty?)$
+ $-(if iref.false?)$
+    static_assert(CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'");
+ $-(/if)$
+$-[/args]$
+$-[args inarg? !nojs?]$
+ $-(if ptr? !defval.empty?)$
     threadcached<$basetype$> $name$__tmp;
     $basetype$ *$name$ = &$name$__tmp;
     if (1 + $@order$ < args.Length())
         from_v8(args[1+$@order$], $name$__tmp);
     else
         $name$ = $defval$;
-  $-(elif !defval.empty?)$
+ $-(elif !defval.empty?)$
     threadcached<$basetype$> $name$;
     if (1 + $@order$ < args.Length())
         from_v8(args[1+$@order$], $name$);
     else
         $name$ = $defval$;
-  $-(elif)$
+ $-(elif)$
     threadcached<$basetype$> $name$;
     from_v8(args[1+$@order$], $name$);
-  $-(/if)$
  $-(/if)$
 $[/args]-$
 
@@ -1096,23 +1081,20 @@ $[/args]-$
     //    PERSISTENT(iso, nifc->_context, ctx);//ifc->_context);
 
     //stream out
-$-(if return.type!="void")$
- $-(if noutargs?)$
+$-(if noutargs?)$
     v8::Handle<v8::Object> r__ = NEWTYPE(iso, Object);
     r__->Set(v8::symbol("$$ret"), nifc ? v8::Handle<v8::Value>(nifc->create_interface_object(true)) : NULLv8(iso));
- $-(elif)$
+$-(elif)$
     v8::Handle<v8::Value> r__ = nifc ? v8::Handle<v8::Value>(nifc->create_interface_object(true)) : NULLv8(iso);
- $-(/if)$
-$(/if)-$
-$-[args outarg?]$
- $-(if iref.false?)$
-    static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'" );
-    r__->Set(v8::symbol("$name$"), to_v8($name$));
- $-(elif)$
-    r__->Set(v8::symbol("$name$"), js_$fulltype$_create_wrapper($name$, ifc&&!ifc->_object.IsEmpty()?ifc->context(iso):CUR_CONTEXT(iso)));
- $-(/if)$
-$[/args]-$
+$-(/if)$
 
+$-[args outarg?]$
+    $-(if iref.false?)$
+    static_assert(CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'");
+    $-(/if)$
+    r__->Set(v8::symbol("$name$"), to_v8($name$));
+$[/args]-$
+    
     return ESCAPE(handle_scope__, r__);
 }
 

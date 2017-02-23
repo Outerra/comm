@@ -198,6 +198,7 @@ namespace ig_test {
 \
         function evt4(a,b,e){\
             var result = {};\
+            this.fun2(a,b);\
             var ret = $query_interface(\"ns::js::main.create_special\",a,b,e);\
             b.set_str(\"evt4\");\
             result.$res = ret.$res;\
@@ -274,8 +275,8 @@ namespace ig_test {
         
         result = js_ifc_test();
         printf(result ?
-            "Lua ifc test successful!\n" :
-            "Lua ifc test failed!\n");
+            "JS ifc test successful!\n" :
+            "JS ifc test failed!\n");
     };
 
 }; // end of namespace ig_test

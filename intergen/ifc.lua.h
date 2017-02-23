@@ -93,7 +93,7 @@ namespace lua {
             lua_pushtoken(L, _lua_member_count_key);
             lua_pushvalue(L, -1);
             lua_rawget(L, -3);
-            int mcount = lua_tointeger(L, -1);
+            size_t mcount = lua_tointeger(L, -1);
             lua_pop(L, 1);
             lua_pushinteger(L, mcount + 1);
             lua_rawset(L, -3);
@@ -109,7 +109,7 @@ namespace lua {
                 lua_pushtoken(L, _lua_member_count_key);
                 lua_pushvalue(L, -1);
                 lua_rawget(L, -1);
-                int mcount = lua_tointeger(L, -1);
+                size_t mcount = lua_tointeger(L, -1);
                 lua_pushinteger(L, mcount - 1);
                 lua_rawset(L, -3);
                 lua_pop(L, 1);
@@ -121,11 +121,11 @@ namespace lua {
         return 0;
     }
 
-    inline int lua_classlen(lua_State * L, int idx) {
+    inline size_t lua_classlen(lua_State * L, int idx) {
         lua_getmetatable(L,idx);
         lua_pushtoken(L,_lua_member_count_key);
         lua_rawget(L, -2);
-        int res = lua_tointeger(L, -1);
+        size_t res = lua_tointeger(L, -1);
         lua_pop(L, 2);
         return res;
     }
@@ -685,7 +685,7 @@ namespace lua {
         lua_pop(L, 1);
 
         lua_getfield(L, -1, _lua_class_hash_key);
-        int hashid = lua_tointeger(L,-1);
+        int hashid = static_cast<int>(lua_tointeger(L,-1));
         lua_pop(L, 1);
 
         if (hashid != p->intergen_hash_id())    //sanity check

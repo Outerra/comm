@@ -167,7 +167,7 @@ private:
         _vtable1[1] = reinterpret_cast<ifn_t>(static_cast<int(policy_intrusive_base::*)()>(&ns1::main_cls::get_a));
         _vtable1[2] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(int)>(&ns1::main_cls::set_a));
         _vtable1[3] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(int,const ns1::dummy&,float*,ns1::dummy&,int*,iref<ns::other>&,const coid::charstr&)>(&ns1::main_cls::fun1));
-        _vtable1[4] = reinterpret_cast<ifn_t>(static_cast<coid::charstr(policy_intrusive_base::*)(int,const ns1::dummy&,float*,ns1::dummy&,int*,iref<ns::other>&,const coid::charstr&,iref<ns::other>)>(&ns1::main_cls::fun2));
+        _vtable1[4] = reinterpret_cast<ifn_t>(static_cast<coid::charstr(policy_intrusive_base::*)(int,iref<ns::other>,int&,iref<ns::other>&)>(&ns1::main_cls::fun2));
         return _vtable1;
     }
 
@@ -273,13 +273,13 @@ public:
             on ? (void*)&_generic_interface_creator : nullptr);
 
         interface_register::register_interface_creator(
-            "ns::main.create@1355134241",
+            "ns::main.create@3221005457",
             on ? (void*)&create : nullptr);
         interface_register::register_interface_creator(
-            "ns::main.create_special@1355134241",
+            "ns::main.create_special@3221005457",
             on ? (void*)&create_special : nullptr);
         interface_register::register_interface_creator(
-            "ns::main.create_wp@1355134241",
+            "ns::main.create_wp@3221005457",
             on ? (void*)&create_wp : nullptr);
     }
 };

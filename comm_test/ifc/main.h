@@ -38,7 +38,7 @@ public:
 
     void fun1( int a, const ns1::dummy& b, float* c, ifc_out ns1::dummy& d, ifc_out int* e, ifc_out iref<ns::other>& f, const coid::charstr& g );
 
-    coid::charstr fun2( int a, const ns1::dummy& b, float* c, ifc_out ns1::dummy& d, ifc_out int* e, ifc_out iref<ns::other>& f, const coid::charstr& g, iref<ns::other> h );
+    coid::charstr fun2( int a, iref<ns::other> b, ifc_out int& c, ifc_out iref<ns::other>& d );
 
 
 protected:
@@ -93,7 +93,7 @@ public:
         if (_cleaner) _cleaner(this,0);
     }
 
-    static const int HASHID = 1355134241;
+    static const int HASHID = 3221005457;
 
     int intergen_hash_id() const override final { return HASHID; }
 
@@ -107,7 +107,7 @@ public:
     }
 
     static const coid::token& intergen_default_creator_static( EBackend bck ) {
-        static const coid::token _dc("ns::main.create@1355134241");
+        static const coid::token _dc("ns::main.create@3221005457");
         static const coid::token _djs("ns::js::main@wrapper");
         static const coid::token _dlua("ns::lua::main@wrapper");
         static const coid::token _dnone;
@@ -161,7 +161,7 @@ inline iref<T> main::create( T* _subclass_ )
     typedef iref<T> (*fn_creator)(main*);
 
     static fn_creator create = 0;
-    static const coid::token ifckey = "ns::main.create@1355134241";
+    static const coid::token ifckey = "ns::main.create@3221005457";
 
     if (!create)
         create = reinterpret_cast<fn_creator>(
@@ -179,7 +179,7 @@ inline iref<T> main::create_special( T* _subclass_, int a, iref<ns::other> b, in
     typedef iref<T> (*fn_creator)(main*, int, iref<ns::other>, int&, iref<ns::other>&, int);
 
     static fn_creator create = 0;
-    static const coid::token ifckey = "ns::main.create_special@1355134241";
+    static const coid::token ifckey = "ns::main.create_special@3221005457";
 
     if (!create)
         create = reinterpret_cast<fn_creator>(
@@ -197,7 +197,7 @@ inline iref<T> main::create_wp( T* _subclass_, int a, int& b, int& c, int d )
     typedef iref<T> (*fn_creator)(main*, int, int&, int&, int);
 
     static fn_creator create = 0;
-    static const coid::token ifckey = "ns::main.create_wp@1355134241";
+    static const coid::token ifckey = "ns::main.create_wp@3221005457";
 
     if (!create)
         create = reinterpret_cast<fn_creator>(
@@ -224,8 +224,8 @@ inline void main::set_a( int a )
 inline void main::fun1( int a, const ns1::dummy& b, float* c, ns1::dummy& d, int* e, iref<ns::other>& f, const coid::charstr& g )
 { return VT_CALL(void,(int,const ns1::dummy&,float*,ns1::dummy&,int*,iref<ns::other>&,const coid::charstr&),3)(a,b,c,d,e,f,g); }
 
-inline coid::charstr main::fun2( int a, const ns1::dummy& b, float* c, ns1::dummy& d, int* e, iref<ns::other>& f, const coid::charstr& g, iref<ns::other> h )
-{ return VT_CALL(coid::charstr,(int,const ns1::dummy&,float*,ns1::dummy&,int*,iref<ns::other>&,const coid::charstr&,iref<ns::other>),4)(a,b,c,d,e,f,g,h); }
+inline coid::charstr main::fun2( int a, iref<ns::other> b, int& c, iref<ns::other>& d )
+{ return VT_CALL(coid::charstr,(int,iref<ns::other>,int&,iref<ns::other>&),4)(a,b,c,d); }
 
 #pragma warning(pop)
 

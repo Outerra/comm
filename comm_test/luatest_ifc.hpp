@@ -88,20 +88,18 @@ namespace ns1 {
         };
 
         ifc_fn void fun1(ifc_in int a, ifc_in const ns1::dummy& b, ifc_in float * c, ifc_out ns1::dummy& d, ifc_out int * e, ifc_out iref<ns::other>& f, ifc_in const coid::charstr& g) {
-            *e = reinterpret_cast<int>(c);
+            //*e = reinterpret_cast<int>(c);
             d = b;
             _a = a;
             f = ns::other::create(g);
         }
 
-        ifc_fn coid::charstr fun2(ifc_in int a, ifc_in const ns1::dummy& b, ifc_in float * c, ifc_out ns1::dummy& d, ifc_out int * e, ifc_out iref<ns::other>& f, ifc_in const coid::charstr& g, ifc_in iref<ns::other> h) {
-            *e = reinterpret_cast<int>(c);
-            d = b;
-            _a = a;
-            f = ns::other::create(g);
-            d.a = a;
-            d.b = "Mnau mnau mnau!!";
-            return g;
+        ifc_fn coid::charstr fun2(ifc_in int a, ifc_in iref<ns::other> b, ifc_out int& c, ifc_out iref<ns::other>& d) {
+            c = a - 1;
+            d = ns::other::create(a);
+            d->set_str("fun2crt");
+
+            return "fun2";
         }
 
         ifc_event void evt1(ifc_in int a, ifc_out int * b, ifc_out iref<ns::other>& d);

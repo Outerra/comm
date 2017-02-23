@@ -1183,7 +1183,7 @@ int main_lua_dispatcher::lua_fun13( lua_State * L ){
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  coid::charstr ns::main::fun2( int a, const ns1::dummy& b, float* c, ns1::dummy& d, int* e, iref<ns::other>& f, const coid::charstr& g, iref<ns::other> h)
+//  coid::charstr ns::main::fun2( int a, iref<ns::other> b, int& c, iref<ns::other>& d)
 //
 __declspec(noinline) int main_lua_dispatcher::lua_fun24_exc( lua_State * L )
 {
@@ -1192,7 +1192,7 @@ __declspec(noinline) int main_lua_dispatcher::lua_fun24_exc( lua_State * L )
     try {
         const int args_count = lua_gettop(L) - 1;
 
-        if (args_count < 5 || args_count > 5) { //in/inout arguments
+        if (args_count < 2 || args_count > 2) { //in/inout arguments
             coid::charstr tmp = "Wrong number of arguments in ";
             tmp << "main.fun2";
             throw coid::exception(tmp);
@@ -1227,53 +1227,32 @@ __declspec(noinline) int main_lua_dispatcher::lua_fun24_exc( lua_State * L )
         from_lua(a);
 
         lua_pushvalue(L, 1 + 2);
-        static_assert(CHECK::meta_operator_exists<ns1::dummy>::value, "missing metastream operator 'ns1::dummy'");
-            threadcached<ns1::dummy> b;
+        iref<ns::other> b;
         from_lua(b);
 
-        lua_pushvalue(L, 2 + 2);
-        static_assert(CHECK::meta_operator_exists<float>::value, "missing metastream operator 'float'");
-            threadcached<float> c;
-        from_lua(c);
-
-        lua_pushvalue(L, 3 + 2);
-        static_assert(CHECK::meta_operator_exists<coid::charstr>::value, "missing metastream operator 'coid::charstr'");
-            threadcached<coid::charstr> g;
-        from_lua(g);
-
-        lua_pushvalue(L, 4 + 2);
-        iref<ns::other> h;
-        from_lua(h);
-
 //out params
-        ns1::dummy d;
-        int e;
-        iref<ns::other> f;
+        int c;
+        iref<ns::other> d;
 
 // invoke
-        coid::charstr _rval_ = R_->fun2(a, b, &c, d, &e, f, g, h);
+        coid::charstr _rval_ = R_->fun2(a, b, c, d);
     
 //stream out
         THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
-        const uint _res_count = 3 + 1;
+        const uint _res_count = 2 + 1;
         lua_createtable(L,0,_res_count);
         static_assert(CHECK::meta_operator_exists<coid::charstr>::value, "missing metastream operator for 'coid::charstr'");
         to_lua(_rval_);
         lua_setfield(L, -2, "_ret");
     
-        static_assert(CHECK::meta_operator_exists<ns1::dummy>::value, "missing metastream operator for 'ns1::dummy'");
-        to_lua(d);
-        lua_setfield(L, -2, "d");
-
-    
         static_assert(CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'");
-        to_lua(e);
-        lua_setfield(L, -2, "e");
+        to_lua(c);
+        lua_setfield(L, -2, "c");
 
     
-        lua_ns_other_create_wrapper(f, ifc->_context)->get_ref();
-        lua_setfield(L, -2, "f");
+        lua_ns_other_create_wrapper(d, ifc->_context)->get_ref();
+        lua_setfield(L, -2, "d");
 
     
         return 1;
@@ -1671,7 +1650,7 @@ iref<::lua::registry_handle> main_lua_dispatcher::create_interface_object( bool 
     *static_cast<size_t*>(cptr_holder) = reinterpret_cast<size_t>(this);
     lua_setfield(L, -2, ::lua::_lua_cthis_key);
         
-    lua_pushnumber(L, ints(1355134241));
+    lua_pushnumber(L, ints(3221005457));
     lua_setfield(L, -2, ::lua::_lua_class_hash_key);
 
     _context->get_ref();

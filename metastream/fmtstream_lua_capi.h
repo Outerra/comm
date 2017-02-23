@@ -244,7 +244,7 @@ public:
                     e = ersSYNTAX_ERROR "expected array";
                 else {
                     _stack.add();
-                    uint len = lua_objlen(_state,-1);
+                    size_t len = lua_objlen(_state,-1);
                     t.set_count(len, p);
                 }
             }
@@ -502,7 +502,7 @@ public:
         type t = c._type;
 
         if (t.type != type::T_CHAR  &&  t.type != type::T_BINARY) {
-            uint na = lua_objlen(_state,-1);
+            size_t na = lua_objlen(_state,-1);
 
             if (n == UMAXS)
                 n = na;

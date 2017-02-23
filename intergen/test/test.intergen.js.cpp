@@ -22,13 +22,14 @@ using namespace coid;
 
 #define ARGUMENTS           v8::FunctionCallbackInfo<v8::Value>
 #define CBK_RET             void
-#define CBK_UNDEFINED       
+#define CBK_UNDEFINED
 
 #define NEWTYPE(iso,t)      v8::t::New(iso)
 #define NEWTYPE2(iso,t,a)   v8::t::New(iso, a)
 #define PERSISTENT(iso,o,n) o.Reset(iso, n)
 #define RESET(o)            o.Reset()
 #define LOCAL(iso,o)        o.Get(iso)
+#define CUR_CONTEXT(iso)    iso->GetCurrentContext()
 
 #else
 
@@ -46,8 +47,9 @@ using namespace coid;
 #define NEWTYPE(iso,t)      v8::t::New()
 #define NEWTYPE2(iso,t,a)   v8::t::New(a)
 #define PERSISTENT(iso,o,n) o = o.New(iso,n)
-#define RESET(o)            do { if(!o.IsWeak()) o.Dispose(); o.Clear(); } while(0)
+#define RESET(o)            do { if (!o.IsWeak()) o.Dispose(); o.Clear(); } while(0)
 #define LOCAL(iso,o)        o
+#define CUR_CONTEXT(iso)    v8::Context::GetCurrent()
 
 #endif
 
@@ -119,7 +121,7 @@ public:
     ~thingface_js_dispatcher() {
         //RESET(_eventobj);
 
-        for(int i=0; i<1; ++i) {
+        for (int i=0; i<1; ++i) {
             RESET(_events[i]);
         }
 
@@ -128,7 +130,7 @@ public:
         //RESET(_script);
         //RESET(_context);
     }
-    
+
     bool intergen_bind_capture( coid::binstring* capture, uint instid ) override
     {
         return _real()->intergen_bind_capture(capture, instid);
@@ -176,8 +178,8 @@ private:
     bool is_event_bound( int id )
     {
         v8::Isolate* iso = v8::Isolate::GetCurrent();
-        
-        if(!_bound_events) {
+
+        if (!_bound_events) {
             //v8::Context::Scope context_scope(LOCAL(iso, _context));
             HANDLE_SCOPE(iso, handle_scope__);
             v8::TryCatch trycatch__;
@@ -197,7 +199,7 @@ CBK_RET thingface_js_dispatcher::v8_hallo0( const ARGUMENTS& args )
 {
     v8::Isolate* iso = args.GetIsolate();
 
-    if(args.Length() < 2 || args.Length() > 2) { //in/inout arguments
+    if (args.Length() < 2 || args.Length() > 2) { //in/inout arguments
         coid::charstr tmp = "Wrong number of arguments in ";
         tmp << "thingface.hallo";
         return (CBK_RET)::js::THROW(iso, v8::Exception::SyntaxError, tmp);
@@ -205,18 +207,18 @@ CBK_RET thingface_js_dispatcher::v8_hallo0( const ARGUMENTS& args )
 
     ESCAPABLE_SCOPE(iso, handle_scope__);
     v8::Local<v8::Object> obj__ = args.Holder();
-    if(obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
+    if (obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
         return CBK_UNDEFINED;
 
     v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
-    if(!intobj__->IsExternal())
+    if (!intobj__->IsExternal())
         return CBK_UNDEFINED;
 
     ::js::interface_wrapper_base<ifc1::ifc2::thingface>* ifc = static_cast<::js::interface_wrapper_base<ifc1::ifc2::thingface>*>
         (v8::Handle<v8::External>::Cast(intobj__)->Value());
 
     auto R_ = ifc ? ifc->_real() : 0;
-    if(!R_) {
+    if (!R_) {
         coid::charstr tmp = "Null interface object in ";
         tmp << "thingface.hallo";
         return (CBK_RET)::js::THROW(iso, &v8::Exception::ReferenceError, tmp);
@@ -228,11 +230,12 @@ CBK_RET thingface_js_dispatcher::v8_hallo0( const ARGUMENTS& args )
     THREAD_SINGLETON(v8_streamer_context).reset();
 
     //stream the arguments in
-    static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator 'int'" );
+    static_assert(CHECK::meta_operator_exists<int>::value, "missing metastream operator 'int'");
+    static_assert(CHECK::meta_operator_exists<coid::token>::value, "missing metastream operator 'coid::token'");
+
     threadcached<int> a;
     from_v8(args[0], a);
 
-    static_assert( CHECK::meta_operator_exists<coid::token>::value, "missing metastream operator 'coid::token'" );
     threadcached<coid::token> b;
     from_v8(args[1], b);
 
@@ -265,7 +268,7 @@ CBK_RET thingface_js_dispatcher::v8_fallo1( const ARGUMENTS& args )
 {
     v8::Isolate* iso = args.GetIsolate();
 
-    if(args.Length() < 2 || args.Length() > 2) { //in/inout arguments
+    if (args.Length() < 2 || args.Length() > 2) { //in/inout arguments
         coid::charstr tmp = "Wrong number of arguments in ";
         tmp << "thingface.fallo";
         return (CBK_RET)::js::THROW(iso, v8::Exception::SyntaxError, tmp);
@@ -273,18 +276,18 @@ CBK_RET thingface_js_dispatcher::v8_fallo1( const ARGUMENTS& args )
 
     ESCAPABLE_SCOPE(iso, handle_scope__);
     v8::Local<v8::Object> obj__ = args.Holder();
-    if(obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
+    if (obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
         return CBK_UNDEFINED;
 
     v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
-    if(!intobj__->IsExternal())
+    if (!intobj__->IsExternal())
         return CBK_UNDEFINED;
 
     ::js::interface_wrapper_base<ifc1::ifc2::thingface>* ifc = static_cast<::js::interface_wrapper_base<ifc1::ifc2::thingface>*>
         (v8::Handle<v8::External>::Cast(intobj__)->Value());
 
     auto R_ = ifc ? ifc->_real() : 0;
-    if(!R_) {
+    if (!R_) {
         coid::charstr tmp = "Null interface object in ";
         tmp << "thingface.fallo";
         return (CBK_RET)::js::THROW(iso, &v8::Exception::ReferenceError, tmp);
@@ -296,11 +299,12 @@ CBK_RET thingface_js_dispatcher::v8_fallo1( const ARGUMENTS& args )
     THREAD_SINGLETON(v8_streamer_context).reset();
 
     //stream the arguments in
-    static_assert( CHECK::meta_operator_exists<bool>::value, "missing metastream operator 'bool'" );
+    static_assert(CHECK::meta_operator_exists<bool>::value, "missing metastream operator 'bool'");
+    static_assert(CHECK::meta_operator_exists<const char*>::value, "missing metastream operator 'const char*'");
+
     threadcached<bool> b;
     from_v8(args[0], b);
 
-    static_assert( CHECK::meta_operator_exists<const char*>::value, "missing metastream operator 'const char*'" );
     threadcached<const char*> str;
     from_v8(args[1], str);
 
@@ -327,7 +331,7 @@ CBK_RET thingface_js_dispatcher::v8_fallo1( const ARGUMENTS& args )
 void thingface_js_dispatcher::boo( const char* key )
 {
     v8::Isolate* iso = v8::Isolate::GetCurrent();
-    
+
     HANDLE_SCOPE(iso, handle_scope__);
     v8::Context::Scope context_scope__(context(iso));
     v8::TryCatch trycatch__;
@@ -335,24 +339,27 @@ void thingface_js_dispatcher::boo( const char* key )
     bind_events(context(iso), false, UNDEFINED);
     auto ev__ = LOCAL(iso, _events[0]);
 
-    if(_events[0].IsEmpty() || ev__->IsUndefined())
+    if (_events[0].IsEmpty() || ev__->IsUndefined())
         return;
 
+// prepare in arguments
     THREAD_SINGLETON(v8_streamer_context).reset();
-  
+
     static_assert( CHECK::meta_operator_exists<const char*>::value, "missing metastream operator for 'const char*'" );
     v8::Handle<v8::Value> __inargs[] = {
-        v8_streamer<const char*>::to_v8(key),
+        v8_streamer<const char*>::to_v8(key)
     };
 
+//  event call
     v8::Local<v8::Value> r__ = ev__->Call(
         LOCAL(iso, _object),
         //_eventobj.IsEmpty() || LOCAL(iso,_eventobj)->IsUndefined() ? LOCAL(iso,_object) : LOCAL(iso,_eventobj),
         1, __inargs);
 
 
-    if(trycatch__.HasCaught())
+    if (trycatch__.HasCaught())
         script_handle::throw_js_error(trycatch__, "ifc1::ifc2::js::thingface.boo(): ");
+// gather results
 
 }
 
@@ -363,11 +370,11 @@ CBK_RET thingface_js_dispatcher::v8_evback_boo0( const ARGUMENTS& args )
 
     ESCAPABLE_SCOPE(iso, handle_scope__);
     v8::Local<v8::Object> obj__ = args.Holder();
-    if(obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
+    if (obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
         return CBK_UNDEFINED;
 
     v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
-    if(!intobj__->IsExternal())
+    if (!intobj__->IsExternal())
         return CBK_UNDEFINED;
 
     ifc1::ifc2::js::thingface_js_dispatcher* ifc = static_cast<ifc1::ifc2::js::thingface_js_dispatcher*>
@@ -380,7 +387,7 @@ CBK_RET thingface_js_dispatcher::v8_evback_boo0( const ARGUMENTS& args )
     ifc->bind_events(ctx, false, UNDEFINED);
     auto ev__ = LOCAL(iso, ifc->_events[0]);
 
-    if(ifc->_events[0].IsEmpty() || ev__->IsUndefined()) {
+    if (ifc->_events[0].IsEmpty() || ev__->IsUndefined()) {
         coid::charstr tmp = "Event not available: ";
         tmp << "boo";
         return (CBK_RET)::js::THROW(iso, &v8::Exception::ReferenceError, tmp);
@@ -388,9 +395,9 @@ CBK_RET thingface_js_dispatcher::v8_evback_boo0( const ARGUMENTS& args )
 
     v8::Local<v8::Value> largs[1];
     int nargs = args.Length();
-    if(nargs > 1)
+    if (nargs > 1)
         nargs = 1;
-    for(int i=0; i<nargs; ++i)
+    for (int i=0; i<nargs; ++i)
         largs[i] = args[i];
 
     v8::Local<v8::Value> r__ = ev__->Call(
@@ -411,20 +418,20 @@ CBK_RET thingface_js_dispatcher::v8log( const ARGUMENTS& args )
 {
     v8::Isolate* iso = args.GetIsolate();
 
-    if(args.Length() == 0)
+    if (args.Length() == 0)
         return CBK_UNDEFINED;
-        
+
     const void* inst = 0;
 
     v8::Local<v8::Object> obj__ = args.Holder();
-    if(!obj__.IsEmpty() && obj__->InternalFieldCount() > 0) {
+    if (!obj__.IsEmpty() && obj__->InternalFieldCount() > 0) {
         v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
-        if(intobj__->IsExternal()) {
+        if (intobj__->IsExternal()) {
             ifc1::ifc2::js::thingface_js_dispatcher* ifc = static_cast<ifc1::ifc2::js::thingface_js_dispatcher*>
                 (v8::Handle<v8::External>::Cast(intobj__)->Value());
 
             inst = ifc;
-            if(!ifc)
+            if (!ifc)
                 return (CBK_RET)::js::THROW(iso, &v8::Exception::ReferenceError, "Null interface object in $log");
         }
     }
@@ -436,7 +443,7 @@ CBK_RET thingface_js_dispatcher::v8log( const ARGUMENTS& args )
 
     intergen_interface::ifclog_ext(coid::ELogType::None, coid::tokenhash("ifc1::ifc2::thingface"),
         inst, tokey);
-    
+
     return CBK_UNDEFINED;
 }
 
@@ -445,7 +452,7 @@ CBK_RET thingface_js_dispatcher::v8query_interface( const ARGUMENTS& args )
 {
     v8::Isolate* iso = args.GetIsolate();
 
-    if(args.Length() < 1)
+    if (args.Length() < 1)
         return (CBK_RET)::js::THROW(iso, &v8::Exception::Error, "Interface creator name missing");
 
     ESCAPABLE_SCOPE(iso, handle_scope__);
@@ -456,24 +463,24 @@ CBK_RET thingface_js_dispatcher::v8query_interface( const ARGUMENTS& args )
     fn_get get = reinterpret_cast<fn_get>(
         coid::interface_register::get_interface_creator(tokey));
 
-    if(!get) {
+    if (!get) {
         coid::charstr tmp = "interface creator ";
         tmp << tokey << " not found";
         return (CBK_RET)::js::THROW(iso, v8::Exception::Error, tmp);
     }
 
     v8::Local<v8::Object> obj__ = args.Holder();
-    if(obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
+    if (obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
         return CBK_UNDEFINED;
 
     v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
-    if(!intobj__->IsExternal())
+    if (!intobj__->IsExternal())
         return CBK_UNDEFINED;
 
     ifc1::ifc2::js::thingface_js_dispatcher* ifc = static_cast<ifc1::ifc2::js::thingface_js_dispatcher*>
         (v8::Handle<v8::External>::Cast(intobj__)->Value());
 
-    if(!ifc)
+    if (!ifc)
         return (CBK_RET)::js::THROW(iso, &v8::Exception::ReferenceError, "Null interface object in $query_interface");
 
 #ifdef V8_MAJOR_VERSION
@@ -488,7 +495,7 @@ CBK_RET thingface_js_dispatcher::v8query_interface_global( const ARGUMENTS& args
 {
     v8::Isolate* iso = args.GetIsolate();
 
-    if(args.Length() < 1)
+    if (args.Length() < 1)
         return (CBK_RET)::js::THROW(iso, &v8::Exception::Error, "Interface creator name missing");
 
     ESCAPABLE_SCOPE(iso, handle_scope__);
@@ -499,12 +506,12 @@ CBK_RET thingface_js_dispatcher::v8query_interface_global( const ARGUMENTS& args
     fn_get get = reinterpret_cast<fn_get>(
         coid::interface_register::get_interface_creator(tokey));
 
-    if(!get) {
+    if (!get) {
         coid::charstr tmp = "interface creator ";
         tmp << tokey << " not found";
         return (CBK_RET)::js::THROW(iso, v8::Exception::Error, tmp);
     }
-    
+
 #ifdef V8_MAJOR_VERSION
     args.GetReturnValue().Set(get(args, 0));
 #else
@@ -518,19 +525,19 @@ CBK_RET thingface_js_dispatcher::v8rebind_events( const ARGUMENTS& args )
     v8::Isolate* iso = args.GetIsolate();
     HANDLE_SCOPE(iso, handle_scope__);
     v8::Local<v8::Object> obj__ = args.Holder();
-    if(obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
+    if (obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
         return CBK_UNDEFINED;
 
     v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
-    if(!intobj__->IsExternal())
+    if (!intobj__->IsExternal())
         return CBK_UNDEFINED;
 
     ifc1::ifc2::js::thingface_js_dispatcher* ifc = static_cast<ifc1::ifc2::js::thingface_js_dispatcher*>
         (v8::Handle<v8::External>::Cast(intobj__)->Value());
 
-    if(ifc) {
+    if (ifc) {
         v8::Local<v8::Value> val;
-        if(args.Length() > 0)
+        if (args.Length() > 0)
             val = args[0];
         ifc->bind_events(ifc->context(iso), true, val);
     }
@@ -542,19 +549,19 @@ CBK_RET thingface_js_dispatcher::v8rebind_events( const ARGUMENTS& args )
 CBK_RET thingface_js_dispatcher::v8current_global( const ARGUMENTS& args )
 {
     v8::Isolate* iso = args.GetIsolate();
-    
+
     ESCAPABLE_SCOPE(iso, handle_scope__);
     v8::Local<v8::Object> obj__ = args.Holder();
-    if(obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
+    if (obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
         return CBK_UNDEFINED;
 
     v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
-    if(!intobj__->IsExternal())
+    if (!intobj__->IsExternal())
         return CBK_UNDEFINED;
 
     ifc1::ifc2::js::thingface_js_dispatcher* ifc = static_cast<ifc1::ifc2::js::thingface_js_dispatcher*>
         (v8::Handle<v8::External>::Cast(intobj__)->Value());
-        
+
 #ifdef V8_MAJOR_VERSION
     args.GetReturnValue().Set(ifc->context(iso)->Global()->GetPrototype());
 #else
@@ -568,7 +575,7 @@ v8::Handle<v8::Object> thingface_js_dispatcher::create_interface_object( bool ma
     v8::Isolate* iso = v8::Isolate::GetCurrent();
 
     static v8::Persistent<v8::ObjectTemplate> _objtempl;
-    if(_objtempl.IsEmpty())
+    if (_objtempl.IsEmpty())
     {
         v8::Local<v8::ObjectTemplate> ot = NEWTYPE(iso, ObjectTemplate);
         ot->SetInternalFieldCount(2);    //ptr and class hash id
@@ -594,9 +601,9 @@ v8::Handle<v8::Object> thingface_js_dispatcher::create_interface_object( bool ma
     v8::Handle<v8::External> hash_ptr = NEWTYPE2(iso, External, (void*)ints(1521478720));
     obj->SetInternalField(1, hash_ptr);
 
-    if(make_weak) {
+    if (make_weak) {
         PERSISTENT(iso, _object, obj);
-        
+
 #ifdef V8_MAJOR_VERSION
         void* p = this;
         _object.SetWeak(&p, _js_release_callback, v8::WeakCallbackType::kParameter);
@@ -620,11 +627,11 @@ v8::Handle<v8::Script> thingface_js_dispatcher::load_script( const coid::token& 
     v8::TryCatch trycatch__;
 
     v8::Handle<v8::Script> compiled_script = v8::Script::Compile(scriptv8, v8::string_utf8(fname));
-    if(trycatch__.HasCaught())
+    if (trycatch__.HasCaught())
         script_handle::throw_js_error(trycatch__, "ifc1::ifc2::js::thingface::load_script(): ");
 
     compiled_script->Run();
-    if(trycatch__.HasCaught())
+    if (trycatch__.HasCaught())
         script_handle::throw_js_error(trycatch__, "ifc1::ifc2::js::thingface::load_script(): ");
 
     return compiled_script;
@@ -633,7 +640,7 @@ v8::Handle<v8::Script> thingface_js_dispatcher::load_script( const coid::token& 
 ////////////////////////////////////////////////////////////////////////////////
 void thingface_js_dispatcher::bind_events( v8::Handle<v8::Context> context, bool force, v8::Handle<v8::Value> ref )
 {
-    if(!force && _bound_events)
+    if (!force && _bound_events)
         return;
 
     v8::Isolate* iso = v8::Isolate::GetCurrent();
@@ -647,28 +654,28 @@ void thingface_js_dispatcher::bind_events( v8::Handle<v8::Context> context, bool
     v8::TryCatch trycatch__;
     v8::Local<v8::Object> global;
     bool clear = false;
-    if(ref.IsEmpty() || ref->IsUndefined())
+    if (ref.IsEmpty() || ref->IsUndefined())
         global = context->Global();
-    else if(ref->IsNull())
+    else if (ref->IsNull())
         clear = true;
     else
         global = ref->ToObject();
 
-    for(int i=0; i<1; ++i)
+    for (int i=0; i<1; ++i)
     {
         RESET(_events[i]);
 
-        if(clear)
+        if (clear)
             continue;
 
         v8::Local<v8::Value> var = global->Get(v8::string_utf8(names[i]));
-        if(var->IsUndefined())
+        if (var->IsUndefined())
             continue;
 
         v8::Local<v8::Function> foo = v8::Local<v8::Function>::Cast(var);
         bool failed = trycatch__.HasCaught() || foo->IsUndefined();
 
-        if(!failed)
+        if (!failed)
              PERSISTENT(iso, _events[i], foo);
     }
 
@@ -687,24 +694,24 @@ iref<thingface_js_dispatcher> thingface_js_dispatcher::get( const script_handle&
 
     // create interface object
     iref<thingface_js_dispatcher> ifc = ifc1::ifc2::thingface::get(new thingface_js_dispatcher);
-    if(!ifc)
+    if (!ifc)
         throw coid::exception() << "failed to create interface object";
 
     // check if an external context provider is required
-    if(script.is_path()) {
+    if (script.is_path()) {
         coid::token path = script.str();
         path.cut_right('?', coid::token::cut_trait_remove_sep_default_empty());
 
         bool ispage = path.begins_with("http://") || path.begins_with("https://") || path.ends_with(".html");
         bool isscript = path.ends_with(".js");
 
-        if(ispage && !isscript) {
+        if (ispage && !isscript) {
             typedef v8::Handle<v8::Context> (*fn_getctx)(const coid::token&, policy_intrusive_base*);
 
             fn_getctx ctxgetter = reinterpret_cast<fn_getctx>(
                     coid::interface_register::get_interface_creator("~html@system_context_getter2"));
 
-            if(!ctxgetter)
+            if (!ctxgetter)
                 throw coid::exception() << "unable to acquire the system context creator interface";
 
             context = ctxgetter(script.str(), ifc.get());
@@ -713,22 +720,22 @@ iref<thingface_js_dispatcher> thingface_js_dispatcher::get( const script_handle&
 
     bool extctx = !context.IsEmpty();
 
-    if(!extctx) {
-        if(script.has_context())
+    if (!extctx) {
+        if (script.has_context())
             context = script.context();
         else
             context = NEWTYPE(iso, Context);
     }
 
-    if(ctx)
+    if (ctx)
         *ctx = ESCAPE(handle_scope__, context);
 
     v8::Context::Scope context_scope(context);
     //PERSISTENT(iso, ifc->_context, context);
 
-    if(!extctx && !script.is_context())
+    if (!extctx && !script.is_context())
     {
-        if(!script.has_context()) {
+        if (!script.has_context()) {
             context->Global()->Set(v8::string_utf8("$include"), NEWTYPE2(iso, FunctionTemplate, &script_handle::js_include)->GetFunction());
             context->Global()->Set(v8::string_utf8("$query_interface"), NEWTYPE2(iso, FunctionTemplate, &thingface_js_dispatcher::v8query_interface_global)->GetFunction());
             context->Global()->Set(v8::string_utf8("$log"), NEWTYPE2(iso, FunctionTemplate, &thingface_js_dispatcher::v8log)->GetFunction());
@@ -736,9 +743,9 @@ iref<thingface_js_dispatcher> thingface_js_dispatcher::get( const script_handle&
 
         coid::token script_tok;
         coid::charstr script_tmp;
-        if(script.is_path()) {
-            coid::bifstream bif(script.str());
-            if(!bif.is_open())
+        if (script.is_path()) {
+            coid::bifstream bif (script.str());
+            if (!bif.is_open())
                 throw coid::exception() << script.str() << " not found";
 
             script_tmp = script.prefix();
@@ -750,7 +757,7 @@ iref<thingface_js_dispatcher> thingface_js_dispatcher::get( const script_handle&
 
             script_tok = script_tmp;
         }
-        else if(script.prefix()) {
+        else if (script.prefix()) {
             script_tmp << script.prefix() << script.str();
             script_tok = script_tmp;
         }
@@ -759,7 +766,7 @@ iref<thingface_js_dispatcher> thingface_js_dispatcher::get( const script_handle&
         }
 
         PERSISTENT(iso, ifc->_object, ifc->create_interface_object(false));
-        if(bindname)
+        if (bindname)
             context->Global()->Set(v8::string_utf8(bindname), LOCAL(iso, ifc->_object));
 
         v8::Handle<v8::Script> compiled_script = load_script(script_tok, script.url());
@@ -769,10 +776,10 @@ iref<thingface_js_dispatcher> thingface_js_dispatcher::get( const script_handle&
     else {
         PERSISTENT(iso, ifc->_object, ifc->create_interface_object(false));
 
-        if(bindname)
+        if (bindname)
             context->Global()->Set(v8::string_utf8(bindname), LOCAL(iso, ifc->_object));
     }
-    
+
     return ifc;
 }
 
@@ -782,7 +789,7 @@ v8::Handle<v8::Value> thingface_js_dispatcher::v8creator_get0( const ARGUMENTS& 
 {
     v8::Isolate* iso = args.GetIsolate();
 
-    if(args.Length() < 1+0 || args.Length() > 1+0) { //fnc name + in/inout arguments
+    if (args.Length() < 1+0 || args.Length() > 1+0) { //fnc name + in/inout arguments
         coid::charstr tmp = "Wrong number of arguments in ";
         tmp << "get";
         ::js::THROW(iso, &v8::Exception::Error, tmp);
@@ -794,25 +801,18 @@ v8::Handle<v8::Value> thingface_js_dispatcher::v8creator_get0( const ARGUMENTS& 
 
     //ifc1::ifc2::js::thingface_js_dispatcher* ifc = static_cast<ifc1::ifc2::js::thingface_js_dispatcher*>
     //    (v8::Handle<v8::External>::Cast(obj__->GetInternalField(0))->Value());
-    
-#if V8_MAJOR_VERSION
-    v8::Local<v8::Context> ctx = ifc && !ifc->_object.IsEmpty()
-        ? ifc->context(iso)//v8::Local<v8::Context>::New(iso, ifc->_context)
-        : iso->GetCurrentContext();
-#else
-    v8::Local<v8::Context> ctx = ifc && !ifc->_object.IsEmpty()
-        ? ifc->context(iso)//*ifc->_context
-        : v8::Context::GetCurrent();
-#endif
 
+    v8::Local<v8::Context> ctx = ifc && !ifc->_object.IsEmpty()
+        ? ifc->context(iso)
+        : CUR_CONTEXT(iso);
     v8::Context::Scope context_scope(ctx);
 
     //stream the arguments in
     THREAD_SINGLETON(v8_streamer_context).reset();
-    
+
     //invoke
     iref<thingface_js_dispatcher> nifc = ifc1::ifc2::thingface::get(new thingface_js_dispatcher);
-    //if(nifc)
+    //if (nifc)
     //    PERSISTENT(iso, nifc->_context, ctx);//ifc->_context);
 
     //stream out
@@ -828,7 +828,11 @@ v8::Handle<v8::Value> create_wrapper_thingface( ::ifc1::ifc2::thingface* orig, v
     v8::Isolate* iso = v8::Isolate::GetCurrent();
 
     // check that the orig points to an object
-    if(!orig) return NULLv8(iso);
+    if (!orig) return NULLv8(iso);
+
+    if (context.IsEmpty()) {
+        context = CUR_CONTEXT(iso);
+    }
 
     v8::Context::Scope context_scope(context);
     ESCAPABLE_SCOPE(iso, scope);
@@ -836,10 +840,10 @@ v8::Handle<v8::Value> create_wrapper_thingface( ::ifc1::ifc2::thingface* orig, v
     iref<ifc1::ifc2::js::thingface_js_dispatcher> ifc;
     v8::Handle<v8::Object> obj;
 
-    if(orig->intergen_backend() == intergen_interface::IFC_BACKEND_JS)
+    if (orig->intergen_backend() == intergen_interface::IFC_BACKEND_JS)
         obj = LOCAL(iso, static_cast<thingface_js_dispatcher*>(orig)->_object);
-    
-    if(obj.IsEmpty()) {
+
+    if (obj.IsEmpty()) {
         // create interface object
         ifc.create(new ifc1::ifc2::js::thingface_js_dispatcher(static_cast<::ifc1::ifc2::thingface*>(orig)));
 

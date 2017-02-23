@@ -274,9 +274,9 @@
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <TargetMachine>MachineX64</TargetMachine>
-      <AdditionalLibraryDirectories>../../../../../lib.14/$(Platform)/$(Configuration);../../../../../lib.14/$(Platform)\$(Configuration);bin\$(Platform)\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../../../lib.14/$(Platform)\$(Configuration);bin\$(Platform)\$(Configuration)</AdditionalLibraryDirectories>
       <ProgramDatabaseFile>$(OutDir)$(TargetName)12.pdb</ProgramDatabaseFile>
-      <AdditionalDependencies>v8_nosnapshot.lib;v8_libbase.lib;v8_base.lib;luajit.lib;comm_static.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>DbgHelp.lib;Shlwapi.lib;winmm.lib;v8_base.lib;v8_icui18n.lib;v8_icuuc.lib;v8_libbase.lib;v8_libplatform.lib;v8_libsampler.lib;v8_nosnapshot.lib;luajit.lib;comm_static.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-clang|x64'">
@@ -333,7 +333,7 @@
       <TargetMachine>MachineX64</TargetMachine>
       <AdditionalLibraryDirectories>../../../../../lib.14/$(Platform)/$(Configuration);../../../../../lib.14/$(Platform)\$(Configuration);bin\$(Platform)\$(Configuration)</AdditionalLibraryDirectories>
       <ProgramDatabaseFile>$(OutDir)$(TargetName)12.pdb</ProgramDatabaseFile>
-      <AdditionalDependencies>v8_nosnapshot.lib;v8_libbase.lib;v8_base.lib;luajit.lib;comm_static.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>DbgHelp.lib;Shlwapi.lib;winmm.lib;v8_base.lib;v8_icui18n.lib;v8_icuuc.lib;v8_libbase.lib;v8_libplatform.lib;v8_libsampler.lib;v8_nosnapshot.lib;luajit.lib;comm_static.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">
@@ -364,7 +364,7 @@
       <TargetMachine>MachineX64</TargetMachine>
       <AdditionalLibraryDirectories>../../../../../lib.14/$(Platform)/$(Configuration);../../../../../lib.14/$(Platform)\$(Configuration);bin\$(Platform)\$(Configuration)</AdditionalLibraryDirectories>
       <ProgramDatabaseFile>$(OutDir)$(TargetName)12.pdb</ProgramDatabaseFile>
-      <AdditionalDependencies>v8_nosnapshot.lib;v8_libbase.lib;v8_base.lib;luajit.lib;comm_static.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>DbgHelp.lib;Shlwapi.lib;winmm.lib;v8_base.lib;v8_icui18n.lib;v8_icuuc.lib;v8_libbase.lib;v8_libplatform.lib;v8_libsampler.lib;v8_nosnapshot.lib;luajit.lib;comm_static.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

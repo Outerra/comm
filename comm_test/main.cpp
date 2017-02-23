@@ -95,7 +95,6 @@ int main( int argc, char* argv[] )
     //coid::test();
     metastream_test();
     regex_test();
-    ig_test::lua_ifc_test();
-    ig_test::js_ifc_test();
+    ig_test::run_test();
     return 0;
 }
