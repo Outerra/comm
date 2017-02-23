@@ -1,12 +1,12 @@
 # INTERGEN
 
-This document describes the intergen tool for generating APIs from C++ classes. The naming convention used here:
+This document describes the intergen tool for generating C++/Javascript/Lua APIs from C++ classes. The naming convention used here:
 
-**host class** - an internal application class, can expose multiple interfaces to the world
+**host class** - any application class, can have one or more interfaces declared
 
-**client interface class** - generated class for a particular interface
+**client interface class** - generated thin wrapper class for a particular interface declaration
 
-An example of how the host class is decorated for intergen to automatically create both C++ and JavaScript client interfaces:
+An example of how the host class could be decorated for intergen to automatically create C++, JavaScript and Lua client interfaces to the same class:
 
 ```c++
     //host class
@@ -15,8 +15,7 @@ An example of how the host class is decorated for intergen to automatically crea
     public:
         //declare an interface, declared name is used as the interface class name
         // the name can optionally contain a namespace under which it should be created
-        //the second parameter is a relative path to the generated interface header,
-        // with optional interface file name
+        //the second parameter is a relative path to the generated interface header, with optional interface file name
         ifc_class(ot::engine_interface, ”ifc/”)
     
         //non-static interface methods
@@ -30,7 +29,8 @@ An example of how the host class is decorated for intergen to automatically crea
         //an interface creator static method (see below)
         ifc_fn static iref<engine> get( const char* param );
     
-        // other normal class content ...
+        //other normal class content, optionally other interfaces
+        // ...
     };
 ```
 
@@ -66,10 +66,7 @@ The generated client interface class can be used like this:
     ent->create_entity(“hoohoo”, &eid);
 ```
     
-Note that one host class can have multiple interfaces defined.
-
-
-
+Note that one host class can have multiple interfaces defined by `ifc_class` or `ifc_class_var` macros. All decorated methods that follow the interface class macro belong to the interface, up until the end of file or until the next interface class declaration.
 
 
 ### Interface methods
@@ -95,9 +92,6 @@ Normal methods callable from the interface can be simply declared by prefixing t
     };
 ```    
 
-Enum parameter types need to specify the enum keyword so that intergen can generate proper type casts internally.
-
-
 Interface destructor can be propagated as a special method of the host class, decorated by `ifc_fnx(~)`. This method is not exposed in the interface directly, it gets called only when the interface is released.
 
 ```c++
@@ -114,7 +108,7 @@ Interface destructor can be propagated as a special method of the host class, de
 
 ### Obtaining interfaces to C++ objects
 
-When a client wants to obtain interface to a host object, it needs to call a special static method of the interface named **creator**. Creators are static host class methods that allow clients to retrieve an interface to a host object. There can be several creators defined on the host class, and what object they return depends solely on their implementation. One can have creator that returns a singleton object, and so all clients would retrieve interfaces to the same object. Or a creator can create a new instance of the host class, or fetch an existing one based on optional parameters declared for the creator method.
+When a client wants to obtain interface to a host object, it needs to call a special static method of the interface named **creator**. Creators are static host class methods that allow clients to connect to a host object. There can be several creators defined on the host class, and what object instance they return depends solely on their implementation. One can have creator that returns a singleton object, and so all clients would retrieve interfaces to the same object. Or a creator can create a new instance of the host class, or fetch an existing one based on optional parameters declared for the creator method.
 
 Creator methods are declared as static `ifc_fn` decorated methods with `iref<host>` return value. No other static interface methods are allowed.
 
@@ -199,10 +193,19 @@ Bidirectional interfaces can be declared via `ifc_class_var` macro, which also i
         ifc_eventx(init) void initialize();
     };
 ```
-    
+
 Host instance can detect whether a client is connected by testing the value of variable declared with `ifc_class_var` clause (var in the above example). 
 
-`ifc_event` can be used to decorate a method that can be called from host class and will be invoked in the derived client class.
+`ifc_event` or `ifc_eventx` can be then used to decorate a method declaration that can be called from host class and will be invoked in the derived client class. Note the body of the method will be generated by intergen and it therefore must not have definition in the host class itself.
+
+`ifc_volatile` can be used to mark event method parameters to indicate that the memory is temporarily mapped and valid for the duration of the call into clients. Javascript and Lua clients can optimize the way the arguments are passed, without duplicating arrays or strings.
+
+`ifc_evbody` can be used to specify the default implementation of an event, in case the client doesn't implement the event handling.
+It can be specified after an ifc_event method declaration:
+
+```c++
+    ifc_event bool event() const ifc_evbody(return false);
+```
 
 
 ### Interface inheritance
