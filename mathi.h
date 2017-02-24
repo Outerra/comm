@@ -319,6 +319,59 @@ inline uint64 interleave_bits(uint32 a, uint32 b) {
     return (part_bits1(uint64(a)) << 1) + part_bits1(uint64(b));
 }
 
+////////////////////////////////////////////////////////////////////////////////
+//@return starting bit number of a contiguous range of n bits that are set to 0
+template <class T>
+inline uints find_zero_bitrange( uints n, const T* begin, const T* end )
+{
+    static const uints NBITS = 8 * sizeof(T);
+
+    const T* p = begin;
+    const T* s;
+
+    //uints reqm = (uints(1) << n) - 1;
+    uint8 bit = NBITS;
+
+    do {
+        if (bit >= NBITS) {
+            for (; p < end && *p == UMAXS; ++p);
+
+            if (p == end)
+                return (p - begin) * NBITS;
+
+            s = p;
+            bit = lsb_bit_set(~*p);
+        }
+
+        T mask = *p >> bit;
+        //if ((mask & reqm) == reqm)
+        //    return slot_id(p) + bit;
+
+
+        uints nrem = n;
+        uint8 nbmax = NBITS - bit;
+        uint8 nend;
+
+        while (nrem && (nend = mask ? lsb_bit_set(mask) : nbmax) >= nbmax) {
+            nrem -= nbmax;
+            ++p;
+            mask = p < end ? *p : 0;
+            nbmax = NBITS;
+        }
+
+        if (nend >= nrem) {
+            //enough space found
+            return (s - begin) * NBITS + bit;
+        }
+
+        //hit an occupied bit before finding the whole range
+        bit += nend;
+        mask >>= nend;
+
+        bit += lsb_bit_set(~mask);
+    }
+    while (true);
+}
 
 COID_NAMESPACE_END
 

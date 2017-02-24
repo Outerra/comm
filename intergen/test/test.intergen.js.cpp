@@ -817,7 +817,7 @@ v8::Handle<v8::Value> thingface_js_dispatcher::v8creator_get0( const ARGUMENTS& 
 
     //stream out
     v8::Handle<v8::Value> r__ = nifc ? v8::Handle<v8::Value>(nifc->create_interface_object(true)) : NULLv8(iso);
-
+    
     return ESCAPE(handle_scope__, r__);
 }
 

@@ -845,6 +845,11 @@ private:
     }
 
 
+    uint slot_id(const uints* p) const {
+        return ((uints)p - (uints)_allocated.ptr()) * 8;
+    }
+
+
     ///Return allocated slot
     T* alloc( uints* pid )
     {
@@ -858,7 +863,7 @@ private:
             *(p = _allocated.add()) = 0;
 
         uint8 bit = lsb_bit_set((uints)~*p);
-        uints slot = ((uints)p - (uints)_allocated.ptr()) * 8;
+        uints slot = slot_id(p);
 
         uints id = slot + bit;
         if(TRACKING)
