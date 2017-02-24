@@ -369,10 +369,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\comm_test\atomic-test.cpp" />
+    <ClCompile Include="..\..\..\comm_test\job.cpp" />
     <ClCompile Include="..\..\..\comm_test\luatest_ifc.intergen.cpp" />
     <ClCompile Include="..\..\..\comm_test\luatest_ifc.intergen.js.cpp" />
     <ClCompile Include="..\..\..\comm_test\luatest_ifc.intergen.lua.cpp" />
-    <ClCompile Include="..\..\..\comm_test\lua_utils.cpp" />
     <ClCompile Include="..\..\..\comm_test\main.cpp" />
     <ClCompile Include="..\..\..\comm_test\malloc.cpp" />
     <ClCompile Include="..\..\..\comm_test\meta.cpp" />
@@ -387,7 +387,6 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\comm_test\intergen\ifc\client.h" />
     <ClInclude Include="..\..\..\comm_test\intergen\ifc\client.js.h" />
-    <ClInclude Include="..\..\..\comm_test\lua_utils.h" />
     <hpp Include="..\..\..\comm_test\luatest_ifc.hpp" />
     <ClInclude Include="..\..\..\comm_test\luatest_ifc_cfg.h" />
     <ClInclude Include="..\..\..\comm_test\ig_test.h" />

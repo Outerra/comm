@@ -327,7 +327,7 @@ inline uints find_zero_bitrange( uints n, const T* begin, const T* end )
     static const uints NBITS = 8 * sizeof(T);
 
     const T* p = begin;
-    const T* s;
+    T mask;
 
     //uints reqm = (uints(1) << n) - 1;
     uint8 bit = NBITS;
@@ -339,11 +339,10 @@ inline uints find_zero_bitrange( uints n, const T* begin, const T* end )
             if (p == end)
                 return (p - begin) * NBITS;
 
-            s = p;
-            bit = lsb_bit_set(~*p);
+            mask = p < end ? *p : 0;
+            bit = lsb_bit_set(~mask);
         }
 
-        T mask = *p >> bit;
         //if ((mask & reqm) == reqm)
         //    return slot_id(p) + bit;
 
@@ -352,23 +351,26 @@ inline uints find_zero_bitrange( uints n, const T* begin, const T* end )
         uint8 nbmax = NBITS - bit;
         uint8 nend;
 
-        while (nrem && (nend = mask ? lsb_bit_set(mask) : nbmax) >= nbmax) {
+        while ((nend = mask ? lsb_bit_set(mask) : nbmax) >= nbmax && nend < nrem) {
             nrem -= nbmax;
             ++p;
             mask = p < end ? *p : 0;
             nbmax = NBITS;
+            bit = 0;
         }
 
         if (nend >= nrem) {
             //enough space found
-            return (s - begin) * NBITS + bit;
+            return (p - begin) * NBITS + bit + nrem - n;
         }
 
         //hit an occupied bit before finding the whole range
         bit += nend;
         mask >>= nend;
 
-        bit += lsb_bit_set(~mask);
+        uint8 nset = lsb_bit_set(~mask);
+        bit += nset;
+        mask >>= nset;
     }
     while (true);
 }

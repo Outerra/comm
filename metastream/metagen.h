@@ -245,7 +245,7 @@ class metagen //: public binstream
     ///Array element variable from cache
     struct VarxElement : Varx
     {
-        uint size;                      //< element byte size
+        uints size;                     //< element byte size
 
 
         ///First array element, return count

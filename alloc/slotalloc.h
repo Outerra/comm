@@ -845,7 +845,7 @@ private:
     }
 
 
-    uint slot_id(const uints* p) const {
+    uints slot_id(const uints* p) const {
         return ((uints)p - (uints)_allocated.ptr()) * 8;
     }
 
