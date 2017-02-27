@@ -429,8 +429,10 @@ struct closure_traits_base
 
     struct function
     {
-        template <typename F>
-        function( const F& fn ) : c(0) { c = new callable<F>(fn); }
+
+
+        template <typename Fn>
+        function( const Fn& fn ) : c(0) { c = new callable<Fn>(fn); }
 
         function() : c(0) {}
         function(nullptr_t) : c(0) {}
@@ -487,7 +489,7 @@ struct closure_traits<R(Args...)> : closure_traits_base<false,false,R,Args...>
 #define COID_CLOSURE_TRAIT(cv, var, is_var)                                 \
 template <typename C, typename R, typename... Args>                         \
 struct closure_traits<R (C::*) (Args... COID_REM_CTOR var) cv>              \
-    : closure_traits_base<std::is_const<int cv>::value, is_var, R, Args...>        \
+    : closure_traits_base<std::is_const<int cv>::value, is_var, R, Args...> \
 {};
 
 COID_CLOSURE_TRAIT(const, (,...), 1)

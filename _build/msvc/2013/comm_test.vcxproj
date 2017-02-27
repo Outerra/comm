@@ -366,6 +366,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\comm_test\atomic-test.cpp" />
+    <ClCompile Include="..\..\..\comm_test\job.cpp" />
     <ClCompile Include="..\..\..\comm_test\luatest_ifc.intergen.cpp" />
     <ClCompile Include="..\..\..\comm_test\luatest_ifc.intergen.js.cpp" />
     <ClCompile Include="..\..\..\comm_test\luatest_ifc.intergen.lua.cpp" />

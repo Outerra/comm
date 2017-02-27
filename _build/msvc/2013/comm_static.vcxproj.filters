@@ -351,6 +351,7 @@
     <ClInclude Include="..\..\..\intergen\lua_utils.h">
       <Filter>intergen</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\bitrange.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\crypt\sha1.cpp">

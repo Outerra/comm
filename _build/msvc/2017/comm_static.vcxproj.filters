@@ -346,6 +346,7 @@
       <Filter>coder</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\range.h" />
+    <ClInclude Include="..\..\..\bitrange.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\crypt\sha1.cpp">

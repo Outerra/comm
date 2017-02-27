@@ -410,5 +410,6 @@
     <ClInclude Include="..\..\..\metastream\fmtstream_v8.h">
       <Filter>metastream</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\bitrange.h" />
   </ItemGroup>
 </Project>

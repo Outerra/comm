@@ -234,7 +234,9 @@ protected:
 
 public:
 
-	logger( bool std_out=false );
+    //@param std_out true if messages should be printed to stdout as well
+    //@param cache_msgs true if messages should be cached until the log file is specified with open()
+	logger( bool std_out, bool cache_msgs );
     virtual ~logger() {}
 
     static void terminate();
@@ -297,7 +299,7 @@ class stdoutlogger : public logger
 {
 public:
 
-    stdoutlogger() : logger(true)
+    stdoutlogger() : logger(true, false)
     {}
 };
 

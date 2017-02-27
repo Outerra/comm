@@ -912,8 +912,6 @@ private:
 
     T* alloc_range( uints n, uints* old )
     {
-        DASSERT( _count + n <= _array.size() );
-
         uints id = find_zero_bitrange(n, _allocated.ptr(), _allocated.ptre());
         uints nslots = align_to_chunks(id + n, MASK_BITS);
         
@@ -928,7 +926,7 @@ private:
         *old = n - nadd;
 
         if(ATOMIC)
-            atomic::add(&_count, n);
+            atomic::add((uints_sized*)&_count, uints_sized(n));
         else
             _count += n;
 

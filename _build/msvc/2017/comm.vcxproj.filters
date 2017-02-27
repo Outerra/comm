@@ -398,5 +398,6 @@
     <ClInclude Include="..\..\..\log\logwriter.h">
       <Filter>log</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\bitrange.h" />
   </ItemGroup>
 </Project>
