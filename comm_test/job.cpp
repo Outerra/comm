@@ -41,7 +41,9 @@ protected:
             invoke_impl(make_index_sequence<sizeof...(Args)>());
         }
 
-        template <unsigned ...I>
+    private:
+
+        template <size_t ...I>
         void invoke_impl(index_sequence<I...>) {
             _fn(std::get<I>(_tuple)...);
         }

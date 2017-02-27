@@ -342,7 +342,7 @@ template<> struct make_index_sequence<1> : index_sequence<0> { };
 #else
 
 template<size_t Size>
-using make_index_sequence = std::make_integer_sequence<size_t, Size>;
+using make_index_sequence = std::make_index_sequence<Size>;
 
 template<size_t... Ints>
 using index_sequence = std::index_sequence<Ints...>;

@@ -98,17 +98,17 @@ COID_NAMESPACE_BEGIN
 ////////////////////////////////////////////////////////////////////////////////
 
 template <class T>
-struct underyling_bitrange_type {
+struct underlying_bitrange_type {
     typedef std::make_unsigned_t<std::remove_cv_t<T>> type;
 };
 
 template <class T>
-struct underyling_bitrange_type<std::atomic<T>> {
+struct underlying_bitrange_type<std::atomic<T>> {
     typedef std::make_unsigned_t<std::remove_cv_t<T>> type;
 };
 
 template <class T>
-using underyling_bitrange_type_t = typename underyling_bitrange_type<T>::type;
+using underlying_bitrange_type_t = typename underlying_bitrange_type<T>::type;
 
 
 
@@ -120,7 +120,7 @@ inline uints find_zero_bitrange( uints n, const T* begin, const T* end )
 
     const T* p = begin;
 
-    using U = underyling_bitrange_type_t<T>;
+    using U = underlying_bitrange_type_t<T>;
     U mask;
 
     //uints reqm = (uints(1) << n) - 1;
@@ -169,7 +169,7 @@ inline uints find_zero_bitrange( uints n, const T* begin, const T* end )
 template <class T>
 void set_bitrange( uints from, uints n, T* ptr )
 {
-    using U = underyling_bitrange_type_t<T>;
+    using U = underlying_bitrange_type_t<T>;
 
     static const int NBITS = 8 * sizeof(T);
     uints slot = from / NBITS;
@@ -191,7 +191,7 @@ void set_bitrange( uints from, uints n, T* ptr )
 template <class T>
 void clear_bitrange( uints from, uints n, T* ptr )
 {
-    using U = underyling_bitrange_type_t<T>;
+    using U = underlying_bitrange_type_t<T>;
 
     static const int NBITS = 8 * sizeof(T);
     uints slot = from / NBITS;
