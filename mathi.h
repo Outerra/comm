@@ -41,59 +41,6 @@
 
 #include "commtypes.h"
 
-////////////////////////////////////////////////////////////////////////////////
-///Bit scan
-
-#ifdef SYSTYPE_MSVC
-#include <intrin.h>
-#ifndef SYSTYPE_CLANG
-#pragma intrinsic(_BitScanForward)
-#pragma intrinsic(_BitScanReverse)
-#endif
-
-#ifdef SYSTYPE_64
-
-#ifndef SYSTYPE_CLANG
-#pragma intrinsic(_BitScanForward64)
-#pragma intrinsic(_BitScanReverse64)
-#endif
-
-#elif !defined SYSTYPE_CLANG
-
-inline void _BitScanForward64(ulong* idx, uint64 v) {
-    if(!_BitScanForward(idx, uint(v))) {
-        _BitScanForward(idx, uint(v>>32));
-        idx += 32;
-    }
-}
-inline void _BitScanReverse64(ulong* idx, uint64 v) {
-    if(!_BitScanReverse(idx, uint(v>>32)))
-        _BitScanReverse(idx, uint(v));
-    else
-        idx += 32;
-}
-#endif
-
-//@{
-//@return position of the lowest or highest bit set
-//@note return value is undefined when the input is 0
-inline uint8 lsb_bit_set( uint v )   { ulong idx; _BitScanForward(&idx, v);   return uint8(idx); }
-inline uint8 lsb_bit_set( uint64 v ) { ulong idx; _BitScanForward64(&idx, v); return uint8(idx); }
-inline uint8 msb_bit_set( uint v )   { ulong idx; _BitScanReverse(&idx, v);   return uint8(idx); }
-inline uint8 msb_bit_set( uint64 v ) { ulong idx; _BitScanReverse64(&idx, v); return uint8(idx); }
-//@}
-#else
-//@{
-//@return position of the lowest or highest bit set
-//@note return value is undefined when the input is 0
-inline uint8 lsb_bit_set( uint v )   { return __builtin_ctzl(v); }
-inline uint8 lsb_bit_set( uint64 v ) { return __builtin_ctzll(v); }
-inline uint8 msb_bit_set( uint v )   { return 31-__builtin_clzl(v); }
-inline uint8 msb_bit_set( uint64 v ) { return 63-__builtin_clzll(v); }
-//@}
-#endif
-
-
 COID_NAMESPACE_BEGIN
 
 
@@ -317,62 +264,6 @@ inline uint32 interleave_bits(uint16 a, uint16 b) {
 
 inline uint64 interleave_bits(uint32 a, uint32 b) {
     return (part_bits1(uint64(a)) << 1) + part_bits1(uint64(b));
-}
-
-////////////////////////////////////////////////////////////////////////////////
-//@return starting bit number of a contiguous range of n bits that are set to 0
-template <class T>
-inline uints find_zero_bitrange( uints n, const T* begin, const T* end )
-{
-    static const uints NBITS = 8 * sizeof(T);
-
-    const T* p = begin;
-    T mask;
-
-    //uints reqm = (uints(1) << n) - 1;
-    uint8 bit = NBITS;
-
-    do {
-        if (bit >= NBITS) {
-            for (; p < end && *p == UMAXS; ++p);
-
-            if (p == end)
-                return (p - begin) * NBITS;
-
-            mask = p < end ? *p : 0;
-            bit = lsb_bit_set(~mask);
-        }
-
-        //if ((mask & reqm) == reqm)
-        //    return slot_id(p) + bit;
-
-
-        uints nrem = n;
-        uint8 nbmax = NBITS - bit;
-        uint8 nend;
-
-        while ((nend = mask ? lsb_bit_set(mask) : nbmax) >= nbmax && nend < nrem) {
-            nrem -= nbmax;
-            ++p;
-            mask = p < end ? *p : 0;
-            nbmax = NBITS;
-            bit = 0;
-        }
-
-        if (nend >= nrem) {
-            //enough space found
-            return (p - begin) * NBITS + bit + nrem - n;
-        }
-
-        //hit an occupied bit before finding the whole range
-        bit += nend;
-        mask >>= nend;
-
-        uint8 nset = lsb_bit_set(~mask);
-        bit += nset;
-        mask >>= nset;
-    }
-    while (true);
 }
 
 COID_NAMESPACE_END
