@@ -305,6 +305,28 @@ public:
         --_count;
     }
 
+    ///Del range of objects
+    void del_range( T* p, uints n ) {
+        if (n == 0)
+            return;
+        if (n == 1)
+            return del(p);
+
+        uints id = get_item_id(p);
+
+        if (!POOL) {
+            auto b = _array.ptr() + id;
+            auto e = b + n;
+            for (; b < e; ++b)
+                b->~T();
+        }
+
+        clear_bitrange(id, n, _allocated.ptr());
+
+        _count -= n;
+    }
+
+
     ///Delete object by id
     void del( uints id )
     {

@@ -119,6 +119,7 @@ protected:
 
     struct invoker_base {
         virtual void invoke() = 0;
+        virtual size_t size() const = 0;
     };
 
     template <typename Fn, typename ...Args>
@@ -160,6 +161,10 @@ protected:
         void invoke() override final {
             invoke_fn(make_index_sequence<sizeof...(Args)>());
         }
+
+        size_t size() const override final {
+            return sizeof(*this);
+        }
     };
 
     ///invoker for member functions
@@ -173,6 +178,10 @@ protected:
 
         void invoke() override final {
             invoke_memberfn(_obj, make_index_sequence<sizeof...(Args)>());
+        }
+
+        size_t size() const override final {
+            return sizeof(*this);
         }
 
     private:
@@ -196,6 +205,8 @@ private:
             invoker_base* task = 0;
             if (_queue.pop(task)) {
                 task->invoke();
+
+                _taskdata.del_range((uint64*)task, align_to_chunks(sizeof(task->size()), sizeof(uint64)));
             }
             else
                 thread::wait(1);
