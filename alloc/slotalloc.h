@@ -215,6 +215,16 @@ public:
 
     ///Add range of objects initialized with default constructors
     T* add_range( uints n ) {
+        if (n == 0)
+            return 0;
+        if (n == 1) {
+            bool newitem;
+            T* p = add(&newitem);
+            if (nreused)
+                *nreused = newitem ? 0 : 1;
+            return p;
+        }
+
         uints old;
         T* p = alloc_range(n, &old);
 
@@ -244,6 +254,16 @@ public:
     //@param newitem optional variable that receives whether the object slot was newly created (true) or reused from the pool (false)
     //@note if nreused == 0 within the pool mode and thus no way to indicate the item has been reused, the reused objects have destructors called
     T* add_range_uninit( uints n, uints* nreused = 0 ) {
+        if (n == 0)
+            return 0;
+        if (n == 1) {
+            bool newitem;
+            T* p = add_uninit(&newitem);
+            if (nreused)
+                *nreused = newitem ? 0 : 1;
+            return p;
+        }
+
         uints old;
         T* p = alloc_range(n, &old);
 

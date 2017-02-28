@@ -38,7 +38,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "logwriter.h"
-#include "../atomic/pool.h"
+//#include "../atomic/pool.h"
 #include "../atomic/pool_base.h"
 
 #include "../binstream/filestream.h"

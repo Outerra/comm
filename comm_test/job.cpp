@@ -1,65 +1,14 @@
 
-#include "../trait.h"
-#include "../alloc/slotalloc.h"
-#include "../bitrange.h"
+#include "../taskmaster.h"
 #include "../log/logger.h"
 
-namespace coid {
-
-class taskmaster
+struct jobtest
 {
-public:
-
-    template <typename Fn, typename ...Args>
-    void push( const Fn& fn, Args&& ...args ) {
-        using callfn = invoker<Fn, Args...>;
-
-        void* p = _queue.add_range_uninit(align_to_chunks(sizeof(callfn), sizeof(uint64)));
-
-        new(p) callfn(fn, std::forward<Args>(args)...);
+    void func(int a, void* b) {
+        coidlog_info("jobtest", "a: " << a << ", b: " << (uints)b);
     }
-
-    void invoke() {
-        reinterpret_cast<invoker_base*>(_queue.get_item(0))->invoke();
-    }
-
-protected:
-
-    struct invoker_base {
-        virtual void invoke() = 0;
-    };
-
-    template <typename Fn, typename ...Args>
-    struct invoker : invoker_base
-    {
-        invoker(const Fn& fn, Args&& ...args)
-            : _fn(fn)
-            , _tuple(std::forward<Args>(args)...)
-        {}
-
-        void invoke() override final {
-            invoke_impl(make_index_sequence<sizeof...(Args)>());
-        }
-
-    private:
-
-        template <size_t ...I>
-        void invoke_impl(index_sequence<I...>) {
-            _fn(std::get<I>(_tuple)...);
-        }
-
-        typedef std::tuple<Args...> tuple_t;
-
-        Fn _fn;
-        tuple_t _tuple;
-    };
-
-private:
-
-    slotalloc<uint64> _queue;
 };
 
-} //namespace coid
 
 void test_job_queue()
 {
@@ -106,13 +55,17 @@ void test_job_queue()
 
 
 
-    coid::taskmaster task;
+    coid::taskmaster task(7);
+    jobtest jt;
 
     auto job1 = [](int a, void* b) {
         coidlog_info("jobtest", "a: " << a << ", b: " << (uints)b);
     };
 
     task.push(job1, 1, nullptr);
+    task.push_memberfn(&jobtest::func, &jt, 2, nullptr);
 
-    task.invoke();
+    task.terminate(true);
+
+    //task.invoke();
 }

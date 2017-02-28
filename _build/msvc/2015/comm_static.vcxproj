@@ -417,7 +417,6 @@
     <ClInclude Include="..\..\..\atomic\pool.h" />
     <ClInclude Include="..\..\..\atomic\pool_base.h" />
     <ClInclude Include="..\..\..\atomic\queue.h" />
-    <ClInclude Include="..\..\..\atomic\queue_base.h" />
     <ClInclude Include="..\..\..\atomic\stack.h" />
     <ClInclude Include="..\..\..\atomic\stack_base.h" />
     <ClInclude Include="..\..\..\binstream\binstream.h" />
@@ -488,6 +487,7 @@
     <ClInclude Include="..\..\..\alloc\memtrack.h" />
     <ClInclude Include="..\..\..\net\asyncrcv.h" />
     <ClInclude Include="..\..\..\ref_helpers.h" />
+    <ClInclude Include="..\..\..\sync\queue.h" />
     <ClInclude Include="..\..\..\sync\_mutex.h" />
     <ClInclude Include="..\..\..\sync\guard.h" />
     <ClInclude Include="..\..\..\sync\mutex.h" />
@@ -512,6 +512,7 @@
     <ClInclude Include="..\..\..\dir.h" />
     <ClInclude Include="..\..\..\dynarray.h" />
     <ClInclude Include="..\..\..\fastdelegate.h" />
+    <ClInclude Include="..\..\..\taskmaster.h" />
     <ClInclude Include="..\..\..\timer.h" />
     <ClInclude Include="..\..\..\lexer.h" />
     <ClInclude Include="..\..\..\local.h" />

@@ -213,11 +213,21 @@ public:
             typeid(T).name(), 0, 0, Module);
     }
 
-    singleton(T&& obj) {
+#ifdef COID_VARIADIC_TEMPLATES
+    template<class...Ps>
+    singleton(Ps&&... ps) {
         _p = (T*)singleton_register_instance(
-            singleton_local_creator(new T(std::forward<T>(obj))), &destroy, &init_module,
+            singleton_local_creator(new T(std::forward<Ps>(ps)...)),
+            &destroy, &init_module,
             typeid(T).name(), 0, 0, Module);
     }
+#endif
+
+    //singleton(T&& obj) {
+    //    _p = (T*)singleton_register_instance(
+    //        singleton_local_creator(new T(std::forward<T>(obj))), &destroy, &init_module,
+    //        typeid(T).name(), 0, 0, Module);
+    //}
 
     T* operator -> () { return _p; }
 
