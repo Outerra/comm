@@ -371,9 +371,6 @@
     <ClCompile Include="..\..\..\alloc\memtrack.cpp">
       <Filter>alloc</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\assert.cpp">
-      <Filter>cxx</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\comm.cpp">
       <Filter>cxx</Filter>
     </ClCompile>
@@ -463,6 +460,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\coder\bufpack_lz4.h">
       <Filter>coder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\commassert.cpp">
+      <Filter>cxx</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

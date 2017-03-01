@@ -43,7 +43,10 @@
 #include "alloc/slotalloc.h"
 #include "bitrange.h"
 #include "sync/queue.h"
+#include "sync/mutex.h"
+#include "sync/guard.h"
 #include "pthreadx.h"
+#include "log/logger.h"
 
 COID_NAMESPACE_BEGIN
 
@@ -51,7 +54,11 @@ class taskmaster
 {
 public:
 
-    taskmaster(uint nthreads) {
+    taskmaster(uint nthreads)
+        : _write_sync(500, false, "taskmaster")
+    {
+        _taskdata.reserve(8192);
+
         _threads.alloc(nthreads);
         _threads.for_each([&](thread& tid) {
             uints id = &tid - _threads.ptr();
@@ -67,11 +74,11 @@ public:
     //@param fn function to run
     //@param args arguments needed to invoke the function
     template <typename Fn, typename ...Args>
-    void push( const Fn& fn, Args&& ...args )
+    void push(const Fn& fn, Args&& ...args)
     {
         using callfn = invoker<Fn, Args...>;
 
-        void* p = _taskdata.add_range_uninit(align_to_chunks(sizeof(callfn), sizeof(uint64)));
+        granule* p = alloc_data(sizeof(callfn));
 
         auto task = new(p) callfn(fn, std::forward<Args>(args)...);
         _queue.push(task);
@@ -81,11 +88,11 @@ public:
     //@param fn member function to run
     //@param args arguments needed to invoke the function
     template <typename Fn, typename C, typename ...Args>
-    void push_memberfn(Fn fn, C* obj, Args&& ...args)
+    void push_memberfn(Fn fn, const C& obj, Args&& ...args)
     {
         using callfn = invoker_memberfn<Fn, C, Args...>;
 
-        void* p = _taskdata.add_range_uninit(align_to_chunks(sizeof(callfn), sizeof(uint64)));
+        granule* p = alloc_data(sizeof(callfn));
 
         auto task = new(p) callfn(fn, obj, std::forward<Args>(args)...);
         _queue.push(task);
@@ -93,7 +100,7 @@ public:
 
     ///Terminate task threads
     //@param empty_queue if true, wait until the task queue empties
-    void terminate( bool empty_queue )
+    void terminate(bool empty_queue)
     {
         if (empty_queue) {
             while (!_queue.is_empty())
@@ -117,6 +124,32 @@ public:
 
 protected:
 
+    //unit of allocation for tasks
+    struct granule
+    {
+        uint64 dummy[2 * sizeof(uints) / 4];
+    };
+
+    granule* alloc_data(uints size)
+    {
+        auto base = _taskdata.get_array().ptr();
+
+        uints n = align_to_chunks(size, sizeof(granule));
+        granule* p;
+
+        {
+            GUARDTHIS(_write_sync);
+            p = _taskdata.add_range_uninit(n);
+        }
+
+        //no rebase
+        DASSERT(base == _taskdata.get_array().ptr());
+
+        coidlog_devdbg("taskmaster", "pushed task id " << _taskdata.get_item_id(p));
+        return p;
+    }
+
+
     struct invoker_base {
         virtual void invoke() = 0;
         virtual size_t size() const = 0;
@@ -125,7 +158,7 @@ protected:
     template <typename Fn, typename ...Args>
     struct invoker_common : invoker_base
     {
-        invoker_common( const Fn& fn, Args&& ...args )
+        invoker_common(const Fn& fn, Args&& ...args)
             : _fn(fn)
             , _tuple(std::forward<Args>(args)...)
         {}
@@ -138,8 +171,8 @@ protected:
         }
 
         template <class C, size_t ...I>
-        void invoke_memberfn(C* obj, index_sequence<I...>) {
-            (obj->*_fn)(std::get<I>(_tuple)...);
+        void invoke_memberfn(C& obj, index_sequence<I...>) {
+            ((*obj).*_fn)(std::get<I>(_tuple)...);
         }
 
     private:
@@ -154,7 +187,7 @@ protected:
     template <typename Fn, typename ...Args>
     struct invoker : invoker_common<Fn, Args...>
     {
-        invoker( const Fn& fn, Args&& ...args )
+        invoker(const Fn& fn, Args&& ...args)
             : invoker_common(fn, std::forward<Args>(args)...)
         {}
 
@@ -171,7 +204,7 @@ protected:
     template <typename Fn, typename C, typename ...Args>
     struct invoker_memberfn : invoker_common<Fn, Args...>
     {
-        invoker_memberfn(Fn fn, C* obj, Args&&... args)
+        invoker_memberfn(Fn fn, const C& obj, Args&&... args)
             : invoker_common(fn, std::forward<Args>(args)...)
             , _obj(obj)
         {}
@@ -186,7 +219,7 @@ protected:
 
     private:
 
-        C* _obj;
+        C _obj;
     };
 
 
@@ -204,9 +237,13 @@ private:
         {
             invoker_base* task = 0;
             if (_queue.pop(task)) {
+                uints id = _taskdata.get_item_id((granule*)task);
+                coidlog_devdbg("taskmaster", "popped task id " << id);
+
+                DASSERT(_taskdata.is_valid_id(id));
                 task->invoke();
 
-                _taskdata.del_range((uint64*)task, align_to_chunks(sizeof(task->size()), sizeof(uint64)));
+                _taskdata.del_range((granule*)task, align_to_chunks(task->size(), sizeof(granule)));
             }
             else
                 thread::wait(1);
@@ -217,7 +254,9 @@ private:
 
 private:
 
-    slotalloc<uint64> _taskdata;
+    comm_mutex _write_sync;
+
+    slotalloc<granule> _taskdata;
 
     queue<invoker_base*> _queue;
 

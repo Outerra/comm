@@ -32,6 +32,13 @@ void test_job_queue()
     i = coid::find_zero_bitrange(3, bits, bits + 2);
     DASSERT(i == 2);
 
+    coid::set_bitrange(0, 1, bits);
+    DASSERT(bits[0] == 0x00005c23); //0b00000000000000000101110000100011,
+
+    i = coid::find_zero_bitrange(1, bits, bits + 2);
+    DASSERT(i == 2);
+
+
     i = coid::find_zero_bitrange(4, bits, bits + 2);
     DASSERT(i == 6);
 
@@ -42,7 +49,7 @@ void test_job_queue()
     DASSERT(i == 35);
 
     coid::set_bitrange(28, 6, bits);
-    DASSERT( bits[0] == 0xf0005c22 //0b11110000000000000101110000100010
+    DASSERT( bits[0] == 0xf0005c23 //0b11110000000000000101110000100010
         &&   bits[1] == 0x00000007 //0b00000000000000000000000000000111
     );
 
@@ -50,7 +57,7 @@ void test_job_queue()
     DASSERT( bits[1] == 0xf8000007 ); //0b11111000000000000000000000000111 );
 
     coid::clear_bitrange(16, 48, bits);
-    DASSERT( bits[0] == 0x00005c22 //0b00000000000000000101110000100010
+    DASSERT( bits[0] == 0x00005c23 //0b00000000000000000101110000100010
         &&   bits[1] == 0 );
 
 

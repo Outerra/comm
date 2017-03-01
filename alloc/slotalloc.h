@@ -459,10 +459,14 @@ public:
             : UMAXS;
     }
 
-    //@return true if item is valid
-    bool is_valid_item( uints id ) const
-    {
+    //@return true if item with id is valid
+    bool is_valid_id( uints id ) const {
         return get_bit(id);
+    }
+
+    //@return true if item is valid
+    bool is_valid_item( const T* p ) const {
+        return get_bit(get_item_id(p));
     }
 
     bool operator == (const slotalloc_base& other) const {

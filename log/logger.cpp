@@ -375,12 +375,16 @@ void log_writer::terminate()
 ////////////////////////////////////////////////////////////////////////////////
 void* log_writer::thread_run()
 {
-	while(1) {
+	while (!coid::thread::self_should_cancel()) {
         flush();
-		if(coid::thread::self_should_cancel())
-            break;
-		coid::sysMilliSecondSleep(500);
+
+#ifdef _DEBUG
+		coid::sysMilliSecondSleep(1);
+#else
+        coid::sysMilliSecondSleep(500);
+#endif
 	}
+
     flush();
 
 	return 0;

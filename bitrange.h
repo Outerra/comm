@@ -118,7 +118,7 @@ inline uints find_zero_bitrange( uints n, const T* begin, const T* end )
 {
     static const uints NBITS = 8 * sizeof(T);
 
-    const T* p = begin;
+    const T* p = begin - 1;
 
     using U = underlying_bitrange_type_t<T>;
     U mask;
@@ -128,13 +128,14 @@ inline uints find_zero_bitrange( uints n, const T* begin, const T* end )
 
     do {
         if (bit >= NBITS) {
-            for (; p < end && *p == UMAXS; ++p);
+            for (++p; p < end && *p == UMAXS; ++p);
 
             if (p == end)
                 return (p - begin) * NBITS;
 
             mask = p < end ? U(*p) : U(0);
             bit = lsb_bit_set(~mask);
+            mask >>= bit;
         }
 
 

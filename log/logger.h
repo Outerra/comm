@@ -82,6 +82,12 @@ ref<logmsg> canlog( ELogType type, const tokenhash& hash = tokenhash(), const vo
 #define coidlog_warning(src, msg) do{ ref<coid::logmsg> q = coid::canlog(coid::ELogType::Warning, src ); if(q) {q->str() << msg; }} while(0)
 #define coidlog_error(src, msg)   do{ ref<coid::logmsg> q = coid::canlog(coid::ELogType::Error, src ); if(q) {q->str() << msg; }} while(0)
 
+#ifdef _DEBUG
+#define coidlog_devdbg(src, msg)  do{ ref<coid::logmsg> q = coid::canlog(coid::ELogType::Debug, src ); if(q) {q->str() << msg; }} while(0)
+#else
+#define coidlog_devdbg(src, msg)
+#endif
+
 
 #ifdef COID_VARIADIC_TEMPLATES
 
