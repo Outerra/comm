@@ -231,7 +231,7 @@ private:
 
     void* threadfunc() {
         //thread order number
-        uint id = (uint)thread::context();
+        uints tid = (uints)thread::context();
 
         while (!thread::self_should_cancel())
         {
