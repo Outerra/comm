@@ -50,52 +50,90 @@
 
 COID_NAMESPACE_BEGIN
 
+/**
+    Taskmaster runs a set of job threads and a queue of jobs that are processed by the job threads.
+    It's intended for short tasks that can be parallelized across the preallocated number of working
+    threads, but it also supports long-duration jobs that can run on a limited number of worker threads
+    and have a lower priority.
+
+    Additionally, jobs can be synchronized or unsynchronized.
+
+    - long duration threads will prioritize short jobs if available
+    - thread waiting for completion of given set of jobs will also partake in processing of the same
+      type of jobs
+    - there can be multiple threads that wait for completion of jobs
+    - if there's a thread waiting for job completion, all worker threads prioritize given job type
+    - if there are multiple completion requests at different synchronization levels, the one with
+      the highest priority (lowest sync level number) is prioritized over the other
+
+**/
 class taskmaster
 {
 public:
 
-    taskmaster(uint nthreads)
+    //@param nthreads total number of job threads to spawn
+    //@param nlong_threads number of long-duration job threads (<= nthreads)
+    taskmaster( uint nthreads, uint nlong_threads )
         : _write_sync(500, false, "taskmaster")
+        , _nlong_threads(nlong_threads)
     {
         _taskdata.reserve(8192);
+        _synclevels.reserve(16, false);
 
         _threads.alloc(nthreads);
-        _threads.for_each([&](thread& tid) {
-            uints id = &tid - _threads.ptr();
-            tid.create(threadfunc, this, (void*)id, "taskmaster");
+        _threads.for_each([&](threadinfo& ti) {
+            ti.order = uint(&ti - _threads.ptr());
+            ti.master = this;
+            ti.tid.create(threadfunc, &ti, 0, "taskmaster");
         });
     }
 
-    //taskmaster(taskmaster&& other) {
-    //    //_taskdata
-    //}
+    ///Set number of threads that can process long-duration jobs
+    //@param nlong_threads number of long-duration job threads
+    void set_long_duration_threads( uint nlong_threads ) {
+        _nlong_threads = nlong_threads;
+    }
+
+    ///Add synchronization level
+    //@param level sync level number (0 highest priority for completion)
+    //@param name sync level name
+    //@return level
+    uint add_sync_level( uint level, const token& name ) {
+        sync_level& sl = _synclevels.get_or_add(level);
+        sl.name = name;
+        sl.njobs = 0;
+
+        return level;
+    }
 
     ///Push task into queue
+    //@param sync synchronization stage to push into (<0 unsynced long duration job, >=0 sync level
     //@param fn function to run
     //@param args arguments needed to invoke the function
     template <typename Fn, typename ...Args>
-    void push(const Fn& fn, Args&& ...args)
+    void push( int sync, const Fn& fn, Args&& ...args )
     {
         using callfn = invoker<Fn, Args...>;
 
         granule* p = alloc_data(sizeof(callfn));
+        auto task = new(p) callfn(sync, fn, std::forward<Args>(args)...);
 
-        auto task = new(p) callfn(fn, std::forward<Args>(args)...);
-        _queue.push(task);
+        push_to_queue(task);
     }
 
     ///Push task into queue
+    //@param sync synchronization stage to push into (<0 unsynced long duration job, >=0 sync level
     //@param fn member function to run
     //@param args arguments needed to invoke the function
     template <typename Fn, typename C, typename ...Args>
-    void push_memberfn(Fn fn, const C& obj, Args&& ...args)
+    void push_memberfn( int sync, Fn fn, const C& obj, Args&& ...args )
     {
         using callfn = invoker_memberfn<Fn, C, Args...>;
 
         granule* p = alloc_data(sizeof(callfn));
+        auto task = new(p) callfn(sync, fn, obj, std::forward<Args>(args)...);
 
-        auto task = new(p) callfn(fn, obj, std::forward<Args>(args)...);
-        _queue.push(task);
+        push_to_queue(task);
     }
 
     ///Terminate task threads
@@ -108,23 +146,44 @@ public:
         }
 
         //signal cancellation
-        _threads.for_each([](thread& tid) {
-            tid.cancel();
+        _threads.for_each([](threadinfo& ti) {
+            ti.tid.cancel();
         });
 
         //wait for cancellation
-        _threads.for_each([](thread& tid) {
-            tid.join(tid);
+        _threads.for_each([](threadinfo& ti) {
+            thread::join(ti.tid);
         });
     }
 
-    //void invoke() {
-    //    reinterpret_cast<invoker_root*>(_taskdata.get_item(0))->invoke();
-    //}
-
 protected:
 
-    //unit of allocation for tasks
+    ///
+    struct threadinfo
+    {
+        thread tid;
+        taskmaster* master;
+
+        int order;
+
+
+        threadinfo() : master(0), order(-1)
+        {}
+
+        bool is_long_duration_thread() const {
+            return order < master->_nlong_threads;
+        }
+    };
+
+    ///
+    struct sync_level
+    {
+        std::atomic_int njobs;          //< number of jobs that need completing on this sync level
+
+        charstr name;
+    };
+
+    ///Unit of allocation for tasks
     struct granule
     {
         uint64 dummy[2 * sizeof(uints) / 4];
@@ -149,17 +208,29 @@ protected:
         return p;
     }
 
-
+    ///
     struct invoker_base {
         virtual void invoke() = 0;
         virtual size_t size() const = 0;
+
+        invoker_base(int sync)
+            : _sync(sync)
+        {}
+
+        int sync_level() const {
+            return _sync;
+        }
+
+    protected:
+        int _sync;
     };
 
     template <typename Fn, typename ...Args>
     struct invoker_common : invoker_base
     {
-        invoker_common(const Fn& fn, Args&& ...args)
-            : _fn(fn)
+        invoker_common(int sync, const Fn& fn, Args&& ...args)
+            : invoker_base(sync)
+            , _fn(fn)
             , _tuple(std::forward<Args>(args)...)
         {}
 
@@ -187,8 +258,8 @@ protected:
     template <typename Fn, typename ...Args>
     struct invoker : invoker_common<Fn, Args...>
     {
-        invoker(const Fn& fn, Args&& ...args)
-            : invoker_common(fn, std::forward<Args>(args)...)
+        invoker(int sync, const Fn& fn, Args&& ...args)
+            : invoker_common(sync, fn, std::forward<Args>(args)...)
         {}
 
         void invoke() override final {
@@ -204,8 +275,8 @@ protected:
     template <typename Fn, typename C, typename ...Args>
     struct invoker_memberfn : invoker_common<Fn, Args...>
     {
-        invoker_memberfn(Fn fn, const C& obj, Args&&... args)
-            : invoker_common(fn, std::forward<Args>(args)...)
+        invoker_memberfn(int sync, Fn fn, const C& obj, Args&&... args)
+            : invoker_common(sync, fn, std::forward<Args>(args)...)
             , _obj(obj)
         {}
 
@@ -223,22 +294,37 @@ protected:
     };
 
 
-private:
+    void push_to_queue(invoker_base* task)
+    {
+        int sync = task->sync_level();
 
-    static void* threadfunc(void* data) {
-        return static_cast<taskmaster*>(data)->threadfunc();
+        if (sync >= 0) {
+            DASSERT(sync < (int)_synclevels.size());
+
+            if (sync < (int)_synclevels.size())
+                ++_synclevels[sync].njobs;
+        }
+
+        _queue.push(task);
     }
 
-    void* threadfunc() {
-        //thread order number
-        uints tid = (uints)thread::context();
+private:
 
+    taskmaster(const taskmaster&);
+
+    static void* threadfunc(void* data) {
+        threadinfo* ti = (threadinfo*)data;
+        return ti->master->threadfunc(ti->order);
+    }
+
+    void* threadfunc( uint order )
+    {
         while (!thread::self_should_cancel())
         {
             invoker_base* task = 0;
             if (_queue.pop(task)) {
                 uints id = _taskdata.get_item_id((granule*)task);
-                coidlog_devdbg("taskmaster", "popped task id " << id);
+                coidlog_devdbg("taskmaster", "thread " << order << " popped task id " << id);
 
                 DASSERT(_taskdata.is_valid_id(id));
                 task->invoke();
@@ -260,7 +346,10 @@ private:
 
     queue<invoker_base*> _queue;
 
-    dynarray<thread> _threads;
+    dynarray<threadinfo> _threads;
+    volatile int _nlong_threads;
+
+    dynarray<sync_level> _synclevels;
 };
 
 COID_NAMESPACE_END
