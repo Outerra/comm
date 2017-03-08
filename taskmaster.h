@@ -136,6 +136,25 @@ public:
         push_to_queue(task);
     }
 
+
+    ///Wait for completion of all jobs of given type/sync level
+    //@note this waiting thread can participate in job completion, and all worker threads will prioritize
+    // jobs of this type unless there's another higher-priority wait on a different thread
+    void wait( int sync ) {
+        if (sync >= (int)_synclevels.size())
+            return;
+
+        //signal to worker threads there's a priority task level
+        auto& level = _synclevels[sync];
+        ++level.priority;
+
+        while (level.njobs > 0) {
+            process_specific_task(sync);
+        }
+
+        --level.priority;
+    }
+
     ///Terminate task threads
     //@param empty_queue if true, wait until the task queue empties
     void terminate(bool empty_queue)
@@ -178,9 +197,15 @@ protected:
     ///
     struct sync_level
     {
-        std::atomic_int njobs;          //< number of jobs that need completing on this sync level
+        std::atomic_int njobs;          //< number of jobs on this sync level
+        std::atomic_int priority;
 
         charstr name;
+
+        sync_level()
+            : njobs(0)
+            , priority(0)
+        {}
     };
 
     ///Unit of allocation for tasks
@@ -217,7 +242,7 @@ protected:
             : _sync(sync)
         {}
 
-        int sync_level() const {
+        int task_level() const {
             return _sync;
         }
 
@@ -296,7 +321,7 @@ protected:
 
     void push_to_queue(invoker_base* task)
     {
-        int sync = task->sync_level();
+        int sync = task->task_level();
 
         if (sync >= 0) {
             DASSERT(sync < (int)_synclevels.size());
@@ -305,6 +330,7 @@ protected:
                 ++_synclevels[sync].njobs;
         }
 
+        ++_qsize;
         _queue.push(task);
     }
 
@@ -317,25 +343,75 @@ private:
         return ti->master->threadfunc(ti->order);
     }
 
-    void* threadfunc( uint order )
+    void* threadfunc( int order )
     {
         while (!thread::self_should_cancel())
         {
+            //if a wait is active, all worker threads should prioritize given task level
+            int priority_level = get_priority_level();
+            bool longthread = order < _nlong_threads;
+
             invoker_base* task = 0;
             if (_queue.pop(task)) {
-                uints id = _taskdata.get_item_id((granule*)task);
-                coidlog_devdbg("taskmaster", "thread " << order << " popped task id " << id);
+                //if priority level is set, process only tasks of that level
+                //short-duration threads should process only short tasks
 
-                DASSERT(_taskdata.is_valid_id(id));
-                task->invoke();
-
-                _taskdata.del_range((granule*)task, align_to_chunks(task->size(), sizeof(granule)));
+                if ((priority_level < 0 && (longthread || task->task_level() >= 0))
+                    || task->task_level() == priority_level)
+                {
+                    run_task(task, order);
+                }
+                else
+                    _queue.push(task);
             }
             else
                 thread::wait(1);
         }
 
         return 0;
+    }
+
+    int get_priority_level() const {
+        const sync_level* sl = _synclevels.find_if([](const sync_level& sl) {
+            return sl.priority > 0;
+        });
+
+        return sl ? sl - _synclevels.ptr() : -1;
+    }
+
+    bool process_specific_task( int sync )
+    {
+        //run through the queue once
+        int qsize = _qsize;
+        invoker_base* task;
+
+        while (qsize-->0 && _queue.pop(task)) {
+            if (task->task_level() == sync) {
+                run_task(task, -1);
+                return true;
+            }
+
+            //push back
+            _queue.push(task);
+        }
+
+        return false;
+    }
+
+    void run_task( invoker_base* task, int order )
+    {
+        uints id = _taskdata.get_item_id((granule*)task);
+        coidlog_devdbg("taskmaster", "thread " << order << " processing task id " << id);
+
+        DASSERT(_taskdata.is_valid_id(id));
+        task->invoke();
+
+        int sync = task->task_level();
+        if (sync >= 0)
+            --_synclevels[sync].njobs;
+        --_qsize;
+
+        _taskdata.del_range((granule*)task, align_to_chunks(task->size(), sizeof(granule)));
     }
 
 private:
@@ -345,6 +421,7 @@ private:
     slotalloc<granule> _taskdata;
 
     queue<invoker_base*> _queue;
+    std::atomic_int _qsize;             //< queue size (not precisely synced to queue)
 
     dynarray<threadinfo> _threads;
     volatile int _nlong_threads;
