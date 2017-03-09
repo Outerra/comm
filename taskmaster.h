@@ -133,7 +133,7 @@ public:
     //@param obj object reference to run the member function on. Can be a pointer or a smart ptr type which resolves to the object with * operator
     //@param args arguments needed to invoke the function
     template <typename Fn, typename C, typename ...Args>
-    void push_memberfn( int tlevel, Fn fn, C& obj, Args&& ...args )
+    void push_memberfn( int tlevel, Fn fn, const C& obj, Args&& ...args )
     {
         static_assert(std::is_member_function_pointer<Fn>::value, "fn must be a function that can be invoked as ((*obj).*fn)(args)");
 
@@ -308,7 +308,7 @@ protected:
     template <typename Fn, typename C, typename ...Args>
     struct invoker_memberfn : invoker_common<Fn, Args...>
     {
-        invoker_memberfn(int sync, Fn fn, C& obj, Args&&... args)
+        invoker_memberfn(int sync, Fn fn, const C& obj, Args&&... args)
             : invoker_common(sync, fn, std::forward<Args>(args)...)
             , _obj(obj)
         {}
