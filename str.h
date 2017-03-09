@@ -2187,10 +2187,10 @@ struct threadcached_charstr
 
     static zstring::zpool* pool() {
         bool init = false;
-        static zstring::zpool* _pool = init = true, zstring::local_pool();
+        static zstring::zpool* _pool = (init = true, zstring::local_pool());
 
         if(init)
-            zstring::set_max_size(_pool, 64);
+            zstring::max_size_in_pool(_pool, 64);
         return _pool;
     }
 
