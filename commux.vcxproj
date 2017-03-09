@@ -80,7 +80,6 @@
       <ThreadSafeStatics Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">No</ThreadSafeStatics>
       <RuntimeTypeInfo Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</RuntimeTypeInfo>
     </ClCompile>
-    <ClCompile Include="assert.cpp" />
     <ClCompile Include="atomic\atomic.cpp" />
     <ClCompile Include="binstream\stdstream.cpp" />
     <ClCompile Include="coder\lz4\lz4.c" />
@@ -88,6 +87,7 @@
     <ClCompile Include="coder\lz4\lz4hc.c" />
     <ClCompile Include="coder\lz4\xxhash.c" />
     <ClCompile Include="comm.cpp" />
+    <ClCompile Include="commassert.cpp" />
     <ClCompile Include="crypt\sha1.cpp" />
     <ClCompile Include="dir.cpp" />
     <ClCompile Include="dirgcc.cpp" />

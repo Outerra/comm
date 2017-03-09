@@ -43,15 +43,17 @@
 #include "alloc/slotalloc.h"
 #include "bitrange.h"
 #include "sync/queue.h"
-#include "sync/mutex.h"
-#include "sync/guard.h"
+//#include "sync/mutex.h"
+//#include "sync/guard.h"
 #include "pthreadx.h"
 #include "log/logger.h"
+#include <mutex>
+#include <condition_variable>
 
 COID_NAMESPACE_BEGIN
 
 /**
-    Taskmaster runs a set of job threads and a queue of jobs that are processed by the job threads.
+    Taskmaster runs a set of worker threads and a queue of tasks that are processed by the worker threads.
     It's intended for short tasks that can be parallelized across the preallocated number of working
     threads, but it also supports long-duration jobs that can run on a limited number of worker threads
     and have a lower priority.
@@ -74,8 +76,9 @@ public:
     //@param nthreads total number of job threads to spawn
     //@param nlong_threads number of long-duration job threads (<= nthreads)
     taskmaster( uint nthreads, uint nlong_threads )
-        : _write_sync(500, false, "taskmaster")
-        , _nlong_threads(nlong_threads)
+        : _nlong_threads(nlong_threads)
+        , _qsize(0)
+        , _quitting(false)
     {
         _taskdata.reserve(8192);
         _synclevels.reserve(16, false);
@@ -98,7 +101,7 @@ public:
     //@param level sync level number (0 highest priority for completion)
     //@param name sync level name
     //@return level
-    uint add_sync_level( uint level, const token& name ) {
+    uint add_task_level( uint level, const token& name ) {
         sync_level& sl = _synclevels.get_or_add(level);
         sl.name = name;
         sl.njobs = 0;
@@ -106,68 +109,75 @@ public:
         return level;
     }
 
-    ///Push task into queue
-    //@param sync synchronization stage to push into (<0 unsynced long duration job, >=0 sync level
+    ///Push task (function and its arguments) into queue for processing by worker threads
+    //@param tlevel task level to push into (<0 unsynced long duration tasks, >=0 registered task level
     //@param fn function to run
     //@param args arguments needed to invoke the function
     template <typename Fn, typename ...Args>
-    void push( int sync, const Fn& fn, Args&& ...args )
+    void push( int tlevel, const Fn& fn, Args&& ...args )
     {
         using callfn = invoker<Fn, Args...>;
 
+        //lock to access allocator and semaphore
+        std::unique_lock<std::mutex> lock(_sync);
+
         granule* p = alloc_data(sizeof(callfn));
-        auto task = new(p) callfn(sync, fn, std::forward<Args>(args)...);
+        auto task = new(p) callfn(tlevel, fn, std::forward<Args>(args)...);
 
         push_to_queue(task);
     }
 
-    ///Push task into queue
-    //@param sync synchronization stage to push into (<0 unsynced long duration job, >=0 sync level
+    ///Push task (function and its arguments) into queue for processing by worker threads
+    //@param tlevel task level to push into (<0 unsynced long duration tasks, >=0 registered task level
     //@param fn member function to run
     //@param args arguments needed to invoke the function
     template <typename Fn, typename C, typename ...Args>
-    void push_memberfn( int sync, Fn fn, const C& obj, Args&& ...args )
+    void push_memberfn( int tlevel, Fn fn, const C& obj, Args&& ...args )
     {
         using callfn = invoker_memberfn<Fn, C, Args...>;
 
+        //lock to access allocator and semaphore
+        std::unique_lock<std::mutex> lock(_sync);
+
         granule* p = alloc_data(sizeof(callfn));
-        auto task = new(p) callfn(sync, fn, obj, std::forward<Args>(args)...);
+        auto task = new(p) callfn(tlevel, fn, obj, std::forward<Args>(args)...);
 
         push_to_queue(task);
     }
 
 
-    ///Wait for completion of all jobs of given type/sync level
+    ///Wait for completion of all jobs of given task level
+    //@param tlevel task level to wait for
     //@note this waiting thread can participate in job completion, and all worker threads will prioritize
-    // jobs of this type unless there's another higher-priority wait on a different thread
-    void wait( int sync ) {
-        if (sync >= (int)_synclevels.size())
+    // jobs of requested task level unless there's a higher-priority wait in another thread
+    void wait( int tlevel )
+    {
+        if (tlevel >= (int)_synclevels.size())
             return;
 
         //signal to worker threads there's a priority task level
-        auto& level = _synclevels[sync];
+        auto& level = _synclevels[tlevel];
         ++level.priority;
 
         while (level.njobs > 0) {
-            process_specific_task(sync);
+            process_specific_task(tlevel);
         }
 
         --level.priority;
     }
 
-    ///Terminate task threads
-    //@param empty_queue if true, wait until the task queue empties
+    ///Terminate all task threads
+    //@param empty_queue if true, wait until the task queue empties, false finish only currently processed tasks
     void terminate(bool empty_queue)
     {
         if (empty_queue) {
-            while (!_queue.is_empty())
+            while (_qsize > 0)
                 thread::wait(0);
         }
 
-        //signal cancellation
-        _threads.for_each([](threadinfo& ti) {
-            ti.tid.cancel();
-        });
+        _quitting = true;
+
+        notify((int)_threads.size());
 
         //wait for cancellation
         _threads.for_each([](threadinfo& ti) {
@@ -219,12 +229,7 @@ protected:
         auto base = _taskdata.get_array().ptr();
 
         uints n = align_to_chunks(size, sizeof(granule));
-        granule* p;
-
-        {
-            GUARDTHIS(_write_sync);
-            p = _taskdata.add_range_uninit(n);
-        }
+        granule* p = _taskdata.add_range_uninit(n);
 
         //no rebase
         DASSERT(base == _taskdata.get_array().ptr());
@@ -330,8 +335,10 @@ protected:
                 ++_synclevels[sync].njobs;
         }
 
-        ++_qsize;
         _queue.push(task);
+        
+        ++_qsize;
+        _cv.notify_one();
     }
 
 private:
@@ -345,28 +352,35 @@ private:
 
     void* threadfunc( int order )
     {
-        while (!thread::self_should_cancel())
+        do
         {
+            wait();
+
+            //could have been woken up for termination
+            if (_quitting)
+                break;
+
             //if a wait is active, all worker threads should prioritize given task level
             int priority_level = get_priority_level();
             bool longthread = order < _nlong_threads;
 
             invoker_base* task = 0;
-            if (_queue.pop(task)) {
-                //if priority level is set, process only tasks of that level
-                //short-duration threads should process only short tasks
+            RASSERT(_queue.pop(task));
 
-                if ((priority_level < 0 && (longthread || task->task_level() >= 0))
-                    || task->task_level() == priority_level)
-                {
-                    run_task(task, order);
-                }
-                else
-                    _queue.push(task);
+            //if priority level is set, process only tasks of that level
+            //short-duration threads should process only short tasks
+
+            if ((priority_level < 0 && (longthread || task->task_level() >= 0))
+                || task->task_level() == priority_level)
+            {
+                run_task(task, order);
             }
-            else
-                thread::wait(1);
+            else {
+                _queue.push(task);
+                notify();
+            }
         }
+        while (1);
 
         return 0;
     }
@@ -376,23 +390,27 @@ private:
             return sl.priority > 0;
         });
 
-        return sl ? sl - _synclevels.ptr() : -1;
+        return sl ? int(sl - _synclevels.ptr()) : -1;
     }
 
-    bool process_specific_task( int sync )
+    bool process_specific_task( int tlevel )
     {
-        //run through the queue once
+        //run through the queue once to pick tasks from given level
         int qsize = _qsize;
+        sync_level& sl = _synclevels[tlevel];
         invoker_base* task;
 
-        while (qsize-->0 && _queue.pop(task)) {
-            if (task->task_level() == sync) {
+        while (qsize-->0 && sl.njobs > 0 && try_wait()) {
+            RASSERT(_queue.pop(task));
+
+            if (task->task_level() == tlevel) {
                 run_task(task, -1);
                 return true;
             }
 
             //push back
             _queue.push(task);
+            notify();
         }
 
         return false;
@@ -409,19 +427,52 @@ private:
         int sync = task->task_level();
         if (sync >= 0)
             --_synclevels[sync].njobs;
-        --_qsize;
 
         _taskdata.del_range((granule*)task, align_to_chunks(task->size(), sizeof(granule)));
     }
 
+    void notify() {
+        {
+            std::unique_lock<std::mutex> lock(_sync);
+            ++_qsize;
+        }
+        _cv.notify_one();
+    }
+
+    void notify( int n ) {
+        {
+            std::unique_lock<std::mutex> lock(_sync);
+            _qsize += n;
+        }
+        _cv.notify_all();
+    }
+
+    void wait() {
+        std::unique_lock<std::mutex> lock(_sync);
+        while(!_qsize) // handle spurious wake-ups
+            _cv.wait(lock);
+        --_qsize;
+    }
+
+    bool try_wait() {
+        std::unique_lock<std::mutex> lock(_sync);
+        if(_qsize) {
+            --_qsize;
+            return true;
+        }
+        return false;
+    }
+
 private:
 
-    comm_mutex _write_sync;
+    std::mutex _sync;
+    std::condition_variable _cv;
+    volatile int _qsize;                //< current queue size, used also as a semaphore
+    volatile bool _quitting;
 
     slotalloc<granule> _taskdata;
 
     queue<invoker_base*> _queue;
-    std::atomic_int _qsize;             //< queue size (not precisely synced to queue)
 
     dynarray<threadinfo> _threads;
     volatile int _nlong_threads;
