@@ -698,13 +698,13 @@ namespace lua {
     }
 
 ////////////////////////////////////////////////////////////////////////////////
-inline iref<registry_handle> wrap_object(intergen_interface* orig, iref<lua_context> ctx)
+inline iref<registry_handle> wrap_object(intergen_interface* orig, iref<registry_handle> ctx)
 {
     if (!orig) {
         return nullptr;
     }
 
-    typedef iref<registry_handle>(*fn_wrapper)(intergen_interface*, iref<lua_context>);
+    typedef iref<registry_handle>(*fn_wrapper)(intergen_interface*, iref<registry_handle>);
     fn_wrapper fn = static_cast<fn_wrapper>(orig->intergen_wrapper(intergen_interface::IFC_BACKEND_LUA));
 
     if (fn){
