@@ -1159,7 +1159,7 @@ $-(/if)$
 LOCAL_SINGLETON_DEF(ifc_autoregger) $name$_autoregger = new ifc_autoregger(&register_binders_for_$name$);
 
 
-void* force_register_js_$name$() {
+void* force_register_$name$() {
     LOCAL_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&register_binders_for_$name$);
     return autoregger.get();
 }
