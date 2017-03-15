@@ -275,9 +275,14 @@ $-(if return.type!="void")$
                 $-(elif)$
         static_assert(CHECK::meta_operator_exists<$return.basetype$>::value, "missing metastream operator for '$return.basetype$'");
         to_lua(_rval_);
-            $-(/if)$
+                $-(/if)$
         $-(elif)$
-        lua_$return.fulltype$_create_wrapper(_rval_, ifc->_context)->get_ref();
+        if(!_rval.is_empty()){
+            lua_$return.fulltype$_create_wrapper(_rval_, ifc->_context)->get_ref();
+        }
+        else {
+            lua_pushnil(L);
+        }
         $-(/if)$
     $-(/if)$
     
@@ -286,7 +291,12 @@ $-(if return.type!="void")$
         static_assert(CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'");
         to_lua($name$);
         $-(elif)$
-        lua_$fulltype$_create_wrapper($name$, ifc->_context)->get_ref();
+        if(!$name$.is_empty()){
+            lua_$fulltype$_create_wrapper($name$, ifc->_context)->get_ref();
+        }
+        else {
+            lua_pushnil(L);
+        }
         $-(/if)$
         lua_setfield(L, -2, "$name$");
 
@@ -297,7 +307,12 @@ $-(elif noutargs?="1")$
         static_assert(CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'");
         to_lua($name$);
         $-(elif)$
-        lua_$fulltype$_create_wrapper($name$, ifc->_context)->get_ref();
+        if(!$name$.is_empty()){
+            lua_$fulltype$_create_wrapper($name$, ifc->_context)->get_ref();
+        }
+        else {
+            lua_pushnil(L);
+        }
         $-(/if)$
     $[/args]-$
 $-(elif noutargs?)$
@@ -308,7 +323,12 @@ $-(elif noutargs?)$
         static_assert(CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'");
         to_lua($name$);
         $-(elif)$
-        lua_$fulltype$_create_wrapper($name$, ifc->_context)->get_ref();
+        if(!$name$.is_empty()){
+            lua_$fulltype$_create_wrapper($name$, ifc->_context)->get_ref();
+        }
+        else {
+            lua_pushnil(L);
+        }
         $ - (/ if)$
         lua_setfield(L, -2, "$name$");
     $[/args]-$
@@ -376,7 +396,12 @@ $-[/args]$
 $(if ninargs?)$
 $-[args inarg?]$
     $-(if iref.true?)$
-    lua_$fulltype$_create_wrapper($name$, _context)->get_ref();
+    if (!$name$.is_empty()) {
+        lua_$fulltype$_create_wrapper($name$, _context)->get_ref();
+    }
+    else {
+        lua_pushnil(L);
+    }
 $-(elif)$
     lua_streamer<$basetype$>::to_lua($name$); // TODO: volatile streamers
     $-(/if)$
