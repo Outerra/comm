@@ -267,7 +267,7 @@ struct MethodIG
         , bimplicit(false), ninargs(0), ninargs_nondef(0), index(-1), noutargs(0)
     {}
 
-    bool parse( iglexer& lex, const charstr& host, const charstr& ns, dynarray<Arg>& irefargs );
+    bool parse( iglexer& lex, const charstr& host, const charstr& ns, dynarray<Arg>& irefargs, bool isevent );
 
     void parse_docs();
 
