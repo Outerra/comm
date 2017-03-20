@@ -135,6 +135,16 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
         lex.clear_err();
     }
 
+    //bare type
+    barenstype = basetype;
+
+    if(biref)
+        barenstype.set(barenstype.ptr()+5, barenstype.ptre()-1);
+
+    barens = barenstype;
+    baretype = barens.cut_right_back("::", false);
+
+
     if(ifctarget) {
         type.swap(ifctarget);
         type.ins(0, "iref<");

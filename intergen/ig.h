@@ -163,6 +163,9 @@ struct MethodIG
     {
         charstr type;                   //< parameter type (stripped of const qualifier)
         token basetype;                 //< base type (stripped of the last ptr/ref)
+        token barenstype;               //< full bare type (without iref)
+        token barens;                   //< namespace part of full bare type
+        token baretype;                 //< type part of full bare type
         //charstr base2arg;               //< suffix to convert from base (storage) type to type parameter
         charstr name;                   //< parameter name
         charstr arsize;                 //< size expression if the parameter is an array, including [ ]
@@ -205,7 +208,9 @@ struct MethodIG
             {
                 m.member("type",p.type);
                 m.member("basetype",p.basetype);
-                //m.member("base2arg",p.base2arg);
+                m.member("barenstype",p.barenstype);
+                m.member("barens",p.barens);
+                m.member("baretype",p.baretype);
                 m.member("name",p.name);
                 m.member("size",p.arsize);
                 m.member("defval",p.defval);
