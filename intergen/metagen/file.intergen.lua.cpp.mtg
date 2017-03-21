@@ -16,7 +16,7 @@ using namespace coid;
 $-(if irefargs?)$
 // forward declarations for used iref arguments
 $-[irefargs]$
-iref<::lua::registry_handle> lua_$fulltype$_create_wrapper(const $type$&, iref<::lua::registry_handle>);
+typedef iref<::lua::registry_handle> (*lua_$fulltype$_create_wrapper_fun)($barenstype$*, iref<::lua::registry_handle>);
 $-[/irefargs]$
 $-(/if)$
 
@@ -262,8 +262,17 @@ $-(if return.type!="void")$
         static_assert(CHECK::meta_operator_exists<$return.type$>::value, "missing metastream operator for '$return.type$'");
         to_lua(_rval_);
         $-(elif)$
-        iref<::lua::registry_handle> _rval_lua_handle = lua_$return.fulltype$_create_wrapper(_rval_, ifc->_context);
-        _rval_lua_handle->get_ref();
+        if (!_rval_.is_empty()){
+            lua_$return.fulltype$_create_wrapper_fun lua_$return.fulltype$_create_wrapper =
+                reinterpret_cast<lua_$return.fulltype$_create_wrapper_fun>(get_cached_create_wrapper_fun<$return.barenstype$, EBackend::IFC_BACKEND_LUA>("$return.barens$::lua::$return.baretype$@wrapper"));
+
+            if (!lua_$return.fulltype$_create_wrapper) {
+                throw coid::exception("create wrapper not found");
+            }
+            lua_$return.fulltype$_create_wrapper(_rval_.get(), ifc->_context)->get_ref();
+        }
+        else
+            lua_pushnil(L);
         $-(/if)$
         lua_setfield(L, -2, "_ret");
     $-(elif)$
@@ -277,8 +286,17 @@ $-(if return.type!="void")$
         to_lua(_rval_);
                 $-(/if)$
         $-(elif)$
-        if (!_rval_.is_empty())
-            lua_$return.fulltype$_create_wrapper(_rval_, ifc->_context)->get_ref();
+        if (!_rval_.is_empty()){
+            lua_$return.fulltype$_create_wrapper_fun lua_$return.fulltype$_create_wrapper =
+                reinterpret_cast<lua_$return.fulltype$_create_wrapper_fun>(get_cached_create_wrapper_fun
+                    <$return.barenstype$, EBackend::IFC_BACKEND_LUA>("$return.barens$::lua::$return.baretype$@wrapper"));
+
+            if (!lua_$return.fulltype$_create_wrapper) {
+                throw coid::exception("create wrapper not found");
+            }
+
+            lua_$return.fulltype$_create_wrapper(_rval_.get(), ifc->_context)->get_ref();
+        }
         else
             lua_pushnil(L);
         $-(/if)$
@@ -289,8 +307,16 @@ $-(if return.type!="void")$
         static_assert(CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'");
         to_lua($name$);
         $-(elif)$
-        if (!$name$.is_empty())
-            lua_$fulltype$_create_wrapper($name$, ifc->_context)->get_ref();
+        if (!$name$.is_empty()){
+            lua_$fulltype$_create_wrapper_fun lua_$fulltype$_create_wrapper =
+                reinterpret_cast<lua_$fulltype$_create_wrapper_fun>(get_cached_create_wrapper_fun<$barenstype$, EBackend::IFC_BACKEND_LUA>("$barens$::lua::$baretype$@wrapper"));
+
+            if (!lua_$fulltype$_create_wrapper) {
+                throw coid::exception("create wrapper not found");
+            }
+
+            lua_$fulltype$_create_wrapper($name$.get(), ifc->_context)->get_ref();
+        }
         else
             lua_pushnil(L);
         $-(/if)$
@@ -303,8 +329,15 @@ $-(elif noutargs?="1")$
         static_assert(CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'");
         to_lua($name$);
         $-(elif)$
-        if (!$name$.is_empty())
-            lua_$fulltype$_create_wrapper($name$, ifc->_context)->get_ref();
+        if (!$name$.is_empty()){
+            lua_$fulltype$_create_wrapper_fun lua_$fulltype$_create_wrapper =
+                reinterpret_cast<lua_$fulltype$_create_wrapper_fun>(get_cached_create_wrapper_fun<$barenstype$, EBackend::IFC_BACKEND_LUA>("$barens$::lua::$baretype$@wrapper"));
+
+            if (!lua_$fulltype$_create_wrapper) {
+                throw coid::exception("create wrapper not found");
+            }
+            lua_$fulltype$_create_wrapper($name$.get(), ifc->_context)->get_ref();
+        }
         else
             lua_pushnil(L);
         $-(/if)$
@@ -317,8 +350,15 @@ $-(elif noutargs?)$
         static_assert(CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'");
         to_lua($name$);
         $-(elif)$
-        if (!$name$.is_empty())
-            lua_$fulltype$_create_wrapper($name$, ifc->_context)->get_ref();
+        if (!$name$.is_empty()){
+            lua_$fulltype$_create_wrapper_fun lua_$fulltype$_create_wrapper =
+                reinterpret_cast<lua_$fulltype$_create_wrapper_fun>(get_cached_create_wrapper_fun<$barenstype$, EBackend::IFC_BACKEND_LUA>("$barens$::lua::$baretype$@wrapper"));
+
+            if (!lua_$fulltype$_create_wrapper) {
+                throw coid::exception("create wrapper not found");
+            }
+            lua_$fulltype$_create_wrapper($name$.get(), ifc->_context)->get_ref();
+        }
         else
             lua_pushnil(L);
         $ - (/ if)$
@@ -388,8 +428,15 @@ $-[/args]$
 $(if ninargs?)$
 $-[args inarg?]$
     $-(if iref.true?)$
+    lua_$fulltype$_create_wrapper_fun lua_$fulltype$_create_wrapper = 
+        reinterpret_cast<lua_$fulltype$_create_wrapper_fun>(get_cached_create_wrapper_fun<$barenstype$, EBackend::IFC_BACKEND_LUA>("$barens$::lua::$baretype$@wrapper"));
+    
+    if(!lua_$fulltype$_create_wrapper){
+        throw coid::exception("create wrapper not found");
+    }
+
     if (!$name$.is_empty()) {
-        lua_$fulltype$_create_wrapper($name$, _context)->get_ref();
+        lua_$fulltype$_create_wrapper($name$.get(), _context)->get_ref();
     }
     else {
         lua_pushnil(L);
@@ -1034,14 +1081,4 @@ $-[ns]$
 } //namespace $@value$
 $-[/ns]$
 
-////////////////////////////////////////////////////////////////////////////////
-///Create LUA wrapper from an existing interface object
-iref<::lua::registry_handle> lua_$ns rest="_" after="_"-$ $name$_create_wrapper( const iref<$ns rest="::" after="::"$$name$>& orig, iref<::lua::registry_handle> context )
-{
-$-(if !virtual?)$
-    return $ns rest="::" after="::"$lua::create_wrapper_$name$(orig.get(), context);
-$-(elif)$
-    return ::lua::wrap_object(orig.get(), context);
-$-(/if)$
-}
 $-[/iface]$$[/class]$
