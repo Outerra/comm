@@ -56,8 +56,8 @@ using namespace coid;
 
 
 // forward declarations for used iref arguments
-v8::Handle<v8::Value> js_ns_other_create_wrapper( const iref<ns::other>&, v8::Handle<v8::Context> );
-v8::Handle<v8::Value> js_ns_main_create_wrapper( const iref<ns::main>&, v8::Handle<v8::Context> );
+typedef v8::Handle<v8::Value> (*js_ns_other_create_wrapper_fun)(ns::other*, v8::Handle<v8::Context>);
+typedef v8::Handle<v8::Value> (*js_ns_main_create_wrapper_fun)(ns::main*, v8::Handle<v8::Context>);
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -322,7 +322,14 @@ CBK_RET other_js_dispatcher::v8_some_fun12( const ARGUMENTS& args )
     static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'" );
     r__->Set(v8::symbol("a"), to_v8(a));
  
-    r__->Set(v8::symbol("b"), js_ns_other_create_wrapper(b, ifc->context(iso)));
+    js_ns_other_create_wrapper_fun js_ns_other_create_wrapper = 
+        reinterpret_cast<js_ns_other_create_wrapper_fun>
+            (get_cached_create_wrapper_fun<ns::other, EBackend::IFC_BACKEND_JS>
+                ("ns::js::other@wrapper"));
+    if (!js_ns_other_create_wrapper) {
+        throw coid::exception("create wrapper not found");
+    }
+    r__->Set(v8::symbol("b"), js_ns_other_create_wrapper(b.get(), ifc->context(iso)));
  
     static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'" );
     r__->Set(v8::symbol("c"), to_v8(c));
@@ -735,7 +742,7 @@ static void register_binders_for_other( bool on )
 LOCAL_SINGLETON_DEF(ifc_autoregger) other_autoregger = new ifc_autoregger(&register_binders_for_other);
 
 
-void* force_register_js_other() {
+void* force_register_other() {
     LOCAL_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&register_binders_for_other);
     return autoregger.get();
 }
@@ -743,12 +750,6 @@ void* force_register_js_other() {
 } //namespace js
 } //namespace ns
 
-////////////////////////////////////////////////////////////////////////////////
-///Create JS wrapper from an existing interface object
-v8::Handle<v8::Value> js_ns_other_create_wrapper( const iref<ns::other>& orig, v8::Handle<v8::Context> context )
-{
-    return ns::js::create_wrapper_other(orig.get(), context);
-}
 ////////////////////////////////////////////////////////////////////////////////
 //
 // javascript handler of interface main of class main_cls
@@ -952,7 +953,14 @@ CBK_RET main_js_dispatcher::v8_some_get0( const ARGUMENTS& args )
 
     //stream out
     v8::Handle<v8::Object> r__ = NEWTYPE(iso, Object);
-    r__->Set(v8::symbol("$ret"), js_ns_other_create_wrapper(_rval_, ifc->context(iso)));
+    js_ns_other_create_wrapper_fun js_ns_other_create_wrapper = 
+        reinterpret_cast<js_ns_other_create_wrapper_fun>
+            (get_cached_create_wrapper_fun<ns::other, EBackend::IFC_BACKEND_JS>
+                ("ns::js::other@wrapper"));
+    if (!js_ns_other_create_wrapper) {
+        throw coid::exception("create wrapper not found");
+    }
+    r__->Set(v8::symbol("$ret"), js_ns_other_create_wrapper(_rval_.get(), ifc->context(iso)));
 
     static_assert( CHECK::meta_operator_exists<coid::charstr>::value, "missing metastream operator for 'coid::charstr'" );
     r__->Set(v8::symbol("a"), to_v8(a));
@@ -1152,7 +1160,14 @@ CBK_RET main_js_dispatcher::v8_fun13( const ARGUMENTS& args )
     static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'" );
     r__->Set(v8::symbol("e"), to_v8(e));
  
-    r__->Set(v8::symbol("f"), js_ns_other_create_wrapper(f, ifc->context(iso)));
+    js_ns_other_create_wrapper_fun js_ns_other_create_wrapper = 
+        reinterpret_cast<js_ns_other_create_wrapper_fun>
+            (get_cached_create_wrapper_fun<ns::other, EBackend::IFC_BACKEND_JS>
+                ("ns::js::other@wrapper"));
+    if (!js_ns_other_create_wrapper) {
+        throw coid::exception("create wrapper not found");
+    }
+    r__->Set(v8::symbol("f"), js_ns_other_create_wrapper(f.get(), ifc->context(iso)));
  
 #ifdef V8_MAJOR_VERSION
     args.GetReturnValue().Set(r__);
@@ -1224,7 +1239,14 @@ CBK_RET main_js_dispatcher::v8_fun24( const ARGUMENTS& args )
     static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'" );
     r__->Set(v8::symbol("c"), to_v8(c));
  
-    r__->Set(v8::symbol("d"), js_ns_other_create_wrapper(d, ifc->context(iso)));
+     js_ns_other_create_wrapper_fun js_ns_other_create_wrapper = 
+        reinterpret_cast<js_ns_other_create_wrapper_fun>
+            (get_cached_create_wrapper_fun<ns::other, EBackend::IFC_BACKEND_JS>
+                ("ns::js::other@wrapper"));
+    if (!js_ns_other_create_wrapper) {
+        throw coid::exception("create wrapper not found");
+    }
+    r__->Set(v8::symbol("d"), js_ns_other_create_wrapper(d.get(), ifc->context(iso)));
  
 #ifdef V8_MAJOR_VERSION
     args.GetReturnValue().Set(r__);
@@ -2429,7 +2451,7 @@ static void register_binders_for_main( bool on )
 LOCAL_SINGLETON_DEF(ifc_autoregger) main_autoregger = new ifc_autoregger(&register_binders_for_main);
 
 
-void* force_register_js_main() {
+void* force_register_main() {
     LOCAL_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&register_binders_for_main);
     return autoregger.get();
 }
@@ -2437,9 +2459,3 @@ void* force_register_js_main() {
 } //namespace js
 } //namespace ns
 
-////////////////////////////////////////////////////////////////////////////////
-///Create JS wrapper from an existing interface object
-v8::Handle<v8::Value> js_ns_main_create_wrapper( const iref<ns::main>& orig, v8::Handle<v8::Context> context )
-{
-    return ns::js::create_wrapper_main(orig.get(), context);
-}
