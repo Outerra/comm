@@ -122,7 +122,7 @@ protected:
 
 public:
 
-    static const int VERSION = 5;
+    static const int VERSION = 6;
 
     //@return host class pointer
     //@note T derived from policy_intrusive_base
