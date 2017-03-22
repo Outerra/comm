@@ -317,7 +317,7 @@ $-(if return.type!="void")$
     js_$return.fulltype$_create_wrapper_fun js_$return.fulltype$_create_wrapper = 
         reinterpret_cast<js_$return.fulltype$_create_wrapper_fun>
             (get_cached_create_wrapper_fun<$return.barenstype$, EBackend::IFC_BACKEND_JS>
-                ("$return.barens$::js::$return.baretype$@wrapper"));
+                ("$return.barens$::$return.baretype$@wrapper.js"));
     if (!js_$return.fulltype$_create_wrapper) {
         throw coid::exception("create wrapper not found");
     }
@@ -333,10 +333,10 @@ $-(if return.type!="void")$
     r__ = to_v8(_rval_);
   $-(/if)$
  $-(elif)$
-     js_$return.fulltype$_create_wrapper_fun js_$return.fulltype$_create_wrapper = 
+    js_$return.fulltype$_create_wrapper_fun js_$return.fulltype$_create_wrapper = 
         reinterpret_cast<js_$return.fulltype$_create_wrapper_fun>
             (get_cached_create_wrapper_fun<$return.barenstype$, EBackend::IFC_BACKEND_JS>
-                ("$return.barens$::js::$return.baretype$@wrapper"));
+                ("$return.barens$::$return.baretype$@wrapper.js"));
     if (!js_$return.fulltype$_create_wrapper) {
         throw coid::exception("create wrapper not found");
     }
@@ -351,7 +351,7 @@ $-(if return.type!="void")$
      js_$fulltype$_create_wrapper_fun js_$fulltype$_create_wrapper = 
         reinterpret_cast<js_$fulltype$_create_wrapper_fun>
             (get_cached_create_wrapper_fun<$barenstype$, EBackend::IFC_BACKEND_JS>
-                ("$barens$::js::$baretype$@wrapper"));
+                ("$barens$::$baretype$@wrapper.js"));
     if (!js_$fulltype$_create_wrapper) {
         throw coid::exception("create wrapper not found");
     }
@@ -367,7 +367,7 @@ $-(elif noutargs?="1")$
     js_$fulltype$_create_wrapper_fun js_$fulltype$_create_wrapper = 
         reinterpret_cast<js_$fulltype$_create_wrapper_fun>
             (get_cached_create_wrapper_fun<$barenstype$, EBackend::IFC_BACKEND_JS>
-                ("$barens$::js::$baretype$@wrapper"));
+                ("$barens$::$baretype$@wrapper.js"));
     if (!js_$fulltype$_create_wrapper) {
         throw coid::exception("create wrapper not found");
     }
@@ -384,7 +384,7 @@ $-(elif noutargs?)$
     js_$fulltype$_create_wrapper_fun js_$fulltype$_create_wrapper = 
         reinterpret_cast<js_$fulltype$_create_wrapper_fun>
             (get_cached_create_wrapper_fun<$barenstype$, EBackend::IFC_BACKEND_JS>
-                ("$barens$::js::$baretype$@wrapper"));
+                ("$barens$::$baretype$@wrapper.js"));
     if (!js_$fulltype$_create_wrapper) {
         throw coid::exception("create wrapper not found");
     }
@@ -621,7 +621,7 @@ v8::Handle<v8::Value> $name$_js_dispatcher::_getter(v8::Local<v8::String> proper
     js_$fulltype$_create_wrapper_fun js_$getter.fulltype$_create_wrapper = 
         reinterpret_cast<js_$getter.fulltype$_create_wrapper_fun>
             (get_cached_create_wrapper_fun<$getter.barenstype$, EBackend::IFC_BACKEND_JS>
-                ("$getter.barens$::js::$getter.baretype$@wrapper"));
+                ("$getter.barens$::$getter.baretype$@wrapper.js"));
     if (!js_$getter.fulltype$_create_wrapper) {
         throw coid::exception("create wrapper not found");
     }
@@ -1181,7 +1181,7 @@ static void register_binders_for_$name$( bool on )
 {
 $-[method static?]$
     interface_register::register_interface_creator(
-        "$..ns rest="::" after="::"$js::$..name$.$name$@creator",
+        "$..ns rest="::" after="::"$$..name$.$name$@creator.js",
         on ? (void*)&$..name$_js_dispatcher::$name$ : nullptr);
 $-(if !internal?)$
     interface_register::register_interface_creator(
@@ -1191,7 +1191,7 @@ $-(/if)$
 $-[/method]$
 $-(if virtual!)$
     interface_register::register_interface_creator(
-        "$ns rest="::" after="::"$js::$name$@wrapper",
+        "$ns rest="::" after="::"$$name$@wrapper.js",
         on ? (void*)&create_wrapper_$name$ : nullptr);
 
 $-(/if)$

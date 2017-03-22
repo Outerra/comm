@@ -16,9 +16,10 @@ struct entry
     token classname;
     token creatorname;
     token ns;
+    token script;
+    token hash;
 
     void* creator_ptr;
-    bool script_creator;
 
     operator const token&() const { return ifcname; }
 };
@@ -53,14 +54,21 @@ public:
     {}
 
     //virtual in order to invoke code from the main exe module when calling from dlls
+    /**
+        @param ifcname in one of the following forms:
+            [ns1[::ns2[...]]]::classname@wrapper[.scriptname]                   wrap existing object
+            [ns1[::ns2[...]]]::classname.creatorname@hashvalue                  c++ versioned creator
+            [ns1[::ns2[...]]]::classname.creatorname@creator.scriptname         script creator
+    **/
     virtual bool register_interface_creator(
         const coid::token& ifcname,
         void* creator_ptr)
     {
         token ns = ifcname;
-        token classname = ns.cut_right_group_back("::");
-        token creatorname = classname.cut_right('.');
-        token script = creatorname.cut_right('@', token::cut_trait_remove_sep_default_empty());
+        token wrapper = ns.cut_right_group_back("::");
+        token classname = wrapper.cut_left('@');
+        token creatorname = classname.cut_right_back('.');
+        token script = wrapper.cut_right('.', token::cut_trait_remove_sep_default_empty());
 
         GUARDTHIS(_mx);
 
@@ -75,7 +83,8 @@ public:
                 en->ns = ns;
                 en->classname = classname;
                 en->creatorname = creatorname;
-                en->script_creator = !script.is_empty();
+                en->hash = wrapper;
+                en->script = script;
                 return true;
             }
         }
@@ -207,7 +216,7 @@ void interface_register::setup( const token& path, fn_log_t log, fn_acc_t access
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-dynarray<interface_register::creator>& interface_register::get_interface_creators( const token& name, dynarray<interface_register::creator>& dst )
+dynarray<interface_register::creator>& interface_register::get_interface_creators( const token& name, const token& script, dynarray<interface_register::creator>& dst )
 {
     //interface creator names:
     // [ns1::[ns2:: ...]]::class.creator
@@ -222,7 +231,7 @@ dynarray<interface_register::creator>& interface_register::get_interface_creator
     auto i = reg._hash.begin();
     auto ie = reg._hash.end();
     for(; i!=ie; ++i) {
-        if(i->script_creator)
+        if(script && script != i->script)
             continue;
 
         if(i->classname != classname)
@@ -254,7 +263,7 @@ dynarray<interface_register::creator>& interface_register::find_interface_creato
     auto i = reg._hash.begin();
     auto ie = reg._hash.end();
     for(; i!=ie; ++i) {
-        if(i->script_creator)
+        if(i->script)
             continue;
 
         if(name.match(i->ifcname)) {

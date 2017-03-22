@@ -264,7 +264,7 @@ $-(if return.type!="void")$
         $-(elif)$
         if (!_rval_.is_empty()){
             lua_$return.fulltype$_create_wrapper_fun lua_$return.fulltype$_create_wrapper =
-                reinterpret_cast<lua_$return.fulltype$_create_wrapper_fun>(get_cached_create_wrapper_fun<$return.barenstype$, EBackend::IFC_BACKEND_LUA>("$return.barens$::lua::$return.baretype$@wrapper"));
+                reinterpret_cast<lua_$return.fulltype$_create_wrapper_fun>(get_cached_create_wrapper_fun<$return.barenstype$, EBackend::IFC_BACKEND_LUA>("$return.barens$::$return.baretype$@wrapper.lua"));
 
             if (!lua_$return.fulltype$_create_wrapper) {
                 throw coid::exception("create wrapper not found");
@@ -289,7 +289,7 @@ $-(if return.type!="void")$
         if (!_rval_.is_empty()){
             lua_$return.fulltype$_create_wrapper_fun lua_$return.fulltype$_create_wrapper =
                 reinterpret_cast<lua_$return.fulltype$_create_wrapper_fun>(get_cached_create_wrapper_fun
-                    <$return.barenstype$, EBackend::IFC_BACKEND_LUA>("$return.barens$::lua::$return.baretype$@wrapper"));
+                    <$return.barenstype$, EBackend::IFC_BACKEND_LUA>("$return.barens$::$return.baretype$@wrapper.lua"));
 
             if (!lua_$return.fulltype$_create_wrapper) {
                 throw coid::exception("create wrapper not found");
@@ -309,7 +309,7 @@ $-(if return.type!="void")$
         $-(elif)$
         if (!$name$.is_empty()){
             lua_$fulltype$_create_wrapper_fun lua_$fulltype$_create_wrapper =
-                reinterpret_cast<lua_$fulltype$_create_wrapper_fun>(get_cached_create_wrapper_fun<$barenstype$, EBackend::IFC_BACKEND_LUA>("$barens$::lua::$baretype$@wrapper"));
+                reinterpret_cast<lua_$fulltype$_create_wrapper_fun>(get_cached_create_wrapper_fun<$barenstype$, EBackend::IFC_BACKEND_LUA>("$barens$::$baretype$@wrapper.lua"));
 
             if (!lua_$fulltype$_create_wrapper) {
                 throw coid::exception("create wrapper not found");
@@ -331,7 +331,7 @@ $-(elif noutargs?="1")$
         $-(elif)$
         if (!$name$.is_empty()){
             lua_$fulltype$_create_wrapper_fun lua_$fulltype$_create_wrapper =
-                reinterpret_cast<lua_$fulltype$_create_wrapper_fun>(get_cached_create_wrapper_fun<$barenstype$, EBackend::IFC_BACKEND_LUA>("$barens$::lua::$baretype$@wrapper"));
+                reinterpret_cast<lua_$fulltype$_create_wrapper_fun>(get_cached_create_wrapper_fun<$barenstype$, EBackend::IFC_BACKEND_LUA>("$barens$::$baretype$@wrapper.lua"));
 
             if (!lua_$fulltype$_create_wrapper) {
                 throw coid::exception("create wrapper not found");
@@ -352,7 +352,7 @@ $-(elif noutargs?)$
         $-(elif)$
         if (!$name$.is_empty()){
             lua_$fulltype$_create_wrapper_fun lua_$fulltype$_create_wrapper =
-                reinterpret_cast<lua_$fulltype$_create_wrapper_fun>(get_cached_create_wrapper_fun<$barenstype$, EBackend::IFC_BACKEND_LUA>("$barens$::lua::$baretype$@wrapper"));
+                reinterpret_cast<lua_$fulltype$_create_wrapper_fun>(get_cached_create_wrapper_fun<$barenstype$, EBackend::IFC_BACKEND_LUA>("$barens$::$baretype$@wrapper.lua"));
 
             if (!lua_$fulltype$_create_wrapper) {
                 throw coid::exception("create wrapper not found");
@@ -429,7 +429,7 @@ $(if ninargs?)$
 $-[args inarg?]$
     $-(if iref.true?)$
     lua_$fulltype$_create_wrapper_fun lua_$fulltype$_create_wrapper = 
-        reinterpret_cast<lua_$fulltype$_create_wrapper_fun>(get_cached_create_wrapper_fun<$barenstype$, EBackend::IFC_BACKEND_LUA>("$barens$::lua::$baretype$@wrapper"));
+        reinterpret_cast<lua_$fulltype$_create_wrapper_fun>(get_cached_create_wrapper_fun<$barenstype$, EBackend::IFC_BACKEND_LUA>("$barens$::$baretype$@wrapper.lua"));
     
     if(!lua_$fulltype$_create_wrapper){
         throw coid::exception("create wrapper not found");
@@ -1052,7 +1052,7 @@ static void register_binders_for_$name$( bool on )
 
 $-[method static?]$
     interface_register::register_interface_creator(
-        "$..ns rest="::" after="::"$lua::$..name$.$name$@creator",
+        "$..ns rest="::" after="::"$$..name$.$name$@creator.lua",
         on ? (void*)&$..name$_lua_dispatcher::$name$ : nullptr);
 $-(if !internal?)$
     interface_register::register_interface_creator(
@@ -1062,7 +1062,7 @@ $-(/if)$
 $-[/method]$
 $-(if virtual!)$
     interface_register::register_interface_creator(
-        "$ns rest="::" after="::"$lua::$name$@wrapper",
+        "$ns rest="::" after="::"$$name$@wrapper.lua",
         on ? (void*)&create_wrapper_$name$ : nullptr);
 
 $-(/if)$

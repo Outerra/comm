@@ -110,8 +110,8 @@ $-(if default_creator.name.empty?)$
 $-(elif)$
         static const coid::token _dc("$ns rest="::" after="::"$$name$.$default_creator.name$@$hash$");
 $-(/if)$
-        static const coid::token _djs("$ns rest="::" after="::"$js::$name$@wrapper");
-        static const coid::token _dlua("$ns rest="::" after="::"$lua::$name$@wrapper");
+        static const coid::token _djs("$ns rest="::" after="::"$$name$@wrapper.js");
+        static const coid::token _dlua("$ns rest="::" after="::"$$name$@wrapper.lua");
         static const coid::token _dnone;
 
         switch(bck) {
