@@ -306,14 +306,7 @@ $-(if return.type!="void")$
     r__->Set(v8::symbol("$$ret"), to_v8(_rval_));
  $-(elif noutargs?)$
     v8::Handle<v8::Object> r__ = NEWTYPE(iso, Object);
-    js_$return.fulltype$_create_wrapper_fun js_$return.fulltype$_create_wrapper = 
-        reinterpret_cast<js_$return.fulltype$_create_wrapper_fun>
-            (get_cached_create_wrapper_fun<$return.barenstype$, EBackend::IFC_BACKEND_JS>
-                ("$return.barens$::$return.baretype$@wrapper.js"));
-    if (!js_$return.fulltype$_create_wrapper) {
-        throw coid::exception("create wrapper not found");
-    }
-    r__->Set(v8::symbol("$$ret"), js_$return.fulltype$_create_wrapper(_rval_.get(), ifc->context(iso)));
+    r__->Set(v8::symbol("$$ret"), ::js::wrap_object(_rval_.get(), ifc->context(iso)));
  $-(elif return.iref.false?)$
     v8::Handle<v8::Value> r__;
   $-(if return.ptr.true?)$
@@ -325,7 +318,7 @@ $-(if return.type!="void")$
     r__ = to_v8(_rval_);
   $-(/if)$
  $-(elif)$
-    v8::Handle<v8::Value> r__ = js::wrap_object(_rval_.get(), ifc->context(iso));
+    v8::Handle<v8::Value> r__ = ::js::wrap_object(_rval_.get(), ifc->context(iso));
  $-(/if)$
 
  $-[args outarg?]$
@@ -333,7 +326,7 @@ $-(if return.type!="void")$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'" );
     r__->Set(v8::symbol("$name$"), to_v8($name$));
   $-(elif)$
-    r__->Set(v8::symbol("$name$"), js::wrap_object($name$.get(), ifc->context(iso)));
+    r__->Set(v8::symbol("$name$"), ::js::wrap_object($name$.get(), ifc->context(iso)));
   $-(/if)$
  $[/args]-$
 $-(elif noutargs?="1")$
@@ -342,7 +335,7 @@ $-(elif noutargs?="1")$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'" );
     v8::Handle<v8::Value> r__ = to_v8($name$);
   $-(elif)$
-    v8::Handle<v8::Value> r__ = js::wrap_object(_rval_.get(), ifc->context(iso));
+    v8::Handle<v8::Value> r__ = ::js::wrap_object(_rval_.get(), ifc->context(iso));
   $-(/if)$
  $[/args]-$
 $-(elif noutargs?)$
@@ -352,7 +345,7 @@ $-(elif noutargs?)$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'" );
     r__->Set(v8::symbol("$name$"), to_v8($name$));
   $-(elif)$
-    r__->Set(v8::symbol("$name$"), js::wrap_object($name$.get(), ifc->context(iso)));
+    r__->Set(v8::symbol("$name$"), ::js::wrap_object($name$.get(), ifc->context(iso)));
   $-(/if)$
  $[/args]-$
 $-(elif)$
@@ -582,7 +575,7 @@ v8::Handle<v8::Value> $name$_js_dispatcher::_getter(v8::Local<v8::String> proper
     static_assert( CHECK::meta_operator_exists<$getter.basetype$>::value, "missing metastream operator for '$getter.basetype$'" );
     v8::Handle<v8::Value> r__ = to_v8(value);
  $-(elif)$
-    v8::Handle<v8::Value> r__ = js::wrap_object(value.get(), ifc->context(iso));
+    v8::Handle<v8::Value> r__ = ::js::wrap_object(value.get(), ifc->context(iso));
  $-(/if)$
 
     return ESCAPE(handle_scope__, r__);

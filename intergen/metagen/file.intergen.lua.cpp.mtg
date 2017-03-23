@@ -259,7 +259,7 @@ $-(if return.type!="void")$
         to_lua(_rval_);
         $-(elif)$
         if (!_rval_.is_empty()){
-            iref<lua::registry_handle> _rval_handle = lua::wrap_object(_rval_.get(), ifc->_context);
+            iref<::lua::registry_handle> _rval_handle = ::lua::wrap_object(_rval_.get(), ifc->_context);
             if (_rval_handle.is_empty()) {
                 lua_pushnil(L);
             }
@@ -283,7 +283,7 @@ $-(if return.type!="void")$
                 $-(/if)$
         $-(elif)$
         if (!_rval_.is_empty()){
-            iref<lua::registry_handle> _rval_handle = lua::wrap_object(_rval_.get(), ifc->_context);
+            iref<::lua::registry_handle> _rval_handle = ::lua::wrap_object(_rval_.get(), ifc->_context);
             if (_rval_handle.is_empty()) {
                 lua_pushnil(L);
             }
@@ -302,7 +302,7 @@ $-(if return.type!="void")$
         to_lua($name$);
         $-(elif)$
         if (!$name$.is_empty()){
-            iref<lua::registry_handle> $name$_handle = lua::wrap_object($name$.get(), _context);
+            iref<::lua::registry_handle> $name$_handle = ::lua::wrap_object($name$.get(), ifc->_context);
             if ($name$_handle.is_empty()) {
                 lua_pushnil(L);
             }
@@ -323,7 +323,7 @@ $-(elif noutargs?="1")$
         to_lua($name$);
         $-(elif)$
         if (!$name$.is_empty()){
-            iref<lua::registry_handle> $name$_handle = lua::wrap_object($name$.get(), _context);
+            iref<::lua::registry_handle> $name$_handle = ::lua::wrap_object($name$.get(), ifc->_context);
             if ($name$_handle.is_empty()) {
                 lua_pushnil(L);
             }
@@ -344,7 +344,7 @@ $-(elif noutargs?)$
         to_lua($name$);
         $-(elif)$
         if (!$name$.is_empty()){
-            iref<lua::registry_handle> $name$_handle = lua::wrap_object($name$.get(), _context);
+            iref<::lua::registry_handle> $name$_handle = ::lua::wrap_object($name$.get(), ifc->_context);
             if ($name$_handle.is_empty()) {
                 lua_pushnil(L);
             }
@@ -448,7 +448,7 @@ $(if ninargs?)$
 $-[args inarg?]$
     $-(if iref.true?)$
     if (!$name$.is_empty()) {
-        iref<lua::registry_handle> $name$_handle = lua::wrap_object($name$.get(), _context);
+        iref<::lua::registry_handle> $name$_handle = ::lua::wrap_object($name$.get(), _context);
         if ($name$_handle.is_empty()) {
             lua_pushnil(L);
         }
