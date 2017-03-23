@@ -55,14 +55,6 @@ using namespace coid;
 
 #endif
 
-$-(if irefargs?)$
-
-// forward declarations for used iref arguments
-$-[irefargs]$
-typedef v8::Handle<v8::Value> (*js_$fulltype$_create_wrapper_fun)($barenstype$*, v8::Handle<v8::Context>);
-$-[/irefargs]$
-$-(/if)$
-
 $-[class]$$[iface rest="\n\n"]$
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -333,14 +325,7 @@ $-(if return.type!="void")$
     r__ = to_v8(_rval_);
   $-(/if)$
  $-(elif)$
-    js_$return.fulltype$_create_wrapper_fun js_$return.fulltype$_create_wrapper = 
-        reinterpret_cast<js_$return.fulltype$_create_wrapper_fun>
-            (get_cached_create_wrapper_fun<$return.barenstype$, EBackend::IFC_BACKEND_JS>
-                ("$return.barens$::$return.baretype$@wrapper.js"));
-    if (!js_$return.fulltype$_create_wrapper) {
-        throw coid::exception("create wrapper not found");
-    }
-    v8::Handle<v8::Value> r__ = js_$return.fulltype$_create_wrapper(_rval_.get(), ifc->context(iso));
+    v8::Handle<v8::Value> r__ = js::wrap_object(_rval_.get(), ifc->context(iso));
  $-(/if)$
 
  $-[args outarg?]$
@@ -348,14 +333,7 @@ $-(if return.type!="void")$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'" );
     r__->Set(v8::symbol("$name$"), to_v8($name$));
   $-(elif)$
-     js_$fulltype$_create_wrapper_fun js_$fulltype$_create_wrapper = 
-        reinterpret_cast<js_$fulltype$_create_wrapper_fun>
-            (get_cached_create_wrapper_fun<$barenstype$, EBackend::IFC_BACKEND_JS>
-                ("$barens$::$baretype$@wrapper.js"));
-    if (!js_$fulltype$_create_wrapper) {
-        throw coid::exception("create wrapper not found");
-    }
-    r__->Set(v8::symbol("$name$"), js_$fulltype$_create_wrapper($name$.get(), ifc->context(iso)));
+    r__->Set(v8::symbol("$name$"), js::wrap_object($name$.get(), ifc->context(iso)));
   $-(/if)$
  $[/args]-$
 $-(elif noutargs?="1")$
@@ -364,14 +342,7 @@ $-(elif noutargs?="1")$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'" );
     v8::Handle<v8::Value> r__ = to_v8($name$);
   $-(elif)$
-    js_$fulltype$_create_wrapper_fun js_$fulltype$_create_wrapper = 
-        reinterpret_cast<js_$fulltype$_create_wrapper_fun>
-            (get_cached_create_wrapper_fun<$barenstype$, EBackend::IFC_BACKEND_JS>
-                ("$barens$::$baretype$@wrapper.js"));
-    if (!js_$fulltype$_create_wrapper) {
-        throw coid::exception("create wrapper not found");
-    }
-    v8::Handle<v8::Value> r__ = js_$fulltype$_create_wrapper(_rval_.get(), ifc->context(iso));
+    v8::Handle<v8::Value> r__ = js::wrap_object(_rval_.get(), ifc->context(iso));
   $-(/if)$
  $[/args]-$
 $-(elif noutargs?)$
@@ -381,14 +352,7 @@ $-(elif noutargs?)$
     static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'" );
     r__->Set(v8::symbol("$name$"), to_v8($name$));
   $-(elif)$
-    js_$fulltype$_create_wrapper_fun js_$fulltype$_create_wrapper = 
-        reinterpret_cast<js_$fulltype$_create_wrapper_fun>
-            (get_cached_create_wrapper_fun<$barenstype$, EBackend::IFC_BACKEND_JS>
-                ("$barens$::$baretype$@wrapper.js"));
-    if (!js_$fulltype$_create_wrapper) {
-        throw coid::exception("create wrapper not found");
-    }
-    r__->Set(v8::symbol("$name$"), js_$fulltype$_create_wrapper($name$.get(), ifc->context(iso)));
+    r__->Set(v8::symbol("$name$"), js::wrap_object($name$.get(), ifc->context(iso)));
   $-(/if)$
  $[/args]-$
 $-(elif)$
@@ -618,14 +582,7 @@ v8::Handle<v8::Value> $name$_js_dispatcher::_getter(v8::Local<v8::String> proper
     static_assert( CHECK::meta_operator_exists<$getter.basetype$>::value, "missing metastream operator for '$getter.basetype$'" );
     v8::Handle<v8::Value> r__ = to_v8(value);
  $-(elif)$
-    js_$fulltype$_create_wrapper_fun js_$getter.fulltype$_create_wrapper = 
-        reinterpret_cast<js_$getter.fulltype$_create_wrapper_fun>
-            (get_cached_create_wrapper_fun<$getter.barenstype$, EBackend::IFC_BACKEND_JS>
-                ("$getter.barens$::$getter.baretype$@wrapper.js"));
-    if (!js_$getter.fulltype$_create_wrapper) {
-        throw coid::exception("create wrapper not found");
-    }
-    v8::Handle<v8::Value> r__ = js_$getter.fulltype$_create_wrapper(value.get(), ifc->context(iso));
+    v8::Handle<v8::Value> r__ = js::wrap_object(value.get(), ifc->context(iso));
  $-(/if)$
 
     return ESCAPE(handle_scope__, r__);
