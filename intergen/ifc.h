@@ -280,18 +280,6 @@ private:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-/// Get cached create_wrapper function
-template<class T, int BE> void * get_cached_create_wrapper_fun(const coid::token& wrap_fun_key) {
-    static void * cached_fun = nullptr;
-    
-    if (!cached_fun) {
-        cached_fun = coid::interface_register::get_interface_creator(wrap_fun_key);
-    }
-
-    return cached_fun;
-};
-
-////////////////////////////////////////////////////////////////////////////////
 
 ///Call interface vtable method
 #define VT_CALL(R,F,I) ((*_host).*(reinterpret_cast<R(policy_intrusive_base::*)F>(_vtable[I])))
