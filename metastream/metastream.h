@@ -1376,6 +1376,11 @@ protected:
 public:
 
     template<class T>
+    static const MetaDesc* meta_find_type() {
+        return smap().find(typeid(T).name());
+    }
+
+    template<class T>
     void meta_variable( const token& varname, const T* )
     {
         typedef typename resolve_enum<T>::type B;
