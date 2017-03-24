@@ -54,15 +54,15 @@ COID_NAMESPACE_BEGIN
 
 /**
     Taskmaster runs a set of worker threads and a queue of tasks that are processed by the worker threads.
-    It's intended for short tasks that can be parallelized across the preallocated number of working
-    threads, but it also supports long-duration jobs that can run on a limited number of worker threads
+    It's intended for short tasks that can be parallelized across a preallocated number of work threads,
+    but it also supports long-duration jobs that can run on a limited number of worker threads
     and have a lower priority.
 
     Additionally, jobs can be synchronized or unsynchronized.
 
-    - long duration threads will prioritize short jobs if available
+    - threads configured to process long duration tasks will prioritize short jobs if available
     - thread waiting for completion of given set of jobs will also partake in processing of the same
-      type of jobs
+      type of jobs it's waiting for
     - there can be multiple threads that wait for completion of jobs
     - if there's a thread waiting for job completion, all worker threads prioritize given job type
     - if there are multiple completion requests at different synchronization levels, the one with
