@@ -100,11 +100,13 @@ public:
     ///Add synchronization level
     //@param level sync level number (0 highest priority for completion)
     //@param name sync level name
+    //@param submitter optional allowed submitter thread
     //@return level
-    uint add_task_level( uint level, const token& name ) {
+    uint add_task_level( uint level, const token& name, thread_t submitter = thread::invalid() ) {
         sync_level& sl = _synclevels.get_or_add(level);
         sl.name = name;
         sl.njobs = 0;
+        sl.submitter = submitter;
 
         return level;
     }
@@ -113,8 +115,9 @@ public:
     //@param tlevel task level to push into (<0 unsynced long duration tasks, >=0 registered task level
     //@param fn function to run
     //@param args arguments needed to invoke the function
+    //@return false if task was rejected (thread not allowed to submit to given task level ...)
     template <typename Fn, typename ...Args>
-    void push( int tlevel, const Fn& fn, Args&& ...args )
+    bool push( int tlevel, const Fn& fn, Args&& ...args )
     {
         using callfn = invoker<Fn, Args...>;
 
@@ -124,7 +127,7 @@ public:
         granule* p = alloc_data(sizeof(callfn));
         auto task = new(p) callfn(tlevel, fn, std::forward<Args>(args)...);
 
-        push_to_queue(task);
+        return push_to_queue(task);
     }
 
     ///Push task (function and its arguments) into queue for processing by worker threads
@@ -132,8 +135,9 @@ public:
     //@param fn member function to run
     //@param obj object reference to run the member function on. Can be a pointer or a smart ptr type which resolves to the object with * operator
     //@param args arguments needed to invoke the function
+    //@return false if task was rejected (thread not allowed to submit to given task level ...)
     template <typename Fn, typename C, typename ...Args>
-    void push_memberfn( int tlevel, Fn fn, const C& obj, Args&& ...args )
+    bool push_memberfn( int tlevel, Fn fn, const C& obj, Args&& ...args )
     {
         static_assert(std::is_member_function_pointer<Fn>::value, "fn must be a function that can be invoked as ((*obj).*fn)(args)");
 
@@ -145,7 +149,7 @@ public:
         granule* p = alloc_data(sizeof(callfn));
         auto task = new(p) callfn(tlevel, fn, obj, std::forward<Args>(args)...);
 
-        push_to_queue(task);
+        return push_to_queue(task);
     }
 
 
@@ -214,10 +218,12 @@ protected:
         std::atomic_int priority;
 
         charstr name;
+        thread_t submitter;             //< allowed task submitter thread
 
         sync_level()
             : njobs(0)
             , priority(0)
+            , submitter(thread::invalid())
         {}
     };
 
@@ -248,6 +254,7 @@ protected:
 
         invoker_base(int sync)
             : _sync(sync)
+            , _tid(thread::self())
         {}
 
         int task_level() const {
@@ -256,6 +263,7 @@ protected:
 
     protected:
         int _sync;
+        thread_t _tid;
     };
 
     template <typename Fn, typename ...Args>
@@ -327,21 +335,32 @@ protected:
     };
 
 
-    void push_to_queue(invoker_base* task)
+    bool push_to_queue(invoker_base* task)
     {
         int sync = task->task_level();
 
         if (sync >= 0) {
             DASSERT(sync < (int)_synclevels.size());
 
-            if (sync < (int)_synclevels.size())
-                ++_synclevels[sync].njobs;
+            if (sync >= (int)_synclevels.size())
+                return false;
+
+            if (_synclevels[sync].submitter != thread::invalid()
+                && _synclevels[sync].submitter != thread::self())
+            {
+                coidlog_error("taskmaster", "thread not allowed to submit tasks to task level " << sync);
+                return false;
+            }
+
+            ++_synclevels[sync].njobs;
         }
 
         _queue.push(task);
         
         ++_qsize;
         _cv.notify_one();
+
+        return true;
     }
 
 private:
