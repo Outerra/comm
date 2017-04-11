@@ -9,6 +9,8 @@ namespace charstrconv {
 ////////////////////////////////////////////////////////////////////////////////
 char* append_fixed( char* dst, char* dste, double v, int nfrac, EAlignNum align)
 {
+    DASSERT(dste > dst);
+
     char sbuf[32];
     bool doalign = align != ALIGN_NUM_LEFT  &&  align != ALIGN_NUM_LEFT_PAD_0;
     uints dsize = dste - dst;

@@ -825,7 +825,7 @@ public:
         if (ndigits > 3) {
             v /= pow(10.0, 3 * ngroup);
             uint res = align >= ALIGN_NUM_RIGHT ? 1 + pad_space : 0;
-            uint offs = append_fixed(v, minsize - res, (ndigits - 3 * ngroup) - 3, align);
+            uint offs = append_fixed(v, minsize ? minsize - res : 5, (ndigits - 3 * ngroup) - 3, align);
             if (res)
                 appendn(res, ' ');
             char* p = _tstr.ptr() + offs;
@@ -836,7 +836,7 @@ public:
         }
         else {
             uint res = align >= ALIGN_NUM_RIGHT ? unit_space + pad_space : 0;
-            uint offs = append_num(10, num, minsize - res, align);
+            uint offs = append_num(10, num, minsize ? minsize - res : 0, align);
             if (res)
                 appendn(res, ' ');
             char* p = _tstr.ptr() + offs;
