@@ -42,7 +42,7 @@ char* append_fixed( char* dst, char* dste, double v, int nfrac, EAlignNum align)
                 ::memset(dst, ' ', d/2);
                 ::memcpy(dst+d/2, buf, end-buf);
                 ::memset(dste-(d-d/2), ' ', d-d/2);
-                return dst+d/2;
+                return dst+d/2 + (end-buf);
             }
 			default: return dst;
         }
