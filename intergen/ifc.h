@@ -122,7 +122,7 @@ protected:
 
 public:
 
-    static const int VERSION = 5;
+    static const int VERSION = 6;
 
     //@return host class pointer
     //@note T derived from policy_intrusive_base
@@ -277,18 +277,6 @@ struct ifc_autoregger
 
 private:
     register_fn _fn;
-};
-
-////////////////////////////////////////////////////////////////////////////////
-/// Get cached create_wrapper function
-template<class T, int BE> void * get_cached_create_wrapper_fun(const coid::token& wrap_fun_key) {
-    static void * cached_fun = nullptr;
-    
-    if (!cached_fun) {
-        cached_fun = coid::interface_register::get_interface_creator(wrap_fun_key);
-    }
-
-    return cached_fun;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

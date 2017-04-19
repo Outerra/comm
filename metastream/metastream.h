@@ -1376,6 +1376,11 @@ protected:
 public:
 
     template<class T>
+    static const MetaDesc* meta_find_type() {
+        return smap().find(typeid(T).name());
+    }
+
+    template<class T>
     void meta_variable( const token& varname, const T* )
     {
         typedef typename resolve_enum<T>::type B;
@@ -3015,6 +3020,26 @@ metastream& operator || ( metastream& m, dynarray<T,COUNT,A>& a )
     }
     return m;
 }
+
+template <class T>
+metastream& operator || ( metastream& m, range<T>& a )
+{
+    if(m.stream_reading()) {
+        a.reset();
+        typename range<T>::range_binstream_container c(a);
+        m.read_container(c);
+    }
+    else if(m.stream_writing()) {
+        typename range<T>::range_binstream_container c(a);
+        m.write_container(c);
+    }
+    else {
+        m.meta_decl_array();
+        m || *(T*)0;
+    }
+    return m;
+}
+
 
 COID_NAMESPACE_END
 

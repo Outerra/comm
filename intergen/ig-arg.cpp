@@ -42,10 +42,21 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
         io = 2;
     }
 
+    if (io == 2)
+        ifckwds = "ifc_out";
+    else if (io == 3)
+        ifckwds = "ifc_inout";
+
     binarg = (io&1) != 0;
     boutarg = (io&2) != 0;
 
     bvolatile = lex.matches("ifc_volatile");
+
+    if (bvolatile) {
+        if (ifckwds)
+            ifckwds << ' ';
+        ifckwds << "ifc_volatile";
+    }
 
     bconst = lex.matches("const");
     benum = lex.matches("enum");

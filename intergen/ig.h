@@ -172,6 +172,7 @@ struct MethodIG
         charstr defval;
         charstr fulltype;
         charstr ifctarget;
+        charstr ifckwds;                //< ifc_out, ifc_inout and ifc_volatile string 
         charstr doc;
         bool bspecptr;                  //< special type where pointer is not separated (e.g const char*)
         bool bptr;                      //< true if the type is a pointer
@@ -216,6 +217,7 @@ struct MethodIG
                 m.member("defval",p.defval);
                 m.member("fulltype",p.fulltype);
                 m.member("ifc",p.ifctarget);
+                m.member("ifckwds",p.ifckwds);
                 m.member("doc",p.doc);
                 m.member("const",p.bconst);
                 m.member("enum",p.benum);
