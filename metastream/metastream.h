@@ -69,7 +69,7 @@ struct waypoint
 
     friend metastream& operator || (metastream& m, waypoint& w)
     {
-        m.compound("waypoint", [&]()
+        m.compound_type(w, [&]()
         {
             m.member("pos", w.pos);
             m.member("rot", w.rot);
@@ -164,8 +164,8 @@ public:
         return *this;
     }
 
-    ///Define struct streaming scheme
-    //@param name struct type name
+    ///Define struct streaming scheme [OBSOLETE - use compound_type instead]
+    //@param name unique struct type name
     //@param fn functor with member functions defining the struct layout
     template<typename Fn>
     metastream& compound( const token& name, Fn fn )
