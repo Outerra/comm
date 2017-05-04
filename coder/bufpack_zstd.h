@@ -44,6 +44,7 @@
 
 COID_NAMESPACE_BEGIN
 
+///Packer/unpacker for ZSTD
 struct packer_zstd
 {
     packer_zstd() : _cstream(0), _dstream(0), _offset(0)
@@ -56,6 +57,7 @@ struct packer_zstd
         }
     }
 
+    ///Pack block of data
     //@param src src data
     //@param size input size
     //@param dst target buffer (append)
@@ -74,7 +76,7 @@ struct packer_zstd
         return ls;
     }
 
-    ///
+    ///Unpack block of data
     //@param src src data
     //@param size available input size
     //@param dst target buffer
@@ -117,6 +119,10 @@ struct packer_zstd
         return zin.pos;
     }
 
+    ///Pack data in streaming mode
+    //@param src data to pack
+    //@param size byt size of data
+    //@param bon output binstream to write to
     void pack_stream( const void* src, uints size, binstream& bon )
     {
         if (!_cstream) {
@@ -163,6 +169,11 @@ struct packer_zstd
         _offset = zout.pos;
     }
 
+    ///Unpack data in streaming mode
+    //@param bin binstream to read from
+    //@param dst destination buffer to write to
+    //@param size size of dest buffer
+    //@return unpacked size, can be less than size argument if there's no more data
     ints unpack_stream( binstream& bin, void* dst, uints size )
     {
         if (!_dstream) {
@@ -209,9 +220,9 @@ struct packer_zstd
                 return -1;
 
             if (rem == 0)   //fully read stream
-                return zot.pos;
+                break;
             else if (isend) //not enough data
-                return zot.pos;
+                break;
         }
 
         _offset = zin.pos;
