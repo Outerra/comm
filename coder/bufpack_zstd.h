@@ -123,13 +123,16 @@ struct packer_zstd
     //@param src data to pack
     //@param size byt size of data
     //@param bon output binstream to write to
-    void pack_stream( const void* src, uints size, binstream& bon )
+    //@param ZSTD complevel compression level
+    uints pack_stream( const void* src, uints size, binstream& bon, int complevel=3 )
     {
-        if (!_cstream) {
+        if (!_cstream)
             _cstream = ZSTD_createCStream();
-            ZSTD_initCStream(_cstream, 19);
 
-            _buf.reserve(ZSTD_CStreamInSize() * 2, false);
+        if (_buf.size() == 0) {
+            ZSTD_initCStream(_cstream, complevel);
+
+            _buf.alloc(ZSTD_CStreamInSize());
         }
 
         ZSTD_outBuffer zout;
@@ -148,7 +151,10 @@ struct packer_zstd
                 bon.xwrite_raw(zout.dst, zout.pos);
             _offset = 0;
 
-            return;
+            //reset buffer to indicate stream needs to be initialized again
+            _buf.reset();
+
+            return 0;
         }
 
         ZSTD_inBuffer zin;
@@ -157,7 +163,9 @@ struct packer_zstd
         zin.pos = 0;
 
         do {
-            ZSTD_compressStream(_cstream, &zout, &zin);
+            uints res = ZSTD_compressStream(_cstream, &zout, &zin);
+            if (ZSTD_isError(res))
+                throw exception() << "packer error";
 
             if (zout.pos >= zout.size) {
                 bon.xwrite_raw(zout.dst, zout.pos);
@@ -167,6 +175,7 @@ struct packer_zstd
         while (zin.size > zin.pos);
 
         _offset = zout.pos;
+        return size;
     }
 
     ///Unpack data in streaming mode
@@ -180,7 +189,7 @@ struct packer_zstd
             _dstream = ZSTD_createDStream();
             ZSTD_initDStream(_dstream);
 
-            _buf.reserve(ZSTD_DStreamInSize() * 2, false);
+            _buf.reserve(ZSTD_DStreamInSize(), false);
         }
 
         ZSTD_inBuffer zin;
