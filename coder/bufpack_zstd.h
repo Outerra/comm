@@ -39,6 +39,7 @@
 
 #include "../namespace.h"
 #include "../dynarray.h"
+#include "../commexception.h"
 
 #include <zstd.h>
 
