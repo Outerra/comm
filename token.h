@@ -2559,6 +2559,11 @@ public:
     zstring& operator = (const charstr& str);
     zstring& operator = (const zstring& s);
 
+    zstring& operator << (const char* sz);
+    zstring& operator << (const token& tok);
+    zstring& operator << (const charstr& str);
+    zstring& operator << (const zstring& s);
+
     void swap( zstring& x ) {
         std::swap(_zptr, x._zptr);
         std::swap(_zend, x._zend);
