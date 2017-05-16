@@ -131,7 +131,9 @@ struct packer_zstd
             _cstream = ZSTD_createCStream();
 
         if (_buf.size() == 0) {
-            ZSTD_initCStream(_cstream, complevel);
+            uints res = ZSTD_initCStream(_cstream, complevel);
+            if (ZSTD_isError(res))
+                throw exception() << "stream initialization failure";
 
             _buf.alloc(ZSTD_CStreamInSize());
         }

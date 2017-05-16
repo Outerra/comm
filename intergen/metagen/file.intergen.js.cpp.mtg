@@ -1130,20 +1130,24 @@ $-(/if)$
 static void register_binders_for_$name$( bool on )
 {
 $-[method static?]$
+    //c++ creator of JS interface object
     interface_register::register_interface_creator(
         "$..ns rest="::" after="::"$$..name$.$name$@creator.js",
         on ? (void*)&$..name$_js_dispatcher::$name$ : nullptr);
 $-(if !internal?)$
+
+    //creator from script
     interface_register::register_interface_creator(
         "$..ns rest="::" after="::"$js::$..name$.$name$",
         on ? (void*)&$..name$_js_dispatcher::v8creator_$name$$@order$ : nullptr);
 $-(/if)$
 $-[/method]$
 $-(if virtual!)$
+
+    //wrapper interface creator from existing c++ interface
     interface_register::register_interface_creator(
         "$ns rest="::" after="::"$$name$@wrapper.js",
         on ? (void*)&create_wrapper_$name$ : nullptr);
-
 $-(/if)$
 }
 

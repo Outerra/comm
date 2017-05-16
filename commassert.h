@@ -101,7 +101,9 @@
 //@{ Assert in debug, log in release, return \a ret on failed assertion
 #define ASSERT_RET(expr,ret)        XASSERTE(expr) coid::__rassert(0,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT(ersEXCEPTION #expr); return ret; } while(0)
 #define ASSERT_RETVOID(expr)        XASSERTE(expr) coid::__rassert(0,ersEXCEPTION,__FILE__,__LINE__,#expr); XASSERT(ersEXCEPTION #expr); return; } while(0)
+//@}
 
+//@{ Assert in debug, return \a ret on failed assertion (even in release)
 #define DASSERT_RET(expr,ret)       ASSERT_RET(expr,ret)
 #define DASSERT_RETVOID(expr)       ASSERT_RETVOID(expr)
 //@}
@@ -131,8 +133,8 @@
 #define ASSERT_RET(expr,ret)        XASSERTE(expr) coid::__rassert(0,0,__FILE__,__LINE__,#expr); return ret; } while(0)
 #define ASSERT_RETVOID(expr)        XASSERTE(expr) coid::__rassert(0,0,__FILE__,__LINE__,#expr); return; } while(0)
 
-#define DASSERT_RET(expr,ret)
-#define DASSERT_RETVOID(expr)
+#define DASSERT_RET(expr,ret)       do{ if(expr) break; return ret; } while(0)
+#define DASSERT_RETVOID(expr)       do{ if(expr) break; return; } while(0)
 
 #endif //_DEBUG
 
