@@ -908,6 +908,8 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
                 throw coid::exception() << "unable to acquire the system context creator interface";
 
             context = ctxgetter(script.str(), ifc.get());
+            if (context.IsEmpty())
+                throw coid::exception() << "unable to create context";
         }
     }
 
