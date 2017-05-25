@@ -71,7 +71,7 @@ protected:
 
 public:
 
-    v8::Handle<v8::Object> create_interface_object( bool make_weak );
+    v8::Handle<v8::Object> create_interface_object( v8::Handle<v8::Context> context, bool make_weak );
 
     static v8::Handle<v8::Script> load_script( const coid::token& scriptfile, const coid::token& file_name );
 $-(if event?)$
@@ -332,10 +332,11 @@ $-(if internal?)$
     throw coid::exception("method not marked for scripting");
 $-(elif)$
     V8_HANDLE_SCOPE(iso, handle_scope__);
-    v8::Context::Scope context_scope__(context(iso));
+    v8::Handle<v8::Context> ctx__ = context(iso);
+    v8::Context::Scope context_scope__(ctx__);
     v8::TryCatch trycatch__;
 
-    bind_events(context(iso), false, V8_UNDEFINED);
+    bind_events(ctx__, false, V8_UNDEFINED);
     auto ev__ = V8_LOCAL(iso, _events[$@index$]);
 
     if (_events[$@index$].IsEmpty() || ev__->IsUndefined())
@@ -748,7 +749,7 @@ v8::CBK_RET $name$_js_dispatcher::v8current_global( const v8::ARGUMENTS& args )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-v8::Handle<v8::Object> $name$_js_dispatcher::create_interface_object( bool make_weak )
+v8::Handle<v8::Object> $name$_js_dispatcher::create_interface_object( v8::Handle<v8::Context> context, bool make_weak )
 {
     v8::Isolate* iso = v8::Isolate::GetCurrent();
 
@@ -781,6 +782,7 @@ $-(/if)$
         V8_PERSISTENT(iso, _objtempl, ot);
     }
 
+    v8::Context::Scope ctxscope(context);
     v8::Local<v8::Object> obj = V8_LOCAL(iso, _objtempl)->NewInstance();
 
     v8::Handle<v8::External> map_ptr = V8_NEWTYPE2(iso, External, this);
@@ -813,7 +815,7 @@ v8::Handle<v8::Script> $name$_js_dispatcher::load_script( const coid::token& scr
     // set up an error handler to catch any exceptions the script might throw.
     v8::TryCatch trycatch__;
 
-    v8::Handle<v8::Script> compiled_script = v8::Script::Compile(scriptv8, v8::string_utf8(fname));
+    v8::Handle<v8::Script> compiled_script = v8::Script::Compile(scriptv8, v8::symbol(fname));
     if (trycatch__.HasCaught())
         script_handle::throw_js_error(trycatch__, "$ns rest="::" after="::"$js::$name$::load_script(): ");
 
@@ -831,7 +833,7 @@ void $name$_js_dispatcher::bind_events( v8::Handle<v8::Context> context, bool fo
     if (!force && _bound_events)
         return;
 
-    v8::Isolate* iso = v8::Isolate::GetCurrent();
+    v8::Isolate* iso = context->GetIsolate();
 
     static token names[] = {
 $-[event]$
@@ -858,7 +860,7 @@ $-[/event]$
         if (clear)
             continue;
 
-        v8::Local<v8::Value> var = global->Get(v8::string_utf8(names[i]));
+        v8::Local<v8::Value> var = global->Get(v8::symbol(names[i]));
         if (var->IsUndefined())
             continue;
 
@@ -880,7 +882,9 @@ $-[method static?]$
 iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle& script
         $-[args]$, $type$ $name$$size$$[/args]$, const coid::token& bindname, v8::Handle<v8::Context>* ctx )
 {
-    v8::Isolate* iso = v8::Isolate::GetCurrent();
+    v8::Isolate* iso = script.has_context()
+        ? script.context()->GetIsolate()
+        : v8::Isolate::GetCurrent();
 
     V8_ESCAPABLE_SCOPE(iso, handle_scope__);
     v8::Handle<v8::Context> context;
@@ -922,18 +926,15 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
             context = V8_NEWTYPE(iso, Context);
     }
 
-    if (ctx)
-        *ctx = V8_ESCAPE(handle_scope__, context);
-
     v8::Context::Scope context_scope(context);
     //V8_PERSISTENT(iso, ifc->_context, context);
 
     if (!extctx && !script.is_context())
     {
         if (!script.has_context()) {
-            context->Global()->Set(v8::string_utf8("$$include"), V8_NEWTYPE2(iso, FunctionTemplate, &script_handle::js_include)->GetFunction());
-            context->Global()->Set(v8::string_utf8("$$query_interface"), V8_NEWTYPE2(iso, FunctionTemplate, &$..name$_js_dispatcher::v8query_interface_global)->GetFunction());
-            context->Global()->Set(v8::string_utf8("$$log"), V8_NEWTYPE2(iso, FunctionTemplate, &$..name$_js_dispatcher::v8log)->GetFunction());
+            context->Global()->Set(v8::symbol("$$include"), V8_NEWTYPE2(iso, FunctionTemplate, &script_handle::js_include)->GetFunction());
+            context->Global()->Set(v8::symbol("$$query_interface"), V8_NEWTYPE2(iso, FunctionTemplate, &$..name$_js_dispatcher::v8query_interface_global)->GetFunction());
+            context->Global()->Set(v8::symbol("$$log"), V8_NEWTYPE2(iso, FunctionTemplate, &$..name$_js_dispatcher::v8log)->GetFunction());
         }
 
         coid::token script_tok;
@@ -960,21 +961,24 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
             script_tok = script.str();
         }
 
-        V8_PERSISTENT(iso, ifc->_object, ifc->create_interface_object(false));
+        V8_PERSISTENT(iso, ifc->_object, ifc->create_interface_object(context, false));
         if (bindname)
-            context->Global()->Set(v8::string_utf8(bindname), V8_LOCAL(iso, ifc->_object));
+            context->Global()->Set(v8::symbol(bindname), V8_LOCAL(iso, ifc->_object));
 
         v8::Handle<v8::Script> compiled_script = load_script(script_tok, script.url());
 
         //V8_PERSISTENT(iso, ifc->_script, compiled_script);
     }
     else {
-        V8_PERSISTENT(iso, ifc->_object, ifc->create_interface_object(false));
+        V8_PERSISTENT(iso, ifc->_object, ifc->create_interface_object(context, false));
 
         if (bindname)
-            context->Global()->Set(v8::string_utf8(bindname), V8_LOCAL(iso, ifc->_object));
+            context->Global()->Set(v8::symbol(bindname), V8_LOCAL(iso, ifc->_object));
     }
 
+    if (ctx)
+        *ctx = V8_ESCAPE(handle_scope__, context);
+    
     return ifc;
 }
 
@@ -1043,9 +1047,9 @@ $[/args]-$
     //stream out
 $-(if noutargs?)$
     v8::Handle<v8::Object> r__ = V8_NEWTYPE(iso, Object);
-    r__->Set(v8::symbol("$$ret"), nifc ? v8::Handle<v8::Value>(nifc->create_interface_object(true)) : V8_NULL(iso));
+    r__->Set(v8::symbol("$$ret"), nifc ? v8::Handle<v8::Value>(nifc->create_interface_object(ctx, true)) : V8_NULL(iso));
 $-(elif)$
-    v8::Handle<v8::Value> r__ = nifc ? v8::Handle<v8::Value>(nifc->create_interface_object(true)) : V8_NULL(iso);
+    v8::Handle<v8::Value> r__ = nifc ? v8::Handle<v8::Value>(nifc->create_interface_object(ctx, true)) : V8_NULL(iso);
 $-(/if)$
 
 $-[args outarg?]$
@@ -1087,7 +1091,7 @@ v8::Handle<v8::Value> create_wrapper_$name$( ::$ns rest="::" after="::"$$name$* 
         // create interface object
         ifc.create(new $ns rest="::" after="::"$js::$name$_js_dispatcher(static_cast<::$ns rest="::" after="::"$$name$*>(orig)));
 
-        obj = ifc->create_interface_object(true);
+        obj = ifc->create_interface_object(context, true);
     }
 
     return V8_ESCAPE(scope, obj);

@@ -145,10 +145,10 @@ struct script_handle
     {
         V8_DECL_ISO(iso);
         V8_ESCAPABLE_SCOPE(iso, scope);
+
         v8::Handle<v8::Context> context = has_context()
             ? _context
-            : V8_NEWTYPE(iso, Context);
-    
+            : V8_CUR_CONTEXT(iso);
         v8::Context::Scope context_scope(context);
 
         coid::token script_tok, script_path = _url;
@@ -324,7 +324,7 @@ struct interface_context
 
     v8::Local<v8::Context> context( v8::Isolate* iso ) {
 #ifdef V8_MAJOR_VERSION
-        return _object .Get(iso)->CreationContext();
+        return _object.Get(iso)->CreationContext();
 #else
         return _object->CreationContext();
 #endif
