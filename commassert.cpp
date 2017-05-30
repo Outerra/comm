@@ -80,7 +80,7 @@ static binstream& bin = SINGLETON(coid_assert_log)._text;
 static int __assert_throws = 1;
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd __rassert( const opt_string& txt, opcd exc, const char* file, int line, const char* expr )
+opcd __rassert( const opt_string& txt, opcd exc, const char* file, int line, const char* function, const char* expr )
 {
     coid_assert_log& asl = SINGLETON(coid_assert_log);
     {
@@ -88,7 +88,8 @@ opcd __rassert( const opt_string& txt, opcd exc, const char* file, int line, con
         asl.get_file();
 
         if (&bin) {
-            bin << "Assertion failed in " << file << ":" << line << " expression:\n    "
+            bin << "Assertion failed in " << file << '(' << line
+                << "), function " << function << ":\n"
                 << expr;
 
             zstring* z = txt.get();
