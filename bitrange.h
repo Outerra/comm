@@ -80,10 +80,10 @@ inline void _BitScanReverse64(ulong* idx, uint64 v) {
 //@{
 //@return position of the lowest or highest bit set
 //@note return value is undefined when the input is 0
-inline uint8 lsb_bit_set( uint v )   { ulong idx; _BitScanForward(&idx, v);   return uint8(idx); }
-inline uint8 lsb_bit_set( uint64 v ) { ulong idx; _BitScanForward64(&idx, v); return uint8(idx); }
-inline uint8 msb_bit_set( uint v )   { ulong idx; _BitScanReverse(&idx, v);   return uint8(idx); }
-inline uint8 msb_bit_set( uint64 v ) { ulong idx; _BitScanReverse64(&idx, v); return uint8(idx); }
+inline uint8 lsb_bit_set(uint v)    { DASSERT(v); ulong idx; _BitScanForward(&idx, v);   return uint8(idx); }
+inline uint8 lsb_bit_set(uint64 v)  { DASSERT(v); ulong idx; _BitScanForward64(&idx, v); return uint8(idx); }
+inline uint8 msb_bit_set(uint v)    { DASSERT(v); ulong idx; _BitScanReverse(&idx, v);   return uint8(idx); }
+inline uint8 msb_bit_set(uint64 v)  { DASSERT(v); ulong idx; _BitScanReverse64(&idx, v); return uint8(idx); }
 //@}
 #else
 //@{
@@ -145,7 +145,7 @@ inline uchar int_lower_pow2( uints x ) {
 //@return exponent of nearest equal or higher power of two number
 //@note for x == 0 returns 0
 inline uchar int_high_pow2(uints x) {
-    return x
+    return x > 1
         ? 1 + msb_bit_set(x - 1)
         : 0;
 }
