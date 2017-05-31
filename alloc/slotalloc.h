@@ -534,7 +534,7 @@ protected:
     template<class Fn>
     using returns_void = std::integral_constant<bool, closure_traits<Fn>::returns_void::value>;
 
-
+    ///A non-tracking void fnc(const T&) const
     template<typename Fn, typename = std::enable_if_t<is_const<Fn>::value && !has_index<Fn>::value>>
     bool funccall(const Fn& fn, const arg0<Fn>& v, size_t&& index) const
     {
@@ -542,6 +542,7 @@ protected:
         return false;
     }
 
+    ///A tracking void fnc(T&)
     template<typename Fn, typename = std::enable_if_t<!is_const<Fn>::value && !has_index<Fn>::value && returns_void<Fn>::value>>
     bool funccall(const Fn& fn, arg0<Fn>& v, const size_t&& index) const
     {
@@ -552,6 +553,7 @@ protected:
         return TRACKING;
     }
 
+    ///Conditionally tracking bool fnc(T&)
     template<typename Fn, typename = std::enable_if_t<!is_const<Fn>::value && !has_index<Fn>::value && !returns_void<Fn>::value>>
     bool funccall(const Fn& fn, arg0<Fn>& v, size_t&& index) const
     {
@@ -562,6 +564,7 @@ protected:
         return rval && TRACKING;
     }
 
+    ///A non-tracking void fnc(const T&, index) const
     template<typename Fn, typename = std::enable_if_t<is_const<Fn>::value && has_index<Fn>::value>>
     bool funccall(const Fn& fn, const arg0<Fn>& v, size_t index) const
     {
@@ -569,6 +572,7 @@ protected:
         return false;
     }
 
+    ///A tracking void fnc(T&, index)
     template<typename Fn, typename = std::enable_if_t<!is_const<Fn>::value && has_index<Fn>::value && returns_void<Fn>::value>>
     bool funccall(const Fn& fn, arg0<Fn>& v, const size_t& index) const
     {
@@ -579,6 +583,7 @@ protected:
         return TRACKING;
     }
 
+    ///Conditionally tracking bool fnc(T&, index)
     template<typename Fn, typename = std::enable_if_t<!is_const<Fn>::value && has_index<Fn>::value && !returns_void<Fn>::value>>
     bool funccall(const Fn& fn, arg0<Fn>& v, size_t index) const
     {
@@ -590,7 +595,7 @@ protected:
     }
 
 
-    ///func call for for_each_modified (with ptr argument)
+    ///func call for for_each_modified (with ptr argument, 0 for deleted objects)
     template<typename Fn, typename = std::enable_if_t<!has_index<Fn>::value>>
     void funccallp(const Fn& fn, const arg0<Fn>& v, size_t&& index) const
     {

@@ -84,8 +84,8 @@ public:
         _synclevels.reserve(16, false);
 
         _threads.alloc(nthreads);
-        _threads.for_each([&](threadinfo& ti) {
-            ti.order = uint(&ti - _threads.ptr());
+        _threads.for_each([&](threadinfo& ti, uints id) {
+            ti.order = uint(id);
             ti.master = this;
             ti.tid.create(threadfunc, &ti, 0, "taskmaster");
         });

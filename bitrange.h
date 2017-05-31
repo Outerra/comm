@@ -38,6 +38,7 @@
 * ***** END LICENSE BLOCK ***** */
 
 #include "commtypes.h"
+#include "commassert.h"
 
 #if !defined(SYSTYPE_MSVC) || SYSTYPE_MSVC >= 1800
 #include <atomic>

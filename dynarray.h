@@ -328,6 +328,8 @@ public:
         return !operator == (a);
     }
 
+#if SYSTYPE_MSVC > 0 && SYSTYPE_MSVC < 1800
+    //support for old msvc
     ///Invoke functor on each element
     //@note handles the case when current element is deleted from the array
     template<typename Func>
@@ -368,6 +370,91 @@ public:
             if(f(_ptr[i])) return _ptr+i;
         return 0;
     }
+
+#else
+
+protected:
+
+    //@{Helper functions for for_each to allow calling with optional index argument
+    template<class Fn>
+    using arg0 = typename std::remove_reference<typename closure_traits<Fn>::template arg<0>>::type;
+
+    template<class Fn>
+    using is_const = std::is_const<arg0<Fn>>;
+
+    template<class Fn>
+    using has_index = std::integral_constant<bool, !(closure_traits<Fn>::arity::value <= 1)>;
+
+    template<class Fn>
+    using result_type = typename closure_traits<Fn>::result_type;
+
+    ///fnc(const T&) const
+    template<typename Fn, typename = std::enable_if_t<is_const<Fn>::value && !has_index<Fn>::value>>
+    result_type<Fn> funccall(const Fn& fn, const arg0<Fn>& v, count_t& index) const
+    {
+        return fn(v);
+    }
+
+    ///fnc(T&)
+    template<typename Fn, typename = std::enable_if_t<!is_const<Fn>::value && !has_index<Fn>::value>>
+    result_type<Fn> funccall(const Fn& fn, arg0<Fn>& v, const count_t& index) const
+    {
+        return fn(v);
+    }
+
+    ///fnc(const T&, index) const
+    template<typename Fn, typename = std::enable_if_t<is_const<Fn>::value && has_index<Fn>::value>>
+    result_type<Fn> funccall(const Fn& fn, const arg0<Fn>& v, count_t index) const
+    {
+        return fn(v, index);
+    }
+
+    ///fnc(T&, index)
+    template<typename Fn, typename = std::enable_if_t<!is_const<Fn>::value && has_index<Fn>::value>>
+    result_type<Fn> funccall(const Fn& fn, arg0<Fn>& v, const count_t index) const
+    {
+        return fn(v, index);
+    }
+    //@}
+
+public:
+
+    ///Invoke functor on each element
+    //@param fn functor as fn([const] T&) or fn([const] T&, count_t index)
+    //@note handles the case when the current element is deleted from the array, or more elements are appended
+    template<typename Func>
+    void for_each( Func fn ) const
+    {
+        typedef std::remove_reference_t<typename closure_traits<Func>::template arg<0>> Tx;
+        
+        count_t n = size();
+        for(count_t i=0; i<n; ++i) {
+            Tx* p = const_cast<Tx*>(_ptr);
+            funccall(fn, p[i], i);
+
+            count_t nn = size();
+            if(n > nn) {
+                //deleted element, ensure continuing with the next
+                --i;
+            }
+
+            n = nn;
+        }
+    }
+
+    ///Find first element for which the predicate returns true
+    //@param fn functor as fn([const] T&) or fn([const] T&, count_t index)
+    //@return pointer to the element or null
+    template<typename Func>
+    T* find_if( Func fn ) const
+    {
+        count_t n = size();
+        for(count_t i=0; i<n; ++i)
+            if(funccall(fn, _ptr[i], i)) return _ptr+i;
+        return 0;
+    }
+
+#endif
 
     ///Get fresh array with \a nitems of elements
     /** Destroys all elements of array and adjusts the array to the required size
