@@ -211,7 +211,8 @@ public:
 
 protected:
 
-    void finalize( policy_msg* p );
+    //@return true if looger should be flushed (msg ended with \r)
+    bool finalize( policy_msg* p );
 };
 
 typedef ref<logmsg> logmsg_ptr;

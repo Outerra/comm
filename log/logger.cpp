@@ -137,7 +137,9 @@ public:
         
         if(_obj->_logger) {
             //first destroy just queues the message
-            _obj->finalize(this);
+            logger* x = _obj->_logger;
+            if (_obj->finalize(this))
+                x->flush();
         }
         else {
             //back to the pool
@@ -237,14 +239,18 @@ void logmsg::write()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void logmsg::finalize( policy_msg* p )
+bool logmsg::finalize( policy_msg* p )
 {
     if(_type == ELogType::None)
         _type = deduce_type();
 
+    bool flush = _str.last_char() == '\r';
+
     _logger_file = _logger->file();
     _logger->enqueue(ref<logmsg>(p));
     _logger = 0;
+
+    return flush;
 }
 
 
