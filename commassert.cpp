@@ -67,7 +67,7 @@ opt_string::~opt_string()
 ////////////////////////////////////////////////////////////////////////////////
 opt_string & opt_string::operator << (const char * sz)
 {
-    if (_zstr)
+    if (!_zstr)
         _zstr = new zstring;
     
     *_zstr << sz;
@@ -77,7 +77,7 @@ opt_string & opt_string::operator << (const char * sz)
 ////////////////////////////////////////////////////////////////////////////////
 opt_string & opt_string::operator << (const token& tok)
 {
-    if (_zstr)
+    if (!_zstr)
         _zstr = new zstring;
 
     *_zstr << tok;
@@ -87,7 +87,7 @@ opt_string & opt_string::operator << (const token& tok)
 ////////////////////////////////////////////////////////////////////////////////
 opt_string & opt_string::operator << (char c)
 {
-    if (_zstr)
+    if (!_zstr)
         _zstr = new zstring;
 
     _zstr->get_str() << c;
@@ -100,7 +100,7 @@ opt_string & opt_string::operator << (char c)
 
 opt_string & opt_string::operator << (ints v)
 {
-    if (_zstr)
+    if (!_zstr)
         _zstr = new zstring;
 
     _zstr->get_str() << v;
@@ -109,7 +109,7 @@ opt_string & opt_string::operator << (ints v)
 
 opt_string & opt_string::operator << (uints v)
 {
-    if (_zstr)
+    if (!_zstr)
         _zstr = new zstring;
 
     _zstr->get_str() << v;
@@ -120,7 +120,7 @@ opt_string & opt_string::operator << (uints v)
 
 opt_string & opt_string::operator << (int v)
 {
-    if (_zstr)
+    if (!_zstr)
         _zstr = new zstring;
 
     _zstr->get_str() << v;
@@ -129,7 +129,7 @@ opt_string & opt_string::operator << (int v)
 
 opt_string & opt_string::operator << (uint v)
 {
-    if (_zstr)
+    if (!_zstr)
         _zstr = new zstring;
 
     _zstr->get_str() << v;
@@ -141,7 +141,7 @@ opt_string & opt_string::operator << (uint v)
 
 opt_string & opt_string::operator << (long v)
 {
-    if (_zstr)
+    if (!_zstr)
         _zstr = new zstring;
 
     _zstr->get_str() << v;
@@ -150,7 +150,7 @@ opt_string & opt_string::operator << (long v)
 
 opt_string & opt_string::operator << (ulong v)
 {
-    if (_zstr)
+    if (!_zstr)
         _zstr = new zstring;
 
     _zstr->get_str() << v;
@@ -162,7 +162,7 @@ opt_string & opt_string::operator << (ulong v)
 ////////////////////////////////////////////////////////////////////////////////
 opt_string & opt_string::operator << (float v)
 {
-    if (_zstr)
+    if (!_zstr)
         _zstr = new zstring;
 
     _zstr->get_str() << v;
@@ -172,7 +172,7 @@ opt_string & opt_string::operator << (float v)
 ////////////////////////////////////////////////////////////////////////////////
 opt_string & opt_string::operator << (double v)
 {
-    if (_zstr)
+    if (!_zstr)
         _zstr = new zstring;
 
     _zstr->get_str() << v;

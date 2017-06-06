@@ -680,13 +680,21 @@ public:
     };
 
     ///Add memory for n uninitialized elements, without calling the constructor
-    T* add_uninit( uints n=1 )
+    //@param n number of items to add
+    //@param rebase optional ptr to variable receiving byte offset (newbase - oldbase) if the array was rebased
+    T* add_uninit( uints n = 1, ints* rebase = 0 )
     {
-        return addnc(n);
+        T* oldbase = _ptr;
+        T* p = addnc(n);
+
+        if (rebase)
+            *rebase = (uints)_ptr - (uints)oldbase;
+
+        return p;
     }
 
     ///Add, throwing exception if the array rebases
-    T* add_norebase( uints n=1 )
+    T* add_norebase( uints n = 1 )
     {
         T* oldbase = _ptr;
         T* p = add(n);
@@ -696,6 +704,8 @@ public:
 
         return p;
     }
+
+
 
     ///Add n new elements on position where key would be inserted.
     /// Uses either operator T<T or a functor(T,T)
