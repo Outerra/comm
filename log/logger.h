@@ -86,6 +86,12 @@ static const char** names() {
     return _names;
 }
 
+static const char* name(type t) {
+    return t >= none && t <= last
+        ? names()[t + 1]
+        : 0;
+}
+
 } //namespace log
 
 class logger_file;

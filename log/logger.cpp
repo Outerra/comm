@@ -297,6 +297,9 @@ ref<logmsg> logger::create_msg( log::type type, const tokenhash& hash, const voi
 ref<logmsg> logger::operator()( log::type t, const int64* time_ms )
 {
     ref<logmsg> msg = create_msg(t);
+    if (!msg)
+        return msg;
+
     charstr& str = msg->str();
 
     if(time_ms) {
@@ -313,6 +316,9 @@ ref<logmsg> logger::operator()( log::type t, const int64* time_ms )
 ////////////////////////////////////////////////////////////////////////////////
 ref<logmsg> logger::create_msg( log::type type )
 {
+    if (type > _minlevel)
+        return ref<logmsg>();
+
     ref<logmsg> msg = ref<logmsg>(policy_msg::create());
     msg->set_type(type);
     msg->set_logger(this);
