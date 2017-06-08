@@ -573,7 +573,7 @@ __declspec(noinline) int $name$_lua_dispatcher::lualog_exc( lua_State * L )
             lua_pop(L, 1);
         }
 
-        intergen_interface::ifclog_ext(coid::ELogType::None, coid::tokenhash("$ns rest="::" after="::"$$name$"),
+        intergen_interface::ifclog_ext(coid::log::none, coid::tokenhash("$ns rest="::" after="::"$$name$"),
             inst, lua_totoken(L, -1));
 
         lua_pop(L, 1);

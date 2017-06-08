@@ -617,7 +617,7 @@ v8::CBK_RET $name$_js_dispatcher::v8log( const v8::ARGUMENTS& args )
 
     coid::token tokey(*key, key.length());
 
-    intergen_interface::ifclog_ext(coid::ELogType::None, coid::tokenhash("$ns rest="::" after="::"$$name$"),
+    intergen_interface::ifclog_ext(coid::log::none, coid::tokenhash("$ns rest="::" after="::"$$name$"),
         inst, tokey);
 
     return V8_RETURN(args, V8_UNDEFINED);
