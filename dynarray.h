@@ -638,7 +638,9 @@ public:
     {
         uints n = _count();
 
-        if(!nitems)  return _ptr + n;
+        if (!nitems)
+            return _ptr + n;
+
         uints nto = nitems + n;
         uints nalloc = nto;
         DASSERT( nto <= COUNT(-1) );
@@ -681,28 +683,29 @@ public:
 
     ///Add memory for n uninitialized elements, without calling the constructor
     //@param n number of items to add
-    //@param rebase optional ptr to variable receiving byte offset (newbase - oldbase) if the array was rebased
-    T* add_uninit( uints n = 1, ints* rebase = 0 )
+    //@param rebase_offset optional ptr to variable receiving byte offset (newbase - oldbase) if the array was rebased
+    T* add_uninit( uints n = 1, ints* rebase_offset = 0 )
     {
         T* oldbase = _ptr;
         T* p = addnc(n);
 
-        if (rebase)
-            *rebase = (uints)_ptr - (uints)oldbase;
+        if (rebase_offset)
+            *rebase_offset = (uints)_ptr - (uints)oldbase;
 
         return p;
     }
 
-    ///Add, throwing exception if the array rebases
-    T* add_norebase( uints n = 1 )
+    ///Add items but only if the array isn't going to be rebased as the result
+    //@return ptr to added items or null
+    T* add_norebase( uints nitems = 1 )
     {
-        T* oldbase = _ptr;
-        T* p = add(n);
+        uints n = _count();
+        uints nalloc = nitems + n;
 
-        if(oldbase && oldbase != _ptr)
-            throw std::exception("array rebased");  //no dependency on coid::exception wanted here
+        if (nalloc * sizeof(T) > _size())
+            return 0;
 
-        return p;
+        return add(nitems);
     }
 
 

@@ -99,6 +99,7 @@
 //@{ Assert in debug, no log in release, return \a ret on failed assertion (also in release)
 #define DASSERT_RET(expr,ret)       XASSERTE(expr) coid::__rassert(0,ersEXCEPTION,__FILE__,__LINE__,__FUNCTION__,#expr); XASSERT(ersEXCEPTION #expr); return ret; } while(0)
 #define DASSERT_RETVOID(expr)       XASSERTE(expr) coid::__rassert(0,ersEXCEPTION,__FILE__,__LINE__,__FUNCTION__,#expr); XASSERT(ersEXCEPTION #expr); return; } while(0)
+#define DASSERT_RUN(expr)           XASSERTE(expr) coid::__rassert(0,ersEXCEPTION,__FILE__,__LINE__,__FUNCTION__,#expr); XASSERT(ersEXCEPTION #expr); } while(0)
 //@}
 
 #else
@@ -118,6 +119,7 @@
 
 #define DASSERT_RET(expr,ret)       do{ if(expr) break; return ret; } while(0)
 #define DASSERT_RETVOID(expr)       do{ if(expr) break; return; } while(0)
+#define DASSERT_RUN(expr)           do{ if(expr) break; } while(0)
 
 #endif //_DEBUG
 
