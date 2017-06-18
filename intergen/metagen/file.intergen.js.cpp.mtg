@@ -540,7 +540,7 @@ v8::CBK_RET $name$_js_dispatcher::_getter(v8::Local<v8::String> property, const 
     args.GetReturnValue().Set(r__);
 #else
     return V8_ESCAPE(handle_scope__, r__);
-#endif    
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -585,7 +585,7 @@ $-(/if)$
     args.GetReturnValue().Set(value);
 #else
     return V8_ESCAPE(handle_scope__, value);
-#endif    
+#endif
 }
 $-(/if)$
 
@@ -925,6 +925,10 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
             context = V8_NEWTYPE(iso, Context);
     }
 
+    //set early here as sometimes the invoked creator methods want to access it
+    if (ctx)
+        *ctx = V8_ESCAPE(handle_scope__, context);
+
     v8::Context::Scope context_scope(context);
     //V8_PERSISTENT(iso, ifc->_context, context);
 
@@ -975,9 +979,6 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const script_handle
             context->Global()->Set(v8::symbol(bindname), V8_LOCAL(iso, ifc->_object));
     }
 
-    if (ctx)
-        *ctx = V8_ESCAPE(handle_scope__, context);
-    
     return ifc;
 }
 
@@ -1057,7 +1058,7 @@ $-[args outarg?]$
     $-(/if)$
     r__->Set(v8::symbol("$name$"), to_v8($name$));
 $[/args]-$
-    
+
     return V8_ESCAPE(handle_scope__, r__);
 }
 

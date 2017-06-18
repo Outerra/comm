@@ -48,6 +48,8 @@ COID_NAMESPACE_BEGIN
 ///Packer/unpacker for ZSTD
 struct packer_zstd
 {
+    COIDNEWDELETE("packer_zstd");
+
     packer_zstd() : _cstream(0), _dstream(0), _offset(0)
     {}
 
