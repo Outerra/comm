@@ -224,7 +224,7 @@ protected:
         while(len>0)
         {
             if(n == 0) {
-                *pdata = decode_sign( (1 << plane) | rp.read() );
+                *pdata = decode_sign( (INT(1) << plane) | rp.read() );
                 pdata += STRIDE;
                 --n;
                 --len;
