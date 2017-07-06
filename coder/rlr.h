@@ -42,6 +42,8 @@
 #include "../dynarray.h"
 #include "../commexception.h"
 
+#include <type_traits>
+
 COID_NAMESPACE_BEGIN
 
 
@@ -49,7 +51,8 @@ COID_NAMESPACE_BEGIN
 template<class INT, int MINPLANE=0>
 struct rlr_coder
 {
-    typedef typename SIGNEDNESS<INT>::UNSIGNED      UINT;
+    typedef std::make_unsigned_t<INT> UINT;
+
     enum {
         BITS = 8*sizeof(INT)-1,
     };
@@ -168,6 +171,7 @@ struct rlr_coder
 
     void encode1( INT vs )
     {
+        //make unsigned by interleaving 0 -1 1 -2 2 ...
         UINT v = (vs<<1) ^ (vs>>BITS);
 
         if(v>>plane)
@@ -328,20 +332,20 @@ private:
     ///
     struct rlr_bitplane
     {
-        typedef uint RUINT;
+        typedef typename std::conditional<sizeof(INT) <= 32, uint, uint64>::type RUINT;
         enum {
             NBITS = 8*sizeof(RUINT),
         };
 
         void one( UINT v ) {
             encode0();
-            v &= (RUINT(1)<<plane)-1;
-            write_bits(v, plane);
+            RUINT rv = RUINT(v) & ((RUINT(1) << plane) - 1);
+            write_bits(rv, plane);
         }
 
         void zero( UINT v ) {
-            v &= (RUINT(2)<<plane)-1;
-            write_bits(v, plane+1);
+            RUINT rv = RUINT(v) & ((RUINT(2) << plane) - 1);
+            write_bits(rv, plane+1);
         }
 
         ///Coming from lower plane
@@ -481,7 +485,7 @@ private:
             uints n0=0;
             while(nzero >= run)
             {
-                //encode run of run zeros by a single 0
+                //encode runs of zeroes with a single 0, doubling the run size
                 ++n0;
                 nzero -= run;
                 
@@ -489,7 +493,7 @@ private:
                 run <<= 1;
             }
 
-            //encode run of count 0's followed by a 1
+            //write the resulting number of zeroes followed by a 1, append remaining count
             write_run(n0, uint(nzero));
             
             if(runbits>0) {
@@ -518,8 +522,8 @@ private:
 
         void write_bits( RUINT v, uint nbits )
         {
-            DASSERT( (v & ~((1<<nbits)-1)) == 0 );
-            DASSERT( dbit==NBITS || (data & ~((1<<dbit)-1)) == 0 );
+            DASSERT( (v & ~((RUINT(1)<<nbits)-1)) == 0 );
+            DASSERT( dbit==NBITS || (data & ~((RUINT(1)<<dbit)-1)) == 0 );
 
             uint nb = NBITS - dbit;
             if(nbits > nb) {
@@ -535,6 +539,7 @@ private:
             dbit += nbits;
         }
 
+        ///Writes n0 of zero bits followed by 1, then writes count in runbits of bits
         void write_run( uints n0, uint count )
         {
             //run of 0's
