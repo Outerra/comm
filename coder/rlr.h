@@ -163,10 +163,12 @@ struct rlr_coder
             planes[i].reset(i, enc);
     }
 
-    void encodeN( const INT* vals, uints n )
+    void encodeN( const INT* vals, uints n, ints span = 1 )
     {
-        while(n-->0)
-            encode1(*vals++);
+        while (n-- > 0) {
+            encode1(*vals);
+            vals += span;
+        }
     }
 
     void encode1( INT vs )
