@@ -289,7 +289,7 @@ protected:
 
     private:
 
-        typedef std::tuple<Args...> tuple_t;
+        typedef std::tuple<std::remove_reference_t<Args>...> tuple_t;
 
         Fn _fn;
         tuple_t _tuple;
