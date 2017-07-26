@@ -36,14 +36,13 @@ template<
     class EXTRACTOR = extractor<T, KEY>,
     class HASHFUNC = hasher<KEY>,
     bool MULTIKEY = false,
-    slotalloc_detail::mode POOL = slotalloc_detail::mode::nopool,
-    bool TRACKING = false,
+    slotalloc_mode MODE = slotalloc_mode::default,
     class...Es
 >
 class slothash
-    : public slotalloc_base<T, POOL, false, TRACKING, Es..., uint>
+    : public slotalloc_base<T, MODE, Es..., uint>
 {
-    typedef slotalloc_base<T, POOL, false, TRACKING, Es..., uint> base;
+    typedef slotalloc_base<T, MODE, Es..., uint> base;
 
     //static constexpr int SEQTABLE_ID = sizeof...(Es);
 
@@ -136,7 +135,7 @@ public:
             //destroy old hash links
             destroy_value_(id);
 
-        slotalloc_detail::constructor<POOL != slotalloc_detail::mode::nopool, T>::construct_object(p, isnew, ps...);
+        slotalloc_detail::constructor<POOL, T>::construct_object(p, isnew, ps...);
 
         return insert_value_(p);
     }
@@ -150,7 +149,7 @@ public:
         bool isnew;
         T* p = insert_value_slot_uninit_(key, &isnew);
         if (p)
-            slotalloc_detail::constructor<POOL != slotalloc_detail::mode::nopool, T>::copy_object(p, isnew, val);
+            slotalloc_detail::constructor<POOL, T>::copy_object(p, isnew, val);
         return p;
     }
 
@@ -162,7 +161,7 @@ public:
         bool isnew;
         T* p = insert_value_slot_uninit_(key, &isnew);
         if (p)
-            slotalloc_detail::constructor<POOL != slotalloc_detail::mode::nopool, T>::copy_object(p, isnew, std::forward<T>(val));
+            slotalloc_detail::constructor<POOL, T>::copy_object(p, isnew, std::forward<T>(val));
         return p;
     }
 

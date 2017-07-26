@@ -45,9 +45,11 @@
 #include "regex.h"
 #include "log/logger.h"
 
+class intergen_interface;
 
 COID_NAMESPACE_BEGIN
 
+////////////////////////////////////////////////////////////////////////////////
 ///A global register for interfaces, used by intergen
 class interface_register
 {
@@ -70,6 +72,12 @@ public:
     typedef bool (*fn_acc_t)(const token&);
 
     static void setup( const token& path, fn_log_t log, fn_acc_t access );
+
+    typedef iref<intergen_interface> (*wrapper_fn)(void*, intergen_interface*);
+
+    ///Get interface wrapper creator matching the given name
+    //@param name interface creator name in the format [ns1::[ns2:: ...]]::class
+    static wrapper_fn get_interface_wrapper( const token& name );
 
     struct creator {
         token name;

@@ -121,6 +121,17 @@ public:
         return dst;
     }
 
+    virtual interface_register::wrapper_fn get_interface_wrapper( const token& name ) const
+    {
+        zstring str = name;
+        str.get_str() << "@wrapper";
+
+        GUARDTHIS(_mx);
+
+        const entry* en = _hash.find_value(name);
+        return en ? (interface_register::wrapper_fn)en->creator_ptr : nullptr;
+    }
+
     virtual dynarray<creator>& get_interface_creators( const token& name, const token& script, dynarray<creator>& dst )
     {
         //interface creator names:
@@ -315,6 +326,15 @@ void interface_register::setup( const token& path, fn_log_t log, fn_acc_t access
 
     if(access)
         reg._fn_acc = access;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+interface_register::wrapper_fn interface_register::get_interface_wrapper( const token& name )
+{
+    //interface creator name:
+    // [ns1::[ns2:: ...]]::class
+    interface_register_impl& reg = interface_register_impl::get();
+    return reg.get_interface_wrapper(name);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
