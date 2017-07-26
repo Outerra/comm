@@ -206,15 +206,12 @@ inline float sysEndianBigFloat(float x) {
 ////////////////////////////////////////////////////////////////////////////////
 class sysDynamicLibrary
 {
+public:
 #ifdef SYSTYPE_WIN
     typedef ints handle;
 #else
     typedef void *handle;
 #endif
-
-    handle _handle;
-
-public:
 
     ~sysDynamicLibrary();
     sysDynamicLibrary( const char* libname = 0 );
@@ -228,6 +225,11 @@ public:
     bool is_valid() {return _handle != 0;}
 
     static handle load_library( const char* libname );
+    static void *getFuncAddress(handle lib_handle, const char *funcname);
+
+private:
+    handle _handle;
+
 };
 
 

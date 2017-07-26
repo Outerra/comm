@@ -176,6 +176,10 @@ namespace coid {
         return (void *)GetProcAddress((HMODULE)_handle, funcname); //lint !e611
     }
 
+    void *sysDynamicLibrary::getFuncAddress(handle lib_handle, const char *funcname) {
+        return (void *)GetProcAddress((HMODULE)lib_handle, funcname);
+    }
+
     sysDynamicLibrary::~sysDynamicLibrary()
     {
         if(_handle != 0)
