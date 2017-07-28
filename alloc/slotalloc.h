@@ -355,6 +355,9 @@ public:
     //@return number of used slots in the container
     uints count() const { return _count; }
 
+    //@return allocated count (not necessarily used)
+    uints allocated_count() const { return _array.size(); }
+
     //@return true if next allocation would rebase the array
     bool full() const { return (_count + 1) * sizeof(T) > _array.reserved_total(); }
 

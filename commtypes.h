@@ -266,6 +266,19 @@ using coid::ushort;
 
 COID_NAMESPACE_BEGIN
 
+///Versioned item id for slot allocators
+struct versionid
+{
+    uint id : 24;
+    uint version : 8;
+
+    versionid() : id(0x00ffffff), version(0xff)
+    {}
+
+    versionid(uint id, uint8 version) : id(id), version(version)
+    {}
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 
 template<class INT>
@@ -370,7 +383,6 @@ COID_NAMESPACE_END
 #define UMAX32      0xffffffffUL
 #define UMAX64      0xffffffffffffffffULL
 #define WMAX        0xffff
-
 
 #include "net_ul.h"
 

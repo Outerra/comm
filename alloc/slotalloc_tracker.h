@@ -38,23 +38,9 @@
 *
 * ***** END LICENSE BLOCK ***** */
 
-#include "slotalloc.h"
 #include "../binstring.h"
 
 COID_NAMESPACE_BEGIN
-
-///Versioned id for slotalloc
-struct versionid
-{
-    uint id : 24;
-    uint version : 8;
-
-    versionid() : id(UMAX32), version(0xff)
-    {}
-
-    versionid(uint id, uint8 version) : id(id), version(version)
-    {}
-};
 
 ////////////////////////////////////////////////////////////////////////////////
 enum class slotalloc_mode
@@ -65,6 +51,8 @@ enum class slotalloc_mode
     atomic          = 4,                //< ins/del operations are done as atomic operations
     tracking        = 8,                //< adds data and methods needed for tracking the modifications
     versioning      = 16,               //< adds data and methods needed to track version of array items, to handle cases when a new item occupies the same slot and old references to the slot should be invalid
+
+    multikey        = 128,              //< used by slothash for multi-key value support
 };
 
 inline constexpr slotalloc_mode operator | (slotalloc_mode a, slotalloc_mode b) {
@@ -169,8 +157,8 @@ struct base_versioning<true, Es...>
 
 
     versionid get_versionid(uints id) const {
-        DASSERT_RET(id < 0x00ffffffU, 0xffffffffU);
-        return uintv(id, version_array()[id]);
+        DASSERT_RET(id < 0x00ffffffU, versionid());
+        return versionid(id, version_array()[id]);
     }
 
     bool check_versionid(versionid vid) const {
@@ -185,7 +173,11 @@ struct base_versioning<true, Es...>
 private:
 
     dynarray<uint8>& version_array() {
-        return &std::get<sizeof...(Es)>(*this);
+        return std::get<sizeof...(Es)>(*this);
+    }
+
+    const dynarray<uint8>& version_array() const {
+        return std::get<sizeof...(Es)>(*this);
     }
 };
 
