@@ -444,7 +444,7 @@ __declspec(noinline) int other_lua_dispatcher::lualog_exc( lua_State * L )
             lua_pop(L, 1);
         }
 
-        intergen_interface::ifclog_ext(coid::ELogType::None, coid::tokenhash("ns::other"),
+        intergen_interface::ifclog_ext(coid::log::none, coid::tokenhash("ns::other"),
             inst, lua_totoken(L, -1));
 
         lua_pop(L, 1);
@@ -783,16 +783,20 @@ static void register_binders_for_other( bool on )
         on ? (void*)&other_lua_dispatcher::register_to_context_other
         : nullptr);
 
+    //c++ creator of Lua interface object
     interface_register::register_interface_creator(
         "ns::other.create@creator.lua",
         on ? (void*)&other_lua_dispatcher::create : nullptr);
+
+    //creator from script
     interface_register::register_interface_creator(
         "ns::lua::other.create",
         on ? (void*)&other_lua_dispatcher::luacreator_create0 : nullptr);
+
+    //wrapper interface creator from existing c++ interface
     interface_register::register_interface_creator(
         "ns::other@wrapper.lua",
         on ? (void*)&create_wrapper_other : nullptr);
-
 }
 
 //auto-register the bind function
@@ -819,14 +823,14 @@ namespace lua {
 class main_lua_dispatcher
     : public ::lua::interface_wrapper_base<ns::main>
 {
-    iref<::lua::weak_registry_handle> _events[4];
+    mutable iref<::lua::weak_registry_handle> _events[4];
+    mutable bool _bound_events;
     
     void init_event_registry() {
         for (int i = 0; i < 4; i++) {
             _events[i] = new ::lua::weak_registry_handle;
         }
     }
-    bool _bound_events;
 
 protected:
 
@@ -836,7 +840,7 @@ protected:
 public:
 
     iref<::lua::registry_handle> create_interface_object(bool make_weak);
-    void bind_events( bool force, iref<::lua::registry_handle> ref );
+    void bind_events( bool force, iref<::lua::registry_handle> ref ) const;
 
     COIDNEWDELETE("ns::main_lua_dispatcher");
 
@@ -1794,7 +1798,7 @@ __declspec(noinline) int main_lua_dispatcher::lualog_exc( lua_State * L )
             lua_pop(L, 1);
         }
 
-        intergen_interface::ifclog_ext(coid::ELogType::None, coid::tokenhash("ns::main"),
+        intergen_interface::ifclog_ext(coid::log::none, coid::tokenhash("ns::main"),
             inst, lua_totoken(L, -1));
 
         lua_pop(L, 1);
@@ -1971,7 +1975,7 @@ iref<::lua::registry_handle> main_lua_dispatcher::create_interface_object( bool 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void main_lua_dispatcher::bind_events(bool force, iref<::lua::registry_handle> ref )
+void main_lua_dispatcher::bind_events(bool force, iref<::lua::registry_handle> ref ) const
 {
     if (!force && _bound_events)
         return;
@@ -2528,28 +2532,38 @@ static void register_binders_for_main( bool on )
         on ? (void*)&main_lua_dispatcher::register_to_context_main
         : nullptr);
 
+    //c++ creator of Lua interface object
     interface_register::register_interface_creator(
         "ns::main.create@creator.lua",
         on ? (void*)&main_lua_dispatcher::create : nullptr);
+
+    //creator from script
     interface_register::register_interface_creator(
         "ns::lua::main.create",
         on ? (void*)&main_lua_dispatcher::luacreator_create0 : nullptr);
+    //c++ creator of Lua interface object
     interface_register::register_interface_creator(
         "ns::main.create_special@creator.lua",
         on ? (void*)&main_lua_dispatcher::create_special : nullptr);
+
+    //creator from script
     interface_register::register_interface_creator(
         "ns::lua::main.create_special",
         on ? (void*)&main_lua_dispatcher::luacreator_create_special1 : nullptr);
+    //c++ creator of Lua interface object
     interface_register::register_interface_creator(
         "ns::main.create_wp@creator.lua",
         on ? (void*)&main_lua_dispatcher::create_wp : nullptr);
+
+    //creator from script
     interface_register::register_interface_creator(
         "ns::lua::main.create_wp",
         on ? (void*)&main_lua_dispatcher::luacreator_create_wp2 : nullptr);
+
+    //wrapper interface creator from existing c++ interface
     interface_register::register_interface_creator(
         "ns::main@wrapper.lua",
         on ? (void*)&create_wrapper_main : nullptr);
-
 }
 
 //auto-register the bind function

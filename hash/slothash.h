@@ -33,7 +33,7 @@ struct extractor<T*, KEY>
 template<
     class T,
     class KEY,
-    slotalloc_mode MODE = slotalloc_mode::default,
+    slotalloc_mode MODE = slotalloc_mode::base,
     class EXTRACTOR = extractor<T, KEY>,
     class HASHFUNC = hasher<KEY>,
     class...Es

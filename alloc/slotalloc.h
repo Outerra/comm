@@ -77,7 +77,7 @@ reserved in advance.
 **/
 template<
     class T,
-    slotalloc_mode MODE = slotalloc_mode::default,
+    slotalloc_mode MODE = slotalloc_mode::base,
     class ...Es>
 class slotalloc_base
     : protected slotalloc_detail::base<MODE & slotalloc_mode::versioning, MODE & slotalloc_mode::tracking, Es...>
@@ -1124,7 +1124,7 @@ private:
 //variants of slotalloc
 
 template<class T, class ...Es>
-using slotalloc = slotalloc_base<T, slotalloc_mode::default, Es...>;
+using slotalloc = slotalloc_base<T, slotalloc_mode::base, Es...>;
 
 template<class T, class ...Es>
 using slotalloc_pool = slotalloc_base<T, slotalloc_mode::pool, Es...>;

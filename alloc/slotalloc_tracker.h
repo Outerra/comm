@@ -45,7 +45,7 @@ COID_NAMESPACE_BEGIN
 ////////////////////////////////////////////////////////////////////////////////
 enum class slotalloc_mode
 {
-    default         = 0,
+    base            = 0,
     pool            = 1,                //< pool mode, destructors not called on item deletion, only on container deletion
     norebase        = 2,                //< throws an exception if item array is rebased (must be reserved in advance)
     atomic          = 4,                //< ins/del operations are done as atomic operations
@@ -135,7 +135,7 @@ struct base_versioning
 
 
     versionid get_versionid(uints id) const {
-        return uintv(id, 0);
+        return versionid(id, 0);
     }
 
     bool check_versionid(versionid vid) const {
@@ -158,7 +158,7 @@ struct base_versioning<true, Es...>
 
     versionid get_versionid(uints id) const {
         DASSERT_RET(id < 0x00ffffffU, versionid());
-        return versionid(id, version_array()[id]);
+        return versionid(uint(id), version_array()[id]);
     }
 
     bool check_versionid(versionid vid) const {
