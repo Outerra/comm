@@ -189,6 +189,9 @@ template<bool VERSIONING, bool TRACKING, class...Es>
 struct base
     : public base_versioning<VERSIONING, Es...>
 {
+    typedef base_versioning<VERSIONING, Es...>
+        base_t;
+
     //typedef changeset changeset_t;
     //typedef std::tuple<dynarray<Es>...>
     //    extarray_t;
@@ -197,7 +200,7 @@ struct base
 
 
     void swap( base& other ) {
-        static_cast<extarray_t*>(this)->swap(other);
+        static_cast<typename base_t::extarray_t*>(this)->swap(other);
     }
 
     void set_modified( uints k ) const {}
@@ -212,6 +215,9 @@ template<bool VERSIONING, class...Es>
 struct base<VERSIONING, true, Es...>
     : public base_versioning<VERSIONING, Es..., changeset>// std::tuple<dynarray<Es>..., dynarray<changeset>>
 {
+    typedef base_versioning<VERSIONING, Es..., changeset>
+        base_t;
+
     //typedef changeset changeset_t;
     //typedef std::tuple<dynarray<Es>..., dynarray<changeset>>
     //    extarray_t;
@@ -225,7 +231,7 @@ struct base<VERSIONING, true, Es...>
     {}
 
     void swap( base& other ) {
-        static_cast<extarray_t*>(this)->swap(other);
+        static_cast<typename base_t::extarray_t*>(this)->swap(other);
         std::swap(_frame, other._frame);
     }
 

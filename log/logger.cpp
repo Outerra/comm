@@ -48,11 +48,11 @@
 
 using namespace coid;
 
+static bool _enable_debug_out = false;
+
 #ifdef SYSTYPE_WIN
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
-
-static bool _enable_debug_out = false;
 
 static void write_console_text( const logmsg& msg )
 {

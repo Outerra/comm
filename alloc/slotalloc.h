@@ -345,7 +345,7 @@ public:
 
     ///Delete object by versionid
     template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
-    void del(versionid id)
+    void del(versionid vid)
     {
         DASSERT_RETVOID(this->check_versionid(vid));
 
@@ -369,7 +369,7 @@ public:
     template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
     const T* get_item(versionid vid) const
     {
-        DASSERT_RET(vid.id < _array.size() && check_versionid(vid) && get_bit(vid.id), 0);
+        DASSERT_RET(vid.id < _array.size() && this->check_versionid(vid) && get_bit(vid.id), 0);
         return _array.ptr() + vid.id;
     }
 
@@ -379,7 +379,7 @@ public:
     template <bool T1 = VERSIONING && !TRACKING, typename = std::enable_if_t<T1>>
     T* get_item(versionid vid)
     {
-        DASSERT_RET(vid.id < _array.size() && check_versionid(vid) && get_bit(vid.id), 0);
+        DASSERT_RET(vid.id < _array.size() && this->check_versionid(vid) && get_bit(vid.id), 0);
         return _array.ptr() + vid.id;
     }
 
@@ -388,7 +388,7 @@ public:
     template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
     T* get_mutable_item(versionid vid)
     {
-        DASSERT_RET(vid.id < _array.size() && check_versionid(vid) && get_bit(vid.id), 0);
+        DASSERT_RET(vid.id < _array.size() && this->check_versionid(vid) && get_bit(vid.id), 0);
         if (TRACKING)
             tracker_t::set_modified(vid.id);
         return _array.ptr() + vid.id;
