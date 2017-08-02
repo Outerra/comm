@@ -76,6 +76,10 @@ inline void _BitScanReverse64(ulong* idx, uint64 v) {
     else
         idx += 32;
 }
+
+inline uint8 __popcnt64(uint64 val) {
+    return __popcnt(uint(val)) + __popcnt(uint(val >> 32));
+}
 #endif
 
 //@{
@@ -95,6 +99,10 @@ inline uint8 lsb_bit_set( uint64 v ) { return __builtin_ctzll(v); }
 inline uint8 msb_bit_set( uint v )   { return 31-__builtin_clzl(v); }
 inline uint8 msb_bit_set( uint64 v ) { return 63-__builtin_clzll(v); }
 //@}
+
+inline uint8 __popcnt16(ushort v) { return __builtin_popcount(v); }
+inline uint8 __popcnt(uint v) { return __builtin_popcount(v); }
+inline uint8 __popcnt64(uint64 v) { return __builtin_popcountll(v); }
 #endif
 
 COID_NAMESPACE_BEGIN
@@ -273,6 +281,11 @@ void clear_bitrange( uints from, uints n, T* ptr )
         bit = 0;
     }
 }
+
+//@return count of bits set to 1
+uint8 popultaion_count(ushort val) { return __popcnt16(val); }
+uint8 popultaion_count(uint32 val) { return __popcnt(val); }
+uint8 popultaion_count(uint64 val) { return __popcnt64(val); }
 
 #endif
 
