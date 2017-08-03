@@ -492,7 +492,7 @@ private:
     volatile int _qsize;                //< current queue size, used also as a semaphore
     volatile bool _quitting;
 
-    slotalloc<granule> _taskdata;
+    slotalloc_atomic<granule> _taskdata;
 
     queue<invoker_base*> _queue;
 

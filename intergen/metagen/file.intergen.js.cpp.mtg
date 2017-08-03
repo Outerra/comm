@@ -411,11 +411,12 @@ $-(elif)$
     //return value
    $-(if return.iref.true?)$
     $return.type$ _rval_;
+    from_v8(r__, _rval_);
    $-(elif)$
     static_assert( CHECK::meta_operator_exists<$return.type$>::value, "missing metastream operator for '$return.type$'" );
     threadcached<$return.type$> _rval_;
+    from_v8(obj__->Get(v8::symbol("$$ret")), _rval_);
    $-(/if)$
-    from_v8(r__, _rval_);
   $-(/if)$
   $-[args outarg?]$
 
