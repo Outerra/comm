@@ -79,6 +79,17 @@ public:
     //@param name interface creator name in the format [ns1::[ns2:: ...]]::class
     static wrapper_fn get_interface_wrapper( const token& name );
 
+    ///Get interface maker creator matching the given name
+    //@param name interface creator name in the format [ns1::[ns2:: ...]]::class
+    //@param script script type
+    static void* get_interface_maker( const token& name, const token& script );
+
+    ///Get client interface creator matching the given name
+    //@param client client name
+    //@param iface interface creator name in the format [ns1::[ns2:: ...]]::class
+    //@param module required module to match
+    static wrapper_fn get_interface_client( const token& client, const token& iface, const token& module );
+
     struct creator {
         token name;
         void* creator_ptr;

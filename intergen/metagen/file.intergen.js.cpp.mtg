@@ -82,12 +82,16 @@ $-(/if)$
     $name$_js_dispatcher() $-(if event?)$ : _bound_events(false)$(/if)$
     {}
 
-    $name$_js_dispatcher( $ns rest="::" after="::"$$name$* orig ) $(if event?)$: _bound_events(false) $(/if)${
+    explicit $name$_js_dispatcher( $ns rest="::" after="::"$$name$* orig ) $(if event?)$: _bound_events(false) $(/if)${
         _base.create(orig);
         _vtable = _base->vtable();
         //V8_PERSISTENT(v8::Isolate::GetCurrent(), _context, context);
 
 		_host = _base->host<policy_intrusive_base>();
+    }
+
+    void set_host( policy_intrusive_base* host ) {
+        _host = host;
     }
 
     ~$name$_js_dispatcher() {
@@ -1098,6 +1102,32 @@ v8::Handle<v8::Value> create_wrapper_$name$( ::$ns rest="::" after="::"$$name$* 
     return V8_ESCAPE(scope, obj);
 }
 
+////////////////////////////////////////////////////////////////////////////////
+///Create JS interface from a host
+static iref<$ns rest="::" after="::"$js::$name$_js_dispatcher> create_maker_$name$( policy_intrusive_base* host, v8::Handle<v8::Context> context )
+{
+    v8::Isolate* iso = context.IsEmpty() ? v8::Isolate::GetCurrent() : context->GetIsolate();
+    if (context.IsEmpty())
+        context = V8_CUR_CONTEXT(iso);
+
+    // check that the orig points to an object
+    if (!host)
+        return 0;
+
+    v8::Context::Scope context_scope(context);
+    V8_ESCAPABLE_SCOPE(iso, scope);
+
+    // create interface object
+    iref<$ns rest="::" after="::"$js::$name$_js_dispatcher> ifc;
+
+    ifc.create(new $ns rest="::" after="::"$js::$name$_js_dispatcher);
+    ifc->set_host(host);
+
+    ifc->create_interface_object(context, false);
+
+    return ifc;
+}
+
 $-(/if)$
 ////////////////////////////////////////////////////////////////////////////////
 static void register_binders_for_$name$( bool on )
@@ -1121,6 +1151,11 @@ $-(if virtual!)$
     interface_register::register_interface_creator(
         "$ns rest="::" after="::"$$name$@wrapper.js",
         on ? (void*)&create_wrapper_$name$ : nullptr);
+
+    //js interface creator from host
+    interface_register::register_interface_creator(
+        "$ns rest="::" after="::"$$name$@maker.js",
+        on ? (void*)&create_maker_$name$ : nullptr);        
 $-(/if)$
 }
 
