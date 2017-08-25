@@ -237,6 +237,11 @@ protected:
         return uint(_HASHFUNC(k) % _buckets.size());
     }
 
+    template<>
+    uint bucket<tokenhash>(const tokenhash& key) const {
+        return uint(key.hash() % _buckets.size());
+    }
+
     ///Find first node that matches the key
     template<class FKEY = KEY>
     uint find_object(uint bucket, const FKEY& k) const

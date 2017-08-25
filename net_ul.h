@@ -51,6 +51,8 @@
 
 COID_NAMESPACE_BEGIN
 
+class charstr;
+
 #ifdef SYSTYPE_WIN
 #   define HAVE_STRUCT_TIMESPEC 1
     struct timespec {
@@ -204,7 +206,7 @@ inline float sysEndianBigFloat(float x) {
 
 
 ////////////////////////////////////////////////////////////////////////////////
-class sysDynamicLibrary
+class dynamic_library
 {
 public:
 #ifdef SYSTYPE_WIN
@@ -213,8 +215,8 @@ public:
     typedef void *handle;
 #endif
 
-    ~sysDynamicLibrary();
-    sysDynamicLibrary( const char* libname = 0 );
+    ~dynamic_library();
+    dynamic_library( const char* libname = 0 );
 
     bool open( const char* libname );
     bool close();
@@ -227,9 +229,12 @@ public:
     static handle load_library( const char* libname );
     static void *getFuncAddress(handle lib_handle, const char *funcname);
 
-private:
-    handle _handle;
+    static charstr& module_path(charstr& dst, bool append = false);
+    static charstr& module_name(charstr& dst, bool append = false);
 
+private:
+
+    handle _handle;
 };
 
 

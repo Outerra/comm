@@ -617,6 +617,12 @@ protected:
     using arg0 = typename std::remove_reference<typename closure_traits<Fn>::template arg<0>>::type;
 
     template<class Fn>
+    using arg0ref = typename coid::nonptr_reference<typename closure_traits<Fn>::template arg<0>>::type;
+
+    template<class Fn>
+    using arg0constref = typename coid::nonptr_reference<const typename closure_traits<Fn>::template arg<0>>::type;
+
+    template<class Fn>
     using is_const = std::is_const<arg0<Fn>>;
 
     template<class Fn>
@@ -627,7 +633,7 @@ protected:
 
     ///A non-tracking void fnc(const T&) const
     template<typename Fn, typename = std::enable_if_t<is_const<Fn>::value && !has_index<Fn>::value>>
-    bool funccall(const Fn& fn, const arg0<Fn>& v, size_t&& index) const
+    bool funccall(const Fn& fn, arg0constref<Fn> v, size_t&& index) const
     {
         fn(v);
         return false;
@@ -635,7 +641,7 @@ protected:
 
     ///A tracking void fnc(T&)
     template<typename Fn, typename = std::enable_if_t<!is_const<Fn>::value && !has_index<Fn>::value && returns_void<Fn>::value>>
-    bool funccall(const Fn& fn, arg0<Fn>& v, const size_t&& index) const
+    bool funccall(const Fn& fn, arg0ref<Fn> v, const size_t&& index) const
     {
         fn(v);
         if (TRACKING)
@@ -646,7 +652,7 @@ protected:
 
     ///Conditionally tracking bool fnc(T&)
     template<typename Fn, typename = std::enable_if_t<!is_const<Fn>::value && !has_index<Fn>::value && !returns_void<Fn>::value>>
-    bool funccall(const Fn& fn, arg0<Fn>& v, size_t&& index) const
+    bool funccall(const Fn& fn, arg0ref<Fn> v, size_t&& index) const
     {
         bool rval = static_cast<bool>(fn(v));
         if (rval && TRACKING)
@@ -657,7 +663,7 @@ protected:
 
     ///A non-tracking void fnc(const T&, index) const
     template<typename Fn, typename = std::enable_if_t<is_const<Fn>::value && has_index<Fn>::value>>
-    bool funccall(const Fn& fn, const arg0<Fn>& v, size_t index) const
+    bool funccall(const Fn& fn, arg0constref<Fn> v, size_t index) const
     {
         fn(v, index);
         return false;
@@ -665,7 +671,7 @@ protected:
 
     ///A tracking void fnc(T&, index)
     template<typename Fn, typename = std::enable_if_t<!is_const<Fn>::value && has_index<Fn>::value && returns_void<Fn>::value>>
-    bool funccall(const Fn& fn, arg0<Fn>& v, const size_t& index) const
+    bool funccall(const Fn& fn, arg0ref<Fn> v, const size_t& index) const
     {
         fn(v, index);
         if (TRACKING)
@@ -676,7 +682,7 @@ protected:
 
     ///Conditionally tracking bool fnc(T&, index)
     template<typename Fn, typename = std::enable_if_t<!is_const<Fn>::value && has_index<Fn>::value && !returns_void<Fn>::value>>
-    bool funccall(const Fn& fn, arg0<Fn>& v, size_t index) const
+    bool funccall(const Fn& fn, arg0ref<Fn> v, size_t index) const
     {
         bool rval = static_cast<bool>(fn(v, index));
         if (rval && TRACKING)
@@ -688,13 +694,13 @@ protected:
 
     ///func call for for_each_modified (with ptr argument, 0 for deleted objects)
     template<typename Fn, typename = std::enable_if_t<!has_index<Fn>::value>>
-    void funccallp(const Fn& fn, const arg0<Fn>& v, size_t&& index) const
+    void funccallp(const Fn& fn, arg0constref<Fn> v, size_t&& index) const
     {
         fn(v);
     }
 
     template<typename Fn, typename = std::enable_if_t<has_index<Fn>::value>>
-    void funccallp(const Fn& fn, const arg0<Fn>& v, size_t index) const
+    void funccallp(const Fn& fn, arg0constref<Fn> v, size_t index) const
     {
         fn(v, index);
     }

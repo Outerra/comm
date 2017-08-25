@@ -280,6 +280,15 @@ struct versionid
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+template<class INT, class INTFROM>
+inline INT saturate_cast(INTFROM a) {
+    static_assert(std::is_integral<INT>::value, "integral type required");
+    INT minv = std::numeric_limits<INT>::min();
+    INT maxv = std::numeric_limits<INT>::max();
+    return a > maxv ? maxv : (a < minv ? minv : INT(a));
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 template<class INT>
 struct SIGNEDNESS

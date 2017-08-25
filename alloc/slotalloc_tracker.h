@@ -297,8 +297,13 @@ struct constructor<true, T>
     static T* construct_object( T* dst, bool isnew, Ps... ps ) {
         if(isnew)
             new(dst) T(std::forward<Ps>(ps)...);
-        else
-            *dst = T(ps...);
+        else {
+            //only in pool mode on reused objects, when someone calls push_construct
+            //this is not a good usage pattern as it cannot reuse existing storage of the old object
+            // (which is what pool mode is about)
+            dst->~T();
+            new(dst) T(std::forward<Ps>(ps)...);
+        }
         return dst;
     }
 };
