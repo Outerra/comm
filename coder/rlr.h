@@ -58,6 +58,7 @@ struct rlr_coder
     };
 
     rlr_coder() {
+        dataend = 0;
         planes.realloc(8*sizeof(INT));
         reset(true);    //default encode
 

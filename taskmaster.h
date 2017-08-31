@@ -374,6 +374,8 @@ private:
 
     void* threadfunc( int order )
     {
+        coidlog_info("taskmaster", "thread " << order << " running");
+
         do
         {
             wait();
@@ -403,6 +405,8 @@ private:
             }
         }
         while (1);
+
+        coidlog_info("taskmaster", "thread " << order << " exiting");
 
         return 0;
     }
