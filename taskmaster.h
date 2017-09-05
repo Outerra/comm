@@ -166,8 +166,12 @@ public:
         auto& level = _synclevels[tlevel];
         ++level.priority;
 
+        //wait for threads to complete tasks, possibly helping with a pending task
+        bool working = false;
         while (level.njobs > 0) {
-            process_specific_task(tlevel);
+            if (!working)
+                thread::wait(0);
+            working = process_specific_task(tlevel);
         }
 
         --level.priority;
