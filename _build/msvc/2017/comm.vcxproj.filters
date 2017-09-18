@@ -398,5 +398,8 @@
       <Filter>log</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\bitrange.h" />
+    <ClInclude Include="..\..\..\alloc\slotalloc_tracker.h">
+      <Filter>alloc</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

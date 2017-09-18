@@ -524,19 +524,8 @@ public:
         //extra space needed
         uints n = id + 1 - _created;
 
-        //in POOL mode the unallocated items in between the valid ones are assumed to be constructed
-        if (POOL) {
-            extarray_expand(n);
-            _array.add(n);
-        }
-        else {
-            if (n > 1) {
-                extarray_expand_uninit(n - 1);
-                expand_array(n - 1);
-            }
-            extarray_expand(1);
-            _array.add(1);
-        }
+        extarray_expand(n);
+        expand(n);
 
         if (TRACKING)
             tracker_t::set_modified(id);
@@ -546,7 +535,7 @@ public:
         ++_count;
 
         if (is_new) *is_new = true;
-        return _array.ptr() + id;
+        return ptr(id);
     }
 
     //@return id of given item, or UMAXS if the item is not managed here
@@ -769,7 +758,7 @@ public:
 
         for (const page* pp = bp; pp < ep; ++pp, gbase += page::ITEMS)
         {
-            Tx* d = const_cast<Tx*>(pp->data);
+            Tx* d = const_cast<Tx*>(pp->ptr());
             uint_type const* epm = em - pm > page::NMASK
                 ? pm + page::NMASK
                 : em;
@@ -927,8 +916,9 @@ public:
         uints s = k / NBITS;
         uints b = k % NBITS;
 
+        U m = U(1) << b;
         B& v = bitarray.get_or_addc(s);
-        return (U::fetch_or(v, m) & m) != 0;
+        return (underlying_bitrange_type<B>::fetch_or(v, m) & m) != 0;
     }
 
     template <class B>
@@ -939,8 +929,9 @@ public:
         uints s = k / NBITS;
         uints b = k % NBITS;
 
+        U m = U(1) << b;
         B& v = bitarray.get_or_addc(s);
-        return (U::fetch_add(~m) & m) != 0;
+        return (underlying_bitrange_type<B>::fetch_add(~m) & m) != 0;
     }
 
     template <class B>
@@ -1097,12 +1088,12 @@ private:
 
     const T* ptr(uints id) const {
         DASSERT(id / page::ITEMS < _pages.size());
-        return _pages[id / page::ITEMS].data + id % page::ITEMS;
+        return (const T*)_pages[id / page::ITEMS].data + id % page::ITEMS;
     }
 
     T* ptr(uints id) {
         DASSERT(id / page::ITEMS < _pages.size());
-        return _pages[id / page::ITEMS].data + id % page::ITEMS;
+        return (T*)_pages[id / page::ITEMS].data + id % page::ITEMS;
     }
 
     ///Return allocated slot
@@ -1147,7 +1138,7 @@ private:
 
         uints nadd = id + n > _created ? id + n - _created : 0;
         if (nadd)
-            expand_array(nadd);
+            expand(nadd);
         *old = n - nadd;
 
         _count += n;
@@ -1171,18 +1162,19 @@ private:
         if (TRACKING)
             tracker_t::set_modified(count);
 
-        return expand_array(1);
+        return expand(1);
     }
 
     ///Adds physical space for n items
     //@return ptr to the last created item
-    T* expand_array(uints n)
+    T* expand(uints n)
     {
         ints ip = _created + n - max_count();
         if (ip > 0)
             _pages.add(align_to_chunks(ip, page::ITEMS));
 
-        if (!POOL && n > 1) {
+        //in POOL mode the unallocated items in between the valid ones are assumed to be constructed
+        if (POOL && n > 1) {
             for_range(_created, n - 1, [](T* p) {
                 new(p) T;
             });
@@ -1216,7 +1208,7 @@ private:
     bool get_bit(uints k) const { return get_bit(_allocated, k); }
 
     //WA for lambda template error
-    //void static destroy(T& p) { p.~T(); }
+    void static destroy(T& p) { p.~T(); }
 
 
     static void update_changeset(uint frame, dynarray<changeset_t>& changeset)
