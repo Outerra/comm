@@ -76,10 +76,6 @@ inline void _BitScanReverse64(ulong* idx, uint64 v) {
     else
         idx += 32;
 }
-
-inline uint8 __popcnt64(uint64 val) {
-    return uint8(__popcnt(uint(val)) + __popcnt(uint(val >> 32)));
-}
 #endif
 
 //@{
@@ -90,6 +86,11 @@ inline uint8 lsb_bit_set(uint64 v)  { DASSERT(v); ulong idx; _BitScanForward64(&
 inline uint8 msb_bit_set(uint v)    { DASSERT(v); ulong idx; _BitScanReverse(&idx, v);   return uint8(idx); }
 inline uint8 msb_bit_set(uint64 v)  { DASSERT(v); ulong idx; _BitScanReverse64(&idx, v); return uint8(idx); }
 //@}
+
+inline uint8 __popcnt64(uint64 val) {
+    return uint8(__popcnt(uint(val)) + __popcnt(uint(val >> 32)));
+}
+
 #else
 //@{
 //@return position of the lowest or highest bit set

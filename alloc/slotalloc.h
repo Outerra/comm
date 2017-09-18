@@ -94,7 +94,7 @@ protected:
         changeset_t;
 
     enum : bool { POOL = MODE & slotalloc_mode::pool };
-    enum : bool { NOREBASE = MODE & slotalloc_mode::norebase };
+    //enum : bool { NOREBASE = MODE & slotalloc_mode::norebase };
     enum : bool { ATOMIC = MODE & slotalloc_mode::atomic };
     enum : bool { TRACKING = MODE & slotalloc_mode::tracking };
     enum : bool { VERSIONING = MODE & slotalloc_mode::versioning };
@@ -338,13 +338,24 @@ public:
         uints id = get_item_id(p);
         uints idk = id;
 
-        auto b = _array.ptr() + id;
-        auto e = b + n;
-        for (; b < e; ++b) {
-            if (!POOL)
-                b->~T();
-            if (VERSIONING)
-                this->bump_version(idk++);
+        uint pg = id / page::ITEMS;
+        uint s = id % page::ITEMS;
+        uints nr = n;
+
+        while (nr > 0) {
+            T* b = _pages[pg].ptr() + s;
+            uints na = stdmin(page::ITEMS - s, nr);
+            T* e = b + na;
+
+            for (; b < e; ++b) {
+                if (!POOL)
+                    b->~T();
+                if (VERSIONING)
+                    this->bump_version(idk++);
+            }
+
+            nr -= na;
+            s = 0;
         }
 
         _count -= clear_bitrange(id, n, _allocated.ptr());
@@ -521,7 +532,7 @@ public:
         else {
             if (n > 1) {
                 extarray_expand_uninit(n - 1);
-                extend_array(n - 1);
+                expand_array(n - 1);
             }
             extarray_expand(1);
             _array.add(1);
@@ -739,6 +750,7 @@ protected:
     //@}
 
 public:
+
     ///Invoke a functor on each used item.
     //@note const version doesn't handle array insertions/deletions during iteration
     //@param f functor with ([const] T&) or ([const] T&, size_t index) arguments
@@ -746,21 +758,35 @@ public:
     void for_each(Func f) const
     {
         typedef std::remove_reference_t<typename closure_traits<Func>::template arg<0>> Tx;
-        Tx* d = const_cast<Tx*>(_array.ptr());
-        uint_type const* b = const_cast<uint_type const*>(_allocated.ptr());
-        uint_type const* e = const_cast<uint_type const*>(_allocated.ptre());
-        uints s = 0;
+        uint_type const* bm = const_cast<uint_type const*>(_allocated.ptr());
+        uint_type const* em = const_cast<uint_type const*>(_allocated.ptre());
 
-        for (uint_type const* p = b; p != e; ++p, s += MASK_BITS) {
-            if (*p == 0)
-                continue;
+        const page* bp = _pages.ptr();
+        const page* ep = _pages.ptre();
 
-            uints m = 1;
-            for (int i = 0; i < MASK_BITS; ++i, m <<= 1) {
-                if (*p & m)
-                    funccall(f, d[s + i], s + i);
-                else if ((*p & ~(m - 1)) == 0)
-                    break;
+        uint_type const* pm = bm;
+        uints gbase = 0;
+
+        for (const page* pp = bp; pp < ep; ++pp, gbase += page::ITEMS)
+        {
+            Tx* d = const_cast<Tx*>(pp->data);
+            uint_type const* epm = em - pm > page::NMASK
+                ? pm + page::NMASK
+                : em;
+
+            uints pbase = 0;
+
+            for (; pm != epm; ++pm, pbase += MASK_BITS) {
+                if (*pm == 0)
+                    continue;
+
+                uints m = 1;
+                for (int i = 0; i < MASK_BITS; ++i, m <<= 1) {
+                    if (*pm & m)
+                        funccall(f, d[pbase + i], gbase + i);
+                    else if ((*pm & ~(m - 1)) == 0)
+                        break;
+                }
             }
         }
     }
@@ -774,19 +800,19 @@ public:
     {
         auto d = value_array<K>().ptr();
 
-        uint_type const* b = const_cast<uint_type const*>(_allocated.ptr());
-        uint_type const* e = const_cast<uint_type const*>(_allocated.ptre());
+        uint_type const* bm = const_cast<uint_type const*>(_allocated.ptr());
+        uint_type const* em = const_cast<uint_type const*>(_allocated.ptre());
         uints s = 0;
 
-        for (uint_type const* p = b; p != e; ++p, s += MASK_BITS) {
-            if (*p == 0)
+        for (uint_type const* pm = bm; pm != em; ++pm, s += MASK_BITS) {
+            if (*pm == 0)
                 continue;
 
             uints m = 1;
             for (int i = 0; i < MASK_BITS; ++i, m <<= 1) {
-                if (*p & m)
+                if (*pm & m)
                     funccall(f, d[s + i], s + i);
-                else if ((*p & ~(m - 1)) == 0)
+                else if ((*pm & ~(m - 1)) == 0)
                     break;
             }
         }
@@ -802,24 +828,39 @@ public:
         const bool all_modified = bitplane_mask > slotalloc_detail::changeset::BITPLANE_MASK;
 
         typedef std::remove_pointer_t<std::remove_reference_t<typename closure_traits<Func>::template arg<0>>> Tx;
-        uint_type const* b = const_cast<uint_type const*>(_allocated.ptr());
-        uint_type const* e = const_cast<uint_type const*>(_allocated.ptre());
-        uint_type const* p = b;
+        uint_type const* bm = const_cast<uint_type const*>(_allocated.ptr());
+        uint_type const* em = const_cast<uint_type const*>(_allocated.ptre());
 
         auto chs = tracker_t::get_changeset();
-        DASSERT(chs->size() >= uints(e - b));
+        DASSERT(chs->size() >= uints(em - bm));
 
-        const changeset_t* chb = chs->ptr();
-        const changeset_t* che = chs->ptre();
+        const changeset_t* bc = chs->ptr();
+        const changeset_t* ec = chs->ptre();
 
-        for (const changeset_t* ch = chb; ch < che; ++p) {
-            uints m = p < e ? *p : 0U;
-            uints s = (p - b) * MASK_BITS;
+        const page* bp = _pages.ptr();
+        const page* ep = _pages.ptre();
 
-            for (int i = 0; ch < che && i < MASK_BITS; ++i, m >>= 1, ++ch) {
-                if (all_modified || (ch->mask & bitplane_mask) != 0) {
-                    Tx* p = (m & 1) != 0 ?  d + s + i : 0;
-                    funccallp(f, p, s + i);
+        uint_type const* pm = bm;
+        changeset_t const* pc = bc;
+        uints gbase = 0;
+
+        for (const page* pp = bp; pp < ep; ++pp, gbase += page::ITEMS)
+        {
+            Tx* d = const_cast<Tx*>(pp->data);
+            changeset_t const* epc = ec - pc > page::NMASK
+                ? pc + page::ITEMS
+                : ec;
+
+            uints pbase = 0;
+
+            for (; pc < epc; ++pm, pbase += MASK_BITS) {
+                uints m = pm < em ? *pm : 0U;
+
+                for (int i = 0; pc < epc && i < MASK_BITS; ++i, m >>= 1, ++pc) {
+                    if (all_modified || (pc->mask & bitplane_mask) != 0) {
+                        Tx* pd = (m & 1) != 0 ? d + pbase + i : 0;
+                        funccallp(f, pd, gbase + i);
+                    }
                 }
             }
         }
@@ -834,12 +875,12 @@ public:
         typedef std::remove_reference_t<typename closure_traits<Func>::template arg<0>> Tx;
         uint_type const* b = const_cast<uint_type const*>(_allocated.ptr());
         uint_type const* e = const_cast<uint_type const*>(_allocated.ptre());
-        uints s = 0;
 
         const page* pb = _pages.ptr();
         const page* pe = _pages.ptre();
 
         uint_type const* p = b;
+        uints s = 0;
 
         for (const page* pp = pb; pp < pe; ++pp)
         {
@@ -981,7 +1022,7 @@ private:
         int dummy[] = {0, ((void)std::get<Index>(ext).add(n), 0)...};
     }
 
-    void extarray_expand(uints n = 1) {
+    void extarray_expand(uints n) {
         extarray_expand_(make_index_sequence<tracker_t::extarray_size>(), n);
     }
 
@@ -1067,7 +1108,7 @@ private:
     ///Return allocated slot
     T* alloc(uints* pid)
     {
-        DASSERT(_count < _array.size());
+        DASSERT(_count < _created);
 
         uint_type* p = _allocated.ptr();
         uint_type* e = _allocated.ptre();
@@ -1091,7 +1132,7 @@ private:
         *p |= uints(1) << bit;
         ++_count;
 
-        return _array.ptr() + id;
+        return ptr(id);
     }
 
     T* alloc_range(uints n, uints* old)
@@ -1104,18 +1145,19 @@ private:
 
         set_bitrange(id, n, _allocated.ptr());
 
-        uints nadd = id + n > _array.size() ? id + n - _array.size() : 0;
+        uints nadd = id + n > _created ? id + n - _created : 0;
         if (nadd)
-            extend_array(nadd);
+            expand_array(nadd);
         *old = n - nadd;
 
         _count += n;
 
         DASSERT(!TRACKING);
 
-        return _array.ptr() + id;
+        return ptr(id);
     }
 
+    ///Append to a full array
     T* append()
     {
         uints count = _count;
@@ -1123,29 +1165,50 @@ private:
         DASSERT(count == _created);
         set_bit(count);
 
-        extarray_expand();
+        extarray_expand(1);
         ++_count;
 
         if (TRACKING)
             tracker_t::set_modified(count);
 
-        return extend_array(1);
+        return expand_array(1);
     }
 
-    T* extend_array(uints n)
+    ///Adds physical space for n items
+    //@return ptr to the last created item
+    T* expand_array(uints n)
     {
-        T* p;
+        ints ip = _created + n - max_count();
+        if (ip > 0)
+            _pages.add(align_to_chunks(ip, page::ITEMS));
 
-        if (NOREBASE) {
-            ints rebase;
-            p = _array.add_uninit(n, &rebase);
-            if (rebase)
-                throw exception("a fixed array rebased");
+        if (!POOL && n > 1) {
+            for_range(_created, n - 1, [](T* p) {
+                new(p) T;
+            });
         }
-        else
-            p = _array.add_uninit(n);
 
-        return p;
+        _created += n;
+        return new(ptr(_created - 1)) T;
+    }
+
+    template<typename Func>
+    void for_range(uints id, uints count, Func f)
+    {
+        uint pg = uint(id / page::ITEMS);
+        uint s = uint(id % page::ITEMS);
+
+        while (count > 0) {
+            T* b = _pages[pg].ptr() + s;
+            uints na = stdmin(page::ITEMS - s, count);
+            T* e = b + na;
+
+            for (; b < e; ++b)
+                f(b);
+
+            count -= na;
+            s = 0;
+        }
     }
 
     bool set_bit(uints k) { return set_bit(_allocated, k); }
