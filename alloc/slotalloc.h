@@ -99,13 +99,31 @@ protected:
     enum : bool { TRACKING = MODE & slotalloc_mode::tracking };
     enum : bool { VERSIONING = MODE & slotalloc_mode::versioning };
 
+private:
+
+    static const int MASK_BITS = 8 * sizeof(uints);
+
+    ///Allocation page
+    struct page {
+        static const uint ITEMS = 256;
+        static const uint NMASK = ITEMS / MASK_BITS;
+
+        uint8 data[ITEMS * sizeof(T)];
+
+        T* ptr() { return (T*)data; }
+        const T* ptr() const { return (const T*)data; }
+
+        T* ptre() { return (T*)data + ITEMS; }
+        const T* ptre() const { return (const T*)data + ITEMS; }
+    };
+
 public:
 
     ///Construct slotalloc container
-    slotalloc_base() : _count(0)
+    slotalloc_base() : _count(0), _created(0)
     {}
 
-    explicit slotalloc_base(uints reserve_items) : _count(0) {
+    explicit slotalloc_base(uints reserve_items) : _count(0), _created(0) {
         reserve(reserve_items);
     }
 
@@ -157,7 +175,7 @@ public:
     }
 
     void swap(slotalloc_base& other) {
-        std::swap(_array, other._array);
+        std::swap(_pages, other._pages);
         std::swap(_allocated, other._allocated);
         std::swap(_count, other._count);
 
@@ -169,20 +187,17 @@ public:
         a.swap(b);
     }
 
-    //@return byte offset to the newly rebased array
-    ints reserve(uints nitems) {
-        T* old = _array.ptr();
-        T* p = _array.reserve(nitems, true);
+    void reserve(uints nitems) {
+        uint npages = align_to_chunks(nitems, page::ITEMS);
+        _pages.reserve(npages, true);
 
         extarray_reserve(nitems);
-
-        return (uints)p - (uints)old;
     }
 
     ///Insert object
     //@return pointer to the newly inserted object
     T* push(const T& v) {
-        bool isold = _count < _array.size();
+        bool isold = _count < _created;
 
         return slotalloc_detail::constructor<POOL, T>::copy_object(
             isold ? alloc(0) : append(),
@@ -193,7 +208,7 @@ public:
     ///Insert object
     //@return pointer to the newly inserted object
     T* push(T&& v) {
-        bool isold = _count < _array.size();
+        bool isold = _count < _created;
 
         return slotalloc_detail::constructor<POOL, T>::copy_object(
             isold ? alloc(0) : append(),
@@ -205,7 +220,7 @@ public:
     template<class...Ps>
     T* push_construct(Ps... ps)
     {
-        bool isold = _count < _array.size();
+        bool isold = _count < _created;
 
         return slotalloc_detail::constructor<POOL, T>::construct_object(
             isold ? alloc(0) : append(),
@@ -215,7 +230,7 @@ public:
 
     ///Add new object initialized with default constructor
     T* add() {
-        bool isold = _count < _array.size();
+        bool isold = _count < _created;
 
         return slotalloc_detail::constructor<POOL, T>::construct_object(
             isold ? alloc(0) : append(),
@@ -242,7 +257,7 @@ public:
     //@param newitem optional variable that receives whether the object slot was newly created (true) or reused from the pool (false)
     //@note if newitem == 0 within the pool mode and thus no way to indicate the item has been reused, the reused objects have destructors called
     T* add_uninit(bool* newitem = 0) {
-        if (_count < _array.size()) {
+        if (_count < _created) {
             T* p = alloc(0);
             if (POOL) {
                 if (!newitem) destroy(*p);
@@ -293,8 +308,8 @@ public:
     ///Delete object in the container
     void del(T* p)
     {
-        uints id = p - _array.ptr();
-        if (id >= _array.size())
+        uints id = get_item_id(p);
+        if (id >= _created)
             throw exception("attempting to delete an invalid object ") << id;
 
         DASSERT_RETVOID(get_bit(id));
@@ -306,9 +321,11 @@ public:
 
         if (!POOL)
             p->~T();
-        clear_bit(id);
 
-        --_count;
+        if (clear_bit(id))
+            --_count;
+        else
+            DASSERT(0);
     }
 
     ///Del range of objects
@@ -330,16 +347,28 @@ public:
                 this->bump_version(idk++);
         }
 
-        clear_bitrange(id, n, _allocated.ptr());
-
-        _count -= n;
+        _count -= clear_bitrange(id, n, _allocated.ptr());
     }
 
     ///Delete object by id
     void del(uints id)
     {
-        DASSERT_RETVOID(id < _array.size());
-        return del(_array.ptr() + id);
+        DASSERT_RETVOID(id < _created);
+
+        if (TRACKING)
+            tracker_t::set_modified(id);
+        if (VERSIONING)
+            this->bump_version(id);
+
+        if (!POOL) {
+            T* p = ptr(id);
+            p->~T();
+        }
+
+        if (clear_bit(id))
+            --_count;
+        else
+            DASSERT(0);
     }
 
 
@@ -349,17 +378,17 @@ public:
     {
         DASSERT_RETVOID(this->check_versionid(vid));
 
-        return del(_array.ptr() + vid.id);
+        return del(vid.id);
     }
 
     //@return number of used slots in the container
     uints count() const { return _count; }
 
     //@return allocated count (not necessarily used)
-    uints allocated_count() const { return _array.size(); }
+    uints allocated_count() const { return _created; }
 
     //@return true if next allocation would rebase the array
-    bool full() const { return (_count + 1) * sizeof(T) > _array.reserved_total(); }
+    //bool full() const { return (_count + 1) * sizeof(T) > _array.reserved_total(); }
 
 
     //@{ accessors with versionid argument, enabled only if versioning is on
@@ -369,8 +398,8 @@ public:
     template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
     const T* get_item(versionid vid) const
     {
-        DASSERT_RET(vid.id < _array.size() && this->check_versionid(vid) && get_bit(vid.id), 0);
-        return _array.ptr() + vid.id;
+        DASSERT_RET(vid.id < _created && this->check_versionid(vid) && get_bit(vid.id), 0);
+        return ptr(vid.id);
     }
 
     ///Return an item given id
@@ -379,8 +408,8 @@ public:
     template <bool T1 = VERSIONING && !TRACKING, typename = std::enable_if_t<T1>>
     T* get_item(versionid vid)
     {
-        DASSERT_RET(vid.id < _array.size() && this->check_versionid(vid) && get_bit(vid.id), 0);
-        return _array.ptr() + vid.id;
+        DASSERT_RET(vid.id < _created && this->check_versionid(vid) && get_bit(vid.id), 0);
+        return ptr(vid.id);
     }
 
     ///Return an item given id
@@ -388,10 +417,10 @@ public:
     template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
     T* get_mutable_item(versionid vid)
     {
-        DASSERT_RET(vid.id < _array.size() && this->check_versionid(vid) && get_bit(vid.id), 0);
+        DASSERT_RET(vid.id < _created && this->check_versionid(vid) && get_bit(vid.id), 0);
         if (TRACKING)
             tracker_t::set_modified(vid.id);
-        return _array.ptr() + vid.id;
+        return ptr(vid.id);
     }
 
     template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
@@ -412,8 +441,8 @@ public:
     //@param id id of the item
     const T* get_item(uints id) const
     {
-        DASSERT_RET(id < _array.size() && get_bit(id), 0);
-        return _array.ptr() + id;
+        DASSERT_RET(id < _created && get_bit(id), 0);
+        return ptr(id);
     }
 
     ///Return an item given id
@@ -422,18 +451,18 @@ public:
     template <bool T1 = TRACKING, typename = std::enable_if_t<!T1>>
     T* get_item(uints id)
     {
-        DASSERT_RET(id < _array.size() && get_bit(id), 0);
-        return _array.ptr() + id;
+        DASSERT_RET(id < _created && get_bit(id), 0);
+        return ptr(id);
     }
 
     ///Return an item given id
     //@param id id of the item
     T* get_mutable_item(uints id)
     {
-        DASSERT_RET(id < _array.size() && get_bit(id), 0);
+        DASSERT_RET(id < _created && get_bit(id), 0);
         if (TRACKING)
             tracker_t::set_modified(id);
-        return _array.ptr() + id;
+        return ptr(id);
     }
 
     const T& operator [] (uints id) const {
@@ -457,12 +486,12 @@ public:
             return add();
         }
 
-        if (id < _array.size()) {
+        if (id < _created) {
             //within allocated space
             if (TRACKING)
                 tracker_t::set_modified(id);
 
-            T* p = _array.ptr() + id;
+            T* p = ptr(id);
 
             if (get_bit(id)) {
                 //existing object
@@ -482,9 +511,9 @@ public:
         }
 
         //extra space needed
-        uints n = id + 1 - _array.size();
+        uints n = id + 1 - _created;
 
-        //in POOL mode unallocated items in between valid ones are assumed to be constructed
+        //in POOL mode the unallocated items in between the valid ones are assumed to be constructed
         if (POOL) {
             extarray_expand(n);
             _array.add(n);
@@ -512,10 +541,16 @@ public:
     //@return id of given item, or UMAXS if the item is not managed here
     uints get_item_id(const T* p) const
     {
-        uints id = p - _array.ptr();
-        return id < _array.size()
-            ? id
-            : UMAXS;
+        const page* b = _pages.ptr();
+        const page* e = _pages.ptre();
+        uints id = 0;
+
+        for (const page* pg = b; pg < e; ++pg, id += page::ITEMS) {
+            if (p >= pg->ptr() && p < pg->ptre())
+                return id + (p - pg->ptr());
+        }
+
+        return UMAXS;
     }
 
     //@return if of given item in ext array or UMAXS if the item is not managed here
@@ -533,10 +568,10 @@ public:
     template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
     versionid get_item_versionid(const T* p) const
     {
-        uints id = p - _array.ptr();
-        return id < _array.size()
-            ? this->get_versionid(id)
-            : versionid();
+        uints id = get_item_id(p);
+        return id == UMAXS
+            ? versionid()
+            : this->get_versionid(id);
     }
 
     //@return true if item with id is valid
@@ -575,16 +610,15 @@ public:
 
         //destroy occupied slots
         if (!POOL) {
-            for_each([](T& p) {destroy(p); });
-
+            destruct();
             extarray_reset();
         }
+        else
+            extarray_reset_count();
 
         _count = 0;
 
-        extarray_reset_count();
-
-        _array.set_size(0);
+        //_array.set_size(0);
         _allocated.set_size(0);
     }
 
@@ -592,24 +626,22 @@ public:
     void discard()
     {
         //destroy occupied slots
-        if (!POOL) {
-            for_each([](T& p) {destroy(p); });
-
-            extarray_reset_count();
-
-            _array.set_size(0);
-            _allocated.set_size(0);
-        }
+        destruct();
+        extarray_discard();
 
         _count = 0;
 
-        _array.discard();
+        _pages.discard();
         _allocated.discard();
-
-        extarray_discard();
     }
 
 protected:
+
+    void destruct()
+    {
+        for_each([](T& v) { destroy(v); });
+        _created = 0;
+    }
 
 
     //@{Helper functions for for_each to allow calling with optional index argument
@@ -770,7 +802,6 @@ public:
         const bool all_modified = bitplane_mask > slotalloc_detail::changeset::BITPLANE_MASK;
 
         typedef std::remove_pointer_t<std::remove_reference_t<typename closure_traits<Func>::template arg<0>>> Tx;
-        Tx* d = const_cast<Tx*>(_array.ptr());
         uint_type const* b = const_cast<uint_type const*>(_allocated.ptr());
         uint_type const* e = const_cast<uint_type const*>(_allocated.ptre());
         uint_type const* p = b;
@@ -787,7 +818,7 @@ public:
 
             for (int i = 0; ch < che && i < MASK_BITS; ++i, m >>= 1, ++ch) {
                 if (all_modified || (ch->mask & bitplane_mask) != 0) {
-                    Tx* p = (m & 1) != 0 ? d + s + i : 0;
+                    Tx* p = (m & 1) != 0 ?  d + s + i : 0;
                     funccallp(f, p, s + i);
                 }
             }
@@ -801,23 +832,35 @@ public:
     T* find_if(Func f) const
     {
         typedef std::remove_reference_t<typename closure_traits<Func>::template arg<0>> Tx;
-        Tx* d = const_cast<Tx*>(_array.ptr());
         uint_type const* b = const_cast<uint_type const*>(_allocated.ptr());
         uint_type const* e = const_cast<uint_type const*>(_allocated.ptre());
         uints s = 0;
 
-        for (uint_type const* p = b; p != e; ++p, s += MASK_BITS) {
-            if (*p == 0)
-                continue;
+        const page* pb = _pages.ptr();
+        const page* pe = _pages.ptre();
 
-            uints m = 1;
-            for (int i = 0; i < MASK_BITS; ++i, m <<= 1) {
-                if (*p & m) {
-                    if (funccall(f, d[s + i], s + i))
-                        return const_cast<T*>(d) + (s + i);
+        uint_type const* p = b;
+
+        for (const page* pp = pb; pp < pe; ++pp)
+        {
+            Tx* d = const_cast<Tx*>(pp->data);
+            uint_type const* ep = e - p > page::NMASK
+                ? p + page::NMASK
+                : e;
+
+            for (; p != ep; ++p, s += MASK_BITS) {
+                if (*p == 0)
+                    continue;
+
+                uints m = 1;
+                for (int i = 0; i < MASK_BITS; ++i, m <<= 1) {
+                    if (*p & m) {
+                        if (funccall(f, d[s + i], s + i))
+                            return const_cast<T*>(d) + (s + i);
+                    }
+                    else if ((*p & ~(m - 1)) == 0)
+                        break;
                 }
-                else if ((*p & ~(m - 1)) == 0)
-                    break;
             }
         }
 
@@ -827,8 +870,8 @@ public:
 
     //@{ Get internal array directly
     //@note altering the array directly may invalidate the internal structure
-    dynarray<T>& get_array() { return _array; }
-    const dynarray<T>& get_array() const { return _array; }
+    //dynarray<T>& get_array() { return _array; }
+    //const dynarray<T>& get_array() const { return _array; }
     //@}
 
     //@return bit array with marked item allocations
@@ -836,25 +879,27 @@ public:
 
     //@{ functions for bit array
     template <class B>
-    static void set_bit(dynarray<B>& bitarray, uints k)
+    static bool set_bit(dynarray<B>& bitarray, uints k)
     {
         static const int NBITS = 8 * sizeof(B);
         using U = underlying_bitrange_type_t<B>;
         uints s = k / NBITS;
         uints b = k % NBITS;
 
-        bitarray.get_or_addc(s) |= U(1) << b;
+        B& v = bitarray.get_or_addc(s);
+        return (U::fetch_or(v, m) & m) != 0;
     }
 
     template <class B>
-    static void clear_bit(dynarray<B>& bitarray, uints k)
+    static bool clear_bit(dynarray<B>& bitarray, uints k)
     {
         static const int NBITS = 8 * sizeof(B);
         using U = underlying_bitrange_type_t<B>;
         uints s = k / NBITS;
         uints b = k % NBITS;
 
-        bitarray.get_or_addc(s) &= ~(U(1) << b);
+        B& v = bitarray.get_or_addc(s);
+        return (U::fetch_add(~m) & m) != 0;
     }
 
     template <class B>
@@ -913,13 +958,21 @@ public:
 
 private:
 
-    typedef typename std::conditional<ATOMIC, std::atomic<uints>, uints>::type uint_type;
+    typedef typename std::conditional<ATOMIC, std::atomic<uints>, uints>::type
+        uint_type;
 
-    static const int MASK_BITS = 8 * sizeof(uint_type);
+    //dynarray<T> _array;                 //< main data array
+    dynarray<page> _pages;
 
-    dynarray<T> _array;                 //< main data array
     dynarray<uint_type> _allocated;     //< bit mask for allocated/free items
+
     uint_type _count;                   //< active element count
+    uint_type _created;                 //< number of continuous created elements in pages
+
+
+    uints max_count() const {
+        return _pages.size() * page::ITEMS;
+    }
 
     ///Helper to expand all ext arrays
     template<size_t... Index>
@@ -1001,6 +1054,16 @@ private:
     }
 
 
+    const T* ptr(uints id) const {
+        DASSERT(id / page::ITEMS < _pages.size());
+        return _pages[id / page::ITEMS].data + id % page::ITEMS;
+    }
+
+    T* ptr(uints id) {
+        DASSERT(id / page::ITEMS < _pages.size());
+        return _pages[id / page::ITEMS].data + id % page::ITEMS;
+    }
+
     ///Return allocated slot
     T* alloc(uints* pid)
     {
@@ -1057,7 +1120,7 @@ private:
     {
         uints count = _count;
 
-        DASSERT(count == _array.size());
+        DASSERT(count == _created);
         set_bit(count);
 
         extarray_expand();
@@ -1085,12 +1148,12 @@ private:
         return p;
     }
 
-    void set_bit(uints k) { return set_bit(_allocated, k); }
-    void clear_bit(uints k) { return clear_bit(_allocated, k); }
+    bool set_bit(uints k) { return set_bit(_allocated, k); }
+    bool clear_bit(uints k) { return clear_bit(_allocated, k); }
     bool get_bit(uints k) const { return get_bit(_allocated, k); }
 
     //WA for lambda template error
-    void static destroy(T& p) { p.~T(); }
+    //void static destroy(T& p) { p.~T(); }
 
 
     static void update_changeset(uint frame, dynarray<changeset_t>& changeset)

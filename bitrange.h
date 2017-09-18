@@ -167,16 +167,45 @@ inline uints nearest_high_pow2( uints x ) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+//@return count of bits set to 1
+inline uint8 population_count(uint16 val) { return uint8(__popcnt16(val)); }
+inline uint8 population_count(uint32 val) { return uint8(__popcnt(val)); }
+inline uint8 population_count(uint64 val) { return uint8(__popcnt64(val)); }
+
+////////////////////////////////////////////////////////////////////////////////
+
 #if !defined(SYSTYPE_MSVC) || SYSTYPE_MSVC >= 1800
 
 template <class T>
 struct underlying_bitrange_type {
     typedef std::make_unsigned_t<std::remove_cv_t<T>> type;
+    typedef T base;
+
+    static T fetch_and(T& v, T m) {
+        T r = v;
+        v &= m;
+        return r;
+    }
+
+    static T fetch_or(T& v, T m) {
+        T r = v;
+        v |= m;
+        return r;
+    }
 };
 
 template <class T>
 struct underlying_bitrange_type<std::atomic<T>> {
     typedef std::make_unsigned_t<std::remove_cv_t<T>> type;
+    typedef std::atomic<T> base;
+
+    static T fetch_and(base& v, T m) {
+        return v.fetch_add(m);
+    }
+
+    static T fetch_or(base& v, T m) {
+        return v.fetch_or(m);
+    }
 };
 
 template <class T>
@@ -238,14 +267,16 @@ inline uints find_zero_bitrange( uints n, const T* begin, const T* end )
     while (true);
 }
 
+//@return number of bits in the range that were set
 template <class T>
-void set_bitrange( uints from, uints n, T* ptr )
+uint set_bitrange( uints from, uints n, T* ptr )
 {
     using U = underlying_bitrange_type_t<T>;
 
     static const int NBITS = 8 * sizeof(T);
     uints slot = from / NBITS;
     uints bit = from % NBITS;
+    uint count = 0;
 
     ptr += slot;
 
@@ -255,19 +286,25 @@ void set_bitrange( uints from, uints n, T* ptr )
             nbmax = uint8(n);
         n -= nbmax;
 
-        *ptr++ |= (U(-1) >> (NBITS-nbmax)) << bit;
+        T m = (U(-1) >> (NBITS - nbmax)) << bit;
+        T r = U::fetch_or(*ptr++, m);
+        count += population_count(~r & m);
         bit = 0;
     }
+
+    return count;
 }
 
+//@return number of bits in the range that were set
 template <class T>
-void clear_bitrange( uints from, uints n, T* ptr )
+uint clear_bitrange( uints from, uints n, T* ptr )
 {
     using U = underlying_bitrange_type_t<T>;
 
     static const int NBITS = 8 * sizeof(T);
     uints slot = from / NBITS;
     uints bit = from % NBITS;
+    uint count = 0;
 
     ptr += slot;
 
@@ -277,15 +314,14 @@ void clear_bitrange( uints from, uints n, T* ptr )
             nbmax = uint8(n);
         n -= nbmax;
 
-        *ptr++ &= ~((U(-1) >> (NBITS-nbmax)) << bit);
+        T m = (U(-1) >> (NBITS - nbmax)) << bit;
+        T r = U::fetch_and(*ptr++, ~m);
+        count += population_count(r & m);
         bit = 0;
     }
-}
 
-//@return count of bits set to 1
-inline uint8 popultaion_count(ushort val) { return uint8(__popcnt16(val)); }
-inline uint8 popultaion_count(uint32 val) { return uint8(__popcnt(val)); }
-inline uint8 popultaion_count(uint64 val) { return uint8(__popcnt64(val)); }
+    return count;
+}
 
 #endif
 
