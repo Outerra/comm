@@ -94,7 +94,6 @@ protected:
         changeset_t;
 
     enum : bool { POOL = MODE & slotalloc_mode::pool };
-    //enum : bool { NOREBASE = MODE & slotalloc_mode::norebase };
     enum : bool { ATOMIC = MODE & slotalloc_mode::atomic };
     enum : bool { TRACKING = MODE & slotalloc_mode::tracking };
     enum : bool { VERSIONING = MODE & slotalloc_mode::versioning };
@@ -104,17 +103,27 @@ private:
     static const int MASK_BITS = 8 * sizeof(uints);
 
     ///Allocation page
-    struct page {
+    struct page
+    {
         static const uint ITEMS = 256;
         static const uint NMASK = ITEMS / MASK_BITS;
 
-        uint8 data[ITEMS * sizeof(T)];
+        T* data;
 
-        T* ptr() { return (T*)data; }
-        const T* ptr() const { return (const T*)data; }
+        T* ptr() { return data; }
+        const T* ptr() const { return data; }
 
-        T* ptre() { return (T*)data + ITEMS; }
-        const T* ptre() const { return (const T*)data + ITEMS; }
+        T* ptre() { return data + ITEMS; }
+        const T* ptre() const { return data + ITEMS; }
+
+        page() {
+            data = (T*)dlmalloc(ITEMS * sizeof(T));
+        }
+
+        ~page() {
+            dlfree(data);
+            data = 0;
+        }
     };
 
 public:
@@ -188,7 +197,7 @@ public:
     }
 
     void reserve(uints nitems) {
-        uint npages = align_to_chunks(nitems, page::ITEMS);
+        uint npages = uint(align_to_chunks(nitems, page::ITEMS));
         _pages.reserve(npages, true);
 
         extarray_reserve(nitems);
@@ -229,36 +238,20 @@ public:
     }
 
     ///Add new object initialized with default constructor
-    T* add() {
+    T* add(uints* pid = 0) {
         bool isold = _count < _created;
 
         return slotalloc_detail::constructor<POOL, T>::construct_object(
-            isold ? alloc(0) : append(),
+            isold ? alloc(pid) : append(pid),
             !POOL || !isold);
-    }
-
-    ///Add range of objects initialized with default constructors
-    T* add_range(uints n) {
-        if (n == 0)
-            return 0;
-        if (n == 1)
-            return add();
-
-        uints old;
-        T* p = alloc_range(n, &old);
-
-        for (uints i = 0; i < n; ++i)
-            slotalloc_detail::constructor<POOL, T>::construct_object(p + i, i >= old);
-
-        return p;
     }
 
     ///Add new object, uninitialized (no constructor invoked on the object)
     //@param newitem optional variable that receives whether the object slot was newly created (true) or reused from the pool (false)
     //@note if newitem == 0 within the pool mode and thus no way to indicate the item has been reused, the reused objects have destructors called
-    T* add_uninit(bool* newitem = 0) {
+    T* add_uninit(bool* newitem = 0, uints* pid = 0) {
         if (_count < _created) {
-            T* p = alloc(0);
+            T* p = alloc(pid);
             if (POOL) {
                 if (!newitem) destroy(*p);
                 else *newitem = false;
@@ -266,44 +259,112 @@ public:
             return p;
         }
         if (newitem) *newitem = true;
-        return append();
+        return append(pid);
     }
 
-    ///Add new object, uninitialized (no constructor invoked on the object)
-    //@param newitem optional variable that receives whether the object slot was newly created (true) or reused from the pool (false)
-    //@note if nreused == 0 within the pool mode and thus no way to indicate the item has been reused, the reused objects have destructors called
-    T* add_range_uninit(uints n, uints* nreused = 0) {
+    ///Add range of objects initialized with default constructors
+    //@return id to the beginning of the allocated range
+    uints add_range(uints n) {
         if (n == 0)
+            return UMAXS;
+        if (n == 1) {
+            uints id;
+            add(&id);
+            return id;
+        }
+
+        uints nold;
+        uints id = alloc_range(n, &nold, false);
+
+        for_range_unchecked(id, n, [&](T* p) {
+            slotalloc_detail::constructor<POOL, T>::construct_object(p, !POOL || nold == 0);
+            if (nold)
+                nold--;
+        });
+
+        return id;
+    }
+
+    ///Add range of objects, uninitialized (no constructor invoked on the objects)
+    //@param nreused optional variable receiving the number of objects that were reused from the pool and are constructed already
+    //@note if nreused == 0 within the pool mode and thus no way to indicate the item has been reused, the reused objects have destructors called
+    //@return id to the beginning of the allocated range
+    uints add_range_uninit(uints n, uints* nreused = 0) {
+        if (n == 0)
+            return UMAXS;
+        if (n == 1) {
+            bool newitem;
+            uints id;
+            T* p = add_uninit(&newitem, &id);
+            if (nreused)
+                *nreused = newitem ? 0 : 1;
+            else if (POOL && !newitem)
+                destroy(*p);
+            return id;
+        }
+
+        uints nold;
+        uints id = alloc_range(n, &nold, true);
+
+        if (POOL && nreused == 0) {
+            for_range_unchecked(id, nold, [](T* p) { destroy(*p); });
+        }
+
+        if (nreused)
+            *nreused = POOL ? nold : 0;
+
+        return id;
+    }
+
+    ///Add range of objects initialized with default constructors
+    //@return id to the beginning of the allocated range
+    T* add_contiguous_range(uints n) {
+        if (n == 0 || n > page::ITEMS)
+            return 0;
+        if (n == 1)
+            return add(&id);
+
+        uints nold;
+        uints id = alloc_range_contiguous(n, &nold, false);
+
+        for_range_unchecked(id, n, [&](T* p) {
+            slotalloc_detail::constructor<POOL, T>::construct_object(p, !POOL || nold == 0);
+            if (nold)
+                nold--;
+        });
+
+        return ptr(id);
+    }
+
+    ///Add range of objects, uninitialized (no constructor invoked on the objects)
+    //@param nreused optional variable receiving the number of objects that were reused from the pool and are constructed already
+    //@note if nreused == 0 within the pool mode and thus no way to indicate the item has been reused, the reused objects have destructors called
+    //@return id to the beginning of the allocated range
+    T* add_contiguous_range_uninit(uints n, uints* nreused = 0) {
+        if (n == 0 || n > page::ITEMS)
             return 0;
         if (n == 1) {
             bool newitem;
             T* p = add_uninit(&newitem);
             if (nreused)
                 *nreused = newitem ? 0 : 1;
+            else if (POOL && !newitem)
+                destroy(*p);
             return p;
         }
 
-        uints old;
-        T* p = alloc_range(n, &old);
+        uints nold;
+        uints id = alloc_range_contiguous(n, &nold, true);
 
         if (POOL && nreused == 0) {
-            for (uints i = 0; i < old; ++i)
-                destroy(p[i]);
+            for_range_unchecked(id, nold, [](T* p) { destroy(*p); });
         }
 
         if (nreused)
-            *nreused = old;
+            *nreused = POOL ? nold : 0;
 
-        return p;
+        return ptr(id);
     }
-
-    /*
-        //@return id of the next object that will be allocated with add/push methods
-        uints get_next_id() const {
-            return _unused != reinterpret_cast<const T*>(this)
-                ? _unused - _array.ptr()
-                : _array.size();
-        }*/
 
     ///Delete object in the container
     void del(T* p)
@@ -338,8 +399,8 @@ public:
         uints id = get_item_id(p);
         uints idk = id;
 
-        uint pg = id / page::ITEMS;
-        uint s = id % page::ITEMS;
+        uint pg = uint(id / page::ITEMS);
+        uint s = uint(id % page::ITEMS);
         uints nr = n;
 
         while (nr > 0) {
@@ -397,10 +458,6 @@ public:
 
     //@return allocated count (not necessarily used)
     uints allocated_count() const { return _created; }
-
-    //@return true if next allocation would rebase the array
-    //bool full() const { return (_count + 1) * sizeof(T) > _array.reserved_total(); }
-
 
     //@{ accessors with versionid argument, enabled only if versioning is on
 
@@ -758,7 +815,7 @@ public:
 
         for (const page* pp = bp; pp < ep; ++pp, gbase += page::ITEMS)
         {
-            Tx* d = const_cast<Tx*>(pp->ptr());
+            T* d = const_cast<T*>(pp->ptr());
             uint_type const* epm = em - pm > page::NMASK
                 ? pm + page::NMASK
                 : em;
@@ -835,7 +892,7 @@ public:
 
         for (const page* pp = bp; pp < ep; ++pp, gbase += page::ITEMS)
         {
-            Tx* d = const_cast<Tx*>(pp->data);
+            T* d = const_cast<T*>(pp->data);
             changeset_t const* epc = ec - pc > page::NMASK
                 ? pc + page::ITEMS
                 : ec;
@@ -847,11 +904,34 @@ public:
 
                 for (int i = 0; pc < epc && i < MASK_BITS; ++i, m >>= 1, ++pc) {
                     if (all_modified || (pc->mask & bitplane_mask) != 0) {
-                        Tx* pd = (m & 1) != 0 ? d + pbase + i : 0;
+                        Tx* pd = (m & 1) != 0 ? (Tx*)(d + pbase + i) : nullptr;
                         funccallp(f, pd, gbase + i);
                     }
                 }
             }
+        }
+    }
+
+    ///Run f(T*) on a range of items
+    //@note this function ignores whether the items in range are allocated or not
+    template<typename Func>
+    void for_range_unchecked(uints id, uints count, Func f)
+    {
+        DASSERT_RETVOID(id + count <= _created);
+
+        uint pg = uint(id / page::ITEMS);
+        uint s = uint(id % page::ITEMS);
+
+        while (count > 0) {
+            T* b = _pages[pg].ptr() + s;
+            uints na = stdmin(page::ITEMS - s, count);
+            T* e = b + na;
+
+            for (; b < e; ++b)
+                f(b);
+
+            count -= na;
+            s = 0;
         }
     }
 
@@ -873,7 +953,7 @@ public:
 
         for (const page* pp = pb; pp < pe; ++pp)
         {
-            Tx* d = const_cast<Tx*>(pp->data);
+            T* d = const_cast<T*>(pp->ptr());
             uint_type const* ep = e - p > page::NMASK
                 ? p + page::NMASK
                 : e;
@@ -912,26 +992,28 @@ public:
     static bool set_bit(dynarray<B>& bitarray, uints k)
     {
         static const int NBITS = 8 * sizeof(B);
-        using U = underlying_bitrange_type_t<B>;
+        using Ub = underlying_bitrange_type<B>;
+        using U = typename Ub::type;
         uints s = k / NBITS;
         uints b = k % NBITS;
 
         U m = U(1) << b;
         B& v = bitarray.get_or_addc(s);
-        return (underlying_bitrange_type<B>::fetch_or(v, m) & m) != 0;
+        return (Ub::fetch_or(v, m) & m) != 0;
     }
 
     template <class B>
     static bool clear_bit(dynarray<B>& bitarray, uints k)
     {
         static const int NBITS = 8 * sizeof(B);
-        using U = underlying_bitrange_type_t<B>;
+        using Ub = underlying_bitrange_type<B>;
+        using U = typename Ub::type;
         uints s = k / NBITS;
         uints b = k % NBITS;
 
         U m = U(1) << b;
         B& v = bitarray.get_or_addc(s);
-        return (underlying_bitrange_type<B>::fetch_add(~m) & m) != 0;
+        return (Ub::fetch_and(v, ~m) & m) != 0;
     }
 
     template <class B>
@@ -1126,7 +1208,8 @@ private:
         return ptr(id);
     }
 
-    T* alloc_range(uints n, uints* old)
+    //@param old receives number of reused objects lying at the beginning of the range
+    uints alloc_range(uints n, uints* old, bool uninit)
     {
         uints id = find_zero_bitrange(n, _allocated.ptr(), _allocated.ptre());
         uints nslots = align_to_chunks(id + n, MASK_BITS);
@@ -1138,18 +1221,64 @@ private:
 
         uints nadd = id + n > _created ? id + n - _created : 0;
         if (nadd)
-            expand(nadd);
+            expand(nadd, uninit);
         *old = n - nadd;
 
         _count += n;
 
         DASSERT(!TRACKING);
+        return id;
+    }
 
-        return ptr(id);
+    uints alloc_range_contiguous(uints n, uints* old, bool uninit)
+    {
+        if (n > page::ITEMS)
+            return UMAXS;
+
+        page* bp = _pages.ptr();
+        page* ep = _pages.ptre();
+        page* pp = bp;
+        uint_type const* bm = _allocated.ptr();
+        uint_type const* em = _allocated.ptre();
+        uint_type const* pm = bm;
+        uints id;
+
+        for (; pp < ep; ++pp)
+        {
+            uint_type const* epm = em - pm > page::NMASK
+                ? pm + page::NMASK
+                : em;
+
+            id = find_zero_bitrange(n, pm, epm);
+            if (id + n <= page::ITEMS)
+                break;
+        }
+
+        if (pp == ep) {
+            id = _pages.size() * page::ITEMS;
+            pp = _pages.add();
+        }
+
+        uints nslots = align_to_chunks(id + n, MASK_BITS);
+
+        if (nslots > _allocated.size())
+            _allocated.addc(nslots - _allocated.size());
+
+        set_bitrange(id, n, _allocated.ptr());
+
+        uints nadd = id + n > _created ? id + n - _created : 0;
+        if (nadd)
+            expand(nadd, uninit);
+        *old = n - nadd;
+
+        _count += n;
+
+        DASSERT(!TRACKING);
+        return id;
     }
 
     ///Append to a full array
-    T* append()
+    T* append(uints* pid = 0)
     {
         uints count = _count;
 
@@ -1157,6 +1286,8 @@ private:
         set_bit(count);
 
         extarray_expand(1);
+        if (pid)
+            *pid = _count;
         ++_count;
 
         if (TRACKING)
@@ -1167,40 +1298,24 @@ private:
 
     ///Adds physical space for n items
     //@return ptr to the last created item
-    T* expand(uints n)
+    T* expand(uints n, bool uninit = false)
     {
-        ints ip = _created + n - max_count();
-        if (ip > 0)
-            _pages.add(align_to_chunks(ip, page::ITEMS));
+        uints np = align_to_chunks(_created + n, page::ITEMS);
+        if (np > _pages.size())
+            _pages.realloc(np);
+
+        uints base = _created;
+        _created += n;
 
         //in POOL mode the unallocated items in between the valid ones are assumed to be constructed
-        if (POOL && n > 1) {
-            for_range(_created, n - 1, [](T* p) {
+        if (POOL && !uninit && n > 1) {
+            for_range_unchecked(base, n - 1, [](T* p) {
                 new(p) T;
             });
         }
 
-        _created += n;
-        return new(ptr(_created - 1)) T;
-    }
-
-    template<typename Func>
-    void for_range(uints id, uints count, Func f)
-    {
-        uint pg = uint(id / page::ITEMS);
-        uint s = uint(id % page::ITEMS);
-
-        while (count > 0) {
-            T* b = _pages[pg].ptr() + s;
-            uints na = stdmin(page::ITEMS - s, count);
-            T* e = b + na;
-
-            for (; b < e; ++b)
-                f(b);
-
-            count -= na;
-            s = 0;
-        }
+        T* p = ptr(_created - 1);
+        return uninit ? p : new(p) T;
     }
 
     bool set_bit(uints k) { return set_bit(_allocated, k); }
@@ -1254,13 +1369,7 @@ template<class T, class ...Es>
 using slotalloc_pool = slotalloc_base<T, slotalloc_mode::pool, Es...>;
 
 template<class T, class ...Es>
-using slotalloc_fixed_pool = slotalloc_base<T, slotalloc_mode::pool | slotalloc_mode::norebase, Es...>;
-
-template<class T, class ...Es>
 using slotalloc_atomic_pool = slotalloc_base<T, slotalloc_mode::pool | slotalloc_mode::atomic, Es...>;
-
-template<class T, class ...Es>
-using slotalloc_fixed_atomic_pool = slotalloc_base<T, slotalloc_mode::pool | slotalloc_mode::norebase | slotalloc_mode::atomic, Es...>;
 
 template<class T, class ...Es>
 using slotalloc_tracking_pool = slotalloc_base<T, slotalloc_mode::pool | slotalloc_mode::tracking, Es...>;

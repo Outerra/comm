@@ -47,7 +47,7 @@ enum class slotalloc_mode
 {
     base            = 0,
     pool            = 1,                //< pool mode, destructors not called on item deletion, only on container deletion
-    norebase        = 2,                //< throws an exception if item array is rebased (must be reserved in advance)
+
     atomic          = 4,                //< ins/del operations are done as atomic operations
     tracking        = 8,                //< adds data and methods needed for tracking the modifications
     versioning      = 16,               //< adds data and methods needed to track version of array items, to handle cases when a new item occupies the same slot and old references to the slot should be invalid

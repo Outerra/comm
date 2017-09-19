@@ -40,6 +40,7 @@
 
 #include "namespace.h"
 #include <type_traits>
+#include <limits>
 
 #if defined(__MINGW32__)
 

@@ -401,5 +401,6 @@
     <ClInclude Include="..\..\..\alloc\slotalloc_tracker.h">
       <Filter>alloc</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\taskmaster.h" />
   </ItemGroup>
 </Project>

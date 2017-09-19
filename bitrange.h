@@ -87,9 +87,11 @@ inline uint8 msb_bit_set(uint v)    { DASSERT(v); ulong idx; _BitScanReverse(&id
 inline uint8 msb_bit_set(uint64 v)  { DASSERT(v); ulong idx; _BitScanReverse64(&idx, v); return uint8(idx); }
 //@}
 
+#ifdef SYSTYPE_32
 inline uint8 __popcnt64(uint64 val) {
     return uint8(__popcnt(uint(val)) + __popcnt(uint(val >> 32)));
 }
+#endif
 
 #else
 //@{
@@ -173,6 +175,19 @@ inline uint8 population_count(uint16 val) { return uint8(__popcnt16(val)); }
 inline uint8 population_count(uint32 val) { return uint8(__popcnt(val)); }
 inline uint8 population_count(uint64 val) { return uint8(__popcnt64(val)); }
 
+#ifdef SYSTYPE_WIN
+# ifdef SYSTYPE_32
+inline uint8 population_count(ints val) { return population_count(uint32(val)); }
+inline uint8 population_count(uints val) { return population_count(uint32(val)); }
+# else //SYSTYPE_64
+inline uint8 population_count(int val) { return population_count(uint32(val)); }
+inline uint8 population_count(uint val) { return population_count(uint32(val)); }
+# endif
+#elif defined(SYSTYPE_32)
+inline uint8 population_count(long val) { return population_count(uint32(val)); }
+inline uint8 population_count(ulong val) { return population_count(uint32(val)); }
+#endif //SYSTYPE_WIN
+
 ////////////////////////////////////////////////////////////////////////////////
 
 #if !defined(SYSTYPE_MSVC) || SYSTYPE_MSVC >= 1800
@@ -182,14 +197,14 @@ struct underlying_bitrange_type {
     typedef std::make_unsigned_t<std::remove_cv_t<T>> type;
     typedef T base;
 
-    static T fetch_and(T& v, T m) {
-        T r = v;
+    static type fetch_and(base& v, type m) {
+        type r = v;
         v &= m;
         return r;
     }
 
-    static T fetch_or(T& v, T m) {
-        T r = v;
+    static type fetch_or(base& v, type m) {
+        type r = v;
         v |= m;
         return r;
     }
@@ -200,11 +215,11 @@ struct underlying_bitrange_type<std::atomic<T>> {
     typedef std::make_unsigned_t<std::remove_cv_t<T>> type;
     typedef std::atomic<T> base;
 
-    static T fetch_and(base& v, T m) {
-        return v.fetch_add(m);
+    static type fetch_and(base& v, type m) {
+        return v.fetch_and(m);
     }
 
-    static T fetch_or(base& v, T m) {
+    static type fetch_or(base& v, type m) {
         return v.fetch_or(m);
     }
 };
@@ -272,7 +287,8 @@ inline uints find_zero_bitrange( uints n, const T* begin, const T* end )
 template <class T>
 uint set_bitrange( uints from, uints n, T* ptr )
 {
-    using U = underlying_bitrange_type_t<T>;
+    using Ub = underlying_bitrange_type<T>;
+    using U = typename Ub::type;
 
     static const int NBITS = 8 * sizeof(T);
     uints slot = from / NBITS;
@@ -287,8 +303,8 @@ uint set_bitrange( uints from, uints n, T* ptr )
             nbmax = uint8(n);
         n -= nbmax;
 
-        T m = (U(-1) >> (NBITS - nbmax)) << bit;
-        T r = U::fetch_or(*ptr++, m);
+        U m = (U(-1) >> (NBITS - nbmax)) << bit;
+        U r = Ub::fetch_or(*ptr++, m);
         count += population_count(~r & m);
         bit = 0;
     }
@@ -300,7 +316,8 @@ uint set_bitrange( uints from, uints n, T* ptr )
 template <class T>
 uint clear_bitrange( uints from, uints n, T* ptr )
 {
-    using U = underlying_bitrange_type_t<T>;
+    using Ub = underlying_bitrange_type<T>;
+    using U = typename Ub::type;
 
     static const int NBITS = 8 * sizeof(T);
     uints slot = from / NBITS;
@@ -315,8 +332,8 @@ uint clear_bitrange( uints from, uints n, T* ptr )
             nbmax = uint8(n);
         n -= nbmax;
 
-        T m = (U(-1) >> (NBITS - nbmax)) << bit;
-        T r = U::fetch_and(*ptr++, ~m);
+        U m = (U(-1) >> (NBITS - nbmax)) << bit;
+        U r = Ub::fetch_and(*ptr++, ~m);
         count += population_count(r & m);
         bit = 0;
     }
