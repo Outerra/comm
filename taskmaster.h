@@ -288,7 +288,7 @@ protected:
 
         template <class C, size_t ...I>
         void invoke_memberfn(C& obj, index_sequence<I...>) {
-            ((*obj).*_fn)(std::get<I>(_tuple)...);
+            (obj.*_fn)(std::get<I>(_tuple)...);
         }
 
     private:
@@ -336,6 +336,28 @@ protected:
     private:
 
         C _obj;
+    };
+
+    ///invoker for member functions
+    template <typename Fn, typename C, typename ...Args>
+    struct invoker_memberfn<Fn, iref<C>, Args...> : invoker_common<Fn, Args...>
+    {
+        invoker_memberfn(int sync, Fn fn, const iref<C>& obj, Args&&... args)
+            : invoker_common<Fn, Args...>(sync, fn, std::forward<Args>(args)...)
+            , _obj(obj)
+        {}
+
+        void invoke() override final {
+            this->invoke_memberfn(*_obj, make_index_sequence<sizeof...(Args)>());
+        }
+
+        size_t size() const override final {
+            return sizeof(*this);
+        }
+
+    private:
+
+        iref<C> _obj;
     };
 
 
