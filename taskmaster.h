@@ -316,13 +316,18 @@ protected:
         }
     };
 
-    ///invoker for member functions
+    ///invoker for member functions (on copied objects)
     template <typename Fn, typename C, typename ...Args>
     struct invoker_memberfn : invoker_common<Fn, Args...>
     {
         invoker_memberfn(int sync, Fn fn, const C& obj, Args&&... args)
             : invoker_common<Fn, Args...>(sync, fn, std::forward<Args>(args)...)
             , _obj(obj)
+        {}
+
+        invoker_memberfn(int sync, Fn fn, C&& obj, Args&&... args)
+            : invoker_common<Fn, Args...>(sync, fn, std::forward<Args>(args)...)
+            , _obj(std::forward<C>(obj))
         {}
 
         void invoke() override final {
@@ -338,7 +343,29 @@ protected:
         C _obj;
     };
 
-    ///invoker for member functions
+    ///invoker for member functions (on pointers)
+    template <typename Fn, typename C, typename ...Args>
+    struct invoker_memberfn<Fn, C*, Args...> : invoker_common<Fn, Args...>
+    {
+        invoker_memberfn(int sync, Fn fn, C* obj, Args&&... args)
+            : invoker_common<Fn, Args...>(sync, fn, std::forward<Args>(args)...)
+            , _obj(obj)
+        {}
+
+        void invoke() override final {
+            this->invoke_memberfn(*_obj, make_index_sequence<sizeof...(Args)>());
+        }
+
+        size_t size() const override final {
+            return sizeof(*this);
+        }
+
+    private:
+
+        C* _obj;
+    };
+
+    ///invoker for member functions (on irefs)
     template <typename Fn, typename C, typename ...Args>
     struct invoker_memberfn<Fn, iref<C>, Args...> : invoker_common<Fn, Args...>
     {
