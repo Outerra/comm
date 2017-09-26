@@ -75,7 +75,8 @@ public:
     ///Constructor from pointer, artificially removed priority to resolve ambiguity
     template<class K>
     iref( K* p, typename std::remove_const<K>::type* = 0 ) : _p(p) {
-        add_refcount();
+        if(_p)
+            _p->add_refcount();
     }
 
     ///Constructor from a convertible type
@@ -84,16 +85,21 @@ public:
 #else
     template<class T2>
 #endif
-    iref( const iref<T2>& r ) : _p(0) {
-        if(r.get()) create(r.get());
+    iref( const iref<T2>& r ) {
+        _p = r.add_refcount();
     }
 
-    T* add_refcount() const { if(_p) _p->add_refcount(); return _p; }
+    T* add_refcount() const {
+        T* p = _p;
+        if (p && p->can_add_refcount())
+            return p;
+        return 0;
+    }
 
     //
 	explicit iref( const create_me& )
         : _p(new T())
-    { add_refcount(); }
+    { _p->add_refcount(); }
 
 	// special constructor from default policy
 	explicit iref( const create_pooled& ) 
@@ -102,7 +108,11 @@ public:
 
 	~iref() { release(); }
 
-	void release() { if(_p) _p->release_refcount(); _p=0;  }
+	void release() {
+        T* p = _p;
+        if (p)
+            p->release_refcount((void**)&_p);
+    }
 
     T* create(T* const p)
 	{
@@ -140,10 +150,9 @@ public:
 	}
 
 	const iref_t& operator = (const iref_t& r) {
-		T* p = r.get();
-		r.add_refcount();
-		release();
-		_p = p;
+        T* p = r.add_refcount();
+        release();
+        _p = p;
 		return *this; 
 	}
 

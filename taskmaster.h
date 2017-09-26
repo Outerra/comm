@@ -247,7 +247,7 @@ protected:
         //no rebase
         DASSERT(base == _taskdata.get_array().ptr());
 
-        coidlog_devdbg("taskmaster", "pushed task id " << _taskdata.get_item_id(p));
+        //coidlog_devdbg("taskmaster", "pushed task id " << _taskdata.get_item_id(p));
         return p;
     }
 
@@ -498,7 +498,7 @@ private:
     void run_task( invoker_base* task, int order )
     {
         uints id = _taskdata.get_item_id((granule*)task);
-        coidlog_devdbg("taskmaster", "thread " << order << " processing task id " << id);
+        //coidlog_devdbg("taskmaster", "thread " << order << " processing task id " << id);
 
         DASSERT(_taskdata.is_valid_id(id));
         task->invoke();
@@ -546,7 +546,7 @@ private:
 
     std::mutex _sync;
     std::condition_variable _cv;
-    volatile int _qsize;                //< current queue size, used also as a semaphore
+    std::atomic_int _qsize;             //< current queue size, used also as a semaphore
     volatile bool _quitting;
 
     slotalloc_atomic<granule> _taskdata;

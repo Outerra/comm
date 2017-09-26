@@ -217,7 +217,7 @@ public:
     }
 
     void release() {
-        if(_p != 0) {
+        if (_p) {
             _p->release_refcount();
             _p = 0;
         }
