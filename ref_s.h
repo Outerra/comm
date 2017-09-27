@@ -184,21 +184,28 @@ public:
 
     const ref_t& operator=(const ref_t& r) {
         release();
-        _p = r.add_refcount();
-        _o = r._o;
+        _p = r.can_add_refcount();
+        _o = _p ? r._o : nullptr;
         return *this;
     }
 
     template< class T2 >
     const ref_t& operator=(const ref<T2>& r) {
         release();
-        _p = r.add_refcount();
-        _o = static_cast<T*>(r.get());
+        _p = r.can_add_refcount();
+        _o = _p ? static_cast<T*>(r.get()) : nullptr;
         return *this;
     }
 
     /// DO NOT USE !!!
-    policy* add_refcount() const { if(_p) _p->add_refcount(); return _p; }
+    policy* add_refcount() const {
+        if(_p) _p->add_refcount(); return _p;
+    }
+
+    policy* can_add_refcount() const {
+        policy* p = _p;
+        return p && p->can_add_refcount() ? p : nullptr;
+    }
 
     T * operator->() const { DASSERT(_o != 0 && "unitialized reference"); return _o; }
 
