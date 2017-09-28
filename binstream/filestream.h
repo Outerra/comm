@@ -170,6 +170,8 @@ public:
     /// a,+ - append
     virtual opcd open( const zstring& name, const token& attr = "" ) override
     {
+        close();
+
         int flg=0;
         int rw=0,sh=0;
         

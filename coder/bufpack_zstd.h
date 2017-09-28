@@ -66,13 +66,13 @@ struct packer_zstd
     //@param size input size
     //@param dst target buffer (append)
     //@return compressed size
-    uints pack( const void* src, uints size, dynarray<uint8>& dst, int compression_level = 1 )
+    uints pack( const void* src, uints size, dynarray<uint8>& dst, int complevel = 3 )
     {
         uints osize = dst.size();
         uints dmax = ZSTD_compressBound(size);
         uint8* p = dst.add(dmax);
 
-        uints ls = ZSTD_compress(p, dmax, src, size, compression_level);
+        uints ls = ZSTD_compress(p, dmax, src, size, complevel);
         if(ZSTD_isError(ls))
             return UMAXS;
 
