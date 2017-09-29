@@ -65,14 +65,14 @@ int main( int argc, char* argv[] )
             sp.push_construct("def");
         }
 
-        sp.del(0U);
+        sp.del_item(0);
         sp.push("ghi");
 
         DASSERT(sp[0] == "ghi");
 
         for (int i = 0; i < 256 + 1; ++i) {
-            ss.del(i);
-            sp.del(i);
+            ss.del_item(i);
+            sp.del_item(i);
         }
 
         ss.add_range(513);

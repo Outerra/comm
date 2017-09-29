@@ -423,7 +423,7 @@ public:
     }
 
     ///Delete object by id
-    void del(uints id)
+    void del_item(uints id)
     {
         DASSERT_RETVOID(id < _created);
 
@@ -446,7 +446,7 @@ public:
 
     ///Delete object by versionid
     template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
-    void del(versionid vid)
+    void del_item(versionid vid)
     {
         DASSERT_RETVOID(this->check_versionid(vid));
 
@@ -643,7 +643,7 @@ public:
     }
 
     //@return true if item is valid
-    bool is_valid_item(const T* p) const {
+    bool is_valid(const T* p) const {
         return get_bit(get_item_id(p));
     }
 
