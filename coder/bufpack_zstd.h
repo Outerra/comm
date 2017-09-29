@@ -111,9 +111,10 @@ struct packer_zstd
             if(ZSTD_isError(r))
                 return UMAXS;
 
-            uints drem = zot.size - zot.pos;
-            if(r > drem) {
-                dst.add(r-drem);
+            if (zot.pos == zot.size) {
+                //needs more out space
+                dst.add(outblocksize);
+                zot.size = dst.size() - origsize;
                 zot.dst = dst.ptr() + origsize;
             }
         }
