@@ -81,7 +81,7 @@ struct AllocStd {
     uints index(const T* p) const { return (uints)p; }
     T* pointer(uints id) const { return (T*)id; }
 
-    ints reserve(uints count) { return 0; }
+    void reserve(uints count) {}
 };
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1800
@@ -95,7 +95,7 @@ struct AllocSlot {
     uints index(const T* p) const { return _slots.get_item_id(p); }
     T* pointer(uints id) const { return (T*)_slots.get_item(id); }
 
-    ints reserve(uints count) { return _slots.reserve(count); }
+    void reserve(uints count) { return _slots.reserve(count); }
 
 private:
     slotalloc_base<T> _slots;
@@ -684,8 +684,7 @@ public:
     }
 
 
-    //@return true if the underlying array was rebased
-    bool resize(size_t bucketn)
+    void resize(size_t bucketn)
     {
         uints ts = _table.size();
         if (bucketn > ts)
@@ -694,7 +693,7 @@ public:
 
             dynarray<Node*> temp;
             temp.need_newc(nb);
-            ints offset = _ALLOC.reserve(nb);
+            _ALLOC.reserve(nb);
 
             for (uints i = 0; i < ts; ++i)
             {
@@ -702,7 +701,7 @@ public:
                 while (n)
                 {
                     //n->_next points to an old location, rebase
-                    Node* t = n->_next ? ptr_byteshift(n->_next, offset) : 0;
+                    Node* t = n->_next;
                     Node** pn = find_socket(temp, _GETKEYFUNC(n->_val));
 
                     n->_next = *pn;
@@ -713,10 +712,7 @@ public:
             }
 
             std::swap(temp, _table);
-            return true;
         }
-
-        return false;
     }
 
     void clear()
@@ -863,8 +859,7 @@ protected:
         Node** ppn = find_socket(k);
         if (*ppn == 0 || !_EQFUNC(_GETKEYFUNC((*ppn)->_val), k))
         {
-            if (adjust(1))
-                ppn = find_socket(k);
+            adjust(1);
 
             Node* n = _ALLOC.alloc();
             n->_next = *ppn;
@@ -882,8 +877,7 @@ protected:
         Node** ppn = find_socket(k);
         if (*ppn == 0 || !_EQFUNC(_GETKEYFUNC((*ppn)->_val), k))
         {
-            if (adjust(1))
-                ppn = find_socket(k);
+            adjust(1);
 
             Node* n = _ALLOC.alloc_uninit();
             n->_next = *ppn;
@@ -902,8 +896,7 @@ protected:
         bool isnew_ = *ppn == 0 || !_EQFUNC(_GETKEYFUNC((*ppn)->_val), k);
         if (isnew_)
         {
-            if (adjust(1))
-                ppn = find_socket(k);
+            adjust(1);
 
             Node* n = _ALLOC.alloc();
             n->_next = *ppn;
@@ -923,8 +916,7 @@ protected:
         bool isnew_ = *ppn == 0 || !_EQFUNC(_GETKEYFUNC((*ppn)->_val), k);
         if (isnew_)
         {
-            if (adjust(1))
-                ppn = find_socket(k);
+            adjust(1);
 
             Node* n = _ALLOC.alloc_uninit();
             n->_next = *ppn;
@@ -976,8 +968,7 @@ protected:
         Node** ppn = find_socket(k);
         if (*ppn == 0 || !_EQFUNC(_GETKEYFUNC((*ppn)->_val), k))
         {
-            if (adjust(1))
-                ppn = find_socket(k);
+            adjust(1);
 
             Node* n = _ALLOC.alloc();
             n->_next = *ppn;
@@ -997,8 +988,7 @@ protected:
         Node** ppn = find_socket(k);
         if (*ppn == 0 || !_EQFUNC(_GETKEYFUNC((*ppn)->_val), k))
         {
-            if (adjust(1))
-                ppn = find_socket(k);
+            adjust(1);
 
             Node* n = _ALLOC.alloc();
             n->_next = *ppn;
@@ -1021,7 +1011,7 @@ protected:
             n = *ppn;
         }
         else {
-            ppn = adjust(1, ppn);
+            adjust(1);
 
             n = _ALLOC.alloc();
             n->_next = *ppn;
@@ -1043,8 +1033,7 @@ protected:
             n = *ppn;
         }
         else {
-            if (adjust(1))
-                ppn = find_socket(k);
+            adjust(1);
 
             n = _ALLOC.alloc();
             n->_next = *ppn;
@@ -1093,8 +1082,7 @@ protected:
 
 private:
 
-    //@return true if the underlying array was rebased
-    bool adjust(uint n) {
+    void adjust(uint n) {
         return resize(_nelem + n);
     }
 

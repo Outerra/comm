@@ -274,7 +274,7 @@ public:
         }
 
         uints nold;
-        uints id = alloc_range(n, &nold, false);
+        uints id = alloc_range<false>(n, &nold);
 
         for_range_unchecked(id, n, [&](T* p) {
             slotalloc_detail::constructor<POOL, T>::construct_object(p, !POOL || nold == 0);
@@ -304,7 +304,7 @@ public:
         }
 
         uints nold;
-        uints id = alloc_range(n, &nold, true);
+        uints id = alloc_range<true>(n, &nold);
 
         if (POOL && nreused == 0) {
             for_range_unchecked(id, nold, [](T* p) { destroy(*p); });
@@ -325,7 +325,7 @@ public:
             return add(&id);
 
         uints nold;
-        uints id = alloc_range_contiguous(n, &nold, false);
+        uints id = alloc_range_contiguous<false>(n, &nold);
 
         for_range_unchecked(id, n, [&](T* p) {
             slotalloc_detail::constructor<POOL, T>::construct_object(p, !POOL || nold == 0);
@@ -354,7 +354,7 @@ public:
         }
 
         uints nold;
-        uints id = alloc_range_contiguous(n, &nold, true);
+        uints id = alloc_range_contiguous<true>(n, &nold);
 
         if (POOL && nreused == 0) {
             for_range_unchecked(id, nold, [](T* p) { destroy(*p); });
@@ -582,7 +582,7 @@ public:
         uints n = id + 1 - _created;
 
         extarray_expand(n);
-        expand(n);
+        expand<false>(n);
 
         if (TRACKING)
             tracker_t::set_modified(id);
@@ -1209,7 +1209,8 @@ private:
     }
 
     //@param old receives number of reused objects lying at the beginning of the range
-    uints alloc_range(uints n, uints* old, bool uninit)
+    template <bool UNINIT>
+    uints alloc_range(uints n, uints* old)
     {
         uints id = find_zero_bitrange(n, _allocated.ptr(), _allocated.ptre());
         uints nslots = align_to_chunks(id + n, MASK_BITS);
@@ -1221,7 +1222,7 @@ private:
 
         uints nadd = id + n > _created ? id + n - _created : 0;
         if (nadd)
-            expand(nadd, uninit);
+            expand<UNINIT>(nadd);
         *old = n - nadd;
 
         _count += n;
@@ -1230,7 +1231,8 @@ private:
         return id;
     }
 
-    uints alloc_range_contiguous(uints n, uints* old, bool uninit)
+    template <bool UNINIT>
+    uints alloc_range_contiguous(uints n, uints* old)
     {
         if (n > page::ITEMS)
             return UMAXS;
@@ -1268,7 +1270,7 @@ private:
 
         uints nadd = id + n > _created ? id + n - _created : 0;
         if (nadd)
-            expand(nadd, uninit);
+            expand<UNINIT>(nadd);
         *old = n - nadd;
 
         _count += n;
@@ -1293,12 +1295,18 @@ private:
         if (TRACKING)
             tracker_t::set_modified(count);
 
-        return expand(1);
+        return expand<true>(1);
     }
 
-    ///Adds physical space for n items
-    //@return ptr to the last created item
-    T* expand(uints n, bool uninit = false)
+    template <bool UNINIT>
+    static T* newT(T* p) { return p; }
+
+    template <>
+    static T* newT<false>(T* p) { return new(p) T; }
+
+
+    template <bool UNINIT>
+    T* expand(uints n)
     {
         uints np = align_to_chunks(_created + n, page::ITEMS);
         if (np > _pages.size())
@@ -1308,14 +1316,14 @@ private:
         _created += n;
 
         //in POOL mode the unallocated items in between the valid ones are assumed to be constructed
-        if (POOL && !uninit && n > 1) {
+        if (POOL && !UNINIT && n > 1) {
             for_range_unchecked(base, n - 1, [](T* p) {
-                new(p) T;
+                newT<UNINIT>(p);
             });
         }
 
         T* p = ptr(_created - 1);
-        return uninit ? p : new(p) T;
+        return newT<UNINIT>(p);
     }
 
     bool set_bit(uints k) { return set_bit(_allocated, k); }

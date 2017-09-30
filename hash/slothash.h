@@ -245,7 +245,7 @@ public:
             uint id = *n;
             *n = seqtable()[id];
 
-            base::del(id);
+            base::del_item(id);
             ++c;
         }
 
