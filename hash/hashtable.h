@@ -684,7 +684,8 @@ public:
     }
 
 
-    void resize(size_t bucketn)
+    //@return true if the underlying array was resized
+    bool resize(size_t bucketn)
     {
         uints ts = _table.size();
         if (bucketn > ts)
@@ -712,7 +713,10 @@ public:
             }
 
             std::swap(temp, _table);
+            return true;
         }
+
+        return false;
     }
 
     void clear()
@@ -859,7 +863,8 @@ protected:
         Node** ppn = find_socket(k);
         if (*ppn == 0 || !_EQFUNC(_GETKEYFUNC((*ppn)->_val), k))
         {
-            adjust(1);
+            if (adjust(1))
+                ppn = find_socket(k);
 
             Node* n = _ALLOC.alloc();
             n->_next = *ppn;
@@ -877,7 +882,8 @@ protected:
         Node** ppn = find_socket(k);
         if (*ppn == 0 || !_EQFUNC(_GETKEYFUNC((*ppn)->_val), k))
         {
-            adjust(1);
+            if (adjust(1))
+                ppn = find_socket(k);
 
             Node* n = _ALLOC.alloc_uninit();
             n->_next = *ppn;
@@ -896,7 +902,8 @@ protected:
         bool isnew_ = *ppn == 0 || !_EQFUNC(_GETKEYFUNC((*ppn)->_val), k);
         if (isnew_)
         {
-            adjust(1);
+            if (adjust(1))
+                ppn = find_socket(k);
 
             Node* n = _ALLOC.alloc();
             n->_next = *ppn;
@@ -916,7 +923,8 @@ protected:
         bool isnew_ = *ppn == 0 || !_EQFUNC(_GETKEYFUNC((*ppn)->_val), k);
         if (isnew_)
         {
-            adjust(1);
+            if (adjust(1))
+                ppn = find_socket(k);
 
             Node* n = _ALLOC.alloc_uninit();
             n->_next = *ppn;
@@ -968,7 +976,8 @@ protected:
         Node** ppn = find_socket(k);
         if (*ppn == 0 || !_EQFUNC(_GETKEYFUNC((*ppn)->_val), k))
         {
-            adjust(1);
+            if (adjust(1))
+                ppn = find_socket(k);
 
             Node* n = _ALLOC.alloc();
             n->_next = *ppn;
@@ -988,7 +997,8 @@ protected:
         Node** ppn = find_socket(k);
         if (*ppn == 0 || !_EQFUNC(_GETKEYFUNC((*ppn)->_val), k))
         {
-            adjust(1);
+            if (adjust(1))
+                ppn = find_socket(k);
 
             Node* n = _ALLOC.alloc();
             n->_next = *ppn;
@@ -1011,7 +1021,8 @@ protected:
             n = *ppn;
         }
         else {
-            adjust(1);
+            if (adjust(1))
+                ppn = find_socket(k);
 
             n = _ALLOC.alloc();
             n->_next = *ppn;
@@ -1033,7 +1044,8 @@ protected:
             n = *ppn;
         }
         else {
-            adjust(1);
+            if (adjust(1))
+                ppn = find_socket(k);
 
             n = _ALLOC.alloc();
             n->_next = *ppn;
@@ -1082,7 +1094,8 @@ protected:
 
 private:
 
-    void adjust(uint n) {
+    //@return true if the underlying array was resized
+    bool adjust(uint n) {
         return resize(_nelem + n);
     }
 
