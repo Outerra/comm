@@ -829,7 +829,7 @@ public:
                 uints m = 1;
                 for (int i = 0; i < MASK_BITS; ++i, m <<= 1) {
                     if (*pm & m)
-                        funccall(f, d[pbase + i], gbase + i);
+                        funccall(f, d[pbase + i], gbase + pbase + i);
                     else if ((*pm & ~(m - 1)) == 0)
                         break;
                 }
@@ -905,7 +905,7 @@ public:
                 for (int i = 0; pc < epc && i < MASK_BITS; ++i, m >>= 1, ++pc) {
                     if (all_modified || (pc->mask & bitplane_mask) != 0) {
                         Tx* pd = (m & 1) != 0 ? (Tx*)(d + pbase + i) : nullptr;
-                        funccallp(f, pd, gbase + i);
+                        funccallp(f, pd, gbase + pbase + i);
                     }
                 }
             }
@@ -942,33 +942,35 @@ public:
     T* find_if(Func f) const
     {
         typedef std::remove_reference_t<typename closure_traits<Func>::template arg<0>> Tx;
-        uint_type const* b = const_cast<uint_type const*>(_allocated.ptr());
-        uint_type const* e = const_cast<uint_type const*>(_allocated.ptre());
+        uint_type const* bm = const_cast<uint_type const*>(_allocated.ptr());
+        uint_type const* em = const_cast<uint_type const*>(_allocated.ptre());
 
         const page* pb = _pages.ptr();
         const page* pe = _pages.ptre();
 
-        uint_type const* p = b;
-        uints s = 0;
+        uint_type const* pm = bm;
+        uints gbase = 0;
 
-        for (const page* pp = pb; pp < pe; ++pp)
+        for (const page* pp = pb; pp < pe; ++pp, gbase += page::ITEMS)
         {
             T* d = const_cast<T*>(pp->ptr());
-            uint_type const* ep = e - p > page::NMASK
-                ? p + page::NMASK
-                : e;
+            uint_type const* epm = em - pm > page::NMASK
+                ? pm + page::NMASK
+                : em;
 
-            for (; p != ep; ++p, s += MASK_BITS) {
-                if (*p == 0)
+            uints pbase = 0;
+
+            for (; pm != epm; ++pm, pbase += MASK_BITS) {
+                if (*pm == 0)
                     continue;
 
                 uints m = 1;
                 for (int i = 0; i < MASK_BITS; ++i, m <<= 1) {
-                    if (*p & m) {
-                        if (funccall(f, d[s + i], s + i))
-                            return const_cast<T*>(d) + (s + i);
+                    if (*pm & m) {
+                        if (funccall(f, d[pbase + i], gbase + pbase + i))
+                            return const_cast<T*>(d) + (pbase + i);
                     }
-                    else if ((*p & ~(m - 1)) == 0)
+                    else if ((*pm & ~(m - 1)) == 0)
                         break;
                 }
             }
