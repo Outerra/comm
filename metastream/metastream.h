@@ -771,10 +771,8 @@ protected:
     ////////////////////////////////////////////////////////////////////////////////
     //@{ methods to physically stream the data utilizing the metastream
 
-    bool prepare_type_common( bool cache, bool read )
+    bool prepare_type_common( bool read )
     {
-        stream_reset(0,cache);
-
         _root.desc = 0;
         _current_var = 0;
 
@@ -811,7 +809,10 @@ protected:
     template<class T>
     opcd prepare_type( T&, const token& name, bool cache, bool read )
     {
-        if( !prepare_type_common(cache, read) )  return 0;
+        //reset on unnamed properties - assumed root property streaming
+        stream_reset(name.is_empty(), cache);
+
+        if( !prepare_type_common(read) )  return 0;
 
         *this || *(typename resolve_enum<T>::type*)0;     // build description
 
@@ -820,7 +821,10 @@ protected:
 
     opcd prepare_named_type( const token& type, const token& name, bool cache, bool read )
     {
-        if( !prepare_type_common(cache, read) )  return 0;
+        //reset on unnamed properties - assumed root property streaming
+        stream_reset(name.is_empty(), cache);
+
+        if( !prepare_type_common(read) )  return 0;
 
         if( !meta_find(type) )
             return ersNOT_FOUND;
@@ -831,7 +835,10 @@ protected:
     template<class T>
     opcd prepare_type_array( T&, uints n, const token& name, bool cache, bool read )
     {
-        if( !prepare_type_common(cache, read) )  return 0;
+        //reset on unnamed properties - assumed root property streaming
+        stream_reset(name.is_empty(), cache);
+
+        if( !prepare_type_common(read) )  return 0;
 
         meta_decl_array(n);
         *this || *(typename resolve_enum<T>::type*)0;     // build description
