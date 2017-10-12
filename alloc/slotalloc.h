@@ -1210,6 +1210,7 @@ private:
         return ptr(id);
     }
 
+    ///Alloc range of objects, can cross page boundaries
     //@param old receives number of reused objects lying at the beginning of the range
     template <bool UNINIT>
     uints alloc_range(uints n, uints* old)
@@ -1233,6 +1234,8 @@ private:
         return id;
     }
 
+    ///Alloc range of objects within a single contiguous page
+    //@param old receives number of reused objects lying at the beginning of the range
     template <bool UNINIT>
     uints alloc_range_contiguous(uints n, uints* old)
     {
@@ -1247,15 +1250,17 @@ private:
         uint_type const* pm = bm;
         uints id;
 
-        for (; pp < ep; ++pp)
+        for (; pp < ep; ++pp, pm += page::NMASK)
         {
             uint_type const* epm = em - pm > page::NMASK
                 ? pm + page::NMASK
                 : em;
 
-            id = find_zero_bitrange(n, pm, epm);
-            if (id + n <= page::ITEMS)
+            uints lid = find_zero_bitrange(n, pm, epm);
+            if (lid + n <= page::ITEMS) {
+                id = lid + (pp - bp) * page::ITEMS;
                 break;
+            }
         }
 
         if (pp == ep) {

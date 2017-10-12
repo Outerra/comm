@@ -234,7 +234,7 @@ protected:
     ///Unit of allocation for tasks
     struct granule
     {
-        uint64 dummy[2 * sizeof(uints) / 4];
+        uint8 dummy[8 * sizeof(void*)];
     };
 
     granule* alloc_data(uints size)
