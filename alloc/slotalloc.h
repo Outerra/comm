@@ -1289,14 +1289,14 @@ private:
     ///Append to a full array
     T* append(uints* pid = 0)
     {
-        uints count = _count;
+        uints count = _created;
 
-        DASSERT(count == _created);
+        DASSERT(_count <= count);   //count may be lower with other threads deleting, but not higher (single producer)
         set_bit(count);
 
         extarray_expand(1);
         if (pid)
-            *pid = _count;
+            *pid = count;
         ++_count;
 
         if (TRACKING)
