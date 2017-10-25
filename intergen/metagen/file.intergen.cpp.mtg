@@ -142,7 +142,7 @@ $-(if varname?)$
     ///Cleanup routine called from ~$name$()
     static void _cleaner_callback( $name$* m, intergen_interface* ifc ) {
         $..ns default=" "$::$..class$* host = m->host<$..ns$::$..class$>();
-        if (host) host->$varname$ = ifc;
+        if (host) host->$varname$.assign_safe(ifc);
     }
 $-(/if)$
 $-(if virtual!)$
@@ -160,7 +160,7 @@ $-(if virtual!)$
         $--(if varname?)$
         if (!host->$varname$) {
             __disp__->_cleaner = &_cleaner_callback;
-            host->$varname$ = __disp__;
+            host->$varname$.assign_safe(__disp__);
         }
         $-(/if)$
 

@@ -155,7 +155,7 @@ public:
 
     ///Assign if empty
     iref_t& assign_safe(const iref_t& r) {
-        static coid::comm_mutex _mux(200, false);
+        static coid::comm_mutex _mux(500, false);
 
         _mux.lock();
         //assign only if nobody assigned before us
