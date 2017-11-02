@@ -620,7 +620,7 @@ public:
     //@param nitems count of items to add
     //@return pointer to the first added element
     template<class ...Args>
-    T* add( uints nitems=1, Args... args )
+    T* add( uints nitems=1, Args&&... args )
     {
         uints n = _count();
 
@@ -633,7 +633,7 @@ public:
             nalloc = _realloc(nalloc, n);
 
         if( !has_trivial_default_constructor<T>::value )
-            for( uints i=n; i<nto; ++i )  ::new(_ptr+i) T(args...);
+            for( uints i=n; i<nto; ++i )  ::new(_ptr+i) T(std::forward<Args>(args)...);
 
         _set_count(nto);
         return _ptr + n;
@@ -766,7 +766,7 @@ public:
 
 #ifdef COID_VARIADIC_TEMPLATES
     template<class...Ps>
-    T* push_construct(Ps... ps) {
+    T* push_construct(Ps&&... ps) {
         T* ptr = addnc(1);
         ::new(ptr) T(std::forward<Ps>(ps)...);
         return ptr;

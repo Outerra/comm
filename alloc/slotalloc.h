@@ -227,7 +227,7 @@ public:
 
     ///Add new object initialized with constructor matching the arguments
     template<class...Ps>
-    T* push_construct(Ps... ps)
+    T* push_construct(Ps&&... ps)
     {
         bool isold = _count < _created;
 

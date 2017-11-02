@@ -294,7 +294,7 @@ struct constructor<true, T>
     }
 
     template<class...Ps>
-    static T* construct_object( T* dst, bool isnew, Ps... ps ) {
+    static T* construct_object( T* dst, bool isnew, Ps&&... ps ) {
         if(isnew)
             new(dst) T(std::forward<Ps>(ps)...);
         else {
@@ -323,7 +323,7 @@ struct constructor<false, T>
     }
 
     template<class...Ps>
-    static T* construct_object( T* dst, bool isnew, Ps... ps ) {
+    static T* construct_object( T* dst, bool isnew, Ps&&... ps ) {
         DASSERT(isnew);
         return new(dst) T(std::forward<Ps>(ps)...);
     }

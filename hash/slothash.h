@@ -161,7 +161,7 @@ public:
     ///Insert a new slot for the key
     //@return pointer to the new item or nullptr if the key already exists and MULTIKEY is false
     template<class...Ps>
-    T* push_construct(Ps... ps) {
+    T* push_construct(Ps&&... ps) {
         T* p = base::push_construct(std::forward<Ps>(ps)...);
         return insert_value_(p);
     }
@@ -170,7 +170,7 @@ public:
     //@param id requested slot id; if occupied it will be destroyed first
     //@return pointer to the uninitialized slot for the key or nullptr if the key already exists and MULTIKEY is false
     template<class...Ps>
-    T* push_construct_in_slot(uint id, Ps... ps)
+    T* push_construct_in_slot(uint id, Ps&&... ps)
     {
         bool isnew;
         T* p = base::get_or_create(id, &isnew);
@@ -179,7 +179,7 @@ public:
             //destroy old hash links
             destroy_value_(id);
 
-        slotalloc_detail::constructor<base::POOL, T>::construct_object(p, isnew, ps...);
+        slotalloc_detail::constructor<base::POOL, T>::construct_object(p, isnew, std::forward<Ps>(ps)...);
 
         return insert_value_(p);
     }

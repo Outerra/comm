@@ -132,7 +132,7 @@ public:
     }
 
 	coid::int32 release_refcount(void** ptref = 0) {
-        policy_base* p = this;
+        policy_base_* p = this;
         coid::int32 count = COUNTER::dec(&_count);
 
 		if(count == 0) {

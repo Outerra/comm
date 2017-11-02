@@ -232,12 +232,11 @@ struct packer_zstd
             }
 
             uints rem = ZSTD_decompressStream(_dstream, &zot, &zin);
-            if (ZSTD_isError(rem))
-                return -1;
-
             if (rem == 0)   //fully read stream
                 break;
-            else if (isend) //not enough data
+            if (ZSTD_isError(rem))
+                return -1;
+            if (isend) //not enough data
                 break;
         }
 
@@ -247,11 +246,13 @@ struct packer_zstd
     }
 
     void reset_read() {
-        ZSTD_resetDStream(_dstream);
+        if (_dstream)
+            ZSTD_resetDStream(_dstream);
     }
 
     void reset_write(uints size = 0) {
-        ZSTD_resetCStream(_cstream, size);
+        if (_cstream)
+            ZSTD_resetCStream(_cstream, size);
     }
 
     bool eof() const {
