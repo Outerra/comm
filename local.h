@@ -144,7 +144,7 @@ public:
 
         _mux.lock();
         //assign only if nobody assigned before us
-        if (!_p)
+        if (!_p || !p)
             _p = (T*)p;
         _mux.unlock();
         return *this;
