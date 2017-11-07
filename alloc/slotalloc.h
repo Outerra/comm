@@ -610,7 +610,7 @@ public:
         return UMAXS;
     }
 
-    //@return if of given item in ext array or UMAXS if the item is not managed here
+    //@return id of given item in ext array or UMAXS if the item is not managed here
     template<int V, class K, bool T1 = VERSIONING, typename = std::enable_if_t<!T1>>
     uints get_array_item_id(const K* p) const
     {
