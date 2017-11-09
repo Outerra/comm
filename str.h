@@ -208,37 +208,37 @@ public:
         }
     */
 
-    charstr(char c) { append(c); }
+    explicit charstr(char c) { append(c); }
 
     template<class Enum>
-    charstr(typename std::enable_if<std::is_enum<Enum>::value>::type v) {
+    explicit charstr(typename std::enable_if<std::is_enum<Enum>::value>::type v) {
         *this = (typename resolve_enum<Enum>::type)v;
     }
 
-    charstr(int8 i) { append_num(10, (int)i); }
-    charstr(uint8 i) { append_num(10, (uint)i); }
-    charstr(int16 i) { append_num(10, (int)i); }
-    charstr(uint16 i) { append_num(10, (uint)i); }
-    charstr(int32 i) { append_num(10, (int)i); }
-    charstr(uint32 i) { append_num(10, (uint)i); }
-    charstr(int64 i) { append_num(10, i); }
-    charstr(uint64 i) { append_num(10, i); }
+    explicit charstr(int8 i) { append_num(10, (int)i); }
+    explicit charstr(uint8 i) { append_num(10, (uint)i); }
+    explicit charstr(int16 i) { append_num(10, (int)i); }
+    explicit charstr(uint16 i) { append_num(10, (uint)i); }
+    explicit charstr(int32 i) { append_num(10, (int)i); }
+    explicit charstr(uint32 i) { append_num(10, (uint)i); }
+    explicit charstr(int64 i) { append_num(10, i); }
+    explicit charstr(uint64 i) { append_num(10, i); }
 
 #ifdef SYSTYPE_WIN
 # ifdef SYSTYPE_32
-    charstr(ints i) { append_num(10, (ints)i); }
-    charstr(uints i) { append_num(10, (uints)i); }
+    explicit charstr(ints i) { append_num(10, (ints)i); }
+    explicit charstr(uints i) { append_num(10, (uints)i); }
 # else //SYSTYPE_64
-    charstr(int i) { append_num(10, i); }
-    charstr(uint i) { append_num(10, i); }
+    explicit charstr(int i) { append_num(10, i); }
+    explicit charstr(uint i) { append_num(10, i); }
 # endif
 #elif defined(SYSTYPE_32)
-    charstr(long i) { append_num(10, (ints)i); }
-    charstr(ulong i) { append_num(10, (uints)i); }
+    explicit charstr(long i) { append_num(10, (ints)i); }
+    explicit charstr(ulong i) { append_num(10, (uints)i); }
 #endif //SYSTYPE_WIN
 
-    charstr(float d) { operator += (d); }
-    charstr(double d) { operator += (d); }
+    explicit charstr(float d) { operator += (d); }
+    explicit charstr(double d) { operator += (d); }
 
 
     charstr& set(const token& tok)
