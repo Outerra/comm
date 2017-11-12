@@ -495,7 +495,7 @@ private:
         uints id = _taskdata.get_item_id((granule*)task);
         //coidlog_devdbg("taskmaster", "thread " << order << " processing task id " << id);
 
-        DASSERT(_taskdata.is_valid_id(id));
+        DASSERT_RETVOID(_taskdata.is_valid_id(id));
         task->invoke();
 
         int sync = task->task_level();

@@ -70,6 +70,8 @@ public:
         _dtns += dtns;
     }
 
+    int64 adjustment_ns() const { return _dtns; }
+
     ///Reset timer (sets current time as the base for elapsed time methods)
 	void reset();
 };
