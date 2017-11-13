@@ -406,11 +406,7 @@ void* log_writer::thread_run()
 	while (!coid::thread::self_should_cancel()) {
         flush();
 
-#ifdef _DEBUG
 		coid::sysMilliSecondSleep(1);
-#else
-        coid::sysMilliSecondSleep(500);
-#endif
 	}
 
     flush();
