@@ -36,6 +36,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "timer.h"
+#include <chrono>
 
 #ifdef SYSTYPE_MSVC
 
@@ -114,6 +115,26 @@ uint64 nsec_timer::current_time_ns()
     static const uint64 NS = 1000000000;
 
     return w*NS + (f*NS) / nsec_timer::_freq;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+uint64 nsec_timer::day_time_ns()
+{
+    static int64 _day_offset = 0;
+
+    if (_day_offset == 0) {
+        uint64 ns = current_time_ns();
+
+        auto hnow = std::chrono::system_clock::now();
+        std::chrono::nanoseconds ens = hnow.time_since_epoch();
+
+        long bias = 0;
+        _get_dstbias(&bias);
+
+        _day_offset = ((ens.count() - bias * 1000000000LL) % 86400000000000LL) - ns;
+    }
+
+    return current_time_ns() + _day_offset;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

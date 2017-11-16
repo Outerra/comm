@@ -310,7 +310,7 @@ ref<logmsg> logger::operator()( log::type t, const int64* time_ms )
 
     if(time_ms) {
         //str.append_fixed(*time_ms * 1e-3, 9, -3, coid::ALIGN_NUM_RIGHT_FILL_ZEROS);
-        str.append_time_formatted(*time_ms, true, 2);
+        str.append_time_formatted(*time_ms, true, 3);
         str.append(' ');
     }
 
