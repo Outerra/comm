@@ -923,7 +923,7 @@ public:
         uint s = uint(id % page::ITEMS);
 
         while (count > 0) {
-            T* b = _pages[pg].ptr() + s;
+            T* b = _pages[pg++].ptr() + s;
             uints na = stdmin(page::ITEMS - s, count);
             T* e = b + na;
 
