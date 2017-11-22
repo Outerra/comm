@@ -187,11 +187,6 @@ struct packer_zstd
         }
         while (zin.size > zin.pos);
 
-        if (zout.pos > 0) {
-            bon.xwrite_raw(zout.dst, zout.pos);
-            zout.pos = 0;
-        }
-
         _offset = zout.pos;
         return size;
     }
