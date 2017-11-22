@@ -106,16 +106,22 @@ struct packer_zstd
         zot.size = dstsize && dstsize <= UMAX64 ? uints(dstsize) : outblocksize;
         zot.dst = dst.add(zot.size);
 
-        uints r;
-        while((r = ZSTD_decompressStream(_dstream, &zot, &zin)) != 0) {
-            if(ZSTD_isError(r))
+        uints rem;
+        while((rem = ZSTD_decompressStream(_dstream, &zot, &zin)) != 0) {
+            if(ZSTD_isError(rem))
                 return UMAXS;
 
+            if (rem == 0)   //fully read
+                break;
             if (zot.pos == zot.size) {
                 //needs more out space
                 dst.add(outblocksize);
                 zot.size = dst.size() - origsize;
                 zot.dst = dst.ptr() + origsize;
+            }
+            if (zin.pos == zin.size) {
+                //insufficient input data
+                return 0;
             }
         }
 
@@ -180,6 +186,11 @@ struct packer_zstd
             }
         }
         while (zin.size > zin.pos);
+
+        if (zout.pos > 0) {
+            bon.xwrite_raw(zout.dst, zout.pos);
+            zout.pos = 0;
+        }
 
         _offset = zout.pos;
         return size;
