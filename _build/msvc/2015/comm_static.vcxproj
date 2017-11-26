@@ -733,6 +733,9 @@
     <ClCompile Include="..\..\..\regex\regexec.cpp" />
     <ClCompile Include="..\..\..\txtconv.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="..\..\..\doc\visualc-syntax\coid.natvis" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
