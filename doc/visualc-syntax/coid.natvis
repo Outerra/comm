@@ -2,11 +2,13 @@
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
 <Type Name="coid::charstr">
-    <DisplayString>size={((size_t*)_tstr._ptr)[-1]} {_tstr._ptr,s}</DisplayString>
+    <DisplayString Condition="_tstr._ptr == 0">empty</DisplayString>
+    <DisplayString>size={((size_t*)_tstr._ptr)[-1]} {_tstr._ptr,s8}</DisplayString>
+    <StringView>_tstr._ptr,s8</StringView>
 </Type>
 
 <Type Name="coid::token">
-    <DisplayString>size={_pte-_ptr} {_ptr,s}</DisplayString>
+    <DisplayString>size={_pte-_ptr} {_ptr,s8}</DisplayString>
 </Type>
 
 <Type Name="coid::opcd">
@@ -14,6 +16,7 @@
 </Type>
 
 <Type Name="coid::dynarray&lt;*,*,*&gt;">
+    <DisplayString Condition="_ptr == 0">empty</DisplayString>
     <DisplayString>size={((size_t*)_ptr)[-1]}</DisplayString>
     <Expand>
         <Item Name="[size]" ExcludeView="simple" >((size_t*)_ptr)[-1]</Item>
