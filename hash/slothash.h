@@ -97,7 +97,7 @@ class slothash
 public:
 
     T* add() = delete;
-    T* add_uninit(bool*) = delete;
+    T* add_uninit(bool*, uints*) = delete;
     T* get_or_create(uints, bool*) = delete;
 
     slothash(uint reserve_items = 64)

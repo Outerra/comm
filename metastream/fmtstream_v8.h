@@ -149,25 +149,33 @@ COID_NAMESPACE_BEGIN
 ////////////////////////////////////////////////////////////////////////////////
 class fmtstream_v8;
 
-///Helper class to stream types to/from v8 objects
+///Helper class to stream types to v8 objects
 template<class T>
-class v8_streamer
+class to_v8
 {
 public:
     ///Generic generator from a type to its v8 representation
-    static v8::Handle<v8::Value> to_v8(const T& v);
+    static v8::Handle<v8::Value> read(const T& v);
+};
 
+///Helper class to stream types from v8 objects
+template<class T>
+class from_v8
+{
+public:
     ///Generic parser from v8 type representation
-    static bool from_v8( v8::Handle<v8::Value> src, T& res );
+    static bool write( v8::Handle<v8::Value> src, T& res );
 };
 
 
-//@{ Fast v8_streamer specializations for base types
+//@{ Fast to_v8/from specializations for base types
 
 #define V8_FAST_STREAMER(T,V8T,CT) \
-template<> class v8_streamer<T> { public: \
-    static v8::Handle<v8::Value> to_v8(const T& v) { return v8::new_object<v8::V8T>(CT(v)); } \
-    static bool from_v8( v8::Handle<v8::Value> src, T& res ) { res = (T)src->V8T##Value(); return true; } \
+template<> class to_v8<T> { public: \
+    static v8::Handle<v8::Value> read(const T& v) { return v8::new_object<v8::V8T>(CT(v)); } \
+}; \
+template<> class from_v8<T> { public: \
+    static bool write( v8::Handle<v8::Value> src, T& res ) { res = (T)src->V8T##Value(); return true; } \
 }
 
 
@@ -200,28 +208,34 @@ V8_FAST_STREAMER(double, Number, double);
 V8_FAST_STREAMER(bool, Boolean, bool);
 
 ///Date/time
-template<> class v8_streamer<timet> {
+template<> class to_v8<timet> {
 public:
-    static v8::Handle<v8::Value> to_v8( const timet& v ) {
+    static v8::Handle<v8::Value> read(const timet& v) {
         return v8::new_object<v8::Date>(double(v.t));
     }
+};
     
-    static bool from_v8( v8::Handle<v8::Value> src, timet& res ) {
+template<> class from_v8<timet> {
+public:
+    static bool write( v8::Handle<v8::Value> src, timet& res ) {
         res = timet((int64)src->NumberValue());
         return true;
     }
 };
 
 ///Strings
-template<> class v8_streamer<charstr> {
+template<> class to_v8<charstr> {
 public:
-    static v8::Handle<v8::Value> to_v8(const charstr& v) { return v8::string_utf8(v); }
+    static v8::Handle<v8::Value> read(const charstr& v) { return v8::string_utf8(v); }
     
-    static v8::Handle<v8::Value> to_v8(const token& v) { return v8::string_utf8(v); }
+    static v8::Handle<v8::Value> read(const token& v) { return v8::string_utf8(v); }
     
-    static v8::Handle<v8::Value> to_v8(const char* v) { return v8::string_utf8(v); }
-    
-    static bool from_v8( v8::Handle<v8::Value> src, charstr& res ) {
+    static v8::Handle<v8::Value> read(const char* v) { return v8::string_utf8(v); }
+};
+
+template<> class from_v8<charstr> {
+public:
+    static bool write( v8::Handle<v8::Value> src, charstr& res ) {
         if(src->IsUndefined() || src->IsNull())
             return false;
         v8::String::Utf8Value str(src);
@@ -230,10 +244,12 @@ public:
     }
 };
 
-template<> class v8_streamer<token> {
+
+template<> class to_v8<token> {
 public:
-    static v8::Handle<v8::Value> to_v8(const token& v) { return v8::string_utf8(v); }
+    static v8::Handle<v8::Value> read(const token& v) { return v8::string_utf8(v); }
 };
+
 
 ///Helper to fill dynarray from V8 array
 template<class T>
@@ -247,7 +263,7 @@ inline bool v8_write_dynarray( v8::Handle<v8::Value> src, dynarray<T>& a )
     a.alloc(n);
 
     for(uint i=0; i<n; ++i) {
-        v8_streamer<T>::from_v8(obj->Get(i), a[i]);
+        from_v8<T>::write(obj->Get(i), a[i]);
     }
 
     return true;
@@ -268,33 +284,36 @@ inline bool v8_write_dynarray( v8::TypedArray* src, dynarray<T>& a )
 #endif
 
 ///Generic dynarray<T> partial specialization
-template<class T> class v8_streamer<dynarray<T>> {
+template<class T> class to_v8<dynarray<T>> {
 public:
-    static v8::Handle<v8::Value> to_v8(const dynarray<T>& v) {
+    static v8::Handle<v8::Value> read(const dynarray<T>& v) {
         uint n = (uint)v.size();
         v8::Local<v8::Array> a = v8::new_object<v8::Array>(n);
-        
-        for(uint i=0; i<n; ++i) {
-            a->Set(i, v8_streamer<T>::to_v8(v[i]));
+
+        for (uint i = 0; i < n; ++i) {
+            a->Set(i, to_v8<T>::read(v[i]));
         }
 
         return a;
     }
+};
     
-    static bool from_v8( v8::Handle<v8::Value> src, dynarray<T>& res ) {
+template<class T> class from_v8<dynarray<T>> {
+public:
+    static bool write(v8::Handle<v8::Value> src, dynarray<T>& res) {
         return v8_write_dynarray(src, res);
     }
 };
 
 ///Generic range<T> partial specialization
-template<class T> class v8_streamer<range<T>> {
+template<class T> class to_v8<range<T>> {
 public:
-    static v8::Handle<v8::Value> to_v8(const range<T>& v) {
+    static v8::Handle<v8::Value> read(const range<T>& v) {
         uint n = (uint)v.size();
         v8::Local<v8::Array> a = v8::new_object<v8::Array>(n);
 
         for(uint i=0; i<n; ++i) {
-            a->Set(i, v8_streamer<T>::to_v8(v[i]));
+            a->Set(i, to_v8<T>::read(v[i]));
         }
 
         return a;
@@ -302,9 +321,9 @@ public:
 };
 
 ///Generic iref<T> partial specialization
-template<class T> class v8_streamer<iref<T>> {
+template<class T> class to_v8<iref<T>> {
 public:
-    static v8::Handle<v8::Value> to_v8(const iref<T>& v) {
+    static v8::Handle<v8::Value> read(const iref<T>& v) {
         v8::Isolate * iso = v8::Isolate::GetCurrent();
         typedef v8::Handle<v8::Value>(*ifc_create_wrapper_fn)(T * orig, v8::Handle<v8::Context> context);
 
@@ -315,8 +334,11 @@ public:
 
         return wrap(v.get(), v8::Handle<v8::Context>());
     }
+};
 
-    static bool from_v8(v8::Handle<v8::Value> src, iref<T>& res) {
+template<class T> class from_v8<iref<T>> {
+public:
+    static bool write(v8::Handle<v8::Value> src, iref<T>& res) {
         res = ::js::unwrap_object<T>(src);
         return !res.is_empty();
     }
@@ -326,17 +348,20 @@ public:
 
 ///Helper class to stream types to/from v8 objects for volatile data (ifc_volatile)
 template<class T>
-class v8_streamer_volatile : public v8_streamer<T>
-{
+class to_v8_volatile : public to_v8<T> {
 public:
     ///Generic generator from a type to its v8 representation
-    static v8::Handle<v8::Value> to_v8(const T& v) {
-        return v8_streamer<T>::to_v8(v);
+    static v8::Handle<v8::Value> read(const T& v) {
+        return to_v8<T>::read(v);
     }
+};
 
+template<class T>
+class from_v8_volatile : public from_v8<T> {
+public:
     ///Generic parser from v8 type representation
-    static bool from_v8( v8::Handle<v8::Value> src, T& res ) {
-        return v8_streamer<T>::from_v8(src, res);
+    static bool write( v8::Handle<v8::Value> src, T& res ) {
+        return from_v8<T>::write(src, res);
     }
 
     static void cleanup( v8::Handle<v8::Value> val ) {}
@@ -411,27 +436,25 @@ inline v8::Handle<v8::ArrayBufferView> v8_map_array_view( const T* ptr, uint cou
 
 ///Macro for direct array mapping to V8
 #define V8_STREAMER_MAPARRAY(T, V8AT) \
-template<> class v8_streamer_volatile<dynarray<T>> : public v8_streamer<dynarray<T>> {\
+template<> class to_v8_volatile<dynarray<T>> : public to_v8<dynarray<T>> {\
 public:\
-    static v8::Handle<v8::Value> to_v8(const dynarray<T>& v) { \
+    static v8::Handle<v8::Value> read(const dynarray<T>& v) { \
         return v8_map_array_view<T, V8AT>(v.ptr(), (uint)v.size()); \
-    } \
- \
-    static bool from_v8( v8::Handle<v8::Value> src, dynarray<T>& res ) { \
-        return v8_write_dynarray(v8::TypedArray::Cast(*src), res); \
     } \
     static void cleanup( v8::Handle<v8::Value> val ) { \
         v8::ArrayBufferView::Cast(*val)->Buffer()->Neuter(); \
     } \
 }; \
-template<> class v8_streamer_volatile<range<T>> : public v8_streamer<range<T>> {\
+template<> class from_v8_volatile<dynarray<T>> : public from_v8<dynarray<T>> {\
 public:\
-    static v8::Handle<v8::Value> to_v8(const range<T>& v) { \
-        return v8_map_array_view<T, V8AT>(v.ptr(), (uint)v.size()); \
+    static bool write( v8::Handle<v8::Value> src, dynarray<T>& res ) { \
+        return v8_write_dynarray(v8::TypedArray::Cast(*src), res); \
     } \
- \
-    static bool from_v8( v8::Handle<v8::Value> src, dynarray<T>& res ) { \
-        throw exception() << "reading into a range not supported"; \
+}; \
+template<> class to_v8_volatile<range<T>> : public to_v8<range<T>> {\
+public:\
+    static v8::Handle<v8::Value> read(const range<T>& v) { \
+        return v8_map_array_view<T, V8AT>(v.ptr(), (uint)v.size()); \
     } \
     static void cleanup( v8::Handle<v8::Value> val ) { \
         v8::ArrayBufferView::Cast(*val)->Buffer()->Neuter(); \
@@ -475,27 +498,25 @@ inline v8::Handle<v8::Value> v8_map_range( const T* ptr, uint count, v8::Externa
 
 ///Macro for direct array mapping to V8
 #define V8_STREAMER_MAPARRAY(T, V8EXT) \
-template<> class v8_streamer_volatile<dynarray<T>> : public v8_streamer<dynarray<T>> {\
+template<> class to_v8_volatile<dynarray<T>> : public to_v8<dynarray<T>> {\
 public:\
-    static v8::Handle<v8::Value> to_v8(const dynarray<T>& v) { \
+    static v8::Handle<v8::Value> read(const dynarray<T>& v) { \
         return v8_map_range(v.ptr(), (uint)v.size(), V8EXT); \
-    } \
- \
-    static bool from_v8( v8::Handle<v8::Value> src, dynarray<T>& res ) { \
-        return v8_write_dynarray(src, res); \
     } \
     static void cleanup( v8::Handle<v8::Value> val ) { \
         val->ToObject()->SetIndexedPropertiesToExternalArrayData(0, V8EXT, 0); \
     } \
 }; \
-template<> class v8_streamer_volatile<range<T>> : public v8_streamer<range<T>> {\
+template<> class from_v8_volatile<dynarray<T>> : public from_v8<dynarray<T>> {\
 public:\
-    static v8::Handle<v8::Value> to_v8(const range<T>& v) { \
-        return v8_map_range(v.ptr(), (uint)v.size(), V8EXT); \
+    static bool write( v8::Handle<v8::Value> src, dynarray<T>& res ) { \
+        return v8_write_dynarray(src, res); \
     } \
-\
-    static bool from_v8( v8::Handle<v8::Value> src, range<T>& res ) { \
-        throw exception() << "reading into a range not supported"; \
+}; \
+template<> class to_v8_volatile<range<T>> : public to_v8<range<T>> {\
+public:\
+    static v8::Handle<v8::Value> read(const range<T>& v) { \
+        return v8_map_range(v.ptr(), (uint)v.size(), V8EXT); \
     } \
     static void cleanup( v8::Handle<v8::Value> val ) { \
         val->ToObject()->SetIndexedPropertiesToExternalArrayData(0, V8EXT, 0); \
@@ -528,16 +549,28 @@ V8_STREAMER_MAPARRAY(ulong, v8::kExternalUnsignedIntArray)
 
 
 ///V8 values
-template<typename V> class v8_streamer<v8::Handle<V>> { public: \
-    typedef v8::Handle<V> T; \
-    static v8::Handle<v8::Value> to_v8(T v) { return v; } \
-    static bool from_v8( v8::Handle<v8::Value> src, T& res ) { res = src.Cast<T>(src); return true; } \
+template<typename V> class to_v8<v8::Handle<V>> {
+public:
+    typedef v8::Handle<V> T;
+    static v8::Handle<v8::Value> read(T v) { return v; }
 };
 
-template<> class v8_streamer<v8::Handle<v8::Function>> { public: \
-    typedef v8::Handle<v8::Function> T; \
-    static v8::Handle<v8::Value> to_v8(T v) { return v; } \
-    static bool from_v8( v8::Handle<v8::Value> src, T& res ) { res = v8::Handle<v8::Function>::Cast(src); return true; } \
+template<typename V> class from_v8<v8::Handle<V>> {
+public:
+    typedef v8::Handle<V> T;
+    static bool write( v8::Handle<v8::Value> src, T& res ) { res = src.Cast<T>(src); return true; }
+};
+
+template<> class to_v8<v8::Handle<v8::Function>> {
+public:
+    typedef v8::Handle<v8::Function> T;
+    static v8::Handle<v8::Value> read(T v) { return v; }
+};
+
+template<> class from_v8<v8::Handle<v8::Function>> {
+public:
+    typedef v8::Handle<v8::Function> T;
+    static bool write(v8::Handle<v8::Value> src, T& res) { res = v8::Handle<v8::Function>::Cast(src); return true; }
 };
 
 //dummy metastream operator for v8::Handle
@@ -730,20 +763,20 @@ public:
                 case type::T_INT:
                     switch( t.get_size() )
                     {
-                    case 1: _top->value = v8_streamer<int8>() .to_v8(*(int8*)p); break;
-                    case 2: _top->value = v8_streamer<int16>().to_v8(*(int16*)p); break;
-                    case 4: _top->value = v8_streamer<int32>().to_v8(*(int32*)p); break;
-                    case 8: _top->value = v8_streamer<int64>().to_v8(*(int64*)p); break;
+                    case 1: _top->value = to_v8<int8>() .read(*(int8*)p); break;
+                    case 2: _top->value = to_v8<int16>().read(*(int16*)p); break;
+                    case 4: _top->value = to_v8<int32>().read(*(int32*)p); break;
+                    case 8: _top->value = to_v8<int64>().read(*(int64*)p); break;
                     }
                     break;
 
                 case type::T_UINT:
                     switch( t.get_size() )
                     {
-                    case 1: _top->value = v8_streamer<uint8>() .to_v8(*(uint8*)p); break;
-                    case 2: _top->value = v8_streamer<uint16>().to_v8(*(uint16*)p); break;
-                    case 4: _top->value = v8_streamer<uint32>().to_v8(*(uint32*)p); break;
-                    case 8: _top->value = v8_streamer<uint64>().to_v8(*(uint64*)p); break;
+                    case 1: _top->value = to_v8<uint8>() .read(*(uint8*)p); break;
+                    case 2: _top->value = to_v8<uint16>().read(*(uint16*)p); break;
+                    case 4: _top->value = to_v8<uint32>().read(*(uint32*)p); break;
+                    case 8: _top->value = to_v8<uint64>().read(*(uint64*)p); break;
                     }
                     break;
 
@@ -761,8 +794,8 @@ public:
                 /////////////////////////////////////////////////////////////////////////////////////
                 case type::T_FLOAT:
                     switch( t.get_size() ) {
-                    case 4: _top->value = v8_streamer<float>().to_v8(*(float*)p); break;
-                    case 8: _top->value = v8_streamer<double>().to_v8(*(double*)p); break;
+                    case 4: _top->value = to_v8<float>().read(*(float*)p); break;
+                    case 8: _top->value = to_v8<double>().read(*(double*)p); break;
                     }
                     break;
 
@@ -773,12 +806,12 @@ public:
 
                 /////////////////////////////////////////////////////////////////////////////////////
                 case type::T_TIME: {
-                    _top->value = v8_streamer<timet>().to_v8(*(timet*)p);
+                    _top->value = to_v8<timet>().read(*(timet*)p);
                 } break;
 
                 /////////////////////////////////////////////////////////////////////////////////////
                 case type::T_ANGLE: {
-                    _top->value = v8_streamer<double>().to_v8(*(double*)p); break;
+                    _top->value = to_v8<double>().read(*(double*)p); break;
                 } break;
 
                 /////////////////////////////////////////////////////////////////////////////////////
@@ -872,10 +905,10 @@ public:
                         try {
                             switch( t.get_size() )
                             {
-                            case 1: v8_streamer<int8>() .from_v8(_top->value, *(int8*)p ); break;
-                            case 2: v8_streamer<int16>().from_v8(_top->value, *(int16*)p); break;
-                            case 4: v8_streamer<int32>().from_v8(_top->value, *(int32*)p); break;
-                            case 8: v8_streamer<int64>().from_v8(_top->value, *(int64*)p); break;
+                            case 1: from_v8<int8>() .write(_top->value, *(int8*)p ); break;
+                            case 2: from_v8<int16>().write(_top->value, *(int16*)p); break;
+                            case 4: from_v8<int32>().write(_top->value, *(int32*)p); break;
+                            case 8: from_v8<int64>().write(_top->value, *(int64*)p); break;
                             }
                         }
                         catch(v8::Exception) {
@@ -889,10 +922,10 @@ public:
                         try {
                             switch( t.get_size() )
                             {
-                            case 1: v8_streamer<uint8>() .from_v8(_top->value, *(uint8*)p ); break;
-                            case 2: v8_streamer<uint16>().from_v8(_top->value, *(uint16*)p); break;
-                            case 4: v8_streamer<uint32>().from_v8(_top->value, *(uint32*)p); break;
-                            case 8: v8_streamer<uint64>().from_v8(_top->value, *(uint64*)p); break;
+                            case 1: from_v8<uint8>() .write(_top->value, *(uint8*)p ); break;
+                            case 2: from_v8<uint16>().write(_top->value, *(uint16*)p); break;
+                            case 4: from_v8<uint32>().write(_top->value, *(uint32*)p); break;
+                            case 8: from_v8<uint64>().write(_top->value, *(uint64*)p); break;
                             }
                         }
                         catch(v8::Exception) {
@@ -927,8 +960,8 @@ public:
                         try {
                             switch( t.get_size() )
                             {
-                            case 4: v8_streamer<float>().from_v8(_top->value, *(float*)p); break;
-                            case 8: v8_streamer<double>().from_v8(_top->value, *(double*)p); break;
+                            case 4: from_v8<float>().write(_top->value, *(float*)p); break;
+                            case 8: from_v8<double>().write(_top->value, *(double*)p); break;
                             }
                         } catch(v8::Exception) {
                             e = ersSYNTAX_ERROR "expected number";
@@ -1164,7 +1197,7 @@ struct v8_enum_helper<true,T> {
 };
 
 template<class T>
-inline v8::Handle<v8::Value> v8_streamer<T>::to_v8(const T& v)
+inline v8::Handle<v8::Value> to_v8<T>::read(const T& v)
 {
     v8_enum_helper<std::is_enum<T>::value, T> en;
     if(std::is_enum<T>::value)
@@ -1177,7 +1210,7 @@ inline v8::Handle<v8::Value> v8_streamer<T>::to_v8(const T& v)
 
 
 template<class T>
-inline bool v8_streamer<T>::from_v8( v8::Handle<v8::Value> src, T& res )
+inline bool from_v8<T>::write( v8::Handle<v8::Value> src, T& res )
 {
     v8_enum_helper<std::is_enum<T>::value, T> en;
     if(std::is_enum<T>::value)
@@ -1191,18 +1224,18 @@ inline bool v8_streamer<T>::from_v8( v8::Handle<v8::Value> src, T& res )
 }
 
 template<class T>
-inline bool from_v8(v8::Handle<v8::Value> src, T& t) {
-    return v8_streamer<T>::from_v8(src, t);
+inline bool write_from_v8(v8::Handle<v8::Value> src, T& t) {
+    return from_v8<T>::write(src, t);
 }
 
 template<class T>
-inline bool from_v8( v8::Handle<v8::Value> src, threadcached<T>& tc ) {
-    return v8_streamer<typename threadcached<T>::storage_type>::from_v8(src, *tc);
+inline bool write_from_v8( v8::Handle<v8::Value> src, threadcached<T>& tc ) {
+    return from_v8<typename threadcached<T>::storage_type>::write(src, *tc);
 }
 
 template<class T>
-inline v8::Handle<v8::Value> to_v8( const T& v ) {
-    return v8_streamer<typename threadcached<T>::storage_type>::to_v8(v);
+inline v8::Handle<v8::Value> read_to_v8( const T& v ) {
+    return to_v8<typename threadcached<T>::storage_type>::read(v);
 }
 
 
