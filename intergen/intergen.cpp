@@ -75,10 +75,6 @@ struct File
 template<class T>
 int generate( const T& t, const token& patfile, const token& outfile, __time64_t mtime )
 {
-    directory::mkdir_tree(outfile, true);
-
-    directory::set_writable(outfile, true);
-
     directory::xstat st;
     bifstream bit;
 
@@ -89,6 +85,9 @@ int generate( const T& t, const token& patfile, const token& outfile, __time64_t
 
     if (st.st_mtime > mtime)
         mtime = st.st_mtime;
+
+    directory::mkdir_tree(outfile, true);
+    directory::set_writable(outfile, true);
 
     metagen mtg;
     mtg.set_source_path(patfile);
@@ -113,7 +112,7 @@ int generate( const T& t, const token& patfile, const token& outfile, __time64_t
     bof.close();
 
     directory::set_writable(outfile, false);
-    directory::set_file_times(outfile, mtime, mtime+2);
+    directory::set_file_times(outfile, mtime, mtime);
 
     return 0;
 }
