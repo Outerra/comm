@@ -8,7 +8,7 @@
 </Type>
 
 <Type Name="coid::token">
-    <DisplayString>size={_pte-_ptr} {_ptr,s8}</DisplayString>
+    <DisplayString>size={_pte-_ptr} {_ptr,[_pte-_ptr]s8}</DisplayString>
 </Type>
 
 <Type Name="coid::opcd">
