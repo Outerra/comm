@@ -112,7 +112,7 @@ int generate( const T& t, const token& patfile, const token& outfile, __time64_t
     bof.close();
 
     directory::set_writable(outfile, false);
-    directory::set_file_times(outfile, mtime, mtime);
+    directory::set_file_times(outfile, mtime+2, mtime+2);
 
     return 0;
 }
@@ -159,6 +159,9 @@ int generate_rl( const File& cgf, charstr& patfile, const token& outfile )
     }
     else
         out << "no rl_cmd's found\n";
+
+    __time64_t mtime = cgf.mtime + 2;
+    directory::set_file_times(outfile, mtime, mtime);
 
     return 0;
 }
