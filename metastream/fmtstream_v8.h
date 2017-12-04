@@ -173,6 +173,7 @@ public:
 #define V8_FAST_STREAMER(T,V8T,CT) \
 template<> class to_v8<T> { public: \
     static v8::Handle<v8::Value> read(const T& v) { return v8::new_object<v8::V8T>(CT(v)); } \
+    static v8::Handle<v8::Value> read(const T* v) { if (v) return v8::new_object<v8::V8T>(CT(*v)); return V8_UNDEFINED; } \
 }; \
 template<> class from_v8<T> { public: \
     static bool write( v8::Handle<v8::Value> src, T& res ) { res = (T)src->V8T##Value(); return true; } \
@@ -236,8 +237,10 @@ public:
 template<> class from_v8<charstr> {
 public:
     static bool write( v8::Handle<v8::Value> src, charstr& res ) {
-        if(src->IsUndefined() || src->IsNull())
+        if (src->IsUndefined() || src->IsNull()) {
+            res.reset();
             return false;
+        }
         v8::String::Utf8Value str(src);
         res.set_from(*str, str.length());
         return true;
@@ -255,14 +258,16 @@ public:
 template<class T>
 inline bool v8_write_dynarray( v8::Handle<v8::Value> src, dynarray<T>& a )
 {
-    if(!src->IsArray())
+    if (!src->IsArray()) {
+        a.reset();
         return false;
+    }
 
     v8::Local<v8::Object> obj = src->ToObject();
     uint n = obj->Get(v8::symbol("length"))->Uint32Value();
     a.alloc(n);
 
-    for(uint i=0; i<n; ++i) {
+    for (uint i=0; i<n; ++i) {
         from_v8<T>::write(obj->Get(i), a[i]);
     }
 
