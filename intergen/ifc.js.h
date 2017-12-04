@@ -239,26 +239,47 @@ public:
     ///
     static v8::CBK_RET js_include(const v8::ARGUMENTS& args)
     {
-        if(args.Length() < 1)
-            return v8::CBK_RET();
+        coid::charstr dst;
+        coid::token relpath;
 
         V8_DECL_ISO(iso);
+        V8_ESCAPABLE_SCOPE(iso, scope);
+
+        if (args.Length() < 1)
+        {
+            //return current path of the 0th stack frame when called without arguments
+
+            if (!script_handle::get_target_path("", 0, dst, &relpath))
+                return (v8::CBK_RET)V8_UNDEFINED;
+
+            coid::charstr urlenc = "file:///";
+            urlenc.append_encode_url(relpath, false);
+
+            v8::Handle<v8::String> source = v8::string_utf8(urlenc);
+
+#ifdef V8_MAJOR_VERSION
+            args.GetReturnValue().Set(source);
+            return;
+#else
+            return scope.Close(source);
+#endif
+        }
+
+        uint frame = args.Length() > 1
+            ? (uint)args[1]->ToInteger()->Value()
+            : 0;
 
         v8::String::Utf8Value str(args[0]);
         coid::token path = coid::token(*str, str.length());
         path.trim_whitespace();
 
-        coid::charstr dst;
-        if(0 != script_handle::get_target_path(path, 0, dst, 0)) {
+        if (0 != script_handle::get_target_path(path, 0, dst, &relpath)) {
             (dst = "invalid path ") << path;
             return v8::throw_js(iso, v8::Exception::Error, dst);
         }
 
-        //if(!dst.ends_with(".js"))
-        //    dst << ".js";
-
         coid::bifstream bif(dst);
-        if(!bif.is_open()) {
+        if (!bif.is_open()) {
             dst.ins(0, coid::token("error opening file "));
             return v8::throw_js(iso, v8::Exception::Error, dst);
         }
@@ -268,7 +289,6 @@ public:
 
         coid::token js = buf;
 
-        V8_ESCAPABLE_SCOPE(iso, scope);
         v8::Local<v8::Context> ctx = V8_CUR_CONTEXT(iso);
 
         v8::TryCatch trycatch;
@@ -276,7 +296,7 @@ public:
         ctx->Global()->Set(result, V8_UNDEFINED);
 
         coid::zstring filepath;
-        filepath.get_str() << "file:///" << dst;
+        filepath.get_str() << "file:///" << relpath;
 
         v8::Handle<v8::String> source = v8::string_utf8(js);
         v8::Handle<v8::String> spath  = v8::string_utf8(filepath);
