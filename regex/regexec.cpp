@@ -255,7 +255,7 @@ token regex_program::regexec(
                 switch(inst->type){
                 case Reinst::RUNE:	// regular character
                     if(inst->cd == r || (icase && inst->cd == ::tolower(r) )) {
-                        _appendfollowstate(nl, inst->next, tlp);
+                        tlp = _appendfollowstate(nl, inst->next, tlp);
                     }
                     break;
                 case Reinst::LBRA:
@@ -266,10 +266,10 @@ token regex_program::regexec(
                     continue;
                 case Reinst::ANY:
                     if(r != j->any_except)
-                        _appendfollowstate(nl, inst->next, tlp);
+                        tlp = _appendfollowstate(nl, inst->next, tlp);
                     break;
                 case Reinst::ANYNL:
-                    _appendfollowstate(nl, inst->next, tlp);
+                    tlp = _appendfollowstate(nl, inst->next, tlp);
                     break;
                 case Reinst::BOL:
                     if(s.ptr() == bol.ptr() || s[-1] == '\n')
@@ -285,7 +285,7 @@ token regex_program::regexec(
 
                     for( ; pb < pe; pb += 2)
                         if(r >= pb[0] && r <= pb[1]) {
-                            _appendfollowstate(nl, inst->next, tlp);
+                            tlp = _appendfollowstate(nl, inst->next, tlp);
                             break;
                         }
                     break;
@@ -298,7 +298,7 @@ token regex_program::regexec(
                         if(r >= pb[0] && r <= pb[1])
                             break;
                     if(pb == pe)
-                        _appendfollowstate(nl, inst->next, tlp);
+                        tlp = _appendfollowstate(nl, inst->next, tlp);
                     break;
                               }
                 case Reinst::OR:
