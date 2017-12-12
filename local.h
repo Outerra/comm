@@ -139,15 +139,16 @@ public:
     }
 
     ///Assign if empty
-    clean_ptr& assign_safe(const T* p) {
+    bool assign_safe(const T* p) {
         static coid::comm_mutex _mux(500, false);
 
         _mux.lock();
         //assign only if nobody assigned before us
-        if (!_p || !p)
+        bool succ = !_p || !p;
+        if (succ)
             _p = (T*)p;
         _mux.unlock();
-        return *this;
+        return succ;
     }
 
     bool is_set() const { return _p != 0; }

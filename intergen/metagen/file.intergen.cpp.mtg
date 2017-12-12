@@ -149,19 +149,43 @@ $-(if virtual!)$
 
     static iref<$name$> _generic_interface_creator($..ns default=" "$::$..class$* host, $name$* __here__)
     {
+        iref<$name$> rval;
+    
         //cast to dispatch to sidestep protected access restrictions
-        $name$_dispatcher* __disp__ = static_cast<$name$_dispatcher*>(__here__);
-        if (!__disp__)
-            __disp__ = new $name$_dispatcher;
-
-        __disp__->_host.create(host);
-        __disp__->_vtable = _capture ? get_vtable_intercept() : get_vtable();
+        $name$_dispatcher* dispatcher = static_cast<$name$_dispatcher*>(__here__);
 
         $--(if varname?)$
         if (!host->$varname$) {
-            __disp__->_cleaner = &_cleaner_callback;
-            host->$varname$.assign_safe(__disp__);
+            if (!dispatcher)
+                dispatcher = new $name$_dispatcher;
+
+            rval.create(dispatcher);
+
+            dispatcher->_host.create(host);
+            dispatcher->_vtable = _capture ? get_vtable_intercept() : get_vtable();
+
+            if (host->$varname$.assign_safe(dispatcher)) {
+                dispatcher->_cleaner = &_cleaner_callback;
+            }
+            else if (!__here__) {
+                dispatcher = static_cast<$name$_dispatcher*>(host->$varname$.get());
+                rval.create(dispatcher);
+            }
         }
+        else if (!__here__) {
+            dispatcher = static_cast<$name$_dispatcher*>(host->$varname$.get());
+            rval.create(dispatcher);
+        }
+        else
+            rval.create(dispatcher);
+        $-(elif)$
+        if (!dispatcher)
+            dispatcher = new $name$_dispatcher;
+
+        rval.create(dispatcher);
+
+        dispatcher->_host.create(host);
+        dispatcher->_vtable = _capture ? get_vtable_intercept() : get_vtable();
         $-(/if)$
 
         $-(if onconnect?)$
@@ -169,10 +193,10 @@ $-(if virtual!)$
 
         $-(/if)$
         $-(if onconnectev?)$
-        __disp__->$onconnectev$();
+        dispatcher->$onconnectev$();
 
         $-(/if)$
-        return __disp__;
+        return rval;
     }
 $-(/if)$
 
