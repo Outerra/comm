@@ -2,15 +2,15 @@
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
 <Type Name="coid::charstr">
-    <DisplayString Condition="_tstr._ptr == 0">"" (null)</DisplayString>
-    <DisplayString>size={((size_t*)_tstr._ptr)[-1]} {_tstr._ptr,s8}</DisplayString>
+    <DisplayString Condition="_tstr._ptr == 0">size = 0 "" (null)</DisplayString>
+    <DisplayString>size = {((size_t*)_tstr._ptr)[-1] - 1} {_tstr._ptr,s8}</DisplayString>
     <StringView>_tstr._ptr,s8</StringView>
 </Type>
 
 <Type Name="coid::token">
-    <DisplayString Condition="_ptr == 0">"" (null)</DisplayString>
-    <DisplayString Condition="_ptr == _pte">""</DisplayString>
-    <DisplayString>size={_pte-_ptr} {_ptr,[_pte-_ptr]s8}</DisplayString>
+    <DisplayString Condition="_ptr == 0">size = 0 "" (null)</DisplayString>
+    <DisplayString Condition="_ptr == _pte">size = 0 ""</DisplayString>
+    <DisplayString>size = {_pte-_ptr} {_ptr,[_pte-_ptr]s8}</DisplayString>
 </Type>
 
 <Type Name="coid::opcd">
@@ -33,13 +33,13 @@
 <Type Name="ref&lt;*&gt;">
     <SmartPointer Usage="Minimal">_o</SmartPointer>
     <DisplayString Condition="_o == 0">{{empty}}</DisplayString>
-    <DisplayString>{*_o}</DisplayString>
+    <DisplayString>{_o,x}</DisplayString>
 </Type>
 
 <Type Name="iref&lt;*&gt;">
     <SmartPointer Usage="Minimal">_p</SmartPointer>
     <DisplayString Condition="_p == 0">{{empty}}</DisplayString>
-    <DisplayString>{*_p}</DisplayString>
+    <DisplayString>{_p,x}</DisplayString>
 </Type>
     
 </AutoVisualizer>
