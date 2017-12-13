@@ -151,37 +151,23 @@ $-(if virtual!)$
     {
         iref<$name$> rval;
     
-        //cast to dispatch to sidestep protected access restrictions
-        $name$_dispatcher* dispatcher = static_cast<$name$_dispatcher*>(__here__);
-
         $--(if varname?)$
-        if (!host->$varname$) {
-            if (!dispatcher)
-                dispatcher = new $name$_dispatcher;
-
+        if (host->$varname$ && !__here__)
+            rval.create(static_cast<$name$_dispatcher*>(host->$varname$.get()));
+            
+        if (rval.is_empty()) {
+            $name$_dispatcher* dispatcher = __here__ ? static_cast<$name$_dispatcher*>(__here__) : new $name$_dispatcher;
             rval.create(dispatcher);
-
+            
             dispatcher->_host.create(host);
             dispatcher->_vtable = _capture ? get_vtable_intercept() : get_vtable();
+            dispatcher->_cleaner = &_cleaner_callback;
+        }
 
-            if (host->$varname$.assign_safe(dispatcher)) {
-                dispatcher->_cleaner = &_cleaner_callback;
-            }
-            else if (!__here__) {
-                dispatcher = static_cast<$name$_dispatcher*>(host->$varname$.get());
-                rval.create(dispatcher);
-            }
-        }
-        else if (!__here__) {
-            dispatcher = static_cast<$name$_dispatcher*>(host->$varname$.get());
-            rval.create(dispatcher);
-        }
-        else
-            rval.create(dispatcher);
+        if (host->$varname$ || !host->$varname$.assign_safe(rval.get()))
+            rval.create(static_cast<$name$_dispatcher*>(host->$varname$.get()));
         $-(elif)$
-        if (!dispatcher)
-            dispatcher = new $name$_dispatcher;
-
+        $name$_dispatcher* dispatcher = __here__ ? static_cast<$name$_dispatcher*>(__here__) : new $name$_dispatcher;
         rval.create(dispatcher);
 
         dispatcher->_host.create(host);
@@ -193,7 +179,7 @@ $-(if virtual!)$
 
         $-(/if)$
         $-(if onconnectev?)$
-        dispatcher->$onconnectev$();
+        rval->$onconnectev$();
 
         $-(/if)$
         return rval;
