@@ -161,11 +161,12 @@ $-(if virtual!)$
             
             dispatcher->_host.create(host);
             dispatcher->_vtable = _capture ? get_vtable_intercept() : get_vtable();
-            dispatcher->_cleaner = &_cleaner_callback;
         }
 
-        if (host->$varname$ || !host->$varname$.assign_safe(rval.get()))
+        if (!host->$varname$.assign_safe(rval.get()))
             rval.create(static_cast<$name$_dispatcher*>(host->$varname$.get()));
+        else
+            static_cast<$name$_dispatcher*>(rval.get())->_cleaner = &_cleaner_callback;
         $-(elif)$
         $name$_dispatcher* dispatcher = __here__ ? static_cast<$name$_dispatcher*>(__here__) : new $name$_dispatcher;
         rval.create(dispatcher);

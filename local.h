@@ -141,6 +141,8 @@ public:
     ///Assign if empty
     bool assign_safe(const T* p) {
         static coid::comm_mutex _mux(500, false);
+        if (_p == p)
+            return true;
 
         _mux.lock();
         //assign only if nobody assigned before us
