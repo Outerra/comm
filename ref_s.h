@@ -67,10 +67,14 @@ public:
 
     // from T* constructors
     explicit ref(T* o)
-        : _p(policy_trait<T>::policy::create(o))
+        : _p(o != 0
+			? policy_trait<T>::policy::create(o)
+			: 0)
         , _o(o)
     {
-        _p->add_refcount();
+		if (_p) {
+			_p->add_refcount();
+		}
     }
 
     template<class Y>
