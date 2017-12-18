@@ -121,9 +121,9 @@ public:
     T* create(T* const p)
     {
         DASSERT_RET(p != _p, _p);
+        p->add_refcount();
         release();
         _p = p;
-        _p->add_refcount();
         return _p;
     }
 
@@ -154,15 +154,16 @@ public:
     }
 
     ///Assign if empty
-    iref_t& assign_safe(const iref_t& r) {
+    bool assign_safe(const iref_t& r) {
         static coid::comm_mutex _mux(500, false);
 
         _mux.lock();
         //assign only if nobody assigned before us
-        if (!_p)
+        bool succ = !_p;
+        if (succ)
             _p = r.add_refcount();
         _mux.unlock();
-        return *this;
+        return succ;
     }
 
     const iref_t& operator = (const iref_t& r) {
@@ -199,6 +200,8 @@ public:
 
     template<class T2>
     void takeover(iref<T2>& p) {
+        if (_p == static_cast<T*>(p.get()))
+            return;
         release();
         _p = p.get();
         p.forget();
