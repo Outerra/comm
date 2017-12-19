@@ -94,6 +94,7 @@
 //@{ Assert in debug, log in release, return \a ret on failed assertion (also in release)
 #define ASSERT_RET(expr,ret,txt)    XASSERTE(expr) coid::__rassert(coid::opt_string() << txt,ersEXCEPTION,__FILE__,__LINE__,__FUNCTION__,#expr); XASSERT(ersEXCEPTION #expr); return ret; } while(0)
 #define ASSERT_RETVOID(expr,txt)    XASSERTE(expr) coid::__rassert(coid::opt_string() << txt,ersEXCEPTION,__FILE__,__LINE__,__FUNCTION__,#expr); XASSERT(ersEXCEPTION #expr); return; } while(0)
+#define ASSERT_LOG(expr,txt)        XASSERTE(expr) coid::__rassert(coid::opt_string() << txt,ersEXCEPTION,__FILE__,__LINE__,__FUNCTION__,#expr); XASSERT(ersEXCEPTION #expr); } while(0)
 //@}
 
 //@{ Assert in debug, no log in release, return \a ret on failed assertion (also in release)
@@ -116,6 +117,7 @@
 
 #define ASSERT_RET(expr,ret,txt)    XASSERTE(expr) coid::__rassert(coid::opt_string() << txt,0,__FILE__,__LINE__,__FUNCTION__,#expr); return ret; } while(0)
 #define ASSERT_RETVOID(expr,txt)    XASSERTE(expr) coid::__rassert(coid::opt_string() << txt,0,__FILE__,__LINE__,__FUNCTION__,#expr); return; } while(0)
+#define ASSERT_LOG(expr,txt)        XASSERTE(expr) coid::__rassert(coid::opt_string() << txt,0,__FILE__,__LINE__,__FUNCTION__,#expr); } while(0)
 
 #define DASSERT_RET(expr,ret)       do{ if(expr) break; return ret; } while(0)
 #define DASSERT_RETVOID(expr)       do{ if(expr) break; return; } while(0)
