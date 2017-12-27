@@ -293,6 +293,12 @@ struct constructor<true, T>
         return dst;
     }
 
+    static T* construct_default( T* dst, bool isnew ) {
+        return isnew
+            ? new(dst) T
+            : dst;
+    }
+
     template<class...Ps>
     static T* construct_object( T* dst, bool isnew, Ps&&... ps ) {
         if(isnew)
@@ -320,6 +326,10 @@ struct constructor<false, T>
     static T* copy_object( T* dst, bool isnew, T&& v ) {
         DASSERT(isnew);
         return new(dst) T(std::forward<T>(v));
+    }
+
+    static T* construct_default( T* dst, bool isnew ) {
+        return new(dst) T;
     }
 
     template<class...Ps>

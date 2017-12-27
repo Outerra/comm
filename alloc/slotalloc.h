@@ -237,13 +237,28 @@ public:
             std::forward<Ps>(ps)...);
     }
 
-    ///Add new object initialized with default constructor
+    ///Add new object initialized with default constructor, or reuse one in pool mode
     T* add(uints* pid = 0) {
         bool isold = _count < _created;
 
-        return slotalloc_detail::constructor<POOL, T>::construct_object(
+        return slotalloc_detail::constructor<POOL, T>::construct_default(
             isold ? alloc(pid) : append(pid),
             !POOL || !isold);
+    }
+
+    ///Add new object or reuse one from pool if predicate returns true
+    template <typename Func>
+    T* add_if(Func fn, uints* pid = 0) {
+        bool isold = _count < _created;
+
+        if (!isold)
+            return new(append(pid)) T;
+
+        uints id = find_unused(fn);
+
+        return id != UMAXS
+            ? alloc_item(pid ? (*pid = id) : id)
+            : new(append(pid)) T;
     }
 
     ///Add new object, uninitialized (no constructor invoked on the object)
@@ -277,7 +292,7 @@ public:
         uints id = alloc_range<false>(n, &nold);
 
         for_range_unchecked(id, n, [&](T* p) {
-            slotalloc_detail::constructor<POOL, T>::construct_object(p, !POOL || nold == 0);
+            slotalloc_detail::constructor<POOL, T>::construct_default(p, !POOL || nold == 0);
             if (nold)
                 nold--;
         });
@@ -328,7 +343,7 @@ public:
         uints id = alloc_range_contiguous<false>(n, &nold);
 
         for_range_unchecked(id, n, [&](T* p) {
-            slotalloc_detail::constructor<POOL, T>::construct_object(p, !POOL || nold == 0);
+            slotalloc_detail::constructor<POOL, T>::construct_default(p, !POOL || nold == 0);
             if (nold)
                 nold--;
         });
@@ -798,7 +813,6 @@ protected:
 public:
 
     ///Invoke a functor on each used item.
-    //@note const version doesn't handle array insertions/deletions during iteration
     //@param f functor with ([const] T&) or ([const] T&, size_t index) arguments
     template<typename Func>
     void for_each(Func f) const
@@ -979,6 +993,56 @@ public:
         return 0;
     }
 
+    ///Run on unused elements (freed elements in pool mode) until predicate returns true
+    //@return pointer to the element or null
+    //@param f functor with ([const] T&) or ([const] T&, size_t index) arguments
+    template<typename Func>
+    uints find_unused(Func f) const
+    {
+        if (!POOL)
+            return UMAXS;
+
+        typedef std::remove_reference_t<typename closure_traits<Func>::template arg<0>> Tx;
+        uint_type const* bm = const_cast<uint_type const*>(_allocated.ptr());
+        uint_type const* em = const_cast<uint_type const*>(_allocated.ptre());
+
+        const page* pb = _pages.ptr();
+        const page* pe = _pages.ptre();
+
+        uint_type const* pm = bm;
+        uints gbase = 0;
+
+        for (const page* pp = pb; pp < pe; ++pp, gbase += page::ITEMS)
+        {
+            T* d = const_cast<T*>(pp->ptr());
+            uint_type const* epm = em - pm > page::NMASK
+                ? pm + page::NMASK
+                : em;
+
+            uints pbase = 0;
+
+            for (; pm != epm; ++pm, pbase += MASK_BITS) {
+                if (*pm == UMAXS)
+                    continue;
+
+                uints m = 1;
+                for (int i = 0; i < MASK_BITS; ++i, m <<= 1) {
+                    uints id = gbase + pbase + i;
+                    if (id >= _created)
+                        break;
+
+                    if (!(*pm & m)) {
+                        if (funccall(f, d[pbase + i], id|0))
+                            return id;
+                    }
+                    //else if ((*pm & ~(m - 1)) == 0)
+                    //    break;
+                }
+            }
+        }
+
+        return UMAXS;
+    }
 
     //@{ Get internal array directly
     //@note altering the array directly may invalidate the internal structure
@@ -1206,6 +1270,24 @@ private:
 
         *p |= uints(1) << bit;
         ++_count;
+
+        return ptr(id);
+    }
+
+    ///Return allocated slot
+    T* alloc_item(uints id)
+    {
+        DASSERT(id < _created);
+        DASSERT(!get_bit(id));
+
+        uint_type* p = &_allocated[id / MASK_BITS];
+        uint8 bit = id & (MASK_BITS - 1);
+
+        *p |= uints(1) << bit;
+        ++_count;
+
+        if (TRACKING)
+            tracker_t::set_modified(id);
 
         return ptr(id);
     }
