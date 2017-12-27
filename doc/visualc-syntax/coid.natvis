@@ -30,6 +30,14 @@
     </Expand>
 </Type>
 
+<Type Name="coid::slotalloc_base&lt;*,*&gt;">
+    <DisplayString>size = {_count}</DisplayString>
+</Type>
+
+<Type Name="coid::slotalloc&lt;*,*&gt;">
+    <DisplayString>size = {_count}</DisplayString>
+</Type>
+
 <Type Name="ref&lt;*&gt;">
     <SmartPointer Usage="Minimal">_o</SmartPointer>
     <DisplayString Condition="_o == 0">{{empty}}</DisplayString>

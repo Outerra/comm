@@ -337,7 +337,7 @@ public:
         if (n == 0 || n > page::ITEMS)
             return 0;
         if (n == 1)
-            return add(&id);
+            return add();
 
         uints nold;
         uints id = alloc_range_contiguous<false>(n, &nold);
@@ -735,6 +735,30 @@ protected:
     template<class Fn>
     using returns_void = std::integral_constant<bool, closure_traits<Fn>::returns_void::value>;
 
+    ///A tracking void fnc(T&)
+    template<typename Fn, typename = std::enable_if_t<!has_index<Fn>::value>>
+    bool funccall_if(const Fn& fn, arg0ref<Fn> v, size_t index) const
+    {
+        bool ret = fn(v);
+        if (TRACKING)
+            tracker_t::set_modified(index);
+
+        return ret;
+    }
+
+    ///A tracking void fnc(T&, index)
+    template<typename Fn, typename = std::enable_if_t<has_index<Fn>::value>>
+    bool funccall_if(const Fn& fn, arg0ref<Fn> v, const size_t& index) const
+    {
+        bool ret = fn(v, index);
+        if (TRACKING)
+            tracker_t::set_modified(index);
+
+        return ret;
+    }
+
+
+
     ///A non-tracking void fnc(const T&) const
     template<typename Fn, typename = std::enable_if_t<is_const<Fn>::value && !has_index<Fn>::value>>
     bool funccall(const Fn& fn, arg0constref<Fn> v, size_t&& index) const
@@ -981,7 +1005,7 @@ public:
                 uints m = 1;
                 for (int i = 0; i < MASK_BITS; ++i, m <<= 1) {
                     if (*pm & m) {
-                        if (funccall(f, d[pbase + i], gbase + pbase + i))
+                        if (funccall_if(f, d[pbase + i], gbase + pbase + i))
                             return const_cast<T*>(d) + (pbase + i);
                     }
                     else if ((*pm & ~(m - 1)) == 0)
@@ -1032,7 +1056,7 @@ public:
                         break;
 
                     if (!(*pm & m)) {
-                        if (funccall(f, d[pbase + i], id|0))
+                        if (funccall_if(f, d[pbase + i], id|0))
                             return id;
                     }
                     //else if ((*pm & ~(m - 1)) == 0)
