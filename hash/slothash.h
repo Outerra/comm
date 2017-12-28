@@ -163,7 +163,7 @@ public:
     //@return object
     //@note caller is required tu physically update the key in the object to match given new key
     template<class FKEY = KEY>
-    T* update_value_slot(const FKEY& newkey, uints id)
+    T* update_value_slot(uints id, const FKEY& newkey)
     {
         //delete old key
 
