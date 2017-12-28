@@ -158,6 +158,35 @@ public:
         return base::get_mutable_item(id);
     }
 
+    ///Update existing item by reassigning it under a new key
+    //@param key new lookup key
+    //@return object
+    //@note caller is required tu physically update the key in the object to match given new key
+    template<class FKEY = KEY>
+    T* update_value_slot(const FKEY& newkey, uints id)
+    {
+        //delete old key
+
+        T* p = base::get_mutable_item(id);
+        const KEY& oldkey = _EXTRACTOR(*p);
+        uint bo = bucket(oldkey);
+
+        //remove id from the bucket list
+        uint* n = find_object_entry(bo, oldkey);
+        DASSERT(*n == id);
+
+        *n = seqtable()[id];
+
+        //insert new key
+
+        uint bn = bucket(newkey);
+
+        seqtable()[id] = _buckets[bn];
+        _buckets[bn] = id;
+
+        return p;
+    }
+
     ///Insert a new slot for the key
     //@return pointer to the new item or nullptr if the key already exists and MULTIKEY is false
     template<class...Ps>
