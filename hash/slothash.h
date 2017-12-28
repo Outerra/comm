@@ -159,8 +159,9 @@ public:
     }
 
     ///Update existing item by reassigning it under a new key
+    //@param id existing item id
     //@param key new lookup key
-    //@return object
+    //@return value object
     //@note caller is required tu physically update the key in the object to match given new key
     template<class FKEY = KEY>
     T* update_value_slot(uints id, const FKEY& newkey)
@@ -168,6 +169,9 @@ public:
         //delete old key
 
         T* p = base::get_mutable_item(id);
+        if (!p)
+            return p;
+
         const KEY& oldkey = _EXTRACTOR(*p);
         uint bo = bucket(oldkey);
 
