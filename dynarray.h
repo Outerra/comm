@@ -1635,6 +1635,9 @@ private:
     void** _a;
 };
 
+///Alias with 32 bit sizes
+template< class T, class A=comm_array_allocator>
+using dynarray32 = dynarray<T, uint, A>;
 
 
 COID_NAMESPACE_END

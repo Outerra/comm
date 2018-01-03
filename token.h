@@ -2537,7 +2537,30 @@ private:
     uint _hash;
 };
 
+////////////////////////////////////////////////////////////////////////////////
 
+///Token constructed from string literals
+class token_literal : public token
+{
+public:
+    token_literal()
+    {}
+
+    token_literal(std::nullptr_t) : token(nullptr)
+    {}
+
+    token_literal(const token_literal& tok) : token(static_cast<const token&>(tok))
+    {}
+
+    ///String literal constructor, optimization to have fast literal strings available as tokens
+    //@note tries to detect and if passed in a char array instead of string literal, by checking if the last char is 0
+    // and the preceding char is not 0
+    // Call token(&*array) to force treating the array as a zero-terminated string
+    template <int N>
+    token_literal(const char(&str)[N])
+        : token(str)
+    {}
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 
