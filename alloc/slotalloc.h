@@ -844,16 +844,14 @@ public:
         typedef std::remove_reference_t<typename closure_traits<Func>::template arg<0>> Tx;
         uint_type const* bm = const_cast<uint_type const*>(_allocated.ptr());
         uint_type const* em = const_cast<uint_type const*>(_allocated.ptre());
-
-        const page* bp = _pages.ptr();
-        const page* ep = _pages.ptre();
-
         uint_type const* pm = bm;
         uints gbase = 0;
 
-        for (const page* pp = bp; pp < ep; ++pp, gbase += page::ITEMS)
+        for (uints ip = 0; ip < _pages.size(); ++ip, gbase += page::ITEMS)
         {
-            T* d = const_cast<T*>(pp->ptr());
+            const page& pp = _pages[ip];
+            T* data = const_cast<T*>(pp.ptr());
+
             uint_type const* epm = em - pm > page::NMASK
                 ? pm + page::NMASK
                 : em;
@@ -867,22 +865,31 @@ public:
                 uints m = 1;
                 for (int i = 0; i < MASK_BITS; ++i, m <<= 1) {
                     if (*pm & m)
-                        funccall(f, d[pbase + i], gbase + pbase + i);
+                        funccall(f, data[pbase + i], gbase + pbase + i);
                     else if ((*pm & ~(m - 1)) == 0)
                         break;
+
+                    //update after rebase
+                    ints diffm = (ints)const_cast<uint_type const*>(_allocated.ptr()) - (ints)bm;
+                    if (diffm) {
+                        bm = ptr_advance(bm, diffm);
+                        em = const_cast<uint_type const*>(_allocated.ptre());
+                        pm = ptr_advance(pm, diffm);
+                        epm = ptr_advance(epm, diffm);
+                    }
                 }
             }
         }
     }
 
     ///Invoke a functor on each used item in given ext array
-    //@note const version doesn't handle array insertions/deletions during iteration
+    //@note handles array insertions/deletions during iteration
     //@param K ext array id
     //@param f functor with ([const] T&) or ([const] T&, size_t index) arguments, with T being the type of given value array
     template<int K, typename Func>
     void for_each_in_array(Func f) const
     {
-        auto d = value_array<K>().ptr();
+        auto extarray = value_array<K>().ptr();
 
         uint_type const* bm = const_cast<uint_type const*>(_allocated.ptr());
         uint_type const* em = const_cast<uint_type const*>(_allocated.ptre());
@@ -895,9 +902,21 @@ public:
             uints m = 1;
             for (int i = 0; i < MASK_BITS; ++i, m <<= 1) {
                 if (*pm & m)
-                    funccall(f, d[s + i], s + i);
+                    funccall(f, extarray[s + i], s + i);
                 else if ((*pm & ~(m - 1)) == 0)
                     break;
+
+                //update after rebase
+                ints diffm = (ints)const_cast<uint_type const*>(_allocated.ptr()) - (ints)bm;
+                if (diffm) {
+                    bm = ptr_advance(bm, diffm);
+                    em = const_cast<uint_type const*>(_allocated.ptre());
+                    pm = ptr_advance(pm, diffm);
+                }
+
+                ints diffa = (ints)value_array<K>().ptr() - (ints)extarray;
+                if (diffa)
+                    extarray = ptr_advance(extarray, diffa);
             }
         }
     }
@@ -930,7 +949,7 @@ public:
 
         for (const page* pp = bp; pp < ep; ++pp, gbase += page::ITEMS)
         {
-            T* d = const_cast<T*>(pp->data);
+            T* data = const_cast<T*>(pp->data);
             changeset_t const* epc = ec - pc > page::NMASK
                 ? pc + page::ITEMS
                 : ec;
@@ -942,7 +961,7 @@ public:
 
                 for (int i = 0; pc < epc && i < MASK_BITS; ++i, m >>= 1, ++pc) {
                     if (all_modified || (pc->mask & bitplane_mask) != 0) {
-                        Tx* pd = (m & 1) != 0 ? (Tx*)(d + pbase + i) : nullptr;
+                        Tx* pd = (m & 1) != 0 ? (Tx*)(data + pbase + i) : nullptr;
                         funccallp(f, pd, gbase + pbase + i);
                     }
                 }
@@ -983,15 +1002,14 @@ public:
         uint_type const* bm = const_cast<uint_type const*>(_allocated.ptr());
         uint_type const* em = const_cast<uint_type const*>(_allocated.ptre());
 
-        const page* pb = _pages.ptr();
-        const page* pe = _pages.ptre();
-
         uint_type const* pm = bm;
         uints gbase = 0;
 
-        for (const page* pp = pb; pp < pe; ++pp, gbase += page::ITEMS)
+        for (uints ip = 0; ip < _pages.size(); ++ip, gbase += page::ITEMS)
         {
-            T* d = const_cast<T*>(pp->ptr());
+            const page& pp = _pages[ip];
+            T* data = const_cast<T*>(pp.ptr());
+
             uint_type const* epm = em - pm > page::NMASK
                 ? pm + page::NMASK
                 : em;
@@ -1005,8 +1023,17 @@ public:
                 uints m = 1;
                 for (int i = 0; i < MASK_BITS; ++i, m <<= 1) {
                     if (*pm & m) {
-                        if (funccall_if(f, d[pbase + i], gbase + pbase + i))
-                            return const_cast<T*>(d) + (pbase + i);
+                        if (funccall_if(f, data[pbase + i], gbase + pbase + i))
+                            return const_cast<T*>(data) + (pbase + i);
+
+                        //update after rebase
+                        ints diffm = (ints)const_cast<uint_type const*>(_allocated.ptr()) - (ints)bm;
+                        if (diffm) {
+                            bm = ptr_advance(bm, diffm);
+                            em = const_cast<uint_type const*>(_allocated.ptre());
+                            pm = ptr_advance(pm, diffm);
+                            epm = ptr_advance(epm, diffm);
+                        }
                     }
                     else if ((*pm & ~(m - 1)) == 0)
                         break;
