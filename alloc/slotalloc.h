@@ -872,10 +872,10 @@ public:
                     //update after rebase
                     ints diffm = (ints)const_cast<uint_type const*>(_allocated.ptr()) - (ints)bm;
                     if (diffm) {
-                        bm = ptr_advance(bm, diffm);
+                        bm = ptr_byteshift(bm, diffm);
                         em = const_cast<uint_type const*>(_allocated.ptre());
-                        pm = ptr_advance(pm, diffm);
-                        epm = ptr_advance(epm, diffm);
+                        pm = ptr_byteshift(pm, diffm);
+                        epm = ptr_byteshift(epm, diffm);
                     }
                 }
             }
@@ -909,14 +909,14 @@ public:
                 //update after rebase
                 ints diffm = (ints)const_cast<uint_type const*>(_allocated.ptr()) - (ints)bm;
                 if (diffm) {
-                    bm = ptr_advance(bm, diffm);
+                    bm = ptr_byteshift(bm, diffm);
                     em = const_cast<uint_type const*>(_allocated.ptre());
-                    pm = ptr_advance(pm, diffm);
+                    pm = ptr_byteshift(pm, diffm);
                 }
 
                 ints diffa = (ints)value_array<K>().ptr() - (ints)extarray;
                 if (diffa)
-                    extarray = ptr_advance(extarray, diffa);
+                    extarray = ptr_byteshift(extarray, diffa);
             }
         }
     }
@@ -1029,10 +1029,10 @@ public:
                         //update after rebase
                         ints diffm = (ints)const_cast<uint_type const*>(_allocated.ptr()) - (ints)bm;
                         if (diffm) {
-                            bm = ptr_advance(bm, diffm);
+                            bm = ptr_byteshift(bm, diffm);
                             em = const_cast<uint_type const*>(_allocated.ptre());
-                            pm = ptr_advance(pm, diffm);
-                            epm = ptr_advance(epm, diffm);
+                            pm = ptr_byteshift(pm, diffm);
+                            epm = ptr_byteshift(epm, diffm);
                         }
                     }
                     else if ((*pm & ~(m - 1)) == 0)

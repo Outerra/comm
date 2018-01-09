@@ -784,9 +784,9 @@ struct token
     token cut_left(char c, cut_trait ctr = cut_trait_remove_sep())
     {
         token r;
-        const char* p = c ? strchr(c) : _pte;
+        const char* p = strchr(c);
         if (p) {
-            token sep(p, c ? 1 : 0);
+            token sep(p, 1);
             return ctr.process_found(*this, r, sep);
         }
         else

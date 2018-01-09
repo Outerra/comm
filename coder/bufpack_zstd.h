@@ -254,11 +254,17 @@ struct packer_zstd
     void reset_read() {
         if (_dstream)
             ZSTD_resetDStream(_dstream);
+
+        _offset = 0;
+        _buf.reset();
     }
 
     void reset_write(uints size = 0) {
         if (_cstream)
             ZSTD_resetCStream(_cstream, size);
+
+        _offset = 0;
+        _buf.reset();
     }
 
     bool eof() const {
