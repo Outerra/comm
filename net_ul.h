@@ -87,6 +87,44 @@ static inline void _sysEndianSwap( uint16 *x )
         (( *x <<  8 ) & 0xFF00 ) ;
 }
 
+template <int S>
+inline void endian_swap(void* p, uints count);
+
+template <>
+inline void endian_swap<sizeof(uint8)>(void* p, uints count) {
+}
+
+template <>
+inline void endian_swap<sizeof(uint16)>(void* p, uints count)
+{
+    uint16* d = (uint16*)p;
+    for (uints i = 0; i < count; ++i)
+        d[i] = (d[i] >> 8) | (d[i] << 8);
+}
+
+template <>
+inline void endian_swap<sizeof(uint32)>(void* p, uints count)
+{
+    uint32* d = (uint32*)p;
+    for (uints i = 0; i < count; ++i)
+        d[i] = (d[i] >> 24) | ((d[i] >> 8) & 0xff00u) | ((d[i] << 8) & 0xff0000u) | (d[i] << 24);
+}
+
+template <>
+inline void endian_swap<sizeof(uint64)>(void* p, uints count)
+{
+    uint64* d = (uint64*)p;
+    for (uints i = 0; i < count; ++i)
+        d[i] = (d[i] >> 56)
+            | ((d[i] >> 40) & 0x000000000000ff00ull)
+            | ((d[i] >> 24) & 0x0000000000ff0000ull)
+            | ((d[i] >>  8) & 0x00000000ff000000ull)
+            | ((d[i] <<  8) & 0x0000ff0000000000ull)
+            | ((d[i] << 24) & 0x0000ff0000000000ull)
+            | ((d[i] << 40) & 0x00ff000000000000ull)
+            |  (d[i] << 56);
+}
+
 inline uint16 sysEndianLittle16( uint16 x )
 {
     if(sysIsLittleEndian)
