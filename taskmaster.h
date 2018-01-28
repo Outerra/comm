@@ -111,6 +111,19 @@ public:
         return level;
     }
 
+    ///Run fn(index) in parallel in task level 0
+    //@param first begin index value
+    //@param last end index value
+    //@param fn function(index) to run
+    template <typename Index, typename Fn>
+    void parallel_for(Index first, Index last, const Fn& fn) {
+        for (; first != last; ++first) {
+            push(0, fn, first);
+        }
+
+        wait(0);
+    }
+
     ///Push task (function and its arguments) into queue for processing by worker threads
     //@param tlevel task level to push into (<0 unsynced long duration tasks, >=0 registered task level
     //@param fn function to run
