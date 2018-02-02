@@ -258,6 +258,9 @@ public:
 
     bool open( const char* libname );
     bool close();
+    void forget() {
+        _handle = 0;
+    }
     const char* error() const;
 
     void *getFuncAddress ( const char *funcname );
