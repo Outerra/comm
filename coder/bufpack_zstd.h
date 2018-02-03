@@ -137,6 +137,9 @@ struct packer_zstd
     //@param ZSTD complevel compression level
     uints pack_stream( const void* src, uints size, binstream& bon, int complevel=3 )
     {
+        if (!src && (!_cstream || _buf.size() == 0))
+            return 0;
+
         if (!_cstream)
             _cstream = ZSTD_createCStream();
 
@@ -268,6 +271,9 @@ struct packer_zstd
     }
 
     bool eof() const {
+        if (!_dstream)
+            return true;
+
         ZSTD_inBuffer zin;
         zin.pos = _offset;
         zin.size = _buf.size();

@@ -359,6 +359,9 @@
     <ClInclude Include="..\..\..\binstream\packstreamzstd.h">
       <Filter>binstream</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\binstream\filestreamzstd.h">
+      <Filter>binstream</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\crypt\sha1.cpp">
