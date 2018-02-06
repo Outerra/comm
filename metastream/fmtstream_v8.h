@@ -344,7 +344,7 @@ public:
 template<class T> class from_v8<iref<T>> {
 public:
     static bool write(v8::Handle<v8::Value> src, iref<T>& res) {
-        res = ::js::unwrap_object<T>(src);
+        res = ::js::template unwrap_object<T>(src);
         return !res.is_empty();
     }
 
