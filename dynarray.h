@@ -760,7 +760,7 @@ public:
     T* push( T&& v )
     {
         T* ptr = addnc(1);
-        ::new (ptr) T(v);
+        ::new (ptr) T(std::forward<T>(v));
         return ptr;
     };
 
@@ -803,13 +803,13 @@ public:
 
     ///Push element into array if it's not already there, linear search
     //@return 0 if already exists, pointer to the new item at the end otherwise
-    T* push_key( const T&& v )
+    T* push_key( T&& v )
     {
         uints c = _count();
         for(uints i=0; i<c; ++i)
             if(_ptr[i] == v) return 0;
 
-        return push(v);
+        return push(std::forward<T>(v));
     }
 
     ///Insert an element to the array at sorted position (using < operator)
@@ -824,7 +824,7 @@ public:
     T* push_sort( T&& v )
     {
         uints i = lower_bound(v);
-        ins_value(i, v);
+        ins_value(i, std::forward<T>(v));
         return _ptr+i;
     }
 
@@ -1308,7 +1308,7 @@ public:
         addnc(1);
         T* p = __ins( _ptr, pos, _count()-1, 1 );
 
-        return new(p) T(v);
+        return new(p) T(std::forward<T>(v));
     }
 
     ///Delete elements from given position
