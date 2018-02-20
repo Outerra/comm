@@ -87,8 +87,10 @@ struct packer_zstd
     //@return consumed size or UMAXS on error
     uints unpack( const void* src, uints size, dynarray<uint8>& dst )
     {
-        if(!_dstream)
-            _dstream = ZSTD_createDStream();
+        if (!_dstream) {
+            ZSTD_customMem cmem = {&_alloc, &_free, 0};
+            _dstream = ZSTD_createDStream_advanced(cmem);
+        }
 
         ZSTD_initDStream(_dstream);
 
@@ -140,8 +142,10 @@ struct packer_zstd
         if (!src && (!_cstream || _buf.size() == 0))
             return 0;
 
-        if (!_cstream)
-            _cstream = ZSTD_createCStream();
+        if (!_cstream) {
+            ZSTD_customMem cmem = {&_alloc, &_free, 0};
+            _cstream = ZSTD_createCStream_advanced(cmem);
+        }
 
         if (_buf.size() == 0) {
             uints res = ZSTD_initCStream(_cstream, complevel);
@@ -202,7 +206,8 @@ struct packer_zstd
     ints unpack_stream( binstream& bin, void* dst, uints size )
     {
         if (!_dstream) {
-            _dstream = ZSTD_createDStream();
+            ZSTD_customMem cmem = {&_alloc, &_free, 0};
+            _dstream = ZSTD_createDStream_advanced(cmem);
             ZSTD_initDStream(_dstream);
 
             _buf.reserve(ZSTD_DStreamInSize(), false);
@@ -287,6 +292,17 @@ struct packer_zstd
         uints rem = ZSTD_decompressStream(_dstream, &zot, &zin);
         return rem == 0;
     }
+
+protected:
+
+    static void* _alloc(void* opaque, size_t size) {
+        return tracked_alloc("zstd", size);
+    }
+
+    static void _free(void* opaque, void* address) {
+        return tracked_free("zstd", address);
+    }
+
 
 private:
 
