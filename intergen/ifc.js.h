@@ -250,7 +250,7 @@ public:
             //return current path of the 0th stack frame when called without arguments
 
             if (!script_handle::get_target_path("", 0, dst, &relpath))
-                return (v8::CBK_RET)V8_UNDEFINED;
+                return (v8::CBK_RET)V8_UNDEFINED(iso);
 
             coid::charstr urlenc = "file:///";
             urlenc.append_encode_url(relpath, false);
@@ -293,7 +293,7 @@ public:
 
         v8::TryCatch trycatch;
         v8::Handle<v8::String> result = v8::string_utf8("$result");
-        ctx->Global()->Set(result, V8_UNDEFINED);
+        ctx->Global()->Set(result, V8_UNDEFINED(iso));
 
         coid::zstring filepath;
         filepath.get_str() << "file:///" << relpath;
@@ -311,7 +311,7 @@ public:
             throw_js_error(trycatch, "js_include: ");
 
         v8::Handle<v8::Value> rval = ctx->Global()->Get(result);
-        ctx->Global()->Set(result, V8_UNDEFINED);
+        ctx->Global()->Set(result, V8_UNDEFINED(iso));
 
 #ifdef V8_MAJOR_VERSION
         args.GetReturnValue().Set(rval);
@@ -405,13 +405,15 @@ inline v8::Handle<v8::Value> wrap_object( intergen_interface* orig, v8::Handle<v
     typedef v8::Handle<v8::Value> (*fn_wrapper)(intergen_interface*, v8::Handle<v8::Context>);
     fn_wrapper fn = static_cast<fn_wrapper>(orig->intergen_wrapper(intergen_interface::IFC_BACKEND_JS));
 
-    if(fn)
 #ifdef V8_MAJOR_VERSION
+    if(fn)
         return handle_scope.Escape(fn(orig, context));
+    return V8_UNDEFINED(iso);
 #else
+    if(fn)
         return handle_scope.Close(fn(orig, context));
+    return v8::Undefined();
 #endif
-    return V8_UNDEFINED;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

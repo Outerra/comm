@@ -176,7 +176,7 @@ private:
             V8_HANDLE_SCOPE(iso, handle_scope__);
             v8::TryCatch trycatch__;
 
-            bind_events(context(iso), false, V8_UNDEFINED);
+            bind_events(context(iso), false, V8_UNDEFINED(iso));
         }
 
         return !_events[id].IsEmpty() && !V8_LOCAL(iso, _events[id])->IsUndefined();
@@ -204,11 +204,11 @@ v8::CBK_RET $..name$_js_dispatcher::v8_$name$$@index$( const v8::ARGUMENTS& args
     V8_ESCAPABLE_SCOPE(iso, handle_scope__);
     v8::Local<v8::Object> obj__ = args.Holder();
     if (obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
-        return V8_RETURN(args, V8_UNDEFINED);
+        return V8_RETURN(args, V8_UNDEFINED(iso));
 
     v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
     if (!intobj__->IsExternal())
-        return V8_RETURN(args, V8_UNDEFINED);
+        return V8_RETURN(args, V8_UNDEFINED(iso));
 
     ::js::interface_wrapper_base<$..ns rest="::"$::$..name$>* ifc = static_cast<::js::interface_wrapper_base<$..ns rest="::"$::$..name$>*>
         (v8::Handle<v8::External>::Cast(intobj__)->Value());
@@ -337,7 +337,7 @@ $-(elif)$
     v8::Context::Scope context_scope__(ctx__);
     v8::TryCatch trycatch__;
 
-    bind_events(ctx__, false, V8_UNDEFINED);
+    bind_events(ctx__, false, V8_UNDEFINED(iso));
     auto ev__ = V8_LOCAL(iso, _events[$@index$]);
 
     if (_events[$@index$].IsEmpty() || ev__->IsUndefined())
@@ -447,11 +447,11 @@ v8::CBK_RET $..name$_js_dispatcher::v8_evback_$name$$@index$( const v8::ARGUMENT
     V8_ESCAPABLE_SCOPE(iso, handle_scope__);
     v8::Local<v8::Object> obj__ = args.Holder();
     if (obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
-        return V8_RETURN(args, V8_UNDEFINED);
+        return V8_RETURN(args, V8_UNDEFINED(iso));
 
     v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
     if (!intobj__->IsExternal())
-        return V8_RETURN(args, V8_UNDEFINED);
+        return V8_RETURN(args, V8_UNDEFINED(iso));
 
     $..ns rest="::" after="::"$js::$..name$_js_dispatcher* ifc = static_cast<$..ns rest="::" after="::"$js::$..name$_js_dispatcher*>
         (v8::Handle<v8::External>::Cast(intobj__)->Value());
@@ -460,7 +460,7 @@ v8::CBK_RET $..name$_js_dispatcher::v8_evback_$name$$@index$( const v8::ARGUMENT
     v8::Context::Scope context_scope(ctx);
     v8::TryCatch trycatch__;
 
-    ifc->bind_events(ctx, false, V8_UNDEFINED);
+    ifc->bind_events(ctx, false, V8_UNDEFINED(iso));
     auto ev__ = V8_LOCAL(iso, ifc->_events[$@index$]);
 
     if (ifc->_events[$@index$].IsEmpty() || ev__->IsUndefined()) {
@@ -500,11 +500,11 @@ v8::CBK_RET $name$_js_dispatcher::_getter(v8::Local<v8::String> property, const 
     V8_ESCAPABLE_SCOPE(iso, handle_scope__);
     v8::Local<v8::Object> obj__ = args.Holder();
     if (obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
-        return V8_RETURN(args, V8_UNDEFINED);
+        return V8_RETURN(args, V8_UNDEFINED(iso));
 
     v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
     if (!intobj__->IsExternal())
-        return V8_RETURN(args, V8_UNDEFINED);
+        return V8_RETURN(args, V8_UNDEFINED(iso));
 
     $ns rest="::" after="::"$js::$name$_js_dispatcher* ifc = static_cast<$ns rest="::" after="::"$js::$name$_js_dispatcher*>
         (v8::Handle<v8::External>::Cast(intobj__)->Value());
@@ -550,11 +550,11 @@ v8::CBK_RET $name$_js_dispatcher::_setter(v8::Local<v8::String> property, v8::Lo
     V8_ESCAPABLE_SCOPE(iso, handle_scope__);
     v8::Local<v8::Object> obj__ = args.Holder();
     if (obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
-        return V8_RETURN(args, V8_UNDEFINED);
+        return V8_RETURN(args, V8_UNDEFINED(iso));
 
     v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
     if (!intobj__->IsExternal())
-        return V8_RETURN(args, V8_UNDEFINED);
+        return V8_RETURN(args, V8_UNDEFINED(iso));
 
     $ns rest="::" after="::"$js::$name$_js_dispatcher* ifc = static_cast<$ns rest="::" after="::"$js::$name$_js_dispatcher*>
         (v8::Handle<v8::External>::Cast(intobj__)->Value());
@@ -592,7 +592,7 @@ v8::CBK_RET $name$_js_dispatcher::v8log( const v8::ARGUMENTS& args )
     v8::Isolate* iso = args.GetIsolate();
 
     if (args.Length() == 0)
-        return V8_RETURN(args, V8_UNDEFINED);
+        return V8_RETURN(args, V8_UNDEFINED(iso));
 
     const void* inst = 0;
 
@@ -617,7 +617,7 @@ v8::CBK_RET $name$_js_dispatcher::v8log( const v8::ARGUMENTS& args )
     intergen_interface::ifclog_ext(coid::log::none, coid::tokenhash("$ns rest="::" after="::"$$name$"),
         inst, tokey);
 
-    return V8_RETURN(args, V8_UNDEFINED);
+    return V8_RETURN(args, V8_UNDEFINED(iso));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -644,11 +644,11 @@ v8::CBK_RET $name$_js_dispatcher::v8query_interface( const v8::ARGUMENTS& args )
 
     v8::Local<v8::Object> obj__ = args.Holder();
     if (obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
-        return V8_RETURN(args, V8_UNDEFINED);
+        return V8_RETURN(args, V8_UNDEFINED(iso));
 
     v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
     if (!intobj__->IsExternal())
-        return V8_RETURN(args, V8_UNDEFINED);
+        return V8_RETURN(args, V8_UNDEFINED(iso));
 
     $ns rest="::" after="::"$js::$name$_js_dispatcher* ifc = static_cast<$ns rest="::" after="::"$js::$name$_js_dispatcher*>
         (v8::Handle<v8::External>::Cast(intobj__)->Value());
@@ -695,16 +695,17 @@ v8::CBK_RET $name$_js_dispatcher::v8query_interface_global( const v8::ARGUMENTS&
 ////////////////////////////////////////////////////////////////////////////////
 v8::CBK_RET $name$_js_dispatcher::v8rebind_events( const v8::ARGUMENTS& args )
 {
-$-(if event?)$
     v8::Isolate* iso = args.GetIsolate();
+
+$-(if event?)$
     V8_HANDLE_SCOPE(iso, handle_scope__);
     v8::Local<v8::Object> obj__ = args.Holder();
     if (obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
-        return V8_RETURN(args, V8_UNDEFINED);
+        return V8_RETURN(args, V8_UNDEFINED(iso));
 
     v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
     if (!intobj__->IsExternal())
-        return V8_RETURN(args, V8_UNDEFINED);
+        return V8_RETURN(args, V8_UNDEFINED(iso));
 
     $ns rest="::" after="::"$js::$name$_js_dispatcher* ifc = static_cast<$ns rest="::" after="::"$js::$name$_js_dispatcher*>
         (v8::Handle<v8::External>::Cast(intobj__)->Value());
@@ -717,7 +718,7 @@ $-(if event?)$
     }
 
 $-(/if)$
-    return V8_RETURN(args, V8_UNDEFINED);
+    return V8_RETURN(args, V8_UNDEFINED(iso));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -728,11 +729,11 @@ v8::CBK_RET $name$_js_dispatcher::v8current_global( const v8::ARGUMENTS& args )
     V8_ESCAPABLE_SCOPE(iso, handle_scope__);
     v8::Local<v8::Object> obj__ = args.Holder();
     if (obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
-        return V8_RETURN(args, V8_UNDEFINED);
+        return V8_RETURN(args, V8_UNDEFINED(iso));
 
     v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
     if (!intobj__->IsExternal())
-        return V8_RETURN(args, V8_UNDEFINED);
+        return V8_RETURN(args, V8_UNDEFINED(iso));
 
     $ns rest="::" after="::"$js::$name$_js_dispatcher* ifc = static_cast<$ns rest="::" after="::"$js::$name$_js_dispatcher*>
         (v8::Handle<v8::External>::Cast(intobj__)->Value());
@@ -990,7 +991,7 @@ v8::Handle<v8::Value> $..name$_js_dispatcher::v8creator_$name$$@order$( const v8
         coid::charstr tmp = "Wrong number of arguments in ";
         tmp << "$name$";
         v8::throw_js(iso, &v8::Exception::Error, tmp);
-        return V8_UNDEFINED;
+        return V8_UNDEFINED(iso);
     }
 
     V8_ESCAPABLE_SCOPE(iso, handle_scope__);

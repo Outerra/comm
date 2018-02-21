@@ -56,7 +56,7 @@ namespace v8 {
 
 #ifdef V8_MAJOR_VERSION
 
-    #define V8_UNDEFINED            v8::Local<v8::Value>()
+    #define V8_UNDEFINED(iso)       v8::Undefined(iso)
     #define V8_NULL(iso)            v8::Null(iso)
 
     #define V8_HANDLE_SCOPE(iso,hs)     v8::HandleScope hs(iso)
@@ -99,7 +99,7 @@ namespace v8 {
 
 #else
 
-    #define V8_UNDEFINED            v8::Undefined()
+    #define V8_UNDEFINED(iso)       v8::Undefined()
     #define V8_NULL(iso)            v8::Null()
 
     #define V8_HANDLE_SCOPE(iso,hs)     v8::HandleScope hs
@@ -173,7 +173,7 @@ public:
 #define V8_FAST_STREAMER(T,V8T,CT) \
 template<> class to_v8<T> { public: \
     static v8::Handle<v8::Value> read(const T& v) { return v8::new_object<v8::V8T>(CT(v)); } \
-    static v8::Handle<v8::Value> read(const T* v) { if (v) return v8::new_object<v8::V8T>(CT(*v)); return V8_UNDEFINED; } \
+    static v8::Handle<v8::Value> read(const T* v) { if (v) return v8::new_object<v8::V8T>(CT(*v)); return V8_UNDEFINED(v8::Isolate::GetCurrent()); } \
 }; \
 template<> class from_v8<T> { public: \
     static bool write( v8::Handle<v8::Value> src, T& res ) { res = (T)src->V8T##Value(); return true; } \
