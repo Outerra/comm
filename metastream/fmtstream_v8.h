@@ -74,13 +74,15 @@ namespace v8 {
     #define V8_RESET(o)             (o).Reset()
     #define V8_LOCAL(iso,o)         (o).Get(iso)
     #define V8_CUR_CONTEXT(iso)     iso->GetCurrentContext()
+
+    #define V8_TRYCATCH(iso,t)      v8::TryCatch t(iso)
    
     inline v8::Local<v8::String> symbol( const coid::token& tok ) {
-        return String::NewFromOneByte(Isolate::GetCurrent(), (const uint8*)tok.ptr(), String::kInternalizedString, tok.len());
+        return String::NewFromOneByte(Isolate::GetCurrent(), (const uint8*)tok.ptr(), NewStringType::kInternalized, tok.len()).ToLocalChecked();
     }
 
     inline v8::Local<v8::String> string_utf8( const coid::token& tok ) {
-        return String::NewFromUtf8(Isolate::GetCurrent(), tok.ptr(), String::kNormalString, tok.len());
+        return String::NewFromUtf8(Isolate::GetCurrent(), tok.ptr(), NewStringType::kNormal, tok.len()).ToLocalChecked();
     }
 
     template<class T>
@@ -118,6 +120,7 @@ namespace v8 {
     #define V8_LOCAL(iso,o)         o
     #define V8_CUR_CONTEXT(iso)     v8::Context::GetCurrent()
 
+    #define V8_TRYCATCH(iso,t)      v8::TryCatch t
     
     inline v8::Local<v8::String> symbol( const coid::token& tok ) {
         return String::NewSymbol(tok.ptr(), tok.len());

@@ -161,7 +161,7 @@ $-[/event]$
         v8::Isolate* iso = v8::Isolate::GetCurrent();
         //v8::Context::Scope context_scope(V8_LOCAL(iso, _context));
         V8_HANDLE_SCOPE(iso, handle_scope__);
-        v8::TryCatch trycatch__;
+        V8_TRYCATCH(iso, js_trycatch);
 
         bind_events(context(iso), true, v8::Local<v8::Value>());
     }
@@ -174,7 +174,7 @@ private:
         if (!_bound_events) {
             //v8::Context::Scope context_scope(V8_LOCAL(iso, _context));
             V8_HANDLE_SCOPE(iso, handle_scope__);
-            v8::TryCatch trycatch__;
+            V8_TRYCATCH(iso, js_trycatch);
 
             bind_events(context(iso), false, V8_UNDEFINED(iso));
         }
@@ -335,7 +335,7 @@ $-(elif)$
     V8_HANDLE_SCOPE(iso, handle_scope__);
     v8::Handle<v8::Context> ctx__ = context(iso);
     v8::Context::Scope context_scope__(ctx__);
-    v8::TryCatch trycatch__;
+    V8_TRYCATCH(iso, js_trycatch__);
 
     bind_events(ctx__, false, V8_UNDEFINED(iso));
     auto ev__ = V8_LOCAL(iso, _events[$@index$]);
@@ -374,8 +374,8 @@ $-[args inarg?]$$(if volatile?)$
     to_v8$(if volatile?)$_volatile$(/if)$<$basetype$>::cleanup(__inargs[$@order$]);$(/if)$
 $-[/args]$
 
-    if (trycatch__.HasCaught())
-        script_handle::throw_js_error(trycatch__, "$..ns rest="::" after="::"$js::$..name$.$name$(): ");
+    if (js_trycatch__.HasCaught())
+        script_handle::throw_js_error(js_trycatch__, "$..ns rest="::" after="::"$js::$..name$.$name$(): ");
 // gather results
 $-(if !noutargs?)$
 
@@ -458,7 +458,7 @@ v8::CBK_RET $..name$_js_dispatcher::v8_evback_$name$$@index$( const v8::ARGUMENT
 
     v8::Handle<v8::Context> ctx = ifc->context(iso);
     v8::Context::Scope context_scope(ctx);
-    v8::TryCatch trycatch__;
+    V8_TRYCATCH(iso, js_trycatch);
 
     ifc->bind_events(ctx, false, V8_UNDEFINED(iso));
     auto ev__ = V8_LOCAL(iso, ifc->_events[$@index$]);
@@ -807,18 +807,20 @@ $-(/if)$
 ////////////////////////////////////////////////////////////////////////////////
 v8::Handle<v8::Script> $name$_js_dispatcher::load_script( const coid::token& script, const coid::token& fname )
 {
+    v8::Isolate* iso = v8::Isolate::GetCurrent();
     v8::Local<v8::String> scriptv8 = v8::string_utf8(script);
 
     // set up an error handler to catch any exceptions the script might throw.
-    v8::TryCatch trycatch__;
+    V8_TRYCATCH(iso, js_trycatch);
 
     v8::Handle<v8::Script> compiled_script = v8::Script::Compile(scriptv8, v8::symbol(fname));
-    if (trycatch__.HasCaught())
-        script_handle::throw_js_error(trycatch__, "$ns rest="::" after="::"$js::$name$::load_script(): ");
+    if (js_trycatch.HasCaught())
+        script_handle::throw_js_error(js_trycatch, "$ns rest="::" after="::"$js::$name$::load_script(): ");
 
     compiled_script->Run();
-    if (trycatch__.HasCaught())
-        script_handle::throw_js_error(trycatch__, "$ns rest="::" after="::"$js::$name$::load_script(): ");
+    
+    if (js_trycatch.HasCaught())
+        script_handle::throw_js_error(js_trycatch, "$ns rest="::" after="::"$js::$name$::load_script(): ");
 
     return compiled_script;
 }
@@ -840,8 +842,9 @@ $-[/event]$
 
     V8_HANDLE_SCOPE(iso, handle_scope__);
     v8::Context::Scope context_scope__(context);
-    v8::TryCatch trycatch__;
+    V8_TRYCATCH(iso, js_trycatch);
     v8::Local<v8::Object> global;
+    
     bool clear = false;
     if (ref.IsEmpty() || ref->IsUndefined())
         global = context->Global();
@@ -862,7 +865,7 @@ $-[/event]$
             continue;
 
         v8::Local<v8::Function> foo = v8::Local<v8::Function>::Cast(var);
-        bool failed = trycatch__.HasCaught() || foo->IsUndefined();
+        bool failed = js_trycatch.HasCaught() || foo->IsUndefined();
 
         if (!failed)
              V8_PERSISTENT(iso, _events[i], foo);
