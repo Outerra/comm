@@ -38,9 +38,20 @@
 #include "metastream.h"
 #include "../local.h"
 #include "../hash/hashkeyset.h"
+#include "../log/logger.h"
 
 COID_NAMESPACE_BEGIN
 
+
+////////////////////////////////////////////////////////////////////////////////
+void metastream::warn_obsolete(const token& name)
+{
+    (_err = "warning: obsolete variable '") << name << '\'';
+    fmt_error();
+    coidlog_warning("metastream", _err);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 struct SMReg {
     typedef hash_keyset<MetaDesc,_Select_Copy<MetaDesc,token> >  MAP;
