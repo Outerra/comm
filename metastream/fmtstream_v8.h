@@ -685,6 +685,7 @@ public:
     //@param err [out] final (formatted) error text with line info etc.
     virtual void fmtstream_err( charstr& err )
     {
+        err.ins(0, "[js] ");
     }
 
     void acknowledge( bool eat=false )
@@ -1180,6 +1181,7 @@ struct v8_streamer_context
 
     v8_streamer_context() {
         meta.bind_formatting_stream(fmtv8);
+        meta.set_file_name("[js]");
     }
 
     ~v8_streamer_context() {
