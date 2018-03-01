@@ -92,8 +92,7 @@ public:
     ///Open the current directory for iterating files using the filter
     opcd open_cwd(const token& filter)
     {
-        charstr path;
-        return open(get_cwd(path), filter);
+        return open(get_cwd(), filter);
     }
     void close();
 
@@ -103,6 +102,13 @@ public:
 
     static char separator();
     static const char* separator_str();
+
+#ifdef SYSTYPE_WIN
+    static const token& separators() { static token sep = "/\\"_T; return sep; }
+#else
+    static const token& separators() { static token sep = "/"_T; return sep; }
+#endif
+
     static charstr& treat_trailing_separator(charstr& path, bool shouldbe)
     {
         char c = path.last_char();
@@ -205,19 +211,47 @@ public:
     //@}
 
     ///Get current working directory
-    static charstr& get_cwd(charstr& buf);
+    static charstr get_cwd();
+    static charstr& get_cwd(charstr& buf) {
+        return buf = get_cwd();
+    }
 
     ///Get program executable directory
-    static charstr& get_ped(charstr& buf);
+    static charstr get_program_dir() {
+        charstr buf = get_program_path();
+
+        token t = buf;
+        t.cut_right_group_back(separators(), token::cut_trait_keep_sep_with_source());
+
+        return buf.resize(t.len());
+    }
+    static charstr& get_program_dir(charstr& buf) {
+        return buf = get_program_dir();
+    }
+
+    ///Get current program executable file path
+    static charstr get_program_path();
+
+    ///Get program executable directory
+    static charstr get_module_dir() {
+        charstr buf = get_module_path();
+
+        token t = buf;
+        t.cut_right_group_back(separators(), token::cut_trait_keep_sep_with_source());
+
+        return buf.resize(t.len());
+    }
+
+    ///Get current module file path
+    static charstr get_module_path() {
+        return get_module_path_func(&get_module_path);
+    }
 
     ///Get temp directory
-    static charstr& get_tmp(charstr& buf);
-
-    ///Get current program file path
-    static charstr& get_program_path(charstr& buf);
+    static charstr get_tmp_dir();
 
     ///Get user home directory
-    static charstr& get_home_dir(charstr& buf);
+    static charstr get_home_dir();
 
     ///Get relative path from src to dst
     static bool get_relative_path(token src, token dst, charstr& relout);
@@ -296,6 +330,8 @@ public:
 protected:
 
     static const char* no_trail_sep( zstring& name );
+
+    static charstr get_module_path_func(const void* fn);
 
 private:
     charstr     _curpath;

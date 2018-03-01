@@ -796,6 +796,9 @@ struct token
     ///Cut left token, up to a character from specified group of single characters as delimiters
     token cut_left_group(const token& separators, cut_trait ctr = cut_trait_remove_sep())
     {
+        if (separators.len() == 1)
+            return cut_left(separators.first_char(), ctr);
+
         token r;
         const char* p = _ptr + count_notingroup(separators);
         if (p < _pte)         //if not all is not separator
@@ -858,6 +861,9 @@ struct token
     ///Cut left substring, searching backwards for a character from specified group of single characters as delimiters
     token cut_left_group_back(const token& separators, cut_trait ctr = cut_trait_remove_sep())
     {
+        if (separators.len() == 1)
+            return cut_left_back(separators.first_char(), ctr);
+
         token r;
         uints off = count_notingroup_back(separators);
 

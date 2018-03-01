@@ -133,26 +133,28 @@ opcd directory::mkdir( zstring name, mode_t mode )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-charstr& directory::get_cwd( charstr& buf )
+charstr directory::get_cwd()
 {
-    uints size = 64;
+    uints size = PATH_MAX;
 
-    while( size < 1024  &&  !getcwd(buf.get_buf(size-1), size) )
+    while (size < 1024 && !getcwd(buf.get_buf(size - 1), size))
     {
         size <<= 1;
         buf.reset();
     }
     buf.correct_size();
 
-    return treat_trailing_separator(buf, true);
+    treat_trailing_separator(buf, true);
+    return buf;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-charstr& directory::get_program_path( charstr& buf )
+charstr directory::get_program_path()
 {
     charstr path = "/proc/";
     path << ::getpid() << "/exe";
 
+    charstr buf;
     ::readlink(path.c_str(), buf.get_buf(PATH_MAX), PATH_MAX);
 
     buf.correct_size();
@@ -160,14 +162,12 @@ charstr& directory::get_program_path( charstr& buf )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-charstr& directory::get_ped( charstr& buf )
+charstr directory::get_module_path_func(const void* fn)
 {
-    get_program_path(buf);
+    Dl_info info;
+    dladdr((void*)fn, &info);
 
-    token t = buf.c_str();
-    t.cut_right_back('/', token::cut_trait_keep_sep_with_source());
-
-    return buf.resize( t.len() );
+    return dli_fname;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -195,10 +195,9 @@ const directory::xstat* directory::next()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-charstr& directory::get_home_dir( charstr& buf )
+charstr directory::get_home_dir()
 {
-    buf = "~/";
-    return buf;
+    return "~/";
 }
 
 ////////////////////////////////////////////////////////////////////////////////

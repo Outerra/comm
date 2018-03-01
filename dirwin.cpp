@@ -165,9 +165,10 @@ opcd directory::mkdir( zstring name, uint mode )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-charstr& directory::get_cwd( charstr& buf )
+charstr directory::get_cwd()
 {
-    uint size = 64;
+    charstr buf;
+    uint size = MAX_PATH;
 
     while( size < 1024  &&  !::_getcwd( buf.get_buf(size-1), size) )
     {
@@ -176,13 +177,15 @@ charstr& directory::get_cwd( charstr& buf )
     }
     buf.correct_size();
     
-    return treat_trailing_separator(buf, true);
+    treat_trailing_separator(buf, true);
+    return buf;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-charstr& directory::get_program_path( charstr& buf )
+charstr directory::get_program_path()
 {
-    uint size = 64, asize;
+    charstr buf;
+    uint size = MAX_PATH, asize;
 
     while( size < 1024  &&  size == (asize = GetModuleFileNameA(0, buf.get_buf(size-1), size)) )
     {
@@ -197,20 +200,25 @@ charstr& directory::get_program_path( charstr& buf )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-charstr& directory::get_ped( charstr& buf )
+charstr directory::get_module_path_func(const void* fn)
 {
-    get_program_path(buf);
+    charstr buf;
+    HMODULE hm = NULL;
 
-    token t = buf;
-    t.cut_right_back('\\', token::cut_trait_keep_sep_with_source());
+    if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCSTR)fn, &hm))
+        GetModuleFileNameA(hm, buf.get_buf(MAX_PATH), MAX_PATH);
 
-    return buf.resize( t.len() );
+    buf.correct_size();
+    return buf;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-charstr& directory::get_tmp( charstr& buf )
+charstr directory::get_tmp_dir()
 {
-    GetTempPathA(244, buf.get_buf(244));
+    charstr buf;
+    GetTempPathA(MAX_PATH, buf.get_buf(MAX_PATH));
+
+    buf.correct_size();
     return buf;
 }
 
@@ -224,42 +232,43 @@ int directory::chdir( zstring name )
 const directory::xstat* directory::next()
 {
     _finddata_t dir;
-    
-    if( _handle == -1 )
+
+    if (_handle == -1)
     {
-        _handle = _findfirst( _pattern.ptr(), &dir );
-        if( _handle == -1 )
+        _handle = _findfirst(_pattern.ptr(), &dir);
+        if (_handle == -1)
             return 0;
     }
     else
     {
-        if( 0 != _findnext( _handle, &dir ) )
+        if (0 != _findnext(_handle, &dir))
             return 0;
     }
 
-    _curpath.resize( _baselen );
+    _curpath.resize(_baselen);
     _curpath << &*dir.name;
-    if(_stat64(_curpath.ptr(), &_st) == 0)
+    if (_stat64(_curpath.ptr(), &_st) == 0)
         return &_st;
 
     return next();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-charstr& directory::get_home_dir( charstr& path )
+charstr directory::get_home_dir()
 {
-    ulong psize = 260;
+    charstr path;
+    ulong psize = MAX_PATH;
     path.get_buf(psize);
-   
+
     void* hToken = 0;
-    if(!OpenProcessToken( GetCurrentProcess(), 0x0008/*TOKEN_QUERY*/, &hToken ))
+    if (!OpenProcessToken(GetCurrentProcess(), 0x0008/*TOKEN_QUERY*/, &hToken))
         return path;
-   
-    if(!GetUserProfileDirectoryA(hToken, (char*)path.ptr(), &psize))
+
+    if (!GetUserProfileDirectoryA(hToken, (char*)path.ptr(), &psize))
         return path;
-   
+
     CloseHandle(hToken);
-    
+
     path.correct_size();
     treat_trailing_separator(path, true);
     return path;
