@@ -55,40 +55,40 @@ class interface_register
 {
 public:
 
-    static bool register_interface_creator( const token& ifcname, void* creator );
+    static bool register_interface_creator(const token& ifcname, void* creator);
 
-    static void* get_interface_creator( const token& ifcname );
+    static void* get_interface_creator(const token& ifcname);
 
     //@param curpath current path
     //@param incpath absolute path or path relative to curpath
     //@param dst [out] result path
     //@param relpath [out] gets relative path from root. If null, relative incpath can only refer to a sub-path below curpath
-    static bool include_path( const token& curpath, const token& incpath, charstr& dst, token* relpath );
+    static bool include_path(const token& curpath, const token& incpath, charstr& dst, token* relpath);
 
     static const charstr& root_path();
 
 
-    typedef ref<logmsg> (*fn_log_t)(log::type, const tokenhash&, const void*);
-    typedef bool (*fn_acc_t)(const token&);
+    typedef ref<logmsg>(*fn_log_t)(log::type, const tokenhash&, const void*);
+    typedef bool(*fn_acc_t)(const token&);
 
-    static void setup( const token& path, fn_log_t log, fn_acc_t access );
+    static void setup(const token& path, fn_log_t log, fn_acc_t access);
 
-    typedef iref<intergen_interface> (*wrapper_fn)(void*, intergen_interface*);
+    typedef iref<intergen_interface>(*wrapper_fn)(void*, intergen_interface*);
 
     ///Get interface wrapper creator matching the given name
     //@param name interface creator name in the format [ns1::[ns2:: ...]]::class
-    static wrapper_fn get_interface_wrapper( const token& name );
+    static wrapper_fn get_interface_wrapper(const token& name);
 
     ///Get interface maker creator matching the given name
     //@param name interface creator name in the format [ns1::[ns2:: ...]]::class
     //@param script script type
-    static void* get_interface_maker( const token& name, const token& script );
+    static void* get_interface_maker(const token& name, const token& script);
 
     ///Get client interface creator matching the given name
     //@param client client name
     //@param iface interface creator name in the format [ns1::[ns2:: ...]]::class
     //@param module required module to match
-    static wrapper_fn get_interface_client( const token& client, const token& iface, const token& module );
+    static wrapper_fn get_interface_client(const token& client, const token& iface, const token& module);
 
     struct creator {
         token name;
@@ -97,20 +97,20 @@ public:
 
     ///Get interface creators matching the given name
     //@param name interface creator name in the format [ns1::[ns2:: ...]]::class[.creator]
-    //@param script script type (js, lua ...), if empty anything matches
+    //@param script script type (""=c++, "js", "lua" ...), if empty/null anything matches
     //@return array of interface creators for given script type (with script_handle argument)
-    static dynarray<creator>& get_interface_creators( const token& name, const token& script, dynarray<creator>& dst );
+    static dynarray<creator>& get_interface_creators(const token& name, const token& script, dynarray<creator>& dst);
 
     ///Get script interface creators matching the given name
     //@param name interface creator name in the format [ns1::[ns2:: ...]]::class[.creator]
-    //@param script script type (js, lua ...), if empty anything matches
+    //@param script script type (""=c++, "js", "lua" ...), if empty/null anything matches
     //@return array of interface creators for given script type (with native script lib argument)
-    static dynarray<creator>& get_script_interface_creators( const token& name, const token& script, dynarray<creator>& dst );
+    static dynarray<creator>& get_script_interface_creators(const token& name, const token& script, dynarray<creator>& dst);
 
     ///Find interfaces containing given string
-    static dynarray<creator>& find_interface_creators( const regex& str, dynarray<creator>& dst );
+    static dynarray<creator>& find_interface_creators(const regex& str, dynarray<creator>& dst);
 
-    static ref<logmsg> canlog( log::type type, const tokenhash& hash, const void* inst = 0 );
+    static ref<logmsg> canlog(log::type type, const tokenhash& hash, const void* inst = 0);
 
 #ifdef COID_VARIADIC_TEMPLATES
 
@@ -119,10 +119,10 @@ public:
     //@param hash source identifier (used for filtering)
     //@param fmt @see charstr.print
     template<class ...Vs>
-    static void print( log::type type, const tokenhash& hash, const token& fmt, Vs&&... vs )
+    static void print(log::type type, const tokenhash& hash, const token& fmt, Vs&&... vs)
     {
         ref<logmsg> msgr = canlog(type, hash);
-        if(!msgr)
+        if (!msgr)
             return;
 
         charstr& str = msgr->str();

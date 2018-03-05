@@ -213,6 +213,19 @@ protected:
 
         msgr->str() << txt;
     }
+
+    static void log_mismatch(const coid::token& clsname, const coid::token& ifckey, const coid::token& hash)
+    {
+        //check if interface missing or different version
+        coid::dynarray<coid::interface_register::creator> tmp;
+        coid::interface_register::get_interface_creators(ifckey, "", tmp);
+
+        ref<coid::logmsg> msg = coid::interface_register::canlog(coid::log::warning, clsname, 0);
+        if (tmp.size() > 0)
+            msg->str() << "interface creator version mismatch (" << ifckey << hash << ')';
+        else
+            msg->str() << "interface creator not found (" << ifckey << hash << ')';
+    }
 };
 
 ////////////////////////////////////////////////////////////////////////////////

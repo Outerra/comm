@@ -162,7 +162,7 @@ $-(/if)$
 
         coid::charstr tmp = "$ns rest="::" after="::"$$name$";
         tmp << "@client" << '.' << type;
-        
+
         coid::interface_register::register_interface_creator(tmp, cc);
         return 0;
     }
@@ -203,8 +203,10 @@ inline iref<T> $..name$::$name$( T* _subclass_
         create = reinterpret_cast<fn_creator>(
             coid::interface_register::get_interface_creator(ifckey));
 
-    if (!create)
-        throw coid::exception("interface creator inaccessible: ") << ifckey;
+    if (!create) {
+        log_mismatch("$name$", "$..ns rest="::" after="::"$$..name$.$name$", "@$..hash$");
+        return 0;
+    }
 
     return create(_subclass_$[args]$, $name$$[/args]$);
 }
