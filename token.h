@@ -125,7 +125,7 @@ struct token
         set(czstr, czstr ? ::strlen(czstr) : 0);
     }
 
-    explicit token(const charstr& str);
+    token(const charstr& str);
 
     token(const char* ptr, uints len)
         : _ptr(ptr), _pte(ptr + len)

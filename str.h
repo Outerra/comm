@@ -125,8 +125,6 @@ public:
         takeover(str);
     }
 
-    operator token() const { return token(ptr(), ptre()); }
-
 
 
     ///Take control over content of another string, the other string becomes empty
