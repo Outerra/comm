@@ -147,8 +147,8 @@ inline coid_constexpr uints constexpr_int_low_pow2(uints x) {
 }
 
 
-//@return exponent of nearest lower power of two number
-inline uchar int_lower_pow2( uints x ) {
+//@return exponent of nearest equal or lower power of two number
+inline uchar int_low_pow2( uints x ) {
     return x
         ? msb_bit_set(x)
         : 0;
