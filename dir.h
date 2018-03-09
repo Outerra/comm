@@ -244,7 +244,13 @@ public:
 
     ///Get current module file path
     static charstr get_module_path() {
-        return get_module_path_func(&get_module_path);
+        charstr buf;
+        get_module_path_func(&dummy_func, buf, false);
+        return buf;
+    }
+
+    static charstr& get_module_path(charstr& dst, bool append = false) {
+        return get_module_path_func(&dummy_func, dst, append);
     }
 
     ///Get temp directory
@@ -329,9 +335,12 @@ public:
 
 protected:
 
+    static void dummy_func() {
+    }
+
     static const char* no_trail_sep( zstring& name );
 
-    static charstr get_module_path_func(const void* fn);
+    static charstr& get_module_path_func(const void* fn, charstr& dst, bool append);
 
 private:
     charstr     _curpath;

@@ -162,12 +162,17 @@ charstr directory::get_program_path()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-charstr directory::get_module_path_func(const void* fn)
+charstr& directory::get_module_path_func(const void* fn, charstr& dst, bool append)
 {
     Dl_info info;
     dladdr((void*)fn, &info);
 
-    return dli_fname;
+    if (append)
+        dst << dli_fname;
+    else
+        dst = dli_fname;
+
+    return dst;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -200,16 +200,16 @@ charstr directory::get_program_path()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-charstr directory::get_module_path_func(const void* fn)
+charstr& directory::get_module_path_func(const void* fn, charstr& dst, bool append)
 {
     charstr buf;
     HMODULE hm = NULL;
 
     if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCSTR)fn, &hm))
-        GetModuleFileNameA(hm, buf.get_buf(MAX_PATH), MAX_PATH);
+        GetModuleFileNameA(hm, append ? dst.get_append_buf(MAX_PATH) : dst.get_buf(MAX_PATH), MAX_PATH);
 
-    buf.correct_size();
-    return buf;
+    dst.correct_size();
+    return dst;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

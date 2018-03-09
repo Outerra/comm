@@ -443,7 +443,7 @@ bool interface_register::register_interface_creator(const token& ifcname, void* 
 
     charstr tmp = ifcname;
     tmp << '*';
-    dynamic_library::module_name(tmp, true);
+    directory::get_module_path(tmp, true);
 
     return reg.register_interface_creator(tmp, creator_ptr);
 }
