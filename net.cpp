@@ -196,15 +196,7 @@ namespace coid {
 
     charstr& dynamic_library::module_path(charstr& dst, bool append)
     {
-        HMODULE hm = NULL;
-
-        if (!GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
-            GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-            (LPCSTR)&module_path,
-            &hm))
-            return dst;
-        
-        GetModuleFileNameA(hm,
+        GetModuleFileNameA((HMODULE)_handle,
             append ? dst.get_append_buf(MAX_PATH) : dst.get_buf(MAX_PATH),
             MAX_PATH);
         return dst.correct_size();
