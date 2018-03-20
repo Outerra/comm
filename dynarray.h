@@ -1444,6 +1444,10 @@ public:
         }
     }
 
+    void compact() {
+        _ptr = A::template realloc<T>(_ptr, size(), 0);
+    }
+
     ///Get number of elements in the array
     count_t size() const                { return (count_t)_count(); }
     uints sizes() const                 { return _count(); }
@@ -1489,8 +1493,8 @@ private:
     uints _realloc( uints newsize, uints oldsize, mspace m = 0 )
     {
         uints nalloc = newsize;
-        if( nalloc < 2 * oldsize )
-            nalloc = 2 * oldsize;
+        if( nalloc < oldsize + oldsize/2 )
+            nalloc = oldsize + oldsize/2;
 
         _ptr = A::template realloc<T>(_ptr, nalloc, m);
         _set_count(newsize);
