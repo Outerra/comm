@@ -51,7 +51,7 @@ struct packer_zstd
 {
     COIDNEWDELETE("packer_zstd");
 
-    packer_zstd() : _cstream(0), _dstream(0), _offset(0)
+    packer_zstd() : _cstream(0), _dstream(0), _offset(0), _eof(false)
     {}
 
     ~packer_zstd() {
@@ -93,6 +93,7 @@ struct packer_zstd
         }
 
         ZSTD_initDStream(_dstream);
+        _eof = false;
 
         uint64 dstsize = ZSTD_getDecompressedSize(src, size);
         uints origsize = dst.size();
@@ -113,8 +114,10 @@ struct packer_zstd
             if(ZSTD_isError(rem))
                 return UMAXS;
 
-            if (rem == 0)   //fully read
+            if (rem == 0) {  //fully read
+                _eof = true;
                 break;
+            }
             if (zot.pos == zot.size) {
                 //needs more out space
                 dst.add(outblocksize);
@@ -211,6 +214,7 @@ struct packer_zstd
             ZSTD_initDStream(_dstream);
 
             _buf.reserve(ZSTD_DStreamInSize(), false);
+            _eof = false;
         }
 
         ZSTD_inBuffer zin;
@@ -246,8 +250,10 @@ struct packer_zstd
             }
 
             uints rem = ZSTD_decompressStream(_dstream, &zot, &zin);
-            if (rem == 0)   //fully read stream
+            if (rem == 0) { //fully read stream
+                _eof = true;
                 break;
+            }
             if (ZSTD_isError(rem))
                 return -1;
             if (isend) //not enough data
@@ -265,6 +271,7 @@ struct packer_zstd
 
         _offset = 0;
         _buf.reset();
+        _eof = false;
     }
 
     void reset_write(uints size = 0) {
@@ -276,21 +283,7 @@ struct packer_zstd
     }
 
     bool eof() const {
-        if (!_dstream)
-            return true;
-
-        ZSTD_inBuffer zin;
-        zin.pos = _offset;
-        zin.size = _buf.size();
-        zin.src = _buf.ptr();
-
-        ZSTD_outBuffer zot;
-        zot.pos = 0;
-        zot.size = 0;
-        zot.dst = 0;
-
-        uints rem = ZSTD_decompressStream(_dstream, &zot, &zin);
-        return rem == 0;
+        return _eof;
     }
 
 protected:
@@ -310,6 +303,7 @@ private:
     ZSTD_DStream* _dstream;
     dynarray<uint8> _buf;
     uints _offset;
+    bool _eof;
 };
 
 COID_NAMESPACE_END
