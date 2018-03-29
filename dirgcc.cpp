@@ -125,6 +125,30 @@ bool directory::is_regular( ushort mode )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+bool directory::is_valid(zstring dir)
+{
+    xstat st;
+    return xstat64(no_trail_sep(dir), &st) == 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+bool directory::is_valid_file(zstring arg)
+{
+    if(!arg)
+        return false;
+
+    xstat st;
+    return xstat64(no_trail_sep(arg), &st) == 0 && is_regular(st.st_mode);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+bool directory::is_valid_dir(const char* arg)
+{
+    directory::xstat st;
+    return xstat64(arg, &st) == 0 && directory::is_directory(st.st_mode);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 opcd directory::mkdir( zstring name, mode_t mode )
 {
     if(!::mkdir(name.c_str(), mode))  return 0;

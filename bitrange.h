@@ -113,7 +113,7 @@ COID_NAMESPACE_BEGIN
 inline bool valid_int_range( int64 v, uint bytes )
 {
     if (bytes >= 8)
-        return false;
+        return true;
     
     int64 vmax = ((uint64)1<<(8*bytes-1)) - 1;
     int64 vmin = ~vmax;

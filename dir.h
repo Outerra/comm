@@ -335,6 +335,8 @@ public:
 
 protected:
 
+    static bool is_valid_dir(const char* path);
+
     static void dummy_func() {
     }
 

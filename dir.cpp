@@ -72,19 +72,6 @@ bool directory::stat(zstring name, xstat* dst)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool directory::is_valid(zstring dir)
-{
-    xstat st;
-    return xstat64(no_trail_sep(dir), &st) == 0;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-static bool _is_valid_directory(const char* arg)
-{
-    directory::xstat st;
-    return xstat64(arg, &st) == 0 && directory::is_directory(st.st_mode);
-}
-
 bool directory::is_valid_directory(zstring arg)
 {
     token tok = arg.get_token();
@@ -100,17 +87,7 @@ bool directory::is_valid_directory(zstring arg)
         arg.get_str() << separator();
     }
 
-    return _is_valid_directory(arg.c_str());
-}
-
-////////////////////////////////////////////////////////////////////////////////
-bool directory::is_valid_file(zstring arg)
-{
-    if(!arg)
-        return false;
-
-    xstat st;
-    return xstat64(no_trail_sep(arg), &st) == 0 && is_regular(st.st_mode);
+    return is_valid_dir(arg.c_str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////

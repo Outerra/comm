@@ -40,6 +40,7 @@
 
 #include "namespace.h"
 #include "retcodes.h"
+#include <limits>
 
 /** \file assert.h
     This header defines various assert macros. The assert macros normally log
@@ -125,9 +126,20 @@
 
 #endif //_DEBUG
 
-
 ////////////////////////////////////////////////////////////////////////////////
 COID_NAMESPACE_BEGIN
+
+///Downcast value of integral type, checking for overflow and underflow
+//@return saturated cast value
+template <class T, class S>
+inline T assert_cast(S v) {
+    const T vmin = std::numeric_limits<T>::min();
+    const T vmax = std::numeric_limits<T>::max();
+
+    DASSERT(v >= vmin && v <= vmax);
+    return v < vmin ? vmin : (v > vmax ? vmax : T(v));
+}
+
 
 struct opcd;
 struct token;

@@ -150,6 +150,33 @@ bool directory::is_regular( ushort mode )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+bool directory::is_valid(zstring arg)
+{
+    uint v = GetFileAttributes(arg.c_str());
+    return v != INVALID_FILE_ATTRIBUTES;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+bool directory::is_valid_file(zstring arg)
+{
+    uint v = GetFileAttributes(arg.c_str());
+    if (v == INVALID_FILE_ATTRIBUTES)
+        return false;
+
+    return (v & (FILE_ATTRIBUTE_DIRECTORY|FILE_ATTRIBUTE_DEVICE)) == 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+bool directory::is_valid_dir(const char* arg)
+{
+    uint v = GetFileAttributes(arg);
+    if (v == INVALID_FILE_ATTRIBUTES)
+        return false;
+
+    return (v & FILE_ATTRIBUTE_DIRECTORY) != 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 opcd directory::mkdir( zstring name, uint mode )
 {
     const char* p = no_trail_sep(name);
