@@ -2388,7 +2388,7 @@ struct token
 
 
     ///Convert token to array of wchar_t characters
-    bool utf8_to_wchar_buf(wchar_t* dst, uints maxlen) const;
+    uints utf8_to_wchar_buf(wchar_t* dst, uints maxlen) const;
 
     template<class A>
     bool utf8_to_wchar_buf(dynarray<wchar_t, uint, A>& dst) const;
