@@ -347,6 +347,9 @@ struct interface_context
         if (_object.IsEmpty())
             return V8_CUR_CONTEXT(iso);
 
+        if (_object.IsEmpty())
+            return V8_CUR_CONTEXT(iso);
+
 #ifdef V8_MAJOR_VERSION
         return _object.Get(iso)->CreationContext();
 #else
