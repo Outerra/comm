@@ -308,6 +308,16 @@ namespace coid {
     }
 
     ////////////////////////////////////////////////////////////////////////////////
+    void netAddress::set(uint addr, int port)
+    {
+        memset(this, 0, sizeof(netAddress));
+
+        sin_family = 2;//AF_INET;
+        sin_addr = ::htonl(addr);
+        sin_port = ::htons(port);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////
     void netAddress::set(const token& host, int port, bool portoverride)
     {
         memset(this, 0, sizeof(netAddress));
