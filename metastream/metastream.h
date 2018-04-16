@@ -2607,7 +2607,7 @@ protected:
         opcd e = 0;
         if (cache_prepared())
         {
-            if (read && !t.is_array_end() && !_cachevar && !_current->valid_addr()) {
+            if (read && !t.is_array_end() && !_cachevar && !_curvar.var->is_array_element() && !_current->valid_addr()) {
                 //cache is open for reading but the member is not there
                 //this can happen when reading a struct that was cached due to reordered input
                 if (!cache_use_default()) {

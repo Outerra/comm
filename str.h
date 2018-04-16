@@ -1608,39 +1608,43 @@ public:
     }
 
     ///Convert string to lowercase
-    void tolower()
+    charstr& tolower()
     {
         char* pe = (char*)ptre();
         for(char* p = (char*)ptr(); p < pe; ++p)
             *p = (char) ::tolower(*p);
+        return *this;
     }
 
     ///Convert range within string to lowercase
-    void tolower(ints from, ints to)
+    charstr& tolower(ints from, ints to)
     {
         clamp_range(from, to);
 
         char* pe = (char*)ptr() + to;
         for(char* p = (char*)ptr() + from; p < pe; ++p)
             *p = (char) ::tolower(*p);
+        return *this;
     }
 
     ///Convert string to uppercase
-    void toupper()
+    charstr& toupper()
     {
         char* pe = (char*)ptre();
         for(char* p = (char*)ptr(); p < pe; ++p)
             *p = (char) ::toupper(*p);
+        return *this;
     }
 
     ///Convert range within string to uppercase
-    void toupper(ints from, ints to)
+    charstr& toupper(ints from, ints to)
     {
         clamp_range(from, to);
 
         char* pe = (char*)ptr() + to;
         for(char* p = (char*)ptr() + from; p < pe; ++p)
             *p = (char) ::toupper(*p);
+        return *this;
     }
 
     ///Replace every occurence of character \a from to character \a to
