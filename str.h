@@ -1613,6 +1613,7 @@ public:
         char* pe = (char*)ptre();
         for(char* p = (char*)ptr(); p < pe; ++p)
             *p = (char) ::tolower(*p);
+
         return *this;
     }
 
@@ -1624,6 +1625,7 @@ public:
         char* pe = (char*)ptr() + to;
         for(char* p = (char*)ptr() + from; p < pe; ++p)
             *p = (char) ::tolower(*p);
+
         return *this;
     }
 
@@ -1633,6 +1635,7 @@ public:
         char* pe = (char*)ptre();
         for(char* p = (char*)ptr(); p < pe; ++p)
             *p = (char) ::toupper(*p);
+        
         return *this;
     }
 
@@ -1644,6 +1647,7 @@ public:
         char* pe = (char*)ptr() + to;
         for(char* p = (char*)ptr() + from; p < pe; ++p)
             *p = (char) ::toupper(*p);
+
         return *this;
     }
 
