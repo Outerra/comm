@@ -344,6 +344,18 @@ static void timet_to_filetime( timet t, FILETIME* ft )
     SystemTimeToFileTime(&systime, ft);*/
 }
 
+////////////////////////////////////////////////////////////////////////////////
+static void filetime_to_timet(const FILETIME& ft, time_t* t)
+{
+    //it is not safe to just make reinterpret cast because FILETIME struct is 32bit aligned
+    ULARGE_INTEGER uint64_union;
+    uint64_union.LowPart = ft.dwLowDateTime;
+    uint64_union.HighPart = ft.dwHighDateTime;
+
+    *t = (uint64_union.QuadPart / 10000000ULL - 11644473600ULL);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 opcd directory::set_file_times(zstring fname, timet actime, timet modtime)
 {
     FILETIME ftacc, ftmod;
@@ -360,6 +372,48 @@ opcd directory::set_file_times(zstring fname, timet actime, timet modtime)
     CloseHandle(h);
     
     return r ? ersNOERR : ersFAILED;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void directory::list_file_modify_times(const coid::charstr& path, const token& extension, bool recursive, const coid::function<void(coid::charstr&& path, time_t last_modified)>& fn)
+{
+    WIN32_FIND_DATA win32_file;
+
+    coid::charstr path_with_wildcard = path;
+    append_path(path_with_wildcard, "*");
+
+    HANDLE hFind = FindFirstFileA(path_with_wildcard.ptr(), &win32_file);
+    
+    if (hFind == INVALID_HANDLE_VALUE)
+        return;
+
+    do
+    {
+        if (win32_file.cFileName[0] == '.')
+        {
+            // . or ..
+        }
+        else if (win32_file.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+        {
+            coid::charstr sub_folder_path = path;
+            append_path(sub_folder_path, win32_file.cFileName);
+            list_file_modify_times(sub_folder_path, extension, true, fn);
+        }
+        else if (coid::token(win32_file.cFileName).ends_with(extension))
+        {
+            coid::charstr abs_path = path;
+            append_path(abs_path, win32_file.cFileName);
+
+            time_t unix_time;
+            filetime_to_timet(win32_file.ftLastWriteTime, &unix_time);
+
+            fn(std::move(abs_path), unix_time);
+        }
+
+    } while (FindNextFileA(hFind, &win32_file) != 0);
+
+    //the reason that FindNextFile returned 0 must be that there are no more files
+    DASSERT(GetLastError() == ERROR_NO_MORE_FILES);
 }
 
 

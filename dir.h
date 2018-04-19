@@ -44,6 +44,7 @@
 #include "commtime.h"
 #include <sys/stat.h>
 #include "str.h"
+#include "trait.h"
 
 #ifndef SYSTYPE_MSVC
 # include <dirent.h>
@@ -332,6 +333,18 @@ public:
             }
         }
     }
+
+    ///lists all files with given extension and their "last modified" times
+    ///note: does not return any folder paths
+    //@param path where to search
+    //@param extension only files whose paths end with this token are returned
+    //@param recursive if set true subfolders will be recursively searched
+    //@param fn callback function. if needed, take the file_path by move (aka: takeover). last_modified is unix time.
+    static void list_file_modify_times(
+        const coid::charstr& path,
+        const token& extension,
+        bool recursive,
+        const coid::function<void(coid::charstr&& file_path, time_t last_modified)>& fn);
 
 protected:
 

@@ -247,6 +247,38 @@ opcd directory::set_file_times(zstring fname, timet actime, timet modtime)
     return utime(fname.c_str(), &ut) == 0 ? 0 : ersFAILED;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// this is mostly copypasta of ::list_file_paths
+void directory::list_file_modify_times(const coid::charstr& path, const token& extension, bool recursive, const coid::function<void(coid::charstr&& path, time_t last_modified)>& fn)
+{
+    directory dir;
+
+    if (recursive) {
+        if (dir.open(path, "*.*") != ersNOERR)
+            return;
+    }
+    else {
+        charstr filter = "*.";
+        filter << extension;
+        if (dir.open(path, filter) != ersNOERR)
+            return;
+    }
+
+    while (dir.next()) {
+        if (dir.is_entry_regular()) {
+
+            if ((!recursive) || (extension == '*') || dir.get_last_file_name_token().cut_right_back('.').cmpeqi(extension)) {
+                fn(std::move(coid::charstr(dir.get_last_full_path())), dir.get_stat()->st_mtime);
+            }
+        }
+        else if (dir.is_entry_subdirectory()) {
+            if (recursive) {
+                directory::list_file_modify_times(dir.get_last_full_path(), extension, recursive, fn);
+            }
+        }
+    }
+}
+
 COID_NAMESPACE_END
 
 
