@@ -375,39 +375,59 @@ opcd directory::set_file_times(zstring fname, timet actime, timet modtime)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void directory::list_file_modify_times(const coid::charstr& path, const token& extension, bool recursive, const coid::function<void(coid::charstr&& path, time_t last_modified)>& fn)
+void directory::find_files(
+    const token& path,
+    const token& extension,
+    bool recursive,
+    bool return_also_folders,
+    const coid::function<void(const find_result& file_info)>& fn)
 {
+    //*** constant that needs to be constructed just once
+    static const coid::token dotdot("..");
+
+    //*** allocate memory that will be reused
     WIN32_FIND_DATA win32_file;
+    find_result result;
+    coid::charstr buffer = path;
 
-    coid::charstr path_with_wildcard = path;
-    append_path(path_with_wildcard, "*");
+    //*** init search using wildcard
+    append_path(buffer, "*");
+    HANDLE hFind = FindFirstFileExA(buffer.ptr(), FindExInfoBasic, &win32_file, FindExSearchNameMatch, NULL, 0);
 
-    HANDLE hFind = FindFirstFileA(path_with_wildcard.ptr(), &win32_file);
-    
     if (hFind == INVALID_HANDLE_VALUE)
         return;
 
     do
     {
-        if (win32_file.cFileName[0] == '.')
-        {
-            // . or ..
-        }
-        else if (win32_file.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-        {
-            coid::charstr sub_folder_path = path;
-            append_path(sub_folder_path, win32_file.cFileName);
-            list_file_modify_times(sub_folder_path, extension, true, fn);
-        }
-        else if (coid::token(win32_file.cFileName).ends_with(extension))
-        {
-            coid::charstr abs_path = path;
-            append_path(abs_path, win32_file.cFileName);
+        const coid::token name(win32_file.cFileName);
 
-            time_t unix_time;
-            filetime_to_timet(win32_file.ftLastWriteTime, &unix_time);
+        if (name == '.' || name == dotdot)
+            continue;
 
-            fn(std::move(abs_path), unix_time);
+        const bool this_is_folder = (win32_file.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+
+        if ((!this_is_folder && name.ends_with(extension)) || (return_also_folders && this_is_folder))
+        {
+            buffer.resize(path.len());
+            append_path(buffer, name);
+
+            result._path = buffer;
+            result._flags = win32_file.dwFileAttributes;
+            result._size = uint64(win32_file.nFileSizeHigh) << 32 | win32_file.nFileSizeLow;
+            filetime_to_timet(win32_file.ftLastWriteTime, &result._last_modified);
+            fn(result);
+        }
+
+        if (recursive && this_is_folder)
+        {
+            if (!return_also_folders)
+            {
+                //*** the append hasn`t been done yet in this case
+                buffer.resize(path.len());
+                append_path(buffer, name);
+            }
+
+            find_files(buffer, extension, recursive, return_also_folders, fn);
         }
 
     } while (FindNextFileA(hFind, &win32_file) != 0);

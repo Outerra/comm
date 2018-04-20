@@ -249,7 +249,13 @@ opcd directory::set_file_times(zstring fname, timet actime, timet modtime)
 
 ////////////////////////////////////////////////////////////////////////////////
 // this is mostly copypasta of ::list_file_paths
-void directory::list_file_modify_times(const coid::charstr& path, const token& extension, bool recursive, const coid::function<void(coid::charstr&& path, time_t last_modified)>& fn)
+// TODO: probably can be greatly optimized
+void directory::find_files(
+    const token& path,
+    const token& extension,
+    bool recursive,
+    bool return_also_folders,
+    const coid::function<void(const find_result& file_info)>& fn)
 {
     directory dir;
 
@@ -266,14 +272,29 @@ void directory::list_file_modify_times(const coid::charstr& path, const token& e
 
     while (dir.next()) {
         if (dir.is_entry_regular()) {
-
             if ((!recursive) || (extension == '*') || dir.get_last_file_name_token().cut_right_back('.').cmpeqi(extension)) {
-                fn(std::move(coid::charstr(dir.get_last_full_path())), dir.get_stat()->st_mtime);
+                const xstat* stat = dir.get_stat();
+                find_result result;
+                result._path = dir.get_last_full_path();
+                result._last_modified = stat->st_mtime;
+                result._size = stat->st_size;
+                result._flags = 0;
+                fn(result);
             }
         }
         else if (dir.is_entry_subdirectory()) {
+            if (return_also_folders) {
+                const xstat* stat = dir.get_stat();
+                find_result result;
+                result._path = dir.get_last_full_path();
+                result._last_modified = stat->st_mtime;
+                result._size = 0;
+                result._flags = 0;
+                fn(result);
+            }
+
             if (recursive) {
-                directory::list_file_modify_times(dir.get_last_full_path(), extension, recursive, fn);
+                directory::find_files(dir.get_last_full_path(), extension, recursive, return_also_folders, fn);
             }
         }
     }

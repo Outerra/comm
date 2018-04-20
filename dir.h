@@ -334,17 +334,36 @@ public:
         }
     }
 
+
+    ///structure returned by ::find_files
+    struct find_result {
+        coid::token _path;              //< temporary! => do not store this token, make string copy if you need to store it
+        uint64      _size;              //< in bytes, always 0 for directories
+        time_t      _last_modified;     //< unix time
+        uint        _flags;             //< windows only! always 0 in gcc build
+
+        enum flags{
+            readonly  = 0x00000001,
+            hidden    = 0x00000002,
+            system    = 0x00000004,
+            directory = 0x00000010,
+            encrypted = 0x00004000
+        };
+    };
+
     ///lists all files with given extension and their "last modified" times
     ///note: does not return any folder paths
     //@param path where to search
-    //@param extension only files whose paths end with this token are returned
-    //@param recursive if set true subfolders will be recursively searched
-    //@param fn callback function. if needed, take the file_path by move (aka: takeover). last_modified is unix time.
-    static void list_file_modify_times(
-        const coid::charstr& path,
+    //@param extension only files whose paths end with this token are returned. keep empty to find all files
+    //@param recursive if true subfolders will be recursively searched
+    //@param return_also_folders if true the callbeck will be called also for folders (even when searching for files with extension)
+    //@param fn callback function called for each found file
+    static void find_files(
+        const token& path,
         const token& extension,
         bool recursive,
-        const coid::function<void(coid::charstr&& file_path, time_t last_modified)>& fn);
+        bool return_also_folders,
+        const coid::function<void(const find_result& file_info)>& fn);
 
 protected:
 
