@@ -390,6 +390,59 @@ struct token
     }
 
 
+
+    //@return true if contains only alpha ascii chars
+    bool is_alpha() const {
+        const char* p = _ptr;
+        const char* e = _pte;
+        for (; p < e; ++p) {
+            char c = *p;
+            bool ok = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+            if (!ok)
+                break;
+        }
+        return p == e;
+    }
+
+    //@return true if contains only numeric chars
+    bool is_num() const {
+        const char* p = _ptr;
+        const char* e = _pte;
+        for (; p < e; ++p) {
+            char c = *p;
+            bool ok = c >= '0' && c <= '9';
+            if (!ok)
+                break;
+        }
+        return p == e;
+    }
+
+    //@return true if contains only alpha ascii chars or digits
+    bool is_alphanum() const {
+        const char* p = _ptr;
+        const char* e = _pte;
+        for (; p < e; ++p) {
+            char c = *p;
+            bool ok = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
+            if (!ok)
+                break;
+        }
+        return p == e;
+    }
+
+    //@return true if contains any digits
+    bool has_digits() const {
+        const char* p = _ptr;
+        const char* e = _pte;
+        for (; p < e; ++p) {
+            char c = *p;
+            if (c >= '0' && c <= '9')
+                return true;
+        }
+        return false;
+    }
+
+
     ////////////////////////////////////////////////////////////////////////////////
     //@return this token if not empty, otherwise the second one
     token operator | (const token& b) const {
