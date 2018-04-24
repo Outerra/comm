@@ -253,7 +253,7 @@ public:
     ///Define a member variable
     //@param name variable name, used as a key in output formats
     //@param v variable to read/write to
-    //@return true if value was read or written and no default was used
+    //@return true if value was read or written and no default was used (also true in meta phase)
     template<typename T>
     bool member(const token& name, T& v)
     {
@@ -263,22 +263,21 @@ public:
         }
 
         meta_variable<T>(name, &v);
-        return false;
+        return true;
     }
 
     ///Define a member variable with default value to use if missing in stream
     //@param name variable name, used as a key in output formats
     //@param v variable to read/write to
     //@param defval value to use if the variable is missing from the stream, convertible to T
-    //@return true if value was read or written and no default was used
+    //@return true if value was read or written and no default was used (also true in meta phase)
     template<typename T, typename D>
     bool member(const token& name, T& v, const D& defval)
     {
-        bool used = false;
+        bool used = true;
 
         if (_binw) {
             *this || *(typename resolve_enum<T>::type*)&v;
-            used = true;
         }
         else if (_binr) {
             used = read_optional(v);
@@ -295,11 +294,11 @@ public:
     //@param v variable to read/write to
     //@param defval value to use if the variable is missing from the stream, convertible to T
     //@param write_default if false, does not write value that equals the defval into output stream
-    //@return true if value was read or written and no default was used
+    //@return true if value was read or written and no default was used (also true in meta phase)
     template<typename T, typename D>
     bool member(const token& name, T& v, const D& defval, bool write_default)
     {
-        bool used = false;
+        bool used = true;
 
         if (_binw) {
             used = write_optional(!cache_prepared() && !write_default && v == defval
@@ -398,11 +397,11 @@ public:
     //@param set void function(const T&) receiving object from stream
     //@param get const T& function() returning object to stream
     //@param write_default if false, does not write value that equals the defval into output stream
-    //@return true if value was read or written and no default was used
+    //@return true if value was read or written and no default was used (also true in meta phase)
     template<typename T, typename D, typename FnIn, typename FnOut>
     bool member_type(const token& name, const D& defval, FnIn set, FnOut get, bool write_default)
     {
-        bool used = false;
+        bool used = true;
         if (_binw) {
             T tmp(get());
             used = write_optional(!cache_prepared() && !write_default && tmp == defval ? 0 : &tmp);
@@ -421,11 +420,11 @@ public:
     //@param name variable name, used as a key in output formats
     //@param set void function(const T*) receiving streamed object, or nullptr if the object wasn't present in the stream
     //@param get const T* function() called to provide object to be streamed, or nullptr if nothing should go into the stream
-    //@return true if value was read or written and no default was used
+    //@return true if value was read or written and no default was used (also true in meta phase)
     template<typename T, typename FnIn, typename FnOut>
     bool member_optional(const token& name, FnIn set, FnOut get)
     {
-        bool used = false;
+        bool used = true;
         if (_binw) {
             const T* p = get();
             used = write_optional(p);
@@ -452,11 +451,11 @@ public:
     //@param write_default if false, does not write value that equals the defval into output stream
     //@note if written value is not present in the list, nothing is written out
     //@note if read string doesn't match any string from the set, defval is set
-    //@return true if value was read or written and no default was used
+    //@return true if value was read or written and no default was used (also true in meta phase)
     template<typename T>
     bool member_enum(const token& name, T& v, const T values[], const char* names[], const T& defval, bool write_default = true)
     {
-        bool used = false;
+        bool used = true;
         if (_binw) {
             if (!cache_prepared() && !write_default && v == defval)
                 used = write_optional((const char**)0);
@@ -491,14 +490,16 @@ public:
     //@param name variable name, used as a key in output formats
     //@param v optional pointer to the read value
     //@param was_read true if the value was read
-    //@return true if value was read or written and no default was used
+    //@return true if value was read or written and no default was used (also true in meta phase)
     template<typename T>
     bool member_obsolete(const token& name, T* v = nullptr)
     {
         bool used = false;
 
-        if (!streaming())
+        if (!streaming()) {
             meta_variable_obsolete<T>(name, 0);
+            return true;
+        }
         else if (stream_reading()) {
             if (cache_prepared()) {
                 _current->offs += sizeof(uints);
