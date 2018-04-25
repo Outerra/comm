@@ -572,12 +572,17 @@ v8::CBK_RET $name$_js_dispatcher::_setter(v8::Local<v8::String> property, v8::Lo
     write_from_v8(value, val);
 
     v8::String::Utf8Value key(property);
+    try {
 $-(if setter.token?)$
-    (*R_)(coid::token(*key, key.length()), val);
+        (*R_)(coid::token(*key, key.length()), val);
 $-(elif)$
-    (*R_)(*key, val);
+        (*R_)(*key, val);
 $-(/if)$
-
+    }
+    catch ( std::exception& e )
+    {
+        v8::throw_js(iso,v8::Exception::Error,e.what());
+    }
 #ifdef V8_MAJOR_VERSION
     args.GetReturnValue().Set(value);
 #else
