@@ -271,6 +271,8 @@ public:
                 if (!newitem) destroy(*p);
                 else *newitem = false;
             }
+            else if (newitem)
+                *newitem = true;
             return p;
         }
         if (newitem) *newitem = true;
@@ -598,6 +600,54 @@ public:
 
         extarray_expand(n);
         expand<false>(n);
+
+        if (TRACKING)
+            tracker_t::set_modified(id);
+
+        set_bit(id);
+
+        ++_count;
+
+        if (is_new) *is_new = true;
+        return ptr(id);
+    }
+
+    ///Get a particular item from given slot or default-construct a new one there
+    //@param id item id, reverts to add() if UMAXS
+    //@param is_new optional if not null, receives true if the item was newly created (also not restored from pool)
+    T* get_or_create_uninit(uints id, bool* is_new = 0)
+    {
+        if (id == UMAXS) {
+            if (is_new) *is_new = true;
+            return add_uninit();
+        }
+
+        if (id < _created) {
+            //within allocated space
+            if (TRACKING)
+                tracker_t::set_modified(id);
+
+            T* p = ptr(id);
+
+            if (get_bit(id)) {
+                //existing object
+                if (is_new) *is_new = false;
+                return p;
+            }
+
+            set_bit(id);
+
+            ++_count;
+
+            if (is_new) *is_new = !POOL;
+            return p;
+        }
+
+        //extra space needed
+        uints n = id + 1 - _created;
+
+        extarray_expand_uninit(n);
+        expand<true>(n);
 
         if (TRACKING)
             tracker_t::set_modified(id);
