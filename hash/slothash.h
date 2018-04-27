@@ -300,12 +300,10 @@ public:
 
     void reserve(uints nitems) {
         uints os = _buckets.size();
-        if (nitems > os)
-            _buckets.addc(nitems - os, true);
+        if (nitems <= os)
+            return;
 
-        //TODO rehash?
-        DASSERT(os == 0);
-
+        _buckets.addc(nitems - os, true);
         base::reserve(nitems);
     }
 
