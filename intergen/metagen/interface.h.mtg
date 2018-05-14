@@ -91,7 +91,14 @@ $-(if varname? destroy.name.empty?)$
     }
 $-(/if)$
 
+    ///Interface revision hash
     static const int HASHID = $hash$;
+    
+    ///Interface name (full ns::class string)
+    static const coid::tokenhash& IFCNAME() {
+        static const coid::tokenhash _name = "$ns rest="::" after="::"$$name$";
+        return _name;
+    }
 
     int intergen_hash_id() const override $-(if !virtual?)$ final$(/if)$ { return HASHID; }
 
@@ -100,8 +107,7 @@ $-(/if)$
     }
 
     const coid::tokenhash& intergen_interface_name() const override $-(if !virtual?)$ final$(/if)$ {
-        static const coid::tokenhash _name = "$ns rest="::" after="::"$$name$";
-        return _name;
+        return IFCNAME();
     }
 
     static const coid::token& intergen_default_creator_static( EBackend bck ) {
@@ -161,7 +167,7 @@ $-(/if)$
         type.consume("struct ");
 
         coid::charstr tmp = "$ns rest="::" after="::"$$name$";
-        tmp << "@client" << '.' << type;
+        tmp << "@client-$hash$" << '.' << type;
 
         coid::interface_register::register_interface_creator(tmp, cc);
         return 0;

@@ -75,33 +75,48 @@ public:
 
     typedef iref<intergen_interface>(*wrapper_fn)(void*, intergen_interface*);
 
-    ///Get interface wrapper creator matching the given name
+    struct creator {
+        token name;
+        union {
+            void* creator_ptr;
+            wrapper_fn fn;
+        };
+    };
+
+    ///Get interface wrapper creator matching given name
     //@param name interface creator name in the format [ns1::[ns2:: ...]]::class
     static wrapper_fn get_interface_wrapper(const token& name);
 
-    ///Get interface maker creator matching the given name
+    ///Get interface maker creator matching given name
     //@param name interface creator name in the format [ns1::[ns2:: ...]]::class
     //@param script script type
     static void* get_interface_maker(const token& name, const token& script);
 
-    ///Get client interface creator matching the given name
+    ///Get client interface creator matching given name
     //@param client client name
-    //@param iface interface creator name in the format [ns1::[ns2:: ...]]::class
+    //@param iface interface name in the format [ns1::[ns2:: ...]]::class
     //@param module required module to match
-    static wrapper_fn get_interface_client(const token& client, const token& iface, const token& module);
+    static wrapper_fn get_interface_client(const token& client, const token& iface, uint hash, const token& module);
 
-    struct creator {
-        token name;
-        void* creator_ptr;
-    };
+    ///Get client interface creators matching given name
+    //@param iface interface name in the format [ns1::[ns2:: ...]]::class
+    //@param module required module to match
+    static dynarray<creator>& get_interface_clients(const tokenhash& iface, uint hash, dynarray<creator>& dst);
 
-    ///Get interface creators matching the given name
+    template <typename T>
+    static dynarray<creator>& get_interface_clients(dynarray<creator>& dst) {
+        static_assert(std::is_base_of<intergen_interface, T>::value, "expected intergen_interface derived class");
+
+        return get_interface_clients(T::IFCNAME(), T::HASHID, dst);
+    }
+
+    ///Get interface creators matching given name
     //@param name interface creator name in the format [ns1::[ns2:: ...]]::class[.creator]
     //@param script script type (""=c++, "js", "lua" ...), if empty/null anything matches
     //@return array of interface creators for given script type (with script_handle argument)
     static dynarray<creator>& get_interface_creators(const token& name, const token& script, dynarray<creator>& dst);
 
-    ///Get script interface creators matching the given name
+    ///Get script interface creators matching given name
     //@param name interface creator name in the format [ns1::[ns2:: ...]]::class[.creator]
     //@param script script type (""=c++, "js", "lua" ...), if empty/null anything matches
     //@return array of interface creators for given script type (with native script lib argument)

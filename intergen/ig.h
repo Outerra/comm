@@ -35,6 +35,8 @@ public:
     static const token IFC_FNX;
     static const token IFC_EVENT;
     static const token IFC_EVENTX;
+    static const token IFC_DEFAULT_BODY;
+    static const token IFC_DEFAULT_EMPTY;
     static const token IFC_EVBODY;
     static const token IFC_INOUT;
     static const token IFC_IN;
