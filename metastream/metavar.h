@@ -58,6 +58,7 @@ struct MetaDesc
     {
         MetaDesc* desc;                 //< ptr to descriptor for the type of the variable
         charstr varname;                //< name of the variable (empty if this is an array element)
+        int offset;                     //< offset in parent
 
         dynarray<uchar> defval;         //< default value for reading if not found in input stream
         bool nameless_root;             //< true if the variable is a nameless root
@@ -66,7 +67,7 @@ struct MetaDesc
 
 
         Var()
-            : desc(0), nameless_root(false), obsolete(false), optional(false)
+            : desc(0), offset(0), nameless_root(false), obsolete(false), optional(false)
         {}
 
         bool is_array() const           { return desc->is_array(); }
@@ -105,9 +106,9 @@ struct MetaDesc
             return desc->type_string(dst);
         }
 
-        Var* add_child( MetaDesc* d, const token& n )
+        Var* add_child( MetaDesc* d, const token& n, int offset )
         {
-            return desc->add_desc_var(d, n);
+            return desc->add_desc_var(d, n, offset);
         }
     };
 
@@ -209,11 +210,12 @@ struct MetaDesc
     MetaDesc() : array_size(UMAXS), fnstream(0) {}
     MetaDesc( const token& n ) : array_size(UMAXS), type_name(n), fnstream(0) {}
 
-    Var* add_desc_var( MetaDesc* d, const token& n )
+    Var* add_desc_var( MetaDesc* d, const token& n, int offset )
     {
         Var* c = children.add();
         c->desc = d;
         c->varname = n;
+        c->offset = offset;
 
         return c;
     }

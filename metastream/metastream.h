@@ -285,7 +285,7 @@ public:
                 v = T(defval);
         }
         else
-            meta_variable_optional<T>(name);
+            meta_variable_optional<T>(name, &v);
         return used;
     }
 
@@ -310,7 +310,7 @@ public:
                 v = T(defval);
         }
         else
-            meta_variable_optional<T>(name);
+            meta_variable_optional<T>(name, &v);
         return used;
     }
 
@@ -412,7 +412,7 @@ public:
             set(used ? val : defval);
         }
         else
-            meta_variable_optional<T>(name);
+            meta_variable_optional<T>(name, (const T*)-1);
         return used;
     }
 
@@ -438,7 +438,7 @@ public:
                 set(nullptr);
         }
         else
-            meta_variable_optional<T>(name);
+            meta_variable_optional<T>(name, (const T*)-1);
         return used;
     }
 
@@ -481,7 +481,7 @@ public:
                 v = defval;
         }
         else
-            meta_variable_optional<charstr>(name);
+            meta_variable_optional<charstr>(name, (const charstr*)&v);
         return used;
 
     }
@@ -497,7 +497,7 @@ public:
         bool used = false;
 
         if (!streaming()) {
-            meta_variable_obsolete<T>(name, 0);
+            meta_variable_obsolete<T>(name);
             return true;
         }
         else if (stream_reading()) {
@@ -613,6 +613,7 @@ public:
         _current_var = 0;
         _curvar.var = 0;
         _cur_variable_name.set_empty();
+        _cur_variable_offset = 0;
 
         _templ_arg_rdy = false;
 
@@ -1135,6 +1136,7 @@ public:
 
         _curvar.var = 0;
         _cur_variable_name.set_empty();
+        _cur_variable_offset = 0;
         _rvarname.reset();
 
         _err.reset();
@@ -1330,7 +1332,7 @@ protected:
             var = &_root;
         }
         else
-            var = _current_var->add_child(d, _cur_variable_name);
+            var = _current_var->add_child(d, _cur_variable_name, _cur_variable_offset);
 
         _cur_variable_name.set_empty();
 
@@ -1421,28 +1423,29 @@ public:
     }
 
     template<class T>
-    void meta_variable(const token& varname, const T*)
+    void meta_variable(const token& varname, const T* v)
     {
         typedef typename resolve_enum<T>::type B;
 
         _cur_variable_name = varname;
+        _cur_variable_offset = (int)(ints)v;
         _cur_stream_fn = &type_streamer<T>::fn;
 
         *this || *(B*)0;
     }
 
     template<class T>
-    void meta_variable_optional(const token& varname)
+    void meta_variable_optional(const token& varname, const T* v)
     {
-        meta_variable<T>(varname, (const T*)0);
+        meta_variable<T>(varname, v);
 
         _last_var->optional = true;
     }
 
     template<class T>
-    void meta_variable_obsolete(const token& varname, const T* v)
+    void meta_variable_obsolete(const token& varname)
     {
-        meta_variable<T>(varname, v);
+        meta_variable<T>(varname, (const T*)-1);
 
         _last_var->obsolete = true;
         _last_var->optional = true;
@@ -1450,11 +1453,12 @@ public:
 
     ///Define member array variable
     template<class T>
-    void meta_variable_array(const token& varname, const T*, uints n)
+    void meta_variable_array(const token& varname, const T* v, uints n)
     {
         typedef typename resolve_enum<T>::type B;
 
         _cur_variable_name = varname;
+        _cur_variable_offset = (int)(ints)v;
         _cur_stream_fn = &type_streamer<T>::fn;
 
         meta_decl_array(n);
@@ -1589,36 +1593,18 @@ public:
 
     ///Get type descriptor for given type
     template<class T>
-    const MetaDesc* get_type_desc(const T*)
+    const MetaDesc* get_type_desc()
     {
         _root.desc = 0;
         _current_var = 0;
 
-        *this << *(const T*)0;     // build description
+        *this || *(typename resolve_enum<T>::type*)0;
+
         const MetaDesc* mtd = _root.desc;
 
         _root.desc = 0;
         return mtd;
     }
-
-    ///
-    template<class T>
-    struct TypeDesc {
-        static const MetaDesc* get(metastream& meta)
-        {
-            return meta.get_type_desc((const T*)0);
-        }
-
-        static charstr get_str(metastream& meta)
-        {
-            const MetaDesc* dsc = meta.get_type_desc((const T*)0);
-
-            charstr res;
-
-            dsc->type_string(res);
-            return res;
-        }
-    };
 
     const MetaDesc* get_type_info(const token& type) const { return smap().find(type); }
 
@@ -1679,6 +1665,7 @@ private:
 
     token _cur_variable_name;
     MetaDesc::stream_func _cur_stream_fn;
+    int _cur_variable_offset;
     //binstream::fnc_from_stream _cur_streamfrom_fnc;
     //binstream::fnc_to_stream _cur_streamto_fnc;
 
