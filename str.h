@@ -1666,24 +1666,6 @@ public:
         return n;
     }
 
-    ///Replace all occurrences of substring by another
-    uint replace( const token& from, const token& to, charstr& dst, bool icase = false )
-    {
-        uint n = 0;
-        token str = *this, tok;
-        while(str) {
-            token tok = str.cut_left(from, icase);
-            dst.append(tok);
-
-            if(tok.ptre() != str.ptr()) {
-                dst.append(to);
-                ++n;
-            }
-        }
-        return n;
-    }
-
-
     ///Insert character at position, a negative offset goes counts from the end
     bool ins(int pos, char c)
     {
@@ -2178,6 +2160,24 @@ inline token token::rebase(const charstr& from, const charstr& to) const
     DASSERT(offset + len() <= to.len());
 
     return token(to.ptr() + offset, len());
+}
+
+///Replace all occurrences of substring by another
+uint token::replace(const token& from, const token& to, charstr& dst, bool icase) const
+{
+    uint n = 0;
+    token str = *this, tok;
+
+    while (str) {
+        token tok = str.cut_left(from, icase);
+        dst.append(tok);
+
+        if (tok.ptre() != str.ptr()) {
+            dst.append(to);
+            ++n;
+        }
+    }
+    return n;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

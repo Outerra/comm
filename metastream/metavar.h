@@ -93,6 +93,7 @@ struct MetaDesc
 
         bool has_default() const        { return defval.size() > 0; }
 
+        ///Get byte size of primitive element
         ushort get_size() const         { return desc->btype.get_size(); }
 
         type get_type() const           { return desc->btype; }
