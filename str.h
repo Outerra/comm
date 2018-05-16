@@ -1666,6 +1666,12 @@ public:
         return n;
     }
 
+    ///Replace all occurrences of substring with another
+    uint replace(const token& from, const token& to, charstr& dst, bool icase = false) const
+    {
+        return token(*this).replace(from, to, dst, icase);
+    }
+
     ///Insert character at position, a negative offset goes counts from the end
     bool ins(int pos, char c)
     {
@@ -2162,8 +2168,7 @@ inline token token::rebase(const charstr& from, const charstr& to) const
     return token(to.ptr() + offset, len());
 }
 
-///Replace all occurrences of substring by another
-uint token::replace(const token& from, const token& to, charstr& dst, bool icase) const
+inline uint token::replace(const token& from, const token& to, charstr& dst, bool icase) const
 {
     uint n = 0;
     token str = *this, tok;

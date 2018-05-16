@@ -185,6 +185,7 @@ struct token
         return __coid_hash_string(ptr(), len());
     }
 
+    ///Replace all occurrences of substring with another
     uint replace(const token& from, const token& to, charstr& dst, bool icase = false) const;
 
     ///Rebase token pointing into one string to point into the same region in another string
