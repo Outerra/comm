@@ -515,7 +515,12 @@ inline metastream& operator || ( metastream& m, hash_keyset<VAL,EXTRACTKEY,HASHF
         return m.write_container(bc);
     }
     else {
-        m.meta_decl_array();
+        m.meta_decl_array(
+            0,  //not a linear array
+            [](const void* a) -> uints { return static_cast<const _HT*>(a)->size(); },
+            0,//[](void* a, uints& i) -> void* {},
+            0 //[](const void* a, uints& i) -> const void* {}
+        );
         m || *(VAL*)0;
     }
 

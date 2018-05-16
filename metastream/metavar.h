@@ -56,19 +56,35 @@ struct MetaDesc
     ///Member variable descriptor
     struct Var
     {
-        MetaDesc* desc;                 //< ptr to descriptor for the type of the variable
+        MetaDesc* desc = 0;             //< ptr to descriptor for the type of the variable
         charstr varname;                //< name of the variable (empty if this is an array element)
-        int offset;                     //< offset in parent
+        int offset = 0;                 //< offset in parent
 
         dynarray<uchar> defval;         //< default value for reading if not found in input stream
-        bool nameless_root;             //< true if the variable is a nameless root
-        bool obsolete;                  //< variable is only read, not written
-        bool optional;                  //< variable is optional
+        bool nameless_root = false;     //< true if the variable is a nameless root
+        bool obsolete = false;          //< variable is only read, not written
+        bool optional = false;          //< variable is optional
+        bool raw_pointer = false;       //< raw pointer type
 
+        //@return ptr to first item of a linear array, 0 for non-linear
+        typedef const void* (*fn_ptr)(const void*);
 
-        Var()
-            : desc(0), offset(0), nameless_root(false), obsolete(false), optional(false)
-        {}
+        //@return count of items in container or -1 if unknown
+        typedef uints (*fn_count)(const void*);
+
+        //@return ptr to back-inserted item
+        //@param iter reference to an iterator value returned from first item and passed to remaining items
+        typedef void* (*fn_push)(void*, uints& iter);
+
+        //@return extracted element
+        //@param iter reference to an iterator value returned from first item and passed to remaining items
+        typedef const void* (*fn_extract)(const void*, uints& iter);
+
+        fn_ptr fnptr = 0;
+        fn_count fncount = 0;
+        fn_push fnpush = 0;
+        fn_extract fnextract = 0;
+
 
         bool is_array() const           { return desc->is_array(); }
         bool is_array_element() const   { return varname.is_empty() && !nameless_root; }

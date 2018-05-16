@@ -535,7 +535,7 @@ public:
             read_container(bc);
         }
         else
-            meta_variable_array<T>(name, 0, size);
+            meta_variable_fixed_array<T>(name, v, size);
         return *this;
     }
 
@@ -776,7 +776,7 @@ public:
         else if (_binw)
             write_container(a);
         else {
-            meta_decl_array();
+            meta_decl_array(0, 0, 0, 0);
             *this << *(T*)0;
         }
         return *this;
@@ -870,7 +870,7 @@ protected:
 
         if (!prepare_type_common(read))  return 0;
 
-        meta_decl_array(n);
+        meta_decl_array(0, 0, 0, 0, n);
         *this || *(typename resolve_enum<T>::type*)0;     // build description
 
         return prepare_type_final(name, cache, read);
@@ -1218,7 +1218,10 @@ public:
             write_token(a);
         }
         else {
-            meta_decl_array();
+            meta_decl_raw_pointer(
+                [](const void* a) -> const void* { return *reinterpret_cast<char const* const*>(a); },
+                [](const void* a, uints& i) -> const void* { return *reinterpret_cast<char const* const*>(a) + i++; }
+            );
             meta_def_primitive<char>("char");
         }
         return *this;
@@ -1243,7 +1246,12 @@ public:
             write_token(a);
         }
         else {
-            meta_decl_array();
+            meta_decl_array(
+                [](const void* a) -> const void* { return static_cast<const charstr*>(a)->ptr(); },
+                [](const void* a) -> uints { return static_cast<const charstr*>(a)->len(); },
+                [](void* a, uints& i) -> void* { return static_cast<charstr*>(a)->appendn_uninitialized(1); },
+                [](const void* a, uints& i) -> const void* { return static_cast<const charstr*>(a)->ptr() + i++; }
+            );
             meta_def_primitive<char>("char");
         }
         return *this;
@@ -1258,7 +1266,12 @@ public:
             write_token(a);
         }
         else {
-            meta_decl_array();
+            meta_decl_array(
+                [](const void* a) -> const void* { return static_cast<const token*>(a)->ptr(); },
+                [](const void* a) -> uints { return static_cast<const token*>(a)->len(); },
+                0,
+                [](const void* a, uints& i) -> const void* { return static_cast<const token*>(a)->ptr() + i++; }
+            );
             meta_def_primitive<char>("char");
         }
         return *this;
@@ -1453,15 +1466,21 @@ public:
 
     ///Define member array variable
     template<class T>
-    void meta_variable_array(const token& varname, const T* v, uints n)
+    void meta_variable_fixed_array(const token& varname, T* v, uints n)
     {
         typedef typename resolve_enum<T>::type B;
 
         _cur_variable_name = varname;
-        _cur_variable_offset = (int)(ints)v;
+        _cur_variable_offset = (int)(ints)&v;
         _cur_stream_fn = &type_streamer<T>::fn;
 
-        meta_decl_array(n);
+        meta_decl_array(
+            [](const void* a) -> const void* { return static_cast<const T*>(a); },
+            [](const void* a) -> uints { return 0; },   //length unknown here, use desc value
+            [](void* a, uints& i) -> void* { return static_cast<T*>(a) + i++; },
+            [](const void* a, uints& i) -> const void* { return static_cast<T const*>(a) + i++; },
+            n
+        );
 
         *this || *(B*)0;
     }
@@ -1539,13 +1558,15 @@ public:
         _curvar.var = 0;
     }
 
-
-
-
-
     ///Signal that the primitive or compound type coming is an array
     //@param n array element count, UMAXS if unknown or varying
-    void meta_decl_array(uints n = UMAXS)
+    void meta_decl_array(
+        MetaDesc::Var::fn_ptr fnptr,
+        MetaDesc::Var::fn_count fncount,
+        MetaDesc::Var::fn_push fnpush,
+        MetaDesc::Var::fn_extract fnextract,
+        uints n = UMAXS
+    )
     {
         if (is_template_name_mode()) {
             static token tarray = "@";
@@ -1557,6 +1578,36 @@ public:
         MetaDesc* d = smap().create_array_desc(n, _cur_stream_fn);
 
         _current_var = meta_fill_parent_variable(d);
+        _current_var->fnptr = fnptr;
+        _current_var->fncount = fncount;
+        _current_var->fnpush = fnpush;
+        _current_var->fnextract = fnextract;
+
+        smap().push(_current_var);
+    }
+
+    ///Signal that the primitive or compound type coming is an array
+    //@param n array element count, UMAXS if unknown or varying
+    void meta_decl_raw_pointer(
+        MetaDesc::Var::fn_ptr fnptr,
+        MetaDesc::Var::fn_extract fnextract
+    )
+    {
+        if (is_template_name_mode()) {
+            static token tarray = "@";
+            handle_template_name_mode(tarray);
+            return;
+        }
+
+        MetaDesc* d = smap().create_array_desc(UMAXS, _cur_stream_fn);
+
+        _current_var = meta_fill_parent_variable(d);
+        _current_var->fnptr = fnptr;
+        _current_var->fncount = 0;
+        _current_var->fnpush = 0;
+        _current_var->fnextract = fnextract;
+        _current_var->raw_pointer = true;
+
         smap().push(_current_var);
     }
 
@@ -3025,7 +3076,12 @@ void type_streamer<T>::fn(metastream* m, void* p, binstream_container_base*) {
 template <class T, class COUNT, class A>
 metastream& operator << (metastream& m, const dynarray<T, COUNT, A>&)
 {
-    m.meta_decl_array();
+    m.meta_decl_array(
+        [](const void* a) -> void* { return static_cast<const dynarray<T, COUNT, A>*>(a)->ptr(); },
+        [](const void* a) -> uints { return static_cast<const dynarray<T, COUNT, A>*>(a)->count(); },
+        [](void* a, uints&) -> void* { return static_cast<dynarray<T, COUNT, A>*>(a)->add(); },
+        [](const void* a, uints& i) -> const void* { return static_cast<const dynarray<T, COUNT, A>*>(a)->ptr() + i++; },
+    );
     m << *(T*)0;
     return m;
 }
@@ -3044,7 +3100,12 @@ metastream& operator || (metastream& m, dynarray<T, COUNT, A>& a)
         m.write_container(c);
     }
     else {
-        m.meta_decl_array();
+        m.meta_decl_array(
+            [](const void* a) -> const void* { return static_cast<const dynarray<T, COUNT, A>*>(a)->ptr(); },
+            [](const void* a) -> uints { return static_cast<const dynarray<T, COUNT, A>*>(a)->size(); },
+            [](void* a, uints&) -> void* { return static_cast<dynarray<T, COUNT, A>*>(a)->add(); },
+            [](const void* a, uints& i) -> const void* { return static_cast<const dynarray<T, COUNT, A>*>(a)->ptr() + i++; }
+        );
         m || *(T*)0;
     }
     return m;
@@ -3063,7 +3124,12 @@ metastream& operator || (metastream& m, range<T>& a)
         m.write_container(c);
     }
     else {
-        m.meta_decl_array();
+        m.meta_decl_array(
+            [](const void* a) -> const void* { return static_cast<const range<T>*>(a)->ptr(); },
+            [](const void* a) -> uints { return static_cast<const range<T>*>(a)->size(); },
+            0,
+            [](const void* a, uints& i) -> const void* { return static_cast<const range<T>*>(a)->ptr() + i++; }
+        );
         m || *(T*)0;
     }
     return m;
