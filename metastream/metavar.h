@@ -91,6 +91,8 @@ struct MetaDesc
         bool is_primitive() const       { return desc->is_primitive(); }
         bool is_compound() const        { return desc->is_compound(); }
 
+        bool skipped() const            { return obsolete || raw_pointer; }
+
         bool has_default() const        { return defval.size() > 0; }
 
         ///Get byte size of primitive element
@@ -135,6 +137,8 @@ struct MetaDesc
 
     token type_name;                    //< type name, name of a structure (empty if this is an array)
     type btype;                         //< basic type id
+
+    uints type_size = 0;
 /*
     binstream::fnc_from_stream
         stream_from;                    //< binstream streaming function used to read data from stream
@@ -161,7 +165,7 @@ struct MetaDesc
     {
         Var* c = (Var*)children.ptr();
         Var* l = children.last();
-        if(!read) while(c<=l && c->obsolete)
+        if(!read) while(c<=l && c->skipped())
             ++c;
 
         return c>l ? 0 : c;
@@ -178,7 +182,7 @@ struct MetaDesc
         if( !c || c >= l )  return 0;
 
         ++c;
-        if(!read) while(c<=l && c->obsolete)
+        if(!read) while(c<=l && c->skipped())
             ++c;
 
         return c>l ? 0 : c;

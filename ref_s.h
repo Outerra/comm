@@ -282,6 +282,26 @@ public:
         s.create(); return bin >> (*s._o);
     }
 
+    friend coid::metastream& operator || (coid::metastream& m, ref<T>& s)
+    {
+        if (m.stream_writing())
+            m.write_optional(s.get());
+        else if (m.stream_reading())
+            s.create(m.read_optional<T>());
+        else {
+            m.meta_decl_raw_pointer(
+                [](const void* a) -> const void* { return static_cast<const ref<T>*>(a)->_p; },
+                [](const void* a) -> uints { return static_cast<const ref<T>*>(a)->is_empty() ? 0 : 1; },
+                [](void* a, uints& i) -> void* { return static_cast<ref<T>*>(a)->_p; },
+                [](const void* a, uints& i) -> const void* { return static_cast<const ref<T>*>(a)->_p; },
+                false
+            );
+            m || *s._p;
+        }
+        return m;
+    }
+
+
 private:
     policy *_p;
     T *_o;

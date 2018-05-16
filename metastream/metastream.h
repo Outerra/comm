@@ -152,7 +152,7 @@ public:
             fn();
             moveout_struct(_binr != 0);
         }
-        else if (!meta_insert(typeid(T).name(), false))
+        else if (!meta_insert(typeid(T).name(), sizeof(T), false))
         {
             fn();
 
@@ -178,7 +178,7 @@ public:
             fn();
             moveout_struct(_binr != 0);
         }
-        else if (!meta_insert(name, false))
+        else if (!meta_insert(name, _curvar.var ? _curvar.var->desc->type_size : 0, false))
         {
             fn();
 
@@ -203,7 +203,7 @@ public:
             fn();
             moveout_struct(_binr != 0);
         }
-        else if (!meta_insert(typeid(T).name(), true))
+        else if (!meta_insert(typeid(T).name(), sizeof(T), true))
         {
             fn();
 
@@ -314,18 +314,48 @@ public:
         return used;
     }
 
-    ///Define a member variable pointer
+    ///Define a member variable referenced by a pointer
     //@param name variable name, used as a key in output formats
     //@param v pointer to variable to read/write to
     template<typename T>
-    metastream& member(const token& name, T*& v)
+    metastream& member_indirect(const token& name, T*& v)
+    {
+        typedef typename std::remove_const<T>::type TNC;
+
+        if (streaming()) {
+            if (!v)
+                throw exception() << "null pointer";
+
+            *this || *(typename resolve_enum<TNC>::type*)v;
+        }
+        else
+            meta_variable<TNC>(name, v);
+        return *this;
+    }
+
+    ///Define a raw pointer member variable
+    //@param name variable name, used as a key in output formats
+    //@param v pointer to variable to read/write to
+    //@param streamed false if variable should not be streamed, just a part of meta description
+    template<typename T>
+    metastream& member_ptr(const token& name, T*& v, bool streamed)
     {
         typedef typename std::remove_const<T>::type TNC;
 
         if (streaming())
             *this || *(typename resolve_enum<TNC>::type*)v;
-        else
-            meta_variable<TNC>(name, (TNC*)0);
+        else {
+            meta_decl_raw_pointer(
+                [](const void* a) -> const void* { return *reinterpret_cast<T const* const*>(a); },
+                0,
+                [](void* a, uints& i) -> void* { return *reinterpret_cast<T**>(a) + i++; },
+                [](const void* a, uints& i) -> const void* { return *reinterpret_cast<T const* const*>(a) + i++; },
+                streamed
+            );
+
+            meta_variable<TNC>(name, v);
+        }
+
         return *this;
     }
 
@@ -614,6 +644,7 @@ public:
         _curvar.var = 0;
         _cur_variable_name.set_empty();
         _cur_variable_offset = 0;
+        _cur_variable_size = 0;
 
         _templ_arg_rdy = false;
 
@@ -1137,6 +1168,7 @@ public:
         _curvar.var = 0;
         _cur_variable_name.set_empty();
         _cur_variable_offset = 0;
+        _cur_variable_size = 0;
         _rvarname.reset();
 
         _err.reset();
@@ -1219,8 +1251,11 @@ public:
         }
         else {
             meta_decl_raw_pointer(
-                [](const void* a) -> const void* { return *reinterpret_cast<char const* const*>(a); },
-                [](const void* a, uints& i) -> const void* { return *reinterpret_cast<char const* const*>(a) + i++; }
+                [](const void* a) -> const void* { return *static_cast<char const* const*>(a); },
+                [](const void* a) -> uints { return 0; },
+                [](void* a, uints& i) -> void* { return static_cast<char**>(a) + i++; },
+                [](const void* a, uints& i) -> const void* { return *static_cast<char const* const*>(a) + i++; },
+                true
             );
             meta_def_primitive<char>("char");
         }
@@ -1366,7 +1401,7 @@ protected:
         return true;
     }
 
-    bool meta_insert(const token& name, bool plain)
+    bool meta_insert(const token& name, uints size, bool plain)
     {
         if (meta_find(name))
             return true;
@@ -1375,6 +1410,8 @@ protected:
             name,
             plain ? type::plain_compound() : type(),
             _cur_stream_fn);
+
+        d->type_size = size;
 
         _current_var = meta_fill_parent_variable(d);
         smap().push(_current_var);
@@ -1405,7 +1442,7 @@ protected:
                 _struct_name = name;
                 _struct_name += targ;
 
-                return meta_insert(_struct_name, false);
+                return meta_insert(_struct_name, 0, false);
             }
 
             charstr& k1 = *_templ_name_stack.last();
@@ -1441,6 +1478,7 @@ public:
         typedef typename resolve_enum<T>::type B;
 
         _cur_variable_name = varname;
+        _cur_variable_size = sizeof(T);
         _cur_variable_offset = (int)(ints)v;
         _cur_stream_fn = &type_streamer<T>::fn;
 
@@ -1471,6 +1509,7 @@ public:
         typedef typename resolve_enum<T>::type B;
 
         _cur_variable_name = varname;
+        _cur_variable_size = sizeof(T);
         _cur_variable_offset = (int)(ints)&v;
         _cur_stream_fn = &type_streamer<T>::fn;
 
@@ -1587,10 +1626,13 @@ public:
     }
 
     ///Signal that the primitive or compound type coming is an array
-    //@param n array element count, UMAXS if unknown or varying
+    //@param streamed false if variable should not be streamed, just a part of meta description
     void meta_decl_raw_pointer(
         MetaDesc::Var::fn_ptr fnptr,
-        MetaDesc::Var::fn_extract fnextract
+        MetaDesc::Var::fn_count fncount,
+        MetaDesc::Var::fn_push fnpush,
+        MetaDesc::Var::fn_extract fnextract,
+        bool streamed
     )
     {
         if (is_template_name_mode()) {
@@ -1603,10 +1645,15 @@ public:
 
         _current_var = meta_fill_parent_variable(d);
         _current_var->fnptr = fnptr;
-        _current_var->fncount = 0;
-        _current_var->fnpush = 0;
+        _current_var->fncount = fncount;
+        _current_var->fnpush = fnpush;
         _current_var->fnextract = fnextract;
         _current_var->raw_pointer = true;
+
+        if (!streamed) {
+            _current_var->obsolete = true;
+            _current_var->optional = true;
+        }
 
         smap().push(_current_var);
     }
@@ -1716,6 +1763,7 @@ private:
 
     token _cur_variable_name;
     MetaDesc::stream_func _cur_stream_fn;
+    uints _cur_variable_size;
     int _cur_variable_offset;
     //binstream::fnc_from_stream _cur_streamfrom_fnc;
     //binstream::fnc_to_stream _cur_streamto_fnc;
@@ -2174,11 +2222,11 @@ protected:
             if (_curvar.var == _cachequit)
                 invalidate_cache_entry();
             /*
-                        if( !next && par == _cacheroot ) {
-                            _current = _cachestack.pop();
-                            DASSERT( _current == 0 );
-                            _cacheroot = 0;
-                        }*/
+            if( !next && par == _cacheroot ) {
+                _current = _cachestack.pop();
+                DASSERT( _current == 0 );
+                _cacheroot = 0;
+            }*/
         }
 
         _curvar.var = next;

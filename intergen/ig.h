@@ -434,9 +434,9 @@ struct Interface
             m.member("comments",p.comments);
             m.member("docs",p.docs);
             m.member("pasters",p.pasters);
-            m.member("srcfile",p.srcfile);
-            m.member("class",p.srcclass);
-            m.member("classnsx",p.srcnamespc);
+            m.member_indirect("srcfile",p.srcfile);
+            m.member_indirect("class",p.srcclass);
+            m.member_indirect("classnsx",p.srcnamespc);
             m.member("base",p.base);
             m.member("baseclass",p.baseclass);
             m.member("basepath",p.basepath);
