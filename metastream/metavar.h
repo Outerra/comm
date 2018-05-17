@@ -91,7 +91,7 @@ struct MetaDesc
         bool is_primitive() const       { return desc->is_primitive(); }
         bool is_compound() const        { return desc->is_compound(); }
 
-        bool skipped() const            { return obsolete || raw_pointer; }
+        bool skipped() const            { return obsolete; }
 
         bool has_default() const        { return defval.size() > 0; }
 

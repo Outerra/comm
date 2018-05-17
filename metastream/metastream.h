@@ -329,7 +329,7 @@ public:
             *this || *(typename resolve_enum<TNC>::type*)v;
         }
         else
-            meta_variable<TNC>(name, v);
+            meta_variable_ptr<TNC>(name, (ints)&v);
         return *this;
     }
 
@@ -353,7 +353,7 @@ public:
                 streamed
             );
 
-            meta_variable<TNC>(name, v);
+            meta_variable_ptr<TNC>(name, (ints)&v);
         }
 
         return *this;
@@ -1486,6 +1486,21 @@ public:
     }
 
     template<class T>
+    void meta_variable_ptr(const token& varname, ints offs)
+    {
+        typedef typename resolve_enum<T>::type B;
+
+        _cur_variable_name = varname;
+        _cur_variable_size = sizeof(T);
+        _cur_variable_offset = (int)offs;
+        _cur_stream_fn = &type_streamer<T>::fn;
+
+        *this || *(B*)0;
+
+        _last_var->raw_pointer = true;
+    }
+
+    template<class T>
     void meta_variable_optional(const token& varname, const T* v)
     {
         meta_variable<T>(varname, v);
@@ -1995,7 +2010,10 @@ private:
 
     ////////////////////////////////////////////////////////////////////////////////
     MetaDesc::Var* last_var() const { return _stack.last()->var; }
-    void pop_var() { DASSERT_RUN(_stack.pop(_curvar)); }
+    void pop_var() {
+        DASSERT_RUN(_stack.pop(_curvar));
+        DASSERT(_curvar.var);
+    }
 
     void push_var(bool read) {
         _stack.push(_curvar);
