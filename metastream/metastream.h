@@ -314,7 +314,31 @@ public:
         return used;
     }
 
-    ///Define a member variable referenced by a pointer
+    ///Define a fixed size array member variable 
+    //@param name variable name, used as a key in output formats
+    //@param v variable to read/write to
+    template<typename T, size_t N>
+    metastream& member(const token& name, T(&v)[N])
+    {
+        return member_array(name, v, N);
+    }
+
+    ///Define a member variable referenced by a pointer (non-streamable)
+    //@param name variable name, used as a key in output formats
+    //@param v pointer to variable to read/write to
+    //@param streamed false variable should not be streamed, just a part of meta description, can point to 1..N items (default)
+    //@param          true variable is indirectly referenced to by a pointer
+    //@note use member_optional or member_type for special handling when the pointer has to be allocated etc.
+    template<typename T>
+    metastream& member(const token& name, T*& v, bool streamed = false)
+    {
+        return streamed
+            ? member_indirect(name, v)
+            : member_ptr(name, v, false);
+    }
+
+
+    ///Define a member variable referenced by a pointer, assumed to be already allocated when streaming to/from
     //@param name variable name, used as a key in output formats
     //@param v pointer to variable to read/write to
     template<typename T>
@@ -329,11 +353,11 @@ public:
             *this || *(typename resolve_enum<TNC>::type*)v;
         }
         else
-            meta_variable_ptr<TNC>(name, (ints)&v);
+            meta_variable_indirect<TNC>(name, (ints)&v);
         return *this;
     }
 
-    ///Define a raw pointer member variable
+    ///Define a raw pointer member variable to 1..N objects
     //@param name variable name, used as a key in output formats
     //@param v pointer to variable to read/write to
     //@param streamed false if variable should not be streamed, just a part of meta description
@@ -344,17 +368,8 @@ public:
 
         if (streaming())
             *this || *(typename resolve_enum<TNC>::type*)v;
-        else {
-            meta_decl_raw_pointer(
-                [](const void* a) -> const void* { return *reinterpret_cast<T const* const*>(a); },
-                0,
-                [](void* a, uints& i) -> void* { return *reinterpret_cast<T**>(a) + i++; },
-                [](const void* a, uints& i) -> const void* { return *reinterpret_cast<T const* const*>(a) + i++; },
-                streamed
-            );
-
-            meta_variable_ptr<TNC>(name, (ints)&v);
-        }
+        else
+            meta_variable_raw_ptr<TNC>(name, (ints)&v, streamed);
 
         return *this;
     }
@@ -807,7 +822,7 @@ public:
         else if (_binw)
             write_container(a);
         else {
-            meta_decl_array(0, 0, 0, 0);
+            meta_decl_array(false, 0, 0, 0, 0);
             *this << *(T*)0;
         }
         return *this;
@@ -901,7 +916,7 @@ protected:
 
         if (!prepare_type_common(read))  return 0;
 
-        meta_decl_array(0, 0, 0, 0, n);
+        meta_decl_array(false, 0, 0, 0, 0, n);
         *this || *(typename resolve_enum<T>::type*)0;     // build description
 
         return prepare_type_final(name, cache, read);
@@ -1251,11 +1266,12 @@ public:
         }
         else {
             meta_decl_raw_pointer(
+                true,
+                0,
                 [](const void* a) -> const void* { return *static_cast<char const* const*>(a); },
                 [](const void* a) -> uints { return 0; },
                 [](void* a, uints& i) -> void* { return static_cast<char**>(a) + i++; },
-                [](const void* a, uints& i) -> const void* { return *static_cast<char const* const*>(a) + i++; },
-                true
+                [](const void* a, uints& i) -> const void* { return *static_cast<char const* const*>(a) + i++; }
             );
             meta_def_primitive<char>("char");
         }
@@ -1282,6 +1298,7 @@ public:
         }
         else {
             meta_decl_array(
+                false,
                 [](const void* a) -> const void* { return static_cast<const charstr*>(a)->ptr(); },
                 [](const void* a) -> uints { return static_cast<const charstr*>(a)->len(); },
                 [](void* a, uints& i) -> void* { return static_cast<charstr*>(a)->appendn_uninitialized(1); },
@@ -1302,6 +1319,7 @@ public:
         }
         else {
             meta_decl_array(
+                false,
                 [](const void* a) -> const void* { return static_cast<const token*>(a)->ptr(); },
                 [](const void* a) -> uints { return static_cast<const token*>(a)->len(); },
                 0,
@@ -1486,7 +1504,7 @@ public:
     }
 
     template<class T>
-    void meta_variable_ptr(const token& varname, ints offs)
+    void meta_variable_indirect(const token& varname, ints offs)
     {
         typedef typename resolve_enum<T>::type B;
 
@@ -1497,7 +1515,29 @@ public:
 
         *this || *(B*)0;
 
-        _last_var->raw_pointer = true;
+        //_last_var->desc->raw_pointer_offset = 0;
+    }
+
+    template<class T>
+    void meta_variable_raw_ptr(const token& varname, ints offs, bool streamed)
+    {
+        typedef typename resolve_enum<T>::type B;
+
+        _cur_variable_name = varname;
+        _cur_variable_size = sizeof(T*);
+        _cur_variable_offset = (int)offs;
+        _cur_stream_fn = &type_streamer<T>::fn;
+
+        meta_decl_raw_pointer(
+            streamed,
+            0,
+            [](const void* a) -> const void* { return *reinterpret_cast<T const* const*>(a); },
+            0,
+            [](void* a, uints& i) -> void* { return *reinterpret_cast<T**>(a) + i++; },
+            [](const void* a, uints& i) -> const void* { return *reinterpret_cast<T const* const*>(a) + i++; }
+        );
+
+        *this || *(B*)0;
     }
 
     template<class T>
@@ -1524,11 +1564,12 @@ public:
         typedef typename resolve_enum<T>::type B;
 
         _cur_variable_name = varname;
-        _cur_variable_size = sizeof(T);
-        _cur_variable_offset = (int)(ints)&v;
+        _cur_variable_size = sizeof(T) * n;
+        _cur_variable_offset = (int)(ints)v;
         _cur_stream_fn = &type_streamer<T>::fn;
 
         meta_decl_array(
+            true,
             [](const void* a) -> const void* { return static_cast<const T*>(a); },
             [](const void* a) -> uints { return 0; },   //length unknown here, use desc value
             [](void* a, uints& i) -> void* { return static_cast<T*>(a) + i++; },
@@ -1614,14 +1655,19 @@ public:
 
     ///Signal that the primitive or compound type coming is an array
     //@param n array element count, UMAXS if unknown or varying
+    //@param embedded true if array is embedded in parent (must be also fixed size in that case)
     void meta_decl_array(
-        MetaDesc::Var::fn_ptr fnptr,
-        MetaDesc::Var::fn_count fncount,
-        MetaDesc::Var::fn_push fnpush,
-        MetaDesc::Var::fn_extract fnextract,
+        bool embedded,
+        MetaDesc::fn_ptr fnptr,
+        MetaDesc::fn_count fncount,
+        MetaDesc::fn_push fnpush,
+        MetaDesc::fn_extract fnextract,
         uints n = UMAXS
     )
     {
+        //embedded arrays must be static
+        DASSERT(!embedded || n != UMAXS);
+
         if (is_template_name_mode()) {
             static token tarray = "@";
             handle_template_name_mode(tarray);
@@ -1630,47 +1676,37 @@ public:
 
         DASSERT(n != 0);
         MetaDesc* d = smap().create_array_desc(n, _cur_stream_fn);
+        d->fnptr = fnptr;
+        d->fncount = fncount;
+        d->fnpush = fnpush;
+        d->fnextract = fnextract;
+        d->embedded = embedded;
+        d->type_size = _cur_variable_size;
 
         _current_var = meta_fill_parent_variable(d);
-        _current_var->fnptr = fnptr;
-        _current_var->fncount = fncount;
-        _current_var->fnpush = fnpush;
-        _current_var->fnextract = fnextract;
 
         smap().push(_current_var);
     }
 
-    ///Signal that the primitive or compound type coming is an array
+    ///Signal that the primitive or compound type coming is a raw pointer
     //@param streamed false if variable should not be streamed, just a part of meta description
     void meta_decl_raw_pointer(
-        MetaDesc::Var::fn_ptr fnptr,
-        MetaDesc::Var::fn_count fncount,
-        MetaDesc::Var::fn_push fnpush,
-        MetaDesc::Var::fn_extract fnextract,
-        bool streamed
+        bool streamed,
+        ints offset,
+        MetaDesc::fn_ptr fnptr,
+        MetaDesc::fn_count fncount,
+        MetaDesc::fn_push fnpush,
+        MetaDesc::fn_extract fnextract
     )
     {
-        if (is_template_name_mode()) {
-            static token tarray = "@";
-            handle_template_name_mode(tarray);
-            return;
-        }
+        meta_decl_array(false, fnptr, fncount, fnpush, fnextract, UMAXS);
 
-        MetaDesc* d = smap().create_array_desc(UMAXS, _cur_stream_fn);
-
-        _current_var = meta_fill_parent_variable(d);
-        _current_var->fnptr = fnptr;
-        _current_var->fncount = fncount;
-        _current_var->fnpush = fnpush;
-        _current_var->fnextract = fnextract;
-        _current_var->raw_pointer = true;
+        _current_var->desc->raw_pointer_offset = (int)offset;
 
         if (!streamed) {
             _current_var->obsolete = true;
             _current_var->optional = true;
         }
-
-        smap().push(_current_var);
     }
 
     ///Only for primitive types
@@ -1736,6 +1772,7 @@ private:
         {
             MetaDesc d(n);
             d.btype = t;
+            d.type_size = t.get_size();
             d.fnstream = fn;
             return insert(d);
         }
@@ -3143,6 +3180,7 @@ template <class T, class COUNT, class A>
 metastream& operator << (metastream& m, const dynarray<T, COUNT, A>&)
 {
     m.meta_decl_array(
+        false,
         [](const void* a) -> void* { return static_cast<const dynarray<T, COUNT, A>*>(a)->ptr(); },
         [](const void* a) -> uints { return static_cast<const dynarray<T, COUNT, A>*>(a)->count(); },
         [](void* a, uints&) -> void* { return static_cast<dynarray<T, COUNT, A>*>(a)->add(); },
@@ -3167,6 +3205,7 @@ metastream& operator || (metastream& m, dynarray<T, COUNT, A>& a)
     }
     else {
         m.meta_decl_array(
+            false,
             [](const void* a) -> const void* { return static_cast<const dynarray<T, COUNT, A>*>(a)->ptr(); },
             [](const void* a) -> uints { return static_cast<const dynarray<T, COUNT, A>*>(a)->size(); },
             [](void* a, uints&) -> void* { return static_cast<dynarray<T, COUNT, A>*>(a)->add(); },
@@ -3191,6 +3230,7 @@ metastream& operator || (metastream& m, range<T>& a)
     }
     else {
         m.meta_decl_array(
+            false,
             [](const void* a) -> const void* { return static_cast<const range<T>*>(a)->ptr(); },
             [](const void* a) -> uints { return static_cast<const range<T>*>(a)->size(); },
             0,

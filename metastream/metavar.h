@@ -64,26 +64,6 @@ struct MetaDesc
         bool nameless_root = false;     //< true if the variable is a nameless root
         bool obsolete = false;          //< variable is only read, not written
         bool optional = false;          //< variable is optional
-        bool raw_pointer = false;       //< raw pointer type
-
-        //@return ptr to first item of a linear array, 0 for non-linear
-        typedef const void* (*fn_ptr)(const void*);
-
-        //@return count of items in container or -1 if unknown
-        typedef uints (*fn_count)(const void*);
-
-        //@return ptr to back-inserted item
-        //@param iter reference to an iterator value returned from first item and passed to remaining items
-        typedef void* (*fn_push)(void*, uints& iter);
-
-        //@return extracted element
-        //@param iter reference to an iterator value returned from first item and passed to remaining items
-        typedef const void* (*fn_extract)(const void*, uints& iter);
-
-        fn_ptr fnptr = 0;
-        fn_count fncount = 0;
-        fn_push fnpush = 0;
-        fn_extract fnextract = 0;
 
 
         bool is_array() const           { return desc->is_array(); }
@@ -133,21 +113,39 @@ struct MetaDesc
 
 
     dynarray<Var> children;             //< member variables
-    uints array_size;                   //< array size, UMAXS for dynamic arrays
+    uints array_size = 0;               //< array size, UMAXS for dynamic arrays
 
     token type_name;                    //< type name, name of a structure (empty if this is an array)
+    uints type_size = 0;
+
     type btype;                         //< basic type id
 
-    uints type_size = 0;
-/*
-    binstream::fnc_from_stream
-        stream_from;                    //< binstream streaming function used to read data from stream
-    binstream::fnc_to_stream
-        stream_to;                      //< binstream streaming function used to write data to stream
-*/
+    bool embedded = true;               //< member is embedded, not a pointer
+
+    int raw_pointer_offset = -1;        //< byte offset to variable pointing to the linear array with elements, if exists
+
+    //@return ptr to first item of a linear array, 0 for non-linear
+    typedef const void* (*fn_ptr)(const void*);
+
+    //@return count of items in container or -1 if unknown
+    typedef uints (*fn_count)(const void*);
+
+    //@return ptr to back-inserted item
+    //@param iter reference to an iterator value returned from first item and passed to remaining items
+    typedef void* (*fn_push)(void*, uints& iter);
+
+    //@return extracted element
+    //@param iter reference to an iterator value returned from first item and passed to remaining items
+    typedef const void* (*fn_extract)(const void*, uints& iter);
+
+    fn_ptr fnptr = 0;
+    fn_count fncount = 0;
+    fn_push fnpush = 0;
+    fn_extract fnextract = 0;
+
     typedef void (*stream_func)(metastream*, void*, binstream_container_base*);
 
-    stream_func fnstream;               //< metastream streaming function
+    stream_func fnstream = 0;           //< metastream streaming function
 
 
 
@@ -228,8 +226,8 @@ struct MetaDesc
     uints size() const                  { return children.size(); }
 
 
-    MetaDesc() : array_size(UMAXS), fnstream(0) {}
-    MetaDesc( const token& n ) : array_size(UMAXS), type_name(n), fnstream(0) {}
+    MetaDesc() {}
+    MetaDesc( const token& n ) : type_name(n) {}
 
     Var* add_desc_var( MetaDesc* d, const token& n, int offset )
     {

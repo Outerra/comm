@@ -377,6 +377,7 @@ inline metastream& operator || (metastream& meta, std::string& p)
     }
     else {
         meta.meta_decl_array(
+            false,
             [](const void* a) -> const void* { return static_cast<const std::string*>(a)->c_str(); },
             [](const void* a) -> uints { return static_cast<const std::string*>(a)->size(); },
             [](void* a, uints&) -> void* { return &static_cast<std::string*>(a)->append(1, '\0').back(); },
