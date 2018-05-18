@@ -318,23 +318,24 @@ public:
     //@param name variable name, used as a key in output formats
     //@param v variable to read/write to
     template<typename T, size_t N>
-    metastream& member(const token& name, T(&v)[N])
+    bool member(const token& name, T(&v)[N])
     {
-        return member_array(name, v, N);
+        member_array(name, v, N);
+        return true;
     }
 
-    ///Define a member variable referenced by a pointer (non-streamable)
+    ///Define a member variable referenced by a pointer (non-streamable) except const char*
     //@param name variable name, used as a key in output formats
     //@param v pointer to variable to read/write to
     //@param streamed false variable should not be streamed, just a part of meta description, can point to 1..N items (default)
     //@param          true variable is indirectly referenced to by a pointer
     //@note use member_optional or member_type for special handling when the pointer has to be allocated etc.
-    template<typename T>
-    metastream& member(const token& name, T*& v, bool streamed = false)
+    template<typename T, typename = std::enable_if_t<std::is_same<const char*, T*>::value>>
+    bool member(const token& name, T*& v, bool streamed = false)
     {
-        return member_ptr(name, v, streamed);
+        member_ptr(name, v, streamed);
+        return true;
     }
-
 
     ///Define a member variable referenced by a pointer, assumed to be already allocated when streaming to/from
     //@param name variable name, used as a key in output formats
@@ -360,7 +361,7 @@ public:
     //@param v pointer to variable to read/write to
     //@param streamed false if variable should not be streamed, just a part of meta description
     template<typename T>
-    metastream& member_ptr(const token& name, T*& v, bool streamed)
+    bool member_ptr(const token& name, T*& v, bool streamed)
     {
         typedef typename std::remove_const<T>::type TNC;
 
@@ -369,7 +370,7 @@ public:
         else
             meta_variable_raw_ptr<TNC>(name, (ints)&v, streamed);
 
-        return *this;
+        return true;
     }
 
     ///Define a raw pointer member variable to 1..N objects
