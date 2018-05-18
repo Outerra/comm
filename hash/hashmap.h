@@ -74,6 +74,7 @@ class hash_map
     typedef typename HASHFUNC::key_type                                 _LOOKUP;
     typedef _Select_pair1st<std::pair<KEY,VAL>,KEY>                     _SEL;
     typedef hashtable<std::pair<KEY,VAL>,HASHFUNC,EQFUNC,_SEL,ALLOC>    _HT;
+    typedef hash_map<KEY,VAL,HASHFUNC,EQFUNC,ALLOC>                     _ThisType;
 
 public:
 
@@ -194,8 +195,15 @@ public:
 
     static metastream& stream_meta( metastream& m )
     {
-        m.meta_decl_array();
-        m << *(const value_type*)0;
+        m.meta_decl_array(
+            typeid(_ThisType).name(),
+            false,
+            0,  //not a linear array
+            [](const void* a) -> uints { return static_cast<const _ThisType*>(a)->size(); },
+            0,//[](void* a, uints& i) -> void* {},
+            0 //[](const void* a, uints& i) -> const void* {}
+        );
+        m || *(const value_type*)0;
         return m;
     }
 };
@@ -228,6 +236,7 @@ class hash_multimap
     typedef typename HASHFUNC::key_type                                 _LOOKUP;
     typedef _Select_pair1st<std::pair<KEY,VAL>,KEY>                     _SEL;
     typedef hashtable<std::pair<KEY,VAL>,HASHFUNC,EQFUNC,_SEL,ALLOC>    _HT;
+    typedef hash_multimap<KEY,VAL,HASHFUNC,EQFUNC,ALLOC>                _ThisType;
 
 public:
 
@@ -342,13 +351,22 @@ public:
 
     static metastream& stream_meta( metastream& m )
     {
-        m.meta_decl_array();
-        m << *(const value_type*)0;
+        m.meta_decl_array(
+            typeid(_ThisType).name(),
+            false,
+            0,  //not a linear array
+            [](const void* a) -> uints { return static_cast<const _ThisType*>(a)->size(); },
+            0,//[](void* a, uints& i) -> void* {},
+            0 //[](const void* a, uints& i) -> const void* {}
+        );
+
+        m || *(const value_type*)0;
         return m;
     }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+/*
 template <class KEY, class VAL, class HASHFUNC, class EQFUNC, template<class> class ALLOC>
 inline binstream& operator << ( binstream& bin, const hash_map<KEY,VAL,HASHFUNC,EQFUNC,ALLOC>& a )
 {   return a.stream_out(bin);    }
@@ -377,7 +395,7 @@ inline metastream& operator << ( metastream& bin, const hash_map<KEY,VAL,HASHFUN
 template <class KEY, class VAL, class HASHFUNC, class EQFUNC, template<class> class ALLOC>
 inline metastream& operator << ( metastream& bin, const hash_multimap<KEY,VAL,HASHFUNC,EQFUNC,ALLOC>& a )
 {   return a.stream_meta(bin);    }
-
+*/
 
 COID_NAMESPACE_END
 

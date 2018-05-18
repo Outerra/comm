@@ -42,6 +42,7 @@
 #include "../dynarray.h"
 #include "../str.h"
 #include "../binstream/binstream.h"
+#include "../binstream/container.h"
 
 COID_NAMESPACE_BEGIN
 
@@ -64,6 +65,7 @@ struct MetaDesc
         bool nameless_root = false;     //< true if the variable is a nameless root
         bool obsolete = false;          //< variable is only read, not written
         bool optional = false;          //< variable is optional
+        bool singleref = false;         //< desc refers to a pointer type pointing to a single object, not an array
 
 
         bool is_array() const           { return desc->is_array(); }
@@ -239,6 +241,49 @@ struct MetaDesc
         return c;
     }
 };
+
+////////////////////////////////////////////////////////////////////////////////
+///
+class meta_container : public binstream_container_base
+{
+    MetaDesc* desc;
+    void* data;
+
+    uints context = 0;
+
+public:
+
+    meta_container(MetaDesc* desc, void* data)
+        : binstream_container_base(desc->btype, desc->fnstream, desc->fnstream)
+        , desc(desc)
+        , data(data)
+    {}
+
+
+    ///Provide a pointer to next object that should be streamed
+    //@param n number of objects to allocate the space for
+    virtual const void* extract(uints n) override {
+        DASSERT(n == 1);
+        return desc->fnextract(data, context);
+    }
+
+    virtual void* insert(uints n) override {
+        DASSERT(n == 1);
+        return desc->fnpush(data, context);
+    }
+
+    //@return true if the storage is continuous in memory
+    virtual bool is_continuous() const override {
+        return desc->fnptr != 0;
+    }
+
+    //@return number of items in container (for reading), UMAXS if unknown in advance
+    virtual uints count() const override {
+        return desc->fncount ? desc->fncount(data) : UMAXS;
+    }
+};
+
+
 
 COID_NAMESPACE_END
 

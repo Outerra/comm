@@ -218,7 +218,7 @@ template<class T, class A> inline metastream& operator || (metastream& m, CONT<T
         m.write_container(c);\
     }\
     else {\
-        m.meta_decl_array();\
+        m.meta_decl_array(typeid(v).name(), false, 0, 0, 0, 0);\
         m || *(typename CONT<T,A>::value_type*)0;\
     }\
     return m;\
@@ -248,7 +248,7 @@ template<class T, class A> inline metastream& operator || (metastream& m, CONT<T
         m.write_container(c);\
     }\
     else {\
-        m.meta_decl_array();\
+        m.meta_decl_array(typeid(v).name(), false, 0, 0, 0, 0);\
         m || *(typename CONT<T,A>::value_type*)0;\
     }\
     return m;\
@@ -330,6 +330,8 @@ template<class T, class A> inline binstream& operator >> (binstream& in, std::ve
 template<class T, class A>
 inline metastream& operator || (metastream& m, std::vector<T,A>& v )
 {
+    typedef std::vector<T, A> CT;
+
     if(m.stream_reading()) {
         std_vector_binstream_container<T,A> c(v);
         m.read_container(c);
@@ -339,7 +341,15 @@ inline metastream& operator || (metastream& m, std::vector<T,A>& v )
         m.write_container(c);
     }
     else {
-        m.meta_decl_array();
+        m.meta_decl_array(
+            typeid(v).name(),
+            false,
+            [](const void* p) -> const void* { return static_cast<const CT*>(p)->data(); },
+            [](const void* p) -> uints { return static_cast<const CT*>(p)->size(); },
+            [](void* p, uints&) -> void* { return &static_cast<CT*>(p)->emplace_back(); },
+            [](const void* p, uints& i) -> const void* { return static_cast<const CT*>(p)->data() + i++; }
+        );
+
         m || *(T*)0;
     }
     return m;
@@ -377,6 +387,7 @@ inline metastream& operator || (metastream& meta, std::string& p)
     }
     else {
         meta.meta_decl_array(
+            typeid(p).name(),
             false,
             [](const void* a) -> const void* { return static_cast<const std::string*>(a)->c_str(); },
             [](const void* a) -> uints { return static_cast<const std::string*>(a)->size(); },

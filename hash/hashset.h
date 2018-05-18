@@ -64,6 +64,7 @@ class hash_set
 {
     typedef _Select_Itself<VAL>                         _SEL;
     typedef hashtable<VAL,HASHFUNC,EQFUNC,_SEL,ALLOC>   _HT;
+    typedef hash_set<VAL,HASHFUNC,EQFUNC,ALLOC>         _ThisType;
 
 public:
 
@@ -170,8 +171,15 @@ public:
 
     static metastream& stream_meta( metastream& m )
     {
-        m.meta_decl_array();
-        m << *(const VAL*)0;
+        m.meta_decl_array(
+            typeid(_ThisType).name(),
+            false,
+            0,  //not a linear array
+            [](const void* a) -> uints { return static_cast<const _ThisType*>(a)->size(); },
+            0,//[](void* a, uints& i) -> void* {},
+            0 //[](const void* a, uints& i) -> const void* {}
+        );
+        m || *(const VAL*)0;
         return m;
     }
 };
@@ -195,6 +203,7 @@ class hash_multiset
 {
     typedef _Select_Itself<VAL>                         _SEL;
     typedef hashtable<VAL,HASHFUNC,EQFUNC,_SEL,ALLOC>   _HT;
+    typedef hash_multiset<VAL,HASHFUNC,EQFUNC,ALLOC>    _ThisType;
 
 public:
 
@@ -295,7 +304,14 @@ public:
 
     static metastream& stream_meta( metastream& m )
     {
-        m.meta_decl_array();
+        m.meta_decl_array(
+            typeid(_ThisType).name(),
+            false,
+            0,  //not a linear array
+            [](const void* a) -> uints { return static_cast<const _ThisType*>(a)->size(); },
+            0,//[](void* a, uints& i) -> void* {},
+            0 //[](const void* a, uints& i) -> const void* {}
+        );
         m << *(const VAL*)0;
         return m;
     }
