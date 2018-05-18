@@ -123,6 +123,7 @@ struct MetaDesc
     type btype;                         //< basic type id
 
     bool embedded = true;               //< member is embedded, not a pointer
+    bool is_array_type = false;
 
     int raw_pointer_offset = -1;        //< byte offset to variable pointing to the linear array with elements, if exists
 
@@ -151,7 +152,7 @@ struct MetaDesc
 
 
 
-    bool is_array() const               { return type_name.is_empty(); }
+    bool is_array() const               { return is_array_type; }
     bool is_primitive() const           { return btype.is_primitive(); }
     bool is_compound() const            { return !btype.is_primitive() && !is_array(); }
     

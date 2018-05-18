@@ -1736,6 +1736,7 @@ public:
         d->embedded = embedded;
         d->type_size = _cur_variable_size;
         d->type_name = type_name;
+        d->is_array_type = true;
 
         _current_var = meta_fill_parent_variable(d);
 
