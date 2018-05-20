@@ -2148,9 +2148,7 @@ protected:
 
 
 ////////////////////////////////////////////////////////////////////////////////
-inline token::token(const charstr& str)
-    : _ptr(str.ptr()), _pte(str.ptre())
-{}
+inline token::token(const charstr& str) : _ptr(str.ptr()), _pte(str.ptre()) {}
 
 inline token& token::operator = (const charstr& t)
 {

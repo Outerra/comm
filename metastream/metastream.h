@@ -3241,7 +3241,7 @@ metastream& operator << (metastream& m, const dynarray<T, COUNT, A>& a)
         [](const void* p) -> void* { return static_cast<const dynarray<T, COUNT, A>*>(p)->ptr(); },
         [](const void* p) -> uints { return static_cast<const dynarray<T, COUNT, A>*>(p)->count(); },
         [](void* p, uints&) -> void* { return static_cast<dynarray<T, COUNT, A>*>(p)->add(); },
-        [](const void* p, uints& i) -> const void* { return static_cast<const dynarray<T, COUNT, A>*>(p)->ptr() + i++; },
+        [](const void* p, uints& i) -> const void* { return static_cast<const dynarray<T, COUNT, A>*>(p)->ptr() + i++; }
     );
     m << *(T*)0;
     return m;
