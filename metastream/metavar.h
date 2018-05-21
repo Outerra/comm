@@ -124,6 +124,7 @@ struct MetaDesc
 
     bool embedded = true;               //< member is embedded, not a pointer
     bool is_array_type = false;
+    bool is_pointer = false;
 
     int raw_pointer_offset = -1;        //< byte offset to variable pointing to the linear array with elements, if exists
 

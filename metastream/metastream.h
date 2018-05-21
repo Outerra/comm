@@ -361,7 +361,7 @@ public:
             write_container(mc);
         }
         else {
-            meta_decl_raw_pointer(
+            meta_decl_container(
                 typeid(T).name(),
                 streamed,
                 raw_ptr ? (ints)raw_ptr - (ints)&v : -1,
@@ -1660,12 +1660,12 @@ public:
         smap().push(_current_var);
     }
 
-    ///Signal that the primitive or compound type coming is a raw pointer
+    ///Signal that the primitive or compound type coming is a container with optional raw pointer inside
     //@param streamed false if variable should not be streamed, just a part of meta description
-    void meta_decl_raw_pointer(
+    void meta_decl_container(
         const token& type_name,
         bool streamed,
-        ints offset,
+        ints raw_pointer_offset,
         MetaDesc::fn_ptr fnptr,
         MetaDesc::fn_count fncount,
         MetaDesc::fn_push fnpush,
@@ -1674,7 +1674,31 @@ public:
     {
         meta_decl_array(type_name, false, fnptr, fncount, fnpush, fnextract, UMAXS);
 
-        _current_var->desc->raw_pointer_offset = (int)offset;
+        _current_var->desc->raw_pointer_offset = (int)raw_pointer_offset;
+        _current_var->desc->is_pointer = false;
+
+        if (!streamed) {
+            _current_var->obsolete = true;
+            _current_var->optional = true;
+        }
+    }
+
+    ///Signal that the primitive or compound type coming is a raw pointer
+    //@param streamed false if variable should not be streamed, just a part of meta description
+    void meta_decl_raw_pointer(
+        const token& type_name,
+        bool streamed,
+        ints raw_pointer_offset,
+        MetaDesc::fn_ptr fnptr,
+        MetaDesc::fn_count fncount,
+        MetaDesc::fn_push fnpush,
+        MetaDesc::fn_extract fnextract
+    )
+    {
+        meta_decl_array(type_name, false, fnptr, fncount, fnpush, fnextract, UMAXS);
+
+        _current_var->desc->raw_pointer_offset = (int)raw_pointer_offset;
+        _current_var->desc->is_pointer = true;
 
         if (!streamed) {
             _current_var->obsolete = true;
