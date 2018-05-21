@@ -419,7 +419,7 @@ template <class F, class S> inline binstream& operator >> (binstream& in, std::p
 template <class F, class S>
 inline metastream& operator || (metastream& m, std::pair<F,S>& p)
 {
-    return m.compound_templated<std::pair<F,S>>("std::pair", [&]()
+    return m.compound_type(p, [&]()
     {
         m.member("key", p.first);
         m.member("value", p.second);

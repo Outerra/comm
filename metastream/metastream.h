@@ -215,41 +215,6 @@ public:
         return *this;
     }
 
-    ///Define struct streaming scheme for templates
-    //@param name struct type name
-    //@param fn functor with member functions defining the struct layout
-    template<typename A, typename Fn>
-    metastream& compound_templated(const token& name, Fn fn)
-    {
-        if (streaming()) {
-            _xthrow(movein_process_key(_binr != 0 ? READ_MODE : WRITE_MODE));
-            _rvarname.reset();
-
-            movein_struct(_binr != 0);
-            fn();
-            moveout_struct(_binr != 0);
-        }
-        else {
-            charstr& k = *_templ_name_stack.add();
-            k.append('<');
-
-            *this || *(A*)0;
-
-            k.append('>');
-
-            if (!handle_template_name_mode(name))
-            {
-                fn();
-
-                _last_var = smap().pop();
-                _current_var = smap().last();
-
-                meta_exit();
-            }
-        }
-        return *this;
-    }
-
     ///Define a member variable
     //@param name variable name, used as a key in output formats
     //@param v variable to read/write to
@@ -397,6 +362,7 @@ public:
         }
         else {
             meta_decl_raw_pointer(
+                typeid(T).name(),
                 streamed,
                 raw_ptr ? (ints)raw_ptr - (ints)&v : -1,
                 fnptr, fncount, fnpush, fnextract
@@ -695,8 +661,6 @@ public:
         _cur_variable_name.set_empty();
         _cur_variable_offset = 0;
         _cur_variable_size = 0;
-
-        _templ_arg_rdy = false;
 
         _dometa = false;
         _fmtstreamwr = _fmtstreamrd = 0;
@@ -1301,6 +1265,7 @@ public:
         }
         else {
             meta_decl_raw_pointer(
+                typeid(a).name(),
                 true,
                 0,
                 [](const void* a) -> const void* { return *static_cast<char const* const*>(a); },
@@ -1474,52 +1439,6 @@ protected:
         return false;
     }
 
-
-    bool is_template_name_mode() {
-        return _templ_name_stack.size() > 0;
-    }
-
-    bool handle_template_name_mode(const token& name)
-    {
-        charstr& k = *_templ_name_stack.last();
-
-        if (_templ_arg_rdy)      //template string ready from nested template arg
-        {
-            charstr targ;
-            targ.takeover(k);
-            _templ_name_stack.resize(-1);
-
-            _templ_arg_rdy = false;
-
-            if (_templ_name_stack.size() == 0)
-            {
-                //final name
-                _struct_name = name;
-                _struct_name += targ;
-
-                return meta_insert(_struct_name, 0, false);
-            }
-
-            charstr& k1 = *_templ_name_stack.last();
-            char c = k1.last_char();
-            if (c != '<'  &&  c != '@'  &&  c != '*')
-                k1.append(',');
-
-            k1.append(name);
-            k1.append(targ);
-        }
-        else
-        {
-            char c = k.last_char();
-            if (c != '<'  &&  c != '@'  &&  c != '*')
-                k.append(',');
-
-            k.append(name);
-        }
-
-        return true;
-    }
-
 public:
 
     template<class T>
@@ -1566,6 +1485,7 @@ public:
         _cur_stream_fn = &type_streamer<T>::fn;
 
         meta_decl_raw_pointer(
+            typeid(T*).name(),
             streamed,
             0,
             [](const void* a) -> const void* { return *reinterpret_cast<T const* const*>(a); },
@@ -1586,7 +1506,7 @@ public:
         _cur_variable_offset = (int)offs;
         _cur_stream_fn = &type_streamer<T>::fn;
 
-        meta_decl_raw_pointer(streamed, raw_ptr_offs, fnptr, fncount, fnpush, fnextract);
+        meta_decl_raw_pointer(typeid(T).name(), streamed, raw_ptr_offs, fnptr, fncount, fnpush, fnextract);
 
         typedef typename resolve_enum<Telem>::type B;
         *this || *(B*)0;
@@ -1621,7 +1541,7 @@ public:
         _cur_stream_fn = &type_streamer<T>::fn;
 
         meta_decl_array(
-            "",
+            typeid(T[]).name(),
             true,
             [](const void* a) -> const void* { return static_cast<const T*>(a); },
             [](const void* a) -> uints { return 0; },   //length unknown here, use desc value
@@ -1721,22 +1641,18 @@ public:
     {
         //embedded arrays must be static
         DASSERT(!embedded || n != UMAXS);
-
-        if (is_template_name_mode()) {
-            static token tarray = "@";
-            handle_template_name_mode(tarray);
-            return;
-        }
-
         DASSERT(n != 0);
-        MetaDesc* d = smap().create_array_desc(n, _cur_stream_fn);
+
+        MetaDesc* d = smap().find_or_create(type_name, bstype::kind(), _cur_stream_fn);
+
+        //MetaDesc* d = smap().create_array_desc(n, _cur_stream_fn);
+        d->array_size = n;
         d->fnptr = fnptr;
         d->fncount = fncount;
         d->fnpush = fnpush;
         d->fnextract = fnextract;
         d->embedded = embedded;
         d->type_size = _cur_variable_size;
-        d->type_name = type_name;
         d->is_array_type = true;
 
         _current_var = meta_fill_parent_variable(d);
@@ -1747,6 +1663,7 @@ public:
     ///Signal that the primitive or compound type coming is a raw pointer
     //@param streamed false if variable should not be streamed, just a part of meta description
     void meta_decl_raw_pointer(
+        const token& type_name,
         bool streamed,
         ints offset,
         MetaDesc::fn_ptr fnptr,
@@ -1755,7 +1672,7 @@ public:
         MetaDesc::fn_extract fnextract
     )
     {
-        meta_decl_array("", false, fnptr, fncount, fnpush, fnextract, UMAXS);
+        meta_decl_array(type_name, false, fnptr, fncount, fnpush, fnextract, UMAXS);
 
         _current_var->desc->raw_pointer_offset = (int)offset;
 
@@ -1771,13 +1688,6 @@ public:
     {
         type t = bstype::t_type<T>();
         DASSERT(t.is_primitive());
-
-        //if we are in template name assembly mode, take the type name and get out
-        if (is_template_name_mode())
-        {
-            handle_template_name_mode(type_name);
-            return;
-        }
 
         MetaDesc* d = smap().find_or_create(type_name, t, _cur_stream_fn);
         _last_var = meta_fill_parent_variable(d);
@@ -1822,7 +1732,6 @@ private:
     struct structure_map
     {
         MetaDesc* find(const token& k) const;
-        MetaDesc* create_array_desc(uints n, MetaDesc::stream_func fn);
 
         MetaDesc* create(const token& n, type t, MetaDesc::stream_func fn)
         {
@@ -1830,7 +1739,7 @@ private:
             d.btype = t;
             d.type_size = t.get_size();
             d.fnstream = fn;
-            return insert(d);
+            return insert(std::move(d));
         }
 
         MetaDesc* find_or_create(const token& n, type t, MetaDesc::stream_func fn)
@@ -1849,7 +1758,7 @@ private:
         ~structure_map();
 
     protected:
-        MetaDesc * insert(const MetaDesc& v);
+        MetaDesc* insert(MetaDesc&& v);
 
         dynarray<MetaDesc::Var*> _stack;
         void* pimpl;
@@ -1891,9 +1800,6 @@ private:
     charstr _rvarname;                  //< name of variable that follows in the input stream
     charstr _struct_name;               //< used during the template name building step
     charstr _convbuf;
-
-    dynarray<charstr> _templ_name_stack;
-    bool _templ_arg_rdy;
 
     bool _binw;
     bool _binr;

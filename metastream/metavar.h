@@ -117,7 +117,7 @@ struct MetaDesc
     dynarray<Var> children;             //< member variables
     uints array_size = 0;               //< array size, UMAXS for dynamic arrays
 
-    token type_name;                    //< type name, name of a structure (empty if this is an array)
+    token type_name;                    //< type name, name of a structure
     uints type_size = 0;
 
     type btype;                         //< basic type id
@@ -210,17 +210,17 @@ struct MetaDesc
     uints get_child_pos( Var* v ) const { return uints(v-children.ptr()); }
 
 
-    charstr& type_string( charstr& dst ) const
+    charstr& type_string(charstr& dst) const
     {
-        if( type_name.is_empty() ) {
+        if (is_array()) {
             dst << char('@');
             return children[0].type_string(dst);
         }
 
-        if( btype.is_primitive() )
+        if (btype.is_primitive())
             dst << char('$');
         dst << type_name;
-        if( btype.size )
+        if (btype.size)
             dst << (8 * btype.size);
         return dst;
     }

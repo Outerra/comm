@@ -56,7 +56,7 @@ void metastream::warn_obsolete(const token& name)
 struct SMReg {
     typedef hash_keyset<MetaDesc,_Select_Copy<MetaDesc,token> >  MAP;
     MAP _map;
-    dynarray< local<MetaDesc> > _arrays;
+    //dynarray< local<MetaDesc> > _arrays;
     //comm_mutex _mutex;
 };
 
@@ -89,10 +89,8 @@ metastream::structure_map::~structure_map()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-MetaDesc* metastream::structure_map::insert( const MetaDesc& v )
+MetaDesc* metastream::structure_map::insert( MetaDesc&& v )
 {
-    //SMReg& smr = SINGLETON(SMReg);
-    //GUARDTHIS(smr._mutex);
     SMReg& smr = *(SMReg*)pimpl;
 
     return (MetaDesc*) smr._map.insert_value(v);
@@ -107,19 +105,5 @@ MetaDesc* metastream::structure_map::find( const token& k ) const
 
     return (MetaDesc*) smr._map.find_value(k);
 }
-
-////////////////////////////////////////////////////////////////////////////////
-MetaDesc* metastream::structure_map::create_array_desc( uints size, MetaDesc::stream_func fn )
-{
-    //SMReg& smr = SINGLETON(SMReg);
-    //GUARDTHIS(smr._mutex);
-    SMReg& smr = *(SMReg*)pimpl;
-
-    MetaDesc* d = *smr._arrays.add() = new MetaDesc;
-    d->array_size = size;
-    d->fnstream = fn;
-    return d;
-}
-
 
 COID_NAMESPACE_END
