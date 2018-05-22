@@ -1255,7 +1255,7 @@ public:
     metastream& operator || (long double&a) { return meta_base_type("long double", a); }
 
 
-    metastream& operator || (const char* a)
+    metastream& operator || (const char*& a)
     {
         if (_binr) {
             throw exception("unsupported");
@@ -1265,15 +1265,39 @@ public:
         }
         else {
             meta_decl_raw_pointer(
-                typeid(a).name(),
+                typeid(char*).name(),
                 true,
-                0,
+                (ints)&a,
                 [](const void* a) -> const void* { return *static_cast<char const* const*>(a); },
                 [](const void* a) -> uints { return 0; },
                 [](void* a, uints& i) -> void* { return static_cast<char**>(a) + i++; },
                 [](const void* a, uints& i) -> const void* { return *static_cast<char const* const*>(a) + i++; }
             );
             meta_def_primitive<char>("char");
+        }
+        return *this;
+    }
+
+    template<typename T>
+    metastream& operator || (T*& a)
+    {
+        if (_binr) {
+            throw exception("unsupported");
+        }
+        else if (_binw) {
+            write_optional(a);
+        }
+        else {
+            meta_decl_raw_pointer(
+                typeid(T*).name(),
+                true,
+                (ints)&a,
+                [](const void* a) -> const void* { return *static_cast<T* const*>(a); },
+                [](const void* a) -> uints { return 0; },
+                [](void* a, uints& i) -> void* { return static_cast<T**>(a) + i++; },
+                [](const void* a, uints& i) -> const void* { return *static_cast<T const* const*>(a) + i++; }
+            );
+            *this || *(T*)0;
         }
         return *this;
     }

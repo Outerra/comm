@@ -828,6 +828,24 @@ public:
         return _ptr+i;
     }
 
+    ///Insert an element to the array at sorted position (using compare function)
+    template<typename FUNC>
+    T* push_sort(const T& v, const FUNC& fn)
+    {
+        uints i = lower_bound(v, fn);
+        ins_value(i, v);
+        return _ptr + i;
+    }
+
+    ///Insert an element to the array at sorted position (using compare function)
+    template<typename FUNC>
+    T* push_sort(T&& v, const FUNC& fn)
+    {
+        uints i = lower_bound(v, fn);
+        ins_value(i, std::forward<T>(v));
+        return _ptr + i;
+    }
+
     ///Pop the last element, copying it to the \a dest
     //@return true if the array wasn't empty and the element was copied
     bool pop( T& dest )

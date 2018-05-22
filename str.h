@@ -1672,6 +1672,15 @@ public:
         return token(*this).replace(from, to, dst, icase);
     }
 
+    ///In-place replace of all occurrences of substring with another
+    charstr& replace(const token& from, const token& to, bool icase = false)
+    {
+        charstr dst;
+        token(*this).replace(from, to, dst, icase);
+        _tstr.swap(dst._tstr);
+        return *this;
+    }
+
     ///Insert character at position, a negative offset goes counts from the end
     bool ins(int pos, char c)
     {
