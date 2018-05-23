@@ -1286,7 +1286,7 @@ public:
             write_optional(a);
         }
         else {
-            meta_decl_raw_pointer(
+            if (meta_decl_raw_pointer(
                 typeid(T*).name(),
                 true,
                 (ints)&a,
@@ -1294,8 +1294,8 @@ public:
                 [](const void* a) -> uints { return 0; },
                 [](void* a, uints& i) -> void* { return static_cast<T**>(a) + i++; },
                 [](const void* a, uints& i) -> const void* { return *static_cast<T const* const*>(a) + i++; }
-            );
-            *this || *(T*)0;
+            ))
+                *this || *(T*)0;
         }
         return *this;
     }
@@ -1528,7 +1528,7 @@ public:
         typedef typename resolve_enum<Telem>::type B;
 
         _cur_variable_name = varname;
-        _cur_variable_size = sizeof(T);
+        _cur_variable_size = sizeof(T*);
         _cur_variable_offset = (int)offs;
         _cur_stream_fn = &type_streamer<T>::fn;
 

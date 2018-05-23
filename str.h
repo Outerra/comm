@@ -1667,7 +1667,7 @@ public:
     }
 
     ///Replace all occurrences of substring with another
-    uint replace(const token& from, const token& to, charstr& dst, bool icase = false) const
+    uint replace(charstr& dst, const token& from, const token& to, bool icase = false) const
     {
         return token(*this).replace(from, to, dst, icase);
     }
