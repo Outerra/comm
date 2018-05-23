@@ -201,7 +201,7 @@ public:
 
     // creator methods
 
-$-[method static?]$
+$-[method static? !ifccr?]$
     static iref<$..name$> $name$( $..name$* __here__$[args]$, $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$ )
     {
         iref<$....ns default=" "$::$....class$> __host__ = $....ns$::$....class$::$intname$($[args rest=", "]$$name$$[/args]$);
@@ -220,10 +220,15 @@ $-(if virtual!)$
             on ? (void*)&_generic_interface_creator : nullptr);
 
 $-(/if)$
-$-[method static?]$
+$-[method static? !ifccr?]$
         interface_register::register_interface_creator(
             "$..ns rest="::" after="::"$$..name$.$name$@$..hash$",
             on ? (void*)&$name$ : nullptr);
+$-[/method]$
+$-[method static? ifccr?]$
+        interface_register::register_interface_creator(
+            "$..ns rest="::" after="::"$$..name$.$name$@$..hash$.ifc",
+            on ? (void*)&$....ns$::$....class$::$name$ : nullptr);
 $-[/method]$
     }
 };

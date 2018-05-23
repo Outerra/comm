@@ -249,6 +249,7 @@ struct MethodIG
     bool bstatic;                       //< a static (creator) method
     bool bptr;                          //< ptr instead of ref
     bool biref;                         //< iref instead of ref
+    bool bifccr;                        //< ifc returning creator (not host)
     bool bconst;                        //< const method
     bool boperator;
     bool binternal;                     //< internal method, invisible to scripts (starts with an underscore)
@@ -276,7 +277,7 @@ struct MethodIG
         , bimplicit(false), ninargs(0), ninargs_nondef(0), index(-1), noutargs(0)
     {}
 
-    bool parse( iglexer& lex, const charstr& host, const charstr& ns, dynarray<Arg>& irefargs, bool isevent );
+    bool parse( iglexer& lex, const charstr& host, const charstr& ns, const charstr& nsifc, dynarray<Arg>& irefargs, bool isevent );
 
     void parse_docs();
 
@@ -319,6 +320,7 @@ struct MethodIG
             m.member("static",p.bstatic);
             m.member("ptr",p.bptr);
             m.member("iref",p.biref);
+            m.member("ifccr",p.bifccr);
             m.member("const",p.bconst);
             m.member("implicit",p.bimplicit);
             m.member("destroy",p.bdestroy);
@@ -343,6 +345,7 @@ struct Interface
 {
     dynarray<charstr> nss;
     charstr name;
+    charstr nsname;
     charstr relpath, relpathjs, relpathlua;
     charstr hdrfile;
     charstr storage;

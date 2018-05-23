@@ -3,7 +3,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Parse function declaration after ifc_fn
-bool MethodIG::parse( iglexer& lex, const charstr& host, const charstr& ns, dynarray<Arg>& irefargs, bool isevent )
+bool MethodIG::parse( iglexer& lex, const charstr& host, const charstr& ns, const charstr& nsifc, dynarray<Arg>& irefargs, bool isevent )
 {
     bstatic = lex.match_optional("static");
 
@@ -17,21 +17,25 @@ bool MethodIG::parse( iglexer& lex, const charstr& host, const charstr& ns, dyna
     if(!bstatic && ret.biref)
         ret.add_unique(irefargs);
 
-    biref=bptr=false;
+    biref = bptr = bifccr = false;
     int ncontinuable_errors = 0;
 
-    if(bstatic) {
+    if (bstatic) {
         charstr tmp;
 
-        if(ret.bptr && ret.type == ((tmp=host)<<'*')) {
-            (ret.type="iref<")<<ns<<host<<'>';
+        if (ret.bptr && ret.type == ((tmp = host) << '*')) {
+            (ret.type = "iref<") << ns << host << '>';
         }
-        else if(ret.type == ((tmp="iref<")<<host<<'>')) {
+        else if (ret.type == ((tmp = "iref<") << host << '>')) {
             biref = true;
-            (ret.type="iref<")<<ns<<host<<'>';
+            (ret.type = "iref<") << ns << host << '>';
         }
-        else if(ret.type == ((tmp="iref<")<<ns<<host<<'>'))
+        else if (ret.type == ((tmp = "iref<") << ns << host << '>'))
             biref = true;
+        else if (ret.type == ((tmp = "iref<") << nsifc << '>')) {
+            biref = true;
+            bifccr = true;
+        }
         //else if(ret.type == ((tmp="ref<")<<ns<<host<<'>'))
         //    ;
         //else if(ret.type == ((tmp=ns)<<host<<'*'))

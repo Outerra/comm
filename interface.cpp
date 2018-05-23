@@ -66,6 +66,7 @@ public:
             [ns1[::ns2[...]]]::classname@wrapper[.scriptname]               wrap existing interface object
             [ns1[::ns2[...]]]::classname@maker[.scriptname]                 create script interface object from host
             [ns1[::ns2[...]]]::classname.creatorname@hashvalue              c++ versioned creator
+            [ns1[::ns2[...]]]::classname.creatorname@hashvalue.ifc          c++ versioned creator direct ifc creator
             [ns1[::ns2[...]]]::classname.creatorname@creator.scriptname     c++ creator of JS interface object
             [ns1[::ns2[...]]]::scriptname::classname.creatorname            creator from script
             [ns1[::ns2[...]]]::classname@client-hashvalue.clientname        client creator
