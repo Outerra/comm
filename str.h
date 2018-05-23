@@ -1895,6 +1895,8 @@ public:
     //@return zero-terminated C-string
     const char* c_str() const { return _tstr.size() ? _tstr.ptr() : ""; }
 
+    char*& ptr_ref() { return _tstr.ptr_ref(); }
+
     ///String length excluding terminating zero
     uint len() const { return _tstr.size() ? (_tstr.size() - 1) : 0; }
     uints lens() const { return _tstr.sizes() ? (_tstr.sizes() - 1) : 0; }

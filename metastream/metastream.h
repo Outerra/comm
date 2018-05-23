@@ -361,15 +361,13 @@ public:
             write_container(mc);
         }
         else {
-            meta_decl_container(
+            if (meta_decl_container(
                 typeid(T).name(),
                 streamed,
                 raw_ptr ? (ints)raw_ptr - (ints)&v : -1,
                 fnptr, fncount, fnpush, fnextract
-            );
-
-            typedef typename resolve_enum<Telem>::type B;
-            *this || *(B*)0;
+            ))
+                *this || *(typename resolve_enum<Telem>::type*)0;
         }
 
         return *this;
@@ -814,15 +812,15 @@ public:
 
     ///Used in metastream operators for templated containers
     template<class T, class COUNT>
-    metastream& meta_container_type(binstream_containerT<T, COUNT>& a)
+    metastream& meta_container_type(binstream_containerT<T, COUNT>& a, ints raw_pointer_offset = -1)
     {
         if (_binr)
             read_container(a);
         else if (_binw)
             write_container(a);
         else {
-            meta_decl_array(typeid(T[]).name(), false, 0, 0, 0, 0);
-            *this << *(T*)0;
+            if (meta_decl_array(typeid(T[]).name(), raw_pointer_offset, false, 0, 0, 0, 0))
+                *this << *(T*)0;
         }
         return *this;
     }
@@ -915,8 +913,8 @@ protected:
 
         if (!prepare_type_common(read))  return 0;
 
-        meta_decl_array(typeid(T[]).name(), false, 0, 0, 0, 0, n);
-        *this || *(typename resolve_enum<T>::type*)0;     // build description
+        if (meta_decl_array(typeid(T[]).name(), -1, false, 0, 0, 0, 0, n))
+            *this || *(typename resolve_enum<T>::type*)0;     // build description
 
         return prepare_type_final(name, cache, read);
     }
@@ -1264,7 +1262,7 @@ public:
             write_token(a);
         }
         else {
-            meta_decl_raw_pointer(
+            if (meta_decl_raw_pointer(
                 typeid(char*).name(),
                 true,
                 (ints)&a,
@@ -1272,8 +1270,8 @@ public:
                 [](const void* a) -> uints { return 0; },
                 [](void* a, uints& i) -> void* { return static_cast<char**>(a) + i++; },
                 [](const void* a, uints& i) -> const void* { return *static_cast<char const* const*>(a) + i++; }
-            );
-            meta_def_primitive<char>("char");
+            ))
+                meta_def_primitive<char>("char");
         }
         return *this;
     }
@@ -1321,15 +1319,16 @@ public:
             write_token(a);
         }
         else {
-            meta_decl_array(
+            if (meta_decl_array(
                 typeid(a).name(),
+                (ints)&a.ptr_ref(),
                 false,
                 [](const void* a) -> const void* { return static_cast<const charstr*>(a)->ptr(); },
                 [](const void* a) -> uints { return static_cast<const charstr*>(a)->len(); },
                 [](void* a, uints& i) -> void* { return static_cast<charstr*>(a)->appendn_uninitialized(1); },
                 [](const void* a, uints& i) -> const void* { return static_cast<const charstr*>(a)->ptr() + i++; }
-            );
-            meta_def_primitive<char>("char");
+            ))
+                meta_def_primitive<char>("char");
         }
         return *this;
     }
@@ -1343,15 +1342,16 @@ public:
             write_token(a);
         }
         else {
-            meta_decl_array(
+            if (meta_decl_array(
                 typeid(a).name(),
+                (ints)&a._ptr,
                 false,
                 [](const void* a) -> const void* { return static_cast<const token*>(a)->ptr(); },
                 [](const void* a) -> uints { return static_cast<const token*>(a)->len(); },
                 0,
                 [](const void* a, uints& i) -> const void* { return static_cast<const token*>(a)->ptr() + i++; }
-            );
-            meta_def_primitive<char>("char");
+            ))
+                meta_def_primitive<char>("char");
         }
         return *this;
     }
@@ -1450,7 +1450,8 @@ protected:
         if (meta_find(name))
             return true;
 
-        MetaDesc* d = smap().create(
+        auto& sm = smap();
+        MetaDesc* d = sm.create(
             name,
             plain ? type::plain_compound() : type(),
             _cur_stream_fn);
@@ -1458,7 +1459,7 @@ protected:
         d->type_size = size;
 
         _current_var = meta_fill_parent_variable(d);
-        smap().push(_current_var);
+        sm.push(_current_var);
 
         return false;
     }
@@ -1508,7 +1509,7 @@ public:
         _cur_variable_offset = (int)offs;
         _cur_stream_fn = &type_streamer<T>::fn;
 
-        meta_decl_raw_pointer(
+        if (meta_decl_raw_pointer(
             typeid(T*).name(),
             streamed,
             0,
@@ -1516,24 +1517,31 @@ public:
             0,
             [](void* a, uints& i) -> void* { return *reinterpret_cast<T**>(a) + i++; },
             [](const void* a, uints& i) -> const void* { return *reinterpret_cast<T const* const*>(a) + i++; }
-        );
-
-        *this || *(B*)0;
+        ))
+            *this || *(B*)0;
     }
 
     template<class T, class Telem>
     void meta_variable_container(const token& varname, ints offs, ints raw_ptr_offs, bool streamed,
         MetaDesc::fn_ptr fnptr, MetaDesc::fn_count fncount, MetaDesc::fn_push fnpush, MetaDesc::fn_extract fnextract)
     {
+        typedef typename resolve_enum<Telem>::type B;
+
         _cur_variable_name = varname;
         _cur_variable_size = sizeof(T*);
         _cur_variable_offset = (int)offs;
         _cur_stream_fn = &type_streamer<T>::fn;
 
-        meta_decl_raw_pointer(typeid(T).name(), streamed, raw_ptr_offs, fnptr, fncount, fnpush, fnextract);
-
-        typedef typename resolve_enum<Telem>::type B;
-        *this || *(B*)0;
+        if (meta_decl_raw_pointer(
+            typeid(T).name(),
+            streamed,
+            raw_ptr_offs,
+            fnptr,
+            fncount,
+            fnpush,
+            fnextract
+        ))
+            *this || *(B*)0;
     }
 
     template<class T>
@@ -1564,17 +1572,17 @@ public:
         _cur_variable_offset = (int)(ints)v;
         _cur_stream_fn = &type_streamer<T>::fn;
 
-        meta_decl_array(
+        if (meta_decl_array(
             typeid(T[]).name(),
+            0,
             true,
             [](const void* a) -> const void* { return static_cast<const T*>(a); },
             [](const void* a) -> uints { return 0; },   //length unknown here, use desc value
             [](void* a, uints& i) -> void* { return static_cast<T*>(a) + i++; },
             [](const void* a, uints& i) -> const void* { return static_cast<T const*>(a) + i++; },
             n
-        );
-
-        *this || *(B*)0;
+        ))
+            *this || *(B*)0;
     }
 
 
@@ -1653,8 +1661,9 @@ public:
     ///Signal that the primitive or compound type coming is an array
     //@param n array element count, UMAXS if unknown or varying
     //@param embedded true if array is embedded in parent (must be also fixed size in that case)
-    void meta_decl_array(
+    MetaDesc* meta_decl_array(
         const token& type_name,
+        ints raw_pointer_offset,
         bool embedded,
         MetaDesc::fn_ptr fnptr,
         MetaDesc::fn_count fncount,
@@ -1667,26 +1676,42 @@ public:
         DASSERT(!embedded || n != UMAXS);
         DASSERT(n != 0);
 
-        MetaDesc* d = smap().find_or_create(type_name, bstype::kind(), _cur_stream_fn);
+        auto& sm = smap();
+        MetaDesc* d = sm.find(type_name);
+
+        if (!d) {
+            d = sm.create(type_name, bstype::kind(), _cur_stream_fn);
+            d->array_size = n;
+            d->type_size = _cur_variable_size;
+            d->is_array_type = true;
+            d->embedded = embedded;
+            d->raw_pointer_offset = raw_pointer_offset;
+            d->fnptr = fnptr;
+            d->fncount = fncount;
+            d->fnpush = fnpush;
+            d->fnextract = fnextract;
+
+            _current_var = meta_fill_parent_variable(d);
+            sm.push(_current_var);
+
+            return d;
+        }
+        else {
+            DASSERT(n == d->array_size);
+            DASSERT(d->type_size = _cur_variable_size);
+            DASSERT(d->is_array_type);
+
+            _last_var = meta_fill_parent_variable(d);
+            meta_exit();
+        }
 
         //MetaDesc* d = smap().create_array_desc(n, _cur_stream_fn);
-        d->array_size = n;
-        d->fnptr = fnptr;
-        d->fncount = fncount;
-        d->fnpush = fnpush;
-        d->fnextract = fnextract;
-        d->embedded = embedded;
-        d->type_size = _cur_variable_size;
-        d->is_array_type = true;
-
-        _current_var = meta_fill_parent_variable(d);
-
-        smap().push(_current_var);
+        return 0;
     }
 
     ///Signal that the primitive or compound type coming is a container with optional raw pointer inside
     //@param streamed false if variable should not be streamed, just a part of meta description
-    void meta_decl_container(
+    MetaDesc* meta_decl_container(
         const token& type_name,
         bool streamed,
         ints raw_pointer_offset,
@@ -1696,20 +1721,17 @@ public:
         MetaDesc::fn_extract fnextract
     )
     {
-        meta_decl_array(type_name, false, fnptr, fncount, fnpush, fnextract, UMAXS);
-
-        _current_var->desc->raw_pointer_offset = (int)raw_pointer_offset;
-        _current_var->desc->is_pointer = false;
-
         if (!streamed) {
             _current_var->obsolete = true;
             _current_var->optional = true;
         }
+
+        return meta_decl_array(type_name, raw_pointer_offset, false, fnptr, fncount, fnpush, fnextract, UMAXS);
     }
 
     ///Signal that the primitive or compound type coming is a raw pointer
     //@param streamed false if variable should not be streamed, just a part of meta description
-    void meta_decl_raw_pointer(
+    MetaDesc* meta_decl_raw_pointer(
         const token& type_name,
         bool streamed,
         ints raw_pointer_offset,
@@ -1719,15 +1741,17 @@ public:
         MetaDesc::fn_extract fnextract
     )
     {
-        meta_decl_array(type_name, false, fnptr, fncount, fnpush, fnextract, UMAXS);
-
-        _current_var->desc->raw_pointer_offset = (int)raw_pointer_offset;
-        _current_var->desc->is_pointer = true;
-
         if (!streamed) {
             _current_var->obsolete = true;
             _current_var->optional = true;
         }
+
+        MetaDesc* d = meta_decl_array(type_name, raw_pointer_offset, false, fnptr, fncount, fnpush, fnextract, UMAXS);
+
+        if (d)
+            d->is_pointer = true;
+
+        return d;
     }
 
     ///Only for primitive types
@@ -1746,9 +1770,11 @@ public:
     ///Get back from multiple array decl around current type
     void meta_exit()
     {
+        auto& sm = smap();
+
         while (_current_var && _current_var->is_array()) {
-            _last_var = smap().pop();
-            _current_var = smap().last();
+            _last_var = sm.pop();
+            _current_var = sm.last();
         }
     }
 
@@ -1800,7 +1826,10 @@ private:
 
         MetaDesc::Var* last() const { MetaDesc::Var** p = _stack.last();  return p ? *p : 0; }
         MetaDesc::Var* pop() { MetaDesc::Var* p;  return _stack.pop(p) ? p : 0; }
-        void push(MetaDesc::Var* v) { _stack.push(v); }
+        
+        void push(MetaDesc::Var* v) {
+            _stack.push(v);
+        }
 
         structure_map();
         ~structure_map();
@@ -3189,15 +3218,16 @@ void type_streamer<T>::fn(metastream* m, void* p, binstream_container_base*) {
 template <class T, class COUNT, class A>
 metastream& operator << (metastream& m, const dynarray<T, COUNT, A>& a)
 {
-    m.meta_decl_array(
+    if (m.meta_decl_array(
         typeid(a).name(),
+        (ints)&a.ptr_ref(),
         false,
         [](const void* p) -> void* { return static_cast<const dynarray<T, COUNT, A>*>(p)->ptr(); },
         [](const void* p) -> uints { return static_cast<const dynarray<T, COUNT, A>*>(p)->count(); },
         [](void* p, uints&) -> void* { return static_cast<dynarray<T, COUNT, A>*>(p)->add(); },
         [](const void* p, uints& i) -> const void* { return static_cast<const dynarray<T, COUNT, A>*>(p)->ptr() + i++; }
-    );
-    m << *(T*)0;
+    ))
+        m << *(T*)0;
     return m;
 }
 
@@ -3215,15 +3245,16 @@ metastream& operator || (metastream& m, dynarray<T, COUNT, A>& a)
         m.write_container(c);
     }
     else {
-        m.meta_decl_array(
+        if (m.meta_decl_array(
             typeid(a).name(),
+            (ints)&a.ptr_ref(),
             false,
             [](const void* p) -> const void* { return static_cast<const dynarray<T, COUNT, A>*>(p)->ptr(); },
             [](const void* p) -> uints { return static_cast<const dynarray<T, COUNT, A>*>(p)->size(); },
             [](void* p, uints&) -> void* { return static_cast<dynarray<T, COUNT, A>*>(p)->add(); },
             [](const void* p, uints& i) -> const void* { return static_cast<const dynarray<T, COUNT, A>*>(p)->ptr() + i++; }
-        );
-        m || *(T*)0;
+        ))
+            m || *(T*)0;
     }
     return m;
 }
@@ -3241,15 +3272,16 @@ metastream& operator || (metastream& m, range<T>& a)
         m.write_container(c);
     }
     else {
-        m.meta_decl_array(
+        if (m.meta_decl_array(
             typeid(a).name(),
+            (ints)&a._ptr,
             false,
             [](const void* a) -> const void* { return static_cast<const range<T>*>(a)->ptr(); },
             [](const void* a) -> uints { return static_cast<const range<T>*>(a)->size(); },
             0,
             [](const void* a, uints& i) -> const void* { return static_cast<const range<T>*>(a)->ptr() + i++; }
-        );
-        m || *(T*)0;
+        ))
+            m || *(T*)0;
     }
     return m;
 }

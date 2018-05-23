@@ -135,7 +135,8 @@ struct base_versioning
 
 
     versionid get_versionid(uints id) const {
-        return versionid(id, 0);
+        DASSERT_RET(id < 0x00ffffffU, versionid());
+        return versionid(uint(id), 0);
     }
 
     bool check_versionid(versionid vid) const {

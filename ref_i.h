@@ -247,7 +247,7 @@ public:
         else if (m.stream_reading())
             s.create(m.read_optional<T>());
         else {
-            m.meta_decl_raw_pointer(
+            if (m.meta_decl_raw_pointer(
                 typeid(s).name(),
                 false,
                 0,
@@ -255,8 +255,8 @@ public:
                 [](const void* a) -> uints { return static_cast<const iref_t*>(a)->is_empty() ? 0 : 1; },
                 [](void* a, uints& i) -> void* { return static_cast<iref*>(a)->_p; },
                 [](const void* a, uints& i) -> const void* { return static_cast<const iref_t*>(a)->_p; }
-            );
-            m || *s._p;
+            ))
+                m || *s._p;
         }
         return m;
     }

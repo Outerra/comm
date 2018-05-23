@@ -458,4 +458,7 @@
       <Filter>cxx</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="..\..\..\doc\visualc-syntax\coid.natvis" />
+  </ItemGroup>
 </Project>

@@ -93,7 +93,7 @@ MetaDesc* metastream::structure_map::insert( MetaDesc&& v )
 {
     SMReg& smr = *(SMReg*)pimpl;
 
-    return (MetaDesc*) smr._map.insert_value(v);
+    return (MetaDesc*) smr._map.insert_value(std::forward<MetaDesc>(v));
 }
 
 ////////////////////////////////////////////////////////////////////////////////

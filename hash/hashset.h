@@ -171,15 +171,16 @@ public:
 
     static metastream& stream_meta( metastream& m )
     {
-        m.meta_decl_array(
+        if (m.meta_decl_array(
             typeid(_ThisType).name(),
+            -1,
             false,
             0,  //not a linear array
             [](const void* a) -> uints { return static_cast<const _ThisType*>(a)->size(); },
             0,//[](void* a, uints& i) -> void* {},
             0 //[](const void* a, uints& i) -> const void* {}
-        );
-        m || *(const VAL*)0;
+        ))
+            m || *(const VAL*)0;
         return m;
     }
 };
@@ -304,15 +305,16 @@ public:
 
     static metastream& stream_meta( metastream& m )
     {
-        m.meta_decl_array(
+        if (m.meta_decl_array(
             typeid(_ThisType).name(),
+            -1,
             false,
             0,  //not a linear array
             [](const void* a) -> uints { return static_cast<const _ThisType*>(a)->size(); },
             0,//[](void* a, uints& i) -> void* {},
             0 //[](const void* a, uints& i) -> const void* {}
-        );
-        m << *(const VAL*)0;
+        ))
+            m << *(const VAL*)0;
         return m;
     }
 };

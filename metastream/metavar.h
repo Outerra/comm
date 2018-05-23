@@ -102,13 +102,12 @@ struct MetaDesc
             return dst;
         }
 
-        charstr& type_string( charstr& dst ) const
-        {
+        charstr& type_string( charstr& dst ) const {
             return desc->type_string(dst);
         }
 
-        Var* add_child( MetaDesc* d, const token& n, int offset )
-        {
+        Var* add_child( MetaDesc* d, const token& n, int offset ) {
+            DASSERT(!is_array() || desc->children.size() == 0);
             return desc->add_desc_var(d, n, offset);
         }
     };
