@@ -285,7 +285,7 @@ public:
     template<typename T, size_t N>
     bool member(const token& name, T(&v)[N])
     {
-        member_array<T, N>(name, v);
+        member_array<N>(name, v);
         return true;
     }
 
@@ -567,7 +567,7 @@ public:
     //@param name variable name, used as a key in output formats
     //@param v pointer to the first array element
     //@param size element count
-    template<typename T, size_t N>
+    template<size_t N, typename T>
     metastream& member_array(const token& name, T* v)
     {
         if (_binw) {
@@ -579,7 +579,7 @@ public:
             read_container(bc);
         }
         else
-            meta_variable_fixed_array<T, N>(name, v);
+            meta_variable_fixed_array<N>(name, v);
         return *this;
     }
 
@@ -1528,7 +1528,7 @@ public:
         typedef typename resolve_enum<Telem>::type B;
 
         _cur_variable_name = varname;
-        _cur_variable_size = sizeof(T*);
+        _cur_variable_size = sizeof(T);
         _cur_variable_offset = (int)offs;
         _cur_stream_fn = &type_streamer<T>::fn;
 
@@ -1562,7 +1562,7 @@ public:
     }
 
     ///Define member array variable
-    template<class T, size_t N>
+    template<size_t N, class T>
     void meta_variable_fixed_array(const token& varname, T* v)
     {
         typedef typename resolve_enum<T>::type B;
@@ -3346,22 +3346,22 @@ COID_NAMESPACE_END
 
 #define COID_METABIN_OP1A(TYPE,ELEM) namespace coid {\
     inline metastream& operator || (metastream& m, TYPE& v) {\
-        m.compound(#TYPE, [&]() { m.member_array("col", &v[0], 1); });\
+        m.compound(#TYPE, [&]() { m.member_array<1>("col", &v[0]); });\
         return m; }}
 
 #define COID_METABIN_OP2A(TYPE,ELEM) namespace coid {\
     inline metastream& operator || (metastream& m, TYPE& v) {\
-        m.compound(#TYPE, [&]() { m.member_array("col", &v[0], 2); });\
+        m.compound(#TYPE, [&]() { m.member_array<2>("col", &v[0]); });\
         return m; }}
 
 #define COID_METABIN_OP3A(TYPE,ELEM) namespace coid {\
     inline metastream& operator || (metastream& m, TYPE& v) {\
-        m.compound(#TYPE, [&]() { m.member_array("col", &v[0], 3); });\
+        m.compound(#TYPE, [&]() { m.member_array<3>("col", &v[0]); });\
         return m; }}
 
 #define COID_METABIN_OP4A(TYPE,ELEM) namespace coid {\
     inline metastream& operator || (metastream& m, TYPE& v) {\
-        m.compound(#TYPE, [&]() { m.member_array("col", &v[0], 4); });\
+        m.compound(#TYPE, [&]() { m.member_array<4>("col", &v[0]); });\
         return m; }}
 
 
