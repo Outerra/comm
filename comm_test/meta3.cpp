@@ -148,6 +148,54 @@ static void metastream_test3x()
 
 ////////////////////////////////////////////////////////////////////////////////
 
+struct container {
+    char bordel[2];
+    int* p;
+    int16 sajrajt;
+
+    friend metastream& operator || (metastream& m, container& c) {
+        return m.member_container_type(c, &c.p, true,
+            [](const void* a) -> const void* { return static_cast<const container*>(a)->p; },
+            [](const void* a) -> uints { return UMAXS; },
+            [](void* a, uints& i) -> void* { return static_cast<container*>(a)->p + i++; },
+            [](const void* a, uints& i) -> const void* { return static_cast<const container*>(a)->p + i++; }
+        );
+    }
+};
+
+struct aaa {
+    int x;
+    char* salama;
+    int16 bordel[7];
+
+    container c;
+    const char* string;
+
+    dynarray<token> stuff;
+
+    friend metastream& operator || (metastream& m, aaa& v) {
+        return m.compound_type(v, [&]() {
+            m.member("x", v.x);
+            m.member("salama", v.salama);
+            m.member("bordel", v.bordel);
+            m.member("c", v.c);
+            m.member("str", v.string);
+            m.member("stuff", v.stuff);
+        });
+    }
+};
+
+void metastream_test4()
+{
+    metastream m;
+    auto a = m.get_type_desc<dynarray<token>>();
+    auto x = m.get_type_desc<aaa>();
+
+    DASSERT(0);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 struct testmtg {
     dynarray<charstr> as;
     dynarray<int> ar;
@@ -196,6 +244,7 @@ void metastream_test3()
     metagen_test();
 
     metastream_test3x();
+
 /*
     dynarray<ref<FooA>> ar;
     ar.add()->create(new FooA(1, 2));

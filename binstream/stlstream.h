@@ -347,7 +347,7 @@ inline metastream& operator || (metastream& m, std::vector<T,A>& v )
             false,
             [](const void* p) -> const void* { return static_cast<const CT*>(p)->data(); },
             [](const void* p) -> uints { return static_cast<const CT*>(p)->size(); },
-            [](void* p, uints&) -> void* { return &static_cast<CT*>(p)->emplace_back(); },
+            [](void* p, uints&) -> void* { static_cast<CT*>(p)->emplace_back(); return &static_cast<CT*>(p)->back(); },
             [](const void* p, uints& i) -> const void* { return static_cast<const CT*>(p)->data() + i++; }
         ))
             m || *(T*)0;

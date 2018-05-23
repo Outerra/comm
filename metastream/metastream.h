@@ -1685,7 +1685,7 @@ public:
             d->type_size = _cur_variable_size;
             d->is_array_type = true;
             d->embedded = embedded;
-            d->raw_pointer_offset = raw_pointer_offset;
+            d->raw_pointer_offset = assert_cast<int>(raw_pointer_offset);
             d->fnptr = fnptr;
             d->fncount = fncount;
             d->fnpush = fnpush;
@@ -1786,6 +1786,10 @@ public:
     {
         _root.desc = 0;
         _current_var = 0;
+
+        _cur_variable_name.set_empty();
+        _cur_variable_size = sizeof(T);
+        _cur_variable_offset = 0;
 
         *this || *(typename resolve_enum<T>::type*)0;
 
