@@ -285,7 +285,7 @@ public:
     template<typename T, size_t N>
     bool member(const token& name, T(&v)[N])
     {
-        member_array(name, v, N);
+        member_array<T, N>(name, v);
         return true;
     }
 
@@ -567,19 +567,19 @@ public:
     //@param name variable name, used as a key in output formats
     //@param v pointer to the first array element
     //@param size element count
-    template<typename T>
-    metastream& member_array(const token& name, T* v, uints size)
+    template<typename T, size_t N>
+    metastream& member_array(const token& name, T* v)
     {
         if (_binw) {
-            binstream_container_fixed_array<T, ints> bc(v, size);
+            binstream_container_fixed_array<T, ints> bc(v, N);
             write_container(bc);
         }
         else if (_binr) {
-            binstream_container_fixed_array<T, ints> bc(v, size);
+            binstream_container_fixed_array<T, ints> bc(v, N);
             read_container(bc);
         }
         else
-            meta_variable_fixed_array<T>(name, v, size);
+            meta_variable_fixed_array<T, N>(name, v);
         return *this;
     }
 
@@ -1562,25 +1562,25 @@ public:
     }
 
     ///Define member array variable
-    template<class T>
-    void meta_variable_fixed_array(const token& varname, T* v, uints n)
+    template<class T, size_t N>
+    void meta_variable_fixed_array(const token& varname, T* v)
     {
         typedef typename resolve_enum<T>::type B;
 
         _cur_variable_name = varname;
-        _cur_variable_size = sizeof(T) * n;
+        _cur_variable_size = sizeof(T) * N;
         _cur_variable_offset = (int)(ints)v;
         _cur_stream_fn = &type_streamer<T>::fn;
 
         if (meta_decl_array(
-            typeid(T[]).name(),
+            typeid(T[N]).name(),
             0,
             true,
             [](const void* a) -> const void* { return static_cast<const T*>(a); },
-            [](const void* a) -> uints { return 0; },   //length unknown here, use desc value
+            [](const void* a) -> uints { return N; },
             [](void* a, uints& i) -> void* { return static_cast<T*>(a) + i++; },
             [](const void* a, uints& i) -> const void* { return static_cast<T const*>(a) + i++; },
-            n
+            N
         ))
             *this || *(B*)0;
     }
