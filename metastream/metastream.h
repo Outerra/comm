@@ -1698,7 +1698,7 @@ public:
         }
         else {
             DASSERT(n == d->array_size);
-            DASSERT(d->type_size = _cur_variable_size);
+            DASSERT(d->type_size == _cur_variable_size);
             DASSERT(d->is_array_type);
 
             _last_var = meta_fill_parent_variable(d);
