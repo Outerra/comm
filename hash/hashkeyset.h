@@ -518,6 +518,7 @@ inline metastream& operator || ( metastream& m, hash_keyset<VAL,EXTRACTKEY,HASHF
         if (m.meta_decl_array(
             typeid(a).name(),
             -1,
+            sizeof(a),
             false,
             0,  //not a linear array
             [](const void* a) -> uints { return static_cast<const _HT*>(a)->size(); },
@@ -556,6 +557,7 @@ inline metastream& operator || ( metastream& m, hash_multikeyset<VAL,EXTRACTKEY,
         if (m.meta_decl_array(
             typeid(a).name(),
             -1,
+            sizeof(a),
             false,
             0,  //not a linear array
             [](const void* a) -> uints { return static_cast<const _HT*>(a)->size(); },

@@ -295,7 +295,7 @@ public:
     //@param streamed false variable should not be streamed, just a part of meta description, can point to 1..N items (default)
     //@param          true variable is indirectly referenced to by a pointer
     //@note use member_optional or member_type for special handling when the pointer has to be allocated etc.
-    template<typename T, typename = std::enable_if_t<std::is_same<const char*, T*>::value>>
+    template<typename T, typename = !std::enable_if_t<std::is_same<const char*, T*>::value>>
     bool member(const token& name, T*& v, bool streamed = false)
     {
         member_ptr(name, v, streamed);
@@ -363,6 +363,7 @@ public:
         else {
             if (meta_decl_container(
                 typeid(T).name(),
+                sizeof(v),
                 streamed,
                 raw_ptr ? (ints)raw_ptr - (ints)&v : -1,
                 fnptr, fncount, fnpush, fnextract
@@ -658,7 +659,6 @@ public:
         _curvar.var = 0;
         _cur_variable_name.set_empty();
         _cur_variable_offset = 0;
-        _cur_variable_size = 0;
 
         _dometa = false;
         _fmtstreamwr = _fmtstreamrd = 0;
@@ -819,7 +819,7 @@ public:
         else if (_binw)
             write_container(a);
         else {
-            if (meta_decl_array(typeid(T[]).name(), raw_pointer_offset, false, 0, 0, 0, 0))
+            if (meta_decl_array(typeid(T[]).name(), raw_pointer_offset, -1, false, 0, 0, 0, 0))
                 *this << *(T*)0;
         }
         return *this;
@@ -913,7 +913,7 @@ protected:
 
         if (!prepare_type_common(read))  return 0;
 
-        if (meta_decl_array(typeid(T[]).name(), -1, false, 0, 0, 0, 0, n))
+        if (meta_decl_array(typeid(T[]).name(), -1, -1, false, 0, 0, 0, 0, n))
             *this || *(typename resolve_enum<T>::type*)0;     // build description
 
         return prepare_type_final(name, cache, read);
@@ -1180,7 +1180,6 @@ public:
         _curvar.var = 0;
         _cur_variable_name.set_empty();
         _cur_variable_offset = 0;
-        _cur_variable_size = 0;
         _rvarname.reset();
 
         _err.reset();
@@ -1322,6 +1321,7 @@ public:
             if (meta_decl_array(
                 typeid(a).name(),
                 (ints)&a.ptr_ref(),
+                sizeof(a),
                 false,
                 [](const void* a) -> const void* { return static_cast<const charstr*>(a)->ptr(); },
                 [](const void* a) -> uints { return static_cast<const charstr*>(a)->len(); },
@@ -1345,6 +1345,7 @@ public:
             if (meta_decl_array(
                 typeid(a).name(),
                 (ints)&a._ptr,
+                sizeof(a),
                 false,
                 [](const void* a) -> const void* { return static_cast<const token*>(a)->ptr(); },
                 [](const void* a) -> uints { return static_cast<const token*>(a)->len(); },
@@ -1477,7 +1478,6 @@ public:
         typedef typename resolve_enum<T>::type B;
 
         _cur_variable_name = varname;
-        _cur_variable_size = sizeof(T);
         _cur_variable_offset = (int)(ints)v;
         _cur_stream_fn = &type_streamer<T>::fn;
 
@@ -1490,7 +1490,6 @@ public:
         typedef typename resolve_enum<T>::type B;
 
         _cur_variable_name = varname;
-        _cur_variable_size = sizeof(T);
         _cur_variable_offset = (int)offs;
         _cur_stream_fn = &type_streamer<T>::fn;
 
@@ -1505,7 +1504,6 @@ public:
         typedef typename resolve_enum<T>::type B;
 
         _cur_variable_name = varname;
-        _cur_variable_size = sizeof(T*);
         _cur_variable_offset = (int)offs;
         _cur_stream_fn = &type_streamer<T>::fn;
 
@@ -1528,7 +1526,6 @@ public:
         typedef typename resolve_enum<Telem>::type B;
 
         _cur_variable_name = varname;
-        _cur_variable_size = sizeof(T*);
         _cur_variable_offset = (int)offs;
         _cur_stream_fn = &type_streamer<T>::fn;
 
@@ -1568,13 +1565,13 @@ public:
         typedef typename resolve_enum<T>::type B;
 
         _cur_variable_name = varname;
-        _cur_variable_size = sizeof(T) * N;
         _cur_variable_offset = (int)(ints)v;
         _cur_stream_fn = &type_streamer<T>::fn;
 
         if (meta_decl_array(
             typeid(T[N]).name(),
             0,
+            sizeof(v),
             true,
             [](const void* a) -> const void* { return static_cast<const T*>(a); },
             [](const void* a) -> uints { return N; },
@@ -1664,6 +1661,7 @@ public:
     MetaDesc* meta_decl_array(
         const token& type_name,
         ints raw_pointer_offset,
+        ints type_size,
         bool embedded,
         MetaDesc::fn_ptr fnptr,
         MetaDesc::fn_count fncount,
@@ -1682,7 +1680,7 @@ public:
         if (!d) {
             d = sm.create(type_name, bstype::kind(), _cur_stream_fn);
             d->array_size = n;
-            d->type_size = _cur_variable_size;
+            d->type_size = type_size;
             d->is_array_type = true;
             d->embedded = embedded;
             d->raw_pointer_offset = assert_cast<int>(raw_pointer_offset);
@@ -1698,7 +1696,7 @@ public:
         }
         else {
             DASSERT(n == d->array_size);
-            DASSERT(d->type_size == _cur_variable_size);
+            DASSERT(d->type_size == type_size);
             DASSERT(d->is_array_type);
 
             _last_var = meta_fill_parent_variable(d);
@@ -1713,6 +1711,7 @@ public:
     //@param streamed false if variable should not be streamed, just a part of meta description
     MetaDesc* meta_decl_container(
         const token& type_name,
+        uints type_size,
         bool streamed,
         ints raw_pointer_offset,
         MetaDesc::fn_ptr fnptr,
@@ -1726,7 +1725,7 @@ public:
             _current_var->optional = true;
         }
 
-        return meta_decl_array(type_name, raw_pointer_offset, false, fnptr, fncount, fnpush, fnextract, UMAXS);
+        return meta_decl_array(type_name, raw_pointer_offset, type_size, false, fnptr, fncount, fnpush, fnextract, UMAXS);
     }
 
     ///Signal that the primitive or compound type coming is a raw pointer
@@ -1746,7 +1745,7 @@ public:
             _current_var->optional = true;
         }
 
-        MetaDesc* d = meta_decl_array(type_name, raw_pointer_offset, false, fnptr, fncount, fnpush, fnextract, UMAXS);
+        MetaDesc* d = meta_decl_array(type_name, raw_pointer_offset, sizeof(void*), false, fnptr, fncount, fnpush, fnextract, UMAXS);
 
         if (d)
             d->is_pointer = true;
@@ -1788,7 +1787,6 @@ public:
         _current_var = 0;
 
         _cur_variable_name.set_empty();
-        _cur_variable_size = sizeof(T);
         _cur_variable_offset = 0;
 
         *this || *(typename resolve_enum<T>::type*)0;
@@ -1861,7 +1859,6 @@ private:
 
     token _cur_variable_name;
     MetaDesc::stream_func _cur_stream_fn;
-    uints _cur_variable_size;
     int _cur_variable_offset;
     //binstream::fnc_from_stream _cur_streamfrom_fnc;
     //binstream::fnc_to_stream _cur_streamto_fnc;
@@ -3225,6 +3222,7 @@ metastream& operator << (metastream& m, const dynarray<T, COUNT, A>& a)
     if (m.meta_decl_array(
         typeid(a).name(),
         (ints)&a.ptr_ref(),
+        sizeof(a),
         false,
         [](const void* p) -> void* { return static_cast<const dynarray<T, COUNT, A>*>(p)->ptr(); },
         [](const void* p) -> uints { return static_cast<const dynarray<T, COUNT, A>*>(p)->count(); },
@@ -3252,6 +3250,7 @@ metastream& operator || (metastream& m, dynarray<T, COUNT, A>& a)
         if (m.meta_decl_array(
             typeid(a).name(),
             (ints)&a.ptr_ref(),
+            sizeof(a),
             false,
             [](const void* p) -> const void* { return static_cast<const dynarray<T, COUNT, A>*>(p)->ptr(); },
             [](const void* p) -> uints { return static_cast<const dynarray<T, COUNT, A>*>(p)->size(); },
@@ -3279,6 +3278,7 @@ metastream& operator || (metastream& m, range<T>& a)
         if (m.meta_decl_array(
             typeid(a).name(),
             (ints)&a._ptr,
+            sizeof(a),
             false,
             [](const void* a) -> const void* { return static_cast<const range<T>*>(a)->ptr(); },
             [](const void* a) -> uints { return static_cast<const range<T>*>(a)->size(); },
@@ -3300,22 +3300,22 @@ COID_NAMESPACE_END
 
 #define COID_METABIN_OP1(TYPE,P0) namespace coid {\
     inline metastream& operator || (metastream& m, TYPE& v) {\
-        m.compound(#TYPE, [&]() { m.member(#P0, v.P0); });\
+        m.compound_type(v, [&]() { m.member(#P0, v.P0); });\
         return m; }}
 
 #define COID_METABIN_OP2(TYPE,P0,P1) namespace coid {\
     inline metastream& operator || (metastream& m, TYPE& v) {\
-        m.compound(#TYPE, [&]() { m.member(#P0, v.P0); m.member(#P1, v.P1); });\
+        m.compound_type(v, [&]() { m.member(#P0, v.P0); m.member(#P1, v.P1); });\
         return m; }}
 
 #define COID_METABIN_OP3(TYPE,P0,P1,P2) namespace coid {\
     inline metastream& operator || (metastream& m, TYPE& v) {\
-        m.compound(#TYPE, [&]() { m.member(#P0, v.P0); m.member(#P1, v.P1); m.member(#P2, v.P2); });\
+        m.compound_type(v, [&]() { m.member(#P0, v.P0); m.member(#P1, v.P1); m.member(#P2, v.P2); });\
         return m; }}
 
 #define COID_METABIN_OP4(TYPE,P0,P1,P2,P3) namespace coid {\
     inline metastream& operator || (metastream& m, TYPE& v) {\
-        m.compound(#TYPE, [&]() { m.member(#P0, v.P0); m.member(#P1, v.P1); m.member(#P2, v.P2); m.member(#P3, v.P3); });\
+        m.compound_type(v, [&]() { m.member(#P0, v.P0); m.member(#P1, v.P1); m.member(#P2, v.P2); m.member(#P3, v.P3); });\
         return m; }}
 
 
@@ -3323,22 +3323,22 @@ COID_NAMESPACE_END
 
 #define COID_METABIN_OP1D(TYPE,P0,P1,D0,D1) namespace coid {\
     inline metastream& operator || (metastream& m, TYPE& v) {\
-        m.compound(#TYPE, [&]() { m.member(#P0, v.P0, D0); });\
+        m.compound_type(v, [&]() { m.member(#P0, v.P0, D0); });\
         return m; }}
 
 #define COID_METABIN_OP2D(TYPE,P0,P1,D0,D1) namespace coid {\
     inline metastream& operator || (metastream& m, TYPE& v) {\
-        m.compound(#TYPE, [&]() { m.member(#P0, v.P0, D0); m.member(#P1, v.P1, D1); });\
+        m.compound_type(v, [&]() { m.member(#P0, v.P0, D0); m.member(#P1, v.P1, D1); });\
         return m; }}
 
 #define COID_METABIN_OP3D(TYPE,P0,P1,P2,D0,D1,D2) namespace coid {\
     inline metastream& operator || (metastream& m, TYPE& v) {\
-        m.compound(#TYPE, [&]() { m.member(#P0, v.P0, D0); m.member(#P1, v.P1, D1); m.member(#P2, v.P2, D2); });\
+        m.compound_type(v, [&]() { m.member(#P0, v.P0, D0); m.member(#P1, v.P1, D1); m.member(#P2, v.P2, D2); });\
         return m; }}
 
 #define COID_METABIN_OP4D(TYPE,P0,P1,P2,P3,D0,D1,D2,D3) namespace coid {\
     inline metastream& operator || (metastream& m, TYPE& v) {\
-        m.compound(#TYPE, [&]() { m.member(#P0, v.P0, D0); m.member(#P1, v.P1, D1); m.member(#P2, v.P2, D2); m.member(#P3, v.P3, D3); });\
+        m.compound_type(v, [&]() { m.member(#P0, v.P0, D0); m.member(#P1, v.P1, D1); m.member(#P2, v.P2, D2); m.member(#P3, v.P3, D3); });\
         return m; }}
 
 
@@ -3346,22 +3346,22 @@ COID_NAMESPACE_END
 
 #define COID_METABIN_OP1A(TYPE,ELEM) namespace coid {\
     inline metastream& operator || (metastream& m, TYPE& v) {\
-        m.compound(#TYPE, [&]() { m.member_array<1>("col", &v[0]); });\
+        m.compound_type(v, [&]() { m.member_array<1>("col", &v[0]); });\
         return m; }}
 
 #define COID_METABIN_OP2A(TYPE,ELEM) namespace coid {\
     inline metastream& operator || (metastream& m, TYPE& v) {\
-        m.compound(#TYPE, [&]() { m.member_array<2>("col", &v[0]); });\
+        m.compound_type(v, [&]() { m.member_array<2>("col", &v[0]); });\
         return m; }}
 
 #define COID_METABIN_OP3A(TYPE,ELEM) namespace coid {\
     inline metastream& operator || (metastream& m, TYPE& v) {\
-        m.compound(#TYPE, [&]() { m.member_array<3>("col", &v[0]); });\
+        m.compound_type(v, [&]() { m.member_array<3>("col", &v[0]); });\
         return m; }}
 
 #define COID_METABIN_OP4A(TYPE,ELEM) namespace coid {\
     inline metastream& operator || (metastream& m, TYPE& v) {\
-        m.compound(#TYPE, [&]() { m.member_array<4>("col", &v[0]); });\
+        m.compound_type(v, [&]() { m.member_array<4>("col", &v[0]); });\
         return m; }}
 
 

@@ -218,7 +218,7 @@ template<class T, class A> inline metastream& operator || (metastream& m, CONT<T
         m.write_container(c);\
     }\
     else {\
-        if (m.meta_decl_array(typeid(v).name(), -1, false, 0, 0, 0, 0))\
+        if (m.meta_decl_array(typeid(v).name(), -1, sizeof(v), false, 0, 0, 0, 0))\
             m || *(typename CONT<T,A>::value_type*)0;\
     }\
     return m;\
@@ -248,7 +248,7 @@ template<class T, class A> inline metastream& operator || (metastream& m, CONT<T
         m.write_container(c);\
     }\
     else {\
-        if(m.meta_decl_array(typeid(v).name(), -1, false, 0, 0, 0, 0))\
+        if(m.meta_decl_array(typeid(v).name(), -1, sizeof(v), false, 0, 0, 0, 0))\
             m || *(typename CONT<T,A>::value_type*)0;\
     }\
     return m;\
@@ -344,6 +344,7 @@ inline metastream& operator || (metastream& m, std::vector<T,A>& v )
         if (m.meta_decl_array(
             typeid(v).name(),
             -1,
+            sizeof(v),
             false,
             [](const void* p) -> const void* { return static_cast<const CT*>(p)->data(); },
             [](const void* p) -> uints { return static_cast<const CT*>(p)->size(); },
@@ -389,6 +390,7 @@ inline metastream& operator || (metastream& meta, std::string& p)
         if (meta.meta_decl_array(
             typeid(p).name(),
             -1,
+            sizeof(p),
             false,
             [](const void* a) -> const void* { return static_cast<const std::string*>(a)->c_str(); },
             [](const void* a) -> uints { return static_cast<const std::string*>(a)->size(); },
