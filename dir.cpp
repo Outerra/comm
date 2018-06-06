@@ -427,7 +427,7 @@ opcd directory::mkdir_tree(token name, bool last_is_file, uint mode)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool directory::get_relative_path(token src, token dst, charstr& relout)
+bool directory::get_relative_path(token src, token dst, charstr& relout, bool last_src_is_file)
 {
 #ifdef SYSTYPE_WIN
     bool sf = src.nth_char(1) == ':';
@@ -468,11 +468,14 @@ bool directory::get_relative_path(token src, token dst, charstr& relout)
     relout.reset();
     while(src) {
         src.cut_left_group(DIR_SEPARATORS);
+
+        if(src || !last_src_is_file) {
 #ifdef SYSTYPE_WIN
-        relout << "..\\";
+            relout << "..\\";
 #else
-        relout << "../";
+            relout << "../";
 #endif
+        }
     }
 
     return append_path(relout, dst);

@@ -261,7 +261,7 @@ public:
     static charstr get_home_dir();
 
     ///Get relative path from src to dst
-    static bool get_relative_path(token src, token dst, charstr& relout);
+    static bool get_relative_path(token src, token dst, charstr& relout, bool last_src_is_file = false);
 
     ///Append \a path to the destination buffer
     //@param dst path to append to, also receives the result
