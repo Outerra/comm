@@ -196,10 +196,27 @@ void metastream_test4()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-struct testmtg {
+struct testmtg
+{
+    struct something {
+        charstr blah;
+        int fooi;
+
+        friend metastream& operator || (metastream& m, something& p) {
+            return m.compound_type_stream_as<coid::charstr>(p,
+                [&]() {
+                    m.member("blah", p.blah);
+                    m.member("fooi", p.fooi);
+                },
+                [](something& p, coid::charstr&& v) { p.blah.takeover(v); },
+                [](something& p) -> const coid::charstr& { return p.blah; });
+        }
+    };
+
     dynarray<charstr> as;
     dynarray<int> ar;
     charstr name;
+    token fame;
     int k;
 
     friend metastream& operator || (metastream& m, testmtg& p) {
@@ -209,6 +226,29 @@ struct testmtg {
             m.member("name", p.name);
             m.member("k", p.k);
         });
+
+        /*return m.compound_type_stream_as_compound(p, [&]() {
+            //reflection
+            m.member("as", p.as);
+            m.member("ar", p.ar);
+            m.member("name", p.name);
+            m.member("k", p.k);
+        }, [&]() {
+            //stream
+            int x;
+            coid::charstr y;
+
+            if (m.stream_writing()) {
+                //prepare x, y
+            }
+
+            m.member("x", x);
+            m.member("y", y);
+
+            if (m.stream_reading()) {
+                //do something with x, y
+            }
+        });*/
     }
 };
 

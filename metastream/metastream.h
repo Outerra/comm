@@ -152,17 +152,109 @@ public:
             fn();
             moveout_struct(_binr != 0);
         }
-        else if (!meta_insert(typeid(T).name(), sizeof(T), false))
-        {
+        else if (!meta_insert(typeid(T).name(), sizeof(T), false)) {
             fn();
 
             _last_var = smap().pop();
+            _last_var->desc->streaming_type = _last_var->desc;
+
             _current_var = smap().last();
 
             meta_exit();
         }
         return *this;
     }
+
+    ///Define a compound type that streams as a different (possibly plain) type
+    //@param set void function(T&, Tstream&&) receiving object from stream
+    //@param get [const Tstream& | Tstream] function(T&) returning object to stream
+    template<typename Tstream, typename T, typename Fn, typename FnIn, typename FnOut>
+    metastream& compound_type_stream_as_type(T& v, Fn fn, FnIn set, FnOut get)
+    {
+        if (_binw) {
+            const Tstream& val = get(v);
+            *this || const_cast<Tstream&>(val);
+        }
+        else if (_binr) {
+            Tstream val;
+            *this || val;
+            set(v, std::forward<Tstream>(val));
+        }
+        else {
+            MetaDesc* md = meta_insert(typeid(T).name(), sizeof(T), false);
+            if (!md)
+            {
+                fn();
+
+                _last_var = smap().pop();
+                md = _last_var->desc;
+
+                _current_var = smap().last();
+
+                meta_exit();
+            }
+
+            //capture alias streaming type
+            MetaDesc::Var* oldvar = _current_var;
+            MetaDesc desc;
+            MetaDesc::Var var;
+            var.desc = &desc;
+            _current_var = &var;
+
+            *this || *(Tstream*)0;
+
+            md->streaming_type = desc.children[0].desc;
+            _current_var = oldvar;
+        }
+
+        return *this;
+    }
+
+    ///Define struct streaming scheme with separate structures for streaming and reflection
+    //@param fnrefl functor with member functions defining the struct layout for reflection
+    //@param fnstream functor with member functions defining the struct layout for streaming
+    template<typename T, typename FnRefl, typename FnStream>
+    metastream& compound_type_stream_as(T&, FnRefl fnrefl, FnStream fnstream)
+    {
+        if (streaming()) {
+            _xthrow(movein_process_key(_binr != 0 ? READ_MODE : WRITE_MODE));
+            _rvarname.reset();
+
+            movein_struct(_binr != 0);
+            fnstream();
+            moveout_struct(_binr != 0);
+        }
+        else {
+            MetaDesc* md = meta_insert(typeid(T).name(), sizeof(T), false);
+            if (!md)
+            {
+                fnrefl();
+
+                _last_var = smap().pop();
+                md = _last_var->desc;
+
+                _current_var = smap().last();
+
+                meta_exit();
+            }
+
+            //capture alias streaming type
+            MetaDesc::Var* oldvar = _current_var;
+            MetaDesc desc;
+            MetaDesc::Var var;
+            var.desc = &desc;
+            _current_var = &var;
+            
+            fnstream();
+
+            md->streaming_type = desc.children[0].desc;
+            _current_var = oldvar;
+        }
+
+        return *this;
+    }
+
+
 
     ///Define struct streaming scheme [OBSOLETE - use compound_type instead]
     //@param name unique struct type name
@@ -183,6 +275,8 @@ public:
             fn();
 
             _last_var = smap().pop();
+            _last_var->desc->streaming_type = _last_var->desc;
+
             _current_var = smap().last();
 
             meta_exit();
@@ -208,6 +302,8 @@ public:
             fn();
 
             _last_var = smap().pop();
+            _last_var->desc->streaming_type = _last_var->desc;
+
             _current_var = smap().last();
 
             meta_exit();
@@ -393,19 +489,19 @@ public:
 
     ///Define a variable of given type, with explicit set/get functors
     //@param name variable name, used as a key in output formats
-    //@param set void function(const T&) receiving object from stream
-    //@param get const T& function() returning object to stream
+    //@param set void function(T&&) receiving object from stream
+    //@param get [const T& | T] function() returning object to stream
     template<typename T, typename FnIn, typename FnOut>
     metastream& member_type(const token& name, FnIn set, FnOut get)
     {
         if (_binw) {
-            T tmp(get());
-            *this || tmp;
+            const T& val = get();
+            *this || const_cast<T&>(val);
         }
         else if (_binr) {
             T val;
             *this || val;
-            set(val);
+            set(std::forward<T>(val));
         }
         else
             meta_variable<T>(name, 0);
@@ -415,19 +511,19 @@ public:
     ///Define a variable of given type, with explicit set/get functors and a default value
     //@param name variable name, used as a key in output formats
     //@param defval value to use if the variable is missing from the stream, convertible to T
-    //@param set void function(const T&) receiving object from stream
-    //@param get const T& function() returning object to stream
+    //@param set void function(T&&) receiving object from stream
+    //@param get [const T& | T] function() returning object to stream
     template<typename T, typename D, typename FnIn, typename FnOut>
     metastream& member_type(const token& name, const D& defval, FnIn set, FnOut get)
     {
         if (_binw) {
-            T tmp(get());
-            *this || tmp;
+            const T& val = get();
+            *this || const_cast<T&>(val);
         }
         else if (_binr) {
             T val;
             *this || val;
-            set(val);
+            set(std::forward<T>(val));
         }
         else {
             meta_variable<T>(name, 0);
@@ -439,8 +535,8 @@ public:
     ///Define a variable of given type, with explicit set/get functors and a default value, with optional writing of default value
     //@param name variable name, used as a key in output formats
     //@param defval value to use if the variable is missing from the stream, convertible to T
-    //@param set void function(const T&) receiving object from stream
-    //@param get const T& function() returning object to stream
+    //@param set void function(T&&) receiving object from stream
+    //@param get [const T& | T] function() returning object to stream
     //@param write_default if false, does not write value that equals the defval into output stream
     //@return true if value was read or written and no default was used (also true in meta phase)
     template<typename T, typename D, typename FnIn, typename FnOut>
@@ -448,13 +544,16 @@ public:
     {
         bool used = true;
         if (_binw) {
-            T tmp(get());
-            used = write_optional(!cache_prepared() && !write_default && tmp == defval ? 0 : &tmp);
+            const T& val = get();
+            used = write_optional(!cache_prepared() && !write_default && val == defval ? 0 : &val);
         }
         else if (_binr) {
             T val;
             used = read_optional(val);
-            set(used ? val : defval);
+            if (used)
+                set(std::forward<T>(val));
+            else
+                set(defval);
         }
         else
             meta_variable_optional<T>(name, (const T*)-1);
@@ -1342,74 +1441,30 @@ public:
             write_token(a);
         }
         else {
-            if (meta_decl_array(
-                typeid(a).name(),
-                (ints)&a._ptr,
-                sizeof(a),
-                false,
-                [](const void* a) -> const void* { return static_cast<const token*>(a)->ptr(); },
-                [](const void* a) -> uints { return static_cast<const token*>(a)->len(); },
-                0,
-                [](const void* a, uints& i) -> const void* { return static_cast<const token*>(a)->ptr() + i++; }
-            ))
-                meta_def_primitive<char>("char");
+            compound_type_stream_as(a,
+                [&]() {
+                    member("ptr", a._ptr);
+                    member("pte", a._pte);
+                },
+                [&]() {
+                    if (meta_decl_array(
+                        "coid::token"_T,        //must be different than typeid used above
+                        (ints)&a._ptr,
+                        sizeof(a),
+                        false,
+                        [](const void* a) -> const void* { return static_cast<const token*>(a)->ptr(); },
+                        [](const void* a) -> uints { return static_cast<const token*>(a)->len(); },
+                        0,
+                        [](const void* a, uints& i) -> const void* { return static_cast<const token*>(a)->ptr() + i++; }
+                    ))
+                        meta_def_primitive<char>("char");
+                }
+            );
         }
+
         return *this;
     }
 
-
-
-    /*
-        template<class T>
-        static type get_type(const T&)              { return bstype::t_type<T>(); }
-
-
-        metastream& operator << (const bool&a)      {meta_primitive( "bool", get_type(a) ); return *this;}
-        metastream& operator << (const int8&a)      {meta_primitive( "int8", get_type(a) ); return *this;}
-        metastream& operator << (const uint8&a)     {meta_primitive( "uint8", get_type(a) ); return *this;}
-        metastream& operator << (const int16&a)     {meta_primitive( "int16", get_type(a) ); return *this;}
-        metastream& operator << (const uint16&a)    {meta_primitive( "uint16", get_type(a) ); return *this;}
-        metastream& operator << (const int32&a)     {meta_primitive( "int32", get_type(a) ); return *this;}
-        metastream& operator << (const uint32&a)    {meta_primitive( "uint32", get_type(a) ); return *this;}
-        metastream& operator << (const int64&a)     {meta_primitive( "int64", get_type(a) ); return *this;}
-        metastream& operator << (const uint64&a)    {meta_primitive( "uint64", get_type(a) ); return *this;}
-
-        metastream& operator << (const char&a)      {meta_primitive( "char", get_type(a) ); return *this;}
-
-    #ifdef SYSTYPE_WIN
-    # ifdef SYSTYPE_32
-        metastream& operator << (const ints&a)      {meta_primitive( "int", get_type(a) ); return *this;}
-        metastream& operator << (const uints&a)     {meta_primitive( "uint", get_type(a) ); return *this;}
-    # else //SYSTYPE_64
-        metastream& operator << (const int&a)       {meta_primitive( "int", get_type(a) ); return *this;}
-        metastream& operator << (const uint&a)      {meta_primitive( "uint", get_type(a) ); return *this;}
-    # endif
-    #elif defined(SYSTYPE_32)
-        metastream& operator << (const long&a)      {meta_primitive( "long", get_type(a) ); return *this;}
-        metastream& operator << (const ulong&a)     {meta_primitive( "ulong", get_type(a) ); return *this;}
-    #endif
-
-        metastream& operator << (const float&a)     {meta_primitive( "float", get_type(a) ); return *this;}
-        metastream& operator << (const double&a)    {meta_primitive( "double", get_type(a) ); return *this;}
-        metastream& operator << (const long double&a)   {meta_primitive( "long double", get_type(a) ); return *this;}
-
-
-        metastream& operator << (const char* const& a) {
-            meta_decl_array(); meta_primitive( "char", bstype::t_type<char>() ); return *this;
-        }
-        //metastream& operator << (const unsigned char* const&a)  {meta_primitive( "const unsigned char *", binstream::t_type<char>() ); return *this;}
-
-        metastream& operator << (const bstype::kind& k) {
-            meta_primitive( "uint", bstype::t_type<uint>() ); return *this;
-        }
-
-        metastream& operator << (const timet&a)     {meta_primitive( "time", get_type(a) ); return *this;}
-
-        metastream& operator << (const opcd&)       {meta_primitive( "opcd", bstype::t_type<opcd>() ); return *this;}
-
-        metastream& operator << (const charstr&a)   {meta_decl_array(); meta_primitive( "char", bstype::t_type<char>() ); return *this;}
-        metastream& operator << (const token&a)     {meta_decl_array(); meta_primitive( "char", bstype::t_type<char>() ); return *this;}
-    */
 
     ////////////////////////////////////////////////////////////////////////////////
     //@{ meta_* functions deal with building the description tree
@@ -1417,6 +1472,7 @@ protected:
 
     MetaDesc::Var* meta_fill_parent_variable(MetaDesc* d)
     {
+        //DASSERT(!_alias_mode);
         MetaDesc::Var* var;
 
         //remember the first descriptor, it's the root type requested for streaming
@@ -1432,37 +1488,38 @@ protected:
         return var;
     }
 
-    bool meta_find(const token& name, bool* is_plain = 0)
+    MetaDesc* meta_find(const token& name)//, bool* is_plain = 0)
     {
         MetaDesc* d = smap().find(name);
         if (!d)
-            return false;
+            return d;
 
         _last_var = meta_fill_parent_variable(d);
-        if (is_plain)
-            *is_plain = _last_var->get_type().is_plain();
+        //if (is_plain)
+        //    *is_plain = _last_var->get_type().is_plain();
 
         meta_exit();
-        return true;
+        return d;
     }
 
-    bool meta_insert(const token& name, uints size, bool plain)
+    MetaDesc* meta_insert(const token& name, uints size, bool plain)
     {
-        if (meta_find(name))
-            return true;
+        MetaDesc* md = meta_find(name);
+        if (md)
+            return md;
 
         auto& sm = smap();
-        MetaDesc* d = sm.create(
+        md = sm.create(
             name,
             plain ? type::plain_compound() : type(),
             _cur_stream_fn);
 
-        d->type_size = size;
+        md->type_size = size;
 
-        _current_var = meta_fill_parent_variable(d);
+        _current_var = meta_fill_parent_variable(md);
         sm.push(_current_var);
 
-        return false;
+        return 0;
     }
 
 public:
@@ -1688,6 +1745,7 @@ public:
             d->fncount = fncount;
             d->fnpush = fnpush;
             d->fnextract = fnextract;
+            d->streaming_type = d;
 
             _current_var = meta_fill_parent_variable(d);
             sm.push(_current_var);
@@ -1755,15 +1813,18 @@ public:
 
     ///Only for primitive types
     template<class T>
-    void meta_def_primitive(const char* type_name)
+    MetaDesc* meta_def_primitive(const char* type_name)
     {
         type t = bstype::t_type<T>();
         DASSERT(t.is_primitive());
 
         MetaDesc* d = smap().find_or_create(type_name, t, _cur_stream_fn);
+
         _last_var = meta_fill_parent_variable(d);
+        d->streaming_type = d;
 
         meta_exit();
+        return d;
     }
 
     ///Get back from multiple array decl around current type
@@ -1771,7 +1832,7 @@ public:
     {
         auto& sm = smap();
 
-        while (_current_var && _current_var->is_array()) {
+        while (_current_var && _current_var->desc->is_array()) {
             _last_var = sm.pop();
             _current_var = sm.last();
         }
@@ -1818,6 +1879,16 @@ private:
             return insert(std::move(d));
         }
 
+        MetaDesc* create_anon(const token& n, type t, MetaDesc::stream_func fn)
+        {
+            MetaDesc* d = insert_anon();
+            d->type_name = n;
+            d->btype = t;
+            d->type_size = t.get_size();
+            d->fnstream = fn;
+            return d;
+        }
+
         MetaDesc* find_or_create(const token& n, type t, MetaDesc::stream_func fn)
         {
             MetaDesc* d = find(n);
@@ -1838,6 +1909,7 @@ private:
 
     protected:
         MetaDesc* insert(MetaDesc&& v);
+        MetaDesc* insert_anon();
 
         dynarray<MetaDesc::Var*> _stack;
         void* pimpl;
@@ -1856,6 +1928,7 @@ private:
     MetaDesc::Var _root;
     MetaDesc::Var* _current_var;
     MetaDesc::Var* _last_var;
+    //MetaDesc* _streamdesc = 0;
 
     token _cur_variable_name;
     MetaDesc::stream_func _cur_stream_fn;
@@ -1881,6 +1954,7 @@ private:
 
     bool _binw;
     bool _binr;
+    //bool _alias_mode = false;           //< true if creating alias streaming descriptor
     bool _dometa;                       //< true if shoud stream metadata, false if only the values
     bool _beseparator;                  //< true if separator between members should be read or written
 
@@ -2298,7 +2372,7 @@ protected:
             return 0;
         }
 
-        MetaDesc::Var* next = par->desc->next_child(_curvar.var, read);
+        MetaDesc::Var* next = par->stream_desc()->next_child(_curvar.var, read);
 
         //find what should come next
         if (_curvar.var == _cachevar) {
@@ -2456,7 +2530,7 @@ protected:
             if (cache_prepared())  //cached compound array
             {
                 //write to cache
-                DASSERT(!_curvar.var->is_primitive());
+                DASSERT(!_curvar.var->stream_desc()->is_primitive());
 
                 uints prevoff = UMAXS, i;
                 for (i = 0; i < n; ++i)
@@ -2579,7 +2653,7 @@ protected:
             {
                 //reading from cache
                 DASSERT(_cachevar || n != UMAXS);
-                DASSERT(!_curvar.var->is_primitive());
+                DASSERT(!_curvar.var->stream_desc()->is_primitive());
 
                 uints i, prevoff = UMAXS;
                 for (i = 0; i < n; ++i)
@@ -3113,7 +3187,7 @@ protected:
             return moveto_expected_target(READ_MODE);
         }
 
-        MetaDesc& desc = *var.desc;
+        MetaDesc& desc = *var.stream_desc();
 
         if (desc.is_primitive()) {
             return data_value(0, desc.btype, READ_MODE);

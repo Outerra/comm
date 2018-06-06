@@ -54,10 +54,10 @@ void metastream::warn_obsolete(const token& name)
 ////////////////////////////////////////////////////////////////////////////////
 
 struct SMReg {
-    typedef hash_keyset<MetaDesc,_Select_Copy<MetaDesc,token> >  MAP;
-    MAP _map;
-    //dynarray< local<MetaDesc> > _arrays;
-    //comm_mutex _mutex;
+    typedef hash_keyset<MetaDesc,_Select_Copy<MetaDesc,token>> map_t;
+    map_t _map;
+
+    dynarray<local<MetaDesc>> _anon;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -65,7 +65,7 @@ void metastream::structure_map::get_all_types( dynarray<const MetaDesc*>& dst ) 
 {
     SMReg& smr = *(SMReg*)pimpl;
 
-    SMReg::MAP::const_iterator b,e;
+    SMReg::map_t::const_iterator b,e;
     b = smr._map.begin();
     e = smr._map.end();
 
@@ -97,13 +97,20 @@ MetaDesc* metastream::structure_map::insert( MetaDesc&& v )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+MetaDesc* metastream::structure_map::insert_anon()
+{
+    SMReg& smr = *(SMReg*)pimpl;
+
+    return (*smr._anon.add() = new MetaDesc()).ptr();
+}
+
+////////////////////////////////////////////////////////////////////////////////
 MetaDesc* metastream::structure_map::find( const token& k ) const
 {
-    //SMReg& smr = SINGLETON(SMReg);
-    //GUARDTHIS(smr._mutex);
     const SMReg& smr = *(const SMReg*)pimpl;
 
-    return (MetaDesc*) smr._map.find_value(k);
+    const MetaDesc* md = smr._map.find_value(k);
+    return (MetaDesc*)md;
 }
 
 COID_NAMESPACE_END

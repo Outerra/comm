@@ -67,30 +67,34 @@ struct MetaDesc
         bool optional = false;          //< variable is optional
         bool singleref = false;         //< desc refers to a pointer type pointing to a single object, not an array
 
+        MetaDesc* stream_desc() const   { DASSERT(desc->streaming_type); return desc->streaming_type; }
 
-        bool is_array() const           { return desc->is_array(); }
+        //bool is_array() const           { return desc->is_array(); }
         bool is_array_element() const   { return varname.is_empty() && !nameless_root; }
-        bool is_primitive() const       { return desc->is_primitive(); }
-        bool is_compound() const        { return desc->is_compound(); }
+        //bool is_primitive() const       { return desc->is_primitive(); }
+        //bool is_compound() const        { return desc->is_compound(); }
 
         bool skipped() const            { return obsolete; }
 
         bool has_default() const        { return defval.size() > 0; }
 
         ///Get byte size of primitive element
-        ushort get_size() const         { return desc->btype.get_size(); }
+        //ushort get_size() const         { return desc->btype.get_size(); }
 
-        type get_type() const           { return desc->btype; }
+        //type get_type() const           { return desc->btype; }
 
 
-        Var* element() const            { DASSERT( is_array() );  return desc->first_child(true); }
+        Var* stream_element() const {
+            DASSERT(stream_desc()->is_array());
+            return stream_desc()->first_child(true);
+        }
 
         charstr& dump( charstr& dst ) const
         {
             if( !varname.is_empty() )
                 dst << char('.') << varname;
 
-            if( is_array() ) {
+            if( desc->is_array() ) {
                 if( desc->array_size == UMAXS )
                     dst << "[]";
                 else
@@ -107,7 +111,7 @@ struct MetaDesc
         }
 
         Var* add_child( MetaDesc* d, const token& n, int offset ) {
-            DASSERT(!is_array() || desc->children.size() == 0);
+            DASSERT(!desc->is_array() || desc->children.size() == 0);
             return desc->add_desc_var(d, n, offset);
         }
     };
@@ -124,6 +128,8 @@ struct MetaDesc
     bool embedded = true;               //< member is embedded, not a pointer
     bool is_array_type = false;
     bool is_pointer = false;
+
+    MetaDesc* streaming_type = 0;       //< streaming type (can be the same as this type)
 
     int raw_pointer_offset = -1;        //< byte offset to variable pointing to the linear array with elements, if exists
 
@@ -160,6 +166,9 @@ struct MetaDesc
     uints num_children() const          { return children.size(); }
 
     type array_type() const             { return children[0].desc->btype; }
+
+    ///Get byte size of primitive element
+    ushort get_size() const             { return btype.get_size(); }
 
     ///Get first member
     Var* first_child( bool read ) const

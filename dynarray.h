@@ -766,6 +766,23 @@ public:
         return ptr;
     };
 
+    ///Push item into array if it doesn't exist
+    T& push_if_absent(const T& v) {
+        ints id = index_of(v);
+        return id < 0
+            ? *push(v)
+            : _ptr[(uints)id];
+    }
+
+    ///Push item into array if it doesn't exist
+    T& push_if_absent(T&& v) {
+        ints id = index_of(v);
+        return id < 0
+            ? *push(std::forward<T>(v))
+            : _ptr[(uints)id];
+    }
+
+
 #ifdef COID_VARIADIC_TEMPLATES
     template<class...Ps>
     T* push_construct(Ps&&... ps) {
@@ -1110,65 +1127,159 @@ public:
 
 
     ///Linear search whether array contains element comparable with \a key
-    //@return -1 if not contained, otherwise index to the key
-    //@{
+    //@return -1 if not contained, otherwise index
     template<class K>
-    ints contains( const K& key ) const
+    ints index_of(const K& key) const
     {
         uints c = _count();
-        for( uints i=0; i<c; ++i )
-            if( _ptr[i] == key )  return i;
+        for (uints i = 0; i < c; ++i)
+            if (_ptr[i] == key)
+                return i;
         return -1;
     }
 
     ///Linear search whether array contains element comparable with \a key via equality functor
     template<class K, class EQ>
-    ints contains( const K& key, const EQ& eq ) const
+    ints index_of(const K& key, const EQ& eq) const
     {
         uints c = _count();
-        for( uints i=0; i<c; ++i )
-            if(eq(_ptr[i], key))  return i;
+        for (uints i = 0; i < c; ++i)
+            if (eq(_ptr[i], key))
+                return i;
         return -1;
     }
 
-    //@}
-
-    ///Linear search (backwards) whether array contains element comparable with \a key
-    //@return -1 if not contained, otherwise index to the key
-    //@{
     template<class K>
-    ints contains_back( const K& key ) const
+    ints index_of_back(const K& key) const
     {
         uints c = _count();
-        for(; c>0; )
+        for (; c > 0; )
         {
             --c;
-            if( _ptr[c] == key )  return c;
+            if (_ptr[c] == key)
+                return c;
         }
         return -1;
     }
+
+    template<class K, class EQ>
+    ints index_of_back(const K& key, const EQ& eq) const
+    {
+        uints c = _count();
+        for (; c > 0; )
+        {
+            --c;
+            if (eq(_ptr[c], key))
+                return c;
+        }
+        return -1;
+    }
+
+
+    ///Linear search whether array contains element comparable with \a key
+    //@return 0 if not contained, otherwise ptr to the key
+    //@{
+    template<class K>
+    const T* contains(const K& key) const
+    {
+        uints c = _count();
+        for (uints i = 0; i < c; ++i)
+            if (_ptr[i] == key)
+                return _ptr + i;
+        return 0;
+    }
+
+    ///Linear search whether array contains element comparable with \a key via equality functor
+    template<class K, class EQ>
+    const T* contains(const K& key, const EQ& eq) const
+    {
+        uints c = _count();
+        for (uints i = 0; i < c; ++i)
+            if (eq(_ptr[i], key))
+                return _ptr + i;
+        return 0;
+    }
+
+    template<class K>
+    T* contains(const K& key) { return const_cast<T*>(std::as_const(*this).contains(key)); }
+
+    template<class K, class EQ>
+    T* contains(const K& key, const EQ& eq) { return const_cast<T*>(std::as_const(*this).contains(key, eq)); }
+    //@}
+
+    ///Linear search (backwards) whether array contains element comparable with \a key
+    //@return 0 if not contained, otherwise ptr to the key
+    //@{
+    template<class K>
+    const T* contains_back(const K& key) const
+    {
+        uints c = _count();
+        for (; c > 0; )
+        {
+            --c;
+            if (_ptr[c] == key)
+                return _ptr + c;
+        }
+        return 0;
+    }
+
+    template<class K, class EQ>
+    const T* contains_back(const K& key, const EQ& eq) const
+    {
+        uints c = _count();
+        for (; c > 0; )
+        {
+            --c;
+            if (eq(_ptr[c], key))
+                return _ptr + c;
+        }
+        return 0;
+    }
+
+    template<class K>
+    T* contains_back(const K& key) { return const_cast<T*>(std::as_const(*this).contains_back(key)); }
+
+    template<class K, class EQ>
+    T* contains_back(const K& key, const EQ& eq) { return const_cast<T*>(contains_back(key, eq)); }
     //@}
 
     ///Binary search whether sorted array contains element comparable to \a key
     /// Uses operator T<K or functor(T,K) to search for the element, and operator T==K for equality comparison
-    //@return element position if found, or (-1 - insert_pos)
+    //@return ptr to element if found or 0 otherwise
+    //@param sort_index optional ptr to variable receiving sort index
     //@{
     template<class K>
-    ints contains_sorted( const K& key ) const
+    const T* contains_sorted(const K& key, uints* sort_index = 0) const
     {
         uints lb = lower_bound(key);
-        if( lb >= size()
-            || !(_ptr[lb] == key) )  return -1 - ints(lb);
-        return lb;
+        if (sort_index)
+            *sort_index = lb;
+
+        return lb >= size() || !(_ptr[lb] == key)
+            ? 0
+            : _ptr + lb;
     }
 
     template<class K, class FUNC>
-    ints contains_sorted( const K& key, const FUNC& fn ) const
+    const T* contains_sorted( const K& key, const FUNC& fn, uints* sort_index =0 ) const
     {
         uints lb = lower_bound(key,fn);
-        if( lb >= size()
-            || !(_ptr[lb] == key) )  return -1 - ints(lb);
-        return lb;
+        if (sort_index)
+            *sort_index = lb;
+
+        return lb >= size() || !(_ptr[lb] == key)
+            ? 0
+            : _ptr + lb;
+    }
+
+    template<class K>
+    T* contains_sorted(const K& key, uints* sort_index = 0) {
+        return const_cast<T*>(std::as_const(*this).contains_sorted(key, sort_index));
+    }
+
+    template<class K, class FUNC>
+    T* contains_sorted(const K& key, const FUNC& fn, uints* sort_index = 0) {
+        return const_cast<T*>(std::as_const(*this).contains_sorted(key, fn, sort_index));
     }
     //@}
 
