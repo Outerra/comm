@@ -437,44 +437,63 @@ bool directory::get_relative_path(token src, token dst, charstr& relout, bool la
     bool df = dst.first_char() == '/';
 #endif
 
-    if(sf != df) return false;
+    if (sf != df) return false;
 
-    if(sf) {
+    if (sf) {
 #ifndef SYSTYPE_WIN
         src.shift_start(1);
         dst.shift_start(1);
 #endif
     }
 
-    if(directory::is_separator(src.last_char()))
+    if (directory::is_separator(src.last_char()))
         src.shift_end(-1);
 
-    while(1)
+    const char* ps = src.ptr();
+    const char* pe = 0;
+
+    while (1)
     {
         token st = src.cut_left_group(DIR_SEPARATORS);
         token dt = dst.cut_left_group(DIR_SEPARATORS);
 
 #ifdef SYSTYPE_WIN
-        if(!st.cmpeqi(dt)) {
+        if (!st.cmpeqi(dt)) {
 #else
-        if(st != dt) {
+        if (st != dt) {
 #endif
             src.set(st.ptr(), src.ptre());
             dst.set(dt.ptr(), dst.ptre());
             break;
         }
+
+        pe = st.ptre();
     }
 
+    token presrc = token(ps, pe);
     relout.reset();
-    while(src) {
-        src.cut_left_group(DIR_SEPARATORS);
 
-        if(src || !last_src_is_file) {
-#ifdef SYSTYPE_WIN
-            relout << "..\\";
-#else
-            relout << "../";
-#endif
+    while (src) {
+        token rt = src.cut_left_group(DIR_SEPARATORS);
+
+        if (rt == ".."_T) {
+            if (relout) {
+                token r2 = relout;
+                r2--;
+                r2.cut_right_back(separator());
+                relout.resize(r2.len());
+            }
+            else if (presrc) {
+                token r2 = presrc.cut_right_group_back(DIR_SEPARATORS);
+                relout << r2;
+                relout << separator();
+            }
+            else
+                return false;
+        }
+        else if (src || !last_src_is_file) {
+            relout << ".."_T;
+            relout << separator();
         }
     }
 

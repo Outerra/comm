@@ -203,7 +203,7 @@ struct testmtg
         int fooi;
 
         friend metastream& operator || (metastream& m, something& p) {
-            return m.compound_type_stream_as<coid::charstr>(p,
+            return m.compound_type_stream_as_type<coid::charstr>(p,
                 [&]() {
                     m.member("blah", p.blah);
                     m.member("fooi", p.fooi);
