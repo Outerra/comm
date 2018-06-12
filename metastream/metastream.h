@@ -2102,7 +2102,7 @@ private:
 
         void* insert_void_padded(uints size)
         {
-            pad();
+            pad(size);
             return buf->add(size);
         }
 
