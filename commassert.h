@@ -129,6 +129,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 COID_NAMESPACE_BEGIN
 
+class opt_string;
+opcd __rassert( const opt_string& txt, opcd exc, const char* file, int line, const char* function, const char* expr );
+
 ///Downcast value of integral type, checking for overflow and underflow
 //@return saturated cast value
 template <class T, class S>
@@ -192,8 +195,6 @@ private:
 
     zstring* _zstr;
 };
-
-opcd __rassert( const opt_string& txt, opcd exc, const char* file, int line, const char* function, const char* expr );
 
 COID_NAMESPACE_END
 

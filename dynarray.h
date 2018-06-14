@@ -1450,7 +1450,7 @@ public:
             return;
 
         uints i = nitems;
-        if (!has_trivial_destructor<T>::value)
+        if (!std::is_trivially_destructible<T>::value)
             for (T* p = _ptr + pos; i > 0; --i, ++p)  p->~T();
 
         __del(_ptr, pos, _count(), nitems);

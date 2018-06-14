@@ -293,12 +293,12 @@ public:
                 typeid(s).name(),
                 false,
                 0,
-                [](const void* a) -> const void* { return static_cast<const ref<T>*>(a)->_p; },
+                [](const void* a) -> const void* { return static_cast<const ref<T>*>(a)->_o; },
                 [](const void* a) -> uints { return static_cast<const ref<T>*>(a)->is_empty() ? 0 : 1; },
-                [](void* a, uints& i) -> void* { return static_cast<ref<T>*>(a)->_p; },
-                [](const void* a, uints& i) -> const void* { return static_cast<const ref<T>*>(a)->_p; }
+                [](void* a, uints& i) -> void* { return static_cast<ref<T>*>(a)->_o; },
+                [](const void* a, uints& i) -> const void* { return static_cast<const ref<T>*>(a)->_o; }
             ))
-                m || *s._p;
+                m || *s._o;
         }
         return m;
     }

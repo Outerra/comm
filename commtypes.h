@@ -279,7 +279,7 @@ struct versionid
     versionid(uint id, uint8 version) : id(id), version(version)
     {}
 
-    bool valid() const { return ((id << 8) | version) != UINT_MAX; }
+    bool valid() const { return ((id << 8) | version) != 0xffffffffU; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////

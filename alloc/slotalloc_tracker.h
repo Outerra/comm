@@ -258,8 +258,26 @@ private:
 
 
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
+template <bool UNINIT, typename T>
+struct newtor {
+    static T* create(T* p) {
+        return p;
+    }
+};
+
+template <typename T>
+struct newtor<false, T> {
+    static T* create(T* p) {
+        return new(p) T;
+    }
+};
+
+
+
+////////////////////////////////////////////////////////////////////////////////
 
 /*@{
 Copy objects to a target that can be either initialized or uninitialized.

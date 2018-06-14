@@ -1489,13 +1489,6 @@ private:
     }
 
     template <bool UNINIT>
-    static T* newT(T* p) { return p; }
-
-    template <>
-    static T* newT<false>(T* p) { return new(p) T; }
-
-
-    template <bool UNINIT>
     T* expand(uints n)
     {
         uints np = align_to_chunks(_created + n, page::ITEMS);
@@ -1508,12 +1501,12 @@ private:
         //in POOL mode the unallocated items in between the valid ones are assumed to be constructed
         if (POOL && !UNINIT && n > 1) {
             for_range_unchecked(base, n - 1, [](T* p) {
-                newT<UNINIT>(p);
+                slotalloc_detail::newtor<UNINIT, T>::create(p);
             });
         }
 
         T* p = ptr(_created - 1);
-        return newT<UNINIT>(p);
+        return slotalloc_detail::newtor<UNINIT, T>::create(p);
     }
 
     bool set_bit(uints k) { return set_bit(_allocated, k); }

@@ -391,7 +391,7 @@ public:
     //@param streamed false variable should not be streamed, just a part of meta description, can point to 1..N items (default)
     //@param          true variable is indirectly referenced to by a pointer
     //@note use member_optional or member_type for special handling when the pointer has to be allocated etc.
-    template<typename T, typename = !std::enable_if_t<std::is_same<const char*, T*>::value>>
+    template<typename T, typename = std::enable_if_t<!std::is_same<const char*, T*>::value>>
     bool member(const token& name, T*& v, bool streamed = false)
     {
         member_ptr(name, v, streamed);
