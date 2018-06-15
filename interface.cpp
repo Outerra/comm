@@ -262,7 +262,7 @@ public:
         zstring str = name;
         str.get_str() << "@maker" << '.' << script;
 
-        return find_wrapper(name);
+        return (void*)find_wrapper(name);
     }
 
     virtual dynarray<interface_register::creator>& get_interface_clients(const tokenhash& iface, uint hash, dynarray<interface_register::creator>& dst)
@@ -287,7 +287,7 @@ public:
 
             interface_register::creator* p = dst.add();
             p->name = i->script;
-            p->creator_ptr = static_cast<interface_register::wrapper_fn>(i->creator_ptr);
+            p->creator_ptr = i->creator_ptr;
         }
 
         return dst;
@@ -400,7 +400,7 @@ void* interface_register::get_interface_creator(const token& ifcname)
         return 0;
     }
 
-    return reg.find_wrapper(ifcname);
+    return (void*)reg.find_wrapper(ifcname);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

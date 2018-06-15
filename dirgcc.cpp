@@ -45,6 +45,9 @@
 #include <fnmatch.h>
 #include <errno.h>
 #include <utime.h>
+#include <dlfcn.h>
+
+#define xstat64 stat64
 
 COID_NAMESPACE_BEGIN
 
@@ -159,6 +162,7 @@ opcd directory::mkdir( zstring name, mode_t mode )
 ////////////////////////////////////////////////////////////////////////////////
 charstr directory::get_cwd()
 {
+    charstr buf;
     uints size = PATH_MAX;
 
     while (size < 1024 && !getcwd(buf.get_buf(size - 1), size))
@@ -192,9 +196,9 @@ charstr& directory::get_module_path_func(const void* fn, charstr& dst, bool appe
     dladdr((void*)fn, &info);
 
     if (append)
-        dst << dli_fname;
+        dst << info.dli_fname;
     else
-        dst = dli_fname;
+        dst = info.dli_fname;
 
     return dst;
 }

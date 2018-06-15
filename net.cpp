@@ -79,6 +79,8 @@
 # include <dlfcn.h>
 # include <memory.h>
 # include <stdarg.h>
+# include <dlfcn.h>
+# include <link.h>
 
 #endif
 
@@ -244,9 +246,19 @@ namespace coid {
         return (_handle==NULL) ? NULL : dlsym(_handle, funcname);
     }
 
-    charstr& module_path(charstr& dst, bool append)
+    charstr& dynamic_library::module_path(charstr& dst, bool append)
     {
-#error TODO dladdr
+        struct link_map* lm = 0;
+        dlinfo(_handle, RTLD_DI_LINKMAP, &lm);
+
+        if (lm) {
+            if (append)
+                dst << lm->l_name;
+            else
+                dst = lm->l_name;
+        }
+
+        return dst;
     }
 
     dynamic_library::~dynamic_library()

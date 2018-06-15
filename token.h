@@ -869,6 +869,10 @@ struct token
             return ctr.process_notfound(*this, r);
     }
 
+    token cut_left_group(char separator, cut_trait ctr = cut_trait_remove_sep()) {
+        return cut_left(separator, ctr);
+    }
+
     ///Cut left token up to the substring
     //@param icase true if case should be ignored
     token cut_left(const token& ss, bool icase, cut_trait ctr = cut_trait_remove_sep())
@@ -935,6 +939,10 @@ struct token
         }
         else
             return ctr.process_notfound(*this, r);
+    }
+
+    token cut_left_group_back(char separator, cut_trait ctr = cut_trait_remove_sep()) {
+        return cut_left_back(separator, ctr);
     }
 
     ///Cut left token, searching for a substring separator backwards
@@ -1005,6 +1013,10 @@ struct token
         return cut_left_group(separators, ctr.make_swap());
     }
 
+    token cut_right_group(char separator, cut_trait ctr = cut_trait_remove_sep()) {
+        return cut_right(separator, ctr);
+    }
+
     ///Cut right token up to the specified substring
     token cut_right(const token& ss, bool icase, cut_trait ctr = cut_trait_remove_sep())
     {
@@ -1027,6 +1039,10 @@ struct token
     token cut_right_group_back(const token& separators, cut_trait ctr = cut_trait_remove_sep())
     {
         return cut_left_group_back(separators, ctr.make_swap());
+    }
+
+    token cut_right_group_back(char separator, cut_trait ctr = cut_trait_remove_sep()) {
+        return cut_right_back(separator, ctr);
     }
 
     ///Cut right substring, searching for separator backwards

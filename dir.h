@@ -246,12 +246,12 @@ public:
     ///Get current module file path
     static charstr get_module_path() {
         charstr buf;
-        get_module_path_func(&dummy_func, buf, false);
+        get_module_path_func((const void*)&dummy_func, buf, false);
         return buf;
     }
 
     static charstr& get_module_path(charstr& dst, bool append = false) {
-        return get_module_path_func(&dummy_func, dst, append);
+        return get_module_path_func((const void*)&dummy_func, dst, append);
     }
 
     ///Get temp directory
