@@ -506,14 +506,21 @@ bool directory::compact_path(charstr& dst, char tosep)
     token dtok = dst;
 
 #ifdef SYSTYPE_WIN
-    bool absp = dtok.nth_char(1) == ':';
-    if(absp) {
+    bool absp = false;
+
+    if (dtok.begins_with("\\\\")) {
+        absp = true;
+        dtok.shift_start(2);
+    }
+    else if (dtok.nth_char(1) == ':') {
+        absp = true;
         char c2 = dtok.nth_char(2);
-        if(c2 != '/' && c2 != '\\' && c2 != 0)
+
+        if (c2 != '/' && c2 != '\\' && c2 != 0)
             return false;
-        if(!c2)
+        if (!c2)
             return true;
-        if(tosep)
+        if (tosep)
             dst[2] = tosep;
         dtok.shift_start(3);
     }

@@ -46,16 +46,59 @@
 
 COID_NAMESPACE_BEGIN
 
+///Conversion from signed to unsigned values by interleaving, make unsigned by interleaving 0 -1 1 -2 2 ...
+template <class INT, bool HASUNDEF>
+struct interleaver {
+    typedef std::make_unsigned_t<INT> UINT;
+    enum : int {
+        BITS = 8 * sizeof(INT) - 1,
+    };
+
+    static UINT encode(INT v) {
+        return (v << 1) ^ (v >> BITS);
+    }
+
+    static INT decode(UINT v) {
+        return (INT(v << BITS) >> BITS) ^ (v >> 1);
+    }
+};
+
+///Specialization for undefined value (INT_MIN), shift sequence by one
+template <class INT>
+struct interleaver<INT, true> {
+    typedef std::make_unsigned_t<INT> UINT;
+    enum : int {
+        BITS = 8 * sizeof(INT) - 1,
+    };
+
+    static UINT encode(INT v) {
+        return ((v << 1) ^ (v >> BITS)) + 1;
+    }
+
+    static INT decode(UINT v) {
+        --v;
+        return (INT(v << BITS) >> BITS) ^ (v >> 1);
+    }
+};
+
+
 
 ///Run-length Rice encoder/decoder
-template<class INT, int MINPLANE=0>
+template<class INT, int MINPLANE=0, bool HASUNDEF=false>
 struct rlr_coder
 {
     typedef std::make_unsigned_t<INT> UINT;
 
-    enum {
-        BITS = 8*sizeof(INT)-1,
-    };
+    //constexpr int BITS = 8 * sizeof(INT) - 1;
+
+    static UINT encode_sign(INT v) {
+        return interleaver<INT, HASUNDEF>::encode(v);
+    }
+
+    static INT decode_sign(UINT v) {
+        return interleaver<INT, HASUNDEF>::decode(v);
+    }
+
 
     rlr_coder() {
         dataend = 0;
@@ -175,7 +218,8 @@ struct rlr_coder
     void encode1( INT vs )
     {
         //make unsigned by interleaving 0 -1 1 -2 2 ...
-        UINT v = (vs<<1) ^ (vs>>BITS);
+        UINT v = encode_sign(vs);
+        //UINT v = (vs<<1) ^ (vs>>BITS);
 
         if(v>>plane)
         {
@@ -324,11 +368,6 @@ protected:
             }
         }
     }
-
-    static INT decode_sign( INT v ) {
-        return (INT(v<<BITS)>>BITS) ^ (v>>1);
-    }
-
 
 private:
 

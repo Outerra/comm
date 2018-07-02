@@ -100,6 +100,24 @@ public:
         init_streams();
     }
 
+    packstreamzip(packstreamzip&& src) : packstream(std::move(src)) {
+        _wblockout.takeover(src._wblockout);
+        _rblockin.takeover(src._rblockin);
+
+        inflateEnd(&_strin);
+        deflateEnd(&_strout);
+        init_streams();
+    }
+
+    packstreamzip(const packstreamzip& src) : packstream(src) {
+        _wblockout = src._wblockout;
+        _rblockin = src._rblockin;
+
+        inflateEnd(&_strin);
+        deflateEnd(&_strout);
+        init_streams();
+    }
+
 protected:
 
     void init_streams()
