@@ -512,6 +512,13 @@ public:
     }
     //@}
 
+    ///Append newline, but only if there's already some text
+    charstr& sepline() {
+        if (len() > 0)
+            append('\n');
+        return *this;
+    }
+
     //concatenation
     TOKEN_OP_STR_NONCONST(charstr&, +=);
 
