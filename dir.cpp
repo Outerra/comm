@@ -389,9 +389,13 @@ opcd directory::delete_files(token path_and_pattern)
     opcd e = dir.open(path_and_pattern);
     if(e) return e;
 
-    while(dir.next()) {
+    while (dir.next()) {
+        if (dir.get_last_file_name_token() == ".."_T)
+            continue;
+
         opcd le = delete_file(dir.get_last_full_path());
-        if(le) e = le;
+        if(le)
+            e = le;
     }
 
     return e;

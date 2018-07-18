@@ -1926,10 +1926,11 @@ public:
     uints reserved() const { return _tstr.reserved_total(); }
 
     ///Reset string to empty but keep the memory
-    void reset() {
+    charstr& reset() {
         if(_tstr.size())
             _tstr[0] = 0;
         _tstr.reset();
+        return *this;
     }
 
     ~charstr() {}
