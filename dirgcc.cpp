@@ -128,10 +128,12 @@ bool directory::is_regular( ushort mode )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool directory::is_valid(zstring dir)
+int directory::is_valid(zstring path)
 {
     xstat st;
-    return xstat64(no_trail_sep(dir), &st) == 0;
+    return xstat64(no_trail_sep(dir), &st) == 0
+        ? (is_regular(st.st_mode) ? 1 : 2)
+        : 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

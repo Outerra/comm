@@ -160,7 +160,8 @@ public:
     bool is_entry_subdirectory() const;     //< a directory, but not . or ..
     bool is_entry_regular() const;
 
-    static bool is_valid(zstring dir);
+    //@return 0 is path is invalid, 1 if file, 2 directory
+    static int is_valid(zstring path);
 
     //@return true if path is a directory
     static bool is_valid_directory(zstring arg);
@@ -178,7 +179,7 @@ public:
 
     static int chdir(zstring name);
 
-    static opcd delete_directory(zstring src, bool recursive = false);
+    static opcd delete_directory(zstring src, bool recursive);
 
     static opcd copy_file(zstring src, zstring dst);
 

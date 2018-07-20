@@ -346,25 +346,20 @@ opcd directory::delete_file(zstring src)
 ////////////////////////////////////////////////////////////////////////////////
 opcd directory::delete_directory(zstring src, bool recursive)
 {
-    opcd firstError = NULL;
+    opcd was_err;
 
-    list_file_paths(src, "*", true, [&firstError](const charstr& path, bool isDirectory) {
-        opcd result;
+    if (recursive) {
+        list_file_paths(src, "*", true, [&was_err](const charstr& path, bool isdir) {
+            opcd err = isdir
+                ? delete_directory(path, true)
+                : delete_file(path);
 
-        if(isDirectory) {
-            result = delete_directory(path);
-        }
-        else {
-            result = delete_file(path);
-        }
+            if (!was_err && !err)
+                was_err = err;
+        });
 
-        if((firstError == NULL) && (result != opcd(0))) {
-            firstError = result;
-        }
-    });
-
-    if(firstError != NULL) {
-        return firstError;
+        if (was_err)
+            return was_err;
     }
 
     return 0 == ::rmdir(no_trail_sep(src)) ? opcd(0) : ersIO_ERROR;

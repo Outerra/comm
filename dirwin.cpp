@@ -150,10 +150,12 @@ bool directory::is_regular( ushort mode )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool directory::is_valid(zstring arg)
+int directory::is_valid(zstring arg)
 {
     uint v = GetFileAttributes(arg.c_str());
-    return v != INVALID_FILE_ATTRIBUTES;
+    return v != INVALID_FILE_ATTRIBUTES
+        ? ((v & (FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_DEVICE)) == 0 ? 1 : 2)
+        : 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
