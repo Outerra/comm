@@ -152,7 +152,7 @@ bool directory::is_regular( ushort mode )
 ////////////////////////////////////////////////////////////////////////////////
 int directory::is_valid(zstring arg)
 {
-    uint v = GetFileAttributes(arg.c_str());
+    uint v = GetFileAttributes(no_trail_sep(arg));
     return v != INVALID_FILE_ATTRIBUTES
         ? ((v & (FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_DEVICE)) == 0 ? 1 : 2)
         : 0;
@@ -191,6 +191,12 @@ opcd directory::mkdir( zstring name, uint mode )
     if(!_mkdir(p))  return 0;
     if( errno == EEXIST )  return 0;
     return ersFAILED;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+opcd directory::move_file(zstring src, zstring dst)
+{
+    return MoveFileEx(src.c_str(), dst.c_str(), MOVEFILE_COPY_ALLOWED) ? ersNOERR : ersIO_ERROR;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

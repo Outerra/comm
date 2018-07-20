@@ -131,7 +131,7 @@ bool directory::is_regular( ushort mode )
 int directory::is_valid(zstring path)
 {
     xstat st;
-    return xstat64(no_trail_sep(dir), &st) == 0
+    return xstat64(no_trail_sep(path), &st) == 0
         ? (is_regular(st.st_mode) ? 1 : 2)
         : 0;
 }
@@ -159,6 +159,15 @@ opcd directory::mkdir( zstring name, mode_t mode )
     if(!::mkdir(name.c_str(), mode))  return 0;
     if( errno == EEXIST )  return 0;
     return ersFAILED;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+opcd directory::move_file(zstring src, zstring dst)
+{
+    //TODO directories
+    if(0 == ::rename(src.c_str(), dst.c_str()))
+        return 0;
+    return ersIO_ERROR;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

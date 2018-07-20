@@ -326,14 +326,6 @@ opcd directory::move_current_file_to(zstring dst)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::move_file(zstring src, zstring dst)
-{
-    if(0 == ::rename(src.c_str(), dst.c_str()))
-        return 0;
-    return ersIO_ERROR;
-}
-
-////////////////////////////////////////////////////////////////////////////////
 opcd directory::delete_file(zstring src)
 {
 #ifdef SYSTYPE_MSVC
@@ -349,7 +341,7 @@ opcd directory::delete_directory(zstring src, bool recursive)
     opcd was_err;
 
     if (recursive) {
-        list_file_paths(src, "*", true, [&was_err](const charstr& path, bool isdir) {
+        list_file_paths(src, "*", true, [&was_err](const charstr& path, int isdir) {
             opcd err = isdir
                 ? delete_directory(path, true)
                 : delete_file(path);
@@ -363,6 +355,75 @@ opcd directory::delete_directory(zstring src, bool recursive)
     }
 
     return 0 == ::rmdir(no_trail_sep(src)) ? opcd(0) : ersIO_ERROR;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+opcd directory::move_directory(zstring src, zstring dst)
+{
+    opcd was_err, err;
+    uint slen = src.len();
+
+    bool sdir = directory::is_separator(src.get_token().last_char());
+    if (!sdir)
+        ++slen;
+
+    bool ddir = directory::is_separator(dst.get_token().last_char());
+
+    // src/ to dst or dst/ - copy content of src into dst/
+    // src to dst/ - move src dir into dst/src
+    // src to dst  - rename src to dst
+
+    charstr& dsts = dst.get_str();
+
+    if (directory::is_valid_file(src)) {
+        if (ddir) {
+            //copy to dst/
+            token file = src.get_token().cut_right_group_back("\\/");
+            dsts << file;
+            err = move_file(src, dsts);
+        }
+        else
+            err = move_file(src, dst);
+
+        return err;
+    }
+
+    if (!sdir) {
+        if (ddir) {
+            token folder = src.get_token().cut_right_group_back("\\/");
+            dsts << folder;
+        }
+        else if (!is_valid(dsts))
+            mkdir(dsts);
+
+        dsts << '/';
+    }
+    else if (!ddir)
+        dsts << '/';
+
+    uint dlen = dsts.len();
+
+    list_file_paths(src, "*", 3, [&](const charstr& path, int isdir) {
+        token newpath = token(path.ptr() + slen, path.ptre());
+        
+        dsts.resize(dlen);
+        dsts << newpath;
+
+        if (isdir == 2)
+            err = mkdir(dsts);
+        else if (isdir == 1)
+            err = delete_directory(path, false);
+        else 
+            err = move_file(path, dsts);
+
+        if (!was_err && err)
+            was_err = err;
+    });
+
+    if (!was_err && !sdir)
+        was_err = delete_directory(src, false);
+
+    return was_err;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -415,14 +476,14 @@ opcd directory::mkdir_tree(token name, bool last_is_file, uint mode)
             char c = pc[i];
             pc[i] = 0;
 
-            opcd e = mkdir(path.c_str(), mode);
+            opcd e = mkdir(pc, mode);
             pc[i] = c;
 
             if(e)  return e;
         }
     }
 
-    return last_is_file && !dirend ? ersNOERR : mkdir(path, mode);
+    return last_is_file && !dirend ? ersNOERR : mkdir(pc, mode);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

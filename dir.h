@@ -181,6 +181,9 @@ public:
 
     static opcd delete_directory(zstring src, bool recursive);
 
+    ///Move directories or files, also work across drives
+    static opcd move_directory(zstring src, zstring dst);
+
     static opcd copy_file(zstring src, zstring dst);
 
     static opcd move_file(zstring src, zstring dst);
@@ -300,39 +303,43 @@ public:
     const char* get_last_file_name() const { return _curpath.c_str() + _baselen; }
     token get_last_file_name_token() const { return token(_curpath.c_str() + _baselen, _curpath.len() - _baselen); }
 
+
     ///Lists all files with extension (extension = "*" if all files) in directory with path using func functor.
     ///if recursive is true, lists also subdirectories.
+    //@param recursive nest into subdirectories: 1 dir callback called after callback on content, 2 before, 3 both
     //@param fn callback function(const charstr& name, bool dir)
     template<typename Func>
-    static void list_file_paths(const token& path, const token& extension, bool recursive, Func fn) {
+    static bool list_file_paths(const token& path, const token& extension, int recursive, Func fn) {
         directory dir;
 
-        if(recursive) {
+        if (recursive) {
             if (dir.open(path, "*.*") != ersNOERR)
-                return;
+                return false;
         }
         else {
             charstr filter = "*.";
             filter << extension;
             if (dir.open(path, filter) != ersNOERR)
-                return;
+                return false;
         }
 
-        while(dir.next()) {
-            if(dir.is_entry_regular()) {
-
-                if((!recursive) || (extension == '*') || dir.get_last_file_name_token().cut_right_back('.').cmpeqi(extension)) {
+        while (dir.next()) {
+            if (dir.is_entry_regular()) {
+                if ((!recursive) || (extension == '*') || dir.get_last_file_name_token().cut_right_back('.').cmpeqi(extension))
                     fn(dir.get_last_full_path(), false);
-                }
             }
-            else if(dir.is_entry_subdirectory()) {
-                if(recursive) {
-                    directory::list_file_paths(dir.get_last_full_path(), extension, recursive, fn);
-                }
+            else if (dir.is_entry_subdirectory()) {
+                if (recursive & 2)
+                    fn(dir.get_last_full_path(), 2);
 
-                fn(dir.get_last_full_path(), true);
+                directory::list_file_paths(dir.get_last_full_path(), extension, recursive, fn);
+
+                if (recursive & 1)
+                    fn(dir.get_last_full_path(), 1);
             }
         }
+
+        return true;
     }
 
 
