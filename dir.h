@@ -1,3 +1,4 @@
+#pragma once
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -35,9 +36,6 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef __COID_COMM_DIR__HEADER_FILE__
-#define __COID_COMM_DIR__HEADER_FILE__
-
 #include "namespace.h"
 
 #include "retcodes.h"
@@ -45,6 +43,7 @@
 #include <sys/stat.h>
 #include "str.h"
 #include "trait.h"
+#include "function.h"
 
 #ifndef SYSTYPE_MSVC
 # include <dirent.h>
@@ -399,5 +398,3 @@ private:
 };
 
 COID_NAMESPACE_END
-
-#endif //__COID_COMM_DIR__HEADER_FILE__

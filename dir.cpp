@@ -361,7 +361,7 @@ opcd directory::delete_directory(zstring src, bool recursive)
 opcd directory::move_directory(zstring src, zstring dst)
 {
     opcd was_err, err;
-    uint slen = src.len();
+    uints slen = src.len();
 
     bool sdir = directory::is_separator(src.get_token().last_char());
     if (!sdir)

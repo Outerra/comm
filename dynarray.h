@@ -1,3 +1,4 @@
+#pragma once
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -35,12 +36,10 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef __COID_COMM_DYNARRAY__HEADER_FILE__
-#define __COID_COMM_DYNARRAY__HEADER_FILE__
-
 #include "namespace.h"
 
-#include "commtypes.h"
+#include "trait.h"
+#include "function.h"
 #include "range.h"
 #include "binstream/binstream.h"
 #include "alloc/commalloc.h"
@@ -383,11 +382,11 @@ protected:
     using arg0 = typename std::remove_reference<typename closure_traits<Fn>::template arg<0>>::type;
 
     template<class Fn>
-    using arg0ref = typename coid::nonptr_reference<typename closure_traits<Fn>::template arg<0>>::type;
+    using arg0ref = typename nonptr_reference<typename closure_traits<Fn>::template arg<0>>::type;
 
     ///Functor const argument type reference or pointer
     template<class Fn>
-    using arg0constref = typename coid::nonptr_reference<const typename closure_traits<Fn>::template arg<0>>::type;
+    using arg0constref = typename nonptr_reference<const typename closure_traits<Fn>::template arg<0>>::type;
 
     template<class Fn>
     using is_const = std::is_const<arg0<Fn>>;
@@ -622,7 +621,7 @@ public:
     //@param nitems count of items to add
     //@return pointer to the first added element
     template<class ...Args>
-    T* add(uints nitems = 1, Args&&... args)
+    T* add_construct(uints nitems = 1, Args&&... args)
     {
         uints n = _count();
 
@@ -640,7 +639,8 @@ public:
         _set_count(nto);
         return _ptr + n;
     };
-#else
+#endif
+
     ///Add \a nitems of elements on the end
     //@param nitems count of items to add
     //@return pointer to the first added element
@@ -664,7 +664,6 @@ public:
         _set_count(nto);
         return _ptr + n;
     };
-#endif
 
     ///Add \a nitems of elements on the end and clear the memory
     /** @param nitems count of items to add
@@ -1776,5 +1775,3 @@ using dynarray32 = dynarray<T, uint, A>;
 
 
 COID_NAMESPACE_END
-
-#endif // __COID_COMM_DYNARRAY__HEADER_FILE__
