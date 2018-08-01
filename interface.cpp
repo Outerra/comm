@@ -507,9 +507,9 @@ bool interface_register::register_interface_creator(const token& ifcname, void* 
 
     if (!reg.check_version(intergen_interface::VERSION)) {
         if (creator_ptr) {
-            //print(coid::log::error, "ifcreg", "declining interface registration for {}, mismatched intergen version", ifcname);
+            //print(coid::log::error, "ifcreg", "declined interface registration for {}, mismatched intergen version", ifcname);
             ref<logmsg> msg = canlog(coid::log::error, "ifcreg", 0);
-            msg->str() << "declining interface registration for " << ifcname
+            msg->str() << "declined interface registration for " << ifcname
                 << ", mismatched intergen version (v" << intergen_interface::VERSION << ')';
         }
         return false;
