@@ -47,7 +47,7 @@ COID_NAMESPACE_BEGIN
 void metastream::warn_obsolete(const token& name)
 {
     (_err = "warning: obsolete variable '") << name << '\'';
-    fmt_error();
+    fmt_error(false);
     coidlog_warning("metastream", _err);
 }
 

@@ -2205,9 +2205,9 @@ private:
         return dst;
     }
 
-    void fmt_error()
+    void fmt_error(bool add_context = true)
     {
-        _fmtstreamrd->fmtstream_err(_err);
+        _fmtstreamrd->fmtstream_err(_err, add_context);
     }
 
     void warn_obsolete(const token& name);
