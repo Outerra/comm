@@ -280,8 +280,12 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
 
     if (nifc > 0)
         generate(file, tdir, fdir, file.mtime);
-    else
-        bofstream bof(fdir);    //create zero file
+    else {
+        directory::set_writable(fdir, true);
+        directory::truncate(fdir, 0);
+        directory::set_file_times(fdir, file.mtime + 2, file.mtime + 2);
+        directory::set_writable(fdir, false);
+    }
 
     //file.intergen.js.cpp
     fdir.ins(-4, ".js");
@@ -289,8 +293,12 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
 
     if (nifc > 0)
         generate(file, tdir, fdir, file.mtime);
-    else
-        bofstream bof(fdir);
+    else {
+        directory::set_writable(fdir, true);
+        directory::truncate(fdir, 0);
+        directory::set_file_times(fdir, file.mtime + 2, file.mtime + 2);
+        directory::set_writable(fdir, false);
+    }
 
     //file.intergen.lua.cpp
     fdir.resize(flen);
@@ -301,8 +309,12 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
 
     if (nifc > 0)
         generate(file, tdir, fdir, file.mtime);
-    else
-        bofstream bof(fdir);    //create zero file
+    else {
+        directory::set_writable(fdir, true);
+        directory::truncate(fdir, 0);
+        directory::set_file_times(fdir, file.mtime + 2, file.mtime + 2);
+        directory::set_writable(fdir, false);
+    }
 
     tdir.resize(tlen);
     fdir.resize(flen);
@@ -337,7 +349,7 @@ int main( int argc, char* argv[] )
     //parse
     int rv = cgf.parse(argv[1]);
     if(rv)
-        return 0;
+        return rv;
 
 
     //generate

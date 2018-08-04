@@ -315,7 +315,8 @@ opcd directory::truncate( zstring fname, uint64 size )
     void* handle = CreateFile(no_trail_sep(fname), GENERIC_WRITE, FILE_SHARE_READ, 0,
         OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 
-    if(!handle) return ersNOT_FOUND;
+    if(handle == INVALID_HANDLE_VALUE)
+        return ersIO_ERROR;
 
     LARGE_INTEGER fs;
     fs.QuadPart = size;
@@ -372,7 +373,7 @@ opcd directory::set_file_times(zstring fname, timet actime, timet modtime)
     timet_to_filetime(modtime, &ftmod);
 
     HANDLE h = CreateFile(fname.c_str(), GENERIC_WRITE, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
-    if(!h)
+    if(h == INVALID_HANDLE_VALUE)
         return ersIO_ERROR;
 
     BOOL r = SetFileTime(h, NULL, &ftacc, &ftmod);
