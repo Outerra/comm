@@ -313,7 +313,7 @@ charstr directory::get_home_dir()
 opcd directory::truncate( zstring fname, uint64 size )
 {
     void* handle = CreateFile(no_trail_sep(fname), GENERIC_WRITE, FILE_SHARE_READ, 0,
-        OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+        OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 
     if(handle == INVALID_HANDLE_VALUE)
         return ersIO_ERROR;
