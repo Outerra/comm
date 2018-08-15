@@ -75,7 +75,7 @@ struct File
 
 ////////////////////////////////////////////////////////////////////////////////
 template<class T>
-int generate( const T& t, const token& patfile, const token& outfile, __time64_t mtime )
+static int generate( int nifc, const T& t, const charstr& patfile, const charstr& outfile, __time64_t mtime )
 {
     directory::xstat st;
     bifstream bit;
@@ -87,6 +87,15 @@ int generate( const T& t, const token& patfile, const token& outfile, __time64_t
 
     if (st.st_mtime > mtime)
         mtime = st.st_mtime;
+
+    if (nifc == 0) {
+        //create an empty file to satisfy dependency checker
+        directory::set_writable(outfile, true);
+        directory::truncate(outfile, 0);
+        directory::set_file_times(outfile, mtime + 2, mtime + 2);
+        directory::set_writable(outfile, false);
+        return 0;
+    }
 
     directory::mkdir_tree(outfile, true);
     directory::set_writable(outfile, true);
@@ -232,7 +241,7 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
 
             tdir << "interface.h.mtg";
 
-            if (generate(ifc, tdir, fdir, file.mtime) < 0)
+            if (generate(ni, ifc, tdir, fdir, file.mtime) < 0)
                 return;
 
             //interface.js.h
@@ -242,7 +251,7 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
             tdir.resize(tlen);
             tdir << "interface.js.h.mtg";
 
-            if (generate(ifc, tdir, fdir, file.mtime) < 0)
+            if (generate(ni, ifc, tdir, fdir, file.mtime) < 0)
                 return;
 
             //iterface.lua.h
@@ -252,7 +261,7 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
             fdir.resize(flen);
             fdir << ifc.relpathlua;
 
-            if (generate(ifc, tdir, fdir, file.mtime) < 0)
+            if (generate(ni, ifc, tdir, fdir, file.mtime) < 0)
                 return;
 
             // class interface docs
@@ -265,7 +274,7 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
 
             fdir << '/' << ifc.name << ".html";
 
-            generate(ifc, tdir, fdir, file.mtime);
+            generate(ni, ifc, tdir, fdir, file.mtime);
 
             ++nifc;
         }
@@ -278,27 +287,13 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
     tdir.resize(tlen);
     tdir << "file.intergen.cpp.mtg";
 
-    if (nifc > 0)
-        generate(file, tdir, fdir, file.mtime);
-    else {
-        directory::set_writable(fdir, true);
-        directory::truncate(fdir, 0);
-        directory::set_file_times(fdir, file.mtime + 2, file.mtime + 2);
-        directory::set_writable(fdir, false);
-    }
+    generate(nifc, file, tdir, fdir, file.mtime);
 
     //file.intergen.js.cpp
     fdir.ins(-4, ".js");
     tdir.ins(-8, ".js");
 
-    if (nifc > 0)
-        generate(file, tdir, fdir, file.mtime);
-    else {
-        directory::set_writable(fdir, true);
-        directory::truncate(fdir, 0);
-        directory::set_file_times(fdir, file.mtime + 2, file.mtime + 2);
-        directory::set_writable(fdir, false);
-    }
+    generate(nifc, file, tdir, fdir, file.mtime);
 
     //file.intergen.lua.cpp
     fdir.resize(flen);
@@ -307,14 +302,7 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
     tdir.resize(tlen);
     tdir << "file.intergen.lua.cpp.mtg";
 
-    if (nifc > 0)
-        generate(file, tdir, fdir, file.mtime);
-    else {
-        directory::set_writable(fdir, true);
-        directory::truncate(fdir, 0);
-        directory::set_file_times(fdir, file.mtime + 2, file.mtime + 2);
-        directory::set_writable(fdir, false);
-    }
+    generate(nifc, file, tdir, fdir, file.mtime);
 
     tdir.resize(tlen);
     fdir.resize(flen);
