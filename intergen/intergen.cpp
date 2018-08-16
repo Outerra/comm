@@ -186,6 +186,16 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
     directory::treat_trailing_separator(fdir, true);
     uint flen = fdir.len();
 
+    //find the data of the oldest mtg file
+    timet mtime = file.mtime;
+
+    directory::list_file_paths(tdir, "mtg", false, [&](const charstr& name, bool dir) {
+        directory::xstat st;
+        if (directory::stat(name, &st))
+            if (st.st_mtime > mtime)
+                mtime = st.st_mtime;
+    });
+
     int nifc = 0;
 
     uints nc = file.classes.size();
@@ -241,7 +251,7 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
 
             tdir << "interface.h.mtg";
 
-            if (generate(ni, ifc, tdir, fdir, file.mtime) < 0)
+            if (generate(ni, ifc, tdir, fdir, mtime) < 0)
                 return;
 
             //interface.js.h
@@ -251,7 +261,7 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
             tdir.resize(tlen);
             tdir << "interface.js.h.mtg";
 
-            if (generate(ni, ifc, tdir, fdir, file.mtime) < 0)
+            if (generate(ni, ifc, tdir, fdir, mtime) < 0)
                 return;
 
             //iterface.lua.h
@@ -261,7 +271,7 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
             fdir.resize(flen);
             fdir << ifc.relpathlua;
 
-            if (generate(ni, ifc, tdir, fdir, file.mtime) < 0)
+            if (generate(ni, ifc, tdir, fdir, mtime) < 0)
                 return;
 
             // class interface docs
@@ -274,7 +284,7 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
 
             fdir << '/' << ifc.name << ".html";
 
-            generate(ni, ifc, tdir, fdir, file.mtime);
+            generate(ni, ifc, tdir, fdir, mtime);
 
             ++nifc;
         }
@@ -287,13 +297,13 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
     tdir.resize(tlen);
     tdir << "file.intergen.cpp.mtg";
 
-    generate(nifc, file, tdir, fdir, file.mtime);
+    generate(nifc, file, tdir, fdir, mtime);
 
     //file.intergen.js.cpp
     fdir.ins(-4, ".js");
     tdir.ins(-8, ".js");
 
-    generate(nifc, file, tdir, fdir, file.mtime);
+    generate(nifc, file, tdir, fdir, mtime);
 
     //file.intergen.lua.cpp
     fdir.resize(flen);
@@ -302,7 +312,7 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
     tdir.resize(tlen);
     tdir << "file.intergen.lua.cpp.mtg";
 
-    generate(nifc, file, tdir, fdir, file.mtime);
+    generate(nifc, file, tdir, fdir, mtime);
 
     tdir.resize(tlen);
     fdir.resize(flen);
