@@ -306,7 +306,7 @@ public:
     ///Lists all files with extension (extension = "*" if all files) in directory with path using func functor.
     ///if recursive is true, lists also subdirectories.
     //@param recursive nest into subdirectories: 1 dir callback called after callback on content, 2 before, 3 both
-    //@param fn callback function(const charstr& name, bool dir)
+    //@param fn callback function(const charstr& name, int dir), dir is 0 for files, 1 for getting out of dir, 2 in
     template<typename Func>
     static bool list_file_paths(const token& path, const token& extension, int recursive, Func fn) {
         directory dir;
@@ -325,7 +325,7 @@ public:
         while (dir.next()) {
             if (dir.is_entry_regular()) {
                 if ((!recursive) || (extension == '*') || dir.get_last_file_name_token().cut_right_back('.').cmpeqi(extension))
-                    fn(dir.get_last_full_path(), false);
+                    fn(dir.get_last_full_path(), 0);
             }
             else if (dir.is_entry_subdirectory()) {
                 if (recursive & 2)

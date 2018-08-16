@@ -186,10 +186,10 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
     directory::treat_trailing_separator(fdir, true);
     uint flen = fdir.len();
 
-    //find the data of the oldest mtg file
+    //find the date of the oldest mtg file
     timet mtime = file.mtime;
 
-    directory::list_file_paths(tdir, "mtg", false, [&](const charstr& name, bool dir) {
+    directory::list_file_paths(tdir, "mtg", false, [&](const charstr& name, int dir) {
         directory::xstat st;
         if (directory::stat(name, &st))
             if (st.st_mtime > mtime)
