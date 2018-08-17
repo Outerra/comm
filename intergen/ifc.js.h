@@ -1,3 +1,5 @@
+#pragma once
+
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -15,7 +17,7 @@
  *
  * The Initial Developer of the Original Code is
  * Outerra.
- * Portions created by the Initial Developer are Copyright (C) 2013
+ * Portions created by the Initial Developer are Copyright (C) 2013-2018
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -44,6 +46,8 @@
 #include <comm/metastream/fmtstream_v8.h>
 #include <comm/binstream/filestream.h>
 #include <v8/v8.h>
+
+namespace js {
 
  ///Helper for script loading
 struct script_handle
@@ -333,8 +337,6 @@ private:
 };
 
 
-
-namespace js {
 
 ////////////////////////////////////////////////////////////////////////////////
 struct interface_context
