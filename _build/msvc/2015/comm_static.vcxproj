@@ -475,6 +475,7 @@
     <ClInclude Include="..\..\..\coder\lz4\xxhash.h" />
     <ClInclude Include="..\..\..\crypt\sha1.h" />
     <ClInclude Include="..\..\..\dbg_location.h" />
+    <ClInclude Include="..\..\..\function.h" />
     <ClInclude Include="..\..\..\hash\slothash.h" />
     <ClInclude Include="..\..\..\interface.h" />
     <ClInclude Include="..\..\..\intergen\ifc.h" />
