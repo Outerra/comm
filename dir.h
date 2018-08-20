@@ -180,8 +180,14 @@ public:
 
     static opcd delete_directory(zstring src, bool recursive);
 
-    ///Move directories or files, also work across drives
-    static opcd move_directory(zstring src, zstring dst);
+    ///Move directories or files, also works across drives
+    static opcd move_directory(zstring src, zstring dst) {
+        return copymove_directory(src, dst, true);
+    }
+
+    static opcd copy_directory(zstring src, zstring dst) {
+        return copymove_directory(src, dst, false);
+    }
 
     static opcd copy_file(zstring src, zstring dst);
 
@@ -373,6 +379,8 @@ public:
         const coid::function<void(const find_result& file_info)>& fn);
 
 protected:
+
+    static opcd copymove_directory(zstring src, zstring dst, bool move);
 
     static bool is_valid_dir(const char* path);
 

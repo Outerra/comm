@@ -358,7 +358,7 @@ opcd directory::delete_directory(zstring src, bool recursive)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::move_directory(zstring src, zstring dst)
+opcd directory::copymove_directory(zstring src, zstring dst, bool move)
 {
     opcd was_err, err;
     uints slen = src.len();
@@ -380,10 +380,10 @@ opcd directory::move_directory(zstring src, zstring dst)
             //copy to dst/
             token file = src.get_token().cut_right_group_back("\\/");
             dsts << file;
-            err = move_file(src, dsts);
+            err = move ? move_file(src, dsts) : copy_file(src, dsts);
         }
         else
-            err = move_file(src, dst);
+            err = move ? move_file(src, dst) : copy_file(src, dst);
 
         return err;
     }
@@ -409,18 +409,23 @@ opcd directory::move_directory(zstring src, zstring dst)
         dsts.resize(dlen);
         dsts << newpath;
 
-        if (isdir == 2)
+        if (isdir == 2) {
             err = mkdir(dsts);
-        else if (isdir == 1)
-            err = delete_directory(path, false);
-        else 
+        }
+        else if (isdir == 1) {
+            if (move)
+                err = delete_directory(path, false);
+        }
+        else if (move)
             err = move_file(path, dsts);
+        else
+            err = copy_file(path, dsts);
 
         if (!was_err && err)
             was_err = err;
     });
 
-    if (!was_err && !sdir)
+    if (!was_err && !sdir && move)
         was_err = delete_directory(src, false);
 
     return was_err;

@@ -199,7 +199,7 @@ public:
         bool isnew;
         T* p = base::add_uninit(&isnew, &id);
 
-        slotalloc_detail::constructor<POOL, T>::construct_object(p, isnew, std::forward<Ps>(ps)...);
+        slotalloc_detail::constructor<base::POOL, T>::construct_object(p, isnew, std::forward<Ps>(ps)...);
 
         //T* p = base::push_construct(std::forward<Ps>(ps)...);
         return insert_value_(p, uint(id));
