@@ -169,6 +169,7 @@ public:
     enum EBackend {
         IFC_BACKEND_CXX,
         IFC_BACKEND_JS,
+        IFC_BACKEND_JSC,
         IFC_BACKEND_LUA
     };
 

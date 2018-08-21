@@ -233,7 +233,10 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
             ifc.relpathjs = ifc.relpath;
             ifc.relpathjs.ins(-(int)end.len(), ".js");
 
-            ifc.relpathlua = ifc.relpath;
+            ifc.relpathjsc = ifc.relpath;
+            ifc.relpathjsc.ins(-(int)end.len(), ".jsc");
+
+			ifc.relpathlua = ifc.relpath;
             ifc.relpathlua.ins(-(int)end.len(), ".lua");
 
             ifc.basepath = ifc.relpath;
@@ -264,7 +267,17 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
             if (generate(ni, ifc, tdir, fdir, mtime) < 0)
                 return;
 
-            //iterface.lua.h
+            //interface.jsc.h
+            fdir.resize(flen);
+            fdir << ifc.relpathjsc;
+
+            tdir.resize(tlen);
+            tdir << "interface.jsc.h.mtg";
+
+            if (generate(ifc, tdir, fdir, file.mtime) < 0)
+                return;
+
+			//iterface.lua.h
             tdir.resize(tlen);
             tdir << "interface.lua.h.mtg";
 
@@ -304,6 +317,22 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
     tdir.ins(-8, ".js");
 
     generate(nifc, file, tdir, fdir, mtime);
+
+	//file.intergen.js.cpp
+	fdir.resize(flen);
+    fdir << file.fname << ".intergen.jsc.cpp";
+
+    tdir.resize(tlen);
+    tdir << "file.intergen.jsc.cpp.mtg";
+
+    if (nifc > 0)
+        generate(file, tdir, fdir, file.mtime);
+    else {
+        directory::set_writable(fdir, true);
+        directory::truncate(fdir, 0);
+        directory::set_file_times(fdir, file.mtime + 2, file.mtime + 2);
+        directory::set_writable(fdir, false);
+    }
 
     //file.intergen.lua.cpp
     fdir.resize(flen);
