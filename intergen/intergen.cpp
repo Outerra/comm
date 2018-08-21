@@ -274,7 +274,7 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
             tdir.resize(tlen);
             tdir << "interface.jsc.h.mtg";
 
-            if (generate(ifc, tdir, fdir, file.mtime) < 0)
+            if (generate(ni, ifc, tdir, fdir, file.mtime) < 0)
                 return;
 
 			//iterface.lua.h
@@ -325,14 +325,7 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
     tdir.resize(tlen);
     tdir << "file.intergen.jsc.cpp.mtg";
 
-    if (nifc > 0)
-        generate(file, tdir, fdir, file.mtime);
-    else {
-        directory::set_writable(fdir, true);
-        directory::truncate(fdir, 0);
-        directory::set_file_times(fdir, file.mtime + 2, file.mtime + 2);
-        directory::set_writable(fdir, false);
-    }
+    generate(nifc, file, tdir, fdir, mtime);
 
     //file.intergen.lua.cpp
     fdir.resize(flen);
