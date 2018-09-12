@@ -301,11 +301,11 @@ public:
         memset(_buckets.ptr(), 0xff, _buckets.byte_size());
     }
 
-    void reserve(uints nitems) {
+    void reserve(uint nitems) {
         if (nitems < 32)
             nitems = 32;
 
-        uints os = _buckets.size();
+        uint os = _buckets.size();
         if (nitems <= os)
             return;
 
@@ -325,20 +325,20 @@ public:
 
 protected:
 
-    static uints bucket_from_hash(uint64 hash, uint shift) {
+    static uint bucket_from_hash(uint64 hash, uint shift) {
         //fibonacci hashing
         hash ^= hash >> shift;
-        return uints((11400714819323198485llu * hash) >> shift);
+        return uint((11400714819323198485llu * hash) >> shift);
     }
 
     template<class FKEY = KEY>
     uint bucket(const FKEY& k) const {
-        return (uint)bucket_from_hash(_HASHFUNC(k), _shift);
+        return bucket_from_hash(_HASHFUNC(k), _shift);
     }
 
     template<>
     uint bucket<tokenhash>(const tokenhash& key) const {
-        return (uint)bucket_from_hash(key.hash(), _shift);
+        return bucket_from_hash(key.hash(), _shift);
     }
 
     ///Find first node that matches the key
@@ -469,7 +469,7 @@ protected:
 
     //@return true if the underlying array was resized
     //@param skip_id id of newly created object that should be skipped in case of resize, or UMAX32
-    bool resize(size_t bucketn, uint skip_id)
+    bool resize(uint bucketn, uint skip_id)
     {
         uint shift = 64 - int_high_pow2(bucketn);
 
@@ -477,7 +477,7 @@ protected:
         {
             //reindex objects
             //clear both buckets index and sequaray
-            uints nb = uints(1) << (64 - shift);
+            uint nb = 1 << (64 - shift);
             _buckets.calloc(nb, true);
 
             dynarray<uint>& st = seqtable();
@@ -493,7 +493,7 @@ protected:
                     uint* n = find_object_entry(b, key);
 
                     st[id] = *n;
-                    *n = id;
+                    *n = uint(id);
                 }
             });
 
@@ -508,7 +508,7 @@ private:
     EXTRACTOR _EXTRACTOR;
     HASHFUNC _HASHFUNC;
 
-    coid::dynarray<uint> _buckets;      //< table with ids of first objects belonging to the given hash socket
+    coid::dynarray32<uint> _buckets;    //< table with ids of first objects belonging to the given hash socket
     uint _shift = 64;
 };
 
