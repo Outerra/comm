@@ -132,18 +132,6 @@ struct base_versioning
         extarray_t;
 
     enum : size_t { extarray_size = sizeof...(Es) };
-
-
-    versionid get_versionid(uints id) const {
-        DASSERT_RET(id < 0x00ffffffU, versionid());
-        return versionid(uint(id), 0);
-    }
-
-    bool check_versionid(versionid vid) const {
-        return true;
-    }
-
-    void bump_version(uints id) {}
 };
 
 ///Versioning base class specialization
@@ -156,22 +144,7 @@ struct base_versioning<true, Es...>
 
     enum : size_t { extarray_size = sizeof...(Es) + 1 };
 
-
-    versionid get_versionid(uints id) const {
-        DASSERT_RET(id < 0x00ffffffU, versionid());
-        return versionid(uint(id), version_array()[id]);
-    }
-
-    bool check_versionid(versionid vid) const {
-        uint8 ver = version_array()[vid.id];
-        return vid.version == ver;
-    }
-
-    void bump_version(uints id) {
-        ++version_array()[id];
-    }
-
-private:
+protected:
 
     dynarray<uint8>& version_array() {
         return std::get<sizeof...(Es)>(*this);
@@ -193,55 +166,22 @@ struct base
     typedef base_versioning<VERSIONING, Es...>
         base_t;
 
-    //typedef changeset changeset_t;
-    //typedef std::tuple<dynarray<Es>...>
-    //    extarray_t;
-    //typedef std::tuple<Es...>
-    //    extarray_element_t;
-
-
     void swap( base& other ) {
         static_cast<typename base_t::extarray_t*>(this)->swap(other);
     }
-
-    void set_modified( uints k ) const {}
-
-    dynarray<changeset>* get_changeset() { return 0; }
-    const dynarray<changeset>* get_changeset() const { return 0; }
-    uint* get_frame() { return 0; }
 };
 
 ///
 template<bool VERSIONING, class...Es>
 struct base<VERSIONING, true, Es...>
-    : public base_versioning<VERSIONING, Es..., changeset>// std::tuple<dynarray<Es>..., dynarray<changeset>>
+    : public base_versioning<VERSIONING, Es..., changeset>
 {
     typedef base_versioning<VERSIONING, Es..., changeset>
         base_t;
 
-    //typedef changeset changeset_t;
-    //typedef std::tuple<dynarray<Es>..., dynarray<changeset>>
-    //    extarray_t;
-    //typedef std::tuple<Es..., changeset>
-    //    extarray_element_t;
-
-    //enum : size_t { extarray_size = sizeof...(Es) + 1 };
-
-    base()
-        : _frame(0)
-    {}
-
     void swap( base& other ) {
         static_cast<typename base_t::extarray_t*>(this)->swap(other);
         std::swap(_frame, other._frame);
-    }
-
-    void set_modified( uints k ) const
-    {
-        //current frame is always at bit position 0
-        dynarray<changeset>& mods = const_cast<dynarray<changeset>&>(
-            std::get<sizeof...(Es)>(*this));
-        mods[k].mask |= 1;
     }
 
     dynarray<changeset>* get_changeset() { return &std::get<sizeof...(Es)>(*this); }
@@ -250,114 +190,8 @@ struct base<VERSIONING, true, Es...>
 
 private:
 
-    ///Position of the changeset within ext arrays
-    //static constexpr int CHANGESET_POS = sizeof...(Es);
-
-    uint _frame;                        //< current frame number
+    uint _frame = 0;                    //< current frame number
 };
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-template <bool UNINIT, typename T>
-struct newtor {
-    static T* create(T* p) {
-        return p;
-    }
-};
-
-template <typename T>
-struct newtor<false, T> {
-    static T* create(T* p) {
-        return new(p) T;
-    }
-};
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-/*@{
-Copy objects to a target that can be either initialized or uninitialized.
-In non-POOL mode it assumes that targets are always uninitialized (new), and uses
-the in-place invoked copy constructor.
-
-In POOL mode it can also use operator = on reuse, when the target poins to
-an uninitialized memory.
-
-Used by containers that can operate both in pooling and non-pooling mode.
-**/
-template<bool POOL, class T>
-struct constructor {};
-
-///constructor helpers for pooling mode
-template<class T>
-struct constructor<true, T>
-{
-    static T* copy_object( T* dst, bool isnew, const T& v ) {
-        if(isnew)
-            new(dst) T(v);
-        else
-            *dst = v;
-        return dst;
-    }
-
-    static T* copy_object( T* dst, bool isnew, T&& v ) {
-        if(isnew)
-            new(dst) T(std::forward<T>(v));
-        else
-            *dst = std::move(v);
-        return dst;
-    }
-
-    static T* construct_default( T* dst, bool isnew ) {
-        return isnew
-            ? new(dst) T
-            : dst;
-    }
-
-    template<class...Ps>
-    static T* construct_object( T* dst, bool isnew, Ps&&... ps ) {
-        if(isnew)
-            new(dst) T(std::forward<Ps>(ps)...);
-        else {
-            //only in pool mode on reused objects, when someone calls push_construct
-            //this is not a good usage pattern as it cannot reuse existing storage of the old object
-            // (which is what pool mode is about)
-            dst->~T();
-            new(dst) T(std::forward<Ps>(ps)...);
-        }
-        return dst;
-    }
-};
-
-///constructor helpers for non-pooling mode (assumes targets are always uninitialized = isnew)
-template<class T>
-struct constructor<false, T>
-{
-    static T* copy_object( T* dst, bool isnew, const T& v ) {
-        DASSERT(isnew);
-        return new(dst) T(v);
-    }
-
-    static T* copy_object( T* dst, bool isnew, T&& v ) {
-        DASSERT(isnew);
-        return new(dst) T(std::forward<T>(v));
-    }
-
-    static T* construct_default( T* dst, bool isnew ) {
-        return new(dst) T;
-    }
-
-    template<class...Ps>
-    static T* construct_object( T* dst, bool isnew, Ps&&... ps ) {
-        DASSERT(isnew);
-        return new(dst) T(std::forward<Ps>(ps)...);
-    }
-};
-//@}
 
 } //namespace slotalloc_detail
 

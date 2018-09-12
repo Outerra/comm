@@ -117,6 +117,13 @@
 # define coid_constexpr const
 #endif
 
+#if defined(__cpp_if_constexpr) || _MSC_VER >= 1910
+# define coid_constexpr_if constexpr
+# define COID_CONSTEXPR_IF
+#else
+# define coid_constexpr_if
+#endif
+
 #if defined(__cpp_user_defined_literals) || _MSC_VER >= 1900
 # define COID_USER_DEFINED_LITERALS
 #endif

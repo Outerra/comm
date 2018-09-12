@@ -465,7 +465,6 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\net\asyncrcv.cpp" />
     <ClCompile Include="..\..\..\pthreadx.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug-clang|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -619,7 +618,6 @@
     <ClInclude Include="..\..\..\alloc\_malloc.h" />
     <ClInclude Include="..\..\..\alloc\commalloc.h" />
     <ClInclude Include="..\..\..\alloc\memtrack.h" />
-    <ClInclude Include="..\..\..\net\asyncrcv.h" />
     <ClInclude Include="..\..\..\sync\_mutex.h" />
     <ClInclude Include="..\..\..\sync\guard.h" />
     <ClInclude Include="..\..\..\sync\mutex.h" />

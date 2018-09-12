@@ -100,7 +100,7 @@ int main( int argc, char* argv[] )
         static_assert( std::is_const<std::remove_reference_t<taxx::arg<0>>>::value && taxx::arity::value == 1, "fail" );
         static_assert( std::is_const<std::remove_reference_t<taxi::arg<0>>>::value && taxi::arity::value > 1, "fail" );
 
-
+#ifdef COID_CONSTEXPR_IF
         slothash<value, token> hash(32);
 
         for (int i = 0; i < 32; ++i) {
@@ -112,6 +112,7 @@ int main( int argc, char* argv[] )
         hash.push_construct("bar");
 
         slotalloc_tracking<value> ring;
+#endif
     }
 
     {
