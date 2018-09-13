@@ -45,11 +45,87 @@ struct value {
     operator token() const { return key; }
 };
 
+////////////////////////////////////////////////////////////////////////////////
+void lambda_test()
+{
+    dynarray<value> data;
+    data.push_construct("abc");
+    data.push_construct("def");
+
+    data.for_each([](value& v) {
+        v.key = "abc";
+    });
+
+    data.for_each([](const value& v) {
+        charstr tmp = v.key;
+    });
+
+    data.for_each([](value& v, uints id) {
+        v.key = "abc";
+        v.key += id;
+    });
+
+    data.for_each([](const value& v, uints id) {
+        charstr tmp = v.key;
+        tmp += id;
+    });
+}
+
+void lambda_slotalloc_test()
+{
+    slotalloc_tracking<value> data;
+    data.push_construct("abc");
+    data.push_construct("def");
+
+    value* p1 = data.find_if([](const value& v) {
+        return v.key == "abc";
+    });
+    DASSERT(p1->key == "abc");
+
+    value* p2 = data.find_if([](const value& v, uints id) {
+        return v.key == "def";
+    });
+    DASSERT(p2->key == "def");
+
+
+    data.for_each([](value& v) {
+        v.key = "abc";
+    });
+
+    data.for_each([](const value& v) {
+        charstr tmp = v.key;
+    });
+
+    data.for_each([](value& v, uints id) {
+        v.key = "abc";
+        v.key += id;
+    });
+
+    data.for_each([](const value& v, uints id) {
+        charstr tmp = v.key;
+        tmp += id;
+    });
+
+    //with modification tracking
+
+    data.for_each([](value& v) -> bool {
+        v.key = "abc";
+        return true;
+    });
+
+    data.for_each([](value& v, uints id) -> bool {
+        v.key = "abc";
+        v.key += id;
+        return true;
+    });
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
 {
     std_test();
+
+    lambda_test();
 
     test_job_queue();
 

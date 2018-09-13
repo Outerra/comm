@@ -49,7 +49,7 @@ COID_NAMESPACE_BEGIN
 
 ////////////////////////////////////////////////////////////////////////////////
 template<class KEYSTORE, class KEYLOOKUP=KEYSTORE>
-struct equal_to	: public std::binary_function<KEYSTORE, KEYLOOKUP, bool>
+struct equal_to
 {
 	bool operator()(const KEYSTORE& _Left, const KEYLOOKUP& _Right) const
     {

@@ -132,6 +132,19 @@ struct base_versioning
         extarray_t;
 
     enum : size_t { extarray_size = sizeof...(Es) };
+
+#ifndef COID_CONSTEXPR_IF
+    versionid get_versionid(uints id) const {
+        DASSERT_RET(id < 0x00ffffffU, versionid());
+        return versionid(uint(id), 0);
+    }
+
+    bool check_versionid(versionid vid) const {
+        return true;
+    }
+
+    void bump_version(uints id) {}
+#endif
 };
 
 ///Versioning base class specialization
@@ -144,7 +157,24 @@ struct base_versioning<true, Es...>
 
     enum : size_t { extarray_size = sizeof...(Es) + 1 };
 
-protected:
+
+#ifndef COID_CONSTEXPR_IF
+    versionid get_versionid(uints id) const {
+        DASSERT_RET(id < 0x00ffffffU, versionid());
+        return versionid(uint(id), version_array()[id]);
+    }
+
+    bool check_versionid(versionid vid) const {
+        uint8 ver = version_array()[vid.id];
+        return vid.version == ver;
+    }
+
+    void bump_version(uints id) {
+        ++version_array()[id];
+    }
+#endif
+
+private:
 
     dynarray<uint8>& version_array() {
         return std::get<sizeof...(Es)>(*this);
@@ -169,6 +199,14 @@ struct base
     void swap( base& other ) {
         static_cast<typename base_t::extarray_t*>(this)->swap(other);
     }
+
+#ifndef COID_CONSTEXPR_IF
+    void set_modified( uints k ) const {}
+
+    dynarray<changeset>* get_changeset() { return 0; }
+    const dynarray<changeset>* get_changeset() const { return 0; }
+    uint* get_frame() { return 0; }
+#endif
 };
 
 ///
@@ -184,6 +222,16 @@ struct base<VERSIONING, true, Es...>
         std::swap(_frame, other._frame);
     }
 
+#ifndef COID_CONSTEXPR_IF
+    void set_modified( uints k ) const
+    {
+        //current frame is always at bit position 0
+        dynarray<changeset>& mods = const_cast<dynarray<changeset>&>(
+            std::get<sizeof...(Es)>(*this));
+        mods[k].mask |= 1;
+    }
+#endif
+
     dynarray<changeset>* get_changeset() { return &std::get<sizeof...(Es)>(*this); }
     const dynarray<changeset>* get_changeset() const { return &std::get<sizeof...(Es)>(*this); }
     uint* get_frame() { return &_frame; }
@@ -192,6 +240,103 @@ private:
 
     uint _frame = 0;                    //< current frame number
 };
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+#ifndef COID_CONSTEXPR_IF
+
+template <bool UNINIT, typename T>
+struct newtor {
+    static T* create(T* p) {
+        return p;
+    }
+};
+
+template <typename T>
+struct newtor<false, T> {
+    static T* create(T* p) {
+        return new(p) T;
+    }
+};
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+/*@{
+Copy objects to a target that can be either initialized or uninitialized.
+In non-POOL mode it assumes that targets are always uninitialized (new), and uses
+the in-place invoked copy constructor.
+
+In POOL mode it can also use operator = on reuse, when the target poins to
+an uninitialized memory.
+
+Used by containers that can operate both in pooling and non-pooling mode.
+**/
+template<bool POOL, class T>
+struct constructor {};
+
+///constructor helpers for pooling mode
+template<class T>
+struct constructor<true, T>
+{
+    static T* copy_object( T* dst, bool isnew, const T& v ) {
+        if(isnew)
+            new(dst) T(v);
+        else
+            *dst = v;
+        return dst;
+    }
+
+    static T* copy_object( T* dst, bool isnew, T&& v ) {
+        if(isnew)
+            new(dst) T(std::forward<T>(v));
+        else
+            *dst = std::move(v);
+        return dst;
+    }
+
+    template<class...Ps>
+    static T* construct_object( T* dst, bool isnew, Ps&&... ps ) {
+        if(isnew)
+            new(dst) T(std::forward<Ps>(ps)...);
+        else {
+            //only in pool mode on reused objects, when someone calls push_construct
+            //this is not a good usage pattern as it cannot reuse existing storage of the old object
+            // (which is what pool mode is about)
+            dst->~T();
+            new(dst) T(std::forward<Ps>(ps)...);
+        }
+        return dst;
+    }
+};
+
+///constructor helpers for non-pooling mode (assumes targets are always uninitialized = isnew)
+template<class T>
+struct constructor<false, T>
+{
+    static T* copy_object( T* dst, bool isnew, const T& v ) {
+        DASSERT(isnew);
+        return new(dst) T(v);
+    }
+
+    static T* copy_object( T* dst, bool isnew, T&& v ) {
+        DASSERT(isnew);
+        return new(dst) T(std::forward<T>(v));
+    }
+
+    template<class...Ps>
+    static T* construct_object( T* dst, bool isnew, Ps&&... ps ) {
+        DASSERT(isnew);
+        return new(dst) T(std::forward<Ps>(ps)...);
+    }
+};
+//@}
+
+#endif //COID_CONSTEXPR_IF
 
 } //namespace slotalloc_detail
 

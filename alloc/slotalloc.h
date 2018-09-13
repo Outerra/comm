@@ -139,7 +139,7 @@ public:
     }
 
     ~slotalloc_base() {
-        if constexpr (!POOL)
+        if coid_constexpr_if (!POOL)
             reset();
     }
 
@@ -220,7 +220,7 @@ public:
         bool isold = _count < _created;
         T* p = isold ? alloc(0) : append();
 
-        return copy_object(p, isold, std::forward<T>(v));
+        return this->copy_object(p, isold, std::forward<T>(v));
     }
 
     ///Add new object initialized with constructor matching the arguments
@@ -262,7 +262,7 @@ public:
     T* add_uninit(bool* newitem = 0, uints* pid = 0) {
         if (_count < _created) {
             T* p = alloc(pid);
-            if constexpr (POOL) {
+            if coid_constexpr_if (POOL) {
                 if (!newitem) destroy(*p);
                 else *newitem = false;
             }
@@ -310,7 +310,7 @@ public:
             T* p = add_uninit(&newitem, &id);
             if (nreused)
                 *nreused = newitem ? 0 : 1;
-            else if constexpr (POOL) {
+            else if coid_constexpr_if (POOL) {
                 if (!newitem)
                     destroy(*p);
             }
@@ -320,7 +320,7 @@ public:
         uints nold;
         uints id = alloc_range<true>(n, &nold);
 
-        if constexpr (POOL) {
+        if coid_constexpr_if (POOL) {
             if (nreused == 0) {
                 for_range_unchecked(id, nold, [](T* p) { destroy(*p); });
             }
@@ -364,7 +364,7 @@ public:
             T* p = add_uninit(&newitem);
             if (nreused)
                 *nreused = newitem ? 0 : 1;
-            else if constexpr (POOL) {
+            else if coid_constexpr_if (POOL) {
                 if (!newitem)
                     destroy(*p);
             }
@@ -374,7 +374,7 @@ public:
         uints nold;
         uints id = alloc_range_contiguous<true>(n, &nold);
 
-        if constexpr (POOL) {
+        if coid_constexpr_if (POOL) {
             if (nreused == 0)
                 for_range_unchecked(id, nold, [](T* p) { destroy(*p); });
         }
@@ -394,12 +394,10 @@ public:
 
         DASSERT_RETVOID(get_bit(id));
 
-        if constexpr (TRACKING)
-            set_modified(id);
-        if constexpr (VERSIONING)
-            bump_version(id);
+        this->set_modified(id);
+        this->bump_version(id);
 
-        if constexpr (!POOL)
+        if coid_constexpr_if (!POOL)
             p->~T();
 
         if (clear_bit(id))
@@ -428,10 +426,9 @@ public:
             T* e = b + na;
 
             for (; b < e; ++b) {
-                if constexpr (!POOL)
+                if coid_constexpr_if (!POOL)
                     b->~T();
-                if constexpr (VERSIONING)
-                    bump_version(idk++);
+                this->bump_version(idk++);
             }
 
             nr -= na;
@@ -446,12 +443,10 @@ public:
     {
         DASSERT_RETVOID(id < _created);
 
-        if constexpr (TRACKING)
-            set_modified(id);
-        if constexpr (VERSIONING)
-            bump_version(id);
+        this->set_modified(id);
+        this->bump_version(id);
 
-        if constexpr (!POOL) {
+        if coid_constexpr_if (!POOL) {
             T* p = ptr(id);
             p->~T();
         }
@@ -505,8 +500,8 @@ public:
     T* get_mutable_item(versionid vid)
     {
         DASSERT_RET(vid.id < _created && this->check_versionid(vid) && get_bit(vid.id), 0);
-        if constexpr (TRACKING)
-            set_modified(vid.id);
+        this->set_modified(vid.id);
+
         return ptr(vid.id);
     }
 
@@ -547,8 +542,8 @@ public:
     T* get_mutable_item(uints id)
     {
         DASSERT_RET(id < _created && get_bit(id), 0);
-        if constexpr (TRACKING)
-            set_modified(id);
+        this->set_modified(id);
+
         return ptr(id);
     }
 
@@ -575,8 +570,7 @@ public:
 
         if (id < _created) {
             //within allocated space
-            if constexpr (TRACKING)
-                set_modified(id);
+            this->set_modified(id);
 
             T* p = ptr(id);
 
@@ -586,7 +580,7 @@ public:
                 return p;
             }
 
-            if constexpr (!POOL)
+            if coid_constexpr_if (!POOL)
                 new(p) T;
 
             set_bit(id);
@@ -603,8 +597,7 @@ public:
         extarray_expand(n);
         expand<false>(n);
 
-        if constexpr (TRACKING)
-            set_modified(id);
+        this->set_modified(id);
 
         set_bit(id);
 
@@ -626,8 +619,7 @@ public:
 
         if (id < _created) {
             //within allocated space
-            if constexpr (TRACKING)
-                set_modified(id);
+            this->set_modified(id);
 
             T* p = ptr(id);
 
@@ -651,8 +643,7 @@ public:
         extarray_expand_uninit(n);
         expand<true>(n);
 
-        if constexpr (TRACKING)
-            set_modified(id);
+        this->set_modified(id);
 
         set_bit(id);
 
@@ -729,11 +720,11 @@ public:
     ///Reset content. Destructors aren't invoked in the pool mode, as the objects may still be reused.
     void reset()
     {
-        if constexpr (TRACKING)
+        if coid_constexpr_if (TRACKING)
             mark_all_modified(false);
 
         //destroy occupied slots
-        if constexpr (!POOL) {
+        if coid_constexpr_if (!POOL) {
             destruct();
             extarray_reset();
         }
@@ -758,6 +749,8 @@ public:
         _pages.discard();
         _allocated.discard();
     }
+
+#ifdef COID_CONSTEXPR_IF
 
 protected:
 
@@ -807,19 +800,6 @@ protected:
 
 protected:
 
-    static T* construct_default(T* p, bool isold) {
-        if constexpr (POOL) {
-            if (isold) {
-                //only in pool mode on reused objects, when someone calls push_construct
-                //this is not a good usage pattern as it cannot reuse existing storage of the old object
-                // (which is what pool mode is about)
-                p->~T();
-            }
-        }
-
-        return new(p) T;
-    }
-
     template<class...Ps>
     static T* construct_object(T* p, bool isold, Ps&&... ps) {
         if constexpr (POOL) {
@@ -862,6 +842,35 @@ protected:
         }
     }
 
+#else
+
+    static T* copy_object(T* dst, bool isnew, const T& v) {
+        return slotalloc_detail::constructor<POOL, T>::copy_object(dst, isnew, v);
+    }
+
+    static T* copy_object(T* dst, bool isnew, T&& v) {
+        return slotalloc_detail::constructor<POOL, T>::copy_object(dst, isnew, std::forward<T>(v));
+    }
+
+    template<class...Ps>
+    static T* construct_object(T* dst, bool isnew, Ps&&... ps) {
+        return slotalloc_detail::constructor<POOL, T>::construct_object(dst, isnew, std::forward<Ps>(ps)...);
+    }
+
+#endif //#ifdef COID_CONSTEXPR_IF
+
+    static T* construct_default(T* p, bool isold) {
+        if coid_constexpr_if (POOL) {
+            return isold
+                ? p
+                : new(p) T;
+        }
+
+        return new(p) T;
+    }
+
+protected:
+
     void destruct()
     {
         for_each([](T& v) { destroy(v); });
@@ -870,6 +879,60 @@ protected:
 
 
     //@{Helper functions for for_each to allow calling with optional index argument
+    template<class Fn>
+    using has_index = std::integral_constant<bool, !(closure_traits<Fn>::arity::value <= 1)>;
+
+    template<class Fn>
+    using returns_void = std::integral_constant<bool, closure_traits<Fn>::returns_void::value>;
+
+#ifdef COID_CONSTEXPR_IF
+    template<class Fn>
+    bool funccall_if(Fn fn, T& v, uints index) const {
+        bool rv;
+        if constexpr (has_index<Fn>::value)
+            rv = fn(v, index);
+        else
+            rv = fn(v);
+
+        if constexpr (TRACKING)
+            set_modified(index);
+
+        return rv;
+    }
+
+    template<class Fn>
+    void funccallp(Fn fn, const T* v, uints index) const {
+        if constexpr (has_index<Fn>::value)
+            fn(v, index);
+        else
+            fn(v);
+    }
+
+    template<class Fn>
+    bool funccall(Fn fn, T& v, uints index) const {
+        bool rv = true;
+        if constexpr (returns_void<Fn>::value) {
+            if constexpr (has_index<Fn>::value)
+                fn(v, index);
+            else
+                fn(v);
+        }
+        else {
+            if constexpr (has_index<Fn>::value)
+                rv = static_cast<bool>(fn(v, index));
+            else
+                rv = static_cast<bool>(fn(v));
+        }
+
+        if constexpr (TRACKING) {
+            if (rv)
+                set_modified(index);
+        }
+
+        return rv && TRACKING;
+    }
+
+#else
     template<class Fn>
     using arg0 = typename std::remove_reference<typename closure_traits<Fn>::template arg<0>>::type;
 
@@ -882,19 +945,12 @@ protected:
     template<class Fn>
     using is_const = std::is_const<arg0<Fn>>;
 
-    template<class Fn>
-    using has_index = std::integral_constant<bool, !(closure_traits<Fn>::arity::value <= 1)>;
-
-    template<class Fn>
-    using returns_void = std::integral_constant<bool, closure_traits<Fn>::returns_void::value>;
-
     ///A tracking void fnc(T&)
     template<typename Fn, typename = std::enable_if_t<!has_index<Fn>::value>>
     bool funccall_if(const Fn& fn, arg0ref<Fn> v, size_t index) const
     {
         bool ret = fn(v);
-        if constexpr (TRACKING)
-            set_modified(index);
+        this->set_modified(index);
 
         return ret;
     }
@@ -904,8 +960,7 @@ protected:
     bool funccall_if(const Fn& fn, arg0ref<Fn> v, const size_t& index) const
     {
         bool ret = fn(v, index);
-        if constexpr (TRACKING)
-            set_modified(index);
+        this->set_modified(index);
 
         return ret;
     }
@@ -925,8 +980,7 @@ protected:
     bool funccall(const Fn& fn, arg0ref<Fn> v, const size_t&& index) const
     {
         fn(v);
-        if constexpr (TRACKING)
-            set_modified(index);
+        this->set_modified(index);
 
         return TRACKING;
     }
@@ -936,8 +990,8 @@ protected:
     bool funccall(const Fn& fn, arg0ref<Fn> v, size_t&& index) const
     {
         bool rval = static_cast<bool>(fn(v));
-        if (rval && TRACKING)
-            set_modified(index);
+        if (rval)
+            this->set_modified(index);
 
         return rval && TRACKING;
     }
@@ -955,8 +1009,7 @@ protected:
     bool funccall(const Fn& fn, arg0ref<Fn> v, const size_t& index) const
     {
         fn(v, index);
-        if constexpr (TRACKING)
-            set_modified(index);
+        this->set_modified(index);
 
         return TRACKING;
     }
@@ -966,8 +1019,8 @@ protected:
     bool funccall(const Fn& fn, arg0ref<Fn> v, size_t index) const
     {
         bool rval = static_cast<bool>(fn(v, index));
-        if (rval && TRACKING)
-            set_modified(index);
+        if (rval)
+            this->set_modified(index);
 
         return rval && TRACKING;
     }
@@ -985,6 +1038,7 @@ protected:
     {
         fn(v, index);
     }
+#endif
     //@}
 
 public:
@@ -1464,8 +1518,7 @@ private:
         uints slot = (p - _allocated.ptr()) * MASK_BITS;
 
         uints id = slot + bit;
-        if constexpr (TRACKING)
-            set_modified(id);
+        this->set_modified(id);
 
         DASSERT(!get_bit(id));
 
@@ -1490,8 +1543,7 @@ private:
         *p |= uints(1) << bit;
         ++_count;
 
-        if constexpr (TRACKING)
-            set_modified(id);
+        this->set_modified(id);
 
         return ptr(id);
     }
@@ -1585,8 +1637,7 @@ private:
             *pid = count;
         ++_count;
 
-        if constexpr (TRACKING)
-            set_modified(count);
+        this->set_modified(count);
 
         return expand<true>(1);
     }
@@ -1602,21 +1653,29 @@ private:
         _created += n;
 
         //in POOL mode the unallocated items in between the valid ones are assumed to be constructed
-        if (POOL) {
+        if coid_constexpr_if (POOL) {
             if (!UNINIT && n > 1) {
                 for_range_unchecked(base, n - 1, [](T* p) {
+#ifdef COID_CONSTEXPR_IF
                     if constexpr (!UNINIT)
                         new(p) T;
+#else
+                    slotalloc_detail::newtor<UNINIT, T>::create(p);
+#endif
                 });
             }
         }
 
         T* p = ptr(_created - 1);
 
-        if constexpr (!UNINIT)
+#ifdef COID_CONSTEXPR_IF
+        if coid_constexpr_if (!UNINIT)
             return new(p) T;
         else
             return p;
+#else
+        return slotalloc_detail::newtor<UNINIT, T>::create(p);
+#endif
     }
 
     bool set_bit(uints k) { return set_bit(_allocated, k); }

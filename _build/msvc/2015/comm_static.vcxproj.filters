@@ -357,6 +357,9 @@
       <Filter>binstream</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\function.h" />
+    <ClInclude Include="..\..\..\alloc\slotalloc_tracker.h">
+      <Filter>alloc</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\crypt\sha1.cpp">

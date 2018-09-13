@@ -95,7 +95,6 @@
     <ClCompile Include="log\logger.cpp" />
     <ClCompile Include="metastream\metastream.cpp" />
     <ClCompile Include="net.cpp" />
-    <ClCompile Include="net\asyncrcv.cpp" />
     <ClCompile Include="pthreadx.cpp" />
     <ClCompile Include="regex\regcomp.cpp" />
     <ClCompile Include="regex\regexec.cpp" />
@@ -214,7 +213,6 @@
     <ClInclude Include="metastream\metavar.h" />
     <ClInclude Include="namespace.h" />
     <ClInclude Include="net.h" />
-    <ClInclude Include="net\asyncrcv.h" />
     <ClInclude Include="net_ul.h" />
     <ClInclude Include="parser.h" />
     <ClInclude Include="password.h" />

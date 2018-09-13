@@ -379,6 +379,10 @@ protected:
     //@{Helper functions for for_each to allow calling with optional index argument
     ///Functor argument type reference or pointer
     template<class Fn>
+    using has_index = std::integral_constant<bool, !(closure_traits<Fn>::arity::value <= 1)>;
+
+#ifndef COID_CONSTEXPR_IF
+    template<class Fn>
     using arg0 = typename std::remove_reference<typename closure_traits<Fn>::template arg<0>>::type;
 
     template<class Fn>
@@ -390,9 +394,6 @@ protected:
 
     template<class Fn>
     using is_const = std::is_const<arg0<Fn>>;
-
-    template<class Fn>
-    using has_index = std::integral_constant<bool, !(closure_traits<Fn>::arity::value <= 1)>;
 
     template<class Fn>
     using result_type = typename closure_traits<Fn>::result_type;
@@ -424,6 +425,7 @@ protected:
     {
         return fn(v, index);
     }
+#endif
     //@}
 
 public:
@@ -437,7 +439,14 @@ public:
         count_t n = size();
         for (count_t i = 0; i < n; ++i) {
             T& v = const_cast<T&>(_ptr[i]);
+#ifdef COID_CONSTEXPR_IF
+            if constexpr (has_index<Func>::value)
+                fn(v, i);
+            else
+                fn(v);
+#else
             funccall(fn, v, i);
+#endif
 
             count_t nn = size();
             if (n > nn) {
@@ -458,7 +467,17 @@ public:
         count_t n = size();
         for (count_t i = 0; i < n; ++i) {
             T& v = const_cast<T&>(_ptr[i]);
-            if (funccall(fn, v, i)) return _ptr + i;
+            bool rv;
+#ifdef COID_CONSTEXPR_IF
+            if constexpr (has_index<Func>::value)
+                rv = fn(v, i);
+            else
+                rv = fn(v);
+#else
+            rv = funccall(fn, v, i);
+#endif
+            if (rv)
+                return _ptr + i;
         }
         return 0;
     }

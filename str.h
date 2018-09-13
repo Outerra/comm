@@ -2372,7 +2372,7 @@ template<bool INSENSITIVE> struct hasher<charstr, INSENSITIVE>
 
 ///Equality operator for hashes with token keys
 template<>
-struct equal_to<charstr, token> : public std::binary_function<charstr, token, bool>
+struct equal_to<charstr, token>
 {
     typedef token key_type;
 
@@ -2383,7 +2383,7 @@ struct equal_to<charstr, token> : public std::binary_function<charstr, token, bo
 };
 
 ///Case-insensitive equality operators for hashes with token keys
-struct equal_to_insensitive : public std::binary_function<charstr, token, bool>
+struct equal_to_insensitive
 {
     typedef token key_type;
 
