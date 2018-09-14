@@ -432,5 +432,6 @@
     <ClInclude Include="sync\queue.h">
       <Filter>sync</Filter>
     </ClInclude>
+    <ClInclude Include="function.h" />
   </ItemGroup>
 </Project>

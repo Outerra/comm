@@ -759,7 +759,7 @@ protected:
     versionid get_versionid(uints id) const {
         DASSERT_RET(id < 0x00ffffffU, versionid());
         if constexpr (VERSIONING) {
-            return versionid(uint(id), base::version_array()[id]);
+            return versionid(uint(id), this->version_array()[id]);
         }
         else {
             return versionid(uint(id), 0);
@@ -768,7 +768,7 @@ protected:
 
     bool check_versionid(versionid vid) const {
         if constexpr (VERSIONING) {
-            uint8 ver = base::version_array()[vid.id];
+            uint8 ver = this->version_array()[vid.id];
             return vid.version == ver;
         }
         else
@@ -777,7 +777,7 @@ protected:
 
     void bump_version(uints id) {
         if constexpr (VERSIONING)
-            ++base::version_array()[id];
+            ++this->version_array()[id];
     }
 
     //@}
