@@ -75,10 +75,7 @@ reserved in advance.
 @param MODE see slotalloc_mode flags
 @param Es variadic types for optional parallel arrays which will be managed along with the main array
 **/
-template<
-    class T,
-    slotalloc_mode MODE = slotalloc_mode::base,
-    class ...Es>
+template<class T, slotalloc_mode MODE = slotalloc_mode::base, class ...Es>
 class slotalloc_base
     : protected slotalloc_detail::base<MODE & slotalloc_mode::versioning, MODE & slotalloc_mode::tracking, Es...>
 {
@@ -97,8 +94,6 @@ protected:
     static constexpr bool ATOMIC = (MODE & slotalloc_mode::atomic) != 0;
     static constexpr bool TRACKING = (MODE & slotalloc_mode::tracking) != 0;
     static constexpr bool VERSIONING = (MODE & slotalloc_mode::versioning) != 0;
-
-
 
 private:
 
@@ -786,7 +781,7 @@ protected:
 
     //@{ tracking functions
 
-    void set_modified( uints k ) const
+    void set_modified(uints k) const
     {
         if constexpr (TRACKING) {
             //current frame is always at bit position 0
@@ -844,17 +839,17 @@ protected:
 
 #else
 
-    static T* copy_object(T* dst, bool isnew, const T& v) {
-        return slotalloc_detail::constructor<POOL, T>::copy_object(dst, isnew, v);
+    static T* copy_object(T* dst, bool isold, const T& v) {
+        return slotalloc_detail::constructor<POOL, T>::copy_object(dst, isold, v);
     }
 
-    static T* copy_object(T* dst, bool isnew, T&& v) {
-        return slotalloc_detail::constructor<POOL, T>::copy_object(dst, isnew, std::forward<T>(v));
+    static T* copy_object(T* dst, bool isold, T&& v) {
+        return slotalloc_detail::constructor<POOL, T>::copy_object(dst, isold, std::forward<T>(v));
     }
 
     template<class...Ps>
-    static T* construct_object(T* dst, bool isnew, Ps&&... ps) {
-        return slotalloc_detail::constructor<POOL, T>::construct_object(dst, isnew, std::forward<Ps>(ps)...);
+    static T* construct_object(T* dst, bool isold, Ps&&... ps) {
+        return slotalloc_detail::constructor<POOL, T>::construct_object(dst, isold, std::forward<Ps>(ps)...);
     }
 
 #endif //#ifdef COID_CONSTEXPR_IF
@@ -1257,7 +1252,7 @@ public:
     template<typename Func>
     uints find_unused(Func f) const
     {
-        if constexpr (!POOL)
+        if coid_constexpr_if (!POOL)
             return UMAXS;
 
         typedef std::remove_reference_t<typename closure_traits<Func>::template arg<0>> Tx;
@@ -1290,7 +1285,7 @@ public:
                         break;
 
                     if (!(*pm & m)) {
-                        if (funccall_if(f, d[pbase + i], id|0))
+                        if (funccall_if(f, d[pbase + i], id))
                             return id;
                     }
                     //else if ((*pm & ~(m - 1)) == 0)

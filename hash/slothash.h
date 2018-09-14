@@ -235,7 +235,7 @@ public:
         bool isnew;
         T* p = insert_value_slot_uninit_(key, &isnew);
         if (p)
-            base::copy_object(p, isnew, val);
+            base::copy_object(p, !isnew, val);
         return p;
     }
 
@@ -247,7 +247,7 @@ public:
         bool isnew;
         T* p = insert_value_slot_uninit_(key, &isnew);
         if (p)
-            base::copy_object(p, isnew, std::forward<T>(val));
+            base::copy_object(p, !isnew, std::forward<T>(val));
         return p;
     }
 
