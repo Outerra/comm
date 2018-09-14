@@ -1257,7 +1257,7 @@ public:
     template<typename Func>
     uints find_unused(Func f) const
     {
-        if constexpr (!POOL)
+        if coid_constexpr_if (!POOL)
             return UMAXS;
 
         typedef std::remove_reference_t<typename closure_traits<Func>::template arg<0>> Tx;
