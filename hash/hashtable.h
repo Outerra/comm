@@ -140,7 +140,7 @@ public:
 private:
     dynarray<Node*> _table;
     uints _nelem;
-    uint _shift;
+    uint _shift = 64;
 
     typedef hashtable<VAL, HASHFUNC, EQFUNC, GETKEYFUNC, ALLOC>  _Self;
 

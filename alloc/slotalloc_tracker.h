@@ -174,7 +174,7 @@ struct base_versioning<true, Es...>
     }
 #endif
 
-private:
+protected:
 
     dynarray<uint8>& version_array() {
         return std::get<sizeof...(Es)>(*this);
