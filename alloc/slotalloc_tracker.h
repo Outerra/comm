@@ -45,14 +45,14 @@ COID_NAMESPACE_BEGIN
 ////////////////////////////////////////////////////////////////////////////////
 enum class slotalloc_mode
 {
-    base            = 0,
-    pool            = 1,                //< pool mode, destructors not called on item deletion, only on container deletion
+    base = 0,
+    pool = 1,                //< pool mode, destructors not called on item deletion, only on container deletion
 
-    atomic          = 4,                //< ins/del operations are done as atomic operations
-    tracking        = 8,                //< adds data and methods needed for tracking the modifications
-    versioning      = 16,               //< adds data and methods needed to track version of array items, to handle cases when a new item occupies the same slot and old references to the slot should be invalid
+    atomic = 4,                //< ins/del operations are done as atomic operations
+    tracking = 8,                //< adds data and methods needed for tracking the modifications
+    versioning = 16,               //< adds data and methods needed to track version of array items, to handle cases when a new item occupies the same slot and old references to the slot should be invalid
 
-    multikey        = 128,              //< used by slothash for multi-key value support
+    multikey = 128,              //< used by slothash for multi-key value support
 };
 
 inline constexpr slotalloc_mode operator | (slotalloc_mode a, slotalloc_mode b) {
@@ -80,7 +80,7 @@ struct changeset
     {}
 
     //@return bit plane number where the relative frame is tracked
-    static int bitplane( int rel_frame )
+    static int bitplane(int rel_frame)
     {
         if (rel_frame >= 0)
             return -1;
@@ -93,7 +93,7 @@ struct changeset
         int r = -rel_frame;
         int bitplane = 0;
 
-        for (int g = 0; r>0 && g<4; ++g) {
+        for (int g = 0; r > 0 && g < 4; ++g) {
             int b = r >= 8 ? 8 : r;
             r -= 8;
 
@@ -107,15 +107,15 @@ struct changeset
     }
 
     //@return bitplane mask for use with for_each_modified
-    static uint bitplane_mask( int bitplane )
+    static uint bitplane_mask(int bitplane)
     {
         return (2U << bitplane) - 1U;
     }
 
     //@return bitplane mask for use with for_each_modified
-    static uint bitplane_mask( int bitplane1, int bitplane2 )
+    static uint bitplane_mask(int bitplane1, int bitplane2)
     {
-        DASSERT( bitplane1 >= bitplane2 );
+        DASSERT(bitplane1 >= bitplane2);
         return ((2U << bitplane1) - 1U)
             && ~((2U << bitplane2) - 1U);
     }
@@ -196,12 +196,12 @@ struct base
     typedef base_versioning<VERSIONING, Es...>
         base_t;
 
-    void swap( base& other ) {
+    void swap(base& other) {
         static_cast<typename base_t::extarray_t*>(this)->swap(other);
     }
 
 #ifndef COID_CONSTEXPR_IF
-    void set_modified( uints k ) const {}
+    void set_modified(uints k) const {}
 
     dynarray<changeset>* get_changeset() { return 0; }
     const dynarray<changeset>* get_changeset() const { return 0; }
@@ -217,13 +217,13 @@ struct base<VERSIONING, true, Es...>
     typedef base_versioning<VERSIONING, Es..., changeset>
         base_t;
 
-    void swap( base& other ) {
+    void swap(base& other) {
         static_cast<typename base_t::extarray_t*>(this)->swap(other);
         std::swap(_frame, other._frame);
     }
 
 #ifndef COID_CONSTEXPR_IF
-    void set_modified( uints k ) const
+    void set_modified(uints k) const
     {
         //current frame is always at bit position 0
         dynarray<changeset>& mods = const_cast<dynarray<changeset>&>(
@@ -283,34 +283,32 @@ struct constructor {};
 template<class T>
 struct constructor<true, T>
 {
-    static T* copy_object( T* dst, bool isnew, const T& v ) {
-        if(isnew)
-            new(dst) T(v);
-        else
+    static T* copy_object(T* dst, bool isold, const T& v) {
+        if (isold)
             *dst = v;
+        else
+            new(dst) T(v);
         return dst;
     }
 
-    static T* copy_object( T* dst, bool isnew, T&& v ) {
-        if(isnew)
-            new(dst) T(std::forward<T>(v));
-        else
+    static T* copy_object(T* dst, bool isold, T&& v) {
+        if (isold)
             *dst = std::move(v);
+        else
+            new(dst) T(std::forward<T>(v));
         return dst;
     }
 
     template<class...Ps>
-    static T* construct_object( T* dst, bool isnew, Ps&&... ps ) {
-        if(isnew)
-            new(dst) T(std::forward<Ps>(ps)...);
-        else {
+    static T* construct_object(T* dst, bool isold, Ps&&... ps) {
+        if (isold) {
             //only in pool mode on reused objects, when someone calls push_construct
             //this is not a good usage pattern as it cannot reuse existing storage of the old object
             // (which is what pool mode is about)
             dst->~T();
-            new(dst) T(std::forward<Ps>(ps)...);
         }
-        return dst;
+
+        return new(dst) T(std::forward<Ps>(ps)...);
     }
 };
 
@@ -318,19 +316,19 @@ struct constructor<true, T>
 template<class T>
 struct constructor<false, T>
 {
-    static T* copy_object( T* dst, bool isnew, const T& v ) {
-        DASSERT(isnew);
+    static T* copy_object(T* dst, bool isold, const T& v) {
+        DASSERT(!isold);
         return new(dst) T(v);
     }
 
-    static T* copy_object( T* dst, bool isnew, T&& v ) {
-        DASSERT(isnew);
+    static T* copy_object(T* dst, bool isold, T&& v) {
+        DASSERT(!isold);
         return new(dst) T(std::forward<T>(v));
     }
 
     template<class...Ps>
-    static T* construct_object( T* dst, bool isnew, Ps&&... ps ) {
-        DASSERT(isnew);
+    static T* construct_object(T* dst, bool isold, Ps&&... ps) {
+        DASSERT(!isold);
         return new(dst) T(std::forward<Ps>(ps)...);
     }
 };
