@@ -1347,6 +1347,22 @@ public:
         return *this;
     }
 
+    ///Replace all non-alphanumeric characters
+    charstr& replace_non_alphanum(char replacement)
+    {
+        for (char* p = (char*) ptr(), *pe = (char*) ptre(); p < pe; ++p) {
+            uchar c = *p;
+            
+            if ((c >= 'A') && (c <= 'Z') || (c >= 'a') && (c <= 'z') || (c >= '0') && (c <= '9')) {
+                continue;
+            }
+
+            *p = replacement;
+        }
+
+        return *this;
+    }
+
     ///Append string while decoding characters as specified for URL encoding
     charstr& append_decode_url(const token& str)
     {
