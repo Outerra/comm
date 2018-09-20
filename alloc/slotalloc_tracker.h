@@ -18,7 +18,7 @@
 *
 * The Initial Developer of the Original Code is
 * Outerra.
-* Portions created by the Initial Developer are Copyright (C) 2016,2017
+* Portions created by the Initial Developer are Copyright (C) 2016-2018
 * the Initial Developer. All Rights Reserved.
 *
 * Contributor(s):
@@ -46,13 +46,13 @@ COID_NAMESPACE_BEGIN
 enum class slotalloc_mode
 {
     base = 0,
-    pool = 1,                //< pool mode, destructors not called on item deletion, only on container deletion
+    pool = 1,               //< pool mode, destructors not called on item deletion, only on container deletion
 
-    atomic = 4,                //< ins/del operations are done as atomic operations
-    tracking = 8,                //< adds data and methods needed for tracking the modifications
-    versioning = 16,               //< adds data and methods needed to track version of array items, to handle cases when a new item occupies the same slot and old references to the slot should be invalid
+    atomic = 4,             //< ins/del operations are done as atomic operations
+    tracking = 8,           //< adds data and methods needed for tracking the modifications
+    versioning = 16,        //< adds data and methods needed to track version of array items, to handle cases when a new item occupies the same slot and old references to the slot should be invalid
 
-    multikey = 128,              //< used by slothash for multi-key value support
+    multikey = 128,         //< used by slothash for multi-key value support
 };
 
 inline constexpr slotalloc_mode operator | (slotalloc_mode a, slotalloc_mode b) {

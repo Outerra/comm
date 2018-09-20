@@ -17,7 +17,7 @@
 *
 * The Initial Developer of the Original Code is
 * Outerra.
-* Portions created by the Initial Developer are Copyright (C) 2017
+* Portions created by the Initial Developer are Copyright (C) 2017-2018
 * the Initial Developer. All Rights Reserved.
 *
 * Contributor(s):
@@ -196,9 +196,10 @@ public:
     template<class...Ps>
     T* push_construct(Ps&&... ps) {
         uints id;
-        T* p = base::add_uninit(nullptr, &id);
+        bool isnew;
+        T* p = base::add_uninit(&isnew, &id);
 
-        base::construct_object(p, false, std::forward<Ps>(ps)...);
+        base::construct_object(p, !isnew, std::forward<Ps>(ps)...);
 
         //if this fails, multikey is off and same key item exists
         T* r = insert_value_(p, assert_cast<uint>(id));
@@ -481,7 +482,8 @@ protected:
             _buckets.calloc(nb, true);
 
             dynarray<uint>& st = seqtable();
-            ::memset(st.ptr(), 0xff, st.byte_size());
+            uints na = stdmax(base::preallocated_count(), nb);    //make sure seqtable won't get rebased
+            st.calloc(na, true);
 
             _shift = shift;
 

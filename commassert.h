@@ -57,6 +57,20 @@
 */
 
 ////////////////////////////////////////////////////////////////////////////////
+COID_NAMESPACE_BEGIN
+
+struct enter_single_thread {
+    enter_single_thread(volatile uint& tid);
+    ~enter_single_thread();
+
+private:
+
+    volatile uint& _tid;
+};
+
+COID_NAMESPACE_END
+
+////////////////////////////////////////////////////////////////////////////////
 #ifdef SYSTYPE_MSVC
 #define XASSERT(e)                  if(__assert_e) __debugbreak()
 #else

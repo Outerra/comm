@@ -17,7 +17,7 @@
  *
  * The Initial Developer of the Original Code is
  * Outerra.
- * Portions created by the Initial Developer are Copyright (C) 2013-2017
+ * Portions created by the Initial Developer are Copyright (C) 2013-2018
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -465,8 +465,13 @@ public:
     //@return number of used slots in the container
     uints count() const { return _count; }
 
-    //@return allocated count (not necessarily used)
+    //@return allocated and previously created count (not necessarily used currently)
     uints allocated_count() const { return _created; }
+
+    //@return number of currently preallocated items
+    uints preallocated_count() const {
+        return _pages.size() * page::ITEMS;
+    }
 
     //@{ accessors with versionid argument, enabled only if versioning is on
 
