@@ -50,6 +50,10 @@
 
 COID_NAMESPACE_BEGIN
 
+#if defined(COID_CONSTEXPR_IF) && !defined(__cpp_if_constexpr)
+#error Please enable C++17 language standard (/std:c++17) in project settings for VS2017+ projects
+#endif
+
 //helper insert/delete fnc
 template <class T> T* __move(ints nitemsfwd, T* ptr, uints nitems) {
     if (nitems)
