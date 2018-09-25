@@ -388,6 +388,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\atomic\atomic.cpp" />
+    <ClCompile Include="..\..\..\binstream\stdstream.cpp" />
     <ClCompile Include="..\..\..\coder\lz4\lz4.c" />
     <ClCompile Include="..\..\..\coder\lz4\lz4hc.c" />
     <ClCompile Include="..\..\..\coder\lz4\xxhash.c" />
