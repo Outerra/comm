@@ -869,6 +869,23 @@ struct token
             return ctr.process_notfound(*this, r);
     }
 
+    template <typename P = [](const char& ch) -> bool>
+    token cut_left_predicate(P predicate, cut_trait ctr = cut_trait_remove_sep())
+    {
+        token r;
+        const char* p = _ptr + count_not(predicate);
+        if (p < _pte)         //if not all is not separator
+        {
+            token sep(p, ctr.consume_other_separators()
+                ? _ptr + count(predicate, p - _ptr)
+                : p + 1);
+
+            return ctr.process_found(*this, r, sep);
+        }
+        else
+            return ctr.process_notfound(*this, r);
+    }
+
     token cut_left_group(char separator, cut_trait ctr = cut_trait_remove_sep()) {
         return cut_left(separator, ctr);
     }
@@ -945,6 +962,27 @@ struct token
         return cut_left_back(separator, ctr);
     }
 
+    ///Cut left substring, searching backwards for a character that satisfies delimiter predicate
+    template <typename P = [](const char& ch) -> bool>
+    token cut_left_predicate_back(P predicate, cut_trait ctr = cut_trait_remove_sep())
+    {
+        token r;
+        uints off = count_not(predicate);
+
+        if (off > 0)
+        {
+            uints ln = ctr.consume_other_separators()
+                ? off - token(_ptr, off).count(predicate)
+                : 1;
+
+            token sep(_ptr + off - ln, ln);
+
+            return ctr.process_found(*this, r, sep);
+        }
+        else
+            return ctr.process_notfound(*this, r);
+    }
+
     ///Cut left token, searching for a substring separator backwards
     //@param icase true if case should be ignored
     token cut_left_back(const token& ss, bool icase, cut_trait ctr = cut_trait_remove_sep())
@@ -1013,8 +1051,15 @@ struct token
         return cut_left_group(separators, ctr.make_swap());
     }
 
-    token cut_right_group(char separator, cut_trait ctr = cut_trait_remove_sep()) {
+    token cut_right_group(char separator, cut_trait ctr = cut_trait_remove_sep())
+    {
         return cut_right(separator, ctr);
+    }
+
+    template <typename P = [](const char& ch) -> bool>
+    token cut_right_predicate(P predicate, cut_trait ctr = cut_trait_remove_sep())
+    {
+        return cut_left_predicate(predicate, ctr.make_swap());
     }
 
     ///Cut right token up to the specified substring
@@ -1045,6 +1090,12 @@ struct token
         return cut_right_back(separator, ctr);
     }
 
+    template <typename P = [](const char& ch) -> bool>
+    token cut_right_predicate_back(P predicate, cut_trait ctr = cut_trait_remove_sep())
+    {
+        return cut_left_predicate_back(predicate, ctr.make_swap());
+    }
+
     ///Cut right substring, searching for separator backwards
     token cut_right_back(const token& ss, bool icase, cut_trait ctr = cut_trait_remove_sep())
     {
@@ -1057,9 +1108,6 @@ struct token
         return cut_left_back(ss, ctr.make_swap());
     }
 
-
-
-
     ///Count characters starting from offset @a off that are not in the group @a sep
     uint count_notingroup(const token& sep, uints off = 0) const
     {
@@ -1070,6 +1118,19 @@ struct token
             for (; ps < sep._pte; ++ps)
                 if (*p == *ps)
                     return uint(p - _ptr);
+        }
+        return uint(p - _ptr);
+    }
+
+    ///Count characters starting from offset @a off that do not satisfy condition @a predicate
+    template <typename P = [](const char& ch) -> bool>
+    uint count_not(P predicate, uints off = 0) const
+    {
+        const char* p = _ptr + off;
+        for (; p < _pte; ++p)
+        {
+            if (predicate(*p))
+                break;
         }
         return uint(p - _ptr);
     }
@@ -1140,6 +1201,7 @@ struct token
         return uint(p - _ptr);
     }
 
+    ///Count characters starting from offset @a off that are in the group @a sep
     uint count_ingroup(const token& sep, uints off = 0) const
     {
         const char* p = _ptr + off;
@@ -1154,6 +1216,20 @@ struct token
             if (ps >= sep._pte)
                 break;
         }
+        return uint(p - _ptr);
+    }
+
+    ///Count characters starting from offset @a off that satisfy condition @a predicate
+    template <typename P = [](const char& ch) -> bool>
+    uint count(P predicate, uints off = 0) const
+    {
+        const char* p = _ptr + off;
+        for (; p < _pte; ++p)
+        {
+            if (!predicate(*p))
+                break;
+        }
+
         return uint(p - _ptr);
     }
 

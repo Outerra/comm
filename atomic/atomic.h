@@ -387,7 +387,7 @@ inline coid::uint8 aand(volatile coid::uint8 * ptr, const coid::uint8 val) {
 
 #ifdef SYSTYPE_32
 inline coid::uints aand(volatile coid::uints * ptr, const coid::uints val) {
-    return aand(reinterpret_cast<volatile int32*>(ptr), val);
+    return aand(reinterpret_cast<volatile coid::int32*>(ptr), val);
 }
 #endif
 
@@ -450,7 +450,7 @@ inline coid::uint8 aor(volatile coid::uint8 * ptr, const coid::uint8 val) {
 
 #ifdef SYSTYPE_32
 inline coid::uints aor(volatile coid::uints * ptr, const coid::uints val) {
-    return aor(reinterpret_cast<volatile int32*>(ptr), val);
+    return aor(reinterpret_cast<volatile coid::int32*>(ptr), val);
 }
 #endif
 
@@ -513,7 +513,7 @@ inline coid::uint8 axor(volatile coid::uint8 * ptr, const coid::uint8 val) {
 
 #ifdef SYSTYPE_32
 inline coid::uints axor(volatile coid::uints * ptr, const coid::uints val) {
-    return axor(reinterpret_cast<volatile int32*>(ptr), val);
+    return axor(reinterpret_cast<volatile coid::int32*>(ptr), val);
 }
 #endif
 
