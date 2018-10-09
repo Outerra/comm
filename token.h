@@ -1,3 +1,5 @@
+#pragma once
+
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -34,10 +36,6 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-
-
-#ifndef __COID_COMM_TOKEN__HEADER_FILE__
-#define __COID_COMM_TOKEN__HEADER_FILE__
 
 #include "namespace.h"
 
@@ -869,7 +867,8 @@ struct token
             return ctr.process_notfound(*this, r);
     }
 
-    template <typename P = [](const char& ch) -> bool>
+    //@param P a functor of type bool(char)
+    template <typename P>
     token cut_left_predicate(P predicate, cut_trait ctr = cut_trait_remove_sep())
     {
         token r;
@@ -963,7 +962,8 @@ struct token
     }
 
     ///Cut left substring, searching backwards for a character that satisfies delimiter predicate
-    template <typename P = [](const char& ch) -> bool>
+    //@param P a functor of type bool(char)
+    template <typename P>
     token cut_left_predicate_back(P predicate, cut_trait ctr = cut_trait_remove_sep())
     {
         token r;
@@ -1056,7 +1056,8 @@ struct token
         return cut_right(separator, ctr);
     }
 
-    template <typename P = [](const char& ch) -> bool>
+    //@param P a functor of type bool(char)
+    template <typename P>
     token cut_right_predicate(P predicate, cut_trait ctr = cut_trait_remove_sep())
     {
         return cut_left_predicate(predicate, ctr.make_swap());
@@ -1090,7 +1091,8 @@ struct token
         return cut_right_back(separator, ctr);
     }
 
-    template <typename P = [](const char& ch) -> bool>
+    //@param P a functor of type bool(char)
+    template <typename P>
     token cut_right_predicate_back(P predicate, cut_trait ctr = cut_trait_remove_sep())
     {
         return cut_left_predicate_back(predicate, ctr.make_swap());
@@ -1123,7 +1125,8 @@ struct token
     }
 
     ///Count characters starting from offset @a off that do not satisfy condition @a predicate
-    template <typename P = [](const char& ch) -> bool>
+    //@param P a functor of type bool(char)
+    template <typename P>
     uint count_not(P predicate, uints off = 0) const
     {
         const char* p = _ptr + off;
@@ -1220,7 +1223,8 @@ struct token
     }
 
     ///Count characters starting from offset @a off that satisfy condition @a predicate
-    template <typename P = [](const char& ch) -> bool>
+    //@param P a functor of type bool(char)
+    template <typename P>
     uint count(P predicate, uints off = 0) const
     {
         const char* p = _ptr + off;
@@ -2842,5 +2846,3 @@ ostream& operator << (ostream& ost, const coid::token& tok);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-#endif //__COID_COMM_TOKEN__HEADER_FILE__
