@@ -44,7 +44,7 @@ class interface_register_impl
 
 public:
 
-    COIDNEWDELETE("interface_register_impl");
+    COIDNEWDELETE(interface_register_impl);
 
     typedef interface_register::creator
         creator;

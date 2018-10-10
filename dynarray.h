@@ -112,7 +112,7 @@ public:
     typedef COUNT               count_t;
     typedef A                   allocator_type;
 
-    COIDNEWDELETE("dynarray");
+    COIDNEWDELETE(dynarray);
 
     dynarray() : _ptr(0) {
         A::instance();

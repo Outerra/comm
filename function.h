@@ -143,7 +143,7 @@ struct closure_traits_base
     template <typename Fn>
     struct callable : callbase
     {
-        COIDNEWDELETE("callable");
+        COIDNEWDELETE(callable);
 
         callable(const Fn& fn) : fn(fn) {}
 

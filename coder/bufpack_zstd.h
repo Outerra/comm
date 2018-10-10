@@ -288,12 +288,14 @@ struct packer_zstd
 
 protected:
 
+    struct zstd {};
+
     static void* _alloc(void* opaque, size_t size) {
-        return tracked_alloc("zstd", size);
+        return tracked_alloc(&typeid(zstd), size);
     }
 
     static void _free(void* opaque, void* address) {
-        return tracked_free("zstd", address);
+        return tracked_free(&typeid(zstd), address);
     }
 
 

@@ -125,11 +125,13 @@ struct memtrack_registrar
     //@note virtual methods to avoid breaking dlls when exe implementation changes
 
     ///Track allocation
-    virtual void alloc(const char* name, size_t size)
+    virtual void alloc(const std::type_info* tracking, size_t size)
     {
         static bool inside = false;
         if (inside)
             return;     //avoid stack overlow from hashmap
+
+        const char* name = tracking ? tracking->name() : "unknown";
 
         GUARDTHIS(*mux);
         inside = true;
@@ -147,8 +149,10 @@ struct memtrack_registrar
     }
 
     ///Track freeing
-    virtual void free(const char* name, size_t size)
+    virtual void free(const std::type_info* tracking, size_t size)
     {
+        const char* name = tracking ? tracking->name() : "unknown";
+
         GUARDTHIS(*mux);
         memtrack_imp* val = const_cast<memtrack_imp*>(hash->find_value((size_t)name));
 
@@ -289,21 +293,21 @@ void memtrack_shutdown()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void memtrack_alloc(const char* name, size_t size)
+void memtrack_alloc(const std::type_info* tracking, size_t size)
 {
     memtrack_registrar* mtr = memtrack_register();
     if (!mtr || !mtr->running) return;
 
-    mtr->alloc(name, size);
+    mtr->alloc(tracking, size);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void memtrack_free(const char* name, size_t size)
+void memtrack_free(const std::type_info* tracking, size_t size)
 {
     memtrack_registrar* mtr = memtrack_register();
     if (!mtr || !mtr->running) return;
 
-    mtr->free(name, size);
+    mtr->free(tracking, size);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

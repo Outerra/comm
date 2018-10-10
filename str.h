@@ -65,7 +65,7 @@ class charstr
 
 public:
 
-    COIDNEWDELETE("charstr");
+    COIDNEWDELETE(charstr);
 
     struct output_iterator : std::iterator<std::output_iterator_tag, char>
     {

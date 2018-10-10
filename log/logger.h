@@ -163,7 +163,7 @@ protected:
 
 public:
 
-    COIDNEWDELETE("logmsg");
+    COIDNEWDELETE(logmsg);
 
     logmsg();
 
