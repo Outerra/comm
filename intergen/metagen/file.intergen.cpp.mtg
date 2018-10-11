@@ -101,7 +101,7 @@ $-[/method]-$
 
 protected:
 
-    COIDNEWDELETE("$[ns]$$@value$::$[/ns]$$name$_dispatcher");
+    COIDNEWDELETE($name$_dispatcher);
 
     $name$_dispatcher()
     {}

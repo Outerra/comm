@@ -100,7 +100,7 @@ class policy_pooled_i
 	: public policy_base
 {
 public:
-    COIDNEWDELETE("policy_pooled_i");
+    COIDNEWDELETE(policy_pooled_i);
 
     typedef policy_pooled_i<T> this_type;
 	typedef pool<this_type*> pool_type;

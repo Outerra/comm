@@ -110,7 +110,7 @@ ref<logmsg> canlog(log::type type, const tokenhash & hash, const void * inst)
 class policy_msg : public policy_base
 {
 public:
-    COIDNEWDELETE("policy_msg");
+    COIDNEWDELETE(policy_msg);
 
     typedef pool<policy_msg*> pool_type;
 

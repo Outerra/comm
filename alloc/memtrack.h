@@ -44,30 +44,53 @@
 #include <cstddef>
 #include <typeinfo>
 
+namespace coid {
+namespace dbg {
+
 #if defined(_DEBUG) || COID_USE_MEMTRACK
 
-#define MEMTRACK_ALLOC(type, size) coid::memtrack_alloc(&typeid(type), size)
-#define MEMTRACK_FREE(type, size) coid::memtrack_free(&typeid(type), size)
+template <class T>
+inline void memtrack_alloc(size_t size) { coid::memtrack_alloc(&typeid(T), size); }
+
+template <class T>
+inline void memtrack_free(size_t size) { coid::memtrack_free(&typeid(T), size); }
+
+inline void memtrack_alloc(const std::type_info* tracking, size_t size) {
+    coid::memtrack_alloc(tracking, size);
+}
+
+inline void memtrack_free(const std::type_info* tracking, size_t size) {
+    coid::memtrack_free(tracking, size);
+}
 
 #define MEMTRACK_ENABLED
 
 #else
 
-#define MEMTRACK_ALLOC(tracking, size)
-#define MEMTRACK_FREE(tracking, size)
+template <class T>
+inline void memtrack_alloc(size_t size) {}
+
+template <class T>
+inline void memtrack_free(size_t size) {}
+
+inline void memtrack_alloc(const std::type_info* tracking, size_t size) {}
+inline void memtrack_free(const std::type_info* tracking, size_t size) {}
 
 #endif
+
+} //namespace dbg
+} //namespace coid
 
 
 #define COIDNEWDELETE(T) \
     void* operator new( size_t size ) { \
         void* p=::dlmalloc(size); \
         if(p==0) throw std::bad_alloc(); \
-        MEMTRACK_ALLOC(T, dlmalloc_usable_size(p)); \
+        coid::dbg::memtrack_alloc<T>(dlmalloc_usable_size(p)); \
         return p; } \
     void* operator new( size_t, void* p ) { return p; } \
     void operator delete(void* p) { \
-        MEMTRACK_FREE(T, dlmalloc_usable_size(p)); \
+        coid::dbg::memtrack_free<T>(dlmalloc_usable_size(p)); \
         ::dlfree(p); } \
     void operator delete(void*, void*)  { }
 
@@ -75,11 +98,11 @@
     void* operator new( size_t size ) { \
         void* p=::dlmemalign(alignment,size); \
         if(p==0) throw std::bad_alloc(); \
-        MEMTRACK_ALLOC(T, dlmalloc_usable_size(p)); \
+        coid::dbg::memtrack_alloc<T>(dlmalloc_usable_size(p)); \
         return p; } \
     void* operator new( size_t, void* p ) { return p; } \
     void operator delete(void* p) { \
-        MEMTRACK_FREE(T, dlmalloc_usable_size(p)); \
+        coid::dbg::memtrack_free<T>(dlmalloc_usable_size(p)); \
         ::dlfree(p); } \
     void operator delete(void*, void*)  { }
 

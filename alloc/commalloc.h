@@ -151,7 +151,7 @@ struct comm_array_allocator
             m ? m : SINGLETON(comm_array_mspace).msp,
             sizeof(uints) + n * elemsize);
 
-        MEMTRACK_ALLOC(tracking, ::mspace_usable_size(p));
+        dbg::memtrack_alloc(tracking, ::mspace_usable_size(p));
 
         if(!p) throw std::bad_alloc();
         p[0] = n;
@@ -170,7 +170,7 @@ struct comm_array_allocator
         if(!p)
             return alloc(n, elemsize, tracking, m);
 
-        MEMTRACK_FREE(tracking, ::mspace_usable_size((uints*)p - 1));
+        dbg::memtrack_free(tracking, ::mspace_usable_size((uints*)p - 1));
 
         uints* pn = (uints*)::mspace_realloc(
             m ? m : SINGLETON(comm_array_mspace).msp,
@@ -178,7 +178,7 @@ struct comm_array_allocator
             sizeof(uints) + n * elemsize);
         if(!pn) throw std::bad_alloc();
 
-        MEMTRACK_ALLOC(tracking, ::mspace_usable_size(pn));
+        dbg::memtrack_alloc(tracking, ::mspace_usable_size(pn));
 
         pn[0] = n;
         return pn + 1;
@@ -204,8 +204,8 @@ struct comm_array_allocator
         if(!pn)
             return 0;
 
-        MEMTRACK_FREE(tracking, so);
-        MEMTRACK_ALLOC(tracking, ::mspace_usable_size(pn));
+        dbg::memtrack_free(tracking, so);
+        dbg::memtrack_alloc(tracking, ::mspace_usable_size(pn));
 
         pn[0] = n;
         return pn + 1;
@@ -219,7 +219,7 @@ struct comm_array_allocator
     {
         if(!p)  return;
 
-        MEMTRACK_FREE(tracking, ::mspace_usable_size((uints*)p - 1));
+        dbg::memtrack_free(tracking, ::mspace_usable_size((uints*)p - 1));
         ::mspace_free((uints*)p - 1);
     }
 
