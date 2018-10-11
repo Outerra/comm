@@ -48,6 +48,10 @@ namespace coid {
 
 #if defined(_DEBUG) || COID_USE_MEMTRACK
 
+//fwd
+void memtrack_alloc(const std::type_info* tracking, size_t size);
+void memtrack_free(const std::type_info* tracking, size_t size);
+
 template <class T>
 inline void dbg_memtrack_alloc(size_t size) { coid::memtrack_alloc(&typeid(T), size); }
 
