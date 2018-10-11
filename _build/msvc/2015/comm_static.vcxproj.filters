@@ -360,6 +360,7 @@
     <ClInclude Include="..\..\..\alloc\slotalloc_tracker.h">
       <Filter>alloc</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\crypt\utils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\crypt\sha1.cpp">
