@@ -2639,7 +2639,7 @@ template<> struct hasher<token>
 {
     typedef token key_type;
 
-    size_t operator() (const token& tok) const {
+    uint operator() (const token& tok) const {
         return tok.hash();
     }
 };

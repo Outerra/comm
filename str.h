@@ -2378,7 +2378,7 @@ template<bool INSENSITIVE> struct hasher<charstr, INSENSITIVE>
 {
     typedef charstr key_type;
 
-    size_t operator() (const charstr& str) const
+    uint operator() (const charstr& str) const
     {
         return INSENSITIVE
             ? __coid_hash_string(str.ptr(), str.len())
