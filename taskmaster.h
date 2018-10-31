@@ -490,6 +490,7 @@ private:
 
     void* threadfunc( int order )
     {
+        thread::set_affinity_mask((uint64)1 << order);
         coidlog_info("taskmaster", "thread " << order << " running");
 
         do
