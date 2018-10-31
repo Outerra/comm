@@ -124,6 +124,26 @@ public:
         wait(0);
     }
 
+    ///Push task (function and its arguments) into queue for processing by specific consumer
+    //@param affinity_group one group is processed by single specific consumer
+    //@param affinity consumer consumes all task with specific affinite in a row
+    //@param fn function to run
+    //@param args arguments needed to invoke the function
+        template <typename Fn, typename ...Args>
+    void push_with_affinity(uint8 affinity_group, uint affinity, const Fn& fn, Args&& ...args)
+    {
+        using callfn = invoker<Fn, Args...>;
+
+        //lock to access allocator and semaphore
+        std::unique_lock<std::mutex> lock(_sync);
+        
+        granule* p = alloc_data(sizeof(callfn));
+        auto task = new(p) callfn(0, fn, std::forward<Args>(args)...);
+        task->set_affinity(affinity);
+
+        push_to_affinity_queue(affinity_group, task);
+    }
+
     ///Push task (function and its arguments) into queue for processing by worker threads
     //@param tlevel task level to push into (<0 unsynced long duration tasks, >=0 registered task level
     //@param fn function to run
@@ -209,6 +229,26 @@ public:
         });
     }
 
+    
+    ///Process tasks with specific affinity
+    ///@param affinity_group only process tasks in specific group
+    ///@param affinity only process tasks witch specific affinity from the group
+    void process_affinity(uint8 affinity_group, uint affinity)
+    {
+        queue<invoker_base*>& q = _affinity_queues[affinity_group];
+        q.push(nullptr); // push sentinel
+        invoker_base* task;
+        while(q.pop(task) && task) {
+            if (task->affinity() == affinity) {
+                task->invoke();
+                _taskdata.del_range((granule*)task, align_to_chunks(task->size(), sizeof(granule)));
+            }
+            else {
+                q.push(task);
+            }
+        }
+    }
+
 protected:
 
     ///
@@ -273,9 +313,18 @@ protected:
             return _sync;
         }
 
+        uint affinity() const { 
+            return _affinity;
+        }
+
+        void set_affinity(uint affinity) {
+            _affinity = affinity;
+        }
+
     protected:
         int _sync;
         thread_t _tid;
+        uint _affinity;
     };
 
     template <typename Fn, typename ...Args>
@@ -323,7 +372,7 @@ protected:
             return sizeof(*this);
         }
     };
-
+    
     ///invoker for member functions (on copied objects)
     template <typename Fn, typename C, typename ...Args>
     struct invoker_memberfn : invoker_common<Fn, Args...>
@@ -394,6 +443,12 @@ protected:
 
         iref<C> _obj;
     };
+
+
+    void push_to_affinity_queue(uint affinity_group, invoker_base* task)
+    {
+        _affinity_queues[affinity_group].push(task);
+    }
 
 
     bool push_to_queue(invoker_base* task)
@@ -560,6 +615,7 @@ private:
     slotalloc_atomic<granule> _taskdata;
 
     queue<invoker_base*> _queue;
+    queue<invoker_base*> _affinity_queues[256];
 
     dynarray<threadinfo> _threads;
     volatile int _nlong_threads;
