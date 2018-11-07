@@ -200,7 +200,7 @@ public:
         while (!is_signaled(signal, true)) {
             invoker_base* task = 0;
             for(int prio = 0; prio < (int)EPriority::COUNT; ++prio) {
-                const bool can_run = prio != (int)EPriority::LOW || order == -1 || order < _nlowprio_threads; 
+                const bool can_run = prio != (int)EPriority::LOW || (order < _nlowprio_threads && order != -1);
                 if (can_run && _ready_jobs[prio].pop(task)) {
                     --_qsize;
                     run_task(task, get_order());

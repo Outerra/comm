@@ -16,18 +16,15 @@ void* taskmaster::threadfunc( int order )
         wait();
         if (_quitting) break;
 
-        bool run = false;
         invoker_base* task = 0;
         for(int prio = 0; prio < (int)EPriority::COUNT; ++prio) {
-            const bool can_run = true; //prio != (int)EPriority::LOW || order < _nlowprio_threads || order == -1;
+            const bool can_run = prio != (int)EPriority::LOW || order < _nlowprio_threads || order == -1;
             if (can_run && _ready_jobs[prio].pop(task)) {
                 run_task(task, order);
-                run = true;
                 break;
             }
         }
         
-        DASSERT(run == (task != nullptr));
         if (!task) {
             // we did not pop any task, this might happen if there's a low prio task 
             // and thread can not process it, so let's wake other thread, hopefully one which 
