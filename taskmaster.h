@@ -143,14 +143,19 @@ public:
     {
         using callfn = invoker<Fn, Args...>;
 
-        //lock to access allocator and semaphore
-        std::unique_lock<std::mutex> lock(_sync);
+        {
+            //lock to access allocator and semaphore
+            std::unique_lock<std::mutex> lock(_sync);
 
-        granule* p = alloc_data(sizeof(callfn));
-        increment(signal);
-        auto task = new(p) callfn(signal ? *signal : invalid_signal, fn, std::forward<Args>(args)...);
+            granule* p = alloc_data(sizeof(callfn));
+            increment(signal);
+            auto task = new(p) callfn(signal ? *signal : invalid_signal, fn, std::forward<Args>(args)...);
 
-        push_to_queue(priority, task);
+            _ready_jobs[(int)priority].push_front(task);
+        
+            ++_qsize;
+        }
+        _cv.notify_one();
     }
 
     ///Push task (function and its arguments) into queue for processing by worker threads
@@ -165,15 +170,20 @@ public:
         static_assert(std::is_member_function_pointer<Fn>::value, "fn must be a function that can be invoked as ((*obj).*fn)(args)");
 
         using callfn = invoker_memberfn<Fn, C, Args...>;
+        
+        {
+            //lock to access allocator and semaphore
+            std::unique_lock<std::mutex> lock(_sync);
 
-        //lock to access allocator and semaphore
-        std::unique_lock<std::mutex> lock(_sync);
+            granule* p = alloc_data(sizeof(callfn));
+            increment(signal);
+            auto task = new(p) callfn(signal ? *signal : invalid_signal, fn, obj, std::forward<Args>(args)...);
 
-        granule* p = alloc_data(sizeof(callfn));
-        increment(signal);
-        auto task = new(p) callfn(signal ? *signal : invalid_signal, fn, obj, std::forward<Args>(args)...);
-
-        push_to_queue(priority, task);
+            _ready_jobs[(int)priority].push_front(task);
+        
+            ++_qsize;
+        }
+        _cv.notify_one();
     }
 
 
@@ -192,6 +202,7 @@ public:
             for(int prio = 0; prio < (int)EPriority::COUNT; ++prio) {
                 const bool can_run = prio != (int)EPriority::LOW || order == -1 || order < _nlowprio_threads; 
                 if (can_run && _ready_jobs[prio].pop(task)) {
+                    --_qsize;
                     run_task(task, get_order());
                     break;
                 }
@@ -429,14 +440,6 @@ protected:
         uint32 version;
     };
 
-    void push_to_queue(EPriority priority, invoker_base* task)
-    {
-        _ready_jobs[(int)priority].push_front(task);
-        
-        ++_qsize;
-        _cv.notify_one();
-    }
-
 private:
 
     taskmaster(const taskmaster&);
@@ -446,41 +449,7 @@ private:
         return ti->master->threadfunc(ti->order);
     }
 
-    void* threadfunc( int order )
-    {
-        get_order() = order;
-
-        thread::set_affinity_mask((uint64)1 << order);
-        coidlog_info("taskmaster", "thread " << order << " running");
-
-        do
-        {
-            wait();
-            if (_quitting) break;
-
-            invoker_base* task = 0;
-            for(int prio = 0; prio < (int)EPriority::COUNT; ++prio) {
-                const bool can_run = prio != (int)EPriority::LOW || order < _nlowprio_threads || order == -1;
-                if (can_run && _ready_jobs[prio].pop(task)) {
-                    run_task(task, order);
-                    break;
-                }
-            }
-            
-            if (!task) {
-                // we did not pop any task, this might happen if there's a low prio task 
-                // and thread can not process it, so let's wake other thread, hopefully one which 
-                // can process low prio tasks
-                notify();
-            }
-
-        }
-        while (!_quitting);
-
-        coidlog_info("taskmaster", "thread " << order << " exiting");
-
-        return 0;
-    }
+    void* threadfunc( int order );
 
     void run_task( invoker_base* task, int order )
     {
