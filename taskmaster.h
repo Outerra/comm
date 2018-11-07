@@ -225,7 +225,7 @@ public:
     ///The signal's counter is initialized = 1
     signal_handle create_signal()
     {
-        std::unique_lock<std::mutex> lock(_sync);
+        std::unique_lock<std::mutex> lock(_signal_sync);
 
         signal_handle handle;
         if(!_free_signals.pop(handle)) return invalid_signal;
@@ -240,7 +240,7 @@ public:
     ///and waiting entities can progress further.
     void trigger_signal(signal_handle handle)
     {
-        std::unique_lock<std::mutex> lock(_sync);
+        std::unique_lock<std::mutex> lock(_signal_sync);
 
         signal& s = _signal_pool[handle.index()];
         --s.ref;
@@ -459,16 +459,20 @@ private:
             if (_quitting) break;
 
             invoker_base* task = 0;
-            do {
-                for(int prio = 0; prio < (int)EPriority::COUNT; ++prio) {
-                    const bool can_run = prio != (int)EPriority::LOW || order < _nlowprio_threads || order == -1;
-                    if (can_run && _ready_jobs[prio].pop(task)) {
-                        run_task(task, order);
-                        goto run;
-                    }
+            for(int prio = 0; prio < (int)EPriority::COUNT; ++prio) {
+                const bool can_run = prio != (int)EPriority::LOW || order < _nlowprio_threads || order == -1;
+                if (can_run && _ready_jobs[prio].pop(task)) {
+                    run_task(task, order);
+                    break;
                 }
-            } while(!_quitting);
-            run: (void)0;
+            }
+            
+            if (!task) {
+                // we did not pop any task, this might happen if there's a low prio task 
+                // and thread can not process it, so let's wake other thread, hopefully one which 
+                // can process low prio tasks
+                notify();
+            }
 
         }
         while (!_quitting);
@@ -488,7 +492,7 @@ private:
 
         const signal_handle handle = task->signal();
         if (handle.is_valid()) {
-            std::unique_lock<std::mutex> lock(_sync);
+            std::unique_lock<std::mutex> lock(_signal_sync);
             signal& s = _signal_pool[handle.index()];
             --s.ref;
             if(s.ref == 0) {
@@ -507,10 +511,10 @@ private:
 
         signal& s = _signal_pool[handle.index()];
         
-        if (lock) _sync.lock();
+        if (lock) _signal_sync.lock();
         const uint version = s.version;
         const uint ref = s.ref;
-        if (lock) _sync.unlock();
+        if (lock) _signal_sync.unlock();
 
         return version != handle.version() || ref == 0;
     }
@@ -528,6 +532,7 @@ private:
 
     void increment(signal_handle* handle)
     {
+        std::unique_lock<std::mutex> lock(_signal_sync);
         if (!handle) return;
         
         if (handle->is_valid()) {
@@ -579,6 +584,7 @@ private:
 private:
 
     std::mutex _sync;
+    std::mutex _signal_sync;
     std::condition_variable _cv;
     std::atomic_int _qsize;             //< current queue size, used also as a semaphore
     volatile bool _quitting;
