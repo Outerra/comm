@@ -73,7 +73,10 @@ public:
             version_shift = 16
         };
 
-        static signal_handle make(uint version, uint index) { return {(version << version_shift) | (index & index_mask) }; }
+        static signal_handle make(uint version, uint index) { return signal_handle((version << version_shift) | (index & index_mask)); }
+
+        signal_handle() : value(invalid) {}
+        explicit signal_handle(uint32 value) : value(value) {}
 
         bool is_valid() const { return value != invalid; }
         uint index() const { return value & index_mask; }
@@ -82,7 +85,7 @@ public:
         uint32 value = invalid;
     };
 
-    static inline const signal_handle invalid_signal = { signal_handle::invalid };
+    static const signal_handle invalid_signal;
 
     enum class EPriority {
         HIGH,
@@ -105,7 +108,7 @@ public:
         _free_signals.reserve(4096, false);
         for (uint i = 0; i < _signal_pool.size(); ++i) {
             _signal_pool[i].version = 0;
-            _free_signals.push({i});
+            _free_signals.push(signal_handle(i));
         }
 
         _threads.alloc(nthreads);
@@ -222,7 +225,7 @@ public:
     ///The signal's counter is initialized = 1
     signal_handle create_signal()
     {
-        std::unique_lock lock(_sync);
+        std::unique_lock<std::mutex> lock(_sync);
 
         signal_handle handle;
         if(!_free_signals.pop(handle)) return invalid_signal;
@@ -237,7 +240,7 @@ public:
     ///and waiting entities can progress further.
     void trigger_signal(signal_handle handle)
     {
-        std::unique_lock lock(_sync);
+        std::unique_lock<std::mutex> lock(_sync);
 
         signal& s = _signal_pool[handle.index()];
         --s.ref;
@@ -453,9 +456,10 @@ private:
         do
         {
             wait();
+            if (_quitting) break;
 
             invoker_base* task = 0;
-            for(;;) {
+            do {
                 for(int prio = 0; prio < (int)EPriority::COUNT; ++prio) {
                     const bool can_run = prio != (int)EPriority::LOW || order < _nlowprio_threads || order == -1;
                     if (can_run && _ready_jobs[prio].pop(task)) {
@@ -463,7 +467,7 @@ private:
                         goto run;
                     }
                 }
-            }
+            } while(!_quitting);
             run: (void)0;
 
         }
@@ -484,7 +488,7 @@ private:
 
         const signal_handle handle = task->signal();
         if (handle.is_valid()) {
-            std::unique_lock lock(_sync);
+            std::unique_lock<std::mutex> lock(_sync);
             signal& s = _signal_pool[handle.index()];
             --s.ref;
             if(s.ref == 0) {

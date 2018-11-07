@@ -465,6 +465,9 @@
     <ClCompile Include="..\..\..\commassert.cpp">
       <Filter>cxx</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\taskmaster.cpp">
+      <Filter>cxx</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="..\..\..\doc\visualc-syntax\coid.natvis" />
