@@ -2718,6 +2718,11 @@ public:
     token_literal(const char(&str)[N])
         : token(str)
     {}
+
+    //@return zero terminated string
+    const char* c_str() const {
+        return ptr();
+    }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
