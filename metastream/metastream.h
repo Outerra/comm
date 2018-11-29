@@ -1333,15 +1333,7 @@ public:
 
     metastream& operator || (char&a) { return meta_base_type("char", a); }
 
-#ifdef SYSTYPE_WIN
-# ifdef SYSTYPE_32
-    metastream& operator || (ints&a) { return meta_base_type("int", a); }
-    metastream& operator || (uints&a) { return meta_base_type("uint", a); }
-# else //SYSTYPE_64
-    metastream& operator || (int&a) { return meta_base_type("int", a); }
-    metastream& operator || (uint&a) { return meta_base_type("uint", a); }
-# endif
-#elif defined(SYSTYPE_32)
+#if defined(SYSTYPE_WIN)
     metastream& operator || (long&a) { return meta_base_type("long", a); }
     metastream& operator || (ulong&a) { return meta_base_type("ulong", a); }
 #endif

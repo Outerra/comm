@@ -156,15 +156,7 @@ DIRECT_HASH_FUNC(int64);
 DIRECT_HASH_FUNC(uint64);
 DIRECT_HASH_FUNC(char);
 
-#ifdef SYSTYPE_WIN
-# ifdef SYSTYPE_32
-DIRECT_HASH_FUNC(ints);
-DIRECT_HASH_FUNC(uints);
-# else //SYSTYPE_64
-DIRECT_HASH_FUNC(int);
-DIRECT_HASH_FUNC(uint);
-# endif
-#elif defined(SYSTYPE_32)
+#if defined(SYSTYPE_WIN)
 DIRECT_HASH_FUNC(long);
 DIRECT_HASH_FUNC(ulong);
 #endif

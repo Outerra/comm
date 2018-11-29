@@ -222,18 +222,10 @@ public:
     explicit charstr(int64 i) { append_num(10, i); }
     explicit charstr(uint64 i) { append_num(10, i); }
 
-#ifdef SYSTYPE_WIN
-# ifdef SYSTYPE_32
-    explicit charstr(ints i) { append_num(10, (ints)i); }
-    explicit charstr(uints i) { append_num(10, (uints)i); }
-# else //SYSTYPE_64
-    explicit charstr(int i) { append_num(10, i); }
-    explicit charstr(uint i) { append_num(10, i); }
-# endif
-#elif defined(SYSTYPE_32)
+#if defined(SYSTYPE_WIN)
     explicit charstr(long i) { append_num(10, (ints)i); }
     explicit charstr(ulong i) { append_num(10, (uints)i); }
-#endif //SYSTYPE_WIN
+#endif
 
     explicit charstr(float d) { operator += (d); }
     explicit charstr(double d) { operator += (d); }
@@ -452,18 +444,10 @@ public:
     charstr& operator = (int64 i) { reset(); append_num(10, i);       return *this; }
     charstr& operator = (uint64 i) { reset(); append_num(10, i);       return *this; }
 
-#ifdef SYSTYPE_WIN
-# ifdef SYSTYPE_32
-    charstr& operator = (ints i) { reset(); append_num(10, (ints)i);  return *this; }
-    charstr& operator = (uints i) { reset(); append_num(10, (uints)i); return *this; }
-# else //SYSTYPE_64
-    charstr& operator = (int i) { reset(); append_num(10, i); return *this; }
-    charstr& operator = (uint i) { reset(); append_num(10, i); return *this; }
-# endif
-#elif defined(SYSTYPE_32)
+#if defined(SYSTYPE_WIN)
     charstr& operator = (long i) { reset(); append_num(10, (ints)i);  return *this; }
     charstr& operator = (ulong i) { reset(); append_num(10, (uints)i); return *this; }
-#endif //SYSTYPE_WIN
+#endif
 
     charstr& operator = (float d) { reset(); return operator += (d); }
     charstr& operator = (double d) { reset(); return operator += (d); }
@@ -550,18 +534,10 @@ public:
     charstr& operator += (int64 i) { append_num(10, i);       return *this; }
     charstr& operator += (uint64 i) { append_num(10, i);       return *this; }
 
-#ifdef SYSTYPE_WIN
-# ifdef SYSTYPE_32
-    charstr& operator += (ints i) { append_num(10, (ints)i);  return *this; }
-    charstr& operator += (uints i) { append_num(10, (uints)i); return *this; }
-# else //SYSTYPE_64
-    charstr& operator += (int i) { append_num(10, i); return *this; }
-    charstr& operator += (uint i) { append_num(10, i); return *this; }
-# endif
-#elif defined(SYSTYPE_32)
+#if defined(SYSTYPE_WIN)
     charstr& operator += (long i) { append_num(10, (ints)i);  return *this; }
     charstr& operator += (ulong i) { append_num(10, (uints)i); return *this; }
-#endif //SYSTYPE_WIN
+#endif
 
     charstr& operator += (float d) { append_float(d, 6); return *this; }
     charstr& operator += (double d) { append_float(d, 10); return *this; }
@@ -606,18 +582,10 @@ public:
     charstr& operator << (int64 i) { append_num(10, i);       return *this; }
     charstr& operator << (uint64 i) { append_num(10, i);       return *this; }
 
-#ifdef SYSTYPE_WIN
-# ifdef SYSTYPE_32
-    charstr& operator << (ints i) { append_num(10, (ints)i);  return *this; }
-    charstr& operator << (uints i) { append_num(10, (uints)i); return *this; }
-# else //SYSTYPE_64
-    charstr& operator << (int i) { append_num(10, i); return *this; }
-    charstr& operator << (uint i) { append_num(10, i); return *this; }
-# endif
-#elif defined(SYSTYPE_32)
+#if defined(SYSTYPE_WIN)
     charstr& operator << (long i) { append_num(10, (ints)i);  return *this; }
     charstr& operator << (ulong i) { append_num(10, (uints)i); return *this; }
-#endif //SYSTYPE_WIN
+#endif
 
     charstr& operator << (float d) { return operator += (d); }
     charstr& operator << (double d) { return operator += (d); }

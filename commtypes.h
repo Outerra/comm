@@ -172,11 +172,11 @@ namespace coid {
 
 #ifdef SYSTYPE_WIN
 typedef short               __int16_t;
-typedef long                __int32_t;
+typedef int                 __int32_t;
 typedef __int64             __int64_t;
 
 typedef unsigned short      __uint16_t;
-typedef unsigned long       __uint32_t;
+typedef unsigned int        __uint32_t;
 typedef unsigned __int64    __uint64_t;
 
 typedef signed char     	__int8_t;

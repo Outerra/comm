@@ -223,18 +223,8 @@ V8_FAST_STREAMER(uint16, Uint32, uint32);
 V8_FAST_STREAMER(uint32, Uint32, uint32);
 V8_FAST_STREAMER(uint64, Number, double);    //can lose data in conversion
 
-#ifdef SYSTYPE_WIN
-# ifdef SYSTYPE_32
-V8_FAST_STREAMER(ints,  Int32,  int32);
-V8_FAST_STREAMER(uints, Uint32, uint32);
-# else //SYSTYPE_64
-V8_FAST_STREAMER(int,   Number, double);
-V8_FAST_STREAMER(uint,  Number, double);
-# endif
-#elif defined(SYSTYPE_32)
 V8_FAST_STREAMER(long,  Int32,  int32);
 V8_FAST_STREAMER(ulong, Uint32, uint32);
-#endif
 
 V8_FAST_STREAMER(float,  Number, double);
 V8_FAST_STREAMER(double, Number, double);
@@ -517,15 +507,7 @@ V8_STREAMER_MAPARRAY(uint32, v8::Uint32Array)
 V8_STREAMER_MAPARRAY(float, v8::Float32Array)
 V8_STREAMER_MAPARRAY(double, v8::Float64Array)
 
-#ifdef SYSTYPE_WIN
-# ifdef SYSTYPE_32
-V8_STREAMER_MAPARRAY(ints, v8::Int32Array)
-V8_STREAMER_MAPARRAY(uints, v8::Uint32Array)
-# else //SYSTYPE_64
-V8_STREAMER_MAPARRAY(int, v8::Int32Array)
-V8_STREAMER_MAPARRAY(uint, v8::Uint32Array)
-# endif
-#elif defined(SYSTYPE_32)
+#if defined(SYSTYPE_WIN)
 V8_STREAMER_MAPARRAY(long, v8::Int32Array)
 V8_STREAMER_MAPARRAY(ulong, v8::Uint32Array)
 #endif
@@ -579,18 +561,8 @@ V8_STREAMER_MAPARRAY(uint32, v8::kExternalUnsignedIntArray)
 V8_STREAMER_MAPARRAY(float, v8::kExternalFloatArray)
 V8_STREAMER_MAPARRAY(double, v8::kExternalDoubleArray)
 
-#ifdef SYSTYPE_WIN
-# ifdef SYSTYPE_32
-V8_STREAMER_MAPARRAY(ints, v8::kExternalIntArray)
-V8_STREAMER_MAPARRAY(uints, v8::kExternalUnsignedIntArray)
-# else //SYSTYPE_64
-V8_STREAMER_MAPARRAY(int, v8::kExternalIntArray)
-V8_STREAMER_MAPARRAY(uint, v8::kExternalUnsignedIntArray)
-# endif
-#elif defined(SYSTYPE_32)
 V8_STREAMER_MAPARRAY(long, v8::kExternalIntArray)
 V8_STREAMER_MAPARRAY(ulong, v8::kExternalUnsignedIntArray)
-#endif
 
 #endif
 

@@ -578,7 +578,7 @@ namespace coid {
 
 #ifdef SYSTYPE_WIN
 
-        uint32 nblocking = blocking ? 0 : 1;
+        ulong nblocking = blocking ? 0 : 1;
         ::ioctlsocket(handle, FIONBIO, &nblocking);
 
 #else
