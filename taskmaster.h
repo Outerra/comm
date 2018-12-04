@@ -60,6 +60,13 @@ COID_NAMESPACE_BEGIN
     for this signal. Several jobs can share single signal, but single job can not trigger multiple signals.
 
     When a thread is waiting for a signal it processes other tasks in queue.
+
+    Basic usage:
+        coid::taskmaster::signal_handle signal;
+        for (int i = 0; i < 10; ++i) {
+            taskmaster->push(coid::taskmaster::EPriority::NORMAL, &signal, [i](){ foo(i); });
+        }
+        taskmaster->wait(signal);
 **/
 class taskmaster
 {
@@ -233,7 +240,9 @@ public:
 
     
     ///Create standalone signal not associated with any task. It can be used to wait for any arbitrary stuff. 
-    ///The signal's counter is initialized = 1
+    //@note The signal's counter is initialized = 1 -> wait(signal) will wait untill counter == 0)
+    // use taskmaster::trigger_signal(signal) do decrement the counter
+    // if you just want to wait until some task finishes, you do not need to use this, see "Basic usage"
     signal_handle create_signal()
     {
         std::unique_lock<std::mutex> lock(_signal_sync);
