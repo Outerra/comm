@@ -3,6 +3,7 @@
 #include "../radix.h"
 #include "../trait.h"
 #include "../hash/slothash.h"
+#include "../function.h"
 //#include "ig_test.h"
 
 namespace coid {
@@ -120,9 +121,16 @@ void lambda_slotalloc_test()
     });
 }
 
+void fntest(void(*pfn)(charstr&))
+{
+    function<void(charstr&)> fn = pfn;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
 {
+    fntest(0);
+
     std_test();
 
     lambda_test();

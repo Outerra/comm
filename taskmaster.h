@@ -97,7 +97,7 @@ public:
     enum class EPriority {
         HIGH,
         NORMAL,
-        LOW,
+        LOW,                            //< for limited "long run" threads
 
         COUNT
     };
