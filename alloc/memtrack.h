@@ -170,7 +170,8 @@ void memtrack_dump( const char* file, bool diff );
 void memtrack_reset();
 
 ///Enable/disable tracking
-void memtrack_enable( bool en );
+//@return previous state
+bool memtrack_enable( bool en );
 
 void memtrack_shutdown();
 

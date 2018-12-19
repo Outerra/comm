@@ -278,11 +278,15 @@ static memtrack_registrar* memtrack_register()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void memtrack_enable(bool en)
+bool memtrack_enable(bool en)
 {
     memtrack_registrar* mtr = memtrack_register();
+    bool old = mtr->enabled;
+
     mtr->enabled = en;
     mtr->running = en & mtr->ready;
+
+    return old;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

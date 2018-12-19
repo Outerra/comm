@@ -23,7 +23,7 @@ static_assert( std::is_base_of<policy_intrusive_base, $nss rest="::" after="::"$
 
 $-[iface]$
 ////////////////////////////////////////////////////////////////////////////////
-// interface $name$ of class $..class$
+// interface $[ns]$$@value$::$[/ns]$$name$ of class $..class$
 $[ns]$
 namespace $@value$ {
 $-[/ns]$
@@ -98,6 +98,28 @@ $-[/method]-$
 
         return _vtable2;
     }
+$-(if varname?)$
+
+    bool assign_safe(intergen_interface* p)
+    {
+        $..ns default=" "$::$..class$* hostptr = host<$..ns default=" "$::$..class$>();
+        if (!hostptr)
+            return false;
+
+        coid::clean_ptr<intergen_interface>& ifcvar = hostptr->$varname$;
+        coid::comm_mutex& mx = share_lock();
+        if (ifcvar == p)
+            return true;
+
+        mx.lock();
+        //assign only if nobody assigned before us
+        bool succ = !ifcvar || !p;
+        if (succ)
+            ifcvar = p;
+        mx.unlock();
+        return succ;
+    }
+$-(/if)$
 
 protected:
 
@@ -141,8 +163,7 @@ $-(if varname?)$
 
     ///Cleanup routine called from ~$name$()
     static void _cleaner_callback( $name$* m, intergen_interface* ifc ) {
-        $..ns default=" "$::$..class$* host = m->host<$..ns$::$..class$>();
-        if (host) host->$varname$.assign_safe(ifc);
+        static_cast<$name$_dispatcher*>(m)->assign_safe(ifc);
     }
 $-(/if)$
 $-(if virtual!)$
@@ -168,7 +189,7 @@ $-(if virtual!)$
 
             //try assigning to the host (MT guard)
             // if that fails, the interface will be passive (no events)
-            if (host->$varname$.assign_safe(rval.get()))
+            if (dispatcher->assign_safe(rval.get()))
                 static_cast<$name$_dispatcher*>(rval.get())->_cleaner = &_cleaner_callback;
             else if (!__here__)
                 rval.create(static_cast<$name$_dispatcher*>(host->$varname$.get()));
@@ -237,7 +258,14 @@ coid::binstring* $name$_dispatcher::_capture = 0;
 uint16 $name$_dispatcher::_instid = 0xffffU;
 intergen_interface::ifn_t* $name$_dispatcher::_vtable2 = 0;
 intergen_interface::ifn_t* $name$_dispatcher::_vtable1 = 0;
+$-(if varname?)$
 
+iref<$name$> $name$::intergen_active_interface(::$classnsx rest="::" after="::"$$class$* host)
+{
+    coid::comm_mutex& mx = share_lock();
+    return static_cast<$name$*>(host->$varname$.get());
+}
+$-(/if)$
 
 //auto-register the available interface creators
 LOCAL_SINGLETON_DEF(ifc_autoregger) $name$_autoregger = new ifc_autoregger(&$name$_dispatcher::register_interfaces);
@@ -260,7 +288,7 @@ $[/..nss]-$
 $-[event !implicit?]$
 $return.type$ $....class$::$intname$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $name$$size$$[/args]$) $-(if const?)$ const$(/if)$
 {
-	if (!$..varname$) $(if default_event_body?)${ $default_event_body$ }$(elif)$
+    if (!$..varname$) $(if default_event_body?)${ $default_event_body$ }$(elif)$
         throw coid::exception() << "$name$" << " handler not implemented";$(/if)$
     else
         return $..varname$->iface<$..ns rest="::" after="::"$$..name$>()->$name$($[args rest=", "]$$name$$[/args]$);

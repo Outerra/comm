@@ -80,7 +80,7 @@ public:
             _p->add_refcount();
     }
 
-    ///Constructor from a convertible type
+    ///Copy constructor from convertible type
 #if SYSTYPE_MSVC && _MSC_VER >= 1800
     template<class T2, class = typename std::enable_if<std::is_convertible<T2*, T*>::value>::type>
 #else
@@ -88,6 +88,16 @@ public:
 #endif
     iref(const iref<T2>& r) {
         _p = r.add_refcount();
+    }
+
+    ///Move constructor from convertible type
+#if SYSTYPE_MSVC && _MSC_VER >= 1800
+    template<class T2, class = typename std::enable_if<std::is_convertible<T2*, T*>::value>::type>
+#else
+    template<class T2>
+#endif
+    iref(iref<T2>&& r) : _p(0) {
+        takeover(r);
     }
 
     T* add_refcount() const {
@@ -200,8 +210,10 @@ public:
 
     template<class T2>
     void takeover(iref<T2>& p) {
-        if (_p == static_cast<T*>(p.get()))
+        if (_p == static_cast<T*>(p.get())) {
+            p.release();
             return;
+        }
         release();
         _p = p.get();
         p.forget();
