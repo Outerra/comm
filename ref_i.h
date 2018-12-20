@@ -100,10 +100,21 @@ public:
         takeover(r);
     }
 
+    ///Increment refcount
     T* add_refcount() const {
-        T* p = _p;
-        if (p && p->can_add_refcount())
-            return p;
+        if (_p)
+            _p->add_refcount();
+        return _p;
+    }
+
+    ///Assign refcounted object if its refcount is non-zero
+    //@return assigned object or null
+    //@note keeps previous object if assignment fails
+    T* add_refcount(T* p) {
+        if (p && p->can_add_refcount()) {
+            release();
+            return _p = p;
+        }
         return 0;
     }
 
@@ -164,7 +175,7 @@ public:
     }
 
     ///Assign if empty
-    bool assign_safe(const iref_t& r) {
+    /*bool assign_safe(const iref_t& r) {
         static coid::comm_mutex _mux(500, false);
 
         _mux.lock();
@@ -174,7 +185,7 @@ public:
             _p = r.add_refcount();
         _mux.unlock();
         return succ;
-    }
+    }*/
 
     const iref_t& operator = (const iref_t& r) {
         T* p = r.add_refcount();
@@ -206,6 +217,7 @@ public:
 
     typedef T* iref<T>::*unspecified_bool_type;
 
+    ///Discard without decrementing refcount
     void forget() { _p = 0; }
 
     template<class T2>

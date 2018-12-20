@@ -100,9 +100,9 @@ $-[/method]-$
     }
 $-(if varname?)$
 
-    bool assign_safe(intergen_interface* p)
+    bool assign_safe(intergen_interface* p, iref<$name$>* pout)
     {
-        $..ns default=" "$::$..class$* hostptr = host<$..ns default=" "$::$..class$>();
+        $..ns$::$..class$* hostptr = host<$..ns$::$..class$>();
         if (!hostptr)
             return false;
 
@@ -111,12 +111,16 @@ $-(if varname?)$
         if (ifcvar == p)
             return true;
 
-        mx.lock();
+        GUARDTHIS(mx);
         //assign only if nobody assigned before us
         bool succ = !ifcvar || !p;
-        if (succ)
+        if (succ) {
             ifcvar = p;
-        mx.unlock();
+            _cleaner = p ? &_cleaner_callback : 0;
+        }
+        else if (pout)
+            pout->add_refcount(static_cast<$name$*>(ifcvar.get()));
+
         return succ;
     }
 $-(/if)$
@@ -125,8 +129,11 @@ protected:
 
     COIDNEWDELETE($name$_dispatcher);
 
-    $name$_dispatcher()
-    {}
+    $name$_dispatcher() {
+    }
+    
+    virtual ~$name$_dispatcher() {
+    }
 
     bool intergen_bind_capture( coid::binstring* capture, uint instid ) override
     {
@@ -163,19 +170,19 @@ $-(if varname?)$
 
     ///Cleanup routine called from ~$name$()
     static void _cleaner_callback( $name$* m, intergen_interface* ifc ) {
-        static_cast<$name$_dispatcher*>(m)->assign_safe(ifc);
+        static_cast<$name$_dispatcher*>(m)->assign_safe(ifc, 0);
     }
 $-(/if)$
 $-(if virtual!)$
 
-    static iref<$name$> _generic_interface_creator($..ns default=" "$::$..class$* host, $name$* __here__)
+    static iref<$name$> _generic_interface_creator($..ns$::$..class$* host, $name$* __here__)
     {
         iref<$name$> rval;
 
         $--(if varname?)$
         //an active interface (with events)
         if (host->$varname$ && !__here__)
-            rval.create(static_cast<$name$_dispatcher*>(host->$varname$.get()));
+            rval = intergen_active_interface(host);
 
         if (rval.is_empty()) {
             //interface not taken from host
@@ -189,12 +196,8 @@ $-(if virtual!)$
 
             //try assigning to the host (MT guard)
             // if that fails, the interface will be passive (no events)
-            if (dispatcher->assign_safe(rval.get()))
-                static_cast<$name$_dispatcher*>(rval.get())->_cleaner = &_cleaner_callback;
-            else if (!__here__)
-                rval.create(static_cast<$name$_dispatcher*>(host->$varname$.get()));
+            dispatcher->assign_safe(rval.get(), __here__ ? 0 : &rval);
         }
-
         $-(elif)$
         //a passive interface (no events)
         $name$_dispatcher* dispatcher = __here__
@@ -225,7 +228,7 @@ public:
 $-[method static? !ifccr?]$
     static iref<$..name$> $name$( $..name$* __here__$[args]$, $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$ )
     {
-        iref<$....ns default=" "$::$....class$> __host__ = $....ns$::$....class$::$intname$($[args rest=", "]$$name$$[/args]$);
+        iref<$....ns$::$....class$> __host__ = $....ns$::$....class$::$intname$($[args rest=", "]$$name$$[/args]$);
         if (!__host__)
             return 0;
         return _generic_interface_creator(__host__.get(), __here__);
@@ -263,7 +266,12 @@ $-(if varname?)$
 iref<$name$> $name$::intergen_active_interface(::$classnsx rest="::" after="::"$$class$* host)
 {
     coid::comm_mutex& mx = share_lock();
-    return static_cast<$name$*>(host->$varname$.get());
+    
+    GUARDTHIS(mx);
+    iref<$name$> rval;
+    rval.add_refcount(static_cast<$name$*>(host->$varname$.get()));
+    
+    return rval;
 }
 $-(/if)$
 

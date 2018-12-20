@@ -97,7 +97,8 @@ $-[/method]$
 $-(if varname? destroy.name.empty?)$
 
     virtual ~$name$() {
-        if (_cleaner) _cleaner(this,0);
+        if (_cleaner)
+            _cleaner(this, 0);
     }
 $-(/if)$
 
@@ -199,10 +200,6 @@ $-(if varname?)$
         return _mx;
     }
 
-    virtual iref<intergen_interface> intergen_active_interface() const {
-        return 0;
-    }
-
     typedef void (*cleanup_fn)($name$*, intergen_interface*);
     cleanup_fn _cleaner;
 $-(/if)$
@@ -211,7 +208,8 @@ $-(if destroy.name.empty!)$
     ~$name$() {
         VT_CALL($destroy.return.type$,($[destroy.args rest=","]$$type$$[/destroy.args]$),0)($[destroy.args rest=","]$$name$$[/destroy.args]$);
 $-(if varname?)$
-        if (_cleaner) _cleaner(this,0);
+        if (_cleaner)
+            _cleaner(this, 0);
 $-(/if)$
     }
 $-(/if)$
