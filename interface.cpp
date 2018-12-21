@@ -41,6 +41,7 @@ class interface_register_impl
     charstr _root_path;
     interface_register::fn_log_t _fn_log;
     interface_register::fn_acc_t _fn_acc;
+    interface_register::fn_getlog_t _fn_getlog;
 
 public:
 
@@ -55,6 +56,7 @@ public:
         : _mx(500, false)
         , _fn_log(0)
         , _fn_acc(0)
+        , _fn_getlog(0)
     {}
 
     virtual ~interface_register_impl()
@@ -299,6 +301,7 @@ public:
 
     virtual interface_register::fn_log_t fn_log() final { return _fn_log; }
     virtual interface_register::fn_acc_t fn_acc() final { return _fn_acc; }
+    virtual interface_register::fn_getlog_t fn_getlog() final { return _fn_getlog; }
 
     virtual interface_register::wrapper_fn find_wrapper(const token& ifcname) const final
     {
@@ -309,7 +312,7 @@ public:
         return en ? (interface_register::wrapper_fn)en->creator_ptr : 0;
     }
 
-    virtual void setup(const token& path, interface_register::fn_log_t logfn, interface_register::fn_acc_t access)
+    virtual void setup(const token& path, interface_register::fn_log_t logfn, interface_register::fn_acc_t access, interface_register::fn_getlog_t getlogfn)
     {
         if (!_root_path) {
             _root_path = path;
@@ -321,6 +324,10 @@ public:
 
         if (access)
             _fn_acc = access;
+
+        if (getlogfn) {
+            _fn_getlog = getlogfn;
+        }
     }
 
     virtual bool check_version(int ver) const {
@@ -425,17 +432,30 @@ ref<logmsg> interface_register::canlog(log::type type, const tokenhash& hash, co
     if (canlogfn)
         msg = canlogfn(type, hash, inst);
     else
-        msg = SINGLETON(stdoutlogger).create_msg(type, hash, inst);
+        msg = getlog()->create_msg(type, hash, inst);
 
     return msg;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void interface_register::setup(const token& path, fn_log_t log, fn_acc_t access)
+logger* interface_register::getlog()
+{
+    fn_getlog_t getlogfn = interface_register_impl::get().fn_getlog();
+
+    if (getlogfn) {
+        return getlogfn();
+    }
+    else {
+        return &SINGLETON(stdoutlogger);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void interface_register::setup(const token& path, fn_log_t log, fn_acc_t access, fn_getlog_t getlog)
 {
     interface_register_impl& reg = interface_register_impl::get();
 
-    reg.setup(path, log, access);
+    reg.setup(path, log, access,getlog);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
