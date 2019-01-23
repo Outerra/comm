@@ -38,7 +38,8 @@
 #include "namespace.h"
 #include "commassert.h"
 
-#include <ctype.h>
+#include <cctype>
+#include <cstring>
 
 COID_NAMESPACE_BEGIN
 

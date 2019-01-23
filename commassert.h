@@ -40,7 +40,6 @@
 
 #include "namespace.h"
 #include "retcodes.h"
-#include <limits>
 
 /** \file assert.h
     This header defines various assert macros. The assert macros normally log
@@ -74,7 +73,7 @@ COID_NAMESPACE_END
 #ifdef SYSTYPE_MSVC
 #define XASSERT(e)                  if(__assert_e) __debugbreak()
 #else
-#include <assert.h>
+#include <cassert>
 #define XASSERT                     assert(__assert_e);
 #endif
 

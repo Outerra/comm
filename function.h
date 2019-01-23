@@ -165,8 +165,8 @@ struct closure_traits_base
 
     struct function
     {
-        template <typename R, typename... Args>
-        function(R (*fn)(Args...)) : c(0) {
+        template <typename Rx, typename... Argsx>
+        function(Rx (*fn)(Argsx...)) : c(0) {
             if (fn)
                 c = new callable<decltype(fn)>(fn);
         }

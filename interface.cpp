@@ -388,7 +388,7 @@ private:
             curpath.consume_icase("file:///"_T);
             dst = _root_path;
 
-            return directory::append_path(dst, curpath, true);
+            return directory::append_path(dst, curpath, true) != 0;
         }
 
         return true;

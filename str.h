@@ -44,9 +44,8 @@
 #include "binstream/bstype.h"
 #include "hash/hashfunc.h"
 
- //#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include <cstring>
+#include <ctime>
 #include <functional>
 
 #include "token.h"

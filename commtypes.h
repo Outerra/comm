@@ -159,9 +159,8 @@
 #define STATIC_DBG static const
 #endif
 
-//#define _USE_32BIT_TIME_T
-#include <sys/types.h>
-#include <stddef.h>
+#include <cstddef>
+#include <cstdint>
 
 /// Operator new for preallocated storage
 inline void * operator new (size_t, const void *p) { return (void*)p; }
@@ -195,14 +194,9 @@ typedef __uint64_t      	uint64;
 typedef float               flt32;
 typedef double              flt64;
 
-
-#ifndef __USE_MISC      // defined on linux systems in sys/types.h
-#define COID_UINT_DEFINED
-    typedef unsigned int		uint;
-    typedef unsigned long       ulong;
-    typedef unsigned short      ushort;
-#endif
-
+typedef unsigned int		uint;
+typedef unsigned long       ulong;
+typedef unsigned short      ushort;
 
 typedef uint8               uchar;
 typedef int8                schar;
@@ -235,11 +229,11 @@ using coid::uchar;
 using coid::schar;
 using coid::uints;
 using coid::ints;
-# ifdef COID_UINT_DEFINED
+
 using coid::uint;
 using coid::ulong;
 using coid::ushort;
-# endif
+
 #endif
 
 

@@ -568,7 +568,7 @@ bool directory::get_relative_path(token src, token dst, charstr& relout, bool la
         }
     }
 
-    return append_path(relout, dst);
+    return append_path(relout, dst) != 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

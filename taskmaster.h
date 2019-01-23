@@ -43,8 +43,6 @@
 #include "alloc/slotalloc.h"
 #include "bitrange.h"
 #include "sync/queue.h"
-//#include "sync/mutex.h"
-//#include "sync/guard.h"
 #include "pthreadx.h"
 #include "log/logger.h"
 #include <mutex>

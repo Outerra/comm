@@ -331,7 +331,7 @@ public:
     ///Formatted log message
     template<class ...Vs>
     void print( const token& fmt, Vs&&... vs ) {
-        ref<logmsg> msgr = create_msg(log::none);
+        ref<logmsg> msgr = create_msg(log::none, tokenhash());
         if(!msgr)
             return;
 

@@ -45,8 +45,8 @@
 #include "commtime.h"
 #include "hash/hashfunc.h"
 
-#include <ctype.h>
-#include <math.h>
+#include <cctype>
+#include <cmath>
 #include <iosfwd>
 
 

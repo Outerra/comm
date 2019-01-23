@@ -337,7 +337,7 @@ ref<logmsg> logger::create_msg( log::type type, const tokenhash& hash )
 void logger::enqueue( ref<logmsg>&& msg )
 {   
     _filters.for_each([&](const log_filter& f) {
-        if (msg->get_type() <= f._log_level
+        if (msg->get_type() <= (log::type)f._log_level
             && f._module.cmpeq(msg->get_hash()))
         {
             f._filter_fun(msg);
