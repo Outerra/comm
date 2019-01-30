@@ -849,16 +849,16 @@ protected:
 #else
 
     static T* copy_object(T* dst, bool isold, const T& v) {
-        return slotalloc_detail::constructor<POOL, T>::copy_object(dst, isold || !POOL, v);
+        return slotalloc_detail::constructor<POOL, T>::copy_object(dst, isold && POOL, v);
     }
 
     static T* copy_object(T* dst, bool isold, T&& v) {
-        return slotalloc_detail::constructor<POOL, T>::copy_object(dst, isold || !POOL, std::forward<T>(v));
+        return slotalloc_detail::constructor<POOL, T>::copy_object(dst, isold && POOL, std::forward<T>(v));
     }
 
     template<class...Ps>
     static T* construct_object(T* dst, bool isold, Ps&&... ps) {
-        return slotalloc_detail::constructor<POOL, T>::construct_object(dst, isold || !POOL, std::forward<Ps>(ps)...);
+        return slotalloc_detail::constructor<POOL, T>::construct_object(dst, isold && POOL, std::forward<Ps>(ps)...);
     }
 
 #endif //#ifdef COID_CONSTEXPR_IF
