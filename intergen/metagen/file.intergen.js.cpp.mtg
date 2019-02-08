@@ -47,7 +47,7 @@ $-(/if)$
     {
         void* p = data.GetParameter();
         $name$_js_dispatcher* ifc = static_cast<$name$_js_dispatcher*>(p);
-        ifc->_object.Empty();
+        ifc->_object.Reset();
         ifc->release_refcount();
     }
 
