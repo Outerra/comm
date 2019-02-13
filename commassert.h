@@ -148,7 +148,7 @@ opcd __rassert( const opt_string& txt, opcd exc, const char* file, int line, con
 ///Downcast value of integral type, checking for overflow and underflow
 //@return saturated cast value
 template <class T, class S>
-inline T assert_cast(S v) {
+inline T down_cast(S v) {
     const T vmin = std::numeric_limits<T>::min();
     const T vmax = std::numeric_limits<T>::max();
 

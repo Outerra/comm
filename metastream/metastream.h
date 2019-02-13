@@ -1733,7 +1733,7 @@ public:
             d->type_size = type_size;
             d->is_array_type = true;
             d->embedded = embedded;
-            d->raw_pointer_offset = assert_cast<int>(raw_pointer_offset);
+            d->raw_pointer_offset = down_cast<int>(raw_pointer_offset);
             d->fnptr = fnptr;
             d->fncount = fncount;
             d->fnpush = fnpush;

@@ -202,7 +202,7 @@ public:
         base::construct_object(p, !isnew, std::forward<Ps>(ps)...);
 
         //if this fails, multikey is off and same key item exists
-        T* r = insert_value_(p, assert_cast<uint>(id));
+        T* r = insert_value_(p, down_cast<uint>(id));
         if (!r)
             base::del_item(id);
 
