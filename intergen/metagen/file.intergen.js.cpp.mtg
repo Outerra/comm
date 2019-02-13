@@ -95,17 +95,15 @@ $-(/if)$
 
     ~$name$_js_dispatcher() {
 $-(if event?)$
-        //V8_RESET(_eventobj);
-
         for (int i=0; i<$event.@size$; ++i) {
             V8_RESET(_events[i]);
         }
 
 $-(/if)$
-        V8_RESET(_object);
+        V8_DECL_ISO(iso);
+        _object.Get(iso)->SetInternalField(0, V8_NULL(iso));
 
-        //V8_RESET(_script);
-        //V8_RESET(_context);
+        V8_RESET(_object);
     }
 
     bool intergen_bind_capture( coid::binstring* capture, uint instid ) override
@@ -758,6 +756,7 @@ v8::Handle<v8::Object> $name$_js_dispatcher::create_interface_object( v8::Handle
     if (_objtempl.IsEmpty())
     {
         v8::Local<v8::ObjectTemplate> ot = V8_NEWTYPE(iso, ObjectTemplate);
+        ot->Set(v8::Symbol::GetToStringTag(iso), v8::string_utf8("$ns rest="::" after="::"$$name$"));
         ot->SetInternalFieldCount(2);    //ptr and class hash id
 
 $-[method !static? !destroy? !internal? !operator?]$

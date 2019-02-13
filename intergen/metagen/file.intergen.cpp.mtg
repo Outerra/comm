@@ -18,8 +18,7 @@ static_assert(intergen_interface::VERSION == $version$, "interface must be rebui
 using namespace coid;
 
 $-[class iface.empty!]$
-static_assert( std::is_base_of<policy_intrusive_base, $nss rest="::" after="::"$$class$>::value, "class '$class$' must be derived from policy_intrusive_base");
-static_assert( std::is_base_of<policy_intrusive_base, $nss rest="::" after="::"$$class$>::value, "class '$class$' must be derived from policy_intrusive_base");
+static_assert( std::is_base_of<policy_intrusive_base, ::$ns rest="::" after="::"$$class$>::value, "class '$class$' must be derived from policy_intrusive_base");
 
 $-[iface]$
 ////////////////////////////////////////////////////////////////////////////////
@@ -47,7 +46,7 @@ $-[method !static?]$
  $-(if hasifc?)$
         _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$$type$$size$$[/args]$)$(if const?)$const$(/if)$>(&$name$__ifc_wrapper));
  $-(elif)$
-        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$$type$$size$$[/args]$)$(if const?)$const$(/if)$>(&$....ns$::$....class$::$intname$));
+        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$$type$$size$$[/args]$)$(if const?)$const$(/if)$>(&::$....ns rest="::" after="::"$$....class$::$intname$));
  $-(/if)$
 $-[/method]-$
 
@@ -102,7 +101,7 @@ $-(if varname?)$
 
     bool assign_safe(intergen_interface* p, iref<$name$>* pout)
     {
-        $..ns$::$..class$* hostptr = host<$..ns$::$..class$>();
+        ::$..ns rest="::" after="::"$$..class$* hostptr = host<::$..ns rest="::" after="::"$$..class$>();
         if (!hostptr)
             return false;
 
@@ -175,7 +174,7 @@ $-(if varname?)$
 $-(/if)$
 $-(if virtual!)$
 
-    static iref<$name$> _generic_interface_creator($..ns$::$..class$* host, $name$* __here__)
+    static iref<$name$> _generic_interface_creator(::$..ns rest="::" after="::"$$..class$* host, $name$* __here__)
     {
         iref<$name$> rval;
 
@@ -228,7 +227,7 @@ public:
 $-[method static? !ifccr?]$
     static iref<$..name$> $name$( $..name$* __here__$[args]$, $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$ )
     {
-        iref<$....ns$::$....class$> __host__ = $....ns$::$....class$::$intname$($[args rest=", "]$$name$$[/args]$);
+        iref<::$....ns rest="::" after="::"$$....class$> __host__ = ::$....ns rest="::" after="::"$$....class$::$intname$($[args rest=", "]$$name$$[/args]$);
         if (!__host__)
             return 0;
         return _generic_interface_creator(__host__.get(), __here__);
@@ -252,7 +251,7 @@ $-[/method]$
 $-[method static? ifccr?]$
         interface_register::register_interface_creator(
             "$..ns rest="::" after="::"$$..name$.$name$@$..hash$.ifc",
-            on ? (void*)&$....ns$::$....class$::$name$ : nullptr);
+            on ? (void*)&::$....ns rest="::" after="::"$$....class$::$name$ : nullptr);
 $-[/method]$
     }
 };

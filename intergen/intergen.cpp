@@ -386,7 +386,6 @@ int main( int argc, char* argv[] )
 bool File::find_class( iglexer& lex, dynarray<charstr>& namespc, charstr& templarg )
 {
     lexer::lextoken& tok = lex.last();
-    int nested_curly = 0;
 
     do {
         lex.next();
@@ -403,27 +402,24 @@ bool File::find_class( iglexer& lex, dynarray<charstr>& namespc, charstr& templa
             continue;
         }
 
-        if( tok == '{' )
-            ++nested_curly;
+        if (tok == '{') {
+            namespc.push(charstr());
+            //++nested_curly;
+        }
         else if( tok == '}' ) {
-            if(nested_curly-- == 0) {
-                //this should be namespace closing
-                //namespc.resize(-(int)token(namespc).cut_right_back("::", token::cut_trait_keep_sep_with_returned()).len());
-                namespc.pop();
-            }
+            namespc.pop();
         }
 
         if( tok != lex.IDENT )  continue;
 
         if( tok == lex.NAMESPC ) {
-            //namespc.reset();
             while( lex.next() ) {
                 if( tok == '{' ) {
-                    ++nested_curly;
+                    //++nested_curly;
                     break;
                 }
                 if( tok == ';' ) {
-                    namespc.reset();    //it was 'using namespace ...'
+                    //namespc.reset();    //it was 'using namespace ...'
                     break;
                 }
 
@@ -448,7 +444,7 @@ bool File::find_class( iglexer& lex, dynarray<charstr>& namespc, charstr& templa
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Parse file
-int File::parse( token path )
+int File::parse(token path)
 {
     directory::xstat st;
 
@@ -469,7 +465,7 @@ int File::parse( token path )
 
     token name = path;
     name.cut_left_group_back("\\/", token::cut_trait_remove_sep_default_empty());
-    
+
     fpath = path;
     fnameext = name;
     fname = name.cut_left_back('.');
@@ -478,8 +474,8 @@ int File::parse( token path )
     hdrname.replace('-', '_');
     hdrname.toupper();
 
-    uint nm=0;
-    uint ne=0;
+    uint nm = 0;
+    uint ne = 0;
     int mt;
     charstr templarg;
     dynarray<charstr> namespc;
@@ -487,24 +483,24 @@ int File::parse( token path )
     int nerr = 0;
 
     try {
-        for( ; 0 != (mt=find_class(lex,namespc,templarg)); ++nm )
+        for (; 0 != (mt = find_class(lex, namespc, templarg)); ++nm)
         {
             Class* pc = classes.add();
-            if(!pc->parse(lex,templarg,namespc,&pasters,irefargs)
+            if (!pc->parse(lex, templarg, namespc, &pasters, irefargs)
                 || pc->method.size() == 0 && pc->iface.size() == 0) {
                 classes.resize(-1);
             }
         }
     }
-    catch( lexer::lexception& ) {}
+    catch (lexer::lexception&) {}
 
-    if(!lex.no_err()) {
+    if (!lex.no_err()) {
         out << lex.err() << '\n';
         out.flush();
         return -1;
     }
 
-    if(!nerr && pasters.size() > 0 && classes.size() == 0) {
+    if (!nerr && pasters.size() > 0 && classes.size() == 0) {
         out << (lex.prepare_exception()
             << "warning: ifc tokens found, but no interface declared\n");
         lex.clear_err();
