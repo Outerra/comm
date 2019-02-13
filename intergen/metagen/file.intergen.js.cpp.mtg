@@ -101,7 +101,7 @@ $-(if event?)$
 
 $-(/if)$
         V8_DECL_ISO(iso);
-        _object.Get(iso)->SetInternalField(0, V8_NULL(iso));
+        V8_LOCAL(iso, _object)->SetInternalField(0, V8_NULL(iso));
 
         V8_RESET(_object);
     }
@@ -756,8 +756,10 @@ v8::Handle<v8::Object> $name$_js_dispatcher::create_interface_object( v8::Handle
     if (_objtempl.IsEmpty())
     {
         v8::Local<v8::ObjectTemplate> ot = V8_NEWTYPE(iso, ObjectTemplate);
+#ifdef V8_MAJOR_VERSION
         ot->Set(v8::Symbol::GetToStringTag(iso), v8::string_utf8("$ns rest="::" after="::"$$name$"));
-        ot->SetInternalFieldCount(2);    //ptr and class hash id
+#endif
+		ot->SetInternalFieldCount(2);    //ptr and class hash id
 
 $-[method !static? !destroy? !internal? !operator?]$
         ot->Set(v8::symbol("$name$", iso), V8_NEWTYPE2(iso, FunctionTemplate, &v8_$name$$@index$));
