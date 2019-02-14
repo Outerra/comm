@@ -145,17 +145,16 @@ COID_NAMESPACE_BEGIN
 class opt_string;
 opcd __rassert( const opt_string& txt, opcd exc, const char* file, int line, const char* function, const char* expr );
 
-///Downcast value of integral type, checking for overflow and underflow
-//@return saturated cast value
+///Downcast value of integral type, asserting on overflow and underflow
+//@return cast value
 template <class T, class S>
 inline T down_cast(S v) {
     const T vmin = std::numeric_limits<T>::min();
     const T vmax = std::numeric_limits<T>::max();
 
     DASSERT(v >= vmin && v <= vmax);
-    return v < vmin ? vmin : (v > vmax ? vmax : T(v));
+    return T(v);
 }
-
 
 struct opcd;
 struct token;
