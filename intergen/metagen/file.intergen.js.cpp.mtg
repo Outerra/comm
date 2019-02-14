@@ -101,7 +101,9 @@ $-(if event?)$
 
 $-(/if)$
         V8_DECL_ISO(iso);
-        V8_LOCAL(iso, _object)->SetInternalField(0, V8_NULL(iso));
+        if (!_object.IsEmpty()) {
+            V8_LOCAL(iso, _object)->SetInternalField(0, V8_NULL(iso));
+        }
 
         V8_RESET(_object);
     }
