@@ -383,14 +383,14 @@ int main( int argc, char* argv[] )
 
 
 ////////////////////////////////////////////////////////////////////////////////
-bool File::find_class( iglexer& lex, dynarray<charstr>& namespc, charstr& templarg )
+bool File::find_class(iglexer& lex, dynarray<charstr>& namespc, charstr& templarg)
 {
     lexer::lextoken& tok = lex.last();
 
     do {
         lex.next();
 
-        if( tok == lex.IFC1  ||  tok == lex.IFC2 ) {
+        if (tok == lex.IFC1 || tok == lex.IFC2) {
             lex.complete_block();
             paste_block* pb = pasters.add();
 
@@ -406,38 +406,47 @@ bool File::find_class( iglexer& lex, dynarray<charstr>& namespc, charstr& templa
             namespc.push(charstr());
             //++nested_curly;
         }
-        else if( tok == '}' ) {
+        else if (tok == '}') {
             namespc.pop();
         }
 
-        if( tok != lex.IDENT )  continue;
+        if (tok != lex.IDENT)  continue;
 
-        if( tok == lex.NAMESPC ) {
-            while( lex.next() ) {
-                if( tok == '{' ) {
+        if (tok == lex.NAMESPC) {
+            charstr* ns = 0;
+
+            while (lex.next()) {
+                if (tok == "::"_T && ns) {
+                    *ns << tok;
+                    continue;
+                }
+                else if (tok == '{') {
                     //++nested_curly;
                     break;
                 }
-                if( tok == ';' ) {
-                    //namespc.reset();    //it was 'using namespace ...'
+                else if (tok == ';') {
+                    //it was 'using namespace ...'
+                    namespc.pop();
                     break;
                 }
+                else if (!ns)
+                    ns = namespc.add();
 
-                *namespc.add() = tok;
+                *ns << tok;
             }
         }
 
-        if( tok == lex.TEMPL )
+        if (tok == lex.TEMPL)
         {
             //read template arguments
             lex.match_block(lex.ANGLE, true);
             tok.swap_to_string(templarg);
         }
 
-        if( tok == lex.CLASS || tok == lex.STRUCT )
+        if (tok == lex.CLASS || tok == lex.STRUCT)
             return true;
     }
-    while(tok.id);
+    while (tok.id);
 
     return false;
 }
