@@ -99,6 +99,7 @@ COID_NAMESPACE_END
 //@{ Debug-only assertions, release build doesn't see anything from it
 #define DASSERT(expr)               XASSERTE(expr) coid::__rassert(0,ersEXCEPTION,__FILE__,__LINE__,__FUNCTION__,#expr); XASSERT(ersEXCEPTION #expr); } while(0)
 #define DASSERTX(expr,txt)          XASSERTE(expr) coid::__rassert(coid::opt_string() << txt,ersEXCEPTION,__FILE__,__LINE__,__FUNCTION__,#expr); XASSERT(ersEXCEPTION #expr); } while(0)
+#define DASSERT_ONCE(expr)          do{ static bool once = false; if(expr || once) break;  coid::opcd __assert_e = coid::__rassert(0,ersEXCEPTION,__FILE__,__LINE__,__FUNCTION__,#expr); once = true; XASSERT(ersEXCEPTION #expr); } while(0)
 
 ///Log-only
 #define DASSERTL(expr)              XASSERTE(expr) coid::__rassert(0,0,__FILE__,__LINE__,__FUNCTION__,#expr); } while(0)
