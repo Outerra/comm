@@ -122,6 +122,7 @@ COID_NAMESPACE_END
 
 #define DASSERT(expr)
 #define DASSERTX(expr,txt)
+#define DASSERT_ONCE(expr)
 
 #define DASSERTE(expr,exc)
 #define DASSERTEX(expr,exc,txt)
