@@ -2604,20 +2604,25 @@ private:
 
     void fix_literal_length()
     {
+#if defined(_DEBUG) || defined(COID_TOKEN_LITERAL_CHECK)
         //if 0 is not at _pte or there's a zero before, recount
         if (*_pte != 0 || (_pte > _ptr && _pte[-1] == 0))
         {
             //an assert here means token is likely being constructed from
             // a character array, but detected as a string literal
-            // please add &* before such strings to avoid the need for this fix
-            //DASSERT(0);
+            // please add &* before such strings to avoid the need for this fix (preferred, to avoid extra checks)
+            // or define COID_TOKEN_LITERAL_CHECK to handle it silently
+#ifndef COID_TOKEN_LITERAL_CHECK
+            RASSERT(0);
+#endif
 
             const char* p = _ptr;
             for (; p < _pte && *p; ++p);
             _pte = p;
         }
+#endif
     }
-    };
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Wrapper class for binstream type key
