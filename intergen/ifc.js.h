@@ -152,19 +152,22 @@ struct script_handle
 
 #ifdef V8_MAJOR_VERSION
         v8::ScriptOrigin so(v8::string_utf8(fname, iso));
-        v8::Handle<v8::Script> compiled_script = v8::Script::Compile(iso->GetCurrentContext(), scriptv8, &so).ToLocalChecked();
+        v8::Local<v8::Script> compiled_script;
+        v8::MaybeLocal<v8::Script> maybe_compiled_script = v8::Script::Compile(iso->GetCurrentContext(), scriptv8, &so);
+        maybe_compiled_script.ToLocal(&compiled_script);
 #else
         v8::Handle<v8::Script> compiled_script =
             v8::Script::Compile(scriptv8, v8::string_utf8(fname, iso));
 #endif
 
         if (js_trycatch.HasCaught())
-            ::js::script_handle::throw_js_error(js_trycatch, "ot::js::canvas::load_script(): ");
+            ::js::script_handle::throw_js_error(js_trycatch, "ot::js::canvas::load_script");
+        else {
+            compiled_script->Run(V8_OPTARG1(iso->GetCurrentContext()));
 
-        compiled_script->Run(V8_OPTARG1(iso->GetCurrentContext()));
-
-        if (js_trycatch.HasCaught())
-            ::js::script_handle::throw_js_error(js_trycatch, "ot::js::canvas::load_script(): ");
+            if (js_trycatch.HasCaught())
+                ::js::script_handle::throw_js_error(js_trycatch, "ot::js::canvas::load_script");
+        }
 
         return compiled_script;
     }
@@ -343,12 +346,12 @@ public:
 #endif
 
         if (js_trycatch.HasCaught())
-            throw_js_error(js_trycatch, "js_include: ");
+            throw_js_error(js_trycatch, "js_include");
 
         script->Run(V8_OPTARG1(ctx));
 
         if (js_trycatch.HasCaught())
-            throw_js_error(js_trycatch, "js_include: ");
+            throw_js_error(js_trycatch, "js_include");
 
         v8::Handle<v8::Value> rval = ctx->Global()->Get(result);
         ctx->Global()->Set(result, V8_UNDEFINED(iso));

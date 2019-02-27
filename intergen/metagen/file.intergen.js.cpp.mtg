@@ -374,7 +374,7 @@ $-[args inarg?]$$(if volatile?)$
 $-[/args]$
 
     if (js_trycatch__.HasCaught())
-        ::js::script_handle::throw_js_error(js_trycatch__, "$..ns rest="::" after="::"$js::$..name$.$name$(): ");
+        ::js::script_handle::throw_js_error(js_trycatch__, "$..ns rest="::" after="::"$js::$..name$.$name$");
 // gather results
 $-(if !noutargs?)$
 
