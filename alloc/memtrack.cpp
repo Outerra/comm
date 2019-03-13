@@ -193,7 +193,9 @@ struct memtrack_registrar
         if (!bof.is_open())
             return;
 
-        static charstr buf;
+        LOCAL_SINGLETON(charstr) dumpbuf;
+        charstr& buf = *dumpbuf;
+
         buf.reserve(8000);
         buf.reset();
 
