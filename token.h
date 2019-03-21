@@ -192,6 +192,9 @@ struct token
     const char* ptr() const { return _ptr; }
     const char* ptre() const { return _pte; }
 
+    const char* begin() const { return _ptr; }
+    const char* end() const { return _pte; }
+
     ///Return length of token
     uint len() const { return uint(_pte - _ptr); }
     uints lens() const { return _pte - _ptr; }
