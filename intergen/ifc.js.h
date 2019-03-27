@@ -347,14 +347,22 @@ public:
 
         if (js_trycatch.HasCaught()) {
             js_trycatch.ReThrow();
+#ifdef V8_MAJOR_VERSION
             return;
+#else
+            return v8::Undefined();
+#endif
         }
 
         script->Run(V8_OPTARG1(ctx));
 
         if (js_trycatch.HasCaught()) {
             js_trycatch.ReThrow();
+#ifdef V8_MAJOR_VERSION
             return;
+#else
+            return v8::Undefined();
+#endif
         }
 
         v8::Handle<v8::Value> rval = ctx->Global()->Get(result);
