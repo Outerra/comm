@@ -2,151 +2,56 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="atomic">
-      <UniqueIdentifier>{595b17fc-47c6-47af-8d2b-9c097ac11978}</UniqueIdentifier>
+      <UniqueIdentifier>{3fe51a65-64f2-4c21-a937-c3cb45f3824a}</UniqueIdentifier>
     </Filter>
     <Filter Include="binstream">
-      <UniqueIdentifier>{fdc4d799-4a35-4050-be02-ed1ce1026b09}</UniqueIdentifier>
+      <UniqueIdentifier>{a6dae606-0221-497b-a7e2-cf4c235f7522}</UniqueIdentifier>
     </Filter>
     <Filter Include="crypt">
-      <UniqueIdentifier>{5df851d9-8148-4de4-9e36-d05edd5b861b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="hash">
-      <UniqueIdentifier>{88bc3e44-e256-4374-ae06-4841b954719c}</UniqueIdentifier>
+      <UniqueIdentifier>{cb6c79be-b0cd-4c4c-aeb2-0c22653713cc}</UniqueIdentifier>
     </Filter>
     <Filter Include="metastream">
-      <UniqueIdentifier>{f8100d48-1053-42cb-b889-591359b8b9c6}</UniqueIdentifier>
+      <UniqueIdentifier>{233ae9be-c90e-492d-965d-e1921af12782}</UniqueIdentifier>
     </Filter>
     <Filter Include="alloc">
-      <UniqueIdentifier>{84b9f56f-6b08-488b-8d16-747946ba4858}</UniqueIdentifier>
+      <UniqueIdentifier>{ceaf5750-c95d-42e7-8bce-883b6ae4dae9}</UniqueIdentifier>
     </Filter>
     <Filter Include="cxx">
-      <UniqueIdentifier>{9d66f200-0c0e-4d9a-89dd-1254e1b7ce6c}</UniqueIdentifier>
+      <UniqueIdentifier>{69d4dce5-6f18-4ff5-864c-30a449505f36}</UniqueIdentifier>
     </Filter>
     <Filter Include="sync">
-      <UniqueIdentifier>{11a6f21f-a15b-4abc-bbf4-36b8cdd257f3}</UniqueIdentifier>
+      <UniqueIdentifier>{26590ad0-e8f7-40b2-b850-0ca10d8b367b}</UniqueIdentifier>
     </Filter>
     <Filter Include="coder">
-      <UniqueIdentifier>{ce14cfa6-eeed-46a9-b61f-811f5db9ef7b}</UniqueIdentifier>
+      <UniqueIdentifier>{653d94ea-1d5b-4a61-aae9-8b69a41a5016}</UniqueIdentifier>
     </Filter>
     <Filter Include="log">
-      <UniqueIdentifier>{1bc4a5ec-d318-45a0-a724-658e042af5f7}</UniqueIdentifier>
+      <UniqueIdentifier>{3eaa98aa-40a2-45c4-80a2-395532f14b3d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="hash">
+      <UniqueIdentifier>{42f08aac-f74c-4a4a-8ce9-6ee6e614df11}</UniqueIdentifier>
     </Filter>
     <Filter Include="regex">
-      <UniqueIdentifier>{91f4ad86-d880-4815-adb2-c7fa2f0729f7}</UniqueIdentifier>
+      <UniqueIdentifier>{17dc812b-6176-4ae7-9661-594432f694ba}</UniqueIdentifier>
     </Filter>
     <Filter Include="intergen">
-      <UniqueIdentifier>{48906725-6d3e-4a41-9723-a66f32495883}</UniqueIdentifier>
+      <UniqueIdentifier>{ef7c566f-3d1a-4dd1-b1f5-ce2957c39ee4}</UniqueIdentifier>
     </Filter>
     <Filter Include="coder\lz4">
-      <UniqueIdentifier>{d018964f-d4a5-44ce-ada8-1b87570254f7}</UniqueIdentifier>
+      <UniqueIdentifier>{5492f2b2-11d9-4591-bdf6-568bd8e53ea3}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\..\atomic\atomic.cpp">
-      <Filter>atomic</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\crypt\sha1.cpp">
-      <Filter>crypt</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\metastream\metastream.cpp">
-      <Filter>metastream</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\alloc\_malloc.c">
-      <Filter>alloc</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\alloc\memtrack.cpp">
-      <Filter>alloc</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\comm.cpp">
-      <Filter>cxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\dir.cpp">
-      <Filter>cxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\dirgcc.cpp">
-      <Filter>cxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\dirwin.cpp">
-      <Filter>cxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\net.cpp">
-      <Filter>cxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\pthreadx.cpp">
-      <Filter>cxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\retcodes.cpp">
-      <Filter>cxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\singleton.cpp">
-      <Filter>cxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\str-win.cpp">
-      <Filter>cxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\substring.cpp">
-      <Filter>cxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\sync\_mutex.cpp">
-      <Filter>sync</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\sync\mutex.cpp">
-      <Filter>sync</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\sync\rw_mx_core.cpp">
-      <Filter>sync</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\sync\rw_mx_core_pthread.cpp">
-      <Filter>sync</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\regex\regcomp.cpp">
-      <Filter>regex</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\regex\regexec.cpp">
-      <Filter>regex</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\txtconv.cpp">
-      <Filter>cxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\sync\thread_mgr.cpp">
-      <Filter>sync</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\coder\lz4\lz4.c">
-      <Filter>coder\lz4</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\coder\lz4\lz4hc.c">
-      <Filter>coder\lz4</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\coder\lz4\xxhash.c">
-      <Filter>coder\lz4</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\interface.cpp">
-      <Filter>cxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\timer.cpp">
-      <Filter>cxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\timeru.cpp">
-      <Filter>cxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\log\logger.cpp">
-      <Filter>log</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\commassert.cpp">
-      <Filter>cxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\binstream\stdstream.cpp">
-      <Filter>cxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\taskmaster.cpp">
-      <Filter>cxx</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\atomic\atomic.h">
       <Filter>atomic</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\atomic\pool.h">
+      <Filter>atomic</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\atomic\queue.h">
+      <Filter>atomic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\atomic\stack.h">
       <Filter>atomic</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\binstream\binstream.h">
@@ -224,6 +129,9 @@
     <ClInclude Include="..\..\..\binstream\packstream.h">
       <Filter>binstream</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\binstream\packstreambzip2.h">
+      <Filter>binstream</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\binstream\packstreamzip.h">
       <Filter>binstream</Filter>
     </ClInclude>
@@ -244,21 +152,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\crypt\sha1.h">
       <Filter>crypt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\hash\hashfunc.h">
-      <Filter>hash</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\hash\hashkeyset.h">
-      <Filter>hash</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\hash\hashmap.h">
-      <Filter>hash</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\hash\hashset.h">
-      <Filter>hash</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\hash\hashtable.h">
-      <Filter>hash</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\metastream\fmtstream.h">
       <Filter>metastream</Filter>
@@ -323,6 +216,24 @@
     <ClInclude Include="..\..\..\log\logger.h">
       <Filter>log</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\log\logwriter.h">
+      <Filter>log</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\hash\hashfunc.h">
+      <Filter>hash</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\hash\hashkeyset.h">
+      <Filter>hash</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\hash\hashmap.h">
+      <Filter>hash</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\hash\hashset.h">
+      <Filter>hash</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\hash\hashtable.h">
+      <Filter>hash</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\regex\regcomp.h">
       <Filter>regex</Filter>
     </ClInclude>
@@ -346,11 +257,14 @@
     <ClInclude Include="..\..\..\ptrowner.h" />
     <ClInclude Include="..\..\..\radix.h" />
     <ClInclude Include="..\..\..\ref.h" />
+    <ClInclude Include="..\..\..\ref_base.h" />
+    <ClInclude Include="..\..\..\ref_i.h" />
+    <ClInclude Include="..\..\..\ref_s.h" />
+    <ClInclude Include="..\..\..\refs.h" />
     <ClInclude Include="..\..\..\regex.h" />
     <ClInclude Include="..\..\..\retcodes.h" />
     <ClInclude Include="..\..\..\rnd.h" />
     <ClInclude Include="..\..\..\singleton.h" />
-    <ClInclude Include="..\..\..\atomic\stack.h" />
     <ClInclude Include="..\..\..\str.h" />
     <ClInclude Include="..\..\..\strgen.h" />
     <ClInclude Include="..\..\..\substring.h" />
@@ -360,6 +274,29 @@
     <ClInclude Include="..\..\..\tutf8.h" />
     <ClInclude Include="..\..\..\txtconv.h" />
     <ClInclude Include="..\..\..\version.h" />
+    <ClInclude Include="..\..\..\list.h" />
+    <ClInclude Include="..\..\..\atomic\pool_base.h" />
+    <ClInclude Include="..\..\..\atomic\basic_pool.h">
+      <Filter>atomic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\atomic\queue_base.h">
+      <Filter>atomic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\atomic\stack_base.h">
+      <Filter>atomic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ref_helpers.h" />
+    <ClInclude Include="..\..\..\binstream\filestreamgz.h">
+      <Filter>binstream</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\binstream\hash_sha1stream.h">
+      <Filter>binstream</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\dbg_location.h" />
+    <ClInclude Include="..\..\..\interface.h" />
+    <ClInclude Include="..\..\..\metastream\fmtstream_v8.h">
+      <Filter>metastream</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\metastream\fmtstreamnull.h">
       <Filter>metastream</Filter>
     </ClInclude>
@@ -369,10 +306,10 @@
     <ClInclude Include="..\..\..\intergen\ifc.js.h">
       <Filter>intergen</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\binstring.h" />
     <ClInclude Include="..\..\..\alloc\slotalloc.h">
       <Filter>alloc</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\binstring.h" />
     <ClInclude Include="..\..\..\coder\lz4\lz4.h">
       <Filter>coder\lz4</Filter>
     </ClInclude>
@@ -385,20 +322,136 @@
     <ClInclude Include="..\..\..\binstream\packstreamlz4.h">
       <Filter>binstream</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\dbg_location.h" />
-    <ClInclude Include="..\..\..\interface.h" />
     <ClInclude Include="..\..\..\timer.h" />
+    <ClInclude Include="..\..\..\alloc\alloc2d.h">
+      <Filter>alloc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\alloc\slotalloc_bmp.h">
+      <Filter>alloc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\binstream\hash_xxhashstream.h">
+      <Filter>binstream</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\hash\slothash.h">
       <Filter>hash</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\log\logwriter.h">
-      <Filter>log</Filter>
+    <ClInclude Include="..\..\..\coder\bufpack_zstd.h">
+      <Filter>coder</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\range.h" />
     <ClInclude Include="..\..\..\bitrange.h" />
+    <ClInclude Include="..\..\..\taskmaster.h" />
     <ClInclude Include="..\..\..\alloc\slotalloc_tracker.h">
       <Filter>alloc</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\taskmaster.h" />
+    <ClInclude Include="..\..\..\function.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\crypt\sha1.cpp">
+      <Filter>crypt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\metastream\metastream.cpp">
+      <Filter>metastream</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\alloc\_malloc.c">
+      <Filter>alloc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\alloc\memtrack.cpp">
+      <Filter>alloc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\comm.cpp">
+      <Filter>cxx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\dir.cpp">
+      <Filter>cxx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\dirgcc.cpp">
+      <Filter>cxx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\dirwin.cpp">
+      <Filter>cxx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\net.cpp">
+      <Filter>cxx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\pthreadx.cpp">
+      <Filter>cxx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\retcodes.cpp">
+      <Filter>cxx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\singleton.cpp">
+      <Filter>cxx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\str-win.cpp">
+      <Filter>cxx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\substring.cpp">
+      <Filter>cxx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\sync\_mutex.cpp">
+      <Filter>sync</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\sync\mutex.cpp">
+      <Filter>sync</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\sync\rw_mx_core.cpp">
+      <Filter>sync</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\sync\rw_mx_core_pthread.cpp">
+      <Filter>sync</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\log\logger.cpp">
+      <Filter>log</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\regex\regcomp.cpp">
+      <Filter>regex</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\regex\regexec.cpp">
+      <Filter>regex</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\txtconv.cpp">
+      <Filter>cxx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\atomic\atomic.cpp">
+      <Filter>atomic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\sync\thread_mgr.cpp">
+      <Filter>sync</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\interface.cpp">
+      <Filter>cxx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\coder\lz4\lz4.c">
+      <Filter>coder\lz4</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\coder\lz4\lz4hc.c">
+      <Filter>coder\lz4</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\coder\lz4\xxhash.c">
+      <Filter>coder\lz4</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\timer.cpp">
+      <Filter>cxx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\timeru.cpp">
+      <Filter>cxx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\binstream\stdstream.cpp">
+      <Filter>cxx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\alloc\slotalloc_bmp.cpp">
+      <Filter>alloc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\coder\bufpack_lz4.h">
+      <Filter>coder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\commassert.cpp">
+      <Filter>cxx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\taskmaster.cpp">
+      <Filter>cxx</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="..\..\..\doc\visualc-syntax\coid.natvis" />
