@@ -1460,6 +1460,30 @@ public:
         return *this;
     }
 
+    ///Used for types that stream using a translation to a different type
+    //@param set void function(S&&) receiving object from stream
+    //@param get [const S& | S] function() returning object to stream
+    template <typename T, typename FnIn, typename FnOut>
+    metastream& operator_indirect(T& a, FnIn set, FnOut get) {
+        typedef std::remove_const_t<std::remove_reference_t<decltype(get())>> S;
+
+        if (stream_writing()) {
+            //auto& val = get();
+            *this || const_cast<S&>(get());
+        }
+        else if (stream_reading()) {
+            S val;
+            *this || val;
+            set(std::forward<S>(val));
+        }
+        else {
+            //_cur_variable_offset was set by a member method, but since this is using a temporary,
+            // indicate that it should not be used
+            _cur_variable_offset = -1;
+            *this || *(S*)0;
+        }
+        return *this;
+    }
 
     ////////////////////////////////////////////////////////////////////////////////
     //@{ meta_* functions deal with building the description tree
@@ -1475,8 +1499,9 @@ protected:
             _root.desc = d;
             var = &_root;
         }
-        else
+        else {
             var = _current_var->add_child(d, _cur_variable_name, _cur_variable_offset);
+        }
 
         _cur_variable_name.set_empty();
 
@@ -1529,7 +1554,7 @@ public:
         typedef typename resolve_enum<T>::type B;
 
         _cur_variable_name = varname;
-        _cur_variable_offset = (int)(ints)v;
+        _cur_variable_offset = down_cast<int>((ints)v);
         _cur_stream_fn = &type_streamer<T>::fn;
 
         *this || *(B*)0;
@@ -1541,7 +1566,7 @@ public:
         typedef typename resolve_enum<T>::type B;
 
         _cur_variable_name = varname;
-        _cur_variable_offset = (int)offs;
+        _cur_variable_offset = down_cast<int>(offs);
         _cur_stream_fn = &type_streamer<T>::fn;
 
         *this || *(B*)0;
@@ -1555,7 +1580,7 @@ public:
         typedef typename resolve_enum<T>::type B;
 
         _cur_variable_name = varname;
-        _cur_variable_offset = (int)offs;
+        _cur_variable_offset = down_cast<int>(offs);
         _cur_stream_fn = &type_streamer<T>::fn;
 
         if (meta_decl_raw_pointer(
@@ -1577,7 +1602,7 @@ public:
         typedef typename resolve_enum<Telem>::type B;
 
         _cur_variable_name = varname;
-        _cur_variable_offset = (int)offs;
+        _cur_variable_offset = down_cast<int>(offs);
         _cur_stream_fn = &type_streamer<T>::fn;
 
         if (meta_decl_raw_pointer(
@@ -1616,7 +1641,7 @@ public:
         typedef typename resolve_enum<T>::type B;
 
         _cur_variable_name = varname;
-        _cur_variable_offset = (int)(ints)v;
+        _cur_variable_offset = down_cast<int>((ints)v);
         _cur_stream_fn = &type_streamer<T>::fn;
 
         if (meta_decl_array(
@@ -1841,6 +1866,8 @@ public:
         _cur_variable_name.set_empty();
         _cur_variable_offset = 0;
 
+        smap_init();
+
         *this || *(typename resolve_enum<T>::type*)0;
 
         const MetaDesc* mtd = _root.desc;
@@ -1927,8 +1954,6 @@ private:
     token _cur_variable_name;
     MetaDesc::stream_func _cur_stream_fn;
     int _cur_variable_offset;
-    //binstream::fnc_from_stream _cur_streamfrom_fnc;
-    //binstream::fnc_to_stream _cur_streamto_fnc;
 
     int _sesopen;                       //< flush(>0) or ack(<0) session currently open
 
@@ -1948,7 +1973,6 @@ private:
 
     bool _binw;
     bool _binr;
-    //bool _alias_mode = false;           //< true if creating alias streaming descriptor
     bool _dometa;                       //< true if shoud stream metadata, false if only the values
     bool _beseparator;                  //< true if separator between members should be read or written
 
