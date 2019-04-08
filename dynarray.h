@@ -1306,6 +1306,40 @@ public:
     //@}
 
 
+    ///Find or insert element into a sorted array
+    //@param key key to search for
+    //@param isnew [out] set to true if value was newly created
+    //@note there must exist < operator able to do (T < K) comparison
+    template<class K>
+    T* find_or_insert_sorted(const K& key, bool& isnew) {
+        uints index;
+        const T* value = contains_sorted(key, &index);
+
+        if (!value) {
+            isnew = true;
+            return ins(index);
+        }
+
+        return const_cast<T*>(value);
+    }
+
+    ///Find or insert element into a sorted array
+    //@param key key to search for
+    //@param isnew [out] set to true if value was newly created
+    //@note there must exist < operator able to do (T < K) comparison
+    template<class K, class FUNC>
+    T* find_or_insert_sorted(const K& key, const FUNC& fn, bool& isnew) {
+        uints index;
+        const T* value = contains_sorted(key, fn, &index);
+
+        if (!value) {
+            isnew = true;
+            return ins(index);
+        }
+
+        return const_cast<T*>(value);
+    }
+
     ///Binary search sorted array
     //@note there must exist < operator able to do (T < K) comparison
     template<class K>
