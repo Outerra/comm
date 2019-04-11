@@ -83,11 +83,11 @@ struct token
     const char* _ptr;                   //< ptr to the beginning of current string part
     const char* _pte;                   //< pointer past the end
 
-    token()
+    constexpr token()
         : _ptr(0), _pte(0)
     {}
 
-    token(std::nullptr_t)
+    constexpr token(std::nullptr_t)
         : _ptr(0), _pte(0)
     {}
 
@@ -125,19 +125,19 @@ struct token
 
     token(const charstr& str);
 
-    token(const char* ptr, uints len)
+    constexpr token(const char* ptr, uints len)
         : _ptr(ptr), _pte(ptr + len)
     {}
 
-    token(char* ptr, uints len)
+    constexpr token(char* ptr, uints len)
         : _ptr(ptr), _pte(ptr + len)
     {}
 
-    token(const char* ptr, const char* ptre)
+    constexpr token(const char* ptr, const char* ptre)
         : _ptr(ptr), _pte(ptre)
     {}
 
-    token(char* ptr, char* ptre)
+    constexpr token(char* ptr, char* ptre)
         : _ptr(ptr), _pte(ptre)
     {}
 
@@ -2840,7 +2840,7 @@ COID_NAMESPACE_END
 #ifdef COID_USER_DEFINED_LITERALS
 
 ///String literal returning token (_T suffix)
-inline const coid::token operator "" _T(const char* s, size_t len)
+inline coid_constexpr coid::token operator "" _T(const char* s, size_t len)
 {
     return coid::token(s, len);
 }
