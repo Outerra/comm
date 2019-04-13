@@ -668,7 +668,7 @@ public:
     //@param v pointer to the first array element
     //@param size element count
     template<size_t N, typename T>
-    metastream& member_array(const token& name, T* v)
+    metastream& member_array(const token& name, T* v, bool nonmember = false)
     {
         if (_binw) {
             binstream_container_fixed_array<T, ints> bc(v, N);
@@ -679,7 +679,148 @@ public:
             read_container(bc);
         }
         else
-            meta_variable_fixed_array<N>(name, v);
+            meta_variable_fixed_array<N>(name, v, nonmember);
+        return *this;
+    }
+
+
+
+    ///Define a member variable
+    //@param name variable name, used as a key in output formats
+    //@param v variable to read/write to
+    //@return true if value was read or written and no default was used (also true in meta phase)
+    template<typename T>
+    bool nonmember(const token& name, T& v)
+    {
+        if (streaming()) {
+            *this || *(typename resolve_enum<T>::type*)&v;
+            return true;
+        }
+
+        meta_variable<T>(name, &v, true);
+        return true;
+    }
+
+    ///Define a member variable with default value to use if missing in stream
+    //@param name variable name, used as a key in output formats
+    //@param v variable to read/write to
+    //@param defval value to use if the variable is missing from the stream, convertible to T
+    //@return true if value was read or written and no default was used (also true in meta phase)
+    template<typename T, typename D>
+    bool nonmember(const token& name, T& v, const D& defval)
+    {
+        bool used = true;
+
+        if (_binw) {
+            *this || *(typename resolve_enum<T>::type*)&v;
+        }
+        else if (_binr) {
+            used = read_optional(v);
+            if (!used)
+                v = T(defval);
+        }
+        else
+            meta_variable_optional<T>(name, &v, true);
+        return used;
+    }
+
+    ///Define a member variable with default value to use if missing in stream
+    //@param name variable name, used as a key in output formats
+    //@param v variable to read/write to
+    //@param defval value to use if the variable is missing from the stream, convertible to T
+    //@param write_default if false, does not write value that equals the defval into output stream
+    //@return true if value was read or written and no default was used (also true in meta phase)
+    template<typename T, typename D>
+    bool nonmember(const token& name, T& v, const D& defval, bool write_default)
+    {
+        bool used = true;
+
+        if (_binw) {
+            used = write_optional(!cache_prepared() && !write_default && v == defval
+                ? 0 : (typename resolve_enum<T>::type*)&v);
+        }
+        else if (_binr) {
+            used = read_optional(v);
+            if (!used)
+                v = T(defval);
+        }
+        else
+            meta_variable_optional<T>(name, &v, true);
+        return used;
+    }
+
+    ///Define a fixed size array member variable
+    //@param name variable name, used as a key in output formats
+    //@param v variable to read/write to
+    template<typename T, size_t N>
+    bool nonmember(const token& name, T(&v)[N])
+    {
+        member_array<N>(name, v, true);
+        return true;
+    }
+
+    ///Define a non-member variable referenced by a pointer (non-streamable) except const char*
+    //@param name variable name, used as a key in output formats
+    //@param v pointer to variable to read/write to
+    //@param streamed false variable should not be streamed, just a part of meta description, can point to 1..N items (default)
+    //@param          true variable is indirectly referenced to by a pointer
+    //@note use member_optional or member_type for special handling when the pointer has to be allocated etc.
+    template<typename T, typename = std::enable_if_t<!std::is_same<const char*, T*>::value>>
+    bool nonmember(const token& name, T*& v, bool streamed = false)
+    {
+        nonmember_ptr(name, v, streamed);
+        return true;
+    }
+
+    ///Define a non-member variable referenced by a pointer, assumed to be already allocated when streaming to/from
+    //@param name variable name, used as a key in output formats
+    //@param v pointer to variable to read/write to
+    template<typename T>
+    metastream& nonmember_indirect(const token& name, T*& v)
+    {
+        typedef typename std::remove_const<T>::type TNC;
+
+        if (streaming()) {
+            if (!v)
+                throw exception() << "null pointer";
+
+            *this || *(typename resolve_enum<TNC>::type*)v;
+        }
+        else
+            meta_variable_indirect<TNC>(name, -1);
+        return *this;
+    }
+
+    ///Define a raw pointer non-member variable to 1..N objects
+    //@param name variable name, used as a key in output formats
+    //@param v pointer to variable to read/write to
+    //@param streamed false if variable should not be streamed, just a part of meta description
+    template<typename T>
+    bool nonmember_ptr(const token& name, T*& v, bool streamed)
+    {
+        typedef typename std::remove_const<T>::type TNC;
+
+        if (streaming())
+            *this || *(typename resolve_enum<TNC>::type*)v;
+        else
+            meta_variable_raw_ptr<TNC>(name, -1, streamed);
+
+        return true;
+    }
+
+    ///Define a non-member variable, with default value constructed by streaming the value object from nullstream
+    //@note obviously, T's metastream declaration must be made only of members with default values
+    //@param name variable name, used as a key in output formats
+    //@param v variable to read/write to
+    template<typename T>
+    metastream& nonmember_stream_default(const token& name, T& v)
+    {
+        if (streaming())
+            *this || (typename resolve_enum<T>::type&)v;
+        else {
+            meta_variable<T>(name, &v, true);
+            meta_cache_default_stream<T>(&v);
+        }
         return *this;
     }
 
@@ -1549,12 +1690,12 @@ public:
     }
 
     template<class T>
-    void meta_variable(const token& varname, const T* v)
+    void meta_variable(const token& varname, const T* v, bool nonmember = false)
     {
         typedef typename resolve_enum<T>::type B;
 
         _cur_variable_name = varname;
-        _cur_variable_offset = down_cast<int>((ints)v);
+        _cur_variable_offset = nonmember ? -1 : down_cast<int>((ints)v);
         _cur_stream_fn = &type_streamer<T>::fn;
 
         *this || *(B*)0;
@@ -1618,9 +1759,9 @@ public:
     }
 
     template<class T>
-    void meta_variable_optional(const token& varname, const T* v)
+    void meta_variable_optional(const token& varname, const T* v, bool nonmember = false)
     {
-        meta_variable<T>(varname, v);
+        meta_variable<T>(varname, v, nonmember);
 
         _last_var->optional = true;
     }
@@ -1636,12 +1777,12 @@ public:
 
     ///Define member array variable
     template<size_t N, class T>
-    void meta_variable_fixed_array(const token& varname, T* v)
+    void meta_variable_fixed_array(const token& varname, T* v, bool nonmember = false)
     {
         typedef typename resolve_enum<T>::type B;
 
         _cur_variable_name = varname;
-        _cur_variable_offset = down_cast<int>((ints)v);
+        _cur_variable_offset = nonmember ? -1 : down_cast<int>((ints)v);
         _cur_stream_fn = &type_streamer<T>::fn;
 
         if (meta_decl_array(
