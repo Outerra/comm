@@ -1012,6 +1012,16 @@ public:
     //@}
 
 
+    ////////////////////////////////////////////////////////////////////////////////
+
+    virtual uint64 get_read_pos() const { return UMAX64; }
+    virtual uint64 get_write_pos() const { return UMAX64; }
+
+    virtual bool set_read_pos(uint64 pos) { return false; }
+    virtual bool set_write_pos(uint64 pos) { return false; }
+
+
+
     static void* bufcpy( void* dst, const void* src, uints count )
     {
         switch(count) {

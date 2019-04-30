@@ -140,18 +140,18 @@ public:
     }
 
     //@{ Get and set current reading and writing position
-    uint64 get_read_pos() const         { return _op>0  ?  getpos()  :  _rpos; }
-    uint64 get_write_pos() const        { return _op<0  ?  getpos()  :  _wpos; }
+    uint64 get_read_pos() const override { return _op > 0 ? getpos() : _rpos; }
+    uint64 get_write_pos() const override { return _op < 0 ? getpos() : _wpos; }
 
-    bool set_read_pos( uint64 pos )     {
-        if(_op<0)
+    bool set_read_pos(uint64 pos) override {
+        if (_op < 0)
             upd_wpos();
 
         return setpos(pos);
     }
 
-    bool set_write_pos( uint64 pos )     {
-        if(_op>0)
+    bool set_write_pos(uint64 pos) override {
+        if (_op > 0)
             upd_rpos();
 
         return setpos(pos);
