@@ -202,7 +202,7 @@ public:
     //@param spin_count number of spins before trying to process other tasks
     //@note never call enter(A) enter(B) exit(A) exit(B) in that order, since it can cause 
     // deadlock thanks to taskmaster's nature
-    void enter_critical_section(critical_section& critical_section, int spin_count = 16)
+    void enter_critical_section(critical_section& critical_section, int spin_count = 1024)
     {
         for(;;) {
             for(int i = 0; i < spin_count; ++i) {
@@ -211,8 +211,8 @@ public:
                 }
             }
 
-            const int order = get_order();
             invoker_base* task = 0;
+            const int order = get_order();
             for(int prio = 0; prio < (int)EPriority::COUNT; ++prio) {
                 const bool can_run = prio != (int)EPriority::LOW || (order < _nlowprio_threads && order != -1);
                 if (can_run && _ready_jobs[prio].pop(task)) {
