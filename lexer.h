@@ -1022,10 +1022,11 @@ public:
 
         @param ignoregrp id of the group to ignore if found at the beginning, 0 for none.
         This is used mainly to omit the whitespace (group 1), or explicitly to not skip it.
+        If ignoregrp < 0, and no block/sequence/group was found, read token until characters from the ignored group are found
         @param enable_seqid enable block/string/sequence temporarily if it's not enabled
         @param no_pop don't pop up the stack unless the next token equals the *no_pop token
         **/
-    const lextoken& next(uint ignoregrp = 1, int enable_seqid = 0, const token* no_pop = 0)
+    const lextoken& next(int ignoregrp = 1, int enable_seqid = 0, const token* no_pop = 0)
     {
         if(_tok.is_null() && _bin)
         {
@@ -1051,7 +1052,7 @@ public:
 
         //skip characters from the ignored group
         if(ignoregrp) {
-            token tok = scan_group(ignoregrp - 1, true);
+            token tok = scan_group(abs(ignoregrp) - 1, true);
             if(tok.ptr() == 0)
                 return set_end();
             else
@@ -1152,6 +1153,12 @@ public:
 
                 return _last;
             }
+        }
+
+        if (ignoregrp < 0) {
+            _last.id = -ignoregrp;
+            _last.tok = scan_notgroup(-ignoregrp - 1, false);
+            return _last;
         }
 
         _last.id = x & xGROUP;
@@ -3021,6 +3028,20 @@ protected:
         return off;
     }
 
+    uints count_notintable(const token& tok, uchar grp, uints off)
+    {
+        const uchar* pc = (const uchar*)tok.ptr();
+        for (; off < tok.len(); ++off)
+        {
+            const uchar* p = pc + off;
+            if ((_abmap[*p] & xGROUP) == grp)
+                break;
+
+            _last.upd_hash(_casemap[*p]);
+        }
+        return off;
+    }
+
     uints count_inmask(const token& tok, uchar msk, uints off)
     {
         const uchar* pc = (const uchar*)tok.ptr();
@@ -3078,6 +3099,39 @@ protected:
         // if there was something in the buffer, append this to it
         token res;
         if(_last.tokbuf.len() > 0)
+        {
+            _last.tokbuf.add_from(_tok.ptr(), off);
+            res = _last.tokbuf;
+        }
+        else
+            res.set(_tok.ptr(), off);
+
+        _tok.shift_start(off);
+        return res;
+    }
+
+    ///Scan input for characters not from a group
+    //@return token with the data, an empty token if there were none, or
+    /// an empty token with _ptr==0 if there are no more data
+    //@param group group characters to return
+    //@param ignore true if the result would be ignored, so there's no need to fill the buffer
+    //@param off number of leading characters to skip
+    token scan_notgroup(uchar group, bool ignore, uints off = 0)
+    {
+        off = count_notintable(_tok, group, off);
+        if (off >= _tok.len())
+        {
+            //end of buffer
+
+            // return special terminating token if we are in ignore mode
+            // or there is nothing in the buffer and in input
+            if (ignore || (off == 0 && _last.tokbuf.len() > 0))
+                return token();
+        }
+
+        // if there was something in the buffer, append this to it
+        token res;
+        if (_last.tokbuf.len() > 0)
         {
             _last.tokbuf.add_from(_tok.ptr(), off);
             res = _last.tokbuf;

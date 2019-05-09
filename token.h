@@ -101,7 +101,7 @@ struct token
     ///String literal constructor, optimization to have fast literal strings available as tokens
     //@note tries to detect and if passed in a char array instead of string literal, by checking if the last char is 0
     // and the preceding char is not 0
-    // Call token(&*array) to force treating the array as a zero-terminated string
+    // Call token::from_cstring(array) to force treating the array as a zero-terminated string
     template <int N>
     token(const char(&str)[N])
         : _ptr(str), _pte(str + N - 1)
@@ -141,7 +141,21 @@ struct token
         : _ptr(ptr), _pte(ptre)
     {}
 
-    static token from_cstring(const char* czstr, uints maxlen = UMAXS)
+    template <int N>
+    static token from_cstring(char(&str)[N])
+    {
+        return token(str, str ? strnlen(str, N) : 0);
+    }
+
+    template <int N>
+    static token from_cstring(const char(&str)[N])
+    {
+        return token(str, str ? strnlen(str, N) : 0);
+    }
+
+    ///From const char*, artificially lowered precedence to allow catching literals above
+    template<typename T>
+    static token from_cstring(T czstr, uints maxlen = UMAXS)
     {
         return token(czstr, czstr ? strnlen(czstr, maxlen) : 0);
     }
@@ -2613,7 +2627,7 @@ private:
         {
             //an assert here means token is likely being constructed from
             // a character array, but detected as a string literal
-            // please add &* before such strings to avoid the need for this fix (preferred, to avoid extra checks)
+            // please use token::from_cstring on such strings to avoid the need for this fix (preferred, to avoid extra checks)
             // or define COID_TOKEN_LITERAL_CHECK to handle it silently
 #ifndef COID_TOKEN_LITERAL_CHECK
             RASSERT(0);
@@ -2671,7 +2685,7 @@ public:
     ///String literal constructor, optimization to have fast literal strings available as tokens
     //@note tries to detect and if passed in a char array instead of string literal, by checking if the last char is 0
     // and the preceding char is not 0
-    // Call token(&*array) to force treating the array as a zero-terminated string
+    // Call token::from_cstring(array) to force treating the array as a zero-terminated string
     template <int N>
     tokenhash(const char(&str)[N])
         : token(str), _hash(literal_hash(str))
@@ -2721,7 +2735,7 @@ public:
     ///String literal constructor, optimization to have fast literal strings available as tokens
     //@note tries to detect and if passed in a char array instead of string literal, by checking if the last char is 0
     // and the preceding char is not 0
-    // Call token(&*array) to force treating the array as a zero-terminated string
+    // Call token::from_cstring(array) to force treating the array as a zero-terminated string
     template <int N>
     token_literal(const char(&str)[N])
         : token(str)

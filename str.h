@@ -92,7 +92,7 @@ public:
     ///String literal constructor, optimization to have fast literal strings available as tokens
     //@note tries to detect and if passed in a char array instead of string literal, by checking if the last char is 0
     // and the preceding char is not 0
-    // Call token(&*array) to force treating the array as a zero-terminated string
+    // Call token::from_cstring(array) to force treating the array as a zero-terminated string
     template <int N>
     charstr(const char(&str)[N])
     {
