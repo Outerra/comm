@@ -2323,7 +2323,8 @@ private:
     ////////////////////////////////////////////////////////////////////////////////
     MetaDesc::Var* last_var() const { return _stack.last()->var; }
     void pop_var() {
-        DASSERT_RUN(_stack.pop(_curvar));
+        bool has = _stack.pop(_curvar);
+        DASSERT(has);
         DASSERT(_curvar.var);
     }
 
