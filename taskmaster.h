@@ -232,7 +232,7 @@ public:
     void leave_critical_section(critical_section& critical_section)
     {
         const int32 prev = atomic::cas(&critical_section.value, 0, 1);
-        DASSERT(prev == 1);
+        DASSERTN(prev == 1);
     }
 
 
@@ -527,7 +527,7 @@ private:
 
     bool is_signaled(signal_handle handle, bool lock)
     {
-        DASSERT(handle.is_valid());
+        DASSERT_RET(handle.is_valid(), false);
 
         signal& s = _signal_pool[handle.index()];
         

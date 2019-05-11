@@ -402,7 +402,7 @@ public:
         if (clear_bit(id))
             --_count;
         else
-            DASSERT(0);
+            DASSERTN(0);
     }
 
     ///Del range of objects
@@ -453,7 +453,7 @@ public:
         if (clear_bit(id))
             --_count;
         else
-            DASSERT(0);
+            DASSERTN(0);
     }
 
 

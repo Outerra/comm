@@ -581,7 +581,7 @@ struct token
     //@return pointer past the end
     const char* set(const char* str, uints len)
     {
-        DASSERT(len <= UMAX32);
+        DASSERTN(len <= UMAX32);
         _ptr = str;
         _pte = str + len;
         return _pte;

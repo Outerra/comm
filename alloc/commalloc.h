@@ -233,7 +233,7 @@ struct comm_array_allocator
         mspace m = 0)
     {
         uints n = count(p);
-        DASSERT( n+nitems <= UMAXS );
+        DASSERTN( n+nitems <= UMAXS );
 
         if(!nitems)
             return const_cast<void*>(p);

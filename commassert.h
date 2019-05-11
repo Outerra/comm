@@ -90,13 +90,12 @@ COID_NAMESPACE_END
 //@{ Runtime assertions
 #define RASSERT(expr)               XASSERTE(expr) coid::__rassert(0,__FILE__,__LINE__,__FUNCTION__,#expr); XASSERT; } while(0)
 #define RASSERTX(expr,txt)          XASSERTE(expr) coid::__rassert(coid::opt_string() << txt,__FILE__,__LINE__,__FUNCTION__,#expr); XASSERT; } while(0)
-
-//Log only on assert
-#define RASSERTL(expr)              XASSERTE(expr) coid::__rassert(0,__FILE__,__LINE__,__FUNCTION__,#expr); XDASSERT; } while(0)
-#define RASSERTLX(expr,txt)         XASSERTE(expr) coid::__rassert(coid::opt_string() << txt,__FILE__,__LINE__,__FUNCTION__,#expr); XDASSERT; } while(0)
 //@}
 
 ////////////////////////////////////////////////////////////////////////////////
+
+//define COID_ASSERT_LOG if debug asserts should log asserts in release
+
 #if defined(_DEBUG) || defined(COID_DASSERT_LOG)
 
 //@{ Debug-only assertions, release build doesn't execute the expression
@@ -120,6 +119,14 @@ COID_NAMESPACE_END
 #define DASSERT_RETVOID(expr)       do{ if(expr) break; return; } while(0)
 
 #endif //_DEBUG
+
+
+//@{ Debug assert that won't be switched to logging in release even with COID_DASSERT_LOG defined
+#ifdef _DEBUG
+#define DASSERTN(expr)              XASSERTE(expr) coid::__rassert(0,__FILE__,__LINE__,__FUNCTION__,#expr); XDASSERT; } while(0)
+#else
+#define DASSERTN(expr)
+#endif
 
 
 //@{ Assert in debug, log in release, return \a ret on failed assertion (also in release)

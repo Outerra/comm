@@ -250,7 +250,7 @@ public:
             return czstr;
         }
 
-        DASSERT(slen <= UMAX32);
+        DASSERTN(slen <= UMAX32);
 
         assign(czstr, slen);
         return czstr + slen;
@@ -277,7 +277,7 @@ public:
         if(slen == 0)
             return czstr;
 
-        DASSERT(slen <= UMAX32);
+        DASSERTN(slen <= UMAX32);
 
         _append(czstr, slen);
         _tstr[len()] = 0;
@@ -333,7 +333,7 @@ public:
         }
         else {
             uints ts = lens();
-            DASSERT(ts + length <= UMAX32);
+            DASSERTN(ts + length <= UMAX32);
 
             if((uints)length < ts)
             {
@@ -1928,7 +1928,7 @@ protected:
             return;
         }
 
-        DASSERT(len <= UMAX32);
+        DASSERTN(len <= UMAX32);
 
         char* p = _tstr.alloc(len + 1);
         xmemcpy(p, czstr, len);
@@ -1949,7 +1949,7 @@ protected:
             return 0;
         }
 
-        DASSERT(len <= UMAX32);
+        DASSERTN(len <= UMAX32);
 
         char* p = _tstr.alloc(len + 1);
         termzero();
@@ -2132,7 +2132,7 @@ protected:
     char* uniadd(uints n)
     {
         uints cn = _tstr.sizes();
-        DASSERT(cn + n <= UMAX32);
+        DASSERTN(cn + n <= UMAX32);
 
         char* p = (cn == 0)
             ? _tstr.add(n + 1)
