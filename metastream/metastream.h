@@ -3029,7 +3029,7 @@ protected:
                 //cache is open for reading but the member is not there
                 //this can happen when reading a struct that was cached due to reordered input
                 if (!cache_use_default()) {
-                    dump_stack(_err, 0);
+                    dump_stack(_err, 1);
                     _err << " - variable '" << _curvar.var->varname << "' not found and no default value provided";
                     fmt_error();
                     throw exception(_err);
@@ -3118,14 +3118,14 @@ protected:
                 _cacheskip = _curvar.var;
             //if normal reading (not a reading to cache), set up defval read or fail
             else if (!cache_use_default() && !_curvar.var->optional) {
-                dump_stack(_err, 0);
+                dump_stack(_err, 1);
                 _err << " - variable '" << _curvar.var->varname << "' not found and no default value provided";
                 fmt_error();
                 throw exception(_err);
             }
         }
         else if (e) {
-            dump_stack(_err, 0);
+            dump_stack(_err, 1);
             _err << " - error while seeking for variable '" << _curvar.var->varname << "': " << opcd_formatter(e);
             fmt_error();
             throw exception(_err);
@@ -3184,7 +3184,7 @@ protected:
 
         opcd e = _fmtstreamwr->write_key(_curvar.var->varname, _curvar.kth);
         if (e) {
-            dump_stack(_err, 0);
+            dump_stack(_err, 1);
             _err << " - error while writing the variable name '" << _curvar.var->varname << "': " << opcd_formatter(e);
             throw exception(_err);
         }
@@ -3250,7 +3250,7 @@ protected:
 
         MetaDesc::Var* crv = par->desc->find_child(_rvarname);
         if (!crv) {
-            dump_stack(_err, 0);
+            dump_stack(_err, 1);
             _err << " - member variable: " << _rvarname << " not defined";
             fmt_error();
             e = ersNOT_FOUND "no such member variable";
@@ -3260,7 +3260,7 @@ protected:
 
         uints k = par->desc->get_child_pos(crv) * sizeof(uints);
         if (_current->valid_addr(base + k)) {
-            dump_stack(_err, 0);
+            dump_stack(_err, 1);
             _err << " - data for member: " << _rvarname << " specified more than once";
             fmt_error();
             e = ersMISMATCHED "redundant member data";
