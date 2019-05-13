@@ -109,6 +109,7 @@ public:
     bool stream_writing() const { return _binw; }
 
     typedef bstype::kind            type;
+    void* context = NULL;
 
 
     metastream() {
@@ -117,6 +118,13 @@ public:
 
     explicit metastream(fmtstream& bin)
     {
+        init();
+        bind_formatting_stream(bin);
+    }
+
+    explicit metastream(fmtstream& bin, void* ctx)
+    {
+        context = ctx;
         init();
         bind_formatting_stream(bin);
     }
@@ -138,6 +146,12 @@ public:
         meta.xstream_in(*that);
     }
 
+    ///Set metastream context and return the previous one
+    void* set_context(void* ctx) {
+        void* prev = context;
+        context = ctx;
+        return prev;
+    }
 
     ///Define struct streaming scheme
     //@param fn functor with member functions defining the struct layout
