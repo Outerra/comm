@@ -286,7 +286,9 @@ public:
 
     const char* add_from_range(const char* strbgn, const char* strend)
     {
-        return add_from(strbgn, strend - strbgn);
+        return strend > strbgn
+            ? add_from(strbgn, strend - strbgn)
+            : strbgn;
     }
 
     ///Copy to buffer, terminate with zero
