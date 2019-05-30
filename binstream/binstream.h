@@ -1058,7 +1058,7 @@ struct opcd_formatter
         if( size <= n + 3 + et.len() ) {
             ::memcpy( buf+n, " : ", 3 );
             et.copy_to( buf+n+3, size-3-n );
-            n += 3 + et.len();
+            n += 3 + et.lens();
         }
 
         return n;

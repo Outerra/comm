@@ -305,6 +305,7 @@ public:
     {
         _handle = -1;
         _rpos = _wpos = 0;
+        _op = 1;
         open(s);
     }
 
@@ -312,6 +313,7 @@ public:
     {
         _handle = -1;
         _rpos = _wpos = 0;
+        _op = 1;
         open(s, attr);
     }
 
@@ -319,6 +321,7 @@ public:
     {
         _handle = -1;
         _rpos = _wpos = 0;
+        _op = 1;
         open(s, attr);
     }
 

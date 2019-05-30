@@ -1590,9 +1590,9 @@ private:
         uint_type const* bm = _allocated.ptr();
         uint_type const* em = _allocated.ptre();
         uint_type const* pm = bm;
-        uints id;
+        uints id = 0;
 
-        for (; pp < ep; ++pp, pm += page::NMASK)
+        for (; pp != ep; ++pp, pm += page::NMASK)
         {
             uint_type const* epm = em - pm > page::NMASK
                 ? pm + page::NMASK
