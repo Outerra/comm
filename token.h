@@ -106,8 +106,10 @@ struct token
     token(const char(&str)[N])
         : _ptr(str), _pte(str + N - 1)
     {
+#if defined(_DEBUG) || defined(COID_TOKEN_LITERAL_CHECK)
         //correct if invoked on char arrays
         fix_literal_length();
+#endif
     }
 
     ///Character array constructor
@@ -135,11 +137,15 @@ struct token
 
     constexpr token(const char* ptr, const char* ptre)
         : _ptr(ptr), _pte(ptre)
-    {}
+    {
+        DASSERT(ptr <= ptre);
+    }
 
     constexpr token(char* ptr, char* ptre)
         : _ptr(ptr), _pte(ptre)
-    {}
+    {
+        DASSERT(ptr <= ptre);
+    }
 
     template <int N>
     static token from_cstring(char(&str)[N])
@@ -2621,7 +2627,6 @@ private:
 
     void fix_literal_length()
     {
-#if defined(_DEBUG) || defined(COID_TOKEN_LITERAL_CHECK)
         //if 0 is not at _pte or there's a zero before, recount
         if (*_pte != 0 || (_pte > _ptr && _pte[-1] == 0))
         {
@@ -2637,7 +2642,6 @@ private:
             for (; p < _pte && *p; ++p);
             _pte = p;
         }
-#endif
     }
 };
 
