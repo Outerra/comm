@@ -136,16 +136,12 @@ struct token
     {}
 
     constexpr token(const char* ptr, const char* ptre)
-        : _ptr(ptr), _pte(ptre)
-    {
-        DASSERT(ptr <= ptre);
-    }
+        : _ptr(ptr), _pte(ptre < ptr ? ptr : ptre)
+    {}
 
     constexpr token(char* ptr, char* ptre)
-        : _ptr(ptr), _pte(ptre)
-    {
-        DASSERT(ptr <= ptre);
-    }
+        : _ptr(ptr), _pte(ptre < ptr ? ptr : ptre)
+    {}
 
     template <int N>
     static token from_cstring(char(&str)[N])
