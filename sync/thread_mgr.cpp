@@ -7,7 +7,7 @@
 #include <windows.h>
 #include <process.h>
 
-typedef HRESULT(*SetThreadDescription_t)(
+typedef HRESULT(__stdcall *SetThreadDescription_t)(
     HANDLE hThread,
     PCWSTR lpThreadDescription
     );
