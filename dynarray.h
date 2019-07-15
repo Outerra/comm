@@ -1096,6 +1096,21 @@ public:
         return _ptr;
     }
 
+
+    ///Reserve \a nitems of elements
+    /** @param nitems number of items to reserve
+        @return pointer to the first item of array */
+    T* reserve_virtual(uints nitems)
+    {
+        discard();
+
+        _ptr = A::template reserve<T>(nitems);
+        _set_count(0);
+
+        return _ptr;
+    }
+
+
     ///Reserve \a nitems of elements
     /** @param nitems number of items to reserve
         @param ikeep keep existing elements (true) or do not necessarily keep them (false)
