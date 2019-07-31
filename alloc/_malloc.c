@@ -2339,9 +2339,33 @@ typedef unsigned int flag_t;           /* The type of various bit flag sets */
 #define set_free_with_pinuse(p, s, n)\
   (clear_pinuse(n), set_size_and_pinuse_of_free_chunk(p, s))
 
+/* page-align a size */
+#define page_align(S)\
+ (((S) + (mparams.page_size - SIZE_T_ONE)) & ~(mparams.page_size - SIZE_T_ONE))
+
+/* granularity-align a size */
+#define granularity_align(S)\
+  (((S) + (mparams.granularity - SIZE_T_ONE))\
+   & ~(mparams.granularity - SIZE_T_ONE))
+
+
+/* For mmap, use granularity alignment on windows, else page-align */
+#ifdef WIN32
+#define mmap_align(S) granularity_align(S)
+#define mmap_align_down(S) ((S) & ~(mparams.granularity - SIZE_T_ONE))
+#else
+#define mmap_align(S) page_align(S)
+#define mmap_align_down(S) ((S) & ~(mparams.page_size - SIZE_T_ONE))
+#endif
+
 /* Get the internal overhead associated with chunk p */
+#ifdef WIN32
 #define overhead_for(p)\
- (is_mmapped(p)? MMAP_CHUNK_OVERHEAD : CHUNK_OVERHEAD)
+ (is_mmapped(p) ? MMAP_CHUNK_OVERHEAD + (p->prev_foot & (mparams.granularity - SIZE_T_ONE)) : CHUNK_OVERHEAD)
+#else
+#define overhead_for(p)\
+ (is_mmapped(p) ? MMAP_CHUNK_OVERHEAD + (p->prev_foot & (mparams.page_size - SIZE_T_ONE)) : CHUNK_OVERHEAD)
+#endif
 
 /* Return true if malloced space is not necessarily cleared */
 #if MMAP_CLEARS
@@ -2716,25 +2740,6 @@ static struct malloc_state _gm_;
  ((M)->mflags = (L)?\
   ((M)->mflags | USE_LOCK_BIT) :\
   ((M)->mflags & ~USE_LOCK_BIT))
-
-/* page-align a size */
-#define page_align(S)\
- (((S) + (mparams.page_size - SIZE_T_ONE)) & ~(mparams.page_size - SIZE_T_ONE))
-
-/* granularity-align a size */
-#define granularity_align(S)\
-  (((S) + (mparams.granularity - SIZE_T_ONE))\
-   & ~(mparams.granularity - SIZE_T_ONE))
-
-
-/* For mmap, use granularity alignment on windows, else page-align */
-#ifdef WIN32
-#define mmap_align(S) granularity_align(S)
-#define mmap_align_down(S) ((S) & ~(mparams.granularity - SIZE_T_ONE))
-#else
-#define mmap_align(S) page_align(S)
-#define mmap_align_down(S) ((S) & ~(mparams.page_size - SIZE_T_ONE))
-#endif
 
 /* For sys_alloc, enough padding to ensure can malloc request on success */
 #define SYS_ALLOC_PADDING(m) (TOP_FOOT_SIZE(m) + MALLOC_ALIGNMENT)
@@ -3294,7 +3299,7 @@ static void do_check_top_chunk(mstate m, mchunkptr p) {
 /* Check properties of (inuse) mmapped chunks */
 static void do_check_mmapped_chunk(mstate m, mchunkptr p) {
   size_t  sz = chunksize(p);
-  size_t len = (sz + p->prev_foot /*+ m->modalign*/ + MMAP_FOOT_PAD);
+  size_t len = (sz /*+ p->prev_foot + m->modalign*/ + MMAP_FOOT_PAD);
   assert(is_mmapped(p));
   assert(use_mmap(m));
   assert((is_aligned(chunk2mem(p), m->modalign)) || (p->head == FENCEPOST_HEAD));
@@ -3900,7 +3905,7 @@ static void* mmap_alloc(mstate m, size_t nb) {
     char* mm = (char*)(CALL_DIRECT_MMAP(mmsize, 0, 0));
     if (mm != CMFAIL) {
       size_t offset = align_offset(chunk2mem(mm), m->modalign);
-      size_t psize = mmsize - offset /*- m->modalign*/ - MMAP_FOOT_PAD;
+      size_t psize = mmsize /*- offset - m->modalign*/ - MMAP_FOOT_PAD;
       assert((psize & FLAG_BITS) == 0);
       mchunkptr p = (mchunkptr)(mm + offset);
       p->prev_foot = offset;
@@ -3926,7 +3931,7 @@ static void* mmap_alloc(mstate m, size_t nb) {
 */
 
 static void* mmap_alloc_virtual(mstate m, size_t nb) {
-  size_t mmsize = mmap_align(nb + /*m->modalign +*/ SIX_SIZE_T_SIZES + CHUNK_ALIGN_MASK);
+  size_t mmsize = mmap_align(nb + /*m->modalign +*/ TWO_SIZE_T_SIZES + CHUNK_ALIGN_MASK);
   //if (m->footprint_limit != 0) {
   //  size_t fp = m->footprint + mmsize;
   //  if (fp <= m->footprint || fp > m->footprint_limit)
@@ -3941,7 +3946,7 @@ static void* mmap_alloc_virtual(mstate m, size_t nb) {
       assert((psize & FLAG_BITS) == 0);
       mchunkptr p = (mchunkptr)(mm + offset);
       p->prev_foot = mmsize + offset;
-      p->head = commit_size - offset;
+      p->head = commit_size;// - offset;
       set_flag4(p);
       //mark_inuse_foot(m, p, psize);
       //chunk_plus_offset(p, psize)->head = FENCEPOST_HEAD;
@@ -3977,7 +3982,7 @@ static mchunkptr mmap_resize(mstate m, mchunkptr oldp, size_t nb, int flags) {
                                   oldmmsize, newmmsize, flags);
     if (cp != CMFAIL) {
       mchunkptr newp = (mchunkptr)(cp + offset);
-      size_t psize = newmmsize - offset /*- m->modalign*/ - MMAP_FOOT_PAD;
+      size_t psize = newmmsize /*- offset - m->modalign*/ - MMAP_FOOT_PAD;
       newp->head = psize;
       mark_inuse_foot(m, newp, psize);
       chunk_plus_offset(newp, psize)->head = FENCEPOST_HEAD;

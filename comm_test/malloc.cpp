@@ -20,12 +20,14 @@ void test_malloc()
         buf.reset();
     }*/
 
-    size_t s = 4LL * 1024 * 1024 * 1024;
+    size_t s = 1LL * 1024 * 1024 * 1024;
 
     dynarray<uint8> buf;
     buf.alloc(1000000);
 
     buf.reserve_virtual(s);
+
+    size_t rs = buf.reserved_total();
 
     uint8* p = buf.add(4000);
     p[4000 - 1] = 1;
