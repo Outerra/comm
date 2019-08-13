@@ -22,6 +22,9 @@ void test_malloc()
 
     size_t s = 1LL * 1024 * 1024 * 1024;
 
+    void* r0 = dlmalloc(1000);
+    void* r = dlmalloc(1310736);
+
     dynarray<uint8> buf;
     buf.alloc(1000000);
 

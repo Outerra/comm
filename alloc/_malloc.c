@@ -3299,7 +3299,7 @@ static void do_check_top_chunk(mstate m, mchunkptr p) {
 /* Check properties of (inuse) mmapped chunks */
 static void do_check_mmapped_chunk(mstate m, mchunkptr p) {
   size_t  sz = chunksize(p);
-  size_t len = (sz /*+ p->prev_foot + m->modalign*/ + MMAP_FOOT_PAD);
+  size_t len = (sz + MALLOC_ALIGNMENT + MMAP_FOOT_PAD);
   assert(is_mmapped(p));
   assert(use_mmap(m));
   assert((is_aligned(chunk2mem(p), m->modalign)) || (p->head == FENCEPOST_HEAD));
@@ -3905,7 +3905,7 @@ static void* mmap_alloc(mstate m, size_t nb) {
     char* mm = (char*)(CALL_DIRECT_MMAP(mmsize, 0, 0));
     if (mm != CMFAIL) {
       size_t offset = align_offset(chunk2mem(mm), m->modalign);
-      size_t psize = mmsize /*- offset - m->modalign*/ - MMAP_FOOT_PAD;
+      size_t psize = mmsize - MALLOC_ALIGNMENT - MMAP_FOOT_PAD;
       assert((psize & FLAG_BITS) == 0);
       mchunkptr p = (mchunkptr)(mm + offset);
       p->prev_foot = offset;
