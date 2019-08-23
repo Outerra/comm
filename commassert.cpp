@@ -68,7 +68,7 @@ bool __rassert( const opt_string& txt, const char* file, int line, const char* f
         << '\r' //forces log flush
     );
 
-    return __assert_throws;
+    return __assert_throws != 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
