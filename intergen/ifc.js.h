@@ -49,6 +49,11 @@
 
 namespace js {
 
+enum exception_behavior {
+    rethrow_in_cxx,                     //< rethrow js exceptions in c++
+    rethrow_in_js,                      //< rethrow js exceptions in js
+};
+
  ///Helper for script loading
 struct script_handle
 {
@@ -142,7 +147,7 @@ struct script_handle
         return coid::interface_register::include_path(curpath, path, dst, relpath) ? 0 : 2;
     }
 
-    static v8::Handle<v8::Script> load_script( const coid::token& script, const coid::token& fname )
+    static v8::Handle<v8::Script> load_script( const coid::token& script, const coid::token& fname, exception_behavior exb )
     {
         V8_DECL_ISO(iso);
         v8::Local<v8::String> scriptv8 = v8::string_utf8(script, iso);
@@ -160,13 +165,21 @@ struct script_handle
             v8::Script::Compile(scriptv8, v8::string_utf8(fname, iso));
 #endif
 
-        if (js_trycatch.HasCaught())
-            ::js::script_handle::throw_exception_from_js_error(js_trycatch, "load_script");
+        if (js_trycatch.HasCaught()) {
+            if (exb == rethrow_in_js)
+                js_trycatch.ReThrow();
+            else
+                ::js::script_handle::throw_exception_from_js_error(js_trycatch, "load_script");
+        }
         else {
             compiled_script->Run(V8_OPTARG1(iso->GetCurrentContext()));
 
-            if (js_trycatch.HasCaught())
-                ::js::script_handle::throw_exception_from_js_error(js_trycatch, "load_script");
+            if (js_trycatch.HasCaught()) {
+                if (exb == rethrow_in_js)
+                    js_trycatch.ReThrow();
+                else
+                    ::js::script_handle::throw_exception_from_js_error(js_trycatch, "load_script");
+            }
         }
 
         return compiled_script;

@@ -817,7 +817,7 @@ $-(/if)$
 ////////////////////////////////////////////////////////////////////////////////
 v8::Handle<v8::Script> $name$_js_dispatcher::load_script( const coid::token& script, const coid::token& fname )
 {
-    return ::js::script_handle::load_script(script, fname);
+    return ::js::script_handle::load_script(script, fname, ::js::rethrow_in_cxx);
 }
 
 $-(if event.empty!)$

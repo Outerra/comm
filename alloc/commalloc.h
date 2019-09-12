@@ -305,7 +305,7 @@ struct comm_array_allocator
 
         if(p)
             *((uints*)p - 1) = n;
-        
+
         return n;
     }
 };

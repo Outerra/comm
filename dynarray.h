@@ -1821,7 +1821,7 @@ struct binstream_adapter_readable< dynarray<T, COUNT, A> > {
 /// region changes after call to realloc/add etc.
 struct dynarray_relocator
 {
-    ///Construct & initialize the relocator before resizing 
+    ///Construct & initialize the relocator before resizing
     template<class T, class COUNT>
     dynarray_relocator(dynarray<T, COUNT>& a)
         : _p(a._ptr), _a((void**)&a._ptr)
