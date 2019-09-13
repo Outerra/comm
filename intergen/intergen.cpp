@@ -266,7 +266,7 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
 
             if (generate(ni, ifc, tdir, fdir, mtime) < 0)
                 return;
-
+#if 0
             //interface.jsc.h
             fdir.resize(flen);
             fdir << ifc.relpathjsc;
@@ -276,7 +276,7 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
 
             if (generate(ni, ifc, tdir, fdir, file.mtime) < 0)
                 return;
-
+#endif
 			//iterface.lua.h
             tdir.resize(tlen);
             tdir << "interface.lua.h.mtg";
