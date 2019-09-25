@@ -227,7 +227,7 @@ public:
             return;
         }
         release();
-        _p = p.get();
+        _p = static_cast<T*>(p.get());
         p.forget();
     }
 
