@@ -147,12 +147,30 @@ struct base_versioning
 #endif
 };
 
+///Helper to initialize version to zero
+struct uint8_zero {
+    uint8 value;
+
+    uint8_zero() : value(0)
+    {}
+
+    uint8_zero(uint8 value) : value(value)
+    {}
+
+    operator uint8() const {
+        return value;
+    }
+    operator uint8& () {
+        return value;
+    }
+};
+
 ///Versioning base class specialization
 template<class...Es>
 struct base_versioning<true, Es...>
-    : public std::tuple<dynarray<Es>..., dynarray<uint8>>
+    : public std::tuple<dynarray<Es>..., dynarray<uint8_zero>>
 {
-    typedef std::tuple<dynarray<Es>..., dynarray<uint8>>
+    typedef std::tuple<dynarray<Es>..., dynarray<uint8_zero>>
         extarray_t;
 
     enum : size_t { extarray_size = sizeof...(Es) + 1 };
@@ -176,11 +194,11 @@ struct base_versioning<true, Es...>
 
 protected:
 
-    dynarray<uint8>& version_array() {
+    dynarray<uint8_zero>& version_array() {
         return std::get<sizeof...(Es)>(*this);
     }
 
-    const dynarray<uint8>& version_array() const {
+    const dynarray<uint8_zero>& version_array() const {
         return std::get<sizeof...(Es)>(*this);
     }
 };
