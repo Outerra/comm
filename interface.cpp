@@ -262,7 +262,7 @@ public:
         zstring str = name;
         str.get_str() << "@maker" << '.' << script;
 
-        return (void*)find_wrapper(name);
+        return (void*)find_wrapper(str);
     }
 
     virtual dynarray<interface_register::creator>& get_interface_clients(const tokenhash& iface, uint hash, dynarray<interface_register::creator>& dst)

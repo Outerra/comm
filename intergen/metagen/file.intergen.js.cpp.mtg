@@ -65,9 +65,15 @@ $-(/if)$
 
 protected:
 
-    EBackend intergen_backend() const override { return IFC_BACKEND_JS; }
+    backend intergen_backend() const override { return backend::js; }
 
 public:
+
+    static void register_global_symbols(v8::Isolate* iso, v8::Handle<v8::Object> gobj) {
+        gobj->Set(v8::symbol("$$include", iso), V8_NEWTYPE2(iso, FunctionTemplate, &::js::script_handle::js_include)->GetFunction());
+        gobj->Set(v8::symbol("$$query_interface", iso), V8_NEWTYPE2(iso, FunctionTemplate, &$name$_js_dispatcher::v8query_interface_global)->GetFunction());
+        gobj->Set(v8::symbol("$$log", iso), V8_NEWTYPE2(iso, FunctionTemplate, &$name$_js_dispatcher::v8log)->GetFunction());
+    }
 
     v8::Handle<v8::Object> create_interface_object( v8::Handle<v8::Context> context, bool make_weak );
 
@@ -86,11 +92,11 @@ $-(/if)$
         _vtable = _base->vtable();
         //V8_PERSISTENT(v8::Isolate::GetCurrent(), _context, context);
 
-		_host = _base->host<policy_intrusive_base>();
+        _host = _base->host<policy_intrusive_base>();
     }
 
-    void set_host( policy_intrusive_base* host ) {
-        _host = host;
+    explicit $name$_js_dispatcher(policy_intrusive_base* host) $-(if event?)$ : _bound_events(false)$(/if)$ {
+        set_host(host, this, 0);
     }
 
     ~$name$_js_dispatcher() {
@@ -761,7 +767,7 @@ v8::Handle<v8::Object> $name$_js_dispatcher::create_interface_object( v8::Handle
 #ifdef V8_MAJOR_VERSION
         ot->Set(v8::Symbol::GetToStringTag(iso), v8::string_utf8("$ns rest="::" after="::"$$name$"));
 #endif
-		ot->SetInternalFieldCount(2);    //ptr and class hash id
+        ot->SetInternalFieldCount(2);    //ptr and class hash id
 
 $-[method !static? !destroy? !internal? !operator?]$
         ot->Set(v8::symbol("$name$", iso), V8_NEWTYPE2(iso, FunctionTemplate, &v8_$name$$@index$));
@@ -839,7 +845,7 @@ $-[/event]$
     v8::Context::Scope context_scope__(context);
     V8_TRYCATCH(iso, js_trycatch);
     v8::Local<v8::Object> global;
-    
+
     bool clear = false;
     if (ref.IsEmpty() || ref->IsUndefined())
         global = context->Global();
@@ -930,11 +936,8 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const ::js::script_
 
     if (!extctx && !script.is_context())
     {
-        if (!script.has_context()) {
-            context->Global()->Set(v8::symbol("$$include", iso), V8_NEWTYPE2(iso, FunctionTemplate, &::js::script_handle::js_include)->GetFunction());
-            context->Global()->Set(v8::symbol("$$query_interface", iso), V8_NEWTYPE2(iso, FunctionTemplate, &$..name$_js_dispatcher::v8query_interface_global)->GetFunction());
-            context->Global()->Set(v8::symbol("$$log", iso), V8_NEWTYPE2(iso, FunctionTemplate, &$..name$_js_dispatcher::v8log)->GetFunction());
-        }
+        if (!script.has_context())
+            register_global_symbols(iso, context->Global());
 
         coid::token script_tok;
         coid::charstr script_tmp;
@@ -1082,7 +1085,7 @@ v8::Handle<v8::Value> create_wrapper_$name$( ::$ns rest="::" after="::"$$name$* 
     iref<$ns rest="::" after="::"$js::$name$_js_dispatcher> ifc;
     v8::Handle<v8::Object> obj;
 
-    if (orig->intergen_backend() == intergen_interface::IFC_BACKEND_JS)
+    if (orig->intergen_backend() == intergen_interface::backend::js)
         obj = V8_LOCAL(iso, static_cast<$name$_js_dispatcher*>(orig)->_object);
 
     if (obj.IsEmpty()) {
@@ -1113,10 +1116,11 @@ static iref<$ns rest="::" after="::"$js::$name$_js_dispatcher> create_maker_$nam
     // create interface object
     iref<$ns rest="::" after="::"$js::$name$_js_dispatcher> ifc;
 
-    ifc.create(new $ns rest="::" after="::"$js::$name$_js_dispatcher);
-    ifc->set_host(host);
+    ifc.create(new $ns rest="::" after="::"$js::$name$_js_dispatcher(host));
 
-    ifc->create_interface_object(context, false);
+    $ns rest="::" after="::"$js::$name$_js_dispatcher::register_global_symbols(iso, context->Global());
+
+    V8_PERSISTENT(iso, ifc->_object, ifc->create_interface_object(context, false));
 
     return ifc;
 }
@@ -1148,7 +1152,7 @@ $-(if virtual!)$
     //js interface creator from host
     interface_register::register_interface_creator(
         "$ns rest="::" after="::"$$name$@maker.js",
-        on ? (void*)&create_maker_$name$ : nullptr);        
+        on ? (void*)&create_maker_$name$ : nullptr);
 $-(/if)$
 }
 

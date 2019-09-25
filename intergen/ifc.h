@@ -15,7 +15,7 @@
  *
  * The Initial Developer of the Original Code is
  * Outerra.
- * Portions created by the Initial Developer are Copyright (C) 2013-2016
+ * Portions created by the Initial Developer are Copyright (C) 2013-2019
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -110,7 +110,7 @@ namespace coid {
     //ifc{
         ... code ...
     //}ifc
-    
+
     Or /*ifc{ ... code ... }ifc* / to push a code block into client header.
 
     With multiple interfaces it's also possible to list which interface header files:
@@ -127,7 +127,7 @@ class intergen_interface
     : public policy_intrusive_base
 {
 protected:
-    typedef void (policy_intrusive_base::*ifn_t)();
+    typedef void (policy_intrusive_base::* ifn_t)();
 
     iref<policy_intrusive_base> _host;
     ifn_t* _vtable;
@@ -162,35 +162,38 @@ public:
     virtual int intergen_hash_id() const = 0;
 
     //@return true if this interface is derived from interface with given hash
-    virtual bool iface_is_derived( int hash ) const = 0;
+    virtual bool iface_is_derived(int hash) const = 0;
 
     //@return interface name
     virtual const coid::tokenhash& intergen_interface_name() const = 0;
 
-    enum EBackend {
-        IFC_BACKEND_CXX,
-        IFC_BACKEND_JS,
-        IFC_BACKEND_JSC,
-        IFC_BACKEND_LUA
+    ///Supported interface client types (dispatcher back-ends)
+    enum class backend {
+        cxx,                            //< c++ back-end implementation
+        js,
+        jsc,
+        lua,
+
+        count_
     };
 
     //@return back-end implementation
-    virtual EBackend intergen_backend() const = 0;
+    virtual backend intergen_backend() const = 0;
 
     //@return wrapper creator for given back-end
-    virtual void* intergen_wrapper( EBackend bck ) const = 0;
+    virtual void* intergen_wrapper(backend bck) const = 0;
 
     //@return name of default creator
-    virtual const coid::token& intergen_default_creator( EBackend bck ) const = 0;
+    virtual const coid::token& intergen_default_creator(backend bck) const = 0;
 
     ///Bind or unbind interface call interceptor handler for current interface and all future instances of the same interface class
     //@param capture capture buffer, 0 to turn the capture off
     //@param instid instance identifier of this interface
     //@return false if the interface can't be bound (instid > max)
-    virtual bool intergen_bind_capture( coid::binstring* capture, uint instid ) { return false; }
+    virtual bool intergen_bind_capture(coid::binstring* capture, uint instid) { return false; }
 
     ///Dispatch a captured call
-    virtual void intergen_capture_dispatch( uint mid, coid::binstring& bin ) {}
+    virtual void intergen_capture_dispatch(uint mid, coid::binstring& bin) {}
 
     //@return real interface in case this is a wrapper around an existing interface object
     virtual intergen_interface* intergen_real_interface() { return this; }
@@ -200,11 +203,11 @@ public:
     ///Interface log function with formatting
     //@param type log type
     //@param fmt format @see charstr.print
-    //@param vs variadic parameters 
+    //@param vs variadic parameters
     template<class ...Vs>
-    void ifclog( coid::log::type type, const coid::token& fmt, Vs&& ...vs ) {
+    void ifclog(coid::log::type type, const coid::token& fmt, Vs&& ...vs) {
         ref<coid::logmsg> msgr = coid::interface_register::canlog(type, intergen_interface_name(), this);
-        if(!msgr)
+        if (!msgr)
             return;
 
         msgr->str().print(fmt, std::forward<Vs>(vs)...);
@@ -212,11 +215,11 @@ public:
 
     ///Interface log function with formatting, log type inferred from message text prefix
     //@param fmt format @see charstr.print
-    //@param vs variadic parameters 
+    //@param vs variadic parameters
     template<class ...Vs>
-    void ifclog( const coid::token& fmt, Vs&& ...vs ) {
+    void ifclog(const coid::token& fmt, Vs&& ...vs) {
         ref<coid::logmsg> msgr = coid::interface_register::canlog(coid::log::none, intergen_interface_name(), this);
-        if(!msgr)
+        if (!msgr)
             return;
 
         msgr->str().print(fmt, std::forward<Vs>(vs)...);
@@ -226,9 +229,9 @@ public:
 
 protected:
 
-    static void ifclog_ext( coid::log::type type, const coid::tokenhash& hash, const void* inst, const coid::token& txt ) {
+    static void ifclog_ext(coid::log::type type, const coid::tokenhash& hash, const void* inst, const coid::token& txt) {
         ref<coid::logmsg> msgr = coid::interface_register::canlog(type, hash, inst);
-        if(!msgr)
+        if (!msgr)
             return;
 
         msgr->str() << txt;
@@ -321,12 +324,12 @@ private:
 ///Force registration of an interface declared in a statically-linked library
 #define FORCE_REGISTER_LIBRARY_INTERFACE(ns,ifc) \
     namespace ns { void* force_register_##ifc(); static void* autoregger_##ifc = force_register_##ifc(); }
-    
+
 ///Force registration of an interface declared in a statically-linked library
 #define FORCE_REGISTER_LIBRARY_INTERFACE2(ifc) \
     void* force_register_##ifc(); static void* autoregger_##ifc = force_register_##ifc()
 
-    
+
 ///Force registration of a script binder in a statically-linked library
 #define FORCE_REGISTER_BINDER_INTERFACE(ns,ifc,script) \
     namespace ns { namespace script { void* force_register_##ifc(); static void* autoregger_##ifc = force_register_##ifc(); }}

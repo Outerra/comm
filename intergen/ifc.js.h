@@ -61,7 +61,7 @@ struct script_handle
     //@param path_or_script path or script content
     //@param is_path true if path_or_script is a path to the script file, false if it's the script itself
     //@param url string to use when identifying script origin
-    //@param context 
+    //@param context
     script_handle(
         const coid::token& path_or_script,
         bool is_path,
@@ -126,7 +126,7 @@ struct script_handle
     //@param path relative path (an include path) or absolute path from root
     //@param frame v8 stack frame number to be made relative to
     //@param dst [out] resulting path, using / for directory separators
-    //@param relpath [out] path relative 
+    //@param relpath [out] path relative
     //@return 0 if succeeded, 1 invalid stack frame, 2 invalid path
     static int get_target_path(coid::token path, uint frame, coid::charstr& dst, coid::token* relpath)
     {
@@ -472,7 +472,7 @@ inline v8::Handle<v8::Value> wrap_object(intergen_interface* orig, v8::Handle<v8
 #endif
 
     typedef v8::Handle<v8::Value>(*fn_wrapper)(intergen_interface*, v8::Handle<v8::Context>);
-    fn_wrapper fn = static_cast<fn_wrapper>(orig->intergen_wrapper(intergen_interface::IFC_BACKEND_JS));
+    fn_wrapper fn = static_cast<fn_wrapper>(orig->intergen_wrapper(intergen_interface::backend::js));
 
 #ifdef V8_MAJOR_VERSION
     if (fn)
@@ -498,7 +498,7 @@ inline bool bind_object(const coid::token& bindname, intergen_interface* orig, v
 #endif
 
     typedef v8::Handle<v8::Value>(*fn_wrapper)(intergen_interface*, v8::Handle<v8::Context>);
-    fn_wrapper fn = static_cast<fn_wrapper>(orig->intergen_wrapper(intergen_interface::IFC_BACKEND_JS));
+    fn_wrapper fn = static_cast<fn_wrapper>(orig->intergen_wrapper(intergen_interface::backend::js));
 
 #ifdef V8_MAJOR_VERSION
     return fn && context->Global()->Set(v8::String::NewFromOneByte(iso,

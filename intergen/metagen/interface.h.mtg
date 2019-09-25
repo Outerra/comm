@@ -107,7 +107,7 @@ $-(/if)$
 
     ///Interface name (full ns::class string)
     static const coid::tokenhash& IFCNAME() {
-        static const coid::tokenhash _name = "$ns rest="::" after="::"$$name$";
+        static const coid::tokenhash _name = "$ns rest="::" after="::"$$name$"_T;
         return _name;
     }
 
@@ -121,22 +121,22 @@ $-(/if)$
         return IFCNAME();
     }
 
-    static const coid::token& intergen_default_creator_static( EBackend bck ) {
+    static const coid::token& intergen_default_creator_static( backend bck ) {
 $-(if default_creator.name.empty?)$
-        static const coid::token _dc("");
+        static const coid::token _dc(""_T);
 $-(elif)$
-        static const coid::token _dc("$ns rest="::" after="::"$$name$.$default_creator.name$@$hash$");
+        static const coid::token _dc("$ns rest="::" after="::"$$name$.$default_creator.name$@$hash$"_T);
 $-(/if)$
-        static const coid::token _djs("$ns rest="::" after="::"$$name$@wrapper.js");
-        static const coid::token _djsc("$ns rest="::" after="::"$$name$@wrapper.jsc");
-        static const coid::token _dlua("$ns rest="::" after="::"$$name$@wrapper.lua");
+        static const coid::token _djs("$ns rest="::" after="::"$$name$@wrapper.js"_T);
+        static const coid::token _djsc("$ns rest="::" after="::"$$name$@wrapper.jsc"_T);
+        static const coid::token _dlua("$ns rest="::" after="::"$$name$@wrapper.lua"_T);
         static const coid::token _dnone;
 
         switch(bck) {
-        case IFC_BACKEND_CXX: return _dc;
-        case IFC_BACKEND_JS:  return _djs;
-        case IFC_BACKEND_JSC:  return _djsc;
-        case IFC_BACKEND_LUA: return _dlua;
+        case backend::cxx: return _dc;
+        case backend::js:  return _djs;
+        case backend::jsc: return _djsc;
+        case backend::lua: return _dlua;
         default: return _dnone;
         }
     }
@@ -147,7 +147,7 @@ $-(if varname?)$
     static iref<$name$> intergen_active_interface(::$classnsx rest="::" after="::"$$class$* host);
 
 $-(/if)$
-    template<enum EBackend B>
+    template<enum class backend B>
     static void* intergen_wrapper_cache() {
         static void* _cached_wrapper=0;
         if (!_cached_wrapper) {
@@ -157,18 +157,18 @@ $-(/if)$
         return _cached_wrapper;
     }
 
-    void* intergen_wrapper( EBackend bck ) const override $-(if !virtual?)$ final$(/if)$ {
+    void* intergen_wrapper( backend bck ) const override $-(if !virtual?)$ final$(/if)$ {
         switch(bck) {
-        case IFC_BACKEND_JS: return intergen_wrapper_cache<IFC_BACKEND_JS>();
-        case IFC_BACKEND_JSC: return intergen_wrapper_cache<IFC_BACKEND_JSC>();
-        case IFC_BACKEND_LUA: return intergen_wrapper_cache<IFC_BACKEND_LUA>();
+        case backend::js:  return intergen_wrapper_cache<backend::js>();
+        case backend::jsc: return intergen_wrapper_cache<backend::jsc>();
+        case backend::lua: return intergen_wrapper_cache<backend::lua>();
         default: return 0;
         }
     }
 
-    EBackend intergen_backend() const override { return IFC_BACKEND_CXX; }
+    backend intergen_backend() const override { return backend::cxx; }
 
-    const coid::token& intergen_default_creator( EBackend bck ) const override $-(if !virtual?)$ final$(/if)$ {
+    const coid::token& intergen_default_creator( backend bck ) const override $-(if !virtual?)$ final$(/if)$ {
         return intergen_default_creator_static(bck);
     }
 
@@ -185,8 +185,8 @@ $-(/if)$
         type.consume("class ");
         type.consume("struct ");
 
-        coid::charstr tmp = "$ns rest="::" after="::"$$name$";
-        tmp << "@client-$hash$" << '.' << type;
+        coid::charstr tmp = "$ns rest="::" after="::"$$name$"_T;
+        tmp << "@client-$hash$"_T << '.' << type;
 
         coid::interface_register::register_interface_creator(tmp, cc);
         return 0;
@@ -200,9 +200,18 @@ $-(if varname?)$
         return _mx;
     }
 
+    ///Cleanup routine called from ~$name$()
+    static void _cleaner_callback($name$* m, intergen_interface* ifc) {
+        m->assign_safe(ifc, 0);
+    }
+
+    bool assign_safe(intergen_interface* client, iref<$name$>* pout);
+
     typedef void (*cleanup_fn)($name$*, intergen_interface*);
     cleanup_fn _cleaner;
 $-(/if)$
+
+    bool set_host(policy_intrusive_base* host, intergen_interface* client, iref<$name$>* pout);
 $-(if destroy.name.empty!)$
 
     ~$name$() {
@@ -227,14 +236,14 @@ inline iref<T> $..name$::$name$( T* _subclass_
     typedef iref<T> (*fn_creator)($..name$*$[args]$, $type$$[/args]$);
 
     static fn_creator create = 0;
-    static const coid::token ifckey = "$..ns rest="::" after="::"$$..name$.$name$@$..hash$";
+    static const coid::token ifckey = "$..ns rest="::" after="::"$$..name$.$name$@$..hash$"_T;
 
     if (!create)
         create = reinterpret_cast<fn_creator>(
             coid::interface_register::get_interface_creator(ifckey));
 
     if (!create) {
-        log_mismatch("$name$", "$..ns rest="::" after="::"$$..name$.$name$", "@$..hash$");
+        log_mismatch("$name$"_T, "$..ns rest="::" after="::"$$..name$.$name$"_T, "@$..hash$"_T);
         return 0;
     }
 
@@ -249,14 +258,14 @@ inline iref<$..name$> $..name$::$name$($-[args rest=", "]$$type$ $name$$size$$[/
     typedef iref<$..name$> (*fn_creator)($[args rest=", "]$$type$$[/args]$);
 
     static fn_creator create = 0;
-    static const coid::token ifckey = "$..ns rest="::" after="::"$$..name$.$name$@$..hash$.ifc";
+    static const coid::token ifckey = "$..ns rest="::" after="::"$$..name$.$name$@$..hash$.ifc"_T;
 
     if (!create)
         create = reinterpret_cast<fn_creator>(
             coid::interface_register::get_interface_creator(ifckey));
 
     if (!create) {
-        log_mismatch("$name$", "$..ns rest="::" after="::"$$..name$.$name$", "@$..hash$");
+        log_mismatch("$name$"_T, "$..ns rest="::" after="::"$$..name$.$name$"_T, "@$..hash$"_T);
         return 0;
     }
 

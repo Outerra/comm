@@ -13,6 +13,8 @@
 //debug string:
 // [inputs] $(ProjectDir)..\..\..\intergen\metagen
 
+//#define ENABLE_JSC
+
 stdoutstream out;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -236,7 +238,7 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
             ifc.relpathjsc = ifc.relpath;
             ifc.relpathjsc.ins(-(int)end.len(), ".jsc");
 
-			ifc.relpathlua = ifc.relpath;
+            ifc.relpathlua = ifc.relpath;
             ifc.relpathlua.ins(-(int)end.len(), ".lua");
 
             ifc.basepath = ifc.relpath;
@@ -266,7 +268,7 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
 
             if (generate(ni, ifc, tdir, fdir, mtime) < 0)
                 return;
-#if 0
+#if ENABLE_JSC
             //interface.jsc.h
             fdir.resize(flen);
             fdir << ifc.relpathjsc;
@@ -277,7 +279,7 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
             if (generate(ni, ifc, tdir, fdir, file.mtime) < 0)
                 return;
 #endif
-			//iterface.lua.h
+            //iterface.lua.h
             tdir.resize(tlen);
             tdir << "interface.lua.h.mtg";
 
@@ -317,16 +319,16 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
     tdir.ins(-8, ".js");
 
     generate(nifc, file, tdir, fdir, mtime);
-
-	//file.intergen.js.cpp
-	fdir.resize(flen);
+#if ENABLE_JSC
+    //file.intergen.jsc.cpp
+    fdir.resize(flen);
     fdir << file.fname << ".intergen.jsc.cpp";
 
     tdir.resize(tlen);
     tdir << "file.intergen.jsc.cpp.mtg";
 
     generate(nifc, file, tdir, fdir, mtime);
-
+#endif
     //file.intergen.lua.cpp
     fdir.resize(flen);
     fdir << file.fname << ".intergen.lua.cpp";
