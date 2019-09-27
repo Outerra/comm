@@ -69,12 +69,6 @@ protected:
 
 public:
 
-    static void register_global_symbols(v8::Isolate* iso, v8::Handle<v8::Object> gobj) {
-        gobj->Set(v8::symbol("$$include", iso), V8_NEWTYPE2(iso, FunctionTemplate, &::js::script_handle::js_include)->GetFunction());
-        gobj->Set(v8::symbol("$$query_interface", iso), V8_NEWTYPE2(iso, FunctionTemplate, &$name$_js_dispatcher::v8query_interface_global)->GetFunction());
-        gobj->Set(v8::symbol("$$log", iso), V8_NEWTYPE2(iso, FunctionTemplate, &$name$_js_dispatcher::v8log)->GetFunction());
-    }
-
     v8::Handle<v8::Object> create_interface_object( v8::Handle<v8::Context> context, bool make_weak );
 
     static v8::Handle<v8::Script> load_script( const coid::token& script, const coid::token& file_name );
@@ -134,14 +128,10 @@ $[/comments]$$(/if)-$
         $-[args]$, $type$ $name$$size$$[/args]$, const coid::token& bindname, v8::Handle<v8::Context>* );
 
     $-(if !internal?)$
-    static v8::Handle<v8::Value> v8creator_$name$$@order$(const v8::ARGUMENTS& args, interface_context* ifc);
+    static v8::Handle<v8::Value> v8creator_$name$$@order$(const v8::ARGUMENTS& args);
 
     $-(/if)$
 $-[/method]$
-    ///Handler for generic $$query_interface javascript method
-    static v8::CBK_RET v8query_interface( const v8::ARGUMENTS& args );
-    static v8::CBK_RET v8query_interface_global( const v8::ARGUMENTS& args );
-    static v8::CBK_RET v8log( const v8::ARGUMENTS& args );
     static v8::CBK_RET v8rebind_events( const v8::ARGUMENTS& args );
     static v8::CBK_RET v8current_global( const v8::ARGUMENTS& args );
 
@@ -597,112 +587,6 @@ $-(/if)$
 $-(/if)$
 
 ////////////////////////////////////////////////////////////////////////////////
-v8::CBK_RET $name$_js_dispatcher::v8log( const v8::ARGUMENTS& args )
-{
-    v8::Isolate* iso = args.GetIsolate();
-
-    if (args.Length() == 0)
-        return V8_RETURN(args, V8_UNDEFINED(iso));
-
-    const void* inst = 0;
-
-    v8::Local<v8::Object> obj__ = args.Holder();
-    if (!obj__.IsEmpty() && obj__->InternalFieldCount() > 0) {
-        v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
-        if (intobj__->IsExternal()) {
-            $ns rest="::" after="::"$js::$name$_js_dispatcher* ifc = static_cast<$ns rest="::" after="::"$js::$name$_js_dispatcher*>
-                (v8::Handle<v8::External>::Cast(intobj__)->Value());
-
-            inst = ifc;
-            if (!ifc)
-                return v8::queue_js_exception(iso, &v8::Exception::ReferenceError, "Null interface object in $$log");
-        }
-    }
-
-    V8_ESCAPABLE_SCOPE(iso, handle_scope__);
-    v8::String::Utf8Value key(V8_OPTARG(iso) args[0]);
-
-    coid::token tokey(*key, key.length());
-
-    intergen_interface::ifclog_ext(coid::log::none, coid::tokenhash("$ns rest="::" after="::"$$name$"),
-        inst, tokey);
-
-    return V8_RETURN(args, V8_UNDEFINED(iso));
-}
-
-////////////////////////////////////////////////////////////////////////////////
-v8::CBK_RET $name$_js_dispatcher::v8query_interface( const v8::ARGUMENTS& args )
-{
-    v8::Isolate* iso = args.GetIsolate();
-
-    if (args.Length() < 1)
-        return v8::queue_js_exception(iso, &v8::Exception::Error, "Interface creator name missing");
-
-    V8_ESCAPABLE_SCOPE(iso, handle_scope__);
-    v8::String::Utf8Value key(V8_OPTARG(iso) args[0]);
-
-    typedef v8::Handle<v8::Value> (*fn_get)(const v8::ARGUMENTS&, interface_context*);
-    coid::token tokey(*key, key.length());
-    fn_get get = reinterpret_cast<fn_get>(
-        coid::interface_register::get_interface_creator(tokey));
-
-    if (!get) {
-        coid::charstr tmp = "interface creator ";
-        tmp << tokey << " not found";
-        return v8::queue_js_exception(iso, v8::Exception::Error, tmp);
-    }
-
-    v8::Local<v8::Object> obj__ = args.Holder();
-    if (obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
-        return V8_RETURN(args, V8_UNDEFINED(iso));
-
-    v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
-    if (!intobj__->IsExternal())
-        return V8_RETURN(args, V8_UNDEFINED(iso));
-
-    $ns rest="::" after="::"$js::$name$_js_dispatcher* ifc = static_cast<$ns rest="::" after="::"$js::$name$_js_dispatcher*>
-        (v8::Handle<v8::External>::Cast(intobj__)->Value());
-
-    if (!ifc)
-        return v8::queue_js_exception(iso, &v8::Exception::ReferenceError, "Null interface object in $$query_interface");
-
-#ifdef V8_MAJOR_VERSION
-    args.GetReturnValue().Set(get(args, ifc));
-#else
-    return V8_ESCAPE(handle_scope__, get(args, ifc));
-#endif
-}
-
-////////////////////////////////////////////////////////////////////////////////
-v8::CBK_RET $name$_js_dispatcher::v8query_interface_global( const v8::ARGUMENTS& args )
-{
-    v8::Isolate* iso = args.GetIsolate();
-
-    if (args.Length() < 1)
-        return v8::queue_js_exception(iso, &v8::Exception::Error, "Interface creator name missing");
-
-    V8_ESCAPABLE_SCOPE(iso, handle_scope__);
-    v8::String::Utf8Value key(V8_OPTARG(iso) args[0]);
-
-    typedef v8::Handle<v8::Value> (*fn_get)(const v8::ARGUMENTS&, interface_context*);
-    coid::token tokey(*key, key.length());
-    fn_get get = reinterpret_cast<fn_get>(
-        coid::interface_register::get_interface_creator(tokey));
-
-    if (!get) {
-        coid::charstr tmp = "interface creator ";
-        tmp << tokey << " not found";
-        return v8::queue_js_exception(iso, v8::Exception::Error, tmp);
-    }
-
-#ifdef V8_MAJOR_VERSION
-    args.GetReturnValue().Set(get(args, 0));
-#else
-    return V8_ESCAPE(handle_scope__, get(args, 0));
-#endif
-}
-
-////////////////////////////////////////////////////////////////////////////////
 v8::CBK_RET $name$_js_dispatcher::v8rebind_events( const v8::ARGUMENTS& args )
 {
     v8::Isolate* iso = args.GetIsolate();
@@ -773,10 +657,10 @@ $-[method !static? !destroy? !internal? !operator?]$
         ot->Set(v8::symbol("$name$", iso), V8_NEWTYPE2(iso, FunctionTemplate, &v8_$name$$@index$));
 $-[/method]$
 
-        ot->Set(v8::symbol("$$query_interface", iso), V8_NEWTYPE2(iso, FunctionTemplate, &v8query_interface));
+        ot->Set(v8::symbol("$$log", iso), V8_NEWTYPE2(iso, FunctionTemplate, &::js::script_handle::js_log));
+        ot->Set(v8::symbol("$$query_interface", iso), V8_NEWTYPE2(iso, FunctionTemplate, &::js::script_handle::js_query_interface));
         ot->Set(v8::symbol("$$rebind_events", iso), V8_NEWTYPE2(iso, FunctionTemplate, &v8rebind_events));
         ot->Set(v8::symbol("$$ctx", iso), V8_NEWTYPE2(iso, FunctionTemplate, &v8current_global));
-        ot->Set(v8::symbol("$$log", iso), V8_NEWTYPE2(iso, FunctionTemplate, &v8log));
 $-(if hasprops?)$
 
 #ifdef V8_MAJOR_VERSION
@@ -923,8 +807,10 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const ::js::script_
     if (!extctx) {
         if (script.has_context())
             context = script.context();
-        else
+        else {
             context = V8_NEWTYPE(iso, Context);
+            ::js::script_handle::register_global_context_methods(context->Global(), iso);
+        }
     }
 
     //set early here as sometimes the invoked creator methods want to access it
@@ -936,9 +822,6 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const ::js::script_
 
     if (!extctx && !script.is_context())
     {
-        if (!script.has_context())
-            register_global_symbols(iso, context->Global());
-
         coid::token script_tok;
         coid::charstr script_tmp;
         if (script.is_path()) {
@@ -984,7 +867,7 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const ::js::script_
 $-(if !internal?)$
 ////////////////////////////////////////////////////////////////////////////////
 ///Creator methods for access from JS
-v8::Handle<v8::Value> $..name$_js_dispatcher::v8creator_$name$$@order$( const v8::ARGUMENTS& args, interface_context* ifc )
+v8::Handle<v8::Value> $..name$_js_dispatcher::v8creator_$name$$@order$(const v8::ARGUMENTS& args)
 {
     v8::Isolate* iso = args.GetIsolate();
 
@@ -1001,9 +884,7 @@ v8::Handle<v8::Value> $..name$_js_dispatcher::v8creator_$name$$@order$( const v8
     //$..ns rest="::" after="::"$js::$..name$_js_dispatcher* ifc = static_cast<$..ns rest="::" after="::"$js::$..name$_js_dispatcher*>
     //    (v8::Handle<v8::External>::Cast(obj__->GetInternalField(0))->Value());
 
-    v8::Local<v8::Context> ctx = ifc && !ifc->_object.IsEmpty()
-        ? ifc->context(iso)
-        : V8_CUR_CONTEXT(iso);
+    v8::Local<v8::Context> ctx = V8_CUR_CONTEXT(iso);
     v8::Context::Scope context_scope(ctx);
 
     //stream the arguments in
@@ -1117,8 +998,6 @@ static iref<$ns rest="::" after="::"$js::$name$_js_dispatcher> create_maker_$nam
     iref<$ns rest="::" after="::"$js::$name$_js_dispatcher> ifc;
 
     ifc.create(new $ns rest="::" after="::"$js::$name$_js_dispatcher(host));
-
-    $ns rest="::" after="::"$js::$name$_js_dispatcher::register_global_symbols(iso, context->Global());
 
     V8_PERSISTENT(iso, ifc->_object, ifc->create_interface_object(context, false));
 

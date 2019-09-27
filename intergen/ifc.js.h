@@ -54,6 +54,25 @@ enum exception_behavior {
     rethrow_in_js,                      //< rethrow js exceptions in js
 };
 
+struct interface_context
+{
+    //v8::Persistent<v8::Context> _context;
+    //v8::Persistent<v8::Script> _script;
+    v8::Persistent<v8::Object> _object;
+
+    v8::Local<v8::Context> context(v8::Isolate* iso) const {
+        if (_object.IsEmpty())
+            return V8_CUR_CONTEXT(iso);
+
+#ifdef V8_MAJOR_VERSION
+        return _object.Get(iso)->CreationContext();
+#else
+        return _object->CreationContext();
+#endif
+    }
+};
+
+
  ///Helper for script loading
 struct script_handle
 {
@@ -388,6 +407,73 @@ public:
 #endif
     }
 
+    ///Log msg from JS
+    static v8::CBK_RET js_log(const v8::ARGUMENTS& args)
+    {
+        v8::Isolate* iso = args.GetIsolate();
+
+        if (args.Length() == 0)
+            return V8_RETURN(args, V8_UNDEFINED(iso));
+
+        intergen_interface* inst = 0;
+
+        v8::Local<v8::Object> obj__ = args.Holder();
+        if (!obj__.IsEmpty() && obj__->InternalFieldCount() > 0) {
+            v8::Local<v8::Value> intobj = obj__->GetInternalField(0);
+            if (intobj->IsExternal()) {
+                inst = static_cast<intergen_interface*>
+                    (v8::Handle<v8::External>::Cast(intobj)->Value());
+            }
+        }
+
+        V8_ESCAPABLE_SCOPE(iso, handle_scope__);
+        v8::String::Utf8Value key(V8_OPTARG(iso) args[0]);
+
+        coid::token tokey(*key, key.length());
+
+        intergen_interface::ifclog_ext(
+            coid::log::none,
+            inst ? inst->intergen_interface_name() : coid::tokenhash(),
+            inst, tokey);
+
+        return V8_RETURN(args, V8_UNDEFINED(iso));
+    }
+
+    ///Query interface from JS
+    static  v8::CBK_RET js_query_interface(const v8::ARGUMENTS& args)
+    {
+        v8::Isolate* iso = args.GetIsolate();
+
+        if (args.Length() < 1)
+            return v8::queue_js_exception(iso, &v8::Exception::Error, "Interface creator name missing");
+
+        V8_ESCAPABLE_SCOPE(iso, handle_scope__);
+        v8::String::Utf8Value key(V8_OPTARG(iso) args[0]);
+        coid::token tokey(*key, key.length());
+
+        typedef v8::Handle<v8::Value>(*fn_get)(const v8::ARGUMENTS&);
+        fn_get get = reinterpret_cast<fn_get>(
+            coid::interface_register::get_interface_creator(tokey));
+
+        if (!get) {
+            coid::charstr tmp = "interface creator ";
+            tmp << tokey << " not found";
+            return v8::queue_js_exception(iso, v8::Exception::Error, tmp);
+        }
+
+#ifdef V8_MAJOR_VERSION
+        args.GetReturnValue().Set(get(args));
+#else
+        return V8_ESCAPE(handle_scope__, get(args));
+#endif
+    }
+
+    static void register_global_context_methods(v8::Handle<v8::Object> gobj, v8::Isolate* iso) {
+        gobj->Set(v8::symbol("$include", iso), V8_NEWTYPE2(iso, FunctionTemplate, &js_include)->GetFunction());
+        gobj->Set(v8::symbol("$query_interface", iso), V8_NEWTYPE2(iso, FunctionTemplate, &js_query_interface)->GetFunction());
+        gobj->Set(v8::symbol("$log", iso), V8_NEWTYPE2(iso, FunctionTemplate, &js_log)->GetFunction());
+    }
+
 private:
 
     coid::token _str;
@@ -399,26 +485,6 @@ private:
     v8::Handle<v8::Context> _context;
 };
 
-
-
-////////////////////////////////////////////////////////////////////////////////
-struct interface_context
-{
-    //v8::Persistent<v8::Context> _context;
-    //v8::Persistent<v8::Script> _script;
-    v8::Persistent<v8::Object> _object;
-
-    v8::Local<v8::Context> context(v8::Isolate* iso) const {
-        if (_object.IsEmpty())
-            return V8_CUR_CONTEXT(iso);
-
-#ifdef V8_MAJOR_VERSION
-        return _object.Get(iso)->CreationContext();
-#else
-        return _object->CreationContext();
-#endif
-    }
-};
 
 ////////////////////////////////////////////////////////////////////////////////
 template<class T>

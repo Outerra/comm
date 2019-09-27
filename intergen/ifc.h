@@ -227,8 +227,6 @@ public:
 
 #endif //COID_VARIADIC_TEMPLATES
 
-protected:
-
     static void ifclog_ext(coid::log::type type, const coid::tokenhash& hash, const void* inst, const coid::token& txt) {
         ref<coid::logmsg> msgr = coid::interface_register::canlog(type, hash, inst);
         if (!msgr)
@@ -236,6 +234,8 @@ protected:
 
         msgr->str() << txt;
     }
+
+protected:
 
     static void log_mismatch(const coid::token& clsname, const coid::token& ifckey, const coid::token& hash)
     {
