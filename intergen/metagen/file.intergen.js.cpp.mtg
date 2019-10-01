@@ -809,6 +809,7 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const ::js::script_
             context = script.context();
         else {
             context = V8_NEWTYPE(iso, Context);
+            v8::Context::Scope context_scope(context);
             ::js::script_handle::register_global_context_methods(context->Global(), iso);
         }
     }
