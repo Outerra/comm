@@ -228,11 +228,16 @@ public:
 #endif //COID_VARIADIC_TEMPLATES
 
     static void ifclog_ext(coid::log::type type, const coid::tokenhash& hash, const void* inst, const coid::token& txt) {
+        //deduce type if none set
+        coid::token rest = txt;
+        if (type == coid::log::none)
+            type = coid::logmsg::consume_type(rest);
+
         ref<coid::logmsg> msgr = coid::interface_register::canlog(type, hash, inst);
         if (!msgr)
             return;
 
-        msgr->str() << txt;
+        msgr->str() << rest;
     }
 
 protected:
@@ -244,10 +249,21 @@ protected:
         coid::interface_register::get_interface_creators(ifckey, "", tmp);
 
         ref<coid::logmsg> msg = coid::interface_register::canlog(coid::log::warning, clsname, 0);
-        if (tmp.size() > 0)
-            msg->str() << "interface creator version mismatch (" << ifckey << hash << ')';
-        else
-            msg->str() << "interface creator not found (" << ifckey << hash << ')';
+        if (msg) {
+            coid::charstr& str = msg->str();
+            if (tmp.size() > 0) {
+                str << "interface creator version mismatch (requested " << ifckey << hash << ", found ";
+
+                uints n = tmp.size();
+                str << tmp[0].name;
+                for (uints i = 1; i<n; ++i)
+                    str << ", " << tmp[i].name;
+
+                str << ')';
+            }
+            else
+                str << "interface creator not found (" << ifckey << ')';
+        }
     }
 };
 

@@ -433,7 +433,7 @@ public:
 
         intergen_interface::ifclog_ext(
             coid::log::none,
-            inst ? inst->intergen_interface_name() : coid::tokenhash(),
+            inst ? inst->intergen_interface_name() : coid::tokenhash("js"_T),
             inst, tokey);
 
         return V8_RETURN(args, V8_UNDEFINED(iso));
