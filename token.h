@@ -103,7 +103,7 @@ struct token
     // and the preceding char is not 0
     // Call token::from_cstring(array) to force treating the array as a zero-terminated string
     template <int N>
-    token(const char(&str)[N])
+    constexpr token(const char(&str)[N])
         : _ptr(str), _pte(str + N - 1)
     {
 #if defined(_DEBUG) || defined(COID_TOKEN_LITERAL_CHECK)
@@ -114,7 +114,7 @@ struct token
 
     ///Character array constructor
     template <int N>
-    token(char(&str)[N])
+    constexpr token(char(&str)[N])
         : _ptr(str), _pte(str + strnlen(str, N))
     {}
 
@@ -169,7 +169,7 @@ struct token
         return tok;
     }
 
-    token(const token& src) : _ptr(src._ptr), _pte(src._pte) {}
+    constexpr token(const token& src) : _ptr(src._ptr), _pte(src._pte) {}
 
     token(const token& src, uints offs, uints len)
     {
@@ -191,11 +191,11 @@ struct token
         std::swap(_pte, other._pte);
     }
 
-    friend uint hash(const token& tok) {
+    friend constexpr uint hash(const token& tok) {
         return tok.hash();
     }
 
-    uint hash() const {
+    constexpr uint hash() const {
         return __coid_hash_string(ptr(), len());
     }
 
@@ -205,15 +205,15 @@ struct token
     ///Rebase token pointing into one string to point into the same region in another string
     token rebase(const charstr& from, const charstr& to) const;
 
-    const char* ptr() const { return _ptr; }
-    const char* ptre() const { return _pte; }
+    constexpr const char* ptr() const { return _ptr; }
+    constexpr const char* ptre() const { return _pte; }
 
-    const char* begin() const { return _ptr; }
-    const char* end() const { return _pte; }
+    constexpr const char* begin() const { return _ptr; }
+    constexpr const char* end() const { return _pte; }
 
     ///Return length of token
-    uint len() const { return uint(_pte - _ptr); }
-    uints lens() const { return _pte - _ptr; }
+    constexpr uint len() const { return uint(_pte - _ptr); }
+    constexpr uints lens() const { return _pte - _ptr; }
 
     ///Return number of unicode characters within utf8 encoded token
     uint len_utf8() const
@@ -243,10 +243,6 @@ struct token
         else if ((uints)n < lens())
             _pte = _ptr + n;
     }
-
-
-    static const token& TK_whitespace() { static token _tk(" \t\n\r");  return _tk; }
-    static const token& TK_newlines() { static token _tk("\n\r");  return _tk; }
 
 
     char operator[] (ints i) const {
@@ -2676,10 +2672,10 @@ inline uint string_hash(const token& tok) {
 class tokenhash : public token
 {
 public:
-    tokenhash() : _hash(0)
+    constexpr tokenhash() : _hash(0)
     {}
 
-    tokenhash(std::nullptr_t) : token(nullptr), _hash(0)
+    constexpr tokenhash(std::nullptr_t) : token(nullptr), _hash(0)
     {}
 
     ///String literal constructor, optimization to have fast literal strings available as tokens
@@ -2705,7 +2701,7 @@ public:
         _hash = __coid_hash_string(ptr(), len());
     }
 
-    tokenhash(const token& tok)
+    constexpr tokenhash(const token& tok)
         : token(tok), _hash(__coid_hash_string(tok.ptr(), tok.len()))
     {}
 

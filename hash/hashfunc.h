@@ -72,7 +72,7 @@ template<class KEY, bool INSENSITIVE = false> struct hasher
 };
 
 ///FNV-1a hash
-inline uint __coid_hash_c_string(const char* s, uint seed = 2166136261u)
+inline constexpr uint __coid_hash_c_string(const char* s, uint seed = 2166136261u)
 {
     for (; *s; ++s)
         seed = (seed ^ *s) * 16777619u;
@@ -81,7 +81,7 @@ inline uint __coid_hash_c_string(const char* s, uint seed = 2166136261u)
 }
 
 
-inline uint __coid_hash_string(const char* s, uints n, uint seed = 2166136261u)
+inline constexpr uint __coid_hash_string(const char* s, uints n, uint seed = 2166136261u)
 {
     //for( ; n>0; ++s,--n)
     //    seed = (seed ^ *s)*16777619u;
@@ -97,7 +97,7 @@ inline uint __coid_hash_string(const char* s, uints n, uint seed = 2166136261u)
     return seed;
 }
 
-inline uint __coid_hash_c_string_insensitive(const char* s, uint seed = 2166136261u)
+inline constexpr uint __coid_hash_c_string_insensitive(const char* s, uint seed = 2166136261u)
 {
     for (; *s; ++s)
         seed = (seed ^ ::tolower(*s)) * 16777619u;
@@ -106,7 +106,7 @@ inline uint __coid_hash_c_string_insensitive(const char* s, uint seed = 21661362
 }
 
 
-inline uint __coid_hash_string_insensitive(const char* s, uints n, uint seed = 2166136261u)
+inline constexpr uint __coid_hash_string_insensitive(const char* s, uints n, uint seed = 2166136261u)
 {
     for (; n > 0; ++s, --n)
         seed = (seed ^ ::tolower(*s)) * 16777619u;
@@ -114,7 +114,7 @@ inline uint __coid_hash_string_insensitive(const char* s, uints n, uint seed = 2
     return seed;
 }
 
-inline uint __coid_hash_string(char c, uint seed = 2166136261u)
+inline constexpr uint __coid_hash_string(char c, uint seed = 2166136261u)
 {
     return (seed ^ c) * 16777619u;
 }
@@ -123,7 +123,7 @@ inline uint __coid_hash_string(char c, uint seed = 2166136261u)
 template<bool INSENSITIVE> struct hasher<char*, INSENSITIVE>
 {
     typedef char* key_type;
-    uint operator()(const char* s) const {
+    constexpr uint operator()(const char* s) const {
         return INSENSITIVE
             ? __coid_hash_c_string_insensitive(s)
             : __coid_hash_c_string(s);
@@ -133,7 +133,7 @@ template<bool INSENSITIVE> struct hasher<char*, INSENSITIVE>
 template<bool INSENSITIVE> struct hasher<const char*, INSENSITIVE>
 {
     typedef const char* key_type;
-    uint operator()(const char* s) const {
+    constexpr uint operator()(const char* s) const {
         return INSENSITIVE
             ? __coid_hash_c_string_insensitive(s)
             : __coid_hash_c_string(s);
@@ -143,7 +143,7 @@ template<bool INSENSITIVE> struct hasher<const char*, INSENSITIVE>
 #define DIRECT_HASH_FUNC(TYPE) template<> struct hasher<TYPE> {\
     typedef TYPE key_type;\
     typedef typename std::conditional<(sizeof(TYPE) > sizeof(uint)), uint64, uint>::type index_type;\
-    index_type operator()(TYPE x) const { return (index_type)x; } }
+    constexpr index_type operator()(TYPE x) const { return (index_type)x; } }
 
 DIRECT_HASH_FUNC(bool);
 DIRECT_HASH_FUNC(uint8);

@@ -81,7 +81,7 @@ bool MethodIG::parse( iglexer& lex, const charstr& host, const charstr& ns, cons
             if(arg->boutarg)
                 ++noutargs;
 
-            arg->tokenpar = arg->binarg && 
+            arg->tokenpar = arg->binarg &&
                 (arg->basetype=="token" || arg->basetype=="coid::token" || arg->basetype=="charstr" || arg->basetype=="coid::charstr");
 
             if(!bstatic && arg->biref && (isevent ? arg->binarg : arg->boutarg))
@@ -91,7 +91,7 @@ bool MethodIG::parse( iglexer& lex, const charstr& host, const charstr& ns, cons
                 bhasifctargets = true;
         }
         while(lex.matches(','));
-        
+
         lex.match(')');
     }
 
@@ -165,7 +165,7 @@ void MethodIG::parse_docs()
 
             token paramline = line;
             if(paramline.consume("@param ")) {
-                token param = paramline.cut_left_group(token::TK_whitespace());
+                token param = paramline.cut_left_group(" \t\n\r"_T);
                 Arg* a = find_arg(param);
 
                 if(a) {
