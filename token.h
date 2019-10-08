@@ -103,7 +103,7 @@ struct token
     // and the preceding char is not 0
     // Call token::from_cstring(array) to force treating the array as a zero-terminated string
     template <int N>
-    constexpr token(const char(&str)[N])
+    coid_constexpr_for token(const char(&str)[N])   //VS2015 has a broken constexpr, hence coid_constexpr_for
         : _ptr(str), _pte(str + N - 1)
     {
 #if defined(_DEBUG) || defined(COID_TOKEN_LITERAL_CHECK)
@@ -114,7 +114,7 @@ struct token
 
     ///Character array constructor
     template <int N>
-    constexpr token(char(&str)[N])
+    coid_constexpr_for token(char(&str)[N])
         : _ptr(str), _pte(str + strnlen(str, N))
     {}
 
@@ -191,11 +191,11 @@ struct token
         std::swap(_pte, other._pte);
     }
 
-    friend constexpr uint hash(const token& tok) {
+    friend coid_constexpr_for uint hash(const token& tok) {
         return tok.hash();
     }
 
-    constexpr uint hash() const {
+    coid_constexpr_for uint hash() const {
         return __coid_hash_string(ptr(), len());
     }
 
@@ -1728,10 +1728,10 @@ struct token
 
 
 
-    static uints strnlen(const char* str, uints n)
+    static coid_constexpr_for uints strnlen(const char* str, uints n)
     {
-        uints i;
-        for (i = 0; i < n; ++i)
+        uints i = 0;
+        for (; i < n; ++i)
             if (str[i] == 0) break;
         return i;
     }
@@ -2701,7 +2701,7 @@ public:
         _hash = __coid_hash_string(ptr(), len());
     }
 
-    constexpr tokenhash(const token& tok)
+    coid_constexpr_for tokenhash(const token& tok)
         : token(tok), _hash(__coid_hash_string(tok.ptr(), tok.len()))
     {}
 
@@ -2850,7 +2850,7 @@ COID_NAMESPACE_END
 #ifdef COID_USER_DEFINED_LITERALS
 
 ///String literal returning token (_T suffix)
-inline coid_constexpr coid::token operator "" _T(const char* s, size_t len)
+inline constexpr coid::token operator "" _T(const char* s, size_t len)
 {
     return coid::token(s, len);
 }

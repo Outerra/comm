@@ -26,11 +26,10 @@ class other_js_dispatcher
     : public ::js::interface_wrapper_base<ns::other>
 {
 #ifdef V8_MAJOR_VERSION
-    static void _js_release_callback(const v8::WeakCallbackInfo<void*>& data)
+    static void _js_release_callback(const v8::WeakCallbackInfo<other_js_dispatcher>& data)
     {
-        void* p = data.GetParameter();
-        other_js_dispatcher* ifc = static_cast<other_js_dispatcher*>(p);
-        ifc->_object.Empty();
+        other_js_dispatcher* ifc = data.GetParameter();
+        ifc->_object.Reset();
         ifc->release_refcount();
     }
 
@@ -49,15 +48,15 @@ class other_js_dispatcher
 
 protected:
 
-    EBackend intergen_backend() const override { return IFC_BACKEND_JS; }
+    backend intergen_backend() const override { return backend::js; }
 
 public:
 
     v8::Handle<v8::Object> create_interface_object( v8::Handle<v8::Context> context, bool make_weak );
 
-    static v8::Handle<v8::Script> load_script( const coid::token& scriptfile, const coid::token& file_name );
+    static v8::Handle<v8::Script> load_script( const coid::token& script, const coid::token& file_name );
 
-    COIDNEWDELETE("ns::other_js_dispatcher");
+    COIDNEWDELETE(other_js_dispatcher);
 
     other_js_dispatcher()
     {}
@@ -67,18 +66,20 @@ public:
         _vtable = _base->vtable();
         //V8_PERSISTENT(v8::Isolate::GetCurrent(), _context, context);
 
-		_host = _base->host<policy_intrusive_base>();
+        _host = _base->host<policy_intrusive_base>();
     }
 
-    void set_host( policy_intrusive_base* host ) {
-        _host = host;
+    explicit other_js_dispatcher(policy_intrusive_base* host) {
+        set_host(host, this, 0);
     }
 
     ~other_js_dispatcher() {
-        V8_RESET(_object);
+        V8_DECL_ISO(iso);
+        if (!_object.IsEmpty()) {
+            V8_LOCAL(iso, _object)->SetInternalField(0, V8_NULL(iso));
+        }
 
-        //V8_RESET(_script);
-        //V8_RESET(_context);
+        V8_RESET(_object);
     }
 
     bool intergen_bind_capture( coid::binstring* capture, uint instid ) override
@@ -95,12 +96,8 @@ public:
 
     static iref<other_js_dispatcher> create( const ::js::script_handle& scriptpath, const coid::charstr& str, const coid::token& bindname, v8::Handle<v8::Context>* );
 
-    static v8::Handle<v8::Value> v8creator_create0(const v8::ARGUMENTS& args, interface_context* ifc);
+    static v8::Handle<v8::Value> v8creator_create0(const v8::ARGUMENTS& args);
 
-    ///Handler for generic $query_interface javascript method
-    static v8::CBK_RET v8query_interface( const v8::ARGUMENTS& args );
-    static v8::CBK_RET v8query_interface_global( const v8::ARGUMENTS& args );
-    static v8::CBK_RET v8log( const v8::ARGUMENTS& args );
     static v8::CBK_RET v8rebind_events( const v8::ARGUMENTS& args );
     static v8::CBK_RET v8current_global( const v8::ARGUMENTS& args );
 
@@ -119,7 +116,7 @@ v8::CBK_RET other_js_dispatcher::v8_get_str0( const v8::ARGUMENTS& args )
     if (args.Length() < 0 || args.Length() > 0) { //in/inout arguments
         coid::charstr tmp = "Wrong number of arguments in ";
         tmp << "other.get_str";
-        return v8::throw_js(iso, v8::Exception::SyntaxError, tmp);
+        return v8::queue_js_exception(iso, v8::Exception::SyntaxError, tmp);
     }
 
     V8_ESCAPABLE_SCOPE(iso, handle_scope__);
@@ -138,7 +135,7 @@ v8::CBK_RET other_js_dispatcher::v8_get_str0( const v8::ARGUMENTS& args )
     if (!R_) {
         coid::charstr tmp = "Null interface object in ";
         tmp << "other.get_str";
-        return v8::throw_js(iso, &v8::Exception::ReferenceError, tmp);
+        return v8::queue_js_exception(iso, &v8::Exception::ReferenceError, tmp);
     }
 
     v8::Context::Scope context_scope(ifc->context(iso));
@@ -161,7 +158,7 @@ v8::CBK_RET other_js_dispatcher::v8_get_str0( const v8::ARGUMENTS& args )
 #endif
 
     } catch(const coid::exception& e) {
-        return v8::throw_js(iso, &v8::Exception::TypeError, e.text());
+        return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }
 
@@ -173,7 +170,7 @@ v8::CBK_RET other_js_dispatcher::v8_set_str1( const v8::ARGUMENTS& args )
     if (args.Length() < 1 || args.Length() > 1) { //in/inout arguments
         coid::charstr tmp = "Wrong number of arguments in ";
         tmp << "other.set_str";
-        return v8::throw_js(iso, v8::Exception::SyntaxError, tmp);
+        return v8::queue_js_exception(iso, v8::Exception::SyntaxError, tmp);
     }
 
     V8_ESCAPABLE_SCOPE(iso, handle_scope__);
@@ -192,7 +189,7 @@ v8::CBK_RET other_js_dispatcher::v8_set_str1( const v8::ARGUMENTS& args )
     if (!R_) {
         coid::charstr tmp = "Null interface object in ";
         tmp << "other.set_str";
-        return v8::throw_js(iso, &v8::Exception::ReferenceError, tmp);
+        return v8::queue_js_exception(iso, &v8::Exception::ReferenceError, tmp);
     }
 
     v8::Context::Scope context_scope(ifc->context(iso));
@@ -217,7 +214,7 @@ v8::CBK_RET other_js_dispatcher::v8_set_str1( const v8::ARGUMENTS& args )
 #endif
 
     } catch(const coid::exception& e) {
-        return v8::throw_js(iso, &v8::Exception::TypeError, e.text());
+        return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }
 
@@ -229,7 +226,7 @@ v8::CBK_RET other_js_dispatcher::v8_some_fun12( const v8::ARGUMENTS& args )
     if (args.Length() < 2 || args.Length() > 2) { //in/inout arguments
         coid::charstr tmp = "Wrong number of arguments in ";
         tmp << "other.some_fun1";
-        return v8::throw_js(iso, v8::Exception::SyntaxError, tmp);
+        return v8::queue_js_exception(iso, v8::Exception::SyntaxError, tmp);
     }
 
     V8_ESCAPABLE_SCOPE(iso, handle_scope__);
@@ -248,7 +245,7 @@ v8::CBK_RET other_js_dispatcher::v8_some_fun12( const v8::ARGUMENTS& args )
     if (!R_) {
         coid::charstr tmp = "Null interface object in ";
         tmp << "other.some_fun1";
-        return v8::throw_js(iso, &v8::Exception::ReferenceError, tmp);
+        return v8::queue_js_exception(iso, &v8::Exception::ReferenceError, tmp);
     }
 
     v8::Context::Scope context_scope(ifc->context(iso));
@@ -271,12 +268,12 @@ v8::CBK_RET other_js_dispatcher::v8_some_fun12( const v8::ARGUMENTS& args )
         //stream out
         v8::Handle<v8::Object> r__ = V8_NEWTYPE(iso, Object);
         static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'" );
-        r__->Set(v8::symbol("a"), read_to_v8(a));
+        r__->Set(v8::symbol("a", iso), read_to_v8(a));
  
-        r__->Set(v8::symbol("b"), ::js::wrap_object(b.get(), ifc->context(iso)));
+        r__->Set(v8::symbol("b", iso), ::js::wrap_object(b.get(), ifc->context(iso)));
  
         static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'" );
-        r__->Set(v8::symbol("c"), read_to_v8(c));
+        r__->Set(v8::symbol("c", iso), read_to_v8(c));
  
 #ifdef V8_MAJOR_VERSION
         args.GetReturnValue().Set(r__);
@@ -285,116 +282,10 @@ v8::CBK_RET other_js_dispatcher::v8_some_fun12( const v8::ARGUMENTS& args )
 #endif
 
     } catch(const coid::exception& e) {
-        return v8::throw_js(iso, &v8::Exception::TypeError, e.text());
+        return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }
 
-
-////////////////////////////////////////////////////////////////////////////////
-v8::CBK_RET other_js_dispatcher::v8log( const v8::ARGUMENTS& args )
-{
-    v8::Isolate* iso = args.GetIsolate();
-
-    if (args.Length() == 0)
-        return V8_RETURN(args, V8_UNDEFINED(iso));
-
-    const void* inst = 0;
-
-    v8::Local<v8::Object> obj__ = args.Holder();
-    if (!obj__.IsEmpty() && obj__->InternalFieldCount() > 0) {
-        v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
-        if (intobj__->IsExternal()) {
-            ns::js::other_js_dispatcher* ifc = static_cast<ns::js::other_js_dispatcher*>
-                (v8::Handle<v8::External>::Cast(intobj__)->Value());
-
-            inst = ifc;
-            if (!ifc)
-                return v8::throw_js(iso, &v8::Exception::ReferenceError, "Null interface object in $log");
-        }
-    }
-
-    V8_ESCAPABLE_SCOPE(iso, handle_scope__);
-    v8::String::Utf8Value key(args[0]);
-
-    coid::token tokey(*key, key.length());
-
-    intergen_interface::ifclog_ext(coid::log::none, coid::tokenhash("ns::other"),
-        inst, tokey);
-
-    return V8_RETURN(args, V8_UNDEFINED(iso));
-}
-
-////////////////////////////////////////////////////////////////////////////////
-v8::CBK_RET other_js_dispatcher::v8query_interface( const v8::ARGUMENTS& args )
-{
-    v8::Isolate* iso = args.GetIsolate();
-
-    if (args.Length() < 1)
-        return v8::throw_js(iso, &v8::Exception::Error, "Interface creator name missing");
-
-    V8_ESCAPABLE_SCOPE(iso, handle_scope__);
-    v8::String::Utf8Value key(args[0]);
-
-    typedef v8::Handle<v8::Value> (*fn_get)(const v8::ARGUMENTS&, interface_context*);
-    coid::token tokey(*key, key.length());
-    fn_get get = reinterpret_cast<fn_get>(
-        coid::interface_register::get_interface_creator(tokey));
-
-    if (!get) {
-        coid::charstr tmp = "interface creator ";
-        tmp << tokey << " not found";
-        return v8::throw_js(iso, v8::Exception::Error, tmp);
-    }
-
-    v8::Local<v8::Object> obj__ = args.Holder();
-    if (obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
-        return V8_RETURN(args, V8_UNDEFINED(iso));
-
-    v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
-    if (!intobj__->IsExternal())
-        return V8_RETURN(args, V8_UNDEFINED(iso));
-
-    ns::js::other_js_dispatcher* ifc = static_cast<ns::js::other_js_dispatcher*>
-        (v8::Handle<v8::External>::Cast(intobj__)->Value());
-
-    if (!ifc)
-        return v8::throw_js(iso, &v8::Exception::ReferenceError, "Null interface object in $query_interface");
-
-#ifdef V8_MAJOR_VERSION
-    args.GetReturnValue().Set(get(args, ifc));
-#else
-    return V8_ESCAPE(handle_scope__, get(args, ifc));
-#endif
-}
-
-////////////////////////////////////////////////////////////////////////////////
-v8::CBK_RET other_js_dispatcher::v8query_interface_global( const v8::ARGUMENTS& args )
-{
-    v8::Isolate* iso = args.GetIsolate();
-
-    if (args.Length() < 1)
-        return v8::throw_js(iso, &v8::Exception::Error, "Interface creator name missing");
-
-    V8_ESCAPABLE_SCOPE(iso, handle_scope__);
-    v8::String::Utf8Value key(args[0]);
-
-    typedef v8::Handle<v8::Value> (*fn_get)(const v8::ARGUMENTS&, interface_context*);
-    coid::token tokey(*key, key.length());
-    fn_get get = reinterpret_cast<fn_get>(
-        coid::interface_register::get_interface_creator(tokey));
-
-    if (!get) {
-        coid::charstr tmp = "interface creator ";
-        tmp << tokey << " not found";
-        return v8::throw_js(iso, v8::Exception::Error, tmp);
-    }
-
-#ifdef V8_MAJOR_VERSION
-    args.GetReturnValue().Set(get(args, 0));
-#else
-    return V8_ESCAPE(handle_scope__, get(args, 0));
-#endif
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 v8::CBK_RET other_js_dispatcher::v8rebind_events( const v8::ARGUMENTS& args )
@@ -437,16 +328,19 @@ v8::Handle<v8::Object> other_js_dispatcher::create_interface_object( v8::Handle<
     if (_objtempl.IsEmpty())
     {
         v8::Local<v8::ObjectTemplate> ot = V8_NEWTYPE(iso, ObjectTemplate);
+#ifdef V8_MAJOR_VERSION
+        ot->Set(v8::Symbol::GetToStringTag(iso), v8::string_utf8("ns::other"));
+#endif
         ot->SetInternalFieldCount(2);    //ptr and class hash id
 
-        ot->Set(v8::symbol("get_str"), V8_NEWTYPE2(iso, FunctionTemplate, &v8_get_str0));
-        ot->Set(v8::symbol("set_str"), V8_NEWTYPE2(iso, FunctionTemplate, &v8_set_str1));
-        ot->Set(v8::symbol("some_fun1"), V8_NEWTYPE2(iso, FunctionTemplate, &v8_some_fun12));
+        ot->Set(v8::symbol("get_str", iso), V8_NEWTYPE2(iso, FunctionTemplate, &v8_get_str0));
+        ot->Set(v8::symbol("set_str", iso), V8_NEWTYPE2(iso, FunctionTemplate, &v8_set_str1));
+        ot->Set(v8::symbol("some_fun1", iso), V8_NEWTYPE2(iso, FunctionTemplate, &v8_some_fun12));
 
-        ot->Set(v8::symbol("$query_interface"), V8_NEWTYPE2(iso, FunctionTemplate, &v8query_interface));
-        ot->Set(v8::symbol("$rebind_events"), V8_NEWTYPE2(iso, FunctionTemplate, &v8rebind_events));
-        ot->Set(v8::symbol("$ctx"), V8_NEWTYPE2(iso, FunctionTemplate, &v8current_global));
-        ot->Set(v8::symbol("$log"), V8_NEWTYPE2(iso, FunctionTemplate, &v8log));
+        ot->Set(v8::symbol("$log", iso), V8_NEWTYPE2(iso, FunctionTemplate, &::js::script_handle::js_log));
+        ot->Set(v8::symbol("$query_interface", iso), V8_NEWTYPE2(iso, FunctionTemplate, &::js::script_handle::js_query_interface));
+        ot->Set(v8::symbol("$rebind_events", iso), V8_NEWTYPE2(iso, FunctionTemplate, &v8rebind_events));
+        ot->Set(v8::symbol("$ctx", iso), V8_NEWTYPE2(iso, FunctionTemplate, &v8current_global));
 
         V8_PERSISTENT(iso, _objtempl, ot);
     }
@@ -463,12 +357,9 @@ v8::Handle<v8::Object> other_js_dispatcher::create_interface_object( v8::Handle<
         V8_PERSISTENT(iso, _object, obj);
 
 #ifdef V8_MAJOR_VERSION
-        void* p = this;
-        _object.SetWeak(&p, _js_release_callback, v8::WeakCallbackType::kParameter);
-        //_context.SetWeak();
+        _object.SetWeak(this, _js_release_callback, v8::WeakCallbackType::kParameter);
 #else
         _object.MakeWeak(this, _js_release_callback);
-        //_context.MakeWeak(0, _js_release_callback);
 #endif
         add_refcount();
     }
@@ -479,22 +370,7 @@ v8::Handle<v8::Object> other_js_dispatcher::create_interface_object( v8::Handle<
 ////////////////////////////////////////////////////////////////////////////////
 v8::Handle<v8::Script> other_js_dispatcher::load_script( const coid::token& script, const coid::token& fname )
 {
-    v8::Isolate* iso = v8::Isolate::GetCurrent();
-    v8::Local<v8::String> scriptv8 = v8::string_utf8(script);
-
-    // set up an error handler to catch any exceptions the script might throw.
-    V8_TRYCATCH(iso, js_trycatch);
-
-    v8::Handle<v8::Script> compiled_script = v8::Script::Compile(scriptv8, v8::symbol(fname));
-    if (js_trycatch.HasCaught())
-        ::js::script_handle::throw_js_error(js_trycatch, "ns::js::other::load_script(): ");
-
-    compiled_script->Run();
-    
-    if (js_trycatch.HasCaught())
-        ::js::script_handle::throw_js_error(js_trycatch, "ns::js::other::load_script(): ");
-
-    return compiled_script;
+    return ::js::script_handle::load_script(script, fname, ::js::rethrow_in_cxx);
 }
 
 // --- creators ---
@@ -542,8 +418,11 @@ iref<other_js_dispatcher> other_js_dispatcher::create( const ::js::script_handle
     if (!extctx) {
         if (script.has_context())
             context = script.context();
-        else
+        else {
             context = V8_NEWTYPE(iso, Context);
+            v8::Context::Scope context_scope(context);
+            ::js::script_handle::register_global_context_methods(context->Global(), iso);
+        }
     }
 
     //set early here as sometimes the invoked creator methods want to access it
@@ -555,12 +434,6 @@ iref<other_js_dispatcher> other_js_dispatcher::create( const ::js::script_handle
 
     if (!extctx && !script.is_context())
     {
-        if (!script.has_context()) {
-            context->Global()->Set(v8::symbol("$include"), V8_NEWTYPE2(iso, FunctionTemplate, &::js::script_handle::js_include)->GetFunction());
-            context->Global()->Set(v8::symbol("$query_interface"), V8_NEWTYPE2(iso, FunctionTemplate, &other_js_dispatcher::v8query_interface_global)->GetFunction());
-            context->Global()->Set(v8::symbol("$log"), V8_NEWTYPE2(iso, FunctionTemplate, &other_js_dispatcher::v8log)->GetFunction());
-        }
-
         coid::token script_tok;
         coid::charstr script_tmp;
         if (script.is_path()) {
@@ -587,7 +460,7 @@ iref<other_js_dispatcher> other_js_dispatcher::create( const ::js::script_handle
 
         V8_PERSISTENT(iso, ifc->_object, ifc->create_interface_object(context, false));
         if (bindname)
-            context->Global()->Set(v8::symbol(bindname), V8_LOCAL(iso, ifc->_object));
+            context->Global()->Set(v8::symbol(bindname, iso), V8_LOCAL(iso, ifc->_object));
 
         v8::Handle<v8::Script> compiled_script = load_script(script_tok, script.url());
 
@@ -597,7 +470,7 @@ iref<other_js_dispatcher> other_js_dispatcher::create( const ::js::script_handle
         V8_PERSISTENT(iso, ifc->_object, ifc->create_interface_object(context, false));
 
         if (bindname)
-            context->Global()->Set(v8::symbol(bindname), V8_LOCAL(iso, ifc->_object));
+            context->Global()->Set(v8::symbol(bindname, iso), V8_LOCAL(iso, ifc->_object));
     }
 
     return ifc;
@@ -605,14 +478,14 @@ iref<other_js_dispatcher> other_js_dispatcher::create( const ::js::script_handle
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Creator methods for access from JS
-v8::Handle<v8::Value> other_js_dispatcher::v8creator_create0( const v8::ARGUMENTS& args, interface_context* ifc )
+v8::Handle<v8::Value> other_js_dispatcher::v8creator_create0(const v8::ARGUMENTS& args)
 {
     v8::Isolate* iso = args.GetIsolate();
 
     if (args.Length() < 1+1 || args.Length() > 1+1) { //fnc name + in/inout arguments
         coid::charstr tmp = "Wrong number of arguments in ";
         tmp << "create";
-        v8::throw_js(iso, &v8::Exception::Error, tmp);
+        v8::queue_js_exception(iso, &v8::Exception::Error, tmp);
         return V8_UNDEFINED(iso);
     }
 
@@ -622,9 +495,7 @@ v8::Handle<v8::Value> other_js_dispatcher::v8creator_create0( const v8::ARGUMENT
     //ns::js::other_js_dispatcher* ifc = static_cast<ns::js::other_js_dispatcher*>
     //    (v8::Handle<v8::External>::Cast(obj__->GetInternalField(0))->Value());
 
-    v8::Local<v8::Context> ctx = ifc && !ifc->_object.IsEmpty()
-        ? ifc->context(iso)
-        : V8_CUR_CONTEXT(iso);
+    v8::Local<v8::Context> ctx = V8_CUR_CONTEXT(iso);
     v8::Context::Scope context_scope(ctx);
 
     //stream the arguments in
@@ -664,7 +535,7 @@ v8::Handle<v8::Value> create_wrapper_other( ::ns::other* orig, v8::Handle<v8::Co
     iref<ns::js::other_js_dispatcher> ifc;
     v8::Handle<v8::Object> obj;
 
-    if (orig->intergen_backend() == intergen_interface::IFC_BACKEND_JS)
+    if (orig->intergen_backend() == intergen_interface::backend::js)
         obj = V8_LOCAL(iso, static_cast<other_js_dispatcher*>(orig)->_object);
 
     if (obj.IsEmpty()) {
@@ -695,10 +566,9 @@ static iref<ns::js::other_js_dispatcher> create_maker_other( policy_intrusive_ba
     // create interface object
     iref<ns::js::other_js_dispatcher> ifc;
 
-    ifc.create(new ns::js::other_js_dispatcher);
-    ifc->set_host(host);
+    ifc.create(new ns::js::other_js_dispatcher(host));
 
-    ifc->create_interface_object(context, false);
+    V8_PERSISTENT(iso, ifc->_object, ifc->create_interface_object(context, false));
 
     return ifc;
 }
@@ -724,7 +594,7 @@ static void register_binders_for_other( bool on )
     //js interface creator from host
     interface_register::register_interface_creator(
         "ns::other@maker.js",
-        on ? (void*)&create_maker_other : nullptr);        
+        on ? (void*)&create_maker_other : nullptr);
 }
 
 //auto-register the bind function
@@ -756,11 +626,10 @@ class main_js_dispatcher
     mutable bool _bound_events;
 
 #ifdef V8_MAJOR_VERSION
-    static void _js_release_callback(const v8::WeakCallbackInfo<void*>& data)
+    static void _js_release_callback(const v8::WeakCallbackInfo<main_js_dispatcher>& data)
     {
-        void* p = data.GetParameter();
-        main_js_dispatcher* ifc = static_cast<main_js_dispatcher*>(p);
-        ifc->_object.Empty();
+        main_js_dispatcher* ifc = data.GetParameter();
+        ifc->_object.Reset();
         ifc->release_refcount();
     }
 
@@ -779,16 +648,16 @@ class main_js_dispatcher
 
 protected:
 
-    EBackend intergen_backend() const override { return IFC_BACKEND_JS; }
+    backend intergen_backend() const override { return backend::js; }
 
 public:
 
     v8::Handle<v8::Object> create_interface_object( v8::Handle<v8::Context> context, bool make_weak );
 
-    static v8::Handle<v8::Script> load_script( const coid::token& scriptfile, const coid::token& file_name );
+    static v8::Handle<v8::Script> load_script( const coid::token& script, const coid::token& file_name );
     void bind_events( v8::Handle<v8::Context> context, bool force, v8::Handle<v8::Value> ref ) const;
 
-    COIDNEWDELETE("ns::main_js_dispatcher");
+    COIDNEWDELETE(main_js_dispatcher);
 
     main_js_dispatcher() : _bound_events(false)
     {}
@@ -798,24 +667,24 @@ public:
         _vtable = _base->vtable();
         //V8_PERSISTENT(v8::Isolate::GetCurrent(), _context, context);
 
-		_host = _base->host<policy_intrusive_base>();
+        _host = _base->host<policy_intrusive_base>();
     }
 
-    void set_host( policy_intrusive_base* host ) {
-        _host = host;
+    explicit main_js_dispatcher(policy_intrusive_base* host) : _bound_events(false) {
+        set_host(host, this, 0);
     }
 
     ~main_js_dispatcher() {
-        //V8_RESET(_eventobj);
-
         for (int i=0; i<4; ++i) {
             V8_RESET(_events[i]);
         }
 
-        V8_RESET(_object);
+        V8_DECL_ISO(iso);
+        if (!_object.IsEmpty()) {
+            V8_LOCAL(iso, _object)->SetInternalField(0, V8_NULL(iso));
+        }
 
-        //V8_RESET(_script);
-        //V8_RESET(_context);
+        V8_RESET(_object);
     }
 
     bool intergen_bind_capture( coid::binstring* capture, uint instid ) override
@@ -832,20 +701,16 @@ public:
 
     static iref<main_js_dispatcher> create( const ::js::script_handle& scriptpath, const coid::token& bindname, v8::Handle<v8::Context>* );
 
-    static v8::Handle<v8::Value> v8creator_create0(const v8::ARGUMENTS& args, interface_context* ifc);
+    static v8::Handle<v8::Value> v8creator_create0(const v8::ARGUMENTS& args);
 
     static iref<main_js_dispatcher> create_special( const ::js::script_handle& scriptpath, int a, iref<ns::other> b, int& c, iref<ns::other>& d, int e, const coid::token& bindname, v8::Handle<v8::Context>* );
 
-    static v8::Handle<v8::Value> v8creator_create_special1(const v8::ARGUMENTS& args, interface_context* ifc);
+    static v8::Handle<v8::Value> v8creator_create_special1(const v8::ARGUMENTS& args);
 
     static iref<main_js_dispatcher> create_wp( const ::js::script_handle& scriptpath, int a, int& b, int& c, int d, const coid::token& bindname, v8::Handle<v8::Context>* );
 
-    static v8::Handle<v8::Value> v8creator_create_wp2(const v8::ARGUMENTS& args, interface_context* ifc);
+    static v8::Handle<v8::Value> v8creator_create_wp2(const v8::ARGUMENTS& args);
 
-    ///Handler for generic $query_interface javascript method
-    static v8::CBK_RET v8query_interface( const v8::ARGUMENTS& args );
-    static v8::CBK_RET v8query_interface_global( const v8::ARGUMENTS& args );
-    static v8::CBK_RET v8log( const v8::ARGUMENTS& args );
     static v8::CBK_RET v8rebind_events( const v8::ARGUMENTS& args );
     static v8::CBK_RET v8current_global( const v8::ARGUMENTS& args );
 
@@ -909,7 +774,7 @@ v8::CBK_RET main_js_dispatcher::v8_some_get0( const v8::ARGUMENTS& args )
     if (args.Length() < 0 || args.Length() > 0) { //in/inout arguments
         coid::charstr tmp = "Wrong number of arguments in ";
         tmp << "main.some_get";
-        return v8::throw_js(iso, v8::Exception::SyntaxError, tmp);
+        return v8::queue_js_exception(iso, v8::Exception::SyntaxError, tmp);
     }
 
     V8_ESCAPABLE_SCOPE(iso, handle_scope__);
@@ -928,7 +793,7 @@ v8::CBK_RET main_js_dispatcher::v8_some_get0( const v8::ARGUMENTS& args )
     if (!R_) {
         coid::charstr tmp = "Null interface object in ";
         tmp << "main.some_get";
-        return v8::throw_js(iso, &v8::Exception::ReferenceError, tmp);
+        return v8::queue_js_exception(iso, &v8::Exception::ReferenceError, tmp);
     }
 
     v8::Context::Scope context_scope(ifc->context(iso));
@@ -943,10 +808,10 @@ v8::CBK_RET main_js_dispatcher::v8_some_get0( const v8::ARGUMENTS& args )
 
         //stream out
         v8::Handle<v8::Object> r__ = V8_NEWTYPE(iso, Object);
-        r__->Set(v8::symbol("$ret"), ::js::wrap_object(_rval_.get(), ifc->context(iso)));
+        r__->Set(v8::symbol("$ret", iso), ::js::wrap_object(_rval_.get(), ifc->context(iso)));
 
         static_assert( CHECK::meta_operator_exists<coid::charstr>::value, "missing metastream operator for 'coid::charstr'" );
-        r__->Set(v8::symbol("a"), read_to_v8(a));
+        r__->Set(v8::symbol("a", iso), read_to_v8(a));
  
 #ifdef V8_MAJOR_VERSION
         args.GetReturnValue().Set(r__);
@@ -955,7 +820,7 @@ v8::CBK_RET main_js_dispatcher::v8_some_get0( const v8::ARGUMENTS& args )
 #endif
 
     } catch(const coid::exception& e) {
-        return v8::throw_js(iso, &v8::Exception::TypeError, e.text());
+        return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }
 
@@ -967,7 +832,7 @@ v8::CBK_RET main_js_dispatcher::v8_get_a1( const v8::ARGUMENTS& args )
     if (args.Length() < 0 || args.Length() > 0) { //in/inout arguments
         coid::charstr tmp = "Wrong number of arguments in ";
         tmp << "main.get_a";
-        return v8::throw_js(iso, v8::Exception::SyntaxError, tmp);
+        return v8::queue_js_exception(iso, v8::Exception::SyntaxError, tmp);
     }
 
     V8_ESCAPABLE_SCOPE(iso, handle_scope__);
@@ -986,7 +851,7 @@ v8::CBK_RET main_js_dispatcher::v8_get_a1( const v8::ARGUMENTS& args )
     if (!R_) {
         coid::charstr tmp = "Null interface object in ";
         tmp << "main.get_a";
-        return v8::throw_js(iso, &v8::Exception::ReferenceError, tmp);
+        return v8::queue_js_exception(iso, &v8::Exception::ReferenceError, tmp);
     }
 
     v8::Context::Scope context_scope(ifc->context(iso));
@@ -1009,7 +874,7 @@ v8::CBK_RET main_js_dispatcher::v8_get_a1( const v8::ARGUMENTS& args )
 #endif
 
     } catch(const coid::exception& e) {
-        return v8::throw_js(iso, &v8::Exception::TypeError, e.text());
+        return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }
 
@@ -1021,7 +886,7 @@ v8::CBK_RET main_js_dispatcher::v8_set_a2( const v8::ARGUMENTS& args )
     if (args.Length() < 1 || args.Length() > 1) { //in/inout arguments
         coid::charstr tmp = "Wrong number of arguments in ";
         tmp << "main.set_a";
-        return v8::throw_js(iso, v8::Exception::SyntaxError, tmp);
+        return v8::queue_js_exception(iso, v8::Exception::SyntaxError, tmp);
     }
 
     V8_ESCAPABLE_SCOPE(iso, handle_scope__);
@@ -1040,7 +905,7 @@ v8::CBK_RET main_js_dispatcher::v8_set_a2( const v8::ARGUMENTS& args )
     if (!R_) {
         coid::charstr tmp = "Null interface object in ";
         tmp << "main.set_a";
-        return v8::throw_js(iso, &v8::Exception::ReferenceError, tmp);
+        return v8::queue_js_exception(iso, &v8::Exception::ReferenceError, tmp);
     }
 
     v8::Context::Scope context_scope(ifc->context(iso));
@@ -1065,7 +930,7 @@ v8::CBK_RET main_js_dispatcher::v8_set_a2( const v8::ARGUMENTS& args )
 #endif
 
     } catch(const coid::exception& e) {
-        return v8::throw_js(iso, &v8::Exception::TypeError, e.text());
+        return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }
 
@@ -1077,7 +942,7 @@ v8::CBK_RET main_js_dispatcher::v8_fun13( const v8::ARGUMENTS& args )
     if (args.Length() < 4 || args.Length() > 4) { //in/inout arguments
         coid::charstr tmp = "Wrong number of arguments in ";
         tmp << "main.fun1";
-        return v8::throw_js(iso, v8::Exception::SyntaxError, tmp);
+        return v8::queue_js_exception(iso, v8::Exception::SyntaxError, tmp);
     }
 
     V8_ESCAPABLE_SCOPE(iso, handle_scope__);
@@ -1096,7 +961,7 @@ v8::CBK_RET main_js_dispatcher::v8_fun13( const v8::ARGUMENTS& args )
     if (!R_) {
         coid::charstr tmp = "Null interface object in ";
         tmp << "main.fun1";
-        return v8::throw_js(iso, &v8::Exception::ReferenceError, tmp);
+        return v8::queue_js_exception(iso, &v8::Exception::ReferenceError, tmp);
     }
 
     v8::Context::Scope context_scope(ifc->context(iso));
@@ -1132,12 +997,12 @@ v8::CBK_RET main_js_dispatcher::v8_fun13( const v8::ARGUMENTS& args )
         //stream out
         v8::Handle<v8::Object> r__ = V8_NEWTYPE(iso, Object);
         static_assert( CHECK::meta_operator_exists<ns1::dummy>::value, "missing metastream operator for 'ns1::dummy'" );
-        r__->Set(v8::symbol("d"), read_to_v8(d));
+        r__->Set(v8::symbol("d", iso), read_to_v8(d));
  
         static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'" );
-        r__->Set(v8::symbol("e"), read_to_v8(e));
+        r__->Set(v8::symbol("e", iso), read_to_v8(e));
  
-        r__->Set(v8::symbol("f"), ::js::wrap_object(f.get(), ifc->context(iso)));
+        r__->Set(v8::symbol("f", iso), ::js::wrap_object(f.get(), ifc->context(iso)));
  
 #ifdef V8_MAJOR_VERSION
         args.GetReturnValue().Set(r__);
@@ -1146,7 +1011,7 @@ v8::CBK_RET main_js_dispatcher::v8_fun13( const v8::ARGUMENTS& args )
 #endif
 
     } catch(const coid::exception& e) {
-        return v8::throw_js(iso, &v8::Exception::TypeError, e.text());
+        return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }
 
@@ -1158,7 +1023,7 @@ v8::CBK_RET main_js_dispatcher::v8_fun24( const v8::ARGUMENTS& args )
     if (args.Length() < 2 || args.Length() > 2) { //in/inout arguments
         coid::charstr tmp = "Wrong number of arguments in ";
         tmp << "main.fun2";
-        return v8::throw_js(iso, v8::Exception::SyntaxError, tmp);
+        return v8::queue_js_exception(iso, v8::Exception::SyntaxError, tmp);
     }
 
     V8_ESCAPABLE_SCOPE(iso, handle_scope__);
@@ -1177,7 +1042,7 @@ v8::CBK_RET main_js_dispatcher::v8_fun24( const v8::ARGUMENTS& args )
     if (!R_) {
         coid::charstr tmp = "Null interface object in ";
         tmp << "main.fun2";
-        return v8::throw_js(iso, &v8::Exception::ReferenceError, tmp);
+        return v8::queue_js_exception(iso, &v8::Exception::ReferenceError, tmp);
     }
 
     v8::Context::Scope context_scope(ifc->context(iso));
@@ -1202,12 +1067,12 @@ v8::CBK_RET main_js_dispatcher::v8_fun24( const v8::ARGUMENTS& args )
         //stream out
         static_assert( CHECK::meta_operator_exists<coid::charstr>::value, "missing metastream operator for 'coid::charstr'" );
         v8::Handle<v8::Object> r__ = V8_NEWTYPE(iso, Object);
-        r__->Set(v8::symbol("$ret"), read_to_v8(_rval_));
+        r__->Set(v8::symbol("$ret", iso), read_to_v8(_rval_));
 
         static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'" );
-        r__->Set(v8::symbol("c"), read_to_v8(c));
+        r__->Set(v8::symbol("c", iso), read_to_v8(c));
  
-        r__->Set(v8::symbol("d"), ::js::wrap_object(d.get(), ifc->context(iso)));
+        r__->Set(v8::symbol("d", iso), ::js::wrap_object(d.get(), ifc->context(iso)));
  
 #ifdef V8_MAJOR_VERSION
         args.GetReturnValue().Set(r__);
@@ -1216,7 +1081,7 @@ v8::CBK_RET main_js_dispatcher::v8_fun24( const v8::ARGUMENTS& args )
 #endif
 
     } catch(const coid::exception& e) {
-        return v8::throw_js(iso, &v8::Exception::TypeError, e.text());
+        return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }
 
@@ -1250,17 +1115,17 @@ void main_js_dispatcher::evt1( int a, int* b, iref<ns::other>& d )
 
 
     if (js_trycatch__.HasCaught())
-        ::js::script_handle::throw_js_error(js_trycatch__, "ns::js::main.evt1(): ");
+        ::js::script_handle::throw_exception_from_js_error(js_trycatch__, "ns::js::main.evt1");
 // gather results
 
     if (!r__->IsObject()) throw coid::exception("invalid params");
-    v8::Local<v8::Object> obj__ = r__->ToObject();
+    v8::Local<v8::Object> obj__ = r__->ToObject(V8_OPTARG1(iso));
 
     static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'" );
     if (b)
-        write_from_v8(obj__->Get(v8::symbol("b")), *b);
+        write_from_v8(obj__->Get(v8::symbol("b", iso)), *b);
 
-    write_from_v8(obj__->Get(v8::symbol("d")), d);
+    write_from_v8(obj__->Get(v8::symbol("d", iso)), d);
 
 }
 
@@ -1291,7 +1156,7 @@ v8::CBK_RET main_js_dispatcher::v8_evback_evt10( const v8::ARGUMENTS& args )
     if (ifc->_events[0].IsEmpty() || ev__->IsUndefined()) {
         coid::charstr tmp = "Event not available: ";
         tmp << "evt1";
-        return v8::throw_js(iso, &v8::Exception::ReferenceError, tmp);
+        return v8::queue_js_exception(iso, &v8::Exception::ReferenceError, tmp);
     }
 
     v8::Local<v8::Value> largs[1];
@@ -1346,25 +1211,25 @@ coid::charstr main_js_dispatcher::evt2( int a, int* b, ns1::dummy& c, iref<ns::o
 
 
     if (js_trycatch__.HasCaught())
-        ::js::script_handle::throw_js_error(js_trycatch__, "ns::js::main.evt2(): ");
+        ::js::script_handle::throw_exception_from_js_error(js_trycatch__, "ns::js::main.evt2");
 // gather results
 
     if (!r__->IsObject()) throw coid::exception("invalid params");
-    v8::Local<v8::Object> obj__ = r__->ToObject();
+    v8::Local<v8::Object> obj__ = r__->ToObject(V8_OPTARG1(iso));
 
     //return value
     static_assert( CHECK::meta_operator_exists<coid::charstr>::value, "missing metastream operator for 'coid::charstr'" );
     threadcached<coid::charstr> _rval_;
-    write_from_v8(obj__->Get(v8::symbol("$ret")), _rval_);
+    write_from_v8(obj__->Get(v8::symbol("$ret", iso)), _rval_);
 
     static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'" );
     if (b)
-        write_from_v8(obj__->Get(v8::symbol("b")), *b);
+        write_from_v8(obj__->Get(v8::symbol("b", iso)), *b);
 
     static_assert( CHECK::meta_operator_exists<ns1::dummy>::value, "missing metastream operator for 'ns1::dummy'" );
-    write_from_v8(obj__->Get(v8::symbol("c")), c);
+    write_from_v8(obj__->Get(v8::symbol("c", iso)), c);
 
-    write_from_v8(obj__->Get(v8::symbol("d")), d);
+    write_from_v8(obj__->Get(v8::symbol("d", iso)), d);
 
     return _rval_;
 }
@@ -1396,7 +1261,7 @@ v8::CBK_RET main_js_dispatcher::v8_evback_evt21( const v8::ARGUMENTS& args )
     if (ifc->_events[1].IsEmpty() || ev__->IsUndefined()) {
         coid::charstr tmp = "Event not available: ";
         tmp << "evt2";
-        return v8::throw_js(iso, &v8::Exception::ReferenceError, tmp);
+        return v8::queue_js_exception(iso, &v8::Exception::ReferenceError, tmp);
     }
 
     v8::Local<v8::Value> largs[3];
@@ -1448,7 +1313,7 @@ iref<ns::other> main_js_dispatcher::evt3( const coid::token& msg )
 
 
     if (js_trycatch__.HasCaught())
-        ::js::script_handle::throw_js_error(js_trycatch__, "ns::js::main.evt3(): ");
+        ::js::script_handle::throw_exception_from_js_error(js_trycatch__, "ns::js::main.evt3");
 // gather results
 
     iref<ns::other> _rval_;
@@ -1483,7 +1348,7 @@ v8::CBK_RET main_js_dispatcher::v8_evback_evt32( const v8::ARGUMENTS& args )
     if (ifc->_events[2].IsEmpty() || ev__->IsUndefined()) {
         coid::charstr tmp = "Event not available: ";
         tmp << "evt3";
-        return v8::throw_js(iso, &v8::Exception::ReferenceError, tmp);
+        return v8::queue_js_exception(iso, &v8::Exception::ReferenceError, tmp);
     }
 
     v8::Local<v8::Value> largs[1];
@@ -1538,20 +1403,20 @@ iref<ns::main> main_js_dispatcher::evt4( int a, iref<ns::other> b, int& c, iref<
 
 
     if (js_trycatch__.HasCaught())
-        ::js::script_handle::throw_js_error(js_trycatch__, "ns::js::main.evt4(): ");
+        ::js::script_handle::throw_exception_from_js_error(js_trycatch__, "ns::js::main.evt4");
 // gather results
 
     if (!r__->IsObject()) throw coid::exception("invalid params");
-    v8::Local<v8::Object> obj__ = r__->ToObject();
+    v8::Local<v8::Object> obj__ = r__->ToObject(V8_OPTARG1(iso));
 
     //return value
     iref<ns::main> _rval_;
     write_from_v8(r__, _rval_);
 
     static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'" );
-    write_from_v8(obj__->Get(v8::symbol("c")), c);
+    write_from_v8(obj__->Get(v8::symbol("c", iso)), c);
 
-    write_from_v8(obj__->Get(v8::symbol("d")), d);
+    write_from_v8(obj__->Get(v8::symbol("d", iso)), d);
 
     return _rval_;
 }
@@ -1583,7 +1448,7 @@ v8::CBK_RET main_js_dispatcher::v8_evback_evt43( const v8::ARGUMENTS& args )
     if (ifc->_events[3].IsEmpty() || ev__->IsUndefined()) {
         coid::charstr tmp = "Event not available: ";
         tmp << "evt4";
-        return v8::throw_js(iso, &v8::Exception::ReferenceError, tmp);
+        return v8::queue_js_exception(iso, &v8::Exception::ReferenceError, tmp);
     }
 
     v8::Local<v8::Value> largs[3];
@@ -1605,112 +1470,6 @@ v8::CBK_RET main_js_dispatcher::v8_evback_evt43( const v8::ARGUMENTS& args )
 #endif
 }
 
-
-////////////////////////////////////////////////////////////////////////////////
-v8::CBK_RET main_js_dispatcher::v8log( const v8::ARGUMENTS& args )
-{
-    v8::Isolate* iso = args.GetIsolate();
-
-    if (args.Length() == 0)
-        return V8_RETURN(args, V8_UNDEFINED(iso));
-
-    const void* inst = 0;
-
-    v8::Local<v8::Object> obj__ = args.Holder();
-    if (!obj__.IsEmpty() && obj__->InternalFieldCount() > 0) {
-        v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
-        if (intobj__->IsExternal()) {
-            ns::js::main_js_dispatcher* ifc = static_cast<ns::js::main_js_dispatcher*>
-                (v8::Handle<v8::External>::Cast(intobj__)->Value());
-
-            inst = ifc;
-            if (!ifc)
-                return v8::throw_js(iso, &v8::Exception::ReferenceError, "Null interface object in $log");
-        }
-    }
-
-    V8_ESCAPABLE_SCOPE(iso, handle_scope__);
-    v8::String::Utf8Value key(args[0]);
-
-    coid::token tokey(*key, key.length());
-
-    intergen_interface::ifclog_ext(coid::log::none, coid::tokenhash("ns::main"),
-        inst, tokey);
-
-    return V8_RETURN(args, V8_UNDEFINED(iso));
-}
-
-////////////////////////////////////////////////////////////////////////////////
-v8::CBK_RET main_js_dispatcher::v8query_interface( const v8::ARGUMENTS& args )
-{
-    v8::Isolate* iso = args.GetIsolate();
-
-    if (args.Length() < 1)
-        return v8::throw_js(iso, &v8::Exception::Error, "Interface creator name missing");
-
-    V8_ESCAPABLE_SCOPE(iso, handle_scope__);
-    v8::String::Utf8Value key(args[0]);
-
-    typedef v8::Handle<v8::Value> (*fn_get)(const v8::ARGUMENTS&, interface_context*);
-    coid::token tokey(*key, key.length());
-    fn_get get = reinterpret_cast<fn_get>(
-        coid::interface_register::get_interface_creator(tokey));
-
-    if (!get) {
-        coid::charstr tmp = "interface creator ";
-        tmp << tokey << " not found";
-        return v8::throw_js(iso, v8::Exception::Error, tmp);
-    }
-
-    v8::Local<v8::Object> obj__ = args.Holder();
-    if (obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
-        return V8_RETURN(args, V8_UNDEFINED(iso));
-
-    v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
-    if (!intobj__->IsExternal())
-        return V8_RETURN(args, V8_UNDEFINED(iso));
-
-    ns::js::main_js_dispatcher* ifc = static_cast<ns::js::main_js_dispatcher*>
-        (v8::Handle<v8::External>::Cast(intobj__)->Value());
-
-    if (!ifc)
-        return v8::throw_js(iso, &v8::Exception::ReferenceError, "Null interface object in $query_interface");
-
-#ifdef V8_MAJOR_VERSION
-    args.GetReturnValue().Set(get(args, ifc));
-#else
-    return V8_ESCAPE(handle_scope__, get(args, ifc));
-#endif
-}
-
-////////////////////////////////////////////////////////////////////////////////
-v8::CBK_RET main_js_dispatcher::v8query_interface_global( const v8::ARGUMENTS& args )
-{
-    v8::Isolate* iso = args.GetIsolate();
-
-    if (args.Length() < 1)
-        return v8::throw_js(iso, &v8::Exception::Error, "Interface creator name missing");
-
-    V8_ESCAPABLE_SCOPE(iso, handle_scope__);
-    v8::String::Utf8Value key(args[0]);
-
-    typedef v8::Handle<v8::Value> (*fn_get)(const v8::ARGUMENTS&, interface_context*);
-    coid::token tokey(*key, key.length());
-    fn_get get = reinterpret_cast<fn_get>(
-        coid::interface_register::get_interface_creator(tokey));
-
-    if (!get) {
-        coid::charstr tmp = "interface creator ";
-        tmp << tokey << " not found";
-        return v8::throw_js(iso, v8::Exception::Error, tmp);
-    }
-
-#ifdef V8_MAJOR_VERSION
-    args.GetReturnValue().Set(get(args, 0));
-#else
-    return V8_ESCAPE(handle_scope__, get(args, 0));
-#endif
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 v8::CBK_RET main_js_dispatcher::v8rebind_events( const v8::ARGUMENTS& args )
@@ -1772,24 +1531,27 @@ v8::Handle<v8::Object> main_js_dispatcher::create_interface_object( v8::Handle<v
     if (_objtempl.IsEmpty())
     {
         v8::Local<v8::ObjectTemplate> ot = V8_NEWTYPE(iso, ObjectTemplate);
+#ifdef V8_MAJOR_VERSION
+        ot->Set(v8::Symbol::GetToStringTag(iso), v8::string_utf8("ns::main"));
+#endif
         ot->SetInternalFieldCount(2);    //ptr and class hash id
 
-        ot->Set(v8::symbol("some_get"), V8_NEWTYPE2(iso, FunctionTemplate, &v8_some_get0));
-        ot->Set(v8::symbol("get_a"), V8_NEWTYPE2(iso, FunctionTemplate, &v8_get_a1));
-        ot->Set(v8::symbol("set_a"), V8_NEWTYPE2(iso, FunctionTemplate, &v8_set_a2));
-        ot->Set(v8::symbol("fun1"), V8_NEWTYPE2(iso, FunctionTemplate, &v8_fun13));
-        ot->Set(v8::symbol("fun2"), V8_NEWTYPE2(iso, FunctionTemplate, &v8_fun24));
+        ot->Set(v8::symbol("some_get", iso), V8_NEWTYPE2(iso, FunctionTemplate, &v8_some_get0));
+        ot->Set(v8::symbol("get_a", iso), V8_NEWTYPE2(iso, FunctionTemplate, &v8_get_a1));
+        ot->Set(v8::symbol("set_a", iso), V8_NEWTYPE2(iso, FunctionTemplate, &v8_set_a2));
+        ot->Set(v8::symbol("fun1", iso), V8_NEWTYPE2(iso, FunctionTemplate, &v8_fun13));
+        ot->Set(v8::symbol("fun2", iso), V8_NEWTYPE2(iso, FunctionTemplate, &v8_fun24));
 
-        ot->Set(v8::symbol("$query_interface"), V8_NEWTYPE2(iso, FunctionTemplate, &v8query_interface));
-        ot->Set(v8::symbol("$rebind_events"), V8_NEWTYPE2(iso, FunctionTemplate, &v8rebind_events));
-        ot->Set(v8::symbol("$ctx"), V8_NEWTYPE2(iso, FunctionTemplate, &v8current_global));
-        ot->Set(v8::symbol("$log"), V8_NEWTYPE2(iso, FunctionTemplate, &v8log));
+        ot->Set(v8::symbol("$log", iso), V8_NEWTYPE2(iso, FunctionTemplate, &::js::script_handle::js_log));
+        ot->Set(v8::symbol("$query_interface", iso), V8_NEWTYPE2(iso, FunctionTemplate, &::js::script_handle::js_query_interface));
+        ot->Set(v8::symbol("$rebind_events", iso), V8_NEWTYPE2(iso, FunctionTemplate, &v8rebind_events));
+        ot->Set(v8::symbol("$ctx", iso), V8_NEWTYPE2(iso, FunctionTemplate, &v8current_global));
 
         //event wrappers for event invocation from outside js
-        ot->Set(v8::symbol("evt1"), V8_NEWTYPE2(iso, FunctionTemplate, &v8_evback_evt10));
-        ot->Set(v8::symbol("evt2"), V8_NEWTYPE2(iso, FunctionTemplate, &v8_evback_evt21));
-        ot->Set(v8::symbol("evt3"), V8_NEWTYPE2(iso, FunctionTemplate, &v8_evback_evt32));
-        ot->Set(v8::symbol("evt4"), V8_NEWTYPE2(iso, FunctionTemplate, &v8_evback_evt43));
+        ot->Set(v8::symbol("evt1", iso), V8_NEWTYPE2(iso, FunctionTemplate, &v8_evback_evt10));
+        ot->Set(v8::symbol("evt2", iso), V8_NEWTYPE2(iso, FunctionTemplate, &v8_evback_evt21));
+        ot->Set(v8::symbol("evt3", iso), V8_NEWTYPE2(iso, FunctionTemplate, &v8_evback_evt32));
+        ot->Set(v8::symbol("evt4", iso), V8_NEWTYPE2(iso, FunctionTemplate, &v8_evback_evt43));
 
         V8_PERSISTENT(iso, _objtempl, ot);
     }
@@ -1806,12 +1568,9 @@ v8::Handle<v8::Object> main_js_dispatcher::create_interface_object( v8::Handle<v
         V8_PERSISTENT(iso, _object, obj);
 
 #ifdef V8_MAJOR_VERSION
-        void* p = this;
-        _object.SetWeak(&p, _js_release_callback, v8::WeakCallbackType::kParameter);
-        //_context.SetWeak();
+        _object.SetWeak(this, _js_release_callback, v8::WeakCallbackType::kParameter);
 #else
         _object.MakeWeak(this, _js_release_callback);
-        //_context.MakeWeak(0, _js_release_callback);
 #endif
         add_refcount();
     }
@@ -1822,22 +1581,7 @@ v8::Handle<v8::Object> main_js_dispatcher::create_interface_object( v8::Handle<v
 ////////////////////////////////////////////////////////////////////////////////
 v8::Handle<v8::Script> main_js_dispatcher::load_script( const coid::token& script, const coid::token& fname )
 {
-    v8::Isolate* iso = v8::Isolate::GetCurrent();
-    v8::Local<v8::String> scriptv8 = v8::string_utf8(script);
-
-    // set up an error handler to catch any exceptions the script might throw.
-    V8_TRYCATCH(iso, js_trycatch);
-
-    v8::Handle<v8::Script> compiled_script = v8::Script::Compile(scriptv8, v8::symbol(fname));
-    if (js_trycatch.HasCaught())
-        ::js::script_handle::throw_js_error(js_trycatch, "ns::js::main::load_script(): ");
-
-    compiled_script->Run();
-    
-    if (js_trycatch.HasCaught())
-        ::js::script_handle::throw_js_error(js_trycatch, "ns::js::main::load_script(): ");
-
-    return compiled_script;
+    return ::js::script_handle::load_script(script, fname, ::js::rethrow_in_cxx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1859,14 +1603,14 @@ void main_js_dispatcher::bind_events( v8::Handle<v8::Context> context, bool forc
     v8::Context::Scope context_scope__(context);
     V8_TRYCATCH(iso, js_trycatch);
     v8::Local<v8::Object> global;
-    
+
     bool clear = false;
     if (ref.IsEmpty() || ref->IsUndefined())
         global = context->Global();
     else if (ref->IsNull())
         clear = true;
     else
-        global = ref->ToObject();
+        global = ref->ToObject(V8_OPTARG1(iso));
 
     for (int i=0; i<4; ++i)
     {
@@ -1875,7 +1619,7 @@ void main_js_dispatcher::bind_events( v8::Handle<v8::Context> context, bool forc
         if (clear)
             continue;
 
-        v8::Local<v8::Value> var = global->Get(v8::symbol(names[i]));
+        v8::Local<v8::Value> var = global->Get(v8::symbol(names[i], iso));
         if (var->IsUndefined())
             continue;
 
@@ -1934,8 +1678,11 @@ iref<main_js_dispatcher> main_js_dispatcher::create( const ::js::script_handle& 
     if (!extctx) {
         if (script.has_context())
             context = script.context();
-        else
+        else {
             context = V8_NEWTYPE(iso, Context);
+            v8::Context::Scope context_scope(context);
+            ::js::script_handle::register_global_context_methods(context->Global(), iso);
+        }
     }
 
     //set early here as sometimes the invoked creator methods want to access it
@@ -1947,12 +1694,6 @@ iref<main_js_dispatcher> main_js_dispatcher::create( const ::js::script_handle& 
 
     if (!extctx && !script.is_context())
     {
-        if (!script.has_context()) {
-            context->Global()->Set(v8::symbol("$include"), V8_NEWTYPE2(iso, FunctionTemplate, &::js::script_handle::js_include)->GetFunction());
-            context->Global()->Set(v8::symbol("$query_interface"), V8_NEWTYPE2(iso, FunctionTemplate, &main_js_dispatcher::v8query_interface_global)->GetFunction());
-            context->Global()->Set(v8::symbol("$log"), V8_NEWTYPE2(iso, FunctionTemplate, &main_js_dispatcher::v8log)->GetFunction());
-        }
-
         coid::token script_tok;
         coid::charstr script_tmp;
         if (script.is_path()) {
@@ -1979,7 +1720,7 @@ iref<main_js_dispatcher> main_js_dispatcher::create( const ::js::script_handle& 
 
         V8_PERSISTENT(iso, ifc->_object, ifc->create_interface_object(context, false));
         if (bindname)
-            context->Global()->Set(v8::symbol(bindname), V8_LOCAL(iso, ifc->_object));
+            context->Global()->Set(v8::symbol(bindname, iso), V8_LOCAL(iso, ifc->_object));
 
         v8::Handle<v8::Script> compiled_script = load_script(script_tok, script.url());
 
@@ -1989,7 +1730,7 @@ iref<main_js_dispatcher> main_js_dispatcher::create( const ::js::script_handle& 
         V8_PERSISTENT(iso, ifc->_object, ifc->create_interface_object(context, false));
 
         if (bindname)
-            context->Global()->Set(v8::symbol(bindname), V8_LOCAL(iso, ifc->_object));
+            context->Global()->Set(v8::symbol(bindname, iso), V8_LOCAL(iso, ifc->_object));
     }
 
     return ifc;
@@ -1997,14 +1738,14 @@ iref<main_js_dispatcher> main_js_dispatcher::create( const ::js::script_handle& 
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Creator methods for access from JS
-v8::Handle<v8::Value> main_js_dispatcher::v8creator_create0( const v8::ARGUMENTS& args, interface_context* ifc )
+v8::Handle<v8::Value> main_js_dispatcher::v8creator_create0(const v8::ARGUMENTS& args)
 {
     v8::Isolate* iso = args.GetIsolate();
 
     if (args.Length() < 1+0 || args.Length() > 1+0) { //fnc name + in/inout arguments
         coid::charstr tmp = "Wrong number of arguments in ";
         tmp << "create";
-        v8::throw_js(iso, &v8::Exception::Error, tmp);
+        v8::queue_js_exception(iso, &v8::Exception::Error, tmp);
         return V8_UNDEFINED(iso);
     }
 
@@ -2014,9 +1755,7 @@ v8::Handle<v8::Value> main_js_dispatcher::v8creator_create0( const v8::ARGUMENTS
     //ns::js::main_js_dispatcher* ifc = static_cast<ns::js::main_js_dispatcher*>
     //    (v8::Handle<v8::External>::Cast(obj__->GetInternalField(0))->Value());
 
-    v8::Local<v8::Context> ctx = ifc && !ifc->_object.IsEmpty()
-        ? ifc->context(iso)
-        : V8_CUR_CONTEXT(iso);
+    v8::Local<v8::Context> ctx = V8_CUR_CONTEXT(iso);
     v8::Context::Scope context_scope(ctx);
 
     //stream the arguments in
@@ -2076,8 +1815,11 @@ iref<main_js_dispatcher> main_js_dispatcher::create_special( const ::js::script_
     if (!extctx) {
         if (script.has_context())
             context = script.context();
-        else
+        else {
             context = V8_NEWTYPE(iso, Context);
+            v8::Context::Scope context_scope(context);
+            ::js::script_handle::register_global_context_methods(context->Global(), iso);
+        }
     }
 
     //set early here as sometimes the invoked creator methods want to access it
@@ -2089,12 +1831,6 @@ iref<main_js_dispatcher> main_js_dispatcher::create_special( const ::js::script_
 
     if (!extctx && !script.is_context())
     {
-        if (!script.has_context()) {
-            context->Global()->Set(v8::symbol("$include"), V8_NEWTYPE2(iso, FunctionTemplate, &::js::script_handle::js_include)->GetFunction());
-            context->Global()->Set(v8::symbol("$query_interface"), V8_NEWTYPE2(iso, FunctionTemplate, &main_js_dispatcher::v8query_interface_global)->GetFunction());
-            context->Global()->Set(v8::symbol("$log"), V8_NEWTYPE2(iso, FunctionTemplate, &main_js_dispatcher::v8log)->GetFunction());
-        }
-
         coid::token script_tok;
         coid::charstr script_tmp;
         if (script.is_path()) {
@@ -2121,7 +1857,7 @@ iref<main_js_dispatcher> main_js_dispatcher::create_special( const ::js::script_
 
         V8_PERSISTENT(iso, ifc->_object, ifc->create_interface_object(context, false));
         if (bindname)
-            context->Global()->Set(v8::symbol(bindname), V8_LOCAL(iso, ifc->_object));
+            context->Global()->Set(v8::symbol(bindname, iso), V8_LOCAL(iso, ifc->_object));
 
         v8::Handle<v8::Script> compiled_script = load_script(script_tok, script.url());
 
@@ -2131,7 +1867,7 @@ iref<main_js_dispatcher> main_js_dispatcher::create_special( const ::js::script_
         V8_PERSISTENT(iso, ifc->_object, ifc->create_interface_object(context, false));
 
         if (bindname)
-            context->Global()->Set(v8::symbol(bindname), V8_LOCAL(iso, ifc->_object));
+            context->Global()->Set(v8::symbol(bindname, iso), V8_LOCAL(iso, ifc->_object));
     }
 
     return ifc;
@@ -2139,14 +1875,14 @@ iref<main_js_dispatcher> main_js_dispatcher::create_special( const ::js::script_
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Creator methods for access from JS
-v8::Handle<v8::Value> main_js_dispatcher::v8creator_create_special1( const v8::ARGUMENTS& args, interface_context* ifc )
+v8::Handle<v8::Value> main_js_dispatcher::v8creator_create_special1(const v8::ARGUMENTS& args)
 {
     v8::Isolate* iso = args.GetIsolate();
 
     if (args.Length() < 1+2 || args.Length() > 1+3) { //fnc name + in/inout arguments
         coid::charstr tmp = "Wrong number of arguments in ";
         tmp << "create_special";
-        v8::throw_js(iso, &v8::Exception::Error, tmp);
+        v8::queue_js_exception(iso, &v8::Exception::Error, tmp);
         return V8_UNDEFINED(iso);
     }
 
@@ -2156,9 +1892,7 @@ v8::Handle<v8::Value> main_js_dispatcher::v8creator_create_special1( const v8::A
     //ns::js::main_js_dispatcher* ifc = static_cast<ns::js::main_js_dispatcher*>
     //    (v8::Handle<v8::External>::Cast(obj__->GetInternalField(0))->Value());
 
-    v8::Local<v8::Context> ctx = ifc && !ifc->_object.IsEmpty()
-        ? ifc->context(iso)
-        : V8_CUR_CONTEXT(iso);
+    v8::Local<v8::Context> ctx = V8_CUR_CONTEXT(iso);
     v8::Context::Scope context_scope(ctx);
 
     //stream the arguments in
@@ -2187,14 +1921,14 @@ v8::Handle<v8::Value> main_js_dispatcher::v8creator_create_special1( const v8::A
 
     //stream out
     v8::Handle<v8::Object> r__ = V8_NEWTYPE(iso, Object);
-    r__->Set(v8::symbol("$ret"), nifc
+    r__->Set(v8::symbol("$ret", iso), nifc
         ? v8::Handle<v8::Value>(nifc->create_interface_object(ctx, true))
         : v8::Handle<v8::Value>(V8_NULL(iso)));
 
     static_assert(CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'");
-    r__->Set(v8::symbol("c"), read_to_v8(c));
+    r__->Set(v8::symbol("c", iso), read_to_v8(c));
 
-    r__->Set(v8::symbol("d"), read_to_v8(d));
+    r__->Set(v8::symbol("d", iso), read_to_v8(d));
 
     return V8_ESCAPE(handle_scope__, r__);
 }
@@ -2242,8 +1976,11 @@ iref<main_js_dispatcher> main_js_dispatcher::create_wp( const ::js::script_handl
     if (!extctx) {
         if (script.has_context())
             context = script.context();
-        else
+        else {
             context = V8_NEWTYPE(iso, Context);
+            v8::Context::Scope context_scope(context);
+            ::js::script_handle::register_global_context_methods(context->Global(), iso);
+        }
     }
 
     //set early here as sometimes the invoked creator methods want to access it
@@ -2255,12 +1992,6 @@ iref<main_js_dispatcher> main_js_dispatcher::create_wp( const ::js::script_handl
 
     if (!extctx && !script.is_context())
     {
-        if (!script.has_context()) {
-            context->Global()->Set(v8::symbol("$include"), V8_NEWTYPE2(iso, FunctionTemplate, &::js::script_handle::js_include)->GetFunction());
-            context->Global()->Set(v8::symbol("$query_interface"), V8_NEWTYPE2(iso, FunctionTemplate, &main_js_dispatcher::v8query_interface_global)->GetFunction());
-            context->Global()->Set(v8::symbol("$log"), V8_NEWTYPE2(iso, FunctionTemplate, &main_js_dispatcher::v8log)->GetFunction());
-        }
-
         coid::token script_tok;
         coid::charstr script_tmp;
         if (script.is_path()) {
@@ -2287,7 +2018,7 @@ iref<main_js_dispatcher> main_js_dispatcher::create_wp( const ::js::script_handl
 
         V8_PERSISTENT(iso, ifc->_object, ifc->create_interface_object(context, false));
         if (bindname)
-            context->Global()->Set(v8::symbol(bindname), V8_LOCAL(iso, ifc->_object));
+            context->Global()->Set(v8::symbol(bindname, iso), V8_LOCAL(iso, ifc->_object));
 
         v8::Handle<v8::Script> compiled_script = load_script(script_tok, script.url());
 
@@ -2297,7 +2028,7 @@ iref<main_js_dispatcher> main_js_dispatcher::create_wp( const ::js::script_handl
         V8_PERSISTENT(iso, ifc->_object, ifc->create_interface_object(context, false));
 
         if (bindname)
-            context->Global()->Set(v8::symbol(bindname), V8_LOCAL(iso, ifc->_object));
+            context->Global()->Set(v8::symbol(bindname, iso), V8_LOCAL(iso, ifc->_object));
     }
 
     return ifc;
@@ -2305,14 +2036,14 @@ iref<main_js_dispatcher> main_js_dispatcher::create_wp( const ::js::script_handl
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Creator methods for access from JS
-v8::Handle<v8::Value> main_js_dispatcher::v8creator_create_wp2( const v8::ARGUMENTS& args, interface_context* ifc )
+v8::Handle<v8::Value> main_js_dispatcher::v8creator_create_wp2(const v8::ARGUMENTS& args)
 {
     v8::Isolate* iso = args.GetIsolate();
 
     if (args.Length() < 1+2 || args.Length() > 1+3) { //fnc name + in/inout arguments
         coid::charstr tmp = "Wrong number of arguments in ";
         tmp << "create_wp";
-        v8::throw_js(iso, &v8::Exception::Error, tmp);
+        v8::queue_js_exception(iso, &v8::Exception::Error, tmp);
         return V8_UNDEFINED(iso);
     }
 
@@ -2322,9 +2053,7 @@ v8::Handle<v8::Value> main_js_dispatcher::v8creator_create_wp2( const v8::ARGUME
     //ns::js::main_js_dispatcher* ifc = static_cast<ns::js::main_js_dispatcher*>
     //    (v8::Handle<v8::External>::Cast(obj__->GetInternalField(0))->Value());
 
-    v8::Local<v8::Context> ctx = ifc && !ifc->_object.IsEmpty()
-        ? ifc->context(iso)
-        : V8_CUR_CONTEXT(iso);
+    v8::Local<v8::Context> ctx = V8_CUR_CONTEXT(iso);
     v8::Context::Scope context_scope(ctx);
 
     //stream the arguments in
@@ -2352,15 +2081,15 @@ v8::Handle<v8::Value> main_js_dispatcher::v8creator_create_wp2( const v8::ARGUME
 
     //stream out
     v8::Handle<v8::Object> r__ = V8_NEWTYPE(iso, Object);
-    r__->Set(v8::symbol("$ret"), nifc
+    r__->Set(v8::symbol("$ret", iso), nifc
         ? v8::Handle<v8::Value>(nifc->create_interface_object(ctx, true))
         : v8::Handle<v8::Value>(V8_NULL(iso)));
 
     static_assert(CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'");
-    r__->Set(v8::symbol("b"), read_to_v8(b));
+    r__->Set(v8::symbol("b", iso), read_to_v8(b));
 
     static_assert(CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'");
-    r__->Set(v8::symbol("c"), read_to_v8(c));
+    r__->Set(v8::symbol("c", iso), read_to_v8(c));
 
     return V8_ESCAPE(handle_scope__, r__);
 }
@@ -2384,7 +2113,7 @@ v8::Handle<v8::Value> create_wrapper_main( ::ns::main* orig, v8::Handle<v8::Cont
     iref<ns::js::main_js_dispatcher> ifc;
     v8::Handle<v8::Object> obj;
 
-    if (orig->intergen_backend() == intergen_interface::IFC_BACKEND_JS)
+    if (orig->intergen_backend() == intergen_interface::backend::js)
         obj = V8_LOCAL(iso, static_cast<main_js_dispatcher*>(orig)->_object);
 
     if (obj.IsEmpty()) {
@@ -2415,10 +2144,9 @@ static iref<ns::js::main_js_dispatcher> create_maker_main( policy_intrusive_base
     // create interface object
     iref<ns::js::main_js_dispatcher> ifc;
 
-    ifc.create(new ns::js::main_js_dispatcher);
-    ifc->set_host(host);
+    ifc.create(new ns::js::main_js_dispatcher(host));
 
-    ifc->create_interface_object(context, false);
+    V8_PERSISTENT(iso, ifc->_object, ifc->create_interface_object(context, false));
 
     return ifc;
 }
@@ -2462,7 +2190,7 @@ static void register_binders_for_main( bool on )
     //js interface creator from host
     interface_register::register_interface_creator(
         "ns::main@maker.js",
-        on ? (void*)&create_maker_main : nullptr);        
+        on ? (void*)&create_maker_main : nullptr);
 }
 
 //auto-register the bind function

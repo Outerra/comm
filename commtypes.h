@@ -110,12 +110,18 @@
 # define COID_VARIADIC_TEMPLATES
 #endif
 
-#if defined(__cpp_constexpr) || _MSC_VER >= 1900
-# define coid_constexpr constexpr
-# define COID_CONSTEXPR
-#else
-# define coid_constexpr const
+#if !defined(__cpp_constexpr) && _MSC_VER < 1900
+#error this compiler doesn't support constexpr
 #endif
+
+//handle VS2015 incomplete constexpr support
+#if defined(_MSC_VER) && _MSC_VER < 1910
+#define coid_constexpr_for
+#else
+#define coid_constexpr_for constexpr
+# define COID_CONSTEXPR_FOR COID_CONSTEXPR
+#endif
+
 
 #if defined(__cpp_if_constexpr) || _MSC_VER >= 1910
 # define coid_constexpr_if constexpr
@@ -305,10 +311,10 @@ COID_NAMESPACE_END
 #endif
 
 
-#ifdef SYSTYPE_64 
-	#define UMAXS       static_cast<coid::uints>(0xffffffffffffffffULL)
+#ifdef SYSTYPE_64
+    #define UMAXS       static_cast<coid::uints>(0xffffffffffffffffULL)
 #else
-	#define UMAXS       static_cast<coid::uints>(0xffffffffUL)
+    #define UMAXS       static_cast<coid::uints>(0xffffffffUL)
 #endif
 
 #define UMAX32      0xffffffffUL

@@ -95,7 +95,7 @@ thread thread::create_new( fnc_entry fn, void* arg, void* context, const token& 
 void thread::set_affinity_mask(uint64 mask)
 {
 #ifdef SYSTYPE_WIN
-    SetThreadAffinityMask(GetCurrentThread(), mask);
+    SetThreadAffinityMask(GetCurrentThread(), (DWORD_PTR)mask);
 #else
     cpu_set_t set;
     CPU_ZERO(&set);
@@ -149,7 +149,7 @@ bool thread::should_cancel() const
 ////////////////////////////////////////////////////////////////////////////////
 bool thread::self_should_cancel()
 {
-	return SINGLETON(thread_manager).self_test_cancellation();
+    return SINGLETON(thread_manager).self_test_cancellation();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

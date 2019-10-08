@@ -16,17 +16,18 @@ static_assert(intergen_interface::VERSION == 7, "interface must be rebuilt with 
 
 using namespace coid;
 
-static_assert( std::is_base_of<policy_intrusive_base, ns1::other_cls>::value, "class 'other_cls' must be derived from policy_intrusive_base");
-static_assert( std::is_base_of<policy_intrusive_base, ns1::other_cls>::value, "class 'other_cls' must be derived from policy_intrusive_base");
+static_assert( std::is_base_of<policy_intrusive_base, ::ns1::other_cls>::value, "class 'other_cls' must be derived from policy_intrusive_base");
 
 ////////////////////////////////////////////////////////////////////////////////
-// interface other of class other_cls
+// interface ns::other of class other_cls
 
 namespace ns {
 
 ///
 class other_dispatcher : public other
 {
+    friend class other;
+
 private:
 
     static coid::binstring* _capture;
@@ -39,9 +40,9 @@ private:
         if (_vtable1) return _vtable1;
 
         _vtable1 = new ifn_t[3];
-        _vtable1[0] = reinterpret_cast<ifn_t>(static_cast<const coid::charstr&(policy_intrusive_base::*)()>(&ns1::other_cls::get_str));
-        _vtable1[1] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(const coid::token&)>(&ns1::other_cls::set_str));
-        _vtable1[2] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(int&,iref<ns::other>&,int*)>(&ns1::other_cls::some_fun1));
+        _vtable1[0] = reinterpret_cast<ifn_t>(static_cast<const coid::charstr&(policy_intrusive_base::*)()>(&::ns1::other_cls::get_str));
+        _vtable1[1] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(const coid::token&)>(&::ns1::other_cls::set_str));
+        _vtable1[2] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(int&,iref<ns::other>&,int*)>(&::ns1::other_cls::some_fun1));
         return _vtable1;
     }
 
@@ -62,10 +63,13 @@ private:
 
 protected:
 
-    COIDNEWDELETE("ns::other_dispatcher");
+    COIDNEWDELETE(other_dispatcher);
 
-    other_dispatcher()
-    {}
+    other_dispatcher() {
+    }
+
+    virtual ~other_dispatcher() {
+    }
 
     bool intergen_bind_capture( coid::binstring* capture, uint instid ) override
     {
@@ -86,7 +90,7 @@ protected:
         }
     }
 
-    static iref<other> _generic_interface_creator(ns1::other_cls* host, other* __here__)
+    static iref<other> _generic_interface_creator(::ns1::other_cls* host, other* __here__)
     {
         iref<other> rval;
         //a passive interface (no events)
@@ -95,8 +99,7 @@ protected:
             : new other_dispatcher;
         rval.create(dispatcher);
 
-        dispatcher->_host.create(host);
-        dispatcher->_vtable = _capture ? get_vtable_intercept() : get_vtable();
+        dispatcher->set_host(host, 0, 0);
 
         return rval;
     }
@@ -107,7 +110,7 @@ public:
 
     static iref<other> create( other* __here__, const coid::charstr& str )
     {
-        iref<ns1::other_cls> __host__ = ns1::other_cls::create(str);
+        iref<::ns1::other_cls> __host__ = ::ns1::other_cls::create(str);
         if (!__host__)
             return 0;
         return _generic_interface_creator(__host__.get(), __here__);
@@ -131,6 +134,12 @@ uint16 other_dispatcher::_instid = 0xffffU;
 intergen_interface::ifn_t* other_dispatcher::_vtable2 = 0;
 intergen_interface::ifn_t* other_dispatcher::_vtable1 = 0;
 
+bool other::set_host(policy_intrusive_base* host, intergen_interface* client, iref<other>* pout)
+{
+    _host = host;
+    _vtable = other_dispatcher::get_vtable();
+    return true;
+}
 
 //auto-register the available interface creators
 LOCAL_SINGLETON_DEF(ifc_autoregger) other_autoregger = new ifc_autoregger(&other_dispatcher::register_interfaces);
@@ -142,17 +151,18 @@ void* force_register_other() {
 
 } //namespace ns
 
-static_assert( std::is_base_of<policy_intrusive_base, ns1::main_cls>::value, "class 'main_cls' must be derived from policy_intrusive_base");
-static_assert( std::is_base_of<policy_intrusive_base, ns1::main_cls>::value, "class 'main_cls' must be derived from policy_intrusive_base");
+static_assert( std::is_base_of<policy_intrusive_base, ::ns1::main_cls>::value, "class 'main_cls' must be derived from policy_intrusive_base");
 
 ////////////////////////////////////////////////////////////////////////////////
-// interface main of class main_cls
+// interface ns::main of class main_cls
 
 namespace ns {
 
 ///
 class main_dispatcher : public main
 {
+    friend class main;
+
 private:
 
     static coid::binstring* _capture;
@@ -165,11 +175,11 @@ private:
         if (_vtable1) return _vtable1;
 
         _vtable1 = new ifn_t[5];
-        _vtable1[0] = reinterpret_cast<ifn_t>(static_cast<iref<ns::other>(policy_intrusive_base::*)(coid::charstr&)>(&ns1::main_cls::some_get));
-        _vtable1[1] = reinterpret_cast<ifn_t>(static_cast<int(policy_intrusive_base::*)()>(&ns1::main_cls::get_a));
-        _vtable1[2] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(int)>(&ns1::main_cls::set_a));
-        _vtable1[3] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(int,const ns1::dummy&,float*,ns1::dummy&,int*,iref<ns::other>&,const coid::charstr&)>(&ns1::main_cls::fun1));
-        _vtable1[4] = reinterpret_cast<ifn_t>(static_cast<coid::charstr(policy_intrusive_base::*)(int,iref<ns::other>,int&,iref<ns::other>&)>(&ns1::main_cls::fun2));
+        _vtable1[0] = reinterpret_cast<ifn_t>(static_cast<iref<ns::other>(policy_intrusive_base::*)(coid::charstr&)>(&::ns1::main_cls::some_get));
+        _vtable1[1] = reinterpret_cast<ifn_t>(static_cast<int(policy_intrusive_base::*)()>(&::ns1::main_cls::get_a));
+        _vtable1[2] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(int)>(&::ns1::main_cls::set_a));
+        _vtable1[3] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(int,const ns1::dummy&,float*,ns1::dummy&,int*,iref<ns::other>&,const coid::charstr&)>(&::ns1::main_cls::fun1));
+        _vtable1[4] = reinterpret_cast<ifn_t>(static_cast<coid::charstr(policy_intrusive_base::*)(int,iref<ns::other>,int&,iref<ns::other>&)>(&::ns1::main_cls::fun2));
         return _vtable1;
     }
 
@@ -192,10 +202,13 @@ private:
 
 protected:
 
-    COIDNEWDELETE("ns::main_dispatcher");
+    COIDNEWDELETE(main_dispatcher);
 
-    main_dispatcher()
-    {}
+    main_dispatcher() {
+    }
+
+    virtual ~main_dispatcher() {
+    }
 
     bool intergen_bind_capture( coid::binstring* capture, uint instid ) override
     {
@@ -216,18 +229,12 @@ protected:
         }
     }
 
-    ///Cleanup routine called from ~main()
-    static void _cleaner_callback( main* m, intergen_interface* ifc ) {
-        ns1::main_cls* host = m->host<ns1::main_cls>();
-        if (host) host->_ifc.assign_safe(ifc);
-    }
-
-    static iref<main> _generic_interface_creator(ns1::main_cls* host, main* __here__)
+    static iref<main> _generic_interface_creator(::ns1::main_cls* host, main* __here__)
     {
         iref<main> rval;
         //an active interface (with events)
         if (host->_ifc && !__here__)
-            rval.create(static_cast<main_dispatcher*>(host->_ifc.get()));
+            rval = intergen_active_interface(host);
 
         if (rval.is_empty()) {
             //interface not taken from host
@@ -236,17 +243,8 @@ protected:
                 : new main_dispatcher;
             rval.create(dispatcher);
 
-            dispatcher->_host.create(host);
-            dispatcher->_vtable = _capture ? get_vtable_intercept() : get_vtable();
-
-            //try assigning to the host (MT guard)
-            // if that fails, the interface will be passive (no events)
-            if (host->_ifc.assign_safe(rval.get()))
-                static_cast<main_dispatcher*>(rval.get())->_cleaner = &_cleaner_callback;
-            else if (!__here__)
-                rval.create(static_cast<main_dispatcher*>(host->_ifc.get()));
+            dispatcher->set_host(host, rval.get(), __here__ ? 0 : &rval);
         }
-
 
         return rval;
     }
@@ -257,7 +255,7 @@ public:
 
     static iref<main> create( main* __here__ )
     {
-        iref<ns1::main_cls> __host__ = ns1::main_cls::create();
+        iref<::ns1::main_cls> __host__ = ::ns1::main_cls::create();
         if (!__host__)
             return 0;
         return _generic_interface_creator(__host__.get(), __here__);
@@ -265,7 +263,7 @@ public:
 
     static iref<main> create_special( main* __here__, int a, iref<ns::other> b, int& c, iref<ns::other>& d, int e = -1 )
     {
-        iref<ns1::main_cls> __host__ = ns1::main_cls::create_special(a, b, c, d, e);
+        iref<::ns1::main_cls> __host__ = ::ns1::main_cls::create_special(a, b, c, d, e);
         if (!__host__)
             return 0;
         return _generic_interface_creator(__host__.get(), __here__);
@@ -273,7 +271,7 @@ public:
 
     static iref<main> create_wp( main* __here__, int a, int& b, int& c, int d = -1 )
     {
-        iref<ns1::main_cls> __host__ = ns1::main_cls::create_wp(a, b, c, d);
+        iref<::ns1::main_cls> __host__ = ::ns1::main_cls::create_wp(a, b, c, d);
         if (!__host__)
             return 0;
         return _generic_interface_creator(__host__.get(), __here__);
@@ -303,6 +301,51 @@ uint16 main_dispatcher::_instid = 0xffffU;
 intergen_interface::ifn_t* main_dispatcher::_vtable2 = 0;
 intergen_interface::ifn_t* main_dispatcher::_vtable1 = 0;
 
+iref<main> main::intergen_active_interface(::ns1::main_cls* host)
+{
+    coid::comm_mutex& mx = share_lock();
+
+    GUARDTHIS(mx);
+    iref<main> rval;
+    rval.add_refcount(static_cast<main*>(host->_ifc.get()));
+
+    return rval;
+}
+
+bool main::assign_safe(intergen_interface* client, iref<main>* pout)
+{
+    //try assigning to the host (MT guard)
+    // if that fails, the interface will be passive (no events)
+
+    ::ns1::main_cls* hostptr = host<::ns1::main_cls>();
+    if (!hostptr)
+        return false;
+
+    coid::clean_ptr<intergen_interface>& ifcvar = hostptr->_ifc;
+    coid::comm_mutex& mx = share_lock();
+    if (ifcvar == client)
+        return true;
+
+    GUARDTHIS(mx);
+    //assign only if nobody assigned before us
+    bool succ = !ifcvar || !client;
+    if (succ) {
+        ifcvar = client;
+        _cleaner = client ? &_cleaner_callback : 0;
+    }
+    else if (pout)
+        pout->add_refcount(static_cast<main*>(ifcvar.get()));
+
+    return succ;
+}
+
+bool main::set_host(policy_intrusive_base* host, intergen_interface* client, iref<main>* pout)
+{
+    _host = host;
+    _vtable = main_dispatcher::get_vtable();
+
+    return assign_safe(client, pout);
+}
 
 //auto-register the available interface creators
 LOCAL_SINGLETON_DEF(ifc_autoregger) main_autoregger = new ifc_autoregger(&main_dispatcher::register_interfaces);
@@ -320,7 +363,7 @@ namespace ns1 {
 
 void main_cls::evt1( int a, ifc_out int* b, ifc_out iref<ns::other>& d )
 {
-	if (!_ifc) 
+    if (!_ifc) 
         throw coid::exception() << "evt1" << " handler not implemented";
     else
         return _ifc->iface<ns::main>()->evt1(a, b, d);
@@ -328,7 +371,7 @@ void main_cls::evt1( int a, ifc_out int* b, ifc_out iref<ns::other>& d )
 
 coid::charstr main_cls::evt2( int a, ifc_out int* b, ifc_inout ns1::dummy& c, ifc_out iref<ns::other>& d, iref<ns::other> e )
 {
-	if (!_ifc) 
+    if (!_ifc) 
         throw coid::exception() << "evt2" << " handler not implemented";
     else
         return _ifc->iface<ns::main>()->evt2(a, b, c, d, e);
@@ -336,7 +379,7 @@ coid::charstr main_cls::evt2( int a, ifc_out int* b, ifc_inout ns1::dummy& c, if
 
 iref<ns::other> main_cls::evt3( const coid::token& msg )
 {
-	if (!_ifc) 
+    if (!_ifc) 
         throw coid::exception() << "evt3" << " handler not implemented";
     else
         return _ifc->iface<ns::main>()->evt3(msg);
@@ -344,7 +387,7 @@ iref<ns::other> main_cls::evt3( const coid::token& msg )
 
 iref<ns::main> main_cls::evt4( int a, iref<ns::other> b, ifc_out int& c, ifc_out iref<ns::other>& d, int e )
 {
-	if (!_ifc) 
+    if (!_ifc) 
         throw coid::exception() << "evt4" << " handler not implemented";
     else
         return _ifc->iface<ns::main>()->evt4(a, b, c, d, e);

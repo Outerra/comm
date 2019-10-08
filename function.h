@@ -51,7 +51,6 @@ struct index_sequence
 {
     using type = index_sequence;
     using value_type = size_t;
-    //static coid_constexpr std::size_t size() { return sizeof...(Ints); }
 };
 
 // --------------------------------------------------------------

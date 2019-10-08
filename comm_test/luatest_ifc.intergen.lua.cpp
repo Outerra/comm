@@ -27,14 +27,14 @@ class other_lua_dispatcher
 {
 protected:
 
-    EBackend intergen_backend() const override { return IFC_BACKEND_LUA; }
+    backend intergen_backend() const override { return backend::lua; }
     static const coid::token& lua_class_name() { static const coid::token _lua_class_name = "ns_other"; return _lua_class_name; };
 
 public:
 
     iref<::lua::registry_handle> create_interface_object(bool make_weak);
 
-    COIDNEWDELETE("ns::other_lua_dispatcher");
+    COIDNEWDELETE(other_lua_dispatcher);
 
     other_lua_dispatcher()
     {    }
@@ -53,7 +53,7 @@ public:
     ~other_lua_dispatcher() {
 
     }
-    
+
     bool intergen_bind_capture( coid::binstring* capture, uint instid ) override
     {
         return _real()->intergen_bind_capture(capture, instid);
@@ -145,13 +145,13 @@ __declspec(noinline) int other_lua_dispatcher::lua_get_str0_exc( lua_State * L )
 
 // invoke
         const coid::charstr& _rval_ = R_->get_str();
-    
+
 //stream out
         THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
         static_assert(CHECK::meta_operator_exists<coid::charstr>::value, "missing metastream operator for 'coid::charstr'");
         to_lua(_rval_);
-    
+
         return 1;
     }
     catch (coid::exception e) {
@@ -241,7 +241,7 @@ __declspec(noinline) int other_lua_dispatcher::lua_set_str1_exc( lua_State * L )
 
 // invoke
         R_->set_str(new_str);
-    
+
 //stream out
         THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
@@ -341,7 +341,7 @@ __declspec(noinline) int other_lua_dispatcher::lua_some_fun12_exc( lua_State * L
 
 // invoke
         R_->some_fun1(a, b, &c);
-    
+
 //stream out
         THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
@@ -477,7 +477,7 @@ __declspec(noinline) int other_lua_dispatcher::luaquery_interface_exc( lua_State
         if (lua_gettop(L) < 2) {
             throw coid::exception("Interface creator name or caller object is missing.");
         }
-        
+
         lua_pushbot(L); // move object table onto top of the stack
 
         if (!lua_istable(L, -1) || !lua_hasfield(L,-1, ::lua::_lua_cthis_key))
@@ -567,7 +567,7 @@ iref<::lua::registry_handle> other_lua_dispatcher::create_interface_object( bool
     void * cptr_holder = lua_newuserdata(L, sizeof(size_t));
     *static_cast<size_t*>(cptr_holder) = reinterpret_cast<size_t>(this);
     lua_setfield(L, -2, ::lua::_lua_cthis_key);
-        
+
     lua_pushnumber(L, ints(4089385363));
     lua_setfield(L, -2, ::lua::_lua_class_hash_key);
 
@@ -603,7 +603,7 @@ int other_lua_dispatcher::register_to_context_other(lua_State * L) {
    //     throw coid::exception() << "Given lua_State is not valid!(use lua_state_wrapper to create valid lua_State)";
   //  }
 
-    //const uint methods_count =3 
+    //const uint methods_count =3
 
     lua_createtable(L, 0, 0);
 
@@ -623,7 +623,7 @@ int other_lua_dispatcher::register_to_context_other(lua_State * L) {
     lua_setfield(L, -2, "some_fun1");
 
     lua_setfield(L, -2, lua_class_name());
-    
+
     return 0;
 }
 
@@ -689,7 +689,7 @@ iref<other_lua_dispatcher> other_lua_dispatcher::create(lua_State * L, const ::l
 
         ::lua::load_script(context, script_tok, script.url());
     }
-    
+
     ifc->_context = new ::lua::weak_registry_handle(L);
     context->get_ref();
     ifc->_context->set_ref();
@@ -701,7 +701,7 @@ iref<other_lua_dispatcher> other_lua_dispatcher::create(lua_State * L, const ::l
         lua_setfield(L, -2, bindname);
         lua_pop(L, 1);
     }
-    
+
     return ifc;
 }
 
@@ -762,9 +762,9 @@ iref <::lua::registry_handle> create_wrapper_other(::ns::other* orig, iref<::lua
     iref<ns::lua::other_lua_dispatcher> ifc;
     iref <::lua::registry_handle> obj;
 
-    if (orig->intergen_backend() == intergen_interface::IFC_BACKEND_LUA)
+    if (orig->intergen_backend() == intergen_interface::backend::lua)
         obj = static_cast<other_lua_dispatcher*>(orig)->_object;
-    
+
     if (obj.is_empty()) {
         // create interface object
         ifc.create(new ns::lua::other_lua_dispatcher(context, static_cast<::ns::other*>(orig)));
@@ -825,7 +825,7 @@ class main_lua_dispatcher
 {
     mutable iref<::lua::weak_registry_handle> _events[4];
     mutable bool _bound_events;
-    
+
     void init_event_registry() {
         for (int i = 0; i < 4; i++) {
             _events[i] = new ::lua::weak_registry_handle;
@@ -834,7 +834,7 @@ class main_lua_dispatcher
 
 protected:
 
-    EBackend intergen_backend() const override { return IFC_BACKEND_LUA; }
+    backend intergen_backend() const override { return backend::lua; }
     static const coid::token& lua_class_name() { static const coid::token _lua_class_name = "ns_main"; return _lua_class_name; };
 
 public:
@@ -842,7 +842,7 @@ public:
     iref<::lua::registry_handle> create_interface_object(bool make_weak);
     void bind_events( bool force, iref<::lua::registry_handle> ref ) const;
 
-    COIDNEWDELETE("ns::main_lua_dispatcher");
+    COIDNEWDELETE(main_lua_dispatcher);
 
     main_lua_dispatcher() : _bound_events(false)
     {
@@ -865,7 +865,7 @@ public:
     ~main_lua_dispatcher() {
 
     }
-    
+
     bool intergen_bind_capture( coid::binstring* capture, uint instid ) override
     {
         return _real()->intergen_bind_capture(capture, instid);
@@ -1006,7 +1006,7 @@ __declspec(noinline) int main_lua_dispatcher::lua_some_get0_exc( lua_State * L )
 
 // invoke
         iref<ns::other> _rval_ = R_->some_get(a);
-    
+
 //stream out
         THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
@@ -1024,7 +1024,7 @@ __declspec(noinline) int main_lua_dispatcher::lua_some_get0_exc( lua_State * L )
         else
             lua_pushnil(L);
         lua_setfield(L, -2, "_ret");
-    
+
         static_assert(CHECK::meta_operator_exists<coid::charstr>::value, "missing metastream operator for 'coid::charstr'");
         to_lua(a);
         lua_setfield(L, -2, "a");
@@ -1117,13 +1117,13 @@ __declspec(noinline) int main_lua_dispatcher::lua_get_a1_exc( lua_State * L )
 
 // invoke
         int _rval_ = R_->get_a();
-    
+
 //stream out
         THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
         static_assert(CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'");
         to_lua(_rval_);
-    
+
         return 1;
     }
     catch (coid::exception e) {
@@ -1213,7 +1213,7 @@ __declspec(noinline) int main_lua_dispatcher::lua_set_a2_exc( lua_State * L )
 
 // invoke
         R_->set_a(a);
-    
+
 //stream out
         THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
@@ -1326,7 +1326,7 @@ __declspec(noinline) int main_lua_dispatcher::lua_fun13_exc( lua_State * L )
 
 // invoke
         R_->fun1(a, b, &c, d, &e, f, g);
-    
+
 //stream out
         THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
@@ -1469,7 +1469,7 @@ __declspec(noinline) int main_lua_dispatcher::lua_fun24_exc( lua_State * L )
 
 // invoke
         coid::charstr _rval_ = R_->fun2(a, b, c, d);
-    
+
 //stream out
         THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
@@ -1478,7 +1478,7 @@ __declspec(noinline) int main_lua_dispatcher::lua_fun24_exc( lua_State * L )
         static_assert(CHECK::meta_operator_exists<coid::charstr>::value, "missing metastream operator for 'coid::charstr'");
         to_lua(_rval_);
         lua_setfield(L, -2, "_ret");
-    
+
         static_assert(CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'");
         to_lua(c);
         lua_setfield(L, -2, "c");
@@ -1587,11 +1587,11 @@ void main_lua_dispatcher::evt1( int a, int* b, iref<ns::other>& d )
     if (!lua_istable(L,-1)) throw coid::exception("invalid params");
 
     static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'" );
-    
+
     lua_getfield(L,-1,"b");
     if (b)
         from_lua(*b);
-    
+
     lua_getfield(L,-1,"d");
     from_lua(d);
 }
@@ -1653,14 +1653,14 @@ coid::charstr main_lua_dispatcher::evt2( int a, int* b, ns1::dummy& c, iref<ns::
         
     static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'" );
     static_assert( CHECK::meta_operator_exists<ns1::dummy>::value, "missing metastream operator for 'ns1::dummy'" );
-    
+
     lua_getfield(L,-1,"b");
     if (b)
         from_lua(*b);
-    
+
     lua_getfield(L,-1,"c");
     from_lua(c);
-    
+
     lua_getfield(L,-1,"d");
     from_lua(d);
     return _rval_;
@@ -1762,10 +1762,10 @@ iref<ns::main> main_lua_dispatcher::evt4( int a, iref<ns::other> b, int& c, iref
     from_lua(_rval_);
         
     static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'" );
-    
+
     lua_getfield(L,-1,"c");
     from_lua(c);
-    
+
     lua_getfield(L,-1,"d");
     from_lua(d);
     return _rval_;
@@ -1831,7 +1831,7 @@ __declspec(noinline) int main_lua_dispatcher::luaquery_interface_exc( lua_State 
         if (lua_gettop(L) < 2) {
             throw coid::exception("Interface creator name or caller object is missing.");
         }
-        
+
         lua_pushbot(L); // move object table onto top of the stack
 
         if (!lua_istable(L, -1) || !lua_hasfield(L,-1, ::lua::_lua_cthis_key))
@@ -1947,7 +1947,7 @@ iref<::lua::registry_handle> main_lua_dispatcher::create_interface_object( bool 
     void * cptr_holder = lua_newuserdata(L, sizeof(size_t));
     *static_cast<size_t*>(cptr_holder) = reinterpret_cast<size_t>(this);
     lua_setfield(L, -2, ::lua::_lua_cthis_key);
-        
+
     lua_pushnumber(L, ints(3187450219));
     lua_setfield(L, -2, ::lua::_lua_class_hash_key);
 
@@ -2039,7 +2039,7 @@ int main_lua_dispatcher::register_to_context_main(lua_State * L) {
    //     throw coid::exception() << "Given lua_State is not valid!(use lua_state_wrapper to create valid lua_State)";
   //  }
 
-    //const uint methods_count =5 
+    //const uint methods_count =5
 
     lua_createtable(L, 0, 0);
 
@@ -2077,7 +2077,7 @@ int main_lua_dispatcher::register_to_context_main(lua_State * L) {
     lua_setfield(L, -2, "evt4");
 
     lua_setfield(L, -2, lua_class_name());
-    
+
     return 0;
 }
 
@@ -2143,7 +2143,7 @@ iref<main_lua_dispatcher> main_lua_dispatcher::create(lua_State * L, const ::lua
 
         ::lua::load_script(context, script_tok, script.url());
     }
-    
+
     ifc->_context = new ::lua::weak_registry_handle(L);
     context->get_ref();
     ifc->_context->set_ref();
@@ -2155,7 +2155,7 @@ iref<main_lua_dispatcher> main_lua_dispatcher::create(lua_State * L, const ::lua
         lua_setfield(L, -2, bindname);
         lua_pop(L, 1);
     }
-    
+
     return ifc;
 }
 
@@ -2261,7 +2261,7 @@ iref<main_lua_dispatcher> main_lua_dispatcher::create_special(lua_State * L, con
 
         ::lua::load_script(context, script_tok, script.url());
     }
-    
+
     ifc->_context = new ::lua::weak_registry_handle(L);
     context->get_ref();
     ifc->_context->set_ref();
@@ -2273,7 +2273,7 @@ iref<main_lua_dispatcher> main_lua_dispatcher::create_special(lua_State * L, con
         lua_setfield(L, -2, bindname);
         lua_pop(L, 1);
     }
-    
+
     return ifc;
 }
 
@@ -2337,7 +2337,7 @@ int main_lua_dispatcher::luacreator_create_special1(lua_State * L, ::lua::interf
     else {
         lua_pushnil(L);
     }
-    
+
     lua_setfield(L, -2, "ret");
 
         static_assert(CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'");
@@ -2411,7 +2411,7 @@ iref<main_lua_dispatcher> main_lua_dispatcher::create_wp(lua_State * L, const ::
 
         ::lua::load_script(context, script_tok, script.url());
     }
-    
+
     ifc->_context = new ::lua::weak_registry_handle(L);
     context->get_ref();
     ifc->_context->set_ref();
@@ -2423,7 +2423,7 @@ iref<main_lua_dispatcher> main_lua_dispatcher::create_wp(lua_State * L, const ::
         lua_setfield(L, -2, bindname);
         lua_pop(L, 1);
     }
-    
+
     return ifc;
 }
 
@@ -2486,7 +2486,7 @@ int main_lua_dispatcher::luacreator_create_wp2(lua_State * L, ::lua::interface_c
     else {
         lua_pushnil(L);
     }
-    
+
     lua_setfield(L, -2, "ret");
 
         static_assert(CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'");
@@ -2511,9 +2511,9 @@ iref <::lua::registry_handle> create_wrapper_main(::ns::main* orig, iref<::lua::
     iref<ns::lua::main_lua_dispatcher> ifc;
     iref <::lua::registry_handle> obj;
 
-    if (orig->intergen_backend() == intergen_interface::IFC_BACKEND_LUA)
+    if (orig->intergen_backend() == intergen_interface::backend::lua)
         obj = static_cast<main_lua_dispatcher*>(orig)->_object;
-    
+
     if (obj.is_empty()) {
         // create interface object
         ifc.create(new ns::lua::main_lua_dispatcher(context, static_cast<::ns::main*>(orig)));

@@ -1694,7 +1694,7 @@ static int dev_zero_fd = -1; /* Cached file descriptor for /dev/zero. */
             mmap(0, (s), MMAP_PROT, MMAP_FLAGS, dev_zero_fd, 0))
 #endif /* MAP_ANONYMOUS */
 
-#define DIRECT_MMAP_DEFAULT(s,cs,p) MMAP_DEFAULT(s,cs,p)
+#define DIRECT_MMAP_DEFAULT(s,cs,p) MMAP_DEFAULT(s)
 
 #else /* WIN32 */
 

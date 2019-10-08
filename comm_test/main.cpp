@@ -129,7 +129,10 @@ void fntest(void(*pfn)(charstr&))
 void constexpr_test()
 {
     constexpr token name = "salama"_T;
+
+#ifdef COID_CONSTEXPR_FOR
     constexpr tokenhash hash = "klobasa"_T;
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////
