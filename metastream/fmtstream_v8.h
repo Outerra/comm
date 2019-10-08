@@ -365,7 +365,7 @@ public:
         v8::Isolate * iso = v8::Isolate::GetCurrent();
         typedef v8::Handle<v8::Value>(*ifc_create_wrapper_fn)(T * orig, v8::Handle<v8::Context> context);
 
-        ifc_create_wrapper_fn wrap = reinterpret_cast<ifc_create_wrapper_fn>(v->intergen_wrapper(T::IFC_BACKEND_JS));
+        ifc_create_wrapper_fn wrap = reinterpret_cast<ifc_create_wrapper_fn>(v->intergen_wrapper(intergen_interface::backend::js));
         if (!wrap) {
             return V8_NULL(iso);
         }
