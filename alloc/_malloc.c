@@ -1727,21 +1727,25 @@ static FORCEINLINE void* win32mmap_commit(void* ptr, size_t commit_size) {
     return VirtualAlloc(ptr, commit_size, MEM_COMMIT, PAGE_READWRITE);
 }
 
-/* This function supports releasing coalesed segments */
+/* This function supports releasing coalesced segments [REMOVED] */
 static FORCEINLINE int win32munmap(void* ptr, size_t size) {
   MEMORY_BASIC_INFORMATION minfo;
   char* cptr = (char*)ptr;
-  while (size) {
+  if (VirtualFree(cptr, 0, MEM_RELEASE) == 0) {
+    assert(0);
+    return -1;
+  }
+  /*while (size) {
     if (VirtualQuery(cptr, &minfo, sizeof(minfo)) == 0)
       return -1;
     if (minfo.BaseAddress != cptr || minfo.AllocationBase != cptr ||
-        minfo.State != MEM_COMMIT || minfo.RegionSize > size)
+      minfo.State != MEM_COMMIT || minfo.RegionSize > size)
       return -1;
     if (VirtualFree(cptr, 0, MEM_RELEASE) == 0)
       return -1;
     cptr += minfo.RegionSize;
     size -= minfo.RegionSize;
-  }
+  }*/
   return 0;
 }
 
@@ -3895,7 +3899,7 @@ void unlink_chunk(mstate M, mchunkptr P, size_t S) {
 
 /* Malloc using mmap */
 static void* mmap_alloc(mstate m, size_t nb) {
-  size_t mmsize = mmap_align(nb /*+ m->modalign*/ + SIX_SIZE_T_SIZES + CHUNK_ALIGN_MASK);
+  size_t mmsize = mmap_align(nb + SIX_SIZE_T_SIZES + CHUNK_ALIGN_MASK);
   if (m->footprint_limit != 0) {
     size_t fp = m->footprint + mmsize;
     if (fp <= m->footprint || fp > m->footprint_limit)
@@ -3945,8 +3949,8 @@ static void* mmap_alloc_virtual(mstate m, size_t nb) {
       size_t psize = mmsize /*- offset - m->modalign*/;// - MMAP_FOOT_PAD;
       assert((psize & FLAG_BITS) == 0);
       mchunkptr p = (mchunkptr)(mm + offset);
-      p->prev_foot = mmsize + offset;
-      p->head = commit_size;// - offset;
+      p->prev_foot = mmsize + offset;   /* virtual block: block size + offset */
+      p->head = commit_size;
       set_flag4(p);
       //mark_inuse_foot(m, p, psize);
       //chunk_plus_offset(p, psize)->head = FENCEPOST_HEAD;
@@ -4476,7 +4480,7 @@ static void dispose_chunk(mstate m, mchunkptr p, size_t psize) {
     mchunkptr prev;
     size_t prevsize = p->prev_foot;
     if (is_mmapped(p)) {
-      psize += prevsize + MMAP_FOOT_PAD;
+      psize += prevsize + MALLOC_ALIGNMENT + MMAP_FOOT_PAD;
       if (CALL_MUNMAP((char*)p - prevsize, psize) == 0)
         m->footprint -= psize;
       return;
@@ -4818,7 +4822,7 @@ void dlfree(void* mem) {
         if (!pinuse(p)) {
           size_t prevsize = p->prev_foot;
           if (is_mmapped(p)) {
-            psize += prevsize /*+ fm->modalign*/ + MMAP_FOOT_PAD;
+            psize += prevsize + MALLOC_ALIGNMENT + MMAP_FOOT_PAD;
             if (CALL_MUNMAP((char*)p - prevsize, psize) == 0)
               fm->footprint -= psize;
             goto postaction;
@@ -5774,7 +5778,7 @@ void mspace_free(/*mspace msp,*/ void* mem) {
         if (!pinuse(p)) {
           size_t prevsize = p->prev_foot;
           if (is_mmapped(p)) {
-            psize += prevsize /*+ fm->modalign*/ + MMAP_FOOT_PAD;
+            psize += MALLOC_ALIGNMENT + MMAP_FOOT_PAD;
             if (CALL_MUNMAP((char*)p - prevsize, psize) == 0)
               fm->footprint -= psize;
             goto postaction;
@@ -5937,16 +5941,19 @@ void* mspace_realloc_in_place(/*mspace msp,*/ void* oldmem, size_t bytes) {
 
       if (flag4inuse(oldp)) {
         /* virtual block can realloc within its reserved space */
-        size_t psize = mmap_align_down(oldp->prev_foot);
-        size_t offset = oldp->prev_foot - psize;
+        size_t commit_size = chunksize(oldp);
 
-        if (nb <= psize - offset - MMAP_CHUNK_OVERHEAD) {
-          nb -= offset;
-          oldp->head = nb | (oldp->head & FLAG_BITS);
-          CALL_DIRECT_MMAP(0, nb + MMAP_CHUNK_OVERHEAD, oldp);
-          return oldmem;
+        if (commit_size < nb) {
+          size_t psize = mmap_align_down(oldp->prev_foot);
+          size_t offset = oldp->prev_foot - psize;
+          if (nb <= psize - offset - MMAP_CHUNK_OVERHEAD) {
+            oldp->head = nb | (oldp->head & FLAG_BITS);
+            CALL_DIRECT_MMAP(0, nb + MMAP_CHUNK_OVERHEAD, oldp);
+            return oldmem;
+          }
+          return 0;
         }
-        return 0;
+        return oldmem;
       }
 
 #if ! FOOTERS

@@ -38,7 +38,14 @@ void test_malloc()
     p = buf.add(8000);
     p[8000 - 1] = 2;
 
+    p = buf.alloc(24560);
+    p[24560 - 1] = 3;
+
     buf.discard();
 
     buf.reserve_virtual(s);
+    buf.discard();
+
+    dlfree(r);
+    dlfree(r0);
 }
