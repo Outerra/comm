@@ -109,7 +109,7 @@ void thread::set_affinity_mask(uint64 mask)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-thread thread::create_new( const std::function<void*()>& fn, void* context, const token& name )
+thread thread::create_new_fn( const function<void*()>& fn, void* context, const token& name )
 {
     return SINGLETON(thread_manager).thread_create(fn, context, name);
 }

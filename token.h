@@ -2006,14 +2006,18 @@ struct token
         }
 
         ///Convert part of the token to unsigned integer deducing the numeric base (0x, 0o, 0b or decimal)
-        T xtouint(token& t, T defval = 0, uint maxchars = 0)
+        T xtouint_and_shift(token& t, T defval = 0, uint maxchars = 0)
         {
             get_num_base(t);
-            return touint(t, defval, maxchars);
+            return touint_and_shift(t, defval, maxchars);
+        }
+
+        T xtouint(const token& t, T defval = 0, uint maxchars = 0) {
+            token tx = t; return xtouint_and_shift(tx, defval, maxchars);
         }
 
         ///Convert part of the token to unsigned integer
-        T touint(token& t, T defval = 0, uint maxchars = 0)
+        T touint_and_shift(token& t, T defval = 0, uint maxchars = 0)
         {
             success = false;
             T r = 0;
@@ -2044,31 +2048,44 @@ struct token
             return success ? r : defval;
         }
 
+        T touint(const token& t, T defval = 0, uint maxchars = 0) {
+            token tx = t; return touint_and_shift(tx, defval, maxchars);
+        }
+
         ///Convert part of the token to signed integer deducing the numeric base (0x, 0o, 0b or decimal)
-        T xtoint(token& t, T defval = 0, uint maxchars = 0)
+        T xtoint_and_shift(token& t, T defval = 0, uint maxchars = 0)
         {
             if (t.is_empty()) {
                 success = false;
                 return 0;
             }
             char c = t[0];
-            if (c == '-')  return (T)-xtouint(t.shift_start(1), defval, maxchars);
-            if (c == '+')  return (T)xtouint(t.shift_start(1), defval, maxchars);
-            return (T)xtouint(t, defval, maxchars);
+            if (c == '-')  return (T)-xtouint_and_shift(t.shift_start(1), defval, maxchars);
+            if (c == '+')  return (T)xtouint_and_shift(t.shift_start(1), defval, maxchars);
+            return (T)xtouint_and_shift(t, defval, maxchars);
+        }
+
+        T xtoint(const token& t, T defval = 0, uint maxchars = 0) {
+            token tx = t; return xtoint_and_shift(tx, defval, maxchars);
         }
 
         ///Convert part of the token to signed integer
-        T toint(token& t, T defval = 0, uint maxchars = 0)
+        T toint_and_shift(token& t, T defval = 0, uint maxchars = 0)
         {
             if (t.is_empty()) {
                 success = false;
                 return 0;
             }
             char c = t[0];
-            if (c == '-')  return (T)-touint(t.shift_start(1), defval, maxchars);
-            if (c == '+')  return (T)touint(t.shift_start(1), defval, maxchars);
-            return (T)touint(t, defval, maxchars);
+            if (c == '-')  return (T)-touint_and_shift(t.shift_start(1), defval, maxchars);
+            if (c == '+')  return (T)touint_and_shift(t.shift_start(1), defval, maxchars);
+            return (T)touint_and_shift(t, defval, maxchars);
         }
+
+        T toint(const token& t, T defval = 0, uint maxchars = 0) {
+            token tx = t; return toint_and_shift(tx, defval, maxchars);
+        }
+
 
         T touint(const char* s, T defval = 0, uint maxchars = 0)
         {
@@ -2136,42 +2153,42 @@ struct token
     uint touint_and_shift(uint defval = 0, uint maxchars = 0)
     {
         tonum<uint> conv(10);
-        return conv.touint(*this, defval, maxchars);
+        return conv.touint_and_shift(*this, defval, maxchars);
     }
 
     ///Convert the token to unsigned int using as much digits as possible
     uint64 touint64_and_shift(uint64 defval = 0, uint maxchars = 0)
     {
         tonum<uint64> conv(10);
-        return conv.touint(*this, defval, maxchars);
+        return conv.touint_and_shift(*this, defval, maxchars);
     }
 
     ///Convert a hexadecimal, decimal, octal or binary token to unsigned int using as much digits as possible
     uint xtouint_and_shift(uint defval = 0, uint maxchars = 0)
     {
         tonum<uint> conv;
-        return conv.xtouint(*this, defval, maxchars);
+        return conv.xtouint_and_shift(*this, defval, maxchars);
     }
 
     ///Convert a hexadecimal, decimal, octal or binary token to unsigned int using as much digits as possible
     uint64 xtouint64_and_shift(uint64 defval = 0, uint maxchars = 0)
     {
         tonum<uint64> conv;
-        return conv.xtouint(*this, defval, maxchars);
+        return conv.xtouint_and_shift(*this, defval, maxchars);
     }
 
     ///Convert a hexadecimal, decimal, octal or binary token to unsigned int using as much digits as possible
     uint touint_base_and_shift(uint base, uint defval = 0, uint maxchars = 0)
     {
         tonum<uint> conv(base);
-        return conv.touint(*this, defval, maxchars);
+        return conv.touint_and_shift(*this, defval, maxchars);
     }
 
     ///Convert a hexadecimal, decimal, octal or binary token to unsigned int using as much digits as possible
     uint64 touint64_base_and_shift(uint base, uint64 defval = 0, uint maxchars = 0)
     {
         tonum<uint64> conv(base);
-        return conv.touint(*this, defval, maxchars);
+        return conv.touint_and_shift(*this, defval, maxchars);
     }
 
     ///Convert the token to signed int using as much digits as possible
@@ -2210,88 +2227,32 @@ struct token
     int toint_and_shift(int defval = 0, uint maxchars = 0)
     {
         tonum<int> conv(10);
-        return conv.toint(*this, defval, maxchars);
+        return conv.toint_and_shift(*this, defval, maxchars);
     }
 
     ///Convert the token to signed int using as much digits as possible
     int64 toint64_and_shift(int64 defval = 0, uint maxchars = 0)
     {
         tonum<int64> conv(10);
-        return conv.toint(*this, defval, maxchars);
+        return conv.toint_and_shift(*this, defval, maxchars);
     }
 
     ///Convert a hexadecimal, decimal, octal or binary token to unsigned int using as much digits as possible
     int xtoint_and_shift(int defval = 0, uint maxchars = 0)
     {
         tonum<int> conv;
-        return conv.xtoint(*this, defval, maxchars);
+        return conv.xtoint_and_shift(*this, defval, maxchars);
     }
 
     ///Convert a hexadecimal, decimal, octal or binary token to unsigned int using as much digits as possible
     int64 xtoint64_and_shift(int64 defval = 0, uint maxchars = 0)
     {
         tonum<int64> conv;
-        return conv.xtoint(*this, defval, maxchars);
+        return conv.xtoint_and_shift(*this, defval, maxchars);
     }
 
     //@{ Conversion to numbers, given size of the integer type and a destination address
     bool toint_any(void* dst, uints size, uint maxchars = 0) const
-    {
-        token tok = *this;
-        switch (size) {
-        case sizeof(int8) : { tonum<int8> conv;  *(int8*)dst = conv.toint(tok, 0, maxchars); } break;
-        case sizeof(int16) : { tonum<int16> conv; *(int16*)dst = conv.toint(tok, 0, maxchars); } break;
-        case sizeof(int32) : { tonum<int32> conv; *(int32*)dst = conv.toint(tok, 0, maxchars); } break;
-        case sizeof(int64) : { tonum<int64> conv; *(int64*)dst = conv.toint(tok, 0, maxchars); } break;
-        default:
-            return false;
-        }
-        return true;
-    }
-
-    bool touint_any(void* dst, uints size, uint maxchars = 0) const
-    {
-        token tok = *this;
-        switch (size) {
-        case sizeof(uint8) : { tonum<uint8> conv;  *(uint8*)dst = conv.touint(tok, 0, maxchars); } break;
-        case sizeof(uint16) : { tonum<uint16> conv; *(uint16*)dst = conv.touint(tok, 0, maxchars); } break;
-        case sizeof(uint32) : { tonum<uint32> conv; *(uint32*)dst = conv.touint(tok, 0, maxchars); } break;
-        case sizeof(uint64) : { tonum<uint64> conv; *(uint64*)dst = conv.touint(tok, 0, maxchars); } break;
-        default:
-            return false;
-        }
-        return true;
-    }
-
-    bool xtoint_any(void* dst, uints size, uint maxchars = 0) const
-    {
-        token tok = *this;
-        switch (size) {
-        case sizeof(int8) : { tonum<int8> conv;  *(int8*)dst = conv.xtoint(tok, 0, maxchars); } break;
-        case sizeof(int16) : { tonum<int16> conv; *(int16*)dst = conv.xtoint(tok, 0, maxchars); } break;
-        case sizeof(int32) : { tonum<int32> conv; *(int32*)dst = conv.xtoint(tok, 0, maxchars); } break;
-        case sizeof(int64) : { tonum<int64> conv; *(int64*)dst = conv.xtoint(tok, 0, maxchars); } break;
-        default:
-            return false;
-        }
-        return true;
-    }
-
-    bool xtouint_any(void* dst, uints size, uint maxchars = 0) const
-    {
-        token tok = *this;
-        switch (size) {
-        case sizeof(uint8) : { tonum<uint8> conv;  *(uint8*)dst = conv.xtouint(tok, 0, maxchars); } break;
-        case sizeof(uint16) : { tonum<uint16> conv; *(uint16*)dst = conv.xtouint(tok, 0, maxchars); } break;
-        case sizeof(uint32) : { tonum<uint32> conv; *(uint32*)dst = conv.xtouint(tok, 0, maxchars); } break;
-        case sizeof(uint64) : { tonum<uint64> conv; *(uint64*)dst = conv.xtouint(tok, 0, maxchars); } break;
-        default:
-            return false;
-        }
-        return true;
-    }
-
-    bool toint_any_and_shift(void* dst, uints size, uint maxchars = 0)
     {
         switch (size) {
         case sizeof(int8) : { tonum<int8> conv;  *(int8*)dst = conv.toint(*this, 0, maxchars); } break;
@@ -2304,7 +2265,7 @@ struct token
         return true;
     }
 
-    bool touint_any_and_shift(void* dst, uints size, uint maxchars = 0)
+    bool touint_any(void* dst, uints size, uint maxchars = 0) const
     {
         switch (size) {
         case sizeof(uint8) : { tonum<uint8> conv;  *(uint8*)dst = conv.touint(*this, 0, maxchars); } break;
@@ -2317,7 +2278,7 @@ struct token
         return true;
     }
 
-    bool xtoint_any_and_shift(void* dst, uints size, uint maxchars = 0)
+    bool xtoint_any(void* dst, uints size, uint maxchars = 0) const
     {
         switch (size) {
         case sizeof(int8) : { tonum<int8> conv;  *(int8*)dst = conv.xtoint(*this, 0, maxchars); } break;
@@ -2330,13 +2291,65 @@ struct token
         return true;
     }
 
-    bool xtouint_any_and_shift(void* dst, uints size, uint maxchars = 0)
+    bool xtouint_any(void* dst, uints size, uint maxchars = 0) const
     {
         switch (size) {
         case sizeof(uint8) : { tonum<uint8> conv;  *(uint8*)dst = conv.xtouint(*this, 0, maxchars); } break;
         case sizeof(uint16) : { tonum<uint16> conv; *(uint16*)dst = conv.xtouint(*this, 0, maxchars); } break;
         case sizeof(uint32) : { tonum<uint32> conv; *(uint32*)dst = conv.xtouint(*this, 0, maxchars); } break;
         case sizeof(uint64) : { tonum<uint64> conv; *(uint64*)dst = conv.xtouint(*this, 0, maxchars); } break;
+        default:
+            return false;
+        }
+        return true;
+    }
+
+    bool toint_any_and_shift(void* dst, uints size, uint maxchars = 0)
+    {
+        switch (size) {
+        case sizeof(int8) : { tonum<int8> conv;  *(int8*)dst = conv.toint_and_shift(*this, 0, maxchars); } break;
+        case sizeof(int16) : { tonum<int16> conv; *(int16*)dst = conv.toint_and_shift(*this, 0, maxchars); } break;
+        case sizeof(int32) : { tonum<int32> conv; *(int32*)dst = conv.toint_and_shift(*this, 0, maxchars); } break;
+        case sizeof(int64) : { tonum<int64> conv; *(int64*)dst = conv.toint_and_shift(*this, 0, maxchars); } break;
+        default:
+            return false;
+        }
+        return true;
+    }
+
+    bool touint_any_and_shift(void* dst, uints size, uint maxchars = 0)
+    {
+        switch (size) {
+        case sizeof(uint8) : { tonum<uint8> conv;  *(uint8*)dst = conv.touint_and_shift(*this, 0, maxchars); } break;
+        case sizeof(uint16) : { tonum<uint16> conv; *(uint16*)dst = conv.touint_and_shift(*this, 0, maxchars); } break;
+        case sizeof(uint32) : { tonum<uint32> conv; *(uint32*)dst = conv.touint_and_shift(*this, 0, maxchars); } break;
+        case sizeof(uint64) : { tonum<uint64> conv; *(uint64*)dst = conv.touint_and_shift(*this, 0, maxchars); } break;
+        default:
+            return false;
+        }
+        return true;
+    }
+
+    bool xtoint_any_and_shift(void* dst, uints size, uint maxchars = 0)
+    {
+        switch (size) {
+        case sizeof(int8) : { tonum<int8> conv;  *(int8*)dst = conv.xtoint_and_shift(*this, 0, maxchars); } break;
+        case sizeof(int16) : { tonum<int16> conv; *(int16*)dst = conv.xtoint_and_shift(*this, 0, maxchars); } break;
+        case sizeof(int32) : { tonum<int32> conv; *(int32*)dst = conv.xtoint_and_shift(*this, 0, maxchars); } break;
+        case sizeof(int64) : { tonum<int64> conv; *(int64*)dst = conv.xtoint_and_shift(*this, 0, maxchars); } break;
+        default:
+            return false;
+        }
+        return true;
+    }
+
+    bool xtouint_any_and_shift(void* dst, uints size, uint maxchars = 0)
+    {
+        switch (size) {
+        case sizeof(uint8) : { tonum<uint8> conv;  *(uint8*)dst = conv.xtouint_and_shift(*this, 0, maxchars); } break;
+        case sizeof(uint16) : { tonum<uint16> conv; *(uint16*)dst = conv.xtouint_and_shift(*this, 0, maxchars); } break;
+        case sizeof(uint32) : { tonum<uint32> conv; *(uint32*)dst = conv.xtouint_and_shift(*this, 0, maxchars); } break;
+        case sizeof(uint64) : { tonum<uint64> conv; *(uint64*)dst = conv.xtouint_and_shift(*this, 0, maxchars); } break;
         default:
             return false;
         }

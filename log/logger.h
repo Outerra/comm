@@ -384,7 +384,7 @@ public:
 
     static void enable_debug_out(bool en);
 
-    uints register_filter(log_filter& filter) { _filters.push(filter); return _filters.count() - 1; }
+    uints register_filter(const log_filter& filter) { _filters.push(filter); return _filters.count() - 1; }
     void unregister_filter(uint pos) { _filters.del_item(pos); }
 };
 
