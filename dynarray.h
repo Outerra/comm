@@ -504,9 +504,10 @@ public:
             if (nalloc < 2 * n)
                 nalloc = 2 * n;
 
-            A::template free<T>(_ptr);
-
-            _ptr = A::template alloc<T>(nalloc);
+            if (!A::template realloc_in_place<T>(_ptr, nalloc)) {
+                A::template free<T>(_ptr);
+                _ptr = A::template alloc<T>(nalloc);
+            }
         }
 
         if (nitems) {
@@ -535,8 +536,10 @@ public:
             if (nalloc < 2 * n)
                 nalloc = 2 * n;
 
-            A::template free<T>(_ptr);
-            _ptr = A::template alloc<T>(nalloc);
+            if (!A::template realloc_in_place<T>(_ptr, nalloc)) {
+                A::template free<T>(_ptr);
+                _ptr = A::template alloc<T>(nalloc);
+            }
         }
 
         if (nitems) {
