@@ -1673,7 +1673,7 @@ unsigned char _BitScanReverse(unsigned long *index, unsigned long mask);
 #if HAVE_MMAP
 
 #ifndef WIN32
-#define MUNMAP_DEFAULT(a, s)  munmap((a), (s))
+#define MUNMAP_DEFAULT(a,s,v)   munmap((a), (s), (v))
 #define MMAP_PROT            (PROT_READ|PROT_WRITE)
 #if !defined(MAP_ANONYMOUS) && defined(MAP_ANON)
 #define MAP_ANONYMOUS        MAP_ANON
@@ -1727,30 +1727,33 @@ static FORCEINLINE void* win32mmap_commit(void* ptr, size_t commit_size) {
     return VirtualAlloc(ptr, commit_size, MEM_COMMIT, PAGE_READWRITE);
 }
 
-/* This function supports releasing coalesced segments [REMOVED] */
-static FORCEINLINE int win32munmap(void* ptr, size_t size) {
+/* This function supports releasing coalesced segments */
+static FORCEINLINE int win32munmap(void* ptr, size_t size, int v) {
   MEMORY_BASIC_INFORMATION minfo;
   char* cptr = (char*)ptr;
-  if (VirtualFree(cptr, 0, MEM_RELEASE) == 0) {
-    assert(0);
-    return -1;
-  }
-  /*while (size) {
-    if (VirtualQuery(cptr, &minfo, sizeof(minfo)) == 0)
-      return -1;
-    if (minfo.BaseAddress != cptr || minfo.AllocationBase != cptr ||
-      minfo.State != MEM_COMMIT || minfo.RegionSize > size)
-      return -1;
+  if (v) {
+    /* virtual block, partially committed */
     if (VirtualFree(cptr, 0, MEM_RELEASE) == 0)
-      return -1;
-    cptr += minfo.RegionSize;
-    size -= minfo.RegionSize;
-  }*/
+      return assert(0), -1;
+  }
+  else {
+    while (size) {
+      if (VirtualQuery(cptr, &minfo, sizeof(minfo)) == 0)
+        return assert(0), -1;
+      if (minfo.BaseAddress != cptr || minfo.AllocationBase != cptr ||
+          minfo.State != MEM_COMMIT || minfo.RegionSize > size)
+        return -1;
+      if (VirtualFree(cptr, 0, MEM_RELEASE) == 0)
+        return assert(0), -1;
+      cptr += minfo.RegionSize;
+      size -= minfo.RegionSize;
+    }
+  }
   return 0;
 }
 
 #define MMAP_DEFAULT(s)             win32mmap(s)
-#define MUNMAP_DEFAULT(a, s)        win32munmap((a), (s))
+#define MUNMAP_DEFAULT(a, s, v)     win32munmap((a), (s), (v))
 #define DIRECT_MMAP_DEFAULT(s,cs,p) win32direct_mmap(s,cs,p)
 #endif /* WIN32 */
 #endif /* HAVE_MMAP */
@@ -1786,9 +1789,9 @@ static FORCEINLINE int win32munmap(void* ptr, size_t size) {
         #define CALL_MMAP(s)        MMAP_DEFAULT(s)
     #endif /* MMAP */
     #ifdef MUNMAP
-        #define CALL_MUNMAP(a, s)   MUNMAP((a), (s))
+        #define CALL_MUNMAP(a,s,v)  MUNMAP((a), (s), (v))
     #else /* MUNMAP */
-        #define CALL_MUNMAP(a, s)   MUNMAP_DEFAULT((a), (s))
+        #define CALL_MUNMAP(a,s,v)  MUNMAP_DEFAULT((a), (s), (v))
     #endif /* MUNMAP */
     #ifdef DIRECT_MMAP
         #define CALL_DIRECT_MMAP(s,cs,p) DIRECT_MMAP(s,cs,p)
@@ -1803,7 +1806,7 @@ static FORCEINLINE int win32munmap(void* ptr, size_t size) {
     #define DIRECT_MMAP(s)          MFAIL
     #define CALL_DIRECT_MMAP(s,cs,p)  DIRECT_MMAP(s,cs,p)
     #define CALL_MMAP(s)            MMAP(s)
-    #define CALL_MUNMAP(a, s)       MUNMAP((a), (s))
+    #define CALL_MUNMAP(a,s,v)      MUNMAP((a), (s), (v))
 #endif /* HAVE_MMAP */
 
 /**
@@ -4383,7 +4386,7 @@ static size_t release_unused_segments(mstate m) {
         else {
           unlink_large_chunk(m, tp);
         }
-        if (CALL_MUNMAP(base, size) == 0) {
+        if (CALL_MUNMAP(base, size, 0) == 0) {
           released += size;
           m->footprint -= size;
           /* unlink obsoleted record */
@@ -4428,7 +4431,7 @@ static int sys_trim(mstate m, size_t pad) {
             (void)newsize; /* placate people compiling -Wunused-variable */
             /* Prefer mremap, fall back to munmap */
             if ((CALL_MREMAP(sp->base, sp->size, newsize, 0) != MFAIL) ||
-                (CALL_MUNMAP(sp->base + newsize, extra) == 0)) {
+                (CALL_MUNMAP(sp->base + newsize, extra, 0) == 0)) {
               released = extra;
             }
           }
@@ -4481,7 +4484,7 @@ static void dispose_chunk(mstate m, mchunkptr p, size_t psize) {
     size_t prevsize = p->prev_foot;
     if (is_mmapped(p)) {
       psize += prevsize + MALLOC_ALIGNMENT + MMAP_FOOT_PAD;
-      if (CALL_MUNMAP((char*)p - prevsize, psize) == 0)
+      if (CALL_MUNMAP((char*)p - prevsize, psize, flag4inuse(p)) == 0)
         m->footprint -= psize;
       return;
     }
@@ -4823,7 +4826,7 @@ void dlfree(void* mem) {
           size_t prevsize = p->prev_foot;
           if (is_mmapped(p)) {
             psize += prevsize + MALLOC_ALIGNMENT + MMAP_FOOT_PAD;
-            if (CALL_MUNMAP((char*)p - prevsize, psize) == 0)
+            if (CALL_MUNMAP((char*)p - prevsize, psize, flag4inuse(p)) == 0)
               fm->footprint -= psize;
             goto postaction;
           }
@@ -5606,7 +5609,7 @@ size_t destroy_mspace(mspace msp) {
       (void)base; /* placate people compiling -Wunused-variable */
       sp = sp->next;
       if ((flag & USE_MMAP_BIT) && !(flag & EXTERN_BIT) &&
-          CALL_MUNMAP(base, size) == 0)
+          CALL_MUNMAP(base, size, 0) == 0)
         freed += size;
     }
   }
@@ -5756,7 +5759,7 @@ void mspace_free(/*mspace msp,*/ void* mem) {
         //a virtual memory block
         size_t psize = mmap_align_down(p->prev_foot);
         size_t offset = p->prev_foot - psize;
-        CALL_MUNMAP((char*)p - offset, psize);
+        CALL_MUNMAP((char*)p - offset, psize, 1);
         return;
     }
 
@@ -5779,7 +5782,7 @@ void mspace_free(/*mspace msp,*/ void* mem) {
           size_t prevsize = p->prev_foot;
           if (is_mmapped(p)) {
             psize += MALLOC_ALIGNMENT + MMAP_FOOT_PAD;
-            if (CALL_MUNMAP((char*)p - prevsize, psize) == 0)
+            if (CALL_MUNMAP((char*)p - prevsize, psize, 0) == 0)
               fm->footprint -= psize;
             goto postaction;
           }

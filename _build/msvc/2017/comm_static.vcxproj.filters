@@ -345,6 +345,7 @@
       <Filter>alloc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\function.h" />
+    <ClInclude Include="..\..\..\vref.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\crypt\sha1.cpp">

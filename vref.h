@@ -15,8 +15,8 @@
  * The Original Code is COID/comm module.
  *
  * The Initial Developer of the Original Code is
- * Ladislav Hrabcak
- * Portions created by the Initial Developer are Copyright (C) 2007
+ * Brano Kemen
+ * Portions created by the Initial Developer are Copyright (C) 2019
  * the Initial Developer. All Rights Reserved.
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -33,42 +33,49 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef __COID_REF_H__
-#define __COID_REF_H__
+#include "commassert.h"
 
-//include non-intrusive and intrusive ref counted pointers
+///Versioned pointer (x64: 48 bit ptr + 16 bit version)
+template <class T>
+struct vref
+{
+    static const size_t vshift = 48;
+    static const size_t ptr_mask = (1ULL << vshift) - 1;
 
-#include "ref_s.h"
-#include "ref_i.h"
-#include "local.h"
-
-COID_NAMESPACE_BEGIN
-
-///Helper function for moving references or pointers without touching the ref.count
-template<class T>
-class ref_takeover {
 public:
-    void operator()(T& dst, T& src) {
-        dst = src;
-        src = 0;
+
+    vref() {}
+    vref(T* p) {
+        _vptr = (uints)p;
     }
+    vref(T* p, uint ver) {
+        _vptr = (uints)p;
+        DASSERT((_vptr & ptr_mask) == 0);
+        _vptr |= ver << vshift;
+    }
+
+    T* operator -> () { return reinterpret_cast<T*>(_vptr & ptr_mask); }
+    const T* operator -> () const { return reinterpret_cast<const T*>(_vptr & ptr_mask); }
+
+    T* ptr() { return reinterpret_cast<T*>(_vptr & ptr_mask); }
+    const T* ptr() const { return reinterpret_cast<const T*>(_vptr & ptr_mask); }
+
+    int version() const {
+        return int(_vptr >> vshift);
+    }
+
+    void set_version(int v) {
+        size_t vptr = _vptr & ptr_mask;
+        _vptr = vptr | (size_t(v) << vshift);
+    }
+
+    typedef size_t vref<T>::* unspecified_bool_type;
+
+    ///Automatic cast to unconvertible bool for checking via if
+    operator unspecified_bool_type () const {
+        return _vptr ? &ref<T>::_vptr : 0;
+    }
+
+private:
+    size_t _vptr = 0;                        //< pointer (low 48 bits) and version (16 bit)
 };
-
-
-template<class M>
-class ref_takeover< iref<M> > {
-public:
-    void operator()(iref<M>& dst, iref<M>& src) { dst.takeover(src); }
-};
-
-template<class M>
-class ref_takeover< ref<M> > {
-public:
-    void operator()(ref<M>& dst, ref<M>& src) { dst.takeover(src); }
-};
-
-
-COID_NAMESPACE_END
-
-
-#endif // __COID_REF_H__

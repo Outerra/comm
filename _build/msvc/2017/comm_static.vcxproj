@@ -536,6 +536,7 @@
     <ClInclude Include="..\..\..\txtconv.h" />
     <ClInclude Include="..\..\..\range.h" />
     <ClInclude Include="..\..\..\version.h" />
+    <ClInclude Include="..\..\..\vref.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\alloc\slotalloc_bmp.cpp" />
