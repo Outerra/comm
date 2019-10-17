@@ -1734,17 +1734,17 @@ static FORCEINLINE int win32munmap(void* ptr, size_t size, int v) {
   if (v) {
     /* virtual block, partially committed */
     if (VirtualFree(cptr, 0, MEM_RELEASE) == 0)
-      return assert(0), -1;
+    { assert(0); return -1; }
   }
   else {
     while (size) {
       if (VirtualQuery(cptr, &minfo, sizeof(minfo)) == 0)
-        return assert(0), -1;
+        { assert(0); return -1; }
       if (minfo.BaseAddress != cptr || minfo.AllocationBase != cptr ||
           minfo.State != MEM_COMMIT || minfo.RegionSize > size)
         return -1;
       if (VirtualFree(cptr, 0, MEM_RELEASE) == 0)
-        return assert(0), -1;
+        { assert(0); return -1; }
       cptr += minfo.RegionSize;
       size -= minfo.RegionSize;
     }
