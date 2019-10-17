@@ -162,7 +162,7 @@ public:
         zstring str = name;
         str.get_str() << "@wrapper";
 
-        return find_wrapper(name);
+        return find_wrapper(str);
     }
 
     virtual dynarray<creator>& get_interface_creators(const token& name, const token& script, dynarray<creator>& dst)
@@ -235,23 +235,23 @@ public:
         return dst;
     }
 
-    virtual interface_register::wrapper_fn get_interface_client(const token& client, const token& iface, uint hash, const token& module) const
+    virtual interface_register::client_fn get_interface_client(const token& client, const token& iface, uint hash, const token& module) const
     {
         zstring str = iface;
-        str.get_str() << "@client" << '.' << client;
+        str.get_str() << "@client-" << hash << '.' << client;
 
         GUARDTHIS(_mx);
 
-        const entry* en = _hash.find_value(iface);
+        const entry* en = _hash.find_value(str);
 
         if (en) {
             if (en->hashvalue != hash)
                 return 0;
 
-            if (module && module != en->modulename)
+            if (module && !en->modulename.ends_with_icase(module))
                 return 0;
 
-            return (interface_register::wrapper_fn)en->creator_ptr;
+            return (interface_register::client_fn)en->creator_ptr;
         }
 
         return 0;
@@ -477,7 +477,7 @@ void* interface_register::get_interface_maker(const token& name, const token& sc
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-interface_register::wrapper_fn interface_register::get_interface_client(const token& client, const token& iface, uint hash, const token& module)
+interface_register::client_fn interface_register::get_interface_client(const token& client, const token& iface, uint hash, const token& module)
 {
     //interface name:
     // [ns1::[ns2:: ...]]::class
