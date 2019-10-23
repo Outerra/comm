@@ -237,13 +237,33 @@ struct Reljunk
         , any_except(0)
         , style(SEARCH)
     {}
+
+    void reset(MatchStyle match_style, Reinst* startinst)
+    {
+        style = match_style;
+        starttype = 0;
+        startchar = 0;
+        any_except = 0;
+
+        if (style == SEARCH) {
+            if (startinst->type == Reinst::RUNE /*&& startinst.r.r < Runeself*/) {
+                starttype = Reinst::RUNE;
+                startchar = startinst->cd;
+            }
+            else if (startinst->type == Reinst::BOL)
+                starttype = Reinst::BOL;
+        }
+
+        relist[0].reset();
+        relist[1].reset();
+    }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Regex program representation
 struct regex_program
 {
-    token match(token bol, token* sub, uint nsub, Reljunk::MatchStyle style) const;
+    token match(const token& bol, token* sub, uint nsub, Reljunk::MatchStyle style) const;
 
     regex_program(bool icase)
         : startinst(0), icase(icase)
@@ -253,7 +273,7 @@ struct regex_program
 private:
 
     void optimize();
-    token regexec(token bol, token* sub, uint nsub, Reljunk* j) const;
+    token regexec(const token& bol, token* sub, uint nsub, Reljunk* j) const;
 
 private:
 
