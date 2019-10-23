@@ -41,7 +41,7 @@ $-[method !static? !destroy?]$
 $(if !comments.empty?)$$[comments]-$
     $@value$
 $[/comments]$$(/if)-$
-    $(if ..virtual?)$virtual $(/if)$$return.type$ $name$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$) $-(if const?)$ const$(/if)$ $-(if ..virtual?)$ = 0$(/if)$;
+    $(if ..virtual?)$virtual $(/if)$$return.type$ $name$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if fnarg?)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$) $-(if const?)$ const$(/if)$ $-(if ..virtual?)$ = 0$(/if)$;
 $[/method]-$
 $-(if !event.empty?)$
 
@@ -55,7 +55,7 @@ $-[event !static?]$
 $(if !comments.empty?)$$[comments]-$
     $@value$
 $[/comments]$$(/if)-$
-    virtual $return.type$ $name$($[args rest="," after=" "]$ $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$) $-(if const?)$ const$(/if)$
+    virtual $return.type$ $name$($[args rest="," after=" "]$ $type$ $(if fnarg?)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$) $-(if const?)$ const$(/if)$
     $-(if return.type?="void")$ {}$(elif default_event_body?)$ { $default_event_body$ }$(elif)${ throw coid::exception("handler not implemented"); }$(/if)$
 $[/event]-$
 
@@ -205,13 +205,13 @@ $-(if varname?)$
         m->assign_safe(ifc, 0);
     }
 
-    bool assign_safe(intergen_interface* client, iref<$name$>* pout);
+    bool assign_safe(intergen_interface* client__, iref<$name$>* pout);
 
     typedef void (*cleanup_fn)($name$*, intergen_interface*);
     cleanup_fn _cleaner;
 $-(/if)$
 
-    bool set_host(policy_intrusive_base* host, intergen_interface* client, iref<$name$>* pout);
+    bool set_host(policy_intrusive_base*, intergen_interface*, iref<$name$>* pout);
 $-(if destroy.name.empty!)$
 
     ~$name$() {
@@ -278,8 +278,8 @@ $-(if !virtual?)$
 #pragma warning(disable : 4191)
 
 $-[method !static? !destroy?]$
-inline $return.type$ $..name$::$name$($[args rest="," after=" "]$ $type$ $name$$size$$[/args]$) $-(if const?)$ const$(/if)$
-{ return VT_CALL($return.type$,($[args rest=","]$$type$$size$$[/args]$) $-(if const?)$ const$(/if)$,$index$)($[args rest=","]$ $-(if xref?)$std::forward<$basetype$>($(/if)-$ $name$ $-(if xref?)$)$(/if)-$ $[/args]$); }
+inline $return.type$ $..name$::$name$($[args rest="," after=" "]$ $type$ $(if fnarg?)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if const?)$ const$(/if)$
+{ return VT_CALL($return.type$,($[args rest=","]$ $-(if fnarg?)$$type$(*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$) $-(if const?)$ const$(/if)$,$index$)($[args rest=","]$ $-(if xref?)$std::forward<$basetype$>($(/if)-$ $name$ $-(if xref?)$)$(/if)-$ $[/args]$); }
 $[/method]-$
 
 #pragma warning(pop)

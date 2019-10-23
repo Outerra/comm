@@ -130,8 +130,8 @@ public:
     {
         static_assert(std::is_base_of<thingface, C>::value, "not a base class");
 
-        typedef iref<intergen_interface> (*fn_client)(void*, intergen_interface*);
-        fn_client cc = [](void*, intergen_interface*) -> iref<intergen_interface> { return new C; };
+        typedef intergen_interface* (*fn_client)();
+        fn_client cc = []() -> intergen_interface* { return new C; };
 
         coid::token type = typeid(C).name();
         type.consume("class ");
@@ -156,12 +156,12 @@ protected:
         m->assign_safe(ifc, 0);
     }
 
-    bool assign_safe(intergen_interface* client, iref<thingface>* pout);
+    bool assign_safe(intergen_interface* client__, iref<thingface>* pout);
 
     typedef void (*cleanup_fn)(thingface*, intergen_interface*);
     cleanup_fn _cleaner;
 
-    bool set_host(policy_intrusive_base* host, intergen_interface* client, iref<thingface>* pout);
+    bool set_host(policy_intrusive_base*, intergen_interface*, iref<thingface>* pout);
 
     ~thingface() {
         VT_CALL(void,(),0)();

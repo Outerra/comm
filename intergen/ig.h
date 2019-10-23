@@ -168,31 +168,28 @@ struct MethodIG
         token barenstype;               //< full bare type (without iref)
         token barens;                   //< namespace part of full bare type
         token baretype;                 //< type part of full bare type
-        //charstr base2arg;               //< suffix to convert from base (storage) type to type parameter
         charstr name;                   //< parameter name
         charstr arsize;                 //< size expression if the parameter is an array, including [ ]
+        charstr fnargs;                 //< argument list of a function-type argument
         charstr defval;
         charstr fulltype;
         charstr ifctarget;
-        charstr ifckwds;                //< ifc_out, ifc_inout and ifc_volatile string 
+        charstr ifckwds;                //< ifc_out, ifc_inout and ifc_volatile string
         charstr doc;
-        bool bspecptr;                  //< special type where pointer is not separated (e.g const char*)
-        bool bptr;                      //< true if the type is a pointer
-        bool bref;                      //< true if the type is a reference
-        bool bxref;                     //< true if the type is xvalue reference
-        bool biref;
-        bool bconst;                    //< true if the type had const qualifier
-        bool benum;
-        bool binarg;                    //< input type argument
-        bool boutarg;                   //< output type argument
-        bool bvolatile;
-        bool tokenpar;                  //< input argument that accepts token (token or charstr)
-        bool bnojs;                     //< not used in JS, use default val
+        bool bspecptr       = false;    //< special type where pointer is not separated (e.g const char*)
+        bool bptr           = false;    //< true if the type is a pointer
+        bool bref           = false;    //< true if the type is a reference
+        bool bxref          = false;    //< true if the type is xvalue reference
+        bool biref          = false;
+        bool bconst         = false;    //< true if the type had const qualifier
+        bool benum          = false;
+        bool binarg         = true;     //< input type argument
+        bool boutarg        = false;    //< output type argument
+        bool bvolatile      = false;
+        bool tokenpar       = false;    //< input argument that accepts token (token or charstr)
+        bool bnojs          = false;    //< not used in JS, use default val
+        bool bfnarg         = false;    //< function type arg
 
-
-        Arg()
-            : bptr(false), bref(false), biref(false), bconst(false), binarg(true), boutarg(false), tokenpar(false)
-        {}
 
         bool operator == (const Arg& a) const {
             return fulltype == a.fulltype
@@ -216,6 +213,7 @@ struct MethodIG
                 m.member("baretype",p.baretype);
                 m.member("name",p.name);
                 m.member("size",p.arsize);
+                m.member("fnargs",p.fnargs);
                 m.member("defval",p.defval);
                 m.member("fulltype",p.fulltype);
                 m.member("ifc",p.ifctarget);
@@ -233,6 +231,7 @@ struct MethodIG
                 m.member("volatile",p.bvolatile);
                 m.member("token",p.tokenpar);
                 m.member("nojs",p.bnojs);
+                m.member("fnarg",p.bfnarg);
             });
         }
     };
@@ -244,38 +243,32 @@ struct MethodIG
     charstr storage;                    //< storage for host class, iref<type>, ref<type> or type*
     charstr default_event_body;
 
-    int index;
+    int index = -1;
 
-    bool bstatic;                       //< a static (creator) method
-    bool bptr;                          //< ptr instead of ref
-    bool biref;                         //< iref instead of ref
-    bool bifccr;                        //< ifc returning creator (not host)
-    bool bconst;                        //< const method
-    bool boperator;
-    bool binternal;                     //< internal method, invisible to scripts (starts with an underscore)
-    bool bcapture;                      //< method captured when interface is in capturing mode
-    bool bimplicit;                     //< an implicit event
-    bool bdestroy;                      //< a method to call on interface destroy
-    bool bmandatory;                    //< mandatory event
-    bool bhasifctargets;
-    bool bduplicate;                    //< a duplicate method/event from another interface of the host
+    bool bstatic            = false;    //< a static (creator) method
+    bool bptr               = false;    //< ptr instead of ref
+    bool biref              = true;     //< iref instead of ref
+    bool bifccr             = false;    //< ifc returning creator (not host)
+    bool bconst             = false;    //< const method
+    bool boperator          = false;
+    bool binternal          = false;    //< internal method, invisible to scripts (starts with an underscore)
+    bool bcapture           = false;    //< method captured when interface is in capturing mode
+    bool bimplicit          = false;    //< an implicit event
+    bool bdestroy           = false;    //< a method to call on interface destroy
+    bool bmandatory         = false;    //< mandatory event
+    bool bhasifctargets     = false;
+    bool bduplicate         = false;    //< a duplicate method/event from another interface of the host
 
     Arg ret;
     dynarray<Arg> args;
 
-    int ninargs;                        //< number of input arguments
-    int ninargs_nondef;
-    int noutargs;                       //< number of output arguments
+    int ninargs = 0;                    //< number of input arguments
+    int ninargs_nondef = 0;
+    int noutargs = 0;                   //< number of output arguments
 
     dynarray<charstr> comments;         //< comments preceding the method declaration
     dynarray<charstr> docs;             //< doc paragraphs
 
-
-    MethodIG()
-        : bstatic(false), bptr(false), bdestroy(false), biref(true), bconst(false)
-        , boperator(false) , binternal(false), bcapture(false)
-        , bimplicit(false), ninargs(0), ninargs_nondef(0), index(-1), noutargs(0)
-    {}
 
     bool parse( iglexer& lex, const charstr& host, const charstr& ns, const charstr& nsifc, dynarray<Arg>& irefargs, bool isevent );
 

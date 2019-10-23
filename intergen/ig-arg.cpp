@@ -27,7 +27,7 @@ charstr& MethodIG::Arg::match_type( iglexer& lex, charstr& type )
 ////////////////////////////////////////////////////////////////////////////////
 bool MethodIG::Arg::parse( iglexer& lex, bool argname )
 {
-    //arg: [ifc_in|ifc_out|ifc_inout|] [const] type  
+    //arg: [ifc_in|ifc_out|ifc_inout|] [const] type
     //type: [class[<templarg>]::]* type[<templarg>] [[*|&] [const]]*
 
     int io = lex.matches_either("ifc_in","ifc_out","ifc_inout","ifc_ret");
@@ -171,8 +171,18 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
     if(!argname)
         return lex.no_err();
 
+    if (lex.matches('(')) {
+        //a function argument [type] (*name)(arg1[,arg2]*)
+        lex.match('*');
+        lex.match(lex.IDENT, name, "expecting argument name");
+        lex.match(')');
 
-    lex.match(lex.IDENT, name, "expecting argument name");
+        //parse argument list as a block
+        fnargs = lex.match_block(lex.ROUND, true);
+        bfnarg = true;
+    }
+    else
+        lex.match(lex.IDENT, name, "expecting argument name");
 
     //match array
     if(lex.matches('[') ) {
