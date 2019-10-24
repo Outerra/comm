@@ -216,6 +216,12 @@ struct closure_traits_base
         ///Automatic cast to unconvertible bool for checking via if
         operator unspecified_bool_type() const { return c ? &function::c : 0; }
 
+        callbase* eject() {
+            callbase* r = c;
+            c = 0;
+            return r;
+        }
+
     protected:
         callbase* c;
     };
@@ -244,6 +250,98 @@ COID_CLOSURE_TRAIT(, (), 0)
 
 template <typename Fn>
 using function = typename closure_traits<Fn>::function;
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+///A callback function that may contain a member function, a static one or a lambda.
+template <class T, class Fn>
+struct callbackfn
+{};
+
+template <class T, class R, class ...Args>
+struct callbackfn<T, R(Args...)>
+{
+private:
+
+    union hybrid {
+        R(*function)(Args...) = 0;
+        R(T::* member)(Args...);
+        R(T::* memberc)(Args...) const;
+        callable_base<R, Args...>* lambda;
+    } _fn;
+
+public:
+
+    callbackfn() {}
+
+    ///A plain function
+    callbackfn(R(*fn)(Args...)) {
+        _fn.function = fn;
+        _caller = &call_static;
+    }
+
+    ///A member function pointer
+    callbackfn(R(T::* fn)(Args...) const) {
+        _fn.memberc = fn;
+        _caller = &call_member;
+    }
+
+    ///A member function pointer
+    callbackfn(R(T::* fn)(Args...)) {
+        _fn.member = fn;
+        _caller = &call_member;
+    }
+
+    ///A direct function object
+    callbackfn(function<R(Args...)>&& fn) {
+        _fn.lambda = fn.eject();
+        _caller = &call_lambda;
+    }
+
+    ///A non-capturing lambda
+    template <class Fn, typename std::enable_if<std::is_constructible<R(*)(Args...), Fn>::value, bool>::type = true>
+    callbackfn(Fn&& lambda) {
+        _fn.function = lambda;
+        _caller = &call_static;
+    }
+
+    ///Capturing lambda
+    template <class Fn, typename std::enable_if<!std::is_constructible<R(*)(Args...), Fn>::value, bool>::type = true>
+    callbackfn(Fn&& lambda) {
+        function<R(Args...)> fn = lambda;
+        _fn.lambda = fn.eject();
+        _caller = &call_lambda;
+    }
+
+    ~callbackfn() {
+        if (_caller == &call_lambda && _fn.lambda)
+            delete _fn.lambda;
+    }
+
+    ///Invoked with T* pointer, which is used only if the bound function was a member pointer
+    R operator()(const T* this__, Args ...args) const {
+        return _caller(_fn, this__, std::forward<Args>(args)...);
+    }
+
+private:
+
+    static R call_static(const hybrid& h, const T* this__, Args ...args) {
+        return h.function(std::forward<Args>(args)...);
+    }
+
+    static R call_member(const hybrid& h, const T* this__, Args ...args) {
+        return (this__->*(h.memberc))(std::forward<Args>(args)...);
+    }
+
+    static R call_lambda(const hybrid& h, const T* this__, Args ...args) {
+        return (*h.lambda)(std::forward<Args>(args)...);
+    }
+
+    R(*_caller)(const hybrid&, const T*, Args...) = 0;
+};
+
+
 
 COID_NAMESPACE_END
 

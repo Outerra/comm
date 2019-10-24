@@ -121,9 +121,37 @@ void lambda_slotalloc_test()
     });
 }
 
+
+struct something
+{
+    static int funs(int, void*) {
+        return 0;
+    }
+
+    int funm(int, void*) {
+        return value;
+    }
+
+    int value = 1;
+};
+
+
 void fntest(void(*pfn)(charstr&))
 {
     function<void(charstr&)> fn = pfn;
+    int z = 2;
+
+    callbackfn<something, int(int, void*)> fns = &something::funs;
+    callbackfn<something, int(int, void*)> fnm = &something::funm;
+    callbackfn<something, int(int, void*)> fnl = [](int, void*) { return -1; };
+    callbackfn<something, int(int, void*)> fnz = [z](int, void*) { return z; };
+
+    something s;
+
+    DASSERT(fns(&s, 1, 0) == 0);
+    DASSERT(fnm(&s, 1, 0) == 1);
+    DASSERT(fnl(&s, 1, 0) == -1);
+    DASSERT(fnz(&s, 1, 0) == 2);
 }
 
 void constexpr_test()
