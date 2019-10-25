@@ -147,7 +147,7 @@ $-(if varname?)$
     static iref<$name$> intergen_active_interface(::$classnsx rest="::" after="::"$$class$* host);
 
 $-(/if)$
-    template<enum class backend B>
+    template<enum backend B>
     static void* intergen_wrapper_cache() {
         static void* _cached_wrapper=0;
         if (!_cached_wrapper) {

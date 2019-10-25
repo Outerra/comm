@@ -467,7 +467,7 @@ public:
                 {
                     //optional class name found
                     if (p) {
-                        token& s = *(token*)p;
+                        //token& s = *(token*)p;
                         //if(!s.is_empty() && s != tok)
                         //    return ersSYNTAX_ERROR "class name mismatch";
                     }

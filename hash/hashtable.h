@@ -178,7 +178,7 @@ public:
     EQFUNC& equal_func() { return _EQFUNC; }
 
 
-    class Ptr : public std::iterator<std::forward_iterator_tag, VAL>
+    class Ptr
     {
         Node* _p;
         const _Self* _ht;
@@ -196,6 +196,8 @@ public:
         typedef const VAL*              const_pointer;
         typedef VAL&                    reference;
         typedef const VAL&              const_reference;
+
+        typedef std::forward_iterator_tag iterator_category;
 
         const Node* _get_node() const { return _p; }
         const _Self* _get_ht() const { return _ht; }
@@ -226,7 +228,7 @@ public:
         }
     };
 
-    class CPtr : public std::iterator<std::forward_iterator_tag, VAL>
+    class CPtr
     {
         const Node* _p;
         const _Self*  _ht;
@@ -244,6 +246,8 @@ public:
         typedef const VAL*              const_pointer;
         typedef VAL&                    reference;
         typedef const VAL&              const_reference;
+
+        typedef std::forward_iterator_tag iterator_category;
 
         CPtr(const Node* p, const _Self& ht) : _p(p), _ht(&ht) {}
         CPtr() : _p(0), _ht(0) {}

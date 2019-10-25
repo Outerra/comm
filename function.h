@@ -145,7 +145,8 @@ struct closure_traits_base
         COIDNEWDELETE(callable);
 
         callable(const Fn& fn) : fn(fn) {}
-
+        callable(Fn&& fn) : fn(std::forward<Fn>(fn)) {}
+        
         R operator()(Args ...args) const override final {
             return fn(std::forward<Args>(args)...);
         }
@@ -171,8 +172,8 @@ struct closure_traits_base
         }
 
         template <typename Fn>
-        function(const Fn& fn) : c(0) {
-            c = new callable<Fn>(fn);
+        function(Fn&& fn) : c(0) {
+            c = new callable<typename std::remove_reference<Fn>::type>(std::forward<Fn>(fn));
         }
 
         function() : c(0) {}
@@ -254,13 +255,48 @@ using function = typename closure_traits<Fn>::function;
 
 ////////////////////////////////////////////////////////////////////////////////
 
+///Helper to force casts in callbacks
+template <class T>
+struct base_cast {
+    base_cast(T&& v) : value(std::move(v)) {}
+    base_cast(const T& v) : value(v) {}
+
+    T value;
+};
+
+
 ///A callback function that may contain a member function, a static one or a lambda.
+/**
+    Size: 2*sizeof(size_t)
+    Usage:
+        struct something
+        {
+            static int funs(int, void*) { return 0; }
+            int funm(int, void*) { return value; }
+
+            int value = 1;
+        };
+
+        int z = 2;
+        callback<something, int(int, void*)> fns = &something::funs;
+        callback<something, int(int, void*)> fnm = &something::funm;
+        callback<something, int(int, void*)> fnl = [](int, void*) { return -1; };
+        callback<something, int(int, void*)> fnz = [z](int, void*) { return z; };
+
+        something s;
+
+        DASSERT(fns(&s, 1, 0) == 0);
+        DASSERT(fnm(&s, 1, 0) == 1);
+        DASSERT(fnl(&s, 1, 0) == -1);
+        DASSERT(fnz(&s, 1, 0) == 2);
+
+**/
 template <class T, class Fn>
-struct callbackfn
+struct callback
 {};
 
 template <class T, class R, class ...Args>
-struct callbackfn<T, R(Args...)>
+struct callback<T, R(Args...)>
 {
 private:
 
@@ -273,50 +309,76 @@ private:
 
 public:
 
-    callbackfn() {}
+    callback() {}
 
     ///A plain function
-    callbackfn(R(*fn)(Args...)) {
+    callback(R(*fn)(Args...)) {
         _fn.function = fn;
         _caller = &call_static;
     }
 
     ///A member function pointer
-    callbackfn(R(T::* fn)(Args...) const) {
+    callback(R(T::* fn)(Args...) const) {
         _fn.memberc = fn;
         _caller = &call_member;
     }
 
     ///A member function pointer
-    callbackfn(R(T::* fn)(Args...)) {
+    callback(R(T::* fn)(Args...)) {
         _fn.member = fn;
         _caller = &call_member;
     }
 
+    ///A derived class member function pointer
+    template <class Td, typename std::enable_if<std::is_base_of<T, Td>::value, bool>::type = true>
+    callback(R(Td::* fn)(Args...)) {
+        static_assert(false, "unsafe cast to a base class, use base_cast(&class::memberfn) in the calling code to override");
+    }
+
+    ///A derived class member function pointer
+    template <class Td, typename std::enable_if<std::is_base_of<T, Td>::value, bool>::type = true>
+    callback(base_cast<R(__cdecl Td::*)(Args...)>&& fn) {
+        _fn.member = static_cast<R(T::*)(Args...)>(fn.value);
+        _caller = &call_member;
+    }
+
     ///A direct function object
-    callbackfn(function<R(Args...)>&& fn) {
+    callback(function<R(Args...)>&& fn) {
         _fn.lambda = fn.eject();
         _caller = &call_lambda;
     }
 
     ///A non-capturing lambda
     template <class Fn, typename std::enable_if<std::is_constructible<R(*)(Args...), Fn>::value, bool>::type = true>
-    callbackfn(Fn&& lambda) {
+    callback(Fn&& lambda) {
         _fn.function = lambda;
         _caller = &call_static;
     }
 
     ///Capturing lambda
     template <class Fn, typename std::enable_if<!std::is_constructible<R(*)(Args...), Fn>::value, bool>::type = true>
-    callbackfn(Fn&& lambda) {
+    callback(Fn&& lambda) {
         function<R(Args...)> fn = lambda;
         _fn.lambda = fn.eject();
         _caller = &call_lambda;
     }
 
-    ~callbackfn() {
+    ~callback() {
         if (_caller == &call_lambda && _fn.lambda)
             delete _fn.lambda;
+    }
+
+    callback(const callback& fn) {
+        _caller = fn._caller;
+        _fn.lambda = _caller == &call_lambda && fn._fn.lambda
+            ? fn._fn.lambda->clone()
+            : fn._fn.lambda;
+    }
+
+    callback(callback&& fn) {
+        _fn.lambda = fn._fn.lambda;
+        fn._fn.lambda = 0;
+        _caller = fn._caller;
     }
 
     ///Invoked with T* pointer, which is used only if the bound function was a member pointer

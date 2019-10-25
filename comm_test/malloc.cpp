@@ -42,7 +42,7 @@ static void test_miki()
 
 void test_malloc()
 {
-    test_miki();
+    //test_miki();
 
     /*while(1)
     {

@@ -486,7 +486,6 @@ int File::parse(token path)
     hdrname.toupper();
 
     uint nm = 0;
-    uint ne = 0;
     int mt;
     charstr templarg;
     dynarray<charstr> namespc;
@@ -498,7 +497,7 @@ int File::parse(token path)
         {
             Class* pc = classes.add();
             if (!pc->parse(lex, templarg, namespc, &pasters, irefargs)
-                || pc->method.size() == 0 && pc->iface.size() == 0) {
+                || (pc->method.size() == 0 && pc->iface.size() == 0)) {
                 classes.resize(-1);
             }
         }

@@ -289,7 +289,7 @@ struct log_filter {
     charstr _module;
     uint _log_level;
 
-    log_filter(filter_fun fn, const token& module, uint level)
+    log_filter(const filter_fun& fn, const token& module, uint level)
     : _filter_fun(fn)
     , _module(module)
     , _log_level(level)

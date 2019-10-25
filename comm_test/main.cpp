@@ -4,7 +4,7 @@
 #include "../trait.h"
 #include "../hash/slothash.h"
 #include "../function.h"
-//#include "ig_test.h"
+#include "intergen/ifc/client.h"
 
 namespace coid {
 void std_test();
@@ -135,16 +135,32 @@ struct something
     int value = 1;
 };
 
+struct anything : something
+{
+    int funm2(int, void*) {
+        return value;
+    }
+};
+
+void reftest(callback<something, int(int, void*)>&& fn) {
+    function<void(int)> x1 = [](int) {};
+    auto s = [fn = std::move(fn)](int) { fn(0, 1, nullptr); };
+    function<void(int)> x2 = std::move(s);
+}
+
 
 void fntest(void(*pfn)(charstr&))
 {
     function<void(charstr&)> fn = pfn;
     int z = 2;
 
-    callbackfn<something, int(int, void*)> fns = &something::funs;
-    callbackfn<something, int(int, void*)> fnm = &something::funm;
-    callbackfn<something, int(int, void*)> fnl = [](int, void*) { return -1; };
-    callbackfn<something, int(int, void*)> fnz = [z](int, void*) { return z; };
+    callback<something, int(int, void*)> fns = &something::funs;
+    callback<something, int(int, void*)> fnm = &something::funm;
+    callback<something, int(int, void*)> fna = base_cast(&anything::funm2);
+    callback<something, int(int, void*)> fnl = [](int, void*) { return -1; };
+    callback<something, int(int, void*)> fnz = [z](int, void*) { return z; };
+
+    
 
     something s;
 

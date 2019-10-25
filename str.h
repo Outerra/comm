@@ -66,8 +66,14 @@ public:
 
     COIDNEWDELETE(charstr);
 
-    struct output_iterator : std::iterator<std::output_iterator_tag, char>
+    struct output_iterator
     {
+        typedef std::output_iterator_tag iterator_category;
+        typedef char value_type;
+        typedef int difference_type;
+        typedef char* pointer_type;
+        typedef char& reference_type;
+
         charstr* _p;                    //<ptr to the managed item
 
         char& operator *(void) const {
@@ -1322,7 +1328,7 @@ public:
         for (char* p = (char*) ptr(), *pe = (char*) ptre(); p < pe; ++p) {
             uchar c = *p;
 
-            if ((c >= 'A') && (c <= 'Z') || (c >= 'a') && (c <= 'z') || (c >= '0') && (c <= '9')) {
+            if (((c >= 'A') && (c <= 'Z')) || ((c >= 'a') && (c <= 'z')) || ((c >= '0') && (c <= '9'))) {
                 continue;
             }
 
@@ -2173,7 +2179,7 @@ inline token token::rebase(const charstr& from, const charstr& to) const
 inline uint token::replace(const token& from, const token& to, charstr& dst, bool icase) const
 {
     uint n = 0;
-    token str = *this, tok;
+    token str = *this;
 
     while (str) {
         token tok = str.cut_left(from, icase);

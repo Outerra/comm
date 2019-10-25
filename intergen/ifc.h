@@ -152,6 +152,12 @@ public:
     template<typename T>
     T* iface() { return static_cast<T*>(this); }
 
+    ///Invoke callback handler
+    template <class T, class R, class ...Args>
+    R call(const coid::callback<T, R(Args...)>& cbk, Args ...args) const {
+        return cbk(this, std::forward<Args>(args)...);
+    }
+
 
     ifn_t* vtable() const { return _vtable; }
 
