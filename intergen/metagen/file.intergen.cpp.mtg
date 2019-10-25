@@ -49,7 +49,7 @@ $-[method !static?]$
  $-(if hasifc?)$
         _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if fnarg?)$$type$(*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if const?)$const$(/if)$>(&$name$__ifc_wrapper));
  $-(elif)$
-        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if fnarg?)$$type$(*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if const?)$const$(/if)$>(&::$....ns rest="::" after="::"$$....class$::$intname$));
+        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if fnarg?)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if const?)$const$(/if)$>(&::$....ns rest="::" after="::"$$....class$::$intname$));
  $-(/if)$
 $-[/method]-$
 

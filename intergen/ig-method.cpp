@@ -3,18 +3,18 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Parse function declaration after ifc_fn
-bool MethodIG::parse( iglexer& lex, const charstr& host, const charstr& ns, const charstr& nsifc, dynarray<Arg>& irefargs, bool isevent )
+bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const charstr& nsifc, dynarray<Arg>& irefargs, bool isevent)
 {
     bstatic = lex.match_optional("static");
 
     //rettype fncname '(' ...
 
-    if(!ret.parse(lex, false))
+    if (!ret.parse(lex, false))
         throw lex.exc();
 
     bhasifctargets = !ret.ifctarget.is_empty();
 
-    if(!bstatic && ret.biref)
+    if (!bstatic && ret.biref)
         ret.add_unique(irefargs);
 
     biref = bptr = bifccr = false;
@@ -42,7 +42,7 @@ bool MethodIG::parse( iglexer& lex, const charstr& host, const charstr& ns, cons
         //    bptr = true;
         else {
             out << (lex.prepare_exception()
-                << "invalid return type for static interface creator method\n  should be iref<"
+                << "error: invalid return type for static interface creator method\n  should be iref<"
                 << host << ">");
             lex.clear_err();
             ++ncontinuable_errors;
@@ -54,7 +54,7 @@ bool MethodIG::parse( iglexer& lex, const charstr& host, const charstr& ns, cons
     lex.match(lex.IDENT, name, "expected method name");
 
     boperator = name == "operator";
-    if(boperator) {
+    if (boperator) {
         lex.match('(');
         lex.match(')');
         name << "()";
@@ -66,31 +66,31 @@ bool MethodIG::parse( iglexer& lex, const charstr& host, const charstr& ns, cons
 
     ninargs = noutargs = 0;
 
-    if(!lex.matches(')')) {
+    if (!lex.matches(')')) {
         do {
-            if( !args.add()->parse(lex, true) )
+            if (!args.add()->parse(lex, true))
                 throw lex.exc();
 
             Arg* arg = args.last();
 
-            if(arg->binarg) {
+            if (arg->binarg) {
                 ++ninargs;
-                if(!arg->defval)
+                if (!arg->defval)
                     ++ninargs_nondef;
             }
-            if(arg->boutarg)
+            if (arg->boutarg)
                 ++noutargs;
 
             arg->tokenpar = arg->binarg &&
                 (arg->basetype=="token" || arg->basetype=="coid::token" || arg->basetype=="charstr" || arg->basetype=="coid::charstr");
 
-            if(!bstatic && arg->biref && (isevent ? arg->binarg : arg->boutarg))
+            if (!bstatic && arg->biref && (isevent ? arg->binarg : arg->boutarg))
                 arg->add_unique(irefargs);
 
-            if(arg->ifctarget)
+            if (arg->ifctarget)
                 bhasifctargets = true;
         }
-        while(lex.matches(','));
+        while (lex.matches(','));
 
         lex.match(')');
     }

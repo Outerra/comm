@@ -101,17 +101,17 @@ struct Method
         friend metastream& operator || (metastream& m, Arg& p)
         {
             return m.compound("Arg", [&]()
-            {
-                m.member("type", p.type);
-                m.member("name", p.name);
-                m.member("size", p.size);
-                m.member("defval", p.defval);
-                m.member("const", p.bconst);
-                m.member("ptr", p.bptr);
-                m.member("ref", p.bref);
-                m.member("retarg", p.bretarg);
-                m.member("sizearg", p.bsizearg);
-            });
+                {
+                    m.member("type", p.type);
+                    m.member("name", p.name);
+                    m.member("size", p.size);
+                    m.member("defval", p.defval);
+                    m.member("const", p.bconst);
+                    m.member("ptr", p.bptr);
+                    m.member("ref", p.bref);
+                    m.member("retarg", p.bretarg);
+                    m.member("sizearg", p.bsizearg);
+                });
         }
     };
 
@@ -140,20 +140,20 @@ struct Method
     friend metastream& operator || (metastream& m, Method& p)
     {
         return m.compound("Method", [&]()
-        {
-            m.member("retexpr", p.retexpr);
-            m.member("retparm", p.retparm);
-            m.member("templarg", p.templarg);
-            m.member("templsub", p.templsub);
-            m.member("rettype", p.rettype);
-            m.member("name", p.name);
-            m.member("static", p.bstatic);
-            m.member("sizearg", p.bsizearg);
-            m.member("ptr", p.bptr);
-            m.member("iref", p.biref);
-            m.member("overload", p.overload);
-            m.member("args", p.args);
-        });
+            {
+                m.member("retexpr", p.retexpr);
+                m.member("retparm", p.retparm);
+                m.member("templarg", p.templarg);
+                m.member("templsub", p.templsub);
+                m.member("rettype", p.rettype);
+                m.member("name", p.name);
+                m.member("static", p.bstatic);
+                m.member("sizearg", p.bsizearg);
+                m.member("ptr", p.bptr);
+                m.member("iref", p.biref);
+                m.member("overload", p.overload);
+                m.member("args", p.args);
+            });
     }
 };
 
@@ -171,6 +171,7 @@ struct MethodIG
         charstr name;                   //< parameter name
         charstr arsize;                 //< size expression if the parameter is an array, including [ ]
         charstr fnargs;                 //< argument list of a function-type argument
+        charstr memfnclass;             //< member fn class
         charstr defval;
         charstr fulltype;
         charstr ifctarget;
@@ -205,34 +206,35 @@ struct MethodIG
         friend metastream& operator || (metastream& m, Arg& p)
         {
             return m.compound("MethodIG::Arg", [&]()
-            {
-                m.member("type",p.type);
-                m.member("basetype",p.basetype);
-                m.member("barenstype",p.barenstype);
-                m.member("barens",p.barens);
-                m.member("baretype",p.baretype);
-                m.member("name",p.name);
-                m.member("size",p.arsize);
-                m.member("fnargs",p.fnargs);
-                m.member("defval",p.defval);
-                m.member("fulltype",p.fulltype);
-                m.member("ifc",p.ifctarget);
-                m.member("ifckwds",p.ifckwds);
-                m.member("doc",p.doc);
-                m.member("const",p.bconst);
-                m.member("enum",p.benum);
-                m.member("specptr",p.bspecptr);
-                m.member("ptr",p.bptr);
-                m.member("ref",p.bref);
-                m.member("xref",p.bxref);
-                m.member("iref",p.biref);
-                m.member("inarg",p.binarg);
-                m.member("outarg",p.boutarg);
-                m.member("volatile",p.bvolatile);
-                m.member("token",p.tokenpar);
-                m.member("nojs",p.bnojs);
-                m.member("fnarg",p.bfnarg);
-            });
+                {
+                    m.member("type", p.type);
+                    m.member("basetype", p.basetype);
+                    m.member("barenstype", p.barenstype);
+                    m.member("barens", p.barens);
+                    m.member("baretype", p.baretype);
+                    m.member("name", p.name);
+                    m.member("size", p.arsize);
+                    m.member("fnargs", p.fnargs);
+                    m.member("memfnclass", p.memfnclass);
+                    m.member("defval", p.defval);
+                    m.member("fulltype", p.fulltype);
+                    m.member("ifc", p.ifctarget);
+                    m.member("ifckwds", p.ifckwds);
+                    m.member("doc", p.doc);
+                    m.member("const", p.bconst);
+                    m.member("enum", p.benum);
+                    m.member("specptr", p.bspecptr);
+                    m.member("ptr", p.bptr);
+                    m.member("ref", p.bref);
+                    m.member("xref", p.bxref);
+                    m.member("iref", p.biref);
+                    m.member("inarg", p.binarg);
+                    m.member("outarg", p.boutarg);
+                    m.member("volatile", p.bvolatile);
+                    m.member("token", p.tokenpar);
+                    m.member("nojs", p.bnojs);
+                    m.member("fnarg", p.bfnarg);
+                });
         }
     };
 
@@ -300,35 +302,35 @@ struct MethodIG
     friend metastream& operator || (metastream& m, MethodIG& p)
     {
         return m.compound("MethodIG", [&]()
-        {
-            m.member("templarg",p.templarg);
-            m.member("templsub",p.templsub);
-            m.member("return",p.ret);
-            m.member("name",p.name);
-            m.member("intname",p.intname);
-            m.member("storage",p.storage);
-            m.member("operator",p.boperator);
-            m.member("internal",p.binternal);
-            m.member("capture",p.bcapture);
-            m.member("static",p.bstatic);
-            m.member("ptr",p.bptr);
-            m.member("iref",p.biref);
-            m.member("ifccr",p.bifccr);
-            m.member("const",p.bconst);
-            m.member("implicit",p.bimplicit);
-            m.member("destroy",p.bdestroy);
-            m.member("mandatory",p.bmandatory);
-            m.member("hasifc",p.bhasifctargets);
-            m.member("duplicate",p.bduplicate);
-            m.member("args",p.args);
-            m.member("ninargs",p.ninargs);
-            m.member("ninargs_nondef",p.ninargs_nondef);
-            m.member("noutargs",p.noutargs);
-            m.member("comments",p.comments);
-            m.member("docs",p.docs);
-            m.member("index",p.index);
-            m.member("default_event_body", p.default_event_body);
-        });
+            {
+                m.member("templarg", p.templarg);
+                m.member("templsub", p.templsub);
+                m.member("return", p.ret);
+                m.member("name", p.name);
+                m.member("intname", p.intname);
+                m.member("storage", p.storage);
+                m.member("operator", p.boperator);
+                m.member("internal", p.binternal);
+                m.member("capture", p.bcapture);
+                m.member("static", p.bstatic);
+                m.member("ptr", p.bptr);
+                m.member("iref", p.biref);
+                m.member("ifccr", p.bifccr);
+                m.member("const", p.bconst);
+                m.member("implicit", p.bimplicit);
+                m.member("destroy", p.bdestroy);
+                m.member("mandatory", p.bmandatory);
+                m.member("hasifc", p.bhasifctargets);
+                m.member("duplicate", p.bduplicate);
+                m.member("args", p.args);
+                m.member("ninargs", p.ninargs);
+                m.member("ninargs_nondef", p.ninargs_nondef);
+                m.member("noutargs", p.noutargs);
+                m.member("comments", p.comments);
+                m.member("docs", p.docs);
+                m.member("index", p.index);
+                m.member("default_event_body", p.default_event_body);
+            });
     }
 };
 
@@ -408,38 +410,38 @@ struct Interface
     friend metastream& operator || (metastream& m, Interface& p)
     {
         return m.compound("Interface", [&]()
-        {
-            m.member("ns",p.nss);
-            m.member("name",p.name);
-            m.member("relpath",p.relpath);
-            m.member("relpathjs",p.relpathjs);
-            m.member("relpathjsc",p.relpathjsc);
-            m.member("relpathlua", p.relpathlua);
-            m.member("hdrfile",p.hdrfile);
-            m.member("storage",p.storage);
-            m.member("method",p.method);
-            m.member("getter",p.getter);
-            m.member("setter",p.setter);
-            m.member("onconnect",p.on_connect);
-            m.member("onconnectev",p.on_connect_ev);
-            m.member_type<bool>("hasprops", [](bool){}, [&]() { return p.oper_get>=0;});
-            m.member("nifcmethods",p.nifc_methods);
-            m.member("varname",p.varname);
-            m.member("event",p.event);
-            m.member("destroy",p.destroy);
-            m.member("hash",p.hash);
-            m.member("comments",p.comments);
-            m.member("docs",p.docs);
-            m.member("pasters",p.pasters);
-            m.member_indirect("srcfile",p.srcfile);
-            m.member_indirect("class",p.srcclass);
-            m.member_indirect("classnsx",p.srcnamespc);
-            m.member("base",p.base);
-            m.member("baseclass",p.baseclass);
-            m.member("basepath",p.basepath);
-            m.member("virtual",p.bvirtual);
-            m.member("default_creator",p.default_creator);
-        });
+            {
+                m.member("ns", p.nss);
+                m.member("name", p.name);
+                m.member("relpath", p.relpath);
+                m.member("relpathjs", p.relpathjs);
+                m.member("relpathjsc", p.relpathjsc);
+                m.member("relpathlua", p.relpathlua);
+                m.member("hdrfile", p.hdrfile);
+                m.member("storage", p.storage);
+                m.member("method", p.method);
+                m.member("getter", p.getter);
+                m.member("setter", p.setter);
+                m.member("onconnect", p.on_connect);
+                m.member("onconnectev", p.on_connect_ev);
+                m.member_type<bool>("hasprops", [](bool) {}, [&]() { return p.oper_get>=0; });
+                m.member("nifcmethods", p.nifc_methods);
+                m.member("varname", p.varname);
+                m.member("event", p.event);
+                m.member("destroy", p.destroy);
+                m.member("hash", p.hash);
+                m.member("comments", p.comments);
+                m.member("docs", p.docs);
+                m.member("pasters", p.pasters);
+                m.member_indirect("srcfile", p.srcfile);
+                m.member_indirect("class", p.srcclass);
+                m.member_indirect("classnsx", p.srcnamespc);
+                m.member("base", p.base);
+                m.member("baseclass", p.baseclass);
+                m.member("basepath", p.basepath);
+                m.member("virtual", p.bvirtual);
+                m.member("default_creator", p.default_creator);
+            });
     }
 };
 
@@ -464,17 +466,17 @@ struct Class
     friend metastream& operator || (metastream& m, Class& p)
     {
         return m.compound("Class", [&]()
-        {
-            m.member("class",p.classname);
-            m.member("templarg",p.templarg);
-            m.member("templsub",p.templsub);
-            m.member("ns",p.ns);
-            m.member("nsx",p.namespc);
-            m.member("noref",p.noref);
-            m.member("method",p.method);
-            m.member("iface",p.iface);
-            m.member("nss",p.namespaces);
-        });
+            {
+                m.member("class", p.classname);
+                m.member("templarg", p.templarg);
+                m.member("templsub", p.templsub);
+                m.member("ns", p.ns);
+                m.member("nsx", p.namespc);
+                m.member("noref", p.noref);
+                m.member("method", p.method);
+                m.member("iface", p.iface);
+                m.member("nss", p.namespaces);
+            });
     }
 };
 
