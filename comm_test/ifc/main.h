@@ -168,8 +168,8 @@ public:
     {
         static_assert(std::is_base_of<main, C>::value, "not a base class");
 
-        typedef iref<intergen_interface> (*fn_client)(void*, intergen_interface*);
-        fn_client cc = [](void*, intergen_interface*) -> iref<intergen_interface> { return new C; };
+        typedef intergen_interface* (*fn_client)();
+        fn_client cc = []() -> intergen_interface* { return new C; };
 
         coid::token type = typeid(C).name();
         type.consume("class ");
@@ -194,12 +194,12 @@ protected:
         m->assign_safe(ifc, 0);
     }
 
-    bool assign_safe(intergen_interface* client, iref<main>* pout);
+    bool assign_safe(intergen_interface* client__, iref<main>* pout);
 
     typedef void (*cleanup_fn)(main*, intergen_interface*);
     cleanup_fn _cleaner;
 
-    bool set_host(policy_intrusive_base* host, intergen_interface* client, iref<main>* pout);
+    bool set_host(policy_intrusive_base*, intergen_interface*, iref<main>* pout);
 
     main() : _cleaner(0)
     {}

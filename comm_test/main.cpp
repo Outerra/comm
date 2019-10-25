@@ -156,11 +156,12 @@ void fntest(void(*pfn)(charstr&))
 
     callback<something, int(int, void*)> fns = &something::funs;
     callback<something, int(int, void*)> fnm = &something::funm;
-    callback<something, int(int, void*)> fna = base_cast(&anything::funm2);
     callback<something, int(int, void*)> fnl = [](int, void*) { return -1; };
     callback<something, int(int, void*)> fnz = [z](int, void*) { return z; };
 
-    
+#if _MSC_VER > 1920
+    callback<something, int(int, void*)> fna = base_cast(&anything::funm2);
+#endif
 
     something s;
 

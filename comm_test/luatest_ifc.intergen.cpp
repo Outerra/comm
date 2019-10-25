@@ -134,9 +134,9 @@ uint16 other_dispatcher::_instid = 0xffffU;
 intergen_interface::ifn_t* other_dispatcher::_vtable2 = 0;
 intergen_interface::ifn_t* other_dispatcher::_vtable1 = 0;
 
-bool other::set_host(policy_intrusive_base* host, intergen_interface* client, iref<other>* pout)
+bool other::set_host(policy_intrusive_base* host__, intergen_interface* client__, iref<other>* pout)
 {
-    _host = host;
+    _host = host__;
     _vtable = other_dispatcher::get_vtable();
     return true;
 }
@@ -312,7 +312,7 @@ iref<main> main::intergen_active_interface(::ns1::main_cls* host)
     return rval;
 }
 
-bool main::assign_safe(intergen_interface* client, iref<main>* pout)
+bool main::assign_safe(intergen_interface* client__, iref<main>* pout)
 {
     //try assigning to the host (MT guard)
     // if that fails, the interface will be passive (no events)
@@ -323,15 +323,15 @@ bool main::assign_safe(intergen_interface* client, iref<main>* pout)
 
     coid::clean_ptr<intergen_interface>& ifcvar = hostptr->_ifc;
     coid::comm_mutex& mx = share_lock();
-    if (ifcvar == client)
+    if (ifcvar == client__)
         return true;
 
     GUARDTHIS(mx);
     //assign only if nobody assigned before us
-    bool succ = !ifcvar || !client;
+    bool succ = !ifcvar || !client__;
     if (succ) {
-        ifcvar = client;
-        _cleaner = client ? &_cleaner_callback : 0;
+        ifcvar = client__;
+        _cleaner = client__ ? &_cleaner_callback : 0;
     }
     else if (pout)
         pout->add_refcount(static_cast<main*>(ifcvar.get()));
@@ -339,12 +339,12 @@ bool main::assign_safe(intergen_interface* client, iref<main>* pout)
     return succ;
 }
 
-bool main::set_host(policy_intrusive_base* host, intergen_interface* client, iref<main>* pout)
+bool main::set_host(policy_intrusive_base* host__, intergen_interface* client__, iref<main>* pout)
 {
-    _host = host;
+    _host = host__;
     _vtable = main_dispatcher::get_vtable();
 
-    return assign_safe(client, pout);
+    return assign_safe(client__, pout);
 }
 
 //auto-register the available interface creators
@@ -363,7 +363,7 @@ namespace ns1 {
 
 void main_cls::evt1( int a, ifc_out int* b, ifc_out iref<ns::other>& d )
 {
-    if (!_ifc) 
+    if (!_ifc)
         throw coid::exception() << "evt1" << " handler not implemented";
     else
         return _ifc->iface<ns::main>()->evt1(a, b, d);
@@ -371,7 +371,7 @@ void main_cls::evt1( int a, ifc_out int* b, ifc_out iref<ns::other>& d )
 
 coid::charstr main_cls::evt2( int a, ifc_out int* b, ifc_inout ns1::dummy& c, ifc_out iref<ns::other>& d, iref<ns::other> e )
 {
-    if (!_ifc) 
+    if (!_ifc)
         throw coid::exception() << "evt2" << " handler not implemented";
     else
         return _ifc->iface<ns::main>()->evt2(a, b, c, d, e);
@@ -379,7 +379,7 @@ coid::charstr main_cls::evt2( int a, ifc_out int* b, ifc_inout ns1::dummy& c, if
 
 iref<ns::other> main_cls::evt3( const coid::token& msg )
 {
-    if (!_ifc) 
+    if (!_ifc)
         throw coid::exception() << "evt3" << " handler not implemented";
     else
         return _ifc->iface<ns::main>()->evt3(msg);
@@ -387,7 +387,7 @@ iref<ns::other> main_cls::evt3( const coid::token& msg )
 
 iref<ns::main> main_cls::evt4( int a, iref<ns::other> b, ifc_out int& c, ifc_out iref<ns::other>& d, int e )
 {
-    if (!_ifc) 
+    if (!_ifc)
         throw coid::exception() << "evt4" << " handler not implemented";
     else
         return _ifc->iface<ns::main>()->evt4(a, b, c, d, e);

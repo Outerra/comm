@@ -99,7 +99,7 @@ public:
     //@note host side helper
     static iref<thingface> intergen_active_interface(::n1::n2::thing* host);
 
-    template<enum backend B>
+    template<enum class backend B>
     static void* intergen_wrapper_cache() {
         static void* _cached_wrapper=0;
         if (!_cached_wrapper) {
