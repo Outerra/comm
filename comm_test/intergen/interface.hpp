@@ -40,7 +40,7 @@ public:
     ifc_event void callforth(void (*cbk)(int, const coid::token&));
 
 
-    ifc_fn void memfn_callback(coid::callback<intergen_interface, void(int, void*)>&& fn) {
+    ifc_fn void memfn_callback(coid::callback<void(int, void*)>&& fn) {
         //invoke passed callback (intergen interface member function)
         //(_ifc->iface<intergen_interface>()->*(fn))(1, nullptr);
 

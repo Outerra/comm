@@ -11,7 +11,7 @@ public:
 
     virtual void echo(int k) override {
         //call interface function giving it a member fn
-        memfn_callback(coid::base_cast(&handler_class::handler));
+        memfn_callback(&handler_class::handler);
     }
 };
 

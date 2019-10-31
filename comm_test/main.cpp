@@ -39,6 +39,8 @@ using namespace coid;
 struct value {
     charstr key;
 
+    value() {}
+
     value(charstr&& val) {
         key.takeover(val);
     }
@@ -124,7 +126,7 @@ void lambda_slotalloc_test()
 
 struct something
 {
-    static int funs(int, void*) {
+    static int funs(void*, int, void*) {
         return 0;
     }
 
@@ -137,39 +139,82 @@ struct something
 
 struct anything : something
 {
-    int funm2(int, void*) {
+    int funm2(int, void*) const {
         return value;
     }
 };
 
-void reftest(callback<something, int(int, void*)>&& fn) {
-    function<void(int)> x1 = [](int) {};
-    auto s = [fn = std::move(fn)](int) { fn(0, 1, nullptr); };
-    function<void(int)> x2 = std::move(s);
-}
+struct multithing : value, something
+{
+    int funm3(int, void*) const {
+        return something::value;
+    }
 
+    int funn3(int, void*) {
+        return something::value;
+    }
+};
+
+struct virthing : something
+{
+    virtual int funv(int, void*) const {
+        return value;
+    }
+};
+
+typedef function<void(float)> fn_axis_handler;
+typedef coid::function<void(void*, const something&)> fn_action_handler;
+
+fn_action_handler hh;
+
+void fnlambda_test(const fn_axis_handler& fn) {
+    hh = [fn](void* obj, const something& act) {
+        fn(act.value);
+        };
+}
 
 void fntest(void(*pfn)(charstr&))
 {
     function<void(charstr&)> fn = pfn;
+
+    fnlambda_test(
+        [](float val) {
+            //whatevs
+        });
+
+    hh(nullptr, something());
+
     int z = 2;
-
-    callback<something, int(int, void*)> fns = &something::funs;
-    callback<something, int(int, void*)> fnm = &something::funm;
-    callback<something, int(int, void*)> fnl = [](int, void*) { return -1; };
-    callback<something, int(int, void*)> fnz = [z](int, void*) { return z; };
-
-#if _MSC_VER > 1920
-    callback<something, int(int, void*)> fna = base_cast(&anything::funm2);
-#endif
+    callback<int(int, void*)> fns = &something::funs;
+    callback<int(int, void*)> fnm = &something::funm;
+    callback<int(int, void*)> fnl = [](void*, int, void*) { return -1; };
+    callback<int(int, void*)> fnz = [z](void*, int, void*) { return z; };
+    callback<int(int, void*)> fn2 = &anything::funm2;
+    callback<int(int, void*)> fm3 = &multithing::funm3;
+    callback<int(int, void*)> fn3 = &multithing::funn3;
+    callback<int(int, void*)> fnv = &virthing::funv;
 
     something s;
+    multithing m;
+    virthing v;
 
     DASSERT(fns(&s, 1, 0) == 0);
     DASSERT(fnm(&s, 1, 0) == 1);
     DASSERT(fnl(&s, 1, 0) == -1);
     DASSERT(fnz(&s, 1, 0) == 2);
+    DASSERT(fn2(&s, 1, 0) == 1);
+    DASSERT(fm3(&m, 1, 0) == 1);
+    DASSERT(fn3(&m, 1, 0) == 1);
+    DASSERT(fnv(&v, 1, 0) == 1);
 }
+
+
+void reftest(callback<int(int, void*)>&& fn) {
+    function<void(int)> x1 = [](int) {};
+    auto s = [fn = std::move(fn)](int) { fn(0, 1, nullptr); };
+    function<void(int)> x2 = std::move(s);
+}
+
 
 void constexpr_test()
 {
