@@ -61,8 +61,9 @@ enter_single_thread::~enter_single_thread()
 bool __rassert( const opt_string& txt, const char* file, int line, const char* function, const char* expr )
 {
     zstring* z = txt.get();
+    coid::token fname = coid::token(file).cut_right_group_back("\\/");
 
-    coidlog_error("", "Assertion failed in " << file << '(' << line
+    coidlog_error("", "Assertion failed in " << fname << '(' << line
         << "), function " << function << ":\n\""
         << expr << (z ? "\": " : "\"") << (z ? z->get_token() : token())
         << '\r' //forces log flush
