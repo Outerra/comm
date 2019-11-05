@@ -177,7 +177,6 @@ struct closure_traits_base
 
         template <typename Fn>
         function(const Fn& fn) : c(0) {
-            static_assert(false, "why here");
             c = new callable<Fn>(fn);
         }
 

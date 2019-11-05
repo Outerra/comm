@@ -111,7 +111,7 @@
 #endif
 
 #if !defined(__cpp_constexpr) && _MSC_VER < 1900
-#error this compiler doesn't support constexpr
+#error this compiler does not support constexpr
 #endif
 
 //handle VS2015 incomplete constexpr support
