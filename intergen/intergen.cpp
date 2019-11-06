@@ -27,7 +27,9 @@ const token iglexer::TEMPL = "template";
 const token iglexer::NAMESPC = "namespace";
 
 const token iglexer::IFC_CLASS = "ifc_class";
+const token iglexer::IFC_CLASSX = "ifc_classx";
 const token iglexer::IFC_CLASS_VAR = "ifc_class_var";
+const token iglexer::IFC_CLASSX_VAR = "ifc_classx_var";
 const token iglexer::IFC_CLASS_VIRTUAL = "ifc_class_virtual";
 const token iglexer::IFC_FN = "ifc_fn";
 const token iglexer::IFC_FNX = "ifc_fnx";

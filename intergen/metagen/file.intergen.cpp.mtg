@@ -302,10 +302,11 @@ $-(if event?)$
 $[..nss]$namespace $@value$ {
 $[/..nss]-$
 
-$-[event !implicit?]$
+$-[event !implicit? !inherit?]$
 $return.type$ $....class$::$intname$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if fnarg?)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if const?)$ const$(/if)$
 {
-    if (!$..varname$) $-(if default_event_body?)$ { $default_event_body$ }$(elif)$
+    if (!$..varname$ $-(if ..inhmask?)$ || ($..varname$->iface<$..ns rest="::" after="::"$$..name$>()->_inhmask & (1<<$..ifc_bit$)) == 0$(/if)$) $-(if default_event_body?)$
+        { $default_event_body$ }$(elif)$
         throw coid::exception() << "$name$" << " handler not implemented";$(/if)$
     else
         return $..varname$->iface<$..ns rest="::" after="::"$$..name$>()->$name$($[args rest=", "]$$name$$[/args]$);

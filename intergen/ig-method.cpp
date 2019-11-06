@@ -30,8 +30,9 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
             biref = true;
             (ret.type = "iref<") << ns << host << '>';
         }
-        else if (ret.type == ((tmp = "iref<") << ns << host << '>'))
+        else if (ret.type == ((tmp = "iref<") << ns << host << '>')) {
             biref = true;
+        }
         else if (ret.type == ((tmp = "iref<") << nsifc << '>')) {
             biref = true;
             bifccr = true;

@@ -29,7 +29,9 @@ public:
     static const token NAMESPC;
 
     static const token IFC_CLASS;
+    static const token IFC_CLASSX;
     static const token IFC_CLASS_VAR;
+    static const token IFC_CLASSX_VAR;
     static const token IFC_CLASS_VIRTUAL;
     static const token IFC_FN;
     static const token IFC_FNX;
@@ -260,6 +262,7 @@ struct MethodIG
     bool bmandatory         = false;    //< mandatory event
     bool bhasifctargets     = false;
     bool bduplicate         = false;    //< a duplicate method/event from another interface of the host
+    bool binherit           = false;    //< method inherited from base interface
 
     Arg ret;
     dynarray<Arg> args;
@@ -322,6 +325,7 @@ struct MethodIG
                 m.member("mandatory", p.bmandatory);
                 m.member("hasifc", p.bhasifctargets);
                 m.member("duplicate", p.bduplicate);
+                m.member("inherit", p.binherit);
                 m.member("args", p.args);
                 m.member("ninargs", p.ninargs);
                 m.member("ninargs_nondef", p.ninargs_nondef);
@@ -356,30 +360,106 @@ struct Interface
     MethodIG destroy;
     MethodIG default_creator;
 
-    int oper_get;
-    int oper_set;
+    int oper_get = -1;
+    int oper_set = -1;
 
     MethodIG::Arg getter, setter;
 
     charstr on_connect, on_connect_ev;
 
-    uint nifc_methods;
+    uint nifc_methods = 0;
 
     dynarray<charstr> pasters;
-    charstr* srcfile;
-    charstr* srcclass;
-    dynarray<charstr>* srcnamespc;
+    charstr* srcfile = 0;
+    charstr* srcclass = 0;
+    dynarray<charstr>* srcnamespc = 0;
 
     uint hash;
+
+    int par_ifc_offset = 0;
+    int ifc_bit = -1;
+    int ninherited = 0;
+    uint inhmask = 0;
 
     dynarray<charstr> comments;
     dynarray<charstr> docs;
 
-    bool bvirtual;
-    bool bdefaultcapture;
+    bool bvirtual = false;
+    bool bdefaultcapture = false;
 
-    Interface() : oper_get(-1), oper_set(-1), bvirtual(false), bdefaultcapture(false)
-    {}
+
+    void copy_methods(Interface& o)
+    {
+        {
+            //set inheritance bits
+            int iof = int(this - &o);
+            par_ifc_offset = iof;
+
+            //find root
+            Interface* par = this;
+            while (par->par_ifc_offset > 0) {
+                par -= par->par_ifc_offset;
+            }
+
+            ifc_bit = ++par->ninherited;
+
+            uint m = 1;
+            par = this;
+
+            while (par->par_ifc_offset > 0) {
+                m |= 1 << par->ifc_bit;
+
+                par -= par->par_ifc_offset;
+                par->ninherited++;
+            }
+
+            if (m > 1) {
+                par->inhmask |= 1;
+                par->ifc_bit = 0;
+            }
+
+            inhmask = m;
+        }
+
+        varname = o.varname;
+
+        relpath = o.relpath;
+        base = o.base;
+        baseclass = o.baseclass;
+        basepath = o.basepath;
+
+        baseclass.rebase(o.base.ptr(), base.ptr());
+        basepath.rebase(o.base.ptr(), base.ptr());
+
+        method = o.method;
+        event = o.event;
+        destroy = o.destroy;
+        default_creator = o.default_creator;
+
+        for (auto& m : method)
+            m.binherit = true;
+        for (auto& e : event)
+            e.binherit = true;
+
+        oper_get = o.oper_get;
+        oper_set = o.oper_set;
+        getter = o.getter;
+        setter = o.setter;
+
+        on_connect = o.on_connect;
+        on_connect_ev = o.on_connect_ev;
+
+        nifc_methods = o.nifc_methods;
+        pasters = o.pasters;
+
+        srcfile = o.srcfile;
+        srcclass = o.srcclass;
+        srcnamespc = o.srcnamespc;
+
+        hash = o.hash;
+
+        docs = o.docs;
+    }
 
     void compute_hash( int version );
 
@@ -430,6 +510,8 @@ struct Interface
                 m.member("event", p.event);
                 m.member("destroy", p.destroy);
                 m.member("hash", p.hash);
+                m.member("inhmask", p.inhmask);
+                m.member("ifc_bit", p.ifc_bit);
                 m.member("comments", p.comments);
                 m.member("docs", p.docs);
                 m.member("pasters", p.pasters);
