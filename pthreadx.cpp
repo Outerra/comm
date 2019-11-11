@@ -66,7 +66,7 @@ thread_t thread::invalid()
 bool thread::is_invalid() const
 {
 #ifdef SYSTYPE_WIN
-    return _thread == UMAXS;
+    return _thread == UMAX32;
 #else
     return _thread == 0;
 #endif
