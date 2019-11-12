@@ -183,7 +183,8 @@ public:
         jsc,
         lua,
 
-        count_
+        count_,
+        unknown = -1
     };
 
     //@return back-end implementation
