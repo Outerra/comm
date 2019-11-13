@@ -88,8 +88,8 @@ COID_NAMESPACE_END
 
 
 //@{ Runtime assertions
-#define RASSERT(expr)               XASSERTE(expr) coid::__rassert(0,__FILE__,__LINE__,__FUNCTION__,#expr); XASSERT; } while(0)
-#define RASSERTX(expr,txt)          XASSERTE(expr) coid::__rassert(coid::opt_string() << txt,__FILE__,__LINE__,__FUNCTION__,#expr); XASSERT; } while(0)
+#define RASSERT(expr)               XASSERTE(expr) coid::__rassert(0,__FILE__,__LINE__,__FUNCTION__,#expr,true); XASSERT; } while(0)
+#define RASSERTX(expr,txt)          XASSERTE(expr) coid::__rassert(coid::opt_string() << txt,__FILE__,__LINE__,__FUNCTION__,#expr,true); XASSERT; } while(0)
 //@}
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -143,7 +143,7 @@ COID_NAMESPACE_END
 COID_NAMESPACE_BEGIN
 
 class opt_string;
-bool __rassert( const opt_string& txt, const char* file, int line, const char* function, const char* expr );
+bool __rassert(const opt_string& txt, const char* file, int line, const char* function, const char* expr, bool flush = false);
 
 ///Downcast value of integral type, asserting on overflow and underflow
 //@return cast value
