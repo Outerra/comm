@@ -159,7 +159,7 @@ protected:
     bool assign_safe(intergen_interface* client__, iref<thingface>* pout);
 
     typedef void (*cleanup_fn)(thingface*, intergen_interface*);
-    cleanup_fn _cleaner;
+    cleanup_fn _cleaner = 0;
 
     bool set_host(policy_intrusive_base*, intergen_interface*, iref<thingface>* pout);
 
@@ -168,9 +168,6 @@ protected:
         if (_cleaner)
             _cleaner(this, 0);
     }
-
-    thingface() : _cleaner(0)
-    {}
 };
 
 ////////////////////////////////////////////////////////////////////////////////

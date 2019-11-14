@@ -197,12 +197,9 @@ protected:
     bool assign_safe(intergen_interface* client__, iref<main>* pout);
 
     typedef void (*cleanup_fn)(main*, intergen_interface*);
-    cleanup_fn _cleaner;
+    cleanup_fn _cleaner = 0;
 
     bool set_host(policy_intrusive_base*, intergen_interface*, iref<main>* pout);
-
-    main() : _cleaner(0)
-    {}
 };
 
 ////////////////////////////////////////////////////////////////////////////////

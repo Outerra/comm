@@ -476,6 +476,14 @@ void thingface_js_dispatcher::bind_events( v8::Handle<v8::Context> context, bool
     if (!force && _bound_events)
         return;
 
+    //check if the context is from a html window & wait for loaded state
+    uint nf = context->GetNumberOfEmbedderDataFields();
+    uints cs = nf > 3 ? (uints)context->GetAlignedPointerFromEmbedderData(3) : 0;
+    if ((cs & ~0xFFULL) == 0xFADB0013BB07F000ULL) {
+        if ((cs & 0xFF) != 0x20)
+            return;
+    }
+
     v8::Isolate* iso = context->GetIsolate();
 
     static token names[] = {

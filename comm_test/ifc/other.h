@@ -132,9 +132,6 @@ public:
 protected:
 
     bool set_host(policy_intrusive_base*, intergen_interface*, iref<other>* pout);
-
-    other()
-    {}
 };
 
 ////////////////////////////////////////////////////////////////////////////////

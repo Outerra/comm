@@ -717,11 +717,19 @@ void $name$_js_dispatcher::bind_events( v8::Handle<v8::Context> context, bool fo
     if (!force && _bound_events)
         return;
 
+    //check if the context is from a html window & wait for loaded state
+    uint nf = context->GetNumberOfEmbedderDataFields();
+    const uint* cs = nf > 3 ? (const uint*)context->GetAlignedPointerFromEmbedderData(3) : 0;
+    if (cs && (*cs & ~1ULL) == 0xBB07F010ULL) {
+        if ((*cs & 1) == 0)
+            return;
+    }
+
     v8::Isolate* iso = context->GetIsolate();
 
     static token names[] = {
 $-[event]$
-        "$name$",
+        "$name$"_T,
 $-[/event]$
     };
 
