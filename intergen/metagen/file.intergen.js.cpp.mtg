@@ -718,11 +718,12 @@ void $name$_js_dispatcher::bind_events( v8::Handle<v8::Context> context, bool fo
         return;
 
     //check if the context is from a html window & wait for loaded state
+    bool final_state = true;
     uint nf = context->GetNumberOfEmbedderDataFields();
     const uint* cs = nf > 3 ? (const uint*)context->GetAlignedPointerFromEmbedderData(3) : 0;
     if (cs && (*cs & ~1ULL) == 0xBB07F010ULL) {
         if ((*cs & 1) == 0)
-            return;
+            final_state = false;
     }
 
     v8::Isolate* iso = context->GetIsolate();
@@ -764,7 +765,8 @@ $-[/event]$
              V8_PERSISTENT(iso, _events[i], foo);
     }
 
-    _bound_events = true;
+    if (final_state)
+        _bound_events = true;
 }
 
 $-(/if)$
