@@ -80,6 +80,9 @@ namespace v8 {
     #define V8_OPTARG(v)            v,
     #define V8_OPTARG1(v)           v
     #define V8_FROMJUST             .FromJust()
+	#define V8_FROMMAYBE(def_val)   .FromMaybe(def_val)
+	#define V8_CHECK				.Check()
+	#define V8_TOLOCALCHECKED		.ToLocalChecked()
 
     #define V8_TRYCATCH(iso,t)      v8::TryCatch t(iso)
    
@@ -96,14 +99,32 @@ namespace v8 {
         return T::New(iso ? iso : Isolate::GetCurrent());
     }
 
-    template<class T, class P1>
+	template<class T, class P1>
     inline auto new_object( const P1& p1, Isolate* iso = 0 ) -> decltype(T::New(iso, p1)) {
         return T::New(iso ? iso : Isolate::GetCurrent(), p1);
     }
+	
+	inline Local<Value> get_value(Local<Object> obj, const coid::token& tok, Isolate* iso = 0, Local<Context> ctx = Local<Context>())
+	{
+		if (iso == 0)
+		{
+			iso = Isolate::GetCurrent();
+		}
+		if (ctx.IsEmpty())
+		{
+			ctx = iso->GetCurrentContext();
+		}
+		auto val = obj->Get(ctx, symbol(tok, iso));
 
-    ///Queue JS exception, to be handled when returning back to JS lib
+		if (val.IsEmpty())
+			return Local<Value>();
+		else
+			return val.ToLocalChecked();
+	}
+
+	///Queue JS exception, to be handled when returning back to JS lib
     inline void queue_js_exception( Isolate* iso, v8::Local<v8::Value> (*err)(v8::Local<v8::String>), const coid::token& s ) {
-        iso->ThrowException((*err)(v8::String::NewFromUtf8(iso, s.ptr(), v8::String::kNormalString, s.len())));
+        iso->ThrowException((*err)(v8::String::NewFromUtf8(iso, s.ptr(), NewStringType::kNormal, s.len()).ToLocalChecked()));
     }
 
 #else
@@ -132,6 +153,9 @@ namespace v8 {
     #define V8_OPTARG(v)
     #define V8_OPTARG1(v)
     #define V8_FROMJUST
+	#define V8_FROMMAYBE(def_val)
+	#define V8_CHECK				
+	#define V8_TOLOCALCHECKED	
 
     #define V8_TRYCATCH(iso,t)      v8::TryCatch t
     
@@ -148,6 +172,11 @@ namespace v8 {
 
     template<class T, class P1>
     inline auto new_object( const P1& p1, Isolate* iso = 0 ) -> decltype(T::New(p1)) { return T::New(p1); }
+
+	inline Handle<Value> get_value(Local<Object> obj, const coid::token& tok, Isolate* iso = 0, Local<Context> ctx = Local<Context>()) {
+		return obj->Get(symbol(tok, iso));
+	}
+
 
     inline Handle<Value> queue_js_exception( Isolate* iso, Local<Value> (*err)(Handle<String>), const coid::token& s ) {
         return ThrowException(err(String::New(s.ptr(), s.len())));
@@ -198,6 +227,16 @@ template<> class from_v8<T> { public: \
         if (mv.IsJust()) res = (T)mv.FromJust(); \
         return mv.IsJust(); } \
 }
+#define V8_FAST_STREAMER_BOOL(T,V8T,CT) \
+template<> class to_v8<T> { public: \
+    static v8::Handle<v8::Value> read(const T& v) { return v8::new_object<v8::V8T>(CT(v)); } \
+    static v8::Handle<v8::Value> read(const T* v) { if (v) return v8::new_object<v8::V8T>(CT(*v)); return V8_UNDEFINED(v8::Isolate::GetCurrent()); } \
+}; \
+template<> class from_v8<T> { public: \
+    static bool write( v8::Handle<v8::Value> src, T& res ) {\
+        res = (T)src->V8T##Value(v8::Isolate::GetCurrent()); \
+        return true; } \
+}
 
 #else
 
@@ -211,7 +250,7 @@ template<> class from_v8<T> { public: \
         res = (T)src->V8T##Value(); \
         return true; } \
 }
-
+#define V8_FAST_STREAMER_BOOL(T,V8T,CT) V8_FAST_STREAMER(T,V8T,CT)
 #endif
 
 V8_FAST_STREAMER(int8,  Int32, int32);
@@ -230,14 +269,21 @@ V8_FAST_STREAMER(ulong, Uint32, uint32);
 V8_FAST_STREAMER(float,  Number, double);
 V8_FAST_STREAMER(double, Number, double);
 
-V8_FAST_STREAMER(bool, Boolean, bool);
+V8_FAST_STREAMER_BOOL(bool, Boolean, bool);
 
 ///Date/time
 template<> class to_v8<timet> {
 public:
     static v8::Handle<v8::Value> read(const timet& v) {
-        return v8::new_object<v8::Date>(double(v.t));
-    }
+#if V8_MAJOR_VERSION
+		V8_DECL_ISO(iso);
+		v8::Local<v8::Context> ctx V8_CUR_CTX_INIT(iso);
+
+		return v8::Date::New(ctx, double(v.t)).ToLocalChecked();
+#else
+		return v8::new_object<v8::Date>(double(v.t));
+#endif
+	}
 };
     
 template<> class from_v8<timet> {
@@ -296,12 +342,13 @@ inline bool v8_write_dynarray( v8::Handle<v8::Value> src, dynarray<T>& a )
     }
 
     V8_DECL_ISO(iso);
-    v8::Local<v8::Object> obj = src->ToObject(V8_OPTARG1(iso));
-    uint n = obj->Get(v8::symbol("length", iso))->Uint32Value(V8_CUR_CTX_OPT(iso)) V8_FROMJUST;
+	v8::Local<v8::Context> ctx V8_CUR_CTX_INIT(iso);
+    v8::Local<v8::Object> obj = src->ToObject(V8_OPTARG1(ctx))V8_TOLOCALCHECKED;
+	uint n = obj->Get(V8_OPTARG(ctx) v8::symbol("length", iso))V8_TOLOCALCHECKED->Uint32Value(ctx)V8_FROMJUST;
     a.alloc(n);
 
     for (uint i=0; i<n; ++i) {
-        from_v8<T>::write(obj->Get(i), a[i]);
+        from_v8<T>::write(obj->Get(V8_OPTARG(ctx) i)V8_TOLOCALCHECKED, a[i]);
     }
 
     return true;
@@ -327,9 +374,10 @@ public:
     static v8::Handle<v8::Value> read(const dynarray<T>& v) {
         uint n = (uint)v.size();
         v8::Local<v8::Array> a = v8::new_object<v8::Array>(n);
-
+		v8::Isolate* iso = v8::Isolate::GetCurrent();
+		v8::Local<v8::Context> ctx = iso->GetCurrentContext();
         for (uint i = 0; i < n; ++i) {
-            a->Set(i, to_v8<T>::read(v[i]));
+            a->Set(V8_OPTARG(ctx) i, to_v8<T>::read(v[i]))V8_CHECK;
         }
 
         return a;
@@ -349,9 +397,10 @@ public:
     static v8::Handle<v8::Value> read(const range<T>& v) {
         uint n = (uint)v.size();
         v8::Local<v8::Array> a = v8::new_object<v8::Array>(n);
-
-        for(uint i=0; i<n; ++i) {
-            a->Set(i, to_v8<T>::read(v[i]));
+		v8::Isolate* iso = v8::Isolate::GetCurrent();
+		v8::Local<v8::Context> ctx = iso->GetCurrentContext();
+		for(uint i=0; i<n; ++i) {
+            a->Set(V8_OPTARG(ctx) i, to_v8<T>::read(v[i]));
         }
 
         return a;
@@ -668,7 +717,7 @@ public:
         _top->value = val;
         
         if(val->IsObject())
-            _top->object = val->ToObject(V8_OPTARG1(v8::Isolate::GetCurrent()));
+            _top->object = val->ToObject(V8_OPTARG1(v8::Isolate::GetCurrent()->GetCurrentContext()))V8_TOLOCALCHECKED;
     }
 
     ///Get a v8 Value result from streaming
@@ -717,8 +766,10 @@ public:
     opcd write_key( const token& key, int kmember )
     {
         if(kmember > 0) {
+			V8_DECL_ISO(iso);
+			v8::Local<v8::Context> ctx V8_CUR_CTX_INIT(iso);
             //attach the previous property
-            _top->object->Set(v8::symbol(_top->key), _top->value);
+            _top->object->Set(V8_OPTARG(ctx) v8::symbol(_top->key), _top->value)V8_CHECK;
         }
 
         _top->key = key;
@@ -729,9 +780,9 @@ public:
     {
         if(_top->object.IsEmpty())
             return ersNO_MORE;
-
-        //looks up the variable in the current object
-        _top->value = _top->object->Get(v8::symbol(expected_key));
+		
+		//looks up the variable in the current object		
+        _top->value = v8::get_value(_top->object, expected_key);
 
         if(_top->value->IsUndefined())
             return ersNO_MORE;
@@ -764,9 +815,12 @@ public:
         }
         else if( t.type == type::T_STRUCTEND )
         {
+			V8_DECL_ISO(iso);
+			v8::Local<v8::Context> ctx V8_CUR_CTX_INIT(iso);
+
             //attach the last property
             if(_top->key)
-                _top->object->Set(v8::symbol(_top->key), _top->value);
+                _top->object->Set(V8_OPTARG(ctx) v8::symbol(_top->key), _top->value);
 
             DASSERT(_stack.size() > 1);
             _top[-1].value = _top->object;
@@ -913,7 +967,7 @@ public:
                 entry* le = _stack.add(1);
                 _top = le-1;
 
-                le->object = _top->value->ToObject(V8_OPTARG1(v8::Isolate::GetCurrent()));
+                le->object = _top->value->ToObject(V8_OPTARG1(v8::Isolate::GetCurrent()->GetCurrentContext()))V8_TOLOCALCHECKED;
                 _top = le;
             }
         }
@@ -1063,8 +1117,11 @@ public:
 
     virtual opcd write_array_separator( type t, uchar end ) override
     {
+		V8_DECL_ISO(iso);
+		v8::Local<v8::Context> ctx V8_CUR_CTX_INIT(iso);
+
         if(_top->element > 0)
-            _top->array->Set(_top->element-1, _top->value);
+            _top->array->Set(V8_OPTARG(ctx) _top->element-1, _top->value)V8_CHECK;
         ++_top->element;
 
         return 0;
@@ -1075,7 +1132,10 @@ public:
         if(_top->element >= _top->array->Length())
             return ersNO_MORE;
 
-        _top->value = _top->array->Get(_top->element++);
+		V8_DECL_ISO(iso);
+		v8::Local<v8::Context> ctx V8_CUR_CTX_INIT(iso);
+		
+		_top->value = _top->array->Get(V8_OPTARG(ctx) _top->element++)V8_TOLOCALCHECKED;
         return 0;
     }
 

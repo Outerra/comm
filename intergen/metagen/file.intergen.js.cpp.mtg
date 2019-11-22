@@ -257,10 +257,10 @@ $-(if return.type!="void")$
  $-(if return.iref.false? noutargs?)$
         static_assert( CHECK::meta_operator_exists<$return.type$>::value, "missing metastream operator for '$return.type$'" );
         v8::Handle<v8::Object> r__ = V8_NEWTYPE(iso, Object);
-        r__->Set(v8::symbol("$$ret", iso), read_to_v8(_rval_));
+        r__->Set(ifc->context(iso), v8::symbol("$$ret", iso), read_to_v8(_rval_));
  $-(elif noutargs?)$
         v8::Handle<v8::Object> r__ = V8_NEWTYPE(iso, Object);
-        r__->Set(v8::symbol("$$ret", iso), ::js::wrap_object(_rval_.get(), ifc->context(iso)));
+        r__->Set(ifc->context(iso), v8::symbol("$$ret", iso), ::js::wrap_object(_rval_.get(), ifc->context(iso)));
  $-(elif return.iref.false?)$
         v8::Handle<v8::Value> r__;
   $-(if return.ptr.true?)$
@@ -278,9 +278,9 @@ $-(if return.type!="void")$
  $-[args outarg?]$
   $-(if iref.false?)$
         static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'" );
-        r__->Set(v8::symbol("$name$", iso), read_to_v8($name$));
+        r__->Set(ifc->context(iso), v8::symbol("$name$", iso), read_to_v8($name$));
   $-(elif)$
-        r__->Set(v8::symbol("$name$", iso), ::js::wrap_object($name$.get(), ifc->context(iso)));
+        r__->Set(ifc->context(iso), v8::symbol("$name$", iso), ::js::wrap_object($name$.get(), ifc->context(iso)));
   $-(/if)$
  $[/args]-$
 $-(elif noutargs?="1")$
@@ -297,9 +297,9 @@ $-(elif noutargs?)$
  $-[args outarg?]$
   $-(if iref.false?)$
         static_assert( CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'" );
-        r__->Set(v8::symbol("$name$", iso), read_to_v8($name$));
+        r__->Set(ifc->context(iso), v8::symbol("$name$", iso), read_to_v8($name$));
   $-(elif)$
-        r__->Set(v8::symbol("$name$", iso), ::js::wrap_object($name$.get(), ifc->context(iso)));
+        r__->Set(ifc->context(iso), v8::symbol("$name$", iso), ::js::wrap_object($name$.get(), ifc->context(iso)));
   $-(/if)$
  $[/args]-$
 $-(elif)$
@@ -361,9 +361,10 @@ $-[/args]$
 $-(/if)$
 //  event call
     v8::Local<v8::Value> r__ = ev__->Call(
+		V8_OPTARG(ctx__)
         V8_LOCAL(iso, _object),
         //_eventobj.IsEmpty() || V8_LOCAL(iso,_eventobj)->IsUndefined() ? V8_LOCAL(iso,_object) : V8_LOCAL(iso,_eventobj),
-        $(if ninargs?)$$ninargs$, __inargs$(elif)$0, 0$(/if)$);
+        $(if ninargs?)$$ninargs$, __inargs$(elif)$0, 0$(/if)$)V8_TOLOCALCHECKED;
 
 $-[args inarg?]$$(if volatile?)$
     to_v8$(if volatile?)$_volatile$(/if)$<$basetype$>::cleanup(__inargs[$@order$]);$(/if)$
@@ -400,7 +401,7 @@ $-(elif)$
  $-(elif)$
 
     if (!r__->IsObject()) throw coid::exception("invalid params");
-    v8::Local<v8::Object> obj__ = r__->ToObject(V8_OPTARG1(iso));
+    v8::Local<v8::Object> obj__ = r__->ToObject(V8_OPTARG1(ctx__))V8_TOLOCALCHECKED;
   $-(if return.type!="void")$
 
     //return value
@@ -410,7 +411,7 @@ $-(elif)$
    $-(elif)$
     static_assert( CHECK::meta_operator_exists<$return.type$>::value, "missing metastream operator for '$return.type$'" );
     threadcached<$return.type$> _rval_;
-    write_from_v8(obj__->Get(v8::symbol("$$ret", iso)), _rval_);
+    write_from_v8(obj__->Get(V8_OPTARG(ctx__) v8::symbol("$$ret", iso))V8_TOLOCALCHECKED, _rval_);
    $-(/if)$
   $-(/if)$
   $-[args outarg?]$
@@ -420,9 +421,9 @@ $-(elif)$
    $-(/if)$
    $-(if ptr?)$
     if ($name$)
-        write_from_v8(obj__->Get(v8::symbol("$name$", iso)), *$name$);
+        write_from_v8(obj__->Get(V8_OPTARG(ctx__) v8::symbol("$name$", iso))V8_TOLOCALCHECKED, *$name$);
    $-(elif)$
-    write_from_v8(obj__->Get(v8::symbol("$name$", iso)), $name$);
+    write_from_v8(obj__->Get(V8_OPTARG(ctx__) v8::symbol("$name$", iso))V8_TOLOCALCHECKED, $name$);
    $-(/if)$
   $-[/args]$
  $-(/if)$
@@ -474,9 +475,10 @@ $-(if ninargs.nonzero?)$
 $-(/if)$
 
     v8::Local<v8::Value> r__ = ev__->Call(
+		V8_OPTARG(ctx)
         V8_LOCAL(iso, ifc->_object),
         //ifc->_eventobj.IsEmpty() || V8_LOCAL(iso, ifc->_eventobj)->IsUndefined() ? V8_LOCAL(iso, ifc->_object) : V8_LOCAL(iso, ifc->_eventobj),
-        $(if ninargs?)$nargs, largs$(elif)$0, 0$(/if)$);
+        $(if ninargs?)$nargs, largs$(elif)$0, 0$(/if)$)V8_TOLOCALCHECKED;
 
 #ifdef V8_MAJOR_VERSION
     args.GetReturnValue().Set(r__);
@@ -683,7 +685,7 @@ $-(/if)$
     }
 
     v8::Context::Scope ctxscope(context);
-    v8::Local<v8::Object> obj = V8_LOCAL(iso, _objtempl)->NewInstance();
+    v8::Local<v8::Object> obj = V8_LOCAL(iso, _objtempl)->NewInstance(V8_OPTARG1(context))V8_TOLOCALCHECKED;
 
     v8::Handle<v8::External> map_ptr = V8_NEWTYPE2(iso, External, this);
     obj->SetInternalField(0, map_ptr);
@@ -745,7 +747,7 @@ $-[/event]$
     else if (ref->IsNull())
         clear = true;
     else
-        global = ref->ToObject(V8_OPTARG1(iso));
+        global = ref->ToObject(V8_OPTARG1(context))V8_TOLOCALCHECKED;
 
     for (int i=0; i<$event.@size$; ++i)
     {
@@ -754,7 +756,7 @@ $-[/event]$
         if (clear)
             continue;
 
-        v8::Local<v8::Value> var = global->Get(v8::symbol(names[i], iso));
+        v8::Local<v8::Value> var = v8::get_value(global, names[i], iso, context);
         if (var->IsUndefined())
             continue;
 
@@ -859,7 +861,7 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const ::js::script_
 
         V8_PERSISTENT(iso, ifc->_object, ifc->create_interface_object(context, false));
         if (bindname)
-            context->Global()->Set(v8::symbol(bindname, iso), V8_LOCAL(iso, ifc->_object));
+            context->Global()->Set(context, v8::symbol(bindname, iso), V8_LOCAL(iso, ifc->_object));
 
         v8::Handle<v8::Script> compiled_script = load_script(script_tok, script.url());
 
@@ -869,7 +871,7 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const ::js::script_
         V8_PERSISTENT(iso, ifc->_object, ifc->create_interface_object(context, false));
 
         if (bindname)
-            context->Global()->Set(v8::symbol(bindname, iso), V8_LOCAL(iso, ifc->_object));
+            context->Global()->Set(context, v8::symbol(bindname, iso), V8_LOCAL(iso, ifc->_object));
     }
 
     return ifc;
@@ -936,7 +938,7 @@ $[/args]-$
     //stream out
 $-(if noutargs?)$
     v8::Handle<v8::Object> r__ = V8_NEWTYPE(iso, Object);
-    r__->Set(v8::symbol("$$ret", iso), nifc
+    r__->Set(ctx, v8::symbol("$$ret", iso), nifc
         ? v8::Handle<v8::Value>(nifc->create_interface_object(ctx, true))
         : v8::Handle<v8::Value>(V8_NULL(iso)));
 $-(elif)$
@@ -949,7 +951,7 @@ $-[args outarg?]$
     $-(if iref.false?)$
     static_assert(CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator for '$basetype$'");
     $-(/if)$
-    r__->Set(v8::symbol("$name$", iso), read_to_v8($name$));
+    r__->Set(ctx, v8::symbol("$name$", iso), read_to_v8($name$));
 $[/args]-$
 
     return V8_ESCAPE(handle_scope__, r__);

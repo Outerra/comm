@@ -245,7 +245,7 @@ struct script_handle
 
 #ifdef V8_MAJOR_VERSION
         v8::Local<v8::String> scriptv8 = v8::String::NewFromUtf8(iso,
-            script_tok.ptr(), v8::String::kNormalString, script_tok.len());
+            script_tok.ptr(), v8::NewStringType::kNormal, script_tok.len()).ToLocalChecked();
 #else
         v8::Local<v8::String> scriptv8 = v8::String::New(script_tok.ptr(), script_tok.len());
 #endif
@@ -360,7 +360,7 @@ public:
 
         V8_TRYCATCH(iso, js_trycatch);
         v8::Handle<v8::String> result = v8::string_utf8("$result", iso);
-        ctx->Global()->Set(result, V8_UNDEFINED(iso));
+        ctx->Global()->Set(V8_OPTARG(ctx) result, V8_UNDEFINED(iso))V8_CHECK;
 
         coid::zstring filepath;
         filepath.get_str() << "file:///" << relpath;
@@ -397,8 +397,8 @@ public:
 #endif
         }
 
-        v8::Handle<v8::Value> rval = ctx->Global()->Get(result);
-        ctx->Global()->Set(result, V8_UNDEFINED(iso));
+        v8::Handle<v8::Value> rval = ctx->Global()->Get(V8_OPTARG(ctx) result)V8_TOLOCALCHECKED;
+        ctx->Global()->Set(V8_OPTARG(ctx) result, V8_UNDEFINED(iso))V8_CHECK;
 
 #ifdef V8_MAJOR_VERSION
         args.GetReturnValue().Set(rval);
@@ -469,9 +469,11 @@ public:
     }
 
     static void register_global_context_methods(v8::Handle<v8::Object> gobj, v8::Isolate* iso) {
-        gobj->Set(v8::symbol("$include", iso), V8_NEWTYPE2(iso, FunctionTemplate, &js_include)->GetFunction());
-        gobj->Set(v8::symbol("$query_interface", iso), V8_NEWTYPE2(iso, FunctionTemplate, &js_query_interface)->GetFunction());
-        gobj->Set(v8::symbol("$log", iso), V8_NEWTYPE2(iso, FunctionTemplate, &js_log)->GetFunction());
+		v8::Local<v8::Context> ctx V8_CUR_CTX_INIT(iso);
+
+        gobj->Set(V8_OPTARG(ctx) v8::symbol("$include", iso), V8_NEWTYPE2(iso, FunctionTemplate, &js_include)->GetFunction(V8_OPTARG1(ctx))V8_TOLOCALCHECKED)V8_CHECK;
+        gobj->Set(V8_OPTARG(ctx) v8::symbol("$query_interface", iso), V8_NEWTYPE2(iso, FunctionTemplate, &js_query_interface)->GetFunction(V8_OPTARG1(ctx))V8_TOLOCALCHECKED)V8_CHECK;
+        gobj->Set(V8_OPTARG(ctx) v8::symbol("$log", iso), V8_NEWTYPE2(iso, FunctionTemplate, &js_log)->GetFunction(V8_OPTARG1(ctx))V8_TOLOCALCHECKED)V8_CHECK;
     }
 
 private:
@@ -509,7 +511,7 @@ inline T* unwrap_object(const v8::Handle<v8::Value> &arg)
     if (arg.IsEmpty()) return 0;
     if (!arg->IsObject()) return 0;
 
-    v8::Handle<v8::Object> obj = arg->ToObject(V8_OPTARG1(v8::Isolate::GetCurrent()));
+    v8::Handle<v8::Object> obj = arg->ToObject(V8_OPTARG1(v8::Isolate::GetCurrent()->GetCurrentContext()))V8_TOLOCALCHECKED;
     if (obj->InternalFieldCount() != 2) return 0;
 
     intergen_interface* p = static_cast<intergen_interface*>(
@@ -567,8 +569,8 @@ inline bool bind_object(const coid::token& bindname, intergen_interface* orig, v
     fn_wrapper fn = static_cast<fn_wrapper>(orig->intergen_wrapper(intergen_interface::backend::js));
 
 #ifdef V8_MAJOR_VERSION
-    return fn && context->Global()->Set(v8::String::NewFromOneByte(iso,
-        (const uint8*)bindname.ptr(), v8::NewStringType::kNormal, bindname.len()).ToLocalChecked(), fn(orig, context));
+    return fn && context->Global()->Set(iso->GetCurrentContext(), v8::String::NewFromOneByte(iso,
+        (const uint8*)bindname.ptr(), v8::NewStringType::kNormal, bindname.len()).ToLocalChecked(), fn(orig, context)).IsJust();
 #else
     return fn && context->Global()->Set(v8::String::New(bindname.ptr(), bindname.len()), fn(orig, context));
 #endif
