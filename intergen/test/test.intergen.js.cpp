@@ -200,11 +200,11 @@ v8::CBK_RET thingface_js_dispatcher::v8_hallo0( const v8::ARGUMENTS& args )
         //stream out
         static_assert( CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'" );
         v8::Handle<v8::Object> r__ = V8_NEWTYPE(iso, Object);
-        r__->Set(v8::symbol("$ret", iso), read_to_v8(_rval_));
+        r__->Set(ifc->context(iso), v8::symbol("$ret", iso), read_to_v8(_rval_));
 
         static_assert( CHECK::meta_operator_exists<coid::charstr>::value, "missing metastream operator for 'coid::charstr'" );
-        r__->Set(v8::symbol("c", iso), read_to_v8(c));
- 
+        r__->Set(ifc->context(iso), v8::symbol("c", iso), read_to_v8(c));
+
 #ifdef V8_MAJOR_VERSION
         args.GetReturnValue().Set(r__);
 #else
@@ -302,9 +302,10 @@ void thingface_js_dispatcher::boo( const char* key )
 
 //  event call
     v8::Local<v8::Value> r__ = ev__->Call(
+        V8_OPTARG(ctx__)
         V8_LOCAL(iso, _object),
         //_eventobj.IsEmpty() || V8_LOCAL(iso,_eventobj)->IsUndefined() ? V8_LOCAL(iso,_object) : V8_LOCAL(iso,_eventobj),
-        1, __inargs);
+        1, __inargs)V8_TOLOCALCHECKED;
 
 
     if (js_trycatch__.HasCaught())
@@ -351,9 +352,10 @@ v8::CBK_RET thingface_js_dispatcher::v8_evback_boo0( const v8::ARGUMENTS& args )
         largs[i] = args[i];
 
     v8::Local<v8::Value> r__ = ev__->Call(
+        V8_OPTARG(ctx)
         V8_LOCAL(iso, ifc->_object),
         //ifc->_eventobj.IsEmpty() || V8_LOCAL(iso, ifc->_eventobj)->IsUndefined() ? V8_LOCAL(iso, ifc->_object) : V8_LOCAL(iso, ifc->_eventobj),
-        nargs, largs);
+        nargs, largs)V8_TOLOCALCHECKED;
 
 #ifdef V8_MAJOR_VERSION
     args.GetReturnValue().Set(r__);
@@ -443,7 +445,7 @@ v8::Handle<v8::Object> thingface_js_dispatcher::create_interface_object( v8::Han
     }
 
     v8::Context::Scope ctxscope(context);
-    v8::Local<v8::Object> obj = V8_LOCAL(iso, _objtempl)->NewInstance();
+    v8::Local<v8::Object> obj = V8_LOCAL(iso, _objtempl)->NewInstance(V8_OPTARG1(context))V8_TOLOCALCHECKED;
 
     v8::Handle<v8::External> map_ptr = V8_NEWTYPE2(iso, External, this);
     obj->SetInternalField(0, map_ptr);
@@ -477,17 +479,18 @@ void thingface_js_dispatcher::bind_events( v8::Handle<v8::Context> context, bool
         return;
 
     //check if the context is from a html window & wait for loaded state
+    bool final_state = true;
     uint nf = context->GetNumberOfEmbedderDataFields();
-    uints cs = nf > 3 ? (uints)context->GetAlignedPointerFromEmbedderData(3) : 0;
-    if ((cs & ~0xFFULL) == 0xFADB0013BB07F000ULL) {
-        if ((cs & 0xFF) != 0x20)
-            return;
+    const uint* cs = nf > 3 ? (const uint*)context->GetAlignedPointerFromEmbedderData(3) : 0;
+    if (cs && (*cs & ~1ULL) == 0xBB07F010ULL) {
+        if ((*cs & 1) == 0)
+            final_state = false;
     }
 
     v8::Isolate* iso = context->GetIsolate();
 
     static token names[] = {
-        "boo",
+        "boo"_T,
     };
 
     V8_HANDLE_SCOPE(iso, handle_scope__);
@@ -501,7 +504,7 @@ void thingface_js_dispatcher::bind_events( v8::Handle<v8::Context> context, bool
     else if (ref->IsNull())
         clear = true;
     else
-        global = ref->ToObject(V8_OPTARG1(iso));
+        global = ref->ToObject(V8_OPTARG1(context))V8_TOLOCALCHECKED;
 
     for (int i=0; i<1; ++i)
     {
@@ -510,7 +513,7 @@ void thingface_js_dispatcher::bind_events( v8::Handle<v8::Context> context, bool
         if (clear)
             continue;
 
-        v8::Local<v8::Value> var = global->Get(v8::symbol(names[i], iso));
+        v8::Local<v8::Value> var = v8::get_value(global, names[i], iso, context);
         if (var->IsUndefined())
             continue;
 
@@ -521,7 +524,8 @@ void thingface_js_dispatcher::bind_events( v8::Handle<v8::Context> context, bool
              V8_PERSISTENT(iso, _events[i], foo);
     }
 
-    _bound_events = true;
+    if (final_state)
+        _bound_events = true;
 }
 
 // --- creators ---
@@ -611,7 +615,7 @@ iref<thingface_js_dispatcher> thingface_js_dispatcher::get( const ::js::script_h
 
         V8_PERSISTENT(iso, ifc->_object, ifc->create_interface_object(context, false));
         if (bindname)
-            context->Global()->Set(v8::symbol(bindname, iso), V8_LOCAL(iso, ifc->_object));
+            context->Global()->Set(context, v8::symbol(bindname, iso), V8_LOCAL(iso, ifc->_object));
 
         v8::Handle<v8::Script> compiled_script = load_script(script_tok, script.url());
 
@@ -621,7 +625,7 @@ iref<thingface_js_dispatcher> thingface_js_dispatcher::get( const ::js::script_h
         V8_PERSISTENT(iso, ifc->_object, ifc->create_interface_object(context, false));
 
         if (bindname)
-            context->Global()->Set(v8::symbol(bindname, iso), V8_LOCAL(iso, ifc->_object));
+            context->Global()->Set(context, v8::symbol(bindname, iso), V8_LOCAL(iso, ifc->_object));
     }
 
     return ifc;
