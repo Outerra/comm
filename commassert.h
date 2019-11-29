@@ -41,6 +41,8 @@
 #include "namespace.h"
 #include "retcodes.h"
 
+#include <limits>
+
 /** \file assert.h
     This header defines various assert macros. The assert macros normally log
     the failed assertion to the assert.log file and throw exception

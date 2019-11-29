@@ -2862,6 +2862,11 @@ COID_NAMESPACE_END
 
 #ifdef COID_USER_DEFINED_LITERALS
 
+#ifdef _T
+#pragma message("_T macro will conflict with token string literal")
+#undef _T
+#endif
+
 ///String literal returning token (_T suffix)
 inline constexpr coid::token operator "" _T(const char* s, size_t len)
 {
