@@ -68,17 +68,6 @@ inline Local<String> string_utf8( const coid::token& tok, Isolate* iso = 0 ) {
     return String::NewFromUtf8(iso ? iso : Isolate::GetCurrent(), tok.ptr(), NewStringType::kNormal, tok.len()).ToLocalChecked();
 }
 
-#ifdef V8_NEW2
-template<class T>
-inline auto new_object(Isolate* iso = 0) -> decltype(T::New(Local<Context>())) {
-    return T::New((iso ? iso : Isolate::GetCurrent())->GetCurrentContext()).ToLocalChecked();
-}
-
-template<class T, class P1>
-inline auto new_object( const P1& p1, Isolate* iso = 0 ) -> decltype(T::New(Local<Context>(), p1)) {
-    return T::New((iso ? iso : Isolate::GetCurrent())->GetCurrentContext(), p1).ToLocalChecked();
-}
-#else
 template<class T>
 inline auto new_object(Isolate* iso = 0) -> decltype(T::New(iso)) {
     return T::New(iso ? iso : Isolate::GetCurrent());
@@ -88,7 +77,6 @@ template<class T, class P1>
 inline auto new_object(const P1& p1, Isolate* iso = 0) -> decltype(T::New(iso, p1)) {
     return T::New(iso ? iso : Isolate::GetCurrent(), p1);
 }
-#endif
 
 inline Local<Value> get_value(Local<Object> obj, const coid::token& tok, Local<Context> ctx) {
     Local<Value> val;
@@ -143,20 +131,20 @@ template<> class from_v8<T> { public: \
         return mv.IsJust(); } \
 }
 
-//#ifdef V8_NEW2
-//#define V8_FAST_STREAMER_BOOL(T,V8T,CT) \
-//template<> class to_v8<T> { public: \
-//    static v8::Handle<v8::Value> read(const T& v) { return v8::new_object<v8::V8T>(CT(v)); } \
-//    static v8::Handle<v8::Value> read(const T* v) { if (v) return v8::new_object<v8::V8T>(CT(*v)); return v8::Undefined(v8::Isolate::GetCurrent()); } \
-//}; \
-//template<> class from_v8<T> { public: \
-//    static bool write( v8::Handle<v8::Value> src, T& res ) {\
-//        res = (T)src->V8T##Value(v8::Isolate::GetCurrent()); \
-//        return true; } \
-//}
-//#else
-//#define V8_FAST_STREAMER_BOOL(T,V8T,CT) V8_FAST_STREAMER(T,V8T,CT)
-//#endif
+#ifdef V8_NEW2
+#define V8_FAST_STREAMER_BOOL(T,V8T,CT) \
+template<> class to_v8<T> { public: \
+    static v8::Handle<v8::Value> read(const T& v) { return v8::new_object<v8::V8T>(CT(v)); } \
+    static v8::Handle<v8::Value> read(const T* v) { if (v) return v8::new_object<v8::V8T>(CT(*v)); return v8::Undefined(v8::Isolate::GetCurrent()); } \
+}; \
+template<> class from_v8<T> { public: \
+    static bool write( v8::Handle<v8::Value> src, T& res ) {\
+        res = (T)src->V8T##Value(v8::Isolate::GetCurrent()); \
+        return true; } \
+}
+#else
+#define V8_FAST_STREAMER_BOOL(T,V8T,CT) V8_FAST_STREAMER(T,V8T,CT)
+#endif
 
 
 V8_FAST_STREAMER(int8, Int32, int32);
@@ -175,13 +163,17 @@ V8_FAST_STREAMER(ulong, Uint32, uint32);
 V8_FAST_STREAMER(float, Number, double);
 V8_FAST_STREAMER(double, Number, double);
 
-V8_FAST_STREAMER(bool, Boolean, bool);
+V8_FAST_STREAMER_BOOL(bool, Boolean, bool);
 
 ///Date/time
 template<> class to_v8<timet> {
 public:
     static v8::Handle<v8::Value> read(const timet& v) {
-        return v8::new_object<v8::Date>(double(v.t));
+#ifdef V8_NEW2
+		return v8::Date::New(v8::Isolate::GetCurrent()->GetCurrentContext(), double(v.t)).ToLocalChecked();
+#else
+		return v8::new_object<v8::Date>(double(v.t));
+#endif // V8_NEW2
     }
 };
 
