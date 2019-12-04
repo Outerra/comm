@@ -1675,6 +1675,15 @@ struct token
         return *this;
     }
 
+    ///Skip the leading part until after given token, or do nothing if token not found
+    //@return true if token was found
+    bool skip_until_after(const token& tok) {
+        const char* p = contains(tok);
+        if (p)
+            _ptr = const_cast<char*>(p + tok.len());
+        return p != 0;
+    }
+
 
     ///Cut line terminated by \r\n or \n
     //@param terminated_only if true, it won't return a line that wasn't terminated by EOL (will keep it)
