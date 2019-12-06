@@ -107,7 +107,7 @@ $-(if varname? destroy.name.empty?)$
 $-(/if)$
 
     ///Interface revision hash
-    static const int HASHID = $hash$;
+    static const int HASHID = $hash$u;
 
     ///Interface name (full ns::class string)
     static const coid::tokenhash& IFCNAME() {
