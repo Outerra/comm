@@ -192,6 +192,7 @@ struct thread_key
 #endif
 
     thread_key();
+    thread_key(const thread_key&) = delete;
     ~thread_key();
 
     void set( void* v );
@@ -200,7 +201,7 @@ struct thread_key
 
 ///Get per-thread on-demand created variable
 template<class T>
-T* thread_object( thread_key tk ) {
+T* thread_object( thread_key& tk ) {
     T* t = (T*)tk.get();
     if(!t)
         tk.set( t = new T );
