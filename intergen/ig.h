@@ -250,6 +250,7 @@ struct MethodIG
     int index = -1;
 
     bool bstatic            = false;    //< a static (creator) method
+    bool bcreator           = false;
     bool bptr               = false;    //< ptr instead of ref
     bool biref              = true;     //< iref instead of ref
     bool bifccr             = false;    //< ifc returning creator (not host)
@@ -257,7 +258,7 @@ struct MethodIG
     bool boperator          = false;
     bool binternal          = false;    //< internal method, invisible to scripts (starts with an underscore)
     bool bcapture           = false;    //< method captured when interface is in capturing mode
-    bool bimplicit          = false;    //< an implicit event
+    bool bimplicit          = false;    //< an implicit event/method
     bool bdestroy           = false;    //< a method to call on interface destroy
     bool bmandatory         = false;    //< mandatory event
     bool bhasifctargets     = false;
@@ -316,6 +317,7 @@ struct MethodIG
                 m.member("internal", p.binternal);
                 m.member("capture", p.bcapture);
                 m.member("static", p.bstatic);
+                m.member("creator", p.bcreator);
                 m.member("ptr", p.bptr);
                 m.member("iref", p.biref);
                 m.member("ifccr", p.bifccr);
@@ -366,6 +368,7 @@ struct Interface
     MethodIG::Arg getter, setter;
 
     charstr on_connect, on_connect_ev;
+    charstr on_unload;
 
     uint nifc_methods = 0;
 
@@ -504,6 +507,7 @@ struct Interface
                 m.member("setter", p.setter);
                 m.member("onconnect", p.on_connect);
                 m.member("onconnectev", p.on_connect_ev);
+                m.member("onunload", p.on_unload);
                 m.member_type<bool>("hasprops", [](bool) {}, [&]() { return p.oper_get>=0; });
                 m.member("nifcmethods", p.nifc_methods);
                 m.member("varname", p.varname);

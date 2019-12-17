@@ -19,7 +19,7 @@ namespace lua {
 class $name$
 {
 public:
-$-[method static?]$
+$-[method creator?]$
 
 $(if !comments.empty?)$$[comments]-$
     $@value$

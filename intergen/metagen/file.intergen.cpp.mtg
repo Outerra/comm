@@ -195,7 +195,7 @@ public:
 
     // creator methods
 
-$-[method static? !ifccr?]$
+$-[method creator? !ifccr?]$
     static iref<$..name$> $name$( $..name$* __here__$[args]$, $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$ )
     {
         iref<::$....ns rest="::" after="::"$$....class$> __host__ = ::$....ns rest="::" after="::"$$....class$::$intname$($[args rest=", "]$$name$$[/args]$);
@@ -214,12 +214,21 @@ $-(if virtual!)$
             on ? (void*)&_generic_interface_creator : nullptr);
 
 $-(/if)$
-$-[method static? !ifccr?]$
+$-(if onunload?)$
+        static_assert(std::is_same<decltype(&::$..ns rest="::" after="::"$$..class$::$onunload$), intergen_interface::fn_unload_client>::value,
+            "expected unload function to have (const coid::token& client, const coid::token& module, int mode) parameters");
+
+        interface_register::register_interface_creator(
+            "$ns rest="::" after="::"$$name$@unload",
+            on ? (void*)&::$..ns rest="::" after="::"$$..class$::$onunload$ : nullptr);
+
+$-(/if)$
+$-[method creator? !ifccr?]$
         interface_register::register_interface_creator(
             "$..ns rest="::" after="::"$$..name$.$name$@$..hash$",
             on ? (void*)&$name$ : nullptr);
 $-[/method]$
-$-[method static? ifccr?]$
+$-[method creator? ifccr?]$
         interface_register::register_interface_creator(
             "$..ns rest="::" after="::"$$..name$.$name$@$..hash$.ifc",
             on ? (void*)&::$....ns rest="::" after="::"$$....class$::$name$ : nullptr);

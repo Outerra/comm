@@ -46,6 +46,10 @@ public:
 
         fn(_ifc->iface<intergen_interface>(), 1, nullptr);
     }
+
+    ifc_fnx(@unload) static bool unload(const coid::token& client, const coid::token& module, coid::binstring* bstr) {
+        return true;
+    }
 };
 
 } // namespace ab

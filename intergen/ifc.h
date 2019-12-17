@@ -82,6 +82,7 @@ namespace coid {
 //@note ifc_fnx(-) or ifc_fnx(-name) marks an interface method that is not captured by an interceptor (for net replication etc) if default was on
 //@note ifc_fnx(+) or ifc_fnx(+name) marks an interface method that is captured by an interceptor (for net replication etc) if default was off
 //@note ifc_fnx(@connect) marks a method that gets called upon successfull interface connection
+//@note ifc_fnx(@unload) marks a static method called when a registered client of given interface is unloading
 //@example ifc_fnx(get) void get_internal();
 #define ifc_fnx(extname)
 
@@ -144,6 +145,8 @@ protected:
 public:
 
     static const int VERSION = 7;
+
+    typedef bool (*fn_unload_client)(const coid::token& client, const coid::token& module_name, coid::binstring* bstr);
 
     //@return host class pointer
     //@note T derived from policy_intrusive_base

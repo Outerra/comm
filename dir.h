@@ -122,7 +122,7 @@ public:
 
     static charstr& validate_filename(charstr& filename, char replacement_char = '_') {
         static char forbidden_chars[] = {'\\','/',':', '*', '?','\"','<', '>', '|'};
-        
+
         DASSERT(replacement_char != forbidden_chars[0] &&
             replacement_char != forbidden_chars[1] &&
             replacement_char != forbidden_chars[2] &&
@@ -145,7 +145,7 @@ public:
                 *i == forbidden_chars[5] ||
                 *i == forbidden_chars[6] ||
                 *i == forbidden_chars[7] ||
-                *i == forbidden_chars[8]) 
+                *i == forbidden_chars[8])
             {
                 filename[i - s] = replacement_char;
             }
@@ -259,8 +259,12 @@ public:
         return buf;
     }
 
-    static charstr& get_module_path(charstr& dst, bool append = false) {
+    static uints get_module_path(charstr& dst, bool append = false) {
         return get_module_path_func((const void*)&dummy_func, dst, append);
+    }
+
+    static uints get_module_handle() {
+        return get_module_handle_func((const void*)&dummy_func);
     }
 
     ///Get temp directory
@@ -390,7 +394,12 @@ protected:
 
     static const char* no_trail_sep( zstring& name );
 
-    static charstr& get_module_path_func(const void* fn, charstr& dst, bool append);
+    //@return handle of module where fn resides
+    static uints get_module_handle_func(const void* fn);
+
+    //@param dst string buffer to receive module path
+    //@return handle of module where fn resides
+    static uints get_module_path_func(const void* fn, charstr& dst, bool append);
 
 private:
     charstr     _curpath;

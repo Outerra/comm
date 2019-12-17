@@ -424,6 +424,19 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                             }
                             ifc->on_connect = m->name = m->intname;
                         }
+                        else if (m->name == "unload") {
+                            //@unload invoked when client dll/script is unloaded
+                            ifc->on_unload = m->name = m->intname;
+
+                            if (!m->bstatic) {
+                                out << (lex.prepare_exception()
+                                    << "error: unload method must be static\n");
+                                lex.clear_err();
+                                ++ncontinuable_errors;
+                            }
+
+                            m->bcreator = false;
+                        }
                         else {
                             out << (lex.prepare_exception()
                                 << "error: unrecognized implicit method\n");
@@ -450,7 +463,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                         m = ifc->method.ptr();
                     }
 
-                    if (m->bstatic && m->args.size() == 0 && ifc->default_creator.name.is_empty())
+                    if (m->bcreator && m->args.size() == 0 && ifc->default_creator.name.is_empty())
                         ifc->default_creator = *m;
 
                     if (!m->bstatic && !binternal && !m->boperator) {

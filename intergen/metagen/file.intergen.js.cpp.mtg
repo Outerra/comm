@@ -105,7 +105,7 @@ $-(/if)$
 
     // --- creators ---
 
-$-[method static? !ifccr?]$
+$-[method creator? !ifccr?]$
 $(if !comments.empty?)$$[comments]-$
     $@value$
 $[/comments]$$(/if)-$
@@ -727,7 +727,7 @@ $-[/event]$
 $-(/if)$
 // --- creators ---
 
-$-[method static? !ifccr?]$
+$-[method creator? !ifccr?]$
 ////////////////////////////////////////////////////////////////////////////////
 iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const ::js::script_handle& script
         $-[args]$, $type$ $name$$size$$[/args]$, const coid::token& bindname, v8::Handle<v8::Context>* ctx )
@@ -969,7 +969,7 @@ $-(/if)$
 ////////////////////////////////////////////////////////////////////////////////
 static void register_binders_for_$name$( bool on )
 {
-$-[method static? !ifccr?]$
+$-[method creator? !ifccr?]$
     //c++ creator of JS interface object
     interface_register::register_interface_creator(
         "$..ns rest="::" after="::"$$..name$.$name$@creator.js",

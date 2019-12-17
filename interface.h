@@ -128,6 +128,9 @@ public:
     ///Find interfaces containing given string
     static dynarray<creator>& find_interface_creators(const regex& str, dynarray<creator>& dst);
 
+    ///Send notification about client handlers unloading
+    static bool notify_module_unload(uints handle, binstring* bstr);
+
     static ref<logmsg> canlog(log::type type, const tokenhash& hash, const void* inst = 0);
     static logger* getlog();
 

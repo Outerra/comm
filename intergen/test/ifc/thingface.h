@@ -61,7 +61,7 @@ public:
     // --- internal helpers ---
 
     ///Interface revision hash
-    static const int HASHID = 1555033958;
+    static const int HASHID = 1555033958u;
 
     ///Interface name (full ns::class string)
     static const coid::tokenhash& IFCNAME() {
