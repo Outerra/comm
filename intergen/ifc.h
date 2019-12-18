@@ -180,7 +180,7 @@ public:
     virtual const coid::tokenhash& intergen_interface_name() const = 0;
 
     ///Supported interface client types (dispatcher back-ends)
-    enum class backend {
+    enum class backend : int8 {
         cxx,                            //< c++ back-end implementation
         js,
         jsc,

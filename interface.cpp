@@ -396,7 +396,14 @@ public:
         GUARDTHIS(_mx);
 
         //find clients residing in given dll
+        entry* de = 0;
+
         for (entry& en : _hash) {
+            if (de) {
+                _hash.erase_value_slot(de);
+                de = 0;
+            }
+
             if (en.hash != "client"_T)
                 continue;
 
@@ -404,7 +411,11 @@ public:
                 continue;
 
             unload_client(en, bstr);
+            de = &en;
         }
+
+        if (de)
+            _hash.erase_value_slot(de);
 
         return true;
     }
@@ -425,7 +436,7 @@ private:
 
         intergen_interface::fn_unload_client fn = (intergen_interface::fn_unload_client)en->creator_ptr;
 
-        return fn(client, en->modulename, bstr);
+        return fn(client, cen.modulename, bstr);
     }
 
     bool current_dir(token curpath, charstr& dst)
@@ -593,7 +604,7 @@ bool interface_register::register_interface_creator(const token& ifcname, void* 
 
     charstr tmp = ifcname;
     tmp << '*';
-    uints offs = tmp.len();
+    uint offs = tmp.len();
 
     uints hmod = directory::get_module_path(tmp, true);
 
