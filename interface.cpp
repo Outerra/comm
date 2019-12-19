@@ -399,7 +399,7 @@ public:
         entry* de = 0;
 
         for (entry& en : _hash) {
-            if (de) {
+            if (!bstr && de) {
                 _hash.erase_value_slot(de);
                 de = 0;
             }
@@ -414,7 +414,7 @@ public:
             de = &en;
         }
 
-        if (de)
+        if (!bstr && de)
             _hash.erase_value_slot(de);
 
         return true;

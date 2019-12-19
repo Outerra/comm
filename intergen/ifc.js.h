@@ -17,7 +17,7 @@
  *
  * The Initial Developer of the Original Code is
  * Outerra.
- * Portions created by the Initial Developer are Copyright (C) 2013-2018
+ * Portions created by the Initial Developer are Copyright (C) 2013-2019
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -40,11 +40,11 @@
 #ifndef __INTERGEN_IFC_JS_H__
 #define __INTERGEN_IFC_JS_H__
 
-#include <comm/token.h>
-#include <comm/dir.h>
-#include <comm/metastream/metastream.h>
-#include <comm/metastream/fmtstream_v8.h>
-#include <comm/binstream/filestream.h>
+#include "../token.h"
+#include "../dir.h"
+#include "../metastream/metastream.h"
+#include "../metastream/fmtstream_v8.h"
+#include "../binstream/filestream.h"
 #include <v8/v8.h>
 
 namespace js {
