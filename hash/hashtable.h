@@ -663,6 +663,10 @@ public:
         return std::pair<const_iterator, const_iterator>(const_iterator(f, *this), const_iterator(l, *this));
     }
 
+    bool erase_value(const VAL& v) {
+        return this->__erase_value(_GETKEYFUNC(v), 0);
+    }
+
     bool erase_value(const LOOKUP& k, VAL* dst) {
         return this->__erase_value(k, dst);
     }
