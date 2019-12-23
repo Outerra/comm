@@ -107,6 +107,8 @@ void* singleton_register_instance(
     int line,
     bool invisible);
 
+void singleton_unregister_instance(void*);
+
 void singletons_destroy();
 
 fn_singleton_creator singleton_local_creator( void* p );
@@ -217,6 +219,11 @@ public:
         _p = (T*)singleton_register_instance(
             singleton_local_creator(new T(std::forward<T>(obj))), &destroy, &init_module,
             typeid(T).name(), 0, 0, Module);
+    }
+
+    ~singleton() {
+        if (_p)
+            singleton_unregister_instance(_p);
     }
 
     T* operator -> () { return _p; }

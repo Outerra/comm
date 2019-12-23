@@ -131,6 +131,24 @@ public:
         return k->ptr;
     }
 
+    void destroy_singleton(void* p)
+    {
+        killer** pkill = &last;
+
+        while (*pkill) {
+            if ((*pkill)->ptr == p) {
+                killer* tmp = *pkill;
+                pkill = &tmp->next;
+
+                tmp->destroy();
+                delete tmp;
+                return;
+            }
+
+            pkill = &(*pkill)->next;
+        }
+    }
+
     void destroy()
     {
         uint n = count;
@@ -196,6 +214,12 @@ void* singleton_register_instance(
     return gsm.find_or_add_singleton(
         fn_create, fn_destroy, fn_initmod,
         type, file, line, invisible);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void singleton_unregister_instance(void* p)
+{
+    global_singleton_manager::get_local().destroy_singleton(p);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
