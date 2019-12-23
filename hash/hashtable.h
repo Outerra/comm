@@ -434,9 +434,9 @@ protected:
     }
 
     ///Find socket with given value
-    Node** find_socket_val(const VAL* val) const
+    Node** find_socket_val(const VAL* val, uints socket = UMAXS) const
     {
-        uints h = bucket(_GETKEYFUNC(*val), _shift);
+        uints h = socket != UMAXS ? socket : bucket(_GETKEYFUNC(*val), _shift);
         Node** pn = (Node**)&_table[h];
         Node* n = *pn;
         while (n && &n->_val != val)
@@ -673,6 +673,11 @@ public:
 
     bool erase_value_slot(const VAL* dst) {
         return this->__erase_value_slot(dst);
+    }
+
+    ///Erase value provided external key (if key in value was already destroyed)
+    bool erase_value_slot(const VAL* dst, const LOOKUP& key) {
+        return this->__erase_value_slot(dst, bucket(key, _shift));
     }
 
     size_t erase(const LOOKUP& k) {
@@ -991,10 +996,10 @@ protected:
         return true;
     }
 
-    bool __erase_value_slot(const VAL* val)
+    bool __erase_value_slot(const VAL* val, uints socket = UMAXS)
     {
-        Node** pn = find_socket_val(val);
-        if (!*pn)
+        Node** pn = find_socket_val(val, socket);
+        if (!pn)
             return false;
 
         Node* n = *pn;
