@@ -388,34 +388,54 @@ public:
         return _fn_acc ? _fn_acc(rpath) : true;
     }
 
-    bool notify_module_unload(uints handle, binstring* bstr)
+    bool notify_module_unload(uints handle, binstring* bstr, dynarray<interface_register::unload_entry>& ens)
     {
-        if (handle == 0)
-            return false;
-
         GUARDTHIS(_mx);
 
-        //find clients residing in given dll
-        entry* de = 0;
+        if (handle == 0) {
+            //send notification after reload
+            zstring str;
 
-        for (entry& en : _hash) {
-            if (!bstr && de) {
-                _hash.erase_value_slot(de);
-                de = 0;
+            for (auto& uen : ens) {
+                //get the interface unload function
+                token nsc = token(uen.ifcname).cut_left('@');
+
+                (str.get_str() = nsc) << "@unload"_T;
+
+                const entry* en = _hash.find_value(str);
+                if (!en)
+                    continue;
+
+                intergen_interface::fn_unload_client fn = (intergen_interface::fn_unload_client)en->creator_ptr;
+
+                return fn(""_T, ""_T, uen.bstrlen > 0 ? bstr : 0);
+
             }
-
-            if (en.hash != "client"_T)
-                continue;
-
-            if (handle != en.handle)
-                continue;
-
-            unload_client(en, bstr);
-            de = &en;
+            return true;
         }
 
-        if (!bstr && de)
-            _hash.erase_value_slot(de);
+        //find clients residing in given dll
+        auto b = _hash.begin();
+        auto e = _hash.end();
+
+        for (; b != e; ) {
+            auto& en = *b;
+            ++b;
+
+            if (en.handle != handle || en.hash != "client"_T)
+                continue;
+
+            uints len = bstr->len();
+
+            unload_client(en, bstr);
+
+            interface_register::unload_entry* ue = ens.add();
+            ue->ifcname.takeover(en.ifcname);
+            ue->bstrofs = down_cast<uint>(len);
+            ue->bstrlen = down_cast<uint>(bstr->len() - len);
+
+            RASSERT(_hash.erase_value_slot(&en, token(ue->ifcname.ptr(), ue->ifcname.ptr() + en.keylen)));
+        }
 
         return true;
     }
@@ -580,11 +600,11 @@ dynarray<interface_register::creator>& interface_register::find_interface_creato
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool interface_register::notify_module_unload(uints handle, binstring* bstr)
+bool interface_register::notify_module_unload(uints handle, binstring* bstr, dynarray<interface_register::unload_entry>& uens)
 {
     //find clients from given dll
     interface_register_impl& reg = interface_register_impl::get();
-    return reg.notify_module_unload(handle, bstr);
+    return reg.notify_module_unload(handle, bstr, uens);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

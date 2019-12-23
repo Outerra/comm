@@ -128,8 +128,17 @@ public:
     ///Find interfaces containing given string
     static dynarray<creator>& find_interface_creators(const regex& str, dynarray<creator>& dst);
 
+    struct unload_entry {
+        charstr ifcname;
+        uint bstrofs;                   //< position in binstring
+        uint bstrlen;
+    };
+
     ///Send notification about client handlers unloading
-    static bool notify_module_unload(uints handle, binstring* bstr);
+    //@param handle dll handle to unload, or 0 if sending notifications about reload
+    //@param bstr ptr to binstring object for persisting the state
+    //@param ens list of unloaded entries
+    static bool notify_module_unload(uints handle, binstring* bstr, dynarray<unload_entry>& ens);
 
     static ref<logmsg> canlog(log::type type, const tokenhash& hash, const void* inst = 0);
     static logger* getlog();
