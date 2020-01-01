@@ -538,6 +538,7 @@ void abort_routine();
 #define DEBUG 1
 #define DEBUG_FILL 0xcd
 #define ABORT_ON_ASSERT_FAILURE 0
+#define MALLOC_INSPECT_ALL 1
 #endif //_DEBUG
 
 #define ABORT abort_routine()
@@ -5257,18 +5258,19 @@ static size_t internal_bulk_free(mstate m, void* array[], size_t nelem) {
 }
 
 /* Traversal */
-#if MALLOC_INSPECT_ALL
 static void internal_inspect_all(mstate m,
                                  void(*handler)(void *start,
                                                 void *end,
                                                 size_t used_bytes,
                                                 void* callback_arg),
-                                 void* arg) {
+                                 void* arg)
+{
+#if MALLOC_INSPECT_ALL
   if (is_initialized(m)) {
     mchunkptr top = m->top;
     msegmentptr s;
     for (s = &m->seg; s != 0; s = s->next) {
-      mchunkptr q = align_as_chunk(s->base);
+      mchunkptr q = align_as_chunk(s->base, m->modalign);
       while (segment_holds(s, q) && q->head != FENCEPOST_HEAD) {
         mchunkptr next = next_chunk(q);
         size_t sz = chunksize(q);
@@ -5287,7 +5289,7 @@ static void internal_inspect_all(mstate m,
             start = (void*)((char*)q + sizeof(struct malloc_tree_chunk));
           }
         }
-        if (start < (void*)next)  /* skip if all space is bookkeeping */
+        if (handler && start < (void*)next)  /* skip if all space is bookkeeping */
           handler(start, next, used, arg);
         if (q == top)
           break;
@@ -5295,8 +5297,8 @@ static void internal_inspect_all(mstate m,
       }
     }
   }
-}
 #endif /* MALLOC_INSPECT_ALL */
+}
 
 /* ------------------ Exported realloc, memalign, etc -------------------- */
 
