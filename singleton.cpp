@@ -138,7 +138,7 @@ public:
         while (*pkill) {
             if ((*pkill)->ptr == p) {
                 killer* tmp = *pkill;
-                pkill = &tmp->next;
+                *pkill = tmp->next;
 
                 tmp->destroy();
                 delete tmp;
