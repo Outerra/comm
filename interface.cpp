@@ -408,7 +408,7 @@ public:
 
                 intergen_interface::fn_unload_client fn = (intergen_interface::fn_unload_client)en->creator_ptr;
 
-                return fn(""_T, ""_T, uen.bstrlen > 0 ? bstr : 0);
+                fn(""_T, ""_T, uen.bstrlen > 0 ? bstr : 0);
 
             }
             return true;
