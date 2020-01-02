@@ -229,12 +229,12 @@ inline bool v8_write_dynarray(v8::Handle<v8::Value> src, dynarray<T>& a)
 
     v8::Isolate* iso = v8::Isolate::GetCurrent();
     v8::Local<v8::Context> ctx = iso->GetCurrentContext();
-    v8::Local<v8::Object> obj = src->ToObject(ctx) .ToLocalChecked();
-    uint n = obj->Get(ctx, v8::symbol("length", iso)) .ToLocalChecked()->Uint32Value(ctx).FromJust();
+    v8::Local<v8::Object> obj = src->ToObject(ctx).ToLocalChecked();
+    uint n = obj->Get(ctx, v8::symbol("length", iso)).ToLocalChecked()->Uint32Value(ctx).FromJust();
     a.alloc(n);
 
     for (uint i = 0; i < n; ++i) {
-        from_v8<T>::write(obj->Get(ctx, i) .ToLocalChecked(), a[i]);
+        from_v8<T>::write(obj->Get(ctx, i).ToLocalChecked(), a[i]);
     }
 
     return true;
@@ -545,7 +545,7 @@ public:
         _top->value = val;
 
         if (val->IsObject())
-            _top->object = val->ToObject(v8::Isolate::GetCurrent()->GetCurrentContext()) .ToLocalChecked();
+            _top->object = val->ToObject(v8::Isolate::GetCurrent()->GetCurrentContext()).ToLocalChecked();
     }
 
     ///Get a v8 Value result from streaming
@@ -791,9 +791,11 @@ public:
                 e = ersSYNTAX_ERROR "expected object";
             else {
                 entry* le = _stack.add(1);
-                _top = le - 1;
 
-                le->object = _top->value->ToObject(v8::Isolate::GetCurrent()->GetCurrentContext()) .ToLocalChecked();
+                if (!undef) {
+                    _top = le - 1;
+                    le->object = _top->value->ToObject(v8::Isolate::GetCurrent()->GetCurrentContext()).ToLocalChecked();
+                }
                 _top = le;
             }
         }
