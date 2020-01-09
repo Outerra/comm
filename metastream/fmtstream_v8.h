@@ -48,6 +48,8 @@
 #define V8_NEW2
 #endif
 
+class intergen_interface;
+
 namespace v8 {
 
 typedef FunctionCallbackInfo<Value> ARGUMENTS;
