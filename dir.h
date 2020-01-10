@@ -319,26 +319,31 @@ public:
     //@param recursive nest into subdirectories: 1 dir callback called after callback on content, 2 before, 3 both
     //@param fn callback function(const charstr& name, int dir), dir is 0 for files, 1 for getting out of dir, 2 in
     template<typename Func>
-    static bool list_file_paths(const token& path, const token& extension, int recursive, Func fn) {
+    static bool list_file_paths(const token& path, const token& extension, int recursive, Func fn)
+    {
         directory dir;
 
-        if (recursive) {
-            if (dir.open(path, "*.*") != ersNOERR)
-                return false;
-        }
-        else {
-            charstr filter = "*.";
-            filter << extension;
-            if (dir.open(path, filter) != ersNOERR)
-                return false;
-        }
+        if (dir.open(path, "*.*") != ersNOERR)
+            return false;
+
+        bool all_files = extension == '*';
+        bool ext_with_dot = extension.first_char() == '.' || extension.is_empty();
 
         while (dir.next()) {
             if (dir.is_entry_regular()) {
-                if ((!recursive) || (extension == '*') || dir.get_last_file_name_token().cut_right_back('.').cmpeqi(extension))
+                bool valid = all_files;
+                if (!all_files) {
+                    token fname = dir.get_last_file_name_token();
+
+                    if (fname.ends_with_icase(extension)
+                        && (ext_with_dot || fname.nth_char(-1 - ints(extension.len())) == '.'))
+                        valid = true;
+                }
+
+                if (valid)
                     fn(dir.get_last_full_path(), 0);
             }
-            else if (dir.is_entry_subdirectory()) {
+            else if (recursive && dir.is_entry_subdirectory()) {
                 if (recursive & 2)
                     fn(dir.get_last_full_path(), 2);
 
