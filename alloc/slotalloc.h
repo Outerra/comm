@@ -396,13 +396,13 @@ public:
         this->set_modified(id);
         this->bump_version(id);
 
-        if coid_constexpr_if (!POOL)
-            p->~T();
-
         if (clear_bit(id))
             --_count;
         else
             DASSERTN(0);
+
+        if coid_constexpr_if (!POOL)
+            p->~T();
     }
 
     ///Del range of objects
@@ -445,15 +445,15 @@ public:
         this->set_modified(id);
         this->bump_version(id);
 
-        if coid_constexpr_if (!POOL) {
-            T* p = ptr(id);
-            p->~T();
-        }
-
         if (clear_bit(id))
             --_count;
         else
             DASSERTN(0);
+
+        if coid_constexpr_if (!POOL) {
+            T* p = ptr(id);
+            p->~T();
+        }
     }
 
 
