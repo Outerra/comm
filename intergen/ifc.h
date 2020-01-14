@@ -99,6 +99,10 @@ namespace coid {
 //@example ifc_event int on_init() ifc_default_body("return -1;");
 #define ifc_default_body(x)
 #define ifc_default_empty
+
+///Client is required to implement the body of the event handler
+#define ifc_required_body
+
 #define ifc_evbody(x)       //obsolete
 
 ///Interface functon argument direction decoration keywords

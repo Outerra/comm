@@ -40,6 +40,7 @@ public:
     static const token IFC_DEFAULT_BODY;
     static const token IFC_DEFAULT_EMPTY;
     static const token IFC_EVBODY;
+    static const token IFC_REQUIRED_BODY;
     static const token IFC_INOUT;
     static const token IFC_IN;
     static const token IFC_OUT;

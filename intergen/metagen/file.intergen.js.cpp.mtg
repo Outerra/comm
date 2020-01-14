@@ -130,7 +130,7 @@ $-(if event.empty!)$
     // --- interface events ---
 
 $-[event]$
-    virtual $return.type$ $name$($[args rest="," after=" "]$ $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$) $-(if const?)$ const$(/if)$ override;
+    virtual $return.type$ $name$($[args rest="," after=" "]$ $type$ $(if fnarg?)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$) $-(if const?)$ const$(/if)$ override;
 $-[/event]$
 
 $-[event]$
@@ -205,7 +205,7 @@ void $..name$_js_dispatcher::v8_$name$$@index$( const v8::ARGUMENTS& args )
         //stream the arguments in
 $-[args inarg? !nojs?]$
  $-(if iref.false?)$
-        static_assert(CHECK::meta_operator_exists<$basetype$>::value, "missing metastream operator '$basetype$'");
+        static_assert(CHECK::meta_operator_exists<$(if fnarg?)$$type$ (*)($fnargs$)$(elif)$$basetype$$(/if)$>::value, "missing metastream operator for '$(if fnarg?)$$type$ (*)($fnargs$)$(elif)$$basetype$$(/if)$'");
  $-(/if)$
 $-[/args]$
 
@@ -224,7 +224,7 @@ $-[args inarg? !nojs?]$
         else
             $name$ = $defval$;
   $-(elif)$
-        threadcached<$basetype$> $name$;
+        threadcached<$(if fnarg?)$$type$ (*)($fnargs$)$(elif)$$basetype$$(/if)$> $name$;
         write_from_v8(args[$@order$], $name$);
   $-(/if)$
 $[/args]-$
@@ -292,7 +292,7 @@ $(/if)-$
 
         args.GetReturnValue().Set(r__);
 
-    } catch(const coid::exception& e) {
+    } catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }
@@ -300,7 +300,7 @@ $(/if)-$
 $-[/method]$
 $-[event]$
 ////////////////////////////////////////////////////////////////////////////////
-$return.type$ $..name$_js_dispatcher::$name$($[args rest="," after=" "]$ $type$ $name$$size$$[/args]$) $-(if const?)$ const$(/if)$
+$return.type$ $..name$_js_dispatcher::$name$($[args rest="," after=" "]$ $type$ $(if fnarg?)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if const?)$ const$(/if)$
 {
     v8::Isolate* iso = v8::Isolate::GetCurrent();
 
@@ -334,7 +334,7 @@ $-[/args]$
 $-(if ninargs?)$
     v8::Handle<v8::Value> __inargs[] = {
 $-[args inarg? rest=","]$
-        to_v8$(if volatile ? )$_volatile$(/ if)$<$basetype$>::read($name$)
+        to_v8$(if volatile ? )$_volatile$(/ if)$<$(if fnarg?)$$type$ (*)($fnargs$)$(elif)$$basetype$$(/if)$>::read($name$)
 $-[/args]$
     };
 

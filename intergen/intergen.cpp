@@ -38,6 +38,7 @@ const token iglexer::IFC_EVENTX = "ifc_eventx";
 const token iglexer::IFC_EVBODY = "ifc_evbody";
 const token iglexer::IFC_DEFAULT_BODY = "ifc_default_body";
 const token iglexer::IFC_DEFAULT_EMPTY = "ifc_default_empty";
+const token iglexer::IFC_REQUIRED_BODY = "ifc_required_body";
 const token iglexer::IFC_INOUT = "ifc_inout";
 const token iglexer::IFC_IN = "ifc_in";
 const token iglexer::IFC_OUT = "ifc_out";

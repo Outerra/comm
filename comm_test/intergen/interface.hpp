@@ -31,16 +31,17 @@ public:
         return 0;
     }
 
-    ifc_fn void callback(void (*cbk)(int, const coid::token&)) {
+    ifc_fnx(!) void callback(void (*cbk)(int, const coid::token&)) {
         cbk(1, "blah"_T);
     }
 
     ifc_event void echo(int k);
 
-    ifc_event void callforth(void (*cbk)(int, const coid::token&));
+    ifc_eventx(!) void callforth(void (*cbk)(int, const coid::token&));
 
+    ifc_event int required(int x) ifc_required_body;
 
-    ifc_fn void memfn_callback(coid::callback<void(int, void*)>&& fn) {
+    ifc_fnx(!) void memfn_callback(coid::callback<void(int, void*)>&& fn) {
         //invoke passed callback (intergen interface member function)
         //(_ifc->iface<intergen_interface>()->*(fn))(1, nullptr);
 

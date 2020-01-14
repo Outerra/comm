@@ -167,8 +167,8 @@ void thingface_js_dispatcher::v8_hallo0( const v8::ARGUMENTS& args )
 
     try {
         //stream the arguments in
-        static_assert(CHECK::meta_operator_exists<int>::value, "missing metastream operator 'int'");
-        static_assert(CHECK::meta_operator_exists<coid::token>::value, "missing metastream operator 'coid::token'");
+        static_assert(CHECK::meta_operator_exists<int>::value, "missing metastream operator for 'int'");
+        static_assert(CHECK::meta_operator_exists<coid::token>::value, "missing metastream operator for 'coid::token'");
 
         threadcached<int> a;
         write_from_v8(args[0], a);
@@ -191,7 +191,7 @@ void thingface_js_dispatcher::v8_hallo0( const v8::ARGUMENTS& args )
  
         args.GetReturnValue().Set(r__);
 
-    } catch(const coid::exception& e) {
+    } catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }
@@ -231,8 +231,8 @@ void thingface_js_dispatcher::v8_fallo1( const v8::ARGUMENTS& args )
 
     try {
         //stream the arguments in
-        static_assert(CHECK::meta_operator_exists<bool>::value, "missing metastream operator 'bool'");
-        static_assert(CHECK::meta_operator_exists<const char*>::value, "missing metastream operator 'const char*'");
+        static_assert(CHECK::meta_operator_exists<bool>::value, "missing metastream operator for 'bool'");
+        static_assert(CHECK::meta_operator_exists<const char*>::value, "missing metastream operator for 'const char*'");
 
         threadcached<bool> b;
         write_from_v8(args[0], b);
@@ -250,7 +250,7 @@ void thingface_js_dispatcher::v8_fallo1( const v8::ARGUMENTS& args )
 
         args.GetReturnValue().Set(r__);
 
-    } catch(const coid::exception& e) {
+    } catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }

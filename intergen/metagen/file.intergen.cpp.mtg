@@ -107,6 +107,10 @@ $-(elif)$
         return 0;
 $-(/if)$
     }
+    
+$-[event mandatory?]$
+    $return.type$ $name$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if fnarg?)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if const?)$ const$(/if)$ { throw coid::exception("unreachable"); }
+$-[/event]$
 
 protected:
 
