@@ -427,7 +427,7 @@ $-(elif)$
         return;
         $-(/if)$
     }
-    $-(elif !mandatory?)$
+    $-(elif !noevbody?)$
         return;
     $-(elif)$
         throw coid::exception("handler not implemented");
