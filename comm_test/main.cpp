@@ -169,7 +169,7 @@ fn_action_handler hh;
 
 void fnlambda_test(const fn_axis_handler& fn) {
     hh = [fn](void* obj, const something& act) {
-        fn(act.value);
+        fn(float(act.value));
         };
 }
 

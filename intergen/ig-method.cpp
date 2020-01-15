@@ -96,10 +96,10 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
     bconst = lex.matches("const");
 
     //optional default event impl
-    int evbody = lex.matches_either(lex.IFC_DEFAULT_EMPTY, lex.IFC_REQUIRED_BODY, lex.IFC_DEFAULT_BODY, lex.IFC_EVBODY);
+    int evbody = lex.matches_either(lex.IFC_DEFAULT_EMPTY, lex.IFC_DEFAULT_BODY, lex.IFC_EVBODY);
     if (evbody)
     {
-        if (evbody > 2) {
+        if (evbody > 1) {
             default_event_body = lex.match_block(lex.ROUND, true);
 
             if (default_event_body.first_char() == '"') {
@@ -113,14 +113,11 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
 
         if (!default_event_body)
             default_event_body = ';';   //needs at least one statement when wrapped in {}
-
-        bmandatory = evbody == 2;
-    }
-    else {
-        bmandatory = ret.type != "void" || noutargs > 0;
     }
     //else
     //    default_event_body = "{ throw coid::exception(\"handler not implemented\"); }";
+
+    bnoevbody = !evbody && (ret.type != "void" || noutargs > 0);
 
     //declaration parsed successfully
     return lex.no_err() && ncontinuable_errors == 0;

@@ -114,6 +114,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 bool extev = tok == lex.IFC_EVENTX;
                 bool bimplicit = false;
                 bool bdestroy = false;
+                bool bpure = false;
                 int8 binternal = 0;
                 int8 bnocapture = 0;
                 int8 bcapture = 0;
@@ -132,6 +133,8 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                         bimplicit = lex.matches('@');
 
                         lex.matches(lex.IDENT, extname);
+
+                        bpure = extev && lex.matches('=') && lex.matches('0');
 
                         /*binternal = lex.matches('!');
                         bimplicit = lex.matches('@');
@@ -269,6 +272,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                     m->binternal = binternal>0;
                     m->bimplicit = bimplicit;
                     m->bduplicate = duplicate != 0;
+                    m->bpure = bpure;
 
                     {
                         if (!m->parse(lex, classname, namespc, ifc->nsname, irefargs, true))

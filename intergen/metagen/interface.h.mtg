@@ -60,7 +60,7 @@ $(if !comments.empty?)$$[comments]-$
     $@value$
 $[/comments]$$(/if)-$
     virtual $return.type$ $name$($[args rest="," after=" "]$ $type$ $(if fnarg?)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$) $-(if const?)$ const$(/if)$
-    $-(if mandatory?)$ = 0;$(elif return.type?="void")$ {}$(elif default_event_body?)$ { $default_event_body$ }$(elif)${ throw coid::exception("handler not implemented"); }$(/if)$
+    $-(if pure?)$ = 0;$(elif return.type?="void")$ {}$(elif default_event_body?)$ { $default_event_body$ }$(elif)${ throw coid::exception("handler not implemented"); }$(/if)$
 $[/event]-$
 
     virtual void force_bind_script_events() {}

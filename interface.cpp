@@ -135,7 +135,7 @@ public:
                 en->hashvalue = hash;
                 en->script = script;
                 en->modulename = modulename;
-                en->handle = handle.touint64();
+                en->handle = uints(handle.touint64());
                 en->keylen = key.len();
                 return true;
             }

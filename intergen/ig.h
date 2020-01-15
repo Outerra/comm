@@ -40,7 +40,6 @@ public:
     static const token IFC_DEFAULT_BODY;
     static const token IFC_DEFAULT_EMPTY;
     static const token IFC_EVBODY;
-    static const token IFC_REQUIRED_BODY;
     static const token IFC_INOUT;
     static const token IFC_IN;
     static const token IFC_OUT;
@@ -261,7 +260,8 @@ struct MethodIG
     bool bcapture           = false;    //< method captured when interface is in capturing mode
     bool bimplicit          = false;    //< an implicit event/method
     bool bdestroy           = false;    //< a method to call on interface destroy
-    bool bmandatory         = false;    //< mandatory event
+    bool bnoevbody          = false;    //< mandatory event
+    bool bpure              = false;    //< pure virtual on client
     bool bhasifctargets     = false;
     bool bduplicate         = false;    //< a duplicate method/event from another interface of the host
     bool binherit           = false;    //< method inherited from base interface
@@ -325,7 +325,8 @@ struct MethodIG
                 m.member("const", p.bconst);
                 m.member("implicit", p.bimplicit);
                 m.member("destroy", p.bdestroy);
-                m.member("mandatory", p.bmandatory);
+                m.member("noevbody", p.bnoevbody);
+                m.member("pure", p.bpure);
                 m.member("hasifc", p.bhasifctargets);
                 m.member("duplicate", p.bduplicate);
                 m.member("inherit", p.binherit);
