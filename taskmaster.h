@@ -129,6 +129,8 @@ public:
         });
     }
 
+    uints get_workers_count() const { return _threads.size(); }
+
     ///Run fn(index) in parallel in task level 0
     //@param first begin index value
     //@param last end index value
