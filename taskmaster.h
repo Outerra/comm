@@ -143,6 +143,18 @@ public:
         wait(signal);
     }
 
+    ///Push task (functor, e.g. lamda) into queue for processing by worker threads
+    //@param priority task priority, higher priority tasks are processed before lower priority
+    //@param signal signal to trigger when the task finishes
+    //@param fn functor to run
+    template <typename Fn>
+    void push_functor(EPriority priority, signal_handle* signal, const Fn& fn)
+    {
+        push(priority, signal, [](const Fn& fn){
+            fn();
+        }, fn);
+    }
+
     ///Push task (function and its arguments) into queue for processing by worker threads
     //@param priority task priority, higher priority tasks are processed before lower priority
     //@param signal signal to trigger when the task finishes
