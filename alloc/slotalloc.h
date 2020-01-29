@@ -405,6 +405,27 @@ public:
             p->~T();
     }
 
+    ///Mark object deleted without running the destructor
+    //@note useful for deletion of objects from within item destructors
+    void del_nodestruct(T* p)
+    {
+        static_assert(!POOL, "error: cannot be used in pool mode");
+
+        uints id = get_item_id(p);
+        if (id >= _created)
+            throw exception("attempting to delete an invalid object ") << id;
+
+        DASSERT_RETVOID(get_bit(id));
+
+        this->set_modified(id);
+        this->bump_version(id);
+
+        if (clear_bit(id))
+            --_count;
+        else
+            DASSERTN(0);
+    }
+
     ///Del range of objects
     void del_range(T* p, uints n) {
         if (n == 0)
