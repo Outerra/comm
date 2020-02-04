@@ -400,6 +400,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\comm_test\intergen\ifc\client.h" />
     <ClInclude Include="..\..\..\comm_test\intergen\ifc\client.js.h" />
+    <ClInclude Include="..\..\..\comm_test\intergen\ifc\client2.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="comm_static.vcxproj">

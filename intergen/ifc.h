@@ -113,19 +113,30 @@ namespace coid {
 #define ifc_volatile
 
 /* @note
-    Use the following style comments to include the enclosed code in generated interface client header file:
-
+  Use the following style comments to include the enclosed code in generated interface client header file:
     //ifc{
         ... code ...
     //}ifc
 
-    Or /*ifc{ ... code ... }ifc* / to push a code block into client header.
+  or
 
-    With multiple interfaces it's also possible to list which interface header files:
+    /*ifc{
+    ... code ...
+    }ifc* /
 
-    //ifc{ ot::ifca ot::ifcb
+  to push a code block into client header.
+
+  With multiple interfaces present in host class it's also possible to list which interface header files:
+    //ifc{ ns::ifca ns::ifcb
     ...
     //}ifc
+
+  Generated code is pushed before the client class definition. In case it needs to be added after the
+  class, add a + sign:
+    //ifc{+
+   or
+    //ifc{ ns::ifc1+
+    ...
 */
 
 ////////////////////////////////////////////////////////////////////////////////

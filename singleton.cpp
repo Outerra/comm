@@ -87,7 +87,7 @@ class global_singleton_manager
         }
 
         killer( void* ptr, void (*fn_destroy)(void*), const token& type, const char* file, int line, bool invisible )
-            : ptr(ptr), fn_destroy(fn_destroy), type_name(type.ptr()), type(type), file(file), line(line), invisible(invisible)
+            : ptr(ptr), fn_destroy(fn_destroy), type_name(type.ptr()), file(file), line(line), type(type), invisible(invisible)
         {
             DASSERT(ptr);
         }

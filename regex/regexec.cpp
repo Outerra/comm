@@ -242,7 +242,7 @@ token regex_program::regexec(
             {
                 switch (inst->type) {
                 case Reinst::RUNE:	// regular character
-                    if (inst->cd == r || (icase && inst->cd == ::tolower(r))) {
+                    if (inst->cd == r || (icase && inst->cd == (ucs4)::tolower(r))) {
                         _appendfollowstate(nl, inst->next, tlp);
                     }
                     break;

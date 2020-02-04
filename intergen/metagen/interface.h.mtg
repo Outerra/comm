@@ -22,7 +22,7 @@ $-[/pasters]$
 $[classnsx after="    "]$namespace $@value$ {
 $[/classnsx]-$
 class $class$;
-$-[classnsx]$}$[/classnsx]$
+$[classnsx]$}$[/classnsx]$
 
 $-[ns]$
 namespace $@value$ {

@@ -1073,7 +1073,6 @@ public:
     template<typename Func>
     void for_each(Func f) const
     {
-        typedef std::remove_reference_t<typename closure_traits<Func>::template arg<0>> Tx;
         uint_type const* bm = const_cast<uint_type const*>(_allocated.ptr());
         uint_type const* em = const_cast<uint_type const*>(_allocated.ptre());
         uint_type const* pm = bm;
@@ -1230,7 +1229,6 @@ public:
     template<typename Func>
     T* find_if(Func f) const
     {
-        typedef std::remove_reference_t<typename closure_traits<Func>::template arg<0>> Tx;
         uint_type const* bm = const_cast<uint_type const*>(_allocated.ptr());
         uint_type const* em = const_cast<uint_type const*>(_allocated.ptre());
 
@@ -1285,7 +1283,6 @@ public:
         if coid_constexpr_if (!POOL)
             return UMAXS;
 
-        typedef std::remove_reference_t<typename closure_traits<Func>::template arg<0>> Tx;
         uint_type const* bm = const_cast<uint_type const*>(_allocated.ptr());
         uint_type const* em = const_cast<uint_type const*>(_allocated.ptre());
 

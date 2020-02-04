@@ -257,7 +257,7 @@ struct versionid
     versionid(uint id, uint8 version) : id(id), version(version)
     {}
 
-    bool valid() const { return ((id << 8) | version) != 0xffffffffU; }
+    bool valid() const { return ((uint(id) << 8u) | version) != 0xffffffffu; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -317,6 +317,8 @@ COID_NAMESPACE_END
     #define UMAXS       static_cast<coid::uints>(0xffffffffUL)
 #endif
 
-#define UMAX32      0xffffffffUL
-#define UMAX64      0xffffffffffffffffULL
-#define WMAX        0xffff
+#define UMAX32          0xffffffffUL
+#define UMAX64          0xffffffffffffffffULL
+#define WMAX            0xffff
+
+#define UINTS_MAX       UMAXS

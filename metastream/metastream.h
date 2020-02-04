@@ -1927,7 +1927,7 @@ public:
         }
         else {
             DASSERT(n == d->array_size);
-            DASSERT(d->type_size == type_size);
+            DASSERT(d->type_size == (uints)type_size);
             DASSERT(d->is_array_type);
 
             _last_var = meta_fill_parent_variable(d);

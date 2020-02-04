@@ -11,7 +11,6 @@
 #include <comm/commexception.h>
 #include <comm/intergen/ifc.h>
 
-
 namespace n1 {
 namespace n2 {
     class thing;
