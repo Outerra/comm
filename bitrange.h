@@ -267,7 +267,7 @@ inline uints find_zero_bitrange( uints n, const T* begin, const T* end )
         bit += nend;
         mask >>= nend;
 
-        uint8 nset = lsb_bit_set(~mask);
+        uint8 nset = ~mask != 0 ? lsb_bit_set(~mask) : NBITS;
         bit += nset;
         mask >>= nset;
     }
