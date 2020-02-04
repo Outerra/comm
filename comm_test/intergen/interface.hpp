@@ -5,8 +5,41 @@
 
 using namespace std;
 
+/*ifc{
+// ***
+// block placed before the generated client classes
+// ***
+}ifc*/
+
+//ifc{ xt::client2
+// ***
+// block placed before the generated client class, specific interface
+// ***
+//}ifc
+
+/*ifc{+
+// ***
+// block placed after the generated client classes
+// ***
+}ifc*/
+
+
 namespace ab {
+
+/*ifc{
+// ***
+// block placed inside namespace
+// ***
+}ifc*/
+
 namespace cd {
+
+/*ifc{ client+
+// ***
+// block placed inside namespace after client class, specific interface
+// ***
+}ifc*/
+
 
 class host : public policy_intrusive_base
 {
@@ -51,6 +84,11 @@ public:
     ifc_fnx(@unload) static bool unload(const coid::token& client, const coid::token& module, coid::binstring* bstr) {
         return true;
     }
+
+
+    ifc_class(xt::client2, "ifc/");
+
+    ifc_fn void test() {}
 };
 
 } // namespace ab

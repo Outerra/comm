@@ -41,15 +41,15 @@ iglexer::iglexer()
     def_string( ".macro", "#", "\r", "escape" );
     def_string( ".macro", "#", "", "escape" );
 
-    IFC1 = def_block( "ifc1", "//ifc{", "//}ifc", "" );
-    IFC2 = def_block( "ifc2", "/*ifc{", "}ifc*/", "" );
+    IFC_LINE_COMMENT = def_block( "ifc1", "//ifc{", "//}ifc", "" );
+    IFC_BLOCK_COMMENT = def_block( "ifc2", "/*ifc{", "}ifc*/", "" );
 
     MLCOM = def_block( ".blkcomment", "/*", "*/", "" );
 
     ANGLE = def_block( "!angle", "<", ">", "angle .comment .blkcomment" );    //by default disabled
     SQUARE = def_block( "!square", "[", "]", "square .comment .blkcomment" );
     ROUND = def_block( "!round", "(", ")", "round .comment .blkcomment" );
-    CURLY = def_block( "curly", "{", "}", "curly .comment .blkcomment .macro" );
+    CURLY = def_block( "curly", "{", "}", "curly ifc1 ifc2 .comment .blkcomment .macro" );
 }
 
 ////////////////////////////////////////////////////////////////////////////////

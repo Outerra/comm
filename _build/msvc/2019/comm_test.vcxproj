@@ -384,7 +384,6 @@
     <ClCompile Include="..\..\..\comm_test\atomic-test.cpp" />
     <ClCompile Include="..\..\..\comm_test\intergen\interface.intergen.cpp" />
     <ClCompile Include="..\..\..\comm_test\intergen\client_test.cpp" />
-    <ClCompile Include="..\..\..\comm_test\intergen\interface.intergen.js.cpp" />
     <ClCompile Include="..\..\..\comm_test\job.cpp" />
     <ClCompile Include="..\..\..\comm_test\main.cpp" />
     <ClCompile Include="..\..\..\comm_test\malloc.cpp" />

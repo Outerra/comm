@@ -394,15 +394,16 @@ bool File::find_class(iglexer& lex, dynarray<charstr>& namespc, charstr& templar
     do {
         lex.next();
 
-        if (tok == lex.IFC1 || tok == lex.IFC2) {
+        if (tok == lex.IFC_LINE_COMMENT || tok == lex.IFC_BLOCK_COMMENT) {
             lex.complete_block();
             paste_block* pb = pasters.add();
 
             token t = tok;
-            t.skip_space();
-            pb->cond = t.get_line();
-
+            t.skip_space().trim_whitespace();
+            pb->condx = t.get_line();
             pb->block = t;
+            pb->namespc = namespc;
+
             continue;
         }
 

@@ -10,17 +10,19 @@
 
 #include <comm/commexception.h>
 #include <comm/intergen/ifc.h>
+$-(if base?)$
 
-$-(if base?)$#include "$baseclass$.h"$(/if)$
+#include "$baseclass$.h"
+$(/if)$
+$-[pasters]$
 
-$-[pasters]-$
 $@value$
 $-[/pasters]$
 
-$-[classnsx after="    "]$namespace $@value$ {
+$[classnsx after="    "]$namespace $@value$ {
 $[/classnsx]-$
 class $class$;
-$[classnsx]$}$[/classnsx]$
+$-[classnsx]$}$[/classnsx]$
 
 $-[ns]$
 namespace $@value$ {
@@ -227,6 +229,10 @@ $-(/if)$
     }
 $-(/if)$
 };
+$-[pasteafters]$
+
+$@value$
+$-[/pasteafters]$
 
 $-[method creator? !ifccr?]$
 ////////////////////////////////////////////////////////////////////////////////

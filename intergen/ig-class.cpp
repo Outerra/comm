@@ -239,8 +239,19 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                     ifc->parse_docs();
 
                     pasters->for_each([ifc](paste_block& b) {
-                        if (b.cond.is_empty() || ifc->full_name_equals(b.cond))
-                            *ifc->pasters.add() = b.block;
+                        int v = -1;
+                        if (b.condx.is_empty()) {
+                            b.fill(*ifc->pasters.add());
+                        }
+                        else if (b.condx == '+') {
+                            b.fill(*ifc->pasteafters.add());
+                        }
+                        else if (v = ifc->full_name_equals(b.condx)) {
+                            if (v > 0)
+                                b.fill(*ifc->pasteafters.add());
+                            else
+                                b.fill(*ifc->pasters.add());
+                        }
                         });
                     //ifc->pasters = pasters;
                 }

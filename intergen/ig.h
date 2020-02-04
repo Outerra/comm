@@ -18,7 +18,7 @@ class iglexer : public lexer
 {
 public:
     int IDENT,NUM,CURLY,ROUND,SQUARE,ANGLE,SQSTRING,DQSTRING,RLCMD,IGKWD;
-    int IFC1,IFC2,SLCOM,MLCOM;
+    int IFC_LINE_COMMENT,IFC_BLOCK_COMMENT,SLCOM,MLCOM;
 
     static const token MARK;
     static const token MARKP;
@@ -78,7 +78,16 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 struct paste_block {
     charstr block;
-    charstr cond;
+    charstr condx;
+    dynarray<charstr> namespc;
+
+    void fill(charstr& dst) const {
+        for (const charstr& ns : namespc)
+            dst << "namespace "_T << ns << " {\n"_T;
+        dst << block;
+        for (const charstr& ns : namespc)
+            dst << "\n}"_T;
+    }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -375,6 +384,7 @@ struct Interface
     uint nifc_methods = 0;
 
     dynarray<charstr> pasters;
+    dynarray<charstr> pasteafters;
     charstr* srcfile = 0;
     charstr* srcclass = 0;
     dynarray<charstr>* srcnamespc = 0;
@@ -456,6 +466,7 @@ struct Interface
 
         nifc_methods = o.nifc_methods;
         pasters = o.pasters;
+        pasteafters = o.pasteafters;
 
         srcfile = o.srcfile;
         srcclass = o.srcclass;
@@ -470,11 +481,13 @@ struct Interface
 
     void parse_docs();
 
-    bool full_name_equals(token name) const {
-        bool hasns = nss.find_if([&name](const charstr& v) { return !(name.consume(v) && name.consume("::")); }) == 0;
-        if(hasns && name.consume(this->name))
-            return name.is_empty();
-        return false;
+    int full_name_equals(token name) const {
+        bool hasns = nss.find_if([&name](const charstr& v) {
+            return !(name.consume(v) && name.consume("::"));
+            }) == 0;
+        if (hasns && name.consume(this->name))
+            return name == '+' ? 1 : name.is_empty() ? -1 : 0;
+        return 0;
     }
 
     static bool has_mismatched_method( const MethodIG& m, const dynarray<MethodIG>& methods ) {
@@ -521,6 +534,7 @@ struct Interface
                 m.member("comments", p.comments);
                 m.member("docs", p.docs);
                 m.member("pasters", p.pasters);
+                m.member("pasteafters", p.pasteafters);
                 m.member_indirect("srcfile", p.srcfile);
                 m.member_indirect("class", p.srcclass);
                 m.member_indirect("classnsx", p.srcnamespc);
