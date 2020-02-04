@@ -23,6 +23,7 @@ iglexer::iglexer()
     def_escape_pair( ie, "\"", "\"" );
     def_escape_pair( ie, "\'", "\'" );
     def_escape_pair( ie, "n", "\n" );
+    def_escape_pair( ie, "r", "\r" );
     def_escape_pair( ie, "\r\n", token() );
     def_escape_pair( ie, "\n", token() );
 

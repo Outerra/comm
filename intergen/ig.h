@@ -83,10 +83,10 @@ struct paste_block {
 
     void fill(charstr& dst) const {
         for (const charstr& ns : namespc)
-            dst << "namespace "_T << ns << " {\n"_T;
+            dst << "namespace "_T << ns << " {\r\n"_T;
         dst << block;
         for (const charstr& ns : namespc)
-            dst << "\n}"_T;
+            dst << "\r\n}"_T;
     }
 };
 

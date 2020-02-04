@@ -141,9 +141,9 @@ void MethodIG::parse_docs()
 
         if(!line) {
             if(paramdoc)
-                *paramdoc << "\n\n";
+                *paramdoc << "\r\n\r\n";
             else if(doc)
-                doc << "\n\n";
+                doc << "\r\n\r\n";
             continue;
         }
 
@@ -169,7 +169,7 @@ void MethodIG::parse_docs()
                 if(a) {
                     paramdoc = &a->doc;
                     if(!paramdoc->is_empty())
-                        *paramdoc << '\n';
+                        *paramdoc << "\r\n";
                     //paramdoc->append_escaped(paramline);
                     *paramdoc << paramline;
                 }
@@ -180,7 +180,7 @@ void MethodIG::parse_docs()
             }
             else if(paramline.consume("@return ")) {
                 if(ret.doc)
-                    ret.doc << '\n';
+                    ret.doc << "\r\n";
                 //ret.doc.append_escaped(paramline);
                 ret.doc << paramline;
             }
