@@ -838,15 +838,34 @@ struct token
     }
 
     ///Cut sep-character separated arguments. Handles strings enclosed in '' or ""
-    token cut_left_argument(char sep = ' ')
+    //@param sep separator char to look for
+    //@param end terminator char to stop at
+    //@note consumes the separator but not the end character
+    token cut_left_argument(char sep = ' ', char end = 0)
     {
         skip_whitespace();
 
         char c = first_char();
-        if (c == '\'' || c == '"')
-            return cut_left_string(0);
+        if (c == '\'' || c == '"') {
+            token r = cut_left_string(0);
+            skip_whitespace();
+            consume_char(sep);
+            return r;
+        }
 
-        return cut_left(sep);
+        const char* b = _ptr;
+        const char* p = strchr2(sep, end);
+
+        if (p) {
+            _ptr = *p == sep ? p + 1 : p;
+        }
+        else {
+            //return all if no separator found
+            _ptr = _pte;
+            p = _pte;
+        }
+
+        return token(b, p).trim_whitespace();
     }
 
     ///Cut left token up to specified character delimiter
@@ -854,6 +873,19 @@ struct token
     {
         token r;
         const char* p = strchr(c);
+        if (p) {
+            token sep(p, 1);
+            return ctr.process_found(*this, r, sep);
+        }
+        else
+            return ctr.process_notfound(*this, r);
+    }
+
+    ///Cut left token up to specified character delimiters
+    token cut_left(char c1, char c2, cut_trait ctr = cut_trait_remove_sep())
+    {
+        token r;
+        const char* p = strchr2(c1, c2);
         if (p) {
             token sep(p, 1);
             return ctr.process_found(*this, r, sep);
@@ -1753,6 +1785,14 @@ struct token
         return 0;
     }
 
+    const char* strchr2(char c1, char c2, uints off = 0) const
+    {
+        const char* p = _ptr + off;
+        for (; p < _pte; ++p)
+            if (*p == c1 || *p == c2)  return p;
+        return 0;
+    }
+
     const char* strrchr(char c, uints off = 0) const
     {
         const char* p = _pte;
@@ -2368,14 +2408,19 @@ struct token
     //@}
 
 
-    ///Convert token to double value, consuming as much as possible
+    ///Convert token to a double value, consuming as much as possible
     double todouble() const
     {
         token t = *this;
         return t.todouble_and_shift();
     }
 
-    ///Convert token to double value, shifting the consumed part
+    ///Convert token to a float value, consuming as much as possible
+    float tofloat() const {
+        return float(todouble());
+    }
+
+    ///Convert token to a double value, shifting the consumed part
     double todouble_and_shift()
     {
         bool invsign = false;
@@ -2404,6 +2449,11 @@ struct token
         }
 
         return invsign ? -val : val;
+    }
+
+    ///Convert token to a float value, shifting the consumed part
+    float tofloat_and_shift() {
+        return float(todouble_and_shift());
     }
 
     ///Convert string (in local time) to datetime value
