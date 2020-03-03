@@ -113,7 +113,6 @@ public:
         , _quitting(false)
     {
         _taskdata.reserve(8192);
-        
         _signal_pool.resize(4096);
         _free_signals.reserve(4096, false);
         for (uint i = 0; i < _signal_pool.size(); ++i) {
@@ -626,8 +625,6 @@ private:
     volatile bool _quitting;
 
     slotalloc_atomic<granule> _taskdata;
-
-    queue<invoker_base*> _queue;
 
     dynarray<threadinfo> _threads;
     volatile int _nlowprio_threads;
