@@ -78,14 +78,17 @@ $-(/if)$
         set_host(host, this, 0);
     }
 
-    ~$name$_js_dispatcher() {
+    ~$name$_js_dispatcher()
+    {
+        v8::Isolate* iso = v8::Isolate::GetCurrent();
+        v8::HandleScope handle_scope__(iso);
+
 $-(if event?)$
         for (int i=0; i<$event.@size$; ++i) {
             _events[i].Reset();
         }
 
 $-(/if)$
-        v8::Isolate* iso = v8::Isolate::GetCurrent();
         if (!_object.IsEmpty()) {
             _object.Get(iso)->SetInternalField(0, v8::Null(iso));
         }
