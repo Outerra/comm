@@ -1748,6 +1748,10 @@ template<class T, class ...Es>
 using slotalloc = slotalloc_base<T, slotalloc_mode::base, Es...>;
 
 template<class T, class ...Es>
+using slotalloc_versioning = slotalloc_base<T, slotalloc_mode::base | slotalloc_mode::versioning, Es...>;
+
+
+template<class T, class ...Es>
 using slotalloc_pool = slotalloc_base<T, slotalloc_mode::pool, Es...>;
 
 template<class T, class ...Es>
