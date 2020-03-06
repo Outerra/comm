@@ -143,42 +143,58 @@ public:
     }
 
     //@return value from ext array associated with given main array object
-    template<int V>
+    template<size_t V>
     typename std::tuple_element<V, extarray_t>::type::value_type&
         assoc_value(const T* p) {
         return std::get<V>(*this)[get_item_id(p)];
     }
 
     //@return value from ext array associated with given main array object
-    template<int V>
+    template<size_t V>
     const typename std::tuple_element<V, extarray_t>::type::value_type&
         assoc_value(const T* p) const {
         return std::get<V>(*this)[get_item_id(p)];
     }
 
     //@return value from ext array for given index
-    template<int V>
+    template<size_t V>
     typename std::tuple_element<V, extarray_t>::type::value_type&
         value(uints index) {
         return std::get<V>(*this)[index];
     }
 
     //@return value from ext array for given index
-    template<int V>
+    template<size_t V>
     const typename std::tuple_element<V, extarray_t>::type::value_type&
         value(uints index) const {
         return std::get<V>(*this)[index];
     }
 
+#ifdef __cpp_lib_tuples_by_type
+
+    //@return value from ext array for given type
+    template<typename T>
+    T& value_type(uints index) {
+        return std::get<T>(*this)[index];
+    }
+
+    //@return value from ext array for given type
+    template <typename T>
+    const T& value_type(uints index) const {
+        return std::get<T>(*this)[index];
+    }
+
+#endif
+
     //@return ext array
-    template<int V>
+    template<size_t V>
     typename std::tuple_element<V, extarray_t>::type&
         value_array() {
         return std::get<V>(*this);
     }
 
     //@return ext array
-    template<int V>
+    template<size_t V>
     const typename std::tuple_element<V, extarray_t>::type&
         value_array() const {
         return std::get<V>(*this);
