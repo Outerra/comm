@@ -240,7 +240,15 @@ struct script_handle
         // set up an error handler to catch any exceptions the script might throw.
         v8::TryCatch js_trycatch(iso);
 
-        v8::ScriptOrigin so(v8::string_utf8(script_path, iso));
+        v8::ScriptOrigin so = [&](){
+            if (script_path.begins_with("file:///")) {
+                return v8::ScriptOrigin(v8::string_utf8(script_path, iso));
+            }
+
+            coid::zstring tmp;
+            tmp.get_str() << "file:///" << script_path;
+            return v8::ScriptOrigin(v8::string_utf8(tmp, iso));
+        }();
         v8::Handle<v8::Script> compiled_script = v8::Script::Compile(context, scriptv8, &so).ToLocalChecked();
 
         if (js_trycatch.HasCaught())
