@@ -1615,6 +1615,10 @@ public:
         return *this;
     }
 
+    metastream operator||(versionid& vid) {
+        return meta_base_type("uint64", vid);
+    }
+
     ///Used for types that stream using a translation to a different type
     //@param set void function(S&&) receiving object from stream
     //@param get [const S& | S] function() returning object to stream

@@ -500,7 +500,7 @@ public:
     {
         DASSERT_RETVOID(this->check_versionid(vid));
 
-        return del(vid.id);
+        return del_item(vid.id);
     }
 
     //@return number of used slots in the container
@@ -728,6 +728,15 @@ public:
         return id == UMAXS
             ? versionid()
             : this->get_versionid(id);
+    }
+
+    //@return versionid of given slot_id if valid
+    template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
+    versionid get_item_versionid(uints slot_id) const
+    {
+        return is_valid_id(slot_id)
+            ? this->get_versionid(slot_id)
+            : versionid();
     }
 
     //@return true if item with id is valid

@@ -246,18 +246,31 @@ using coid::ushort;
 COID_NAMESPACE_BEGIN
 
 ///Versioned item id for slot allocators
+//@note static cast to uint64 is safe, but must be called explicitly 
 struct versionid
 {
-    uint id : 24;
-    uint version : 8;
+    uint64 id : 48;
+    uint64 version : 16;
 
-    versionid() : id(0x00ffffff), version(0xff)
+    versionid() : id(0x00ffffffffffffff), version(0xffff)
     {}
 
     versionid(uint id, uint8 version) : id(id), version(version)
     {}
 
-    bool valid() const { return ((uint(id) << 8u) | version) != 0xffffffffu; }
+    bool valid() const { return ((uint64(id) << 16u) | version) != 0xffffffffffffffffu; }
+
+    bool operator==(const versionid& rhs) const {
+        return id == rhs.id && version == rhs.version;
+    }
+
+    bool operator!=(const versionid& rhs) const {
+        return id != rhs.id || version != rhs.version;
+    }
+
+    explicit operator uint64() const {
+        return id | version << 48;
+    }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
