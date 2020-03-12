@@ -75,6 +75,13 @@ template <> inline void* __del(void* &ptr, uints nfrom, uints nlen, uints ndel) 
 
 
 ////////////////////////////////////////////////////////////////////////////////
+enum class reserve
+{
+    memory,                     //< reserve & commit memory to use initially, resizeable with rebase allowed
+    virtual_space,              //< reserve virtual address space for use for the whole lifetime, allocated dynamically
+};
+
+////////////////////////////////////////////////////////////////////////////////
 //Fw
 template<class T, class COUNT, class A> class dynarray;
 template<class T, class COUNT, class A>
@@ -122,6 +129,21 @@ public:
     explicit dynarray(uints reserve_count) : _ptr(0) {
         A::instance();
         reserve(reserve_count, false);
+    }
+
+    //@param count number of items to reserve meomory or virtual address space for
+    //@param mode reservation mode
+    dynarray(uints count, reserve mode)
+    {
+        if (mode == reserve::virtual_space) {
+            _ptr = A::template reserve<T>(count);
+            _set_count(0);
+        }
+        else {
+            A::instance();
+            _ptr = 0;
+            reserve(count, false);
+        }
     }
 
     ~dynarray() {

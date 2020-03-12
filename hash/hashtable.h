@@ -95,7 +95,7 @@ struct AllocSlot {
     uints index(const T* p) const { return _slots.get_item_id(p); }
     T* pointer(uints id) const { return (T*)_slots.get_item(id); }
 
-    void reserve(uints count) { return _slots.reserve(count); }
+    void reserve(uints count) { _slots.reserve(count); }
 
 private:
     slotalloc_base<T> _slots;

@@ -101,11 +101,7 @@ public:
     T* get_or_create(uints, bool*) = delete;
 
     slothash(uint reserve_items = 64)
-        : base(reserve_items)
     {
-        //append related array for hash table sequences
-        //base::append_relarray(&_seqtable);
-
         reserve(reserve_items);
     }
 
@@ -315,6 +311,7 @@ public:
             return;
 
         base::reserve(nitems);
+
         resize(nitems, UMAX32);
     }
 
