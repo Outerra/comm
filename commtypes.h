@@ -252,13 +252,15 @@ struct versionid
     uint64 id : 48;
     uint64 version : 16;
 
-    versionid() : id(0x00ffffffffffffff), version(0xffff)
+    versionid() : id(0x0000ffffffffffffull), version(0xffffull)
     {}
 
     versionid(uint id, uint8 version) : id(id), version(version)
     {}
 
-    bool valid() const { return ((uint64(id) << 16u) | version) != 0xffffffffffffffffu; }
+    void reset() { id = 0x0000ffffffffffffull; version = 0xffffull; }
+    
+    bool valid() const { return ((uint64(id) << 16ull) | version) != 0xffffffffffffffffull; }
 
     bool operator==(const versionid& rhs) const {
         return id == rhs.id && version == rhs.version;
@@ -266,6 +268,10 @@ struct versionid
 
     bool operator!=(const versionid& rhs) const {
         return id != rhs.id || version != rhs.version;
+    }
+
+    bool operator<(const versionid& rhs) const {
+        return uint64(this) < uint64(rhs);
     }
 
     explicit operator uint64() const {
