@@ -16,6 +16,7 @@ namespace n2 {
     class thing;
 }}
 
+
 namespace ifc1 {
 namespace ifc2 {
 

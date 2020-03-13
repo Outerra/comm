@@ -60,6 +60,7 @@ private:
         _vtable2[2] = vtable1[2];
         return _vtable2;
     }
+    
 
 protected:
 
@@ -199,6 +200,7 @@ private:
         _vtable2[4] = vtable1[4];
         return _vtable2;
     }
+    
 
 protected:
 

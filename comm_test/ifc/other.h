@@ -12,6 +12,7 @@
 #include <comm/intergen/ifc.h>
 
 #include "luatest_ifc_cfg.h"
+
 #include <comm/str.h>
 namespace ns {
     class other;
@@ -21,6 +22,7 @@ namespace ns {
 namespace ns1 {
     class other_cls;
 }
+
 
 namespace ns {
 
@@ -50,7 +52,7 @@ public:
     // --- internal helpers ---
 
     ///Interface revision hash
-    static const int HASHID = 4089385363;
+    static const int HASHID = 4089385363u;
 
     ///Interface name (full ns::class string)
     static const coid::tokenhash& IFCNAME() {

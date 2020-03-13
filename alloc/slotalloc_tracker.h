@@ -89,23 +89,6 @@ struct storage
     : public atomic_base<ATOMIC>
 {
     using atomic_base_t = atomic_base<ATOMIC>;
-
-    static constexpr int MASK_BITS = 8 * sizeof(uints);
-
-    dynarray<T> _array;                 //< main data array (when using contiguous memory)
-
-
-    void swap_storage(storage& other) {
-        _array.swap(other._array);
-    }
-};
-
-///Paged storage
-template <bool ATOMIC, class T>
-struct storage<false, ATOMIC, T>
-    : public atomic_base<ATOMIC>
-{
-    using atomic_base_t = atomic_base<ATOMIC>;
     using uint_type = typename atomic_base_t::uint_type;
 
     static constexpr int MASK_BITS = 8 * sizeof(uints);
@@ -138,13 +121,41 @@ struct storage<false, ATOMIC, T>
 
     uint_type _created = 0;             //< contigous elements created total
 
+#ifndef COID_CONSTEXPR_IF
+    dynarray<T> _array;                 //< main data array (when using contiguous memory)
+#endif
+
 
     void swap_storage(storage& other) {
         _pages.swap(other._pages);
         std::swap(_created, other._created);
+
+#ifndef COID_CONSTEXPR_IF
+        _array.swap(other._array);
+#endif
     }
 };
 
+#ifdef COID_CONSTEXPR_IF
+
+///Paged storage
+template <bool ATOMIC, class T>
+struct storage<true, ATOMIC, T>
+    : public atomic_base<ATOMIC>
+{
+    using atomic_base_t = atomic_base<ATOMIC>;
+
+    static constexpr int MASK_BITS = 8 * sizeof(uints);
+
+    dynarray<T> _array;                 //< main data array (when using contiguous memory)
+
+
+    void swap_storage(storage& other) {
+        _array.swap(other._array);
+    }
+};
+
+#endif //COID_CONSTEXPR_IF
 
 
 template<class...Es>

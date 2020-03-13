@@ -109,9 +109,9 @@ public:
     ///Constructor, reserve memory (non-virtual, will rebase when overflows)
     //@param reserve_items number of items to reserve memory for
     //@param bvirtual true for virtual address space reservation, false for physical reservation (will rebase if crossed)
-    slotalloc_base(uints nitems, reserve mode)
+    slotalloc_base(uints nitems, reserve_mode mode)
     {
-        if (mode == reserve::virtual_space)
+        if (mode == reserve_mode::virtual_space)
             reserve_virtual(nitems);
         else
             reserve(nitems);
@@ -194,19 +194,19 @@ public:
 
     void reserve(uints nitems)
     {
-        if constexpr (LINEAR) {
+        if coid_constexpr_if (LINEAR) {
             this->_array.reserve(nitems, true);
         }
 
         uints na = align_to_chunks(nitems, MASK_BITS);
         _allocated.reserve(na, true);
 
-        extarray_reserve(nitems, reserve::memory);
+        extarray_reserve(nitems, reserve_mode::memory);
     }
 
     void reserve_virtual(uints nitems)
     {
-        if constexpr (LINEAR) {
+        if coid_constexpr_if (LINEAR) {
             discard();
 
             this->_array.reserve_virtual(nitems);
@@ -215,7 +215,7 @@ public:
         uints na = align_to_chunks(nitems, MASK_BITS);
         _allocated.reserve_virtual(na);
 
-        extarray_reserve(nitems, reserve::virtual_space);
+        extarray_reserve(nitems, reserve_mode::virtual_space);
     }
 
     ///Insert object
@@ -348,7 +348,7 @@ public:
     ///Add range of objects initialized with default constructors
     //@return id to the beginning of the allocated range
     T* add_contiguous_range(uints n) {
-        if constexpr (!LINEAR) {
+        if coid_constexpr_if (!LINEAR) {
             if (n > storage_t::page::ITEMS)
                 return 0;
         }
@@ -375,7 +375,7 @@ public:
     //@note if nreused == 0 within the pool mode and thus no way to indicate the item has been reused, the reused objects have destructors called
     //@return id to the beginning of the allocated range
     T* add_contiguous_range_uninit(uints n, uints* nreused = 0) {
-        if constexpr (!LINEAR) {
+        if coid_constexpr_if (!LINEAR) {
             if (n > storage_t::page::ITEMS)
                 return 0;
         }
@@ -461,7 +461,7 @@ public:
         uints id = get_item_id(p);
         uints idk = id;
 
-        if constexpr (LINEAR) {
+        if coid_constexpr_if (LINEAR) {
             auto b = this->_array.ptr() + id;
             auto e = b + n;
 
@@ -530,7 +530,7 @@ public:
 
     //@return allocated and previously created count (not necessarily used currently)
     uints created() const {
-        if constexpr (LINEAR)
+        if coid_constexpr_if (LINEAR)
             return this->_array.size();
         else
             return this->_created;
@@ -538,7 +538,7 @@ public:
 
     //@return number of currently preallocated items
     uints preallocated_count() const {
-        if constexpr (LINEAR)
+        if coid_constexpr_if (LINEAR)
             return this->_array.reserved_total() / sizeof(T);
         else
             return this->_pages.size() * storage_t::page::ITEMS;
@@ -727,7 +727,7 @@ public:
     //@return id of given item, or UMAXS if the item is not managed here
     uints get_item_id(const T* p) const
     {
-        if constexpr (LINEAR) {
+        if coid_constexpr_if (LINEAR) {
             uints id = p - this->_array.ptr();
             return id < this->_array.size()
                 ? id
@@ -836,7 +836,7 @@ public:
         _count = 0;
         _allocated.discard();
 
-        if constexpr (LINEAR) {
+        if coid_constexpr_if (LINEAR) {
             this->_array.discard();
         }
         else {
@@ -853,7 +853,7 @@ protected:
 
     versionid get_versionid(uints id) const {
         DASSERT_RET(id < 0x00ffffffU, versionid());
-        if constexpr (VERSIONING) {
+        if coid_constexpr_if (VERSIONING) {
             return versionid(uint(id), tracker_t::version_array()[id]);
         }
         else {
@@ -862,7 +862,7 @@ protected:
     }
 
     bool check_versionid(versionid vid) const {
-        if constexpr (VERSIONING) {
+        if coid_constexpr_if (VERSIONING) {
             uint8 ver = tracker_t::version_array()[vid.id];
             return vid.version == ver;
         }
@@ -871,7 +871,7 @@ protected:
     }
 
     void bump_version(uints id) {
-        if constexpr (VERSIONING)
+        if coid_constexpr_if (VERSIONING)
             ++tracker_t::version_array()[id];
     }
 
@@ -883,7 +883,7 @@ protected:
 
     void set_modified(uints k) const
     {
-        if constexpr (TRACKING) {
+        if coid_constexpr_if (TRACKING) {
             //current frame is always at bit position 0
             dynarray<slotalloc_detail::changeset>& mods = const_cast<dynarray<slotalloc_detail::changeset>&>(
                 std::get<sizeof...(Es)>(this->_exts));
@@ -897,7 +897,7 @@ protected:
 
     template<class...Ps>
     static T* construct_object(T* p, bool isold, Ps&&... ps) {
-        if constexpr (POOL) {
+        if coid_constexpr_if (POOL) {
             if (isold) {
                 //only in pool mode on reused objects, when someone calls push_construct
                 //this is not a good usage pattern as it cannot reuse existing storage of the old object
@@ -910,7 +910,7 @@ protected:
     }
 
     static T* copy_object(T* p, bool isold, const T& v) {
-        if constexpr (!POOL) {
+        if coid_constexpr_if (!POOL) {
             return new(p) T(v);
         }
         else {
@@ -924,7 +924,7 @@ protected:
     }
 
     static T* copy_object(T* p, bool isold, T&& v) {
-        if constexpr (!POOL) {
+        if coid_constexpr_if (!POOL) {
             return new(p) T(std::forward<T>(v));
         }
         else {
@@ -970,7 +970,7 @@ protected:
     {
         for_each([](T& v) { destroy(v); });
 
-        if constexpr (LINEAR)
+        if coid_constexpr_if (LINEAR)
             this->_array.set_size(0);
         else
             this->_created = 0;
@@ -988,12 +988,12 @@ protected:
     template<class Fn>
     bool funccall_if(Fn fn, T& v, uints index) const {
         bool rv;
-        if constexpr (has_index<Fn>::value)
+        if coid_constexpr_if (has_index<Fn>::value)
             rv = fn(v, index);
         else
             rv = fn(v);
 
-        if constexpr (TRACKING)
+        if coid_constexpr_if (TRACKING)
             set_modified(index);
 
         return rv;
@@ -1001,7 +1001,7 @@ protected:
 
     template<class Fn>
     void funccallp(Fn fn, T* v, uints index) const {
-        if constexpr (has_index<Fn>::value)
+        if coid_constexpr_if (has_index<Fn>::value)
             fn(v, index);
         else
             fn(v);
@@ -1010,20 +1010,20 @@ protected:
     template<class Fn, class K = T>
     bool funccall(Fn fn, K& v, uints index) const {
         bool rv = true;
-        if constexpr (returns_void<Fn>::value) {
-            if constexpr (has_index<Fn>::value)
+        if coid_constexpr_if (returns_void<Fn>::value) {
+            if coid_constexpr_if (has_index<Fn>::value)
                 fn(v, index);
             else
                 fn(v);
         }
         else {
-            if constexpr (has_index<Fn>::value)
+            if coid_constexpr_if (has_index<Fn>::value)
                 rv = static_cast<bool>(fn(v, index));
             else
                 rv = static_cast<bool>(fn(v));
         }
 
-        if constexpr (TRACKING) {
+        if coid_constexpr_if (TRACKING) {
             if (rv)
                 set_modified(index);
         }
@@ -1127,13 +1127,13 @@ protected:
 
     ///func call for for_each_modified (with ptr argument, 0 for deleted objects)
     template<typename Fn, typename = std::enable_if_t<!has_index<Fn>::value>>
-    void funccallp(const Fn& fn, arg0constref<Fn> v, size_t&& index) const
+    void funccallp(const Fn& fn, T* v, const size_t& index) const
     {
         fn(v);
     }
 
     template<typename Fn, typename = std::enable_if_t<has_index<Fn>::value>>
-    void funccallp(const Fn& fn, arg0constref<Fn> v, size_t index) const
+    void funccallp(const Fn& fn, T* v, size_t index) const
     {
         fn(v, index);
     }
@@ -1147,7 +1147,7 @@ public:
     template<typename Func>
     void for_each(Func f) const
     {
-        if constexpr (LINEAR) {
+        if coid_constexpr_if (LINEAR) {
             typedef std::remove_reference_t<typename closure_traits<Func>::template arg<0>> Tx;
             Tx* d = const_cast<Tx*>(this->_array.ptr());
             uint_type const* b = const_cast<uint_type const*>(_allocated.ptr());
@@ -1268,7 +1268,7 @@ public:
 
         const changeset_t* bc = chs->ptr();
         const changeset_t* ec = chs->ptre();
-        if constexpr (LINEAR) {
+        if coid_constexpr_if (LINEAR) {
             T* pd0 = const_cast<T*>(this->_array.ptr());
             uint_type const* pm = bm;
 
@@ -1323,7 +1323,7 @@ public:
     {
         DASSERT_RETVOID(id + count <= created());
 
-        if constexpr (LINEAR) {
+        if coid_constexpr_if (LINEAR) {
             T* p = this->_array.ptr() + id;
             uints n = this->_array.size();
             if (id + count < n)
@@ -1360,7 +1360,7 @@ public:
         uint_type const* bm = const_cast<uint_type const*>(_allocated.ptr());
         uint_type const* em = const_cast<uint_type const*>(_allocated.ptre());
 
-        if constexpr (LINEAR) {
+        if coid_constexpr_if (LINEAR) {
             uints base = 0;
             T* pd0 = const_cast<T*>(this->_array.ptr());
 
@@ -1372,7 +1372,7 @@ public:
                 for (int i = 0; i < MASK_BITS; ++i, m <<= 1) {
                     if (*pm & m) {
                         uints id = base + i;
-                        if (funccall(f, pd0[id], id))
+                        if (funccall(f, pd0[id], base + i))
                             return pd0 + id;
 
                         //update after rebase
@@ -1447,7 +1447,7 @@ public:
         uint_type const* em = const_cast<uint_type const*>(_allocated.ptre());
         uint_type const* pm = bm;
 
-        if constexpr (LINEAR) {
+        if coid_constexpr_if (LINEAR) {
             uints pbase = 0;
             T* pd0 = const_cast<T*>(this->_array.ptr());
             uints n = this->_array.size();
@@ -1666,8 +1666,8 @@ private:
         int dummy[] = {0, ((void)std::get<Index>(this->_exts).reserve_virtual(size), 0)...};
     }
 
-    void extarray_reserve(uints size, enum reserve mode) {
-        if (mode == reserve::virtual_space)
+    void extarray_reserve(uints size, reserve_mode mode) {
+        if (mode == reserve_mode::virtual_space)
             extarray_reserve_virtual_(make_index_sequence<tracker_t::extarray_size>(), size);
         else
             extarray_reserve_(make_index_sequence<tracker_t::extarray_size>(), size);
@@ -1687,7 +1687,7 @@ private:
 
 
     const T* ptr(uints id) const {
-        if constexpr (LINEAR)
+        if coid_constexpr_if (LINEAR)
             return this->_array.ptr() + id;
         else {
             using page = typename storage_t::page;
@@ -1698,7 +1698,7 @@ private:
     }
 
     T* ptr(uints id) {
-        if constexpr (LINEAR)
+        if coid_constexpr_if (LINEAR)
             return this->_array.ptr() + id;
         else {
             using page = typename storage_t::page;
@@ -1784,7 +1784,7 @@ private:
     template <bool UNINIT>
     uints alloc_range_contiguous(uints n, uints* old)
     {
-        if constexpr (!LINEAR) {
+        if coid_constexpr_if (!LINEAR) {
             if (n > storage_t::page::ITEMS)
                 return UMAXS;
         }
@@ -1792,7 +1792,7 @@ private:
         uint_type const* bm = _allocated.ptr();
         uint_type const* em = _allocated.ptre();
         uints id = 0;
-        if constexpr (LINEAR) {
+        if coid_constexpr_if (LINEAR) {
             id = find_zero_bitrange(n, bm, em);
         }
         else {
@@ -1865,7 +1865,7 @@ private:
     {
         uints base = created();
 
-        if constexpr (LINEAR) {
+        if coid_constexpr_if (LINEAR) {
             ints rebase = 0;
             this->_array.add_uninit(n, &rebase);
 
@@ -1888,7 +1888,7 @@ private:
             if (!UNINIT && n > 1) {
                 for_range_unchecked(base, n - 1, [](T* p) {
 #ifdef COID_CONSTEXPR_IF
-                    if constexpr (!UNINIT)
+                    if coid_constexpr_if (!UNINIT)
                         new(p) T;
 #else
                     slotalloc_detail::newtor<UNINIT, T>::create(p);

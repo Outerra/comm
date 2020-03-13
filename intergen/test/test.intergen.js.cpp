@@ -62,12 +62,15 @@ public:
         set_host(host, this, 0);
     }
 
-    ~thingface_js_dispatcher() {
+    ~thingface_js_dispatcher()
+    {
+        v8::Isolate* iso = v8::Isolate::GetCurrent();
+        v8::HandleScope handle_scope__(iso);
+
         for (int i=0; i<1; ++i) {
             _events[i].Reset();
         }
 
-        v8::Isolate* iso = v8::Isolate::GetCurrent();
         if (!_object.IsEmpty()) {
             _object.Get(iso)->SetInternalField(0, v8::Null(iso));
         }
