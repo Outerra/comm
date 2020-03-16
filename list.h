@@ -45,7 +45,6 @@ public:
     };
 
     struct _list_iterator_base
-        : std::iterator < std::bidirectional_iterator_tag, T >
     {
         node*  _node;
 
