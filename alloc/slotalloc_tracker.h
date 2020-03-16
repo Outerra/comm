@@ -121,9 +121,9 @@ struct storage
 
     uint_type _created = 0;             //< contigous elements created total
 
-#ifndef COID_CONSTEXPR_IF
+//#ifndef COID_CONSTEXPR_IF // commented out to keep data layout with VS2017 and newer
     dynarray<T> _array;                 //< main data array (when using contiguous memory)
-#endif
+//#endif
 
 
     void swap_storage(storage& other) {
