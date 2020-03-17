@@ -409,6 +409,11 @@ public:
     }
 
     ///Delete object in the container
+    void del(uints item_id) {
+        del(get_item(item_id));
+    }
+
+    ///Delete object in the container
     void del(T* p)
     {
         uints id = get_item_id(p);
@@ -450,19 +455,16 @@ public:
             DASSERTN(0);
     }
 
-    ///Del range of objects
-    void del_range(T* p, uints n)
-    {
+    void del_range(uints item_id, uints n) {
         if (n == 0)
             return;
         if (n == 1)
-            return del(p);
+            return del(item_id);
 
-        uints id = get_item_id(p);
-        uints idk = id;
+        uints idk = item_id;
 
-        if coid_constexpr_if (LINEAR) {
-            auto b = this->_array.ptr() + id;
+        if coid_constexpr_if(LINEAR) {
+            auto b = this->_array.ptr() + item_id;
             auto e = b + n;
 
             for (; b < e; ++b) {
@@ -474,8 +476,8 @@ public:
         else {
             using page = typename storage_t::page;
 
-            uint pg = uint(id / page::ITEMS);
-            uint s = uint(id % page::ITEMS);
+            uint pg = uint(item_id / page::ITEMS);
+            uint s = uint(item_id % page::ITEMS);
             uints nr = n;
 
             while (nr > 0) {
@@ -493,7 +495,13 @@ public:
                 s = 0;
             }
         }
-        _count -= clear_bitrange(id, n, _allocated.ptr());
+        _count -= clear_bitrange(item_id, n, _allocated.ptr());
+    }
+
+    ///Del range of objects
+    void del_range(T* p, uints n)
+    {
+        del_range(get_item_id(p), n);
     }
 
     ///Delete object by id
@@ -1854,7 +1862,7 @@ private:
         if coid_constexpr_if(EXT_UNINIT)
             extarray_expand_uninit(1);
         else
-            extarray_expand(1);
+        extarray_expand(1);
 
         if (pid)
             *pid = count;
