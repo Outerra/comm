@@ -225,10 +225,27 @@ void constexpr_test()
 #endif
 }
 
+uints test_slotalloc_virtual() {
+    struct a {
+        uint member_a;
+    };
+
+    struct b {
+        uint member_b;
+        b(uint val_b) :member_b(val_b) {};
+
+    };
+
+    slotalloc_linear<a, b> dummy(123456, coid::reserve_mode::virtual_space);
+
+    return dummy.add_range_uninit(50);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
 {
     test_malloc();
+    test_slotalloc_virtual();
 
     fntest(0);
 

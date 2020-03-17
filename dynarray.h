@@ -533,7 +533,7 @@ public:
         }
 
         if (nitems) {
-            if (!has_trivial_default_constructor<T>::value)
+            if coid_constexpr_if (!has_trivial_default_constructor<T>::value)
                 for (uints i = 0; i < nitems; ++i)  ::new(_ptr + i) T;
         }
 
@@ -567,7 +567,7 @@ public:
         if (nitems) {
             ::memset(_ptr, toones ? 0xff : 0x00, nitems * sizeof(T));
 
-            if (!has_trivial_default_constructor<T>::value)
+            if coid_constexpr_if (!has_trivial_default_constructor<T>::value)
                 for (uints i = 0; i < nitems; ++i)  ::new(_ptr + i) T;
         }
 
@@ -588,7 +588,7 @@ public:
 
         if (nitems == n)  return _ptr;
         if (nitems < n) {
-            if (!std::is_trivially_destructible<T>::value)
+            if coid_constexpr_if (!std::is_trivially_destructible<T>::value)
                 for (uints i = n - 1; i > nitems; --i)  _ptr[i].~T();
             _set_count(nitems);
             return _ptr;
@@ -598,7 +598,7 @@ public:
         if (nalloc * sizeof(T) > _size())
             nalloc = _realloc(nalloc, n);
 
-        if (!has_trivial_default_constructor<T>::value)
+        if coid_constexpr_if (!has_trivial_default_constructor<T>::value)
             for (uints i = n; i < nitems; ++i)  ::new(_ptr + i) T;
 
         if (_ptr)  _set_count(nitems);
@@ -631,7 +631,7 @@ public:
 
         ::memset(_ptr + n, toones ? 0xff : 0x00, (nitems - n) * sizeof(T));
 
-        if (!has_trivial_default_constructor<T>::value)
+        if coid_constexpr_if (!has_trivial_default_constructor<T>::value)
             for (uints i = n; i < nitems; ++i)  ::new(_ptr + i) T;
 
         if (_ptr)  _set_count(nitems);
@@ -681,7 +681,7 @@ public:
         if (nalloc * sizeof(T) > _size())
             nalloc = _realloc(nalloc, n);
 
-        if (!has_trivial_default_constructor<T>::value)
+        if coid_constexpr_if (!has_trivial_default_constructor<T>::value)
             for (uints i = n; i < nto; ++i)  ::new(_ptr + i) T(std::forward<Args>(args)...);
 
         _set_count(nto);
@@ -706,7 +706,7 @@ public:
         if (nalloc * sizeof(T) > _size())
             nalloc = _realloc(nalloc, n);
 
-        if (!has_trivial_default_constructor<T>::value)
+        if coid_constexpr_if (!has_trivial_default_constructor<T>::value)
             for (uints i = n; i < nto; ++i)  ::new(_ptr + i) T;
 
         _set_count(nto);
@@ -731,7 +731,7 @@ public:
 
         ::memset(_ptr + n, toones ? 0xff : 0, (nto - n) * sizeof(T));
 
-        if (!has_trivial_default_constructor<T>::value)
+        if coid_constexpr_if (!has_trivial_default_constructor<T>::value)
             for (uints i = n; i < nto; ++i)  ::new(_ptr + i) T;
 
         _set_count(nto);
@@ -920,7 +920,7 @@ public:
         if (n > 0) {
             dest = *last();
 
-            if (!std::is_trivially_destructible<T>::value)
+            if coid_constexpr_if (!std::is_trivially_destructible<T>::value)
                 _ptr[n - 1].~T();
 
             _set_count(n - 1);
@@ -937,7 +937,7 @@ public:
         uints cnt = _count();
         if (!cnt)  return 0;
 
-        if (!std::is_trivially_destructible<T>::value)
+        if coid_constexpr_if (!std::is_trivially_destructible<T>::value)
             _ptr[cnt - 1].~T();
 
         _set_count(cnt - 1);
@@ -1488,7 +1488,7 @@ public:
         addnc(nitems);
         T* p = __ins(_ptr, pos, _count() - nitems, nitems);
 
-        if (!has_trivial_default_constructor<T>::value)
+        if coid_constexpr_if (!has_trivial_default_constructor<T>::value)
             for (; nitems > 0; --nitems, ++p)  ::new (p) T;
         return _ptr + pos;
     }
@@ -1546,7 +1546,7 @@ public:
             return;
 
         uints i = nitems;
-        if (!std::is_trivially_destructible<T>::value)
+        if coid_constexpr_if (!std::is_trivially_destructible<T>::value)
             for (T* p = _ptr + pos; i > 0; --i, ++p)  p->~T();
 
         __del(_ptr, pos, _count(), nitems);
@@ -1713,7 +1713,7 @@ private:
             throw ersEXCEPTION "invalid pointer";
 #endif
         uints c = _count();
-        if (!std::is_trivially_destructible<T>::value)
+        if coid_constexpr_if (!std::is_trivially_destructible<T>::value)
             for (uints i = 0; i < c; ++i)  _ptr[i].~T();
     }
 

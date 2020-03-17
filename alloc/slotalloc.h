@@ -222,7 +222,7 @@ public:
     //@return pointer to the newly inserted object
     T* push(const T& v) {
         bool isold = _count < created();
-        T* p = isold ? alloc(0) : append();
+        T* p = isold ? alloc(0) : append<false>();
 
         return copy_object(p, isold, v);
     }
@@ -231,7 +231,7 @@ public:
     //@return pointer to the newly inserted object
     T* push(T&& v) {
         bool isold = _count < created();
-        T* p = isold ? alloc(0) : append();
+        T* p = isold ? alloc(0) : append<false>();
 
         return this->copy_object(p, isold, std::forward<T>(v));
     }
@@ -241,7 +241,7 @@ public:
     T* push_construct(Ps&&... ps)
     {
         bool isold = _count < created();
-        T* p = isold ? alloc(0) : append();
+        T* p = isold ? alloc(0) : append<false>();
 
         return construct_object(p, isold, std::forward<Ps>(ps)...);
     }
@@ -249,7 +249,7 @@ public:
     ///Add new object initialized with default constructor, or reuse one in pool mode
     T* add(uints* pid = 0) {
         bool isold = _count < created();
-        T* p = isold ? alloc(pid) : append(pid);
+        T* p = isold ? alloc(pid) : append<false>(pid);
 
         return construct_default(p, isold);
     }
@@ -260,13 +260,13 @@ public:
         bool isold = _count < created();
 
         if (!isold)
-            return new(append(pid)) T;
+            return new(append<false>(pid)) T;
 
         uints id = find_unused(fn);
 
         return id != UMAXS
             ? alloc_item(pid ? (*pid = id) : id)
-            : new(append(pid)) T;
+            : new(append<false>(pid)) T;
     }
 
     ///Add new object, uninitialized (no constructor invoked on the object)
@@ -284,7 +284,7 @@ public:
             return p;
         }
         if (newitem) *newitem = true;
-        return append(pid);
+        return append<true>(pid);
     }
 
     ///Add range of objects initialized with default constructors
@@ -1618,7 +1618,7 @@ private:
     ///Helper to expand all ext arrays
     template<size_t... Index>
     void extarray_expand_uninit_(index_sequence<Index...>, uints n) {
-        int dummy[] = {0, ((void)std::get<Index>(this->_exts).add(n), 0)...};
+        int dummy[] = {0, ((void)std::get<Index>(this->_exts).add_uninit(n), 0)...};
     }
 
     void extarray_expand_uninit(uints n = 1) {
@@ -1843,6 +1843,7 @@ private:
     }
 
     ///Append to a full array
+    template <bool EXT_UNINIT>
     T* append(uints* pid = 0)
     {
         uints count = created();
@@ -1850,7 +1851,11 @@ private:
         DASSERT(_count <= count);   //count may be lower with other threads deleting, but not higher (single producer)
         set_bit(count);
 
-        extarray_expand(1);
+        if coid_constexpr_if(EXT_UNINIT)
+            extarray_expand_uninit(1);
+        else
+            extarray_expand(1);
+
         if (pid)
             *pid = count;
         ++_count;
