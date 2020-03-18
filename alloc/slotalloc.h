@@ -1862,7 +1862,7 @@ private:
         if coid_constexpr_if(EXT_UNINIT)
             extarray_expand_uninit(1);
         else
-        extarray_expand(1);
+            extarray_expand(1);
 
         if (pid)
             *pid = count;
