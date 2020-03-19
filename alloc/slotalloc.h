@@ -537,11 +537,8 @@ public:
     uints count() const { return _count; }
 
     //@return allocated and previously created count (not necessarily used currently)
-    uints created() const {
-        if coid_constexpr_if (LINEAR)
-            return this->_array.size();
-        else
-            return this->_created;
+    uints allocated_count() const {
+        return created();
     }
 
     //@return number of currently preallocated items
@@ -1605,6 +1602,16 @@ public:
             for (int i = 0; ch < che && i < MASK_BITS; ++i, m >>= 1, ++ch)
                 ch->mask = (ch->mask & preserve) | (m & 1);
         }
+    }
+
+protected:
+
+    //@return allocated and previously created count (not necessarily used currently)
+    uints created() const {
+        if coid_constexpr_if(LINEAR)
+            return this->_array.size();
+        else
+            return this->_created;
     }
 
 private:
