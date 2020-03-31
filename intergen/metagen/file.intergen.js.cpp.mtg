@@ -57,7 +57,7 @@ public:
 
     v8::Handle<v8::Object> create_interface_object( v8::Handle<v8::Context> context, bool make_weak );
 
-    static v8::Handle<v8::Script> load_script( const coid::token& script, const coid::token& file_name );
+    static v8::Handle<v8::Script> load_script( const coid::token& script, const coid::token& file_name, const coid::token& prefix);
 $-(if event?)$
     void bind_events( v8::Handle<v8::Context> context, bool force, v8::Handle<v8::Value> ref ) const;
 $-(/if)$
@@ -663,9 +663,9 @@ $-(/if)$
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-v8::Handle<v8::Script> $name$_js_dispatcher::load_script( const coid::token& script, const coid::token& fname )
+v8::Handle<v8::Script> $name$_js_dispatcher::load_script( const coid::token& script, const coid::token& fname, const coid::token& prefix )
 {
-    return ::js::script_handle::load_script(script, fname, ::js::rethrow_in_cxx);
+    return ::js::script_handle::load_script(script, fname, ::js::rethrow_in_cxx, prefix);
 }
 
 $-(if event.empty!)$
@@ -792,25 +792,7 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const ::js::script_
     {
         coid::token script_tok;
         coid::charstr script_tmp;
-        if (script.is_path()) {
-            coid::bifstream bif (script.str());
-            if (!bif.is_open())
-                throw coid::exception() << script.str() << " not found";
-
-            script_tmp = script.prefix();
-
-            coid::binstreambuf buf;
-            buf.swap(script_tmp);
-            buf.transfer_from(bif);
-            buf.swap(script_tmp);
-
-            script_tok = script_tmp;
-        }
-        else if (script.prefix()) {
-            script_tmp << script.prefix() << script.str();
-            script_tok = script_tmp;
-        }
-        else {
+        if (!script.is_path()) {
             script_tok = script.str();
         }
 
@@ -818,7 +800,7 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$( const ::js::script_
         if (bindname)
             context->Global()->Set(context, v8::symbol(bindname, iso), ifc->_object.Get(iso));
 
-        v8::Handle<v8::Script> compiled_script = load_script(script_tok, script.url());
+        v8::Handle<v8::Script> compiled_script = load_script(script_tok, script.url(), script.prefix());
     }
     else {
         ifc->_object.Reset(iso, ifc->create_interface_object(context, false));

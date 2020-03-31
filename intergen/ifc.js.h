@@ -45,6 +45,8 @@
 #include "../metastream/metastream.h"
 #include "../metastream/fmtstream_v8.h"
 #include "../binstream/filestream.h"
+#include "../hash/hashmap.h"
+
 #include <v8/v8.h>
 
 namespace js {
@@ -162,18 +164,58 @@ struct script_handle
         return coid::interface_register::include_path(curpath, path, dst, relpath) ? 0 : 2;
     }
 
-    static v8::Handle<v8::Script> load_script( const coid::token& script, const coid::token& fname, exception_behavior exb )
+    static v8::Handle<v8::Script> lookup_or_compile_script(const coid::token& script, const coid::token& fname, const coid::token& prefix = coid::token())
+    {
+        using v8_pers_unbound_script_t = v8::Persistent<v8::UnboundScript, v8::CopyablePersistentTraits<v8::UnboundScript>>;
+        LOCAL_SINGLETON(coid::hash_map<coid::charstr, v8_pers_unbound_script_t>) scriptcache;
+
+        v8::Isolate* iso = v8::Isolate::GetCurrent();
+        v8::Handle<v8::UnboundScript> unbound_script;
+
+        auto pos = scriptcache->find_value(fname);
+        if (pos) {
+            unbound_script = pos->Get(iso);
+        }
+        else {
+            v8::ScriptOrigin so(v8::string_utf8(fname, iso));
+            v8::Local<v8::String> scriptv8;
+            coid::charstr script_src;
+            if (script.is_empty()) {
+                coid::bifstream bif(fname);
+                if (!bif.is_open())
+                    throw coid::exception() << fname << " not found";
+
+                script_src = prefix;
+
+                coid::binstreambuf buf;
+                buf.swap(script_src);
+                buf.transfer_from(bif);
+                buf.swap(script_src);
+            }
+            else {
+                script_src << prefix << script;
+            }
+
+            scriptv8 = v8::string_utf8(script_src, iso);
+            v8::ScriptCompiler::Source source(scriptv8, so);
+            unbound_script = v8::ScriptCompiler::CompileUnboundScript(iso, &source).ToLocalChecked();
+
+            if (!fname.is_empty()) {
+                scriptcache->insert_key_value(fname, v8_pers_unbound_script_t(iso, unbound_script));
+            }
+        }
+
+        return unbound_script->BindToCurrentContext();
+    }
+
+    static v8::Handle<v8::Script> load_script( const coid::token& script, const coid::token& fname, exception_behavior exb, const coid::token& prefix = coid::token())
     {
         v8::Isolate* iso = v8::Isolate::GetCurrent();
-        v8::Local<v8::String> scriptv8 = v8::string_utf8(script, iso);
 
         // set up an error handler to catch any exceptions the script might throw.
         v8::TryCatch js_trycatch(iso);
 
-        v8::ScriptOrigin so(v8::string_utf8(fname, iso));
-        v8::Local<v8::Script> compiled_script;
-        v8::MaybeLocal<v8::Script> maybe_compiled_script = v8::Script::Compile(iso->GetCurrentContext(), scriptv8, &so);
-        maybe_compiled_script.ToLocal(&compiled_script);
+        v8::Handle<v8::Script> compiled_script = lookup_or_compile_script(script, fname, prefix);
 
         if (js_trycatch.HasCaught()) {
             if (exb == rethrow_in_js)
@@ -212,35 +254,15 @@ struct script_handle
         if (is_path()) {
             if (!script_path)
                 script_path = _str;
-
-            coid::bifstream bif(_str);
-            if (!bif.is_open())
-                throw coid::exception() << _str << " not found";
-
-            script_tmp = _prefix;
-
-            coid::binstreambuf buf;
-            buf.swap(script_tmp);
-            buf.transfer_from(bif);
-            buf.swap(script_tmp);
-
-            script_tok = script_tmp;
-        }
-        else if (_prefix) {
-            script_tmp << _prefix << _str;
-            script_tok = script_tmp;
         }
         else {
             script_tok = _str;
         }
 
-        v8::Local<v8::String> scriptv8 = v8::String::NewFromUtf8(iso,
-            script_tok.ptr(), v8::NewStringType::kNormal, script_tok.len()).ToLocalChecked();
-
         // set up an error handler to catch any exceptions the script might throw.
         v8::TryCatch js_trycatch(iso);
 
-        v8::ScriptOrigin so = [&](){
+        v8::ScriptOrigin so = [&]() {
             if (script_path.begins_with("file:///")) {
                 return v8::ScriptOrigin(v8::string_utf8(script_path, iso));
             }
@@ -249,7 +271,7 @@ struct script_handle
             tmp.get_str() << "file:///" << script_path;
             return v8::ScriptOrigin(v8::string_utf8(tmp, iso));
         }();
-        v8::Handle<v8::Script> compiled_script = v8::Script::Compile(context, scriptv8, &so).ToLocalChecked();
+        v8::Handle<v8::Script> compiled_script = lookup_or_compile_script(script_tok, script_path, _prefix);
 
         if (js_trycatch.HasCaught())
             throw_exception_from_js_error(js_trycatch);
@@ -348,13 +370,7 @@ public:
         coid::zstring filepath;
         filepath.get_str() << "file:///" << relpath;
 
-        v8::Handle<v8::String> source = v8::string_utf8(js, iso);
-        v8::Handle<v8::String> spath = v8::string_utf8(filepath, iso);
-
-        v8::ScriptOrigin so(spath);
-
-        v8::Handle<v8::Script> script =
-            v8::Script::Compile(ctx, source, &so).ToLocalChecked();
+        v8::Handle<v8::Script> script = lookup_or_compile_script(js, filepath);
 
         if (js_trycatch.HasCaught()) {
             js_trycatch.ReThrow();
