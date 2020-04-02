@@ -274,7 +274,7 @@ public:
     void del(T* p)
     {
         uint id = (uint)get_item_id(p);
-        DASSERT_RETVOID(id != UMAX32);
+        DASSERT_RET(id != UMAX32);
 
         destroy_value_(id);
         base::del(p);
@@ -283,7 +283,7 @@ public:
     ///Delete object by id
     void del(uint id)
     {
-        DASSERT_RETVOID(id != UMAX32);
+        DASSERT_RET(id != UMAX32);
 
         T* p = destroy_value_(id);
         base::del(p);

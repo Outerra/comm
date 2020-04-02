@@ -522,7 +522,7 @@ private:
         uints id = _taskdata.get_item_id((granule*)task);
         //coidlog_devdbg("taskmaster", "thread " << order << " processing task id " << id);
 
-        DASSERT_RETVOID(_taskdata.is_valid_id(id));
+        DASSERT_RET(_taskdata.is_valid_id(id));
         task->invoke();
 
         const signal_handle handle = task->signal();

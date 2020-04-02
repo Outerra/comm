@@ -73,19 +73,19 @@ COID_NAMESPACE_END
 
 ////////////////////////////////////////////////////////////////////////////////
 #ifdef SYSTYPE_MSVC
-#define XASSERT                     if(__assert_e) __debugbreak()
+#define XASSERT                     if (__assert_e) __debugbreak()
 #else
 #include <cassert>
 #define XASSERT                     assert(__assert_e);
 #endif
 
 #ifdef _DEBUG
-#define XDASSERT XASSERT
+#define XDASSERT    XASSERT
 #else
 #define XDASSERT
 #endif
 
-#define XASSERTE(expr)              do{ if(expr) break;  bool __assert_e =
+#define XASSERTE(expr)              do{ if (expr) break;  bool __assert_e =
 
 
 
@@ -107,8 +107,7 @@ COID_NAMESPACE_END
 //@}
 
 //@{ Assert in debug, return \a ret on failed assertion (also in release)
-#define DASSERT_RET(expr,ret)       XASSERTE(expr) coid::__rassert(0,__FILE__,__LINE__,__FUNCTION__,#expr); XDASSERT; return ret; } while(0)
-#define DASSERT_RETVOID(expr)       XASSERTE(expr) coid::__rassert(0,__FILE__,__LINE__,__FUNCTION__,#expr); XDASSERT; return; } while(0)
+#define DASSERT_RET(expr, ...)      XASSERTE(expr) coid::__rassert(0,__FILE__,__LINE__,__FUNCTION__,#expr); XDASSERT; return __VA_ARGS__; } while(0)
 //@}
 
 #else
@@ -117,8 +116,7 @@ COID_NAMESPACE_END
 #define DASSERTX(expr,txt)
 #define DASSERT_ONCE(expr)
 
-#define DASSERT_RET(expr,ret)       do{ if(expr) break; return ret; } while(0)
-#define DASSERT_RETVOID(expr)       do{ if(expr) break; return; } while(0)
+#define DASSERT_RET(expr, ...)      do{ if(expr) break; coid::__retassert(); return __VA_ARGS__; } while(0)
 
 #endif //_DEBUG
 
@@ -134,18 +132,25 @@ COID_NAMESPACE_END
 //@{ Assert in debug, log in release, return \a ret on failed assertion (also in release)
 #define LASSERT(expr)               XASSERTE(expr) coid::__rassert(0,__FILE__,__LINE__,__FUNCTION__,#expr); XDASSERT; } while(0)
 #define LASSERTX(expr,txt)          XASSERTE(expr) coid::__rassert(coid::opt_string() << txt,__FILE__,__LINE__,__FUNCTION__,#expr); XDASSERT; } while(0)
-#define LASSERT_RET(expr,ret)       XASSERTE(expr) coid::__rassert(0,__FILE__,__LINE__,__FUNCTION__,#expr); XDASSERT; return ret; } while(0)
-#define LASSERT_RETVOID(expr)       XASSERTE(expr) coid::__rassert(0,__FILE__,__LINE__,__FUNCTION__,#expr); XDASSERT; return; } while(0)
-#define LASSERT_RETVOIDX(expr,txt)  XASSERTE(expr) coid::__rassert(coid::opt_string() << txt,__FILE__,__LINE__,__FUNCTION__,#expr); XDASSERT; return; } while(0)
-#define LASSERT_RETX(expr,ret,txt)  XASSERTE(expr) coid::__rassert(coid::opt_string() << txt,__FILE__,__LINE__,__FUNCTION__,#expr); XDASSERT; return ret; } while(0)
+#define LASSERT_RET(expr, ...)      XASSERTE(expr) coid::__rassert(0,__FILE__,__LINE__,__FUNCTION__,#expr); XDASSERT; return __VA_ARGS__; } while(0)
+#define LASSERT_RETX(expr,txt, ...) XASSERTE(expr) coid::__rassert(coid::opt_string() << txt,__FILE__,__LINE__,__FUNCTION__,#expr); XDASSERT; return __VA_ARGS__; } while(0)
 //@}
 
 
 ////////////////////////////////////////////////////////////////////////////////
 COID_NAMESPACE_BEGIN
 
+///Run-time enable/disable DASSERT_RET macros throwing exceptions in release builds
+//@note default disabled
+void enable_dassert_ret_exceptions(bool en);
+
+///Run-time enable/disable invoking debug break by assert macros
+void enable_dassert_debugbreak(bool en);
+
 class opt_string;
 bool __rassert(const opt_string& txt, const char* file, int line, const char* function, const char* expr, bool flush = false);
+
+void __retassert();
 
 ///Downcast value of integral type, asserting on overflow and underflow
 //@return cast value

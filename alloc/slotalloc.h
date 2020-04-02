@@ -420,7 +420,7 @@ public:
         if (id >= created())
             throw exception("attempting to delete an invalid object ") << id;
 
-        DASSERT_RETVOID(get_bit(id));
+        DASSERT_RET(get_bit(id));
 
         this->set_modified(id);
         this->bump_version(id);
@@ -444,7 +444,7 @@ public:
         if (id >= created())
             throw exception("attempting to delete an invalid object ") << id;
 
-        DASSERT_RETVOID(get_bit(id));
+        DASSERT_RET(get_bit(id));
 
         this->set_modified(id);
         this->bump_version(id);
@@ -507,7 +507,7 @@ public:
     ///Delete object by id
     void del_item(uints id)
     {
-        DASSERT_RETVOID(id < created());
+        DASSERT_RET(id < created());
 
         this->set_modified(id);
         this->bump_version(id);
@@ -528,7 +528,7 @@ public:
     template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
     void del_item(versionid vid)
     {
-        DASSERT_RETVOID(this->check_versionid(vid));
+        DASSERT_RET(this->check_versionid(vid));
 
         return del_item(vid.id);
     }
@@ -1326,7 +1326,7 @@ public:
     template<typename Func>
     void for_range_unchecked(uints id, uints count, Func f)
     {
-        DASSERT_RETVOID(id + count <= created());
+        DASSERT_RET(id + count <= created());
 
         if coid_constexpr_if (LINEAR) {
             T* p = this->_array.ptr() + id;
