@@ -211,14 +211,34 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 
 ///Downcast value of integral type, asserting on overflow and underflow
-//@return cast value
+//@return unclamped cast value
 template <class T, class S>
 inline T down_cast(S v) {
-    const T vmin = std::numeric_limits<T>::min();
-    const T vmax = std::numeric_limits<T>::max();
+    constexpr T vmin = std::numeric_limits<T>::min();
+    constexpr T vmax = std::numeric_limits<T>::max();
 
     DASSERT(v >= vmin && v <= vmax);
     return T(v);
+}
+
+///Downcast value of integral type, asserting on overflow and underflow
+//@return clamped value
+template <class T, class S>
+inline T down_cast_saturate(S v) {
+    constexpr T vmin = std::numeric_limits<T>::min();
+    constexpr T vmax = std::numeric_limits<T>::max();
+
+    if (v < vmin) {
+        DASSERT(0);
+        return vmin;
+    }
+    else if (v > vmax) {
+        DASSERT(0);
+        return vmax;
+    }
+    else {
+        return T(v);
+    }
 }
 
 
