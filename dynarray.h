@@ -345,8 +345,10 @@ public:
     bool operator == (const dynarray& a) const
     {
         if (size() != a.size())  return false;
-        for (uints i = 0; i < size(); ++i)
-            if (!(_ptr[i] == a._ptr[i]))  return false;
+        for (uints i = 0; i < size(); ++i) {
+            if (!(_ptr[i] == a._ptr[i]))
+                return false;
+        }
         return true;
     }
 
