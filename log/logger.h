@@ -321,8 +321,10 @@ protected:
     slotalloc<log_filter> _filters;
     ref<logger_file> _logfile;
 
-    log::type _minlevel;
-    bool _stdout;
+    log::type _minlevel = log::last;
+
+    bool _stdout = false;
+    bool _allow_perf = false;
 
 public:
 
@@ -383,7 +385,7 @@ public:
 
     void flush();
 
-    void set_log_level( log::type minlevel = log::last );
+    void set_log_level( log::type minlevel = log::last, bool allow_perf = false );
 
     static void enable_debug_out(bool en);
 
