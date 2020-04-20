@@ -84,7 +84,9 @@ public:
     typedef typename _HT::const_iterator            const_iterator;
 
     std::pair<iterator, bool> insert( const value_type& val )
-    {   return insert_unique(val);    }
+    {
+        return this->insert_unique(val);
+    }
 
     void insert( const value_type* f, const value_type* l )
     {   insert_unique( f, l );   }

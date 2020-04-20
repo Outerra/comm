@@ -273,7 +273,7 @@ public:
     ///Delete item from hash map
     void del(T* p)
     {
-        uint id = (uint)get_item_id(p);
+        uint id = (uint)base::get_item_id(p);
         DASSERT_RET(id != UMAX32);
 
         destroy_value_(id);
