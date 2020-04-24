@@ -194,11 +194,15 @@ public:
 
     void reserve(uints nitems)
     {
+        uints na = align_to_chunks(nitems, MASK_BITS);
+
         if coid_constexpr_if (LINEAR) {
             this->_array.reserve(nitems, true);
         }
+        else {
+            this->_pages.reserve(na,true);
+        }
 
-        uints na = align_to_chunks(nitems, MASK_BITS);
         _allocated.reserve(na, true);
 
         extarray_reserve(nitems, reserve_mode::memory);
@@ -206,13 +210,17 @@ public:
 
     void reserve_virtual(uints nitems)
     {
+        uints na = align_to_chunks(nitems, MASK_BITS);
+
         if coid_constexpr_if (LINEAR) {
             discard();
 
             this->_array.reserve_virtual(nitems);
         }
+        else {
+            this->_pages.reserve_virtual(na);
+        }
 
-        uints na = align_to_chunks(nitems, MASK_BITS);
         _allocated.reserve_virtual(na);
 
         extarray_reserve(nitems, reserve_mode::virtual_space);
@@ -1834,7 +1842,13 @@ private:
 
             if (pp == ep) {
                 id = this->_pages.size() * page::ITEMS;
+                
+                void* oldbase = this->_pages.ptr();
                 pp = this->_pages.add();
+                
+                if coid_constexpr_if(ATOMIC) {
+                    DASSERT(oldbase == nullptr || oldbase == this->_pages.ptr()); // check if page dynarray rebased
+                }
             }
         }
 
@@ -1897,8 +1911,13 @@ private:
             using page = typename storage_t::page;
 
             uints np = align_to_chunks(this->_created + n, page::ITEMS);
-            if (np > this->_pages.size())
+            if (np > this->_pages.size()) {
+                void* oldbase = this->_pages.ptr();
                 this->_pages.realloc(np);
+                if coid_constexpr_if(ATOMIC) {
+                    DASSERT(oldbase == nullptr || oldbase == this->_pages.ptr()); // check if page dynarray rebased
+                }
+            }
 
             this->_created += n;
         }
