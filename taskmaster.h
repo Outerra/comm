@@ -190,11 +190,11 @@ public:
     //@param obj object reference to run the member function on. Can be a pointer or a smart ptr type which resolves to the object with * operator
     //@param args arguments needed to invoke the function
     template <typename Fn, typename C, typename ...Args>
-    void push_memberfn( EPriority priority, signal_handle* signal, Fn fn, const C& obj, Args&& ...args )
+    void push_memberfn( EPriority priority, signal_handle* signal, Fn fn, C* obj, Args&& ...args )
     {
         static_assert(std::is_member_function_pointer<Fn>::value, "fn must be a function that can be invoked as ((*obj).*fn)(args)");
 
-        using callfn = invoker_memberfn<Fn, C, Args...>;
+        using callfn = invoker_memberfn<Fn, C*, Args...>;
 
         {
             //lock to access allocator and semaphore
@@ -517,20 +517,28 @@ private:
 
     void* threadfunc( int order );
 
-    void run_task( invoker_base* task, int order )
+    void run_task(invoker_base* task, int order)
     {
         uints id = _taskdata.get_item_id((granule*)task);
         //coidlog_devdbg("taskmaster", "thread " << order << " processing task id " << id);
 
+#ifdef _DEBUG
+        thread::set_name("<unknown task>"_T);
+#endif
+
         DASSERT_RET(_taskdata.is_valid_id(id));
         task->invoke();
+
+#ifdef _DEBUG
+        thread::set_name("<no task>"_T);
+#endif
 
         const signal_handle handle = task->signal();
         if (handle.is_valid()) {
             std::unique_lock<std::mutex> lock(_signal_sync);
             signal& s = _signal_pool[handle.index()];
             --s.ref;
-            if(s.ref == 0) {
+            if (s.ref == 0) {
                 s.version = (s.version + 1) % 0xffFF;
                 signal_handle free_handle = signal_handle::make(s.version, handle.index());
                 _free_signals.push(free_handle);
@@ -557,7 +565,7 @@ private:
     signal_handle alloc_signal()
     {
         signal_handle handle;
-        if(!_free_signals.pop(handle)) return invalid_signal;
+        if (!_free_signals.pop(handle)) return invalid_signal;
 
         signal& s = _signal_pool[handle.index()];
         s.ref = 1;
