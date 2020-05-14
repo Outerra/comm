@@ -226,9 +226,11 @@ public:
         extarray_reserve(nitems, reserve_mode::virtual_space);
     }
 
+
     ///Insert object
     //@return pointer to the newly inserted object
-    T* push(const T& v) {
+    T* push(const T& v)
+    {
         bool isold = _count < created();
         T* p = isold ? alloc(0) : append<false>();
 
@@ -237,7 +239,8 @@ public:
 
     ///Insert object
     //@return pointer to the newly inserted object
-    T* push(T&& v) {
+    T* push(T&& v)
+    {
         bool isold = _count < created();
         T* p = isold ? alloc(0) : append<false>();
 
@@ -255,7 +258,8 @@ public:
     }
 
     ///Add new object initialized with default constructor, or reuse one in pool mode
-    T* add(uints* pid = 0) {
+    T* add(uints* pid = 0)
+    {
         bool isold = _count < created();
         T* p = isold ? alloc(pid) : append<false>(pid);
 
@@ -264,7 +268,8 @@ public:
 
     ///Add new object or reuse one from pool if predicate returns true
     template <typename Func>
-    T* add_if(Func fn, uints* pid = 0) {
+    T* add_if(Func fn, uints* pid = 0)
+    {
         bool isold = _count < created();
 
         if (!isold)
@@ -280,7 +285,8 @@ public:
     ///Add new object, uninitialized (no constructor invoked on the object)
     //@param newitem optional variable that receives whether the object slot was newly created (true) or reused from the pool (false)
     //@note if newitem == 0 within the pool mode and thus no way to indicate the item has been reused, the reused objects have destructors called
-    T* add_uninit(bool* newitem = 0, uints* pid = 0) {
+    T* add_uninit(bool* newitem = 0, uints* pid = 0)
+    {
         if (_count < created()) {
             T* p = alloc(pid);
             if coid_constexpr_if(POOL) {
@@ -297,7 +303,8 @@ public:
 
     ///Add range of objects initialized with default constructors
     //@return id to the beginning of the allocated range
-    uints add_range(uints n) {
+    uints add_range(uints n)
+    {
         if (n == 0)
             return UMAXS;
         if (n == 1) {
@@ -322,7 +329,8 @@ public:
     //@param nreused optional variable receiving the number of objects that were reused from the pool and are constructed already
     //@note if nreused == 0 within the pool mode and thus no way to indicate the item has been reused, the reused objects have destructors called
     //@return id to the beginning of the allocated range
-    uints add_range_uninit(uints n, uints* nreused = 0) {
+    uints add_range_uninit(uints n, uints* nreused = 0)
+    {
         if (n == 0)
             return UMAXS;
         if (n == 1) {
@@ -355,7 +363,8 @@ public:
 
     ///Add range of objects initialized with default constructors
     //@return id to the beginning of the allocated range
-    T* add_contiguous_range(uints n) {
+    T* add_contiguous_range(uints n)
+    {
         if coid_constexpr_if (!LINEAR) {
             if (n > storage_t::page::ITEMS)
                 return 0;
@@ -382,7 +391,8 @@ public:
     //@param nreused optional variable receiving the number of objects that were reused from the pool and are constructed already
     //@note if nreused == 0 within the pool mode and thus no way to indicate the item has been reused, the reused objects have destructors called
     //@return id to the beginning of the allocated range
-    T* add_contiguous_range_uninit(uints n, uints* nreused = 0) {
+    T* add_contiguous_range_uninit(uints n, uints* nreused = 0)
+    {
         if coid_constexpr_if (!LINEAR) {
             if (n > storage_t::page::ITEMS)
                 return 0;
@@ -421,7 +431,7 @@ public:
         del(get_item(item_id));
     }
 
-    ///Delete object in the container
+    ///Delete object by pointer
     void del(T* p)
     {
         uints id = get_item_id(p);
@@ -431,7 +441,10 @@ public:
         DASSERT_RET(get_bit(id));
 
         this->set_modified(id);
-        this->bump_version(id);
+
+        //bump version on deletion, but not for pooled items that may be resurrected yet
+        if coid_constexpr_if(!POOL)
+            this->bump_version(id);
 
         if (clear_bit(id))
             --_count;
@@ -440,6 +453,81 @@ public:
 
         if coid_constexpr_if(!POOL)
             p->~T();
+    }
+
+    ///Delete object by id
+    void del_item(uints id)
+    {
+        DASSERT_RET(id < created());
+
+        this->set_modified(id);
+
+        //bump version on deletion, but not for pooled items that may be resurrected yet
+        if coid_constexpr_if(!POOL)
+            this->bump_version(id);
+
+        if (clear_bit(id))
+            --_count;
+        else
+            DASSERTN(0);
+
+        if coid_constexpr_if(!POOL) {
+            T* p = ptr(id);
+            p->~T();
+        }
+    }
+
+
+    ///Delete object by versionid
+    template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
+    void del_item(versionid vid)
+    {
+        DASSERT_RET(this->check_versionid(vid));
+
+        return del_item(vid.id);
+    }
+
+    //@return previously deleted but still valid item
+    //@note only works in POOL mode
+    T* undel_item(uints id)
+    {
+        static_assert(POOL, "only available in pool mode");
+
+        if (POOL && id < this->_created) {
+            if (set_bit(id))
+                ++_count;
+            else {
+                DASSERTN(0);
+                return 0;
+            }
+
+            return ptr(id);
+        }
+
+        return 0;
+    }
+
+    //@return previously deleted but still valid item with correct version
+    //@note only works in POOL mode
+    template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
+    T* undel_item(versionid vid)
+    {
+        static_assert(POOL, "only available in pool mode");
+
+        if (POOL && vid.id < this->_created) {
+            if (this->check_versionid(vid)) {
+                if (set_bit(vid.id))
+                    ++_count;
+                else {
+                    DASSERTN(0);
+                    return 0;
+                }
+            }
+
+            return ptr(vid.id);
+        }
+
+        return 0;
     }
 
     ///Mark object deleted without running the destructor
@@ -510,35 +598,6 @@ public:
     void del_range(T* p, uints n)
     {
         del_range(get_item_id(p), n);
-    }
-
-    ///Delete object by id
-    void del_item(uints id)
-    {
-        DASSERT_RET(id < created());
-
-        this->set_modified(id);
-        this->bump_version(id);
-
-        if (clear_bit(id))
-            --_count;
-        else
-            DASSERTN(0);
-
-        if coid_constexpr_if(!POOL) {
-            T* p = ptr(id);
-            p->~T();
-        }
-    }
-
-
-    ///Delete object by versionid
-    template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
-    void del_item(versionid vid)
-    {
-        DASSERT_RET(this->check_versionid(vid));
-
-        return del_item(vid.id);
     }
 
     //@return number of used slots in the container
@@ -645,6 +704,7 @@ public:
     ///Get a particular item from given slot or default-construct a new one there
     //@param id item id, reverts to add() if UMAXS
     //@param is_new optional if not null, receives true if the item was newly created
+    //@note a deleted item in POOL mode is also considered newly created here
     T* get_or_create(uints id, bool* is_new = 0)
     {
         if (id == UMAXS) {
@@ -865,12 +925,12 @@ protected:
     //@{ versioning functions
 
     versionid get_versionid(uints id) const {
-        DASSERT_RET(id < 0x00ffffffU, versionid());
+        DASSERT_RET(id <= versionid::max_id, versionid());
         if coid_constexpr_if (VERSIONING) {
-            return versionid(uint(id), tracker_t::version_array()[id]);
+            return versionid(id, tracker_t::version_array()[id]);
         }
         else {
-            return versionid(uint(id), 0);
+            return versionid(id, 0);
         }
     }
 
@@ -1842,10 +1902,10 @@ private:
 
             if (pp == ep) {
                 id = this->_pages.size() * page::ITEMS;
-                
+
                 void* oldbase = this->_pages.ptr();
                 pp = this->_pages.add();
-                
+
                 if coid_constexpr_if(ATOMIC) {
                     DASSERT(oldbase == nullptr || oldbase == this->_pages.ptr()); // check if page dynarray rebased
                 }
