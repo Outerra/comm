@@ -17,7 +17,7 @@ void* taskmaster::threadfunc( int order )
     coidlog_info("taskmaster", "thread " << order << " running");
     char tmp[64];
     sprintf_s(tmp, "taskmaster %d", order);
-    profiler::setThreadName(tmp);
+    profiler::set_thread_name(tmp);
 
     do
     {
