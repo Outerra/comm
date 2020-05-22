@@ -641,7 +641,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\profiler\microprofile\miniz.c" />
     <ClCompile Include="..\..\..\profiler\profiler.cpp" />
-    <ClCompile Include="..\..\..\profiler\profiler_microprofile.cpp" />
     <ClCompile Include="..\..\..\taskmaster.cpp" />
     <ClCompile Include="..\..\..\timer.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>

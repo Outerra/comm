@@ -476,9 +476,6 @@
     <ClCompile Include="..\..\..\profiler\profiler.cpp">
       <Filter>profiler</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\profiler\profiler_microprofile.cpp">
-      <Filter>profiler</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="..\..\..\doc\visualc-syntax\coid.natvis" />
