@@ -43,9 +43,6 @@
     <Filter Include="profiler">
       <UniqueIdentifier>{59571774-70fb-4f8d-8590-e6f687794952}</UniqueIdentifier>
     </Filter>
-    <Filter Include="profiler\microprofile">
-      <UniqueIdentifier>{723e4e11-3445-491b-bf31-ee07a1902109}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\atomic\atomic.h">
@@ -351,12 +348,6 @@
       <Filter>alloc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\function.h" />
-    <ClInclude Include="..\..\..\profiler\microprofile\microprofile.h">
-      <Filter>profiler\microprofile</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\profiler\microprofile\microprofile_html.h">
-      <Filter>profiler\microprofile</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\profiler\profiler.h">
       <Filter>profiler</Filter>
     </ClInclude>
@@ -466,12 +457,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\taskmaster.cpp">
       <Filter>cxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\profiler\microprofile\microprofile.cpp">
-      <Filter>profiler\microprofile</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\profiler\microprofile\miniz.c">
-      <Filter>profiler\microprofile</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\profiler\profiler.cpp">
       <Filter>profiler</Filter>
