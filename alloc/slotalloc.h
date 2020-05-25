@@ -1771,7 +1771,7 @@ private:
         if coid_constexpr_if (LINEAR)
             return this->_array.ptr() + id;
         else {
-            DASSERT(id / storage_t::storage_t::PAGE_ITEMS < this->_pages.size());
+            DASSERT(id / storage_t::PAGE_ITEMS < this->_pages.size());
             return (T*)this->_pages[id / storage_t::PAGE_ITEMS].data + id % storage_t::PAGE_ITEMS;
         }
     }
