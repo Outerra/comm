@@ -41,6 +41,10 @@ void frame() {
     if (g_backend) g_backend->frame();
 }
 
+void gpu_frame() {
+    if (g_backend) g_backend->gpu_frame();
+}
+
 void begin_gpu(const coid::token& name, uint64 timestamp, uint64 order)
 {
     if (g_backend) g_backend->begin_gpu(name, timestamp, order);

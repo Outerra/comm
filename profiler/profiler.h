@@ -9,6 +9,7 @@ namespace profiler
 class backend {
 public:
     virtual void frame() = 0;
+    virtual void gpu_frame() = 0;
     virtual uint64 get_token(const char* name) = 0;
     virtual void begin(uint64 token, uint8 r, uint8 g, uint8 b) = 0;
     virtual void end() = 0;
@@ -23,6 +24,7 @@ public:
 void set_backend(backend* backend);
 
 void frame();
+void gpu_frame();
 uint64 get_token(const char* name);
 void begin(uint64 token, uint8 r = 0xa0, uint8 g = 0xa0, uint8 b = 0xa0);
 void begin(const char* name, uint8 r = 0xa0, uint8 g = 0xa0, uint8 b = 0xa0);
