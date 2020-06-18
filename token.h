@@ -171,7 +171,11 @@ struct token
 
     constexpr token(const token& src) : _ptr(src._ptr), _pte(src._pte) {}
 
-    token(const token& src, uints offs, uints len)
+    /// create token from a subset of another token
+    /// @param src source token
+    /// @param len max number of characters to use
+    /// @param offs starting offset
+    token(const token& src, uints len, uints offs = 0)
     {
         if (offs > src.lens())
             _ptr = src._pte, _pte = _ptr;
