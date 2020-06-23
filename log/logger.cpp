@@ -46,6 +46,7 @@
 
 #include "../interface.h"
 #include "../timer.h"
+#include "../net_ul.h"
 
 using namespace coid;
 

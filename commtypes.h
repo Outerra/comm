@@ -149,6 +149,10 @@
 # endif
 #endif
 
+static const int _sysEndianTest = 1;
+#define sysIsLittleEndian (*((char *) &_sysEndianTest ) != 0)
+#define sysIsBigEndian    (*((char *) &_sysEndianTest ) == 0)
+
 
 #ifdef SYSTYPE_MSVC
 # define xstrncasecmp     _strnicmp
