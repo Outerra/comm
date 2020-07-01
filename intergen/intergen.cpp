@@ -363,6 +363,9 @@ int generate_index(const charstr& path)
 
     directory::list_file_paths(path, "html", 0,
         [&](const charstr& name, int dir) {
+            if (name.ends_with("index.html"_T))
+                return;
+
             bifstream bif(name);
             if (!bif.is_open()) {
                 out << "can't open " << name << '\n';
@@ -380,12 +383,14 @@ int generate_index(const charstr& path)
 
             single = text.cut_left(ssend);
 
+            if (single) {
+                if (multi)
+                    multi << ", \r\n";
+                multi << single;
+            }
+
             if (!after)
                 after = text;
-
-            if (multi)
-                multi << ", \r\n";
-            multi << single;
 
             ++n;
         });
