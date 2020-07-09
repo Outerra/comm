@@ -847,7 +847,13 @@ struct token
     //@note consumes the separator but not the end character
     token cut_left_argument(char sep = ' ', char end = 0)
     {
-        skip_whitespace();
+        //skip whitespace except the separator char
+        while (_ptr < _pte) {
+            char c = *_ptr;
+            if (c != sep && c != ' '  &&  c != '\t' && c != '\r' && c != '\n')
+                break;
+            ++_ptr;
+        }
 
         char c = first_char();
         if (c == '\'' || c == '"') {
@@ -2425,7 +2431,7 @@ struct token
     }
 
     ///Convert token to a double value, shifting the consumed part
-    //@param defval 
+    //@param defval
     double todouble_and_shift(double defval = 0.0)
     {
         bool invsign = false;
