@@ -850,7 +850,7 @@ struct token
         //skip whitespace except the separator char
         while (_ptr < _pte) {
             char c = *_ptr;
-            if (c != sep && c != ' '  &&  c != '\t' && c != '\r' && c != '\n')
+            if (c == sep || (c != ' '  &&  c != '\t' && c != '\r' && c != '\n'))
                 break;
             ++_ptr;
         }
