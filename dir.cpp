@@ -91,6 +91,29 @@ bool directory::is_valid_directory(zstring arg)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+charstr directory::create_tmp_dir(const token& prefix)
+{
+    charstr tmpdir = get_tmp_dir();
+
+    directory::treat_trailing_separator(tmpdir, true);
+    uint len = tmpdir.len();
+
+    timet now = timet::now();
+    int offs = now & 0xffffffff;
+
+    uint n = 10;
+    for (uint i = 0; i < n; ++i) {
+        tmpdir << prefix << (offs + i);
+        if (!directory::is_valid(tmpdir) && directory::mkdir(tmpdir) == NOERR)
+            return tmpdir;
+
+        tmpdir.resize(i);
+    }
+
+    return charstr();
+}
+
+////////////////////////////////////////////////////////////////////////////////
 uint64 directory::file_size(zstring file)
 {
     if(!file)
