@@ -370,9 +370,9 @@ opcd directory::delete_directory(zstring src, bool recursive)
     opcd was_err;
 
     if (recursive) {
-        list_file_paths(src, "*", true, [&was_err](const charstr& path, int isdir) {
+        list_file_paths(src, "*", 1, [&was_err](const charstr& path, int isdir) {
             opcd err = isdir
-                ? delete_directory(path, true)
+                ? delete_directory(path, false)
                 : delete_file(path);
 
             if (!was_err && !err)
