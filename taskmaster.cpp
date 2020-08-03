@@ -44,7 +44,7 @@ void* taskmaster::threadfunc( int order )
             notify();
             ++notify_counter;
             if (notify_counter > _threads.size() * 4) {
-                // all low prio threads are most likely busy so we give up out timeslice since there might be 
+                // all low prio threads are most likely busy so we give up our timeslice since there might be 
                 // other sleeping threads ready to work (e.g. jobmaster)
                 thread::wait(0);
                 notify_counter = 0;
