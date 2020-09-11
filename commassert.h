@@ -122,6 +122,7 @@ COID_NAMESPACE_END
 #define DASSERT_ONCE(expr)
 
 #define DASSERT_RET(expr, ...)      do{ if(expr) break; coid::__retassert(); return __VA_ARGS__; } while(0)
+#define DASSERT_RETX(expr,txt, ...) do{ if(expr) break; coid::__retassert(); return __VA_ARGS__; } while(0)
 
 #endif //_DEBUG
 
