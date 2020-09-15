@@ -191,7 +191,7 @@ int directory::append_path(charstr& dst, token path, bool keep_below)
             if (tdst.is_empty())
                 return 0;           //too many .. in path
 
-            token cut = tdst.cut_right_group_back(DIR_SEPARATORS, token::cut_trait_keep_sep_with_returned());
+            token cut = tdst.cut_right_group_back(DIR_SEPARATORS, token::cut_trait_keep_sep_with_returned_default_full());
             if (directory::is_separator(cut.first_char()))
                 sep = cut.first_char();
 
@@ -434,7 +434,7 @@ opcd directory::copymove_directory(zstring src, zstring dst, bool move)
 
     list_file_paths(src, "*", 3, [&](const charstr& path, int isdir) {
         token newpath = token(path.ptr() + slen, path.ptre());
-        
+
         dsts.resize(dlen);
         dsts << newpath;
 

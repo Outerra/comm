@@ -231,7 +231,7 @@ public:
         charstr buf = get_program_path();
 
         token t = buf;
-        t.cut_right_group_back(separators(), token::cut_trait_keep_sep_with_source());
+        t.cut_right_group_back(separators(), token::cut_trait_keep_sep_with_source_default_full());
 
         return buf.resize(t.len());
     }
@@ -247,7 +247,7 @@ public:
         charstr buf = get_module_path();
 
         token t = buf;
-        t.cut_right_group_back(separators(), token::cut_trait_keep_sep_with_source());
+        t.cut_right_group_back(separators(), token::cut_trait_keep_sep_with_source_default_full());
 
         return buf.resize(t.len());
     }

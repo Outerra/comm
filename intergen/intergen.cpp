@@ -244,7 +244,7 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
             ifc.relpathlua.ins(-(int)end.len(), ".lua");
 
             ifc.basepath = ifc.relpath;
-            ifc.hdrfile = ifc.basepath.cut_right_back('/', token::cut_trait_keep_sep_with_source());
+            ifc.hdrfile = ifc.basepath.cut_right_back('/', token::cut_trait_keep_sep_with_source_default_full());
 
             ifc.srcfile = &file.fnameext;
             ifc.srcclass = &cls.classname;

@@ -154,7 +154,7 @@ struct script_handle
 
         v8::String::Utf8Value uber(iso, trace->GetFrame(iso, frame)->GetScriptName());
         coid::token curpath = coid::token(*uber, uber.length());
-        curpath.cut_right_group_back("\\/", coid::token::cut_trait_keep_sep_with_source());
+        curpath.cut_right_group_back("\\/", coid::token::cut_trait_keep_sep_with_source_default_full());
 
         if (path.consume("file:///"))
             --path;
