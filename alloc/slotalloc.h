@@ -933,6 +933,8 @@ protected:
 
     bool check_versionid(versionid vid) const {
         if coid_constexpr_if (VERSIONING) {
+            if (vid.id >= created())
+                return false;
             uint8 ver = tracker_t::version_array()[vid.id];
             return vid.version == ver;
         }
