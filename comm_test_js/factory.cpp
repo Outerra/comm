@@ -43,8 +43,6 @@ void factory::initialize()
         int result = do_something();
     }
     catch (std::exception& e) {
-        // fuck
-        int a = 1;
         coidlog_error("",e.what());
     }
 }
