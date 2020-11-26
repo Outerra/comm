@@ -92,7 +92,8 @@ public:
         return exists(_thread);
     }
 
-    void set_name(const coid::token& name);
+    ///Set thread name
+    static void set_name(const coid::token& name);
 
     //@return true if thread exists
     static bool exists( thread_t tid );
