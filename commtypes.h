@@ -296,7 +296,7 @@ struct versionid
     }
 
     bool operator != (const versionid& rhs) const {
-        return value != value;
+        return value != rhs.value;
     }
 
     bool operator < (const versionid& rhs) const {
