@@ -278,7 +278,7 @@ struct versionid
         uint64 value;
     };
 
-    versionid() : id(max_id), version(0xffffull)
+    versionid() : value(UMAX64)
     {}
 
     versionid(uint64 id, uint16 version) : id(id), version(version)

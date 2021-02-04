@@ -57,6 +57,7 @@
 </Type>
 
 <Type Name="vref&lt;*&gt;">
+    <SmartPointer Usage="Minimal">($T1*)(_vptr &amp; vref&lt;$T1&gt;::ptr_mask)</SmartPointer>
     <DisplayString Condition="_vptr == 0">{{empty}}</DisplayString>
     <DisplayString>version = {_vptr &gt;&gt; vref&lt;$T1&gt;::vshift}, pointer = {(_vptr &amp; vref&lt;$T1&gt;::ptr_mask),x}</DisplayString>
     <Expand>

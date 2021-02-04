@@ -194,10 +194,11 @@ public:
 
     ///Supported interface client types (dispatcher back-ends)
     enum class backend : int8 {
+        none,                           //< empty clients
         cxx,                            //< c++ back-end implementation
-        js,
-        jsc,
-        lua,
+        js,                             //< javascript
+        jsc,                            //< jsc (unsupported)
+        lua,                            //< lua clients
 
         count_,
         unknown = -1
