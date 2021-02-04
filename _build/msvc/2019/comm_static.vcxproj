@@ -189,7 +189,6 @@
       <PrecompiledHeaderOutputFile>$(IntDir)comm_static.pch</PrecompiledHeaderOutputFile>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat>FullDebug</DebugInformationFormat>
       <ExceptionHandling>Enabled</ExceptionHandling>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>

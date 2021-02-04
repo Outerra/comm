@@ -233,7 +233,7 @@ public:
 
     T*& ptr_ref() { return _ptr; }
 
-#ifdef SYSTYPE_MSVC
+#if 0//def SYSTYPE_MSVC
     template< typename T, typename C, typename A >
     friend binstream& operator << (binstream &out, const dynarray<T, C, A> &dyna);
     template< typename T, typename C, typename A >
