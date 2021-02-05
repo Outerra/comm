@@ -85,7 +85,7 @@ struct paste_block {
         for (const charstr& ns : namespc)
             dst << "namespace "_T << ns << " {\r\n"_T;
         dst << block;
-        for (const charstr& ns : namespc)
+        for (uints n = namespc.size(); n > 0; --n)
             dst << "\r\n}"_T;
     }
 };

@@ -233,15 +233,8 @@ public:
 
     T*& ptr_ref() { return _ptr; }
 
-#ifdef SYSTYPE_MSVC
-    template< typename T, typename C, typename A >
-    friend binstream& operator << (binstream &out, const dynarray<T, C, A> &dyna);
-    template< typename T, typename C, typename A >
-    friend binstream& operator >> (binstream &in, dynarray<T, C, A> &dyna);
-#else
-    friend binstream& operator << TEMPLFRIEND(binstream &out, const dynarray<T, COUNT, A> &dyna);
-    friend binstream& operator >> TEMPLFRIEND(binstream &in, dynarray<T, COUNT, A> &dyna);
-#endif
+    friend binstream& operator << (binstream &out, const dynarray<T, COUNT, A> &dyna);
+    friend binstream& operator >> (binstream &in, dynarray<T, COUNT, A> &dyna);
 
     typedef binstream_container_base::fnc_stream	fnc_stream;
 

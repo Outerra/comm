@@ -62,7 +62,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
     if (!t.is_empty()) {
         templsub << char('<');
         for (int i = 0; !t.is_empty(); ++i) {
-            token x = t.cut_left(' ');
+            t.cut_left(' ');
 
             if (i)  templsub << ", ";
             templsub << t.cut_left(',');
@@ -71,7 +71,6 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
     }
 
     hash_map<charstr, uint, hasher<token>> map_overloads;
-    typedef hash_map<charstr, uint, hasher<token>>::value_type t_val;
 
     int ncontinuable_errors = 0;
 
@@ -246,7 +245,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                         else if (b.condx == '+') {
                             b.fill(*ifc->pasteafters.add());
                         }
-                        else if (v = ifc->full_name_equals(b.condx)) {
+                        else if ((v = ifc->full_name_equals(b.condx)) != 0) {
                             if (v > 0)
                                 b.fill(*ifc->pasteafters.add());
                             else

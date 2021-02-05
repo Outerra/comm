@@ -150,7 +150,7 @@ struct closure_traits_base
 
         callable(const Fn& fn) : fn(fn) {}
         callable(Fn&& fn) : fn(std::forward<Fn>(fn)) {}
-        
+
         R operator()(Args ...args) const override final {
             return fn(std::forward<Args>(args)...);
         }
@@ -277,7 +277,7 @@ using function = typename closure_traits<Fn>::function;
     Callback function invoked with a "this" context.
     Binds either to a member function with (Args... args) arguments, or to a static
     or lambda functions with (void* this__, Args... args) arguments.
-    
+
     The value of "this" is passed on by the caller.
 
     Size: 2*sizeof(ptr_t)
@@ -363,11 +363,11 @@ public:
             //optimized case of single-inheritance member function pointer
             caster tmp;
             tmp.method = fn;
-            _fn.ptr = tmp.function;
+            _fn.ptr = (void*)tmp.function;
 
             _caller = [](const hybrid& h, void* this__, Args ...args) {
                 caster v;
-                v.function = static_cast<R(*)(Args...)>(h.ptr);
+                v.function = (R(*)(Args...))h.ptr;
                 return (static_cast<T*>(this__)->*(v.method))(std::forward<Args>(args)...);
             };
         }
@@ -395,11 +395,11 @@ public:
             //optimized case of single-inheritance member function pointer
             caster tmp;
             tmp.method = fn;
-            _fn.ptr = tmp.function;
+            _fn.ptr = (void*)tmp.function;
 
             _caller = [](const hybrid& h, void* this__, Args ...args) {
                 caster v;
-                v.function = static_cast<R(*)(Args...)>(h.ptr);
+                v.function = (R(*)(Args...))h.ptr;
                 return (static_cast<const T*>(this__)->*(v.method))(std::forward<Args>(args)...);
             };
         }

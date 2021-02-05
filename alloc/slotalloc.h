@@ -153,15 +153,15 @@ public:
 #ifdef __cpp_lib_tuples_by_type
 
     //@return value from ext array for given type
-    template<typename T>
-    T& value_type(uints index) {
-        return std::get<T>(this->_exts)[index];
+    template<typename T2>
+    T2& value_type(uints index) {
+        return std::get<T2>(this->_exts)[index];
     }
 
     //@return value from ext array for given type
-    template <typename T>
-    const T& value_type(uints index) const {
-        return std::get<T>(this->_exts)[index];
+    template <typename T2>
+    const T2& value_type(uints index) const {
+        return std::get<T2>(this->_exts)[index];
     }
 
 #endif
@@ -807,7 +807,7 @@ public:
         else {
             uints id = 0;
 
-            for (const storage_t::page& pg : this->_pages) {
+            for (const typename storage_t::page& pg : this->_pages) {
                 if (p >= pg.ptr() && p < pg.ptre())
                     return id + (p - pg.ptr());
 
@@ -1247,7 +1247,7 @@ public:
 
             for (uints ip = 0; ip < this->_pages.size(); ++ip, gbase += storage_t::PAGE_ITEMS)
             {
-                const storage_t::page& pp = this->_pages[ip];
+                const typename storage_t::page& pp = this->_pages[ip];
                 T* data = const_cast<T*>(pp.ptr());
 
                 uint_type const* epm = em - pm > storage_t::NMASK
@@ -1462,7 +1462,7 @@ public:
 
             for (uints ip = 0; ip < this->_pages.size(); ++ip, gbase += storage_t::PAGE_ITEMS)
             {
-                const storage_t::page& pp = this->_pages[ip];
+                const typename storage_t::page& pp = this->_pages[ip];
                 T* data = const_cast<T*>(pp.ptr());
 
                 uint_type const* epm = em - pm > storage_t::NMASK
@@ -1679,6 +1679,11 @@ private:
 
     uint_type _count = 0;               //< active element count
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-variable"
+#endif
+
     ///Helper to expand all ext arrays
     template<size_t... Index>
     void extarray_expand_(index_sequence<Index...>, uints n) {
@@ -1759,6 +1764,9 @@ private:
         extarray_iterate_(make_index_sequence<tracker_t::extarray_size>(), fn);
     }
 
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
     const T* ptr(uints id) const {
         if coid_constexpr_if (LINEAR)

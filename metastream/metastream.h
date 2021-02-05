@@ -1142,7 +1142,8 @@ protected:
 
         if (!prepare_type_common(read))  return 0;
 
-        *this || *(typename resolve_enum<T>::type*)0;     // build description
+        typename resolve_enum<T>::type* p = 0;
+        *this || *p;     // build description
 
         return prepare_type_final(name, cache, read);
     }
@@ -1359,7 +1360,8 @@ public:
     template<class T>
     void xcache_in(const token& name = token())
     {
-        _xthrow(prepare_type(*(T*)0, name, true, READ_MODE));
+        T* t = 0;
+        _xthrow(prepare_type(*t, name, true, READ_MODE));
     }
 
 
@@ -1716,7 +1718,8 @@ public:
         _cur_variable_offset = nonmember ? -1 : down_cast<int>((ints)v);
         _cur_stream_fn = &type_streamer<T>::fn;
 
-        *this || *(B*)0;
+        B* b = 0;
+        *this || *b;
     }
 
     template<class T>
@@ -1728,7 +1731,8 @@ public:
         _cur_variable_offset = down_cast<int>(offs);
         _cur_stream_fn = &type_streamer<T>::fn;
 
-        *this || *(B*)0;
+        B* b = 0;
+        *this || *b;
 
         _last_var->singleref = true;
     }
@@ -3510,8 +3514,10 @@ metastream& operator || (metastream& m, dynarray<T, COUNT, A>& a)
             [](const void* p) -> uints { return static_cast<const dynarray<T, COUNT, A>*>(p)->size(); },
             [](void* p, uints&) -> void* { return static_cast<dynarray<T, COUNT, A>*>(p)->add(); },
             [](const void* p, uints& i) -> const void* { return static_cast<const dynarray<T, COUNT, A>*>(p)->ptr() + i++; }
-        ))
-            m || *(T*)0;
+        )) {
+            T* v = 0;
+            m || *v;
+        }
     }
     return m;
 }

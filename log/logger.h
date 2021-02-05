@@ -57,7 +57,7 @@ enum type {
     last,
 };
 
-static const type* values() {
+inline const type* values() {
     static type _values[] = {
         none,
         exception,
@@ -72,7 +72,7 @@ static const type* values() {
     return _values;
 }
 
-static const char** names() {
+inline const char** names() {
     static const char* _names[] = {
         "none",
         "exception",
@@ -88,7 +88,7 @@ static const char** names() {
     return _names;
 }
 
-static const char* name(type t) {
+inline const char* name(type t) {
     return t >= none && t <= last
         ? names()[t + 1]
         : 0;
