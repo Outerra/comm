@@ -193,7 +193,7 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
     //find the date of the oldest mtg file
     timet mtime = file.mtime;
 
-    directory::list_file_paths(tdir, "mtg", false, [&](const charstr& name, int dir) {
+    directory::list_file_paths(tdir, "mtg", recursive_flags_enum::no_recursive, [&](const charstr& name, recursive_flags_enum dir) {
         directory::xstat st;
         if (directory::stat(name, &st))
             if (st.st_mtime > mtime)
@@ -361,8 +361,8 @@ int generate_index(const charstr& path)
     const substring ssbeg = "/**interface metadata begin**/"_T;
     const substring ssend = "/**interface metadata end**/"_T;
 
-    directory::list_file_paths(path, "html", 0,
-        [&](const charstr& name, int dir) {
+    directory::list_file_paths(path, "html", recursive_flags_enum::no_recursive,
+        [&](const charstr& name, recursive_flags_enum dir) {
             if (name.ends_with("index.html"_T))
                 return;
 

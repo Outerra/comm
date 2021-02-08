@@ -369,8 +369,8 @@ opcd directory::delete_directory(zstring src, bool recursive)
     opcd was_err;
 
     if (recursive) {
-        list_file_paths(src, "*", 1, [&was_err](const charstr& path, int isdir) {
-            opcd err = isdir
+        list_file_paths(src, "*", recursive_flags_enum::recursive_head, [&was_err](const charstr& path, recursive_flags_enum isdir) {
+            opcd err = isdir != recursive_flags_enum::no_recursive
                 ? delete_directory(path, false)
                 : delete_file(path);
 
@@ -431,16 +431,16 @@ opcd directory::copymove_directory(zstring src, zstring dst, bool move)
 
     uint dlen = dsts.len();
 
-    list_file_paths(src, "*", 3, [&](const charstr& path, int isdir) {
+    list_file_paths(src, "*", recursive_flags_enum::recursive_both, [&](const charstr& path, recursive_flags_enum isdir) {
         token newpath = token(path.ptr() + slen, path.ptre());
 
         dsts.resize(dlen);
         dsts << newpath;
 
-        if (isdir == 2) {
+        if (isdir == recursive_flags_enum::recursive_tail) {
             err = mkdir(dsts);
         }
-        else if (isdir == 1) {
+        else if (isdir == recursive_flags_enum::recursive_head) {
             if (move)
                 err = delete_directory(path, false);
         }
@@ -701,5 +701,44 @@ bool directory::compact_path(charstr& dst, char tosep)
     return true;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+bool directory::list_file_paths(const token& path, const token& extension, recursive_flags_enum recursive,
+    const coid::function<void(const charstr&, recursive_flags_enum)>& fn)
+{
+    directory dir;
+
+    if (dir.open(path, "*.*") != ersNOERR)
+        return false;
+
+    bool all_files = extension == '*';
+    bool ext_with_dot = extension.first_char() == '.' || extension.is_empty();
+
+    while (dir.next()) {
+        if (dir.is_entry_regular()) {
+            bool valid = all_files;
+            if (!all_files) {
+                token fname = dir.get_last_file_name_token();
+
+                if (fname.ends_with_icase(extension)
+                    && (ext_with_dot || fname.nth_char(-1 - ints(extension.len())) == '.'))
+                    valid = true;
+            }
+
+            if (valid)
+                fn(dir.get_last_full_path(), recursive_flags_enum::no_recursive);
+        }
+        else if (recursive != recursive_flags_enum::no_recursive && dir.is_entry_subdirectory()) {
+            if (recursive & recursive_flags_enum::recursive_tail)
+                fn(dir.get_last_full_path(), recursive_flags_enum::recursive_tail);
+
+            directory::list_file_paths(dir.get_last_full_path(), extension, recursive, fn);
+
+            if (recursive & recursive_flags_enum::recursive_head)
+                fn(dir.get_last_full_path(), recursive_flags_enum::recursive_head);
+        }
+    }
+
+    return true;
+}
 
 COID_NAMESPACE_END
