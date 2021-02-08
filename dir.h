@@ -329,8 +329,8 @@ public:
     token get_last_file_name_token() const { return token(_curpath.c_str() + _baselen, _curpath.len() - _baselen); }
 
     ///Lists all files with extension (extension = "*" if all files) in directory with path using func functor.
-    ///if recursive != no_recursive, lists also subdirectories.
-    //@param recursive - nest into subdirectories and calls callback fn in order specified by recursive_flags_enum
+    ///Lists also subdirectories paths when recursive_flags set
+    //@param recursive_flags - nest into subdirectories and calls callback fn in order specified by recursive_flags_enum
     //@param fn callback function(const charstr& file_path, recursive_flags_enum flags)
     //@note fn callback flags values- no_recursion(callback called on file), recursive_tail(callback called before recursive nesting), recursive_head(callback called after recursive nesting)
     static bool list_file_paths(const token& path, const token& extension, recursive_flags_enum recursive_flags,
