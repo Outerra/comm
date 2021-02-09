@@ -143,15 +143,15 @@ $-[event]$
     virtual bool is_bound_$name$() override { return is_event_bound($@index$); }
 $-[/event]$
 
-virtual void force_bind_script_events() {
-    bind_events( true, iref<::lua::registry_handle>(&::lua::registry_handle()));
-}
+    virtual void force_bind_script_events() {
+        bind_events(true, iref<::lua::registry_handle>());
+    }
 
 private:
     bool is_event_bound(int id)
     {
         if (!_bound_events) {
-            bind_events( false, iref<::lua::registry_handle>(&::lua::registry_handle()));
+            bind_events(false, iref<::lua::registry_handle>());
         }
 
         return !_events[id];
