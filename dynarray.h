@@ -813,7 +813,8 @@ public:
     };
 
     ///Push item into array if it doesn't exist
-    T& push_if_absent(const T& v) {
+    //@return item reference
+    T& push_unique(const T& v) {
         ints id = index_of(v);
         return id < 0
             ? *push(v)
@@ -821,7 +822,8 @@ public:
     }
 
     ///Push item into array if it doesn't exist
-    T& push_if_absent(T&& v) {
+    //@return item reference
+    T& push_unique(T&& v) {
         ints id = index_of(v);
         return id < 0
             ? *push(std::forward<T>(v))
