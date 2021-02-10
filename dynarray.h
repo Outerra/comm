@@ -153,6 +153,11 @@ public:
     ///copy constructor
     dynarray(const dynarray& p) : _ptr(0)
     {
+        uints virtsize = A::reserved_size(p._ptr);
+        if (virtsize > 0) {
+            reserve_virtual(virtsize / sizeof(T));
+        }
+
         uints n = p.sizes();
         alloc(n);
 
@@ -168,6 +173,13 @@ public:
     ///assignment operator - duplicate
     dynarray& operator = (const dynarray& p)
     {
+        discard();
+
+        uints virtsize = A::reserved_size(p._ptr);
+        if (virtsize > 0) {
+            reserve_virtual(virtsize / sizeof(T));
+        }
+
         uints n = p.sizes();
         alloc(n);
 
@@ -1696,6 +1708,9 @@ public:
     ///Return number of remaining reserved bytes
     uints reserved_remaining() const { return A::size(_ptr) - sizeof(T)*A::count(_ptr); }
     uints reserved_total() const { return A::size(_ptr); }
+    
+    //@return reserved virtual size, if the memory was allocaded by reserve_virtual, otherwise 0
+    uints reserved_virtual() const { return A::reserved_size(_ptr); }
 
 
     typedef T*                          iterator;
