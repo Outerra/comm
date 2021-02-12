@@ -3537,7 +3537,7 @@ metastream& operator || (metastream& m, range<T>& a)
     else {
         if (m.meta_decl_array(
             typeid(a).name(),
-            (ints)&a._ptr,
+            -1,
             sizeof(a),
             false,
             [](const void* a) -> const void* { return static_cast<const range<T>*>(a)->ptr(); },

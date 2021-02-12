@@ -50,15 +50,16 @@ template<class, class, class> class dynarray;
 template<class T>
 struct range
 {
-    T* _ptr;
-    T* _pte;
+private:
+    T* _ptr = 0;
+    T* _pte = 0;
+
+public:
 
     range()
-        : _ptr(0), _pte(0)
     {}
 
     range(std::nullptr_t)
-        : _ptr(0), _pte(0)
     {}
 
     template<class COUNT, class A>
