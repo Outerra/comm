@@ -168,8 +168,8 @@ V8_FAST_STREAMER(double, Number, double);
 V8_FAST_STREAMER_BOOL(bool, Boolean, bool);
 
 ///slotalloc version id
-//#define V8_FAST_STREAMER(T,V8T,CT) 
-template<> class to_v8<coid::versionid> { 
+//#define V8_FAST_STREAMER(T,V8T,CT)
+template<> class to_v8<coid::versionid> {
 public:
     static v8::Handle<v8::Value> read(const coid::versionid& v) { return v8::new_object<v8::Number>(*reinterpret_cast<const double*>(&v)); }
 };
@@ -182,7 +182,7 @@ public:
             const double tmp = mv.FromJust();
             res = *reinterpret_cast<const coid::versionid*>(&tmp);
         };
-        
+
         return mv.IsJust();
     }
 };
@@ -552,7 +552,7 @@ protected:
 public:
     fmtstream_v8()
     {
-        _stack.reserve(32, true);
+        _stack.reserve(32);
 
         _top = _stack.alloc(1);
         _top->element = 0;

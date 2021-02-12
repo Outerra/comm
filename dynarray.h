@@ -1114,23 +1114,22 @@ public:
 
     ///Reserve \a nitems of elements
     /** @param nitems number of items to reserve
-        @param ikeep keep existing elements (true) or do not necessarily keep them (false)
+        @param ikeep keep existing elements (true) or discard them (false)
         @param m [optional] memory space to use (fresh alloc only)
         @return pointer to the first item of array */
-    T* reserve(uints nitems, bool ikeep, mspace m = 0)
+    T* reserve(uints nitems, bool ikeep = true, mspace m = 0)
     {
         uints n = _count();
 
-        if (nitems > n  &&  nitems * sizeof(T) > _size())
-        {
-            if (!ikeep) {
-                _destroy();
-                n = 0;
-            }
-
-            _realloc(nitems, n, m);
-            _set_count(n);
+        if (!ikeep) {
+            _destroy();
+            n = 0;
         }
+
+        if (nitems > n  &&  nitems * sizeof(T) > _size())
+            _realloc(nitems, n, m);
+
+        _set_count(n);
         return _ptr;
     }
 
@@ -1708,7 +1707,7 @@ public:
     ///Return number of remaining reserved bytes
     uints reserved_remaining() const { return A::size(_ptr) - sizeof(T)*A::count(_ptr); }
     uints reserved_total() const { return A::size(_ptr); }
-    
+
     //@return reserved virtual size, if the memory was allocaded by reserve_virtual, otherwise 0
     uints reserved_virtual() const { return A::reserved_size(_ptr); }
 
