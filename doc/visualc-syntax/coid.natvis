@@ -27,12 +27,12 @@
     <DisplayString Condition="_ptr == 0">size = 0</DisplayString>
     <DisplayString>size = {((size_t*)_ptr)[-1]}</DisplayString>
     <Expand>
-        <Item Name="[size]" ExcludeView="simple" >((size_t*)_ptr)[-1]</Item>
-        <Item Name="[capacity]" ExcludeView="simple">((size_t*)_ptr)[-2]/sizeof(*_ptr)</Item>
-        <ArrayItems> 
-            <Size>((size_t*)_ptr)[-1]</Size> 
-            <ValuePointer>_ptr</ValuePointer> 
-        </ArrayItems> 
+        <Item Name="[size]" ExcludeView="simple">_ptr ? ((size_t*)_ptr)[-1] : 0</Item>
+        <Item Name="[capacity]" ExcludeView="simple">_ptr ? ((size_t*)_ptr)[-2] : 0/sizeof(*_ptr)</Item>
+        <ArrayItems>
+            <Size>_ptr ? ((size_t*)_ptr)[-1] : 0</Size>
+            <ValuePointer>_ptr</ValuePointer>
+        </ArrayItems>
     </Expand>
 </Type>
 
@@ -71,5 +71,5 @@
     <DisplayString Condition="_p == 0">{{empty}}</DisplayString>
     <DisplayString>{_p,x}</DisplayString>
 </Type>
-    
+
 </AutoVisualizer>
