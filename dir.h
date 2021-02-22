@@ -62,18 +62,6 @@ static const token DIR_SEPARATOR_STRING = "/";
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
-enum class recursive_flags_enum : uchar
-{
-    no_recursive = 0,
-    recursive_head = 1, // recursion (nesting into subdirectory) is called before the listing callback function
-    recursive_tail = 2, // recursion (nesting into subdirectory) is called after the listing callback function
-    recursive_both = 3 // the listing callback function is called before and after the nesting
-};
-
-inline constexpr bool operator&(recursive_flags_enum a, recursive_flags_enum b) { return (uchar(a) & uchar(b)) != 0; }
-
-
-////////////////////////////////////////////////////////////////////////////////
 class directory
 {
 public:
@@ -328,13 +316,21 @@ public:
     const char* get_last_file_name() const { return _curpath.c_str() + _baselen; }
     token get_last_file_name_token() const { return token(_curpath.c_str() + _baselen, _curpath.len() - _baselen); }
 
+    enum class recursion_mode
+    {
+        file            = 0, //< no recursion into sundirectories
+        dir_exit        = 1, //< recursive subdir enumeration, subdir callback invoked after listing the subdir content
+        dir_enter       = 2, //< recursive subdir enumeration, subdir callback invoked before listing the subdir content
+        dir_enter_exit  = 3  //< recursive subdir enumeration, subdir callback invoked both before and after listing the subdir content
+    };
+
     ///Lists all files with extension (extension = "*" if all files) in directory with path using func functor.
     ///Lists also subdirectories paths when recursive_flags set
-    //@param recursive_flags - nest into subdirectories and calls callback fn in order specified by recursive_flags_enum
-    //@param fn callback function(const charstr& file_path, recursive_flags_enum flags)
-    //@note fn callback flags values- no_recursion(callback called on file), recursive_tail(callback called before recursive nesting), recursive_head(callback called after recursive nesting)
-    static bool list_file_paths(const token& path, const token& extension, recursive_flags_enum recursive_flags,
-        const coid::function<void(const charstr&, recursive_flags_enum)>& fn);
+    //@param mode - nest into subdirectories and calls callback fn in order specified by recursive_mode
+    //@param fn callback function(const charstr& file_path, recursion_mode mode)
+    //@note fn callback recursion_mode parameter invoked on each file or on directories upon entering or exisitng (or both)
+    static bool list_file_paths(const token& path, const token& extension, recursion_mode mode,
+        const coid::function<void(const charstr&, recursion_mode)>& fn);
 
     ///structure returned by ::find_files
     struct find_result {

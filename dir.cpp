@@ -369,8 +369,8 @@ opcd directory::delete_directory(zstring src, bool recursive)
     opcd was_err;
 
     if (recursive) {
-        list_file_paths(src, "*", recursive_flags_enum::recursive_head, [&was_err](const charstr& path, recursive_flags_enum isdir) {
-            opcd err = isdir != recursive_flags_enum::no_recursive
+        list_file_paths(src, "*", recursion_mode::dir_enter, [&was_err](const charstr& path, recursion_mode type) {
+            opcd err = type != recursion_mode::file
                 ? delete_directory(path, false)
                 : delete_file(path);
 
@@ -431,16 +431,16 @@ opcd directory::copymove_directory(zstring src, zstring dst, bool move)
 
     uint dlen = dsts.len();
 
-    list_file_paths(src, "*", recursive_flags_enum::recursive_both, [&](const charstr& path, recursive_flags_enum isdir) {
+    list_file_paths(src, "*", recursion_mode::dir_enter_exit, [&](const charstr& path, recursion_mode isdir) {
         token newpath = token(path.ptr() + slen, path.ptre());
 
         dsts.resize(dlen);
         dsts << newpath;
 
-        if (isdir == recursive_flags_enum::recursive_tail) {
+        if (isdir == recursion_mode::dir_enter) {
             err = mkdir(dsts);
         }
-        else if (isdir == recursive_flags_enum::recursive_head) {
+        else if (isdir == recursion_mode::dir_exit) {
             if (move)
                 err = delete_directory(path, false);
         }
@@ -702,8 +702,8 @@ bool directory::compact_path(charstr& dst, char tosep)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool directory::list_file_paths(const token& path, const token& extension, recursive_flags_enum recursive,
-    const coid::function<void(const charstr&, recursive_flags_enum)>& fn)
+bool directory::list_file_paths(const token& path, const token& extension, recursion_mode mode,
+    const coid::function<void(const charstr&, recursion_mode)>& fn)
 {
     directory dir;
 
@@ -725,16 +725,16 @@ bool directory::list_file_paths(const token& path, const token& extension, recur
             }
 
             if (valid)
-                fn(dir.get_last_full_path(), recursive_flags_enum::no_recursive);
+                fn(dir.get_last_full_path(), recursion_mode::file);
         }
-        else if (recursive != recursive_flags_enum::no_recursive && dir.is_entry_subdirectory()) {
-            if (recursive & recursive_flags_enum::recursive_tail)
-                fn(dir.get_last_full_path(), recursive_flags_enum::recursive_tail);
+        else if (mode != recursion_mode::file && dir.is_entry_subdirectory()) {
+            if (int(mode) & int(recursion_mode::dir_enter))
+                fn(dir.get_last_full_path(), recursion_mode::dir_enter);
 
-            directory::list_file_paths(dir.get_last_full_path(), extension, recursive, fn);
+            directory::list_file_paths(dir.get_last_full_path(), extension, mode, fn);
 
-            if (recursive & recursive_flags_enum::recursive_head)
-                fn(dir.get_last_full_path(), recursive_flags_enum::recursive_head);
+            if (int(mode) & int(recursion_mode::dir_exit))
+                fn(dir.get_last_full_path(), recursion_mode::dir_exit);
         }
     }
 
