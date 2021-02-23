@@ -2806,17 +2806,17 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 
-///Token constructed from string literals
+///Token constructed only from string literals
 class token_literal : public token
 {
 public:
-    token_literal()
+    constexpr token_literal()
     {}
 
-    token_literal(std::nullptr_t) : token(nullptr)
+    constexpr token_literal(std::nullptr_t) : token(nullptr)
     {}
 
-    token_literal(const token_literal& tok) : token(static_cast<const token&>(tok))
+    constexpr token_literal(const token_literal& tok) : token(static_cast<const token&>(tok))
     {}
 
     ///String literal constructor, optimization to have fast literal strings available as tokens
@@ -2824,15 +2824,37 @@ public:
     // and the preceding char is not 0
     // Call token::from_cstring(array) to force treating the array as a zero-terminated string
     template <int N>
-    token_literal(const char(&str)[N])
-        : token(str)
+    coid_constexpr_for token_literal(const char(&str)[N])
+        : token(str, str + N - 1)
     {}
 
+
+
     //@return zero terminated string
-    const char* c_str() const {
+    constexpr const char* c_str() const {
         return ptr();
     }
 };
+
+
+
+#ifdef COID_USER_DEFINED_LITERALS
+COID_NAMESPACE_END
+
+#ifdef _T
+#pragma message("_T macro will conflict with token string literal")
+#undef _T
+#endif
+
+///String literal returning token (_T suffix)
+inline constexpr coid::token operator "" _T(const char* s, size_t len)
+{
+    return coid::token(s, len);
+}
+
+COID_NAMESPACE_BEGIN
+#endif //COID_USER_DEFINED_LITERALS
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -2934,25 +2956,6 @@ private:
 
 
 COID_NAMESPACE_END
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-#ifdef COID_USER_DEFINED_LITERALS
-
-#ifdef _T
-#pragma message("_T macro will conflict with token string literal")
-#undef _T
-#endif
-
-///String literal returning token (_T suffix)
-inline constexpr coid::token operator "" _T(const char* s, size_t len)
-{
-    return coid::token(s, len);
-}
-
-#endif //COID_USER_DEFINED_LITERALS
-
 
 ////////////////////////////////////////////////////////////////////////////////
 
