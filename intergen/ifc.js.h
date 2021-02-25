@@ -83,7 +83,7 @@ struct script_handle
         const coid::token& url = coid::token(),
         v8::Handle<v8::Context> context = v8::Handle<v8::Context>()
     )
-        : _str(path_or_script), _is_path(is_path), _context(context), _url(url)
+        : _str(path_or_script), _is_path(is_path), _url(url), _context(context)
     {}
 
     script_handle(v8::Handle<v8::Context> context)
@@ -254,7 +254,7 @@ struct script_handle
         if (js_trycatch.HasCaught())
             throw_exception_from_js_error(js_trycatch);
 
-        compiled_script->Run(iso->GetCurrentContext());
+        v8::MaybeLocal<v8::Value> rv = compiled_script->Run(iso->GetCurrentContext());
 
         if (js_trycatch.HasCaught())
             throw_exception_from_js_error(js_trycatch);

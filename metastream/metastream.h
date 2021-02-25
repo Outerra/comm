@@ -1641,7 +1641,8 @@ public:
             //_cur_variable_offset was set by a member method, but since this is using a temporary,
             // indicate that it should not be used
             _cur_variable_offset = -1;
-            *this || *(S*)0;
+            S* s = 0;
+            *this || *s;
         }
         return *this;
     }
@@ -1817,8 +1818,10 @@ public:
             [](void* a, uints& i) -> void* { return static_cast<T*>(a) + i++; },
             [](const void* a, uints& i) -> const void* { return static_cast<T const*>(a) + i++; },
             N
-        ))
-            *this || *(B*)0;
+        )) {
+            B* b = 0;
+            *this || *b;
+        }
     }
 
 

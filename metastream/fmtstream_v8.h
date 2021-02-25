@@ -584,9 +584,9 @@ public:
     }
 
 
-    virtual token fmtstream_name() { return "fmtstream_v8"; }
+    virtual token fmtstream_name() override { return "fmtstream_v8"; }
 
-    virtual void fmtstream_file_name(const token& file_name)
+    virtual void fmtstream_file_name(const token& file_name) override
     {
         //_tokenizer.set_file_name(file_name);
     }
@@ -594,18 +594,18 @@ public:
     ///Return formatting stream error (if any) and current line and column for error reporting purposes
     //@param err [in] error text
     //@param err [out] final (formatted) error text with line info etc.
-    virtual void fmtstream_err(charstr& err, bool add_context = true)
+    virtual void fmtstream_err(charstr& err, bool add_context = true) override
     {
         err.ins(0, "[js] ");
     }
 
-    void acknowledge(bool eat = false)
+    void acknowledge(bool eat = false) override
     {
         _top = _stack.alloc(1);
         _top->element = 0;
     }
 
-    void flush()
+    void flush() override
     {
         _top = _stack.alloc(1);
         _top->element = 0;
@@ -613,7 +613,7 @@ public:
 
 
     ////////////////////////////////////////////////////////////////////////////////
-    opcd write_key(const token& key, int kmember)
+    opcd write_key(const token& key, int kmember) override
     {
         if (kmember > 0) {
             v8::Isolate* iso = v8::Isolate::GetCurrent();
@@ -626,7 +626,7 @@ public:
         return 0;
     }
 
-    opcd read_key(charstr& key, int kmember, const token& expected_key)
+    opcd read_key(charstr& key, int kmember, const token& expected_key) override
     {
         if (_top->object.IsEmpty())
             return ersNO_MORE;
