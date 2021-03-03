@@ -40,8 +40,6 @@
 
 #include "../namespace.h"
 #include "_malloc.h"
-#include <algorithm>
-#include <cstddef>
 #include <typeinfo>
 
 namespace coid {
@@ -128,6 +126,13 @@ struct memtrack {
     unsigned int ncurallocs;            //< total current number of allocations
     unsigned int nlifeallocs;           //< lifetime number of allocations
     const char* name;                   //< class identifier
+
+    template <typename T>
+    void swap(T& a, T& b) {
+        T tmp = static_cast<T&&>(a);
+        a = static_cast<T&&>(b);
+        b = static_cast<T&&>(tmp);
+    }
 
     void swap(memtrack& m) {
         std::swap(size, m.size);
