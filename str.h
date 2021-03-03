@@ -40,13 +40,11 @@
 
 #include "namespace.h"
 
-#include "alloc/commalloc.h"
 #include "binstream/bstype.h"
 #include "hash/hashfunc.h"
 
 #include <cstring>
 #include <ctime>
-#include <functional>
 
 #include "token.h"
 #include "dynarray.h"
@@ -167,14 +165,21 @@ public:
         dst.takeover(_tstr);
     }
 
+    template <typename T>
+    static void swap(T& a, T& b) {
+        T tmp = static_cast<T&&>(a);
+        a = static_cast<T&&>(b);
+        b = static_cast<T&&>(tmp);
+    }
+
     ///Swap strings
     friend void swap( charstr& a, charstr& b )
     {
-        std::swap(a._tstr, b._tstr);
+        swap(a._tstr, b._tstr);
     }
 
     void swap( charstr& other ) {
-        std::swap(_tstr, other._tstr);
+        swap(_tstr, other._tstr);
     }
 
     template<class COUNT>
