@@ -111,7 +111,7 @@ protected:
     friend struct dynarray_relocator;
     template<typename, typename, typename> friend class dynarray;
 
-    T* _ptr;
+    T* _ptr = 0;
 
 public:
 
@@ -121,13 +121,13 @@ public:
 
     COIDNEWDELETE(dynarray);
 
-    dynarray() : _ptr(0) {
-        A::instance();
+    constexpr dynarray() {
+        //A::instance();
     }
 
     ///Reserve specified number of items in constructor
-    explicit dynarray(uints reserve_count) : _ptr(0) {
-        A::instance();
+    explicit dynarray(uints reserve_count) {
+        //A::instance();
         reserve(reserve_count, false);
     }
 
@@ -140,7 +140,7 @@ public:
             _set_count(0);
         }
         else {
-            A::instance();
+            //A::instance();
             _ptr = 0;
             reserve(count, false);
         }

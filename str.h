@@ -87,12 +87,12 @@ public:
         output_iterator(charstr& p) : _p(&p) { }
     };
 
-    charstr() {}
+    constexpr charstr() {}
 
     charstr(const token& tok)
     {
-        if(tok.is_empty()) return;
-        assign(tok.ptr(), tok.len());
+        if (!tok.is_empty())
+            assign(tok.ptr(), tok.len());
     }
 
     ///String literal constructor, optimization to have fast literal strings available as tokens
