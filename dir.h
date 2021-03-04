@@ -251,10 +251,11 @@ public:
         return buf.resize(t.len());
     }
 
-    ///Get current module file path
-    static charstr get_module_path() {
+    ///Get current module file path, or module path where given function resides
+    //@param func pointer to a function
+    static charstr get_module_path(const void* func = 0) {
         charstr buf;
-        get_module_path_func((const void*)&dummy_func, buf, false);
+        get_module_path_func(func ? func : (const void*)&dummy_func, buf, false);
         return buf;
     }
 

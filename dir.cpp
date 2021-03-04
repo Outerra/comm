@@ -196,7 +196,7 @@ int directory::append_path(charstr& dst, token path, bool keep_below)
 
             if (c == 0) {
                 dst.resize(tdst.len());
-                return is_below ? -1 : 1;
+                return is_below ? 1 : -1;
             }
 
             ++path;
@@ -228,7 +228,7 @@ int directory::append_path(charstr& dst, token path, bool keep_below)
 
         dst << path;
 
-        return is_below ? -1 : 1;
+        return is_below ? 1 : -1;
     }
 }
 
