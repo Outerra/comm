@@ -39,8 +39,8 @@
 #include "namespace.h"
 
 #include "trait.h"
-#include "function.h"
-#include "range.h"
+//#include "function.h"
+//#include "range.h"
 #include "binstream/binstream.h"
 #include "alloc/commalloc.h"
 
@@ -1751,22 +1751,6 @@ private:
         return _ptr + n;
     };
 };
-
-////////////////////////////////////////////////////////////////////////////////
-
-template<class T>
-template<class COUNT, class A>
-range<T>::range(const dynarray<T, COUNT, A>& a)
-    : range<T>(const_cast<T*>(a.ptr()), const_cast<T*>(a.ptre()))
-{}
-
-template<class T>
-template<class COUNT, class A>
-range<T>& range<T>::operator = (const dynarray<T, COUNT, A>& a)
-{
-    _ptr = const_cast<T*>(a.ptr());
-    _pte = const_cast<T*>(a.ptre());
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 ///take control over buffer controlled by \a dest dynarray, \a dest ptr will be set to zero

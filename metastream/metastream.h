@@ -43,6 +43,7 @@
 
 #include "../namespace.h"
 #include "../dynarray.h"
+#include "../range.h"
 #include "../str.h"
 #include "../commexception.h"
 
