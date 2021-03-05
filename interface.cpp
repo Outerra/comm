@@ -343,6 +343,7 @@ public:
     }
 
     //@param relpath [out] gets relative path from root. If null, relative incpath can only refer to a sub-path below curpath
+    //@note relpath is set to a null token when the path was relative
     virtual bool include_path(const token& curpath, const token& incpath, charstr& dst, token* relpath)
     {
         bool slash = incpath.first_char() == '/' || incpath.first_char() == '\\';
@@ -376,15 +377,18 @@ public:
                 return false;
         }
 
+        if (relsub) {
+            if (relpath)
+                relpath->set_null();
+            return true;
+        }
+
         token rpath = dst;
         if (!directory::subpath(_root_path, rpath))
             return false;
 
         if (relpath)
             *relpath = rpath;
-
-        if (relsub)
-            return true;
 
         return _fn_acc ? _fn_acc(rpath) : true;
     }
