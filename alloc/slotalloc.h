@@ -1398,7 +1398,7 @@ public:
             if (id + count < n)
                 n = id + count;
 
-            for (uints i = id; i < n; ++i)
+            for (uints i = 0; i < count; ++i)
                 funccallp(f, p + i, i);
         }
         else {
