@@ -361,7 +361,7 @@ public:
                 return false;
 
             //relative paths below curpath are always allowed, not checked
-            if (!relpath || rv < 0)
+            if (!relpath || rv > 0)
                 relsub = true;
         }
         else {
