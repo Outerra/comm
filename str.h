@@ -484,6 +484,9 @@ public:
     }
 
 
+    //@return string as a token
+    token get_token() const { return token(ptr(), ptre()); }
+
     //@{ retrieve nth character
     char last_char() const { uints n = lens(); return n ? _tstr[n - 1] : 0; }
     char first_char() const { return _tstr.size() ? _tstr[0] : 0; }
