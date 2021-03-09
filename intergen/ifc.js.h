@@ -290,7 +290,7 @@ public:
     }
 
     ///Function called from scripts to include a script
-    static void js_include(const v8::ARGUMENTS& args)
+    static void include(const v8::ARGUMENTS& args)
     {
         coid::charstr dst;
         coid::token relpath;
@@ -342,40 +342,23 @@ public:
 
 
         v8::TryCatch js_trycatch(iso);
-        v8::Handle<v8::String> result = v8::string_utf8("$result", iso);
-        ctx->Global()->Set(ctx, result, v8::Undefined(iso)) V8_CHECK;
+        v8::Handle<v8::String> result_token = v8::string_utf8("$result", iso);
+        v8::Local<v8::Object> glob = ctx->Global();
+        glob->Set(ctx, result_token, v8::Undefined(iso)) V8_CHECK;
 
-        coid::zstring filepath;
-        filepath.get_str() << "file:///" << relpath;
+        coid::zstring urlenc;
+        (urlenc.get_str() = "file:///"_T).append_encode_url(relpath, false);
 
-        v8::Handle<v8::String> source = v8::string_utf8(js, iso);
-        v8::Handle<v8::String> spath = v8::string_utf8(filepath, iso);
+        v8::Handle<v8::Script> script = load_script(js, urlenc, js::rethrow_in_js);
 
-        v8::ScriptOrigin so(spath);
-
-        v8::Handle<v8::Script> script =
-            v8::Script::Compile(ctx, source, &so).ToLocalChecked();
-
-        if (js_trycatch.HasCaught()) {
-            js_trycatch.ReThrow();
-            return;
-        }
-
-        script->Run(ctx);
-
-        if (js_trycatch.HasCaught()) {
-            js_trycatch.ReThrow();
-            return;
-        }
-
-        v8::Handle<v8::Value> rval = ctx->Global()->Get(ctx, result).ToLocalChecked();
-        ctx->Global()->Set(ctx, result, v8::Undefined(iso)) V8_CHECK;
+        v8::Handle<v8::Value> rval = glob->Get(ctx, result_token).ToLocalChecked();
+        glob->Set(ctx, result_token, v8::Undefined(iso)) V8_CHECK;
 
         args.GetReturnValue().Set(rval);
     }
 
     ///Log msg from JS
-    static void js_log(const v8::ARGUMENTS& args)
+    static void log(const v8::ARGUMENTS& args)
     {
         v8::Isolate* iso = args.GetIsolate();
 
@@ -407,7 +390,7 @@ public:
     }
 
     ///Query interface from JS
-    static  void js_query_interface(const v8::ARGUMENTS& args)
+    static  void query_interface(const v8::ARGUMENTS& args)
     {
         v8::Isolate* iso = args.GetIsolate();
 
@@ -434,9 +417,9 @@ public:
     static void register_global_context_methods(v8::Handle<v8::Object> gobj, v8::Isolate* iso) {
         v8::Local<v8::Context> ctx = iso->GetCurrentContext();
 
-        gobj->Set(ctx, v8::symbol("$include", iso), v8::FunctionTemplate::New(iso, &js_include)->GetFunction(ctx).ToLocalChecked()) V8_CHECK;
-        gobj->Set(ctx, v8::symbol("$query_interface", iso), v8::FunctionTemplate::New(iso, &js_query_interface)->GetFunction(ctx).ToLocalChecked()) V8_CHECK;
-        gobj->Set(ctx, v8::symbol("$log", iso), v8::FunctionTemplate::New(iso, &js_log)->GetFunction(ctx).ToLocalChecked()) V8_CHECK;
+        gobj->Set(ctx, v8::symbol("$include", iso), v8::FunctionTemplate::New(iso, &include)->GetFunction(ctx).ToLocalChecked()) V8_CHECK;
+        gobj->Set(ctx, v8::symbol("$query_interface", iso), v8::FunctionTemplate::New(iso, &query_interface)->GetFunction(ctx).ToLocalChecked()) V8_CHECK;
+        gobj->Set(ctx, v8::symbol("$log", iso), v8::FunctionTemplate::New(iso, &log)->GetFunction(ctx).ToLocalChecked()) V8_CHECK;
     }
 
 private:
