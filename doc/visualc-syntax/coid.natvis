@@ -14,6 +14,13 @@
     <DisplayString>size = {_pte-_ptr} {_ptr,[_pte-_ptr]s8}</DisplayString>
 </Type>
 
+<Type Name="coid::zstring">
+    <DisplayString Condition="_buf != 0">{((size_t*)_buf->_tstr._ptr)[-1] - 1} {_buf->_tstr._ptr,s8}</DisplayString>
+    <DisplayString Condition="_zptr == 0">0 "" (null)</DisplayString>
+    <DisplayString Condition="_zptr == _zend">0 ""</DisplayString>
+    <DisplayString>size = {_zend-_zptr} {_zptr,[_zend-_zptr]s8}</DisplayString>
+</Type>
+
 <Type Name="coid::opcd">
     <DisplayString>code={_ptr->_code} {_ptr->_desc,s}</DisplayString>
 </Type>
