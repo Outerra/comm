@@ -302,11 +302,11 @@ public:
         {
             //return current path of the 0th stack frame when called without arguments
 
-            if (!script_handle::get_target_path("", 0, dst, &relpath))
+            if (0 != script_handle::get_target_path("", 0, dst, &relpath))
                 return (void)v8::Undefined(iso);
 
             coid::charstr urlenc = "file:///";
-            urlenc.append_encode_url(relpath, false);
+            urlenc.append_encode_url(relpath.is_null() ? coid::token(dst) : relpath, false);
 
             v8::Handle<v8::String> source = v8::string_utf8(urlenc, iso);
 
