@@ -501,7 +501,7 @@ public:
         static_assert(POOL, "only available in pool mode");
 
         if (POOL && id < this->_created) {
-            if (set_bit(id))
+            if (!set_bit(id))
                 ++_count;
             else {
                 DASSERTN(0);
@@ -523,7 +523,7 @@ public:
 
         if (POOL && vid.id < this->_created) {
             if (this->check_versionid(vid)) {
-                if (set_bit(vid.id))
+                if (!set_bit(vid.id))
                     ++_count;
                 else {
                     DASSERTN(0);
