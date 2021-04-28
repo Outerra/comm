@@ -266,6 +266,13 @@ public:
         return construct_default(p, isold);
     }
 
+    ///Add completely new object, ignoring any unused ones
+    T* add_new(uints* pid = 0)
+    {
+        T* p = append<false>(pid);
+        return construct_default(p, false);
+    }
+
     ///Add new object or reuse one from pool if predicate returns true
     template <typename Func>
     T* add_if(Func fn, uints* pid = 0)
@@ -1931,7 +1938,7 @@ private:
     {
         uints count = created();
 
-        DASSERT(_count <= count);   //count may be lower with other threads deleting, but not higher (single producer)
+        //DASSERT(_count <= count);   //count may be lower with other threads deleting, but not higher (single producer)
         set_bit(count);
 
         if coid_constexpr_if(EXT_UNINIT)
