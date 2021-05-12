@@ -1519,11 +1519,7 @@ public:
     T* ins_value(uints pos, const T& v)
     {
         DASSERT(pos != UMAXS);
-        if (pos > sizes())
-        {
-            uints ov = pos - _count();
-            add(ov);
-        }
+        DASSERT(pos <= sizes());
 
         addnc(1);
         T* p = __ins(_ptr, pos, _count() - 1, 1);
@@ -1534,11 +1530,7 @@ public:
     T* ins_value(uints pos, T&& v)
     {
         DASSERT(pos != UMAXS);
-        if (pos > sizes())
-        {
-            uints ov = pos - _count();
-            add(ov);
-        }
+        DASSERT(pos <= sizes());
 
         addnc(1);
         T* p = __ins(_ptr, pos, _count() - 1, 1);
@@ -1546,7 +1538,7 @@ public:
         return new(p) T(std::forward<T>(v));
     }
 
-    ///Delete elements from given position
+    ///Delete elements from given positiond
     /** @param pos position from what to delete
         @param nitems number of items to delete */
     void del(uints pos, uints nitems = 1) {
