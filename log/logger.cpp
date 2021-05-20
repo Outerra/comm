@@ -263,8 +263,9 @@ bool logmsg::finalize( policy_msg* p )
 
 
 ////////////////////////////////////////////////////////////////////////////////
-logger::logger( bool std_out, bool cache_msgs )
+logger::logger(bool std_out, bool cache_msgs)
     : _stdout(std_out)
+    , _mutex(512, false)
 {
     SINGLETON(log_writer);
 
@@ -282,6 +283,20 @@ void logger::terminate()
 void logger::enable_debug_out(bool en)
 {
     _enable_debug_out = en;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+uints logger::register_filter(const log_filter& filter) 
+{ 
+    GUARDTHIS(_mutex);
+    return _filters.get_item_id(_filters.push(filter));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void logger::unregister_filter(uints pos) 
+{ 
+    GUARDTHIS(_mutex);
+    _filters.del_item(pos); 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -345,14 +360,18 @@ ref<logmsg> logger::create_msg( log::type type, const tokenhash& hash )
 ////////////////////////////////////////////////////////////////////////////////
 void logger::enqueue( ref<logmsg>&& msg )
 {
-    _filters.for_each([&](const log_filter& f) {
-        if (msg->get_type() <= (log::type)f._log_level
-            && f._module.cmpeq(msg->get_hash()))
-        {
-            f._filter_fun(msg);
-        }
-    });
+    {
+        GUARDTHIS(_mutex);
 
+        _filters.for_each([&](const log_filter& f) {
+            if (msg->get_type() <= (log::type)f._log_level
+                && f._module.cmpeq(msg->get_hash()))
+            {
+                f._filter_fun(msg);
+            }
+        });
+
+    }
     SINGLETON(log_writer).addmsg(std::forward<ref<logmsg>>(msg));
 }
 
