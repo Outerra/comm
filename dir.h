@@ -188,7 +188,7 @@ public:
         return copymove_directory(src, dst, false);
     }
 
-    static opcd copy_file(zstring src, zstring dst);
+    static opcd copy_file(zstring src, zstring dst, bool preserve_dates);
 
     static opcd move_file(zstring src, zstring dst);
 
@@ -197,11 +197,15 @@ public:
     ///delete multiple files using a pattern for file
     static opcd delete_files(token path_and_pattern);
 
-    ///copy file to open directory
-    opcd copy_file_from(const token& src, const token& name = token());
+    ///Copy file to the open directory
+    opcd copy_file_from(const token& src, bool preserve_dates, const token& name = token());
 
-    opcd copy_file_to(const token& dst, const token& name = token());
-    opcd copy_current_file_to(const token& dst);
+    ///Copy current file to dst dir path
+    //@param dst destination directory path
+    //@param preserve_dates use access and modification times of the source file
+    //@param name optional file name, if it's different than the current one
+    opcd copy_file_to(const token& dst, bool preserve_dates, const token& name = token());
+    opcd copy_current_file_to(const token& dst, bool preserve_dates);
 
 
     ///move file to open directory

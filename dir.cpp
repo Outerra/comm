@@ -232,7 +232,7 @@ int directory::append_path(charstr& dst, token path, bool keep_below)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::copy_file_from(const token& src, const token& name)
+opcd directory::copy_file_from(const token& src, bool preserve_dates, const token& name)
 {
     _curpath.resize(_baselen);
 
@@ -246,11 +246,11 @@ opcd directory::copy_file_from(const token& src, const token& name)
     else
         _curpath << name;
 
-    return copy_file(src, _curpath);
+    return copy_file(src, _curpath, preserve_dates);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::copy_file_to(const token& dst, const token& name)
+opcd directory::copy_file_to(const token& dst, bool preserve_dates, const token& name)
 {
     _curpath.resize(_baselen);
 
@@ -264,17 +264,17 @@ opcd directory::copy_file_to(const token& dst, const token& name)
     else
         _curpath << name;
 
-    return copy_file(_curpath, dst);
+    return copy_file(_curpath, dst, preserve_dates);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::copy_current_file_to(const token& dst)
+opcd directory::copy_current_file_to(const token& dst, bool preserve_dates)
 {
-    return copy_file(_curpath, dst);
+    return copy_file(_curpath, dst, preserve_dates);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::copy_file(zstring src, zstring dst)
+opcd directory::copy_file(zstring src, zstring dst, bool preserve_dates)
 {
     if(src.get_token() == dst.get_token())
         return 0;
@@ -305,6 +305,12 @@ opcd directory::copy_file(zstring src, zstring dst)
             break;
         else
             return re;
+    }
+
+    if (preserve_dates) {
+        xstat st;
+        if (stat(src, &st))
+            set_file_times(dst, st.st_atime, st.st_mtime);
     }
 
     return 0;
@@ -407,10 +413,10 @@ opcd directory::copymove_directory(zstring src, zstring dst, bool move)
             //copy to dst/
             token file = src.get_token().cut_right_group_back("\\/"_T);
             dsts << file;
-            err = move ? move_file(src, dsts) : copy_file(src, dsts);
+            err = move ? move_file(src, dsts) : copy_file(src, dsts, true);
         }
         else
-            err = move ? move_file(src, dst) : copy_file(src, dst);
+            err = move ? move_file(src, dst) : copy_file(src, dst, true);
 
         return err;
     }
@@ -446,7 +452,7 @@ opcd directory::copymove_directory(zstring src, zstring dst, bool move)
         else if (move)
             err = move_file(path, dsts);
         else
-            err = copy_file(path, dsts);
+            err = copy_file(path, dsts, true);
 
         if (!was_err && err)
             was_err = err;
