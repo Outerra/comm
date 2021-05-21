@@ -112,6 +112,10 @@ namespace coid {
 /// of the (event) call or limited
 #define ifc_volatile
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcomment"
+#endif
 /* @note
   Use the following style comments to include the enclosed code in generated interface client header file:
     //ifc{
@@ -138,6 +142,9 @@ namespace coid {
     //ifc{ ns::ifc1+
     ...
 */
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 

@@ -67,6 +67,8 @@ class metagen //: public binstream
     {
         int IDENT, NUM, DQSTRING, STEXT, COMMTAG;
 
+        virtual ~mtglexer() {}
+
         virtual void on_error_prefix(bool rules, charstr& dst, int line) override
         {
             if (!rules) {
@@ -325,7 +327,6 @@ class metagen //: public binstream
             const lextoken& tok = lex.last();
 
             bool condneg = false;
-            bool special = false;
             if (tok == '!') {
                 condneg = true;
                 lex.next();
@@ -510,7 +511,6 @@ class metagen //: public binstream
 
                 lex.next();
 
-                int def = -1;
                 bool lastopen = false;
 
                 attr.reset();

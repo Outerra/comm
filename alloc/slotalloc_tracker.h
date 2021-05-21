@@ -180,8 +180,8 @@ protected:
 struct changeset
 {
     uint16 mask;
-    static const int BITPLANE_COUNT = sizeof(decltype(mask)) << 3;
-    static const uint BITPLANE_MASK = (1U << BITPLANE_COUNT) - 1;
+    static constexpr int BITPLANE_COUNT = sizeof(decltype(mask)) << 3;
+    static constexpr uint BITPLANE_MASK = (1U << BITPLANE_COUNT) - 1;
 
     changeset() : mask(0)
     {}

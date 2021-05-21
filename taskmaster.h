@@ -108,9 +108,9 @@ public:
     //@param nthreads total number of job threads to spawn
     //@param nlong_threads number of low-prio job threads (<= nthreads)
     taskmaster(uint nthreads, uint nlowprio_threads)
-        : _nlowprio_threads(nlowprio_threads)
-        , _qsize(0)
+        : _qsize(0)
         , _quitting(false)
+        , _nlowprio_threads(nlowprio_threads)
     {
         _taskdata.reserve_virtual(8192 * 16);
         _signal_pool.resize(4096);

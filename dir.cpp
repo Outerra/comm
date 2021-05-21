@@ -45,14 +45,13 @@
 #include "str.h"
 #include "pthreadx.h"
 
-//#include <sys/utime.h>
-
 COID_NAMESPACE_BEGIN
 
 #if defined(SYSTYPE_MSVC)
 #define xstat64 _stat64
 #else
 #define xstat64 stat64
+#include <unistd.h>
 #endif
 
 
@@ -96,7 +95,6 @@ charstr directory::create_tmp_dir(const token& prefix)
     charstr tmpdir = get_tmp_dir();
 
     directory::treat_trailing_separator(tmpdir, true);
-    uint len = tmpdir.len();
 
     timet now = timet::now();
     int offs = now & 0xffffffff;
@@ -383,7 +381,7 @@ opcd directory::delete_directory(zstring src, bool recursive)
             return was_err;
     }
 
-    return 0 == ::rmdir(no_trail_sep(src)) ? opcd(0) : ersIO_ERROR;
+    return 0 == rmdir(no_trail_sep(src)) ? opcd(0) : ersIO_ERROR;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -463,13 +461,13 @@ opcd directory::copymove_directory(zstring src, zstring dst, bool move)
 ////////////////////////////////////////////////////////////////////////////////
 bool directory::is_writable(zstring fname)
 {
-    return 0 == ::access(no_trail_sep(fname), 2);
+    return 0 == access(no_trail_sep(fname), 2);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 bool directory::set_writable(zstring fname, bool writable)
 {
-    return 0 == ::chmod(no_trail_sep(fname), writable ? (S_IREAD | S_IWRITE) : S_IREAD);
+    return 0 == chmod(no_trail_sep(fname), writable ? (S_IREAD | S_IWRITE) : S_IREAD);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -247,8 +247,52 @@ void test_slotalloc_virtual()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+template <bool L, class ...Es>
+struct storage
+{
+    struct page {
+        static constexpr int ITEMS = 256;
+        typedef std::tuple<Es...> extarray_t;
+
+        extarray_t* data;
+    };
+
+    page* pages;
+    size_t count;
+};
+
+template <class ...Es>
+struct storage<true, Es...> {
+    typedef std::tuple<Es...> extarray_t;
+    extarray_t* array;
+};
+
+
+template <bool L, class... Es>
+struct slot : storage<L, Es...>
+{
+    using storage_t = storage<L, Es...>;
+    typedef std::tuple<Es...> extarray_t;
+
+    extarray_t* ptr(int id) const {
+        if constexpr (L) {
+            return 0;// this->array + id;
+        }
+        else {
+            using page = typename storage_t::page;      //<-- fails with this
+            //using page = storage<L, Es...>;             //<-- but not with this
+            return this->pages[id / page::ITEMS].data + id % page::ITEMS;
+        }
+    }
+};
+
+////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
 {
+    slot<true, int> sl;
+    sl.ptr(0);
+
+
     test_malloc();
     test_slotalloc_virtual();
 

@@ -86,7 +86,12 @@ public:
         }
     }
 
+
+#if _MSC_VER == 0 || _MSC_VER >= 1920
+    template<enum backend B>
+#else
     template<enum class backend B>
+#endif
     static void* intergen_wrapper_cache() {
         static void* _cached_wrapper=0;
         if (!_cached_wrapper) {

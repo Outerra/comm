@@ -46,6 +46,7 @@
 #include <errno.h>
 #include <utime.h>
 #include <dlfcn.h>
+#include <unistd.h>
 
 #define xstat64 stat64
 

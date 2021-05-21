@@ -153,15 +153,15 @@ public:
 #ifdef __cpp_lib_tuples_by_type
 
     //@return value from ext array for given type
-    template<typename T>
-    T& value_type(uints index) {
-        return std::get<T>(this->_exts)[index];
+    template<typename T2>
+    T2& value_type(uints index) {
+        return std::get<T2>(this->_exts)[index];
     }
 
     //@return value from ext array for given type
-    template <typename T>
-    const T& value_type(uints index) const {
-        return std::get<T>(this->_exts)[index];
+    template <typename T2>
+    const T2& value_type(uints index) const {
+        return std::get<T2>(this->_exts)[index];
     }
 
 #endif
@@ -807,7 +807,7 @@ public:
         else {
             uints id = 0;
 
-            for (const storage_t::page& pg : this->_pages) {
+            for (const typename storage_t::page& pg : this->_pages) {
                 if (p >= pg.ptr() && p < pg.ptre())
                     return id + (p - pg.ptr());
 
@@ -1247,7 +1247,7 @@ public:
 
             for (uints ip = 0; ip < this->_pages.size(); ++ip, gbase += storage_t::PAGE_ITEMS)
             {
-                const storage_t::page& pp = this->_pages[ip];
+                const typename storage_t::page& pp = this->_pages[ip];
                 T* data = const_cast<T*>(pp.ptr());
 
                 uint_type const* epm = em - pm > storage_t::NMASK
@@ -1355,14 +1355,15 @@ public:
             }
         }
         else {
-            const storage_t::page* bp = this->_pages.ptr();
-            const storage_t::page* ep = this->_pages.ptre();
+            typedef typename storage_t::page page;
+            const page* bp = this->_pages.ptr();
+            const page* ep = this->_pages.ptre();
 
             uint_type const* pm = bm;
             changeset_t const* pc = bc;
             uints gbase = 0;
 
-            for (const storage_t::page* pp = bp; pp < ep; ++pp, gbase += storage_t::PAGE_ITEMS)
+            for (const page* pp = bp; pp < ep; ++pp, gbase += page::ITEMS)
             {
                 T* data = const_cast<T*>(pp->data);
                 changeset_t const* epc = ec - pc > storage_t::NMASK
@@ -1462,7 +1463,7 @@ public:
 
             for (uints ip = 0; ip < this->_pages.size(); ++ip, gbase += storage_t::PAGE_ITEMS)
             {
-                const storage_t::page& pp = this->_pages[ip];
+                const typename storage_t::page& pp = this->_pages[ip];
                 T* data = const_cast<T*>(pp.ptr());
 
                 uint_type const* epm = em - pm > storage_t::NMASK
@@ -1538,13 +1539,14 @@ public:
             }
         }
         else {
-            const storage_t::page* pb = this->_pages.ptr();
-            const storage_t::page* pe = this->_pages.ptre();
+            typedef typename storage_t::page page;
+            const page* pb = this->_pages.ptr();
+            const page* pe = this->_pages.ptre();
 
             uint_type const* pm = bm;
             uints gbase = 0;
 
-            for (const storage_t::page* pp = pb; pp < pe; ++pp, gbase += storage_t::PAGE_ITEMS)
+            for (const page* pp = pb; pp < pe; ++pp, gbase += page::ITEMS)
             {
                 T* d = const_cast<T*>(pp->ptr());
                 uint_type const* epm = em - pm > storage_t::NMASK
@@ -1584,7 +1586,7 @@ public:
     template <class B>
     static bool set_bit(dynarray<B>& bitarray, uints k)
     {
-        static const int NBITS = 8 * sizeof(B);
+        static constexpr int NBITS = 8 * sizeof(B);
         using Ub = underlying_bitrange_type<B>;
         using U = typename Ub::type;
         uints s = k / NBITS;
@@ -1598,7 +1600,7 @@ public:
     template <class B>
     static bool clear_bit(dynarray<B>& bitarray, uints k)
     {
-        static const int NBITS = 8 * sizeof(B);
+        static constexpr int NBITS = 8 * sizeof(B);
         using Ub = underlying_bitrange_type<B>;
         using U = typename Ub::type;
         uints s = k / NBITS;
@@ -1612,7 +1614,7 @@ public:
     template <class B>
     static bool get_bit(const dynarray<B>& bitarray, uints k)
     {
-        static const int NBITS = 8 * sizeof(B);
+        static constexpr int NBITS = 8 * sizeof(B);
         using U = underlying_bitrange_type_t<B>;
         uints s = k / NBITS;
         uints b = k % NBITS;
@@ -1678,6 +1680,11 @@ private:
     dynarray<uint_type> _allocated;     //< bit mask for allocated/free items
 
     uint_type _count = 0;               //< active element count
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-variable"
+#endif
 
     ///Helper to expand all ext arrays
     template<size_t... Index>
@@ -1759,6 +1766,9 @@ private:
         extarray_iterate_(make_index_sequence<tracker_t::extarray_size>(), fn);
     }
 
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
     const T* ptr(uints id) const {
         if coid_constexpr_if (LINEAR)
