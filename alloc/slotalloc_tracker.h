@@ -92,22 +92,23 @@ struct storage
     using uint_type = typename atomic_base_t::uint_type;
 
     static constexpr int MASK_BITS = 8 * sizeof(uints);
-    static constexpr uint PAGE_ITEMS = 256;
-    static constexpr uint NMASK = PAGE_ITEMS / MASK_BITS;
 
     ///Allocation page
     struct page
     {
+        static constexpr uint ITEMS = 256;
+        static constexpr uint NMASK = ITEMS / MASK_BITS;
+
         T* data;
 
         T* ptr() { return data; }
         const T* ptr() const { return data; }
 
-        T* ptre() { return data + PAGE_ITEMS; }
-        const T* ptre() const { return data + PAGE_ITEMS; }
+        T* ptre() { return data + ITEMS; }
+        const T* ptre() const { return data + ITEMS; }
 
         page() {
-            data = (T*)dlmalloc(PAGE_ITEMS * sizeof(T));
+            data = (T*)dlmalloc(ITEMS * sizeof(T));
         }
 
         ~page() {

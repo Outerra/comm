@@ -373,7 +373,7 @@ public:
     T* add_contiguous_range(uints n)
     {
         if coid_constexpr_if (!LINEAR) {
-            if (n > storage_t::PAGE_ITEMS)
+            if (n > storage_t::page::ITEMS)
                 return 0;
         }
 
@@ -401,7 +401,7 @@ public:
     T* add_contiguous_range_uninit(uints n, uints* nreused = 0)
     {
         if coid_constexpr_if (!LINEAR) {
-            if (n > storage_t::PAGE_ITEMS)
+            if (n > storage_t::page::ITEMS)
                 return 0;
         }
 
@@ -577,13 +577,16 @@ public:
             }
         }
         else {
-            uint pg = uint(item_id / storage_t::PAGE_ITEMS);
-            uint s = uint(item_id % storage_t::PAGE_ITEMS);
+            //using page = typename storage_t::page;
+            typedef typename storage_t::page page;
+
+            uint pg = uint(item_id / page::ITEMS);
+            uint s = uint(item_id % page::ITEMS);
             uints nr = n;
 
             while (nr > 0) {
                 T* b = this->_pages[pg].ptr() + s;
-                uints na = stdmin(storage_t::PAGE_ITEMS - s, nr);
+                uints na = stdmin(page::ITEMS - s, nr);
                 T* e = b + na;
 
                 for (; b < e; ++b) {
@@ -618,7 +621,7 @@ public:
         if coid_constexpr_if (LINEAR)
             return this->_array.reserved_total() / sizeof(T);
         else
-            return this->_pages.size() * storage_t::PAGE_ITEMS;
+            return this->_pages.size() * storage_t::page::ITEMS;
     }
 
     //@{ accessors with versionid argument, enabled only if versioning is on
@@ -812,13 +815,16 @@ public:
                 : UMAXS;
         }
         else {
+            //using page = typename storage_t::page;
+            typedef typename storage_t::page page;
+
             uints id = 0;
 
-            for (const typename storage_t::page& pg : this->_pages) {
+            for (const page& pg : this->_pages) {
                 if (p >= pg.ptr() && p < pg.ptre())
                     return id + (p - pg.ptr());
 
-                id += storage_t::PAGE_ITEMS;
+                id += page::ITEMS;
             }
 
             return UMAXS;
@@ -1247,18 +1253,21 @@ public:
             }
         }
         else {
+            //using page = typename storage_t::page;
+            typedef typename storage_t::page page;
+
             uint_type const* bm = const_cast<uint_type const*>(_allocated.ptr());
             uint_type const* em = const_cast<uint_type const*>(_allocated.ptre());
             uint_type const* pm = bm;
             uints gbase = 0;
 
-            for (uints ip = 0; ip < this->_pages.size(); ++ip, gbase += storage_t::PAGE_ITEMS)
+            for (uints ip = 0; ip < this->_pages.size(); ++ip, gbase += page::ITEMS)
             {
-                const typename storage_t::page& pp = this->_pages[ip];
+                const page& pp = this->_pages[ip];
                 T* data = const_cast<T*>(pp.ptr());
 
-                uint_type const* epm = em - pm > storage_t::NMASK
-                    ? pm + storage_t::NMASK
+                uint_type const* epm = em - pm > page::NMASK
+                    ? pm + page::NMASK
                     : em;
 
                 uints pbase = 0;
@@ -1362,7 +1371,10 @@ public:
             }
         }
         else {
+            //using page = typename storage_t::page;
             typedef typename storage_t::page page;
+
+
             const page* bp = this->_pages.ptr();
             const page* ep = this->_pages.ptre();
 
@@ -1373,8 +1385,8 @@ public:
             for (const page* pp = bp; pp < ep; ++pp, gbase += page::ITEMS)
             {
                 T* data = const_cast<T*>(pp->data);
-                changeset_t const* epc = ec - pc > storage_t::NMASK
-                    ? pc + storage_t::PAGE_ITEMS
+                changeset_t const* epc = ec - pc > page::NMASK
+                    ? pc + page::ITEMS
                     : ec;
 
                 uints pbase = 0;
@@ -1410,12 +1422,15 @@ public:
                 funccallp(f, p + i, i);
         }
         else {
-            uint pg = uint(id / storage_t::PAGE_ITEMS);
-            uint s = uint(id % storage_t::PAGE_ITEMS);
+            //using page = typename storage_t::page;
+            typedef typename storage_t::page page;
+
+            uint pg = uint(id / page::ITEMS);
+            uint s = uint(id % page::ITEMS);
 
             while (count > 0) {
                 T* b = this->_pages[pg++].ptr() + s;
-                uints na = stdmin(storage_t::PAGE_ITEMS - s, count);
+                uints na = stdmin(page::ITEMS - s, count);
                 T* e = b + na;
 
                 for (; b < e; ++b)
@@ -1465,16 +1480,19 @@ public:
             }
         }
         else {
+            //using page = typename storage_t::page;
+            typedef typename storage_t::page page;
+
             uint_type const* pm = bm;
             uints gbase = 0;
 
-            for (uints ip = 0; ip < this->_pages.size(); ++ip, gbase += storage_t::PAGE_ITEMS)
+            for (uints ip = 0; ip < this->_pages.size(); ++ip, gbase += page::ITEMS)
             {
-                const typename storage_t::page& pp = this->_pages[ip];
+                const page& pp = this->_pages[ip];
                 T* data = const_cast<T*>(pp.ptr());
 
-                uint_type const* epm = em - pm > storage_t::NMASK
-                    ? pm + storage_t::NMASK
+                uint_type const* epm = em - pm > page::NMASK
+                    ? pm + page::NMASK
                     : em;
 
                 uints pbase = 0;
@@ -1546,7 +1564,9 @@ public:
             }
         }
         else {
+            //using page = typename storage_t::page;
             typedef typename storage_t::page page;
+
             const page* pb = this->_pages.ptr();
             const page* pe = this->_pages.ptre();
 
@@ -1556,8 +1576,8 @@ public:
             for (const page* pp = pb; pp < pe; ++pp, gbase += page::ITEMS)
             {
                 T* d = const_cast<T*>(pp->ptr());
-                uint_type const* epm = em - pm > storage_t::NMASK
-                    ? pm + storage_t::NMASK
+                uint_type const* epm = em - pm > page::NMASK
+                    ? pm + page::NMASK
                     : em;
 
                 uints pbase = 0;
@@ -1781,8 +1801,11 @@ private:
         if coid_constexpr_if (LINEAR)
             return this->_array.ptr() + id;
         else {
-            DASSERT(id / storage_t::PAGE_ITEMS < this->_pages.size());
-            return (const T*)this->_pages[id / storage_t::PAGE_ITEMS].data + id % storage_t::PAGE_ITEMS;
+            //using page = typename storage_t::page;
+            typedef typename storage_t::page page;
+
+            DASSERT(id / page::ITEMS < this->_pages.size());
+            return (const T*)this->_pages[id / page::ITEMS].data + id % page::ITEMS;
         }
     }
 
@@ -1790,8 +1813,11 @@ private:
         if coid_constexpr_if (LINEAR)
             return this->_array.ptr() + id;
         else {
-            DASSERT(id / storage_t::PAGE_ITEMS < this->_pages.size());
-            return (T*)this->_pages[id / storage_t::PAGE_ITEMS].data + id % storage_t::PAGE_ITEMS;
+            //using page = typename storage_t::page;
+            typedef typename storage_t::page page;
+
+            DASSERT(id / page::ITEMS < this->_pages.size());
+            return (T*)this->_pages[id / page::ITEMS].data + id % page::ITEMS;
         }
     }
 
@@ -1872,7 +1898,7 @@ private:
     uints alloc_range_contiguous(uints n, uints* old)
     {
         if coid_constexpr_if (!LINEAR) {
-            if (n > storage_t::PAGE_ITEMS)
+            if (n > storage_t::page::ITEMS)
                 return UMAXS;
         }
 
@@ -1883,28 +1909,30 @@ private:
             id = find_zero_bitrange(n, bm, em);
         }
         else {
+            //using page = typename storage_t::page;
             typedef typename storage_t::page page;
+
             page* ep = this->_pages.ptre();
             page* bp = this->_pages.ptr();
             page* pp = bp;
 
             uint_type const* pm = bm;
 
-            for (; pp != ep; ++pp, pm += storage_t::NMASK)
+            for (; pp != ep; ++pp, pm += page::NMASK)
             {
-                uint_type const* epm = em - pm > storage_t::NMASK
-                    ? pm + storage_t::NMASK
+                uint_type const* epm = em - pm > page::NMASK
+                    ? pm + page::NMASK
                     : em;
 
                 uints lid = find_zero_bitrange(n, pm, epm);
-                if (lid + n <= storage_t::PAGE_ITEMS) {
-                    id = lid + (pp - bp) * storage_t::PAGE_ITEMS;
+                if (lid + n <= page::ITEMS) {
+                    id = lid + (pp - bp) * page::ITEMS;
                     break;
                 }
             }
 
             if (pp == ep) {
-                id = this->_pages.size() * storage_t::PAGE_ITEMS;
+                id = this->_pages.size() * page::ITEMS;
 
                 void* oldbase = this->_pages.ptr();
                 pp = this->_pages.add();
@@ -1971,7 +1999,10 @@ private:
                 throw exception("a linear array rebased");
         }
         else {
-            uints np = align_to_chunks(this->_created + n, storage_t::PAGE_ITEMS);
+            //using page = typename storage_t::page;
+            typedef typename storage_t::page page;
+
+            uints np = align_to_chunks(this->_created + n, page::ITEMS);
             if (np > this->_pages.size()) {
                 void* oldbase = this->_pages.ptr();
                 this->_pages.realloc(np);
