@@ -266,6 +266,13 @@ public:
         return construct_default(p, isold);
     }
 
+    ///Add completely new object, ignoring any unused ones
+    T* add_new(uints* pid = 0)
+    {
+        T* p = append<false>(pid);
+        return construct_default(p, false);
+    }
+
     ///Add new object or reuse one from pool if predicate returns true
     template <typename Func>
     T* add_if(Func fn, uints* pid = 0)
@@ -494,7 +501,7 @@ public:
         static_assert(POOL, "only available in pool mode");
 
         if (POOL && id < this->_created) {
-            if (set_bit(id))
+            if (!set_bit(id))
                 ++_count;
             else {
                 DASSERTN(0);
@@ -516,7 +523,7 @@ public:
 
         if (POOL && vid.id < this->_created) {
             if (this->check_versionid(vid)) {
-                if (set_bit(vid.id))
+                if (!set_bit(vid.id))
                     ++_count;
                 else {
                     DASSERTN(0);
@@ -1399,7 +1406,7 @@ public:
             if (id + count < n)
                 n = id + count;
 
-            for (uints i = id; i < n; ++i)
+            for (uints i = 0; i < count; ++i)
                 funccallp(f, p + i, i);
         }
         else {
@@ -1933,7 +1940,7 @@ private:
     {
         uints count = created();
 
-        DASSERT(_count <= count);   //count may be lower with other threads deleting, but not higher (single producer)
+        //DASSERT(_count <= count);   //count may be lower with other threads deleting, but not higher (single producer)
         set_bit(count);
 
         if coid_constexpr_if(EXT_UNINIT)

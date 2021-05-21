@@ -39,14 +39,10 @@
 #include "namespace.h"
 
 #include "trait.h"
-#include "function.h"
-#include "range.h"
+//#include "function.h"
+//#include "range.h"
 #include "binstream/binstream.h"
 #include "alloc/commalloc.h"
-
-#include <iterator>
-#include <algorithm>
-
 
 COID_NAMESPACE_BEGIN
 
@@ -111,7 +107,7 @@ protected:
     friend struct dynarray_relocator;
     template<typename, typename, typename> friend class dynarray;
 
-    T* _ptr;
+    T* _ptr = 0;
 
 public:
 
@@ -121,13 +117,13 @@ public:
 
     COIDNEWDELETE(dynarray);
 
-    dynarray() : _ptr(0) {
-        A::instance();
+    constexpr dynarray() {
+        //A::instance();
     }
 
     ///Reserve specified number of items in constructor
-    explicit dynarray(uints reserve_count) : _ptr(0) {
-        A::instance();
+    explicit dynarray(uints reserve_count) {
+        //A::instance();
         reserve(reserve_count, false);
     }
 
@@ -140,7 +136,7 @@ public:
             _set_count(0);
         }
         else {
-            A::instance();
+            //A::instance();
             _ptr = 0;
             reserve(count, false);
         }
@@ -153,6 +149,11 @@ public:
     ///copy constructor
     dynarray(const dynarray& p) : _ptr(0)
     {
+        uints virtsize = A::reserved_size(p._ptr);
+        if (virtsize > 0) {
+            reserve_virtual(virtsize / sizeof(T));
+        }
+
         uints n = p.sizes();
         alloc(n);
 
@@ -168,6 +169,13 @@ public:
     ///assignment operator - duplicate
     dynarray& operator = (const dynarray& p)
     {
+        discard();
+
+        uints virtsize = A::reserved_size(p._ptr);
+        if (virtsize > 0) {
+            reserve_virtual(virtsize / sizeof(T));
+        }
+
         uints n = p.sizes();
         alloc(n);
 
@@ -813,7 +821,8 @@ public:
     };
 
     ///Push item into array if it doesn't exist
-    T& push_if_absent(const T& v) {
+    //@return item reference
+    T& push_unique(const T& v) {
         ints id = index_of(v);
         return id < 0
             ? *push(v)
@@ -821,7 +830,8 @@ public:
     }
 
     ///Push item into array if it doesn't exist
-    T& push_if_absent(T&& v) {
+    //@return item reference
+    T& push_unique(T&& v) {
         ints id = index_of(v);
         return id < 0
             ? *push(std::forward<T>(v))
@@ -1100,23 +1110,22 @@ public:
 
     ///Reserve \a nitems of elements
     /** @param nitems number of items to reserve
-        @param ikeep keep existing elements (true) or do not necessarily keep them (false)
+        @param ikeep keep existing elements (true) or discard them (false)
         @param m [optional] memory space to use (fresh alloc only)
         @return pointer to the first item of array */
-    T* reserve(uints nitems, bool ikeep, mspace m = 0)
+    T* reserve(uints nitems, bool ikeep = true, mspace m = 0)
     {
         uints n = _count();
 
-        if (nitems > n  &&  nitems * sizeof(T) > _size())
-        {
-            if (!ikeep) {
-                _destroy();
-                n = 0;
-            }
-
-            _realloc(nitems, n, m);
-            _set_count(n);
+        if (!ikeep) {
+            _destroy();
+            n = 0;
         }
+
+        if (nitems > n  &&  nitems * sizeof(T) > _size())
+            _realloc(nitems, n, m);
+
+        _set_count(n);
         return _ptr;
     }
 
@@ -1510,11 +1519,7 @@ public:
     T* ins_value(uints pos, const T& v)
     {
         DASSERT(pos != UMAXS);
-        if (pos > sizes())
-        {
-            uints ov = pos - _count();
-            add(ov);
-        }
+        DASSERT(pos <= sizes());
 
         addnc(1);
         T* p = __ins(_ptr, pos, _count() - 1, 1);
@@ -1525,11 +1530,7 @@ public:
     T* ins_value(uints pos, T&& v)
     {
         DASSERT(pos != UMAXS);
-        if (pos > sizes())
-        {
-            uints ov = pos - _count();
-            add(ov);
-        }
+        DASSERT(pos <= sizes());
 
         addnc(1);
         T* p = __ins(_ptr, pos, _count() - 1, 1);
@@ -1537,7 +1538,7 @@ public:
         return new(p) T(std::forward<T>(v));
     }
 
-    ///Delete elements from given position
+    ///Delete elements from given positiond
     /** @param pos position from what to delete
         @param nitems number of items to delete */
     void del(uints pos, uints nitems = 1) {
@@ -1695,6 +1696,9 @@ public:
     uints reserved_remaining() const { return A::size(_ptr) - sizeof(T)*A::count(_ptr); }
     uints reserved_total() const { return A::size(_ptr); }
 
+    //@return reserved virtual size, if the memory was allocaded by reserve_virtual, otherwise 0
+    uints reserved_virtual() const { return A::reserved_size(_ptr); }
+
 
     typedef T*                          iterator;
     typedef const T*                    const_iterator;
@@ -1739,22 +1743,6 @@ private:
         return _ptr + n;
     };
 };
-
-////////////////////////////////////////////////////////////////////////////////
-
-template<class T>
-template<class COUNT, class A>
-range<T>::range(const dynarray<T, COUNT, A>& a)
-    : range<T>(const_cast<T*>(a.ptr()), const_cast<T*>(a.ptre()))
-{}
-
-template<class T>
-template<class COUNT, class A>
-range<T>& range<T>::operator = (const dynarray<T, COUNT, A>& a)
-{
-    _ptr = const_cast<T*>(a.ptr());
-    _pte = const_cast<T*>(a.ptre());
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 ///take control over buffer controlled by \a dest dynarray, \a dest ptr will be set to zero

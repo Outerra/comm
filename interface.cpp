@@ -342,7 +342,12 @@ public:
         return intergen_interface::VERSION == ver;
     }
 
-    //@param relpath [out] gets relative path from root. If null, relative incpath can only refer to a sub-path below curpath
+    //@param curpath current directory
+    //@param incpath path to include/append to the current dir
+    //@param dst [out] output path (absolute)
+    //@param relpath [out] gets relative path from root
+    //@note if relpath is null, relative incpath can only refer to a sub-path below curpath
+    //@note relpath is set to a null token when incpath was relative to curpath and bellow it
     virtual bool include_path(const token& curpath, const token& incpath, charstr& dst, token* relpath)
     {
         bool slash = incpath.first_char() == '/' || incpath.first_char() == '\\';
@@ -361,7 +366,7 @@ public:
                 return false;
 
             //relative paths below curpath are always allowed, not checked
-            if (!relpath || rv < 0)
+            if (!relpath || rv > 0)
                 relsub = true;
         }
         else {
@@ -377,14 +382,24 @@ public:
         }
 
         token rpath = dst;
+
+        if (relsub) {
+            //path was relative, no access check but still try returning relpath
+            if (relpath) {
+                if (directory::subpath(_root_path, rpath))
+                    *relpath = rpath;
+                else
+                    relpath->set_null();
+            }
+            return true;
+        }
+
+        //absolute path, check if lies below root
         if (!directory::subpath(_root_path, rpath))
             return false;
 
         if (relpath)
             *relpath = rpath;
-
-        if (relsub)
-            return true;
 
         return _fn_acc ? _fn_acc(rpath) : true;
     }
@@ -460,6 +475,7 @@ private:
         return fn(client, cen.modulename, bstr);
     }
 
+    //@return current directory from current path
     bool current_dir(token curpath, charstr& dst)
     {
         if (directory::is_absolute_path(curpath))

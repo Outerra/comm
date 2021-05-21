@@ -40,13 +40,11 @@
 
 #include "namespace.h"
 
-#include "alloc/commalloc.h"
 #include "binstream/bstype.h"
 #include "hash/hashfunc.h"
 
 #include <cstring>
 #include <ctime>
-#include <functional>
 
 #include "token.h"
 #include "dynarray.h"
@@ -87,12 +85,12 @@ public:
         output_iterator(charstr& p) : _p(&p) { }
     };
 
-    charstr() {}
+    constexpr charstr() {}
 
     charstr(const token& tok)
     {
-        if(tok.is_empty()) return;
-        assign(tok.ptr(), tok.len());
+        if (!tok.is_empty())
+            assign(tok.ptr(), tok.len());
     }
 
     ///String literal constructor, optimization to have fast literal strings available as tokens
@@ -167,14 +165,21 @@ public:
         dst.takeover(_tstr);
     }
 
+    template <typename T>
+    static void swap(T& a, T& b) {
+        T tmp = static_cast<T&&>(a);
+        a = static_cast<T&&>(b);
+        b = static_cast<T&&>(tmp);
+    }
+
     ///Swap strings
     friend void swap( charstr& a, charstr& b )
     {
-        std::swap(a._tstr, b._tstr);
+        swap(a._tstr, b._tstr);
     }
 
     void swap( charstr& other ) {
-        std::swap(_tstr, other._tstr);
+        swap(_tstr, other._tstr);
     }
 
     template<class COUNT>
@@ -460,8 +465,8 @@ public:
     charstr& operator = (double d) { reset(); return operator += (d); }
 
     ///Formatted numbers - int/uint
-    template<int WIDTH, int BASE, int ALIGN, class NUM>
-    charstr& operator = (const num_fmt_object<WIDTH, BASE, ALIGN, NUM> v) {
+    template<int WIDTH, uint BASE, int ALIGN, class NUM>
+    charstr& operator = (const num_fmt_object<WIDTH, BASE, ALIGN, NUM>& v) {
         append_num(BASE, v.value, WIDTH, ALIGN);
         return *this;
     }
@@ -478,6 +483,9 @@ public:
         return *this;
     }
 
+
+    //@return string as a token
+    token get_token() const { return token(ptr(), ptre()); }
 
     //@{ retrieve nth character
     char last_char() const { uints n = lens(); return n ? _tstr[n - 1] : 0; }
@@ -550,8 +558,8 @@ public:
     charstr& operator += (double d) { append_float(d, 10); return *this; }
 
     ///Formatted numbers - int/uint
-    template<int WIDTH, int BASE, int ALIGN, class NUM>
-    charstr& operator += (const num_fmt_object<WIDTH, BASE, ALIGN, NUM> v) {
+    template<int WIDTH, uint BASE, int ALIGN, class NUM>
+    charstr& operator += (const num_fmt_object<WIDTH, BASE, ALIGN, NUM>& v) {
         append_num(BASE, v.value, WIDTH, ALIGN);
         return *this;
     }
@@ -598,8 +606,8 @@ public:
     charstr& operator << (double d) { return operator += (d); }
 
     ///Formatted numbers - int/uint
-    template<int WIDTH, int BASE, int ALIGN, class NUM>
-    charstr& operator << (const num_fmt_object<WIDTH, BASE, ALIGN, NUM> v) {
+    template<int WIDTH, uint BASE, int ALIGN, class NUM>
+    charstr& operator << (const num_fmt_object<WIDTH, BASE, ALIGN, NUM>& v) {
         append_num(BASE, v.value, WIDTH, (EAlignNum)ALIGN);
         return *this;
     }

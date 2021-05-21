@@ -114,7 +114,7 @@ public:
     {
         _taskdata.reserve_virtual(8192 * 16);
         _signal_pool.resize(4096);
-        _free_signals.reserve(4096, false);
+        _free_signals.reserve(4096);
         for (uint i = 0; i < _signal_pool.size(); ++i) {
             _signal_pool[i].version = 0;
             _free_signals.push(signal_handle(i));

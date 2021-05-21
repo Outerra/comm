@@ -37,7 +37,7 @@
 * ***** END LICENSE BLOCK ***** */
 
 #include "trait.h"
-#include <functional>
+#include <tuple>
 
 COID_NAMESPACE_BEGIN
 
@@ -560,15 +560,5 @@ private:
 
 
 COID_NAMESPACE_END
-
-////////////////////////////////////////////////////////////////////////////////
-
-//std function is known to have a non-trivial rebase
-namespace coid {
-template<class F>
-struct has_trivial_rebase<std::function<F>> {
-    static const bool value = false;
-};
-}
 
 #endif //COID_VARIADIC_TEMPLATES

@@ -41,6 +41,7 @@
 #include "hash/hashfunc.h"
 #include "binstream/binstreambuf.h"
 #include "metastream/metastream.h"
+#include "atomic/pool_base.h"
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 

@@ -61,7 +61,6 @@ static const char DIR_SEPARATORS = '/';
 static const token DIR_SEPARATOR_STRING = "/";
 #endif
 
-
 ////////////////////////////////////////////////////////////////////////////////
 class directory
 {
@@ -252,10 +251,11 @@ public:
         return buf.resize(t.len());
     }
 
-    ///Get current module file path
-    static charstr get_module_path() {
+    ///Get current module file path, or module path where given function resides
+    //@param func pointer to a function
+    static charstr get_module_path(const void* func = 0) {
         charstr buf;
-        get_module_path_func((const void*)&dummy_func, buf, false);
+        get_module_path_func(func ? func : (const void*)&dummy_func, buf, false);
         return buf;
     }
 
@@ -317,50 +317,21 @@ public:
     const char* get_last_file_name() const { return _curpath.c_str() + _baselen; }
     token get_last_file_name_token() const { return token(_curpath.c_str() + _baselen, _curpath.len() - _baselen); }
 
+    enum class recursion_mode
+    {
+        file            = 0, //< no recursion into sundirectories
+        dir_exit        = 1, //< recursive subdir enumeration, subdir callback invoked after listing the subdir content
+        dir_enter       = 2, //< recursive subdir enumeration, subdir callback invoked before listing the subdir content
+        dir_enter_exit  = 3  //< recursive subdir enumeration, subdir callback invoked both before and after listing the subdir content
+    };
 
     ///Lists all files with extension (extension = "*" if all files) in directory with path using func functor.
-    ///if recursive is true, lists also subdirectories.
-    //@param recursive nest into subdirectories: 1 dir callback called after callback on content, 2 before, 3 both
-    //@param fn callback function(const charstr& name, int dir), dir is 0 for files, 1 for getting out of dir, 2 in
-    static bool list_file_paths(const token& path, const token& extension, int recursive,
-        const coid::function<void(const charstr&, int)>& fn)
-    {
-        directory dir;
-
-        if (dir.open(path, "*.*") != ersNOERR)
-            return false;
-
-        bool all_files = extension == '*';
-        bool ext_with_dot = extension.first_char() == '.' || extension.is_empty();
-
-        while (dir.next()) {
-            if (dir.is_entry_regular()) {
-                bool valid = all_files;
-                if (!all_files) {
-                    token fname = dir.get_last_file_name_token();
-
-                    if (fname.ends_with_icase(extension)
-                        && (ext_with_dot || fname.nth_char(-1 - ints(extension.len())) == '.'))
-                        valid = true;
-                }
-
-                if (valid)
-                    fn(dir.get_last_full_path(), 0);
-            }
-            else if (recursive && dir.is_entry_subdirectory()) {
-                if (recursive & 2)
-                    fn(dir.get_last_full_path(), 2);
-
-                directory::list_file_paths(dir.get_last_full_path(), extension, recursive, fn);
-
-                if (recursive & 1)
-                    fn(dir.get_last_full_path(), 1);
-            }
-        }
-
-        return true;
-    }
-
+    ///Lists also subdirectories paths when recursive_flags set
+    //@param mode - nest into subdirectories and calls callback fn in order specified by recursive_mode
+    //@param fn callback function(const charstr& file_path, recursion_mode mode)
+    //@note fn callback recursion_mode parameter invoked on each file or on directories upon entering or exisitng (or both)
+    static bool list_file_paths(const token& path, const token& extension, recursion_mode mode,
+        const coid::function<void(const charstr&, recursion_mode)>& fn);
 
     ///structure returned by ::find_files
     struct find_result {

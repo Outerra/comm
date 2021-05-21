@@ -402,8 +402,8 @@ v8::Handle<v8::Object> thingface_js_dispatcher::create_interface_object( v8::Han
         ot->Set(v8::symbol("hallo", iso), v8::FunctionTemplate::New(iso, &v8_hallo0));
         ot->Set(v8::symbol("fallo", iso), v8::FunctionTemplate::New(iso, &v8_fallo1));
 
-        ot->Set(v8::symbol("$log", iso), v8::FunctionTemplate::New(iso, &::js::script_handle::js_log));
-        ot->Set(v8::symbol("$query_interface", iso), v8::FunctionTemplate::New(iso, &::js::script_handle::js_query_interface));
+        ot->Set(v8::symbol("$log", iso), v8::FunctionTemplate::New(iso, &::js::script_handle::log));
+        ot->Set(v8::symbol("$query_interface", iso), v8::FunctionTemplate::New(iso, &::js::script_handle::query_interface));
         ot->Set(v8::symbol("$rebind_events", iso), v8::FunctionTemplate::New(iso, &v8rebind_events));
         ot->Set(v8::symbol("$ctx", iso), v8::FunctionTemplate::New(iso, &v8current_global));
 

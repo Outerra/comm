@@ -37,6 +37,7 @@
 *
 * ***** END LICENSE BLOCK ***** */
 
+#include "function.h"
 #include "namespace.h"
 #include "commtypes.h"
 
@@ -50,15 +51,16 @@ template<class, class, class> class dynarray;
 template<class T>
 struct range
 {
-    T* _ptr;
-    T* _pte;
+private:
+    T* _ptr = 0;
+    T* _pte = 0;
+
+public:
 
     range()
-        : _ptr(0), _pte(0)
     {}
 
     range(std::nullptr_t)
-        : _ptr(0), _pte(0)
     {}
 
     template<class COUNT, class A>
@@ -683,5 +685,20 @@ public:
     };
 };
 
+////////////////////////////////////////////////////////////////////////////////
+
+template<class T>
+template<class COUNT, class A>
+range<T>::range(const dynarray<T, COUNT, A>& a)
+    : range<T>(const_cast<T*>(a.ptr()), const_cast<T*>(a.ptre()))
+{}
+
+template<class T>
+template<class COUNT, class A>
+range<T>& range<T>::operator = (const dynarray<T, COUNT, A>& a)
+{
+    _ptr = const_cast<T*>(a.ptr());
+    _pte = const_cast<T*>(a.ptre());
+}
 
 COID_NAMESPACE_END

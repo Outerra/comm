@@ -51,6 +51,15 @@ struct value {
 
 
 ////////////////////////////////////////////////////////////////////////////////
+void singleton_test()
+{
+    LOCAL_SINGLETON_DEF(dynarray<int>) sa = new dynarray<int>(100);
+    LOCAL_SINGLETON_DEF(dynarray<int>) sb = new dynarray<int>(100);
+
+    DASSERT(sa->ptr() != sb->ptr());
+}
+
+////////////////////////////////////////////////////////////////////////////////
 void lambda_test()
 {
     dynarray<value> data;
@@ -289,6 +298,7 @@ struct slot : storage<L, Es...>
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
 {
+    singleton_test();
     slot<true, int> sl;
     sl.ptr(0);
 
