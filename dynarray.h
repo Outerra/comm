@@ -1164,7 +1164,7 @@ public:
     }
 
     ///Get value from array or a default one if index is out of range
-    T get_safe(uints i, const T& def) const
+    const T& get_safe(uints i, const T& def) const
     {
         return i < _count() ? _ptr[i] : def;
     }
