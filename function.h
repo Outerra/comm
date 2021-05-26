@@ -441,7 +441,7 @@ public:
 
     callback(const callback& fn) {
         _caller = fn._caller;
-        if (_fn.ptr) {
+        if (fn._fn.ptr) {
             if (_caller == &call_flambda)
                 _fn.flambda = fn._fn.flambda->clone();
             else if (_caller == &call_mlambda)
