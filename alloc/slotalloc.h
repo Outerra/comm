@@ -500,7 +500,7 @@ public:
     {
         static_assert(POOL, "only available in pool mode");
 
-        if (POOL && id < this->_created) {
+        if (POOL && id < created()) {
             if (!set_bit(id))
                 ++_count;
             else {
