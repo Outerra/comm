@@ -256,6 +256,9 @@ void test_slotalloc_virtual()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+#ifdef COID_CONSTEXPR_IF
+
 template <bool L, class ...Es>
 struct storage
 {
@@ -295,13 +298,17 @@ struct slot : storage<L, Es...>
     }
 };
 
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
 {
     singleton_test();
+
+#ifdef COID_CONSTEXPR_IF
     slot<true, int> sl;
     sl.ptr(0);
-
+#endif
 
     test_malloc();
     test_slotalloc_virtual();

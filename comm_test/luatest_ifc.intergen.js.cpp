@@ -311,8 +311,8 @@ v8::Handle<v8::Object> other_js_dispatcher::create_interface_object( v8::Handle<
         ot->Set(v8::symbol("set_str", iso), v8::FunctionTemplate::New(iso, &v8_set_str1));
         ot->Set(v8::symbol("some_fun1", iso), v8::FunctionTemplate::New(iso, &v8_some_fun12));
 
-        ot->Set(v8::symbol("$log", iso), v8::FunctionTemplate::New(iso, &::js::script_handle::js_log));
-        ot->Set(v8::symbol("$query_interface", iso), v8::FunctionTemplate::New(iso, &::js::script_handle::js_query_interface));
+        ot->Set(v8::symbol("$log", iso), v8::FunctionTemplate::New(iso, &::js::script_handle::log));
+        ot->Set(v8::symbol("$query_interface", iso), v8::FunctionTemplate::New(iso, &::js::script_handle::query_interface));
         ot->Set(v8::symbol("$rebind_events", iso), v8::FunctionTemplate::New(iso, &v8rebind_events));
         ot->Set(v8::symbol("$ctx", iso), v8::FunctionTemplate::New(iso, &v8current_global));
 
@@ -1457,8 +1457,8 @@ v8::Handle<v8::Object> main_js_dispatcher::create_interface_object( v8::Handle<v
         ot->Set(v8::symbol("fun1", iso), v8::FunctionTemplate::New(iso, &v8_fun13));
         ot->Set(v8::symbol("fun2", iso), v8::FunctionTemplate::New(iso, &v8_fun24));
 
-        ot->Set(v8::symbol("$log", iso), v8::FunctionTemplate::New(iso, &::js::script_handle::js_log));
-        ot->Set(v8::symbol("$query_interface", iso), v8::FunctionTemplate::New(iso, &::js::script_handle::js_query_interface));
+        ot->Set(v8::symbol("$log", iso), v8::FunctionTemplate::New(iso, &::js::script_handle::log));
+        ot->Set(v8::symbol("$query_interface", iso), v8::FunctionTemplate::New(iso, &::js::script_handle::query_interface));
         ot->Set(v8::symbol("$rebind_events", iso), v8::FunctionTemplate::New(iso, &v8rebind_events));
         ot->Set(v8::symbol("$ctx", iso), v8::FunctionTemplate::New(iso, &v8current_global));
 

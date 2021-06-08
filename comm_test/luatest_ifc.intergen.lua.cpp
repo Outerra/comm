@@ -941,14 +941,16 @@ public:
     virtual bool is_bound_evt4() override { return is_event_bound(3); }
 
 virtual void force_bind_script_events() {
-    bind_events( true, iref<::lua::registry_handle>(&::lua::registry_handle()));
+    static ::lua::registry_handle empty_registry_handle;
+    bind_events( true, iref<::lua::registry_handle>(&empty_registry_handle));
 }
 
 private:
     bool is_event_bound(int id)
     {
         if (!_bound_events) {
-            bind_events( false, iref<::lua::registry_handle>(&::lua::registry_handle()));
+            static ::lua::registry_handle empty_registry_handle;
+            bind_events( false, iref<::lua::registry_handle>(&empty_registry_handle));
         }
 
         return !_events[id];
