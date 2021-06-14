@@ -1538,6 +1538,18 @@ public:
         return new(p) T(std::forward<T>(v));
     }
 
+    /// swaps an element with the last one and pops it
+    /// can be used as fast delete when order of elements does not matter
+    /// @param pos position from where to delete
+    void swap_and_pop(uints pos)
+    {
+        const uints s = _count();
+        if (s < 1) return;
+
+        std::swap(_ptr[pos], _ptr[s - 1]);
+        pop();
+    }
+
     ///Delete elements from given positiond
     /** @param pos position from what to delete
         @param nitems number of items to delete */
