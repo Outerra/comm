@@ -108,14 +108,18 @@ public:
     static const token& separators() { static token sep = "/"_T; return sep; }
 #endif
 
-    static charstr& treat_trailing_separator(charstr& path, bool shouldbe)
+    //@param shouldbe true or one of / or \ characters if path should end with the separator, false if path separator should not be there
+    static charstr& treat_trailing_separator(charstr& path, char shouldbe)
     {
+        if (shouldbe && shouldbe != '/' && shouldbe != '\\')
+            shouldbe = separator();
+
         char c = path.last_char();
         if (is_separator(c)) {
             if (!shouldbe)  path.resize(-1);
         }
         else if (shouldbe && c != 0)   //don't add separator to an empty path, that would make it absolute
-            path.append(separator());
+            path.append(shouldbe);
         return path;
     }
 
