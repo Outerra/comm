@@ -141,20 +141,6 @@ bool directory::is_subpath(token root, token path)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool directory::subpath(token root, token& path)
-{
-    while (root && path) {
-        token r = root.cut_left_group(DIR_SEPARATORS);
-        token p = path.cut_left_group(DIR_SEPARATORS);
-
-        if (r != p)
-            break;
-    }
-
-    return root.is_empty();
-}
-
-////////////////////////////////////////////////////////////////////////////////
 int directory::append_path(charstr& dst, token path, bool keep_below)
 {
     if (is_absolute_path(path))
