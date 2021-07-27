@@ -39,8 +39,6 @@
 #include "namespace.h"
 
 #include "trait.h"
-//#include "function.h"
-//#include "range.h"
 #include "binstream/binstream.h"
 #include "alloc/commalloc.h"
 
@@ -778,6 +776,7 @@ public:
     /// Uses either operator T<T or a functor(T,T)
     /// add_sortT() can use a different key type than T, provided an operator T<K exists, or functor(T,K) was provided.
     //@param key key to use to find the element position in sorted array
+    //@param fn a functor that returns >0 for T<K, or else <= 0
     //@param n number of elements to insert
     /** this uses the provided \a key just to find the position, doesn't insert the key
         @see push_sort() **/
@@ -904,6 +903,7 @@ public:
     }
 
     ///Insert an element to the array at sorted position (using compare function)
+    //@param fn a functor that returns >0 for T<K, or else <= 0
     template<typename FUNC>
     T* push_sort(const T& v, const FUNC& fn)
     {
@@ -913,6 +913,7 @@ public:
     }
 
     ///Insert an element to the array at sorted position (using compare function)
+    //@param fn a functor that returns >0 for T<K, or else <= 0
     template<typename FUNC>
     T* push_sort(T&& v, const FUNC& fn)
     {
@@ -1313,9 +1314,10 @@ public:
     T* contains_back(const K& key, const EQ& eq) { return const_cast<T*>(contains_back(key, eq)); }
     //@}
 
-    ///Binary search whether sorted array contains element comparable to \a key
-    /// Uses operator T<K or functor(T,K) to search for the element, and operator T==K for equality comparison
+    ///Binary search to check whether a sorted array contains element comparable to \a key
+    /// Uses operator T<K and operator T==K for equality comparison, or functor(T,K) to search for the element
     //@return ptr to element if found or 0 otherwise
+    //@param fn a functor that returns >0 for T<K, 0 for T==K, <0 for T>K
     //@param sort_index optional ptr to variable receiving sort index
     //@{
     template<class K>
@@ -1337,7 +1339,7 @@ public:
         if (sort_index)
             *sort_index = lb;
 
-        return lb >= size() || !(_ptr[lb] == key)
+        return lb >= size() || fn(_ptr[lb], key) != 0
             ? 0
             : _ptr + lb;
     }
@@ -1373,6 +1375,7 @@ public:
 
     ///Find or insert element into a sorted array
     //@param key key to search for
+    //@param fn a functor that returns >0 for T<K, 0 for T==K, <0 for T>K
     //@param isnew [out] set to true if value was newly created
     //@note there must exist < operator able to do (T < K) comparison
     template<class K, class FUNC>
@@ -1411,6 +1414,7 @@ public:
     }
 
     ///Binary search sorted array using function object f(T,K) for comparing T<K
+    //@param fn a functor that returns >0 for T<K, else <= 0
     template<class K, class FUNC>
     count_t lower_bound(const K& key, const FUNC& fn) const
     {
@@ -1423,7 +1427,7 @@ public:
         for (; j > i;)
         {
             m = (i + j) >> 1;
-            if (fn(_ptr[m], key))
+            if (greater_than_zero(fn(_ptr[m], key)))
                 i = m + 1;
             else
                 j = m;
@@ -1432,7 +1436,7 @@ public:
     }
 
     ///Binary search sorted array
-    //@note there must exist < operator able to do (K < T) comparison
+    //@note there must exist < operator able to do T<K comparison
     template<class K>
     count_t upper_bound(const K& key) const
     {
@@ -1442,15 +1446,16 @@ public:
         for (; j > i;)
         {
             m = (i + j) >> 1;
-            if (key < _ptr[m])
-                j = m;
-            else
+            if (_ptr[m] < key)
                 i = m + 1;
+            else
+                j = m;
         }
         return (count_t)i;
     }
 
-    ///Binary search sorted array using function object f(K,T) for comparing K<T
+    ///Binary search sorted array using function object f(T,K) for comparing T<K
+    //@param fn a functor that returns >0 for T<K, else <= 0
     template<class K, class FUNC>
     count_t upper_bound(const K& key, const FUNC& fn) const
     {
@@ -1460,10 +1465,10 @@ public:
         for (; j > i;)
         {
             m = (i + j) >> 1;
-            if (fn(key, _ptr[m]))
-                i = m + 1;
-            else
+            if (greater_than_zero(fn(_ptr[m], key)))
                 j = m;
+            else
+                i = m + 1;
         }
         return (count_t)i;
     }
@@ -1596,6 +1601,7 @@ public:
     /// Uses either operator T<K or a functor(T,K) for binary search, and operator T==K for equality comparison
     //@return number of deleted items
     //@param key key to localize the first item to delete
+    //@param fn a functor that returns >0 for T<K, or else <= 0
     //@param n maximum number of items to delete
     //@{
     template<class K>
@@ -1618,7 +1624,7 @@ public:
         uints c = lower_bound(key, fn);
         uints i, m = _count();
         for (i = c; i < m && n>0; ++i, --n) {
-            if (!(_ptr[i] == key))
+            if (fn(_ptr[i], key) != 0)
                 break;
         }
         if (i > c)

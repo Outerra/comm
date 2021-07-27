@@ -511,8 +511,9 @@ public:
     //@}
 
     ///Binary search whether sorted array contains element comparable to \a key
-    /// Uses operator T<K or functor(T,K) to search for the element, and operator T==K for equality comparison
+    /// Uses operator T<K and operator T==K for equality comparison, or functor(T,K) to search for the element
     //@return ptr to element if found or 0 otherwise
+    //@param fn a functor that returns >0 for T<K, 0 for T==K, <0 for T>K
     //@param sort_index optional ptr to variable receiving sort index
     //@{
     template<class K>
@@ -530,11 +531,11 @@ public:
     template<class K, class FUNC>
     const T* contains_sorted( const K& key, const FUNC& fn, uints* sort_index =0 ) const
     {
-        uints lb = lower_bound(key,fn);
+        uints lb = lower_bound(key, fn);
         if (sort_index)
             *sort_index = lb;
 
-        return lb >= size() || !(_ptr[lb] == key)
+        return lb >= size() || fn(_ptr[lb], key) != 0
             ? 0
             : _ptr + lb;
     }
@@ -586,7 +587,7 @@ public:
         for (; j > i;)
         {
             m = (i + j) >> 1;
-            if (fn(_ptr[m], key))
+            if (greater_than_zero(fn(_ptr[m], key)))
                 i = m + 1;
             else
                 j = m;
@@ -605,10 +606,10 @@ public:
         for (; j > i;)
         {
             m = (i + j) >> 1;
-            if (key < _ptr[m])
-                j = m;
-            else
+            if (_ptr[m] < key)
                 i = m + 1;
+            else
+                j = m;
         }
         return (uints)i;
     }
@@ -623,10 +624,10 @@ public:
         for (; j > i;)
         {
             m = (i + j) >> 1;
-            if (fn(key, _ptr[m]))
-                i = m + 1;
-            else
+            if (greater_than_zero(fn(_ptr[m], key)))
                 j = m;
+            else
+                i = m + 1;
         }
         return (uints)i;
     }
