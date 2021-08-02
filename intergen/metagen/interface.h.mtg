@@ -84,7 +84,7 @@ public:
     // --- host helpers to check presence of handlers in scripts ---
 
 $-[event !static?]$
-    virtual bool is_bound_$name$() { return true; }
+    virtual bool is_bound_$intname$() { return true; }
 $-[/event]$
 
 public:
