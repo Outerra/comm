@@ -286,17 +286,17 @@ void logger::enable_debug_out(bool en)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-uints logger::register_filter(const log_filter& filter) 
-{ 
+uints logger::register_filter(const log_filter& filter)
+{
     GUARDTHIS(_mutex);
     return _filters.get_item_id(_filters.push(filter));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void logger::unregister_filter(uints pos) 
-{ 
+void logger::unregister_filter(uints pos)
+{
     GUARDTHIS(_mutex);
-    _filters.del_item(pos); 
+    _filters.del_item(pos);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -376,23 +376,20 @@ void logger::enqueue( ref<logmsg>&& msg )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void logger::post( const token& txt, const token& prefix )
+void logger::post( const token& txt, const token& from )
 {
     token msg = txt;
     log::type type = logmsg::consume_type(msg);
 
-    ref<logmsg> rmsg = ref<logmsg>(policy_msg::create());
-    rmsg->set_logger(this);
-    rmsg->set_type(type);
+    ref<logmsg> msgr = interface_register::canlog(type, from, this);
+    if (msgr) {
+        charstr& str = msgr->str();
+        str = logmsg::type2tok(type);
 
-    charstr& str = rmsg->str();
-    str = logmsg::type2tok(type);
-
-    if(prefix)
-        str << '[' << prefix << "] ";
-    str << msg;
-
-    //enqueue(rmsg);
+        if (from)
+            str << '[' << from << "] ";
+        str << msg;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -408,7 +405,7 @@ void logger::open(const token& filename)
 void logger::flush()
 {
     int maxloop = 3000 / 20;
-    while(!SINGLETON(log_writer).is_empty() && maxloop-- > 0)
+    while (!SINGLETON(log_writer).is_empty() && maxloop-- > 0)
         sysMilliSecondSleep(20);
 }
 
