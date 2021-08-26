@@ -217,7 +217,7 @@ struct closure_traits_base
             return *this;
         }
 
-        function& operator = (function&& other) {
+        function& operator = (function&& other) noexcept {
             if (c) delete c;
             c = other.c;
             other.c = 0;
@@ -451,7 +451,7 @@ public:
         }
     }
 
-    callback(callback&& fn) {
+    callback(callback&& fn) noexcept {
         _fn.ptr = fn._fn.ptr;
         fn._fn.ptr = 0;
         _caller = fn._caller;

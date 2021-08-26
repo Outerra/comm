@@ -227,15 +227,6 @@ void reftest(callback<int(int, void*)>&& fn) {
 }
 
 
-void constexpr_test()
-{
-    constexpr token name = "salama"_T;
-
-#ifdef COID_CONSTEXPR_FOR
-    constexpr tokenhash hash = "klobasa"_T;
-#endif
-}
-
 void test_slotalloc_virtual()
 {
 #ifdef COID_CONSTEXPR_IF
@@ -291,8 +282,8 @@ struct slot : storage<L, Es...>
             return 0;// this->array + id;
         }
         else {
-            using page = typename storage_t::page;      //<-- fails with this
-            //using page = storage<L, Es...>;             //<-- but not with this
+            //using page = typename storage_t::page;      //<-- fails with this
+            using page = storage<L, Es...>;             //<-- but not with this
             return this->pages[id / page::ITEMS].data + id % page::ITEMS;
         }
     }
@@ -417,6 +408,7 @@ int main( int argc, char* argv[] )
     uint64 stuff[] = {7000, 45, 2324, 11, 0, 222};
     radixi<uint64, uint, uint64> rx;
     const uint* idx = rx.sort(true, stuff, sizeof(stuff)/sizeof(stuff[0]));
+    DASSERT(stuff[idx[0]] == 0);
 
     //coid::test();
 

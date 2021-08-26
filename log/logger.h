@@ -178,7 +178,7 @@ public:
 
     logmsg();
 
-    logmsg(logmsg&& other)
+    logmsg(logmsg&& other) noexcept
         : _type(other._type)
     {
         _logger = other._logger;

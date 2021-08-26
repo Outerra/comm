@@ -124,7 +124,7 @@ public:
     {}
 
     ///move constructor
-    charstr(charstr&& str) {
+    charstr(charstr&& str) noexcept {
         takeover(str);
     }
 
@@ -397,7 +397,7 @@ public:
         return *this;
     }
 
-    charstr& operator = (charstr&& str) {
+    charstr& operator = (charstr&& str) noexcept {
         return takeover(str);
     }
 
@@ -897,7 +897,7 @@ public:
     void append_float(double d, int nfrac, uints maxsize = 0)
     {
         if(!maxsize)
-            maxsize = std::abs(nfrac) + 4;
+            maxsize = std::abs(ints(nfrac)) + 4;
         char* buf = get_append_buf(maxsize);
         char* end = charstrconv::append_float(buf, buf + maxsize, d, nfrac);
 
@@ -1437,7 +1437,7 @@ public:
     void append_encode_base64(token str)
     {
         static const char* table_ = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-        char* buf = alloc_append_buf(((str.len() + 2) / 3) * 4);
+        char* buf = alloc_append_buf(((uints(str.len()) + 2) / 3) * 4);
 
         while(str.len() >= 3)
         {
@@ -1536,7 +1536,7 @@ public:
         for(uints i = 0;; )
         {
             append(prefix);
-            char* pdst = get_append_buf(itemsize * 2);
+            char* pdst = get_append_buf(uints(itemsize) * 2);
 
             if(sysIsLittleEndian)
             {

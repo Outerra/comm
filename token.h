@@ -2047,7 +2047,7 @@ struct token
     struct tonum
     {
         uint BaseN;
-        bool success;
+        bool success = false;
 
 
         tonum(uint BaseN = 10) : BaseN(BaseN) {}

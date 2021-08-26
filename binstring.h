@@ -63,7 +63,7 @@ public:
     binstring()
     {}
 
-    binstring(binstring&& other)
+    binstring(binstring&& other) noexcept
         : _tstr(std::move(other._tstr))
         , _offset(other._offset)
         , _packing(other._packing)
@@ -177,7 +177,7 @@ public:
     ///Write number as a varint
     template<class T>
     binstring& write_varint(T num) {
-        uint8 buf[12];
+        uint8 buf[(8*sizeof(T))/7 + 1];
         uint8* pb = buf;
 
         while (num & ~0x7f) {

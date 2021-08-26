@@ -160,7 +160,7 @@ public:
         }
     }
 
-    dynarray(dynarray&& p) : _ptr(0) {
+    dynarray(dynarray&& p) noexcept : _ptr(0) {
         takeover(p);
     }
 
@@ -183,7 +183,7 @@ public:
         return *this;
     }
 
-    dynarray& operator = (dynarray&& p) {
+    dynarray& operator = (dynarray&& p) noexcept {
         return takeover(p);
     }
 
