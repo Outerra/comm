@@ -1662,8 +1662,8 @@ public:
     {
         uint n = 0;
         char* pe = (char*)ptre();
-        for(char* p = (char*)ptr(); p < pe; ++p) {
-            if(*p == from) {
+        for (char* p = (char*)ptr(); p < pe; ++p) {
+            if (*p == from) {
                 *p = to;
                 ++n;
             }
@@ -1719,6 +1719,29 @@ public:
 
         if(npos + n > slen)  return false;
         _tstr.del(npos, n > slen - npos ? slen - npos : n);
+        return true;
+    }
+
+    ///Replace ndel characters at position pos with a string
+    //@param pos insertion position
+    //@param ndel number of characters to delete at pos
+    //@param tins token to insert at pos
+    //@return false if position is invalid
+    bool insdel(int pos, uint ndel, const token& tins) {
+        uint slen = len();
+        uint npos = pos < 0 ? slen + pos : pos;
+
+        if (npos > slen)  return false;
+        if (npos + ndel > slen)
+            ndel = slen - npos;
+        uint nins = tins.len();
+        if (nins > ndel) {
+            _tstr.ins(npos, nins - ndel);
+        }
+        else if (nins < ndel) {
+            _tstr.del(npos, ndel - nins);
+        }
+        xmemcpy(_tstr.ptr() + npos, tins.ptr(), nins);
         return true;
     }
 
