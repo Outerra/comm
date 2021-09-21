@@ -49,6 +49,8 @@ class intergen_interface;
 
 COID_NAMESPACE_BEGIN
 
+class binstring;
+
 ////////////////////////////////////////////////////////////////////////////////
 ///A global register for interfaces, used by intergen
 class interface_register

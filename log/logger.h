@@ -39,7 +39,48 @@
 #include "../str.h"
 #include "../ref.h"
 #include "../function.h"
-#include "../alloc/slotalloc.h"
+//#include "../alloc/slotalloc.h"
+
+////////////////////////////////////////////////////////////////////////////////
+//@{ Log message with specified severity
+#define coidlog_error(src, msg)   do{ ref<coid::logmsg> q = coid::canlog(coid::log::error, src ); if (q) {q->str() << msg; }} while(0)
+#define coidlog_warning(src, msg) do{ ref<coid::logmsg> q = coid::canlog(coid::log::warning, src ); if (q) {q->str() << msg; }} while(0)
+#define coidlog_msg(src, msg)     do{ ref<coid::logmsg> q = coid::canlog(coid::log::highlight, src ); if (q) {q->str() << msg; }} while(0)
+#define coidlog_info(src, msg)    do{ ref<coid::logmsg> q = coid::canlog(coid::log::info, src ); if (q) {q->str() << msg; }} while(0)
+#define coidlog_debug(src, msg)   do{ ref<coid::logmsg> q = coid::canlog(coid::log::debug, src ); if (q) {q->str() << msg; }} while(0)
+#define coidlog_perf(src, msg)    do{ ref<coid::logmsg> q = coid::canlog(coid::log::perf, src ); if (q) {q->str() << msg; }} while(0)
+#define coidlog_none(src, msg)    do{ ref<coid::logmsg> q = coid::canlog(coid::log::none, src ); if (q) {q->str() << msg; }} while(0)
+//@}
+
+///Log message with severity specified at the beginning of msg
+/// @param src source module
+/// @param msg text message to log, containing a severity prefix (error: err: warning: warn: info: msg: debug: perf:
+void coidlog_text(const coid::token& src, coid::token msg);
+
+
+///Create a perf object that logs the time while the scope exists
+#define coidlog_perf_scope(src, msg) \
+   ref<coid::logmsg> perf##line = coid::canlog(coid::log::perf, src); if (perf##line) perf##line->str() << msg
+
+///Log fatal error and throw exception with the same message
+#define coidlog_exception(src, msg)\
+    do { ref<coid::logmsg> q = coid::canlog(coid::log::exception, src ); if (q) {q->str() << msg; throw coid::exception() << msg; }} while(0)
+
+//@{ Log error if condition fails
+#define coidlog_assert(test, src, msg)\
+    do { if (!(test)) coidlog_error(src, msg); } while(0)
+
+#define coidlog_assert_ret(test, src, msg, ...)\
+    do { if (!(test)) { coidlog_error(src, msg); return __VA_ARGS__; } } while(0)
+//@}
+
+///Debug message existing only in debug builds
+#ifdef _DEBUG
+#define coidlog_devdbg(src, msg)  do{ ref<coid::logmsg> q = coid::canlog(coid::log::debug, src ); if (q) {q->str() << msg; }} while(0)
+#else
+#define coidlog_devdbg(src, msg)
+#endif
+
 
 COID_NAMESPACE_BEGIN
 
@@ -104,7 +145,6 @@ class policy_msg;
 //@return logmsg object if given log type and source is currently allowed to log
 ref<logmsg> canlog(log::type type, const tokenhash& hash = tokenhash(), const void* inst = 0);
 
-
 #ifdef COID_VARIADIC_TEMPLATES
 
 ///Formatted log message
@@ -115,40 +155,6 @@ template<class ...Vs>
 void printlog(log::type type, const tokenhash& hash, const token& fmt, Vs&&... vs);
 
 #endif //COID_VARIADIC_TEMPLATES
-
-////////////////////////////////////////////////////////////////////////////////
-//@{ Log message with specified severity
-#define coidlog_none(src, msg)    do{ ref<coid::logmsg> q = coid::canlog(coid::log::none, src ); if (q) {q->str() << msg; }} while(0)
-#define coidlog_debug(src, msg)   do{ ref<coid::logmsg> q = coid::canlog(coid::log::debug, src ); if (q) {q->str() << msg; }} while(0)
-#define coidlog_perf(src, msg)    do{ ref<coid::logmsg> q = coid::canlog(coid::log::perf, src ); if (q) {q->str() << msg; }} while(0)
-#define coidlog_info(src, msg)    do{ ref<coid::logmsg> q = coid::canlog(coid::log::info, src ); if (q) {q->str() << msg; }} while(0)
-#define coidlog_msg(src, msg)     do{ ref<coid::logmsg> q = coid::canlog(coid::log::highlight, src ); if (q) {q->str() << msg; }} while(0)
-#define coidlog_warning(src, msg) do{ ref<coid::logmsg> q = coid::canlog(coid::log::warning, src ); if (q) {q->str() << msg; }} while(0)
-#define coidlog_error(src, msg)   do{ ref<coid::logmsg> q = coid::canlog(coid::log::error, src ); if (q) {q->str() << msg; }} while(0)
-//@}
-
-///Create a perf object that logs the time while the scope exists
-#define coidlog_perf_scope(src, msg) \
-   ref<coid::logmsg> perf##line = coid::canlog(coid::log::perf, src); if (perf##line) perf##line->str() << msg
-
-///Log fatal error and throw exception with the same message
-#define coidlog_exception(src, msg)\
-        do{ ref<coid::logmsg> q = coid::canlog(coid::log::exception, src ); if (q) {q->str() << msg; throw coid::exception() << msg; }} while(0)
-
-//@{ Log error if condition fails
-#define coidlog_assert(test, src, msg)\
-        do { if (!(test)) coidlog_error(src, msg); } while(0)
-
-#define coidlog_assert_ret(test, src, msg, ...)\
-        do { if (!(test)) { coidlog_error(src, msg); return __VA_ARGS__; } } while(0)
-//@}
-
-///Debug message existing only in debug builds
-#ifdef _DEBUG
-#define coidlog_devdbg(src, msg)  do{ ref<coid::logmsg> q = coid::canlog(coid::log::debug, src ); if (q) {q->str() << msg; }} while(0)
-#else
-#define coidlog_devdbg(src, msg)
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -238,11 +244,6 @@ public:
         return t<log::last ? st[1 + int(t)] : empty;
     }
 
-    log::type deduce_type() const {
-        token tok = _str;
-        return consume_type(tok);
-    }
-
     log::type get_type() const { return _type; }
 
     void set_type(log::type t) { _type = t; }
@@ -288,7 +289,8 @@ inline void printlog(log::type type, const tokenhash& hash, const token& fmt, Vs
 
 #endif //COID_VARIADIC_TEMPLATES
 
-struct log_filter {
+struct log_filter
+{
     typedef function<void(ref<logmsg>&)> filter_fun;
     filter_fun _filter_fun;
     charstr _module;
@@ -299,6 +301,12 @@ struct log_filter {
         , _module(module)
         , _log_level(level)
     {}
+
+    log_filter(log_filter&& lf) {
+        _filter_fun = lf._filter_fun;
+        _module.takeover(lf._module);
+        _log_level = lf._log_level;
+    }
 };
 
 
@@ -320,7 +328,7 @@ struct log_filter {
 class logger
 {
 protected:
-    slotalloc<log_filter> _filters;
+    dynarray<log_filter> _filters;
     ref<logger_file> _logfile;
 
     log::type _minlevel = log::last;
@@ -340,7 +348,7 @@ public:
 
     void open(const token& filename);
 
-    void post(const token& msg, const token& prefix = token());
+    static void post(const token& msg, const token& from = token(), const void* inst = 0);
 
 #ifdef COID_VARIADIC_TEMPLATES
 
@@ -392,10 +400,9 @@ public:
 
     static void enable_debug_out(bool en);
 
-    uints register_filter(const log_filter& filter);
+    uints register_filter(log_filter&& filter);
     void unregister_filter(uints pos);
 };
-
 
 ////////////////////////////////////////////////////////////////////////////////
 ///
@@ -407,7 +414,12 @@ public:
     {}
 };
 
-
 COID_NAMESPACE_END
+
+//
+inline void coidlog_text(const coid::token& src, coid::token msg)
+{
+    coid::logger::post(msg, src);
+}
 
 #endif // __COMM_LOGGER_H__
