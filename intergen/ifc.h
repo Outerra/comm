@@ -388,4 +388,11 @@ private:
 #define IFC_REGISTER_CLIENT(client) \
     static int _autoregger = client::register_client<client>();
 
+///Handler not implemented message
+#ifdef _DEBUG
+#define HANDLER_NOT_IMPLEMENTED_MESSAGE __FUNCTION__ " handler not implemented"
+#else
+#define HANDLER_NOT_IMPLEMENTED_MESSAGE "handler not implemented"
+#endif //_DEBUG
+
 #endif //__INTERGEN_IFC_H__
