@@ -268,7 +268,7 @@ inline iref<T> $..name$::$name$( T* _subclass_
             coid::interface_register::get_interface_creator(ifckey));
 
     if (!create) {
-        log_mismatch("$name$"_T, "$..ns rest="::" after="::"$$..name$.$name$"_T, "@$..hash$"_T);
+        log_mismatch("$..name$"_T, "$..ns rest="::" after="::"$$..name$.$name$"_T, "@$..hash$"_T);
         return 0;
     }
 
@@ -290,7 +290,7 @@ inline iref<$..name$> $..name$::$name$($-[args rest=", "]$$type$ $name$$size$$[/
             coid::interface_register::get_interface_creator(ifckey));
 
     if (!create) {
-        log_mismatch("$name$"_T, "$..ns rest="::" after="::"$$..name$.$name$"_T, "@$..hash$"_T);
+        log_mismatch("$..name$"_T, "$..ns rest="::" after="::"$$..name$.$name$"_T, "@$..hash$"_T);
         return 0;
     }
 
