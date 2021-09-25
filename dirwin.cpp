@@ -185,8 +185,10 @@ bool directory::subpath(token root, token& path)
         token r = root.cut_left_group(DIR_SEPARATORS);
         token p = path.cut_left_group(DIR_SEPARATORS);
 
-        if (!r.cmpeqi(p))
-            break;
+        if (!r.cmpeqi(p)) {
+            path._ptr = p._ptr;
+            return false;
+        }
     }
 
     return root.is_empty();

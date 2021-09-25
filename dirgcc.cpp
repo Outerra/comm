@@ -158,11 +158,13 @@ bool directory::is_valid_dir(const char* arg)
 bool directory::subpath(token root, token& path)
 {
     while (root && path) {
-        token r = root.cut_left_group(DIR_SEPARATORS);
-        token p = path.cut_left_group(DIR_SEPARATORS);
+        token r = root.cut_left(DIR_SEPARATORS);
+        token p = path.cut_left(DIR_SEPARATORS);
 
-        if (r != p)
-            break;
+        if (r != p) {
+            path._ptr = p._ptr;
+            return false;
+        }
     }
 
     return root.is_empty();

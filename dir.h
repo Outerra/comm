@@ -54,11 +54,11 @@
 COID_NAMESPACE_BEGIN
 
 #ifdef SYSTYPE_WIN
-static const token DIR_SEPARATORS = "\\/";
-static const token DIR_SEPARATOR_STRING = "\\";
+static constexpr token DIR_SEPARATORS = "\\/"_T;
+static constexpr token DIR_SEPARATOR_STRING = "\\"_T;
 #else
-static const char DIR_SEPARATORS = '/';
-static const token DIR_SEPARATOR_STRING = "/";
+static constexpr char DIR_SEPARATORS = '/';
+static constexpr token DIR_SEPARATOR_STRING = "/"_T;
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
