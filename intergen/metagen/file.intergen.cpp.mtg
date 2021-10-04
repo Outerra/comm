@@ -12,8 +12,11 @@ $-[/iface]$$[/class]$
 #include <comm/binstring.h>
 #include <type_traits>
 
-
 static_assert(intergen_interface::VERSION == $version$, "interface must be rebuilt with a different intergen version");
+$-[pastedefers]$
+
+$@value$
+$-[/pastedefers]$
 
 using namespace coid;
 

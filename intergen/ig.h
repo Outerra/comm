@@ -28,6 +28,8 @@ struct paste_block {
     };
     position pos = position::before_class;
 
+    bool in_dispatch = false;
+
     void fill(charstr& dst) const {
         for (const charstr& ns : namespc)
             dst << "namespace "_T << ns << " {\r\n"_T;
@@ -42,8 +44,9 @@ struct paste_block {
 class iglexer : public lexer
 {
 public:
-    int IDENT,NUM,CURLY,ROUND,SQUARE,ANGLE,SQSTRING,DQSTRING,RLCMD,IGKWD;
-    int IFC_LINE_COMMENT,IFC_BLOCK_COMMENT,SLCOM,MLCOM;
+    int IDENT, NUM, CURLY, ROUND, SQUARE, ANGLE, SQSTRING, DQSTRING, RLCMD, IGKWD;
+    int IFC_LINE_COMMENT, IFC_BLOCK_COMMENT, IFC_DISPATCH_LINE_COMMENT, IFC_DISPATCH_BLOCK_COMMENT;
+    int SLCOM, MLCOM;
 
     static const token MARK;
     static const token MARKP;
@@ -392,9 +395,10 @@ struct Interface
 
     uint nifc_methods = 0;
 
-    dynarray<charstr> pasters;
-    dynarray<charstr> pasteafters;
-    dynarray<charstr> pasteinners;
+    dynarray<charstr> pasters;              //< pasted before the generated class declaration
+    dynarray<charstr> pasteafters;          //< pasted after the generated class declaration
+    dynarray<charstr> pasteinners;          //< pasted inside the generated class declaration
+
     charstr* srcfile = 0;
     charstr* srcclass = 0;
     dynarray<charstr>* srcnamespc = 0;

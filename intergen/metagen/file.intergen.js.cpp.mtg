@@ -10,6 +10,10 @@
 $-[class]$$[iface]$
 #include "$relpathjs$"
 $-[/iface]$$[/class]$
+$-[pastedefers]$
+
+$@value$
+$-[/pastedefers]$
 
 using namespace coid;
 

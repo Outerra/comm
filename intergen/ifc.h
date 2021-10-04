@@ -128,15 +128,27 @@ namespace coid {
     ... code ...
     }ifc* /
 
-  to push a code block into client header.
+  to push the enclosed code block into the client header, or
+
+    //ifc-dispatch{
+        ... code ...
+    //}ifc-dispatch
+
+  or
+
+    /*ifc-dispatch{
+    ... code ...
+    }ifc-dispatch* /
+
+  to push the enclosed code block into the generated dispatch files.
 
   With multiple interfaces present in host class it's also possible to list which interface header files:
     //ifc{ ns::ifca ns::ifcb
     ...
     //}ifc
 
-  Generated code is pushed before the client class definition. In case it needs to be added after the
-  class, add a + sign:
+  Generated code is normally pushed before the client class definition. In case it needs to be added after,
+  add a + sign:
     //ifc{+
    or
     //ifc{ ns::ifc1+
