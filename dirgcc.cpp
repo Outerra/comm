@@ -270,7 +270,7 @@ opcd directory::truncate( zstring fname, uint64 size )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::set_file_times(zstring fname, timet actime, timet modtime)
+opcd directory::set_file_times(zstring fname, timet actime, timet modtime, timet crtime)
 {
     struct utimbuf ut;
     ut.actime = actime.t;

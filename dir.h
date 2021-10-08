@@ -218,7 +218,12 @@ public:
     opcd move_file_to(zstring dst, const token& name = token());
     opcd move_current_file_to(zstring dst);
 
-    static opcd set_file_times(zstring fname, timet actime, timet modtime);
+    /// Set file times
+    //@param fname file name to modify
+    //@param actime access time, 0 if not changed
+    //@param modtime modification time, 0 if not changed
+    //@param crtime creation time, 0 if not changed, ignored on linux
+    static opcd set_file_times(zstring fname, timet actime, timet modtime, timet crtime = 0);
 
     static opcd truncate(zstring fname, uint64 size);
 
