@@ -49,20 +49,33 @@ public:
 
     ifc_class_var(client, "ifc/", _ifc);
 
+    /// @brief interface creator
+    /// @return host class instance
     ifc_fn static iref<ab::cd::host> creator() {
         return new host;
     }
 
+    ///Setter
     ifc_fn void set(const coid::token& par)
     {
         _tmp = par;
     }
 
+    ///Getter
     ifc_fn int get(ifc_out coid::charstr& par)
     {
         par = _tmp;
         return 0;
     }
+
+    //ifc{
+    typedef int sometype;
+    //}ifc
+
+    ///Using a custom type
+    ifc_fn sometype custom();
+
+    ifc_fnx(!) const int* c_only_method(int k);
 
     ifc_fn void set_array(const float ar[3]) {
     }

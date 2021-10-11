@@ -291,8 +291,9 @@ struct slot : storage<L, Es...>
             return 0;// this->array + id;
         }
         else {
-            using page = typename storage_t::page;      //<-- fails with this
-            //using page = storage<L, Es...>;             //<-- but not with this
+            //using page = typename storage_t::page;      //<-- fails with this
+            using page = storage<L, Es...>;             //<-- but not with this
+            //typedef storage<L, Es...> page;             //<-- neither with this
             return this->pages[id / page::ITEMS].data + id % page::ITEMS;
         }
     }
