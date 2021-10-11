@@ -114,7 +114,7 @@ COID_NAMESPACE_BEGIN
     The lexer uses first group as the one containing ignored whitespace characters,
     unless you provide the next() method with different group id (or none) to ignore.
     **/
-    class lexer
+class lexer
 {
 public:
 
