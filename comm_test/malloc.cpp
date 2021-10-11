@@ -69,7 +69,7 @@ void test_malloc()
 
     buf.reserve_virtual(s);
 
-    size_t rs = buf.reserved_total();
+    size_t rs = buf.reserved_virtual();
     DASSERT(rs >= 1000000);
 
     uint8* p = buf.add(4000);

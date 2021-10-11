@@ -413,6 +413,7 @@ int main( int argc, char* argv[] )
 
     //coid::test();
 
+    metastream_test3();
     metastream_test4();
     //metastream_test2();
     //float_test();

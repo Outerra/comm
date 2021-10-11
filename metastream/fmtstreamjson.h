@@ -61,7 +61,7 @@ protected:
 
     int8 _sesinitr = 0;                     //< session has been initiated (read or write block, cleared with flush/ack)
     int8 _sesinitw = 0;
-
+    bool _ext_esc_string = false;
 
 public:
     fmtstreamjson(bool enable_esc_strings, bool utf8 = true) : fmtstream_lexer(utf8)
@@ -88,6 +88,7 @@ public:
         if (bw)  bind(*bw, BIND_OUTPUT);
         if (br)  bind(*br, BIND_INPUT);
 
+        _ext_esc_string = enable_esc_strings;
         _sesinitr = _sesinitw = 0;
 
         _tokenizer.def_group("", " \t\r\n");
@@ -106,7 +107,7 @@ public:
         _tokenizer.def_escape_pair(er, "t", "\t");
         _tokenizer.def_escape_pair(er, "0", token("\0", 1));
 
-        if (enable_esc_strings) {
+        if (_ext_esc_string) {
             lexstre = _tokenizer.def_string("str", "\\\"", "\"", "esc");
             lexchre = _tokenizer.def_string("str", "\\'", "'", "esc");
             lexstr = _tokenizer.def_string("str", "\"", "\"", "");
@@ -115,6 +116,8 @@ public:
         else {
             lexstr = _tokenizer.def_string("str", "\"", "\"", "esc");
             lexchr = _tokenizer.def_string("str", "\'", "\'", "esc");
+            lexstre = INT_MIN;
+            lexchre = INT_MIN;
         }
 
         _tokenizer.def_string(".comment", "#", "\n", "");
@@ -211,8 +214,12 @@ public:
                 write_tabs(_indent);
                 _bufw.append('"');
             }
-            else if (t.type == type::T_CHAR || t.type == type::T_BINARY)
+            else if (t.type == type::T_CHAR) {
+                //postpone writing until the escape status is known
+            }
+            else if (t.type == type::T_BINARY) {
                 _bufw.append('"');
+            }
             else {
                 _bufw << char('[');
             }
@@ -277,7 +284,7 @@ public:
 
             } break;
 
-                /////////////////////////////////////////////////////////////////////////////////////
+            /////////////////////////////////////////////////////////////////////////////////////
             case type::T_FLOAT:
                 switch (t.get_size()) {
                 case 4:
@@ -291,27 +298,27 @@ public:
                 }
                 break;
 
-                /////////////////////////////////////////////////////////////////////////////////////
+            /////////////////////////////////////////////////////////////////////////////////////
             case type::T_BOOL:
                 if (*(bool*)p) _bufw << "true";
                 else            _bufw << "false";
                 break;
 
-                /////////////////////////////////////////////////////////////////////////////////////
+            /////////////////////////////////////////////////////////////////////////////////////
             case type::T_TIME: {
                 _bufw.append('"');
                 _bufw.append_date_local(*(const timet*)p);
                 _bufw.append('"');
             } break;
 
-                /////////////////////////////////////////////////////////////////////////////////////
+            /////////////////////////////////////////////////////////////////////////////////////
             case type::T_ANGLE: {
                 _bufw.append('"');
                 _bufw.append_angle(*(const double*)p);
                 _bufw.append('"');
             } break;
 
-                /////////////////////////////////////////////////////////////////////////////////////
+            /////////////////////////////////////////////////////////////////////////////////////
             case type::T_ERRCODE:
             {
                 opcd e = (const opcd::errcode*)p;
@@ -687,13 +694,23 @@ public:
                 e = write_raw(c.extract(n), n);
             else
             {
+                // a string starting with \" is used to denote escaped string
+                // a string starting with simple " is interpreted literally (no escapes)
+
                 token t((const char*)c.extract(n), n);
-                if (lexstre && !_tokenizer.synthesize_string(lexstre, t, _bufw, true)) {
-                    //there was no need to escape anything, revert to simple strings
-                    _bufw.reset();
-                    _bufw << char('"');
-                    _bufw += t;
+
+                if (_ext_esc_string) {
+                    _bufw << "\\\"";
+
+                    if (!_tokenizer.synthesize_string(lexstre, t, _bufw, true)) {
+                        //there was no need to escape anything, revert to simple strings
+                        _bufw.reset();
+                        _bufw << char('"');
+                        _bufw += t;
+                    }
                 }
+                else if (!_tokenizer.synthesize_string(lexstr, t, _bufw))
+                    _bufw += t;
 
                 uints len = _bufw.len();
                 e = write_raw(_bufw.ptr(), len);
@@ -720,7 +737,7 @@ public:
         const lexer::lextoken& tk = _tokenizer.next();
         token tok = tk;
 
-        if (!(tk == lexstr || tk == lexid))
+        if (!(tk == lexstr || tk == lexstre || tk == lexid))
             return ersSYNTAX_ERROR;
 
         opcd e = 0;

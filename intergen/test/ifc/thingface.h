@@ -195,7 +195,7 @@ inline iref<T> thingface::get( T* _subclass_ )
             coid::interface_register::get_interface_creator(ifckey));
 
     if (!create) {
-        log_mismatch("get"_T, "ifc1::ifc2::thingface.get"_T, "@1555033958"_T);
+        log_mismatch("thingface"_T, "ifc1::ifc2::thingface.get"_T, "@1555033958"_T);
         return 0;
     }
 

@@ -139,11 +139,45 @@ static const char* text = "\
 static void metastream_test3x()
 {
     binstreamconstbuf bc(text);
-    fmtstreamjson fmt(bc);
+    fmtstreamjson fmt(bc, false);
     metastream meta(fmt);
 
     root r;
     meta.stream_in(r);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+struct upper {
+    charstr norm;
+    charstr spec;
+
+    friend metastream& operator || (metastream& m, upper& w)
+    {
+        return m.compound_type(w, [&]()
+        {
+            m.member("norm", w.norm);
+            m.member("spec", w.spec);
+        });
+    }
+
+};
+
+static void fmtstreamjson_test()
+{
+    binstreamconstbuf bc("{ norm : \"normal text\", spec : \\\"escaped text\n\" }");
+    binstreambuf buf;
+    fmtstreamjson fmt(bc, true);
+    metastream meta(fmt);
+
+    upper r;
+    meta.stream_in(r);
+
+    fmt.bind(buf);
+
+    meta.stream_out(r);
+
+    token tok = buf;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -284,6 +318,8 @@ void metastream_test3()
     metagen_test();
 
     metastream_test3x();
+
+    fmtstreamjson_test();
 
 /*
     dynarray<ref<FooA>> ar;

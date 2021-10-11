@@ -84,7 +84,7 @@ using namespace coid;
 void metastream_test2()
 {
     bifstream bif("iomap.cfg");
-    fmtstreamjson fmt(bif);
+    fmtstreamjson fmt(bif, false);
     metastream meta(fmt);
 
     io_man b;
