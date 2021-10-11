@@ -58,6 +58,8 @@ struct File
     dynarray<paste_block> pasters;
     dynarray<MethodIG::Arg> irefargs;
 
+    dynarray<charstr> pastedefers;          //< pasted before the generated class definition
+
     friend metastream& operator || (metastream& m, File& p)
     {
         return m.compound("File", [&]()
@@ -66,6 +68,7 @@ struct File
             m.member("hdr",p.fnameext);          //< file name
             m.member("HDR",p.hdrname);           //< file name without extension, uppercase
             m.member("class",p.classes);
+            m.member("pastedefers", p.pastedefers);
             m.member("irefargs",p.irefargs);
             m.nonmember("version",version);
         });
@@ -479,7 +482,9 @@ bool File::find_class(iglexer& lex, dynarray<charstr>& namespc, charstr& templar
     do {
         lex.next();
 
-        if (tok == lex.IFC_LINE_COMMENT || tok == lex.IFC_BLOCK_COMMENT) {
+        bool dispatch_comment = tok == lex.IFC_DISPATCH_LINE_COMMENT || tok == lex.IFC_DISPATCH_BLOCK_COMMENT;
+
+        if (dispatch_comment || tok == lex.IFC_LINE_COMMENT || tok == lex.IFC_BLOCK_COMMENT) {
             lex.complete_block();
             paste_block* pb = pasters.add();
 
@@ -489,6 +494,7 @@ bool File::find_class(iglexer& lex, dynarray<charstr>& namespc, charstr& templar
             pb->block = t;
             pb->namespc = namespc;
             pb->pos = cond.consume_end_char('+') ? paste_block::position::after_class : paste_block::position::before_class;
+            pb->in_dispatch = dispatch_comment;
             pb->condx = cond;
 
             continue;
@@ -604,6 +610,11 @@ int File::parse(token path)
         out << (lex.prepare_exception()
             << "warning: ifc tokens found, but no interface declared\n");
         lex.clear_err();
+    }
+
+    for (const paste_block& pb : pasters) {
+        if (pb.in_dispatch)
+            pb.fill(*pastedefers.add());
     }
 
     return 0;

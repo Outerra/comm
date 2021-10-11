@@ -310,7 +310,7 @@ class metagen //: public binstream
         token name;
         enum { UNKNOWN, DEFAULT, INLINE, OPEN, COND_POS, COND_NEG } cond;
         Value value;
-        int depth;
+        int depth = 0;
 
 
         operator const token& () const { return name; }
@@ -703,7 +703,7 @@ class metagen //: public binstream
     struct TagSimple : Tag
     {
         dynarray<Attribute> attr;       //< conditions and attributes
-        char escape;
+        char escape = 0;
 
         ///Process the variable, default code does simple substitution
         virtual void process_content(metagen& mg, const Varx& var) const

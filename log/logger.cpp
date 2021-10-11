@@ -38,7 +38,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "logwriter.h"
-//#include "../atomic/pool.h"
+ //#include "../atomic/pool.h"
 #include "../atomic/pool_base.h"
 
 #include "../binstream/filestream.h"
@@ -56,17 +56,17 @@ static bool _enable_debug_out = false;
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
-static void write_console_text( const logmsg& msg )
+static void write_console_text(const logmsg& msg)
 {
     const charstr& text = msg.str();
     log::type type = msg.get_type();
 
     static HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
 
-    if(type != log::info) {
+    if (type != log::info) {
         uint flg;
 
-        switch(type) {
+        switch (type) {
         case log::exception: flg = FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY; break;
         case log::error:     flg = FOREGROUND_RED | FOREGROUND_INTENSITY; break;
         case log::warning:   flg = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY; break;
@@ -82,7 +82,7 @@ static void write_console_text( const logmsg& msg )
 
     fwrite(text.ptr(), 1, text.len(), stdout);
 
-    if(type != log::info)
+    if (type != log::info)
         SetConsoleTextAttribute(hstdout, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
 
     if (_enable_debug_out)
@@ -91,7 +91,7 @@ static void write_console_text( const logmsg& msg )
 
 #else
 
-static void write_console_text( const logmsg& msg )
+static void write_console_text(const logmsg& msg)
 {
     fwrite(msg.str().ptr(), 1, msg.str().len(), stdout);
 }
@@ -102,7 +102,7 @@ static void write_console_text( const logmsg& msg )
 
 namespace coid {
 
-ref<logmsg> canlog(log::type type, const tokenhash & hash, const void * inst)
+ref<logmsg> canlog(log::type type, const tokenhash& hash, const void* inst)
 {
     return interface_register::canlog(type, hash, inst);
 }
@@ -124,7 +124,7 @@ protected:
 protected:
 
     ///
-    explicit policy_msg(logmsg* const obj, pool_type* const p=0)
+    explicit policy_msg(logmsg* const obj, pool_type* const p = 0)
         : _pool(p)
         , _obj(obj)
     {}
@@ -137,7 +137,7 @@ public:
     {
         DASSERT(_pool != 0);
 
-        if(_obj->_logger) {
+        if (_obj->_logger) {
             //first destroy just queues the message
             logger* x = _obj->_logger;
             if (_obj->finalize(this))
@@ -154,10 +154,10 @@ public:
     static policy_msg* create()
     {
         pool_type& pool = pool_singleton();
-        policy_msg* p=0;
+        policy_msg* p = 0;
 
         bool make = !pool.create_instance(p);
-        if(make)
+        if (make)
             p = new policy_msg(new logmsg, &pool);
         else
             p->get()->reset();
@@ -183,37 +183,37 @@ class logger_file
 
     bool check_file_open()
     {
-        if(_logfile.is_open() || !_logpath)
+        if (_logfile.is_open() || !_logpath)
             return _logfile.is_open();
 
         opcd e = _logfile.open(_logpath);
-        if(!e) {
+        if (!e) {
             _logfile.xwrite_token_raw(_logbuf);
             _logbuf.free();
         }
 
-        return e==0;
+        return e == 0;
     }
 
 public:
-    explicit logger_file( bool std_out ) : _stdout(std_out) {}
-    logger_file( const token& path, bool std ) : _logpath(path), _stdout(std)
+    explicit logger_file(bool std_out) : _stdout(std_out) {}
+    logger_file(const token& path, bool std) : _logpath(path), _stdout(std)
     {}
 
     ///Open physical log file. @note Only notes the file name, the file is opened with the next log msg because of potential MT clashes
-    void open( charstr filename, bool std ) {
+    void open(charstr filename, bool std) {
         std::swap(_logpath, filename);
         _stdout = std;
     }
 
-    void write_to_file( const logmsg& lm )
+    void write_to_file(const logmsg& lm)
     {
-        if(check_file_open())
+        if (check_file_open())
             _logfile.xwrite_token_raw(lm.str());
         else
             _logbuf << lm.str();
 
-        if(_stdout)
+        if (_stdout)
             write_console_text(lm);
     }
 };
@@ -230,25 +230,29 @@ logmsg::logmsg()
 ////////////////////////////////////////////////////////////////////////////////
 void logmsg::write()
 {
-    if(!_str.ends_with('\n'))
+    if (!_str.ends_with('\n'))
         _str.append('\n');
 
-    if(_logger_file)
+    if (_logger_file)
         _logger_file->write_to_file(*this);
     else
         write_console_text(*this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool logmsg::finalize( policy_msg* p )
+bool logmsg::finalize(policy_msg* p)
 {
     if (_type == log::perf) {
         int64 ns = nsec_timer::current_time_ns() - _time;
         _str << " (" << (ns * 1.0e-6f) << "ms)";
     }
 
-    if (_type == log::none)
-        _type = deduce_type();
+    if (_type == log::none) {
+        token tok = _str;
+        _type = consume_type(tok);
+        if (tok.len() < _str.len())
+            _str.del(0, _str.len() - tok.len());
+    }
 
     bool flush = _str.last_char() == '\r';
 
@@ -286,17 +290,19 @@ void logger::enable_debug_out(bool en)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-uints logger::register_filter(const log_filter& filter) 
-{ 
+uints logger::register_filter(log_filter&& filter)
+{
     GUARDTHIS(_mutex);
-    return _filters.get_item_id(_filters.push(filter));
+    uints id = _filters.size();
+    _filters.push(std::move(filter));
+    return id;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void logger::unregister_filter(uints pos) 
-{ 
+void logger::unregister_filter(uints pos)
+{
     GUARDTHIS(_mutex);
-    _filters.del_item(pos); 
+    _filters.del(pos);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -307,7 +313,7 @@ void logger::set_log_level(log::type minlevel, bool allow_perf)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-ref<logmsg> logger::create_msg( log::type type, const tokenhash& hash, const void* inst, const int64* mstime )
+ref<logmsg> logger::create_msg(log::type type, const tokenhash& hash, const void* inst, const int64* mstime)
 {
     //TODO check hash, inst
     if (type > _minlevel && (!_allow_perf || type != log::perf))
@@ -321,7 +327,7 @@ ref<logmsg> logger::create_msg( log::type type, const tokenhash& hash, const voi
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-ref<logmsg> logger::operator()( log::type t, const tokenhash& hash, const int64* time_ms )
+ref<logmsg> logger::operator()(log::type t, const tokenhash& hash, const int64* time_ms)
 {
     ref<logmsg> msg = create_msg(t, hash);
     if (!msg)
@@ -329,7 +335,7 @@ ref<logmsg> logger::operator()( log::type t, const tokenhash& hash, const int64*
 
     charstr& str = msg->str();
 
-    if(time_ms) {
+    if (time_ms) {
         //str.append_fixed(*time_ms * 1e-3, 9, -3, coid::ALIGN_NUM_RIGHT_FILL_ZEROS);
         str.append_time_formatted(*time_ms, true, 3);
         str.append(' ');
@@ -341,7 +347,7 @@ ref<logmsg> logger::operator()( log::type t, const tokenhash& hash, const int64*
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-ref<logmsg> logger::create_msg( log::type type, const tokenhash& hash )
+ref<logmsg> logger::create_msg(log::type type, const tokenhash& hash)
 {
     if (type > _minlevel && (!_allow_perf || type != log::perf))
         return ref<logmsg>();
@@ -358,7 +364,7 @@ ref<logmsg> logger::create_msg( log::type type, const tokenhash& hash )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void logger::enqueue( ref<logmsg>&& msg )
+void logger::enqueue(ref<logmsg>&& msg)
 {
     {
         GUARDTHIS(_mutex);
@@ -376,23 +382,20 @@ void logger::enqueue( ref<logmsg>&& msg )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void logger::post( const token& txt, const token& prefix )
+void logger::post(const token& txt, const token& from, const void* inst)
 {
     token msg = txt;
     log::type type = logmsg::consume_type(msg);
 
-    ref<logmsg> rmsg = ref<logmsg>(policy_msg::create());
-    rmsg->set_logger(this);
-    rmsg->set_type(type);
+    ref<logmsg> msgr = interface_register::canlog(type, from, inst);
+    if (msgr) {
+        charstr& str = msgr->str();
+        str = logmsg::type2tok(type);
 
-    charstr& str = rmsg->str();
-    str = logmsg::type2tok(type);
-
-    if(prefix)
-        str << '[' << prefix << "] ";
-    str << msg;
-
-    //enqueue(rmsg);
+        if (from)
+            str << '[' << from << "] ";
+        str << msg;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -408,7 +411,7 @@ void logger::open(const token& filename)
 void logger::flush()
 {
     int maxloop = 3000 / 20;
-    while(!SINGLETON(log_writer).is_empty() && maxloop-- > 0)
+    while (!SINGLETON(log_writer).is_empty() && maxloop-- > 0)
         sysMilliSecondSleep(20);
 }
 
@@ -421,7 +424,7 @@ log_writer::log_writer()
     policy_msg::pool_singleton();
     //policy_pooled<logmsg>::default_pool();
 
-    _thread.create( thread_run_fn, this, 0, "log_writer" );
+    _thread.create(thread_run_fn, this, 0, "log_writer");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -458,8 +461,8 @@ void log_writer::flush()
 
     //int maxloop = 3000 / 20;
 
-    while( _queue.pop(m) ) {
-        DASSERT( m->str() );
+    while (_queue.pop(m)) {
+        DASSERT(m->str());
         m->write();
         m.release();
     }

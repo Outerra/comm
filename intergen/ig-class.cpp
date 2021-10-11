@@ -14,7 +14,6 @@ int Interface::check_interface(iglexer& lex, const dynarray<paste_block>& classp
         }
     }
 
-
     int nerr = 0;
 
     if ((oper_get >= 0) != (oper_set >= 0)) {
@@ -249,10 +248,12 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 if (filepasters) {
                     for (paste_block& b : *filepasters) {
                         if (b.condx.is_empty() || ifc->full_name_equals(b.condx)) {
-                            if (b.pos == paste_block::position::after_class)
-                                b.fill(*ifc->pasteafters.add());
-                            else
-                                b.fill(*ifc->pasters.add());
+                            if (!b.in_dispatch) {
+                                if (b.pos == paste_block::position::after_class)
+                                    b.fill(*ifc->pasteafters.add());
+                                else
+                                    b.fill(*ifc->pasters.add());
+                            }
                         }
                     }
                 }

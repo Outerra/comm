@@ -54,11 +54,11 @@
 COID_NAMESPACE_BEGIN
 
 #ifdef SYSTYPE_WIN
-static const token DIR_SEPARATORS = "\\/";
-static const token DIR_SEPARATOR_STRING = "\\";
+static constexpr token DIR_SEPARATORS = "\\/"_T;
+static constexpr token DIR_SEPARATOR_STRING = "\\"_T;
 #else
-static const char DIR_SEPARATORS = '/';
-static const token DIR_SEPARATOR_STRING = "/";
+static constexpr char DIR_SEPARATORS = '/';
+static constexpr token DIR_SEPARATOR_STRING = "/"_T;
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -108,14 +108,18 @@ public:
     static const token& separators() { static token sep = "/"_T; return sep; }
 #endif
 
-    static charstr& treat_trailing_separator(charstr& path, bool shouldbe)
+    //@param shouldbe true or one of / or \ characters if path should end with the separator, false if path separator should not be there
+    static charstr& treat_trailing_separator(charstr& path, char shouldbe)
     {
+        if (shouldbe && shouldbe != '/' && shouldbe != '\\')
+            shouldbe = separator();
+
         char c = path.last_char();
         if (is_separator(c)) {
             if (!shouldbe)  path.resize(-1);
         }
         else if (shouldbe && c != 0)   //don't add separator to an empty path, that would make it absolute
-            path.append(separator());
+            path.append(shouldbe);
         return path;
     }
 
@@ -214,7 +218,12 @@ public:
     opcd move_file_to(zstring dst, const token& name = token());
     opcd move_current_file_to(zstring dst);
 
-    static opcd set_file_times(zstring fname, timet actime, timet modtime);
+    /// Set file times
+    //@param fname file name to modify
+    //@param actime access time, 0 if not changed
+    //@param modtime modification time, 0 if not changed
+    //@param crtime creation time, 0 if not changed, ignored on linux
+    static opcd set_file_times(zstring fname, timet actime, timet modtime, timet crtime = 0);
 
     static opcd truncate(zstring fname, uint64 size);
 

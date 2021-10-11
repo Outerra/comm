@@ -45,6 +45,9 @@ iglexer::iglexer()
     IFC_LINE_COMMENT = def_block( "ifc1", "//ifc{", "//}ifc", "" );
     IFC_BLOCK_COMMENT = def_block( "ifc2", "/*ifc{", "}ifc*/", "" );
 
+    IFC_DISPATCH_LINE_COMMENT = def_block("ifcd1", "//ifc-dispatch{", "//}ifc-dispatch", "");
+    IFC_DISPATCH_BLOCK_COMMENT = def_block("ifcd2", "/*ifc-dispatch{", "}ifc-dispatch*/", "");
+
     MLCOM = def_block( ".blkcomment", "/*", "*/", "" );
 
     ANGLE = def_block( "!angle", "<", ">", "angle .comment .blkcomment" );    //by default disabled
@@ -77,6 +80,7 @@ int iglexer::find_method(const token& classname, dynarray<paste_block>& classpas
             pb->block = t;
             //pb->namespc = namespc;
             pb->pos = paste_block::position::inside_class;
+            pb->in_dispatch = false;
             pb->condx = cond;
 
             ignore(MLCOM, true);

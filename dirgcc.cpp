@@ -155,6 +155,22 @@ bool directory::is_valid_dir(const char* arg)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+bool directory::subpath(token root, token& path)
+{
+    while (root && path) {
+        token r = root.cut_left(DIR_SEPARATORS);
+        token p = path.cut_left(DIR_SEPARATORS);
+
+        if (r != p) {
+            path._ptr = p._ptr;
+            return false;
+        }
+    }
+
+    return root.is_empty();
+}
+
+////////////////////////////////////////////////////////////////////////////////
 opcd directory::mkdir( zstring name, mode_t mode )
 {
     if(!::mkdir(name.c_str(), mode))  return 0;
@@ -254,7 +270,7 @@ opcd directory::truncate( zstring fname, uint64 size )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::set_file_times(zstring fname, timet actime, timet modtime)
+opcd directory::set_file_times(zstring fname, timet actime, timet modtime, timet crtime)
 {
     struct utimbuf ut;
     ut.actime = actime.t;

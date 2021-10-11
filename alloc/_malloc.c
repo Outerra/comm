@@ -1487,9 +1487,9 @@ DLMALLOC_EXPORT int mspace_mallopt(int, int);
 #endif
 #define DEBUG 0
 #endif /* DEBUG */
-#if !defined(WIN32) && !defined(LACKS_TIME_H)
-#include <time.h>        /* for magic initialization */
-#endif /* WIN32 */
+//#if !defined(WIN32) && !defined(LACKS_TIME_H)
+//#include <time.h>        /* for magic initialization */
+//#endif /* WIN32 */
 #ifndef LACKS_STDLIB_H
 #include <stdlib.h>      /* for abort() */
 #endif /* LACKS_STDLIB_H */
@@ -2697,7 +2697,7 @@ typedef struct malloc_state*    mstate;
 */
 
 struct malloc_params {
-  size_t magic;
+  size_t magic_check;
   size_t page_size;
   size_t granularity;
   size_t mmap_threshold;
@@ -2705,10 +2705,12 @@ struct malloc_params {
   flag_t default_mflags;
 };
 
+const size_t global_magic = (size_t)0x451d92ec560b19adULL;
+
 static struct malloc_params mparams;
 
 /* Ensure mparams initialized */
-#define ensure_initialization() (void)(mparams.magic != 0 || init_mparams())
+#define ensure_initialization() (void)(mparams.magic_check != 0 || init_mparams())
 
 #if !ONLY_MSPACES
 
@@ -3091,7 +3093,7 @@ static size_t traverse_and_check(mstate m);
 
 #if (FOOTERS && !INSECURE)
 /* Check if (alleged) mstate m has expected magic field */
-#define ok_magic(M)      ((M)->magic == mparams.magic)
+#define ok_magic(M)      ((M)->magic == global_magic)
 #else  /* (FOOTERS && !INSECURE) */
 #define ok_magic(M)      (1)
 #endif /* (FOOTERS && !INSECURE) */
@@ -3133,11 +3135,11 @@ static size_t traverse_and_check(mstate m);
 
 /* Set foot of inuse chunk to be xor of mstate and seed */
 #define mark_inuse_foot(M,p,s)\
-  (((mchunkptr)((char*)(p) + (s)))->prev_foot = ((size_t)(M) ^ mparams.magic))
+  (((mchunkptr)((char*)(p) + (s)))->prev_foot = ((size_t)(M) ^ global_magic))
 
 #define get_mstate_for(p)\
   ((mstate)(((mchunkptr)((char*)(p) +\
-    (chunksize(p))))->prev_foot ^ mparams.magic))
+    (chunksize(p))))->prev_foot ^ global_magic))
 
 #define set_inuse(M,p,s)\
   ((p)->head = (((p)->head & PINUSE_BIT)|s|CINUSE_BIT),\
@@ -3171,7 +3173,7 @@ static int init_mparams(void) {
 #endif
 
   ACQUIRE_MALLOC_GLOBAL_LOCK();
-  if (mparams.magic == 0) {
+  if (mparams.magic_check == 0) {
     size_t magic;
     size_t psize;
     size_t gsize;
@@ -3224,32 +3226,10 @@ static int init_mparams(void) {
 #endif
 
     {
-#if 0
-#if USE_DEV_RANDOM
-      int fd;
-      unsigned char buf[sizeof(size_t)];
-      /* Try to use /dev/urandom, else fall back on using time */
-      if ((fd = open("/dev/urandom", O_RDONLY)) >= 0 &&
-          read(fd, buf, sizeof(buf)) == sizeof(buf)) {
-        magic = *((size_t *) buf);
-        close(fd);
-      }
-      else
-#endif /* USE_DEV_RANDOM */
-#ifdef WIN32
-      magic = (size_t)(GetTickCount() ^ (size_t)0x55555555U);
-#elif defined(LACKS_TIME_H)
-      magic = (size_t)&magic ^ (size_t)0x55555555U;
-#else
-      magic = (size_t)(time(0) ^ (size_t)0x55555555U);
-#endif
-      magic |= (size_t)8U;    /* ensure nonzero */
-      magic &= ~(size_t)7U;   /* improve chances of fault for bad values */
-#endif
       //needed for dll interoperability
-      magic = (size_t)0x451d92ec560b19adULL;
+      magic = global_magic;
       /* Until memory modes commonly available, use volatile-write */
-      (*(volatile size_t *)(&(mparams.magic))) = magic;
+      (*(volatile size_t *)(&(mparams.magic_check))) = magic;
     }
   }
 
@@ -4297,7 +4277,7 @@ static void* sys_alloc(mstate m, size_t nb) {
       m->seg.base = tbase;
       m->seg.size = tsize;
       m->seg.sflags = mmap_flag;
-      m->magic = mparams.magic;
+      m->magic = global_magic;
       m->release_checks = MAX_RELEASE_CHECK_RATE;
       init_bins(m);
 #if !ONLY_MSPACES
@@ -5529,7 +5509,7 @@ static mstate init_user_mstate(char* tbase, size_t tsize, size_t modalign) {
   msp->head = (msize|INUSE_BITS);
   m->seg.base = m->least_addr = tbase;
   m->seg.size = m->footprint = m->max_footprint = tsize;
-  m->magic = mparams.magic;
+  m->magic = global_magic;
   m->release_checks = MAX_RELEASE_CHECK_RATE;
   m->mflags = mparams.default_mflags;
   m->extp = 0;

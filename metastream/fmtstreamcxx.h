@@ -51,9 +51,9 @@ class fmtstreamcxx : public fmtstream_lexer
 {
 protected:
 
-    int _indent;
-    int er;
-    int lexign, lexid, lexstr, lexchr, lexstre, lexchre, lexcode;
+    int _indent = 0;
+    int er = 0;
+    int lexign = 0, lexid = 0, lexstr = 0, lexchr = 0, lexstre = 0, lexchre = 0, lexcode = 0;
 
 public:
     fmtstreamcxx(bool utf8 = false)
@@ -80,11 +80,8 @@ public:
     {
         separators_are_optional = false;
 
-        _binr = _binw = 0;
         if (bw)  bind(*bw, BIND_OUTPUT);
         if (br)  bind(*br, BIND_INPUT);
-
-        _indent = 0;
 
         lexign = _tokenizer.def_group("", " \t\r\n");
 
@@ -376,7 +373,7 @@ public:
         if (t.is_array_start())
         {
             if (t.type == type::T_BINARY) {
-                e = tk == lexstr
+                e = tk == lexstr || tk == lexstre
                     ? opcd(0)
                     : ersSYNTAX_ERROR "expected string";
                 if (!e)
@@ -428,7 +425,7 @@ public:
         else if (t.is_array_end())
         {
             if (t.type == type::T_BINARY) {
-                e = tk == lexstr
+                e = tk == lexstr || tk == lexstre
                     ? opcd(0)
                     : ersSYNTAX_ERROR "expected string";
             }
@@ -585,7 +582,7 @@ public:
             }
             break;
 
-        /////////////////////////////////////////////////////////////////////////////////////
+            /////////////////////////////////////////////////////////////////////////////////////
             case type::T_BOOL: {
                 if (tok.cmpeqi("true"))
                     *(bool*)p = true;

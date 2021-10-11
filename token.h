@@ -537,6 +537,26 @@ struct token
         return *this;
     }
 
+    ///Create a new token with starting pointer shifted forwards or backwards
+    token shifted_start(ints i) const
+    {
+        const char* p = _ptr + i;
+        if (p > _pte)
+            p = _pte;
+
+        return token(p, _pte);
+    }
+
+    ///Create a new token with ending pointer Shifted forwards or backwards
+    token shifted_end(ints i) const
+    {
+        const char* p = _pte + i;
+        if (p < _ptr)
+            p = _ptr;
+
+        return token(_ptr, p);
+    }
+
     bool is_empty() const { return _ptr == _pte; }
     bool is_set() const { return _ptr != _pte; }
     bool is_null() const { return _ptr == 0; }
@@ -2047,7 +2067,7 @@ struct token
     struct tonum
     {
         uint BaseN;
-        bool success;
+        bool success = false;
 
 
         tonum(uint BaseN = 10) : BaseN(BaseN) {}

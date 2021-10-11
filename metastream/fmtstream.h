@@ -51,10 +51,10 @@ public:
 
     fmtstream()
     { init(0,0); }
-    
+
     fmtstream( binstream& b )
     { init(&b, &b); }
-    
+
     fmtstream( binstream* br, binstream* bw )
     { init(br, bw); }
 
@@ -100,7 +100,7 @@ public:
             _binw = &bin;
         else
             _binr = _binw = &bin;
-        
+
         return 0;
     }
 
@@ -193,8 +193,8 @@ protected:
 
 
 
-    binstream* _binr;                   //< bound reading stream
-    binstream* _binw;                   //< bound writing stream
+    binstream* _binr = 0;               //< bound reading stream
+    binstream* _binw = 0;               //< bound writing stream
 
     charstr _bufw;                      //< caching write buffer
 };

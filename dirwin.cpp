@@ -179,6 +179,22 @@ bool directory::is_valid_dir(const char* arg)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+bool directory::subpath(token root, token& path)
+{
+    while (root && path) {
+        token r = root.cut_left_group(DIR_SEPARATORS);
+        token p = path.cut_left_group(DIR_SEPARATORS);
+
+        if (!r.cmpeqi(p)) {
+            path._ptr = p._ptr;
+            return false;
+        }
+    }
+
+    return root.is_empty();
+}
+
+////////////////////////////////////////////////////////////////////////////////
 opcd directory::mkdir( zstring name, uint mode )
 {
     const char* p = no_trail_sep(name);
@@ -377,18 +393,19 @@ static void filetime_to_timet(const FILETIME& ft, time_t* t)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::set_file_times(zstring fname, timet actime, timet modtime)
+opcd directory::set_file_times(zstring fname, timet actime, timet modtime, timet crtime)
 {
-    FILETIME ftacc, ftmod;
+    FILETIME ftacc, ftmod, ftcre;
 
-    timet_to_filetime(actime, &ftacc);
-    timet_to_filetime(modtime, &ftmod);
+    if (actime) timet_to_filetime(actime, &ftacc);
+    if (modtime) timet_to_filetime(modtime, &ftmod);
+    if (crtime) timet_to_filetime(crtime, &ftcre);
 
     HANDLE h = CreateFile(fname.c_str(), GENERIC_WRITE, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
     if(h == INVALID_HANDLE_VALUE)
         return ersIO_ERROR;
 
-    BOOL r = SetFileTime(h, NULL, &ftacc, &ftmod);
+    BOOL r = SetFileTime(h, crtime ? &ftcre : NULL, actime ? &ftacc : NULL, modtime ? &ftmod : NULL);
 
     CloseHandle(h);
 

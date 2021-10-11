@@ -75,7 +75,7 @@ $(if !comments.empty?)$$[comments]-$
     $@value$
 $[/comments]$$(/if)-$
     virtual $return.type$ $name$($[args rest="," after=" "]$ $type$ $(if fnarg?)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$) $-(if const?)$ const$(/if)$
-    $-(if pure?)$ = 0;$(elif return.type?="void")$ {}$(elif default_event_body?)$ { $default_event_body$ }$(elif)${ throw coid::exception("handler not implemented"); }$(/if)$
+    $-(if pure?)$ = 0;$(elif return.type?="void")$ {}$(elif default_event_body?)$ { $default_event_body$ }$(elif)${ throw coid::exception(HANDLER_NOT_IMPLEMENTED_MESSAGE); }$(/if)$
 $[/event]-$
 
     virtual void force_bind_script_events() {}
@@ -84,7 +84,7 @@ public:
     // --- host helpers to check presence of handlers in scripts ---
 
 $-[event !static?]$
-    virtual bool is_bound_$name$() { return true; }
+    virtual bool is_bound_$intname$() { return true; }
 $-[/event]$
 
 public:
@@ -268,7 +268,7 @@ inline iref<T> $..name$::$name$( T* _subclass_
             coid::interface_register::get_interface_creator(ifckey));
 
     if (!create) {
-        log_mismatch("$name$"_T, "$..ns rest="::" after="::"$$..name$.$name$"_T, "@$..hash$"_T);
+        log_mismatch("$..name$"_T, "$..ns rest="::" after="::"$$..name$.$name$"_T, "@$..hash$"_T);
         return 0;
     }
 
@@ -290,7 +290,7 @@ inline iref<$..name$> $..name$::$name$($-[args rest=", "]$$type$ $name$$size$$[/
             coid::interface_register::get_interface_creator(ifckey));
 
     if (!create) {
-        log_mismatch("$name$"_T, "$..ns rest="::" after="::"$$..name$.$name$"_T, "@$..hash$"_T);
+        log_mismatch("$..name$"_T, "$..ns rest="::" after="::"$$..name$.$name$"_T, "@$..hash$"_T);
         return 0;
     }
 

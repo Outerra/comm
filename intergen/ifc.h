@@ -128,15 +128,27 @@ namespace coid {
     ... code ...
     }ifc* /
 
-  to push a code block into client header.
+  to push the enclosed code block into the client header, or
+
+    //ifc-dispatch{
+        ... code ...
+    //}ifc-dispatch
+
+  or
+
+    /*ifc-dispatch{
+    ... code ...
+    }ifc-dispatch* /
+
+  to push the enclosed code block into the generated dispatch files.
 
   With multiple interfaces present in host class it's also possible to list which interface header files:
     //ifc{ ns::ifca ns::ifcb
     ...
     //}ifc
 
-  Generated code is pushed before the client class definition. In case it needs to be added after the
-  class, add a + sign:
+  Generated code is normally pushed before the client class definition. In case it needs to be added after,
+  add a + sign:
     //ifc{+
    or
     //ifc{ ns::ifc1+
@@ -261,13 +273,13 @@ public:
 
 #endif //COID_VARIADIC_TEMPLATES
 
-    static void ifclog_ext(coid::log::type type, const coid::tokenhash& hash, const void* inst, const coid::token& txt) {
+    static void ifclog_ext(coid::log::type type, const coid::token& from, const void* inst, const coid::token& txt) {
         //deduce type if none set
         coid::token rest = txt;
         if (type == coid::log::none)
             type = coid::logmsg::consume_type(rest);
 
-        ref<coid::logmsg> msgr = coid::interface_register::canlog(type, hash, inst);
+        ref<coid::logmsg> msgr = coid::interface_register::canlog(type, from, inst);
         if (!msgr)
             return;
 
@@ -387,5 +399,12 @@ private:
 ///Register a derived client interface class
 #define IFC_REGISTER_CLIENT(client) \
     static int _autoregger = client::register_client<client>();
+
+///Handler not implemented message
+#ifdef _DEBUG
+#define HANDLER_NOT_IMPLEMENTED_MESSAGE __FUNCTION__ " handler not implemented"
+#else
+#define HANDLER_NOT_IMPLEMENTED_MESSAGE "handler not implemented"
+#endif //_DEBUG
 
 #endif //__INTERGEN_IFC_H__

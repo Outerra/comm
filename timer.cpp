@@ -127,7 +127,7 @@ uint64 nsec_timer::day_time_ns()
 
 #if SYSTYPE_WIN
         SYSTEMTIME stime;
-        GetSystemTime(&stime);
+        GetLocalTime(&stime);
 
         // the current file time
         FILETIME ftime;
@@ -146,10 +146,7 @@ uint64 nsec_timer::day_time_ns()
         //std::chrono::nanoseconds ens = hnow.time_since_epoch();
         //uint64 nsc = ens.count();
 
-        long bias = 0;
-        _get_dstbias(&bias);
-
-        _day_offset = ((nsc - bias * 1000000000LL) % 86400000000000LL) - ns;
+        _day_offset = ((nsc) % 86400000000000LL) - ns;
     }
 
     return current_time_ns() + _day_offset;

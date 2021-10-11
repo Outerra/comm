@@ -35,8 +35,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{D2F47060-00C0-4A3C-9888-CF663F14D44D}</ProjectGuid>
-    <RootNamespace>comm_static</RootNamespace>
+    <ProjectGuid>{67F94DBD-39F3-4ED5-B02D-EA5A62C69F26}</ProjectGuid>
+    <RootNamespace>comm</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -44,19 +44,19 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v142</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-clang|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -65,19 +65,22 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>v142</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-clang|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -119,31 +122,24 @@
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug-clang|Win32'">$(ProjectDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)out\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug-clang|Win32'">$(ProjectDir)out\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)bin\$(Platform)\$(Configuration)\</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug-clang|x64'">$(ProjectDir)bin\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)out\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug-clang|x64'">$(ProjectDir)out\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|Win32'">$(ProjectDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)out\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|Win32'">$(ProjectDir)out\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)bin\$(Platform)\$(Configuration)\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug-clang|x64'">$(ProjectDir)bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)out\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug-clang|x64'">$(ProjectDir)out\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">$(ProjectDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)out\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">$(ProjectDir)out\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectName)</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug-clang|x64'">$(ProjectName)</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectName)</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">$(ProjectName)</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectName)</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug-clang|Win32'">$(ProjectName)</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">
-    <ExtensionsToDeleteOnClean>*.intergen.cpp;*.intergen.js.cpp;*.intergen.lua.cpp;$(ExtensionsToDeleteOnClean)</ExtensionsToDeleteOnClean>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <ExtensionsToDeleteOnClean>*.intergen.cpp;*.intergen.js.cpp;*.intergen.lua.cpp;$(ExtensionsToDeleteOnClean)</ExtensionsToDeleteOnClean>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <ExtensionsToDeleteOnClean>*.intergen.cpp;*.intergen.js.cpp;*.intergen.lua.cpp;$(ExtensionsToDeleteOnClean)</ExtensionsToDeleteOnClean>
-    <IncludePath>$(UniversalCRT_IncludePath);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -152,11 +148,9 @@
       <PreprocessorDefinitions>_LIB;WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <SmallerTypeCheck>false</SmallerTypeCheck>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <BufferSecurityCheck>true</BufferSecurityCheck>
-      <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <PrecompiledHeaderOutputFile>$(IntDir)comm_static.pch</PrecompiledHeaderOutputFile>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <PrecompiledHeaderOutputFile>$(IntDir)comm.pch</PrecompiledHeaderOutputFile>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -170,7 +164,6 @@
     <Lib>
       <OutputFile>$(OutDir)$(TargetName).lib</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <TargetMachine>MachineX86</TargetMachine>
     </Lib>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -179,18 +172,18 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-clang|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_LIB;WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_LIB;WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <SmallerTypeCheck>false</SmallerTypeCheck>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <BufferSecurityCheck>true</BufferSecurityCheck>
-      <RuntimeTypeInfo>true</RuntimeTypeInfo>
-      <PrecompiledHeaderOutputFile>$(IntDir)comm_static.pch</PrecompiledHeaderOutputFile>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <PrecompiledHeaderOutputFile>$(IntDir)comm.pch</PrecompiledHeaderOutputFile>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
+      <DebugInformationFormat>FullDebug</DebugInformationFormat>
       <ExceptionHandling>Enabled</ExceptionHandling>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
@@ -201,7 +194,71 @@
     <Lib>
       <OutputFile>$(OutDir)$(TargetName).lib</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <TargetMachine>MachineX86</TargetMachine>
+    </Lib>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+    </Bscmake>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalOptions>/MP /permissive- /d2Zi+ %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>MaxSpeed</Optimization>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeaderOutputFile>$(IntDir)comm.pch</PrecompiledHeaderOutputFile>
+      <WarningLevel>Level3</WarningLevel>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x041b</Culture>
+    </ResourceCompile>
+    <Lib>
+      <OutputFile>$(OutDir)$(TargetName).lib</OutputFile>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+    </Lib>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+    </Bscmake>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|Win32'">
+    <ClCompile>
+      <AdditionalOptions>/MP /permissive- /d2Zi+ %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>MaxSpeed</Optimization>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeaderOutputFile>$(IntDir)comm.pch</PrecompiledHeaderOutputFile>
+      <WarningLevel>Level3</WarningLevel>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x041b</Culture>
+    </ResourceCompile>
+    <Lib>
+      <OutputFile>$(OutDir)$(TargetName).lib</OutputFile>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
     </Lib>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -217,11 +274,9 @@
       <PreprocessorDefinitions>_LIB;WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <SmallerTypeCheck>false</SmallerTypeCheck>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <BufferSecurityCheck>true</BufferSecurityCheck>
-      <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <PrecompiledHeaderOutputFile>$(IntDir)comm_static.pch</PrecompiledHeaderOutputFile>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <PrecompiledHeaderOutputFile>$(IntDir)comm.pch</PrecompiledHeaderOutputFile>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -235,7 +290,6 @@
     <Lib>
       <OutputFile>$(OutDir)$(TargetName).lib</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <TargetMachine>MachineX64</TargetMachine>
     </Lib>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -246,18 +300,19 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
+      <AdditionalOptions>-mcx16 %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_LIB;WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <SmallerTypeCheck>false</SmallerTypeCheck>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <BufferSecurityCheck>true</BufferSecurityCheck>
-      <PrecompiledHeaderOutputFile>$(IntDir)comm_static.pch</PrecompiledHeaderOutputFile>
-      <AdditionalOptions>-mcx16 %(AdditionalOptions)</AdditionalOptions>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <PrecompiledHeaderOutputFile>$(IntDir)comm.pch</PrecompiledHeaderOutputFile>
       <WarningLevel>Level3</WarningLevel>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -266,77 +321,6 @@
     <Lib>
       <OutputFile>$(OutDir)$(TargetName).lib</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <TargetMachine>MachineX64</TargetMachine>
-    </Lib>
-    <Bscmake>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-    </Bscmake>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <ClCompile>
-      <AdditionalOptions>/MP /permissive- /d2Zi+ %(AdditionalOptions)</AdditionalOptions>
-      <Optimization>MaxSpeed</Optimization>
-      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <OmitFramePointers>true</OmitFramePointers>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <BufferSecurityCheck>false</BufferSecurityCheck>
-      <FunctionLevelLinking>false</FunctionLevelLinking>
-      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
-      <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <PrecompiledHeaderOutputFile>$(IntDir)comm_static.pch</PrecompiledHeaderOutputFile>
-      <WarningLevel>Level3</WarningLevel>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-      <TreatWarningAsError>true</TreatWarningAsError>
-    </ClCompile>
-    <ResourceCompile>
-      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <Culture>0x041b</Culture>
-    </ResourceCompile>
-    <Lib>
-      <OutputFile>$(OutDir)$(TargetName).lib</OutputFile>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <TargetMachine>MachineX86</TargetMachine>
-    </Lib>
-    <Bscmake>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-    </Bscmake>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|Win32'">
-    <ClCompile>
-      <AdditionalOptions>/MP /permissive- /d2Zi+ %(AdditionalOptions)</AdditionalOptions>
-      <Optimization>MaxSpeed</Optimization>
-      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <OmitFramePointers>true</OmitFramePointers>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <BufferSecurityCheck>false</BufferSecurityCheck>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
-      <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <PrecompiledHeaderOutputFile>$(IntDir)comm_static.pch</PrecompiledHeaderOutputFile>
-      <WarningLevel>Level3</WarningLevel>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-      <TreatWarningAsError>true</TreatWarningAsError>
-    </ClCompile>
-    <ResourceCompile>
-      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <Culture>0x041b</Culture>
-    </ResourceCompile>
-    <Lib>
-      <OutputFile>$(OutDir)$(TargetName).lib</OutputFile>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <TargetMachine>MachineX86</TargetMachine>
     </Lib>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -350,20 +334,19 @@
       <AdditionalOptions>/MP /permissive- /d2Zi+ %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeaderOutputFile>$(IntDir)comm.pch</PrecompiledHeaderOutputFile>
+      <WarningLevel>Level3</WarningLevel>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <BufferSecurityCheck>false</BufferSecurityCheck>
-      <FunctionLevelLinking>false</FunctionLevelLinking>
-      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
-      <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <PrecompiledHeaderOutputFile>$(IntDir)comm_static.pch</PrecompiledHeaderOutputFile>
-      <WarningLevel>Level3</WarningLevel>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
@@ -374,7 +357,6 @@
     <Lib>
       <OutputFile>$(OutDir)$(TargetName).lib</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <TargetMachine>MachineX64</TargetMachine>
     </Lib>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -388,22 +370,21 @@
       <AdditionalOptions>/MP /permissive- /d2Zi+ %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeaderOutputFile>$(IntDir)comm.pch</PrecompiledHeaderOutputFile>
+      <WarningLevel>Level3</WarningLevel>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <BufferSecurityCheck>false</BufferSecurityCheck>
-      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
-      <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <PrecompiledHeaderOutputFile>$(IntDir)comm_static.pch</PrecompiledHeaderOutputFile>
-      <WarningLevel>Level3</WarningLevel>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -412,155 +393,14 @@
     <Lib>
       <OutputFile>$(OutDir)$(TargetName).lib</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <TargetMachine>MachineX64</TargetMachine>
-      <LinkTimeCodeGeneration>true</LinkTimeCodeGeneration>
     </Lib>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
     </Bscmake>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\alloc\slotalloc.h" />
-    <ClInclude Include="..\..\..\alloc\alloc2d.h" />
-    <ClInclude Include="..\..\..\alloc\slotalloc_bmp.h" />
-    <ClInclude Include="..\..\..\alloc\slotalloc_tracker.h" />
-    <ClInclude Include="..\..\..\atomic\atomic.h" />
-    <ClInclude Include="..\..\..\atomic\basic_pool.h" />
-    <ClInclude Include="..\..\..\atomic\pool.h" />
-    <ClInclude Include="..\..\..\atomic\pool_base.h" />
-    <ClInclude Include="..\..\..\atomic\queue.h" />
-    <ClInclude Include="..\..\..\atomic\queue_base.h" />
-    <ClInclude Include="..\..\..\atomic\stack.h" />
-    <ClInclude Include="..\..\..\atomic\stack_base.h" />
-    <ClInclude Include="..\..\..\binstream\binstream.h" />
-    <ClInclude Include="..\..\..\binstream\binstreambuf.h" />
-    <ClInclude Include="..\..\..\binstream\binstreamsegbuf.h" />
-    <ClInclude Include="..\..\..\binstream\bstype.h" />
-    <ClInclude Include="..\..\..\binstream\cachestream.h" />
-    <ClInclude Include="..\..\..\binstream\circularstreambuf.h" />
-    <ClInclude Include="..\..\..\binstream\container.h" />
-    <ClInclude Include="..\..\..\binstream\container_linear.h" />
-    <ClInclude Include="..\..\..\binstream\enc_base64stream.h" />
-    <ClInclude Include="..\..\..\binstream\enc_hexstream.h" />
-    <ClInclude Include="..\..\..\binstream\exestream.h" />
-    <ClInclude Include="..\..\..\binstream\filestream.h" />
-    <ClInclude Include="..\..\..\binstream\forkstream.h" />
-    <ClInclude Include="..\..\..\binstream\hash_sha1stream.h" />
-    <ClInclude Include="..\..\..\binstream\hash_xxhashstream.h" />
-    <ClInclude Include="..\..\..\binstream\httpstream.h" />
-    <ClInclude Include="..\..\..\binstream\httpstreamcoid.h" />
-    <ClInclude Include="..\..\..\binstream\httpstreamtunnel.h" />
-    <ClInclude Include="..\..\..\binstream\inoutstream.h" />
-    <ClInclude Include="..\..\..\binstream\netstream.h" />
-    <ClInclude Include="..\..\..\binstream\netstreamcoid.h" />
-    <ClInclude Include="..\..\..\binstream\netstreamhttp.h" />
-    <ClInclude Include="..\..\..\binstream\netstreamtcp.h" />
-    <ClInclude Include="..\..\..\binstream\netstreamudp.h" />
-    <ClInclude Include="..\..\..\binstream\netstreamudpbuf.h" />
-    <ClInclude Include="..\..\..\binstream\nullstream.h" />
-    <ClInclude Include="..\..\..\binstream\packstream.h" />
-    <ClInclude Include="..\..\..\binstream\packstreambzip2.h" />
-    <ClInclude Include="..\..\..\binstream\filestreamgz.h" />
-    <ClInclude Include="..\..\..\binstream\packstreamlz4.h" />
-    <ClInclude Include="..\..\..\binstream\packstreamzip.h" />
-    <ClInclude Include="..\..\..\binstream\packstreamzstd.h" />
-    <ClInclude Include="..\..\..\binstream\stdstream.h" />
-    <ClInclude Include="..\..\..\binstream\stlstream.h" />
-    <ClInclude Include="..\..\..\binstream\txtcachestream.h" />
-    <ClInclude Include="..\..\..\binstream\txtstream.h" />
-    <ClInclude Include="..\..\..\binstream\txtstreamhtml.h" />
-    <ClInclude Include="..\..\..\binstring.h" />
-    <ClInclude Include="..\..\..\bitrange.h" />
-    <ClInclude Include="..\..\..\coder\bufpack_zstd.h" />
-    <ClInclude Include="..\..\..\coder\lz4\lz4.h" />
-    <ClInclude Include="..\..\..\coder\lz4\lz4hc.h" />
-    <ClInclude Include="..\..\..\coder\lz4\xxhash.h" />
-    <ClInclude Include="..\..\..\crypt\sha1.h" />
-    <ClInclude Include="..\..\..\dbg_location.h" />
-    <ClInclude Include="..\..\..\function.h" />
-    <ClInclude Include="..\..\..\hash\slothash.h" />
-    <ClInclude Include="..\..\..\interface.h" />
-    <ClInclude Include="..\..\..\intergen\ifc.h" />
-    <ClInclude Include="..\..\..\intergen\ifc.js.h" />
-    <ClInclude Include="..\..\..\list.h" />
-    <ClInclude Include="..\..\..\metastream\fmtstream.h" />
-    <ClInclude Include="..\..\..\metastream\fmtstreamnull.h" />
-    <ClInclude Include="..\..\..\metastream\fmtstream_lexer.h" />
-    <ClInclude Include="..\..\..\metastream\fmtstreamcxx.h" />
-    <ClInclude Include="..\..\..\metastream\fmtstreamjson.h" />
-    <ClInclude Include="..\..\..\metastream\fmtstreamxml.h" />
-    <ClInclude Include="..\..\..\metastream\fmtstreamxml2.h" />
-    <ClInclude Include="..\..\..\metastream\fmtstream_v8.h" />
-    <ClInclude Include="..\..\..\metastream\metagen.h" />
-    <ClInclude Include="..\..\..\metastream\metastream.h" />
-    <ClInclude Include="..\..\..\metastream\metavar.h" />
-    <ClInclude Include="..\..\..\alloc\_malloc.h" />
-    <ClInclude Include="..\..\..\alloc\commalloc.h" />
-    <ClInclude Include="..\..\..\alloc\memtrack.h" />
-    <ClInclude Include="..\..\..\profiler\profiler.h" />
-    <ClInclude Include="..\..\..\ref_helpers.h" />
-    <ClInclude Include="..\..\..\sync\_mutex.h" />
-    <ClInclude Include="..\..\..\sync\guard.h" />
-    <ClInclude Include="..\..\..\sync\mutex.h" />
-    <ClInclude Include="..\..\..\sync\mutex_reg.h" />
-    <ClInclude Include="..\..\..\sync\rw_mutex.h" />
-    <ClInclude Include="..\..\..\sync\rw_mx_core.h" />
-    <ClInclude Include="..\..\..\sync\thread_mgr.h" />
-    <ClInclude Include="..\..\..\coder\rlr.h" />
-    <ClInclude Include="..\..\..\log\logger.h" />
-    <ClInclude Include="..\..\..\log\logwriter.h" />
-    <ClInclude Include="..\..\..\hash\hashfunc.h" />
-    <ClInclude Include="..\..\..\hash\hashkeyset.h" />
-    <ClInclude Include="..\..\..\hash\hashmap.h" />
-    <ClInclude Include="..\..\..\hash\hashset.h" />
-    <ClInclude Include="..\..\..\hash\hashtable.h" />
-    <ClInclude Include="..\..\..\regex\regcomp.h" />
-    <ClInclude Include="..\..\..\comm.h" />
-    <ClInclude Include="..\..\..\commassert.h" />
-    <ClInclude Include="..\..\..\commexception.h" />
-    <ClInclude Include="..\..\..\commtime.h" />
-    <ClInclude Include="..\..\..\commtypes.h" />
-    <ClInclude Include="..\..\..\dir.h" />
-    <ClInclude Include="..\..\..\dynarray.h" />
-    <ClInclude Include="..\..\..\fastdelegate.h" />
-    <ClInclude Include="..\..\..\taskmaster.h" />
-    <ClInclude Include="..\..\..\timer.h" />
-    <ClInclude Include="..\..\..\lexer.h" />
-    <ClInclude Include="..\..\..\local.h" />
-    <ClInclude Include="..\..\..\mathf.h" />
-    <ClInclude Include="..\..\..\mathi.h" />
-    <ClInclude Include="..\..\..\namespace.h" />
-    <ClInclude Include="..\..\..\net.h" />
-    <ClInclude Include="..\..\..\net_ul.h" />
-    <ClInclude Include="..\..\..\password.h" />
-    <ClInclude Include="..\..\..\pthreadx.h" />
-    <ClInclude Include="..\..\..\ptrowner.h" />
-    <ClInclude Include="..\..\..\radix.h" />
-    <ClInclude Include="..\..\..\ref.h" />
-    <ClInclude Include="..\..\..\ref_base.h" />
-    <ClInclude Include="..\..\..\ref_i.h" />
-    <ClInclude Include="..\..\..\ref_s.h" />
-    <ClInclude Include="..\..\..\refs.h" />
-    <ClInclude Include="..\..\..\regex.h" />
-    <ClInclude Include="..\..\..\retcodes.h" />
-    <ClInclude Include="..\..\..\rnd.h" />
-    <ClInclude Include="..\..\..\singleton.h" />
-    <ClInclude Include="..\..\..\str.h" />
-    <ClInclude Include="..\..\..\strgen.h" />
-    <ClInclude Include="..\..\..\substring.h" />
-    <ClInclude Include="..\..\..\token.h" />
-    <ClInclude Include="..\..\..\tokenizer.h" />
-    <ClInclude Include="..\..\..\trait.h" />
-    <ClInclude Include="..\..\..\tutf8.h" />
-    <ClInclude Include="..\..\..\txtconv.h" />
-    <ClInclude Include="..\..\..\range.h" />
-    <ClInclude Include="..\..\..\version.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\..\alloc\slotalloc_bmp.cpp" />
     <ClCompile Include="..\..\..\atomic\atomic.cpp" />
     <ClCompile Include="..\..\..\binstream\stdstream.cpp" />
-    <ClInclude Include="..\..\..\coder\bufpack_lz4.h" />
     <ClCompile Include="..\..\..\coder\lz4\lz4.c" />
     <ClCompile Include="..\..\..\coder\lz4\lz4hc.c" />
     <ClCompile Include="..\..\..\coder\lz4\xxhash.c" />
@@ -627,36 +467,7 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\profiler\profiler.cpp" />
-    <ClCompile Include="..\..\..\taskmaster.cpp" />
-    <ClCompile Include="..\..\..\timer.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug-clang|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug-clang|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    </ClCompile>
-    <ClCompile Include="..\..\..\timeru.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-clang|Win32'">true</ExcludedFromBuild>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug-clang|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-clang|x64'">true</ExcludedFromBuild>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug-clang|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|Win32'">true</ExcludedFromBuild>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">true</ExcludedFromBuild>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    </ClCompile>
+    <ClCompile Include="..\..\..\log\logger.cpp" />
     <ClCompile Include="..\..\..\net.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug-clang|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -739,10 +550,135 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\log\logger.cpp" />
     <ClCompile Include="..\..\..\regex\regcomp.cpp" />
     <ClCompile Include="..\..\..\regex\regexec.cpp" />
+    <ClCompile Include="..\..\..\taskmaster.cpp" />
+    <ClCompile Include="..\..\..\timer.cpp" />
+    <ClCompile Include="..\..\..\timeru.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-clang|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-clang|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\..\..\txtconv.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\alloc\slotalloc.h" />
+    <ClInclude Include="..\..\..\alloc\slotalloc_tracker.h" />
+    <ClInclude Include="..\..\..\atomic\atomic.h" />
+    <ClInclude Include="..\..\..\atomic\queue.h" />
+    <ClInclude Include="..\..\..\binstream\binstream.h" />
+    <ClInclude Include="..\..\..\binstream\binstreambuf.h" />
+    <ClInclude Include="..\..\..\binstream\binstreamsegbuf.h" />
+    <ClInclude Include="..\..\..\binstream\bstype.h" />
+    <ClInclude Include="..\..\..\binstream\cachestream.h" />
+    <ClInclude Include="..\..\..\binstream\circularstreambuf.h" />
+    <ClInclude Include="..\..\..\binstream\container.h" />
+    <ClInclude Include="..\..\..\binstream\container_linear.h" />
+    <ClInclude Include="..\..\..\binstream\enc_base64stream.h" />
+    <ClInclude Include="..\..\..\binstream\enc_hexstream.h" />
+    <ClInclude Include="..\..\..\binstream\exestream.h" />
+    <ClInclude Include="..\..\..\binstream\filestream.h" />
+    <ClInclude Include="..\..\..\binstream\forkstream.h" />
+    <ClInclude Include="..\..\..\binstream\httpstream.h" />
+    <ClInclude Include="..\..\..\binstream\httpstreamcoid.h" />
+    <ClInclude Include="..\..\..\binstream\httpstreamtunnel.h" />
+    <ClInclude Include="..\..\..\binstream\inoutstream.h" />
+    <ClInclude Include="..\..\..\binstream\netstream.h" />
+    <ClInclude Include="..\..\..\binstream\netstreamcoid.h" />
+    <ClInclude Include="..\..\..\binstream\netstreamhttp.h" />
+    <ClInclude Include="..\..\..\binstream\netstreamtcp.h" />
+    <ClInclude Include="..\..\..\binstream\netstreamudp.h" />
+    <ClInclude Include="..\..\..\binstream\netstreamudpbuf.h" />
+    <ClInclude Include="..\..\..\binstream\nullstream.h" />
+    <ClInclude Include="..\..\..\binstream\packstream.h" />
+    <ClInclude Include="..\..\..\binstream\packstreamlz4.h" />
+    <ClInclude Include="..\..\..\binstream\packstreamzip.h" />
+    <ClInclude Include="..\..\..\binstream\stdstream.h" />
+    <ClInclude Include="..\..\..\binstream\stlstream.h" />
+    <ClInclude Include="..\..\..\binstream\txtcachestream.h" />
+    <ClInclude Include="..\..\..\binstream\txtstream.h" />
+    <ClInclude Include="..\..\..\binstream\txtstreamhtml.h" />
+    <ClInclude Include="..\..\..\binstring.h" />
+    <ClInclude Include="..\..\..\bitrange.h" />
+    <ClInclude Include="..\..\..\coder\lz4\lz4.h" />
+    <ClInclude Include="..\..\..\coder\lz4\lz4hc.h" />
+    <ClInclude Include="..\..\..\coder\lz4\xxhash.h" />
+    <ClInclude Include="..\..\..\crypt\sha1.h" />
+    <ClInclude Include="..\..\..\dbg_location.h" />
+    <ClInclude Include="..\..\..\hash\hashfunc.h" />
+    <ClInclude Include="..\..\..\hash\hashkeyset.h" />
+    <ClInclude Include="..\..\..\hash\hashmap.h" />
+    <ClInclude Include="..\..\..\hash\hashset.h" />
+    <ClInclude Include="..\..\..\hash\hashtable.h" />
+    <ClInclude Include="..\..\..\hash\slothash.h" />
+    <ClInclude Include="..\..\..\interface.h" />
+    <ClInclude Include="..\..\..\intergen\ifc.h" />
+    <ClInclude Include="..\..\..\intergen\ifc.js.h" />
+    <ClInclude Include="..\..\..\metastream\fmtstream.h" />
+    <ClInclude Include="..\..\..\metastream\fmtstreamnull.h" />
+    <ClInclude Include="..\..\..\metastream\fmtstream_lexer.h" />
+    <ClInclude Include="..\..\..\metastream\fmtstreamcxx.h" />
+    <ClInclude Include="..\..\..\metastream\fmtstreamjson.h" />
+    <ClInclude Include="..\..\..\metastream\fmtstreamxml.h" />
+    <ClInclude Include="..\..\..\metastream\fmtstreamxml2.h" />
+    <ClInclude Include="..\..\..\metastream\metagen.h" />
+    <ClInclude Include="..\..\..\metastream\metastream.h" />
+    <ClInclude Include="..\..\..\metastream\metavar.h" />
+    <ClInclude Include="..\..\..\alloc\_malloc.h" />
+    <ClInclude Include="..\..\..\alloc\commalloc.h" />
+    <ClInclude Include="..\..\..\alloc\memtrack.h" />
+    <ClInclude Include="..\..\..\sync\_mutex.h" />
+    <ClInclude Include="..\..\..\sync\guard.h" />
+    <ClInclude Include="..\..\..\sync\mutex.h" />
+    <ClInclude Include="..\..\..\sync\mutex_reg.h" />
+    <ClInclude Include="..\..\..\sync\rw_mutex.h" />
+    <ClInclude Include="..\..\..\sync\rw_mx_core.h" />
+    <ClInclude Include="..\..\..\sync\thread_mgr.h" />
+    <ClInclude Include="..\..\..\coder\rlr.h" />
+    <ClInclude Include="..\..\..\log\logger.h" />
+    <ClInclude Include="..\..\..\regex\regcomp.h" />
+    <ClInclude Include="..\..\..\comm.h" />
+    <ClInclude Include="..\..\..\commassert.h" />
+    <ClInclude Include="..\..\..\commexception.h" />
+    <ClInclude Include="..\..\..\commtime.h" />
+    <ClInclude Include="..\..\..\commtypes.h" />
+    <ClInclude Include="..\..\..\dir.h" />
+    <ClInclude Include="..\..\..\dynarray.h" />
+    <ClInclude Include="..\..\..\fastdelegate.h" />
+    <ClInclude Include="..\..\..\lexer.h" />
+    <ClInclude Include="..\..\..\local.h" />
+    <ClInclude Include="..\..\..\log\logwriter.h" />
+    <ClInclude Include="..\..\..\mathf.h" />
+    <ClInclude Include="..\..\..\mathi.h" />
+    <ClInclude Include="..\..\..\namespace.h" />
+    <ClInclude Include="..\..\..\net.h" />
+    <ClInclude Include="..\..\..\net_ul.h" />
+    <ClInclude Include="..\..\..\password.h" />
+    <ClInclude Include="..\..\..\pthreadx.h" />
+    <ClInclude Include="..\..\..\ptrowner.h" />
+    <ClInclude Include="..\..\..\radix.h" />
+    <ClInclude Include="..\..\..\ref.h" />
+    <ClInclude Include="..\..\..\regex.h" />
+    <ClInclude Include="..\..\..\retcodes.h" />
+    <ClInclude Include="..\..\..\rnd.h" />
+    <ClInclude Include="..\..\..\singleton.h" />
+    <ClInclude Include="..\..\..\atomic\stack.h" />
+    <ClInclude Include="..\..\..\str.h" />
+    <ClInclude Include="..\..\..\strgen.h" />
+    <ClInclude Include="..\..\..\substring.h" />
+    <ClInclude Include="..\..\..\taskmaster.h" />
+    <ClInclude Include="..\..\..\timer.h" />
+    <ClInclude Include="..\..\..\token.h" />
+    <ClInclude Include="..\..\..\tokenizer.h" />
+    <ClInclude Include="..\..\..\trait.h" />
+    <ClInclude Include="..\..\..\tutf8.h" />
+    <ClInclude Include="..\..\..\txtconv.h" />
+    <ClInclude Include="..\..\..\version.h" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="..\..\..\doc\visualc-syntax\coid.natvis" />
