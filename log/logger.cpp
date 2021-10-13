@@ -388,14 +388,8 @@ void logger::post(const token& txt, const token& from, const void* inst)
     log::type type = logmsg::consume_type(msg);
 
     ref<logmsg> msgr = interface_register::canlog(type, from, inst);
-    if (msgr) {
-        charstr& str = msgr->str();
-        str = logmsg::type2tok(type);
-
-        if (from)
-            str << '[' << from << "] ";
-        str << msg;
-    }
+    if (msgr)
+        msgr->str() << msg;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
