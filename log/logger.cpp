@@ -293,9 +293,8 @@ void logger::enable_debug_out(bool en)
 uints logger::register_filter(log_filter&& filter)
 {
     GUARDTHIS(_mutex);
-    uints id = _filters.size();
-    _filters.push(std::move(filter));
-    return id;
+    log_filter * slot = _filters.push(std::move(filter));
+    return _filters.get_item_id(slot);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

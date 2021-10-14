@@ -39,7 +39,7 @@
 #include "../str.h"
 #include "../ref.h"
 #include "../function.h"
-//#include "../alloc/slotalloc.h"
+#include "../alloc/slotalloc.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 //@{ Log message with specified severity
@@ -328,7 +328,7 @@ struct log_filter
 class logger
 {
 protected:
-    dynarray<log_filter> _filters;
+    slotalloc<log_filter> _filters;
     ref<logger_file> _logfile;
 
     log::type _minlevel = log::last;
