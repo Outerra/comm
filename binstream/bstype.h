@@ -325,6 +325,9 @@ DEF_TYPE2(  STRUCT_CLOSE,       T_STRUCTEND, 0);
 
 DEF_TYPE(   versionid,          T_UINT);
 
+template< typename T > struct t_type<typed_versionid<T>> : kind { t_type() : kind(kind::basic_type, sizeof(typed_versionid<T>)) {} };
+
+
 ////////////////////////////////////////////////////////////////////////////////
 ///Wrapper class for binstream type key
 template<class T>

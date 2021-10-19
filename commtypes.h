@@ -312,6 +312,25 @@ struct versionid
     }
 };
 
+template<typename T>
+struct typed_versionid : coid::versionid
+{
+    typed_versionid(coid::versionid& vid)
+        : coid::versionid(vid)
+    {
+    }
+
+    typed_versionid(coid::versionid&& vid)
+        : coid::versionid(vid)
+    {
+    }
+
+    typed_versionid()
+        : coid::versionid()
+    {
+    }
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 #ifdef SYSTYPE_MSVC
 # define TEMPLFRIEND

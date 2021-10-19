@@ -1704,8 +1704,14 @@ public:
         return *this;
     }
 
-    metastream operator||(versionid& vid) {
+    metastream& operator ||(versionid& vid) {
         return meta_base_type("uint64", vid);
+    }
+
+    template<typename T>
+    friend metastream& operator ||(metastream& m, typed_versionid<T>& val)
+    {
+        return m || static_cast<versionid&>(val);
     }
 
     ///Used for types that stream using a translation to a different type
