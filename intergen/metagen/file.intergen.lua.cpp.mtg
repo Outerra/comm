@@ -143,25 +143,21 @@ $-[event]$
     virtual $return.type$ $name$($[args rest="," after=" "]$ $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$) $-(if const?)$ const$(/if)$ override;
 $-[/event]$
 
-$-[event]$
-    virtual bool is_bound_$intname$() override { return is_event_bound($@index$); }
-$-[/event]$
+    virtual bool is_bound(event m) override {
+        if (!_bound_events) {
+            static ::lua::registry_handle empty_registry_handle;
+            bind_events(false, iref<::lua::registry_handle>(&empty_registry_handle));
+        }
+
+        return !_events[int(m)];
+    }
 
 virtual void force_bind_script_events() {
     static ::lua::registry_handle empty_registry_handle;
-    bind_events( true, iref<::lua::registry_handle>(&empty_registry_handle));
+    bind_events(true, iref<::lua::registry_handle>(&empty_registry_handle));
 }
 
 private:
-    bool is_event_bound(int id)
-    {
-        if (!_bound_events) {
-            static ::lua::registry_handle empty_registry_handle;
-            bind_events( false, iref<::lua::registry_handle>(&empty_registry_handle));
-        }
-
-        return !_events[id];
-    }
 
     //event wrappers for event invocation from lua
 $-[event]$

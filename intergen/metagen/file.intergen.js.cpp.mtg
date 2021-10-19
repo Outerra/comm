@@ -140,9 +140,18 @@ $-[event]$
     virtual $return.type$ $name$($[args rest="," after=" "]$ $type$ $(if fnarg?)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$) $-(if const?)$ const$(/if)$ override;
 $-[/event]$
 
-$-[event]$
-    virtual bool is_bound_$intname$() override { return is_event_bound($@index$); }
-$-[/event]$
+    virtual bool is_bound(event m) override {
+        v8::Isolate* iso = v8::Isolate::GetCurrent();
+        if (!_bound_events) {
+            v8::HandleScope handle_scope__(iso);
+            v8::TryCatch js_trycatch(iso);
+
+            bind_events(context(iso), false, v8::Undefined(iso));
+        }
+
+        int id = int(m);
+        return !_events[id].IsEmpty() && !_events[id].Get(iso)->IsUndefined();
+    }
 
     virtual void force_bind_script_events() {
         v8::Isolate* iso = v8::Isolate::GetCurrent();
@@ -153,19 +162,6 @@ $-[/event]$
     }
 
 private:
-    bool is_event_bound( int id )
-    {
-        v8::Isolate* iso = v8::Isolate::GetCurrent();
-
-        if (!_bound_events) {
-            v8::HandleScope handle_scope__(iso);
-            v8::TryCatch js_trycatch(iso);
-
-            bind_events(context(iso), false, v8::Undefined(iso));
-        }
-
-        return !_events[id].IsEmpty() && !_events[id].Get(iso)->IsUndefined();
-    }
 
     //event wrappers for event invocation from js
 $-[event]$

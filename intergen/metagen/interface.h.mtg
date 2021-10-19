@@ -45,6 +45,48 @@ $-[pasteinners]$
 
 $@value$
 $-[/pasteinners]$
+$-(if varname? destroy.name.empty?)$
+
+    virtual ~$name$() {
+        if (_cleaner)
+            _cleaner(this, 0);
+    }
+$-(/if)$
+$-(if event?)$
+
+    // --- host helpers to check presence of event handlers in scripts ---
+    
+    enum class event {
+$-[event !static?]$
+        $intname$ = $@index$,
+$-[/event]$
+    };
+
+    virtual bool is_bound(event m) { return true; }
+$-(/if event?)$
+
+    // --- creators ---
+$-[method creator? !ifccr?]$
+
+$(if !comments.empty?)$$[comments]-$
+    $@value$
+$[/comments]$$(/if)-$
+    static iref<$..name$> $name$(
+        $-[args rest="," after=" "]$ $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$) {
+        return $name$<$..name$>(0$[args]$, $name$$[/args]$);
+    }
+
+    template<class T>
+    static iref<T> $name$( T* _subclass_$[args]$, $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$ );
+$-[/method]$
+$-[method creator? ifccr?]$
+
+$(if !comments.empty?)$$[comments]-$
+    $@value$
+$[/comments]$$(/if)-$
+    static iref<$..name$> $name$(
+        $-[args rest="," after=" "]$ $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$);
+$-[/method]$
 
     // --- interface methods ---
 
@@ -81,45 +123,9 @@ $[/event]-$
     virtual void force_bind_script_events() {}
 
 public:
-    // --- host helpers to check presence of handlers in scripts ---
-
-$-[event !static?]$
-    virtual bool is_bound_$intname$() { return true; }
-$-[/event]$
-
-public:
 $-(/if)$
-    // --- creators ---
-$-[method creator? !ifccr?]$
-
-$(if !comments.empty?)$$[comments]-$
-    $@value$
-$[/comments]$$(/if)-$
-    static iref<$..name$> $name$(
-        $-[args rest="," after=" "]$ $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$) {
-        return $name$<$..name$>(0$[args]$, $name$$[/args]$);
-    }
-
-    template<class T>
-    static iref<T> $name$( T* _subclass_$[args]$, $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$ );
-$-[/method]$
-$-[method creator? ifccr?]$
-
-$(if !comments.empty?)$$[comments]-$
-    $@value$
-$[/comments]$$(/if)-$
-    static iref<$..name$> $name$(
-        $-[args rest="," after=" "]$ $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$);
-$-[/method]$
 
     // --- internal helpers ---
-$-(if varname? destroy.name.empty?)$
-
-    virtual ~$name$() {
-        if (_cleaner)
-            _cleaner(this, 0);
-    }
-$-(/if)$
 
     ///Interface revision hash
     static const int HASHID = $hash$u;

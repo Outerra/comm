@@ -176,7 +176,7 @@ protected:
 
 public:
 
-    static const int VERSION = 7;
+    static const int VERSION = 8;
 
     typedef bool (*fn_unload_client)(const coid::token& client, const coid::token& module_name, coid::binstring* bstr);
 
