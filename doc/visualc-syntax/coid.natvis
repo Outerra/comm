@@ -79,4 +79,20 @@
     <DisplayString>{_p,x}</DisplayString>
 </Type>
 
+<Type Name="coid::versionid">
+  <DisplayString>id = {id}</DisplayString>
+  <Expand>
+    <Item Name="[id]" ExcludeView="simple">id</Item>
+    <Item Name="[version]" ExcludeView="simple" >version</Item>
+  </Expand>
+</Type>
+
+<Type Name="coid::typed_versionid&lt;*,*&gt;">
+  <DisplayString>id = {id}</DisplayString>
+  <Expand>
+    <Item Name="[id]" ExcludeView="simple">id</Item>
+    <Item Name="[version]" ExcludeView="simple" >version</Item>
+  </Expand>
+</Type>
+
 </AutoVisualizer>
