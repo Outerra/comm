@@ -631,10 +631,14 @@ bool interface_register::register_interface_creator(const token& ifcname, void* 
 
     if (!reg.check_version(intergen_interface::VERSION)) {
         if (creator_ptr) {
-            //print(coid::log::error, "ifcreg", "declined interface registration for {}, mismatched intergen version", ifcname);
             ref<logmsg> msg = canlog(coid::log::error, "ifcreg"_T, 0);
-            msg->str() << "declined interface registration for " << ifcname
-                << ", mismatched intergen version (v" << intergen_interface::VERSION << ')';
+            if (msg) {
+                charstr modpath = directory::get_module_path(creator_ptr);
+
+                msg->str() << "declined interface registration for " << ifcname
+                    << " (" << token(modpath).cut_right_group_back("/\\")
+                    << "), mismatched intergen version (v" << intergen_interface::VERSION << ')';
+            }
         }
         return false;
     }
