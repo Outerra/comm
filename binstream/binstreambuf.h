@@ -55,139 +55,139 @@ class binstreambuf : public binstream
 
 public:
 
-    virtual uint binstream_attributes( bool in0out1 ) const override
+    virtual uint binstream_attributes(bool in0out1) const override
     {
         return fATTR_REVERTABLE | fATTR_READ_UNTIL;
     }
 
-/*
-    virtual uint64 get_written_size() const override        { return _buf.size() - _bgi; }
-    virtual uint64 set_written_size( int64 n ) override
-    {
-        if( n < 0 )
+    /*
+        virtual uint64 get_written_size() const override        { return _buf.size() - _bgi; }
+        virtual uint64 set_written_size( int64 n ) override
         {
-            ints k = _buf.size() - _bgi - int_abs((ints)n);
-            if( k <= 0 )
-                _buf.reset();
-            else
-                _buf.realloc( _bgi + k );
+            if( n < 0 )
+            {
+                ints k = _buf.size() - _bgi - int_abs((ints)n);
+                if( k <= 0 )
+                    _buf.reset();
+                else
+                    _buf.realloc( _bgi + k );
+            }
+            else if( (uints)n < _buf.size() - _bgi )
+                _buf.realloc( uints(n + _bgi) );
+
+            return _buf.size() - _bgi;
         }
-        else if( (uints)n < _buf.size() - _bgi )
-            _buf.realloc( uints(n + _bgi) );
 
-        return _buf.size() - _bgi;
-    }
+        virtual opcd overwrite_raw( uint64 pos, const void* data, uints len ) override
+        {
+            if( pos + len > _buf.size() - _bgi )
+                return ersOUT_OF_RANGE;
 
-    virtual opcd overwrite_raw( uint64 pos, const void* data, uints len ) override
-    {
-        if( pos + len > _buf.size() - _bgi )
-            return ersOUT_OF_RANGE;
-
-        xmemcpy( _buf.ptr() + _bgi + pos, data, len );
-        return 0;
-    }*/
+            xmemcpy( _buf.ptr() + _bgi + pos, data, len );
+            return 0;
+        }*/
 
 
-    operator token() const                  { return token( _buf.ptr()+_bgi, _buf.size() - _bgi ); }
+    operator token() const { return token(_buf.ptr() + _bgi, _buf.size() - _bgi); }
 
-    bool is_empty() const                   { return _buf.size() - _bgi == 0; }
+    bool is_empty() const { return _buf.size() - _bgi == 0; }
 
-    dynarray<char>& get_buf()               { return _buf; }
-    const dynarray<char>& get_buf() const   { return _buf; }
+    dynarray<char>& get_buf() { return _buf; }
+    const dynarray<char>& get_buf() const { return _buf; }
 
-    void swap( charstr& str )
+    void swap(charstr& str)
     {
         str.swap(_buf, true);
         _bgi = 0;
     }
 
     template<class COUNT>
-    void swap( dynarray<char,COUNT>& buf )
+    void swap(dynarray<char, COUNT>& buf)
     {
         _buf.swap(buf);
         _bgi = 0;
     }
 
     template<class COUNT>
-    void swap( dynarray<uchar,COUNT>& buf )
+    void swap(dynarray<uchar, COUNT>& buf)
     {
         _buf.swap(reinterpret_cast<dynarray<char>&>(buf));
         _bgi = 0;
     }
 
-    friend void swap( binstreambuf& a, binstreambuf& b )
+    friend void swap(binstreambuf& a, binstreambuf& b)
     {
         std::swap(a._buf, b._buf);
         std::swap(a._bgi, b._bgi);
     }
 
     ///Reserve raw space in the buffer
-    void* add_raw( uints len )
+    void* add_raw(uints len)
     {
         return _buf.add(len);
     }
 
     ///Reserve raw space in the buffer, preset with 0's or 1's
-    void* addc_raw( uints len, bool toones )
+    void* addc_raw(uints len, bool toones)
     {
-        return _buf.addc( len, toones );
+        return _buf.addc(len, toones);
     }
 
     ///Reserve memory in the buffer
-    void reserve( uints size )
+    void reserve(uints size)
     {
         _buf.reserve(size, true);
     }
 
     ///resize memory in the buffer
-    void resize( uints size )
+    void resize(uints size)
     {
         _buf.resize(size);
     }
 
     ///Get pointer to raw data in the buffer
-    void* get_raw_available( uints pos, uints& len )
+    void* get_raw_available(uints pos, uints& len)
     {
-        if( pos >= _buf.size() )
+        if (pos >= _buf.size())
             return 0;
-        if( pos+len > _buf.size() )
+        if (pos + len > _buf.size())
             len = _buf.size() - pos;
 
-        return _buf.ptr()+pos;
+        return _buf.ptr() + pos;
     }
 
     ///Get pointer to raw data in the buffer
-    void* get_raw( uints pos, uints len )
+    void* get_raw(uints pos, uints len)
     {
-        if( pos >= _buf.size() )
+        if (pos >= _buf.size())
             return 0;
-        if( pos+len > _buf.size() )
+        if (pos + len > _buf.size())
             return 0;
 
-        return _buf.ptr()+pos;
+        return _buf.ptr() + pos;
     }
 
 
-    virtual opcd write_raw( const void* p, uints& len ) override
+    virtual opcd write_raw(const void* p, uints& len) override
     {
         void* b = _buf.add(len);
-        xmemcpy( b, p, len );
+        xmemcpy(b, p, len);
         len = 0;
         return 0;
     }
 
-    virtual opcd read_raw( void* p, uints& len ) override
+    virtual opcd read_raw(void* p, uints& len) override
     {
-        if( _buf.size() - _bgi < len )
+        if (_buf.size() - _bgi < len)
         {
             uints rem = _buf.size() - _bgi;
-            xmemcpy( p, _buf.ptr()+_bgi, rem );
+            xmemcpy(p, _buf.ptr() + _bgi, rem);
             _bgi = 0;
             _buf.reset();
             len -= rem;
             return ersNO_MORE;
         }
-        xmemcpy( p, _buf.ptr()+_bgi, len );
+        xmemcpy(p, _buf.ptr() + _bgi, len);
         _bgi += len;
         len = 0;
         //compact();
@@ -195,64 +195,64 @@ public:
     }
 
     /// read until \a ss substring is read or 'max_size' bytes received
-    opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS ) override
+    opcd read_until(const substring& ss, binstream* bout, uints max_size = UMAXS) override
     {
-        token t( _buf.ptr()+_bgi, _buf.size() - _bgi );
+        token t(_buf.ptr() + _bgi, _buf.size() - _bgi);
 
         uints n = t.count_until_substring(ss);
-        if(bout)
-            bout->write_raw( _buf.ptr()+_bgi, n );
+        if (bout)
+            bout->write_raw(_buf.ptr() + _bgi, n);
         _bgi += n;
 
-        return n<t.len() ? opcd(0) : ersNOT_FOUND;
+        return n < t.len() ? opcd(0) : ersNOT_FOUND;
     }
 
-    virtual opcd peek_read( uint timeout ) override {
-        if(timeout)  return ersINVALID_PARAMS;
-        return _buf.size() > _bgi  ?  opcd(0) : ersNO_MORE;
+    virtual opcd peek_read(uint timeout) override {
+        if (timeout)  return ersINVALID_PARAMS;
+        return _buf.size() > _bgi ? opcd(0) : ersNO_MORE;
     }
 
-    virtual opcd peek_write( uint timeout ) override {
+    virtual opcd peek_write(uint timeout) override {
         return 0;
     }
 
 
     ///Write raw data to another binstream. Overloadable to avoid excesive copying when not neccessary.
     //@return number of bytes written
-    virtual opcd transfer_to( binstream& bin, uints datasize=UMAXS, uints* size_written=0, uints blocksize = 4096 ) override
+    virtual opcd transfer_to(binstream& bin, uints datasize = UMAXS, uints* size_written = 0, uints blocksize = 4096) override
     {
         opcd e;
-        uints n=0, tlen = uint_min(_buf.size(), datasize);
+        uints n = 0, tlen = uint_min(_buf.size(), datasize);
 
-        for( ; _bgi<tlen; )
+        for (; _bgi < tlen; )
         {
-            uints len = uint_min( tlen - _bgi, uints(blocksize) );
+            uints len = uint_min(tlen - _bgi, uints(blocksize));
             uints oen = len;
 
-            e = bin.write_raw( _buf.ptr()+_bgi, len );
+            e = bin.write_raw(_buf.ptr() + _bgi, len);
 
             n += oen - len;
             _bgi += oen - len;
 
-            if( e || len>0 )
+            if (e || len > 0)
                 break;
         }
 
-        if(size_written)
+        if (size_written)
             *size_written = n;
 
         return e;
     }
 
-    virtual opcd transfer_from( binstream& bin, uints datasize=UMAXS, uints* size_read=0, uints blocksize = 4096 ) override
+    virtual opcd transfer_from(binstream& bin, uints datasize = UMAXS, uints* size_read = 0, uints blocksize = 4096) override
     {
         opcd e;
         uints old = _buf.size();
-        uints n=0;
+        uints n = 0;
 
-        for( ;; )
+        for (;; )
         {
-            uints len = datasize>blocksize ? blocksize : datasize;
+            uints len = datasize > blocksize ? blocksize : datasize;
             uints toread = len;
             void* ptr = _buf.add(len);
 
@@ -262,12 +262,12 @@ public:
             datasize -= d;
             n += d;
 
-            if( e || len>0 || datasize==0 )
+            if (e || len > 0 || datasize == 0)
                 break;
         }
 
-        _buf.resize(old+n);
-        if(size_read)
+        _buf.resize(old + n);
+        if (size_read)
             *size_read = n;
 
         return e == ersNO_MORE ? opcd(0) : e;
@@ -276,11 +276,11 @@ public:
 
     virtual bool is_open() const override { return true; }//_buf.size() > 0; }
     virtual void flush() override { }
-    virtual void acknowledge( bool eat=false ) override
+    virtual void acknowledge(bool eat = false) override
     {
-        if( _bgi < _buf.size() )
+        if (_bgi < _buf.size())
         {
-            if(eat) { reset_read(); }
+            if (eat) { reset_read(); }
             throw ersIO_ERROR "data left in input buffer";
         }
     }
@@ -297,12 +297,12 @@ public:
 
     bool restore()
     {
-        _bgi=0;
+        _bgi = 0;
         return _buf.size() > 0;
     }
 
-    bool operator == (const binstreambuf& buf) const        { return _buf == buf._buf; }
-    bool operator != (const binstreambuf& buf) const        { return _buf != buf._buf; }
+    bool operator == (const binstreambuf& buf) const { return _buf == buf._buf; }
+    bool operator != (const binstreambuf& buf) const { return _buf != buf._buf; }
 
     binstreambuf& operator = (const binstreambuf& src)
     {
@@ -325,23 +325,25 @@ public:
     }
 
 
-    binstreambuf() : _bgi(0)     { }
-    binstreambuf( const token& str )
+    binstreambuf() : _bgi(0) { }
+    binstreambuf(const token& str)
     {
-        _buf.copy_bin_from( str.ptr(), str.len() );
+        _buf.copy_bin_from(str.ptr(), str.len());
         _bgi = 0;
     }
 
-    explicit binstreambuf( dynarray<uchar>& buf )
+    template<class COUNT>
+    explicit binstreambuf(dynarray<uchar, COUNT>& buf)
     {
-        _buf.takeover( (dynarray<char>&)buf );
-        _bgi=0;
+        _buf.takeover((dynarray<char>&)buf);
+        _bgi = 0;
     }
 
-    explicit binstreambuf( dynarray<char>& buf )
+    template<class COUNT>
+    explicit binstreambuf(dynarray<char, COUNT>& buf)
     {
-        _buf.takeover( buf );
-        _bgi=0;
+        _buf.takeover(buf);
+        _bgi = 0;
     }
 
     uint64 get_read_pos() const override { return _bgi; }
@@ -375,46 +377,46 @@ class binstreamconstbuf : public binstream
 
 public:
 
-    virtual uint binstream_attributes( bool in0out1 ) const
+    virtual uint binstream_attributes(bool in0out1) const
     {
         return 0;
     }
 
-    virtual opcd write_raw( const void* p, uints& len )
+    virtual opcd write_raw(const void* p, uints& len)
     {
         return ersUNAVAILABLE "can't write to binstreamconstbuf read-only stream";
     }
 
-    virtual opcd read_raw( void* p, uints& len )
+    virtual opcd read_raw(void* p, uints& len)
     {
-        if( _len < len )
+        if (_len < len)
         {
-            xmemcpy( p, _source, _len );
+            xmemcpy(p, _source, _len);
             len -= _len;
             _source += _len;
             _len = 0;
             return ersNO_MORE;
         }
 
-        xmemcpy( p, _source, len );
+        xmemcpy(p, _source, len);
         _source += len;
 
-        if( _len != UMAXS ) _len -= len;
+        if (_len != UMAXS) _len -= len;
         len = 0;
         return 0;
     }
 
     /// read until \a ss substring is read or 'max_size' bytes received
-    opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS )
+    opcd read_until(const substring& ss, binstream* bout, uints max_size = UMAXS)
     {
-        token t( (const char*)_source, _len );
+        token t((const char*)_source, _len);
 
         uints n = t.count_until_substring(ss);
-        if(bout)
-            bout->write_raw( _source, n );
+        if (bout)
+            bout->write_raw(_source, n);
 
-        opcd e = n<_len ? opcd(0) : ersNOT_FOUND;
-        if(!e)
+        opcd e = n < _len ? opcd(0) : ersNOT_FOUND;
+        if (!e)
             n += ss.len();
 
         _source += n;
@@ -423,23 +425,23 @@ public:
         return e;
     }
 
-    virtual opcd peek_read( uint timeout ) {
-        if(timeout)  return ersINVALID_PARAMS;
-        return _len  ?  opcd(0) : ersNO_MORE;
+    virtual opcd peek_read(uint timeout) {
+        if (timeout)  return ersINVALID_PARAMS;
+        return _len ? opcd(0) : ersNO_MORE;
     }
 
-    virtual opcd peek_write( uint timeout ) {
+    virtual opcd peek_write(uint timeout) {
         return ersNO_MORE;
     }
 
 
-    virtual bool is_open() const        { return _source != NULL; }
-    virtual void flush()                { }
-    virtual void acknowledge (bool eat=false)
+    virtual bool is_open() const { return _source != NULL; }
+    virtual void flush() { }
+    virtual void acknowledge(bool eat = false)
     {
-        if( _len > 0 )
+        if (_len > 0)
         {
-            if(!eat)
+            if (!eat)
                 throw ersIO_ERROR "data left in input buffer";
         }
 
@@ -460,18 +462,18 @@ public:
 
     friend inline binstream& operator << (binstream& out, const binstreamconstbuf& buf)
     {
-        if( buf._len == UMAXS ) throw ersUNAVAILABLE "unknown size";
-        out.xwrite_raw( buf._source, buf._len );
+        if (buf._len == UMAXS) throw ersUNAVAILABLE "unknown size";
+        out.xwrite_raw(buf._source, buf._len);
         return out;
     }
 
     binstreamconstbuf() : _source(0), _base(0), _len(0) { }
-    binstreamconstbuf( const void* source, uints len )
+    binstreamconstbuf(const void* source, uints len)
         : _source((const uchar*)source), _base((const uchar*)source), _len(len) { }
-    binstreamconstbuf( const token& t )
-        : _source((const uchar *)t._ptr), _base((const uchar *)t.ptr()), _len(t.len()) { }
+    binstreamconstbuf(const token& t)
+        : _source((const uchar*)t._ptr), _base((const uchar*)t.ptr()), _len(t.len()) { }
 
-    explicit binstreamconstbuf( const binstreambuf& str )
+    explicit binstreamconstbuf(const binstreambuf& str)
     {
         token t = str;
         _source = (const uchar*)t.ptr();
@@ -480,28 +482,28 @@ public:
     }
 
 
-    void set( const void* source, uints len )
+    void set(const void* source, uints len)
     {
         _source = (const uchar*)source;
         _base = _source;
         _len = len;
     }
 
-    void set( const token& t )
+    void set(const token& t)
     {
         _source = (const uchar*)t.ptr();
         _base = _source;
         _len = t.len();
     }
 
-    uints get_pos() const { return _source-_base; }
+    uints get_pos() const { return _source - _base; }
 
-    bool set_read_pos( uint64 pos )
+    bool set_read_pos(uint64 pos)
     {
-        DASSERT(pos<=UMAX64);
+        DASSERT(pos <= UMAX64);
 
-        if( pos<_len ) {
-            _source=_base+(uints)pos;
+        if (pos < _len) {
+            _source = _base + (uints)pos;
             return true;
         }
         else

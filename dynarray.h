@@ -1678,7 +1678,10 @@ public:
         return n;
     }
 
-    void clear() { reset(); }
+    dynarray& clear() {
+        reset();
+        return *this;
+    }
 
     ///Delete content and _destroy the memory
     void discard() {
