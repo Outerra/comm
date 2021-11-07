@@ -360,8 +360,8 @@ opcd directory::delete_directory(zstring src, bool recursive)
     opcd was_err;
 
     if (recursive) {
-        list_file_paths(src, "*", recursion_mode::dir_enter, [&was_err](const charstr& path, recursion_mode type) {
-            opcd err = type != recursion_mode::file
+        list_file_paths(src, "*", recursion_mode::dirs_enter, [&was_err](const charstr& path, list_entry type) {
+            opcd err = type != list_entry::file
                 ? delete_directory(path, false)
                 : delete_file(path);
 
@@ -422,16 +422,16 @@ opcd directory::copymove_directory(zstring src, zstring dst, bool move)
 
     uint dlen = dsts.len();
 
-    list_file_paths(src, "*", recursion_mode::dir_enter_exit, [&](const charstr& path, recursion_mode isdir) {
+    list_file_paths(src, "*", recursion_mode::dirs_enter_exit, [&](const charstr& path, list_entry isdir) {
         token newpath = token(path.ptr() + slen, path.ptre());
 
         dsts.resize(dlen);
         dsts << newpath;
 
-        if (isdir == recursion_mode::dir_enter) {
+        if (isdir == list_entry::dir_enter) {
             err = mkdir(dsts);
         }
-        else if (isdir == recursion_mode::dir_exit) {
+        else if (isdir == list_entry::dir_exit) {
             if (move)
                 err = delete_directory(path, false);
         }
@@ -694,15 +694,15 @@ bool directory::compact_path(charstr& dst, char tosep)
 
 ////////////////////////////////////////////////////////////////////////////////
 bool directory::list_file_paths(const token& path, const token& extension, recursion_mode mode,
-    const coid::function<void(const charstr&, recursion_mode)>& fn)
+    const coid::function<void(const charstr&, list_entry)>& fn)
 {
     directory dir;
 
     if (dir.open(path, "*.*") != ersNOERR)
         return false;
 
-    bool all_files = extension == '*';
-    bool ext_with_dot = extension.first_char() == '.' || extension.is_empty();
+    bool all_files = extension.is_empty() || extension == '*';
+    bool ext_with_dot = extension.first_char() == '.';
 
     while (dir.next()) {
         if (dir.is_entry_regular()) {
@@ -716,16 +716,21 @@ bool directory::list_file_paths(const token& path, const token& extension, recur
             }
 
             if (valid)
-                fn(dir.get_last_full_path(), recursion_mode::file);
+                fn(dir.get_last_full_path(), list_entry::file);
         }
-        else if (mode != recursion_mode::file && dir.is_entry_subdirectory()) {
-            if (int(mode) & int(recursion_mode::dir_enter))
-                fn(dir.get_last_full_path(), recursion_mode::dir_enter);
+        else if (dir.is_entry_subdirectory()) {
+            if (mode == recursion_mode::files_and_dirs) {
+                fn(dir.get_last_full_path(), list_entry::dir_enter);
+            }
+            else if (mode != recursion_mode::files) {
+                if (int(mode) & int(recursion_mode::dirs_enter))
+                    fn(dir.get_last_full_path(), list_entry::dir_enter);
 
-            directory::list_file_paths(dir.get_last_full_path(), extension, mode, fn);
+                directory::list_file_paths(dir.get_last_full_path(), extension, mode, fn);
 
-            if (int(mode) & int(recursion_mode::dir_exit))
-                fn(dir.get_last_full_path(), recursion_mode::dir_exit);
+                if (int(mode) & int(recursion_mode::dirs_exit))
+                    fn(dir.get_last_full_path(), list_entry::dir_exit);
+            }
         }
     }
 

@@ -332,19 +332,27 @@ public:
 
     enum class recursion_mode
     {
-        file            = 0, //< no recursion into sundirectories
-        dir_exit        = 1, //< recursive subdir enumeration, subdir callback invoked after listing the subdir content
-        dir_enter       = 2, //< recursive subdir enumeration, subdir callback invoked before listing the subdir content
-        dir_enter_exit  = 3  //< recursive subdir enumeration, subdir callback invoked both before and after listing the subdir content
+        files = 0, //< no recursion into sundirectories, list only files
+        dirs_exit = 1, //< list files while recursively entering subdirs, subdir callback invoked after listing the subdir content
+        dirs_enter = 2, //< list files while recursively entering subdirs, subdir callback invoked before listing the subdir content
+        dirs_enter_exit = 3, //< list files while recursively entering subdirs, subdir callback invoked both before and after listing the subdir content
+        files_and_dirs = 4, //< no recursion into subdirectories, list files and dirs
     };
 
-    ///Lists all files with extension (extension = "*" if all files) in directory with path using func functor.
+    enum class list_entry
+    {
+        file,
+        dir_exit,
+        dir_enter,
+    };
+
+    ///Lists all files with extension (extension = "" or "*" if all files) in directory with path using func functor.
     ///Lists also subdirectories paths when recursive_flags set
     //@param mode - nest into subdirectories and calls callback fn in order specified by recursive_mode
     //@param fn callback function(const charstr& file_path, recursion_mode mode)
     //@note fn callback recursion_mode parameter invoked on each file or on directories upon entering or exisitng (or both)
     static bool list_file_paths(const token& path, const token& extension, recursion_mode mode,
-        const coid::function<void(const charstr&, recursion_mode)>& fn);
+        const coid::function<void(const charstr&, list_entry)>& fn);
 
     ///structure returned by ::find_files
     struct find_result {
