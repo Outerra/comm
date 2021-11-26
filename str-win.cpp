@@ -104,28 +104,28 @@ COID_NAMESPACE_BEGIN
 
 struct zstring::zpool
 {
-    atomic::stack_base<charstr*> _pool;
+    atomic::stack_base<charstr> _pool;
     uints _maxsize;
 
     zpool() : _maxsize(SIZE_MAX)
     {}
 
-    void free( charstr* str ) {
+    void free(charstr* str) {
         //keep only strings under the max size
-        if(str && str->reserved() < _maxsize)
+        if (str && str->reserved() < _maxsize)
             _pool.push(str);
         else
             delete str;
     }
 
     charstr* alloc() {
-        charstr* str = 0;
-        if(!_pool.pop(str))
+        charstr* str = _pool.pop();
+        if (!str)
             str = new charstr;
         return str;
     }
 
-    void set_max_size( uints maxsize ) {
+    void set_max_size(uints maxsize) {
         _maxsize = maxsize;
     }
 
@@ -146,7 +146,7 @@ zstring::zpool* zstring::thread_local_pool()
     zstring::zpool* p = (zstring::zpool*)_TK.get();
     if(p)
         return p;
-        
+
     p = new zstring::zpool;
     _TK.set(p);
 
@@ -180,7 +180,7 @@ static atomic::stack_base<charstr*>& zeroterm_pool()
     pool_t* p = (pool_t*)_TK.get();
     if(p)
         return *p;
-        
+
     p = new pool_t;
     _TK.set(p);
 
@@ -377,7 +377,7 @@ const char* zstring::c_str() const
         return _buf->c_str();
     if(_zend == 0)
         return _zptr;
-    
+
     return *_zend
         ? const_cast<zstring*>(this)->get_str().c_str()
         : _zptr;

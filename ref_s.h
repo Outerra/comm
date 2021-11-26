@@ -61,20 +61,20 @@ public:
     typedef ref<T> ref_t;
     typedef policy_base policy;
     typedef coid::policy_pooled<T> policy_pooled_t;
-    typedef coid::pool<policy_pooled_t*> pool_type_t;
+    typedef coid::pool<policy_pooled_t> pool_type_t;
 
     ref() : _p(0), _o(0) {}
 
     // from T* constructors
     explicit ref(T* o)
         : _p(o != 0
-			? policy_trait<T>::policy::create(o)
-			: 0)
+            ? policy_trait<T>::policy::create(o)
+            : 0)
         , _o(o)
     {
-		if (_p) {
-			_p->add_refcount();
-		}
+        if (_p) {
+            _p->add_refcount();
+        }
     }
 
     template<class Y>

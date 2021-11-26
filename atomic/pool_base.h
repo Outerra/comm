@@ -13,48 +13,61 @@ template<class T>
 class pool
     : protected atomic::stack_base<T>
 {
+    using stack_t = atomic::stack_base<T>;
+
 public:
-	pool()
+    pool()
         : atomic::stack_base<T>()
-	{}
+    {}
 
-	/// return global pool for type T
-	static pool& global() { return SINGLETON(pool<T>); }
+    /// return global pool for type T
+    static pool& global() { return SINGLETON(pool<T>); }
 
-	/// create instance or take one from pool
-	bool create_instance(T& o) {
-		return this->pop(o);
-	}
+    /// @brief Get item from pool
+    /// @return item from pool or nullptr
+    T* get_item() {
+        return stack_t::pop();
+    }
 
-    /// return isntance to pool
-	void release_instance( T& o) {
-		// create trait for reset !!!
-		this->push(o);
-	}
+    /// @brief Create instance or take one from pool
+    T* create_item() {
+        T* inst = stack_t::pop();
+        if (!inst)
+            inst = new T;
+        return inst;
+    }
+
+    /// return instance to pool
+    void release_item(T*& o) {
+        // create trait for reset !!!
+        stack_t::push(o);
+        o = 0;
+    }
 };
 
+////////////////////////////////////////////////////////////////////////////////
 ///
 template<class T>
 class policy_pooled
-	: public policy_base
+    : public policy_base
 {
 public:
     COIDNEWDELETE(policy_pooled);
 
     typedef policy_pooled<T> this_type;
-	typedef pool<this_type*> pool_type;
+    typedef pool<this_type> pool_type;
 
 protected:
-    pool_type* _pool;
+    pool_type* _pool = 0;
 
-    T* _obj;
+    T* _obj = 0;
 
 protected:
 
     ///
-	explicit policy_pooled(T* const obj, pool_type* const p=0) 
-		: policy_base()
-		, _pool(p) 
+    explicit policy_pooled(T* const obj, pool_type* const p=0)
+        : policy_base()
+        , _pool(p)
         , _obj(obj)
     {}
 
@@ -63,30 +76,32 @@ public:
     T* get() const { return _obj; }
 
     ///
-	virtual void _destroy() override
-    { 
-        DASSERTN(_pool!=0); 
+    virtual void _destroy() override
+    {
+        DASSERTN(_pool!=0);
         _obj->reset();
-		this_type* t = static_cast<this_type*>(this);
-        _pool->release_instance(t); 
+        this_type* t = static_cast<this_type*>(this);
+        _pool->release_item(t);
     }
 
     ///
-	static this_type* create( pool_type* po, bool nonew=false, bool* isnew=0 ) 
-    { 
-        DASSERTN(po!=0); 
-        this_type* p=0;
+    static this_type* create(pool_type* po, bool nonew = false, bool* isnew = 0)
+    {
+        DASSERTN(po!=0);
+        this_type* p = po->get_item();
 
-        bool make = !po->create_instance(p) && !nonew;
-        if(make)
+        bool make = !p && !nonew;
+        if (make)
             p = new this_type(new T, po);
-        if(isnew)
+
+        if (isnew)
             *isnew = make;
+
         return p;
     }
 
     ///
-	static this_type* create( bool* isnew=0 )
+    static this_type* create( bool* isnew=0 )
     {
         return create(&default_pool(), false, isnew);
     }
@@ -94,16 +109,17 @@ public:
     static pool_type& default_pool() { return pool_type::global(); }
 };
 
+////////////////////////////////////////////////////////////////////////////////
 ///
 template<class T>
 class policy_pooled_i
-	: public policy_base
+    : public policy_base
 {
 public:
     COIDNEWDELETE(policy_pooled_i);
 
     typedef policy_pooled_i<T> this_type;
-	typedef pool<this_type*> pool_type;
+    typedef pool<this_type> pool_type;
 
 protected:
     pool_type* _pool;
@@ -111,39 +127,39 @@ protected:
 public:
 
     ///
-	policy_pooled_i() 
-		: policy_base()
-        , _pool(&default_pool()) 
+    policy_pooled_i()
+        : policy_base()
+        , _pool(&default_pool())
     {}
 
     ///
-	virtual void _destroy() override
-    { 
-        DASSERTN(_pool!=0); 
+    virtual void _destroy() override
+    {
+        DASSERTN(_pool!=0);
         static_cast<T*>(this)->reset();
         this_type* t = this;
-        _pool->release_instance(t);
+        _pool->release_item(t);
     }
 
     ///
-	static T* create(pool_type* po) 
-    { 
-        DASSERTN(po!=0); 
+    static T* create(pool_type* po)
+    {
+        DASSERTN(po!=0);
         this_type* p = 0;
 
-        if( !po->create_instance(p) ) {
+        if (!po->get_item(p)) {
             p = new T;
             p->_pool = po;
         }
 
-		//if(init_counter)
-		p->add_refcount();
+        //if(init_counter)
+        p->add_refcount();
 
         return static_cast<T*>(p);
     }
 
     ///
-	static T* create()
+    static T* create()
     {
         return create(&default_pool());
     }

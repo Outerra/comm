@@ -45,21 +45,27 @@ namespace atomic {
 template <class T>
 class stack_base
 {
+public:
+    stack_base() = default;
+
+    void push(T* item);
+    T* pop();
+
 private:
 
     struct atomic_align node
     {
         COIDNEWDELETE(node);
 
-        node* _next_basic_pool;
-        T _item;
+        node* _next_basic_pool = 0;
+        T* _item = 0;
     };
 
     struct atomic_align ptr_t
     {
 #ifdef SYSTYPE_64
         typedef coid::uint64 tag_t;
-#else 
+#else
         typedef coid::uint32 tag_t;
 #endif
         ptr_t() : _ptr(0), _pops(0) {}
@@ -79,17 +85,17 @@ private:
             };
         };
 
-        ptr_t(const ptr_t &p) { *this = p; }
+        ptr_t(const ptr_t& p) { *this = p; }
 
-        void operator=(const ptr_t &p) {
+        void operator=(const ptr_t& p) {
 #ifdef SYSTYPE_64
 #ifdef SYSTYPE_MSVC
             __movsq((uint64*)&_data, (uint64*)&p._data, 2);
 #else
-            *((__int128_t*)_data) = __sync_add_and_fetch((__int128_t*)&p._data, 0);
+            * ((__int128_t*)_data) = __sync_add_and_fetch((__int128_t*)&p._data, 0);
 #endif
 #else
-            _data=p._data;
+            _data = p._data;
 #endif
         }
     };
@@ -99,49 +105,52 @@ private:
     friend class basic_pool<node>;
 
     basic_pool<node> _node_pool;
-
-public:
-    stack_base() : _head() {}
-
-    void push(const T& item)
-    {
-        node* n = _node_pool.pop_new();
-        n->_item = item;
-
-        for(;;) {
-            ptr_t oldhead = _head;
-            n->_next_basic_pool = oldhead._ptr;
-
-            const ptr_t newhead(n, oldhead._pops + 1);
-#ifdef SYSTYPE_64
-            if(b_cas128(&_head._data, newhead._datah, newhead._data, &oldhead._data))
-#else 
-            if(b_cas(&_head._data,newhead._data,oldhead._data))
-#endif
-                break;
-        }
-    }
-
-    bool pop(T& item)
-    {
-        for(;;) {
-            ptr_t oldhead = _head;
-
-            if(oldhead._ptr == 0) return false;
-
-            const ptr_t newhead(oldhead._ptr->_next_basic_pool, oldhead._pops + 1);
-#ifdef SYSTYPE_64
-            if(b_cas128(&_head._data, newhead._datah, newhead._data, &oldhead._data)) {
-#else 
-            if(b_cas(&_head._data, newhead._data, oldhead._data)) {
-#endif
-                item = oldhead._ptr->_item;
-                _node_pool.push(oldhead._ptr);
-                return true;
-            }
-        }
-    }
 };
+
+////////////////////////////////////////////////////////////////////////////////
+template <class T>
+void stack_base<T>::push(T* item)
+{
+    node* n = _node_pool.pop_new();
+    n->_item = item;
+
+    for (;;) {
+        ptr_t oldhead = _head;
+        n->_next_basic_pool = oldhead._ptr;
+
+        const ptr_t newhead(n, oldhead._pops + 1);
+#ifdef SYSTYPE_64
+        if (b_cas128(&_head._data, newhead._datah, newhead._data, &oldhead._data))
+#else
+        if (b_cas(&_head._data, newhead._data, oldhead._data))
+#endif
+            break;
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+template <class T>
+T* stack_base<T>::pop()
+{
+    for (;;) {
+        ptr_t oldhead = _head;
+
+        if (oldhead._ptr == 0)
+            return 0;
+
+        const ptr_t newhead(oldhead._ptr->_next_basic_pool, oldhead._pops + 1);
+#ifdef SYSTYPE_64
+        if (b_cas128(&_head._data, newhead._datah, newhead._data, &oldhead._data)) {
+#else
+        if (b_cas(&_head._data, newhead._data, oldhead._data)) {
+#endif
+            T* item = oldhead._ptr->_item;
+            _node_pool.push(oldhead._ptr);
+            return item;
+        }
+    }
+}
+
 
 } // end of namespace
 

@@ -114,7 +114,7 @@ class policy_msg : public policy_base
 public:
     COIDNEWDELETE(policy_msg);
 
-    typedef pool<policy_msg*> pool_type;
+    typedef pool<policy_msg> pool_type;
 
 protected:
 
@@ -146,7 +146,7 @@ public:
         else {
             //back to the pool
             policy_msg* t = this;
-            _pool->release_instance(t);
+            _pool->release_item(t);
         }
     }
 
@@ -154,10 +154,9 @@ public:
     static policy_msg* create()
     {
         pool_type& pool = pool_singleton();
-        policy_msg* p = 0;
+        policy_msg* p = pool.get_item();
 
-        bool make = !pool.create_instance(p);
-        if (make)
+        if (!p)
             p = new policy_msg(new logmsg, &pool);
         else
             p->get()->reset();
