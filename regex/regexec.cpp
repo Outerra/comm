@@ -51,7 +51,7 @@ regex::regex() {
 }
 
 regex::regex(token rt, bool literal, bool star_match_newline, bool icase) {
-    compile(rt, literal, icase, star_match_newline);
+    compile(rt, literal, star_match_newline, icase);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
