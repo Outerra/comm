@@ -26,6 +26,23 @@ class thingface
 {
 public:
 
+    // --- host helpers to check presence of event handlers in scripts ---
+    
+    enum class event {
+        boo = 0,
+    };
+
+    virtual bool is_bound(event m) { return true; }
+
+    // --- creators ---
+
+    static iref<thingface> get() {
+        return get<thingface>(0);
+    }
+
+    template<class T>
+    static iref<T> get( T* _subclass_ );
+
     // --- interface methods ---
 
 #pragma warning(push)
@@ -50,24 +67,11 @@ protected:
     virtual void force_bind_script_events() {}
 
 public:
-    // --- host helpers to check presence of handlers in scripts ---
-
-    virtual bool is_bound_boo() { return true; }
-
-public:
-    // --- creators ---
-
-    static iref<thingface> get() {
-        return get<thingface>(0);
-    }
-
-    template<class T>
-    static iref<T> get( T* _subclass_ );
 
     // --- internal helpers ---
 
     ///Interface revision hash
-    static const int HASHID = 1555033958u;
+    static const int HASHID = 1739587767u;
 
     ///Interface name (full ns::class string)
     static const coid::tokenhash& IFCNAME() {
@@ -86,7 +90,7 @@ public:
     }
 
     static const coid::token& intergen_default_creator_static( backend bck ) {
-        static constexpr coid::token _dc("ifc1::ifc2::thingface.get@1555033958"_T);
+        static constexpr coid::token _dc("ifc1::ifc2::thingface.get@1739587767"_T);
         static constexpr coid::token _djs("ifc1::ifc2::thingface@wrapper.js"_T);
         static constexpr coid::token _djsc("ifc1::ifc2::thingface@wrapper.jsc"_T);
         static constexpr coid::token _dlua("ifc1::ifc2::thingface@wrapper.lua"_T);
@@ -149,7 +153,7 @@ public:
         type.consume("struct ");
 
         coid::charstr tmp = "ifc1::ifc2::thingface"_T;
-        tmp << "@client-1555033958"_T << '.' << type;
+        tmp << "@client-1739587767"_T << '.' << type;
 
         coid::interface_register::register_interface_creator(tmp, cc);
         return 0;
@@ -188,14 +192,14 @@ inline iref<T> thingface::get( T* _subclass_ )
     typedef iref<T> (*fn_creator)(thingface*);
 
     static fn_creator create = 0;
-    static constexpr coid::token ifckey = "ifc1::ifc2::thingface.get@1555033958"_T;
+    static constexpr coid::token ifckey = "ifc1::ifc2::thingface.get@1739587767"_T;
 
     if (!create)
         create = reinterpret_cast<fn_creator>(
             coid::interface_register::get_interface_creator(ifckey));
 
     if (!create) {
-        log_mismatch("thingface"_T, "ifc1::ifc2::thingface.get"_T, "@1555033958"_T);
+        log_mismatch("thingface"_T, "ifc1::ifc2::thingface.get"_T, "@1739587767"_T);
         return 0;
     }
 

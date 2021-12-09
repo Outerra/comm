@@ -3,6 +3,7 @@
 #include "../binstream/filestream.h"
 #include "../metastream/metastream.h"
 #include "../metastream/fmtstreamcxx.h"
+#include "../metastream/fmtstreamjson.h"
 #include "../metastream/fmtstreamxml2.h"
 
 #include <sstream>
@@ -20,7 +21,7 @@ struct STLMIX {
 
     inline friend metastream& operator || (metastream& m, STLMIX& x)
     {
-        return m.compound("STLMIX", [&]()
+        return m.compound_type(x, [&]()
         {
             m.member("vector", x.vector);
             m.member("list", x.list);
@@ -33,9 +34,59 @@ struct STLMIX {
     }
 };
 
+struct string_test
+{
+    charstr normal_text = "abcd123\\";
+    charstr quoted_text = "\"hello\"";
+    charstr special_text = "\tend\n";
+
+    inline friend metastream& operator || (metastream& m, string_test& x)
+    {
+        return m.compound_type(x, [&]()
+        {
+            m.member("normal", x.normal_text);
+            m.member("quoted", x.quoted_text);
+            m.member("special", x.special_text);
+        });
+    }
+
+    void test()
+    {
+        binstreambuf buf;
+        fmtstreamcxx fmt(buf);
+        metastream meta(fmt);
+
+        buf.write_token_raw("CXX\n\n");
+
+        meta.stream_out(*this);
+        meta.stream_flush();
+
+        buf.write_token_raw("\n\nJSON normal\n\n");
+
+        fmtstreamjson fmtjn(buf, false);
+        meta.bind_formatting_stream(fmtjn);
+        meta.stream_out(*this);
+        meta.stream_flush();
+
+        buf.write_token_raw("\n\nJSON escaped\n\n");
+
+        fmtstreamjson fmtje(buf, true);
+        meta.bind_formatting_stream(fmtje);
+        meta.stream_out(*this);
+        meta.stream_flush();
+
+        bofstream bof("string_test.txt");
+        buf.transfer_to(bof);
+        bof.close();
+    }
+};
+
 
 void std_test()
 {
+    string_test st;
+    st.test();
+
     {
         token t = "fashion";
         const char* v = "test";
@@ -44,7 +95,7 @@ void std_test()
         ost << t << v;
     }
 
-    
+
     //metastream out and in test
 
     bofstream bof("stl_meta.test");

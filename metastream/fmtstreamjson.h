@@ -147,8 +147,10 @@ public:
         if (!_sesinitw)
             throw ersIMPROPER_STATE;
 
-        if (_sesinitw > 0)
+        if (_sesinitw > 0) {
+            write_tabs(--_indent);
             _bufw << '}';
+        }
 
         _sesinitw = 0;
         _indent = 0;
@@ -709,8 +711,11 @@ public:
                         _bufw += t;
                     }
                 }
-                else if (!_tokenizer.synthesize_string(lexstr, t, _bufw))
-                    _bufw += t;
+                else {
+                    _bufw << '"';
+                    if (!_tokenizer.synthesize_string(lexstr, t, _bufw))
+                        _bufw += t;
+                }
 
                 uints len = _bufw.len();
                 e = write_raw(_bufw.ptr(), len);
@@ -770,7 +775,7 @@ public:
     /// @param tab indentation
     /// @param sep separator between standalone entries (multiple types pushed sequentially)
     /// @param arraysep separator between array elements
-    void set_separators(token eol, token tab, token sep = ", ", token arraysep = ",")
+    void set_separators(token eol, token tab, token sep = ",", token arraysep = ",")
     {
         tEol = eol;
         tTab = tab;
@@ -785,7 +790,7 @@ public:
     {
         tEol = "\n";
         tTab = "\t";
-        trSep = tSep = ", ";
+        trSep = tSep = ",";
         trArraySep = tArraySep = ",";
 
         _tokenizer.strip_group(trSep, 1);

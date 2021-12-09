@@ -73,9 +73,13 @@ public:
     //}ifc
 
     ///Using a custom type
-    ifc_fn sometype custom();
+    ifc_fn sometype custom() {
+        return 0;
+    }
 
-    ifc_fnx(!) const int* c_only_method(int k);
+    ifc_fnx(!) const int* c_only_method(int k) {
+        return 0;
+    }
 
     ifc_fn void set_array(const float ar[3]) {
     }
