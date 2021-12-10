@@ -51,8 +51,8 @@ struct jozo {};
 void compot()
 {
 
-    token name1 = token::type_name<transform>();
-    token name2 = token::type_name<jozo<transform>>();
+    constexpr token name1 = token::type_name<transform>();
+    constexpr token name2 = token::type_name<jozo<transform>>();
 
     type_sequencer idr;
 
