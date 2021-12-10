@@ -143,6 +143,41 @@ struct token
         : _ptr(ptr), _pte(ptre < ptr ? ptr : ptre)
     {}
 
+    //@return constexpr token with type name
+    //@usage constexpr token name = token::type_name<T>();
+    template <typename T>
+    constexpr static token type_name()
+    {
+#ifdef SYSTYPE_MSVC
+        char const* p = __FUNCSIG__;
+        while (*p != '<') ++p;
+        ++p;
+        const char* pe = p;
+        int count = 1;
+        for (;; ++pe) {
+            if (*pe == '>') {
+                if (--count == 0)
+                    break;
+            }
+            else if (*pe == '<')
+                count++;
+        }
+#else
+        char const* p = __PRETTY_FUNCTION__;
+        while (*p != '=') ++p;
+        while (*++p == ' ');
+        const char* px = p;
+        const char* pe = px;
+        while (*px != 0) {
+            if (*px == ']')
+                pe = px;
+            ++px;
+        }
+#endif
+        return token(p, pe);
+    }
+
+
     template <int N>
     static token from_cstring(char(&str)[N])
     {

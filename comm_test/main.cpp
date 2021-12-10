@@ -4,6 +4,7 @@
 #include "../trait.h"
 #include "../hash/slothash.h"
 #include "../function.h"
+#include "../global.h"
 #include "intergen/ifc/client.h"
 
 namespace coid {
@@ -35,6 +36,31 @@ void float_test()
 }
 
 using namespace coid;
+
+
+struct transform
+{
+    float pos;
+    int rot;
+};
+
+template <class T>
+struct jozo {};
+
+
+void compot()
+{
+
+    token name1 = token::type_name<transform>();
+    token name2 = token::type_name<jozo<transform>>();
+
+    type_sequencer idr;
+
+    int id0 = idr.id<transform>();
+    int id1 = idr.id<jozo<transform>>();
+    int id0x = idr.id<transform>();
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 struct value {
@@ -295,6 +321,8 @@ struct slot : storage<L, Es...>
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
 {
+    compot();
+
     singleton_test();
 
 #ifdef COID_CONSTEXPR_IF

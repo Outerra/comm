@@ -357,6 +357,7 @@
     <ClInclude Include="..\..\..\coder\bufpack_lz4.h">
       <Filter>coder</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\global.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\crypt\sha1.cpp">
