@@ -41,7 +41,6 @@
 #include "token.h"
 #include "dynarray.h"
 #include "sync/mutex.h"
-#include <typeinfo>
 
 COID_NAMESPACE_BEGIN
 
@@ -96,6 +95,34 @@ private:
 
     dynarray<token> _types;
     comm_mutex _mux;
+};
+
+
+/// @brief class for fast access of heterogenous data as components
+/// @note keeps T* in array, given T is always in the same slot across all instances of context_holder
+/// @tparam ForT owner class (or any type) used to have a
+template <class ForT>
+class context_holder
+{
+public:
+
+    //@return reference to a component pointer
+    template <class T>
+    T*& component() {
+        type_sequencer& sq = tsq();
+        int id = sq.id<T>();
+        void*& ctx = _components.get_or_addc(id);
+        return reinterpret_cast<T*&>(ctx);
+    }
+
+private:
+
+    type_sequencer& tsq() {
+        LOCAL_PROCWIDE_SINGLETON_DEF(type_sequencer) _tsq = new type_sequencer;
+        return *_tsq;
+    }
+
+    dynarray32<void*> _components;
 };
 
 
