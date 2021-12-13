@@ -100,8 +100,8 @@ private:
 
 /// @brief class for fast access of heterogenous data as components
 /// @note keeps T* in array, given T is always in the same slot across all instances of context_holder
-/// @tparam ForT owner class (or any type) used to have a
-template <class ForT>
+/// @tparam OwnT owner class (or any type) used to store shared data
+template <class OwnT>
 class context_holder
 {
 public:
