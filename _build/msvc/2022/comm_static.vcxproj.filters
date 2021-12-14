@@ -358,6 +358,7 @@
       <Filter>coder</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\global.h" />
+    <ClInclude Include="..\..\..\typeseq.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\crypt\sha1.cpp">

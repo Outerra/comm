@@ -38,65 +38,13 @@
 
 
 #include "namespace.h"
-#include "token.h"
-#include "dynarray.h"
-#include "sync/mutex.h"
+#include "typeseq.h"
+#include "hash/slothash.h"
 
 COID_NAMESPACE_BEGIN
 
 
-/// @brief a registrar that assigns unique sequential id for any queried type
-/// The assigned ID is cached in a static variable of a template specialization for the type, so repeated
-/// queries are fast. First time initialization and first time request from a
-class type_sequencer
-{
-    template <class T>
-    struct id_holder {
-        inline static int slot = -1;
-    };
-
-public:
-
-    type_sequencer() : _mux(500, false)
-    {}
-
-    virtual ~type_sequencer() {}
-
-    /// @brief Get unique 0-based id for this type
-    /// @tparam T
-    /// @return cached or assigned id
-    template <class T>
-    int id()
-    {
-        int& rid = id_holder<T>::slot;
-        if (rid >= 0)
-            return rid;
-
-        //needs allocating (or finding if this is a query from different module)
-        constexpr token ti = token::type_name<T>();
-        return rid = allocate(ti);
-    }
-
-private:
-
-    //virtual here is for always calling the main module implementation and not (possibly) outdated dll one
-    virtual int allocate(const token& type_name)
-    {
-        comm_mutex_guard g(_mux);
-        int i = 0;
-        for (const token& tok : _types) {
-            if (tok == type_name)
-                return i;
-            ++i;
-        }
-        *_types.add() = type_name;
-        return i;
-    }
-
-    dynarray<token> _types;
-    comm_mutex _mux;
-};
-
+////////////////////////////////////////////////////////////////////////////////
 
 /// @brief class for fast access of heterogenous data as components
 /// @note keeps T* in array, given T is always in the same slot across all instances of context_holder
@@ -107,17 +55,21 @@ class context_holder
 public:
 
     //@return reference to a component pointer
+    //@param pid [optional] receives component id
     template <class T>
-    T*& component() {
+    T*& component(int* pid = 0)
+    {
         type_sequencer& sq = tsq();
         int id = sq.id<T>();
+        if (pid)
+            *pid = id;
         void*& ctx = _components.get_or_addc(id);
         return reinterpret_cast<T*&>(ctx);
     }
 
 private:
 
-    type_sequencer& tsq() {
+    static type_sequencer& tsq() {
         LOCAL_PROCWIDE_SINGLETON_DEF(type_sequencer) _tsq = new type_sequencer;
         return *_tsq;
     }
@@ -125,5 +77,151 @@ private:
     dynarray32<void*> _components;
 };
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+/// @brief Data manager template class
+/// Keep mulitple dynamically created linear or slothash-ed containers, to which it provides a simple access via the data class type.
+/// Containers are created automatically when pushing data.
+/// e.g.
+///     class entman : public data_manager<entman> {};
+///     entman::push(id, type1());
+///     entman::get<type2>();
+///
+/// @tparam OwnT owner class (or any type) used to store the shared data
+template <class OwnT>
+class data_manager
+{
+    template <class T> struct storage : T { uint eid; };
+
+    template <class T>
+    struct shash {
+        struct extractor {
+            using value_type = storage<T>;
+            uint operator()(const storage<T>& s) const { return s.eid; }
+        };
+
+        virtual ~shash() {}
+        slothash<storage<T>, uint, slotalloc_mode::versioning | slotalloc_mode::linear, extractor> hash;
+    };
+
+public:
+
+    /// @brief Retrieve data of given type
+    /// @tparam C data type
+    /// @param eid entity id
+    /// @return data pointer
+    template <class C>
+    static C* get(uint eid)
+    {
+        type_sequencer& sq = tsq();
+        int id = sq.id<C>();
+
+        //negative ids are used to reference primary (linear) arrays instead of unordered map
+        if (id < 0) {
+            id = -1 - id;
+
+            using coarray = dynarray<C>;
+            coarray& co = data_container<coarray>(id);
+
+            return eid < co.size()
+                ? &co[eid]
+                : nullptr;
+        }
+
+        using cohash = shash<C>;
+        cohash& co = data_container<cohash>(id);
+
+        return (C*)co.hash.find_value(eid);
+    }
+
+    /// @brief Insert data of given type under the entity id
+    /// @tparam C data type
+    /// @param eid entity id
+    /// @param v data value
+    /// @return pointer to the inserted data
+    template <class C>
+    static C* push(uint eid, C&& v)
+    {
+        type_sequencer& sq = tsq();
+        int id = sq.id<C>();
+
+        //negative ids are used to reference primary arrays instead of unordered map
+        if (id < 0) {
+            id = -1 - id;
+
+            using coarray = dynarray<C>;
+            coarray& co = data_container<coarray>(id);
+
+            C& sv = co.get_or_add(eid);
+            sv = std::move(v);
+            return &sv;
+        }
+
+        using cohash = shash<C>;
+        cohash& co = data_container<cohash>(id);
+
+        bool isnew;
+        storage<C>* sv = co.hash.find_or_insert_value_slot(eid, &isnew);
+        *static_cast<C*>(sv) = std::move(v);
+
+        sv->eid = eid;
+        return sv;
+    }
+
+    /// @brief Define a primary data type, that will be stored in a linear array indexed directly
+    /// @tparam C data type
+    template <class C>
+    static dynarray<C>& set_primary_container()
+    {
+        type_sequencer& sq = tsq();
+        int& id = sq.assign<C>();
+
+        if (id >= 0)
+            id = -1 - id;
+        int pid = -1 - id;
+
+        using coarray = dynarray<C>;
+        return data_container<coarray>(pid);
+    }
+
+    /// @brief Retrieve container for primary data
+    /// @tparam C
+    /// @return linear array of given data type
+    template <class C>
+    static dynarray<C>& get_primary_container()
+    {
+        type_sequencer& sq = tsq();
+        const int* xid = sq.existing_id<C>();
+
+        //primary containers must have been pre-loaded via primary<C>()
+        if (xid == nullptr || *xid >= 0)
+            throw exception();
+
+        int pid = -1 - *xid;
+        using coarray = dynarray<C>;
+        return data_container<coarray>(pid);
+    }
+
+private:
+
+    static type_sequencer& tsq() {
+        LOCAL_PROCWIDE_SINGLETON_DEF(type_sequencer) _tsq = new type_sequencer;
+        return *_tsq;
+    }
+
+    template <class T>
+    static T& data_container(uint id)
+    {
+        void*& vctx = _data_containers.get_or_addc(id);
+        T*& cont = reinterpret_cast<T*&>(vctx);
+
+        if (!cont)
+            cont = new T;
+        return *cont;
+    }
+
+    inline static dynarray32<void*> _data_containers;
+};
 
 COID_NAMESPACE_END
