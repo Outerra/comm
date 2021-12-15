@@ -92,17 +92,80 @@ private:
 template <class OwnT>
 class data_manager
 {
+    struct container {
+        size_t element_size;
+        enum class type {
+            dynarray,
+            slothash,
+        } storage_type;
+
+        container(uint size, enum class type t) : element_size(size), storage_type(t)
+        {}
+        virtual ~container() = default;
+
+        /// @brief Fetch element from container, used only manipulator access
+        virtual void* element(uint eid) = 0;
+    };
+
     template <class T> struct storage : T { uint eid; };
 
     template <class T>
-    struct shash {
+    struct cshash : container {
         struct extractor {
             using value_type = storage<T>;
             uint operator()(const storage<T>& s) const { return s.eid; }
         };
 
-        virtual ~shash() {}
+        cshash() : container(sizeof(storage<T>), container::type::slothash)
+        {}
+        virtual void* element(uint eid) override {
+            return (T*)hash.find_value(eid);
+        }
+
         slothash<storage<T>, uint, slotalloc_mode::versioning | slotalloc_mode::linear, extractor> hash;
+    };
+
+    template <class T>
+    struct carray : container {
+        carray() : container(sizeof(T), container::type::dynarray)
+        {}
+        virtual void* element(uint eid) override {
+            return eid < data.size() ? &data[eid] : nullptr;
+        }
+
+        dynarray<T> data;
+    };
+
+    // manipulators for data
+
+    static inline coid::context_holder<OwnT> _handlers;
+
+    template <class M>
+    struct base_handler {
+        virtual ~base_handler() {}
+        virtual void invoke(M*, void*) = 0;
+    };
+
+    template <class M, class C>
+    struct handler : base_handler<M>
+    {
+        using handler_t = void (*)(M*, C&);
+
+        virtual void invoke(M* m, void* c) override {
+            return fn(m, *(C*)c);
+        }
+
+        handler(handler_t&& fn) {
+            this->fn = std::move(fn);
+        }
+
+        handler_t fn;
+    };
+
+    template <class M>
+    struct manipulator {
+        virtual ~manipulator() {}
+        coid::dynarray32<base_handler<M>*> component_handlers;
     };
 
 public:
@@ -117,22 +180,31 @@ public:
         type_sequencer& sq = tsq();
         int id = sq.id<C>();
 
-        //negative ids are used to reference primary (linear) arrays instead of unordered map
         if (id < 0) {
+            //negative ids are used to reference primary (linear) arrays instead of unordered map
             id = -1 - id;
 
-            using coarray = dynarray<C>;
+            using coarray = carray<C>;
             coarray& co = data_container<coarray>(id);
 
-            return eid < co.size()
-                ? &co[eid]
+            return eid < co.data.size()
+                ? &co.data[eid]
                 : nullptr;
         }
 
-        using cohash = shash<C>;
+        using cohash = cshash<C>;
         cohash& co = data_container<cohash>(id);
 
         return (C*)co.hash.find_value(eid);
+    }
+
+    static void* get_data(uint eid, uint c)
+    {
+        container* co = _data_containers.get_safe(c, nullptr);
+        if (!co)
+            return 0;
+
+        return co->element(eid);
     }
 
     /// @brief Insert data of given type under the entity id
@@ -150,15 +222,15 @@ public:
         if (id < 0) {
             id = -1 - id;
 
-            using coarray = dynarray<C>;
+            using coarray = carray<C>;
             coarray& co = data_container<coarray>(id);
 
-            C& sv = co.get_or_add(eid);
+            C& sv = co.data.get_or_add(eid);
             sv = std::move(v);
             return &sv;
         }
 
-        using cohash = shash<C>;
+        using cohash = cshash<C>;
         cohash& co = data_container<cohash>(id);
 
         bool isnew;
@@ -167,6 +239,16 @@ public:
 
         sv->eid = eid;
         return sv;
+    }
+
+    /// @brief Get order id assigned to the type (also assigns on first use)
+    /// @tparam C
+    /// @return -1 if type was not registered
+    template <class C>
+    static int data_order()
+    {
+        int id = tsq().id<C>();
+        return id < 0 ? -1 - id : id;
     }
 
     /// @brief Define a primary data type, that will be stored in a linear array indexed directly
@@ -181,8 +263,8 @@ public:
             id = -1 - id;
         int pid = -1 - id;
 
-        using coarray = dynarray<C>;
-        return data_container<coarray>(pid);
+        using coarray = carray<C>;
+        return data_container<coarray>(pid).data;
     }
 
     /// @brief Retrieve container for primary data
@@ -194,7 +276,7 @@ public:
         type_sequencer& sq = tsq();
         const int* xid = sq.existing_id<C>();
 
-        //primary containers must have been pre-loaded via primary<C>()
+        //primary containers must have been pre-loaded via set_primary_container<C>()
         if (xid == nullptr || *xid >= 0)
             throw exception();
 
@@ -203,17 +285,95 @@ public:
         return data_container<coarray>(pid);
     }
 
-private:
+    /// @brief Set invokable handler for given manipulator type and given data type
+    /// @tparam M manipulator type (a distinct type allowing for multiple different handlers)
+    /// @tparam C data/component type
+    /// @param fn function callback
+    template <class M, class C>
+    static void set_handler(void (*fn)(M*, C&))
+    {
+        manipulator<M>*& mm = _handlers.component<manipulator<M>>();
+        if (!mm)
+            mm = new manipulator<M>;
+
+        int cid = data_order<C>();
+
+        using handler_t = typename handler<M, C>::handler_t;
+        base_handler<M>*& h = mm->component_handlers.get_or_addc(cid);
+        if (!h)
+            h = new handler<M, C>(std::forward<handler_t>(fn));
+    }
+
+    /// @brief Invoke handler of given manipulator on given data type of given entity
+    /// @tparam M manipulator type (a distinct type allowing for multiple different handlers)
+    /// @tparam C data/component type
+    /// @param m manipulator context
+    /// @param eid entity id
+    template <class M, class C>
+    static void invoke_component_handler(M* m, uint eid)
+    {
+        C* c = get<C>(eid);
+        if (!c)
+            return;
+
+        manipulator<M>*& mm = _handlers.component<manipulator<M>>();
+        if (!mm)
+            return;
+
+        int cid = data_order<C>();
+
+        base_handler<M>* h = mm->component_handlers.get_safe(cid, nullptr);
+        if (!h)
+            return;
+
+        h->fn(m, *c);
+    }
+
+    /// @brief Invoke handlers of given manipulator for all data existing for given entity
+    /// @tparam M manipulator type (a distinct type allowing for multiple different handlers)
+    /// @param m manipulator context
+    /// @param eid entity id
+    /// @param fn optional callback to invoke before invoking a handler, identifying the data type processed
+    template <class M>
+    static void invoke_all_component_handlers(M* m, uint eid, bool (*fn)(const coid::token& type) = 0)
+    {
+        manipulator<M>* mm = _handlers.component<manipulator<M>>();
+        if (!mm)
+            return;
+
+        uint n = _data_containers.size();
+
+        for (uint i = 0; i < n; ++i) {
+            base_handler<M>* h = mm->component_handlers[i];
+            if (!h)
+                continue;
+
+            void* c = get_data(eid, i);
+            if (c) {
+                if (fn) {
+                    auto td = tsq().type(i);
+                    if (!fn(td->type_name))
+                        continue;
+                }
+
+                h->invoke(m, c);
+            }
+        }
+    }
+
+protected:
 
     static type_sequencer& tsq() {
         LOCAL_PROCWIDE_SINGLETON_DEF(type_sequencer) _tsq = new type_sequencer;
         return *_tsq;
     }
 
+private:
+
     template <class T>
     static T& data_container(uint id)
     {
-        void*& vctx = _data_containers.get_or_addc(id);
+        container*& vctx = _data_containers.get_or_addc(id);
         T*& cont = reinterpret_cast<T*&>(vctx);
 
         if (!cont)
@@ -221,7 +381,9 @@ private:
         return *cont;
     }
 
-    inline static dynarray32<void*> _data_containers;
+protected:
+
+    inline static dynarray32<container*> _data_containers;
 };
 
 COID_NAMESPACE_END

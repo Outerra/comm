@@ -58,11 +58,13 @@ class type_sequencer
 public:
 
     type_sequencer() : _mux(500, false)
-    {}
+    {
+        _types.reserve_virtual(1 << 20);
+    }
 
     virtual ~type_sequencer() {}
 
-    /// @brief Get unique id for type T
+    /// @brief Get assigned id for type T
     /// @tparam T
     /// @return cached or assigned id
     /// @note IDs are generated sequentially, 0-based index
@@ -75,7 +77,7 @@ public:
 
         //needs allocating (or finding if this is a query from different module)
         constexpr token ti = token::type_name<T>();
-        return rid = *allocate(ti, true);
+        return rid = *allocate(ti, sizeof(T), true);
     }
 
     /// @brief Get an existing id that was assigned to the type
@@ -88,7 +90,7 @@ public:
             return &rid;
 
         constexpr token ti = token::type_name<T>();
-        int* enid = allocate(ti, false);
+        int* enid = allocate(ti, sizeof(T), false);
         return enid ? &(rid = *enid) : nullptr;
     }
 
@@ -99,18 +101,27 @@ public:
     int& assign()
     {
         constexpr token ti = token::type_name<T>();
-        return *allocate(ti, true);
+        return *allocate(ti, sizeof(T), true);
+    }
+
+    struct entry {
+        token type_name;
+        size_t size;
+        int id;
+    };
+
+    const dynarray32<entry>& types() const {
+        return _types;
+    }
+
+    const entry* type(uint i) const {
+        return i < _types.size() ? &_types[i] : nullptr;
     }
 
 private:
 
-    struct entry {
-        token type_name;
-        int id;
-    };
-
     //virtual here is for always calling the main module implementation and not (possibly) outdated dll one
-    virtual int* allocate(const token& type_name, bool create)
+    virtual int* allocate(const token& type_name, size_t size, bool create)
     {
         comm_mutex_guard g(_mux);
         for (entry& en : _types) {
@@ -123,6 +134,7 @@ private:
         uint id = _types.size();
         entry* en = _types.add();
         en->type_name = type_name;
+        en->size = size;
         en->id = id;
         return &en->id;
     }
