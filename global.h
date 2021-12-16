@@ -136,9 +136,7 @@ class data_manager
         dynarray<T> data;
     };
 
-    // manipulators for data
-
-    static inline coid::context_holder<OwnT> _handlers;
+    // manipulators for the data
 
     template <class M>
     struct base_handler {
@@ -200,7 +198,7 @@ public:
 
     static void* get_data(uint eid, uint c)
     {
-        container* co = _data_containers.get_safe(c, nullptr);
+        container* co = data_containers().get_safe(c, nullptr);
         if (!co)
             return 0;
 
@@ -292,7 +290,7 @@ public:
     template <class M, class C>
     static void set_handler(void (*fn)(M*, C&))
     {
-        manipulator<M>*& mm = _handlers.component<manipulator<M>>();
+        manipulator<M>*& mm = handlers().component<manipulator<M>>();
         if (!mm)
             mm = new manipulator<M>;
 
@@ -316,7 +314,7 @@ public:
         if (!c)
             return;
 
-        manipulator<M>*& mm = _handlers.component<manipulator<M>>();
+        manipulator<M>*& mm = handlers().component<manipulator<M>>();
         if (!mm)
             return;
 
@@ -337,11 +335,11 @@ public:
     template <class M>
     static void invoke_all_component_handlers(M* m, uint eid, bool (*fn)(const coid::token& type) = 0)
     {
-        manipulator<M>* mm = _handlers.component<manipulator<M>>();
+        manipulator<M>* mm = handlers().component<manipulator<M>>();
         if (!mm)
             return;
 
-        uint n = _data_containers.size();
+        uint n = data_containers().size();
 
         for (uint i = 0; i < n; ++i) {
             base_handler<M>* h = mm->component_handlers[i];
@@ -373,7 +371,7 @@ private:
     template <class T>
     static T& data_container(uint id)
     {
-        container*& vctx = _data_containers.get_or_addc(id);
+        container*& vctx = data_containers().get_or_addc(id);
         T*& cont = reinterpret_cast<T*&>(vctx);
 
         if (!cont)
@@ -383,7 +381,15 @@ private:
 
 protected:
 
-    inline static dynarray32<container*> _data_containers;
+    static coid::context_holder<OwnT>& handlers() {
+        LOCAL_SINGLETON_DEF(coid::context_holder<OwnT>) _hs;
+        return *_hs;
+    }
+
+    static dynarray32<container*>& data_containers() {
+        LOCAL_SINGLETON_DEF(dynarray32<container*>) _dc;
+        return *_dc;
+    }
 };
 
 COID_NAMESPACE_END
