@@ -555,6 +555,7 @@
     <ClInclude Include="..\..\..\tutf8.h" />
     <ClInclude Include="..\..\..\txtconv.h" />
     <ClInclude Include="..\..\..\range.h" />
+    <ClInclude Include="..\..\..\typeseq.h" />
     <ClInclude Include="..\..\..\version.h" />
   </ItemGroup>
   <ItemGroup>

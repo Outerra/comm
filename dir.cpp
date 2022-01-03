@@ -704,8 +704,10 @@ bool directory::list_file_paths(const token& path, const token& extension, recur
     bool all_files = extension.is_empty() || extension == '*';
     bool ext_with_dot = extension.first_char() == '.';
 
-    while (dir.next()) {
-        if (dir.is_entry_regular()) {
+    while (dir.next())
+    {
+        if (mode != recursion_mode::dirs_only && dir.is_entry_regular())
+        {
             bool valid = all_files;
             if (!all_files) {
                 token fname = dir.get_last_file_name_token();
@@ -718,11 +720,13 @@ bool directory::list_file_paths(const token& path, const token& extension, recur
             if (valid)
                 fn(dir.get_last_full_path(), list_entry::file);
         }
-        else if (dir.is_entry_subdirectory()) {
-            if (mode == recursion_mode::files_and_dirs) {
+        else if (dir.is_entry_subdirectory())
+        {
+            if (mode == recursion_mode::files_and_dirs || mode == recursion_mode::dirs_only) {
                 fn(dir.get_last_full_path(), list_entry::dir_enter);
             }
-            else if (mode != recursion_mode::files) {
+            else if (mode != recursion_mode::files)
+            {
                 if (int(mode) & int(recursion_mode::dirs_enter))
                     fn(dir.get_last_full_path(), list_entry::dir_enter);
 

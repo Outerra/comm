@@ -332,11 +332,12 @@ public:
 
     enum class recursion_mode
     {
-        files = 0, //< no recursion into sundirectories, list only files
-        dirs_exit = 1, //< list files while recursively entering subdirs, subdir callback invoked after listing the subdir content
-        dirs_enter = 2, //< list files while recursively entering subdirs, subdir callback invoked before listing the subdir content
+        files = 0,          //< no recursion into sundirectories, list only files
+        dirs_exit = 1,      //< list files while recursively entering subdirs, subdir callback invoked after listing the subdir content
+        dirs_enter = 2,     //< list files while recursively entering subdirs, subdir callback invoked before listing the subdir content
         dirs_enter_exit = 3, //< list files while recursively entering subdirs, subdir callback invoked both before and after listing the subdir content
         files_and_dirs = 4, //< no recursion into subdirectories, list files and dirs
+        dirs_only = 5,      //< no recursion into subdirectories, list dirs only
     };
 
     enum class list_entry
