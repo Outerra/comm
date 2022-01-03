@@ -164,6 +164,16 @@ public:
         takeover(p);
     }
 
+    dynarray(std::initializer_list<T>&& initializer_list) 
+    {
+        alloc(initializer_list.size());
+
+        for (uints i = 0; i < initializer_list.size(); ++i) {
+            _ptr[i] = std::move(initializer_list.begin()[i]);;
+        }
+
+    }
+
     ///assignment operator - duplicate
     dynarray& operator = (const dynarray& p)
     {
