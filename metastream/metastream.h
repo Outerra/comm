@@ -251,6 +251,7 @@ public:
 
             //capture alias streaming type
             MetaDesc::Var* oldvar = _current_var;
+            MetaDesc::Var* oldlastvar = _last_var;
             MetaDesc desc;
             MetaDesc::Var var;
             var.desc = &desc;
@@ -259,6 +260,7 @@ public:
             fnstream();
 
             md->streaming_type = desc.children[0].desc;
+            _last_var = oldlastvar;
             _current_var = oldvar;
         }
 
@@ -505,6 +507,109 @@ public:
             meta_cache_default_stream<T>(&v);
         }
         return *this;
+    }
+
+
+    ///Define a variable streamed as a different type, with explicit set/get functors
+    //@param name variable name, used as a key in output formats
+    //@param set void function(AsType&&, T&) receiving object from stream
+    //@param get [const AsType& | AsType] function(T&) returning object to stream
+    template<typename AsType, typename T, typename FnIn, typename FnOut>
+    metastream& member_as_type(const token& name, T& v, FnIn set, FnOut get)
+    {
+        if (_binw) {
+            const AsType& val = get(v);
+            *this || const_cast<AsType&>(val);
+        }
+        else if (_binr) {
+            if constexpr (std::is_same_v<token, AsType>) {
+                //special handling for tokens that are normally not readable from stream
+                charstr val;
+                *this || val;
+                set(token(val), v);
+            }
+            else {
+                AsType val;
+                *this || val;
+                set(std::forward<AsType>(val), v);
+            }
+        }
+        else
+            meta_variable<AsType>(name, 0);
+        return *this;
+    }
+
+    ///Define a variable streamed as a different type, with explicit set/get functors and a default value
+    //@param name variable name, used as a key in output formats
+    //@param defval value to use if the variable is missing from the stream, convertible to AsType
+    //@param set void function(AsType&&, T&) receiving object from stream
+    //@param get [const AsType& | AsType] function(T&) returning object to stream
+    template<typename AsType, typename T, typename D, typename FnIn, typename FnOut>
+    metastream& member_as_type(const token& name, T& v, FnIn set, FnOut get, const D& defval)
+    {
+        if (_binw) {
+            const AsType& val = get(v);
+            *this || const_cast<AsType&>(val);
+        }
+        else if (_binr) {
+            if constexpr (std::is_same_v<token, AsType>) {
+                //special handling for tokens that are normally not readable from stream
+                charstr val;
+                *this || val;
+                set(token(val), v);
+            }
+            else {
+                AsType val;
+                *this || val;
+                set(std::forward<AsType>(val), v);
+            }
+        }
+        else {
+            meta_variable<AsType>(name, 0);
+            meta_cache_default(AsType(defval));
+        }
+        return *this;
+    }
+
+    ///Define a variable streamed as a different type, with explicit set/get functors and a default value, with optional writing of default value
+    //@param name variable name, used as a key in output formats
+    //@param defval value to use if the variable is missing from the stream, convertible to T
+    //@param set void function(AsType&&, T&) receiving object from stream
+    //@param get [const AsType& | AsType] function(T&) returning object to stream
+    //@param write_default if false, does not write value that equals the defval into output stream
+    //@return true if value was read or written and no default was used, false in meta phase
+    template<typename AsType, typename T, typename D, typename FnIn, typename FnOut>
+    bool member_as_type(const token& name, T& v, FnIn set, FnOut get, const D& defval, bool write_default)
+    {
+        bool used = false;
+
+        if (_binw) {
+            const AsType& val = get(v);
+            used = write_optional(!cache_prepared() && !write_default && val == defval ? 0 : &val);
+        }
+        else if (_binr) {
+            if constexpr (std::is_same_v<token, AsType>) {
+                //special handling for tokens that are normally not readable from stream
+                charstr val;
+                used = read_optional(val);
+                if (used)
+                    set(token(val), v);
+                else
+                    set(defval, v);
+            }
+            else {
+                AsType val;
+                used = read_optional(val);
+                if (used)
+                    set(std::forward<AsType>(val), v);
+                else
+                    set(defval, v);
+            }
+        }
+        else
+            meta_variable_optional<AsType>(name, (const AsType*)-1);
+
+        return used;
     }
 
     ///Define a variable of given type, with explicit set/get functors
