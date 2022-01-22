@@ -399,7 +399,7 @@ public:
     template<typename T, size_t N>
     bool member(const token& name, T(&v)[N], bool optional = false)
     {
-        return member_array<N>(name, v, optional, false);
+        return member_fixed_size_array<N>(name, v, optional, false);
     }
 
     ///Define a member variable referenced by a pointer (non-streamable) except const char*
@@ -910,7 +910,7 @@ public:
     template<typename T, size_t N>
     bool nonmember(const token& name, T(&v)[N], bool optional = false)
     {
-        return member_array<N>(name, v, optional, true);
+        return member_fixed_size_array<N>(name, v, optional, true);
     }
 
     ///Define a non-member variable referenced by a pointer (non-streamable), except const char*
@@ -1032,7 +1032,7 @@ public:
     //@param nonmember non-member variable (no valid offset within the parent struct)
     //@return true if value was read or written and no default was used, false in meta phase
     template<size_t N, typename T>
-    bool member_array(const token& name, T* v, bool optional, bool nonmember = false)
+    bool member_fixed_size_array(const token& name, T* v, bool optional, bool nonmember = false)
     {
         if (_binw) {
             binstream_container_fixed_array<T, ints> bc(v, N);
@@ -1045,6 +1045,30 @@ public:
         }
         else
             meta_variable_fixed_array<N>(name, v, optional, nonmember);
+        return false;
+    }
+
+    ///Define a dynamically sized array member
+    //@param name variable name, used as a key in output formats
+    //@param v pointer to the first array element
+    //@param n element count (when streaming), max element count when declaring
+    //@param optional true if optional on input
+    //@param nonmember non-member variable (no valid offset within the parent struct)
+    //@return true if value was read or written and no default was used, false in meta phase
+    template<typename T>
+    bool member_dynamic_array(const token& name, T* v, uints n, bool optional, bool nonmember = false)
+    {
+        if (_binw) {
+            binstream_container_fixed_array<T, ints> bc(v, n);
+            write_container(bc);
+            return true;
+        }
+        else if (_binr) {
+            binstream_container_fixed_array<T, ints> bc(v, n);
+            return read_container(bc, optional);
+        }
+        else
+            meta_variable_array(name, v, n, optional, nonmember);
         return false;
     }
 
@@ -1831,9 +1855,17 @@ public:
             *this || const_cast<S&>(get());
         }
         else if (stream_reading()) {
-            S val;
-            *this || val;
-            set(std::forward<S>(val));
+            if constexpr (std::is_same_v<token, S>) {
+                //special handling for tokens that are normally not readable from stream
+                charstr val;
+                *this || val;
+                set(token(val));
+            }
+            else {
+                S val;
+                *this || val;
+                set(std::forward<S>(val));
+            }
         }
         else {
             //_cur_variable_offset was set by a member method, but since this is using a temporary,
@@ -2027,6 +2059,37 @@ public:
         }
     }
 
+    ///Define member array variable with dynamic sizing
+    //@param n max array size
+    template<class T>
+    void meta_variable_array(const token& varname, T* v, uints n, bool optional, bool nonmember = false)
+    {
+        typedef typename resolve_enum<T>::type B;
+
+        _cur_variable_name = varname;
+        _cur_variable_offset = nonmember ? -1 : down_cast<int>((ints)v);
+        _cur_stream_fn = &type_streamer<T>::fn;
+
+        if (meta_decl_array(
+            typeid(T[]).name(),
+            0,
+            sizeof(v),
+            true,
+            [](const void* a) -> const void* { return static_cast<const T*>(a); },
+            [](const void* a) -> uints { return UMAXS; },
+            [](void* a, uints& i) -> void* { return static_cast<T*>(a) + i++; },
+            [](const void* a, uints& i) -> const void* { return static_cast<T const*>(a) + i++; },
+            n
+        )) {
+            _current_var->optional = optional;
+
+            B* b = 0;
+            *this || *b;
+        }
+        else {
+            _current_var->optional = optional;
+        }
+    }
 
 
 
@@ -3812,22 +3875,22 @@ COID_NAMESPACE_END
 
 #define COID_METABIN_OP1A(TYPE,ELEM) namespace coid {\
     inline metastream& operator || (metastream& m, TYPE& v) {\
-        m.compound_type(v, [&]() { m.member_array<1>("col", &v[0], false); });\
+        m.compound_type(v, [&]() { m.member_fixed_size_array<1>("col", &v[0], false); });\
         return m; }}
 
 #define COID_METABIN_OP2A(TYPE,ELEM) namespace coid {\
     inline metastream& operator || (metastream& m, TYPE& v) {\
-        m.compound_type(v, [&]() { m.member_array<2>("col", &v[0], false); });\
+        m.compound_type(v, [&]() { m.member_fixed_size_array<2>("col", &v[0], false); });\
         return m; }}
 
 #define COID_METABIN_OP3A(TYPE,ELEM) namespace coid {\
     inline metastream& operator || (metastream& m, TYPE& v) {\
-        m.compound_type(v, [&]() { m.member_array<3>("col", &v[0], false); });\
+        m.compound_type(v, [&]() { m.member_fixed_size_array<3>("col", &v[0], false); });\
         return m; }}
 
 #define COID_METABIN_OP4A(TYPE,ELEM) namespace coid {\
     inline metastream& operator || (metastream& m, TYPE& v) {\
-        m.compound_type(v, [&]() { m.member_array<4>("col", &v[0], false); });\
+        m.compound_type(v, [&]() { m.member_fixed_size_array<4>("col", &v[0], false); });\
         return m; }}
 
 
