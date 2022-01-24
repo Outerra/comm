@@ -718,7 +718,7 @@ public:
         bool used = false;
 
         if (_binw) {
-            used = write_optional(v != defval ? &v : 0);
+            used = write_optional(v == defval ? 0 : &v);
         }
         else if (_binr) {
             used = read_optional(v);
@@ -957,7 +957,7 @@ public:
         bool used = false;
 
         if (_binw) {
-            used = write_optional(v != defval ? &v : 0);
+            used = write_optional(v == defval ? 0 : &v);
         }
         else if (_binr) {
             used = read_optional(v);
@@ -1848,10 +1848,9 @@ public:
     //@param get [const S& | S] function() returning object to stream
     template <typename T, typename FnIn, typename FnOut>
     metastream& operator_indirect(T& a, FnIn set, FnOut get) {
-        typedef std::remove_const_t<std::remove_reference_t<decltype(get())>> S;
+        using S = std::remove_const_t<std::remove_reference_t<decltype(get())>>;
 
         if (stream_writing()) {
-            //auto& val = get();
             *this || const_cast<S&>(get());
         }
         else if (stream_reading()) {
