@@ -64,21 +64,22 @@ public:
     virtual void flush()
     {
         txtstream::flush();
-        binstreambuf& buf = *get_read_buffer();
-
+        binstreambuf* buf = get_read_buffer();
+        if (buf) {
 #if defined(SYSTYPE_WIN) && (!defined(_CONSOLE) || defined(STDSTREAM_DEBUG_OUT))
-        dynarray<char>& dyn = buf.get_buf();
-        *dyn.add() = 0;
-        debug_out(dyn.ptr());
-        dyn.resize(-1);
+            dynarray<char>& dyn = buf->get_buf();
+            *dyn.add() = 0;
+            debug_out(dyn.ptr());
+            dyn.resize(-1);
 #endif
-        token t = buf;
+            token t = *buf;
 
-        fwrite(t.ptr(), 1, t.len(), stdout);
+            fwrite(t.ptr(), 1, t.len(), stdout);
+        }
         reset_write();
     }
 
-    static void debug_out( const char* );
+    static void debug_out(const char*);
 };
 
 COID_NAMESPACE_END

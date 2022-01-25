@@ -56,7 +56,7 @@ static void* local_creator()
 }
 
 ///Temporarily store the creator parameter in a thread local variable
-fn_singleton_creator singleton_local_creator( void* p )
+fn_singleton_creator singleton_local_creator(void* p)
 {
     _t_creator_key.set(p);
     return &local_creator;
@@ -69,7 +69,7 @@ class global_singleton_manager
 {
     struct killer
     {
-        COIDNEWDELETE_NOTRACK
+        COIDNEWDELETE_NOTRACK;
 
         void* ptr;
         void (*fn_destroy)(void*);
@@ -87,7 +87,7 @@ class global_singleton_manager
             ptr = 0;
         }
 
-        killer( void* ptr, void (*fn_destroy)(void*), const token& type, const char* file, int line, bool invisible )
+        killer(void* ptr, void (*fn_destroy)(void*), const token& type, const char* file, int line, bool invisible)
             : ptr(ptr), fn_destroy(fn_destroy), type_name(type.ptr()), file(file), line(line), type(type), invisible(invisible)
         {
             DASSERT(ptr);
@@ -107,24 +107,24 @@ public:
         fn_singleton_creator create,
         fn_singleton_destroyer destroy,
         fn_singleton_initmod initmod,
-        const token& type, const char* file, int line, bool invisible )
+        const token& type, const char* file, int line, bool invisible)
     {
-        RASSERT( !shutting_down );
+        RASSERT(!shutting_down);
         comm_mutex_guard<_comm_mutex> mxg(mx);
 
-        //look for singletons registered in different module
+        //look for singletons registered in different modules
         killer* k = invisible ? 0 : last;
-        while(k && (k->invisible || k->type != type))
+        while (k && (k->invisible || k->type != type))
             k = k->next;
 
-        if(!k) {
+        if (!k) {
             k = new killer(create(), destroy, type, file, line, invisible);
             k->next = last;
 
             last = k;
             ++count;
         }
-        else if(initmod)
+        else if (initmod)
             initmod(k->ptr);
 
         _t_creator_key.set(0);
@@ -154,7 +154,7 @@ public:
     {
         uint n = count;
 
-        if(last) {
+        if (last) {
 #ifdef _DEBUG
             memtrack_shutdown();
 
@@ -164,7 +164,7 @@ public:
 
             shutting_down = true;
 
-            while(last) {
+            while (last) {
                 killer* tmp = last->next;
 
 #ifdef _DEBUG
@@ -206,7 +206,7 @@ void* singleton_register_instance(
     const char* type,
     const char* file,
     int line,
-    bool invisible )
+    bool invisible)
 {
     auto& gsm = invisible
         ? global_singleton_manager::get_local()
@@ -238,16 +238,16 @@ void singletons_destroy()
 #define GLOBAL_SINGLETON_REGISTRAR sglo_registrar
 
 #ifdef SYSTYPE_WIN
-typedef int (__stdcall *proc_t)();
+typedef int(__stdcall* proc_t)();
 
 extern "C"
-__declspec(dllimport) proc_t __stdcall GetProcAddress (
+__declspec(dllimport) proc_t __stdcall GetProcAddress(
     void* hmodule,
     const char* procname
-    );
+);
 
 extern "C"
-_declspec(dllimport) void* __stdcall GetModuleHandleA(const char * lpModuleName
+_declspec(dllimport) void* __stdcall GetModuleHandleA(const char* lpModuleName
 );
 
 
@@ -256,7 +256,7 @@ typedef global_singleton_manager* (*ireg_t)();
 #define MAKESTR(x) STR(x)
 #define STR(x) #x
 
-extern "C" __declspec(dllexport) global_singleton_manager* GLOBAL_SINGLETON_REGISTRAR()
+extern "C" __declspec(dllexport) global_singleton_manager * GLOBAL_SINGLETON_REGISTRAR()
 {
     static global_singleton_manager _gsm;
     return &_gsm;
@@ -264,13 +264,13 @@ extern "C" __declspec(dllexport) global_singleton_manager* GLOBAL_SINGLETON_REGI
 
 global_singleton_manager& global_singleton_manager::get_global()
 {
-    static global_singleton_manager* _this=0;
+    static global_singleton_manager* _this = 0;
 
-    if(!_this) {
+    if (!_this) {
         //retrieve process-wide singleton from exported fn
         const char* s = MAKESTR(GLOBAL_SINGLETON_REGISTRAR);
         ireg_t p = (ireg_t)GetProcAddress(GetModuleHandleA(NULL), s);
-        if(!p) {
+        if (!p) {
             //entry point for global singleton not found in exe
             //probably a 3rd party exe
             _this = GLOBAL_SINGLETON_REGISTRAR();
