@@ -96,7 +96,7 @@ int iglexer::find_method(const token& classname, dynarray<paste_block>& classpas
             charstr& txt = commlist.get_or_add(nv++);
             txt.reset();
 
-            token t = last().tok;
+            token t = last().val;
             char k = t.first_char();
 
             if (mc == 2 && (k == '*' || k == '!')) {

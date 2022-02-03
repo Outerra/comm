@@ -477,7 +477,7 @@ int main(int argc, char* argv[])
 ////////////////////////////////////////////////////////////////////////////////
 bool File::find_class(iglexer& lex, dynarray<charstr>& namespc, charstr& templarg)
 {
-    lexer::lextoken& tok = lex.last();
+    const lexer::lextoken& tok = lex.last();
 
     do {
         lex.next();
@@ -538,7 +538,7 @@ bool File::find_class(iglexer& lex, dynarray<charstr>& namespc, charstr& templar
         {
             //read template arguments
             lex.match_block(lex.ANGLE, true);
-            tok.swap_to_string(templarg);
+            templarg = tok;
         }
 
         if (tok == lex.CLASS || tok == lex.STRUCT)
@@ -592,8 +592,7 @@ int File::parse(token path)
         for (; 0 != (mt = find_class(lex, namespc, templarg)); ++nm)
         {
             Class* pc = classes.add();
-            if (!pc->parse(lex, templarg, namespc, &pasters, irefargs)
-                || (pc->method.size() == 0 && pc->iface.size() == 0)) {
+            if (!pc->parse(lex, templarg, namespc, &pasters, irefargs) || (pc->method.size() == 0 && pc->iface.size() == 0)) {
                 classes.resize(-1);
             }
         }

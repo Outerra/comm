@@ -114,7 +114,7 @@ COID_NAMESPACE_BEGIN
     The lexer uses first group as the one containing ignored whitespace characters,
     unless you provide the next() method with different group id (or none) to ignore.
     **/
-class lexer
+    class lexer
 {
 public:
 
@@ -177,8 +177,9 @@ public:
     ///Lexer output token
     struct lextoken
     {
-        token   tok;                    //< value string, points to input string or to tokbuf
-        token   outok;                  //< value string, points to a string including its leading and trailing delimiters
+        token   val;                    //< value string, points to input string or to tokbuf or an alias
+        token   outok;                  //< value string, points to input string including its leading and trailing delimiters
+        token   intok;                  //< value string, points to input string
         int     id = 0;                 //< token id (group type or string type)
         int     termid = 0;             //< terminator id, for strings or blocks with multiple trailing sequences, or keyword id for keywords
         int     state = 0;              //< >0 leading, <0 trailing, =0 chunked
@@ -188,19 +189,24 @@ public:
 
 
         bool operator == (int i) const { return i == id; }
-        bool operator == (char c) const { return tok == c; }
-        bool operator == (const token& t) const { return tok.cmpeqc(t, !icase); }
+        bool operator == (char c) const { return val == c; }
+        bool operator == (const token& t) const { return val.cmpeqc(t, !icase); }
 
         bool operator != (int i) const { return i != id; }
-        bool operator != (char c) const { return tok != c; }
-        bool operator != (const token& t) const { return !tok.cmpeqc(t, !icase); }
+        bool operator != (char c) const { return val != c; }
+        bool operator != (const token& t) const { return !val.cmpeqc(t, !icase); }
 
-        operator token() const { return tok; }
+        operator token() const { return val; }
 
 
-        typedef int lextoken::*unspecified_bool_type;
+        typedef int lextoken::* unspecified_bool_type;
         operator unspecified_bool_type() const {
             return id == 0 ? 0 : &lextoken::id;
+        }
+
+        //@return true if value token doesn't come from the input stream (a processed string or alias)
+        bool noninput_value() const {
+            return val._ptr != intok._ptr;
         }
 
         //@return true if this is end-of-file token
@@ -241,10 +247,12 @@ public:
         ///Swap or assign token to the destination string
         void swap_to_string(charstr& buf)
         {
-            if (!tokbuf.is_empty())
+            if (!tokbuf.is_empty()) {
                 buf.swap(tokbuf);
+                tokbuf.reset();
+            }
             else
-                buf = tok;
+                buf = val;
         }
 
         ///Swap content
@@ -252,22 +260,22 @@ public:
         {
             if (!tokbuf.is_empty())
                 dstr.swap(tokbuf);
-            return tok;
+            return val;
         }
 
         ///Return token
-        token value() const { return tok; }
+        token value() const { return val; }
 
         ///Return token including the leading and trailing sequences of strings and blocks
         token outer() const {
-            return id >= 0 ? tok : outok;
+            return outok;// id >= 0 ? val : outok;
         }
 
-        ///Return pointer to the beginning of the current token
-        const char* ptr() const { return tok.ptr(); }
+        ///Return pointer to the beginning of the current token in the input
+        const char* ptr() const { return intok.ptr(); }
 
-        ///Return pointer to the end of the current token
-        const char* ptre() const { return tok.ptre(); }
+        ///Return pointer to the end of the current token in the input
+        const char* ptre() const { return intok.ptre(); }
 
         int group() const { return id; }
 
@@ -373,8 +381,9 @@ public:
         _bomread = true;
 
         _orig = _tok;
-        _last.tok.set_empty(_tok.ptr());
-        _last.outok = _last.tok;
+        _last.intok.set_empty(_tok.ptr());
+        _last.outok = _last.intok;
+        _last.val = _last.intok;
         _lines_processed = _lines_last = _tok.ptr();
     }
 
@@ -399,8 +408,9 @@ public:
 
         _last.id = 0;
         _last.state = 0;
-        _last.tok.set_null();
-        _last.outok = _last.tok;
+        _last.intok.set_null();
+        _last.outok = _last.intok;
+        _last.val = _last.intok;
         _last_string = -1;
         _err = 0;
         _errtext.reset();
@@ -776,6 +786,64 @@ public:
         return -1 - g;
     }
 
+    int def_alias(const token& name, const token& target)
+    {
+        //find what group/keyword the target is
+        token tok = target;
+
+        uchar code = tok.first_char();
+        ushort x = _abmap[code];        //get mask for the leading character
+
+        lextoken lt;
+        lt.id = x & xGROUP;
+        ++lt.id;
+
+        uchar cmap = _casemap[code];
+        lt.set_hash(cmap);
+
+        x = _abmap[cmap];
+
+        //normal token, get all characters belonging to the same group, unless this is
+        // a single-char group
+        if (x & fGROUP_SINGLE)
+        {
+            if (_utf8) {
+                //return whole utf8 characters
+                lt.intok = tok.cut_left_n(prefetch_utf8());
+            }
+            else
+                lt.intok = tok.cut_left_n(1);
+        }
+        else
+        {
+            //consume remaining
+            if (x & fGROUP_TRAILSET) {
+                uints off = count_inmask(tok, lt.hash, 1 << _grpary[lt.id - 1]->bitmap, 1);
+                lt.intok.set(tok.ptr(), off);
+                tok.shift_start(off);
+            }
+            else {
+                uints off = count_intable(tok, lt.hash, lt.id - 1, 1);
+                lt.intok.set(tok.ptr(), off);
+                tok.shift_start(off);
+            }
+
+            //check if it's a keyword
+            int kwdgrp;
+            if ((x & fGROUP_KEYWORDS) && (kwdgrp = _kwds.valid(lt.hash.hash, lt.intok, &lt.termid)))
+                lt.id = kwdgrp;
+        }
+
+        int id = (int)_aliases.size();
+        alias_record* alias = _aliases.add();
+        alias->target = target;
+        alias->alias = name;
+        alias->id = lt.id;
+        alias->termid = lt.termid;
+
+        return id;
+    }
+
     ///Enable or disable specified sequence, string or block. Disabled construct is not detected in input.
     //@note for s/s/b with same name, this applies only to the specific one
     //@return previous state
@@ -947,7 +1015,7 @@ public:
         {
             DASSERT(_last.id >= 0);
             DASSERT(_last.tokbuf.is_empty());
-            _tok.shift_start(-(ints)_last.tok.len());
+            _tok.shift_start(-(ints)_last.intok.len());
             _rawpos = _tok.ptr();
             _pushback = 0;
         }
@@ -1009,7 +1077,7 @@ public:
             if (tok.ptr() == 0)
                 set_end();
             else
-                _last.tok = tok;
+                _last.intok = tok;
 
             _rawpos = _tok.ptr();
         }
@@ -1058,7 +1126,7 @@ public:
             if (tok.ptr() == 0)
                 return set_end();
             else
-                _last.tok = tok;
+                _last.intok = tok;
         }
         else if (_tok.len() == 0)
         {
@@ -1073,7 +1141,8 @@ public:
                 _last.state = -1;
                 _last_string = k;
 
-                _last.tok.set_empty(_last.tok.ptre());
+                _last.intok.set_empty(_last.intok.ptre());
+                _last.val = _last.intok;
                 return _last;
             }
 
@@ -1098,12 +1167,18 @@ public:
             _last.id = -1 - k;
             _last.state = -1;
             _last_string = k;
+            uint slen = br.trailing[kt].seq.len();
 
             if (no_pop && *no_pop != br.trailing[kt].seq) {
-                _last.tok.set(_tok.ptr(), br.trailing[kt].seq.len());
+                _last.outok.set(_tok.ptr(), slen);
+                _last.intok.set(_last.outok.ptr(), _last.outok.ptr());
+                _last.val = _last.outok;
             }
             else {
-                _last.tok = _tok.cut_left_n(br.trailing[kt].seq.len());
+                //TODO set intok/outok to inner/outer content
+                _last.outok = _tok.cut_left_n(slen);
+                _last.intok.set(_last.outok.ptr(), _last.outok.ptr());
+                _last.val = _last.outok;
                 _stack.pop();
             }
 
@@ -1113,7 +1188,7 @@ public:
         if (x & xSEQ)
         {
             //this could be a leading string/block delimiter, if we can find it in the register
-            const dynarray<sequence*>& dseq = _seqary[((x&xSEQ) >> rSEQ) - 1];
+            const dynarray<sequence*>& dseq = _seqary[((x & xSEQ) >> rSEQ) - 1];
             uint i, n = (uint)dseq.size();
             uint enb = -1 - enable_seqid;
 
@@ -1131,7 +1206,8 @@ public:
                 _last_string = k;
 
                 _last.outok.set(_tok.ptr(), _tok.ptr());
-                _last.tok = _tok.cut_left_n(seq->leading.len());
+                _tok.shift_start(seq->leading.len());
+                _last.intok.set(_tok.ptr(), _tok.ptr());
 
                 //this is a leading string or block delimiter
                 uints off = 0;
@@ -1142,6 +1218,9 @@ public:
                     if (!ign)
                     {
                         _stack.push(reinterpret_cast<block_rule*>(seq));
+                        //_last.intok._ptr = _last.outok.ptr();
+                        _last.outok._pte = _last.intok.ptre();
+                        _last.val = _last.outok;
                         return _last;
                     }
 
@@ -1152,6 +1231,7 @@ public:
                 }
                 else {
                     _last.outok._pte = _tok.ptr();
+                    _last.val = _last.tokbuf ? token(_last.tokbuf) : _last.intok;
                 }
 
                 if (ign)
@@ -1163,14 +1243,15 @@ public:
 
         if (ignoregrp < 0) {
             _last.id = -ignoregrp;
-            _last.tok = scan_notgroup(-ignoregrp - 1, false);
+            _last.intok = scan_notgroup(-ignoregrp - 1, false);
+            _last.val = _last.intok;
             return _last;
         }
 
         _last.id = x & xGROUP;
         ++_last.id;
 
-        uchar cmap = _casemap[(uchar)*_tok.ptr()];
+        uchar cmap = _casemap[code];
         _last.set_hash(cmap);
 
         x = _abmap[cmap];
@@ -1181,29 +1262,29 @@ public:
         {
             if (_utf8) {
                 //return whole utf8 characters
-                _last.tok = _tok.cut_left_n(prefetch_utf8());
+                _last.intok = _tok.cut_left_n(prefetch_utf8());
             }
             else
-                _last.tok = _tok.cut_left_n(1);
+                _last.intok = _tok.cut_left_n(1);
 
-            _last.outok = _last.tok;
-            return _last;
+            _last.outok = _last.intok;
+            return process_alias();
         }
 
         //consume remaining
         if (x & fGROUP_TRAILSET)
-            _last.tok = scan_mask(1 << _grpary[_last.id - 1]->bitmap, false, 1);
+            _last.intok = scan_mask(1 << _grpary[_last.id - 1]->bitmap, false, 1);
         else
-            _last.tok = scan_group(_last.id - 1, false, 1);
+            _last.intok = scan_group(_last.id - 1, false, 1);
 
-        _last.outok = _last.tok;
+        _last.outok = _last.intok;
 
         //check if it's a keyword
         int kwdgrp;
-        if ((x & fGROUP_KEYWORDS) && (kwdgrp = _kwds.valid(_last.hash.hash, _last.tok, &_last.termid)))
+        if ((x & fGROUP_KEYWORDS) && (kwdgrp = _kwds.valid(_last.hash.hash, _last.intok, &_last.termid)))
             _last.id = kwdgrp;
 
-        return _last;
+        return process_alias();
     }
 
     ///Try to match a raw (untokenized) string following in the input
@@ -1283,7 +1364,7 @@ public:
         if (!_last.tokbuf.is_empty())
             dst.takeover(_last.tokbuf);
         else
-            dst = _last.tok;
+            dst = _last.val;
         return true;
     }
 
@@ -1304,7 +1385,7 @@ public:
             return false;
         }
 
-        dst = _last.tok;
+        dst = _last.val;
         return true;
     }
 
@@ -1738,10 +1819,10 @@ public:
 
     //@return last token read
     const lextoken& last() const { return _last; }
-    lextoken& last() { return _last; }
+    //lextoken& oulast() { return _last; }
 
     ///Return remainder of the input
-    token remainder() const { return _pushback ? _last.tok : _tok; }
+    token remainder() const { return _pushback ? _last.intok : _tok; }
 
 
     ///Return current lexer line position
@@ -2161,13 +2242,13 @@ protected:
             ///Insert escape pair into backmap
             void insert(const escpair* pair) {
                 uchar c = pair->replace.first_char();
-                fastlookup[c / BITBLK] |= 1 << (c%BITBLK);
+                fastlookup[c / BITBLK] |= 1 << (c % BITBLK);
                 *map.add_sort(pair->replace, func()) = pair;
             }
 
             ///
             bool is_escaped(uchar c) const {
-                return (fastlookup[c / BITBLK] & 1 << (c%BITBLK)) != 0;
+                return (fastlookup[c / BITBLK] & 1 << (c % BITBLK)) != 0;
             }
 
             ///Find longest replacement that starts given token
@@ -2570,13 +2651,13 @@ protected:
     //@param s the set definition, characters and ranges
     //@param fnval parameter for the callback function
     //@param fn callback
-    bool process_set(token s, uchar fnval, void (lexer::*fn)(uchar, uchar))
+    bool process_set(token s, uchar fnval, void (lexer::* fn)(uchar, uchar))
     {
         uchar k, kprev = 0;
         for (; !s.is_empty(); kprev = k)
         {
             k = ++s;
-            if (k == '.'  &&  s.first_char() == '.')
+            if (k == '.' && s.first_char() == '.')
             {
                 k = s.nth_char(1);
                 if (!k || !kprev)
@@ -2660,6 +2741,7 @@ protected:
 
                 if (tid >= 0) {
                     _last.termid = tid;
+                    _last.val = _last.tokbuf ? token(_last.tokbuf) : _last.intok;
                     return _last;
                 }
 
@@ -2743,6 +2825,7 @@ protected:
                     add_stb_segment(sr, k, off, outermost, ignored);
 
                     _last.termid = k;
+                    _last.val = _last.tokbuf ? token(_last.tokbuf) : _last.intok;
                     return _last;
                 }
 
@@ -2777,6 +2860,7 @@ protected:
 
                 if (tid >= 0) {
                     _last.state = 0;
+                    _last.val = _last.tokbuf ? token(_last.tokbuf) : _last.intok;
                     return _last;
                 }
 
@@ -2801,15 +2885,17 @@ protected:
                 add_stb_segment(br, k, off, outermost, ignored);
 
                 _last.termid = k;
-                if (outermost)
+                if (outermost) {
+                    _last.val = _last.tokbuf ? token(_last.tokbuf) : _last.intok;
                     _last.state = 0;
+                }
                 return _last;
             }
 
             //if it's another leading sequence, find it
             if (x & xSEQ)
             {
-                const dynarray<sequence*>& dseq = _seqary[((x&xSEQ) >> rSEQ) - 1];
+                const dynarray<sequence*>& dseq = _seqary[((x & xSEQ) >> rSEQ) - 1];
                 uint i, n = (uint)dseq.size();
 
                 for (i = 0; i < n; ++i) {
@@ -2870,7 +2956,7 @@ protected:
     sequence* verify_matchable_sequence(sequence* seq) const
     {
         ushort x = _abmap[seq->leading.first_char()];
-        const dynarray<sequence*>& seqlist = _seqary[((x&xSEQ) >> rSEQ) - 1];
+        const dynarray<sequence*>& seqlist = _seqary[((x & xSEQ) >> rSEQ) - 1];
 
         uint n = (uint)seqlist.size();
         for (uint i = 0; i < n; ++i) {
@@ -2903,15 +2989,17 @@ protected:
                 _last.tokbuf.add_from(_tok.ptr(), off);
             _tok.shift_start(off);
             off = 0;
-            if (final)
-                _last.tok = _last.tokbuf;
+            if (final) {
+                _last.intok._pte = _tok.ptr();
+                _last.val = _last.tokbuf;
+            }
         }
         else if (final)
-            _last.tok.set(_tok.ptr(), off);
+            _last.intok.set(_tok.ptr(), off);
 
         if (final) {
             _tok.shift_start(off + len);
-            _last.outok.set(_last.outok.ptr(), _tok.ptr());
+            _last.outok._pte = _tok.ptr();
             off = 0;
         }
     }
@@ -3024,7 +3112,7 @@ protected:
         return off;
     }
 
-    uints count_intable(const token& tok, uchar grp, uints off)
+    uints count_intable(const token& tok, token_hash& hash, uchar grp, uints off)
     {
         const uchar* pc = (const uchar*)tok.ptr();
         for (; off < tok.len(); ++off)
@@ -3033,12 +3121,12 @@ protected:
             if ((_abmap[*p] & xGROUP) != grp)
                 break;
 
-            _last.upd_hash(_casemap[*p]);
+            hash.inc_char(_casemap[*p]);
         }
         return off;
     }
 
-    uints count_notintable(const token& tok, uchar grp, uints off)
+    uints count_notintable(const token& tok, token_hash& hash, uchar grp, uints off)
     {
         const uchar* pc = (const uchar*)tok.ptr();
         for (; off < tok.len(); ++off)
@@ -3047,12 +3135,12 @@ protected:
             if ((_abmap[*p] & xGROUP) == grp)
                 break;
 
-            _last.upd_hash(_casemap[*p]);
+            hash.inc_char(_casemap[*p]);
         }
         return off;
     }
 
-    uints count_inmask(const token& tok, uchar msk, uints off)
+    uints count_inmask(const token& tok, token_hash& hash, uchar msk, uints off)
     {
         const uchar* pc = (const uchar*)tok.ptr();
         for (; off < tok.len(); ++off)
@@ -3060,7 +3148,7 @@ protected:
             const uchar* p = pc + off;
             if ((_trail[*p] & msk) == 0)  break;
 
-            _last.upd_hash(_casemap[*p]);
+            hash.inc_char(_casemap[*p]);
         }
         return off;
     }
@@ -3095,13 +3183,13 @@ protected:
     //@param off number of leading characters that are already considered belonging to the group
     token scan_group(uchar group, bool ignore, uints off = 0)
     {
-        off = count_intable(_tok, group, off);
+        off = count_intable(_tok, _last.hash, group, off);
         if (off >= _tok.len())
         {
             //end of buffer
 
             // return special terminating token if we are in ignore mode
-            // or there is nothing in the buffer and in input
+            // or if there is nothing in the buffer
             if (ignore || (off == 0 && _last.tokbuf.len() > 0))
                 return token();
         }
@@ -3128,7 +3216,7 @@ protected:
     //@param off number of leading characters to skip
     token scan_notgroup(uchar group, bool ignore, uints off = 0)
     {
-        off = count_notintable(_tok, group, off);
+        off = count_notintable(_tok, _last.hash, group, off);
         if (off >= _tok.len())
         {
             //end of buffer
@@ -3160,7 +3248,7 @@ protected:
     //@param ignore true if the result would be ignored, so there's no need to fill the buffer
     token scan_mask(uchar msk, bool ignore, uints off = 0)
     {
-        off = count_inmask(_tok, msk, off);
+        off = count_inmask(_tok, _last.hash, msk, off);
         if (off >= _tok.len())
         {
             //end of buffer
@@ -3223,9 +3311,11 @@ protected:
     ///Set end-of-input token
     const lextoken& set_end()
     {
+        _tok._ptr = _tok._pte;
         _last.id = 0;
-        _last.tok.set_empty(_tok.ptr());
-        _last.outok = _last.tok;
+        _last.intok.set_empty(_tok.ptr());
+        _last.outok = _last.intok;
+        _last.val = _last.intok;
         return _last;
     }
 
@@ -3277,6 +3367,32 @@ protected:
 
 protected:
 
+    struct alias_record {
+        charstr alias;
+        charstr target;
+        int id;
+        int termid;
+
+        bool operator == (const token& tok) const {
+            return alias == tok;
+        }
+    };
+
+    lextoken& process_alias() {
+        const alias_record* alias = _aliases.contains(_last.intok);
+        if (alias) {
+            //_last.tokbuf = alias->target;
+            _last.id = alias->id;
+            _last.termid = alias->termid;
+            _last.val = alias->target;
+        }
+        else
+            _last.val = _last.tokbuf ? token(_last.tokbuf) : _last.intok;
+        return _last;
+    }
+
+protected:
+
     dynarray<ushort> _abmap;            //< group flag array, fGROUP_xxx
     dynarray<char> _casemap;            //< mapping to deal with case-sensitiveness
     dynarray<uchar> _trail;             //< mask arrays for customized group's trailing set
@@ -3288,6 +3404,9 @@ protected:
     dynarray<group_rule*> _grpary;      //< character groups
     dynarray<escape_rule*> _escary;     //< escape character replacement pairs
     dynarray<sequence*> _stbary;        //< string or block delimiters
+
+    dynarray<alias_record> _aliases;
+
     keywords _kwds;
     uint _nkwd_groups;                  //< number of defined keyword groups
 
@@ -3368,7 +3487,7 @@ inline bool lexer::escape_rule::synthesize_string(const token& src, charstr& dst
             ++tok;
     }
 
-    if (altered  &&  tok.ptr() > copied)
+    if (altered && tok.ptr() > copied)
         dst.add_from_range(copied, tok.ptr());
 
     return altered;

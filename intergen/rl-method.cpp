@@ -204,7 +204,7 @@ bool Method::Arg::parse( iglexer& lex )
                 break;
             }
 
-            defval << tok.tok;
+            defval << tok.val;
         }
         while(1);
     }

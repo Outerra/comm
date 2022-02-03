@@ -182,7 +182,8 @@ class metagen //: public binstream
 
                 if (!v->varparent)  return false;
                 v = v->varparent;
-            } while (!name.is_empty());
+            }
+            while (!name.is_empty());
 
             if (part.first_char() == '@') {
                 *last = part;
@@ -196,7 +197,7 @@ class metagen //: public binstream
             //find descendant
             int nch = 0;
             do {
-                if (last_is_attrib  &&  nch > 0 && name.len() == 0) {
+                if (last_is_attrib && nch > 0 && name.len() == 0) {
                     if (last)  *last = part;
                     return true;
                 }
@@ -213,7 +214,8 @@ class metagen //: public binstream
 
                 part = name.cut_left('.');
                 ++nch;
-            } while (!part.is_empty());
+            }
+            while (!part.is_empty());
 
             return true;
         }
@@ -333,7 +335,7 @@ class metagen //: public binstream
             }
 
             if (tok.id != lex.IDENT)  return false;
-            name = tok.tok;
+            name = tok.val;
 
             depth = 0;
             const char* pc = name.ptr();
@@ -346,8 +348,8 @@ class metagen //: public binstream
 
             cond = UNKNOWN;
             lex.next();
-            if (tok.tok == '?')        cond = condneg ? COND_NEG : COND_POS;
-            else if (tok.tok == '!')   cond = COND_NEG;
+            if (tok.val == '?')        cond = condneg ? COND_NEG : COND_POS;
+            else if (tok.val == '!')   cond = COND_NEG;
             else lex.push_back();
 
             lex.next();
@@ -404,7 +406,7 @@ class metagen //: public binstream
             bool val;
 
             if (!value.value.is_empty())
-                val = defined  &&  value.value == v.write_buf(mg, 0, true, 0);
+                val = defined && value.value == v.write_buf(mg, 0, true, 0);
             else if (n == "defined")
                 val = defined;
             else if (n.is_empty() || n == "nonzero" || n == "true")
@@ -477,15 +479,15 @@ class metagen //: public binstream
             brace = 0;
             depth = 0;
 
-            while (tok.tok == '-') {
+            while (tok.val == '-') {
                 ++eat_left;
                 lex.next();
             }
 
-            if (tok.tok != '{'  &&  tok.tok != '['  &&  tok.tok != '(' && tok.tok != '#')
+            if (tok.val != '{' && tok.val != '[' && tok.val != '(' && tok.val != '#')
                 lex.push_back();
             else
-                brace = tok.tok[0];
+                brace = tok.val[0];
 
             if (brace == '#') {
                 lex.next_as_string(lex.COMMTAG, true);
@@ -493,7 +495,7 @@ class metagen //: public binstream
             else {
                 lex.next();
 
-                if (tok.tok == '/') {
+                if (tok.val == '/') {
                     trailing = 1;
                     lex.next();
                 }
@@ -502,10 +504,10 @@ class metagen //: public binstream
                     lex.set_err() << "Expected identifier";
                     throw lex.exc();
                 }
-                varname = tok.tok;
+                varname = tok.val;
 
-                const char* p = tok.tok.ptr();
-                const char* pe = tok.tok.ptre();
+                const char* p = varname.ptr();
+                const char* pe = varname.ptre();
                 for (; p < pe; ++p)
                     if (*p == '.')  ++depth;
 
@@ -540,38 +542,38 @@ class metagen //: public binstream
             }
             else if (brace)
             {
-                if (brace == '('  &&  tok.tok != ')') {
+                if (brace == '(' && tok.val != ')') {
                     lex.set_err() << "Expecting )";
                     throw lex.exc();
                 }
-                if (brace == '{'  &&  tok.tok != '}') {
+                if (brace == '{' && tok.val != '}') {
                     lex.set_err() << "Expecting }";
                     throw lex.exc();
                 }
-                if (brace == '['  &&  tok.tok != ']') {
+                if (brace == '[' && tok.val != ']') {
                     lex.set_err() << "Expecting ]";
                     throw lex.exc();
                 }
 
                 lex.next(0);
             }
-            else if (tok.tok == '\\') {
+            else if (tok.val == '\\') {
                 //read the escape char
                 bool en = lex.enable(lex.DQSTRING, false);
 
                 lex.next(0);
-                escape = tok.tok.first_char();
+                escape = tok.val.first_char();
 
                 lex.enable(lex.DQSTRING, en);
                 lex.next(0);
             }
 
-            while (tok.tok == '-') {
+            while (tok.val == '-') {
                 ++eat_right;
                 lex.next(0);
             }
 
-            if (tok.tok != '$') {
+            if (tok.val != '$') {
                 lex.set_err() << "Expecting end of tag $";
                 throw lex.exc();
             }
@@ -617,7 +619,7 @@ class metagen //: public binstream
                 return false;
             }
 
-            stext = lex.last().tok;
+            stext = lex.last().val;
 
             uint nr = hdr.eat_right;
             while (nr--) {
@@ -663,7 +665,7 @@ class metagen //: public binstream
                 return false;
             }
 
-            stext = lex.last().tok;
+            stext = lex.last().val;
 
             while (skip_newline--) {
                 stext.skip_ingroup(" \t");
@@ -860,7 +862,8 @@ class metagen //: public binstream
 
                 *sequence.add() = ptag;
                 succ = ptag->parse(lex, tout);
-            } while (succ);
+            }
+            while (succ);
 
             if (par && !par->varname.is_empty()) {
                 lex.set_err() << "End of file before the closing tag";
@@ -924,7 +927,8 @@ class metagen //: public binstream
 
                 if (tmp.trailing)
                     break;
-            } while (1);
+            }
+            while (1);
 
             hdr.eat_right = tmp.eat_right;
         }
@@ -1005,7 +1009,8 @@ class metagen //: public binstream
                 rng.parse(lex, tmp, &hdr);
                 if (tmp.trailing)
                     break;
-            } while (1);
+            }
+            while (1);
 
             hdr.eat_right = tmp.eat_right;
         }
@@ -1101,7 +1106,8 @@ class metagen //: public binstream
                 rng.parse(lex, tmp, &hdr);
                 if (tmp.trailing)
                     break;
-            } while (1);
+            }
+            while (1);
         }
     };
 
