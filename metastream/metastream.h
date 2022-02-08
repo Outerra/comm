@@ -708,7 +708,7 @@ public:
         return used;
     }
 
-    ///Define an optional variable, doesn't get read if it wasn't present in the input stream
+    ///Define an optional variable, doesn't get read (and overwritten) if it wasn't present in the input stream
     //@param name variable name, used as a key in output formats
     //@param defval default value for optional writing of values
     //@return true if value was read or written and no default was used, false in meta phase

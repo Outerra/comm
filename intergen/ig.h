@@ -75,7 +75,7 @@ public:
 
     virtual void on_error_prefix( bool rules, charstr& dst, int line ) override
     {
-        if(!rules)
+        if (!rules)
             dst << infile << char('(') << line << ") : ";
     }
 
@@ -90,7 +90,7 @@ public:
     int find_method( const token& classname, dynarray<paste_block>& classpasters, dynarray<charstr>& commlist );
 
     charstr& syntax_err() {
-        prepare_exception(true) << "syntax error: ";
+        prepare_exception() << "syntax error: ";
         return _errtext;
     }
 

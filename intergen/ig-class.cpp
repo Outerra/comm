@@ -80,9 +80,14 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
 
     int ncontinuable_errors = 0;
 
+    if (lex.matches_block(lex.CURLY, true)) {
+        //some dummy unnamed class
+        return false;
+    }
+
     if (!lex.matches(lex.IDENT, classname)) {
         lex.syntax_err() << "expecting class name\n";
-        return false;
+        throw lex.exc();
     }
 
     const lexer::lextoken& tok = lex.last();

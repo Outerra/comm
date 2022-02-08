@@ -12,6 +12,7 @@
 
 //debug string:
 // [inputs] $(ProjectDir)..\..\..\intergen\metagen
+// $(ProjectDir)..\..\..\intergen\test\test.hpp $(ProjectDir)..\..\..\intergen\metagen
 
 //#define ENABLE_JSC
 
