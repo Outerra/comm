@@ -134,7 +134,7 @@ public:
     ~iref() { release(); }
 
     void release() {
-        T* p = _p;
+        policy_intrusive_base* p = reinterpret_cast<policy_intrusive_base*>(_p);
         if (p)
             p->release_refcount((void**)&_p);
         _p = 0;
