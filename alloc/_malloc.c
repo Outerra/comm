@@ -2299,7 +2299,7 @@ typedef unsigned int flag_t;           /* The type of various bit flag sets */
   adjacent chunk in use, and or'ed with CINUSE_BIT if this chunk is in
   use, unless mmapped, in which case both bits are cleared.
 
-  FLAG4_BIT is not used by this malloc, but might be useful in extensions.
+  FLAG4_BIT - used to mark virtual memory allocation
 */
 
 #define PINUSE_BIT          (SIZE_T_ONE)
@@ -6121,6 +6121,7 @@ size_t mspace_usable_size(const void* mem) {
   return 0;
 }
 
+//@return size of virtual reserved space or 0 if it wasn't a virtual allocation
 size_t mspace_virtual_size(const void* mem) {
   if (mem != 0) {
     mchunkptr p = mem2chunk(mem);
