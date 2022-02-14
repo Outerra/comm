@@ -115,7 +115,7 @@ struct comm_array_allocator
 
         uints vs = mspace_virtual_size((uints*)p - 1);
         if (vs > 0) {
-            //reserved virtual memory, will be reallocated in-place
+            //reserved virtual memory, can be only reallocated in-place
             T* pn = (T*)realloc_in_place(p, n, sizeof(T), &typeid(T[]));
             return pn;
         }
@@ -160,7 +160,7 @@ struct comm_array_allocator
     }
 
 
-    ///Untyped array reserve
+    ///Untyped array reserve of virtual space
     static void* reserve(
         uints n,
         uints elemsize,

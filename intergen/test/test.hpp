@@ -9,6 +9,10 @@ namespace xx {
     class yy;
 }
 
+struct {
+    int dummy;
+};
+
 namespace n1 {
 namespace n2 {
 
