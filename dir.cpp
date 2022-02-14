@@ -373,7 +373,11 @@ opcd directory::delete_directory(zstring src, bool recursive)
             return was_err;
     }
 
+#ifdef SYSTYPE_MSVC
     return 0 == _rmdir(no_trail_sep(src)) ? opcd(0) : ersIO_ERROR;
+#else
+    return 0 == rmdir(no_trail_sep(src)) ? opcd(0) : ersIO_ERROR;
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -453,13 +457,21 @@ opcd directory::copymove_directory(zstring src, zstring dst, bool move)
 ////////////////////////////////////////////////////////////////////////////////
 bool directory::is_writable(zstring fname)
 {
+#ifdef SYSTYPE_MSVC
     return 0 == _access(no_trail_sep(fname), 2);
+#else
+    return 0 == access(no_trail_sep(fname), 2);
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 bool directory::set_writable(zstring fname, bool writable)
 {
+#ifdef SYSTYPE_MSVC
     return 0 == _chmod(no_trail_sep(fname), writable ? (S_IREAD | S_IWRITE) : S_IREAD);
+#else
+    return 0 == chmod(no_trail_sep(fname), writable ? (S_IREAD | S_IWRITE) : S_IREAD);
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////
