@@ -64,6 +64,15 @@ void test_malloc()
     void* r0 = dlmalloc(1000);
     void* r = dlmalloc(1310736);
 
+    dynarray<uint8> edge_test;
+    edge_test.reserve_virtual(0x10000 - 4 * sizeof(size_t));    //should allocate just one page
+    DASSERT(edge_test.reserved_virtual() == 0x10000 - 4 * sizeof(size_t));
+
+    dynarray<uint8> stack_test;
+    stack_test.reserve_stack(256);
+    uints ns = stack_test.reserved_virtual();
+    DASSERT(ns >= 256);
+
     dynarray<uint8> buf;
     buf.alloc(1000000);
 

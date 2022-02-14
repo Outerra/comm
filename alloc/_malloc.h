@@ -1,12 +1,12 @@
 /*
   Default header file for malloc-2.8.x, written by Doug Lea
   and released to the public domain, as explained at
-  http://creativecommons.org/publicdomain/zero/1.0/ 
- 
+  http://creativecommons.org/publicdomain/zero/1.0/
+
   This header is for ANSI C/C++ only.  You can set any of
   the following #defines before including:
 
-  * If USE_DL_PREFIX is defined, it is assumed that malloc.c 
+  * If USE_DL_PREFIX is defined, it is assumed that malloc.c
     was also compiled with this option, so all routines
     have names starting with "dl".
 
@@ -77,7 +77,7 @@ extern "C" {
 #define dlbulk_free            bulk_free
 #endif /* USE_DL_PREFIX */
 
-#if !NO_MALLINFO 
+#if !NO_MALLINFO
 #ifndef HAVE_USR_INCLUDE_MALLOC_H
 #ifndef _MALLOC_H
 #ifndef MALLINFO_FIELD_TYPE
@@ -258,7 +258,7 @@ size_t dlmalloc_max_footprint(void);
   malloc_set_footprint_limit, or the maximum size_t value if
   never set. The returned value reflects a permission. There is no
   guarantee that this number of bytes can actually be obtained from
-  the system.  
+  the system.
 */
 size_t dlmalloc_footprint_limit(void);
 
@@ -502,7 +502,7 @@ int  dlmalloc_trim(size_t);
 
   malloc_stats prints only the most commonly interesting statistics.
   More information can be obtained by calling mallinfo.
-  
+
   malloc_stats is not compiled if NO_MALLOC_STATS is defined.
 */
 void  dlmalloc_stats(void);
@@ -601,6 +601,7 @@ int mspace_mallopt(int, int);
 */
 void* mspace_malloc(mspace msp, size_t bytes);
 void* mspace_malloc_virtual(mspace msp, size_t bytes);
+void* mspace_malloc_stack(mspace msp, size_t bytes);
 void mspace_free(/*mspace msp,*/ void* mem);
 void* mspace_calloc(mspace msp, size_t n_elements, size_t elem_size);
 void* mspace_realloc(mspace msp, void* mem, size_t newsize);
@@ -612,7 +613,7 @@ void** mspace_independent_comalloc(mspace msp, size_t n_elements,
                                    size_t sizes[], void* chunks[]);
 size_t mspace_bulk_free(mspace msp, void**, size_t n_elements);
 size_t mspace_usable_size(const void* mem);
-size_t mspace_virtual_size(const void* mem);
+size_t mspace_virtual_size(const void* mem, int* is_stack);
 mspace mspace_from_ptr(const void* mem);
 void mspace_malloc_stats(mspace msp);
 int mspace_trim(mspace msp, size_t pad);
@@ -620,7 +621,7 @@ size_t mspace_footprint(mspace msp);
 size_t mspace_max_footprint(mspace msp);
 size_t mspace_footprint_limit(mspace msp);
 size_t mspace_set_footprint_limit(mspace msp, size_t bytes);
-void mspace_inspect_all(mspace msp, 
+void mspace_inspect_all(mspace msp,
                         void(*handler)(void *, void *, size_t, void*),
                         void* arg);
 #endif  /* MSPACES */

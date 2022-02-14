@@ -73,6 +73,7 @@ enum class reserve_mode
 {
     memory,                     //< reserve & commit memory to use initially, resizeable with rebase allowed
     virtual_space,              //< reserve virtual address space for use for the whole lifetime, allocated dynamically
+    stack_space,                //< reserve stack memory using _alloca
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -125,12 +126,16 @@ public:
         reserve(reserve_count, false);
     }
 
-    //@param count number of items to reserve meomory or virtual address space for
+    //@param count number of items to reserve heap memory or stack or virtual address space for
     //@param mode reservation mode
     dynarray(uints count, reserve_mode mode)
     {
         if (mode == reserve_mode::virtual_space) {
-            _ptr = A::template reserve<T>(count);
+            _ptr = A::template reserve_virtual<T>(count);
+            _set_count(0);
+        }
+        else if (mode == reserve_mode::stack_space) {
+            _ptr = A::template reserve_stack<T>(count);
             _set_count(0);
         }
         else {
@@ -147,9 +152,13 @@ public:
     ///copy constructor
     dynarray(const dynarray& p) : _ptr(0)
     {
-        uints virtsize = A::reserved_size(p._ptr);
+        int is_stack;
+        uints virtsize = A::reserved_virtual_size(p._ptr, &is_stack);
         if (virtsize > 0) {
-            reserve_virtual(virtsize / sizeof(T));
+            if (is_stack)
+                reserve_stack(virtsize / sizeof(T));
+            else
+                reserve_virtual(virtsize / sizeof(T));
         }
 
         uints n = p.sizes();
@@ -164,7 +173,7 @@ public:
         takeover(p);
     }
 
-    dynarray(std::initializer_list<T>&& initializer_list) 
+    dynarray(std::initializer_list<T>&& initializer_list)
     {
         alloc(initializer_list.size());
 
@@ -179,9 +188,13 @@ public:
     {
         discard();
 
-        uints virtsize = A::reserved_size(p._ptr);
+        int is_stack;
+        uints virtsize = A::reserved_virtual_size(p._ptr, &is_stack);
         if (virtsize > 0) {
-            reserve_virtual(virtsize / sizeof(T));
+            if (is_stack)
+                reserve_stack(virtsize / sizeof(T));
+            else
+                reserve_virtual(virtsize / sizeof(T));
         }
 
         uints n = p.sizes();
@@ -1141,14 +1154,27 @@ public:
     }
 
 
-    ///Reserve \a nitems of elements
+    ///Reserve address space for \a nitems of elements in virtual memory
     /** @param nitems number of items to reserve
         @return pointer to the first item of array */
     T* reserve_virtual(uints nitems)
     {
         discard();
 
-        _ptr = A::template reserve<T>(nitems);
+        _ptr = A::template reserve_virtual<T>(nitems);
+        _set_count(0);
+
+        return _ptr;
+    }
+
+    ///Reserve stack memory for \a nitems of elements using _alloca
+    /** @param nitems number of items to reserve
+        @return pointer to the first item of array */
+    T* reserve_stack(uints nitems)
+    {
+        discard();
+
+        _ptr = A::template reserve_stack<T>(nitems);
         _set_count(0);
 
         return _ptr;
@@ -1724,11 +1750,11 @@ public:
     uints byte_size() const { return _count() * sizeof(T); }
 
     ///Return number of remaining reserved bytes
-    uints reserved_remaining() const { return A::size(_ptr) - sizeof(T)*A::count(_ptr); }
+    uints reserved_remaining() const { return A::size(_ptr) - sizeof(T) * A::count(_ptr); }
     uints reserved_total() const { return A::size(_ptr); }
 
-    //@return reserved virtual size, if the memory was allocaded by reserve_virtual, otherwise 0
-    uints reserved_virtual() const { return A::reserved_size(_ptr); }
+    //@return reserved virtual size in bytes, if the memory was allocaded by reserve_virtual or reserve_stack, otherwise 0
+    uints reserved_virtual() const { return A::reserved_virtual_size(_ptr, nullptr); }
 
 
     typedef T*                          iterator;

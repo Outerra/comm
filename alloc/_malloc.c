@@ -1350,6 +1350,7 @@ DLMALLOC_EXPORT int mspace_track_large_chunks(mspace msp, int enable);
 DLMALLOC_EXPORT void* mspace_malloc(mspace msp, size_t bytes);
 
 DLMALLOC_EXPORT void* mspace_malloc_virtual(mspace msp, size_t bytes);
+DLMALLOC_EXPORT void* mspace_malloc_stack(mspace msp, size_t bytes);
 
 /*
   mspace_free behaves as free, but operates within
@@ -1426,9 +1427,9 @@ DLMALLOC_EXPORT size_t mspace_usable_size(const void* mem);
 
 /*
   malloc_virtual_size(void* p) returns virtual block size if it was
-  previously allocated via mspace_malloc_virtual, otherwise 0
+  previously allocated via mspace_malloc_virtual or mspace_malloc_stack, otherwise 0
 */
-DLMALLOC_EXPORT size_t mspace_virtual_size(const void* mem);
+DLMALLOC_EXPORT size_t mspace_virtual_size(const void* mem, int* is_stack);
 
 /*
   mspace_malloc_stats behaves as malloc_stats, but reports
@@ -2299,7 +2300,7 @@ typedef unsigned int flag_t;           /* The type of various bit flag sets */
   adjacent chunk in use, and or'ed with CINUSE_BIT if this chunk is in
   use, unless mmapped, in which case both bits are cleared.
 
-  FLAG4_BIT - used to mark virtual memory allocation
+  FLAG4_BIT - used to mark virtual or stack (+pinuse) memory allocation
 */
 
 #define PINUSE_BIT          (SIZE_T_ONE)
@@ -3919,12 +3920,7 @@ static void* mmap_alloc(mstate m, size_t nb) {
 */
 
 static void* mmap_alloc_virtual(mstate m, size_t nb) {
-  size_t mmsize = mmap_align(nb + /*m->modalign +*/ TWO_SIZE_T_SIZES + CHUNK_ALIGN_MASK);
-  //if (m->footprint_limit != 0) {
-  //  size_t fp = m->footprint + mmsize;
-  //  if (fp <= m->footprint || fp > m->footprint_limit)
-  //    return 0;
-  //}
+  size_t mmsize = mmap_align(nb + m->modalign + TWO_SIZE_T_SIZES);
   if (mmsize > nb) {     /* Check for wrap around 0 */
     size_t commit_size = mparams.page_size;
     char* mm = (char*)(CALL_DIRECT_MMAP(mmsize, commit_size, 0));
@@ -3936,20 +3932,36 @@ static void* mmap_alloc_virtual(mstate m, size_t nb) {
       p->prev_foot = mmsize + offset;   /* virtual block: block size + offset */
       p->head = commit_size;
       set_flag4(p);
-      //mark_inuse_foot(m, p, psize);
-      //chunk_plus_offset(p, psize)->head = FENCEPOST_HEAD;
-      //chunk_plus_offset(p, psize+SIZE_T_SIZE)->head = 0;
-
-      //if (m->least_addr == 0 || mm < m->least_addr)
-      //  m->least_addr = mm;
-      //if ((m->footprint += mmsize) > m->max_footprint)
-      //  m->max_footprint = m->footprint;
       assert(is_aligned(chunk2mem(p), m->modalign));
-      //check_mmapped_chunk(m, p);
       return chunk2mem(p);
     }
   }
   return 0;
+}
+
+/* Alloc a stack memory block.
+   does not use prev_foot, so for modalign 8 it can start at the head to save space
+*/
+
+static void* mmap_alloc_stack(mstate m, size_t nb) {
+    size_t mmsize = m->modalign == SIZE_T_SIZE ? nb + SIZE_T_SIZE : nb + m->modalign + TWO_SIZE_T_SIZES;
+    if (mmsize > nb) {     /* Check for wrap around 0 */
+        char* mm = (char*)_alloca(mmsize);
+        if (mm != 0) {
+            ptrdiff_t offset = m->modalign == SIZE_T_SIZE ? -SIZE_T_SIZE : align_offset(chunk2mem(mm), m->modalign);
+            size_t psize = mmsize;
+            assert((psize & FLAG_BITS) == 0);
+            mchunkptr p = (mchunkptr)(mm + offset);
+            //p->prev_foot not used, may point to invalid memory
+            p->head = nb;
+            set_flag4(p);
+            p->head |= PINUSE_BIT;  //marks stack memory when used with flag4
+
+            assert(is_aligned(chunk2mem(p), m->modalign));
+            return chunk2mem(p);
+        }
+    }
+    return 0;
 }
 
 /* Realloc using mmap */
@@ -5611,6 +5623,16 @@ void* mspace_malloc_virtual(mspace msp, size_t bytes) {
     return mmap_alloc_virtual(ms, bytes);
 }
 
+void* mspace_malloc_stack(mspace msp, size_t bytes) {
+    mstate ms = (mstate)msp;
+    if (!ok_magic(ms)) {
+        USAGE_ERROR_ACTION(ms, ms);
+        return 0;
+    }
+
+    return mmap_alloc_stack(ms, bytes);
+}
+
 /*
   mspace versions of routines are near-clones of the global
   versions. This is not so nice but better than the alternatives.
@@ -5738,11 +5760,17 @@ void mspace_free(/*mspace msp,*/ void* mem) {
     mchunkptr p  = mem2chunk(mem);
 
     if (flag4inuse(p)) {
-        //a virtual memory block
+      if (pinuse(p)) {
+        //stack memory
+        return;
+      }
+      else {
+        //virtual memory block
         size_t psize = mmap_align_down(p->prev_foot);
         size_t offset = p->prev_foot - psize;
         CALL_MUNMAP((char*)p - offset, psize, 1);
         return;
+      }
     }
 
 #if FOOTERS
@@ -5881,7 +5909,7 @@ void* mspace_realloc(mspace msp, void* oldmem, size_t bytes) {
     mchunkptr oldp = mem2chunk(oldmem);
 
     if (flag4inuse(oldp)) {
-      /* virtual mmap block */
+      /* virtual or stack mmap block */
       return mspace_realloc_in_place(oldmem, bytes);
     }
 
@@ -5925,7 +5953,11 @@ void* mspace_realloc_in_place(/*mspace msp,*/ void* oldmem, size_t bytes) {
       mchunkptr oldp = mem2chunk(oldmem);
 
       if (flag4inuse(oldp)) {
-        /* virtual block can realloc within its reserved space */
+        if (pinuse(oldp)) {
+          //stack memory, can't be reallocated in-space
+          return 0;
+        }
+        // virtual block can realloc within its reserved space
         size_t commit_size = chunksize(oldp);
 
         if (commit_size < nb) {
@@ -6122,13 +6154,23 @@ size_t mspace_usable_size(const void* mem) {
 }
 
 //@return size of virtual reserved space or 0 if it wasn't a virtual allocation
-size_t mspace_virtual_size(const void* mem) {
+size_t mspace_virtual_size(const void* mem, int* is_stack) {
+  if (is_stack) *is_stack = 0;
   if (mem != 0) {
     mchunkptr p = mem2chunk(mem);
     if (flag4inuse(p)) {
-      size_t psize = mmap_align_down(p->prev_foot);
-      size_t offset = p->prev_foot - psize;
-      return psize - offset - MMAP_CHUNK_OVERHEAD;
+      if (pinuse(p)) {
+        //stack memory
+        size_t psize = chunksize(p);
+        if (is_stack) *is_stack = 1;
+        return psize;
+      }
+      else {
+        //virtual memory
+        size_t psize = mmap_align_down(p->prev_foot);
+        size_t offset = p->prev_foot - psize;
+        return psize - offset - MMAP_CHUNK_OVERHEAD;
+      }
     }
   }
   return 0;

@@ -1937,11 +1937,23 @@ public:
     void free() { _tstr.discard(); }
     void discard() { _tstr.discard(); }
 
-    ///Reserve memory for string
+    ///Reserve memory for the string buffer
     //@param len min size for string to reserve (incl. term zero)
     //@param m [optional] memory space to use
     char* reserve( uints len, mspace m = 0 ) {
         return _tstr.reserve(len, true, m);
+    }
+
+    ///Reserve virtual memory for the string buffer
+    //@param len min size for string to reserve (incl. term zero)
+    char* reserve_virtual(uints len) {
+        return _tstr.reserve_virtual(len);
+    }
+
+    ///Reserve stack memory for the string buffer
+    //@param len min size for string to reserve (incl. term zero)
+    char* reserve_stack(uints len) {
+        return _tstr.reserve_stack(len);
     }
 
     //@return number of reserved bytes
