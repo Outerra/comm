@@ -122,15 +122,15 @@ class metagen //: public binstream
     ///Variable from cache
     struct Varx
     {
-        const Var* var;             //< associated variable
-        Varx* varparent;
-        const uchar* data;          //< cache position
-        int index;                  //< current element index for arrays
-        int order;                  //< current filtered element index for arrays
+        const Var* var = 0;         //< associated variable
+        Varx* varparent = 0;
+        const uchar* data = 0;      //< cache position
+        int index = -1;             //< current element index for arrays
+        int order = -1;             //< current filtered element index for arrays
 
 
-        Varx() : var(0), varparent(0), data(0), index(-1), order(-1) {}
-        Varx(const Var* v, const uchar* d) : var(v), varparent(0), data(d), index(-1), order(-1) {}
+        Varx() = default;
+        Varx(const Var* v, const uchar* d) : var(v), data(d) {}
 
         bool find_containing_array_element(Varx& ch) const
         {
@@ -257,9 +257,11 @@ class metagen //: public binstream
         ///First array element, return count
         uints first(const Varx& ary)
         {
-            MetaDesc* md = ary.var->stream_desc();
-            DASSERT(md->is_array());
+            MetaDesc* mdp = ary.var->stream_desc();
+            DASSERT(mdp->is_array());
+
             var = ary.var->stream_element();
+            MetaDesc* md = var->stream_desc();
 
             data = ary.data + sizeof(uints);
             varparent = const_cast<Varx*>(&ary);
