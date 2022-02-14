@@ -328,14 +328,6 @@ public:
         return *this;
     }
 
-    binstring& swap_pointer(uchar*& dest)
-    {
-        _tstr.swap_pointer(dest);
-
-        _offset = 0;
-        return *this;
-    }
-
     dynarray<uint8>& get_buf() { return _tstr; }
     const dynarray<uint8>& get_buf() const { return _tstr; }
 

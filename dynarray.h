@@ -230,6 +230,15 @@ public:
     dynarray& takeover(dynarray<T, COUNT2>& src)
     {
         discard();
+
+        uints stack_size = A::reserved_stack_size(src._ptr);
+        if (stack_size > 0) {
+            //this is a stack memory that cannot be moved
+            *this = const_cast<const dynarray<T, COUNT2>&>(src);
+            return *this;
+        }
+
+        //swap pointers
         _ptr = src.ptr();
         src._ptr = 0;
         return *this;
@@ -243,15 +252,6 @@ public:
     template<class COUNT2 COID_DEFAULT_OPT(COUNT)>
     void swap(dynarray<T, COUNT2, A>& other) {
         std::swap(_ptr, other._ptr);
-    }
-
-    ///Swap content with another dynarray
-    dynarray& swap_pointer(T*& dest)
-    {
-        T* t = dest;
-        dest = _ptr;
-        _ptr = t;
-        return *this;
     }
 
     T* ptr() { return _ptr; }
@@ -1136,7 +1136,7 @@ public:
     /** @param nitems number of items to reserve
         @param ikeep keep existing elements (true) or discard them (false)
         @param m [optional] memory space to use (fresh alloc only)
-        @return pointer to the first item of array */
+        @return pointer to the first item of the array */
     T* reserve(uints nitems, bool ikeep = true, mspace m = 0)
     {
         uints n = _count();
@@ -1153,10 +1153,31 @@ public:
         return _ptr;
     }
 
+    /// @brief Reserve \a nitems of elements
+    /// @param count number of items to reserve
+    /// @param mode reservation mode
+    /// @return pointer to the first item of the array
+    T* reserve(uints count, reserve_mode mode) {
+        discard();
+
+        if (mode == reserve_mode::virtual_space) {
+            _ptr = A::template reserve_virtual<T>(count);
+            _set_count(0);
+        }
+        else if (mode == reserve_mode::stack_space) {
+            _ptr = A::template reserve_stack<T>(count);
+            _set_count(0);
+        }
+        else {
+            _ptr = 0;
+            reserve(count, false);
+        }
+        return _ptr;
+    }
 
     ///Reserve address space for \a nitems of elements in virtual memory
     /** @param nitems number of items to reserve
-        @return pointer to the first item of array */
+        @return pointer to the first item of the array */
     T* reserve_virtual(uints nitems)
     {
         discard();
