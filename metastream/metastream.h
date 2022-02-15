@@ -687,7 +687,7 @@ public:
         return used;
     }
 
-    ///Define an optional variable, doesn't get read if it wasn't present in the input stream
+    ///Define an optional variable, value doesn't get overwritten if it wasn't present in the input stream
     //@param name variable name, used as a key in output formats
     //@return true if value was read or written and no default was used, false in meta phase
     template<typename T>
@@ -708,7 +708,7 @@ public:
         return used;
     }
 
-    ///Define an optional variable, doesn't get read (and overwritten) if it wasn't present in the input stream
+    ///Define an optional variable, value doesn't get overwritten if it wasn't present in the input stream
     //@param name variable name, used as a key in output formats
     //@param defval default value for optional writing of values
     //@return true if value was read or written and no default was used, false in meta phase
@@ -729,7 +729,7 @@ public:
         return used;
     }
 
-    ///Define an optional variable, with explicit set/get functors
+    ///Define an optional variable, with explicit set/get functors that take pointer (optionally nullptr)
     //@param name variable name, used as a key in output formats
     //@param set void function(const T*) receiving streamed object, or nullptr if the object wasn't present in the stream
     //@param get const T* function() called to provide object to be streamed, or nullptr if nothing should go into the stream
@@ -753,6 +753,42 @@ public:
         }
         else
             meta_variable_optional<T>(name, (const T*)-1);
+
+        return used;
+    }
+
+    ///Define an optional variable (value doesn't get overwritten if it wasn't present in the input) streamed as a different type, with explicit set/get functors
+    //@param name variable name, used as a key in output formats
+    //@param set void function(AsType&&, T&) receiving object from stream
+    //@param get [const AsType& | AsType] function(T&) returning object to stream
+    //@param write if false, does not write value to output
+    //@return true if value was read or written, false in meta phase
+    template<typename AsType, typename T, typename D, typename FnIn, typename FnOut>
+    bool member_optional_as_type(const token& name, T& v, FnIn set, FnOut get, bool write = true)
+    {
+        bool used = false;
+
+        if (_binw) {
+            const AsType& val = get(v);
+            used = write_optional(write ? &get(v) : nullptr);
+        }
+        else if (_binr) {
+            if constexpr (std::is_same_v<token, AsType>) {
+                //special handling for tokens that are normally not readable from stream
+                charstr val;
+                used = read_optional(val);
+                if (used)
+                    set(token(val), v);
+            }
+            else {
+                AsType val;
+                used = read_optional(val);
+                if (used)
+                    set(std::forward<AsType>(val), v);
+            }
+        }
+        else
+            meta_variable_optional<AsType>(name, (const AsType*)-1);
 
         return used;
     }
