@@ -77,8 +77,8 @@ public:
     ///Constructor from pointer, artificially removed priority to resolve ambiguity
     template<class K>
     iref(K* p, typename std::remove_const<K>::type* = 0) : _p(p) {
-        if (_p)
-            _p->add_refcount();
+        if (_p) 
+            reinterpret_cast<policy_intrusive_base*>(_p)->add_refcount();
     }
 
     ///Copy constructor from convertible type
@@ -104,7 +104,7 @@ public:
     ///Increment refcount
     T* add_refcount() const {
         if (_p)
-            _p->add_refcount();
+            reinterpret_cast<policy_intrusive_base*>(_p)->add_refcount();
         return _p;
     }
 
@@ -134,9 +134,8 @@ public:
     ~iref() { release(); }
 
     void release() {
-        policy_intrusive_base* p = reinterpret_cast<policy_intrusive_base*>(_p);
-        if (p)
-            p->release_refcount((void**)&_p);
+        if (_p)
+            reinterpret_cast<policy_intrusive_base*>(_p)->release_refcount((void**)&_p);
         _p = 0;
     }
 
