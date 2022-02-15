@@ -73,8 +73,33 @@ enum class reserve_mode
 {
     memory,                     //< reserve & commit memory to use initially, resizeable with rebase allowed
     virtual_space,              //< reserve virtual address space for use for the whole lifetime, allocated dynamically
-    stack_space,                //< reserve stack memory using _alloca
 };
+
+template <class T>
+struct stack_buffer
+{
+    uints count = 0;
+    T* buffer = 0;
+
+    stack_buffer(uints n, void* mem)
+        : count(n)
+        , buffer(static_cast<T*>(mem))
+    {}
+
+    size_t buffer_size() const {
+        return required_size(count);
+    }
+
+    static size_t required_size(uints count) {
+        constexpr uints mask = sizeof(size_t) - 1;
+        uints n16 = (count * sizeof(T) + mask) & ~mask;
+        return 2 * sizeof(size_t) + n16;
+    }
+};
+
+///Macro to allocate stack memory buffer
+///Needs to be a macro to keep _alloca call in correct scope
+#define STACK_RESERVE(T, count) stack_buffer<T>(count, _alloca(stack_buffer<T>::required_size(count)))
 
 ////////////////////////////////////////////////////////////////////////////////
 //Fw
@@ -121,28 +146,25 @@ public:
     }
 
     ///Reserve specified number of items in constructor
-    explicit dynarray(uints reserve_count) {
-        //A::instance();
-        reserve(reserve_count, false);
-    }
-
     //@param count number of items to reserve heap memory or stack or virtual address space for
     //@param mode reservation mode
-    dynarray(uints count, reserve_mode mode)
+    explicit dynarray(uints reserve_count, reserve_mode mode = reserve_mode::memory)
     {
         if (mode == reserve_mode::virtual_space) {
-            _ptr = A::template reserve_virtual<T>(count);
-            _set_count(0);
-        }
-        else if (mode == reserve_mode::stack_space) {
-            _ptr = A::template reserve_stack<T>(count);
+            _ptr = A::template reserve_virtual<T>(reserve_count);
             _set_count(0);
         }
         else {
             //A::instance();
-            _ptr = 0;
-            reserve(count, false);
+            reserve(reserve_count, false);
         }
+    }
+
+    /// @brief Reserve stack memory for this dynarray
+    //@param sb stack buffer created with the STACK_RESERVE macro
+    dynarray(const stack_buffer<T>& sb) {
+        _ptr = A::template reserve_stack<T>(sb.count, sb.buffer, sb.buffer_size());
+        _set_count(0);
     }
 
     ~dynarray() {
@@ -152,21 +174,16 @@ public:
     ///copy constructor
     dynarray(const dynarray& p) : _ptr(0)
     {
-        int is_stack;
-        uints virtsize = A::reserved_virtual_size(p._ptr, &is_stack);
+        uints virtsize = A::reserved_virtual_size(p._ptr);
         if (virtsize > 0) {
-            if (is_stack)
-                reserve_stack(virtsize / sizeof(T));
-            else
-                reserve_virtual(virtsize / sizeof(T));
+            reserve_virtual(virtsize / sizeof(T));
         }
 
         uints n = p.sizes();
         alloc(n);
 
-        for (uints i = 0; i < n; ++i) {
+        for (uints i = 0; i < n; ++i)
             _ptr[i] = p._ptr[i];
-        }
     }
 
     dynarray(dynarray&& p) noexcept : _ptr(0) {
@@ -188,13 +205,9 @@ public:
     {
         discard();
 
-        int is_stack;
-        uints virtsize = A::reserved_virtual_size(p._ptr, &is_stack);
+        uints virtsize = A::reserved_virtual_size(p._ptr);
         if (virtsize > 0) {
-            if (is_stack)
-                reserve_stack(virtsize / sizeof(T));
-            else
-                reserve_virtual(virtsize / sizeof(T));
+            reserve_virtual(virtsize / sizeof(T));
         }
 
         uints n = p.sizes();
@@ -230,17 +243,16 @@ public:
     dynarray& takeover(dynarray<T, COUNT2>& src)
     {
         discard();
-
-        uints stack_size = A::reserved_stack_size(src._ptr);
+        uints stack_size = src.reserved_stack();
         if (stack_size > 0) {
-            //this is a stack memory that cannot be moved
-            *this = const_cast<const dynarray<T, COUNT2>&>(src);
-            return *this;
+            //stack memory cannot be moved, needs to be a copy
+            *this = src;
+            src.reset();
         }
-
-        //swap pointers
-        _ptr = src.ptr();
-        src._ptr = 0;
+        else {
+            _ptr = src.ptr();
+            src._ptr = 0;
+        }
         return *this;
     }
 
@@ -1164,10 +1176,6 @@ public:
             _ptr = A::template reserve_virtual<T>(count);
             _set_count(0);
         }
-        else if (mode == reserve_mode::stack_space) {
-            _ptr = A::template reserve_stack<T>(count);
-            _set_count(0);
-        }
         else {
             _ptr = 0;
             reserve(count, false);
@@ -1191,11 +1199,11 @@ public:
     ///Reserve stack memory for \a nitems of elements using _alloca
     /** @param nitems number of items to reserve
         @return pointer to the first item of array */
-    T* reserve_stack(uints nitems)
+    T* reserve_stack(const stack_buffer<T>& sb)
     {
         discard();
 
-        _ptr = A::template reserve_stack<T>(nitems);
+        _ptr = A::template reserve_stack<T>(sb.count, sb.buffer, sb.buffer_size());
         _set_count(0);
 
         return _ptr;
@@ -1774,8 +1782,11 @@ public:
     uints reserved_remaining() const { return A::size(_ptr) - sizeof(T) * A::count(_ptr); }
     uints reserved_total() const { return A::size(_ptr); }
 
-    //@return reserved virtual size in bytes, if the memory was allocaded by reserve_virtual or reserve_stack, otherwise 0
-    uints reserved_virtual() const { return A::reserved_virtual_size(_ptr, nullptr); }
+    //@return reserved virtual size in bytes, if the memory was allocaded by reserve_virtual, otherwise 0
+    uints reserved_virtual() const { return A::reserved_virtual_size(_ptr); }
+
+    //@return reserved stack size in bytes, if the memory was allocaded by reserve_stack, otherwise 0
+    uints reserved_stack() const { return A::reserved_stack_size(_ptr); }
 
 
     typedef T*                          iterator;

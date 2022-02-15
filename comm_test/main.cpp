@@ -452,5 +452,7 @@ int main( int argc, char* argv[] )
     regex_test();
     //ig_test::run_test();
 
+    logger::terminate();
+
     return 0;
 }

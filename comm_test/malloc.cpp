@@ -40,6 +40,14 @@ static void test_miki()
     }
 }
 
+dynarray<uint> test_return_stack()
+{
+    dynarray<uint> buf = STACK_RESERVE(uint, 250);
+    DASSERT(buf.reserved_stack() >= 250 * sizeof(uint));
+
+    return buf;
+}
+
 void test_malloc()
 {
     //test_miki();
@@ -68,10 +76,12 @@ void test_malloc()
     edge_test.reserve_virtual(0x10000 - 4 * sizeof(size_t));    //should allocate just one page
     DASSERT(edge_test.reserved_virtual() == 0x10000 - 4 * sizeof(size_t));
 
-    dynarray<uint8> stack_test;
-    stack_test.reserve_stack(256);
-    uints ns = stack_test.reserved_virtual();
-    DASSERT(ns >= 256);
+    dynarray<uint8> stack_test(STACK_RESERVE(uint8, 250));
+    DASSERT(stack_test.reserved_stack() >= 250);
+
+    //test if returned stack memory gets converted to heap on return
+    dynarray<uint> nonstack = test_return_stack();
+    DASSERT(nonstack.reserved_stack() == 0);
 
     dynarray<uint8> buf;
     buf.alloc(1000000);

@@ -102,8 +102,8 @@ struct comm_array_allocator
 
     ///Typed array reserve of virtual memory
     template<class T>
-    static T* reserve_stack(uints n, mspace m = 0) {
-        return (T*)reserve_stack(n, sizeof(T), m);
+    static T* reserve_stack(uints n, void* buffer, uints buffer_size) {
+        return (T*)reserve_stack(n, sizeof(T), buffer, buffer_size);
     }
 
     ///Typed array alloc
@@ -119,9 +119,8 @@ struct comm_array_allocator
         if (!p)
             return alloc<T>(n, mn);
 
-        int is_stack;
-        uints vs = mspace_virtual_size((uints*)p - 1, &is_stack);
-        if (vs > 0 && !is_stack) {
+        uints vs = mspace_virtual_size((uints*)p - 1);
+        if (vs > 0) {
             //reserved virtual memory, can be only reallocated in-place
             T* pn = (T*)realloc_in_place(p, n, sizeof(T), &typeid(T[]));
             return pn;
@@ -187,18 +186,19 @@ struct comm_array_allocator
     }
 
     ///Untyped array reserve of stack space
+    //@param buffer needs to be _alloca buffer of (2*sizeof(size_t) + n*elemsize) size
     static void* reserve_stack(
         uints n,
         uints elemsize,
-        mspace m = 0
+        void* buffer,
+        uints buffer_size
     )
     {
-        uints* p = (uints*)::mspace_malloc_stack(
-            m ? m : SINGLETON(comm_array_mspace).msp,
-            sizeof(uints) + n * elemsize);
+        DASSERT_RET(buffer_size >= 2 * sizeof(size_t) + ((n * elemsize + (sizeof(size_t) - 1)) & ~(sizeof(size_t) - 1)), nullptr);
 
-        if (!p) throw std::bad_alloc();
-        p[0] = n;
+        //to be compatible with dlmalloc, we need to set flag4 and pinuse for this memory
+        uints* p = (uints*)mspace_malloc_stack(SINGLETON(comm_array_mspace).msp, buffer_size, buffer);
+        p[0] = buffer_size - sizeof(size_t);
         return p + 1;
     }
 
@@ -326,12 +326,19 @@ struct comm_array_allocator
         return size ? size - sizeof(uints) : 0;
     }
 
-    //@param is_stack [out] true if it's a stack memory
-    //@return size of virtual/stack memory, if the block was created using reserve_virtual() or reserve_stack() , else 0
-    static uints reserved_virtual_size(const void* p, int* is_stack) {
+    //@return size of virtual memory, if the block was created using reserve_virtual(), else 0
+    static uints reserved_virtual_size(const void* p) {
         if (!p)
             return 0;
-        uints size = ::mspace_virtual_size((const uints*)p - 1, is_stack);
+        uints size = ::mspace_virtual_size((const uints*)p - 1);
+        return size ? size - sizeof(uints) : 0;
+    }
+
+    //@return size of stack memory, if the block was created using reserve_stack(), else 0
+    static uints reserved_stack_size(const void* p) {
+        if (!p)
+            return 0;
+        uints size = ::mspace_stack_size((const uints*)p - 1);
         return size ? size - sizeof(uints) : 0;
     }
 

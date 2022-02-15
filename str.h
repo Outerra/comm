@@ -1952,8 +1952,8 @@ public:
 
     ///Reserve stack memory for the string buffer
     //@param len min size for string to reserve (incl. term zero)
-    char* reserve_stack(uints len) {
-        return _tstr.reserve_stack(len);
+    char* reserve_stack(const stack_buffer<char>& sb) {
+        return _tstr.reserve_stack(sb);
     }
 
     //@return number of reserved bytes
