@@ -763,14 +763,14 @@ public:
     //@param get [const AsType& | AsType] function(T&) returning object to stream
     //@param write if false, does not write value to output
     //@return true if value was read or written, false in meta phase
-    template<typename AsType, typename T, typename D, typename FnIn, typename FnOut>
+    template<typename AsType, typename T, typename FnIn, typename FnOut>
     bool member_optional_as_type(const token& name, T& v, FnIn set, FnOut get, bool write = true)
     {
         bool used = false;
 
         if (_binw) {
             const AsType& val = get(v);
-            used = write_optional(write ? &get(v) : nullptr);
+            used = write_optional(write ? &val : nullptr);
         }
         else if (_binr) {
             if constexpr (std::is_same_v<token, AsType>) {
