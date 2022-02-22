@@ -118,6 +118,12 @@ public:
         return i < _types.size() ? &_types[i] : nullptr;
     }
 
+    template<class T>
+    const coid::token& name()
+    {
+        return _types[id<T>()].type_name;
+    }
+
 private:
 
     //virtual here is for always calling the main module implementation and not (possibly) outdated dll one
