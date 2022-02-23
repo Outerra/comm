@@ -321,7 +321,7 @@ struct slot : storage<L, Es...>
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
 {
-    compot();
+    //compot();
 
     singleton_test();
 

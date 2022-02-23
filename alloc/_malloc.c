@@ -1426,7 +1426,7 @@ DLMALLOC_EXPORT struct mallinfo mspace_mallinfo(mspace msp);
 DLMALLOC_EXPORT size_t mspace_usable_size(const void* mem);
 
 /*
-  malloc_virtual_size(void* p) returns virtual block size if it was
+  malloc_virtual_size(void* p) returns usable virtual size if it was
   previously allocated via mspace_malloc_virtual, otherwise 0
 */
 DLMALLOC_EXPORT size_t mspace_virtual_size(const void* mem);
@@ -3953,14 +3953,14 @@ static void* mmap_alloc_stack(mstate m, size_t nb, void* buffer) {
   char* mm = (char*)buffer;
   ptrdiff_t offset = m->modalign - TWO_SIZE_T_SIZES;
   size_t psize = nb - TWO_SIZE_T_SIZES - offset;
-  mchunkptr p = (mchunkptr)(mm + offset);
+            mchunkptr p = (mchunkptr)(mm + offset);
   //p->prev_foot not used, may point to invalid memory in case of modalign == SIZE_T_SIZE
   p->head = psize;
   p->head |= FLAG4_BIT | PINUSE_BIT;  //marks stack memory when used with flag4
 
-  assert(is_aligned(chunk2mem(p), m->modalign));
-  return chunk2mem(p);
-}
+            assert(is_aligned(chunk2mem(p), m->modalign));
+            return chunk2mem(p);
+        }
 
 /* Realloc using mmap */
 static mchunkptr mmap_resize(mstate m, mchunkptr oldp, size_t nb, int flags) {
@@ -6156,14 +6156,14 @@ size_t mspace_virtual_size(const void* mem) {
   if (mem != 0) {
     mchunkptr p = mem2chunk(mem);
     if (flag4inuse(p) && !pinuse(p)) {
-      //virtual memory
-      size_t psize = mmap_align_down(p->prev_foot);
-      size_t offset = p->prev_foot - psize;
-      return psize - offset - MMAP_CHUNK_OVERHEAD;
+        //virtual memory
+        size_t psize = mmap_align_down(p->prev_foot);
+        size_t offset = p->prev_foot - psize;
+        return psize - offset - MMAP_CHUNK_OVERHEAD;
+      }
     }
-  }
   return 0;
-}
+  }
 
 //@return size of reserved stack space or 0 if it wasn't a stack allocation
 size_t mspace_stack_size(const void* mem) {
@@ -6174,7 +6174,7 @@ size_t mspace_stack_size(const void* mem) {
             return chunksize(p);
         }
     }
-    return 0;
+  return 0;
 }
 
 mspace mspace_from_ptr(const void* mem) {

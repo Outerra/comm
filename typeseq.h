@@ -47,7 +47,8 @@ COID_NAMESPACE_BEGIN
 
 /// @brief a registrar that assigns unique sequential id for any queried type
 /// The assigned ID is cached in a static variable of a template specialization for the type, so repeated
-/// queries are fast. First time initialization and first time request from a
+/// queries are fast. First time initialization and first time request from a different dll module uses
+/// a mutex to ensure a correct registration
 class type_sequencer
 {
     template <class T>

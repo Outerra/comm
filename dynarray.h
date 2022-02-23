@@ -233,7 +233,7 @@ public:
     }
 
     ///Cast dynarray-conforming pointer to a dynarray object
-    static dynarray& from_dynarray_conforming_ptr(void*& ptr)
+    static dynarray& from_dynarray_conforming_ptr(T*& ptr)
     {
         return *reinterpret_cast<dynarray*>(&ptr);
     }
