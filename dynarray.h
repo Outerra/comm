@@ -246,8 +246,14 @@ public:
         uints stack_size = src.reserved_stack();
         if (stack_size > 0) {
             //stack memory cannot be moved, needs to be a copy
-            *this = src;
-            src.reset();
+            if constexpr (std::is_copy_assignable_v<T>) {
+                *this = src;
+                src.reset();
+            }
+            else {
+                //something that's not cpoy assignable cannot be allocated on stack
+                DASSERT(0);
+            }
         }
         else {
             _ptr = src.ptr();
