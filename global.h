@@ -67,6 +67,17 @@ public:
         return reinterpret_cast<T*&>(ctx);
     }
 
+    //@return component id (sequential by order of registration)
+    template <class T>
+    int component_id() {
+        type_sequencer& sq = tsq();
+        return sq.id<T>();
+    }
+
+    void* component_data(int cid) const {
+        return cid < (int)_components.size() ? _components[cid] : nullptr;
+    }
+
 private:
 
     static type_sequencer& tsq() {
