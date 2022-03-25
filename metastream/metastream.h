@@ -548,8 +548,14 @@ public:
     metastream& member_as_type(const token& name, T& v, FnIn set, FnOut get, const D& defval)
     {
         if (_binw) {
-            const AsType& val = get(v);
-            *this || const_cast<AsType&>(val);
+            if constexpr (std::is_same_v<token, AsType>) {
+                const charstr& val = get(v);
+                *this || const_cast<charstr&>(val);
+            }
+            else {
+                const AsType& val = get(v);
+                *this || const_cast<AsType&>(val);
+            }
         }
         else if (_binr) {
             if constexpr (std::is_same_v<token, AsType>) {
@@ -584,8 +590,14 @@ public:
         bool used = false;
 
         if (_binw) {
-            const AsType& val = get(v);
-            used = write_optional(!cache_prepared() && !write_default && val == defval ? 0 : &val);
+            if constexpr (std::is_same_v<token, AsType>) {
+                const charstr& val = get(v);
+                used = write_optional(!cache_prepared() && !write_default && val == defval ? 0 : &val);
+            }
+            else {
+                const AsType& val = get(v);
+                used = write_optional(!cache_prepared() && !write_default && val == defval ? 0 : &val);
+            }
         }
         else if (_binr) {
             if constexpr (std::is_same_v<token, AsType>) {
@@ -769,8 +781,14 @@ public:
         bool used = false;
 
         if (_binw) {
-            const AsType& val = get(v);
-            used = write_optional(write ? &val : nullptr);
+            if constexpr (std::is_same_v<token, AsType>) {
+                const charstr& val = get(v);
+                used = write_optional(write ? &val : nullptr);
+            }
+            else {
+                const AsType& val = get(v);
+                used = write_optional(write ? &val : nullptr);
+            }
         }
         else if (_binr) {
             if constexpr (std::is_same_v<token, AsType>) {
