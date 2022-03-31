@@ -180,10 +180,10 @@ public:
         }
 
         uints n = p.sizes();
-        alloc(n);
+        T* ptr = add_uninit(n);
 
         for (uints i = 0; i < n; ++i)
-            _ptr[i] = p._ptr[i];
+            new (ptr+i) T(p._ptr[i]);
     }
 
     dynarray(dynarray&& p) noexcept : _ptr(0) {
@@ -195,9 +195,8 @@ public:
         alloc(initializer_list.size());
 
         for (uints i = 0; i < initializer_list.size(); ++i) {
-            _ptr[i] = std::move(initializer_list.begin()[i]);;
+            _ptr[i] = std::move(initializer_list.begin()[i]);
         }
-
     }
 
     ///assignment operator - duplicate
@@ -211,10 +210,10 @@ public:
         }
 
         uints n = p.sizes();
-        alloc(n);
+        T* ptr = add_uninit(n);
 
         for (uints i = 0; i < n; ++i)
-            _ptr[i] = p._ptr[i];
+            new (ptr+i) T(p._ptr[i]);
 
         return *this;
     }
