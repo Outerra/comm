@@ -181,6 +181,44 @@ static const char* textxml2 =
 "<xsd:int>6</xsd:int></item></aai><end>99</end></root>";
 
 ////////////////////////////////////////////////////////////////////////////////
+
+inline coid::charstr int_getter(int st) {
+    coid::charstr text;
+    text << st;
+    return text;
+}
+
+inline void int_setter(coid::token text, int& st) {
+    st = text.toint();
+}
+
+struct allopt {
+    int a, b, c;
+
+    friend metastream& operator || (metastream& m, allopt& x) {
+        return m.compound_type(x, [&]() {
+            m.member_as_type<coid::token>("at", x.a, int_setter, int_getter, "", false);
+            m.member_as_type<coid::token>("bt", x.b, int_setter, int_getter, "", false);
+            m.member_as_type<coid::token>("ct", x.c, int_setter, int_getter, "", false);
+        });
+    }
+};
+
+struct allopt_wrap {
+    allopt x;
+    int v;
+
+    friend metastream& operator || (metastream& m, allopt_wrap& x) {
+        return m.compound_type(x, [&]() {
+            m.member("allopt", x.x);
+            m.member("v", x.v);
+        });
+    }
+};
+
+static const char* test_allopt = "allopt = {}, v = 47";
+
+////////////////////////////////////////////////////////////////////////////////
 void metastream_test()
 {
     binstreamconstbuf buf(teststr);
@@ -232,6 +270,15 @@ void metastream_test()
     meta.stream_flush();
 
     bof.close();
+
+
+    allopt_wrap aw;
+    buf.set(test_allopt);
+    fmt.bind(buf);
+    meta.stream_in(aw);
+    meta.stream_acknowledge();
+
+
     bof.open("meta-xml2.test");
 
     fmtstreamxml2 fmx(bof);

@@ -176,7 +176,11 @@ public:
         const lexer::lextoken& tk = _tokenizer.next();
         token tok = tk;
 
-        if (tok == char('}') || _tokenizer.end())
+        if (tok == char('}')) {
+            _tokenizer.push_back();
+            e = ersNO_MORE;
+        }
+        else if (_tokenizer.end())
             e = ersNO_MORE;
         else
             e = tk == lexid

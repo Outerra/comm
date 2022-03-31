@@ -1113,6 +1113,10 @@ public:
     bool member_dynamic_array(const token& name, T* v, uints n, bool optional, bool nonmember = false)
     {
         if (_binw) {
+            if (optional && n == 0) {
+                moveto_expected_target(WRITE_MODE);
+                return false;
+            }
             binstream_container_fixed_array<T, ints> bc(v, n);
             write_container(bc);
             return true;
@@ -2858,10 +2862,8 @@ protected:
             //_rvarname.reset();
             return 0;
         }
-        else
-            if (_curvar.var->nameless_root ||
-                _curvar.var->is_array_element())
-                return 0;
+        else if (_curvar.var->nameless_root || _curvar.var->is_array_element())
+            return 0;
 
         return read
             ? fmts_or_cache_read_key()
@@ -3494,7 +3496,7 @@ protected:
             return !_curvar.var->optional || _current->valid_addr() ? 0 : ersNO_MORE;
 
         opcd e;
-        bool outoforder;
+        bool outoforder = false;
 
         do {
             e = fmts_read_key();
