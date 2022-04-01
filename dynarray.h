@@ -75,6 +75,8 @@ enum class reserve_mode
     virtual_space,              //< reserve virtual address space for use for the whole lifetime, allocated dynamically
 };
 
+constexpr uint64 abyss_dynarray_size = (1ui64 << 32ui64) - 1;
+
 template <class T>
 struct stack_buffer
 {
