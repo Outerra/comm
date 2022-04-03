@@ -111,7 +111,7 @@ public:
     }
 
     ///Constructor from const char*, artificially lowered precedence to allow catching literals above
-    template<typename T>
+    template <typename T>
     charstr(T czstr, typename is_char_ptr<T, ints>::type len = -1)
     {
         set_from(czstr, len < 0 ? (czstr ? ::strlen(czstr) : 0) : len);
@@ -381,7 +381,7 @@ public:
     //assignment
     charstr& operator = (const token& tok)
     {
-        if(tok.is_empty())
+        if (tok.is_empty())
             reset();
         else
             assign(tok.ptr(), tok.len());
@@ -390,7 +390,7 @@ public:
 
     charstr& operator = (const charstr& str)
     {
-        if(str.is_empty())
+        if (str.is_empty())
             reset();
         else
             assign(str.ptr(), str.len());
@@ -401,35 +401,10 @@ public:
         return takeover(str);
     }
 
-    ///Define operators for string literals and c-strings based on tokens
-#define TOKEN_OP_STR_CONST(ret,op) \
-    template <int N> \
-    ret operator op (const char (&str)[N]) const    { return (*this op token::from_literal(str, N-1)); } \
- \
-    template <int N> \
-    ret operator op (char (&str)[N]) const          { return (*this op token::from_cstring(str, N-1)); } \
- \
-    template<typename T> \
-    typename is_char_ptr<T,ret>::type operator op (T czstr) const { \
-        return (*this op token::from_cstring(czstr)); \
-    }
-
-#define TOKEN_OP_STR_NONCONST(ret,op) \
-    template <int N> \
-    ret operator op (const char (&str)[N])          { return (*this op token::from_literal(str, N-1)); } \
- \
-    template <int N> \
-    ret operator op (char (&str)[N])                { return (*this op token::from_cstring(str, N-1)); } \
- \
-    template<typename T> \
-    typename is_char_ptr<T,ret>::type operator op (T czstr) { \
-        return (*this op token::from_cstring(czstr)); \
-    }
-
 /*
     template <int N>
     charstr& operator = (const char (&str)[N]) const    { return set(token::from_literal(str, N-1)); }
-
+    
     template <int N>
     charstr& operator = (char (&str)[N]) const          { return set(token::from_cstring(str, N-1)); }
 
@@ -438,7 +413,7 @@ public:
         return set(token::from_cstring(czstr));
     }*/
 
-    charstr& operator = (const char* czstr) { return set(token::from_cstring(czstr)); }
+    //charstr& operator = (const char* czstr) { return set(token::from_cstring(czstr)); }
 
     charstr& operator = (char c) { reset(); append(c); return *this; }
 
@@ -516,6 +491,32 @@ public:
         if (len() > 0)
             append('\n');
         return *this;
+    }
+
+
+    ///Define operators for string literals and c-strings based on tokens
+#define TOKEN_OP_STR_CONST(ret,op) \
+    template <int N> \
+    ret operator op (const char (&str)[N]) const    { return (*this op token::from_literal(str, N-1)); } \
+ \
+    template <int N> \
+    ret operator op (char (&str)[N]) const          { return (*this op token::from_cstring(str, N-1)); } \
+ \
+    template<typename T> \
+    typename is_char_ptr<T,ret>::type operator op (T czstr) const { \
+        return (*this op token::from_cstring(czstr)); \
+    }
+
+#define TOKEN_OP_STR_NONCONST(ret,op) \
+    template <int N> \
+    ret operator op (const char (&str)[N])          { return (*this op token::from_literal(str, N-1)); } \
+ \
+    template <int N> \
+    ret operator op (char (&str)[N])                { return (*this op token::from_cstring(str, N-1)); } \
+ \
+    template<typename T> \
+    typename is_char_ptr<T,ret>::type operator op (T czstr) { \
+        return (*this op token::from_cstring(czstr)); \
     }
 
     //concatenation

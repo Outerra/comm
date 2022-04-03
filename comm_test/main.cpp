@@ -325,6 +325,10 @@ int main( int argc, char* argv[] )
 
     singleton_test();
 
+    charstr test1 = "literal";
+    charstr test2; test2 = "literal";
+    charstr test3 = test1;
+
 #ifdef COID_CONSTEXPR_IF
     slot<true, int> sl;
     sl.ptr(0);
