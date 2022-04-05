@@ -51,6 +51,11 @@
 #include "mathf.h"
 #include "txtconv.h"
 
+ ///Macro to allocate stack memory buffer
+ ///Needs to be a macro to keep _alloca call in correct scope
+#define STACK_STRING(count) coid::stack_buffer<char>(count, _alloca(coid::stack_buffer<char>::required_size(count)))
+
+
 COID_NAMESPACE_BEGIN
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -86,6 +91,11 @@ public:
     };
 
     constexpr charstr() {}
+
+    charstr(const stack_buffer<char>& sb) {
+        reserve_stack(sb);
+    }
+
 
     charstr(const token& tok)
     {

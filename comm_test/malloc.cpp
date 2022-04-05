@@ -1,5 +1,6 @@
 
 #include "../dynarray.h"
+#include "../str.h"
 
 using namespace coid;
 
@@ -44,6 +45,27 @@ dynarray<uint> test_return_stack()
 {
     dynarray<uint> buf = STACK_RESERVE(uint, 250);
     DASSERT(buf.reserved_stack() >= 250 * sizeof(uint));
+
+    buf.push(9);
+
+
+    charstr text = STACK_STRING(257);
+    uints rs = text.reserved();
+    DASSERT(rs >= 257);
+
+    for (int i = 0; i < 16; ++i) {
+        text << "abcdefghij123456";
+    }
+
+    text.appendn(rs - 1 - text.len(), 'Q');
+
+    //crash
+    try {
+        text << "abcdefghij123456";
+    }
+    catch (std::exception&) {
+        //ok
+    }
 
     return buf;
 }

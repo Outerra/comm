@@ -101,7 +101,7 @@ struct stack_buffer
 
 ///Macro to allocate stack memory buffer
 ///Needs to be a macro to keep _alloca call in correct scope
-#define STACK_RESERVE(T, count) stack_buffer<T>(count, _alloca(stack_buffer<T>::required_size(count)))
+#define STACK_RESERVE(T, count) coid::stack_buffer<T>(count, _alloca(coid::stack_buffer<T>::required_size(count)))
 
 ////////////////////////////////////////////////////////////////////////////////
 //Fw

@@ -5497,6 +5497,10 @@ int dlmallopt(int param_number, int value) {
 size_t dlmalloc_usable_size(const void* mem) {
   if (mem != 0) {
     mchunkptr p = mem2chunk(mem);
+    if (flag4inuse(p)) {
+        //virtual/stack memory
+        return chunksize(p);
+    }
     if (is_inuse(p))
       return chunksize(p) - overhead_for(p);
   }
