@@ -83,7 +83,7 @@ struct atomic_base<true>
 };
 
 
-///Linear storage
+///Paged storage
 template <bool LINEAR, bool ATOMIC, class T>
 struct storage
     : public atomic_base<ATOMIC>
@@ -111,6 +111,11 @@ struct storage
             data = (T*)dlmalloc(ITEMS * sizeof(T));
         }
 
+        page(const page& p) {
+            //allocate but no copy because there are holes
+            data = (T*)dlmalloc(ITEMS * sizeof(T));
+        }
+
         ~page() {
             dlfree(data);
             data = 0;
@@ -125,6 +130,10 @@ struct storage
     dynarray<T> _array;                 //< main data array (when using contiguous memory)
 //#endif
 
+    void prepare_storage_copy(const storage& o) {
+        _pages = o._pages;
+        _created = o._created;
+    }
 
     void swap_storage(storage& other) {
         _pages.swap(other._pages);
@@ -138,7 +147,7 @@ struct storage
 
 #ifdef COID_CONSTEXPR_IF
 
-///Paged storage
+///Linear storage
 template <bool ATOMIC, class T>
 struct storage<true, ATOMIC, T>
     : public atomic_base<ATOMIC>
@@ -148,7 +157,6 @@ struct storage<true, ATOMIC, T>
     static constexpr int MASK_BITS = 8 * sizeof(uints);
 
     dynarray<T> _array;                 //< main data array (when using contiguous memory)
-
 
     void swap_storage(storage& other) {
         _array.swap(other._array);

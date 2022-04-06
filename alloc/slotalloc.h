@@ -122,6 +122,57 @@ public:
             reset();
     }
 
+    slotalloc_base(const slotalloc_base& s) {
+        copy(s);
+    }
+
+    void copy(const slotalloc_base& o)
+    {
+        _allocated = o._allocated;
+
+        if coid_constexpr_if(LINEAR) {
+            copy_array_with_bitmask(o._array, this->_array, _allocated);
+        }
+        else {
+            //using page = typename storage_t::page;
+            typedef typename storage_t::page page;
+
+            this->prepare_storage_copy(o);
+
+            uint_type const* bm = const_cast<uint_type const*>(_allocated.ptr());
+            uint_type const* em = const_cast<uint_type const*>(_allocated.ptre());
+            uint_type const* pm = bm;
+            uints gbase = 0;
+
+            for (uints ip = 0; ip < this->_pages.size(); ++ip, gbase += page::ITEMS)
+            {
+                T* dd = const_cast<T*>(this->_pages[ip].ptr());
+                const T* ds = o._pages[ip].ptr();
+
+                uint_type const* epm = em - pm > page::NMASK
+                    ? pm + page::NMASK
+                    : em;
+
+                uints pbase = 0;
+
+                for (; pm != epm; ++pm, pbase += MASK_BITS) {
+                    if (*pm == 0)
+                        continue;
+
+                    uints m = 1;
+                    for (int i = 0; i < MASK_BITS; ++i, m <<= 1) {
+                        if (*pm & m)
+                            new (dd + (pbase + i)) T(ds[pbase + i]);
+                        else if ((*pm & ~(m - 1)) == 0)
+                            break;
+                    }
+                }
+            }
+        }
+
+        extarray_copy(o);
+    }
+
     //@return value from ext array associated with given main array object
     template<size_t V>
     typename std::tuple_element<V, extarray_t>::type::value_type&
@@ -200,7 +251,7 @@ public:
             this->_array.reserve(nitems, true);
         }
         else {
-            this->_pages.reserve(na,true);
+            this->_pages.reserve(na, true);
         }
 
         _allocated.reserve(na, true);
@@ -1374,7 +1425,6 @@ public:
             //using page = typename storage_t::page;
             typedef typename storage_t::page page;
 
-
             const page* bp = this->_pages.ptr();
             const page* ep = this->_pages.ptre();
 
@@ -1702,6 +1752,30 @@ protected:
             return this->_created;
     }
 
+    template <class T, class uint_type>
+    static void copy_array_with_bitmask(const dynarray<T>& src, dynarray<T>& dst, const dynarray<uint_type>& mask) {
+        uints rsv = src.reserved_virtual();
+        if (rsv > 0)
+            dst.reserve(rsv, reserve_mode::virtual_space);
+        else
+            dst.reserve(src.reserved_total(), reserve_mode::memory);
+        T* dd = dst.add_uninit(src.size());
+        const T* sd = src.ptr();
+        constexpr int n = sizeof(uint_type) * 8;
+
+        for (uint_type m : mask) {
+            uint i = 0;
+            while (m != 0) {
+                if (m & 1)
+                    new (dd + i) T(sd[i]);
+                ++i;
+                m >>= 1;
+            }
+            dd += n;
+            sd += n;
+        }
+    }
+
 private:
 
     dynarray<uint_type> _allocated;     //< bit mask for allocated/free items
@@ -1779,6 +1853,17 @@ private:
             extarray_reserve_virtual_(make_index_sequence<tracker_t::extarray_size>(), size);
         else
             extarray_reserve_(make_index_sequence<tracker_t::extarray_size>(), size);
+    }
+
+
+    ///Helper to iterate over all ext arrays
+    template<size_t... Index>
+    void extarray_copy_(const slotalloc_base& o, index_sequence<Index...>) {
+        int dummy[] = {0, ((void)copy_array_with_bitmask(std::get<Index>(o._exts), std::get<Index>(this->_exts), _allocated), 0)...};
+    }
+
+    void extarray_copy(const slotalloc_base& o) {
+        extarray_copy_(o, make_index_sequence<tracker_t::extarray_size>());
     }
 
 
