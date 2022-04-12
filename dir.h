@@ -184,17 +184,19 @@ public:
     static opcd delete_directory(zstring src, bool recursive);
 
     ///Move directories or files, also works across drives
+    ///@note will fail if src file already exists in dst
     static opcd move_directory(zstring src, zstring dst) {
         return copymove_directory(src, dst, true);
     }
 
+    ///@note will fail if src file already exists in dst
     static opcd copy_directory(zstring src, zstring dst) {
         return copymove_directory(src, dst, false);
     }
 
     static opcd copy_file(zstring src, zstring dst, bool preserve_dates);
 
-    static opcd move_file(zstring src, zstring dst);
+    static opcd move_file(zstring src, zstring dst, bool replace_existing);
 
     static opcd delete_file(zstring src);
 
@@ -213,10 +215,10 @@ public:
 
 
     ///move file to open directory
-    opcd move_file_from(zstring src, const token& name = token());
+    opcd move_file_from(zstring src, const token& name = token(), bool replace_existing = false);
 
-    opcd move_file_to(zstring dst, const token& name = token());
-    opcd move_current_file_to(zstring dst);
+    opcd move_file_to(zstring dst, const token& name = token(), bool replace_existing = false);
+    opcd move_current_file_to(zstring dst, bool replace_existing);
 
     /// Set file times
     //@param fname file name to modify

@@ -303,7 +303,7 @@ opcd directory::copy_file(zstring src, zstring dst, bool preserve_dates)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::move_file_from(zstring src, const token& name)
+opcd directory::move_file_from(zstring src, const token& name, bool replace_existing)
 {
     _curpath.resize(_baselen);
 
@@ -317,11 +317,11 @@ opcd directory::move_file_from(zstring src, const token& name)
     else
         _curpath << name;
 
-    return move_file(src, _curpath);
+    return move_file(src, _curpath, replace_existing);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::move_file_to(zstring dst, const token& name)
+opcd directory::move_file_to(zstring dst, const token& name, bool replace_existing)
 {
     _curpath.resize(_baselen);
 
@@ -335,13 +335,13 @@ opcd directory::move_file_to(zstring dst, const token& name)
     else
         _curpath << name;
 
-    return move_file(_curpath, dst);
+    return move_file(_curpath, dst, replace_existing);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::move_current_file_to(zstring dst)
+opcd directory::move_current_file_to(zstring dst, bool replace_existing)
 {
-    return move_file(_curpath, dst);
+    return move_file(_curpath, dst, replace_existing);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -403,10 +403,10 @@ opcd directory::copymove_directory(zstring src, zstring dst, bool move)
             //copy to dst/
             token file = src.get_token().cut_right_group_back("\\/"_T);
             dsts << file;
-            err = move ? move_file(src, dsts) : copy_file(src, dsts, true);
+            err = move ? move_file(src, dsts, false) : copy_file(src, dsts, true);
         }
         else
-            err = move ? move_file(src, dst) : copy_file(src, dst, true);
+            err = move ? move_file(src, dst, false) : copy_file(src, dst, true);
 
         return err;
     }
@@ -440,7 +440,7 @@ opcd directory::copymove_directory(zstring src, zstring dst, bool move)
                 err = delete_directory(path, false);
         }
         else if (move)
-            err = move_file(path, dsts);
+            err = move_file(path, dsts, false);
         else
             err = copy_file(path, dsts, true);
 

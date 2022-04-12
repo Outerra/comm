@@ -212,9 +212,10 @@ opcd directory::mkdir( zstring name, uint mode )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::move_file(zstring src, zstring dst)
+opcd directory::move_file(zstring src, zstring dst, bool replace_existing)
 {
-    return MoveFileEx(src.c_str(), dst.c_str(), MOVEFILE_COPY_ALLOWED) ? ersNOERR : ersIO_ERROR;
+    const DWORD flags = MOVEFILE_COPY_ALLOWED | (replace_existing ? MOVEFILE_REPLACE_EXISTING : 0);
+    return MoveFileEx(src.c_str(), dst.c_str(), flags) ? ersNOERR : ersIO_ERROR;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

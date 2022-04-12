@@ -551,6 +551,30 @@ public:
         return 0;
     }
 
+    ///Remove each element for which the predicate returns true
+    //@param fn functor as fn([const] T&) or fn([const] T&, count_t index)
+    //@return pointer to the element or null
+    template<typename Func>
+    void del_if(Func fn)
+    {
+        count_t n = size();
+        for (count_t i = n; i > 0; --i) {
+            T& v = const_cast<T&>(_ptr[i - 1]);
+            bool rv;
+#ifdef COID_CONSTEXPR_IF
+            if constexpr (has_index<Func>::value)
+                rv = fn(v, i - 1);
+            else
+                rv = fn(v);
+#else
+            rv = funccall(fn, v, i - 1);
+#endif
+            if (rv) {
+                del(i - 1);
+            }
+        }
+    }
+
 #endif
 
     ///Get fresh array with \a nitems of elements

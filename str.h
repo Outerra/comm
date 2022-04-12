@@ -1888,8 +1888,22 @@ public:
 
 
     ////////////////////////////////////////////////////////////////////////////////
-    char* get_buf(uints len) { return alloc_buf(len); }
-    char* get_append_buf(uints len) { return alloc_append_buf(len); }
+    char* get_buf(uints len)
+    {
+        bool empty = is_empty();
+        char* p = alloc_buf(len);
+        if (p && empty)
+            *p = '\0';
+        return p;
+    }
+    char* get_append_buf(uints len)
+    {
+        bool empty = is_empty();
+        char* p = alloc_append_buf(len);
+        if (p && empty)
+            *p = '\0';
+        return p;
+    }
 
     ///correct the size of the string if a terminating zero is found inside
     charstr& correct_size()
