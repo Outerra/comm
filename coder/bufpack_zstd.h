@@ -66,7 +66,8 @@ struct packer_zstd
     //@param size input size
     //@param dst target buffer (append)
     //@return compressed size
-    uints pack(const void* src, uints size, dynarray<uint8>& dst, int complevel = 3)
+    template <class COUNT>
+    uints pack(const void* src, uints size, dynarray<uint8, COUNT>& dst, int complevel = ZSTD_CLEVEL_DEFAULT)
     {
         uints osize = dst.size();
         uints dmax = ZSTD_compressBound(size);
@@ -85,7 +86,8 @@ struct packer_zstd
     //@param size available input size
     //@param dst target buffer
     //@return consumed size or UMAXS on error
-    uints unpack(const void* src, uints size, dynarray<uint8>& dst)
+    template <class COUNT>
+    uints unpack(const void* src, uints size, dynarray<uint8, COUNT>& dst)
     {
         if (!_dstream) {
             ZSTD_customMem cmem = {&_alloc, &_free, 0};
@@ -140,7 +142,7 @@ struct packer_zstd
     //@param size byt size of data
     //@param bon output binstream to write to
     //@param ZSTD complevel compression level
-    uints pack_stream(const void* src, uints size, binstream& bon, int complevel = 3)
+    uints pack_stream(const void* src, uints size, binstream& bon, int complevel = ZSTD_CLEVEL_DEFAULT)
     {
         if (!src && (!_cstream || _buf.size() == 0))
             return 0;

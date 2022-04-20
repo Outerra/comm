@@ -72,7 +72,7 @@ public:
     }
 
     ///Set the maximum packing alignment
-    //@note resulting alignment is the minimum of this value and __alignof(type)
+    //@note resulting alignment is the minimum of this value and alignof(type)
     void set_packing(uint pack) {
         _packing = pack;
     }
@@ -128,9 +128,18 @@ public:
         return (uint8*)p - _tstr.ptr();
     }
 
+    ///Allocate space for an array of n elements, padding for type T
+    //@return pointer to the allocated buffer
+    //@note for n=0 applies only the padding
     template<class T>
-    uints write_space() {
-        T* p = pad_alloc<T>();
+    T* alloc_array(uints n) {
+        return pad_alloc<T>(n);
+    }
+
+    ///Write padding needed if T was written afterwards
+    template<class T>
+    uints write_padding() {
+        T* p = pad_alloc<T>(0);
         return (uint8*)p - _tstr.ptr();
     }
 
@@ -177,7 +186,7 @@ public:
     ///Write number as a varint
     template<class T>
     binstring& write_varint(T num) {
-        uint8 buf[(8*sizeof(T))/7 + 1];
+        uint8 buf[(8 * sizeof(T)) / 7 + 1];
         uint8* pb = buf;
 
         while (num & ~0x7f) {
@@ -190,7 +199,7 @@ public:
         DASSERT(len <= sizeof(buf));
 
         uints size = _tstr.size();
-        uints align = align_value_up(size, _packing<__alignof(T) ? _packing : __alignof(T)) - size;
+        uints align = align_value_up(size, _packing < alignof(T) ? _packing : alignof(T)) - size;
 
         ::memcpy(_tstr.add(align + len) + align, buf, len);
         return *this;
@@ -207,6 +216,12 @@ public:
     template<class T>
     const T& fetch() {
         return *seek<std::remove_reference_t<T>>(_offset);
+    }
+
+    ///Fetch pointer to a typed array
+    template<class T>
+    const T* fetch_array(uints n) {
+        return seek<std::remove_reference_t<T>>(_offset, n);
     }
 
     ///Read (copy) data into target variable
@@ -246,7 +261,7 @@ public:
             : T((result >> 1) ^ -int64(result & 1));
     }
 
-    ///Return position of data given a starting offset in buffer
+    ///Return pointer to data of given type, given a starting offset in buffer
     template<class T>
     T* data(uints offset) {
         return seek<T>(offset);
@@ -256,7 +271,7 @@ public:
     template<class SIZE COID_DEFAULT_OPT(uint)>
     token string() {
         const SIZE& size = fetch<SIZE>();
-        if (_tstr.size()-_offset < size)
+        if (_tstr.size() - _offset < size)
             throw exception("buffer overflow");
         const uint8* p = _tstr.ptr() + _offset;
         _offset += size;
@@ -284,7 +299,7 @@ public:
         while (1)
         {
             static const uints packet = 4096;
-            const uints len = datasize<packet ? datasize : packet;
+            const uints len = datasize < packet ? datasize : packet;
             uint8* ptr = _tstr.add(len);
 
             uints toread = len;
@@ -294,7 +309,7 @@ public:
             datasize -= d;
             n += d;
 
-            if (e || toread>0 || datasize==0)
+            if (e || toread > 0 || datasize == 0)
                 break;
         }
 
@@ -315,7 +330,7 @@ public:
     template<class COUNT>
     binstring& swap(dynarray<char, COUNT>& ref)
     {
-        _tstr.swap(ref);
+        _tstr.swap(reinterpret_cast<dynarray<uint8, COUNT>&>(ref));
         _offset = 0;
         return *this;
     }
@@ -326,6 +341,18 @@ public:
         _tstr.swap(ref);
         _offset = 0;
         return *this;
+    }
+
+    binstring& swap(charstr& str, bool removetermzero)
+    {
+        swap(str.dynarray_ref());
+
+        if (removetermzero) {
+            if (_tstr.size() > 0 && *_tstr.last() == 0)
+                _tstr.resize(-1);
+            if (str.lent() > 0 && *str.dynarray_ref().last() != 0)
+                str.dynarray_ref().push(0);
+        }
     }
 
     dynarray<uint8>& get_buf() { return _tstr; }
@@ -399,21 +426,22 @@ protected:
     }
 
     template<class T>
-    T* pad_alloc() {
+    T* pad_alloc(uints n = 1) {
         uints size = _tstr.size();
-        uints align = align_value_up(size, _packing<__alignof(T) ? _packing : __alignof(T)) - size;
+        uints align = align_value_up(size, _packing < alignof(T) ? _packing : alignof(T)) - size;
 
-        return reinterpret_cast<T*>(_tstr.add(align + sizeof(T)) + align);
+        return reinterpret_cast<T*>(_tstr.add(align + n * sizeof(T)) + align);
     }
 
     template<class T>
-    T* seek(uints& offset) {
-        uints off = align_value_up(offset, _packing<__alignof(T) ? _packing : __alignof(T));
-        if (off+sizeof(T) > _tstr.size())
+    T* seek(uints& offset, uints count = 1) {
+        uints off = align_value_up(offset, _packing < alignof(T) ? _packing : alignof(T));
+        uints size = count * sizeof(T);
+        if (off + size > _tstr.size())
             throw exception("error reading buffer");
 
         T* p = reinterpret_cast<T*>(_tstr.ptr() + off);
-        offset = off + sizeof(T);
+        offset = off + size;
         return p;
     }
 

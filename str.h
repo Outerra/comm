@@ -193,26 +193,26 @@ public:
     }
 
     template<class COUNT>
-    charstr& swap(dynarray<char,COUNT>& ref, bool removetermzero)
+    charstr& swap(dynarray<char, COUNT>& ref, bool removetermzero)
     {
-        if(removetermzero && _tstr.size() > 0)
+        if (removetermzero && _tstr.size() > 0 && *_tstr.last() == 0)
             _tstr.resize(-1);   //remove terminating zero
 
         _tstr.swap(ref);
-        if(_tstr.size() > 0 && _tstr[_tstr.size() - 1] != 0)
+        if (_tstr.size() > 0 && _tstr[_tstr.size() - 1] != 0)
             *_tstr.add() = 0;
         return *this;
     }
 
     template<class COUNT>
-    charstr& swap(dynarray<uchar,COUNT>& ref, bool removetermzero)
+    charstr& swap(dynarray<uchar, COUNT>& ref, bool removetermzero)
     {
-        if(removetermzero && _tstr.size() > 0)
+        if (removetermzero && _tstr.size() > 0 && *_tstr.last() == 0)
             _tstr.resize(-1);   //remove terminating zero
 
         _tstr.swap(reinterpret_cast<dynarray<char>&>(ref));
 
-        if(_tstr.size() > 0 && _tstr[_tstr.size() - 1] != 0)
+        if (_tstr.size() > 0 && _tstr[_tstr.size() - 1] != 0)
             *_tstr.add() = 0;
         return *this;
     }
@@ -1905,15 +1905,17 @@ public:
         return p;
     }
 
-    ///correct the size of the string if a terminating zero is found inside
+    ///Correct the size of the string if a terminating zero is found inside, also ensure it ends with zero
     charstr& correct_size()
     {
-        uints l = lens();
-        if(l > 0)
+        uints nmax = lens();
+        if (nmax > 0)
         {
-            uints n = ::strlen(_tstr.ptr());
-            if(n < l)
+            uints n = ::strnlen(_tstr.ptr(), nmax);
+            if (n < nmax)
                 resize(n);
+            else
+                _tstr[nmax] = 0;
         }
         return *this;
     }
@@ -1986,7 +1988,7 @@ public:
 
     ///Reset string to empty but keep the memory
     charstr& reset() {
-        if(_tstr.size())
+        if (_tstr.size())
             _tstr[0] = 0;
         _tstr.reset();
         return *this;
