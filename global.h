@@ -103,23 +103,144 @@ private:
 template <class OwnT>
 class data_manager
 {
-    struct container {
+    struct erecord
+    {
+        uint16 version;
+        uint16 combo;
+        uint32 id;
+    };
+
+    struct sequencer : type_sequencer
+    {
+        static constexpr int MASK_BITS = 8 * sizeof(uints);
+
+        bool set_bit(uints k) { return _allocated.set_bit(k); }
+        bool clear_bit(uints k) { return _allocated.clear_bit(k); }
+        bool get_bit(uints k) const { return _allocated.get_bit(k); }
+
+        erecord* alloc(uint* pid)
+        {
+            DASSERT(_count < _entities.size());
+
+            uints* p = _allocated.ptr();
+            uints* e = _allocated.ptre();
+            for (; p != e && *p == UMAXS; ++p);
+
+            if (p == e)
+                *(p = _allocated.add()) = 0;
+
+            uint8 bit = lsb_bit_set((uints)~*p);
+            uint slot = uint((p - _allocated.ptr()) * MASK_BITS);
+            uint id = slot + bit;
+
+            DASSERT(!get_bit(id));
+
+            if (pid)
+                *pid = id;
+
+            *p |= uints(1) << bit;
+            ++_count;
+
+            return &_entities[id];
+        }
+
+        erecord* append(uint* pid = 0)
+        {
+            uint count = _entities.size();
+            set_bit(count);
+
+            if (pid)
+                *pid = count;
+            ++_count;
+
+            erecord* p = _entities.add();
+            p->version = 0;
+            return p;
+        }
+
+        ///Add new object initialized with default constructor, or reuse one in pool mode
+        erecord* add(uint* pid = 0)
+        {
+            bool isold = _count < _entities.size();
+            return isold ? alloc(pid) : append(pid);
+        }
+
+        ///Delete object by id
+        void del(uint id)
+        {
+            DASSERT_RET(id < _entities.size());
+
+            if (clear_bit(id))
+                --_count;
+            else
+                DASSERTN(0);
+        }
+
+        bool is_valid(uint id) const {
+            return get_bit(id);
+        }
+
+        bool is_valid(versionid v) const {
+            return get_bit(v.id) && _entities[v.id].version == v.version;
+        }
+
+        versionid get_versionid(uint eid) const {
+            DASSERT_RET(get_bit(eid), versionid());
+            return versionid(eid, _entities[eid].version);
+        }
+
+        dynarray32<uints> _allocated;
+        dynarray32<erecord> _entities;
+        uint _count = 0;
+    };
+
+    static sequencer& tsq() {
+        LOCAL_PROCWIDE_SINGLETON_DEF(sequencer) _tsq = new sequencer;
+        return *_tsq;
+    }
+
+
+
+    struct container
+    {
         size_t element_size;
+
         enum class type {
             dynarray,
             slothash,
         } storage_type;
 
-        container(uint size, enum class type t) : element_size(size), storage_type(t)
-        {}
+        sequencer* seq = 0;
+
+        container(uint size, enum class type t) : element_size(size), storage_type(t) {
+            seq = &tsq();
+        }
         virtual ~container() = default;
 
-        /// @brief Fetch element from container, used only manipulator access
+        /// @brief Fetch element from container
         virtual void* element(uint eid) = 0;
+
+        /// @brief Create element
+        virtual void* create(uint eid) = 0;
+
+        /// @return pointer to a dynarray with linear storage
+        virtual const void* linear_array_ptr() const = 0;
+
+        /// @brief Reserve memory
+        /// @param count number of elements to reserve memory for
+        virtual void reserve(uint count) = 0;
+
+        virtual versionid allocate() = 0;
     };
 
-    template <class T> struct storage : T { uint eid; };
+    /// @brief helper class to hold entity id for hashed data containers
+    template <class T> struct storage : T {
+        uint eid;
+        storage(uint eid) : eid(eid) {}
+    };
 
+    /// @brief slothash type container for sparse data
+    /// @tparam T
     template <class T>
     struct cshash : container {
         struct extractor {
@@ -129,23 +250,48 @@ class data_manager
 
         cshash() : container(sizeof(storage<T>), container::type::slothash)
         {}
-        virtual void* element(uint eid) override {
-            return (T*)hash.find_value(eid);
+        void* element(uint eid) override final { return (T*)hash.find_value(eid); }
+        void* create(uint eid) override final {
+            return hash.push_construct(eid);
+        }
+        const void* linear_array_ptr() const override final {
+            return 0;   //not supported
+        }
+        void reserve(uint count) override final {
+            hash.reserve_virtual(count);
+        }
+        versionid allocate() override final {
+            DASSERT(0);
+            return versionid();
         }
 
         slothash<storage<T>, uint, slotalloc_mode::versioning | slotalloc_mode::linear, extractor> hash;
     };
 
+    /// @brief linear array container
+    /// @tparam T
     template <class T>
     struct carray : container {
         carray() : container(sizeof(T), container::type::dynarray)
         {}
-        virtual void* element(uint eid) override {
-            return eid < data.size() ? &data[eid] : nullptr;
+        void* element(uint eid) override final { return eid < data.size() ? &data[eid] : nullptr; }
+        void* create(uint eid) override final {
+            return &data.get_or_add(eid);
+        }
+        const void* linear_array_ptr() const override final {
+            return &data;
+        }
+        void reserve(uint count) override final {
+            data.reserve_virtual(count);
+        }
+        versionid allocate() override final {
+            DASSERT(0);
+            return versionid();
         }
 
-        dynarray<T> data;
+        dynarray32<T> data;
     };
+
 
     // manipulators for the data
 
@@ -171,6 +317,8 @@ class data_manager
         handler_t fn;
     };
 
+    /// @brief Manipulator base class. Manipulators allow working with different components of the entity, e.g. invoke UI handlers for each component
+    /// @tparam M manipulator specialization, e.g. class xyz : manipulator<xyz> ...
     template <class M>
     struct manipulator {
         virtual ~manipulator() {}
@@ -186,25 +334,23 @@ public:
     template <class C>
     static C* get(uint eid)
     {
-        type_sequencer& sq = tsq();
-        int id = sq.id<C>();
+        static container* c = safe_container<C>(tsq().id<C>());
 
-        if (id < 0) {
-            //negative ids are used to reference primary (linear) arrays instead of unordered map
-            id = -1 - id;
+        return static_cast<C*>(c->element(eid));
+    }
 
-            using coarray = carray<C>;
-            coarray& co = data_container<coarray>(id);
+    /// @brief Retrieve data of given type
+    /// @tparam C data type
+    /// @param eid entity id
+    /// @return data pointer
+    template <class C>
+    static C* get(versionid vid)
+    {
+        static container* c = safe_container<C>(tsq().id<C>());
+        if (!c->seq->is_valid(vid))
+            return nullptr;
 
-            return eid < co.data.size()
-                ? &co.data[eid]
-                : nullptr;
-        }
-
-        using cohash = cshash<C>;
-        cohash& co = data_container<cohash>(id);
-
-        return (C*)co.hash.find_value(eid);
+        return static_cast<C*>(c->element(vid.id));
     }
 
     static void* get_data(uint eid, uint c)
@@ -216,38 +362,72 @@ public:
         return co->element(eid);
     }
 
+    static versionid allocate()
+    {
+        static sequencer& seq = tsq();
+        uint id;
+        erecord* er = seq.add(&id);
+
+        return versionid(id, er->version);
+    }
+
+    static void free(uint eid) {
+        static sequencer& seq = tsq();
+        seq.del(eid);
+        //TODO delete components?
+    }
+
+    /// @brief Run destructor on component
+    /// @tparam OwnT
+    template <class C>
+    static void destruct(uint eid) {
+        static container* c = safe_container<C>(tsq().id<C>());
+        C* co = static_cast<C*>(c->element(eid));
+        if (co)
+            co->~C();
+    }
+
+    static bool is_valid(uint eid) {
+        static sequencer& seq = tsq();
+        return seq.is_valid(eid);
+    }
+
+    static bool is_valid(versionid vid) {
+        static sequencer& seq = tsq();
+        return seq.is_valid(vid);
+    }
+
+    static versionid get_versionid(uint eid) {
+        static sequencer& seq = tsq();
+        return seq.get_versionid(eid);
+    }
+
     /// @brief Insert data of given type under the entity id
     /// @tparam C data type
     /// @param eid entity id
-    /// @param v data value
+    /// @param v data value to move from
     /// @return pointer to the inserted data
     template <class C>
     static C* push(uint eid, C&& v)
     {
-        type_sequencer& sq = tsq();
-        int id = sq.id<C>();
+        static container* c = safe_container<C>(tsq().id<C>());
 
-        //negative ids are used to reference primary arrays instead of unordered map
-        if (id < 0) {
-            id = -1 - id;
+        C* d = static_cast<C*>(c->create(eid));
+        *d = std::move(v);
 
-            using coarray = carray<C>;
-            coarray& co = data_container<coarray>(id);
+        return d;
+    }
 
-            C& sv = co.data.get_or_add(eid);
-            sv = std::move(v);
-            return &sv;
-        }
+    /// @brief Insert uninitialized data, to be in-place constructed
+    /// @tparam C data type
+    /// @param eid entity id
+    /// @return pointer to the uninitialized data
+    template <class C>
+    static C* push_uninit(uint eid)
+    {
+        static container* c = safe_container<C>(tsq().id<C>());
 
-        using cohash = cshash<C>;
-        cohash& co = data_container<cohash>(id);
-
-        bool isnew;
-        storage<C>* sv = co.hash.find_or_insert_value_slot(eid, &isnew);
-        *static_cast<C*>(sv) = std::move(v);
-
-        sv->eid = eid;
-        return sv;
+        return static_cast<C*>(c->create(eid));
     }
 
     /// @brief Get order id assigned to the type (also assigns on first use)
@@ -262,37 +442,55 @@ public:
 
     /// @brief Define a primary data type, that will be stored in a linear array indexed directly
     /// @tparam C data type
+    /// @param reserve_count number of elements to reserve initial memory for
+    /// @return container id
+    /// @note container id 0 is created as a slotalloc to keep track of existing and deleted objects
     template <class C>
-    static dynarray<C>& set_primary_container()
+    static uint preallocate_array_container(uint reserve_count = 0)
     {
         type_sequencer& sq = tsq();
-        int& id = sq.assign<C>();
+        int id = sq.assign<C>();
 
-        if (id >= 0)
-            id = -1 - id;
-        int pid = -1 - id;
+        typed_container<carray<C>>(id).reserve(reserve_count);
 
-        using coarray = carray<C>;
-        return data_container<coarray>(pid).data;
+        return id;
+    }
+
+    template <class C>
+    static uint preallocate_hash_container()
+    {
+        type_sequencer& sq = tsq();
+        int id = sq.assign<C>();
+
+        typed_container<cshash<C>>(id);
+
+        return id;
     }
 
     /// @brief Retrieve container for primary data
     /// @tparam C
-    /// @return linear array of given data type
+    /// @return linear array of given data type, or nullptr if given storage doesn't have linear data
     template <class C>
-    static dynarray<C>& get_primary_container()
+    static const dynarray32<C>& get_array()
     {
-        type_sequencer& sq = tsq();
-        const int* xid = sq.existing_id<C>();
+        static const dynarray32<C>* c = static_cast<const dynarray32<C>*>(safe_container<C, carray<C>>(tsq().id<C>())->linear_array_ptr());
+        RASSERT(c != nullptr);
 
-        //primary containers must have been pre-loaded via set_primary_container<C>()
-        if (xid == nullptr || *xid >= 0)
-            throw exception();
-
-        int pid = -1 - *xid;
-        using coarray = dynarray<C>;
-        return data_container<coarray>(pid);
+        return *c;
     }
+
+    template <class C>
+    static uint get_id_in_array(const C* p)
+    {
+        return uint(p - get_array<C>().ptr());
+    }
+
+    template <class C>
+    static versionid get_versionid_in_array(const C* p)
+    {
+        return get_versionid(uint(p - get_array<C>().ptr()));
+    }
+
 
     /// @brief Set invokable handler for given manipulator type and given data type
     /// @tparam M manipulator type (a distinct type allowing for multiple different handlers)
@@ -370,17 +568,10 @@ public:
         }
     }
 
-protected:
-
-    static type_sequencer& tsq() {
-        LOCAL_PROCWIDE_SINGLETON_DEF(type_sequencer) _tsq = new type_sequencer;
-        return *_tsq;
-    }
-
 private:
 
     template <class T>
-    static T& data_container(uint id)
+    static T& typed_container(uint id)
     {
         container*& vctx = data_containers().get_or_addc(id);
         T*& cont = reinterpret_cast<T*&>(vctx);
@@ -388,6 +579,18 @@ private:
         if (!cont)
             cont = new T;
         return *cont;
+    }
+
+    /// @brief get existing container or create a hashed one
+    /// @tparam C component type
+    /// @param cid container id
+    template <class C, class ContDefault = cshash<C>>
+    static container* safe_container(uint cid)
+    {
+        dynarray32<container*>& co = data_containers();
+        return cid < co.size()
+            ? co[cid]
+            : (co.get_or_add(cid) = new ContDefault());
     }
 
 protected:

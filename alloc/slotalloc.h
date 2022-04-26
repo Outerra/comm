@@ -940,6 +940,11 @@ public:
     }
 
 
+    const dynarray<T>* linear_array() const {
+        return storage_t::linear_array();
+    }
+
+
     ///Reset content. Destructors aren't invoked in the pool mode, as the objects may still be reused.
     void reset()
     {
@@ -1659,47 +1664,6 @@ public:
     //@return bit array with marked item allocations
     const dynarray<uints>& get_bitarray() const { return _allocated; }
 
-    //@{ functions for bit array
-    template <class B>
-    static bool set_bit(dynarray<B>& bitarray, uints k)
-    {
-        static constexpr int NBITS = 8 * sizeof(B);
-        using Ub = underlying_bitrange_type<B>;
-        using U = typename Ub::type;
-        uints s = k / NBITS;
-        uints b = k % NBITS;
-
-        U m = U(1) << b;
-        B& v = bitarray.get_or_addc(s);
-        return (Ub::fetch_or(v, m) & m) != 0;
-    }
-
-    template <class B>
-    static bool clear_bit(dynarray<B>& bitarray, uints k)
-    {
-        static constexpr int NBITS = 8 * sizeof(B);
-        using Ub = underlying_bitrange_type<B>;
-        using U = typename Ub::type;
-        uints s = k / NBITS;
-        uints b = k % NBITS;
-
-        U m = U(1) << b;
-        B& v = bitarray.get_or_addc(s);
-        return (Ub::fetch_and(v, ~m) & m) != 0;
-    }
-
-    template <class B>
-    static bool get_bit(const dynarray<B>& bitarray, uints k)
-    {
-        static constexpr int NBITS = 8 * sizeof(B);
-        using U = underlying_bitrange_type_t<B>;
-        uints s = k / NBITS;
-        uints b = k % NBITS;
-
-        return s < bitarray.size() && (bitarray[s] & (U(1) << b)) != 0;
-    }
-    //@}
-
     ///Advance to the next tracking frame, updating changeset
     //@return new frame number
     uint advance_frame()
@@ -2125,9 +2089,9 @@ private:
 #endif
     }
 
-    bool set_bit(uints k) { return set_bit(_allocated, k); }
-    bool clear_bit(uints k) { return clear_bit(_allocated, k); }
-    bool get_bit(uints k) const { return get_bit(_allocated, k); }
+    bool set_bit(uints k) { return _allocated.set_bit(k); }
+    bool clear_bit(uints k) { return _allocated.clear_bit(k); }
+    bool get_bit(uints k) const { return _allocated.get_bit(k); }
 
     //WA for lambda template error
     void static destroy(T& p) { p.~T(); }

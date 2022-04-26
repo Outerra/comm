@@ -161,6 +161,10 @@ struct storage<true, ATOMIC, T>
     void swap_storage(storage& other) {
         _array.swap(other._array);
     }
+
+    const dynarray<T>* linear_array() const {
+        return &_array;
+    }
 };
 
 #endif //COID_CONSTEXPR_IF

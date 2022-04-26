@@ -39,6 +39,7 @@
 #include "namespace.h"
 
 #include "trait.h"
+#include "bitrange.h"
 #include "binstream/binstream.h"
 #include "alloc/commalloc.h"
 
@@ -1173,6 +1174,44 @@ public:
 
         return b;
     }
+
+    //@{ functions for bit arrays
+    bool set_bit(uints k)
+    {
+        static constexpr int NBITS = 8 * sizeof(T);
+        using Ub = underlying_bitrange_type<T>;
+        using U = typename Ub::type;
+        uints s = k / NBITS;
+        uints b = k % NBITS;
+
+        U m = U(1) << b;
+        T& v = get_or_addc(s);
+        return (Ub::fetch_or(v, m) & m) != 0;
+    }
+
+    bool clear_bit(uints k)
+    {
+        static constexpr int NBITS = 8 * sizeof(T);
+        using Ub = underlying_bitrange_type<T>;
+        using U = typename Ub::type;
+        uints s = k / NBITS;
+        uints b = k % NBITS;
+
+        U m = U(1) << b;
+        T& v = get_or_addc(s);
+        return (Ub::fetch_and(v, ~m) & m) != 0;
+    }
+
+    bool get_bit(uints k) const
+    {
+        static constexpr int NBITS = 8 * sizeof(T);
+        using U = underlying_bitrange_type_t<T>;
+        uints s = k / NBITS;
+        uints b = k % NBITS;
+
+        return s < size() && (_ptr[s] & (U(1) << b)) != 0;
+    }
+    //@}
 
 
     ///Reserve \a nitems of elements
