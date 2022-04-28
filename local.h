@@ -159,45 +159,47 @@ class local
 {
     T* _p;
 public:
-    local()  {_p=0;}
-    ~local() {if(_p)  {delete _p;  _p=0;} }
+    local() { _p = 0; }
+    ~local() { if (_p) { delete _p;  _p = 0; } }
 
-    local(T* p) {_p= p;}
+    local(T* p) { _p = p; }
 
-    local( local&& p )
+    local(const local& p) = delete;
+
+    local(local&& p)
     {
         _p = p._p;//new T(*p._p);
         p._p = 0;
     }
 
-    T* ptr() const                      { return _p; }
+    T* ptr() const { return _p; }
 
-    operator T*(void) const             { return _p; }
+    operator T* (void) const { return _p; }
 
-    int operator==(const T* ptr) const  { return ptr==_p; }
-    int operator!=(const T* ptr) const  { return ptr!=_p; }
+    int operator==(const T* ptr) const { return ptr==_p; }
+    int operator!=(const T* ptr) const { return ptr!=_p; }
 
-    T& operator*(void)                  { return *_p; }
-    const T& operator*(void) const      { return *_p; }
+    T& operator*(void) { return *_p; }
+    const T& operator*(void) const { return *_p; }
 
 #ifdef SYSTYPE_MSVC
 #pragma warning (disable : 4284)
 #endif //SYSTYPE_MSVC
-    T* operator->(void)                 { return _p; }
-    const T* operator->(void) const     { return _p; }
+    T* operator->(void) { return _p; }
+    const T* operator->(void) const { return _p; }
 #ifdef SYSTYPE_MSVC
 #pragma warning (default : 4284)
 #endif //SYSTYPE_MSVC
 
     local& operator = (const T* p) {
-        if(_p) delete _p;
-        _p= (T*)p;
+        if (_p) delete _p;
+        _p = (T*)p;
         return *this;
     }
 
     local& operator = (local&& p)
     {
-        if(_p) {
+        if (_p) {
             delete _p;
             _p = 0;
         }
@@ -206,43 +208,43 @@ public:
         return *this;
     }
 
-    T*& get_ptr () const        { return (T*&)_p; }
+    T*& get_ptr() const { return (T*&)_p; }
 
-    friend binstream& operator << (binstream &out, const local<T> &loca);
-    friend binstream& operator >> (binstream &in, local<T> &loca);
+    friend binstream& operator << (binstream& out, const local<T>& loca);
+    friend binstream& operator >> (binstream& in, local<T>& loca);
 
-    bool is_set() const		{ return _p != 0; }
+    bool is_set() const { return _p != 0; }
 
-    T* eject() { T* tmp=_p; _p=0; return tmp; }
-    void destroy ()
+    T* eject() { T* tmp = _p; _p = 0; return tmp; }
+    void destroy()
     {
         if (_p)
             delete _p;
         _p = 0;
     }
 
-    void swap( local<T>& other )
+    void swap(local<T>& other)
     {
         std::swap(_p, other._p);
     }
 
-    friend void swap( local& a, local& b ) {
+    friend void swap(local& a, local& b) {
         std::swap(a._p, b._p);
     }
 };
 
 template <class T>
-binstream& operator << (binstream &out, const local<T> &loca) {
+binstream& operator << (binstream& out, const local<T>& loca) {
     if (loca.is_set())
         out << (uint)1;
     else
         out << (uint)0x00;
-    if(loca._p)  out << *loca._p;
+    if (loca._p)  out << *loca._p;
     return out;
 }
 
 template <class T>
-binstream& operator >> (binstream &in, local<T> &loca) {
+binstream& operator >> (binstream& in, local<T>& loca) {
     uint is;
     in >> is;
     if (is) {

@@ -112,7 +112,7 @@ class data_manager
 
     struct sequencer : type_sequencer
     {
-        static constexpr int MASK_BITS = 8 * sizeof(uints);
+        static constexpr int BITMASK_BITS = 8 * sizeof(uints);
 
         bool set_bit(uints k) { return _allocated.set_bit(k); }
         bool clear_bit(uints k) { return _allocated.clear_bit(k); }
@@ -130,7 +130,7 @@ class data_manager
                 *(p = _allocated.add()) = 0;
 
             uint8 bit = lsb_bit_set((uints)~*p);
-            uint slot = uint((p - _allocated.ptr()) * MASK_BITS);
+            uint slot = uint((p - _allocated.ptr()) * BITMASK_BITS);
             uint id = slot + bit;
 
             DASSERT(!get_bit(id));
@@ -166,14 +166,27 @@ class data_manager
         }
 
         ///Delete object by id
-        void del(uint id)
+        bool del(uint id)
         {
-            DASSERT_RET(id < _entities.size());
+            DASSERT_RET(id < _entities.size(), false);
 
-            if (clear_bit(id))
+            if (clear_bit(id)) {
                 --_count;
-            else
-                DASSERTN(0);
+                return true;
+            }
+
+            DASSERTN(0);
+            return false;
+        }
+
+        bool del(versionid vid)
+        {
+            DASSERT_RET(get_bit(vid.id) && _entities[vid.id].version == vid.version, false);
+            if (clear_bit(id)) {
+                --_count;
+                return true;
+            }
+            return false;
         }
 
         bool is_valid(uint id) const {
@@ -206,8 +219,8 @@ class data_manager
         size_t element_size;
 
         enum class type {
-            dynarray,
-            slothash,
+            array,
+            hash,
         } storage_type;
 
         sequencer* seq = 0;
@@ -222,6 +235,8 @@ class data_manager
 
         /// @brief Create element
         virtual void* create(uint eid) = 0;
+
+        virtual void remove(uint eid) = 0;
 
         /// @return pointer to a dynarray with linear storage
         virtual const void* linear_array_ptr() const = 0;
@@ -248,11 +263,15 @@ class data_manager
             uint operator()(const storage<T>& s) const { return s.eid; }
         };
 
-        cshash() : container(sizeof(storage<T>), container::type::slothash)
+        cshash() : container(sizeof(storage<T>), container::type::hash)
         {}
         void* element(uint eid) override final { return (T*)hash.find_value(eid); }
         void* create(uint eid) override final {
+            hash.erase(eid);
             return hash.push_construct(eid);
+        }
+        void remove(uint eid) override final {
+            hash.erase(eid);
         }
         const void* linear_array_ptr() const override final {
             return 0;   //not supported
@@ -272,11 +291,14 @@ class data_manager
     /// @tparam T
     template <class T>
     struct carray : container {
-        carray() : container(sizeof(T), container::type::dynarray)
+        carray() : container(sizeof(T), container::type::array)
         {}
         void* element(uint eid) override final { return eid < data.size() ? &data[eid] : nullptr; }
         void* create(uint eid) override final {
             return &data.get_or_add(eid);
+        }
+        void remove(uint eid) override final {
+            DASSERT(0);
         }
         const void* linear_array_ptr() const override final {
             return &data;
@@ -371,10 +393,26 @@ public:
         return versionid(id, er->version);
     }
 
+    /// @brief Free entity
+    static void free(versionid vid) {
+        static sequencer& seq = tsq();
+        if (seq.del(vid)) {
+            for (container* c : data_containers()) {
+                if (c->storage_type == container::type::hash)
+                    c->erase(vid.id);
+            }
+        }
+    }
+
+    /// @brief Free entity
     static void free(uint eid) {
         static sequencer& seq = tsq();
-        seq.del(eid);
-        //TODO delete components?
+        if (seq.del(eid)) {
+            for (container* c : data_containers()) {
+                if (c->storage_type == container::type::hash)
+                    c->remove(eid);
+            }
+        }
     }
 
     /// @brief Run destructor on component
@@ -418,6 +456,18 @@ public:
         return d;
     }
 
+    /// @brief Insert default constructed data
+    /// @tparam C data type
+    /// @param eid entity id
+    /// @return pointer to the uninitialized data
+    template <class C>
+    static C* push_default(uint eid)
+    {
+        static container* c = safe_container<C>(tsq().id<C>());
+
+        return new (c->create(eid)) C;
+    }
+
     /// @brief Insert uninitialized data, to be in-place constructed
     /// @tparam C data type
     /// @param eid entity id
@@ -428,6 +478,54 @@ public:
         static container* c = safe_container<C>(tsq().id<C>());
 
         return static_cast<C*>(c->create(eid));
+    }
+
+    /// @brief Remove component from entity
+    /// @tparam C data type
+    /// @param eid entity id
+    template <class C>
+    static void remove(uint eid)
+    {
+        static container* c = safe_container<C>(tsq().id<C>());
+
+        c->remove(eid);
+    }
+
+    /// @brief Remove component from entity
+    /// @tparam C data type
+    /// @param eid entity id
+    template <class C>
+    static void remove(versionid vid)
+    {
+        static container* c = safe_container<C>(tsq().id<C>());
+
+        DASSERT_RET(c->seq->is_valid(vid));
+        c->remove(vid.id);
+    }
+
+    /// @brief Enumerate through entities with given component
+    /// @tparam C data type
+    /// @tparam Fn 
+    /// @param fn 
+    template <class C, class Fn>
+    static void enumerate(const Fn& fn)
+    {
+        static container* c = safe_container<C>(tsq().id<C>());
+
+        if (c->storage_type == container::type::array) {
+            //TODO: use bitmask
+            carray<C>& ca = *static_cast<carray<C>*>(c);
+            uint id = 0;
+            for (C& e : ca.data) {
+                fn(e, id++);
+            }
+        }
+        else {
+            cshash<C>& ch = *static_cast<cshash<C>*>(c);
+            for (storage<C>& e : ch.hash) {
+                fn((C&)e, e.eid);
+            }
+        }
     }
 
     /// @brief Get order id assigned to the type (also assigns on first use)

@@ -91,13 +91,13 @@ struct storage
     using atomic_base_t = atomic_base<ATOMIC>;
     using uint_type = typename atomic_base_t::uint_type;
 
-    static constexpr int MASK_BITS = 8 * sizeof(uints);
+    static constexpr int BITMASK_BITS = 8 * sizeof(uints);
 
     ///Allocation page
     struct page
     {
         static constexpr uint ITEMS = 256;
-        static constexpr uint NMASK = ITEMS / MASK_BITS;
+        static constexpr uint NMASK = ITEMS / BITMASK_BITS;
 
         T* data;
 
@@ -154,7 +154,7 @@ struct storage<true, ATOMIC, T>
 {
     using atomic_base_t = atomic_base<ATOMIC>;
 
-    static constexpr int MASK_BITS = 8 * sizeof(uints);
+    static constexpr int BITMASK_BITS = 8 * sizeof(uints);
 
     dynarray<T> _array;                 //< main data array (when using contiguous memory)
 

@@ -83,6 +83,7 @@ class slotalloc_base
 {
 protected:
 
+    using base_t = slotalloc_base<T, MODE, Es...>;
     using tracker_t = slotalloc_detail::base<MODE & slotalloc_mode::versioning, MODE & slotalloc_mode::tracking, Es...>;
     using storage_t = slotalloc_detail::storage<MODE & slotalloc_mode::linear, MODE & slotalloc_mode::atomic, T>;
 
@@ -91,7 +92,7 @@ protected:
 
     using uint_type = typename storage_t::uint_type;
 
-    static constexpr int MASK_BITS = 8 * sizeof(uints);
+    static constexpr int BITMASK_BITS = 8 * sizeof(uints);
 
     static constexpr bool POOL = (MODE & slotalloc_mode::pool) != 0;
     static constexpr bool ATOMIC = (MODE & slotalloc_mode::atomic) != 0;
@@ -155,12 +156,12 @@ public:
 
                 uints pbase = 0;
 
-                for (; pm != epm; ++pm, pbase += MASK_BITS) {
+                for (; pm != epm; ++pm, pbase += BITMASK_BITS) {
                     if (*pm == 0)
                         continue;
 
                     uints m = 1;
-                    for (int i = 0; i < MASK_BITS; ++i, m <<= 1) {
+                    for (int i = 0; i < BITMASK_BITS; ++i, m <<= 1) {
                         if (*pm & m)
                             new (dd + (pbase + i)) T(ds[pbase + i]);
                         else if ((*pm & ~(m - 1)) == 0)
@@ -245,7 +246,7 @@ public:
 
     void reserve(uints nitems)
     {
-        uints na = align_to_chunks(nitems, MASK_BITS);
+        uints na = align_to_chunks(nitems, BITMASK_BITS);
 
         if coid_constexpr_if (LINEAR) {
             this->_array.reserve(nitems, true);
@@ -261,7 +262,7 @@ public:
 
     void reserve_virtual(uints nitems)
     {
-        uints na = align_to_chunks(nitems, MASK_BITS);
+        uints na = align_to_chunks(nitems, BITMASK_BITS);
 
         if coid_constexpr_if (LINEAR) {
             discard();
@@ -1295,12 +1296,12 @@ public:
             uint_type const* e = const_cast<uint_type const*>(_allocated.ptre());
             uints s = 0;
 
-            for (uint_type const* p = b; p != e; ++p, s += MASK_BITS) {
+            for (uint_type const* p = b; p != e; ++p, s += BITMASK_BITS) {
                 if (*p == 0)
                     continue;
 
                 uints m = 1;
-                for (int i = 0; i < MASK_BITS; ++i, m <<= 1) {
+                for (int i = 0; i < BITMASK_BITS; ++i, m <<= 1) {
                     if (*p & m)
                         funccall(f, d[s + i], s + i);
                     else if ((*p & ~(m - 1)) == 0)
@@ -1328,12 +1329,12 @@ public:
 
                 uints pbase = 0;
 
-                for (; pm != epm; ++pm, pbase += MASK_BITS) {
+                for (; pm != epm; ++pm, pbase += BITMASK_BITS) {
                     if (*pm == 0)
                         continue;
 
                     uints m = 1;
-                    for (int i = 0; i < MASK_BITS; ++i, m <<= 1) {
+                    for (int i = 0; i < BITMASK_BITS; ++i, m <<= 1) {
                         if (*pm & m)
                             funccall(f, data[pbase + i], gbase + pbase + i);
                         else if ((*pm & ~(m - 1)) == 0)
@@ -1366,12 +1367,12 @@ public:
         uint_type const* em = const_cast<uint_type const*>(_allocated.ptre());
         uints s = 0;
 
-        for (uint_type const* pm = bm; pm != em; ++pm, s += MASK_BITS) {
+        for (uint_type const* pm = bm; pm != em; ++pm, s += BITMASK_BITS) {
             if (*pm == 0)
                 continue;
 
             uints m = 1;
-            for (int i = 0; i < MASK_BITS; ++i, m <<= 1) {
+            for (int i = 0; i < BITMASK_BITS; ++i, m <<= 1) {
                 if (*pm & m)
                     funccall(f, extarray[s + i], s + i);
                 else if ((*pm & ~(m - 1)) == 0)
@@ -1416,9 +1417,9 @@ public:
 
             for (const changeset_t* ch = bc; ch < ec; ++pm) {
                 uints m = pm < em ? *pm : 0U;
-                uints idbase = (pm - bm) * MASK_BITS;
+                uints idbase = (pm - bm) * BITMASK_BITS;
 
-                for (int i = 0; ch < ec && i < MASK_BITS; ++i, m >>= 1, ++ch) {
+                for (int i = 0; ch < ec && i < BITMASK_BITS; ++i, m >>= 1, ++ch) {
                     if (all_modified || (ch->mask & bitplane_mask) != 0) {
                         T* pd = (m & 1) != 0 ? pd0 + (idbase + i) : 0;
                         funccallp(f, pd, idbase + i);
@@ -1446,10 +1447,10 @@ public:
 
                 uints pbase = 0;
 
-                for (; pc < epc; ++pm, pbase += MASK_BITS) {
+                for (; pc < epc; ++pm, pbase += BITMASK_BITS) {
                     uints m = pm < em ? *pm : 0U;
 
-                    for (int i = 0; pc < epc && i < MASK_BITS; ++i, m >>= 1, ++pc) {
+                    for (int i = 0; pc < epc && i < BITMASK_BITS; ++i, m >>= 1, ++pc) {
                         if (all_modified || (pc->mask & bitplane_mask) != 0) {
                             T* pd = (m & 1) != 0 ? (T*)(data + pbase + i) : nullptr;
                             funccallp(f, pd, gbase + pbase + i);
@@ -1510,12 +1511,12 @@ public:
             uints base = 0;
             T* pd0 = const_cast<T*>(this->_array.ptr());
 
-            for (uint_type const* pm = bm; pm != em; ++pm, base += MASK_BITS) {
+            for (uint_type const* pm = bm; pm != em; ++pm, base += BITMASK_BITS) {
                 if (*pm == 0)
                     continue;
 
                 uints m = 1;
-                for (int i = 0; i < MASK_BITS; ++i, m <<= 1) {
+                for (int i = 0; i < BITMASK_BITS; ++i, m <<= 1) {
                     if (*pm & m) {
                         uints id = base + i;
                         if (funccall(f, pd0[id], base + i))
@@ -1552,12 +1553,12 @@ public:
 
                 uints pbase = 0;
 
-                for (; pm != epm; ++pm, pbase += MASK_BITS) {
+                for (; pm != epm; ++pm, pbase += BITMASK_BITS) {
                     if (*pm == 0)
                         continue;
 
                     uints m = 1;
-                    for (int i = 0; i < MASK_BITS; ++i, m <<= 1) {
+                    for (int i = 0; i < BITMASK_BITS; ++i, m <<= 1) {
                         if (*pm & m) {
                             if (funccall_if(f, data[pbase + i], gbase + pbase + i))
                                 return const_cast<T*>(data) + (pbase + i);
@@ -1599,12 +1600,12 @@ public:
             T* pd0 = const_cast<T*>(this->_array.ptr());
             uints n = this->_array.size();
 
-            for (; pm != em; ++pm, pbase += MASK_BITS) {
+            for (; pm != em; ++pm, pbase += BITMASK_BITS) {
                 if (*pm == UMAXS)
                     continue;
 
                 uints m = 1;
-                for (int i = 0; i < MASK_BITS; ++i, m <<= 1) {
+                for (int i = 0; i < BITMASK_BITS; ++i, m <<= 1) {
                     uints id = pbase + i;
                     if (id >= n)
                         break;
@@ -1637,12 +1638,12 @@ public:
 
                 uints pbase = 0;
 
-                for (; pm != epm; ++pm, pbase += MASK_BITS) {
+                for (; pm != epm; ++pm, pbase += BITMASK_BITS) {
                     if (*pm == UMAXS)
                         continue;
 
                     uints m = 1;
-                    for (int i = 0; i < MASK_BITS; ++i, m <<= 1) {
+                    for (int i = 0; i < BITMASK_BITS; ++i, m <<= 1) {
                         uints id = gbase + pbase + i;
                         if (id >= this->_created)
                             break;
@@ -1698,15 +1699,83 @@ public:
         changeset_t* chb = chs->ptr();
         changeset_t* che = chs->ptre();
 
-        for (changeset_t* ch = chb; ch < che; p += MASK_BITS) {
+        for (changeset_t* ch = chb; ch < che; p += BITMASK_BITS) {
             uints m = p < e ? uints(*p) : 0U;
 
-            for (int i = 0; ch < che && i < MASK_BITS; ++i, m >>= 1, ++ch)
+            for (int i = 0; ch < che && i < BITMASK_BITS; ++i, m >>= 1, ++ch)
                 ch->mask = (ch->mask & preserve) | (m & 1);
         }
     }
 
+    struct iterator
+    {
+        typedef std::forward_iterator_tag iterator_category;
+
+        iterator(base_t* base, uint_type index) : base(base), index(index)
+        {}
+
+        iterator& operator ++ () {
+            index = base->next_index(index);
+            return *this;
+        }
+
+        iterator operator ++ (int) const {
+            return iterator(base, base->next_index(index));
+        }
+
+        bool operator == (const iterator& o) const {
+            return base == o.base && index == o.index;
+        }
+
+        const T& operator * () const { return *base->get_item(index); }
+        T& operator * () { return *base->get_item(index); }
+
+        const T& operator -> () const { return *base->get_item(index); }
+        T& operator -> () { return *base->get_item(index); }
+
+    private:
+
+        base_t* base = 0;
+        uint_type index = uint_type(-1);
+    };
+
+    iterator begin() const {
+        return iterator(const_cast<base_t*>(this), 0);
+    }
+
+    iterator end() const {
+        return iterator(const_cast<base_t*>(this), _count);
+    }
+
 protected:
+
+    uint_type next_index(uint_type index) const {
+        constexpr int mask_bits = (int)constexpr_int_high_pow2(BITMASK_BITS);
+        constexpr uint_type bit_mask = (1 << mask_bits) - 1;
+        uint bit = index & bit_mask;
+        uint_type slot = index >> mask_bits;
+        uint_type mask = _allocated[slot];
+        ++bit;
+        mask >>= bit;
+        do {
+            while (mask) {
+                if (mask & 1)
+                    return (slot << mask_bits) + bit;
+                ++bit;
+                mask >>= 1;
+            }
+
+            ++slot;
+            if (slot >= _allocated.size())
+                break;
+
+            mask = _allocated[slot];
+            bit = 0;
+        }
+        while (true);
+
+        return _count;
+    }
 
     //@return allocated and previously created count (not necessarily used currently)
     uints created() const {
@@ -1883,7 +1952,7 @@ private:
             *(p = _allocated.add()) = 0;
 
         uint8 bit = lsb_bit_set((uints)~*p);
-        uints slot = (p - _allocated.ptr()) * MASK_BITS;
+        uints slot = (p - _allocated.ptr()) * BITMASK_BITS;
 
         uints id = slot + bit;
         this->set_modified(id);
@@ -1905,8 +1974,8 @@ private:
         DASSERT(id < created());
         DASSERT(!get_bit(id));
 
-        uint_type* p = &_allocated[id / MASK_BITS];
-        uint8 bit = id & (MASK_BITS - 1);
+        uint_type* p = &_allocated[id / BITMASK_BITS];
+        uint8 bit = id & (BITMASK_BITS - 1);
 
         *p |= uints(1) << bit;
         ++_count;
@@ -1922,7 +1991,7 @@ private:
     uints alloc_range(uints n, uints* old)
     {
         uints id = find_zero_bitrange(n, _allocated.ptr(), _allocated.ptre());
-        uints nslots = align_to_chunks(id + n, MASK_BITS);
+        uints nslots = align_to_chunks(id + n, BITMASK_BITS);
 
         if (nslots > _allocated.size())
             _allocated.addc(nslots - _allocated.size());
@@ -1992,7 +2061,7 @@ private:
             }
         }
 
-        uints nslots = align_to_chunks(id + n, MASK_BITS);
+        uints nslots = align_to_chunks(id + n, BITMASK_BITS);
 
         if (nslots > _allocated.size())
             _allocated.addc(nslots - _allocated.size());
