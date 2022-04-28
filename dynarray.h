@@ -1384,7 +1384,6 @@ public:
 
     ///Linear search whether array contains element comparable with \a key
     //@return 0 if not contained, otherwise ptr to the key
-    //@{
     template<class K>
     const T* contains(const K& key) const
     {
@@ -1396,6 +1395,7 @@ public:
     }
 
     ///Linear search whether array contains element comparable with \a key via equality functor
+    //@param eq functor as fn([const] T&, const K&)
     template<class K, class EQ>
     const T* contains(const K& key, const EQ& eq) const
     {
@@ -1406,16 +1406,18 @@ public:
         return 0;
     }
 
+    ///Linear search whether array contains element comparable with \a key
+    //@return 0 if not contained, otherwise ptr to the key
     template<class K>
     T* contains(const K& key) { return const_cast<T*>(std::as_const(*this).contains(key)); }
 
+    ///Linear search whether array contains element comparable with \a key via equality functor
+    //@param eq functor as fn([const] T&, const K&)
     template<class K, class EQ>
     T* contains(const K& key, const EQ& eq) { return const_cast<T*>(std::as_const(*this).contains(key, eq)); }
-    //@}
 
     ///Linear search (backwards) whether array contains element comparable with \a key
     //@return 0 if not contained, otherwise ptr to the key
-    //@{
     template<class K>
     const T* contains_back(const K& key) const
     {
@@ -1429,6 +1431,8 @@ public:
         return 0;
     }
 
+    ///Linear search (backwards) whether array contains element comparable with \a key via equality functor
+    //@param eq functor as fn([const] T&, const K&)
     template<class K, class EQ>
     const T* contains_back(const K& key, const EQ& eq) const
     {
@@ -1442,12 +1446,15 @@ public:
         return 0;
     }
 
+    ///Linear search (backwards) whether array contains element comparable with \a key
+    //@return 0 if not contained, otherwise ptr to the key
     template<class K>
     T* contains_back(const K& key) { return const_cast<T*>(std::as_const(*this).contains_back(key)); }
 
+    ///Linear search (backwards) whether array contains element comparable with \a key via equality functor
+    //@param eq functor as fn([const] T&, const K&)
     template<class K, class EQ>
     T* contains_back(const K& key, const EQ& eq) { return const_cast<T*>(contains_back(key, eq)); }
-    //@}
 
     ///Binary search to check whether a sorted array contains element comparable to \a key
     /// Uses operator T<K and operator T==K for equality comparison, or functor(T,K) to search for the element
@@ -1490,22 +1497,54 @@ public:
     }
     //@}
 
+    ///Find or push element into a array
+    //@param key key to search for
+    //@param isnew [out] set to true if value was newly created
+    //@note there must exist < operator able to do (T < K) comparison
+    template<class K>
+    T* find_or_push(const K& key, bool* isnew) {
+        T* value = contains(key);
+
+        if (!value) {
+            if (isnew) *isnew = true;
+            value = push();
+        }
+
+        return value;
+    }
+
+    ///Find or push element into a array
+    //@param key key to search for
+    //@param fn a functor as fn([const] T&, const K&)
+    //@param isnew [out] set to true if value was newly created
+    //@note there must exist < operator able to do (T < K) comparison
+    template<class K, class FUNC>
+    T* find_or_push(const K& key, const FUNC& fn, bool* isnew) {
+        T* value = contains(key, fn);
+
+        if (!value) {
+            if (isnew) *isnew = true;
+            value = push();
+        }
+
+        return value;
+    }
 
     ///Find or insert element into a sorted array
     //@param key key to search for
     //@param isnew [out] set to true if value was newly created
     //@note there must exist < operator able to do (T < K) comparison
     template<class K>
-    T* find_or_insert_sorted(const K& key, bool& isnew) {
+    T* find_or_insert_sorted(const K& key, bool* isnew) {
         uints index;
-        const T* value = contains_sorted(key, &index);
+        T* value = contains_sorted(key, &index);
 
         if (!value) {
-            isnew = true;
-            return ins(index);
+            if (isnew) *isnew = true;
+            value = ins(index);
         }
 
-        return const_cast<T*>(value);
+        return value;
     }
 
     ///Find or insert element into a sorted array
@@ -1514,16 +1553,16 @@ public:
     //@param isnew [out] set to true if value was newly created
     //@note there must exist < operator able to do (T < K) comparison
     template<class K, class FUNC>
-    T* find_or_insert_sorted(const K& key, const FUNC& fn, bool& isnew) {
+    T* find_or_insert_sorted(const K& key, const FUNC& fn, bool* isnew) {
         uints index;
-        const T* value = contains_sorted(key, fn, &index);
+        T* value = contains_sorted(key, fn, &index);
 
         if (!value) {
-            isnew = true;
-            return ins(index);
+            if (isnew) *isnew = true;
+            value = ins(index);
         }
 
-        return const_cast<T*>(value);
+        return value;
     }
 
     ///Binary search sorted array
