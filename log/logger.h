@@ -52,6 +52,11 @@
 #define coidlog_none(src, msg)    do{ ref<coid::logmsg> q = coid::canlog(coid::log::none, src ); if (q) {q->str() << msg; }} while(0)
 //@}
 
+///Log into file. The file is trucated initially and multiple messages are appended to it during the process duration
+//@param file file name/path
+#define coidlog_file(file, msg)   do{ ref<coid::logmsg> q = coid::canlog(coid::log::last, file ); if (q) {q->str() << msg; }} while(0)
+
+
 ///Log message with severity specified at the beginning of msg
 /// @param src source module
 /// @param msg text message to log, containing a severity prefix (error: err: warning: warn: info: msg: debug: perf:
@@ -95,6 +100,7 @@ namespace log {
         info,
         debug,
         perf,
+        file,
         last,
     };
 
@@ -108,7 +114,6 @@ namespace log {
             info,
             debug,
             perf,
-            last,
         };
         return _values;
     }
@@ -123,7 +128,6 @@ namespace log {
             "info",
             "debug",
             "perf",
-            "last",
             0
         };
         return _names;
@@ -144,6 +148,12 @@ class policy_msg;
 
 //@return logmsg object if given log type and source is currently allowed to log
 ref<logmsg> canlog(log::type type, const tokenhash& hash = tokenhash(), const void* inst = 0);
+
+/// @brief Return logging object for multi-line logging, ex: auto log = filelog("path"); log->str() << "bla" << 1;
+/// @param file file name/path
+inline ref<logmsg> filelog(const tokenhash& file) {
+    return canlog(log::file, file);
+}
 
 #ifdef COID_VARIADIC_TEMPLATES
 

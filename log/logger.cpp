@@ -44,6 +44,7 @@
 #include "../binstream/filestream.h"
 #include "../binstream/stdstream.h"
 
+#include "../hash/slothash.h"
 #include "../interface.h"
 #include "../timer.h"
 #include "../net_ul.h"
@@ -185,7 +186,14 @@ class logger_file
         if (_logfile.is_open() || !_logpath)
             return _logfile.is_open();
 
-        opcd e = _logfile.open(_logpath);
+        //check if it wasn't already opened in this instance
+        LOCAL_SINGLETON_DEF(slothash<charstr, charstr>) reg;
+
+        const charstr* oldv = reg->find_value(_logpath);
+        if (!oldv)
+            reg->push(_logpath);
+
+        opcd e = _logfile.open(_logpath, oldv ? "wc+" : "wct");
         if (!e) {
             _logfile.xwrite_token_raw(_logbuf);
             _logbuf.free();
@@ -199,9 +207,11 @@ public:
     logger_file(const token& path, bool std) : _logpath(path), _stdout(std)
     {}
 
-    ///Open physical log file. @note Only notes the file name, the file is opened with the next log msg because of potential MT clashes
-    void open(charstr filename, bool std) {
-        std::swap(_logpath, filename);
+    ///Open physical log file
+    //@param filename file name/path to open
+    //@note Only notes the file name, the file is opened with the next log msg because of potential MT clashes
+    void open(charstr&& filename, bool std) {
+        _logpath = std::move(filename);
         _stdout = std;
     }
 
@@ -255,7 +265,10 @@ bool logmsg::finalize(policy_msg* p)
 
     bool flush = _str.last_char() == '\r';
 
-    _logger_file = _logger->file();
+    if (_type == log::file)
+        _logger_file.create(new logger_file(_hash, false));
+    else
+        _logger_file = _logger->file();
     _logger->enqueue(ref<logmsg>(p));
     _logger = 0;
 
@@ -314,11 +327,12 @@ void logger::set_log_level(log::type minlevel, bool allow_perf)
 ref<logmsg> logger::create_msg(log::type type, const tokenhash& hash, const void* inst, const int64* mstime)
 {
     //TODO check hash, inst
-    if (type > _minlevel && (!_allow_perf || type != log::perf))
+    bool filelog = type == log::type::file;
+    if (!filelog && type > _minlevel && (!_allow_perf || type != log::perf))
         return ref<logmsg>();
 
     ref<logmsg> rmsg = operator()(type, hash, mstime);
-    if (hash)
+    if (!filelog && hash)
         rmsg->str() << '[' << hash << "] ";
 
     return rmsg;
@@ -347,7 +361,7 @@ ref<logmsg> logger::operator()(log::type t, const tokenhash& hash, const int64* 
 ////////////////////////////////////////////////////////////////////////////////
 ref<logmsg> logger::create_msg(log::type type, const tokenhash& hash)
 {
-    if (type > _minlevel && (!_allow_perf || type != log::perf))
+    if (type != log::type::file && type > _minlevel && (!_allow_perf || type != log::perf))
         return ref<logmsg>();
 
     ref<logmsg> msg = ref<logmsg>(policy_msg::create());
@@ -368,11 +382,8 @@ void logger::enqueue(ref<logmsg>&& msg)
         GUARDTHIS(_mutex);
 
         _filters.for_each([&](const log_filter& f) {
-            if (msg->get_type() <= (log::type)f._log_level
-                && f._module.cmpeq(msg->get_hash()))
-            {
+            if (msg->get_type() <= (log::type)f._log_level && f._module.cmpeq(msg->get_hash()))
                 f._filter_fun(msg);
-            }
         });
 
     }
