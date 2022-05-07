@@ -248,7 +248,7 @@ public:
         uints stack_size = src.reserved_stack();
         if (stack_size > 0) {
             //stack memory cannot be moved, needs to be a copy
-            if constexpr (std::is_copy_assignable_v<T>) {
+            if coid_constexpr_if(std::is_copy_assignable_v<T>) {
                 *this = src;
                 src.reset();
             }

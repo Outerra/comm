@@ -32,6 +32,15 @@ class other
 {
 public:
 
+    // --- creators ---
+
+    static iref<other> create( const coid::charstr& str ) {
+        return create<other>(0, str);
+    }
+
+    template<class T>
+    static iref<T> create( T* _subclass_, const coid::charstr& str );
+
     // --- interface methods ---
 
 #pragma warning(push)
@@ -47,19 +56,11 @@ public:
     { return VT_CALL(void,(int&,iref<ns::other>&,int*),2)(a,b,c); }
 
 #pragma warning(pop)
-    // --- creators ---
-
-    static iref<other> create( const coid::charstr& str ) {
-        return create<other>(0, str);
-    }
-
-    template<class T>
-    static iref<T> create( T* _subclass_, const coid::charstr& str );
 
     // --- internal helpers ---
 
     ///Interface revision hash
-    static const int HASHID = 4089385363u;
+    static const int HASHID = 12527114u;
 
     ///Interface name (full ns::class string)
     static const coid::tokenhash& IFCNAME() {
@@ -137,7 +138,7 @@ public:
         type.consume("struct ");
 
         coid::charstr tmp = "ns::other"_T;
-        tmp << "@client-4089385363"_T << '.' << type;
+        tmp << "@client-12527114"_T << '.' << type;
 
         coid::interface_register::register_interface_creator(tmp, cc);
         return 0;
@@ -155,14 +156,14 @@ inline iref<T> other::create( T* _subclass_, const coid::charstr& str )
     typedef iref<T> (*fn_creator)(other*, const coid::charstr&);
 
     static fn_creator create = 0;
-    static constexpr coid::token ifckey = "ns::other.create@4089385363"_T;
+    static constexpr coid::token ifckey = "ns::other.create@12527114"_T;
 
     if (!create)
         create = reinterpret_cast<fn_creator>(
             coid::interface_register::get_interface_creator(ifckey));
 
     if (!create) {
-        log_mismatch("create"_T, "ns::other.create"_T, "@4089385363"_T);
+        log_mismatch("other"_T, "ns::other.create"_T, "@12527114"_T);
         return 0;
     }
 

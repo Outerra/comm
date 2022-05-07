@@ -590,7 +590,7 @@ public:
         bool used = false;
 
         if (_binw) {
-            if constexpr (std::is_same_v<token, AsType>) {
+            if coid_constexpr_if(std::is_same_v<token, AsType>) {
                 const charstr& val = get(v);
                 used = write_optional(!cache_prepared() && !write_default && val == defval ? 0 : &val);
             }
@@ -600,7 +600,7 @@ public:
             }
         }
         else if (_binr) {
-            if constexpr (std::is_same_v<token, AsType>) {
+            if coid_constexpr_if(std::is_same_v<token, AsType>) {
                 //special handling for tokens that are normally not readable from stream
                 charstr val;
                 used = read_optional(val);
@@ -1912,7 +1912,7 @@ public:
             *this || const_cast<S&>(get());
         }
         else if (stream_reading()) {
-            if constexpr (std::is_same_v<token, S>) {
+            if coid_constexpr_if(std::is_same_v<token, S>) {
                 //special handling for tokens that are normally not readable from stream
                 charstr val;
                 *this || val;

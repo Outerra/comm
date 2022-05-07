@@ -143,6 +143,8 @@ struct token
         : _ptr(ptr), _pte(ptre < ptr ? ptr : ptre)
     {}
 
+#if __cpp_constexpr >= 201304L
+
     //@return constexpr token with type name
     //@usage constexpr token name = token::type_name<T>();
     template <typename T>
@@ -176,7 +178,7 @@ struct token
 #endif
         return token(p, pe);
     }
-
+#endif //__cpp_constexpr >= 201304L
 
     template <int N>
     static token from_cstring(char(&str)[N])
