@@ -207,6 +207,7 @@ public:
 
             //capture alias streaming type
             MetaDesc::Var* oldvar = _current_var;
+            MetaDesc::Var* oldlastvar = _last_var;
             MetaDesc desc;
             MetaDesc::Var var;
             var.desc = &desc;
@@ -216,6 +217,7 @@ public:
 
             md->streaming_type = desc.children[0].desc;
             _current_var = oldvar;
+            _last_var = oldlastvar;
         }
 
         return *this;

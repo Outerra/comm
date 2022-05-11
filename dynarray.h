@@ -528,6 +528,28 @@ public:
         }
     }
 
+    ///Invoke functor on each element
+    //@param fn functor as fn(const T&) or fn(const T&, count_t index)
+    template<typename Res, typename Func>
+    Res sum(Func fn) const
+    {
+        Res result = Res(0);
+        for (count_t i = 0, n = size(); i < n; ++i) {
+            const T& v = _ptr[i];
+#ifdef COID_CONSTEXPR_IF
+            if constexpr (has_index<Func>::value) {
+                result = result + fn(v, i);
+            }
+            else {
+                result = result + fn(v);
+            }
+#else
+            result = result + funccall(fn, v, i);
+#endif
+        }
+        return result;
+    }
+
     ///Find first element for which the predicate returns true
     //@param fn functor as fn([const] T&) or fn([const] T&, count_t index)
     //@return pointer to the element or null
