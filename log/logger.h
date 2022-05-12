@@ -251,7 +251,7 @@ public:
         };
         static token empty;
 
-        return t<log::last ? st[1 + int(t)] : empty;
+        return t >= 0 && t < log::last ? st[1 + int(t)] : empty;
     }
 
     log::type get_type() const { return _type; }

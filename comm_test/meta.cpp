@@ -100,7 +100,7 @@ struct FooB
             m.member("flag", s.flag, false);
             m.member("ai", s.ai);
             m.member("aai", s.aai);
-            m.member_optional<FooAA>("p",
+            m.member_type_optional<FooAA>("p",
                 [&](const FooAA* v) {if(v) s.pfo = new FooAA(*v); },
                 [&]() { return s.pfo; }
                 );

@@ -701,6 +701,34 @@ public:
         return used;
     }
 
+    ///Define an optional variable, with explicit set/get functors that take pointer (optionally nullptr)
+    //@param name variable name, used as a key in output formats
+    //@param set void function(const T*) receiving streamed object, or nullptr if the object wasn't present in the stream
+    //@param get const T* function() called to provide object to be streamed, or nullptr if nothing should go into the stream
+    //@return true if value was read or written and no default was used, false in meta phase
+    template<typename T, typename FnIn, typename FnOut>
+    bool member_type_optional(const token& name, FnIn set, FnOut get)
+    {
+        bool used = false;
+
+        if (_binw) {
+            const T* p = get();
+            used = write_optional(p);
+        }
+        else if (_binr) {
+            T val;
+            used = read_optional(val);
+            if (used)
+                set(&val);
+            else
+                set(nullptr);
+        }
+        else
+            meta_variable_optional<T>(name, (const T*)-1);
+
+        return used;
+    }
+
     ///Define an optional variable, value doesn't get overwritten if it wasn't present in the input stream
     //@param name variable name, used as a key in output formats
     //@return true if value was read or written and no default was used, false in meta phase
@@ -739,34 +767,6 @@ public:
         }
         else
             meta_variable_optional<T>(name, &v);
-
-        return used;
-    }
-
-    ///Define an optional variable, with explicit set/get functors that take pointer (optionally nullptr)
-    //@param name variable name, used as a key in output formats
-    //@param set void function(const T*) receiving streamed object, or nullptr if the object wasn't present in the stream
-    //@param get const T* function() called to provide object to be streamed, or nullptr if nothing should go into the stream
-    //@return true if value was read or written and no default was used, false in meta phase
-    template<typename T, typename FnIn, typename FnOut>
-    bool member_optional(const token& name, FnIn set, FnOut get)
-    {
-        bool used = false;
-
-        if (_binw) {
-            const T* p = get();
-            used = write_optional(p);
-        }
-        else if (_binr) {
-            T val;
-            used = read_optional(val);
-            if (used)
-                set(&val);
-            else
-                set(nullptr);
-        }
-        else
-            meta_variable_optional<T>(name, (const T*)-1);
 
         return used;
     }

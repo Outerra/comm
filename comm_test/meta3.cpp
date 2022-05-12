@@ -232,21 +232,6 @@ void metastream_test4()
 
 struct testmtg
 {
-    struct something {
-        charstr blah;
-        int fooi;
-
-        friend metastream& operator || (metastream& m, something& p) {
-            return m.compound_type_stream_as_type<coid::charstr>(p,
-                [&]() {
-                    m.member("blah", p.blah);
-                    m.member("fooi", p.fooi);
-                },
-                [](something& p, coid::charstr&& v) { p.blah.takeover(v); },
-                [](something& p) -> const coid::charstr& { return p.blah; });
-        }
-    };
-
     dynarray<charstr> as;
     dynarray<int> ar;
     charstr name;
@@ -286,6 +271,7 @@ struct testmtg
     }
 };
 
+
 static void metagen_test()
 {
     testmtg t;
@@ -312,6 +298,64 @@ $[ar final=\"$@order$\"]$$[/ar]$";
     token res = dst;
 }
 
+
+
+struct as_type
+{
+    struct something {
+        charstr blah;
+        int fooi;
+
+        bool operator == (const something& s) const {
+            return blah == s.blah && fooi == s.fooi;
+        }
+
+        friend metastream& operator || (metastream& m, something& p) {
+            return m.compound_type_stream_as_type<coid::charstr>(p,
+                [&]() {
+                m.member("blah", p.blah);
+                m.member("fooi", p.fooi);
+            },
+                [](something& p, coid::charstr&& v) {
+                token t = v;
+                token n = t.cut_right_back(':');
+                p.blah.takeover(v);
+                p.blah.resize(t.len());
+                p.fooi = n.toint();
+            },
+                [](something& p) -> coid::charstr {
+                return p.blah + ':' + p.fooi;
+            });
+        }
+    };
+
+    dynarray<something> aaa;
+    dynarray<something> bbb;
+
+    something* s = 0;
+
+    friend metastream& operator || (metastream& m, as_type& p) {
+        return m.compound_type(p, [&]() {
+            m.member("aaa", p.aaa, dynarray<something>(), false);
+            m.member("bbb", p.bbb, dynarray<something>(), false);
+        });
+    }
+};
+
+static void test_as_type()
+{
+    const char* str = "aaa = [\"jozo:1\", \"fero:2\"]";
+
+    binstreamconstbuf cbuf(str);
+    fmtstreamcxx fmt(cbuf);
+    metastream meta(fmt);
+
+    as_type tat;
+    tat.s = new as_type::something;
+
+    meta.xstream_in(tat);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 void metastream_test3()
 {
@@ -321,6 +365,7 @@ void metastream_test3()
 
     fmtstreamjson_test();
 
+    test_as_type();
 /*
     dynarray<ref<FooA>> ar;
     ar.add()->create(new FooA(1, 2));
