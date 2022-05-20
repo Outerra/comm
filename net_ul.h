@@ -55,32 +55,32 @@ class charstr;
 
 #ifdef SYSTYPE_WIN
 #   define HAVE_STRUCT_TIMESPEC 1
-    struct timespec {
-        int tv_sec;
-        int tv_nsec;
-    };
+struct timespec {
+    int tv_sec;
+    int tv_nsec;
+};
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
-void sysSleep( int seconds );
-void sysMilliSecondSleep( int milliseconds );
+void sysSleep(int seconds);
+void sysMilliSecondSleep(int milliseconds);
 
 ////////////////////////////////////////////////////////////////////////////////
 uint sysGetPid();
 
 ////////////////////////////////////////////////////////////////////////////////
-static inline void _sysEndianSwap( uint32 *x )
+constexpr inline void _sysEndianSwap(uint32* x)
 {
-    *x = (( *x >> 24 ) & 0x000000FF ) |
-        (( *x >>  8 ) & 0x0000FF00 ) |
-        (( *x <<  8 ) & 0x00FF0000 ) |
-        (( *x << 24 ) & 0xFF000000 ) ;
+    *x = ((*x >> 24) & 0x000000FF) |
+        ((*x >>  8) & 0x0000FF00) |
+        ((*x <<  8) & 0x00FF0000) |
+        ((*x << 24) & 0xFF000000);
 }
 
-static inline void _sysEndianSwap( uint16 *x )
+constexpr inline void _sysEndianSwap(uint16* x)
 {
-    *x = (( *x >>  8 ) & 0x00FF ) |
-        (( *x <<  8 ) & 0xFF00 ) ;
+    *x = ((*x >>  8) & 0x00FF) |
+        ((*x <<  8) & 0xFF00);
 }
 
 template <int S>
@@ -112,18 +112,18 @@ inline void endian_swap<sizeof(uint64)>(void* p, uints count)
     uint64* d = (uint64*)p;
     for (uints i = 0; i < count; ++i)
         d[i] = (d[i] >> 56)
-            | ((d[i] >> 40) & 0x000000000000ff00ull)
-            | ((d[i] >> 24) & 0x0000000000ff0000ull)
-            | ((d[i] >>  8) & 0x00000000ff000000ull)
-            | ((d[i] <<  8) & 0x0000ff0000000000ull)
-            | ((d[i] << 24) & 0x0000ff0000000000ull)
-            | ((d[i] << 40) & 0x00ff000000000000ull)
-            |  (d[i] << 56);
+        | ((d[i] >> 40) & 0x000000000000ff00ull)
+        | ((d[i] >> 24) & 0x0000000000ff0000ull)
+        | ((d[i] >>  8) & 0x00000000ff000000ull)
+        | ((d[i] <<  8) & 0x0000ff0000000000ull)
+        | ((d[i] << 24) & 0x0000ff0000000000ull)
+        | ((d[i] << 40) & 0x00ff000000000000ull)
+        |  (d[i] << 56);
 }
 
-inline uint16 sysEndianLittle16( uint16 x )
+constexpr inline uint16 sysEndianLittle16(uint16 x)
 {
-    if(sysIsLittleEndian)
+    if (sysIsLittleEndian)
         return x;
     else {
         _sysEndianSwap(&x);
@@ -131,9 +131,9 @@ inline uint16 sysEndianLittle16( uint16 x )
     }
 }
 
-inline uint32 sysEndianLittle32( uint32 x )
+constexpr inline uint32 sysEndianLittle32(uint32 x)
 {
-    if(sysIsLittleEndian)
+    if (sysIsLittleEndian)
         return x;
     else {
         _sysEndianSwap(&x);
@@ -141,9 +141,9 @@ inline uint32 sysEndianLittle32( uint32 x )
     }
 }
 
-inline float sysEndianLittleFloat(float x)
+constexpr inline float sysEndianLittleFloat(float x)
 {
-    if(sysIsLittleEndian)
+    if (sysIsLittleEndian)
         return x;
     else {
         _sysEndianSwap((uint32*)(void*)&x);
@@ -151,68 +151,68 @@ inline float sysEndianLittleFloat(float x)
     }
 }
 
-inline void sysEndianLittleArray16( uint16 *x, int length )
+inline void sysEndianLittleArray16(uint16* x, int length)
 {
-    if(sysIsLittleEndian)
+    if (sysIsLittleEndian)
         return;
     else {
-        for( int i = 0; i < length; ++i )
+        for (int i = 0; i < length; ++i)
             _sysEndianSwap(x++);
     }
 }
 
-inline void sysEndianLittleArray32( uint32 *x, int length )
+inline void sysEndianLittleArray32(uint32* x, int length)
 {
-    if(sysIsLittleEndian)
+    if (sysIsLittleEndian)
         return;
     else {
-        for( int i = 0; i < length; ++i )
+        for (int i = 0; i < length; ++i)
             _sysEndianSwap(x++);
     }
 }
 
-inline void sysEndianLittleArrayFloat( float *x, int length )
+inline void sysEndianLittleArrayFloat(float* x, int length)
 {
-    if(sysIsLittleEndian)
+    if (sysIsLittleEndian)
         return;
     else {
-        for( int i = 0; i < length; ++i )
+        for (int i = 0; i < length; ++i)
             _sysEndianSwap((uint32*)(void*)x++);
     }
 }
 
-inline void sysEndianBigArray16( uint16 *x, int length )
+inline void sysEndianBigArray16(uint16* x, int length)
 {
-    if(sysIsBigEndian)
+    if (sysIsBigEndian)
         return;
     else {
-        for( int i = 0; i < length; ++i )
+        for (int i = 0; i < length; ++i)
             _sysEndianSwap(x++);
     }
 }
 
-inline void sysEndianBigArray32(uint32 *x, int length)
+inline void sysEndianBigArray32(uint32* x, int length)
 {
-    if(sysIsBigEndian)
+    if (sysIsBigEndian)
         return;
     else {
-        for( int i = 0; i < length; ++i )
+        for (int i = 0; i < length; ++i)
             _sysEndianSwap(x++);
     }
 }
 
-inline void sysEndianBigArrayFloat(float *x, int length)
+inline void sysEndianBigArrayFloat(float* x, int length)
 {
-    if(sysIsBigEndian)
+    if (sysIsBigEndian)
         return;
     else {
-        for( int i = 0; i < length; ++i )
+        for (int i = 0; i < length; ++i)
             _sysEndianSwap((uint32*)(void*)x++);
     }
 }
 
-inline uint16 sysEndianBig16(uint16 x) {
-    if(sysIsBigEndian)
+constexpr inline uint16 sysEndianBig16(uint16 x) {
+    if (sysIsBigEndian)
         return x;
     else {
         _sysEndianSwap(&x);
@@ -220,8 +220,8 @@ inline uint16 sysEndianBig16(uint16 x) {
     }
 }
 
-inline uint32 sysEndianBig32(uint32 x) {
-    if(sysIsBigEndian)
+constexpr inline uint32 sysEndianBig32(uint32 x) {
+    if (sysIsBigEndian)
         return x;
     else {
         _sysEndianSwap(&x);
@@ -229,8 +229,8 @@ inline uint32 sysEndianBig32(uint32 x) {
     }
 }
 
-inline float sysEndianBigFloat(float x) {
-    if(sysIsBigEndian)
+constexpr inline float sysEndianBigFloat(float x) {
+    if (sysIsBigEndian)
         return x;
     else {
         _sysEndianSwap((uint32*)(void*)&x);
@@ -246,25 +246,25 @@ public:
 #ifdef SYSTYPE_WIN
     typedef ints handle;
 #else
-    typedef void *handle;
+    typedef void* handle;
 #endif
 
     ~dynamic_library();
-    dynamic_library( const char* libname = 0 );
+    dynamic_library(const char* libname = 0);
 
-    bool open( const char* libname );
+    bool open(const char* libname);
     bool close();
     void forget() {
         _handle = 0;
     }
     const char* error() const;
 
-    void *getFuncAddress ( const char *funcname );
+    void* getFuncAddress(const char* funcname);
 
-    bool is_valid() {return _handle != 0;}
+    bool is_valid() { return _handle != 0; }
 
-    static handle load_library( const char* libname );
-    static void *getFuncAddress(handle lib_handle, const char *funcname);
+    static handle load_library(const char* libname);
+    static void* getFuncAddress(handle lib_handle, const char* funcname);
 
     charstr& module_path(charstr& dst, bool append = false);
     charstr& module_name(charstr& dst, bool append = false);
