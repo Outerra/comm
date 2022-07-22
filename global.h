@@ -266,7 +266,7 @@ class data_manager
         cshash() : container(sizeof(storage<T>), container::type::hash)
         {}
         void* element(uint eid) override final { return (T*)hash.find_value(eid); }
-        void* create(uint eid) override final {
+        void* create(uint eid) override {
             hash.erase(eid);
             return hash.push_construct(eid);
         }
@@ -294,7 +294,7 @@ class data_manager
         carray() : container(sizeof(T), container::type::array)
         {}
         void* element(uint eid) override final { return eid < data.size() ? &data[eid] : nullptr; }
-        void* create(uint eid) override final {
+        void* create(uint eid) override {
             return &data.get_or_add(eid);
         }
         void remove(uint eid) override final {
@@ -356,9 +356,10 @@ public:
     template <class C>
     static C* get(uint eid)
     {
-        static container* c = safe_container<C>(tsq().id<C>());
+        static container* c = 0;
+        if (!c) c = get_container<C>();
 
-        return static_cast<C*>(c->element(eid));
+        return c ? static_cast<C*>(c->element(eid)) : nullptr;
     }
 
     /// @brief Retrieve data of given type
@@ -368,8 +369,10 @@ public:
     template <class C>
     static C* get(versionid vid)
     {
-        static container* c = safe_container<C>(tsq().id<C>());
-        if (!c->seq->is_valid(vid))
+        static container* c = 0;
+        if (!c) c = get_container<C>();
+
+        if (!c || !c->seq->is_valid(vid))
             return nullptr;
 
         return static_cast<C*>(c->element(vid.id));
@@ -419,7 +422,9 @@ public:
     /// @tparam OwnT
     template <class C>
     static void destruct(uint eid) {
-        static container* c = safe_container<C>(tsq().id<C>());
+        static container* c = 0;
+        if (!c) c = get_container<C>();
+        DASSERT_RET(c);
         C* co = static_cast<C*>(c->element(eid));
         if (co)
             co->~C();
@@ -448,7 +453,8 @@ public:
     template <class C>
     static C* push(uint eid, C&& v)
     {
-        static container* c = safe_container<C>(tsq().id<C>());
+        static container* c = get_or_create_container<C, cshash<C>>();
+        DASSERT_RET(c, 0);
 
         C* d = static_cast<C*>(c->create(eid));
         *d = std::move(v);
@@ -463,7 +469,8 @@ public:
     template <class C>
     static C* push_default(uint eid)
     {
-        static container* c = safe_container<C>(tsq().id<C>());
+        static container* c = get_or_create_container<C, cshash<C>>();
+        DASSERT_RET(c, 0);
 
         return new (c->create(eid)) C;
     }
@@ -475,7 +482,8 @@ public:
     template <class C>
     static C* push_uninit(uint eid)
     {
-        static container* c = safe_container<C>(tsq().id<C>());
+        static container* c = get_or_create_container<C, cshash<C>>();
+        DASSERT_RET(c, 0);
 
         return static_cast<C*>(c->create(eid));
     }
@@ -486,7 +494,9 @@ public:
     template <class C>
     static void remove(uint eid)
     {
-        static container* c = safe_container<C>(tsq().id<C>());
+        static container* c = 0;
+        if (!c) c = get_container<C>();
+        DASSERT_RET(c);
 
         c->remove(eid);
     }
@@ -497,7 +507,9 @@ public:
     template <class C>
     static void remove(versionid vid)
     {
-        static container* c = safe_container<C>(tsq().id<C>());
+        static container* c = 0;
+        if (!c) c = get_container<C>();
+        DASSERT_RET(c);
 
         DASSERT_RET(c->seq->is_valid(vid));
         c->remove(vid.id);
@@ -505,12 +517,14 @@ public:
 
     /// @brief Enumerate through entities with given component
     /// @tparam C data type
-    /// @tparam Fn 
-    /// @param fn 
+    /// @tparam Fn
+    /// @param fn
     template <class C, class Fn>
     static void enumerate(const Fn& fn)
     {
-        static container* c = safe_container<C>(tsq().id<C>());
+        static container* c = 0;
+        if (!c) c = get_container<C>();
+        if (!c) return;
 
         if (c->storage_type == container::type::array) {
             //TODO: use bitmask
@@ -544,25 +558,16 @@ public:
     /// @return container id
     /// @note container id 0 is created as a slotalloc to keep track of existing and deleted objects
     template <class C>
-    static uint preallocate_array_container(uint reserve_count = 0)
+    static void preallocate_array_container(uint reserve_count = 0)
     {
-        type_sequencer& sq = tsq();
-        int id = sq.assign<C>();
-
-        typed_container<carray<C>>(id).reserve(reserve_count);
-
-        return id;
+        carray<C>* cont = get_or_create_container<C, carray<C>>();
+        cont->reserve(reserve_count);
     }
 
     template <class C>
-    static uint preallocate_hash_container()
+    static void preallocate_hash_container()
     {
-        type_sequencer& sq = tsq();
-        int id = sq.assign<C>();
-
-        typed_container<cshash<C>>(id);
-
-        return id;
+        cshash<C>*& cont = get_or_create_container<C, cshash<C>>();
     }
 
     /// @brief Retrieve container for primary data
@@ -571,7 +576,7 @@ public:
     template <class C>
     static const dynarray32<C>& get_array()
     {
-        static const dynarray32<C>* c = static_cast<const dynarray32<C>*>(safe_container<C, carray<C>>(tsq().id<C>())->linear_array_ptr());
+        static const dynarray32<C>* c = static_cast<const dynarray32<C>*>(get_or_create_container<C, carray<C>>()->linear_array_ptr());
         RASSERT(c != nullptr);
 
         return *c;
@@ -668,39 +673,52 @@ public:
 
 private:
 
-    template <class T>
-    static T& typed_container(uint id)
+    template <class C>
+    static container* get_container()
     {
-        container*& vctx = data_containers().get_or_addc(id);
-        T*& cont = reinterpret_cast<T*&>(vctx);
-
-        if (!cont)
-            cont = new T;
-        return *cont;
+        static uint cid = tsq().id<C>();
+        dynarray32<container*>& co = data_containers();
+        return cid < co.size() ? co[cid] : nullptr;
     }
 
-    /// @brief get existing container or create a hashed one
+    template <class Co>
+    static Co* typed_container(uint cid)
+    {
+        dynarray32<container*>& co = data_containers();
+        return cid < co.size() ? &static_cast<Co*>(co[cid]) : nullptr;
+    }
+
+    /// @brief get existing container or create a new (def.hashed) one
     /// @tparam C component type
     /// @param cid container id
     template <class C, class ContDefault = cshash<C>>
-    static container* safe_container(uint cid)
+    static ContDefault* get_or_create_container()
     {
+        static uint cid = tsq().id<C>();
         dynarray32<container*>& co = data_containers();
-        return cid < co.size()
-            ? co[cid]
-            : (co.get_or_add(cid) = new ContDefault());
+        return static_cast<ContDefault*>(
+            cid < co.size() ? co[cid] : (co.get_or_addc(cid) = new ContDefault()));
     }
 
 protected:
 
+    struct containers
+    {
+        dynarray32<container*> _dc;
+        coid::context_holder<OwnT> _hs;
+
+        static containers& get() {
+            LOCAL_PROCWIDE_SINGLETON_DEF(containers) _cs = new containers;
+            return *_cs;
+        }
+    };
+
     static coid::context_holder<OwnT>& handlers() {
-        LOCAL_SINGLETON_DEF(coid::context_holder<OwnT>) _hs;
-        return *_hs;
+        return containers::get()._hs;
     }
 
     static dynarray32<container*>& data_containers() {
-        LOCAL_SINGLETON_DEF(dynarray32<container*>) _dc;
-        return *_dc;
+        return containers::get()._dc;
     }
 };
 
