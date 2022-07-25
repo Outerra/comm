@@ -567,7 +567,7 @@ public:
     template <class C>
     static void preallocate_hash_container()
     {
-        cshash<C>*& cont = get_or_create_container<C, cshash<C>>();
+        cshash<C>* cont = get_or_create_container<C, cshash<C>>();
     }
 
     /// @brief Retrieve container for primary data
