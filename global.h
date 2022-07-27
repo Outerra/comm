@@ -153,8 +153,8 @@ class data_manager
                 *pid = count;
             ++_count;
 
-            erecord* p = _entities.add();
-            p->version = 0;
+            //alloc BITMASK_BITS entries at once to simplify validity checking
+            erecord* p = _entities.addc(BITMASK_BITS);
             return p;
         }
 
