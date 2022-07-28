@@ -317,26 +317,38 @@ class data_manager
 
     // manipulators for the data
 
+public:
+    struct handler_data {
+        virtual ~handler_data() {}
+    };
+
+private:
     template <class M>
     struct base_handler {
         virtual ~base_handler() {}
-        virtual void invoke(M*, void*) = 0;
+        virtual void invoke(M*, void*, uint) = 0;
     };
 
     template <class M, class C>
     struct handler : base_handler<M>
     {
-        using handler_t = void (*)(M*, C&);
+        using handler_t = void (*)(M*, C&, uint, handler_data*);
 
-        virtual void invoke(M* m, void* c) override {
-            return fn(m, *(C*)c);
+        virtual void invoke(M* m, void* c, uint eid) override {
+            return fn(m, *(C*)c, eid, data);
         }
 
-        handler(handler_t&& fn) {
+        handler(handler_t&& fn, handler_data* data) {
             this->fn = std::move(fn);
+            this->data = data;
+        }
+
+        ~handler() {
+            delete data;
         }
 
         handler_t fn;
+        handler_data* data = nullptr;
     };
 
     /// @brief Manipulator base class. Manipulators allow working with different components of the entity, e.g. invoke UI handlers for each component
@@ -401,7 +413,7 @@ public:
         static sequencer& seq = tsq();
         if (seq.del(vid)) {
             for (container* c : data_containers()) {
-                if (c->storage_type == container::type::hash)
+                if (c && c->storage_type == container::type::hash)
                     c->erase(vid.id);
             }
         }
@@ -412,7 +424,7 @@ public:
         static sequencer& seq = tsq();
         if (seq.del(eid)) {
             for (container* c : data_containers()) {
-                if (c->storage_type == container::type::hash)
+                if (c && c->storage_type == container::type::hash)
                     c->remove(eid);
             }
         }
@@ -600,7 +612,7 @@ public:
     /// @tparam C data/component type
     /// @param fn function callback
     template <class M, class C>
-    static void set_handler(void (*fn)(M*, C&))
+    static void set_handler(void (*fn)(M*, C&, uint eid, handler_data*), handler_data* data = nullptr)
     {
         manipulator<M>*& mm = handlers().component<manipulator<M>>();
         if (!mm)
@@ -611,7 +623,7 @@ public:
         using handler_t = typename handler<M, C>::handler_t;
         base_handler<M>*& h = mm->component_handlers.get_or_addc(cid);
         if (!h)
-            h = new handler<M, C>(std::forward<handler_t>(fn));
+            h = new handler<M, C>(std::forward<handler_t>(fn), data);
     }
 
     /// @brief Invoke handler of given manipulator on given data type of given entity
@@ -636,7 +648,7 @@ public:
         if (!h)
             return;
 
-        h->fn(m, *c);
+        h->invoke(m, *c, eid);
     }
 
     /// @brief Invoke handlers of given manipulator for all data existing for given entity
@@ -645,28 +657,30 @@ public:
     /// @param eid entity id
     /// @param fn optional callback to invoke before invoking a handler, identifying the data type processed
     template <class M>
-    static void invoke_all_component_handlers(M* m, uint eid, bool (*fn)(const coid::token& type) = 0)
+    static void invoke_all_component_handlers(M* m, uint eid, void (*default_fn)(const coid::token& type) = 0)
     {
         manipulator<M>* mm = handlers().component<manipulator<M>>();
         if (!mm)
             return;
 
         uint n = data_containers().size();
+        uint handler_count = mm->component_handlers.size();
 
-        for (uint i = 0; i < n; ++i) {
-            base_handler<M>* h = mm->component_handlers[i];
-            if (!h)
+        for (uint i = 0; i < n; ++i)
+        {
+            void* c = get_data(eid, i);
+            if (!c)
                 continue;
 
-            void* c = get_data(eid, i);
-            if (c) {
-                if (fn) {
+            base_handler<M>* h = i >= handler_count ? nullptr : mm->component_handlers[i];
+            if (h) {
+                h->invoke(m, c, eid);
+            }
+            else {
+                if (default_fn) {
                     auto td = tsq().type(i);
-                    if (!fn(td->type_name))
-                        continue;
+                    default_fn(td->type_name);
                 }
-
-                h->invoke(m, c);
             }
         }
     }
@@ -697,7 +711,7 @@ private:
         static uint cid = tsq().id<C>();
         dynarray32<container*>& co = data_containers();
         return static_cast<ContDefault*>(
-            cid < co.size() ? co[cid] : (co.get_or_addc(cid) = new ContDefault()));
+            cid < co.size() && co[cid] != nullptr ? co[cid] : (co.get_or_addc(cid) = new ContDefault()));
     }
 
 protected:
