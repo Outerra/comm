@@ -4,7 +4,9 @@
 
 $-[class]$$[iface]$
 #include "$relpath$"
-$-[/iface]$$[/class]$
+$-[/iface]$$[iface_data]$
+#include "$relpath$"
+$-[/iface_data]$$[/class]$
 #include "$hdr$"
 
 #include <comm/ref.h>
@@ -20,9 +22,11 @@ $-[/pastedefers]$
 
 using namespace coid;
 
-$-[class iface.empty!]$
+$-[class]$
+$-(if iface.empty!)$
 static_assert( std::is_base_of<policy_intrusive_base, ::$ns rest="::" after="::"$$class$>::value, "class '$class$' must be derived from policy_intrusive_base");
 
+$-(/if)$
 $-[iface]$
 ////////////////////////////////////////////////////////////////////////////////
 // interface $[ns]$$@value$::$[/ns]$$name$ of class $..class$
@@ -37,10 +41,10 @@ class $name$_dispatcher : public $name$
 
 private:
 
-    static coid::binstring* _capture;
-    static uint16 _instid;
-    static ifn_t* _vtable1;
-    static ifn_t* _vtable2;
+    inline static coid::binstring* _capture = 0;
+    inline static uint16 _instid = 0xffffU;
+    inline static ifn_t* _vtable1 = 0;
+    inline static ifn_t* _vtable2 = 0;
 
     static ifn_t* get_vtable()
     {
@@ -243,10 +247,6 @@ $-[/method]$
     }
 };
 
-coid::binstring* $name$_dispatcher::_capture = 0;
-uint16 $name$_dispatcher::_instid = 0xffffU;
-intergen_interface::ifn_t* $name$_dispatcher::_vtable2 = 0;
-intergen_interface::ifn_t* $name$_dispatcher::_vtable1 = 0;
 $-(if varname?)$
 
 iref<$name$> $name$::intergen_active_interface(::$classnsx rest="::" after="::"$$class$* host)
@@ -333,4 +333,101 @@ $[..nss]$} //namespace $@value$
 $[/..nss]-$
 $(/if)-$
 
-$-[/iface]$$[/class]$
+$-[/iface]$
+$-[iface_data]$
+////////////////////////////////////////////////////////////////////////////////
+// data interface $[ns]$$@value$::$[/ns]$$name$ of class $..class$
+$[ns]$
+namespace $@value$ {
+$-[/ns]$
+
+///
+class $name$_data_dispatcher : public $name$
+{
+private:
+
+    inline static ifn_t _fn_table[] = {$-[method !static?]$
+ $-(if hasifc?)$
+        reinterpret_cast<ifn_t>(reinterpret_cast<$return.type$(intergen_data_interface::*)($[args rest=","]$ $-(if fnarg?)$$type$(*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if const?)$const$(/if)$>(&$name$__ifc_wrapper)),
+ $-(elif)$
+        reinterpret_cast<ifn_t>(reinterpret_cast<$return.type$(intergen_data_interface::*)($[args rest=","]$ $-(if fnarg?)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if const?)$const$(/if)$>(&::$....ns rest="::" after="::"$$....class$::$intname$)),
+ $-(/if)$
+$-[/method]$
+        nullptr
+    };
+    inline static icr_t _cr_table[] = {$-[method creator? !ifccr?]$
+        reinterpret_cast<icr_t>(&::$....ns rest="::" after="::"$$....class$::$intname$),
+$-[/method]$
+        nullptr
+    };
+$-[method hasifc?]$
+
+    $return.type$ $name$__ifc_wrapper($[args rest=", "]$$type$ $name$$[/args]$)$(if const?)$ const$(/if)$
+    {
+        iref<$return.ifc$> __ret__ = $name$($[args rest=","]$$name$$[/args]$);
+        if (!__ret__)
+            return 0;
+
+        typedef iref<$return.ifc$> (*fn_wrap)(intergen_data_interface*, intergen_interface*);
+        static fn_wrap wrapper = reinterpret_cast<fn_wrap>(
+            coid::interface_register::get_interface_creator("$ns rest="::" after="::"$$name$@wrapper"));
+
+        return wrapper ? wrapper(__ret__.get(), new $..name$_data_dispatcher) : 0;
+    }
+$[/method]-$
+$-[event pure?]$
+
+    $return.type$ $name$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if fnarg?)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if const?)$ const$(/if)$ override { throw coid::exception("unreachable"); }
+$-[/event]$
+
+protected:
+
+    COIDNEWDELETE($name$_data_dispatcher);
+
+    $name$_data_dispatcher() = default;
+    ~$name$_data_dispatcher() = default;
+
+public:
+
+    static void register_interfaces(bool on)
+    {
+        coid::ifcman::set_type_ifc<$name$>($hash$, _cr_table, _fn_table);
+    }
+};
+
+
+//auto-register the available interface creators
+LOCAL_SINGLETON_DEF(ifc_autoregger) $name$_autoregger = new ifc_autoregger(&$name$_data_dispatcher::register_interfaces);
+
+void* force_register_$name$() {
+    LOCAL_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&$name$_data_dispatcher::register_interfaces);
+    return autoregger.get();
+}
+
+$-[ns]$
+} //namespace $@value$
+$-[/ns]$
+
+$-(if event?)$
+// events
+
+$[..nss]$namespace $@value$ {
+$[/..nss]-$
+
+$-[event !implicit? !inherit?]$
+$return.type$ $....class$::$intname$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if fnarg?)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if const?)$ const$(/if)$
+{
+    if (!$..varname$ $-(if ..inhmask?)$ || ($..varname$->iface<$..ns rest="::" after="::"$$..name$>()->_inhmask & (1<<$..ifc_bit$)) == 0$(/if)$) $-(if default_event_body?)$
+        { $default_event_body$ }$(elif)$
+        throw coid::exception() << "$name$" << " handler not implemented";$(/if)$
+    else
+        return $..varname$->iface<$..ns rest="::" after="::"$$..name$>()->$name$($[args rest=", "]$$name$$[/args]$);
+}
+$[/event]-$
+
+$[..nss]$} //namespace $@value$
+$[/..nss]-$
+$(/if)-$
+
+$-[/iface_data]$
+$-[/class]$

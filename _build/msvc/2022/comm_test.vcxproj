@@ -383,6 +383,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\comm_test\atomic-test.cpp" />
+    <ClCompile Include="..\..\..\comm_test\intergen\data_client_test.cpp" />
     <ClCompile Include="..\..\..\comm_test\intergen\interface.intergen.cpp" />
     <ClCompile Include="..\..\..\comm_test\intergen\client_test.cpp" />
     <ClCompile Include="..\..\..\comm_test\job.cpp" />
@@ -401,7 +402,13 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\comm_test\intergen\ifc\client.h" />
     <ClInclude Include="..\..\..\comm_test\intergen\ifc\client.js.h" />
+    <ClInclude Include="..\..\..\comm_test\intergen\ifc\client.lua.h" />
     <ClInclude Include="..\..\..\comm_test\intergen\ifc\client2.h" />
+    <ClInclude Include="..\..\..\comm_test\intergen\ifc\client2.js.h" />
+    <ClInclude Include="..\..\..\comm_test\intergen\ifc\client2.lua.h" />
+    <ClInclude Include="..\..\..\comm_test\intergen\ifc\data_ifc.h" />
+    <ClInclude Include="..\..\..\comm_test\intergen\ifc\data_ifc.js.h" />
+    <ClInclude Include="..\..\..\comm_test\intergen\ifc\data_ifc.lua.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="comm_static.vcxproj">

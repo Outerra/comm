@@ -111,5 +111,28 @@ public:
     ifc_fn void test() {}
 };
 
+
+struct data
+{
+    ifc_struct(data_ifc, "ifc/");
+
+    ifc_fn static data* creator() {
+        return new data;
+    }
+
+    ifc_fn void set_a(int b) {
+        _b = b;
+    }
+
+    ifc_fn void set_b(const coid::token& a, ifc_out int* b) {
+        _a = a;
+        *b = _b;
+    }
+
+    int _b;
+    coid::charstr _a;
+};
+
+
 } // namespace ab
 } // namespace cd

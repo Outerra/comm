@@ -15,7 +15,7 @@
  *
  * The Initial Developer of the Original Code is
  * Outerra.
- * Portions created by the Initial Developer are Copyright (C) 2013-2019
+ * Portions created by the Initial Developer are Copyright (C) 2013-2022
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -40,6 +40,7 @@
 
 #include "../ref.h"
 #include "../interface.h"
+#include "../typeseq.h"
 #include "../local.h"
 #include "../log/logger.h"
 
@@ -50,14 +51,16 @@ namespace coid {
 ///Interface class decoration keyword
 //@param name desired name of the interface class, optionally with namespace and base interface [ns:]name [: baseifc]
 //@param path relative path (and optional file name) of the interface header file
+//@param base base interface
 //@example ifc_class(ns:client, "../ifc")
 #define ifc_class(name,path)
-#define ifc_classx(name,orig)
+#define ifc_classx(name,base)
 
 ///Interface class decoration keyword for bi-directional interfaces with event methods that can be overriden by the client.
 //@param name desired name of the interface class, optionally with namespace and base interface [ns:]name [: baseifc]
 //@param path relative path (and optional file name) of the interface header file
 //@param var name for the variable representing the connected client
+//@param base base interface
 //@note clean_ptr is an intentional weak link, since interface already holds ref to the host
 //@example ifc_class_var(ns::client, "../ifc", _ifc)
 #define ifc_class_var(name,path,var) coid::clean_ptr<intergen_interface> var
@@ -69,6 +72,13 @@ namespace coid {
 //@example ifc_class_virtual(ns:base, "../ifc")
 //@example ifc_class(ns::client : ns::base, "../ifc")
 #define ifc_class_virtual(name,path)
+
+
+///Data interface (not refcounted)
+//@param name desired name of the interface class, optionally with namespace and base interface [ns:]name [: baseifc]
+//@param path relative path (and optional file name) of the interface header file
+#define ifc_struct(name,path)
+
 
 ///Interface function decoration keyword: such decorated method will be added into the interface
 //@example ifc_fn void fn(int a, ifc_out int& b);
@@ -313,6 +323,99 @@ protected:
     }
 };
 
+///Call interface vtable method
+#define VT_CALL(R,F,I) ((*_host).*(reinterpret_cast<R(policy_intrusive_base::*)F>(_vtable[I])))
+
+////////////////////////////////////////////////////////////////////////////////
+struct intergen_data_interface
+{
+    typedef void (intergen_data_interface::* ifn_t)();
+    typedef void (* icr_t)();
+
+protected:
+
+    static void log_mismatch(const coid::token& clsname, const coid::token& ifckey, const coid::token& hash)
+    {
+        //check if interface missing or different version
+        coid::dynarray<coid::interface_register::creator> tmp;
+        coid::interface_register::get_interface_creators(ifckey, "", tmp);
+
+        ref<coid::logmsg> msg = coid::interface_register::canlog(coid::log::warning, clsname, 0);
+        if (msg) {
+            coid::charstr& str = msg->str();
+            if (tmp.size() > 0) {
+                str << "interface creator version mismatch (requested " << ifckey << hash << ", found ";
+
+                uints n = tmp.size();
+                str << tmp[0].name;
+                for (uints i = 1; i < n; ++i)
+                    str << ", " << tmp[i].name;
+
+                str << ')';
+            }
+            else
+                str << "interface creator not found (" << ifckey << ')';
+        }
+    }
+};
+
+
+#define DT_CALL(R,F,I) (this->*(reinterpret_cast<R(intergen_data_interface::*)F>(_fn_table[I])))
+
+
+
+COID_NAMESPACE_BEGIN
+
+class ifcman
+{
+public:
+
+    struct data_ifc {
+        const type_sequencer::entry* _type = 0;
+        intergen_data_interface::icr_t* _cr_table = 0;
+        intergen_data_interface::ifn_t* _fn_table = 0;
+
+        uint64 _hash = 0;
+    };
+
+
+    template <class T>
+    static const data_ifc* get_type_ifc(uint64 hash) {
+        ifcman& m = get();
+        uint id = m._seq.id<T>();
+        return id < m._clients.size() && m._clients[id]._hash == hash ? &m._clients[id] : nullptr;
+    }
+
+    template <class T>
+    static intergen_data_interface::ifn_t* set_type_ifc(uint64 hash, intergen_data_interface::icr_t* cr_table, intergen_data_interface::ifn_t* fn_table) {
+        ifcman& m = get();
+        m._seq.assign<T>([&](int id, const type_sequencer::entry& en) {
+            data_ifc& dc = m._clients.get_or_add(id);
+            dc._fn_table = fn_table;
+            dc._cr_table = cr_table;
+            dc._type = &en;
+            dc._hash = hash;
+        });
+        return fn_table;
+    }
+
+private:
+
+    static ifcman& get() {
+        LOCAL_PROCWIDE_SINGLETON_DEF(ifcman) _m = new ifcman;
+        return *_m;
+    }
+
+    ifcman() {
+        _clients.reserve_virtual(8192);
+    }
+
+    type_sequencer _seq;
+    dynarray32<data_ifc> _clients;
+};
+
+COID_NAMESPACE_END
+
 ////////////////////////////////////////////////////////////////////////////////
 ///Helper class for interface methods to return a derived class of interface client, when
 /// the interface contains events that can/should be overriden by the client
@@ -376,12 +479,6 @@ struct ifc_autoregger
 private:
     register_fn _fn;
 };
-
-////////////////////////////////////////////////////////////////////////////////
-
-///Call interface vtable method
-#define VT_CALL(R,F,I) ((*_host).*(reinterpret_cast<R(policy_intrusive_base::*)F>(_vtable[I])))
-
 
 ///Force registration of an interface declared in a statically-linked library
 #define FORCE_REGISTER_LIBRARY_INTERFACE(ns,ifc) \

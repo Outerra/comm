@@ -14,35 +14,7 @@
 // [inputs] $(ProjectDir)..\..\..\intergen\metagen
 // $(ProjectDir)..\..\..\intergen\test\test.hpp $(ProjectDir)..\..\..\intergen\metagen
 
-//#define ENABLE_JSC
-
 stdoutstream out;
-
-////////////////////////////////////////////////////////////////////////////////
-const token iglexer::MARK = "rl_cmd";
-const token iglexer::MARKP = "rl_cmd_p";
-const token iglexer::MARKS = "rl_cmd_s";
-const token iglexer::CLASS = "class";
-const token iglexer::STRUCT = "struct";
-const token iglexer::TEMPL = "template";
-const token iglexer::NAMESPC = "namespace";
-
-const token iglexer::IFC_CLASS = "ifc_class";
-const token iglexer::IFC_CLASSX = "ifc_classx";
-const token iglexer::IFC_CLASS_VAR = "ifc_class_var";
-const token iglexer::IFC_CLASSX_VAR = "ifc_classx_var";
-const token iglexer::IFC_CLASS_VIRTUAL = "ifc_class_virtual";
-const token iglexer::IFC_FN = "ifc_fn";
-const token iglexer::IFC_FNX = "ifc_fnx";
-const token iglexer::IFC_EVENT = "ifc_event";
-const token iglexer::IFC_EVENTX = "ifc_eventx";
-const token iglexer::IFC_EVBODY = "ifc_evbody";
-const token iglexer::IFC_DEFAULT_BODY = "ifc_default_body";
-const token iglexer::IFC_DEFAULT_EMPTY = "ifc_default_empty";
-const token iglexer::IFC_INOUT = "ifc_inout";
-const token iglexer::IFC_IN = "ifc_in";
-const token iglexer::IFC_OUT = "ifc_out";
-
 
 ////////////////////////////////////////////////////////////////////////////////
 ///
@@ -83,7 +55,7 @@ struct File
 
 ////////////////////////////////////////////////////////////////////////////////
 template<class T>
-static int generate( int nifc, const T& t, const charstr& patfile, const charstr& outfile, __time64_t mtime )
+static int generate( bool empty, const T& t, const charstr& patfile, const charstr& outfile, __time64_t mtime )
 {
     directory::xstat st;
     bifstream bit;
@@ -96,7 +68,7 @@ static int generate( int nifc, const T& t, const charstr& patfile, const charstr
     if (st.st_mtime > mtime)
         mtime = st.st_mtime;
 
-    if (nifc == 0) {
+    if (empty) {
         //create an empty file to satisfy dependency checker
         directory::set_writable(outfile, true);
         directory::truncate(outfile, 0);
@@ -186,6 +158,90 @@ int generate_rl( const File& cgf, charstr& patfile, const token& outfile )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+bool generate_ifc(File& file, Class& cls, Interface& ifc, timet mtime, charstr& tdir, charstr& fdir)
+{
+    uint tlen = tdir.len();
+    uint flen = fdir.len();
+
+    ifc.compute_hash(intergen_interface::VERSION);
+
+    //interface.h
+    token end;
+
+    if (ifc.relpath.ends_with_icase(end = ".hpp") || ifc.relpath.ends_with_icase(end = ".hxx") || ifc.relpath.ends_with_icase(end = ".h"))
+        fdir << ifc.relpath;    //contains the file name already
+    else if (ifc.relpath.last_char() == '/' || ifc.relpath.last_char() == '\\')
+        fdir << ifc.relpath << ifc.name << ".h";
+    else if (ifc.relpath)
+        fdir << ifc.relpath << '/' << ifc.name << ".h";
+    else
+        fdir << ifc.name << ".h";
+
+    ifc.relpath.set_from_range(fdir.ptr() + flen, fdir.ptre());
+    directory::compact_path(ifc.relpath);
+    ifc.relpath.replace('\\', '/');
+
+    ifc.relpathjs = ifc.relpath;
+    ifc.relpathjs.ins(-(int)end.len(), ".js");
+
+    ifc.relpathlua = ifc.relpath;
+    ifc.relpathlua.ins(-(int)end.len(), ".lua");
+
+    ifc.basepath = ifc.relpath;
+    ifc.hdrfile = ifc.basepath.cut_right_back('/', token::cut_trait_keep_sep_with_source_default_full());
+
+    ifc.srcfile = &file.fnameext;
+    ifc.srcclass = &cls.classname;
+    ifc.srcnamespc = &cls.namespaces;
+    ifc.srcclassorstruct = &cls.classorstruct;
+
+    uints nm = ifc.method.size();
+    for (uints m = 0; m < nm; ++m) {
+        if (ifc.method[m].bstatic)
+            ifc.storage = ifc.method[m].storage;
+    }
+
+    tdir << (ifc.bdataifc ? "interface-data.h.mtg" : "interface.h.mtg");
+
+    if (generate(false, ifc, tdir, fdir, mtime) < 0)
+        return false;
+
+    if (!ifc.bdataifc) {
+        //interface.js.h
+        fdir.resize(flen);
+        fdir << ifc.relpathjs;
+
+        tdir.resize(tlen);
+        tdir << "interface.js.h.mtg";
+
+        if (generate(false, ifc, tdir, fdir, mtime) < 0)
+            return false;
+
+        //iterface.lua.h
+        tdir.resize(tlen);
+        tdir << "interface.lua.h.mtg";
+
+        fdir.resize(flen);
+        fdir << ifc.relpathlua;
+
+        if (generate(false, ifc, tdir, fdir, mtime) < 0)
+            return false;
+    }
+
+    // class interface docs
+    tdir.resize(tlen);
+    tdir << "interface.doc.mtg";
+
+    fdir.resize(-int(token(fdir).cut_right_group_back("\\/").len()));
+    fdir << "/docs";
+    directory::mkdir(fdir);
+
+    fdir << '/' << ifc.name << ".html";
+
+    return generate(false, ifc, tdir, fdir, mtime) >= 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 void generate_ig(File& file, charstr& tdir, charstr& fdir)
 {
     directory::treat_trailing_separator(tdir, true);
@@ -212,101 +268,24 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
     {
         Class& cls = file.classes[c];
 
-        //ig
-        int ni = (int)cls.iface.size();
-        for (int i = 0; i < ni; ++i)
-        {
-            Interface& ifc = cls.iface[i];
-
-            ifc.compute_hash(intergen_interface::VERSION);
-
+        //refc interfaces
+        for (Interface& ifc : cls.iface_refc) {
             fdir.resize(flen);
             tdir.resize(tlen);
 
-            //interface.h
-            token end;
-
-            if (ifc.relpath.ends_with_icase(end = ".hpp") || ifc.relpath.ends_with_icase(end = ".hxx") || ifc.relpath.ends_with_icase(end = ".h"))
-                fdir << ifc.relpath;    //contains the file name already
-            else if (ifc.relpath.last_char() == '/' || ifc.relpath.last_char() == '\\')
-                fdir << ifc.relpath << ifc.name << ".h";
-            else if (ifc.relpath)
-                fdir << ifc.relpath << '/' << ifc.name << ".h";
-            else
-                fdir << ifc.name << ".h";
-
-            ifc.relpath.set_from_range(fdir.ptr() + flen, fdir.ptre());
-            directory::compact_path(ifc.relpath);
-            ifc.relpath.replace('\\', '/');
-
-            ifc.relpathjs = ifc.relpath;
-            ifc.relpathjs.ins(-(int)end.len(), ".js");
-
-            ifc.relpathjsc = ifc.relpath;
-            ifc.relpathjsc.ins(-(int)end.len(), ".jsc");
-
-            ifc.relpathlua = ifc.relpath;
-            ifc.relpathlua.ins(-(int)end.len(), ".lua");
-
-            ifc.basepath = ifc.relpath;
-            ifc.hdrfile = ifc.basepath.cut_right_back('/', token::cut_trait_keep_sep_with_source_default_full());
-
-            ifc.srcfile = &file.fnameext;
-            ifc.srcclass = &cls.classname;
-            ifc.srcnamespc = &cls.namespaces;
-
-            uints nm = ifc.method.size();
-            for (uints m = 0; m < nm; ++m) {
-                if (ifc.method[m].bstatic)
-                    ifc.storage = ifc.method[m].storage;
-            }
-
-            tdir << "interface.h.mtg";
-
-            if (generate(ni, ifc, tdir, fdir, mtime) < 0)
+            if (!generate_ifc(file, cls, ifc, mtime, tdir, fdir))
                 return;
 
-            //interface.js.h
+            ++nifc;
+        }
+
+        //data interfaces
+        for (Interface& ifc : cls.iface_data) {
             fdir.resize(flen);
-            fdir << ifc.relpathjs;
-
             tdir.resize(tlen);
-            tdir << "interface.js.h.mtg";
 
-            if (generate(ni, ifc, tdir, fdir, mtime) < 0)
+            if (!generate_ifc(file, cls, ifc, mtime, tdir, fdir))
                 return;
-#if ENABLE_JSC
-            //interface.jsc.h
-            fdir.resize(flen);
-            fdir << ifc.relpathjsc;
-
-            tdir.resize(tlen);
-            tdir << "interface.jsc.h.mtg";
-
-            if (generate(ni, ifc, tdir, fdir, file.mtime) < 0)
-                return;
-#endif
-            //iterface.lua.h
-            tdir.resize(tlen);
-            tdir << "interface.lua.h.mtg";
-
-            fdir.resize(flen);
-            fdir << ifc.relpathlua;
-
-            if (generate(ni, ifc, tdir, fdir, mtime) < 0)
-                return;
-
-            // class interface docs
-            tdir.resize(tlen);
-            tdir << "interface.doc.mtg";
-
-            fdir.resize(-int(token(fdir).cut_right_group_back("\\/").len()));
-            fdir << "/docs";
-            directory::mkdir(fdir);
-
-            fdir << '/' << ifc.name << ".html";
-
-            generate(ni, ifc, tdir, fdir, mtime);
 
             ++nifc;
         }
@@ -319,23 +298,14 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
     tdir.resize(tlen);
     tdir << "file.intergen.cpp.mtg";
 
-    generate(nifc, file, tdir, fdir, mtime);
+    generate(nifc == 0, file, tdir, fdir, mtime);
 
     //file.intergen.js.cpp
     fdir.ins(-4, ".js");
     tdir.ins(-8, ".js");
 
-    generate(nifc, file, tdir, fdir, mtime);
-#if ENABLE_JSC
-    //file.intergen.jsc.cpp
-    fdir.resize(flen);
-    fdir << file.fname << ".intergen.jsc.cpp";
+    generate(nifc == 0, file, tdir, fdir, mtime);
 
-    tdir.resize(tlen);
-    tdir << "file.intergen.jsc.cpp.mtg";
-
-    generate(nifc, file, tdir, fdir, mtime);
-#endif
     //file.intergen.lua.cpp
     fdir.resize(flen);
     fdir << file.fname << ".intergen.lua.cpp";
@@ -343,7 +313,7 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
     tdir.resize(tlen);
     tdir << "file.intergen.lua.cpp.mtg";
 
-    generate(nifc, file, tdir, fdir, mtime);
+    generate(nifc == 0, file, tdir, fdir, mtime);
 
     tdir.resize(tlen);
     fdir.resize(flen);
@@ -593,7 +563,9 @@ int File::parse(token path)
         for (; 0 != (mt = find_class(lex, namespc, templarg)); ++nm)
         {
             Class* pc = classes.add();
-            if (!pc->parse(lex, templarg, namespc, &pasters, irefargs) || (pc->method.size() == 0 && pc->iface.size() == 0)) {
+            pc->classorstruct = lex.last();
+
+            if (!pc->parse(lex, templarg, namespc, &pasters, irefargs) || (pc->method.size() == 0 && pc->iface_refc.size() == 0 && pc->iface_data.size() == 0)) {
                 classes.resize(-1);
             }
         }

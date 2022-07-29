@@ -48,29 +48,30 @@ public:
     int IFC_LINE_COMMENT, IFC_BLOCK_COMMENT, IFC_DISPATCH_LINE_COMMENT, IFC_DISPATCH_BLOCK_COMMENT;
     int SLCOM, MLCOM;
 
-    static const token MARK;
-    static const token MARKP;
-    static const token MARKS;
-    static const token CLASS;
-    static const token STRUCT;
-    static const token TEMPL;
-    static const token NAMESPC;
+    inline static const token MARK = "rl_cmd";
+    inline static const token MARKP = "rl_cmd_p";
+    inline static const token MARKS = "rl_cmd_s";
+    inline static const token CLASS = "class";
+    inline static const token STRUCT = "struct";
+    inline static const token TEMPL = "template";
+    inline static const token NAMESPC = "namespace";
 
-    static const token IFC_CLASS;
-    static const token IFC_CLASSX;
-    static const token IFC_CLASS_VAR;
-    static const token IFC_CLASSX_VAR;
-    static const token IFC_CLASS_VIRTUAL;
-    static const token IFC_FN;
-    static const token IFC_FNX;
-    static const token IFC_EVENT;
-    static const token IFC_EVENTX;
-    static const token IFC_DEFAULT_BODY;
-    static const token IFC_DEFAULT_EMPTY;
-    static const token IFC_EVBODY;
-    static const token IFC_INOUT;
-    static const token IFC_IN;
-    static const token IFC_OUT;
+    inline static const token IFC_CLASS = "ifc_class";
+    inline static const token IFC_CLASSX = "ifc_classx";
+    inline static const token IFC_CLASS_VAR = "ifc_class_var";
+    inline static const token IFC_CLASSX_VAR = "ifc_classx_var";
+    inline static const token IFC_CLASS_VIRTUAL = "ifc_class_virtual";
+    inline static const token IFC_STRUCT = "ifc_struct";
+    inline static const token IFC_FN = "ifc_fn";
+    inline static const token IFC_FNX = "ifc_fnx";
+    inline static const token IFC_EVENT = "ifc_event";
+    inline static const token IFC_EVENTX = "ifc_eventx";
+    inline static const token IFC_EVBODY = "ifc_evbody";
+    inline static const token IFC_DEFAULT_BODY = "ifc_default_body";
+    inline static const token IFC_DEFAULT_EMPTY = "ifc_default_empty";
+    inline static const token IFC_INOUT = "ifc_inout";
+    inline static const token IFC_IN = "ifc_in";
+    inline static const token IFC_OUT = "ifc_out";
 
 
     virtual void on_error_prefix( bool rules, charstr& dst, int line ) override
@@ -370,7 +371,7 @@ struct Interface
     dynarray<charstr> nss;
     charstr name;
     charstr nsname;
-    charstr relpath, relpathjs, relpathjsc, relpathlua;
+    charstr relpath, relpathjs, relpathlua;
     charstr hdrfile;
     charstr storage;
     charstr varname;
@@ -401,6 +402,7 @@ struct Interface
 
     charstr* srcfile = 0;
     charstr* srcclass = 0;
+    charstr* srcclassorstruct = 0;
     dynarray<charstr>* srcnamespc = 0;
 
     uint hash;
@@ -415,6 +417,7 @@ struct Interface
 
     bool bvirtual = false;
     bool bdefaultcapture = false;
+    bool bdataifc = false;
 
 
     void copy_methods(Interface& o)
@@ -485,6 +488,7 @@ struct Interface
 
         srcfile = o.srcfile;
         srcclass = o.srcclass;
+        srcclassorstruct = o.srcclassorstruct;
         srcnamespc = o.srcnamespc;
 
         hash = o.hash;
@@ -523,43 +527,44 @@ struct Interface
     friend metastream& operator || (metastream& m, Interface& p)
     {
         return m.compound("Interface", [&]()
-            {
-                m.member("ns", p.nss);
-                m.member("name", p.name);
-                m.member("relpath", p.relpath);
-                m.member("relpathjs", p.relpathjs);
-                m.member("relpathjsc", p.relpathjsc);
-                m.member("relpathlua", p.relpathlua);
-                m.member("hdrfile", p.hdrfile);
-                m.member("storage", p.storage);
-                m.member("method", p.method);
-                m.member("getter", p.getter);
-                m.member("setter", p.setter);
-                m.member("onconnect", p.on_connect);
-                m.member("onconnectev", p.on_connect_ev);
-                m.member("onunload", p.on_unload);
-                m.member_type<bool>("hasprops", [](bool) {}, [&]() { return p.oper_get>=0; });
-                m.member("nifcmethods", p.nifc_methods);
-                m.member("varname", p.varname);
-                m.member("event", p.event);
-                m.member("destroy", p.destroy);
-                m.member("hash", p.hash);
-                m.member("inhmask", p.inhmask);
-                m.member("ifc_bit", p.ifc_bit);
-                m.member("comments", p.comments);
-                m.member("docs", p.docs);
-                m.member("pasters", p.pasters);
-                m.member("pasteafters", p.pasteafters);
-                m.member("pasteinners", p.pasteinners);
-                m.member_indirect("srcfile", p.srcfile);
-                m.member_indirect("class", p.srcclass);
-                m.member_indirect("classnsx", p.srcnamespc);
-                m.member("base", p.base);
-                m.member("baseclass", p.baseclass);
-                m.member("basepath", p.basepath);
-                m.member("virtual", p.bvirtual);
-                m.member("default_creator", p.default_creator);
-            });
+        {
+            m.member("ns", p.nss);
+            m.member("name", p.name);
+            m.member("relpath", p.relpath);
+            m.member("relpathjs", p.relpathjs);
+            m.member("relpathlua", p.relpathlua);
+            m.member("hdrfile", p.hdrfile);
+            m.member("storage", p.storage);
+            m.member("method", p.method);
+            m.member("getter", p.getter);
+            m.member("setter", p.setter);
+            m.member("onconnect", p.on_connect);
+            m.member("onconnectev", p.on_connect_ev);
+            m.member("onunload", p.on_unload);
+            m.member_type<bool>("hasprops", [](bool) {}, [&]() { return p.oper_get >= 0; });
+            m.member("nifcmethods", p.nifc_methods);
+            m.member("varname", p.varname);
+            m.member("event", p.event);
+            m.member("destroy", p.destroy);
+            m.member("hash", p.hash);
+            m.member("inhmask", p.inhmask);
+            m.member("ifc_bit", p.ifc_bit);
+            m.member("comments", p.comments);
+            m.member("docs", p.docs);
+            m.member("pasters", p.pasters);
+            m.member("pasteafters", p.pasteafters);
+            m.member("pasteinners", p.pasteinners);
+            m.member_indirect("srcfile", p.srcfile);
+            m.member_indirect("class", p.srcclass);
+            m.member_indirect("classnsx", p.srcnamespc);
+            m.member_indirect("classorstruct", p.srcclassorstruct);
+            m.member("base", p.base);
+            m.member("baseclass", p.baseclass);
+            m.member("basepath", p.basepath);
+            m.member("virtual", p.bvirtual);
+            m.member("dataifc", p.bdataifc);
+            m.member("default_creator", p.default_creator);
+        });
     }
 };
 
@@ -567,16 +572,19 @@ struct Interface
 ///
 struct Class
 {
+    charstr classorstruct;
     charstr classname;
     charstr templarg;
     charstr templsub;
     charstr namespc;                    //< namespace with the trailing :: (if not empty)
     charstr ns;                         //< namespace without the trailing ::
-    bool noref;
+    bool noref = true;
+    bool datahost = false;              //< data-type host
 
     dynarray<charstr> namespaces;
     dynarray<Method> method;
-    dynarray<Interface> iface;
+    dynarray<Interface> iface_refc;
+    dynarray<Interface> iface_data;
 
     dynarray<paste_block> classpasters;
 
@@ -586,17 +594,20 @@ struct Class
     friend metastream& operator || (metastream& m, Class& p)
     {
         return m.compound("Class", [&]()
-            {
-                m.member("class", p.classname);
-                m.member("templarg", p.templarg);
-                m.member("templsub", p.templsub);
-                m.member("ns", p.ns);
-                m.member("nsx", p.namespc);
-                m.member("noref", p.noref);
-                m.member("method", p.method);
-                m.member("iface", p.iface);
-                m.member("nss", p.namespaces);
-            });
+        {
+            m.member("classorstruct", p.classorstruct);
+            m.member("class", p.classname);
+            m.member("templarg", p.templarg);
+            m.member("templsub", p.templsub);
+            m.member("ns", p.ns);
+            m.member("nsx", p.namespc);
+            m.member("noref", p.noref);
+            m.member("datahost", p.datahost);
+            m.member("method", p.method);
+            m.member("iface", p.iface_refc);
+            m.member("iface_data", p.iface_data);
+            m.member("nss", p.namespaces);
+        });
     }
 };
 

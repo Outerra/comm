@@ -318,10 +318,13 @@ struct slot : storage<L, Es...>
 
 #endif
 
+void data_client_test();
+
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
 {
     //compot();
+    data_client_test();
 
     singleton_test();
 

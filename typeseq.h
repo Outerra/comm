@@ -65,6 +65,12 @@ public:
 
     virtual ~type_sequencer() {}
 
+    struct entry {
+        token type_name;
+        size_t size;
+        int id;
+    };
+
     /// @brief Get assigned id for type T
     /// @tparam T
     /// @return cached or assigned id
@@ -97,19 +103,33 @@ public:
 
     /// @brief Pre-allocate type, with possibility to change the id value
     /// @tparam T
+    /// @param cbk optional callback executed under mutex lock
     /// @return Reference to the id value. Value of -1 is reserved for uninitialized state.
     template <class T>
-    int& assign()
+    int assign()
     {
         constexpr token ti = token::type_name<T>();
+        comm_mutex_guard g(_mux);
         return *allocate(ti, sizeof(T), true);
     }
 
-    struct entry {
-        token type_name;
-        size_t size;
-        int id;
-    };
+    /// @brief Pre-allocate type, with possibility to change the id value
+    /// @tparam T
+    /// @param cbk optional callback executed under mutex lock
+    /// @return Reference to the id value. Value of -1 is reserved for uninitialized state.
+    template <class T>
+    int assign(const function<void(int&, const entry&)>& cbk)
+    {
+        constexpr token ti = token::type_name<T>();
+        comm_mutex_guard g(_mux);
+        int id = *allocate(ti, sizeof(T), true);
+        if (cbk) {
+            int oldid = id;
+            cbk(id, _types[id]);
+            _types[oldid].id = id;
+        }
+        return id;
+    }
 
     const dynarray32<entry>& types() const {
         return _types;
@@ -130,7 +150,6 @@ private:
     //virtual here is for always calling the main module implementation and not (possibly) outdated dll one
     virtual int* allocate(const token& type_name, size_t size, bool create)
     {
-        comm_mutex_guard g(_mux);
         for (entry& en : _types) {
             if (en.type_name == type_name)
                 return &en.id;
