@@ -1527,10 +1527,11 @@ public:
     T* find_or_push(const K& key, bool* isnew) {
         T* value = contains(key);
 
-        if (!value) {
-            if (isnew) *isnew = true;
+        if (isnew)
+            *isnew = value == 0;
+
+        if (!value)
             value = push();
-        }
 
         return value;
     }
@@ -1544,10 +1545,11 @@ public:
     T* find_or_push(const K& key, const FUNC& fn, bool* isnew) {
         T* value = contains(key, fn);
 
-        if (!value) {
-            if (isnew) *isnew = true;
+        if (isnew)
+            *isnew = value == 0;
+
+        if (!value)
             value = push();
-        }
 
         return value;
     }
@@ -1561,10 +1563,11 @@ public:
         uints index;
         T* value = contains_sorted(key, &index);
 
-        if (!value) {
-            if (isnew) *isnew = true;
+        if (isnew)
+            *isnew = value == 0;
+
+        if (!value)
             value = ins(index);
-        }
 
         return value;
     }
@@ -1579,10 +1582,11 @@ public:
         uints index;
         T* value = contains_sorted(key, fn, &index);
 
-        if (!value) {
-            if (isnew) *isnew = true;
+        if (isnew)
+            *isnew = value == 0;
+
+        if (!value)
             value = ins(index);
-        }
 
         return value;
     }
