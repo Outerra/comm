@@ -4,6 +4,7 @@
 
 COID_NAMESPACE_BEGIN
 
+
 const taskmaster::signal_handle taskmaster::invalid_signal = taskmaster::signal_handle(taskmaster::signal_handle::invalid); 
 
 taskmaster::taskmaster(uint nthreads, uint nlowprio_threads)
