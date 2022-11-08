@@ -2884,10 +2884,7 @@ public:
     constexpr token_literal(const token_literal& tok) : token(static_cast<const token&>(tok))
     {}
 
-    ///String literal constructor, optimization to have fast literal strings available as tokens
-    //@note tries to detect and if passed in a char array instead of string literal, by checking if the last char is 0
-    // and the preceding char is not 0
-    // Call token::from_cstring(array) to force treating the array as a zero-terminated string
+    ///String literal constructor
     template <int N>
     coid_constexpr_for token_literal(const char(&str)[N])
         : token(str, str + N - 1)
