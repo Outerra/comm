@@ -48,7 +48,7 @@ public:
 
     ///Interface name (full ns::class string)
     inline static const coid::tokenhash& IFCNAME = "data_ifc"_T;
-    
+
 private:
 
     inline static const coid::ifcman::data_ifc* _difc = 0;
