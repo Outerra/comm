@@ -37,6 +37,7 @@
 *
 * ***** END LICENSE BLOCK ***** */
 
+#include <algorithm>
 #include "function.h"
 #include "namespace.h"
 #include "commtypes.h"
