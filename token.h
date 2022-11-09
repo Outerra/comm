@@ -57,6 +57,12 @@
 #include <string>
 #endif
 
+namespace coid {
+    class token_literal;
+}
+
+constexpr coid::token_literal operator "" _T(const char* s, size_t len);
+
 COID_NAMESPACE_BEGIN
 
 
@@ -2896,6 +2902,13 @@ public:
     constexpr const char* c_str() const {
         return ptr();
     }
+
+    static constexpr token_literal from_literal_string(const char* s, size_t len) {
+        token_literal x;
+        x._ptr = s;
+        x._pte = s + len;
+        return x;
+    }
 };
 
 
@@ -2909,9 +2922,9 @@ COID_NAMESPACE_END
 #endif
 
 ///String literal returning token (_T suffix)
-inline constexpr coid::token operator "" _T(const char* s, size_t len)
+inline constexpr coid::token_literal operator "" _T(const char* s, size_t len)
 {
-    return coid::token(s, len);
+    return coid::token_literal::from_literal_string(s, len);
 }
 
 COID_NAMESPACE_BEGIN
