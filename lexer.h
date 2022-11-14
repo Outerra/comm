@@ -162,7 +162,7 @@ public:
     ///Incremental token hasher used by the lexer
     struct token_hash
     {
-        uint hash;
+        uint hash = 0;
 
         ///Incremental hash value computation
         void inc_char(char c) {
@@ -650,8 +650,7 @@ public:
             sr->escrule = en ? reinterpret_cast<escape_rule*>(*en) : 0;
             if (!sr->escrule)
                 __throw_doesnt_exist(escape);
-
-            if (sr->escrule->type != entity::ESCAPE) {
+            else  if (sr->escrule->type != entity::ESCAPE) {
                 _err = lexception::ERR_ENTITY_BAD_TYPE;
 
                 on_error_prefix(true, _errtext, current_line());
@@ -2217,7 +2216,7 @@ protected:
     struct escape_rule : entity
     {
         char esc = 0;                   //< escape character
-        fn_replace_esc_seq  replfn;     //< custom replacement function
+        fn_replace_esc_seq  replfn = 0; //< custom replacement function
 
         dynarray<escpair> pairs;        //< static replacement pairs
 
@@ -2225,7 +2224,7 @@ protected:
         class back_map {
             enum { BITBLK = 8 * sizeof(uint32) };
 
-            dynarray < const escpair* >
+            dynarray<const escpair*>
                 map;                    //< reverted mapping of escaped symbols for synthesizer
 
             /// bit map for fast lookups whether replacement sequence can start with given character

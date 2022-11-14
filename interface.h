@@ -82,7 +82,7 @@ public:
     struct creator {
         token name;
         union {
-            void* creator_ptr;
+            void* creator_ptr = 0;
             wrapper_fn fn;
             client_fn fn_client;
         };
@@ -132,8 +132,8 @@ public:
 
     struct unload_entry {
         charstr ifcname;
-        uint bstrofs;                   //< position in binstring
-        uint bstrlen;
+        uint bstrofs = 0;                   //< position in binstring
+        uint bstrlen = 0;
     };
 
     ///Send notification about client handlers unloading

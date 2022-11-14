@@ -67,8 +67,8 @@ public:
 
     struct entry {
         token type_name;
-        size_t size;
-        int id;
+        size_t size = 0;
+        int id = -1;
     };
 
     /// @brief Get assigned id for type T
