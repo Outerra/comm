@@ -382,7 +382,7 @@ void logger::enqueue(ref<logmsg>&& msg)
         GUARDTHIS(_mutex);
 
         _filters.for_each([&](const log_filter& f) {
-            if (msg->get_type() <= (log::type)f._log_level && f._module.cmpeq(msg->get_hash()))
+            if (msg->get_type() <= (log::type)f._log_level && (f._module.is_empty() || f._module.cmpeq(msg->get_hash())))
                 f._filter_fun(msg);
         });
 

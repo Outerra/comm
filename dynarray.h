@@ -1914,8 +1914,8 @@ public:
     uints byte_size() const { return _count() * sizeof(T); }
 
     ///Return number of remaining reserved bytes
-    uints reserved_remaining() const { return A::size(_ptr) - sizeof(T) * A::count(_ptr); }
-    uints reserved_total() const { return A::size(_ptr); }
+    uints reserved_remaining() const { return _size() - sizeof(T) * _count(); }
+    uints reserved_total() const { return _size(); }
 
     //@return reserved virtual size in bytes, if the memory was allocaded by reserve_virtual, otherwise 0
     uints reserved_virtual() const { return A::reserved_virtual_size(_ptr); }
