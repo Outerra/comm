@@ -55,7 +55,7 @@ $-(/if)$
 $-(if event?)$
 
     // --- host helpers to check presence of event handlers in scripts ---
-    
+
     enum class event {
 $-[event !static?]$
         $intname$ = $@index$,
