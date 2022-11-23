@@ -55,7 +55,7 @@
     *ASSERT_RET assert in debug build, log in release, on failed assertion causes return from function where used
 
     #define COID_DASSERT_LOG to turn all debug asserts into logging ones in release
-    
+
     enable_dassert_ret_exceptions(true) - failed *ASSERT_RET conditions will throw exceptions in release
     enable_dassert_debugbreak(false) - turn off invocation of debug break
 */
@@ -85,7 +85,7 @@ COID_NAMESPACE_END
 
 #ifdef _DEBUG
 #define XASSERT_FINAL               XASSERT_BREAK
-#define XASSERTCOND(expr)           do{ if (expr) break; static bool noassert = false; bool __assert_e = !noassert && 
+#define XASSERTCOND(expr)           do{ static bool noassert = false; if (expr) break; bool __assert_e = !noassert
 #else
 #define XASSERT_FINAL
 #define XASSERTCOND(expr)           do{ if (expr) break;  bool __assert_e =
@@ -94,8 +94,8 @@ COID_NAMESPACE_END
 
 
 //@{ Runtime assertions
-#define RASSERT(expr)               XASSERTCOND(expr) coid::__rassert(0,__FILE__,__LINE__,__FUNCTION__,#expr,true); XASSERT_BREAK; } while(0)
-#define RASSERTX(expr,txt)          XASSERTCOND(expr) coid::__rassert(coid::opt_string() << txt,__FILE__,__LINE__,__FUNCTION__,#expr,true); XASSERT_BREAK; } while(0)
+#define RASSERT(expr)               XASSERTCOND(expr) && coid::__rassert(0,__FILE__,__LINE__,__FUNCTION__,#expr,true); XASSERT_BREAK; } while(0)
+#define RASSERTX(expr,txt)          XASSERTCOND(expr) && coid::__rassert(coid::opt_string() << txt,__FILE__,__LINE__,__FUNCTION__,#expr,true); XASSERT_BREAK; } while(0)
 //@}
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -105,14 +105,15 @@ COID_NAMESPACE_END
 #if defined(_DEBUG) || defined(COID_DASSERT_LOG)
 
 //@{ Debug-only assertions, release build doesn't execute the expression
-#define DASSERT(expr)               XASSERTCOND(expr) coid::__rassert(0,__FILE__,__LINE__,__FUNCTION__,#expr); XASSERT_FINAL; } while(0)
-#define DASSERTX(expr,txt)          XASSERTCOND(expr) coid::__rassert(coid::opt_string() << txt,__FILE__,__LINE__,__FUNCTION__,0); XASSERT_FINAL; } while(0)
+#define DASSERT(expr)               XASSERTCOND(expr) && coid::__rassert(0,__FILE__,__LINE__,__FUNCTION__,#expr); XASSERT_FINAL; } while(0)
+#define DASSERTX(expr,txt)          XASSERTCOND(expr) && coid::__rassert(coid::opt_string() << txt,__FILE__,__LINE__,__FUNCTION__,0); XASSERT_FINAL; } while(0)
 #define DASSERT_ONCE(expr)          do{ static bool once = false; if(expr || once) break;  bool __assert_e = coid::__rassert(0,__FILE__,__LINE__,__FUNCTION__,#expr); once = true; XASSERT_FINAL; } while(0)
+#define DASSERT_FATAL(expr)         XASSERTCOND(expr) && coid::__rassert(0,__FILE__,__LINE__,__FUNCTION__,#expr); XASSERT_FINAL; std::abort(); } while(0)
 //@}
 
 //@{ Assert in debug, return \a ret on failed assertion (also in release)
-#define DASSERT_RET(expr, ...)      XASSERTCOND(expr) coid::__rassert(0,__FILE__,__LINE__,__FUNCTION__,#expr); XASSERT_FINAL; return __VA_ARGS__; } while(0)
-#define DASSERT_RETX(expr,txt, ...) XASSERTCOND(expr) coid::__rassert(coid::opt_string() << txt,__FILE__,__LINE__,__FUNCTION__,0); XASSERT_FINAL; return __VA_ARGS__; } while(0)
+#define DASSERT_RET(expr, ...)      XASSERTCOND(expr) && coid::__rassert(0,__FILE__,__LINE__,__FUNCTION__,#expr); XASSERT_FINAL; return __VA_ARGS__; } while(0)
+#define DASSERT_RETX(expr,txt, ...) XASSERTCOND(expr) && coid::__rassert(coid::opt_string() << txt,__FILE__,__LINE__,__FUNCTION__,0); XASSERT_FINAL; return __VA_ARGS__; } while(0)
 //@}
 
 #else //no _DEBUG
@@ -123,23 +124,24 @@ COID_NAMESPACE_END
 
 #define DASSERT_RET(expr, ...)      do{ if(expr) break; coid::__retassert(); return __VA_ARGS__; } while(0)
 #define DASSERT_RETX(expr,txt, ...) do{ if(expr) break; coid::__retassert(); return __VA_ARGS__; } while(0)
+#define DASSERT_FATAL(expr)
 
 #endif //_DEBUG
 
 
 //@{ Debug assert that won't be switched to logging in release even with COID_DASSERT_LOG defined
 #ifdef _DEBUG
-#define DASSERTN(expr)              XASSERTCOND(expr) coid::__rassert(0,__FILE__,__LINE__,__FUNCTION__,#expr); XASSERT_FINAL; } while(0)
+#define DASSERTN(expr)              XASSERTCOND(expr) && coid::__rassert(0,__FILE__,__LINE__,__FUNCTION__,#expr); XASSERT_FINAL; } while(0)
 #else
 #define DASSERTN(expr)
 #endif
 
 
 //@{ Assert in debug, log in release, return \a ret on failed assertion (also in release)
-#define LASSERT(expr)               XASSERTCOND(expr) coid::__rassert(0,__FILE__,__LINE__,__FUNCTION__,#expr); XASSERT_FINAL; } while(0)
-#define LASSERTX(expr,txt)          XASSERTCOND(expr) coid::__rassert(coid::opt_string() << txt,__FILE__,__LINE__,__FUNCTION__,0); XASSERT_FINAL; } while(0)
-#define LASSERT_RET(expr, ...)      XASSERTCOND(expr) coid::__rassert(0,__FILE__,__LINE__,__FUNCTION__,#expr); XASSERT_FINAL; return __VA_ARGS__; } while(0)
-#define LASSERT_RETX(expr,txt, ...) XASSERTCOND(expr) coid::__rassert(coid::opt_string() << txt,__FILE__,__LINE__,__FUNCTION__,0); XASSERT_FINAL; return __VA_ARGS__; } while(0)
+#define LASSERT(expr)               XASSERTCOND(expr) && coid::__rassert(0,__FILE__,__LINE__,__FUNCTION__,#expr); XASSERT_FINAL; } while(0)
+#define LASSERTX(expr,txt)          XASSERTCOND(expr) && coid::__rassert(coid::opt_string() << txt,__FILE__,__LINE__,__FUNCTION__,0); XASSERT_FINAL; } while(0)
+#define LASSERT_RET(expr, ...)      XASSERTCOND(expr) && coid::__rassert(0,__FILE__,__LINE__,__FUNCTION__,#expr); XASSERT_FINAL; return __VA_ARGS__; } while(0)
+#define LASSERT_RETX(expr,txt, ...) XASSERTCOND(expr) && coid::__rassert(coid::opt_string() << txt,__FILE__,__LINE__,__FUNCTION__,0); XASSERT_FINAL; return __VA_ARGS__; } while(0)
 //@}
 
 
@@ -176,7 +178,7 @@ public:
     ~opt_string();
 
     opt_string& operator << (const char* sz);
-    
+
     opt_string& operator << (const token& tok);
     opt_string& operator << (char c);
 
