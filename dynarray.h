@@ -1070,7 +1070,8 @@ public:
         @param n number of elements to get
         @return pointer to the first element of array */
     T* copy_bin_from(const T* pin, uints n) {
-        T* p = alloc(n);
+        reset();
+        T* p = add_uninit(n);
         xmemcpy(p, pin, n * sizeof(T));
         return p;
     }
