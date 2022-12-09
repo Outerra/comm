@@ -576,7 +576,6 @@ public:
 
     ///Remove each element for which the predicate returns true
     //@param fn functor as fn([const] T&) or fn([const] T&, count_t index)
-    //@return pointer to the element or null
     template<typename Func>
     void del_if(Func fn)
     {

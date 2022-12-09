@@ -1582,6 +1582,89 @@ public:
         return 0;
     }
 
+    ///Remove each element for which the predicate returns true
+    ///@param f functor with ([const] T&) or ([const] T&, size_t index) arguments
+    template<typename Func>
+    T* del_if(Func f)
+    {
+        uint_type const* bm = const_cast<uint_type const*>(_allocated.ptr());
+        uint_type const* em = const_cast<uint_type const*>(_allocated.ptre());
+
+        if coid_constexpr_if(LINEAR) {
+            uints base = 0;
+            T* pd0 = const_cast<T*>(this->_array.ptr());
+
+            for (uint_type const* pm = bm; pm != em; ++pm, base += BITMASK_BITS) {
+                if (*pm == 0)
+                    continue;
+
+                uints m = 1;
+                for (int i = 0; i < BITMASK_BITS; ++i, m <<= 1) {
+                    if (*pm & m) {
+                        uints id = base + i;
+                        if (funccall(f, pd0[id], base + i))
+                            del(pd0 + id);
+
+                        //update after rebase
+                        ints diffm = (ints)const_cast<uint_type const*>(_allocated.ptr()) - (ints)bm;
+                        if (diffm) {
+                            bm = ptr_byteshift(bm, diffm);
+                            em = const_cast<uint_type const*>(_allocated.ptre());
+                            pm = ptr_byteshift(pm, diffm);
+                        }
+                    }
+                    else if ((*pm & ~(m - 1)) == 0)
+                        break;
+                }
+            }
+        }
+        else {
+            //using page = typename storage_t::page;
+            typedef typename storage_t::page page;
+
+            uint_type const* pm = bm;
+            uints gbase = 0;
+
+            for (uints ip = 0; ip < this->_pages.size(); ++ip, gbase += page::ITEMS)
+            {
+                const page& pp = this->_pages[ip];
+                T* data = const_cast<T*>(pp.ptr());
+
+                uint_type const* epm = em - pm > page::NMASK
+                    ? pm + page::NMASK
+                    : em;
+
+                uints pbase = 0;
+
+                for (; pm != epm; ++pm, pbase += BITMASK_BITS) {
+                    if (*pm == 0)
+                        continue;
+
+                    uints m = 1;
+                    for (int i = 0; i < BITMASK_BITS; ++i, m <<= 1) {
+                        if (*pm & m) {
+                            if (funccall_if(f, data[pbase + i], gbase + pbase + i))
+                                del(const_cast<T*>(data) + (pbase + i));
+
+                            //update after rebase
+                            ints diffm = (ints)const_cast<uint_type const*>(_allocated.ptr()) - (ints)bm;
+                            if (diffm) {
+                                bm = ptr_byteshift(bm, diffm);
+                                em = const_cast<uint_type const*>(_allocated.ptre());
+                                pm = ptr_byteshift(pm, diffm);
+                                epm = ptr_byteshift(epm, diffm);
+                            }
+                        }
+                        else if ((*pm & ~(m - 1)) == 0)
+                            break;
+                    }
+                }
+            }
+        }
+
+        return 0;
+    }
+
     ///Run on unused elements (freed elements in pool mode) until predicate returns true
     //@return pointer to the element or null
     //@param f functor with ([const] T&) or ([const] T&, size_t index) arguments
