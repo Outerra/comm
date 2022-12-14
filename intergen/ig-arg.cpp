@@ -208,12 +208,13 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
     //match default value
     if(lex.matches('=')) {
         //match everything up to a comma or a closing parenthesis
-        lex.enable(lex.SQUARE, true);
-        lex.enable(lex.ROUND, true);
+        bool was_square = lex.enable(lex.SQUARE, true);
+        bool was_round = lex.enable(lex.ROUND, true);
+        bool was_curly = lex.enable(lex.CURLY, true);
         do {
             const lexer::lextoken& tok = lex.next();
 
-            if( tok == lex.SQUARE || tok == lex.ROUND ) {
+            if( tok == lex.SQUARE || tok == lex.ROUND || tok == lex.CURLY ) {
                 lex.complete_block();
                 defval << tok.leading_token(lex) << tok << tok.trailing_token(lex);
                 continue;
@@ -226,8 +227,10 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
             defval << tok;
         }
         while(1);
-        lex.enable(lex.SQUARE, false);
-        lex.enable(lex.ROUND, false);
+
+        lex.enable(lex.CURLY, was_curly);
+        lex.enable(lex.SQUARE, was_square);
+        lex.enable(lex.ROUND, was_round);
 
         bnojs = name.first_char() == '_';
     }

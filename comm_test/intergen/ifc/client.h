@@ -42,7 +42,7 @@ public:
     }
 
     // --- host helpers to check presence of event handlers in scripts ---
-    
+
     enum class event {
         echo = 0,
         callforth = 1,
@@ -67,29 +67,32 @@ public:
 #pragma warning(push)
 #pragma warning(disable : 4191)
 
+    void set_def( const flags& flg = {.a = 1, .b = 2} )
+    { return VT_CALL(void,(const flags&),0)(flg); }
+
     ///Setter
     void set( const coid::token& par )
-    { return VT_CALL(void,(const coid::token&),0)(par); }
+    { return VT_CALL(void,(const coid::token&),1)(par); }
 
     ///Getter
     int get( ifc_out coid::charstr& par )
-    { return VT_CALL(int,(coid::charstr&),1)(par); }
+    { return VT_CALL(int,(coid::charstr&),2)(par); }
 
     ///Using a custom type
     sometype custom()
-    { return VT_CALL(sometype,(),2)(); }
+    { return VT_CALL(sometype,(),3)(); }
 
     const int* c_only_method( int k )
-    { return VT_CALL(const int*,(int),3)(k); }
+    { return VT_CALL(const int*,(int),4)(k); }
 
     void set_array( const float ar[3] )
-    { return VT_CALL(void,(const float[3]),4)(ar); }
+    { return VT_CALL(void,(const float[3]),5)(ar); }
 
     void callback( void (*cbk)(int, const coid::token&) )
-    { return VT_CALL(void,(void(*)(int, const coid::token&)),5)(cbk); }
+    { return VT_CALL(void,(void(*)(int, const coid::token&)),6)(cbk); }
 
     void memfn_callback( coid::callback<void(int, void*)>&& fn )
-    { return VT_CALL(void,(coid::callback<void(int, void*)>&&),6)(std::forward<coid::callback<void(int, void*)>>(fn)); }
+    { return VT_CALL(void,(coid::callback<void(int, void*)>&&),7)(std::forward<coid::callback<void(int, void*)>>(fn)); }
 
 #pragma warning(pop)
 
@@ -112,7 +115,7 @@ public:
     // --- internal helpers ---
 
     ///Interface revision hash
-    static const int HASHID = 903385447u;
+    static const int HASHID = 3567392906u;
 
     ///Interface name (full ns::class string)
     static const coid::tokenhash& IFCNAME() {
@@ -131,7 +134,7 @@ public:
     }
 
     static const coid::token& intergen_default_creator_static( backend bck ) {
-        static constexpr coid::token _dc("client.creator@903385447"_T);
+        static constexpr coid::token _dc("client.creator@3567392906"_T);
         static constexpr coid::token _djs("client@wrapper.js"_T);
         static constexpr coid::token _djsc("client@wrapper.jsc"_T);
         static constexpr coid::token _dlua("client@wrapper.lua"_T);
@@ -194,7 +197,7 @@ public:
         type.consume("struct ");
 
         coid::charstr tmp = "client"_T;
-        tmp << "@client-903385447"_T << '.' << type;
+        tmp << "@client-3567392906"_T << '.' << type;
 
         coid::interface_register::register_interface_creator(tmp, cc);
         return 0;
@@ -239,14 +242,14 @@ inline iref<T> client::creator( T* _subclass_ )
     typedef iref<T> (*fn_creator)(client*);
 
     static fn_creator create = 0;
-    static constexpr coid::token ifckey = "client.creator@903385447"_T;
+    static constexpr coid::token ifckey = "client.creator@3567392906"_T;
 
     if (!create)
         create = reinterpret_cast<fn_creator>(
             coid::interface_register::get_interface_creator(ifckey));
 
     if (!create) {
-        log_mismatch("client"_T, "client.creator"_T, "@903385447"_T);
+        log_mismatch("client"_T, "client.creator"_T, "@3567392906"_T);
         return 0;
     }
 

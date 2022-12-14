@@ -41,6 +41,20 @@ namespace cd {
 }ifc*/
 
 
+struct flags {
+    int a;
+    float b;
+
+    coid::metastream& operator || (coid::metastream& m, flags& d) {
+        return m.compound_type(d, []() {
+            m.member("a", d.a);
+            m.member("b", d.b);
+        });
+    }
+};
+
+
+
 class host : public policy_intrusive_base
 {
     coid::charstr _tmp;
@@ -53,6 +67,10 @@ public:
     /// @return host class instance
     ifc_fn static iref<ab::cd::host> creator() {
         return new host;
+    }
+
+    ifc_fn void set_def(const flags& flg = {.a = 1, .b = 2})
+    {
     }
 
     ///Setter
