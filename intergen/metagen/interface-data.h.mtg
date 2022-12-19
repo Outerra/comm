@@ -106,7 +106,7 @@ inline $..name$* $..name$::$name$($-[args rest=", "]$$type$ $name$$size$$[/args]
         }
     }
 
-    typedef $..name$* (*fn_creator)($[args]$, $type$$[/args]$);
+    typedef $..name$* (*fn_creator)($[args rest=", "]$$type$$[/args]$);
     static fn_creator create = reinterpret_cast<fn_creator>(_cr_table[$@order$]);
 
     return create($[args rest=", "]$$name$$[/args]$);

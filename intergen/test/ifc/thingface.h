@@ -27,7 +27,7 @@ class thingface
 public:
 
     // --- host helpers to check presence of event handlers in scripts ---
-    
+
     enum class event {
         boo = 0,
     };
