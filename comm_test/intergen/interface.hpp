@@ -24,6 +24,20 @@ using namespace std;
 }ifc*/
 
 
+/*ifc{ client
+struct flags {
+    int a;
+    float b;
+
+    friend coid::metastream& operator || (coid::metastream& m, flags& d) {
+        return m.compound_type(d, [&]() {
+            m.member("a", d.a);
+            m.member("b", d.b);
+        });
+    }
+};
+}ifc*/
+
 namespace ab {
 
 /*ifc{
@@ -41,18 +55,6 @@ namespace cd {
 }ifc*/
 
 
-struct flags {
-    int a;
-    float b;
-
-    coid::metastream& operator || (coid::metastream& m, flags& d) {
-        return m.compound_type(d, []() {
-            m.member("a", d.a);
-            m.member("b", d.b);
-        });
-    }
-};
-
 
 
 class host : public policy_intrusive_base
@@ -69,7 +71,7 @@ public:
         return new host;
     }
 
-    ifc_fn void set_def(const flags& flg = {.a = 1, .b = 2})
+    ifc_fn void set_def(const flags& flg = { .a = 1, .b = 2 })
     {
     }
 

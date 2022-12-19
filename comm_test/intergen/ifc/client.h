@@ -15,6 +15,18 @@
 // block placed before the generated client classes
 // ***
 
+struct flags {
+    int a;
+    float b;
+
+    friend coid::metastream& operator || (coid::metastream& m, flags& d) {
+        return m.compound_type(d, [&]() {
+            m.member("a", d.a);
+            m.member("b", d.b);
+        });
+    }
+};
+
 namespace ab {
 // ***
 // block placed inside namespace
@@ -67,7 +79,7 @@ public:
 #pragma warning(push)
 #pragma warning(disable : 4191)
 
-    void set_def( const flags& flg = {.a = 1, .b = 2} )
+    void set_def( const flags& flg = { .a = 1, .b = 2 } )
     { return VT_CALL(void,(const flags&),0)(flg); }
 
     ///Setter
