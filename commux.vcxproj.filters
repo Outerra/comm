@@ -433,5 +433,6 @@
       <Filter>sync</Filter>
     </ClInclude>
     <ClInclude Include="function.h" />
+    <ClInclude Include="typeseq.h" />
   </ItemGroup>
 </Project>

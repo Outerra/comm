@@ -256,6 +256,7 @@
     <ClInclude Include="trait.h" />
     <ClInclude Include="tutf8.h" />
     <ClInclude Include="txtconv.h" />
+    <ClInclude Include="typeseq.h" />
     <ClInclude Include="version.h" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">

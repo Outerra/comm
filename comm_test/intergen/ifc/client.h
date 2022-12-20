@@ -79,7 +79,7 @@ public:
 #pragma warning(push)
 #pragma warning(disable : 4191)
 
-    void set_def( const flags& flg = { .a = 1, .b = 2 } )
+    void set_def( const flags& flg = {.a = 1, .b = 2} )
     { return VT_CALL(void,(const flags&),0)(flg); }
 
     ///Setter

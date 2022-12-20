@@ -1868,22 +1868,22 @@ protected:
             return this->_created;
     }
 
-    template <class T, class uint_type>
-    static void copy_array_with_bitmask(const dynarray<T>& src, dynarray<T>& dst, const dynarray<uint_type>& mask) {
+    template <class Te, class uint_type>
+    static void copy_array_with_bitmask(const dynarray<Te>& src, dynarray<Te>& dst, const dynarray<uint_type>& mask) {
         uints rsv = src.reserved_virtual();
         if (rsv > 0)
             dst.reserve(rsv, reserve_mode::virtual_space);
         else
             dst.reserve(src.reserved_total(), reserve_mode::memory);
-        T* dd = dst.add_uninit(src.size());
-        const T* sd = src.ptr();
+        Te* dd = dst.add_uninit(src.size());
+        const Te* sd = src.ptr();
         constexpr int n = sizeof(uint_type) * 8;
 
         for (uint_type m : mask) {
             uint i = 0;
             while (m != 0) {
                 if (m & 1)
-                    new (dd + i) T(sd[i]);
+                    new (dd + i) Te(sd[i]);
                 ++i;
                 m >>= 1;
             }

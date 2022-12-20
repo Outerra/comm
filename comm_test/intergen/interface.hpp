@@ -71,7 +71,7 @@ public:
         return new host;
     }
 
-    ifc_fn void set_def(const flags& flg = { .a = 1, .b = 2 })
+    ifc_fn void set_def(const flags& flg = {.a = 1, .b = 2})
     {
     }
 
