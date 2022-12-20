@@ -1823,7 +1823,8 @@ public:
     };
 
     iterator begin() const {
-        return iterator(const_cast<base_t*>(this), 0);
+        const uint_type first_id = is_valid_id(0) || this->allocated_count() == 0 ? 0 : next_index(0);
+        return iterator(const_cast<base_t*>(this), first_id);
     }
 
     iterator end() const {
