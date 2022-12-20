@@ -59,7 +59,7 @@
 COID_NAMESPACE_BEGIN
 
 ////////////////////////////////////////////////////////////////////////////////
-///String class
+///String class, size of char*, keeps terminating zero
 class charstr
 {
     friend binstream& operator >> (binstream &in, charstr& x);
@@ -411,17 +411,17 @@ public:
         return takeover(str);
     }
 
-/*
+
     template <int N>
-    charstr& operator = (const char (&str)[N]) const    { return set(token::from_literal(str, N-1)); }
-    
+    charstr& operator = (const char (&str)[N])    { return set(token::from_literal(str, N-1)); }
+
     template <int N>
-    charstr& operator = (char (&str)[N]) const          { return set(token::from_cstring(str, N-1)); }
+    charstr& operator = (char (&str)[N])          { return set(token::from_cstring(str, N-1)); }
 
     template<typename T>
-    typename is_char_ptr<T,charstr&>::type operator = (T czstr) const {
+    typename is_char_ptr<T,charstr&>::type operator = (T czstr) {
         return set(token::from_cstring(czstr));
-    }*/
+    }
 
     //charstr& operator = (const char* czstr) { return set(token::from_cstring(czstr)); }
 
