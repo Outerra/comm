@@ -348,9 +348,9 @@ private:
 
     inline static ifn_t _fn_table[] = {$-[method !static?]$
  $-(if hasifc?)$
-        reinterpret_cast<ifn_t>(reinterpret_cast<$return.type$(intergen_data_interface::*)($[args rest=","]$ $-(if fnarg?)$$type$(*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if const?)$const$(/if)$>(&$name$__ifc_wrapper)),
+        reinterpret_cast<ifn_t>(($return.type$(intergen_data_interface::*)($[args rest=","]$ $-(if fnarg?)$$type$(*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if const?)$const$(/if)$)(&$name$__ifc_wrapper)),
  $-(elif)$
-        reinterpret_cast<ifn_t>(reinterpret_cast<$return.type$(intergen_data_interface::*)($[args rest=","]$ $-(if fnarg?)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if const?)$const$(/if)$>(&::$....ns rest="::" after="::"$$....class$::$intname$)),
+        reinterpret_cast<ifn_t>(($return.type$(intergen_data_interface::*)($[args rest=","]$ $-(if fnarg?)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if const?)$const$(/if)$)(&::$....ns rest="::" after="::"$$....class$::$intname$)),
  $-(/if)$
 $-[/method]$
         nullptr
