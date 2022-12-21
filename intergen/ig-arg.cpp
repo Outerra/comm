@@ -30,17 +30,8 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
     //arg: [ifc_in|ifc_out|ifc_inout|] [const] type
     //type: [class[<templarg>]::]* type[<templarg>] [[*|&] [const]]*
 
-    int io = lex.matches_either("ifc_in","ifc_out","ifc_inout","ifc_ret");
-    if(!io) io=1;
-
-    //ifc_return(ifcname)
-    if(io == 4) {
-        lex.match('(');
-        match_type(lex, ifctarget);
-        lex.match(')');
-
-        io = 2;
-    }
+    int io = lex.matches_either("ifc_in","ifc_out","ifc_inout");
+    if (!io) io = 1;
 
     if (io == 2)
         ifckwds = "ifc_out";
@@ -98,7 +89,7 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
     bptr = isPR == 1;
     bref = bxref || isPR == 2;
 
-    if(boutarg && ((!bptr && !bref && !ifctarget) || type.begins_with("const "))) {
+    if(boutarg && ((!bptr && !bref) || type.begins_with("const "))) {
         out << (lex.prepare_exception()
             << "error: out argument must be a ref or ptr and cannot be const\n");
         lex.clear_err();
@@ -140,23 +131,6 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
         }
         while(bs);
     }
-    else if(ifctarget) {
-        out << (lex.prepare_exception()
-            << "error: ifc_ret argument must be an iref<>\n");
-        lex.clear_err();
-    }
-
-    if (ifctarget) {
-        type.swap(ifctarget);
-        type.ins(0, "iref<");
-        type.append('>');
-        basetype.set(type.ptr()+5, type.ptre()-1);
-
-        //remove iref from ifctarget
-        ifctarget.del(0, 5);
-        ifctarget.del(-1, 1);
-    }
-
 
     if(!argname)
         return lex.no_err();

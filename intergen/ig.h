@@ -198,7 +198,6 @@ struct MethodIG
         charstr memfnclass;             //< member fn class
         charstr defval;
         charstr fulltype;
-        charstr ifctarget;
         charstr ifckwds;                //< ifc_out, ifc_inout and ifc_volatile string
         charstr doc;
         bool bspecptr       = false;    //< special type where pointer is not separated (e.g const char*)
@@ -242,7 +241,6 @@ struct MethodIG
                     m.member("memfnclass", p.memfnclass);
                     m.member("defval", p.defval);
                     m.member("fulltype", p.fulltype);
-                    m.member("ifc", p.ifctarget);
                     m.member("ifckwds", p.ifckwds);
                     m.member("doc", p.doc);
                     m.member("const", p.bconst);
@@ -284,7 +282,6 @@ struct MethodIG
     bool bdestroy           = false;    //< a method to call on interface destroy
     bool bnoevbody          = false;    //< mandatory event
     bool bpure              = false;    //< pure virtual on client
-    bool bhasifctargets     = false;
     bool bduplicate         = false;    //< a duplicate method/event from another interface of the host
     bool binherit           = false;    //< method inherited from base interface
 
@@ -349,7 +346,6 @@ struct MethodIG
                 m.member("destroy", p.bdestroy);
                 m.member("noevbody", p.bnoevbody);
                 m.member("pure", p.bpure);
-                m.member("hasifc", p.bhasifctargets);
                 m.member("duplicate", p.bduplicate);
                 m.member("inherit", p.binherit);
                 m.member("args", p.args);

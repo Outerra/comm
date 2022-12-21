@@ -53,11 +53,7 @@ $-(if !virtual?)$
 
         _vtable1 = new ifn_t[$nifcmethods$];
 $-[method !static?]$
- $-(if hasifc?)$
-        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if fnarg?)$$type$(*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if const?)$const$(/if)$>(&$name$__ifc_wrapper));
- $-(elif)$
         _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if fnarg?)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if const?)$const$(/if)$>(&::$....ns rest="::" after="::"$$....class$::$intname$));
- $-(/if)$
 $-[/method]-$
 
         return _vtable1;
@@ -76,21 +72,6 @@ $-[method capture?]$
         return VT_CALL2($return.type$,($[args rest=","]$$type$$[/args]$),$index$)($[args rest=","]$$name$$[/args]$);
     }
 $-[/method]$
-
-$-[method hasifc?]$
-    $return.type$ $name$__ifc_wrapper($[args rest=", "]$$type$ $name$$[/args]$)$(if const?)$ const$(/if)$
-    {
-        iref<$return.ifc$> __ret__ = $name$($[args rest=","]$$name$$[/args]$);
-        if (!__ret__)
-            return 0;
-
-        typedef iref<$return.ifc$> (*fn_wrap)(policy_intrusive_base*, intergen_interface*);
-        static fn_wrap wrapper = reinterpret_cast<fn_wrap>(
-            coid::interface_register::get_interface_creator("$ns rest="::" after="::"$$name$@wrapper"));
-
-        return wrapper ? wrapper(__ret__.get(), new $..name$_dispatcher) : 0;
-    }
-$[/method]-$
 
     static ifn_t* get_vtable_intercept()
     {
@@ -347,11 +328,7 @@ class $name$_data_dispatcher : public $name$
 private:
 
     inline static ifn_t _fn_table[] = {$-[method !static?]$
- $-(if hasifc?)$
-        reinterpret_cast<ifn_t>(($return.type$(intergen_data_interface::*)($[args rest=","]$ $-(if fnarg?)$$type$(*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if const?)$const$(/if)$)(&$name$__ifc_wrapper)),
- $-(elif)$
         reinterpret_cast<ifn_t>(($return.type$(intergen_data_interface::*)($[args rest=","]$ $-(if fnarg?)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if const?)$const$(/if)$)(&::$....ns rest="::" after="::"$$....class$::$intname$)),
- $-(/if)$
 $-[/method]$
         nullptr
     };
@@ -360,21 +337,6 @@ $-[/method]$
 $-[/method]$
         nullptr
     };
-$-[method hasifc?]$
-
-    $return.type$ $name$__ifc_wrapper($[args rest=", "]$$type$ $name$$[/args]$)$(if const?)$ const$(/if)$
-    {
-        iref<$return.ifc$> __ret__ = $name$($[args rest=","]$$name$$[/args]$);
-        if (!__ret__)
-            return 0;
-
-        typedef iref<$return.ifc$> (*fn_wrap)(intergen_data_interface*, intergen_interface*);
-        static fn_wrap wrapper = reinterpret_cast<fn_wrap>(
-            coid::interface_register::get_interface_creator("$ns rest="::" after="::"$$name$@wrapper"));
-
-        return wrapper ? wrapper(__ret__.get(), new $..name$_data_dispatcher) : 0;
-    }
-$[/method]-$
 $-[event pure?]$
 
     $return.type$ $name$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if fnarg?)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if const?)$ const$(/if)$ override { throw coid::exception("unreachable"); }

@@ -12,8 +12,6 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
     if (!ret.parse(lex, false))
         throw lex.exc();
 
-    bhasifctargets = !ret.ifctarget.is_empty();
-
     if (!bstatic && ret.biref)
         ret.add_unique(irefargs);
 
@@ -84,9 +82,6 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
 
             if (!bstatic && arg->biref && (isevent ? arg->binarg : arg->boutarg))
                 arg->add_unique(irefargs);
-
-            if (arg->ifctarget)
-                bhasifctargets = true;
         }
         while (lex.matches(','));
 
