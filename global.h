@@ -234,7 +234,8 @@ class data_manager
         virtual void* element(uint eid) = 0;
 
         /// @brief Create element
-        virtual void* create(uint eid) = 0;
+        virtual void* create_default(uint eid) = 0;
+        virtual void* create_uninit(uint eid) = 0;
 
         virtual void remove(uint eid) = 0;
 
@@ -251,7 +252,6 @@ class data_manager
     /// @brief helper class to hold entity id for hashed data containers
     template <class T> struct storage : T {
         uint eid;
-        storage(uint eid) : eid(eid) {}
     };
 
     /// @brief slothash type container for sparse data
@@ -266,9 +266,16 @@ class data_manager
         cshash() : container(sizeof(storage<T>), container::type::hash)
         {}
         void* element(uint eid) override final { return (T*)hash.find_value(eid); }
-        void* create(uint eid) override {
-            hash.erase(eid);
-            return hash.push_construct(eid);
+        void* create_default(uint eid) override {
+            return new (create_uninit(eid)) T;
+        }
+        void* create_uninit(uint eid) override {
+            bool is_new;
+            storage<T>* item = hash.find_or_insert_value_slot_uninit(eid, &is_new);
+            if (!is_new)
+                item->~storage<T>();
+            item->eid = eid;
+            return item;
         }
         void remove(uint eid) override final {
             hash.erase(eid);
@@ -294,7 +301,10 @@ class data_manager
         carray() : container(sizeof(T), container::type::array)
         {}
         void* element(uint eid) override final { return eid < data.size() ? &data[eid] : nullptr; }
-        void* create(uint eid) override {
+        void* create_default(uint eid) override {
+            return new (create_uninit(eid)) T;
+        }
+        void* create_uninit(uint eid) override {
             return &data.get_or_add(eid);
         }
         void remove(uint eid) override final {
@@ -468,8 +478,9 @@ public:
         static container* c = get_or_create_container<C, cshash<C>>();
         DASSERT_RET(c, 0);
 
-        C* d = static_cast<C*>(c->create(eid));
+        C* d = static_cast<C*>(c->create_default(eid));
         *d = std::move(v);
+        DASSERT(c->storage_type != container::type::hash || static_cast<storage<C>*>(d)->eid == eid);
 
         return d;
     }
@@ -484,20 +495,20 @@ public:
         static container* c = get_or_create_container<C, cshash<C>>();
         DASSERT_RET(c, 0);
 
-        return new (c->create(eid)) C;
+        return static_cast<C*>(c->create_default(eid));
     }
 
     /// @brief Insert uninitialized data, to be in-place constructed
     /// @tparam C data type
     /// @param eid entity id
     /// @return pointer to the uninitialized data
-    template <class C>
-    static C* push_uninit(uint eid)
+    template <class C, class...Ps>
+    static C* emplace(uint eid, Ps&&... ps)
     {
         static container* c = get_or_create_container<C, cshash<C>>();
         DASSERT_RET(c, 0);
 
-        return static_cast<C*>(c->create(eid));
+        return new (c->create_uninit(eid)) C(std::forward<Ps>(ps)...);
     }
 
     /// @brief Remove component from entity
@@ -682,6 +693,28 @@ public:
                     default_fn(td->type_name);
                 }
             }
+        }
+    }
+
+    /// @brief Invoke given function for every component type, create component if fn returns true
+    static void iterate_all_components(uint eid, bool (*fn)(const coid::token& type, bool entity_has_component) = 0)
+    {
+        if (fn == nullptr) return;
+
+        uint n = data_containers().size();
+
+        for (uint i = 0; i < n; ++i)
+        {
+            container* c = data_containers()[i];
+            if (!c)
+                continue;
+
+            void* d = get_data(eid, i);
+            bool has_component = d != nullptr;
+
+            auto td = tsq().type(i);
+            if (fn(td->type_name, has_component))
+                c->create_default(eid);
         }
     }
 
