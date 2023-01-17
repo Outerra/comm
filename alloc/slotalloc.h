@@ -2174,7 +2174,13 @@ private:
         set_bit(count);
 
         if coid_constexpr_if(EXT_UNINIT)
+        {
             extarray_expand_uninit(1);
+            if coid_constexpr_if(VERSIONING)
+            {
+                tracker_t::version_array()[count] = 0;
+            }
+        }
         else
             extarray_expand(1);
 
