@@ -351,6 +351,30 @@ public:
 
         v8::Handle<v8::Script> script = load_script(js, urlenc, js::rethrow_in_js);
 
+        if (js_trycatch.HasCaught())
+        {
+            coid::charstr msg;
+
+            v8::String::Utf8Value exc(iso, js_trycatch.Exception());
+            v8::Handle<v8::Message> message = js_trycatch.Message();
+
+            if (message.IsEmpty()) {
+                msg << *exc;
+            }
+            else {
+                v8::String::Utf8Value filename(iso, message->GetScriptResourceName());
+                coid::token filename_tok = *filename;
+                filename_tok.consume("file://");
+
+                int linenum = message->GetLineNumber(iso->GetCurrentContext()).FromJust();
+
+                msg << filename_tok << '(' << linenum << "): " << *exc;
+            }
+            v8::queue_js_exception(iso, v8::Exception::Error, msg);
+            js_trycatch.ReThrow();
+            return;
+        }
+
         v8::Handle<v8::Value> rval = glob->Get(ctx, result_token).ToLocalChecked();
         glob->Set(ctx, result_token, v8::Undefined(iso)) V8_CHECK;
 
