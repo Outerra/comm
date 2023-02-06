@@ -114,6 +114,11 @@ class data_manager
     {
         static constexpr int BITMASK_BITS = 8 * sizeof(uints);
 
+        sequencer()
+            : _allocated(coid::abyss_dynarray_size, coid::reserve_mode::virtual_space)
+            , _entities(coid::abyss_dynarray_size, coid::reserve_mode::virtual_space)
+        {}
+
         bool set_bit(uints k) { return _allocated.set_bit(k); }
         bool clear_bit(uints k) { return _allocated.clear_bit(k); }
         bool get_bit(uints k) const { return _allocated.get_bit(k); }
@@ -581,16 +586,17 @@ public:
     /// @return container id
     /// @note container id 0 is created as a slotalloc to keep track of existing and deleted objects
     template <class C>
-    static void preallocate_array_container(uint reserve_count = 0)
+    static void preallocate_array_container(uint reserve_count = coid::abyss_dynarray_size)
     {
         carray<C>* cont = get_or_create_container<C, carray<C>>();
         cont->reserve(reserve_count);
     }
 
     template <class C>
-    static void preallocate_hash_container()
+    static void preallocate_hash_container(uint reserve_count = coid::abyss_dynarray_size)
     {
         cshash<C>* cont = get_or_create_container<C, cshash<C>>();
+        cont->reserve(reserve_count);
     }
 
     /// @brief Retrieve container for primary data
