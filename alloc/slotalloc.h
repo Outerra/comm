@@ -90,7 +90,7 @@ protected:
     using extarray_t = typename tracker_t::extarray_t;
     using changeset_t = typename slotalloc_detail::changeset;
 
-    using uint_type = typename storage_t::uint_type;
+    using bitmask_type = typename storage_t::bitmask_type;
 
     static constexpr int BITMASK_BITS = 8 * sizeof(uints);
 
@@ -140,9 +140,9 @@ public:
 
             this->prepare_storage_copy(o);
 
-            uint_type const* bm = const_cast<uint_type const*>(_allocated.ptr());
-            uint_type const* em = const_cast<uint_type const*>(_allocated.ptre());
-            uint_type const* pm = bm;
+            bitmask_type const* bm = const_cast<bitmask_type const*>(_allocated.ptr());
+            bitmask_type const* em = const_cast<bitmask_type const*>(_allocated.ptre());
+            bitmask_type const* pm = bm;
             uints gbase = 0;
 
             for (uints ip = 0; ip < this->_pages.size(); ++ip, gbase += page::ITEMS)
@@ -150,7 +150,7 @@ public:
                 T* dd = const_cast<T*>(this->_pages[ip].ptr());
                 const T* ds = o._pages[ip].ptr();
 
-                uint_type const* epm = em - pm > page::NMASK
+                bitmask_type const* epm = em - pm > page::NMASK
                     ? pm + page::NMASK
                     : em;
 
@@ -1292,11 +1292,11 @@ public:
         if coid_constexpr_if (LINEAR) {
             typedef std::remove_reference_t<typename closure_traits<Func>::template arg<0>> Tx;
             Tx* d = const_cast<Tx*>(this->_array.ptr());
-            uint_type const* b = const_cast<uint_type const*>(_allocated.ptr());
-            uint_type const* e = const_cast<uint_type const*>(_allocated.ptre());
+            bitmask_type const* b = const_cast<bitmask_type const*>(_allocated.ptr());
+            bitmask_type const* e = const_cast<bitmask_type const*>(_allocated.ptre());
             uints s = 0;
 
-            for (uint_type const* p = b; p != e; ++p, s += BITMASK_BITS) {
+            for (bitmask_type const* p = b; p != e; ++p, s += BITMASK_BITS) {
                 if (*p == 0)
                     continue;
 
@@ -1313,9 +1313,9 @@ public:
             //using page = typename storage_t::page;
             typedef typename storage_t::page page;
 
-            uint_type const* bm = const_cast<uint_type const*>(_allocated.ptr());
-            uint_type const* em = const_cast<uint_type const*>(_allocated.ptre());
-            uint_type const* pm = bm;
+            bitmask_type const* bm = const_cast<bitmask_type const*>(_allocated.ptr());
+            bitmask_type const* em = const_cast<bitmask_type const*>(_allocated.ptre());
+            bitmask_type const* pm = bm;
             uints gbase = 0;
 
             for (uints ip = 0; ip < this->_pages.size(); ++ip, gbase += page::ITEMS)
@@ -1323,7 +1323,7 @@ public:
                 const page& pp = this->_pages[ip];
                 T* data = const_cast<T*>(pp.ptr());
 
-                uint_type const* epm = em - pm > page::NMASK
+                bitmask_type const* epm = em - pm > page::NMASK
                     ? pm + page::NMASK
                     : em;
 
@@ -1341,10 +1341,10 @@ public:
                             break;
 
                         //update after rebase
-                        ints diffm = (ints)const_cast<uint_type const*>(_allocated.ptr()) - (ints)bm;
+                        ints diffm = (ints)const_cast<bitmask_type const*>(_allocated.ptr()) - (ints)bm;
                         if (diffm) {
                             bm = ptr_byteshift(bm, diffm);
-                            em = const_cast<uint_type const*>(_allocated.ptre());
+                            em = const_cast<bitmask_type const*>(_allocated.ptre());
                             pm = ptr_byteshift(pm, diffm);
                             epm = ptr_byteshift(epm, diffm);
                         }
@@ -1363,11 +1363,11 @@ public:
     {
         auto extarray = value_array<K>().ptr();
 
-        uint_type const* bm = const_cast<uint_type const*>(_allocated.ptr());
-        uint_type const* em = const_cast<uint_type const*>(_allocated.ptre());
+        bitmask_type const* bm = const_cast<bitmask_type const*>(_allocated.ptr());
+        bitmask_type const* em = const_cast<bitmask_type const*>(_allocated.ptre());
         uints s = 0;
 
-        for (uint_type const* pm = bm; pm != em; ++pm, s += BITMASK_BITS) {
+        for (bitmask_type const* pm = bm; pm != em; ++pm, s += BITMASK_BITS) {
             if (*pm == 0)
                 continue;
 
@@ -1379,10 +1379,10 @@ public:
                     break;
 
                 //update after rebase
-                ints diffm = (ints)const_cast<uint_type const*>(_allocated.ptr()) - (ints)bm;
+                ints diffm = (ints)const_cast<bitmask_type const*>(_allocated.ptr()) - (ints)bm;
                 if (diffm) {
                     bm = ptr_byteshift(bm, diffm);
-                    em = const_cast<uint_type const*>(_allocated.ptre());
+                    em = const_cast<bitmask_type const*>(_allocated.ptre());
                     pm = ptr_byteshift(pm, diffm);
                 }
 
@@ -1403,8 +1403,8 @@ public:
         const bool all_modified = bitplane_mask > slotalloc_detail::changeset::BITPLANE_MASK;
 
         typedef std::remove_pointer_t<std::remove_reference_t<typename closure_traits<Func>::template arg<0>>> Tx;
-        uint_type const* bm = const_cast<uint_type const*>(_allocated.ptr());
-        uint_type const* em = const_cast<uint_type const*>(_allocated.ptre());
+        bitmask_type const* bm = const_cast<bitmask_type const*>(_allocated.ptr());
+        bitmask_type const* em = const_cast<bitmask_type const*>(_allocated.ptre());
 
         auto chs = tracker_t::get_changeset();
         DASSERT(chs->size() >= uints(em - bm));
@@ -1413,7 +1413,7 @@ public:
         const changeset_t* ec = chs->ptre();
         if coid_constexpr_if (LINEAR) {
             T* pd0 = const_cast<T*>(this->_array.ptr());
-            uint_type const* pm = bm;
+            bitmask_type const* pm = bm;
 
             for (const changeset_t* ch = bc; ch < ec; ++pm) {
                 uints m = pm < em ? *pm : 0U;
@@ -1434,7 +1434,7 @@ public:
             const page* bp = this->_pages.ptr();
             const page* ep = this->_pages.ptre();
 
-            uint_type const* pm = bm;
+            bitmask_type const* pm = bm;
             changeset_t const* pc = bc;
             uints gbase = 0;
 
@@ -1504,14 +1504,14 @@ public:
     template<typename Func>
     T* find_if(Func f) const
     {
-        uint_type const* bm = const_cast<uint_type const*>(_allocated.ptr());
-        uint_type const* em = const_cast<uint_type const*>(_allocated.ptre());
+        bitmask_type const* bm = const_cast<bitmask_type const*>(_allocated.ptr());
+        bitmask_type const* em = const_cast<bitmask_type const*>(_allocated.ptre());
 
         if coid_constexpr_if (LINEAR) {
             uints base = 0;
             T* pd0 = const_cast<T*>(this->_array.ptr());
 
-            for (uint_type const* pm = bm; pm != em; ++pm, base += BITMASK_BITS) {
+            for (bitmask_type const* pm = bm; pm != em; ++pm, base += BITMASK_BITS) {
                 if (*pm == 0)
                     continue;
 
@@ -1523,10 +1523,10 @@ public:
                             return pd0 + id;
 
                         //update after rebase
-                        ints diffm = (ints)const_cast<uint_type const*>(_allocated.ptr()) - (ints)bm;
+                        ints diffm = (ints)const_cast<bitmask_type const*>(_allocated.ptr()) - (ints)bm;
                         if (diffm) {
                             bm = ptr_byteshift(bm, diffm);
-                            em = const_cast<uint_type const*>(_allocated.ptre());
+                            em = const_cast<bitmask_type const*>(_allocated.ptre());
                             pm = ptr_byteshift(pm, diffm);
                         }
                     }
@@ -1539,7 +1539,7 @@ public:
             //using page = typename storage_t::page;
             typedef typename storage_t::page page;
 
-            uint_type const* pm = bm;
+            bitmask_type const* pm = bm;
             uints gbase = 0;
 
             for (uints ip = 0; ip < this->_pages.size(); ++ip, gbase += page::ITEMS)
@@ -1547,7 +1547,7 @@ public:
                 const page& pp = this->_pages[ip];
                 T* data = const_cast<T*>(pp.ptr());
 
-                uint_type const* epm = em - pm > page::NMASK
+                bitmask_type const* epm = em - pm > page::NMASK
                     ? pm + page::NMASK
                     : em;
 
@@ -1564,10 +1564,10 @@ public:
                                 return const_cast<T*>(data) + (pbase + i);
 
                             //update after rebase
-                            ints diffm = (ints)const_cast<uint_type const*>(_allocated.ptr()) - (ints)bm;
+                            ints diffm = (ints)const_cast<bitmask_type const*>(_allocated.ptr()) - (ints)bm;
                             if (diffm) {
                                 bm = ptr_byteshift(bm, diffm);
-                                em = const_cast<uint_type const*>(_allocated.ptre());
+                                em = const_cast<bitmask_type const*>(_allocated.ptre());
                                 pm = ptr_byteshift(pm, diffm);
                                 epm = ptr_byteshift(epm, diffm);
                             }
@@ -1587,14 +1587,14 @@ public:
     template<typename Func>
     T* del_if(Func f)
     {
-        uint_type const* bm = const_cast<uint_type const*>(_allocated.ptr());
-        uint_type const* em = const_cast<uint_type const*>(_allocated.ptre());
+        bitmask_type const* bm = const_cast<bitmask_type const*>(_allocated.ptr());
+        bitmask_type const* em = const_cast<bitmask_type const*>(_allocated.ptre());
 
         if coid_constexpr_if(LINEAR) {
             uints base = 0;
             T* pd0 = const_cast<T*>(this->_array.ptr());
 
-            for (uint_type const* pm = bm; pm != em; ++pm, base += BITMASK_BITS) {
+            for (bitmask_type const* pm = bm; pm != em; ++pm, base += BITMASK_BITS) {
                 if (*pm == 0)
                     continue;
 
@@ -1606,10 +1606,10 @@ public:
                             del(pd0 + id);
 
                         //update after rebase
-                        ints diffm = (ints)const_cast<uint_type const*>(_allocated.ptr()) - (ints)bm;
+                        ints diffm = (ints)const_cast<bitmask_type const*>(_allocated.ptr()) - (ints)bm;
                         if (diffm) {
                             bm = ptr_byteshift(bm, diffm);
-                            em = const_cast<uint_type const*>(_allocated.ptre());
+                            em = const_cast<bitmask_type const*>(_allocated.ptre());
                             pm = ptr_byteshift(pm, diffm);
                         }
                     }
@@ -1622,7 +1622,7 @@ public:
             //using page = typename storage_t::page;
             typedef typename storage_t::page page;
 
-            uint_type const* pm = bm;
+            bitmask_type const* pm = bm;
             uints gbase = 0;
 
             for (uints ip = 0; ip < this->_pages.size(); ++ip, gbase += page::ITEMS)
@@ -1630,7 +1630,7 @@ public:
                 const page& pp = this->_pages[ip];
                 T* data = const_cast<T*>(pp.ptr());
 
-                uint_type const* epm = em - pm > page::NMASK
+                bitmask_type const* epm = em - pm > page::NMASK
                     ? pm + page::NMASK
                     : em;
 
@@ -1647,10 +1647,10 @@ public:
                                 del(const_cast<T*>(data) + (pbase + i));
 
                             //update after rebase
-                            ints diffm = (ints)const_cast<uint_type const*>(_allocated.ptr()) - (ints)bm;
+                            ints diffm = (ints)const_cast<bitmask_type const*>(_allocated.ptr()) - (ints)bm;
                             if (diffm) {
                                 bm = ptr_byteshift(bm, diffm);
-                                em = const_cast<uint_type const*>(_allocated.ptre());
+                                em = const_cast<bitmask_type const*>(_allocated.ptre());
                                 pm = ptr_byteshift(pm, diffm);
                                 epm = ptr_byteshift(epm, diffm);
                             }
@@ -1674,9 +1674,9 @@ public:
         if coid_constexpr_if(!POOL)
             return UMAXS;
 
-        uint_type const* bm = const_cast<uint_type const*>(_allocated.ptr());
-        uint_type const* em = const_cast<uint_type const*>(_allocated.ptre());
-        uint_type const* pm = bm;
+        bitmask_type const* bm = const_cast<bitmask_type const*>(_allocated.ptr());
+        bitmask_type const* em = const_cast<bitmask_type const*>(_allocated.ptre());
+        bitmask_type const* pm = bm;
 
         if coid_constexpr_if (LINEAR) {
             uints pbase = 0;
@@ -1709,13 +1709,13 @@ public:
             const page* pb = this->_pages.ptr();
             const page* pe = this->_pages.ptre();
 
-            uint_type const* pm = bm;
+            bitmask_type const* pm = bm;
             uints gbase = 0;
 
             for (const page* pp = pb; pp < pe; ++pp, gbase += page::ITEMS)
             {
                 T* d = const_cast<T*>(pp->ptr());
-                uint_type const* epm = em - pm > page::NMASK
+                bitmask_type const* epm = em - pm > page::NMASK
                     ? pm + page::NMASK
                     : em;
 
@@ -1770,9 +1770,9 @@ public:
         if (!TRACKING)
             return;
 
-        uint_type const* b = const_cast<uint_type const*>(_allocated.ptr());
-        uint_type const* e = const_cast<uint_type const*>(_allocated.ptre());
-        uint_type const* p = b;
+        bitmask_type const* b = const_cast<bitmask_type const*>(_allocated.ptr());
+        bitmask_type const* e = const_cast<bitmask_type const*>(_allocated.ptre());
+        bitmask_type const* p = b;
 
         const uint16 preserve = clear_old ? 0xfffeU : 0U;
 
@@ -1794,7 +1794,7 @@ public:
     {
         typedef std::forward_iterator_tag iterator_category;
 
-        iterator(base_t* base, uint_type index) : base(base), index(index)
+        iterator(base_t* base, bitmask_type index) : base(base), index(index)
         {}
 
         iterator& operator ++ () {
@@ -1819,11 +1819,11 @@ public:
     private:
 
         base_t* base = 0;
-        uint_type index = uint_type(-1);
+        uints index = uints(-1);
     };
 
     iterator begin() const {
-        const uint_type first_id = is_valid_id(0) || this->allocated_count() == 0 ? 0 : next_index(0);
+        const uints first_id = is_valid_id(0) || this->allocated_count() == 0 ? 0 : next_index(0);
         return iterator(const_cast<base_t*>(this), first_id);
     }
 
@@ -1833,12 +1833,15 @@ public:
 
 protected:
 
-    uint_type next_index(uint_type index) const {
+    uints next_index(bitmask_type index) const
+    {
+        using bitmask_value_type = typename storage_t::value_type;
         constexpr int mask_bits = (int)constexpr_int_high_pow2(BITMASK_BITS);
-        constexpr uint_type bit_mask = (1 << mask_bits) - 1;
-        uint bit = index & bit_mask;
-        uint_type slot = index >> mask_bits;
-        uint_type mask = _allocated[slot];
+        constexpr uint bitmask_value_mask = (1 << mask_bits) - 1;
+        uint bit = index & bitmask_value_mask;
+        uints slot = index >> mask_bits;
+
+        bitmask_value_type mask = _allocated[slot];
         ++bit;
         mask >>= bit;
         do {
@@ -1869,8 +1872,9 @@ protected:
             return this->_created;
     }
 
-    template <class Te, class uint_type>
-    static void copy_array_with_bitmask(const dynarray<Te>& src, dynarray<Te>& dst, const dynarray<uint_type>& mask) {
+    template <class Te, class bitmask_type>
+    static void copy_array_with_bitmask(const dynarray<Te>& src, dynarray<Te>& dst, const dynarray<bitmask_type>& mask)
+    {
         uints rsv = src.reserved_virtual();
         if (rsv > 0)
             dst.reserve(rsv, reserve_mode::virtual_space);
@@ -1878,9 +1882,9 @@ protected:
             dst.reserve(src.reserved_total(), reserve_mode::memory);
         Te* dd = dst.add_uninit(src.size());
         const Te* sd = src.ptr();
-        constexpr int n = sizeof(uint_type) * 8;
+        constexpr int n = sizeof(bitmask_type) * 8;
 
-        for (uint_type m : mask) {
+        for (bitmask_type m : mask) {
             uint i = 0;
             while (m != 0) {
                 if (m & 1)
@@ -1895,9 +1899,9 @@ protected:
 
 private:
 
-    dynarray<uint_type> _allocated;     //< bit mask for allocated/free items
+    dynarray<bitmask_type> _allocated;      //< bit mask for allocated/free items
 
-    uint_type _count = 0;               //< active element count
+    uints _count = 0;                       //< active element count
 
 #ifdef __clang__
 #pragma clang diagnostic push
@@ -2028,8 +2032,8 @@ private:
     {
         DASSERT(_count < created());
 
-        uint_type* p = _allocated.ptr();
-        uint_type* e = _allocated.ptre();
+        bitmask_type* p = _allocated.ptr();
+        bitmask_type* e = _allocated.ptre();
         for (; p != e && *p == UMAXS; ++p);
 
         if (p == e)
@@ -2058,7 +2062,7 @@ private:
         DASSERT(id < created());
         DASSERT(!get_bit(id));
 
-        uint_type* p = &_allocated[id / BITMASK_BITS];
+        bitmask_type* p = &_allocated[id / BITMASK_BITS];
         uint8 bit = id & (BITMASK_BITS - 1);
 
         *p |= uints(1) << bit;
@@ -2104,8 +2108,8 @@ private:
                 return UMAXS;
         }
 
-        uint_type const* bm = _allocated.ptr();
-        uint_type const* em = _allocated.ptre();
+        bitmask_type const* bm = _allocated.ptr();
+        bitmask_type const* em = _allocated.ptre();
         uints id = 0;
         if coid_constexpr_if (LINEAR) {
             id = find_zero_bitrange(n, bm, em);
@@ -2118,11 +2122,11 @@ private:
             page* bp = this->_pages.ptr();
             page* pp = bp;
 
-            uint_type const* pm = bm;
+            bitmask_type const* pm = bm;
 
             for (; pp != ep; ++pp, pm += page::NMASK)
             {
-                uint_type const* epm = em - pm > page::NMASK
+                bitmask_type const* epm = em - pm > page::NMASK
                     ? pm + page::NMASK
                     : em;
 

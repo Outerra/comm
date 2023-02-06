@@ -291,7 +291,7 @@ class data_manager
             return versionid();
         }
 
-        slothash<storage<T>, uint, slotalloc_mode::versioning | slotalloc_mode::linear, extractor> hash;
+        slothash<storage<T>, uint, slotalloc_mode::versioning | slotalloc_mode::linear | slotalloc_mode::atomic, extractor> hash;
     };
 
     /// @brief linear array container

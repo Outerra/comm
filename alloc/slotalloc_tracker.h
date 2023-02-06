@@ -73,13 +73,15 @@ namespace slotalloc_detail {
 template <bool ATOMIC>
 struct atomic_base
 {
-    using uint_type = uints;
+    using bitmask_type = uints;
+    using value_type = uints;
 };
 
 template <>
 struct atomic_base<true>
 {
-    using uint_type = std::atomic<uints>;
+    using bitmask_type = std::atomic<uints>;
+    using value_type = uints;
 };
 
 
@@ -89,7 +91,7 @@ struct storage
     : public atomic_base<ATOMIC>
 {
     using atomic_base_t = atomic_base<ATOMIC>;
-    using uint_type = typename atomic_base_t::uint_type;
+    using bitmask_type = typename atomic_base_t::bitmask_type;
 
     static constexpr int BITMASK_BITS = 8 * sizeof(uints);
 
@@ -124,7 +126,7 @@ struct storage
 
     dynarray<page> _pages;              //< pages of memory (paged mode)
 
-    uint_type _created = 0;             //< contiguous elements created total
+    uints _created = 0;                 //< contiguous elements created total
 
 //#ifndef COID_CONSTEXPR_IF // commented out to keep data layout with VS2017 and newer
     dynarray<T> _array;                 //< main data array (when using contiguous memory)

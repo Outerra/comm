@@ -56,17 +56,17 @@ typedef FunctionCallbackInfo<Value> ARGUMENTS;
 typedef PropertyCallbackInfo<Value> ACCESSOR;
 
 #ifdef V8_NEW2
-    #define V8_CHECK    .Check()
+#define V8_CHECK    .Check()
 #else
-    #define V8_CHECK
+#define V8_CHECK
 #endif
 
 
-inline Local<String> symbol( const coid::token& tok, Isolate* iso = 0 ) {
+inline Local<String> symbol(const coid::token& tok, Isolate* iso = 0) {
     return String::NewFromOneByte(iso ? iso : Isolate::GetCurrent(), (const uint8*)tok.ptr(), NewStringType::kInternalized, tok.len()).ToLocalChecked();
 }
 
-inline Local<String> string_utf8( const coid::token& tok, Isolate* iso = 0 ) {
+inline Local<String> string_utf8(const coid::token& tok, Isolate* iso = 0) {
     return String::NewFromUtf8(iso ? iso : Isolate::GetCurrent(), tok.ptr(), NewStringType::kNormal, tok.len()).ToLocalChecked();
 }
 
@@ -106,7 +106,7 @@ template<class T>
 class to_v8
 {
 public:
-    ///Generic generator from a type to its v8 representation
+    ///Generic generator from a type to its v8 representation (via metastream)
     static v8::Handle<v8::Value> read(const T& v);
 };
 
@@ -115,7 +115,7 @@ template<class T>
 class from_v8
 {
 public:
-    ///Generic parser from v8 type representation
+    ///Generic parser from v8 type representation (via metastream)
     static bool write(v8::Handle<v8::Value> src, T& res);
 };
 
