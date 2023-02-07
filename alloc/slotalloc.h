@@ -1828,7 +1828,7 @@ public:
     }
 
     iterator end() const {
-        return iterator(const_cast<base_t*>(this), _count);
+        return iterator(const_cast<base_t*>(this), uints(_count));
     }
 
 protected:
@@ -1901,7 +1901,7 @@ private:
 
     dynarray<bitmask_type> _allocated;      //< bit mask for allocated/free items
 
-    uints _count = 0;                       //< active element count
+    bitmask_type _count = 0;                       //< active element count
 
 #ifdef __clang__
 #pragma clang diagnostic push
