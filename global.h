@@ -586,14 +586,14 @@ public:
     /// @return container id
     /// @note container id 0 is created as a slotalloc to keep track of existing and deleted objects
     template <class C>
-    static void preallocate_array_container(uint reserve_count = coid::abyss_dynarray_size)
+    static void preallocate_array_container(uint reserve_count = 1 << 23)
     {
         carray<C>* cont = get_or_create_container<C, carray<C>>();
         cont->reserve(reserve_count);
     }
 
     template <class C>
-    static void preallocate_hash_container(uint reserve_count = coid::abyss_dynarray_size)
+    static void preallocate_hash_container(uint reserve_count = 1 << 23)
     {
         cshash<C>* cont = get_or_create_container<C, cshash<C>>();
         cont->reserve(reserve_count);
