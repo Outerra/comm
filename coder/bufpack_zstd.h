@@ -97,7 +97,10 @@ struct packer_zstd
         ZSTD_initDStream(_dstream);
         _eof = false;
 
-        uint64 dstsize = ZSTD_getDecompressedSize(src, size);
+        uint64 dstsize = ZSTD_getFrameContentSize(src, size);
+        if (dstsize == ZSTD_CONTENTSIZE_ERROR)
+            return UMAXS;
+
         uints origsize = dst.size();
 
         const uints outblocksize = ZSTD_DStreamOutSize();
@@ -108,7 +111,7 @@ struct packer_zstd
         zin.size = size;
         zin.pos = 0;
         zot.pos = 0;
-        zot.size = dstsize && dstsize <= UMAX64 ? uints(dstsize) : outblocksize;
+        zot.size = dstsize < ZSTD_CONTENTSIZE_UNKNOWN ? uints(dstsize) : outblocksize;
         zot.dst = dst.add(zot.size);
 
         uints rem;
