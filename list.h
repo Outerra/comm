@@ -23,16 +23,16 @@ public:
         COIDNEWDELETE(node);
 
         union {
-            node *_next_basic_pool;
-            node *_next = 0;
+            node* _next_basic_pool;
+            node* _next = 0;
         };
-        node *_prev = 0;
-        union 
+        node* _prev = 0;
+        union
         {
             uchar _item_mem[sizeof(T)];
             T _item;
         };
-        
+
 
         node() {}
 
@@ -40,7 +40,7 @@ public:
 
         ~node() {};
 
-        void operator = (const node &n) { DASSERT(false); }
+        void operator = (const node& n) { DASSERT(false); }
 
         T& item() { return *reinterpret_cast<T*>(_item_mem); }
 
@@ -53,7 +53,7 @@ public:
 
     struct _list_iterator_base
     {
-        node*  _node;
+        node* _node;
 
         bool operator == (const _list_iterator_base& p) const { return p._node == _node; }
         bool operator != (const _list_iterator_base& p) const { return p._node != _node; }
@@ -160,9 +160,9 @@ protected:
 
 protected:
 
-    node* new_node(node *itpos, const T& item)
+    node* new_node(node* itpos, const T& item)
     {
-        node *nn = _npool.pop_new();
+        node* nn = _npool.pop_new();
 
         nn->_next = itpos;
         nn->_prev = itpos->_prev;
@@ -171,9 +171,9 @@ protected:
         return nn;
     }
 
-    node* new_node(node *itpos, T&& item)
+    node* new_node(node* itpos, T&& item)
     {
-        node *nn = _npool.pop_new();
+        node* nn = _npool.pop_new();
 
         nn->_next = itpos;
         nn->_prev = itpos->_prev;
@@ -183,30 +183,30 @@ protected:
         return nn;
     }
 
-    void delete_node(node *n)
+    void delete_node(node* n)
     {
         n->item().~T();
         _npool.push(n);
     }
 
     ///
-    void insert(node* itpos, const T &item)
+    void insert(node* itpos, const T& item)
     {
-        node * const nn = new_node(itpos, item);
+        node* const nn = new_node(itpos, item);
         nn->_prev->_next = itpos->_prev = nn;
     }
 
     ///
     void insert(node* itpos, T&& item)
     {
-        node * const nn = new_node(itpos, std::forward<T>(item));
+        node* const nn = new_node(itpos, std::forward<T>(item));
         nn->_prev->_next = itpos->_prev = nn;
     }
 
     ///
     T* insert_uninit(node* itpos)
     {
-        node *nn = _npool.pop_new();
+        node* nn = _npool.pop_new();
 
         nn->_next = itpos;
         nn->_prev = itpos->_prev;
@@ -242,20 +242,20 @@ public:
     T* push_back_uninit() { return insert_uninit(&_node); }
 
     ///
-    void insert(_list_iterator_base &it, const T &item) {
+    void insert(_list_iterator_base& it, const T& item) {
         insert(it._node->_next, item);
     }
 
     ///
-    void insert_before(_list_iterator_base &it, const T &item)
+    void insert_before(_list_iterator_base& it, const T& item)
     {
         insert(it._node, item);
     }
 
     ///
-    void erase(_list_iterator_base &it)
+    void erase(_list_iterator_base& it)
     {
-        if(it._node != &_node) {
+        if (it._node != &_node) {
             it._node->_prev->_next = it._node->_next;
             it._node->_next->_prev = it._node->_prev;
             delete_node(it._node);
@@ -263,9 +263,9 @@ public:
     }
 
     ///
-    bool pop_front(T &item)
+    bool pop_front(T& item)
     {
-        if(!is_empty()) {
+        if (!is_empty()) {
             item = std::move(front());
             iterator eit(_node._next);
             erase(eit);
@@ -277,8 +277,8 @@ public:
     ///
     T* pop_front_ptr()
     {
-        if(!is_empty()) {
-            T *item = &front();
+        if (!is_empty()) {
+            T* item = &front();
             iterator eit(_node._next);
             erase(eit);
             return item;
@@ -287,9 +287,9 @@ public:
     }
 
     ///
-    bool pop_back(T &item)
+    bool pop_back(T& item)
     {
-        if(!is_empty()) {
+        if (!is_empty()) {
             item = std::move(back());
             iterator eit(_node._prev);
             erase(eit);
@@ -301,8 +301,8 @@ public:
     ///
     T* pop_back_ptr()
     {
-        if(!is_empty()) {
-            T *item = &back();
+        if (!is_empty()) {
+            T* item = &back();
             iterator eit(_node._prev);
             erase(eit);
             return item;
@@ -315,7 +315,7 @@ public:
     {
         node* n = _node._next;
         _node._next = _node._prev = &_node;
-        while(n->_next != &_node) {
+        while (n->_next != &_node) {
             n = n->_next;
             delete_node(n->_prev);
         }
@@ -339,14 +339,14 @@ public:
     const_reverse_iterator rbegin() const { return const_reverse_iterator(_node._prev); }
     const_reverse_iterator rend() const { return const_reverse_iterator(&_node); }
 
-    iterator find(const T &item)
+    iterator find(const T& item)
     {
         iterator i = begin(), e = end();
-        for(; *i != item && i != e; ++i);
+        for (; *i != item && i != e; ++i);
         return i;
     }
 
-    const_iterator find(const T &item) const
+    const_iterator find(const T& item) const
     {
         return find(item);
     }

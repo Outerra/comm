@@ -120,9 +120,9 @@ public:
     struct Node
     {
         VAL     _val;
-        Node* _next;
+        Node* _next = 0;
 
-        Node() : _next(0) {}
+        Node() {}
 
         COIDNEWDELETE_NOTRACK;
     };
