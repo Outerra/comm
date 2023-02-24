@@ -27,21 +27,28 @@ public:
             node *_next = 0;
         };
         node *_prev = 0;
-        uchar _item[sizeof(T)];
+        union 
+        {
+            uchar _item_mem[sizeof(T)];
+            T _item;
+        };
+        
 
         node() {}
 
-        node(bool) { _next = _prev = this; memset(&_item, 0xff, sizeof(_item)); }
+        node(bool) { _next = _prev = this; memset(&_item_mem, 0xff, sizeof(_item_mem)); }
+
+        ~node() {};
 
         void operator = (const node &n) { DASSERT(false); }
 
-        T& item() { return *reinterpret_cast<T*>(_item); }
+        T& item() { return *reinterpret_cast<T*>(_item_mem); }
 
-        const T& item() const { return *reinterpret_cast<const T*>(_item); }
+        const T& item() const { return *reinterpret_cast<const T*>(_item_mem); }
 
-        T* item_ptr() { return reinterpret_cast<T*>(_item); }
+        T* item_ptr() { return reinterpret_cast<T*>(_item_mem); }
 
-        const T* item_ptr() const { return reinterpret_cast<const T*>(_item); }
+        const T* item_ptr() const { return reinterpret_cast<const T*>(_item_mem); }
     };
 
     struct _list_iterator_base
@@ -159,7 +166,7 @@ protected:
 
         nn->_next = itpos;
         nn->_prev = itpos->_prev;
-        new (nn->_item) T(item);
+        new (nn->_item_mem) T(item);
 
         return nn;
     }
@@ -171,7 +178,7 @@ protected:
         nn->_next = itpos;
         nn->_prev = itpos->_prev;
 
-        new (nn->_item) T(std::move(item));
+        new (nn->_item_mem) T(std::move(item));
 
         return nn;
     }
