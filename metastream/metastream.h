@@ -114,6 +114,8 @@ public:
 
 
     metastream() = default;
+    metastream(const metastream&) = delete;
+    metastream& operator=(const metastream&) = delete;
 
     explicit metastream(fmtstream& bin)
     {
