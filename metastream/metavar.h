@@ -62,6 +62,7 @@ struct MetaDesc
         int offset = 0;                 //< offset in parent
 
         dynarray<uchar> defval;         //< default value for reading if not found in input stream
+
         bool nameless_root = false;     //< true if the variable is a nameless root
         bool obsolete = false;          //< variable is only read, not written
         bool optional = false;          //< variable is optional
@@ -69,20 +70,9 @@ struct MetaDesc
 
         MetaDesc* stream_desc() const   { DASSERT(desc->streaming_type); return desc->streaming_type; }
 
-        //bool is_array() const           { return desc->is_array(); }
         bool is_array_element() const   { return varname.is_empty() && !nameless_root; }
-        //bool is_primitive() const       { return desc->is_primitive(); }
-        //bool is_compound() const        { return desc->is_compound(); }
-
         bool skipped() const            { return obsolete; }
-
         bool has_default() const        { return defval.size() > 0; }
-
-        ///Get byte size of primitive element
-        //ushort get_size() const         { return desc->btype.get_size(); }
-
-        //type get_type() const           { return desc->btype; }
-
 
         Var* stream_element() const {
             DASSERT(stream_desc()->is_array());
@@ -161,7 +151,7 @@ struct MetaDesc
     bool is_array() const               { return is_array_type; }
     bool is_primitive() const           { return btype.is_primitive(); }
     bool is_compound() const            { return !btype.is_primitive() && !is_array(); }
-    
+
 
     uints num_children() const          { return children.size(); }
 
@@ -185,7 +175,7 @@ struct MetaDesc
     Var* next_child( Var* c, bool read ) const
     {
         if(!c)  return 0;
-        
+
         Var* l = children.last();
 
         DASSERT( c>=children.ptr() && c<=l );

@@ -336,7 +336,7 @@ public:
     bool member(const token& name, T& v)
     {
         if (streaming()) {
-            *this || *(typename resolve_enum<T>::type*) & v;
+            *this || *(typename resolve_enum<T>::type*)&v;
             return true;
         }
 
@@ -355,7 +355,7 @@ public:
         bool used = false;
 
         if (_binw) {
-            *this || *(typename resolve_enum<T>::type*) & v;
+            *this || *(typename resolve_enum<T>::type*)&v;
             used = true;
         }
         else if (_binr) {
@@ -382,7 +382,7 @@ public:
 
         if (_binw) {
             used = write_optional(!cache_prepared() && !write_default && v == defval
-                ? 0 : (typename resolve_enum<T>::type*) & v);
+                ? 0 : (typename resolve_enum<T>::type*)&v);
         }
         else if (_binr) {
             used = read_optional(v);
@@ -902,7 +902,7 @@ public:
     bool nonmember(const token& name, T& v)
     {
         if (streaming()) {
-            *this || *(typename resolve_enum<T>::type*) & v;
+            *this || *(typename resolve_enum<T>::type*)&v;
             return true;
         }
 
@@ -921,7 +921,7 @@ public:
         bool used = false;
 
         if (_binw) {
-            *this || *(typename resolve_enum<T>::type*) & v;
+            *this || *(typename resolve_enum<T>::type*)&v;
             used = true;
         }
         else if (_binr) {
@@ -948,7 +948,7 @@ public:
 
         if (_binw) {
             used = write_optional(!cache_prepared() && !write_default && v == defval
-                ? 0 : (typename resolve_enum<T>::type*) & v);
+                ? 0 : (typename resolve_enum<T>::type*)&v);
         }
         else if (_binr) {
             used = read_optional(v);
@@ -1170,7 +1170,7 @@ public:
     {
         opcd e = movein_process_key(READ_MODE);
         if (!e) {
-            *this || *(typename resolve_enum<T>::type*) & val;
+            *this || *(typename resolve_enum<T>::type*)&val;
             return true;
         }
         else {
@@ -1199,9 +1199,12 @@ public:
         return 0;
     }
 
-    void set_next_container_default_value(void* defval) {
-        if (stream_reading())
-            _container_default_value = defval;
+    template <class T>
+    void set_next_container_default_value(const T& defval) {
+        if (stream_reading()) {
+            _container_default_value = &defval;
+            _container_default_value_type = typeid(T).name();
+        }
     }
 
 
@@ -2462,7 +2465,8 @@ private:
     MetaDesc::Var* _current_var = 0;
     MetaDesc::Var* _last_var = 0;
 
-    void* _container_default_value = 0;
+    const void* _container_default_value = 0;
+    const char* _container_default_value_type = 0;
 
     token _cur_variable_name;
     MetaDesc::stream_func _cur_stream_fn;
@@ -2473,6 +2477,7 @@ private:
     ///Entry for variable stack
     struct VarEntry {
         MetaDesc::Var* var = 0;         //< currently processed variable
+        const void* defval = 0;         //< default value provided by set_next_container_default_value
         int kth = 0;                    //< its position within parent
     };
 
@@ -2881,6 +2886,12 @@ protected:
 
     opcd movein_process_key(bool read)
     {
+        if (_container_default_value) {
+            _curvar.defval = _container_default_value;
+            _container_default_value = nullptr;
+            _container_default_value_type = nullptr;
+        }
+
         if (!_rvarname.is_empty()) {
             DASSERT(_rvarname == _curvar.var->varname);
             //_rvarname.reset();
@@ -2897,8 +2908,6 @@ protected:
     ///Traverse the tree and set up the next target for input/output streaming
     opcd moveto_expected_target(bool read)
     {
-        _container_default_value = nullptr;
-
         //get next var
         MetaDesc::Var* par = parent_var();
         if (!par) {
@@ -3198,7 +3207,7 @@ protected:
                         type::mask_array_element_first_flag(tae);
                     }
 
-                    void* p = c.insert(1, _container_default_value);
+                    void* p = c.insert(1, _curvar.defval);
                     if (!p)
                         return ersNOT_ENOUGH_MEM;
 
@@ -3232,15 +3241,17 @@ protected:
 
                 *count = i;
             }
-            else                    //uncached compound array
+            else {
+                //uncached compound array
                 e = data_read_compound_array_content(c, n, count);
+            }
         }
         else if (cache_prepared()) //cache with a primitive array
         {
             if (!_cachevar && c.is_continuous() && n != UMAXS)
             {
                 uints na = n * tae.get_size();
-                xmemcpy(c.insert(n, _container_default_value), _current->data(), na);
+                xmemcpy(c.insert(n, _curvar.defval), _current->data(), na);
 
                 _current->offs += na;
                 *count = n;
@@ -3254,7 +3265,7 @@ protected:
                     DASSERT(!t.is_no_size());
 
                     uints na = n * t.get_size();
-                    e = data_read_raw_full(c.insert(n, _container_default_value), na);
+                    e = data_read_raw_full(c.insert(n, _curvar.defval), na);
 
                     if (!e)  *count = n;
                 }
@@ -3274,6 +3285,7 @@ protected:
         bool complextype = !c._type.is_primitive();
         bool needpeek = c.array_needs_separators();
         uints k = 0;
+        const void* defitemval = _curvar.defval;
 
         opcd e;
         while (n > 0)
@@ -3284,7 +3296,7 @@ protected:
             if (needpeek && (e = data_read_array_separator(tae)))
                 break;
 
-            void* p = c.insert(1, _container_default_value);
+            void* p = c.insert(1, defitemval);
             if (!p)
                 return ersNOT_ENOUGH_MEM;
 
