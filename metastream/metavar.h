@@ -277,7 +277,7 @@ public:
         return desc->fnextract(data, context);
     }
 
-    virtual void* insert(uints n) override {
+    virtual void* insert(uints n, const void* defval) override {
         DASSERT(n == 1);
         return desc->fnpush(data, context);
     }

@@ -747,18 +747,18 @@ public:
 
         opcd e = 0;
         if (t.type == type::T_BINARY)
-            e = read_binary(tok, c, n, count);
+            e = read_binary(tok, c, n, count, m);
         else
         {
             if (n != UMAXS && n != tok.len())
                 e = ersMISMATCHED "array size";
             else if (c.is_continuous() && n != UMAXS)
-                xmemcpy(c.insert(n), tok.ptr(), tok.len());
+                xmemcpy(c.insert(n, m), tok.ptr(), tok.len());
             else
             {
                 const char* p = tok.ptr();
                 uints n = tok.len();
-                for (; n > 0; --n, ++p)  *(char*)c.insert(1) = *p;
+                for (; n > 0; --n, ++p)  *(char*)c.insert(1, m) = *p;
             }
 
             *count = tok.len();

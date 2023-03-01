@@ -647,11 +647,11 @@ public:
 			tok = _tokenizer.last();
 
         opcd e=0;
-		if( _tagmode == 3 ) {
-			*count = 0;
-		}
-        else if( t.type == type::T_BINARY )
-            e = read_binary(tok,c,n,count);
+        if (_tagmode == 3) {
+            *count = 0;
+        }
+        else if (t.type == type::T_BINARY)
+            e = read_binary(tok, c, n, count, m);
         else
         {
             if( n != UMAXS  &&  n != tok.len() )

@@ -290,7 +290,7 @@ public:
     ////////////////////////////////////////////////////////////////////////////////
     struct dynarray_binstream_container : public binstream_containerT<T, COUNT>
     {
-        virtual const void* extract(uints n)
+        virtual const void* extract(uints n) override
         {
             DASSERT(_pos + n <= _v.size());
             const T* p = &_v[_pos];
@@ -298,15 +298,20 @@ public:
             return p;
         }
 
-        virtual void* insert(uints n)
+        virtual void* insert(uints n, const void* defval) override
         {
             _v._assert_allowed_size(n);
-            return _v.add(COUNT(n));
+            T* p = _v.add(COUNT(n));
+            if (defval) {
+                for (uints i = 0; i < n; ++i)
+                    p[i] = *static_cast<const T*>(defval);
+            }
+            return p;
         }
 
-        virtual bool is_continuous() const { return true; }
+        virtual bool is_continuous() const override { return true; }
 
-        virtual uints count() const { return _v.size(); }
+        virtual uints count() const override { return _v.size(); }
 
         dynarray_binstream_container(const dynarray<T, COUNT, A>& v)
             : _v(const_cast<dynarray<T, COUNT, A>&>(v))
@@ -329,7 +334,7 @@ public:
     ///
     struct dynarray_binstream_dereferencing_container : public binstream_containerT<T, COUNT>
     {
-        virtual const void* extract(uints n)
+        virtual const void* extract(uints n) override
         {
             DASSERT(n == 1);
             const T* p = _v[_pos];
@@ -337,17 +342,17 @@ public:
             return p;
         }
 
-        virtual void* insert(uints n)
+        virtual void* insert(uints n, const void* defval) override
         {
             DASSERT(n == 1);
-            return new(_v.add()) T;
+            return defval ? new (_v.add()) T(*static_cast<const T*>(defval)) : new(_v.add()) T;
         }
 
-        virtual bool is_continuous() const {
+        virtual bool is_continuous() const override {
             return false;
         }
 
-        virtual uints count() const { return _v.size(); }
+        virtual uints count() const override { return _v.size(); }
 
         dynarray_binstream_dereferencing_container(const dynarray<T*>& v)
             : _v(const_cast<dynarray<T*>&>(v))

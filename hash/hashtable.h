@@ -305,7 +305,7 @@ public:
     {
         typedef typename binstream_containerT<VAL>::fnc_stream    fnc_stream;
 
-        virtual const void* extract(uints n)
+        virtual const void* extract(uints n) override
         {
             DASSERT(_begin != _end);
             const VAL* p = &(*_begin);
@@ -313,9 +313,11 @@ public:
             return p;
         }
 
-        virtual void* insert(uints n)
+        virtual void* insert(uints n, const void* defval) override
         {
             Node* p = *_newnode.add() = _ht._ALLOC.alloc();
+            if (defval)
+                p->_val = *static_cast<const VAL*>(defval);
             return &p->_val;
         }
 

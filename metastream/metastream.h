@@ -336,7 +336,7 @@ public:
     bool member(const token& name, T& v)
     {
         if (streaming()) {
-            *this || *(typename resolve_enum<T>::type*)&v;
+            *this || *(typename resolve_enum<T>::type*) & v;
             return true;
         }
 
@@ -355,7 +355,7 @@ public:
         bool used = false;
 
         if (_binw) {
-            *this || *(typename resolve_enum<T>::type*)&v;
+            *this || *(typename resolve_enum<T>::type*) & v;
             used = true;
         }
         else if (_binr) {
@@ -382,7 +382,7 @@ public:
 
         if (_binw) {
             used = write_optional(!cache_prepared() && !write_default && v == defval
-                ? 0 : (typename resolve_enum<T>::type*)&v);
+                ? 0 : (typename resolve_enum<T>::type*) & v);
         }
         else if (_binr) {
             used = read_optional(v);
@@ -403,7 +403,7 @@ public:
     template<typename T, size_t N>
     bool member(const token& name, T(&v)[N], bool optional = false)
     {
-        return member_fixed_size_array<N>(name, v, optional, false);
+        return member_fixed_size_array(name, v, optional, false);
     }
 
     ///Define a member variable referenced by a pointer (non-streamable) except const char*
@@ -902,7 +902,7 @@ public:
     bool nonmember(const token& name, T& v)
     {
         if (streaming()) {
-            *this || *(typename resolve_enum<T>::type*)&v;
+            *this || *(typename resolve_enum<T>::type*) & v;
             return true;
         }
 
@@ -921,7 +921,7 @@ public:
         bool used = false;
 
         if (_binw) {
-            *this || *(typename resolve_enum<T>::type*)&v;
+            *this || *(typename resolve_enum<T>::type*) & v;
             used = true;
         }
         else if (_binr) {
@@ -948,7 +948,7 @@ public:
 
         if (_binw) {
             used = write_optional(!cache_prepared() && !write_default && v == defval
-                ? 0 : (typename resolve_enum<T>::type*)&v);
+                ? 0 : (typename resolve_enum<T>::type*) & v);
         }
         else if (_binr) {
             used = read_optional(v);
@@ -968,7 +968,7 @@ public:
     template<typename T, size_t N>
     bool nonmember(const token& name, T(&v)[N], bool optional = false)
     {
-        return member_fixed_size_array<N>(name, v, optional, true);
+        return member_fixed_size_array(name, v, optional, true);
     }
 
     ///Define a non-member variable referenced by a pointer (non-streamable), except const char*
@@ -1090,7 +1090,20 @@ public:
     //@param nonmember non-member variable (no valid offset within the parent struct)
     //@return true if value was read or written and no default was used, false in meta phase
     template<size_t N, typename T>
-    bool member_fixed_size_array(const token& name, T* v, bool optional, bool nonmember = false)
+    bool member_fixed_size_array(const token& name, T(&v)[N], bool optional, bool nonmember = false)
+    {
+        return member_fixed_size_array_ptr<N>(name, v, optional, nonmember);
+    }
+
+    ///Define a fixed size array member
+    //@param name variable name, used as a key in output formats
+    //@param v pointer to the first array element
+    //@param size element count
+    //@param optional true if optional on input
+    //@param nonmember non-member variable (no valid offset within the parent struct)
+    //@return true if value was read or written and no default was used, false in meta phase
+    template<size_t N, typename T>
+    bool member_fixed_size_array_ptr(const token& name, T* v, bool optional, bool nonmember = false)
     {
         if (_binw) {
             binstream_container_fixed_array<T, ints> bc(v, N);
@@ -1157,7 +1170,7 @@ public:
     {
         opcd e = movein_process_key(READ_MODE);
         if (!e) {
-            *this || *(typename resolve_enum<T>::type*)&val;
+            *this || *(typename resolve_enum<T>::type*) & val;
             return true;
         }
         else {
@@ -1184,6 +1197,11 @@ public:
             moveto_expected_target(READ_MODE);
 
         return 0;
+    }
+
+    void set_next_container_default_value(void* defval) {
+        if (stream_reading())
+            _container_default_value = defval;
     }
 
 
@@ -1244,13 +1262,13 @@ public:
 
         ///Provide a pointer to next object that should be streamed
         //@param n number of objects to allocate the space for
-        virtual const void* extract(uints n) { return _container.extract(n); }
-        virtual void* insert(uints n) { return _container.insert(n); }
+        virtual const void* extract(uints n, metastream* m) override { return _container.extract(n); }
+        virtual void* insert(uints n, metastream* m) override { return _container.insert(n); }
 
         //@return true if the storage is continuous in memory
-        virtual bool is_continuous() const { return _container.is_continuous(); }
+        virtual bool is_continuous() const override { return _container.is_continuous(); }
 
-        virtual uints count() const { return _container.count(); }
+        virtual uints count() const override { return _container.count(); }
 
     protected:
 
@@ -1759,26 +1777,26 @@ public:
 
     metastream& operator || (bstype::key& a) { return meta_base_type("bstype::key", a.k); }
 
-    metastream& operator || (bool&a) { return meta_base_type("bool", a); }
-    metastream& operator || (int8&a) { return meta_base_type("int8", a); }
-    metastream& operator || (uint8&a) { return meta_base_type("uint8", a); }
-    metastream& operator || (int16&a) { return meta_base_type("int16", a); }
-    metastream& operator || (uint16&a) { return meta_base_type("uint16", a); }
-    metastream& operator || (int32&a) { return meta_base_type("int32", a); }
-    metastream& operator || (uint32&a) { return meta_base_type("uint32", a); }
-    metastream& operator || (int64&a) { return meta_base_type("int64", a); }
-    metastream& operator || (uint64&a) { return meta_base_type("uint64", a); }
+    metastream& operator || (bool& a) { return meta_base_type("bool", a); }
+    metastream& operator || (int8& a) { return meta_base_type("int8", a); }
+    metastream& operator || (uint8& a) { return meta_base_type("uint8", a); }
+    metastream& operator || (int16& a) { return meta_base_type("int16", a); }
+    metastream& operator || (uint16& a) { return meta_base_type("uint16", a); }
+    metastream& operator || (int32& a) { return meta_base_type("int32", a); }
+    metastream& operator || (uint32& a) { return meta_base_type("uint32", a); }
+    metastream& operator || (int64& a) { return meta_base_type("int64", a); }
+    metastream& operator || (uint64& a) { return meta_base_type("uint64", a); }
 
-    metastream& operator || (char&a) { return meta_base_type("char", a); }
+    metastream& operator || (char& a) { return meta_base_type("char", a); }
 
 #if defined(SYSTYPE_WIN)
-    metastream& operator || (long&a) { return meta_base_type("long", a); }
-    metastream& operator || (ulong&a) { return meta_base_type("ulong", a); }
+    metastream& operator || (long& a) { return meta_base_type("long", a); }
+    metastream& operator || (ulong& a) { return meta_base_type("ulong", a); }
 #endif
 
-    metastream& operator || (float&a) { return meta_base_type("float", a); }
-    metastream& operator || (double&a) { return meta_base_type("double", a); }
-    metastream& operator || (long double&a) { return meta_base_type("long double", a); }
+    metastream& operator || (float& a) { return meta_base_type("float", a); }
+    metastream& operator || (double& a) { return meta_base_type("double", a); }
+    metastream& operator || (long double& a) { return meta_base_type("long double", a); }
 
 
     metastream& operator || (const char*& a)
@@ -1828,11 +1846,11 @@ public:
         return *this;
     }
 
-    metastream& operator || (timet&a) { return meta_base_type("time", a); }
+    metastream& operator || (timet& a) { return meta_base_type("time", a); }
 
-    metastream& operator || (opcd&a) { return meta_base_type("opcd", a); }
+    metastream& operator || (opcd& a) { return meta_base_type("opcd", a); }
 
-    metastream& operator || (charstr&a)
+    metastream& operator || (charstr& a)
     {
         if (_binr) {
             auto& dyn = a.dynarray_ref();
@@ -1862,7 +1880,7 @@ public:
         return *this;
     }
 
-    metastream& operator || (token&a)
+    metastream& operator || (token& a)
     {
         if (_binr) {
             throw exception("unsupported");
@@ -1873,22 +1891,22 @@ public:
         else {
             compound_type_stream_as(a,
                 [&]() {
-                    member("ptr", a._ptr);
-                    member("pte", a._pte);
-                },
+                member("ptr", a._ptr);
+                member("pte", a._pte);
+            },
                 [&]() {
-                    if (meta_decl_array(
-                        "coid::token"_T,        //must be different than typeid used above
-                        (ints)&a._ptr,
-                        sizeof(a),
-                        false,
-                        [](const void* a) -> const void* { return static_cast<const token*>(a)->ptr(); },
-                        [](const void* a) -> uints { return static_cast<const token*>(a)->len(); },
-                        0,
-                        [](const void* a, uints& i) -> const void* { return static_cast<const token*>(a)->ptr() + i++; }
-                    ))
-                        meta_def_primitive<char>("char");
-                }
+                if (meta_decl_array(
+                    "coid::token"_T,        //must be different than typeid used above
+                    (ints)&a._ptr,
+                    sizeof(a),
+                    false,
+                    [](const void* a) -> const void* { return static_cast<const token*>(a)->ptr(); },
+                    [](const void* a) -> uints { return static_cast<const token*>(a)->len(); },
+                    0,
+                    [](const void* a, uints& i) -> const void* { return static_cast<const token*>(a)->ptr() + i++; }
+                ))
+                    meta_def_primitive<char>("char");
+            }
             );
         }
 
@@ -2444,6 +2462,8 @@ private:
     MetaDesc::Var* _current_var = 0;
     MetaDesc::Var* _last_var = 0;
 
+    void* _container_default_value = 0;
+
     token _cur_variable_name;
     MetaDesc::stream_func _cur_stream_fn;
     int _cur_variable_offset;
@@ -2877,6 +2897,8 @@ protected:
     ///Traverse the tree and set up the next target for input/output streaming
     opcd moveto_expected_target(bool read)
     {
+        _container_default_value = nullptr;
+
         //get next var
         MetaDesc::Var* par = parent_var();
         if (!par) {
@@ -3077,7 +3099,7 @@ protected:
         }
         else if (cache_prepared()) //cache with a primitive array
         {
-            if (!_cachevar  &&  c.is_continuous() && n != UMAXS)
+            if (!_cachevar && c.is_continuous() && n != UMAXS)
             {
                 uints na = n * tae.get_size();
                 xmemcpy(_current->insert_void_unpadded(na), c.extract(n), na);
@@ -3176,7 +3198,7 @@ protected:
                         type::mask_array_element_first_flag(tae);
                     }
 
-                    void* p = c.insert(1);
+                    void* p = c.insert(1, _container_default_value);
                     if (!p)
                         return ersNOT_ENOUGH_MEM;
 
@@ -3203,7 +3225,7 @@ protected:
                         _current->offs = off;
                 }
 
-                if (_cachevar  &&  i > 0) {
+                if (_cachevar && i > 0) {
                     uints off = _current->pad();
                     _current->set_addr(prevoff, off);
                 }
@@ -3215,10 +3237,10 @@ protected:
         }
         else if (cache_prepared()) //cache with a primitive array
         {
-            if (!_cachevar  &&  c.is_continuous() && n != UMAXS)
+            if (!_cachevar && c.is_continuous() && n != UMAXS)
             {
                 uints na = n * tae.get_size();
-                xmemcpy(c.insert(n), _current->data(), na);
+                xmemcpy(c.insert(n, _container_default_value), _current->data(), na);
 
                 _current->offs += na;
                 *count = n;
@@ -3232,7 +3254,7 @@ protected:
                     DASSERT(!t.is_no_size());
 
                     uints na = n * t.get_size();
-                    e = data_read_raw_full(c.insert(n), na);
+                    e = data_read_raw_full(c.insert(n, _container_default_value), na);
 
                     if (!e)  *count = n;
                 }
@@ -3262,7 +3284,7 @@ protected:
             if (needpeek && (e = data_read_array_separator(tae)))
                 break;
 
-            void* p = c.insert(1);
+            void* p = c.insert(1, _container_default_value);
             if (!p)
                 return ersNOT_ENOUGH_MEM;
 
@@ -3429,7 +3451,7 @@ protected:
             {
                 //only primitive data here
                 DASSERT(t.is_primitive());
-                DASSERT(t.type != type::T_STRUCTBGN  &&  t.type != type::T_STRUCTEND);
+                DASSERT(t.type != type::T_STRUCTBGN && t.type != type::T_STRUCTEND);
                 DASSERT(_cachevar || !_curvar.var->is_array_element());
 
                 uints tsize = t.get_size();
@@ -3656,14 +3678,14 @@ protected:
     ///
     struct cache_container : public binstream_container<uints>
     {
-        const void* extract(uints n) { return 0; }
+        const void* extract(uints n) override { return 0; }
 
         //just fake it as the memory wouldn't be used anyway but it can't be NULL
-        void* insert(uints n) { return (void*)1; }
+        void* insert(uints n, const void* defval) override { return (void*)1; }
 
-        bool is_continuous() const { return true; }    //for primitive types it's continuous
+        bool is_continuous() const override { return true; }    //for primitive types it's continuous
 
-        uints count() const { return desc.array_size; }
+        uints count() const override { return desc.array_size; }
 
 
         cache_container(metastream& meta, MetaDesc& desc)
@@ -3678,7 +3700,7 @@ protected:
         }
 
     protected:
-        metastream & meta;
+        metastream& meta;
         const MetaDesc& desc;
     };
     /*
@@ -3934,22 +3956,22 @@ COID_NAMESPACE_END
 
 #define COID_METABIN_OP1A(TYPE,ELEM) namespace coid {\
     inline metastream& operator || (metastream& m, TYPE& v) {\
-        m.compound_type(v, [&]() { m.member_fixed_size_array<1>("col", &v[0], false); });\
+        m.compound_type(v, [&]() { m.member_fixed_size_array_ptr<1>("col", &v[0], false); });\
         return m; }}
 
 #define COID_METABIN_OP2A(TYPE,ELEM) namespace coid {\
     inline metastream& operator || (metastream& m, TYPE& v) {\
-        m.compound_type(v, [&]() { m.member_fixed_size_array<2>("col", &v[0], false); });\
+        m.compound_type(v, [&]() { m.member_fixed_size_array_ptr<2>("col", &v[0], false); });\
         return m; }}
 
 #define COID_METABIN_OP3A(TYPE,ELEM) namespace coid {\
     inline metastream& operator || (metastream& m, TYPE& v) {\
-        m.compound_type(v, [&]() { m.member_fixed_size_array<3>("col", &v[0], false); });\
+        m.compound_type(v, [&]() { m.member_fixed_size_array_ptr<3>("col", &v[0], false); });\
         return m; }}
 
 #define COID_METABIN_OP4A(TYPE,ELEM) namespace coid {\
     inline metastream& operator || (metastream& m, TYPE& v) {\
-        m.compound_type(v, [&]() { m.member_fixed_size_array<4>("col", &v[0], false); });\
+        m.compound_type(v, [&]() { m.member_fixed_size_array_ptr<4>("col", &v[0], false); });\
         return m; }}
 
 

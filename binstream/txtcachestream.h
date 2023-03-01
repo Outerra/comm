@@ -200,14 +200,14 @@ public:
         if( c.is_continuous()  &&  n != UMAXS )
         {
             *count = n;
-            return read_raw( c.insert(n), n );
+            return read_raw( c.insert(n, nullptr), n );
         }
         else
         {
             uints es=1, k=0;
             char ch;
             while( n-- > 0  &&  0 == read_raw( &ch, es ) ) {
-                *(char*)c.insert(1) = ch;
+                *(char*)c.insert(1, nullptr) = ch;
                 es = 1;
                 ++k;
             }

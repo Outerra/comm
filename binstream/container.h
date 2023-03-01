@@ -42,7 +42,7 @@
 
 #include "bstype.h"
 #include "../alloc/_malloc.h"
-//#include "../commexception.h"
+ //#include "../commexception.h"
 
 COID_NAMESPACE_BEGIN
 
@@ -66,8 +66,8 @@ struct binstream_container_base
 
     ///Provide a pointer to next object that should be streamed
     //@param n number of objects to allocate the space for
-    virtual const void* extract( uints n ) = 0;
-    virtual void* insert( uints n ) = 0;
+    virtual const void* extract(uints n) = 0;
+    virtual void* insert(uints n, const void* defval) = 0;
 
     //@return true if the storage is continuous in memory
     virtual bool is_continuous() const = 0;
@@ -78,7 +78,7 @@ struct binstream_container_base
     typedef void (*fnc_stream)(metastream*, void*, binstream_container_base*);
 
 
-    binstream_container_base( bstype::kind t, fnc_stream fout, fnc_stream fin )
+    binstream_container_base(bstype::kind t, fnc_stream fout, fnc_stream fin)
         : _stream_in(fin)
         , _stream_out(fout)
         , _type(t)
@@ -99,12 +99,12 @@ struct binstream_container_base
         return _type.is_array_unspecified_size();
     }
 
-    opcd stream_in( metastream* m, void* p ) {
+    opcd stream_in(metastream* m, void* p) {
         _stream_in(m, p, this);
         return ersNOERR;
     }
 
-    opcd stream_out( metastream* m, void* p ) {
+    opcd stream_out(metastream* m, void* p) {
         _stream_out(m, p, this);
         return ersNOERR;
     }
@@ -124,7 +124,7 @@ struct binstream_container : binstream_container_base
 {
     typedef COUNT   count_t;
 
-    binstream_container( bstype::kind t, fnc_stream fout, fnc_stream fin )
+    binstream_container(bstype::kind t, fnc_stream fout, fnc_stream fin)
         : binstream_container_base(t, fout, fin)
     {}
 };
@@ -152,7 +152,7 @@ struct binstream_streamfunc
 ////////////////////////////////////////////////////////////////////////////////
 template<class T>
 struct type_streamer {
-    static void fn( metastream* m, void* p, binstream_container_base* );
+    static void fn(metastream* m, void* p, binstream_container_base*);
 };
 /*
 template<>
@@ -166,7 +166,7 @@ struct type_streamer<bstype::key> {
 ///Templatized base container
 //@param T type held by the container
 //@param COUNT unsigned integer type for storing count
-template<class T, class COUNT=uints>
+template<class T, class COUNT = uints>
 struct binstream_containerT : binstream_container<COUNT>
 {
     typedef T       data_t;
@@ -178,14 +178,14 @@ struct binstream_containerT : binstream_container<COUNT>
             &type_streamer<T>::fn)
     {}
 
-    binstream_containerT( fnc_stream fout, fnc_stream fin )
-        : binstream_container<COUNT>(bstype::t_type<T>(),fout,fin)
+    binstream_containerT(fnc_stream fout, fnc_stream fin)
+        : binstream_container<COUNT>(bstype::t_type<T>(), fout, fin)
     {}
-/*
-    //template<class T>
-    static void fnstream( metastream* m, void* p, binstream_container_base& bc ) {
-        *m || *static_cast<typename resolve_enum<T>::type*>(p);
-    }*/
+    /*
+        //template<class T>
+        static void fnstream( metastream* m, void* p, binstream_container_base& bc ) {
+            *m || *static_cast<typename resolve_enum<T>::type*>(p);
+        }*/
 };
 
 
@@ -224,38 +224,40 @@ struct binstream_adapter_readable
     typedef CONT<T,A>       TContainer; \
     typedef BINCONT<TContainer>    TBinstreamContainer; };
 
-////////////////////////////////////////////////////////////////////////////////
-///Generic dereferencing container for containers holding pointers
+    ////////////////////////////////////////////////////////////////////////////////
+    ///Generic dereferencing container for containers holding pointers
 template<class T, class COUNT>
 struct binstream_dereferencing_containerT
-    : binstream_containerT<T,COUNT>
+    : binstream_containerT<T, COUNT>
 {
     typedef binstream_container_base::fnc_stream    fnc_stream;
 
 
-    virtual const void* extract( uints n )
-    {   return *(T**)_bc.extract(n); }
-
-    virtual void* insert( uints n )
+    virtual const void* extract(uints n) override
     {
-        T** p = (T**)_bc.insert(n);
+        return *(T**)_bc.extract(n);
+    }
+
+    virtual void* insert(uints n, const void* defval) override
+    {
+        T** p = (T**)_bc.insert(n, defval);
         *p = new T;
         return *p;
     }
 
     //@return true if the storage is continuous in memory
-    virtual bool is_continuous() const      { return false; }
+    virtual bool is_continuous() const override { return false; }
 
-    virtual uints count() const             { return _bc.count(); }
+    virtual uints count() const override { return _bc.count(); }
 
 
-    binstream_dereferencing_containerT( binstream_container<COUNT>& bc )
-        : binstream_containerT<T,COUNT>()
+    binstream_dereferencing_containerT(binstream_container<COUNT>& bc)
+        : binstream_containerT<T, COUNT>()
         , _bc(bc)
     {}
 
-    binstream_dereferencing_containerT( binstream_container<COUNT>& bc, fnc_stream fout, fnc_stream fin )
-        : binstream_containerT<T,COUNT>(fout, fin)
+    binstream_dereferencing_containerT(binstream_container<COUNT>& bc, fnc_stream fout, fnc_stream fin)
+        : binstream_containerT<T, COUNT>(fout, fin)
         , _bc(bc)
     {}
 
@@ -266,34 +268,36 @@ protected:
 ///Generic dereferencing container for containers holding ref<T>
 template<class T, class RefT, class COUNT>
 struct binstream_dereferencing_containerRefT
-    : binstream_containerT<T,COUNT>
+    : binstream_containerT<T, COUNT>
 {
     typedef binstream_container_base::fnc_stream    fnc_stream;
 
 
-    virtual const void* extract( uints n )
-    {   return &(**(RefT*)_bc.extract(n)); }
-
-    virtual void* insert( uints n )
+    virtual const void* extract(uints n) override
     {
-        RefT* p = (RefT*)_bc.insert(n);
+        return &(**(RefT*)_bc.extract(n));
+    }
+
+    virtual void* insert(uints n, const void* defval) override
+    {
+        RefT* p = (RefT*)_bc.insert(n, defval);
         *p = RefT(new T);
         return &(**p);
     }
 
     //@return true if the storage is continuous in memory
-    virtual bool is_continuous() const      { return false; }
+    virtual bool is_continuous() const override { return false; }
 
-    virtual uints count() const             { return _bc.count(); }
+    virtual uints count() const override { return _bc.count(); }
 
 
-    binstream_dereferencing_containerRefT( binstream_container<COUNT>& bc )
-        : binstream_containerT<T,COUNT>()
+    binstream_dereferencing_containerRefT(binstream_container<COUNT>& bc)
+        : binstream_containerT<T, COUNT>()
         , _bc(bc)
     {}
 
-    binstream_dereferencing_containerRefT( binstream_container<COUNT>& bc, fnc_stream fout, fnc_stream fin )
-        : binstream_containerT<T,COUNT>(fout, fin)
+    binstream_dereferencing_containerRefT(binstream_container<COUNT>& bc, fnc_stream fout, fnc_stream fin)
+        : binstream_containerT<T, COUNT>(fout, fin)
         , _bc(bc)
     {}
 
@@ -306,19 +310,19 @@ protected:
 template<class COUNT>
 struct binstream_container_primitive : binstream_container<COUNT>
 {
-    binstream_container_primitive( bstype::kind t )
-        : binstream_container<COUNT>(t,0,0)
+    binstream_container_primitive(bstype::kind t)
+        : binstream_container<COUNT>(t, 0, 0)
     {}
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Container for writting from a prepared array
 template<class T, class COUNT>
-struct binstream_container_fixed_array : binstream_containerT<T,COUNT>
+struct binstream_container_fixed_array : binstream_containerT<T, COUNT>
 {
-    virtual const void* extract( uints n )
+    virtual const void* extract(uints n) override
     {
-        if(n > uints(_pte-_ptr))
+        if (n > uints(_pte - _ptr))
             throw ersNO_MORE;
 
         T* p = _ptr;
@@ -326,32 +330,37 @@ struct binstream_container_fixed_array : binstream_containerT<T,COUNT>
         return p;
     }
 
-    virtual void* insert( uints n )
+    virtual void* insert(uints n, const void* defval) override
     {
-        if(n > uints(_pte-_ptr))
+        if (n > uints(_pte - _ptr))
             throw ersNO_MORE;
 
         T* p = _ptr;
+        if (defval) {
+            for (uints i = 0; i < n; ++i)
+                p[i] = *static_cast<const T*>(defval);
+        }
+
         _ptr = ptr_advance(_ptr, n);
         return p;
     }
 
-    virtual bool is_continuous() const      { return true; }
+    virtual bool is_continuous() const override { return true; }
 
-    virtual uints count() const             { return _pte - _ptr; }
+    virtual uints count() const override { return _pte - _ptr; }
 
     typedef typename binstream_container_base::fnc_stream    fnc_stream;
 
-    binstream_container_fixed_array( T* ptr, uints n )
-        : binstream_containerT<T,COUNT>(), _ptr(ptr), _pte(ptr+n) {}
-    binstream_container_fixed_array( const T* ptr, uints n )
-        : binstream_containerT<T,COUNT>(), _ptr((T*)ptr), _pte((T*)ptr+n) {}
-    binstream_container_fixed_array( T* ptr, uints n, fnc_stream fout, fnc_stream fin )
-        : binstream_containerT<T,COUNT>(fout,fin), _ptr(ptr), _pte(ptr+n) {}
-    binstream_container_fixed_array( const T* ptr, uints n, fnc_stream fout, fnc_stream fin )
-        : binstream_containerT<T,COUNT>(fout,fin), _ptr((T*)ptr), _pte((T*)ptr+n) {}
+    binstream_container_fixed_array(T* ptr, uints n)
+        : binstream_containerT<T, COUNT>(), _ptr(ptr), _pte(ptr + n) {}
+    binstream_container_fixed_array(const T* ptr, uints n)
+        : binstream_containerT<T, COUNT>(), _ptr((T*)ptr), _pte((T*)ptr + n) {}
+    binstream_container_fixed_array(T* ptr, uints n, fnc_stream fout, fnc_stream fin)
+        : binstream_containerT<T, COUNT>(fout, fin), _ptr(ptr), _pte(ptr + n) {}
+    binstream_container_fixed_array(const T* ptr, uints n, fnc_stream fout, fnc_stream fin)
+        : binstream_containerT<T, COUNT>(fout, fin), _ptr((T*)ptr), _pte((T*)ptr + n) {}
 
-    void set( const T* ptr, uints n )
+    void set(const T* ptr, uints n)
     {
         _ptr = (T*)ptr;
         _pte = _ptr + n;
@@ -366,51 +375,51 @@ protected:
 ////////////////////////////////////////////////////////////////////////////////
 ///Container for writting from a prepared array
 template<class COUNT>
-struct binstream_container_char_array : binstream_containerT<char,COUNT>
+struct binstream_container_char_array : binstream_containerT<char, COUNT>
 {
-    virtual const void* extract( uints n )
+    virtual const void* extract(uints n) override
     {
         char* p = _ptr;
         _ptr += n;
         return p;
     }
 
-    virtual void* insert( uints n )
+    virtual void* insert(uints n, const void* defval) override
     {
-        uints nres = align_value_to_power2( _size, 5 );   //32B blocks
-        if( n+_size > nres ) {
-            nres = align_value_to_power2(_size+n,5);
-            _ptr = (char*)::dlrealloc(_ptr,nres);
+        uints nres = align_value_to_power2(_size, 5);   //32B blocks
+        if (n + _size > nres) {
+            nres = align_value_to_power2(_size + n, 5);
+            _ptr = (char*)::dlrealloc(_ptr, nres);
         }
-        char* p = _ptr + _size-1;
+        char* p = _ptr + _size - 1;
         p[n] = 0;
         _size += n;
         return p;
     }
 
-    virtual bool is_continuous() const      { return true; }
+    virtual bool is_continuous() const override { return true; }
 
-    virtual uints count() const             { return _size; }
+    virtual uints count() const override { return _size; }
 
-    binstream_container_char_array( uints n )
+    binstream_container_char_array(uints n)
     {
-        _ptr = (char*)::dlmalloc(1<<5);
+        _ptr = (char*)::dlmalloc(1 << 5);
         _ptr[0] = 0;
         _size = 1;
     }
-    binstream_container_char_array( const char* ptr, uints n )
+    binstream_container_char_array(const char* ptr, uints n)
         : _ptr((char*)ptr)
         , _size(n)
     {
     }
 
-    void set( const char* ptr, uints n )
+    void set(const char* ptr, uints n)
     {
         _ptr = (char*)ptr;
         _size = n;
     }
 
-    const char* get() const         { return _ptr; }
+    const char* get() const { return _ptr; }
 
 protected:
     char* _ptr;

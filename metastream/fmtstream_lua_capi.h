@@ -520,14 +520,14 @@ public:
         token tok(str, len);
 
         if (t.type == type::T_BINARY)
-            e = read_binary(tok, c, n, count);
+            e = read_binary(tok, c, n, count, m);
         else
         {
             if (n != UMAXS  &&  n != tok.len())
                 e = ersMISMATCHED "array size";
             else if (c.is_continuous())
             {
-                xmemcpy(c.insert(n), tok.ptr(), tok.len());
+                xmemcpy(c.insert(n, 0), tok.ptr(), tok.len());
 
                 *count = tok.len();
             }
@@ -536,7 +536,7 @@ public:
                 const char* p = tok.ptr();
                 uints nc = tok.len();
                 for (; nc>0; --nc, ++p)
-                    *(char*)c.insert(1) = *p;
+                    *(char*)c.insert(1, 0) = *p;
 
                 *count = nc;
             }

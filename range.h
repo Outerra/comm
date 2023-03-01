@@ -652,7 +652,7 @@ public:
     {
         typedef binstream_container_base::fnc_stream	fnc_stream;
 
-        virtual const void* extract(uints n)
+        virtual const void* extract(uints n) override
         {
             DASSERT(_pos + n <= _v.size());
             const T* p = &_v.ptr()[_pos];
@@ -660,13 +660,13 @@ public:
             return p;
         }
 
-        virtual void* insert(uints n) {
+        virtual void* insert(uints n, const void* defval) override {
             throw std::exception("unsupported");
         }
 
-        virtual bool is_continuous() const { return true; }
+        virtual bool is_continuous() const override { return true; }
 
-        virtual uints count() const { return _v.size(); }
+        virtual uints count() const override { return _v.size(); }
 
         range_binstream_container(const range<T>& v)
             : _v(const_cast<range<T>&>(v))
