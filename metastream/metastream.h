@@ -1423,6 +1423,7 @@ protected:
         _curvar.var = &_root;
         _curvar.var->varname = name;
         _curvar.var->nameless_root = name.is_empty();
+        _curvar.defval = nullptr;
 
         if (cache)
             cache_fill_root();
@@ -1734,6 +1735,7 @@ public:
         _binr = _binw = 0;
 
         _curvar.var = 0;
+        _curvar.defval = nullptr;
         _cur_variable_name.set_empty();
         _cur_variable_offset = 0;
         _rvarname.reset();
@@ -2709,6 +2711,7 @@ private:
         _stack.push(_curvar);
         _curvar.var = _curvar.var->desc->first_child(read);
         _curvar.kth = 0;
+        _curvar.defval = nullptr;
     }
 
     MetaDesc::Var* parent_var() const
@@ -2908,6 +2911,9 @@ protected:
     ///Traverse the tree and set up the next target for input/output streaming
     opcd moveto_expected_target(bool read)
     {
+        DASSERT(!_container_default_value);
+        _container_default_value = nullptr;
+
         //get next var
         MetaDesc::Var* par = parent_var();
         if (!par) {
@@ -2942,6 +2948,7 @@ protected:
         }
 
         _curvar.var = next;
+        _curvar.defval = nullptr;
 
         if (read)
             _rvarname.reset();
@@ -3671,6 +3678,7 @@ protected:
         MetaDesc::Var* old_var = _curvar.var;
         MetaDesc::Var* old_cvar = _cachevar;
         uints old_offs = _current->offs;
+        const void* old_defval = _curvar.defval;
 
         _current->offs = offs;
 
@@ -3682,6 +3690,7 @@ protected:
         _current->offs = old_offs;
         _cachevar = old_cvar;
         _curvar.var = old_var;
+        _curvar.defval = old_defval;
 
         return e;
     }
