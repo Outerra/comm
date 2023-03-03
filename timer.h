@@ -56,16 +56,16 @@ public:
 
     nsec_timer();
 
-    //@return elapsed time in seconds
+    /// @return elapsed time in seconds
 	double time();
 
-    //@return elapsed time in nanoseconds
+    /// @return elapsed time in nanoseconds
 	uint64 time_ns();
     
-    //@return current time in nanoseconds
+    /// @return current time in nanoseconds
     static uint64 current_time_ns();
 
-    //@return time since local day start
+    /// @return time since local day start
     static uint64 day_time_ns();
 
     ///Adjust returned time

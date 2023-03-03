@@ -104,7 +104,7 @@ public:
     }
 
     ///String literal constructor, optimization to have fast literal strings available as tokens
-    //@note tries to detect and if passed in a char array instead of string literal, by checking if the last char is 0
+    /// @note tries to detect and if passed in a char array instead of string literal, by checking if the last char is 0
     // and the preceding char is not 0
     // Call token::from_cstring(array) to force treating the array as a zero-terminated string
     template <int N>
@@ -469,10 +469,10 @@ public:
     }
 
 
-    //@return string as a token
+    /// @return string as a token
     token get_token() const { return token(ptr(), ptre()); }
 
-    //@{ retrieve nth character
+    /// @{ retrieve nth character
     char last_char() const { uints n = lens(); return n ? _tstr[n - 1] : 0; }
     char first_char() const { return _tstr.size() ? _tstr[0] : 0; }
     char nth_char(ints n) const
@@ -482,9 +482,9 @@ public:
             ? ((uints)-n <= s ? _tstr[s + n] : 0)
             : ((uints)n < s ? _tstr[n] : 0);
     }
-    //@}
+    /// @}
 
-    //@{ set nth character
+    /// @{ set nth character
     char last_char(char c) { uints n = lens(); return n ? (_tstr[n - 1] = c) : 0; }
     char first_char(char c) { return _tstr.size() ? (_tstr[0] = c) : 0; }
     char nth_char(ints n, char c)
@@ -494,7 +494,7 @@ public:
             ? ((uints)-n <= s ? (_tstr[s + n] = c) : 0)
             : ((uints)n < s ? (_tstr[n] = c) : 0);
     }
-    //@}
+    /// @}
 
     ///Append newline, but only if there's already some text
     charstr& sepline() {
@@ -681,7 +681,7 @@ public:
 
     ////////////////////////////////////////////////////////////////////////////////
     ///Append signed number
-    //@return offset past the last non-padding character
+    /// @return offset past the last non-padding character
     uint append_num_signed(int BaseN, int64 n, uints minsize = 0, EAlignNum align = ALIGN_NUM_RIGHT)
     {
         return n < 0
@@ -690,7 +690,7 @@ public:
     }
 
     ///Append unsigned number
-    //@return offset past the last non-padding character
+    /// @return offset past the last non-padding character
     uint append_num_unsigned(int BaseN, uint64 n, int sgn, uints minsize = 0, EAlignNum align = ALIGN_NUM_RIGHT)
     {
         char buf[128];
@@ -748,7 +748,7 @@ public:
     }
 
     ///Append number with thousands separated
-    //@return offset past the last non-padding character
+    /// @return offset past the last non-padding character
     uint append_num_thousands(int64 n, char thousand_sep = ' ', uints minsize = 0, EAlignNum align = ALIGN_NUM_RIGHT)
     {
         if(n == 0)
@@ -798,11 +798,11 @@ public:
     }
 
     ///Append number with metric suffix
-    //@param num value to append
-    //@param minsize min char size to append, includes padding
-    //@param align alignment
-    //@param space space character between number and unit prefix, 0 for none
-    //@return offset past the last non-padding character
+    /// @param num value to append
+    /// @param minsize min char size to append, includes padding
+    /// @param align alignment
+    /// @param space space character between number and unit prefix, 0 for none
+    /// @return offset past the last non-padding character
     uint append_num_metric(uint64 num, uint minsize = 0, EAlignNum align = ALIGN_NUM_RIGHT, char space=' ')
     {
         double v = double(num);
@@ -848,11 +848,11 @@ public:
     }
 
     ///Append time duration
-    //@param n seconds, or miliseconds if msec==true
-    //@param msec true if given time is in miliseconds, else seconds
-    //@param maxlev max time unit to show: 0 msec, 1 sec, 2 min, 3 hours, 4 days
-    //@note for maxlev==3 (hours but no days), the whole number of hours will be printed
-    //@note for maxlev<3 only the fractional number of minutes/seconds will be printed
+    /// @param n seconds, or miliseconds if msec==true
+    /// @param msec true if given time is in miliseconds, else seconds
+    /// @param maxlev max time unit to show: 0 msec, 1 sec, 2 min, 3 hours, 4 days
+    /// @note for maxlev==3 (hours but no days), the whole number of hours will be printed
+    /// @note for maxlev<3 only the fractional number of minutes/seconds will be printed
     void append_time_formatted(uint64 n, bool msec = false, int maxlev = 3)
     {
         uint ms;
@@ -894,9 +894,9 @@ public:
     }
 
     ///Append floating point number with fixed number of characters
-    //@param maxsize maximum buffer size to use
-    //@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
-    //@return offset past the last non-padding char
+    /// @param maxsize maximum buffer size to use
+    /// @param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
+    /// @return offset past the last non-padding char
     uint append_fixed(double v, uints maxsize, int nfrac = -1, EAlignNum align = ALIGN_NUM_RIGHT)
     {
         char* buf = get_append_buf(maxsize);
@@ -904,7 +904,7 @@ public:
     }
 
     ///Append floating point number
-    //@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
+    /// @param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
     void append_float(double d, int nfrac, uints maxsize = 0)
     {
         if(!maxsize)
@@ -915,7 +915,7 @@ public:
         resize(end - ptr());
     }
     /*
-        //@param ndig number of decimal places: >0 maximum, <0 precisely -ndig places
+        /// @param ndig number of decimal places: >0 maximum, <0 precisely -ndig places
         void append_fraction( double n, int ndig )
         {
             uint ndiga = int_abs(ndig);
@@ -941,7 +941,7 @@ public:
     */
 
     ///Append text aligned within a box of given width
-    //@return index past the last non-filling char
+    /// @return index past the last non-filling char
     uint append_aligned(const token& tok, uint width, EAlignNum align = ALIGN_NUM_LEFT)
     {
         uint len = tok.len();
@@ -1025,8 +1025,8 @@ public:
 #ifdef COID_VARIADIC_TEMPLATES
 
     ///Append a variadic block of arguments with format string
-    //@param fmt msg and format string, with {} for variable substitutions, e.g. "foo {} bar {} end"
-    //@param args variadic parameters
+    /// @param fmt msg and format string, with {} for variable substitutions, e.g. "foo {} bar {} end"
+    /// @param args variadic parameters
     template<typename ...Args>
     void print( const token& fmt, Args&& ...args )
     {
@@ -1072,7 +1072,7 @@ public:
     }
 
     ///Append UCS-4 character
-    //@return number of bytes written
+    /// @return number of bytes written
     uint append_ucs4(ucs4 c)
     {
         if(c <= 0x7f) {
@@ -1089,9 +1089,9 @@ public:
     }
 
     ///Append wchar (UCS-2) buffer, converting it to the UTF-8 on the fly
-    //@param src pointer to the source buffer
-    //@param nchars number of characters in the source buffer, -1 if zero terminated
-    //@return number of bytes appended
+    /// @param src pointer to the source buffer
+    /// @param nchars number of characters in the source buffer, -1 if zero terminated
+    /// @return number of bytes appended
     uint append_wchar_buf(const wchar_t* src, uints nchars)
     {
         uints nold = lens();
@@ -1117,8 +1117,8 @@ public:
 
 #ifdef SYSTYPE_WIN
     ///Append wchar (UCS-2) buffer, converting it to the ANSI on the fly
-    //@param src pointer to the source buffer
-    //@param nchars number of characters in the source buffer, -1 if zero-terminated
+    /// @param src pointer to the source buffer
+    /// @param nchars number of characters in the source buffer, -1 if zero-terminated
     uint append_wchar_buf_ansi(const wchar_t* src, uints nchars);
 #endif
 
@@ -1141,7 +1141,7 @@ public:
     };
 
     ///Append GMT date string constructed by the flags set
-    //@note default format: Tue, 15 Nov 1994 08:12:31 GMT
+    /// @note default format: Tue, 15 Nov 1994 08:12:31 GMT
     charstr& append_date_gmt(const timet t, uint flg = DATE_DEFAULT)
     {
 #ifdef SYSTYPE_MSVC
@@ -1155,7 +1155,7 @@ public:
     }
 
     ///Append local time zone date string constructed by the flags set
-    //@note default format: Tue, 15 Nov 1994 08:12:31 GMT
+    /// @note default format: Tue, 15 Nov 1994 08:12:31 GMT
     charstr& append_date_local(const timet t, uint flg = DATE_DEFAULT)
     {
 #ifdef SYSTYPE_MSVC
@@ -1294,7 +1294,7 @@ public:
     }
 
     ///Append string while encoding characters as specified for URI encoding
-    //@param component true for encoding URI components, false for encoding URI
+    /// @param component true for encoding URI components, false for encoding URI
     charstr& append_encode_url( const token& str, bool component=true )
     {
         static char charmap[256];
@@ -1382,7 +1382,7 @@ public:
         return *this;
     }
 
-    //@return c if it should be escaped, otherwise 0
+    /// @return c if it should be escaped, otherwise 0
     static char escape_char(char c, char strdel = 0)
     {
         char v = 0;
@@ -1402,7 +1402,7 @@ public:
     }
 
     ///Append character, escaping it if it's a control character
-    //@param strdel string delimiter to escape (', ", or both if 0)
+    /// @param strdel string delimiter to escape (', ", or both if 0)
     charstr& append_escaped(char c, char strdel = 0)
     {
         char v = escape_char(c, strdel);
@@ -1417,8 +1417,8 @@ public:
     }
 
     ///Append string while escaping the control characters in it
-    //@param str source string
-    //@param strdel string delimiter to escape (', ", or both if 0)
+    /// @param str source string
+    /// @param strdel string delimiter to escape (', ", or both if 0)
     charstr& append_escaped(const token& str, char strdel = 0)
     {
         const char* p = str.ptr();
@@ -1534,11 +1534,11 @@ public:
 
 
     ///Append binary data converted to escaped hexadecimal string
-    //@param src source memory buffer
-    //@param dst destination character buffer capable to hold at least (((itemsize*2) + sep?1:0) * nitems) bytes
-    //@param nitems number of itemsize sized words to convert
-    //@param itemsize number of bytes to write clumped together after prefix
-    //@param prefix before each item
+    /// @param src source memory buffer
+    /// @param dst destination character buffer capable to hold at least (((itemsize*2) + sep?1:0) * nitems) bytes
+    /// @param nitems number of itemsize sized words to convert
+    /// @param itemsize number of bytes to write clumped together after prefix
+    /// @param prefix before each item
     charstr& append_prehex(const void* src, uints nitems, uint itemsize, const token& prefix)
     {
         if(nitems == 0)
@@ -1721,8 +1721,8 @@ public:
     }
 
     ///Delete character(s) at position
-    //@param pos offset to delete from, a negative offset counts from the end
-    //@param n number of bytes to delete, will be clamped
+    /// @param pos offset to delete from, a negative offset counts from the end
+    /// @param n number of bytes to delete, will be clamped
     bool del(int pos, uint n = 1)
     {
         uint slen = len();
@@ -1734,10 +1734,10 @@ public:
     }
 
     ///Replace ndel characters at position pos with a string
-    //@param pos insertion position
-    //@param ndel number of characters to delete at pos
-    //@param tins token to insert at pos
-    //@return false if position is invalid
+    /// @param pos insertion position
+    /// @param ndel number of characters to delete at pos
+    /// @param tins token to insert at pos
+    /// @return false if position is invalid
     bool insdel(int pos, uint ndel, const token& tins) {
         uint slen = len();
         uint npos = pos < 0 ? slen + pos : pos;
@@ -1757,35 +1757,35 @@ public:
     }
 
     ///Return position where the substring is located
-    //@return substring position, 0 if not found
+    /// @return substring position, 0 if not found
     const char* contains(const substring& sub, uints off = 0) const
     {
         return token(*this).contains(sub, off);
     }
 
     ///Return position where the substring is located
-    //@return substring position, 0 if not found
+    /// @return substring position, 0 if not found
     const char* contains(const token& tok, uints off = 0) const
     {
         return token(*this).contains(tok, off);
     }
 
     ///Return position where the substring is located
-    //@return substring position, 0 if not found
+    /// @return substring position, 0 if not found
     const char* contains_icase(const token& tok, uints off = 0) const
     {
         return token(*this).contains_icase(tok, off);
     }
 
     ///Return position where the character is located
-    //@return substring position, 0 if not found
+    /// @return substring position, 0 if not found
     const char* contains(char c, uints off = 0) const
     {
         return token(*this).contains(c, off);
     }
 
     ///Return position where the character is located, searching from the end
-    //@return substring position, 0 if not found
+    /// @return substring position, 0 if not found
     const char* contains_back(char c, uints off = 0) const
     {
         return token(*this).contains_back(c, off);
@@ -1795,7 +1795,7 @@ public:
     char operator [] (uints i) const { return _tstr[i]; }
     char& operator [] (uints i) { return _tstr[i]; }
 
-    //@return true if strings are equal
+    /// @return true if strings are equal
     bool operator == (const charstr& str) const
     {
         if(ptr() == str.ptr())
@@ -1807,7 +1807,7 @@ public:
     }
     bool operator != (const charstr& str) const { return !operator == (str); }
 
-    //@return true if strings are equal
+    /// @return true if strings are equal
     bool operator == (const token& tok) const {
         if(tok.len() != len())  return false;
         return strncmp(_tstr.ptr(), tok.ptr(), tok.len()) == 0;
@@ -1818,7 +1818,7 @@ public:
         return strncmp(_tstr.ptr(), tok.ptr(), tok.len()) != 0;
     }
 
-    //@return true if string contains only the given character
+    /// @return true if string contains only the given character
     bool operator == (const char c) const {
         if(len() != 1)  return false;
         return _tstr[0] == c;
@@ -1926,7 +1926,7 @@ public:
         return p + len;
     }
 
-    //@return true if the string is empty
+    /// @return true if the string is empty
     bool is_empty() const {
         return _tstr.size() <= 1;
     }
@@ -1942,13 +1942,13 @@ public:
 
     dynarray<char, uint>& dynarray_ref() { return _tstr; }
 
-    //@return char* to the string beginning
+    /// @return char* to the string beginning
     const char* ptr() const { return _tstr.ptr(); }
 
-    //@return char* to past the string end
+    /// @return char* to past the string end
     const char* ptre() const { return _tstr.ptr() + len(); }
 
-    //@return zero-terminated C-string
+    /// @return zero-terminated C-string
     const char* c_str() const { return _tstr.size() ? _tstr.ptr() : ""; }
 
     char*& ptr_ref() { return _tstr.ptr_ref(); }
@@ -1965,25 +1965,25 @@ public:
     void discard() { _tstr.discard(); }
 
     ///Reserve memory for the string buffer
-    //@param len min size for string to reserve (incl. term zero)
-    //@param m [optional] memory space to use
+    /// @param len min size for string to reserve (incl. term zero)
+    /// @param m [optional] memory space to use
     char* reserve( uints len, mspace m = 0 ) {
         return _tstr.reserve(len, true, m);
     }
 
     ///Reserve virtual memory for the string buffer
-    //@param len min size for string to reserve (incl. term zero)
+    /// @param len min size for string to reserve (incl. term zero)
     char* reserve_virtual(uints len) {
         return _tstr.reserve_virtual(len);
     }
 
     ///Reserve stack memory for the string buffer
-    //@param len min size for string to reserve (incl. term zero)
+    /// @param len min size for string to reserve (incl. term zero)
     char* reserve_stack(const stack_buffer<char>& sb) {
         return _tstr.reserve_stack(sb);
     }
 
-    //@return number of reserved bytes
+    /// @return number of reserved bytes
     uints reserved() const { return _tstr.reserved_total(); }
 
     ///Reset string to empty but keep the memory
@@ -2113,7 +2113,7 @@ public:
 
     ////////////////////////////////////////////////////////////////////////////////
     ///Compare strings
-    //@return -1 if str<this, 0 if str==this, 1 if str>this
+    /// @return -1 if str<this, 0 if str==this, 1 if str>this
     int cmp(const token& str) const
     {
         uints let = lens();

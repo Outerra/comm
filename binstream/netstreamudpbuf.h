@@ -644,7 +644,7 @@ protected:
     }
 
     ///Receive an udp packet
-    //@return non-zero size if message received
+    /// @return non-zero size if message received
     uints recvpack( uint timeout )
     {
         if( timeout != 0 )

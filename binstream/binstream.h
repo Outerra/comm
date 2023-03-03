@@ -151,7 +151,7 @@ public:
     binstream& operator >> (const STRUCT_CLOSE&) { return xread(0, bstype::t_type<STRUCT_CLOSE>()); }
 
 
-    //@{ Primitive operators for extracting data from binstream.
+    /// @{ Primitive operators for extracting data from binstream.
     binstream& operator << (opcd x)
     {
         if (!x._ptr)
@@ -187,8 +187,8 @@ public:
 #endif
 
     ///Formatted integers
-    //@param WIDTH minimum width
-    //@note used by text formatting streams, writes as a raw token
+    /// @param WIDTH minimum width
+    /// @note used by text formatting streams, writes as a raw token
     template<int WIDTH, int BASE, int ALIGN, class NUM>
     binstream& operator << (const num_fmt_object<WIDTH, BASE, ALIGN, NUM> v)
     {
@@ -199,9 +199,9 @@ public:
     }
 
     ///Append formatted floating point value
-    //@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
-    //@param WIDTH total width
-    //@note used by text formatting streams, writes as a raw token
+    /// @param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
+    /// @param WIDTH total width
+    /// @note used by text formatting streams, writes as a raw token
     template<int WIDTH, int ALIGN>
     binstream& operator << (const float_fmt<WIDTH, ALIGN>& v)
     {
@@ -236,7 +236,7 @@ public:
 
         return *this;
     }
-    //@}
+    /// @}
 
 
     /** @{ Primitive operators for extracting data from binstream.
@@ -306,7 +306,7 @@ public:
         x.set(e);
         return *this;
     }
-    //@}
+    /// @}
 
     ///Read error code from binstream. Also translates binstream errors to
     opcd read_error()
@@ -343,7 +343,7 @@ public:
     }
 
     ///Read the following key for named values, used with formatting streams & metastream
-    //@note definition in str.h
+    /// @note definition in str.h
     virtual opcd read_key(charstr& key, int kmember, const token& expected_key);
 
 
@@ -507,26 +507,26 @@ public:
 
     ////////////////////////////////////////////////////////////////////////////////
     ///Write raw data
-    //@param len contains number of bytes to write, on return the number of bytes remaining to write
-    //@return 0 (no error), ersNO_MORE when not all data could be read
+    /// @param len contains number of bytes to write, on return the number of bytes remaining to write
+    /// @return 0 (no error), ersNO_MORE when not all data could be read
     virtual opcd write_raw(const void* p, uints& len) = 0;
 
     ///Read raw data
-    //@param len contains number of bytes to read, on return the number of bytes remaining to read
-    //@return 0 (no error), ersRETRY when only partial chunk was returned and the method should be called again, ersNO_MORE when not
-    //@         all data has been read
+    /// @param len contains number of bytes to read, on return the number of bytes remaining to read
+    /// @return 0 (no error), ersRETRY when only partial chunk was returned and the method should be called again, ersNO_MORE when not
+    /// @         all data has been read
     virtual opcd read_raw(void* p, uints& len) = 0;
 
     ///Write raw data.
-    //@note This method is provided just for the symetry, write_raw specification doesn't allow returning ersRETRY error code
-    //@      to specify that only partial data has been written, this may change in the future if it turns out being needed
+    /// @note This method is provided just for the symetry, write_raw specification doesn't allow returning ersRETRY error code
+    /// @      to specify that only partial data has been written, this may change in the future if it turns out being needed
     opcd write_raw_full(const void* p, uints& len)
     {
         return write_raw(p, len);
     }
 
     ///Read raw data repeatedly while ersRETRY is returned from read_raw
-    //@note tries to read complete buffer as requested, thus cannot return with ersRETRY
+    /// @note tries to read complete buffer as requested, thus cannot return with ersRETRY
     opcd read_raw_full(void* p, uints& len)
     {
         for (;;) {
@@ -539,8 +539,8 @@ public:
     }
 
     ///Read raw data until at least something is returned from read_raw
-    //@note read_raw() can return ersRETRY while not reading anything, whereas this method either returns a different error than
-    //@ ersRETRY or it has read something
+    /// @note read_raw() can return ersRETRY while not reading anything, whereas this method either returns a different error than
+    /// @ ersRETRY or it has read something
     opcd read_raw_any(void* p, uints& len)
     {
         uints olen = len;
@@ -552,7 +552,7 @@ public:
     }
 
     ///A write_raw() wrapper throwing exception on error
-    //@return number of bytes remaining to write
+    /// @return number of bytes remaining to write
     uints xwrite_raw(const void* p, uints len)
     {
         opcd e = write_raw(p, len);
@@ -561,7 +561,7 @@ public:
     }
 
     ///A read_raw() wrapper throwing exception on error
-    //@return number of bytes remaining to read
+    /// @return number of bytes remaining to read
     uints xread_raw(void* p, uints len)
     {
         opcd e = read_raw_full(p, len);
@@ -592,7 +592,7 @@ public:
     }
 
     ///Write raw data to another binstream.
-    //@return number of bytes written
+    /// @return number of bytes written
     opcd copy_to(binstream& bin, uints dlen, uints* size_written, uints blocksize)
     {
         opcd e;
@@ -627,14 +627,14 @@ public:
     }
 
     ///Transfer the content of source binstream to this binstream
-    //@param blocksize hint about size of the memory block used for copying
+    /// @param blocksize hint about size of the memory block used for copying
     virtual opcd transfer_from(binstream& src, uints datasize = UMAXS, uints* size_read = 0, uints blocksize = 32768)
     {
         return src.copy_to(*this, datasize, size_read, blocksize);
     }
 
     ///Transfer the content of this binstream to the destination binstream
-    //@param blocksize hint about size of the memory block used for copying
+    /// @param blocksize hint about size of the memory block used for copying
     virtual opcd transfer_to(binstream& dst, uints datasize = UMAXS, uints* size_written = 0, uints blocksize = 32768)
     {
         return copy_to(dst, datasize, size_written, blocksize);
@@ -642,7 +642,7 @@ public:
 
 
 
-    //@{ Array manipulating methods.
+    /// @{ Array manipulating methods.
     /**
         Methods to write and read arrays of objects. The write_array() and read_array()
         methods take as the argument a container object.
@@ -867,7 +867,7 @@ public:
 
 
     ///Writes array without storing the count explicitly, reader is expected to know the count
-    //@note do not use in metastream for fixed arrays
+    /// @note do not use in metastream for fixed arrays
     template <class T, class COUNT>
     opcd write_fixed_array_content(const T* p, COUNT n, metastream* m)
     {
@@ -877,7 +877,7 @@ public:
     }
 
     ///Read array that was stored without the count
-    //@note do not use in metastream for fixed arrays
+    /// @note do not use in metastream for fixed arrays
     template <class T, class COUNT>
     opcd read_fixed_array_content(T* p, COUNT n, metastream* m)
     {
@@ -905,9 +905,9 @@ public:
 
     ////////////////////////////////////////////////////////////////////////////////
     ///Peek at the input if there's anything to read
-    //@param timeout timeout to wait before returning with ersTIMEOUT error
-    //@return 0 if there's something to read, ersNO_MORE if nothing, ersINVALID_PARAMS (see note) or ersTIMEOUT
-    //@note not all streams support the timeouts, the streams that don't would return ersINVALID_PARAMS on nonzero timeout values
+    /// @param timeout timeout to wait before returning with ersTIMEOUT error
+    /// @return 0 if there's something to read, ersNO_MORE if nothing, ersINVALID_PARAMS (see note) or ersTIMEOUT
+    /// @note not all streams support the timeouts, the streams that don't would return ersINVALID_PARAMS on nonzero timeout values
     virtual opcd peek_read(uint timeout) = 0;
 
     ///Peek at the output if writing is possible
@@ -925,7 +925,7 @@ public:
     }
 
 
-    //@{ Methods for streams where the medium should be opened before use and closed after.
+    /// @{ Methods for streams where the medium should be opened before use and closed after.
     /**
     **/
     ///Open underlying medium
@@ -936,7 +936,7 @@ public:
     virtual opcd close(bool linger = false) { return ersNOT_IMPLEMENTED; }
     ///Check if the underlying medium is open
     virtual bool is_open() const = 0;
-    //@}
+    /// @}
 
 
     ///Bind to another binstream (for wrapper and formatting binstreams)
@@ -962,7 +962,7 @@ public:
     /// Note that in such streams, reading more data than the packet contains will result in
     /// the read() methods returning error ersNO_MORE, or xread() methods throwing the exception
     /// (opcd) ersNO_MORE.
-    //@param eat forces the binstream to eat all remaining data from the packet
+    /// @param eat forces the binstream to eat all remaining data from the packet
     virtual void acknowledge(bool eat = false) = 0;
 
     ///Completely reset the binstream. By default resets both reading and writing pipe, but can do more.
@@ -991,7 +991,7 @@ public:
     ///Seek within the binstream
     virtual opcd seek(int seektype, int64 pos) { return ersNOT_IMPLEMENTED; }
 
-    //@{ Methods for revertable streams --OBSOLETE--
+    /// @{ Methods for revertable streams --OBSOLETE--
     /**
         These methods are supported on binstreams that can manipulate data already pushed into the
         stream. For example, some protocol may require the size of body written in a header, before
@@ -1020,7 +1020,7 @@ public:
         throw ersNOT_IMPLEMENTED;
     }
 
-    //@}
+    /// @}
 
 
     ////////////////////////////////////////////////////////////////////////////////

@@ -109,8 +109,8 @@ public:
     }
 
     ///Assign refcounted object if its refcount is non-zero
-    //@return assigned object or null
-    //@note keeps previous object if assignment fails
+    /// @return assigned object or null
+    /// @note keeps previous object if assignment fails
     T* add_refcount(T* p) {
         if (p && p->can_add_refcount()) {
             release();

@@ -78,8 +78,8 @@ public:
     virtual token fmtstream_name() = 0;
 
     /// Return formatting stream error (if any) and current line and column for error reporting purposes
-    //@param dst [inout] error text
-    //@param add_context add context info, like a caret pointing to a token of text
+    /// @param dst [inout] error text
+    /// @param add_context add context info, like a caret pointing to a token of text
     virtual void fmtstream_err(charstr& dst, bool add_context = true) { }
 
     ///Called to provide prefix for error reporting

@@ -190,16 +190,16 @@ public:
 
     typedef bool (*fn_unload_client)(const coid::token& client, const coid::token& module_name, coid::binstring* bstr);
 
-    //@return host class pointer
-    //@note T derived from policy_intrusive_base
+    /// @return host class pointer
+    /// @note T derived from policy_intrusive_base
     template<typename T>
     T* host() const { return static_cast<T*>(_host.get()); }
 
-    //@return interface class pointer
+    /// @return interface class pointer
     template<typename T>
     const T* iface() const { return static_cast<const T*>(this); }
 
-    //@return interface class pointer
+    /// @return interface class pointer
     template<typename T>
     T* iface() { return static_cast<T*>(this); }
 
@@ -212,13 +212,13 @@ public:
 
     ifn_t* vtable() const { return _vtable; }
 
-    //@return hash of interface definition, serving for version checks
+    /// @return hash of interface definition, serving for version checks
     virtual int intergen_hash_id() const = 0;
 
-    //@return true if this interface is derived from interface with given hash
+    /// @return true if this interface is derived from interface with given hash
     virtual bool iface_is_derived(int hash) const = 0;
 
-    //@return interface name
+    /// @return interface name
     virtual const coid::tokenhash& intergen_interface_name() const = 0;
 
     ///Supported interface client types (dispatcher back-ends)
@@ -233,33 +233,33 @@ public:
         unknown = -1
     };
 
-    //@return back-end implementation
+    /// @return back-end implementation
     virtual backend intergen_backend() const = 0;
 
-    //@return wrapper creator for given back-end
+    /// @return wrapper creator for given back-end
     virtual void* intergen_wrapper(backend bck) const = 0;
 
-    //@return name of default creator
+    /// @return name of default creator
     virtual const coid::token& intergen_default_creator(backend bck) const = 0;
 
     ///Bind or unbind interface call interceptor handler for current interface and all future instances of the same interface class
-    //@param capture capture buffer, 0 to turn the capture off
-    //@param instid instance identifier of this interface
-    //@return false if the interface can't be bound (instid > max)
+    /// @param capture capture buffer, 0 to turn the capture off
+    /// @param instid instance identifier of this interface
+    /// @return false if the interface can't be bound (instid > max)
     virtual bool intergen_bind_capture(coid::binstring* capture, uint instid) { return false; }
 
     ///Dispatch a captured call
     virtual void intergen_capture_dispatch(uint mid, coid::binstring& bin) {}
 
-    //@return real interface in case this is a wrapper around an existing interface object
+    /// @return real interface in case this is a wrapper around an existing interface object
     virtual intergen_interface* intergen_real_interface() { return this; }
 
 #ifdef COID_VARIADIC_TEMPLATES
 
     ///Interface log function with formatting
-    //@param type log type
-    //@param fmt format @see charstr.print
-    //@param vs variadic parameters
+    /// @param type log type
+    /// @param fmt format @see charstr.print
+    /// @param vs variadic parameters
     template<class ...Vs>
     void ifclog(coid::log::type type, const coid::token& fmt, Vs&& ...vs) {
         ref<coid::logmsg> msgr = coid::interface_register::canlog(type, intergen_interface_name(), this);
@@ -270,8 +270,8 @@ public:
     }
 
     ///Interface log function with formatting, log type inferred from message text prefix
-    //@param fmt format @see charstr.print
-    //@param vs variadic parameters
+    /// @param fmt format @see charstr.print
+    /// @param vs variadic parameters
     template<class ...Vs>
     void ifclog(const coid::token& fmt, Vs&& ...vs) {
         ref<coid::logmsg> msgr = coid::interface_register::canlog(coid::log::none, intergen_interface_name(), this);

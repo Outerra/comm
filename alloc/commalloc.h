@@ -186,7 +186,7 @@ struct comm_array_allocator
     }
 
     ///Untyped array reserve of stack space
-    //@param buffer needs to be _alloca buffer of (2*sizeof(size_t) + n*elemsize) size
+    /// @param buffer needs to be _alloca buffer of (2*sizeof(size_t) + n*elemsize) size
     static void* reserve_stack(
         uints n,
         uints elemsize,
@@ -287,7 +287,7 @@ struct comm_array_allocator
     }
 
     ///Untyped uninitialized add
-    //@return pointer to array
+    /// @return pointer to array
     static void* add(
         const void* p,
         uints nitems,
@@ -326,7 +326,7 @@ struct comm_array_allocator
         return size ? size - sizeof(uints) : 0;
     }
 
-    //@return size of virtual memory, if the block was created using reserve_virtual(), else 0
+    /// @return size of virtual memory, if the block was created using reserve_virtual(), else 0
     static uints reserved_virtual_size(const void* p) {
         if (!p)
             return 0;
@@ -334,7 +334,7 @@ struct comm_array_allocator
         return size ? size - sizeof(uints) : 0;
     }
 
-    //@return size of stack memory, if the block was created using reserve_stack(), else 0
+    /// @return size of stack memory, if the block was created using reserve_stack(), else 0
     static uints reserved_stack_size(const void* p) {
         if (!p)
             return 0;

@@ -272,7 +272,7 @@ public:
 
 protected:
 
-    //@return true if looger should be flushed (msg ended with \r)
+    /// @return true if looger should be flushed (msg ended with \r)
     bool finalize(policy_msg* p);
 };
 
@@ -349,8 +349,8 @@ protected:
     coid::comm_mutex _mutex;
 public:
 
-    //@param std_out true if messages should be printed to stdout as well
-    //@param cache_msgs true if messages should be cached until the log file is specified with open()
+    /// @param std_out true if messages should be printed to stdout as well
+    /// @param cache_msgs true if messages should be cached until the log file is specified with open()
     logger(bool std_out, bool cache_msgs);
     virtual ~logger() {}
 
@@ -387,17 +387,17 @@ public:
 
 #endif
 
-    //@return logmsg, filling the prefix by the log type (e.g. ERROR: )
+    /// @return logmsg, filling the prefix by the log type (e.g. ERROR: )
     ref<logmsg> operator()(log::type type = log::info, const tokenhash& hash = "", const int64* time_ms = 0);
 
-    //@return an empty logmsg object
+    /// @return an empty logmsg object
     ref<logmsg> create_msg(log::type type, const tokenhash& hash);
 
     ///Creates logmsg object if given log message type is enabled
-    //@param type log level
-    //@param hash tokenhash identifying the client (interface) name
-    //@param inst optional instance id
-    //@return logmsg reference or null if not enabled
+    /// @param type log level
+    /// @param hash tokenhash identifying the client (interface) name
+    /// @param inst optional instance id
+    /// @return logmsg reference or null if not enabled
     ref<logmsg> create_msg(log::type type, const tokenhash& hash, const void* inst, const int64* mstime = 0);
 
     const ref<logger_file>& file() const { return _logfile; }

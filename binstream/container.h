@@ -65,14 +65,14 @@ struct binstream_container_base
     virtual ~binstream_container_base() {}
 
     ///Provide a pointer to next object that should be streamed
-    //@param n number of objects to allocate the space for
+    /// @param n number of objects to allocate the space for
     virtual const void* extract(uints n) = 0;
     virtual void* insert(uints n, const void* defval) = 0;
 
-    //@return true if the storage is continuous in memory
+    /// @return true if the storage is continuous in memory
     virtual bool is_continuous() const = 0;
 
-    //@return number of items in container (for reading), UMAXS if unknown in advance
+    /// @return number of items in container (for reading), UMAXS if unknown in advance
     virtual uints count() const = 0;
 
     typedef void (*fnc_stream)(metastream*, void*, binstream_container_base*);
@@ -245,7 +245,7 @@ struct binstream_dereferencing_containerT
         return *p;
     }
 
-    //@return true if the storage is continuous in memory
+    /// @return true if the storage is continuous in memory
     virtual bool is_continuous() const override { return false; }
 
     virtual uints count() const override { return _bc.count(); }
@@ -285,7 +285,7 @@ struct binstream_dereferencing_containerRefT
         return &(**p);
     }
 
-    //@return true if the storage is continuous in memory
+    /// @return true if the storage is continuous in memory
     virtual bool is_continuous() const override { return false; }
 
     virtual uints count() const override { return _bc.count(); }

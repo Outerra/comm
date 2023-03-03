@@ -201,7 +201,7 @@ struct changeset
     changeset() : mask(0)
     {}
 
-    //@return bit plane number where the relative frame is tracked
+    /// @return bit plane number where the relative frame is tracked
     static int bitplane(int rel_frame)
     {
         if (rel_frame >= 0)
@@ -228,13 +228,13 @@ struct changeset
         return bitplane - 1;
     }
 
-    //@return bitplane mask for use with for_each_modified
+    /// @return bitplane mask for use with for_each_modified
     static uint bitplane_mask(int bitplane)
     {
         return (2U << bitplane) - 1U;
     }
 
-    //@return bitplane mask for use with for_each_modified
+    /// @return bitplane mask for use with for_each_modified
     static uint bitplane_mask(int bitplane1, int bitplane2)
     {
         DASSERTN(bitplane1 >= bitplane2);

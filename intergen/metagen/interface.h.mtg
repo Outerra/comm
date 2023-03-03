@@ -167,8 +167,8 @@ $-(/if)$
     }
 
 $-(if varname?)$
-    //@return cached active interface of given host class
-    //@note host side helper
+    /// @return cached active interface of given host class
+    /// @note host side helper
     static iref<$name$> intergen_active_interface(::$classnsx rest="::" after="::"$$class$* host);
 
 $-(/if)$

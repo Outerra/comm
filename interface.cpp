@@ -26,12 +26,12 @@ struct entry
     uint hashvalue = 0;
     uint keylen = 0;
 
-    //@return interface string without the module name
+    /// @return interface string without the module name
     operator token() const {
         return token(ifcname.ptr(), ifcname.ptr() + keylen);
     }
 
-    //@return class name with namespaces
+    /// @return class name with namespaces
     token ns_class() const {
         return token(ns.ptr(), classname.ptre());
     }
@@ -342,12 +342,12 @@ public:
         return intergen_interface::VERSION == ver;
     }
 
-    //@param curpath current directory
-    //@param incpath path to include/append to the current dir
-    //@param dst [out] output path (absolute)
-    //@param relpath [out] gets relative path from root
-    //@note if relpath is null, relative incpath can only refer to a sub-path below curpath
-    //@note relpath is set to a null token when incpath was relative to curpath and bellow it
+    /// @param curpath current directory
+    /// @param incpath path to include/append to the current dir
+    /// @param dst [out] output path (absolute)
+    /// @param relpath [out] gets relative path from root
+    /// @note if relpath is null, relative incpath can only refer to a sub-path below curpath
+    /// @note relpath is set to a null token when incpath was relative to curpath and bellow it
     virtual bool include_path(const token& curpath, const token& incpath, charstr& dst, token* relpath)
     {
         bool slash = incpath.first_char() == '/' || incpath.first_char() == '\\';
@@ -475,7 +475,7 @@ private:
         return fn(client, cen.modulename, bstr);
     }
 
-    //@return current directory from current path
+    /// @return current directory from current path
     bool current_dir(token curpath, charstr& dst)
     {
         if (directory::is_absolute_path(curpath))

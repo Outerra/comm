@@ -208,8 +208,8 @@ public:
     {}
 
     ///Open physical log file
-    //@param filename file name/path to open
-    //@note Only notes the file name, the file is opened with the next log msg because of potential MT clashes
+    /// @param filename file name/path to open
+    /// @note Only notes the file name, the file is opened with the next log msg because of potential MT clashes
     void open(charstr&& filename, bool std) {
         _logpath = std::move(filename);
         _stdout = std;

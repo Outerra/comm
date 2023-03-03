@@ -117,7 +117,7 @@ public:
         return COUNTER::inc(&_count);
     }
 
-    //@return true if refcount was safely incremented (didn't go to 0)
+    /// @return true if refcount was safely incremented (didn't go to 0)
     bool can_add_refcount() {
         int previous = _count;
         for (;;)

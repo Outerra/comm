@@ -171,8 +171,8 @@ public:
     }
 
 
-    //@return global singleton, registering the place of birth
-    //@param module_local create a singleton that's local to the current module
+    /// @return global singleton, registering the place of birth
+    /// @param module_local create a singleton that's local to the current module
     static T& instance( bool module_local, const char* file=0, int line=0 )
     {
         T*& node = ptr();
@@ -191,7 +191,7 @@ public:
         return *node;
     }
 
-    //@return global singleton reference
+    /// @return global singleton reference
     static T*& ptr() {
         static T* node = 0;
         return node;
@@ -253,7 +253,7 @@ class thread_singleton
 {
 public:
 
-    //@return global thread singleton (always the same one from multiple places where used)
+    /// @return global thread singleton (always the same one from multiple places where used)
     static T& instance( bool module_local )
     {
         thread_key& tk = get_key();
@@ -291,7 +291,7 @@ private:
         return p;
     }
 
-    //@return global thread key
+    /// @return global thread key
     static thread_key& get_key() {
         static thread_key _gtkey;
         return _gtkey;

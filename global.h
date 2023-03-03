@@ -54,8 +54,8 @@ class context_holder
 {
 public:
 
-    //@return reference to a component pointer
-    //@param pid [optional] receives component id
+    /// @return reference to a component pointer
+    /// @param pid [optional] receives component id
     template <class T>
     T*& component(int* pid = 0)
     {
@@ -67,7 +67,7 @@ public:
         return reinterpret_cast<T*&>(ctx);
     }
 
-    //@return component id (sequential by order of registration)
+    /// @return component id (sequential by order of registration)
     template <class T>
     int component_id() {
         type_sequencer& sq = tsq();

@@ -105,8 +105,8 @@ public:
         COUNT
     };
 
-    //@param nthreads total number of job threads to spawn
-    //@param nlong_threads number of low-prio job threads (<= nthreads)
+    /// @param nthreads total number of job threads to spawn
+    /// @param nlong_threads number of low-prio job threads (<= nthreads)
     taskmaster(uint nthreads, uint nlowprio_threads);
 
     ~taskmaster();
@@ -114,9 +114,9 @@ public:
     uints get_workers_count() const { return _threads.size(); }
 
     ///Run fn(index) in parallel in task level 0
-    //@param first begin index value
-    //@param last end index value
-    //@param fn function(index) to run
+    /// @param first begin index value
+    /// @param last end index value
+    /// @param fn function(index) to run
     template <typename Index, typename Fn>
     void parallel_for(Index first, Index last, const Fn& fn) {
         signal_handle signal;
@@ -128,9 +128,9 @@ public:
     }
 
     ///Push task (functor, e.g. lamda) into queue for processing by worker threads
-    //@param priority task priority, higher priority tasks are processed before lower priority
-    //@param signal signal to trigger when the task finishes
-    //@param fn functor to run
+    /// @param priority task priority, higher priority tasks are processed before lower priority
+    /// @param signal signal to trigger when the task finishes
+    /// @param fn functor to run
     template <typename Fn>
     void push_functor(EPriority priority, signal_handle* signal, const Fn& fn)
     {
@@ -140,10 +140,10 @@ public:
     }
 
     ///Push task (function and its arguments) into queue for processing by worker threads
-    //@param priority task priority, higher priority tasks are processed before lower priority
-    //@param signal signal to trigger when the task finishes
-    //@param fn function to run
-    //@param args arguments needed to invoke the function
+    /// @param priority task priority, higher priority tasks are processed before lower priority
+    /// @param signal signal to trigger when the task finishes
+    /// @param fn function to run
+    /// @param args arguments needed to invoke the function
     template <typename Fn, typename ...Args>
     void push(EPriority priority, signal_handle* signal, const Fn& fn, Args&& ...args)
     {
@@ -169,11 +169,11 @@ public:
     }
 
     ///Push task (function and its arguments) into queue for processing by worker threads
-    //@param priority task priority, higher priority tasks are processed before lower priority
-    //@param signal signal to trigger when the task finishes
-    //@param fn member function to run
-    //@param obj object pointer to run the member function on
-    //@param args arguments needed to invoke the function
+    /// @param priority task priority, higher priority tasks are processed before lower priority
+    /// @param signal signal to trigger when the task finishes
+    /// @param fn member function to run
+    /// @param obj object pointer to run the member function on
+    /// @param args arguments needed to invoke the function
     template <typename Fn, typename C, typename ...Args>
     void push_memberfn(EPriority priority, signal_handle* signal, Fn fn, C* obj, Args&& ...args)
     {
@@ -201,11 +201,11 @@ public:
     }
 
     ///Push task (function and its arguments) into queue for processing by worker threads
-    //@param priority task priority, higher priority tasks are processed before lower priority
-    //@param signal signal to trigger when the task finishes
-    //@param fn member function to run
-    //@param obj object reference to run the member function on. Can be a smart ptr type which resolves to the object with * operator
-    //@param args arguments needed to invoke the function
+    /// @param priority task priority, higher priority tasks are processed before lower priority
+    /// @param signal signal to trigger when the task finishes
+    /// @param fn member function to run
+    /// @param obj object reference to run the member function on. Can be a smart ptr type which resolves to the object with * operator
+    /// @param args arguments needed to invoke the function
     template <typename Fn, typename C, typename ...Args>
     void push_memberfn(EPriority priority, signal_handle* signal, Fn fn, const C& obj, Args&& ...args)
     {
@@ -234,28 +234,28 @@ public:
 
     /// Enter critical section; no two threads can be in the same critical section at the same time
     /// other threads process other tasks while waiting to enter critical section
-    //@param spin_count number of spins before trying to process other tasks
-    //@note never call enter(A) enter(B) exit(A) exit(B) in that order, since it can cause
+    /// @param spin_count number of spins before trying to process other tasks
+    /// @note never call enter(A) enter(B) exit(A) exit(B) in that order, since it can cause
     // deadlock thanks to taskmaster's nature
     void enter_critical_section(critical_section& critical_section, int spin_count = 1024);
 
     /// Leave critical section
-    //@note only thread which entered the critical section can leave it
+    /// @note only thread which entered the critical section can leave it
     void leave_critical_section(critical_section& critical_section);
 
     ///Wait for signal to become signaled
-    //@param signal signal to wait for
-    //@note each time a task is pushed to queue and has a signal associated, it increments the signal's counter.
+    /// @param signal signal to wait for
+    /// @note each time a task is pushed to queue and has a signal associated, it increments the signal's counter.
     // When the task finishes it decrements the counter. Once the counter == 0, the signal is in signaled state.
     // Multiple tasks can use the same signal.
     void wait(signal_handle signal);
 
     ///Terminate all task threads
-    //@param empty_queue if true, wait until the task queue empties, false finish only currently processed tasks
+    /// @param empty_queue if true, wait until the task queue empties, false finish only currently processed tasks
     void terminate(bool empty_queue);
 
     ///Create standalone signal not associated with any task. It can be used to wait for any arbitrary stuff.
-    //@note The signal's counter is initialized = 1 -> wait(signal) will wait untill counter == 0)
+    /// @note The signal's counter is initialized = 1 -> wait(signal) will wait untill counter == 0)
     // use taskmaster::trigger_signal(signal) do decrement the counter
     // if you just want to wait until some task finishes, you do not need to use this, see "Basic usage"
     signal_handle create_signal();

@@ -24,7 +24,7 @@ $-[method static?]$
 $(if !comments.empty?)$$[comments]-$
     $@value$
 $[/comments]$$(/if)-$
-    //@param scriptpath path to js script to bind to
+    /// @param scriptpath path to js script to bind to
     static iref<$..ns rest="::"$::$..name$> $name$( const ::js::script_handle& script
         $-[args]$, $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$, const coid::token& bindvar = coid::token(), v8::Handle<v8::Context>* ctx=0 )
     {

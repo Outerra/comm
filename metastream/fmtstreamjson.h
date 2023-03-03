@@ -82,7 +82,7 @@ public:
     ~fmtstreamjson()
     {}
 
-    //@param enable_esc_strings if true, strings with special characters are written as \"..\\." and normal strings are "..\." without escape sequences
+    /// @param enable_esc_strings if true, strings with special characters are written as \"..\\." and normal strings are "..\." without escape sequences
     void init(binstream* br, binstream* bw, bool enable_esc_strings)
     {
         if (bw)  bind(*bw, BIND_OUTPUT);

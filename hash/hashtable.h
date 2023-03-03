@@ -127,12 +127,12 @@ public:
         COIDNEWDELETE_NOTRACK;
     };
 
-    //@return value index
+    /// @return value index
     uints get_value_index(const VAL* v) const {
         return _ALLOC.index((Node*)v);
     }
 
-    //@return object by index
+    /// @return object by index
     const VAL* get_value(uints id) const {
         return (const VAL*)_ALLOC.pointer(id);
     }
@@ -715,7 +715,7 @@ public:
     }
 
 
-    //@return true if the underlying array was resized
+    /// @return true if the underlying array was resized
     bool resize(size_t bucketn)
     {
         uints ts = _table.size();
@@ -1137,7 +1137,7 @@ protected:
 
 private:
 
-    //@return true if the underlying array was resized
+    /// @return true if the underlying array was resized
     bool adjust(uint n) {
         return resize(_nelem + n);
     }

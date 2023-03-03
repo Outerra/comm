@@ -61,10 +61,10 @@ public:
 
     static void* get_interface_creator(const token& ifcname);
 
-    //@param curpath current path
-    //@param incpath absolute path or path relative to curpath
-    //@param dst [out] result path
-    //@param relpath [out] gets relative path from root. If null, relative incpath can only refer to a sub-path below curpath
+    /// @param curpath current path
+    /// @param incpath absolute path or path relative to curpath
+    /// @param dst [out] result path
+    /// @param relpath [out] gets relative path from root. If null, relative incpath can only refer to a sub-path below curpath
     static bool include_path(const token& curpath, const token& incpath, charstr& dst, token* relpath);
 
     static const charstr& root_path();
@@ -89,23 +89,23 @@ public:
     };
 
     ///Get interface wrapper creator matching given name
-    //@param name interface creator name in the format [ns1::[ns2:: ...]]::class
+    /// @param name interface creator name in the format [ns1::[ns2:: ...]]::class
     static wrapper_fn get_interface_wrapper(const token& name);
 
     ///Get interface maker creator matching given name
-    //@param name interface creator name in the format [ns1::[ns2:: ...]]::class
-    //@param script script type
+    /// @param name interface creator name in the format [ns1::[ns2:: ...]]::class
+    /// @param script script type
     static void* get_interface_maker(const token& name, const token& script);
 
     ///Get client interface creator matching given name
-    //@param client client name
-    //@param iface interface name in the format [ns1::[ns2:: ...]]::class
-    //@param module required module to match
+    /// @param client client name
+    /// @param iface interface name in the format [ns1::[ns2:: ...]]::class
+    /// @param module required module to match
     static client_fn get_interface_client(const token& client, const token& iface, uint hash, const token& module);
 
     ///Get client interface creators matching given name
-    //@param iface interface name in the format [ns1::[ns2:: ...]]::class
-    //@param module required module to match
+    /// @param iface interface name in the format [ns1::[ns2:: ...]]::class
+    /// @param module required module to match
     static dynarray<creator>& get_interface_clients(const token& iface, uint hash, dynarray<creator>& dst);
 
     template <typename T>
@@ -116,15 +116,15 @@ public:
     }
 
     ///Get interface creators matching given name
-    //@param name interface creator name in the format [ns1::[ns2:: ...]]::class[.creator]
-    //@param script script type (""=c++, "js", "lua" ...), if empty/null anything matches
-    //@return array of interface creators for given script type (with script_handle argument)
+    /// @param name interface creator name in the format [ns1::[ns2:: ...]]::class[.creator]
+    /// @param script script type (""=c++, "js", "lua" ...), if empty/null anything matches
+    /// @return array of interface creators for given script type (with script_handle argument)
     static dynarray<creator>& get_interface_creators(const token& name, const token& script, dynarray<creator>& dst);
 
     ///Get script interface creators matching given name
-    //@param name interface creator name in the format [ns1::[ns2:: ...]]::class[.creator]
-    //@param script script type (""=c++, "js", "lua" ...), if empty/null anything matches
-    //@return array of interface creators for given script type (with native script lib argument)
+    /// @param name interface creator name in the format [ns1::[ns2:: ...]]::class[.creator]
+    /// @param script script type (""=c++, "js", "lua" ...), if empty/null anything matches
+    /// @return array of interface creators for given script type (with native script lib argument)
     static dynarray<creator>& get_script_interface_creators(const token& name, const token& script, dynarray<creator>& dst);
 
     ///Find interfaces containing given string
@@ -137,9 +137,9 @@ public:
     };
 
     ///Send notification about client handlers unloading
-    //@param handle dll handle to unload, or 0 if sending notifications about reload
-    //@param bstr ptr to binstring object for persisting the state
-    //@param ens list of unloaded entries
+    /// @param handle dll handle to unload, or 0 if sending notifications about reload
+    /// @param bstr ptr to binstring object for persisting the state
+    /// @param ens list of unloaded entries
     static bool notify_module_unload(uints handle, binstring* bstr, dynarray<unload_entry>& ens);
 
     static ref<logmsg> canlog(log::type type, const token& src, const void* inst = 0);
@@ -148,9 +148,9 @@ public:
 #ifdef COID_VARIADIC_TEMPLATES
 
     ///Formatted log message
-    //@param type log level
-    //@param from source identifier (used for filtering)
-    //@param fmt @see charstr.print
+    /// @param type log level
+    /// @param from source identifier (used for filtering)
+    /// @param fmt @see charstr.print
     template<class ...Vs>
     static void print(log::type type, const token& from, const token& fmt, Vs&&... vs)
     {

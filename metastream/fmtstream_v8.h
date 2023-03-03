@@ -592,8 +592,8 @@ public:
     }
 
     ///Return formatting stream error (if any) and current line and column for error reporting purposes
-    //@param err [in] error text
-    //@param err [out] final (formatted) error text with line info etc.
+    /// @param err [in] error text
+    /// @param err [out] final (formatted) error text with line info etc.
     virtual void fmtstream_err(charstr& err, bool add_context = true) override
     {
         err.ins(0, "[js] ");

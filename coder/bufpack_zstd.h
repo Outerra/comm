@@ -62,10 +62,10 @@ struct packer_zstd
     }
 
     ///Pack block of data
-    //@param src src data
-    //@param size input size
-    //@param dst target buffer (append)
-    //@return compressed size
+    /// @param src src data
+    /// @param size input size
+    /// @param dst target buffer (append)
+    /// @return compressed size
     template <class COUNT>
     uints pack(const void* src, uints size, dynarray<uint8, COUNT>& dst, int complevel = ZSTD_CLEVEL_DEFAULT)
     {
@@ -82,10 +82,10 @@ struct packer_zstd
     }
 
     ///Unpack block of data
-    //@param src src data
-    //@param size available input size
-    //@param dst target buffer
-    //@return consumed size or UMAXS on error
+    /// @param src src data
+    /// @param size available input size
+    /// @param dst target buffer
+    /// @return consumed size or UMAXS on error
     template <class COUNT>
     uints unpack(const void* src, uints size, dynarray<uint8, COUNT>& dst)
     {
@@ -141,10 +141,10 @@ struct packer_zstd
     }
 
     ///Pack data in streaming mode
-    //@param src data to pack, 0 to flush
-    //@param size byt size of data
-    //@param bon output binstream to write to
-    //@param ZSTD complevel compression level
+    /// @param src data to pack, 0 to flush
+    /// @param size byt size of data
+    /// @param bon output binstream to write to
+    /// @param ZSTD complevel compression level
     uints pack_stream(const void* src, uints size, binstream& bon, int complevel = ZSTD_CLEVEL_DEFAULT)
     {
         if (!src && (!_cstream || _buf.size() == 0))
@@ -207,10 +207,10 @@ struct packer_zstd
     }
 
     ///Unpack data in streaming mode
-    //@param bin binstream to read from
-    //@param dst destination buffer to write to
-    //@param size size of dest buffer
-    //@return unpacked size, can be less than size argument if there's no more data
+    /// @param bin binstream to read from
+    /// @param dst destination buffer to write to
+    /// @param size size of dest buffer
+    /// @return unpacked size, can be less than size argument if there's no more data
     ints unpack_stream(binstream& bin, void* dst, uints size)
     {
         if (!_dstream) {

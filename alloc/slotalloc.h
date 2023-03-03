@@ -103,13 +103,13 @@ protected:
 public:
 
     ///Construct slotalloc container
-    //@note it's required to reserve memory or virtual address space, and/or to call allow_rebase() to indicate that it's ok when item addresses change on resize
+    /// @note it's required to reserve memory or virtual address space, and/or to call allow_rebase() to indicate that it's ok when item addresses change on resize
     slotalloc_base()
     {}
 
     ///Constructor, reserve memory (non-virtual, will rebase when overflows)
-    //@param reserve_items number of items to reserve memory for
-    //@param bvirtual true for virtual address space reservation, false for physical reservation (will rebase if crossed)
+    /// @param reserve_items number of items to reserve memory for
+    /// @param bvirtual true for virtual address space reservation, false for physical reservation (will rebase if crossed)
     slotalloc_base(uints nitems, reserve_mode mode)
     {
         if (mode == reserve_mode::virtual_space)
@@ -174,28 +174,28 @@ public:
         extarray_copy(o);
     }
 
-    //@return value from ext array associated with given main array object
+    /// @return value from ext array associated with given main array object
     template<size_t V>
     typename std::tuple_element<V, extarray_t>::type::value_type&
         assoc_value(const T* p) {
         return std::get<V>(this->_exts)[get_item_id(p)];
     }
 
-    //@return value from ext array associated with given main array object
+    /// @return value from ext array associated with given main array object
     template<size_t V>
     const typename std::tuple_element<V, extarray_t>::type::value_type&
         assoc_value(const T* p) const {
         return std::get<V>(this->_exts)[get_item_id(p)];
     }
 
-    //@return value from ext array for given index
+    /// @return value from ext array for given index
     template<size_t V>
     typename std::tuple_element<V, extarray_t>::type::value_type&
         value(uints index) {
         return std::get<V>(this->_exts)[index];
     }
 
-    //@return value from ext array for given index
+    /// @return value from ext array for given index
     template<size_t V>
     const typename std::tuple_element<V, extarray_t>::type::value_type&
         value(uints index) const {
@@ -204,13 +204,13 @@ public:
 
 #ifdef __cpp_lib_tuples_by_type
 
-    //@return value from ext array for given type
+    /// @return value from ext array for given type
     template<typename T2>
     T2& value_type(uints index) {
         return std::get<T2>(this->_exts)[index];
     }
 
-    //@return value from ext array for given type
+    /// @return value from ext array for given type
     template <typename T2>
     const T2& value_type(uints index) const {
         return std::get<T2>(this->_exts)[index];
@@ -218,14 +218,14 @@ public:
 
 #endif
 
-    //@return ext array
+    /// @return ext array
     template<size_t V>
     typename std::tuple_element<V, extarray_t>::type&
         value_array() {
         return std::get<V>(this->_exts);
     }
 
-    //@return ext array
+    /// @return ext array
     template<size_t V>
     const typename std::tuple_element<V, extarray_t>::type&
         value_array() const {
@@ -280,7 +280,7 @@ public:
 
 
     ///Insert object
-    //@return pointer to the newly inserted object
+    /// @return pointer to the newly inserted object
     T* push(const T& v)
     {
         bool isold = _count < created();
@@ -290,7 +290,7 @@ public:
     }
 
     ///Insert object
-    //@return pointer to the newly inserted object
+    /// @return pointer to the newly inserted object
     T* push(T&& v)
     {
         bool isold = _count < created();
@@ -342,8 +342,8 @@ public:
     }
 
     ///Add new object, uninitialized (no constructor invoked on the object)
-    //@param newitem optional variable that receives whether the object slot was newly created (true) or reused from the pool (false)
-    //@note if newitem == 0 within the pool mode and thus no way to indicate the item has been reused, the reused objects have destructors called
+    /// @param newitem optional variable that receives whether the object slot was newly created (true) or reused from the pool (false)
+    /// @note if newitem == 0 within the pool mode and thus no way to indicate the item has been reused, the reused objects have destructors called
     T* add_uninit(bool* newitem = 0, uints* pid = 0)
     {
         if (_count < created()) {
@@ -361,7 +361,7 @@ public:
     }
 
     ///Add range of objects initialized with default constructors
-    //@return id to the beginning of the allocated range
+    /// @return id to the beginning of the allocated range
     uints add_range(uints n)
     {
         if (n == 0)
@@ -385,9 +385,9 @@ public:
     }
 
     ///Add range of objects, uninitialized (no constructor invoked on the objects)
-    //@param nreused optional variable receiving the number of objects that were reused from the pool and are constructed already
-    //@note if nreused == 0 within the pool mode and thus no way to indicate the item has been reused, the reused objects have destructors called
-    //@return id to the beginning of the allocated range
+    /// @param nreused optional variable receiving the number of objects that were reused from the pool and are constructed already
+    /// @note if nreused == 0 within the pool mode and thus no way to indicate the item has been reused, the reused objects have destructors called
+    /// @return id to the beginning of the allocated range
     uints add_range_uninit(uints n, uints* nreused = 0)
     {
         if (n == 0)
@@ -421,7 +421,7 @@ public:
     }
 
     ///Add range of objects initialized with default constructors
-    //@return id to the beginning of the allocated range
+    /// @return id to the beginning of the allocated range
     T* add_contiguous_range(uints n)
     {
         if coid_constexpr_if (!LINEAR) {
@@ -447,9 +447,9 @@ public:
     }
 
     ///Add range of objects, uninitialized (no constructor invoked on the objects)
-    //@param nreused optional variable receiving the number of objects that were reused from the pool and are constructed already
-    //@note if nreused == 0 within the pool mode and thus no way to indicate the item has been reused, the reused objects have destructors called
-    //@return id to the beginning of the allocated range
+    /// @param nreused optional variable receiving the number of objects that were reused from the pool and are constructed already
+    /// @note if nreused == 0 within the pool mode and thus no way to indicate the item has been reused, the reused objects have destructors called
+    /// @return id to the beginning of the allocated range
     T* add_contiguous_range_uninit(uints n, uints* nreused = 0)
     {
         if coid_constexpr_if (!LINEAR) {
@@ -546,8 +546,8 @@ public:
         return del_item(vid.id);
     }
 
-    //@return previously deleted but still valid item
-    //@note only works in POOL mode
+    /// @return previously deleted but still valid item
+    /// @note only works in POOL mode
     T* undel_item(uints id)
     {
         static_assert(POOL, "only available in pool mode");
@@ -566,8 +566,8 @@ public:
         return 0;
     }
 
-    //@return previously deleted but still valid item with correct version
-    //@note only works in POOL mode
+    /// @return previously deleted but still valid item with correct version
+    /// @note only works in POOL mode
     template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
     T* undel_item(versionid vid)
     {
@@ -590,7 +590,7 @@ public:
     }
 
     ///Mark object deleted without running the destructor
-    //@note useful for deletion of objects from within item destructors
+    /// @note useful for deletion of objects from within item destructors
     void del_nodestruct(T* p)
     {
         static_assert(!POOL, "error: cannot be used in pool mode");
@@ -660,15 +660,15 @@ public:
         del_range(get_item_id(p), n);
     }
 
-    //@return number of used slots in the container
+    /// @return number of used slots in the container
     uints count() const { return _count; }
 
-    //@return allocated and previously created count (not necessarily used currently)
+    /// @return allocated and previously created count (not necessarily used currently)
     uints allocated_count() const {
         return created();
     }
 
-    //@return number of currently preallocated items
+    /// @return number of currently preallocated items
     uints preallocated_count() const {
         if coid_constexpr_if (LINEAR)
             return this->_array.reserved_total() / sizeof(T);
@@ -676,10 +676,10 @@ public:
             return this->_pages.size() * storage_t::page::ITEMS;
     }
 
-    //@{ accessors with versionid argument, enabled only if versioning is on
+    /// @{ accessors with versionid argument, enabled only if versioning is on
 
     ///Return an item given id
-    //@param id id of the item
+    /// @param id id of the item
     template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
     const T* get_item(versionid vid) const
     {
@@ -688,8 +688,8 @@ public:
     }
 
     ///Return an item given id
-    //@param id id of the item
-    //@note non-const operator [] disabled on tracking allocators, use explicit get_mutable_item to indicate the element will be modified
+    /// @param id id of the item
+    /// @note non-const operator [] disabled on tracking allocators, use explicit get_mutable_item to indicate the element will be modified
     template <bool T1 = VERSIONING && !TRACKING, typename = std::enable_if_t<T1>>
     T* get_item(versionid vid)
     {
@@ -698,7 +698,7 @@ public:
     }
 
     ///Return an item given id
-    //@param id id of the item
+    /// @param id id of the item
     template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
     T* get_mutable_item(versionid vid)
     {
@@ -713,17 +713,17 @@ public:
         return *get_item(vid);
     }
 
-    //@note non-const operator [] disabled on tracking allocators, use explicit get_mutable_item to indicate the element will be modified
+    /// @note non-const operator [] disabled on tracking allocators, use explicit get_mutable_item to indicate the element will be modified
     template <bool T1 = VERSIONING && !TRACKING, typename = std::enable_if_t<T1>>
     T& operator [] (versionid vid) {
         return *get_mutable_item(vid);
     }
 
-    //@}
+    /// @}
 
 
     ///Return an item given id
-    //@param id id of the item
+    /// @param id id of the item
     const T* get_item(uints id) const
     {
         DASSERT_RET(id < created() && get_bit(id), 0);
@@ -731,8 +731,8 @@ public:
     }
 
     ///Return an item given id
-    //@param id id of the item
-    //@note non-const operator [] disabled on tracking allocators, use explicit get_mutable_item to indicate the element will be modified
+    /// @param id id of the item
+    /// @note non-const operator [] disabled on tracking allocators, use explicit get_mutable_item to indicate the element will be modified
     template <bool T1 = TRACKING, typename = std::enable_if_t<!T1>>
     T* get_item(uints id)
     {
@@ -741,7 +741,7 @@ public:
     }
 
     ///Return an item given id
-    //@param id id of the item
+    /// @param id id of the item
     T* get_mutable_item(uints id)
     {
         DASSERT_RET(id < created() && get_bit(id), 0);
@@ -754,7 +754,7 @@ public:
         return *get_item(id);
     }
 
-    //@note non-const operator [] disabled on tracking allocators, use explicit get_mutable_item to indicate the element will be modified
+    /// @note non-const operator [] disabled on tracking allocators, use explicit get_mutable_item to indicate the element will be modified
     template <bool T1 = TRACKING, typename = std::enable_if_t<!T1>>
     T& operator [] (uints id) {
         return *get_mutable_item(id);
@@ -762,9 +762,9 @@ public:
 
 
     ///Get a particular item from given slot or default-construct a new one there
-    //@param id item id, reverts to add() if UMAXS
-    //@param is_new optional if not null, receives true if the item was newly created
-    //@note a deleted item in POOL mode is also considered newly created here
+    /// @param id item id, reverts to add() if UMAXS
+    /// @param is_new optional if not null, receives true if the item was newly created
+    /// @note a deleted item in POOL mode is also considered newly created here
     T* get_or_create(uints id, bool* is_new = 0)
     {
         if (id == UMAXS) {
@@ -812,8 +812,8 @@ public:
     }
 
     ///Get a particular item from given slot or default-construct a new one there
-    //@param id item id, reverts to add() if UMAXS
-    //@param is_new optional if not null, receives true if the item was newly created (also not restored from pool)
+    /// @param id item id, reverts to add() if UMAXS
+    /// @param is_new optional if not null, receives true if the item was newly created (also not restored from pool)
     T* get_or_create_uninit(uints id, bool* is_new = 0)
     {
         if (id == UMAXS) {
@@ -857,7 +857,7 @@ public:
         return ptr(id);
     }
 
-    //@return id of given item, or UMAXS if the item is not managed here
+    /// @return id of given item, or UMAXS if the item is not managed here
     uints get_item_id(const T* p) const
     {
         if coid_constexpr_if (LINEAR) {
@@ -883,7 +883,7 @@ public:
         }
     }
 
-    //@return if of given item in ext array or UMAXS if the item is not managed here
+    /// @return if of given item in ext array or UMAXS if the item is not managed here
     template<int V, class K, bool T1 = VERSIONING, typename = std::enable_if_t<!T1>>
     uints get_array_item_id(const K* p) const
     {
@@ -894,7 +894,7 @@ public:
             : UMAXS;
     }
 
-    //@return versionid of given item
+    /// @return versionid of given item
     template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
     versionid get_item_versionid(const T* p) const
     {
@@ -904,7 +904,7 @@ public:
             : this->get_versionid(id);
     }
 
-    //@return versionid of given slot_id if valid
+    /// @return versionid of given slot_id if valid
     template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
     versionid get_item_versionid(uints slot_id) const
     {
@@ -913,18 +913,18 @@ public:
             : versionid();
     }
 
-    //@return true if item with id is valid
+    /// @return true if item with id is valid
     bool is_valid_id(uints id) const {
         return get_bit(id);
     }
 
-    //@return true if item with id is valid
+    /// @return true if item with id is valid
     template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
     bool is_valid_id(versionid vid) const {
         return this->check_versionid(vid) && get_bit(vid.id);
     }
 
-    //@return true if item is valid
+    /// @return true if item is valid
     bool is_valid(const T* p) const {
         return get_bit(get_item_id(p));
     }
@@ -989,7 +989,7 @@ public:
 
 protected:
 
-    //@{ versioning functions
+    /// @{ versioning functions
 
     versionid get_versionid(uints id) const {
         DASSERT_RET(id <= versionid::max_id, versionid());
@@ -1017,11 +1017,11 @@ protected:
             ++tracker_t::version_array()[id];
     }
 
-    //@}
+    /// @}
 
 protected:
 
-    //@{ tracking functions
+    /// @{ tracking functions
 
     void set_modified(uints k) const
     {
@@ -1033,7 +1033,7 @@ protected:
         }
     }
 
-    //@}
+    /// @}
 
 protected:
 
@@ -1119,7 +1119,7 @@ protected:
     }
 
 
-    //@{Helper functions for for_each to allow calling with optional index argument
+    /// @{Helper functions for for_each to allow calling with optional index argument
     template<class Fn>
     using has_index = std::integral_constant<bool, !(closure_traits<Fn>::arity::value <= 1)>;
 
@@ -1280,12 +1280,12 @@ protected:
         fn(v, index);
     }
 #endif
-    //@}
+    /// @}
 
 public:
 
     ///Invoke a functor on each used item.
-    //@param f functor with ([const] T&) or ([const] T&, size_t index) arguments
+    /// @param f functor with ([const] T&) or ([const] T&, size_t index) arguments
     template<typename Func>
     void for_each(Func f) const
     {
@@ -1355,9 +1355,9 @@ public:
     }
 
     ///Invoke a functor on each used item in given ext array
-    //@note handles array insertions/deletions during iteration
-    //@param K ext array id
-    //@param f functor with ([const] T&) or ([const] T&, size_t index) arguments, with T being the type of given value array
+    /// @note handles array insertions/deletions during iteration
+    /// @param K ext array id
+    /// @param f functor with ([const] T&) or ([const] T&, size_t index) arguments, with T being the type of given value array
     template<int K, typename Func>
     void for_each_in_array(Func f) const
     {
@@ -1394,9 +1394,9 @@ public:
     }
 
     ///Invoke a functor on each item that was modified between two frames
-    //@note const version doesn't handle array insertions/deletions during iteration
-    //@param bitplane_mask changeset bitplane mask (slotalloc_detail::changeset::bitplane_mask)
-    //@param f functor with ([const] T* ptr) or ([const] T* ptr, size_t index) arguments; ptr can be null if item was deleted
+    /// @note const version doesn't handle array insertions/deletions during iteration
+    /// @param bitplane_mask changeset bitplane mask (slotalloc_detail::changeset::bitplane_mask)
+    /// @param f functor with ([const] T* ptr) or ([const] T* ptr, size_t index) arguments; ptr can be null if item was deleted
     template<typename Func, bool T1 = TRACKING, typename = std::enable_if_t<T1>>
     void for_each_modified(uint bitplane_mask, Func f) const
     {
@@ -1462,7 +1462,7 @@ public:
     }
 
     ///Run f(T*) on a range of items
-    //@note this function ignores whether the items in range are allocated or not
+    /// @note this function ignores whether the items in range are allocated or not
     template<typename Func>
     void for_range_unchecked(uints id, uints count, Func f)
     {
@@ -1499,8 +1499,8 @@ public:
     }
 
     ///Find first element for which the predicate returns true
-    //@return pointer to the element or null
-    //@param f functor with ([const] T&) or ([const] T&, size_t index) arguments
+    /// @return pointer to the element or null
+    /// @param f functor with ([const] T&) or ([const] T&, size_t index) arguments
     template<typename Func>
     T* find_if(Func f) const
     {
@@ -1583,7 +1583,7 @@ public:
     }
 
     ///Remove each element for which the predicate returns true
-    ///@param f functor with ([const] T&) or ([const] T&, size_t index) arguments
+    /// @param f functor with ([const] T&) or ([const] T&, size_t index) arguments
     template<typename Func>
     T* del_if(Func f)
     {
@@ -1666,8 +1666,8 @@ public:
     }
 
     ///Run on unused elements (freed elements in pool mode) until predicate returns true
-    //@return pointer to the element or null
-    //@param f functor with ([const] T&) or ([const] T&, size_t index) arguments
+    /// @return pointer to the element or null
+    /// @param f functor with ([const] T&) or ([const] T&, size_t index) arguments
     template<typename Func>
     uints find_unused(Func f) const
     {
@@ -1745,11 +1745,11 @@ public:
         return UMAXS;
     }
 
-    //@return bit array with marked item allocations
+    /// @return bit array with marked item allocations
     const dynarray<uints>& get_bitarray() const { return _allocated; }
 
     ///Advance to the next tracking frame, updating changeset
-    //@return new frame number
+    /// @return new frame number
     uint advance_frame()
     {
         if (!TRACKING)
@@ -1764,7 +1764,7 @@ public:
     }
 
     ///Mark all objects that have the corresponding bit set as modified in current frame
-    //@param clear_old if true, old change bits are cleared
+    /// @param clear_old if true, old change bits are cleared
     void mark_all_modified(bool clear_old)
     {
         if (!TRACKING)
@@ -1864,7 +1864,7 @@ protected:
         return _count;
     }
 
-    //@return allocated and previously created count (not necessarily used currently)
+    /// @return allocated and previously created count (not necessarily used currently)
     uints created() const {
         if coid_constexpr_if(LINEAR)
             return this->_array.size();
@@ -2074,7 +2074,7 @@ private:
     }
 
     ///Alloc range of objects, can cross page boundaries
-    //@param old receives number of reused objects lying at the beginning of the range
+    /// @param old receives number of reused objects lying at the beginning of the range
     template <bool UNINIT>
     uints alloc_range(uints n, uints* old)
     {
@@ -2099,7 +2099,7 @@ private:
     }
 
     ///Alloc range of objects within a single contiguous page
-    //@param old receives number of reused objects lying at the beginning of the range
+    /// @param old receives number of reused objects lying at the beginning of the range
     template <bool UNINIT>
     uints alloc_range_contiguous(uints n, uints* old)
     {

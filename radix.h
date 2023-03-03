@@ -104,11 +104,11 @@ public:
     //uints size() const      { return _puidxa.size(); }
 
     ///Sort integer data
-    //@param ascending true for ascending order, false for descending one
-    //@param psort array to sort (random access via [] operator required)
-    //@param nitems number of elements in the array
-    //@param useindex true if the current index should be used (preserves partial order in the index)
-    //@param stride byte size of an array element
+    /// @param ascending true for ascending order, false for descending one
+    /// @param psort array to sort (random access via [] operator required)
+    /// @param nitems number of elements in the array
+    /// @param useindex true if the current index should be used (preserves partial order in the index)
+    /// @param stride byte size of an array element
     template<class CONTAINER>
     INT_IDX* sort( bool ascending, const CONTAINER& psort, uints nitems, bool useindex = false )
     {

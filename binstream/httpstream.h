@@ -250,8 +250,8 @@ public:
 public:
 
     ///Called to decode the value of unknown http header
-    //@param name header
-    //@param value value string
+    /// @param name header
+    /// @param value value string
     virtual opcd on_extra_header( const token& name, token value )
     {
         return 0;

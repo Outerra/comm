@@ -49,10 +49,10 @@ struct packer_lz4
         LZ4_resetStream(&_stream);
     }
 
-    //@param src src data
-    //@param size input size
-    //@param dst target buffer (append)
-    //@return compressed size
+    /// @param src src data
+    /// @param size input size
+    /// @param dst target buffer (append)
+    /// @return compressed size
     uints pack( const void* src, uints size, dynarray<uint8>& dst )
     {
         DASSERT( size < LZ4_MAX_INPUT_SIZE );
@@ -72,10 +72,10 @@ struct packer_lz4
     }
 
     ///
-    //@param src src data
-    //@param size available input size
-    //@param dst target buffer
-    //@return consumed size or UMAXS on error
+    /// @param src src data
+    /// @param size available input size
+    /// @param dst target buffer
+    /// @return consumed size or UMAXS on error
     uints unpack( const void* src, uints size, dynarray<uint8>& dst )
     {
         DASSERT_RET( size > sizeof(uint), 0 );

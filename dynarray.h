@@ -149,8 +149,8 @@ public:
     }
 
     ///Reserve specified number of items in constructor
-    //@param count number of items to reserve heap memory or stack or virtual address space for
-    //@param mode reservation mode
+    /// @param count number of items to reserve heap memory or stack or virtual address space for
+    /// @param mode reservation mode
     explicit dynarray(uints reserve_count, reserve_mode mode = reserve_mode::memory)
     {
         if (mode == reserve_mode::virtual_space) {
@@ -164,7 +164,7 @@ public:
     }
 
     /// @brief Reserve stack memory for this dynarray
-    //@param sb stack buffer created with the STACK_RESERVE macro
+    /// @param sb stack buffer created with the STACK_RESERVE macro
     dynarray(const stack_buffer<T>& sb) {
         _ptr = A::template reserve_stack<T>(sb.count, sb.buffer, sb.buffer_size());
         _set_count(0);
@@ -407,7 +407,7 @@ public:
 #if SYSTYPE_MSVC > 0 && SYSTYPE_MSVC < 1800
     //support for old msvc
     ///Invoke functor on each element
-    //@note handles the case when current element is deleted from the array
+    /// @note handles the case when current element is deleted from the array
     template<typename Func>
     void for_each(Func f)
     {
@@ -422,7 +422,7 @@ public:
     }
 
     ///Invoke functor on each element
-    //@note handles the case when current element is deleted from the array
+    /// @note handles the case when current element is deleted from the array
     template<typename Func>
     void for_each(Func f) const
     {
@@ -437,7 +437,7 @@ public:
     }
 
     ///Find first element for which the predicate returns true
-    //@return pointer to the element or null
+    /// @return pointer to the element or null
     template<typename Func>
     T* find_if(Func f) const
     {
@@ -451,7 +451,7 @@ public:
 
 protected:
 
-    //@{Helper functions for for_each to allow calling with optional index argument
+    /// @{Helper functions for for_each to allow calling with optional index argument
     ///Functor argument type reference or pointer
     template<class Fn>
     using has_index = std::integral_constant<bool, !(closure_traits<Fn>::arity::value <= 1)>;
@@ -501,13 +501,13 @@ protected:
         return fn(v, index);
     }
 #endif
-    //@}
+    /// @}
 
 public:
 
     ///Invoke functor on each element
-    //@param fn functor as fn([const] T&) or fn([const] T&, count_t index)
-    //@note handles the case when the current element is deleted from the array, or more elements are appended
+    /// @param fn functor as fn([const] T&) or fn([const] T&, count_t index)
+    /// @note handles the case when the current element is deleted from the array, or more elements are appended
     template<typename Func>
     void for_each(Func fn) const
     {
@@ -534,7 +534,7 @@ public:
     }
 
     ///Invoke functor on each element
-    //@param fn functor as fn(const T&) or fn(const T&, count_t index)
+    /// @param fn functor as fn(const T&) or fn(const T&, count_t index)
     template<typename Res, typename Func>
     Res sum(Func fn) const
     {
@@ -556,8 +556,8 @@ public:
     }
 
     ///Find first element for which the predicate returns true
-    //@param fn functor as fn([const] T&) or fn([const] T&, count_t index)
-    //@return pointer to the element or null
+    /// @param fn functor as fn([const] T&) or fn([const] T&, count_t index)
+    /// @return pointer to the element or null
     template<typename Func>
     T* find_if(Func fn) const
     {
@@ -580,7 +580,7 @@ public:
     }
 
     ///Remove each element for which the predicate returns true
-    //@param fn functor as fn([const] T&) or fn([const] T&, count_t index)
+    /// @param fn functor as fn([const] T&) or fn([const] T&, count_t index)
     template<typename Func>
     void del_if(Func fn)
     {
@@ -736,13 +736,13 @@ public:
         return _ptr;
     };
 
-    //@{ alternative names
+    /// @{ alternative names
     T* need_new(uints nitems) { return alloc(nitems); }
     T* need_newc(uints nitems, bool toones = false) { return calloc(nitems, toones); }
 
     T* need(uints nitems) { return realloc(nitems); }
     T* needc(uints nitems, bool toones = false) { return crealloc(nitems, toones); }
-    //@} alternative names
+    /// @} alternative names
 
 
     ///Cut to specified length, negative numbers cut abs(len) from the end
@@ -764,8 +764,8 @@ public:
 
 #ifdef COID_VARIADIC_TEMPLATES
     ///Add \a nitems of elements on the end
-    //@param nitems count of items to add
-    //@return pointer to the first added element
+    /// @param nitems count of items to add
+    /// @return pointer to the first added element
     template<class ...Args>
     T* add_construct(uints nitems = 1, Args&&... args)
     {
@@ -788,8 +788,8 @@ public:
 #endif
 
     ///Add \a nitems of elements on the end
-    //@param nitems count of items to add
-    //@return pointer to the first added element
+    /// @param nitems count of items to add
+    /// @return pointer to the first added element
     T* add(uints nitems = 1)
     {
         uints n = _count();
@@ -837,8 +837,8 @@ public:
     };
 
     ///Add memory for n uninitialized elements, without calling the constructor
-    //@param n number of items to add
-    //@param rebase_offset optional ptr to variable receiving byte offset (newbase - oldbase) if the array was rebased
+    /// @param n number of items to add
+    /// @param rebase_offset optional ptr to variable receiving byte offset (newbase - oldbase) if the array was rebased
     T* add_uninit(uints n = 1, ints* rebase_offset = 0)
     {
         T* oldbase = _ptr;
@@ -851,7 +851,7 @@ public:
     }
 
     ///Add items but only if the array isn't going to be rebased as the result
-    //@return ptr to added items or null
+    /// @return ptr to added items or null
     T* add_norebase(uints nitems = 1)
     {
         uints n = _count();
@@ -868,12 +868,12 @@ public:
     ///Add n new elements on position where key would be inserted.
     /// Uses either operator T<T or a functor(T,T)
     /// add_sortT() can use a different key type than T, provided an operator T<K exists, or functor(T,K) was provided.
-    //@param key key to use to find the element position in sorted array
-    //@param fn a functor that returns >0 for T<K, or else <= 0
-    //@param n number of elements to insert
+    /// @param key key to use to find the element position in sorted array
+    /// @param fn a functor that returns >0 for T<K, or else <= 0
+    /// @param n number of elements to insert
     /** this uses the provided \a key just to find the position, doesn't insert the key
         @see push_sort() **/
-    //@{
+    /// @{
     template<class K>
     T* add_sort(const K& key, uints n = 1)
     {
@@ -887,11 +887,11 @@ public:
         uints i = lower_bound(key, fn);
         return ins(i, n);
     }
-    //@}
+    /// @}
 
 
     ///Append an empty element to the end
-    //@return pointer to the last element (the one appended)
+    /// @return pointer to the last element (the one appended)
     T* push() {
         return add();
     }
@@ -913,7 +913,7 @@ public:
     };
 
     ///Push item into array if it doesn't exist
-    //@return item reference
+    /// @return item reference
     T& push_unique(const T& v) {
         ints id = index_of(v);
         return id < 0
@@ -922,7 +922,7 @@ public:
     }
 
     ///Push item into array if it doesn't exist
-    //@return item reference
+    /// @return item reference
     T& push_unique(T&& v) {
         ints id = index_of(v);
         return id < 0
@@ -958,7 +958,7 @@ public:
     };
 
     ///Push element into array if it's not already there, linear search
-    //@return 0 if already exists, pointer to the new item at the end otherwise
+    /// @return 0 if already exists, pointer to the new item at the end otherwise
     T* push_key(const T& v)
     {
         uints c = _count();
@@ -969,7 +969,7 @@ public:
     }
 
     ///Push element into array if it's not already there, linear search
-    //@return 0 if already exists, pointer to the new item at the end otherwise
+    /// @return 0 if already exists, pointer to the new item at the end otherwise
     T* push_key(T&& v)
     {
         uints c = _count();
@@ -996,7 +996,7 @@ public:
     }
 
     ///Insert an element to the array at sorted position (using compare function)
-    //@param fn a functor that returns >0 for T<K, or else <= 0
+    /// @param fn a functor that returns >0 for T<K, or else <= 0
     template<typename FUNC>
     T* push_sort(const T& v, const FUNC& fn)
     {
@@ -1006,7 +1006,7 @@ public:
     }
 
     ///Insert an element to the array at sorted position (using compare function)
-    //@param fn a functor that returns >0 for T<K, or else <= 0
+    /// @param fn a functor that returns >0 for T<K, or else <= 0
     template<typename FUNC>
     T* push_sort(T&& v, const FUNC& fn)
     {
@@ -1016,7 +1016,7 @@ public:
     }
 
     ///Pop the last element, copying it to the \a dest
-    //@return true if the array wasn't empty and the element was copied
+    /// @return true if the array wasn't empty and the element was copied
     bool pop(T& dest)
     {
         uints n = _count();
@@ -1034,7 +1034,7 @@ public:
     }
 
     ///Pop the last element from the array, returning pointer to new last element.
-    //@return pointer to the new last element or null if there's nothing left
+    /// @return pointer to the new last element or null if there's nothing left
     T* pop()
     {
         uints cnt = _count();
@@ -1202,7 +1202,7 @@ public:
         return b;
     }
 
-    //@{ functions for bit arrays
+    /// @{ functions for bit arrays
     bool set_bit(uints k)
     {
         static constexpr int NBITS = 8 * sizeof(T);
@@ -1238,7 +1238,7 @@ public:
 
         return s < size() && (_ptr[s] & (U(1) << b)) != 0;
     }
-    //@}
+    /// @}
 
 
     ///Reserve \a nitems of elements
@@ -1360,7 +1360,7 @@ public:
 
 
     ///Linear search whether array contains element comparable with \a key
-    //@return -1 if not contained, otherwise index
+    /// @return -1 if not contained, otherwise index
     template<class K>
     ints index_of(const K& key) const
     {
@@ -1410,7 +1410,7 @@ public:
 
 
     ///Linear search whether array contains element comparable with \a key
-    //@return 0 if not contained, otherwise ptr to the key
+    /// @return 0 if not contained, otherwise ptr to the key
     template<class K>
     const T* contains(const K& key) const
     {
@@ -1422,7 +1422,7 @@ public:
     }
 
     ///Linear search whether array contains element comparable with \a key via equality functor
-    //@param eq functor as fn([const] T&, const K&)
+    /// @param eq functor as fn([const] T&, const K&)
     template<class K, class EQ>
     const T* contains(const K& key, const EQ& eq) const
     {
@@ -1434,17 +1434,17 @@ public:
     }
 
     ///Linear search whether array contains element comparable with \a key
-    //@return 0 if not contained, otherwise ptr to the key
+    /// @return 0 if not contained, otherwise ptr to the key
     template<class K>
     T* contains(const K& key) { return const_cast<T*>(std::as_const(*this).contains(key)); }
 
     ///Linear search whether array contains element comparable with \a key via equality functor
-    //@param eq functor as fn([const] T&, const K&)
+    /// @param eq functor as fn([const] T&, const K&)
     template<class K, class EQ>
     T* contains(const K& key, const EQ& eq) { return const_cast<T*>(std::as_const(*this).contains(key, eq)); }
 
     ///Linear search (backwards) whether array contains element comparable with \a key
-    //@return 0 if not contained, otherwise ptr to the key
+    /// @return 0 if not contained, otherwise ptr to the key
     template<class K>
     const T* contains_back(const K& key) const
     {
@@ -1459,7 +1459,7 @@ public:
     }
 
     ///Linear search (backwards) whether array contains element comparable with \a key via equality functor
-    //@param eq functor as fn([const] T&, const K&)
+    /// @param eq functor as fn([const] T&, const K&)
     template<class K, class EQ>
     const T* contains_back(const K& key, const EQ& eq) const
     {
@@ -1474,21 +1474,21 @@ public:
     }
 
     ///Linear search (backwards) whether array contains element comparable with \a key
-    //@return 0 if not contained, otherwise ptr to the key
+    /// @return 0 if not contained, otherwise ptr to the key
     template<class K>
     T* contains_back(const K& key) { return const_cast<T*>(std::as_const(*this).contains_back(key)); }
 
     ///Linear search (backwards) whether array contains element comparable with \a key via equality functor
-    //@param eq functor as fn([const] T&, const K&)
+    /// @param eq functor as fn([const] T&, const K&)
     template<class K, class EQ>
     T* contains_back(const K& key, const EQ& eq) { return const_cast<T*>(contains_back(key, eq)); }
 
     ///Binary search to check whether a sorted array contains element comparable to \a key
     /// Uses operator T<K and operator T==K for equality comparison, or functor(T,K) to search for the element
-    //@return ptr to element if found or 0 otherwise
-    //@param fn a functor that returns >0 for T<K, 0 for T==K, <0 for T>K
-    //@param sort_index optional ptr to variable receiving sort index
-    //@{
+    /// @return ptr to element if found or 0 otherwise
+    /// @param fn a functor that returns >0 for T<K, 0 for T==K, <0 for T>K
+    /// @param sort_index optional ptr to variable receiving sort index
+    /// @{
     template<class K>
     const T* contains_sorted(const K& key, uints* sort_index = 0) const
     {
@@ -1522,12 +1522,12 @@ public:
     T* contains_sorted(const K& key, const FUNC& fn, uints* sort_index = 0) {
         return const_cast<T*>(std::as_const(*this).contains_sorted(key, fn, sort_index));
     }
-    //@}
+    /// @}
 
     ///Find or push element into a array
-    //@param key key to search for
-    //@param isnew [out] set to true if value was newly created
-    //@note there must exist < operator able to do (T < K) comparison
+    /// @param key key to search for
+    /// @param isnew [out] set to true if value was newly created
+    /// @note there must exist < operator able to do (T < K) comparison
     template<class K>
     T* find_or_push(const K& key, bool* isnew) {
         T* value = contains(key);
@@ -1542,10 +1542,10 @@ public:
     }
 
     ///Find or push element into a array
-    //@param key key to search for
-    //@param fn a functor as fn([const] T&, const K&)
-    //@param isnew [out] set to true if value was newly created
-    //@note there must exist < operator able to do (T < K) comparison
+    /// @param key key to search for
+    /// @param fn a functor as fn([const] T&, const K&)
+    /// @param isnew [out] set to true if value was newly created
+    /// @note there must exist < operator able to do (T < K) comparison
     template<class K, class FUNC>
     T* find_or_push(const K& key, const FUNC& fn, bool* isnew) {
         T* value = contains(key, fn);
@@ -1560,9 +1560,9 @@ public:
     }
 
     ///Find or insert element into a sorted array
-    //@param key key to search for
-    //@param isnew [out] set to true if value was newly created
-    //@note there must exist < operator able to do (T < K) comparison
+    /// @param key key to search for
+    /// @param isnew [out] set to true if value was newly created
+    /// @note there must exist < operator able to do (T < K) comparison
     template<class K>
     T* find_or_insert_sorted(const K& key, bool* isnew) {
         uints index;
@@ -1578,10 +1578,10 @@ public:
     }
 
     ///Find or insert element into a sorted array
-    //@param key key to search for
-    //@param fn a functor that returns >0 for T<K, 0 for T==K, <0 for T>K
-    //@param isnew [out] set to true if value was newly created
-    //@note there must exist < operator able to do (T < K) comparison
+    /// @param key key to search for
+    /// @param fn a functor that returns >0 for T<K, 0 for T==K, <0 for T>K
+    /// @param isnew [out] set to true if value was newly created
+    /// @note there must exist < operator able to do (T < K) comparison
     template<class K, class FUNC>
     T* find_or_insert_sorted(const K& key, const FUNC& fn, bool* isnew) {
         uints index;
@@ -1597,7 +1597,7 @@ public:
     }
 
     ///Binary search sorted array
-    //@note there must exist < operator able to do (T < K) comparison
+    /// @note there must exist < operator able to do (T < K) comparison
     template<class K>
     count_t lower_bound(const K& key) const
     {
@@ -1619,7 +1619,7 @@ public:
     }
 
     ///Binary search sorted array using function object f(T,K) for comparing T<K
-    //@param fn a functor that returns >0 for T<K, else <= 0
+    /// @param fn a functor that returns >0 for T<K, else <= 0
     template<class K, class FUNC>
     count_t lower_bound(const K& key, const FUNC& fn) const
     {
@@ -1641,7 +1641,7 @@ public:
     }
 
     ///Binary search sorted array
-    //@note there must exist < operator able to do T<K comparison
+    /// @note there must exist < operator able to do T<K comparison
     template<class K>
     count_t upper_bound(const K& key) const
     {
@@ -1660,7 +1660,7 @@ public:
     }
 
     ///Binary search sorted array using function object f(T,K) for comparing T<K
-    //@param fn a functor that returns >0 for T<K, else <= 0
+    /// @param fn a functor that returns >0 for T<K, else <= 0
     template<class K, class FUNC>
     count_t upper_bound(const K& key, const FUNC& fn) const
     {
@@ -1804,11 +1804,11 @@ public:
 
     ///Delete element in sorted array
     /// Uses either operator T<K or a functor(T,K) for binary search, and operator T==K for equality comparison
-    //@return number of deleted items
-    //@param key key to localize the first item to delete
-    //@param fn a functor that returns >0 for T<K, or else <= 0
-    //@param n maximum number of items to delete
-    //@{
+    /// @return number of deleted items
+    /// @param key key to localize the first item to delete
+    /// @param fn a functor that returns >0 for T<K, or else <= 0
+    /// @param n maximum number of items to delete
+    /// @{
     template<class K>
     count_t del_sort(const K& key, uints n = 1)
     {
@@ -1836,7 +1836,7 @@ public:
             del(c, i - c);
         return count_t(i - c);
     }
-    //@}
+    /// @}
 
     ///Move items up or down in buffer
     T* move(uints from, uints to, uints num)
@@ -1872,7 +1872,7 @@ public:
     }
 
     ///Delete content but keep the memory reserved
-    //@return previous size of the array
+    /// @return previous size of the array
     count_t reset()
     {
         count_t n = size();
@@ -1906,7 +1906,7 @@ public:
     uints sizes() const { return _count(); }
 
     ///Hard set number of elements
-    //@warn Doesn't execute either destructors for the removed elements or constructors for added ones.
+    /// @warn Doesn't execute either destructors for the removed elements or constructors for added ones.
     uints set_size(uints n)
     {
         DASSERTN(n <= count_t(-1));
@@ -1922,10 +1922,10 @@ public:
     uints reserved_remaining() const { return _size() - sizeof(T) * _count(); }
     uints reserved_total() const { return _size(); }
 
-    //@return reserved virtual size in bytes, if the memory was allocaded by reserve_virtual, otherwise 0
+    /// @return reserved virtual size in bytes, if the memory was allocaded by reserve_virtual, otherwise 0
     uints reserved_virtual() const { return A::reserved_virtual_size(_ptr); }
 
-    //@return reserved stack size in bytes, if the memory was allocaded by reserve_stack, otherwise 0
+    /// @return reserved stack size in bytes, if the memory was allocaded by reserve_stack, otherwise 0
     uints reserved_stack() const { return A::reserved_stack_size(_ptr); }
 
 
@@ -1962,8 +1962,8 @@ private:
     }
 
     ///Add \a nitems of elements on the end but do not initialize them with default constructor
-    //@param nitems count of items to add
-    //@return pointer to the first added element
+    /// @param nitems count of items to add
+    /// @return pointer to the first added element
     T* addnc(uints nitems)
     {
         uints n = _count();

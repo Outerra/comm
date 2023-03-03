@@ -107,9 +107,9 @@ public:
     static uint32 htonl( uint32 );
 */
     ///Set up the network address from string
-    //@param host address in the format [proto://]server[:port]
-    //@param port port number to use
-    //@param portoverride If false, the port parameter is used as a default
+    /// @param host address in the format [proto://]server[:port]
+    /// @param port port number to use
+    /// @param portoverride If false, the port parameter is used as a default
     ///       value when it's not specified in the \a host argument.
     ///       If true, the port number specified in the \a port argument 
     ///       overrides any potential port number specified in the \a host.
@@ -269,7 +269,7 @@ public:
     int   recv        ( void* buffer, int size, int flags = 0 ) ;
     int   recvfrom    ( void* buffer, int size, int flags, netAddress* from ) ;
 
-    //@return 1 if connected, 0 if unknow yet, -1 if connection failed
+    /// @return 1 if connected, 0 if unknow yet, -1 if connection failed
     int   connected() const;
 
     netAddress* getLocalAddress (netAddress* adrrto) const;	/// local IP

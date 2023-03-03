@@ -139,7 +139,7 @@ public:
             setpos(_wpos);
     }
 
-    //@{ Get and set current reading and writing position
+    /// @{ Get and set current reading and writing position
     uint64 get_read_pos() const override { return _op > 0 ? getpos() : _rpos; }
     uint64 get_write_pos() const override { return _op < 0 ? getpos() : _wpos; }
 
@@ -156,11 +156,11 @@ public:
 
         return setpos(pos);
     }
-    //@}
+    /// @}
 
     ///Open file
-    //@param name file name
-    //@param attr open attributes
+    /// @param name file name
+    /// @param attr open attributes
     /// r - open for reading
     /// w - open for writing
     /// l - lock file

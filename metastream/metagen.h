@@ -164,7 +164,7 @@ class metagen //: public binstream
         }
 
         ///Find a descendant variable and its position in the cache
-        //@param last_is_attrib if set, do not treat the last token as child name and return it here, but only after at least one child has been read
+        /// @param last_is_attrib if set, do not treat the last token as child name and return it here, but only after at least one child has been read
         bool find_descendant(token name, Varx& ch, bool last_is_attrib, token* last = 0) const
         {
             const Varx* v = this;
@@ -802,8 +802,8 @@ class metagen //: public binstream
                 (*ch)->process(mg, var);
         }
 
-        //@param tout trailing tag
-        //@param par parent tag for matching end of parse
+        /// @param tout trailing tag
+        /// @param par parent tag for matching end of parse
         bool parse(mtglexer& lex, ParsedTag& tout, const ParsedTag* par)
         {
             TagEmpty* etag = new TagEmpty;

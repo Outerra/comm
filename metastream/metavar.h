@@ -123,18 +123,18 @@ struct MetaDesc
 
     int raw_pointer_offset = -1;        //< byte offset to variable pointing to the linear array with elements, if exists
 
-    //@return ptr to first item of a linear array, 0 for non-linear
+    /// @return ptr to first item of a linear array, 0 for non-linear
     typedef const void* (*fn_ptr)(const void*);
 
-    //@return count of items in container or -1 if unknown
+    /// @return count of items in container or -1 if unknown
     typedef uints (*fn_count)(const void*);
 
-    //@return ptr to back-inserted item
-    //@param iter reference to an iterator value returned from first item and passed to remaining items
+    /// @return ptr to back-inserted item
+    /// @param iter reference to an iterator value returned from first item and passed to remaining items
     typedef void* (*fn_push)(void*, uints& iter);
 
-    //@return extracted element
-    //@param iter reference to an iterator value returned from first item and passed to remaining items
+    /// @return extracted element
+    /// @param iter reference to an iterator value returned from first item and passed to remaining items
     typedef const void* (*fn_extract)(const void*, uints& iter);
 
     fn_ptr fnptr = 0;
@@ -261,7 +261,7 @@ public:
 
 
     ///Provide a pointer to next object that should be streamed
-    //@param n number of objects to allocate the space for
+    /// @param n number of objects to allocate the space for
     virtual const void* extract(uints n) override {
         DASSERT(n == 1);
         return desc->fnextract(data, context);
@@ -272,12 +272,12 @@ public:
         return desc->fnpush(data, context);
     }
 
-    //@return true if the storage is continuous in memory
+    /// @return true if the storage is continuous in memory
     virtual bool is_continuous() const override {
         return desc->fnptr != 0;
     }
 
-    //@return number of items in container (for reading), UMAXS if unknown in advance
+    /// @return number of items in container (for reading), UMAXS if unknown in advance
     virtual uints count() const override {
         return desc->fncount ? desc->fncount(data) : UMAXS;
     }

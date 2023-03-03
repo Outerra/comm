@@ -351,7 +351,7 @@ public:
         return find(item);
     }
 
-    //@return true if the item was found
+    /// @return true if the item was found
     bool erase(const T& item)
     {
         iterator i = find(item);

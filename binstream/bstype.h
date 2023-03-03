@@ -173,7 +173,7 @@ struct kind
 
     bool is_nameless() const                { return (ctrl & fNAMELESS) != 0; }
 
-    //@return true if the type is array control token
+    /// @return true if the type is array control token
     bool is_array_control_type() const      { return (ctrl & (fARRAY_BEGIN|fARRAY_END)) != 0; }
 
     bool is_array_start() const             { return (ctrl & fARRAY_BEGIN) != 0; }
@@ -182,7 +182,7 @@ struct kind
     bool is_struct_start() const            { return type == T_STRUCTBGN; }
     bool is_struct_end() const              { return type == T_STRUCTEND; }
 
-    //@{ Create array control types from current type
+    /// @{ Create array control types from current type
     template<class COUNT>
     kind get_array_begin() const            { kind t=*this; t.ctrl=fARRAY_BEGIN; t.size=sizeof(COUNT); return t; }
     
@@ -194,7 +194,7 @@ struct kind
 
     void set_array_unspecified_size()       { ctrl |= fARRAY_UNSPECIFIED_SIZE; }
     bool is_array_unspecified_size() const  { return (ctrl & fARRAY_UNSPECIFIED_SIZE) != 0; }
-    //@}
+    /// @}
 
     bool is_array_element() const           { return (ctrl & fARRAY_ELEMENT) != 0; }
     bool is_first_array_element() const     { return (ctrl & (fARRAY_ELEMENT|fARRAY_ELEMENT_NEXT)) == fARRAY_ELEMENT; }

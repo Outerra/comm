@@ -83,10 +83,10 @@ public:
     bool operator == (thread_t t) const;
     bool operator != (thread_t t) const  { return !(*this == t); }
 
-    //@return true if the object contains invalid thread id value (not that the thread is invalid)
+    /// @return true if the object contains invalid thread id value (not that the thread is invalid)
     bool is_invalid() const;
 
-    //@return true if thread exists
+    /// @return true if thread exists
     bool exists() const {
         return exists(_thread);
     }
@@ -94,15 +94,15 @@ public:
     ///Set thread name
     static void set_name(const coid::token& name);
 
-    //@return true if thread exists
+    /// @return true if thread exists
     static bool exists( thread_t tid );
 
-    //@return invalid thread id
+    /// @return invalid thread id
     static thread_t invalid();
 
     ///Spawn new thread, setting up this object with reference to the new thread
-    //@param fn function to execute
-    //@param context thread context, queryable from thread
+    /// @param fn function to execute
+    /// @param context thread context, queryable from thread
     thread& create_fn( const function<void*()>& fn, void* context=0, const token& name = token() )
     {
         _thread = create_new_fn(fn, context, name);
@@ -113,9 +113,9 @@ public:
     static thread create_new_fn( const function<void*()>& fn, void* context=0, const token& name = token() );
 
     ///Spawn new thread, setting up this object with reference to the new thread
-    //@param f function to execute
-    //@param arg argument given to the function
-    //@param context thread context, queryable from thread
+    /// @param f function to execute
+    /// @param arg argument given to the function
+    /// @param context thread context, queryable from thread
     thread& create( fnc_entry f, void* arg, void* context=0, const token& name = token() )
     {
         _thread = create_new(f, arg, context, name);
@@ -128,12 +128,12 @@ public:
     // sets a processor affinity mask for current thread
     static void set_affinity_mask(uint64 mask);
 
-    //@{ Static methods dealing with the thread currently running
+    /// @{ Static methods dealing with the thread currently running
 
-    //@return context info given when current thread was created
+    /// @return context info given when current thread was created
     static void* context();
 
-    //@return thread object for the thread we are currently in
+    /// @return thread object for the thread we are currently in
     static thread self();
 
     ///Exit from current thread
@@ -142,26 +142,26 @@ public:
     ///Cancel the current thread
     static void self_cancel();
 
-    //@return true if the current thread should be cancelled
+    /// @return true if the current thread should be cancelled
     static bool self_should_cancel();
 
     ///Cancel current thread if it was signalled to cancel
     static void self_test_cancel( uint exitcode );
 
     static void wait( uint ms );
-    //@}
+    /// @}
 
 
     ///Request cancellation of the thread referred to by this object
-    //@note the thread must check itself if it should be cancelled
+    /// @note the thread must check itself if it should be cancelled
     opcd cancel();
 
-    //@return true if the thread referred by this object should be cancelled
+    /// @return true if the thread referred by this object should be cancelled
     bool should_cancel() const;
 
     ///Request cancellation of referred thread and wait for it to cancel itself
-    //@param mstimeout maximum time to wait for the thread to end
-    //@return true if thread was successfully terminated in time
+    /// @param mstimeout maximum time to wait for the thread to end
+    /// @return true if thread was successfully terminated in time
     bool cancel_and_wait( uint mstimeout );
 
     ///Wait for thread to end

@@ -72,7 +72,7 @@ public:
     }
 
     ///Set the maximum packing alignment
-    //@note resulting alignment is the minimum of this value and alignof(type)
+    /// @note resulting alignment is the minimum of this value and alignof(type)
     void set_packing(uint pack) {
         _packing = pack;
     }
@@ -120,7 +120,7 @@ public:
     }
 
     ///Write data
-    //@return position in buffer
+    /// @return position in buffer
     template<class T>
     uints write(const T& v) {
         T* p = pad_alloc<T>();
@@ -129,8 +129,8 @@ public:
     }
 
     ///Allocate space for an array of n elements, padding for type T
-    //@return pointer to the allocated buffer
-    //@note for n=0 applies only the padding
+    /// @return pointer to the allocated buffer
+    /// @note for n=0 applies only the padding
     template<class T>
     T* alloc_array(uints n) {
         return pad_alloc<T>(n);
@@ -206,7 +206,7 @@ public:
     }
 
     ///Align the reader offset to the specified alignment
-    //@return true if data are available
+    /// @return true if data are available
     bool align(uint alignment) {
         _offset = align_value_up(_offset, alignment);
         return has_data();
@@ -290,7 +290,7 @@ public:
     }
 
     ///Read/append data from binstream
-    //@return size read
+    /// @return size read
     uints load_from_binstream(binstream& bin, uints datasize = UMAXS)
     {
         uints old = _tstr.size();
@@ -373,23 +373,23 @@ public:
         return p;
     }
 
-    //@return pointer to the string beginning
+    /// @return pointer to the string beginning
     const uint8* ptr() const { return _tstr.ptr(); }
 
-    //@return pointer past the string end
+    /// @return pointer past the string end
     const uint8* ptre() const { return _tstr.ptre(); }
 
 
-    //@return total binstring length
+    /// @return total binstring length
     uints len() const { return _tstr.size(); }
 
-    //@return the remaining (unread) length
+    /// @return the remaining (unread) length
     uints remaining_len() const { return _tstr.size() - _offset; }
 
-    //@return true if binstring still has data available for reading
+    /// @return true if binstring still has data available for reading
     bool has_data() const { return _offset < _tstr.size(); }
 
-    //@return current reading offset
+    /// @return current reading offset
     uints offset() const { return _offset; }
 
     ///Set the reading offset

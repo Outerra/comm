@@ -123,7 +123,7 @@ struct memtrack_registrar
 
     virtual ~memtrack_registrar() {}
 
-    //@note virtual methods to avoid breaking dlls when exe implementation changes
+    /// @note virtual methods to avoid breaking dlls when exe implementation changes
 
     ///Track allocation
     virtual void alloc(const std::type_info* tracking, size_t size)

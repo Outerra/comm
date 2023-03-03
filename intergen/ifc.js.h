@@ -73,10 +73,10 @@ struct interface_context
 struct script_handle
 {
     ///Provide path or direct script
-    //@param path_or_script path or script content
-    //@param is_path true if path_or_script is a path to the script file, false if it's the script itself
-    //@param url string to use when identifying script origin
-    //@param context
+    /// @param path_or_script path or script content
+    /// @param is_path true if path_or_script is a path to the script file, false if it's the script itself
+    /// @param url string to use when identifying script origin
+    /// @param context
     script_handle(
         const coid::token& path_or_script,
         bool is_path,
@@ -138,11 +138,11 @@ struct script_handle
     }
 
     ///Get absolute path from the provided path that's relative to given JS stack frame
-    //@param path relative path (an include path) or absolute path from root
-    //@param frame v8 stack frame number to be made relative to
-    //@param dst [out] resulting path, using / for directory separators
-    //@param relpath [out] path relative
-    //@return 0 if succeeded, 1 invalid stack frame, 2 invalid path
+    /// @param path relative path (an include path) or absolute path from root
+    /// @param frame v8 stack frame number to be made relative to
+    /// @param dst [out] resulting path, using / for directory separators
+    /// @param relpath [out] path relative
+    /// @return 0 if succeeded, 1 invalid stack frame, 2 invalid path
     static int get_target_path(coid::token path, uint frame, coid::charstr& dst, coid::token* relpath)
     {
         v8::Isolate* iso = v8::Isolate::GetCurrent();

@@ -529,10 +529,10 @@ namespace lua {
     struct script_handle
     {
         ///Provide path or direct script
-        //@param path_or_script path or script content
-        //@param is_path true if path_or_script is a path to the script file, false if it's the script itself
-        //@param url string to use when identifying script origin
-        //@param context
+        /// @param path_or_script path or script content
+        /// @param is_path true if path_or_script is a path to the script file, false if it's the script itself
+        /// @param url string to use when identifying script origin
+        /// @param context
         script_handle(
             const coid::token& path_or_script,
             bool is_path,

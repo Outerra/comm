@@ -330,7 +330,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                     //lex.match(';', "error: implicit events must not be declared");
 
                     if (m->name == "connect") {
-                        //@connect invoked on successfull interface connection
+                        /// @connect invoked on successfull interface connection
                         lastifc->on_connect_ev = m->name = m->intname;
 
                         //m->ret.type = m->ret.basetype = m->ret.fulltype = "void";
@@ -444,7 +444,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
 
                 if (m->bimplicit) {
                     if (m->name == "connect") {
-                        //@connect called when interface connects successfully
+                        /// @connect called when interface connects successfully
                         if (m->ret.type != "void" && m->args.size() != 0) {
                             out << (lex.prepare_exception()
                                 << "error: invalid format for connect method\n");
@@ -454,7 +454,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                         lastifc->on_connect = m->name = m->intname;
                     }
                     else if (m->name == "unload") {
-                        //@unload invoked when client dll/script is unloaded
+                        /// @unload invoked when client dll/script is unloaded
                         lastifc->on_unload = m->name = m->intname;
 
                         if (!m->bstatic) {
