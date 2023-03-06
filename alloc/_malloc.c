@@ -546,6 +546,8 @@ void abort_routine();
 #define USAGE_ERROR_ACTION(m,p) __debugbreak()
 //COID>
 
+//workaround for bad sdk
+#define MICROSOFT_WINDOWS_WINBASE_H_DEFINE_INTERLOCKED_CPLUSPLUS_OVERLOADS 0
 
 /* Version identifier to allow people to support multiple versions */
 #ifndef DLMALLOC_VERSION
