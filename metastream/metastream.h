@@ -773,25 +773,70 @@ public:
         return used;
     }
 
-    ///Define an optional variable (value doesn't get overwritten if it wasn't present in the input) streamed as a different type, with explicit set/get functors
+    /// Define an optional variable (value doesn't get overwritten if it wasn't present in the input) streamed as a different type, with explicit set/get functors, not writing variable to output if equals the default
     /// @param name variable name, used as a key in output formats
     /// @param set void function(AsType&&, T&) receiving object from stream
     /// @param get [const AsType& | AsType] function(T&) returning object to stream
-    /// @param write if false, does not write value to output
+    /// @param defval used to suppress writing the default value
     /// @return true if value was read or written, false in meta phase
     template<typename AsType, typename T, typename FnIn, typename FnOut>
-    bool member_optional_as_type(const token& name, T& v, FnIn set, FnOut get, bool write = true)
+    bool member_optional_as_type(const token& name, T& v, FnIn set, FnOut get)
     {
         bool used = false;
 
         if (_binw) {
             if constexpr (std::is_same_v<token, AsType>) {
                 const charstr& val = get(v);
-                used = write_optional(write ? &val : nullptr);
+                used = write_optional(&val);
             }
             else {
                 const AsType& val = get(v);
-                used = write_optional(write ? &val : nullptr);
+                used = write_optional(&val);
+            }
+        }
+        else if (_binr) {
+            if constexpr (std::is_same_v<token, AsType>) {
+                //special handling for tokens that are normally not readable from stream
+                charstr val;
+                used = read_optional(val);
+                if (used)
+                    set(token(val), v);
+            }
+            else {
+                AsType val;
+                used = read_optional(val);
+                if (used)
+                    set(std::forward<AsType>(val), v);
+            }
+        }
+        else
+            meta_variable_optional<AsType>(name, (const AsType*)-1);
+
+        return used;
+    }
+
+    /// Define an optional variable (value doesn't get overwritten if it wasn't present in the input) streamed as a different type, with explicit set/get functors, not writing variable to output if equals the default
+    /// @param name variable name, used as a key in output formats
+    /// @param set void function(AsType&&, T&) receiving object from stream
+    /// @param get [const AsType& | AsType] function(T&) returning object to stream
+    /// @param defval used to suppress writing the default value
+    /// @return true if value was read or written, false in meta phase
+    template<typename AsType, typename T, typename FnIn, typename FnOut>
+    bool member_optional_as_type(const token& name, T& v, FnIn set, FnOut get, const T& defval)
+    {
+        bool used = false;
+
+        if (_binw) {
+            if (v == defval) {
+                used = write_optional<AsType>(nullptr);
+            }
+            else if constexpr (std::is_same_v<token, AsType>) {
+                const charstr& val = get(v);
+                used = write_optional(&val);
+            }
+            else {
+                const AsType& val = get(v);
+                used = write_optional(&val);
             }
         }
         else if (_binr) {
