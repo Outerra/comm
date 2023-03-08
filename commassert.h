@@ -218,10 +218,26 @@ private:
 //@return unclamped cast value
 template <class T, class S>
 inline T down_cast(S v) {
-    constexpr T vmin = std::numeric_limits<T>::min();
-    constexpr T vmax = std::numeric_limits<T>::max();
+    typedef std::numeric_limits<T> dst_lim;
+    typedef std::numeric_limits<S> src_lim;
 
-    DASSERT(v >= vmin && v <= vmax);
+    if constexpr (!dst_lim::is_signed && !src_lim::is_signed)
+    {
+        DASSERT((v <= dst_lim::max()));
+    }
+    else if (!dst_lim::is_signed && src_lim::is_signed)
+    {
+        DASSERT(v <= dst_lim::max() && v >= 0);
+    }
+    else if (dst_lim::is_signed && !src_lim::is_signed)
+    {
+        DASSERT(v <= dst_lim::max());
+    }
+    else if (dst_lim::is_signed && src_lim::is_signed)
+    {
+        DASSERT(v >= dst_lim::min() && v <= dst_lim::max());
+    }
+
     return T(v);
 }
 
