@@ -361,7 +361,7 @@ public:
         else if (_binr) {
             used = read_optional(v);
             if (!used)
-                v = T(defval);
+                v = static_cast<const T&>(defval);
         }
         else
             meta_variable_optional<T>(name, &v);
@@ -381,13 +381,13 @@ public:
         bool used = false;
 
         if (_binw) {
-            used = write_optional(!cache_prepared() && !write_default && v == defval
+            used = write_optional(!cache_prepared() && !write_default && v == static_cast<const T&>(defval)
                 ? 0 : (typename resolve_enum<T>::type*)&v);
         }
         else if (_binr) {
             used = read_optional(v);
             if (!used)
-                v = T(defval);
+                v = static_cast<const T&>(defval);
         }
         else
             meta_variable_optional<T>(name, &v);
@@ -687,7 +687,7 @@ public:
 
         if (_binw) {
             const T& val = get();
-            used = write_optional(!cache_prepared() && !write_default && val == defval ? 0 : &val);
+            used = write_optional(!cache_prepared() && !write_default && val == static_cast<const T&>(defval) ? 0 : &val);
         }
         else if (_binr) {
             T val;
@@ -762,7 +762,7 @@ public:
         bool used = false;
 
         if (_binw) {
-            used = write_optional(v == defval ? 0 : &v);
+            used = write_optional(v == static_cast<const T&>(defval) ? 0 : &v);
         }
         else if (_binr) {
             used = read_optional(v);
@@ -826,7 +826,7 @@ public:
     /// @note if read string doesn't match any string from the set, defval is set
     /// @return true if value was read or written and no default was used, false in meta phase
     template<typename T>
-    bool member_enum(const token& name, T& v, const T values[], const char* names[], const T& defval, bool write_default = true)
+    bool member_enum(const token& name, T& v, const T values[], const char* const names[], const T& defval, bool write_default = true)
     {
         bool used = false;
 
@@ -863,8 +863,7 @@ public:
 
     ///Define an obsolete member - not present in the object, ignored on output, but doesn't fail when present in the input stream
     /// @param name variable name, used as a key in output formats
-    /// @param v optional pointer to the read value
-    /// @param was_read true if the value was read
+    /// @param v optional pointer to the read value, not written if not found in stream
     /// @return true if value was read or written and no default was used, false in meta phase
     template<typename T>
     bool member_obsolete(const token& name, T* v = nullptr)
@@ -927,7 +926,7 @@ public:
         else if (_binr) {
             used = read_optional(v);
             if (!used)
-                v = T(defval);
+                v = static_cast<const T&>(defval);
         }
         else
             meta_variable_optional<T>(name, &v, true);
@@ -953,7 +952,7 @@ public:
         else if (_binr) {
             used = read_optional(v);
             if (!used)
-                v = T(defval);
+                v = static_cast<const T&>(defval);
         }
         else
             meta_variable_optional<T>(name, &v, true);
@@ -1015,7 +1014,7 @@ public:
         bool used = false;
 
         if (_binw) {
-            used = write_optional(v == defval ? 0 : &v);
+            used = write_optional(v == static_cast<const T&>(defval) ? 0 : &v);
         }
         else if (_binr) {
             used = read_optional(v);
