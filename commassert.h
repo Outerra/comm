@@ -216,29 +216,34 @@ private:
 
 ///Downcast value of integral type, asserting on overflow and underflow
 //@return unclamped cast value
-template <class T, class S>
-inline T down_cast(S v) {
-    typedef std::numeric_limits<T> dst_lim;
+template <class D, class S>
+inline D down_cast(S v) {
+    static_assert(std::is_integral<S>::value);
+    static_assert(std::is_integral<D>::value);
+
+    typedef std::numeric_limits<D> dst_lim;
     typedef std::numeric_limits<S> src_lim;
+    typedef std::make_unsigned<D>::type D_unsigned;
+    typedef std::make_unsigned<S>::type S_unsigned;
 
     if constexpr (!dst_lim::is_signed && !src_lim::is_signed)
     {
         DASSERT((v <= dst_lim::max()));
     }
-    else if (!dst_lim::is_signed && src_lim::is_signed)
+    else if constexpr (!dst_lim::is_signed && src_lim::is_signed)
     {
-        DASSERT(v <= dst_lim::max() && v >= 0);
+        DASSERT(static_cast<D_unsigned>(v) <= dst_lim::max() && v >= 0);
     }
-    else if (dst_lim::is_signed && !src_lim::is_signed)
+    else if constexpr (dst_lim::is_signed && !src_lim::is_signed)
     {
-        DASSERT(v <= dst_lim::max());
+        DASSERT(v <= static_cast<S_unsigned>(dst_lim::max()));
     }
-    else if (dst_lim::is_signed && src_lim::is_signed)
+    else if constexpr (dst_lim::is_signed && src_lim::is_signed)
     {
         DASSERT(v >= dst_lim::min() && v <= dst_lim::max());
     }
 
-    return T(v);
+    return static_cast<D>(v);
 }
 
 ///Downcast value of integral type, asserting on overflow and underflow
