@@ -75,7 +75,7 @@ struct binstream_container_stl_input_iterator : binstream_containerT<typename St
         return p;
     }
 
-    void* insert( uints n ) override
+    void* insert(uints n, const void* defval) override
     {
         DASSERT(0); //not defined for input
         return 0;
@@ -110,7 +110,7 @@ struct binstream_container_stl_insert_iterator : binstream_container<uints>
         DASSERT(0); //not defined for output
         return 0;
     }
-    virtual void* insert( uints n ) override { return &temp; }
+    virtual void* insert(uints n, const void* defval) override { return &temp; }
 
     virtual bool is_continuous() const override { return false; }
 
@@ -160,7 +160,7 @@ struct binstream_container_stl_assoc_iterator : binstream_container<uints>
         DASSERT(0); //not defined for output
         return 0;
     }
-    virtual void* insert( uints n ) override { return &temp; }
+    virtual void* insert(uints n, const void* defval) override { return &temp; }
 
     virtual bool is_continuous() const override { return false; }
 
@@ -280,7 +280,7 @@ struct std_vector_binstream_container : public binstream_containerT<T,uints>
         return p;
     }
 
-    virtual void* insert( uints n ) override
+    virtual void* insert(uints n, const void* defval) override
     {
         _v.resize( _pos+n );
         T* p = &_v[_pos];
