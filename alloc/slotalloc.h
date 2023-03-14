@@ -88,7 +88,7 @@ protected:
     using storage_t = slotalloc_detail::storage<MODE & slotalloc_mode::linear, MODE & slotalloc_mode::atomic, T>;
 
     using extarray_t = typename tracker_t::extarray_t;
-    using changeset_t = typename slotalloc_detail::changeset;
+    using changeset_t = slotalloc_detail::changeset;
 
     using bitmask_type = typename storage_t::bitmask_type;
 
@@ -1402,7 +1402,6 @@ public:
     {
         const bool all_modified = bitplane_mask > slotalloc_detail::changeset::BITPLANE_MASK;
 
-        typedef std::remove_pointer_t<std::remove_reference_t<typename closure_traits<Func>::template arg<0>>> Tx;
         bitmask_type const* bm = const_cast<bitmask_type const*>(_allocated.ptr());
         bitmask_type const* em = const_cast<bitmask_type const*>(_allocated.ptre());
 

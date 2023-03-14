@@ -273,7 +273,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <CppLanguageStandard>c++17</CppLanguageStandard>
+      <CppLanguageStandard>c++2a</CppLanguageStandard>
       <CppAdditionalWarning>%(CppAdditionalWarning);no-conversion</CppAdditionalWarning>
       <CAdditionalWarning>%(CAdditionalWarning);no-conversion</CAdditionalWarning>
     </ClCompile>

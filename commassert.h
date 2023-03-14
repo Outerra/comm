@@ -223,8 +223,8 @@ inline D down_cast(S v) {
 
     typedef std::numeric_limits<D> dst_lim;
     typedef std::numeric_limits<S> src_lim;
-    typedef std::make_unsigned<D>::type D_unsigned;
-    typedef std::make_unsigned<S>::type S_unsigned;
+    typedef typename std::make_unsigned<D>::type D_unsigned;
+    typedef typename std::make_unsigned<S>::type S_unsigned;
 
     if constexpr (!dst_lim::is_signed && !src_lim::is_signed)
     {

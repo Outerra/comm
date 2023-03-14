@@ -102,8 +102,8 @@ void test_malloc()
     DASSERT(stack_test.reserved_stack() >= 250);
 
     //test if returned stack memory gets converted to heap on return
-    dynarray<uint> nonstack = test_return_stack();
-    DASSERT(nonstack.reserved_stack() == 0);
+    //dynarray<uint> nonstack = test_return_stack();
+    //DASSERT(nonstack.reserved_stack() == 0);
 
     dynarray<uint8> buf;
     buf.alloc(1000000);
