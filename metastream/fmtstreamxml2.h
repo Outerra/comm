@@ -657,12 +657,12 @@ public:
             if( n != UMAXS  &&  n != tok.len() )
                 e = ersMISMATCHED "array size";
             else if( c.is_continuous() )
-                xmemcpy( c.insert(tok.len()), tok.ptr(), tok.len() );
+                xmemcpy( c.insert(tok.len(), nullptr), tok.ptr(), tok.len() );
             else
             {
                 const char* p = tok.ptr();
                 uints n = tok.len();
-                for(; n>0; --n,++p )  *(char*)c.insert(1) = *p;
+                for(; n>0; --n,++p )  *(char*)c.insert(1, nullptr) = *p;
             }
 
             if(!e)  *count = tok.len();

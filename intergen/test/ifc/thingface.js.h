@@ -19,7 +19,7 @@ class thingface
 {
 public:
 
-    //@param scriptpath path to js script to bind to
+    /// @param scriptpath path to js script to bind to
     static iref<ifc1::ifc2::thingface> get( const ::js::script_handle& script, const coid::token& bindvar = coid::token(), v8::Handle<v8::Context>* ctx=0 )
     {
         typedef iref<ifc1::ifc2::thingface> (*fn_bind)(const ::js::script_handle&, const coid::token&, v8::Handle<v8::Context>*);

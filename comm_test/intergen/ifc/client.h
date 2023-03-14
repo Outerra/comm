@@ -161,8 +161,8 @@ public:
         }
     }
 
-    //@return cached active interface of given host class
-    //@note host side helper
+    /// @return cached active interface of given host class
+    /// @note host side helper
     static iref<client> intergen_active_interface(::ab::cd::host* host);
 
 

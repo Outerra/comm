@@ -105,8 +105,8 @@ public:
         }
     }
 
-    //@return cached active interface of given host class
-    //@note host side helper
+    /// @return cached active interface of given host class
+    /// @note host side helper
     static iref<thingface> intergen_active_interface(::n1::n2::thing* host);
 
 

@@ -19,9 +19,9 @@ public:
 
     /// @brief interface creator
     /// @return host class instance
-    //@param script - script for object to bind to
-    //@param bindvar - name of variable in script context for object to bind to
-    //@param ctx -
+    /// @param script - script for object to bind to
+    /// @param bindvar - name of variable in script context for object to bind to
+    /// @param ctx -
     static iref<::client> creator( lua_State * L, const ::lua::script_handle& script, const coid::token& bindvar = coid::token(), iref<::lua::registry_handle>* ctx = 0)
     {
         typedef iref<::client> (*fn_bind)(lua_State * L, const ::lua::script_handle&, const coid::token&, iref<::lua::registry_handle>*);
