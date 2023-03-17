@@ -210,8 +210,8 @@ public:
 
     T*& get_ptr() const { return (T*&)_p; }
 
-    friend binstream& operator << (binstream& out, const local<T>& loca);
-    friend binstream& operator >> (binstream& in, local<T>& loca);
+    friend binstream& operator << <T>(binstream& out, const local<T>& loca);
+    friend binstream& operator >> <T>(binstream& in, local<T>& loca);
 
     bool is_set() const { return _p != 0; }
 

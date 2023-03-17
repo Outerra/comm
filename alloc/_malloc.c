@@ -3934,8 +3934,7 @@ static void* mmap_alloc_virtual(mstate m, size_t nb) {
     char* mm = (char*)(CALL_DIRECT_MMAP(mmsize, commit_size, 0));
     if (mm != CMFAIL) {
       size_t offset = align_offset(chunk2mem(mm), m->modalign);
-      size_t psize = mmsize /*- offset - m->modalign*/;// - MMAP_FOOT_PAD;
-      assert((psize & FLAG_BITS) == 0);
+      assert((mmsize & FLAG_BITS) == 0);
       mchunkptr p = (mchunkptr)(mm + offset);
       p->prev_foot = mmsize + offset;   /* virtual block: block size + offset */
       p->head = commit_size;

@@ -74,16 +74,6 @@ bool thread::is_invalid() const
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void thread::_end( uint v )
-{
-#ifdef SYSTYPE_WIN
-    _endthreadex(v);
-#else
-    pthread_exit((void*)v);
-#endif
-}
-
-////////////////////////////////////////////////////////////////////////////////
 thread thread::create_new( fnc_entry fn, void* arg, void* context, const token& name )
 {
     return SINGLETON(thread_manager).thread_create(
@@ -125,8 +115,6 @@ void* thread::context()
 void thread::self_exit( uint code )
 {
     throw thread::CancelException(code);
-    //SINGLETON(thread_manager).thread_delete( self() );
-    //_end(code);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

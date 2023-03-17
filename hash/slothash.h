@@ -356,8 +356,7 @@ protected:
         return bucket_from_hash(_HASHFUNC(k), _shift);
     }
 
-    template<>
-    uint bucket<tokenhash>(const tokenhash& key) const {
+    uint bucket(const tokenhash& key) const {
         return bucket_from_hash(key.hash(), _shift);
     }
 

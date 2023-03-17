@@ -244,7 +244,7 @@ public:
         const uint8* buffer = _tstr.ptr() + _offset;
 
         uint64 result = 0;
-        int count = 0;
+        size_t count = 0;
         uint8 b;
 
         do {
@@ -353,6 +353,7 @@ public:
             if (str.lent() > 0 && *str.dynarray_ref().last() != 0)
                 str.dynarray_ref().push(0);
         }
+        return *this;
     }
 
     dynarray<uint8>& get_buf() { return _tstr; }

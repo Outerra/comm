@@ -170,8 +170,6 @@ public:
 
 protected:
 
-    static void _end( uint v );
-
 /*
     static void cancel_callback()
     {

@@ -282,8 +282,8 @@ public:
 
     T*& ptr_ref() { return _ptr; }
 
-    friend binstream& operator << (binstream &out, const dynarray<T, COUNT, A> &dyna);
-    friend binstream& operator >> (binstream &in, dynarray<T, COUNT, A> &dyna);
+    friend binstream& operator << <T, COUNT, A>(binstream &out, const dynarray<T, COUNT, A> &dyna);
+    friend binstream& operator >> <T, COUNT, A>(binstream &in, dynarray<T, COUNT, A> &dyna);
 
     typedef binstream_container_base::fnc_stream	fnc_stream;
 
