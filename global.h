@@ -187,7 +187,7 @@ class data_manager
         bool del(versionid vid)
         {
             DASSERT_RET(get_bit(vid.id) && _entities[vid.id].version == vid.version, false);
-            if (clear_bit(id)) {
+            if (clear_bit(vid.id)) {
                 --_count;
                 return true;
             }
@@ -429,7 +429,7 @@ public:
         if (seq.del(vid)) {
             for (container* c : data_containers()) {
                 if (c && c->storage_type == container::type::hash)
-                    c->erase(vid.id);
+                    c->remove(vid.id);
             }
         }
     }

@@ -1609,6 +1609,20 @@ public:
     ///Append string from binstream (without resetting previous content)
     binstream& append_from_stream(binstream& bin);
 
+    ///Append concatenated strings with given delimiter
+    template <class T, class COUNT>
+    charstr& append_concat(const dynarray<T, COUNT>& str, const token& delim)
+    {
+        if (str.size() > 0) {
+            append(str[0]);
+        }
+        for (COUNT i = 1; i < str.size(); ++i) {
+            append(delim);
+            append(str[i]);
+        }
+        return *this;
+    }
+
 
     ///Clamp character positions to actual string range. Negative values index from end and are converted. Zero in \a to means an end of the string position
     void clamp_range(ints& from, ints& to) const
