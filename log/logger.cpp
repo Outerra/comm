@@ -141,8 +141,7 @@ public:
         if (_obj->_logger) {
             //first destroy just queues the message
             logger* x = _obj->_logger;
-            if (_obj->finalize(this))
-                x->flush();
+            _obj->finalize(this);
         }
         else {
             //back to the pool
@@ -249,7 +248,7 @@ void logmsg::write()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool logmsg::finalize(policy_msg* p)
+void logmsg::finalize(policy_msg* p)
 {
     if (_type == log::perf) {
         int64 ns = nsec_timer::current_time_ns() - _time;
@@ -263,16 +262,16 @@ bool logmsg::finalize(policy_msg* p)
             _str.del(0, _str.len() - tok.len());
     }
 
-    bool flush = _str.last_char() == '\r';
+    //bool flush = _str.last_char() == '\r';
 
     if (_type == log::file)
         _logger_file.create(new logger_file(_hash, false));
-    else
+    else 
         _logger_file = _logger->file();
     _logger->enqueue(ref<logmsg>(p));
     _logger = 0;
 
-    return flush;
+    //return flush;
 }
 
 
@@ -439,7 +438,6 @@ log_writer::~log_writer()
 ////////////////////////////////////////////////////////////////////////////////
 void log_writer::terminate()
 {
-    flush();
     _thread.cancel_and_wait(10000);
 }
 

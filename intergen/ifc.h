@@ -55,6 +55,7 @@ namespace coid {
 //@example ifc_class(ns:client, "../ifc")
 #define ifc_class(name,path)
 #define ifc_classx(name,base)
+#define ifc_class_inheritable(name,path)
 
 ///Interface class decoration keyword for bi-directional interfaces with event methods that can be overriden by the client.
 //@param name desired name of the interface class, optionally with namespace and base interface [ns:]name [: baseifc]
@@ -65,6 +66,8 @@ namespace coid {
 //@example ifc_class_var(ns::client, "../ifc", _ifc)
 #define ifc_class_var(name,path,var) coid::clean_ptr<intergen_interface> var
 #define ifc_classx_var(name,orig)
+#define ifc_class_var_inheritable(name,path,var) coid::clean_ptr<intergen_interface> var
+
 
 ///Virtual base interface class decoration keyword for declaration of abstrac base interfaces
 //@param name desired name of the interface class, optionally with namespace
@@ -72,6 +75,9 @@ namespace coid {
 //@example ifc_class_virtual(ns:base, "../ifc")
 //@example ifc_class(ns::client : ns::base, "../ifc")
 #define ifc_class_virtual(name,path)
+
+#define ifc_class_inherit(ifc_name, base_ifc_name, base_ifc_src_path, ifc_path)
+#define ifc_class_var_inherit(ifc_name, base_ifc_name, base_ifc_src_path, ifc_path)
 
 
 ///Data interface (not refcounted)

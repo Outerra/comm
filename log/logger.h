@@ -272,8 +272,7 @@ public:
 
 protected:
 
-    /// @return true if looger should be flushed (msg ended with \r)
-    bool finalize(policy_msg* p);
+    void finalize(policy_msg* p);
 };
 
 typedef ref<logmsg> logmsg_ptr;
@@ -404,14 +403,14 @@ public:
 
     virtual void enqueue(ref<logmsg>&& msg);
 
-    void flush();
-
     void set_log_level(log::type minlevel = log::last, bool allow_perf = false);
 
     static void enable_debug_out(bool en);
 
     uints register_filter(log_filter&& filter);
-    void unregister_filter(uints pos);
+    void unregister_filter(uints pos);\
+protected:
+    void flush();
 };
 
 ////////////////////////////////////////////////////////////////////////////////

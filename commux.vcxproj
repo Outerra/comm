@@ -214,6 +214,7 @@
     <ClInclude Include="metastream\fmtstreamxml.h" />
     <ClInclude Include="metastream\fmtstreamxml2.h" />
     <ClInclude Include="metastream\fmtstream_lexer.h" />
+    <ClInclude Include="metastream\fmtstream_lua_capi.h" />
     <ClInclude Include="metastream\fmtstream_v8.h" />
     <ClInclude Include="metastream\metagen.h" />
     <ClInclude Include="metastream\metastream.h" />

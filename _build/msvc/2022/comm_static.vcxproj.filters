@@ -359,6 +359,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\global.h" />
     <ClInclude Include="..\..\..\typeseq.h" />
+    <ClInclude Include="..\..\..\metastream\fmtstream_lua_capi.h">
+      <Filter>metastream</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\crypt\sha1.cpp">

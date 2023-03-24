@@ -1,0 +1,1579 @@
+[
+	{
+		"script_path": "script_syntax_0.lua",
+		"should_throw": true
+	},
+	{
+		"script_path": "script_implements_0.lua",
+		"should_throw": true
+	},
+	{
+		"script_path": "script_implements_1.lua",
+		"should_throw": true
+	},
+	{
+		"script_path": "script_implements_2.lua",
+		"should_throw": true
+	},
+	{
+		"script_path": "script_implements_3.lua",
+		"should_throw": false
+	},
+	{
+		"script_path": "script_implements_4.lua",
+		"should_throw": true
+	},
+	{
+		"script_path": "script_implements_as_0.lua",
+		"should_throw": true
+	},
+	{
+		"script_path": "script_implements_as_1.lua",
+		"should_throw": true
+	},
+	{
+		"script_path": "script_implements_as_2.lua",
+		"should_throw": true
+	},
+	{
+		"script_path": "script_implements_as_3.lua",
+		"script_class_name": "parent_class",
+		"should_throw": false
+	},
+	{
+		"script_path": "script_implements_as_4.lua",
+		"should_throw": true
+	},
+	{
+		"script_path": "script_implements_as_5.lua",
+		"should_throw": true
+	},
+	{
+		"script_path": "bind_variable_0.lua",
+		"script_binding_variable_name": "my_bind_var",
+		"should_throw": true
+	},
+	{
+		"script_path": "bind_variable_1.lua",
+		"script_binding_variable_name": "my_bind_var",
+		"should_throw": false
+	},
+	{
+		"script_path": "log_0.lua",
+		"should_throw": true
+	},
+	{
+		"script_path": "log_1.lua",
+		"should_throw": true
+	},
+	{
+		"script_path": "log_2.lua",
+		"should_throw": true
+	},
+	{
+		"script_path": "log_3.lua",
+		"should_throw": true
+	},
+	{
+		"script_path": "log_4.lua",
+		"should_throw": false
+	},
+	{
+		"script_path": "query_interface_0.lua",
+		"should_throw": true
+	},
+	{
+		"script_path": "query_interface_1.lua",
+		"should_throw": true
+	},
+	{
+		"script_path": "query_interface_2.lua",
+		"should_throw": true
+	},
+	{
+		"script_path": "query_interface_3.lua",
+		"should_throw": false
+	},
+	{
+		"script_path": "query_interface_4.lua",
+		"should_throw": true
+	},
+	{
+		"script_path": "query_interface_5.lua",
+		"should_throw": true
+	},
+	{
+		"script_path": "query_interface_6.lua",
+		"should_throw": true
+	},
+	{
+		"script_path": "query_interface_7.lua",
+		"should_throw": false
+	},
+	{
+		"script_path": "query_interface_8.lua",
+		"should_throw": false
+	},
+	{
+		"script_path": "query_interface_9.lua",
+		"should_throw": false
+	},
+	{
+		"script_path": "query_interface_10.lua",
+		"should_throw": false
+	},
+	{
+		"script_path": "events_0.lua",
+		"int_result": 0,
+		"call_event_with_default_body": true
+	},
+	{
+		"script_path": "events_1.lua",
+		"int_result": 9,
+		"call_event_with_default_body": false
+	},
+	{
+		"script_path": "events_2.lua",
+		"int_result": 9,
+		"call_event_with_default_body": true
+	},
+	{
+		"script_path": "events_3.lua",
+		"int_result": 9,
+		"call_event_with_default_body": false,
+		"should_throw": true
+	},
+	{
+		"script_path": "events_4.lua",
+		"int_result": 9,
+		"call_event_with_default_body": false,
+		"should_throw": false
+	},
+	{
+		"script_path": "events_5.lua",
+		"int_result": 9,
+		"call_event_with_default_body": false,
+		"should_throw": true
+	},
+	{
+		"script_path": "events_6.lua",
+		"int_result": 9,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": true,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_7.lua",
+		"int_result": 9,
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": true,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_8.lua",
+		"int_result": 9,
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": true,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_9.lua",
+		"int_result": 9,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": true,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_10.lua",
+		"int_result": 9,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": true,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_11.lua",
+		"int_result": 9,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": true,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_12.lua",
+		"int_result": 9,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": true,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_13.lua",
+		"int_result": 9,
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": false,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_14.lua",
+		"int_result": 9,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_15.lua",
+		"int_result": 9,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_16.lua",
+		"int_result": 9,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_17.lua",
+		"int_result": 9,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_18.lua",
+		"int_result": 9,
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_19.lua",
+		"int_result": 9,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_20.lua",
+		"int_result": 9,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_21.lua",
+		"int_result": 9,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_22.lua",
+		"int_result": 9,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_23.lua",
+		"int_result": 9,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_24.lua",
+		"int_result": 9,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_25.lua",
+		"float_result": 9.0,
+		"call_event_with_default_body": false,
+		"should_throw": true
+	},
+	{
+		"script_path": "events_26.lua",
+		"float_result": 9.0,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": true,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_27.lua",
+		"float_result": 9.0,
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": true,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_28.lua",
+		"float_result": 9.0,
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": true,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_29.lua",
+		"float_result": 9.0,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": true,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_30.lua",
+		"float_result": 9.0,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": true,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_31.lua",
+		"float_result": 9.0,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": true,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_32.lua",
+		"float_result": 9.0,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": true,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_33.lua",
+		"float_result": 9.0,
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": false,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_34.lua",
+		"float_result": 9.0,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_35.lua",
+		"float_result": 9.0,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_36.lua",
+		"float_result": 9.0,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_37.lua",
+		"float_result": 9.0,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_38.lua",
+		"float_result": 9.0,
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_39.lua",
+		"float_result": 9.0,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_40.lua",
+		"float_result": 9.0,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_41.lua",
+		"float_result": 9.0,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_42.lua",
+		"float_result": 9.0,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_43.lua",
+		"float_result": 9.0,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_44.lua",
+		"float_result": 9.0,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_45.lua",
+		"bool_result": false,
+		"call_event_with_default_body": false,
+		"should_throw": true
+	},
+	{
+		"script_path": "events_46.lua",
+		"bool_result": false,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": true,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_47.lua",
+		"bool_result": false,
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": true,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_48.lua",
+		"bool_result": false,
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": true,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_49.lua",
+		"bool_result": false,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": true,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_50.lua",
+		"bool_result": false,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": true,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_51.lua",
+		"bool_result": false,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": true,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_52.lua",
+		"bool_result": false,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": true,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_53.lua",
+		"bool_result": false,
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": false,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_54.lua",
+		"bool_result": false,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_55.lua",
+		"bool_result": false,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_56.lua",
+		"bool_result": false,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_57.lua",
+		"bool_result": false,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_58.lua",
+		"bool_result": false,
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_59.lua",
+		"bool_result": false,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_60.lua",
+		"bool_result": false,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_61.lua",
+		"bool_result": false,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_62.lua",
+		"bool_result": false,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_63.lua",
+		"bool_result": false,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_64.lua",
+		"bool_result": false,
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_65.lua",
+		"string_result": "some string",
+		"call_event_with_default_body": false,
+		"should_throw": true
+	},
+	{
+		"script_path": "events_66.lua",
+		"string_result": "some string",
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": true,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_67.lua",
+		"string_result": "some string",
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": true,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_68.lua",
+		"string_result": "some string",
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": true,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_69.lua",
+		"string_result": "some string",
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": true,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_70.lua",
+		"string_result": "some string",
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": true,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_71.lua",
+		"string_result": "some string",
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": true,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_72.lua",
+		"string_result": "some string",
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": true,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_73.lua",
+		"string_result": "some string",
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": false,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_74.lua",
+		"string_result": "some string",
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_75.lua",
+		"string_result": "some string",
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_76.lua",
+		"string_result": "some string",
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_77.lua",
+		"string_result": "some string",
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_78.lua",
+		"string_result": "some string",
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_79.lua",
+		"string_result": "some string",
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_80.lua",
+		"string_result": "some string",
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_81.lua",
+		"string_result": "some string",
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_82.lua",
+		"string_result": "some string",
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_83.lua",
+		"string_result": "some string",
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_84.lua",
+		"string_result": "some string",
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_85.lua",
+		"string_result": "some string",
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_86.lua",
+		"int_array_result": [],
+		"call_event_with_default_body": true,
+		"should_throw": false
+	},
+	{
+		"script_path": "events_87.lua",
+		"int_array_result": [ 0, 1, 2 ],
+		"call_event_with_default_body": false,
+		"should_throw": false
+	},
+	{
+		"script_path": "events_88.lua",
+		"int_array_result": [ 0, 1, 2, 3 ],
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"test_non_equal": true
+	},
+	{
+		"script_path": "events_89.lua",
+		"int_array_result": [ 0, 1, 2 ],
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": true,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_90.lua",
+		"int_array_result": [ 0, 1, 2 ],
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": true,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_91.lua",
+		"int_array_result": [ 0, 1, 2 ],
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": false,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_92.lua",
+		"int_array_result": [ 0, 1, 2 ],
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_93.lua",
+		"int_array_result": [ 0, 1, 2 ],
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_94.lua",
+		"int_array_result": [ 0, 1, 2 ],
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_95.lua",
+		"int_array_result": [ 0, 1, 2 ],
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_96.lua",
+		"int_array_result": [ 0, 1, 2 ],
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_97.lua",
+		"compound_result": {
+			"integer_value": 0,
+			"float_value": 0.0,
+			"bool_value": false,
+			"string_value": "default string",
+			"integer_array_value": [],
+			"other_compound_value": {
+				"integer_value": 0,
+				"float_value": 0.0,
+				"bool_value": false,
+				"string_value": "default string",
+				"integer_array_value": []
+			}
+		},
+		"call_event_with_default_body": true,
+		"should_throw": false,
+		"is_retvoid": false,
+		"num_outargs": 0
+	},
+	{
+		"script_path": "events_98.lua",
+		"compound_result": {
+			"integer_value": 9,
+			"float_value": 9.9,
+			"bool_value": true,
+			"string_value": "some string",
+			"integer_array_value": [ 1, 2, 3 ],
+			"other_compound_value": {
+				"integer_value": 0,
+				"float_value": 0.0,
+				"bool_value": false,
+				"string_value": "default string",
+				"integer_array_value": []
+			}
+		},
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": false,
+		"num_outargs": 0
+	},
+	{
+		"script_path": "events_99.lua",
+		"compound_result": {
+			"integer_value": 9,
+			"float_value": 9.9,
+			"bool_value": true,
+			"string_value": "some string",
+			"integer_array_value": [ 1, 2, 3 ],
+			"other_compound_value": {
+				"integer_value": 0,
+				"float_value": 0.0,
+				"bool_value": false,
+				"string_value": "default string",
+				"integer_array_value": []
+			}
+		},
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 0
+	},
+	{
+		"script_path": "events_100.lua",
+		"compound_result": {
+			"integer_value": 9,
+			"float_value": 9.9,
+			"bool_value": true,
+			"string_value": "some string",
+			"integer_array_value": [ 1, 2, 3 ],
+			"other_compound_value": {
+				"integer_value": 0,
+				"float_value": 0.0,
+				"bool_value": false,
+				"string_value": "default string",
+				"integer_array_value": []
+			}
+		},
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 0
+	},
+	{
+		"script_path": "events_101.lua",
+		"compound_result": {
+			"integer_value": 9,
+			"float_value": 9.9,
+			"bool_value": true,
+			"string_value": "some string",
+			"integer_array_value": [ 1, 2, 3 ],
+			"other_compound_value": {
+				"integer_value": 0,
+				"float_value": 0.0,
+				"bool_value": false,
+				"string_value": "default string",
+				"integer_array_value": []
+			}
+		},
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 0
+	},
+	{
+		"script_path": "events_102.lua",
+		"compound_result": {
+			"integer_value": 9,
+			"float_value": 9.9,
+			"bool_value": true,
+			"string_value": "some string",
+			"integer_array_value": [ 1, 2, 3 ],
+			"other_compound_value": {
+				"integer_value": 0,
+				"float_value": 0.0,
+				"bool_value": false,
+				"string_value": "default string",
+				"integer_array_value": []
+			}
+		},
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 0
+	},
+	{
+		"script_path": "events_103.lua",
+		"compound_result": {
+			"integer_value": 9,
+			"float_value": 9.9,
+			"bool_value": true,
+			"string_value": "some string",
+			"integer_array_value": [ 1, 2, 3 ],
+			"other_compound_value": {
+				"integer_value": 0,
+				"float_value": 0.0,
+				"bool_value": false,
+				"string_value": "default string",
+				"integer_array_value": []
+			}
+		},
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 0
+	},
+	{
+		"script_path": "events_104.lua",
+		"compound_result": {
+			"integer_value": 9,
+			"float_value": 9.9,
+			"bool_value": true,
+			"string_value": "some string",
+			"integer_array_value": [ 1, 2, 3 ],
+			"other_compound_value": {
+				"integer_value": 0,
+				"float_value": 0.0,
+				"bool_value": false,
+				"string_value": "default string",
+				"integer_array_value": []
+			}
+		},
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 0
+	},
+	{
+		"script_path": "events_105.lua",
+		"compound_result": {
+			"integer_value": 9,
+			"float_value": 9.9,
+			"bool_value": true,
+			"string_value": "some string",
+			"integer_array_value": [ 1, 2, 3 ],
+			"other_compound_value": {
+				"integer_value": 0,
+				"float_value": 0.0,
+				"bool_value": false,
+				"string_value": "default string",
+				"integer_array_value": []
+			}
+		},
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 0
+	},
+	{
+		"script_path": "events_106.lua",
+		"compound_result": {
+			"integer_value": 9,
+			"float_value": 9.9,
+			"bool_value": true,
+			"string_value": "some string",
+			"integer_array_value": [ 1, 2, 3 ],
+			"other_compound_value": {
+				"integer_value": 0,
+				"float_value": 0.0,
+				"bool_value": false,
+				"string_value": "default string",
+				"integer_array_value": []
+			}
+		},
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 0
+	},
+	{
+		"script_path": "events_107.lua",
+		"compound_result": {
+			"integer_value": 9,
+			"float_value": 9.9,
+			"bool_value": true,
+			"string_value": "some string",
+			"integer_array_value": [ 1, 2, 3 ],
+			"other_compound_value": {
+				"integer_value": 0,
+				"float_value": 0.0,
+				"bool_value": false,
+				"string_value": "default string",
+				"integer_array_value": []
+			}
+		},
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 0
+	},
+	{
+		"script_path": "events_108.lua",
+		"compound_result": {
+			"integer_value": 9,
+			"float_value": 9.9,
+			"bool_value": true,
+			"string_value": "some string",
+			"integer_array_value": [ 1, 2, 3 ],
+			"other_compound_value": {
+				"integer_value": 0,
+				"float_value": 0.0,
+				"bool_value": false,
+				"string_value": "default string",
+				"integer_array_value": []
+			}
+		},
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 0
+	},
+	{
+		"script_path": "events_109.lua",
+		"compound_result": {
+			"integer_value": 9,
+			"float_value": 9.9,
+			"bool_value": true,
+			"string_value": "some string",
+			"integer_array_value": [ 1, 2, 3 ],
+			"other_compound_value": {
+				"integer_value": 9,
+				"float_value": 9.9,
+				"bool_value": true,
+				"string_value": "some string",
+				"integer_array_value": [ 1, 2, 3 ]
+			}
+		},
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": false,
+		"num_outargs": 0
+	},
+	{
+		"script_path": "events_110.lua",
+		"compound_result": {
+			"integer_value": 9,
+			"float_value": 9.9,
+			"bool_value": true,
+			"string_value": "some string",
+			"integer_array_value": [ 1, 2, 3 ],
+			"other_compound_value": {
+				"integer_value": 9,
+				"float_value": 9.9,
+				"bool_value": true,
+				"string_value": "some string",
+				"integer_array_value": [ 1, 2, 3 ]
+			}
+		},
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 0
+	},
+
+	{
+		"script_path": "events_111.lua",
+		"compound_result": {
+			"integer_value": 9,
+			"float_value": 9.9,
+			"bool_value": true,
+			"string_value": "some string",
+			"integer_array_value": [ 1, 2, 3 ],
+			"other_compound_value": {
+				"integer_value": 9,
+				"float_value": 9.9,
+				"bool_value": true,
+				"string_value": "some string",
+				"integer_array_value": [ 1, 2, 3 ]
+			}
+		},
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 0
+	},
+
+	{
+		"script_path": "events_112.lua",
+		"compound_result": {
+			"integer_value": 9,
+			"float_value": 9.9,
+			"bool_value": true,
+			"string_value": "some string",
+			"integer_array_value": [ 1, 2, 3 ],
+			"other_compound_value": {
+				"integer_value": 9,
+				"float_value": 9.9,
+				"bool_value": true,
+				"string_value": "some string",
+				"integer_array_value": [ 1, 2, 3 ]
+			}
+		},
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 0
+	},
+
+	{
+		"script_path": "events_113.lua",
+		"compound_result": {
+			"integer_value": 9,
+			"float_value": 9.9,
+			"bool_value": true,
+			"string_value": "some string",
+			"integer_array_value": [ 1, 2, 3 ],
+			"other_compound_value": {
+				"integer_value": 9,
+				"float_value": 9.9,
+				"bool_value": true,
+				"string_value": "some string",
+				"integer_array_value": [ 1, 2, 3 ]
+			}
+		},
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 0
+	},
+
+	{
+		"script_path": "events_114.lua",
+		"compound_result": {
+			"integer_value": 9,
+			"float_value": 9.9,
+			"bool_value": true,
+			"string_value": "some string",
+			"integer_array_value": [ 1, 2, 3 ],
+			"other_compound_value": {
+				"integer_value": 9,
+				"float_value": 9.9,
+				"bool_value": true,
+				"string_value": "some string",
+				"integer_array_value": [ 1, 2, 3 ]
+			}
+		},
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 0
+	},
+	{
+		"script_path": "events_115.lua",
+		"compound_result": {
+			"integer_value": 9,
+			"float_value": 9.9,
+			"bool_value": true,
+			"string_value": "some string",
+			"integer_array_value": [ 1, 2, 3 ],
+			"other_compound_value": {
+				"integer_value": 9,
+				"float_value": 9.9,
+				"bool_value": true,
+				"string_value": "some string",
+				"integer_array_value": [ 1, 2, 3 ]
+			}
+		},
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 0
+	},
+	{
+		"script_path": "events_116.lua",
+		"compound_result": {
+			"integer_value": 9,
+			"float_value": 9.9,
+			"bool_value": true,
+			"string_value": "some string",
+			"integer_array_value": [ 1, 2, 3 ],
+			"other_compound_value": {
+				"integer_value": 9,
+				"float_value": 9.9,
+				"bool_value": true,
+				"string_value": "some string",
+				"integer_array_value": [ 1, 2, 3 ]
+			}
+		},
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 0
+	},
+	{
+		"script_path": "events_117.lua",
+		"compound_result": {
+			"integer_value": 9,
+			"float_value": 9.9,
+			"bool_value": true,
+			"string_value": "some string",
+			"integer_array_value": [ 1, 2, 3 ],
+			"other_compound_value": {
+				"integer_value": 9,
+				"float_value": 9.9,
+				"bool_value": true,
+				"string_value": "some string",
+				"integer_array_value": [ 1, 2, 3 ]
+			}
+		},
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 0
+	},
+	{
+		"script_path": "events_118.lua",
+		"compound_result": {
+			"integer_value": 9,
+			"float_value": 9.9,
+			"bool_value": true,
+			"string_value": "some string",
+			"integer_array_value": [ 1, 2, 3 ],
+			"other_compound_value": {
+				"integer_value": 9,
+				"float_value": 9.9,
+				"bool_value": true,
+				"string_value": "some string",
+				"integer_array_value": [ 1, 2, 3 ]
+			}
+		},
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 0
+	},
+	{
+		"script_path": "events_119.lua",
+		"compound_result": {
+			"integer_value": 9,
+			"float_value": 9.9,
+			"bool_value": true,
+			"string_value": "some string",
+			"integer_array_value": [ 1, 2, 3 ],
+			"other_compound_value": {
+				"integer_value": 9,
+				"float_value": 9.9,
+				"bool_value": true,
+				"string_value": "some string",
+				"integer_array_value": [ 1, 2, 3 ]
+			}
+		},
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 0
+	},
+	{
+		"script_path": "events_120.lua",
+		"compound_result": {
+			"integer_value": 9,
+			"float_value": 9.9,
+			"bool_value": true,
+			"string_value": "some string",
+			"integer_array_value": [ 1, 2, 3 ],
+			"other_compound_value": {
+				"integer_value": 9,
+				"float_value": 9.9,
+				"bool_value": true,
+				"string_value": "some string",
+				"integer_array_value": [ 1, 2, 3 ]
+			}
+		},
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": true,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_121.lua",
+		"compound_result": {
+			"integer_value": 9,
+			"float_value": 9.9,
+			"bool_value": true,
+			"string_value": "some string",
+			"integer_array_value": [ 1, 2, 3 ],
+			"other_compound_value": {
+				"integer_value": 9,
+				"float_value": 9.9,
+				"bool_value": true,
+				"string_value": "some string",
+				"integer_array_value": [ 1, 2, 3 ]
+			}
+		},
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": true,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_122.lua",
+		"compound_result": {
+			"integer_value": 9,
+			"float_value": 9.9,
+			"bool_value": true,
+			"string_value": "some string",
+			"integer_array_value": [ 1, 2, 3 ],
+			"other_compound_value": {
+				"integer_value": 9,
+				"float_value": 9.9,
+				"bool_value": true,
+				"string_value": "some string",
+				"integer_array_value": [ 1, 2, 3 ]
+			}
+		},
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": false,
+		"num_outargs": 1
+	},
+	{
+		"script_path": "events_123.lua",
+		"compound_result": {
+			"integer_value": 9,
+			"float_value": 9.9,
+			"bool_value": true,
+			"string_value": "some string",
+			"integer_array_value": [ 1, 2, 3 ],
+			"other_compound_value": {
+				"integer_value": 9,
+				"float_value": 9.9,
+				"bool_value": true,
+				"string_value": "some string",
+				"integer_array_value": [ 1, 2, 3 ]
+			}
+		},
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_124.lua",
+		"compound_result": {
+			"integer_value": 9,
+			"float_value": 9.9,
+			"bool_value": true,
+			"string_value": "some string",
+			"integer_array_value": [ 1, 2, 3 ],
+			"other_compound_value": {
+				"integer_value": 9,
+				"float_value": 9.9,
+				"bool_value": true,
+				"string_value": "some string",
+				"integer_array_value": [ 1, 2, 3 ]
+			}
+		},
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_125.lua",
+		"compound_result": {
+			"integer_value": 9,
+			"float_value": 9.9,
+			"bool_value": true,
+			"string_value": "some string",
+			"integer_array_value": [ 1, 2, 3 ],
+			"other_compound_value": {
+				"integer_value": 9,
+				"float_value": 9.9,
+				"bool_value": true,
+				"string_value": "some string",
+				"integer_array_value": [ 1, 2, 3 ]
+			}
+		},
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "events_126.lua",
+		"compound_result": {
+			"integer_value": 9,
+			"float_value": 9.9,
+			"bool_value": true,
+			"string_value": "some string",
+			"integer_array_value": [ 1, 2, 3 ],
+			"other_compound_value": {
+				"integer_value": 9,
+				"float_value": 9.9,
+				"bool_value": true,
+				"string_value": "some string",
+				"integer_array_value": [ 1, 2, 3 ]
+			}
+		},
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 2
+	},
+	{
+		"script_path": "include_0.lua",
+		"int_result": 10,
+		"script_class_name": "included_parent_class",
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": false,
+		"num_outargs": 0
+	},
+	{
+		"script_path": "include_1.lua",
+		"call_event_with_default_body": false,
+		"should_throw": true
+	},
+	{
+		"script_path": "include_2.lua",
+		"call_event_with_default_body": false,
+		"should_throw": true
+	},
+	{
+		"script_path": "include_3.lua",
+		"call_event_with_default_body": false,
+		"should_throw": true
+	},
+	{
+		"script_path": "include_4.lua",
+		"int_result": 10,
+		"script_class_name": "included_parent_class",
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": false,
+		"num_outargs": 0
+	},
+	{
+		"script_path": "rebind_0.lua",
+		"int_result": 11,
+		"script_class_name": "factory",
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": false,
+		"num_outargs": 0
+	},
+	{
+		"script_path": "rebind_1.lua",
+		"int_result": 11,
+		"script_class_name": "factory",
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": false,
+		"num_outargs": 0
+	},
+	{
+		"script_path": "rebind_2.lua",
+		"int_result": 11,
+		"script_class_name": "factory",
+		"call_event_with_default_body": false,
+		"should_throw": true,
+		"is_retvoid": false,
+		"num_outargs": 0
+	},
+	{
+		"script_path": "direct_inheritance_0.lua",
+		"int_result": 12,
+		"script_class_name": "child",
+		"call_event_with_default_body": false,
+		"should_throw": false,
+		"is_retvoid": false,
+		"num_outargs": 0,
+		"use_child_class" :  true
+	}
+]

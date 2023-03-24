@@ -44,6 +44,8 @@
 
 #include "binstream/container.h"
 
+#include <algorithm>
+
 COID_NAMESPACE_BEGIN
 
 template<class, class, class> class dynarray;

@@ -304,7 +304,7 @@ $return.type$ $....class$::$intname$($[args rest="," after=" "]$ $ifckwds after=
 {
     if (!$..varname$ $-(if ..inhmask?)$ || ($..varname$->iface<$..ns rest="::" after="::"$$..name$>()->_inhmask & (1<<$..ifc_bit$)) == 0$(/if)$) $-(if default_event_body?)$
         { $default_event_body$ }$(elif)$
-        throw coid::exception() << "$name$" << " handler not implemented";$(/if)$
+        throw coid::exception("Client not connected! ($name$)");$(/if)$
     else
         return $..varname$->iface<$..ns rest="::" after="::"$$..name$>()->$name$($[args rest=", "]$$name$$[/args]$);
 }

@@ -27,6 +27,7 @@ struct File
     timet mtime;
 
     dynarray<Class> classes;
+    dynarray<File> dependencies;
 
     dynarray<paste_block> pasters;
     dynarray<MethodIG::Arg> irefargs;
@@ -571,6 +572,75 @@ int File::parse(token path)
         }
     }
     catch (lexer::lexception&) {}
+
+    for (Class& c : classes)
+    {
+        for (Interface& i : c.iface_refc)
+        {
+            if (i.bdirect_inheritance) 
+            {
+                charstr base_src_path = token(path).cut_left_group_back(DIR_SEPARATORS, coid::token::cut_trait_remove_sep_default_empty());
+                if (!base_src_path.is_empty()) 
+                {
+                    base_src_path << "/";
+                }
+                base_src_path << i.basesrc;
+
+                out << "Parsing base class source file: " << i.basesrc << "\n";
+ 
+                File* base_file = dependencies.add();
+                int res = base_file->parse(base_src_path);
+                if (res != 0) 
+                {
+                    return res;
+                }
+
+                for(Class& cls : base_file->classes)
+                {
+                    Interface* found = cls.iface_refc.find_if([&](Interface& ifc) {
+                        return ifc.nsname == i.base;
+                        });
+
+                    if (found) 
+                    {
+                        for (const MethodIG& e : found->event) 
+                        {
+                            const MethodIG * found = i.event.find_if([&e](const MethodIG& it) {
+                                return e.name == it.name && e.intname == it.intname;
+                            });
+
+                            if (!found) 
+                            {
+                                i.event.push(e);
+                                i.event.last()->binherit = true;
+                            }
+                        }
+
+                        for (const MethodIG& m : found->method)
+                        {
+                            const MethodIG* found = i.event.find_if([&m](const MethodIG& it) {
+                                return m.name == it.name && m.intname == it.intname;
+                                });
+
+                            if (!found && !m.bcreator)
+                            {
+                                i.method.push(m);
+                                i.method.last()->binherit = true;
+                            }
+                        }
+
+                        i.varname = found->varname;
+                    }
+                    else
+                    {
+                        out << "Base class not found in " << i.basesrc << "\n";
+                        return -1;
+                    }
+                }
+
+            }
+        }
+    }
 
     if (!lex.no_err()) {
         out << lex.err() << '\n';

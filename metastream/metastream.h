@@ -1287,7 +1287,15 @@ public:
             _fmtstreamwr->fmtstream_file_name(name);
     }
 
-    metastream& _xthrow(opcd e) { if (e) throw exception(e); return *this; }
+    metastream& _xthrow(opcd e) 
+    { 
+        if (e) 
+        {
+            before_exception_throw();
+            throw exception(e); 
+        }
+        return *this; 
+    }
 
     ////////////////////////////////////////////////////////////////////////////////
     template<class T, class C>
@@ -2791,9 +2799,10 @@ private:
         return dst;
     }
 
-    void fmt_error(bool add_context = true)
+    void before_exception_throw()
     {
-        _fmtstreamrd->fmtstream_err(_err, add_context);
+        _fmtstreamrd->fmtstream_err(_err, true);
+        _fmtstreamrd->on_exception_thow();
     }
 
     void warn_obsolete(const token& name);
@@ -2865,7 +2874,7 @@ protected:
                 dump_stack(_err, 0);
                 _err << " - error " << (read ? "reading" : "writing") << " struct opening token\n";
                 if (read)
-                    fmt_error();
+                    before_exception_throw();
                 throw exception(_err);
                 return e;
             }
@@ -2918,7 +2927,7 @@ protected:
                 dump_stack(_err, 0);
                 _err << " - error " << (read ? "reading" : "writing") << " struct closing token";
                 if (read)
-                    fmt_error();
+                    before_exception_throw();
                 throw exception(_err);
                 return e;
             }
@@ -3039,7 +3048,7 @@ protected:
         if (e) {
             dump_stack(_err, 0);
             _err << " - error " << (read ? "reading" : "writing") << " variable '" << _curvar.var->varname << "', error: " << opcd_formatter(e);
-            fmt_error();
+            before_exception_throw();
             throw exception(_err);
             return e;
         }
@@ -3074,7 +3083,7 @@ protected:
             if (e) {
                 dump_stack(_err, 0);
                 _err << " - error reading separator: " << opcd_formatter(e);
-                fmt_error();
+                before_exception_throw();
                 throw exception(_err);
                 return e;
             }
@@ -3428,7 +3437,7 @@ protected:
         if (e) {
             dump_stack(_err, 0);
             _err << " - error reading array separator: " << opcd_formatter(e);
-            fmt_error();
+            before_exception_throw();
             throw exception(_err);
         }
 
@@ -3464,9 +3473,9 @@ protected:
                 //cache is open for reading but the member is not there
                 //this can happen when reading a struct that was cached due to reordered input
                 if (!cache_use_default()) {
-                    dump_stack(_err, 1);
+                    dump_stack(_err, 0);
                     _err << " - variable '" << _curvar.var->varname << "' not found and no default value provided";
-                    fmt_error();
+                    before_exception_throw();
                     throw exception(_err);
                 }
             }
@@ -3553,16 +3562,16 @@ protected:
                 _cacheskip = _curvar.var;
             //if normal reading (not a reading to cache), set up defval read or fail
             else if (!cache_use_default() && !_curvar.var->optional) {
-                dump_stack(_err, 1);
+                dump_stack(_err, 0);
                 _err << " - variable '" << _curvar.var->varname << "' not found and no default value provided";
-                fmt_error();
+                before_exception_throw();
                 throw exception(_err);
             }
         }
         else if (e) {
-            dump_stack(_err, 1);
+            dump_stack(_err, 0);
             _err << " - error while seeking for variable '" << _curvar.var->varname << "': " << opcd_formatter(e);
-            fmt_error();
+            before_exception_throw();
             throw exception(_err);
         }
 
@@ -3619,7 +3628,7 @@ protected:
 
         opcd e = _fmtstreamwr->write_key(_curvar.var->varname, _curvar.kth);
         if (e) {
-            dump_stack(_err, 1);
+            dump_stack(_err, 0);
             _err << " - error while writing the variable name '" << _curvar.var->varname << "': " << opcd_formatter(e);
             throw exception(_err);
         }
@@ -3647,7 +3656,7 @@ protected:
             // and thus an error
             dump_stack(_err, 0);
             _err << " - expected variable: " << _curvar.var->varname;
-            fmt_error();
+            before_exception_throw();
             e = ersNOT_FOUND "no such variable";
             throw exception(_err);
         }
@@ -3685,9 +3694,9 @@ protected:
 
         MetaDesc::Var* crv = par->desc->find_child(_rvarname);
         if (!crv) {
-            dump_stack(_err, 1);
+            dump_stack(_err, -1);
             _err << " - member variable: " << _rvarname << " not defined";
-            fmt_error();
+            before_exception_throw();
             e = ersNOT_FOUND "no such member variable";
             throw exception(_err);
             //return e;
@@ -3695,9 +3704,9 @@ protected:
 
         uints k = par->desc->get_child_pos(crv) * sizeof(uints);
         if (_current->valid_addr(base + k)) {
-            dump_stack(_err, 1);
+            dump_stack(_err, -1);
             _err << " - data for member: " << _rvarname << " specified more than once";
-            fmt_error();
+            before_exception_throw();
             e = ersMISMATCHED "redundant member data";
             throw exception(_err);
             //return e;

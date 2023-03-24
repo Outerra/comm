@@ -61,6 +61,10 @@ public:
     inline static const token IFC_CLASS_VAR = "ifc_class_var";
     inline static const token IFC_CLASSX_VAR = "ifc_classx_var";
     inline static const token IFC_CLASS_VIRTUAL = "ifc_class_virtual";
+    inline static const token IFC_CLASS_INHERIT = "ifc_class_inherit";
+    inline static const token IFC_CLASS_VAR_INHERIT = "ifc_class_var_inherit";
+    inline static const token IFC_CLASS_INHERITABLE = "ifc_class_inheritable";
+    inline static const token IFC_CLASS_VAR_INHERITABLE = "ifc_class_var_inheritable";
     inline static const token IFC_STRUCT = "ifc_struct";
     inline static const token IFC_FN = "ifc_fn";
     inline static const token IFC_FNX = "ifc_fnx";
@@ -372,9 +376,12 @@ struct Interface
     charstr storage;
     charstr varname;
 
-    charstr base;
-    token baseclass;
+    charstr base;    // base class name with namespaces
+    charstr basesrc; // path of base class source file (relative to the file this ifc is generated from)
+    token baseclass; // only the base class name
     token basepath;
+
+    dynarray<charstr> baseclassnss; // base class namespaces
 
     dynarray<MethodIG> method;
     dynarray<MethodIG> event;
@@ -414,7 +421,9 @@ struct Interface
     bool bvirtual = false;
     bool bdefaultcapture = false;
     bool bdataifc = false;
-
+    bool bdirect_inheritance = false;
+    bool binheritable = false;
+    bool bvirtualorinheritable = false;
 
     void copy_methods(Interface& o)
     {
@@ -523,44 +532,49 @@ struct Interface
     friend metastream& operator || (metastream& m, Interface& p)
     {
         return m.compound("Interface", [&]()
-        {
-            m.member("ns", p.nss);
-            m.member("name", p.name);
-            m.member("relpath", p.relpath);
-            m.member("relpathjs", p.relpathjs);
-            m.member("relpathlua", p.relpathlua);
-            m.member("hdrfile", p.hdrfile);
-            m.member("storage", p.storage);
-            m.member("method", p.method);
-            m.member("getter", p.getter);
-            m.member("setter", p.setter);
-            m.member("onconnect", p.on_connect);
-            m.member("onconnectev", p.on_connect_ev);
-            m.member("onunload", p.on_unload);
-            m.member_type<bool>("hasprops", [](bool) {}, [&]() { return p.oper_get >= 0; });
-            m.member("nifcmethods", p.nifc_methods);
-            m.member("varname", p.varname);
-            m.member("event", p.event);
-            m.member("destroy", p.destroy);
-            m.member("hash", p.hash);
-            m.member("inhmask", p.inhmask);
-            m.member("ifc_bit", p.ifc_bit);
-            m.member("comments", p.comments);
-            m.member("docs", p.docs);
-            m.member("pasters", p.pasters);
-            m.member("pasteafters", p.pasteafters);
-            m.member("pasteinners", p.pasteinners);
-            m.member_indirect("srcfile", p.srcfile);
-            m.member_indirect("class", p.srcclass);
-            m.member_indirect("classnsx", p.srcnamespc);
-            m.member_indirect("classorstruct", p.srcclassorstruct);
-            m.member("base", p.base);
-            m.member("baseclass", p.baseclass);
-            m.member("basepath", p.basepath);
-            m.member("virtual", p.bvirtual);
-            m.member("dataifc", p.bdataifc);
-            m.member("default_creator", p.default_creator);
-        });
+            {
+                m.member("ns", p.nss);
+                m.member("name", p.name);
+                m.member("relpath", p.relpath);
+                m.member("relpathjs", p.relpathjs);
+                m.member("relpathlua", p.relpathlua);
+                m.member("hdrfile", p.hdrfile);
+                m.member("storage", p.storage);
+                m.member("method", p.method);
+                m.member("getter", p.getter);
+                m.member("setter", p.setter);
+                m.member("onconnect", p.on_connect);
+                m.member("onconnectev", p.on_connect_ev);
+                m.member("onunload", p.on_unload);
+                m.member_type<bool>("hasprops", [](bool) {}, [&]() { return p.oper_get>=0; });
+                m.member("nifcmethods", p.nifc_methods);
+                m.member("varname", p.varname);
+                m.member("event", p.event);
+                m.member("destroy", p.destroy);
+                m.member("hash", p.hash);
+                m.member("inhmask", p.inhmask);
+                m.member("ifc_bit", p.ifc_bit);
+                m.member("comments", p.comments);
+                m.member("docs", p.docs);
+                m.member("pasters", p.pasters);
+                m.member("pasteafters", p.pasteafters);
+                m.member("pasteinners", p.pasteinners);
+                m.member_indirect("srcfile", p.srcfile);
+                m.member_indirect("class", p.srcclass);
+                m.member_indirect("classnsx", p.srcnamespc);
+                m.member_indirect("classorstruct", p.srcclassorstruct);
+                m.member("base", p.base);
+                m.member("baseclass", p.baseclass);
+                m.member("basepath", p.basepath);
+                m.member("baseclassns", p.baseclassnss);
+                m.member("virtual", p.bvirtual);
+                m.member("dataifc", p.bdataifc);
+                m.member("default_creator", p.default_creator);
+                m.member("direct_inheritance", p.bdirect_inheritance);
+                m.member("inheritable", p.binheritable);
+                m.member("virtualorinheritable", p.bvirtualorinheritable);
+
+            });
     }
 };
 

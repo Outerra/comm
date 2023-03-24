@@ -408,6 +408,9 @@
     <ClInclude Include="..\..\..\profiler\profiler.h">
       <Filter>profiler</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\metastream\fmtstream_lua_capi.h">
+      <Filter>metastream</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="..\..\..\doc\visualc-syntax\coid.natvis" />
