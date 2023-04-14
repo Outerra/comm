@@ -95,3 +95,4 @@ struct scope final
 #define CPU_PROFILE_SCOPE(name) static uint64 CPU_PROFILE_CONCAT(g_mp, __LINE__) = profiler::get_token(name); profiler::scope CPU_PROFILE_CONCAT(foo, __LINE__)(CPU_PROFILE_CONCAT(g_mp, __LINE__));
 #define CPU_PROFILE_SCOPE_COLOR(name, r, g, b) static uint64 CPU_PROFILE_CONCAT(g_mp, __LINE__) = profiler::get_token(name); profiler::scope CPU_PROFILE_CONCAT(foo, __LINE__)(CPU_PROFILE_CONCAT(g_mp, __LINE__), r, g, b);
 #define CPU_PROFILE_FUNCTION() static uint64 CPU_PROFILE_CONCAT(g_mp, __LINE__) = profiler::get_token(__FUNCTION__); profiler::scope CPU_PROFILE_CONCAT(foo, __LINE__)(CPU_PROFILE_CONCAT(g_mp, __LINE__));
+#define CPU_PROFILE_FUNCTION_COLOR(r, g, b) static uint64 CPU_PROFILE_CONCAT(g_mp, __LINE__) = profiler::get_token(__FUNCTION__); profiler::scope CPU_PROFILE_CONCAT(foo, __LINE__)(CPU_PROFILE_CONCAT(g_mp, __LINE__), r, g, b);
