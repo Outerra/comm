@@ -362,6 +362,7 @@
     <ClInclude Include="..\..\..\metastream\fmtstream_lua_capi.h">
       <Filter>metastream</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\international.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\crypt\sha1.cpp">
