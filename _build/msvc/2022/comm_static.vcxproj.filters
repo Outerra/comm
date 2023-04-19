@@ -363,6 +363,7 @@
       <Filter>metastream</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\international.h" />
+    <ClInclude Include="..\..\..\process.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\crypt\sha1.cpp">
@@ -470,6 +471,7 @@
     <ClCompile Include="..\..\..\profiler\profiler.cpp">
       <Filter>profiler</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\process_win.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="..\..\..\doc\visualc-syntax\coid.natvis" />
