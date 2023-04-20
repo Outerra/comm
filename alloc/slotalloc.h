@@ -1583,9 +1583,11 @@ public:
 
     ///Remove each element for which the predicate returns true
     /// @param f functor with ([const] T&) or ([const] T&, size_t index) arguments
+    /// @return true if some item was deleted otherwise false
     template<typename Func>
-    T* del_if(Func f)
+    bool del_if(Func f)
     {
+        bool found = false;
         bitmask_type const* bm = const_cast<bitmask_type const*>(_allocated.ptr());
         bitmask_type const* em = const_cast<bitmask_type const*>(_allocated.ptre());
 
@@ -1602,7 +1604,10 @@ public:
                     if (*pm & m) {
                         uints id = base + i;
                         if (funccall(f, pd0[id], base + i))
+                        {
                             del(pd0 + id);
+                            found = true;
+                        }
 
                         //update after rebase
                         ints diffm = (ints)const_cast<bitmask_type const*>(_allocated.ptr()) - (ints)bm;
@@ -1643,7 +1648,10 @@ public:
                     for (int i = 0; i < BITMASK_BITS; ++i, m <<= 1) {
                         if (*pm & m) {
                             if (funccall_if(f, data[pbase + i], gbase + pbase + i))
+                            {
                                 del(const_cast<T*>(data) + (pbase + i));
+                                found = true;
+                            }
 
                             //update after rebase
                             ints diffm = (ints)const_cast<bitmask_type const*>(_allocated.ptr()) - (ints)bm;
@@ -1661,7 +1669,7 @@ public:
             }
         }
 
-        return 0;
+        return found;
     }
 
     ///Run on unused elements (freed elements in pool mode) until predicate returns true

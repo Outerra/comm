@@ -83,10 +83,10 @@ protected: // methods only
     static void* process_std_err_thread_func(void* context);
 
 protected: // members only
-    inline static const int pipe_buffer_size = 128;
+    inline static const int pipe_buffer_size = 4096;
 
 #if defined(SYSTYPE_MSVC)
-    unsigned long _std_out_peek_pos = 0;
+    //unsigned long _std_out_peek_pos = 0;
 
     void* _std_out_handle = nullptr;
     void* _std_err_handle = nullptr;

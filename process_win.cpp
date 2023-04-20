@@ -34,47 +34,7 @@ coid::process::process(
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-void * coid::process::process_std_out_thread_func(void* context)
-{
-    bool success = true;
-    process* proc_ptr = static_cast<process*>(context);
-    DASSERT(proc_ptr != nullptr);
-
-    char buf[pipe_buffer_size] = { 0, };
-    DWORD bytes_read = 0;
-
-    while (!coid::thread::self_should_cancel() && success)
-    {
-
-        success = PeekNamedPipe(proc_ptr->_std_out_handle, buf, pipe_buffer_size, &bytes_read, NULL, NULL);
-
-        bytes_read -= proc_ptr->_std_out_peek_pos;
-
-        if (success && bytes_read > 0)
-        {
-            GUARDTHIS(proc_ptr->_std_out_buf_mutex);
-            uints size = bytes_read;
-            if (proc_ptr->_std_out_buf.write_raw(buf + proc_ptr->_std_out_peek_pos, size) != NOERR)
-            {
-                DASSERT(0);
-            }
-
-            proc_ptr->_std_out_peek_pos += bytes_read;
-        }        
-        
-        if (proc_ptr->_std_out_peek_pos == pipe_buffer_size)
-        {
-            success = ReadFile(proc_ptr->_std_out_handle, buf, pipe_buffer_size, &bytes_read, NULL);
-            proc_ptr->_std_out_peek_pos = 0;
-        }
-
-        coid::sysMilliSecondSleep(wait_ms);
-    }
-
-    return nullptr;
-}
-
-//void* coid::process::process_std_out_thread_func(void* context)
+//void * coid::process::process_std_out_thread_func(void* context)
 //{
 //    bool success = true;
 //    process* proc_ptr = static_cast<process*>(context);
@@ -85,16 +45,27 @@ void * coid::process::process_std_out_thread_func(void* context)
 //
 //    while (!coid::thread::self_should_cancel() && success)
 //    {
-//        success = ReadFile(proc_ptr->_std_out_handle, buf, pipe_buffer_size, &bytes_read, NULL);
+//
+//        success = PeekNamedPipe(proc_ptr->_std_out_handle, buf, pipe_buffer_size, &bytes_read, NULL, NULL);
+//
+//        bytes_read -= proc_ptr->_std_out_peek_pos;
 //
 //        if (success && bytes_read > 0)
 //        {
 //            GUARDTHIS(proc_ptr->_std_out_buf_mutex);
 //            uints size = bytes_read;
-//            if (proc_ptr->_std_out_buf.write_raw(buf, size) != NOERR)
+//            if (proc_ptr->_std_out_buf.write_raw(buf + proc_ptr->_std_out_peek_pos, size) != NOERR)
 //            {
 //                DASSERT(0);
 //            }
+//
+//            proc_ptr->_std_out_peek_pos += bytes_read;
+//        }        
+//        
+//        if (proc_ptr->_std_out_peek_pos == pipe_buffer_size)
+//        {
+//            success = ReadFile(proc_ptr->_std_out_handle, buf, pipe_buffer_size, &bytes_read, NULL);
+//            proc_ptr->_std_out_peek_pos = 0;
 //        }
 //
 //        coid::sysMilliSecondSleep(wait_ms);
@@ -102,6 +73,35 @@ void * coid::process::process_std_out_thread_func(void* context)
 //
 //    return nullptr;
 //}
+
+void* coid::process::process_std_out_thread_func(void* context)
+{
+    bool success = true;
+    process* proc_ptr = static_cast<process*>(context);
+    DASSERT(proc_ptr != nullptr);
+
+    char buf[pipe_buffer_size] = { 0, };
+    DWORD bytes_read = 0;
+
+    while (!coid::thread::self_should_cancel() && success)
+    {
+        success = ReadFile(proc_ptr->_std_out_handle, buf, pipe_buffer_size, &bytes_read, NULL);
+
+        if (success && bytes_read > 0)
+        {
+            GUARDTHIS(proc_ptr->_std_out_buf_mutex);
+            uints size = bytes_read;
+            if (proc_ptr->_std_out_buf.write_raw(buf, size) != NOERR)
+            {
+                DASSERT(0);
+            }
+        }
+
+        coid::sysMilliSecondSleep(wait_ms);
+    }
+
+    return nullptr;
+}
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
