@@ -58,13 +58,20 @@ protected:
     // Tests if table on the top of the stack contains field with this iterface calss
     //@param push_on_top - if the call table is found, it is pushed on the top of the stack
     //@return - true if this class table including namespace tables are contained in the table on the top of the stack
-    bool contains_interface_class_table_internal(bool push_on_top) const;
+    static bool contains_interface_class_table_internal(lua_State* L, bool push_on_top);
     // Gets this class interface table from the table on the top of the stack and pushes it on the top
     //@note - you must be 100% sure the class interface table is contained by the table on the top of the stack!!!
-    void get_interface_class_table_internal();
+    static void get_interface_class_table_internal(lua_State* L);
 public:
 
-    iref<::lua::registry_handle> create_interface_object(bool make_weak,const coid::token& existing_script_object);
+    /// Creates script iterface object in the context of this dispatcher
+    /// @param make_weak - created interface object will be weak
+    /// @param script_class_or_bind_var - script class name or binding variable name (see note)
+    /// @param is_bind_var - specifies if script_class_or_bind_var argument should be interpreted as bind variable name or script class name
+    /// @note is_bind_var is false, created interface objects will inherited from the table with name "script_class"
+    /// @note is_bind_var is true, created interface objects will use existing table variable with "bind_var" name
+    /// @note if script_class_or_bind_var is empty and is_bind_var is false created interface object is creted from empty table
+    iref<::lua::registry_handle> create_interface_object(bool make_weak, const coid::token& script_class_or_bind_var, bool is_bind_var);
 $-(if event?)$
     void bind_events_internal( lua_State * L, bool clear ) const;
     void bind_events( bool force, const coid::token& script_class_name ) const;
@@ -695,10 +702,8 @@ int $name$_lua_dispatcher::luarebind_events(lua_State * L) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool $name$_lua_dispatcher::contains_interface_class_table_internal(bool push_on_top) const
+bool $name$_lua_dispatcher::contains_interface_class_table_internal(lua_State * L, bool push_on_top)
 {
-    lua_State* L = _context->get_state();
-
 #ifdef _DEBUG
     const int stack_top = lua_gettop(L);
 #endif
@@ -730,15 +735,13 @@ $-[/ns]$
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void $name$_lua_dispatcher::get_interface_class_table_internal()
+void $name$_lua_dispatcher::get_interface_class_table_internal(lua_State* L)
 {
-    lua_State* L = _context->get_state();
-
 #ifdef _DEBUG
     const int stack_top = lua_gettop(L);
 #endif
 
-    DASSERT(contains_interface_class_table_internal(false));
+    DASSERT(contains_interface_class_table_internal(L, false));
 
     constexpr int num_namespaces = $ns.@size$;
 $-[ns rest="\n"]$
@@ -753,7 +756,7 @@ $-[/ns]$
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-iref<::lua::registry_handle> $name$_lua_dispatcher::create_interface_object( bool make_weak, const coid::token& existing_script_object )
+iref<::lua::registry_handle> $name$_lua_dispatcher::create_interface_object( bool make_weak, const coid::token& script_class_or_bind_var, bool is_bind_var )
 {
     lua_State * L = _context->get_state();
 
@@ -763,23 +766,26 @@ iref<::lua::registry_handle> $name$_lua_dispatcher::create_interface_object( boo
 
     _context->get_ref();
 
-    if( existing_script_object.is_empty() )
+    if(!is_bind_var)
     {
+        // get object table
         lua_createtable(L, 0, 3);
     }
     else
     {
-        if (!lua_hasfield(L, -1, existing_script_object))
+        if (!lua_hasfield(L, -1, script_class_or_bind_var))
         {
             lua_pop(L, 1); // pop context table
             coid::exception e("");
-            e << "Given contex doesn't contain object variable with name " << existing_script_object << "!";
+            e << "Given contex doesn't contain object binding variable with name " << script_class_or_bind_var << "!";
             throw e;
         }
 
-        lua_getfield(L, -1, existing_script_object);
+        // get object table
+        lua_getfield(L, -1, script_class_or_bind_var);
     }
 
+    // get metatable
     lua_pushvalue(L, -1);
     lua_setmetatable(L, -2);
 
@@ -794,14 +800,35 @@ iref<::lua::registry_handle> $name$_lua_dispatcher::create_interface_object( boo
     lua_pushnumber(L, ints($hash$));
     lua_setfield(L, -2, ::lua::_lua_class_hash_key);
 
-    lua_rawgeti(L, LUA_REGISTRYINDEX, ::lua::LUA_INTERFACE_METATABLE_REGISTER_INDEX); // push interface metatable register table
-    if (!contains_interface_class_table_internal(true))
+
+    if (0) 
     {
-        register_interface_$name$(L, true);
+        ::lua::debug_print_stack(L);
     }
 
-    lua_remove(L, -2); // remove interface metatable register table 
+    // set index table
+    if (!is_bind_var && !script_class_or_bind_var.is_empty())
+    {
+        if (!lua_hasfield(L, -2, script_class_or_bind_var))
+        {
+            lua_pop(L, 2); // pop context and object table
+            coid::exception e("");
+            e << "Given contex doesn't contain script class with name " << script_class_or_bind_var << "!";
+            throw e;
+        }
 
+        lua_getfield(L, -2, script_class_or_bind_var);
+    }
+    else
+    {
+        lua_rawgeti(L, LUA_REGISTRYINDEX, ::lua::LUA_INTERFACE_METATABLE_REGISTER_INDEX); // push interface metatable register table
+        if (!contains_interface_class_table_internal(L, true))
+        {
+            register_interface_$name$(L, true);
+        }
+
+        lua_remove(L, -2); // remove interface metatable register table 
+    }
     lua_setfield(L, -2, ::lua::_lua_parent_index_key);
     
     iref<::lua::registry_handle> obj;
@@ -887,7 +914,7 @@ void $name$_lua_dispatcher::bind_events(bool force, const coid::token& script_cl
 
     if (script_class_name.is_empty())
     {
-        if (!contains_interface_class_table_internal(true))
+        if (!contains_interface_class_table_internal(L, true))
         {
             lua_pop(L, 2); // pop interface object and context table
             coid::exception e("");
@@ -989,6 +1016,18 @@ $-[/ns]$
 $-(/if)$
 
     lua_createtable(L, 0, 0); // table for class
+    lua_pushvalue(L, -1); // get metatable
+    lua_setmetatable(L, -2); // it is its own metatable
+
+    // new we set __index table to aquire methods for c interface
+    lua_rawgeti(L, LUA_REGISTRYINDEX, ::lua::LUA_INTERFACE_METATABLE_REGISTER_INDEX); // push interface metatable register table
+    if (!contains_interface_class_table_internal(L, true))
+    {
+        register_interface_$name$(L, true);
+    }
+
+    lua_remove(L, -2); // remove interface metatable register table 
+    lua_setfield(L, -2, ::lua::_lua_parent_index_key);
 
 $-[event]$
     lua_pushtoken(L,"empty_event");
@@ -1094,7 +1133,9 @@ iref<$..name$_lua_dispatcher> $..name$_lua_dispatcher::$name$(lua_State * L, con
         ifc->_context = new ::lua::weak_registry_handle(L);
         context->get_ref();
         ifc->_context->set_ref();
-        ifc->_object = ifc->create_interface_object(false, bind_variable_name);
+
+        const bool is_bind_var = !bind_variable_name.is_empty();
+        ifc->_object = ifc->create_interface_object(false, is_bind_var ? bind_variable_name : script_class_name, is_bind_var);
 
 $-(if ..event?)$
         ifc->bind_events(false, script_class_name);
@@ -1186,7 +1227,7 @@ $-(if noutargs?)$
             nifc->_context->set_ref();
         }
 
-        nifc->create_interface_object(true, "")->get_ref();
+        nifc->create_interface_object(true, "" , false)->get_ref();
     }
     else {
         lua_pushnil(L);
@@ -1212,7 +1253,7 @@ $-(elif)$
             nifc->_context->set_ref();
         }
 
-        nifc->create_interface_object(true, "")->get_ref();
+        nifc->create_interface_object(true, "", false)->get_ref();
     }
     else {
         lua_pushnil(L);
@@ -1242,7 +1283,7 @@ iref <::lua::registry_handle> create_wrapper_$name$(::$ns rest = "::" after = ":
         // create interface object
         ifc.create(new $ns rest="::" after="::"$lua::$name$_lua_dispatcher(context, static_cast<::$ns rest="::" after="::"$$name$*>(orig)));
 
-        obj = ifc->create_interface_object(true, "");
+        obj = ifc->create_interface_object(true, "", false);
     }
 
     return obj;

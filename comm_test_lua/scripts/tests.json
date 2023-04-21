@@ -1574,6 +1574,13 @@
 		"should_throw": false,
 		"is_retvoid": false,
 		"num_outargs": 0,
-		"use_child_class" :  true
+		"use_child_class": true
+	},
+	{
+		"script_path": "class_method_0.lua",
+		"int_result": 9,
+		"script_class_name": "parent_class_ifc",
+		"call_event_with_default_body": false,
+		"should_throw": false
 	}
 ]
