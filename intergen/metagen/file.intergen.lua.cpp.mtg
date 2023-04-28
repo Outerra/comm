@@ -86,7 +86,7 @@ $-(if event?)$
 $(/if)-$
     }
 
-    $name$_lua_dispatcher(iref<::lua::registry_handle> context, $ns rest="::" after="::"$$name$* orig ) $(if event?)$: _bound_events(false) $(/if)${
+    explicit $name$_lua_dispatcher(iref<::lua::registry_handle> context, $ns rest="::" after="::"$$name$* orig ) $(if event?)$: _bound_events(false) $(/if)${
         _base.create(orig);
         _vtable = _base->vtable();
 
@@ -99,6 +99,12 @@ $(/if)-$
 $-(if event?)$
         init_event_registry();
 $(/if)-$
+    }
+
+
+    explicit $name$_lua_dispatcher(policy_intrusive_base* host) $ - (if event ? )$ : _bound_events(false)$(/ if)$
+    {
+        set_host(host, this, 0);
     }
 
     ~$name$_lua_dispatcher() {
@@ -1289,6 +1295,24 @@ iref <::lua::registry_handle> create_wrapper_$name$(::$ns rest = "::" after = ":
     return obj;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+///Create LUA interface from a host
+static iref<$ns rest = "::" after = "::"$lua::$name$_lua_dispatcher> create_maker_$name$(policy_intrusive_base* host, iref<::lua::lua_context> context)
+{
+    // check that the orig points to an object
+    if (!host)
+        return 0;
+
+    // create interface object
+    iref<$ns rest = "::" after = "::"$lua::$name$_lua_dispatcher> ifc;
+
+    ifc.create(new $ns rest = "::" after = "::"$lua::$name$_lua_dispatcher(host));
+
+    //ifc->_object.Reset(iso, ifc->create_interface_object(context, false));
+
+    return ifc;
+}
+
 $-(/if)$
 ////////////////////////////////////////////////////////////////////////////////
 static void register_binders_for_$name$( bool on )
@@ -1318,6 +1342,11 @@ $-(if virtual!)$
     interface_register::register_interface_creator(
         "$ns rest="::" after="::"$$name$@wrapper.lua",
         on ? (void*)&create_wrapper_$name$ : nullptr);
+
+    //js interface creator from host
+    interface_register::register_interface_creator(
+        "$ns rest="::" after="::"$lua::$name$@maker.lua",
+        on ? (void*)&create_maker_$name$ : nullptr);
 $-(/if)$
 }
 

@@ -1074,6 +1074,11 @@ namespace lua {
             return _context;
         }
 
+        bool load_script()
+        {
+            
+        }
+
     private:
 
         coid::token _str;
