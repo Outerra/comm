@@ -409,7 +409,7 @@ public:
 
     uints register_filter(log_filter&& filter);
     void unregister_filter(uints pos);\
-protected:
+
     void flush();
 };
 
