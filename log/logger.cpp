@@ -75,7 +75,7 @@ static void write_console_text(const logmsg& msg)
         case log::highlight: flg = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY; break;
         case log::debug:     flg = FOREGROUND_GREEN | FOREGROUND_BLUE; break;
         case log::perf:      flg = FOREGROUND_GREEN | FOREGROUND_INTENSITY; break;
-        default:                   flg = BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE;
+        default:             flg = BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE;
         }
 
         SetConsoleTextAttribute(hstdout, flg);
@@ -101,12 +101,61 @@ static void write_console_text(const logmsg& msg)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace coid {
+void coidlog_text(const token& src, token msg)
+{
+    logger::post(msg, src);
+}
 
-ref<logmsg> canlog(log::type type, const tokenhash& hash, const void* inst)
+
+namespace coid {
+namespace log {
+
+const type* values() {
+    static type _values[] = {
+        none,
+        exception,
+        error,
+        warning,
+        highlight,
+        info,
+        debug,
+        perf,
+    };
+    return _values;
+}
+
+const char** names() {
+    static const char* _names[] = {
+        "none",
+        "exception",
+        "error",
+        "warning",
+        "highlight",
+        "info",
+        "debug",
+        "perf",
+        0
+    };
+    return _names;
+}
+
+const char* name(type t)
+{
+    return t >= none && t <= last ? names()[t + 1] : 0;
+}
+
+
+ref<logmsg> openmsg(log::type type, const tokenhash& hash, const void* inst)
 {
     return interface_register::canlog(type, hash, inst);
 }
+
+void flush()
+{
+    interface_register::getlog()->flush();
+}
+
+} //namespace log
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -323,14 +372,14 @@ void logger::set_log_level(log::type minlevel, bool allow_perf)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-ref<logmsg> logger::create_msg(log::type type, const tokenhash& hash, const void* inst, const int64* mstime)
+ref<logmsg> logger::create_msg(log::type type, const tokenhash& hash, const void* inst, bool append_time)
 {
     //TODO check hash, inst
     bool filelog = type == log::type::file;
     if (!filelog && type > _minlevel && (!_allow_perf || type != log::perf))
         return ref<logmsg>();
 
-    ref<logmsg> rmsg = operator()(type, hash, mstime);
+    ref<logmsg> rmsg = operator()(type, hash, append_time);
     if (!filelog && hash)
         rmsg->str() << '[' << hash << "] ";
 
@@ -338,17 +387,17 @@ ref<logmsg> logger::create_msg(log::type type, const tokenhash& hash, const void
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-ref<logmsg> logger::operator()(log::type t, const tokenhash& hash, const int64* time_ms)
+ref<logmsg> logger::operator()(log::type t, const tokenhash& hash, bool append_time)
 {
-    ref<logmsg> msg = create_msg(t, hash);
+    ref<logmsg> msg = create_msg(t, hash, append_time);
     if (!msg)
         return msg;
 
     charstr& str = msg->str();
 
-    if (time_ms) {
-        //str.append_fixed(*time_ms * 1e-3, 9, -3, coid::ALIGN_NUM_RIGHT_FILL_ZEROS);
-        str.append_time_formatted(*time_ms, true, 3);
+    if (append_time) {
+        int64 ms = nsec_timer::day_time_ns() / 1000000;
+        str.append_time_formatted(ms, true, 3);
         str.append(' ');
     }
 
@@ -358,7 +407,7 @@ ref<logmsg> logger::operator()(log::type t, const tokenhash& hash, const int64* 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-ref<logmsg> logger::create_msg(log::type type, const tokenhash& hash)
+ref<logmsg> logger::create_msg(log::type type, const tokenhash& hash, bool append_time)
 {
     if (type != log::type::file && type > _minlevel && (!_allow_perf || type != log::perf))
         return ref<logmsg>();
@@ -370,6 +419,13 @@ ref<logmsg> logger::create_msg(log::type type, const tokenhash& hash)
 
     if (type == log::perf)
         msg->set_time(nsec_timer::current_time_ns());
+
+    if (append_time) {
+        int64 ms = nsec_timer::day_time_ns() / 1000000;
+        charstr& str = msg->str();
+        str.append_time_formatted(ms, true, 3);
+        str.append(' ');
+    }
 
     return msg;
 }

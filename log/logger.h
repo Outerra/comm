@@ -14,10 +14,7 @@
  *
  * The Original Code is COID/comm module.
  *
- * The Initial Developer of the Original Code is
- * Ladislav Hrabcak
- * Portions created by the Initial Developer are Copyright (C) 2007
- * the Initial Developer. All Rights Reserved.
+ * Copyright (C) 2007-2023. All Rights Reserved.
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -36,267 +33,14 @@
 #ifndef __COMM_LOGGER_H__
 #define __COMM_LOGGER_H__
 
+#include "../log.h"
 #include "../str.h"
 #include "../ref.h"
 #include "../function.h"
 #include "../alloc/slotalloc.h"
 
-////////////////////////////////////////////////////////////////////////////////
-//@{ Log message with specified severity
-#define coidlog_error(src, msg)   do{ ref<coid::logmsg> q = coid::canlog(coid::log::error, src ); if (q) {q->str() << msg; }} while(0)
-#define coidlog_warning(src, msg) do{ ref<coid::logmsg> q = coid::canlog(coid::log::warning, src ); if (q) {q->str() << msg; }} while(0)
-#define coidlog_msg(src, msg)     do{ ref<coid::logmsg> q = coid::canlog(coid::log::highlight, src ); if (q) {q->str() << msg; }} while(0)
-#define coidlog_info(src, msg)    do{ ref<coid::logmsg> q = coid::canlog(coid::log::info, src ); if (q) {q->str() << msg; }} while(0)
-#define coidlog_debug(src, msg)   do{ ref<coid::logmsg> q = coid::canlog(coid::log::debug, src ); if (q) {q->str() << msg; }} while(0)
-#define coidlog_perf(src, msg)    do{ ref<coid::logmsg> q = coid::canlog(coid::log::perf, src ); if (q) {q->str() << msg; }} while(0)
-#define coidlog_none(src, msg)    do{ ref<coid::logmsg> q = coid::canlog(coid::log::none, src ); if (q) {q->str() << msg; }} while(0)
-//@}
-
-///Log into file. The file is trucated initially and multiple messages are appended to it during the process duration
-//@param file file name/path
-#define coidlog_file(file, msg)   do{ ref<coid::logmsg> q = coid::canlog(coid::log::last, file ); if (q) {q->str() << msg; }} while(0)
-
-
-///Log message with severity specified at the beginning of msg
-/// @param src source module
-/// @param msg text message to log, containing a severity prefix (error: err: warning: warn: info: msg: debug: perf:
-void coidlog_text(const coid::token& src, coid::token msg);
-
-
-///Create a perf object that logs the time while the scope exists
-#define coidlog_perf_scope(src, msg) \
-   ref<coid::logmsg> perf##line = coid::canlog(coid::log::perf, src); if (perf##line) perf##line->str() << msg
-
-///Log fatal error and throw exception with the same message
-#define coidlog_exception(src, msg)\
-    do { ref<coid::logmsg> q = coid::canlog(coid::log::exception, src ); if (q) {q->str() << msg; throw coid::exception() << msg; }} while(0)
-
-//@{ Log error if condition fails
-#define coidlog_assert(test, src, msg)\
-    do { if (!(test)) coidlog_error(src, msg); } while(0)
-
-#define coidlog_assert_ret(test, src, msg, ...)\
-    do { if (!(test)) { coidlog_error(src, msg); return __VA_ARGS__; } } while(0)
-//@}
-
-///Debug message existing only in debug builds
-#ifdef _DEBUG
-#define coidlog_devdbg(src, msg)  do{ ref<coid::logmsg> q = coid::canlog(coid::log::debug, src ); if (q) {q->str() << msg; }} while(0)
-#else
-#define coidlog_devdbg(src, msg)
-#endif
-
-
 COID_NAMESPACE_BEGIN
 
-namespace log {
-
-    enum type {
-        none = -1,
-        exception = 0,
-        error,
-        warning,
-        highlight,
-        info,
-        debug,
-        perf,
-        file,
-        last,
-    };
-
-    inline const type* values() {
-        static type _values[] = {
-            none,
-            exception,
-            error,
-            warning,
-            highlight,
-            info,
-            debug,
-            perf,
-        };
-        return _values;
-    }
-
-    inline const char** names() {
-        static const char* _names[] = {
-            "none",
-            "exception",
-            "error",
-            "warning",
-            "highlight",
-            "info",
-            "debug",
-            "perf",
-            0
-        };
-        return _names;
-    }
-
-    inline const char* name(type t) {
-        return t >= none && t <= last
-            ? names()[t + 1]
-            : 0;
-    }
-
-} //namespace log
-
-class logger_file;
-class logger;
-class logmsg;
-class policy_msg;
-
-//@return logmsg object if given log type and source is currently allowed to log
-ref<logmsg> canlog(log::type type, const tokenhash& hash = tokenhash(), const void* inst = 0);
-
-/// @brief Return logging object for multi-line logging, ex: auto log = filelog("path"); log->str() << "bla" << 1;
-/// @param file file name/path
-inline ref<logmsg> filelog(const tokenhash& file) {
-    return canlog(log::file, file);
-}
-
-#ifdef COID_VARIADIC_TEMPLATES
-
-///Formatted log message
-//@param type log level
-//@param hash source identifier (used for filtering)
-//@param fmt @see charstr.print
-template<class ...Vs>
-void printlog(log::type type, const tokenhash& hash, const token& fmt, Vs&&... vs);
-
-#endif //COID_VARIADIC_TEMPLATES
-
-////////////////////////////////////////////////////////////////////////////////
-
-/*
- * Log message object, returned by the logger.
- * Message is written in policy_log::release() upon calling destructor of ref
- * with policy policy_log.
- */
-class logmsg
-    //: public policy_pooled<logmsg>
-{
-protected:
-
-    friend class policy_msg;
-
-    logger* _logger = 0;
-    ref<logger_file> _logger_file;
-
-    tokenhash _hash;
-    log::type _type = log::none;
-    charstr _str;
-    uint64 _time = 0;
-
-public:
-
-    COIDNEWDELETE(logmsg);
-
-    logmsg();
-
-    logmsg(logmsg&& other) noexcept
-        : _type(other._type)
-    {
-        _logger = other._logger;
-        other._logger = 0;
-
-        _logger_file.takeover(other._logger_file);
-        _str.takeover(other._str);
-    }
-
-    void set_logger(logger* l) { _logger = l; }
-
-    void reset() {
-        _str.reset();
-        _logger = 0;
-        _logger_file.release();
-    }
-
-    void write();
-
-    ///Consume type prefix from the message
-    static log::type consume_type(token& msg)
-    {
-        log::type t = log::info;
-        if (msg.consume_icase("err:"_T) || msg.consume_icase("error:"_T))
-            t = log::error;
-        else if (msg.consume_icase("warn:"_T) || msg.consume_icase("warning:"_T))
-            t = log::warning;
-        else if (msg.consume_icase("info:"_T))
-            t = log::info;
-        else if (msg.consume_icase("msg:"_T))
-            t = log::highlight;
-        else if (msg.consume_icase("dbg:"_T) || msg.consume_icase("debug:"_T))
-            t = log::debug;
-        else if (msg.consume_icase("perf:"_T))
-            t = log::perf;
-        else if (msg.consume_icase("fatal: "_T))
-            t = log::exception;
-
-        msg.skip_whitespace();
-        return t;
-    }
-
-    static const token& type2tok(log::type t)
-    {
-        static token st[1 + int(log::last)] = {
-            "",
-            "FATAL: ",
-            "ERROR: ",
-            "WARNING: ",
-            "INFO: ",
-            "INFO: ",
-            "DEBUG: ",
-            "PERF: ",
-        };
-        static token empty;
-
-        return t >= 0 && t < log::last ? st[1 + int(t)] : empty;
-    }
-
-    log::type get_type() const { return _type; }
-
-    void set_type(log::type t) { _type = t; }
-
-    void set_time(uint64 ns) {
-        _time = ns;
-    }
-
-    int64 get_time() const { return _time; }
-
-    void set_hash(const tokenhash& hash) { _hash = hash; }
-    const tokenhash& get_hash() { return _hash; }
-
-    charstr& str() { return _str; }
-    const charstr& str() const { return _str; }
-
-protected:
-
-    void finalize(policy_msg* p);
-};
-
-typedef ref<logmsg> logmsg_ptr;
-
-////////////////////////////////////////////////////////////////////////////////
-
-#ifdef COID_VARIADIC_TEMPLATES
-
-///Formatted log message
-//@param type log level
-//@param hash source identifier (used for filtering)
-//@param fmt @see charstr.print
-template<class ...Vs>
-inline void printlog(log::type type, const tokenhash& hash, const token& fmt, Vs&&... vs)
-{
-    ref<logmsg> msgr = canlog(type, hash);
-    if (!msgr)
-        return;
-
-    charstr& str = msgr->str();
-    str.print(fmt, std::forward<Vs>(vs)...);
-}
-
-#endif //COID_VARIADIC_TEMPLATES
 
 struct log_filter
 {
@@ -387,17 +131,17 @@ public:
 #endif
 
     /// @return logmsg, filling the prefix by the log type (e.g. ERROR: )
-    ref<logmsg> operator()(log::type type = log::info, const tokenhash& hash = "", const int64* time_ms = 0);
+    ref<logmsg> operator()(log::type type = log::info, const tokenhash& hash = "", bool append_time = false);
 
     /// @return an empty logmsg object
-    ref<logmsg> create_msg(log::type type, const tokenhash& hash);
+    ref<logmsg> create_msg(log::type type, const tokenhash& hash, bool append_time = false);
 
     ///Creates logmsg object if given log message type is enabled
     /// @param type log level
     /// @param hash tokenhash identifying the client (interface) name
     /// @param inst optional instance id
     /// @return logmsg reference or null if not enabled
-    ref<logmsg> create_msg(log::type type, const tokenhash& hash, const void* inst, const int64* mstime = 0);
+    ref<logmsg> create_msg(log::type type, const tokenhash& hash, const void* inst, bool append_time = false);
 
     const ref<logger_file>& file() const { return _logfile; }
 
@@ -408,7 +152,7 @@ public:
     static void enable_debug_out(bool en);
 
     uints register_filter(log_filter&& filter);
-    void unregister_filter(uints pos);\
+    void unregister_filter(uints pos);
 
     void flush();
 };
@@ -425,10 +169,5 @@ public:
 
 COID_NAMESPACE_END
 
-//
-inline void coidlog_text(const coid::token& src, coid::token msg)
-{
-    coid::logger::post(msg, src);
-}
 
 #endif // __COMM_LOGGER_H__

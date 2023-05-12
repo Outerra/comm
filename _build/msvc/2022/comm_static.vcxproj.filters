@@ -364,6 +364,7 @@
     </ClInclude>
     <ClInclude Include="..\..\..\international.h" />
     <ClInclude Include="..\..\..\process.h" />
+    <ClInclude Include="..\..\..\log\log.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\crypt\sha1.cpp">

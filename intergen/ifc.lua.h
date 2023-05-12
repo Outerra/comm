@@ -43,7 +43,7 @@
 #include <comm/token.h>
 #include <comm/dir.h>
 #include <comm/metastream/metastream.h>
-#include <comm/log/logger.h>
+#include <comm/log.h>
 #include <comm/binstream/filestream.h>
 #include <comm/singleton.h>
 #include <luaJIT/lua.hpp>
