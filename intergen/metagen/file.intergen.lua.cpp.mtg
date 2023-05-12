@@ -42,7 +42,7 @@ $-(if event?)$
 
     void init_event_registry() {
         for (int i = 0; i < $event.@size$; i++) {
-            _events[i] = new ::lua::weak_registry_handle;
+            _events[i] = nullptr;
         }
     }
 
@@ -71,7 +71,7 @@ public:
     /// @note is_bind_var is false, created interface objects will inherited from the table with name "script_class"
     /// @note is_bind_var is true, created interface objects will use existing table variable with "bind_var" name
     /// @note if script_class_or_bind_var is empty and is_bind_var is false created interface object is creted from empty table
-    iref<::lua::registry_handle> create_interface_object(bool make_weak, const coid::token& script_class_or_bind_var, bool is_bind_var);
+    iref<::lua::registry_handle> create_interface_object(const iref<::lua::registry_handle>& context, bool make_weak, const coid::token& script_class_or_bind_var, bool is_bind_var);
 $-(if event?)$
     void bind_events_internal( lua_State * L, bool clear ) const;
     void bind_events( bool force, const coid::token& script_class_name ) const;
@@ -90,10 +90,8 @@ $(/if)-$
         _base.create(orig);
         _vtable = _base->vtable();
 
-        _context->set_state(context->get_state());
-        context->get_ref();
-        _context->set_ref();
-
+        set_context(context);
+        
         _host = _base->host<policy_intrusive_base>();
 
 $-(if event?)$
@@ -268,6 +266,7 @@ $-[args inarg? !nojs?]$
         from_lua($name$);
         $-(/if)$
     $-(/if)$
+        lua_pop(L, 1); // who pushes, must pop!
 $-[/args]$
 
 //out params
@@ -762,15 +761,15 @@ $-[/ns]$
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-iref<::lua::registry_handle> $name$_lua_dispatcher::create_interface_object( bool make_weak, const coid::token& script_class_or_bind_var, bool is_bind_var )
+iref<::lua::registry_handle> $name$_lua_dispatcher::create_interface_object(const iref<::lua::registry_handle>& context, bool make_weak, const coid::token& script_class_or_bind_var, bool is_bind_var )
 {
-    lua_State * L = _context->get_state();
+    lua_State * L = context->get_state();
 
 #ifdef _DEBUG
     const int stack_top = lua_gettop(L);
 #endif
 
-    _context->get_ref();
+    context->get_ref();
 
     if(!is_bind_var)
     {
@@ -863,6 +862,7 @@ iref<::lua::registry_handle> $name$_lua_dispatcher::create_interface_object( boo
 #endif
 
     _object = obj;
+    set_context(context);
     return obj;
 }
 
@@ -882,12 +882,11 @@ $-[/event]$
 
     for (int i = 0; i<$event.@size$; ++i)
         {
-            _events[i]->release();
+            _events[i].create(new ::lua::weak_registry_handle(L));
 
             if (clear) {
                 continue;
             }
-            _events[i]->set_state(L);
             lua_getfield(L, -1, names[i]);
             if (!lua_isfunction(L, -1)) {
                 lua_pop(L, 1);
@@ -1077,71 +1076,15 @@ iref<$..name$_lua_dispatcher> $..name$_lua_dispatcher::$name$(lua_State * L, con
     
     try
     {
-        iref<::lua::registry_handle> context = nullptr;
-
-        if (script.has_context()){
-            context = script.context();
-        }
-        else {
-            context = new ::lua::lua_context(L);
-
-            if (script.is_path()) {
-                
-                context->get_ref();
-                
-                coid::token script_dir;
-                script_dir = script.str();
-                if (script_dir.contains_back('\\') || script_dir.contains_back('/')) {
-                    script_dir.cut_right_group_back(coid::DIR_SEPARATORS,coid::token::cut_trait_keep_sep_default_empty());
-                }
-                
-                lua_pushtoken(L, script_dir);
-                lua_setfield(L, -2, ::lua::_lua_context_dir_key);
-                lua_pushtoken(L, script.str());
-                lua_setfield(L, -2, ::lua::_lua_context_info_key);
-                
-                lua_pop(L, 1);
-            }
-        }
+        iref<::lua::registry_handle> context = script.load_script(L);
 
         if (ctx)
             *ctx = context;
 
-        if (!script.is_context())
-        {
-            coid::token script_tok;
-            coid::charstr script_tmp;
-            if (script.is_path()) {
-                coid::bifstream bif(script.str());
-                if (!bif.is_open())
-                    throw coid::exception() << script.str() << " not found";
-
-                script_tmp = script.prefix();
-
-                coid::binstreambuf buf;
-                buf.swap(script_tmp);
-                buf.transfer_from(bif);
-                buf.swap(script_tmp);
-
-                script_tok = script_tmp;
-            }
-            else if (script.prefix()) {
-                script_tmp << script.prefix() << script.str();
-                script_tok = script_tmp;
-            }
-            else {
-                script_tok = script.str();
-            }
-
-            ::lua::load_script(context, script_tok, script.url());
-        }
-
-        ifc->_context = new ::lua::weak_registry_handle(L);
-        context->get_ref();
-        ifc->_context->set_ref();
+        ifc->set_context(context);
 
         const bool is_bind_var = !bind_variable_name.is_empty();
-        ifc->_object = ifc->create_interface_object(false, is_bind_var ? bind_variable_name : script_class_name, is_bind_var);
+        ifc->_object = ifc->create_interface_object(context, false, is_bind_var ? bind_variable_name : script_class_name, is_bind_var);
 
 $-(if ..event?)$
         ifc->bind_events(false, script_class_name);
@@ -1168,6 +1111,10 @@ $-(if !internal?)$
 
 int $..name$_lua_dispatcher::luacreator_$name$$@order$(lua_State * L, ::lua::interface_context* ifc )
 {
+#ifdef _DEBUG
+    const int stack_top = lua_gettop(L);
+#endif
+
     const int args_count = lua_gettop(L);
 
     if (args_count < $ninargs_nondef$ || args_count > $ninargs$) { //in/inout arguments
@@ -1211,6 +1158,7 @@ $-[args inarg? !nojs?]$
     from_lua($name$);
         $-(/if)$
     $-(/if)$
+    lua_pop(L, 1); // who pushes, must pop!
 $[/args]-$
 
 //out params
@@ -1233,7 +1181,7 @@ $-(if noutargs?)$
             nifc->_context->set_ref();
         }
 
-        nifc->create_interface_object(true, "" , false)->get_ref();
+        nifc->create_interface_object(nifc->_context, true, "" , false)->get_ref();
     }
     else {
         lua_pushnil(L);
@@ -1250,21 +1198,27 @@ $-(if noutargs?)$
     $[/args]-$
 $-(elif)$
     if (nifc) {
+        iref<::lua::registry_handle> context = nullptr;
         if (ifc) {
-            nifc->_context = ifc->_context;
+            context = ifc->_context;
         }
         else {
-            nifc->_context->set_state(L);
+            context.create(new ::lua::weak_registry_handle(L));
             lua_pushvalue(L, LUA_ENVIRONINDEX);
-            nifc->_context->set_ref();
+            context->set_ref();
         }
 
-        nifc->create_interface_object(true, "", false)->get_ref();
+        nifc->create_interface_object(context, true, "", false)->get_ref();
     }
     else {
         lua_pushnil(L);
     }
 $-(/if)$
+
+#ifdef _DEBUG
+    const int current_stack_top = lua_gettop(L);
+    DASSERT(current_stack_top == stack_top + 1); // starting top + number of results 
+#endif  
 
     return 1;
 }
@@ -1289,7 +1243,7 @@ iref <::lua::registry_handle> create_wrapper_$name$(::$ns rest = "::" after = ":
         // create interface object
         ifc.create(new $ns rest="::" after="::"$lua::$name$_lua_dispatcher(context, static_cast<::$ns rest="::" after="::"$$name$*>(orig)));
 
-        obj = ifc->create_interface_object(true, "", false);
+        obj = ifc->create_interface_object(context, true, "", false);
     }
 
     return obj;
@@ -1297,7 +1251,7 @@ iref <::lua::registry_handle> create_wrapper_$name$(::$ns rest = "::" after = ":
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Create LUA interface from a host
-static iref<$ns rest = "::" after = "::"$lua::$name$_lua_dispatcher> create_maker_$name$(policy_intrusive_base* host, iref<::lua::lua_context> context)
+static iref<$ns rest = "::" after = "::"$lua::$name$_lua_dispatcher> create_maker_$name$(policy_intrusive_base* host, iref<::lua::registry_handle> context)
 {
     // check that the orig points to an object
     if (!host)
@@ -1307,8 +1261,10 @@ static iref<$ns rest = "::" after = "::"$lua::$name$_lua_dispatcher> create_make
     iref<$ns rest = "::" after = "::"$lua::$name$_lua_dispatcher> ifc;
 
     ifc.create(new $ns rest = "::" after = "::"$lua::$name$_lua_dispatcher(host));
-
-    //ifc->_object.Reset(iso, ifc->create_interface_object(context, false));
+    ifc->create_interface_object(context, false, "", false);
+$-(if event?)$
+    ifc->bind_events(false, "");
+$-(/if)$
 
     return ifc;
 }
@@ -1345,7 +1301,7 @@ $-(if virtual!)$
 
     //js interface creator from host
     interface_register::register_interface_creator(
-        "$ns rest="::" after="::"$lua::$name$@maker.lua",
+        "$ns rest="::" after="::"$$name$@maker.lua",
         on ? (void*)&create_maker_$name$ : nullptr);
 $-(/if)$
 }

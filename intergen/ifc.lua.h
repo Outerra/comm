@@ -68,8 +68,8 @@ namespace lua {
     static constexpr coid::token_literal _lua_class_hash_key = "__class_hash";
     static constexpr coid::token_literal _lua_gc_key = "__gc";
     static constexpr coid::token_literal _lua_weak_meta_key = "__weak_object_meta";
-    static constexpr coid::token_literal _lua_context_info_key = "__ctx_inf";
-    static constexpr coid::token_literal _lua_context_dir_key = "__ctx_dir";
+    static constexpr coid::token_literal _lua_context_script_path_key = "__ctx_script_path";
+    static constexpr coid::token_literal _lua_context_script_dir_key = "__ctx_script_dir";
     static constexpr coid::token_literal _lua_implements_fn_name = "implements";
     static constexpr coid::token_literal _lua_implements_as_fn_name = "implements_as";
     static constexpr coid::token_literal _lua_log_key = "log";
@@ -412,7 +412,7 @@ namespace lua {
 
             lua_pushvalue(L, LUA_ENVIRONINDEX);
             coid::token hash;
-            lua_getfield(L, -1, _lua_context_info_key);
+            lua_getfield(L, -1, _lua_context_script_path_key);
             
             if (lua_isnil(L, -1)) {
                 hash = "Unknown script";
@@ -433,7 +433,7 @@ namespace lua {
             process_exception_and_push_error_string_internal(e, L);
         }
 
-        if (exception_caught)
+        if (exception_caught)   
         {
             lua_error(L);
         }
@@ -457,16 +457,14 @@ namespace lua {
 
     class registry_handle :public policy_intrusive_base {
     public:
-        static const iref<registry_handle>& get_empty() {
-            static iref<registry_handle> empty = new registry_handle;
-            return empty;
-        }
+        //static const iref<registry_handle>& get_empty() {
+        //    static iref<registry_handle> empty = new registry_handle();
+        //    return empty;
+        //}
 
         bool is_empty() {
             return _lua_handle == 0;
         }
-
-        void set_state(lua_State * L) { _L = L; };
 
         lua_State * get_state() const { return _L; }
 
@@ -497,19 +495,14 @@ namespace lua {
             release();
         }
 
-        registry_handle()
-            : _lua_handle(0)
-            , _L(nullptr)
-        {};
-
-        registry_handle(lua_State * L)
+        explicit registry_handle(lua_State * L)
             : _L(L)
             , _lua_handle(0)
         {
         };
     protected:
-        int32 _lua_handle;
-        lua_State * _L;
+        int32 _lua_handle = 0;
+        lua_State * _L = nullptr;
     };
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -553,11 +546,7 @@ namespace lua {
             release();
         }
 
-        weak_registry_handle()
-            : registry_handle()
-        {};
-
-        weak_registry_handle(lua_State * L)
+        explicit weak_registry_handle(lua_State * L)
             : registry_handle(L)
         {};
     };
@@ -571,7 +560,7 @@ namespace lua {
         class_implement_fn reg_fn = reinterpret_cast<class_implement_fn>(coid::interface_register::get_interface_creator(implement_function_registrar_name));
         if (!reg_fn) {
             coid::exception e;
-            e << interface_class_name << " class implement funcion not found!";
+            e << interface_class_name << " class not found!";
             throw e;
         }
 
@@ -654,6 +643,8 @@ namespace lua {
         return 0;
     }
 
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    
     inline bool is_interface_table(lua_State* L, int index)
     {
         const int n = lua_gettop(L); // number of arguments
@@ -668,6 +659,22 @@ namespace lua {
             && lua_hasfield(L, index, _lua_interface_cptr_key)
             && lua_hasfield(L, index, _lua_class_hash_key)
             && lua_hasfield(L, index, _lua_parent_index_key);
+    }
+
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+    inline bool is_context_table(lua_State* L, int index)
+    {
+        const int n = lua_gettop(L); // number of arguments
+
+        if (n < index || n < -index)
+        {
+            throw coid::exception("Wrong number of arguments!");
+        }
+
+        return lua_istable(L, index)
+            && lua_hasfield(L, index, _lua_context_script_dir_key)
+            && lua_hasfield(L, index, _lua_context_script_path_key);
     }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -734,6 +741,11 @@ namespace lua {
                 lua_close(_L);
                 _L = nullptr;
             }
+        }
+
+        void collect_garbage()
+        {
+            lua_gc(_L, LUA_GCCOLLECT, 0);
         }
 
     private:
@@ -813,12 +825,15 @@ namespace lua {
             set_ref();
         };
 
-        lua_context(const lua_context& ctx) {
+        /*lua_context(const lua_context& ctx) 
+        {
             _L = ctx._L;
             _lua_handle = ctx._lua_handle;
-        }
+        }*/
 
-        ~lua_context() {
+        ~lua_context() 
+        {
+            //lua_gc(_L, LUA_GCCOLLECT, 0);
         };
 
         void debug_print() 
@@ -962,7 +977,7 @@ namespace lua {
                 throw coid::exception("The first argument of string type expected!");
             }
 
-            if (!lua_hasfield(L, LUA_ENVIRONINDEX, ::lua::_lua_context_dir_key))
+            if (!lua_hasfield(L, LUA_ENVIRONINDEX, ::lua::_lua_context_script_dir_key))
             {
                 throw coid::exception("Script context is not valid!");
             }
@@ -977,7 +992,7 @@ namespace lua {
 
             if (!coid::directory::is_absolute_path(script_path_arg))
             {
-                lua_getfield(L, LUA_ENVIRONINDEX, ::lua::_lua_context_dir_key);
+                lua_getfield(L, LUA_ENVIRONINDEX, ::lua::_lua_context_script_dir_key);
                 script_path = lua_totoken(L,-1);
                 lua_pop(L, 1);
 
@@ -1021,7 +1036,7 @@ namespace lua {
             const coid::token& url = coid::token(),
             iref<registry_handle> ctx = nullptr
         )
-            : _str(path_or_script), _is_path(is_path), _context(ctx), _url(url)
+            : _path_or_code(path_or_script), _is_path(is_path), _context(ctx), _url(url)
         {}
 
         script_handle(lua_context* ctx)
@@ -1039,7 +1054,7 @@ namespace lua {
             iref<registry_handle> ctx = nullptr
         )
         {
-            _str = path_or_script;
+            _path_or_code = path_or_script;
             _is_path = is_path;
             _context = ctx;
             _url = url;
@@ -1048,7 +1063,7 @@ namespace lua {
         void set(iref<registry_handle> ctx) {
             _context = ctx;
             _is_path = false;
-            _str.set_null();
+            _path_or_code.set_null();
         }
 
         ///Set prefix code to be included before the file/script
@@ -1060,28 +1075,92 @@ namespace lua {
 
 
         bool is_path() const { return _is_path; }
-        bool is_script() const { return !_is_path && !_str.is_null(); }
-        bool is_context() const { return _str.is_null(); }
+        bool is_script() const { return !_is_path && !_path_or_code.is_null(); }
+        bool is_context() const { return _path_or_code.is_null(); }
         bool has_context() const { return !_context.is_empty(); }
 
 
         const coid::token& str() const {
-            return _str;
+            return _path_or_code;
         }
 
-        const coid::token& url() const { return _url ? _url : (_is_path ? _str : _url); }
+        const coid::token& url() const { return _url ? _url : (_is_path ? _path_or_code : _url); }
         const iref<registry_handle>& context() const {
             return _context;
         }
 
-        bool load_script()
+        iref<registry_handle> load_script(lua_State* L) const
         {
+#ifdef _DEBUG
+            const int stack_top = lua_gettop(L);
+#endif
+
+            if (is_context())
+            {
+                return _context;
+            }
+
+            iref<lua_context> context = new ::lua::lua_context(L);
+
+
+            const coid::token url_tok = url();
+
+            coid::token script_dir;
+            script_dir = url_tok;
+            if (script_dir.contains_back('\\') || script_dir.contains_back('/')) {
+                script_dir.cut_right_group_back(coid::DIR_SEPARATORS, coid::token::cut_trait_keep_sep_default_empty());
+            }
+
+            context->get_ref();
+            lua_pushtoken(L, script_dir);
+            lua_setfield(L, -2, ::lua::_lua_context_script_dir_key);
+            lua_pushtoken(L, url_tok);
+            lua_setfield(L, -2, ::lua::_lua_context_script_path_key);
+
+            lua_pop(L, 1);
+
+            coid::charstr script_code_buf;
+            coid::token script_code;
             
+            if (_is_path)
+            {
+                coid::bifstream bif(_path_or_code);
+                if (!bif.is_open())
+                    throw coid::exception() << url_tok << " not found";
+
+                script_code_buf = prefix();
+
+                coid::binstreambuf buf;
+                buf.swap(script_code_buf);
+                buf.transfer_from(bif);
+                buf.swap(script_code_buf);
+                
+                script_code = script_code_buf;
+            }
+            else if (!_prefix.is_empty())
+            {
+                script_code_buf = _prefix;
+                script_code_buf.append(_path_or_code);
+                script_code = script_code_buf;
+            }
+            else 
+            {
+                script_code = _path_or_code;
+            }
+            
+            ::lua::load_script(context, script_code, url_tok);
+
+#ifdef _DEBUG
+            const int current_stack_top = lua_gettop(L);
+            DASSERT(current_stack_top == stack_top);
+#endif  
+
+            return context;
         }
 
-    private:
+    private: 
 
-        coid::token _str;
+        coid::token _path_or_code;
         bool _is_path;
 
         coid::token _prefix;
@@ -1093,11 +1172,22 @@ namespace lua {
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     struct interface_context
     {
-        iref<weak_registry_handle> _context;
-        iref<registry_handle> _object;
+        iref<weak_registry_handle> _context = nullptr;
+        iref<registry_handle> _object = nullptr;
 
         interface_context() {
-            _context = new weak_registry_handle;
+        }
+
+        void set_context(iref<registry_handle> context)
+        {
+            DASSERT(!context.is_empty());
+
+            lua_State* L = context->get_state();
+            
+            _context.create(new weak_registry_handle(L));
+            context->get_ref();
+            DASSERT(is_context_table(L, -1));
+            _context->set_ref();
         }
     };
 
@@ -1117,6 +1207,11 @@ namespace lua {
         }
 
         T* _real() { return static_cast<T*>(intergen_real_interface()); }
+        
+        ~interface_wrapper_base()
+        {
+            _base.release();
+        }
     };
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

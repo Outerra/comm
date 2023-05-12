@@ -188,6 +188,7 @@ protected:
 
     virtual ~intergen_interface() {
         _vtable = 0;
+        _host.release();
     }
 
 public:
