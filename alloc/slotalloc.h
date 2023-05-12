@@ -121,6 +121,8 @@ public:
     ~slotalloc_base() {
         if coid_constexpr_if(!POOL)
             reset();
+
+        discard();
     }
 
     slotalloc_base(const slotalloc_base& s) {
