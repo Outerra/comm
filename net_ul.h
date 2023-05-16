@@ -123,7 +123,7 @@ inline void endian_swap<sizeof(uint64)>(void* p, uints count)
 
 constexpr inline uint16 sysEndianLittle16(uint16 x)
 {
-    if (sysIsLittleEndian)
+    if constexpr (endian::native == endian::little)
         return x;
     else {
         _sysEndianSwap(&x);
@@ -133,7 +133,7 @@ constexpr inline uint16 sysEndianLittle16(uint16 x)
 
 constexpr inline uint32 sysEndianLittle32(uint32 x)
 {
-    if (sysIsLittleEndian)
+    if constexpr (endian::native == endian::little)
         return x;
     else {
         _sysEndianSwap(&x);
@@ -143,7 +143,7 @@ constexpr inline uint32 sysEndianLittle32(uint32 x)
 
 constexpr inline float sysEndianLittleFloat(float x)
 {
-    if (sysIsLittleEndian)
+    if constexpr (endian::native == endian::little)
         return x;
     else {
         _sysEndianSwap((uint32*)(void*)&x);
@@ -153,7 +153,7 @@ constexpr inline float sysEndianLittleFloat(float x)
 
 inline void sysEndianLittleArray16(uint16* x, int length)
 {
-    if (sysIsLittleEndian)
+    if constexpr (endian::native == endian::little)
         return;
     else {
         for (int i = 0; i < length; ++i)
@@ -163,7 +163,7 @@ inline void sysEndianLittleArray16(uint16* x, int length)
 
 inline void sysEndianLittleArray32(uint32* x, int length)
 {
-    if (sysIsLittleEndian)
+    if constexpr (endian::native == endian::little)
         return;
     else {
         for (int i = 0; i < length; ++i)
@@ -173,7 +173,7 @@ inline void sysEndianLittleArray32(uint32* x, int length)
 
 inline void sysEndianLittleArrayFloat(float* x, int length)
 {
-    if (sysIsLittleEndian)
+    if constexpr (endian::native == endian::little)
         return;
     else {
         for (int i = 0; i < length; ++i)
@@ -183,7 +183,7 @@ inline void sysEndianLittleArrayFloat(float* x, int length)
 
 inline void sysEndianBigArray16(uint16* x, int length)
 {
-    if (sysIsBigEndian)
+    if constexpr (endian::native == endian::big)
         return;
     else {
         for (int i = 0; i < length; ++i)
@@ -193,7 +193,7 @@ inline void sysEndianBigArray16(uint16* x, int length)
 
 inline void sysEndianBigArray32(uint32* x, int length)
 {
-    if (sysIsBigEndian)
+    if constexpr (endian::native == endian::big)
         return;
     else {
         for (int i = 0; i < length; ++i)
@@ -203,7 +203,7 @@ inline void sysEndianBigArray32(uint32* x, int length)
 
 inline void sysEndianBigArrayFloat(float* x, int length)
 {
-    if (sysIsBigEndian)
+    if constexpr (endian::native == endian::big)
         return;
     else {
         for (int i = 0; i < length; ++i)
@@ -211,8 +211,9 @@ inline void sysEndianBigArrayFloat(float* x, int length)
     }
 }
 
-constexpr inline uint16 sysEndianBig16(uint16 x) {
-    if (sysIsBigEndian)
+constexpr inline uint16 sysEndianBig16(uint16 x)
+{
+    if constexpr (endian::native == endian::big)
         return x;
     else {
         _sysEndianSwap(&x);
@@ -220,8 +221,9 @@ constexpr inline uint16 sysEndianBig16(uint16 x) {
     }
 }
 
-constexpr inline uint32 sysEndianBig32(uint32 x) {
-    if (sysIsBigEndian)
+constexpr inline uint32 sysEndianBig32(uint32 x)
+{
+    if constexpr (endian::native == endian::big)
         return x;
     else {
         _sysEndianSwap(&x);
@@ -229,8 +231,9 @@ constexpr inline uint32 sysEndianBig32(uint32 x) {
     }
 }
 
-constexpr inline float sysEndianBigFloat(float x) {
-    if (sysIsBigEndian)
+constexpr inline float sysEndianBigFloat(float x)
+{
+    if constexpr (endian::native == endian::big)
         return x;
     else {
         _sysEndianSwap((uint32*)(void*)&x);

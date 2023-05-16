@@ -62,8 +62,8 @@ COID_NAMESPACE_BEGIN
 ///String class, size of char*, keeps terminating zero
 class charstr
 {
-    friend binstream& operator >> (binstream &in, charstr& x);
-    friend binstream& operator << (binstream &out, const charstr& x);
+    friend binstream& operator >> (binstream& in, charstr& x);
+    friend binstream& operator << (binstream& out, const charstr& x);
 
 public:
 
@@ -149,28 +149,28 @@ public:
 
     ///Take control over content of another string, the other string becomes empty
     template<class COUNT>
-    charstr& takeover(dynarray<char,COUNT>& ref)
+    charstr& takeover(dynarray<char, COUNT>& ref)
     {
         _tstr.takeover(ref);
-        if(_tstr.size() > 0 && _tstr[_tstr.size() - 1] != 0)
+        if (_tstr.size() > 0 && _tstr[_tstr.size() - 1] != 0)
             *_tstr.add() = 0;
         return *this;
     }
 
     ///Take control over content of another string, the other string becomes empty
     template<class COUNT>
-    charstr& takeover(dynarray<uchar,COUNT>& ref)
+    charstr& takeover(dynarray<uchar, COUNT>& ref)
     {
         _tstr.discard();
         _tstr.swap(reinterpret_cast<dynarray<char>&>(ref));
 
-        if(_tstr.size() > 0 && _tstr[_tstr.size() - 1] != 0)
+        if (_tstr.size() > 0 && _tstr[_tstr.size() - 1] != 0)
             *_tstr.add() = 0;
         return *this;
     }
 
     ///Hand control over to the given dynarray<char> object
-    void handover(dynarray<char,uint>& dst)
+    void handover(dynarray<char, uint>& dst)
     {
         dst.takeover(_tstr);
     }
@@ -183,12 +183,12 @@ public:
     }
 
     ///Swap strings
-    friend void swap( charstr& a, charstr& b )
+    friend void swap(charstr& a, charstr& b)
     {
         swap(a._tstr, b._tstr);
     }
 
-    void swap( charstr& other ) {
+    void swap(charstr& other) {
         swap(_tstr, other._tstr);
     }
 
@@ -266,7 +266,7 @@ public:
 
     const char* set_from(const char* czstr, uints slen)
     {
-        if(slen == 0) {
+        if (slen == 0) {
             reset();
             return czstr;
         }
@@ -286,7 +286,7 @@ public:
 
     const char* add_from(const token& tok)
     {
-        if(tok.is_empty())
+        if (tok.is_empty())
             return tok.ptr();
         _append(tok.ptr(), tok.len());
         _tstr[tok.len()] = 0;
@@ -295,7 +295,7 @@ public:
 
     const char* add_from(const char* czstr, uints slen)
     {
-        if(slen == 0)
+        if (slen == 0)
             return czstr;
 
         DASSERTN(slen <= UMAX32);
@@ -315,11 +315,11 @@ public:
     ///Copy to buffer, terminate with zero
     char* copy_to(char* str, uints maxbufsize) const
     {
-        if(maxbufsize == 0)
+        if (maxbufsize == 0)
             return str;
 
         uints lt = lens();
-        if(lt >= maxbufsize)
+        if (lt >= maxbufsize)
             lt = maxbufsize - 1;
         xmemcpy(str, _tstr.ptr(), lt);
         str[lt] = 0;
@@ -330,11 +330,11 @@ public:
     ///Copy to buffer, unterminated
     uints copy_raw_to(char* str, uints maxbufsize) const
     {
-        if(maxbufsize == 0)
+        if (maxbufsize == 0)
             return 0;
 
         uints lt = lens();
-        if(lt > maxbufsize)
+        if (lt > maxbufsize)
             lt = maxbufsize;
         xmemcpy(str, _tstr.ptr(), lt);
 
@@ -345,9 +345,9 @@ public:
     ///Cut to specified length, negative numbers cut abs(len) from the end
     charstr& resize(ints length)
     {
-        if(length < 0)
+        if (length < 0)
         {
-            if((uints)-length >= lens())
+            if ((uints)-length >= lens())
                 reset();
             else {
                 _tstr.realloc(lens() + length + 1);
@@ -358,12 +358,12 @@ public:
             uints ts = lens();
             DASSERTN(ts + length <= UMAX32);
 
-            if((uints)length < ts)
+            if ((uints)length < ts)
             {
                 _tstr.realloc(length + 1);
                 _tstr.ptr()[length] = 0;
             }
-            else if(_tstr.size() > 0)
+            else if (_tstr.size() > 0)
                 termzero();
         }
 
@@ -373,7 +373,7 @@ public:
     ///Trim leading and trailing newlines (both \n and \r)
     charstr& trim(bool newline = true, bool whitespace = true)
     {
-        if(_tstr.size() <= 1)  return *this;
+        if (_tstr.size() <= 1)  return *this;
 
         token tok = *this;
         tok.trim(newline, whitespace);
@@ -381,9 +381,9 @@ public:
         ints lead = tok.ptr() - ptr();
         ints trail = ptre() - tok.ptre();
 
-        if(lead > 0)
+        if (lead > 0)
             del(0, uint(lead));
-        if(trail)
+        if (trail)
             resize(-trail);
         return *this;
     }
@@ -413,13 +413,13 @@ public:
 
 
     template <int N>
-    charstr& operator = (const char (&str)[N])    { return set(token::from_literal(str, N-1)); }
+    charstr& operator = (const char(&str)[N]) { return set(token::from_literal(str, N - 1)); }
 
     template <int N>
-    charstr& operator = (char (&str)[N])          { return set(token::from_cstring(str, N-1)); }
+    charstr& operator = (char(&str)[N]) { return set(token::from_cstring(str, N - 1)); }
 
     template<typename T>
-    typename is_char_ptr<T,charstr&>::type operator = (T czstr) {
+    typename is_char_ptr<T, charstr&>::type operator = (T czstr) {
         return set(token::from_cstring(czstr));
     }
 
@@ -459,7 +459,7 @@ public:
     ///Formatted numbers - floats
     template<int WIDTH, int ALIGN>
     charstr& operator = (const float_fmt<WIDTH, ALIGN>& v) {
-        if(WIDTH == 0)
+        if (WIDTH == 0)
             append_float(v.value, v.nfrac);
         else {
             char* buf = get_buf(WIDTH);
@@ -533,13 +533,13 @@ public:
     TOKEN_OP_STR_NONCONST(charstr&, +=);
 
     charstr& operator += (const token& tok) {
-        if(!tok) return *this;
+        if (!tok) return *this;
         _append(tok.ptr(), tok.len());
         return *this;
     }
 
     charstr& operator += (const charstr& str) {
-        if(str.is_empty()) return *this;
+        if (str.is_empty()) return *this;
         _append(str.ptr(), str.len());
         return *this;
     }
@@ -578,7 +578,7 @@ public:
     ///Formatted numbers - floats
     template<int WIDTH, int ALIGN>
     charstr& operator += (const float_fmt<WIDTH, ALIGN>& v) {
-        if(WIDTH == 0)
+        if (WIDTH == 0)
             append_float(v.value, v.nfrac);
         else {
             char* buf = get_append_buf(WIDTH);
@@ -638,7 +638,7 @@ public:
     ///Formatted numbers - floats
     template<int WIDTH, int ALIGN>
     charstr& operator << (const float_fmt<WIDTH, ALIGN>& v) {
-        if(WIDTH == 0)
+        if (WIDTH == 0)
             append_float(v.value, v.nfrac);
         else {
             char* buf = get_append_buf(WIDTH);
@@ -651,12 +651,12 @@ public:
     charstr& operator << (const dynarray<T>& a)
     {
         uints n = a.size();
-        if(n == 0)
+        if (n == 0)
             return *this;
 
         --n;
         uints i;
-        for(i = 0; i < n; ++i)
+        for (i = 0; i < n; ++i)
             (*this) << a[i] << " ";
         (*this) << a[i];
 
@@ -672,7 +672,7 @@ public:
             out << " (code: " << tmp << ")";
         }*/
 
-        if(f.e.text() && f.e.text()[0])
+        if (f.e.text() && f.e.text()[0])
             out << " : " << f.e.text();
         return out;
     }
@@ -697,7 +697,7 @@ public:
         uints i = charstrconv::num_formatter<uint64>::precompute(buf, n, BaseN, sgn);
 
         uints fc = 0;              //fill count
-        if(i < minsize)
+        if (i < minsize)
             fc = minsize - i;
 
         char* p = get_append_buf(i + fc);
@@ -720,7 +720,7 @@ public:
     uint append_num_int(int base, const void* p, uints bytes, uints minsize = 0, EAlignNum align = ALIGN_NUM_RIGHT)
     {
         uint e;
-        switch(bytes)
+        switch (bytes)
         {
         case 1: e = append_num_signed(base, *(int8*)p, minsize, align);  break;
         case 2: e = append_num_signed(base, *(int16*)p, minsize, align);  break;
@@ -735,7 +735,7 @@ public:
     uint append_num_uint(int base, const void* p, uints bytes, uints minsize = 0, EAlignNum align = ALIGN_NUM_RIGHT)
     {
         uint e;
-        switch(bytes)
+        switch (bytes)
         {
         case 1: e = append_num_unsigned(base, *(uint8*)p, 0, minsize, align);  break;
         case 2: e = append_num_unsigned(base, *(uint16*)p, 0, minsize, align);  break;
@@ -751,14 +751,14 @@ public:
     /// @return offset past the last non-padding character
     uint append_num_thousands(int64 n, char thousand_sep = ' ', uints minsize = 0, EAlignNum align = ALIGN_NUM_RIGHT)
     {
-        if(n == 0)
+        if (n == 0)
             return append_num(10, n, minsize, align);
 
         int64 mods[(64 + 10 - 1) / 10];
         uints k = 0;
         uint64 v = n < 0 ? -n : n;
 
-        for(; v >= 1000; ++k) {
+        for (; v >= 1000; ++k) {
             mods[k] = v % 1000;
             v = v / 1000;
         }
@@ -769,10 +769,10 @@ public:
         size += nlead;
         size += 3 * k;
 
-        if(thousand_sep)
+        if (thousand_sep)
             size += k;
 
-        if(minsize < size)
+        if (minsize < size)
             minsize = size;
 
         char* dst = alloc_append_buf(minsize);
@@ -781,14 +781,14 @@ public:
 
         buf -= size;
 
-        if(n < 0)
+        if (n < 0)
             *buf++ = '-';
 
         buf += charstrconv::num_formatter<uint64>::write(buf, nlead, v, 10, ' ');
 
-        for(; k > 0; ) {
+        for (; k > 0; ) {
             --k;
-            if(thousand_sep)
+            if (thousand_sep)
                 *buf++ = thousand_sep;
 
             buf += charstrconv::num_formatter<uint64>::write(buf, 3, int_abs(mods[k]), 10, '0');
@@ -803,7 +803,7 @@ public:
     /// @param align alignment
     /// @param space space character between number and unit prefix, 0 for none
     /// @return offset past the last non-padding character
-    uint append_num_metric(uint64 num, uint minsize = 0, EAlignNum align = ALIGN_NUM_RIGHT, char space=' ')
+    uint append_num_metric(uint64 num, uint minsize = 0, EAlignNum align = ALIGN_NUM_RIGHT, char space = ' ')
     {
         double v = double(num);
         int ndigits = num > 0
@@ -856,7 +856,7 @@ public:
     void append_time_formatted(uint64 n, bool msec = false, int maxlev = 3)
     {
         uint ms;
-        if(msec) {
+        if (msec) {
             ms = uint(n % 1000);
             n /= 1000;
         }
@@ -866,28 +866,28 @@ public:
         uint mns = hs / 60;
         uint sec = hs % 60;
 
-        if(maxlev >= 4) {
+        if (maxlev >= 4) {
             uint days = hrs / 24;
             hrs = hrs % 24;
             append_num(10, days);
             append('d');
         }
 
-        if(maxlev >= 3) {
-            if(maxlev >= 4)
+        if (maxlev >= 3) {
+            if (maxlev >= 4)
                 append_num(10, hrs, 2, ALIGN_NUM_RIGHT_FILL_ZEROS);
             else
                 append_num(10, hrs);
             append(':');
         }
-        if(maxlev >= 2) {
+        if (maxlev >= 2) {
             append_num(10, mns, 2, ALIGN_NUM_RIGHT_FILL_ZEROS);
             append(':');
         }
-        if(maxlev >= 1)
+        if (maxlev >= 1)
             append_num(10, sec, 2, ALIGN_NUM_RIGHT_FILL_ZEROS);
 
-        if(msec && maxlev >= 0) {
+        if (msec && maxlev >= 0) {
             append('.');
             append_num(10, ms, 3, ALIGN_NUM_RIGHT_FILL_ZEROS);
         }
@@ -907,7 +907,7 @@ public:
     /// @param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
     void append_float(double d, int nfrac, uints maxsize = 0)
     {
-        if(!maxsize)
+        if (!maxsize)
             maxsize = std::abs(ints(nfrac)) + 4;
         char* buf = get_append_buf(maxsize);
         char* end = charstrconv::append_float(buf, buf + maxsize, d, nfrac);
@@ -945,7 +945,7 @@ public:
     uint append_aligned(const token& tok, uint width, EAlignNum align = ALIGN_NUM_LEFT)
     {
         uint len = tok.len();
-        if(len > width)
+        if (len > width)
             len = width;
 
         char* dst = alloc_append_buf(width);
@@ -959,7 +959,7 @@ public:
 
     charstr& append(char c)
     {
-        if(c)
+        if (c)
             *uniadd(1) = c;
         return *this;
     }
@@ -967,8 +967,8 @@ public:
     ///Append n characters
     charstr& appendn(uints n, char c)
     {
-        char *p = uniadd(n);
-        for(; n > 0; --n)
+        char* p = uniadd(n);
+        for (; n > 0; --n)
             *p++ = c;
         return *this;
     }
@@ -977,8 +977,8 @@ public:
     charstr& appendn(uints n, const token& tok)
     {
         uint nc = tok.len();
-        char *p = uniadd(n*nc);
-        for(; n > 0; --n) {
+        char* p = uniadd(n * nc);
+        for (; n > 0; --n) {
             ::memcpy(p, tok.ptr(), nc);
             p += nc;
         }
@@ -1028,17 +1028,17 @@ public:
     /// @param fmt msg and format string, with {} for variable substitutions, e.g. "foo {} bar {} end"
     /// @param args variadic parameters
     template<typename ...Args>
-    void print( const token& fmt, Args&& ...args )
+    void print(const token& fmt, Args&& ...args)
     {
         constexpr int N = sizeof...(args);
-        token substrings[N+1];
+        token substrings[N + 1];
 
         int n = 0;
         token str = fmt;
 
         do {
             token p = str.cut_left("{}", false);
-            if(p.ptre() < str.ptr())
+            if (p.ptre() < str.ptr())
                 substrings[n++] = p;
             else {
                 //no more {} in the string
@@ -1046,10 +1046,10 @@ public:
                 break;
             }
         }
-        while(n<N);
+        while (n < N);
 
         auto fn = [&](int k, auto&& v) {
-            if(k < n)
+            if (k < n)
                 (*this) << substrings[k] << v;
         };
         variadic_call(fn, std::forward<Args>(args)...);
@@ -1066,7 +1066,7 @@ public:
         char* p = alloc_append_buf(n);
         const char* s = tok.ptr();
 
-        for(uint i = 0; i < n; ++i)
+        for (uint i = 0; i < n; ++i)
             p[i] = s[i] == from ? to : s[i];
         return *this;
     }
@@ -1075,7 +1075,7 @@ public:
     /// @return number of bytes written
     uint append_ucs4(ucs4 c)
     {
-        if(c <= 0x7f) {
+        if (c <= 0x7f) {
             append((char)c);
             return 1;
         }
@@ -1097,9 +1097,9 @@ public:
         uints nold = lens();
         _tstr.set_size(nold);
 
-        for(; *src != 0 && nchars > 0; ++src, --nchars)
+        for (; *src != 0 && nchars > 0; ++src, --nchars)
         {
-            if(*src <= 0x7f)
+            if (*src <= 0x7f)
                 *_tstr.add() = (char)*src;
             else
             {
@@ -1109,7 +1109,7 @@ public:
                 _tstr.set_size(old + n);
             }
         }
-        if(_tstr.size())
+        if (_tstr.size())
             *_tstr.add() = 0;
 
         return uint(lens() - nold);
@@ -1162,7 +1162,7 @@ public:
         struct tm tm;
         localtime_s(&tm, &t.t);
         char tzbuf[32];
-        if(flg & DATE_TZ) {
+        if (flg & DATE_TZ) {
             uints sz;
             _get_tzname(&sz, tzbuf, 32, 0);
         }
@@ -1184,23 +1184,23 @@ public:
             "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
         };
 
-        if(flg & DATE_WDAY) {
+        if (flg & DATE_WDAY) {
             add_from(wday[tm.tm_wday], 3);
             add_from(", ", 2);
         }
 
-        if(flg & DATE_MDAY) {
+        if (flg & DATE_MDAY) {
             append_num(10, tm.tm_mday);
             append(' ');
         }
 
-        if(flg & DATE_MONTH) {
+        if (flg & DATE_MONTH) {
             add_from(mons[tm.tm_mon], 3);
             append(' ');
         }
 
         // 2008-02-22T15:08:13Z
-        if(flg & DATE_ISO8601) {
+        if (flg & DATE_ISO8601) {
             append_num(10, tm.tm_year + 1900);
             append('-');
             append_num(10, tm.tm_mon + 1);
@@ -1208,36 +1208,36 @@ public:
             append_num(10, tm.tm_mday);
             append('T');
         }
-        else if(flg & DATE_YYYYMMDD) {
+        else if (flg & DATE_YYYYMMDD) {
             append_num(10, tm.tm_year + 1900, 4, coid::ALIGN_NUM_RIGHT_FILL_ZEROS);
             append(':');
             append_num(10, tm.tm_mon + 1, 2, coid::ALIGN_NUM_RIGHT_FILL_ZEROS);
             append(':');
             append_num(10, tm.tm_mday, 2, coid::ALIGN_NUM_RIGHT_FILL_ZEROS);
         }
-        else if(flg & DATE_YEAR) {
+        else if (flg & DATE_YEAR) {
             append_num(10, tm.tm_year + 1900);
         }
 
-        if(flg & (DATE_HHMM | DATE_HHMMSS | DATE_ISO8601)) {
+        if (flg & (DATE_HHMM | DATE_HHMMSS | DATE_ISO8601)) {
             append((flg & DATE_ISO8601) ? 'T' : ' ');
             append_num(10, tm.tm_hour, 2, ALIGN_NUM_RIGHT_FILL_ZEROS);
             append(':');
             append_num(10, tm.tm_min, 2, ALIGN_NUM_RIGHT_FILL_ZEROS);
         }
 
-        if(flg & (DATE_HHMMSS | DATE_ISO8601)) {
+        if (flg & (DATE_HHMMSS | DATE_ISO8601)) {
             append(':');
             append_num(10, tm.tm_sec, 2, ALIGN_NUM_RIGHT_FILL_ZEROS);
         }
 
-        if(flg & DATE_TZ) {
+        if (flg & DATE_TZ) {
             append(' ');
             append(tz);
         }
 
-        if(flg & DATE_ISO8601) {
-            if(flg & DATE_ISO8601_GMT)
+        if (flg & DATE_ISO8601) {
+            if (flg & DATE_ISO8601_GMT)
                 append('Z');
             else {
                 int t;
@@ -1250,7 +1250,7 @@ public:
 #else
                 t = -__timezone;
 #endif
-                if(t > 0) append('+');
+                if (t > 0) append('+');
                 append_num(10, t / 3600, 2, ALIGN_NUM_RIGHT_FILL_ZEROS);
                 append(':');
                 append_num(10, (t % 3600) / 60, 2, ALIGN_NUM_RIGHT_FILL_ZEROS);
@@ -1260,12 +1260,12 @@ public:
         return *this;
     }
 
-    charstr& append_time_xsd(const timet & t)
+    charstr& append_time_xsd(const timet& t)
     {
         return append_date_local(t, DATE_ISO8601);
     }
 
-    charstr& append_time_xsd_gmt(const timet & t)
+    charstr& append_time_xsd_gmt(const timet& t)
     {
         return append_date_local(t, DATE_ISO8601 | DATE_ISO8601_GMT);
     }
@@ -1295,21 +1295,21 @@ public:
 
     ///Append string while encoding characters as specified for URI encoding
     /// @param component true for encoding URI components, false for encoding URI
-    charstr& append_encode_url( const token& str, bool component=true )
+    charstr& append_encode_url(const token& str, bool component = true)
     {
         static char charmap[256];
         static const char* hexmap = 0;
 
-        if(!hexmap) {
+        if (!hexmap) {
             ::memset(charmap, 0, sizeof(charmap));
 
-            for(uchar i = '0'; i <= '9'; ++i)  charmap[i] = 1;
-            for(uchar i = 'a'; i <= 'z'; ++i)  charmap[i] = 1;
-            for(uchar i = 'A'; i <= 'Z'; ++i)  charmap[i] = 1;
+            for (uchar i = '0'; i <= '9'; ++i)  charmap[i] = 1;
+            for (uchar i = 'a'; i <= 'z'; ++i)  charmap[i] = 1;
+            for (uchar i = 'A'; i <= 'Z'; ++i)  charmap[i] = 1;
             const char* spec1 = "-_.~!*'()";
             const char* spec2 = ";,/?:@&=+$";
-            for(; *spec1; ++spec1) charmap[(uchar)*spec1] = 1;  //unreserved
-            for(; *spec2; ++spec2) charmap[(uchar)*spec2] = 2;  //not escaped when component=false
+            for (; *spec1; ++spec1) charmap[(uchar)*spec1] = 1;  //unreserved
+            for (; *spec2; ++spec2) charmap[(uchar)*spec2] = 2;  //not escaped when component=false
 
             hexmap = "0123456789abcdef";
         }
@@ -1318,12 +1318,12 @@ public:
         const char* pe = str.ptre();
         const char* ps = p;
 
-        for(; p < pe; ++p) {
+        for (; p < pe; ++p) {
             uchar c = *p;
 
-            if(charmap[c] == 0 || (component && charmap[c] == 2))
+            if (charmap[c] == 0 || (component && charmap[c] == 2))
             {
-                if(p - ps)
+                if (p - ps)
                     add_from(ps, p - ps);
 
                 char* h = uniadd(3);
@@ -1335,7 +1335,7 @@ public:
             }
         }
 
-        if(p - ps)
+        if (p - ps)
             add_from(ps, p - ps);
 
         return *this;
@@ -1344,7 +1344,7 @@ public:
     ///Replace all non-alphanumeric characters
     charstr& replace_non_alphanum(char replacement)
     {
-        for (char* p = (char*) ptr(), *pe = (char*) ptre(); p < pe; ++p) {
+        for (char* p = (char*)ptr(), *pe = (char*)ptre(); p < pe; ++p) {
             uchar c = *p;
 
             if (((c >= 'A') && (c <= 'Z')) || ((c >= 'a') && (c <= 'z')) || ((c >= '0') && (c <= '9'))) {
@@ -1363,20 +1363,20 @@ public:
         token src = str;
         const char* ps = src.ptr();
 
-        for(; !src.is_empty(); ) {
-            if(++src != '%')
+        for (; !src.is_empty(); ) {
+            if (++src != '%')
                 continue;
 
             add_from(ps, src.ptr() - 1 - ps);
 
-            char v = (char) src.touint_base_and_shift(16, 0, 2);
-            if(v)
+            char v = (char)src.touint_base_and_shift(16, 0, 2);
+            if (v)
                 *uniadd(1) = v;
 
             ps = src.ptr();
         }
 
-        if(src.ptr() > ps)
+        if (src.ptr() > ps)
             add_from(ps, src.ptr() - ps);
 
         return *this;
@@ -1386,7 +1386,7 @@ public:
     static char escape_char(char c, char strdel = 0)
     {
         char v = 0;
-        switch(c) {
+        switch (c) {
         case '\a': v = 'a'; break;
         case '\b': v = 'b'; break;
         case '\t': v = 't'; break;
@@ -1394,8 +1394,8 @@ public:
         case '\v': v = 'v'; break;
         case '\f': v = 'f'; break;
         case '\r': v = 'r'; break;
-        case '\"': if(strdel == '"' || strdel == 0) v = '"'; break;
-        case '\'': if(strdel == '\'' || strdel == 0) v = '\''; break;
+        case '\"': if (strdel == '"' || strdel == 0) v = '"'; break;
+        case '\'': if (strdel == '\'' || strdel == 0) v = '\''; break;
         case '\\': v = '\\'; break;
         }
         return v;
@@ -1406,7 +1406,7 @@ public:
     charstr& append_escaped(char c, char strdel = 0)
     {
         char v = escape_char(c, strdel);
-        if(v) {
+        if (v) {
             char* dst = alloc_append_buf(2);
             dst[0] = '\\';
             dst[1] = v;
@@ -1425,10 +1425,10 @@ public:
         const char* pe = str.ptre();
         const char* ps = p;
 
-        for(; p < pe; ++p) {
+        for (; p < pe; ++p) {
             char v = escape_char(*p, strdel);
 
-            if(v) {
+            if (v) {
                 ints len = p - ps;
                 char* dst = alloc_append_buf(len + 2);
                 xmemcpy(dst, ps, len);
@@ -1439,7 +1439,7 @@ public:
             }
         }
 
-        if(p > ps)
+        if (p > ps)
             add_from(ps, p - ps);
         return *this;
     }
@@ -1450,7 +1450,7 @@ public:
         static const char* table_ = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
         char* buf = alloc_append_buf(((uints(str.len()) + 2) / 3) * 4);
 
-        while(str.len() >= 3)
+        while (str.len() >= 3)
         {
             uint w = (str._ptr[0] << 16) | (str._ptr[1] << 8) | str._ptr[2];
             str.shift_start(3);
@@ -1461,7 +1461,7 @@ public:
             *buf++ = table_[uint8(w & 0x3f)];
         }
 
-        if(str.len() == 1)    //2 bytes missing
+        if (str.len() == 1)    //2 bytes missing
         {
             uint w = (str._ptr[0] << 16);
             *buf++ = table_[uint8((w >> 18) & 0x3f)];
@@ -1469,7 +1469,7 @@ public:
             *buf++ = '=';
             *buf++ = '=';
         }
-        else if(str.len() == 2)
+        else if (str.len() == 2)
         {
             uint w = (str._ptr[0] << 16) | (str._ptr[1] << 8);
             *buf++ = table_[uint8((w >> 18) & 0x3f)];
@@ -1487,20 +1487,20 @@ public:
 
         int cut = 0;
         uint r = 0, n = 4;
-        while(!str.is_empty())
+        while (!str.is_empty())
         {
             char c = *str._ptr++;
             --n;
 
-            if(c >= 'A' && c <= 'Z')      r |= (c - 'A') << (n * 6);
-            else if(c >= 'a' && c <= 'z') r |= (c - 'a' + 26) << (n * 6);
-            else if(c >= '0' && c <= '9') r |= (c - '0' + 2 * 26) << (n * 6);
-            else if(c == '+')             r |= 62 << (n * 6);
-            else if(c == '/')             r |= 63 << (n * 6);
-            else if(c == '=') {
+            if (c >= 'A' && c <= 'Z')      r |= (c - 'A') << (n * 6);
+            else if (c >= 'a' && c <= 'z') r |= (c - 'a' + 26) << (n * 6);
+            else if (c >= '0' && c <= '9') r |= (c - '0' + 2 * 26) << (n * 6);
+            else if (c == '+')             r |= 62 << (n * 6);
+            else if (c == '/')             r |= 63 << (n * 6);
+            else if (c == '=') {
                 //end of input
                 const char* pe = str._ptr + n;
-                if(n > 1 || str._pte != pe) {
+                if (n > 1 || str._pte != pe) {
                     resize(-na);
                     return false; //malformed input
                 }
@@ -1513,7 +1513,7 @@ public:
                 return false; //unrecognized char
             }
 
-            if(n == 0) {
+            if (n == 0) {
                 *buf++ = r >> 16;
                 *buf++ = (r >> 8) & 0xff;
                 *buf++ = r & 0xff;
@@ -1522,12 +1522,12 @@ public:
             }
         }
 
-        if(n < 4) {
+        if (n < 4) {
             resize(-na);
             return false; //truncated input
         }
 
-        if(cut)
+        if (cut)
             resize(-cut);
         return true;
     }
@@ -1541,17 +1541,17 @@ public:
     /// @param prefix before each item
     charstr& append_prehex(const void* src, uints nitems, uint itemsize, const token& prefix)
     {
-        if(nitems == 0)
+        if (nitems == 0)
             return *this;
 
-        for(uints i = 0;; )
+        for (uints i = 0;; )
         {
             append(prefix);
             char* pdst = get_append_buf(uints(itemsize) * 2);
 
-            if(sysIsLittleEndian)
+            if constexpr (endian::native == endian::little)
             {
-                for(uint j = itemsize; j > 0; )
+                for (uint j = itemsize; j > 0; )
                 {
                     --j;
                     write_hex_code(((uchar*)src)[j], pdst);
@@ -1560,7 +1560,7 @@ public:
             }
             else
             {
-                for(uint j = 0; j < itemsize; ++j)
+                for (uint j = 0; j < itemsize; ++j)
                 {
                     write_hex_code(((uchar*)src)[j], pdst);
                     pdst += 2;
@@ -1570,7 +1570,7 @@ public:
             src = (uchar*)src + itemsize;
 
             ++i;
-            if(i >= nitems)  break;
+            if (i >= nitems)  break;
         }
 
         return *this;
@@ -1587,7 +1587,7 @@ public:
     charstr& append_color(uint color)
     {
         const uint8* pb = (const uint8*)&color;
-        if(!sysIsLittleEndian)
+        if constexpr (endian::native != endian::little)
             ++pb;
         return append_prehex(pb, 1, 3, "#");
     }
@@ -1628,21 +1628,21 @@ public:
     void clamp_range(ints& from, ints& to) const
     {
         ints size = len();
-        if(from < 0)  from = size - from;
-        if(to <= 0)   to = size - to;
+        if (from < 0)  from = size - from;
+        if (to <= 0)   to = size - to;
 
-        if(from >= size) from = size;
-        else if(from < 0) from = 0;
+        if (from >= size) from = size;
+        else if (from < 0) from = 0;
 
-        if(to >= size) to = size;
-        else if(to < from) to = from;
+        if (to >= size) to = size;
+        else if (to < from) to = from;
     }
 
     ///Convert string to lowercase
     charstr& tolower()
     {
         char* pe = (char*)ptre();
-        for(char* p = (char*)ptr(); p < pe; ++p)
+        for (char* p = (char*)ptr(); p < pe; ++p)
             *p = (char) ::tolower(*p);
 
         return *this;
@@ -1654,7 +1654,7 @@ public:
         clamp_range(from, to);
 
         char* pe = (char*)ptr() + to;
-        for(char* p = (char*)ptr() + from; p < pe; ++p)
+        for (char* p = (char*)ptr() + from; p < pe; ++p)
             *p = (char) ::tolower(*p);
 
         return *this;
@@ -1664,7 +1664,7 @@ public:
     charstr& toupper()
     {
         char* pe = (char*)ptre();
-        for(char* p = (char*)ptr(); p < pe; ++p)
+        for (char* p = (char*)ptr(); p < pe; ++p)
             *p = (char) ::toupper(*p);
 
         return *this;
@@ -1676,7 +1676,7 @@ public:
         clamp_range(from, to);
 
         char* pe = (char*)ptr() + to;
-        for(char* p = (char*)ptr() + from; p < pe; ++p)
+        for (char* p = (char*)ptr() + from; p < pe; ++p)
             *p = (char) ::toupper(*p);
 
         return *this;
@@ -1718,7 +1718,7 @@ public:
         uint slen = len();
         uint npos = pos < 0 ? slen + pos : pos;
 
-        if(npos > slen)  return false;
+        if (npos > slen)  return false;
         *_tstr.ins(npos) = c;
         return true;
     }
@@ -1729,7 +1729,7 @@ public:
         uint slen = len();
         uint npos = pos < 0 ? slen + pos : pos;
 
-        if(npos > slen)  return false;
+        if (npos > slen)  return false;
         xmemcpy(_tstr.ins(npos, t.len()), t.ptr(), t.len());
         return true;
     }
@@ -1742,7 +1742,7 @@ public:
         uint slen = len();
         uint npos = pos < 0 ? slen + pos : pos;
 
-        if(npos + n > slen)  return false;
+        if (npos + n > slen)  return false;
         _tstr.del(npos, n > slen - npos ? slen - npos : n);
         return true;
     }
@@ -1812,9 +1812,9 @@ public:
     /// @return true if strings are equal
     bool operator == (const charstr& str) const
     {
-        if(ptr() == str.ptr())
+        if (ptr() == str.ptr())
             return 1;           //only when 0==0
-        if(len() != str.len())
+        if (len() != str.len())
             return 0;
         return 0 == memcmp(_tstr.ptr(), str._tstr.ptr(), len());
         //return _tbuf.operator == (str._tbuf);
@@ -1823,22 +1823,22 @@ public:
 
     /// @return true if strings are equal
     bool operator == (const token& tok) const {
-        if(tok.len() != len())  return false;
+        if (tok.len() != len())  return false;
         return strncmp(_tstr.ptr(), tok.ptr(), tok.len()) == 0;
     }
 
     bool operator != (const token& tok) const {
-        if(tok.len() != len())  return true;
+        if (tok.len() != len())  return true;
         return strncmp(_tstr.ptr(), tok.ptr(), tok.len()) != 0;
     }
 
     /// @return true if string contains only the given character
     bool operator == (const char c) const {
-        if(len() != 1)  return false;
+        if (len() != 1)  return false;
         return _tstr[0] == c;
     }
     bool operator != (const char c) const {
-        if(len() != 1)  return true;
+        if (len() != 1)  return true;
         return _tstr[0] != c;
     }
 
@@ -1848,13 +1848,13 @@ public:
 
 
     bool operator > (const charstr& str) const {
-        if(!len())  return 0;
-        if(!str.len())  return 1;
+        if (!len())  return 0;
+        if (!str.len())  return 1;
         return strcmp(_tstr.ptr(), str._tstr.ptr()) > 0;
     }
     bool operator < (const charstr& str) const {
-        if(!str.len())  return 0;
-        if(!len())  return 1;
+        if (!str.len())  return 0;
+        if (!len())  return 1;
         return strcmp(_tstr.ptr(), str._tstr.ptr()) < 0;
     }
     bool operator >= (const charstr& str) const {
@@ -1867,19 +1867,19 @@ public:
 
     bool operator > (const token& tok) const
     {
-        if(is_empty())  return 0;
-        if(tok.is_empty())  return 1;
+        if (is_empty())  return 0;
+        if (tok.is_empty())  return 1;
 
         int k = strncmp(_tstr.ptr(), tok.ptr(), tok.len());
-        if(k == 0)
+        if (k == 0)
             return len() > tok.len();
         return k > 0;
     }
 
     bool operator < (const token& tok) const
     {
-        if(tok.is_empty())  return 0;
-        if(is_empty())  return 1;
+        if (tok.is_empty())  return 0;
+        if (is_empty())  return 1;
 
         int k = strncmp(_tstr.ptr(), tok.ptr(), tok.len());
         return k < 0;
@@ -1934,7 +1934,7 @@ public:
         return *this;
     }
 
-    char *copy32(char *p) const {
+    char* copy32(char* p) const {
         uints len = _tstr.size();
         xmemcpy(p, _tstr.ptr(), len);
         return p + len;
@@ -1945,7 +1945,7 @@ public:
         return _tstr.size() <= 1;
     }
 
-    typedef dynarray<char, uint> charstr::*unspecified_bool_type;
+    typedef dynarray<char, uint> charstr::* unspecified_bool_type;
 
     ///Automatic cast to bool for checking emptiness
     operator unspecified_bool_type () const {
@@ -1981,7 +1981,7 @@ public:
     ///Reserve memory for the string buffer
     /// @param len min size for string to reserve (incl. term zero)
     /// @param m [optional] memory space to use
-    char* reserve( uints len, mspace m = 0 ) {
+    char* reserve(uints len, mspace m = 0) {
         return _tstr.reserve(len, true, m);
     }
 
@@ -2013,9 +2013,9 @@ public:
 
 protected:
 
-    void assign(const char *czstr, uints len)
+    void assign(const char* czstr, uints len)
     {
-        if(len == 0) {
+        if (len == 0) {
             reset();
             return;
         }
@@ -2027,16 +2027,16 @@ protected:
         p[len] = 0;
     }
 
-    void _append(const char *czstr, uints len)
+    void _append(const char* czstr, uints len)
     {
-        if(!len) return;
+        if (!len) return;
         xmemcpy(alloc_append_buf(len), czstr, len);
     }
 
 
     char* alloc_buf(uints len)
     {
-        if(!len) {
+        if (!len) {
             _tstr.reset();
             return 0;
         }
@@ -2051,7 +2051,7 @@ protected:
 
     char* alloc_append_buf(uints len)
     {
-        if(!len) return 0;
+        if (!len) return 0;
         return uniadd(len);
     }
 
@@ -2111,14 +2111,14 @@ public:
     ////////////////////////////////////////////////////////////////////////////////
     bool cmpeq(const token& str) const
     {
-        if(len() != str.len())
+        if (len() != str.len())
             return 0;
         return 0 == memcmp(_tstr.ptr(), str.ptr(), str.len());
     }
 
     bool cmpeqi(const token& str) const
     {
-        if(len() != str.len())
+        if (len() != str.len())
             return 0;
         return 0 == xstrncasecmp(_tstr.ptr(), str.ptr(), str.len());
     }
@@ -2133,10 +2133,10 @@ public:
         uints let = lens();
         uints lex = str.len();
         int r = memcmp(_tstr.ptr(), str.ptr(), uint_min(let, lex));
-        if(r == 0)
+        if (r == 0)
         {
-            if(let < lex)  return -1;
-            if(lex < let)  return 1;
+            if (let < lex)  return -1;
+            if (lex < let)  return 1;
         }
         return r;
     }
@@ -2147,10 +2147,10 @@ public:
         uints let = lens();
         uints lex = str.len();
         int r = memcmp(_tstr.ptr(), str.ptr(), uint_min(let, lex));
-        if(r == 0)
+        if (r == 0)
         {
-            if(let < lex)  return 1;
-            if(lex < let)  return -1;
+            if (let < lex)  return 1;
+            if (lex < let)  return -1;
         }
         return r;
     }
@@ -2160,10 +2160,10 @@ public:
         uints let = lens();
         uints lex = str.len();
         int r = xstrncasecmp(_tstr.ptr(), str.ptr(), uint_min(let, lex));
-        if(r == 0)
+        if (r == 0)
         {
-            if(let < lex)  return -1;
-            if(lex < let)  return 1;
+            if (let < lex)  return -1;
+            if (lex < let)  return 1;
         }
         return r;
     }
@@ -2286,16 +2286,16 @@ inline bool token::utf8_to_wchar_buf(dynarray<wchar_t, uint, A>& dst) const
     uints n = lens();
     const char* p = ptr();
 
-    while(n > 0)
+    while (n > 0)
     {
-        if((uchar)*p <= 0x7f) {
+        if ((uchar)*p <= 0x7f) {
             *dst.add() = *p++;
             --n;
         }
         else
         {
             uints ne = get_utf8_seq_expected_bytes(p);
-            if(ne > n)  return false;
+            if (ne > n)  return false;
 
             *dst.add() = (wchar_t)read_utf8_seq(p);
             p += ne;
@@ -2319,7 +2319,7 @@ struct threadcached_charstr
         bool init = false;
         static zstring::zpool* _pool = (init = true, zstring::local_pool());
 
-        if(init)
+        if (init)
             zstring::max_size_in_pool(_pool, 64);
         return _pool;
     }
@@ -2374,13 +2374,13 @@ struct threadcached<const char*> : public threadcached_charstr<const char*>
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-inline binstream& operator >> (binstream &bin, charstr& x)
+inline binstream& operator >> (binstream& bin, charstr& x)
 {
     x._tstr.reset();
     dynarray<char, uint>::dynarray_binstream_container c(x._tstr);
 
     bin.xread_array(c);
-    if(x._tstr.size())
+    if (x._tstr.size())
         *x._tstr.add() = 0;
     return bin;
 }
@@ -2390,22 +2390,22 @@ inline binstream& charstr::append_from_stream(binstream& bin)
     dynarray<char, uint>::dynarray_binstream_container c(_tstr);
 
     bin.xread_array(c);
-    if(_tstr.size())
+    if (_tstr.size())
         *_tstr.add() = 0;
     return bin;
 }
 
-inline binstream& operator << (binstream &out, const charstr& x)
+inline binstream& operator << (binstream& out, const charstr& x)
 {
     return out.xwrite_token(x.ptr(), x.len());
 }
 
-inline binstream& operator << (binstream &out, const token& x)
+inline binstream& operator << (binstream& out, const token& x)
 {
     return out.xwrite_token(x);
 }
 
-inline binstream& operator >> (binstream &out, token& x)
+inline binstream& operator >> (binstream& out, token& x)
 {
     //this should not be called ever
     RASSERT(0);
@@ -2415,9 +2415,9 @@ inline binstream& operator >> (binstream &out, token& x)
 ////////////////////////////////////////////////////////////////////////////////
 inline opcd binstream::read_key(charstr& key, int kmember, const token& expected_key)
 {
-    if(kmember > 0) {
+    if (kmember > 0) {
         opcd e = read_separator();
-        if(e) return e;
+        if (e) return e;
     }
 
     key.reset();
@@ -2425,7 +2425,7 @@ inline opcd binstream::read_key(charstr& key, int kmember, const token& expected
         c(reinterpret_cast<dynarray<bstype::key, uint>&>(key.dynarray_ref()));
 
     opcd e = read_array(c);
-    if(key.lent())
+    if (key.lent())
         key.appendn_uninitialized(1);
 
     return e;
@@ -2473,7 +2473,7 @@ inline charstr& opcd_formatter::text(charstr& dst) const
 {
     dst << e.error_desc();
 
-    if(e.text() && e.text()[0])
+    if (e.text() && e.text()[0])
         dst << " : " << e.text();
     return dst;
 }

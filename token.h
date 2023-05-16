@@ -158,12 +158,12 @@ struct token
     {
 #ifdef SYSTYPE_MSVC
         char const* p = __FUNCSIG__;
-        while (*p != '<') ++p;
+        while (*p != 0 && *p != '<') ++p;
         ++p;
         const char* pe = p;
         int count = 1;
         for (;; ++pe) {
-            if (*pe == '>') {
+            if (*pe != 0 && *pe == '>') {
                 if (--count == 0)
                     break;
             }
@@ -172,7 +172,7 @@ struct token
         }
 #else
         char const* p = __PRETTY_FUNCTION__;
-        while (*p != '=') ++p;
+        while (*p != 0 && *p != '=') ++p;
         while (*++p == ' ');
         const char* px = p;
         const char* pe = px;

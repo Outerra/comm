@@ -1287,14 +1287,14 @@ public:
             _fmtstreamwr->fmtstream_file_name(name);
     }
 
-    metastream& _xthrow(opcd e) 
-    { 
-        if (e) 
+    metastream& _xthrow(opcd e)
+    {
+        if (e)
         {
             before_exception_throw();
-            throw exception(e); 
+            throw exception(e);
         }
-        return *this; 
+        return *this;
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -1317,8 +1317,8 @@ public:
 
         ///Provide a pointer to next object that should be streamed
         /// @param n number of objects to allocate the space for
-        virtual const void* extract(uints n, metastream* m) override { return _container.extract(n); }
-        virtual void* insert(uints n, metastream* m) override { return _container.insert(n); }
+        virtual const void* extract(uints n) override { return _container.extract(n); }
+        virtual void* insert(uints n, const void* defval) override { return _container.insert(n, defval); }
 
         /// @return true if the storage is continuous in memory
         virtual bool is_continuous() const override { return _container.is_continuous(); }

@@ -227,11 +227,11 @@ inline D down_cast(S v) {
     }
     else if constexpr (!dst_lim::is_signed && src_lim::is_signed)
     {
-        DASSERT(static_cast<std::make_unsigned<S>::type>(v) <= dst_lim::max() && v >= 0);
+        DASSERT(static_cast<typename std::make_unsigned<S>::type>(v) <= dst_lim::max() && v >= 0);
     }
     else if constexpr (dst_lim::is_signed && !src_lim::is_signed)
     {
-        DASSERT(v <= static_cast<std::make_unsigned<D>::type>(dst_lim::max()));
+        DASSERT(v <= static_cast<typename std::make_unsigned<D>::type>(dst_lim::max()));
     }
     else if constexpr (dst_lim::is_signed && src_lim::is_signed)
     {
