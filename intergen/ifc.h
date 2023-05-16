@@ -269,7 +269,7 @@ public:
     /// @param vs variadic parameters
     template<class ...Vs>
     void ifclog(coid::log::level type, const coid::token& fmt, Vs&& ...vs) {
-        ref<coid::logmsg> msgr = coid::interface_register::canlog(type, intergen_interface_name(), this);
+        ref<coid::logmsg> msgr = coid::interface_register::canlog(type, intergen_interface_name(), this, coid::log::target::primary_log);
         if (!msgr)
             return;
 
@@ -281,7 +281,7 @@ public:
     /// @param vs variadic parameters
     template<class ...Vs>
     void ifclog(const coid::token& fmt, Vs&& ...vs) {
-        ref<coid::logmsg> msgr = coid::interface_register::canlog(coid::log::level::none, intergen_interface_name(), this);
+        ref<coid::logmsg> msgr = coid::interface_register::canlog(coid::log::level::none, intergen_interface_name(), this, coid::log::target::primary_log);
         if (!msgr)
             return;
 
