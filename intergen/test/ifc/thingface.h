@@ -11,8 +11,6 @@
 #include <comm/commexception.h>
 #include <comm/intergen/ifc.h>
 
-
-
 namespace n1 {
 namespace n2 {
     class thing;
@@ -27,13 +25,6 @@ class thingface
     : public intergen_interface
 {
 public:
-    static iref<thingface> get_interface(policy_intrusive_base* host);
-	
-	template<typename T> static constexpr bool is_derived_from_host_class() 
-    {
-        return std::is_base_of<::n1::n2::thing,T>::value;
-    }
-	
 
     // --- host helpers to check presence of event handlers in scripts ---
 
@@ -88,13 +79,13 @@ public:
         return _name;
     }
 
-    int intergen_hash_id() const override { return HASHID; }
+    int intergen_hash_id() const override final { return HASHID; }
 
-    bool iface_is_derived( int hash ) const override {
+    bool iface_is_derived( int hash ) const override final {
         return hash == HASHID;
     }
 
-    const coid::tokenhash& intergen_interface_name() const override {
+    const coid::tokenhash& intergen_interface_name() const override final {
         return IFCNAME();
     }
 
@@ -133,7 +124,7 @@ public:
         return _cached_wrapper;
     }
 
-    void* intergen_wrapper( backend bck ) const override {
+    void* intergen_wrapper( backend bck ) const override final {
         switch(bck) {
         case backend::js:  return intergen_wrapper_cache<backend::js>();
         case backend::jsc: return intergen_wrapper_cache<backend::jsc>();
@@ -144,7 +135,7 @@ public:
 
     backend intergen_backend() const override { return backend::cxx; }
 
-    const coid::token& intergen_default_creator( backend bck ) const override {
+    const coid::token& intergen_default_creator( backend bck ) const override final {
         return intergen_default_creator_static(bck);
     }
 
@@ -193,17 +184,6 @@ protected:
             _cleaner(this, 0);
     }
 };
-
-////////////////////////////////////////////////////////////////////////////////
-inline iref<thingface> thingface::get_interface(policy_intrusive_base* host )
-{
-    typedef iref<thingface> (*fn_wrap)(policy_intrusive_base*, intergen_interface*);
-    
-    static fn_wrap wrapper = reinterpret_cast<fn_wrap>(
-            coid::interface_register::get_interface_creator("ifc1::ifc2::thingface@wrapper"));
-
-    return wrapper ? wrapper(host, nullptr) : 0;
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 template<class T>

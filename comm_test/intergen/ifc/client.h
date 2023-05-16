@@ -45,7 +45,6 @@ class client
     : public intergen_interface
 {
 public:
-
     typedef int sometype;
 
     virtual ~client() {

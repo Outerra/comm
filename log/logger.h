@@ -47,9 +47,9 @@ struct log_filter
     typedef function<void(ref<logmsg>&)> filter_fun;
     filter_fun _filter_fun;
     charstr _module;
-    uint _log_level;
+    log::level _log_level;
 
-    log_filter(const filter_fun& fn, const token& module, uint level)
+    log_filter(const filter_fun& fn, const token& module, log::level level)
         : _filter_fun(fn)
         , _module(module)
         , _log_level(level)
@@ -84,7 +84,7 @@ protected:
     slotalloc<log_filter> _filters;
     ref<logger_file> _logfile;
 
-    log::type _minlevel = log::last;
+    log::level _minlevel = log::level::last;
 
     bool _stdout = false;
     bool _allow_perf = false;
@@ -108,7 +108,7 @@ public:
     ///Formatted log message
     template<class ...Vs>
     void print(const token& fmt, Vs&&... vs) {
-        ref<logmsg> msgr = create_msg(log::none, tokenhash());
+        ref<logmsg> msgr = create_msg(log::level::none, tokenhash());
         if (!msgr)
             return;
 
@@ -118,7 +118,7 @@ public:
 
     ///Formatted log message
     template<class ...Vs>
-    void print(log::type type, const tokenhash& hash, const void* inst, const token& fmt, Vs&&... vs)
+    void print(log::level type, const tokenhash& hash, const void* inst, const token& fmt, Vs&&... vs)
     {
         ref<logmsg> msgr = create_msg(type, hash, inst);
         if (!msgr)
@@ -131,23 +131,23 @@ public:
 #endif
 
     /// @return logmsg, filling the prefix by the log type (e.g. ERROR: )
-    ref<logmsg> operator()(log::type type = log::info, const tokenhash& hash = "", bool append_time = false);
+    //ref<logmsg> operator()(log::level type = log::level::info, log::target target = log::target::primary_log, const tokenhash& hash = "");
 
     /// @return an empty logmsg object
-    ref<logmsg> create_msg(log::type type, const tokenhash& hash, bool append_time = false);
+    //ref<logmsg> create_empty_msg(log::level type, log::target target, const tokenhash& hash);
 
     ///Creates logmsg object if given log message type is enabled
     /// @param type log level
     /// @param hash tokenhash identifying the client (interface) name
     /// @param inst optional instance id
     /// @return logmsg reference or null if not enabled
-    ref<logmsg> create_msg(log::type type, const tokenhash& hash, const void* inst, bool append_time = false);
+    ref<logmsg> create_msg(log::level type, log::target target, const tokenhash& hash, const void* inst);
 
     const ref<logger_file>& file() const { return _logfile; }
 
     virtual void enqueue(ref<logmsg>&& msg);
 
-    void set_log_level(log::type minlevel = log::last, bool allow_perf = false);
+    void set_log_level(log::level minlevel = log::level::last, bool allow_perf = false);
 
     static void enable_debug_out(bool en);
 

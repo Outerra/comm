@@ -496,7 +496,7 @@
     <ClInclude Include="..\..\..\intergen\ifc.js.h" />
     <ClInclude Include="..\..\..\international.h" />
     <ClInclude Include="..\..\..\list.h" />
-    <ClInclude Include="..\..\..\log\log.h" />
+    <ClInclude Include="..\..\..\log.h" />
     <ClInclude Include="..\..\..\metastream\fmtstream.h" />
     <ClInclude Include="..\..\..\metastream\fmtstreamnull.h" />
     <ClInclude Include="..\..\..\metastream\fmtstream_lexer.h" />

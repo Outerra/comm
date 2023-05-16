@@ -496,10 +496,10 @@ void* interface_register::get_interface_creator(const token& ifcname)
 {
     interface_register_impl& reg = interface_register_impl::get();
     if (!reg.check_version(intergen_interface::VERSION)) {
-        ref<logmsg> msg = canlog(coid::log::error, "ifcreg"_T, 0);
+        ref<logmsg> msg = canlog(coid::log::level::error, "ifcreg"_T, 0, coid::log::target::primary_log);
         msg->str() << "mismatched intergen version for " << ifcname << "(v" << intergen_interface::VERSION << ')';
         //print requires VS2015
-        //print(coid::log::error, "ifcreg", "mismatched intergen version for {}", ifcname);
+        //print(coid::log::level::error, "ifcreg", "mismatched intergen version for {}", ifcname);
         return 0;
     }
 
@@ -520,15 +520,15 @@ const charstr& interface_register::root_path()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-ref<logmsg> interface_register::canlog(log::type type, const token& from, const void* inst)
+ref<logmsg> interface_register::canlog(log::level type, const token& src, const void* inst, log::target target)
 {
     fn_log_t canlogfn = interface_register_impl::get().fn_log();
     ref<logmsg> msg;
 
     if (canlogfn)
-        msg = canlogfn(type, from, inst);
+        msg = canlogfn(type, src, inst, target);
     else
-        msg = getlog()->create_msg(type, from, inst);
+        msg = getlog()->create_msg(type, target, src, inst);
 
     return msg;
 }
@@ -631,7 +631,7 @@ bool interface_register::register_interface_creator(const token& ifcname, void* 
 
     if (!reg.check_version(intergen_interface::VERSION)) {
         if (creator_ptr) {
-            ref<logmsg> msg = canlog(coid::log::error, "ifcreg"_T, 0);
+            ref<logmsg> msg = canlog(coid::log::level::error, "ifcreg"_T, 0, coid::log::target::primary_log);
             if (msg) {
                 charstr modpath = directory::get_module_path(creator_ptr);
 

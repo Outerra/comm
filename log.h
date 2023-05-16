@@ -40,22 +40,24 @@
 
  ////////////////////////////////////////////////////////////////////////////////
  //@{ Log message with specified severity
-#define coidlog_exc(src, msg)     do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::exception, src); if (q) {q->str() << msg; }} while(0)
-#define coidlog_error(src, msg)   do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::error, src); if (q) {q->str() << msg; }} while(0)
-#define coidlog_warning(src, msg) do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::warning, src); if (q) {q->str() << msg; }} while(0)
-#define coidlog_msg(src, msg)     do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::highlight, src); if (q) {q->str() << msg; }} while(0)
-#define coidlog_info(src, msg)    do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::info, src); if (q) {q->str() << msg; }} while(0)
-#define coidlog_debug(src, msg)   do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::debug, src); if (q) {q->str() << msg; }} while(0)
-#define coidlog_perf(src, msg)    do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::perf, src); if (q) {q->str() << msg; }} while(0)
-#define coidlog_none(src, msg)    do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::none, src); if (q) {q->str() << msg; }} while(0)
+#define coidlog_exc(src, msg)     do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::exception, src); if (q) {q->str() << msg; }} while(0)
+#define coidlog_error(src, msg)   do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::error, src); if (q) {q->str() << msg; }} while(0)
+#define coidlog_warning(src, msg) do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::warning, src); if (q) {q->str() << msg; }} while(0)
+#define coidlog_msg(src, msg)     do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::highlight, src); if (q) {q->str() << msg; }} while(0)
+#define coidlog_info(src, msg)    do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::info, src); if (q) {q->str() << msg; }} while(0)
+#define coidlog_debug(src, msg)   do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::debug, src); if (q) {q->str() << msg; }} while(0)
+#define coidlog_perf(src, msg)    do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::perf, src); if (q) {q->str() << msg; }} while(0)
+#define coidlog_none(src, msg)    do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::none, src); if (q) {q->str() << msg; }} while(0)
 
-#define coidlog_loglevel(level, src, msg)   do{ ref<coid::logmsg> q = coid::log::openmsg(level, src); if (q) {q->str() << msg; }} while(0)
+#define coidlog_loglevel(level, src, msg) do{ ref<coid::logmsg> q = coid::log::openmsg(level, src); if (q) {q->str() << msg; }} while(0)
 //@}
 
 ///Log into file. The file is trucated initially and multiple messages are appended to it during the process duration
 //@param file file name/path
-#define coidlog_file(file, msg)   do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::last, file ); if (q) {q->str() << msg; }} while(0)
+#define coidlog_file(file, msg)   do{ ref<coid::logmsg> q = coid::log::filemsg(coid::log::level::info, file); if (q) {q->str() << msg; }} while(0)
 
+///Post fading message (if fading handler is attached in the logger)
+#define coidlog_fade(level, msg) do{ ref<coid::logmsg> q = coid::log::fademsg(level, ""); if (q) {q->str() << msg; }} while(0)
 
 ///Log message with severity specified at the beginning of msg
 /// @param src source module
@@ -65,11 +67,11 @@ void coidlog_text(const coid::token& src, coid::token msg);
 
 ///Create a perf object that logs the time while the scope exists
 #define coidlog_perf_scope(src, msg) \
-   ref<coid::logmsg> perf##line = coid::log::openmsg(coid::log::perf, src); if (perf##line) perf##line->str() << msg
+   ref<coid::logmsg> perf##line = coid::log::openmsg(coid::log::level::perf, src); if (perf##line) perf##line->str() << msg
 
 ///Log fatal error and throw exception with the same message
 #define coidlog_exception(src, msg)\
-    do { ref<coid::logmsg> q = coid::log::openmsg(coid::log::exception, src ); if (q) {q->str() << msg; throw coid::exception() << msg; }} while(0)
+    do { ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::exception, src); if (q) {q->str() << msg; throw coid::exception() << msg; }} while(0)
 
 //@{ Log error if condition fails
 #define coidlog_assert(test, src, msg)\
@@ -81,7 +83,7 @@ void coidlog_text(const coid::token& src, coid::token msg);
 
 ///Debug message existing only in debug builds
 #ifdef _DEBUG
-#define coidlog_devdbg(src, msg)  do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::debug, src ); if (q) {q->str() << msg; }} while(0)
+#define coidlog_devdbg(src, msg)  do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::debug, src); if (q) {q->str() << msg; }} while(0)
 #else
 #define coidlog_devdbg(src, msg)
 #endif
@@ -94,7 +96,7 @@ class logmsg;
 namespace log {
 
     /// @brief log message severity levels
-    enum type {
+    enum class level {
         none = -1,                      ///< unspecified, determined from text
         exception = 0,                  ///< fatal
         error,                          ///< error
@@ -104,19 +106,32 @@ namespace log {
         debug,                          ///< debug
         perf,                           ///< performance
 
-        file,                           ///< log to a specific file
-        fade,                           ///< log to a fading display (if attached)
-
         last,
     };
 
-    const char** names();
-    const type* values();
+    /// @brief limited backward compatibility
+    using type = level;
 
-    const char* name(type t);
+    /// @brief target for the message
+    enum class target {
+        primary_log,                    ///< primary log file
+        file,                           ///< message source determines the output file
+        fade,                           ///< fading display
+    };
+
+    const char** names();
+    const level* values();
+
+    const char* name(level t);
 
     //@return logmsg object if given log type and source is currently allowed to log
-    ref<logmsg> openmsg(log::type type, const tokenhash& hash = tokenhash(), const void* inst = 0);
+    ref<logmsg> openmsg(level type, const tokenhash& hash = tokenhash(), const void* inst = 0);
+
+    /// @brief Register file message
+    ref<logmsg> filemsg(level type, const tokenhash& file, const void* inst = 0);
+
+    /// @brief Register fading message
+    ref<logmsg> fademsg(level type, const tokenhash& hash = tokenhash(), const void* inst = 0);
 
     void flush();
 
@@ -128,8 +143,8 @@ class policy_msg;
 
 /// @brief Return logging object for multi-line logging, ex: auto log = filelog("path"); log->str() << "bla" << 1;
 /// @param file file name/path
-inline ref<logmsg> filelog(const tokenhash& file) {
-    return log::openmsg(log::file, file);
+inline ref<logmsg> filelog(log::level type, const tokenhash& file) {
+    return log::filemsg(type, file);
 }
 
 #ifdef COID_VARIADIC_TEMPLATES
@@ -139,7 +154,7 @@ inline ref<logmsg> filelog(const tokenhash& file) {
 //@param hash source identifier (used for filtering)
 //@param fmt @see charstr.print
 template<class ...Vs>
-void printlog(log::type type, const tokenhash& hash, const token& fmt, Vs&&... vs);
+void printlog(log::level type, const tokenhash& hash, const token& fmt, Vs&&... vs);
 
 #endif //COID_VARIADIC_TEMPLATES
 
@@ -161,7 +176,8 @@ protected:
     ref<logger_file> _logger_file;
 
     tokenhash _hash;
-    log::type _type = log::none;
+    log::level _type = log::level::none;
+    log::target _target = log::target::primary_log;
     charstr _str;
     uint64 _time = 0;
 
@@ -181,6 +197,10 @@ public:
         _str.takeover(other._str);
     }
 
+    void set_target(log::target target) {
+        _target = target;
+    }
+
     void set_logger(logger* l) { _logger = l; }
 
     void reset() {
@@ -192,31 +212,31 @@ public:
     void write();
 
     ///Consume type prefix from the message
-    static log::type consume_type(token& msg)
+    static log::level consume_type(token& msg)
     {
-        log::type t = log::info;
+        log::level t = log::level::info;
         if (msg.consume_icase("err:"_T) || msg.consume_icase("error:"_T))
-            t = log::error;
+            t = log::level::error;
         else if (msg.consume_icase("warn:"_T) || msg.consume_icase("warning:"_T))
-            t = log::warning;
+            t = log::level::warning;
         else if (msg.consume_icase("info:"_T))
-            t = log::info;
+            t = log::level::info;
         else if (msg.consume_icase("msg:"_T))
-            t = log::highlight;
+            t = log::level::highlight;
         else if (msg.consume_icase("dbg:"_T) || msg.consume_icase("debug:"_T))
-            t = log::debug;
+            t = log::level::debug;
         else if (msg.consume_icase("perf:"_T))
-            t = log::perf;
+            t = log::level::perf;
         else if (msg.consume_icase("fatal: "_T))
-            t = log::exception;
+            t = log::level::exception;
 
         msg.skip_whitespace();
         return t;
     }
 
-    static const token& type2tok(log::type t)
+    static const token& type2tok(log::level t)
     {
-        static token st[1 + int(log::last)] = {
+        static token st[1 + int(log::level::last)] = {
             "",
             "FATAL: ",
             "ERROR: ",
@@ -228,12 +248,13 @@ public:
         };
         static token empty;
 
-        return t >= 0 && t < log::last ? st[1 + int(t)] : empty;
+        return t > log::level::none && t < log::level::last ? st[1 + int(t)] : empty;
     }
 
-    log::type get_type() const { return _type; }
+    log::level get_type() const { return _type; }
+    log::target get_target() const { return _target; }
 
-    void set_type(log::type t) { _type = t; }
+    void set_type(log::level t) { _type = t; }
 
     void set_time(uint64 ns) {
         _time = ns;
@@ -263,7 +284,7 @@ typedef ref<logmsg> logmsg_ptr;
 //@param hash source identifier (used for filtering)
 //@param fmt @see charstr.print
 template<class ...Vs>
-inline void printlog(log::type type, const tokenhash& hash, const token& fmt, Vs&&... vs)
+inline void printlog(log::level type, const tokenhash& hash, const token& fmt, Vs&&... vs)
 {
     ref<logmsg> msgr = log::openmsg(type, hash);
     if (!msgr)

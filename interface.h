@@ -70,7 +70,7 @@ public:
     static const charstr& root_path();
 
 
-    typedef ref<logmsg>(*fn_log_t)(log::type, const token&, const void*);
+    typedef ref<logmsg>(*fn_log_t)(log::level, const token&, const void*, log::target);
     typedef bool(*fn_acc_t)(const token&);
     typedef logger*(*fn_getlog_t)();
 
@@ -142,7 +142,7 @@ public:
     /// @param ens list of unloaded entries
     static bool notify_module_unload(uints handle, binstring* bstr, dynarray<unload_entry>& ens);
 
-    static ref<logmsg> canlog(log::type type, const token& src, const void* inst = 0);
+    static ref<logmsg> canlog(log::level type, const token& src, const void* inst, log::target target);
     static logger* getlog();
 
 #ifdef COID_VARIADIC_TEMPLATES
@@ -152,7 +152,7 @@ public:
     /// @param from source identifier (used for filtering)
     /// @param fmt @see charstr.print
     template<class ...Vs>
-    static void print(log::type type, const token& from, const token& fmt, Vs&&... vs)
+    static void print(log::level type, const token& from, const token& fmt, Vs&&... vs)
     {
         ref<logmsg> msgr = canlog(type, from);
         if (!msgr)

@@ -364,7 +364,7 @@
     </ClInclude>
     <ClInclude Include="..\..\..\international.h" />
     <ClInclude Include="..\..\..\process.h" />
-    <ClInclude Include="..\..\..\log\log.h" />
+    <ClInclude Include="..\..\..\log.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\crypt\sha1.cpp">
@@ -472,7 +472,9 @@
     <ClCompile Include="..\..\..\profiler\profiler.cpp">
       <Filter>profiler</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\process_win.cpp" />
+    <ClCompile Include="..\..\..\process_win.cpp">
+      <Filter>cxx</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="..\..\..\doc\visualc-syntax\coid.natvis" />

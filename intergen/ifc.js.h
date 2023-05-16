@@ -406,7 +406,8 @@ public:
         coid::token tokey(*key, key.length());
 
         intergen_interface::ifclog_ext(
-            coid::log::none,
+            coid::log::level::none,
+            coid::log::target::primary_log,
             inst ? coid::token(inst->intergen_interface_name()) : "js"_T,
             inst, tokey);
 

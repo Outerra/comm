@@ -268,7 +268,7 @@ public:
     /// @param fmt format @see charstr.print
     /// @param vs variadic parameters
     template<class ...Vs>
-    void ifclog(coid::log::type type, const coid::token& fmt, Vs&& ...vs) {
+    void ifclog(coid::log::level type, const coid::token& fmt, Vs&& ...vs) {
         ref<coid::logmsg> msgr = coid::interface_register::canlog(type, intergen_interface_name(), this);
         if (!msgr)
             return;
@@ -281,7 +281,7 @@ public:
     /// @param vs variadic parameters
     template<class ...Vs>
     void ifclog(const coid::token& fmt, Vs&& ...vs) {
-        ref<coid::logmsg> msgr = coid::interface_register::canlog(coid::log::none, intergen_interface_name(), this);
+        ref<coid::logmsg> msgr = coid::interface_register::canlog(coid::log::level::none, intergen_interface_name(), this);
         if (!msgr)
             return;
 
@@ -290,13 +290,13 @@ public:
 
 #endif //COID_VARIADIC_TEMPLATES
 
-    static void ifclog_ext(coid::log::type type, const coid::token& from, const void* inst, const coid::token& txt) {
+    static void ifclog_ext(coid::log::level type, coid::log::target target, const coid::token& from, const void* inst, const coid::token& txt) {
         //deduce type if none set
         coid::token rest = txt;
-        if (type == coid::log::none)
+        if (type == coid::log::level::none)
             type = coid::logmsg::consume_type(rest);
 
-        ref<coid::logmsg> msgr = coid::interface_register::canlog(type, from, inst);
+        ref<coid::logmsg> msgr = coid::interface_register::canlog(type, from, inst, target);
         if (!msgr)
             return;
 
@@ -311,7 +311,7 @@ protected:
         coid::dynarray<coid::interface_register::creator> tmp;
         coid::interface_register::get_interface_creators(ifckey, "", tmp);
 
-        ref<coid::logmsg> msg = coid::interface_register::canlog(coid::log::warning, clsname, 0);
+        ref<coid::logmsg> msg = coid::interface_register::canlog(coid::log::level::warning, clsname, 0, coid::log::target::primary_log);
         if (msg) {
             coid::charstr& str = msg->str();
             if (tmp.size() > 0) {
@@ -347,7 +347,7 @@ protected:
         coid::dynarray<coid::interface_register::creator> tmp;
         coid::interface_register::get_interface_creators(ifckey, "", tmp);
 
-        ref<coid::logmsg> msg = coid::interface_register::canlog(coid::log::warning, clsname, 0);
+        ref<coid::logmsg> msg = coid::interface_register::canlog(coid::log::level::warning, clsname, 0, coid::log::target::primary_log);
         if (msg) {
             coid::charstr& str = msg->str();
             if (tmp.size() > 0) {
