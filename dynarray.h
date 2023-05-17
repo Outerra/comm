@@ -45,6 +45,11 @@
 
 COID_NAMESPACE_BEGIN
 
+enum class direction {
+    forward,
+    backward,
+};
+
 #if defined(COID_CONSTEXPR_IF) && !defined(__cpp_if_constexpr)
 #error Please enable C++17 language standard (/std:c++17) in project settings for VS2017+ projects
 #endif
@@ -509,22 +514,23 @@ public:
     /// @param fn functor as fn([const] T&) or fn([const] T&, count_t index)
     /// @note handles the case when the current element is deleted from the array, or more elements are appended
     template<typename Func>
-    void for_each(Func fn) const
+    void for_each(Func fn, direction dir = direction::forward) const
     {
         count_t n = size();
         for (count_t i = 0; i < n; ++i) {
-            T& v = const_cast<T&>(_ptr[i]);
+            count_t k = dir == direction::forward ? i : n - 1 - i;
+            T& v = const_cast<T&>(_ptr[k]);
 #ifdef COID_CONSTEXPR_IF
             if constexpr (has_index<Func>::value)
-                fn(v, i);
+                fn(v, k);
             else
                 fn(v);
 #else
-            funccall(fn, v, i);
+            funccall(fn, v, k);
 #endif
 
             count_t nn = size();
-            if (n > nn) {
+            if (dir == direction::forward && n > nn) {
                 //deleted element, ensure continuing with the next
                 --i;
             }
@@ -533,48 +539,27 @@ public:
         }
     }
 
-    ///Invoke functor on each element
-    /// @param fn functor as fn(const T&) or fn(const T&, count_t index)
-    template<typename Res, typename Func>
-    Res sum(Func fn) const
-    {
-        Res result = Res(0);
-        for (count_t i = 0, n = size(); i < n; ++i) {
-            const T& v = _ptr[i];
-#ifdef COID_CONSTEXPR_IF
-            if constexpr (has_index<Func>::value) {
-                result = result + fn(v, i);
-            }
-            else {
-                result = result + fn(v);
-            }
-#else
-            result = result + funccall(fn, v, i);
-#endif
-        }
-        return result;
-    }
-
     ///Find first element for which the predicate returns true
     /// @param fn functor as fn([const] T&) or fn([const] T&, count_t index)
     /// @return pointer to the element or null
     template<typename Func>
-    T* find_if(Func fn) const
+    T* find_if(Func fn, direction dir = direction::forward) const
     {
         count_t n = size();
         for (count_t i = 0; i < n; ++i) {
-            T& v = const_cast<T&>(_ptr[i]);
+            count_t k = dir == direction::forward ? i : n - 1 - i;
+            T& v = const_cast<T&>(_ptr[k]);
             bool rv;
 #ifdef COID_CONSTEXPR_IF
             if constexpr (has_index<Func>::value)
-                rv = fn(v, i);
+                rv = fn(v, k);
             else
                 rv = fn(v);
 #else
-            rv = funccall(fn, v, i);
+            rv = funccall(fn, v, k);
 #endif
             if (rv)
-                return _ptr + i;
+                return _ptr + k;
         }
         return 0;
     }
