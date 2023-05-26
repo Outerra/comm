@@ -1166,12 +1166,12 @@ public:
     ///Define a dynamically sized array member
     /// @param name variable name, used as a key in output formats
     /// @param v pointer to the first array element
-    /// @param n element count (when streaming), max element count when declaring
+    /// @param n element count (when streaming), max element count when declaring, [out] real element count
     /// @param optional true if optional on input
     /// @param nonmember non-member variable (no valid offset within the parent struct)
     /// @return true if value was read or written and no default was used, false in meta phase
     template<typename T>
-    bool member_dynamic_array(const token& name, T* v, uints n, bool optional, bool nonmember = false)
+    bool member_dynamic_array(const token& name, T* v, uints& n, bool optional, bool nonmember = false)
     {
         if (_binw) {
             if (optional && n == 0) {
@@ -1180,11 +1180,14 @@ public:
             }
             binstream_container_fixed_array<T, ints> bc(v, n);
             write_container(bc);
+            n -= bc.count();
             return true;
         }
         else if (_binr) {
             binstream_container_fixed_array<T, ints> bc(v, n);
-            return read_container(bc, optional);
+            bool res = read_container(bc, optional);
+            n -= bc.count();
+            return res;
         }
         else
             meta_variable_array(name, v, n, optional, nonmember);
