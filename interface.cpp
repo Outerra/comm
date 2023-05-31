@@ -19,7 +19,7 @@ struct entry
     token ns;
     token script;                       //< script ("js", "lua" ...) or client name
     token hash;                         //< hash text value, or "wrapper", "maker", "creator", "client"
-    token modulename;
+    token modulepath;
     uints handle = 0;
 
     void* creator_ptr = 0;
@@ -90,7 +90,7 @@ public:
         charstr tmp = ifcname;
 
         token ns = tmp;
-        token modulename = ns.cut_right_back('*', token::cut_trait_remove_sep_default_empty());
+        token modulepath = ns.cut_right_back('*', token::cut_trait_remove_sep_default_empty());
         token wrapper = ns.cut_right_back('@', token::cut_trait_remove_sep_default_empty());
         token classname = ns.cut_right_back("::"_T, false);
         token creatorname = classname.cut_right_back('.', token::cut_trait_remove_sep_default_empty());
@@ -112,12 +112,12 @@ public:
             }
         }
 
-        uints ml = modulename.len();
+        uints ml = modulepath.len();
         if (ml)
             ml++;
         token key = token(tmp.ptr(), tmp.ptre() - ml);
 
-        token handle = modulename.cut_right_back(':', token::cut_trait_remove_sep_default_empty());
+        token handle = modulepath.cut_right_back(':', token::cut_trait_remove_sep_default_empty());
 
         GUARDTHIS(_mx);
 
@@ -135,7 +135,7 @@ public:
                 en->hash = wrapper;
                 en->hashvalue = hash;
                 en->script = script;
-                en->modulename = modulename;
+                en->modulepath = modulepath;
                 en->handle = uints(handle.touint64());
                 en->keylen = key.len();
                 return true;
@@ -259,7 +259,7 @@ public:
             if (en->hashvalue != hash)
                 return 0;
 
-            if (module && !en->modulename.ends_with_icase(module))
+            if (module && !module.cmpeq(en->modulepath))
                 return 0;
 
             return (interface_register::client_fn)en->creator_ptr;
@@ -472,7 +472,7 @@ private:
 
         intergen_interface::fn_unload_client fn = (intergen_interface::fn_unload_client)en->creator_ptr;
 
-        return fn(client, cen.modulename, bstr);
+        return fn(client, cen.modulepath, bstr);
     }
 
     /// @return current directory from current path
@@ -649,11 +649,16 @@ bool interface_register::register_interface_creator(const token& ifcname, void* 
 
     uints hmod = directory::get_module_path(tmp, true);
 
+    directory::compact_path(tmp, '/');
+
+    /*
     //keep only the file name
     token path = token(tmp.ptr()+offs, tmp.ptre());
     uint plen = path.len();
     path.cut_left_group_back("\\/"_T);
     tmp.del(offs, plen - path.len());
+    */
+
 
     tmp << ':' << hmod;
 
