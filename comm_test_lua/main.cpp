@@ -283,8 +283,8 @@ struct test_result
 
 ref<coid::stdoutlogger> logger;
 
-static ref<coid::logmsg> canlog(coid::log::type type, const coid::token& from, const void* inst) {
-    return logger->create_msg(type, from, inst);
+static ref<coid::logmsg> canlog(coid::log::level type, const coid::token& src, const void* inst, coid::log::target target) {
+    return logger->create_msg(type, target, src, inst);
 }
 
 static coid::logger* getlog() {
