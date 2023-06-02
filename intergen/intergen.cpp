@@ -553,7 +553,6 @@ int File::parse(token path)
     hdrname.replace('-', '_');
     hdrname.toupper();
 
-    uint nm = 0;
     int mt;
     charstr templarg;
     dynarray<charstr> namespc;
@@ -561,7 +560,7 @@ int File::parse(token path)
     int nerr = 0;
 
     try {
-        for (; 0 != (mt = find_class(lex, namespc, templarg)); ++nm)
+        for (; 0 != (mt = find_class(lex, namespc, templarg));)
         {
             Class* pc = classes.add();
             pc->classorstruct = lex.last();
