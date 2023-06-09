@@ -238,6 +238,10 @@ class data_manager
         /// @brief Fetch element from container
         virtual void* element(uint eid) = 0;
 
+        /// @brief  Fetch element by container id, not element_id
+        /// @param id container id
+        virtual void* element_by_container_id(uint id) = 0;
+
         /// @brief Create element
         virtual void* create_default(uint eid) = 0;
         virtual void* create_uninit(uint eid) = 0;
@@ -275,6 +279,10 @@ class data_manager
         cshash() : container(sizeof(storage<T>), container::type::hash)
         {}
         void* element(uint eid) override final { return (T*)hash.find_value(eid); }
+        void* element_by_container_id(uint id) override final {
+            return hash.get_item(id);
+        }
+        
         void* create_default(uint eid) override {
             return new (create_uninit(eid)) T;
         }
@@ -320,6 +328,9 @@ class data_manager
         carray() : container(sizeof(T), container::type::array)
         {}
         void* element(uint eid) override final { return eid < data.size() ? &data[eid] : nullptr; }
+        void* element_by_container_id(uint id) override final {
+            return element(id);
+        }
         void* create_default(uint eid) override {
             return new (create_uninit(eid)) T;
         }
@@ -431,15 +442,15 @@ public:
 
     /// @brief Retrieve data of given type
     /// @tparam C data type
-    /// @param eid entity id
+    /// @param id container item id
     /// @return data pointer
     template <class C>
-    static C* get_by_container_id(uint eid)
+    static C* get_by_container_id(uint id)
     {
         static container* c = 0;
         if (!c) c = get_container<C>();
 
-        return c ? static_cast<C*>(c->element(eid)) : nullptr;
+        return c ? static_cast<C*>(c->element_by_container_id(id)) : nullptr;
     }
 
     static void* get_data(uint eid, uint c)
