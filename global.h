@@ -252,6 +252,10 @@ class data_manager
         virtual void reserve(uint count) = 0;
 
         virtual versionid allocate() = 0;
+    
+        virtual uint get_container_item_id(uint eid) const = 0;
+
+        virtual uint get_used_count() const = 0;
     };
 
     /// @brief helper class to hold entity id for hashed data containers
@@ -296,6 +300,16 @@ class data_manager
             return versionid();
         }
 
+        uint get_container_item_id(uint eid) const override final
+        {
+            return coid::down_cast<uint>(hash.get_item_id(hash.find_value(eid)));
+        }
+
+        uint get_used_count() const override final
+        {
+            return coid::down_cast<uint>(hash.count());
+        }
+
         slothash<storage<T>, uint, slotalloc_mode::versioning | slotalloc_mode::linear | slotalloc_mode::atomic, extractor> hash;
     };
 
@@ -324,6 +338,16 @@ class data_manager
         versionid allocate() override final {
             DASSERT(0);
             return versionid();
+        }
+
+        uint get_container_item_id(uint eid) const override final
+        {
+            return eid;
+        }
+
+        uint get_used_count() const override final
+        {
+            return data.size();
         }
 
         dynarray32<T> data;
@@ -403,6 +427,19 @@ public:
             return nullptr;
 
         return static_cast<C*>(c->element(vid.id));
+    }
+
+    /// @brief Retrieve data of given type
+    /// @tparam C data type
+    /// @param eid entity id
+    /// @return data pointer
+    template <class C>
+    static C* get_by_container_id(uint eid)
+    {
+        static container* c = 0;
+        if (!c) c = get_container<C>();
+
+        return c ? static_cast<C*>(c->element(eid)) : nullptr;
     }
 
     static void* get_data(uint eid, uint c)
@@ -541,6 +578,51 @@ public:
 
         DASSERT_RET(c->seq->is_valid(vid));
         c->remove(vid.id);
+    }
+
+    /// @brief Get container id of element of given type
+    /// @tparam C Type of element
+    /// @param eid element id
+    /// @return container id of given element
+    /// @note Container id is internal id of element in underlying container type( eg. index for arrays, slot_id for slothash)
+    template <class C>
+    static uint get_container_id(uint eid) 
+    {
+        static container* c = 0;
+        if (!c) c = get_container<C>();
+        DASSERT_RET(c);
+        
+        return c->get_element_id(eid);
+    }
+
+    /// @brief Get container id of element of given type
+    /// @tparam C Type of element
+    /// @param vid element version id
+    /// @return container id of given element
+    /// @note Container id is internal id of element in underlying container type( eg. index for arrays, slot_id for slothash)
+    template <class C>
+    static uint get_container_id(versionid vid)
+    {
+        static container* c = 0;
+        if (!c) c = get_container<C>();
+        DASSERT_RET(c, -1);
+
+        DASSERT_RET(c->seq->is_valid(vid), -1);
+
+        return c->get_container_item_id(coid::down_cast<uint>(vid.id));
+    }
+
+    /// @brief Get count of elements of type C
+    /// @tparam C Type of element
+    /// @return count
+    template<class C>
+    static uint get_count()
+    {
+        static container* c = 0;
+        if (!c) c = get_container<C>();
+        DASSERT_RET(c, -1);
+
+        return c->get_used_count();
     }
 
     /// @brief Enumerate through entities with given component
