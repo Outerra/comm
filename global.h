@@ -601,9 +601,9 @@ public:
     {
         static container* c = 0;
         if (!c) c = get_container<C>();
-        DASSERT_RET(c);
+        DASSERT_RET(c, -1);
         
-        return c->get_element_id(eid);
+        return c->get_container_item_id(eid);
     }
 
     /// @brief Get container id of element of given type
