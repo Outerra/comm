@@ -67,6 +67,19 @@ public:
         return reinterpret_cast<T*&>(ctx);
     }
 
+    /// @return const component pointer
+    /// @param pid [optional] receives component id
+    template <class T>
+    const T* component(int* pid = 0) const
+    {
+        type_sequencer& sq = tsq();
+        int id = sq.id<T>();
+        if (pid)
+            *pid = id;
+        void* const& ctx = _components.get_safe(id, nullptr);
+        return reinterpret_cast<const T*>(ctx);
+    }
+
     /// @return component id (sequential by order of registration)
     template <class T>
     int component_id() {
