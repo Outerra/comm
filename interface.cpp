@@ -232,8 +232,10 @@ public:
                 continue;
 
             token ins = i->ns;
-            if (!script.is_null() && (!ins.consume_end(script) || !ins.consume_end("::"_T)))
+            if (!script.is_null() && (!ins.consume_end(script)))
                 continue;
+
+            ins.consume_end("::"_T); // consume trailing "::" in case that interface is in some namespace
 
             if (ns && ins != ns)
                 continue;
