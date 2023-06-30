@@ -95,13 +95,11 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
     if (evbody)
     {
         if (evbody > 1) {
-            default_event_body = lex.match_block(lex.ROUND, true);
+            token text = lex.match_block(lex.ROUND, true);
+            text.consume_char('"');
+            text.consume_end_char('"');
 
-            if (default_event_body.first_char() == '"') {
-                default_event_body.del(0, 1);
-                if (default_event_body.last_char() == '"')
-                    default_event_body.resize(-1);
-            }
+            default_event_body.reset().append_unescaped(text);
         }
         else
             default_event_body.reset();

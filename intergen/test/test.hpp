@@ -40,6 +40,8 @@ public:
     ifc_fn coid::charstr fallo( bool b, const char* str ) { return str; }
 
     ifc_event void boo( const char* key );
+
+    ifc_event void body() ifc_default_body("return \"string\";");
 };
 
 }
