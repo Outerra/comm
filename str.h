@@ -1382,24 +1382,42 @@ public:
         return *this;
     }
 
-    /// @return c if it should be escaped, otherwise 0
+    /// @return escape character if c should be escaped, otherwise 0
     static char escape_char(char c, char strdel = 0)
     {
         char v = 0;
         switch (c) {
         case '\a': v = 'a'; break;
         case '\b': v = 'b'; break;
-        case '\t': v = 't'; break;
-        case '\n': v = 'n'; break;
-        case '\v': v = 'v'; break;
         case '\f': v = 'f'; break;
+        case '\n': v = 'n'; break;
         case '\r': v = 'r'; break;
+        case '\t': v = 't'; break;
+        case '\v': v = 'v'; break;
         case '\"': if (strdel == '"' || strdel == 0) v = '"'; break;
         case '\'': if (strdel == '\'' || strdel == 0) v = '\''; break;
         case '\\': v = '\\'; break;
+        case '\?': v = '\?'; break;
         }
         return v;
     }
+
+    /// @return character corresponding to given escape character
+    static char unescape_char(char c)
+    {
+        char v = c;
+        switch (c) {
+        case 'a': v = '\a'; break;
+        case 'b': v = '\b'; break;
+        case 'f': v = '\f'; break;
+        case 'n': v = '\n'; break;
+        case 'r': v = '\r'; break;
+        case 't': v = '\t'; break;
+        case 'v': v = '\v'; break;
+        }
+        return v;
+    }
+
 
     ///Append character, escaping it if it's a control character
     /// @param strdel string delimiter to escape (', ", or both if 0)
@@ -1416,7 +1434,7 @@ public:
         return *this;
     }
 
-    ///Append string while escaping the control characters in it
+    ///Append string while escaping control characters
     /// @param str source string
     /// @param strdel string delimiter to escape (', ", or both if 0)
     charstr& append_escaped(const token& str, char strdel = 0)
@@ -1435,6 +1453,33 @@ public:
                 dst += len;
                 dst[0] = '\\';
                 dst[1] = v;
+                ps = p + 1;
+            }
+        }
+
+        if (p > ps)
+            add_from(ps, p - ps);
+        return *this;
+    }
+
+    ///Append string while un-escaping escaped sequences
+    /// @param str source string
+    charstr& append_unescaped(const token& str)
+    {
+        const char* p = str.ptr();
+        const char* pe = str.ptre();
+        const char* ps = p;
+
+        for (; p < pe; ++p) {
+            if (*p == '\\') {
+                char v = unescape_char(p[1]);
+
+                ints len = p - ps;
+                char* dst = alloc_append_buf(len + 1);
+                xmemcpy(dst, ps, len);
+                dst += len;
+                dst[0] = v;
+                p++;
                 ps = p + 1;
             }
         }
