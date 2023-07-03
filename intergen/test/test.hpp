@@ -18,7 +18,12 @@ namespace n2 {
 
 class zz;
 
-class thing : public policy_intrusive_base
+class base_thing : public policy_intrusive_base
+{
+    virtual charstr strbody() { return "base"; }
+};
+
+class thing : base_thing
 {
 public:
 
@@ -42,6 +47,8 @@ public:
     ifc_event void boo( const char* key );
 
     ifc_event void body() ifc_default_body("return \"string\";");
+
+    ifc_event charstr strbody() override ifc_default_body("return \"value\";");
 };
 
 }
