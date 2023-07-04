@@ -89,6 +89,7 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
     }
 
     bconst = lex.matches("const");
+    bool boverride = lex.matches("override");
 
     //optional default event impl
     int evbody = lex.matches_either(lex.IFC_DEFAULT_EMPTY, lex.IFC_DEFAULT_BODY, lex.IFC_EVBODY);
