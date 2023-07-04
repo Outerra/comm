@@ -618,7 +618,7 @@ bool directory::compact_path(charstr& dst, char tosep)
             return true;
         if (tosep)
             dst[2] = tosep;
-        dtok.shift_start(3);
+        dtok.shift_start(2);
     }
 #else
     bool absp = dtok.first_char() == '/';
