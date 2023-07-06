@@ -104,12 +104,7 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
         }
         else
             default_event_body.reset();
-
-        if (!default_event_body)
-            default_event_body = ';';   //needs at least one statement when wrapped in {}
     }
-    //else
-    //    default_event_body = "{ throw coid::exception(\"handler not implemented\"); }";
 
     bnoevbody = !evbody && (ret.type != "void" || noutargs > 0);
 
