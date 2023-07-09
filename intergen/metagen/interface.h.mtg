@@ -302,7 +302,7 @@ inline iref<$..name$> $..name$::$name$($-[args rest=", "]$$type$ $name$$size$$[/
 $-[/method]$
 
 $-[method !static? !destroy? !virtual?]$
-inline $return.type$ $..name$::$name$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if fnarg?)$( $-memfnclass after="::"-$ *$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if const?)$ const$(/if)$
+inline auto $..name$::$name$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if fnarg?)$( $-memfnclass after="::"-$ *$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if const?)$ const$(/if)$ -> $return.type$
 { return VT_CALL($return.type$,($[args rest=","]$ $-(if fnarg?)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$) $-(if const?)$ const$(/if)$,$index$)($[args rest=","]$ $-(if xref?)$std::forward<$basetype$>($(/if)-$ $name$ $-(if xref?)$)$(/if)-$ $[/args]$); }
 $[/method]-$
 

@@ -78,13 +78,13 @@ public:
     inline static const token IFC_OUT = "ifc_out";
 
 
-    virtual void on_error_prefix( bool rules, charstr& dst, int line ) override
+    virtual void on_error_prefix(bool rules, charstr& dst, int line) override
     {
         if (!rules)
             dst << infile << char('(') << line << ") : ";
     }
 
-    void set_current_file( const token& file ) {
+    void set_current_file(const token& file) {
         infile = file;
     }
 
@@ -92,7 +92,7 @@ public:
 
 
     ///Find method mark within current class declaration
-    int find_method( const token& classname, dynarray<paste_block>& classpasters, dynarray<charstr>& commlist );
+    int find_method(const token& classname, dynarray<paste_block>& classpasters, dynarray<charstr>& commlist);
 
     charstr& syntax_err() {
         prepare_exception() << "syntax error: ";
@@ -124,22 +124,22 @@ struct Method
         bool bconst;                    //< true if the type had const qualifier
 
 
-        bool parse( iglexer& lex );
+        bool parse(iglexer& lex);
 
         friend metastream& operator || (metastream& m, Arg& p)
         {
             return m.compound("Arg", [&]()
-                {
-                    m.member("type", p.type);
-                    m.member("name", p.name);
-                    m.member("size", p.size);
-                    m.member("defval", p.defval);
-                    m.member("const", p.bconst);
-                    m.member("ptr", p.bptr);
-                    m.member("ref", p.bref);
-                    m.member("retarg", p.bretarg);
-                    m.member("sizearg", p.bsizearg);
-                });
+            {
+                m.member("type", p.type);
+                m.member("name", p.name);
+                m.member("size", p.size);
+                m.member("defval", p.defval);
+                m.member("const", p.bconst);
+                m.member("ptr", p.bptr);
+                m.member("ref", p.bref);
+                m.member("retarg", p.bretarg);
+                m.member("sizearg", p.bsizearg);
+            });
         }
     };
 
@@ -160,28 +160,28 @@ struct Method
     dynarray<Arg> args;
 
 
-    bool parse( iglexer& lex, int prefix );
+    bool parse(iglexer& lex, int prefix);
 
-    bool generate_h( binstream& bin );
+    bool generate_h(binstream& bin);
 
 
     friend metastream& operator || (metastream& m, Method& p)
     {
         return m.compound("Method", [&]()
-            {
-                m.member("retexpr", p.retexpr);
-                m.member("retparm", p.retparm);
-                m.member("templarg", p.templarg);
-                m.member("templsub", p.templsub);
-                m.member("rettype", p.rettype);
-                m.member("name", p.name);
-                m.member("static", p.bstatic);
-                m.member("sizearg", p.bsizearg);
-                m.member("ptr", p.bptr);
-                m.member("iref", p.biref);
-                m.member("overload", p.overload);
-                m.member("args", p.args);
-            });
+        {
+            m.member("retexpr", p.retexpr);
+            m.member("retparm", p.retparm);
+            m.member("templarg", p.templarg);
+            m.member("templsub", p.templsub);
+            m.member("rettype", p.rettype);
+            m.member("name", p.name);
+            m.member("static", p.bstatic);
+            m.member("sizearg", p.bsizearg);
+            m.member("ptr", p.bptr);
+            m.member("iref", p.biref);
+            m.member("overload", p.overload);
+            m.member("args", p.args);
+        });
     }
 };
 
@@ -204,19 +204,19 @@ struct MethodIG
         charstr fulltype;
         charstr ifckwds;                //< ifc_out, ifc_inout and ifc_volatile string
         charstr doc;
-        bool bspecptr       = false;    //< special type where pointer is not separated (e.g const char*)
-        bool bptr           = false;    //< true if the type is a pointer
-        bool bref           = false;    //< true if the type is a reference
-        bool bxref          = false;    //< true if the type is xvalue reference
-        bool biref          = false;
-        bool bconst         = false;    //< true if the type had const qualifier
-        bool benum          = false;
-        bool binarg         = true;     //< input type argument
-        bool boutarg        = false;    //< output type argument
-        bool bvolatile      = false;
-        bool tokenpar       = false;    //< input argument that accepts token (token or charstr)
-        bool bnojs          = false;    //< not used in JS, use default val
-        bool bfnarg         = false;    //< function type arg
+        bool bspecptr = false;          //< special type where pointer is not separated (e.g const char*)
+        bool bptr = false;              //< true if the type is a pointer
+        bool bref = false;              //< true if the type is a reference
+        bool bxref = false;             //< true if the type is xvalue reference
+        bool biref = false;
+        bool bconst = false;            //< true if the type had const qualifier
+        bool benum = false;
+        bool binarg = true;             //< input type argument
+        bool boutarg = false;           //< output type argument
+        bool bvolatile = false;
+        bool tokenpar = false;          //< input argument that accepts token (token or charstr)
+        bool bnojs = false;             //< not used in JS, use default val
+        bool bfnarg = false;            //< function type arg
 
 
         bool operator == (const Arg& a) const {
@@ -224,48 +224,46 @@ struct MethodIG
                 && arsize == a.arsize;
         }
 
-        bool parse( iglexer& lex, bool argname );
+        bool parse(iglexer& lex, bool argname);
 
-        static charstr& match_type( iglexer& lex, charstr& dst );
+        static charstr& match_type(iglexer& lex, charstr& dst);
 
-        void add_unique( dynarray<Arg>& irefargs );
+        void add_unique(dynarray<Arg>& irefargs);
 
         friend metastream& operator || (metastream& m, Arg& p)
         {
             return m.compound("MethodIG::Arg", [&]()
-                {
-                    m.member("type", p.type);
-                    m.member("basetype", p.basetype);
-                    m.member("barenstype", p.barenstype);
-                    m.member("barens", p.barens);
-                    m.member("baretype", p.baretype);
-                    m.member("name", p.name);
-                    m.member("size", p.arsize);
-                    m.member("fnargs", p.fnargs);
-                    m.member("memfnclass", p.memfnclass);
-                    m.member("defval", p.defval);
-                    m.member("fulltype", p.fulltype);
-                    m.member("ifckwds", p.ifckwds);
-                    m.member("doc", p.doc);
-                    m.member("const", p.bconst);
-                    m.member("enum", p.benum);
-                    m.member("specptr", p.bspecptr);
-                    m.member("ptr", p.bptr);
-                    m.member("ref", p.bref);
-                    m.member("xref", p.bxref);
-                    m.member("iref", p.biref);
-                    m.member("inarg", p.binarg);
-                    m.member("outarg", p.boutarg);
-                    m.member("volatile", p.bvolatile);
-                    m.member("token", p.tokenpar);
-                    m.member("nojs", p.bnojs);
-                    m.member("fnarg", p.bfnarg);
-                });
+            {
+                m.member("type", p.type);
+                m.member("basetype", p.basetype);
+                m.member("barenstype", p.barenstype);
+                m.member("barens", p.barens);
+                m.member("baretype", p.baretype);
+                m.member("name", p.name);
+                m.member("size", p.arsize);
+                m.member("fnargs", p.fnargs);
+                m.member("memfnclass", p.memfnclass);
+                m.member("defval", p.defval);
+                m.member("fulltype", p.fulltype);
+                m.member("ifckwds", p.ifckwds);
+                m.member("doc", p.doc);
+                m.member("const", p.bconst);
+                m.member("enum", p.benum);
+                m.member("specptr", p.bspecptr);
+                m.member("ptr", p.bptr);
+                m.member("ref", p.bref);
+                m.member("xref", p.bxref);
+                m.member("iref", p.biref);
+                m.member("inarg", p.binarg);
+                m.member("outarg", p.boutarg);
+                m.member("volatile", p.bvolatile);
+                m.member("token", p.tokenpar);
+                m.member("nojs", p.bnojs);
+                m.member("fnarg", p.bfnarg);
+            });
         }
     };
 
-    charstr templarg;                   //< template arguments (optional)
-    charstr templsub;                   //< template arguments for substitution
     charstr name;                       //< method name
     charstr intname;                    //< internal name
     charstr storage;                    //< storage for host class, iref<type>, ref<type> or type*
@@ -273,21 +271,21 @@ struct MethodIG
 
     int index = -1;
 
-    bool bstatic            = false;    //< a static (creator) method
-    bool bcreator           = false;
-    bool bptr               = false;    //< ptr instead of ref
-    bool biref              = true;     //< iref instead of ref
-    bool bifccr             = false;    //< ifc returning creator (not host)
-    bool bconst             = false;    //< const method
-    bool boperator          = false;
-    bool binternal          = false;    //< internal method, invisible to scripts (starts with an underscore)
-    bool bcapture           = false;    //< method captured when interface is in capturing mode
-    bool bimplicit          = false;    //< an implicit event/method
-    bool bdestroy           = false;    //< a method to call on interface destroy
-    bool bnoevbody          = false;    //< mandatory event
-    bool bpure              = false;    //< pure virtual on client
-    bool bduplicate         = false;    //< a duplicate method/event from another interface of the host
-    bool binherit           = false;    //< method inherited from base interface
+    bool bstatic = false;               //< a static (creator) method
+    bool bcreator = false;
+    bool bptr = false;                  //< ptr instead of ref
+    bool biref = true;                  //< iref instead of ref
+    bool bifccr = false;                //< ifc returning creator (not host)
+    bool bconst = false;                //< const method
+    bool boperator = false;
+    bool binternal = false;             //< internal method, invisible to scripts (starts with an underscore)
+    bool bcapture = false;              //< method captured when interface is in capturing mode
+    bool bimplicit = false;             //< an implicit event/method
+    bool bdestroy = false;              //< a method to call on interface destroy
+    bool bnoevbody = false;             //< mandatory event
+    bool bpure = false;                 //< pure virtual on client
+    bool bduplicate = false;            //< a duplicate method/event from another interface of the host
+    bool binherit = false;              //< method inherited from base interface
 
     Arg ret;
     dynarray<Arg> args;
@@ -300,67 +298,65 @@ struct MethodIG
     dynarray<charstr> docs;             //< doc paragraphs
 
 
-    bool parse( iglexer& lex, const charstr& host, const charstr& ns, const charstr& nsifc, dynarray<Arg>& irefargs, bool isevent );
+    bool parse(iglexer& lex, const charstr& host, const charstr& ns, const charstr& nsifc, dynarray<Arg>& irefargs, bool isevent);
 
     void parse_docs();
 
-    Arg* find_arg( const coid::token& name ) {
+    Arg* find_arg(const coid::token& name) {
         return args.find_if([&](const Arg& a) {
             return a.name == name;
         });
     }
 
-    bool matches_args( const MethodIG& m ) const {
-        if(ninargs != m.ninargs || noutargs != m.noutargs)
+    bool matches_args(const MethodIG& m) const {
+        if (ninargs != m.ninargs || noutargs != m.noutargs)
             return false;
 
         const Arg* a1 = args.ptr();
         const Arg* a2 = m.args.ptr();
         const Arg* e1 = args.ptre();
 
-        for(; a1<e1; ++a1,++a2) {
-            if(!(*a1 == *a2)) break;
+        for (; a1 < e1; ++a1, ++a2) {
+            if (!(*a1 == *a2)) break;
         }
 
         return a1 == e1;
     }
 
-    bool generate_h( binstream& bin );
+    bool generate_h(binstream& bin);
 
     friend metastream& operator || (metastream& m, MethodIG& p)
     {
         return m.compound("MethodIG", [&]()
-            {
-                m.member("templarg", p.templarg);
-                m.member("templsub", p.templsub);
-                m.member("return", p.ret);
-                m.member("name", p.name);
-                m.member("intname", p.intname);
-                m.member("storage", p.storage);
-                m.member("operator", p.boperator);
-                m.member("internal", p.binternal);
-                m.member("capture", p.bcapture);
-                m.member("static", p.bstatic);
-                m.member("creator", p.bcreator);
-                m.member("ptr", p.bptr);
-                m.member("iref", p.biref);
-                m.member("ifccr", p.bifccr);
-                m.member("const", p.bconst);
-                m.member("implicit", p.bimplicit);
-                m.member("destroy", p.bdestroy);
-                m.member("noevbody", p.bnoevbody);
-                m.member("pure", p.bpure);
-                m.member("duplicate", p.bduplicate);
-                m.member("inherit", p.binherit);
-                m.member("args", p.args);
-                m.member("ninargs", p.ninargs);
-                m.member("ninargs_nondef", p.ninargs_nondef);
-                m.member("noutargs", p.noutargs);
-                m.member("comments", p.comments);
-                m.member("docs", p.docs);
-                m.member("index", p.index);
-                m.member("default_event_body", p.default_event_body);
-            });
+        {
+            m.member("return", p.ret);
+            m.member("name", p.name);
+            m.member("intname", p.intname);
+            m.member("storage", p.storage);
+            m.member("operator", p.boperator);
+            m.member("internal", p.binternal);
+            m.member("capture", p.bcapture);
+            m.member("static", p.bstatic);
+            m.member("creator", p.bcreator);
+            m.member("ptr", p.bptr);
+            m.member("iref", p.biref);
+            m.member("ifccr", p.bifccr);
+            m.member("const", p.bconst);
+            m.member("implicit", p.bimplicit);
+            m.member("destroy", p.bdestroy);
+            m.member("noevbody", p.bnoevbody);
+            m.member("pure", p.bpure);
+            m.member("duplicate", p.bduplicate);
+            m.member("inherit", p.binherit);
+            m.member("args", p.args);
+            m.member("ninargs", p.ninargs);
+            m.member("ninargs_nondef", p.ninargs_nondef);
+            m.member("noutargs", p.noutargs);
+            m.member("comments", p.comments);
+            m.member("docs", p.docs);
+            m.member("index", p.index);
+            m.member("default_event_body", p.default_event_body);
+        });
     }
 };
 
@@ -501,25 +497,25 @@ struct Interface
         docs = o.docs;
     }
 
-    void compute_hash( int version );
+    void compute_hash(int version);
 
     void parse_docs();
 
     bool full_name_equals(token name) const {
         bool hasns = nss.find_if([&name](const charstr& v) {
             return !(name.consume(v) && name.consume("::"));
-            }) == 0;
+        }) == 0;
         if (hasns && name.consume(this->name))
             return name.is_empty();
         return false;
     }
 
-    static bool has_mismatched_method( const MethodIG& m, const dynarray<MethodIG>& methods ) {
-        int nmatch=0, nmiss=0;
+    static bool has_mismatched_method(const MethodIG& m, const dynarray<MethodIG>& methods) {
+        int nmatch = 0, nmiss = 0;
         methods.for_each([&](const MethodIG& ms) {
-            if(m.name == ms.name) {
+            if (m.name == ms.name) {
                 ++nmatch;
-                if(!m.matches_args(ms))
+                if (!m.matches_args(ms))
                     ++nmiss;
             }
         });
@@ -532,49 +528,49 @@ struct Interface
     friend metastream& operator || (metastream& m, Interface& p)
     {
         return m.compound("Interface", [&]()
-            {
-                m.member("ns", p.nss);
-                m.member("name", p.name);
-                m.member("relpath", p.relpath);
-                m.member("relpathjs", p.relpathjs);
-                m.member("relpathlua", p.relpathlua);
-                m.member("hdrfile", p.hdrfile);
-                m.member("storage", p.storage);
-                m.member("method", p.method);
-                m.member("getter", p.getter);
-                m.member("setter", p.setter);
-                m.member("onconnect", p.on_connect);
-                m.member("onconnectev", p.on_connect_ev);
-                m.member("onunload", p.on_unload);
-                m.member_type<bool>("hasprops", [](bool) {}, [&]() { return p.oper_get>=0; });
-                m.member("nifcmethods", p.nifc_methods);
-                m.member("varname", p.varname);
-                m.member("event", p.event);
-                m.member("destroy", p.destroy);
-                m.member("hash", p.hash);
-                m.member("inhmask", p.inhmask);
-                m.member("ifc_bit", p.ifc_bit);
-                m.member("comments", p.comments);
-                m.member("docs", p.docs);
-                m.member("pasters", p.pasters);
-                m.member("pasteafters", p.pasteafters);
-                m.member("pasteinners", p.pasteinners);
-                m.member_indirect("srcfile", p.srcfile);
-                m.member_indirect("class", p.srcclass);
-                m.member_indirect("classnsx", p.srcnamespc);
-                m.member_indirect("classorstruct", p.srcclassorstruct);
-                m.member("base", p.base);
-                m.member("baseclass", p.baseclass);
-                m.member("basepath", p.basepath);
-                m.member("baseclassns", p.baseclassnss);
-                m.member("virtual", p.bvirtual);
-                m.member("dataifc", p.bdataifc);
-                m.member("default_creator", p.default_creator);
-                m.member("direct_inheritance", p.bdirect_inheritance);
-                m.member("inheritable", p.binheritable);
-                m.member("virtualorinheritable", p.bvirtualorinheritable);
+        {
+            m.member("ns", p.nss);
+            m.member("name", p.name);
+            m.member("relpath", p.relpath);
+            m.member("relpathjs", p.relpathjs);
+            m.member("relpathlua", p.relpathlua);
+            m.member("hdrfile", p.hdrfile);
+            m.member("storage", p.storage);
+            m.member("method", p.method);
+            m.member("getter", p.getter);
+            m.member("setter", p.setter);
+            m.member("onconnect", p.on_connect);
+            m.member("onconnectev", p.on_connect_ev);
+            m.member("onunload", p.on_unload);
+            m.member_type<bool>("hasprops", [](bool) {}, [&]() { return p.oper_get >= 0; });
+            m.member("nifcmethods", p.nifc_methods);
+            m.member("varname", p.varname);
+            m.member("event", p.event);
+            m.member("destroy", p.destroy);
+            m.member("hash", p.hash);
+            m.member("inhmask", p.inhmask);
+            m.member("ifc_bit", p.ifc_bit);
+            m.member("comments", p.comments);
+            m.member("docs", p.docs);
+            m.member("pasters", p.pasters);
+            m.member("pasteafters", p.pasteafters);
+            m.member("pasteinners", p.pasteinners);
+            m.member_indirect("srcfile", p.srcfile);
+            m.member_indirect("class", p.srcclass);
+            m.member_indirect("classnsx", p.srcnamespc);
+            m.member_indirect("classorstruct", p.srcclassorstruct);
+            m.member("base", p.base);
+            m.member("baseclass", p.baseclass);
+            m.member("basepath", p.basepath);
+            m.member("baseclassns", p.baseclassnss);
+            m.member("virtual", p.bvirtual);
+            m.member("dataifc", p.bdataifc);
+            m.member("default_creator", p.default_creator);
+            m.member("direct_inheritance", p.bdirect_inheritance);
+            m.member("inheritable", p.binheritable);
+            m.member("virtualorinheritable", p.bvirtualorinheritable);
 
-            });
+        });
     }
 };
 
@@ -599,7 +595,7 @@ struct Class
     dynarray<paste_block> classpasters;
 
 
-    bool parse( iglexer& lex, charstr& templarg_, const dynarray<charstr>& namespcs, dynarray<paste_block>* pasters, dynarray<MethodIG::Arg>& irefargs );
+    bool parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& namespcs, dynarray<paste_block>* pasters, dynarray<MethodIG::Arg>& irefargs);
 
     friend metastream& operator || (metastream& m, Class& p)
     {
