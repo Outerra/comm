@@ -170,7 +170,8 @@ class metagen //: public binstream
             const Varx* v = this;
             token part;
 
-            if (name.is_empty())  return false;
+            if (name.is_empty())
+                return false;
 
             if (last)
                 last->set_empty();
@@ -757,8 +758,34 @@ class metagen //: public binstream
             }
             else if (attrib == "@size") {
                 //array size
-                if (v.is_array())
-                    mg.write_as_string(v.array_size());
+                if (v.is_array()) {
+                    if (attr.size() == 0) {
+                        mg.write_as_string(v.array_size());
+                    }
+                    else {
+                        const Attribute* pb = attr.ptr();
+                        const Attribute* pe = attr.ptre();
+
+                        uint count = 0;
+                        VarxElement ve;
+                        uints n = ve.first(v);
+                        if (n > 0) {
+                            for (; n > 0; --n, ve.next())
+                            {
+                                const Attribute* p = pb;
+                                for (; p < pe; ++p) {
+                                    if (!p->eval(mg, ve)) break;
+                                }
+                                if (p < pe)
+                                    continue;
+
+                                ++count;
+                            }
+                        }
+
+                        mg.write_as_string(count);
+                    }
+                }
             }
             else
                 return false;
@@ -942,6 +969,7 @@ class metagen //: public binstream
         TagSequence atr_first, atr_rest;
         TagSequence atr_body;
         TagSequence atr_after, atr_final;
+        TagSequence atr_empty;
 
         dynarray<Attribute> cond;
 
@@ -965,8 +993,10 @@ class metagen //: public binstream
 
                 VarxElement ve;
                 uints n = ve.first(v);
-                if (!n)
+                if (!n) {
+                    atr_empty.process(mg, ve);
                     return;
+                }
 
                 bool evalcond = cond.size() > 0;
 
@@ -1025,6 +1055,7 @@ class metagen //: public binstream
             if (name == "body")   return &atr_body;
             if (name == "after")  return &atr_after;
             if (name == "final")  return &atr_final;
+            if (name == "empty")  return &atr_empty;
             return 0;
         }
 
