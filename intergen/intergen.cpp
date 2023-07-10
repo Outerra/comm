@@ -182,11 +182,13 @@ bool generate_ifc(File& file, Class& cls, Interface& ifc, timet mtime, charstr& 
     directory::compact_path(ifc.relpath);
     ifc.relpath.replace('\\', '/');
 
-    ifc.relpathjs = ifc.relpath;
-    ifc.relpathjs.ins(-(int)end.len(), ".js");
+    token reldir = token(ifc.relpath).cut_left_group_back("\\/", token::cut_trait_return_with_sep_default_empty());
 
-    ifc.relpathlua = ifc.relpath;
-    ifc.relpathlua.ins(-(int)end.len(), ".lua");
+    ifc.relpathjs = reldir;
+    ifc.relpathjs << "js/" << ifc.name << ".h";
+
+    ifc.relpathlua = reldir;
+    ifc.relpathlua << "lua/" << ifc.name << ".h";
 
     ifc.basepath = ifc.relpath;
     ifc.hdrfile = ifc.basepath.cut_right_back('/', token::cut_trait_keep_sep_with_source_default_full());
@@ -207,25 +209,21 @@ bool generate_ifc(File& file, Class& cls, Interface& ifc, timet mtime, charstr& 
     if (generate(false, ifc, tdir, fdir, mtime) < 0)
         return false;
 
+    fdir.resize(flen);
+
     if (!ifc.bdataifc) {
         //interface.js.h
-        fdir.resize(flen);
-        fdir << ifc.relpathjs;
-
         tdir.resize(tlen);
         tdir << "interface.js.h.mtg";
 
-        if (generate(false, ifc, tdir, fdir, mtime) < 0)
+        if (generate(false, ifc, tdir, fdir + ifc.relpathjs, mtime) < 0)
             return false;
 
         //iterface.lua.h
         tdir.resize(tlen);
         tdir << "interface.lua.h.mtg";
 
-        fdir.resize(flen);
-        fdir << ifc.relpathlua;
-
-        if (generate(false, ifc, tdir, fdir, mtime) < 0)
+        if (generate(false, ifc, tdir, fdir + ifc.relpathlua, mtime) < 0)
             return false;
     }
 
@@ -233,8 +231,7 @@ bool generate_ifc(File& file, Class& cls, Interface& ifc, timet mtime, charstr& 
     tdir.resize(tlen);
     tdir << "interface.doc.mtg";
 
-    fdir.resize(-int(token(fdir).cut_right_group_back("\\/").len()));
-    fdir << "/docs";
+    fdir << reldir << "docs";
     directory::mkdir(fdir);
 
     fdir << '/' << ifc.name << ".html";
@@ -576,20 +573,20 @@ int File::parse(token path)
     {
         for (Interface& i : c.iface_refc)
         {
-            if (i.bdirect_inheritance) 
+            if (i.bdirect_inheritance)
             {
                 charstr base_src_path = token(path).cut_left_group_back(DIR_SEPARATORS, coid::token::cut_trait_remove_sep_default_empty());
-                if (!base_src_path.is_empty()) 
+                if (!base_src_path.is_empty())
                 {
                     base_src_path << "/";
                 }
                 base_src_path << i.basesrc;
 
                 out << "Parsing base class source file: " << i.basesrc << "\n";
- 
+
                 File* base_file = dependencies.add();
                 int res = base_file->parse(base_src_path);
-                if (res != 0) 
+                if (res != 0)
                 {
                     return res;
                 }
@@ -600,15 +597,15 @@ int File::parse(token path)
                         return ifc.nsname == i.base;
                         });
 
-                    if (found) 
+                    if (found)
                     {
-                        for (const MethodIG& e : found->event) 
+                        for (const MethodIG& e : found->event)
                         {
                             const MethodIG * found = i.event.find_if([&e](const MethodIG& it) {
                                 return e.name == it.name && e.intname == it.intname;
                             });
 
-                            if (!found) 
+                            if (!found)
                             {
                                 i.event.push(e);
                                 i.event.last()->binherit = true;

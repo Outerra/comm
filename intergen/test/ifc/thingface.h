@@ -66,7 +66,7 @@ protected:
 
     virtual void body() { return "string"; }
 
-    virtual charstr strbody(){ throw coid::exception(HANDLER_NOT_IMPLEMENTED_MESSAGE); }
+    virtual charstr strbody() { return "value"; }
 
     virtual void force_bind_script_events() {}
 
@@ -211,10 +211,10 @@ inline iref<T> thingface::get( T* _subclass_ )
 }
 
 
-inline int thingface::hallo( int a, const coid::token& b, ifc_out coid::charstr& c )
+inline auto thingface::hallo( int a, const coid::token& b, ifc_out coid::charstr& c ) -> int
 { return VT_CALL(int,(int,const coid::token&,coid::charstr&),1)(a,b,c); }
 
-inline coid::charstr thingface::fallo( bool b, const char* str )
+inline auto thingface::fallo( bool b, const char* str ) -> coid::charstr
 { return VT_CALL(coid::charstr,(bool,const char*),2)(b,str); }
 
 } //namespace
