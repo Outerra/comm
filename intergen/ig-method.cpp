@@ -103,7 +103,7 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
             default_event_body.reset().append_unescaped(text);
         }
         else
-            default_event_body.reset();
+            default_event_body = ' ';
     }
 
     bnoevbody = !evbody && (ret.type != "void" || noutargs > 0);
