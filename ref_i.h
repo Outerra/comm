@@ -233,7 +233,7 @@ public:
 
     /// @brief Upcast to iref of derived type using static_cast
     template <class T2>
-    iref<T2> upcast() const {
+    iref<T2> cast() const {
         iref<T2> res;
         res.add_refcount(static_cast<T2*>(const_cast<T*>(_p)));
         return res;

@@ -137,13 +137,8 @@ public:
 
     T* get() const { return _p; }
 
-private:
-
-    template <typename D>
-    static comm_mutex& mux() {
-        static coid::comm_mutex _mux(500, false);   //mutex specialized for D class
-        return _mux;
-    }
+    template <class U>
+    U* cast() const { return static_cast<U*>(_p); }
 };
 
 
