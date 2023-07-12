@@ -1832,12 +1832,12 @@ public:
     };
 
     iterator begin() const {
-        const uints first_id = is_valid_id(0) || this->allocated_count() == 0 ? 0 : next_index(0);
+        const uints first_id = is_valid_id(0) || this->allocated_count() == 0 ? uints(-1) : next_index(0);
         return iterator(const_cast<base_t*>(this), first_id);
     }
 
     iterator end() const {
-        return iterator(const_cast<base_t*>(this), uints(_count));
+        return iterator(const_cast<base_t*>(this), uints(-1));
     }
 
 protected:
@@ -1870,7 +1870,7 @@ protected:
         }
         while (true);
 
-        return _count;
+        return -1;
     }
 
     /// @return allocated and previously created count (not necessarily used currently)
