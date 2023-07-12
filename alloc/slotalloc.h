@@ -1832,7 +1832,7 @@ public:
     };
 
     iterator begin() const {
-        const uints first_id = is_valid_id(0) || this->allocated_count() == 0 ? uints(-1) : next_index(0);
+        const uints first_id = is_valid_id(0) ? uints(0) : (this->allocated_count() == 0 ? uints(-1) : next_index(0));
         return iterator(const_cast<base_t*>(this), first_id);
     }
 
