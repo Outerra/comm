@@ -365,6 +365,7 @@
     <ClInclude Include="..\..\..\international.h" />
     <ClInclude Include="..\..\..\process.h" />
     <ClInclude Include="..\..\..\log.h" />
+    <ClInclude Include="..\..\..\unique_ptr.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\crypt\sha1.cpp">

@@ -571,6 +571,7 @@
     <ClInclude Include="..\..\..\txtconv.h" />
     <ClInclude Include="..\..\..\range.h" />
     <ClInclude Include="..\..\..\typeseq.h" />
+    <ClInclude Include="..\..\..\unique_ptr.h" />
     <ClInclude Include="..\..\..\version.h" />
   </ItemGroup>
   <ItemGroup>
