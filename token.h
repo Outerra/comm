@@ -739,9 +739,11 @@ struct token
         return ch;
     }
 
-    ///Cut maximum of \a n characters from the token from the left side
-    token cut_left_n(uints n)
+    ///Cut maximum of \a n characters from the token from the left side, or cut the remaining characters when counting from the right side when n < 0
+    token cut_left_n(ints n)
     {
+        if (n < 0)
+            n = (_pte - _ptr) + n;
         const char* p = _ptr + n;
         if (p > _pte)
             p = _pte;
@@ -751,9 +753,11 @@ struct token
         return r;
     }
 
-    ///Cut maximum of \a n characters from the token from the right side
-    token cut_right_n(uints n)
+    ///Cut maximum of \a n characters from the token from the right side, or cut the remaining characters when counting from the left side when n < 0
+    token cut_right_n(ints n)
     {
+        if (n < 0)
+            n = (_pte - _ptr) + n;
         const char* p = _pte - n;
         if (p < _ptr)
             p = _ptr;
