@@ -3978,6 +3978,28 @@ metastream& operator || (metastream& m, range<T>& a)
 }
 
 
+///A helper to check if a type has metastream operator defined
+/// Usage: has_metastream_operator<T>::value
+
+namespace check {
+    template<typename T> char operator || (coid::metastream&, T&);
+
+    template <typename T>
+    struct helper {
+        typedef typename std::remove_reference<T>::type B;
+        typedef typename std::remove_const<B>::type C;
+
+        enum {
+            value = std::is_enum<C>::value || (sizeof(*(metastream*)(0) || *(C*)(0)) != sizeof(char))
+        };
+    };
+}
+
+template <typename T>
+struct has_metastream_operator {
+    static constexpr bool value = check::helper<T>::value;
+};
+
 COID_NAMESPACE_END
 
 
@@ -4050,34 +4072,5 @@ COID_NAMESPACE_END
     inline metastream& operator || (metastream& m, TYPE& v) {\
         m.compound_type(v, [&]() { m.member_fixed_size_array_ptr<4>("col", &v[0], false); });\
         return m; }}
-
-
-
-///A helper to check if a type has metastream operator defined
-/// Usage: CHECK::meta_operator_exists<T>::value
-
-namespace CHECK  // namespace to not let "operator <<" become global
-{
-typedef char no[7];
-template<typename T> no& operator || (coid::metastream&, T&);
-
-template <typename T>
-struct meta_operator_exists
-{
-    typedef typename std::remove_reference<T>::type B;
-    typedef typename std::remove_const<B>::type C;
-
-    enum {
-        value = std::is_enum<C>::value
-        || (sizeof(*(coid::metastream*)(0) || *(C*)(0)) != sizeof(no))
-    };
-};
-
-template<>
-struct meta_operator_exists<bool> {
-    enum { value = true };
-};
-}
-
 
 #endif //__COID_COMM_METASTREAM__HEADER_FILE__

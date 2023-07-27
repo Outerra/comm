@@ -313,7 +313,7 @@ class metagen //: public binstream
         };
 
         token name;
-        enum { UNKNOWN, DEFAULT, INLINE, OPEN, COND_POS, COND_NEG } cond;
+        enum { UNKNOWN, DEFAULT, INLINE, OPEN, COND_POS, COND_NEG, COND_OPEN_AND, COND_OPEN_OR } cond = UNKNOWN;
         Value value;
         int depth = 0;
 
@@ -325,17 +325,27 @@ class metagen //: public binstream
         bool is_condition() const { return cond >= COND_POS; }
         bool is_open() const { return cond == OPEN; }
 
-        bool parse(mtglexer& lex)
+        bool parse(mtglexer& lex, bool has_open_tag)
         {
             //attribute can be
-            // [!]<name>(.<name>)* [?!] [= "value"]
+            // [!?]<name>(.<name>)* [= "value"]
             const lextoken& tok = lex.last();
 
-            bool condneg = false;
+            cond = UNKNOWN;
             if (tok == '!') {
-                condneg = true;
+                cond = COND_NEG;
                 lex.next();
             }
+            else if (tok == '?') {
+                cond = COND_POS;
+                lex.next();
+            }
+
+            //bool condneg = false;
+            //if (tok == '!') {
+            //    condneg = true;
+            //    lex.next();
+            //}
 
             if (tok.id != lex.IDENT)  return false;
             name = tok.val;
@@ -348,12 +358,6 @@ class metagen //: public binstream
 
             for (; pc < pce; ++pc)
                 if (*pc == '.')  ++depth;
-
-            cond = UNKNOWN;
-            lex.next();
-            if (tok.val == '?')        cond = condneg ? COND_NEG : COND_POS;
-            else if (tok.val == '!')   cond = COND_NEG;
-            else lex.push_back();
 
             lex.next();
             if (tok == '=')
@@ -371,15 +375,23 @@ class metagen //: public binstream
 
                 lex.next();
             }
+            else if (!has_open_tag && cond == UNKNOWN) {
+                cond = COND_OPEN_AND;
+                if (tok == '|')
+                    cond = COND_OPEN_OR;
+                else if (tok == '&')
+                    cond = COND_OPEN_AND;
+            }
 
-            if (cond && depth == 0)
-                depth = 1;          //force find_child
-            else if (!cond)
+            if (cond)
+                depth++; //force find_child
+            else
                 cond = OPEN;
 
             if (name == "default")
             {
-                if (cond == INLINE)  cond = DEFAULT;
+                if (cond == INLINE)
+                    cond = DEFAULT;
                 else if (cond != OPEN) {
                     lex.set_err() << "'default' attribute can only be open or inline";
                     throw lex.exc();
@@ -389,7 +401,7 @@ class metagen //: public binstream
             return true;
         }
 
-        bool eval(metagen& mg, const Varx& var) const
+        bool eval(metagen& mg, const Varx& var, const Attribute*& anext, const Attribute* aend) const
         {
             //if the depth is set, the attribute reffers to a descendant
             token n = name;
@@ -401,10 +413,53 @@ class metagen //: public binstream
             else
                 v = var;
 
-            bool inv;
+            bool inv = false;
             if (cond == COND_POS)      inv = false;
             else if (cond == COND_NEG) inv = true;
-            else return true;
+            else if (cond == COND_OPEN_AND || cond == COND_OPEN_OR) {
+                //consume conditional attributes that follow
+                const Attribute* cend = anext;
+                while (cend < aend && cend->is_condition()) cend++;
+                const Attribute* at = anext;
+                anext = cend;
+
+                if (cend > at) {
+                    bool is_either = cond == COND_OPEN_OR;
+                    if (v.is_array()) {
+                        VarxElement ve;
+                        uints n = ve.first(v);
+                        for (; n > 0; --n, ve.next())
+                        {
+                            const Attribute* p = at;
+                            const Attribute* dummy = 0;
+                            for (; p < cend; ++p) {
+                                bool succ = p->eval(mg, ve, dummy, dummy);
+                                if (is_either == succ)
+                                    break;  //break early if and-mode and got false, or if or-mode and got true
+                            }
+
+                            if (is_either == (p < cend))
+                                return true;   //all (and-mode) or at least one (or-mode) passed
+                        }
+
+                        return false;
+                    }
+                    else {
+                        const Attribute* p = at;
+                        const Attribute* dummy = 0;
+                        for (; p < cend; ++p) {
+                            bool succ = p->eval(mg, v, dummy, dummy);
+                            if (is_either == succ)
+                                break;  //break early if and-mode and got false, or if or-mode and got true
+                        }
+
+                        bool val = is_either == (p < cend);
+                        return val;
+                    }
+                }
+            }
+            else
+                return true;
 
             bool val;
 
@@ -441,6 +496,7 @@ class metagen //: public binstream
         uint16 eat_left : 4;
         uint16 eat_right : 4;
 
+        bool is_either = false;         //< for conditions, or-relation
         char brace;                     //< brace type (character)
         char escape;                    //< escape given char and all special ones
         int8 depth;                     //< tag depth from current level (number of dots before name)
@@ -456,8 +512,7 @@ class metagen //: public binstream
                     && ((trailing && varname == "if") || (!trailing && varname == "elif"));
             }
 
-            return brace == p.brace
-                && varname == p.varname;
+            return brace == p.brace && varname == p.varname;
         }
 
         void set_empty() {
@@ -479,6 +534,7 @@ class metagen //: public binstream
 
             trailing = 0;
             eat_left = eat_right = 0;
+            is_either = false;
             brace = 0;
             depth = 0;
 
@@ -514,16 +570,22 @@ class metagen //: public binstream
                 for (; p < pe; ++p)
                     if (*p == '.')  ++depth;
 
+                if (lex.matches('|'))
+                    is_either = true;
+                else if (lex.matches('&'))
+                    is_either = false;
+
                 lex.next();
 
+                bool can_have_open_tag = brace == '[';
                 bool lastopen = false;
 
                 attr.reset();
 
                 Attribute at;
-                while (at.parse(lex))
+                while (at.parse(lex, can_have_open_tag))
                 {
-                    if (lastopen) {
+                    if (can_have_open_tag && lastopen) {
                         lex.set_err() << "An open attribute followed by another";
                         throw lex.exc();
                     }
@@ -709,6 +771,7 @@ class metagen //: public binstream
     {
         dynarray<Attribute> attr;       //< conditions and attributes
         char escape = 0;
+        bool is_either = false;
 
         ///Process the variable, default code does simple substitution
         virtual void process_content(metagen& mg, const Varx& var) const
@@ -731,6 +794,7 @@ class metagen //: public binstream
             escape = hdr.escape;
 
             attr.swap(hdr.attr);
+            is_either = hdr.is_either;
 
             if (attr.size() > 0 && attr.last()->is_open()) {
                 lex.set_err() << "Simple tags cannot contain open attribute";
@@ -773,10 +837,17 @@ class metagen //: public binstream
                             for (; n > 0; --n, ve.next())
                             {
                                 const Attribute* p = pb;
+                                const Attribute* dummy = 0;
                                 for (; p < pe; ++p) {
-                                    if (!p->eval(mg, ve)) break;
+                                    DASSERT(p->is_condition());
+                                    if (!p->is_condition())
+                                        continue;
+
+                                    bool succ = p->eval(mg, ve, dummy, dummy);
+                                    if (is_either == succ)
+                                        break;  //break early if and-mode and got false, or if or-mode and got true
                                 }
-                                if (p < pe)
+                                if (is_either == (p >= pe))
                                     continue;
 
                                 ++count;
@@ -911,14 +982,23 @@ class metagen //: public binstream
         struct Clause {
             dynarray<Attribute> attr;
             TagSequence rng;
+            bool is_either = false;         //< either of conditions must be true
 
             bool eval(metagen& mg, const Varx& var) const
             {
                 const Attribute* p = attr.ptr();
                 const Attribute* pe = attr.ptre();
 
-                for (; p < pe; ++p)
-                    if (!p->eval(mg, var))  return false;
+                while (p < pe) {
+                    const Attribute* next = p + 1;
+                    bool succ = p->eval(mg, var, next, pe);
+                    if (succ == is_either)
+                        break;
+                    p = next;
+                }
+
+                if (is_either == (p >= pe))
+                    return false;
 
                 rng.process(mg, var);
                 return true;
@@ -933,24 +1013,28 @@ class metagen //: public binstream
             const Clause* p = clause.ptr();
             const Clause* pe = clause.ptre();
 
-            for (; p < pe; ++p)
-                if (p->eval(mg, var))  return;
+            for (; p < pe; ++p) {
+                if (p->eval(mg, var))
+                    return;
+            }
         }
 
         virtual void parse_content(mtglexer& lex, ParsedTag& hdr)
         {
             if (hdr.varname != "if") {
-                lex.set_err() << "Unknown code block: " << hdr.varname;
+                lex.set_err() << "Unknown conditional block: " << hdr.varname;
                 throw lex.exc();
             }
 
             ParsedTag tmp;
             tmp.attr.swap(hdr.attr);
             tmp.eat_right = hdr.eat_right;
+            tmp.is_either = hdr.is_either;
 
             do {
                 Clause* c = clause.add();
                 c->attr.swap(tmp.attr);
+                c->is_either = tmp.is_either;
 
                 c->rng.parse(lex, tmp, &hdr);
 
@@ -968,7 +1052,7 @@ class metagen //: public binstream
     {
         TagSequence atr_first, atr_rest;
         TagSequence atr_body;
-        TagSequence atr_after, atr_final;
+        TagSequence atr_after;
         TagSequence atr_empty;
 
         dynarray<Attribute> cond;
@@ -977,8 +1061,12 @@ class metagen //: public binstream
         {
             const Attribute* p = cond.ptr();
             const Attribute* pe = cond.ptre();
-            for (; p < pe; ++p)
-                if (!p->eval(mg, var))  return false;
+            while (p < pe) {
+                const Attribute* next = p + 1;
+                if (!p->eval(mg, var, next, pe))
+                    return false;
+                p = next;
+            }
             return true;
         }
 
@@ -1001,12 +1089,12 @@ class metagen //: public binstream
                 bool evalcond = cond.size() > 0;
 
                 int i = 0, fi = 0;
-                for (; n > 0; --n, ve.next())
+                for (; n > 0; --n, ve.next(), ++i)
                 {
                     if (evalcond && !eval_cond(mg, ve))
                         continue;
 
-                    if (i == 0)
+                    if (fi == 0)
                         atr_first.process(mg, ve);
                     else
                         atr_rest.process(mg, ve);
@@ -1015,7 +1103,6 @@ class metagen //: public binstream
                     ve.order = fi++;
 
                     atr_body.process(mg, ve);
-                    ++i;
                 }
 
                 ve.index = i;
@@ -1024,8 +1111,8 @@ class metagen //: public binstream
                 //the 'after' statement is evaluated only if there were some array items evaluated too
                 if (i > 0)
                     atr_after.process(mg, ve);
-
-                atr_final.process(mg, ve);
+                else
+                    atr_empty.process(mg, ve);
             }
         }
 
@@ -1054,7 +1141,6 @@ class metagen //: public binstream
             if (name == "rest")   return &atr_rest;
             if (name == "body")   return &atr_body;
             if (name == "after")  return &atr_after;
-            if (name == "final")  return &atr_final;
             if (name == "empty")  return &atr_empty;
             return 0;
         }

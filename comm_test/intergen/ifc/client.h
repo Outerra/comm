@@ -78,32 +78,24 @@ public:
 #pragma warning(push)
 #pragma warning(disable : 4191)
 
-    void set_def( const flags& flg = {.a = 1, .b = 2} )
-    { return VT_CALL(void,(const flags&),0)(flg); }
+    void set_def( const flags& flg = {.a = 1, .b = 2} );
 
     ///Setter
-    void set( const coid::token& par )
-    { return VT_CALL(void,(const coid::token&),1)(par); }
+    void set( const coid::token& par );
 
     ///Getter
-    int get( ifc_out coid::charstr& par )
-    { return VT_CALL(int,(coid::charstr&),2)(par); }
+    int get( ifc_out coid::charstr& par );
 
     ///Using a custom type
-    sometype custom()
-    { return VT_CALL(sometype,(),3)(); }
+    sometype custom();
 
-    const int* c_only_method( int k )
-    { return VT_CALL(const int*,(int),4)(k); }
+    const int* c_only_method( int k );
 
-    void set_array( const float ar[3] )
-    { return VT_CALL(void,(const float[3]),5)(ar); }
+    void set_array( const float ar[3] );
 
-    void callback( void (*cbk)(int, const coid::token&) )
-    { return VT_CALL(void,(void(*)(int, const coid::token&)),6)(cbk); }
+    void callback( void (*cbk)(int, const coid::token&) );
 
-    void memfn_callback( coid::callback<void(int, void*)>&& fn )
-    { return VT_CALL(void,(coid::callback<void(int, void*)>&&),7)(std::forward<coid::callback<void(int, void*)>>(fn)); }
+    void memfn_callback( coid::callback<void(int, void*)>&& fn );
 
 #pragma warning(pop)
 
@@ -266,6 +258,31 @@ inline iref<T> client::creator( T* _subclass_ )
 
     return create(_subclass_);
 }
+
+
+inline auto client::set_def( const flags& flg ) -> void
+{ return VT_CALL(void,(const flags&),0)(flg); }
+
+inline auto client::set( const coid::token& par ) -> void
+{ return VT_CALL(void,(const coid::token&),1)(par); }
+
+inline auto client::get( ifc_out coid::charstr& par ) -> int
+{ return VT_CALL(int,(coid::charstr&),2)(par); }
+
+inline auto client::custom() -> sometype
+{ return VT_CALL(sometype,(),3)(); }
+
+inline auto client::c_only_method( int k ) -> const int*
+{ return VT_CALL(const int*,(int),4)(k); }
+
+inline auto client::set_array( const float ar[3] ) -> void
+{ return VT_CALL(void,(const float[3]),5)(ar); }
+
+inline auto client::callback( void (*cbk)(int, const coid::token&) ) -> void
+{ return VT_CALL(void,(void(*)(int, const coid::token&)),6)(cbk); }
+
+inline auto client::memfn_callback( coid::callback<void(int, void*)>&& fn ) -> void
+{ return VT_CALL(void,(coid::callback<void(int, void*)>&&),7)(std::forward<coid::callback<void(int, void*)>>(fn)); }
 
 
 #endif //_INTERGEN_GENERATED__client_H_

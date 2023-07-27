@@ -215,7 +215,7 @@ struct MethodIG
         bool boutarg = false;           //< output type argument
         bool bvolatile = false;
         bool tokenpar = false;          //< input argument that accepts token (token or charstr)
-        bool bnojs = false;             //< not used in JS, use default val
+        bool bnoscript = false;         //< not used in scripts, use default val
         bool bfnarg = false;            //< function type arg
 
 
@@ -258,7 +258,7 @@ struct MethodIG
                 m.member("outarg", p.boutarg);
                 m.member("volatile", p.bvolatile);
                 m.member("token", p.tokenpar);
-                m.member("nojs", p.bnojs);
+                m.member("nojs", p.bnoscript);
                 m.member("fnarg", p.bfnarg);
             });
         }
@@ -266,6 +266,7 @@ struct MethodIG
 
     charstr name;                       //< method name
     charstr intname;                    //< internal name
+    charstr basename;                   //< method name, changed operator name
     charstr storage;                    //< storage for host class, iref<type>, ref<type> or type*
     charstr default_event_body;
 
@@ -332,6 +333,7 @@ struct MethodIG
             m.member("return", p.ret);
             m.member("name", p.name);
             m.member("intname", p.intname);
+            m.member("basename", p.basename);
             m.member("storage", p.storage);
             m.member("operator", p.boperator);
             m.member("internal", p.binternal);

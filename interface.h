@@ -51,6 +51,127 @@ COID_NAMESPACE_BEGIN
 
 class binstring;
 
+namespace meta {
+
+template <typename T>
+struct stream_op {
+    static void fn(metastream& m, void* v) {
+        if constexpr (std::is_enum_v<T>)
+            m || *(std::underlying_type_t<T>*)v;
+        else if constexpr (!has_metastream_operator<T>::value)
+            ;
+        else
+            m || *(T*)v;
+    }
+};
+
+struct arg
+{
+    const token name;                   //< parameter name
+    const token type;                   //< parameter type (stripped of const qualifier)
+    const token basetype;               //< base type (stripped of the last ptr/ref)
+    const token barens;                 //< namespace part of full bare type (without iref)
+    const token baretype;               //< type part of full bare type
+    const token argsize;                //< size expression if the parameter is an array, including [ ]
+    const token fnargs;                 //< argument list of a function-type argument
+    const token memfnclass;             //< member fn class
+    const token defval;                 //< default value expression
+
+    void (*fn_metastream)(metastream&, void*);
+
+    bool bspecptr       = false;        //< special type where pointer is not separated (e.g const char*)
+    bool bptr           = false;        //< true if the type is a pointer
+    bool bref           = false;        //< true if the type is a reference
+    bool bxref          = false;        //< true if the type is xvalue reference
+    bool biref          = false;
+    bool bconst         = false;        //< true if the type had const qualifier
+    bool benum          = false;
+    bool binarg         = true;         //< input type argument
+    bool boutarg        = false;        //< output type argument
+    bool bvolatile      = false;
+    bool bnojs          = false;        //< not used in script, use default val
+    bool bfnarg         = false;        //< function type arg
+
+    const token doc;
+};
+
+struct method
+{
+    const token name;                   //< method name
+
+    bool bstatic        = false;        //< a static (creator) method
+    bool bptr           = false;        //< ptr instead of ref
+    bool biref          = true;         //< iref instead of ref
+    bool bifccr         = false;        //< ifc returning creator (not returning host)
+    bool bconst         = false;        //< const method
+    bool boperator      = false;
+    bool binternal      = false;        //< internal method, invisible to scripts (starts with an underscore)
+    bool bcapture       = false;        //< method captured when interface is in capturing mode
+    bool bimplicit      = false;        //< an implicit event/method
+    bool bdestroy       = false;        //< a method to call on interface destroy
+    bool bnoevbody      = false;        //< mandatory event
+    bool bpure          = false;        //< pure virtual on client
+    bool bduplicate     = false;        //< a duplicate method/event from another interface of the host
+    bool binherit       = false;        //< method inherited from base interface
+
+    int nargs = 0;                      //< total number of arguments 
+    int ninargs = 0;                    //< number of input arguments
+    int noutargs = 0;                   //< number of output arguments
+
+    const arg* args = 0;                //< arguments
+    const arg retval;                   //< return value
+
+    //const token* comments = 0;          //< comments preceding the method declaration
+    //const token* docs = 0;              //< doc paragraphs
+
+};
+
+struct interface
+{
+    const token name;
+    const token* nss = 0;           //< namespaces
+    const token hdrfile;
+    const token storage;
+
+    const token baseclass;          //< only the base class name
+    const token* baseclassnss = 0;  //< base class namespaces
+
+    uint ncreators = 0;
+    uint nmethods = 0;
+    uint nevents = 0;
+    const method* creators = 0;
+    const method* methods = 0;
+    const method* events = 0;
+
+    int destroy_method = -1;
+    int default_creator_method = -1;
+
+    int oper_get = -1;
+    int oper_set = -1;
+
+    const arg* getter = 0;
+    const arg* setter = 0;
+
+    const token on_connect;
+    const token on_connect_ev;
+    const token on_unload;
+
+    uint hash;
+
+    int ninherited = 0;
+
+    const token* comments = 0;
+    const token* docs = 0;
+
+    bool bvirtual = false;
+    bool bdataifc = false;
+    bool bdirect_inheritance = false;
+    bool binheritable = false;
+    bool bvirtualorinheritable = false;
+};
+
+} //namespace meta
+
 ////////////////////////////////////////////////////////////////////////////////
 ///A global register for interfaces, used by intergen
 class interface_register

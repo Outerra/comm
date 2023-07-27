@@ -177,7 +177,7 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
     baretype = barens.cut_right_back("::", false);
 
 
-    bnojs = false;
+    bnoscript = false;
 
     //match default value
     if(lex.matches('=')) {
@@ -206,7 +206,8 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
         lex.enable(lex.SQUARE, was_square);
         lex.enable(lex.ROUND, was_round);
 
-        bnojs = name.first_char() == '_';
+        //arguments starting with underscore that have default value are not used in script
+        bnoscript = name.first_char() == '_';
     }
 
     return lex.no_err();

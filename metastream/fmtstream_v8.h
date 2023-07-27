@@ -1102,24 +1102,12 @@ struct v8_streamer_context
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-template<bool ISENUM, class T>
-struct v8_enum_helper {
-    int operator << (const T&) const { return 0; }
-    T operator >> (int) const { return T(); }
-};
-
-template<class T>
-struct v8_enum_helper<true, T> {
-    int operator << (const T& v) const { return int(v); }
-    T operator >> (int v) const { return T(v); }
-};
 
 template<class T>
 inline v8::Handle<v8::Value> to_v8<T>::read(const T& v)
 {
-    v8_enum_helper<std::is_enum<T>::value, T> en;
-    if (std::is_enum<T>::value)
-        return v8::Int32::New(v8::Isolate::GetCurrent(), en << v);
+    if constexpr (std::is_enum_v<T>)
+        return v8::Int32::New(v8::Isolate::GetCurrent(), int(v));
 
     auto& streamer = THREAD_SINGLETON(v8_streamer_context);
     streamer.meta.xstream_out(v);
@@ -1130,9 +1118,8 @@ inline v8::Handle<v8::Value> to_v8<T>::read(const T& v)
 template<class T>
 inline bool from_v8<T>::write(v8::Handle<v8::Value> src, T& res)
 {
-    v8_enum_helper<std::is_enum<T>::value, T> en;
-    if (std::is_enum<T>::value)
-        res = en >> src->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromJust();
+    if constexpr (std::is_enum_v<T>)
+        res = T(src->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromJust());
     else {
         auto& streamer = THREAD_SINGLETON(v8_streamer_context);
         streamer.fmtv8.set(src);

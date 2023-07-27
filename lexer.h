@@ -552,6 +552,14 @@ public:
         return 1 + ord;
     }
 
+    /// @return number of keywords in a group
+    uint num_keywords(int kid) const {
+        DASSERT(kid >= ID_KEYWORDS && kid < ID_KEYWORDS + (int)_nkwd_groups);
+        if (kid < ID_KEYWORDS || kid >= ID_KEYWORDS + (int)_nkwd_groups)
+            return 0;
+
+        return _kwds.nkwds[kid - ID_KEYWORDS].nkwd;
+    }
 
     ///Escape sequence processor function prototype.
     ///Used to consume input after escape character and to append translated characters to dst
@@ -1766,6 +1774,7 @@ public:
     ///Push the last token back to be retrieved again by the next() method
     /// (and all the methods that use it, like the match_* methods etc.).
     void push_back() {
+        DASSERT(_pushback == 0);
         _pushback = 1;
     }
 
@@ -2032,8 +2041,8 @@ protected:
     bool next_equals(const token& val)
     {
         //preserve old token position if there's no match
-        const char* old = _tok.ptr();
-        uints oldstacksize = _stack.size();
+        //const char* old = _tok.ptr();
+        //uints oldstacksize = _stack.size();
 
         bool equals = _pushback
             ? _last == val
@@ -2041,9 +2050,10 @@ protected:
         equals = equals && !_last.is_content();
 
         if (!equals && !_pushback) {
-            _tok._ptr = old;
-            if (_stack.size() > oldstacksize)
-                _stack.resize(oldstacksize);
+            //_tok._ptr = old;
+            //if (_stack.size() > oldstacksize)
+            //    _stack.resize(oldstacksize);
+            _pushback = 1;
         }
         else if (equals && _pushback)
             _pushback = 0;
@@ -2377,7 +2387,7 @@ protected:
             int nkwd;
         };
 
-        hash_keyset < keyword_id, _Select_Copy<keyword_id, token>, hash_keyword, equal_keyword >
+        hash_keyset<keyword_id, _Select_Copy<keyword_id, token>, hash_keyword, equal_keyword>
             set;                        //< hash_keyset for fast detection if the string is in the list
         dynarray<group> nkwds;
 

@@ -10,7 +10,7 @@
 
 #include <comm/commexception.h>
 #include <comm/intergen/ifc.h>
-$-(if base?)$
+$-(if ?base)$
 
 #include "$baseclass$.h"
 $(/if)$
@@ -28,7 +28,7 @@ $-[ns]$
 namespace $@value$ {
 $-[/ns]$
 ////////////////////////////////////////////////////////////////////////////////
-$-(if !comments.empty?)$$[comments]$
+$-(if !comments.empty)$$[comments]$
 $@value$
 $-[/comments]$$(/if)$
 class $name$ : public intergen_data_interface
@@ -41,20 +41,20 @@ $-[/pasteinners]$
 
     // --- interface methods ---
 
-$-[method !static? !destroy?]$
-$(if !comments.empty?)$$[comments]-$
+$-[method !static !destroy]$
+$(if !comments.empty)$$[comments]-$
     $@value$
 $[/comments]$$(/if)-$
-    $(if ..virtual?)$virtual $(/if)$$return.type$ $name$($[args rest=", "]$$ifckwds after=" "$$type$ $(if fnarg?)$( $-memfnclass after="::"-$ *$name$)($fnargs$)$(elif)$$name$$(/if)$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$) $-(if const?)$ const$(/if)$$(if ..virtual?)$ = 0$(/if)$;
+    $(if ?..virtual)$virtual $(/if)$$return.type$ $name$($[args rest=", "]$$ifckwds after=" "$$type$ $(if ?fnarg)$( $-memfnclass after="::"-$ *$name$)($fnargs$)$(elif)$$name$$(/if)$$size$ $-(if ?defval)$ = $defval$$(/if)$$[/args]$) $-(if ?const)$ const$(/if)$$(if ?..virtual)$ = 0$(/if)$;
 $[/method]-$
 
     // --- creators ---
-$-[method creator?]$
+$-[method ?creator]$
 
-$(if !comments.empty?)$$[comments]-$
+$(if !comments.empty)$$[comments]-$
     $@value$
 $[/comments]$$(/if)-$
-    static $..name$* $name$($-[args rest=" ,"]$ $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$);
+    static $..name$* $name$($-[args rest=" ,"]$ $type$ $name$$size$ $-(if ?defval)$ = $defval$$(/if)$$[/args]$);
 $-[/method]$
 
     // --- internal helpers ---
@@ -80,17 +80,17 @@ $-[/pasteafters]$
 #pragma warning(push)
 #pragma warning(disable : 4191)
 
-$-[method !static? !destroy? !virtual?]$
-$(if !comments.empty?)$$[comments]-$
+$-[method !static !destroy !virtual]$
+$(if !comments.empty)$$[comments]-$
     $@value$
 $[/comments]$$(/if)-$
-inline $return.type$ $..name$::$name$($[args rest=", "]$$ifckwds after=" "$$type$ $(if fnarg?)$( $-memfnclass after="::"-$ *$name$)($fnargs$)$(elif)$$name$$(/if)$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$) $-(if const?)$ const$(/if)$
-{ return DT_CALL($return.type$,($[args rest=","]$ $-(if fnarg?)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$) $-(if const?)$ const$(/if)$,$index$)($[args rest=","]$ $-(if xref?)$std::forward<$basetype$>($(/if)-$ $name$ $-(if xref?)$)$(/if)-$ $[/args]$); }
+inline $return.type$ $..name$::$name$($[args rest=", "]$$ifckwds after=" "$$type$ $(if ?fnarg)$( $-memfnclass after="::"-$ *$name$)($fnargs$)$(elif)$$name$$(/if)$$size$ $-(if ?defval)$ = $defval$$(/if)$$[/args]$) $-(if ?const)$ const$(/if)$
+{ return DT_CALL($return.type$,($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$) $-(if ?const)$ const$(/if)$,$index$)($[args rest=","]$ $-(if ?xref)$std::forward<$basetype$>($(/if)-$ $name$ $-(if ?xref)$)$(/if)-$ $[/args]$); }
 $[/method]-$
 
 #pragma warning(pop)
 
-$-[method static?]$
+$-[method ?static]$
 ////////////////////////////////////////////////////////////////////////////////
 inline $..name$* $..name$::$name$($-[args rest=", "]$$type$ $name$$size$$[/args]$)
 {

@@ -394,6 +394,7 @@
     <ClCompile Include="..\..\..\comm_test\meta3.cpp" />
     <ClCompile Include="..\..\..\comm_test\regex.cpp" />
     <ClCompile Include="..\..\..\comm_test\stream.cpp" />
+    <ClCompile Include="..\..\..\intergen\test\test.intergen.cpp" />
   </ItemGroup>
   <ItemGroup>
     <hpp Include="..\..\..\comm_test\intergen\interface.hpp" />

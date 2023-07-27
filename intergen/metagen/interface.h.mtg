@@ -10,7 +10,7 @@
 
 #include <comm/commexception.h>
 #include <comm/intergen/ifc.h>
-$-(if base?)$
+$-(if ?base)$
 
 #include "$baseclass$.h"
 $(/if)$
@@ -30,13 +30,13 @@ namespace $@value$ {
 $-[/ns]$
 
 ////////////////////////////////////////////////////////////////////////////////
-$-(if !comments.empty?)$$[comments]$
+$-(if !comments.empty)$$[comments]$
 $@value$
 $-[/comments]$$(/if)$
 class $name$
-    : public $(if base?)$$base$$(elif)$intergen_interface$(/if)$
+    : public $(if ?base)$$base$$(elif)$intergen_interface$(/if)$
 {
-$-(if inhmask?)$
+$-(if ?inhmask)$
     const uint _inhmask = $inhmask$;
 
 $-(/if)$
@@ -44,47 +44,47 @@ public:
 $-[pasteinners]$
 $@value$
 $-[/pasteinners]$
-$-(if varname? destroy.name.empty?)$
+$-(if ?varname ?destroy.name.empty)$
 
     virtual ~$name$() {
         if (_cleaner)
             _cleaner(this, 0);
     }
 $-(/if)$
-$-(if event?)$
+$-(if ?event)$
 
     // --- host helpers to check presence of event handlers in scripts ---
 
     enum class event {
-$-[event !static?]$
-        $intname$ = $@index$,
+$-[event !static]$
+        $intname$ = $@order$,
 $-[/event]$
     };
 
     virtual bool is_bound(event m) { return true; }
-$-(/if event?)$
+$-(/if ?event)$
 
     // --- creators ---
-$-[method creator? !ifccr?]$
+$-[method ?creator !ifccr]$
 
-$(if !comments.empty?)$$[comments]-$
+$(if !comments.empty)$$[comments]-$
     $@value$
 $[/comments]$$(/if)-$
     static iref<$..name$> $name$(
-        $-[args rest="," after=" "]$ $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$) {
+        $-[args rest="," after=" "]$ $type$ $name$$size$ $-(if ?defval)$ = $defval$$(/if)$$[/args]$) {
         return $name$<$..name$>(0$[args]$, $name$$[/args]$);
     }
 
     template<class T>
-    static iref<T> $name$( T* _subclass_$[args]$, $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$ );
+    static iref<T> $name$( T* _subclass_$[args]$, $type$ $name$$size$ $-(if ?defval)$ = $defval$$(/if)$$[/args]$ );
 $-[/method]$
-$-[method creator? ifccr?]$
+$-[method ?creator ?ifccr]$
 
-$(if !comments.empty?)$$[comments]-$
+$(if !comments.empty)$$[comments]-$
     $@value$
 $[/comments]$$(/if)-$
     static iref<$..name$> $name$(
-        $-[args rest="," after=" "]$ $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$);
+        $-[args rest="," after=" "]$ $type$ $name$$size$ $-(if ?defval)$ = $defval$$(/if)$$[/args]$);
 $-[/method]$
 
     // --- interface methods ---
@@ -92,15 +92,15 @@ $-[/method]$
 #pragma warning(push)
 #pragma warning(disable : 4191)
 
-$-[method !static? !destroy?]$
-$(if !comments.empty?)$$[comments]-$
+$-[method !static !destroy]$
+$(if !comments.empty)$$[comments]-$
     $@value$
 $[/comments]$$(/if)-$
-    $(if ..virtual?)$virtual $(/if)$$return.type$ $name$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if fnarg?)$( $-memfnclass after="::"-$ *$name$)($fnargs$)$(elif)$$name$$(/if)$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$) $-(if const?)$ const$(/if)$$(if ..virtual?)$ = 0$(/if)$;
+    $(if ?..virtual)$virtual $(/if)$$return.type$ $name$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if ?fnarg)$( $-memfnclass after="::"-$ *$name$)($fnargs$)$(elif)$$name$$(/if)$$size$ $-(if ?defval)$ = $defval$$(/if)$$[/args]$) $-(if ?const)$ const$(/if)$$(if ?..virtual)$ = 0$(/if)$;
 $[/method]-$
 
 #pragma warning(pop)
-$-(if !event.empty?)$
+$-(if !event.empty)$
 
 protected:
     // --- interface events (callbacks from host to client) ---
@@ -108,12 +108,12 @@ protected:
 
     friend class ::$classnsx rest="::" after="::"$$class$;
 
-$-[event !static?]$
-$(if !comments.empty?)$$[comments]-$
+$-[event !static]$
+$(if !comments.empty)$$[comments]-$
     $@value$
 $[/comments]$$(/if)-$
-    virtual $return.type$ $name$($[args rest="," after=" "]$ $type$ $(if fnarg?)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$) $-(if const?)$ const$(/if)$
-    $-(if pure?)$ = 0;$(elif default_event_body?)$ { $default_event_body$ }$(elif return.type?="void")$ {}$(elif)${ throw coid::exception(HANDLER_NOT_IMPLEMENTED_MESSAGE); }$(/if)$
+    virtual $return.type$ $name$($[args rest="," after=" "]$ $type$ $(if ?fnarg)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$ $-(if ?defval)$ = $defval$$(/if)$$[/args]$) $-(if ?const)$ const$(/if)$
+    $-(if ?pure)$ = 0;$(elif ?default_event_body)$ { $default_event_body$ }$(elif ?return.type="void")$ {}$(elif)${ throw coid::exception(HANDLER_NOT_IMPLEMENTED_MESSAGE); }$(/if)$
 $[/event]-$
 
     virtual void force_bind_script_events() {}
@@ -132,18 +132,18 @@ $-(/if)$
         return _name;
     }
 
-    int intergen_hash_id() const override $-(if !virtualorinheritable?)$ final$(/if)$ { return HASHID; }
+    int intergen_hash_id() const override $-(if !virtualorinheritable)$ final$(/if)$ { return HASHID; }
 
-    bool iface_is_derived( int hash ) const override $-(if !virtualorinheritable ?)$ final$(/if)$ {
-        return hash == HASHID $-(if base?)$ || $base$::iface_is_derived(hash)$(/if)$;
+    bool iface_is_derived( int hash ) const override $-(if !virtualorinheritable)$ final$(/if)$ {
+        return hash == HASHID $-(if ?base)$ || $base$::iface_is_derived(hash)$(/if)$;
     }
 
-    const coid::tokenhash& intergen_interface_name() const override $-(if !virtualorinheritable ?)$ final$(/if)$ {
+    const coid::tokenhash& intergen_interface_name() const override $-(if !virtualorinheritable)$ final$(/if)$ {
         return IFCNAME();
     }
 
     static const coid::token& intergen_default_creator_static( backend bck ) {
-$-(if default_creator.name.empty?)$
+$-(if ?default_creator.name.empty)$
         static constexpr coid::token _dc(""_T);
 $-(elif)$
         static constexpr coid::token _dc("$ns rest="::" after="::"$$name$.$default_creator.name$@$hash$"_T);
@@ -162,7 +162,7 @@ $-(/if)$
         }
     }
 
-$-(if varname?)$
+$-(if ?varname)$
     /// @return cached active interface of given host class
     /// @note host side helper
     static iref<$name$> intergen_active_interface(::$classnsx rest="::" after="::"$$class$* host);
@@ -183,7 +183,7 @@ $-(/if)$
         return _cached_wrapper;
     }
 
-    void* intergen_wrapper( backend bck ) const override $-(if !virtualorinheritable ?)$ final$(/if)$ {
+    void* intergen_wrapper( backend bck ) const override $-(if !virtualorinheritable)$ final$(/if)$ {
         switch(bck) {
         case backend::js:  return intergen_wrapper_cache<backend::js>();
         case backend::jsc: return intergen_wrapper_cache<backend::jsc>();
@@ -194,7 +194,7 @@ $-(/if)$
 
     backend intergen_backend() const override { return backend::cxx; }
 
-    const coid::token& intergen_default_creator( backend bck ) const override $-(if !virtualorinheritable ?)$ final$(/if)$ {
+    const coid::token& intergen_default_creator( backend bck ) const override $-(if !virtualorinheritable)$ final$(/if)$ {
         return intergen_default_creator_static(bck);
     }
 
@@ -219,7 +219,7 @@ $-(/if)$
     }
 
 protected:
-$-(if varname?)$
+$-(if ?varname)$
 
     static coid::comm_mutex& share_lock() {
         static coid::comm_mutex _mx(500, false);
@@ -238,11 +238,11 @@ $-(if varname?)$
 $-(/if)$
 
     bool set_host(policy_intrusive_base*, intergen_interface*, iref<$name$>* pout);
-$-(if destroy.name.empty!)$
+$-(if !destroy.name.empty)$
 
     ~$name$() {
         VT_CALL($destroy.return.type$,($[destroy.args rest=","]$$type$$[/destroy.args]$),0)($[destroy.args rest=","]$$name$$[/destroy.args]$);
-$-(if varname?)$
+$-(if ?varname)$
         if (_cleaner)
             _cleaner(this, 0);
 $-(/if)$
@@ -254,7 +254,7 @@ $-[pasteafters]$
 $@value$
 $-[/pasteafters]$
 
-$-[method creator? !ifccr?]$
+$-[method ?creator !ifccr]$
 ////////////////////////////////////////////////////////////////////////////////
 template<class T>
 inline iref<T> $..name$::$name$( T* _subclass_
@@ -278,7 +278,7 @@ inline iref<T> $..name$::$name$( T* _subclass_
 }
 
 $-[/method]$
-$-[method static? ifccr?]$
+$-[method ?static ?ifccr]$
 ////////////////////////////////////////////////////////////////////////////////
 inline iref<$..name$> $..name$::$name$($-[args rest=", "]$$type$ $name$$size$$[/args]$)
 {
@@ -301,9 +301,9 @@ inline iref<$..name$> $..name$::$name$($-[args rest=", "]$$type$ $name$$size$$[/
 
 $-[/method]$
 
-$-[method !static? !destroy? !virtual?]$
-inline auto $..name$::$name$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if fnarg?)$( $-memfnclass after="::"-$ *$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if const?)$ const$(/if)$ -> $return.type$
-{ return VT_CALL($return.type$,($[args rest=","]$ $-(if fnarg?)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$) $-(if const?)$ const$(/if)$,$index$)($[args rest=","]$ $-(if xref?)$std::forward<$basetype$>($(/if)-$ $name$ $-(if xref?)$)$(/if)-$ $[/args]$); }
+$-[method !static !destroy !virtual]$
+inline auto $..name$::$name$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if ?fnarg)$( $-memfnclass after="::"-$ *$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if ?const)$ const$(/if)$ -> $return.type$
+{ return VT_CALL($return.type$,($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$) $-(if ?const)$ const$(/if)$,$index$)($[args rest=","]$ $-(if ?xref)$std::forward<$basetype$>($(/if)-$ $name$ $-(if ?xref)$)$(/if)-$ $[/args]$); }
 $[/method]-$
 
 $-[ns]$

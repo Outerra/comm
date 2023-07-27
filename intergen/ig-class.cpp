@@ -388,6 +388,8 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                     else
                         m->intname = m->name;
 
+                    m->basename = m->name;
+
                     if (m->bstatic) {
                         out << (lex.prepare_exception()
                             << "error: interface event cannot be static\n");
@@ -484,8 +486,18 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 }
                 else
                     m->intname = m->name;
+                    
+                m->basename = m->name;
 
                 if (m->boperator) {
+                    DASSERT(m->basename.ends_with("()"));
+                    m->basename.resize(-2);
+                    m->basename.trim() << '_';
+                    if (m->bconst)
+                        m->basename << "const";
+                    else
+                        m->basename << "nonconst";
+
                     if (m->bconst && lastifc->oper_get >= 0) {
                         out << (lex.prepare_exception() << "error: property getter already defined\n");
                         lex.clear_err();

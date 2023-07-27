@@ -23,7 +23,7 @@ $-[/pastedefers]$
 using namespace coid;
 
 $-[class]$
-$-(if iface.empty!)$
+$-(if !iface.empty)$
 static_assert( std::is_base_of<policy_intrusive_base, ::$ns rest="::" after="::"$$class$>::value, "class '$class$' must be derived from policy_intrusive_base");
 
 $-(/if)$
@@ -39,6 +39,34 @@ class $name$_dispatcher : public $name$
 {
     friend class $name$;
 
+    $-[method !args.empty]$
+    inline static const meta::arg $basename$_$@index$args[] = {$[args]$
+       { "$name$", "$type$", "$basetype$", "$barens$", "$baretype$", "$argsize$", "$fnargs$", "$memfnclass$", "$defval$", $(if | ?..internal ?nojs ?type="void" ?iref ?ptr)$nullptr$(elif)$&meta::stream_op<$basetype$>::fn$(/if)$, $specptr$, $ptr$, $ref$, $xref$, $iref$, $const$, $enum$, $inarg$, $outarg$, $volatile$, $nojs$, $fnarg$, "$doc\"$" },$[/args]$
+    };$[/method]$
+    inline static const meta::method$(if method ?static)$ creators[] = {$[method ?static]$
+        { "$name$", $static$, $ptr$, $iref$, $ifccr$, $const$, $operator$, $internal$, $capture$, $implicit$, $destroy$, $noevbody$, $pure$, $duplicate$, $inherit$, $args.@size$, $ninargs$, $noutargs$, $(if ?args.empty)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/method]$
+    };$(elif)$* creators = nullptr;$(/if)$
+    inline static const meta::method$(if method !static)$ methods[] = {$[method !static]$
+        { "$name$", $static$, $ptr$, $iref$, $ifccr$, $const$, $operator$, $internal$, $capture$, $implicit$, $destroy$, $noevbody$, $pure$, $duplicate$, $inherit$, $args.@size$, $ninargs$, $noutargs$, $(if ?args.empty)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/method]$
+    };$(elif)$* methods = nullptr;$(/if)$
+    $-[event !args.empty]$
+    inline static const meta::arg $basename$_$@index$args[] = {$[args]$
+       { "$name$", "$type$", "$basetype$", "$barens$", "$baretype$", "$argsize$", "$fnargs$", "$memfnclass$", "$defval$", $(if | ?..internal ?nojs ?type="void" ?iref ?ptr)$nullptr$(elif)$&meta::stream_op<$basetype$>::fn$(/if)$, $specptr$, $ptr$, $ref$, $xref$, $iref$, $const$, $enum$, $inarg$, $outarg$, $volatile$, $nojs$, $fnarg$, "$doc\"$" },$[/args]$
+    };$[/event]$
+    inline static const meta::method$(if event)$ events[] = {$[event]$
+        { "$name$", $static$, $ptr$, $iref$, $ifccr$, $const$, $operator$, $internal$, $capture$, $implicit$, $destroy$, $noevbody$, $pure$, $duplicate$, $inherit$, $args.@size$, $ninargs$, $noutargs$, $(if ?args.empty)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/event]$
+    };$(elif)$* events = nullptr;$(/if)$
+    inline static const meta::interface ifc_meta = {
+        "$name$", // interface name
+        {$[nss]$ "$@value$",$[/nss]$ 0 }, // namespaces
+        "$hdrfile$", // header file
+        "$storage$", // storage
+        "$baseclass$", // base class name
+        {$[baseclassnss]$" "$@value$",$[/baseclassnss]$ 0 }, // base class namespaces
+        $method.@size ?static$, $method.@size !static$, $event.@size$, // num. creators/methods/events
+        creators, methods, events
+    };
+
 private:
 
     inline static coid::binstring* _capture = 0;
@@ -48,12 +76,12 @@ private:
 
     static ifn_t* get_vtable()
     {
-$-(if !virtual?)$
+$-(if !virtual)$
         if (_vtable1) return _vtable1;
 
         _vtable1 = new ifn_t[$nifcmethods$];
-$-[method !static?]$
-        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if fnarg?)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if const?)$const$(/if)$>(&::$....ns rest="::" after="::"$$....class$::$intname$));
+$-[method !static]$
+        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if ?const)$const$(/if)$>(&::$....ns rest="::" after="::"$$....class$::$intname$));
 $-[/method]-$
 
         return _vtable1;
@@ -64,27 +92,27 @@ $-(/if)$
 
     #define VT_CALL2(R,F,I) ((*reinterpret_cast<policy_intrusive_base*>(this)).*(reinterpret_cast<R(policy_intrusive_base::*)F>(_vtable1[I])))
 
-$-[method capture?]$
+$-[method ?capture]$
 
-    $return.type$ __capture__$(if operator?)$operator$(elif)$$name$$index$$(/if)$($[args rest=", "]$$type$ $name$$[/args]$)$(if const?)$ const$(/if)$
+    $return.type$ __capture__$(if ?operator)$operator$(elif)$$name$$index$$(/if)$($[args rest=", "]$$type$ $name$$[/args]$)$(if ?const)$ const$(/if)$
     {
-        (*_capture) << uint16(_instid | $index$) $-[args inarg?]$ << $name$$[/args]$;
+        (*_capture) << uint16(_instid | $index$) $-[args ?inarg]$ << $name$$[/args]$;
         return VT_CALL2($return.type$,($[args rest=","]$$type$$[/args]$),$index$)($[args rest=","]$$name$$[/args]$);
     }
 $-[/method]$
 
     static ifn_t* get_vtable_intercept()
     {
-$-(if !virtual?)$
+$-(if !virtual)$
         if (_vtable2) return _vtable2;
         ifn_t* vtable1 = get_vtable();
 
         _vtable2 = new ifn_t[$nifcmethods$];
-$-[method !static?]$
-    $-(if capture? operator?)$
-        _vtable2[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$$type$$[/args]$)$(if const?)$const$(/if)$>(&__capture__operator));
-    $-(elif capture?)$
-        _vtable2[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$$type$$[/args]$)$(if const?)$const$(/if)$>(&__capture__$name$$index$));
+$-[method !static]$
+    $-(if ?capture ?operator)$
+        _vtable2[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$$type$$[/args]$)$(if ?const)$const$(/if)$>(&__capture__operator));
+    $-(elif ?capture)$
+        _vtable2[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$$type$$[/args]$)$(if ?const)$const$(/if)$>(&__capture__$name$$index$));
     $-(elif)$
         _vtable2[$@order$] = vtable1[$@order$];
     $-(/if)$
@@ -96,8 +124,8 @@ $-(elif)$
 $-(/if)$
     }
 
-$-[event pure?]$
-    $return.type$ $name$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if fnarg?)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if const?)$ const$(/if)$ override { throw coid::exception("unreachable"); }
+$-[event ?pure]$
+    $return.type$ $name$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if ?fnarg)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if ?const)$ const$(/if)$ override { throw coid::exception("unreachable"); }
 $-[/event]$
 
 protected:
@@ -124,10 +152,10 @@ protected:
     void intergen_capture_dispatch( uint mid, coid::binstring& bin ) override
     {
         switch(mid) {
-        $-[method capture? noutargs!]$
+        $-[method ?capture !noutargs]$
         case $index$: {
-            $-[args inarg?]$
-            $-(if token?)$
+            $-[args ?inarg]$
+            $-(if ?token)$
             coid::token $name$ = bin.string();
             $-(elif)$
             const $basetype$& $name$ = bin.fetch<$basetype$>();
@@ -141,13 +169,13 @@ protected:
         default: throw coid::exception("unknown method id in $name$ capture dispatcher");
         }
     }
-$-(if virtual!)$
+$-(if !virtual)$
 
     static iref<$name$> _generic_interface_creator(::$..ns rest="::" after="::"$$..class$* host, $name$* __here__)
     {
         iref<$name$> rval;
 
-        $--(if varname?)$
+        $--(if ?varname)$
         //an active interface (with events)
         if (host->$varname$ && !__here__)
             rval = intergen_active_interface(host);
@@ -171,11 +199,11 @@ $-(if virtual!)$
         dispatcher->set_host(host, 0, 0);
         $-(/if)$
 
-        $-(if onconnect?)$
+        $-(if ?onconnect)$
         host->$onconnect$();
 
         $-(/if)$
-        $-(if onconnectev?)$
+        $-(if ?onconnectev)$
         rval->$onconnectev$();
 
         $-(/if)$
@@ -187,8 +215,8 @@ public:
 
     // creator methods
 
-$-[method creator? !ifccr?]$
-    static iref<$..name$> $name$( $..name$* __here__$[args]$, $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$ )
+$-[method ?creator !ifccr]$
+    static iref<$..name$> $name$( $..name$* __here__$[args]$, $type$ $name$$size$ $-(if ?defval)$ = $defval$$(/if)$$[/args]$ )
     {
         iref<::$....ns rest="::" after="::"$$....class$> __host__ = ::$....ns rest="::" after="::"$$....class$::$intname$($[args rest=", "]$$name$$[/args]$);
         if (!__host__)
@@ -200,13 +228,13 @@ $-[/method]$
     ///Register interface creators in the global registry
     static void register_interfaces( bool on )
     {
-$-(if virtual!)$
+$-(if !virtual)$
         interface_register::register_interface_creator(
             "$ns rest="::" after="::"$$name$@wrapper",
             on ? (void*)&_generic_interface_creator : nullptr);
 
 $-(/if)$
-$-(if onunload?)$
+$-(if ?onunload)$
         static_assert(std::is_same<decltype(&::$..ns rest="::" after="::"$$..class$::$onunload$), intergen_interface::fn_unload_client>::value,
             "expected unload function to have (const coid::token& client, const coid::token& module, int mode) parameters");
 
@@ -215,12 +243,12 @@ $-(if onunload?)$
             on ? (void*)&::$..ns rest="::" after="::"$$..class$::$onunload$ : nullptr);
 
 $-(/if)$
-$-[method creator? !ifccr?]$
+$-[method ?creator !ifccr]$
         interface_register::register_interface_creator(
             "$..ns rest="::" after="::"$$..name$.$name$@$..hash$",
             on ? (void*)&$name$ : nullptr);
 $-[/method]$
-$-[method creator? ifccr?]$
+$-[method ?creator ?ifccr]$
         interface_register::register_interface_creator(
             "$..ns rest="::" after="::"$$..name$.$name$@$..hash$.ifc",
             on ? (void*)&::$....ns rest="::" after="::"$$....class$::$name$ : nullptr);
@@ -228,7 +256,7 @@ $-[/method]$
     }
 };
 
-$-(if varname?)$
+$-(if ?varname)$
 
 iref<$name$> $name$::intergen_active_interface(::$classnsx rest="::" after="::"$$class$* host)
 {
@@ -273,7 +301,7 @@ bool $name$::set_host(policy_intrusive_base* host__, intergen_interface* client_
 {
     _host = host__;
     _vtable = $name$_dispatcher::get_vtable();
-$-(if varname?)$
+$-(if ?varname)$
 
     return assign_safe(client__, pout);
 $-(elif)$
@@ -293,16 +321,16 @@ $-[ns]$
 } //namespace $@value$
 $-[/ns]$
 
-$-(if event?)$
+$-(if ?event)$
 // events
 
 $[..nss]$namespace $@value$ {
 $[/..nss]-$
 
-$-[event !implicit? !inherit?]$
-$return.type$ $....class$::$intname$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if fnarg?)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if const?)$ const$(/if)$
+$-[event !implicit !inherit]$
+$return.type$ $....class$::$intname$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if ?fnarg)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if ?const)$ const$(/if)$
 {
-    if (!$..varname$ $-(if ..inhmask?)$ || ($..varname$->iface<$..ns rest="::" after="::"$$..name$>()->_inhmask & (1<<$..ifc_bit$)) == 0$(/if)$) $-(if default_event_body?)$
+    if (!$..varname$ $-(if ?..inhmask)$ || ($..varname$->iface<$..ns rest="::" after="::"$$..name$>()->_inhmask & (1<<$..ifc_bit$)) == 0$(/if)$) $-(if ?default_event_body)$
         { $default_event_body$ }$(elif)$
         throw coid::exception("Client not connected! ($name$)");$(/if)$
     else
@@ -327,19 +355,19 @@ class $name$_data_dispatcher : public $name$
 {
 private:
 
-    inline static ifn_t _fn_table[] = {$-[method !static?]$
-        reinterpret_cast<ifn_t>(($return.type$(intergen_data_interface::*)($[args rest=","]$ $-(if fnarg?)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if const?)$const$(/if)$)(&::$....ns rest="::" after="::"$$....class$::$intname$)),
+    inline static ifn_t _fn_table[] = {$-[method !static]$
+        reinterpret_cast<ifn_t>(($return.type$(intergen_data_interface::*)($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if ?const)$const$(/if)$)(&::$....ns rest="::" after="::"$$....class$::$intname$)),
 $-[/method]$
         nullptr
     };
-    inline static icr_t _cr_table[] = {$-[method creator? !ifccr?]$
+    inline static icr_t _cr_table[] = {$-[method ?creator !ifccr]$
         reinterpret_cast<icr_t>(&::$....ns rest="::" after="::"$$....class$::$intname$),
 $-[/method]$
         nullptr
     };
-$-[event pure?]$
+$-[event ?pure]$
 
-    $return.type$ $name$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if fnarg?)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if const?)$ const$(/if)$ override { throw coid::exception("unreachable"); }
+    $return.type$ $name$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if ?fnarg)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if ?const)$ const$(/if)$ override { throw coid::exception("unreachable"); }
 $-[/event]$
 
 protected:
@@ -370,16 +398,16 @@ $-[ns]$
 } //namespace $@value$
 $-[/ns]$
 
-$-(if event?)$
+$-(if ?event)$
 // events
 
 $[..nss]$namespace $@value$ {
 $[/..nss]-$
 
-$-[event !implicit? !inherit?]$
-$return.type$ $....class$::$intname$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if fnarg?)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if const?)$ const$(/if)$
+$-[event !implicit !inherit]$
+$return.type$ $....class$::$intname$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if ?fnarg)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if ?const)$ const$(/if)$
 {
-    if (!$..varname$ $-(if ..inhmask?)$ || ($..varname$->iface<$..ns rest="::" after="::"$$..name$>()->_inhmask & (1<<$..ifc_bit$)) == 0$(/if)$) $-(if default_event_body?)$
+    if (!$..varname$ $-(if ?..inhmask)$ || ($..varname$->iface<$..ns rest="::" after="::"$$..name$>()->_inhmask & (1<<$..ifc_bit$)) == 0$(/if)$) $-(if ?default_event_body)$
         { $default_event_body$ }$(elif)$
         throw coid::exception() << "$name$" << " handler not implemented";$(/if)$
     else
