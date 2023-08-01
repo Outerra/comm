@@ -882,3 +882,7 @@ protected:
 };
 
 COID_NAMESPACE_END
+
+
+class entman : public coid::data_manager<entman>
+{};
