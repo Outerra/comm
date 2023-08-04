@@ -57,6 +57,9 @@ public:
     T* operator -> () { return reinterpret_cast<T*>(_vptr & ptr_mask); }
     const T* operator -> () const { return reinterpret_cast<const T*>(_vptr & ptr_mask); }
 
+    T& operator * () { return *reinterpret_cast<T*>(_vptr & ptr_mask); }
+    const T& operator * () const { return *reinterpret_cast<const T*>(_vptr & ptr_mask); }
+
     T* ptr() { return reinterpret_cast<T*>(_vptr & ptr_mask); }
     const T* ptr() const { return reinterpret_cast<const T*>(_vptr & ptr_mask); }
 

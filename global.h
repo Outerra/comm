@@ -269,7 +269,7 @@ class data_manager
         virtual void reserve(uint count) = 0;
 
         virtual versionid allocate() = 0;
-    
+
         virtual uint get_container_item_id(uint eid) const = 0;
 
         virtual uint get_used_count() const = 0;
@@ -295,9 +295,12 @@ class data_manager
         void* element_by_container_id(uint id) override final {
             return hash.get_item(id);
         }
-        
+
         void* create_default(uint eid) override {
-            return new (create_uninit(eid)) T;
+            if constexpr (std::is_default_constructible_v<T>)
+                return new (create_uninit(eid)) T;
+
+            __assume(false);
         }
         void* create_uninit(uint eid) override {
             bool is_new;
@@ -345,7 +348,10 @@ class data_manager
             return element(id);
         }
         void* create_default(uint eid) override {
-            return new (create_uninit(eid)) T;
+            if constexpr (std::is_default_constructible_v<T>)
+                return new (create_uninit(eid)) T;
+
+            __assume(false);
         }
         void* create_uninit(uint eid) override {
             return &data.get_or_add(eid);
@@ -535,46 +541,49 @@ public:
 
     /// @brief Insert data of given type under the entity id
     /// @tparam C data type
-    /// @param eid entity id
+    /// @param vid entity handle
     /// @param v data value to move from
     /// @return pointer to the inserted data
     template <class C>
-    static C* push(uint eid, C&& v)
+    static C* push(versionid vid, C&& v)
     {
         static container* c = get_or_create_container<C, cshash<C>>();
-        DASSERT_RET(c, 0);
+        DASSERT_RET(c, nullptr);
+        DASSERT_RET(c->seq->is_valid(vid), nullptr);
 
-        C* d = static_cast<C*>(c->create_default(eid));
+        C* d = static_cast<C*>(c->create_default(vid.id));
         *d = std::move(v);
-        DASSERT(c->storage_type != container::type::hash || static_cast<storage<C>*>(d)->eid == eid);
+        DASSERT(c->storage_type != container::type::hash || static_cast<storage<C>*>(d)->eid == vid.id);
 
         return d;
     }
 
     /// @brief Insert default constructed data
     /// @tparam C data type
-    /// @param eid entity id
+    /// @param vid entity handle
     /// @return pointer to the uninitialized data
     template <class C>
-    static C* push_default(uint eid)
+    static C* push_default(versionid vid)
     {
         static container* c = get_or_create_container<C, cshash<C>>();
-        DASSERT_RET(c, 0);
+        DASSERT_RET(c, nullptr);
+        DASSERT_RET(c->seq->is_valid(vid), nullptr);
 
-        return static_cast<C*>(c->create_default(eid));
+        return static_cast<C*>(c->create_default(vid.id));
     }
 
     /// @brief Insert uninitialized data, to be in-place constructed
     /// @tparam C data type
-    /// @param eid entity id
+    /// @param vid entity handle
     /// @return pointer to the uninitialized data
     template <class C, class...Ps>
-    static C* emplace(uint eid, Ps&&... ps)
+    static C* emplace(versionid vid, Ps&&... ps)
     {
         static container* c = get_or_create_container<C, cshash<C>>();
-        DASSERT_RET(c, 0);
+        DASSERT_RET(c, nullptr);
+        DASSERT_RET(c->seq->is_valid(vid.id), nullptr);
 
-        return new (c->create_uninit(eid)) C(std::forward<Ps>(ps)...);
+        return new (c->create_uninit(vid.id)) C(std::forward<Ps>(ps)...);
     }
 
     /// @brief Remove component from entity
@@ -610,12 +619,12 @@ public:
     /// @return container id of given element
     /// @note Container id is internal id of element in underlying container type( eg. index for arrays, slot_id for slothash)
     template <class C>
-    static uint get_container_id(uint eid) 
+    static uint get_container_id(uint eid)
     {
         static container* c = 0;
         if (!c) c = get_container<C>();
         DASSERT_RET(c, -1);
-        
+
         return c->get_container_item_id(eid);
     }
 

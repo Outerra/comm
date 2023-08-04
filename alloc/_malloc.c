@@ -537,6 +537,7 @@ void abort_routine();
 #ifdef _DEBUG
 #define DEBUG 1
 #define DEBUG_FILL 0xcd
+#define ON_ASSERT(x) do { if (!(x)) __debugbreak(); } while(0)
 #define ABORT_ON_ASSERT_FAILURE 0
 #define MALLOC_INSPECT_ALL 1
 #endif //_DEBUG
@@ -1484,7 +1485,10 @@ DLMALLOC_EXPORT int mspace_mallopt(int, int);
 #include <errno.h>       /* for MALLOC_FAILURE_ACTION */
 #endif /* LACKS_ERRNO_H */
 #ifdef DEBUG
-#if ABORT_ON_ASSERT_FAILURE
+#ifdef ON_ASSERT
+#undef assert
+#define assert(x) ON_ASSERT(x)
+#elif ABORT_ON_ASSERT_FAILURE
 #undef assert
 #define assert(x) if(!(x)) ABORT
 #else /* ABORT_ON_ASSERT_FAILURE */
