@@ -48,72 +48,71 @@ namespace coid {
     class binstring;
 }
 
-///Interface class decoration keyword
-//@param name desired name of the interface class, optionally with namespace and base interface [ns:]name [: baseifc]
-//@param path relative path (and optional file name) of the interface header file
-//@param base base interface
-//@example ifc_class(ns:client, "../ifc")
-#define ifc_class(name,path)
-#define ifc_classx(name,base)
-#define ifc_class_inheritable(name,path)
+///Interface class decoration keyword.
+/// @param ifc_name desired name of the interface class, optionally with (virtual) base interface [ns::]name [: [ns::]baseifc] [ final]
+/// @param dst_path relative path (and optional file name) where to generate the interface header file
+/// @param ... optional relative path to the file containing the base interface
+/// @example ifc_class(ns:client, "../ifc")
+#define ifc_class(ifc_name, dst_path, ...)
 
 ///Interface class decoration keyword for bi-directional interfaces with event methods that can be overriden by the client.
-//@param name desired name of the interface class, optionally with namespace and base interface [ns:]name [: baseifc]
-//@param path relative path (and optional file name) of the interface header file
-//@param var name for the variable representing the connected client
-//@param base base interface
-//@note clean_ptr is an intentional weak link, since interface already holds ref to the host
-//@example ifc_class_var(ns::client, "../ifc", _ifc)
-#define ifc_class_var(name,path,var) coid::clean_ptr<intergen_interface> var
-#define ifc_classx_var(name,orig)
-#define ifc_class_var_inheritable(name,path,var) coid::clean_ptr<intergen_interface> var
+/// @param ifc_name desired name of the interface class, optionally with (virtual) base interface [ns::]name [: [ns::]baseifc] [ final]
+/// @param dst_path relative path (and optional file name) of the interface header file
+/// @param var name for the variable representing the connected client
+/// @param base_ifc_name base interface
+/// @note var is of type clean_ptr, an intentional weak link, since interface already holds ref to the host
+/// @example ifc_class_var(ns::client, "../ifc", _ifc)
+#define ifc_class_var(ifc_name, dst_path, var) coid::clean_ptr<intergen_interface> var
 
+///Interface class decoration keyword, extend existing interface either from the same class (no path provided) or from a different host class
+/// @param ifc_name desired name of the interface class and a base interface [ns::]name : [ns::]baseifc [ final]
+/// @param dst_path relative path (and optional file name) where to generate the interface header file
+/// @param ... optional relative path to the file containing the base interface
+/// @example ifc_class(ns:client, "../ifc")
+#define ifc_class_extend(ifc_name, dst_path, ...)
 
 ///Virtual base interface class decoration keyword for declaration of abstrac base interfaces
-//@param name desired name of the interface class, optionally with namespace
-//@param path relative path (and optional file name) of the interface header file
-//@example ifc_class_virtual(ns:base, "../ifc")
-//@example ifc_class(ns::client : ns::base, "../ifc")
-#define ifc_class_virtual(name,path)
-
-#define ifc_class_inherit(ifc_name, base_ifc_name, base_ifc_src_path, ifc_path)
-#define ifc_class_var_inherit(ifc_name, base_ifc_name, base_ifc_src_path, ifc_path)
+/// @param ifc_name desired name of the interface class, optionally with namespace
+/// @param dst_path relative path (and optional file name) of the interface header file
+/// @example ifc_class_virtual(ns:base, "../ifc")
+/// @example ifc_class(ns::client : ns::base, "../ifc")
+#define ifc_class_virtual(ifc_name, dst_path)
 
 
 ///Data interface (not refcounted)
-//@param name desired name of the interface class, optionally with namespace and base interface [ns:]name [: baseifc]
-//@param path relative path (and optional file name) of the interface header file
-#define ifc_struct(name,path)
+/// @param ifc_name desired name of the interface class, optionally with namespace and base interface [ns:]name [: baseifc]
+/// @param dst_path relative path (and optional file name) of the interface header file
+#define ifc_struct(ifc_name, dst_path)
 
 
 ///Interface function decoration keyword: such decorated method will be added into the interface
-//@example ifc_fn void fn(int a, ifc_out int& b);
+/// @example ifc_fn void fn(int a, ifc_out int& b);
 #define ifc_fn
 
 ///Interface function decoration keyword
-//@param extname an alternative name for the method used in the interface
-//@note special symbols:
-//@note ifc_fnx(~) marks a method that is invoked when the interface is being detached (client destroying)
-//@note ifc_fnx(!) or ifc_fnx(!name) marks an interface method that's not available to script clients
-//@note ifc_fnx(-) or ifc_fnx(-name) marks an interface method that is not captured by an interceptor (for net replication etc) if default was on
-//@note ifc_fnx(+) or ifc_fnx(+name) marks an interface method that is captured by an interceptor (for net replication etc) if default was off
-//@note ifc_fnx(@connect) marks a method that gets called upon successfull interface connection
-//@note ifc_fnx(@unload) marks a static method called when a registered client of given interface is unloading
-//@example ifc_fnx(get) void get_internal();
+/// @param extname an alternative name for the method used in the interface
+/// @note special symbols:
+/// @note ifc_fnx(~) marks a method that is invoked when the interface is being detached (client destroying)
+/// @note ifc_fnx(!) or ifc_fnx(!name) marks an interface method that's not available to script clients
+/// @note ifc_fnx(-) or ifc_fnx(-name) marks an interface method that is not captured by an interceptor (for net replication etc) if default was on
+/// @note ifc_fnx(+) or ifc_fnx(+name) marks an interface method that is captured by an interceptor (for net replication etc) if default was off
+/// @note ifc_fnx(@connect) marks a method that gets called upon successfull interface connection
+/// @note ifc_fnx(@unload) marks a static method called when a registered client of given interface is unloading
+/// @example ifc_fnx(get) void get_internal();
 #define ifc_fnx(extname)
 
 ///Interface event callback decoration
-//@note events are defined in the generated dispatcher code, so the method after this keyword should be just a declaration
-//@note ifc_eventx(@connect) marks an event that gets called upon successfull interface connection
-//@note ifc_eventx(=0) or ifc_eventx(extname=0) tells that client virtual method will be pure and has to be implemented
-//@example ifc_event void on_init(int a, ifc_out int& b);   //definition generated by intergen
+/// @note events are defined in the generated dispatcher code, so the method after this keyword should be just a declaration
+/// @note ifc_eventx(@connect) marks an event that gets called upon successfull interface connection
+/// @note ifc_eventx(=0) or ifc_eventx(extname=0) tells that client virtual method will be pure and has to be implemented
+/// @example ifc_event void on_init(int a, ifc_out int& b);   //definition generated by intergen
 #define ifc_event
 #define ifc_eventx(extname)
 
 ///Statement to fill in as the default implementation of an event, in case the client doesn't implement the event handling.
 ///Optionally, should be specified after an ifc_event method declaration:
 /// ifc_event bool event() const ifc_default_body(return false;);
-//@example ifc_event int on_init() ifc_default_body("return -1;");
+/// @example ifc_event int on_init() ifc_default_body("return -1;");
 #define ifc_default_body(x)
 #define ifc_default_empty
 
@@ -319,7 +318,7 @@ protected:
 
                 uints n = tmp.size();
                 str << tmp[0].name;
-                for (uints i = 1; i<n; ++i)
+                for (uints i = 1; i < n; ++i)
                     str << ", " << tmp[i].name;
 
                 str << ')';
@@ -449,11 +448,11 @@ public:
     const iref<T>& get_ref() const { return _target; }
 
     template<class S>
-    ifc_creator( iref<S>& s )
-        : _create(reinterpret_cast<T*(*)()>(&creator_helper<S>::create))
+    ifc_creator(iref<S>& s)
+        : _create(reinterpret_cast<T* (*)()>(&creator_helper<S>::create))
         , _target(reinterpret_cast<iref<T>&>(s))
     {
-        static_assert( std::is_base_of<T,S>::value, "unrelated types" );
+        static_assert(std::is_base_of<T, S>::value, "unrelated types");
     }
 
 protected:
@@ -475,7 +474,7 @@ struct ifc_autoregger
 
     typedef void (*register_fn)(bool);
 
-    ifc_autoregger( register_fn fn ) : _fn(fn) {
+    ifc_autoregger(register_fn fn) : _fn(fn) {
         _fn(true);
     }
 

@@ -57,14 +57,9 @@ public:
     inline static const token NAMESPC = "namespace";
 
     inline static const token IFC_CLASS = "ifc_class";
-    inline static const token IFC_CLASSX = "ifc_classx";
     inline static const token IFC_CLASS_VAR = "ifc_class_var";
-    inline static const token IFC_CLASSX_VAR = "ifc_classx_var";
+    inline static const token IFC_CLASS_EXTEND = "ifc_class_extend";
     inline static const token IFC_CLASS_VIRTUAL = "ifc_class_virtual";
-    inline static const token IFC_CLASS_INHERIT = "ifc_class_inherit";
-    inline static const token IFC_CLASS_VAR_INHERIT = "ifc_class_var_inherit";
-    inline static const token IFC_CLASS_INHERITABLE = "ifc_class_inheritable";
-    inline static const token IFC_CLASS_VAR_INHERITABLE = "ifc_class_var_inheritable";
     inline static const token IFC_STRUCT = "ifc_struct";
     inline static const token IFC_FN = "ifc_fn";
     inline static const token IFC_FNX = "ifc_fnx";
@@ -419,9 +414,9 @@ struct Interface
     bool bvirtual = false;
     bool bdefaultcapture = false;
     bool bdataifc = false;
-    bool bdirect_inheritance = false;
-    bool binheritable = false;
-    bool bvirtualorinheritable = false;
+    bool bextend = false;
+    bool bextend_ext = false;
+    bool bfinal = false;
 
     void copy_methods(Interface& o)
     {
@@ -568,9 +563,7 @@ struct Interface
             m.member("virtual", p.bvirtual);
             m.member("dataifc", p.bdataifc);
             m.member("default_creator", p.default_creator);
-            m.member("direct_inheritance", p.bdirect_inheritance);
-            m.member("inheritable", p.binheritable);
-            m.member("virtualorinheritable", p.bvirtualorinheritable);
+            m.member("final", p.bfinal);
 
         });
     }

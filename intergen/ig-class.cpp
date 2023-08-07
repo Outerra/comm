@@ -120,46 +120,31 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
             const lexer::lextoken& tok = lex.last();
 
             bool dataifc = tok == lex.IFC_STRUCT;
-            int classifc = 0;
-            int classvar = 0;
+            bool isclass = false;
+            bool isclassvirtual = false;
+            bool isvar = false;
+            bool isext = false;
+            bool isextpath = false;
 
             if (tok == lex.IFC_CLASS)
             {
-                classifc = 1;
-            }
-            else if (tok == lex.IFC_CLASSX)
-            {
-                classifc = 2;
-            }
-            else if (tok == lex.IFC_CLASS_INHERIT)
-            {
-                classifc = 3;
-            }
-            else if (tok == lex.IFC_CLASS_INHERITABLE)
-            {
-                classifc = 4;
+                isclass = true;
             }
             else if (tok == lex.IFC_CLASS_VAR)
             {
-                classvar = 1;
+                isclass = true;
+                isvar = true;
             }
-            else if (tok == lex.IFC_CLASSX_VAR)
+            else if (tok == lex.IFC_CLASS_EXTEND)
             {
-                classvar = 2;
+                isclass = true;
+                isext = true;
             }
-            else if (tok == lex.IFC_CLASS_VAR_INHERIT)
+            else if (tok == lex.IFC_CLASS_VIRTUAL)
             {
-                classvar = 3;
+                isclass = true;
+                isclassvirtual = true;
             }
-            else if (tok == lex.IFC_CLASS_VAR_INHERITABLE)
-            {
-                classvar = 4;
-            }
-
-            bool classvirtual = tok == lex.IFC_CLASS_VIRTUAL;
-            bool classext = (classifc == 2) || (classvar == 2);
-            bool classinherit = (classifc == 3) || (classvar == 3);
-            bool classinheritable = (classifc == 4) || (classvar == 4);
 
             bool extfn = tok == lex.IFC_FNX;
             bool extev = tok == lex.IFC_EVENTX;
@@ -203,7 +188,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 lex.match(')');
             }
 
-            if (dataifc || classifc || classvar || classvirtual)
+            if (dataifc || isclass)
             {
                 if (lastifc)
                     lastifc->check_interface(lex, classpasters);
@@ -216,10 +201,6 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
 
                 ifc->nifc_methods = 0;
                 ifc->comments.takeover(commlist);
-                ifc->bvirtual = classvirtual;
-                ifc->bdataifc = dataifc;
-                ifc->binheritable = classinheritable;
-                ifc->bvirtualorinheritable = ifc->bvirtual || ifc->binheritable;
 
                 lex.match('(');
                 ifc->bdefaultcapture = lex.matches_either('+', '-') == 1;
@@ -251,73 +232,50 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
 
                 lex.match(',');
 
-                if (classext) {
-                    //get ifc to extend
-                    charstr base = lex.match(lex.IDENT).value();
-                    token baseclass = base;
+                ifc->relpath = lex.match(lex.DQSTRING);
 
-                    while (lex.matches("::"_T)) {
-                        base << "::"_T;
-                        token bc = lex.match(lex.IDENT);
-                        base << bc;
-                        baseclass.set(base.ptre() - bc.len(), base.ptre());
-                    }
+                if (isvar) {
+                    lex.match(',');
+                    ifc->varname = lex.match(lex.IDENT);
+                }
 
-                    if (ifc->nsname)
-                        ifc->nsname << "::"_T;
-                    ifc->nsname << ifc->name;
-
-                    //find in previous interfaces
-                    Interface* bifc = 0;
-                    for (Interface& pifc : *lastifaces)
-                    {
-                        if (&pifc == ifc)
-                            continue;
-                        if (pifc.nsname == base) {
-                            bifc = &pifc;
-                            break;
-                        }
-                    }
-
-                    if (!bifc) {
-                        lex.prepare_exception()
-                            << "error: base interface " << base << " not declared in this class\n";
+                if (isext)
+                {
+                    if (!ifc->baseclass) {
+                        lex.prepare_exception() << "error: no base interface specified\n";
                         throw lex.exc();
                     }
 
-                    ifc->copy_methods(*bifc);
-                }
-                else if (classinherit)
-                {
-                    //a base class for the interface
-                    token bc;
-                    ifc->baseclass = ifc->base = bc = lex.match(lex.IDENT);
-                    while (lex.matches("::"_T)) {
-                        *ifc->baseclassnss.add() = bc;
-                        ifc->base << "::"_T;
-                        bc = lex.match(lex.IDENT);
-                        ifc->base << bc;
-                        ifc->baseclass.set(ifc->base.ptre() - bc.len(), ifc->base.ptre());
+                    if (lex.matches(','))
+                    {
+                        //rel.path to the header with base interface
+                        isextpath = true;
+                        ifc->basesrc = lex.match(lex.DQSTRING);
                     }
-                }
-                else 
-                {
-                    ifc->relpath = lex.match(lex.DQSTRING);
-                }
 
-                if (classinherit) // parse file with  
-                {
-                    lex.match(',');
-                    ifc->bdirect_inheritance = true;
-                    ifc->basesrc = lex.match(lex.DQSTRING);
-                    
-                    lex.match(',');
-                    ifc->relpath = lex.match(lex.DQSTRING);
-                }
+                    if (!isextpath)
+                    {
+                        //same class interface extension
+                        //find in previous interfaces
+                        Interface* bifc = 0;
+                        for (Interface& pifc : *lastifaces)
+                        {
+                            if (&pifc == ifc)
+                                continue;
+                            if (pifc.nsname == ifc->base) {
+                                bifc = &pifc;
+                                break;
+                            }
+                        }
 
-                if (!classext && (classvar && classvar != 3)) {
-                    lex.match(',');
-                    ifc->varname = lex.match(lex.IDENT);
+                        if (!bifc) {
+                            lex.prepare_exception()
+                                << "error: base interface " << ifc->base << " not declared in this class\n";
+                            throw lex.exc();
+                        }
+
+                        ifc->copy_methods(*bifc);
+                    }
                 }
 
                 lex.match(')');
@@ -339,6 +297,11 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 else {
                     ifc->relpath = lex.match(lex.DQSTRING);
                 }
+
+                ifc->bvirtual = isclassvirtual;
+                ifc->bdataifc = dataifc;
+                ifc->bextend = isextpath;
+                ifc->bextend_ext = isextpath && !ifc->basesrc.is_empty();
             }
             else if (extev || tok == lex.IFC_EVENT)
             {
@@ -353,12 +316,6 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                     lex.prepare_exception()
                         << "error: no preceding interface declared\n";
                     throw lex.exc();
-                }
-                else if (lastifc->varname.is_empty() && !lastifc->bdirect_inheritance) {
-                    out << (lex.prepare_exception()
-                        << "error: events can be used only with bidirectional interfaces\n");
-                    lex.clear_err();
-                    ++ncontinuable_errors;
                 }
 
                 MethodIG* m = lastifc->event.add();
@@ -377,7 +334,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                         lex.match(';');
                         lex.match("*/");
                     }
-                    else if (lastifc->varname.is_empty() && !lastifc->bdirect_inheritance) {
+                    else if (lastifc->varname.is_empty() && !lastifc->bextend_ext) {
                         lex.ignore(lex.MLCOM, mlcom);
                     }
 
@@ -486,7 +443,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 }
                 else
                     m->intname = m->name;
-                    
+
                 m->basename = m->name;
 
                 if (m->boperator) {

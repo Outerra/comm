@@ -161,6 +161,12 @@ int generate_rl(const File& cgf, charstr& patfile, const token& outfile)
 ////////////////////////////////////////////////////////////////////////////////
 bool generate_ifc(File& file, Class& cls, Interface& ifc, timet mtime, charstr& tdir, charstr& fdir)
 {
+    if (ifc.event.size() > 0 && ifc.varname.is_empty()) {
+        out << "error: interface " << ifc.name << " has ifc_event methods that can be used only with bidirectional interfaces\n";
+        return false;
+    }
+
+
     uint tlen = tdir.len();
     uint flen = fdir.len();
 
@@ -594,7 +600,7 @@ int File::parse(token path)
     {
         for (Interface& i : c.iface_refc)
         {
-            if (!i.bdirect_inheritance)
+            if (!i.bextend_ext)
                 continue;
 
             charstr base_src_path = token(path).cut_left_group_back(DIR_SEPARATORS, coid::token::cut_trait_remove_sep_default_empty());

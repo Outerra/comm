@@ -79,7 +79,26 @@ public:
     ifc_event const char* body() ifc_default_body("return \"string\";");
 
     ifc_event coid::charstr strbody() override ifc_default_body("return \"value\";");
+
+
+    //extension interface in the same class
+
+    ifc_class_extend(ns::ifc_ext : ifc1::ifc2::thingface, "ifc");
+
+    ifc_fn void dummy();
 };
+
+
+class inherit_external : public policy_intrusive_base
+{
+public:
+
+    //extension interface in a different class
+    ifc_class(ns::ifc_ext_ext : ifc1::ifc2::thingface, "ifc", "");
+
+    ifc_fn void dummy();
+};
+
 
 }
 }
