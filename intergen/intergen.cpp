@@ -39,24 +39,24 @@ struct File
         return m.compound("File", [&]()
         {
             int version = intergen_interface::VERSION;
-            m.member("hdr",p.fnameext);          //< file name
-            m.member("HDR",p.hdrname);           //< file name without extension, uppercase
-            m.member("class",p.classes);
+            m.member("hdr", p.fnameext);          //< file name
+            m.member("HDR", p.hdrname);           //< file name without extension, uppercase
+            m.member("class", p.classes);
             m.member("pastedefers", p.pastedefers);
-            m.member("irefargs",p.irefargs);
-            m.nonmember("version",version);
+            m.member("irefargs", p.irefargs);
+            m.nonmember("version", version);
         });
     }
 
 
     int parse(token path);
 
-    bool find_class( iglexer& lex, dynarray<charstr>& namespc, charstr& templarg );
+    bool find_class(iglexer& lex, dynarray<charstr>& namespc, charstr& templarg);
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 template<class T>
-static int generate( bool empty, const T& t, const charstr& patfile, const charstr& outfile, __time64_t mtime )
+static int generate(bool empty, const T& t, const charstr& patfile, const charstr& outfile, __time64_t mtime)
 {
     directory::xstat st;
     bifstream bit;
@@ -84,7 +84,7 @@ static int generate( bool empty, const T& t, const charstr& patfile, const chars
     metagen mtg;
     mtg.set_source_path(patfile);
 
-    if( !mtg.parse(bit) ) {
+    if (!mtg.parse(bit)) {
         //out << "error: error parsing the document template:\n";
         out << mtg.err() << '\n';
         out.flush();
@@ -93,7 +93,7 @@ static int generate( bool empty, const T& t, const charstr& patfile, const chars
     }
 
     bofstream bof(outfile);
-    if( !bof.is_open() ) {
+    if (!bof.is_open()) {
         out << "error: can't create output file '" << outfile << "'\n";
         return -5;
     }
@@ -104,13 +104,13 @@ static int generate( bool empty, const T& t, const charstr& patfile, const chars
     bof.close();
 
     directory::set_writable(outfile, false);
-    directory::set_file_times(outfile, mtime+2, mtime+2);
+    directory::set_file_times(outfile, mtime + 2, mtime + 2);
 
     return 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int generate_rl( const File& cgf, charstr& patfile, const token& outfile )
+int generate_rl(const File& cgf, charstr& patfile, const token& outfile)
 {
     uint l = patfile.len();
     patfile << "template.inl.mtg";
@@ -122,12 +122,12 @@ int generate_rl( const File& cgf, charstr& patfile, const token& outfile )
 
     patfile.resize(l);
 
-    if( !bit.is_open() ) {
+    if (!bit.is_open()) {
         out << "error: can't open template file '" << patfile << "'\n";
         return -5;
     }
 
-    if( !mtg.parse(bit) ) {
+    if (!mtg.parse(bit)) {
         out << "error: error parsing the document template:\n";
         out << mtg.err();
 
@@ -136,16 +136,16 @@ int generate_rl( const File& cgf, charstr& patfile, const token& outfile )
 
     bofstream bof(outfile);
 
-    if( cgf.classes.size() > 0 )
+    if (cgf.classes.size() > 0)
     {
-        if( !bof.is_open() ) {
+        if (!bof.is_open()) {
             out << "error: can't create output file '" << outfile << "'\n";
             return -5;
         }
 
         out << "writing " << outfile << " ...\n";
         cgf.classes.for_each([&](const Class& c) {
-            if(c.method.size())
+            if (c.method.size())
                 mtg.generate(c, bof);
         });
     }
@@ -289,6 +289,25 @@ void generate_ig(File& file, charstr& tdir, charstr& fdir)
         }
     }
 
+    //file.intergen.deps
+    fdir.resize(flen);
+    fdir << file.fname << ".intergen.deps";
+
+    if (file.dependencies.size() > 0) {
+        out << "writing " << fdir << " ...\n";
+
+        charstr txt;
+        for (const File& f : file.dependencies) {
+            txt << f.fpath << "\r\n";
+        }
+
+        bofstream bof(fdir);
+        bof.xwrite_token_raw(txt);
+    }
+    else {
+        directory::delete_file(fdir);
+    }
+
     //file.intergen.cpp
     fdir.resize(flen);
     fdir << file.fname << ".intergen.cpp";
@@ -322,7 +341,7 @@ void test();
 ////////////////////////////////////////////////////////////////////////////////
 int generate_index(const charstr& path)
 {
-    if(!directory::is_valid_directory(path)) {
+    if (!directory::is_valid_directory(path)) {
         out << "failed to open " << path;
         return 0;
     }
@@ -336,37 +355,37 @@ int generate_index(const charstr& path)
 
     directory::list_file_paths(path, "html", directory::recursion_mode::files,
         [&](const charstr& name, directory::list_entry) {
-            if (name.ends_with("index.html"_T))
-                return;
+        if (name.ends_with("index.html"_T))
+            return;
 
-            bifstream bif(name);
-            if (!bif.is_open()) {
-                out << "can't open " << name << '\n';
-                return;
-            }
-            buf.reset_all();
-            buf.transfer_from(bif);
-            bif.close();
+        bifstream bif(name);
+        if (!bif.is_open()) {
+            out << "can't open " << name << '\n';
+            return;
+        }
+        buf.reset_all();
+        buf.transfer_from(bif);
+        bif.close();
 
-            token text = buf;
-            token lead = text.cut_left(ssbeg);
+        token text = buf;
+        token lead = text.cut_left(ssbeg);
 
-            if (!before)
-                before = lead;
+        if (!before)
+            before = lead;
 
-            single = text.cut_left(ssend);
+        single = text.cut_left(ssend);
 
-            if (single) {
-                if (multi)
-                    multi << ", \r\n";
-                multi << single;
-            }
+        if (single) {
+            if (multi)
+                multi << ", \r\n";
+            multi << single;
+        }
 
-            if (!after)
-                after = text;
+        if (!after)
+            after = text;
 
-            ++n;
-        });
+        ++n;
+    });
 
     if (before) {
         out << "found " << n << " interface files, generating index.html ... ";
@@ -542,7 +561,9 @@ int File::parse(token path)
     token name = path;
     name.cut_left_group_back("\\/", token::cut_trait_remove_sep_default_empty());
 
-    fpath = path;
+    fpath = directory::get_cwd();
+    directory::append_path(fpath, path);
+    //fpath = path;
     fnameext = name;
     fname = name.cut_left_back('.');
 
@@ -573,67 +594,59 @@ int File::parse(token path)
     {
         for (Interface& i : c.iface_refc)
         {
-            if (i.bdirect_inheritance)
+            if (!i.bdirect_inheritance)
+                continue;
+
+            charstr base_src_path = token(path).cut_left_group_back(DIR_SEPARATORS, coid::token::cut_trait_remove_sep_default_empty());
+            if (!base_src_path.is_empty())
+                base_src_path << "/";
+            base_src_path << i.basesrc;
+
+            out << "Parsing base class source file: " << i.basesrc << "\n";
+
+            File* base_file = dependencies.add();
+            int res = base_file->parse(base_src_path);
+            if (res != 0) {
+                return res;
+            }
+
+            for (Class& cls : base_file->classes)
             {
-                charstr base_src_path = token(path).cut_left_group_back(DIR_SEPARATORS, coid::token::cut_trait_remove_sep_default_empty());
-                if (!base_src_path.is_empty())
-                {
-                    base_src_path << "/";
-                }
-                base_src_path << i.basesrc;
+                Interface* base_ifc = cls.iface_refc.find_if([&](Interface& ifc) {
+                    return ifc.nsname == i.base;
+                });
 
-                out << "Parsing base class source file: " << i.basesrc << "\n";
-
-                File* base_file = dependencies.add();
-                int res = base_file->parse(base_src_path);
-                if (res != 0)
-                {
-                    return res;
+                if (!base_ifc) {
+                    out << "Base class not found in " << i.basesrc << "\n";
+                    return -1;
                 }
 
-                for(Class& cls : base_file->classes)
+                for (const MethodIG& e : base_ifc->event)
                 {
-                    Interface* found = cls.iface_refc.find_if([&](Interface& ifc) {
-                        return ifc.nsname == i.base;
-                        });
+                    const MethodIG* found = i.event.find_if([&e](const MethodIG& it) {
+                        return e.name == it.name && e.intname == it.intname;
+                    });
 
-                    if (found)
+                    if (!found)
                     {
-                        for (const MethodIG& e : found->event)
-                        {
-                            const MethodIG * found = i.event.find_if([&e](const MethodIG& it) {
-                                return e.name == it.name && e.intname == it.intname;
-                            });
-
-                            if (!found)
-                            {
-                                i.event.push(e);
-                                i.event.last()->binherit = true;
-                            }
-                        }
-
-                        for (const MethodIG& m : found->method)
-                        {
-                            const MethodIG* found = i.event.find_if([&m](const MethodIG& it) {
-                                return m.name == it.name && m.intname == it.intname;
-                                });
-
-                            if (!found && !m.bcreator)
-                            {
-                                i.method.push(m);
-                                i.method.last()->binherit = true;
-                            }
-                        }
-
-                        i.varname = found->varname;
-                    }
-                    else
-                    {
-                        out << "Base class not found in " << i.basesrc << "\n";
-                        return -1;
+                        i.event.ins_value(0, e)->binherit = true;
                     }
                 }
 
+                for (const MethodIG& m : base_ifc->method)
+                {
+                    const MethodIG* found = i.event.find_if([&m](const MethodIG& it) {
+                        return m.name == it.name && m.intname == it.intname;
+                    });
+
+                    if (!found && !m.bcreator)
+                    {
+                        i.method.ins_value(0, m)->binherit = true;
+                        i.nifc_methods++;
+                    }
+                }
+
+                i.varname = base_ifc->varname;
             }
         }
     }

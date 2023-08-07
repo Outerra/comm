@@ -79,7 +79,7 @@ private:
 $-(if !virtual)$
         if (_vtable1) return _vtable1;
 
-        _vtable1 = new ifn_t[$nifcmethods$];
+        _vtable1 = new ifn_t[$method.@size !static$];
 $-[method !static]$
         _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if ?const)$const$(/if)$>(&::$....ns rest="::" after="::"$$....class$::$intname$));
 $-[/method]-$
@@ -107,7 +107,7 @@ $-(if !virtual)$
         if (_vtable2) return _vtable2;
         ifn_t* vtable1 = get_vtable();
 
-        _vtable2 = new ifn_t[$nifcmethods$];
+        _vtable2 = new ifn_t[$method.@size !static$];
 $-[method !static]$
     $-(if ?capture ?operator)$
         _vtable2[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$$type$$[/args]$)$(if ?const)$const$(/if)$>(&__capture__operator));
