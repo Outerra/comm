@@ -162,7 +162,7 @@ int generate_rl(const File& cgf, charstr& patfile, const token& outfile)
 bool generate_ifc(File& file, Class& cls, Interface& ifc, timet mtime, charstr& tdir, charstr& fdir)
 {
     if (ifc.event.size() > 0 && ifc.varname.is_empty()) {
-        out << "error: interface " << ifc.name << " has ifc_event methods that can be used only with bidirectional interfaces\n";
+        out << "error: interface " << ifc.name << " has ifc_event methods and can be used only with bi-directional interfaces (ifc_class_var)\n";
         return false;
     }
 
@@ -593,79 +593,85 @@ int File::parse(token path)
                 classes.resize(-1);
             }
         }
-    }
-    catch (lexer::lexception&) {}
 
-    for (Class& c : classes)
-    {
-        for (Interface& i : c.iface_refc)
+        for (Class& c : classes)
         {
-            if (!i.bextend_ext)
-                continue;
-
-            charstr base_src_path = token(path).cut_left_group_back(DIR_SEPARATORS, coid::token::cut_trait_remove_sep_default_empty());
-            if (!base_src_path.is_empty())
-                base_src_path << "/";
-            base_src_path << i.basesrc;
-
-            out << "Parsing base class source file: " << i.basesrc << "\n";
-
-            File* base_file = dependencies.add();
-            int res = base_file->parse(base_src_path);
-            if (res != 0) {
-                return res;
-            }
-
-            for (Class& cls : base_file->classes)
+            for (Interface& i : c.iface_refc)
             {
-                Interface* base_ifc = cls.iface_refc.find_if([&](Interface& ifc) {
-                    return ifc.nsname == i.base;
-                });
-
-                if (!base_ifc) {
-                    out << "Base class not found in " << i.basesrc << "\n";
-                    return -1;
+                if (!i.bextend_ext) {
+                    //normal interface, not extended
+                    continue;
                 }
 
-                for (const MethodIG& e : base_ifc->event)
+                charstr base_src_path = token(path).cut_left_group_back(DIR_SEPARATORS, coid::token::cut_trait_remove_sep_default_empty());
+                if (!base_src_path.is_empty())
+                    base_src_path << "/";
+                base_src_path << i.basesrc;
+
+                out << "Parsing base class source file: " << i.basesrc << "\n";
+
+                File* base_file = dependencies.add();
+                int res = base_file->parse(base_src_path);
+                if (res != 0) {
+                    return res;
+                }
+
+                for (Class& cls : base_file->classes)
                 {
-                    const MethodIG* found = i.event.find_if([&e](const MethodIG& it) {
-                        return e.name == it.name && e.intname == it.intname;
+                    Interface* base_ifc = cls.iface_refc.find_if([&](Interface& ifc) {
+                        return ifc.nsname == i.base;
                     });
 
-                    if (!found)
-                    {
-                        i.event.ins_value(0, e)->binherit = true;
+                    if (!base_ifc) {
+                        out << i.file << '(' << i.line << "): error: base class not found in " << i.basesrc << '\n';
+                        nerr++;
+                        break;
                     }
-                }
-
-                for (const MethodIG& m : base_ifc->method)
-                {
-                    const MethodIG* found = i.event.find_if([&m](const MethodIG& it) {
-                        return m.name == it.name && m.intname == it.intname;
-                    });
-
-                    if (!found && !m.bcreator)
-                    {
-                        i.method.ins_value(0, m)->binherit = true;
-                        i.nifc_methods++;
+                    else if (base_ifc->varname && i.varname) {
+                        out << i.file << '(' << i.line << "): error: extended interface `" << i.nsname << "' of ifc_class_var base interface `" << base_ifc->nsname << "' cannot use ifc_class_var\n";
+                        nerr++;
                     }
-                }
 
-                i.varname = base_ifc->varname;
+                    for (const MethodIG& e : base_ifc->event)
+                    {
+                        const MethodIG* found = i.event.find_if([&e](const MethodIG& it) {
+                            return e.name == it.name && e.intname == it.intname;
+                        });
+
+                        if (!found) {
+                            i.event.ins_value(0, e)->binherit = true;
+                        }
+                    }
+
+                    for (const MethodIG& m : base_ifc->method)
+                    {
+                        const MethodIG* found = i.event.find_if([&m](const MethodIG& it) {
+                            return m.name == it.name && m.intname == it.intname;
+                        });
+
+                        if (!found && !m.bcreator)
+                        {
+                            i.method.ins_value(0, m)->binherit = true;
+                            //i.nifc_methods++;
+                        }
+                    }
+
+                    i.varname = base_ifc->varname;
+                }
             }
         }
     }
+    catch (lexer::lexception&) {}
 
-    if (!lex.no_err()) {
+
+    if (nerr || !lex.no_err()) {
         out << lex.err() << '\n';
         out.flush();
         return -1;
     }
 
-    if (!nerr && pasters.size() > 0 && classes.size() == 0) {
-        out << (lex.prepare_exception()
-            << "warning: ifc tokens found, but no interface declared\n");
+    if (pasters.size() > 0 && classes.size() == 0) {
+        out << (lex.prepare_exception() << "warning: ifc tokens found, but no interface declared\n");
         lex.clear_err();
     }
 

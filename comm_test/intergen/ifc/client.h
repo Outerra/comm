@@ -126,13 +126,13 @@ public:
         return _name;
     }
 
-    int intergen_hash_id() const override final { return HASHID; }
+    int intergen_hash_id() const override { return HASHID; }
 
-    bool iface_is_derived( int hash ) const override final {
+    bool iface_is_derived( int hash ) const override {
         return hash == HASHID;
     }
 
-    const coid::tokenhash& intergen_interface_name() const override final {
+    const coid::tokenhash& intergen_interface_name() const override {
         return IFCNAME();
     }
 
@@ -171,7 +171,7 @@ public:
         return _cached_wrapper;
     }
 
-    void* intergen_wrapper( backend bck ) const override final {
+    void* intergen_wrapper( backend bck ) const override {
         switch(bck) {
         case backend::js:  return intergen_wrapper_cache<backend::js>();
         case backend::jsc: return intergen_wrapper_cache<backend::jsc>();
@@ -182,7 +182,7 @@ public:
 
     backend intergen_backend() const override { return backend::cxx; }
 
-    const coid::token& intergen_default_creator( backend bck ) const override final {
+    const coid::token& intergen_default_creator( backend bck ) const override {
         return intergen_default_creator_static(bck);
     }
 

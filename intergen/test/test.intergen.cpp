@@ -4,7 +4,8 @@
 
 #include "ifc/emptyface.h"
 #include "ifc/thingface.h"
-#include "ifc/ifc_ext_ext.h"
+#include "ifc/ifc_ext.h"
+#include "ifc/ifc_ext.h"
 #include "test.hpp"
 
 #include <comm/ref.h>
@@ -214,7 +215,6 @@ class thingface_dispatcher : public thingface
         { "fallo", false, false, false, false, false, false, false, false, false, false, true, false, false, false, 2, 2, 0, fallo_4args },
         { "operator()", false, false, false, false, true, true, false, false, false, false, true, false, false, false, 1, 1, 0, operator_const_5args },
         { "operator()", false, false, false, false, false, true, false, false, false, false, false, false, false, false, 2, 2, 0, operator_nonconst_6args },
-        { "dummy", false, false, false, false, false, false, false, false, false, false, false, false, false, false, 0, 0, 0, nullptr },
     };
     inline static const meta::arg boo_0args[] = {
        { "key", "const char*", "const char*", "", "const char*", "", "", "", "", nullptr, true, true, false, false, false, false, false, true, false, false, false, false, "" },
@@ -231,7 +231,7 @@ class thingface_dispatcher : public thingface
         "iref<n1::n2::thing>", // storage
         "", // base class name
         { 0 }, // base class namespaces
-        1, 7, 3, // num. creators/methods/events
+        1, 6, 3, // num. creators/methods/events
         creators, methods, events
     };
 
@@ -246,14 +246,13 @@ private:
     {
         if (_vtable1) return _vtable1;
 
-        _vtable1 = new ifn_t[7];
+        _vtable1 = new ifn_t[6];
         _vtable1[0] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::thing::destroy));
         _vtable1[1] = reinterpret_cast<ifn_t>(static_cast<int(policy_intrusive_base::*)(int,const coid::token&,coid::charstr&)>(&::n1::n2::thing::hallo));
         _vtable1[2] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::thing::noargs));
         _vtable1[3] = reinterpret_cast<ifn_t>(static_cast<coid::charstr(policy_intrusive_base::*)(bool,const char*)>(&::n1::n2::thing::fallo));
         _vtable1[4] = reinterpret_cast<ifn_t>(static_cast<double(policy_intrusive_base::*)(const char*)const>(&::n1::n2::thing::operator()));
         _vtable1[5] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(const char*,double)>(&::n1::n2::thing::operator()));
-        _vtable1[6] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::thing::dummy));
         return _vtable1;
     }
 
@@ -265,14 +264,13 @@ private:
         if (_vtable2) return _vtable2;
         ifn_t* vtable1 = get_vtable();
 
-        _vtable2 = new ifn_t[7];
+        _vtable2 = new ifn_t[6];
         _vtable2[0] = vtable1[0];
         _vtable2[1] = vtable1[1];
         _vtable2[2] = vtable1[2];
         _vtable2[3] = vtable1[3];
         _vtable2[4] = vtable1[4];
         _vtable2[5] = vtable1[5];
-        _vtable2[6] = vtable1[6];
         return _vtable2;
     }
 
@@ -346,7 +344,7 @@ public:
             on ? (void*)&_generic_interface_creator : nullptr);
 
         interface_register::register_interface_creator(
-            "ifc1::ifc2::thingface.get@3696752908",
+            "ifc1::ifc2::thingface.get@1485224918",
             on ? (void*)&get : nullptr);
     }
 };
@@ -441,27 +439,265 @@ coid::charstr thing::strbody()
 } //namespace n1
 } //namespace n2
 
-static_assert( std::is_base_of<policy_intrusive_base, ::n1::n2::inherit_external>::value, "class 'inherit_external' must be derived from policy_intrusive_base");
-
 ////////////////////////////////////////////////////////////////////////////////
-// interface ns::ifc_ext_ext of class inherit_external
+// interface ns::ifc_ext of class thing
 
 namespace ns {
 
 ///
-class ifc_ext_ext_dispatcher : public ifc_ext_ext
+class ifc_ext_dispatcher : public ifc_ext
 {
-    friend class ifc_ext_ext;
+    friend class ifc_ext;
+
+    inline static const meta::arg hallo_2args[] = {
+       { "a", "int", "int", "", "int", "", "", "", "", &meta::stream_op<int>::fn, false, false, false, false, false, false, false, true, false, false, false, false, "some argument \" test escaping" },
+       { "b", "const coid::token&", "coid::token", "coid", "token", "", "", "", "", &meta::stream_op<coid::token>::fn, false, false, true, false, false, false, false, true, false, false, false, false, "" },
+       { "c", "coid::charstr&", "coid::charstr", "coid", "charstr", "", "", "", "", &meta::stream_op<coid::charstr>::fn, false, false, true, false, false, false, false, false, true, false, false, false, "" },
+    };
+    inline static const meta::arg fallo_4args[] = {
+       { "b", "bool", "bool", "", "bool", "", "", "", "", &meta::stream_op<bool>::fn, false, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "str", "const char*", "const char*", "", "const char*", "", "", "", "", nullptr, true, true, false, false, false, false, false, true, false, false, false, false, "" },
+    };
+    inline static const meta::arg operator_const_5args[] = {
+       { "key", "const char*", "const char*", "", "const char*", "", "", "", "", nullptr, true, true, false, false, false, false, false, true, false, false, false, false, "" },
+    };
+    inline static const meta::arg operator_nonconst_6args[] = {
+       { "key", "const char*", "const char*", "", "const char*", "", "", "", "", nullptr, true, true, false, false, false, false, false, true, false, false, false, false, "" },
+       { "value", "double", "double", "", "double", "", "", "", "", &meta::stream_op<double>::fn, false, false, false, false, false, false, false, true, false, false, false, false, "" },
+    };
+    inline static const meta::method creators[] = {
+        { "get", true, false, true, false, false, false, false, false, false, false, true, false, false, true, 0, 0, 0, nullptr },
+    };
+    inline static const meta::method methods[] = {
+        { "destroy", false, false, false, false, false, false, false, false, false, true, false, false, false, true, 0, 0, 0, nullptr },
+        { "hallo", false, false, false, false, false, false, false, false, false, false, true, false, false, true, 3, 2, 1, hallo_2args },
+        { "noargs", false, false, false, false, false, false, false, false, false, false, false, false, false, true, 0, 0, 0, nullptr },
+        { "fallo", false, false, false, false, false, false, false, false, false, false, true, false, false, true, 2, 2, 0, fallo_4args },
+        { "operator()", false, false, false, false, true, true, false, false, false, false, true, false, false, true, 1, 1, 0, operator_const_5args },
+        { "operator()", false, false, false, false, false, true, false, false, false, false, false, false, false, true, 2, 2, 0, operator_nonconst_6args },
+        { "dummy", false, false, false, false, false, false, false, false, false, false, false, false, false, false, 0, 0, 0, nullptr },
+    };
+    inline static const meta::arg boo_0args[] = {
+       { "key", "const char*", "const char*", "", "const char*", "", "", "", "", nullptr, true, true, false, false, false, false, false, true, false, false, false, false, "" },
+    };
+    inline static const meta::method events[] = {
+        { "boo", false, false, false, false, false, false, false, false, false, false, false, false, false, true, 1, 1, 0, boo_0args },
+        { "body", false, false, false, false, false, false, false, false, false, false, false, false, false, true, 0, 0, 0, nullptr },
+        { "strbody", false, false, false, false, false, false, false, false, false, false, false, false, false, true, 0, 0, 0, nullptr },
+    };
+    inline static const meta::interface ifc_meta = {
+        "ifc_ext", // interface name
+        { 0 }, // namespaces
+        "ifc_ext.h", // header file
+        "iref<n1::n2::thing>", // storage
+        "thingface", // base class name
+        { 0 }, // base class namespaces
+        1, 7, 3, // num. creators/methods/events
+        creators, methods, events
+    };
+
+private:
+
+    inline static coid::binstring* _capture = 0;
+    inline static uint16 _instid = 0xffffU;
+    inline static ifn_t* _vtable1 = 0;
+    inline static ifn_t* _vtable2 = 0;
+
+    static ifn_t* get_vtable()
+    {
+        if (_vtable1) return _vtable1;
+
+        _vtable1 = new ifn_t[7];
+        _vtable1[0] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::thing::destroy));
+        _vtable1[1] = reinterpret_cast<ifn_t>(static_cast<int(policy_intrusive_base::*)(int,const coid::token&,coid::charstr&)>(&::n1::n2::thing::hallo));
+        _vtable1[2] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::thing::noargs));
+        _vtable1[3] = reinterpret_cast<ifn_t>(static_cast<coid::charstr(policy_intrusive_base::*)(bool,const char*)>(&::n1::n2::thing::fallo));
+        _vtable1[4] = reinterpret_cast<ifn_t>(static_cast<double(policy_intrusive_base::*)(const char*)const>(&::n1::n2::thing::operator()));
+        _vtable1[5] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(const char*,double)>(&::n1::n2::thing::operator()));
+        _vtable1[6] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::thing::dummy));
+        return _vtable1;
+    }
+
+    #define VT_CALL2(R,F,I) ((*reinterpret_cast<policy_intrusive_base*>(this)).*(reinterpret_cast<R(policy_intrusive_base::*)F>(_vtable1[I])))
+
+
+    static ifn_t* get_vtable_intercept()
+    {
+        if (_vtable2) return _vtable2;
+        ifn_t* vtable1 = get_vtable();
+
+        _vtable2 = new ifn_t[7];
+        _vtable2[0] = vtable1[0];
+        _vtable2[1] = vtable1[1];
+        _vtable2[2] = vtable1[2];
+        _vtable2[3] = vtable1[3];
+        _vtable2[4] = vtable1[4];
+        _vtable2[5] = vtable1[5];
+        _vtable2[6] = vtable1[6];
+        return _vtable2;
+    }
+
+
+protected:
+
+    COIDNEWDELETE(ifc_ext_dispatcher);
+
+    ifc_ext_dispatcher() {
+    }
+
+    virtual ~ifc_ext_dispatcher() {
+    }
+
+    bool intergen_bind_capture( coid::binstring* capture, uint instid ) override
+    {
+        if (instid >= 0xffU)
+            return false;
+
+        _instid = uint16(instid << 8U);
+        _capture = capture;
+        _vtable = _capture ? get_vtable_intercept() : get_vtable();
+        return true;
+    }
+
+    void intergen_capture_dispatch( uint mid, coid::binstring& bin ) override
+    {
+        switch(mid) {
+        case UMAX32:
+        default: throw coid::exception("unknown method id in ifc_ext capture dispatcher");
+        }
+    }
+
+    static iref<ifc_ext> _generic_interface_creator(::n1::n2::thing* host, ifc_ext* __here__)
+    {
+        iref<ifc_ext> rval;
+        //an active interface (with events)
+        if (host->_ifc && !__here__)
+            rval = intergen_active_interface(host);
+
+        if (rval.is_empty()) {
+            //interface not taken from host
+            ifc_ext_dispatcher* dispatcher = __here__
+                ? static_cast<ifc_ext_dispatcher*>(__here__)
+                : new ifc_ext_dispatcher;
+            rval.create(dispatcher);
+
+            dispatcher->set_host(host, rval.get(), __here__ ? 0 : &rval);
+        }
+
+        return rval;
+    }
+
+public:
+
+    // creator methods
+
+    static iref<ifc_ext> get( ifc_ext* __here__ )
+    {
+        iref<::n1::n2::thing> __host__ = ::n1::n2::thing::get_thing();
+        if (!__host__)
+            return 0;
+        return _generic_interface_creator(__host__.get(), __here__);
+    }
+
+    ///Register interface creators in the global registry
+    static void register_interfaces( bool on )
+    {
+        interface_register::register_interface_creator(
+            "ns::ifc_ext@wrapper",
+            on ? (void*)&_generic_interface_creator : nullptr);
+
+        interface_register::register_interface_creator(
+            "ns::ifc_ext.get@3696752908",
+            on ? (void*)&get : nullptr);
+    }
+};
+
+
+iref<ifc_ext> ifc_ext::intergen_active_interface(::n1::n2::thing* host)
+{
+    coid::comm_mutex& mx = share_lock();
+
+    GUARDTHIS(mx);
+    iref<ifc_ext> rval;
+    rval.add_refcount(static_cast<ifc_ext*>(host->_ifc.get()));
+
+    return rval;
+}
+
+bool ifc_ext::assign_safe(intergen_interface* client__, iref<ifc_ext>* pout)
+{
+    //try assigning to the host (MT guard)
+    // if that fails, the interface will be passive (no events)
+
+    ::n1::n2::thing* hostptr = host<::n1::n2::thing>();
+    if (!hostptr)
+        return false;
+
+    coid::clean_ptr<intergen_interface>& ifcvar = hostptr->_ifc;
+    coid::comm_mutex& mx = share_lock();
+    if (ifcvar == client__)
+        return true;
+
+    GUARDTHIS(mx);
+    //assign only if nobody assigned before us
+    bool succ = !ifcvar || !client__;
+    if (succ) {
+        ifcvar = client__;
+        _cleaner = client__ ? &_cleaner_callback : 0;
+    }
+    else if (pout)
+        pout->add_refcount(static_cast<ifc_ext*>(ifcvar.get()));
+
+    return succ;
+}
+
+bool ifc_ext::set_host(policy_intrusive_base* host__, intergen_interface* client__, iref<ifc_ext>* pout)
+{
+    _host = host__;
+    _vtable = ifc_ext_dispatcher::get_vtable();
+
+    return assign_safe(client__, pout);
+}
+
+//auto-register the available interface creators
+LOCAL_SINGLETON_DEF(ifc_autoregger) ifc_ext_autoregger = new ifc_autoregger(&ifc_ext_dispatcher::register_interfaces);
+
+void* force_register_ifc_ext() {
+    LOCAL_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&ifc_ext_dispatcher::register_interfaces);
+    return autoregger.get();
+}
+
+} //namespace ns
+
+// events
+
+namespace n1 {
+namespace n2 {
+
+} //namespace n1
+} //namespace n2
+
+static_assert( std::is_base_of<policy_intrusive_base, ::n1::n2::inherit_external>::value, "class 'inherit_external' must be derived from policy_intrusive_base");
+
+////////////////////////////////////////////////////////////////////////////////
+// interface ns::ifc_ext of class inherit_external
+
+namespace ns {
+
+///
+class ifc_ext_dispatcher : public ifc_ext
+{
+    friend class ifc_ext;
 
     inline static const meta::method* creators = nullptr;
     inline static const meta::method methods[] = {
-        { "dummy", false, false, false, false, false, false, false, false, false, false, false, false, false, false, 0, 0, 0, nullptr },
+        { "mummy", false, false, false, false, false, false, false, false, false, false, false, false, false, false, 0, 0, 0, nullptr },
     };
     inline static const meta::method* events = nullptr;
     inline static const meta::interface ifc_meta = {
-        "ifc_ext_ext", // interface name
+        "ifc_ext", // interface name
         { 0 }, // namespaces
-        "ifc_ext_ext.h", // header file
+        "ifc_ext.h", // header file
         "", // storage
         "thingface", // base class name
         { 0 }, // base class namespaces
@@ -481,7 +717,7 @@ private:
         if (_vtable1) return _vtable1;
 
         _vtable1 = new ifn_t[1];
-        _vtable1[0] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::inherit_external::dummy));
+        _vtable1[0] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::inherit_external::mummy));
         return _vtable1;
     }
 
@@ -501,12 +737,12 @@ private:
 
 protected:
 
-    COIDNEWDELETE(ifc_ext_ext_dispatcher);
+    COIDNEWDELETE(ifc_ext_dispatcher);
 
-    ifc_ext_ext_dispatcher() {
+    ifc_ext_dispatcher() {
     }
 
-    virtual ~ifc_ext_ext_dispatcher() {
+    virtual ~ifc_ext_dispatcher() {
     }
 
     bool intergen_bind_capture( coid::binstring* capture, uint instid ) override
@@ -524,17 +760,17 @@ protected:
     {
         switch(mid) {
         case UMAX32:
-        default: throw coid::exception("unknown method id in ifc_ext_ext capture dispatcher");
+        default: throw coid::exception("unknown method id in ifc_ext capture dispatcher");
         }
     }
 
-    static iref<ifc_ext_ext> _generic_interface_creator(::n1::n2::inherit_external* host, ifc_ext_ext* __here__)
+    static iref<ifc_ext> _generic_interface_creator(::n1::n2::inherit_external* host, ifc_ext* __here__)
     {
-        iref<ifc_ext_ext> rval;
+        iref<ifc_ext> rval;
         //a passive interface (no events)
-        ifc_ext_ext_dispatcher* dispatcher = __here__
-            ? static_cast<ifc_ext_ext_dispatcher*>(__here__)
-            : new ifc_ext_ext_dispatcher;
+        ifc_ext_dispatcher* dispatcher = __here__
+            ? static_cast<ifc_ext_dispatcher*>(__here__)
+            : new ifc_ext_dispatcher;
         rval.create(dispatcher);
 
         dispatcher->set_host(host, 0, 0);
@@ -550,25 +786,25 @@ public:
     static void register_interfaces( bool on )
     {
         interface_register::register_interface_creator(
-            "ns::ifc_ext_ext@wrapper",
+            "ns::ifc_ext@wrapper",
             on ? (void*)&_generic_interface_creator : nullptr);
 
     }
 };
 
 
-bool ifc_ext_ext::set_host(policy_intrusive_base* host__, intergen_interface* client__, iref<ifc_ext_ext>* pout)
+bool ifc_ext::set_host(policy_intrusive_base* host__, intergen_interface* client__, iref<ifc_ext>* pout)
 {
     _host = host__;
-    _vtable = ifc_ext_ext_dispatcher::get_vtable();
+    _vtable = ifc_ext_dispatcher::get_vtable();
     return true;
 }
 
 //auto-register the available interface creators
-LOCAL_SINGLETON_DEF(ifc_autoregger) ifc_ext_ext_autoregger = new ifc_autoregger(&ifc_ext_ext_dispatcher::register_interfaces);
+LOCAL_SINGLETON_DEF(ifc_autoregger) ifc_ext_autoregger = new ifc_autoregger(&ifc_ext_dispatcher::register_interfaces);
 
-void* force_register_ifc_ext_ext() {
-    LOCAL_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&ifc_ext_ext_dispatcher::register_interfaces);
+void* force_register_ifc_ext() {
+    LOCAL_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&ifc_ext_dispatcher::register_interfaces);
     return autoregger.get();
 }
 

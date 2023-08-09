@@ -62,8 +62,6 @@ public:
 
     void operator()( const char* key, double value );
 
-    void dummy();
-
 #pragma warning(pop)
 
 protected:
@@ -85,7 +83,7 @@ public:
     // --- internal helpers ---
 
     ///Interface revision hash
-    static const int HASHID = 3696752908u;
+    static const int HASHID = 1485224918u;
 
     ///Interface name (full ns::class string)
     static const coid::tokenhash& IFCNAME() {
@@ -93,18 +91,18 @@ public:
         return _name;
     }
 
-    int intergen_hash_id() const override final { return HASHID; }
+    int intergen_hash_id() const override { return HASHID; }
 
-    bool iface_is_derived( int hash ) const override final {
+    bool iface_is_derived( int hash ) const override {
         return hash == HASHID;
     }
 
-    const coid::tokenhash& intergen_interface_name() const override final {
+    const coid::tokenhash& intergen_interface_name() const override {
         return IFCNAME();
     }
 
     static const coid::token& intergen_default_creator_static( backend bck ) {
-        static constexpr coid::token _dc("ifc1::ifc2::thingface.get@3696752908"_T);
+        static constexpr coid::token _dc("ifc1::ifc2::thingface.get@1485224918"_T);
         static constexpr coid::token _djs("ifc1::ifc2::thingface@wrapper.js"_T);
         static constexpr coid::token _djsc("ifc1::ifc2::thingface@wrapper.jsc"_T);
         static constexpr coid::token _dlua("ifc1::ifc2::thingface@wrapper.lua"_T);
@@ -138,7 +136,7 @@ public:
         return _cached_wrapper;
     }
 
-    void* intergen_wrapper( backend bck ) const override final {
+    void* intergen_wrapper( backend bck ) const override {
         switch(bck) {
         case backend::js:  return intergen_wrapper_cache<backend::js>();
         case backend::jsc: return intergen_wrapper_cache<backend::jsc>();
@@ -149,7 +147,7 @@ public:
 
     backend intergen_backend() const override { return backend::cxx; }
 
-    const coid::token& intergen_default_creator( backend bck ) const override final {
+    const coid::token& intergen_default_creator( backend bck ) const override {
         return intergen_default_creator_static(bck);
     }
 
@@ -167,7 +165,7 @@ public:
         type.consume("struct ");
 
         coid::charstr tmp = "ifc1::ifc2::thingface"_T;
-        tmp << "@client-3696752908"_T << '.' << type;
+        tmp << "@client-1485224918"_T << '.' << type;
 
         coid::interface_register::register_interface_creator(tmp, cc);
         return 0;
@@ -206,14 +204,14 @@ inline iref<T> thingface::get( T* _subclass_ )
     typedef iref<T> (*fn_creator)(thingface*);
 
     static fn_creator create = 0;
-    static constexpr coid::token ifckey = "ifc1::ifc2::thingface.get@3696752908"_T;
+    static constexpr coid::token ifckey = "ifc1::ifc2::thingface.get@1485224918"_T;
 
     if (!create)
         create = reinterpret_cast<fn_creator>(
             coid::interface_register::get_interface_creator(ifckey));
 
     if (!create) {
-        log_mismatch("thingface"_T, "ifc1::ifc2::thingface.get"_T, "@3696752908"_T);
+        log_mismatch("thingface"_T, "ifc1::ifc2::thingface.get"_T, "@1485224918"_T);
         return 0;
     }
 
@@ -235,9 +233,6 @@ inline auto thingface::operator()( const char* key ) const -> double
 
 inline auto thingface::operator()( const char* key, double value ) -> void
 { return VT_CALL(void,(const char*,double),5)(key,value); }
-
-inline auto thingface::dummy() -> void
-{ return VT_CALL(void,(),6)(); }
 
 } //namespace
 } //namespace

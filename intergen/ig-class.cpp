@@ -1,6 +1,7 @@
 
 #include "ig.h"
 
+#include "../dir.h"
 #include "../hash/hashmap.h"
 
 
@@ -17,8 +18,7 @@ int Interface::check_interface(iglexer& lex, const dynarray<paste_block>& classp
     int nerr = 0;
 
     if ((oper_get >= 0) != (oper_set >= 0)) {
-        out << (lex.prepare_exception()
-            << "warning: both setter and getter operator() must be defined for use with scripts\n");
+        out << (lex.prepare_exception() << "warning: both setter and getter operator() must be defined for use with scripts\n");
         lex.clear_err();
 
         oper_get = oper_set = -1;
@@ -32,8 +32,7 @@ int Interface::check_interface(iglexer& lex, const dynarray<paste_block>& classp
 
     //TODO: check types
     if (get.args.size() < 1  ||  set.args.size() < 2) {
-        out << (lex.prepare_exception()
-            << "warning: insufficient number of arguments in getter/setter operator()\n");
+        out << (lex.prepare_exception() << "warning: insufficient number of arguments in getter/setter operator()\n");
         lex.clear_err();
 
         oper_get = oper_set = -1;
@@ -123,7 +122,6 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
             bool isclass = false;
             bool isclassvirtual = false;
             bool isvar = false;
-            bool isext = false;
             bool isextpath = false;
 
             if (tok == lex.IFC_CLASS)
@@ -134,11 +132,6 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
             {
                 isclass = true;
                 isvar = true;
-            }
-            else if (tok == lex.IFC_CLASS_EXTEND)
-            {
-                isclass = true;
-                isext = true;
             }
             else if (tok == lex.IFC_CLASS_VIRTUAL)
             {
@@ -199,7 +192,10 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 lastifc = lastifaces->add();
                 Interface* ifc = lastifc;
 
-                ifc->nifc_methods = 0;
+                ifc->file = lex.get_current_file();
+                ifc->line = lex.current_line();
+
+                //ifc->nifc_methods = 0;
                 ifc->comments.takeover(commlist);
 
                 lex.match('(');
@@ -239,43 +235,43 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                     ifc->varname = lex.match(lex.IDENT);
                 }
 
-                if (isext)
+                if (lex.matches(','))
                 {
+                    ifc->basesrc = lex.match(lex.DQSTRING);
+                    isextpath = !ifc->basesrc.is_empty();
+
                     if (!ifc->baseclass) {
                         lex.prepare_exception() << "error: no base interface specified\n";
                         throw lex.exc();
                     }
+                }
 
-                    if (lex.matches(','))
+                if (ifc->baseclass && !isextpath)
+                {
+                    //same class interface extension
+                    //find in previous interfaces
+                    Interface* base_ifc = 0;
+                    for (Interface& pifc : *lastifaces)
                     {
-                        //rel.path to the header with base interface
-                        isextpath = true;
-                        ifc->basesrc = lex.match(lex.DQSTRING);
+                        if (&pifc == ifc)
+                            continue;
+                        if (pifc.nsname == ifc->base) {
+                            base_ifc = &pifc;
+                            break;
+                        }
                     }
 
-                    if (!isextpath)
+                    if (base_ifc)
                     {
-                        //same class interface extension
-                        //find in previous interfaces
-                        Interface* bifc = 0;
-                        for (Interface& pifc : *lastifaces)
-                        {
-                            if (&pifc == ifc)
-                                continue;
-                            if (pifc.nsname == ifc->base) {
-                                bifc = &pifc;
-                                break;
-                            }
+                        if (base_ifc->varname && ifc->varname) {
+                            out << (lex.prepare_exception() << "error: extended interface `" << ifc->nsname << "' of ifc_class_var base interface `" << base_ifc->nsname << "' cannot use ifc_class_var\n");
+                            lex.clear_err();
+                            ++ncontinuable_errors;
                         }
 
-                        if (!bifc) {
-                            lex.prepare_exception()
-                                << "error: base interface " << ifc->base << " not declared in this class\n";
-                            throw lex.exc();
-                        }
-
-                        ifc->copy_methods(*bifc);
+                        ifc->copy_methods(*base_ifc);
                     }
+                    // else not declared in this class, assume virtual base interface
                 }
 
                 lex.match(')');
@@ -300,7 +296,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
 
                 ifc->bvirtual = isclassvirtual;
                 ifc->bdataifc = dataifc;
-                ifc->bextend = isextpath;
+                ifc->bextend = !ifc->baseclass.is_empty();
                 ifc->bextend_ext = isextpath && !ifc->basesrc.is_empty();
             }
             else if (extev || tok == lex.IFC_EVENT)
@@ -313,8 +309,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
 
                 //parse event declaration
                 if (!lastifc) {
-                    lex.prepare_exception()
-                        << "error: no preceding interface declared\n";
+                    lex.prepare_exception() << "error: no preceding interface declared\n";
                     throw lex.exc();
                 }
 
@@ -329,6 +324,18 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 {
                     if (!m->parse(lex, classname, namespc, lastifc->nsname, irefargs, true))
                         ++ncontinuable_errors;
+
+                    const MethodIG* old = lastifc->method.find_if([m](const MethodIG& o) {
+                        return &o != m && o.name == m->name && m->matches_args(o);
+                    });
+
+                    if (old) {
+                        charstr relpath;
+                        directory::get_relative_path(m->file, old->file, relpath, true);
+                        out << (lex.prepare_exception() << "method already declared in " << relpath << "(" << old->line << "): " << m->name << "\n");
+                        lex.clear_err();
+                        ++ncontinuable_errors;
+                    }
 
                     if (duplicate == 2) {
                         lex.match(';');
@@ -348,8 +355,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                     m->basename = m->name;
 
                     if (m->bstatic) {
-                        out << (lex.prepare_exception()
-                            << "error: interface event cannot be static\n");
+                        out << (lex.prepare_exception() << "error: interface event cannot be static\n");
                         lex.clear_err();
                         ++ncontinuable_errors;
                     }
@@ -365,8 +371,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                         //m->ret.type = m->ret.basetype = m->ret.fulltype = "void";
                     }
                     else {
-                        out << (lex.prepare_exception()
-                            << "error: unrecognized implicit event\n");
+                        out << (lex.prepare_exception() << "error: unrecognized implicit event\n");
                         lex.clear_err();
                         ++ncontinuable_errors;
                     }
@@ -383,8 +388,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                     }
 
                     if (nmiss) {
-                        out << (lex.prepare_exception()
-                            << "warning: a matching duplicate event " << m->name << " not found in previous interfaces\n");
+                        out << (lex.prepare_exception() << "warning: a matching duplicate event " << m->name << " not found in previous interfaces\n");
                         lex.clear_err();
                     }
                 }
@@ -416,6 +420,18 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 if (!m->parse(lex, classname, namespc, lastifc->nsname, irefargs, false))
                     ++ncontinuable_errors;
 
+                const MethodIG* old = lastifc->method.find_if([m](const MethodIG& o) {
+                    return &o != m && o.name == m->name && m->matches_args(o);
+                });
+
+                if (old) {
+                    charstr relpath;
+                    directory::get_relative_path(m->file, old->file, relpath, true);
+                    out << (lex.prepare_exception() << "method already declared in " << relpath << "(" << old->line << "): " << m->name << "\n");
+                    lex.clear_err();
+                    ++ncontinuable_errors;
+                }
+
                 if (duplicate == 2) {
                     lex.match(';');
                     lex.match("*/");
@@ -432,8 +448,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 m->bcapture = capture > 0 && !m->bconst && !m->bstatic;
 
                 if (bcapture > bnocapture && !m->bcapture) {
-                    out << (lex.prepare_exception()
-                        << "warning: const and static methods aren't captured\n");
+                    out << (lex.prepare_exception() << "warning: const and static methods aren't captured\n");
                     lex.clear_err();
                 }
 
@@ -472,8 +487,8 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                         lastifc->oper_set = int(lastifc->method.size() - 1);
                 }
 
-                if (!m->bstatic)
-                    ++lastifc->nifc_methods;
+                //if (!m->bstatic)
+                //    ++lastifc->nifc_methods;
 
                 if (m->bstatic && bdestroy) {
                     out << "error: method to call on interface release cannot be static\n";
@@ -485,8 +500,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                     if (m->name == "connect") {
                         /// @connect called when interface connects successfully
                         if (m->ret.type != "void" && m->args.size() != 0) {
-                            out << (lex.prepare_exception()
-                                << "error: invalid format for connect method\n");
+                            out << (lex.prepare_exception() << "error: invalid format for connect method\n");
                             lex.clear_err();
                             ++ncontinuable_errors;
                         }
@@ -497,8 +511,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                         lastifc->on_unload = m->name = m->intname;
 
                         if (!m->bstatic) {
-                            out << (lex.prepare_exception()
-                                << "error: unload method must be static\n");
+                            out << (lex.prepare_exception() << "error: unload method must be static\n");
                             lex.clear_err();
                             ++ncontinuable_errors;
                         }
@@ -506,8 +519,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                         m->bcreator = false;
                     }
                     else {
-                        out << (lex.prepare_exception()
-                            << "error: unrecognized implicit method\n");
+                        out << (lex.prepare_exception() << "error: unrecognized implicit method\n");
                         lex.clear_err();
                         ++ncontinuable_errors;
                     }
@@ -520,8 +532,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 if (bdestroy) {
                     //mark and move to the first pos
                     if (lastifc->destroy.name) {
-                        out << (lex.prepare_exception()
-                            << "error: interface release method already specified\n");
+                        out << (lex.prepare_exception() << "error: interface release method already specified\n");
                         lex.clear_err();
                         ++ncontinuable_errors;
                     }
@@ -531,8 +542,8 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                     m = lastifc->method.ptr();
                 }
 
-                if (m->bcreator && m->args.size() == 0 && lastifc->default_creator.name.is_empty())
-                    lastifc->default_creator = *m;
+                if (m->bcreator && m->args.size() == 0 && lastifc->default_creator.is_empty())
+                    lastifc->default_creator = m->name;
 
                 if (!m->bstatic && !binternal && !m->boperator) {
                     //check if another public method with the same name exists
@@ -540,8 +551,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                         return !mi.bstatic && mi.name == m->name;
                     });
                     if (mdup != m) {
-                        out << (lex.prepare_exception()
-                            << "error: overloaded methods not supported for scripting interface\n");
+                        out << (lex.prepare_exception() << "error: overloaded methods not supported for scripting interface\n");
                         lex.clear_err();
                         ++ncontinuable_errors;
                     }
@@ -558,16 +568,14 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                     }
 
                     if (nmiss) {
-                        out << (lex.prepare_exception()
-                            << "warning: a matching duplicate method " << m->name << " not found in previous interfaces\n");
+                        out << (lex.prepare_exception() << "warning: a matching duplicate method " << m->name << " not found in previous interfaces\n");
                         lex.clear_err();
                     }
                 }
             }
             else {
                 //produce a warning for other misplaced keywords
-                out << (lex.prepare_exception()
-                    << "warning: misplaced keyword\n");
+                out << (lex.prepare_exception() << "warning: misplaced keyword\n");
                 lex.clear_err();
             }
         }
@@ -595,8 +603,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
 
     //check consistency
     if (iface_refc.size() > 0 && iface_data.size() > 0) {
-        out << (lex.prepare_exception()
-            << "error: mixed interface types in host class `" << classname << "'\n");
+        out << (lex.prepare_exception() << "error: mixed interface types in host class `" << classname << "'\n");
         lex.clear_err();
         ++ncontinuable_errors;
     }

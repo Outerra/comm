@@ -16,7 +16,7 @@ iglexer::iglexer()
 
     RLCMD = def_keywords("rl_cmdr:rl_cmdr_p:rl_cmdr_s:rl_cmdp:rl_cmdp_p:rl_cmdp_s:rl_cmdi:rl_cmdi_p:rl_cmdi_s");
 
-    IGKWD = def_keywords("ifc_class:ifc_class_var:ifc_class_extend:ifc_class_virtual:ifc_struct:ifc_fn:ifc_fnx:ifc_event:ifc_eventx:ifc_in:ifc_out:ifc_inout:ifc_ret");
+    IGKWD = def_keywords("ifc_class:ifc_class_var:ifc_class_virtual:ifc_struct:ifc_fn:ifc_fnx:ifc_event:ifc_eventx:ifc_in:ifc_out:ifc_inout:ifc_ret");
 
     int ie = def_escape("escape", '\\', 0);
     def_escape_pair(ie, "\\", "\\");
@@ -129,8 +129,14 @@ int iglexer::find_method(const token& classname, dynarray<paste_block>& classpas
             complete_block();
             continue;
         }
-        else
+        else {
             nv = 0;
+            //produce error for old/non-existing ifc keywords
+            if (tok.value().begins_with("ifc_")) {
+                syntax_err() << "unrecognized ifc keyword encountered: " << tok.value();
+                throw exc();
+            }
+        }
 
         next();
     }

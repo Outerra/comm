@@ -5,6 +5,9 @@
 ///Parse function declaration after ifc_fn
 bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const charstr& nsifc, dynarray<Arg>& irefargs, bool isevent)
 {
+    file = lex.get_current_file();
+    line = lex.current_line();
+
     bstatic = lex.match_optional("static");
 
     //rettype fncname '(' ...

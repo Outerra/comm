@@ -79,9 +79,8 @@ public:
             dst << infile << char('(') << line << ") : ";
     }
 
-    void set_current_file(const token& file) {
-        infile = file;
-    }
+    void set_current_file(const token& file) { infile = file; }
+    const charstr& get_current_file() const { return infile; }
 
     iglexer();
 
@@ -259,6 +258,9 @@ struct MethodIG
         }
     };
 
+    charstr file;
+    uint line = 0;
+
     charstr name;                       //< method name
     charstr intname;                    //< internal name
     charstr basename;                   //< method name, changed operator name
@@ -361,6 +363,9 @@ struct MethodIG
 ///
 struct Interface
 {
+    charstr file;
+    uint line = 0;
+
     dynarray<charstr> nss;
     charstr name;
     charstr nsname;
@@ -380,7 +385,7 @@ struct Interface
     dynarray<MethodIG> event;
 
     MethodIG destroy;
-    MethodIG default_creator;
+    charstr default_creator;
 
     int oper_get = -1;
     int oper_set = -1;
@@ -390,7 +395,7 @@ struct Interface
     charstr on_connect, on_connect_ev;
     charstr on_unload;
 
-    uint nifc_methods = 0;
+    //uint nifc_methods = 0;
 
     dynarray<charstr> pasters;              //< pasted before the generated class declaration
     dynarray<charstr> pasteafters;          //< pasted after the generated class declaration
@@ -403,10 +408,6 @@ struct Interface
 
     uint hash;
 
-    int par_ifc_offset = 0;
-    int ifc_bit = -1;
-    int ninherited = 0;
-    uint inhmask = 0;
 
     dynarray<charstr> comments;
     dynarray<charstr> docs;
@@ -420,56 +421,20 @@ struct Interface
 
     void copy_methods(Interface& o)
     {
-        {
-            //set inheritance bits
-            int iof = int(this - &o);
-            par_ifc_offset = iof;
-
-            //find root
-            Interface* par = this;
-            while (par->par_ifc_offset > 0) {
-                par -= par->par_ifc_offset;
-            }
-
-            ifc_bit = ++par->ninherited;
-
-            uint m = 1;
-            par = this;
-
-            while (par->par_ifc_offset > 0) {
-                m |= 1 << par->ifc_bit;
-
-                par -= par->par_ifc_offset;
-                par->ninherited++;
-            }
-
-            if (m > 1) {
-                par->inhmask |= 1;
-                par->ifc_bit = 0;
-            }
-
-            inhmask = m;
-        }
-
         varname = o.varname;
-
-        relpath = o.relpath;
-        base = o.base;
-        baseclass = o.baseclass;
-        basepath = o.basepath;
-
-        baseclass.rebase(o.base.ptr(), base.ptr());
-        basepath.rebase(o.base.ptr(), base.ptr());
 
         method = o.method;
         event = o.event;
-        destroy = o.destroy;
-        default_creator = o.default_creator;
 
         for (auto& m : method)
             m.binherit = true;
         for (auto& e : event)
             e.binherit = true;
+
+        destroy = o.destroy;
+        destroy.binherit = true;
+
+        default_creator = o.default_creator;
 
         oper_get = o.oper_get;
         oper_set = o.oper_set;
@@ -478,20 +443,6 @@ struct Interface
 
         on_connect = o.on_connect;
         on_connect_ev = o.on_connect_ev;
-
-        nifc_methods = o.nifc_methods;
-        pasters = o.pasters;
-        pasteafters = o.pasteafters;
-        pasteinners = o.pasteinners;
-
-        srcfile = o.srcfile;
-        srcclass = o.srcclass;
-        srcclassorstruct = o.srcclassorstruct;
-        srcnamespc = o.srcnamespc;
-
-        hash = o.hash;
-
-        docs = o.docs;
     }
 
     void compute_hash(int version);
@@ -540,13 +491,13 @@ struct Interface
             m.member("onconnectev", p.on_connect_ev);
             m.member("onunload", p.on_unload);
             m.member_type<bool>("hasprops", [](bool) {}, [&]() { return p.oper_get >= 0; });
-            m.member("nifcmethods", p.nifc_methods);
+            //m.member("nifcmethods", p.nifc_methods);
             m.member("varname", p.varname);
             m.member("event", p.event);
             m.member("destroy", p.destroy);
             m.member("hash", p.hash);
-            m.member("inhmask", p.inhmask);
-            m.member("ifc_bit", p.ifc_bit);
+            //m.member("inhmask", p.inhmask);
+            //m.member("ifc_bit", p.ifc_bit);
             m.member("comments", p.comments);
             m.member("docs", p.docs);
             m.member("pasters", p.pasters);
