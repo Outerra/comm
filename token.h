@@ -251,6 +251,7 @@ struct token
 
     ///Rebase token pointing into one string to point into the same region in another string
     token rebase(const charstr& from, const charstr& to) const;
+    token rebase(const char* from, const char* to) const;
 
     constexpr const char* ptr() const { return _ptr; }
     constexpr const char* ptre() const { return _pte; }

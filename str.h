@@ -2298,11 +2298,25 @@ inline token& token::operator = (const charstr& t)
 
 inline token token::rebase(const charstr& from, const charstr& to) const
 {
+    if (is_null())
+        return *this;
+
     DASSERT(_ptr >= from.ptr() && _pte <= from.ptre());
     uints offset = _ptr - from.ptr();
     DASSERT(offset + len() <= to.len());
 
     return token(to.ptr() + offset, len());
+}
+
+inline token token::rebase(const char* from, const char* to) const
+{
+    if (is_null())
+        return *this;
+
+    DASSERT(_ptr >= from && _pte <= from);
+    uints offset = _ptr - from;
+
+    return token(to + offset, len());
 }
 
 inline uint token::replace(const token& from, const token& to, charstr& dst, bool icase) const

@@ -205,9 +205,10 @@ public:
 
     /// DO NOT USE !!!
     policy* add_refcount() const {
-        if (_p)
-            _p->add_refcount();
-        return _p;
+        policy* p = _p;
+        if (p)
+            p->add_refcount();
+        return p;
     }
 
     policy* can_add_refcount() const {
