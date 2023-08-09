@@ -43,6 +43,17 @@
     </Expand>
 </Type>
 
+<Type Name="coid::range&lt;*&gt;">
+    <DisplayString>size = {_pte - _ptr}</DisplayString>
+    <Expand>
+        <Item Name="[size]" ExcludeView="simple">_pte - _ptr</Item>
+        <ArrayItems>
+            <Size>_pte - _ptr</Size>
+            <ValuePointer>_ptr</ValuePointer>
+        </ArrayItems>
+    </Expand>
+</Type>
+
 <Type Name="coid::slotalloc_base&lt;*,*&gt;">
     <DisplayString>size = {_count}</DisplayString>
 </Type>
