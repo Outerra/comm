@@ -548,15 +548,17 @@ bool directory::get_relative_path(token src, token dst, charstr& relout, bool la
     const char* ps = src.ptr();
     const char* pe = 0;
 
-    while (1)
+    while (src.is_set() || dst.is_set())
     {
         token st = src.cut_left_group(DIR_SEPARATORS);
         token dt = dst.cut_left_group(DIR_SEPARATORS);
 
+        bool isfile = last_src_is_file && src.is_empty();
+
 #ifdef SYSTYPE_WIN
-        if (!st.cmpeqi(dt)) {
+        if (isfile || !st.cmpeqi(dt)) {
 #else
-        if (st != dt) {
+        if (isfile || st != dt) {
 #endif
             src.set(st.ptr(), src.ptre());
             dst.set(dt.ptr(), dst.ptre());
