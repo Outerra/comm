@@ -200,6 +200,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
 
                 lex.match('(');
                 ifc->bdefaultcapture = lex.matches_either('+', '-') == 1;
+                ifc->bnoscript = lex.matches('!');
                 ifc->name = lex.match(lex.IDENT);
 
                 while (lex.matches("::"_T)) {
@@ -230,6 +231,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
 
                 ifc->relpath = lex.match(lex.DQSTRING);
 
+                ifc->bvartype = isvar;
                 if (isvar) {
                     lex.match(',');
                     ifc->varname = lex.match(lex.IDENT);
@@ -238,7 +240,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 if (lex.matches(','))
                 {
                     ifc->basesrc = lex.match(lex.DQSTRING);
-                    isextpath = !ifc->basesrc.is_empty();
+                    isextpath = true;
 
                     if (!ifc->baseclass) {
                         lex.prepare_exception() << "error: no base interface specified\n";
@@ -263,12 +265,6 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
 
                     if (base_ifc)
                     {
-                        if (base_ifc->varname && ifc->varname) {
-                            out << (lex.prepare_exception() << "error: extended interface `" << ifc->nsname << "' of ifc_class_var base interface `" << base_ifc->nsname << "' cannot use ifc_class_var\n");
-                            lex.clear_err();
-                            ++ncontinuable_errors;
-                        }
-
                         ifc->copy_methods(*base_ifc);
                     }
                     // else not declared in this class, assume virtual base interface
@@ -297,7 +293,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 ifc->bvirtual = isclassvirtual;
                 ifc->bdataifc = dataifc;
                 ifc->bextend = !ifc->baseclass.is_empty();
-                ifc->bextend_ext = isextpath && !ifc->basesrc.is_empty();
+                ifc->bextend_ext = isextpath;
             }
             else if (extev || tok == lex.IFC_EVENT)
             {
@@ -316,7 +312,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 MethodIG* m = lastifc->event.add();
 
                 m->comments.takeover(commlist);
-                m->binternal = binternal > 0;
+                m->binternal = binternal > 0 || lastifc->bnoscript;
                 m->bimplicit = bimplicit;
                 m->bduplicate = duplicate != 0;
                 m->bpure = bpure;
@@ -413,7 +409,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 MethodIG* m = lastifc->method.add();
 
                 m->comments.takeover(commlist);
-                m->binternal = binternal > 0;
+                m->binternal = binternal > 0 || lastifc->bnoscript;
                 m->bduplicate = duplicate != 0;
                 m->bimplicit = bimplicit;
 

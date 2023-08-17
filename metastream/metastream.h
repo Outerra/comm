@@ -3987,10 +3987,11 @@ namespace check {
     template <typename T>
     struct helper {
         typedef typename std::remove_reference<T>::type B;
-        typedef typename std::remove_const<B>::type C;
+        typedef typename std::remove_pointer<T>::type C;
+        typedef typename std::remove_const<C>::type X;
 
         enum {
-            value = std::is_enum<C>::value || (sizeof(*(metastream*)(0) || *(C*)(0)) != sizeof(char))
+            value = std::is_enum<X>::value || (sizeof(*(metastream*)(0) || *(X*)(0)) != sizeof(char))
         };
     };
 }

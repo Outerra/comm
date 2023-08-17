@@ -5,6 +5,14 @@
 #include "../ifc.h"
 #include "../../str.h"
 
+//ifc{
+struct test;
+
+namespace bt {
+    struct base;
+}
+//}ifc
+
 namespace xx {
     class yy;
 }
@@ -74,6 +82,10 @@ public:
     ifc_fn double operator()(const char* key) const;
     ifc_fn void operator()(const char* key, double value);
 
+    ifc_fn void inout(ifc_inout test*& par);
+
+    ifc_fn void nested(const coid::dynarray<bt::base>& stuff);
+
     ifc_event void boo( const char* key );
 
     ifc_event const char* body() ifc_default_body("return \"string\";");
@@ -83,12 +95,12 @@ public:
 
     //extension interface in the same class
 
-    ifc_class(ns::ifc_ext : ifc1::ifc2::thingface, "ifc");
+    ifc_class(ns::ifc_int : ifc1::ifc2::thingface, "ifc");
 
     ifc_fn void dummy();
 };
 
-/// @brief 
+/// @brief
 class inherit_external : public thing
 {
 public:
@@ -97,6 +109,10 @@ public:
     ifc_class(ns::ifc_ext : ifc1::ifc2::thingface, "ifc", "");
 
     ifc_fn void mummy();
+
+
+    //extension of extension
+    ifc_class(ns::ifc_ext2 : ns::ifc_ext, "ifc");
 };
 
 }

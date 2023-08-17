@@ -174,8 +174,9 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
         barenstype.set(barenstype.ptr()+5, barenstype.ptre()-1);
 
     barens = barenstype;
+    barens.cut_right('<', token::cut_trait_remove_sep_default_empty());  //remove template args
     baretype = barens.cut_right_back("::", false);
-
+    baretype._pte = barenstype._pte; //restore template args
 
     bnoscript = false;
 

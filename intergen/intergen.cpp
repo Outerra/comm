@@ -49,7 +49,7 @@ struct File
     }
 
 
-    int parse(token path);
+    int parse(token path, const char* ref_file, int ref_line);
 
     bool find_class(iglexer& lex, dynarray<charstr>& namespc, charstr& templarg);
 };
@@ -453,7 +453,7 @@ int main(int argc, char* argv[])
     File cgf;
 
     //parse
-    int rv = cgf.parse(argv[1]);
+    int rv = cgf.parse(argv[1], 0, 0);
     if (rv)
         return rv;
 
@@ -545,30 +545,36 @@ bool File::find_class(iglexer& lex, dynarray<charstr>& namespc, charstr& templar
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Parse file
-int File::parse(token path)
+int File::parse(token path, const char* ref_file, int ref_line)
 {
     directory::xstat st;
 
     bifstream bif;
     if (!directory::stat(path, &st) || bif.open(path) != 0) {
-        out << "error: can't open the file " << path << "\n";
+        if (ref_file)
+            out << ref_file << '(' << ref_line << "): error: can't open the file " << path << "\n";
+        else
+            out << "error: can't open the file " << path << "\n";
         return -2;
     }
 
     mtime = st.st_mtime;
 
+    charstr cpath = path;
+    directory::compact_path(cpath, '\\');
+
     iglexer lex;
     lex.bind(bif);
-    lex.set_current_file(path);
+    lex.set_current_file(cpath);
 
 
-    out << "processing " << path << " file ...\n";
+    out << "processing " << cpath << " file ...\n";
 
-    token name = path;
+    token name = cpath;
     name.cut_left_group_back("\\/", token::cut_trait_remove_sep_default_empty());
 
     fpath = directory::get_cwd();
-    directory::append_path(fpath, path);
+    directory::append_path(fpath, cpath);
     //fpath = path;
     fnameext = name;
     fname = name.cut_left_back('.');
@@ -599,65 +605,134 @@ int File::parse(token path)
             for (Interface& i : c.iface_refc)
             {
                 if (!i.bextend_ext) {
-                    //normal interface, not extended
+                    //not an external extend
+                    if (i.bextend) {
+                        //find in the same class
+                        i.base_ifc = c.iface_refc.find_if([&](Interface& ifc) {
+                            return &ifc != &i && ifc.nsname == i.base;
+                        });
+                    }
                     continue;
                 }
 
-                charstr base_src_path = token(path).cut_left_group_back(DIR_SEPARATORS, coid::token::cut_trait_remove_sep_default_empty());
-                if (!base_src_path.is_empty())
-                    base_src_path << "/";
-                base_src_path << i.basesrc;
-
-                out << "Parsing base class source file: " << i.basesrc << "\n";
-
-                File* base_file = dependencies.add();
-                int res = base_file->parse(base_src_path);
-                if (res != 0) {
-                    return res;
+                charstr base_src_path;
+                if (i.basesrc) {
+                    base_src_path = token(cpath).cut_left_group_back(DIR_SEPARATORS, coid::token::cut_trait_remove_sep_default_empty());
+                    if (!base_src_path.is_empty())
+                        base_src_path << '\\';
+                    directory::append_path(base_src_path, i.basesrc);
+                    directory::compact_path(base_src_path, '\\');
                 }
 
-                for (Class& cls : base_file->classes)
+                Class* base_class = 0;
+                Interface* base_ifc = 0;
+
+                if (!i.basesrc || base_src_path == cpath) {
+                    //find in other classes of the same file
+                    base_src_path = fnameext;
+
+                    for (Class& cls : classes)
+                    {
+                        if (&c == &cls)
+                            continue;
+
+                        base_ifc = cls.iface_refc.find_if([&](Interface& ifc) {
+                            return ifc.nsname == i.base;
+                        });
+
+                        if (base_ifc) {
+                            base_class = &cls;
+                            break;
+                        }
+                    }
+                }
+                else {
+                    //find in another file
+                    out << "Parsing base class source file: " << i.basesrc << "\n";
+
+                    File* base_file = dependencies.add();
+                    int res = base_file->parse(base_src_path, i.file.c_str(), i.line);
+                    if (res != 0) {
+                        return res;
+                    }
+
+                    for (Class& cls : base_file->classes)
+                    {
+                        base_ifc = cls.iface_refc.find_if([&](Interface& ifc) {
+                            return ifc.nsname == i.base;
+                        });
+
+                        if (base_ifc) {
+                            base_class = &cls;
+                            break;
+                        }
+                    }
+                }
+
+                if (!base_ifc) {
+                    out << i.file << '(' << i.line << "): error: base class not found in " << base_src_path << '\n';
+                    nerr++;
+                    break;
+                }
+                //else if (base_ifc->bvartype && i.bvartype) {
+                //    out << i.file << '(' << i.line << "): error: extended interface `" << i.nsname << "' of ifc_class_var base interface `" << base_ifc->nsname << "' cannot use ifc_class_var\n";
+                //    nerr++;
+                //}
+
+                for (const MethodIG& e : base_ifc->event)
                 {
-                    Interface* base_ifc = cls.iface_refc.find_if([&](Interface& ifc) {
-                        return ifc.nsname == i.base;
+                    const MethodIG* found = i.event.find_if([&e](const MethodIG& it) {
+                        return e.name == it.name && e.intname == it.intname;
                     });
 
-                    if (!base_ifc) {
-                        out << i.file << '(' << i.line << "): error: base class not found in " << i.basesrc << '\n';
-                        nerr++;
-                        break;
+                    if (!found) {
+                        i.event.ins_value(0, e)->binherit = true;
                     }
-                    else if (base_ifc->varname && i.varname) {
-                        out << i.file << '(' << i.line << "): error: extended interface `" << i.nsname << "' of ifc_class_var base interface `" << base_ifc->nsname << "' cannot use ifc_class_var\n";
-                        nerr++;
-                    }
-
-                    for (const MethodIG& e : base_ifc->event)
-                    {
-                        const MethodIG* found = i.event.find_if([&e](const MethodIG& it) {
-                            return e.name == it.name && e.intname == it.intname;
-                        });
-
-                        if (!found) {
-                            i.event.ins_value(0, e)->binherit = true;
-                        }
-                    }
-
-                    for (const MethodIG& m : base_ifc->method)
-                    {
-                        const MethodIG* found = i.event.find_if([&m](const MethodIG& it) {
-                            return m.name == it.name && m.intname == it.intname;
-                        });
-
-                        if (!found && !m.bcreator)
-                        {
-                            i.method.ins_value(0, m)->binherit = true;
-                            //i.nifc_methods++;
-                        }
-                    }
-
-                    i.varname = base_ifc->varname;
                 }
+
+                for (const MethodIG& m : base_ifc->method)
+                {
+                    const MethodIG* found = i.event.find_if([&m](const MethodIG& it) {
+                        return m.name == it.name && m.intname == it.intname;
+                    });
+
+                    if (!found && !m.bcreator)
+                    {
+                        i.method.ins_value(0, m)->binherit = true;
+                        //i.nifc_methods++;
+                    }
+                }
+
+                i.base_ifc = base_ifc;
+            }
+        }
+
+        //check dependencies
+        for (Class& c : classes)
+        {
+            for (Interface& i : c.iface_refc)
+            {
+                if (!i.bextend && !i.bextend_ext)
+                    continue;
+
+                if (!i.base_ifc)
+                    continue;
+
+                Interface* root = i.base_ifc;
+                const charstr* varname = root->bvartype ? &root->varname : 0;
+                while (root->base_ifc) {
+                    root = root->base_ifc;
+                    if (root->bvartype)
+                        varname = &root->varname;
+                }
+
+                if (varname && i.bvartype) {
+                    out << i.file << '(' << i.line << "): error: extended interface `" << i.nsname << "' of ifc_class_var base interface `" << i.base_ifc->nsname << "' cannot use ifc_class_var\n";
+                    nerr++;
+                }
+
+                if (varname)
+                    i.varname = *varname;
             }
         }
     }

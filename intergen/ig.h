@@ -276,7 +276,7 @@ struct MethodIG
     bool bifccr = false;                //< ifc returning creator (not host)
     bool bconst = false;                //< const method
     bool boperator = false;
-    bool binternal = false;             //< internal method, invisible to scripts (starts with an underscore)
+    bool binternal = false;             //< internal method, invisible to scripts (starts with an underscore or ifc_fn(!))
     bool bcapture = false;              //< method captured when interface is in capturing mode
     bool bimplicit = false;             //< an implicit event/method
     bool bdestroy = false;              //< a method to call on interface destroy
@@ -365,6 +365,7 @@ struct Interface
 {
     charstr file;
     uint line = 0;
+    Interface* base_ifc = 0;
 
     dynarray<charstr> nss;
     charstr name;
@@ -414,10 +415,12 @@ struct Interface
 
     bool bvirtual = false;
     bool bdefaultcapture = false;
+    bool bnoscript = false;
     bool bdataifc = false;
     bool bextend = false;
     bool bextend_ext = false;
     bool bfinal = false;
+    bool bvartype = false;
 
     void copy_methods(Interface& o)
     {

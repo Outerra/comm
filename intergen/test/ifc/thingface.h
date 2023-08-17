@@ -11,6 +11,12 @@
 #include <comm/commexception.h>
 #include <comm/intergen/ifc.h>
 
+struct test;
+
+namespace bt {
+    struct base;
+}
+
 namespace n1 {
 namespace n2 {
     class thing;
@@ -62,6 +68,10 @@ public:
 
     void operator()( const char* key, double value );
 
+    void inout( ifc_inout test*& par );
+
+    void nested( const coid::dynarray<bt::base>& stuff );
+
 #pragma warning(pop)
 
 protected:
@@ -83,7 +93,7 @@ public:
     // --- internal helpers ---
 
     ///Interface revision hash
-    static const int HASHID = 1485224918u;
+    static const int HASHID = 882214376u;
 
     ///Interface name (full ns::class string)
     static const coid::tokenhash& IFCNAME() {
@@ -102,7 +112,7 @@ public:
     }
 
     static const coid::token& intergen_default_creator_static( backend bck ) {
-        static constexpr coid::token _dc("ifc1::ifc2::thingface.get@1485224918"_T);
+        static constexpr coid::token _dc("ifc1::ifc2::thingface.get@882214376"_T);
         static constexpr coid::token _djs("ifc1::ifc2::thingface@wrapper.js"_T);
         static constexpr coid::token _djsc("ifc1::ifc2::thingface@wrapper.jsc"_T);
         static constexpr coid::token _dlua("ifc1::ifc2::thingface@wrapper.lua"_T);
@@ -165,7 +175,7 @@ public:
         type.consume("struct ");
 
         coid::charstr tmp = "ifc1::ifc2::thingface"_T;
-        tmp << "@client-1485224918"_T << '.' << type;
+        tmp << "@client-882214376"_T << '.' << type;
 
         coid::interface_register::register_interface_creator(tmp, cc);
         return 0;
@@ -204,14 +214,14 @@ inline iref<T> thingface::get( T* _subclass_ )
     typedef iref<T> (*fn_creator)(thingface*);
 
     static fn_creator create = 0;
-    static constexpr coid::token ifckey = "ifc1::ifc2::thingface.get@1485224918"_T;
+    static constexpr coid::token ifckey = "ifc1::ifc2::thingface.get@882214376"_T;
 
     if (!create)
         create = reinterpret_cast<fn_creator>(
             coid::interface_register::get_interface_creator(ifckey));
 
     if (!create) {
-        log_mismatch("thingface"_T, "ifc1::ifc2::thingface.get"_T, "@1485224918"_T);
+        log_mismatch("thingface"_T, "ifc1::ifc2::thingface.get"_T, "@882214376"_T);
         return 0;
     }
 
@@ -233,6 +243,12 @@ inline auto thingface::operator()( const char* key ) const -> double
 
 inline auto thingface::operator()( const char* key, double value ) -> void
 { return VT_CALL(void,(const char*,double),5)(key,value); }
+
+inline auto thingface::inout( ifc_inout test*& par ) -> void
+{ return VT_CALL(void,(test*&),6)(par); }
+
+inline auto thingface::nested( const coid::dynarray<bt::base>& stuff ) -> void
+{ return VT_CALL(void,(const coid::dynarray<bt::base>&),7)(stuff); }
 
 } //namespace
 } //namespace
