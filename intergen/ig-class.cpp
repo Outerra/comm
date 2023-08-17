@@ -418,7 +418,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                     ++ncontinuable_errors;
 
                 const MethodIG* old = lastifc->method.find_if([m](const MethodIG& o) {
-                    return &o != m && o.name == m->name && m->matches_args(o);
+                    return &o != m && o.bcreator == m->bcreator && o.name == m->name && m->matches_args(o);
                 });
 
                 if (old) {

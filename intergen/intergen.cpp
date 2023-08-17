@@ -683,7 +683,7 @@ int File::parse(token path, const char* ref_file, int ref_line)
                 for (const MethodIG& e : base_ifc->event)
                 {
                     const MethodIG* found = i.event.find_if([&e](const MethodIG& it) {
-                        return e.name == it.name && e.intname == it.intname;
+                        return e.name == it.name && e.intname == it.intname && e.matches_args(it);
                     });
 
                     if (!found) {
@@ -694,8 +694,11 @@ int File::parse(token path, const char* ref_file, int ref_line)
                 int im = 0;
                 for (const MethodIG& m : base_ifc->method)
                 {
+                    if (m.bcreator)
+                        continue;
+
                     const MethodIG* found = i.method.find_if([&m](const MethodIG& it) {
-                        return !m.bcreator && m.name == it.name && m.intname == it.intname;
+                        return m.bcreator == it.bcreator && m.name == it.name && m.intname == it.intname && m.matches_args(it);
                     });
 
                     if (!found && !m.bcreator) {
