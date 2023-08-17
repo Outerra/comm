@@ -9,12 +9,12 @@
 struct test;
 
 namespace bt {
-    struct base;
+struct base;
 }
 //}ifc
 
 namespace xx {
-    class yy;
+class yy;
 }
 
 struct test {
@@ -64,29 +64,31 @@ public:
         return new thing;
     }
 
-    /*ifc_fn*/  void createScenario(const coid::charstr &name);
+    /*ifc_fn*/  void createScenario(const coid::charstr& name);
 
     ifc_fnx(~) void destroy()
     {}
 
     /// @brief some method " test escaping
     /// @param a some argument " test escaping
-    ifc_fn int hallo( int a, const coid::token& b, ifc_out coid::charstr& c ) {
+    ifc_fn int hallo(int a, const coid::token& b, ifc_out coid::charstr& c) {
         return 0;
     }
 
     ifc_fn void noargs() {}
 
-    ifc_fn coid::charstr fallo( bool b, const char* str ) { return str; }
+    ifc_fn coid::charstr fallo(bool b, const char* str) { return str; }
+
+    ifc_fn void loo(bool a, int b);
 
     ifc_fn double operator()(const char* key) const;
     ifc_fn void operator()(const char* key, double value);
 
     ifc_fn void inout(ifc_inout test*& par);
 
-    ifc_fn void nested(const coid::dynarray<bt::base>& stuff);
+    ifc_fnx(!) void nested(const coid::dynarray<bt::base>& stuff);
 
-    ifc_event void boo( const char* key );
+    ifc_event void boo(const char* key, int some);
 
     ifc_event const char* body() ifc_default_body("return \"string\";");
 
@@ -113,6 +115,9 @@ public:
 
     //extension of extension
     ifc_class(ns::ifc_ext2 : ns::ifc_ext, "ifc");
+
+    //override base ifc method
+    ifc_event bool loo();
 };
 
 }

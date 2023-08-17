@@ -81,7 +81,7 @@ $-(if !virtual)$
 
         _vtable1 = new ifn_t[$method.@size !static$];
 $-[method !static]$
-        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if ?const)$const$(/if)$>(&::$....ns rest="::" after="::"$$....class$::$intname$));
+        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if ?const)$const$(/if)$>(&::$....ns rest="::" after="::"$$classname$::$intname$));
 $-[/method]-$
 
         return _vtable1;

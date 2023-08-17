@@ -679,6 +679,7 @@ int File::parse(token path, const char* ref_file, int ref_line)
                 //    nerr++;
                 //}
 
+                int ie = 0;
                 for (const MethodIG& e : base_ifc->event)
                 {
                     const MethodIG* found = i.event.find_if([&e](const MethodIG& it) {
@@ -686,20 +687,19 @@ int File::parse(token path, const char* ref_file, int ref_line)
                     });
 
                     if (!found) {
-                        i.event.ins_value(0, e)->binherit = true;
+                        i.event.ins_value(ie++, e)->binherit = true;
                     }
                 }
 
+                int im = 0;
                 for (const MethodIG& m : base_ifc->method)
                 {
-                    const MethodIG* found = i.event.find_if([&m](const MethodIG& it) {
-                        return m.name == it.name && m.intname == it.intname;
+                    const MethodIG* found = i.method.find_if([&m](const MethodIG& it) {
+                        return !m.bcreator && m.name == it.name && m.intname == it.intname;
                     });
 
-                    if (!found && !m.bcreator)
-                    {
-                        i.method.ins_value(0, m)->binherit = true;
-                        //i.nifc_methods++;
+                    if (!found && !m.bcreator) {
+                        i.method.ins_value(im++, m)->binherit = true;
                     }
                 }
 

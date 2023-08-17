@@ -264,6 +264,7 @@ struct MethodIG
     charstr name;                       //< method name
     charstr intname;                    //< internal name
     charstr basename;                   //< method name, changed operator name
+    charstr classname;                  //< class name (can be inherited)
     charstr storage;                    //< storage for host class, iref<type>, ref<type> or type*
     charstr default_event_body;
 
@@ -331,6 +332,7 @@ struct MethodIG
             m.member("name", p.name);
             m.member("intname", p.intname);
             m.member("basename", p.basename);
+            m.member("classname", p.classname);
             m.member("storage", p.storage);
             m.member("operator", p.boperator);
             m.member("internal", p.binternal);
