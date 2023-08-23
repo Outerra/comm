@@ -70,6 +70,7 @@ namespace coid {
 /// @example ifc_class_virtual(ns:base, "../ifc")
 /// @example ifc_class(ns::client : ns::base, "../ifc")
 #define ifc_class_virtual(ifc_name, dst_path)
+#define ifc_class_virtual_var(ifc_name, dst_path, var, ...) coid::clean_ptr<intergen_interface> var
 
 
 ///Data interface (not refcounted)

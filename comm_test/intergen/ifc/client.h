@@ -93,6 +93,8 @@ public:
 
     void set_array( const float ar[3] );
 
+    bool overridable();
+
     void callback( void (*cbk)(int, const coid::token&) );
 
     void memfn_callback( coid::callback<void(int, void*)>&& fn );
@@ -118,7 +120,7 @@ public:
     // --- internal helpers ---
 
     ///Interface revision hash
-    static const int HASHID = 3567392906u;
+    static const int HASHID = 1798146601u;
 
     ///Interface name (full ns::class string)
     static const coid::tokenhash& IFCNAME() {
@@ -137,7 +139,7 @@ public:
     }
 
     static const coid::token& intergen_default_creator_static( backend bck ) {
-        static constexpr coid::token _dc("client.creator@3567392906"_T);
+        static constexpr coid::token _dc("client.creator@1798146601"_T);
         static constexpr coid::token _djs("client@wrapper.js"_T);
         static constexpr coid::token _djsc("client@wrapper.jsc"_T);
         static constexpr coid::token _dlua("client@wrapper.lua"_T);
@@ -200,7 +202,7 @@ public:
         type.consume("struct ");
 
         coid::charstr tmp = "client"_T;
-        tmp << "@client-3567392906"_T << '.' << type;
+        tmp << "@client-1798146601"_T << '.' << type;
 
         coid::interface_register::register_interface_creator(tmp, cc);
         return 0;
@@ -245,14 +247,14 @@ inline iref<T> client::creator( T* _subclass_ )
     typedef iref<T> (*fn_creator)(client*);
 
     static fn_creator create = 0;
-    static constexpr coid::token ifckey = "client.creator@3567392906"_T;
+    static constexpr coid::token ifckey = "client.creator@1798146601"_T;
 
     if (!create)
         create = reinterpret_cast<fn_creator>(
             coid::interface_register::get_interface_creator(ifckey));
 
     if (!create) {
-        log_mismatch("client"_T, "client.creator"_T, "@3567392906"_T);
+        log_mismatch("client"_T, "client.creator"_T, "@1798146601"_T);
         return 0;
     }
 
@@ -278,11 +280,14 @@ inline auto client::c_only_method( int k ) -> const int*
 inline auto client::set_array( const float ar[3] ) -> void
 { return VT_CALL(void,(const float[3]),5)(ar); }
 
+inline auto client::overridable() -> bool
+{ return VT_CALL(bool,(),6)(); }
+
 inline auto client::callback( void (*cbk)(int, const coid::token&) ) -> void
-{ return VT_CALL(void,(void(*)(int, const coid::token&)),6)(cbk); }
+{ return VT_CALL(void,(void(*)(int, const coid::token&)),7)(cbk); }
 
 inline auto client::memfn_callback( coid::callback<void(int, void*)>&& fn ) -> void
-{ return VT_CALL(void,(coid::callback<void(int, void*)>&&),7)(std::forward<coid::callback<void(int, void*)>>(fn)); }
+{ return VT_CALL(void,(coid::callback<void(int, void*)>&&),8)(std::forward<coid::callback<void(int, void*)>>(fn)); }
 
 
 #endif //_INTERGEN_GENERATED__client_H_

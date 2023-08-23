@@ -18,8 +18,11 @@ struct Class;
 ////////////////////////////////////////////////////////////////////////////////
 struct paste_block {
     charstr block;
-    charstr condx;
+    charstr condx;                  //< optional interface name to apply to
     dynarray<charstr> namespc;
+
+    charstr file;
+    int line = 0;
 
     enum class position {
         before_class,
@@ -60,6 +63,7 @@ public:
     inline static const token IFC_CLASS_VAR = "ifc_class_var";
     inline static const token IFC_CLASS_EXTEND = "ifc_class_extend";
     inline static const token IFC_CLASS_VIRTUAL = "ifc_class_virtual";
+    inline static const token IFC_CLASS_VIRTUAL_VAR = "ifc_class_virtual_var";
     inline static const token IFC_STRUCT = "ifc_struct";
     inline static const token IFC_FN = "ifc_fn";
     inline static const token IFC_FNX = "ifc_fnx";
@@ -275,6 +279,7 @@ struct MethodIG
     bool bptr = false;                  //< ptr instead of ref
     bool biref = true;                  //< iref instead of ref
     bool bifccr = false;                //< ifc returning creator (not host)
+    bool bvirtual = false;              //< virtual method (on host)
     bool bconst = false;                //< const method
     bool boperator = false;
     bool binternal = false;             //< internal method, invisible to scripts (starts with an underscore or ifc_fn(!))

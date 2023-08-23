@@ -138,6 +138,12 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 isclass = true;
                 isclassvirtual = true;
             }
+            else if (tok == lex.IFC_CLASS_VIRTUAL_VAR)
+            {
+                isclass = true;
+                isclassvirtual = true;
+                isvar = true;
+            }
 
             bool extfn = tok == lex.IFC_FNX;
             bool extev = tok == lex.IFC_EVENTX;

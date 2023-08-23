@@ -481,6 +481,8 @@ bool File::find_class(iglexer& lex, dynarray<charstr>& namespc, charstr& templar
         if (dispatch_comment || tok == lex.IFC_LINE_COMMENT || tok == lex.IFC_BLOCK_COMMENT) {
             lex.complete_block();
             paste_block* pb = pasters.add();
+            pb->file = lex.get_current_file();
+            pb->line = lex.current_line();
 
             token t = tok;
             t.skip_space().trim_whitespace();
@@ -754,9 +756,27 @@ int File::parse(token path, const char* ref_file, int ref_line)
     }
 
     for (const paste_block& pb : pasters) {
+        if (pb.condx) {
+            //check if used anywhere
+            bool found = false;
+            for (const Class& c : classes) {
+                for (const Interface& i : c.iface_refc) {
+                    if (i.nsname == pb.condx) {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!found) {
+                out << pb.file << '(' << pb.line << "): error: interface " << pb.condx << " not found in file\n";
+                ++nerr;
+            }
+        }
+
         if (pb.in_dispatch)
             pb.fill(*pastedefers.add());
     }
 
-    return 0;
+    return nerr ? -1 : 0;
 }

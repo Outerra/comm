@@ -8,7 +8,8 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
     file = lex.get_current_file();
     line = lex.current_line();
 
-    bstatic = lex.match_optional("static");
+    bstatic = lex.matches("static");
+    bvirtual = lex.matches("virtual");
 
     //rettype fncname '(' ...
 
