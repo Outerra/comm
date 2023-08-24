@@ -2249,14 +2249,14 @@ public:
     }
 
 
-    charstr operator + (const token& tok) const
+    [[nodiscard]] charstr operator + (const token& tok) const
     {
         charstr res = *this;
         res += tok;
         return res;
     }
 
-    charstr operator + (char c) const
+    [[nodiscard]] charstr operator + (char c) const
     {
         charstr res = *this;
         res.append(c);
@@ -2296,7 +2296,7 @@ inline token& token::operator = (const charstr& t)
     return *this;
 }
 
-inline token token::rebase(const charstr& from, const charstr& to) const
+inline token token::rebased(const charstr& from, const charstr& to) const
 {
     if (is_null())
         return *this;
@@ -2308,7 +2308,7 @@ inline token token::rebase(const charstr& from, const charstr& to) const
     return token(to.ptr() + offset, len());
 }
 
-inline token token::rebase(const char* from, const char* to) const
+inline token token::rebased(const char* from, const char* to) const
 {
     if (is_null())
         return *this;

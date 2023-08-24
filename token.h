@@ -250,8 +250,8 @@ struct token
     uint replace(const token& from, const token& to, charstr& dst, bool icase = false) const;
 
     ///Rebase token pointing into one string to point into the same region in another string
-    token rebase(const charstr& from, const charstr& to) const;
-    token rebase(const char* from, const char* to) const;
+    [[nodiscard]] token rebased(const charstr& from, const charstr& to) const;
+    [[nodiscard]] token rebased(const char* from, const char* to) const;
 
     constexpr const char* ptr() const { return _ptr; }
     constexpr const char* ptre() const { return _pte; }
@@ -582,7 +582,7 @@ struct token
     }
 
     ///Create a new token with starting pointer shifted forwards or backwards
-    token shifted_start(ints i) const
+    [[nodiscard]] token shifted_start(ints i) const
     {
         const char* p = _ptr + i;
         if (p > _pte)
@@ -592,7 +592,7 @@ struct token
     }
 
     ///Create a new token with ending pointer Shifted forwards or backwards
-    token shifted_end(ints i) const
+    [[nodiscard]] token shifted_end(ints i) const
     {
         const char* p = _pte + i;
         if (p < _ptr)
@@ -1815,7 +1815,7 @@ struct token
     }
 
     ///Find first zero in the substring and return truncated substring
-    token trim_to_null() const
+    [[nodiscard]] token trim_to_null() const
     {
         const char* p = _ptr;
         for (; p < _pte; ++p)
@@ -2088,7 +2088,7 @@ struct token
     }
 
     /// @return part of the token after a substring
-    token get_after_substring(const substring& sub) const
+    [[nodiscard]] token get_after_substring(const substring& sub) const
     {
         uints n = count_until_substring(sub);
 
@@ -2102,7 +2102,7 @@ struct token
     }
 
     /// @return part of the token before a substring
-    token get_before_substring(const substring& sub) const
+    [[nodiscard]] token get_before_substring(const substring& sub) const
     {
         uints n = count_until_substring(sub);
         return token(_ptr, n);
