@@ -111,9 +111,14 @@ COID_NAMESPACE_END
 #define DASSERT_FATAL(expr)         XASSERTCOND(expr) coid::__rassert(0,__FILE__,__LINE__,__FUNCTION__,#expr); XASSERT_FINAL; std::abort(); } while(0)
 //@}
 
-//@{ Assert in debug, return \a ret on failed assertion (also in release)
+//@{ Assert in debug, return on failed assertion (also in release)
 #define DASSERT_RET(expr, ...)      XASSERTCOND(expr) coid::__rassert(0,__FILE__,__LINE__,__FUNCTION__,#expr); XASSERT_FINAL; return __VA_ARGS__; } while(0)
 #define DASSERT_RETX(expr,txt, ...) XASSERTCOND(expr) coid::__rassert(coid::opt_string() << txt,__FILE__,__LINE__,__FUNCTION__,0); XASSERT_FINAL; return __VA_ARGS__; } while(0)
+//@}
+
+//@{ Assert and return on failed assertion, nothing in release
+#define DASSERT_DRET(expr, ...)     XASSERTCOND(expr) coid::__rassert(0,__FILE__,__LINE__,__FUNCTION__,#expr); XASSERT_FINAL; return __VA_ARGS__; } while(0)
+#define DASSERT_DRETX(expr,txt,...) XASSERTCOND(expr) coid::__rassert(coid::opt_string() << txt,__FILE__,__LINE__,__FUNCTION__,0); XASSERT_FINAL; return __VA_ARGS__; } while(0)
 //@}
 
 #else //no _DEBUG
@@ -121,10 +126,12 @@ COID_NAMESPACE_END
 #define DASSERT(expr)
 #define DASSERTX(expr,txt)
 #define DASSERT_ONCE(expr)
+#define DASSERT_FATAL(expr)
 
 #define DASSERT_RET(expr, ...)      do{ if(expr) break; coid::__retassert(); return __VA_ARGS__; } while(0)
 #define DASSERT_RETX(expr,txt, ...) do{ if(expr) break; coid::__retassert(); return __VA_ARGS__; } while(0)
-#define DASSERT_FATAL(expr)
+#define DASSERT_DRET(expr, ...)
+#define DASSERT_DRETX(expr,txt, ...)
 
 #endif //_DEBUG
 

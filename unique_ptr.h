@@ -41,11 +41,14 @@ public:
     }
 
     template <typename... Args>
-    static unique_ptr<T> create(Args&&... args) {
+    static unique_ptr<T> emplace(Args&&... args) {
         return unique_ptr<T>(new T(static_cast<Args&&>(args)...));
     }
 
     T* ptr() const { return _p; }
+    T*& ptr_ref() { return _p; }
+
+    explicit operator bool() const { return _p != 0; }
 
     //operator T* (void) const { return _p; }
 
@@ -64,9 +67,9 @@ public:
     #pragma warning (default : 4284)
     #endif //SYSTYPE_MSVC
 
-    unique_ptr& operator = (const T* p) {
+    unique_ptr& operator = (T* p) {
         if (_p) delete _p;
-        _p = const_cast<T*>(p);
+        _p = p;
         return *this;
     }
 
@@ -79,12 +82,11 @@ public:
         return *this;
     }
 
-    T*& get_ptr() const { return (T*&)_p; }
-
     friend binstream& operator << <T>(binstream& out, const unique_ptr<T>& ptr);
     friend binstream& operator >> <T>(binstream& in, unique_ptr<T>& ptr);
 
     bool is_set() const { return _p != nullptr; }
+    bool is_empty() const { return _p == nullptr; }
 
     T* eject() { T* tmp = _p; _p = nullptr; return tmp; }
 
