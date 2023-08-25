@@ -42,8 +42,6 @@ extern "C" {
     extern char* gettext(const char* text);
 }
 
-#define _(x) gettext(x)
-
 template <int HASH>
 const char* translate(const char* str)
 {
