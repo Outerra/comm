@@ -249,9 +249,12 @@ struct token
     ///Replace all occurrences of substring with another
     uint replace(const token& from, const token& to, charstr& dst, bool icase = false) const;
 
-    ///Rebase token pointing into one string to point into the same region in another string
+    ///Return a rebased token pointing into one string to point into the same region in another string
     [[nodiscard]] token rebased(const charstr& from, const charstr& to) const;
     [[nodiscard]] token rebased(const char* from, const char* to) const;
+
+    token& rebase(const charstr& from, const charstr& to) { return *this = rebased(from, to); }
+    token& rebase(const char* from, const char* to) { return *this = rebased(from, to); }
 
     constexpr const char* ptr() const { return _ptr; }
     constexpr const char* ptre() const { return _pte; }
