@@ -31,7 +31,7 @@ int Interface::check_interface(iglexer& lex, const dynarray<paste_block>& classp
     MethodIG& set = method[oper_set];
 
     //TODO: check types
-    if (get.args.size() < 1  ||  set.args.size() < 2) {
+    if (get.args.size() < 1 || set.args.size() < 2) {
         out << (lex.prepare_exception() << "warning: insufficient number of arguments in getter/setter operator()\n");
         lex.clear_err();
 
@@ -118,35 +118,35 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
             //interface definitions
             const lexer::lextoken& tok = lex.last();
 
-            bool dataifc = tok == lex.IFC_STRUCT;
+            bool dataifc = tok == "ifc_struct"_T || tok == "IFC_STRUCT"_T;
             bool isclass = false;
             bool isclassvirtual = false;
             bool isvar = false;
             bool isextpath = false;
 
-            if (tok == lex.IFC_CLASS)
+            if (tok == "ifc_class"_T || tok == "IFC_CLASS"_T)
             {
                 isclass = true;
             }
-            else if (tok == lex.IFC_CLASS_VAR)
+            else if (tok == "ifc_class_var"_T || tok == "IFC_CLASS_VAR"_T)
             {
                 isclass = true;
                 isvar = true;
             }
-            else if (tok == lex.IFC_CLASS_VIRTUAL)
+            else if (tok == "ifc_class_virtual"_T || tok == "IFC_CLASS_VIRTUAL"_T)
             {
                 isclass = true;
                 isclassvirtual = true;
             }
-            else if (tok == lex.IFC_CLASS_VIRTUAL_VAR)
+            else if (tok == "ifc_class_virtual_var"_T || tok == "IFC_CLASS_VIRTUAL_VAR"_T)
             {
                 isclass = true;
                 isclassvirtual = true;
                 isvar = true;
             }
 
-            bool extfn = tok == lex.IFC_FNX;
-            bool extev = tok == lex.IFC_EVENTX;
+            bool extfn = tok == "ifc_fnx"_T;
+            bool extev = tok == "ifc_eventx"_T;
             bool bimplicit = false;
             bool bdestroy = false;
             bool bpure = false;
@@ -224,6 +224,8 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
 
                 if (lex.matches(':')) {
                     //a base class for the interface
+                    ifc->bvirtualbase = lex.matches("virtual"_T);
+
                     ifc->baseclass = ifc->base = lex.match(lex.IDENT);
                     while (lex.matches("::"_T)) {
                         ifc->base << "::"_T;
@@ -254,7 +256,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                     }
                 }
 
-                if (ifc->baseclass && !isextpath)
+                if (ifc->baseclass && !ifc->bvirtualbase && !isextpath)
                 {
                     //same class interface extension
                     //find in previous interfaces
@@ -271,7 +273,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
 
                     if (base_ifc)
                     {
-                        ifc->copy_methods(*base_ifc);
+                        //ifc->copy_methods(*base_ifc);
                     }
                     // else not declared in this class, assume virtual base interface
                 }
@@ -301,7 +303,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 ifc->bextend = !ifc->baseclass.is_empty();
                 ifc->bextend_ext = isextpath;
             }
-            else if (extev || tok == lex.IFC_EVENT)
+            else if (extev || tok == "ifc_event"_T)
             {
                 //event declaration may be commented out if the method is a duplicate (with multiple interfaces)
                 bool slcom = lex.enable(lex.SLCOM, false);
@@ -397,7 +399,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
 
                 m->parse_docs();
             }
-            else if (extfn || tok == lex.IFC_FN)
+            else if (extfn || tok == "ifc_fn"_T)
             {
                 //method declaration may be commented out if the method is a duplicate (with multiple interfaces)
                 bool slcom = lex.enable(lex.SLCOM, false);
@@ -672,7 +674,7 @@ void Interface::parse_docs()
     auto e = comments.ptre();
     charstr doc;
 
-    for (; b!=e; ++b)
+    for (; b != e; ++b)
     {
         token line = *b;
 

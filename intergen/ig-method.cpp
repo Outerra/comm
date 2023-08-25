@@ -82,7 +82,7 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
                 ++noutargs;
 
             arg->tokenpar = arg->binarg &&
-                (arg->basetype=="token" || arg->basetype=="coid::token" || arg->basetype=="charstr" || arg->basetype=="coid::charstr");
+                (arg->basetype == "token" || arg->basetype == "coid::token" || arg->basetype == "charstr" || arg->basetype == "coid::charstr");
 
             if (!bstatic && arg->biref && (isevent ? arg->binarg : arg->boutarg))
                 arg->add_unique(irefargs);
@@ -96,7 +96,7 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
     bool boverride = lex.matches("override");
 
     //optional default event impl
-    int evbody = lex.matches_either(lex.IFC_DEFAULT_EMPTY, lex.IFC_DEFAULT_BODY, lex.IFC_EVBODY);
+    int evbody = lex.matches_either("ifc_default_empty"_T, "ifc_default_body"_T, "ifc_evbody"_T);
     if (evbody)
     {
         if (evbody > 1) {
@@ -124,7 +124,7 @@ void MethodIG::parse_docs()
     charstr doc;
     charstr* paramdoc = 0;
 
-    for(; b!=e; ++b)
+    for (; b != e; ++b)
     {
         token line = *b;
 
@@ -132,36 +132,36 @@ void MethodIG::parse_docs()
         line.skip_char('/');
         line.trim();
 
-        if(!line) {
-            if(paramdoc)
+        if (!line) {
+            if (paramdoc)
                 *paramdoc << "\r\n\r\n";
-            else if(doc)
+            else if (doc)
                 doc << "\r\n\r\n";
             continue;
         }
 
-        if(line.first_char() != '@') {
+        if (line.first_char() != '@') {
             charstr& target = paramdoc ? *paramdoc : doc;
-            if(!target.is_empty())
+            if (!target.is_empty())
                 target << ' ';
             //target.append_escaped(line);
             target << line;
         }
         else {
             //close previous string
-            if(paramdoc)
+            if (paramdoc)
                 paramdoc = 0;
-            else if(doc)
+            else if (doc)
                 docs.add()->swap(doc);
 
             token paramline = line;
-            if(paramline.consume("@param ")) {
+            if (paramline.consume("@param ")) {
                 token param = paramline.cut_left_group(" \t\n\r"_T);
                 Arg* a = find_arg(param);
 
-                if(a) {
+                if (a) {
                     paramdoc = &a->doc;
-                    if(!paramdoc->is_empty())
+                    if (!paramdoc->is_empty())
                         *paramdoc << "\r\n";
                     //paramdoc->append_escaped(paramline);
                     *paramdoc << paramline;
@@ -171,8 +171,8 @@ void MethodIG::parse_docs()
                     doc << line;
                 }
             }
-            else if(paramline.consume("@return ")) {
-                if(ret.doc)
+            else if (paramline.consume("@return ")) {
+                if (ret.doc)
                     ret.doc << "\r\n";
                 //ret.doc.append_escaped(paramline);
                 ret.doc << paramline;
@@ -184,6 +184,6 @@ void MethodIG::parse_docs()
         }
     }
 
-    if(doc)
+    if (doc)
         docs.add()->swap(doc);
 }

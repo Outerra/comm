@@ -126,6 +126,7 @@ public:
         return true;
     }
 
+    ////
 
     ifc_class(xt::client2, "ifc/");
 

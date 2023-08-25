@@ -606,15 +606,18 @@ int File::parse(token path, const char* ref_file, int ref_line)
         {
             for (Interface& i : c.iface_refc)
             {
+                if (i.bvirtualbase)
+                    continue;
+
                 if (!i.bextend_ext) {
                     //not an external extend
-                    if (i.bextend) {
-                        //find in the same class
-                        i.base_ifc = c.iface_refc.find_if([&](Interface& ifc) {
-                            return &ifc != &i && ifc.nsname == i.base;
-                        });
-                    }
-                    continue;
+                    if (!i.bextend)
+                        continue;
+
+                    //find in the same class
+                    i.base_ifc = c.iface_refc.find_if([&](Interface& ifc) {
+                        return &ifc != &i && ifc.nsname == i.base;
+                    });
                 }
 
                 charstr base_src_path;
@@ -629,7 +632,19 @@ int File::parse(token path, const char* ref_file, int ref_line)
                 Class* base_class = 0;
                 Interface* base_ifc = 0;
 
-                if (!i.basesrc || base_src_path == cpath) {
+                if (!i.bextend_ext) {
+                    //find in the same class
+                    base_src_path = fnameext;
+
+                    base_ifc = c.iface_refc.find_if([&](Interface& ifc) {
+                        return &ifc != &i && ifc.nsname == i.base;
+                    });
+
+                    if (base_ifc) {
+                        base_class = &c;
+                    }
+                }
+                else if (!i.basesrc || base_src_path == cpath) {
                     //find in other classes of the same file
                     base_src_path = fnameext;
 
@@ -672,7 +687,7 @@ int File::parse(token path, const char* ref_file, int ref_line)
                 }
 
                 if (!base_ifc) {
-                    out << i.file << '(' << i.line << "): error: base class not found in " << base_src_path << '\n';
+                    out << i.file << '(' << i.line << "): error: base class " << i.base << " not found in " << base_src_path << '\n';
                     nerr++;
                     break;
                 }
@@ -693,18 +708,38 @@ int File::parse(token path, const char* ref_file, int ref_line)
                     }
                 }
 
+                //creators are not inherited
+                uint nbase_methods = 0;
+                for (const MethodIG& m : base_ifc->method) { if (!m.bcreator) ++nbase_methods; }
+
+                MethodIG* base_methods = i.method.ins(0, nbase_methods);
+                uint ntotal_methods = (uint)i.method.size();
+
                 int im = 0;
-                for (const MethodIG& m : base_ifc->method)
+                for (uint bi = 0; bi < nbase_methods; ++bi)
                 {
-                    if (m.bcreator)
-                        continue;
+                    while (base_ifc->method[im].bcreator) ++im;
+                    const MethodIG& bm = base_ifc->method[im++];
 
-                    const MethodIG* found = i.method.find_if([&m](const MethodIG& it) {
-                        return m.bcreator == it.bcreator && m.name == it.name && m.intname == it.intname && m.matches_args(it);
-                    });
+                    int found = -1;
+                    for (uint x = nbase_methods; x < ntotal_methods; ++x) {
+                        const MethodIG& it = i.method[x];
+                        if (bm.bcreator == it.bcreator && bm.name == it.name && bm.intname == it.intname && bm.matches_args(it)) {
+                            found = x;
+                            break;
+                        }
+                    }
 
-                    if (!found && !m.bcreator) {
-                        i.method.ins_value(im++, m)->binherit = true;
+                    if (found >= 0) {
+                        //found an override
+                        base_methods[bi] = std::move(i.method[found]);
+                        i.method.del(found);
+                        --ntotal_methods;
+                    }
+                    else {
+                        base_methods[bi] = bm;
+                        base_methods[bi].fix_copy(bm);
+                        base_methods[bi].binherit = true;
                     }
                 }
 

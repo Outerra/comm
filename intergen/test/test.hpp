@@ -29,11 +29,21 @@ namespace n2 {
 
 class zz;
 
+class virtual_thing
+{
+public:
+
+    IFC_CLASS_VIRTUAL(basei, "ifc");
+
+    ifc_fn void xooo();
+};
+
+
 class empty_thing : public policy_intrusive_base
 {
 public:
 
-    ifc_class(ifc1::ifc2::emptyface, "ifc");
+    IFC_CLASS(ifc1::ifc2::emptyface, "ifc");
 
     ifc_fnx(get) static iref<n1::n2::empty_thing> _get_thing() {
         return new empty_thing;
@@ -58,7 +68,7 @@ class thing : public base_thing
 {
 public:
 
-    ifc_class_var(ifc1::ifc2::thingface, "ifc", _ifc);
+    IFC_CLASS_VAR(ifc1::ifc2::thingface : virtual basei, "ifc", _ifc);
 
     ifc_fnx(get) static iref<n1::n2::thing> get_thing() {
         return new thing;
@@ -97,7 +107,7 @@ public:
 
     //extension interface in the same class
 
-    ifc_class(ns::ifc_int : ifc1::ifc2::thingface, "ifc");
+    IFC_CLASS(ns::ifc_int : ifc1::ifc2::thingface, "ifc");
 
     ifc_fn void dummy();
 };
@@ -108,16 +118,29 @@ class inherit_external : public thing
 public:
 
     //extension interface in a different class
-    ifc_class(ns::ifc_ext : ifc1::ifc2::thingface, "ifc", "");
+    IFC_CLASS(ns::ifc_ext : ifc1::ifc2::thingface, "ifc", "");
 
     ifc_fn void mummy();
 
+    //override parent method
+    ifc_fn void loo(bool a, bool b);
+
+
+
+    ////
 
     //extension of extension
-    ifc_class(ns::ifc_ext2 : ns::ifc_ext, "ifc");
+    IFC_CLASS(ns::ifc_ext2 : ns::ifc_ext, "ifc");
 
-    //override base ifc method
-    ifc_event bool loo();
+    ifc_fn void some1();
+
+    //override parent method
+    ifc_fn void loo(bool a, bool b);
+
+    ifc_fn void some2();
+
+    //override base ifc method, change to event
+    ifc_event bool noo();
 };
 
 }

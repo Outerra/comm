@@ -16,7 +16,10 @@ iglexer::iglexer()
 
     RLCMD = def_keywords("rl_cmdr:rl_cmdr_p:rl_cmdr_s:rl_cmdp:rl_cmdp_p:rl_cmdp_s:rl_cmdi:rl_cmdi_p:rl_cmdi_s");
 
-    IGKWD = def_keywords("ifc_class:ifc_class_var:ifc_class_virtual:ifc_class_virtual_var:ifc_struct:ifc_fn:ifc_fnx:ifc_event:ifc_eventx:ifc_in:ifc_out:ifc_inout:ifc_ret");
+    IGKWD = def_keywords("\
+ifc_class:ifc_class_var:ifc_class_virtual:ifc_class_virtual_var:ifc_struct:\
+IFC_CLASS:IFC_CLASS_VAR:IFC_CLASS_VIRTUAL:IFC_CLASS_VIRTUAL_VAR:IFC_STRUCT:\
+ifc_fn:ifc_fnx:ifc_event:ifc_eventx:ifc_in:ifc_out:ifc_inout:ifc_ret");
 
     int ie = def_escape("escape", '\\', 0);
     def_escape_pair(ie, "\\", "\\");

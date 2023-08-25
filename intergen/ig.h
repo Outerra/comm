@@ -59,24 +59,6 @@ public:
     inline static const token TEMPL = "template";
     inline static const token NAMESPC = "namespace";
 
-    inline static const token IFC_CLASS = "ifc_class";
-    inline static const token IFC_CLASS_VAR = "ifc_class_var";
-    inline static const token IFC_CLASS_EXTEND = "ifc_class_extend";
-    inline static const token IFC_CLASS_VIRTUAL = "ifc_class_virtual";
-    inline static const token IFC_CLASS_VIRTUAL_VAR = "ifc_class_virtual_var";
-    inline static const token IFC_STRUCT = "ifc_struct";
-    inline static const token IFC_FN = "ifc_fn";
-    inline static const token IFC_FNX = "ifc_fnx";
-    inline static const token IFC_EVENT = "ifc_event";
-    inline static const token IFC_EVENTX = "ifc_eventx";
-    inline static const token IFC_EVBODY = "ifc_evbody";
-    inline static const token IFC_DEFAULT_BODY = "ifc_default_body";
-    inline static const token IFC_DEFAULT_EMPTY = "ifc_default_empty";
-    inline static const token IFC_INOUT = "ifc_inout";
-    inline static const token IFC_IN = "ifc_in";
-    inline static const token IFC_OUT = "ifc_out";
-
-
     virtual void on_error_prefix(bool rules, charstr& dst, int line) override
     {
         if (!rules)
@@ -224,6 +206,14 @@ struct MethodIG
 
         bool parse(iglexer& lex, bool argname);
 
+        void fix_copy(const Arg& src)
+        {
+            basetype.rebase(src.type, type);
+            barenstype.rebase(src.type, type);
+            barens.rebase(src.type, type);
+            baretype.rebase(src.type, type);
+        }
+
         static charstr& match_type(iglexer& lex, charstr& dst);
 
         void add_unique(dynarray<Arg>& irefargs);
@@ -301,6 +291,14 @@ struct MethodIG
     dynarray<charstr> comments;         //< comments preceding the method declaration
     dynarray<charstr> docs;             //< doc paragraphs
 
+
+    void fix_copy(const MethodIG& src)
+    {
+        for (int i = 0; Arg& a : args)
+            a.fix_copy(src.args[i++]);
+
+        ret.fix_copy(src.ret);
+    }
 
     bool parse(iglexer& lex, const charstr& host, const charstr& ns, const charstr& nsifc, dynarray<Arg>& irefargs, bool isevent);
 
@@ -416,11 +414,11 @@ struct Interface
 
     uint hash;
 
-
     dynarray<charstr> comments;
     dynarray<charstr> docs;
 
     bool bvirtual = false;
+    bool bvirtualbase = false;
     bool bdefaultcapture = false;
     bool bnoscript = false;
     bool bdataifc = false;
@@ -428,6 +426,7 @@ struct Interface
     bool bextend_ext = false;
     bool bfinal = false;
     bool bvartype = false;
+
 
     void copy_methods(Interface& o)
     {
@@ -525,7 +524,6 @@ struct Interface
             m.member("dataifc", p.bdataifc);
             m.member("default_creator", p.default_creator);
             m.member("final", p.bfinal);
-
         });
     }
 };
@@ -534,6 +532,9 @@ struct Interface
 ///
 struct Class
 {
+    Class() = default;
+    Class(const Class&) = delete;
+
     charstr classorstruct;
     charstr classname;
     charstr templarg;

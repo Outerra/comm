@@ -11,6 +11,9 @@
 #include <comm/commexception.h>
 #include <comm/intergen/ifc.h>
 
+#include "basei.h"
+
+
 struct test;
 
 namespace bt {
@@ -28,7 +31,7 @@ namespace ifc2 {
 
 ////////////////////////////////////////////////////////////////////////////////
 class thingface
-    : public intergen_interface
+    : public basei
 {
 public:
 
@@ -106,7 +109,7 @@ public:
     int intergen_hash_id() const override { return HASHID; }
 
     bool iface_is_derived( int hash ) const override {
-        return hash == HASHID;
+        return hash == HASHID || basei::iface_is_derived(hash);
     }
 
     const coid::tokenhash& intergen_interface_name() const override {

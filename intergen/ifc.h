@@ -54,6 +54,7 @@ namespace coid {
 /// @param ... optional relative path to the file containing the base interface
 /// @example ifc_class(ns:client, "../ifc")
 #define ifc_class(ifc_name, dst_path, ...)
+#define IFC_CLASS(ifc_name, dst_path, ...)
 
 ///Interface class decoration keyword for bi-directional interfaces with event methods that can be overriden by the client.
 /// @param ifc_name desired name of the interface class, optionally with (virtual) base interface [ns::]name [: [ns::]baseifc] [ final]
@@ -63,6 +64,7 @@ namespace coid {
 /// @note var is of type clean_ptr, an intentional weak link, since interface already holds ref to the host
 /// @example ifc_class_var(ns::client, "../ifc", _ifc)
 #define ifc_class_var(ifc_name, dst_path, var, ...) coid::clean_ptr<intergen_interface> var
+#define IFC_CLASS_VAR(ifc_name, dst_path, var, ...) coid::clean_ptr<intergen_interface> var
 
 ///Virtual base interface class decoration keyword for declaration of abstrac base interfaces
 /// @param ifc_name desired name of the interface class, optionally with namespace
@@ -71,12 +73,14 @@ namespace coid {
 /// @example ifc_class(ns::client : ns::base, "../ifc")
 #define ifc_class_virtual(ifc_name, dst_path)
 #define ifc_class_virtual_var(ifc_name, dst_path, var, ...) coid::clean_ptr<intergen_interface> var
-
+#define IFC_CLASS_VIRTUAL(ifc_name, dst_path)
+#define IFC_CLASS_VIRTUAL_VAR(ifc_name, dst_path, var, ...) coid::clean_ptr<intergen_interface> var
 
 ///Data interface (not refcounted)
 /// @param ifc_name desired name of the interface class, optionally with namespace and base interface [ns:]name [: baseifc]
 /// @param dst_path relative path (and optional file name) of the interface header file
 #define ifc_struct(ifc_name, dst_path)
+#define IFC_STRUCT(ifc_name, dst_path)
 
 
 ///Interface function decoration keyword: such decorated method will be added into the interface
