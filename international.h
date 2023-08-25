@@ -36,11 +36,25 @@
 *
 * ***** END LICENSE BLOCK ***** */
 
+#include "token.h"
+
 extern "C" {
     extern char* gettext(const char* text);
 }
 
 #define _(x) gettext(x)
+
+template <int HASH>
+const char* translate(const char* str)
+{
+    static const char* ret = nullptr;
+    if (ret == nullptr) {
+        ret = gettext(str);
+    }
+    return ret;
+}
+
+#define INTL(s) translate<coid::__coid_hash_c_string(s)>(s)
 
 inline const char* operator "" _X(const char* str, size_t len)
 {
