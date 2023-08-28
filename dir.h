@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * PosAm.
- * Portions created by the Initial Developer are Copyright (C) 2003
+ * Portions created by the Initial Developer are Copyright (C) 2003-2023
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -274,8 +274,13 @@ public:
         return buf;
     }
 
-    static uints get_module_path(charstr& dst, bool append = false) {
-        return get_module_path_func((const void*)&dummy_func, dst, append);
+    /// @brief Get module path
+    /// @param dst target path
+    /// @param append true append to dst, false set to dst
+    /// @param func optional function pointer to get the module handle for
+    /// @return module handle
+    static uints get_module_path(charstr& dst, bool append = false, const void* func = 0) {
+        return get_module_path_func(func ? func : (const void*)&dummy_func, dst, append);
     }
 
     static uints get_module_handle() {
