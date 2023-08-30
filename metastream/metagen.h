@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Brano Kemen
- * Portions created by the Initial Developer are Copyright (C) 2007-2017
+ * Portions created by the Initial Developer are Copyright (C) 2007-2023
  * the Initial Developer. All Rights Reserved.
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -144,6 +144,11 @@ class metagen //: public binstream
             return v != 0;
         }
 
+        bool child_exists(const token& name) const {
+            return name.first_char() == '@'
+                || var->desc->find_child_pos(name) >= 0;
+        }
+
         ///Find member variable and its position in the cache
         bool find_child(const token& name, Varx& ch, token* last = 0) const
         {
@@ -164,8 +169,8 @@ class metagen //: public binstream
         }
 
         ///Find a descendant variable and its position in the cache
-        /// @param last_is_attrib if set, do not treat the last token as child name and return it here, but only after at least one child has been read
-        bool find_descendant(token name, Varx& ch, bool last_is_attrib, token* last = 0) const
+        /// @param last_may_be_attrib if set, do not treat the last token as child name if it doesn't exist
+        bool find_descendant(token name, Varx& ch, bool last_may_be_attrib, token* last = 0) const
         {
             const Varx* v = this;
             token part;
@@ -198,7 +203,7 @@ class metagen //: public binstream
             //find descendant
             int nch = 0;
             do {
-                if (last_is_attrib && nch > 0 && name.len() == 0) {
+                if (last_may_be_attrib && nch > 0 && name.len() == 0 && !ch.child_exists(part)) {
                     if (last)  *last = part;
                     return true;
                 }
@@ -233,7 +238,7 @@ class metagen //: public binstream
         {
             token b = write_buf(mg, attr, true, escape);
 
-            mg.bin->xwrite_token_raw(b);
+            mg.out << b;
             return !b.is_empty();
         }
 
@@ -272,6 +277,18 @@ class metagen //: public binstream
             else
                 prepare();
             return *(uints*)ary.data;
+        }
+
+        uints single(const Varx& obj)
+        {
+            static_cast<Varx&>(*this) = obj;
+            MetaDesc* md = obj.var->stream_desc();
+
+            if (md->is_primitive())
+                size = md->get_size();
+            else
+                prepare();
+            return 1;
         }
 
         VarxElement& next()
@@ -462,8 +479,14 @@ class metagen //: public binstream
                 return true;
 
             bool val;
-
-            if (!value.value.is_empty())
+            if ((cond == COND_POS || cond == COND_NEG) && n == "@revert") {
+                //match and consume trailing string in the output buffer
+                val = mg.out.ends_with(value.value);
+                if (val) {
+                    mg.out.resize(-(int)value.value.len());
+                }
+            }
+            else if (!value.value.is_empty())
                 val = defined && value.value == v.write_buf(mg, 0, true, 0);
             else if (n == "defined")
                 val = defined;
@@ -669,7 +692,7 @@ class metagen //: public binstream
                 process_content(mg, var);
 
             if (!stext.is_empty())
-                mg.bin->xwrite_raw(stext.ptr(), stext.len());
+                mg.out << stext;
         }
 
         bool parse(mtglexer& lex, ParsedTag& hdr)
@@ -706,7 +729,7 @@ class metagen //: public binstream
             const Attribute* pe = attr.ptre();
             for (; pb < pe; ++pb) {
                 if (pb->cond == Attribute::DEFAULT)
-                    mg.bin->xwrite_raw(pb->value.value.ptr(), pb->value.value.len());
+                    mg.out << pb->value.value;
             }
         }
 
@@ -717,8 +740,8 @@ class metagen //: public binstream
     ///Empty tag for tagless leading static text
     struct TagEmpty : Tag
     {
-        virtual void process_content(metagen& mg, const Varx& var) const {}
-        virtual void parse_content(mtglexer& lex, ParsedTag& hdr) {}
+        virtual void process_content(metagen& mg, const Varx& var) const override {}
+        virtual void parse_content(mtglexer& lex, ParsedTag& hdr) override {}
 
         bool parse(mtglexer& lex, uint skip_newline)
         {
@@ -749,11 +772,11 @@ class metagen //: public binstream
     struct TagComment : Tag
     {
         ///Process the variable, default code does simple substitution
-        virtual void process_content(metagen& mg, const Varx& var) const
+        virtual void process_content(metagen& mg, const Varx& var) const override
         {
         }
 
-        virtual void parse_content(mtglexer& lex, ParsedTag& hdr)
+        virtual void parse_content(mtglexer& lex, ParsedTag& hdr) override
         {
         }
     };
@@ -765,7 +788,10 @@ class metagen //: public binstream
             default     - value to print if variable not found
             after       - suffix to add if variable produced a non-empty string or if it's a non-zero array
             first       - prefix to add      -||-
-            rest        - infix to add before each next array element except the first (ignored on non-arrays)
+            rest        - [array] infix to add before each next array element except the first (ignored on non-arrays)
+            prefix      - [array] text inserted before each element
+            suffix      - [array] test inserted after each element
+            set         - replacement text to use if value is non-zero
     **/
     struct TagSimple : Tag
     {
@@ -774,7 +800,7 @@ class metagen //: public binstream
         bool is_either = false;
 
         ///Process the variable, default code does simple substitution
-        virtual void process_content(metagen& mg, const Varx& var) const
+        virtual void process_content(metagen& mg, const Varx& var) const override
         {
             token attrib;
             Varx v;
@@ -789,7 +815,7 @@ class metagen //: public binstream
                 write_default(mg, attr);
         }
 
-        virtual void parse_content(mtglexer& lex, ParsedTag& hdr)
+        virtual void parse_content(mtglexer& lex, ParsedTag& hdr) override
         {
             escape = hdr.escape;
 
@@ -820,7 +846,11 @@ class metagen //: public binstream
                 //current element value
                 v.write_var(mg, &attr, escape);
             }
-            else if (attrib == "@size") {
+            else if (attrib == "@trim") {
+                //remove trailing string
+
+            }
+            else if (attrib == "@size" || attrib == "@count") {
                 //array size
                 if (v.is_array()) {
                     if (attr.size() == 0) {
@@ -833,30 +863,60 @@ class metagen //: public binstream
                         uint count = 0;
                         VarxElement ve;
                         uints n = ve.first(v);
-                        if (n > 0) {
-                            for (; n > 0; --n, ve.next())
-                            {
-                                const Attribute* p = pb;
-                                const Attribute* dummy = 0;
-                                for (; p < pe; ++p) {
-                                    DASSERT(p->is_condition());
-                                    if (!p->is_condition())
-                                        continue;
-
-                                    bool succ = p->eval(mg, ve, dummy, dummy);
-                                    if (is_either == succ)
-                                        break;  //break early if and-mode and got false, or if or-mode and got true
-                                }
-                                if (is_either == (p >= pe))
+                        for (; n > 0; --n, ve.next())
+                        {
+                            const Attribute* p = pb;
+                            const Attribute* dummy = 0;
+                            for (; p < pe; ++p) {
+                                DASSERT(p->is_condition());
+                                if (!p->is_condition())
                                     continue;
 
-                                ++count;
+                                bool succ = p->eval(mg, ve, dummy, dummy);
+                                if (is_either == succ)
+                                    break;  //break early if and-mode and got false, or if or-mode and got true
                             }
+                            if (is_either == (p >= pe))
+                                continue;
+
+                            ++count;
                         }
 
                         mg.write_as_string(count);
                     }
                 }
+            }
+            else if (attrib == "@first_index") {
+                //index of the first element that satisfies the condition, or -1
+                int idx = -1;
+                if (v.is_array() && attr.size() > 0) {
+                    const Attribute* pb = attr.ptr();
+                    const Attribute* pe = attr.ptre();
+
+                    VarxElement ve;
+                    uints n = ve.first(v);
+                    int i = 0;
+                    for (; n > 0; --n, ve.next(), ++i)
+                    {
+                        const Attribute* p = pb;
+                        const Attribute* dummy = 0;
+                        for (; p < pe; ++p) {
+                            DASSERT(p->is_condition());
+                            if (!p->is_condition())
+                                continue;
+
+                            bool succ = p->eval(mg, ve, dummy, dummy);
+                            if (is_either == succ)
+                                break;  //break early if and-mode and got false, or if or-mode and got true
+                        }
+                        if (is_either == (p >= pe))
+                            continue;
+
+                        idx = i;
+                        break;
+                    }
+                }
+                mg.write_as_string(idx);
             }
             else
                 return false;
@@ -893,7 +953,7 @@ class metagen //: public binstream
         void process(metagen& mg, const Varx& var) const
         {
             if (!value.value.is_empty())
-                mg.bin->xwrite_raw(value.value.ptr(), value.value.len());
+                mg.out << value.value;
 
             const LTag* ch = sequence.ptr();
             for (uints n = sequence.size(); n > 0; --n, ++ch)
@@ -1007,8 +1067,7 @@ class metagen //: public binstream
 
         dynarray<Clause> clause;        //< conditional sections
 
-
-        virtual void process_content(metagen& mg, const Varx& var) const
+        virtual void process_content(metagen& mg, const Varx& var) const override
         {
             const Clause* p = clause.ptr();
             const Clause* pe = clause.ptre();
@@ -1019,7 +1078,7 @@ class metagen //: public binstream
             }
         }
 
-        virtual void parse_content(mtglexer& lex, ParsedTag& hdr)
+        virtual void parse_content(mtglexer& lex, ParsedTag& hdr) override
         {
             if (hdr.varname != "if") {
                 lex.set_err() << "Unknown conditional block: " << hdr.varname;
@@ -1053,9 +1112,17 @@ class metagen //: public binstream
         TagSequence atr_first, atr_rest;
         TagSequence atr_body;
         TagSequence atr_after;
+        TagSequence atr_prefix;
+        TagSequence atr_suffix;
         TagSequence atr_empty;
 
         dynarray<Attribute> cond;
+
+        struct cat {
+            token varname;
+            int depth = 0;
+        };
+        dynarray<cat> concat;
 
         bool eval_cond(metagen& mg, const Varx& var) const
         {
@@ -1070,53 +1137,21 @@ class metagen //: public binstream
             return true;
         }
 
-        void process_content(metagen& mg, const Varx& var) const
+        virtual void process_content(metagen& mg, const Varx& var) const override
         {
+            bool evalcond = cond.size() > 0;
+            int index = 0, order = 0;
             token attrib;
             Varx v;
-            if (find_var(var, v, attrib))
-            {
-                if (!v.var->stream_desc()->is_array())
-                    return;
 
-                VarxElement ve;
-                uints n = ve.first(v);
-                if (!n) {
-                    atr_empty.process(mg, ve);
-                    return;
-                }
+            process_var(mg, var, varname, depth, index, order, concat.size() == 0);
 
-                bool evalcond = cond.size() > 0;
-
-                int i = 0, fi = 0;
-                for (; n > 0; --n, ve.next(), ++i)
-                {
-                    if (evalcond && !eval_cond(mg, ve))
-                        continue;
-
-                    if (fi == 0)
-                        atr_first.process(mg, ve);
-                    else
-                        atr_rest.process(mg, ve);
-
-                    ve.index = i;
-                    ve.order = fi++;
-
-                    atr_body.process(mg, ve);
-                }
-
-                ve.index = i;
-                ve.order = fi;
-
-                //the 'after' statement is evaluated only if there were some array items evaluated too
-                if (i > 0)
-                    atr_after.process(mg, ve);
-                else
-                    atr_empty.process(mg, ve);
+            for (const cat& ext : concat) {
+                process_var(mg, var, ext.varname, ext.depth, index, order, &ext == concat.last());
             }
         }
 
-        virtual void parse_content(mtglexer& lex, ParsedTag& hdr)
+        virtual void parse_content(mtglexer& lex, ParsedTag& hdr) override
         {
             ParsedTag tmp;
             tmp.attr.swap(hdr.attr);
@@ -1135,12 +1170,89 @@ class metagen //: public binstream
         }
 
     private:
+
+        void process_var(metagen& mg, const Varx& par, const token& varname, int depth, int& index, int& order, bool last) const
+        {
+            Varx v;
+            token attrib;
+            bool found = depth < 1
+                ? par.find_child(varname, v, &attrib)
+                : par.find_descendant(varname, v, false, &attrib);
+            if (!found)
+                return;
+
+            int i = index, fi = order;
+
+            bool evalcond = cond.size() > 0;
+            VarxElement ve;
+
+            if (!v.var->stream_desc()->is_array())
+            {
+                //treat as a single-element array
+                ve.single(v);
+                if (evalcond && eval_cond(mg, v))
+                {
+                    if (fi == 0)
+                        atr_first.process(mg, ve);
+                    else
+                        atr_rest.process(mg, ve);
+
+                    ve.index = i++;
+                    ve.order = fi++;
+
+                    atr_body.process(mg, ve);
+                }
+            }
+            else
+            {
+                uints n = ve.first(v);
+                if (!n) {
+                    atr_empty.process(mg, ve);
+                    return;
+                }
+
+                for (; n > 0; --n, ve.next(), ++i)
+                {
+                    if (evalcond && !eval_cond(mg, ve))
+                        continue;
+
+                    if (fi == 0)
+                        atr_first.process(mg, ve);
+                    else
+                        atr_rest.process(mg, ve);
+
+                    ve.index = i;
+                    ve.order = fi++;
+
+                    atr_prefix.process(mg, ve);
+                    atr_body.process(mg, ve);
+                    atr_suffix.process(mg, ve);
+                }
+            }
+
+            if (last) {
+                ve.index = i;
+                ve.order = fi;
+
+                //the 'after' statement is evaluated only if there were some array items evaluated too
+                if (fi > 0)
+                    atr_after.process(mg, ve);
+                else
+                    atr_empty.process(mg, ve);
+            }
+
+            index = i;
+            order = fi;
+        }
+
         TagSequence* section(const token& name)
         {
             if (name == "first")  return &atr_first;
             if (name == "rest")   return &atr_rest;
             if (name == "body")   return &atr_body;
             if (name == "after")  return &atr_after;
+            if (name == "prefix") return &atr_prefix;
+            if (name == "suffix") return &atr_suffix;
             if (name == "empty")  return &atr_empty;
             return 0;
         }
@@ -1199,7 +1311,7 @@ class metagen //: public binstream
     {
         TagSequence seq;
 
-        void process_content(metagen& mg, const Varx& var) const
+        virtual void process_content(metagen& mg, const Varx& var) const override
         {
             token attrib;
             Varx v;
@@ -1209,7 +1321,7 @@ class metagen //: public binstream
                 seq.process(mg, v);
         }
 
-        virtual void parse_content(mtglexer& lex, ParsedTag& hdr)
+        virtual void parse_content(mtglexer& lex, ParsedTag& hdr) override
         {
             ParsedTag tmp;
             tmp.attr.swap(hdr.attr);
@@ -1232,9 +1344,7 @@ class metagen //: public binstream
 
 public:
     metagen()
-    {
-        bin = 0;
-    }
+    {}
 
     bool parse(binstream& bin)
     {
@@ -1283,10 +1393,11 @@ public:
 
     void generate(binstream& bin, const Var& var, const uchar* data)
     {
-        this->bin = &bin;
-
         Varx v(&var, data);
         tags.process(*this, v);
+
+        bin.xwrite_token_raw(out);
+        out.reset();
     }
 
     ///Set prefix to be displayed when reporting errors
@@ -1297,44 +1408,19 @@ public:
     ///Write a string value to output
     template<class T>
     void write_as_string(T val) {
-        buf = val;
-        bin->xwrite_raw(buf.ptr(), buf.len());
-        buf.reset();
+        out << val;
     }
 
-
-    /*
-        const char* error_text() const  { return err_lex; }
-
-        charstr& error_location( charstr& buf, const token& file )
-        {
-            const lextoken& last = lex.last();
-            token line;
-            uint col;
-            uint row = lex.current_line( &line, &col );
-
-            buf << file << ":" << (row+1) << ": " << err_lex << "\n";
-
-            if( !line.is_empty() ) {
-                buf << line << "\n";
-                buf.appendn( col, ' ' );
-                buf << "^\n";
-            }
-
-            return buf;
-        }
-    */
 private:
+
     charstr buf;                    //< helper buffer
-    binstream* bin;                 //< output stream
+    charstr out;
 
     binstreambuf patbuf;            //< buffered pattern file
 
     metastream meta;
     binstreambuf tmpx;
     fmtstreamcxx fmtx;
-
-    //const char* err_lex;
 
     mtglexer lex;                   //< lexer used to parse the template file
     TagSequence tags;                  //< top level tag array
@@ -1352,9 +1438,7 @@ inline token metagen::Varx::write_buf(metagen& mg, const dynarray<Attribute>* at
         buf.reset();
     uint oldbufsize = buf.len();
 
-    static const token first = "first";
-    static const token rest = "rest";
-    static const token after = "after";
+    auto append = [&](const token& t) { if (t) { if (escape) buf.append_escaped(t); else buf << t; } };
 
     MetaDesc* md = var->stream_desc();
 
@@ -1363,50 +1447,61 @@ inline token metagen::Varx::write_buf(metagen& mg, const dynarray<Attribute>* at
             token t = token((const char*)p + sizeof(uints), *(const uints*)p);
             if (!t) return t;
 
-            if (escape)
-                buf.append_escaped(t);
-            else
-                buf << t;
+            append(t);
 
             //support for 'first' and 'after' attributes
             bool nonempty = buf.len() > oldbufsize;
 
             const Attribute* pa;
-            token prefix = attr && (pa = attr->contains(first)) ? pa->value.value : token();
-            if (prefix && nonempty)
-                buf.ins(0, prefix);
+            token at_first = attr && (pa = attr->contains("first"_T)) ? pa->value.value : token();
+            if (at_first && nonempty)
+                buf.ins(0, at_first);
 
-            token suffix = attr && (pa = attr->contains(after)) ? pa->value.value : token();
-            if (suffix && nonempty)
-                buf << suffix;
+            token at_after = attr && (pa = attr->contains("after"_T)) ? pa->value.value : token();
+            if (at_after && nonempty)
+                buf << at_after;
         }
         else {
             VarxElement element;
             uints n = element.first(*this);
-            if (!n) return token();
-
             const Attribute* pa;
-            token prefix = attr && (pa = attr->contains(first)) ? pa->value.value : token();
-            token infix = attr && (pa = attr->contains(rest)) ? pa->value.value : token();
-            token suffix = attr && (pa = attr->contains(after)) ? pa->value.value : token();
+            if (!n) {
+                if ((pa = attr->contains("empty"_T))) {
+                    append(pa->value.value);
+                    return buf;
+                }
+                return token();
+            }
 
-            if (escape) buf.append_escaped(prefix, escape); else buf << prefix;
+            token at_first = attr && (pa = attr->contains("first"_T)) ? pa->value.value : token();
+            token at_rest = attr && (pa = attr->contains("rest"_T)) ? pa->value.value : token();
+            token at_after = attr && (pa = attr->contains("after"_T)) ? pa->value.value : token();
+            token at_prefix = attr && (pa = attr->contains("prefix"_T)) ? pa->value.value : token();
+            token at_suffix = attr && (pa = attr->contains("suffix"_T)) ? pa->value.value : token();
+
+            append(at_first);
 
             for (uints k = 0; k < n; ++k) {
-                if (k > 0) {
-                    if (escape)
-                        buf.append_escaped(infix, escape);
-                    else
-                        buf << infix;
-                }
+                if (k > 0)
+                    append(at_rest);
 
+                append(at_prefix);
                 element.write_buf(mg, 0, false, escape);
+                append(at_suffix);
+
                 element.next();
             }
 
-            if (escape) buf.append_escaped(suffix, escape); else buf << suffix;
+            append(at_after);
         }
 
+        return buf;
+    }
+
+    const Attribute* pa;
+    if (attr && (pa = attr->contains("set"_T))) {
+        if (is_nonzero())
+            buf << pa->value.value;
         return buf;
     }
 
@@ -1472,12 +1567,11 @@ inline token metagen::Varx::write_buf(metagen& mg, const dynarray<Attribute>* at
     //support for 'first' and 'after' attributes
     bool nonempty = buf.len() > oldbufsize;
 
-    const Attribute* pa;
-    token prefix = attr && (pa = attr->contains(first)) ? pa->value.value : token();
+    token prefix = attr && (pa = attr->contains("first"_T)) ? pa->value.value : token();
     if (prefix && nonempty)
         buf.ins(0, prefix);
 
-    token suffix = attr && (pa = attr->contains(after)) ? pa->value.value : token();
+    token suffix = attr && (pa = attr->contains("after"_T)) ? pa->value.value : token();
     if (suffix && nonempty)
         buf << suffix;
 
