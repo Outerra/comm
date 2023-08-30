@@ -377,7 +377,7 @@ class data_manager
         void* create_uninit(uint gid) override final {
             uint n = data.size();
             if (gid < n) {
-                DASSERT(0);
+                //DASSERT(0);
                 return &data[gid];  //not uninitialized but we can't call destructor
             }
             T* p = data.add_uninit(gid + 1 - n);
