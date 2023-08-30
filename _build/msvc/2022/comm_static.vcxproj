@@ -494,6 +494,7 @@
     <ClInclude Include="..\..\..\interface.h" />
     <ClInclude Include="..\..\..\intergen\ifc.h" />
     <ClInclude Include="..\..\..\intergen\ifc.js.h" />
+    <ClInclude Include="..\..\..\intergen\ifc.lua.h" />
     <ClInclude Include="..\..\..\international.h" />
     <ClInclude Include="..\..\..\list.h" />
     <ClInclude Include="..\..\..\log.h" />

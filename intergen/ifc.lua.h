@@ -15,7 +15,7 @@
  *
  * The Initial Developer of the Original Code is
  * Outerra.
- * Portions created by the Initial Developer are Copyright (C) 2013
+ * Portions created by the Initial Developer are Copyright (C) 2013-2023
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -38,20 +38,19 @@
 #ifndef __INTERGEN_IFC_LUA_H__
 #define __INTERGEN_IFC_LUA_H__
 
-#include <comm/interface.h>
-#include <comm/intergen/ifc.h>
-#include <comm/token.h>
-#include <comm/dir.h>
-#include <comm/metastream/metastream.h>
-#include <comm/log.h>
-#include <comm/binstream/filestream.h>
-#include <comm/singleton.h>
+#include "../token.h"
+#include "../dir.h"
+#include "../log.h"
+#include "../metastream/metastream.h"
+#include "../binstream/filestream.h"
+#include "../singleton.h"
+
 #include <luaJIT/lua.hpp>
 #include <luaJIT/luaext.h>
 
 //#include "lua_utils.h"
 
-// rebind v interface objectoch treba 
+// rebind v interface objectoch treba
 
 namespace lua {
     int ctx_query_interface(lua_State * L);
@@ -95,9 +94,9 @@ namespace lua {
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-    inline void insert_indentation(int count, coid::charstr& result) 
+    inline void insert_indentation(int count, coid::charstr& result)
     {
-        for (int i = 0; i < count; i++) 
+        for (int i = 0; i < count; i++)
         {
             result << "\t";
         }
@@ -140,7 +139,7 @@ namespace lua {
             result << "0x";
             result.append_num_uint(16, &ptr, sizeof(&ptr),0);
         }
-        else if (lua_isuserdata(L, idx)) 
+        else if (lua_isuserdata(L, idx))
         {
             result << "{\n";
             insert_indentation(level + 1, result);
@@ -163,7 +162,7 @@ namespace lua {
         {
             result << "{\n";
             lua_pushvalue(L, LUA_GLOBALSINDEX);
-            if (lua_rawequal(L, -1, idx)) 
+            if (lua_rawequal(L, -1, idx))
             {
                 insert_indentation(level, result);
                 result << "\t LUA_GLOBAL\n";
@@ -172,21 +171,21 @@ namespace lua {
                 lua_pop(L, 1);
                 return;
             }
-            
+
             lua_pop(L, 1);
             lua_pushnil(L);
             while (lua_next(L, idx) != 0)
             {
                 insert_indentation(level, result);
-				lua_pushvalue(L, -2);
-				result << "\t" << lua_tostring(L, -1) << ": ";
-				lua_pop(L, 1);
-                
+                lua_pushvalue(L, -2);
+                result << "\t" << lua_tostring(L, -1) << ": ";
+                lua_pop(L, 1);
+
                 if (lua_istable(L, -1) && !recursive)
                 {
                     result << "{...}";
                 }
-                else 
+                else
                 {
                     debug_stack_value_to_str(L, lua_gettop(L), recursive, result, level + 1);
                     result << "\n";
@@ -231,7 +230,7 @@ namespace lua {
 
             coidlog_debug("debug_print_stack", res);
         }
-        else 
+        else
         {
             coidlog_debug("debug_print_stack", "The stack is empty!");
         }
@@ -371,7 +370,7 @@ namespace lua {
 
             lua_pushtoken(L, msg);
         }
-        else  // we have no stack info(usually when exception is thrown in C function called from script, in that case we already have stack info in error msg) 
+        else  // we have no stack info(usually when exception is thrown in C function called from script, in that case we already have stack info in error msg)
         {
             lua_pop(L, 1);
         }
@@ -397,7 +396,7 @@ namespace lua {
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     inline int ctx_log(lua_State* L) {
         bool exception_caught = false;
-        
+
         try
         {
             if (lua_gettop(L) != 1)
@@ -413,14 +412,14 @@ namespace lua {
             lua_pushvalue(L, LUA_ENVIRONINDEX);
             coid::token hash;
             lua_getfield(L, -1, _lua_context_script_path_key);
-            
+
             if (lua_isnil(L, -1)) {
                 hash = "Unknown script";
             }
             else {
                 hash = lua_totoken(L, -1);
             }
-            
+
             lua_pop(L, 2);
 
 
@@ -433,7 +432,7 @@ namespace lua {
             process_exception_and_push_error_string_internal(e, L);
         }
 
-        if (exception_caught)   
+        if (exception_caught)
         {
             lua_error(L);
         }
@@ -629,7 +628,7 @@ namespace lua {
 
             implement_class_in_context(L, interface_class_name, script_class_name);
         }
-        catch (const coid::exception& e) 
+        catch (const coid::exception& e)
         {
             exception_caught = true;
             process_exception_and_push_error_string_internal(e, L);
@@ -644,7 +643,7 @@ namespace lua {
     }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-    
+
     inline bool is_interface_table(lua_State* L, int index)
     {
         const int n = lua_gettop(L); // number of arguments
@@ -685,7 +684,7 @@ namespace lua {
 
     //    try {
 
-    //        if (n != 2) // it must contain interface source interface table and destination 
+    //        if (n != 2) // it must contain interface source interface table and destination
     //        {
     //            throw coid::exception("Wrong number of arguments!");
     //        }
@@ -703,7 +702,7 @@ namespace lua {
 
     //        coid::token script_class_name = lua_totoken(L, -1);
     //        coid::token interface_class_name = lua_totoken(L, -2);
-    //    
+    //
     //        implement_class_in_context(L, interface_class_name, script_class_name);
     //    }
     //    catch (const coid::exception& e)
@@ -821,22 +820,22 @@ namespace lua {
             lua_pushvalue(_L, -2);
             lua_setfenv(_L, -2);
             lua_setfield(_L, -2, _lua_include_key);
-            
+
             set_ref();
         };
 
-        /*lua_context(const lua_context& ctx) 
+        /*lua_context(const lua_context& ctx)
         {
             _L = ctx._L;
             _lua_handle = ctx._lua_handle;
         }*/
 
-        ~lua_context() 
+        ~lua_context()
         {
             //lua_gc(_L, LUA_GCCOLLECT, 0);
         };
 
-        void debug_print() 
+        void debug_print()
         {
             get_ref();
             debug_print_stack(_L);
@@ -847,7 +846,7 @@ namespace lua {
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 
-    inline void print_weak_registry(lua_State* L) 
+    inline void print_weak_registry(lua_State* L)
     {
         lua_rawgeti(L, LUA_REGISTRYINDEX, LUA_WEAK_REGISTRY_INDEX);
         lua_getmetatable(L,-1);
@@ -872,7 +871,7 @@ namespace lua {
                 result << "\t" << index << ": ";
                 lua_pop(L, 1);
 
-                if (index == LUA_INTERFACE_METATABLE_REGISTER_INDEX) 
+                if (index == LUA_INTERFACE_METATABLE_REGISTER_INDEX)
                 {
                     result << "LUA_INTERFACE_METATABLE_REGISTER_INDEX";
                 }
@@ -888,12 +887,12 @@ namespace lua {
                 {
                     result << "LUA_WEAK_IFC_METATABLE_INDEX";
                 }
-                
+
 
                 debug_stack_value_to_str(L, lua_gettop(L), true, result, 1);
                 result << "\n";
             }
-            
+
             lua_pop(L, 1);
         }
 
@@ -940,18 +939,18 @@ namespace lua {
     inline void load_script(iref<registry_handle> context, const coid::token& script_path) {
         coid::token script_tok;
         coid::charstr script_tmp;
-        
-		coid::bifstream bif(script_path);
-		if (!bif.is_open())
-			throw coid::exception() << script_path << " not found";
 
-		coid::binstreambuf buf;
-		buf.swap(script_tmp);
-		buf.transfer_from(bif);
-		buf.swap(script_tmp);
+        coid::bifstream bif(script_path);
+        if (!bif.is_open())
+            throw coid::exception() << script_path << " not found";
 
-		script_tok = script_tmp;
-        
+        coid::binstreambuf buf;
+        buf.swap(script_tmp);
+        buf.transfer_from(bif);
+        buf.swap(script_tmp);
+
+        script_tok = script_tmp;
+
         load_script(context,script_tok,script_path);
     }
 
@@ -966,7 +965,7 @@ namespace lua {
             {
                 debug_print_stack(L);
             }
-            
+
             if (n != 1) // it must contain script path
             {
                 throw coid::exception("Wrong number of arguments!");
@@ -999,7 +998,7 @@ namespace lua {
                 script_path << script_path_arg;
                 script_path_arg = script_path;
             }
-            
+
             load_script(context_weak, script_path);
         }
         catch (const coid::exception& e)
@@ -1121,7 +1120,7 @@ namespace lua {
 
             coid::charstr script_code_buf;
             coid::token script_code;
-            
+
             if (_is_path)
             {
                 coid::bifstream bif(_path_or_code);
@@ -1134,7 +1133,7 @@ namespace lua {
                 buf.swap(script_code_buf);
                 buf.transfer_from(bif);
                 buf.swap(script_code_buf);
-                
+
                 script_code = script_code_buf;
             }
             else if (!_prefix.is_empty())
@@ -1143,22 +1142,22 @@ namespace lua {
                 script_code_buf.append(_path_or_code);
                 script_code = script_code_buf;
             }
-            else 
+            else
             {
                 script_code = _path_or_code;
             }
-            
+
             ::lua::load_script(context, script_code, url_tok);
 
 #ifdef _DEBUG
             const int current_stack_top = lua_gettop(L);
             DASSERT(current_stack_top == stack_top);
-#endif  
+#endif
 
             return context;
         }
 
-    private: 
+    private:
 
         coid::token _path_or_code;
         bool _is_path;
@@ -1183,7 +1182,7 @@ namespace lua {
             DASSERT(!context.is_empty());
 
             lua_State* L = context->get_state();
-            
+
             _context.create(new weak_registry_handle(L));
             context->get_ref();
             DASSERT(is_context_table(L, -1));
@@ -1200,14 +1199,13 @@ namespace lua {
     public:
         iref<T> _base;                      //< original c++ interface object
 
-                                            //T* _real() { return _base ? _base.get() : this; }
         intergen_interface* intergen_real_interface() override final
         {
             return _base ? _base.get() : this;
         }
 
         T* _real() { return static_cast<T*>(intergen_real_interface()); }
-        
+
         ~interface_wrapper_base()
         {
             _base.release();

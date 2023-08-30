@@ -1,3 +1,5 @@
+#pragma once
+
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -15,7 +17,7 @@
  *
  * The Initial Developer of the Original Code is
  * Outerra.
- * Portions created by the Initial Developer are Copyright (C) 2013-2022
+ * Portions created by the Initial Developer are Copyright (C) 2013-2023
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -43,6 +45,7 @@
 #include "../typeseq.h"
 #include "../local.h"
 #include "../log/logger.h"
+#include "../global.h"
 
 namespace coid {
     class binstring;
@@ -170,6 +173,14 @@ namespace coid {
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+///Call interface vtable method
+#define VT_CALL(R,F,I) ((*_host).*(reinterpret_cast<R(policy_intrusive_base::*)F>(_vtable[I])))
+
+#define DT_CALL(R,F,I) (this->*(reinterpret_cast<R(intergen_data_interface::*)F>(_fn_table[I])))
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -327,9 +338,6 @@ protected:
     }
 };
 
-///Call interface vtable method
-#define VT_CALL(R,F,I) ((*_host).*(reinterpret_cast<R(policy_intrusive_base::*)F>(_vtable[I])))
-
 ////////////////////////////////////////////////////////////////////////////////
 struct intergen_data_interface
 {
@@ -364,7 +372,51 @@ protected:
 };
 
 
-#define DT_CALL(R,F,I) (this->*(reinterpret_cast<R(intergen_data_interface::*)F>(_fn_table[I])))
+
+
+/// @brief Wrapper for managed data interfaces
+/// @tparam T data interface type
+template <class T>
+class cref
+{
+public:
+
+    cref() = default;
+
+    explicit cref(coid::versionid eid)
+        : _entity_id(eid)
+    {}
+
+    /// @return component reference valid for current frame
+    T* ready() {
+        //obtain a valid reference once per frame
+        uint gframe = entman::frame;
+        if (_cached_object && _ready_frame == gframe)
+            return _cached_object;
+
+        _cached_object = entman::get<T>(_entity_id);
+        _ready_frame = gframe;
+        return _cached_object;
+    }
+
+    cref& operator = (coid::versionid eid) {
+        _entity_id = eid;
+        _cached_object = 0;
+        return *this;
+    }
+
+    T* operator -> () {
+        T* p = ready();
+        if (!p) throw coid::exception() << "dead object";
+        return p;
+    }
+
+private:
+
+    coid::versionid _entity_id;         //< id of the connected entity
+    T* _cached_object = 0;              //< cached connected object
+    uint _ready_frame = 0;              //< frame when the connected object was valid
+};
 
 
 
@@ -374,7 +426,7 @@ class ifcman
 {
 public:
 
-    struct data_ifc {
+    struct data_ifc_descriptor {
         const type_sequencer::entry* _type = 0;
         intergen_data_interface::icr_t* _cr_table = 0;
         intergen_data_interface::ifn_t* _fn_table = 0;
@@ -384,7 +436,7 @@ public:
 
 
     template <class T>
-    static const data_ifc* get_type_ifc(uint64 hash) {
+    static const data_ifc_descriptor* get_type_ifc(uint64 hash) {
         ifcman& m = get();
         uint id = m._seq.id<T>();
         return id < m._clients.size() && m._clients[id]._hash == hash ? &m._clients[id] : nullptr;
@@ -394,7 +446,7 @@ public:
     static intergen_data_interface::ifn_t* set_type_ifc(uint64 hash, intergen_data_interface::icr_t* cr_table, intergen_data_interface::ifn_t* fn_table) {
         ifcman& m = get();
         m._seq.assign<T>([&](int id, const type_sequencer::entry& en) {
-            data_ifc& dc = m._clients.get_or_add(id);
+            data_ifc_descriptor& dc = m._clients.get_or_add(id);
             dc._fn_table = fn_table;
             dc._cr_table = cr_table;
             dc._type = &en;
@@ -415,7 +467,7 @@ private:
     }
 
     type_sequencer _seq;
-    dynarray32<data_ifc> _clients;
+    dynarray32<data_ifc_descriptor> _clients;
 };
 
 COID_NAMESPACE_END

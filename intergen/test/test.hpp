@@ -9,12 +9,12 @@
 struct test;
 
 namespace bt {
-struct base;
+    struct base;
 }
 //}ifc
 
 namespace xx {
-class yy;
+    class yy;
 }
 
 struct test {
@@ -29,7 +29,7 @@ namespace n2 {
 
 class zz;
 
-class virtual_thing
+class virtual_thing : public policy_intrusive_base
 {
 public:
 
@@ -96,6 +96,8 @@ public:
 
     ifc_fn void inout(ifc_inout test*& par);
 
+    ifc_fn struct test* dataret();
+
     ifc_fnx(!) void nested(const coid::dynarray<bt::base>& stuff);
 
     ifc_event void boo(const char* key, int some);
@@ -135,7 +137,7 @@ public:
     ifc_fn void some1();
 
     //override parent method
-    ifc_fn void loo(bool a, bool b);
+    ifc_fnx(loo) void loo2(bool a, bool b);
 
     ifc_fn void some2();
 

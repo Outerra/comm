@@ -696,15 +696,33 @@ int File::parse(token path, const char* ref_file, int ref_line)
                 //    nerr++;
                 //}
 
-                int ie = 0;
-                for (const MethodIG& e : base_ifc->event)
-                {
-                    const MethodIG* found = i.event.find_if([&e](const MethodIG& it) {
-                        return e.name == it.name && e.intname == it.intname && e.matches_args(it);
-                    });
+                uint nbase_events = (uint)base_ifc->event.size();
+                MethodIG* base_events = i.event.ins(0, nbase_events);
+                uint ntotal_events = (uint)i.event.size();
 
-                    if (!found) {
-                        i.event.ins_value(ie++, e)->binherit = true;
+                for (uint bi = 0; bi < nbase_events; ++bi)
+                {
+                    const MethodIG& be = base_ifc->event[bi];
+
+                    int found = -1;
+                    for (uint x = nbase_events; x < ntotal_events; ++x) {
+                        const MethodIG& it = i.event[x];
+                        if (be.name == it.name && be.matches_args(it)) {
+                            found = x;
+                            break;
+                        }
+                    }
+
+                    if (found >= 0) {
+                        //found an override
+                        base_events[bi] = std::move(i.event[found]);
+                        i.event.del(found);
+                        --ntotal_events;
+                    }
+                    else {
+                        base_events[bi] = be;
+                        base_events[bi].fix_copy(be);
+                        base_events[bi].binherit = true;
                     }
                 }
 
@@ -724,7 +742,7 @@ int File::parse(token path, const char* ref_file, int ref_line)
                     int found = -1;
                     for (uint x = nbase_methods; x < ntotal_methods; ++x) {
                         const MethodIG& it = i.method[x];
-                        if (bm.bcreator == it.bcreator && bm.name == it.name && bm.intname == it.intname && bm.matches_args(it)) {
+                        if (bm.bcreator == it.bcreator && bm.name == it.name && bm.matches_args(it)) {
                             found = x;
                             break;
                         }

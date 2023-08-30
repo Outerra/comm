@@ -383,9 +383,24 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\comm_test\atomic-test.cpp" />
+    <ClCompile Include="..\..\..\comm_test\intergen\data.intergen.cpp" />
+    <ClCompile Include="..\..\..\comm_test\intergen\data.intergen.js.cpp" />
+    <ClCompile Include="..\..\..\comm_test\intergen\data.intergen.lua.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-clang|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\..\..\comm_test\intergen\data_client_test.cpp" />
     <ClCompile Include="..\..\..\comm_test\intergen\interface.intergen.cpp" />
     <ClCompile Include="..\..\..\comm_test\intergen\client_test.cpp" />
+    <ClCompile Include="..\..\..\comm_test\intergen\interface.intergen.js.cpp" />
+    <ClCompile Include="..\..\..\comm_test\intergen\interface.intergen.lua.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-clang|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\..\..\comm_test\job.cpp" />
     <ClCompile Include="..\..\..\comm_test\main.cpp" />
     <ClCompile Include="..\..\..\comm_test\malloc.cpp" />
@@ -397,19 +412,14 @@
     <ClCompile Include="..\..\..\intergen\test\test.intergen.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <hpp Include="..\..\..\comm_test\intergen\data.hpp" />
     <hpp Include="..\..\..\comm_test\intergen\interface.hpp" />
     <hpp Include="..\..\..\intergen\test\test.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\comm_test\intergen\ifc\client.h" />
-    <ClInclude Include="..\..\..\comm_test\intergen\ifc\client.js.h" />
-    <ClInclude Include="..\..\..\comm_test\intergen\ifc\client.lua.h" />
     <ClInclude Include="..\..\..\comm_test\intergen\ifc\client2.h" />
-    <ClInclude Include="..\..\..\comm_test\intergen\ifc\client2.js.h" />
-    <ClInclude Include="..\..\..\comm_test\intergen\ifc\client2.lua.h" />
     <ClInclude Include="..\..\..\comm_test\intergen\ifc\data_ifc.h" />
-    <ClInclude Include="..\..\..\comm_test\intergen\ifc\data_ifc.js.h" />
-    <ClInclude Include="..\..\..\comm_test\intergen\ifc\data_ifc.lua.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="comm_static.vcxproj">

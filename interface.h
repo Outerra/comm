@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * PosAm.
- * Portions created by the Initial Developer are Copyright (C) 2003
+ * Portions created by the Initial Developer are Copyright (C) 2003-2023
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -95,46 +95,54 @@ struct arg
     const token doc;
 };
 
+
 struct method
 {
     const token name;                   //< method name
 
-    bool bstatic        = false;        //< a static (creator) method
-    bool bptr           = false;        //< ptr instead of ref
-    bool biref          = true;         //< iref instead of ref
-    bool bifccr         = false;        //< ifc returning creator (not returning host)
-    bool bconst         = false;        //< const method
-    bool boperator      = false;
-    bool binternal      = false;        //< internal method, invisible to scripts (starts with an underscore)
-    bool bcapture       = false;        //< method captured when interface is in capturing mode
-    bool bimplicit      = false;        //< an implicit event/method
-    bool bdestroy       = false;        //< a method to call on interface destroy
-    bool bnoevbody      = false;        //< mandatory event
-    bool bpure          = false;        //< pure virtual on client
-    bool bduplicate     = false;        //< a duplicate method/event from another interface of the host
-    bool binherit       = false;        //< method inherited from base interface
+    enum class flg : uint {
+        bstatic        = 0x0001,        //< a static (creator) method
+        bptr           = 0x0002,        //< ptr instead of ref
+        biref          = 0x0004,        //< iref instead of ref
+        bifccr         = 0x0008,        //< ifc returning creator (not returning host)
+        bconst         = 0x0010,        //< const method
+        boperator      = 0x0020,        //<
+        binternal      = 0x0040,        //< internal method, invisible to scripts (starts with an underscore)
+        bcapture       = 0x0080,        //< method captured when interface is in capturing mode
+        bimplicit      = 0x0100,        //< an implicit event/method
+        bdestroy       = 0x0200,        //< a method to call on interface destroy
+        bnoevbody      = 0x0400,        //< mandatory event
+        bpure          = 0x0800,        //< pure virtual on client
+        bduplicate     = 0x1000,        //< a duplicate method/event from another interface of the host
+        binherit       = 0x2000,        //< method inherited from base interface
+    };
 
-    int nargs = 0;                      //< total number of arguments 
+    flg flags = flg(0);                 //< interface flags
+
+    int nargs = 0;                      //< total number of arguments
     int ninargs = 0;                    //< number of input arguments
     int noutargs = 0;                   //< number of output arguments
 
-    const arg* args = 0;                //< arguments
-    const arg retval;                   //< return value
+    const arg* args = 0;                //< return value and arguments
 
-    //const token* comments = 0;          //< comments preceding the method declaration
-    //const token* docs = 0;              //< doc paragraphs
-
+    const token comments;               //< doc paragraphs
 };
 
-struct interface
+inline method::flg operator | (method::flg a, method::flg b) { return method::flg(uint(a) | uint(b)); }
+inline method::flg& operator |= (method::flg& a, method::flg b) { return a = method::flg(uint(a) | uint(b)); }
+inline bool operator & (method::flg a, method::flg b) { return (uint(a) & uint(b)) != 0; }
+
+
+/// @brief meta-data for interfaces to classes
+struct class_interface
 {
-    const token name;
-    const token* nss = 0;           //< namespaces
+    const token nsname;
     const token hdrfile;
     const token storage;
 
-    const token baseclass;          //< only the base class name
-    const token* baseclassnss = 0;  //< base class namespaces
+    const token baseclass;              //< only the base class name
+
+    uint hash;
 
     uint ncreators = 0;
     uint nmethods = 0;
@@ -145,30 +153,23 @@ struct interface
 
     int destroy_method = -1;
     int default_creator_method = -1;
-
     int oper_get = -1;
     int oper_set = -1;
 
-    const arg* getter = 0;
-    const arg* setter = 0;
+    enum class flg : uint {
+        bvirtual = 1,
+        bdataifc = 2,
+    };
 
-    const token on_connect;
-    const token on_connect_ev;
-    const token on_unload;
+    flg flags = flg(0);                 //< interface flags
 
-    uint hash;
-
-    int ninherited = 0;
-
-    const token* comments = 0;
-    const token* docs = 0;
-
-    bool bvirtual = false;
-    bool bdataifc = false;
-    bool bdirect_inheritance = false;
-    bool binheritable = false;
-    bool bvirtualorinheritable = false;
+    const token comments;
 };
+
+inline class_interface::flg operator | (class_interface::flg a, class_interface::flg b) { return class_interface::flg(uint(a) | uint(b)); }
+inline class_interface::flg& operator |= (class_interface::flg& a, class_interface::flg b) { return a = class_interface::flg(uint(a) | uint(b)); }
+inline bool operator & (class_interface::flg a, class_interface::flg b) { return (uint(a) & uint(b)) != 0; }
+
 
 } //namespace meta
 
@@ -178,7 +179,9 @@ class interface_register
 {
 public:
 
-    static bool register_interface_creator(const token& ifcname, void* creator);
+    static bool register_interface(const meta::class_interface& ifcmeta, const void* func);
+
+    static bool register_interface_creator(const token& ifcname, void* creator, const meta::class_interface* ifcmeta);
 
     static void* get_interface_creator(const token& ifcname);
 
@@ -217,6 +220,11 @@ public:
     /// @param name interface creator name in the format [ns1::[ns2:: ...]]::class
     /// @param script script type
     static void* get_interface_maker(const token& name, const token& script);
+
+    ///Get interface data maker creator matching given name
+    /// @param name interface creator name in the format [ns1::[ns2:: ...]]::class
+    /// @param script script type
+    static void* get_interface_dcmaker(const token& name, const token& script);
 
     ///Get client interface creator matching given name
     /// @param client client name

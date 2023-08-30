@@ -366,6 +366,9 @@
     <ClInclude Include="..\..\..\process.h" />
     <ClInclude Include="..\..\..\log.h" />
     <ClInclude Include="..\..\..\unique_ptr.h" />
+    <ClInclude Include="..\..\..\intergen\ifc.lua.h">
+      <Filter>intergen</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\crypt\sha1.cpp">

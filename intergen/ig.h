@@ -190,7 +190,16 @@ struct MethodIG
         bool bxref = false;             //< true if the type is xvalue reference
         bool biref = false;
         bool bconst = false;            //< true if the type had const qualifier
-        bool benum = false;
+
+        enum class Type : uint8 {
+            unspecified,
+            enuma,
+            structa,
+            classa
+        };
+
+        enum Type struct_type = Type::unspecified;
+
         bool binarg = true;             //< input type argument
         bool boutarg = false;           //< output type argument
         bool bvolatile = false;
@@ -236,7 +245,7 @@ struct MethodIG
                 m.member("ifckwds", p.ifckwds);
                 m.member("doc", p.doc);
                 m.member("const", p.bconst);
-                m.member("enum", p.benum);
+                m.member("struct_type", p.struct_type);
                 m.member("specptr", p.bspecptr);
                 m.member("ptr", p.bptr);
                 m.member("ref", p.bref);

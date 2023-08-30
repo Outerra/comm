@@ -324,6 +324,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 m->bimplicit = bimplicit;
                 m->bduplicate = duplicate != 0;
                 m->bpure = bpure;
+                m->classname << namespc << classname;
 
                 {
                     if (!m->parse(lex, classname, namespc, lastifc->nsname, irefargs, true))
@@ -420,7 +421,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 m->binternal = binternal > 0 || lastifc->bnoscript;
                 m->bduplicate = duplicate != 0;
                 m->bimplicit = bimplicit;
-                m->classname = classname;
+                m->classname << namespc << classname;
 
                 if (!m->parse(lex, classname, namespc, lastifc->nsname, irefargs, false))
                     ++ncontinuable_errors;

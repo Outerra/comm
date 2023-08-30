@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Outerra.
- * Portions created by the Initial Developer are Copyright (C) 2021
+ * Portions created by the Initial Developer are Copyright (C) 2021-2023
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -261,6 +261,7 @@ class data_manager
         virtual uint element_id(const void* p) const = 0;
 
         /// @brief Create element
+        /// @return nullptr if element already exists
         virtual void* create_default(uint gid) = 0;
         virtual void* create_uninit(uint gid) = 0;
 
@@ -308,17 +309,19 @@ class data_manager
             return static_cast<const storage<T>*>(p)->eid;
         }
 
-        void* create_default(uint gid) override {
-            if constexpr (std::is_default_constructible_v<T>)
-                return new (create_uninit(gid)) T;
+        void* create_default(uint gid) override final {
+            if constexpr (std::is_default_constructible_v<T>) {
+                void* p = create_uninit(gid);
+                return p ? new (p) T : nullptr;
+            }
 
             __assume(false);
         }
-        void* create_uninit(uint gid) override {
+        void* create_uninit(uint gid) override final {
             bool is_new;
             storage<T>* item = hash.find_or_insert_value_slot_uninit(gid, &is_new);
             if (!is_new)
-                item->~storage<T>();
+                return nullptr;
             item->eid = gid;
             return item;
         }
@@ -365,14 +368,20 @@ class data_manager
             return uint(pt - data.ptr());
         }
 
-        void* create_default(uint gid) override {
+        void* create_default(uint gid) override final {
             if constexpr (std::is_default_constructible_v<T>)
-                return new (create_uninit(gid)) T;
+                return &data.get_or_add(gid);
 
             __assume(false);
         }
-        void* create_uninit(uint gid) override {
-            return &data.get_or_add(gid);
+        void* create_uninit(uint gid) override final {
+            uint n = data.size();
+            if (gid < n) {
+                DASSERT(0);
+                return &data[gid];  //not uninitialized but we can't call destructor
+            }
+            T* p = data.add_uninit(gid + 1 - n);
+            return p - 1;
         }
         void remove(uint gid) override final {
             DASSERT(0);
@@ -474,6 +483,22 @@ public:
         return static_cast<C*>(c->element(vid.id));
     }
 
+    template <class C>
+    static C* get_or_create(versionid vid)
+    {
+        static container* c = 0;
+        if (!c) c = get_container<C>();
+
+        if (!c || !c->seq->is_valid(vid))
+            return nullptr;
+
+        C* el = static_cast<C*>(c->element(vid.id));
+        if (!el)
+            el = static_cast<C*>(c->create_default(vid.id));
+
+        return el;
+    }
+
     /// @brief Retrieve data of given type
     /// @tparam C data type
     /// @param id container item id
@@ -550,7 +575,7 @@ public:
     }
 
     /// @param gid global id (non-versioned)
-    /// @return versioned id from given global id 
+    /// @return versioned id from given global id
     static versionid get_versionid(uint gid) {
         static sequencer& seq = tsq();
         return seq.get_versionid(gid);
@@ -600,7 +625,9 @@ public:
         DASSERT_RET(c, nullptr);
         DASSERT_RET(c->seq->is_valid(vid.id), nullptr);
 
-        return new (c->create_uninit(vid.id)) C(std::forward<Ps>(ps)...);
+        void* p = c->create_uninit(vid.id);
+        DASSERT(p);
+        return new (p) C(std::forward<Ps>(ps)...);
     }
 
     /// @brief Remove component from entity
@@ -951,4 +978,9 @@ COID_NAMESPACE_END
 
 
 class entman : public coid::data_manager<entman>
-{};
+{
+public:
+
+    /// @brief current frame, determines the lifetime of references to components
+    inline static uint frame = 0;
+};

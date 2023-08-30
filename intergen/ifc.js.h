@@ -17,7 +17,7 @@
  *
  * The Initial Developer of the Original Code is
  * Outerra.
- * Portions created by the Initial Developer are Copyright (C) 2013-2019
+ * Portions created by the Initial Developer are Copyright (C) 2013-2023
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -56,9 +56,7 @@ enum exception_behavior {
 
 struct interface_context
 {
-    //v8::Persistent<v8::Context> _context;
-    //v8::Persistent<v8::Script> _script;
-    v8::Persistent<v8::Object> _object;
+    v8::Persistent<v8::Object> _object;         //< V8 object representing this interface in JS
 
     v8::Local<v8::Context> context(v8::Isolate* iso) const {
         if (_object.IsEmpty())
@@ -510,6 +508,22 @@ inline v8::Handle<v8::Value> wrap_object(intergen_interface* orig, v8::Handle<v8
 
     if (fn)
         return handle_scope.Escape(fn(orig, context));
+    return v8::Undefined(iso);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+template <class T>
+inline v8::Handle<v8::Value> wrap_data_object(T* data, const coid::token& ifcname, v8::Handle<v8::Context> context)
+{
+    v8::Isolate* iso = v8::Isolate::GetCurrent();
+    if (!data) return v8::Null(iso);
+    v8::EscapableHandleScope handle_scope(iso);
+
+    typedef v8::Handle<v8::Value>(*fn_dcmaker)(void*, v8::Handle<v8::Context>);
+    static fn_dcmaker fn = static_cast<fn_dcmaker>(coid::interface_register::get_interface_dcmaker(ifcname, "js"_T));
+
+    if (fn)
+        return handle_scope.Escape(fn(data, context));
     return v8::Undefined(iso);
 }
 

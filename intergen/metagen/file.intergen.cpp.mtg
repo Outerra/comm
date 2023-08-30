@@ -24,12 +24,12 @@ using namespace coid;
 
 $-[class]$
 $-(if !iface.empty)$
-static_assert( std::is_base_of<policy_intrusive_base, ::$ns rest="::" after="::"$$class$>::value, "class '$class$' must be derived from policy_intrusive_base");
+static_assert(std::is_base_of<policy_intrusive_base, ::$nsx$$class$>::value, "class '$nsx$$class$' must be derived from policy_intrusive_base");
 
 $-(/if)$
 $-[iface]$
 ////////////////////////////////////////////////////////////////////////////////
-// interface $[ns]$$@value$::$[/ns]$$name$ of class $..class$
+// interface $ns suffix="::"$$name$ of class $..nsx$$..class$
 $[ns]$
 namespace $@value$ {
 $-[/ns]$
@@ -38,33 +38,37 @@ $-[/ns]$
 class $name$_dispatcher : public $name$
 {
     friend class $name$;
+    using enum meta::method::flg;
+    using enum meta::class_interface::flg;
 
     $-[method !args.empty]$
     inline static const meta::arg $basename$_$@index$args[] = {$[args]$
-       { "$name$", "$type$", "$basetype$", "$barens$", "$baretype$", "$argsize$", "$fnargs$", "$memfnclass$", "$defval$", $(if | ?..internal ?nojs ?type="void" ?iref ?ptr)$nullptr$(elif)$&meta::stream_op<$basetype$>::fn$(/if)$, $specptr$, $ptr$, $ref$, $xref$, $iref$, $const$, $enum$, $inarg$, $outarg$, $volatile$, $nojs$, $fnarg$, "$doc\"$" },$[/args]$
+       { "$name$", "$type$", "$basetype$", "$barens$", "$baretype$", "$argsize$", "$fnargs$", "$memfnclass$", "$defval$", $(if | ?..internal ?nojs ?type="void" ?iref ?ptr)$nullptr$(elif)$&meta::stream_op<$basetype$>::fn$(/if)$, $specptr$, $ptr$, $ref$, $xref$, $iref$, $const$, $struct_type$, $inarg$, $outarg$, $volatile$, $nojs$, $fnarg$, "$doc\"$" },$[/args]$
     };$[/method]$
     inline static const meta::method$(if method ?static)$ creators[] = {$[method ?static]$
-        { "$name$", $static$, $ptr$, $iref$, $ifccr$, $const$, $operator$, $internal$, $capture$, $implicit$, $destroy$, $noevbody$, $pure$, $duplicate$, $inherit$, $args.@size$, $ninargs$, $noutargs$, $(if ?args.empty)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/method]$
+        { "$name$", $static set="bstatic|"$ $-ptr set="bptr|"$ $-iref set="biref|"$ $-ifccr set="bifccr|"$ $-const set="bconst|"$ $-operator set="boperator|"$ $-internal set="binternal|"$ $-capture set="bcapture|"$ $-implicit set="bimplicit|"$ $-destroy set="bdestroy|"$ $-noevbody set="bnoevbody|"$ $-pure set="bpure|"$ $-duplicate set="bduplicate|"$ $-inherit set="binherit|"$ $-(if !@revert="|")$meta::method::flg(0)$(/if)$, $args.@size$, $ninargs$, $noutargs$, $(if ?args.empty)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/method]$
     };$(elif)$* creators = nullptr;$(/if)$
     inline static const meta::method$(if method !static)$ methods[] = {$[method !static]$
-        { "$name$", $static$, $ptr$, $iref$, $ifccr$, $const$, $operator$, $internal$, $capture$, $implicit$, $destroy$, $noevbody$, $pure$, $duplicate$, $inherit$, $args.@size$, $ninargs$, $noutargs$, $(if ?args.empty)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/method]$
+        { "$name$", $static set="bstatic|"$ $-ptr set="bptr|"$ $-iref set="biref|"$ $-ifccr set="bifccr|"$ $-const set="bconst|"$ $-operator set="boperator|"$ $-internal set="binternal|"$ $-capture set="bcapture|"$ $-implicit set="bimplicit|"$ $-destroy set="bdestroy|"$ $-noevbody set="bnoevbody|"$ $-pure set="bpure|"$ $-duplicate set="bduplicate|"$ $-inherit set="binherit|"$ $-(if !@revert="|")$meta::method::flg(0)$(/if)$, $args.@size$, $ninargs$, $noutargs$, $(if ?args.empty)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/method]$
     };$(elif)$* methods = nullptr;$(/if)$
     $-[event !args.empty]$
     inline static const meta::arg $basename$_$@index$args[] = {$[args]$
-       { "$name$", "$type$", "$basetype$", "$barens$", "$baretype$", "$argsize$", "$fnargs$", "$memfnclass$", "$defval$", $(if | ?..internal ?nojs ?type="void" ?iref ?ptr)$nullptr$(elif)$&meta::stream_op<$basetype$>::fn$(/if)$, $specptr$, $ptr$, $ref$, $xref$, $iref$, $const$, $enum$, $inarg$, $outarg$, $volatile$, $nojs$, $fnarg$, "$doc\"$" },$[/args]$
+       { "$name$", "$type$", "$basetype$", "$barens$", "$baretype$", "$argsize$", "$fnargs$", "$memfnclass$", "$defval$", $(if | ?..internal ?nojs ?type="void" ?iref ?ptr)$nullptr$(elif)$&meta::stream_op<$basetype$>::fn$(/if)$, $specptr$, $ptr$, $ref$, $xref$, $iref$, $const$, $struct_type$, $inarg$, $outarg$, $volatile$, $nojs$, $fnarg$, "$doc\"$" },$[/args]$
     };$[/event]$
     inline static const meta::method$(if event)$ events[] = {$[event]$
-        { "$name$", $static$, $ptr$, $iref$, $ifccr$, $const$, $operator$, $internal$, $capture$, $implicit$, $destroy$, $noevbody$, $pure$, $duplicate$, $inherit$, $args.@size$, $ninargs$, $noutargs$, $(if ?args.empty)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/event]$
+        { "$name$", $static set="bstatic|"$ $-ptr set="bptr|"$ $-iref set="biref|"$ $-ifccr set="bifccr|"$ $-const set="bconst|"$ $-operator set="boperator|"$ $-internal set="binternal|"$ $-capture set="bcapture|"$ $-implicit set="bimplicit|"$ $-destroy set="bdestroy|"$ $-noevbody set="bnoevbody|"$ $-pure set="bpure|"$ $-duplicate set="bduplicate|"$ $-inherit set="binherit|"$ $-(if !@revert="|")$meta::method::flg(0)$(/if)$, $args.@size$, $ninargs$, $noutargs$, $(if ?args.empty)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/event]$
     };$(elif)$* events = nullptr;$(/if)$
-    inline static const meta::interface ifc_meta = {
-        "$name$", // interface name
-        {$[nss]$ "$@value$",$[/nss]$ 0 }, // namespaces
+    inline static const meta::class_interface ifc_meta = {
+        "$[ns]$$@value$::$[/ns]$$name$", // interface name
         "$hdrfile$", // header file
         "$storage$", // storage
-        "$baseclass$", // base class name
-        {$[baseclassnss]$" "$@value$",$[/baseclassnss]$ 0 }, // base class namespaces
+        "$baseclassnss suffix="::"$$baseclass$", // base class name
+        $hash$, //version
         $method.@size ?static$, $method.@size !static$, $event.@size$, // num. creators/methods/events
-        creators, methods, events
+        creators, methods, events,
+        $method.@first_index ?destroy$, $method.@first_index ?creator !args$, $method.@first_index ?operator ?const$, $method.@first_index ?operator !const$,
+        $virtual set="bvirtual|"$ $-dataifc set="bdataifc|"$ $-(if !@revert="|")$meta::class_interface::flg(0)$(/if)$,
+        R"##($comments rest="\n"$)##",
     };
 
 private:
@@ -81,7 +85,7 @@ $-(if !virtual)$
 
         _vtable1 = new ifn_t[$method.@size !static$];
 $-[method !static]$
-        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if ?const)$const$(/if)$>(&::$....ns rest="::" after="::"$$classname$::$intname$));
+        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if ?const)$const$(/if)$>(&::$classname$::$intname$));
 $-[/method]-$
 
         return _vtable1;
@@ -138,7 +142,7 @@ protected:
     virtual ~$name$_dispatcher() {
     }
 
-    bool intergen_bind_capture( coid::binstring* capture, uint instid ) override
+    bool intergen_bind_capture(coid::binstring* capture, uint instid) override
     {
         if (instid >= 0xffU)
             return false;
@@ -149,7 +153,7 @@ protected:
         return true;
     }
 
-    void intergen_capture_dispatch( uint mid, coid::binstring& bin ) override
+    void intergen_capture_dispatch(uint mid, coid::binstring& bin) override
     {
         switch(mid) {
         $-[method ?capture !noutargs]$
@@ -171,7 +175,7 @@ protected:
     }
 $-(if !virtual)$
 
-    static iref<$name$> _generic_interface_creator(::$..ns rest="::" after="::"$$..class$* host, $name$* __here__)
+    static iref<$name$> _generic_interface_creator(::$..nsx$$..class$* host, $name$* __here__)
     {
         iref<$name$> rval;
 
@@ -216,9 +220,9 @@ public:
     // creator methods
 
 $-[method ?creator !ifccr]$
-    static iref<$..name$> $name$( $..name$* __here__$[args]$, $type$ $name$$size$ $-(if ?defval)$ = $defval$$(/if)$$[/args]$ )
+    static iref<$..name$> $name$($..name$* __here__$[args]$, $type$ $name$$size$ $-(if ?defval)$ = $defval$$(/if)$$[/args]$)
     {
-        iref<::$....ns rest="::" after="::"$$....class$> __host__ = ::$....ns rest="::" after="::"$$....class$::$intname$($[args rest=", "]$$name$$[/args]$);
+        iref<::$....nsx$$....class$> __host__ = ::$....nsx$$....class$::$intname$($[args rest=", "]$$name$$[/args]$);
         if (!__host__)
             return 0;
         return _generic_interface_creator(__host__.get(), __here__);
@@ -226,39 +230,31 @@ $-[method ?creator !ifccr]$
 
 $-[/method]$
     ///Register interface creators in the global registry
-    static void register_interfaces( bool on )
+    static void register_interfaces(bool on)
     {
 $-(if !virtual)$
-        interface_register::register_interface_creator(
-            "$ns rest="::" after="::"$$name$@wrapper",
-            on ? (void*)&_generic_interface_creator : nullptr);
+        interface_register::register_interface_creator("$ns suffix="::"$$name$@wrapper", on ? (void*)&_generic_interface_creator : nullptr, &ifc_meta);
 
 $-(/if)$
 $-(if ?onunload)$
-        static_assert(std::is_same<decltype(&::$..ns rest="::" after="::"$$..class$::$onunload$), intergen_interface::fn_unload_client>::value,
+        static_assert(std::is_same<decltype(&::$..nsx$$..class$::$onunload$), intergen_interface::fn_unload_client>::value,
             "expected unload function to have (const coid::token& client, const coid::token& module, int mode) parameters");
 
-        interface_register::register_interface_creator(
-            "$ns rest="::" after="::"$$name$@unload",
-            on ? (void*)&::$..ns rest="::" after="::"$$..class$::$onunload$ : nullptr);
+        interface_register::register_interface_creator("$ns suffix="::"$$name$@unload", on ? (void*)&::$..nsx$$..class$::$onunload$ : nullptr, &ifc_meta);
 
 $-(/if)$
 $-[method ?creator !ifccr]$
-        interface_register::register_interface_creator(
-            "$..ns rest="::" after="::"$$..name$.$name$@$..hash$",
-            on ? (void*)&$name$ : nullptr);
+        interface_register::register_interface_creator("$..ns suffix="::"$$..name$.$name$@$..hash$", on ? (void*)&$name$ : nullptr, &ifc_meta);
 $-[/method]$
 $-[method ?creator ?ifccr]$
-        interface_register::register_interface_creator(
-            "$..ns rest="::" after="::"$$..name$.$name$@$..hash$.ifc",
-            on ? (void*)&::$....ns rest="::" after="::"$$....class$::$name$ : nullptr);
+        interface_register::register_interface_creator("$..ns suffix="::"$$..name$.$name$@$..hash$.ifc", on ? (void*)&::$....nsx$$....class$::$name$ : nullptr, &ifc_meta);
 $-[/method]$
     }
 };
 
 $-(if ?varname)$
 
-iref<$name$> $name$::intergen_active_interface(::$classnsx rest="::" after="::"$$class$* host)
+iref<$name$> $name$::intergen_active_interface(::$classnsx suffix="::"$$class$* host)
 {
     coid::comm_mutex& mx = share_lock();
 
@@ -274,7 +270,7 @@ bool $name$::assign_safe(intergen_interface* client__, iref<$name$>* pout)
     //try assigning to the host (MT guard)
     // if that fails, the interface will be passive (no events)
 
-    ::$..ns rest="::" after="::"$$..class$* hostptr = host<::$..ns rest="::" after="::"$$..class$>();
+    ::$..nsx$$..class$* hostptr = host<::$..nsx$$..class$>();
     if (!hostptr)
         return false;
 
@@ -330,11 +326,11 @@ $[/..nss]-$
 $-[event !implicit !inherit]$
 $return.type$ $....class$::$intname$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if ?fnarg)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if ?const)$ const$(/if)$
 {
-    if (!$..varname$ $-(if ?..inhmask)$ || ($..varname$->iface<$..ns rest="::" after="::"$$..name$>()->_inhmask & (1<<$..ifc_bit$)) == 0$(/if)$) $-(if ?default_event_body)$
+    if (!$..varname$ $-(if ?..inhmask)$ || ($..varname$->iface<$..ns suffix="::"$$..name$>()->_inhmask & (1<<$..ifc_bit$)) == 0$(/if)$) $-(if ?default_event_body)$
         { $default_event_body$ }$(elif)$
         throw coid::exception("Client not connected! ($name$)");$(/if)$
     else
-        return $..varname$->iface<$..ns rest="::" after="::"$$..name$>()->$name$($[args rest=", "]$$name$$[/args]$);
+        return $..varname$->iface<$..ns suffix="::"$$..name$>()->$name$($[args rest=", "]$$name$$[/args]$);
 }
 $[/event]-$
 
@@ -345,7 +341,7 @@ $(/if)-$
 $-[/iface]$
 $-[iface_data]$
 ////////////////////////////////////////////////////////////////////////////////
-// data interface $[ns]$$@value$::$[/ns]$$name$ of class $..class$
+// data interface $[ns]$$@value$::$[/ns]$$name$ of class $..nsx$$..class$
 $[ns]$
 namespace $@value$ {
 $-[/ns]$
@@ -356,12 +352,12 @@ class $name$_data_dispatcher : public $name$
 private:
 
     inline static ifn_t _fn_table[] = {$-[method !static]$
-        reinterpret_cast<ifn_t>(($return.type$(intergen_data_interface::*)($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if ?const)$const$(/if)$)(&::$....ns rest="::" after="::"$$....class$::$intname$)),
+        reinterpret_cast<ifn_t>(($return.type$(intergen_data_interface::*)($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if ?const)$const$(/if)$)(&::$....nsx$$....class$::$intname$)),
 $-[/method]$
         nullptr
     };
     inline static icr_t _cr_table[] = {$-[method ?creator !ifccr]$
-        reinterpret_cast<icr_t>(&::$....ns rest="::" after="::"$$....class$::$intname$),
+        reinterpret_cast<icr_t>(&::$....nsx$$....class$::$intname$),
 $-[/method]$
         nullptr
     };
@@ -381,7 +377,7 @@ public:
 
     static void register_interfaces(bool on)
     {
-        coid::ifcman::set_type_ifc<$name$>($hash$, _cr_table, _fn_table);
+        coid::ifcman::set_type_ifc<$name$>(HASHID, _cr_table, _fn_table);
     }
 };
 
@@ -407,11 +403,11 @@ $[/..nss]-$
 $-[event !implicit !inherit]$
 $return.type$ $....class$::$intname$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if ?fnarg)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if ?const)$ const$(/if)$
 {
-    if (!$..varname$ $-(if ?..inhmask)$ || ($..varname$->iface<$..ns rest="::" after="::"$$..name$>()->_inhmask & (1<<$..ifc_bit$)) == 0$(/if)$) $-(if ?default_event_body)$
+    if (!$..varname$ $-(if ?..inhmask)$ || ($..varname$->iface<$..ns suffix="::"$$..name$>()->_inhmask & (1<<$..ifc_bit$)) == 0$(/if)$) $-(if ?default_event_body)$
         { $default_event_body$ }$(elif)$
         throw coid::exception() << "$name$" << " handler not implemented";$(/if)$
     else
-        return $..varname$->iface<$..ns rest="::" after="::"$$..name$>()->$name$($[args rest=", "]$$name$$[/args]$);
+        return $..varname$->iface<$..ns suffix="::"$$..name$>()->$name$($[args rest=", "]$$name$$[/args]$);
 }
 $[/event]-$
 

@@ -2,6 +2,7 @@
 #pragma once
 
 #include <comm/intergen/ifc.h>
+#include "data.hpp"
 
 using namespace std;
 
@@ -38,6 +39,10 @@ struct flags {
 };
 }ifc*/
 
+//ifc{ xt::client2
+struct component;
+//}ifc
+
 namespace ab {
 
 /*ifc{
@@ -60,6 +65,7 @@ namespace cd {
 class host : public policy_intrusive_base
 {
     coid::charstr _tmp;
+    coid::versionid _eid;
 
 public:
 
@@ -103,7 +109,7 @@ public:
 
     ifc_fn void set_array(const float ar[3]) {}
 
-    ifc_fn virtual bool overridable() {}
+    ifc_fn virtual bool overridable() { return false; }
 
     ifc_fnx(!) void callback(void (*cbk)(int, const coid::token&)) {
         cbk(1, "blah"_T);
@@ -131,30 +137,10 @@ public:
     ifc_class(xt::client2, "ifc/");
 
     ifc_fn void test() {}
+
+    /// @return pointer to a data interface type (ifc_struct)
+    ifc_fn struct component* get();
 };
-
-
-struct data
-{
-    ifc_struct(data_ifc, "ifc/");
-
-    ifc_fn static data* creator() {
-        return new data;
-    }
-
-    ifc_fn void set_a(int b) {
-        _b = b;
-    }
-
-    ifc_fn void set_b(const coid::token& a, ifc_out int* b) {
-        _a = a;
-        *b = _b;
-    }
-
-    int _b;
-    coid::charstr _a;
-};
-
 
 } // namespace ab
 } // namespace cd

@@ -6,7 +6,6 @@
 #include "dir.h"
 #include "intergen/ifc.h"
 
-#include <cstdio>
 
 COID_NAMESPACE_BEGIN
 
@@ -21,6 +20,8 @@ struct entry
     token hash;                         //< hash text value, or "wrapper", "maker", "creator", "client"
     token modulepath;
     uints handle = 0;
+
+    const meta::class_interface* ifc_meta = 0;
 
     void* creator_ptr = 0;
     uint hashvalue = 0;
@@ -72,8 +73,9 @@ public:
         @param ifcname in one of the following forms:
             [ns1[::ns2[...]]]::classname@wrapper[.scriptname]               wrap existing interface object
             [ns1[::ns2[...]]]::classname@maker[.scriptname]                 create script interface object from host
+            [ns1[::ns2[...]]]::classname@dcmaker[.scriptname]               create script interface object from host
             [ns1[::ns2[...]]]::classname@unload                             unload registered client
-            [ns1[::ns2[...]]]::classname@meta                               register meta types
+            [ns1[::ns2[...]]]::classname@meta                               register interface meta info
             [ns1[::ns2[...]]]::classname.creatorname@hashvalue              c++ versioned creator
             [ns1[::ns2[...]]]::classname.creatorname@hashvalue.ifc          c++ versioned creator direct ifc creator
             [ns1[::ns2[...]]]::classname.creatorname@creator.scriptname     c++ creator of JS interface object
@@ -84,7 +86,8 @@ public:
     **/
     virtual bool register_interface_creator(
         const coid::token& ifcname,
-        void* creator_ptr)
+        void* creator_ptr,
+        const meta::class_interface* ifcmeta)
     {
         //create string in current module
         charstr tmp = ifcname;
@@ -127,6 +130,7 @@ public:
         else {
             entry* en = _hash.insert_value_slot(key);
             if (en) {
+                en->ifc_meta = ifcmeta;
                 en->creator_ptr = creator_ptr;
                 en->ifcname.takeover(tmp);
                 en->ns = ns;
@@ -406,6 +410,14 @@ public:
         return _fn_acc ? _fn_acc(rpath) : true;
     }
 
+    virtual void* get_interface_dcmaker(const token& name, const token& script) const
+    {
+        zstring str = name;
+        str.get_str() << "@dcmaker" << '.' << script;
+
+        return (void*)find_wrapper(str);
+    }
+
     bool notify_module_unload(uints handle, binstring* bstr, dynarray<interface_register::unload_entry>& ens)
     {
         GUARDTHIS(_mx);
@@ -575,6 +587,15 @@ void* interface_register::get_interface_maker(const token& name, const token& sc
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+void* interface_register::get_interface_dcmaker(const token& name, const token& script)
+{
+    //interface name:
+    // [ns1::[ns2:: ...]]::class
+    interface_register_impl& reg = interface_register_impl::get();
+    return reg.get_interface_dcmaker(name, script);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 interface_register::client_fn interface_register::get_interface_client(const token& client, const token& iface, uint hash, const token& module)
 {
     //interface name:
@@ -627,7 +648,37 @@ bool interface_register::notify_module_unload(uints handle, binstring* bstr, dyn
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool interface_register::register_interface_creator(const token& ifcname, void* creator_ptr)
+bool interface_register::register_interface(const meta::class_interface& ifcmeta, const void* func)
+{
+    interface_register_impl& reg = interface_register_impl::get();
+
+    if (!reg.check_version(intergen_interface::VERSION)) {
+        if (func) {
+            ref<logmsg> msg = canlog(coid::log::level::error, "ifcreg"_T, 0, coid::log::target::primary_log);
+            if (msg) {
+                charstr modpath = directory::get_module_path(func);
+
+                msg->str() << "declined interface registration for " << ifcmeta.nsname
+                    << " (" << token(modpath).cut_right_group_back("/\\")
+                    << "), mismatched intergen version (v" << intergen_interface::VERSION << ')';
+            }
+        }
+        return false;
+    }
+
+    charstr tmp = ifcmeta.nsname;
+    tmp << "@meta*";
+
+    uints hmod = directory::get_module_path(tmp, true, func);
+
+    directory::compact_path(tmp, '/');
+    tmp << ':' << hmod;
+
+    return reg.register_interface_creator(tmp, const_cast<void*>(func), &ifcmeta);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+bool interface_register::register_interface_creator(const token& ifcname, void* creator_ptr, const meta::class_interface* ifcmeta)
 {
     interface_register_impl& reg = interface_register_impl::get();
 
@@ -647,24 +698,13 @@ bool interface_register::register_interface_creator(const token& ifcname, void* 
 
     charstr tmp = ifcname;
     tmp << '*';
-    uint offs = tmp.len();
 
-    uints hmod = directory::get_module_path(tmp, true);
+    uints hmod = directory::get_module_path(tmp, true, creator_ptr);
 
     directory::compact_path(tmp, '/');
-
-    /*
-    //keep only the file name
-    token path = token(tmp.ptr()+offs, tmp.ptre());
-    uint plen = path.len();
-    path.cut_left_group_back("\\/"_T);
-    tmp.del(offs, plen - path.len());
-    */
-
-
     tmp << ':' << hmod;
 
-    return reg.register_interface_creator(tmp, creator_ptr);
+    return reg.register_interface_creator(tmp, creator_ptr, ifcmeta);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
