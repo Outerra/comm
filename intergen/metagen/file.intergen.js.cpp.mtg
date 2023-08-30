@@ -1074,7 +1074,7 @@ $-[/method]$
 
 private:
 
-    cref<$name$> ifc;
+    cref<::$..nsx$$..class$> ifc;
 };
 
 $-[method !static !destroy !internal !operator]$
@@ -1099,7 +1099,7 @@ void $..name$_js_dispatcher::v8_$name$$@order$(const v8::ARGUMENTS& args)
         return (void)args.GetReturnValue().Set(v8::Undefined(iso));
 
     $..name$_js_dispatcher* disp_ = static_cast<$..name$_js_dispatcher*>(v8::Handle<v8::External>::Cast(intobj__)->Value());
-    $..name$* R_ = disp_->ifc.ready();
+    ::$....nsx$$....class$* R_ = disp_->ifc.ready();
 
     if (!R_) {
         coid::charstr tmp = "Null interface object in ";
@@ -1143,7 +1143,7 @@ $[args ?outarg !inarg]-$
         $basetype$ $name$;
 $[/args]-$
 
-        $(if !return.type="void")$$return.type$ _rval_ = $(/if)$R_->$name$($[args rest=", "]$ $-(if ?ptr ?outarg)$&$-(elif ?ptr ?defval.empty !specptr)$&$(/if)$ $-(if ?nojs)$$defval$$(elif)$$name$$(/if)$$[/args]$);
+        $(if !return.type="void")$$return.type$ _rval_ = $(/if)$R_->$intname$($[args rest=", "]$ $-(if ?ptr ?outarg)$&$-(elif ?ptr ?defval.empty !specptr)$&$(/if)$ $-(if ?nojs)$$defval$$(elif)$$name$$(/if)$$[/args]$);
 
         //stream out
 $-(if !return.type="void")$
@@ -1223,7 +1223,7 @@ void $name$_js_dispatcher::_getter(v8::Local<v8::Name> property, const v8::ACCES
         return (void)args.GetReturnValue().Set(v8::Undefined(iso));
 
     $..name$_js_dispatcher* disp_ = static_cast<$..name$_js_dispatcher*>(v8::Handle<v8::External>::Cast(intobj__)->Value());
-    $..name$* R_ = disp_->ifc.ready();
+    ::$....nsx$$....class$* R_ = disp_->ifc.ready();
 
     if (!R_) {
         coid::charstr tmp = "Null interface object in ";
@@ -1266,7 +1266,7 @@ void $name$_js_dispatcher::_setter(v8::Local<v8::Name> property, v8::Local<v8::V
         return (void)args.GetReturnValue().Set(v8::Undefined(iso));
 
     $..name$_js_dispatcher* disp_ = static_cast<$..name$_js_dispatcher*>(v8::Handle<v8::External>::Cast(intobj__)->Value());
-    $..name$* R_ = disp_->ifc.ready();
+    ::$....nsx$$....class$* R_ = disp_->ifc.ready();
 
     if (!R_) {
         coid::charstr tmp = "Null interface object in ";

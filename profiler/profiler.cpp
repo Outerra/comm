@@ -44,7 +44,7 @@
 namespace profiler
 {
 
-auto& g_backend = PROCWIDE_SINGLETON(backend*);
+backend* g_backend = PROCWIDE_SINGLETON(backend*);
 
 uint64 now()
 {
