@@ -381,7 +381,7 @@ class data_manager
                 return &data[gid];  //not uninitialized but we can't call destructor
             }
             T* p = data.add_uninit(gid + 1 - n);
-            return p - 1;
+            return data.ptr() + gid;
         }
         void remove(uint gid) override final {
             DASSERT(0);
