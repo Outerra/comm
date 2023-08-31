@@ -79,13 +79,22 @@ struct arg
 
     void (*fn_metastream)(metastream&, void*);
 
+    /// @brief Explicit usage of 'enum', 'struct' or 'class' in argument declaration
+    enum class ex_type : uint8 {
+        unspecified,
+        enuma,
+        structa,
+        classa
+    };
+
+    ex_type extype = ex_type::unspecified;
+
     bool bspecptr       = false;        //< special type where pointer is not separated (e.g const char*)
     bool bptr           = false;        //< true if the type is a pointer
     bool bref           = false;        //< true if the type is a reference
     bool bxref          = false;        //< true if the type is xvalue reference
     bool biref          = false;
     bool bconst         = false;        //< true if the type had const qualifier
-    bool benum          = false;
     bool binarg         = true;         //< input type argument
     bool boutarg        = false;        //< output type argument
     bool bvolatile      = false;

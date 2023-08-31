@@ -16,6 +16,8 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
     if (!ret.parse(lex, false))
         throw lex.exc();
 
+    ret.name = "return";
+
     if (!bstatic && ret.biref)
         ret.add_unique(irefargs);
 

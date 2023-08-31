@@ -56,7 +56,7 @@ public:
 
 private:
 
-    cref<component_ifc> ifc;
+    cref<::component> ifc;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -80,7 +80,7 @@ void component_ifc_js_dispatcher::v8_set_a0(const v8::ARGUMENTS& args)
         return (void)args.GetReturnValue().Set(v8::Undefined(iso));
 
     component_ifc_js_dispatcher* disp_ = static_cast<component_ifc_js_dispatcher*>(v8::Handle<v8::External>::Cast(intobj__)->Value());
-    component_ifc* R_ = disp_->ifc.ready();
+    ::component* R_ = disp_->ifc.ready();
 
     if (!R_) {
         coid::charstr tmp = "Null interface object in ";
@@ -133,7 +133,7 @@ void component_ifc_js_dispatcher::v8_set_b1(const v8::ARGUMENTS& args)
         return (void)args.GetReturnValue().Set(v8::Undefined(iso));
 
     component_ifc_js_dispatcher* disp_ = static_cast<component_ifc_js_dispatcher*>(v8::Handle<v8::External>::Cast(intobj__)->Value());
-    component_ifc* R_ = disp_->ifc.ready();
+    ::component* R_ = disp_->ifc.ready();
 
     if (!R_) {
         coid::charstr tmp = "Null interface object in ";

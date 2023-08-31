@@ -8,6 +8,7 @@
 #include "../binstream/binstream.h"
 #include "../binstream/stdstream.h"
 #include "../metastream/metastream.h"
+#include "../interface.h"
 
 using namespace coid;
 
@@ -108,7 +109,7 @@ struct Method
 
         friend metastream& operator || (metastream& m, Arg& p)
         {
-            return m.compound("Arg", [&]()
+            return m.compound_type(p, [&]()
             {
                 m.member("type", p.type);
                 m.member("name", p.name);
@@ -147,7 +148,7 @@ struct Method
 
     friend metastream& operator || (metastream& m, Method& p)
     {
-        return m.compound("Method", [&]()
+        return m.compound_type(p, [&]()
         {
             m.member("retexpr", p.retexpr);
             m.member("retparm", p.retparm);
@@ -191,14 +192,7 @@ struct MethodIG
         bool biref = false;
         bool bconst = false;            //< true if the type had const qualifier
 
-        enum class Type : uint8 {
-            unspecified,
-            enuma,
-            structa,
-            classa
-        };
-
-        enum Type struct_type = Type::unspecified;
+        meta::arg::ex_type struct_type = meta::arg::ex_type::unspecified;
 
         bool binarg = true;             //< input type argument
         bool boutarg = false;           //< output type argument
@@ -209,8 +203,7 @@ struct MethodIG
 
 
         bool operator == (const Arg& a) const {
-            return fulltype == a.fulltype
-                && arsize == a.arsize;
+            return fulltype == a.fulltype && arsize == a.arsize;
         }
 
         bool parse(iglexer& lex, bool argname);
@@ -229,7 +222,7 @@ struct MethodIG
 
         friend metastream& operator || (metastream& m, Arg& p)
         {
-            return m.compound("MethodIG::Arg", [&]()
+            return m.compound_type(p, [&]()
             {
                 m.member("type", p.type);
                 m.member("basetype", p.basetype);
@@ -338,7 +331,7 @@ struct MethodIG
 
     friend metastream& operator || (metastream& m, MethodIG& p)
     {
-        return m.compound("MethodIG", [&]()
+        return m.compound_type(p, [&]()
         {
             m.member("return", p.ret);
             m.member("name", p.name);
@@ -493,7 +486,7 @@ struct Interface
 
     friend metastream& operator || (metastream& m, Interface& p)
     {
-        return m.compound("Interface", [&]()
+        return m.compound_type(p, [&]()
         {
             m.member("ns", p.nss);
             m.member("name", p.name);
@@ -565,7 +558,7 @@ struct Class
 
     friend metastream& operator || (metastream& m, Class& p)
     {
-        return m.compound("Class", [&]()
+        return m.compound_type(p, [&]()
         {
             m.member("classorstruct", p.classorstruct);
             m.member("class", p.classname);

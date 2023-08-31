@@ -51,7 +51,7 @@ bool MethodIG::Arg::parse(iglexer& lex, bool argname)
     }
 
     bconst = lex.matches("const");
-    struct_type = (Type)lex.matches_either("enum", "struct", "class");
+    struct_type = (meta::arg::ex_type)lex.matches_either("enum", "struct", "class");
 
     bool bunsigned = lex.matches("unsigned");
 

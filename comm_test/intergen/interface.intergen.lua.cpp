@@ -438,13 +438,13 @@ __declspec(noinline) int client_lua_dispatcher::lua_get2_exc(lua_State * L)
         lua_createtable(L,0,_res_count);
         static_assert(coid::has_metastream_operator<int>::value, "missing metastream operator for 'int'");
         to_lua(_rval_);
-        lua_setfield(L, -2, "_ret");
+            lua_setfield(L, -2, "_ret");
 
         static_assert(coid::has_metastream_operator<coid::charstr>::value, "missing metastream operator for 'coid::charstr'");
         to_lua(par);
         lua_setfield(L, -2, "par");
 
-    
+  
         return 1;
     }
     catch (const coid::exception& e) {
@@ -1716,9 +1716,7 @@ __declspec(noinline) int client2_lua_dispatcher::lua_get1_exc(lua_State * L)
 //stream out
         THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
-        static_assert(coid::has_metastream_operator<component>::value, "missing metastream operator for 'component'");
-                if (_rval_)
-            to_lua(*_rval_);
+        //TODO data interfaces
 
         return 1;
     }
