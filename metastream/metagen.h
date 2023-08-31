@@ -287,7 +287,7 @@ class metagen //: public binstream
             if (md->is_primitive())
                 size = md->get_size();
             else
-                prepare();
+                size = md->type_size;
             return 1;
         }
 
@@ -308,7 +308,6 @@ class metagen //: public binstream
         void prepare()
         {
             DASSERT(!var->stream_desc()->is_primitive());
-
             size = *(const uints*)data;
             data += sizeof(uints);
         }
@@ -512,7 +511,8 @@ class metagen //: public binstream
     ///
     struct ParsedTag
     {
-        token varname;
+        token varname;                  //< var name (or tag name)
+        dynarray<token> catnames;       //< additional var names concatenated with +
         dynarray<Attribute> attr;
 
         uint16 trailing : 1;
@@ -535,11 +535,12 @@ class metagen //: public binstream
                     && ((trailing && varname == "if") || (!trailing && varname == "elif"));
             }
 
-            return brace == p.brace && varname == p.varname;
+            return brace == p.brace && varname == p.varname && catnames == p.catnames;
         }
 
         void set_empty() {
             varname.set_empty();
+            catnames.reset();
             trailing = 0;
             eat_left = eat_right = 0;
             brace = 0;
@@ -571,6 +572,8 @@ class metagen //: public binstream
             else
                 brace = tok.val[0];
 
+            catnames.reset();
+
             if (brace == '#') {
                 lex.next_as_string(lex.COMMTAG, true);
             }
@@ -587,6 +590,10 @@ class metagen //: public binstream
                     throw lex.exc();
                 }
                 varname = tok.val;
+
+                while (lex.matches('+')) {
+                    *catnames.add() = lex.match(lex.IDENT);
+                }
 
                 const char* p = varname.ptr();
                 const char* pe = varname.ptre();
@@ -1035,33 +1042,46 @@ class metagen //: public binstream
         void swap(TagSequence& other) { sequence.swap(other.sequence); }
     };
 
+    ///Conditional clause
+    struct ConditionalAttributes
+    {
+        dynarray<Attribute> attr;
+        bool is_either = false;         //< either of conditions may be true
+
+        bool eval(metagen& mg, const Varx& var) const
+        {
+            const Attribute* p = attr.ptr();
+            const Attribute* pe = attr.ptre();
+
+            while (p < pe) {
+                const Attribute* next = p + 1;
+                bool succ = p->eval(mg, var, next, pe);
+                if (succ == is_either)
+                    break;
+                p = next;
+            }
+
+            if (is_either == (p >= pe))
+                return false;
+
+            return true;
+        }
+    };
+
     ///Conditional tag
     struct TagCondition : Tag
     {
-        ///Conditional clause
-        struct Clause {
-            dynarray<Attribute> attr;
+        struct Clause : ConditionalAttributes
+        {
             TagSequence rng;
-            bool is_either = false;         //< either of conditions must be true
 
             bool eval(metagen& mg, const Varx& var) const
             {
-                const Attribute* p = attr.ptr();
-                const Attribute* pe = attr.ptre();
-
-                while (p < pe) {
-                    const Attribute* next = p + 1;
-                    bool succ = p->eval(mg, var, next, pe);
-                    if (succ == is_either)
-                        break;
-                    p = next;
+                if (ConditionalAttributes::eval(mg, var)) {
+                    rng.process(mg, var);
+                    return true;
                 }
-
-                if (is_either == (p >= pe))
-                    return false;
-
-                rng.process(mg, var);
-                return true;
+                return false;
             }
         };
 
@@ -1116,7 +1136,7 @@ class metagen //: public binstream
         TagSequence atr_suffix;
         TagSequence atr_empty;
 
-        dynarray<Attribute> cond;
+        ConditionalAttributes cond;
 
         struct cat {
             token varname;
@@ -1124,22 +1144,9 @@ class metagen //: public binstream
         };
         dynarray<cat> concat;
 
-        bool eval_cond(metagen& mg, const Varx& var) const
-        {
-            const Attribute* p = cond.ptr();
-            const Attribute* pe = cond.ptre();
-            while (p < pe) {
-                const Attribute* next = p + 1;
-                if (!p->eval(mg, var, next, pe))
-                    return false;
-                p = next;
-            }
-            return true;
-        }
-
         virtual void process_content(metagen& mg, const Varx& var) const override
         {
-            bool evalcond = cond.size() > 0;
+            bool evalcond = cond.attr.size() > 0;
             int index = 0, order = 0;
             token attrib;
             Varx v;
@@ -1156,6 +1163,15 @@ class metagen //: public binstream
             ParsedTag tmp;
             tmp.attr.swap(hdr.attr);
             tmp.eat_right = hdr.eat_right;
+
+            cond.is_either = hdr.is_either;
+
+            for (token cat : hdr.catnames) {
+                int depth = 0;
+                while (cat.consume_char('.')) depth++;
+
+                *concat.add() = {cat, depth};
+            }
 
             do {
                 TagSequence& rng = bind_attributes(lex, tmp.attr);
@@ -1183,14 +1199,21 @@ class metagen //: public binstream
 
             int i = index, fi = order;
 
-            bool evalcond = cond.size() > 0;
+            bool evalcond = cond.attr.size() > 0;
             VarxElement ve;
 
             if (!v.var->stream_desc()->is_array())
             {
-                //treat as a single-element array
-                ve.single(v);
-                if (evalcond && eval_cond(mg, v))
+                //treat as a single-element array, also emulate depth
+                Var dummy;
+                dummy.desc = v.var->desc;
+                Varx ar;
+                ar.var = &dummy;
+                ar.varparent = &v;
+                ar.data = v.data;
+
+                ve.single(ar);
+                if (!evalcond || cond.eval(mg, ar))
                 {
                     if (fi == 0)
                         atr_first.process(mg, ve);
@@ -1206,14 +1229,9 @@ class metagen //: public binstream
             else
             {
                 uints n = ve.first(v);
-                if (!n) {
-                    atr_empty.process(mg, ve);
-                    return;
-                }
-
                 for (; n > 0; --n, ve.next(), ++i)
                 {
-                    if (evalcond && !eval_cond(mg, ve))
+                    if (evalcond && !cond.eval(mg, ve))
                         continue;
 
                     if (fi == 0)
@@ -1266,7 +1284,7 @@ class metagen //: public binstream
             for (; p < pe; ++p)
             {
                 if (p->is_condition()) {
-                    cond.add()->swap(*p);
+                    cond.attr.add()->swap(*p);
                     continue;
                 }
 
@@ -1385,7 +1403,7 @@ public:
         meta.cache_in<T>();
         meta.stream_acknowledge();
 
-        const uchar* cachedata;
+        const uchar* cachedata = 0;
         const MetaDesc::Var& root = meta.get_root_var(cachedata);
 
         generate(bot, root, cachedata);

@@ -225,7 +225,6 @@ struct MetaDesc
     }
 
     operator const token&() const       { return type_name; }
-    uints size() const                  { return children.size(); }
 
 
     MetaDesc() {}
