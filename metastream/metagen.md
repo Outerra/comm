@@ -163,15 +163,27 @@ class Bar
 };
 ```
 
+### Concatenating arrays
+
+It's possible to concatenate multiple arrays but also non-array members into a single array block that will be evaluated sequentially.
+
+```
+$[return+args !type="void" rest=", "]-$ $type$ $name$ $-[/return+args]$
+```
+If `return` is a non-array variable, it will be treated as a 1-element array followed by the content of the `args` variable, which can again be either an array or a non-array member of the current scope.
+Concatenated variables do not have to be of the same underlying type.
+
+
 ### Special array variables
 
 Special variables that can be used within array scope:
 | variable | meaning |
 |----------|---------|
-| `$@index$` | return current element index (0 based) in array |
-| `$@order$` | return the position of the current element in a filtered array (see array tags with conditions) |
-| `$@value$` | return array element value (arrays of primitive types) |
-| `$@size$`<br>`$@size >cond$` | return the array size<br>return the filtered array size |
+| `$@index$` | (on array element) return current element index (0 based) in array |
+| `$@order$` | (on array element) return the position of the current element in a filtered array (see array tags with conditions) |
+| `$@value$` | (on array element) return array element value (arrays of primitive types) |
+| `$@size$`<br>`$@size conditions$` | (on array) return the array size<br>return the filtered array size |
+| `$@first_index conditions$` | (on array) return the index of the first element that satisfies given condition |
 
 For simple processing of arrays of strings it's also possible to use the simple tag.
 Let's say stuff is an array of strings, then $stuff$ will simply output a string concatenated from the individual elements. Additionally, the first/rest/after attributes can be used with the simple tag as well:
@@ -182,6 +194,8 @@ Let's say stuff is an array of strings, then $stuff$ will simply output a string
 | first     | `$stuff first="-"$` | prefix the first element by given string (only for non-empty arrays) |
 | rest      | `$stuff rest="."$` | infix separator, a string to put before all elements but the first one |
 | after     | `$stuff after=";"$` | suffix after the last element, if the array is not empty |
+| prefix    | `$stuff prefix="&"$` | prefix written directly before each element |
+| suffix    | `$stuff suffix="::"$` | suffix written directly after each element |
 | empty     | `$stuff empty="nullptr"` | text generated when the array is empty |
 
 The attributes can be freely combined.
@@ -225,9 +239,11 @@ $(elif)$
 $(/if)$
 ```
 
-If the conditional variable is an array, normally the if clause passes if the array is non-empty. It's also possible to query if array with elements filtered by a condition would be non-zero too:
+If the conditional variable is an array, normally the `if` clause passes if the array is non-empty. It's also possible to query if an array with elements filtered by some condition would be non-zero too:
 ```
 $(if somearray ?prop)$
+```
+This condition would pass if there's at least one element whose `prop` property is true (or convertible to true).
 
 ### Multiple conditions
 
@@ -239,6 +255,12 @@ To specify the logical operator to use, insert `|` or `&` after `if`:
 ```
 $(if | ?value="1" ?value="2")$ ... $(/if)$
 $(if & ?type="int" ?value.nonzero)$ ... $(/if)$
+```
+
+Multiple conditions can be also specified for some nested member instead of the current one, e.g.:
+```
+$(if something | ?value="1" ?value="2")$ ... $(/if)$
+$(if something & ?type="int" ?value.nonzero)$ ... $(/if)$
 ```
 
 ### Conditions in array evaluation
