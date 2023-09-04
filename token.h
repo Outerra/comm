@@ -212,7 +212,13 @@ struct token
         return tok;
     }
 
-    constexpr token(const token& src) : _ptr(src._ptr), _pte(src._pte) {}
+    constexpr token(const token& src) : _ptr(src._ptr), _pte(src._pte)
+    {}
+
+    constexpr token(token&& src) {
+        _ptr = src._ptr;
+        _pte = src._pte;
+    }
 
     /// create token from a subset of another token
     /// @param src source token

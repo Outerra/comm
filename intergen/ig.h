@@ -173,10 +173,10 @@ struct MethodIG
     struct Arg
     {
         charstr type;                   //< parameter type (stripped of const qualifier)
-        token basetype;                 //< base type (stripped of the last ptr/ref)
-        token barenstype;               //< full bare type (without iref)
-        token barens;                   //< namespace part of full bare type
-        token baretype;                 //< type part of full bare type
+        charstr basetype;               //< base type (stripped of the last ptr/ref)
+        charstr barenstype;             //< full bare type (without iref)
+        charstr barens;                 //< namespace part of full bare type
+        charstr baretype;               //< type part of full bare type
         charstr name;                   //< parameter name
         charstr arsize;                 //< size expression if the parameter is an array, including [ ]
         charstr fnargs;                 //< argument list of a function-type argument
@@ -208,13 +208,13 @@ struct MethodIG
 
         bool parse(iglexer& lex, bool argname);
 
-        void fix_copy(const Arg& src)
-        {
-            basetype.rebase(src.type, type);
-            barenstype.rebase(src.type, type);
-            barens.rebase(src.type, type);
-            baretype.rebase(src.type, type);
-        }
+        //void fix_copy(const Arg& src)
+        //{
+        //    basetype.rebase(src.type, type);
+        //    barenstype.rebase(src.type, type);
+        //    barens.rebase(src.type, type);
+        //    baretype.rebase(src.type, type);
+        //}
 
         static charstr& match_type(iglexer& lex, charstr& dst);
 
@@ -294,13 +294,13 @@ struct MethodIG
     dynarray<charstr> docs;             //< doc paragraphs
 
 
-    void fix_copy(const MethodIG& src)
-    {
-        for (int i = 0; Arg& a : args)
-            a.fix_copy(src.args[i++]);
-
-        ret.fix_copy(src.ret);
-    }
+    //void fix_copy(const MethodIG& src)
+    //{
+    //    for (int i = 0; Arg& a : args)
+    //        a.fix_copy(src.args[i++]);
+    //
+    //    ret.fix_copy(src.ret);
+    //}
 
     bool parse(iglexer& lex, const charstr& host, const charstr& ns, const charstr& nsifc, dynarray<Arg>& irefargs, bool isevent);
 

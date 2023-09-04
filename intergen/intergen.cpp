@@ -721,7 +721,7 @@ int File::parse(token path, const char* ref_file, int ref_line)
                     }
                     else {
                         base_events[bi] = be;
-                        base_events[bi].fix_copy(be);
+                        //base_events[bi].fix_copy(be);
                         base_events[bi].binherit = true;
                     }
                 }
@@ -756,7 +756,7 @@ int File::parse(token path, const char* ref_file, int ref_line)
                     }
                     else {
                         base_methods[bi] = bm;
-                        base_methods[bi].fix_copy(bm);
+                        //base_methods[bi].fix_copy(bm);
                         base_methods[bi].binherit = true;
                     }
                 }

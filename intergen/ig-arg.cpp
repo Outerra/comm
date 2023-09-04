@@ -96,31 +96,31 @@ bool MethodIG::Arg::parse(iglexer& lex, bool argname)
         lex.clear_err();
     }
 
-    basetype = type;
+    token tbasetype = type;
     if (isPR)
-        basetype.shift_end(isPR == 3 ? -2 : -1);
+        tbasetype.shift_end(isPR == 3 ? -2 : -1);
 
-    if (basetype.begins_with("const ")) basetype.shift_start(6);
-    else if (basetype.ends_with(" const")) basetype.shift_end(-6);
+    if (tbasetype.begins_with("const ")) tbasetype.shift_start(6);
+    else if (tbasetype.ends_with(" const")) tbasetype.shift_end(-6);
 
     bspecptr = false;
 
     //special handling for strings and tokens
     if (type == "const char*") {
-        basetype = type;
+        tbasetype = type;
         bspecptr = true;
     }
     /*if(type == "const char*") {
-        basetype = "coid::charstr";
+        tbasetype = "coid::charstr";
         base2arg = ".c_str()";
     }
-    else if(basetype == "token" || basetype == "coid::token") {
-        basetype = "coid::charstr";
+    else if(tbasetype == "token" || tbasetype == "coid::token") {
+        tbasetype = "coid::charstr";
     }*/
 
-    biref = basetype.begins_with("iref<");
+    biref = tbasetype.begins_with("iref<");
     if (biref) {
-        token bs = basetype;
+        token bs = tbasetype;
         bs.shift_start(5);
         bs.cut_right_back('>');
 
@@ -133,8 +133,8 @@ bool MethodIG::Arg::parse(iglexer& lex, bool argname)
         while (bs);
     }
 
-    if (!argname)
-        return lex.no_err();
+    //if (!argname)
+    //    return lex.no_err();
 
     if (lex.matches('(')) {
         //a function argument [type] (*name)(arg1[,arg2]*)
@@ -153,14 +153,14 @@ bool MethodIG::Arg::parse(iglexer& lex, bool argname)
         fnargs = lex.match_block(lex.ROUND, true);
         bfnarg = true;
     }
-    else
+    else if (argname)
         lex.match(lex.IDENT, name, "expecting argument name");
 
     //match array
-    if (lex.matches('[')) {
+    if (argname && lex.matches('[')) {
         if (bconst) {
             type.ins(0, "const ");
-            basetype = token(type.ptr() + 6, type.ptre());
+            tbasetype = token(type.ptr() + 6, type.ptre());
             bconst = 0;
         }
         arsize = '[';
@@ -168,21 +168,28 @@ bool MethodIG::Arg::parse(iglexer& lex, bool argname)
         arsize << ']';
     }
 
+    basetype = tbasetype;
+
     //bare type
-    barenstype = basetype;
+    token tbarenstype = tbasetype;
 
     if (biref)
-        barenstype.set(barenstype.ptr() + 5, barenstype.ptre() - 1);
+        tbarenstype.set(tbarenstype.ptr() + 5, tbarenstype.ptre() - 1);
 
-    barens = barenstype;
-    barens.cut_right('<', token::cut_trait_remove_sep_default_empty());  //remove template args
-    baretype = barens.cut_right_back("::", false);
-    baretype._pte = barenstype._pte; //restore template args
+    barenstype = tbarenstype;
+
+    token tbarens = tbarenstype;
+    tbarens.cut_right('<', token::cut_trait_remove_sep_default_empty());  //remove template args
+    token tbaretype = tbarens.cut_right_back("::", false);
+    barens = tbarens;
+
+    tbaretype._pte = tbarenstype._pte; //restore template args
+    baretype = tbaretype;
 
     bnoscript = false;
 
     //match default value
-    if (lex.matches('=')) {
+    if (argname && lex.matches('=')) {
         //match everything up to a comma or a closing parenthesis
         bool was_square = lex.enable(lex.SQUARE, true);
         bool was_round = lex.enable(lex.ROUND, true);
