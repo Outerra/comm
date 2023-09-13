@@ -59,7 +59,7 @@ public:
     template <class T>
     T*& component(int* pid = 0)
     {
-        type_sequencer& sq = tsq();
+        type_sequencer<OwnT>& sq = tsq();
         int id = sq.id<T>();
         if (pid)
             *pid = id;
@@ -72,7 +72,7 @@ public:
     template <class T>
     const T* component(int* pid = 0) const
     {
-        type_sequencer& sq = tsq();
+        type_sequencer<OwnT>& sq = tsq();
         int id = sq.id<T>();
         if (pid)
             *pid = id;
@@ -83,7 +83,7 @@ public:
     /// @return component id (sequential by order of registration)
     template <class T>
     int component_id() {
-        type_sequencer& sq = tsq();
+        type_sequencer<OwnT>& sq = tsq();
         return sq.id<T>();
     }
 
@@ -93,8 +93,8 @@ public:
 
 private:
 
-    static type_sequencer& tsq() {
-        LOCAL_PROCWIDE_SINGLETON_DEF(type_sequencer) _tsq = new type_sequencer;
+    static type_sequencer<OwnT>& tsq() {
+        LOCAL_PROCWIDE_SINGLETON_DEF(type_sequencer<OwnT>) _tsq = new type_sequencer<OwnT>;
         return *_tsq;
     }
 
@@ -123,7 +123,7 @@ class data_manager
         uint32 id;
     };
 
-    struct sequencer : type_sequencer
+    struct sequencer : type_sequencer<OwnT>
     {
         static constexpr int BITMASK_BITS = 8 * sizeof(uints);
 

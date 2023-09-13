@@ -49,6 +49,7 @@ COID_NAMESPACE_BEGIN
 /// The assigned ID is cached in a static variable of a template specialization for the type, so repeated
 /// queries are fast. First time initialization and first time request from a different dll module uses
 /// a mutex to ensure a correct registration
+template<typename OWNER>
 class type_sequencer
 {
     template <class T>

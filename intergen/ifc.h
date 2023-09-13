@@ -427,7 +427,7 @@ class ifcman
 public:
 
     struct data_ifc_descriptor {
-        const type_sequencer::entry* _type = 0;
+        const type_sequencer<ifcman>::entry* _type = 0;
         intergen_data_interface::icr_t* _cr_table = 0;
         intergen_data_interface::ifn_t* _fn_table = 0;
 
@@ -445,7 +445,7 @@ public:
     template <class T>
     static intergen_data_interface::ifn_t* set_type_ifc(uint64 hash, intergen_data_interface::icr_t* cr_table, intergen_data_interface::ifn_t* fn_table) {
         ifcman& m = get();
-        m._seq.assign<T>([&](int id, const type_sequencer::entry& en) {
+        m._seq.assign<T>([&](int id, const type_sequencer<ifcman>::entry& en) {
             data_ifc_descriptor& dc = m._clients.get_or_add(id);
             dc._fn_table = fn_table;
             dc._cr_table = cr_table;
@@ -466,7 +466,7 @@ private:
         _clients.reserve_virtual(8192);
     }
 
-    type_sequencer _seq;
+    type_sequencer<ifcman> _seq;
     dynarray32<data_ifc_descriptor> _clients;
 };
 
