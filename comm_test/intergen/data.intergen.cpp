@@ -21,6 +21,41 @@ using namespace coid;
 ///
 class component_ifc_data_dispatcher : public component_ifc
 {
+    friend class component_ifc;
+    using enum meta::method::flg;
+    using enum meta::class_interface::flg;
+
+    inline static const meta::arg creator_0args[] = {
+       { "return", "iref<component>", "component", "", "component", "", "", "", "", nullptr, (meta::arg::ex_type)0, false, true, false, false, false, false, true, false, false, false, false, "" },
+    };
+    inline static const meta::arg set_a_1args[] = {
+       { "b", "int", "int", "", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+    };
+    inline static const meta::arg set_b_2args[] = {
+       { "a", "const coid::token&", "coid::token", "coid", "token", "", "", "", "", &meta::stream_op<coid::token>::fn, (meta::arg::ex_type)0, false, false, true, false, false, false, true, false, false, false, false, "" },
+       { "b", "int*", "int", "", "int", "", "", "", "", nullptr, (meta::arg::ex_type)0, false, true, false, false, false, false, false, true, false, false, false, "" },
+    };
+    inline static const meta::method creators[] = {
+        { "creator", bstatic|bnoevbody, 0, 0, 0, nullptr },
+    };
+    inline static const meta::method methods[] = {
+        { "set_a", meta::method::flg(0), 1, 1, 0, set_a_1args },
+        { "set_b", bnoevbody, 2, 1, 1, set_b_2args },
+    };
+    inline static const meta::method* events = nullptr;
+    inline static const meta::class_interface ifc_meta = {
+        "component_ifc", // interface name
+        "component_ifc.h", // header file
+        "iref<component>", // storage
+        "", // base class name
+        889931507, //version
+        1, 2, 0, // num. creators/methods/events
+        creators, methods, events,
+        -1, 0, -1, -1,
+        bdataifc,
+        R"##()##",
+    };
+
 private:
 
     inline static ifn_t _fn_table[] = {
@@ -44,7 +79,7 @@ public:
 
     static void register_interfaces(bool on)
     {
-        coid::ifcman::set_type_ifc<component_ifc>(HASHID, _cr_table, _fn_table);
+        coid::ifcman::set_type_ifc<component_ifc>(HASHID, _cr_table, _fn_table, &ifc_meta);
     }
 };
 

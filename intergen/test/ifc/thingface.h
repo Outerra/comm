@@ -63,9 +63,11 @@ public:
     /// @param a some argument " test escaping
     int hallo( int a, const coid::token& b, ifc_out coid::charstr& c );
 
+    void xooo();
+
     void noargs();
 
-    ref<thing> noscript();
+    ref<test> noscript();
 
     coid::charstr fallo( bool b, const char* str );
 
@@ -102,7 +104,7 @@ public:
     // --- internal helpers ---
 
     ///Interface revision hash
-    static const int HASHID = 1542304383u;
+    static const int HASHID = 984017018u;
 
     ///Interface name (full ns::class string)
     static const coid::tokenhash& IFCNAME() {
@@ -121,7 +123,7 @@ public:
     }
 
     static const coid::token& intergen_default_creator_static(backend bck) {
-        static constexpr coid::token _dc("ifc1::ifc2::thingface.get@1542304383"_T);
+        static constexpr coid::token _dc("ifc1::ifc2::thingface.get@984017018"_T);
         static constexpr coid::token _djs("ifc1::ifc2::thingface@wrapper.js"_T);
         static constexpr coid::token _djsc("ifc1::ifc2::thingface@wrapper.jsc"_T);
         static constexpr coid::token _dlua("ifc1::ifc2::thingface@wrapper.lua"_T);
@@ -184,7 +186,7 @@ public:
         type.consume("struct ");
 
         coid::charstr tmp = "ifc1::ifc2::thingface"_T;
-        tmp << "@client-1542304383"_T << '.' << type;
+        tmp << "@client-984017018"_T << '.' << type;
 
         coid::interface_register::register_interface_creator(tmp, cc, nullptr);
         return 0;
@@ -223,14 +225,14 @@ inline iref<T> thingface::get(T* _subclass_)
     typedef iref<T> (*fn_creator)(thingface*);
 
     static fn_creator create = 0;
-    static constexpr coid::token ifckey = "ifc1::ifc2::thingface.get@1542304383"_T;
+    static constexpr coid::token ifckey = "ifc1::ifc2::thingface.get@984017018"_T;
 
     if (!create)
         create = reinterpret_cast<fn_creator>(
             coid::interface_register::get_interface_creator(ifckey));
 
     if (!create) {
-        log_mismatch("thingface"_T, "ifc1::ifc2::thingface.get"_T, "@1542304383"_T);
+        log_mismatch("thingface"_T, "ifc1::ifc2::thingface.get"_T, "@984017018"_T);
         return 0;
     }
 
@@ -241,32 +243,35 @@ inline iref<T> thingface::get(T* _subclass_)
 inline auto thingface::hallo( int a, const coid::token& b, ifc_out coid::charstr& c ) -> int
 { return VT_CALL(int,(int,const coid::token&,coid::charstr&),1)(a,b,c); }
 
-inline auto thingface::noargs() -> void
+inline auto thingface::xooo() -> void
 { return VT_CALL(void,(),2)(); }
 
-inline auto thingface::noscript() -> ref<thing>
-{ return VT_CALL(ref<thing>,(),3)(); }
+inline auto thingface::noargs() -> void
+{ return VT_CALL(void,(),3)(); }
+
+inline auto thingface::noscript() -> ref<test>
+{ return VT_CALL(ref<test>,(),4)(); }
 
 inline auto thingface::fallo( bool b, const char* str ) -> coid::charstr
-{ return VT_CALL(coid::charstr,(bool,const char*),4)(b,str); }
+{ return VT_CALL(coid::charstr,(bool,const char*),5)(b,str); }
 
 inline auto thingface::loo( bool a, int b ) -> void
-{ return VT_CALL(void,(bool,int),5)(a,b); }
+{ return VT_CALL(void,(bool,int),6)(a,b); }
 
 inline auto thingface::operator()( const char* key ) const -> double
-{ return VT_CALL(double,(const char*) const,6)(key); }
+{ return VT_CALL(double,(const char*) const,7)(key); }
 
 inline auto thingface::operator()( const char* key, double value ) -> void
-{ return VT_CALL(void,(const char*,double),7)(key,value); }
+{ return VT_CALL(void,(const char*,double),8)(key,value); }
 
 inline auto thingface::inout( ifc_inout test*& par ) -> void
-{ return VT_CALL(void,(test*&),8)(par); }
+{ return VT_CALL(void,(test*&),9)(par); }
 
 inline auto thingface::dataret() -> test*
-{ return VT_CALL(test*,(),9)(); }
+{ return VT_CALL(test*,(),10)(); }
 
 inline auto thingface::nested( const coid::dynarray<bt::base>& stuff ) -> void
-{ return VT_CALL(void,(const coid::dynarray<bt::base>&),10)(stuff); }
+{ return VT_CALL(void,(const coid::dynarray<bt::base>&),11)(stuff); }
 
 } //namespace
 } //namespace

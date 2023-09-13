@@ -418,6 +418,24 @@ public:
         return (void*)find_wrapper(str);
     }
 
+    virtual dynarray<const meta::class_interface*>& find_interface_meta_info(const regex& name, dynarray<const meta::class_interface*>& dst) const
+    {
+        GUARDTHIS(_mx);
+
+        auto i = _hash.begin();
+        auto ie = _hash.end();
+        for (; i != ie; ++i) {
+            if (!i->ifc_meta || i->hash != "meta"_T)
+                continue;
+
+            if (name.match(token(*i))) {
+                *dst.add() = i->ifc_meta;
+            }
+        }
+
+        return dst;
+    }
+
     bool notify_module_unload(uints handle, binstring* bstr, dynarray<interface_register::unload_entry>& ens)
     {
         GUARDTHIS(_mx);
@@ -637,6 +655,13 @@ dynarray<interface_register::creator>& interface_register::find_interface_creato
 
     interface_register_impl& reg = interface_register_impl::get();
     return reg.find_interface_creators(name, dst);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+dynarray<const meta::class_interface*>& interface_register::find_interface_meta_info(const regex& str, dynarray<const meta::class_interface*>& dst)
+{
+    interface_register_impl& reg = interface_register_impl::get();
+    return reg.find_interface_meta_info(str, dst);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

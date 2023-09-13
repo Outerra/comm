@@ -54,7 +54,7 @@ void compot()
     constexpr token name1 = token::type_name<transform>();
     constexpr token name2 = token::type_name<jozo<transform>>();
 
-    type_sequencer idr;
+    type_sequencer<void> idr;
 
     int id0 = idr.id<transform>();
     int id1 = idr.id<jozo<transform>>();

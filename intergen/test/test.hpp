@@ -85,9 +85,11 @@ public:
         return 0;
     }
 
+    ifc_fn void xooo() {}
+
     ifc_fn void noargs() {}
 
-    ifc_fnx(!) ref<thing> noscript();
+    ifc_fnx(!) ref<test> noscript();
 
     ifc_fn coid::charstr fallo(bool b, const char* str) { return str; }
 

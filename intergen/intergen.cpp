@@ -36,7 +36,7 @@ struct File
 
     friend metastream& operator || (metastream& m, File& p)
     {
-        return m.compound("File", [&]()
+        return m.compound_type(p, [&]()
         {
             int version = intergen_interface::VERSION;
             m.member("hdr", p.fnameext);          //< file name

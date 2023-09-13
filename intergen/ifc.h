@@ -426,12 +426,16 @@ class ifcman
 {
 public:
 
+    using ifn_t = intergen_data_interface::ifn_t;
+    using icr_t = intergen_data_interface::icr_t;
+
     struct data_ifc_descriptor {
         const type_sequencer<entman>::entry* _type = 0;
-        intergen_data_interface::icr_t* _cr_table = 0;
-        intergen_data_interface::ifn_t* _fn_table = 0;
+        icr_t* _cr_table = 0;
+        ifn_t* _fn_table = 0;
 
         uint64 _hash = 0;
+        const meta::class_interface* _meta = 0;
     };
 
 
@@ -443,7 +447,8 @@ public:
     }
 
     template <class T>
-    static intergen_data_interface::ifn_t* set_type_ifc(uint64 hash, intergen_data_interface::icr_t* cr_table, intergen_data_interface::ifn_t* fn_table) {
+    static intergen_data_interface::ifn_t* set_type_ifc(uint64 hash, icr_t* cr_table, ifn_t* fn_table, const meta::class_interface* meta)
+    {
         ifcman& m = get();
         m._seq.assign<T>([&](int id, const type_sequencer<entman>::entry& en) {
             data_ifc_descriptor& dc = m._clients.get_or_add(id);
@@ -451,6 +456,7 @@ public:
             dc._cr_table = cr_table;
             dc._type = &en;
             dc._hash = hash;
+            dc._meta = meta;
         });
         return fn_table;
     }

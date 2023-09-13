@@ -128,9 +128,9 @@ struct method
 
     flg flags = flg(0);                 //< interface flags
 
-    int nargs = 0;                      //< total number of arguments
-    int ninargs = 0;                    //< number of input arguments
-    int noutargs = 0;                   //< number of output arguments
+    uint nargs = 0;                     //< total number of arguments
+    uint ninargs = 0;                   //< number of input arguments
+    uint noutargs = 0;                  //< number of output arguments
 
     const arg* args = 0;                //< return value and arguments
 
@@ -267,6 +267,8 @@ public:
 
     ///Find interfaces containing given string
     static dynarray<creator>& find_interface_creators(const regex& str, dynarray<creator>& dst);
+
+    static dynarray<const meta::class_interface*>& find_interface_meta_info(const regex& str, dynarray<const meta::class_interface*>& dst);
 
     struct unload_entry {
         charstr ifcname;
