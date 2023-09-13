@@ -44,6 +44,8 @@
 #include "pthreadx.h"
 #include <type_traits>
 
+#include <source_location>
+
 ///Retrieves module (current dll/exe) singleton object of given type T
 # define SINGLETON(...) \
     coid::singleton<__VA_ARGS__>::instance(true, __FILE__, __LINE__)
@@ -57,13 +59,13 @@
 /// usage:
 /// LOCAL_SINGLETON_DEF(class) name = new class;
 #define LOCAL_SINGLETON_DEF(...) \
-    static coid::singleton<__VA_ARGS__>
+    static coid::singleton<__VA_ARGS__, __FILE__, std::source_location::current().line()>
 
 ///Used for function-local singleton objects returning process-wide singleton
 /// usage:
 /// LOCAL_PROCWIDE_SINGLETON_DEF(class) name = new class;
 #define LOCAL_PROCWIDE_SINGLETON_DEF(...) \
-    static coid::singleton<__VA_ARGS__, false>
+    static coid::singleton<__VA_ARGS__, __FILE__, std::source_location::current().line(), false>
 
 
 ///Same as LOCAL_SINGLETON_DEF (compatibility)
@@ -82,8 +84,7 @@
 /// usage:
 /// THREAD_LOCAL_SINGLETON_DEF(class) name = new class;
 #define THREAD_LOCAL_SINGLETON_DEF(...) \
-    static coid::thread_singleton<__VA_ARGS__>
-
+    static coid::thread_singleton<__VA_ARGS__, __FILE__, std::source_location::current().line()>
 
 
 ///Evaluates to true if a singleton of given type exists
@@ -160,8 +161,24 @@ struct has_singleton_initialize_module_method
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Class for global and local singletons
+//@param T - type of singleton
+//@param File - file from where the singleton was created (empty string for global singletons)
+//@param Line - line in file form where the singleton was created(0 for global singletons)
 //@param Module true if locally created singletons should be unique in each module (dll), false if process-wide
-template <class T, bool Module = true>
+
+namespace detail
+{
+template<uints N>
+struct string_literal
+{
+    constexpr string_literal(const char(&str)[N]) {
+        std::copy_n(str, N, value);
+    }
+    char value[N];
+};
+}
+
+template <class T, detail::string_literal File = "", int Line = 0, bool Module = true>
 class singleton
 {
 public:
@@ -205,20 +222,20 @@ public:
 
         _p = (T*)singleton_register_instance(
             &create, &destroy, &init_module,
-            typeid(T).name(), 0, 0, Module);
+            typeid(T).name(), File.value, Line, Module);
     }
 
     ///Local singleton constructor, use through LOCAL_SINGLETON macro
     singleton(T* obj) {
         _p = (T*)singleton_register_instance(
             singleton_local_creator(obj), &destroy, &init_module,
-            typeid(T).name(), 0, 0, Module);
+            typeid(T).name(), File.value, Line, Module);
     }
 
     singleton(T&& obj) {
         _p = (T*)singleton_register_instance(
             singleton_local_creator(new T(std::forward<T>(obj))), &destroy, &init_module,
-            typeid(T).name(), 0, 0, Module);
+            typeid(T).name(), File.value, Line, Module);
     }
 
     ~singleton() {
@@ -248,7 +265,7 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Class for global and local thread singletons
-template<class T>
+template<class T, detail::string_literal File = "", int Line = -1>
 class thread_singleton
 {
 public:
@@ -285,7 +302,7 @@ private:
         if (!p) {
             p = (T*)singleton_register_instance(
                 &create, &destroy, &singleton<T>::init_module,
-                typeid(T).name(), 0, 0, module_local);
+                typeid(T).name(), File.value, Line, module_local);
             tk.set(p);
         }
         return p;
@@ -308,7 +325,6 @@ private:
 
 
 };
-
 
 COID_NAMESPACE_END
 

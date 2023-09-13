@@ -114,7 +114,7 @@ public:
 
         //look for singletons registered in different modules
         killer* k = invisible ? 0 : last;
-        while (k && (k->invisible || k->type != type))
+        while (k && (k->invisible || k->type != type || line != k->line || strcmp(file, k->file) != 0))
             k = k->next;
 
         if (!k) {
