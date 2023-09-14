@@ -1306,10 +1306,10 @@ $-(/if)$
 }
 
 //auto-register the bind function
-LOCAL_SINGLETON_DEF(ifc_autoregger) $name$_autoregger = new ifc_autoregger(&register_binders_for_$name$);
+LOCAL_FILE_SINGLETON_DEF(ifc_autoregger) $name$_autoregger = new ifc_autoregger(&register_binders_for_$name$);
 
 void* force_register_$name$() {
-    LOCAL_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&register_binders_for_$name$);
+    LOCAL_FUNCTION_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&register_binders_for_$name$);
     return autoregger.get();
 }
 

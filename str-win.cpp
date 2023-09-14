@@ -159,7 +159,7 @@ zstring::zpool* zstring::local_pool()
         &zstring::zpool::create,
         &zstring::zpool::destroy,
         0,
-        0, 0, 0, true);
+        0, 0, 0, 0, true);
 }
 
 uints zstring::max_size_in_pool( zpool* pool, uints maxsize )

@@ -307,10 +307,10 @@ $-(/if)$
 }
 
 //auto-register the available interface creators
-LOCAL_SINGLETON_DEF(ifc_autoregger) $name$_autoregger = new ifc_autoregger(&$name$_dispatcher::register_interfaces);
+LOCAL_FILE_SINGLETON_DEF(ifc_autoregger) $name$_autoregger = new ifc_autoregger(&$name$_dispatcher::register_interfaces);
 
 void* force_register_$name$() {
-    LOCAL_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&$name$_dispatcher::register_interfaces);
+    LOCAL_FUNCTION_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&$name$_dispatcher::register_interfaces);
     return autoregger.get();
 }
 
@@ -418,10 +418,10 @@ public:
 
 
 //auto-register the available interface creators
-LOCAL_SINGLETON_DEF(ifc_autoregger) $name$_autoregger = new ifc_autoregger(&$name$_data_dispatcher::register_interfaces);
+LOCAL_FILE_SINGLETON_DEF(ifc_autoregger) $name$_autoregger = new ifc_autoregger(&$name$_data_dispatcher::register_interfaces);
 
 void* force_register_$name$() {
-    LOCAL_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&$name$_data_dispatcher::register_interfaces);
+    LOCAL_FUNCTION_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&$name$_data_dispatcher::register_interfaces);
     return autoregger.get();
 }
 
