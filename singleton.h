@@ -47,12 +47,12 @@
 #include <source_location>
 
 ///Retrieves module (current dll/exe) singleton object of given type T
-# define SINGLETON(...) \
-    coid::singleton<__VA_ARGS__>::instance(true, __FILE__, __LINE__)
+#define SINGLETON(...) \
+    coid::singleton<__VA_ARGS__>::instance(true, std::source_location::current())
 
 ///Retrieves process-wide global singleton object of given type T
-# define PROCWIDE_SINGLETON(...) \
-    coid::singleton<__VA_ARGS__>::instance(false, __FILE__, __LINE__)
+#define PROCWIDE_SINGLETON(...) \
+    coid::singleton<__VA_ARGS__>::instance(false, std::source_location::current())
 
 
 ///Used for function-local singleton objects, unique for each module (dll)
@@ -71,7 +71,7 @@
 /// usage:
 /// LOCAL_FUNCTION_SINGLETON_DEF(class) name = new class;
 #define LOCAL_FILE_SINGLETON_DEF(...)\
-    static coid::singleton<__VA_ARGS__, __FILE__, std::source_location::current().line()>  
+    static coid::singleton<__VA_ARGS__, __FILE__, std::source_location::current().line()>
 
 ///Returns thread singleton instance (the same one when called from different code within module)
 #define THREAD_SINGLETON(...) \
@@ -124,7 +124,7 @@ void singleton_unregister_instance(void*);
 
 void singletons_destroy();
 
-fn_singleton_creator singleton_local_creator( void* p );
+fn_singleton_creator singleton_local_creator(void* p);
 
 
 ///This will run singleton_initialize_module() static method if T has one
@@ -133,14 +133,14 @@ struct has_singleton_initialize_module_method
 {
     // SFINAE foo-has-correct-sig
     template<typename A>
-    static std::true_type test( void (A::*)() ) {
+    static std::true_type test(void (A::*)()) {
         return std::true_type();
     }
 
     // SFINAE foo-exists
     template <typename A>
     static decltype(test(&A::singleton_initialize_module))
-    test( decltype(&A::singleton_initialize_module), void* ) {
+        test(decltype(&A::singleton_initialize_module), void*) {
         // foo exists. check sig
         typedef decltype(test(&A::singleton_initialize_module)) return_type;
         return return_type();
@@ -154,7 +154,7 @@ struct has_singleton_initialize_module_method
     }
 
     // This will be either `std::true_type` or `std::false_type`
-    typedef decltype(test<T>(0,0)) type;
+    typedef decltype(test<T>(0, 0)) type;
 
     static const bool value = type::value;
 
@@ -162,10 +162,10 @@ struct has_singleton_initialize_module_method
         p->singleton_initialize_module();
     }
 
-    static void evalfn(...){
+    static void evalfn(...) {
     }
 
-    static void eval( void* p ) {
+    static void eval(void* p) {
         evalfn(static_cast<T*>(p), type());
     }
 };
@@ -195,18 +195,18 @@ class singleton
 {
 public:
 
-    static void init_module( void* p ) {
+    static void init_module(void* p) {
         has_singleton_initialize_module_method<T>::eval(p);
     }
 
 
     /// @return global singleton, registering the place of birth
     /// @param module_local create a singleton that's local to the current module
-    static T& instance( bool module_local, const char* file=0, int line=0 )
+    static T& instance(bool module_local, const std::source_location& loc)
     {
         T*& node = ptr();
 
-        if(node)
+        if (node)
             return *node;
 
 #if !defined(SYSTYPE_MSVC) || SYSTYPE_MSVC >= 1700
@@ -215,7 +215,7 @@ public:
 
         node = (T*)singleton_register_instance(
             &create, &destroy, &init_module,
-            typeid(T).name(), file, "", line, module_local);
+            typeid(T).name(), loc.file_name(), "", loc.line(), module_local);
 
         return *node;
     }
@@ -283,7 +283,7 @@ class thread_singleton
 public:
 
     /// @return global thread singleton (always the same one from multiple places where used)
-    static T& instance( bool module_local )
+    static T& instance(bool module_local)
     {
         thread_key& tk = get_key();
         return *thread_instance(tk, module_local);
@@ -309,7 +309,7 @@ public:
 
 private:
 
-    static T* thread_instance( thread_key& tk, bool module_local ) {
+    static T* thread_instance(thread_key& tk, bool module_local) {
         T* p = reinterpret_cast<T*>(tk.get());
         if (!p) {
             p = (T*)singleton_register_instance(

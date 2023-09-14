@@ -234,12 +234,12 @@ $-[args ?inarg !nojs]$
         threadcached<$(if ?fnarg)$$type$ (*)($fnargs$)$(elif)$$basetype$$(/if)$> $name$;
         write_from_v8(args[$@order$], $name$);
   $-(/if)$
-$[/args]-$
+$-[/args]$
 
         //invoke
-$[args ?outarg !inarg]-$
+$-[args ?outarg !inarg]$
         $basetype$ $name$;
-$[/args]-$
+$-[/args]$
         $(if !return.type="void")$$return.type$ _rval_ = $(/if)$R_->$name$($[args rest=", "]$ $-(if ?ptr ?outarg)$&$-(elif ?ptr ?defval.empty !specptr)$&$(/if)$ $-(if ?nojs)$$defval$$(elif)$$name$$(/if)$$[/args]$);
 
         //stream out
@@ -274,7 +274,7 @@ $-(if !return.type="void")$
   $-(elif)$
         r__->Set(ctx, v8::symbol("$name$", iso), ::js::wrap_object($name$.get(), ifc->context(iso)));
   $-(/if)$
- $[/args]-$
+ $-[/args]$
 $-(elif ?noutargs="1")$
  $-[args ?outarg]$
   $-(if ?iref.false)$
@@ -283,7 +283,7 @@ $-(elif ?noutargs="1")$
   $-(elif)$
         v8::Handle<v8::Value> r__ = ::js::wrap_object(_rval_.get(), ifc->context(iso));
   $-(/if)$
- $[/args]-$
+ $-[/args]$
 $-(elif ?noutargs)$
         v8::Handle<v8::Object> r__ = v8::Object::New(iso);
  $-[args ?outarg]$
@@ -293,13 +293,12 @@ $-(elif ?noutargs)$
   $-(elif)$
         r__->Set(ctx, v8::symbol("$name$", iso), ::js::wrap_object($name$.get(), ifc->context(iso)));
   $-(/if)$
- $[/args]-$
+ $-[/args]$
 $-(elif)$
         v8::Handle<v8::Object> r__;
 $(/if)-$
 
         args.GetReturnValue().Set(r__);
-
     } catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
@@ -882,12 +881,12 @@ $-[args ?inarg !nojs]$
     threadcached<$basetype$> $name$;
     write_from_v8(args[1+$@order$], $name$);
  $-(/if)$
-$[/args]-$
+$-[/args]$
 
     //invoke
-$[args ?outarg !inarg]-$
+$-[args ?outarg !inarg]$
     $basetype$ $name$;
-$[/args]-$
+$-[/args]$
 
     iref<$..name$_js_dispatcher> nifc = $..ns suffix="::"$$..name$::$name$(new $..name$_js_dispatcher$[args]$, $(if ?ptr ?outarg)$&$(elif ?ptr ?defval.empty !specptr)$&$(/if)$$name$$[/args]$);
 
@@ -908,7 +907,7 @@ $-[args ?outarg]$
     static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
     $-(/if)$
     r__->Set(ctx, v8::symbol("$name$", iso), read_to_v8($name$));
-$[/args]-$
+$-[/args]$
 
     return handle_scope__.Escape(r__);
 }
@@ -1136,12 +1135,12 @@ $-[args ?inarg !nojs]$
         threadcached<$(if ?fnarg)$$type$ (*)($fnargs$)$(elif)$$basetype$$(/if)$> $name$;
         write_from_v8(args[$@order$], $name$);
   $-(/if)$
-$[/args]-$
+$-[/args]$
 
         //invoke
-$[args ?outarg !inarg]-$
+$-[args ?outarg !inarg]$
         $basetype$ $name$;
-$[/args]-$
+$-[/args]$
 
         $(if !return.type="void")$$return.type$ _rval_ = $(/if)$R_->$intname$($[args rest=", "]$ $-(if ?ptr ?outarg)$&$-(elif ?ptr ?defval.empty !specptr)$&$(/if)$ $-(if ?nojs)$$defval$$(elif)$$name$$(/if)$$[/args]$);
 
@@ -1175,7 +1174,7 @@ $-(if !return.type="void")$
   $-(elif)$
         r__->Set(ctx, v8::symbol("$name$", iso), ::js::wrap_object($name$.get(), ifc->context(iso)));
   $-(/if)$
- $[/args]-$
+ $-[/args]$
 $-(elif ?noutargs="1")$
  $-[args ?outarg]$
   $-(if ?iref.false)$
@@ -1184,7 +1183,7 @@ $-(elif ?noutargs="1")$
   $-(elif)$
         v8::Handle<v8::Value> r__ = ::js::wrap_object(_rval_.get(), ifc->context(iso));
   $-(/if)$
- $[/args]-$
+ $-[/args]$
 $-(elif ?noutargs)$
         v8::Handle<v8::Object> r__ = v8::Object::New(iso);
  $-[args ?outarg]$
@@ -1194,7 +1193,7 @@ $-(elif ?noutargs)$
   $-(elif)$
         r__->Set(ctx, v8::symbol("$name$", iso), ::js::wrap_object($name$.get(), ifc->context(iso)));
   $-(/if)$
- $[/args]-$
+ $-[/args]$
 $-(elif)$
         v8::Handle<v8::Object> r__;
 $(/if)-$

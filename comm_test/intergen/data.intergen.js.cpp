@@ -159,7 +159,6 @@ void component_ifc_js_dispatcher::v8_set_b1(const v8::ARGUMENTS& args)
         //stream out
         static_assert(coid::has_metastream_operator<int>::value, "missing metastream operator for 'int'");
         v8::Handle<v8::Value> r__ = read_to_v8(b);
- 
         args.GetReturnValue().Set(r__);
 
     } catch (const coid::exception& e) {
@@ -231,11 +230,11 @@ static void register_binders_for_component_ifc(bool on)
 }
 
 //auto-register the bind function
-LOCAL_SINGLETON_DEF(ifc_autoregger) component_ifc_autoregger = new ifc_autoregger(&register_binders_for_component_ifc);
+LOCAL_FILE_SINGLETON_DEF(ifc_autoregger) component_ifc_autoregger = new ifc_autoregger(&register_binders_for_component_ifc);
 
 
 void* force_register_component_ifc() {
-    LOCAL_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&register_binders_for_component_ifc);
+    LOCAL_FUNCTION_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&register_binders_for_component_ifc);
     return autoregger.get();
 }
 

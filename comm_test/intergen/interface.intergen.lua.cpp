@@ -1469,10 +1469,10 @@ static void register_binders_for_client(bool on)
 }
 
 //auto-register the bind function
-LOCAL_SINGLETON_DEF(ifc_autoregger) client_autoregger = new ifc_autoregger(&register_binders_for_client);
+LOCAL_FILE_SINGLETON_DEF(ifc_autoregger) client_autoregger = new ifc_autoregger(&register_binders_for_client);
 
 void* force_register_client() {
-    LOCAL_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&register_binders_for_client);
+    LOCAL_FUNCTION_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&register_binders_for_client);
     return autoregger.get();
 }
 
@@ -2088,10 +2088,10 @@ static void register_binders_for_client2(bool on)
 }
 
 //auto-register the bind function
-LOCAL_SINGLETON_DEF(ifc_autoregger) client2_autoregger = new ifc_autoregger(&register_binders_for_client2);
+LOCAL_FILE_SINGLETON_DEF(ifc_autoregger) client2_autoregger = new ifc_autoregger(&register_binders_for_client2);
 
 void* force_register_client2() {
-    LOCAL_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&register_binders_for_client2);
+    LOCAL_FUNCTION_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&register_binders_for_client2);
     return autoregger.get();
 }
 

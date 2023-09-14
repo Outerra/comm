@@ -85,10 +85,10 @@ public:
 
 
 //auto-register the available interface creators
-LOCAL_SINGLETON_DEF(ifc_autoregger) component_ifc_autoregger = new ifc_autoregger(&component_ifc_data_dispatcher::register_interfaces);
+LOCAL_FILE_SINGLETON_DEF(ifc_autoregger) component_ifc_autoregger = new ifc_autoregger(&component_ifc_data_dispatcher::register_interfaces);
 
 void* force_register_component_ifc() {
-    LOCAL_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&component_ifc_data_dispatcher::register_interfaces);
+    LOCAL_FUNCTION_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&component_ifc_data_dispatcher::register_interfaces);
     return autoregger.get();
 }
 

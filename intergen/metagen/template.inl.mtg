@@ -5,7 +5,7 @@
 public:
 $-[method]$
 #define rl_$name$(r$(if !static !ptr !iref)$,t$(/if)$ $-[args !retarg !sizearg]$,$name$$[/args]$)\
-    rl_$name$_(__FILE__,__LINE__,r$(if !static !ptr !iref)$,t$(/if)$ $-[args !retarg !sizearg]$,$name$$[/args]$)
+    rl_$name$_(__FILE__,std::source_location::current().line(),r$(if !static !ptr !iref)$,t$(/if)$ $-[args !retarg !sizearg]$,$name$$[/args]$)
 
     $(if ?templarg.nonzero)$template<$templarg$>
     $(/if)-$

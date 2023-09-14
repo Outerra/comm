@@ -224,7 +224,7 @@ public:
     }
 
     static pool_type& pool_singleton() {
-        LOCAL_PROCWIDE_SINGLETON_DEF(pool_type) pool;
+        LOCAL_FUNCTION_PROCWIDE_SINGLETON_DEF(pool_type) pool;
         return *pool;
     }
 };

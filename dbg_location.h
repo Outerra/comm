@@ -55,12 +55,12 @@ private:
 
 COID_NAMESPACE_END
 
-#define LOCATION coid::debug::location(__FUNCTION__, __FILE__, __LINE__)
+#define LOCATION coid::debug::location(__FUNCTION__, __FILE__, std::source_location::current().line())
 
 
 #define PASTER1(x) #x
 #define PASTER2(x) PASTER1(x)
-#define FILE_LOCATION __FILE__ " : " PASTER2(__LINE__)
+#define FILE_LOCATION __FILE__ " : " PASTER2(std::source_location::current().line())
 
 
 #endif // __COMM_DBG_LOCATION_H__

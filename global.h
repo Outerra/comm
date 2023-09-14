@@ -94,7 +94,7 @@ public:
 private:
 
     static type_sequencer<OwnT>& tsq() {
-        LOCAL_PROCWIDE_SINGLETON_DEF(type_sequencer<OwnT>) _tsq = new type_sequencer<OwnT>;
+        LOCAL_FUNCTION_PROCWIDE_SINGLETON_DEF(type_sequencer<OwnT>) _tsq = new type_sequencer<OwnT>;
         return *_tsq;
     }
 
@@ -226,7 +226,7 @@ class data_manager
     };
 
     static sequencer& tsq() {
-        LOCAL_PROCWIDE_SINGLETON_DEF(sequencer) _tsq = new sequencer;
+        LOCAL_FUNCTION_PROCWIDE_SINGLETON_DEF(sequencer) _tsq = new sequencer;
         return *_tsq;
     }
 
@@ -960,7 +960,7 @@ protected:
         coid::context_holder<OwnT> _hs;
 
         static containers& get() {
-            LOCAL_PROCWIDE_SINGLETON_DEF(containers) _cs = new containers;
+            LOCAL_FUNCTION_PROCWIDE_SINGLETON_DEF(containers) _cs = new containers;
             return *_cs;
         }
     };

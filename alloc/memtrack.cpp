@@ -274,7 +274,7 @@ static memtrack_registrar* memtrack_register()
         return 0;
 
     reentry = true;
-    LOCAL_PROCWIDE_SINGLETON_DEF(memtrack_registrar) reg;
+    LOCAL_FUNCTION_PROCWIDE_SINGLETON_DEF(memtrack_registrar) reg;
     reentry = false;
 
     return reg.get();

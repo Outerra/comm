@@ -120,10 +120,10 @@ bool basei::set_host(policy_intrusive_base* host__, intergen_interface* client__
 }
 
 //auto-register the available interface creators
-LOCAL_SINGLETON_DEF(ifc_autoregger) basei_autoregger = new ifc_autoregger(&basei_dispatcher::register_interfaces);
+LOCAL_FILE_SINGLETON_DEF(ifc_autoregger) basei_autoregger = new ifc_autoregger(&basei_dispatcher::register_interfaces);
 
 void* force_register_basei() {
-    LOCAL_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&basei_dispatcher::register_interfaces);
+    LOCAL_FUNCTION_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&basei_dispatcher::register_interfaces);
     return autoregger.get();
 }
 
@@ -280,10 +280,10 @@ bool emptyface::set_host(policy_intrusive_base* host__, intergen_interface* clie
 }
 
 //auto-register the available interface creators
-LOCAL_SINGLETON_DEF(ifc_autoregger) emptyface_autoregger = new ifc_autoregger(&emptyface_dispatcher::register_interfaces);
+LOCAL_FILE_SINGLETON_DEF(ifc_autoregger) emptyface_autoregger = new ifc_autoregger(&emptyface_dispatcher::register_interfaces);
 
 void* force_register_emptyface() {
-    LOCAL_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&emptyface_dispatcher::register_interfaces);
+    LOCAL_FUNCTION_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&emptyface_dispatcher::register_interfaces);
     return autoregger.get();
 }
 
@@ -559,10 +559,10 @@ bool thingface::set_host(policy_intrusive_base* host__, intergen_interface* clie
 }
 
 //auto-register the available interface creators
-LOCAL_SINGLETON_DEF(ifc_autoregger) thingface_autoregger = new ifc_autoregger(&thingface_dispatcher::register_interfaces);
+LOCAL_FILE_SINGLETON_DEF(ifc_autoregger) thingface_autoregger = new ifc_autoregger(&thingface_dispatcher::register_interfaces);
 
 void* force_register_thingface() {
-    LOCAL_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&thingface_dispatcher::register_interfaces);
+    LOCAL_FUNCTION_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&thingface_dispatcher::register_interfaces);
     return autoregger.get();
 }
 
@@ -856,10 +856,10 @@ bool ifc_int::set_host(policy_intrusive_base* host__, intergen_interface* client
 }
 
 //auto-register the available interface creators
-LOCAL_SINGLETON_DEF(ifc_autoregger) ifc_int_autoregger = new ifc_autoregger(&ifc_int_dispatcher::register_interfaces);
+LOCAL_FILE_SINGLETON_DEF(ifc_autoregger) ifc_int_autoregger = new ifc_autoregger(&ifc_int_dispatcher::register_interfaces);
 
 void* force_register_ifc_int() {
-    LOCAL_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&ifc_int_dispatcher::register_interfaces);
+    LOCAL_FUNCTION_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&ifc_int_dispatcher::register_interfaces);
     return autoregger.get();
 }
 
@@ -1130,10 +1130,10 @@ bool ifc_ext::set_host(policy_intrusive_base* host__, intergen_interface* client
 }
 
 //auto-register the available interface creators
-LOCAL_SINGLETON_DEF(ifc_autoregger) ifc_ext_autoregger = new ifc_autoregger(&ifc_ext_dispatcher::register_interfaces);
+LOCAL_FILE_SINGLETON_DEF(ifc_autoregger) ifc_ext_autoregger = new ifc_autoregger(&ifc_ext_dispatcher::register_interfaces);
 
 void* force_register_ifc_ext() {
-    LOCAL_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&ifc_ext_dispatcher::register_interfaces);
+    LOCAL_FUNCTION_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&ifc_ext_dispatcher::register_interfaces);
     return autoregger.get();
 }
 
@@ -1413,10 +1413,10 @@ bool ifc_ext2::set_host(policy_intrusive_base* host__, intergen_interface* clien
 }
 
 //auto-register the available interface creators
-LOCAL_SINGLETON_DEF(ifc_autoregger) ifc_ext2_autoregger = new ifc_autoregger(&ifc_ext2_dispatcher::register_interfaces);
+LOCAL_FILE_SINGLETON_DEF(ifc_autoregger) ifc_ext2_autoregger = new ifc_autoregger(&ifc_ext2_dispatcher::register_interfaces);
 
 void* force_register_ifc_ext2() {
-    LOCAL_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&ifc_ext2_dispatcher::register_interfaces);
+    LOCAL_FUNCTION_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&ifc_ext2_dispatcher::register_interfaces);
     return autoregger.get();
 }
 

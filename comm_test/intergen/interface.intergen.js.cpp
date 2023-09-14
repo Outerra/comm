@@ -194,7 +194,6 @@ void client_js_dispatcher::v8_set_def0(const v8::ARGUMENTS& args)
         v8::Handle<v8::Object> r__;
 
         args.GetReturnValue().Set(r__);
-
     } catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
@@ -247,7 +246,6 @@ void client_js_dispatcher::v8_set1(const v8::ARGUMENTS& args)
         v8::Handle<v8::Object> r__;
 
         args.GetReturnValue().Set(r__);
-
     } catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
@@ -289,6 +287,7 @@ void client_js_dispatcher::v8_get2(const v8::ARGUMENTS& args)
     try {
         //stream the arguments in
 
+
         //invoke
         coid::charstr par;
         int _rval_ = R_->get(par);
@@ -300,9 +299,7 @@ void client_js_dispatcher::v8_get2(const v8::ARGUMENTS& args)
 
         static_assert(coid::has_metastream_operator<coid::charstr>::value, "missing metastream operator for 'coid::charstr'");
         r__->Set(ctx, v8::symbol("par", iso), read_to_v8(par));
- 
         args.GetReturnValue().Set(r__);
-
     } catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
@@ -344,6 +341,7 @@ void client_js_dispatcher::v8_custom3(const v8::ARGUMENTS& args)
     try {
         //stream the arguments in
 
+
         //invoke
         sometype _rval_ = R_->custom();
 
@@ -353,7 +351,6 @@ void client_js_dispatcher::v8_custom3(const v8::ARGUMENTS& args)
         r__ = read_to_v8(_rval_);
 
         args.GetReturnValue().Set(r__);
-
     } catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
@@ -406,7 +403,6 @@ void client_js_dispatcher::v8_set_array4(const v8::ARGUMENTS& args)
         v8::Handle<v8::Object> r__;
 
         args.GetReturnValue().Set(r__);
-
     } catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
@@ -448,6 +444,7 @@ void client_js_dispatcher::v8_overridable5(const v8::ARGUMENTS& args)
     try {
         //stream the arguments in
 
+
         //invoke
         bool _rval_ = R_->overridable();
 
@@ -457,7 +454,6 @@ void client_js_dispatcher::v8_overridable5(const v8::ARGUMENTS& args)
         r__ = read_to_v8(_rval_);
 
         args.GetReturnValue().Set(r__);
-
     } catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
@@ -966,6 +962,7 @@ v8::Handle<v8::Value> client_js_dispatcher::v8creator_creator0(const v8::ARGUMEN
     v8::Context::Scope context_scope(ctx);
 
     //stream the arguments in
+
     //invoke
 
     iref<client_js_dispatcher> nifc = client::creator(new client_js_dispatcher);
@@ -974,6 +971,7 @@ v8::Handle<v8::Value> client_js_dispatcher::v8creator_creator0(const v8::ARGUMEN
     v8::Handle<v8::Value> r__ = nifc
         ? v8::Handle<v8::Value>(nifc->create_interface_object(ctx, true))
         : v8::Handle<v8::Value>(v8::Null(iso));
+
 
     return handle_scope__.Escape(r__);
 }
@@ -1052,11 +1050,11 @@ static void register_binders_for_client(bool on)
 }
 
 //auto-register the bind function
-LOCAL_SINGLETON_DEF(ifc_autoregger) client_autoregger = new ifc_autoregger(&register_binders_for_client);
+LOCAL_FILE_SINGLETON_DEF(ifc_autoregger) client_autoregger = new ifc_autoregger(&register_binders_for_client);
 
 
 void* force_register_client() {
-    LOCAL_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&register_binders_for_client);
+    LOCAL_FUNCTION_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&register_binders_for_client);
     return autoregger.get();
 }
 
@@ -1181,6 +1179,7 @@ void client2_js_dispatcher::v8_test0(const v8::ARGUMENTS& args)
     try {
         //stream the arguments in
 
+
         //invoke
         R_->test();
 
@@ -1188,7 +1187,6 @@ void client2_js_dispatcher::v8_test0(const v8::ARGUMENTS& args)
         v8::Handle<v8::Object> r__;
 
         args.GetReturnValue().Set(r__);
-
     } catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
@@ -1230,6 +1228,7 @@ void client2_js_dispatcher::v8_get1(const v8::ARGUMENTS& args)
     try {
         //stream the arguments in
 
+
         //invoke
         component* _rval_ = R_->get();
 
@@ -1238,7 +1237,6 @@ void client2_js_dispatcher::v8_get1(const v8::ARGUMENTS& args)
         r__ = ::js::wrap_data_object<component>(_rval_, "component"_T, ifc->context(iso));
 
         args.GetReturnValue().Set(r__);
-
     } catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
@@ -1392,11 +1390,11 @@ static void register_binders_for_client2(bool on)
 }
 
 //auto-register the bind function
-LOCAL_SINGLETON_DEF(ifc_autoregger) client2_autoregger = new ifc_autoregger(&register_binders_for_client2);
+LOCAL_FILE_SINGLETON_DEF(ifc_autoregger) client2_autoregger = new ifc_autoregger(&register_binders_for_client2);
 
 
 void* force_register_client2() {
-    LOCAL_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&register_binders_for_client2);
+    LOCAL_FUNCTION_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&register_binders_for_client2);
     return autoregger.get();
 }
 

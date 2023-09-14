@@ -464,7 +464,7 @@ public:
 private:
 
     static ifcman& get() {
-        LOCAL_PROCWIDE_SINGLETON_DEF(ifcman) _m = new ifcman;
+        LOCAL_FUNCTION_PROCWIDE_SINGLETON_DEF(ifcman) _m = new ifcman;
         return *_m;
     }
 
