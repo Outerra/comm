@@ -102,6 +102,17 @@ namespace coid {
 /// @example ifc_fnx(get) void get_internal();
 #define ifc_fnx(extname)
 
+///Interface function decoration that marks a function returning an iref-based interface (strong interface that extends the lifetime)
+/// @param ifcname interface name (with namespaces), optionally followed by ifc_fnx options
+/// @note the function return type must be a pointer to the host class of the returned interface
+#define ifc_fnx_class(ifcname)
+
+///Interface function decoration that marks a function returning a lightweight interface (weak interface that doesn't own the remote object)
+/// @param ifcname interface name (with namespaces), optionally followed by ifc_fnx options
+/// @note the function return type must be a pointer to the host class of the returned interface
+#define ifc_fnx_struct(ifcname)
+
+
 ///Interface event callback decoration
 /// @note events are defined in the generated dispatcher code, so the method after this keyword should be just a declaration
 /// @note ifc_eventx(@connect) marks an event that gets called upon successfull interface connection

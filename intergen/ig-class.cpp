@@ -145,7 +145,9 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 isvar = true;
             }
 
-            bool extfn = tok == "ifc_fnx"_T;
+            bool extfn_struct = tok == "ifc_fnx_struct"_T;
+            bool extfn_class = tok == "ifc_fnx_class"_T;
+            bool extfn = tok == "ifc_fnx"_T || extfn_struct || extfn_class;
             bool extev = tok == "ifc_eventx"_T;
             bool bimplicit = false;
             bool bdestroy = false;
@@ -154,35 +156,41 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
             int8 bnocapture = 0;
             int8 bcapture = 0;
 
-            charstr extname;//, implname;
+            charstr extifcname;
+            charstr extname;
+
             if (extev || extfn) {
                 //parse external name
                 lex.match('(');
 
-                if (extfn && lex.matches('~'))
+                bool has_rename = true;
+
+                if (extfn_struct || extfn_class) {
+                    //match fully qualified interface name
+                    extifcname = lex.match(lex.IDENT);
+
+                    while (lex.matches("::"_T)) {
+                        extifcname << "::"_T << lex.match(lex.IDENT);
+                    }
+
+                    has_rename = lex.matches(',');
+                }
+
+                if (!has_rename)
+                    ;
+                else if (extfn && lex.matches('~')) {
                     bdestroy = true;
+                }
                 else {
-                    while (int k = lex.matches_either('!', '-', '+'))
+                    while (int k = lex.matches_either('!', '-', '+')) {
                         (&binternal)[k - 1]++;
+                    }
 
                     bimplicit = lex.matches('@');
 
                     lex.matches(lex.IDENT, extname);
 
                     bpure = extev && lex.matches('=') && lex.matches('0');
-
-                    /*binternal = lex.matches('!');
-                    bimplicit = lex.matches('@');
-                    if(bimplicit) {
-                        lex.match(lex.IDENT, implname);
-                        lex.matches(lex.IDENT, extname);
-                    }
-                    else {
-                        lex.matches(lex.IDENT, extname);
-                        bimplicit = lex.matches('@');
-                        if(bimplicit)
-                            lex.match(lex.IDENT, implname);
-                    }*/
                 }
                 lex.match(')');
             }
