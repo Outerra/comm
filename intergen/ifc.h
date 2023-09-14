@@ -430,7 +430,7 @@ public:
     using icr_t = intergen_data_interface::icr_t;
 
     struct data_ifc_descriptor {
-        const type_sequencer<entman>::entry* _type = 0;
+        const type_sequencer<ifcman>::entry* _type = 0;
         icr_t* _cr_table = 0;
         ifn_t* _fn_table = 0;
 
@@ -450,7 +450,7 @@ public:
     static intergen_data_interface::ifn_t* set_type_ifc(uint64 hash, icr_t* cr_table, ifn_t* fn_table, const meta::class_interface* meta)
     {
         ifcman& m = get();
-        m._seq.assign<T>([&](int id, const type_sequencer<entman>::entry& en) {
+        m._seq.assign<T>([&](int id, const type_sequencer<ifcman>::entry& en) {
             data_ifc_descriptor& dc = m._clients.get_or_add(id);
             dc._fn_table = fn_table;
             dc._cr_table = cr_table;
@@ -472,7 +472,7 @@ private:
         _clients.reserve_virtual(8192);
     }
 
-    type_sequencer<entman> _seq;
+    type_sequencer<ifcman> _seq;
     dynarray32<data_ifc_descriptor> _clients;
 };
 
