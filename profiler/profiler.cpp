@@ -44,7 +44,7 @@
 namespace profiler
 {
 
-backend* g_backend = PROCWIDE_SINGLETON(backend*);
+backend* g_backend = nullptr;
 
 uint64 now()
 {
@@ -99,32 +99,28 @@ void gpu_frame()
         g_backend->gpu_frame();
 }
 
-void begin_gpu(const coid::token& name, uint64 timestamp, uint64 order)
+void begin_gpu(const coid::token_literal& name, uint64 timestamp, uint order)
 {
     if (g_backend)
         g_backend->begin_gpu(name, timestamp, order);
 }
 
-void end_gpu(const coid::token& name, uint64 timestamp, uint64 order)
+void end_gpu(const coid::token_literal& name, uint64 timestamp, uint order)
 {
     if (g_backend)
         g_backend->end_gpu(name, timestamp, order);
 }
 
-uint64 get_token(const char* name)
-{
-    return g_backend ? g_backend->get_token(name) : 0;
-}
-
-void begin(uint64 token, uint8 r, uint8 g, uint8 b)
+void begin(const coid::token_literal& name, uint8 r, uint8 g, uint8 b)
 {
     if (g_backend)
-        g_backend->begin(token, r, g, b);
+        g_backend->begin(name, r, g, b);
 }
 
-void begin(const char* name, uint8 r, uint8 g, uint8 b)
-{ 
-    begin(get_token(name), r, g, b);
+void begin_slow(const char* name, uint8 r, uint8 g, uint8 b)
+{
+    if (g_backend)
+        g_backend->begin_slow(name, r, g, b);
 }
 
 void end()
