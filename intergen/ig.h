@@ -257,9 +257,10 @@ struct MethodIG
     charstr file;
     uint line = 0;
 
-    charstr name;                       //< method name
-    charstr intname;                    //< internal name
+    charstr name;                       //< method name (in interface)
+    charstr intname;                    //< internal name (in host)
     charstr basename;                   //< method name, changed operator name
+    charstr retifcname;                 //< for methods returning interfaces, interface name
     charstr classname;                  //< class name (can be inherited)
     charstr storage;                    //< storage for host class, iref<type>, ref<type> or type*
     charstr default_event_body;
@@ -270,7 +271,8 @@ struct MethodIG
     bool bcreator = false;
     bool bptr = false;                  //< ptr instead of ref
     bool biref = true;                  //< iref instead of ref
-    bool bifccr = false;                //< ifc returning creator (not host)
+    bool bret_classifc = false;         //< method returning a class interface
+    bool bret_structifc = false;        //< method returning a struct interface
     bool bvirtual = false;              //< virtual method (on host)
     bool bconst = false;                //< const method
     bool boperator = false;
@@ -346,7 +348,8 @@ struct MethodIG
             m.member("creator", p.bcreator);
             m.member("ptr", p.bptr);
             m.member("iref", p.biref);
-            m.member("ifccr", p.bifccr);
+            m.member("ret_classifc", p.bret_classifc);
+            m.member("ret_structifc", p.bret_structifc);
             m.member("const", p.bconst);
             m.member("implicit", p.bimplicit);
             m.member("destroy", p.bdestroy);

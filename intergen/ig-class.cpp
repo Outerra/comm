@@ -358,6 +358,9 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                         lex.ignore(lex.MLCOM, mlcom);
                     }
 
+                    m->bret_classifc = extfn_class;
+                    m->bret_structifc = extfn_struct;
+
                     if (extname) {
                         m->intname.takeover(m->name);
                         m->name.takeover(extname);

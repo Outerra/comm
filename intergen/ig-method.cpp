@@ -21,7 +21,7 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
     if (!bstatic && ret.biref)
         ret.add_unique(irefargs);
 
-    biref = bptr = bifccr = false;
+    biref = bptr = false;
     int ncontinuable_errors = 0;
 
     if (bstatic && !bimplicit) {
@@ -38,14 +38,9 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
         else if (ret.type == ((tmp = "iref<") << ns << host << '>')) {
             biref = true;
         }
-        else if (ret.type == ((tmp = "iref<") << nsifc << '>')) {
-            biref = true;
-            bifccr = true;
-        }
         else {
             out << (lex.prepare_exception()
-                << "error: invalid return type for static interface creator method\n  should be iref<"
-                << host << ">");
+                << "error: invalid return type for static interface creator method\n  should be iref<" << host << ">");
             lex.clear_err();
             ++ncontinuable_errors;
         }

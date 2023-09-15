@@ -77,7 +77,7 @@ public:
             [ns1[::ns2[...]]]::classname@unload                             unload registered client
             [ns1[::ns2[...]]]::classname@meta                               register interface meta info
             [ns1[::ns2[...]]]::classname.creatorname@hashvalue              c++ versioned creator
-            [ns1[::ns2[...]]]::classname.creatorname@hashvalue.ifc          c++ versioned creator direct ifc creator
+          x [ns1[::ns2[...]]]::classname.creatorname@hashvalue.ifc          c++ versioned creator direct ifc creator [removed]
             [ns1[::ns2[...]]]::classname.creatorname@creator.scriptname     c++ creator of JS interface object
             [ns1[::ns2[...]]]::scriptname::classname.creatorname            creator from script
             [ns1[::ns2[...]]]::classname@client-hashvalue.clientname        client creator

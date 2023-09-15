@@ -46,17 +46,17 @@ class $name$_dispatcher : public $name$
        { "$name$", "$type$", "$basetype$", "$barens$", "$baretype$", "$argsize$", "$fnargs$", "$memfnclass$", "$defval$", $(if | ?..internal ?nojs ?type="void" ?iref ?ptr)$nullptr$(elif)$&meta::stream_op<$basetype$>::fn$(/if)$, (meta::arg::ex_type)$struct_type$, $specptr$, $ptr$, $ref$, $xref$, $iref$, $const$, $inarg$, $outarg$, $volatile$, $nojs$, $fnarg$, "$doc\"$" },$[/return+args]$
     };$[/method]$
     inline static const meta::method$(if method ?static)$ creators[] = {$[method ?static]$
-        { "$name$", $static set="bstatic|"$ $-ptr set="bptr|"$ $-iref set="biref|"$ $-ifccr set="bifccr|"$ $-const set="bconst|"$ $-operator set="boperator|"$ $-internal set="binternal|"$ $-capture set="bcapture|"$ $-implicit set="bimplicit|"$ $-destroy set="bdestroy|"$ $-noevbody set="bnoevbody|"$ $-pure set="bpure|"$ $-duplicate set="bduplicate|"$ $-inherit set="binherit|"$ $-(if !@revert="|")$meta::method::flg(0)$(/if)$, $args.@size$, $ninargs$, $noutargs$, $(if & args.empty return.type="void" !return.fnarg)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/method]$
+        { "$name$", $static set="bstatic|"$ $-ptr set="bptr|"$ $-iref set="biref|"$ $-const set="bconst|"$ $-operator set="boperator|"$ $-internal set="binternal|"$ $-capture set="bcapture|"$ $-implicit set="bimplicit|"$ $-destroy set="bdestroy|"$ $-noevbody set="bnoevbody|"$ $-pure set="bpure|"$ $-duplicate set="bduplicate|"$ $-inherit set="binherit|"$ $-(if !@revert="|")$meta::method::flg(0)$(/if)$, $args.@size$, $ninargs$, $noutargs$, $(if & args.empty return.type="void" !return.fnarg)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/method]$
     };$(elif)$* creators = nullptr;$(/if)$
     inline static const meta::method$(if method !static)$ methods[] = {$[method !static]$
-        { "$name$", $static set="bstatic|"$ $-ptr set="bptr|"$ $-iref set="biref|"$ $-ifccr set="bifccr|"$ $-const set="bconst|"$ $-operator set="boperator|"$ $-internal set="binternal|"$ $-capture set="bcapture|"$ $-implicit set="bimplicit|"$ $-destroy set="bdestroy|"$ $-noevbody set="bnoevbody|"$ $-pure set="bpure|"$ $-duplicate set="bduplicate|"$ $-inherit set="binherit|"$ $-(if !@revert="|")$meta::method::flg(0)$(/if)$, $args.@size$, $ninargs$, $noutargs$, $(if & args.empty return.type="void" !return.fnarg)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/method]$
+        { "$name$", $static set="bstatic|"$ $-ptr set="bptr|"$ $-iref set="biref|"$ $-const set="bconst|"$ $-operator set="boperator|"$ $-internal set="binternal|"$ $-capture set="bcapture|"$ $-implicit set="bimplicit|"$ $-destroy set="bdestroy|"$ $-noevbody set="bnoevbody|"$ $-pure set="bpure|"$ $-duplicate set="bduplicate|"$ $-inherit set="binherit|"$ $-(if !@revert="|")$meta::method::flg(0)$(/if)$, $args.@size$, $ninargs$, $noutargs$, $(if & args.empty return.type="void" !return.fnarg)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/method]$
     };$(elif)$* methods = nullptr;$(/if)$
     $-[event | !args.empty !return.type="void" ?return.fnarg]$
     inline static const meta::arg $basename$_$@index$args[] = {$[return+args | !type="void" ?fnarg]$
        { "$name$", "$type$", "$basetype$", "$barens$", "$baretype$", "$argsize$", "$fnargs$", "$memfnclass$", "$defval$", $(if | ?..internal ?nojs ?type="void" ?iref ?ptr)$nullptr$(elif)$&meta::stream_op<$basetype$>::fn$(/if)$, (meta::arg::ex_type)$struct_type$, $specptr$, $ptr$, $ref$, $xref$, $iref$, $const$, $inarg$, $outarg$, $volatile$, $nojs$, $fnarg$, "$doc\"$" },$[/return+args]$
     };$[/event]$
     inline static const meta::method$(if event)$ events[] = {$[event]$
-        { "$name$", $static set="bstatic|"$ $-ptr set="bptr|"$ $-iref set="biref|"$ $-ifccr set="bifccr|"$ $-const set="bconst|"$ $-operator set="boperator|"$ $-internal set="binternal|"$ $-capture set="bcapture|"$ $-implicit set="bimplicit|"$ $-destroy set="bdestroy|"$ $-noevbody set="bnoevbody|"$ $-pure set="bpure|"$ $-duplicate set="bduplicate|"$ $-inherit set="binherit|"$ $-(if !@revert="|")$meta::method::flg(0)$(/if)$, $args.@size$, $ninargs$, $noutargs$, $(if & args.empty return.type="void" !return.fnarg)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/event]$
+        { "$name$", $static set="bstatic|"$ $-ptr set="bptr|"$ $-iref set="biref|"$ $-const set="bconst|"$ $-operator set="boperator|"$ $-internal set="binternal|"$ $-capture set="bcapture|"$ $-implicit set="bimplicit|"$ $-destroy set="bdestroy|"$ $-noevbody set="bnoevbody|"$ $-pure set="bpure|"$ $-duplicate set="bduplicate|"$ $-inherit set="binherit|"$ $-(if !@revert="|")$meta::method::flg(0)$(/if)$, $args.@size$, $ninargs$, $noutargs$, $(if & args.empty return.type="void" !return.fnarg)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/event]$
     };$(elif)$* events = nullptr;$(/if)$
     inline static const meta::class_interface ifc_meta = {
         "$[ns]$$@value$::$[/ns]$$name$", // interface name
@@ -219,7 +219,7 @@ public:
 
     // creator methods
 
-$-[method ?creator !ifccr]$
+$-[method ?creator]$
     static iref<$..name$> $name$($..name$* __here__$[args]$, $type$ $name$$size$ $-(if ?defval)$ = $defval$$(/if)$$[/args]$)
     {
         iref<::$....nsx$$....class$> __host__ = ::$....nsx$$....class$::$intname$($[args rest=", "]$$name$$[/args]$);
@@ -244,11 +244,8 @@ $-(if ?onunload)$
 
         interface_register::register_interface_creator("$ns suffix="::"$$name$@unload", on ? (void*)&::$..nsx$$..class$::$onunload$ : nullptr, &ifc_meta);
 $-(/if)$
-$-[method ?creator !ifccr]$
+$-[method ?creator]$
         interface_register::register_interface_creator("$..ns suffix="::"$$..name$.$name$@$..hash$", on ? (void*)&$name$ : nullptr, &ifc_meta);
-$-[/method]$
-$-[method ?creator ?ifccr]$
-        interface_register::register_interface_creator("$..ns suffix="::"$$..name$.$name$@$..hash$.ifc", on ? (void*)&::$....nsx$$....class$::$name$ : nullptr, &ifc_meta);
 $-[/method]$
     }
 };
@@ -359,17 +356,17 @@ class $name$_data_dispatcher : public $name$
        { "$name$", "$type$", "$basetype$", "$barens$", "$baretype$", "$argsize$", "$fnargs$", "$memfnclass$", "$defval$", $(if | ?..internal ?nojs ?type="void" ?iref ?ptr)$nullptr$(elif)$&meta::stream_op<$basetype$>::fn$(/if)$, (meta::arg::ex_type)$struct_type$, $specptr$, $ptr$, $ref$, $xref$, $iref$, $const$, $inarg$, $outarg$, $volatile$, $nojs$, $fnarg$, "$doc\"$" },$[/return+args]$
     };$[/method]$
     inline static const meta::method$(if method ?static)$ creators[] = {$[method ?static]$
-        { "$name$", $static set="bstatic|"$ $-ptr set="bptr|"$ $-iref set="biref|"$ $-ifccr set="bifccr|"$ $-const set="bconst|"$ $-operator set="boperator|"$ $-internal set="binternal|"$ $-capture set="bcapture|"$ $-implicit set="bimplicit|"$ $-destroy set="bdestroy|"$ $-noevbody set="bnoevbody|"$ $-pure set="bpure|"$ $-duplicate set="bduplicate|"$ $-inherit set="binherit|"$ $-(if !@revert="|")$meta::method::flg(0)$(/if)$, $args.@size$, $ninargs$, $noutargs$, $(if & args.empty return.type="void" !return.fnarg)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/method]$
+        { "$name$", $static set="bstatic|"$ $-ptr set="bptr|"$ $-iref set="biref|"$ $-const set="bconst|"$ $-operator set="boperator|"$ $-internal set="binternal|"$ $-capture set="bcapture|"$ $-implicit set="bimplicit|"$ $-destroy set="bdestroy|"$ $-noevbody set="bnoevbody|"$ $-pure set="bpure|"$ $-duplicate set="bduplicate|"$ $-inherit set="binherit|"$ $-(if !@revert="|")$meta::method::flg(0)$(/if)$, $args.@size$, $ninargs$, $noutargs$, $(if & args.empty return.type="void" !return.fnarg)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/method]$
     };$(elif)$* creators = nullptr;$(/if)$
     inline static const meta::method$(if method !static)$ methods[] = {$[method !static]$
-        { "$name$", $static set="bstatic|"$ $-ptr set="bptr|"$ $-iref set="biref|"$ $-ifccr set="bifccr|"$ $-const set="bconst|"$ $-operator set="boperator|"$ $-internal set="binternal|"$ $-capture set="bcapture|"$ $-implicit set="bimplicit|"$ $-destroy set="bdestroy|"$ $-noevbody set="bnoevbody|"$ $-pure set="bpure|"$ $-duplicate set="bduplicate|"$ $-inherit set="binherit|"$ $-(if !@revert="|")$meta::method::flg(0)$(/if)$, $args.@size$, $ninargs$, $noutargs$, $(if & args.empty return.type="void" !return.fnarg)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/method]$
+        { "$name$", $static set="bstatic|"$ $-ptr set="bptr|"$ $-iref set="biref|"$ $-const set="bconst|"$ $-operator set="boperator|"$ $-internal set="binternal|"$ $-capture set="bcapture|"$ $-implicit set="bimplicit|"$ $-destroy set="bdestroy|"$ $-noevbody set="bnoevbody|"$ $-pure set="bpure|"$ $-duplicate set="bduplicate|"$ $-inherit set="binherit|"$ $-(if !@revert="|")$meta::method::flg(0)$(/if)$, $args.@size$, $ninargs$, $noutargs$, $(if & args.empty return.type="void" !return.fnarg)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/method]$
     };$(elif)$* methods = nullptr;$(/if)$
     $-[event | !args.empty !return.type="void" ?return.fnarg]$
     inline static const meta::arg $basename$_$@index$args[] = {$[return+args | !type="void" ?fnarg]$
        { "$name$", "$type$", "$basetype$", "$barens$", "$baretype$", "$argsize$", "$fnargs$", "$memfnclass$", "$defval$", $(if | ?..internal ?nojs ?type="void" ?iref ?ptr)$nullptr$(elif)$&meta::stream_op<$basetype$>::fn$(/if)$, (meta::arg::ex_type)$struct_type$, $specptr$, $ptr$, $ref$, $xref$, $iref$, $const$, $inarg$, $outarg$, $volatile$, $nojs$, $fnarg$, "$doc\"$" },$[/return+args]$
     };$[/event]$
     inline static const meta::method$(if event)$ events[] = {$[event]$
-        { "$name$", $static set="bstatic|"$ $-ptr set="bptr|"$ $-iref set="biref|"$ $-ifccr set="bifccr|"$ $-const set="bconst|"$ $-operator set="boperator|"$ $-internal set="binternal|"$ $-capture set="bcapture|"$ $-implicit set="bimplicit|"$ $-destroy set="bdestroy|"$ $-noevbody set="bnoevbody|"$ $-pure set="bpure|"$ $-duplicate set="bduplicate|"$ $-inherit set="binherit|"$ $-(if !@revert="|")$meta::method::flg(0)$(/if)$, $args.@size$, $ninargs$, $noutargs$, $(if & args.empty return.type="void" !return.fnarg)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/event]$
+        { "$name$", $static set="bstatic|"$ $-ptr set="bptr|"$ $-iref set="biref|"$ $-const set="bconst|"$ $-operator set="boperator|"$ $-internal set="binternal|"$ $-capture set="bcapture|"$ $-implicit set="bimplicit|"$ $-destroy set="bdestroy|"$ $-noevbody set="bnoevbody|"$ $-pure set="bpure|"$ $-duplicate set="bduplicate|"$ $-inherit set="binherit|"$ $-(if !@revert="|")$meta::method::flg(0)$(/if)$, $args.@size$, $ninargs$, $noutargs$, $(if & args.empty return.type="void" !return.fnarg)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/event]$
     };$(elif)$* events = nullptr;$(/if)$
     inline static const meta::class_interface ifc_meta = {
         "$[ns]$$@value$::$[/ns]$$name$", // interface name
@@ -391,7 +388,7 @@ private:
 $-[/method]$
         nullptr
     };
-    inline static icr_t _cr_table[] = {$-[method ?creator !ifccr]$
+    inline static icr_t _cr_table[] = {$-[method ?creator]$
         reinterpret_cast<icr_t>(&::$....nsx$$....class$::$intname$),
 $-[/method]$
         nullptr
