@@ -116,9 +116,9 @@ void* singleton_register_instance(
     fn_singleton_initmod initmod,
     const char* type,
     const char* file,
-    const char* unique_indentifier,
     int line,
-    bool invisible);
+    bool invisible,
+    const char* unique_indentifier);
 
 void singleton_unregister_instance(void*);
 
@@ -215,7 +215,7 @@ public:
 
         node = (T*)singleton_register_instance(
             &create, &destroy, &init_module,
-            typeid(T).name(), loc.file_name(), "", loc.line(), module_local);
+            typeid(T).name(), loc.file_name(), loc.line(), module_local, "");
 
         return *node;
     }
@@ -232,22 +232,20 @@ public:
         static_assert(std::is_default_constructible<T>::value, "type is not default constructible");
 #endif
 
-        _p = (T*)singleton_register_instance(
-            &create, &destroy, &init_module,
-            typeid(T).name(), "", Unique_identidier.value, Line, Module);
+        _p = (T*)singleton_register_instance(&create, &destroy, &init_module, typeid(T).name(), "", Line, Module, Unique_identidier.value);
     }
 
     ///Local singleton constructor, use through LOCAL_SINGLETON macro
     singleton(T* obj) {
         _p = (T*)singleton_register_instance(
             singleton_local_creator(obj), &destroy, &init_module,
-            typeid(T).name(), "", Unique_identidier.value, Line, Module);
+            typeid(T).name(), "", Line, Module, Unique_identidier.value);
     }
 
     singleton(T&& obj) {
         _p = (T*)singleton_register_instance(
             singleton_local_creator(new T(std::forward<T>(obj))), &destroy, &init_module,
-            typeid(T).name(), "", Unique_identidier.value, Line, Module);
+            typeid(T).name(), "", Line, Module, Unique_identidier.value);
     }
 
     ~singleton() {
@@ -314,7 +312,7 @@ private:
         if (!p) {
             p = (T*)singleton_register_instance(
                 &create, &destroy, &singleton<T>::init_module,
-                typeid(T).name(), "", Function_signature.value, Line, module_local);
+                typeid(T).name(), "", Line, module_local, Function_signature.value);
             tk.set(p);
         }
         return p;
