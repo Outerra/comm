@@ -100,7 +100,9 @@ public:
 
     ifc_fn void inout(ifc_inout test*& par);
 
-    ifc_fn struct test* dataret();
+    ifc_fnx(ifc_class=ifc1::ifc2::emptyface) empty_thing* ret_classifc();
+
+    ifc_fnx(ifc_struct=component_ifc) component* ret_structifc();
 
     ifc_fnx(!) void nested(const coid::dynarray<bt::base>& stuff);
 

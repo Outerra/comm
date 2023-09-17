@@ -79,7 +79,9 @@ public:
 
     void inout( ifc_inout test*& par );
 
-    test* dataret();
+    empty_thing* ret_classifc();
+
+    component* ret_structifc();
 
     void nested( const coid::dynarray<bt::base>& stuff );
 
@@ -104,7 +106,7 @@ public:
     // --- internal helpers ---
 
     ///Interface revision hash
-    static const int HASHID = 984017018u;
+    static const int HASHID = 1690157489u;
 
     ///Interface name (full ns::class string)
     static const coid::tokenhash& IFCNAME() {
@@ -123,7 +125,7 @@ public:
     }
 
     static const coid::token& intergen_default_creator_static(backend bck) {
-        static constexpr coid::token _dc("ifc1::ifc2::thingface.get@984017018"_T);
+        static constexpr coid::token _dc("ifc1::ifc2::thingface.get@1690157489"_T);
         static constexpr coid::token _djs("ifc1::ifc2::thingface@wrapper.js"_T);
         static constexpr coid::token _djsc("ifc1::ifc2::thingface@wrapper.jsc"_T);
         static constexpr coid::token _dlua("ifc1::ifc2::thingface@wrapper.lua"_T);
@@ -186,7 +188,7 @@ public:
         type.consume("struct ");
 
         coid::charstr tmp = "ifc1::ifc2::thingface"_T;
-        tmp << "@client-984017018"_T << '.' << type;
+        tmp << "@client-1690157489"_T << '.' << type;
 
         coid::interface_register::register_interface_creator(tmp, cc, nullptr);
         return 0;
@@ -225,14 +227,14 @@ inline iref<T> thingface::get(T* _subclass_)
     typedef iref<T> (*fn_creator)(thingface*);
 
     static fn_creator create = 0;
-    static constexpr coid::token ifckey = "ifc1::ifc2::thingface.get@984017018"_T;
+    static constexpr coid::token ifckey = "ifc1::ifc2::thingface.get@1690157489"_T;
 
     if (!create)
         create = reinterpret_cast<fn_creator>(
             coid::interface_register::get_interface_creator(ifckey));
 
     if (!create) {
-        log_mismatch("thingface"_T, "ifc1::ifc2::thingface.get"_T, "@984017018"_T);
+        log_mismatch("thingface"_T, "ifc1::ifc2::thingface.get"_T, "@1690157489"_T);
         return 0;
     }
 
@@ -267,11 +269,14 @@ inline auto thingface::operator()( const char* key, double value ) -> void
 inline auto thingface::inout( ifc_inout test*& par ) -> void
 { return VT_CALL(void,(test*&),9)(par); }
 
-inline auto thingface::dataret() -> test*
-{ return VT_CALL(test*,(),10)(); }
+inline auto thingface::ret_classifc() -> empty_thing*
+{ return VT_CALL(empty_thing*,(),10)(); }
+
+inline auto thingface::ret_structifc() -> component*
+{ return VT_CALL(component*,(),11)(); }
 
 inline auto thingface::nested( const coid::dynarray<bt::base>& stuff ) -> void
-{ return VT_CALL(void,(const coid::dynarray<bt::base>&),11)(stuff); }
+{ return VT_CALL(void,(const coid::dynarray<bt::base>&),12)(stuff); }
 
 } //namespace
 } //namespace

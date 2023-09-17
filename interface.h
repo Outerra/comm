@@ -89,6 +89,15 @@ struct arg
 
     ex_type extype = ex_type::unspecified;
 
+    /// @brief Argument mapping to an interface type
+    enum class ifc_type : uint8 {
+        none,
+        ifc_class,
+        ifc_struct,
+    };
+
+    ifc_type ifctype = ifc_type::none;
+
     bool bspecptr       = false;        //< special type where pointer is not separated (e.g const char*)
     bool bptr           = false;        //< true if the type is a pointer
     bool bref           = false;        //< true if the type is a reference

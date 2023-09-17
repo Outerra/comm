@@ -116,7 +116,7 @@ $-(/if)$
 
     // --- creators ---
 
-$-[method ?creator !ifccr]$
+$-[method ?creator]$
 $(if !comments.empty)$$[comments]-$
     $@value$
 $[/comments]$$(/if)-$
@@ -211,13 +211,13 @@ void $..name$_js_dispatcher::v8_$name$$@order$(const v8::ARGUMENTS& args)
     try {
         //stream the arguments in
 $-[args ?inarg !nojs]$
- $-(if ?iref.false)$
+  $-(if !iref)$
         static_assert(coid::has_metastream_operator<$(if ?fnarg)$$type$ (*)($fnargs$)$(elif)$$basetype$$(/if)$>::value, "missing metastream operator for '$(if ?fnarg)$$type$ (*)($fnargs$)$(elif)$$basetype$$(/if)$'");
- $-(/if)$
+  $-(/if)$
 $-[/args]$
 
 $-[args ?inarg !nojs]$
-  $-(if !defval.empty ?ptr.true)$
+  $-(if !defval.empty ?ptr)$
         threadcached<$basetype$> $name$__tmp;
         $basetype$ *$name$ = &$name$__tmp;
         if ($@order$ < args.Length())
@@ -244,18 +244,16 @@ $-[/args]$
 
         //stream out
 $-(if !return.type="void")$
- $-(if !return.iref ?noutargs)$
+ $-(if !retifc ?noutargs)$
         static_assert(coid::has_metastream_operator<$return.type$>::value, "missing metastream operator for '$return.type$'");
         v8::Handle<v8::Object> r__ = v8::Object::New(iso);
         r__->Set(ctx, v8::symbol("$$ret", iso), read_to_v8(_rval_));
  $-(elif ?noutargs)$
         v8::Handle<v8::Object> r__ = v8::Object::New(iso);
         r__->Set(ctx, v8::symbol("$$ret", iso), ::js::wrap_object(_rval_.get(), ifc->context(iso)));
- $-(elif !return.iref)$
+ $-(elif !retifc)$
         v8::Handle<v8::Value> r__;
-  $-(if ?return.ptr ?return.struct_type="2")$
-        r__ = ::js::wrap_data_object<$return.basetype$>(_rval_, "$return.basetype$"_T, ifc->context(iso));
-  $-(elif ?return.ptr)$
+  $-(if ?return.ptr)$
         static_assert(coid::has_metastream_operator<$return.basetype$>::value, "missing metastream operator for '$return.basetype$'");
         if (_rval_)
             r__ = read_to_v8(*_rval_);
@@ -263,12 +261,14 @@ $-(if !return.type="void")$
         static_assert(coid::has_metastream_operator<$return.basetype$>::value, "missing metastream operator for '$return.basetype$'");
         r__ = read_to_v8(_rval_);
   $-(/if)$
- $-(elif)$
+ $-(elif ?return.ifc_type="1")$
         v8::Handle<v8::Value> r__ = ::js::wrap_object(_rval_.get(), ifc->context(iso));
+ $-(elif ?return.ifc_type="2")$
+        v8::Handle<v8::Value> r__ = ::js::wrap_data_object<$return.basetype$>(_rval_, "$return.basetype$"_T, ifc->context(iso));
  $-(/if)$
 
  $-[args ?outarg]$
-  $-(if !iref)$
+  $-(if !ifc_type)$
         static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
         r__->Set(ctx, v8::symbol("$name$", iso), read_to_v8($name$));
   $-(elif)$
@@ -277,7 +277,7 @@ $-(if !return.type="void")$
  $-[/args]$
 $-(elif ?noutargs="1")$
  $-[args ?outarg]$
-  $-(if ?iref.false)$
+  $-(if !ifc_type)$
         static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
         v8::Handle<v8::Value> r__ = read_to_v8($name$);
   $-(elif)$
@@ -287,7 +287,7 @@ $-(elif ?noutargs="1")$
 $-(elif ?noutargs)$
         v8::Handle<v8::Object> r__ = v8::Object::New(iso);
  $-[args ?outarg]$
-  $-(if ?iref.false)$
+  $-(if !ifc_type)$
         static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
         r__->Set(ctx, v8::symbol("$name$", iso), read_to_v8($name$));
   $-(elif)$
@@ -335,7 +335,7 @@ $-(elif)$
   $-(/if)$
 
 // prepare in arguments
-$-[args ?inarg ?iref.false]$
+$-[args ?inarg !iref]$
     static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
 $-[/args]$
 $-(if ?ninargs)$
@@ -362,7 +362,7 @@ $-[/args]$
 $-(if !noutargs)$
 
  $-(if !return.type="void")$
-  $-(if ?return.iref.true)$
+  $-(if ?retifc)$
     $return.type$ _rval_;
   $-(elif)$
     static_assert(coid::has_metastream_operator<$return.type$>::value, "missing metastream operator for '$return.type$'");
@@ -374,7 +374,7 @@ $-(elif)$
  $-(if ?return.type="void" ?noutargs="1")$
 
   $-[args ?outarg]$
-   $-(if ?iref.false)$
+   $-(if !iref)$
     static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
    $-(/if)$
    $-(if ?ptr)$
@@ -391,7 +391,7 @@ $-(elif)$
   $-(if !return.type="void")$
 
     //return value
-   $-(if ?return.iref.true)$
+   $-(if ?retifc)$
     $return.type$ _rval_;
     write_from_v8(r__, _rval_);
    $-(elif)$
@@ -402,7 +402,7 @@ $-(elif)$
   $-(/if)$
   $-[args ?outarg]$
 
-   $-(if ?iref.false)$
+   $-(if !iref)$
     static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
    $-(/if)$
    $-(if ?ptr)$
@@ -506,7 +506,7 @@ void $name$_js_dispatcher::_getter(v8::Local<v8::Name> property, const v8::ACCES
  $-(/if)$
 
     //stream out
- $-(if ?getter.iref.false)$
+ $-(if !getter.ifc_type)$
     static_assert(coid::has_metastream_operator<$getter.basetype$>::value, "missing metastream operator for '$getter.basetype$'");
     v8::Handle<v8::Value> r__ = read_to_v8(value);
  $-(elif)$
@@ -734,7 +734,7 @@ $-[/event]$
 $-(/if)$
 // --- creators ---
 
-$-[method ?creator !ifccr]$
+$-[method ?creator]$
 ////////////////////////////////////////////////////////////////////////////////
 iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$(const ::js::script_handle& script
         $-[args]$, $type$ $name$$size$$[/args]$, const coid::token& bindname, v8::Handle<v8::Context>* ctx)
@@ -859,28 +859,28 @@ v8::Handle<v8::Value> $..name$_js_dispatcher::v8creator_$name$$@order$(const v8:
 
     //stream the arguments in
 $-[args ?inarg !nojs]$
- $-(if ?iref.false)$
+  $-(if !iref)$
     static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
- $-(/if)$
+  $-(/if)$
 $-[/args]$
 $-[args ?inarg !nojs]$
- $-(if ?ptr !defval.empty)$
+  $-(if ?ptr !defval.empty)$
     threadcached<$basetype$> $name$__tmp;
     $basetype$ *$name$ = &$name$__tmp;
     if (1 + $@order$ < args.Length())
         write_from_v8(args[1+$@order$], $name$__tmp);
     else
         $name$ = $defval$;
- $-(elif !defval.empty)$
+  $-(elif !defval.empty)$
     threadcached<$basetype$> $name$;
     if (1 + $@order$ < args.Length())
         write_from_v8(args[1+$@order$], $name$);
     else
         $name$ = $defval$;
- $-(elif)$
+  $-(elif)$
     threadcached<$basetype$> $name$;
     write_from_v8(args[1+$@order$], $name$);
- $-(/if)$
+  $-(/if)$
 $-[/args]$
 
     //invoke
@@ -903,9 +903,9 @@ $-(elif)$
 $-(/if)$
 
 $-[args ?outarg]$
-    $-(if ?iref.false)$
+  $-(if !iref)$
     static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
-    $-(/if)$
+  $-(/if)$
     r__->Set(ctx, v8::symbol("$name$", iso), read_to_v8($name$));
 $-[/args]$
 
@@ -976,7 +976,7 @@ $-(/if)$
 ////////////////////////////////////////////////////////////////////////////////
 static void register_binders_for_$name$(bool on)
 {
-$-[method ?creator !ifccr]$
+$-[method ?creator]$
     //c++ creator of JS interface object
     interface_register::register_interface_creator("$..ns suffix="::"$$..name$.$name$@creator.js", on ? (void*)&$..name$_js_dispatcher::$name$ : nullptr, nullptr);
 $-(if !internal)$
@@ -1053,7 +1053,7 @@ public:
 
     // --- creators ---
 
-$-[method ?creator !ifccr]$
+$-[method ?creator]$
 $(if !comments.empty)$$[comments]-$
     $@value$
 $[/comments]$$(/if)-$
@@ -1112,13 +1112,13 @@ void $..name$_js_dispatcher::v8_$name$$@order$(const v8::ARGUMENTS& args)
     try {
         //stream the arguments in
 $-[args ?inarg !nojs]$
- $-(if ?iref.false)$
+  $-(if !iref)$
         static_assert(coid::has_metastream_operator<$(if ?fnarg)$$type$ (*)($fnargs$)$(elif)$$basetype$$(/if)$>::value, "missing metastream operator for '$(if ?fnarg)$$type$ (*)($fnargs$)$(elif)$$basetype$$(/if)$'");
- $-(/if)$
+  $-(/if)$
 $-[/args]$
 
 $-[args ?inarg !nojs]$
-  $-(if !defval.empty ?ptr.true)$
+  $-(if !defval.empty ?ptr)$
         threadcached<$basetype$> $name$__tmp;
         $basetype$ *$name$ = &$name$__tmp;
         if ($@order$ < args.Length())
@@ -1146,16 +1146,16 @@ $-[/args]$
 
         //stream out
 $-(if !return.type="void")$
- $-(if ?return.iref.false ?noutargs)$
+ $-(if !retifc ?noutargs)$
         static_assert(coid::has_metastream_operator<$return.type$>::value, "missing metastream operator for '$return.type$'");
         v8::Handle<v8::Object> r__ = v8::Object::New(iso);
         r__->Set(ctx, v8::symbol("$$ret", iso), read_to_v8(_rval_));
  $-(elif ?noutargs)$
         v8::Handle<v8::Object> r__ = v8::Object::New(iso);
         r__->Set(ctx, v8::symbol("$$ret", iso), ::js::wrap_object(_rval_.get(), ifc->context(iso)));
- $-(elif ?return.iref.false)$
+ $-(elif !retifc)$
         v8::Handle<v8::Value> r__;
-  $-(if ?return.ptr.true)$
+  $-(if ?return.ptr)$
         static_assert(coid::has_metastream_operator<$return.basetype$>::value, "missing metastream operator for '$return.basetype$'");
         if (_rval_)
             r__ = read_to_v8(*_rval_);
@@ -1163,12 +1163,14 @@ $-(if !return.type="void")$
         static_assert(coid::has_metastream_operator<$return.basetype$>::value, "missing metastream operator for '$return.basetype$'");
         r__ = read_to_v8(_rval_);
   $-(/if)$
- $-(elif)$
+ $-(elif ?return.ifc_type="1")$
         v8::Handle<v8::Value> r__ = ::js::wrap_object(_rval_.get(), ifc->context(iso));
+ $-(elif ?return.ifc_type="2")$
+        v8::Handle<v8::Value> r__ = ::js::wrap_data_object<$return.basetype$>(_rval_, "$return.basetype$"_T, ifc->context(iso));
  $-(/if)$
 
  $-[args ?outarg]$
-  $-(if ?iref.false)$
+  $-(if !ifc_type)$
         static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
         r__->Set(ctx, v8::symbol("$name$", iso), read_to_v8($name$));
   $-(elif)$
@@ -1177,7 +1179,7 @@ $-(if !return.type="void")$
  $-[/args]$
 $-(elif ?noutargs="1")$
  $-[args ?outarg]$
-  $-(if ?iref.false)$
+  $-(if !ifc_type)$
         static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
         v8::Handle<v8::Value> r__ = read_to_v8($name$);
   $-(elif)$
@@ -1187,7 +1189,7 @@ $-(elif ?noutargs="1")$
 $-(elif ?noutargs)$
         v8::Handle<v8::Object> r__ = v8::Object::New(iso);
  $-[args ?outarg]$
-  $-(if ?iref.false)$
+  $-(if !ifc_type)$
         static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
         r__->Set(ctx, v8::symbol("$name$", iso), read_to_v8($name$));
   $-(elif)$
@@ -1240,7 +1242,7 @@ void $name$_js_dispatcher::_getter(v8::Local<v8::Name> property, const v8::ACCES
  $-(/if)$
 
     //stream out
- $-(if ?getter.iref.false)$
+ $-(if !getter.ifc_type)$
     static_assert(coid::has_metastream_operator<$getter.basetype$>::value, "missing metastream operator for '$getter.basetype$'");
     v8::Handle<v8::Value> r__ = read_to_v8(value);
  $-(elif)$

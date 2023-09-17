@@ -145,8 +145,8 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 isvar = true;
             }
 
-            bool extfn_struct = tok == "ifc_fnx_struct"_T;
-            bool extfn_class = tok == "ifc_fnx_class"_T;
+            bool extfn_struct = false;
+            bool extfn_class = false;
             bool extfn = tok == "ifc_fnx"_T || extfn_struct || extfn_class;
             bool extev = tok == "ifc_eventx"_T;
             bool bimplicit = false;
@@ -163,22 +163,21 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 //parse external name
                 lex.match('(');
 
-                bool has_rename = true;
+                extfn_struct = lex.matches("ifc_struct"_T);
+                extfn_class = lex.matches("ifc_class"_T);
 
                 if (extfn_struct || extfn_class) {
+                    lex.match('=');
+
                     //match fully qualified interface name
                     extifcname = lex.match(lex.IDENT);
 
                     while (lex.matches("::"_T)) {
                         extifcname << "::"_T << lex.match(lex.IDENT);
                     }
-
-                    has_rename = lex.matches(',');
                 }
 
-                if (!has_rename)
-                    ;
-                else if (extfn && lex.matches('~')) {
+                if (extfn && lex.matches('~')) {
                     bdestroy = true;
                 }
                 else {
@@ -358,8 +357,9 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                         lex.ignore(lex.MLCOM, mlcom);
                     }
 
-                    m->bret_classifc = extfn_class;
-                    m->bret_structifc = extfn_struct;
+                    m->bretifc = extfn_class || extfn_struct;
+                    if (m->bretifc)
+                        m->ret.extifctype = extifcname;
 
                     if (extname) {
                         m->intname.takeover(m->name);

@@ -99,18 +99,10 @@ namespace coid {
 /// @note ifc_fnx(+) or ifc_fnx(+name) marks an interface method that is captured by an interceptor (for net replication etc) if default was off
 /// @note ifc_fnx(@connect) marks a method that gets called upon successfull interface connection
 /// @note ifc_fnx(@unload) marks a static method called when a registered client of given interface is unloading
+/// @note ifc_fnx(class=...) marks a method that returns ifc_class type interface
+/// @note ifc_fnx(struct=...) marks a method that returns ifc_struct type interface
 /// @example ifc_fnx(get) void get_internal();
 #define ifc_fnx(extname)
-
-///Interface function decoration that marks a function returning an iref-based interface (strong interface that extends the lifetime)
-/// @param ifcname interface name (with namespaces), optionally followed by ifc_fnx options
-/// @note the function return type must be a pointer to the host class of the returned interface
-#define ifc_fnx_class(ifcname)
-
-///Interface function decoration that marks a function returning a lightweight interface (weak interface that doesn't own the remote object)
-/// @param ifcname interface name (with namespaces), optionally followed by ifc_fnx options
-/// @note the function return type must be a pointer to the host class of the returned interface
-#define ifc_fnx_struct(ifcname)
 
 
 ///Interface event callback decoration

@@ -61,7 +61,7 @@ $-[/event]$
 $-(/if ?event)$
 
     // --- creators ---
-$-[method ?creator !ifccr]$
+$-[method ?creator]$
 
 $(if !comments.empty)$$[comments]-$
     $@value$
@@ -74,7 +74,7 @@ $[/comments]$$(/if)-$
     template<class T>
     static iref<T> $name$(T* _subclass_$[args]$, $type$ $name$$size$ $-(if ?defval)$ = $defval$$(/if)$$[/args]$);
 $-[/method]$
-$-[method ?creator ?ifccr]$
+$-[method ?creator]$
 
 $(if !comments.empty)$$[comments]-$
     $@value$
@@ -92,7 +92,7 @@ $-[method !static !destroy]$
 $(if !comments.empty)$$[comments]-$
     $@value$
 $[/comments]$$(/if)-$
-    $(if ?..virtual)$virtual $(/if)$$return.type$ $name$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if ?fnarg)$($-memfnclass after="::"-$ *$name$)($fnargs$)$(elif)$$name$$(/if)$$size$ $-(if ?defval)$ = $defval$$(/if)$$[/args]$) $-(if ?const)$ const$(/if)$$(if ?..virtual)$ = 0$(/if)$;
+    $(if ?..virtual)$virtual $(/if)$$return.type$$return.type$ $name$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if ?fnarg)$($-memfnclass after="::"-$ *$name$)($fnargs$)$(elif)$$name$$(/if)$$size$ $-(if ?defval)$ = $defval$$(/if)$$[/args]$) $-(if ?const)$ const$(/if)$$(if ?..virtual)$ = 0$(/if)$;
 $[/method]-$
 
 #pragma warning(pop)
@@ -250,7 +250,7 @@ $-[pasteafters]$
 $@value$
 $-[/pasteafters]$
 
-$-[method ?creator !ifccr]$
+$-[method ?creator]$
 ////////////////////////////////////////////////////////////////////////////////
 template<class T>
 inline iref<T> $..name$::$name$(T* _subclass_
@@ -271,28 +271,6 @@ inline iref<T> $..name$::$name$(T* _subclass_
     }
 
     return create(_subclass_$[args]$, $name$$[/args]$);
-}
-
-$-[/method]$
-$-[method ?static ?ifccr]$
-////////////////////////////////////////////////////////////////////////////////
-inline iref<$..name$> $..name$::$name$($-[args rest=", "]$$type$ $name$$size$$[/args]$)
-{
-    typedef iref<$..name$> (*fn_creator)($[args rest=", "]$$type$$[/args]$);
-
-    static fn_creator create = 0;
-    static constexpr coid::token ifckey = "$..ns suffix="::"$$..name$.$name$@$..hash$.ifc"_T;
-
-    if (!create)
-        create = reinterpret_cast<fn_creator>(
-            coid::interface_register::get_interface_creator(ifckey));
-
-    if (!create) {
-        log_mismatch("$..name$"_T, "$..ns suffix="::"$$..name$.$name$"_T, "@$..hash$"_T);
-        return 0;
-    }
-
-    return create($[args rest=", "]$$name$$[/args]$);
 }
 
 $-[/method]$

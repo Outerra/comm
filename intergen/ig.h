@@ -177,7 +177,8 @@ struct MethodIG
         charstr barenstype;             //< full bare type (without iref)
         charstr barens;                 //< namespace part of full bare type
         charstr baretype;               //< type part of full bare type
-        charstr name;                   //< parameter name
+        charstr extifctype;             //< ifc type name if this arg/return value is mapped to an interface
+        charstr name;                   //< parameter name (or "return")
         charstr arsize;                 //< size expression if the parameter is an array, including [ ]
         charstr fnargs;                 //< argument list of a function-type argument
         charstr memfnclass;             //< member fn class
@@ -193,6 +194,7 @@ struct MethodIG
         bool bconst = false;            //< true if the type had const qualifier
 
         meta::arg::ex_type struct_type = meta::arg::ex_type::unspecified;
+        meta::arg::ifc_type ifc_type = meta::arg::ifc_type::none;
 
         bool binarg = true;             //< input type argument
         bool boutarg = false;           //< output type argument
@@ -229,6 +231,7 @@ struct MethodIG
                 m.member("barenstype", p.barenstype);
                 m.member("barens", p.barens);
                 m.member("baretype", p.baretype);
+                m.member("extifctype", p.extifctype);
                 m.member("name", p.name);
                 m.member("size", p.arsize);
                 m.member("fnargs", p.fnargs);
@@ -239,6 +242,7 @@ struct MethodIG
                 m.member("doc", p.doc);
                 m.member("const", p.bconst);
                 m.member("struct_type", p.struct_type);
+                m.member("ifc_type", p.ifc_type);
                 m.member("specptr", p.bspecptr);
                 m.member("ptr", p.bptr);
                 m.member("ref", p.bref);
@@ -271,8 +275,7 @@ struct MethodIG
     bool bcreator = false;
     bool bptr = false;                  //< ptr instead of ref
     bool biref = true;                  //< iref instead of ref
-    bool bret_classifc = false;         //< method returning a class interface
-    bool bret_structifc = false;        //< method returning a struct interface
+    bool bretifc = false;               //< method marked as returning an interface
     bool bvirtual = false;              //< virtual method (on host)
     bool bconst = false;                //< const method
     bool boperator = false;
@@ -348,8 +351,7 @@ struct MethodIG
             m.member("creator", p.bcreator);
             m.member("ptr", p.bptr);
             m.member("iref", p.biref);
-            m.member("ret_classifc", p.bret_classifc);
-            m.member("ret_structifc", p.bret_structifc);
+            m.member("retifc", p.bretifc);
             m.member("const", p.bconst);
             m.member("implicit", p.bimplicit);
             m.member("destroy", p.bdestroy);
