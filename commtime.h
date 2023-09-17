@@ -68,7 +68,7 @@ struct timet
 
     timet& operator = ( time_t tx ) { t = tx;  return *this; }
 
-    //@return difference in seconds
+    /// @return difference in seconds
     int64 diff( time_t tx ) const   { return t - tx; }
 
     ///Set to current time
@@ -82,7 +82,7 @@ struct timet
         return *this;
     }
 
-    //@return current time
+    /// @return current time
     static timet now()
     {
         timet t;
@@ -97,7 +97,7 @@ struct timet
         return t;
     }
 
-    //@return current time (alias for now())
+    /// @return current time (alias for now())
     static timet current() {
         return now();
     }

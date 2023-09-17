@@ -185,7 +185,7 @@ public:
     }
 
     ///initializing with a NONZERO seed
-    //@note obsolete, compatibility
+    /// @note obsolete, compatibility
     void seed_old(uint seed) {
         // setting initial seeds to _mt[N] using
         // the generator Line 25 of Table 1 in

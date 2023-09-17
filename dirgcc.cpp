@@ -179,7 +179,7 @@ opcd directory::mkdir( zstring name, mode_t mode )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::move_file(zstring src, zstring dst)
+opcd directory::move_file(zstring src, zstring dst, bool replace_existing)
 {
     //TODO directories
     if(0 == ::rename(src.c_str(), dst.c_str()))

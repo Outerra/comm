@@ -120,8 +120,8 @@ public:
 
     ///Called before throwing an error exception to preset the _errtext member, just before
     /// the lexer inserts the error information itself.
-    //@param rules true if the error occured during parsing the lexer grammar
-    //@param dst destination string to fill
+    /// @param rules true if the error occured during parsing the lexer grammar
+    /// @param dst destination string to fill
     virtual void on_error_prefix(bool rules, charstr& dst, int line)
     {
         if (!rules)
@@ -162,7 +162,7 @@ public:
     ///Incremental token hasher used by the lexer
     struct token_hash
     {
-        uint hash;
+        uint hash = 0;
 
         ///Incremental hash value computation
         void inc_char(char c) {
@@ -204,15 +204,15 @@ public:
             return id == 0 ? 0 : &lextoken::id;
         }
 
-        //@return true if value token doesn't come from the input stream (a processed string or alias)
+        /// @return true if value token doesn't come from the input stream (a processed string or alias)
         bool noninput_value() const {
             return val._ptr != intok._ptr;
         }
 
-        //@return true if this is end-of-file token
+        /// @return true if this is end-of-file token
         bool end() const { return id == 0; }
 
-        //@return leading token of matched sequence, string or block
+        /// @return leading token of matched sequence, string or block
         const charstr& leading_token(lexer& lex) const {
             static charstr empty;
             if (id >= 0) return empty;
@@ -221,7 +221,7 @@ public:
             return seq->leading;
         }
 
-        //@return trailing token of matched string or block
+        /// @return trailing token of matched string or block
         const charstr& trailing_token(lexer& lex) const {
             static charstr empty;
             if (id >= 0) return empty;
@@ -233,13 +233,13 @@ public:
             return static_cast<const stringorblock*>(seq)->trailing[termid].seq;
         }
 
-        //@return true if this is leading token of specified sequence
+        /// @return true if this is leading token of specified sequence
         bool leading(int i) const { return state > 0 && id == i; }
 
-        //@return true if this is trailing token of specified sequence
+        /// @return true if this is trailing token of specified sequence
         bool trailing(int i) const { return state < 0 && id == i; }
 
-        //@return true if this is actually a string or block content (without the leading and trailing sequences)
+        /// @return true if this is actually a string or block content (without the leading and trailing sequences)
         bool is_content() const {
             return id < 0 && state == 0;
         }
@@ -327,8 +327,8 @@ public:
 
 
     ///Constructor
-    //@param utf8 enable or disable utf8 mode
-    //@param icase case insensitive tokens (true) or sensitive (false)
+    /// @param utf8 enable or disable utf8 mode
+    /// @param icase case insensitive tokens (true) or sensitive (false)
     lexer(bool utf8 = true, bool icase = false)
     {
         _utf8 = utf8;
@@ -388,7 +388,7 @@ public:
     }
 
 
-    //@return true if the lexer is set up to interpret input as utf-8 characters
+    /// @return true if the lexer is set up to interpret input as utf-8 characters
     bool is_utf8() const {
         return _utf8;
     }
@@ -426,10 +426,10 @@ public:
 
     ///Create new group named \a name with characters from \a set. Clump of continuous characters
     /// from the group is returned as one token.
-    //@return group id or 0 on error, error id is stored in the _err variable
-    //@param name group name
-    //@param set characters to include in the group, recognizes ranges when .. is found
-    //@param trailset optional character set to match after the first character from the
+    /// @return group id or 0 on error, error id is stored in the _err variable
+    /// @param name group name
+    /// @param set characters to include in the group, recognizes ranges when .. is found
+    /// @param trailset optional character set to match after the first character from the
     /// set was found. This can be used to allow different characters after the first
     /// letter matched
     int def_group(const token& name, const token& set, const token& trailset = token())
@@ -460,9 +460,9 @@ public:
 
     ///Create new group named \a name with characters from \a set that will be returned
     /// as single character tokens
-    //@return group id or 0 on error, error id is stored in the _err variable
-    //@param name group name
-    //@param set characters to include in the group, recognizes ranges when .. is found
+    /// @return group id or 0 on error, error id is stored in the _err variable
+    /// @param name group name
+    /// @param set characters to include in the group, recognizes ranges when .. is found
     int def_group_single(const token& name, const token& set)
     {
         uint g = (uint)_grpary.size();
@@ -484,9 +484,9 @@ public:
     /// implemented as lookups into the keyword hash table after the scanner computes
     /// the hash value for the token it processed.
     ///Otherwise (when they are heterogenous) they are set up as sequences.
-    //@param kwd keyword to add
-    //@param keyword_group 0-based id of distinct keyword group
-    //@return ID_KEYWORDS if the keyword consists of homogenous characters from
+    /// @param kwd keyword to add
+    /// @param keyword_group 0-based id of distinct keyword group
+    /// @return ID_KEYWORDS if the keyword consists of homogenous characters from
     /// one character group, or id of a sequence created, or 0 if already defined.
     int def_keyword(const token& kwd, uint keyword_group = 0)
     {
@@ -507,9 +507,9 @@ public:
     }
 
     ///Define multiple keywords at once
-    //@param kwdlist list of keywords separated by @a sep character
-    //@param sep separator character
-    //@return group id of the last keyword
+    /// @param kwdlist list of keywords separated by @a sep character
+    /// @param sep separator character
+    /// @return group id of the last keyword
     int def_keywords(token kwdlist, char sep = ':')
     {
         token kwd;
@@ -524,8 +524,8 @@ public:
     }
 
     ///Define multiple keywords at once
-    //@param kwdlist null-terminated list of keywords
-    //@return group id of the last keyword
+    /// @param kwdlist null-terminated list of keywords
+    /// @return group id of the last keyword
     int def_keywords(const char** kwdlist)
     {
         int grp = 0;
@@ -538,7 +538,7 @@ public:
         return grp;
     }
 
-    //@return nonzero if token is a keyword from given keyword group, the return equals keyword id + 1
+    /// @return nonzero if token is a keyword from given keyword group, the return equals keyword id + 1
     int is_keyword(int kid, const token& tok) const
     {
         DASSERT(kid >= ID_KEYWORDS && kid < ID_KEYWORDS + (int)_nkwd_groups);
@@ -552,18 +552,26 @@ public:
         return 1 + ord;
     }
 
+    /// @return number of keywords in a group
+    uint num_keywords(int kid) const {
+        DASSERT(kid >= ID_KEYWORDS && kid < ID_KEYWORDS + (int)_nkwd_groups);
+        if (kid < ID_KEYWORDS || kid >= ID_KEYWORDS + (int)_nkwd_groups)
+            return 0;
+
+        return _kwds.nkwds[kid - ID_KEYWORDS].nkwd;
+    }
 
     ///Escape sequence processor function prototype.
     ///Used to consume input after escape character and to append translated characters to dst
-    //@param src source characters to translate, the token should be advanced by the consumed amount
-    //@param dst destination buffer to append the translated characters to
+    /// @param src source characters to translate, the token should be advanced by the consumed amount
+    /// @param dst destination buffer to append the translated characters to
     typedef bool(*fn_replace_esc_seq)(token& src, charstr& dst);
 
     ///Define an escape rule. Escape replacement pairs are added subsequently via def_escape_pair()
-    //@return the escape rule id, or -1 on error
-    //@param name the escape rule name
-    //@param escapechar the escape character used to prefix the sequences
-    //@param fn_replace pointer to function that should perform the replacement
+    /// @return the escape rule id, or -1 on error
+    /// @param name the escape rule name
+    /// @param escapechar the escape character used to prefix the sequences
+    /// @param fn_replace pointer to function that should perform the replacement
     int def_escape(const token& name, char escapechar, fn_replace_esc_seq fn_replace = 0)
     {
         uint g = (uint)_escary.size();
@@ -585,11 +593,11 @@ public:
     }
 
     ///Define the escape string mappings.
-    //@return true if successful
-    //@param escrule id of the escape rule
-    //@param code source sequence that if found directly after the escape character, will be replaced
-    //@param replacewith the replacement string
-    //@note To define rule that replaces escaped \n, specify \n for code and an empty token for
+    /// @return true if successful
+    /// @param escrule id of the escape rule
+    /// @param code source sequence that if found directly after the escape character, will be replaced
+    /// @param replacewith the replacement string
+    /// @note To define rule that replaces escaped \n, specify \n for code and an empty token for
     /// the replacewith param. To specify a sequence that inserts \0 character(s), the replacewith
     /// token must be explicitly set to include it, like token("\0", 1).
     bool def_escape_pair(int escrule, const token& code, const token& replacewith)
@@ -616,11 +624,11 @@ public:
     ///Create new string sequence detector named \a name, using specified leading and trailing sequences.
     ///If the leading sequence was already defined for another string, only the trailing sequence is
     /// inserted into its trailing set, and the escape definition is ignored.
-    //@return string id (a negative number) or 0 on error, error id is stored in the _err variable
-    //@param name string rule name. Name prefixed with . (dot) makes the block content ignored in global scope, prefixed with (!) makes it disabled.
-    //@param leading the leading string delimiter
-    //@param trailing the trailing string delimiter. An empty string means end of file.
-    //@param escape name of the escape rule to use for processing of escape sequences within strings
+    /// @return string id (a negative number) or 0 on error, error id is stored in the _err variable
+    /// @param name string rule name. Name prefixed with . (dot) makes the block content ignored in global scope, prefixed with (!) makes it disabled.
+    /// @param leading the leading string delimiter
+    /// @param trailing the trailing string delimiter. An empty string means end of file.
+    /// @param escape name of the escape rule to use for processing of escape sequences within strings
     int def_string(token name, const token& leading, const token& trailing, const token& escape)
     {
         uint g = (uint)_stbary.size();
@@ -650,8 +658,7 @@ public:
             sr->escrule = en ? reinterpret_cast<escape_rule*>(*en) : 0;
             if (!sr->escrule)
                 __throw_doesnt_exist(escape);
-
-            if (sr->escrule->type != entity::ESCAPE) {
+            else  if (sr->escrule->type != entity::ESCAPE) {
                 _err = lexception::ERR_ENTITY_BAD_TYPE;
 
                 on_error_prefix(true, _errtext, current_line());
@@ -673,13 +680,13 @@ public:
 
 
     ///Create new block sequence detector named \a name, using specified leading and trailing sequences.
-    //@return block id (a negative number) or 0 on error, error id is stored in the _err variable
-    //@param name block rule name. Name prefixed with . (dot) makes the block content ignored in global scope.
-    //@param leading the leading block delimiter
-    //@param trailing the trailing block delimiter
-    //@param nested names of recognized nested blocks and strings to look and account for (separated with
+    /// @return block id (a negative number) or 0 on error, error id is stored in the _err variable
+    /// @param name block rule name. Name prefixed with . (dot) makes the block content ignored in global scope.
+    /// @param leading the leading block delimiter
+    /// @param trailing the trailing block delimiter
+    /// @param nested names of recognized nested blocks and strings to look and account for (separated with
     /// spaces). An empty list disables any nested blocks and strings.
-    //@note The rule names (either in the name or the nested params) can start with '.' (dot) character,
+    /// @note The rule names (either in the name or the nested params) can start with '.' (dot) character,
     /// in which case the rule is set to ignored state either within global scope (if placed before the
     /// rule name) or within the rule scope (if placed before rule names in nested list).
     int def_block(token name, const token& leading, const token& trailing, token nested)
@@ -757,9 +764,9 @@ public:
 
 
     ///Create new simple sequence detector named \a name.
-    //@return block id (a negative number) or 0 on error, error id is stored in the _err variable
-    //@param name block rule name. Name prefixed with . (dot) makes the block content ignored in global scope.
-    //@param seq the sequence to detect, prior to basic grouping rules
+    /// @return block id (a negative number) or 0 on error, error id is stored in the _err variable
+    /// @param name block rule name. Name prefixed with . (dot) makes the block content ignored in global scope.
+    /// @param seq the sequence to detect, prior to basic grouping rules
     int def_sequence(token name, const token& seq)
     {
         uint g = (uint)_stbary.size();
@@ -845,8 +852,8 @@ public:
     }
 
     ///Enable or disable specified sequence, string or block. Disabled construct is not detected in input.
-    //@note for s/s/b with same name, this applies only to the specific one
-    //@return previous state
+    /// @note for s/s/b with same name, this applies only to the specific one
+    /// @return previous state
     bool enable(int seqid, bool en)
     {
         __assert_valid_sequence(seqid, 0);
@@ -858,8 +865,8 @@ public:
     }
 
     ///Make sequence, string or block ignored or not. Ignored constructs are detected but skipped and not returned.
-    //@note for s/s/b with same name, this applies only to the specific one
-    //@return previous state
+    /// @note for s/s/b with same name, this applies only to the specific one
+    /// @return previous state
     bool ignore(int seqid, bool ig)
     {
         __assert_valid_sequence(seqid, 0);
@@ -883,10 +890,10 @@ public:
     }
 
     ///Return next token as if the string opening sequence has been already read.
-    //@note this explicit request will read the string content even if the
+    /// @note this explicit request will read the string content even if the
     /// string is currently disabled.
-    //@param stringid string identifier as returned by def_string() call.
-    //@param consume_trailing_seq true if the trailing sequence should be consumed, false if it should be left in input
+    /// @param stringid string identifier as returned by def_string() call.
+    /// @param consume_trailing_seq true if the trailing sequence should be consumed, false if it should be left in input
     const lextoken& next_as_string(int stringid, bool consume_trailing_seq = true)
     {
         __assert_valid_sequence(stringid, entity::STRING);
@@ -907,10 +914,10 @@ public:
     }
 
     ///Return next token as if the block opening sequence has been already read.
-    //@note this explicit request will read the block content even if the
+    /// @note this explicit request will read the block content even if the
     /// block is currently disabled, but it will not pop the block stack
-    //@param blockid string identifier as returned by def_block() call.
-    //@param consume_trailing_seq true if the trailing sequence should be consumed, false if it should be left in input
+    /// @param blockid string identifier as returned by def_block() call.
+    /// @param consume_trailing_seq true if the trailing sequence should be consumed, false if it should be left in input
     const lextoken& next_as_block(int blockid, bool consume_trailing_seq = true)
     {
         __assert_valid_sequence(blockid, entity::BLOCK);
@@ -963,9 +970,9 @@ public:
     }
 
     ///Return current block as single token
-    //@param seqid id of block/string/sequence to match
-    //@param complete true if the block should be read completely and returned, false if only the leading token should be matched
-    //@note This method temporarily enables the block if it was disabled before the call. If the block shares common
+    /// @param seqid id of block/string/sequence to match
+    /// @param complete true if the block should be read completely and returned, false if only the leading token should be matched
+    /// @note This method temporarily enables the block if it was disabled before the call. If the block shares common
     /// leading delimiter with other enabled block, the one that was specified first is evaluated.
     /// If the block was ignored, it will be matched now.
     /** Finds the end of active block and returns the content as a single token.
@@ -992,9 +999,9 @@ public:
     }
 
     ///Try to match given block type
-    //@param seqid id of block/string/sequence to match
-    //@param complete true if the block should be read completely and returned, false if only the leading token should be matched
-    //@note This method temporarily enables the block if it was disabled before the call. If the block shares common
+    /// @param seqid id of block/string/sequence to match
+    /// @param complete true if the block should be read completely and returned, false if only the leading token should be matched
+    /// @note This method temporarily enables the block if it was disabled before the call. If the block shares common
     /// leading delimiter with other enabled block, the one that was specified first is evaluated.
     /// If the block was ignored, it will be matched now.
     /** Finds the end of active block and returns the content as a single token.
@@ -1288,8 +1295,8 @@ public:
     }
 
     ///Try to match a raw (untokenized) string following in the input
-    //@param tok raw string to try match
-    //@param ignore id of the group that should be skipped beforehand, 0 if nothing shall be skipped
+    /// @param tok raw string to try match
+    /// @param ignore id of the group that should be skipped beforehand, 0 if nothing shall be skipped
     bool follows(const token& tok, uint ignore = 1)
     {
         uints skip = 0;
@@ -1310,8 +1317,8 @@ public:
     }
 
     ///Try to match a character following in the input
-    //@param c character to try to match
-    //@param ignore id of the group that should be skipped beforehand, 0 if nothing shall be skipped
+    /// @param c character to try to match
+    /// @param ignore id of the group that should be skipped beforehand, 0 if nothing shall be skipped
     bool follows(char c, uint ignore = 1)
     {
         uints skip = 0;
@@ -1330,25 +1337,25 @@ public:
     }
 
     ///Match a literal string. Pushes the read token back if not matched.
-    //@return true if next token matches literal string
-    //@note This won't match a string or block with content equal to @a val, only normal tokens can be matched
+    /// @return true if next token matches literal string
+    /// @note This won't match a string or block with content equal to @a val, only normal tokens can be matched
     bool matches(const token& val)
     {
         return next_equals(val);
     }
 
     ///Match a literal character. Pushes the read token back if not matched.
-    //@return true if next token matches literal character
-    //@note This won't match a string or block with content equal to @a val, only normal tokens can be matched
+    /// @return true if next token matches literal character
+    /// @note This won't match a string or block with content equal to @a val, only normal tokens can be matched
     bool matches(char c) {
         return next_equals(token(c));
     }
 
     ///Match group of characters. Pushes the read token back if not matched.
-    //@return true if next token belongs to the specified group/sequence.
-    //@param grp group/sequence id
-    //@param dst the token read
-    //@note Since the group is asked for explicitly, it will be returned even if it is currently set to be ignored
+    /// @return true if next token belongs to the specified group/sequence.
+    /// @param grp group/sequence id
+    /// @param dst the token read
+    /// @note Since the group is asked for explicitly, it will be returned even if it is currently set to be ignored
     bool matches(int grp, charstr& dst)
     {
         __assert_valid_rule(grp);
@@ -1369,10 +1376,10 @@ public:
     }
 
     ///Match group of characters. Pushes the read token back if not matched.
-    //@return true if next token belongs to the specified group/sequence.
-    //@param grp group/sequence id
-    //@param dst the token read
-    //@note Since the group is asked for explicitly, it will be returned even if it is currently set to be ignored
+    /// @return true if next token belongs to the specified group/sequence.
+    /// @param grp group/sequence id
+    /// @param dst the token read
+    /// @note Since the group is asked for explicitly, it will be returned even if it is currently set to be ignored
     bool matches(int grp, token& dst)
     {
         __assert_valid_rule(grp);
@@ -1390,9 +1397,9 @@ public:
     }
 
     ///Match group of characters. Pushes the read token back if not matched.
-    //@return true if next token belongs to the specified group/sequence.
-    //@param grp group/sequence id
-    //@note Since the group is asked for explicitly, it will be returned even if it is currently set to be ignored
+    /// @return true if next token belongs to the specified group/sequence.
+    /// @param grp group/sequence id
+    /// @note Since the group is asked for explicitly, it will be returned even if it is currently set to be ignored
     bool matches(int grp)
     {
         __assert_valid_rule(grp);
@@ -1404,7 +1411,7 @@ public:
         return res;
     }
 
-    //@return true if end of file was matched
+    /// @return true if end of file was matched
     bool matches_end()
     {
         return last().end() || next().end();
@@ -1412,10 +1419,10 @@ public:
 
 
     ///Match literal or else throw exception (struct lexception)
-    //@note This won't match a string or block with content equal to @a val, only normal tokens can be matched
-    //@param val literal string to match
-    //@param peek set to true if the function should return match status instead of throwing the exception
-    //@return match result if @a peek was set to true (otherwise an exception is thrown)
+    /// @note This won't match a string or block with content equal to @a val, only normal tokens can be matched
+    /// @param val literal string to match
+    /// @param peek set to true if the function should return match status instead of throwing the exception
+    /// @return match result if @a peek was set to true (otherwise an exception is thrown)
     bool match(const token& val, const char* errmsg = 0)
     {
         bool res = matches(val);
@@ -1435,10 +1442,10 @@ public:
     }
 
     ///Match literal or else throw exception (struct lexception)
-    //@note This won't match a string or block with content equal to @a val, only normal tokens can be matched
-    //@param c literal character to match
-    //@param peek set to true if the function should return match status instead of throwing the exception
-    //@return match result if @a peek was set to true (otherwise an exception is thrown)
+    /// @note This won't match a string or block with content equal to @a val, only normal tokens can be matched
+    /// @param c literal character to match
+    /// @param peek set to true if the function should return match status instead of throwing the exception
+    /// @return match result if @a peek was set to true (otherwise an exception is thrown)
     bool match(char c, const char* errmsg = 0)
     {
         bool res = matches(c);
@@ -1462,10 +1469,10 @@ public:
     }
 
     ///Match rule or else throw exception (struct lexception)
-    //@param grp group id to match
-    //@param dst destination string that is to receive the matched value
-    //@param peek set to true if the function should return match status instead of throwing the exception
-    //@return match result if @a peek was set to true (otherwise an exception is thrown)
+    /// @param grp group id to match
+    /// @param dst destination string that is to receive the matched value
+    /// @param peek set to true if the function should return match status instead of throwing the exception
+    /// @return match result if @a peek was set to true (otherwise an exception is thrown)
     bool match(int grp, charstr& dst, const char* errmsg = 0)
     {
         bool res = matches(grp, dst);
@@ -1491,10 +1498,10 @@ public:
     }
 
     ///Match rule or else throw exception (struct lexception)
-    //@param grp group id to match
-    //@param dst destination token that is to receive the matched value
-    //@param peek set to true if the function should return match status instead of throwing the exception
-    //@return match result if @a peek was set to true (otherwise an exception is thrown)
+    /// @param grp group id to match
+    /// @param dst destination token that is to receive the matched value
+    /// @param peek set to true if the function should return match status instead of throwing the exception
+    /// @return match result if @a peek was set to true (otherwise an exception is thrown)
     bool match(int grp, token& dst, const char* errmsg = 0)
     {
         bool res = matches(grp, dst);
@@ -1520,9 +1527,9 @@ public:
     }
 
     ///Match rule or else throw exception (struct lexception)
-    //@param grp group id to match
-    //@param peek set to true if the function should return match status instead of throwing the exception
-    //@return lextoken result if @a peek was set to true (otherwise an exception is thrown)
+    /// @param grp group id to match
+    /// @param peek set to true if the function should return match status instead of throwing the exception
+    /// @return lextoken result if @a peek was set to true (otherwise an exception is thrown)
     const lextoken& match(int grp, const char* errmsg = 0)
     {
         bool res = matches(grp);
@@ -1550,7 +1557,7 @@ public:
         return _last;
     }
 
-    //@return true if end of file was matched
+    /// @return true if end of file was matched
     bool match_end(const char* errmsg = 0)
     {
         bool res = matches_end();
@@ -1575,14 +1582,14 @@ public:
     }
 
     ///Try to match an optional literal, push back if not succeeded.
-    //@note This won't match a string or block with content equal to @a val, only normal tokens can be matched
+    /// @note This won't match a string or block with content equal to @a val, only normal tokens can be matched
     bool match_optional(const token& val)
     {
         return matches(val);
     }
 
     ///Try to match an optional literal character, push back if not succeeded.
-    //@note This won't match a string or block with content equal to @a val, only normal tokens can be matched
+    /// @note This won't match a string or block with content equal to @a val, only normal tokens can be matched
     bool match_optional(char c)
     {
         return matches(c);
@@ -1601,10 +1608,10 @@ public:
     }
 
 
-    //@{
+    /// @{
     ///Try to match one of the literals. The list is terminated by an empty token.
-    //@return number of matched rule (base 1) if succesfull. Returns 0 if none were matched.
-    //@note if nothing was matched, the lexer doesn't consume anything from the stream
+    /// @return number of matched rule (base 1) if succesfull. Returns 0 if none were matched.
+    /// @note if nothing was matched, the lexer doesn't consume anything from the stream
     int matches_either(token list[]) {
         int i = 0;
         while (list[i]) {
@@ -1612,15 +1619,15 @@ public:
         }
         return 0;
     }
-    //@}
+    /// @}
 
 
-    //@{
+    /// @{
     ///Try to match one of the rules. The parameters can be either literals (strings or
     /// single characters) or rule identifiers.
-    //@return number of matched rule (base 1) if succesfull; matched rule content can be
+    /// @return number of matched rule (base 1) if succesfull; matched rule content can be
     /// retrieved by calling last(). Returns 0 if none were matched.
-    //@note if nothing was matched, the lexer doesn't consume anything from the stream
+    /// @note if nothing was matched, the lexer doesn't consume anything from the stream
     template<class T1, class T2>
     int matches_either(T1 a, T2 b) {
         if (matches(a))  return 1;
@@ -1654,7 +1661,7 @@ public:
         if (matches(e))  return 5;
         return 0;
     }
-    //@}
+    /// @}
 
 
     ///Match one of the literals. The list is terminated by an empty token.
@@ -1675,7 +1682,7 @@ public:
         throw lexception(_err, _errtext);
     }
 
-    //@{
+    /// @{
     ///Match one of the rules. The parameters can be either literals (strings or
     /// single characters) or rule identifiers.
     ///If no parameter is matched, throws exception (struct lexception).
@@ -1762,19 +1769,20 @@ public:
 
         throw lexception(_err, _errtext);
     }
-    //@}
+    /// @}
 
     ///Push the last token back to be retrieved again by the next() method
     /// (and all the methods that use it, like the match_* methods etc.).
     void push_back() {
+        DASSERT(_pushback == 0);
         _pushback = 1;
     }
 
 
     ///Mark a backtrackable point
-    //@param overwrite overwrite last backtrack point
-    //@return nonnegative identifier of the backtrack point
-    //@note won't work with bound streams
+    /// @param overwrite overwrite last backtrack point
+    /// @return nonnegative identifier of the backtrack point
+    /// @note won't work with bound streams
     int push_backtrack_mark(bool overwrite) {
         DASSERT(_pushback == 0);  //not compatible with old style pushback
 
@@ -1787,7 +1795,7 @@ public:
     }
 
     ///Backtrack the lexer status
-    //@TODO needs to recover much more
+    /// @TODO needs to recover much more
     void backtrack(int mark = -1) {
         const backtrack_point* btm;
         if (mark < 0)
@@ -1814,10 +1822,10 @@ public:
 
 
 
-    //@return true if whole input was consumed
+    /// @return true if whole input was consumed
     bool end() const { return _last.id == 0; }
 
-    //@return last token read
+    /// @return last token read
     const lextoken& last() const { return _last; }
     //lextoken& oulast() { return _last; }
 
@@ -1826,7 +1834,7 @@ public:
 
 
     ///Return current lexer line position
-    //@return current line number (from index 1, not 0)
+    /// @return current line number (from index 1, not 0)
     virtual uint current_line()
     {
         if (_rawpos - _orig.ptr() < 0) {
@@ -1841,9 +1849,9 @@ public:
     }
 
     ///Return current lexer position info
-    //@return current line number (from index 1, not 0)
-    //@param text optional token, recieves current line text (may be incomplete)
-    //@param col receives column number of current token
+    /// @return current line number (from index 1, not 0)
+    /// @param text optional token, recieves current line text (may be incomplete)
+    /// @param col receives column number of current token
     uint current_line(token* text, uint* col)
     {
         if (_rawpos - _orig.ptr() < 0) {
@@ -1898,9 +1906,9 @@ public:
     ///This is used to obtain an exception with the same format as with an internal lexer exception.
     ///The line and column info relates to the last returned token. After using the return value to
     /// provide specific error text, call throw exception().
-    //@return string object that can be used to fill specific info; the string is
+    /// @return string object that can be used to fill specific info; the string is
     /// already prefilled with whatever the on_error_prefix() handler inserted into it
-    //@note
+    /// @note
     charstr& prepare_exception(int force_line = -1)
     {
         _err = lexception::ERR_EXTERNAL_ERROR;
@@ -1918,7 +1926,7 @@ public:
         return _errtext;
     }
 
-    //@return lexception object to be thrown
+    /// @return lexception object to be thrown
     lexception exc()
     {
         append_exception_location();
@@ -1928,7 +1936,7 @@ public:
 
 
     ///Test if whole token consists of characters from single group.
-    //@return 0 if not, or else the character group it belongs to (>0)
+    /// @return 0 if not, or else the character group it belongs to (>0)
     int homogenous(token t) const
     {
         uchar code = t[0];
@@ -1974,11 +1982,11 @@ public:
 
 
     ///Synthesize proper escape sequences for given string
-    //@param string id of the string type as returned by def_string
-    //@param tok string to synthesize
-    //@param dst destination storage where altered string is appended (if not altered it's not used)
-    //@param skip_selfescape do not escape the string if all escaped characters are the esc chars themselves
-    //@return true if the string has been altered
+    /// @param string id of the string type as returned by def_string
+    /// @param tok string to synthesize
+    /// @param dst destination storage where altered string is appended (if not altered it's not used)
+    /// @param skip_selfescape do not escape the string if all escaped characters are the esc chars themselves
+    /// @return true if the string has been altered
     bool synthesize_string(int string, token tok, charstr& dst, bool skip_selfescape = false) const
     {
         __assert_valid_sequence(string, entity::STRING);
@@ -2033,8 +2041,8 @@ protected:
     bool next_equals(const token& val)
     {
         //preserve old token position if there's no match
-        const char* old = _tok.ptr();
-        uints oldstacksize = _stack.size();
+        //const char* old = _tok.ptr();
+        //uints oldstacksize = _stack.size();
 
         bool equals = _pushback
             ? _last == val
@@ -2042,9 +2050,10 @@ protected:
         equals = equals && !_last.is_content();
 
         if (!equals && !_pushback) {
-            _tok._ptr = old;
-            if (_stack.size() > oldstacksize)
-                _stack.resize(oldstacksize);
+            //_tok._ptr = old;
+            //if (_stack.size() > oldstacksize)
+            //    _stack.resize(oldstacksize);
+            _pushback = 1;
         }
         else if (equals && _pushback)
             _pushback = 0;
@@ -2217,7 +2226,7 @@ protected:
     struct escape_rule : entity
     {
         char esc = 0;                   //< escape character
-        fn_replace_esc_seq  replfn;     //< custom replacement function
+        fn_replace_esc_seq  replfn = 0; //< custom replacement function
 
         dynarray<escpair> pairs;        //< static replacement pairs
 
@@ -2225,7 +2234,7 @@ protected:
         class back_map {
             enum { BITBLK = 8 * sizeof(uint32) };
 
-            dynarray < const escpair* >
+            dynarray<const escpair*>
                 map;                    //< reverted mapping of escaped symbols for synthesizer
 
             /// bit map for fast lookups whether replacement sequence can start with given character
@@ -2281,7 +2290,7 @@ protected:
         { }
 
 
-        //@return true if some replacements were made and \a dst is filled,
+        /// @return true if some replacements were made and \a dst is filled,
         /// or false if no processing was required and \a dst was not filled
         bool synthesize_string(const token& src, charstr& dst, bool skip_selfescape) const;
 
@@ -2378,7 +2387,7 @@ protected:
             int nkwd;
         };
 
-        hash_keyset < keyword_id, _Select_Copy<keyword_id, token>, hash_keyword, equal_keyword >
+        hash_keyset<keyword_id, _Select_Copy<keyword_id, token>, hash_keyword, equal_keyword>
             set;                        //< hash_keyset for fast detection if the string is in the list
         dynarray<group> nkwds;
 
@@ -2504,7 +2513,7 @@ protected:
 
         ///Make the specified S/S/B enabled or disabled within this block.
         ///If this very same block is enabled it means that it can nest in itself.
-        //@return previous state
+        /// @return previous state
         bool enable(int id, bool en)
         {
             DASSERT(id < 64);
@@ -2520,7 +2529,7 @@ protected:
 
         ///Make the specified S/S/B ignored or not ignored within this block.
         ///Ignored sequences are still analyzed for correctness, but are not returned.
-        //@return previous state
+        /// @return previous state
         bool ignore(int id, bool ig)
         {
             DASSERT(id < 64);
@@ -2648,9 +2657,9 @@ protected:
     }
 
     ///Process the definition of a set, executing callbacks on each character included
-    //@param s the set definition, characters and ranges
-    //@param fnval parameter for the callback function
-    //@param fn callback
+    /// @param s the set definition, characters and ranges
+    /// @param fnval parameter for the callback function
+    /// @param fn callback
     bool process_set(token s, uchar fnval, void (lexer::* fn)(uchar, uchar))
     {
         uchar k, kprev = 0;
@@ -2693,8 +2702,8 @@ protected:
     }
 
     ///Try to match a set of strings at offset
-    //@return number of the trailing string matched or -1
-    //@note strings are expected to be sorted by size (longest first)
+    /// @return number of the trailing string matched or -1
+    /// @note strings are expected to be sorted by size (longest first)
     int match_trail(const dynarray<stringorblock::trail>& str, uints& off)
     {
         const stringorblock::trail* p = str.ptr();
@@ -2712,7 +2721,7 @@ protected:
     }
 
     ///Read next token as if it was a string with the leading sequence already read.
-    //@note Also consumes the trailing string sequence, but it's not included in the
+    /// @note Also consumes the trailing string sequence, but it's not included in the
     /// returned lextoken if @a outermost is set. The lextoken contains the id member
     /// to distinguish between strings and literals.
     const lextoken& next_read_string(const string_rule& sr, uints& off, bool outermost, bool ignored)
@@ -2952,7 +2961,7 @@ protected:
     }
 
     ///Verify if the sequence can ever be matched
-    //@return null if ok, or else pointer to sequence which comes before the given one and has the same leading token
+    /// @return null if ok, or else pointer to sequence which comes before the given one and has the same leading token
     sequence* verify_matchable_sequence(sequence* seq) const
     {
         ushort x = _abmap[seq->leading.first_char()];
@@ -3176,11 +3185,11 @@ protected:
     }
 
     ///Scan input for characters from group
-    //@return token with the data, an empty token if there were none or ignored, or
+    /// @return token with the data, an empty token if there were none or ignored, or
     /// an empty token with _ptr==0 if there are no more data
-    //@param group group characters to return
-    //@param ignore true if the result would be ignored, so there's no need to fill the buffer
-    //@param off number of leading characters that are already considered belonging to the group
+    /// @param group group characters to return
+    /// @param ignore true if the result would be ignored, so there's no need to fill the buffer
+    /// @param off number of leading characters that are already considered belonging to the group
     token scan_group(uchar group, bool ignore, uints off = 0)
     {
         off = count_intable(_tok, _last.hash, group, off);
@@ -3209,11 +3218,11 @@ protected:
     }
 
     ///Scan input for characters not from a group
-    //@return token with the data, an empty token if there were none, or
+    /// @return token with the data, an empty token if there were none, or
     /// an empty token with _ptr==0 if there are no more data
-    //@param group group characters to return
-    //@param ignore true if the result would be ignored, so there's no need to fill the buffer
-    //@param off number of leading characters to skip
+    /// @param group group characters to return
+    /// @param ignore true if the result would be ignored, so there's no need to fill the buffer
+    /// @param off number of leading characters to skip
     token scan_notgroup(uchar group, bool ignore, uints off = 0)
     {
         off = count_notintable(_tok, _last.hash, group, off);
@@ -3242,10 +3251,10 @@ protected:
     }
 
     ///Scan input for characters set in mask
-    //@return token with the data, an empty token if there were none or ignored, or
+    /// @return token with the data, an empty token if there were none or ignored, or
     /// an empty token with _ptr==0 if there are no more data
-    //@param msk to check in \a _trail array
-    //@param ignore true if the result would be ignored, so there's no need to fill the buffer
+    /// @param msk to check in \a _trail array
+    /// @param ignore true if the result would be ignored, so there's no need to fill the buffer
     token scan_mask(uchar msk, bool ignore, uints off = 0)
     {
         off = count_inmask(_tok, _last.hash, msk, off);

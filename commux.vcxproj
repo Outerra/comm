@@ -214,6 +214,7 @@
     <ClInclude Include="metastream\fmtstreamxml.h" />
     <ClInclude Include="metastream\fmtstreamxml2.h" />
     <ClInclude Include="metastream\fmtstream_lexer.h" />
+    <ClInclude Include="metastream\fmtstream_lua_capi.h" />
     <ClInclude Include="metastream\fmtstream_v8.h" />
     <ClInclude Include="metastream\metagen.h" />
     <ClInclude Include="metastream\metastream.h" />
@@ -256,6 +257,7 @@
     <ClInclude Include="trait.h" />
     <ClInclude Include="tutf8.h" />
     <ClInclude Include="txtconv.h" />
+    <ClInclude Include="typeseq.h" />
     <ClInclude Include="version.h" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
@@ -272,7 +274,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <CppLanguageStandard>c++17</CppLanguageStandard>
+      <CppLanguageStandard>c++2a</CppLanguageStandard>
       <CppAdditionalWarning>%(CppAdditionalWarning);no-conversion</CppAdditionalWarning>
       <CAdditionalWarning>%(CAdditionalWarning);no-conversion</CAdditionalWarning>
     </ClCompile>

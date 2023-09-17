@@ -83,15 +83,16 @@ class slotalloc_base
 {
 protected:
 
+    using base_t = slotalloc_base<T, MODE, Es...>;
     using tracker_t = slotalloc_detail::base<MODE & slotalloc_mode::versioning, MODE & slotalloc_mode::tracking, Es...>;
     using storage_t = slotalloc_detail::storage<MODE & slotalloc_mode::linear, MODE & slotalloc_mode::atomic, T>;
 
     using extarray_t = typename tracker_t::extarray_t;
-    using changeset_t = typename slotalloc_detail::changeset;
+    using changeset_t = slotalloc_detail::changeset;
 
-    using uint_type = typename storage_t::uint_type;
+    using bitmask_type = typename storage_t::bitmask_type;
 
-    static constexpr int MASK_BITS = 8 * sizeof(uints);
+    static constexpr int BITMASK_BITS = 8 * sizeof(uints);
 
     static constexpr bool POOL = (MODE & slotalloc_mode::pool) != 0;
     static constexpr bool ATOMIC = (MODE & slotalloc_mode::atomic) != 0;
@@ -102,13 +103,13 @@ protected:
 public:
 
     ///Construct slotalloc container
-    //@note it's required to reserve memory or virtual address space, and/or to call allow_rebase() to indicate that it's ok when item addresses change on resize
+    /// @note it's required to reserve memory or virtual address space, and/or to call allow_rebase() to indicate that it's ok when item addresses change on resize
     slotalloc_base()
     {}
 
     ///Constructor, reserve memory (non-virtual, will rebase when overflows)
-    //@param reserve_items number of items to reserve memory for
-    //@param bvirtual true for virtual address space reservation, false for physical reservation (will rebase if crossed)
+    /// @param reserve_items number of items to reserve memory for
+    /// @param bvirtual true for virtual address space reservation, false for physical reservation (will rebase if crossed)
     slotalloc_base(uints nitems, reserve_mode mode)
     {
         if (mode == reserve_mode::virtual_space)
@@ -120,30 +121,83 @@ public:
     ~slotalloc_base() {
         if coid_constexpr_if(!POOL)
             reset();
+
+        discard();
     }
 
-    //@return value from ext array associated with given main array object
+    slotalloc_base(const slotalloc_base& s) {
+        copy(s);
+    }
+
+    void copy(const slotalloc_base& o)
+    {
+        _allocated = o._allocated;
+
+        if coid_constexpr_if(LINEAR) {
+            copy_array_with_bitmask(o._array, this->_array, _allocated);
+        }
+        else {
+            //using page = typename storage_t::page;
+            typedef typename storage_t::page page;
+
+            this->prepare_storage_copy(o);
+
+            bitmask_type const* bm = const_cast<bitmask_type const*>(_allocated.ptr());
+            bitmask_type const* em = const_cast<bitmask_type const*>(_allocated.ptre());
+            bitmask_type const* pm = bm;
+            uints gbase = 0;
+
+            for (uints ip = 0; ip < this->_pages.size(); ++ip, gbase += page::ITEMS)
+            {
+                T* dd = const_cast<T*>(this->_pages[ip].ptr());
+                const T* ds = o._pages[ip].ptr();
+
+                bitmask_type const* epm = em - pm > page::NMASK
+                    ? pm + page::NMASK
+                    : em;
+
+                uints pbase = 0;
+
+                for (; pm != epm; ++pm, pbase += BITMASK_BITS) {
+                    if (*pm == 0)
+                        continue;
+
+                    uints m = 1;
+                    for (int i = 0; i < BITMASK_BITS; ++i, m <<= 1) {
+                        if (*pm & m)
+                            new (dd + (pbase + i)) T(ds[pbase + i]);
+                        else if ((*pm & ~(m - 1)) == 0)
+                            break;
+                    }
+                }
+            }
+        }
+
+        extarray_copy(o);
+    }
+
+    /// @return value from ext array associated with given main array object
     template<size_t V>
     typename std::tuple_element<V, extarray_t>::type::value_type&
         assoc_value(const T* p) {
         return std::get<V>(this->_exts)[get_item_id(p)];
     }
 
-    //@return value from ext array associated with given main array object
+    /// @return value from ext array associated with given main array object
     template<size_t V>
     const typename std::tuple_element<V, extarray_t>::type::value_type&
         assoc_value(const T* p) const {
         return std::get<V>(this->_exts)[get_item_id(p)];
     }
 
-    //@return value from ext array for given index
+    /// @return value from ext array for given index
     template<size_t V>
     typename std::tuple_element<V, extarray_t>::type::value_type&
         value(uints index) {
         return std::get<V>(this->_exts)[index];
     }
 
-    //@return value from ext array for given index
+    /// @return value from ext array for given index
     template<size_t V>
     const typename std::tuple_element<V, extarray_t>::type::value_type&
         value(uints index) const {
@@ -152,13 +206,13 @@ public:
 
 #ifdef __cpp_lib_tuples_by_type
 
-    //@return value from ext array for given type
+    /// @return value from ext array for given type
     template<typename T2>
     T2& value_type(uints index) {
         return std::get<T2>(this->_exts)[index];
     }
 
-    //@return value from ext array for given type
+    /// @return value from ext array for given type
     template <typename T2>
     const T2& value_type(uints index) const {
         return std::get<T2>(this->_exts)[index];
@@ -166,14 +220,14 @@ public:
 
 #endif
 
-    //@return ext array
+    /// @return ext array
     template<size_t V>
     typename std::tuple_element<V, extarray_t>::type&
         value_array() {
         return std::get<V>(this->_exts);
     }
 
-    //@return ext array
+    /// @return ext array
     template<size_t V>
     const typename std::tuple_element<V, extarray_t>::type&
         value_array() const {
@@ -194,13 +248,13 @@ public:
 
     void reserve(uints nitems)
     {
-        uints na = align_to_chunks(nitems, MASK_BITS);
+        uints na = align_to_chunks(nitems, BITMASK_BITS);
 
         if coid_constexpr_if (LINEAR) {
             this->_array.reserve(nitems, true);
         }
         else {
-            this->_pages.reserve(na,true);
+            this->_pages.reserve(na, true);
         }
 
         _allocated.reserve(na, true);
@@ -210,7 +264,7 @@ public:
 
     void reserve_virtual(uints nitems)
     {
-        uints na = align_to_chunks(nitems, MASK_BITS);
+        uints na = align_to_chunks(nitems, BITMASK_BITS);
 
         if coid_constexpr_if (LINEAR) {
             discard();
@@ -228,7 +282,7 @@ public:
 
 
     ///Insert object
-    //@return pointer to the newly inserted object
+    /// @return pointer to the newly inserted object
     T* push(const T& v)
     {
         bool isold = _count < created();
@@ -238,7 +292,7 @@ public:
     }
 
     ///Insert object
-    //@return pointer to the newly inserted object
+    /// @return pointer to the newly inserted object
     T* push(T&& v)
     {
         bool isold = _count < created();
@@ -290,8 +344,8 @@ public:
     }
 
     ///Add new object, uninitialized (no constructor invoked on the object)
-    //@param newitem optional variable that receives whether the object slot was newly created (true) or reused from the pool (false)
-    //@note if newitem == 0 within the pool mode and thus no way to indicate the item has been reused, the reused objects have destructors called
+    /// @param newitem optional variable that receives whether the object slot was newly created (true) or reused from the pool (false)
+    /// @note if newitem == 0 within the pool mode and thus no way to indicate the item has been reused, the reused objects have destructors called
     T* add_uninit(bool* newitem = 0, uints* pid = 0)
     {
         if (_count < created()) {
@@ -309,7 +363,7 @@ public:
     }
 
     ///Add range of objects initialized with default constructors
-    //@return id to the beginning of the allocated range
+    /// @return id to the beginning of the allocated range
     uints add_range(uints n)
     {
         if (n == 0)
@@ -333,9 +387,9 @@ public:
     }
 
     ///Add range of objects, uninitialized (no constructor invoked on the objects)
-    //@param nreused optional variable receiving the number of objects that were reused from the pool and are constructed already
-    //@note if nreused == 0 within the pool mode and thus no way to indicate the item has been reused, the reused objects have destructors called
-    //@return id to the beginning of the allocated range
+    /// @param nreused optional variable receiving the number of objects that were reused from the pool and are constructed already
+    /// @note if nreused == 0 within the pool mode and thus no way to indicate the item has been reused, the reused objects have destructors called
+    /// @return id to the beginning of the allocated range
     uints add_range_uninit(uints n, uints* nreused = 0)
     {
         if (n == 0)
@@ -369,7 +423,7 @@ public:
     }
 
     ///Add range of objects initialized with default constructors
-    //@return id to the beginning of the allocated range
+    /// @return id to the beginning of the allocated range
     T* add_contiguous_range(uints n)
     {
         if coid_constexpr_if (!LINEAR) {
@@ -395,9 +449,9 @@ public:
     }
 
     ///Add range of objects, uninitialized (no constructor invoked on the objects)
-    //@param nreused optional variable receiving the number of objects that were reused from the pool and are constructed already
-    //@note if nreused == 0 within the pool mode and thus no way to indicate the item has been reused, the reused objects have destructors called
-    //@return id to the beginning of the allocated range
+    /// @param nreused optional variable receiving the number of objects that were reused from the pool and are constructed already
+    /// @note if nreused == 0 within the pool mode and thus no way to indicate the item has been reused, the reused objects have destructors called
+    /// @return id to the beginning of the allocated range
     T* add_contiguous_range_uninit(uints n, uints* nreused = 0)
     {
         if coid_constexpr_if (!LINEAR) {
@@ -494,8 +548,8 @@ public:
         return del_item(vid.id);
     }
 
-    //@return previously deleted but still valid item
-    //@note only works in POOL mode
+    /// @return previously deleted but still valid item
+    /// @note only works in POOL mode
     T* undel_item(uints id)
     {
         static_assert(POOL, "only available in pool mode");
@@ -514,8 +568,8 @@ public:
         return 0;
     }
 
-    //@return previously deleted but still valid item with correct version
-    //@note only works in POOL mode
+    /// @return previously deleted but still valid item with correct version
+    /// @note only works in POOL mode
     template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
     T* undel_item(versionid vid)
     {
@@ -538,7 +592,7 @@ public:
     }
 
     ///Mark object deleted without running the destructor
-    //@note useful for deletion of objects from within item destructors
+    /// @note useful for deletion of objects from within item destructors
     void del_nodestruct(T* p)
     {
         static_assert(!POOL, "error: cannot be used in pool mode");
@@ -608,15 +662,15 @@ public:
         del_range(get_item_id(p), n);
     }
 
-    //@return number of used slots in the container
+    /// @return number of used slots in the container
     uints count() const { return _count; }
 
-    //@return allocated and previously created count (not necessarily used currently)
+    /// @return allocated and previously created count (not necessarily used currently)
     uints allocated_count() const {
         return created();
     }
 
-    //@return number of currently preallocated items
+    /// @return number of currently preallocated items
     uints preallocated_count() const {
         if coid_constexpr_if (LINEAR)
             return this->_array.reserved_total() / sizeof(T);
@@ -624,10 +678,10 @@ public:
             return this->_pages.size() * storage_t::page::ITEMS;
     }
 
-    //@{ accessors with versionid argument, enabled only if versioning is on
+    /// @{ accessors with versionid argument, enabled only if versioning is on
 
     ///Return an item given id
-    //@param id id of the item
+    /// @param id id of the item
     template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
     const T* get_item(versionid vid) const
     {
@@ -636,8 +690,8 @@ public:
     }
 
     ///Return an item given id
-    //@param id id of the item
-    //@note non-const operator [] disabled on tracking allocators, use explicit get_mutable_item to indicate the element will be modified
+    /// @param id id of the item
+    /// @note non-const operator [] disabled on tracking allocators, use explicit get_mutable_item to indicate the element will be modified
     template <bool T1 = VERSIONING && !TRACKING, typename = std::enable_if_t<T1>>
     T* get_item(versionid vid)
     {
@@ -646,7 +700,7 @@ public:
     }
 
     ///Return an item given id
-    //@param id id of the item
+    /// @param id id of the item
     template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
     T* get_mutable_item(versionid vid)
     {
@@ -661,17 +715,17 @@ public:
         return *get_item(vid);
     }
 
-    //@note non-const operator [] disabled on tracking allocators, use explicit get_mutable_item to indicate the element will be modified
+    /// @note non-const operator [] disabled on tracking allocators, use explicit get_mutable_item to indicate the element will be modified
     template <bool T1 = VERSIONING && !TRACKING, typename = std::enable_if_t<T1>>
     T& operator [] (versionid vid) {
         return *get_mutable_item(vid);
     }
 
-    //@}
+    /// @}
 
 
     ///Return an item given id
-    //@param id id of the item
+    /// @param id id of the item
     const T* get_item(uints id) const
     {
         DASSERT_RET(id < created() && get_bit(id), 0);
@@ -679,8 +733,8 @@ public:
     }
 
     ///Return an item given id
-    //@param id id of the item
-    //@note non-const operator [] disabled on tracking allocators, use explicit get_mutable_item to indicate the element will be modified
+    /// @param id id of the item
+    /// @note non-const operator [] disabled on tracking allocators, use explicit get_mutable_item to indicate the element will be modified
     template <bool T1 = TRACKING, typename = std::enable_if_t<!T1>>
     T* get_item(uints id)
     {
@@ -689,7 +743,7 @@ public:
     }
 
     ///Return an item given id
-    //@param id id of the item
+    /// @param id id of the item
     T* get_mutable_item(uints id)
     {
         DASSERT_RET(id < created() && get_bit(id), 0);
@@ -702,7 +756,7 @@ public:
         return *get_item(id);
     }
 
-    //@note non-const operator [] disabled on tracking allocators, use explicit get_mutable_item to indicate the element will be modified
+    /// @note non-const operator [] disabled on tracking allocators, use explicit get_mutable_item to indicate the element will be modified
     template <bool T1 = TRACKING, typename = std::enable_if_t<!T1>>
     T& operator [] (uints id) {
         return *get_mutable_item(id);
@@ -710,9 +764,9 @@ public:
 
 
     ///Get a particular item from given slot or default-construct a new one there
-    //@param id item id, reverts to add() if UMAXS
-    //@param is_new optional if not null, receives true if the item was newly created
-    //@note a deleted item in POOL mode is also considered newly created here
+    /// @param id item id, reverts to add() if UMAXS
+    /// @param is_new optional if not null, receives true if the item was newly created
+    /// @note a deleted item in POOL mode is also considered newly created here
     T* get_or_create(uints id, bool* is_new = 0)
     {
         if (id == UMAXS) {
@@ -760,8 +814,8 @@ public:
     }
 
     ///Get a particular item from given slot or default-construct a new one there
-    //@param id item id, reverts to add() if UMAXS
-    //@param is_new optional if not null, receives true if the item was newly created (also not restored from pool)
+    /// @param id item id, reverts to add() if UMAXS
+    /// @param is_new optional if not null, receives true if the item was newly created (also not restored from pool)
     T* get_or_create_uninit(uints id, bool* is_new = 0)
     {
         if (id == UMAXS) {
@@ -805,7 +859,7 @@ public:
         return ptr(id);
     }
 
-    //@return id of given item, or UMAXS if the item is not managed here
+    /// @return id of given item, or UMAXS if the item is not managed here
     uints get_item_id(const T* p) const
     {
         if coid_constexpr_if (LINEAR) {
@@ -831,7 +885,7 @@ public:
         }
     }
 
-    //@return if of given item in ext array or UMAXS if the item is not managed here
+    /// @return if of given item in ext array or UMAXS if the item is not managed here
     template<int V, class K, bool T1 = VERSIONING, typename = std::enable_if_t<!T1>>
     uints get_array_item_id(const K* p) const
     {
@@ -842,7 +896,7 @@ public:
             : UMAXS;
     }
 
-    //@return versionid of given item
+    /// @return versionid of given item
     template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
     versionid get_item_versionid(const T* p) const
     {
@@ -852,7 +906,7 @@ public:
             : this->get_versionid(id);
     }
 
-    //@return versionid of given slot_id if valid
+    /// @return versionid of given slot_id if valid
     template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
     versionid get_item_versionid(uints slot_id) const
     {
@@ -861,18 +915,18 @@ public:
             : versionid();
     }
 
-    //@return true if item with id is valid
+    /// @return true if item with id is valid
     bool is_valid_id(uints id) const {
         return get_bit(id);
     }
 
-    //@return true if item with id is valid
+    /// @return true if item with id is valid
     template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
     bool is_valid_id(versionid vid) const {
         return this->check_versionid(vid) && get_bit(vid.id);
     }
 
-    //@return true if item is valid
+    /// @return true if item is valid
     bool is_valid(const T* p) const {
         return get_bit(get_item_id(p));
     }
@@ -886,6 +940,11 @@ public:
             });
 
         return dif == 0;
+    }
+
+
+    const dynarray<T>* linear_array() const {
+        return storage_t::linear_array();
     }
 
 
@@ -932,7 +991,7 @@ public:
 
 protected:
 
-    //@{ versioning functions
+    /// @{ versioning functions
 
     versionid get_versionid(uints id) const {
         DASSERT_RET(id <= versionid::max_id, versionid());
@@ -960,11 +1019,11 @@ protected:
             ++tracker_t::version_array()[id];
     }
 
-    //@}
+    /// @}
 
 protected:
 
-    //@{ tracking functions
+    /// @{ tracking functions
 
     void set_modified(uints k) const
     {
@@ -976,7 +1035,7 @@ protected:
         }
     }
 
-    //@}
+    /// @}
 
 protected:
 
@@ -1062,7 +1121,7 @@ protected:
     }
 
 
-    //@{Helper functions for for_each to allow calling with optional index argument
+    /// @{Helper functions for for_each to allow calling with optional index argument
     template<class Fn>
     using has_index = std::integral_constant<bool, !(closure_traits<Fn>::arity::value <= 1)>;
 
@@ -1223,28 +1282,28 @@ protected:
         fn(v, index);
     }
 #endif
-    //@}
+    /// @}
 
 public:
 
     ///Invoke a functor on each used item.
-    //@param f functor with ([const] T&) or ([const] T&, size_t index) arguments
+    /// @param f functor with ([const] T&) or ([const] T&, size_t index) arguments
     template<typename Func>
     void for_each(Func f) const
     {
         if coid_constexpr_if (LINEAR) {
             typedef std::remove_reference_t<typename closure_traits<Func>::template arg<0>> Tx;
             Tx* d = const_cast<Tx*>(this->_array.ptr());
-            uint_type const* b = const_cast<uint_type const*>(_allocated.ptr());
-            uint_type const* e = const_cast<uint_type const*>(_allocated.ptre());
+            bitmask_type const* b = const_cast<bitmask_type const*>(_allocated.ptr());
+            bitmask_type const* e = const_cast<bitmask_type const*>(_allocated.ptre());
             uints s = 0;
 
-            for (uint_type const* p = b; p != e; ++p, s += MASK_BITS) {
+            for (bitmask_type const* p = b; p != e; ++p, s += BITMASK_BITS) {
                 if (*p == 0)
                     continue;
 
                 uints m = 1;
-                for (int i = 0; i < MASK_BITS; ++i, m <<= 1) {
+                for (int i = 0; i < BITMASK_BITS; ++i, m <<= 1) {
                     if (*p & m)
                         funccall(f, d[s + i], s + i);
                     else if ((*p & ~(m - 1)) == 0)
@@ -1256,9 +1315,9 @@ public:
             //using page = typename storage_t::page;
             typedef typename storage_t::page page;
 
-            uint_type const* bm = const_cast<uint_type const*>(_allocated.ptr());
-            uint_type const* em = const_cast<uint_type const*>(_allocated.ptre());
-            uint_type const* pm = bm;
+            bitmask_type const* bm = const_cast<bitmask_type const*>(_allocated.ptr());
+            bitmask_type const* em = const_cast<bitmask_type const*>(_allocated.ptre());
+            bitmask_type const* pm = bm;
             uints gbase = 0;
 
             for (uints ip = 0; ip < this->_pages.size(); ++ip, gbase += page::ITEMS)
@@ -1266,28 +1325,28 @@ public:
                 const page& pp = this->_pages[ip];
                 T* data = const_cast<T*>(pp.ptr());
 
-                uint_type const* epm = em - pm > page::NMASK
+                bitmask_type const* epm = em - pm > page::NMASK
                     ? pm + page::NMASK
                     : em;
 
                 uints pbase = 0;
 
-                for (; pm != epm; ++pm, pbase += MASK_BITS) {
+                for (; pm != epm; ++pm, pbase += BITMASK_BITS) {
                     if (*pm == 0)
                         continue;
 
                     uints m = 1;
-                    for (int i = 0; i < MASK_BITS; ++i, m <<= 1) {
+                    for (int i = 0; i < BITMASK_BITS; ++i, m <<= 1) {
                         if (*pm & m)
                             funccall(f, data[pbase + i], gbase + pbase + i);
                         else if ((*pm & ~(m - 1)) == 0)
                             break;
 
                         //update after rebase
-                        ints diffm = (ints)const_cast<uint_type const*>(_allocated.ptr()) - (ints)bm;
+                        ints diffm = (ints)const_cast<bitmask_type const*>(_allocated.ptr()) - (ints)bm;
                         if (diffm) {
                             bm = ptr_byteshift(bm, diffm);
-                            em = const_cast<uint_type const*>(_allocated.ptre());
+                            em = const_cast<bitmask_type const*>(_allocated.ptre());
                             pm = ptr_byteshift(pm, diffm);
                             epm = ptr_byteshift(epm, diffm);
                         }
@@ -1298,34 +1357,34 @@ public:
     }
 
     ///Invoke a functor on each used item in given ext array
-    //@note handles array insertions/deletions during iteration
-    //@param K ext array id
-    //@param f functor with ([const] T&) or ([const] T&, size_t index) arguments, with T being the type of given value array
+    /// @note handles array insertions/deletions during iteration
+    /// @param K ext array id
+    /// @param f functor with ([const] T&) or ([const] T&, size_t index) arguments, with T being the type of given value array
     template<int K, typename Func>
     void for_each_in_array(Func f) const
     {
         auto extarray = value_array<K>().ptr();
 
-        uint_type const* bm = const_cast<uint_type const*>(_allocated.ptr());
-        uint_type const* em = const_cast<uint_type const*>(_allocated.ptre());
+        bitmask_type const* bm = const_cast<bitmask_type const*>(_allocated.ptr());
+        bitmask_type const* em = const_cast<bitmask_type const*>(_allocated.ptre());
         uints s = 0;
 
-        for (uint_type const* pm = bm; pm != em; ++pm, s += MASK_BITS) {
+        for (bitmask_type const* pm = bm; pm != em; ++pm, s += BITMASK_BITS) {
             if (*pm == 0)
                 continue;
 
             uints m = 1;
-            for (int i = 0; i < MASK_BITS; ++i, m <<= 1) {
+            for (int i = 0; i < BITMASK_BITS; ++i, m <<= 1) {
                 if (*pm & m)
                     funccall(f, extarray[s + i], s + i);
                 else if ((*pm & ~(m - 1)) == 0)
                     break;
 
                 //update after rebase
-                ints diffm = (ints)const_cast<uint_type const*>(_allocated.ptr()) - (ints)bm;
+                ints diffm = (ints)const_cast<bitmask_type const*>(_allocated.ptr()) - (ints)bm;
                 if (diffm) {
                     bm = ptr_byteshift(bm, diffm);
-                    em = const_cast<uint_type const*>(_allocated.ptre());
+                    em = const_cast<bitmask_type const*>(_allocated.ptre());
                     pm = ptr_byteshift(pm, diffm);
                 }
 
@@ -1337,17 +1396,16 @@ public:
     }
 
     ///Invoke a functor on each item that was modified between two frames
-    //@note const version doesn't handle array insertions/deletions during iteration
-    //@param bitplane_mask changeset bitplane mask (slotalloc_detail::changeset::bitplane_mask)
-    //@param f functor with ([const] T* ptr) or ([const] T* ptr, size_t index) arguments; ptr can be null if item was deleted
+    /// @note const version doesn't handle array insertions/deletions during iteration
+    /// @param bitplane_mask changeset bitplane mask (slotalloc_detail::changeset::bitplane_mask)
+    /// @param f functor with ([const] T* ptr) or ([const] T* ptr, size_t index) arguments; ptr can be null if item was deleted
     template<typename Func, bool T1 = TRACKING, typename = std::enable_if_t<T1>>
     void for_each_modified(uint bitplane_mask, Func f) const
     {
         const bool all_modified = bitplane_mask > slotalloc_detail::changeset::BITPLANE_MASK;
 
-        typedef std::remove_pointer_t<std::remove_reference_t<typename closure_traits<Func>::template arg<0>>> Tx;
-        uint_type const* bm = const_cast<uint_type const*>(_allocated.ptr());
-        uint_type const* em = const_cast<uint_type const*>(_allocated.ptre());
+        bitmask_type const* bm = const_cast<bitmask_type const*>(_allocated.ptr());
+        bitmask_type const* em = const_cast<bitmask_type const*>(_allocated.ptre());
 
         auto chs = tracker_t::get_changeset();
         DASSERT(chs->size() >= uints(em - bm));
@@ -1356,13 +1414,13 @@ public:
         const changeset_t* ec = chs->ptre();
         if coid_constexpr_if (LINEAR) {
             T* pd0 = const_cast<T*>(this->_array.ptr());
-            uint_type const* pm = bm;
+            bitmask_type const* pm = bm;
 
             for (const changeset_t* ch = bc; ch < ec; ++pm) {
                 uints m = pm < em ? *pm : 0U;
-                uints idbase = (pm - bm) * MASK_BITS;
+                uints idbase = (pm - bm) * BITMASK_BITS;
 
-                for (int i = 0; ch < ec && i < MASK_BITS; ++i, m >>= 1, ++ch) {
+                for (int i = 0; ch < ec && i < BITMASK_BITS; ++i, m >>= 1, ++ch) {
                     if (all_modified || (ch->mask & bitplane_mask) != 0) {
                         T* pd = (m & 1) != 0 ? pd0 + (idbase + i) : 0;
                         funccallp(f, pd, idbase + i);
@@ -1374,11 +1432,10 @@ public:
             //using page = typename storage_t::page;
             typedef typename storage_t::page page;
 
-
             const page* bp = this->_pages.ptr();
             const page* ep = this->_pages.ptre();
 
-            uint_type const* pm = bm;
+            bitmask_type const* pm = bm;
             changeset_t const* pc = bc;
             uints gbase = 0;
 
@@ -1391,10 +1448,10 @@ public:
 
                 uints pbase = 0;
 
-                for (; pc < epc; ++pm, pbase += MASK_BITS) {
+                for (; pc < epc; ++pm, pbase += BITMASK_BITS) {
                     uints m = pm < em ? *pm : 0U;
 
-                    for (int i = 0; pc < epc && i < MASK_BITS; ++i, m >>= 1, ++pc) {
+                    for (int i = 0; pc < epc && i < BITMASK_BITS; ++i, m >>= 1, ++pc) {
                         if (all_modified || (pc->mask & bitplane_mask) != 0) {
                             T* pd = (m & 1) != 0 ? (T*)(data + pbase + i) : nullptr;
                             funccallp(f, pd, gbase + pbase + i);
@@ -1406,7 +1463,7 @@ public:
     }
 
     ///Run f(T*) on a range of items
-    //@note this function ignores whether the items in range are allocated or not
+    /// @note this function ignores whether the items in range are allocated or not
     template<typename Func>
     void for_range_unchecked(uints id, uints count, Func f)
     {
@@ -1443,34 +1500,34 @@ public:
     }
 
     ///Find first element for which the predicate returns true
-    //@return pointer to the element or null
-    //@param f functor with ([const] T&) or ([const] T&, size_t index) arguments
+    /// @return pointer to the element or null
+    /// @param f functor with ([const] T&) or ([const] T&, size_t index) arguments
     template<typename Func>
     T* find_if(Func f) const
     {
-        uint_type const* bm = const_cast<uint_type const*>(_allocated.ptr());
-        uint_type const* em = const_cast<uint_type const*>(_allocated.ptre());
+        bitmask_type const* bm = const_cast<bitmask_type const*>(_allocated.ptr());
+        bitmask_type const* em = const_cast<bitmask_type const*>(_allocated.ptre());
 
         if coid_constexpr_if (LINEAR) {
             uints base = 0;
             T* pd0 = const_cast<T*>(this->_array.ptr());
 
-            for (uint_type const* pm = bm; pm != em; ++pm, base += MASK_BITS) {
+            for (bitmask_type const* pm = bm; pm != em; ++pm, base += BITMASK_BITS) {
                 if (*pm == 0)
                     continue;
 
                 uints m = 1;
-                for (int i = 0; i < MASK_BITS; ++i, m <<= 1) {
+                for (int i = 0; i < BITMASK_BITS; ++i, m <<= 1) {
                     if (*pm & m) {
                         uints id = base + i;
                         if (funccall(f, pd0[id], base + i))
                             return pd0 + id;
 
                         //update after rebase
-                        ints diffm = (ints)const_cast<uint_type const*>(_allocated.ptr()) - (ints)bm;
+                        ints diffm = (ints)const_cast<bitmask_type const*>(_allocated.ptr()) - (ints)bm;
                         if (diffm) {
                             bm = ptr_byteshift(bm, diffm);
-                            em = const_cast<uint_type const*>(_allocated.ptre());
+                            em = const_cast<bitmask_type const*>(_allocated.ptre());
                             pm = ptr_byteshift(pm, diffm);
                         }
                     }
@@ -1483,7 +1540,7 @@ public:
             //using page = typename storage_t::page;
             typedef typename storage_t::page page;
 
-            uint_type const* pm = bm;
+            bitmask_type const* pm = bm;
             uints gbase = 0;
 
             for (uints ip = 0; ip < this->_pages.size(); ++ip, gbase += page::ITEMS)
@@ -1491,27 +1548,27 @@ public:
                 const page& pp = this->_pages[ip];
                 T* data = const_cast<T*>(pp.ptr());
 
-                uint_type const* epm = em - pm > page::NMASK
+                bitmask_type const* epm = em - pm > page::NMASK
                     ? pm + page::NMASK
                     : em;
 
                 uints pbase = 0;
 
-                for (; pm != epm; ++pm, pbase += MASK_BITS) {
+                for (; pm != epm; ++pm, pbase += BITMASK_BITS) {
                     if (*pm == 0)
                         continue;
 
                     uints m = 1;
-                    for (int i = 0; i < MASK_BITS; ++i, m <<= 1) {
+                    for (int i = 0; i < BITMASK_BITS; ++i, m <<= 1) {
                         if (*pm & m) {
                             if (funccall_if(f, data[pbase + i], gbase + pbase + i))
                                 return const_cast<T*>(data) + (pbase + i);
 
                             //update after rebase
-                            ints diffm = (ints)const_cast<uint_type const*>(_allocated.ptr()) - (ints)bm;
+                            ints diffm = (ints)const_cast<bitmask_type const*>(_allocated.ptr()) - (ints)bm;
                             if (diffm) {
                                 bm = ptr_byteshift(bm, diffm);
-                                em = const_cast<uint_type const*>(_allocated.ptre());
+                                em = const_cast<bitmask_type const*>(_allocated.ptre());
                                 pm = ptr_byteshift(pm, diffm);
                                 epm = ptr_byteshift(epm, diffm);
                             }
@@ -1526,30 +1583,121 @@ public:
         return 0;
     }
 
+    ///Remove each element for which the predicate returns true
+    /// @param f functor with ([const] T&) or ([const] T&, size_t index) arguments
+    /// @return true if some item was deleted otherwise false
+    template<typename Func>
+    bool del_if(Func f)
+    {
+        bool found = false;
+        bitmask_type const* bm = const_cast<bitmask_type const*>(_allocated.ptr());
+        bitmask_type const* em = const_cast<bitmask_type const*>(_allocated.ptre());
+
+        if coid_constexpr_if(LINEAR) {
+            uints base = 0;
+            T* pd0 = const_cast<T*>(this->_array.ptr());
+
+            for (bitmask_type const* pm = bm; pm != em; ++pm, base += BITMASK_BITS) {
+                if (*pm == 0)
+                    continue;
+
+                uints m = 1;
+                for (int i = 0; i < BITMASK_BITS; ++i, m <<= 1) {
+                    if (*pm & m) {
+                        uints id = base + i;
+                        if (funccall(f, pd0[id], base + i))
+                        {
+                            del(pd0 + id);
+                            found = true;
+                        }
+
+                        //update after rebase
+                        ints diffm = (ints)const_cast<bitmask_type const*>(_allocated.ptr()) - (ints)bm;
+                        if (diffm) {
+                            bm = ptr_byteshift(bm, diffm);
+                            em = const_cast<bitmask_type const*>(_allocated.ptre());
+                            pm = ptr_byteshift(pm, diffm);
+                        }
+                    }
+                    else if ((*pm & ~(m - 1)) == 0)
+                        break;
+                }
+            }
+        }
+        else {
+            //using page = typename storage_t::page;
+            typedef typename storage_t::page page;
+
+            bitmask_type const* pm = bm;
+            uints gbase = 0;
+
+            for (uints ip = 0; ip < this->_pages.size(); ++ip, gbase += page::ITEMS)
+            {
+                const page& pp = this->_pages[ip];
+                T* data = const_cast<T*>(pp.ptr());
+
+                bitmask_type const* epm = em - pm > page::NMASK
+                    ? pm + page::NMASK
+                    : em;
+
+                uints pbase = 0;
+
+                for (; pm != epm; ++pm, pbase += BITMASK_BITS) {
+                    if (*pm == 0)
+                        continue;
+
+                    uints m = 1;
+                    for (int i = 0; i < BITMASK_BITS; ++i, m <<= 1) {
+                        if (*pm & m) {
+                            if (funccall_if(f, data[pbase + i], gbase + pbase + i))
+                            {
+                                del(const_cast<T*>(data) + (pbase + i));
+                                found = true;
+                            }
+
+                            //update after rebase
+                            ints diffm = (ints)const_cast<bitmask_type const*>(_allocated.ptr()) - (ints)bm;
+                            if (diffm) {
+                                bm = ptr_byteshift(bm, diffm);
+                                em = const_cast<bitmask_type const*>(_allocated.ptre());
+                                pm = ptr_byteshift(pm, diffm);
+                                epm = ptr_byteshift(epm, diffm);
+                            }
+                        }
+                        else if ((*pm & ~(m - 1)) == 0)
+                            break;
+                    }
+                }
+            }
+        }
+
+        return found;
+    }
+
     ///Run on unused elements (freed elements in pool mode) until predicate returns true
-    //@return pointer to the element or null
-    //@param f functor with ([const] T&) or ([const] T&, size_t index) arguments
+    /// @return pointer to the element or null
+    /// @param f functor with ([const] T&) or ([const] T&, size_t index) arguments
     template<typename Func>
     uints find_unused(Func f) const
     {
         if coid_constexpr_if(!POOL)
             return UMAXS;
 
-        uint_type const* bm = const_cast<uint_type const*>(_allocated.ptr());
-        uint_type const* em = const_cast<uint_type const*>(_allocated.ptre());
-        uint_type const* pm = bm;
+        bitmask_type const* bm = const_cast<bitmask_type const*>(_allocated.ptr());
+        bitmask_type const* em = const_cast<bitmask_type const*>(_allocated.ptre());
+        bitmask_type const* pm = bm;
 
         if coid_constexpr_if (LINEAR) {
             uints pbase = 0;
             T* pd0 = const_cast<T*>(this->_array.ptr());
             uints n = this->_array.size();
 
-            for (; pm != em; ++pm, pbase += MASK_BITS) {
+            for (; pm != em; ++pm, pbase += BITMASK_BITS) {
                 if (*pm == UMAXS)
                     continue;
 
                 uints m = 1;
-                for (int i = 0; i < MASK_BITS; ++i, m <<= 1) {
+                for (int i = 0; i < BITMASK_BITS; ++i, m <<= 1) {
                     uints id = pbase + i;
                     if (id >= n)
                         break;
@@ -1570,24 +1718,24 @@ public:
             const page* pb = this->_pages.ptr();
             const page* pe = this->_pages.ptre();
 
-            uint_type const* pm = bm;
+            bitmask_type const* pm = bm;
             uints gbase = 0;
 
             for (const page* pp = pb; pp < pe; ++pp, gbase += page::ITEMS)
             {
                 T* d = const_cast<T*>(pp->ptr());
-                uint_type const* epm = em - pm > page::NMASK
+                bitmask_type const* epm = em - pm > page::NMASK
                     ? pm + page::NMASK
                     : em;
 
                 uints pbase = 0;
 
-                for (; pm != epm; ++pm, pbase += MASK_BITS) {
+                for (; pm != epm; ++pm, pbase += BITMASK_BITS) {
                     if (*pm == UMAXS)
                         continue;
 
                     uints m = 1;
-                    for (int i = 0; i < MASK_BITS; ++i, m <<= 1) {
+                    for (int i = 0; i < BITMASK_BITS; ++i, m <<= 1) {
                         uints id = gbase + pbase + i;
                         if (id >= this->_created)
                             break;
@@ -1606,52 +1754,11 @@ public:
         return UMAXS;
     }
 
-    //@return bit array with marked item allocations
+    /// @return bit array with marked item allocations
     const dynarray<uints>& get_bitarray() const { return _allocated; }
 
-    //@{ functions for bit array
-    template <class B>
-    static bool set_bit(dynarray<B>& bitarray, uints k)
-    {
-        static constexpr int NBITS = 8 * sizeof(B);
-        using Ub = underlying_bitrange_type<B>;
-        using U = typename Ub::type;
-        uints s = k / NBITS;
-        uints b = k % NBITS;
-
-        U m = U(1) << b;
-        B& v = bitarray.get_or_addc(s);
-        return (Ub::fetch_or(v, m) & m) != 0;
-    }
-
-    template <class B>
-    static bool clear_bit(dynarray<B>& bitarray, uints k)
-    {
-        static constexpr int NBITS = 8 * sizeof(B);
-        using Ub = underlying_bitrange_type<B>;
-        using U = typename Ub::type;
-        uints s = k / NBITS;
-        uints b = k % NBITS;
-
-        U m = U(1) << b;
-        B& v = bitarray.get_or_addc(s);
-        return (Ub::fetch_and(v, ~m) & m) != 0;
-    }
-
-    template <class B>
-    static bool get_bit(const dynarray<B>& bitarray, uints k)
-    {
-        static constexpr int NBITS = 8 * sizeof(B);
-        using U = underlying_bitrange_type_t<B>;
-        uints s = k / NBITS;
-        uints b = k % NBITS;
-
-        return s < bitarray.size() && (bitarray[s] & (U(1) << b)) != 0;
-    }
-    //@}
-
     ///Advance to the next tracking frame, updating changeset
-    //@return new frame number
+    /// @return new frame number
     uint advance_frame()
     {
         if (!TRACKING)
@@ -1666,15 +1773,15 @@ public:
     }
 
     ///Mark all objects that have the corresponding bit set as modified in current frame
-    //@param clear_old if true, old change bits are cleared
+    /// @param clear_old if true, old change bits are cleared
     void mark_all_modified(bool clear_old)
     {
         if (!TRACKING)
             return;
 
-        uint_type const* b = const_cast<uint_type const*>(_allocated.ptr());
-        uint_type const* e = const_cast<uint_type const*>(_allocated.ptre());
-        uint_type const* p = b;
+        bitmask_type const* b = const_cast<bitmask_type const*>(_allocated.ptr());
+        bitmask_type const* e = const_cast<bitmask_type const*>(_allocated.ptre());
+        bitmask_type const* p = b;
 
         const uint16 preserve = clear_old ? 0xfffeU : 0U;
 
@@ -1684,17 +1791,86 @@ public:
         changeset_t* chb = chs->ptr();
         changeset_t* che = chs->ptre();
 
-        for (changeset_t* ch = chb; ch < che; p += MASK_BITS) {
+        for (changeset_t* ch = chb; ch < che; p += BITMASK_BITS) {
             uints m = p < e ? uints(*p) : 0U;
 
-            for (int i = 0; ch < che && i < MASK_BITS; ++i, m >>= 1, ++ch)
+            for (int i = 0; ch < che && i < BITMASK_BITS; ++i, m >>= 1, ++ch)
                 ch->mask = (ch->mask & preserve) | (m & 1);
         }
     }
 
+    struct iterator
+    {
+        typedef std::forward_iterator_tag iterator_category;
+
+        iterator(base_t* base, bitmask_type index) : base(base), index(index)
+        {}
+
+        iterator& operator ++ () {
+            index = base->next_index(index);
+            return *this;
+        }
+
+        iterator operator ++ (int) const {
+            return iterator(base, base->next_index(index));
+        }
+
+        bool operator == (const iterator& o) const {
+            return base == o.base && index == o.index;
+        }
+
+        const T& operator * () const { return *base->get_item(index); }
+        T& operator * () { return *base->get_item(index); }
+
+        const T& operator -> () const { return *base->get_item(index); }
+        T& operator -> () { return *base->get_item(index); }
+
+    private:
+
+        base_t* base = 0;
+        uints index = uints(-1);
+    };
+
+    iterator begin() const {
+        const uints first_id = is_valid_id(0) ? uints(0) : (this->allocated_count() == 0 ? uints(-1) : next_index(0));
+        return iterator(const_cast<base_t*>(this), first_id);
+    }
+
+    iterator end() const {
+        return iterator(const_cast<base_t*>(this), uints(-1));
+    }
+
 protected:
 
-    //@return allocated and previously created count (not necessarily used currently)
+    uints next_index(bitmask_type index) const
+    {
+        using bitmask_value_type = typename storage_t::value_type;
+        constexpr int mask_bits = (int)constexpr_int_high_pow2(BITMASK_BITS);
+        constexpr uint bitmask_value_mask = (1 << mask_bits) - 1;
+
+        uints id = index;
+        ++id;
+        uint bit = id & bitmask_value_mask;
+        uints slot = id >> mask_bits;
+
+        uints count = _allocated.size();
+        while (slot < count) {
+            bitmask_value_type mask = _allocated[slot];
+            mask >>= bit;
+
+            if (mask) {
+                bit += lsb_bit_set(mask);
+                return (slot << mask_bits) + bit;
+            }
+
+            bit = 0;
+            ++slot;
+        }
+
+        return -1;
+    }
+
+    /// @return allocated and previously created count (not necessarily used currently)
     uints created() const {
         if coid_constexpr_if(LINEAR)
             return this->_array.size();
@@ -1702,11 +1878,36 @@ protected:
             return this->_created;
     }
 
+    template <class Te, class bitmask_type>
+    static void copy_array_with_bitmask(const dynarray<Te>& src, dynarray<Te>& dst, const dynarray<bitmask_type>& mask)
+    {
+        uints rsv = src.reserved_virtual();
+        if (rsv > 0)
+            dst.reserve(rsv, reserve_mode::virtual_space);
+        else
+            dst.reserve(src.reserved_total(), reserve_mode::memory);
+        Te* dd = dst.add_uninit(src.size());
+        const Te* sd = src.ptr();
+        constexpr int n = sizeof(bitmask_type) * 8;
+
+        for (bitmask_type m : mask) {
+            uint i = 0;
+            while (m != 0) {
+                if (m & 1)
+                    new (dd + i) Te(sd[i]);
+                ++i;
+                m >>= 1;
+            }
+            dd += n;
+            sd += n;
+        }
+    }
+
 private:
 
-    dynarray<uint_type> _allocated;     //< bit mask for allocated/free items
+    dynarray<bitmask_type> _allocated;      //< bit mask for allocated/free items
 
-    uint_type _count = 0;               //< active element count
+    bitmask_type _count = 0;                       //< active element count
 
 #ifdef __clang__
 #pragma clang diagnostic push
@@ -1783,6 +1984,17 @@ private:
 
 
     ///Helper to iterate over all ext arrays
+    template<size_t... Index>
+    void extarray_copy_(const slotalloc_base& o, index_sequence<Index...>) {
+        int dummy[] = {0, ((void)copy_array_with_bitmask(std::get<Index>(o._exts), std::get<Index>(this->_exts), _allocated), 0)...};
+    }
+
+    void extarray_copy(const slotalloc_base& o) {
+        extarray_copy_(o, make_index_sequence<tracker_t::extarray_size>());
+    }
+
+
+    ///Helper to iterate over all ext arrays
     template<typename F, size_t... Index>
     void extarray_iterate_(index_sequence<Index...>, F fn) {
         int dummy[] = {0, ((void)fn(std::get<Index>(this->_exts)), 0)...};
@@ -1826,15 +2038,15 @@ private:
     {
         DASSERT(_count < created());
 
-        uint_type* p = _allocated.ptr();
-        uint_type* e = _allocated.ptre();
+        bitmask_type* p = _allocated.ptr();
+        bitmask_type* e = _allocated.ptre();
         for (; p != e && *p == UMAXS; ++p);
 
         if (p == e)
             *(p = _allocated.add()) = 0;
 
         uint8 bit = lsb_bit_set((uints)~*p);
-        uints slot = (p - _allocated.ptr()) * MASK_BITS;
+        uints slot = (p - _allocated.ptr()) * BITMASK_BITS;
 
         uints id = slot + bit;
         this->set_modified(id);
@@ -1856,8 +2068,8 @@ private:
         DASSERT(id < created());
         DASSERT(!get_bit(id));
 
-        uint_type* p = &_allocated[id / MASK_BITS];
-        uint8 bit = id & (MASK_BITS - 1);
+        bitmask_type* p = &_allocated[id / BITMASK_BITS];
+        uint8 bit = id & (BITMASK_BITS - 1);
 
         *p |= uints(1) << bit;
         ++_count;
@@ -1868,12 +2080,12 @@ private:
     }
 
     ///Alloc range of objects, can cross page boundaries
-    //@param old receives number of reused objects lying at the beginning of the range
+    /// @param old receives number of reused objects lying at the beginning of the range
     template <bool UNINIT>
     uints alloc_range(uints n, uints* old)
     {
         uints id = find_zero_bitrange(n, _allocated.ptr(), _allocated.ptre());
-        uints nslots = align_to_chunks(id + n, MASK_BITS);
+        uints nslots = align_to_chunks(id + n, BITMASK_BITS);
 
         if (nslots > _allocated.size())
             _allocated.addc(nslots - _allocated.size());
@@ -1893,7 +2105,7 @@ private:
     }
 
     ///Alloc range of objects within a single contiguous page
-    //@param old receives number of reused objects lying at the beginning of the range
+    /// @param old receives number of reused objects lying at the beginning of the range
     template <bool UNINIT>
     uints alloc_range_contiguous(uints n, uints* old)
     {
@@ -1902,8 +2114,8 @@ private:
                 return UMAXS;
         }
 
-        uint_type const* bm = _allocated.ptr();
-        uint_type const* em = _allocated.ptre();
+        bitmask_type const* bm = _allocated.ptr();
+        bitmask_type const* em = _allocated.ptre();
         uints id = 0;
         if coid_constexpr_if (LINEAR) {
             id = find_zero_bitrange(n, bm, em);
@@ -1916,11 +2128,11 @@ private:
             page* bp = this->_pages.ptr();
             page* pp = bp;
 
-            uint_type const* pm = bm;
+            bitmask_type const* pm = bm;
 
             for (; pp != ep; ++pp, pm += page::NMASK)
             {
-                uint_type const* epm = em - pm > page::NMASK
+                bitmask_type const* epm = em - pm > page::NMASK
                     ? pm + page::NMASK
                     : em;
 
@@ -1943,7 +2155,7 @@ private:
             }
         }
 
-        uints nslots = align_to_chunks(id + n, MASK_BITS);
+        uints nslots = align_to_chunks(id + n, BITMASK_BITS);
 
         if (nslots > _allocated.size())
             _allocated.addc(nslots - _allocated.size());
@@ -1972,7 +2184,13 @@ private:
         set_bit(count);
 
         if coid_constexpr_if(EXT_UNINIT)
+        {
             extarray_expand_uninit(1);
+            if coid_constexpr_if(VERSIONING)
+            {
+                tracker_t::version_array()[count] = 0;
+            }
+        }
         else
             extarray_expand(1);
 
@@ -2040,9 +2258,9 @@ private:
 #endif
     }
 
-    bool set_bit(uints k) { return set_bit(_allocated, k); }
-    bool clear_bit(uints k) { return clear_bit(_allocated, k); }
-    bool get_bit(uints k) const { return get_bit(_allocated, k); }
+    bool set_bit(uints k) { return _allocated.set_bit(k); }
+    bool clear_bit(uints k) { return _allocated.clear_bit(k); }
+    bool get_bit(uints k) const { return _allocated.get_bit(k); }
 
     //WA for lambda template error
     void static destroy(T& p) { p.~T(); }

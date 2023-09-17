@@ -8,21 +8,53 @@
 
 COID_NAMESPACE_BEGIN
 
+#define LUASTREAMER_STRINGIFY_DEFINE_ARG(arg) #arg
+
 class fmtstream_lua_capi : public fmtstream
 {
 protected:
     struct stack_entry {
-        int _arr_idx;
-        bool _is_struct;
+        enum class operation_enum : uint8
+        {
+            read_array_bit =    1 << 0,
+            write_array_bit =   1 << 1,
+            read_struct_bit =   1 << 2,
+            write_struct_bit =  1 << 3,
+            read_key_val_bit =  1 << 4,
+            write_key_val_bit = 1 << 5
+        };
 
-        stack_entry() : _arr_idx(0), _is_struct(false) {};
+        int _array_index;
+        
+        union
+        {
+            struct {
+                bool _read_array : 1;
+                bool _write_array : 1;
+                bool _read_struct : 1;
+                bool _write_struct : 1;
+                bool _read_key_val : 1;
+                bool _write_key_val : 1;
+            };
+
+            uint8 _bits;
+        };
+
+        explicit stack_entry(int idx, operation_enum operation)
+            : _array_index(idx)
+            , _bits(static_cast<uint8>(operation))
+        {
+            DASSERT(coid::population_count(static_cast<uint32>(_bits)) == 1);
+        };
+        stack_entry(const stack_entry&) = delete;
+        stack_entry& operator=(const stack_entry&) = delete;
     };
 
     lua_State * _state;
     int _init_stack_size;
     bool _read_as_queue;
 
-    dynarray<stack_entry> _stack;
+    dynarray32<stack_entry> _stack;
 public:
     fmtstream_lua_capi()
         : _state(0)
@@ -35,75 +67,95 @@ public:
         : _stack(32)
         , _read_as_queue(read_as_queue)
     {
-        set_lua_state(L);
+        reset(L);
     };
 
     ~fmtstream_lua_capi() {
     };
 
-    void set_lua_state(lua_State * L) { 
+    void reset(lua_State * L) { 
         DASSERT(L);
         _state = L;
         _init_stack_size = lua_gettop(_state);
+        _stack.reset();
     }
 
     lua_State * get_cur_state() { return _state; }
 
-    virtual token fmtstream_name() { return "fmtstream_lua_capi"; }
+    virtual token fmtstream_name() override { return "fmtstream_lua_capi"; }
 
-    virtual void fmtstream_file_name(const token& file_name)
-    {
-        //_tokenizer.set_file_name(file_name);
-    }
+    ///Called to provide prefix for error reporting
+    virtual void fmtstream_file_name(const token& file_name) override {};
 
-    ///Return formatting stream error (if any) and current line and column for error reporting purposes
-    //@param err [in] error text
-    //@param err [out] final (formatted) error text with line info etc.
-    virtual void fmtstream_err(charstr& err, bool add_context = true)
+    virtual void on_exception_thow() override
     {
-    }
+        if (0)
+        {
+            ::lua::debug_print_stack(_state);
+        }
 
-    void acknowledge(bool eat = false)
-    {
-       /* int garb_count = lua_gettop(_state) - _init_stack_size;
-        DASSERT(garb_count >= 0);
-        lua_pop(_state, garb_count);*/
-        DASSERT(_stack.size() == 0);
+        int key_val_count = 0;
+        int current_lua_stack_size = lua_gettop(_state);
+        for (stack_entry& e : _stack)
+        {
+            if (e._read_key_val)
+            {
+                key_val_count++;
+            }
+        }
+
+        lua_pop(_state, key_val_count);
+
+        DASSERT(_init_stack_size == (current_lua_stack_size - key_val_count));
+
         _stack.reset();
     }
 
-    void flush()
+    void acknowledge(bool eat = false) override
     {
-       /* int garb_count = lua_gettop(_state) - _init_stack_size;
-        DASSERT(garb_count >= 0);
-        lua_pop(_state, garb_count);*/
+         DASSERT(_stack.size() == 0);
+        _stack.reset();
+    }
+
+    void flush() override
+    {
         DASSERT(_stack.size()==0);
         _stack.reset();
     }
 
 
     ////////////////////////////////////////////////////////////////////////////////
-    opcd write_key(const token& key, int kmember)
+    opcd write_key(const token& key, int kmember) override
     {
-        lua_pushlstring(_state,key._ptr,key.len());
+        lua_pushtoken(_state,key);
         return 0;
     }
 
-    opcd read_key(charstr& key, int kmember, const token& expected_key)
+    opcd read_key(charstr& key, int kmember, const token& expected_key) override
     {
-        lua_pushlstring(_state, expected_key.ptr(), expected_key.len());
+        lua_pushtoken(_state, expected_key);
         lua_gettable(_state, -2);
         
-        if (lua_isnil(_state, -1)) {        
+        if(0)
+        {
+            ::lua::debug_print_stack(_state);
+        }
+
+        if (lua_isnil(_state, -1)) {
+            lua_pop(_state, 1); // pop nil
             return ersNO_MORE;
+        }
+        else
+        {
+            new(_stack.add_uninit()) stack_entry(-1, stack_entry::operation_enum::read_key_val_bit);
         }
 
         key = expected_key;
-        return 0;
+        return ersNOERR;
     }
 
     ////////////////////////////////////////////////////////////////////////////////
-    opcd write(const void* p, type t)
+    opcd write(const void* p, type t) override
     {
         if (t.is_array_start())
         {
@@ -112,7 +164,7 @@ public:
                 array_len = (array_len == -1) ? 0 : array_len;
                 DASSERT(array_len >= 0);
                 lua_createtable(_state, array_len, 0);
-                _stack.add();
+                new (_stack.add_uninit())stack_entry(0, stack_entry::operation_enum::read_array_bit);
             }
 
             return 0;
@@ -120,7 +172,7 @@ public:
         else if (t.is_array_end())
         {
             if (t.type != type::T_KEY && t.type != type::T_CHAR && t.type != type::T_BINARY) {
-                DASSERT(_stack.size() > 0);
+                DASSERT(_stack.last() && _stack.last()->_read_array);
                 _stack.pop();
             }
             else {
@@ -129,13 +181,14 @@ public:
         }
         else if (t.type == type::T_STRUCTEND)
         {
+            DASSERT(_stack.last() && _stack.last()->_write_struct);
             _stack.pop();
         }
         else if (t.type == type::T_STRUCTBGN)
         {
             lua_newtable(_state);
-            stack_entry * cur = _stack.add();
-            cur->_is_struct = true;
+            new (_stack.add_uninit())stack_entry(0, stack_entry::operation_enum::write_struct_bit);
+
             return 0;
         }
         else
@@ -210,7 +263,7 @@ public:
             }
         }
 
-        if (_stack.last() && _stack.last()->_is_struct) {
+        if (_stack.last() && _stack.last()->_write_struct) {
             lua_settable(_state, -3);
         }
 
@@ -219,7 +272,7 @@ public:
 
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
-    opcd read(void* p, type t)
+    opcd read(void* p, type t) override
     {
         opcd e = 0;
         if (t.is_array_start())
@@ -228,47 +281,69 @@ public:
                 DASSERT(0);
             }
             else if (t.type == type::T_CHAR) {
-                uints len;
-                const char * str = lua_tolstring(_state, -1, &len);
-                if (str == 0)
+                token tok = lua_totoken(_state, -1);
+                
+                if (tok.ptr() == nullptr)
+                {
                     e = ersSYNTAX_ERROR "expected string";
+                }
                 else
-                    t.set_count(len, p);
+                {
+                    t.set_count(tok.len(), p);
+                }
             }
             else if (t.type == type::T_KEY) {
                 DASSERT(0);
             }
             else
             {
-                if (!lua_istable(_state,-1))
-                    e = ersSYNTAX_ERROR "expected array";
-                else {
-                    _stack.add();
-                    size_t len = lua_objlen(_state,-1);
+                if (lua_istable(_state, -1))
+                {
+                    new (_stack.add_uninit()) stack_entry(0, stack_entry::operation_enum::read_array_bit);
+                    size_t len = lua_objlen(_state, -1);
                     t.set_count(len, p);
+                } 
+                else 
+                {
+                    e = ersSYNTAX_ERROR "expected array";
                 }
             }
         }
         else if (t.is_array_end())
         {
-            if (t.type != type::T_CHAR) {
+            if (t.type != type::T_CHAR)
+            {
+                DASSERT(_stack.last() && _stack.last()->_read_array);
                 _stack.pop();
+            }
+
+            if (_stack.last() && _stack.last()->_read_key_val) // this is only needed when reading string or array member of compound
+            {
                 lua_pop(_state, 1);
+                _stack.pop();
             }
         }
         else if (t.type == type::T_STRUCTEND)
         {
+            DASSERT(_stack.last()->_read_struct);
             _stack.pop();
-            lua_pop(_state, 1);
+
+            if (_stack.last() && _stack.last()->_read_key_val) // this is only needed when reading string compound member of other compound
+            {
+                lua_pop(_state, 1);
+                _stack.pop();
+            }
         }
         else if (t.type == type::T_STRUCTBGN)
         {   
-            if (!lua_istable(_state,-1))
-                e = ersSYNTAX_ERROR "expected object";
-            else {
-                stack_entry* cur = _stack.add();
-                cur->_is_struct = true;
+            if (lua_istable(_state, -1))
+            {
+                new (_stack.add_uninit()) stack_entry(-1, stack_entry::operation_enum::read_struct_bit);
             }
+            else 
+            {
+                e = ersSYNTAX_ERROR "expected object";
+            } 
         }
         else
         {
@@ -420,44 +495,54 @@ public:
                 break;
             }
 
-            lua_pop(_state, 1);
+            if (_stack.last() && _stack.last()->_read_key_val)
+            {
+                _stack.pop();
+                lua_pop(_state, 1);
+            }
         }
 
         return e;
     }
 
-    virtual opcd write_array_separator(type t, uchar end)
+    virtual opcd write_array_separator(type t, uchar end) override
     {
         if (t.is_next_array_element()) {
             DASSERT(_stack.last());
             stack_entry * cur = _stack.last();
-            cur->_arr_idx++;
-            lua_rawseti(_state, -2, cur->_arr_idx);
+            cur->_array_index++;
+            lua_rawseti(_state, -2, cur->_array_index);
         }
 
         return 0;
     }
 
-    virtual opcd read_array_separator(type t)
+    virtual opcd read_array_separator(type t) override
     {
-        /*if (_top->element >= _top->array->Length())
-            return ersNO_MORE;
-
-        _top->value = _top->array->Get(_top->element++);*/
-
         stack_entry* cur = _stack.last();
-        cur->_arr_idx++;
-        lua_rawgeti(_state, -1, cur->_arr_idx);
+        DASSERT(cur->_read_array);
+        cur->_array_index++;
+        lua_rawgeti(_state, -1, cur->_array_index);
         if (lua_isnil(_state, -1)) {
             lua_pop(_state, 1);
             return ersNO_MORE;
+        }
+        else 
+        {
+            new (_stack.add_uninit())stack_entry(-1, stack_entry::operation_enum::read_key_val_bit);
         }
        
         return 0;
     }
 
-    virtual opcd write_array_content(binstream_container_base& c, uints* count, metastream* m)
+    virtual opcd write_array_content(binstream_container_base& c, uints* count, metastream* m) override
     {
+
+        if (0)
+        {
+            ::lua::debug_print_stack(_state);
+        }
+
         opcd e;
         type t = c._type;
         uints n = c.count();
@@ -478,10 +563,12 @@ public:
                 tok.set((const char*)c.extract(n), n);
             }
 
-            if (!e) {
-                lua_pushlstring(_state,tok.ptr(),n);
+            if (e == ersNOERR) 
+            {
+                lua_pushtoken(_state, tok);
 
-                if (_stack.last() && _stack.last()->_is_struct) {
+                if (_stack.last() && _stack.last()->_write_struct) 
+                {
                     lua_settable(_state, -3);
                 }
             }
@@ -495,7 +582,7 @@ public:
         return e;
     }
 
-    virtual opcd read_array_content(binstream_container_base& c, uints n, uints* count, metastream* m)
+    virtual opcd read_array_content(binstream_container_base& c, uints n, uints* count, metastream* m) override
     {
         opcd e = 0;
 
@@ -511,23 +598,23 @@ public:
 
             return read_compound_array_content(c, n, count, m);
         }
-
-        //if(!_top->value->IsString())
-        //    return ersSYNTAX_ERROR "expected string";
-
-        uints len = 0;
-        const char * str = lua_tolstring(_state, -1, &len);
-        token tok(str, len);
+        
+        if (0)
+        {
+            ::lua::debug_print_stack(_state);
+        }
+        
+        token tok = lua_totoken(_state, -1);
 
         if (t.type == type::T_BINARY)
-            e = read_binary(tok, c, n, count);
+            e = read_binary(tok, c, n, count, nullptr);
         else
         {
             if (n != UMAXS  &&  n != tok.len())
                 e = ersMISMATCHED "array size";
             else if (c.is_continuous())
             {
-                xmemcpy(c.insert(n), tok.ptr(), tok.len());
+                xmemcpy(c.insert(n, nullptr), tok.ptr(), tok.len());
 
                 *count = tok.len();
             }
@@ -536,13 +623,11 @@ public:
                 const char* p = tok.ptr();
                 uints nc = tok.len();
                 for (; nc>0; --nc, ++p)
-                    *(char*)c.insert(1) = *p;
+                    *(char*)c.insert(1, nullptr) = *p;
 
                 *count = nc;
             }
         }
-
-        lua_pop(_state, 1);
         
         return e;
     }
@@ -562,23 +647,142 @@ struct lua_streamer_context {
 
     void reset(lua_State * L) {
         meta.stream_reset(true, false);
-        fmt_lua.set_lua_state(L);
+        fmt_lua.reset(L);
     }
 
     lua_State * get_cur_state() { return fmt_lua.get_cur_state(); }
 };
 
+template<class T>
+void check_type_and_throw(lua_State* L)
+{
+    bool result = 0;
+
+    if constexpr (
+        std::is_same<T, int8>::value ||
+        std::is_same<T, int16>::value ||
+        std::is_same<T, int32>::value ||
+        std::is_same<T, int64>::value ||
+        std::is_same<T, uint8>::value ||
+        std::is_same<T, uint16>::value ||
+        std::is_same<T, uint32>::value ||
+        std::is_same<T, uint64>::value ||
+        std::is_same<T, long>::value ||
+        std::is_same<T, ulong>::value
+        )
+    {
+        result = lua_isinteger(L, -1);
+    }
+    else if constexpr (
+        std::is_same<T, float>::value ||
+        std::is_same<T, double>::value
+    )
+    {
+        result = lua_isnumber(L, -1);
+    }
+    else if constexpr (std::is_same<T, bool>::value)
+    {
+        result = lua_isboolean(L, -1);
+    }
+    else 
+    {
+        DASSERT(0 && "not primitive type souldn't get here!!");
+    }
+
+    if (result == 0)
+    {
+        if (lua_isnoneornil(L, -1))
+        {
+            throw coid::exception("Nil on the top of the stack!(Undefined variable as argument used?)");
+        }
+        else
+        {
+            throw coid::exception("Value of wrong type on the top of the lua stack!");
+        }
+    }
+}
 
 template<class T>
 class lua_streamer {
 public:
+    static void to_lua(const T* val)
+    {
+        to_lua(*val);
+    }
     static void to_lua(const T& val) {
         auto& streamer = THREAD_SINGLETON(lua_streamer_context);
-        streamer.meta.xstream_out(val);
+        lua_State* L = streamer.get_cur_state();
+
+        if constexpr (
+            std::is_same<T, int8>::value ||
+            std::is_same<T, int16>::value ||
+            std::is_same<T, int32>::value ||
+            std::is_same<T, int64>::value ||
+            std::is_same<T, uint8>::value ||
+            std::is_same<T, uint16>::value ||
+            std::is_same<T, uint32>::value ||
+            std::is_same<T, uint64>::value ||
+            std::is_same<T, long>::value ||
+            std::is_same<T, ulong>::value
+        )
+        {
+            lua_pushinteger(L, static_cast<lua_Integer>(val));
+        }
+        else if constexpr (
+            std::is_same<T, float>::value ||
+            std::is_same<T, double>::value
+        )
+        {
+            lua_pushnumber(L, static_cast<lua_Number>(val));
+        }
+        else if constexpr (std::is_same<T, bool>::value)
+        {
+            lua_pushboolean(L, val);
+        }
+        else
+        {
+            streamer.meta.xstream_out(val);
+        }
     };
     static void from_lua(T& val) {
         auto& streamer = THREAD_SINGLETON(lua_streamer_context);
-        streamer.meta.xstream_in(val);
+
+        lua_State* L = streamer.get_cur_state();
+
+        if constexpr (
+            std::is_same<T, int8>::value ||
+            std::is_same<T, int16>::value ||
+            std::is_same<T, int32>::value ||
+            std::is_same<T, int64>::value ||
+            std::is_same<T, uint8>::value ||
+            std::is_same<T, uint16>::value ||
+            std::is_same<T, uint32>::value ||
+            std::is_same<T, uint64>::value ||
+            std::is_same<T, long>::value ||
+            std::is_same<T, ulong>::value
+            )
+        {
+            check_type_and_throw<T>(L);
+            val = static_cast<T>(lua_tointeger(L, -1));
+        }
+        else if constexpr (
+            std::is_same<T, float>::value ||
+            std::is_same<T, double>::value
+        )
+        {
+            check_type_and_throw<T>(L);
+            val = static_cast<T>(lua_tonumber(L, -1));
+        }
+        else if constexpr (std::is_same<T, bool>::value)
+        {
+            check_type_and_throw<T>(L);
+            val = lua_toboolean(L, -1) != 0;
+        }
+        else
+        {
+            streamer.reset(L);
+            streamer.meta.xstream_in(val);
+        }
     };
 };
 
@@ -602,68 +806,88 @@ public:
     };
 };
 
-#define LUA_FAST_STREAMER(CTYPE,LTOPREFIX,LTYPE) \
-template<> \
-class lua_streamer<CTYPE>{\
-public:\
-    static void to_lua(const CTYPE& val) {\
-        auto& streamer = THREAD_SINGLETON(lua_streamer_context);\
-        lua_State * L = streamer.get_cur_state();\
-        lua_push##LTOPREFIX(L,static_cast<lua_##LTYPE>(val));\
-    }\
-    static void to_lua(const CTYPE* val) {\
-        auto& streamer = THREAD_SINGLETON(lua_streamer_context);\
-        lua_State * L = streamer.get_cur_state();\
-        if (val) lua_push##LTOPREFIX(L,static_cast<lua_##LTYPE>(*val));\
-        else lua_pushnil(L);\
-    }\
-\
-    static void from_lua(CTYPE& val){\
-        auto& streamer = THREAD_SINGLETON(lua_streamer_context);\
-        lua_State * L = streamer.get_cur_state();\
-        val = static_cast<CTYPE>(lua_to##LTOPREFIX(L,-1));\
-        lua_pop(L,1);\
-    }\
-}
-
-LUA_FAST_STREAMER(int8, integer, Integer);
-LUA_FAST_STREAMER(int16, integer, Integer);
-LUA_FAST_STREAMER(int32, integer, Integer);
-LUA_FAST_STREAMER(int64, integer, Integer);     //can lose data in conversion
-
-LUA_FAST_STREAMER(uint8, integer, Integer);
-LUA_FAST_STREAMER(uint16, integer, Integer);
-LUA_FAST_STREAMER(uint32, integer, Integer);
-LUA_FAST_STREAMER(uint64, integer, Integer);    //can lose data in conversion
-
-LUA_FAST_STREAMER(long, integer, Integer);
-LUA_FAST_STREAMER(ulong, integer, Integer);
-
-LUA_FAST_STREAMER(float, number, Number);
-LUA_FAST_STREAMER(double, number, Number);
-
-template<> 
-class lua_streamer<bool> {
-public:
-    static void to_lua(const bool val) {
-        auto& streamer = THREAD_SINGLETON(lua_streamer_context); 
-            lua_State * L = streamer.get_cur_state(); 
-            lua_pushboolean(L, static_cast<lua_Integer>(val)); 
-    }
-    static void to_lua(const bool* val) {
-        auto& streamer = THREAD_SINGLETON(lua_streamer_context); 
-        lua_State * L = streamer.get_cur_state(); 
-        if (val) lua_pushboolean(L, static_cast<lua_Integer>(*val));
-        else lua_pushnil(L);
-    }
-    static void from_lua(bool& val) {
-        auto& streamer = THREAD_SINGLETON(lua_streamer_context);
-        lua_State * L = streamer.get_cur_state();
-        val = lua_toboolean(L, -1) != 0;
-        lua_pop(L,1);
-    }
-};
-
+//#define LUA_FAST_STREAMER(CTYPE,LTOPREFIX,LTYPE)                                                            \
+//template<>                                                                                                  \
+//class lua_streamer<CTYPE>{                                                                                  \
+//public:                                                                                                     \
+//    static void to_lua(const CTYPE& val) {                                                                  \
+//        auto& streamer = THREAD_SINGLETON(lua_streamer_context);                                            \
+//        lua_State * L = streamer.get_cur_state();                                                           \
+//        lua_push##LTOPREFIX(L,static_cast<lua_##LTYPE>(val));                                               \
+//    }                                                                                                       \
+//    static void to_lua(const CTYPE* val) {                                                                  \
+//        auto& streamer = THREAD_SINGLETON(lua_streamer_context);                                            \
+//        lua_State * L = streamer.get_cur_state();                                                           \
+//        if (val) lua_push##LTOPREFIX(L,static_cast<lua_##LTYPE>(*val));                                     \
+//        else lua_pushnil(L);                                                                                \
+//    }                                                                                                       \
+//                                                                                                            \
+//    static void from_lua(CTYPE& val){                                                                       \
+//        auto& streamer = THREAD_SINGLETON(lua_streamer_context);                                            \
+//        lua_State * L = streamer.get_cur_state();                                                           \
+//        if(!lua_is##LTOPREFIX(L,-1))                                                                        \
+//        {                                                                                                   \
+//            if (lua_isnoneornil(L, -1))                                                                     \
+//            {                                                                                               \
+//                throw coid::exception("Nil on the top of the stack!(Undefined variable as argument used?)");\
+//            }                                                                                               \
+//            else                                                                                            \
+//            {                                                                                               \
+//                throw coid::exception("Value of wrong type on the top of the lua stack!"                    \
+//                    " Can't convert to "LUASTREAMER_STRINGIFY_DEFINE_ARG(CTYPE)"!");                        \
+//            }                                                                                               \
+//        }                                                                                                   \
+//        val = static_cast<CTYPE>(lua_to##LTOPREFIX(L,-1));                                                  \
+//    }                                                                                                       \
+//}                                                                                                           
+//
+//LUA_FAST_STREAMER(int8, integer, Integer);
+//LUA_FAST_STREAMER(int16, integer, Integer);
+//LUA_FAST_STREAMER(int32, integer, Integer);
+//LUA_FAST_STREAMER(int64, integer, Integer);     //can lose data in conversion
+//
+//LUA_FAST_STREAMER(uint8, integer, Integer);
+//LUA_FAST_STREAMER(uint16, integer, Integer);
+//LUA_FAST_STREAMER(uint32, integer, Integer);
+//LUA_FAST_STREAMER(uint64, integer, Integer);    //can lose data in conversion
+//
+//LUA_FAST_STREAMER(long, integer, Integer);
+//LUA_FAST_STREAMER(ulong, integer, Integer);
+//
+//LUA_FAST_STREAMER(float, number, Number);
+//LUA_FAST_STREAMER(double, number, Number);
+//
+//template<> 
+//class lua_streamer<bool> {
+//public:
+//    static void to_lua(const bool val) {
+//        auto& streamer = THREAD_SINGLETON(lua_streamer_context); 
+//            lua_State * L = streamer.get_cur_state(); 
+//            lua_pushboolean(L, static_cast<lua_Integer>(val)); 
+//    }
+//    static void to_lua(const bool* val) {
+//        auto& streamer = THREAD_SINGLETON(lua_streamer_context); 
+//        lua_State * L = streamer.get_cur_state(); 
+//        if (val) lua_pushboolean(L, static_cast<lua_Integer>(*val));
+//        else lua_pushnil(L);
+//    }
+//    static void from_lua(bool& val) {
+//        auto& streamer = THREAD_SINGLETON(lua_streamer_context);
+//        lua_State* L = streamer.get_cur_state();
+//        if (!lua_isboolean(L, -1))
+//        {
+//            if (lua_isnoneornil(L, -1))                                                                     
+//            {                                                                                               
+//                throw coid::exception("Nil on the top of the stack!(Undefined variable as argument used?)"); 
+//            }                                                                                               
+//            else                                                                                            
+//            {                                                                                               
+//                throw coid::exception("Value of wrong type on the top of the lua stack! Can't convert to boolean!");
+//            }
+//        }
+//        val = lua_toboolean(L, -1) != 0;
+//    }
+//};
 
 template<class T>
 inline void from_lua(T& v) {

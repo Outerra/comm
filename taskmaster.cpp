@@ -4,7 +4,7 @@
 
 COID_NAMESPACE_BEGIN
 
-const taskmaster::signal_handle taskmaster::invalid_signal = taskmaster::signal_handle(taskmaster::signal_handle::invalid); 
+const taskmaster::signal_handle taskmaster::invalid_signal = taskmaster::signal_handle(taskmaster::signal_handle::invalid);
 
 taskmaster::taskmaster(uint nthreads, uint nlowprio_threads)
     : _qsize(0)
@@ -33,7 +33,7 @@ taskmaster::~taskmaster() {
 }
 
 void taskmaster::wait() {
-    CPU_PROFILE_SCOPE_COLOR("taskmaster::wait", 0x80, 0, 0);
+    CPU_PROFILE_SCOPE_COLOR(taskmaster_wait, 0x80, 0, 0);
     std::unique_lock<std::mutex> lock(_sync);
     if (get_order() < _nlowprio_threads) {
         while (!_qsize) // handle spurious wake-ups

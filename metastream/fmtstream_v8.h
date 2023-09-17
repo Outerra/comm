@@ -56,17 +56,17 @@ typedef FunctionCallbackInfo<Value> ARGUMENTS;
 typedef PropertyCallbackInfo<Value> ACCESSOR;
 
 #ifdef V8_NEW2
-    #define V8_CHECK    .Check()
+#define V8_CHECK    .Check()
 #else
-    #define V8_CHECK
+#define V8_CHECK
 #endif
 
 
-inline Local<String> symbol( const coid::token& tok, Isolate* iso = 0 ) {
+inline Local<String> symbol(const coid::token& tok, Isolate* iso = 0) {
     return String::NewFromOneByte(iso ? iso : Isolate::GetCurrent(), (const uint8*)tok.ptr(), NewStringType::kInternalized, tok.len()).ToLocalChecked();
 }
 
-inline Local<String> string_utf8( const coid::token& tok, Isolate* iso = 0 ) {
+inline Local<String> string_utf8(const coid::token& tok, Isolate* iso = 0) {
     return String::NewFromUtf8(iso ? iso : Isolate::GetCurrent(), tok.ptr(), NewStringType::kNormal, tok.len()).ToLocalChecked();
 }
 
@@ -106,7 +106,7 @@ template<class T>
 class to_v8
 {
 public:
-    ///Generic generator from a type to its v8 representation
+    ///Generic generator from a type to its v8 representation (via metastream)
     static v8::Handle<v8::Value> read(const T& v);
 };
 
@@ -115,7 +115,7 @@ template<class T>
 class from_v8
 {
 public:
-    ///Generic parser from v8 type representation
+    ///Generic parser from v8 type representation (via metastream)
     static bool write(v8::Handle<v8::Value> src, T& res);
 };
 
@@ -592,8 +592,8 @@ public:
     }
 
     ///Return formatting stream error (if any) and current line and column for error reporting purposes
-    //@param err [in] error text
-    //@param err [out] final (formatted) error text with line info etc.
+    /// @param err [in] error text
+    /// @param err [out] final (formatted) error text with line info etc.
     virtual void fmtstream_err(charstr& err, bool add_context = true) override
     {
         err.ins(0, "[js] ");
@@ -1051,14 +1051,14 @@ public:
 
         opcd e = 0;
         if (t.type == type::T_BINARY)
-            e = read_binary(tok, c, n, count);
+            e = read_binary(tok, c, n, count, m);
         else
         {
             if (n != UMAXS && n != tok.len())
                 e = ersMISMATCHED "array size";
             else if (c.is_continuous())
             {
-                xmemcpy(c.insert(n), tok.ptr(), tok.len());
+                xmemcpy(c.insert(n, nullptr), tok.ptr(), tok.len());
 
                 *count = tok.len();
             }
@@ -1067,7 +1067,7 @@ public:
                 const char* p = tok.ptr();
                 uints nc = tok.len();
                 for (; nc > 0; --nc, ++p)
-                    *(char*)c.insert(1) = *p;
+                    *(char*)c.insert(1, nullptr) = *p;
 
                 *count = nc;
             }
@@ -1102,24 +1102,12 @@ struct v8_streamer_context
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-template<bool ISENUM, class T>
-struct v8_enum_helper {
-    int operator << (const T&) const { return 0; }
-    T operator >> (int) const { return T(); }
-};
-
-template<class T>
-struct v8_enum_helper<true, T> {
-    int operator << (const T& v) const { return int(v); }
-    T operator >> (int v) const { return T(v); }
-};
 
 template<class T>
 inline v8::Handle<v8::Value> to_v8<T>::read(const T& v)
 {
-    v8_enum_helper<std::is_enum<T>::value, T> en;
-    if (std::is_enum<T>::value)
-        return v8::Int32::New(v8::Isolate::GetCurrent(), en << v);
+    if constexpr (std::is_enum_v<T>)
+        return v8::Int32::New(v8::Isolate::GetCurrent(), int(v));
 
     auto& streamer = THREAD_SINGLETON(v8_streamer_context);
     streamer.meta.xstream_out(v);
@@ -1130,9 +1118,8 @@ inline v8::Handle<v8::Value> to_v8<T>::read(const T& v)
 template<class T>
 inline bool from_v8<T>::write(v8::Handle<v8::Value> src, T& res)
 {
-    v8_enum_helper<std::is_enum<T>::value, T> en;
-    if (std::is_enum<T>::value)
-        res = en >> src->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromJust();
+    if constexpr (std::is_enum_v<T>)
+        res = T(src->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromJust());
     else {
         auto& streamer = THREAD_SINGLETON(v8_streamer_context);
         streamer.fmtv8.set(src);

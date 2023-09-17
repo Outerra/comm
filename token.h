@@ -57,6 +57,12 @@
 #include <string>
 #endif
 
+namespace coid {
+    class token_literal;
+}
+
+constexpr coid::token_literal operator "" _T(const char* s, size_t len);
+
 COID_NAMESPACE_BEGIN
 
 
@@ -92,14 +98,14 @@ struct token
     {}
 
     ///Constructor from a single char
-    //@note beware that this may point to the stack and get invalidated outside the scope
+    /// @note beware that this may point to the stack and get invalidated outside the scope
     explicit token(const char& c)
         : _ptr(&c), _pte(&c + 1)
     {}
 
 
     ///String literal constructor, optimization to have fast literal strings available as tokens
-    //@note tries to detect and if passed in a char array instead of string literal, by checking if the last char is 0
+    /// @note tries to detect and if passed in a char array instead of string literal, by checking if the last char is 0
     // and the preceding char is not 0
     // Call token::from_cstring(array) to force treating the array as a zero-terminated string
     template <int N>
@@ -143,19 +149,21 @@ struct token
         : _ptr(ptr), _pte(ptre < ptr ? ptr : ptre)
     {}
 
-    //@return constexpr token with type name
-    //@usage constexpr token name = token::type_name<T>();
+#if __cpp_constexpr >= 201304L
+
+    /// @return constexpr token with type name
+    /// @usage constexpr token name = token::type_name<T>();
     template <typename T>
     constexpr static token type_name()
     {
 #ifdef SYSTYPE_MSVC
         char const* p = __FUNCSIG__;
-        while (*p != '<') ++p;
+        while (*p != 0 && *p != '<') ++p;
         ++p;
         const char* pe = p;
         int count = 1;
         for (;; ++pe) {
-            if (*pe == '>') {
+            if (*pe != 0 && *pe == '>') {
                 if (--count == 0)
                     break;
             }
@@ -164,7 +172,7 @@ struct token
         }
 #else
         char const* p = __PRETTY_FUNCTION__;
-        while (*p != '=') ++p;
+        while (*p != 0 && *p != '=') ++p;
         while (*++p == ' ');
         const char* px = p;
         const char* pe = px;
@@ -176,7 +184,7 @@ struct token
 #endif
         return token(p, pe);
     }
-
+#endif //__cpp_constexpr >= 201304L
 
     template <int N>
     static token from_cstring(char(&str)[N])
@@ -204,7 +212,13 @@ struct token
         return tok;
     }
 
-    constexpr token(const token& src) : _ptr(src._ptr), _pte(src._pte) {}
+    constexpr token(const token& src) : _ptr(src._ptr), _pte(src._pte)
+    {}
+
+    constexpr token(token&& src) {
+        _ptr = src._ptr;
+        _pte = src._pte;
+    }
 
     /// create token from a subset of another token
     /// @param src source token
@@ -241,8 +255,12 @@ struct token
     ///Replace all occurrences of substring with another
     uint replace(const token& from, const token& to, charstr& dst, bool icase = false) const;
 
-    ///Rebase token pointing into one string to point into the same region in another string
-    token rebase(const charstr& from, const charstr& to) const;
+    ///Return a rebased token pointing into one string to point into the same region in another string
+    [[nodiscard]] token rebased(const charstr& from, const charstr& to) const;
+    [[nodiscard]] token rebased(const char* from, const char* to) const;
+
+    token& rebase(const charstr& from, const charstr& to) { return *this = rebased(from, to); }
+    token& rebase(const char* from, const char* to) { return *this = rebased(from, to); }
 
     constexpr const char* ptr() const { return _ptr; }
     constexpr const char* ptre() const { return _pte; }
@@ -384,7 +402,7 @@ struct token
 
     ////////////////////////////////////////////////////////////////////////////////
     ///Compare strings
-    //@return -1 if str<this, 0 if str==this, 1 if str>this
+    /// @return -1 if str<this, 0 if str==this, 1 if str>this
     int cmp(const token& str) const
     {
         uints lex = str.lens();
@@ -454,7 +472,7 @@ struct token
 
 
 
-    //@return true if contains only alpha ascii chars
+    /// @return true if contains only alpha ascii chars
     bool is_alpha() const {
         const char* p = _ptr;
         const char* e = _pte;
@@ -467,7 +485,7 @@ struct token
         return p == e;
     }
 
-    //@return true if contains only numeric chars
+    /// @return true if contains only numeric chars
     bool is_num() const {
         const char* p = _ptr;
         const char* e = _pte;
@@ -480,7 +498,7 @@ struct token
         return p == e;
     }
 
-    //@return true if contains only alpha ascii chars or digits
+    /// @return true if contains only alpha ascii chars or digits
     bool is_alphanum() const {
         const char* p = _ptr;
         const char* e = _pte;
@@ -493,7 +511,7 @@ struct token
         return p == e;
     }
 
-    //@return true if contains any digits
+    /// @return true if contains any digits
     bool has_digits() const {
         const char* p = _ptr;
         const char* e = _pte;
@@ -507,7 +525,7 @@ struct token
 
 
     ////////////////////////////////////////////////////////////////////////////////
-    //@return this token if not empty, otherwise the second one
+    /// @return this token if not empty, otherwise the second one
     token operator | (const token& b) const {
         return is_empty()
             ? b
@@ -573,7 +591,7 @@ struct token
     }
 
     ///Create a new token with starting pointer shifted forwards or backwards
-    token shifted_start(ints i) const
+    [[nodiscard]] token shifted_start(ints i) const
     {
         const char* p = _ptr + i;
         if (p > _pte)
@@ -583,7 +601,7 @@ struct token
     }
 
     ///Create a new token with ending pointer Shifted forwards or backwards
-    token shifted_end(ints i) const
+    [[nodiscard]] token shifted_end(ints i) const
     {
         const char* p = _pte + i;
         if (p < _ptr)
@@ -642,8 +660,8 @@ struct token
     */
 
     ///Set token from string and length.
-    //@note use set_empty(ptr) to avoid conflict with overloads when len==0
-    //@return pointer past the end
+    /// @note use set_empty(ptr) to avoid conflict with overloads when len==0
+    /// @return pointer past the end
     const char* set(const char* str, uints len)
     {
         DASSERTN(len <= UMAX32);
@@ -731,9 +749,11 @@ struct token
         return ch;
     }
 
-    ///Cut maximum of \a n characters from the token from the left side
-    token cut_left_n(uints n)
+    ///Cut maximum of \a n characters from the token from the left side, or cut the remaining characters when counting from the right side when n < 0
+    token cut_left_n(ints n)
     {
+        if (n < 0)
+            n = (_pte - _ptr) + n;
         const char* p = _ptr + n;
         if (p > _pte)
             p = _pte;
@@ -743,9 +763,11 @@ struct token
         return r;
     }
 
-    ///Cut maximum of \a n characters from the token from the right side
-    token cut_right_n(uints n)
+    ///Cut maximum of \a n characters from the token from the right side, or cut the remaining characters when counting from the left side when n < 0
+    token cut_right_n(ints n)
     {
+        if (n < 0)
+            n = (_pte - _ptr) + n;
         const char* p = _pte - n;
         if (p < _ptr)
             p = _ptr;
@@ -775,7 +797,7 @@ struct token
         explicit constexpr cut_trait(int flags) : flags(flags)
         {}
 
-        //@return true if all continuous separators should be consumed
+        /// @return true if all continuous separators should be consumed
         bool consume_other_separators() const {
             return (flags & fREMOVE_ALL_SEPARATORS) != 0;
         }
@@ -825,7 +847,7 @@ struct token
         }
     };
 
-    //@{ Most used traits
+    /// @{ Most used traits
     ///Keep the separator with the source string, return the whole string if no separator found
     static constexpr cut_trait cut_trait_keep_sep_with_source_default_full() {
         return cut_trait(fKEEP_SEPARATOR);
@@ -875,17 +897,17 @@ struct token
     static constexpr cut_trait cut_trait_remove_all_default_empty() {
         return cut_trait(fREMOVE_ALL_SEPARATORS | fON_FAIL_RETURN_EMPTY);
     }
-    //@}
+    /// @}
 
 
-    //@{ Token cutting methods.
-    //@note if the separator isn't found and the @a ctr parameter doesn't contain fON_FAIL_RETURN_EMPTY,
+    /// @{ Token cutting methods.
+    /// @note if the separator isn't found and the @a ctr parameter doesn't contain fON_FAIL_RETURN_EMPTY,
     /// whole token is returned. This applies to cut_right* methods as well.
 
     ///Cut the string that follows. The first character is assumed to be the string delimiter (usually ' or "). If the
     /// same character is not found, a null-token is returned.
-    //@param escchar character used to escape the next character so that it's not interpreted as a terminating one.
-    //@note The returned token doesn't contain the delimiters. Escape character is used only to skip an escaped terminating character, otherwise the escape characters are preserved in the output
+    /// @param escchar character used to escape the next character so that it's not interpreted as a terminating one.
+    /// @note The returned token doesn't contain the delimiters. Escape character is used only to skip an escaped terminating character, otherwise the escape characters are preserved in the output
     token cut_left_string(char escchar)
     {
         char c = first_char();
@@ -905,9 +927,9 @@ struct token
     }
 
     ///Cut sep-character separated arguments. Handles strings enclosed in '' or ""
-    //@param sep separator char to look for
-    //@param end terminator char to stop at
-    //@note consumes the separator but not the end character
+    /// @param sep separator char to look for
+    /// @param end terminator char to stop at
+    /// @note consumes the separator but not the end character
     token cut_left_argument(char sep = ' ', char end = 0)
     {
         //skip whitespace except the separator char
@@ -987,7 +1009,7 @@ struct token
             return ctr.process_notfound(*this, r);
     }
 
-    //@param P a functor of type bool(char)
+    /// @param P a functor of type bool(char)
     template <typename P>
     token cut_left_predicate(P predicate, cut_trait ctr = cut_trait_remove_sep_default_full())
     {
@@ -1010,7 +1032,7 @@ struct token
     }
 
     ///Cut left token up to the substring
-    //@param icase true if case should be ignored
+    /// @param icase true if case should be ignored
     token cut_left(const token& ss, bool icase, cut_trait ctr = cut_trait_remove_sep_default_full())
     {
         token r;
@@ -1082,7 +1104,7 @@ struct token
     }
 
     ///Cut left substring, searching backwards for a character that satisfies delimiter predicate
-    //@param P a functor of type bool(char)
+    /// @param P a functor of type bool(char)
     template <typename P>
     token cut_left_predicate_back(P predicate, cut_trait ctr = cut_trait_remove_sep_default_full())
     {
@@ -1104,7 +1126,7 @@ struct token
     }
 
     ///Cut left token, searching for a substring separator backwards
-    //@param icase true if case should be ignored
+    /// @param icase true if case should be ignored
     token cut_left_back(const token& ss, bool icase, cut_trait ctr = cut_trait_remove_sep_default_full())
     {
         token r;
@@ -1176,7 +1198,7 @@ struct token
         return cut_right(separator, ctr);
     }
 
-    //@param P a functor of type bool(char)
+    /// @param P a functor of type bool(char)
     template <typename P>
     token cut_right_predicate(P predicate, cut_trait ctr = cut_trait_remove_sep_default_full())
     {
@@ -1211,7 +1233,7 @@ struct token
         return cut_right_back(separator, ctr);
     }
 
-    //@param P a functor of type bool(char)
+    /// @param P a functor of type bool(char)
     template <typename P>
     token cut_right_predicate_back(P predicate, cut_trait ctr = cut_trait_remove_sep_default_full())
     {
@@ -1245,7 +1267,7 @@ struct token
     }
 
     ///Count characters starting from offset @a off that do not satisfy condition @a predicate
-    //@param P a functor of type bool(char)
+    /// @param P a functor of type bool(char)
     template <typename P>
     uint count_not(P predicate, uints off = 0) const
     {
@@ -1343,7 +1365,7 @@ struct token
     }
 
     ///Count characters starting from offset @a off that satisfy condition @a predicate
-    //@param P a functor of type bool(char)
+    /// @param P a functor of type bool(char)
     template <typename P>
     uint count(P predicate, uints off = 0) const
     {
@@ -1538,7 +1560,7 @@ struct token
 
 
     ///Return position where the substring is located
-    //@return substring position, len() if not found
+    /// @return substring position, len() if not found
     const char* contains(const substring& sub, uints off = 0) const {
         uints k = count_until_substring(sub, off);
         return k < len() ? _ptr + k : 0;
@@ -1781,7 +1803,7 @@ struct token
     }
 
     ///Skip the leading part until after given token, or do nothing if token not found
-    //@return true if token was found
+    /// @return true if token was found
     bool skip_until_after(const token& tok) {
         const char* p = contains(tok);
         if (p)
@@ -1791,7 +1813,7 @@ struct token
 
 
     ///Cut line terminated by \r\n or \n
-    //@param terminated_only if true, it won't return a line that wasn't terminated by EOL (will keep it)
+    /// @param terminated_only if true, it won't return a line that wasn't terminated by EOL (will keep it)
     token get_line(bool terminated_only = false)
     {
         token r = cut_left('\n',
@@ -1802,7 +1824,7 @@ struct token
     }
 
     ///Find first zero in the substring and return truncated substring
-    token trim_to_null() const
+    [[nodiscard]] token trim_to_null() const
     {
         const char* p = _ptr;
         for (; p < _pte; ++p)
@@ -1887,7 +1909,7 @@ struct token
         return 0;
     }
 
-    //@return the length of common prefix between two strings
+    /// @return the length of common prefix between two strings
     uint common_prefix(const token& t) const
     {
         const char* p = _ptr;
@@ -1901,7 +1923,7 @@ struct token
         return i;
     }
 
-    //@return true if token begins with given string
+    /// @return true if token begins with given string
     bool begins_with(const token& tok, uints off = 0) const
     {
         if (tok.lens() + off > lens())
@@ -2031,7 +2053,7 @@ struct token
 
 
     ///Consume leading word if matches and is followed by whitespace, which is also consumed
-    //@param tok leading string to consume if matches, which must be followed by end or by whitespace characters
+    /// @param tok leading string to consume if matches, which must be followed by end or by whitespace characters
     bool consume_word(const token& tok)
     {
         if (begins_with(tok)) {
@@ -2074,8 +2096,8 @@ struct token
         return false;
     }
 
-    //@return part of the token after a substring
-    token get_after_substring(const substring& sub) const
+    /// @return part of the token after a substring
+    [[nodiscard]] token get_after_substring(const substring& sub) const
     {
         uints n = count_until_substring(sub);
 
@@ -2088,8 +2110,8 @@ struct token
         return token();
     }
 
-    //@return part of the token before a substring
-    token get_before_substring(const substring& sub) const
+    /// @return part of the token before a substring
+    [[nodiscard]] token get_before_substring(const substring& sub) const
     {
         uints n = count_until_substring(sub);
         return token(_ptr, n);
@@ -2107,7 +2129,7 @@ struct token
 
         tonum(uint BaseN = 10) : BaseN(BaseN) {}
 
-        //@return true if the conversion failed
+        /// @return true if the conversion failed
         bool failed() const { return !success; }
 
         ///Deduce the numeric base (0x, 0o, 0b or decimal)
@@ -2373,7 +2395,7 @@ struct token
         return conv.xtoint_and_shift(*this, defval, maxchars);
     }
 
-    //@{ Conversion to numbers, given size of the integer type and a destination address
+    /// @{ Conversion to numbers, given size of the integer type and a destination address
     bool toint_any(void* dst, uints size, uint maxchars = 0) const
     {
         switch (size) {
@@ -2478,7 +2500,7 @@ struct token
         return true;
     }
 
-    //@}
+    /// @}
 
 
     ///Convert token to a double value, consuming as much as possible
@@ -2494,7 +2516,7 @@ struct token
     }
 
     ///Convert token to a double value, shifting the consumed part
-    //@param defval
+    /// @param defval
     double todouble_and_shift(double defval = 0.0)
     {
         bool invsign = false;
@@ -2539,7 +2561,7 @@ struct token
     }
 
     ///Convert string (in local time) to datetime value
-    //@note format Tue, 15 Nov 1994 08:12:31
+    /// @note format Tue, 15 Nov 1994 08:12:31
     opcd todate_local(timet& dst)
     {
         struct tm tmm;
@@ -2556,7 +2578,7 @@ struct token
 }
 
     ///Convert string (in gmt time) to datetime value
-    //@note format Tue, 15 Nov 1994 08:12:31 GMT
+    /// @note format Tue, 15 Nov 1994 08:12:31 GMT
     opcd todate_gmt(timet& dst)
     {
         struct tm tmm;
@@ -2573,7 +2595,7 @@ struct token
     }
 
     ///Convert string (in specified timezone) to datetime value
-    //@note format [Tue,] [15 Nov] 1994[:10:15] [08:12:31] [GMT]
+    /// @note format [Tue,] [15 Nov] 1994[:10:15] [08:12:31] [GMT]
     opcd todate(struct tm& tmm, const token& timezone)
     {
         cut_trait ctr(fREMOVE_SEPARATOR | fON_FAIL_RETURN_EMPTY);
@@ -2833,7 +2855,7 @@ public:
     {}
 
     ///String literal constructor, optimization to have fast literal strings available as tokens
-    //@note tries to detect and if passed in a char array instead of string literal, by checking if the last char is 0
+    /// @note tries to detect and if passed in a char array instead of string literal, by checking if the last char is 0
     // and the preceding char is not 0
     // Call token::from_cstring(array) to force treating the array as a zero-terminated string
     template <int N>
@@ -2882,10 +2904,7 @@ public:
     constexpr token_literal(const token_literal& tok) : token(static_cast<const token&>(tok))
     {}
 
-    ///String literal constructor, optimization to have fast literal strings available as tokens
-    //@note tries to detect and if passed in a char array instead of string literal, by checking if the last char is 0
-    // and the preceding char is not 0
-    // Call token::from_cstring(array) to force treating the array as a zero-terminated string
+    ///String literal constructor
     template <int N>
     coid_constexpr_for token_literal(const char(&str)[N])
         : token(str, str + N - 1)
@@ -2893,9 +2912,16 @@ public:
 
 
 
-    //@return zero terminated string
+    /// @return zero terminated string
     constexpr const char* c_str() const {
         return ptr();
+    }
+
+    static constexpr token_literal from_literal_string(const char* s, size_t len) {
+        token_literal x;
+        x._ptr = s;
+        x._pte = s + len;
+        return x;
     }
 };
 
@@ -2910,9 +2936,9 @@ COID_NAMESPACE_END
 #endif
 
 ///String literal returning token (_T suffix)
-inline constexpr coid::token operator "" _T(const char* s, size_t len)
+inline constexpr coid::token_literal operator "" _T(const char* s, size_t len)
 {
-    return coid::token(s, len);
+    return coid::token_literal::from_literal_string(s, len);
 }
 
 COID_NAMESPACE_BEGIN
@@ -2947,7 +2973,7 @@ public:
     static zpool* local_pool();         //< local pool (registers as a local singleton, keep in a static var)
 
     ///Set max size of strings in the pool (default no limit)
-    //@return previous size
+    /// @return previous size
     static uints max_size_in_pool(zpool*, uints maxsize);
 
     explicit zstring(zpool* pool);
@@ -3000,11 +3026,11 @@ public:
     ///Get modifiable string
     charstr& get_str(zpool* pool = 0);
 
-    //@return pointer to first char
-    //@note doesn't have to be zero-terminated, use c_str() if you need one
+    /// @return pointer to first char
+    /// @note doesn't have to be zero-terminated, use c_str() if you need one
     const char* ptr() const;
 
-    //@return string length
+    /// @return string length
     uints len() const;
 
     void free_string();

@@ -178,6 +178,9 @@ token regex_program::regexec(
     Reljunk* j
 ) const
 {
+    if (!startinst || startinst->type == Reinst::END)
+        return bol;
+
     int flag = 0;
     ucs4 r;
 

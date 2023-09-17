@@ -472,7 +472,7 @@ public:
 
     ///Read next token as if it was a string with leading delimiter already read, with specified
     /// trailing delimiter
-    //@note A call to was_string() would return true, but the last_string_delimiter() method
+    /// @note A call to was_string() would return true, but the last_string_delimiter() method
     /// would return 0 after this method has been used
     token next_as_string( ucs4 upto )
     {
@@ -533,15 +533,15 @@ public:
         return token::empty();
     }
 
-    //@return true if the last token was string
+    /// @return true if the last token was string
     bool was_string() const             { return _last_mask == fGROUP_STRING; }
 
     bool was_group( uint g ) const      { return _last_mask == 1<<g; }
 
-    //@return last string delimiter or 0 if it wasn't a string
+    /// @return last string delimiter or 0 if it wasn't a string
     ucs4 last_string_delimiter() const  { return _last_mask == fGROUP_STRING  ?  _last_strdel : 0; }
 
-    //@return group mask of the last token
+    /// @return group mask of the last token
     uint last_mask() const              { return _last_mask; }
 
     ///Strip leading and trailing characters belonging to the given group
@@ -564,7 +564,7 @@ public:
     }
 
 
-    //@return true if some replacements were made and \a dst is filled,
+    /// @return true if some replacements were made and \a dst is filled,
     /// or false if no processing was required and \a dst was not filled
     bool synthesize_string( const token& tok, charstr& dst )
     {
@@ -630,7 +630,7 @@ public:
         return false;
     }
 
-    //@return true if some replacements were made and \a dst is filled,
+    /// @return true if some replacements were made and \a dst is filled,
     /// or false if no processing was required and \a dst was not filled
     bool synthesize_char( ucs4 k, charstr& dst )
     {
@@ -862,7 +862,7 @@ protected:
     }
     
     ///Scan input for characters of multiple groups
-    //@return token with the data, an empty token if there were none or ignored, or
+    /// @return token with the data, an empty token if there were none or ignored, or
     /// an empty token with _ptr==0 if there are no more data
     token scan_groups( uint msk, bool ignore )
     {

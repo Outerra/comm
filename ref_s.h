@@ -65,6 +65,8 @@ public:
 
     ref() : _p(0), _o(0) {}
 
+    explicit ref(nullptr_t) : ref() {};
+
     // from T* constructors
     explicit ref(T* o)
         : _p(o != 0
@@ -203,9 +205,10 @@ public:
 
     /// DO NOT USE !!!
     policy* add_refcount() const {
-        if (_p)
-            _p->add_refcount();
-        return _p;
+        policy* p = _p;
+        if (p)
+            p->add_refcount();
+        return p;
     }
 
     policy* can_add_refcount() const {

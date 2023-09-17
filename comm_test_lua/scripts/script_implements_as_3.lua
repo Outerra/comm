@@ -1,0 +1,1 @@
+implements_as("a.b.parent_class_ifc","parent_class");

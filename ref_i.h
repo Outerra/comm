@@ -78,7 +78,7 @@ public:
     template<class K>
     iref(K* p, typename std::remove_const<K>::type* = 0) : _p(p) {
         if (_p)
-            _p->add_refcount();
+            reinterpret_cast<policy_intrusive_base*>(_p)->add_refcount();
     }
 
     ///Copy constructor from convertible type
@@ -104,13 +104,13 @@ public:
     ///Increment refcount
     T* add_refcount() const {
         if (_p)
-            _p->add_refcount();
+            reinterpret_cast<policy_intrusive_base*>(_p)->add_refcount();
         return _p;
     }
 
     ///Assign refcounted object if its refcount is non-zero
-    //@return assigned object or null
-    //@note keeps previous object if assignment fails
+    /// @return assigned object or null
+    /// @note keeps previous object if assignment fails
     T* add_refcount(T* p) {
         if (p && p->can_add_refcount()) {
             release();
@@ -134,9 +134,8 @@ public:
     ~iref() { release(); }
 
     void release() {
-        policy_intrusive_base* p = reinterpret_cast<policy_intrusive_base*>(_p);
-        if (p)
-            p->release_refcount((void**)&_p);
+        if (_p)
+            reinterpret_cast<policy_intrusive_base*>(_p)->release_refcount((void**)&_p);
         _p = 0;
     }
 
@@ -149,7 +148,7 @@ public:
         return _p;
     }
 
-    bool create_lock(T *p) {
+    bool create_lock(T* p) {
         release();
         if (p && p->add_refcount_lock()) {
             _p = p;
@@ -167,7 +166,7 @@ public:
         return _p;
     }
 
-    T* create_pooled(pool_type_t *po) {
+    T* create_pooled(pool_type_t* po) {
         T* p = coid::policy_pooled_i<T>::create(po);
         DASSERT_RET(p != _p, _p);
         release();
@@ -216,12 +215,12 @@ public:
 
     bool is_empty() const { return (_p == 0); }
 
-    typedef T* iref<T>::*unspecified_bool_type;
+    typedef T* iref<T>::* unspecified_bool_type;
 
     ///Discard without decrementing refcount
     void forget() { _p = 0; }
 
-    template<class T2>
+    template <class T2>
     void takeover(iref<T2>&& p) {
         if (_p == static_cast<T*>(p.get())) {
             p.release();
@@ -230,6 +229,12 @@ public:
         release();
         _p = static_cast<T*>(p.get());
         p.forget();
+    }
+
+    /// @brief Upcast to iref of derived type using static_cast
+    template <class T2>
+    T2* cast() const {
+        return static_cast<T2*>(_p);
     }
 
     coid::int32 refcount() const { return _p ? _p->refcount() : 0; }
@@ -258,12 +263,6 @@ public:
     friend coid::binstream& operator >> (coid::binstream& bin, iref_t& s) {
         s.create(new T); return bin >> *s.get();
     }
-    /*
-        friend coid::metastream& operator << (coid::metastream& m,const iref_t& s) {
-            MSTRUCT_OPEN(m,"ref")
-            MMP(m,"ptr",s.get())
-            MSTRUCT_CLOSE(m)
-        }*/
 
     friend coid::metastream& operator || (coid::metastream& m, iref_t& s)
     {
@@ -294,18 +293,18 @@ class irefw
 {
 protected:
 
-    T *_p;
-    volatile coid::uint32 *_weaks;
+    T* _p;
+    volatile coid::uint32* _weaks;
 
 public:
     irefw() : _p(0), _weaks(0) {}
 
-    irefw(const iref<T> &o)
+    irefw(const iref<T>& o)
         : _p(o._p)
         , _weaks(o._p ? _p->add_weak_copy() : 0)
     {}
 
-    irefw(const irefw<T> &o)
+    irefw(const irefw<T>& o)
         : _p(o._p)
         , _weaks(o._p ? T::add_weak_copy(o._weaks) : 0)
     {}
@@ -325,7 +324,7 @@ public:
         }
     }
 
-    bool lock(iref<T> &newref) {
+    bool lock(iref<T>& newref) {
         if (_p && newref._p != _p)
             for (;;) {
                 coid::int32 tmp = *_weaks;
@@ -374,7 +373,7 @@ struct threadcached<iref<T>>
         return *this;
     }
 
-    T * get() { return _val.get(); }
+    T* get() { return _val.get(); }
 
 private:
 

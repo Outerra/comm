@@ -94,10 +94,16 @@ struct comm_array_allocator
         SINGLETON(comm_array_mspace);
     }
 
-    ///Typed array reserve
+    ///Typed array reserve of virtual memory
     template<class T>
-    static T* reserve(uints n, mspace m = 0) {
-        return (T*)reserve(n, sizeof(T), &typeid(T[]), m);
+    static T* reserve_virtual(uints n, mspace m = 0) {
+        return (T*)reserve_virtual(n, sizeof(T), &typeid(T[]), m);
+    }
+
+    ///Typed array reserve of virtual memory
+    template<class T>
+    static T* reserve_stack(uints n, void* buffer, uints buffer_size) {
+        return (T*)reserve_stack(n, sizeof(T), buffer, buffer_size);
     }
 
     ///Typed array alloc
@@ -161,7 +167,7 @@ struct comm_array_allocator
 
 
     ///Untyped array reserve of virtual space
-    static void* reserve(
+    static void* reserve_virtual(
         uints n,
         uints elemsize,
         const std::type_info* tracking = 0,
@@ -176,6 +182,23 @@ struct comm_array_allocator
 
         if (!p) throw std::bad_alloc();
         p[0] = n;
+        return p + 1;
+    }
+
+    ///Untyped array reserve of stack space
+    /// @param buffer needs to be _alloca buffer of (2*sizeof(size_t) + n*elemsize) size
+    static void* reserve_stack(
+        uints n,
+        uints elemsize,
+        void* buffer,
+        uints buffer_size
+    )
+    {
+        DASSERT_RET(buffer_size >= 2 * sizeof(size_t) + ((n * elemsize + (sizeof(size_t) - 1)) & ~(sizeof(size_t) - 1)), nullptr);
+
+        //to be compatible with dlmalloc, we need to set flag4 and pinuse for this memory
+        uints* p = (uints*)mspace_malloc_stack(SINGLETON(comm_array_mspace).msp, buffer_size, buffer);
+        p[0] = buffer_size - sizeof(size_t);
         return p + 1;
     }
 
@@ -264,7 +287,7 @@ struct comm_array_allocator
     }
 
     ///Untyped uninitialized add
-    //@return pointer to array
+    /// @return pointer to array
     static void* add(
         const void* p,
         uints nitems,
@@ -297,14 +320,26 @@ struct comm_array_allocator
 
 
     static uints size(const void* p) {
-        return p
-            ? (dlmalloc_usable_size((const uints*)p - 1) - sizeof(uints))
-            : 0;
+        if (!p)
+            return 0;
+        uints size = dlmalloc_usable_size((const uints*)p - 1);
+        return size ? size - sizeof(uints) : 0;
     }
 
-    //@return size of virtual memory, if the block was created using reserve(), else 0
-    static uints reserved_size(const void* p) {
-        return p ? ::mspace_virtual_size((const uints*)p - 1) : 0;
+    /// @return size of virtual memory, if the block was created using reserve_virtual(), else 0
+    static uints reserved_virtual_size(const void* p) {
+        if (!p)
+            return 0;
+        uints size = ::mspace_virtual_size((const uints*)p - 1);
+        return size ? size - sizeof(uints) : 0;
+    }
+
+    /// @return size of stack memory, if the block was created using reserve_stack(), else 0
+    static uints reserved_stack_size(const void* p) {
+        if (!p)
+            return 0;
+        uints size = ::mspace_stack_size((const uints*)p - 1);
+        return size ? size - sizeof(uints) : 0;
     }
 
     static uints count(const void* p) {

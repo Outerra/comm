@@ -47,7 +47,9 @@ COID_NAMESPACE_BEGIN
 
 /// @brief a registrar that assigns unique sequential id for any queried type
 /// The assigned ID is cached in a static variable of a template specialization for the type, so repeated
-/// queries are fast. First time initialization and first time request from a
+/// queries are fast. First time initialization and first time request from a different dll module uses
+/// a mutex to ensure a correct registration
+template<typename OWNER>
 class type_sequencer
 {
     template <class T>
@@ -63,6 +65,12 @@ public:
     }
 
     virtual ~type_sequencer() {}
+
+    struct entry {
+        token type_name;
+        size_t size = 0;
+        int id = -1;
+    };
 
     /// @brief Get assigned id for type T
     /// @tparam T
@@ -96,19 +104,33 @@ public:
 
     /// @brief Pre-allocate type, with possibility to change the id value
     /// @tparam T
+    /// @param cbk optional callback executed under mutex lock
     /// @return Reference to the id value. Value of -1 is reserved for uninitialized state.
     template <class T>
-    int& assign()
+    int assign()
     {
         constexpr token ti = token::type_name<T>();
+        comm_mutex_guard g(_mux);
         return *allocate(ti, sizeof(T), true);
     }
 
-    struct entry {
-        token type_name;
-        size_t size;
-        int id;
-    };
+    /// @brief Pre-allocate type, with possibility to change the id value
+    /// @tparam T
+    /// @param cbk optional callback executed under mutex lock
+    /// @return Reference to the id value. Value of -1 is reserved for uninitialized state.
+    template <class T>
+    int assign(const function<void(int&, const entry&)>& cbk)
+    {
+        constexpr token ti = token::type_name<T>();
+        comm_mutex_guard g(_mux);
+        int id = *allocate(ti, sizeof(T), true);
+        if (cbk) {
+            int oldid = id;
+            cbk(id, _types[id]);
+            _types[oldid].id = id;
+        }
+        return id;
+    }
 
     const dynarray32<entry>& types() const {
         return _types;
@@ -118,12 +140,17 @@ public:
         return i < _types.size() ? &_types[i] : nullptr;
     }
 
+    template<class T>
+    const coid::token& name()
+    {
+        return _types[id<T>()].type_name;
+    }
+
 private:
 
     //virtual here is for always calling the main module implementation and not (possibly) outdated dll one
     virtual int* allocate(const token& type_name, size_t size, bool create)
     {
-        comm_mutex_guard g(_mux);
         for (entry& en : _types) {
             if (en.type_name == type_name)
                 return &en.id;

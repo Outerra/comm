@@ -54,7 +54,7 @@ void compot()
     constexpr token name1 = token::type_name<transform>();
     constexpr token name2 = token::type_name<jozo<transform>>();
 
-    type_sequencer idr;
+    type_sequencer<void> idr;
 
     int id0 = idr.id<transform>();
     int id1 = idr.id<jozo<transform>>();
@@ -318,12 +318,19 @@ struct slot : storage<L, Es...>
 
 #endif
 
+void data_client_test();
+
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
 {
-    compot();
+    //compot();
+    data_client_test();
 
     singleton_test();
+
+    charstr test1 = "literal";
+    charstr test2; test2 = "literal";
+    charstr test3 = test1;
 
 #ifdef COID_CONSTEXPR_IF
     slot<true, int> sl;
@@ -451,6 +458,8 @@ int main( int argc, char* argv[] )
     metastream_test();
     regex_test();
     //ig_test::run_test();
+
+    logger::terminate();
 
     return 0;
 }

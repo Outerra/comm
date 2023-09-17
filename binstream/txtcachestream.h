@@ -60,7 +60,7 @@ public:
         return fATTR_IO_FORMATTING | _cache.binstream_attributes(in0out1);
     }
 
-    //@param s specifies string that should be appended to output upon flush()
+    /// @param s specifies string that should be appended to output upon flush()
     void set_flush_token( const token& s )
     {
         _flush = s;
@@ -200,14 +200,14 @@ public:
         if( c.is_continuous()  &&  n != UMAXS )
         {
             *count = n;
-            return read_raw( c.insert(n), n );
+            return read_raw( c.insert(n, nullptr), n );
         }
         else
         {
             uints es=1, k=0;
             char ch;
             while( n-- > 0  &&  0 == read_raw( &ch, es ) ) {
-                *(char*)c.insert(1) = ch;
+                *(char*)c.insert(1, nullptr) = ch;
                 es = 1;
                 ++k;
             }

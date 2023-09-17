@@ -2,9 +2,9 @@
 #include "ig.h"
 
 ////////////////////////////////////////////////////////////////////////////////
-charstr& MethodIG::Arg::match_type( iglexer& lex, charstr& type )
+charstr& MethodIG::Arg::match_type(iglexer& lex, charstr& type)
 {
-    if(lex.matches("::"))
+    if (lex.matches("::"))
         type = "::";
     else
         type.reset();
@@ -13,42 +13,34 @@ charstr& MethodIG::Arg::match_type( iglexer& lex, charstr& type )
     do {
         type << lex.match(lex.IDENT, "expected type name");
 
-        if(lex.matches('<'))
+        if (lex.matches('<'))
             type << char('<') << lex.next_as_block(lex.ANGLE) << char('>');
 
         nested = lex.matches("::");
-        if(nested)
+        if (nested)
             type << "::";
-    } while(nested);
+    }
+    while (nested);
 
     return type;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool MethodIG::Arg::parse( iglexer& lex, bool argname )
+bool MethodIG::Arg::parse(iglexer& lex, bool argname)
 {
     //arg: [ifc_in|ifc_out|ifc_inout|] [const] type
     //type: [class[<templarg>]::]* type[<templarg>] [[*|&] [const]]*
 
-    int io = lex.matches_either("ifc_in","ifc_out","ifc_inout","ifc_ret");
-    if(!io) io=1;
-
-    //ifc_return(ifcname)
-    if(io == 4) {
-        lex.match('(');
-        match_type(lex, ifctarget);
-        lex.match(')');
-
-        io = 2;
-    }
+    int io = lex.matches_either("ifc_in", "ifc_out", "ifc_inout");
+    if (!io) io = 1;
 
     if (io == 2)
         ifckwds = "ifc_out";
     else if (io == 3)
         ifckwds = "ifc_inout";
 
-    binarg = (io&1) != 0;
-    boutarg = (io&2) != 0;
+    binarg = (io & 1) != 0;
+    boutarg = (io & 2) != 0;
 
     bvolatile = lex.matches("ifc_volatile");
 
@@ -59,23 +51,23 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
     }
 
     bconst = lex.matches("const");
-    benum = lex.matches("enum");
+    struct_type = (meta::arg::ex_type)lex.matches_either("enum", "struct", "class");
 
     bool bunsigned = lex.matches("unsigned");
 
     match_type(lex, type);
-    if(bunsigned)
+    if (bunsigned)
         type.ins(0, "unsigned ");
 
-    int isPR=0,wasPR;
-    int isCV=0;
+    int isPR = 0, wasPR;
+    int isCV = 0;
 
     //parse a sequence of pointer and reference specifications
-    while((wasPR = lex.matches_either('*', '&')))
+    while ((wasPR = lex.matches_either('*', '&')))
     {
-        isPR = isPR==2 && wasPR==2 ? 3 : wasPR;
+        isPR = isPR == 2 && wasPR == 2 ? 3 : wasPR;
 
-        if(bconst) {
+        if (bconst) {
             //const was a part of the inner type, move to the beginning
             type.ins(0, "const ");
             bconst = 0;
@@ -83,83 +75,66 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
 
         type << lex.last().value();
 
-        if((isCV = lex.matches_either("const", "volatile"))) {
+        if ((isCV = lex.matches_either("const", "volatile"))) {
             type << ' ' << lex.last().value();
             isPR = 0;
         }
     }
 
-    if(isCV == 1)   //ends with const
+    if (isCV == 1)   //ends with const
         bconst = true;
-    if(isCV)
-        type.resize(isCV==1 ? 6 : 9);   //strip the last const and volatile
+    if (isCV)
+        type.resize(isCV == 1 ? 6 : 9);   //strip the last const and volatile
 
     bxref = isPR == 3;
     bptr = isPR == 1;
     bref = bxref || isPR == 2;
 
-    if(boutarg && ((!bptr && !bref && !ifctarget) || type.begins_with("const "))) {
+    if (boutarg && ((!bptr && !bref) || type.begins_with("const "))) {
         out << (lex.prepare_exception()
             << "error: out argument must be a ref or ptr and cannot be const\n");
         lex.clear_err();
     }
 
-    basetype = type;
-    if(isPR)
-        basetype.shift_end(isPR==3 ? -2 : -1);
+    token tbasetype = type;
+    if (isPR)
+        tbasetype.shift_end(isPR == 3 ? -2 : -1);
 
-    if(basetype.begins_with("const ")) basetype.shift_start(6);
-    else if(basetype.ends_with(" const")) basetype.shift_end(-6);
+    if (tbasetype.begins_with("const ")) tbasetype.shift_start(6);
+    else if (tbasetype.ends_with(" const")) tbasetype.shift_end(-6);
 
     bspecptr = false;
 
     //special handling for strings and tokens
-    if(type == "const char*") {
-        basetype = type;
+    if (type == "const char*") {
+        tbasetype = type;
         bspecptr = true;
     }
     /*if(type == "const char*") {
-        basetype = "coid::charstr";
+        tbasetype = "coid::charstr";
         base2arg = ".c_str()";
     }
-    else if(basetype == "token" || basetype == "coid::token") {
-        basetype = "coid::charstr";
+    else if(tbasetype == "token" || tbasetype == "coid::token") {
+        tbasetype = "coid::charstr";
     }*/
 
-    biref = basetype.begins_with("iref<");
-    if(biref) {
-        token bs = basetype;
+    biref = tbasetype.begins_with("iref<");
+    if (biref) {
+        token bs = tbasetype;
         bs.shift_start(5);
         bs.cut_right_back('>');
 
         do {
             token p = bs.cut_left("::", false);
             fulltype << p;
-            if(bs)
+            if (bs)
                 fulltype << '_';
         }
-        while(bs);
-    }
-    else if(ifctarget) {
-        out << (lex.prepare_exception()
-            << "error: ifc_ret argument must be an iref<>\n");
-        lex.clear_err();
+        while (bs);
     }
 
-    if (ifctarget) {
-        type.swap(ifctarget);
-        type.ins(0, "iref<");
-        type.append('>');
-        basetype.set(type.ptr()+5, type.ptre()-1);
-
-        //remove iref from ifctarget
-        ifctarget.del(0, 5);
-        ifctarget.del(-1, 1);
-    }
-
-
-    if(!argname)
-        return lex.no_err();
+    //if (!argname)
+    //    return lex.no_err();
 
     if (lex.matches('(')) {
         //a function argument [type] (*name)(arg1[,arg2]*)
@@ -178,14 +153,14 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
         fnargs = lex.match_block(lex.ROUND, true);
         bfnarg = true;
     }
-    else
+    else if (argname)
         lex.match(lex.IDENT, name, "expecting argument name");
 
     //match array
-    if (lex.matches('[')) {
+    if (argname && lex.matches('[')) {
         if (bconst) {
             type.ins(0, "const ");
-            basetype = token(type.ptr() + 6, type.ptre());
+            tbasetype = token(type.ptr() + 6, type.ptre());
             bconst = 0;
         }
         arsize = '[';
@@ -193,62 +168,74 @@ bool MethodIG::Arg::parse( iglexer& lex, bool argname )
         arsize << ']';
     }
 
+    basetype = tbasetype;
+
     //bare type
-    barenstype = basetype;
+    token tbarenstype = tbasetype;
 
     if (biref)
-        barenstype.set(barenstype.ptr()+5, barenstype.ptre()-1);
+        tbarenstype.set(tbarenstype.ptr() + 5, tbarenstype.ptre() - 1);
 
-    barens = barenstype;
-    baretype = barens.cut_right_back("::", false);
+    barenstype = tbarenstype;
 
+    token tbarens = tbarenstype;
+    tbarens.cut_right('<', token::cut_trait_remove_sep_default_empty());  //remove template args
+    token tbaretype = tbarens.cut_right_back("::", false);
+    barens = tbarens;
 
-    bnojs = false;
+    tbaretype._pte = tbarenstype._pte; //restore template args
+    baretype = tbaretype;
+
+    bnoscript = false;
 
     //match default value
-    if(lex.matches('=')) {
+    if (argname && lex.matches('=')) {
         //match everything up to a comma or a closing parenthesis
-        lex.enable(lex.SQUARE, true);
-        lex.enable(lex.ROUND, true);
+        bool was_square = lex.enable(lex.SQUARE, true);
+        bool was_round = lex.enable(lex.ROUND, true);
+        bool was_curly = lex.enable(lex.CURLY, true);
         do {
             const lexer::lextoken& tok = lex.next();
 
-            if( tok == lex.SQUARE || tok == lex.ROUND ) {
+            if (tok == lex.SQUARE || tok == lex.ROUND || tok == lex.CURLY) {
                 lex.complete_block();
                 defval << tok.leading_token(lex) << tok << tok.trailing_token(lex);
                 continue;
             }
-            if( tok == ','  ||  tok == ')'  ||  tok.end() ) {
+            if (tok == ',' || tok == ')' || tok.end()) {
                 lex.push_back();
                 break;
             }
 
             defval << tok;
         }
-        while(1);
-        lex.enable(lex.SQUARE, false);
-        lex.enable(lex.ROUND, false);
+        while (1);
 
-        bnojs = name.first_char() == '_';
+        lex.enable(lex.CURLY, was_curly);
+        lex.enable(lex.SQUARE, was_square);
+        lex.enable(lex.ROUND, was_round);
+
+        //arguments starting with underscore that have default value are not used in script
+        bnoscript = name.first_char() == '_';
     }
 
     return lex.no_err();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void MethodIG::Arg::add_unique( dynarray<MethodIG::Arg>& irefargs )
+void MethodIG::Arg::add_unique(dynarray<MethodIG::Arg>& irefargs)
 {
     Arg* ps = irefargs.ptr();
     Arg* pe = irefargs.ptre();
 
-    for(; ps<pe; ++ps) {
-        if(ps->fulltype == fulltype) return;
+    for (; ps < pe; ++ps) {
+        if (ps->fulltype == fulltype) return;
     }
 
     Arg& arg = *irefargs.add();
     arg = *this;
 
     char x = arg.type.last_char();
-    if(x=='&' || x=='*')
+    if (x == '&' || x == '*')
         arg.type.resize(-1);
 }

@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * PosAm.
- * Portions created by the Initial Developer are Copyright (C) 2003
+ * Portions created by the Initial Developer are Copyright (C) 2003-2023
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -95,8 +95,8 @@ public:
     }
     void close();
 
-    //@return true if the character is allowed path separator
-    //@note on windows it's both / and \ characters
+    /// @return true if the character is allowed path separator
+    /// @note on windows it's both / and \ characters
     static bool is_separator(char c) { return c == '/' || c == separator(); }
 
     static char separator();
@@ -108,7 +108,7 @@ public:
     static const token& separators() { static token sep = "/"_T; return sep; }
 #endif
 
-    //@param shouldbe true or one of / or \ characters if path should end with the separator, false if path separator should not be there
+    /// @param shouldbe true or one of / or \ characters if path should end with the separator, false if path separator should not be there
     static charstr& treat_trailing_separator(charstr& path, char shouldbe)
     {
         if (shouldbe && shouldbe != '/' && shouldbe != '\\')
@@ -162,10 +162,10 @@ public:
     bool is_entry_subdirectory() const;     //< a directory, but not . or ..
     bool is_entry_regular() const;
 
-    //@return 0 is path is invalid, 1 if file, 2 directory
+    /// @return 0 is path is invalid, 1 if file, 2 directory
     static int is_valid(zstring path);
 
-    //@return true if path is a directory
+    /// @return true if path is a directory
     static bool is_valid_directory(zstring arg);
 
     static bool is_valid_file(zstring arg);
@@ -184,17 +184,19 @@ public:
     static opcd delete_directory(zstring src, bool recursive);
 
     ///Move directories or files, also works across drives
+    /// @note will fail if src file already exists in dst
     static opcd move_directory(zstring src, zstring dst) {
         return copymove_directory(src, dst, true);
     }
 
+    /// @note will fail if src file already exists in dst
     static opcd copy_directory(zstring src, zstring dst) {
         return copymove_directory(src, dst, false);
     }
 
     static opcd copy_file(zstring src, zstring dst, bool preserve_dates);
 
-    static opcd move_file(zstring src, zstring dst);
+    static opcd move_file(zstring src, zstring dst, bool replace_existing);
 
     static opcd delete_file(zstring src);
 
@@ -205,32 +207,32 @@ public:
     opcd copy_file_from(const token& src, bool preserve_dates, const token& name = token());
 
     ///Copy current file to dst dir path
-    //@param dst destination directory path
-    //@param preserve_dates use access and modification times of the source file
-    //@param name optional file name, if it's different than the current one
+    /// @param dst destination directory path
+    /// @param preserve_dates use access and modification times of the source file
+    /// @param name optional file name, if it's different than the current one
     opcd copy_file_to(const token& dst, bool preserve_dates, const token& name = token());
     opcd copy_current_file_to(const token& dst, bool preserve_dates);
 
 
     ///move file to open directory
-    opcd move_file_from(zstring src, const token& name = token());
+    opcd move_file_from(zstring src, const token& name = token(), bool replace_existing = false);
 
-    opcd move_file_to(zstring dst, const token& name = token());
-    opcd move_current_file_to(zstring dst);
+    opcd move_file_to(zstring dst, const token& name = token(), bool replace_existing = false);
+    opcd move_current_file_to(zstring dst, bool replace_existing);
 
     /// Set file times
-    //@param fname file name to modify
-    //@param actime access time, 0 if not changed
-    //@param modtime modification time, 0 if not changed
-    //@param crtime creation time, 0 if not changed, ignored on linux
+    /// @param fname file name to modify
+    /// @param actime access time, 0 if not changed
+    /// @param modtime modification time, 0 if not changed
+    /// @param crtime creation time, 0 if not changed, ignored on linux
     static opcd set_file_times(zstring fname, timet actime, timet modtime, timet crtime = 0);
 
     static opcd truncate(zstring fname, uint64 size);
 
-    //@{ tests and sets file write access flags
+    /// @{ tests and sets file write access flags
     static bool is_writable(zstring fname);
     static bool set_writable(zstring fname, bool writable);
-    //@}
+    /// @}
 
     ///Get current working directory
     static charstr get_cwd();
@@ -265,15 +267,20 @@ public:
     }
 
     ///Get current module file path, or module path where given function resides
-    //@param func pointer to a function
+    /// @param func pointer to a function
     static charstr get_module_path(const void* func = 0) {
         charstr buf;
         get_module_path_func(func ? func : (const void*)&dummy_func, buf, false);
         return buf;
     }
 
-    static uints get_module_path(charstr& dst, bool append = false) {
-        return get_module_path_func((const void*)&dummy_func, dst, append);
+    /// @brief Get module path
+    /// @param dst target path
+    /// @param append true append to dst, false set to dst
+    /// @param func optional function pointer to get the module handle for
+    /// @return module handle
+    static uints get_module_path(charstr& dst, bool append = false, const void* func = 0) {
+        return get_module_path_func(func ? func : (const void*)&dummy_func, dst, append);
     }
 
     static uints get_module_handle() {
@@ -284,7 +291,7 @@ public:
     static charstr get_tmp_dir();
 
     ///Create temp directory in system temp folder
-    //@param prefix prefix name to use
+    /// @param prefix prefix name to use
     static charstr create_tmp_dir(const token& prefix);
 
     ///Get user home directory
@@ -294,24 +301,24 @@ public:
     static bool get_relative_path(token src, token dst, charstr& relout, bool last_src_is_file = false);
 
     ///Append \a path to the destination buffer
-    //@param dst path to append to, also receives the result
-    //@param path relative path to append; an absolute path replaces the content of dst
-    //@param keep_below if true, only allows relative paths that cannot get out of the input path
-    //@return >0 ok, 0 error, <0 if path is ok but possibly outside of input directory
+    /// @param dst path to append to, also receives the result
+    /// @param path relative path to append; an absolute path replaces the content of dst
+    /// @param keep_below if true, only allows relative paths that cannot get out of the input path
+    /// @return >0 ok, 0 error, <0 if path is ok but possibly outside of input directory
     static int append_path(charstr& dst, token path, bool keep_below = false);
 
     static bool is_absolute_path(const token& path);
 
-    //@return true if path is under or equals root
-    //@note paths must be compact
+    /// @return true if path is under or equals root
+    /// @note paths must be compact
     static bool is_subpath( token root, token path );
 
-    //@return true if path is under or equals root, if true path is modified to contain the relative path
-    //@note paths must be compact
+    /// @return true if path is under or equals root, if true path is modified to contain the relative path
+    /// @note paths must be compact
     static bool subpath( token root, token& path );
 
     ///Remove nested ../ chunks, remove extra path separator characters
-    //@param tosep replace separators with given character (usually '/' or '\\')
+    /// @param tosep replace separators with given character (usually '/' or '\\')
     static bool compact_path(charstr& dst, char tosep = 0);
 
 
@@ -349,9 +356,9 @@ public:
 
     ///Lists all files with extension (extension = "" or "*" if all files) in directory with path using func functor.
     ///Lists also subdirectories paths when recursive_flags set
-    //@param mode - nest into subdirectories and calls callback fn in order specified by recursive_mode
-    //@param fn callback function(const charstr& file_path, recursion_mode mode)
-    //@note fn callback recursion_mode parameter invoked on each file or on directories upon entering or exisitng (or both)
+    /// @param mode - nest into subdirectories and calls callback fn in order specified by recursive_mode
+    /// @param fn callback function(const charstr& file_path, recursion_mode mode)
+    /// @note fn callback recursion_mode parameter invoked on each file or on directories upon entering or exisitng (or both)
     static bool list_file_paths(const token& path, const token& extension, recursion_mode mode,
         const coid::function<void(const charstr&, list_entry)>& fn);
 
@@ -373,11 +380,11 @@ public:
 
     ///lists all files with given extension and their "last modified" times
     ///note: does not return any folder paths
-    //@param path where to search
-    //@param extension only files whose paths end with this token are returned. keep empty to find all files
-    //@param recursive if true subfolders will be recursively searched
-    //@param return_also_folders if true the callbeck will be called also for folders (even when searching for files with extension)
-    //@param fn callback function called for each found file
+    /// @param path where to search
+    /// @param extension only files whose paths end with this token are returned. keep empty to find all files
+    /// @param recursive if true subfolders will be recursively searched
+    /// @param return_also_folders if true the callbeck will be called also for folders (even when searching for files with extension)
+    /// @param fn callback function called for each found file
     static void find_files(
         const token& path,
         const token& extension,
@@ -396,11 +403,11 @@ protected:
 
     static const char* no_trail_sep( zstring& name );
 
-    //@return handle of module where fn resides
+    /// @return handle of module where fn resides
     static uints get_module_handle_func(const void* fn);
 
-    //@param dst string buffer to receive module path
-    //@return handle of module where fn resides
+    /// @param dst string buffer to receive module path
+    /// @return handle of module where fn resides
     static uints get_module_path_func(const void* fn, charstr& dst, bool append);
 
 private:

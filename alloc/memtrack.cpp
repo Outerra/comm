@@ -123,7 +123,7 @@ struct memtrack_registrar
 
     virtual ~memtrack_registrar() {}
 
-    //@note virtual methods to avoid breaking dlls when exe implementation changes
+    /// @note virtual methods to avoid breaking dlls when exe implementation changes
 
     ///Track allocation
     virtual void alloc(const std::type_info* tracking, size_t size)
@@ -274,7 +274,7 @@ static memtrack_registrar* memtrack_register()
         return 0;
 
     reentry = true;
-    LOCAL_PROCWIDE_SINGLETON_DEF(memtrack_registrar) reg;
+    LOCAL_FUNCTION_PROCWIDE_SINGLETON_DEF(memtrack_registrar) reg;
     reentry = false;
 
     return reg.get();

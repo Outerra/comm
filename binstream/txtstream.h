@@ -71,7 +71,7 @@ public:
         return f;
     }
 
-    //@param s specifies string that should be appended to output upon flush()
+    /// @param s specifies string that should be appended to output upon flush()
     void set_flush_token(const token& s) {
         _flush = s;
     }
@@ -233,7 +233,7 @@ public:
         opcd e = 0;
         if (c.is_continuous() && n != UMAXS)
         {
-            e = read_raw(c.insert(n), n);
+            e = read_raw(c.insert(n, 0), n);
 
             if (!e)  *count = n;
         }
@@ -242,7 +242,7 @@ public:
             uints es = 1, k = 0;
             char ch;
             while (n-- > 0 && 0 == read_raw(&ch, es)) {
-                char* p = (char*)c.insert(1);
+                char* p = (char*)c.insert(1, 0);
                 if (!p)  return ersNOT_ENOUGH_MEM;
 
                 *p = ch;
@@ -371,7 +371,7 @@ public:
     }
 
     ///Append floating point number
-    //@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
+    /// @param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
     void append_float(double d, int nfrac)
     {
         char buf[256];

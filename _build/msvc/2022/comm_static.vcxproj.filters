@@ -359,6 +359,16 @@
     </ClInclude>
     <ClInclude Include="..\..\..\global.h" />
     <ClInclude Include="..\..\..\typeseq.h" />
+    <ClInclude Include="..\..\..\metastream\fmtstream_lua_capi.h">
+      <Filter>metastream</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\international.h" />
+    <ClInclude Include="..\..\..\process.h" />
+    <ClInclude Include="..\..\..\log.h" />
+    <ClInclude Include="..\..\..\unique_ptr.h" />
+    <ClInclude Include="..\..\..\intergen\ifc.lua.h">
+      <Filter>intergen</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\crypt\sha1.cpp">
@@ -465,6 +475,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\profiler\profiler.cpp">
       <Filter>profiler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\process_win.cpp">
+      <Filter>cxx</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

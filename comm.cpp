@@ -49,45 +49,45 @@ static uints G_mem = 0;
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Only for concentrated debug point
-void *_xmemcpy( void *dest, const void *src, size_t count ) {
-    return ::memcpy( dest, src, count );
+void* _xmemcpy(void* dest, const void* src, size_t count) {
+    return ::memcpy(dest, src, count);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool cdcd_memcheck( const uchar* a, const uchar* ae, const uchar* b, const uchar* be )
+bool cdcd_memcheck(const uchar* a, const uchar* ae, const uchar* b, const uchar* be)
 {
-    const uchar* p = (const uchar*)::memchr( a, 0xcd, ae-a );
-    if(!p)
+    const uchar* p = (const uchar*)::memchr(a, 0xcd, ae - a);
+    if (!p)
     {
-        if( be == b )  return true;
-        return cdcd_memcheck( b, be, 0, 0 );
+        if (be == b)  return true;
+        return cdcd_memcheck(b, be, 0, 0);
     }
-    else if( p == ae-1 )
+    else if (p == ae - 1)
     {
-        if( be == b )  return true;
-        if( *b == 0xcd )  return false;
-        return cdcd_memcheck( b+1, be, 0, 0 );
+        if (be == b)  return true;
+        if (*b == 0xcd)  return false;
+        return cdcd_memcheck(b + 1, be, 0, 0);
     }
-    else if( p[1] == 0xcd )
+    else if (p[1] == 0xcd)
         return false;
     else
-        return cdcd_memcheck( a+2, ae, b, be );
+        return cdcd_memcheck(a + 2, ae, b, be);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void* memaligned_alloc( size_t size, size_t alignment )
+void* memaligned_alloc(size_t size, size_t alignment)
 {
     void* p = ::dlmemalign(alignment, size);
 
-    if(p)
+    if (p)
         G_mem += ::dlmalloc_usable_size(p);
     return p;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void memaligned_free( void* p )
+void memaligned_free(void* p)
 {
-    if(p)
+    if (p)
         G_mem -= ::dlmalloc_usable_size(p);
 
     ::dlfree(p);
@@ -106,13 +106,13 @@ uints memaligned_used()
     @param nitems number of items to resize to
     @param itemsize size of item in bytes
     @return pointer to the first element of array */
-void* dynarray_realloc( void* p, uints nitems, uints itemsize )
+void* dynarray_realloc(void* p, uints nitems, uints itemsize)
 {
     uints n = *((const uints*)p - 1);
     uints nalloc = nitems;
-    uints size = p ? (dlmalloc_usable_size( (uints*)p - 1 ) - sizeof(uints)) : 0;
+    uints size = p ? (dlmalloc_usable_size((uints*)p - 1) - sizeof(uints)) : 0;
 
-    if( nalloc*itemsize > size )
+    if (nalloc * itemsize > size)
     {
         uints* pn = (uints*)::mspace_realloc(SINGLETON(comm_array_mspace).msp, (uints*)p - 1,
             sizeof(uints) + n * itemsize);
@@ -123,10 +123,10 @@ void* dynarray_realloc( void* p, uints nitems, uints itemsize )
     else
         *((uints*)p - 1) = nitems;
 
-    if(nitems) {
+    if (nitems) {
 #if defined(_DEBUG) && !defined(NO_DYNARRAY_DEBUG_FILL)
-        if (nalloc*itemsize > size)
-            ::memset( (uchar*)p+size, 0xcd, nalloc*itemsize - size );
+        if (nalloc * itemsize > size)
+            ::memset((uchar*)p + size, 0xcd, nalloc * itemsize - size);
 #endif
     }
 

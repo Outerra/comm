@@ -44,31 +44,34 @@
 #include "pthreadx.h"
 #include <type_traits>
 
+#include <source_location>
+
 ///Retrieves module (current dll/exe) singleton object of given type T
-# define SINGLETON(...) \
-    coid::singleton<__VA_ARGS__>::instance(true, __FILE__, __LINE__)
+#define SINGLETON(...) \
+    coid::singleton<__VA_ARGS__>::instance(true, std::source_location::current())
 
 ///Retrieves process-wide global singleton object of given type T
-# define PROCWIDE_SINGLETON(...) \
-    coid::singleton<__VA_ARGS__>::instance(false, __FILE__, __LINE__)
+#define PROCWIDE_SINGLETON(...) \
+    coid::singleton<__VA_ARGS__>::instance(false, std::source_location::current())
 
 
 ///Used for function-local singleton objects, unique for each module (dll)
 /// usage:
-/// LOCAL_SINGLETON_DEF(class) name = new class;
-#define LOCAL_SINGLETON_DEF(...) \
-    static coid::singleton<__VA_ARGS__>
+/// LOCAL_FUNCTION_SINGLETON_DEF(class) name = new class;
+#define LOCAL_FUNCTION_SINGLETON_DEF(...) \
+    static coid::singleton<__VA_ARGS__, __FUNCSIG__, std::source_location::current().line()>
 
 ///Used for function-local singleton objects returning process-wide singleton
 /// usage:
-/// LOCAL_PROCWIDE_SINGLETON_DEF(class) name = new class;
-#define LOCAL_PROCWIDE_SINGLETON_DEF(...) \
-    static coid::singleton<__VA_ARGS__, false>
+/// LOCAL_FUNCTION_PROCWIDE_SINGLETON_DEF(class) name = new class;
+#define LOCAL_FUNCTION_PROCWIDE_SINGLETON_DEF(...) \
+    static coid::singleton<__VA_ARGS__, __FUNCSIG__, std::source_location::current().line(), false>
 
-
-///Same as LOCAL_SINGLETON_DEF (compatibility)
-#define LOCAL_SINGLETON(...) LOCAL_SINGLETON_DEF(__VA_ARGS__)
-
+///Used for file-local singleton objects, unique for each module (dll)
+/// usage:
+/// LOCAL_FUNCTION_SINGLETON_DEF(class) name = new class;
+#define LOCAL_FILE_SINGLETON_DEF(...)\
+    static coid::singleton<__VA_ARGS__, __FILE__, std::source_location::current().line()>
 
 ///Returns thread singleton instance (the same one when called from different code within module)
 #define THREAD_SINGLETON(...) \
@@ -82,8 +85,17 @@
 /// usage:
 /// THREAD_LOCAL_SINGLETON_DEF(class) name = new class;
 #define THREAD_LOCAL_SINGLETON_DEF(...) \
-    static coid::thread_singleton<__VA_ARGS__>
+    static coid::thread_singleton<__VA_ARGS__, __FUNCSIG__, std::source_location::current().line()>
 
+
+///Same as LOCAL_FUNCTION_SINGLETON_DEF (compatibility)
+#define LOCAL_SINGLETON_DEF(...) LOCAL_FUNCTION_SINGLETON_DEF(__VA_ARGS__)
+
+///Same as LOCAL_FUNCTION_PROCWIDE_SINGLETON_DEF (compatibility)
+#define LOCAL_PROCWIDE_SINGLETON_DEF(...) LOCAL_FUNCTION_PROCWIDE_SINGLETON_DEF(__VA_ARGS__)
+
+///Same as LOCAL_SINGLETON_DEF (compatibility)
+#define LOCAL_SINGLETON(...) LOCAL_SINGLETON_DEF(__VA_ARGS__)
 
 
 ///Evaluates to true if a singleton of given type exists
@@ -105,13 +117,14 @@ void* singleton_register_instance(
     const char* type,
     const char* file,
     int line,
-    bool invisible);
+    bool invisible,
+    const char* unique_indentifier);
 
 void singleton_unregister_instance(void*);
 
 void singletons_destroy();
 
-fn_singleton_creator singleton_local_creator( void* p );
+fn_singleton_creator singleton_local_creator(void* p);
 
 
 ///This will run singleton_initialize_module() static method if T has one
@@ -120,14 +133,14 @@ struct has_singleton_initialize_module_method
 {
     // SFINAE foo-has-correct-sig
     template<typename A>
-    static std::true_type test( void (A::*)() ) {
+    static std::true_type test(void (A::*)()) {
         return std::true_type();
     }
 
     // SFINAE foo-exists
     template <typename A>
     static decltype(test(&A::singleton_initialize_module))
-    test( decltype(&A::singleton_initialize_module), void* ) {
+        test(decltype(&A::singleton_initialize_module), void*) {
         // foo exists. check sig
         typedef decltype(test(&A::singleton_initialize_module)) return_type;
         return return_type();
@@ -141,7 +154,7 @@ struct has_singleton_initialize_module_method
     }
 
     // This will be either `std::true_type` or `std::false_type`
-    typedef decltype(test<T>(0,0)) type;
+    typedef decltype(test<T>(0, 0)) type;
 
     static const bool value = type::value;
 
@@ -149,10 +162,10 @@ struct has_singleton_initialize_module_method
         p->singleton_initialize_module();
     }
 
-    static void evalfn(...){
+    static void evalfn(...) {
     }
 
-    static void eval( void* p ) {
+    static void eval(void* p) {
         evalfn(static_cast<T*>(p), type());
     }
 };
@@ -160,24 +173,40 @@ struct has_singleton_initialize_module_method
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Class for global and local singletons
-//@param Module true if locally created singletons should be unique in each module (dll), false if process-wide
-template <class T, bool Module = true>
+//@tparam T - type of singleton
+//@tparam Unique_identidier - signature of function when LOCAL_FUNCTION_SINGLETON used, file path when LOCAL_FILE_SINGLETON used
+//@tparam Line - line in file form where the singleton was created(0 for global singletons)
+//@tparam Module true if locally created singletons should be unique in each module (dll), false if process-wide
+
+namespace detail
+{
+template<uints N>
+struct string_literal
+{
+    constexpr string_literal(const char(&str)[N]) {
+        std::copy_n(str, N, value);
+    }
+    char value[N];
+};
+}
+
+template <class T, detail::string_literal Unique_identidier = "", int Line = 0, bool Module = true>
 class singleton
 {
 public:
 
-    static void init_module( void* p ) {
+    static void init_module(void* p) {
         has_singleton_initialize_module_method<T>::eval(p);
     }
 
 
-    //@return global singleton, registering the place of birth
-    //@param module_local create a singleton that's local to the current module
-    static T& instance( bool module_local, const char* file=0, int line=0 )
+    /// @return global singleton, registering the place of birth
+    /// @param module_local create a singleton that's local to the current module
+    static T& instance(bool module_local, const std::source_location& loc)
     {
         T*& node = ptr();
 
-        if(node)
+        if (node)
             return *node;
 
 #if !defined(SYSTYPE_MSVC) || SYSTYPE_MSVC >= 1700
@@ -186,12 +215,12 @@ public:
 
         node = (T*)singleton_register_instance(
             &create, &destroy, &init_module,
-            typeid(T).name(), file, line, module_local);
+            typeid(T).name(), loc.file_name(), loc.line(), module_local, "");
 
         return *node;
     }
 
-    //@return global singleton reference
+    /// @return global singleton reference
     static T*& ptr() {
         static T* node = 0;
         return node;
@@ -203,22 +232,20 @@ public:
         static_assert(std::is_default_constructible<T>::value, "type is not default constructible");
 #endif
 
-        _p = (T*)singleton_register_instance(
-            &create, &destroy, &init_module,
-            typeid(T).name(), 0, 0, Module);
+        _p = (T*)singleton_register_instance(&create, &destroy, &init_module, typeid(T).name(), "", Line, Module, Unique_identidier.value);
     }
 
     ///Local singleton constructor, use through LOCAL_SINGLETON macro
     singleton(T* obj) {
         _p = (T*)singleton_register_instance(
             singleton_local_creator(obj), &destroy, &init_module,
-            typeid(T).name(), 0, 0, Module);
+            typeid(T).name(), "", Line, Module, Unique_identidier.value);
     }
 
     singleton(T&& obj) {
         _p = (T*)singleton_register_instance(
             singleton_local_creator(new T(std::forward<T>(obj))), &destroy, &init_module,
-            typeid(T).name(), 0, 0, Module);
+            typeid(T).name(), "", Line, Module, Unique_identidier.value);
     }
 
     ~singleton() {
@@ -248,13 +275,13 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Class for global and local thread singletons
-template<class T>
+template<class T, detail::string_literal Function_signature = "", int Line = -1>
 class thread_singleton
 {
 public:
 
-    //@return global thread singleton (always the same one from multiple places where used)
-    static T& instance( bool module_local )
+    /// @return global thread singleton (always the same one from multiple places where used)
+    static T& instance(bool module_local)
     {
         thread_key& tk = get_key();
         return *thread_instance(tk, module_local);
@@ -280,18 +307,18 @@ public:
 
 private:
 
-    static T* thread_instance( thread_key& tk, bool module_local ) {
+    static T* thread_instance(thread_key& tk, bool module_local) {
         T* p = reinterpret_cast<T*>(tk.get());
         if (!p) {
             p = (T*)singleton_register_instance(
                 &create, &destroy, &singleton<T>::init_module,
-                typeid(T).name(), 0, 0, module_local);
+                typeid(T).name(), "", Line, module_local, Function_signature.value);
             tk.set(p);
         }
         return p;
     }
 
-    //@return global thread key
+    /// @return global thread key
     static thread_key& get_key() {
         static thread_key _gtkey;
         return _gtkey;
@@ -308,7 +335,6 @@ private:
 
 
 };
-
 
 COID_NAMESPACE_END
 

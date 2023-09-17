@@ -6,7 +6,6 @@
 #include "dir.h"
 #include "intergen/ifc.h"
 
-#include <cstdio>
 
 COID_NAMESPACE_BEGIN
 
@@ -19,19 +18,21 @@ struct entry
     token ns;
     token script;                       //< script ("js", "lua" ...) or client name
     token hash;                         //< hash text value, or "wrapper", "maker", "creator", "client"
-    token modulename;
+    token modulepath;
     uints handle = 0;
+
+    const meta::class_interface* ifc_meta = 0;
 
     void* creator_ptr = 0;
     uint hashvalue = 0;
     uint keylen = 0;
 
-    //@return interface string without the module name
+    /// @return interface string without the module name
     operator token() const {
         return token(ifcname.ptr(), ifcname.ptr() + keylen);
     }
 
-    //@return class name with namespaces
+    /// @return class name with namespaces
     token ns_class() const {
         return token(ns.ptr(), classname.ptre());
     }
@@ -72,10 +73,11 @@ public:
         @param ifcname in one of the following forms:
             [ns1[::ns2[...]]]::classname@wrapper[.scriptname]               wrap existing interface object
             [ns1[::ns2[...]]]::classname@maker[.scriptname]                 create script interface object from host
+            [ns1[::ns2[...]]]::classname@dcmaker[.scriptname]               create script interface object from host
             [ns1[::ns2[...]]]::classname@unload                             unload registered client
-            [ns1[::ns2[...]]]::classname@meta                               register meta types
+            [ns1[::ns2[...]]]::classname@meta                               register interface meta info
             [ns1[::ns2[...]]]::classname.creatorname@hashvalue              c++ versioned creator
-            [ns1[::ns2[...]]]::classname.creatorname@hashvalue.ifc          c++ versioned creator direct ifc creator
+          x [ns1[::ns2[...]]]::classname.creatorname@hashvalue.ifc          c++ versioned creator direct ifc creator [removed]
             [ns1[::ns2[...]]]::classname.creatorname@creator.scriptname     c++ creator of JS interface object
             [ns1[::ns2[...]]]::scriptname::classname.creatorname            creator from script
             [ns1[::ns2[...]]]::classname@client-hashvalue.clientname        client creator
@@ -84,13 +86,14 @@ public:
     **/
     virtual bool register_interface_creator(
         const coid::token& ifcname,
-        void* creator_ptr)
+        void* creator_ptr,
+        const meta::class_interface* ifcmeta)
     {
         //create string in current module
         charstr tmp = ifcname;
 
         token ns = tmp;
-        token modulename = ns.cut_right_back('*', token::cut_trait_remove_sep_default_empty());
+        token modulepath = ns.cut_right_back('*', token::cut_trait_remove_sep_default_empty());
         token wrapper = ns.cut_right_back('@', token::cut_trait_remove_sep_default_empty());
         token classname = ns.cut_right_back("::"_T, false);
         token creatorname = classname.cut_right_back('.', token::cut_trait_remove_sep_default_empty());
@@ -112,12 +115,12 @@ public:
             }
         }
 
-        uints ml = modulename.len();
+        uints ml = modulepath.len();
         if (ml)
             ml++;
         token key = token(tmp.ptr(), tmp.ptre() - ml);
 
-        token handle = modulename.cut_right_back(':', token::cut_trait_remove_sep_default_empty());
+        token handle = modulepath.cut_right_back(':', token::cut_trait_remove_sep_default_empty());
 
         GUARDTHIS(_mx);
 
@@ -127,6 +130,7 @@ public:
         else {
             entry* en = _hash.insert_value_slot(key);
             if (en) {
+                en->ifc_meta = ifcmeta;
                 en->creator_ptr = creator_ptr;
                 en->ifcname.takeover(tmp);
                 en->ns = ns;
@@ -135,7 +139,7 @@ public:
                 en->hash = wrapper;
                 en->hashvalue = hash;
                 en->script = script;
-                en->modulename = modulename;
+                en->modulepath = modulepath;
                 en->handle = uints(handle.touint64());
                 en->keylen = key.len();
                 return true;
@@ -232,8 +236,10 @@ public:
                 continue;
 
             token ins = i->ns;
-            if (!script.is_null() && (!ins.consume_end(script) || !ins.consume_end("::"_T)))
+            if (!script.is_null() && (!ins.consume_end(script)))
                 continue;
+
+            ins.consume_end("::"_T); // consume trailing "::" in case that interface is in some namespace
 
             if (ns && ins != ns)
                 continue;
@@ -259,7 +265,7 @@ public:
             if (en->hashvalue != hash)
                 return 0;
 
-            if (module && !en->modulename.ends_with_icase(module))
+            if (module && !module.cmpeq(en->modulepath))
                 return 0;
 
             return (interface_register::client_fn)en->creator_ptr;
@@ -342,12 +348,12 @@ public:
         return intergen_interface::VERSION == ver;
     }
 
-    //@param curpath current directory
-    //@param incpath path to include/append to the current dir
-    //@param dst [out] output path (absolute)
-    //@param relpath [out] gets relative path from root
-    //@note if relpath is null, relative incpath can only refer to a sub-path below curpath
-    //@note relpath is set to a null token when incpath was relative to curpath and bellow it
+    /// @param curpath current directory
+    /// @param incpath path to include/append to the current dir
+    /// @param dst [out] output path (absolute)
+    /// @param relpath [out] gets relative path from root
+    /// @note if relpath is null, relative incpath can only refer to a sub-path below curpath
+    /// @note relpath is set to a null token when incpath was relative to curpath and bellow it
     virtual bool include_path(const token& curpath, const token& incpath, charstr& dst, token* relpath)
     {
         bool slash = incpath.first_char() == '/' || incpath.first_char() == '\\';
@@ -402,6 +408,32 @@ public:
             *relpath = rpath;
 
         return _fn_acc ? _fn_acc(rpath) : true;
+    }
+
+    virtual void* get_interface_dcmaker(const token& name, const token& script) const
+    {
+        zstring str = name;
+        str.get_str() << "@dcmaker" << '.' << script;
+
+        return (void*)find_wrapper(str);
+    }
+
+    virtual dynarray<const meta::class_interface*>& find_interface_meta_info(const regex& name, dynarray<const meta::class_interface*>& dst) const
+    {
+        GUARDTHIS(_mx);
+
+        auto i = _hash.begin();
+        auto ie = _hash.end();
+        for (; i != ie; ++i) {
+            if (!i->ifc_meta || i->hash != "meta"_T)
+                continue;
+
+            if (name.match(token(*i))) {
+                *dst.add() = i->ifc_meta;
+            }
+        }
+
+        return dst;
     }
 
     bool notify_module_unload(uints handle, binstring* bstr, dynarray<interface_register::unload_entry>& ens)
@@ -472,10 +504,10 @@ private:
 
         intergen_interface::fn_unload_client fn = (intergen_interface::fn_unload_client)en->creator_ptr;
 
-        return fn(client, cen.modulename, bstr);
+        return fn(client, cen.modulepath, bstr);
     }
 
-    //@return current directory from current path
+    /// @return current directory from current path
     bool current_dir(token curpath, charstr& dst)
     {
         if (directory::is_absolute_path(curpath))
@@ -496,10 +528,10 @@ void* interface_register::get_interface_creator(const token& ifcname)
 {
     interface_register_impl& reg = interface_register_impl::get();
     if (!reg.check_version(intergen_interface::VERSION)) {
-        ref<logmsg> msg = canlog(coid::log::error, "ifcreg"_T, 0);
+        ref<logmsg> msg = canlog(coid::log::level::error, "ifcreg"_T, 0, coid::log::target::primary_log);
         msg->str() << "mismatched intergen version for " << ifcname << "(v" << intergen_interface::VERSION << ')';
         //print requires VS2015
-        //print(coid::log::error, "ifcreg", "mismatched intergen version for {}", ifcname);
+        //print(coid::log::level::error, "ifcreg", "mismatched intergen version for {}", ifcname);
         return 0;
     }
 
@@ -520,15 +552,15 @@ const charstr& interface_register::root_path()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-ref<logmsg> interface_register::canlog(log::type type, const token& from, const void* inst)
+ref<logmsg> interface_register::canlog(log::level type, const token& src, const void* inst, log::target target)
 {
     fn_log_t canlogfn = interface_register_impl::get().fn_log();
     ref<logmsg> msg;
 
     if (canlogfn)
-        msg = canlogfn(type, from, inst);
+        msg = canlogfn(type, src, inst, target);
     else
-        msg = getlog()->create_msg(type, from, inst);
+        msg = getlog()->create_msg(type, target, src, inst);
 
     return msg;
 }
@@ -570,6 +602,15 @@ void* interface_register::get_interface_maker(const token& name, const token& sc
     // [ns1::[ns2:: ...]]::class
     interface_register_impl& reg = interface_register_impl::get();
     return reg.get_interface_maker(name, script);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void* interface_register::get_interface_dcmaker(const token& name, const token& script)
+{
+    //interface name:
+    // [ns1::[ns2:: ...]]::class
+    interface_register_impl& reg = interface_register_impl::get();
+    return reg.get_interface_dcmaker(name, script);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -617,6 +658,13 @@ dynarray<interface_register::creator>& interface_register::find_interface_creato
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+dynarray<const meta::class_interface*>& interface_register::find_interface_meta_info(const regex& str, dynarray<const meta::class_interface*>& dst)
+{
+    interface_register_impl& reg = interface_register_impl::get();
+    return reg.find_interface_meta_info(str, dst);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 bool interface_register::notify_module_unload(uints handle, binstring* bstr, dynarray<interface_register::unload_entry>& uens)
 {
     //find clients from given dll
@@ -625,13 +673,43 @@ bool interface_register::notify_module_unload(uints handle, binstring* bstr, dyn
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool interface_register::register_interface_creator(const token& ifcname, void* creator_ptr)
+bool interface_register::register_interface(const meta::class_interface& ifcmeta, const void* func)
+{
+    interface_register_impl& reg = interface_register_impl::get();
+
+    if (!reg.check_version(intergen_interface::VERSION)) {
+        if (func) {
+            ref<logmsg> msg = canlog(coid::log::level::error, "ifcreg"_T, 0, coid::log::target::primary_log);
+            if (msg) {
+                charstr modpath = directory::get_module_path(func);
+
+                msg->str() << "declined interface registration for " << ifcmeta.nsname
+                    << " (" << token(modpath).cut_right_group_back("/\\")
+                    << "), mismatched intergen version (v" << intergen_interface::VERSION << ')';
+            }
+        }
+        return false;
+    }
+
+    charstr tmp = ifcmeta.nsname;
+    tmp << "@meta*";
+
+    uints hmod = directory::get_module_path(tmp, true, func);
+
+    directory::compact_path(tmp, '/');
+    tmp << ':' << hmod;
+
+    return reg.register_interface_creator(tmp, const_cast<void*>(func), &ifcmeta);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+bool interface_register::register_interface_creator(const token& ifcname, void* creator_ptr, const meta::class_interface* ifcmeta)
 {
     interface_register_impl& reg = interface_register_impl::get();
 
     if (!reg.check_version(intergen_interface::VERSION)) {
         if (creator_ptr) {
-            ref<logmsg> msg = canlog(coid::log::error, "ifcreg"_T, 0);
+            ref<logmsg> msg = canlog(coid::log::level::error, "ifcreg"_T, 0, coid::log::target::primary_log);
             if (msg) {
                 charstr modpath = directory::get_module_path(creator_ptr);
 
@@ -645,19 +723,13 @@ bool interface_register::register_interface_creator(const token& ifcname, void* 
 
     charstr tmp = ifcname;
     tmp << '*';
-    uint offs = tmp.len();
 
-    uints hmod = directory::get_module_path(tmp, true);
+    uints hmod = directory::get_module_path(tmp, true, creator_ptr);
 
-    //keep only the file name
-    token path = token(tmp.ptr()+offs, tmp.ptre());
-    uint plen = path.len();
-    path.cut_left_group_back("\\/"_T);
-    tmp.del(offs, plen - path.len());
-
+    directory::compact_path(tmp, '/');
     tmp << ':' << hmod;
 
-    return reg.register_interface_creator(tmp, creator_ptr);
+    return reg.register_interface_creator(tmp, creator_ptr, ifcmeta);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

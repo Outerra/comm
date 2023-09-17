@@ -280,7 +280,7 @@
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <ResourceCompile>
@@ -347,7 +347,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <ResourceCompile>
@@ -478,6 +478,7 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <ClCompile Include="..\..\..\profiler\profiler.cpp" />
     <ClCompile Include="..\..\..\pthreadx.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug-clang|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -626,12 +627,14 @@
     <ClInclude Include="..\..\..\metastream\fmtstreamjson.h" />
     <ClInclude Include="..\..\..\metastream\fmtstreamxml.h" />
     <ClInclude Include="..\..\..\metastream\fmtstreamxml2.h" />
+    <ClInclude Include="..\..\..\metastream\fmtstream_lua_capi.h" />
     <ClInclude Include="..\..\..\metastream\metagen.h" />
     <ClInclude Include="..\..\..\metastream\metastream.h" />
     <ClInclude Include="..\..\..\metastream\metavar.h" />
     <ClInclude Include="..\..\..\alloc\_malloc.h" />
     <ClInclude Include="..\..\..\alloc\commalloc.h" />
     <ClInclude Include="..\..\..\alloc\memtrack.h" />
+    <ClInclude Include="..\..\..\profiler\profiler.h" />
     <ClInclude Include="..\..\..\sync\_mutex.h" />
     <ClInclude Include="..\..\..\sync\guard.h" />
     <ClInclude Include="..\..\..\sync\mutex.h" />

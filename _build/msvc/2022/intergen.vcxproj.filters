@@ -44,5 +44,8 @@
     <None Include="..\..\..\intergen\metagen\interface.lua.h.mtg">
       <Filter>metagen</Filter>
     </None>
+    <None Include="..\..\..\intergen\metagen\interface-data.h.mtg">
+      <Filter>metagen</Filter>
+    </None>
   </ItemGroup>
 </Project>

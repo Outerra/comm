@@ -68,7 +68,7 @@ public:
 
     substring& operator = ( const token& tok )  { set(tok);  return *this; }
 
-    //@{ Predefined substrings
+    /// @{ Predefined substrings
     ///CRLF sequence
     static substring& crlf()                    { static substring _S("\r\n",2,false);  return _S; }
 
@@ -77,7 +77,7 @@ public:
 
     ///Character 0 (end of string)
     static substring& zero()                    { static substring _S("",1,false);  return _S; }
-    //@}
+    /// @}
 
 
     ///Initialize with string
@@ -96,7 +96,7 @@ public:
 
 
     ///Find the substring within the provided data
-    //@return position of the substring or \a len if not found
+    /// @return position of the substring or \a len if not found
     uints find( const char* ptr, uints len ) const
     {
         if( _len == 1 )

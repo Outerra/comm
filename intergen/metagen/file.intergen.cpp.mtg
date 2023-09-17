@@ -4,7 +4,9 @@
 
 $-[class]$$[iface]$
 #include "$relpath$"
-$-[/iface]$$[/class]$
+$-[/iface]$$[iface_data]$
+#include "$relpath$"
+$-[/iface_data]$$[/class]$
 #include "$hdr$"
 
 #include <comm/ref.h>
@@ -20,12 +22,14 @@ $-[/pastedefers]$
 
 using namespace coid;
 
-$-[class iface.empty!]$
-static_assert( std::is_base_of<policy_intrusive_base, ::$ns rest="::" after="::"$$class$>::value, "class '$class$' must be derived from policy_intrusive_base");
+$-[class]$
+$-(if !iface.empty)$
+static_assert(std::is_base_of<policy_intrusive_base, ::$nsx$$class$>::value, "class '$nsx$$class$' must be derived from policy_intrusive_base");
 
+$-(/if)$
 $-[iface]$
 ////////////////////////////////////////////////////////////////////////////////
-// interface $[ns]$$@value$::$[/ns]$$name$ of class $..class$
+// interface $ns suffix="::"$$name$ of class $..nsx$$..class$
 $[ns]$
 namespace $@value$ {
 $-[/ns]$
@@ -34,26 +38,54 @@ $-[/ns]$
 class $name$_dispatcher : public $name$
 {
     friend class $name$;
+    using enum meta::method::flg;
+    using enum meta::class_interface::flg;
+
+    $-[method | !args.empty !return.type="void" ?return.fnarg]$
+    inline static const meta::arg $basename$_$@index$args[] = {$[return+args | !type="void" ?fnarg]$
+       { "$name$", "$type$", "$basetype$", "$barens$", "$baretype$", "$argsize$", "$fnargs$", "$memfnclass$", "$defval$", $(if | ?..internal ?nojs ?type="void" ?iref ?ptr)$nullptr$(elif)$&meta::stream_op<$basetype$>::fn$(/if)$, (meta::arg::ex_type)$struct_type$, $specptr$, $ptr$, $ref$, $xref$, $iref$, $const$, $inarg$, $outarg$, $volatile$, $nojs$, $fnarg$, "$doc\"$" },$[/return+args]$
+    };$[/method]$
+    inline static const meta::method$(if method ?static)$ creators[] = {$[method ?static]$
+        { "$name$", $static set="bstatic|"$ $-ptr set="bptr|"$ $-iref set="biref|"$ $-const set="bconst|"$ $-operator set="boperator|"$ $-internal set="binternal|"$ $-capture set="bcapture|"$ $-implicit set="bimplicit|"$ $-destroy set="bdestroy|"$ $-noevbody set="bnoevbody|"$ $-pure set="bpure|"$ $-duplicate set="bduplicate|"$ $-inherit set="binherit|"$ $-(if !@revert="|")$meta::method::flg(0)$(/if)$, $args.@size$, $ninargs$, $noutargs$, $(if & args.empty return.type="void" !return.fnarg)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/method]$
+    };$(elif)$* creators = nullptr;$(/if)$
+    inline static const meta::method$(if method !static)$ methods[] = {$[method !static]$
+        { "$name$", $static set="bstatic|"$ $-ptr set="bptr|"$ $-iref set="biref|"$ $-const set="bconst|"$ $-operator set="boperator|"$ $-internal set="binternal|"$ $-capture set="bcapture|"$ $-implicit set="bimplicit|"$ $-destroy set="bdestroy|"$ $-noevbody set="bnoevbody|"$ $-pure set="bpure|"$ $-duplicate set="bduplicate|"$ $-inherit set="binherit|"$ $-(if !@revert="|")$meta::method::flg(0)$(/if)$, $args.@size$, $ninargs$, $noutargs$, $(if & args.empty return.type="void" !return.fnarg)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/method]$
+    };$(elif)$* methods = nullptr;$(/if)$
+    $-[event | !args.empty !return.type="void" ?return.fnarg]$
+    inline static const meta::arg $basename$_$@index$args[] = {$[return+args | !type="void" ?fnarg]$
+       { "$name$", "$type$", "$basetype$", "$barens$", "$baretype$", "$argsize$", "$fnargs$", "$memfnclass$", "$defval$", $(if | ?..internal ?nojs ?type="void" ?iref ?ptr)$nullptr$(elif)$&meta::stream_op<$basetype$>::fn$(/if)$, (meta::arg::ex_type)$struct_type$, $specptr$, $ptr$, $ref$, $xref$, $iref$, $const$, $inarg$, $outarg$, $volatile$, $nojs$, $fnarg$, "$doc\"$" },$[/return+args]$
+    };$[/event]$
+    inline static const meta::method$(if event)$ events[] = {$[event]$
+        { "$name$", $static set="bstatic|"$ $-ptr set="bptr|"$ $-iref set="biref|"$ $-const set="bconst|"$ $-operator set="boperator|"$ $-internal set="binternal|"$ $-capture set="bcapture|"$ $-implicit set="bimplicit|"$ $-destroy set="bdestroy|"$ $-noevbody set="bnoevbody|"$ $-pure set="bpure|"$ $-duplicate set="bduplicate|"$ $-inherit set="binherit|"$ $-(if !@revert="|")$meta::method::flg(0)$(/if)$, $args.@size$, $ninargs$, $noutargs$, $(if & args.empty return.type="void" !return.fnarg)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/event]$
+    };$(elif)$* events = nullptr;$(/if)$
+    inline static const meta::class_interface ifc_meta = {
+        "$[ns]$$@value$::$[/ns]$$name$", // interface name
+        "$hdrfile$", // header file
+        "$storage$", // storage
+        "$baseclassnss suffix="::"$$baseclass$", // base class name
+        $hash$, //version
+        $method.@size ?static$, $method.@size !static$, $event.@size$, // num. creators/methods/events
+        creators, methods, events,
+        $method.@first_index ?destroy$, $method.@first_index ?creator !args$, $method.@first_index ?operator ?const$, $method.@first_index ?operator !const$,
+        $virtual set="bvirtual|"$ $-dataifc set="bdataifc|"$ $-(if !@revert="|")$meta::class_interface::flg(0)$(/if)$,
+        R"##($comments rest="\n"$)##",
+    };
 
 private:
 
-    static coid::binstring* _capture;
-    static uint16 _instid;
-    static ifn_t* _vtable1;
-    static ifn_t* _vtable2;
+    inline static coid::binstring* _capture = 0;
+    inline static uint16 _instid = 0xffffU;
+    inline static ifn_t* _vtable1 = 0;
+    inline static ifn_t* _vtable2 = 0;
 
     static ifn_t* get_vtable()
     {
-$-(if !virtual?)$
+$-(if !virtual)$
         if (_vtable1) return _vtable1;
 
-        _vtable1 = new ifn_t[$nifcmethods$];
-$-[method !static?]$
- $-(if hasifc?)$
-        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if fnarg?)$$type$(*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if const?)$const$(/if)$>(&$name$__ifc_wrapper));
- $-(elif)$
-        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if fnarg?)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if const?)$const$(/if)$>(&::$....ns rest="::" after="::"$$....class$::$intname$));
- $-(/if)$
+        _vtable1 = new ifn_t[$method.@size !static$];
+$-[method !static]$
+        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if ?const)$const$(/if)$>(&::$classname$::$intname$));
 $-[/method]-$
 
         return _vtable1;
@@ -64,42 +96,27 @@ $-(/if)$
 
     #define VT_CALL2(R,F,I) ((*reinterpret_cast<policy_intrusive_base*>(this)).*(reinterpret_cast<R(policy_intrusive_base::*)F>(_vtable1[I])))
 
-$-[method capture?]$
+$-[method ?capture]$
 
-    $return.type$ __capture__$(if operator?)$operator$(elif)$$name$$index$$(/if)$($[args rest=", "]$$type$ $name$$[/args]$)$(if const?)$ const$(/if)$
+    $return.type$ __capture__$(if ?operator)$operator$(elif)$$name$$index$$(/if)$($[args rest=", "]$$type$ $name$$[/args]$)$(if ?const)$ const$(/if)$
     {
-        (*_capture) << uint16(_instid | $index$) $-[args inarg?]$ << $name$$[/args]$;
+        (*_capture) << uint16(_instid | $index$) $-[args ?inarg]$ << $name$$[/args]$;
         return VT_CALL2($return.type$,($[args rest=","]$$type$$[/args]$),$index$)($[args rest=","]$$name$$[/args]$);
     }
 $-[/method]$
 
-$-[method hasifc?]$
-    $return.type$ $name$__ifc_wrapper($[args rest=", "]$$type$ $name$$[/args]$)$(if const?)$ const$(/if)$
-    {
-        iref<$return.ifc$> __ret__ = $name$($[args rest=","]$$name$$[/args]$);
-        if (!__ret__)
-            return 0;
-
-        typedef iref<$return.ifc$> (*fn_wrap)(policy_intrusive_base*, intergen_interface*);
-        static fn_wrap wrapper = reinterpret_cast<fn_wrap>(
-            coid::interface_register::get_interface_creator("$ns rest="::" after="::"$$name$@wrapper"));
-
-        return wrapper ? wrapper(__ret__.get(), new $..name$_dispatcher) : 0;
-    }
-$[/method]-$
-
     static ifn_t* get_vtable_intercept()
     {
-$-(if !virtual?)$
+$-(if !virtual)$
         if (_vtable2) return _vtable2;
         ifn_t* vtable1 = get_vtable();
 
-        _vtable2 = new ifn_t[$nifcmethods$];
-$-[method !static?]$
-    $-(if capture? operator?)$
-        _vtable2[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$$type$$[/args]$)$(if const?)$const$(/if)$>(&__capture__operator));
-    $-(elif capture?)$
-        _vtable2[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$$type$$[/args]$)$(if const?)$const$(/if)$>(&__capture__$name$$index$));
+        _vtable2 = new ifn_t[$method.@size !static$];
+$-[method !static]$
+    $-(if ?capture ?operator)$
+        _vtable2[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$$type$$[/args]$)$(if ?const)$const$(/if)$>(&__capture__operator));
+    $-(elif ?capture)$
+        _vtable2[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$$type$$[/args]$)$(if ?const)$const$(/if)$>(&__capture__$name$$index$));
     $-(elif)$
         _vtable2[$@order$] = vtable1[$@order$];
     $-(/if)$
@@ -111,8 +128,8 @@ $-(elif)$
 $-(/if)$
     }
 
-$-[event pure?]$
-    $return.type$ $name$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if fnarg?)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if const?)$ const$(/if)$ override { throw coid::exception("unreachable"); }
+$-[event ?pure]$
+    $return.type$ $name$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if ?fnarg)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if ?const)$ const$(/if)$ override { throw coid::exception("unreachable"); }
 $-[/event]$
 
 protected:
@@ -125,7 +142,7 @@ protected:
     virtual ~$name$_dispatcher() {
     }
 
-    bool intergen_bind_capture( coid::binstring* capture, uint instid ) override
+    bool intergen_bind_capture(coid::binstring* capture, uint instid) override
     {
         if (instid >= 0xffU)
             return false;
@@ -136,13 +153,13 @@ protected:
         return true;
     }
 
-    void intergen_capture_dispatch( uint mid, coid::binstring& bin ) override
+    void intergen_capture_dispatch(uint mid, coid::binstring& bin) override
     {
         switch(mid) {
-        $-[method capture? noutargs!]$
+        $-[method ?capture !noutargs]$
         case $index$: {
-            $-[args inarg?]$
-            $-(if token?)$
+            $-[args ?inarg]$
+            $-(if ?token)$
             coid::token $name$ = bin.string();
             $-(elif)$
             const $basetype$& $name$ = bin.fetch<$basetype$>();
@@ -156,13 +173,13 @@ protected:
         default: throw coid::exception("unknown method id in $name$ capture dispatcher");
         }
     }
-$-(if virtual!)$
+$-(if !virtual)$
 
-    static iref<$name$> _generic_interface_creator(::$..ns rest="::" after="::"$$..class$* host, $name$* __here__)
+    static iref<$name$> _generic_interface_creator(::$..nsx$$..class$* host, $name$* __here__)
     {
         iref<$name$> rval;
 
-        $--(if varname?)$
+        $--(if ?varname)$
         //an active interface (with events)
         if (host->$varname$ && !__here__)
             rval = intergen_active_interface(host);
@@ -186,11 +203,11 @@ $-(if virtual!)$
         dispatcher->set_host(host, 0, 0);
         $-(/if)$
 
-        $-(if onconnect?)$
+        $-(if ?onconnect)$
         host->$onconnect$();
 
         $-(/if)$
-        $-(if onconnectev?)$
+        $-(if ?onconnectev)$
         rval->$onconnectev$();
 
         $-(/if)$
@@ -202,10 +219,10 @@ public:
 
     // creator methods
 
-$-[method creator? !ifccr?]$
-    static iref<$..name$> $name$( $..name$* __here__$[args]$, $type$ $name$$size$ $-(if defval?)$ = $defval$$(/if)$$[/args]$ )
+$-[method ?creator]$
+    static iref<$..name$> $name$($..name$* __here__$[args]$, $type$ $name$$size$ $-(if ?defval)$ = $defval$$(/if)$$[/args]$)
     {
-        iref<::$....ns rest="::" after="::"$$....class$> __host__ = ::$....ns rest="::" after="::"$$....class$::$intname$($[args rest=", "]$$name$$[/args]$);
+        iref<::$....nsx$$....class$> __host__ = ::$....nsx$$....class$::$intname$($[args rest=", "]$$name$$[/args]$);
         if (!__host__)
             return 0;
         return _generic_interface_creator(__host__.get(), __here__);
@@ -213,43 +230,29 @@ $-[method creator? !ifccr?]$
 
 $-[/method]$
     ///Register interface creators in the global registry
-    static void register_interfaces( bool on )
+    static void register_interfaces(bool on)
     {
-$-(if virtual!)$
-        interface_register::register_interface_creator(
-            "$ns rest="::" after="::"$$name$@wrapper",
-            on ? (void*)&_generic_interface_creator : nullptr);
+        interface_register::register_interface(ifc_meta, &register_interfaces);
+$-(if !virtual)$
 
+        interface_register::register_interface_creator("$ns suffix="::"$$name$@wrapper", on ? (void*)&_generic_interface_creator : nullptr, &ifc_meta);
 $-(/if)$
-$-(if onunload?)$
-        static_assert(std::is_same<decltype(&::$..ns rest="::" after="::"$$..class$::$onunload$), intergen_interface::fn_unload_client>::value,
+$-(if ?onunload)$
+
+        static_assert(std::is_same<decltype(&::$..nsx$$..class$::$onunload$), intergen_interface::fn_unload_client>::value,
             "expected unload function to have (const coid::token& client, const coid::token& module, int mode) parameters");
 
-        interface_register::register_interface_creator(
-            "$ns rest="::" after="::"$$name$@unload",
-            on ? (void*)&::$..ns rest="::" after="::"$$..class$::$onunload$ : nullptr);
-
+        interface_register::register_interface_creator("$ns suffix="::"$$name$@unload", on ? (void*)&::$..nsx$$..class$::$onunload$ : nullptr, &ifc_meta);
 $-(/if)$
-$-[method creator? !ifccr?]$
-        interface_register::register_interface_creator(
-            "$..ns rest="::" after="::"$$..name$.$name$@$..hash$",
-            on ? (void*)&$name$ : nullptr);
-$-[/method]$
-$-[method creator? ifccr?]$
-        interface_register::register_interface_creator(
-            "$..ns rest="::" after="::"$$..name$.$name$@$..hash$.ifc",
-            on ? (void*)&::$....ns rest="::" after="::"$$....class$::$name$ : nullptr);
+$-[method ?creator]$
+        interface_register::register_interface_creator("$..ns suffix="::"$$..name$.$name$@$..hash$", on ? (void*)&$name$ : nullptr, &ifc_meta);
 $-[/method]$
     }
 };
 
-coid::binstring* $name$_dispatcher::_capture = 0;
-uint16 $name$_dispatcher::_instid = 0xffffU;
-intergen_interface::ifn_t* $name$_dispatcher::_vtable2 = 0;
-intergen_interface::ifn_t* $name$_dispatcher::_vtable1 = 0;
-$-(if varname?)$
+$-(if ?varname)$
 
-iref<$name$> $name$::intergen_active_interface(::$classnsx rest="::" after="::"$$class$* host)
+iref<$name$> $name$::intergen_active_interface(::$classnsx suffix="::"$$class$* host)
 {
     coid::comm_mutex& mx = share_lock();
 
@@ -265,7 +268,7 @@ bool $name$::assign_safe(intergen_interface* client__, iref<$name$>* pout)
     //try assigning to the host (MT guard)
     // if that fails, the interface will be passive (no events)
 
-    ::$..ns rest="::" after="::"$$..class$* hostptr = host<::$..ns rest="::" after="::"$$..class$>();
+    ::$..nsx$$..class$* hostptr = host<::$..nsx$$..class$>();
     if (!hostptr)
         return false;
 
@@ -292,7 +295,7 @@ bool $name$::set_host(policy_intrusive_base* host__, intergen_interface* client_
 {
     _host = host__;
     _vtable = $name$_dispatcher::get_vtable();
-$-(if varname?)$
+$-(if ?varname)$
 
     return assign_safe(client__, pout);
 $-(elif)$
@@ -301,10 +304,10 @@ $-(/if)$
 }
 
 //auto-register the available interface creators
-LOCAL_SINGLETON_DEF(ifc_autoregger) $name$_autoregger = new ifc_autoregger(&$name$_dispatcher::register_interfaces);
+LOCAL_FILE_SINGLETON_DEF(ifc_autoregger) $name$_autoregger = new ifc_autoregger(&$name$_dispatcher::register_interfaces);
 
 void* force_register_$name$() {
-    LOCAL_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&$name$_dispatcher::register_interfaces);
+    LOCAL_FUNCTION_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&$name$_dispatcher::register_interfaces);
     return autoregger.get();
 }
 
@@ -312,20 +315,20 @@ $-[ns]$
 } //namespace $@value$
 $-[/ns]$
 
-$-(if event?)$
+$-(if ?event)$
 // events
 
 $[..nss]$namespace $@value$ {
 $[/..nss]-$
 
-$-[event !implicit? !inherit?]$
-$return.type$ $....class$::$intname$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if fnarg?)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if const?)$ const$(/if)$
+$-[event !implicit !inherit]$
+$return.type$ $....class$::$intname$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if ?fnarg)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if ?const)$ const$(/if)$
 {
-    if (!$..varname$ $-(if ..inhmask?)$ || ($..varname$->iface<$..ns rest="::" after="::"$$..name$>()->_inhmask & (1<<$..ifc_bit$)) == 0$(/if)$) $-(if default_event_body?)$
+    if (!$..varname$ $-(if ?..inhmask)$ || ($..varname$->iface<$..ns suffix="::"$$..name$>()->_inhmask & (1<<$..ifc_bit$)) == 0$(/if)$) $-(if ?default_event_body)$
         { $default_event_body$ }$(elif)$
-        throw coid::exception() << "$name$" << " handler not implemented";$(/if)$
+        throw coid::exception("Client not connected! ($name$)");$(/if)$
     else
-        return $..varname$->iface<$..ns rest="::" after="::"$$..name$>()->$name$($[args rest=", "]$$name$$[/args]$);
+        return $..varname$->iface<$..ns suffix="::"$$..name$>()->$name$($[args rest=", "]$$name$$[/args]$);
 }
 $[/event]-$
 
@@ -333,4 +336,116 @@ $[..nss]$} //namespace $@value$
 $[/..nss]-$
 $(/if)-$
 
-$-[/iface]$$[/class]$
+$-[/iface]$
+$-[iface_data]$
+////////////////////////////////////////////////////////////////////////////////
+// data interface $[ns]$$@value$::$[/ns]$$name$ of class $..nsx$$..class$
+$[ns]$
+namespace $@value$ {
+$-[/ns]$
+
+///
+class $name$_data_dispatcher : public $name$
+{
+    friend class $name$;
+    using enum meta::method::flg;
+    using enum meta::class_interface::flg;
+
+    $-[method | !args.empty !return.type="void" ?return.fnarg]$
+    inline static const meta::arg $basename$_$@index$args[] = {$[return+args | !type="void" ?fnarg]$
+       { "$name$", "$type$", "$basetype$", "$barens$", "$baretype$", "$argsize$", "$fnargs$", "$memfnclass$", "$defval$", $(if | ?..internal ?nojs ?type="void" ?iref ?ptr)$nullptr$(elif)$&meta::stream_op<$basetype$>::fn$(/if)$, (meta::arg::ex_type)$struct_type$, $specptr$, $ptr$, $ref$, $xref$, $iref$, $const$, $inarg$, $outarg$, $volatile$, $nojs$, $fnarg$, "$doc\"$" },$[/return+args]$
+    };$[/method]$
+    inline static const meta::method$(if method ?static)$ creators[] = {$[method ?static]$
+        { "$name$", $static set="bstatic|"$ $-ptr set="bptr|"$ $-iref set="biref|"$ $-const set="bconst|"$ $-operator set="boperator|"$ $-internal set="binternal|"$ $-capture set="bcapture|"$ $-implicit set="bimplicit|"$ $-destroy set="bdestroy|"$ $-noevbody set="bnoevbody|"$ $-pure set="bpure|"$ $-duplicate set="bduplicate|"$ $-inherit set="binherit|"$ $-(if !@revert="|")$meta::method::flg(0)$(/if)$, $args.@size$, $ninargs$, $noutargs$, $(if & args.empty return.type="void" !return.fnarg)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/method]$
+    };$(elif)$* creators = nullptr;$(/if)$
+    inline static const meta::method$(if method !static)$ methods[] = {$[method !static]$
+        { "$name$", $static set="bstatic|"$ $-ptr set="bptr|"$ $-iref set="biref|"$ $-const set="bconst|"$ $-operator set="boperator|"$ $-internal set="binternal|"$ $-capture set="bcapture|"$ $-implicit set="bimplicit|"$ $-destroy set="bdestroy|"$ $-noevbody set="bnoevbody|"$ $-pure set="bpure|"$ $-duplicate set="bduplicate|"$ $-inherit set="binherit|"$ $-(if !@revert="|")$meta::method::flg(0)$(/if)$, $args.@size$, $ninargs$, $noutargs$, $(if & args.empty return.type="void" !return.fnarg)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/method]$
+    };$(elif)$* methods = nullptr;$(/if)$
+    $-[event | !args.empty !return.type="void" ?return.fnarg]$
+    inline static const meta::arg $basename$_$@index$args[] = {$[return+args | !type="void" ?fnarg]$
+       { "$name$", "$type$", "$basetype$", "$barens$", "$baretype$", "$argsize$", "$fnargs$", "$memfnclass$", "$defval$", $(if | ?..internal ?nojs ?type="void" ?iref ?ptr)$nullptr$(elif)$&meta::stream_op<$basetype$>::fn$(/if)$, (meta::arg::ex_type)$struct_type$, $specptr$, $ptr$, $ref$, $xref$, $iref$, $const$, $inarg$, $outarg$, $volatile$, $nojs$, $fnarg$, "$doc\"$" },$[/return+args]$
+    };$[/event]$
+    inline static const meta::method$(if event)$ events[] = {$[event]$
+        { "$name$", $static set="bstatic|"$ $-ptr set="bptr|"$ $-iref set="biref|"$ $-const set="bconst|"$ $-operator set="boperator|"$ $-internal set="binternal|"$ $-capture set="bcapture|"$ $-implicit set="bimplicit|"$ $-destroy set="bdestroy|"$ $-noevbody set="bnoevbody|"$ $-pure set="bpure|"$ $-duplicate set="bduplicate|"$ $-inherit set="binherit|"$ $-(if !@revert="|")$meta::method::flg(0)$(/if)$, $args.@size$, $ninargs$, $noutargs$, $(if & args.empty return.type="void" !return.fnarg)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/event]$
+    };$(elif)$* events = nullptr;$(/if)$
+    inline static const meta::class_interface ifc_meta = {
+        "$[ns]$$@value$::$[/ns]$$name$", // interface name
+        "$hdrfile$", // header file
+        "$storage$", // storage
+        "$baseclassnss suffix="::"$$baseclass$", // base class name
+        $hash$, //version
+        $method.@size ?static$, $method.@size !static$, $event.@size$, // num. creators/methods/events
+        creators, methods, events,
+        $method.@first_index ?destroy$, $method.@first_index ?creator !args$, $method.@first_index ?operator ?const$, $method.@first_index ?operator !const$,
+        $virtual set="bvirtual|"$ $-dataifc set="bdataifc|"$ $-(if !@revert="|")$meta::class_interface::flg(0)$(/if)$,
+        R"##($comments rest="\n"$)##",
+    };
+
+private:
+
+    inline static ifn_t _fn_table[] = {$-[method !static]$
+        reinterpret_cast<ifn_t>(($return.type$(intergen_data_interface::*)($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if ?const)$const$(/if)$)(&::$....nsx$$....class$::$intname$)),
+$-[/method]$
+        nullptr
+    };
+    inline static icr_t _cr_table[] = {$-[method ?creator]$
+        reinterpret_cast<icr_t>(&::$....nsx$$....class$::$intname$),
+$-[/method]$
+        nullptr
+    };
+$-[event ?pure]$
+
+    $return.type$ $name$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if ?fnarg)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if ?const)$ const$(/if)$ override { throw coid::exception("unreachable"); }
+$-[/event]$
+
+protected:
+
+    COIDNEWDELETE($name$_data_dispatcher);
+
+    $name$_data_dispatcher() = default;
+    ~$name$_data_dispatcher() = default;
+
+public:
+
+    static void register_interfaces(bool on)
+    {
+        coid::ifcman::set_type_ifc<$name$>(HASHID, _cr_table, _fn_table, &ifc_meta);
+    }
+};
+
+
+//auto-register the available interface creators
+LOCAL_FILE_SINGLETON_DEF(ifc_autoregger) $name$_autoregger = new ifc_autoregger(&$name$_data_dispatcher::register_interfaces);
+
+void* force_register_$name$() {
+    LOCAL_FUNCTION_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&$name$_data_dispatcher::register_interfaces);
+    return autoregger.get();
+}
+
+$-[ns]$
+} //namespace $@value$
+$-[/ns]$
+
+$-(if ?event)$
+// events
+
+$[..nss]$namespace $@value$ {
+$[/..nss]-$
+
+$-[event !implicit !inherit]$
+$return.type$ $....class$::$intname$($[args rest="," after=" "]$ $ifckwds after=" "$$type$ $(if ?fnarg)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if ?const)$ const$(/if)$
+{
+    if (!$..varname$ $-(if ?..inhmask)$ || ($..varname$->iface<$..ns suffix="::"$$..name$>()->_inhmask & (1<<$..ifc_bit$)) == 0$(/if)$) $-(if ?default_event_body)$
+        { $default_event_body$ }$(elif)$
+        throw coid::exception() << "$name$" << " handler not implemented";$(/if)$
+    else
+        return $..varname$->iface<$..ns suffix="::"$$..name$>()->$name$($[args rest=", "]$$name$$[/args]$);
+}
+$[/event]-$
+
+$[..nss]$} //namespace $@value$
+$[/..nss]-$
+$(/if)-$
+
+$-[/iface_data]$
+$-[/class]$

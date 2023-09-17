@@ -325,8 +325,8 @@ namespace charstrconv
             return size;
         }
 
-        //@return number of characters taken
-        //@note writes a reversed buffer
+        /// @return number of characters taken
+        /// @note writes a reversed buffer
         static uints precompute( char* buf, uint64 n, int BaseN, int sgn )
         {
             uints i=0;
@@ -438,35 +438,35 @@ namespace charstrconv
     }
 
     ///Append floating point number with fixed number of characters
-    //@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
-    //@return position between dst and dste where last non-padding character is
+    /// @param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
+    /// @return position between dst and dste where last non-padding character is
     char* append_fixed( char* dst, char* dste, double v, int nfrac, EAlignNum align=ALIGN_NUM_LEFT);
 
     ///Append floating point number
-    //@param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
-    //@param minsize minimum size of the integer part
-    //@return position after the inserted wtring
+    /// @param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
+    /// @param minsize minimum size of the integer part
+    /// @return position after the inserted wtring
     char* append_float( char* dst, char* dste, double d, int nfrac );
 
-    //@param ndig number of decimal places: >0 maximum, <0 precisely -ndig places
+    /// @param ndig number of decimal places: >0 maximum, <0 precisely -ndig places
     char* append_fraction( char* dst, char* dste, double n, int ndig, bool round=true );
 
     ///Convert hexadecimal string content to binary data. Expects little-endian ordering.
-    //@param src input: source string, output: remainder of the input
-    //@param dst destination buffer of size at least nbytes
-    //@param nbytes maximum number of bytes to convert
-    //@param sep separator character to ignore, all other characters will cause the function to stop
-    //@return number of bytes remaining to convert
-    //@note function returns either after it converted required number of bytes, or it has read
+    /// @param src input: source string, output: remainder of the input
+    /// @param dst destination buffer of size at least nbytes
+    /// @param nbytes maximum number of bytes to convert
+    /// @param sep separator character to ignore, all other characters will cause the function to stop
+    /// @return number of bytes remaining to convert
+    /// @note function returns either after it converted required number of bytes, or it has read
     /// the whole string, or it encountered an invalid character.
     uints hex2bin( token& src, void* dst, uints nbytes, char sep );
 
     ///Convert binary data to hexadecimal string
-    //@param src source memory buffer
-    //@param dst destination character buffer capable to hold at least (((itemsize*2) + sep?1:0) * nitems) bytes
-    //@param nitems number of itemsize sized words to convert
-    //@param itemsize number of bytes to write clumped together before separator
-    //@param sep separator character, 0 if none
+    /// @param src source memory buffer
+    /// @param dst destination character buffer capable to hold at least (((itemsize*2) + sep?1:0) * nitems) bytes
+    /// @param nitems number of itemsize sized words to convert
+    /// @param itemsize number of bytes to write clumped together before separator
+    /// @param sep separator character, 0 if none
     void bin2hex( const void* src, char*& dst, uints nitems, uint itemsize, char sep=' ' );
 
     ////////////////////////////////////////////////////////////////////////////////

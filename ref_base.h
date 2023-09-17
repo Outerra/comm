@@ -54,39 +54,39 @@ template<class T> class policy_shared;
 template<class T> struct policy_trait { typedef policy_shared<T> policy; };
 
 #define DEFAULT_POLICY(t, p) \
-	template<> struct policy_trait<t> { \
-	typedef p<t> policy; \
+    template<> struct policy_trait<t> { \
+    typedef p<t> policy; \
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 struct atomic_counter
 {
-	static coid::int32 inc(volatile coid::int32* ptr) { return atomic::inc(ptr); }
-	static coid::int32 add(volatile coid::int32* ptr,const coid::int32 v) { return atomic::add(ptr,v); }
-	static coid::int32 dec(volatile coid::int32* ptr) { return atomic::dec(ptr); }
-	static bool b_cas(volatile coid::int32 * ptr,const coid::int32 val,const coid::int32 cmp) { 
-		return atomic::b_cas( ptr,val,cmp ); 
-	}
+    static coid::int32 inc(volatile coid::int32* ptr) { return atomic::inc(ptr); }
+    static coid::int32 add(volatile coid::int32* ptr,const coid::int32 v) { return atomic::add(ptr,v); }
+    static coid::int32 dec(volatile coid::int32* ptr) { return atomic::dec(ptr); }
+    static bool b_cas(volatile coid::int32 * ptr,const coid::int32 val,const coid::int32 cmp) {
+        return atomic::b_cas( ptr,val,cmp );
+    }
 
     static coid::uint32 add(volatile coid::uint32* ptr,const coid::uint32 v) { return atomic::add(ptr,v); }
-	static coid::uint32 aor(volatile coid::uint32* ptr, const coid::uint32 val) { return atomic::aor(ptr, val); }
-	static coid::uint32 aand(volatile coid::uint32* ptr, const coid::uint32 val) { return atomic::aand(ptr, val); }
-	static coid::uint32 inc(volatile coid::uint32* ptr) { return atomic::inc(ptr); }
-	static coid::uint32 dec(volatile coid::uint32* ptr) { return atomic::dec(ptr); }
+    static coid::uint32 aor(volatile coid::uint32* ptr, const coid::uint32 val) { return atomic::aor(ptr, val); }
+    static coid::uint32 aand(volatile coid::uint32* ptr, const coid::uint32 val) { return atomic::aand(ptr, val); }
+    static coid::uint32 inc(volatile coid::uint32* ptr) { return atomic::inc(ptr); }
+    static coid::uint32 dec(volatile coid::uint32* ptr) { return atomic::dec(ptr); }
 };
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 struct simple_counter
 {
-	static coid::int32 inc(volatile coid::int32* ptr) { return ++(*ptr); }
-	static coid::int32 add(volatile coid::int32* ptr,const coid::int32 v) { return (*ptr)+=v; }
-	static coid::int32 dec(volatile coid::int32* ptr) { return --(*ptr); }
-	static bool b_cas(volatile coid::int32 * ptr,const coid::int32 val,const coid::int32 cmp) { 
-		DASSERT(false && "should not be used!");
+    static coid::int32 inc(volatile coid::int32* ptr) { *ptr = *ptr + 1; return *ptr; }
+    static coid::int32 add(volatile coid::int32* ptr, const coid::int32 v) { *ptr = *ptr + v; return *ptr; }
+    static coid::int32 dec(volatile coid::int32* ptr) { *ptr = *ptr - 1; return *ptr; }
+    static bool b_cas(volatile coid::int32 * ptr,const coid::int32 val,const coid::int32 cmp) {
+        DASSERT(false && "should not be used!");
         return false;
-	}
+    }
 };
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -95,12 +95,12 @@ template<class COUNTER=atomic_counter>
 class policy_base_
 {
 private:
-	policy_base_( policy_base_ const & );
-	policy_base_ & operator=( policy_base_ const & );
+    policy_base_( policy_base_ const & );
+    policy_base_ & operator=( policy_base_ const & );
 
 protected:
 
-	volatile coid::int32 _count;
+    volatile coid::int32 _count;
 
     virtual void _destroy() {
         delete this;
@@ -111,13 +111,13 @@ public:
 
     virtual ~policy_base_() {}
 
-	policy_base_() : _count(0) {}
+    policy_base_() : _count(0) {}
 
-	coid::int32 add_refcount() {
+    coid::int32 add_refcount() {
         return COUNTER::inc(&_count);
     }
 
-    //@return true if refcount was safely incremented (didn't go to 0)
+    /// @return true if refcount was safely incremented (didn't go to 0)
     bool can_add_refcount() {
         int previous = _count;
         for (;;)
@@ -131,18 +131,18 @@ public:
         return true;
     }
 
-	coid::int32 release_refcount(void** ptref = 0) {
+    coid::int32 release_refcount(void** ptref = 0) {
         policy_base_* p = this;
         coid::int32 count = COUNTER::dec(&_count);
 
-		if(count == 0) {
+        if(count == 0) {
             if(ptref) *ptref = 0;
             p->_destroy();
         }
-		return count;
-	}
+        return count;
+    }
 
-	coid::int32 refcount() { return COUNTER::add(&_count, 0); }
+    coid::int32 refcount() { return COUNTER::add(&_count, 0); }
 };
 
 ///
@@ -156,19 +156,19 @@ private:
 
 protected:
 
-    virtual void _destroy() override { 
-        delete this; 
+    virtual void _destroy() override {
+        delete this;
     }
 
 public:
 
     virtual ~policy_base_weak_() {}
 
-	policy_base_weak_() : policy_base_<COUNTER>(), _weaks(0) {}
+    policy_base_weak_() : policy_base_<COUNTER>(), _weaks(0) {}
 
-	coid::int32 release() { 
-		coid::int32 count = COUNTER::dec(&this->_count);
-		if(count == 0) {
+    coid::int32 release() {
+        coid::int32 count = COUNTER::dec(&this->_count);
+        if(count == 0) {
             if(_weaks) {
                 coid::uint32 weaks = COUNTER::aor(_weaks, 0x80000000);
                 count = COUNTER::add(&this->_count, 0); // double check
@@ -184,8 +184,8 @@ public:
             else
                 _destroy();
         }
-		return count;
-	}
+        return count;
+    }
 
     volatile coid::uint32* add_weak_copy() {
         if(!_weaks)
@@ -200,13 +200,13 @@ public:
         return COUNTER::inc(weaks);
     }
 
-	static coid::uint32 get_weak_count(volatile coid::uint32 *weaks) {
+    static coid::uint32 get_weak_count(volatile coid::uint32 *weaks) {
         return COUNTER::add(weaks, 0);
     }
 
     static bool add_weak_lock(volatile coid::uint32 *weaks) {
         for(;;) {
-			coid::uint32 tmp = *weaks;
+            coid::uint32 tmp = *weaks;
             if(tmp & 0x80000000) {
                 if(tmp == COUNTER::add(weaks, 0))
                     return false;
@@ -228,54 +228,54 @@ typedef policy_base_weak_<> policy_intrusive_base_weak;
 
 template<class T>
 class policy_shared
-	: public policy_base
+    : public policy_base
 {
 private:
-	policy_shared( policy_shared const & );
-	policy_shared & operator=( policy_shared const & );
+    policy_shared( policy_shared const & );
+    policy_shared & operator=( policy_shared const & );
 
 protected:
-	T* _obj;
+    T* _obj;
 
-	typedef policy_shared<T> this_t;
+    typedef policy_shared<T> this_t;
 
     COIDNEWDELETE(policy_shared);
 
-	virtual ~policy_shared() { if( _obj ) delete _obj; _obj=0; }
+    virtual ~policy_shared() { if( _obj ) delete _obj; _obj=0; }
 
-	policy_shared(T* const obj) : _obj(obj) {}
+    policy_shared(T* const obj) : _obj(obj) {}
 
 public:
-	static this_t* create(T*const obj) { return new this_t(obj); }
+    static this_t* create(T*const obj) { return new this_t(obj); }
 
-	static this_t* create() { return new this_t(new T); }
+    static this_t* create() { return new this_t(new T); }
 
-	T* get() const { return _obj; }
+    T* get() const { return _obj; }
 };
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 template<class T>
 class policy_dummy
-	: public policy_shared<T>
+    : public policy_shared<T>
 {
 private:
-	policy_dummy( policy_dummy const & );
-	policy_dummy & operator=( policy_dummy const & );
+    policy_dummy( policy_dummy const & );
+    policy_dummy & operator=( policy_dummy const & );
 
 protected:
-	typedef policy_dummy<T> this_t;
+    typedef policy_dummy<T> this_t;
 
-	policy_dummy(T* const obj) : policy_shared<T>(obj) {}
+    policy_dummy(T* const obj) : policy_shared<T>(obj) {}
 
-	virtual ~policy_dummy() { this->_obj=0; }
+    virtual ~policy_dummy() { this->_obj=0; }
 
 public:
-	static this_t* create(T*const obj) { return new this_t(obj); }
+    static this_t* create(T*const obj) { return new this_t(obj); }
 
-	static this_t* create() { return new this_t(new T); }
+    static this_t* create() { return new this_t(new T); }
 
-	T* get() const { return this->_obj; }
+    T* get() const { return this->_obj; }
 };
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

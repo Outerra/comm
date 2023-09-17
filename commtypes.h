@@ -149,9 +149,13 @@
 # endif
 #endif
 
-static const int _sysEndianTest = 1;
-#define sysIsLittleEndian (*((char *) &_sysEndianTest ) != 0)
-#define sysIsBigEndian    (*((char *) &_sysEndianTest ) == 0)
+#if defined(__cpp_lib_endian)
+#include <bit>
+using endian = std::endian;
+#else
+enum class endian { little = 0, big = 1, native = little };
+#endif
+
 
 
 #ifdef SYSTYPE_MSVC
@@ -275,10 +279,10 @@ struct versionid
             uint64 id : 48;
             uint64 version : 16;
         };
-        uint64 value;
+        uint64 value = UMAX64;
     };
 
-    versionid() : value(UMAX64)
+    versionid()
     {}
 
     versionid(uint64 id, uint16 version) : id(id), version(version)

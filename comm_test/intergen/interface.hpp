@@ -2,6 +2,7 @@
 #pragma once
 
 #include <comm/intergen/ifc.h>
+#include "data.hpp"
 
 using namespace std;
 
@@ -24,6 +25,24 @@ using namespace std;
 }ifc*/
 
 
+/*ifc{ client
+struct flags {
+    int a;
+    float b;
+
+    friend coid::metastream& operator || (coid::metastream& m, flags& d) {
+        return m.compound_type(d, [&]() {
+            m.member("a", d.a);
+            m.member("b", d.b);
+        });
+    }
+};
+}ifc*/
+
+//ifc{ xt::client2
+struct component;
+//}ifc
+
 namespace ab {
 
 /*ifc{
@@ -41,9 +60,12 @@ namespace cd {
 }ifc*/
 
 
+
+
 class host : public policy_intrusive_base
 {
     coid::charstr _tmp;
+    coid::versionid _eid;
 
 public:
 
@@ -53,6 +75,10 @@ public:
     /// @return host class instance
     ifc_fn static iref<ab::cd::host> creator() {
         return new host;
+    }
+
+    ifc_fn void set_def(const flags& flg = {.a = 1, .b = 2})
+    {
     }
 
     ///Setter
@@ -81,8 +107,9 @@ public:
         return 0;
     }
 
-    ifc_fn void set_array(const float ar[3]) {
-    }
+    ifc_fn void set_array(const float ar[3]) {}
+
+    ifc_fn virtual bool overridable() { return false; }
 
     ifc_fnx(!) void callback(void (*cbk)(int, const coid::token&)) {
         cbk(1, "blah"_T);
@@ -105,10 +132,14 @@ public:
         return true;
     }
 
+    ////
 
     ifc_class(xt::client2, "ifc/");
 
     ifc_fn void test() {}
+
+    /// @return pointer to a data interface type (ifc_struct)
+    ifc_fn struct component* get();
 };
 
 } // namespace ab

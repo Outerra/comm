@@ -32,6 +32,45 @@ class main
 {
 public:
 
+    virtual ~main() {
+        if (_cleaner)
+            _cleaner(this, 0);
+    }
+
+    // --- host helpers to check presence of event handlers in scripts ---
+    
+    enum class event {
+        evt1 = 0,
+        evt2 = 1,
+        evt3 = 2,
+        evt4 = 3,
+    };
+
+    virtual bool is_bound(event m) { return true; }
+
+    // --- creators ---
+
+    static iref<main> create() {
+        return create<main>(0);
+    }
+
+    template<class T>
+    static iref<T> create( T* _subclass_ );
+
+    static iref<main> create_special( int a, iref<ns::other> b, int& c, iref<ns::other>& d, int e = -1 ) {
+        return create_special<main>(0, a, b, c, d, e);
+    }
+
+    template<class T>
+    static iref<T> create_special( T* _subclass_, int a, iref<ns::other> b, int& c, iref<ns::other>& d, int e = -1 );
+
+    static iref<main> create_wp( int a, int& b, int& c, int d = -1 ) {
+        return create_wp<main>(0, a, b, c, d);
+    }
+
+    template<class T>
+    static iref<T> create_wp( T* _subclass_, int a, int& b, int& c, int d = -1 );
+
     // --- interface methods ---
 
 #pragma warning(push)
@@ -62,55 +101,20 @@ protected:
 
     virtual void evt1( int a, int* b, iref<ns::other>& d ) {}
 
-    virtual coid::charstr evt2( int a, int* b, ns1::dummy& c, iref<ns::other>& d, iref<ns::other> e ){ throw coid::exception("handler not implemented"); }
+    virtual coid::charstr evt2( int a, int* b, ns1::dummy& c, iref<ns::other>& d, iref<ns::other> e ){ throw coid::exception(HANDLER_NOT_IMPLEMENTED_MESSAGE); }
 
-    virtual iref<ns::other> evt3( const coid::token& msg ){ throw coid::exception("handler not implemented"); }
+    virtual iref<ns::other> evt3( const coid::token& msg ){ throw coid::exception(HANDLER_NOT_IMPLEMENTED_MESSAGE); }
 
-    virtual iref<ns::main> evt4( int a, iref<ns::other> b, int& c, iref<ns::other>& d, int e = -1 ){ throw coid::exception("handler not implemented"); }
+    virtual iref<ns::main> evt4( int a, iref<ns::other> b, int& c, iref<ns::other>& d, int e = -1 ){ throw coid::exception(HANDLER_NOT_IMPLEMENTED_MESSAGE); }
 
     virtual void force_bind_script_events() {}
 
 public:
-    // --- host helpers to check presence of handlers in scripts ---
-
-    virtual bool is_bound_evt1() { return true; }
-    virtual bool is_bound_evt2() { return true; }
-    virtual bool is_bound_evt3() { return true; }
-    virtual bool is_bound_evt4() { return true; }
-
-public:
-    // --- creators ---
-
-    static iref<main> create() {
-        return create<main>(0);
-    }
-
-    template<class T>
-    static iref<T> create( T* _subclass_ );
-
-    static iref<main> create_special( int a, iref<ns::other> b, int& c, iref<ns::other>& d, int e = -1 ) {
-        return create_special<main>(0, a, b, c, d, e);
-    }
-
-    template<class T>
-    static iref<T> create_special( T* _subclass_, int a, iref<ns::other> b, int& c, iref<ns::other>& d, int e = -1 );
-
-    static iref<main> create_wp( int a, int& b, int& c, int d = -1 ) {
-        return create_wp<main>(0, a, b, c, d);
-    }
-
-    template<class T>
-    static iref<T> create_wp( T* _subclass_, int a, int& b, int& c, int d = -1 );
 
     // --- internal helpers ---
 
-    virtual ~main() {
-        if (_cleaner)
-            _cleaner(this, 0);
-    }
-
     ///Interface revision hash
-    static const int HASHID = 3187450219u;
+    static const int HASHID = 3137117362u;
 
     ///Interface name (full ns::class string)
     static const coid::tokenhash& IFCNAME() {
@@ -129,7 +133,7 @@ public:
     }
 
     static const coid::token& intergen_default_creator_static( backend bck ) {
-        static constexpr coid::token _dc("ns::main.create@3187450219"_T);
+        static constexpr coid::token _dc("ns::main.create@3137117362"_T);
         static constexpr coid::token _djs("ns::main@wrapper.js"_T);
         static constexpr coid::token _djsc("ns::main@wrapper.jsc"_T);
         static constexpr coid::token _dlua("ns::main@wrapper.lua"_T);
@@ -192,7 +196,7 @@ public:
         type.consume("struct ");
 
         coid::charstr tmp = "ns::main"_T;
-        tmp << "@client-3187450219"_T << '.' << type;
+        tmp << "@client-3137117362"_T << '.' << type;
 
         coid::interface_register::register_interface_creator(tmp, cc);
         return 0;
@@ -225,14 +229,14 @@ inline iref<T> main::create( T* _subclass_ )
     typedef iref<T> (*fn_creator)(main*);
 
     static fn_creator create = 0;
-    static constexpr coid::token ifckey = "ns::main.create@3187450219"_T;
+    static constexpr coid::token ifckey = "ns::main.create@3137117362"_T;
 
     if (!create)
         create = reinterpret_cast<fn_creator>(
             coid::interface_register::get_interface_creator(ifckey));
 
     if (!create) {
-        log_mismatch("create"_T, "ns::main.create"_T, "@3187450219"_T);
+        log_mismatch("main"_T, "ns::main.create"_T, "@3137117362"_T);
         return 0;
     }
 
@@ -246,14 +250,14 @@ inline iref<T> main::create_special( T* _subclass_, int a, iref<ns::other> b, in
     typedef iref<T> (*fn_creator)(main*, int, iref<ns::other>, int&, iref<ns::other>&, int);
 
     static fn_creator create = 0;
-    static constexpr coid::token ifckey = "ns::main.create_special@3187450219"_T;
+    static constexpr coid::token ifckey = "ns::main.create_special@3137117362"_T;
 
     if (!create)
         create = reinterpret_cast<fn_creator>(
             coid::interface_register::get_interface_creator(ifckey));
 
     if (!create) {
-        log_mismatch("create_special"_T, "ns::main.create_special"_T, "@3187450219"_T);
+        log_mismatch("main"_T, "ns::main.create_special"_T, "@3137117362"_T);
         return 0;
     }
 
@@ -267,14 +271,14 @@ inline iref<T> main::create_wp( T* _subclass_, int a, int& b, int& c, int d )
     typedef iref<T> (*fn_creator)(main*, int, int&, int&, int);
 
     static fn_creator create = 0;
-    static constexpr coid::token ifckey = "ns::main.create_wp@3187450219"_T;
+    static constexpr coid::token ifckey = "ns::main.create_wp@3137117362"_T;
 
     if (!create)
         create = reinterpret_cast<fn_creator>(
             coid::interface_register::get_interface_creator(ifckey));
 
     if (!create) {
-        log_mismatch("create_wp"_T, "ns::main.create_wp"_T, "@3187450219"_T);
+        log_mismatch("main"_T, "ns::main.create_wp"_T, "@3137117362"_T);
         return 0;
     }
 

@@ -54,7 +54,7 @@ class netstream : public binstream
 {
 protected:
     //netSocket _socket;
-    uint      _timeout;
+    int      _timeout;
 
 public:
 
@@ -72,7 +72,7 @@ public:
     }
 
     virtual opcd close( bool linger=false ) = 0;
-    
+
 
     virtual opcd connect( const token& addr, int port=0, bool portoverride=false )
     {
@@ -91,7 +91,7 @@ public:
         return 0;
     }
 
-    
+
     static netAddress* get_local_address( netAddress* addr )
     {
         return netAddress::getLocalHost(addr);

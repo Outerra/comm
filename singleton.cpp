@@ -75,9 +75,10 @@ class global_singleton_manager
         void (*fn_destroy)(void*);
         const char* type_name;
         const char* file;
+        const char* unique_indentifier;
         int line;
 
-        killer* next;
+        killer* next = nullptr;
 
         token type;
         bool invisible;
@@ -87,8 +88,8 @@ class global_singleton_manager
             ptr = 0;
         }
 
-        killer(void* ptr, void (*fn_destroy)(void*), const token& type, const char* file, int line, bool invisible)
-            : ptr(ptr), fn_destroy(fn_destroy), type_name(type.ptr()), file(file), line(line), type(type), invisible(invisible)
+        killer(void* ptr, void (*fn_destroy)(void*), const token& type, const char* file, const char* unique_indentifier, int line, bool invisible)
+            : ptr(ptr), fn_destroy(fn_destroy), type_name(type.ptr()), file(file), line(line), unique_indentifier(unique_indentifier), type(type), invisible(invisible)
         {
             DASSERT(ptr);
         }
@@ -103,22 +104,26 @@ public:
         shutting_down = false;
     }
 
-    void* find_or_add_singleton(
+    virtual void* find_or_add_singleton(
         fn_singleton_creator create,
         fn_singleton_destroyer destroy,
         fn_singleton_initmod initmod,
-        const token& type, const char* file, int line, bool invisible)
+        const token& type,
+        const char* file,
+        int line,
+        bool invisible,
+        const char* unique_indentifier)
     {
         RASSERT(!shutting_down);
         comm_mutex_guard<_comm_mutex> mxg(mx);
 
         //look for singletons registered in different modules
         killer* k = invisible ? 0 : last;
-        while (k && (k->invisible || k->type != type))
+        while (k && (k->invisible || k->type != type || line != k->line || strcmp(unique_indentifier, k->unique_indentifier) != 0))
             k = k->next;
 
         if (!k) {
-            k = new killer(create(), destroy, type, file, line, invisible);
+            k = new killer(create(), destroy, type, file, unique_indentifier, line, invisible);
             k->next = last;
 
             last = k;
@@ -132,7 +137,7 @@ public:
         return k->ptr;
     }
 
-    void destroy_singleton(void* p)
+    virtual void destroy_singleton(void* p)
     {
         killer** pkill = &last;
 
@@ -150,7 +155,7 @@ public:
         }
     }
 
-    void destroy()
+    virtual void destroy()
     {
         uint n = count;
 
@@ -181,7 +186,7 @@ public:
         }
     }
 
-    ~global_singleton_manager() {
+    virtual ~global_singleton_manager() {
         //destroy();
     }
 
@@ -206,7 +211,8 @@ void* singleton_register_instance(
     const char* type,
     const char* file,
     int line,
-    bool invisible)
+    bool invisible,
+    const char* unique_indentifier)
 {
     auto& gsm = invisible
         ? global_singleton_manager::get_local()
@@ -214,7 +220,7 @@ void* singleton_register_instance(
 
     return gsm.find_or_add_singleton(
         fn_create, fn_destroy, fn_initmod,
-        type, file, line, invisible);
+        type, file, line, invisible, unique_indentifier);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

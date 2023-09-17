@@ -93,7 +93,7 @@ class slothash
 
     //static constexpr int SEQTABLE_ID = sizeof...(Es);
 
-    //@return table with ids pointing to the next object in hash socket chain
+    /// @return table with ids pointing to the next object in hash socket chain
     dynarray<uint>& seqtable() {
         return base::template value_array<sizeof...(Es)>();
     }
@@ -115,9 +115,9 @@ public:
         reserve(reserve_items);
     }
 
-    //@return object with given key or null if no matching object was found
-    //@param key lookup key
-    //@param slot [out] optional ptr to variable receiving slot id
+    /// @return object with given key or null if no matching object was found
+    /// @param key lookup key
+    /// @param slot [out] optional ptr to variable receiving slot id
     template<class FKEY = KEY>
     const T* find_value(const FKEY& key, uint* slot = 0) const
     {
@@ -131,10 +131,10 @@ public:
     }
 
     ///Find item by key or insert a new slot for item with such key
-    //@param key lookup key
-    //@param isnew [out] set to true if the item was newly created
-    //@return found object or pointer to a newly created one
-    //@note if isnew is true, caller has to set the object pointed to by the return value
+    /// @param key lookup key
+    /// @param isnew [out] set to true if the item was newly created
+    /// @return found object or pointer to a newly created one
+    /// @note if isnew is true, caller has to set the object pointed to by the return value
     template<class FKEY = KEY>
     T* find_or_insert_value_slot(const FKEY& key, bool* isnew = 0, uint* pid = 0)
     {
@@ -151,10 +151,10 @@ public:
     }
 
     ///Find item by key or insert a new uninitialized slot for item with such key
-    //@param key lookup key
-    //@param isnew [out] set to true if the item was newly created
-    //@return found object or pointer to a newly created one
-    //@note if isnew is true, caller has to in-place construct the object pointed to by the return value
+    /// @param key lookup key
+    /// @param isnew [out] set to true if the item was newly created
+    /// @return found object or pointer to a newly created one
+    /// @note if isnew is true, caller has to in-place construct the object pointed to by the return value
     template<class FKEY = KEY>
     T* find_or_insert_value_slot_uninit(const FKEY& key, bool* isnew = 0, uint* pid = 0)
     {
@@ -169,10 +169,10 @@ public:
     }
 
     ///Update existing item by reassigning it under a new key
-    //@param id existing item id
-    //@param key new lookup key
-    //@return value object
-    //@note caller is required tu physically update the key in the object to match given new key
+    /// @param id existing item id
+    /// @param key new lookup key
+    /// @return value object
+    /// @note caller is required tu physically update the key in the object to match given new key
     template<class FKEY = KEY>
     T* update_value_slot(uint id, const FKEY& newkey)
     {
@@ -202,7 +202,7 @@ public:
     }
 
     ///Insert a new slot for the key
-    //@return pointer to the new item or nullptr if the key already exists and MULTIKEY is false
+    /// @return pointer to the new item or nullptr if the key already exists and MULTIKEY is false
     template<class...Ps>
     T* push_construct(Ps&&... ps) {
         uints id;
@@ -220,8 +220,8 @@ public:
     }
 
     ///Insert a new uninitialized slot for the key
-    //@param id requested slot id; if occupied it will be destroyed first
-    //@return pointer to the uninitialized slot for the key or nullptr if the key already exists and MULTIKEY is false
+    /// @param id requested slot id; if occupied it will be destroyed first
+    /// @return pointer to the uninitialized slot for the key or nullptr if the key already exists and MULTIKEY is false
     template<class...Ps>
     T* push_construct_in_slot(uint id, Ps&&... ps)
     {
@@ -239,7 +239,7 @@ public:
 
 
     ///Push value into slothash
-    //@return newly inserted item or nullptr if the key was already taken
+    /// @return newly inserted item or nullptr if the key was already taken
     T* push(const T& val)
     {
         const KEY& key = _EXTRACTOR(val);
@@ -251,7 +251,7 @@ public:
     }
 
     ///Push value into slothash
-    //@return newly inserted item or nullptr if the key was already taken
+    /// @return newly inserted item or nullptr if the key was already taken
     T* push(T&& val)
     {
         const KEY& key = _EXTRACTOR(val);
@@ -291,7 +291,7 @@ public:
 
 
     ///Delete all items that match the key
-    //@return number of deleted items
+    /// @return number of deleted items
     template<class FKEY = KEY>
     uints erase(const FKEY& key)
     {
@@ -356,8 +356,7 @@ protected:
         return bucket_from_hash(_HASHFUNC(k), _shift);
     }
 
-    template<>
-    uint bucket<tokenhash>(const tokenhash& key) const {
+    uint bucket(const tokenhash& key) const {
         return bucket_from_hash(key.hash(), _shift);
     }
 
@@ -376,8 +375,8 @@ protected:
         return n;
     }
 
-    //@return ref to bucket or seqtable slot where the key would be found or written
-    //@note if return value points to UINT32, the key was not found
+    /// @return ref to bucket or seqtable slot where the key would be found or written
+    /// @note if return value points to UINT32, the key was not found
     template<class FKEY = KEY>
     uint* find_object_entry(uint bucket, const FKEY& k)
     {
@@ -439,7 +438,7 @@ protected:
     }
 
     ///Find uint* where the new id should be written
-    //@param skip_id id of newly created object that should be skipped in case of resize, or UMAX32
+    /// @param skip_id id of newly created object that should be skipped in case of resize, or UMAX32
     template<class FKEY = KEY>
     uint* get_object_entry(const FKEY& key, uint skip_id)
     {
@@ -504,8 +503,8 @@ protected:
     }
 
 
-    //@return true if the underlying array was resized
-    //@param skip_id id of newly created object that should be skipped in case of resize, or UMAX32
+    /// @return true if the underlying array was resized
+    /// @param skip_id id of newly created object that should be skipped in case of resize, or UMAX32
     bool resize(uint bucketn, uint skip_id)
     {
         uint shift = 64 - int_high_pow2(bucketn);

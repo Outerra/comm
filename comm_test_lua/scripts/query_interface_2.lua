@@ -1,0 +1,1 @@
+local instance = query_interface("unknow_class_getter");

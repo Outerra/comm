@@ -44,6 +44,7 @@
 #include "../binstream/filestream.h"
 #include "../binstream/stdstream.h"
 
+#include "../hash/slothash.h"
 #include "../interface.h"
 #include "../timer.h"
 #include "../net_ul.h"
@@ -59,22 +60,22 @@ static bool _enable_debug_out = false;
 static void write_console_text(const logmsg& msg)
 {
     const charstr& text = msg.str();
-    log::type type = msg.get_type();
+    log::level type = msg.get_type();
 
     static HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
 
-    if (type != log::info) {
+    if (type != log::level::info) {
         uint flg;
 
         switch (type) {
-        case log::exception: flg = FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY; break;
-        case log::error:     flg = FOREGROUND_RED | FOREGROUND_INTENSITY; break;
-        case log::warning:   flg = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY; break;
-        case log::info:      flg = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE; break;
-        case log::highlight: flg = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY; break;
-        case log::debug:     flg = FOREGROUND_GREEN | FOREGROUND_BLUE; break;
-        case log::perf:      flg = FOREGROUND_GREEN | FOREGROUND_INTENSITY; break;
-        default:                   flg = BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE;
+        case log::level::exception: flg = FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY; break;
+        case log::level::error:     flg = FOREGROUND_RED | FOREGROUND_INTENSITY; break;
+        case log::level::warning:   flg = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY; break;
+        case log::level::info:      flg = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE; break;
+        case log::level::highlight: flg = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY; break;
+        case log::level::debug:     flg = FOREGROUND_GREEN | FOREGROUND_BLUE; break;
+        case log::level::perf:      flg = FOREGROUND_GREEN | FOREGROUND_INTENSITY; break;
+        default:                    flg = BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE;
         }
 
         SetConsoleTextAttribute(hstdout, flg);
@@ -82,7 +83,7 @@ static void write_console_text(const logmsg& msg)
 
     fwrite(text.ptr(), 1, text.len(), stdout);
 
-    if (type != log::info)
+    if (type != log::level::info)
         SetConsoleTextAttribute(hstdout, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
 
     if (_enable_debug_out)
@@ -100,12 +101,71 @@ static void write_console_text(const logmsg& msg)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace coid {
-
-ref<logmsg> canlog(log::type type, const tokenhash& hash, const void* inst)
+void coidlog_text(const token& src, token msg)
 {
-    return interface_register::canlog(type, hash, inst);
+    logger::post(msg, src);
 }
+
+
+namespace coid {
+namespace log {
+
+const level* values() {
+    static level _values[] = {
+        level::none,
+        level::exception,
+        level::error,
+        level::warning,
+        level::highlight,
+        level::info,
+        level::debug,
+        level::perf,
+    };
+    return _values;
+}
+
+const char** names() {
+    static const char* _names[] = {
+        "none",
+        "exception",
+        "error",
+        "warning",
+        "highlight",
+        "info",
+        "debug",
+        "perf",
+        0
+    };
+    return _names;
+}
+
+const char* name(level t)
+{
+    return t >= level::none && t < level::last ? names()[int(t) + 1] : 0;
+}
+
+
+ref<logmsg> openmsg(level type, const tokenhash& hash, const void* inst)
+{
+    return interface_register::canlog(type, hash, inst, target::primary_log);
+}
+
+ref<logmsg> filemsg(level type, const tokenhash& file, const void* inst)
+{
+    return interface_register::canlog(type, file, inst, target::file);
+}
+
+ref<logmsg> fademsg(level type, const tokenhash& hash, const void* inst)
+{
+    return interface_register::canlog(type, hash, inst, target::fade);
+}
+
+void flush()
+{
+    interface_register::getlog()->flush();
+}
+
+} //namespace log
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -140,8 +200,7 @@ public:
         if (_obj->_logger) {
             //first destroy just queues the message
             logger* x = _obj->_logger;
-            if (_obj->finalize(this))
-                x->flush();
+            _obj->finalize(this);
         }
         else {
             //back to the pool
@@ -165,7 +224,7 @@ public:
     }
 
     static pool_type& pool_singleton() {
-        LOCAL_PROCWIDE_SINGLETON_DEF(pool_type) pool;
+        LOCAL_FUNCTION_PROCWIDE_SINGLETON_DEF(pool_type) pool;
         return *pool;
     }
 };
@@ -185,7 +244,14 @@ class logger_file
         if (_logfile.is_open() || !_logpath)
             return _logfile.is_open();
 
-        opcd e = _logfile.open(_logpath);
+        //check if it wasn't already opened in this instance
+        LOCAL_SINGLETON_DEF(slothash<charstr, charstr>) reg;
+
+        const charstr* oldv = reg->find_value(_logpath);
+        if (!oldv)
+            reg->push(_logpath);
+
+        opcd e = _logfile.open(_logpath, oldv ? "wc+" : "wct");
         if (!e) {
             _logfile.xwrite_token_raw(_logbuf);
             _logbuf.free();
@@ -199,9 +265,11 @@ public:
     logger_file(const token& path, bool std) : _logpath(path), _stdout(std)
     {}
 
-    ///Open physical log file. @note Only notes the file name, the file is opened with the next log msg because of potential MT clashes
-    void open(charstr filename, bool std) {
-        std::swap(_logpath, filename);
+    ///Open physical log file
+    /// @param filename file name/path to open
+    /// @note Only notes the file name, the file is opened with the next log msg because of potential MT clashes
+    void open(charstr&& filename, bool std) {
+        _logpath = std::move(filename);
         _stdout = std;
     }
 
@@ -239,27 +307,31 @@ void logmsg::write()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool logmsg::finalize(policy_msg* p)
+void logmsg::finalize(policy_msg* p)
 {
-    if (_type == log::perf) {
+    if (_type == log::level::perf) {
         int64 ns = nsec_timer::current_time_ns() - _time;
         _str << " (" << (ns * 1.0e-6f) << "ms)";
     }
 
-    if (_type == log::none) {
+    if (_type == log::level::none) {
         token tok = _str;
         _type = consume_type(tok);
         if (tok.len() < _str.len())
             _str.del(0, _str.len() - tok.len());
     }
 
-    bool flush = _str.last_char() == '\r';
+    //bool flush = _str.last_char() == '\r';
 
-    _logger_file = _logger->file();
+    if (_target == log::target::file)
+        _logger_file.create(new logger_file(_hash, false));
+    else if (_target != log::target::fade)
+        _logger_file = _logger->file();
+
     _logger->enqueue(ref<logmsg>(p));
     _logger = 0;
 
-    return flush;
+    //return flush;
 }
 
 
@@ -304,62 +376,90 @@ void logger::unregister_filter(uints pos)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void logger::set_log_level(log::type minlevel, bool allow_perf)
+void logger::set_log_level(log::level minlevel, bool allow_perf)
 {
     _minlevel = minlevel;
-    _allow_perf = allow_perf || _minlevel >= log::perf;
+    _allow_perf = allow_perf || _minlevel >= log::level::perf;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-ref<logmsg> logger::create_msg(log::type type, const tokenhash& hash, const void* inst, const int64* mstime)
+ref<logmsg> logger::create_msg(log::level type, log::target target, const tokenhash& hash, const void* inst)
 {
     //TODO check hash, inst
-    if (type > _minlevel && (!_allow_perf || type != log::perf))
-        return ref<logmsg>();
-
-    ref<logmsg> rmsg = operator()(type, hash, mstime);
-    if (hash)
-        rmsg->str() << '[' << hash << "] ";
-
-    return rmsg;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-ref<logmsg> logger::operator()(log::type t, const tokenhash& hash, const int64* time_ms)
-{
-    ref<logmsg> msg = create_msg(t, hash);
-    if (!msg)
-        return msg;
-
-    charstr& str = msg->str();
-
-    if (time_ms) {
-        //str.append_fixed(*time_ms * 1e-3, 9, -3, coid::ALIGN_NUM_RIGHT_FILL_ZEROS);
-        str.append_time_formatted(*time_ms, true, 3);
-        str.append(' ');
-    }
-
-    str << logmsg::type2tok(t);
-
-    return msg;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-ref<logmsg> logger::create_msg(log::type type, const tokenhash& hash)
-{
-    if (type > _minlevel && (!_allow_perf || type != log::perf))
+    if (type > _minlevel && (!_allow_perf || type != log::level::perf))
         return ref<logmsg>();
 
     ref<logmsg> msg = ref<logmsg>(policy_msg::create());
     msg->set_type(type);
     msg->set_hash(hash);
+    msg->set_target(target);
     msg->set_logger(this);
 
-    if (type == log::perf)
+    if (type == log::level::perf)
         msg->set_time(nsec_timer::current_time_ns());
+
+    if (target != log::target::fade) {
+        int64 ms = nsec_timer::day_time_ns() / 1000000;
+        charstr& str = msg->str();
+        str.append_time_formatted(ms, true, 3);
+        str.append(' ');
+    }
+
+    //ref<logmsg> msg = create_empty_msg(type, target, hash);
+    if (!msg)
+        return msg;
+
+    if (target != log::target::fade) {
+        charstr& str = msg->str();
+        str << logmsg::type2tok(type);
+    }
+
+    //ref<logmsg> rmsg = operator()(type, target, hash);
+    if (hash)
+        msg->str() << '[' << hash << "] ";
 
     return msg;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+/*ref<logmsg> logger::operator()(log::level type, log::target target, const tokenhash& hash)
+{
+    ref<logmsg> msg = create_empty_msg(type, target, hash);
+    if (!msg)
+        return msg;
+
+    if (target != log::target::fade) {
+        charstr& str = msg->str();
+        str << logmsg::type2tok(type);
+    }
+
+    return msg;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+ref<logmsg> logger::create_empty_msg(log::level type, log::target target, const tokenhash& hash)
+{
+    if (type > _minlevel && (!_allow_perf || type != log::level::perf))
+        return ref<logmsg>();
+
+    ref<logmsg> msg = ref<logmsg>(policy_msg::create());
+    msg->set_type(type);
+    msg->set_hash(hash);
+    msg->set_target(target);
+    msg->set_logger(this);
+
+    if (type == log::level::perf)
+        msg->set_time(nsec_timer::current_time_ns());
+
+    if (target != log::target::fade) {
+        int64 ms = nsec_timer::day_time_ns() / 1000000;
+        charstr& str = msg->str();
+        str.append_time_formatted(ms, true, 3);
+        str.append(' ');
+    }
+
+    return msg;
+}*/
 
 ////////////////////////////////////////////////////////////////////////////////
 void logger::enqueue(ref<logmsg>&& msg)
@@ -368,11 +468,8 @@ void logger::enqueue(ref<logmsg>&& msg)
         GUARDTHIS(_mutex);
 
         _filters.for_each([&](const log_filter& f) {
-            if (msg->get_type() <= (log::type)f._log_level
-                && f._module.cmpeq(msg->get_hash()))
-            {
+            if (msg->get_type() <= f._log_level && (f._module.is_empty() || f._module.cmpeq(msg->get_hash())))
                 f._filter_fun(msg);
-            }
         });
 
     }
@@ -383,9 +480,9 @@ void logger::enqueue(ref<logmsg>&& msg)
 void logger::post(const token& txt, const token& from, const void* inst)
 {
     token msg = txt;
-    log::type type = logmsg::consume_type(msg);
+    log::level type = logmsg::consume_type(msg);
 
-    ref<logmsg> msgr = interface_register::canlog(type, from, inst);
+    ref<logmsg> msgr = interface_register::canlog(type, from, inst, log::target::primary_log);
     if (msgr)
         msgr->str() << msg;
 }
@@ -428,7 +525,6 @@ log_writer::~log_writer()
 ////////////////////////////////////////////////////////////////////////////////
 void log_writer::terminate()
 {
-    flush();
     _thread.cancel_and_wait(10000);
 }
 

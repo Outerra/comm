@@ -303,7 +303,7 @@ opcd directory::copy_file(zstring src, zstring dst, bool preserve_dates)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::move_file_from(zstring src, const token& name)
+opcd directory::move_file_from(zstring src, const token& name, bool replace_existing)
 {
     _curpath.resize(_baselen);
 
@@ -317,11 +317,11 @@ opcd directory::move_file_from(zstring src, const token& name)
     else
         _curpath << name;
 
-    return move_file(src, _curpath);
+    return move_file(src, _curpath, replace_existing);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::move_file_to(zstring dst, const token& name)
+opcd directory::move_file_to(zstring dst, const token& name, bool replace_existing)
 {
     _curpath.resize(_baselen);
 
@@ -335,13 +335,13 @@ opcd directory::move_file_to(zstring dst, const token& name)
     else
         _curpath << name;
 
-    return move_file(_curpath, dst);
+    return move_file(_curpath, dst, replace_existing);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::move_current_file_to(zstring dst)
+opcd directory::move_current_file_to(zstring dst, bool replace_existing)
 {
-    return move_file(_curpath, dst);
+    return move_file(_curpath, dst, replace_existing);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -373,7 +373,11 @@ opcd directory::delete_directory(zstring src, bool recursive)
             return was_err;
     }
 
+#ifdef SYSTYPE_MSVC
     return 0 == _rmdir(no_trail_sep(src)) ? opcd(0) : ersIO_ERROR;
+#else
+    return 0 == rmdir(no_trail_sep(src)) ? opcd(0) : ersIO_ERROR;
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -399,10 +403,10 @@ opcd directory::copymove_directory(zstring src, zstring dst, bool move)
             //copy to dst/
             token file = src.get_token().cut_right_group_back("\\/"_T);
             dsts << file;
-            err = move ? move_file(src, dsts) : copy_file(src, dsts, true);
+            err = move ? move_file(src, dsts, false) : copy_file(src, dsts, true);
         }
         else
-            err = move ? move_file(src, dst) : copy_file(src, dst, true);
+            err = move ? move_file(src, dst, false) : copy_file(src, dst, true);
 
         return err;
     }
@@ -436,7 +440,7 @@ opcd directory::copymove_directory(zstring src, zstring dst, bool move)
                 err = delete_directory(path, false);
         }
         else if (move)
-            err = move_file(path, dsts);
+            err = move_file(path, dsts, false);
         else
             err = copy_file(path, dsts, true);
 
@@ -453,13 +457,21 @@ opcd directory::copymove_directory(zstring src, zstring dst, bool move)
 ////////////////////////////////////////////////////////////////////////////////
 bool directory::is_writable(zstring fname)
 {
+#ifdef SYSTYPE_MSVC
     return 0 == _access(no_trail_sep(fname), 2);
+#else
+    return 0 == access(no_trail_sep(fname), 2);
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 bool directory::set_writable(zstring fname, bool writable)
 {
+#ifdef SYSTYPE_MSVC
     return 0 == _chmod(no_trail_sep(fname), writable ? (S_IREAD | S_IWRITE) : S_IREAD);
+#else
+    return 0 == chmod(no_trail_sep(fname), writable ? (S_IREAD | S_IWRITE) : S_IREAD);
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -536,15 +548,17 @@ bool directory::get_relative_path(token src, token dst, charstr& relout, bool la
     const char* ps = src.ptr();
     const char* pe = 0;
 
-    while (1)
+    while (src.is_set() || dst.is_set())
     {
         token st = src.cut_left_group(DIR_SEPARATORS);
         token dt = dst.cut_left_group(DIR_SEPARATORS);
 
+        bool isfile = last_src_is_file && src.is_empty();
+
 #ifdef SYSTYPE_WIN
-        if (!st.cmpeqi(dt)) {
+        if (isfile || !st.cmpeqi(dt)) {
 #else
-        if (st != dt) {
+        if (isfile || st != dt) {
 #endif
             src.set(st.ptr(), src.ptre());
             dst.set(dt.ptr(), dst.ptre());
@@ -606,7 +620,7 @@ bool directory::compact_path(charstr& dst, char tosep)
             return true;
         if (tosep)
             dst[2] = tosep;
-        dtok.shift_start(3);
+        dtok.shift_start(2);
     }
 #else
     bool absp = dtok.first_char() == '/';

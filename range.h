@@ -37,11 +37,14 @@
 *
 * ***** END LICENSE BLOCK ***** */
 
+#include <algorithm>
 #include "function.h"
 #include "namespace.h"
 #include "commtypes.h"
 
 #include "binstream/container.h"
+
+#include <algorithm>
 
 COID_NAMESPACE_BEGIN
 
@@ -100,7 +103,7 @@ public:
     const T* ptr() const { return _ptr; }
     const T* ptre() const { return _pte; }
 
-    //@return length of range
+    /// @return length of range
     uints size() const { return _pte - _ptr; }
 
     uints byte_size() const { return size() * sizeof(T); }
@@ -267,8 +270,8 @@ public:
     range& operator = (const dynarray<T, COUNT, A>& t);
 
     ///Set range from ptr and length.
-    //@note use set_empty(ptr) to avoid conflict with overloads when len==0
-    //@return pointer past the end
+    /// @note use set_empty(ptr) to avoid conflict with overloads when len==0
+    /// @return pointer past the end
     T* set(T* str, uints len)
     {
         _ptr = str;
@@ -300,7 +303,7 @@ private:
 public:
 
     ///Invoke functor on each element
-    //@note handles the case when current element is deleted from the array
+    /// @note handles the case when current element is deleted from the array
     template<typename Func>
     void for_each(Func fn)
     {
@@ -322,7 +325,7 @@ public:
     }
 
     ///Invoke functor on each element
-    //@note handles the case when current element is deleted from the array
+    /// @note handles the case when current element is deleted from the array
     template<typename Func>
     void for_each(Func fn) const
     {
@@ -344,7 +347,7 @@ public:
     }
 
     ///Find first element for which the predicate returns true
-    //@return pointer to the element or null
+    /// @return pointer to the element or null
     template<typename Func>
     T* find_if(Func fn) const
     {
@@ -367,8 +370,8 @@ public:
     }
 
     ///Linear search whether array contains element comparable with \a key
-    //@return -1 if not contained, otherwise index to the key
-    //@{
+    /// @return -1 if not contained, otherwise index to the key
+    /// @{
     template<class K>
     ints index_of(const K& key) const
     {
@@ -388,11 +391,11 @@ public:
         return -1;
     }
 
-    //@}
+    /// @}
 
     ///Linear search (backwards) whether array contains element comparable with \a key
-    //@return -1 if not contained, otherwise index to the key
-    //@{
+    /// @return -1 if not contained, otherwise index to the key
+    /// @{
     template<class K>
     ints index_of_back(const K& key) const
     {
@@ -417,12 +420,12 @@ public:
         }
         return -1;
     }
-    //@}
+    /// @}
 
     ///Binary search whether sorted array contains element comparable to \a key
     /// Uses operator T<K or functor(T,K) to search for the element, and operator T==K for equality comparison
-    //@return element position if found, or (-1 - insert_pos)
-    //@{
+    /// @return element position if found, or (-1 - insert_pos)
+    /// @{
     template<class K>
     ints index_of_sorted(const K& key) const
     {
@@ -440,12 +443,12 @@ public:
             || !(_ptr[lb] == key))  return -1 - ints(lb);
         return lb;
     }
-    //@}
+    /// @}
 
 
     ///Linear search whether array contains element comparable with \a key
-    //@return 0 if not contained, otherwise ptr to the key
-    //@{
+    /// @return 0 if not contained, otherwise ptr to the key
+    /// @{
     template<class K>
     const T* contains(const K& key) const
     {
@@ -472,11 +475,11 @@ public:
 
     template<class K, class EQ>
     T* contains(const K& key, const EQ& eq) { return const_cast<T*>(std::as_const(*this).contains(key, eq)); }
-    //@}
+    /// @}
 
     ///Linear search (backwards) whether array contains element comparable with \a key
-    //@return 0 if not contained, otherwise ptr to the key
-    //@{
+    /// @return 0 if not contained, otherwise ptr to the key
+    /// @{
     template<class K>
     const T* contains_back(const K& key) const
     {
@@ -508,14 +511,14 @@ public:
 
     template<class K, class EQ>
     T* contains_back(const K& key, const EQ& eq) { return const_cast<T*>(contains_back(key, eq)); }
-    //@}
+    /// @}
 
     ///Binary search whether sorted array contains element comparable to \a key
     /// Uses operator T<K and operator T==K for equality comparison, or functor(T,K) to search for the element
-    //@return ptr to element if found or 0 otherwise
-    //@param fn a functor that returns >0 for T<K, 0 for T==K, <0 for T>K
-    //@param sort_index optional ptr to variable receiving sort index
-    //@{
+    /// @return ptr to element if found or 0 otherwise
+    /// @param fn a functor that returns >0 for T<K, 0 for T==K, <0 for T>K
+    /// @param sort_index optional ptr to variable receiving sort index
+    /// @{
     template<class K>
     const T* contains_sorted(const K& key, uints* sort_index = 0) const
     {
@@ -549,11 +552,11 @@ public:
     T* contains_sorted(const K& key, const FUNC& fn, uints* sort_index = 0) {
         return const_cast<T*>(std::as_const(*this).contains_sorted(key, fn, sort_index));
     }
-    //@}
+    /// @}
 
 
     ///Binary search sorted array
-    //@note there must exist < operator able to do (T < K) comparison
+    /// @note there must exist < operator able to do (T < K) comparison
     template<class K>
     uints lower_bound(const K& key) const
     {
@@ -596,7 +599,7 @@ public:
     }
 
     ///Binary search sorted array
-    //@note there must exist < operator able to do (K < T) comparison
+    /// @note there must exist < operator able to do (K < T) comparison
     template<class K>
     uints upper_bound(const K& key) const
     {
@@ -651,7 +654,7 @@ public:
     {
         typedef binstream_container_base::fnc_stream	fnc_stream;
 
-        virtual const void* extract(uints n)
+        virtual const void* extract(uints n) override
         {
             DASSERT(_pos + n <= _v.size());
             const T* p = &_v.ptr()[_pos];
@@ -659,13 +662,13 @@ public:
             return p;
         }
 
-        virtual void* insert(uints n) {
+        virtual void* insert(uints n, const void* defval) override {
             throw std::exception("unsupported");
         }
 
-        virtual bool is_continuous() const { return true; }
+        virtual bool is_continuous() const override { return true; }
 
-        virtual uints count() const { return _v.size(); }
+        virtual uints count() const override { return _v.size(); }
 
         range_binstream_container(const range<T>& v)
             : _v(const_cast<range<T>&>(v))

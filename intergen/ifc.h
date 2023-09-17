@@ -1,3 +1,5 @@
+#pragma once
+
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -15,7 +17,7 @@
  *
  * The Initial Developer of the Original Code is
  * Outerra.
- * Portions created by the Initial Developer are Copyright (C) 2013-2019
+ * Portions created by the Initial Developer are Copyright (C) 2013-2023
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -40,64 +42,89 @@
 
 #include "../ref.h"
 #include "../interface.h"
+#include "../typeseq.h"
 #include "../local.h"
 #include "../log/logger.h"
+#include "../global.h"
 
 namespace coid {
     class binstring;
 }
 
-///Interface class decoration keyword
-//@param name desired name of the interface class, optionally with namespace and base interface [ns:]name [: baseifc]
-//@param path relative path (and optional file name) of the interface header file
-//@example ifc_class(ns:client, "../ifc")
-#define ifc_class(name,path)
-#define ifc_classx(name,orig)
+///Interface class decoration keyword.
+/// @param ifc_name desired name of the interface class, optionally with (virtual) base interface [ns::]name [: [ns::]baseifc] [ final]
+/// @param dst_path relative path (and optional file name) where to generate the interface header file
+/// @param ... optional relative path to the file containing the base interface
+/// @example ifc_class(ns:client, "../ifc")
+#define ifc_class(ifc_name, dst_path, ...)
+#define IFC_CLASS(ifc_name, dst_path, ...)
 
 ///Interface class decoration keyword for bi-directional interfaces with event methods that can be overriden by the client.
-//@param name desired name of the interface class, optionally with namespace and base interface [ns:]name [: baseifc]
-//@param path relative path (and optional file name) of the interface header file
-//@param var name for the variable representing the connected client
-//@note clean_ptr is an intentional weak link, since interface already holds ref to the host
-//@example ifc_class_var(ns::client, "../ifc", _ifc)
-#define ifc_class_var(name,path,var) coid::clean_ptr<intergen_interface> var
-#define ifc_classx_var(name,orig)
+/// @param ifc_name desired name of the interface class, optionally with (virtual) base interface [ns::]name [: [ns::]baseifc] [ final]
+/// @param dst_path relative path (and optional file name) of the interface header file
+/// @param var name for the variable representing the connected client
+/// @param base_ifc_name base interface
+/// @note var is of type clean_ptr, an intentional weak link, since interface already holds ref to the host
+/// @example ifc_class_var(ns::client, "../ifc", _ifc)
+#define ifc_class_var(ifc_name, dst_path, var, ...) coid::clean_ptr<intergen_interface> var
+#define IFC_CLASS_VAR(ifc_name, dst_path, var, ...) coid::clean_ptr<intergen_interface> var
 
 ///Virtual base interface class decoration keyword for declaration of abstrac base interfaces
-//@param name desired name of the interface class, optionally with namespace
-//@param path relative path (and optional file name) of the interface header file
-//@example ifc_class_virtual(ns:base, "../ifc")
-//@example ifc_class(ns::client : ns::base, "../ifc")
-#define ifc_class_virtual(name,path)
+/// @param ifc_name desired name of the interface class, optionally with namespace
+/// @param dst_path relative path (and optional file name) of the interface header file
+/// @example ifc_class_virtual(ns:base, "../ifc")
+/// @example ifc_class(ns::client : ns::base, "../ifc")
+#define ifc_class_virtual(ifc_name, dst_path)
+#define ifc_class_virtual_var(ifc_name, dst_path, var, ...) coid::clean_ptr<intergen_interface> var
+#define IFC_CLASS_VIRTUAL(ifc_name, dst_path)
+#define IFC_CLASS_VIRTUAL_VAR(ifc_name, dst_path, var, ...) coid::clean_ptr<intergen_interface> var
+
+///Data interface (not refcounted)
+/// @param ifc_name desired name of the interface class, optionally with namespace and base interface [ns:]name [: baseifc]
+/// @param dst_path relative path (and optional file name) of the interface header file
+#define ifc_struct(ifc_name, dst_path)
+#define IFC_STRUCT(ifc_name, dst_path)
+
 
 ///Interface function decoration keyword: such decorated method will be added into the interface
-//@example ifc_fn void fn(int a, ifc_out int& b);
+/// @example ifc_fn void fn(int a, ifc_out int& b);
 #define ifc_fn
 
 ///Interface function decoration keyword
-//@param extname an alternative name for the method used in the interface
-//@note special symbols:
-//@note ifc_fnx(~) marks a method that is invoked when the interface is being detached (client destroying)
-//@note ifc_fnx(!) or ifc_fnx(!name) marks an interface method that's not available to script clients
-//@note ifc_fnx(-) or ifc_fnx(-name) marks an interface method that is not captured by an interceptor (for net replication etc) if default was on
-//@note ifc_fnx(+) or ifc_fnx(+name) marks an interface method that is captured by an interceptor (for net replication etc) if default was off
-//@note ifc_fnx(@connect) marks a method that gets called upon successfull interface connection
-//@note ifc_fnx(@unload) marks a static method called when a registered client of given interface is unloading
-//@example ifc_fnx(get) void get_internal();
+/// @param extname an alternative name for the method used in the interface
+/// @note special symbols:
+/// @note ifc_fnx(~) marks a method that is invoked when the interface is being detached (client destroying)
+/// @note ifc_fnx(!) or ifc_fnx(!name) marks an interface method that's not available to script clients
+/// @note ifc_fnx(-) or ifc_fnx(-name) marks an interface method that is not captured by an interceptor (for net replication etc) if default was on
+/// @note ifc_fnx(+) or ifc_fnx(+name) marks an interface method that is captured by an interceptor (for net replication etc) if default was off
+/// @note ifc_fnx(@connect) marks a method that gets called upon successfull interface connection
+/// @note ifc_fnx(@unload) marks a static method called when a registered client of given interface is unloading
+/// @example ifc_fnx(get) void get_internal();
 #define ifc_fnx(extname)
 
+///Interface function decoration that marks a function returning an iref-based interface (strong interface that extends the lifetime)
+/// @param ifcname interface name (with namespaces), optionally followed by ifc_fnx options
+/// @note the function return type must be a pointer to the host class of the returned interface
+#define ifc_fnx_class(ifcname)
+
+///Interface function decoration that marks a function returning a lightweight interface (weak interface that doesn't own the remote object)
+/// @param ifcname interface name (with namespaces), optionally followed by ifc_fnx options
+/// @note the function return type must be a pointer to the host class of the returned interface
+#define ifc_fnx_struct(ifcname)
+
+
 ///Interface event callback decoration
-//@note events are defined in the generated dispatcher code, so the method after this keyword should be just a declaration
-//@note ifc_eventx(@connect) marks an event that gets called upon successfull interface connection
-//@note ifc_eventx(=0) or ifc_eventx(extname=0) tells that client virtual method will be pure and has to be implemented
-//@example ifc_event void on_init(int a, ifc_out int& b);   //definition generated by intergen
+/// @note events are defined in the generated dispatcher code, so the method after this keyword should be just a declaration
+/// @note ifc_eventx(@connect) marks an event that gets called upon successfull interface connection
+/// @note ifc_eventx(=0) or ifc_eventx(extname=0) tells that client virtual method will be pure and has to be implemented
+/// @example ifc_event void on_init(int a, ifc_out int& b);   //definition generated by intergen
 #define ifc_event
 #define ifc_eventx(extname)
 
 ///Statement to fill in as the default implementation of an event, in case the client doesn't implement the event handling.
 ///Optionally, should be specified after an ifc_event method declaration:
 /// ifc_event bool event() const ifc_default_body(return false;);
-//@example ifc_event int on_init() ifc_default_body("return -1;");
+/// @example ifc_event int on_init() ifc_default_body("return -1;");
 #define ifc_default_body(x)
 #define ifc_default_empty
 
@@ -158,6 +185,14 @@ namespace coid {
 #pragma clang diagnostic pop
 #endif
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+///Call interface vtable method
+#define VT_CALL(R,F,I) ((*_host).*(reinterpret_cast<R(policy_intrusive_base::*)F>(_vtable[I])))
+
+#define DT_CALL(R,F,I) (this->*(reinterpret_cast<R(intergen_data_interface::*)F>(_fn_table[I])))
+
 ////////////////////////////////////////////////////////////////////////////////
 
 ///Base class for intergen interfaces
@@ -172,6 +207,7 @@ protected:
 
     virtual ~intergen_interface() {
         _vtable = 0;
+        _host.release();
     }
 
 public:
@@ -180,16 +216,16 @@ public:
 
     typedef bool (*fn_unload_client)(const coid::token& client, const coid::token& module_name, coid::binstring* bstr);
 
-    //@return host class pointer
-    //@note T derived from policy_intrusive_base
+    /// @return host class pointer
+    /// @note T derived from policy_intrusive_base
     template<typename T>
     T* host() const { return static_cast<T*>(_host.get()); }
 
-    //@return interface class pointer
+    /// @return interface class pointer
     template<typename T>
     const T* iface() const { return static_cast<const T*>(this); }
 
-    //@return interface class pointer
+    /// @return interface class pointer
     template<typename T>
     T* iface() { return static_cast<T*>(this); }
 
@@ -202,13 +238,13 @@ public:
 
     ifn_t* vtable() const { return _vtable; }
 
-    //@return hash of interface definition, serving for version checks
+    /// @return hash of interface definition, serving for version checks
     virtual int intergen_hash_id() const = 0;
 
-    //@return true if this interface is derived from interface with given hash
+    /// @return true if this interface is derived from interface with given hash
     virtual bool iface_is_derived(int hash) const = 0;
 
-    //@return interface name
+    /// @return interface name
     virtual const coid::tokenhash& intergen_interface_name() const = 0;
 
     ///Supported interface client types (dispatcher back-ends)
@@ -223,36 +259,36 @@ public:
         unknown = -1
     };
 
-    //@return back-end implementation
+    /// @return back-end implementation
     virtual backend intergen_backend() const = 0;
 
-    //@return wrapper creator for given back-end
+    /// @return wrapper creator for given back-end
     virtual void* intergen_wrapper(backend bck) const = 0;
 
-    //@return name of default creator
+    /// @return name of default creator
     virtual const coid::token& intergen_default_creator(backend bck) const = 0;
 
     ///Bind or unbind interface call interceptor handler for current interface and all future instances of the same interface class
-    //@param capture capture buffer, 0 to turn the capture off
-    //@param instid instance identifier of this interface
-    //@return false if the interface can't be bound (instid > max)
+    /// @param capture capture buffer, 0 to turn the capture off
+    /// @param instid instance identifier of this interface
+    /// @return false if the interface can't be bound (instid > max)
     virtual bool intergen_bind_capture(coid::binstring* capture, uint instid) { return false; }
 
     ///Dispatch a captured call
     virtual void intergen_capture_dispatch(uint mid, coid::binstring& bin) {}
 
-    //@return real interface in case this is a wrapper around an existing interface object
+    /// @return real interface in case this is a wrapper around an existing interface object
     virtual intergen_interface* intergen_real_interface() { return this; }
 
 #ifdef COID_VARIADIC_TEMPLATES
 
     ///Interface log function with formatting
-    //@param type log type
-    //@param fmt format @see charstr.print
-    //@param vs variadic parameters
+    /// @param type log type
+    /// @param fmt format @see charstr.print
+    /// @param vs variadic parameters
     template<class ...Vs>
-    void ifclog(coid::log::type type, const coid::token& fmt, Vs&& ...vs) {
-        ref<coid::logmsg> msgr = coid::interface_register::canlog(type, intergen_interface_name(), this);
+    void ifclog(coid::log::level type, const coid::token& fmt, Vs&& ...vs) {
+        ref<coid::logmsg> msgr = coid::interface_register::canlog(type, intergen_interface_name(), this, coid::log::target::primary_log);
         if (!msgr)
             return;
 
@@ -260,11 +296,11 @@ public:
     }
 
     ///Interface log function with formatting, log type inferred from message text prefix
-    //@param fmt format @see charstr.print
-    //@param vs variadic parameters
+    /// @param fmt format @see charstr.print
+    /// @param vs variadic parameters
     template<class ...Vs>
     void ifclog(const coid::token& fmt, Vs&& ...vs) {
-        ref<coid::logmsg> msgr = coid::interface_register::canlog(coid::log::none, intergen_interface_name(), this);
+        ref<coid::logmsg> msgr = coid::interface_register::canlog(coid::log::level::none, intergen_interface_name(), this, coid::log::target::primary_log);
         if (!msgr)
             return;
 
@@ -273,13 +309,13 @@ public:
 
 #endif //COID_VARIADIC_TEMPLATES
 
-    static void ifclog_ext(coid::log::type type, const coid::token& from, const void* inst, const coid::token& txt) {
+    static void ifclog_ext(coid::log::level type, coid::log::target target, const coid::token& from, const void* inst, const coid::token& txt) {
         //deduce type if none set
         coid::token rest = txt;
-        if (type == coid::log::none)
+        if (type == coid::log::level::none)
             type = coid::logmsg::consume_type(rest);
 
-        ref<coid::logmsg> msgr = coid::interface_register::canlog(type, from, inst);
+        ref<coid::logmsg> msgr = coid::interface_register::canlog(type, from, inst, target);
         if (!msgr)
             return;
 
@@ -294,7 +330,7 @@ protected:
         coid::dynarray<coid::interface_register::creator> tmp;
         coid::interface_register::get_interface_creators(ifckey, "", tmp);
 
-        ref<coid::logmsg> msg = coid::interface_register::canlog(coid::log::warning, clsname, 0);
+        ref<coid::logmsg> msg = coid::interface_register::canlog(coid::log::level::warning, clsname, 0, coid::log::target::primary_log);
         if (msg) {
             coid::charstr& str = msg->str();
             if (tmp.size() > 0) {
@@ -302,7 +338,7 @@ protected:
 
                 uints n = tmp.size();
                 str << tmp[0].name;
-                for (uints i = 1; i<n; ++i)
+                for (uints i = 1; i < n; ++i)
                     str << ", " << tmp[i].name;
 
                 str << ')';
@@ -312,6 +348,146 @@ protected:
         }
     }
 };
+
+////////////////////////////////////////////////////////////////////////////////
+struct intergen_data_interface
+{
+    typedef void (intergen_data_interface::* ifn_t)();
+    typedef void (* icr_t)();
+
+protected:
+
+    static void log_mismatch(const coid::token& clsname, const coid::token& ifckey, const coid::token& hash)
+    {
+        //check if interface missing or different version
+        coid::dynarray<coid::interface_register::creator> tmp;
+        coid::interface_register::get_interface_creators(ifckey, "", tmp);
+
+        ref<coid::logmsg> msg = coid::interface_register::canlog(coid::log::level::warning, clsname, 0, coid::log::target::primary_log);
+        if (msg) {
+            coid::charstr& str = msg->str();
+            if (tmp.size() > 0) {
+                str << "interface creator version mismatch (requested " << ifckey << hash << ", found ";
+
+                uints n = tmp.size();
+                str << tmp[0].name;
+                for (uints i = 1; i < n; ++i)
+                    str << ", " << tmp[i].name;
+
+                str << ')';
+            }
+            else
+                str << "interface creator not found (" << ifckey << ')';
+        }
+    }
+};
+
+
+
+
+/// @brief Wrapper for managed data interfaces
+/// @tparam T data interface type
+template <class T>
+class cref
+{
+public:
+
+    cref() = default;
+
+    explicit cref(coid::versionid eid)
+        : _entity_id(eid)
+    {}
+
+    /// @return component reference valid for current frame
+    T* ready() {
+        //obtain a valid reference once per frame
+        uint gframe = entman::frame;
+        if (_cached_object && _ready_frame == gframe)
+            return _cached_object;
+
+        _cached_object = entman::get<T>(_entity_id);
+        _ready_frame = gframe;
+        return _cached_object;
+    }
+
+    cref& operator = (coid::versionid eid) {
+        _entity_id = eid;
+        _cached_object = 0;
+        return *this;
+    }
+
+    T* operator -> () {
+        T* p = ready();
+        if (!p) throw coid::exception() << "dead object";
+        return p;
+    }
+
+private:
+
+    coid::versionid _entity_id;         //< id of the connected entity
+    T* _cached_object = 0;              //< cached connected object
+    uint _ready_frame = 0;              //< frame when the connected object was valid
+};
+
+
+
+COID_NAMESPACE_BEGIN
+
+class ifcman
+{
+public:
+
+    using ifn_t = intergen_data_interface::ifn_t;
+    using icr_t = intergen_data_interface::icr_t;
+
+    struct data_ifc_descriptor {
+        const type_sequencer<ifcman>::entry* _type = 0;
+        icr_t* _cr_table = 0;
+        ifn_t* _fn_table = 0;
+
+        uint64 _hash = 0;
+        const meta::class_interface* _meta = 0;
+    };
+
+
+    template <class T>
+    static const data_ifc_descriptor* get_type_ifc(uint64 hash) {
+        ifcman& m = get();
+        uint id = m._seq.id<T>();
+        return id < m._clients.size() && m._clients[id]._hash == hash ? &m._clients[id] : nullptr;
+    }
+
+    template <class T>
+    static intergen_data_interface::ifn_t* set_type_ifc(uint64 hash, icr_t* cr_table, ifn_t* fn_table, const meta::class_interface* meta)
+    {
+        ifcman& m = get();
+        m._seq.assign<T>([&](int id, const type_sequencer<ifcman>::entry& en) {
+            data_ifc_descriptor& dc = m._clients.get_or_add(id);
+            dc._fn_table = fn_table;
+            dc._cr_table = cr_table;
+            dc._type = &en;
+            dc._hash = hash;
+            dc._meta = meta;
+        });
+        return fn_table;
+    }
+
+private:
+
+    static ifcman& get() {
+        LOCAL_FUNCTION_PROCWIDE_SINGLETON_DEF(ifcman) _m = new ifcman;
+        return *_m;
+    }
+
+    ifcman() {
+        _clients.reserve_virtual(8192);
+    }
+
+    type_sequencer<ifcman> _seq;
+    dynarray32<data_ifc_descriptor> _clients;
+};
+
+COID_NAMESPACE_END
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Helper class for interface methods to return a derived class of interface client, when
@@ -339,11 +515,11 @@ public:
     const iref<T>& get_ref() const { return _target; }
 
     template<class S>
-    ifc_creator( iref<S>& s )
-        : _create(reinterpret_cast<T*(*)()>(&creator_helper<S>::create))
+    ifc_creator(iref<S>& s)
+        : _create(reinterpret_cast<T* (*)()>(&creator_helper<S>::create))
         , _target(reinterpret_cast<iref<T>&>(s))
     {
-        static_assert( std::is_base_of<T,S>::value, "unrelated types" );
+        static_assert(std::is_base_of<T, S>::value, "unrelated types");
     }
 
 protected:
@@ -365,7 +541,7 @@ struct ifc_autoregger
 
     typedef void (*register_fn)(bool);
 
-    ifc_autoregger( register_fn fn ) : _fn(fn) {
+    ifc_autoregger(register_fn fn) : _fn(fn) {
         _fn(true);
     }
 
@@ -376,12 +552,6 @@ struct ifc_autoregger
 private:
     register_fn _fn;
 };
-
-////////////////////////////////////////////////////////////////////////////////
-
-///Call interface vtable method
-#define VT_CALL(R,F,I) ((*_host).*(reinterpret_cast<R(policy_intrusive_base::*)F>(_vtable[I])))
-
 
 ///Force registration of an interface declared in a statically-linked library
 #define FORCE_REGISTER_LIBRARY_INTERFACE(ns,ifc) \

@@ -17,7 +17,7 @@
  *
  * The Initial Developer of the Original Code is
  * Outerra.
- * Portions created by the Initial Developer are Copyright (C) 2013-2019
+ * Portions created by the Initial Developer are Copyright (C) 2013-2023
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -56,9 +56,7 @@ enum exception_behavior {
 
 struct interface_context
 {
-    //v8::Persistent<v8::Context> _context;
-    //v8::Persistent<v8::Script> _script;
-    v8::Persistent<v8::Object> _object;
+    v8::Persistent<v8::Object> _object;         //< V8 object representing this interface in JS
 
     v8::Local<v8::Context> context(v8::Isolate* iso) const {
         if (_object.IsEmpty())
@@ -73,10 +71,10 @@ struct interface_context
 struct script_handle
 {
     ///Provide path or direct script
-    //@param path_or_script path or script content
-    //@param is_path true if path_or_script is a path to the script file, false if it's the script itself
-    //@param url string to use when identifying script origin
-    //@param context
+    /// @param path_or_script path or script content
+    /// @param is_path true if path_or_script is a path to the script file, false if it's the script itself
+    /// @param url string to use when identifying script origin
+    /// @param context
     script_handle(
         const coid::token& path_or_script,
         bool is_path,
@@ -138,11 +136,11 @@ struct script_handle
     }
 
     ///Get absolute path from the provided path that's relative to given JS stack frame
-    //@param path relative path (an include path) or absolute path from root
-    //@param frame v8 stack frame number to be made relative to
-    //@param dst [out] resulting path, using / for directory separators
-    //@param relpath [out] path relative
-    //@return 0 if succeeded, 1 invalid stack frame, 2 invalid path
+    /// @param path relative path (an include path) or absolute path from root
+    /// @param frame v8 stack frame number to be made relative to
+    /// @param dst [out] resulting path, using / for directory separators
+    /// @param relpath [out] path relative
+    /// @return 0 if succeeded, 1 invalid stack frame, 2 invalid path
     static int get_target_path(coid::token path, uint frame, coid::charstr& dst, coid::token* relpath)
     {
         v8::Isolate* iso = v8::Isolate::GetCurrent();
@@ -351,6 +349,30 @@ public:
 
         v8::Handle<v8::Script> script = load_script(js, urlenc, js::rethrow_in_js);
 
+        if (js_trycatch.HasCaught())
+        {
+            coid::charstr msg;
+
+            v8::String::Utf8Value exc(iso, js_trycatch.Exception());
+            v8::Handle<v8::Message> message = js_trycatch.Message();
+
+            if (message.IsEmpty()) {
+                msg << *exc;
+            }
+            else {
+                v8::String::Utf8Value filename(iso, message->GetScriptResourceName());
+                coid::token filename_tok = *filename;
+                filename_tok.consume("file://");
+
+                int linenum = message->GetLineNumber(iso->GetCurrentContext()).FromJust();
+
+                msg << filename_tok << '(' << linenum << "): " << *exc;
+            }
+            v8::queue_js_exception(iso, v8::Exception::Error, msg);
+            js_trycatch.ReThrow();
+            return;
+        }
+
         v8::Handle<v8::Value> rval = glob->Get(ctx, result_token).ToLocalChecked();
         glob->Set(ctx, result_token, v8::Undefined(iso)) V8_CHECK;
 
@@ -382,7 +404,8 @@ public:
         coid::token tokey(*key, key.length());
 
         intergen_interface::ifclog_ext(
-            coid::log::none,
+            coid::log::level::none,
+            coid::log::target::primary_log,
             inst ? coid::token(inst->intergen_interface_name()) : "js"_T,
             inst, tokey);
 
@@ -485,6 +508,22 @@ inline v8::Handle<v8::Value> wrap_object(intergen_interface* orig, v8::Handle<v8
 
     if (fn)
         return handle_scope.Escape(fn(orig, context));
+    return v8::Undefined(iso);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+template <class T>
+inline v8::Handle<v8::Value> wrap_data_object(T* data, const coid::token& ifcname, v8::Handle<v8::Context> context)
+{
+    v8::Isolate* iso = v8::Isolate::GetCurrent();
+    if (!data) return v8::Null(iso);
+    v8::EscapableHandleScope handle_scope(iso);
+
+    typedef v8::Handle<v8::Value>(*fn_dcmaker)(void*, v8::Handle<v8::Context>);
+    static fn_dcmaker fn = static_cast<fn_dcmaker>(coid::interface_register::get_interface_dcmaker(ifcname, "js"_T));
+
+    if (fn)
+        return handle_scope.Escape(fn(data, context));
     return v8::Undefined(iso);
 }
 

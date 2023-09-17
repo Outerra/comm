@@ -62,11 +62,12 @@ struct packer_zstd
     }
 
     ///Pack block of data
-    //@param src src data
-    //@param size input size
-    //@param dst target buffer (append)
-    //@return compressed size
-    uints pack(const void* src, uints size, dynarray<uint8>& dst, int complevel = 3)
+    /// @param src src data
+    /// @param size input size
+    /// @param dst target buffer (append)
+    /// @return compressed size
+    template <class COUNT>
+    uints pack(const void* src, uints size, dynarray<uint8, COUNT>& dst, int complevel = ZSTD_CLEVEL_DEFAULT)
     {
         uints osize = dst.size();
         uints dmax = ZSTD_compressBound(size);
@@ -81,11 +82,12 @@ struct packer_zstd
     }
 
     ///Unpack block of data
-    //@param src src data
-    //@param size available input size
-    //@param dst target buffer
-    //@return consumed size or UMAXS on error
-    uints unpack(const void* src, uints size, dynarray<uint8>& dst)
+    /// @param src src data
+    /// @param size available input size
+    /// @param dst target buffer
+    /// @return consumed size or UMAXS on error
+    template <class COUNT>
+    uints unpack(const void* src, uints size, dynarray<uint8, COUNT>& dst)
     {
         if (!_dstream) {
             ZSTD_customMem cmem = {&_alloc, &_free, 0};
@@ -95,7 +97,10 @@ struct packer_zstd
         ZSTD_initDStream(_dstream);
         _eof = false;
 
-        uint64 dstsize = ZSTD_getDecompressedSize(src, size);
+        uint64 dstsize = ZSTD_getFrameContentSize(src, size);
+        if (dstsize == ZSTD_CONTENTSIZE_ERROR)
+            return UMAXS;
+
         uints origsize = dst.size();
 
         const uints outblocksize = ZSTD_DStreamOutSize();
@@ -106,7 +111,7 @@ struct packer_zstd
         zin.size = size;
         zin.pos = 0;
         zot.pos = 0;
-        zot.size = dstsize && dstsize <= UMAX64 ? uints(dstsize) : outblocksize;
+        zot.size = dstsize < ZSTD_CONTENTSIZE_UNKNOWN ? uints(dstsize) : outblocksize;
         zot.dst = dst.add(zot.size);
 
         uints rem;
@@ -136,11 +141,11 @@ struct packer_zstd
     }
 
     ///Pack data in streaming mode
-    //@param src data to pack, 0 to flush
-    //@param size byt size of data
-    //@param bon output binstream to write to
-    //@param ZSTD complevel compression level
-    uints pack_stream(const void* src, uints size, binstream& bon, int complevel = 3)
+    /// @param src data to pack, 0 to flush
+    /// @param size byt size of data
+    /// @param bon output binstream to write to
+    /// @param ZSTD complevel compression level
+    uints pack_stream(const void* src, uints size, binstream& bon, int complevel = ZSTD_CLEVEL_DEFAULT)
     {
         if (!src && (!_cstream || _buf.size() == 0))
             return 0;
@@ -202,10 +207,10 @@ struct packer_zstd
     }
 
     ///Unpack data in streaming mode
-    //@param bin binstream to read from
-    //@param dst destination buffer to write to
-    //@param size size of dest buffer
-    //@return unpacked size, can be less than size argument if there's no more data
+    /// @param bin binstream to read from
+    /// @param dst destination buffer to write to
+    /// @param size size of dest buffer
+    /// @return unpacked size, can be less than size argument if there's no more data
     ints unpack_stream(binstream& bin, void* dst, uints size)
     {
         if (!_dstream) {

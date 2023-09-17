@@ -45,25 +45,25 @@ COID_NAMESPACE_BEGIN
 class log_writer
 {
 protected:
-	coid::thread _thread;
-	coid::queue<logmsg_ptr> _queue;
+    coid::thread _thread;
+    coid::queue<logmsg_ptr> _queue;
 
 public:
-	log_writer();
+    log_writer();
 
-	~log_writer();
+    ~log_writer();
 
     static void* thread_run_fn( void* p ) {
-        return reinterpret_cast<log_writer*>(p)->thread_run();
+        return static_cast<log_writer*>(p)->thread_run();
     }
 
-	void* thread_run();
+    void* thread_run();
 
-	void addmsg(logmsg_ptr&& m) {
+    void addmsg(logmsg_ptr&& m) {
         _queue.push(std::forward<logmsg_ptr>(m));
     }
 
-	void flush();
+    void flush();
 
     void terminate();
 

@@ -14,15 +14,51 @@
     AssemblyName="Microsoft.Build.Tasks.v4.0">
     <Task>$(MSBuildThisFileDirectory)$(MSBuildThisFileName).xml</Task>
   </UsingTask>
+  
+  <Target Name="_hppDeps" Condition="'@(hpp)' != ''">
+    <ReadLinesFromFile
+        Condition="Exists('%(hpp.RootDir)%(hpp.Directory)%(hpp.Filename).intergen.deps')"
+        File="%(hpp.RootDir)%(hpp.Directory)%(hpp.Filename).intergen.deps">
+        <Output TaskParameter="Lines" PropertyName="hppDeps_%(hpp.Filename)" />
+    </ReadLinesFromFile>
+    <Message Text="HALOOO: (%(hpp.Filename)) hppDeps_%(hpp.Filename) $(hppDeps_%(hpp.Filename))"/>
+  </Target>
 
+  <Target Name="_WriteHppTlogs" Condition="'@(hpp)' != '' and '@(SelectedFiles)' == ''" DependsOnTargets="_hppDeps">
+    <ItemGroup>
+      <_hppReadTlog Include="^%(hpp.FullPath);%(hpp.AdditionalDependencies);$(hppDeps_%(hpp.Filename))" 
+                     Condition="'%(hpp.ExcludedFromBuild)' != 'true' and '%(hpp.Outputs)' != ''"/>
+      <_hppWriteTlog Include="^%(hpp.FullPath);%(hpp.Outputs)" 
+                      Condition="'%(hpp.ExcludedFromBuild)' != 'true' and '%(hpp.Outputs)' != ''"/>
+    </ItemGroup>
+
+    <WriteLinesToFile
+      Condition="'@(_hppReadTlog)' != ''"
+      File="$(TLogLocation)hpp.read.1u.tlog"
+      Lines="@(_hppReadTlog->MetaData('Identity')->ToUpperInvariant());"
+      Overwrite="true"
+      Encoding="Unicode"/>
+    <WriteLinesToFile
+      Condition="'@(_hppWriteTlog)' != ''"
+      File="$(TLogLocation)hpp.write.1u.tlog"
+      Lines="@(_hppWriteTlog->MetaData('Identity')->ToUpperInvariant());"
+      Overwrite="true"
+      Encoding="Unicode"/>
+
+    <ItemGroup>
+      <_hppReadTlog Remove="@(_hppReadTlog)" />
+      <_hppWriteTlog Remove="@(_hppWriteTlog)" />
+    </ItemGroup>
+  </Target>
+  
   <Target
     Name="_hpp"
     BeforeTargets="$(hppBeforeTargets)"
     AfterTargets="$(hppAfterTargets)"
     Condition="'@(hpp)' != ''"
-    DependsOnTargets="$(hppDependsOn);ComputehppOutput"
     Outputs="%(hpp.Outputs)"
-    Inputs="%(hpp.Identity);%(hpp.AdditionalDependencies)">
+    Inputs="%(hpp.Identity);%(hpp.AdditionalDependencies);$(hppDeps_%(hpp.Filename))"
+    DependsOnTargets="$(hppDependsOn);_WriteHppTlogs;_hppDeps;ComputehppOutput">
     <ItemGroup
       Condition="'@(SelectedFiles)' != ''">
       <hpp
@@ -91,6 +127,7 @@
       </ItemGroup>
 
       <!--<Delete Files="@(FilesToDelete)" TreatErrorsAsWarnings="true" />-->
+      <Exec Command="del /F /Q &quot;@(FilesToDelete,'deps&quot; &quot;')deps&quot;"/>
       <Exec Command="del /F /Q &quot;@(FilesToDelete,'cpp&quot; &quot;')cpp&quot;"/>
       <Exec Command="del /F /Q &quot;@(FilesToDelete,'js.cpp&quot; &quot;')js.cpp&quot;"/>
       <!--<Exec Command="del /F /Q &quot;@(FilesToDelete,'jsc.cpp&quot; &quot;')jsc.cpp&quot;"/>-->

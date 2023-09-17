@@ -232,21 +232,6 @@ void metastream_test4()
 
 struct testmtg
 {
-    struct something {
-        charstr blah;
-        int fooi;
-
-        friend metastream& operator || (metastream& m, something& p) {
-            return m.compound_type_stream_as_type<coid::charstr>(p,
-                [&]() {
-                    m.member("blah", p.blah);
-                    m.member("fooi", p.fooi);
-                },
-                [](something& p, coid::charstr&& v) { p.blah.takeover(v); },
-                [](something& p) -> const coid::charstr& { return p.blah; });
-        }
-    };
-
     dynarray<charstr> as;
     dynarray<int> ar;
     charstr name;
@@ -286,6 +271,7 @@ struct testmtg
     }
 };
 
+
 static void metagen_test()
 {
     testmtg t;
@@ -312,6 +298,158 @@ $[ar final=\"$@order$\"]$$[/ar]$";
     token res = dst;
 }
 
+
+
+struct as_type
+{
+    struct something {
+        charstr blah;
+        int fooi;
+
+        bool operator == (const something& s) const {
+            return blah == s.blah && fooi == s.fooi;
+        }
+
+        friend metastream& operator || (metastream& m, something& p) {
+            return m.compound_type_stream_as_type<coid::charstr>(p,
+                [&]() {
+                m.member("blah", p.blah);
+                m.member("fooi", p.fooi);
+            },
+                [](something& p, coid::charstr&& v) {
+                token t = v;
+                token n = t.cut_right_back(':');
+                p.blah.takeover(v);
+                p.blah.resize(t.len());
+                p.fooi = n.toint();
+            },
+                [](something& p) -> coid::charstr {
+                return p.blah + ':' + p.fooi;
+            });
+        }
+    };
+
+    dynarray<something> aaa;
+    dynarray<something> bbb;
+
+    something* s = 0;
+
+    friend metastream& operator || (metastream& m, as_type& p) {
+        return m.compound_type(p, [&]() {
+            m.member("aaa", p.aaa, dynarray<something>(), false);
+            m.member("bbb", p.bbb, dynarray<something>(), false);
+        });
+    }
+};
+
+static void test_as_type()
+{
+    const char* str = "aaa = [\"jozo:1\", \"fero:2\"]";
+
+    binstreamconstbuf cbuf(str);
+    fmtstreamcxx fmt(cbuf);
+    metastream meta(fmt);
+
+    as_type tat;
+    tat.s = new as_type::something;
+
+    meta.xstream_in(tat);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+struct FooCCC
+{
+    float f;
+
+    FooCCC() {}
+    FooCCC(float f) { set(f); }
+
+    void set(float f)
+    {
+        this->f = f;
+    }
+
+    friend metastream& operator || (metastream& m, FooCCC& s)
+    {
+        return m.compound_type(s, [&]()
+        {
+            m.member("f", s.f);
+        });
+    }
+};
+
+struct FooAAA
+{
+    int i;
+    FooCCC c;
+
+    FooAAA() {}
+    FooAAA(int i, float f) { set(i, f); }
+    bool operator==(const FooAAA& other) { return other.i == i && other.c.f == c.f; }
+
+    void set(int i, float f)
+    {
+        this->i = i;
+        this->c.f = f;
+    }
+
+    friend metastream& operator || (metastream& m, FooAAA& s)
+    {
+        return m.compound_type(s, [&]()
+        {
+            m.member("i", s.i);
+            m.member("c", s.c);
+        });
+    }
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+struct FooBBB
+{
+    bool b = false;
+    bool c = false;
+    FooAAA a;
+
+    FooBBB() = default;
+    FooBBB(int i, float f, bool b) { set(i, f, b); }
+
+
+    void set(int i, float f, bool b)
+    {
+        this->b = b;
+        a = FooAAA(i, f);
+    }
+
+    friend metastream& operator || (metastream& m, FooBBB& s)
+    {
+        return m.compound_type(s, [&]()
+        {
+            m.member_optional("b", s.b, false);
+            m.member_optional("c", s.c, false);
+            m.member_optional("a", s.a, FooAAA());
+        });
+    }
+
+};
+
+void test_nested_compound()
+{
+    const char* test_input =
+        "[{a: {i:2, c: {f : 3.0}} , b: true, c: true},  {a: {i:2} , b: true, c: true}]";
+
+    binstreamconstbuf txt(test_input);
+    fmtstreamjson fmt(txt, false);
+    metastream meta(fmt);
+
+    coid::dynarray<FooBBB> bs;
+
+    meta.stream_in(bs);
+    meta.stream_acknowledge();
+
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 void metastream_test3()
 {
@@ -321,6 +459,9 @@ void metastream_test3()
 
     fmtstreamjson_test();
 
+    test_as_type();
+
+    test_nested_compound();
 /*
     dynarray<ref<FooA>> ar;
     ar.add()->create(new FooA(1, 2));

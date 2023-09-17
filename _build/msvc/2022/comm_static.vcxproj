@@ -212,7 +212,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalOptions>/MP /permissive- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/w34389 /w34296 /d2Zi+ %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_LIB;WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
@@ -227,6 +227,10 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <SDLCheck>true</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -258,6 +262,7 @@
       <AdditionalOptions>-mcx16 %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <WarningLevel>Level3</WarningLevel>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -347,7 +352,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalOptions>/MP /permissive- /d2Zi+ %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/w34389 /w34296 /d2Zi+ %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -357,7 +362,7 @@
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <FunctionLevelLinking>false</FunctionLevelLinking>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <PrecompiledHeaderOutputFile>$(IntDir)comm_static.pch</PrecompiledHeaderOutputFile>
@@ -366,6 +371,9 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <ConformanceMode>true</ConformanceMode>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -385,7 +393,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalOptions>/MP /permissive- /d2Zi+ %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/w34389 /w34296 /d2Zi+ %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -404,6 +412,9 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <FunctionLevelLinking>true</FunctionLevelLinking>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <ConformanceMode>true</ConformanceMode>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -483,7 +494,10 @@
     <ClInclude Include="..\..\..\interface.h" />
     <ClInclude Include="..\..\..\intergen\ifc.h" />
     <ClInclude Include="..\..\..\intergen\ifc.js.h" />
+    <ClInclude Include="..\..\..\intergen\ifc.lua.h" />
+    <ClInclude Include="..\..\..\international.h" />
     <ClInclude Include="..\..\..\list.h" />
+    <ClInclude Include="..\..\..\log.h" />
     <ClInclude Include="..\..\..\metastream\fmtstream.h" />
     <ClInclude Include="..\..\..\metastream\fmtstreamnull.h" />
     <ClInclude Include="..\..\..\metastream\fmtstream_lexer.h" />
@@ -491,6 +505,7 @@
     <ClInclude Include="..\..\..\metastream\fmtstreamjson.h" />
     <ClInclude Include="..\..\..\metastream\fmtstreamxml.h" />
     <ClInclude Include="..\..\..\metastream\fmtstreamxml2.h" />
+    <ClInclude Include="..\..\..\metastream\fmtstream_lua_capi.h" />
     <ClInclude Include="..\..\..\metastream\fmtstream_v8.h" />
     <ClInclude Include="..\..\..\metastream\metagen.h" />
     <ClInclude Include="..\..\..\metastream\metastream.h" />
@@ -498,6 +513,7 @@
     <ClInclude Include="..\..\..\alloc\_malloc.h" />
     <ClInclude Include="..\..\..\alloc\commalloc.h" />
     <ClInclude Include="..\..\..\alloc\memtrack.h" />
+    <ClInclude Include="..\..\..\process.h" />
     <ClInclude Include="..\..\..\profiler\profiler.h" />
     <ClInclude Include="..\..\..\ref_helpers.h" />
     <ClInclude Include="..\..\..\sync\_mutex.h" />
@@ -556,6 +572,7 @@
     <ClInclude Include="..\..\..\txtconv.h" />
     <ClInclude Include="..\..\..\range.h" />
     <ClInclude Include="..\..\..\typeseq.h" />
+    <ClInclude Include="..\..\..\unique_ptr.h" />
     <ClInclude Include="..\..\..\version.h" />
   </ItemGroup>
   <ItemGroup>
@@ -629,6 +646,7 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <ClCompile Include="..\..\..\process_win.cpp" />
     <ClCompile Include="..\..\..\profiler\profiler.cpp" />
     <ClCompile Include="..\..\..\taskmaster.cpp" />
     <ClCompile Include="..\..\..\timer.cpp">
