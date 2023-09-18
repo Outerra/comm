@@ -3,7 +3,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Parse function declaration after ifc_fn
-bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const charstr& nsifc, dynarray<Arg>& irefargs, bool isevent)
+bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const charstr& extifc, dynarray<forward>& fwds, bool isevent)
 {
     file = lex.get_current_file();
     line = lex.current_line();
@@ -18,8 +18,24 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
 
     ret.name = "return";
 
-    if (!bstatic && ret.biref)
-        ret.add_unique(irefargs);
+    if (extifc) {
+        ret.hosttype = ret.ptrtype;
+
+        ret.ptrtype = extifc;
+        ret.basetype = extifc;
+        ret.type = ret.ifc_type == meta::arg::ifc_type::ifc_class
+            ? "iref<"_T
+            : "cref<"_T;
+        ret.type << extifc << '>';
+
+        forward fwd;
+        fwd.type = ret.ifc_type;
+        fwd.parse(extifc);
+
+        if (!fwds.contains(fwd))
+            fwds.push(std::move(fwd));
+    }
+
 
     biref = bptr = false;
     int ncontinuable_errors = 0;
@@ -80,9 +96,6 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
 
             arg->tokenpar = arg->binarg &&
                 (arg->basetype == "token" || arg->basetype == "coid::token" || arg->basetype == "charstr" || arg->basetype == "coid::charstr");
-
-            if (!bstatic && arg->biref && (isevent ? arg->binarg : arg->boutarg))
-                arg->add_unique(irefargs);
         }
         while (lex.matches(','));
 

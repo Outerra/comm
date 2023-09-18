@@ -1234,7 +1234,9 @@ void client2_js_dispatcher::v8_get1(const v8::ARGUMENTS& args)
 
         //stream out
         v8::Handle<v8::Value> r__;
-        r__ = ::js::wrap_data_object<component>(_rval_, "component"_T, ifc->context(iso));
+        static_assert(coid::has_metastream_operator<component>::value, "missing metastream operator for 'component'");
+        if (_rval_)
+            r__ = read_to_v8(*_rval_);
 
         args.GetReturnValue().Set(r__);
     } catch (const coid::exception& e) {

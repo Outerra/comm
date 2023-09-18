@@ -50,7 +50,7 @@ int Interface::check_interface(iglexer& lex, const dynarray<paste_block>& classp
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Parse function declaration after rl_cmd or rl_cmd_p
-bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& namespcs, dynarray<paste_block>* filepasters, dynarray<MethodIG::Arg>& irefargs)
+bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& namespcs, dynarray<paste_block>* filepasters)
 {
     templarg.swap(templarg_);
     //namespaces = namespcs;
@@ -333,48 +333,46 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 m->bpure = bpure;
                 m->classname << namespc << classname;
 
-                {
-                    if (!m->parse(lex, classname, namespc, lastifc->nsname, irefargs, true))
-                        ++ncontinuable_errors;
+                m->bretifc = extfn_class || extfn_struct;
+                if (m->bretifc)
+                    m->ret.ifc_type = extfn_class ? meta::arg::ifc_type::ifc_class : meta::arg::ifc_type::ifc_struct;
 
-                    const MethodIG* old = lastifc->method.find_if([m](const MethodIG& o) {
-                        return &o != m && o.name == m->name && m->matches_args(o);
-                    });
+                if (!m->parse(lex, classname, namespc, extifcname, lastifc->fwds, true))
+                    ++ncontinuable_errors;
 
-                    if (old) {
-                        charstr relpath;
-                        directory::get_relative_path(m->file, old->file, relpath, true);
-                        out << (lex.prepare_exception() << "method already declared in " << relpath << "(" << old->line << "): " << m->name << "\n");
-                        lex.clear_err();
-                        ++ncontinuable_errors;
-                    }
+                const MethodIG* old = lastifc->method.find_if([m](const MethodIG& o) {
+                    return &o != m && o.name == m->name && m->matches_args(o);
+                });
 
-                    if (duplicate == 2) {
-                        lex.match(';');
-                        lex.match("*/");
-                    }
-                    else if (lastifc->varname.is_empty() && !lastifc->bextend_ext) {
-                        lex.ignore(lex.MLCOM, mlcom);
-                    }
+                if (old) {
+                    charstr relpath;
+                    directory::get_relative_path(m->file, old->file, relpath, true);
+                    out << (lex.prepare_exception() << "method already declared in " << relpath << "(" << old->line << "): " << m->name << "\n");
+                    lex.clear_err();
+                    ++ncontinuable_errors;
+                }
 
-                    m->bretifc = extfn_class || extfn_struct;
-                    if (m->bretifc)
-                        m->ret.extifctype = extifcname;
+                if (duplicate == 2) {
+                    lex.match(';');
+                    lex.match("*/");
+                }
+                else if (lastifc->varname.is_empty() && !lastifc->bextend_ext) {
+                    lex.ignore(lex.MLCOM, mlcom);
+                }
 
-                    if (extname) {
-                        m->intname.takeover(m->name);
-                        m->name.takeover(extname);
-                    }
-                    else
-                        m->intname = m->name;
+                if (extname) {
+                    m->intname.takeover(m->name);
+                    m->name.takeover(extname);
+                }
+                else
+                    m->intname = m->name;
 
-                    m->basename = m->name;
+                m->basename = m->name;
 
-                    if (m->bstatic) {
-                        out << (lex.prepare_exception() << "error: interface event cannot be static\n");
-                        lex.clear_err();
-                        ++ncontinuable_errors;
-                    }
+                if (m->bstatic) {
+                    out << (lex.prepare_exception() << "error: interface event cannot be static\n");
+                    lex.clear_err();
+                    ++ncontinuable_errors;
                 }
 
                 if (m->bimplicit) {
@@ -434,7 +432,11 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 m->bimplicit = bimplicit;
                 m->classname << namespc << classname;
 
-                if (!m->parse(lex, classname, namespc, lastifc->nsname, irefargs, false))
+                m->bretifc = extfn_class || extfn_struct;
+                if (m->bretifc)
+                    m->ret.ifc_type = extfn_class ? meta::arg::ifc_type::ifc_class : meta::arg::ifc_type::ifc_struct;
+
+                if (!m->parse(lex, classname, namespc, extifcname, lastifc->fwds, false))
                     ++ncontinuable_errors;
 
                 const MethodIG* old = lastifc->method.find_if([m](const MethodIG& o) {

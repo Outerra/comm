@@ -70,8 +70,6 @@ struct arg
     const token name;                   //< parameter name
     const token type;                   //< parameter type (stripped of const qualifier)
     const token basetype;               //< base type (stripped of the last ptr/ref)
-    const token barens;                 //< namespace part of full bare type (without iref)
-    const token baretype;               //< type part of full bare type
     const token argsize;                //< size expression if the parameter is an array, including [ ]
     const token fnargs;                 //< argument list of a function-type argument
     const token memfnclass;             //< member fn class

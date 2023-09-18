@@ -24,6 +24,8 @@ struct test {
     };
 };
 
+struct component;
+
 namespace n1 {
 namespace n2 {
 
@@ -100,8 +102,10 @@ public:
 
     ifc_fn void inout(ifc_inout test*& par);
 
+    /// @brief return class interface
     ifc_fnx(ifc_class=ifc1::ifc2::emptyface) empty_thing* ret_classifc();
 
+    /// @brief return struct interface
     ifc_fnx(ifc_struct=component_ifc) component* ret_structifc();
 
     ifc_fnx(!) void nested(const coid::dynarray<bt::base>& stuff);

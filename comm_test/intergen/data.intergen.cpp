@@ -26,14 +26,14 @@ class component_ifc_data_dispatcher : public component_ifc
     using enum meta::class_interface::flg;
 
     inline static const meta::arg creator_0args[] = {
-       { "return", "iref<component>", "component", "", "component", "", "", "", "", nullptr, (meta::arg::ex_type)0, false, true, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "iref<component>", "component", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg set_a_1args[] = {
-       { "b", "int", "int", "", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "b", "int", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg set_b_2args[] = {
-       { "a", "const coid::token&", "coid::token", "coid", "token", "", "", "", "", &meta::stream_op<coid::token>::fn, (meta::arg::ex_type)0, false, false, true, false, false, false, true, false, false, false, false, "" },
-       { "b", "int*", "int", "", "int", "", "", "", "", nullptr, (meta::arg::ex_type)0, false, true, false, false, false, false, false, true, false, false, false, "" },
+       { "a", "const coid::token&", "coid::token", "", "", "", "", &meta::stream_op<coid::token>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, false, false, false, false, "" },
+       { "b", "int*", "int", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, true, false, false, false, false, false, true, false, false, false, "" },
     };
     inline static const meta::method creators[] = {
         { "creator", bstatic|bnoevbody, 0, 0, 0, nullptr },

@@ -43,7 +43,7 @@ class $name$_dispatcher : public $name$
 
     $-[method | !args.empty !return.type="void" ?return.fnarg]$
     inline static const meta::arg $basename$_$@index$args[] = {$[return+args | !type="void" ?fnarg]$
-       { "$name$", "$type$", "$basetype$", "$barens$", "$baretype$", "$argsize$", "$fnargs$", "$memfnclass$", "$defval$", $(if | ?..internal ?nojs ?type="void" ?iref ?ptr)$nullptr$(elif)$&meta::stream_op<$basetype$>::fn$(/if)$, (meta::arg::ex_type)$struct_type$, (meta::arg::ifc_type)$ifc_type$, $specptr$, $ptr$, $ref$, $xref$, $iref$, $const$, $inarg$, $outarg$, $volatile$, $nojs$, $fnarg$, "$doc\"$" },$[/return+args]$
+       { "$name$", "$type$", "$basetype$", "$argsize$", "$fnargs$", "$memfnclass$", "$defval$", $(if | ?..internal ?nojs ?type="void" ?iref ?ptr)$nullptr$(elif)$&meta::stream_op<$basetype$>::fn$(/if)$, (meta::arg::ex_type)$struct_type$, (meta::arg::ifc_type)$ifc_type$, $specptr$, $ptr$, $ref$, $xref$, $iref$, $const$, $inarg$, $outarg$, $volatile$, $nojs$, $fnarg$, "$doc\"$" },$[/return+args]$
     };$[/method]$
     inline static const meta::method$(if method ?static)$ creators[] = {$[method ?static]$
         { "$name$", $static set="bstatic|"$ $-ptr set="bptr|"$ $-iref set="biref|"$ $-const set="bconst|"$ $-operator set="boperator|"$ $-internal set="binternal|"$ $-capture set="bcapture|"$ $-implicit set="bimplicit|"$ $-destroy set="bdestroy|"$ $-noevbody set="bnoevbody|"$ $-pure set="bpure|"$ $-duplicate set="bduplicate|"$ $-inherit set="binherit|"$ $-(if !@revert="|")$meta::method::flg(0)$(/if)$, $args.@size$, $ninargs$, $noutargs$, $(if & args.empty return.type="void" !return.fnarg)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/method]$
@@ -53,7 +53,7 @@ class $name$_dispatcher : public $name$
     };$(elif)$* methods = nullptr;$(/if)$
     $-[event | !args.empty !return.type="void" ?return.fnarg]$
     inline static const meta::arg $basename$_$@index$args[] = {$[return+args | !type="void" ?fnarg]$
-       { "$name$", "$type$", "$basetype$", "$barens$", "$baretype$", "$argsize$", "$fnargs$", "$memfnclass$", "$defval$", $(if | ?..internal ?nojs ?type="void" ?iref ?ptr)$nullptr$(elif)$&meta::stream_op<$basetype$>::fn$(/if)$, (meta::arg::ex_type)$struct_type$, (meta::arg::ifc_type)$ifc_type$, $specptr$, $ptr$, $ref$, $xref$, $iref$, $const$, $inarg$, $outarg$, $volatile$, $nojs$, $fnarg$, "$doc\"$" },$[/return+args]$
+       { "$name$", "$type$", "$basetype$", "$argsize$", "$fnargs$", "$memfnclass$", "$defval$", $(if | ?..internal ?nojs ?type="void" ?iref ?ptr)$nullptr$(elif)$&meta::stream_op<$basetype$>::fn$(/if)$, (meta::arg::ex_type)$struct_type$, (meta::arg::ifc_type)$ifc_type$, $specptr$, $ptr$, $ref$, $xref$, $iref$, $const$, $inarg$, $outarg$, $volatile$, $nojs$, $fnarg$, "$doc\"$" },$[/return+args]$
     };$[/event]$
     inline static const meta::method$(if event)$ events[] = {$[event]$
         { "$name$", $static set="bstatic|"$ $-ptr set="bptr|"$ $-iref set="biref|"$ $-const set="bconst|"$ $-operator set="boperator|"$ $-internal set="binternal|"$ $-capture set="bcapture|"$ $-implicit set="bimplicit|"$ $-destroy set="bdestroy|"$ $-noevbody set="bnoevbody|"$ $-pure set="bpure|"$ $-duplicate set="bduplicate|"$ $-inherit set="binherit|"$ $-(if !@revert="|")$meta::method::flg(0)$(/if)$, $args.@size$, $ninargs$, $noutargs$, $(if & args.empty return.type="void" !return.fnarg)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/event]$
@@ -77,6 +77,15 @@ private:
     inline static uint16 _instid = 0xffffU;
     inline static ifn_t* _vtable1 = 0;
     inline static ifn_t* _vtable2 = 0;
+$-[method !static ?retifc first="\n"]$
+    $return.type$ $name$($[args rest=", "]$$ifckwds after=" "$$type$ $(if ?fnarg)$($-memfnclass after="::"-$ *$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-const set="const"$ {
+ $-(if ?ret.ifc_type="1")$
+        using wrapper_fn = iref<$return.type$>(*)($return.hosttype$*, $return.type$*);
+        static wrapper_fn wrapper = interface_register::get_interface_wrapper("$return.type$");
+        return wrapper ? wrapper($..name$::$name$()) : nullptr;
+ $-(/if)$
+    }
+$-[/method]$
 
     static ifn_t* get_vtable()
     {
@@ -84,8 +93,15 @@ $-(if !virtual)$
         if (_vtable1) return _vtable1;
 
         _vtable1 = new ifn_t[$method.@size !static$];
-$-[method !static]$
+$-[method !static !retifc]$
+$-(if ?retifc="1")$
+        
         _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if ?const)$const$(/if)$>(&::$classname$::$intname$));
+$-(elif ?retifc="2")$
+        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if ?const)$const$(/if)$>(&::$classname$::$intname$));
+$-(elif)$
+        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if ?const)$const$(/if)$>(&::$classname$::$intname$));
+$-(/if)$
 $-[/method]-$
 
         return _vtable1;
@@ -353,7 +369,7 @@ class $name$_data_dispatcher : public $name$
 
     $-[method | !args.empty !return.type="void" ?return.fnarg]$
     inline static const meta::arg $basename$_$@index$args[] = {$[return+args | !type="void" ?fnarg]$
-       { "$name$", "$type$", "$basetype$", "$barens$", "$baretype$", "$argsize$", "$fnargs$", "$memfnclass$", "$defval$", $(if | ?..internal ?nojs ?type="void" ?iref ?ptr)$nullptr$(elif)$&meta::stream_op<$basetype$>::fn$(/if)$, (meta::arg::ex_type)$struct_type$, (meta::arg::ifc_type)$ifc_type$, $specptr$, $ptr$, $ref$, $xref$, $iref$, $const$, $inarg$, $outarg$, $volatile$, $nojs$, $fnarg$, "$doc\"$" },$[/return+args]$
+       { "$name$", "$type$", "$basetype$", "$argsize$", "$fnargs$", "$memfnclass$", "$defval$", $(if | ?..internal ?nojs ?type="void" ?iref ?ptr)$nullptr$(elif)$&meta::stream_op<$basetype$>::fn$(/if)$, (meta::arg::ex_type)$struct_type$, (meta::arg::ifc_type)$ifc_type$, $specptr$, $ptr$, $ref$, $xref$, $iref$, $const$, $inarg$, $outarg$, $volatile$, $nojs$, $fnarg$, "$doc\"$" },$[/return+args]$
     };$[/method]$
     inline static const meta::method$(if method ?static)$ creators[] = {$[method ?static]$
         { "$name$", $static set="bstatic|"$ $-ptr set="bptr|"$ $-iref set="biref|"$ $-const set="bconst|"$ $-operator set="boperator|"$ $-internal set="binternal|"$ $-capture set="bcapture|"$ $-implicit set="bimplicit|"$ $-destroy set="bdestroy|"$ $-noevbody set="bnoevbody|"$ $-pure set="bpure|"$ $-duplicate set="bduplicate|"$ $-inherit set="binherit|"$ $-(if !@revert="|")$meta::method::flg(0)$(/if)$, $args.@size$, $ninargs$, $noutargs$, $(if & args.empty return.type="void" !return.fnarg)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/method]$
@@ -363,7 +379,7 @@ class $name$_data_dispatcher : public $name$
     };$(elif)$* methods = nullptr;$(/if)$
     $-[event | !args.empty !return.type="void" ?return.fnarg]$
     inline static const meta::arg $basename$_$@index$args[] = {$[return+args | !type="void" ?fnarg]$
-       { "$name$", "$type$", "$basetype$", "$barens$", "$baretype$", "$argsize$", "$fnargs$", "$memfnclass$", "$defval$", $(if | ?..internal ?nojs ?type="void" ?iref ?ptr)$nullptr$(elif)$&meta::stream_op<$basetype$>::fn$(/if)$, (meta::arg::ex_type)$struct_type$, (meta::arg::ifc_type)$ifc_type$, $specptr$, $ptr$, $ref$, $xref$, $iref$, $const$, $inarg$, $outarg$, $volatile$, $nojs$, $fnarg$, "$doc\"$" },$[/return+args]$
+       { "$name$", "$type$", "$basetype$", "$argsize$", "$fnargs$", "$memfnclass$", "$defval$", $(if | ?..internal ?nojs ?type="void" ?iref ?ptr)$nullptr$(elif)$&meta::stream_op<$basetype$>::fn$(/if)$, (meta::arg::ex_type)$struct_type$, (meta::arg::ifc_type)$ifc_type$, $specptr$, $ptr$, $ref$, $xref$, $iref$, $const$, $inarg$, $outarg$, $volatile$, $nojs$, $fnarg$, "$doc\"$" },$[/return+args]$
     };$[/event]$
     inline static const meta::method$(if event)$ events[] = {$[event]$
         { "$name$", $static set="bstatic|"$ $-ptr set="bptr|"$ $-iref set="biref|"$ $-const set="bconst|"$ $-operator set="boperator|"$ $-internal set="binternal|"$ $-capture set="bcapture|"$ $-implicit set="bimplicit|"$ $-destroy set="bdestroy|"$ $-noevbody set="bnoevbody|"$ $-pure set="bpure|"$ $-duplicate set="bduplicate|"$ $-inherit set="binherit|"$ $-(if !@revert="|")$meta::method::flg(0)$(/if)$, $args.@size$, $ninargs$, $noutargs$, $(if & args.empty return.type="void" !return.fnarg)$nullptr$(elif)$$basename$_$@index$args$(/if)$ },$[/event]$

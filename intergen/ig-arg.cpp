@@ -59,7 +59,7 @@ bool MethodIG::Arg::parse(iglexer& lex, bool argname)
     if (bunsigned)
         type.ins(0, "unsigned ");
 
-    int isPR = 0, wasPR;
+    int isPR = 0, wasPR;    // * 1, & 2, && 3
     int isCV = 0;
 
     //parse a sequence of pointer and reference specifications
@@ -84,7 +84,7 @@ bool MethodIG::Arg::parse(iglexer& lex, bool argname)
     if (isCV == 1)   //ends with const
         bconst = true;
     if (isCV)
-        type.resize(isCV == 1 ? 6 : 9);   //strip the last const and volatile
+        type.resize(isCV == 1 ? -6 : -9);   //strip the last const and volatile
 
     bxref = isPR == 3;
     bptr = isPR == 1;
@@ -110,31 +110,7 @@ bool MethodIG::Arg::parse(iglexer& lex, bool argname)
         tbasetype = type;
         bspecptr = true;
     }
-    /*if(type == "const char*") {
-        tbasetype = "coid::charstr";
-        base2arg = ".c_str()";
-    }
-    else if(tbasetype == "token" || tbasetype == "coid::token") {
-        tbasetype = "coid::charstr";
-    }*/
 
-    biref = tbasetype.begins_with("iref<");
-    if (biref) {
-        token bs = tbasetype;
-        bs.shift_start(5);
-        bs.cut_right_back('>');
-
-        do {
-            token p = bs.cut_left("::", false);
-            fulltype << p;
-            if (bs)
-                fulltype << '_';
-        }
-        while (bs);
-    }
-
-    //if (!argname)
-    //    return lex.no_err();
 
     if (lex.matches('(')) {
         //a function argument [type] (*name)(arg1[,arg2]*)
@@ -170,21 +146,19 @@ bool MethodIG::Arg::parse(iglexer& lex, bool argname)
 
     basetype = tbasetype;
 
-    //bare type
-    token tbarenstype = tbasetype;
+    biref = tbasetype.begins_with("iref<");
+    bcref = tbasetype.begins_with("cref<");
 
-    if (biref)
-        tbarenstype.set(tbarenstype.ptr() + 5, tbarenstype.ptre() - 1);
+    if (biref || bcref) {
+        token bs = tbasetype;
+        bs.shift_start(5);
+        bs.cut_right_back('>');
 
-    barenstype = tbarenstype;
-
-    token tbarens = tbarenstype;
-    tbarens.cut_right('<', token::cut_trait_remove_sep_default_empty());  //remove template args
-    token tbaretype = tbarens.cut_right_back("::", false);
-    barens = tbarens;
-
-    tbaretype._pte = tbarenstype._pte; //restore template args
-    baretype = tbaretype;
+        ptrtype = bs.trim();
+    }
+    else if (bptr) {
+        ptrtype = type;
+    }
 
     bnoscript = false;
 
@@ -220,22 +194,4 @@ bool MethodIG::Arg::parse(iglexer& lex, bool argname)
     }
 
     return lex.no_err();
-}
-
-////////////////////////////////////////////////////////////////////////////////
-void MethodIG::Arg::add_unique(dynarray<MethodIG::Arg>& irefargs)
-{
-    Arg* ps = irefargs.ptr();
-    Arg* pe = irefargs.ptre();
-
-    for (; ps < pe; ++ps) {
-        if (ps->fulltype == fulltype) return;
-    }
-
-    Arg& arg = *irefargs.add();
-    arg = *this;
-
-    char x = arg.type.last_char();
-    if (x == '&' || x == '*')
-        arg.type.resize(-1);
 }

@@ -257,7 +257,7 @@ public:
     /// @return wrapper creator for given back-end
     virtual void* intergen_wrapper(backend bck) const = 0;
 
-    /// @return name of default creator
+    /// @return the name of the default creator
     virtual const coid::token& intergen_default_creator(backend bck) const = 0;
 
     ///Bind or unbind interface call interceptor handler for current interface and all future instances of the same interface class

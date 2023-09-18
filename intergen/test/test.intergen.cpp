@@ -144,11 +144,11 @@ class emptyface_dispatcher : public emptyface
     using enum meta::class_interface::flg;
 
     inline static const meta::arg get_0args[] = {
-       { "return", "iref<n1::n2::empty_thing>", "iref<n1::n2::empty_thing>", "n1::n2", "empty_thing", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, true, false, true, false, false, false, false, "" },
+       { "return", "iref<n1::n2::empty_thing>", "iref<n1::n2::empty_thing>", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, true, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg get2_1args[] = {
-       { "return", "iref<n1::n2::empty_thing>", "iref<n1::n2::empty_thing>", "n1::n2", "empty_thing", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, true, false, true, false, false, false, false, "" },
-       { "p", "void*", "void", "", "void", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, true, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "iref<n1::n2::empty_thing>", "iref<n1::n2::empty_thing>", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, true, false, true, false, false, false, false, "" },
+       { "p", "void*", "void", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::method creators[] = {
         { "get", bstatic|biref|binternal|bnoevbody, 0, 0, 0, nullptr },
@@ -306,45 +306,45 @@ class thingface_dispatcher : public thingface
     using enum meta::class_interface::flg;
 
     inline static const meta::arg get_1args[] = {
-       { "return", "iref<n1::n2::thing>", "iref<n1::n2::thing>", "n1::n2", "thing", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, true, false, true, false, false, false, false, "" },
+       { "return", "iref<n1::n2::thing>", "iref<n1::n2::thing>", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, true, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg hallo_2args[] = {
-       { "return", "int", "int", "", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
-       { "a", "int", "int", "", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "some argument \" test escaping" },
-       { "b", "const coid::token&", "coid::token", "coid", "token", "", "", "", "", &meta::stream_op<coid::token>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, false, false, false, false, "" },
-       { "c", "coid::charstr&", "coid::charstr", "coid", "charstr", "", "", "", "", &meta::stream_op<coid::charstr>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, false, true, false, false, false, "" },
+       { "return", "int", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "a", "int", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "some argument \" test escaping" },
+       { "b", "const coid::token&", "coid::token", "", "", "", "", &meta::stream_op<coid::token>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, false, false, false, false, "" },
+       { "c", "coid::charstr&", "coid::charstr", "", "", "", "", &meta::stream_op<coid::charstr>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, false, true, false, false, false, "" },
     };
     inline static const meta::arg noscript_5args[] = {
-       { "return", "ref<test>", "ref<test>", "", "ref<test>", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "ref<test>", "ref<test>", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg fallo_6args[] = {
-       { "return", "coid::charstr", "coid::charstr", "coid", "charstr", "", "", "", "", &meta::stream_op<coid::charstr>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
-       { "b", "bool", "bool", "", "bool", "", "", "", "", &meta::stream_op<bool>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
-       { "str", "const char*", "const char*", "", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "coid::charstr", "coid::charstr", "", "", "", "", &meta::stream_op<coid::charstr>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "b", "bool", "bool", "", "", "", "", &meta::stream_op<bool>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "str", "const char*", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg loo_7args[] = {
-       { "a", "bool", "bool", "", "bool", "", "", "", "", &meta::stream_op<bool>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
-       { "b", "int", "int", "", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "a", "bool", "bool", "", "", "", "", &meta::stream_op<bool>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "b", "int", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg operator_const_8args[] = {
-       { "return", "double", "double", "", "double", "", "", "", "", &meta::stream_op<double>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
-       { "key", "const char*", "const char*", "", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "double", "double", "", "", "", "", &meta::stream_op<double>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "key", "const char*", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg operator_nonconst_9args[] = {
-       { "key", "const char*", "const char*", "", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
-       { "value", "double", "double", "", "double", "", "", "", "", &meta::stream_op<double>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "key", "const char*", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
+       { "value", "double", "double", "", "", "", "", &meta::stream_op<double>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg inout_10args[] = {
-       { "par", "test*&", "test*", "", "test*", "", "", "", "", &meta::stream_op<test*>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, true, false, false, false, "" },
+       { "par", "test*&", "test*", "", "", "", "", &meta::stream_op<test*>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, true, false, false, false, "" },
     };
     inline static const meta::arg ret_classifc_11args[] = {
-       { "return", "empty_thing*", "empty_thing", "", "empty_thing", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, true, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "iref<ifc1::ifc2::emptyface>", "ifc1::ifc2::emptyface", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)1, false, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg ret_structifc_12args[] = {
-       { "return", "component*", "component", "", "component", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, true, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "cref<component_ifc>", "component_ifc", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)2, false, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg nested_13args[] = {
-       { "stuff", "const coid::dynarray<bt::base>&", "coid::dynarray<bt::base>", "coid", "dynarray<bt::base>", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, false, false, false, false, "" },
+       { "stuff", "const coid::dynarray<bt::base>&", "coid::dynarray<bt::base>", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::method creators[] = {
         { "get", bstatic|biref|bnoevbody, 0, 0, 0, nullptr },
@@ -365,14 +365,14 @@ class thingface_dispatcher : public thingface
         { "nested", binternal, 1, 1, 0, nested_13args },
     };
     inline static const meta::arg boo_0args[] = {
-       { "key", "const char*", "const char*", "", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
-       { "some", "int", "int", "", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "key", "const char*", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
+       { "some", "int", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg body_1args[] = {
-       { "return", "const char*", "const char*", "", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "const char*", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg strbody_2args[] = {
-       { "return", "coid::charstr", "coid::charstr", "coid", "charstr", "", "", "", "", &meta::stream_op<coid::charstr>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "coid::charstr", "coid::charstr", "", "", "", "", &meta::stream_op<coid::charstr>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::method events[] = {
         { "boo", meta::method::flg(0), 2, 2, 0, boo_0args },
@@ -384,7 +384,7 @@ class thingface_dispatcher : public thingface
         "thingface.h", // header file
         "iref<n1::n2::thing>", // storage
         "basei", // base class name
-        1690157489, //version
+        4209920831, //version
         1, 13, 3, // num. creators/methods/events
         creators, methods, events,
         0, 1, 8, 9,
@@ -398,6 +398,11 @@ private:
     inline static uint16 _instid = 0xffffU;
     inline static ifn_t* _vtable1 = 0;
     inline static ifn_t* _vtable2 = 0;
+
+    iref<ifc1::ifc2::emptyface> ret_classifc() {
+    }
+    cref<component_ifc> ret_structifc() {
+    }
 
     static ifn_t* get_vtable()
     {
@@ -414,9 +419,7 @@ private:
         _vtable1[7] = reinterpret_cast<ifn_t>(static_cast<double(policy_intrusive_base::*)(const char*)const>(&::n1::n2::thing::operator()));
         _vtable1[8] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(const char*,double)>(&::n1::n2::thing::operator()));
         _vtable1[9] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(test*&)>(&::n1::n2::thing::inout));
-        _vtable1[10] = reinterpret_cast<ifn_t>(static_cast<empty_thing*(policy_intrusive_base::*)()>(&::n1::n2::thing::ret_classifc));
-        _vtable1[11] = reinterpret_cast<ifn_t>(static_cast<component*(policy_intrusive_base::*)()>(&::n1::n2::thing::ret_structifc));
-        _vtable1[12] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(const coid::dynarray<bt::base>&)>(&::n1::n2::thing::nested));
+        _vtable1[10] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(const coid::dynarray<bt::base>&)>(&::n1::n2::thing::nested));
         return _vtable1;
     }
 
@@ -513,7 +516,7 @@ public:
         interface_register::register_interface(ifc_meta, &register_interfaces);
 
         interface_register::register_interface_creator("ifc1::ifc2::thingface@wrapper", on ? (void*)&_generic_interface_creator : nullptr, &ifc_meta);
-        interface_register::register_interface_creator("ifc1::ifc2::thingface.get@1690157489", on ? (void*)&get : nullptr, &ifc_meta);
+        interface_register::register_interface_creator("ifc1::ifc2::thingface.get@4209920831", on ? (void*)&get : nullptr, &ifc_meta);
     }
 };
 
@@ -620,42 +623,42 @@ class ifc_int_dispatcher : public ifc_int
     using enum meta::class_interface::flg;
 
     inline static const meta::arg hallo_1args[] = {
-       { "return", "int", "int", "", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
-       { "a", "int", "int", "", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "some argument \" test escaping" },
-       { "b", "const coid::token&", "coid::token", "coid", "token", "", "", "", "", &meta::stream_op<coid::token>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, false, false, false, false, "" },
-       { "c", "coid::charstr&", "coid::charstr", "coid", "charstr", "", "", "", "", &meta::stream_op<coid::charstr>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, false, true, false, false, false, "" },
+       { "return", "int", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "a", "int", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "some argument \" test escaping" },
+       { "b", "const coid::token&", "coid::token", "", "", "", "", &meta::stream_op<coid::token>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, false, false, false, false, "" },
+       { "c", "coid::charstr&", "coid::charstr", "", "", "", "", &meta::stream_op<coid::charstr>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, false, true, false, false, false, "" },
     };
     inline static const meta::arg noscript_4args[] = {
-       { "return", "ref<test>", "ref<test>", "", "ref<test>", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "ref<test>", "ref<test>", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg fallo_5args[] = {
-       { "return", "coid::charstr", "coid::charstr", "coid", "charstr", "", "", "", "", &meta::stream_op<coid::charstr>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
-       { "b", "bool", "bool", "", "bool", "", "", "", "", &meta::stream_op<bool>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
-       { "str", "const char*", "const char*", "", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "coid::charstr", "coid::charstr", "", "", "", "", &meta::stream_op<coid::charstr>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "b", "bool", "bool", "", "", "", "", &meta::stream_op<bool>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "str", "const char*", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg loo_6args[] = {
-       { "a", "bool", "bool", "", "bool", "", "", "", "", &meta::stream_op<bool>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
-       { "b", "int", "int", "", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "a", "bool", "bool", "", "", "", "", &meta::stream_op<bool>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "b", "int", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg operator_const_7args[] = {
-       { "return", "double", "double", "", "double", "", "", "", "", &meta::stream_op<double>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
-       { "key", "const char*", "const char*", "", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "double", "double", "", "", "", "", &meta::stream_op<double>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "key", "const char*", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg operator_nonconst_8args[] = {
-       { "key", "const char*", "const char*", "", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
-       { "value", "double", "double", "", "double", "", "", "", "", &meta::stream_op<double>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "key", "const char*", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
+       { "value", "double", "double", "", "", "", "", &meta::stream_op<double>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg inout_9args[] = {
-       { "par", "test*&", "test*", "", "test*", "", "", "", "", &meta::stream_op<test*>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, true, false, false, false, "" },
+       { "par", "test*&", "test*", "", "", "", "", &meta::stream_op<test*>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, true, false, false, false, "" },
     };
     inline static const meta::arg ret_classifc_10args[] = {
-       { "return", "empty_thing*", "empty_thing", "", "empty_thing", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, true, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "iref<ifc1::ifc2::emptyface>", "ifc1::ifc2::emptyface", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)1, false, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg ret_structifc_11args[] = {
-       { "return", "component*", "component", "", "component", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, true, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "cref<component_ifc>", "component_ifc", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)2, false, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg nested_12args[] = {
-       { "stuff", "const coid::dynarray<bt::base>&", "coid::dynarray<bt::base>", "coid", "dynarray<bt::base>", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, false, false, false, false, "" },
+       { "stuff", "const coid::dynarray<bt::base>&", "coid::dynarray<bt::base>", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::method* creators = nullptr;
     inline static const meta::method methods[] = {
@@ -675,14 +678,14 @@ class ifc_int_dispatcher : public ifc_int
         { "dummy", meta::method::flg(0), 0, 0, 0, nullptr },
     };
     inline static const meta::arg boo_0args[] = {
-       { "key", "const char*", "const char*", "", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
-       { "some", "int", "int", "", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "key", "const char*", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
+       { "some", "int", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg body_1args[] = {
-       { "return", "const char*", "const char*", "", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "const char*", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg strbody_2args[] = {
-       { "return", "coid::charstr", "coid::charstr", "coid", "charstr", "", "", "", "", &meta::stream_op<coid::charstr>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "coid::charstr", "coid::charstr", "", "", "", "", &meta::stream_op<coid::charstr>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::method events[] = {
         { "boo", binherit, 2, 2, 0, boo_0args },
@@ -694,7 +697,7 @@ class ifc_int_dispatcher : public ifc_int
         "ifc_int.h", // header file
         "", // storage
         "thingface", // base class name
-        3645416118, //version
+        3790725848, //version
         0, 14, 3, // num. creators/methods/events
         creators, methods, events,
         0, -1, 7, 8,
@@ -708,6 +711,11 @@ private:
     inline static uint16 _instid = 0xffffU;
     inline static ifn_t* _vtable1 = 0;
     inline static ifn_t* _vtable2 = 0;
+
+    iref<ifc1::ifc2::emptyface> ret_classifc() {
+    }
+    cref<component_ifc> ret_structifc() {
+    }
 
     static ifn_t* get_vtable()
     {
@@ -724,10 +732,8 @@ private:
         _vtable1[7] = reinterpret_cast<ifn_t>(static_cast<double(policy_intrusive_base::*)(const char*)const>(&::n1::n2::thing::operator()));
         _vtable1[8] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(const char*,double)>(&::n1::n2::thing::operator()));
         _vtable1[9] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(test*&)>(&::n1::n2::thing::inout));
-        _vtable1[10] = reinterpret_cast<ifn_t>(static_cast<empty_thing*(policy_intrusive_base::*)()>(&::n1::n2::thing::ret_classifc));
-        _vtable1[11] = reinterpret_cast<ifn_t>(static_cast<component*(policy_intrusive_base::*)()>(&::n1::n2::thing::ret_structifc));
-        _vtable1[12] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(const coid::dynarray<bt::base>&)>(&::n1::n2::thing::nested));
-        _vtable1[13] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::thing::dummy));
+        _vtable1[10] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(const coid::dynarray<bt::base>&)>(&::n1::n2::thing::nested));
+        _vtable1[11] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::thing::dummy));
         return _vtable1;
     }
 
@@ -900,42 +906,46 @@ class ifc_ext_dispatcher : public ifc_ext
     using enum meta::class_interface::flg;
 
     inline static const meta::arg hallo_1args[] = {
-       { "return", "int", "int", "", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
-       { "a", "int", "int", "", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "some argument \" test escaping" },
-       { "b", "const coid::token&", "coid::token", "coid", "token", "", "", "", "", &meta::stream_op<coid::token>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, false, false, false, false, "" },
-       { "c", "coid::charstr&", "coid::charstr", "coid", "charstr", "", "", "", "", &meta::stream_op<coid::charstr>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, false, true, false, false, false, "" },
+       { "return", "int", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "a", "int", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "some argument \" test escaping" },
+       { "b", "const coid::token&", "coid::token", "", "", "", "", &meta::stream_op<coid::token>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, false, false, false, false, "" },
+       { "c", "coid::charstr&", "coid::charstr", "", "", "", "", &meta::stream_op<coid::charstr>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, false, true, false, false, false, "" },
     };
     inline static const meta::arg noscript_4args[] = {
-       { "return", "ref<test>", "ref<test>", "", "ref<test>", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "ref<test>", "ref<test>", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg fallo_5args[] = {
-       { "return", "coid::charstr", "coid::charstr", "coid", "charstr", "", "", "", "", &meta::stream_op<coid::charstr>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
-       { "b", "bool", "bool", "", "bool", "", "", "", "", &meta::stream_op<bool>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
-       { "str", "const char*", "const char*", "", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "coid::charstr", "coid::charstr", "", "", "", "", &meta::stream_op<coid::charstr>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "b", "bool", "bool", "", "", "", "", &meta::stream_op<bool>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "str", "const char*", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg loo_6args[] = {
-       { "a", "bool", "bool", "", "bool", "", "", "", "", &meta::stream_op<bool>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
-       { "b", "bool", "bool", "", "bool", "", "", "", "", &meta::stream_op<bool>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "a", "bool", "bool", "", "", "", "", &meta::stream_op<bool>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "b", "int", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg operator_const_7args[] = {
-       { "return", "double", "double", "", "double", "", "", "", "", &meta::stream_op<double>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
-       { "key", "const char*", "const char*", "", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "double", "double", "", "", "", "", &meta::stream_op<double>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "key", "const char*", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg operator_nonconst_8args[] = {
-       { "key", "const char*", "const char*", "", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
-       { "value", "double", "double", "", "double", "", "", "", "", &meta::stream_op<double>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "key", "const char*", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
+       { "value", "double", "double", "", "", "", "", &meta::stream_op<double>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg inout_9args[] = {
-       { "par", "test*&", "test*", "", "test*", "", "", "", "", &meta::stream_op<test*>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, true, false, false, false, "" },
+       { "par", "test*&", "test*", "", "", "", "", &meta::stream_op<test*>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, true, false, false, false, "" },
     };
     inline static const meta::arg ret_classifc_10args[] = {
-       { "return", "empty_thing*", "empty_thing", "", "empty_thing", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, true, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "iref<ifc1::ifc2::emptyface>", "ifc1::ifc2::emptyface", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)1, false, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg ret_structifc_11args[] = {
-       { "return", "component*", "component", "", "component", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, true, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "cref<component_ifc>", "component_ifc", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)2, false, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg nested_12args[] = {
-       { "stuff", "const coid::dynarray<bt::base>&", "coid::dynarray<bt::base>", "coid", "dynarray<bt::base>", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, false, false, false, false, "" },
+       { "stuff", "const coid::dynarray<bt::base>&", "coid::dynarray<bt::base>", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, false, false, false, false, "" },
+    };
+    inline static const meta::arg loo_14args[] = {
+       { "a", "bool", "bool", "", "", "", "", &meta::stream_op<bool>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "b", "bool", "bool", "", "", "", "", &meta::stream_op<bool>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::method* creators = nullptr;
     inline static const meta::method methods[] = {
@@ -945,7 +955,7 @@ class ifc_ext_dispatcher : public ifc_ext
         { "noargs", binherit, 0, 0, 0, nullptr },
         { "noscript", binternal|bnoevbody|binherit, 0, 0, 0, nullptr },
         { "fallo", bnoevbody|binherit, 2, 2, 0, fallo_5args },
-        { "loo", meta::method::flg(0), 2, 2, 0, loo_6args },
+        { "loo", binherit, 2, 2, 0, loo_6args },
         { "operator()", bconst|boperator|bnoevbody|binherit, 1, 1, 0, operator_const_7args },
         { "operator()", boperator|binherit, 2, 2, 0, operator_nonconst_8args },
         { "inout", bnoevbody|binherit, 1, 1, 1, inout_9args },
@@ -953,16 +963,17 @@ class ifc_ext_dispatcher : public ifc_ext
         { "ret_structifc", bnoevbody|binherit, 0, 0, 0, nullptr },
         { "nested", binternal|binherit, 1, 1, 0, nested_12args },
         { "mummy", meta::method::flg(0), 0, 0, 0, nullptr },
+        { "loo", meta::method::flg(0), 2, 2, 0, loo_14args },
     };
     inline static const meta::arg boo_0args[] = {
-       { "key", "const char*", "const char*", "", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
-       { "some", "int", "int", "", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "key", "const char*", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
+       { "some", "int", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg body_1args[] = {
-       { "return", "const char*", "const char*", "", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "const char*", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg strbody_2args[] = {
-       { "return", "coid::charstr", "coid::charstr", "coid", "charstr", "", "", "", "", &meta::stream_op<coid::charstr>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "coid::charstr", "coid::charstr", "", "", "", "", &meta::stream_op<coid::charstr>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::method events[] = {
         { "boo", binherit, 2, 2, 0, boo_0args },
@@ -974,8 +985,8 @@ class ifc_ext_dispatcher : public ifc_ext
         "ifc_ext.h", // header file
         "", // storage
         "thingface", // base class name
-        3172590762, //version
-        0, 14, 3, // num. creators/methods/events
+        3168498227, //version
+        0, 15, 3, // num. creators/methods/events
         creators, methods, events,
         0, -1, 7, 8,
         meta::class_interface::flg(0),
@@ -989,25 +1000,29 @@ private:
     inline static ifn_t* _vtable1 = 0;
     inline static ifn_t* _vtable2 = 0;
 
+    iref<ifc1::ifc2::emptyface> ret_classifc() {
+    }
+    cref<component_ifc> ret_structifc() {
+    }
+
     static ifn_t* get_vtable()
     {
         if (_vtable1) return _vtable1;
 
-        _vtable1 = new ifn_t[14];
+        _vtable1 = new ifn_t[15];
         _vtable1[0] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::thing::destroy));
         _vtable1[1] = reinterpret_cast<ifn_t>(static_cast<int(policy_intrusive_base::*)(int,const coid::token&,coid::charstr&)>(&::n1::n2::thing::hallo));
         _vtable1[2] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::thing::xooo));
         _vtable1[3] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::thing::noargs));
         _vtable1[4] = reinterpret_cast<ifn_t>(static_cast<ref<test>(policy_intrusive_base::*)()>(&::n1::n2::thing::noscript));
         _vtable1[5] = reinterpret_cast<ifn_t>(static_cast<coid::charstr(policy_intrusive_base::*)(bool,const char*)>(&::n1::n2::thing::fallo));
-        _vtable1[6] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(bool,bool)>(&::n1::n2::inherit_external::loo));
+        _vtable1[6] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(bool,int)>(&::n1::n2::thing::loo));
         _vtable1[7] = reinterpret_cast<ifn_t>(static_cast<double(policy_intrusive_base::*)(const char*)const>(&::n1::n2::thing::operator()));
         _vtable1[8] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(const char*,double)>(&::n1::n2::thing::operator()));
         _vtable1[9] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(test*&)>(&::n1::n2::thing::inout));
-        _vtable1[10] = reinterpret_cast<ifn_t>(static_cast<empty_thing*(policy_intrusive_base::*)()>(&::n1::n2::thing::ret_classifc));
-        _vtable1[11] = reinterpret_cast<ifn_t>(static_cast<component*(policy_intrusive_base::*)()>(&::n1::n2::thing::ret_structifc));
-        _vtable1[12] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(const coid::dynarray<bt::base>&)>(&::n1::n2::thing::nested));
-        _vtable1[13] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::inherit_external::mummy));
+        _vtable1[10] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(const coid::dynarray<bt::base>&)>(&::n1::n2::thing::nested));
+        _vtable1[11] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::inherit_external::mummy));
+        _vtable1[12] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(bool,bool)>(&::n1::n2::inherit_external::loo));
         return _vtable1;
     }
 
@@ -1019,7 +1034,7 @@ private:
         if (_vtable2) return _vtable2;
         ifn_t* vtable1 = get_vtable();
 
-        _vtable2 = new ifn_t[14];
+        _vtable2 = new ifn_t[15];
         _vtable2[0] = vtable1[0];
         _vtable2[1] = vtable1[1];
         _vtable2[2] = vtable1[2];
@@ -1034,6 +1049,7 @@ private:
         _vtable2[11] = vtable1[11];
         _vtable2[12] = vtable1[12];
         _vtable2[13] = vtable1[13];
+        _vtable2[14] = vtable1[14];
         return _vtable2;
     }
 
@@ -1178,42 +1194,46 @@ class ifc_ext2_dispatcher : public ifc_ext2
     using enum meta::class_interface::flg;
 
     inline static const meta::arg hallo_1args[] = {
-       { "return", "int", "int", "", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
-       { "a", "int", "int", "", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "some argument \" test escaping" },
-       { "b", "const coid::token&", "coid::token", "coid", "token", "", "", "", "", &meta::stream_op<coid::token>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, false, false, false, false, "" },
-       { "c", "coid::charstr&", "coid::charstr", "coid", "charstr", "", "", "", "", &meta::stream_op<coid::charstr>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, false, true, false, false, false, "" },
+       { "return", "int", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "a", "int", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "some argument \" test escaping" },
+       { "b", "const coid::token&", "coid::token", "", "", "", "", &meta::stream_op<coid::token>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, false, false, false, false, "" },
+       { "c", "coid::charstr&", "coid::charstr", "", "", "", "", &meta::stream_op<coid::charstr>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, false, true, false, false, false, "" },
     };
     inline static const meta::arg noscript_4args[] = {
-       { "return", "ref<test>", "ref<test>", "", "ref<test>", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "ref<test>", "ref<test>", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg fallo_5args[] = {
-       { "return", "coid::charstr", "coid::charstr", "coid", "charstr", "", "", "", "", &meta::stream_op<coid::charstr>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
-       { "b", "bool", "bool", "", "bool", "", "", "", "", &meta::stream_op<bool>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
-       { "str", "const char*", "const char*", "", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "coid::charstr", "coid::charstr", "", "", "", "", &meta::stream_op<coid::charstr>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "b", "bool", "bool", "", "", "", "", &meta::stream_op<bool>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "str", "const char*", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg loo_6args[] = {
-       { "a", "bool", "bool", "", "bool", "", "", "", "", &meta::stream_op<bool>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
-       { "b", "bool", "bool", "", "bool", "", "", "", "", &meta::stream_op<bool>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "a", "bool", "bool", "", "", "", "", &meta::stream_op<bool>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "b", "int", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg operator_const_7args[] = {
-       { "return", "double", "double", "", "double", "", "", "", "", &meta::stream_op<double>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
-       { "key", "const char*", "const char*", "", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "double", "double", "", "", "", "", &meta::stream_op<double>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "key", "const char*", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg operator_nonconst_8args[] = {
-       { "key", "const char*", "const char*", "", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
-       { "value", "double", "double", "", "double", "", "", "", "", &meta::stream_op<double>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "key", "const char*", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
+       { "value", "double", "double", "", "", "", "", &meta::stream_op<double>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg inout_9args[] = {
-       { "par", "test*&", "test*", "", "test*", "", "", "", "", &meta::stream_op<test*>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, true, false, false, false, "" },
+       { "par", "test*&", "test*", "", "", "", "", &meta::stream_op<test*>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, true, false, false, false, "" },
     };
     inline static const meta::arg ret_classifc_10args[] = {
-       { "return", "empty_thing*", "empty_thing", "", "empty_thing", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, true, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "iref<ifc1::ifc2::emptyface>", "ifc1::ifc2::emptyface", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)1, false, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg ret_structifc_11args[] = {
-       { "return", "component*", "component", "", "component", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, true, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "cref<component_ifc>", "component_ifc", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)2, false, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg nested_12args[] = {
-       { "stuff", "const coid::dynarray<bt::base>&", "coid::dynarray<bt::base>", "coid", "dynarray<bt::base>", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, false, false, false, false, "" },
+       { "stuff", "const coid::dynarray<bt::base>&", "coid::dynarray<bt::base>", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, false, false, false, false, "" },
+    };
+    inline static const meta::arg loo_14args[] = {
+       { "a", "bool", "bool", "", "", "", "", &meta::stream_op<bool>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "b", "bool", "bool", "", "", "", "", &meta::stream_op<bool>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::method* creators = nullptr;
     inline static const meta::method methods[] = {
@@ -1223,7 +1243,7 @@ class ifc_ext2_dispatcher : public ifc_ext2
         { "noargs", binherit, 0, 0, 0, nullptr },
         { "noscript", binternal|bnoevbody|binherit, 0, 0, 0, nullptr },
         { "fallo", bnoevbody|binherit, 2, 2, 0, fallo_5args },
-        { "loo", meta::method::flg(0), 2, 2, 0, loo_6args },
+        { "loo", binherit, 2, 2, 0, loo_6args },
         { "operator()", bconst|boperator|bnoevbody|binherit, 1, 1, 0, operator_const_7args },
         { "operator()", boperator|binherit, 2, 2, 0, operator_nonconst_8args },
         { "inout", bnoevbody|binherit, 1, 1, 1, inout_9args },
@@ -1231,21 +1251,22 @@ class ifc_ext2_dispatcher : public ifc_ext2
         { "ret_structifc", bnoevbody|binherit, 0, 0, 0, nullptr },
         { "nested", binternal|binherit, 1, 1, 0, nested_12args },
         { "mummy", binherit, 0, 0, 0, nullptr },
+        { "loo", meta::method::flg(0), 2, 2, 0, loo_14args },
         { "some1", meta::method::flg(0), 0, 0, 0, nullptr },
         { "some2", meta::method::flg(0), 0, 0, 0, nullptr },
     };
     inline static const meta::arg boo_0args[] = {
-       { "key", "const char*", "const char*", "", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
-       { "some", "int", "int", "", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "key", "const char*", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
+       { "some", "int", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg body_1args[] = {
-       { "return", "const char*", "const char*", "", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "const char*", "const char*", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, true, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg strbody_2args[] = {
-       { "return", "coid::charstr", "coid::charstr", "coid", "charstr", "", "", "", "", &meta::stream_op<coid::charstr>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "coid::charstr", "coid::charstr", "", "", "", "", &meta::stream_op<coid::charstr>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg noo_3args[] = {
-       { "return", "bool", "bool", "", "bool", "", "", "", "", &meta::stream_op<bool>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "bool", "bool", "", "", "", "", &meta::stream_op<bool>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::method events[] = {
         { "boo", binherit, 2, 2, 0, boo_0args },
@@ -1258,8 +1279,8 @@ class ifc_ext2_dispatcher : public ifc_ext2
         "ifc_ext2.h", // header file
         "", // storage
         "ifc_ext", // base class name
-        2999792893, //version
-        0, 16, 4, // num. creators/methods/events
+        439136414, //version
+        0, 17, 4, // num. creators/methods/events
         creators, methods, events,
         0, -1, 7, 8,
         meta::class_interface::flg(0),
@@ -1274,27 +1295,31 @@ private:
     inline static ifn_t* _vtable1 = 0;
     inline static ifn_t* _vtable2 = 0;
 
+    iref<ifc1::ifc2::emptyface> ret_classifc() {
+    }
+    cref<component_ifc> ret_structifc() {
+    }
+
     static ifn_t* get_vtable()
     {
         if (_vtable1) return _vtable1;
 
-        _vtable1 = new ifn_t[16];
+        _vtable1 = new ifn_t[17];
         _vtable1[0] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::thing::destroy));
         _vtable1[1] = reinterpret_cast<ifn_t>(static_cast<int(policy_intrusive_base::*)(int,const coid::token&,coid::charstr&)>(&::n1::n2::thing::hallo));
         _vtable1[2] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::thing::xooo));
         _vtable1[3] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::thing::noargs));
         _vtable1[4] = reinterpret_cast<ifn_t>(static_cast<ref<test>(policy_intrusive_base::*)()>(&::n1::n2::thing::noscript));
         _vtable1[5] = reinterpret_cast<ifn_t>(static_cast<coid::charstr(policy_intrusive_base::*)(bool,const char*)>(&::n1::n2::thing::fallo));
-        _vtable1[6] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(bool,bool)>(&::n1::n2::inherit_external::loo2));
+        _vtable1[6] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(bool,int)>(&::n1::n2::thing::loo));
         _vtable1[7] = reinterpret_cast<ifn_t>(static_cast<double(policy_intrusive_base::*)(const char*)const>(&::n1::n2::thing::operator()));
         _vtable1[8] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(const char*,double)>(&::n1::n2::thing::operator()));
         _vtable1[9] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(test*&)>(&::n1::n2::thing::inout));
-        _vtable1[10] = reinterpret_cast<ifn_t>(static_cast<empty_thing*(policy_intrusive_base::*)()>(&::n1::n2::thing::ret_classifc));
-        _vtable1[11] = reinterpret_cast<ifn_t>(static_cast<component*(policy_intrusive_base::*)()>(&::n1::n2::thing::ret_structifc));
-        _vtable1[12] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(const coid::dynarray<bt::base>&)>(&::n1::n2::thing::nested));
-        _vtable1[13] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::inherit_external::mummy));
-        _vtable1[14] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::inherit_external::some1));
-        _vtable1[15] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::inherit_external::some2));
+        _vtable1[10] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(const coid::dynarray<bt::base>&)>(&::n1::n2::thing::nested));
+        _vtable1[11] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::inherit_external::mummy));
+        _vtable1[12] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(bool,bool)>(&::n1::n2::inherit_external::loo2));
+        _vtable1[13] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::inherit_external::some1));
+        _vtable1[14] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::inherit_external::some2));
         return _vtable1;
     }
 
@@ -1306,7 +1331,7 @@ private:
         if (_vtable2) return _vtable2;
         ifn_t* vtable1 = get_vtable();
 
-        _vtable2 = new ifn_t[16];
+        _vtable2 = new ifn_t[17];
         _vtable2[0] = vtable1[0];
         _vtable2[1] = vtable1[1];
         _vtable2[2] = vtable1[2];
@@ -1323,6 +1348,7 @@ private:
         _vtable2[13] = vtable1[13];
         _vtable2[14] = vtable1[14];
         _vtable2[15] = vtable1[15];
+        _vtable2[16] = vtable1[16];
         return _vtable2;
     }
 
