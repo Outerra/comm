@@ -91,6 +91,17 @@ public:
         return cid < (int)_components.size() ? _components[cid] : nullptr;
     }
 
+    void iterate_all_components(void (*fn)(void* component_ptr, uint component_id))
+    {
+        for (uint i = 0, e = _components.size(); i < e; ++i)
+        {
+            if (_components[i] != nullptr)
+            {
+                fn(_components[i], i);
+            }
+        }
+    }
+
 private:
 
     static type_sequencer<OwnT>& tsq() {
