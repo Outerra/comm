@@ -75,7 +75,6 @@ class global_singleton_manager
         void (*fn_destroy)(void*);
         const char* type_name;
         const char* file;
-        const char* unique_indentifier;
         int line;
 
         killer* next = nullptr;
@@ -83,12 +82,14 @@ class global_singleton_manager
         token type;
         bool invisible;
 
+        const char* unique_indentifier;
+
         void destroy() {
             fn_destroy(ptr);
             ptr = 0;
         }
 
-        killer(void* ptr, void (*fn_destroy)(void*), const token& type, const char* file, const char* unique_indentifier, int line, bool invisible)
+        killer(void* ptr, void (*fn_destroy)(void*), const token& type, const char* file, int line, bool invisible, const char* unique_indentifier)
             : ptr(ptr), fn_destroy(fn_destroy), type_name(type.ptr()), file(file), line(line), unique_indentifier(unique_indentifier), type(type), invisible(invisible)
         {
             DASSERT(ptr);
@@ -123,7 +124,7 @@ public:
             k = k->next;
 
         if (!k) {
-            k = new killer(create(), destroy, type, file, unique_indentifier, line, invisible);
+            k = new killer(create(), destroy, type, file, line, invisible, unique_indentifier);
             k->next = last;
 
             last = k;
