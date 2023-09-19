@@ -71,9 +71,10 @@ public:
     //virtual in order to invoke code from the main exe module when calling from dlls
     /**
         @param ifcname in one of the following forms:
-            [ns1[::ns2[...]]]::classname@wrapper[.scriptname]               wrap existing interface object
-            [ns1[::ns2[...]]]::classname@maker[.scriptname]                 create script interface object from host
-            [ns1[::ns2[...]]]::classname@dcmaker[.scriptname]               create script interface object from host
+            [ns1[::ns2[...]]]::classname@wrapper                            get or connect interface to given host object
+            [ns1[::ns2[...]]]::classname@wrapper.scriptname                 wrap existing interface object
+            [ns1[::ns2[...]]]::classname@maker[.scriptname]                 create [script] interface object from host
+            [ns1[::ns2[...]]]::classname@dcmaker[.scriptname]               create [script] interface object from host
             [ns1[::ns2[...]]]::classname@unload                             unload registered client
             [ns1[::ns2[...]]]::classname@meta                               register interface meta info
             [ns1[::ns2[...]]]::classname.creatorname@hashvalue              c++ versioned creator
@@ -172,14 +173,6 @@ public:
         return dst;
     }
 
-    virtual interface_register::wrapper_fn get_interface_wrapper(const token& name) const
-    {
-        zstring str = name;
-        str.get_str() << "@wrapper";
-
-        return find_wrapper(str);
-    }
-
     virtual dynarray<creator>& get_interface_creators(const token& name, const token& script, dynarray<creator>& dst)
     {
         //interface creator names:
@@ -272,14 +265,6 @@ public:
         }
 
         return 0;
-    }
-
-    virtual void* get_interface_maker(const token& name, const token& script) const
-    {
-        zstring str = name;
-        str.get_str() << "@maker" << '.' << script;
-
-        return (void*)find_wrapper(str);
     }
 
     virtual dynarray<interface_register::creator>& get_interface_clients(const token& iface, uint hash, dynarray<interface_register::creator>& dst)
@@ -408,14 +393,6 @@ public:
             *relpath = rpath;
 
         return _fn_acc ? _fn_acc(rpath) : true;
-    }
-
-    virtual void* get_interface_dcmaker(const token& name, const token& script) const
-    {
-        zstring str = name;
-        str.get_str() << "@dcmaker" << '.' << script;
-
-        return (void*)find_wrapper(str);
     }
 
     virtual dynarray<const meta::class_interface*>& find_interface_meta_info(const regex& name, dynarray<const meta::class_interface*>& dst) const
@@ -591,8 +568,11 @@ interface_register::wrapper_fn interface_register::get_interface_wrapper(const t
 {
     //interface creator name:
     // [ns1::[ns2:: ...]]::class
+    zstring str = name;
+    str.get_str() << "@wrapper";
+
     interface_register_impl& reg = interface_register_impl::get();
-    return reg.get_interface_wrapper(name);
+    return reg.find_wrapper(str);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -600,8 +580,23 @@ void* interface_register::get_interface_maker(const token& name, const token& sc
 {
     //interface name:
     // [ns1::[ns2:: ...]]::class
+    zstring str = name;
+    str.get_str() << "@maker" << '.' << script;
+
     interface_register_impl& reg = interface_register_impl::get();
-    return reg.get_interface_maker(name, script);
+    return reg.find_wrapper(str);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void* interface_register::get_interface_dcwrapper(const token& name, const token& script)
+{
+    //interface name:
+    // [ns1::[ns2:: ...]]::class
+    zstring str = name;
+    str.get_str() << "@dcwrapper" << '.' << script;
+
+    interface_register_impl& reg = interface_register_impl::get();
+    return reg.find_wrapper(str);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -609,8 +604,11 @@ void* interface_register::get_interface_dcmaker(const token& name, const token& 
 {
     //interface name:
     // [ns1::[ns2:: ...]]::class
+    zstring str = name;
+    str.get_str() << "@dcmaker" << '.' << script;
+
     interface_register_impl& reg = interface_register_impl::get();
-    return reg.get_interface_dcmaker(name, script);
+    return reg.find_wrapper(str);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

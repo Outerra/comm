@@ -473,9 +473,9 @@ public:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-///Unwrap interface object from JS object
+///Unwrap interface object from a JS object
 template<class T>
-inline T* unwrap_object(const v8::Handle<v8::Value> &arg)
+inline T* unwrap_interface(const v8::Handle<v8::Value> &arg)
 {
     if (arg.IsEmpty()) return 0;
     if (!arg->IsObject()) return 0;
@@ -497,7 +497,8 @@ inline T* unwrap_object(const v8::Handle<v8::Value> &arg)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-inline v8::Handle<v8::Value> wrap_object(intergen_interface* orig, v8::Handle<v8::Context> context)
+/// @brief Wrap existing interface object to a JS object handle
+inline v8::Handle<v8::Value> wrap_interface(intergen_interface* orig, v8::Handle<v8::Context> context)
 {
     v8::Isolate* iso = v8::Isolate::GetCurrent();
     if (!orig) return v8::Null(iso);
@@ -512,6 +513,7 @@ inline v8::Handle<v8::Value> wrap_object(intergen_interface* orig, v8::Handle<v8
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+/// @brief Wrap data host object to a JS object handle
 template <class T>
 inline v8::Handle<v8::Value> wrap_data_object(T* data, const coid::token& ifcname, v8::Handle<v8::Context> context)
 {
@@ -521,6 +523,21 @@ inline v8::Handle<v8::Value> wrap_data_object(T* data, const coid::token& ifcnam
 
     typedef v8::Handle<v8::Value>(*fn_dcmaker)(void*, v8::Handle<v8::Context>);
     static fn_dcmaker fn = static_cast<fn_dcmaker>(coid::interface_register::get_interface_dcmaker(ifcname, "js"_T));
+
+    if (fn)
+        return handle_scope.Escape(fn(data, context));
+    return v8::Undefined(iso);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+template <class T>
+inline v8::Handle<v8::Value> wrap_data_interface(const coref<T>& data, const coid::token& ifcname, v8::Handle<v8::Context> context)
+{
+    v8::Isolate* iso = v8::Isolate::GetCurrent();
+    if (!data) return v8::Null(iso);
+    v8::EscapableHandleScope handle_scope(iso);
+
+    static interface_register::wrapper_fn fn = coid::interface_register::get_interface_wrapper(ifcname, "js"_T);
 
     if (fn)
         return handle_scope.Escape(fn(data, context));

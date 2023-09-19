@@ -11,6 +11,7 @@
 #include "test.hpp"
 
 #include <comm/ref.h>
+#include <comm/global.h>
 #include <comm/singleton.h>
 #include <comm/binstring.h>
 #include <type_traits>
@@ -226,7 +227,7 @@ protected:
         }
     }
 
-    static iref<emptyface> _generic_interface_creator(::n1::n2::empty_thing* host, emptyface* __here__)
+    static iref<emptyface> _host_wrapper(::n1::n2::empty_thing* host, emptyface* __here__)
     {
         iref<emptyface> rval;
         //a passive interface (no events)
@@ -244,20 +245,20 @@ public:
 
     // creator methods
 
-    static iref<emptyface> get(emptyface* __here__)
+    static iref<emptyface> get(emptyface* here__)
     {
-        iref<::n1::n2::empty_thing> __host__ = ::n1::n2::empty_thing::_get_thing();
-        if (!__host__)
+        iref<::n1::n2::empty_thing> host__ = ::n1::n2::empty_thing::_get_thing();
+        if (!host__)
             return 0;
-        return _generic_interface_creator(__host__.get(), __here__);
+        return _host_wrapper(host__.get(), here__);
     }
 
-    static iref<emptyface> get2(emptyface* __here__, void* p)
+    static iref<emptyface> get2(emptyface* here__, void* p)
     {
-        iref<::n1::n2::empty_thing> __host__ = ::n1::n2::empty_thing::_get2(p);
-        if (!__host__)
+        iref<::n1::n2::empty_thing> host__ = ::n1::n2::empty_thing::_get2(p);
+        if (!host__)
             return 0;
-        return _generic_interface_creator(__host__.get(), __here__);
+        return _host_wrapper(host__.get(), here__);
     }
 
     ///Register interface creators in the global registry
@@ -265,7 +266,7 @@ public:
     {
         interface_register::register_interface(ifc_meta, &register_interfaces);
 
-        interface_register::register_interface_creator("ifc1::ifc2::emptyface@wrapper", on ? (void*)&_generic_interface_creator : nullptr, &ifc_meta);
+        interface_register::register_interface_creator("ifc1::ifc2::emptyface@maker", on ? (void*)&_host_wrapper : nullptr, &ifc_meta);
         interface_register::register_interface_creator("ifc1::ifc2::emptyface.get@73279724", on ? (void*)&get : nullptr, &ifc_meta);
         interface_register::register_interface_creator("ifc1::ifc2::emptyface.get2@73279724", on ? (void*)&get2 : nullptr, &ifc_meta);
     }
@@ -341,7 +342,7 @@ class thingface_dispatcher : public thingface
        { "return", "iref<ifc1::ifc2::emptyface>", "ifc1::ifc2::emptyface", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)1, false, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg ret_structifc_12args[] = {
-       { "return", "cref<component_ifc>", "component_ifc", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)2, false, true, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "coref<component_ifc>", "component_ifc", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)2, false, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg nested_13args[] = {
        { "stuff", "const coid::dynarray<bt::base>&", "coid::dynarray<bt::base>", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, false, false, false, false, "" },
@@ -384,7 +385,7 @@ class thingface_dispatcher : public thingface
         "thingface.h", // header file
         "iref<n1::n2::thing>", // storage
         "basei", // base class name
-        4209920831, //version
+        3075154512, //version
         1, 13, 3, // num. creators/methods/events
         creators, methods, events,
         0, 1, 8, 9,
@@ -399,9 +400,19 @@ private:
     inline static ifn_t* _vtable1 = 0;
     inline static ifn_t* _vtable2 = 0;
 
-    iref<ifc1::ifc2::emptyface> ret_classifc() {
+    iref<ifc1::ifc2::emptyface> wrap_ret_classifc() {
+        using wrapper_fn = iref<ifc1::ifc2::emptyface>(*)(policy_intrusive_base*, ifc1::ifc2::emptyface*);
+        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_maker("ifc1::ifc2::emptyface", "");
+        return wrapper
+            ? wrapper(_host.cast<n1::n2::thing>()->ret_classifc(), 0)
+            : iref<ifc1::ifc2::emptyface>();
     }
-    cref<component_ifc> ret_structifc() {
+    coref<component_ifc> wrap_ret_structifc() {
+        using wrapper_fn = coref<component_ifc>(*)(component*);
+        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_dcmaker("component_ifc", "");
+        return wrapper
+            ? wrapper(_host.cast<n1::n2::thing>()->ret_structifc())
+            : coref<component_ifc>(nullptr);
     }
 
     static ifn_t* get_vtable()
@@ -419,7 +430,9 @@ private:
         _vtable1[7] = reinterpret_cast<ifn_t>(static_cast<double(policy_intrusive_base::*)(const char*)const>(&::n1::n2::thing::operator()));
         _vtable1[8] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(const char*,double)>(&::n1::n2::thing::operator()));
         _vtable1[9] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(test*&)>(&::n1::n2::thing::inout));
-        _vtable1[10] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(const coid::dynarray<bt::base>&)>(&::n1::n2::thing::nested));
+        _vtable1[10] = reinterpret_cast<ifn_t>(static_cast<iref<ifc1::ifc2::emptyface>(policy_intrusive_base::*)()>(&wrap_ret_classifc));
+        _vtable1[11] = reinterpret_cast<ifn_t>(static_cast<coref<component_ifc>(policy_intrusive_base::*)()>(&wrap_ret_structifc));
+        _vtable1[12] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(const coid::dynarray<bt::base>&)>(&::n1::n2::thing::nested));
         return _vtable1;
     }
 
@@ -478,7 +491,7 @@ protected:
         }
     }
 
-    static iref<thingface> _generic_interface_creator(::n1::n2::thing* host, thingface* __here__)
+    static iref<thingface> _host_wrapper(::n1::n2::thing* host, thingface* __here__)
     {
         iref<thingface> rval;
         //an active interface (with events)
@@ -502,12 +515,12 @@ public:
 
     // creator methods
 
-    static iref<thingface> get(thingface* __here__)
+    static iref<thingface> get(thingface* here__)
     {
-        iref<::n1::n2::thing> __host__ = ::n1::n2::thing::get_thing();
-        if (!__host__)
+        iref<::n1::n2::thing> host__ = ::n1::n2::thing::get_thing();
+        if (!host__)
             return 0;
-        return _generic_interface_creator(__host__.get(), __here__);
+        return _host_wrapper(host__.get(), here__);
     }
 
     ///Register interface creators in the global registry
@@ -515,8 +528,8 @@ public:
     {
         interface_register::register_interface(ifc_meta, &register_interfaces);
 
-        interface_register::register_interface_creator("ifc1::ifc2::thingface@wrapper", on ? (void*)&_generic_interface_creator : nullptr, &ifc_meta);
-        interface_register::register_interface_creator("ifc1::ifc2::thingface.get@4209920831", on ? (void*)&get : nullptr, &ifc_meta);
+        interface_register::register_interface_creator("ifc1::ifc2::thingface@maker", on ? (void*)&_host_wrapper : nullptr, &ifc_meta);
+        interface_register::register_interface_creator("ifc1::ifc2::thingface.get@3075154512", on ? (void*)&get : nullptr, &ifc_meta);
     }
 };
 
@@ -655,7 +668,7 @@ class ifc_int_dispatcher : public ifc_int
        { "return", "iref<ifc1::ifc2::emptyface>", "ifc1::ifc2::emptyface", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)1, false, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg ret_structifc_11args[] = {
-       { "return", "cref<component_ifc>", "component_ifc", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)2, false, true, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "coref<component_ifc>", "component_ifc", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)2, false, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg nested_12args[] = {
        { "stuff", "const coid::dynarray<bt::base>&", "coid::dynarray<bt::base>", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, false, false, false, false, "" },
@@ -697,7 +710,7 @@ class ifc_int_dispatcher : public ifc_int
         "ifc_int.h", // header file
         "", // storage
         "thingface", // base class name
-        3790725848, //version
+        3330342603, //version
         0, 14, 3, // num. creators/methods/events
         creators, methods, events,
         0, -1, 7, 8,
@@ -712,9 +725,19 @@ private:
     inline static ifn_t* _vtable1 = 0;
     inline static ifn_t* _vtable2 = 0;
 
-    iref<ifc1::ifc2::emptyface> ret_classifc() {
+    iref<ifc1::ifc2::emptyface> wrap_ret_classifc() {
+        using wrapper_fn = iref<ifc1::ifc2::emptyface>(*)(policy_intrusive_base*, ifc1::ifc2::emptyface*);
+        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_maker("ifc1::ifc2::emptyface", "");
+        return wrapper
+            ? wrapper(_host.cast<n1::n2::thing>()->ret_classifc(), 0)
+            : iref<ifc1::ifc2::emptyface>();
     }
-    cref<component_ifc> ret_structifc() {
+    coref<component_ifc> wrap_ret_structifc() {
+        using wrapper_fn = coref<component_ifc>(*)(component*);
+        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_dcmaker("component_ifc", "");
+        return wrapper
+            ? wrapper(_host.cast<n1::n2::thing>()->ret_structifc())
+            : coref<component_ifc>(nullptr);
     }
 
     static ifn_t* get_vtable()
@@ -732,8 +755,10 @@ private:
         _vtable1[7] = reinterpret_cast<ifn_t>(static_cast<double(policy_intrusive_base::*)(const char*)const>(&::n1::n2::thing::operator()));
         _vtable1[8] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(const char*,double)>(&::n1::n2::thing::operator()));
         _vtable1[9] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(test*&)>(&::n1::n2::thing::inout));
-        _vtable1[10] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(const coid::dynarray<bt::base>&)>(&::n1::n2::thing::nested));
-        _vtable1[11] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::thing::dummy));
+        _vtable1[10] = reinterpret_cast<ifn_t>(static_cast<iref<ifc1::ifc2::emptyface>(policy_intrusive_base::*)()>(&wrap_ret_classifc));
+        _vtable1[11] = reinterpret_cast<ifn_t>(static_cast<coref<component_ifc>(policy_intrusive_base::*)()>(&wrap_ret_structifc));
+        _vtable1[12] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(const coid::dynarray<bt::base>&)>(&::n1::n2::thing::nested));
+        _vtable1[13] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::thing::dummy));
         return _vtable1;
     }
 
@@ -793,7 +818,7 @@ protected:
         }
     }
 
-    static iref<ifc_int> _generic_interface_creator(::n1::n2::thing* host, ifc_int* __here__)
+    static iref<ifc_int> _host_wrapper(::n1::n2::thing* host, ifc_int* __here__)
     {
         iref<ifc_int> rval;
         //an active interface (with events)
@@ -822,7 +847,7 @@ public:
     {
         interface_register::register_interface(ifc_meta, &register_interfaces);
 
-        interface_register::register_interface_creator("ns::ifc_int@wrapper", on ? (void*)&_generic_interface_creator : nullptr, &ifc_meta);
+        interface_register::register_interface_creator("ns::ifc_int@maker", on ? (void*)&_host_wrapper : nullptr, &ifc_meta);
     }
 };
 
@@ -938,7 +963,7 @@ class ifc_ext_dispatcher : public ifc_ext
        { "return", "iref<ifc1::ifc2::emptyface>", "ifc1::ifc2::emptyface", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)1, false, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg ret_structifc_11args[] = {
-       { "return", "cref<component_ifc>", "component_ifc", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)2, false, true, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "coref<component_ifc>", "component_ifc", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)2, false, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg nested_12args[] = {
        { "stuff", "const coid::dynarray<bt::base>&", "coid::dynarray<bt::base>", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, false, false, false, false, "" },
@@ -985,7 +1010,7 @@ class ifc_ext_dispatcher : public ifc_ext
         "ifc_ext.h", // header file
         "", // storage
         "thingface", // base class name
-        3168498227, //version
+        1815671022, //version
         0, 15, 3, // num. creators/methods/events
         creators, methods, events,
         0, -1, 7, 8,
@@ -1000,9 +1025,19 @@ private:
     inline static ifn_t* _vtable1 = 0;
     inline static ifn_t* _vtable2 = 0;
 
-    iref<ifc1::ifc2::emptyface> ret_classifc() {
+    iref<ifc1::ifc2::emptyface> wrap_ret_classifc() {
+        using wrapper_fn = iref<ifc1::ifc2::emptyface>(*)(policy_intrusive_base*, ifc1::ifc2::emptyface*);
+        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_maker("ifc1::ifc2::emptyface", "");
+        return wrapper
+            ? wrapper(_host.cast<n1::n2::thing>()->ret_classifc(), 0)
+            : iref<ifc1::ifc2::emptyface>();
     }
-    cref<component_ifc> ret_structifc() {
+    coref<component_ifc> wrap_ret_structifc() {
+        using wrapper_fn = coref<component_ifc>(*)(component*);
+        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_dcmaker("component_ifc", "");
+        return wrapper
+            ? wrapper(_host.cast<n1::n2::thing>()->ret_structifc())
+            : coref<component_ifc>(nullptr);
     }
 
     static ifn_t* get_vtable()
@@ -1020,9 +1055,11 @@ private:
         _vtable1[7] = reinterpret_cast<ifn_t>(static_cast<double(policy_intrusive_base::*)(const char*)const>(&::n1::n2::thing::operator()));
         _vtable1[8] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(const char*,double)>(&::n1::n2::thing::operator()));
         _vtable1[9] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(test*&)>(&::n1::n2::thing::inout));
-        _vtable1[10] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(const coid::dynarray<bt::base>&)>(&::n1::n2::thing::nested));
-        _vtable1[11] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::inherit_external::mummy));
-        _vtable1[12] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(bool,bool)>(&::n1::n2::inherit_external::loo));
+        _vtable1[10] = reinterpret_cast<ifn_t>(static_cast<iref<ifc1::ifc2::emptyface>(policy_intrusive_base::*)()>(&wrap_ret_classifc));
+        _vtable1[11] = reinterpret_cast<ifn_t>(static_cast<coref<component_ifc>(policy_intrusive_base::*)()>(&wrap_ret_structifc));
+        _vtable1[12] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(const coid::dynarray<bt::base>&)>(&::n1::n2::thing::nested));
+        _vtable1[13] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::inherit_external::mummy));
+        _vtable1[14] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(bool,bool)>(&::n1::n2::inherit_external::loo));
         return _vtable1;
     }
 
@@ -1083,7 +1120,7 @@ protected:
         }
     }
 
-    static iref<ifc_ext> _generic_interface_creator(::n1::n2::inherit_external* host, ifc_ext* __here__)
+    static iref<ifc_ext> _host_wrapper(::n1::n2::inherit_external* host, ifc_ext* __here__)
     {
         iref<ifc_ext> rval;
         //an active interface (with events)
@@ -1112,7 +1149,7 @@ public:
     {
         interface_register::register_interface(ifc_meta, &register_interfaces);
 
-        interface_register::register_interface_creator("ns::ifc_ext@wrapper", on ? (void*)&_generic_interface_creator : nullptr, &ifc_meta);
+        interface_register::register_interface_creator("ns::ifc_ext@maker", on ? (void*)&_host_wrapper : nullptr, &ifc_meta);
     }
 };
 
@@ -1226,7 +1263,7 @@ class ifc_ext2_dispatcher : public ifc_ext2
        { "return", "iref<ifc1::ifc2::emptyface>", "ifc1::ifc2::emptyface", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)1, false, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg ret_structifc_11args[] = {
-       { "return", "cref<component_ifc>", "component_ifc", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)2, false, true, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "coref<component_ifc>", "component_ifc", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)2, false, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg nested_12args[] = {
        { "stuff", "const coid::dynarray<bt::base>&", "coid::dynarray<bt::base>", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, false, false, false, false, "" },
@@ -1279,7 +1316,7 @@ class ifc_ext2_dispatcher : public ifc_ext2
         "ifc_ext2.h", // header file
         "", // storage
         "ifc_ext", // base class name
-        439136414, //version
+        859932777, //version
         0, 17, 4, // num. creators/methods/events
         creators, methods, events,
         0, -1, 7, 8,
@@ -1295,9 +1332,19 @@ private:
     inline static ifn_t* _vtable1 = 0;
     inline static ifn_t* _vtable2 = 0;
 
-    iref<ifc1::ifc2::emptyface> ret_classifc() {
+    iref<ifc1::ifc2::emptyface> wrap_ret_classifc() {
+        using wrapper_fn = iref<ifc1::ifc2::emptyface>(*)(policy_intrusive_base*, ifc1::ifc2::emptyface*);
+        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_maker("ifc1::ifc2::emptyface", "");
+        return wrapper
+            ? wrapper(_host.cast<n1::n2::thing>()->ret_classifc(), 0)
+            : iref<ifc1::ifc2::emptyface>();
     }
-    cref<component_ifc> ret_structifc() {
+    coref<component_ifc> wrap_ret_structifc() {
+        using wrapper_fn = coref<component_ifc>(*)(component*);
+        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_dcmaker("component_ifc", "");
+        return wrapper
+            ? wrapper(_host.cast<n1::n2::thing>()->ret_structifc())
+            : coref<component_ifc>(nullptr);
     }
 
     static ifn_t* get_vtable()
@@ -1315,11 +1362,13 @@ private:
         _vtable1[7] = reinterpret_cast<ifn_t>(static_cast<double(policy_intrusive_base::*)(const char*)const>(&::n1::n2::thing::operator()));
         _vtable1[8] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(const char*,double)>(&::n1::n2::thing::operator()));
         _vtable1[9] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(test*&)>(&::n1::n2::thing::inout));
-        _vtable1[10] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(const coid::dynarray<bt::base>&)>(&::n1::n2::thing::nested));
-        _vtable1[11] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::inherit_external::mummy));
-        _vtable1[12] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(bool,bool)>(&::n1::n2::inherit_external::loo2));
-        _vtable1[13] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::inherit_external::some1));
-        _vtable1[14] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::inherit_external::some2));
+        _vtable1[10] = reinterpret_cast<ifn_t>(static_cast<iref<ifc1::ifc2::emptyface>(policy_intrusive_base::*)()>(&wrap_ret_classifc));
+        _vtable1[11] = reinterpret_cast<ifn_t>(static_cast<coref<component_ifc>(policy_intrusive_base::*)()>(&wrap_ret_structifc));
+        _vtable1[12] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(const coid::dynarray<bt::base>&)>(&::n1::n2::thing::nested));
+        _vtable1[13] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::inherit_external::mummy));
+        _vtable1[14] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)(bool,bool)>(&::n1::n2::inherit_external::loo2));
+        _vtable1[15] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::inherit_external::some1));
+        _vtable1[16] = reinterpret_cast<ifn_t>(static_cast<void(policy_intrusive_base::*)()>(&::n1::n2::inherit_external::some2));
         return _vtable1;
     }
 
@@ -1382,7 +1431,7 @@ protected:
         }
     }
 
-    static iref<ifc_ext2> _generic_interface_creator(::n1::n2::inherit_external* host, ifc_ext2* __here__)
+    static iref<ifc_ext2> _host_wrapper(::n1::n2::inherit_external* host, ifc_ext2* __here__)
     {
         iref<ifc_ext2> rval;
         //an active interface (with events)
@@ -1411,7 +1460,7 @@ public:
     {
         interface_register::register_interface(ifc_meta, &register_interfaces);
 
-        interface_register::register_interface_creator("ns::ifc_ext2@wrapper", on ? (void*)&_generic_interface_creator : nullptr, &ifc_meta);
+        interface_register::register_interface_creator("ns::ifc_ext2@maker", on ? (void*)&_host_wrapper : nullptr, &ifc_meta);
     }
 };
 

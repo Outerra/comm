@@ -25,7 +25,7 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
         ret.basetype = extifc;
         ret.type = ret.ifc_type == meta::arg::ifc_type::ifc_class
             ? "iref<"_T
-            : "cref<"_T;
+            : "coref<"_T;
         ret.type << extifc << '>';
 
         forward fwd;

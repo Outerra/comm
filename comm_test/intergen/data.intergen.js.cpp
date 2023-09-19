@@ -40,6 +40,9 @@ public:
         ifc = entman::get_versionid<::component>(host);
     }
 
+    explicit component_ifc_js_dispatcher(const coref<component_ifc>& ifc) : ifc(ifc)
+    {}
+
     ~component_ifc_js_dispatcher()
     {}
 
@@ -56,7 +59,7 @@ public:
 
 private:
 
-    cref<::component> ifc;
+    coref<component_ifc> ifc;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -107,7 +110,8 @@ void component_ifc_js_dispatcher::v8_set_a0(const v8::ARGUMENTS& args)
 
         args.GetReturnValue().Set(r__);
 
-    } catch (const coid::exception& e) {
+    }
+    catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }
@@ -161,7 +165,8 @@ void component_ifc_js_dispatcher::v8_set_b1(const v8::ARGUMENTS& args)
         v8::Handle<v8::Value> r__ = read_to_v8(b);
         args.GetReturnValue().Set(r__);
 
-    } catch (const coid::exception& e) {
+    }
+    catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }
@@ -222,11 +227,37 @@ static v8::Handle<v8::Value> create_js_object_from_host_component_ifc(::componen
     return scope.Escape(r__);
 }
 
+///Create JS interface from an interface
+static v8::Handle<v8::Value> create_js_object_from_interface_component_ifc(const coref<component_ifc>& ifc, v8::Handle<v8::Context> ctx)
+{
+    // check that the orig points to an object
+    v8::Isolate* iso = ctx.IsEmpty() ? v8::Isolate::GetCurrent() : ctx->GetIsolate();
+    if (!host)
+        return v8::Null(iso);
+
+    if (ctx.IsEmpty())
+        ctx = iso->GetCurrentContext();
+
+    v8::Context::Scope context_scope(ctx);
+    v8::EscapableHandleScope scope(iso);
+
+    // create interface object
+    js::component_ifc_js_dispatcher* ifc = new js::component_ifc_js_dispatcher(ifc);
+
+    //stream out
+    v8::Handle<v8::Value> r__ = v8::Handle<v8::Value>(ifc->create_interface_object(ctx));
+
+    return scope.Escape(r__);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 static void register_binders_for_component_ifc(bool on)
 {
-    //maker from script from data host
-    interface_register::register_interface_creator("component@dcmaker.js", on ? (void*)&create_js_object_from_host_component_ifc : nullptr, nullptr);
+    //script interface maker from data host
+    interface_register::register_interface_creator("component_ifc@dcmaker.js", on ? (void*)&create_js_object_from_host_component_ifc : nullptr, nullptr);
+
+    //script interface maker from data interface
+    interface_register::register_interface_creator("component_ifc@dcwrapper.js", on ? (void*)&create_js_object_from_interface_component_ifc : nullptr, nullptr);
 }
 
 //auto-register the bind function

@@ -139,7 +139,7 @@ public:
     ifc_fn void test() {}
 
     /// @return pointer to a data interface type (ifc_struct)
-    ifc_fn struct component* get();
+    ifc_fnx(ifc_struct=component_ifc) component* get();
 };
 
 } // namespace ab

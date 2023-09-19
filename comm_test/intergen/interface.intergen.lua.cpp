@@ -1573,7 +1573,7 @@ public:
     static int lua_get1(lua_State * L);
     static bool can_use_ffi_get1();
     static void get_ffi_inject_get1(coid::token& header, coid::token& body);
-    static component* lua_get1_ffi(void * ifc_this);
+    static coref<component_ifc> lua_get1_ffi(void * ifc_this);
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1670,7 +1670,7 @@ void client2_lua_dispatcher::lua_test0_ffi(void * ifc_this){
 */
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  component* xt::client2::get()
+//  coref<component_ifc> xt::client2::get()
 //
 __declspec(noinline) int client2_lua_dispatcher::lua_get1_exc(lua_State * L)
 {
@@ -1711,12 +1711,14 @@ __declspec(noinline) int client2_lua_dispatcher::lua_get1_exc(lua_State * L)
 //out params
 
 // invoke
-        component* _rval_ = R_->get();
+        coref<component_ifc> _rval_ = R_->get();
 
 //stream out
         THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
-        //TODO data interfaces
+        static_assert(coid::has_metastream_operator<component_ifc>::value, "missing metastream operator for 'component_ifc'");
+        if (_rval_)
+            to_lua(*_rval_);
 
         return 1;
     }
@@ -1749,7 +1751,7 @@ bool client2_lua_dispatcher::can_use_ffi_get1(){
 }
 
 void client2_lua_dispatcher::get_ffi_inject_get1(coid::token& header, coid::token& body){
-    static const coid::token h = "typedef component* (*client2_get1_fun)(void * ifc_this)\n";
+    static const coid::token h = "typedef coref<component_ifc> (*client2_get1_fun)(void * ifc_this)\n";
     header = h;
     static const coid::token b =
 "client2.get_ffi = ffi.cast(\"client2_get1_fun\",client2.get);\n"\
@@ -1759,7 +1761,7 @@ void client2_lua_dispatcher::get_ffi_inject_get1(coid::token& header, coid::toke
     body = b;
 }
 /*
-component* client2_lua_dispatcher::lua_get1_ffi(void * ifc_this){
+coref<component_ifc> client2_lua_dispatcher::lua_get1_ffi(void * ifc_this){
 
 }
 */
@@ -1873,7 +1875,7 @@ iref<::lua::registry_handle> client2_lua_dispatcher::create_interface_object(con
     *static_cast<size_t*>(cptr_holder) = reinterpret_cast<size_t>(this->intergen_real_interface());
     lua_setfield(L, -2, ::lua::_lua_interface_cptr_key);
 
-    lua_pushnumber(L, ints(3558882638));
+    lua_pushnumber(L, ints(4187390586));
     lua_setfield(L, -2, ::lua::_lua_class_hash_key);
 
 

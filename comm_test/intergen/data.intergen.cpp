@@ -6,6 +6,7 @@
 #include "data.hpp"
 
 #include <comm/ref.h>
+#include <comm/global.h>
 #include <comm/singleton.h>
 #include <comm/binstring.h>
 #include <type_traits>
@@ -75,11 +76,18 @@ protected:
     component_ifc_data_dispatcher() = default;
     ~component_ifc_data_dispatcher() = default;
 
+    static coref<component_ifc> _host_wrapper(::component* host)
+    {
+        return coref<component_ifc>(reinterpret_cast<component_ifc*>(host));
+    }
+    
 public:
 
     static void register_interfaces(bool on)
     {
         coid::ifcman::set_type_ifc<component_ifc>(HASHID, _cr_table, _fn_table, &ifc_meta);
+        
+        interface_register::register_interface_creator("component_ifc@dcmaker", on ? (void*)&_host_wrapper : nullptr, &ifc_meta);
     }
 };
 

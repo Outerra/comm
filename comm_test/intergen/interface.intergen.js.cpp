@@ -194,7 +194,8 @@ void client_js_dispatcher::v8_set_def0(const v8::ARGUMENTS& args)
         v8::Handle<v8::Object> r__;
 
         args.GetReturnValue().Set(r__);
-    } catch (const coid::exception& e) {
+    }
+    catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }
@@ -246,7 +247,8 @@ void client_js_dispatcher::v8_set1(const v8::ARGUMENTS& args)
         v8::Handle<v8::Object> r__;
 
         args.GetReturnValue().Set(r__);
-    } catch (const coid::exception& e) {
+    }
+    catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }
@@ -300,7 +302,8 @@ void client_js_dispatcher::v8_get2(const v8::ARGUMENTS& args)
         static_assert(coid::has_metastream_operator<coid::charstr>::value, "missing metastream operator for 'coid::charstr'");
         r__->Set(ctx, v8::symbol("par", iso), read_to_v8(par));
         args.GetReturnValue().Set(r__);
-    } catch (const coid::exception& e) {
+    }
+    catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }
@@ -351,7 +354,8 @@ void client_js_dispatcher::v8_custom3(const v8::ARGUMENTS& args)
         r__ = read_to_v8(_rval_);
 
         args.GetReturnValue().Set(r__);
-    } catch (const coid::exception& e) {
+    }
+    catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }
@@ -403,7 +407,8 @@ void client_js_dispatcher::v8_set_array4(const v8::ARGUMENTS& args)
         v8::Handle<v8::Object> r__;
 
         args.GetReturnValue().Set(r__);
-    } catch (const coid::exception& e) {
+    }
+    catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }
@@ -454,7 +459,8 @@ void client_js_dispatcher::v8_overridable5(const v8::ARGUMENTS& args)
         r__ = read_to_v8(_rval_);
 
         args.GetReturnValue().Set(r__);
-    } catch (const coid::exception& e) {
+    }
+    catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }
@@ -1187,7 +1193,8 @@ void client2_js_dispatcher::v8_test0(const v8::ARGUMENTS& args)
         v8::Handle<v8::Object> r__;
 
         args.GetReturnValue().Set(r__);
-    } catch (const coid::exception& e) {
+    }
+    catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }
@@ -1230,16 +1237,14 @@ void client2_js_dispatcher::v8_get1(const v8::ARGUMENTS& args)
 
 
         //invoke
-        component* _rval_ = R_->get();
+        coref<component_ifc> _rval_ = R_->get();
 
         //stream out
-        v8::Handle<v8::Value> r__;
-        static_assert(coid::has_metastream_operator<component>::value, "missing metastream operator for 'component'");
-        if (_rval_)
-            r__ = read_to_v8(*_rval_);
+        v8::Handle<v8::Value> r__ = ::js::wrap_data_object<component_ifc>(_rval_, "component_ifc"_T, ifc->context(iso));
 
         args.GetReturnValue().Set(r__);
-    } catch (const coid::exception& e) {
+    }
+    catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }
@@ -1302,7 +1307,7 @@ v8::Handle<v8::Object> client2_js_dispatcher::create_interface_object(v8::Handle
 
     v8::Handle<v8::External> map_ptr = v8::External::New(iso, this);
     obj->SetInternalField(0, map_ptr);
-    v8::Handle<v8::External> hash_ptr = v8::External::New(iso, (void*)ints(3558882638));
+    v8::Handle<v8::External> hash_ptr = v8::External::New(iso, (void*)ints(4187390586));
     obj->SetInternalField(1, hash_ptr);
 
     if (make_weak) {

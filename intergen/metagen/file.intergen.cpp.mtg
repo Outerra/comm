@@ -10,6 +10,7 @@ $-[/iface_data]$$[/class]$
 #include "$hdr$"
 
 #include <comm/ref.h>
+#include <comm/global.h>
 #include <comm/singleton.h>
 #include <comm/binstring.h>
 #include <type_traits>
@@ -78,11 +79,19 @@ private:
     inline static ifn_t* _vtable1 = 0;
     inline static ifn_t* _vtable2 = 0;
 $-[method !static ?retifc first="\n"]$
-    $return.type$ $name$($[args rest=", "]$$ifckwds after=" "$$type$ $(if ?fnarg)$($-memfnclass after="::"-$ *$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-const set="const"$ {
- $-(if ?ret.ifc_type="1")$
-        using wrapper_fn = iref<$return.type$>(*)($return.hosttype$*, $return.type$*);
-        static wrapper_fn wrapper = interface_register::get_interface_wrapper("$return.type$");
-        return wrapper ? wrapper($..name$::$name$()) : nullptr;
+    $return.type$ wrap_$name$($[args rest=", "]$$ifckwds after=" "$$type$ $(if ?fnarg)$($-memfnclass after="::"-$ *$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-const set="const"$ {
+ $-(if ?return.ifc_type="1")$
+        using wrapper_fn = iref<$return.basetype$>(*)(policy_intrusive_base*, $return.basetype$*);
+        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_maker("$return.basetype$", "");
+        return wrapper
+            ? wrapper(_host.cast<$classname$>()->$name$($[args rest=","]$ $-(if ?xref)$std::forward<$basetype$>($(/if)-$ $name$ $-(if ?xref)$)$(/if)-$ $[/args]$), 0)
+            : iref<$return.basetype$>();
+ $-(elif ?return.ifc_type="2")$
+        using wrapper_fn = coref<$return.basetype$>(*)($return.hosttype$*);
+        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_dcmaker("$return.basetype$", "");
+        return wrapper
+            ? wrapper(_host.cast<$classname$>()->$name$($[args rest=","]$ $-(if ?xref)$std::forward<$basetype$>($(/if)-$ $name$ $-(if ?xref)$)$(/if)-$ $[/args]$))
+            : coref<$return.basetype$>(nullptr);
  $-(/if)$
     }
 $-[/method]$
@@ -93,12 +102,11 @@ $-(if !virtual)$
         if (_vtable1) return _vtable1;
 
         _vtable1 = new ifn_t[$method.@size !static$];
-$-[method !static !retifc]$
-$-(if ?retifc="1")$
-        
-        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if ?const)$const$(/if)$>(&::$classname$::$intname$));
-$-(elif ?retifc="2")$
-        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if ?const)$const$(/if)$>(&::$classname$::$intname$));
+$-[method !static]$
+$-(if ?return.ifc_type="1")$
+        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if ?const)$const$(/if)$>(&wrap_$intname$));
+$-(elif ?return.ifc_type="2")$
+        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if ?const)$const$(/if)$>(&wrap_$intname$));
 $-(elif)$
         _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if ?const)$const$(/if)$>(&::$classname$::$intname$));
 $-(/if)$
@@ -191,7 +199,7 @@ protected:
     }
 $-(if !virtual)$
 
-    static iref<$name$> _generic_interface_creator(::$..nsx$$..class$* host, $name$* __here__)
+    static iref<$name$> _host_wrapper(::$..nsx$$..class$* host, $name$* __here__)
     {
         iref<$name$> rval;
 
@@ -236,12 +244,12 @@ public:
     // creator methods
 
 $-[method ?creator]$
-    static iref<$..name$> $name$($..name$* __here__$[args]$, $type$ $name$$size$ $-(if ?defval)$ = $defval$$(/if)$$[/args]$)
+    static iref<$..name$> $name$($..name$* here__$[args]$, $type$ $name$$size$ $-(if ?defval)$ = $defval$$(/if)$$[/args]$)
     {
-        iref<::$....nsx$$....class$> __host__ = ::$....nsx$$....class$::$intname$($[args rest=", "]$$name$$[/args]$);
-        if (!__host__)
+        iref<::$....nsx$$....class$> host__ = ::$....nsx$$....class$::$intname$($[args rest=", "]$$name$$[/args]$);
+        if (!host__)
             return 0;
-        return _generic_interface_creator(__host__.get(), __here__);
+        return _host_wrapper(host__.get(), here__);
     }
 
 $-[/method]$
@@ -251,7 +259,7 @@ $-[/method]$
         interface_register::register_interface(ifc_meta, &register_interfaces);
 $-(if !virtual)$
 
-        interface_register::register_interface_creator("$ns suffix="::"$$name$@wrapper", on ? (void*)&_generic_interface_creator : nullptr, &ifc_meta);
+        interface_register::register_interface_creator("$ns suffix="::"$$name$@maker", on ? (void*)&_host_wrapper : nullptr, &ifc_meta);
 $-(/if)$
 $-(if ?onunload)$
 
@@ -421,11 +429,18 @@ protected:
     $name$_data_dispatcher() = default;
     ~$name$_data_dispatcher() = default;
 
+    static coref<$name$> _host_wrapper(::$..nsx$$..class$* host)
+    {
+        return coref<$name$>(reinterpret_cast<$name$*>(host));
+    }
+    
 public:
 
     static void register_interfaces(bool on)
     {
         coid::ifcman::set_type_ifc<$name$>(HASHID, _cr_table, _fn_table, &ifc_meta);
+        
+        interface_register::register_interface_creator("$ns suffix="::"$$name$@dcmaker", on ? (void*)&_host_wrapper : nullptr, &ifc_meta);
     }
 };
 

@@ -147,7 +147,7 @@ bool MethodIG::Arg::parse(iglexer& lex, bool argname)
     basetype = tbasetype;
 
     biref = tbasetype.begins_with("iref<");
-    bcref = tbasetype.begins_with("cref<");
+    bcref = tbasetype.begins_with("coref<");
 
     if (biref || bcref) {
         token bs = tbasetype;
@@ -157,7 +157,7 @@ bool MethodIG::Arg::parse(iglexer& lex, bool argname)
         ptrtype = bs.trim();
     }
     else if (bptr) {
-        ptrtype = type;
+        ptrtype = tbasetype;
     }
 
     bnoscript = false;

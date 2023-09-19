@@ -299,7 +299,8 @@ $-(elif)$
 $(/if)-$
 
         args.GetReturnValue().Set(r__);
-    } catch (const coid::exception& e) {
+    }
+    catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }
@@ -917,12 +918,12 @@ $-[/method]$
 $-(if !virtual)$
 ////////////////////////////////////////////////////////////////////////////////
 ///Create JS wrapper from an existing interface object
-v8::Handle<v8::Value> create_wrapper_$name$(::$ns suffix="::"$$name$* orig, v8::Handle<v8::Context> context)
+v8::Handle<v8::Value> wrap_ifc_to_js_$name$(::$ns suffix="::"$$name$* orig_ifc, v8::Handle<v8::Context> context)
 {
     v8::Isolate* iso = v8::Isolate::GetCurrent();
 
-    // check that the orig points to an object
-    if (!orig)
+    // check that the orig_ifc points to an object
+    if (!orig_ifc)
         return v8::Null(iso);
 
     if (context.IsEmpty())
@@ -934,12 +935,12 @@ v8::Handle<v8::Value> create_wrapper_$name$(::$ns suffix="::"$$name$* orig, v8::
     iref<$ns suffix="::"$js::$name$_js_dispatcher> ifc;
     v8::Handle<v8::Object> obj;
 
-    if (orig->intergen_backend() == intergen_interface::backend::js)
-        obj = static_cast<$name$_js_dispatcher*>(orig)->_object.Get(iso);
+    if (orig_ifc->intergen_backend() == intergen_interface::backend::js)
+        obj = static_cast<$name$_js_dispatcher*>(orig_ifc)->_object.Get(iso);
 
     if (obj.IsEmpty()) {
         // create interface object
-        ifc.create(new $ns suffix="::"$js::$name$_js_dispatcher(static_cast<::$ns suffix="::"$$name$*>(orig)));
+        ifc.create(new $ns suffix="::"$js::$name$_js_dispatcher(static_cast<::$ns suffix="::"$$name$*>(orig_ifc)));
 
         obj = ifc->create_interface_object(context, true);
     }
@@ -949,7 +950,7 @@ v8::Handle<v8::Value> create_wrapper_$name$(::$ns suffix="::"$$name$* orig, v8::
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Create JS interface from a host
-static iref<$ns suffix="::"$js::$name$_js_dispatcher> create_maker_$name$(policy_intrusive_base* host, v8::Handle<v8::Context> context)
+static iref<$ns suffix="::"$js::$name$_js_dispatcher> make_js_ifc_from_host_$name$(policy_intrusive_base* host, v8::Handle<v8::Context> context)
 {
     v8::Isolate* iso = context.IsEmpty() ? v8::Isolate::GetCurrent() : context->GetIsolate();
     if (context.IsEmpty())
@@ -988,10 +989,10 @@ $-[/method]$
 $-(if !virtual)$
 
     //wrapper interface creator from existing js/c++ interface
-    interface_register::register_interface_creator("$ns suffix="::"$$name$@wrapper.js", on ? (void*)&create_wrapper_$name$ : nullptr, nullptr);
+    interface_register::register_interface_creator("$ns suffix="::"$$name$@wrapper.js", on ? (void*)&wrap_ifc_to_js_$name$ : nullptr, nullptr);
 
     //js interface creator from host
-    interface_register::register_interface_creator("$ns suffix="::"$$name$@maker.js", on ? (void*)&create_maker_$name$ : nullptr, nullptr);
+    interface_register::register_interface_creator("$ns suffix="::"$$name$@maker.js", on ? (void*)&make_js_ifc_from_host_$name$ : nullptr, nullptr);
 $-(/if)$
 }
 
@@ -1048,6 +1049,9 @@ public:
         ifc = entman::get_versionid<::$..nsx$$..class$>(host);
     }
 
+    explicit $name$_js_dispatcher(const coref<$name$>& ifc) : ifc(ifc)
+    {}
+
     ~$name$_js_dispatcher()
     {}
 
@@ -1073,7 +1077,7 @@ $-[/method]$
 
 private:
 
-    cref<::$..nsx$$..class$> ifc;
+    coref<$name$> ifc;
 };
 
 $-[method !static !destroy !internal !operator]$
@@ -1166,7 +1170,7 @@ $-(if !return.type="void")$
  $-(elif ?return.ifc_type="1")$
         v8::Handle<v8::Value> r__ = ::js::wrap_object(_rval_.get(), ifc->context(iso));
  $-(elif ?return.ifc_type="2")$
-        v8::Handle<v8::Value> r__ = ::js::wrap_data_object<$return.basetype$>(_rval_, "$return.basetype$"_T, ifc->context(iso));
+        v8::Handle<v8::Value> r__ = ::js::wrap_data_object<$return.basetype$>(_rval_.ready(), "$return.basetype$"_T, ifc->context(iso));
  $-(/if)$
 
  $-[args ?outarg]$
@@ -1202,7 +1206,8 @@ $(/if)-$
 
         args.GetReturnValue().Set(r__);
 
-    } catch (const coid::exception& e) {
+    }
+    catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }
@@ -1335,6 +1340,29 @@ $-(/if)$
 
 $-(if !virtual)$
 ////////////////////////////////////////////////////////////////////////////////
+///Create JS wrapper from an existing interface object
+v8::Handle<v8::Value> wrap_ifc_to_js_$name$(const coref<$name$>& orig_ifc, v8::Handle<v8::Context> context)
+{
+    v8::Isolate* iso = v8::Isolate::GetCurrent();
+
+    // check that the orig points to an object
+    if (!orig)
+        return v8::Null(iso);
+
+    if (context.IsEmpty())
+        context = iso->GetCurrentContext();
+
+    v8::Context::Scope context_scope(context);
+    v8::EscapableHandleScope scope(iso);
+    
+    // create interface object
+    $ns suffix="::"$js::$name$_js_dispatcher* difc = new $ns suffix="::"$js::$name$_js_dispatcher(ifc);
+
+    v8::Handle<v8::Value> r__ = v8::Handle<v8::Value>(difc->create_interface_object(ctx));
+    return scope.Escape(r__);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 ///Create JS interface from a host
 static v8::Handle<v8::Value> create_js_object_from_host_$name$(::$..nsx$$..class$* host, v8::Handle<v8::Context> ctx)
 {
@@ -1367,8 +1395,11 @@ $-(/if)$
 ////////////////////////////////////////////////////////////////////////////////
 static void register_binders_for_$name$(bool on)
 {
-    //maker from script from data host
-    interface_register::register_interface_creator("$..nsx$$..class$@dcmaker.js", on ? (void*)&create_js_object_from_host_$name$ : nullptr, nullptr);
+    //script interface maker from data host
+    interface_register::register_interface_creator("$name$@dcmaker.js", on ? (void*)&create_js_object_from_host_$name$ : nullptr, nullptr);
+
+    //script interface maker from data interface
+    interface_register::register_interface_creator("$name$@dcwrapper.js", on ? (void*)&create_js_object_from_interface_$name$ : nullptr, nullptr);
 }
 
 //auto-register the bind function

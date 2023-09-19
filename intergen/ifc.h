@@ -375,54 +375,6 @@ protected:
 };
 
 
-
-
-/// @brief Wrapper for managed data interfaces
-/// @tparam T data interface type
-template <class T>
-class cref
-{
-public:
-
-    cref() = default;
-
-    explicit cref(coid::versionid eid)
-        : _entity_id(eid)
-    {}
-
-    /// @return component reference valid for current frame
-    T* ready() {
-        //obtain a valid reference once per frame
-        uint gframe = entman::frame;
-        if (_cached_object && _ready_frame == gframe)
-            return _cached_object;
-
-        _cached_object = entman::get<T>(_entity_id);
-        _ready_frame = gframe;
-        return _cached_object;
-    }
-
-    cref& operator = (coid::versionid eid) {
-        _entity_id = eid;
-        _cached_object = 0;
-        return *this;
-    }
-
-    T* operator -> () {
-        T* p = ready();
-        if (!p) throw coid::exception() << "dead object";
-        return p;
-    }
-
-private:
-
-    coid::versionid _entity_id;         //< id of the connected entity
-    T* _cached_object = 0;              //< cached connected object
-    uint _ready_frame = 0;              //< frame when the connected object was valid
-};
-
-
-
 COID_NAMESPACE_BEGIN
 
 class ifcman
