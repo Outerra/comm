@@ -107,7 +107,7 @@ public:
         return 0;
     }
 
-    ifc_fn void set_array(const float ar[3]) {}
+    ifc_fnx(!) void set_array(const float ar[3]) {}
 
     ifc_fn virtual bool overridable() { return false; }
 

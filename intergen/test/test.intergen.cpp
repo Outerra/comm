@@ -227,7 +227,7 @@ protected:
         }
     }
 
-    static iref<emptyface> _host_wrapper(::n1::n2::empty_thing* host, emptyface* __here__)
+    static iref<emptyface> _host_connector(::n1::n2::empty_thing* host, emptyface* __here__)
     {
         iref<emptyface> rval;
         //a passive interface (no events)
@@ -250,7 +250,7 @@ public:
         iref<::n1::n2::empty_thing> host__ = ::n1::n2::empty_thing::_get_thing();
         if (!host__)
             return 0;
-        return _host_wrapper(host__.get(), here__);
+        return _host_connector(host__.get(), here__);
     }
 
     static iref<emptyface> get2(emptyface* here__, void* p)
@@ -258,7 +258,7 @@ public:
         iref<::n1::n2::empty_thing> host__ = ::n1::n2::empty_thing::_get2(p);
         if (!host__)
             return 0;
-        return _host_wrapper(host__.get(), here__);
+        return _host_connector(host__.get(), here__);
     }
 
     ///Register interface creators in the global registry
@@ -266,7 +266,7 @@ public:
     {
         interface_register::register_interface(ifc_meta, &register_interfaces);
 
-        interface_register::register_interface_creator("ifc1::ifc2::emptyface@maker", on ? (void*)&_host_wrapper : nullptr, &ifc_meta);
+        interface_register::register_interface_creator("ifc1::ifc2::emptyface@connect", on ? (void*)&_host_connector : nullptr, &ifc_meta);
         interface_register::register_interface_creator("ifc1::ifc2::emptyface.get@73279724", on ? (void*)&get : nullptr, &ifc_meta);
         interface_register::register_interface_creator("ifc1::ifc2::emptyface.get2@73279724", on ? (void*)&get2 : nullptr, &ifc_meta);
     }
@@ -402,14 +402,14 @@ private:
 
     iref<ifc1::ifc2::emptyface> wrap_ret_classifc() {
         using wrapper_fn = iref<ifc1::ifc2::emptyface>(*)(policy_intrusive_base*, ifc1::ifc2::emptyface*);
-        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_maker("ifc1::ifc2::emptyface", "");
+        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_connector("ifc1::ifc2::emptyface");
         return wrapper
             ? wrapper(_host.cast<n1::n2::thing>()->ret_classifc(), 0)
             : iref<ifc1::ifc2::emptyface>();
     }
     coref<component_ifc> wrap_ret_structifc() {
         using wrapper_fn = coref<component_ifc>(*)(component*);
-        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_dcmaker("component_ifc", "");
+        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_dcconnector("component_ifc");
         return wrapper
             ? wrapper(_host.cast<n1::n2::thing>()->ret_structifc())
             : coref<component_ifc>(nullptr);
@@ -491,7 +491,7 @@ protected:
         }
     }
 
-    static iref<thingface> _host_wrapper(::n1::n2::thing* host, thingface* __here__)
+    static iref<thingface> _host_connector(::n1::n2::thing* host, thingface* __here__)
     {
         iref<thingface> rval;
         //an active interface (with events)
@@ -520,7 +520,7 @@ public:
         iref<::n1::n2::thing> host__ = ::n1::n2::thing::get_thing();
         if (!host__)
             return 0;
-        return _host_wrapper(host__.get(), here__);
+        return _host_connector(host__.get(), here__);
     }
 
     ///Register interface creators in the global registry
@@ -528,7 +528,7 @@ public:
     {
         interface_register::register_interface(ifc_meta, &register_interfaces);
 
-        interface_register::register_interface_creator("ifc1::ifc2::thingface@maker", on ? (void*)&_host_wrapper : nullptr, &ifc_meta);
+        interface_register::register_interface_creator("ifc1::ifc2::thingface@connect", on ? (void*)&_host_connector : nullptr, &ifc_meta);
         interface_register::register_interface_creator("ifc1::ifc2::thingface.get@3075154512", on ? (void*)&get : nullptr, &ifc_meta);
     }
 };
@@ -727,14 +727,14 @@ private:
 
     iref<ifc1::ifc2::emptyface> wrap_ret_classifc() {
         using wrapper_fn = iref<ifc1::ifc2::emptyface>(*)(policy_intrusive_base*, ifc1::ifc2::emptyface*);
-        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_maker("ifc1::ifc2::emptyface", "");
+        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_connector("ifc1::ifc2::emptyface");
         return wrapper
             ? wrapper(_host.cast<n1::n2::thing>()->ret_classifc(), 0)
             : iref<ifc1::ifc2::emptyface>();
     }
     coref<component_ifc> wrap_ret_structifc() {
         using wrapper_fn = coref<component_ifc>(*)(component*);
-        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_dcmaker("component_ifc", "");
+        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_dcconnector("component_ifc");
         return wrapper
             ? wrapper(_host.cast<n1::n2::thing>()->ret_structifc())
             : coref<component_ifc>(nullptr);
@@ -818,7 +818,7 @@ protected:
         }
     }
 
-    static iref<ifc_int> _host_wrapper(::n1::n2::thing* host, ifc_int* __here__)
+    static iref<ifc_int> _host_connector(::n1::n2::thing* host, ifc_int* __here__)
     {
         iref<ifc_int> rval;
         //an active interface (with events)
@@ -847,7 +847,7 @@ public:
     {
         interface_register::register_interface(ifc_meta, &register_interfaces);
 
-        interface_register::register_interface_creator("ns::ifc_int@maker", on ? (void*)&_host_wrapper : nullptr, &ifc_meta);
+        interface_register::register_interface_creator("ns::ifc_int@connect", on ? (void*)&_host_connector : nullptr, &ifc_meta);
     }
 };
 
@@ -1027,14 +1027,14 @@ private:
 
     iref<ifc1::ifc2::emptyface> wrap_ret_classifc() {
         using wrapper_fn = iref<ifc1::ifc2::emptyface>(*)(policy_intrusive_base*, ifc1::ifc2::emptyface*);
-        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_maker("ifc1::ifc2::emptyface", "");
+        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_connector("ifc1::ifc2::emptyface");
         return wrapper
             ? wrapper(_host.cast<n1::n2::thing>()->ret_classifc(), 0)
             : iref<ifc1::ifc2::emptyface>();
     }
     coref<component_ifc> wrap_ret_structifc() {
         using wrapper_fn = coref<component_ifc>(*)(component*);
-        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_dcmaker("component_ifc", "");
+        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_dcconnector("component_ifc");
         return wrapper
             ? wrapper(_host.cast<n1::n2::thing>()->ret_structifc())
             : coref<component_ifc>(nullptr);
@@ -1120,7 +1120,7 @@ protected:
         }
     }
 
-    static iref<ifc_ext> _host_wrapper(::n1::n2::inherit_external* host, ifc_ext* __here__)
+    static iref<ifc_ext> _host_connector(::n1::n2::inherit_external* host, ifc_ext* __here__)
     {
         iref<ifc_ext> rval;
         //an active interface (with events)
@@ -1149,7 +1149,7 @@ public:
     {
         interface_register::register_interface(ifc_meta, &register_interfaces);
 
-        interface_register::register_interface_creator("ns::ifc_ext@maker", on ? (void*)&_host_wrapper : nullptr, &ifc_meta);
+        interface_register::register_interface_creator("ns::ifc_ext@connect", on ? (void*)&_host_connector : nullptr, &ifc_meta);
     }
 };
 
@@ -1334,14 +1334,14 @@ private:
 
     iref<ifc1::ifc2::emptyface> wrap_ret_classifc() {
         using wrapper_fn = iref<ifc1::ifc2::emptyface>(*)(policy_intrusive_base*, ifc1::ifc2::emptyface*);
-        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_maker("ifc1::ifc2::emptyface", "");
+        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_connector("ifc1::ifc2::emptyface");
         return wrapper
             ? wrapper(_host.cast<n1::n2::thing>()->ret_classifc(), 0)
             : iref<ifc1::ifc2::emptyface>();
     }
     coref<component_ifc> wrap_ret_structifc() {
         using wrapper_fn = coref<component_ifc>(*)(component*);
-        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_dcmaker("component_ifc", "");
+        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_dcconnector("component_ifc");
         return wrapper
             ? wrapper(_host.cast<n1::n2::thing>()->ret_structifc())
             : coref<component_ifc>(nullptr);
@@ -1431,7 +1431,7 @@ protected:
         }
     }
 
-    static iref<ifc_ext2> _host_wrapper(::n1::n2::inherit_external* host, ifc_ext2* __here__)
+    static iref<ifc_ext2> _host_connector(::n1::n2::inherit_external* host, ifc_ext2* __here__)
     {
         iref<ifc_ext2> rval;
         //an active interface (with events)
@@ -1460,7 +1460,7 @@ public:
     {
         interface_register::register_interface(ifc_meta, &register_interfaces);
 
-        interface_register::register_interface_creator("ns::ifc_ext2@maker", on ? (void*)&_host_wrapper : nullptr, &ifc_meta);
+        interface_register::register_interface_creator("ns::ifc_ext2@connect", on ? (void*)&_host_connector : nullptr, &ifc_meta);
     }
 };
 

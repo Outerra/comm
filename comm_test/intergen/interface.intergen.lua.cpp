@@ -135,16 +135,11 @@ public:
     static bool can_use_ffi_custom3();
     static void get_ffi_inject_custom3(coid::token& header, coid::token& body);
     static sometype lua_custom3_ffi(void * ifc_this);
-    static int lua_set_array4_exc(lua_State * L);
-    static int lua_set_array4(lua_State * L);
-    static bool can_use_ffi_set_array4();
-    static void get_ffi_inject_set_array4(coid::token& header, coid::token& body);
-    static void lua_set_array4_ffi(void * ifc_this, const float ar[3]);
-    static int lua_overridable5_exc(lua_State * L);
-    static int lua_overridable5(lua_State * L);
-    static bool can_use_ffi_overridable5();
-    static void get_ffi_inject_overridable5(coid::token& header, coid::token& body);
-    static bool lua_overridable5_ffi(void * ifc_this);
+    static int lua_overridable4_exc(lua_State * L);
+    static int lua_overridable4(lua_State * L);
+    static bool can_use_ffi_overridable4();
+    static void get_ffi_inject_overridable4(coid::token& header, coid::token& body);
+    static bool lua_overridable4_ffi(void * ifc_this);
 
     // --- interface events ---
 
@@ -588,107 +583,9 @@ sometype client_lua_dispatcher::lua_custom3_ffi(void * ifc_this){
 */
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  void client::set_array( const float ar)
-//
-__declspec(noinline) int client_lua_dispatcher::lua_set_array4_exc(lua_State * L)
-{
-    bool exception_caught = false;
-
-    try {
-        const int args_count = lua_gettop(L) - 1;
-
-        if (args_count < 1 || args_count > 1) { //in/inout arguments
-            coid::charstr tmp = "Wrong number of arguments in ";
-            tmp << "client.set_array";
-            throw coid::exception(tmp);
-        }
-
-        if (!lua_istable(L, 1) || !lua_hasfield(L, 1, ::lua::_lua_dispatcher_cptr_key)) {
-            coid::charstr tmp = "Caller is not valid object in ";
-            tmp << "client.set_array";
-            throw coid::exception(tmp);
-        }
-
-        lua_getfield(L, 1, ::lua::_lua_dispatcher_cptr_key);
-
-        ::lua::interface_wrapper_base<::client>* ifc = reinterpret_cast<::lua::interface_wrapper_base<::client>*>(
-        *static_cast<size_t*>(lua_touserdata(L, -1)));
-        lua_pop(L, 1);
-
-        auto R_ = ifc ? ifc->_real() : 0;
-        if (!R_) {
-            coid::charstr tmp = "Null interface object in ";
-            tmp << "client.set_array";
-            throw coid::exception(tmp);
-        }
-
-        THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
-
-        //stream the arguments in
-
-        lua_pushvalue(L, 0 + 2);
-        static_assert(coid::has_metastream_operator<float>::value, "missing metastream operator 'float'");
-            threadcached<float> ar;
-        from_lua(ar);
-        lua_pop(L, 1); // who pushes, must pop!
-
-//out params
-
-// invoke
-        R_->set_array(ar);
-
-//stream out
-        THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
-
-        return 0;    }
-    catch (const coid::exception& e) {
-        exception_caught = true;
-        ::lua::process_exception_and_push_error_string_internal(e, L);
-    }
-
-    if (exception_caught)
-    {
-        lua_error(L);
-    }
-
-    return -1;
-}
-
-int client_lua_dispatcher::lua_set_array4(lua_State * L){
-    int res = lua_set_array4_exc(L);
-    if (res == -1) {
-        lua_error(L);
-    }
-
-    return res;
-}
-
-bool client_lua_dispatcher::can_use_ffi_set_array4(){
-    const MetaDesc * dsc = nullptr;
-
-    return false;
-}
-
-void client_lua_dispatcher::get_ffi_inject_set_array4(coid::token& header, coid::token& body){
-    static const coid::token h = "typedef void (*client_set_array4_fun)(void * ifc_this, const float ar[3])\n";
-    header = h;
-    static const coid::token b =
-"client.set_array_ffi = ffi.cast(\"client_set_array4_fun\",client.set_array);\n"\
-"function client:set_array(ar,)\n"\
-"   return client.set_array_ffi(self.__cthis, ar)\n"\
-"end;\n";
-    body = b;
-}
-/*
-void client_lua_dispatcher::lua_set_array4_ffi(void * ifc_this, const float ar[3]){
-
-}
-*/
-////////////////////////////////////////////////////////////////////////////////
-//
 //  bool client::overridable()
 //
-__declspec(noinline) int client_lua_dispatcher::lua_overridable5_exc(lua_State * L)
+__declspec(noinline) int client_lua_dispatcher::lua_overridable4_exc(lua_State * L)
 {
     bool exception_caught = false;
 
@@ -750,8 +647,8 @@ __declspec(noinline) int client_lua_dispatcher::lua_overridable5_exc(lua_State *
     return -1;
 }
 
-int client_lua_dispatcher::lua_overridable5(lua_State * L){
-    int res = lua_overridable5_exc(L);
+int client_lua_dispatcher::lua_overridable4(lua_State * L){
+    int res = lua_overridable4_exc(L);
     if (res == -1) {
         lua_error(L);
     }
@@ -759,24 +656,24 @@ int client_lua_dispatcher::lua_overridable5(lua_State * L){
     return res;
 }
 
-bool client_lua_dispatcher::can_use_ffi_overridable5(){
+bool client_lua_dispatcher::can_use_ffi_overridable4(){
     const MetaDesc * dsc = nullptr;
 
     return false;
 }
 
-void client_lua_dispatcher::get_ffi_inject_overridable5(coid::token& header, coid::token& body){
-    static const coid::token h = "typedef bool (*client_overridable5_fun)(void * ifc_this)\n";
+void client_lua_dispatcher::get_ffi_inject_overridable4(coid::token& header, coid::token& body){
+    static const coid::token h = "typedef bool (*client_overridable4_fun)(void * ifc_this)\n";
     header = h;
     static const coid::token b =
-"client.overridable_ffi = ffi.cast(\"client_overridable5_fun\",client.overridable);\n"\
+"client.overridable_ffi = ffi.cast(\"client_overridable4_fun\",client.overridable);\n"\
 "function client:overridable()\n"\
 "   return client.overridable_ffi(self.__cthis)\n"\
 "end;\n";
     body = b;
 }
 /*
-bool client_lua_dispatcher::lua_overridable5_ffi(void * ifc_this){
+bool client_lua_dispatcher::lua_overridable4_ffi(void * ifc_this){
 
 }
 */
@@ -1233,12 +1130,7 @@ int client_lua_dispatcher::register_interface_client(lua_State * L, bool push) {
     lua_setfenv(L, -2);
     lua_setfield(L, -2, "custom");
 
-    lua_pushcfunction(L, &client_lua_dispatcher::lua_set_array4);
-    lua_pushvalue(L, LUA_GLOBALSINDEX);
-    lua_setfenv(L, -2);
-    lua_setfield(L, -2, "set_array");
-
-    lua_pushcfunction(L, &client_lua_dispatcher::lua_overridable5);
+    lua_pushcfunction(L, &client_lua_dispatcher::lua_overridable4);
     lua_pushvalue(L, LUA_GLOBALSINDEX);
     lua_setfenv(L, -2);
     lua_setfield(L, -2, "overridable");

@@ -1022,6 +1022,8 @@ public:
         return _cached_object;
     }
 
+    explicit operator bool() const { return _cached_object != 0; }
+
     coref& operator = (coid::versionid eid) {
         _entity_id = eid;
         _cached_object = 0;

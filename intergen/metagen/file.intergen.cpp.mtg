@@ -82,13 +82,13 @@ $-[method !static ?retifc first="\n"]$
     $return.type$ wrap_$name$($[args rest=", "]$$ifckwds after=" "$$type$ $(if ?fnarg)$($-memfnclass after="::"-$ *$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-const set="const"$ {
  $-(if ?return.ifc_type="1")$
         using wrapper_fn = iref<$return.basetype$>(*)(policy_intrusive_base*, $return.basetype$*);
-        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_maker("$return.basetype$", "");
+        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_connector("$return.basetype$");
         return wrapper
             ? wrapper(_host.cast<$classname$>()->$name$($[args rest=","]$ $-(if ?xref)$std::forward<$basetype$>($(/if)-$ $name$ $-(if ?xref)$)$(/if)-$ $[/args]$), 0)
             : iref<$return.basetype$>();
  $-(elif ?return.ifc_type="2")$
         using wrapper_fn = coref<$return.basetype$>(*)($return.hosttype$*);
-        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_dcmaker("$return.basetype$", "");
+        static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_dcconnector("$return.basetype$");
         return wrapper
             ? wrapper(_host.cast<$classname$>()->$name$($[args rest=","]$ $-(if ?xref)$std::forward<$basetype$>($(/if)-$ $name$ $-(if ?xref)$)$(/if)-$ $[/args]$))
             : coref<$return.basetype$>(nullptr);
@@ -199,7 +199,7 @@ protected:
     }
 $-(if !virtual)$
 
-    static iref<$name$> _host_wrapper(::$..nsx$$..class$* host, $name$* __here__)
+    static iref<$name$> _host_connector(::$..nsx$$..class$* host, $name$* __here__)
     {
         iref<$name$> rval;
 
@@ -249,7 +249,7 @@ $-[method ?creator]$
         iref<::$....nsx$$....class$> host__ = ::$....nsx$$....class$::$intname$($[args rest=", "]$$name$$[/args]$);
         if (!host__)
             return 0;
-        return _host_wrapper(host__.get(), here__);
+        return _host_connector(host__.get(), here__);
     }
 
 $-[/method]$
@@ -259,7 +259,7 @@ $-[/method]$
         interface_register::register_interface(ifc_meta, &register_interfaces);
 $-(if !virtual)$
 
-        interface_register::register_interface_creator("$ns suffix="::"$$name$@maker", on ? (void*)&_host_wrapper : nullptr, &ifc_meta);
+        interface_register::register_interface_creator("$ns suffix="::"$$name$@connect", on ? (void*)&_host_connector : nullptr, &ifc_meta);
 $-(/if)$
 $-(if ?onunload)$
 
@@ -429,7 +429,7 @@ protected:
     $name$_data_dispatcher() = default;
     ~$name$_data_dispatcher() = default;
 
-    static coref<$name$> _host_wrapper(::$..nsx$$..class$* host)
+    static coref<$name$> _host_connector(::$..nsx$$..class$* host)
     {
         return coref<$name$>(reinterpret_cast<$name$*>(host));
     }
@@ -440,7 +440,7 @@ public:
     {
         coid::ifcman::set_type_ifc<$name$>(HASHID, _cr_table, _fn_table, &ifc_meta);
         
-        interface_register::register_interface_creator("$ns suffix="::"$$name$@dcmaker", on ? (void*)&_host_wrapper : nullptr, &ifc_meta);
+        interface_register::register_interface_creator("$ns suffix="::"$$name$@dcconnect", on ? (void*)&_host_connector : nullptr, &ifc_meta);
     }
 };
 

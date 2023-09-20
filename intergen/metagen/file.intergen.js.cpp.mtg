@@ -250,7 +250,7 @@ $-(if !return.type="void")$
         r__->Set(ctx, v8::symbol("$$ret", iso), read_to_v8(_rval_));
  $-(elif ?noutargs)$
         v8::Handle<v8::Object> r__ = v8::Object::New(iso);
-        r__->Set(ctx, v8::symbol("$$ret", iso), ::js::wrap_object(_rval_.get(), ifc->context(iso)));
+        r__->Set(ctx, v8::symbol("$$ret", iso), ::js::wrap_interface(_rval_.get(), ifc->context(iso)));
  $-(elif !retifc)$
         v8::Handle<v8::Value> r__;
   $-(if ?return.ptr)$
@@ -262,9 +262,9 @@ $-(if !return.type="void")$
         r__ = read_to_v8(_rval_);
   $-(/if)$
  $-(elif ?return.ifc_type="1")$
-        v8::Handle<v8::Value> r__ = ::js::wrap_object(_rval_.get(), ifc->context(iso));
+        v8::Handle<v8::Value> r__ = ::js::wrap_interface(_rval_.get(), ifc->context(iso));
  $-(elif ?return.ifc_type="2")$
-        v8::Handle<v8::Value> r__ = ::js::wrap_data_object<$return.basetype$>(_rval_, "$return.basetype$"_T, ifc->context(iso));
+        v8::Handle<v8::Value> r__ = ::js::wrap_data_interface<$return.basetype$>(_rval_, "$return.basetype$"_T, ifc->context(iso));
  $-(/if)$
 
  $-[args ?outarg]$
@@ -272,7 +272,7 @@ $-(if !return.type="void")$
         static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
         r__->Set(ctx, v8::symbol("$name$", iso), read_to_v8($name$));
   $-(elif)$
-        r__->Set(ctx, v8::symbol("$name$", iso), ::js::wrap_object($name$.get(), ifc->context(iso)));
+        r__->Set(ctx, v8::symbol("$name$", iso), ::js::wrap_interface($name$.get(), ifc->context(iso)));
   $-(/if)$
  $-[/args]$
 $-(elif ?noutargs="1")$
@@ -281,7 +281,7 @@ $-(elif ?noutargs="1")$
         static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
         v8::Handle<v8::Value> r__ = read_to_v8($name$);
   $-(elif)$
-        v8::Handle<v8::Value> r__ = ::js::wrap_object(_rval_.get(), ifc->context(iso));
+        v8::Handle<v8::Value> r__ = ::js::wrap_interface(_rval_.get(), ifc->context(iso));
   $-(/if)$
  $-[/args]$
 $-(elif ?noutargs)$
@@ -291,7 +291,7 @@ $-(elif ?noutargs)$
         static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
         r__->Set(ctx, v8::symbol("$name$", iso), read_to_v8($name$));
   $-(elif)$
-        r__->Set(ctx, v8::symbol("$name$", iso), ::js::wrap_object($name$.get(), ifc->context(iso)));
+        r__->Set(ctx, v8::symbol("$name$", iso), ::js::wrap_interface($name$.get(), ifc->context(iso)));
   $-(/if)$
  $-[/args]$
 $-(elif)$
@@ -511,7 +511,7 @@ void $name$_js_dispatcher::_getter(v8::Local<v8::Name> property, const v8::ACCES
     static_assert(coid::has_metastream_operator<$getter.basetype$>::value, "missing metastream operator for '$getter.basetype$'");
     v8::Handle<v8::Value> r__ = read_to_v8(value);
  $-(elif)$
-    v8::Handle<v8::Value> r__ = ::js::wrap_object(value.get(), ifc->context(iso));
+    v8::Handle<v8::Value> r__ = ::js::wrap_interface(value.get(), ifc->context(iso));
  $-(/if)$
 
     args.GetReturnValue().Set(r__);
@@ -965,7 +965,6 @@ static iref<$ns suffix="::"$js::$name$_js_dispatcher> make_js_ifc_from_host_$nam
 
     // create interface object
     iref<$ns suffix="::"$js::$name$_js_dispatcher> ifc;
-
     ifc.create(new $ns suffix="::"$js::$name$_js_dispatcher(host));
 
     ifc->_object.Reset(iso, ifc->create_interface_object(context, false));
@@ -1102,7 +1101,7 @@ void $..name$_js_dispatcher::v8_$name$$@order$(const v8::ARGUMENTS& args)
         return (void)args.GetReturnValue().Set(v8::Undefined(iso));
 
     $..name$_js_dispatcher* disp_ = static_cast<$..name$_js_dispatcher*>(v8::Handle<v8::External>::Cast(intobj__)->Value());
-    ::$....nsx$$....class$* R_ = disp_->ifc.ready();
+    $..name$* R_ = disp_->ifc.ready();
 
     if (!R_) {
         coid::charstr tmp = "Null interface object in ";
@@ -1156,7 +1155,7 @@ $-(if !return.type="void")$
         r__->Set(ctx, v8::symbol("$$ret", iso), read_to_v8(_rval_));
  $-(elif ?noutargs)$
         v8::Handle<v8::Object> r__ = v8::Object::New(iso);
-        r__->Set(ctx, v8::symbol("$$ret", iso), ::js::wrap_object(_rval_.get(), ifc->context(iso)));
+        r__->Set(ctx, v8::symbol("$$ret", iso), ::js::wrap_interface(_rval_.get(), ifc->context(iso)));
  $-(elif !retifc)$
         v8::Handle<v8::Value> r__;
   $-(if ?return.ptr)$
@@ -1168,9 +1167,9 @@ $-(if !return.type="void")$
         r__ = read_to_v8(_rval_);
   $-(/if)$
  $-(elif ?return.ifc_type="1")$
-        v8::Handle<v8::Value> r__ = ::js::wrap_object(_rval_.get(), ifc->context(iso));
+        v8::Handle<v8::Value> r__ = ::js::wrap_interface(_rval_.get(), ifc->context(iso));
  $-(elif ?return.ifc_type="2")$
-        v8::Handle<v8::Value> r__ = ::js::wrap_data_object<$return.basetype$>(_rval_.ready(), "$return.basetype$"_T, ifc->context(iso));
+        v8::Handle<v8::Value> r__ = ::js::wrap_data_interface<$return.basetype$>(_rval_.ready(), "$return.basetype$"_T, ifc->context(iso));
  $-(/if)$
 
  $-[args ?outarg]$
@@ -1178,7 +1177,7 @@ $-(if !return.type="void")$
         static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
         r__->Set(ctx, v8::symbol("$name$", iso), read_to_v8($name$));
   $-(elif)$
-        r__->Set(ctx, v8::symbol("$name$", iso), ::js::wrap_object($name$.get(), ifc->context(iso)));
+        r__->Set(ctx, v8::symbol("$name$", iso), ::js::wrap_interface($name$.get(), ifc->context(iso)));
   $-(/if)$
  $-[/args]$
 $-(elif ?noutargs="1")$
@@ -1187,7 +1186,7 @@ $-(elif ?noutargs="1")$
         static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
         v8::Handle<v8::Value> r__ = read_to_v8($name$);
   $-(elif)$
-        v8::Handle<v8::Value> r__ = ::js::wrap_object(_rval_.get(), ifc->context(iso));
+        v8::Handle<v8::Value> r__ = ::js::wrap_interface(_rval_.get(), ifc->context(iso));
   $-(/if)$
  $-[/args]$
 $-(elif ?noutargs)$
@@ -1197,7 +1196,7 @@ $-(elif ?noutargs)$
         static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
         r__->Set(ctx, v8::symbol("$name$", iso), read_to_v8($name$));
   $-(elif)$
-        r__->Set(ctx, v8::symbol("$name$", iso), ::js::wrap_object($name$.get(), ifc->context(iso)));
+        r__->Set(ctx, v8::symbol("$name$", iso), ::js::wrap_interface($name$.get(), ifc->context(iso)));
   $-(/if)$
  $-[/args]$
 $-(elif)$
@@ -1251,7 +1250,7 @@ void $name$_js_dispatcher::_getter(v8::Local<v8::Name> property, const v8::ACCES
     static_assert(coid::has_metastream_operator<$getter.basetype$>::value, "missing metastream operator for '$getter.basetype$'");
     v8::Handle<v8::Value> r__ = read_to_v8(value);
  $-(elif)$
-    v8::Handle<v8::Value> r__ = ::js::wrap_object(value.get(), ifc->context(iso));
+    v8::Handle<v8::Value> r__ = ::js::wrap_interface(value.get(), ifc->context(iso));
  $-(/if)$
 
     args.GetReturnValue().Set(r__);
@@ -1346,7 +1345,7 @@ v8::Handle<v8::Value> wrap_ifc_to_js_$name$(const coref<$name$>& orig_ifc, v8::H
     v8::Isolate* iso = v8::Isolate::GetCurrent();
 
     // check that the orig points to an object
-    if (!orig)
+    if (!orig_ifc)
         return v8::Null(iso);
 
     if (context.IsEmpty())
@@ -1356,50 +1355,43 @@ v8::Handle<v8::Value> wrap_ifc_to_js_$name$(const coref<$name$>& orig_ifc, v8::H
     v8::EscapableHandleScope scope(iso);
     
     // create interface object
-    $ns suffix="::"$js::$name$_js_dispatcher* difc = new $ns suffix="::"$js::$name$_js_dispatcher(ifc);
+    $ns suffix="::"$js::$name$_js_dispatcher* difc = new $ns suffix="::"$js::$name$_js_dispatcher(orig_ifc);
 
-    v8::Handle<v8::Value> r__ = v8::Handle<v8::Value>(difc->create_interface_object(ctx));
+    v8::Handle<v8::Value> r__ = v8::Handle<v8::Value>(difc->create_interface_object(context));
     return scope.Escape(r__);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Create JS interface from a host
-static v8::Handle<v8::Value> create_js_object_from_host_$name$(::$..nsx$$..class$* host, v8::Handle<v8::Context> ctx)
+static iref<$ns suffix="::"$js::$name$_js_dispatcher> make_js_ifc_from_host_$name$(::$..nsx$$..class$* host, v8::Handle<v8::Context> context)
 {
     // check that the orig points to an object
-    v8::Isolate* iso = ctx.IsEmpty() ? v8::Isolate::GetCurrent() : ctx->GetIsolate();
+    v8::Isolate* iso = context.IsEmpty() ? v8::Isolate::GetCurrent() : context->GetIsolate();
     if (!host)
-        return v8::Null(iso);
+        return 0;
 
-    if (ctx.IsEmpty())
-        ctx = iso->GetCurrentContext();
+    if (context.IsEmpty())
+        context = iso->GetCurrentContext();
 
-    v8::Context::Scope context_scope(ctx);
-    v8::EscapableHandleScope scope(iso);
+    v8::Context::Scope context_scope(context);
+    v8::HandleScope scope(iso);
 
     // create interface object
-    $ns suffix="::"$js::$name$_js_dispatcher* ifc = new $ns suffix="::"$js::$name$_js_dispatcher(host);
+    $ns suffix="::"$js::$name$_js_dispatcher* difc = new $ns suffix="::"$js::$name$_js_dispatcher(host);
 
-    //stream out
-$-(if ?noutargs)$
-    v8::Handle<v8::Object> r__ = v8::Object::New(iso);
-    r__->Set(ctx, v8::symbol("$$ret", iso), v8::Handle<v8::Value>(ifc->create_interface_object(ctx)));
-$-(elif)$
-    v8::Handle<v8::Value> r__ = v8::Handle<v8::Value>(ifc->create_interface_object(ctx));
-$-(/if)$
-
-    return scope.Escape(r__);
+    difc->_object.Reset(iso, difc->create_interface_object(context));
+    return difc;
 }
 
 $-(/if)$
 ////////////////////////////////////////////////////////////////////////////////
 static void register_binders_for_$name$(bool on)
 {
-    //script interface maker from data host
-    interface_register::register_interface_creator("$name$@dcmaker.js", on ? (void*)&create_js_object_from_host_$name$ : nullptr, nullptr);
+    //script interface wrapper from data interface
+    interface_register::register_interface_creator("$name$@dcwrapper.js", on ? (void*)&wrap_ifc_to_js_$name$ : nullptr, nullptr);
 
-    //script interface maker from data interface
-    interface_register::register_interface_creator("$name$@dcwrapper.js", on ? (void*)&create_js_object_from_interface_$name$ : nullptr, nullptr);
+    //script interface maker from data host
+    interface_register::register_interface_creator("$name$@dcmaker.js", on ? (void*)&make_js_ifc_from_host_$name$ : nullptr, nullptr);
 }
 
 //auto-register the bind function
