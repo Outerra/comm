@@ -238,38 +238,33 @@ __declspec(noinline) int $..name$_lua_dispatcher::lua_$name$$@order$_exc(lua_Sta
 
         //stream the arguments in
 $-[args ?inarg !nojs]$
+  $-(if !iref)$
+        static_assert(coid::has_metastream_operator<$(if ?fnarg)$$type$ (*)($fnargs$)$(elif)$$basetype$$(/if)$>::value, "missing metastream operator for '$(if ?fnarg)$$type$ (*)($fnargs$)$(elif)$$basetype$$(/if)$'");
+  $-(/if)$
+$-[/args]$
+
+$-[args ?inarg !nojs]$
 
         lua_pushvalue(L, $@order$ + 2);
-  $-(if ?iref)$
-        $basetype$ $name$;
-    $-(if !defval.empty)$
-        if ($@order$ < args_count)
-            from_lua($name$);
-        else
-            $name$ = $defval$;
-    $-(elif)$
-        from_lua($name$);
-    $-(/if)$
-  $-(elif)$
-        static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator '$basetype$'");
-    $-(if !defval.empty ?ptr)$
+
+  $-(if !defval.empty ?ptr)$
         threadcached<$basetype$> $name$__tmp;
-        $basetype$ *$name$ = &$name$__tmp;
+        $basetype$* $name$ = &$name$__tmp;
         if ($@order$ < args_count)
             from_lua($name$__tmp);
         else
             $name$ = $defval$;
-    $-(elif !defval.empty)$
+  $-(elif !defval.empty)$
         threadcached<$basetype$> $name$;
         if ($@order$ < args_count)
             from_lua($name$);
         else
             $name$ = $defval$;
-    $-(elif)$
-            threadcached<$basetype$> $name$;
+  $-(elif)$
+        threadcached<$(if ?fnarg)$$type$ (*)($fnargs$)$(elif)$$basetype$$(/if)$> $name$;
         from_lua($name$);
-    $-(/if)$
   $-(/if)$
+
         lua_pop(L, 1); // who pushes, must pop!
 $-[/args]$
 

@@ -394,6 +394,10 @@ public:
     };
 
 
+    /// @brief Get data ifc type interface descriptor, checking the version
+    /// @tparam T data interface type
+    /// @param hash version
+    /// @return ptr to the descriptor, if it exists and its version matches, otherwise null
     template <class T>
     static const data_ifc_descriptor* get_type_ifc(uint64 hash) {
         ifcman& m = get();
@@ -401,11 +405,28 @@ public:
         return id < m._clients.size() && m._clients[id]._hash == hash ? &m._clients[id] : nullptr;
     }
 
+    /// @brief Get data ifc type interface descriptor
+    /// @tparam T data interface type
+    /// @return ptr to the descriptor if it exists, otherwise null
     template <class T>
-    static intergen_data_interface::ifn_t* set_type_ifc(uint64 hash, icr_t* cr_table, ifn_t* fn_table, const meta::class_interface* meta)
+    static const data_ifc_descriptor* get_type_ifc() {
+        ifcman& m = get();
+        uint id = m._seq.id<T>();
+        return id < m._clients.size() ? &m._clients[id] : nullptr;
+    }
+
+    /// @brief Set info about data interface type
+    /// @tparam T data interface type
+    /// @param hash version
+    /// @param cr_table table of creators
+    /// @param fn_table table of methods
+    /// @param meta meta info
+    /// @return assigned type id
+    template <class T>
+    static int set_type_ifc(uint64 hash, icr_t* cr_table, ifn_t* fn_table, const meta::class_interface* meta)
     {
         ifcman& m = get();
-        m._seq.assign<T>([&](int id, const type_sequencer<ifcman>::entry& en) {
+        int ord = m._seq.assign<T>([&](int id, const type_sequencer<ifcman>::entry& en) {
             data_ifc_descriptor& dc = m._clients.get_or_add(id);
             dc._fn_table = fn_table;
             dc._cr_table = cr_table;
@@ -413,7 +434,7 @@ public:
             dc._hash = hash;
             dc._meta = meta;
         });
-        return fn_table;
+        return ord;
     }
 
 private:

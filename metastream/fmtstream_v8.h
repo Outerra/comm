@@ -42,6 +42,7 @@
 #include "../range.h"
 #include "../str.h"
 #include "../ref.h"
+#include "../global.h"
 #include "metastream.h"
 
 #if V8_MAJOR_VERSION > 7 || (V8_MAJOR_VERSION == 7 && V8_MINOR_VERSION >= 7)
@@ -315,7 +316,7 @@ public:
 template<class T> class to_v8<iref<T>> {
 public:
     static v8::Handle<v8::Value> read(const iref<T>& v) {
-        v8::Isolate* iso = v8::Isolate::GetCurrent();
+        /*v8::Isolate* iso = v8::Isolate::GetCurrent();
         typedef v8::Handle<v8::Value>(*ifc_create_wrapper_fn)(T* orig, v8::Handle<v8::Context> context);
 
         ifc_create_wrapper_fn wrap = reinterpret_cast<ifc_create_wrapper_fn>(v->intergen_wrapper(intergen_interface::backend::js));
@@ -323,17 +324,28 @@ public:
             return v8::Null(iso);
         }
 
-        return wrap(v.get(), v8::Handle<v8::Context>());
+        return wrap(v.get(), v8::Handle<v8::Context>());*/
+        return ::js::wrap_interface(v.get(), v8::Handle<v8::Context>());
+    }
+};
+
+///Generic coref<T> partial specialization
+template<class T> class to_v8<coref<T>> {
+public:
+    static v8::Handle<v8::Value> read(const coref<T>& v) {
+        const coid::ifcman::data_ifc_descriptor* desc = coid::ifcman::template get_type_ifc<T>();
+        return desc && desc->_meta
+            ? ::js::wrap_data_interface(v, desc->_meta->nsname, v8::Handle<v8::Context>())
+            : v8::Undefined(v8::Isolate::GetCurrent());
     }
 };
 
 template<class T> class from_v8<iref<T>> {
 public:
     static bool write(v8::Handle<v8::Value> src, iref<T>& res) {
-        res = ::js::template unwrap_object<T>(src);
+        res = ::js::template unwrap_interface<T>(src);
         return !res.is_empty();
     }
-
 };
 
 

@@ -538,10 +538,11 @@ inline v8::Handle<v8::Value> wrap_data_interface(const coref<T>& data, const coi
     v8::EscapableHandleScope handle_scope(iso);
 
     typedef v8::Handle<v8::Value>(*fn_wrapper)(const coref<T>&, v8::Handle<v8::Context>);
-    static fn_wrapper fn = static_cast<fn_wrapper>(coid::interface_register::get_script_interface_wrapper(ifcname, "js"_T));
+    static fn_wrapper fn = static_cast<fn_wrapper>(coid::interface_register::get_script_interface_dcwrapper(ifcname, "js"_T));
 
     if (fn)
         return handle_scope.Escape(fn(data, context));
+
     return v8::Undefined(iso);
 }
 

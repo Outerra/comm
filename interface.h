@@ -152,7 +152,7 @@ inline bool operator & (method::flg a, method::flg b) { return (uint(a) & uint(b
 /// @brief meta-data for interfaces to classes
 struct class_interface
 {
-    const token nsname;
+    const token nsname;                 //< fully qualified interface name (with namespaces)
     const token hdrfile;
     const token storage;
 

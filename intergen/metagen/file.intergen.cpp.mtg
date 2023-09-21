@@ -84,13 +84,13 @@ $-[method !static ?retifc first="\n"]$
         using wrapper_fn = iref<$return.basetype$>(*)(policy_intrusive_base*, $return.basetype$*);
         static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_connector("$return.basetype$");
         return wrapper
-            ? wrapper(_host.cast<$classname$>()->$name$($[args rest=","]$ $-(if ?xref)$std::forward<$basetype$>($(/if)-$ $name$ $-(if ?xref)$)$(/if)-$ $[/args]$), 0)
+            ? wrapper(_host.cast<::$classname$>()->$name$($[args rest=","]$ $-(if ?xref)$std::forward<$basetype$>($(/if)-$ $name$ $-(if ?xref)$)$(/if)-$ $[/args]$), 0)
             : iref<$return.basetype$>();
  $-(elif ?return.ifc_type="2")$
         using wrapper_fn = coref<$return.basetype$>(*)($return.hosttype$*);
         static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_dcconnector("$return.basetype$");
         return wrapper
-            ? wrapper(_host.cast<$classname$>()->$name$($[args rest=","]$ $-(if ?xref)$std::forward<$basetype$>($(/if)-$ $name$ $-(if ?xref)$)$(/if)-$ $[/args]$))
+            ? wrapper(_host.cast<::$classname$>()->$name$($[args rest=","]$ $-(if ?xref)$std::forward<$basetype$>($(/if)-$ $name$ $-(if ?xref)$)$(/if)-$ $[/args]$))
             : coref<$return.basetype$>(nullptr);
  $-(/if)$
     }
@@ -103,9 +103,7 @@ $-(if !virtual)$
 
         _vtable1 = new ifn_t[$method.@size !static$];
 $-[method !static]$
-$-(if ?return.ifc_type="1")$
-        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if ?const)$const$(/if)$>(&wrap_$intname$));
-$-(elif ?return.ifc_type="2")$
+$-(if ?return.ifc_type)$
         _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if ?const)$const$(/if)$>(&wrap_$intname$));
 $-(elif)$
         _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if ?const)$const$(/if)$>(&::$classname$::$intname$));
@@ -433,13 +431,13 @@ protected:
     {
         return coref<$name$>(reinterpret_cast<$name$*>(host));
     }
-    
+
 public:
 
     static void register_interfaces(bool on)
     {
         coid::ifcman::set_type_ifc<$name$>(HASHID, _cr_table, _fn_table, &ifc_meta);
-        
+
         interface_register::register_interface_creator("$ns suffix="::"$$name$@dcconnect", on ? (void*)&_host_connector : nullptr, &ifc_meta);
     }
 };
