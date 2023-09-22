@@ -102,6 +102,13 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
         lex.match(')');
     }
 
+    bool retvoid = ret.type == "void";
+
+    nalloutargs = noutargs;
+    if (!retvoid)
+        ++nalloutargs;
+    bmultioutargs = nalloutargs > 1;
+
     bconst = lex.matches("const");
     bool boverride = lex.matches("override");
 
@@ -120,7 +127,7 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
             default_event_body = ' ';
     }
 
-    bnoevbody = !evbody && (ret.type != "void" || noutargs > 0);
+    bnoevbody = !evbody && nalloutargs > 0;
 
     //declaration parsed successfully
     return lex.no_err() && ncontinuable_errors == 0;

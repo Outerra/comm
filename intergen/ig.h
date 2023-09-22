@@ -302,6 +302,7 @@ struct MethodIG
     bool bpure = false;                 //< pure virtual on client
     bool bduplicate = false;            //< a duplicate method/event from another interface of the host
     bool binherit = false;              //< method inherited from base interface
+    bool bmultioutargs = false;         //< has multiple outputs (return value and out params)
 
     Arg ret;
     dynarray<Arg> args;
@@ -309,6 +310,7 @@ struct MethodIG
     int ninargs = 0;                    //< number of input arguments
     int ninargs_nondef = 0;
     int noutargs = 0;                   //< number of output arguments
+    int nalloutargs = 0;                //< number of output arguments including return (if not void)
 
     dynarray<charstr> comments;         //< comments preceding the method declaration
     dynarray<charstr> docs;             //< doc paragraphs
@@ -374,10 +376,12 @@ struct MethodIG
             m.member("pure", p.bpure);
             m.member("duplicate", p.bduplicate);
             m.member("inherit", p.binherit);
+            m.member("multiout", p.bmultioutargs);
             m.member("args", p.args);
             m.member("ninargs", p.ninargs);
             m.member("ninargs_nondef", p.ninargs_nondef);
             m.member("noutargs", p.noutargs);
+            m.member("nalloutargs", p.nalloutargs);
             m.member("comments", p.comments);
             m.member("docs", p.docs);
             m.member("index", p.index);

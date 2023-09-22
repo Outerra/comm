@@ -242,56 +242,27 @@ $-[args ?outarg !inarg]$
 $-[/args]$
 
         //invoke
-        $(if !return.type="void")$$return.type$ _rval_ = $(/if)$R_->$name$($[args rest=", "]$ $-(if ?ptr ?outarg)$&$-(elif ?ptr ?defval.empty !specptr)$&$(/if)$ $-(if ?nojs)$$defval$$(elif)$$name$$(/if)$$[/args]$);
+        $(if !return.type="void")$$return.type$ rval__ = $(/if)$R_->$name$($[args rest=", "]$ $-(if ?ptr ?outarg)$&$-(elif ?ptr ?defval.empty !specptr)$&$(/if)$ $-(if ?nojs)$$defval$$(elif)$$name$$(/if)$$[/args]$);
+$-(if ?nalloutargs)$
 
         //stream out
-$-(if !return.type="void")$
-  $-(if ?noutargs)$
-        static_assert(coid::has_metastream_operator<$return.type$>::value, "missing metastream operator for '$return.type$'");
+$-(if ?multiout)$
         v8::Handle<v8::Object> r__ = v8::Object::New(iso);
-        r__->Set(ctx, v8::symbol("$$ret", iso), read_to_v8(_rval_));
-  $-(elif !retifc)$
-    $-(if ?return.ptr)$
-        static_assert(coid::has_metastream_operator<$return.basetype$>::value, "missing metastream operator for '$return.basetype$'");
-        v8::Handle<v8::Value> r__;
-        if (_rval_)
-            r__ = read_to_v8(*_rval_);
-    $-(elif)$
-        static_assert(coid::has_metastream_operator<$return.basetype$>::value, "missing metastream operator for '$return.basetype$'");
-        v8::Handle<v8::Value> r__ = read_to_v8(_rval_);
-    $-(/if)$
-  $-(elif ?return.ifc_type="1")$
-        v8::Handle<v8::Value> r__ = ::js::wrap_interface(_rval_.get(), ifc->context(iso));
-  $-(elif ?return.ifc_type="2")$
-        v8::Handle<v8::Value> r__ = ::js::wrap_data_interface<$return.basetype$>(_rval_, "$return.basetype$"_T, ifc->context(iso));
-  $-(/if)$
-
-  $-[args ?outarg]$
-    $-(if ?iref)$
-        r__->Set(ctx, v8::symbol("$name$", iso), ::js::wrap_interface($name$.get(), ifc->context(iso)));
-    $-(elif ?cref)$
-        r__->Set(ctx, v8::symbol("$name$", iso), ::js::wrap_data_interface($name$.get(), "$return.basetype$"_T, ifc->context(iso)));
-    $-(elif)$
-        static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
+$-(/if)$
+$-(if !return.type="void")$
+        $(if ?multiout)$r__->Set(ctx, v8::symbol("$$ret", iso), read_to_v8(rval__));$(elif)$v8::Handle<v8::Value> r__ = read_to_v8(rval__);$(/if)$
+$-(/if)$
+$-[args ?outarg]$
+  $-(if ?..multiout)$
         r__->Set(ctx, v8::symbol("$name$", iso), read_to_v8($name$));
-    $-(/if)$
-  $-[/args]$
-$-(elif ?noutargs="1")$
-  $-[args ?outarg]$
+  $-(elif)$        
         static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
         v8::Handle<v8::Value> r__ = read_to_v8($name$);
-  $-[/args]$
-$-(elif ?noutargs)$
-        v8::Handle<v8::Object> r__ = v8::Object::New(iso);
-  $-[args ?outarg]$
-        static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
-        r__->Set(ctx, v8::symbol("$name$", iso), read_to_v8($name$));
- $-[/args]$
-$-(elif)$
-        v8::Handle<v8::Object> r__;
-$(/if)-$
+  $-(/if)$
+$-[/args]$
 
         args.GetReturnValue().Set(r__);
+$-(/if)$
     }
     catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
@@ -328,7 +299,7 @@ $-(elif)$
         throw coid::exception("handler not implemented");
   $-(/if)$
 
-// prepare in arguments
+    // prepare in arguments
 $-[args ?inarg !iref]$
     static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
 $-[/args]$
@@ -340,7 +311,7 @@ $-[/args]$
     };
 
 $-(/if)$
-//  event call
+    //  event call
     v8::Local<v8::Value> r__ = ev__->Call(
         ctx__,
         _object.Get(iso),
@@ -352,7 +323,7 @@ $-[/args]$
 
     if (js_trycatch__.HasCaught())
         ::js::script_handle::throw_exception_from_js_error(js_trycatch__, "$..ns suffix="::"$js::$..name$.$name$");
-// gather results
+    // gather results
 $-(if !noutargs)$
 
  $-(if !return.type="void")$
@@ -1142,57 +1113,63 @@ $-[/args]$
         $(if !return.type="void")$$return.type$ _rval_ = $(/if)$R_->$intname$($[args rest=", "]$ $-(if ?ptr ?outarg)$&$-(elif ?ptr ?defval.empty !specptr)$&$(/if)$ $-(if ?nojs)$$defval$$(elif)$$name$$(/if)$$[/args]$);
 
         //stream out
-$-(if !return.type="void")$
- $-(if !retifc ?noutargs)$
+$-(if !return.type="void" /*has some return value*/)$
+  $-(if !retifc ?noutargs)$
         static_assert(coid::has_metastream_operator<$return.type$>::value, "missing metastream operator for '$return.type$'");
         v8::Handle<v8::Object> r__ = v8::Object::New(iso);
         r__->Set(ctx, v8::symbol("$$ret", iso), read_to_v8(_rval_));
- $-(elif ?noutargs)$
+  $-(elif ?noutargs)$
         v8::Handle<v8::Object> r__ = v8::Object::New(iso);
         r__->Set(ctx, v8::symbol("$$ret", iso), ::js::wrap_interface(_rval_.get(), ifc->context(iso)));
- $-(elif !retifc)$
+  $-(elif !retifc)$
         v8::Handle<v8::Value> r__;
-  $-(if ?return.ptr)$
+    $-(if ?return.ptr)$
         static_assert(coid::has_metastream_operator<$return.basetype$>::value, "missing metastream operator for '$return.basetype$'");
         if (_rval_)
             r__ = read_to_v8(*_rval_);
-  $-(elif)$
+    $-(elif)$
         static_assert(coid::has_metastream_operator<$return.basetype$>::value, "missing metastream operator for '$return.basetype$'");
         r__ = read_to_v8(_rval_);
-  $-(/if)$
- $-(elif ?return.ifc_type="1")$
+    $-(/if)$
+  $-(elif ?return.ifc_type="1")$
         v8::Handle<v8::Value> r__ = ::js::wrap_interface(_rval_.get(), ifc->context(iso));
- $-(elif ?return.ifc_type="2")$
+  $-(elif ?return.ifc_type="2")$
         v8::Handle<v8::Value> r__ = ::js::wrap_data_interface<$return.basetype$>(_rval_.ready(), "$return.basetype$"_T, ifc->context(iso));
- $-(/if)$
+  $-(/if)$
 
- $-[args ?outarg]$
-  $-(if !iref)$
+  $-[args ?outarg]$
+    $-(if ?iref)$
+        r__->Set(ctx, v8::symbol("$name$", iso), ::js::wrap_interface($name$.get(), ifc->context(iso)));
+    $-(elif ?cref)$
+        r__->Set(ctx, v8::symbol("$name$", iso), ::js::wrap_data_interface($name$.get(), ifc->context(iso)));
+    $-(elif)$
         static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
         r__->Set(ctx, v8::symbol("$name$", iso), read_to_v8($name$));
-  $-(elif)$
-        r__->Set(ctx, v8::symbol("$name$", iso), ::js::wrap_interface($name$.get(), ifc->context(iso)));
-  $-(/if)$
- $-[/args]$
-$-(elif ?noutargs="1")$
- $-[args ?outarg]$
-  $-(if !iref)$
+    $-(/if)$
+  $-[/args]$
+$-(elif ?noutargs="1" /*void return and just a single output value*/)$
+  $-[args ?outarg]$
+    $-(if ?iref)$
+        v8::Handle<v8::Value> r__ = ::js::wrap_interface(_rval_.get(), ifc->context(iso));
+    $-(elif ?cref)$
+        v8::Handle<v8::Value> r__ = ::js::wrap_data_interface(_rval_.get(), ifc->context(iso));
+    $-(elif)$
         static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
         v8::Handle<v8::Value> r__ = read_to_v8($name$);
-  $-(elif)$
-        v8::Handle<v8::Value> r__ = ::js::wrap_interface(_rval_.get(), ifc->context(iso));
-  $-(/if)$
- $-[/args]$
-$-(elif ?noutargs)$
+    $-(/if)$
+  $-[/args]$
+$-(elif ?noutargs /*multiple output values*/)$
         v8::Handle<v8::Object> r__ = v8::Object::New(iso);
- $-[args ?outarg]$
-  $-(if !iref)$
+  $-[args ?outarg]$
+    $-(if ?iref)$
+        r__->Set(ctx, v8::symbol("$name$", iso), ::js::wrap_interface($name$.get(), ifc->context(iso)));
+    $-(elif ?cref)$
+        r__->Set(ctx, v8::symbol("$name$", iso), ::js::wrap_data_interface($name$.get(), ifc->context(iso)));
+    $-(elif)$
         static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
         r__->Set(ctx, v8::symbol("$name$", iso), read_to_v8($name$));
-  $-(elif)$
-        r__->Set(ctx, v8::symbol("$name$", iso), ::js::wrap_interface($name$.get(), ifc->context(iso)));
-  $-(/if)$
- $-[/args]$
+    $-(/if)$
+  $-[/args]$
 $-(elif)$
         v8::Handle<v8::Object> r__;
 $(/if)-$

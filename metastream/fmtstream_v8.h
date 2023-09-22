@@ -333,10 +333,7 @@ public:
 template<class T> class to_v8<coref<T>> {
 public:
     static v8::Handle<v8::Value> read(const coref<T>& v) {
-        const coid::ifcman::data_ifc_descriptor* desc = coid::ifcman::template get_type_ifc<T>();
-        return desc && desc->_meta
-            ? ::js::wrap_data_interface(v, desc->_meta->nsname, v8::Handle<v8::Context>())
-            : v8::Undefined(v8::Isolate::GetCurrent());
+        return ::js::wrap_data_interface(v, token::type_name<T>(), v8::Handle<v8::Context>());
     }
 };
 

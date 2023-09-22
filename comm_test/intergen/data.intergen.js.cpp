@@ -83,7 +83,7 @@ void component_ifc_js_dispatcher::v8_set_a0(const v8::ARGUMENTS& args)
         return (void)args.GetReturnValue().Set(v8::Undefined(iso));
 
     component_ifc_js_dispatcher* disp_ = static_cast<component_ifc_js_dispatcher*>(v8::Handle<v8::External>::Cast(intobj__)->Value());
-    component_ifc* R_ = disp_->ifc.ready();
+    ::component* R_ = reinterpret_cast<::component*>(disp_->ifc.ready());
 
     if (!R_) {
         coid::charstr tmp = "Null interface object in ";
@@ -102,7 +102,6 @@ void component_ifc_js_dispatcher::v8_set_a0(const v8::ARGUMENTS& args)
         write_from_v8(args[0], b);
 
         //invoke
-
         R_->set_a(b);
 
         //stream out
@@ -137,7 +136,7 @@ void component_ifc_js_dispatcher::v8_set_b1(const v8::ARGUMENTS& args)
         return (void)args.GetReturnValue().Set(v8::Undefined(iso));
 
     component_ifc_js_dispatcher* disp_ = static_cast<component_ifc_js_dispatcher*>(v8::Handle<v8::External>::Cast(intobj__)->Value());
-    component_ifc* R_ = disp_->ifc.ready();
+    ::component* R_ = reinterpret_cast<::component*>(disp_->ifc.ready());
 
     if (!R_) {
         coid::charstr tmp = "Null interface object in ";
@@ -218,7 +217,7 @@ v8::Handle<v8::Value> wrap_ifc_to_js_component_ifc(const coref<component_ifc>& o
 
     v8::Context::Scope context_scope(context);
     v8::EscapableHandleScope scope(iso);
-    
+
     // create interface object
     js::component_ifc_js_dispatcher* difc = new js::component_ifc_js_dispatcher(orig_ifc);
 

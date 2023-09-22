@@ -789,19 +789,28 @@ public:
 template<class T>
 class lua_streamer<iref<T>> {
 public:
-    static void to_lua(const iref<T>& val) {
-        typedef iref <::lua::registry_handle>(*ifc_create_wrapper_fn)(T* , iref<lua::registry_handle>);
+    static void to_lua(const iref<T>& val)
+    {
+        typedef iref<::lua::registry_handle>(*ifc_create_wrapper_fn)(T*, iref<lua::registry_handle>);
         auto& streamer = THREAD_SINGLETON(lua_streamer_context);
-        lua_State * L = streamer.get_cur_state();
+        lua_State* L = streamer.get_cur_state();
         lua_pushvalue(L, LUA_ENVIRONINDEX);
         iref<lua::weak_registry_handle> context = new lua::weak_registry_handle(L);
         context->set_ref();
-        reinterpret_cast<ifc_create_wrapper_fn>(val->intergen_wrapper(T::IFC_BACKEND_LUA))(val.get(), context)->get_ref();
+        ::lua::wrap_interface(val.get(), context):
+        //reinterpret_cast<ifc_create_wrapper_fn>(val->intergen_wrapper(T::IFC_BACKEND_LUA))(val.get(), context)->get_ref();
     };
-    static void from_lua(iref<T>& val) {
+
+    static void to_lua(const coref<T>& val)
+    {
+        //TODO
+    };
+
+    static void from_lua(iref<T>& val)
+    {
         auto& streamer = THREAD_SINGLETON(lua_streamer_context);
         lua_State * L = streamer.get_cur_state();
-        val = ::lua::unwrap_object<T>(L);
+        val = ::lua::unwrap_interface<T>(L);
         lua_pop(L, 1);
     };
 };

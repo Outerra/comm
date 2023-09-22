@@ -220,22 +220,25 @@ __declspec(noinline) int client_lua_dispatcher::lua_set_def0_exc(lua_State * L)
         THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
         //stream the arguments in
+        static_assert(coid::has_metastream_operator<flags>::value, "missing metastream operator for 'flags'");
+
 
         lua_pushvalue(L, 0 + 2);
-        static_assert(coid::has_metastream_operator<flags>::value, "missing metastream operator 'flags'");
+
         threadcached<flags> flg;
         if (0 < args_count)
             from_lua(flg);
         else
             flg = {.a = 1, .b = 2};
+
         lua_pop(L, 1); // who pushes, must pop!
 
-//out params
+        //out params
 
-// invoke
+        // invoke
         R_->set_def(flg);
 
-//stream out
+        //stream out
         THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
         return 0;    }
@@ -244,8 +247,7 @@ __declspec(noinline) int client_lua_dispatcher::lua_set_def0_exc(lua_State * L)
         ::lua::process_exception_and_push_error_string_internal(e, L);
     }
 
-    if (exception_caught)
-    {
+    if (exception_caught) {
         lua_error(L);
     }
 
@@ -321,19 +323,22 @@ __declspec(noinline) int client_lua_dispatcher::lua_set1_exc(lua_State * L)
         THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
         //stream the arguments in
+        static_assert(coid::has_metastream_operator<coid::token>::value, "missing metastream operator for 'coid::token'");
+
 
         lua_pushvalue(L, 0 + 2);
-        static_assert(coid::has_metastream_operator<coid::token>::value, "missing metastream operator 'coid::token'");
-            threadcached<coid::token> par;
+
+        threadcached<coid::token> par;
         from_lua(par);
+
         lua_pop(L, 1); // who pushes, must pop!
 
-//out params
+        //out params
 
-// invoke
+        // invoke
         R_->set(par);
 
-//stream out
+        //stream out
         THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
         return 0;    }
@@ -342,8 +347,7 @@ __declspec(noinline) int client_lua_dispatcher::lua_set1_exc(lua_State * L)
         ::lua::process_exception_and_push_error_string_internal(e, L);
     }
 
-    if (exception_caught)
-    {
+    if (exception_caught) {
         lua_error(L);
     }
 
@@ -420,17 +424,18 @@ __declspec(noinline) int client_lua_dispatcher::lua_get2_exc(lua_State * L)
 
         //stream the arguments in
 
-//out params
+
+        //out params
         coid::charstr par;
 
-// invoke
+        // invoke
         int _rval_ = R_->get(par);
 
-//stream out
+        //stream out
         THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
         constexpr uint _res_count = 1 + 1;
-        lua_createtable(L,0,_res_count);
+        lua_createtable(L, 0, _res_count);
         static_assert(coid::has_metastream_operator<int>::value, "missing metastream operator for 'int'");
         to_lua(_rval_);
             lua_setfield(L, -2, "_ret");
@@ -447,8 +452,7 @@ __declspec(noinline) int client_lua_dispatcher::lua_get2_exc(lua_State * L)
         ::lua::process_exception_and_push_error_string_internal(e, L);
     }
 
-    if (exception_caught)
-    {
+    if (exception_caught) {
         lua_error(L);
     }
 
@@ -525,16 +529,16 @@ __declspec(noinline) int client_lua_dispatcher::lua_custom3_exc(lua_State * L)
 
         //stream the arguments in
 
-//out params
 
-// invoke
+        //out params
+
+        // invoke
         sometype _rval_ = R_->custom();
 
-//stream out
+        //stream out
         THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
-        static_assert(coid::has_metastream_operator<sometype>::value, "missing metastream operator for 'sometype'");
-        to_lua(_rval_);
+        lua_pushref(L, ::lua::wrap_interface(_rval_.get(), ifc->_context));
 
         return 1;
     }
@@ -543,8 +547,7 @@ __declspec(noinline) int client_lua_dispatcher::lua_custom3_exc(lua_State * L)
         ::lua::process_exception_and_push_error_string_internal(e, L);
     }
 
-    if (exception_caught)
-    {
+    if (exception_caught) {
         lua_error(L);
     }
 
@@ -621,16 +624,16 @@ __declspec(noinline) int client_lua_dispatcher::lua_overridable4_exc(lua_State *
 
         //stream the arguments in
 
-//out params
 
-// invoke
+        //out params
+
+        // invoke
         bool _rval_ = R_->overridable();
 
-//stream out
+        //stream out
         THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
-        static_assert(coid::has_metastream_operator<bool>::value, "missing metastream operator for 'bool'");
-        to_lua(_rval_);
+        lua_pushref(L, ::lua::wrap_interface(_rval_.get(), ifc->_context));
 
         return 1;
     }
@@ -639,8 +642,7 @@ __declspec(noinline) int client_lua_dispatcher::lua_overridable4_exc(lua_State *
         ::lua::process_exception_and_push_error_string_internal(e, L);
     }
 
-    if (exception_caught)
-    {
+    if (exception_caught) {
         lua_error(L);
     }
 
@@ -1508,12 +1510,13 @@ __declspec(noinline) int client2_lua_dispatcher::lua_test0_exc(lua_State * L)
 
         //stream the arguments in
 
-//out params
 
-// invoke
+        //out params
+
+        // invoke
         R_->test();
 
-//stream out
+        //stream out
         THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
         return 0;    }
@@ -1522,8 +1525,7 @@ __declspec(noinline) int client2_lua_dispatcher::lua_test0_exc(lua_State * L)
         ::lua::process_exception_and_push_error_string_internal(e, L);
     }
 
-    if (exception_caught)
-    {
+    if (exception_caught) {
         lua_error(L);
     }
 
@@ -1600,12 +1602,13 @@ __declspec(noinline) int client2_lua_dispatcher::lua_get1_exc(lua_State * L)
 
         //stream the arguments in
 
-//out params
 
-// invoke
+        //out params
+
+        // invoke
         coref<component_ifc> _rval_ = R_->get();
 
-//stream out
+        //stream out
         THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
         static_assert(coid::has_metastream_operator<component_ifc>::value, "missing metastream operator for 'component_ifc'");
@@ -1619,8 +1622,7 @@ __declspec(noinline) int client2_lua_dispatcher::lua_get1_exc(lua_State * L)
         ::lua::process_exception_and_push_error_string_internal(e, L);
     }
 
-    if (exception_caught)
-    {
+    if (exception_caught) {
         lua_error(L);
     }
 

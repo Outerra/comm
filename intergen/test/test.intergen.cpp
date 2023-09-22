@@ -404,14 +404,14 @@ private:
         using wrapper_fn = iref<ifc1::ifc2::emptyface>(*)(policy_intrusive_base*, ifc1::ifc2::emptyface*);
         static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_connector("ifc1::ifc2::emptyface");
         return wrapper
-            ? wrapper(_host.cast<n1::n2::thing>()->ret_classifc(), 0)
+            ? wrapper(_host.cast<::n1::n2::thing>()->ret_classifc(), 0)
             : iref<ifc1::ifc2::emptyface>();
     }
     coref<component_ifc> wrap_ret_structifc() {
         using wrapper_fn = coref<component_ifc>(*)(component*);
         static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_dcconnector("component_ifc");
         return wrapper
-            ? wrapper(_host.cast<n1::n2::thing>()->ret_structifc())
+            ? wrapper(_host.cast<::n1::n2::thing>()->ret_structifc())
             : coref<component_ifc>(nullptr);
     }
 
@@ -729,14 +729,14 @@ private:
         using wrapper_fn = iref<ifc1::ifc2::emptyface>(*)(policy_intrusive_base*, ifc1::ifc2::emptyface*);
         static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_connector("ifc1::ifc2::emptyface");
         return wrapper
-            ? wrapper(_host.cast<n1::n2::thing>()->ret_classifc(), 0)
+            ? wrapper(_host.cast<::n1::n2::thing>()->ret_classifc(), 0)
             : iref<ifc1::ifc2::emptyface>();
     }
     coref<component_ifc> wrap_ret_structifc() {
         using wrapper_fn = coref<component_ifc>(*)(component*);
         static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_dcconnector("component_ifc");
         return wrapper
-            ? wrapper(_host.cast<n1::n2::thing>()->ret_structifc())
+            ? wrapper(_host.cast<::n1::n2::thing>()->ret_structifc())
             : coref<component_ifc>(nullptr);
     }
 
@@ -1029,14 +1029,14 @@ private:
         using wrapper_fn = iref<ifc1::ifc2::emptyface>(*)(policy_intrusive_base*, ifc1::ifc2::emptyface*);
         static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_connector("ifc1::ifc2::emptyface");
         return wrapper
-            ? wrapper(_host.cast<n1::n2::thing>()->ret_classifc(), 0)
+            ? wrapper(_host.cast<::n1::n2::thing>()->ret_classifc(), 0)
             : iref<ifc1::ifc2::emptyface>();
     }
     coref<component_ifc> wrap_ret_structifc() {
         using wrapper_fn = coref<component_ifc>(*)(component*);
         static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_dcconnector("component_ifc");
         return wrapper
-            ? wrapper(_host.cast<n1::n2::thing>()->ret_structifc())
+            ? wrapper(_host.cast<::n1::n2::thing>()->ret_structifc())
             : coref<component_ifc>(nullptr);
     }
 
@@ -1336,14 +1336,14 @@ private:
         using wrapper_fn = iref<ifc1::ifc2::emptyface>(*)(policy_intrusive_base*, ifc1::ifc2::emptyface*);
         static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_connector("ifc1::ifc2::emptyface");
         return wrapper
-            ? wrapper(_host.cast<n1::n2::thing>()->ret_classifc(), 0)
+            ? wrapper(_host.cast<::n1::n2::thing>()->ret_classifc(), 0)
             : iref<ifc1::ifc2::emptyface>();
     }
     coref<component_ifc> wrap_ret_structifc() {
         using wrapper_fn = coref<component_ifc>(*)(component*);
         static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_dcconnector("component_ifc");
         return wrapper
-            ? wrapper(_host.cast<n1::n2::thing>()->ret_structifc())
+            ? wrapper(_host.cast<::n1::n2::thing>()->ret_structifc())
             : coref<component_ifc>(nullptr);
     }
 

@@ -80,13 +80,13 @@ protected:
     {
         return coref<component_ifc>(reinterpret_cast<component_ifc*>(host));
     }
-    
+
 public:
 
     static void register_interfaces(bool on)
     {
         coid::ifcman::set_type_ifc<component_ifc>(HASHID, _cr_table, _fn_table, &ifc_meta);
-        
+
         interface_register::register_interface_creator("component_ifc@dcconnect", on ? (void*)&_host_connector : nullptr, &ifc_meta);
     }
 };

@@ -186,13 +186,10 @@ void client_js_dispatcher::v8_set_def0(const v8::ARGUMENTS& args)
         else
             flg = {.a = 1, .b = 2};
 
+        //out params
+
         //invoke
         R_->set_def(flg);
-
-        //stream out
-        v8::Handle<v8::Object> r__;
-
-        args.GetReturnValue().Set(r__);
     }
     catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
@@ -239,13 +236,10 @@ void client_js_dispatcher::v8_set1(const v8::ARGUMENTS& args)
         threadcached<coid::token> par;
         write_from_v8(args[0], par);
 
+        //out params
+
         //invoke
         R_->set(par);
-
-        //stream out
-        v8::Handle<v8::Object> r__;
-
-        args.GetReturnValue().Set(r__);
     }
     catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
@@ -289,17 +283,17 @@ void client_js_dispatcher::v8_get2(const v8::ARGUMENTS& args)
         //stream the arguments in
 
 
-        //invoke
+        //out params
         coid::charstr par;
-        int _rval_ = R_->get(par);
+
+        //invoke
+        int rval__ = R_->get(par);
 
         //stream out
-        static_assert(coid::has_metastream_operator<int>::value, "missing metastream operator for 'int'");
         v8::Handle<v8::Object> r__ = v8::Object::New(iso);
-        r__->Set(ctx, v8::symbol("$ret", iso), read_to_v8(_rval_));
-
-        static_assert(coid::has_metastream_operator<coid::charstr>::value, "missing metastream operator for 'coid::charstr'");
+        r__->Set(ctx, v8::symbol("$ret", iso), read_to_v8(rval__));
         r__->Set(ctx, v8::symbol("par", iso), read_to_v8(par));
+
         args.GetReturnValue().Set(r__);
     }
     catch (const coid::exception& e) {
@@ -344,13 +338,13 @@ void client_js_dispatcher::v8_custom3(const v8::ARGUMENTS& args)
         //stream the arguments in
 
 
+        //out params
+
         //invoke
-        sometype _rval_ = R_->custom();
+        sometype rval__ = R_->custom();
 
         //stream out
-        v8::Handle<v8::Value> r__;
-        static_assert(coid::has_metastream_operator<sometype>::value, "missing metastream operator for 'sometype'");
-        r__ = read_to_v8(_rval_);
+        v8::Handle<v8::Value> r__ = read_to_v8(rval__);
 
         args.GetReturnValue().Set(r__);
     }
@@ -396,13 +390,13 @@ void client_js_dispatcher::v8_overridable4(const v8::ARGUMENTS& args)
         //stream the arguments in
 
 
+        //out params
+
         //invoke
-        bool _rval_ = R_->overridable();
+        bool rval__ = R_->overridable();
 
         //stream out
-        v8::Handle<v8::Value> r__;
-        static_assert(coid::has_metastream_operator<bool>::value, "missing metastream operator for 'bool'");
-        r__ = read_to_v8(_rval_);
+        v8::Handle<v8::Value> r__ = read_to_v8(rval__);
 
         args.GetReturnValue().Set(r__);
     }
@@ -427,13 +421,13 @@ void client_js_dispatcher::echo( int k )
     if (_events[0].IsEmpty() || ev__->IsUndefined())
         return;
 
-// prepare in arguments
+    // prepare in arguments
     static_assert(coid::has_metastream_operator<int>::value, "missing metastream operator for 'int'");
     v8::Handle<v8::Value> __inargs[] = {
         to_v8<int>::read(k)
     };
 
-//  event call
+    //  event call
     v8::Local<v8::Value> r__ = ev__->Call(
         ctx__,
         _object.Get(iso),
@@ -442,7 +436,7 @@ void client_js_dispatcher::echo( int k )
 
     if (js_trycatch__.HasCaught())
         ::js::script_handle::throw_exception_from_js_error(js_trycatch__, "js::client.echo");
-// gather results
+    // gather results
 
 }
 
@@ -560,13 +554,13 @@ int client_js_dispatcher::required( int x )
     if (_events[2].IsEmpty() || ev__->IsUndefined())
         throw coid::exception("handler not implemented");
 
-// prepare in arguments
+    // prepare in arguments
     static_assert(coid::has_metastream_operator<int>::value, "missing metastream operator for 'int'");
     v8::Handle<v8::Value> __inargs[] = {
         to_v8<int>::read(x)
     };
 
-//  event call
+    //  event call
     v8::Local<v8::Value> r__ = ev__->Call(
         ctx__,
         _object.Get(iso),
@@ -575,7 +569,7 @@ int client_js_dispatcher::required( int x )
 
     if (js_trycatch__.HasCaught())
         ::js::script_handle::throw_exception_from_js_error(js_trycatch__, "js::client.required");
-// gather results
+    // gather results
 
     static_assert(coid::has_metastream_operator<int>::value, "missing metastream operator for 'int'");
     threadcached<int> _rval_;
@@ -1130,13 +1124,10 @@ void client2_js_dispatcher::v8_test0(const v8::ARGUMENTS& args)
         //stream the arguments in
 
 
+        //out params
+
         //invoke
         R_->test();
-
-        //stream out
-        v8::Handle<v8::Object> r__;
-
-        args.GetReturnValue().Set(r__);
     }
     catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
@@ -1180,11 +1171,13 @@ void client2_js_dispatcher::v8_get1(const v8::ARGUMENTS& args)
         //stream the arguments in
 
 
+        //out params
+
         //invoke
-        coref<component_ifc> _rval_ = R_->get();
+        coref<component_ifc> rval__ = R_->get();
 
         //stream out
-        v8::Handle<v8::Value> r__ = ::js::wrap_data_interface<component_ifc>(_rval_, "component_ifc"_T, ifc->context(iso));
+        v8::Handle<v8::Value> r__ = read_to_v8(rval__);
 
         args.GetReturnValue().Set(r__);
     }
