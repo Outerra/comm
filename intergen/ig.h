@@ -279,9 +279,10 @@ struct MethodIG
     charstr file;
     uint line = 0;
 
-    charstr name;                       //< method name
-    charstr intname;                    //< internal name
+    charstr name;                       //< method name (in interface)
+    charstr intname;                    //< internal name (in host)
     charstr basename;                   //< method name, changed operator name
+    charstr retifcname;                 //< for methods returning interfaces, interface name
     charstr classname;                  //< class name (can be inherited)
     charstr storage;                    //< storage for host class, iref<type>, ref<type> or type*
     charstr default_event_body;
