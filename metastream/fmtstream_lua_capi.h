@@ -797,13 +797,8 @@ public:
         lua_pushvalue(L, LUA_ENVIRONINDEX);
         iref<lua::weak_registry_handle> context = new lua::weak_registry_handle(L);
         context->set_ref();
-        ::lua::wrap_interface(val.get(), context):
+        ::lua::wrap_interface(val.get(), context);
         //reinterpret_cast<ifc_create_wrapper_fn>(val->intergen_wrapper(T::IFC_BACKEND_LUA))(val.get(), context)->get_ref();
-    };
-
-    static void to_lua(const coref<T>& val)
-    {
-        //TODO
     };
 
     static void from_lua(iref<T>& val)
@@ -814,6 +809,22 @@ public:
         lua_pop(L, 1);
     };
 };
+
+template<class T>
+class lua_streamer<coref<T>> {
+public:
+
+    static void to_lua(const coref<T>& val)
+    {
+        //TODO
+    };
+
+    static void from_lua(coref<T>& val)
+    {
+        //TODO
+    };
+};
+
 
 //#define LUA_FAST_STREAMER(CTYPE,LTOPREFIX,LTYPE)                                                            \
 //template<>                                                                                                  \

@@ -1144,12 +1144,14 @@ inline bool write_from_v8(v8::Handle<v8::Value> src, T& t) {
 
 template<class T>
 inline bool write_from_v8(v8::Handle<v8::Value> src, threadcached<T>& tc) {
-    return from_v8<typename threadcached<T>::storage_type>::write(src, *tc);
+    using ST = typename threadcached<T>::storage_type;
+    return from_v8<ST>::write(src, *tc);
 }
 
 template<class T>
 inline v8::Handle<v8::Value> read_to_v8(const T& v) {
-    return to_v8<typename threadcached<T>::storage_type>::read(v);
+    using ST = typename threadcached<T>::storage_type;
+    return to_v8<ST>::read(v);
 }
 
 

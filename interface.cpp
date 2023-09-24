@@ -174,6 +174,12 @@ public:
         return dst;
     }
 
+    /// removed function, vtable position preserved for backward compatibility
+    virtual void* removed_function1(const token&) const
+    {
+        return 0;
+    }
+
     virtual dynarray<creator>& get_interface_creators(const token& name, const token& script, dynarray<creator>& dst)
     {
         //interface creator names:
@@ -265,6 +271,12 @@ public:
             return (interface_register::client_fn)en->creator_ptr;
         }
 
+        return 0;
+    }
+
+    /// removed function, vtable position preserved for backward compatibility
+    virtual void* removed_function2(const token&, const token&) const
+    {
         return 0;
     }
 

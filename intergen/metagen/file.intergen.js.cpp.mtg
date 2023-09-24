@@ -210,13 +210,12 @@ void $..name$_js_dispatcher::v8_$name$$@order$(const v8::ARGUMENTS& args)
 
     try {
         //stream the arguments in
-$-[args ?inarg !nojs]$
+$-[args ?inarg !nojs after="\n"]$
   $-(if !iref)$
         static_assert(coid::has_metastream_operator<$(if ?fnarg)$$type$ (*)($fnargs$)$(elif)$$basetype$$(/if)$>::value, "missing metastream operator for '$(if ?fnarg)$$type$ (*)($fnargs$)$(elif)$$basetype$$(/if)$'");
   $-(/if)$
 $-[/args]$
-
-$-[args ?inarg !nojs]$
+$-[args ?inarg !nojs after="\n"]$
   $-(if !defval.empty ?ptr)$
         threadcached<$basetype$> $name$__tmp;
         $basetype$* $name$ = &$name$__tmp;
@@ -235,7 +234,6 @@ $-[args ?inarg !nojs]$
         write_from_v8(args[$@order$], $name$);
   $-(/if)$
 $-[/args]$
-
         //out params
 $-[args ?outarg !inarg]$
         $basetype$ $name$;
@@ -1131,9 +1129,9 @@ $-(if !return.type="void" /*has some return value*/)$
         static_assert(coid::has_metastream_operator<$return.basetype$>::value, "missing metastream operator for '$return.basetype$'");
         r__ = read_to_v8(_rval_);
     $-(/if)$
-  $-(elif ?return.ifc_type="1")$
+  $-(elif ?return.ifc_type="ifc_class")$
         v8::Handle<v8::Value> r__ = ::js::wrap_interface(_rval_.get(), ifc->context(iso));
-  $-(elif ?return.ifc_type="2")$
+  $-(elif ?return.ifc_type="ifc_struct")$
         v8::Handle<v8::Value> r__ = ::js::wrap_data_interface<$return.basetype$>(_rval_.ready(), "$return.basetype$"_T, ifc->context(iso));
   $-(/if)$
 
@@ -1217,9 +1215,9 @@ void $name$_js_dispatcher::_getter(v8::Local<v8::Name> property, const v8::ACCES
  $-(/if)$
 
     //stream out
- $-(if ?getter.ifc_type="1")$
+ $-(if ?getter.ifc_type="ifc_class")$
     v8::Handle<v8::Value> r__ = ::js::wrap_interface(value.get(), ifc->context(iso));
- $-(elif ?getter.ifc_type="2")$
+ $-(elif ?getter.ifc_type="ifc_struct")$
     v8::Handle<v8::Value> r__ = ::js::wrap_data_interface(value.get(), ifc->context(iso));
  $-(elif)$
     static_assert(coid::has_metastream_operator<$getter.basetype$>::value, "missing metastream operator for '$getter.basetype$'");

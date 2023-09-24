@@ -256,8 +256,11 @@ struct MethodIG
                 m.member("ifckwds", p.ifckwds);
                 m.member("doc", p.doc);
                 m.member("const", p.bconst);
-                m.member("struct_type", p.struct_type);
-                m.member("ifc_type", p.ifc_type);
+                {
+                    static const meta::arg::ifc_type types[] = {meta::arg::ifc_type::none, meta::arg::ifc_type::ifc_class, meta::arg::ifc_type::ifc_struct};
+                    static const char* const strings[] = {"none", "ifc_class", "ifc_struct", nullptr};
+                    m.member_enum("ifc_type", p.ifc_type, types, strings, meta::arg::ifc_type::none);
+                }
                 m.member("specptr", p.bspecptr);
                 m.member("ptr", p.bptr);
                 m.member("ref", p.bref);

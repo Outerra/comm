@@ -8,7 +8,7 @@
 
 //host class $classnsx suffix="::"$$class$
 $-[fwds first="\n\n//begin auto forward declarations\n" after="\n//end auto forward declarations"]$
- $-(if nss)$namespace $nss rest="::"$ { $(if ?type="1")$class$(elif)$struct$(/if)$ $name$; }
+ $-(if nss)$namespace $nss rest="::"$ { class $name$; }
  $-(elif)$
 $(if ?type="1")$class$(elif)$struct$(/if)$ $name$;
 $-(/if)$

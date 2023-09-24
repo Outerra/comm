@@ -85,8 +85,6 @@ struct arg
         classa
     };
 
-    ex_type extype = ex_type::unspecified;
-
     /// @brief Argument mapping to an interface type
     enum class ifc_type : uint8 {
         none,
