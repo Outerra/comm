@@ -28,10 +28,8 @@ struct File
 
     dynarray<Class> classes;
     dynarray<File> dependencies;
-
     dynarray<paste_block> pasters;
-    dynarray<MethodIG::Arg> irefargs;
-
+    dynarray<forward> fwds;                 
     dynarray<charstr> pastedefers;          //< pasted before the generated class definition
 
     friend metastream& operator || (metastream& m, File& p)
@@ -43,7 +41,7 @@ struct File
             m.member("HDR", p.hdrname);           //< file name without extension, uppercase
             m.member("class", p.classes);
             m.member("pastedefers", p.pastedefers);
-            m.member("irefargs", p.irefargs);
+            m.member("fwds", p.fwds);
             m.nonmember("version", version);
         });
     }
@@ -597,7 +595,7 @@ int File::parse(token path, const char* ref_file, int ref_line)
             Class* pc = classes.add();
             pc->classorstruct = lex.last();
 
-            if (!pc->parse(lex, templarg, namespc, &pasters, irefargs) || (pc->method.size() == 0 && pc->iface_refc.size() == 0 && pc->iface_data.size() == 0)) {
+            if (!pc->parse(lex, templarg, namespc, &pasters) || (pc->method.size() == 0 && pc->iface_refc.size() == 0 && pc->iface_data.size() == 0)) {
                 classes.resize(-1);
             }
         }

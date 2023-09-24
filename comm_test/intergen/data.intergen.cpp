@@ -6,6 +6,7 @@
 #include "data.hpp"
 
 #include <comm/ref.h>
+#include <comm/global.h>
 #include <comm/singleton.h>
 #include <comm/binstring.h>
 #include <type_traits>
@@ -26,14 +27,14 @@ class component_ifc_data_dispatcher : public component_ifc
     using enum meta::class_interface::flg;
 
     inline static const meta::arg creator_0args[] = {
-       { "return", "iref<component>", "component", "", "component", "", "", "", "", nullptr, (meta::arg::ex_type)0, false, true, false, false, false, false, true, false, false, false, false, "" },
+       { "return", "iref<component>", "component", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, true, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg set_a_1args[] = {
-       { "b", "int", "int", "", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
+       { "b", "int", "int", "", "", "", "", &meta::stream_op<int>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, false, false, false, false, true, false, false, false, false, "" },
     };
     inline static const meta::arg set_b_2args[] = {
-       { "a", "const coid::token&", "coid::token", "coid", "token", "", "", "", "", &meta::stream_op<coid::token>::fn, (meta::arg::ex_type)0, false, false, true, false, false, false, true, false, false, false, false, "" },
-       { "b", "int*", "int", "", "int", "", "", "", "", nullptr, (meta::arg::ex_type)0, false, true, false, false, false, false, false, true, false, false, false, "" },
+       { "a", "const coid::token&", "coid::token", "", "", "", "", &meta::stream_op<coid::token>::fn, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, false, true, false, false, false, true, false, false, false, false, "" },
+       { "b", "int*", "int", "", "", "", "", nullptr, (meta::arg::ex_type)0, (meta::arg::ifc_type)0, false, true, false, false, false, false, false, true, false, false, false, "" },
     };
     inline static const meta::method creators[] = {
         { "creator", bstatic|bnoevbody, 0, 0, 0, nullptr },
@@ -75,11 +76,18 @@ protected:
     component_ifc_data_dispatcher() = default;
     ~component_ifc_data_dispatcher() = default;
 
+    static coref<component_ifc> _host_connector(::component* host)
+    {
+        return coref<component_ifc>(reinterpret_cast<component_ifc*>(host));
+    }
+
 public:
 
     static void register_interfaces(bool on)
     {
         coid::ifcman::set_type_ifc<component_ifc>(HASHID, _cr_table, _fn_table, &ifc_meta);
+
+        interface_register::register_interface_creator("component_ifc@dcconnect", on ? (void*)&_host_connector : nullptr, &ifc_meta);
     }
 };
 

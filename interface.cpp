@@ -71,9 +71,11 @@ public:
     //virtual in order to invoke code from the main exe module when calling from dlls
     /**
         @param ifcname in one of the following forms:
-            [ns1[::ns2[...]]]::classname@wrapper[.scriptname]               wrap existing interface object
-            [ns1[::ns2[...]]]::classname@maker[.scriptname]                 create script interface object from host
-            [ns1[::ns2[...]]]::classname@dcmaker[.scriptname]               create script interface object from host
+            [ns1[::ns2[...]]]::classname@connect                            create/connect interface object to host
+            [ns1[::ns2[...]]]::classname@dcconnect                          create/connect interface object to host
+            [ns1[::ns2[...]]]::classname@wrapper.scriptname                 wrap existing interface object, return script handle
+            [ns1[::ns2[...]]]::classname@maker.scriptname                   create script interface object from host
+            [ns1[::ns2[...]]]::classname@dcmaker.scriptname                 create script interface object from host
             [ns1[::ns2[...]]]::classname@unload                             unload registered client
             [ns1[::ns2[...]]]::classname@meta                               register interface meta info
             [ns1[::ns2[...]]]::classname.creatorname@hashvalue              c++ versioned creator
@@ -172,12 +174,10 @@ public:
         return dst;
     }
 
-    virtual interface_register::wrapper_fn get_interface_wrapper(const token& name) const
+    /// removed function, vtable position preserved for backward compatibility
+    virtual void* removed_function1(const token&) const
     {
-        zstring str = name;
-        str.get_str() << "@wrapper";
-
-        return find_wrapper(str);
+        return 0;
     }
 
     virtual dynarray<creator>& get_interface_creators(const token& name, const token& script, dynarray<creator>& dst)
@@ -274,12 +274,10 @@ public:
         return 0;
     }
 
-    virtual void* get_interface_maker(const token& name, const token& script) const
+    /// removed function, vtable position preserved for backward compatibility
+    virtual void* removed_function2(const token&, const token&) const
     {
-        zstring str = name;
-        str.get_str() << "@maker" << '.' << script;
-
-        return (void*)find_wrapper(str);
+        return 0;
     }
 
     virtual dynarray<interface_register::creator>& get_interface_clients(const token& iface, uint hash, dynarray<interface_register::creator>& dst)
@@ -317,13 +315,12 @@ public:
     virtual interface_register::fn_acc_t fn_acc() { return _fn_acc; }
     virtual interface_register::fn_getlog_t fn_getlog() { return _fn_getlog; }
 
-    virtual interface_register::wrapper_fn find_wrapper(const token& ifcname) const
+    virtual void* find_wrapper(const token& ifcname) const
     {
         GUARDTHIS(_mx);
 
         const entry* en = _hash.find_value(ifcname);
-
-        return en ? (interface_register::wrapper_fn)en->creator_ptr : 0;
+        return en ? en->creator_ptr : 0;
     }
 
     virtual void setup(const token& path, interface_register::fn_log_t logfn, interface_register::fn_acc_t access, interface_register::fn_getlog_t getlogfn)
@@ -408,14 +405,6 @@ public:
             *relpath = rpath;
 
         return _fn_acc ? _fn_acc(rpath) : true;
-    }
-
-    virtual void* get_interface_dcmaker(const token& name, const token& script) const
-    {
-        zstring str = name;
-        str.get_str() << "@dcmaker" << '.' << script;
-
-        return (void*)find_wrapper(str);
     }
 
     virtual dynarray<const meta::class_interface*>& find_interface_meta_info(const regex& name, dynarray<const meta::class_interface*>& dst) const
@@ -587,37 +576,75 @@ void interface_register::setup(const token& path, fn_log_t log, fn_acc_t access,
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-interface_register::wrapper_fn interface_register::get_interface_wrapper(const token& name)
+auto interface_register::get_interface_connector(const token& name) -> host_to_ifc_fn
 {
-    //interface creator name:
-    // [ns1::[ns2:: ...]]::class
+    //interface creator name, [ns1::[ns2:: ...]]::class
+    zstring str = name;
+    str.get_str() << "@connect";
+
     interface_register_impl& reg = interface_register_impl::get();
-    return reg.get_interface_wrapper(name);
+    return (host_to_ifc_fn)reg.find_wrapper(str);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void* interface_register::get_interface_maker(const token& name, const token& script)
+void* interface_register::get_interface_dcconnector(const token& name)
 {
-    //interface name:
-    // [ns1::[ns2:: ...]]::class
+    //interface creator name, [ns1::[ns2:: ...]]::class
+    zstring str = name;
+    str.get_str() << "@dcconnect";
+
     interface_register_impl& reg = interface_register_impl::get();
-    return reg.get_interface_maker(name, script);
+    return reg.find_wrapper(str);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void* interface_register::get_interface_dcmaker(const token& name, const token& script)
+void* interface_register::get_script_interface_wrapper(const token& name, const token& script)
 {
-    //interface name:
-    // [ns1::[ns2:: ...]]::class
+    //interface creator name, [ns1::[ns2:: ...]]::class
+    zstring str = name;
+    str.get_str() << "@wrapper" << '.' << script;
+
     interface_register_impl& reg = interface_register_impl::get();
-    return reg.get_interface_dcmaker(name, script);
+    return reg.find_wrapper(str);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void* interface_register::get_script_interface_maker(const token& name, const token& script)
+{
+    //interface creator name, [ns1::[ns2:: ...]]::class
+    zstring str = name;
+    str.get_str() << "@maker" << '.' << script;
+
+    interface_register_impl& reg = interface_register_impl::get();
+    return reg.find_wrapper(str);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void* interface_register::get_script_interface_dcwrapper(const token& name, const token& script)
+{
+    //interface creator name, [ns1::[ns2:: ...]]::class
+    zstring str = name;
+    str.get_str() << "@dcwrapper" << '.' << script;
+
+    interface_register_impl& reg = interface_register_impl::get();
+    return reg.find_wrapper(str);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void* interface_register::get_script_interface_dcmaker(const token& name, const token& script)
+{
+    //interface creator name, [ns1::[ns2:: ...]]::class
+    zstring str = name;
+    str.get_str() << "@dcmaker" << '.' << script;
+
+    interface_register_impl& reg = interface_register_impl::get();
+    return reg.find_wrapper(str);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 interface_register::client_fn interface_register::get_interface_client(const token& client, const token& iface, uint hash, const token& module)
 {
-    //interface name:
-    // [ns1::[ns2:: ...]]::class
+    //interface creator name, [ns1::[ns2:: ...]]::class
     interface_register_impl& reg = interface_register_impl::get();
     return reg.get_interface_client(client, iface, hash, module);
 }
@@ -632,8 +659,7 @@ dynarray<interface_register::creator>& interface_register::get_interface_clients
 ////////////////////////////////////////////////////////////////////////////////
 dynarray<interface_register::creator>& interface_register::get_interface_creators(const token& name, const token& script, dynarray<interface_register::creator>& dst)
 {
-    //interface creator names:
-    // [ns1::[ns2:: ...]]::class.creator
+    //interface creator name, [ns1::[ns2:: ...]]::class
     interface_register_impl& reg = interface_register_impl::get();
     return reg.get_interface_creators(name, script, dst);
 }
@@ -641,8 +667,7 @@ dynarray<interface_register::creator>& interface_register::get_interface_creator
 ////////////////////////////////////////////////////////////////////////////////
 dynarray<interface_register::creator>& interface_register::get_script_interface_creators(const token& name, const token& script, dynarray<interface_register::creator>& dst)
 {
-    //interface creator names:
-    // [ns1::[ns2:: ...]]::class.creator
+    //interface creator name, [ns1::[ns2:: ...]]::class
     interface_register_impl& reg = interface_register_impl::get();
     return reg.get_script_interface_creators(name, script, dst);
 }
@@ -650,9 +675,7 @@ dynarray<interface_register::creator>& interface_register::get_script_interface_
 ////////////////////////////////////////////////////////////////////////////////
 dynarray<interface_register::creator>& interface_register::find_interface_creators(const regex& name, dynarray<interface_register::creator>& dst)
 {
-    //interface creator names:
-    // [ns1::[ns2:: ...]]::class.creator
-
+    //interface creator name, [ns1::[ns2:: ...]]::class
     interface_register_impl& reg = interface_register_impl::get();
     return reg.find_interface_creators(name, dst);
 }

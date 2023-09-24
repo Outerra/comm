@@ -141,6 +141,7 @@ public:
 
     T* create(T* const p)
     {
+        static_assert(std::is_base_of_v<policy_intrusive_base, T>, "type must be derived from policy_intrusive_base");
         DASSERT_RET(p != _p, _p);
         p->add_refcount();
         release();

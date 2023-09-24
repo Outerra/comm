@@ -70,8 +70,6 @@ struct arg
     const token name;                   //< parameter name
     const token type;                   //< parameter type (stripped of const qualifier)
     const token basetype;               //< base type (stripped of the last ptr/ref)
-    const token barens;                 //< namespace part of full bare type (without iref)
-    const token baretype;               //< type part of full bare type
     const token argsize;                //< size expression if the parameter is an array, including [ ]
     const token fnargs;                 //< argument list of a function-type argument
     const token memfnclass;             //< member fn class
@@ -87,7 +85,14 @@ struct arg
         classa
     };
 
-    ex_type extype = ex_type::unspecified;
+    /// @brief Argument mapping to an interface type
+    enum class ifc_type : uint8 {
+        none,
+        ifc_class,
+        ifc_struct,
+    };
+
+    ifc_type ifctype = ifc_type::none;
 
     bool bspecptr       = false;        //< special type where pointer is not separated (e.g const char*)
     bool bptr           = false;        //< true if the type is a pointer
@@ -145,7 +150,7 @@ inline bool operator & (method::flg a, method::flg b) { return (uint(a) & uint(b
 /// @brief meta-data for interfaces to classes
 struct class_interface
 {
-    const token nsname;
+    const token nsname;                 //< fully qualified interface name (with namespaces)
     const token hdrfile;
     const token storage;
 
@@ -209,39 +214,59 @@ public:
 
     static void setup(const token& path, fn_log_t log, fn_acc_t access, fn_getlog_t getlogfn);
 
-    typedef iref<intergen_interface>(*wrapper_fn)(void*, intergen_interface*);
+    typedef iref<intergen_interface>(*host_to_ifc_fn)(void*, intergen_interface*);
     typedef intergen_interface* (*client_fn)();
 
     struct creator {
         token name;
         union {
             void* creator_ptr = 0;
-            wrapper_fn fn;
+            host_to_ifc_fn fn;              //< creates interface from host, (host*, interface* opt)
             client_fn fn_client;
         };
     };
 
-    ///Get interface wrapper creator matching given name
+    ///Get interface-to-host connector/creator matching the given interface name
     /// @param name interface creator name in the format [ns1::[ns2:: ...]]::class
-    static wrapper_fn get_interface_wrapper(const token& name);
+    /// @return function that creates interface from an existing host
+    static host_to_ifc_fn get_interface_connector(const token& name);
 
-    ///Get interface maker creator matching given name
+    ///Get data interface-to-host connector/creator matching the given interface name
+    /// @param name interface creator name in the format [ns1::[ns2:: ...]]::class
+    /// @return function that creates data interface from an existing host
+    static void* get_interface_dcconnector(const token& name);
+
+    ///Get interface wrapper function that creates script interface from another interface
     /// @param name interface creator name in the format [ns1::[ns2:: ...]]::class
     /// @param script script type
-    static void* get_interface_maker(const token& name, const token& script);
+    /// @return function that creates script handle (bound to a script interface) from another interface
+    static void* get_script_interface_wrapper(const token& name, const token& script);
 
-    ///Get interface data maker creator matching given name
+    ///Get interface maker creator matching the given interface name
     /// @param name interface creator name in the format [ns1::[ns2:: ...]]::class
     /// @param script script type
-    static void* get_interface_dcmaker(const token& name, const token& script);
+    /// @return maker function that creates interface from an existing host
+    static void* get_script_interface_maker(const token& name, const token& script);
 
-    ///Get client interface creator matching given name
+    ///Get interface data wrapper matching the given interface name
+    /// @param name interface creator name in the format [ns1::[ns2:: ...]]::class
+    /// @param script script type
+    /// @return function returning script interface, with first parameter const coref<ifc>&
+    static void* get_script_interface_dcwrapper(const token& name, const token& script);
+
+    ///Get interface data maker creator matching the given interface name
+    /// @param name interface creator name in the format [ns1::[ns2:: ...]]::class
+    /// @param script script type
+    /// @return function returning script-specific handle, with first parameter host*
+    static void* get_script_interface_dcmaker(const token& name, const token& script);
+
+    ///Get client interface creator matching the given interface name
     /// @param client client name
     /// @param iface interface name in the format [ns1::[ns2:: ...]]::class
     /// @param module required module to match
     static client_fn get_interface_client(const token& client, const token& iface, uint hash, const token& module);
 
-    ///Get client interface creators matching given name
+    ///Get client interface creators matching the given interface name
     /// @param iface interface name in the format [ns1::[ns2:: ...]]::class
     /// @param module required module to match
     static dynarray<creator>& get_interface_clients(const token& iface, uint hash, dynarray<creator>& dst);
@@ -253,13 +278,13 @@ public:
         return get_interface_clients(T::IFCNAME(), T::HASHID, dst);
     }
 
-    ///Get interface creators matching given name
+    ///Get interface creators matching the given interface name
     /// @param name interface creator name in the format [ns1::[ns2:: ...]]::class[.creator]
     /// @param script script type (""=c++, "js", "lua" ...), if empty/null anything matches
     /// @return array of interface creators for given script type (with script_handle argument)
     static dynarray<creator>& get_interface_creators(const token& name, const token& script, dynarray<creator>& dst);
 
-    ///Get script interface creators matching given name
+    ///Get script interface creators matching the given interface name
     /// @param name interface creator name in the format [ns1::[ns2:: ...]]::class[.creator]
     /// @param script script type (""=c++, "js", "lua" ...), if empty/null anything matches
     /// @return array of interface creators for given script type (with native script lib argument)

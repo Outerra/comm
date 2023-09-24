@@ -106,8 +106,7 @@ public:
     static void v8_set1(const v8::ARGUMENTS& args);
     static void v8_get2(const v8::ARGUMENTS& args);
     static void v8_custom3(const v8::ARGUMENTS& args);
-    static void v8_set_array4(const v8::ARGUMENTS& args);
-    static void v8_overridable5(const v8::ARGUMENTS& args);
+    static void v8_overridable4(const v8::ARGUMENTS& args);
 
     // --- interface events ---
 
@@ -187,14 +186,12 @@ void client_js_dispatcher::v8_set_def0(const v8::ARGUMENTS& args)
         else
             flg = {.a = 1, .b = 2};
 
+        //out params
+
         //invoke
         R_->set_def(flg);
-
-        //stream out
-        v8::Handle<v8::Object> r__;
-
-        args.GetReturnValue().Set(r__);
-    } catch (const coid::exception& e) {
+    }
+    catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }
@@ -239,14 +236,12 @@ void client_js_dispatcher::v8_set1(const v8::ARGUMENTS& args)
         threadcached<coid::token> par;
         write_from_v8(args[0], par);
 
+        //out params
+
         //invoke
         R_->set(par);
-
-        //stream out
-        v8::Handle<v8::Object> r__;
-
-        args.GetReturnValue().Set(r__);
-    } catch (const coid::exception& e) {
+    }
+    catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }
@@ -288,19 +283,20 @@ void client_js_dispatcher::v8_get2(const v8::ARGUMENTS& args)
         //stream the arguments in
 
 
-        //invoke
+        //out params
         coid::charstr par;
-        int _rval_ = R_->get(par);
+
+        //invoke
+        int rval__ = R_->get(par);
 
         //stream out
-        static_assert(coid::has_metastream_operator<int>::value, "missing metastream operator for 'int'");
         v8::Handle<v8::Object> r__ = v8::Object::New(iso);
-        r__->Set(ctx, v8::symbol("$ret", iso), read_to_v8(_rval_));
-
-        static_assert(coid::has_metastream_operator<coid::charstr>::value, "missing metastream operator for 'coid::charstr'");
+        r__->Set(ctx, v8::symbol("$ret", iso), read_to_v8(rval__));
         r__->Set(ctx, v8::symbol("par", iso), read_to_v8(par));
+
         args.GetReturnValue().Set(r__);
-    } catch (const coid::exception& e) {
+    }
+    catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }
@@ -342,74 +338,23 @@ void client_js_dispatcher::v8_custom3(const v8::ARGUMENTS& args)
         //stream the arguments in
 
 
+        //out params
+
         //invoke
-        sometype _rval_ = R_->custom();
+        sometype rval__ = R_->custom();
 
         //stream out
-        v8::Handle<v8::Value> r__;
-        static_assert(coid::has_metastream_operator<sometype>::value, "missing metastream operator for 'sometype'");
-        r__ = read_to_v8(_rval_);
+        v8::Handle<v8::Value> r__ = read_to_v8(rval__);
 
         args.GetReturnValue().Set(r__);
-    } catch (const coid::exception& e) {
+    }
+    catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void client_js_dispatcher::v8_set_array4(const v8::ARGUMENTS& args)
-{
-    v8::Isolate* iso = args.GetIsolate();
-
-    if (args.Length() < 1 || args.Length() > 1) { //in/inout arguments
-        coid::charstr tmp = "Wrong number of arguments in ";
-        tmp << "client.set_array";
-        return v8::queue_js_exception(iso, v8::Exception::SyntaxError, tmp);
-    }
-
-    v8::HandleScope handle_scope__(iso);
-    v8::Local<v8::Object> obj__ = args.Holder();
-    if (obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
-        return (void)args.GetReturnValue().Set(v8::Undefined(iso));
-
-    v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
-    if (!intobj__->IsExternal())
-        return (void)args.GetReturnValue().Set(v8::Undefined(iso));
-
-    ::js::interface_wrapper_base<::client>* ifc = static_cast<::js::interface_wrapper_base<::client>*>
-        (v8::Handle<v8::External>::Cast(intobj__)->Value());
-
-    auto R_ = ifc ? ifc->_real() : 0;
-    if (!R_) {
-        coid::charstr tmp = "Null interface object in ";
-        tmp << "client.set_array";
-        return v8::queue_js_exception(iso, &v8::Exception::ReferenceError, tmp);
-    }
-
-    v8::Local<v8::Context> ctx = ifc->context(iso);
-    v8::Context::Scope context_scope(ctx);
-
-    try {
-        //stream the arguments in
-        static_assert(coid::has_metastream_operator<float>::value, "missing metastream operator for 'float'");
-
-        threadcached<float> ar;
-        write_from_v8(args[0], ar);
-
-        //invoke
-        R_->set_array(ar);
-
-        //stream out
-        v8::Handle<v8::Object> r__;
-
-        args.GetReturnValue().Set(r__);
-    } catch (const coid::exception& e) {
-        return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-void client_js_dispatcher::v8_overridable5(const v8::ARGUMENTS& args)
+void client_js_dispatcher::v8_overridable4(const v8::ARGUMENTS& args)
 {
     v8::Isolate* iso = args.GetIsolate();
 
@@ -445,16 +390,17 @@ void client_js_dispatcher::v8_overridable5(const v8::ARGUMENTS& args)
         //stream the arguments in
 
 
+        //out params
+
         //invoke
-        bool _rval_ = R_->overridable();
+        bool rval__ = R_->overridable();
 
         //stream out
-        v8::Handle<v8::Value> r__;
-        static_assert(coid::has_metastream_operator<bool>::value, "missing metastream operator for 'bool'");
-        r__ = read_to_v8(_rval_);
+        v8::Handle<v8::Value> r__ = read_to_v8(rval__);
 
         args.GetReturnValue().Set(r__);
-    } catch (const coid::exception& e) {
+    }
+    catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }
@@ -475,13 +421,13 @@ void client_js_dispatcher::echo( int k )
     if (_events[0].IsEmpty() || ev__->IsUndefined())
         return;
 
-// prepare in arguments
+    // prepare in arguments
     static_assert(coid::has_metastream_operator<int>::value, "missing metastream operator for 'int'");
     v8::Handle<v8::Value> __inargs[] = {
         to_v8<int>::read(k)
     };
 
-//  event call
+    //  event call
     v8::Local<v8::Value> r__ = ev__->Call(
         ctx__,
         _object.Get(iso),
@@ -490,7 +436,7 @@ void client_js_dispatcher::echo( int k )
 
     if (js_trycatch__.HasCaught())
         ::js::script_handle::throw_exception_from_js_error(js_trycatch__, "js::client.echo");
-// gather results
+    // gather results
 
 }
 
@@ -608,13 +554,13 @@ int client_js_dispatcher::required( int x )
     if (_events[2].IsEmpty() || ev__->IsUndefined())
         throw coid::exception("handler not implemented");
 
-// prepare in arguments
+    // prepare in arguments
     static_assert(coid::has_metastream_operator<int>::value, "missing metastream operator for 'int'");
     v8::Handle<v8::Value> __inargs[] = {
         to_v8<int>::read(x)
     };
 
-//  event call
+    //  event call
     v8::Local<v8::Value> r__ = ev__->Call(
         ctx__,
         _object.Get(iso),
@@ -623,7 +569,7 @@ int client_js_dispatcher::required( int x )
 
     if (js_trycatch__.HasCaught())
         ::js::script_handle::throw_exception_from_js_error(js_trycatch__, "js::client.required");
-// gather results
+    // gather results
 
     static_assert(coid::has_metastream_operator<int>::value, "missing metastream operator for 'int'");
     threadcached<int> _rval_;
@@ -741,8 +687,7 @@ v8::Handle<v8::Object> client_js_dispatcher::create_interface_object(v8::Handle<
         ot->Set(v8::symbol("set", iso), v8::FunctionTemplate::New(iso, &v8_set1));
         ot->Set(v8::symbol("get", iso), v8::FunctionTemplate::New(iso, &v8_get2));
         ot->Set(v8::symbol("custom", iso), v8::FunctionTemplate::New(iso, &v8_custom3));
-        ot->Set(v8::symbol("set_array", iso), v8::FunctionTemplate::New(iso, &v8_set_array4));
-        ot->Set(v8::symbol("overridable", iso), v8::FunctionTemplate::New(iso, &v8_overridable5));
+        ot->Set(v8::symbol("overridable", iso), v8::FunctionTemplate::New(iso, &v8_overridable4));
 
         ot->Set(v8::symbol("$log", iso), v8::FunctionTemplate::New(iso, &::js::script_handle::log));
         ot->Set(v8::symbol("$query_interface", iso), v8::FunctionTemplate::New(iso, &::js::script_handle::query_interface));
@@ -978,12 +923,12 @@ v8::Handle<v8::Value> client_js_dispatcher::v8creator_creator0(const v8::ARGUMEN
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Create JS wrapper from an existing interface object
-v8::Handle<v8::Value> create_wrapper_client(::client* orig, v8::Handle<v8::Context> context)
+v8::Handle<v8::Value> wrap_ifc_to_js_client(::client* orig_ifc, v8::Handle<v8::Context> context)
 {
     v8::Isolate* iso = v8::Isolate::GetCurrent();
 
-    // check that the orig points to an object
-    if (!orig)
+    // check that the orig_ifc points to an object
+    if (!orig_ifc)
         return v8::Null(iso);
 
     if (context.IsEmpty())
@@ -995,12 +940,12 @@ v8::Handle<v8::Value> create_wrapper_client(::client* orig, v8::Handle<v8::Conte
     iref<js::client_js_dispatcher> ifc;
     v8::Handle<v8::Object> obj;
 
-    if (orig->intergen_backend() == intergen_interface::backend::js)
-        obj = static_cast<client_js_dispatcher*>(orig)->_object.Get(iso);
+    if (orig_ifc->intergen_backend() == intergen_interface::backend::js)
+        obj = static_cast<client_js_dispatcher*>(orig_ifc)->_object.Get(iso);
 
     if (obj.IsEmpty()) {
         // create interface object
-        ifc.create(new js::client_js_dispatcher(static_cast<::client*>(orig)));
+        ifc.create(new js::client_js_dispatcher(static_cast<::client*>(orig_ifc)));
 
         obj = ifc->create_interface_object(context, true);
     }
@@ -1010,7 +955,7 @@ v8::Handle<v8::Value> create_wrapper_client(::client* orig, v8::Handle<v8::Conte
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Create JS interface from a host
-static iref<js::client_js_dispatcher> create_maker_client(policy_intrusive_base* host, v8::Handle<v8::Context> context)
+static iref<js::client_js_dispatcher> make_js_ifc_from_host_client(policy_intrusive_base* host, v8::Handle<v8::Context> context)
 {
     v8::Isolate* iso = context.IsEmpty() ? v8::Isolate::GetCurrent() : context->GetIsolate();
     if (context.IsEmpty())
@@ -1025,7 +970,6 @@ static iref<js::client_js_dispatcher> create_maker_client(policy_intrusive_base*
 
     // create interface object
     iref<js::client_js_dispatcher> ifc;
-
     ifc.create(new js::client_js_dispatcher(host));
 
     ifc->_object.Reset(iso, ifc->create_interface_object(context, false));
@@ -1043,10 +987,10 @@ static void register_binders_for_client(bool on)
     interface_register::register_interface_creator("js::client.creator", on ? (void*)&client_js_dispatcher::v8creator_creator0 : nullptr, nullptr);
 
     //wrapper interface creator from existing js/c++ interface
-    interface_register::register_interface_creator("client@wrapper.js", on ? (void*)&create_wrapper_client : nullptr, nullptr);
+    interface_register::register_interface_creator("client@wrapper.js", on ? (void*)&wrap_ifc_to_js_client : nullptr, nullptr);
 
     //js interface creator from host
-    interface_register::register_interface_creator("client@maker.js", on ? (void*)&create_maker_client : nullptr, nullptr);
+    interface_register::register_interface_creator("client@maker.js", on ? (void*)&make_js_ifc_from_host_client : nullptr, nullptr);
 }
 
 //auto-register the bind function
@@ -1180,14 +1124,12 @@ void client2_js_dispatcher::v8_test0(const v8::ARGUMENTS& args)
         //stream the arguments in
 
 
+        //out params
+
         //invoke
         R_->test();
-
-        //stream out
-        v8::Handle<v8::Object> r__;
-
-        args.GetReturnValue().Set(r__);
-    } catch (const coid::exception& e) {
+    }
+    catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }
@@ -1229,15 +1171,17 @@ void client2_js_dispatcher::v8_get1(const v8::ARGUMENTS& args)
         //stream the arguments in
 
 
+        //out params
+
         //invoke
-        component* _rval_ = R_->get();
+        coref<component_ifc> rval__ = R_->get();
 
         //stream out
-        v8::Handle<v8::Value> r__;
-        r__ = ::js::wrap_data_object<component>(_rval_, "component"_T, ifc->context(iso));
+        v8::Handle<v8::Value> r__ = read_to_v8(rval__);
 
         args.GetReturnValue().Set(r__);
-    } catch (const coid::exception& e) {
+    }
+    catch (const coid::exception& e) {
         return v8::queue_js_exception(iso, &v8::Exception::TypeError, e.text());
     }
 }
@@ -1300,7 +1244,7 @@ v8::Handle<v8::Object> client2_js_dispatcher::create_interface_object(v8::Handle
 
     v8::Handle<v8::External> map_ptr = v8::External::New(iso, this);
     obj->SetInternalField(0, map_ptr);
-    v8::Handle<v8::External> hash_ptr = v8::External::New(iso, (void*)ints(3558882638));
+    v8::Handle<v8::External> hash_ptr = v8::External::New(iso, (void*)ints(4187390586));
     obj->SetInternalField(1, hash_ptr);
 
     if (make_weak) {
@@ -1323,12 +1267,12 @@ v8::Handle<v8::Script> client2_js_dispatcher::load_script(const coid::token& scr
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Create JS wrapper from an existing interface object
-v8::Handle<v8::Value> create_wrapper_client2(::xt::client2* orig, v8::Handle<v8::Context> context)
+v8::Handle<v8::Value> wrap_ifc_to_js_client2(::xt::client2* orig_ifc, v8::Handle<v8::Context> context)
 {
     v8::Isolate* iso = v8::Isolate::GetCurrent();
 
-    // check that the orig points to an object
-    if (!orig)
+    // check that the orig_ifc points to an object
+    if (!orig_ifc)
         return v8::Null(iso);
 
     if (context.IsEmpty())
@@ -1340,12 +1284,12 @@ v8::Handle<v8::Value> create_wrapper_client2(::xt::client2* orig, v8::Handle<v8:
     iref<xt::js::client2_js_dispatcher> ifc;
     v8::Handle<v8::Object> obj;
 
-    if (orig->intergen_backend() == intergen_interface::backend::js)
-        obj = static_cast<client2_js_dispatcher*>(orig)->_object.Get(iso);
+    if (orig_ifc->intergen_backend() == intergen_interface::backend::js)
+        obj = static_cast<client2_js_dispatcher*>(orig_ifc)->_object.Get(iso);
 
     if (obj.IsEmpty()) {
         // create interface object
-        ifc.create(new xt::js::client2_js_dispatcher(static_cast<::xt::client2*>(orig)));
+        ifc.create(new xt::js::client2_js_dispatcher(static_cast<::xt::client2*>(orig_ifc)));
 
         obj = ifc->create_interface_object(context, true);
     }
@@ -1355,7 +1299,7 @@ v8::Handle<v8::Value> create_wrapper_client2(::xt::client2* orig, v8::Handle<v8:
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Create JS interface from a host
-static iref<xt::js::client2_js_dispatcher> create_maker_client2(policy_intrusive_base* host, v8::Handle<v8::Context> context)
+static iref<xt::js::client2_js_dispatcher> make_js_ifc_from_host_client2(policy_intrusive_base* host, v8::Handle<v8::Context> context)
 {
     v8::Isolate* iso = context.IsEmpty() ? v8::Isolate::GetCurrent() : context->GetIsolate();
     if (context.IsEmpty())
@@ -1370,7 +1314,6 @@ static iref<xt::js::client2_js_dispatcher> create_maker_client2(policy_intrusive
 
     // create interface object
     iref<xt::js::client2_js_dispatcher> ifc;
-
     ifc.create(new xt::js::client2_js_dispatcher(host));
 
     ifc->_object.Reset(iso, ifc->create_interface_object(context, false));
@@ -1383,10 +1326,10 @@ static void register_binders_for_client2(bool on)
 {
 
     //wrapper interface creator from existing js/c++ interface
-    interface_register::register_interface_creator("xt::client2@wrapper.js", on ? (void*)&create_wrapper_client2 : nullptr, nullptr);
+    interface_register::register_interface_creator("xt::client2@wrapper.js", on ? (void*)&wrap_ifc_to_js_client2 : nullptr, nullptr);
 
     //js interface creator from host
-    interface_register::register_interface_creator("xt::client2@maker.js", on ? (void*)&create_maker_client2 : nullptr, nullptr);
+    interface_register::register_interface_creator("xt::client2@maker.js", on ? (void*)&make_js_ifc_from_host_client2 : nullptr, nullptr);
 }
 
 //auto-register the bind function

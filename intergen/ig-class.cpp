@@ -50,7 +50,7 @@ int Interface::check_interface(iglexer& lex, const dynarray<paste_block>& classp
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Parse function declaration after rl_cmd or rl_cmd_p
-bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& namespcs, dynarray<paste_block>* filepasters, dynarray<MethodIG::Arg>& irefargs)
+bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& namespcs, dynarray<paste_block>* filepasters)
 {
     templarg.swap(templarg_);
     //namespaces = namespcs;
@@ -145,8 +145,8 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 isvar = true;
             }
 
-            bool extfn_struct = tok == "ifc_fnx_struct"_T;
-            bool extfn_class = tok == "ifc_fnx_class"_T;
+            bool extfn_struct = false;
+            bool extfn_class = false;
             bool extfn = tok == "ifc_fnx"_T || extfn_struct || extfn_class;
             bool extev = tok == "ifc_eventx"_T;
             bool bimplicit = false;
@@ -163,22 +163,21 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 //parse external name
                 lex.match('(');
 
-                bool has_rename = true;
+                extfn_struct = lex.matches("ifc_struct"_T);
+                extfn_class = lex.matches("ifc_class"_T);
 
                 if (extfn_struct || extfn_class) {
+                    lex.match('=');
+
                     //match fully qualified interface name
                     extifcname = lex.match(lex.IDENT);
 
                     while (lex.matches("::"_T)) {
                         extifcname << "::"_T << lex.match(lex.IDENT);
                     }
-
-                    has_rename = lex.matches(',');
                 }
 
-                if (!has_rename)
-                    ;
-                else if (extfn && lex.matches('~')) {
+                if (extfn && lex.matches('~')) {
                     bdestroy = true;
                 }
                 else {
@@ -334,8 +333,11 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 m->bpure = bpure;
                 m->classname << namespc << classname;
 
-                {
-                    if (!m->parse(lex, classname, namespc, lastifc->nsname, irefargs, true))
+                m->bretifc = extfn_class || extfn_struct;
+                if (m->bretifc)
+                    m->ret.ifc_type = extfn_class ? meta::arg::ifc_type::ifc_class : meta::arg::ifc_type::ifc_struct;
+
+                if (!m->parse(lex, classname, namespc, extifcname, lastifc->fwds, true))
                         ++ncontinuable_errors;
 
                     const MethodIG* old = lastifc->method.find_if([m](const MethodIG& o) {
@@ -372,7 +374,6 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                         lex.clear_err();
                         ++ncontinuable_errors;
                     }
-                }
 
                 if (m->bimplicit) {
                     //lex.match(';', "error: implicit events must not be declared");
@@ -431,7 +432,11 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 m->bimplicit = bimplicit;
                 m->classname << namespc << classname;
 
-                if (!m->parse(lex, classname, namespc, lastifc->nsname, irefargs, false))
+                m->bretifc = extfn_class || extfn_struct;
+                if (m->bretifc)
+                    m->ret.ifc_type = extfn_class ? meta::arg::ifc_type::ifc_class : meta::arg::ifc_type::ifc_struct;
+
+                if (!m->parse(lex, classname, namespc, extifcname, lastifc->fwds, false))
                     ++ncontinuable_errors;
 
                 const MethodIG* old = lastifc->method.find_if([m](const MethodIG& o) {

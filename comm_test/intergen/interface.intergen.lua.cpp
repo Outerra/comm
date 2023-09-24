@@ -135,16 +135,11 @@ public:
     static bool can_use_ffi_custom3();
     static void get_ffi_inject_custom3(coid::token& header, coid::token& body);
     static sometype lua_custom3_ffi(void * ifc_this);
-    static int lua_set_array4_exc(lua_State * L);
-    static int lua_set_array4(lua_State * L);
-    static bool can_use_ffi_set_array4();
-    static void get_ffi_inject_set_array4(coid::token& header, coid::token& body);
-    static void lua_set_array4_ffi(void * ifc_this, const float ar[3]);
-    static int lua_overridable5_exc(lua_State * L);
-    static int lua_overridable5(lua_State * L);
-    static bool can_use_ffi_overridable5();
-    static void get_ffi_inject_overridable5(coid::token& header, coid::token& body);
-    static bool lua_overridable5_ffi(void * ifc_this);
+    static int lua_overridable4_exc(lua_State * L);
+    static int lua_overridable4(lua_State * L);
+    static bool can_use_ffi_overridable4();
+    static void get_ffi_inject_overridable4(coid::token& header, coid::token& body);
+    static bool lua_overridable4_ffi(void * ifc_this);
 
     // --- interface events ---
 
@@ -225,22 +220,25 @@ __declspec(noinline) int client_lua_dispatcher::lua_set_def0_exc(lua_State * L)
         THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
         //stream the arguments in
+        static_assert(coid::has_metastream_operator<flags>::value, "missing metastream operator for 'flags'");
+
 
         lua_pushvalue(L, 0 + 2);
-        static_assert(coid::has_metastream_operator<flags>::value, "missing metastream operator 'flags'");
+
         threadcached<flags> flg;
         if (0 < args_count)
             from_lua(flg);
         else
             flg = {.a = 1, .b = 2};
+
         lua_pop(L, 1); // who pushes, must pop!
 
-//out params
+        //out params
 
-// invoke
+        // invoke
         R_->set_def(flg);
 
-//stream out
+        //stream out
         THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
         return 0;    }
@@ -249,8 +247,7 @@ __declspec(noinline) int client_lua_dispatcher::lua_set_def0_exc(lua_State * L)
         ::lua::process_exception_and_push_error_string_internal(e, L);
     }
 
-    if (exception_caught)
-    {
+    if (exception_caught) {
         lua_error(L);
     }
 
@@ -326,19 +323,22 @@ __declspec(noinline) int client_lua_dispatcher::lua_set1_exc(lua_State * L)
         THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
         //stream the arguments in
+        static_assert(coid::has_metastream_operator<coid::token>::value, "missing metastream operator for 'coid::token'");
+
 
         lua_pushvalue(L, 0 + 2);
-        static_assert(coid::has_metastream_operator<coid::token>::value, "missing metastream operator 'coid::token'");
-            threadcached<coid::token> par;
+
+        threadcached<coid::token> par;
         from_lua(par);
+
         lua_pop(L, 1); // who pushes, must pop!
 
-//out params
+        //out params
 
-// invoke
+        // invoke
         R_->set(par);
 
-//stream out
+        //stream out
         THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
         return 0;    }
@@ -347,8 +347,7 @@ __declspec(noinline) int client_lua_dispatcher::lua_set1_exc(lua_State * L)
         ::lua::process_exception_and_push_error_string_internal(e, L);
     }
 
-    if (exception_caught)
-    {
+    if (exception_caught) {
         lua_error(L);
     }
 
@@ -425,17 +424,18 @@ __declspec(noinline) int client_lua_dispatcher::lua_get2_exc(lua_State * L)
 
         //stream the arguments in
 
-//out params
+
+        //out params
         coid::charstr par;
 
-// invoke
+        // invoke
         int _rval_ = R_->get(par);
 
-//stream out
+        //stream out
         THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
         constexpr uint _res_count = 1 + 1;
-        lua_createtable(L,0,_res_count);
+        lua_createtable(L, 0, _res_count);
         static_assert(coid::has_metastream_operator<int>::value, "missing metastream operator for 'int'");
         to_lua(_rval_);
             lua_setfield(L, -2, "_ret");
@@ -452,8 +452,7 @@ __declspec(noinline) int client_lua_dispatcher::lua_get2_exc(lua_State * L)
         ::lua::process_exception_and_push_error_string_internal(e, L);
     }
 
-    if (exception_caught)
-    {
+    if (exception_caught) {
         lua_error(L);
     }
 
@@ -530,16 +529,16 @@ __declspec(noinline) int client_lua_dispatcher::lua_custom3_exc(lua_State * L)
 
         //stream the arguments in
 
-//out params
 
-// invoke
+        //out params
+
+        // invoke
         sometype _rval_ = R_->custom();
 
-//stream out
+        //stream out
         THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
-        static_assert(coid::has_metastream_operator<sometype>::value, "missing metastream operator for 'sometype'");
-        to_lua(_rval_);
+        lua_pushref(L, ::lua::wrap_interface(_rval_.get(), ifc->_context));
 
         return 1;
     }
@@ -548,8 +547,7 @@ __declspec(noinline) int client_lua_dispatcher::lua_custom3_exc(lua_State * L)
         ::lua::process_exception_and_push_error_string_internal(e, L);
     }
 
-    if (exception_caught)
-    {
+    if (exception_caught) {
         lua_error(L);
     }
 
@@ -588,107 +586,9 @@ sometype client_lua_dispatcher::lua_custom3_ffi(void * ifc_this){
 */
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  void client::set_array( const float ar)
-//
-__declspec(noinline) int client_lua_dispatcher::lua_set_array4_exc(lua_State * L)
-{
-    bool exception_caught = false;
-
-    try {
-        const int args_count = lua_gettop(L) - 1;
-
-        if (args_count < 1 || args_count > 1) { //in/inout arguments
-            coid::charstr tmp = "Wrong number of arguments in ";
-            tmp << "client.set_array";
-            throw coid::exception(tmp);
-        }
-
-        if (!lua_istable(L, 1) || !lua_hasfield(L, 1, ::lua::_lua_dispatcher_cptr_key)) {
-            coid::charstr tmp = "Caller is not valid object in ";
-            tmp << "client.set_array";
-            throw coid::exception(tmp);
-        }
-
-        lua_getfield(L, 1, ::lua::_lua_dispatcher_cptr_key);
-
-        ::lua::interface_wrapper_base<::client>* ifc = reinterpret_cast<::lua::interface_wrapper_base<::client>*>(
-        *static_cast<size_t*>(lua_touserdata(L, -1)));
-        lua_pop(L, 1);
-
-        auto R_ = ifc ? ifc->_real() : 0;
-        if (!R_) {
-            coid::charstr tmp = "Null interface object in ";
-            tmp << "client.set_array";
-            throw coid::exception(tmp);
-        }
-
-        THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
-
-        //stream the arguments in
-
-        lua_pushvalue(L, 0 + 2);
-        static_assert(coid::has_metastream_operator<float>::value, "missing metastream operator 'float'");
-            threadcached<float> ar;
-        from_lua(ar);
-        lua_pop(L, 1); // who pushes, must pop!
-
-//out params
-
-// invoke
-        R_->set_array(ar);
-
-//stream out
-        THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
-
-        return 0;    }
-    catch (const coid::exception& e) {
-        exception_caught = true;
-        ::lua::process_exception_and_push_error_string_internal(e, L);
-    }
-
-    if (exception_caught)
-    {
-        lua_error(L);
-    }
-
-    return -1;
-}
-
-int client_lua_dispatcher::lua_set_array4(lua_State * L){
-    int res = lua_set_array4_exc(L);
-    if (res == -1) {
-        lua_error(L);
-    }
-
-    return res;
-}
-
-bool client_lua_dispatcher::can_use_ffi_set_array4(){
-    const MetaDesc * dsc = nullptr;
-
-    return false;
-}
-
-void client_lua_dispatcher::get_ffi_inject_set_array4(coid::token& header, coid::token& body){
-    static const coid::token h = "typedef void (*client_set_array4_fun)(void * ifc_this, const float ar[3])\n";
-    header = h;
-    static const coid::token b =
-"client.set_array_ffi = ffi.cast(\"client_set_array4_fun\",client.set_array);\n"\
-"function client:set_array(ar,)\n"\
-"   return client.set_array_ffi(self.__cthis, ar)\n"\
-"end;\n";
-    body = b;
-}
-/*
-void client_lua_dispatcher::lua_set_array4_ffi(void * ifc_this, const float ar[3]){
-
-}
-*/
-////////////////////////////////////////////////////////////////////////////////
-//
 //  bool client::overridable()
 //
-__declspec(noinline) int client_lua_dispatcher::lua_overridable5_exc(lua_State * L)
+__declspec(noinline) int client_lua_dispatcher::lua_overridable4_exc(lua_State * L)
 {
     bool exception_caught = false;
 
@@ -724,16 +624,16 @@ __declspec(noinline) int client_lua_dispatcher::lua_overridable5_exc(lua_State *
 
         //stream the arguments in
 
-//out params
 
-// invoke
+        //out params
+
+        // invoke
         bool _rval_ = R_->overridable();
 
-//stream out
+        //stream out
         THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
-        static_assert(coid::has_metastream_operator<bool>::value, "missing metastream operator for 'bool'");
-        to_lua(_rval_);
+        lua_pushref(L, ::lua::wrap_interface(_rval_.get(), ifc->_context));
 
         return 1;
     }
@@ -742,16 +642,15 @@ __declspec(noinline) int client_lua_dispatcher::lua_overridable5_exc(lua_State *
         ::lua::process_exception_and_push_error_string_internal(e, L);
     }
 
-    if (exception_caught)
-    {
+    if (exception_caught) {
         lua_error(L);
     }
 
     return -1;
 }
 
-int client_lua_dispatcher::lua_overridable5(lua_State * L){
-    int res = lua_overridable5_exc(L);
+int client_lua_dispatcher::lua_overridable4(lua_State * L){
+    int res = lua_overridable4_exc(L);
     if (res == -1) {
         lua_error(L);
     }
@@ -759,24 +658,24 @@ int client_lua_dispatcher::lua_overridable5(lua_State * L){
     return res;
 }
 
-bool client_lua_dispatcher::can_use_ffi_overridable5(){
+bool client_lua_dispatcher::can_use_ffi_overridable4(){
     const MetaDesc * dsc = nullptr;
 
     return false;
 }
 
-void client_lua_dispatcher::get_ffi_inject_overridable5(coid::token& header, coid::token& body){
-    static const coid::token h = "typedef bool (*client_overridable5_fun)(void * ifc_this)\n";
+void client_lua_dispatcher::get_ffi_inject_overridable4(coid::token& header, coid::token& body){
+    static const coid::token h = "typedef bool (*client_overridable4_fun)(void * ifc_this)\n";
     header = h;
     static const coid::token b =
-"client.overridable_ffi = ffi.cast(\"client_overridable5_fun\",client.overridable);\n"\
+"client.overridable_ffi = ffi.cast(\"client_overridable4_fun\",client.overridable);\n"\
 "function client:overridable()\n"\
 "   return client.overridable_ffi(self.__cthis)\n"\
 "end;\n";
     body = b;
 }
 /*
-bool client_lua_dispatcher::lua_overridable5_ffi(void * ifc_this){
+bool client_lua_dispatcher::lua_overridable4_ffi(void * ifc_this){
 
 }
 */
@@ -1233,12 +1132,7 @@ int client_lua_dispatcher::register_interface_client(lua_State * L, bool push) {
     lua_setfenv(L, -2);
     lua_setfield(L, -2, "custom");
 
-    lua_pushcfunction(L, &client_lua_dispatcher::lua_set_array4);
-    lua_pushvalue(L, LUA_GLOBALSINDEX);
-    lua_setfenv(L, -2);
-    lua_setfield(L, -2, "set_array");
-
-    lua_pushcfunction(L, &client_lua_dispatcher::lua_overridable5);
+    lua_pushcfunction(L, &client_lua_dispatcher::lua_overridable4);
     lua_pushvalue(L, LUA_GLOBALSINDEX);
     lua_setfenv(L, -2);
     lua_setfield(L, -2, "overridable");
@@ -1573,7 +1467,7 @@ public:
     static int lua_get1(lua_State * L);
     static bool can_use_ffi_get1();
     static void get_ffi_inject_get1(coid::token& header, coid::token& body);
-    static component* lua_get1_ffi(void * ifc_this);
+    static coref<component_ifc> lua_get1_ffi(void * ifc_this);
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1616,12 +1510,13 @@ __declspec(noinline) int client2_lua_dispatcher::lua_test0_exc(lua_State * L)
 
         //stream the arguments in
 
-//out params
 
-// invoke
+        //out params
+
+        // invoke
         R_->test();
 
-//stream out
+        //stream out
         THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
         return 0;    }
@@ -1630,8 +1525,7 @@ __declspec(noinline) int client2_lua_dispatcher::lua_test0_exc(lua_State * L)
         ::lua::process_exception_and_push_error_string_internal(e, L);
     }
 
-    if (exception_caught)
-    {
+    if (exception_caught) {
         lua_error(L);
     }
 
@@ -1670,7 +1564,7 @@ void client2_lua_dispatcher::lua_test0_ffi(void * ifc_this){
 */
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  component* xt::client2::get()
+//  coref<component_ifc> xt::client2::get()
 //
 __declspec(noinline) int client2_lua_dispatcher::lua_get1_exc(lua_State * L)
 {
@@ -1708,15 +1602,18 @@ __declspec(noinline) int client2_lua_dispatcher::lua_get1_exc(lua_State * L)
 
         //stream the arguments in
 
-//out params
 
-// invoke
-        component* _rval_ = R_->get();
+        //out params
 
-//stream out
+        // invoke
+        coref<component_ifc> _rval_ = R_->get();
+
+        //stream out
         THREAD_SINGLETON(coid::lua_streamer_context).reset(L);
 
-        //TODO data interfaces
+        static_assert(coid::has_metastream_operator<component_ifc>::value, "missing metastream operator for 'component_ifc'");
+        if (_rval_)
+            to_lua(*_rval_);
 
         return 1;
     }
@@ -1725,8 +1622,7 @@ __declspec(noinline) int client2_lua_dispatcher::lua_get1_exc(lua_State * L)
         ::lua::process_exception_and_push_error_string_internal(e, L);
     }
 
-    if (exception_caught)
-    {
+    if (exception_caught) {
         lua_error(L);
     }
 
@@ -1749,7 +1645,7 @@ bool client2_lua_dispatcher::can_use_ffi_get1(){
 }
 
 void client2_lua_dispatcher::get_ffi_inject_get1(coid::token& header, coid::token& body){
-    static const coid::token h = "typedef component* (*client2_get1_fun)(void * ifc_this)\n";
+    static const coid::token h = "typedef coref<component_ifc> (*client2_get1_fun)(void * ifc_this)\n";
     header = h;
     static const coid::token b =
 "client2.get_ffi = ffi.cast(\"client2_get1_fun\",client2.get);\n"\
@@ -1759,7 +1655,7 @@ void client2_lua_dispatcher::get_ffi_inject_get1(coid::token& header, coid::toke
     body = b;
 }
 /*
-component* client2_lua_dispatcher::lua_get1_ffi(void * ifc_this){
+coref<component_ifc> client2_lua_dispatcher::lua_get1_ffi(void * ifc_this){
 
 }
 */
@@ -1873,7 +1769,7 @@ iref<::lua::registry_handle> client2_lua_dispatcher::create_interface_object(con
     *static_cast<size_t*>(cptr_holder) = reinterpret_cast<size_t>(this->intergen_real_interface());
     lua_setfield(L, -2, ::lua::_lua_interface_cptr_key);
 
-    lua_pushnumber(L, ints(3558882638));
+    lua_pushnumber(L, ints(4187390586));
     lua_setfield(L, -2, ::lua::_lua_class_hash_key);
 
 

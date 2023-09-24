@@ -686,8 +686,8 @@ public:
     /// @param trailing the trailing block delimiter
     /// @param nested names of recognized nested blocks and strings to look and account for (separated with
     /// spaces). An empty list disables any nested blocks and strings.
-    /// @note The rule names (either in the name or the nested params) can start with '.' (dot) character,
-    /// in which case the rule is set to ignored state either within global scope (if placed before the
+    /// @note The rule names (either in the name or the nested params) can start with '.' (dot) or '!' characters,
+    /// in which case the rule is set to ignored resp. disabled state either within the global scope (if placed before the
     /// rule name) or within the rule scope (if placed before rule names in nested list).
     int def_block(token name, const token& leading, const token& trailing, token nested)
     {

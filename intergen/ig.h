@@ -88,6 +88,37 @@ private:
     charstr infile;
 };
 
+/// @brief Forward declared types
+struct forward
+{
+    coid::dynarray<charstr> nss;
+    charstr name;
+
+    meta::arg::ifc_type type = meta::arg::ifc_type::none;
+
+
+    bool operator == (const forward& o) const { return type == o.type && name == o.name && nss == o.nss; }
+
+    void parse(token tok) {
+        while (token ns = tok.cut_left("::", false, token::cut_trait_remove_sep_default_empty())) {
+            *nss.add() = ns;
+        }
+        name = tok;
+    }
+
+    friend metastream& operator || (metastream& m, forward& p)
+    {
+        return m.compound_type(p, [&]()
+        {
+            m.member("nss", p.nss);
+            m.member("name", p.name);
+            m.member("type", p.type);
+        });
+    }
+};
+
+
+
 ////////////////////////////////////////////////////////////////////////////////
 struct Method
 {
@@ -173,16 +204,14 @@ struct MethodIG
     struct Arg
     {
         charstr type;                   //< parameter type (stripped of const qualifier)
-        charstr basetype;               //< base type (stripped of the last ptr/ref)
-        charstr barenstype;             //< full bare type (without iref)
-        charstr barens;                 //< namespace part of full bare type
-        charstr baretype;               //< type part of full bare type
-        charstr name;                   //< parameter name
+        charstr basetype;               //< base type (stripped of last ptr/ref)
+        charstr ptrtype;                //< ptr content type (also removes iref/ref/cref)
+        charstr hosttype;               //< host type name if this arg/return value is mapped to an interface
+        charstr name;                   //< parameter name (or "return")
         charstr arsize;                 //< size expression if the parameter is an array, including [ ]
         charstr fnargs;                 //< argument list of a function-type argument
         charstr memfnclass;             //< member fn class
         charstr defval;
-        charstr fulltype;
         charstr ifckwds;                //< ifc_out, ifc_inout and ifc_volatile string
         charstr doc;
         bool bspecptr = false;          //< special type where pointer is not separated (e.g const char*)
@@ -190,9 +219,11 @@ struct MethodIG
         bool bref = false;              //< true if the type is a reference
         bool bxref = false;             //< true if the type is xvalue reference
         bool biref = false;
+        bool bcref = false;
         bool bconst = false;            //< true if the type had const qualifier
 
         meta::arg::ex_type struct_type = meta::arg::ex_type::unspecified;
+        meta::arg::ifc_type ifc_type = meta::arg::ifc_type::none;
 
         bool binarg = true;             //< input type argument
         bool boutarg = false;           //< output type argument
@@ -203,22 +234,12 @@ struct MethodIG
 
 
         bool operator == (const Arg& a) const {
-            return fulltype == a.fulltype && arsize == a.arsize;
+            return type == a.type && arsize == a.arsize;
         }
 
         bool parse(iglexer& lex, bool argname);
 
-        //void fix_copy(const Arg& src)
-        //{
-        //    basetype.rebase(src.type, type);
-        //    barenstype.rebase(src.type, type);
-        //    barens.rebase(src.type, type);
-        //    baretype.rebase(src.type, type);
-        //}
-
         static charstr& match_type(iglexer& lex, charstr& dst);
-
-        void add_unique(dynarray<Arg>& irefargs);
 
         friend metastream& operator || (metastream& m, Arg& p)
         {
@@ -226,19 +247,20 @@ struct MethodIG
             {
                 m.member("type", p.type);
                 m.member("basetype", p.basetype);
-                m.member("barenstype", p.barenstype);
-                m.member("barens", p.barens);
-                m.member("baretype", p.baretype);
+                m.member("hosttype", p.hosttype);
                 m.member("name", p.name);
                 m.member("size", p.arsize);
                 m.member("fnargs", p.fnargs);
                 m.member("memfnclass", p.memfnclass);
                 m.member("defval", p.defval);
-                m.member("fulltype", p.fulltype);
                 m.member("ifckwds", p.ifckwds);
                 m.member("doc", p.doc);
                 m.member("const", p.bconst);
-                m.member("struct_type", p.struct_type);
+                {
+                    static const meta::arg::ifc_type types[] = {meta::arg::ifc_type::none, meta::arg::ifc_type::ifc_class, meta::arg::ifc_type::ifc_struct};
+                    static const char* const strings[] = {"none", "ifc_class", "ifc_struct", nullptr};
+                    m.member_enum("ifc_type", p.ifc_type, types, strings, meta::arg::ifc_type::none);
+                }
                 m.member("specptr", p.bspecptr);
                 m.member("ptr", p.bptr);
                 m.member("ref", p.bref);
@@ -270,7 +292,7 @@ struct MethodIG
     bool bcreator = false;
     bool bptr = false;                  //< ptr instead of ref
     bool biref = true;                  //< iref instead of ref
-    bool bifccr = false;                //< ifc returning creator (not host)
+    bool bretifc = false;               //< method marked as returning an interface
     bool bvirtual = false;              //< virtual method (on host)
     bool bconst = false;                //< const method
     bool boperator = false;
@@ -282,6 +304,7 @@ struct MethodIG
     bool bpure = false;                 //< pure virtual on client
     bool bduplicate = false;            //< a duplicate method/event from another interface of the host
     bool binherit = false;              //< method inherited from base interface
+    bool bmultioutargs = false;         //< has multiple outputs (return value and out params)
 
     Arg ret;
     dynarray<Arg> args;
@@ -289,6 +312,7 @@ struct MethodIG
     int ninargs = 0;                    //< number of input arguments
     int ninargs_nondef = 0;
     int noutargs = 0;                   //< number of output arguments
+    int nalloutargs = 0;                //< number of output arguments including return (if not void)
 
     dynarray<charstr> comments;         //< comments preceding the method declaration
     dynarray<charstr> docs;             //< doc paragraphs
@@ -302,7 +326,7 @@ struct MethodIG
     //    ret.fix_copy(src.ret);
     //}
 
-    bool parse(iglexer& lex, const charstr& host, const charstr& ns, const charstr& nsifc, dynarray<Arg>& irefargs, bool isevent);
+    bool parse(iglexer& lex, const charstr& host, const charstr& ns, const charstr& extifc, dynarray<forward>& fwds, bool isevent);
 
     void parse_docs();
 
@@ -346,7 +370,7 @@ struct MethodIG
             m.member("creator", p.bcreator);
             m.member("ptr", p.bptr);
             m.member("iref", p.biref);
-            m.member("ifccr", p.bifccr);
+            m.member("retifc", p.bretifc);
             m.member("const", p.bconst);
             m.member("implicit", p.bimplicit);
             m.member("destroy", p.bdestroy);
@@ -354,10 +378,12 @@ struct MethodIG
             m.member("pure", p.bpure);
             m.member("duplicate", p.bduplicate);
             m.member("inherit", p.binherit);
+            m.member("multiout", p.bmultioutargs);
             m.member("args", p.args);
             m.member("ninargs", p.ninargs);
             m.member("ninargs_nondef", p.ninargs_nondef);
             m.member("noutargs", p.noutargs);
+            m.member("nalloutargs", p.nalloutargs);
             m.member("comments", p.comments);
             m.member("docs", p.docs);
             m.member("index", p.index);
@@ -388,6 +414,8 @@ struct Interface
     token basepath;
 
     dynarray<charstr> baseclassnss; // base class namespaces
+
+    dynarray<forward> fwds;
 
     dynarray<MethodIG> method;
     dynarray<MethodIG> event;
@@ -522,6 +550,7 @@ struct Interface
             m.member("baseclass", p.baseclass);
             m.member("basepath", p.basepath);
             m.member("baseclassns", p.baseclassnss);
+            m.member("fwds", p.fwds);
             m.member("virtual", p.bvirtual);
             m.member("dataifc", p.bdataifc);
             m.member("default_creator", p.default_creator);
@@ -554,7 +583,7 @@ struct Class
     dynarray<paste_block> classpasters;
 
 
-    bool parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& namespcs, dynarray<paste_block>* pasters, dynarray<MethodIG::Arg>& irefargs);
+    bool parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& namespcs, dynarray<paste_block>* pasters);
 
     friend metastream& operator || (metastream& m, Class& p)
     {

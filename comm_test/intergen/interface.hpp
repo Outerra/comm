@@ -107,7 +107,7 @@ public:
         return 0;
     }
 
-    ifc_fn void set_array(const float ar[3]) {}
+    ifc_fnx(!) void set_array(const float ar[3]) {}
 
     ifc_fn virtual bool overridable() { return false; }
 
@@ -139,7 +139,7 @@ public:
     ifc_fn void test() {}
 
     /// @return pointer to a data interface type (ifc_struct)
-    ifc_fn struct component* get();
+    ifc_fnx(ifc_struct=component_ifc) component* get();
 };
 
 } // namespace ab

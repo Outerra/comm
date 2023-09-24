@@ -99,18 +99,10 @@ namespace coid {
 /// @note ifc_fnx(+) or ifc_fnx(+name) marks an interface method that is captured by an interceptor (for net replication etc) if default was off
 /// @note ifc_fnx(@connect) marks a method that gets called upon successfull interface connection
 /// @note ifc_fnx(@unload) marks a static method called when a registered client of given interface is unloading
+/// @note ifc_fnx(class=...) marks a method that returns ifc_class type interface
+/// @note ifc_fnx(struct=...) marks a method that returns ifc_struct type interface
 /// @example ifc_fnx(get) void get_internal();
 #define ifc_fnx(extname)
-
-///Interface function decoration that marks a function returning an iref-based interface (strong interface that extends the lifetime)
-/// @param ifcname interface name (with namespaces), optionally followed by ifc_fnx options
-/// @note the function return type must be a pointer to the host class of the returned interface
-#define ifc_fnx_class(ifcname)
-
-///Interface function decoration that marks a function returning a lightweight interface (weak interface that doesn't own the remote object)
-/// @param ifcname interface name (with namespaces), optionally followed by ifc_fnx options
-/// @note the function return type must be a pointer to the host class of the returned interface
-#define ifc_fnx_struct(ifcname)
 
 
 ///Interface event callback decoration
@@ -212,7 +204,7 @@ protected:
 
 public:
 
-    static const int VERSION = 8;
+    static const int VERSION = 9;
 
     typedef bool (*fn_unload_client)(const coid::token& client, const coid::token& module_name, coid::binstring* bstr);
 
@@ -265,7 +257,7 @@ public:
     /// @return wrapper creator for given back-end
     virtual void* intergen_wrapper(backend bck) const = 0;
 
-    /// @return name of default creator
+    /// @return the name of the default creator
     virtual const coid::token& intergen_default_creator(backend bck) const = 0;
 
     ///Bind or unbind interface call interceptor handler for current interface and all future instances of the same interface class
@@ -383,54 +375,6 @@ protected:
 };
 
 
-
-
-/// @brief Wrapper for managed data interfaces
-/// @tparam T data interface type
-template <class T>
-class cref
-{
-public:
-
-    cref() = default;
-
-    explicit cref(coid::versionid eid)
-        : _entity_id(eid)
-    {}
-
-    /// @return component reference valid for current frame
-    T* ready() {
-        //obtain a valid reference once per frame
-        uint gframe = entman::frame;
-        if (_cached_object && _ready_frame == gframe)
-            return _cached_object;
-
-        _cached_object = entman::get<T>(_entity_id);
-        _ready_frame = gframe;
-        return _cached_object;
-    }
-
-    cref& operator = (coid::versionid eid) {
-        _entity_id = eid;
-        _cached_object = 0;
-        return *this;
-    }
-
-    T* operator -> () {
-        T* p = ready();
-        if (!p) throw coid::exception() << "dead object";
-        return p;
-    }
-
-private:
-
-    coid::versionid _entity_id;         //< id of the connected entity
-    T* _cached_object = 0;              //< cached connected object
-    uint _ready_frame = 0;              //< frame when the connected object was valid
-};
-
-
-
 COID_NAMESPACE_BEGIN
 
 class ifcman
@@ -450,6 +394,10 @@ public:
     };
 
 
+    /// @brief Get data ifc type interface descriptor, checking the version
+    /// @tparam T data interface type
+    /// @param hash version
+    /// @return ptr to the descriptor, if it exists and its version matches, otherwise null
     template <class T>
     static const data_ifc_descriptor* get_type_ifc(uint64 hash) {
         ifcman& m = get();
@@ -457,11 +405,28 @@ public:
         return id < m._clients.size() && m._clients[id]._hash == hash ? &m._clients[id] : nullptr;
     }
 
+    /// @brief Get data ifc type interface descriptor
+    /// @tparam T data interface type
+    /// @return ptr to the descriptor if it exists, otherwise null
     template <class T>
-    static intergen_data_interface::ifn_t* set_type_ifc(uint64 hash, icr_t* cr_table, ifn_t* fn_table, const meta::class_interface* meta)
+    static const data_ifc_descriptor* get_type_ifc() {
+        ifcman& m = get();
+        uint id = m._seq.id<T>();
+        return id < m._clients.size() ? &m._clients[id] : nullptr;
+    }
+
+    /// @brief Set info about data interface type
+    /// @tparam T data interface type
+    /// @param hash version
+    /// @param cr_table table of creators
+    /// @param fn_table table of methods
+    /// @param meta meta info
+    /// @return assigned type id
+    template <class T>
+    static int set_type_ifc(uint64 hash, icr_t* cr_table, ifn_t* fn_table, const meta::class_interface* meta)
     {
         ifcman& m = get();
-        m._seq.assign<T>([&](int id, const type_sequencer<ifcman>::entry& en) {
+        int ord = m._seq.assign<T>([&](int id, const type_sequencer<ifcman>::entry& en) {
             data_ifc_descriptor& dc = m._clients.get_or_add(id);
             dc._fn_table = fn_table;
             dc._cr_table = cr_table;
@@ -469,7 +434,7 @@ public:
             dc._hash = hash;
             dc._meta = meta;
         });
-        return fn_table;
+        return ord;
     }
 
 private:

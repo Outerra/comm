@@ -19,7 +19,7 @@ iglexer::iglexer()
     IGKWD = def_keywords("\
 ifc_class:ifc_class_var:ifc_class_virtual:ifc_class_virtual_var:ifc_struct:\
 IFC_CLASS:IFC_CLASS_VAR:IFC_CLASS_VIRTUAL:IFC_CLASS_VIRTUAL_VAR:IFC_STRUCT:\
-ifc_fn:ifc_fnx:ifc_fnx_struct:ifc_fnx_class:ifc_event:ifc_eventx:\
+ifc_fn:ifc_fnx:ifc_event:ifc_eventx:\
 ifc_in:ifc_out:ifc_inout:ifc_ret");
 
     int ie = def_escape("escape", '\\', 0);

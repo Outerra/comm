@@ -242,32 +242,27 @@ void singletons_destroy()
 ////////////////////////////////////////////////////////////////////////////////
 //code for process-wide singletons
 
-#define GLOBAL_SINGLETON_REGISTRAR sglo_registrar
+#define GLOBAL_SINGLETON_REGISTRAR sglo2_registrar
 
 #ifdef SYSTYPE_WIN
 typedef int(__stdcall* proc_t)();
 
-extern "C"
-__declspec(dllimport) proc_t __stdcall GetProcAddress(
-    void* hmodule,
-    const char* procname
-);
+extern "C" {
+    __declspec(dllimport) proc_t __stdcall GetProcAddress(void* hmodule, const char* procname);
+    __declspec(dllimport) void* __stdcall GetModuleHandleA(const char* lpModuleName);
 
-extern "C"
-_declspec(dllimport) void* __stdcall GetModuleHandleA(const char* lpModuleName
-);
-
+    __declspec(dllexport) global_singleton_manager* GLOBAL_SINGLETON_REGISTRAR()
+    {
+        static global_singleton_manager _gsm;
+        return &_gsm;
+    }
+}
 
 typedef global_singleton_manager* (*ireg_t)();
 
 #define MAKESTR(x) STR(x)
 #define STR(x) #x
 
-extern "C" __declspec(dllexport) global_singleton_manager * GLOBAL_SINGLETON_REGISTRAR()
-{
-    static global_singleton_manager _gsm;
-    return &_gsm;
-}
 
 global_singleton_manager& global_singleton_manager::get_global()
 {
@@ -282,8 +277,9 @@ global_singleton_manager& global_singleton_manager::get_global()
             //probably a 3rd party exe
             _this = GLOBAL_SINGLETON_REGISTRAR();
         }
-        else
+        else {
             _this = p();
+        }
     }
 
     return *_this;

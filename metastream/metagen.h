@@ -57,7 +57,7 @@ COID_NAMESPACE_BEGIN
 
 
 **/
-class metagen //: public binstream
+class metagen
 {
     struct Tag;
     typedef MetaDesc::Var   Var;
@@ -65,7 +65,7 @@ class metagen //: public binstream
     ///Lexer for tokenizing tags
     struct mtglexer : lexer
     {
-        int IDENT, NUM, DQSTRING, STEXT, COMMTAG;
+        int IDENT, NUM, DQSTRING, STEXT, COMMTAG, COMMENT;
 
         virtual ~mtglexer() {}
 
@@ -105,6 +105,8 @@ class metagen //: public binstream
             enable(STEXT, false);
 
             COMMTAG = def_string("!commtag", "#", "#", "");
+
+            COMMENT = def_block("!.comment", "/*", "*/", "");
         }
 
         charstr& set_err() {
@@ -574,6 +576,8 @@ class metagen //: public binstream
 
             catnames.reset();
 
+            lex.enable(lex.COMMENT, true);
+
             if (brace == '#') {
                 lex.next_as_string(lex.COMMTAG, true);
             }
@@ -662,6 +666,8 @@ class metagen //: public binstream
                 lex.enable(lex.DQSTRING, en);
                 lex.next(0);
             }
+
+            lex.enable(lex.COMMENT, false);
 
             while (tok.val == '-') {
                 ++eat_right;
