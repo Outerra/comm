@@ -107,7 +107,7 @@ public:
     // --- internal helpers ---
 
     ///Interface revision hash
-    static const int HASHID = 1798146601u;
+    static const int HASHID = 1781368982u;
 
     ///Interface name (full ns::class string)
     static const coid::tokenhash& IFCNAME() {
@@ -126,7 +126,7 @@ public:
     }
 
     static const coid::token& intergen_default_creator_static(backend bck) {
-        static constexpr coid::token _dc("client.creator@1798146601"_T);
+        static constexpr coid::token _dc("client.creator@1781368982"_T);
         static constexpr coid::token _djs("client@wrapper.js"_T);
         static constexpr coid::token _djsc("client@wrapper.jsc"_T);
         static constexpr coid::token _dlua("client@wrapper.lua"_T);
@@ -189,7 +189,7 @@ public:
         type.consume("struct ");
 
         coid::charstr tmp = "client"_T;
-        tmp << "@client-1798146601"_T << '.' << type;
+        tmp << "@client-1781368982"_T << '.' << type;
 
         coid::interface_register::register_interface_creator(tmp, cc, nullptr);
         return 0;
@@ -234,14 +234,14 @@ inline iref<T> client::creator(T* _subclass_)
     typedef iref<T> (*fn_creator)(client*);
 
     static fn_creator create = 0;
-    static constexpr coid::token ifckey = "client.creator@1798146601"_T;
+    static constexpr coid::token ifckey = "client.creator@1781368982"_T;
 
     if (!create)
         create = reinterpret_cast<fn_creator>(
             coid::interface_register::get_interface_creator(ifckey));
 
     if (!create) {
-        log_mismatch("client"_T, "client.creator"_T, "@1798146601"_T);
+        log_mismatch("client"_T, "client.creator"_T, "@1781368982"_T);
         return 0;
     }
 

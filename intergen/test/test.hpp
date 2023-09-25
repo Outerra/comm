@@ -62,6 +62,12 @@ class base_thing : public policy_intrusive_base
 {
 protected:
     virtual coid::charstr strbody() { return "base"; }
+
+public:
+
+    IFC_CLASS_VAR(ifc::basething : virtual basei, "ifc", _ifc);
+
+    ifc_fn void xooo() {}
 };
 
 
@@ -70,7 +76,7 @@ class thing : public base_thing
 {
 public:
 
-    IFC_CLASS_VAR(ifc1::ifc2::thingface : virtual basei, "ifc", _ifc);
+    IFC_CLASS(ifc1::ifc2::thingface : ifc::basething, "ifc", "");
 
     ifc_fnx(get) static iref<n1::n2::thing> get_thing() {
         return new thing;
