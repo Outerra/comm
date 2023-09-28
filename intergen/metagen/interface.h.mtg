@@ -270,7 +270,11 @@ inline iref<T> $..name$::$name$(T* _subclass_
 $-[/method]$
 
 $-[method !static !destroy !virtual]$
+$-(if ?return.ifc_type="none")$
 inline auto $..name$::$name$($[args rest=", "]$$ifckwds after=" "$$type$ $(if ?fnarg)$($-memfnclass after="::"-$ *$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if ?const)$ const$(/if)$ -> $return.type$ { return VT_CALL($return.type$,($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$) $-(if ?const)$ const$(/if)$,$index$)($[args rest=","]$ $-(if ?xref)$std::forward<$basetype$>($(/if)-$ $name$ $-(if ?xref)$)$(/if)-$ $[/args]$); }
+$-(elif)$
+inline auto $..name$::$name$($[args rest=", "]$$ifckwds after=" "$$type$ $(if ?fnarg)$($-memfnclass after="::"-$ *$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if ?const)$ const$(/if)$ -> $return.type$ { return ((*this).*(reinterpret_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$) $-(if ?const)$ const$(/if)$>(_vtable[$index$])))($[args rest=","]$ $-(if ?xref)$std::forward<$basetype$>($(/if)-$ $name$ $-(if ?xref)$)$(/if)-$ $[/args]$); }
+$-(/if)$
 $-[/method]$
 
 $-[ns]$

@@ -72,12 +72,12 @@ public:
         int id = -1;
     };
 
-    /// @brief Get assigned id for type T
+    /// @brief Get or assign an id for type T
     /// @tparam T
     /// @return cached or assigned id
     /// @note IDs are generated sequentially, 0-based index
     template <class T>
-    int id()
+    int type_id()
     {
         int& rid = id_holder<T>::slot;
         if (rid >= 0)

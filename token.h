@@ -184,6 +184,17 @@ struct token
 #endif
         return token(p, pe);
     }
+
+    /// @return type name without class/struct prefix
+    template <typename T>
+    static token clean_type_name()
+    {
+        token name = type_name<T>();
+        name.consume("class ");
+        name.consume("struct ");
+        return name;
+    }
+
 #endif //__cpp_constexpr >= 201304L
 
     template <int N>

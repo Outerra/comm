@@ -432,7 +432,7 @@ protected:
 
     static coref<$name$> _host_connector(::$..nsx$$..class$* host)
     {
-        return coref<$name$>(reinterpret_cast<$name$*>(host));
+        return coref<$name$>::from_host(host);
     }
 
 public:

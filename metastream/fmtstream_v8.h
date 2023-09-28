@@ -333,7 +333,7 @@ public:
 template<class T> class to_v8<coref<T>> {
 public:
     static v8::Handle<v8::Value> read(const coref<T>& v) {
-        return ::js::wrap_data_interface(v, token::type_name<T>(), v8::Handle<v8::Context>());
+        return ::js::wrap_data_interface(v, token::clean_type_name<T>(), v8::Handle<v8::Context>());
     }
 };
 

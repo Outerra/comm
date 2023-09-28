@@ -232,18 +232,18 @@ inline iref<T> thingface::get(T* _subclass_)
 }
 
 
-inline auto thingface::xooo() -> void { return VT_CALL(void,(),0)(); }
-inline auto thingface::hallo(int a, const coid::token& b, ifc_out coid::charstr& c) -> int { return VT_CALL(int,(int,const coid::token&,coid::charstr&),2)(a,b,c); }
-inline auto thingface::noargs() -> void { return VT_CALL(void,(),3)(); }
-inline auto thingface::noscript() -> ref<test> { return VT_CALL(ref<test>,(),4)(); }
-inline auto thingface::fallo(bool b, const char* str) -> coid::charstr { return VT_CALL(coid::charstr,(bool,const char*),5)(b,str); }
-inline auto thingface::loo(bool a, int b) -> void { return VT_CALL(void,(bool,int),6)(a,b); }
-inline auto thingface::operator()(const char* key) const -> double { return VT_CALL(double,(const char*) const,7)(key); }
-inline auto thingface::operator()(const char* key, double value) -> void { return VT_CALL(void,(const char*,double),8)(key,value); }
-inline auto thingface::inout(ifc_inout test*& par) -> void { return VT_CALL(void,(test*&),9)(par); }
+inline auto thingface::xooo() -> void { return ((*_host).*(reinterpret_cast<void(policy_intrusive_base::*)()>(_vtable[0])))(); }
+inline auto thingface::hallo(int a, const coid::token& b, ifc_out coid::charstr& c) -> int { return ((*_host).*(reinterpret_cast<int(policy_intrusive_base::*)(int,const coid::token&,coid::charstr&)>(_vtable[2])))(a,b,c); }
+inline auto thingface::noargs() -> void { return ((*_host).*(reinterpret_cast<void(policy_intrusive_base::*)()>(_vtable[3])))(); }
+inline auto thingface::noscript() -> ref<test> { return ((*_host).*(reinterpret_cast<ref<test>(policy_intrusive_base::*)()>(_vtable[4])))(); }
+inline auto thingface::fallo(bool b, const char* str) -> coid::charstr { return ((*_host).*(reinterpret_cast<coid::charstr(policy_intrusive_base::*)(bool,const char*)>(_vtable[5])))(b,str); }
+inline auto thingface::loo(bool a, int b) -> void { return ((*_host).*(reinterpret_cast<void(policy_intrusive_base::*)(bool,int)>(_vtable[6])))(a,b); }
+inline auto thingface::operator()(const char* key) const -> double { return ((*_host).*(reinterpret_cast<double(policy_intrusive_base::*)(const char*) const>(_vtable[7])))(key); }
+inline auto thingface::operator()(const char* key, double value) -> void { return ((*_host).*(reinterpret_cast<void(policy_intrusive_base::*)(const char*,double)>(_vtable[8])))(key,value); }
+inline auto thingface::inout(ifc_inout test*& par) -> void { return ((*_host).*(reinterpret_cast<void(policy_intrusive_base::*)(test*&)>(_vtable[9])))(par); }
 inline auto thingface::ret_classifc() -> iref<ifc1::ifc2::emptyface> { return VT_CALL(iref<ifc1::ifc2::emptyface>,(),10)(); }
 inline auto thingface::ret_structifc() -> coref<component_ifc> { return VT_CALL(coref<component_ifc>,(),11)(); }
-inline auto thingface::nested(const coid::dynarray<bt::base>& stuff) -> void { return VT_CALL(void,(const coid::dynarray<bt::base>&),12)(stuff); }
+inline auto thingface::nested(const coid::dynarray<bt::base>& stuff) -> void { return ((*_host).*(reinterpret_cast<void(policy_intrusive_base::*)(const coid::dynarray<bt::base>&)>(_vtable[12])))(stuff); }
 
 } //namespace
 } //namespace
