@@ -79,9 +79,10 @@ private:
     inline static ifn_t* _vtable1 = 0;
     inline static ifn_t* _vtable2 = 0;
 $-[method !static ?retifc first="\n"]$
-    $return.type$ wrap_$name$($[args rest=", "]$$ifckwds after=" "$$type$ $(if ?fnarg)$($-memfnclass after="::"-$ *$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-const set="const"$ {
+    $return.type$ wrap_$name$($[args rest=", "]$$ifckwds after=" "$$type$ $(if ?fnarg)$($-memfnclass after="::"-$ *$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-const set=" const"$
+    {
  $-(if ?return.ifc_type="ifc_class")$
-        using wrapper_fn = iref<$return.basetype$>(*)(policy_intrusive_base*, $return.basetype$*);
+        using wrapper_fn = iref<$return.basetype$>(*)(void*, $return.basetype$*);
         static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_connector("$return.basetype$");
         return wrapper
             ? wrapper(_host.cast<::$classname$>()->$name$($[args rest=","]$ $-(if ?xref)$std::forward<$basetype$>($(/if)-$ $name$ $-(if ?xref)$)$(/if)-$ $[/args]$), 0)
