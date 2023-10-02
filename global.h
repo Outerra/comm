@@ -311,8 +311,9 @@ class data_manager
             uint operator()(const storage<T>& s) const { return s.eid; }
         };
 
-        explicit cshash(uint id) : container(id, sizeof(storage<T>), container::type::hash)
-        {}
+        explicit cshash(uint id) : container(id, sizeof(storage<T>), container::type::hash) {
+            hash.reserve(1 << 23);
+        }
         void* element(uint gid) override final { return (T*)hash.find_value(gid); }
         void* element_by_container_local_id(uint id) override final {
             return hash.get_item(id);
@@ -369,10 +370,10 @@ class data_manager
     /// @brief linear array container
     /// @tparam T
     template <class T>
-    struct carray : container
-    {
-        explicit carray(uint id) : container(id, sizeof(T), container::type::array)
-        {}
+    struct carray : container {
+        explicit carray(uint id) : container(id, sizeof(T), container::type::array) {
+            data.reserve(1 << 23);
+        }
         void* element(uint gid) override final { return gid < data.size() ? &data[gid] : nullptr; }
         void* element_by_container_local_id(uint id) override final {
             return element(id);
@@ -830,17 +831,19 @@ public:
     /// @return container id
     /// @note container id 0 is created as a slotalloc to keep track of existing and deleted objects
     template <class C>
-    static void preallocate_array_container(uint reserve_count = 1 << 23)
+    static void preallocate_array_container()
     {
         carray<C>* cont = get_or_create_container<C, carray<C>>();
-        cont->reserve(reserve_count);
+        //TODO: this function just ensures that container of type C exists, refactor candidate
+        //cont->reserve(reserve_count);
     }
 
     template <class C>
-    static void preallocate_hash_container(uint reserve_count = 1 << 23)
+    static void preallocate_hash_container()
     {
         cshash<C>* cont = get_or_create_container<C, cshash<C>>();
-        cont->reserve(reserve_count);
+        //TODO: this function just ensures that container of type C exists, refactor candidate
+        //cont->reserve(reserve_count);
     }
 
     /// @brief Retrieve container for primary data
