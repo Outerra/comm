@@ -1986,9 +1986,10 @@ public:
     }
 
     /// @return true if the string is empty
-    bool is_empty() const {
-        return _tstr.size() <= 1;
-    }
+    bool is_empty() const { return _tstr.size() <= 1; }
+
+    /// @return true if the string is non-empty
+    bool is_set() const { return _tstr.size() > 1; }
 
     typedef dynarray<char, uint> charstr::* unspecified_bool_type;
 

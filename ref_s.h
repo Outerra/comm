@@ -244,7 +244,8 @@ public:
 
     T* const & get_ref() const { return _o; }
 
-    bool is_empty() const { return (_o == 0); }
+    bool is_empty() const { return _o == 0; }
+    bool is_set() const { return _o != 0; }
 
     typedef T* ref<T>::*unspecified_bool_type;
 

@@ -214,7 +214,8 @@ public:
         std::swap(a._p, b._p);
     }
 
-    bool is_empty() const { return (_p == 0); }
+    bool is_empty() const { return _p == 0; }
+    bool is_set() const { return _p != 0; }
 
     typedef T* iref<T>::* unspecified_bool_type;
 
