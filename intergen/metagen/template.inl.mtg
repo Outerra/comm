@@ -14,7 +14,7 @@ $-(if ?name="create")$static ref<$..class$> rl_create_(
 $-(elif ?sizearg)$void rl_$name$_(
 $-(elif)$$rettype$ rl_$name$_(
 $-(/if)$
-        const char* __file__, int __line__, const rl_ref& rl
+        const char* __file__, int __line__, const ref<render_list>& rl
 $-(if !static)-$
 $-(if !ptr !iref)$,
         const ref<$..class$>& that
@@ -46,7 +46,7 @@ $(/if)-$
     }
 $(if ?name="create")$
     ///Initialize the object created by new
-    void rl_init(const rl_ref& rl
+    void rl_init(const ref<render_list>& rl
     $-[args !retarg !sizearg]$,
         $type$
         $-ref-$
