@@ -1058,7 +1058,7 @@ public:
         return x;
     }
 
-    /// @return component reference valid for current frame
+    /// @return component reference valid for current frame, nullptr if object no longer exists
     T* ready()
     {
         //obtain a valid reference once per frame
@@ -1073,7 +1073,16 @@ public:
         return _cached_object;
     }
 
-    explicit operator bool() const { return _cached_object != 0; }
+    /// @return true if this doesn't refer to any entity
+    bool is_empty() const { return !_entity_id.valid(); }
+
+    /// @return true if this refers to an entity
+    /// @note only checks if this has been set up with a valid entity, but not if the entity is still valid - call ready() for that
+    bool is_set() const { return _entity_id.valid(); }
+
+    /// @return true if this refers to an entity
+    /// @note only checks if this has been set up with a valid entity, but not if the entity is still valid - call ready() for that
+    explicit operator bool() const { return _entity_id.valid(); }
 
     coref<T>& operator = (const coref<T>&) = default;
 
