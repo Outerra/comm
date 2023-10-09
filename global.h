@@ -1052,8 +1052,8 @@ public:
     {
         coref<T> x;
         x._entity_id = entman::get_versionid<HostType>(host);
-        x._cached_object = reinterpret_cast<T*>(host);
-        x._ready_frame = entman::frame;
+        x._cached_object = nullptr; //to be obtained in the first call, ensuring initialization
+        x._ready_frame = -1;
         x._cid = entman::get_container_id<HostType>();
         return x;
     }
@@ -1065,6 +1065,8 @@ public:
         uint gframe = entman::frame;
         if (_cached_object && _ready_frame == gframe)
             return _cached_object;
+
+        T::get_data_ifc_descriptor();
 
         _cached_object = static_cast<T*>(entman::get_by_container_id(_entity_id, _cid));
         _ready_frame = gframe;

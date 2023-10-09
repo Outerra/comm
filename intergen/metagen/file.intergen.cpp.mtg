@@ -433,6 +433,7 @@ protected:
 
     static coref<$name$> _host_connector(::$..nsx$$..class$* host)
     {
+        get_data_ifc_descriptor();
         return coref<$name$>::from_host(host);
     }
 
