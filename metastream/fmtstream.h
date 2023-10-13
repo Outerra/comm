@@ -82,7 +82,7 @@ public:
     /// @param add_context add context info, like a caret pointing to a token of text
     virtual void fmtstream_err(charstr& dst, bool add_context = true) { }
 
-    /// Called when binded metestream thorws exception so clean up can be made
+    /// Called when bound metestream throws an exception, cleanup
     virtual void on_exception_thow() {};
 
     ///Called to provide prefix for error reporting
