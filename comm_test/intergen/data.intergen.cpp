@@ -78,7 +78,8 @@ protected:
 
     static coref<component_ifc> _host_connector(::component* host)
     {
-        return coref<component_ifc>(reinterpret_cast<component_ifc*>(host));
+        get_data_ifc_descriptor();
+        return coref<component_ifc>::from_host(host);
     }
 
 public:

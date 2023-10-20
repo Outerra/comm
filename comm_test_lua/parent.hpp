@@ -14,7 +14,7 @@ namespace b
 class parent_class : public policy_intrusive_base
 {
 public: // interfaces only
-    ifc_class_var_inheritable(a::b::parent_class_ifc, "ifc", _client);
+    ifc_class_var(a::b::parent_class_ifc, "ifc", _client);
     ifc_fn static iref<parent_class> get_default();
     ifc_fn static iref<parent_class> get_value(int value);
     ifc_fn static iref<parent_class> _get(void* ptr);

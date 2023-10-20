@@ -12,3 +12,405 @@
 #include <comm/binstream/binstreambuf.h>
 
 using namespace coid;
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// lua handler of data interface component_ifc of class component
+//
+////////////////////////////////////////////////////////////////////////////////
+
+namespace lua {
+
+////////////////////////////////////////////////////////////////////////////////
+class component_ifc_lua_dispatcher
+    : public ::lua::interface_context
+{
+public:
+
+    iref<::lua::registry_handle> create_interface_object(const iref<::lua::registry_handle>& context);
+
+    COIDNEWDELETE(component_ifc_lua_dispatcher);
+
+    explicit component_ifc_lua_dispatcher(::component* host)
+    {
+        ifc = coref<component_ifc>::from_host(host);
+    }
+
+    explicit component_ifc_lua_dispatcher(const coref<component_ifc>& ifc) : ifc(ifc)
+    {}
+
+    ~component_ifc_lua_dispatcher()
+    {}
+
+    // --- creators ---
+
+    static iref<component_ifc_lua_dispatcher> creator(const ::lua::script_handle& scriptpath, const coid::token& bindname);
+
+        static int luacreator_creator0(lua_State * L, ::lua::interface_context* ifc);
+
+    // --- method wrappers ---
+
+    static int lua_set_a0_exc(lua_State * L);
+    static int lua_set_a0(lua_State* L);
+    static int lua_set_b1_exc(lua_State * L);
+    static int lua_set_b1(lua_State* L);
+
+protected:
+        // Tests if table on the top of the stack contains field with this iterface calss
+    //@param push_on_top - if the call table is found, it is pushed on the top of the stack
+    //@return - true if this class table including namespace tables are contained in the table on the top of the stack
+    static bool contains_interface_class_table_internal(lua_State* L, bool push_on_top);
+
+    static int register_interface_component_ifc(lua_State * L, bool push);
+
+private:
+
+
+    coref<component_ifc> ifc;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool component_ifc_lua_dispatcher::contains_interface_class_table_internal(lua_State * L, bool push_on_top)
+{
+#ifdef _DEBUG
+    const int stack_top = lua_gettop(L);
+#endif
+
+    int num_pops = 0;
+    constexpr int num_namespaces = 0;
+
+    bool result = (num_pops == num_namespaces) && lua_hasfield(L, -1, "component_ifc");
+
+    if (push_on_top && result)
+    {
+        lua_getfield(L, -1, "component_ifc");
+        lua_insert(L, -1 - num_namespaces);
+    }
+
+    lua_pop(L, num_pops);
+
+    DASSERT((result&& push_on_top) ? (stack_top + 1 == lua_gettop(L)) : (stack_top == lua_gettop(L)));
+
+    return result;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  void component_ifc::set_a( int b)
+//
+__declspec(noinline) int component_ifc_lua_dispatcher::lua_set_a0_exc(lua_State * L)
+{
+    bool exception_caught = false;
+
+    try {
+        const int args_count = lua_gettop(L) - 1;
+
+        if (args_count < 1 || args_count > 1) { //in/inout arguments
+            coid::charstr tmp = "Wrong number of arguments in ";
+            tmp << "component_ifc.set_a";
+            throw coid::exception(tmp);
+        }
+
+        if (!lua_istable(L, 1) || !lua_hasfield(L, 1, ::lua::_lua_dispatcher_cptr_key)) {
+            coid::charstr tmp = "Caller is not valid object in ";
+            tmp << "component_ifc.set_a";
+            throw coid::exception(tmp);
+        }
+
+        lua_getfield(L, 1, ::lua::_lua_dispatcher_cptr_key);
+
+        component_ifc_lua_dispatcher* dispatcher = reinterpret_cast<component_ifc_lua_dispatcher*>(
+        *static_cast<size_t*>(lua_touserdata(L, -1)));
+        lua_pop(L, 1);
+
+        ::component* R_ = reinterpret_cast<::component*>(dispatcher->ifc.ready());
+
+        if (!R_) {
+            coid::charstr tmp = "Null interface object in ";
+            tmp << "component_ifc.set_a";
+            throw coid::exception(tmp);
+        }
+
+        THREAD_SINGLETON(coid::lua_streamer_context).set_context(dispatcher->_context.get());
+
+        //stream the arguments in
+        static_assert(coid::has_metastream_operator<int>::value, "missing metastream operator for 'int'");
+
+        lua_pushvalue(L, 0 + 2);
+
+        threadcached<int> b;
+        from_lua(b);
+
+        lua_pop(L, 1); // who pushes, must pop!
+
+        //out params
+
+        // invoke
+        R_->set_a(b);
+
+        //stream out
+        THREAD_SINGLETON(coid::lua_streamer_context).set_context(dispatcher->_context.get());
+        return 0;
+    }
+    catch (const coid::exception& e) {
+        exception_caught = true;
+        ::lua::process_exception_and_push_error_string_internal(e, L);
+    }
+
+    if (exception_caught) {
+        lua_error(L);
+    }
+
+    return -1;
+}
+
+int component_ifc_lua_dispatcher::lua_set_a0(lua_State * L){
+    int res = lua_set_a0_exc(L);
+    if (res == -1) {
+        lua_error(L);
+    }
+
+    return res;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  void component_ifc::set_b( const coid::token& a, int* b)
+//
+__declspec(noinline) int component_ifc_lua_dispatcher::lua_set_b1_exc(lua_State * L)
+{
+    bool exception_caught = false;
+
+    try {
+        const int args_count = lua_gettop(L) - 1;
+
+        if (args_count < 1 || args_count > 1) { //in/inout arguments
+            coid::charstr tmp = "Wrong number of arguments in ";
+            tmp << "component_ifc.set_b";
+            throw coid::exception(tmp);
+        }
+
+        if (!lua_istable(L, 1) || !lua_hasfield(L, 1, ::lua::_lua_dispatcher_cptr_key)) {
+            coid::charstr tmp = "Caller is not valid object in ";
+            tmp << "component_ifc.set_b";
+            throw coid::exception(tmp);
+        }
+
+        lua_getfield(L, 1, ::lua::_lua_dispatcher_cptr_key);
+
+        component_ifc_lua_dispatcher* dispatcher = reinterpret_cast<component_ifc_lua_dispatcher*>(
+        *static_cast<size_t*>(lua_touserdata(L, -1)));
+        lua_pop(L, 1);
+
+        ::component* R_ = reinterpret_cast<::component*>(dispatcher->ifc.ready());
+
+        if (!R_) {
+            coid::charstr tmp = "Null interface object in ";
+            tmp << "component_ifc.set_b";
+            throw coid::exception(tmp);
+        }
+
+        THREAD_SINGLETON(coid::lua_streamer_context).set_context(dispatcher->_context.get());
+
+        //stream the arguments in
+        static_assert(coid::has_metastream_operator<coid::token>::value, "missing metastream operator for 'coid::token'");
+
+        lua_pushvalue(L, 0 + 2);
+
+        threadcached<coid::token> a;
+        from_lua(a);
+
+        lua_pop(L, 1); // who pushes, must pop!
+
+        //out params
+        int b;
+
+        // invoke
+        R_->set_b(a, &b);
+
+        //stream out
+        THREAD_SINGLETON(coid::lua_streamer_context).set_context(dispatcher->_context.get());
+
+        //stream out        
+        static_assert(coid::has_metastream_operator<int>::value, "missing metastream operator for 'int'");
+        to_lua(b);
+
+        return 1;
+    }
+    catch (const coid::exception& e) {
+        exception_caught = true;
+        ::lua::process_exception_and_push_error_string_internal(e, L);
+    }
+
+    if (exception_caught) {
+        lua_error(L);
+    }
+
+    return -1;
+}
+
+int component_ifc_lua_dispatcher::lua_set_b1(lua_State * L){
+    int res = lua_set_b1_exc(L);
+    if (res == -1) {
+        lua_error(L);
+    }
+
+    return res;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+iref<::lua::registry_handle> component_ifc_lua_dispatcher::create_interface_object(const iref<::lua::registry_handle>& context)
+{
+   lua_State * L = context->get_state();
+
+#ifdef _DEBUG
+    const int stack_top = lua_gettop(L);
+#endif
+
+    context->push_ref();
+
+    // get metatable
+    lua_pushvalue(L, -1);
+    lua_setmetatable(L, -2);
+
+    void * cptr_holder = lua_newuserdata(L, sizeof(size_t));
+    *static_cast<size_t*>(cptr_holder) = reinterpret_cast<size_t>(this);
+    lua_setfield(L, -2, ::lua::_lua_dispatcher_cptr_key);
+
+    cptr_holder = lua_newuserdata(L, sizeof(size_t));
+    *static_cast<size_t*>(cptr_holder) = reinterpret_cast<size_t>(this);
+    lua_setfield(L, -2, ::lua::_lua_interface_cptr_key);
+
+    lua_pushnumber(L, ints(873153888));
+    lua_setfield(L, -2, ::lua::_lua_class_hash_key);
+
+
+    if (0)
+    {
+        ::lua::debug_print_stack(L);
+    }
+
+    // set index table
+    lua_rawgeti(L, LUA_REGISTRYINDEX, ::lua::LUA_INTERFACE_METATABLE_REGISTER_INDEX); // push interface metatable register table
+    if (!contains_interface_class_table_internal(L, true))
+    {
+        register_interface_component_ifc(L, true);
+    }
+
+    lua_remove(L, -2); // remove interface metatable register table
+ 
+    lua_setfield(L, -2, ::lua::_lua_parent_index_key);
+
+    iref<::lua::registry_handle> obj;
+    obj = new ::lua::registry_handle(L);
+    obj->set_ref();
+
+    lua_pop(L, 1); // pop context table
+
+#ifdef _DEBUG
+    {
+        const int current_stack_top = lua_gettop(L);
+        DASSERT(stack_top == current_stack_top);
+    }
+#endif
+
+    _object = obj;
+    set_context(context);
+    return obj;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+///Create LUA wrapper from an existing interface object
+iref<::lua::registry_handle> wrap_ifc_to_lua_component_ifc(const coref<component_ifc>& orig_ifc, const iref<::lua::registry_handle>& context)
+{
+    DASSERT_RET(context.is_set(), nullptr);
+
+    // check that the orig points to an object
+    if (!orig_ifc)
+    {
+        return nullptr;
+    }
+    
+    // create interface object
+    lua::component_ifc_lua_dispatcher* difc = new lua::component_ifc_lua_dispatcher(orig_ifc);
+
+    return difc->create_interface_object(context);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+///Create LUA interface from a host
+static iref<lua::component_ifc_lua_dispatcher> make_lua_ifc_from_host_component_ifc(::component* host, const iref<::lua::registry_handle>& context)
+{
+    // check that the orig points to an object
+    if (!host)
+        return 0;
+
+    // create interface object
+    lua::component_ifc_lua_dispatcher* difc = new lua::component_ifc_lua_dispatcher(host);
+
+    difc->_object = difc->create_interface_object(context);
+    return difc;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+int component_ifc_lua_dispatcher::register_interface_component_ifc(lua_State * L, bool push) {
+#ifdef _DEBUG
+    const int stack_top = lua_gettop(L);
+#endif
+
+    lua_rawgeti(L,LUA_REGISTRYINDEX, ::lua::LUA_INTERFACE_METATABLE_REGISTER_INDEX); // push interface metatable register table
+
+    lua_createtable(L, 0, 0);
+
+    lua_pushcfunction(L, &component_ifc_lua_dispatcher::lua_set_a0);
+    lua_pushvalue(L, LUA_GLOBALSINDEX);
+    lua_setfenv(L, -2);
+    lua_setfield(L, -2, "set_a");
+
+    lua_pushcfunction(L, &component_ifc_lua_dispatcher::lua_set_b1);
+    lua_pushvalue(L, LUA_GLOBALSINDEX);
+    lua_setfenv(L, -2);
+    lua_setfield(L, -2, "set_b");
+
+    if (push)
+    {
+        lua_pushvalue(L, -1);
+        lua_insert(L, -3);
+    }
+
+    lua_setfield(L, -2, "component_ifc");
+    lua_pop(L, 1); // pop namespace or interface metatable register table
+
+#ifdef _DEBUG
+    {
+        const int current_stack_top = lua_gettop(L);
+        DASSERT(current_stack_top == (push ? stack_top + 1 : stack_top)); // ensure we left the stack in the initial state
+    }
+#endif
+
+    return 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+static void register_binders_for_component_ifc(bool on)
+{
+    //script interface wrapper from data interface
+    interface_register::register_interface_creator("component_ifc@dcwrapper.lua", on ? (void*)&wrap_ifc_to_lua_component_ifc : nullptr, nullptr);
+
+    //script interface maker from data host
+    interface_register::register_interface_creator("component_ifc@dcmaker.lua", on ? (void*)&make_lua_ifc_from_host_component_ifc : nullptr, nullptr);
+}
+
+//auto-register the bind function
+LOCAL_FILE_SINGLETON_DEF(ifc_autoregger) component_ifc_autoregger = new ifc_autoregger(&register_binders_for_component_ifc);
+
+
+void* force_register_component_ifc() {
+    LOCAL_FUNCTION_SINGLETON_DEF(ifc_autoregger) autoregger = new ifc_autoregger(&register_binders_for_component_ifc);
+    return autoregger.get();
+}
+
+} //namespace lua

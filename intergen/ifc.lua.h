@@ -671,9 +671,11 @@ inline bool is_context_table(lua_State* L, int index)
         throw coid::exception("Wrong number of arguments!");
     }
 
-    return lua_istable(L, index)
-        && lua_hasfield(L, index, _lua_context_script_dir_key)
-        && lua_hasfield(L, index, _lua_context_script_path_key);
+    bool result = lua_istable(L, index);
+    result &= lua_hasfield(L, index, _lua_context_script_dir_key);
+    result &= lua_hasfield(L, index, _lua_context_script_path_key);
+    
+    return result;
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

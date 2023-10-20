@@ -87,7 +87,7 @@ public:
     ///Called to provide prefix for error reporting
     virtual void fmtstream_file_name(const token& file_name) override {};
 
-    virtual void on_exception_thow() override
+    virtual void on_exception_throw() override
     {
         if (0)
         {
@@ -636,6 +636,7 @@ public:
 struct lua_streamer_context {
     metastream meta;
     fmtstream_lua_capi fmt_lua;
+    ::lua::registry_handle* _context = nullptr;
 
     lua_streamer_context() {
         meta.bind_formatting_stream(fmt_lua);
@@ -645,9 +646,16 @@ struct lua_streamer_context {
         meta.stream_reset(true,false);
     }
 
-    void reset(lua_State * L) {
+    void set_context(::lua::registry_handle* context) {
         meta.stream_reset(true, false);
-        fmt_lua.reset(L);
+        _context = context;
+        fmt_lua.reset(_context->get_state());
+    }
+
+    void reset()
+    {
+        meta.stream_reset(true, false);
+        fmt_lua.reset(_context->get_state());
     }
 
     lua_State * get_cur_state() { return fmt_lua.get_cur_state(); }
@@ -780,7 +788,7 @@ public:
         }
         else
         {
-            streamer.reset(L);
+            streamer.reset();
             streamer.meta.xstream_in(val);
         }
     };
@@ -793,11 +801,8 @@ public:
     {
         typedef iref<::lua::registry_handle>(*ifc_create_wrapper_fn)(T*, iref<lua::registry_handle>);
         auto& streamer = THREAD_SINGLETON(lua_streamer_context);
-        lua_State* L = streamer.get_cur_state();
-        lua_pushvalue(L, LUA_ENVIRONINDEX);
-        iref<lua::weak_registry_handle> context = new lua::weak_registry_handle(L);
-        context->set_ref();
-        ::lua::wrap_interface(val.get(), context);
+        
+        ::lua::wrap_interface(val.get(), streamer._context)->push_ref();
         //reinterpret_cast<ifc_create_wrapper_fn>(val->intergen_wrapper(T::IFC_BACKEND_LUA))(val.get(), context)->get_ref();
     };
 

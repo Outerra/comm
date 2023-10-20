@@ -32,12 +32,9 @@ public:
 
     COIDNEWDELETE(component_ifc_js_dispatcher);
 
-    //component_ifc_js_dispatcher()
-    //{}
-
     explicit component_ifc_js_dispatcher(::component* host)
     {
-        ifc = entman::get_versionid<::component>(host);
+        ifc = coref<component_ifc>::from_host(host);
     }
 
     explicit component_ifc_js_dispatcher(const coref<component_ifc>& ifc) : ifc(ifc)

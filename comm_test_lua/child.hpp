@@ -14,7 +14,7 @@ public: // methods only
     child_class& operator=(const child_class&) = delete;
     child_class(int value);
 
-    ifc_class_var_inherit(a::b::c::child_class_ifc, a::b::parent_class_ifc, "parent.hpp", "ifc");
+    ifc_class(a::b::c::child_class_ifc : a::b::parent_class_ifc, "ifc", "parent.hpp");
     ifc_fn static iref<a::b::c::child_class> _get(void* ptr);
 
 protected: // methods only
