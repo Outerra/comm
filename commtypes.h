@@ -290,14 +290,14 @@ struct versionid
         //DASSERT(id <= max_id);
     }
 
+    static versionid invalid() { return versionid(); }
+
     void reset() {
         id = max_id;
         version = 0xffffull;
     }
 
-    bool valid() const {
-        return value != UMAX64;
-    }
+    bool is_valid() const { return value != UMAX64; }
 
     bool operator == (const versionid& rhs) const {
         return value == rhs.value;

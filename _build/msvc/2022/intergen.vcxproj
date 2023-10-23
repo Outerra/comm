@@ -198,7 +198,7 @@
       <ForcedIncludeFiles>
       </ForcedIncludeFiles>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <StringPooling>true</StringPooling>
       <AdditionalOptions>/w34389 /w34296 %(AdditionalOptions)</AdditionalOptions>
