@@ -306,6 +306,8 @@ class data_manager
     template <class T>
     struct cshash : container
     {
+        static constexpr container::type specific_type = container::type::hash;
+
         struct extractor {
             using value_type = storage<T>;
             uint operator()(const storage<T>& s) const { return s.eid; }
@@ -370,7 +372,10 @@ class data_manager
     /// @brief linear array container
     /// @tparam T
     template <class T>
-    struct carray : container {
+    struct carray : container
+    {
+        static constexpr container::type specific_type = container::type::array;
+
         explicit carray(uint id) : container(id, sizeof(T), container::type::array) {
             data.reserve(1 << 23);
         }
@@ -422,7 +427,6 @@ class data_manager
 
         dynarray32<T> data;
     };
-
 
     // manipulators for the data
 
@@ -527,19 +531,16 @@ public:
     }
 
     template <class C>
-    static C* get_or_create(versionid vid)
+    static C& get_or_create(versionid vid)
     {
         static container* c = 0;
-        if (!c) c = get_container<C>();
-
-        if (!c || !c->seq->is_valid(vid))
-            return nullptr;
+        if (!c) c = &get_or_create_container<C>();
 
         C* el = static_cast<C*>(c->element(vid.id));
         if (!el)
             el = static_cast<C*>(c->create_default(vid.id));
 
-        return el;
+        return *el;
     }
 
     /// @brief Retrieve data of given type
@@ -632,7 +633,7 @@ public:
     template <class C>
     static C* push(versionid vid, C&& v)
     {
-        static container* c = get_or_create_container<C, cshash<C>>();
+        static container* c = &get_or_create_container<C, cshash<C>>();
         DASSERT_RET(c, nullptr);
         DASSERT_RET(c->seq->is_valid(vid), nullptr);
 
@@ -650,7 +651,7 @@ public:
     template <class C>
     static C* push_default(versionid vid)
     {
-        static container* c = get_or_create_container<C, cshash<C>>();
+        static container* c = &get_or_create_container<C, cshash<C>>();
         DASSERT_RET(c, nullptr);
         DASSERT_RET(c->seq->is_valid(vid), nullptr);
 
@@ -664,7 +665,7 @@ public:
     template <class C, class...Ps>
     static C* emplace(versionid vid, Ps&&... ps)
     {
-        static container* c = get_or_create_container<C, cshash<C>>();
+        static container* c = &get_or_create_container<C, cshash<C>>();
         DASSERT_RET(c, nullptr);
         DASSERT_RET(c->seq->is_valid(vid.id), nullptr);
 
@@ -833,7 +834,7 @@ public:
     template <class C>
     static void preallocate_array_container()
     {
-        carray<C>* cont = get_or_create_container<C, carray<C>>();
+        carray<C>* cont = static_cast<carray<C>*>(&get_or_create_container<C, carray<C>>());
         //TODO: this function just ensures that container of type C exists, refactor candidate
         //cont->reserve(reserve_count);
     }
@@ -841,7 +842,7 @@ public:
     template <class C>
     static void preallocate_hash_container()
     {
-        cshash<C>* cont = get_or_create_container<C, cshash<C>>();
+        cshash<C>* cont = static_cast<cshash<C>*>(&get_or_create_container<C, cshash<C>>());
         //TODO: this function just ensures that container of type C exists, refactor candidate
         //cont->reserve(reserve_count);
     }
@@ -852,7 +853,7 @@ public:
     template <class C>
     static const dynarray32<C>& get_array()
     {
-        static const dynarray32<C>* c = static_cast<const dynarray32<C>*>(get_or_create_container<C, carray<C>>()->linear_array_ptr());
+        static const dynarray32<C>* c = static_cast<const dynarray32<C>*>(get_or_create_container<C, carray<C>>().linear_array_ptr());
         RASSERT(c != nullptr);
 
         return *c;
@@ -978,13 +979,19 @@ private:
     /// @brief get existing container or create a new (def.hashed) one
     /// @tparam C component type
     /// @param cid container id
-    template <class C, class ContDefault = cshash<C>>
-    static ContDefault* get_or_create_container()
+    template <class C, class DefaultContainer = cshash<C>>
+    static container& get_or_create_container()
     {
         static uint cid = tsq().type_id<C>();
         dynarray32<container*>& co = data_containers();
-        return static_cast<ContDefault*>(
-            cid < co.size() && co[cid] != nullptr ? co[cid] : (co.get_or_addc(cid) = new ContDefault(cid)));
+        if constexpr (DefaultContainer::specific_type != container::type::hash) {
+            //mismatch between previously created container type
+            DASSERT(cid >= co.size() || !co[cid] || co[cid]->storage_type == DefaultContainer::specific_type);
+        }
+
+        return  cid < co.size() && co[cid] != nullptr
+            ? *co[cid]
+            : *(co.get_or_addc(cid) = new DefaultContainer(cid));
     }
 
 protected:
