@@ -1437,7 +1437,8 @@ iref<::lua::registry_handle> $name$_lua_dispatcher::create_interface_object(cons
 #endif
 
     context->push_ref();
-
+    
+    lua_createtable(L, 0, 3);
     // get metatable
     lua_pushvalue(L, -1);
     lua_setmetatable(L, -2);
@@ -1447,7 +1448,7 @@ iref<::lua::registry_handle> $name$_lua_dispatcher::create_interface_object(cons
     lua_setfield(L, -2, ::lua::_lua_dispatcher_cptr_key);
 
     cptr_holder = lua_newuserdata(L, sizeof(size_t));
-    *static_cast<size_t*>(cptr_holder) = reinterpret_cast<size_t>(this);
+    *static_cast<size_t*>(cptr_holder) = reinterpret_cast<size_t>(nullptr); /// do we really need interface ptr?
     lua_setfield(L, -2, ::lua::_lua_interface_cptr_key);
 
     lua_pushnumber(L, ints($hash$));

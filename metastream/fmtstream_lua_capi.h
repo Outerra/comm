@@ -821,6 +821,9 @@ public:
 
     static void to_lua(const coref<T>& val)
     {
+        auto& streamer = THREAD_SINGLETON(lua_streamer_context);
+        
+        ::lua::wrap_data_interface(val, token::clean_type_name<T>(), streamer._context)->push_ref();
         //TODO
     };
 
