@@ -1379,8 +1379,8 @@ $-[args ?outarg !inarg]$
         $basetype$ $name$;
 $-[/args]$
 
-        // invoke
-        $(if !return.type="void")$$return.type$ rval__ = $(/if)$R_->$name$($[args rest=", "]$ $-(if ?ptr ?outarg)$&$-(elif ?ptr ?defval.empty !specptr)$&$(/if)$ $-(if ?nojs)$$defval$$(elif)$$name$$(/if)$$[/args]$);
+        //invoke
+        $(if !return.type="void")$$return.type$ rval__ = $(/if)$R_->$intname$($[args rest=", "]$ $-(if ?ptr ?outarg)$&$-(elif ?ptr ?defval.empty !specptr)$&$(/if)$ $-(if ?nojs)$$defval$$(elif)$$name$$(/if)$$[/args]$);
 
         //stream out
         THREAD_SINGLETON(coid::lua_streamer_context).set_context(dispatcher->_context.get());
