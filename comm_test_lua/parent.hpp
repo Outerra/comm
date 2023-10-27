@@ -4,6 +4,7 @@
 
 //ifc{
 #include "compound.h"
+#include "ifc/data_ifc.h"
 //}ifc
 
 namespace a
@@ -11,10 +12,21 @@ namespace a
 namespace b
 {
 
+namespace c
+{
+namespace d
+{
+struct data;
+}; // end of namespace d
+}; // end of namespace c
+
 class parent_class : public policy_intrusive_base
 {
 public: // interfaces only
     ifc_class_var(a::b::parent_class_ifc, "ifc", _client);
+
+    ifc_fnx(ifc_struct = a::b::c::d::data_ifc) a::b::c::d::data* get_data();
+
     ifc_fn static iref<parent_class> get_default();
     ifc_fn static iref<parent_class> get_value(int value);
     ifc_fn static iref<parent_class> _get(void* ptr);

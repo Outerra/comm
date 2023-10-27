@@ -1,6 +1,7 @@
 #pragma once
 
 #include <comm/intergen/ifc.h>
+#include <comm/global.h>
 
 namespace a
 {
@@ -15,7 +16,8 @@ struct data
     ifc_struct(a::b::c::d::data_ifc, "ifc");
 
     ifc_fn static data* create() {
-        return new data;
+        coid::versionid vid = entman::allocate();
+        return entman::get_or_create<data>(vid);
     }
 
     ifc_fn void set_int(int i) {
@@ -27,7 +29,7 @@ struct data
         return _int;
     }
 
-    int _int;
+    int _int = 1488;
 };
 }; // end of namespace d 
 }; // end of namespace c 
