@@ -6,9 +6,10 @@
 
 a::b::c::d::data* a::b::parent_class::get_data()
 {
-    coid::versionid id = entman::allocate();
-    return entman::push_default<a::b::c::d::data>(id);
+    return a::b::c::d::data::create();
 }
+
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 iref<a::b::parent_class> a::b::parent_class::get_default()
 {

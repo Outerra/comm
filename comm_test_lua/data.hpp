@@ -16,8 +16,8 @@ struct data
     ifc_struct(a::b::c::d::data_ifc, "ifc");
 
     ifc_fn static data* create() {
-        coid::versionid vid = entman::allocate();
-        return entman::get_or_create<data>(vid);
+        coid::versionid id = entman::allocate();
+        return entman::push_default<a::b::c::d::data>(id);
     }
 
     ifc_fn void set_int(int i) {
