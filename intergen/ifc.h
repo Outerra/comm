@@ -55,7 +55,7 @@ namespace coid {
 /// @param ifc_name desired name of the interface class, optionally with (virtual) base interface [ns::]name [: [ns::]baseifc] [ final]
 /// @param dst_path relative path (and optional file name) where to generate the interface header file
 /// @param ... optional relative path to the file containing the base interface
-/// @example ifc_class(ns:client, "../ifc")
+/// @example ifc_class(ns::client : ns::base, "../ifc")
 #define ifc_class(ifc_name, dst_path, ...)
 #define IFC_CLASS(ifc_name, dst_path, ...)
 
@@ -65,7 +65,7 @@ namespace coid {
 /// @param var name for the variable representing the connected client
 /// @param base_ifc_name base interface
 /// @note var is of type clean_ptr, an intentional weak link, since interface already holds ref to the host
-/// @example ifc_class_var(ns::client, "../ifc", _ifc)
+/// @example ifc_class_var(ns::client : ns::base, "../ifc", _ifc)
 #define ifc_class_var(ifc_name, dst_path, var, ...) coid::clean_ptr<intergen_interface> var
 #define IFC_CLASS_VAR(ifc_name, dst_path, var, ...) coid::clean_ptr<intergen_interface> var
 

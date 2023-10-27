@@ -22,6 +22,8 @@
     <ClCompile Include="..\..\..\comm_test_lua\child.cpp" />
     <ClCompile Include="..\..\..\comm_test_lua\child.intergen.cpp" />
     <ClCompile Include="..\..\..\comm_test_lua\child.intergen.lua.cpp" />
+    <ClCompile Include="..\..\..\comm_test_lua\data.intergen.cpp" />
+    <ClCompile Include="..\..\..\comm_test_lua\data.intergen.lua.cpp" />
     <ClCompile Include="..\..\..\comm_test_lua\factory.cpp" />
     <ClCompile Include="..\..\..\comm_test_lua\factory.intergen.cpp" />
     <ClCompile Include="..\..\..\comm_test_lua\factory.intergen.lua.cpp" />
@@ -37,6 +39,7 @@
   </ItemGroup>
   <ItemGroup>
     <hpp Include="..\..\..\comm_test_lua\child.hpp" />
+    <hpp Include="..\..\..\comm_test_lua\data.hpp" />
     <hpp Include="..\..\..\comm_test_lua\factory.hpp" />
     <hpp Include="..\..\..\comm_test_lua\parent.hpp" />
   </ItemGroup>

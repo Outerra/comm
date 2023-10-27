@@ -85,7 +85,7 @@ $-[method !static ?retifc first="\n"]$
         using wrapper_fn = iref<$return.basetype$>(*)(void*, $return.basetype$*);
         static wrapper_fn wrapper = (wrapper_fn)interface_register::get_interface_connector("$return.basetype$");
         return wrapper
-            ? wrapper(_host.cast<::$classname$>()->$name$($[args rest=","]$ $-(if ?xref)$std::forward<$basetype$>($(/if)-$ $name$ $-(if ?xref)$)$(/if)-$ $[/args]$), 0)
+            ? wrapper(_host.cast<::$classname$>()->$name$($[args rest=","]$ $-(if ?xref)$std::forward<$basetype$>($(/if)-$ $name$ $-(if ?xref)$)$(/if)-$ $[/args]$) $-(if ?return.iref)$.get()$(/if)-$ , 0)
             : iref<$return.basetype$>();
  $-(elif ?return.ifc_type="ifc_struct")$
         using wrapper_fn = coref<$return.basetype$>(*)($return.hosttype$*);

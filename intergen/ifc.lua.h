@@ -671,9 +671,11 @@ inline bool is_context_table(lua_State* L, int index)
         throw coid::exception("Wrong number of arguments!");
     }
 
-    return lua_istable(L, index)
-        && lua_hasfield(L, index, _lua_context_script_dir_key)
-        && lua_hasfield(L, index, _lua_context_script_path_key);
+    bool result = lua_istable(L, index);
+    result &= lua_hasfield(L, index, _lua_context_script_dir_key);
+    result &= lua_hasfield(L, index, _lua_context_script_path_key);
+    
+    return result;
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -1254,8 +1256,41 @@ inline iref<registry_handle> wrap_interface(intergen_interface* orig, const iref
 
     return nullptr;
 }
+
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+// /// @brief Wrap data host object to a LUA object handle
+template <class T>
+inline iref<registry_handle> wrap_data_object(T* data, const coid::token& ifcname, const iref<registry_handle>& context)
+{
+    if (!data) return nullptr;
+
+    typedef iref<registry_handle>(*fn_dcmaker)(void*, const iref<registry_handle>&);
+    static fn_dcmaker fn = static_cast<fn_dcmaker>(coid::interface_register::get_script_interface_dcmaker(ifcname, "lua"_T));
+
+    if (fn)
+        return fn(data, context);
+    
+    return nullptr;
+}
+
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+template <class T>
+inline iref<registry_handle> wrap_data_interface(const coref<T>& data, const coid::token& ifcname, const iref<registry_handle>& context)
+{
+    typedef iref<registry_handle>(*fn_wrapper)(const coref<T>&, const iref<registry_handle>&);
+    static fn_wrapper fn = static_cast<fn_wrapper>(coid::interface_register::get_script_interface_dcwrapper(ifcname, "lua"_T));
+
+    if (fn)
+        return fn(data, context);
+
+    return nullptr;
+}
+
 /*
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
 inline bool push_interface(lua_State* L, const iref<registry_handle>& ref)
 {
     iref<registry_handle> handle = wrap_interface(ref.get(), ifc->_context);

@@ -83,7 +83,7 @@ public:
     virtual void fmtstream_err(charstr& dst, bool add_context = true) { }
 
     /// Called when bound metestream throws an exception, cleanup
-    virtual void on_exception_thow() {};
+    virtual void on_exception_throw() {};
 
     ///Called to provide prefix for error reporting
     virtual void fmtstream_file_name(const token& file_name) = 0;

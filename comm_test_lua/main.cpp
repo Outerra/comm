@@ -3,8 +3,8 @@
 #include "child.hpp"
 #include "compound.h"
 
-#include "ifc/parent_class_ifc.lua.h"
-#include "ifc/child_class_ifc.lua.h"
+#include "ifc/lua/parent_class_ifc.h"
+#include "ifc/lua/child_class_ifc.h"
 
 #include <comm/dynarray.h>
 #include <comm/log/logger.h>
@@ -909,7 +909,7 @@ int main()
         return -1;
     }
 
-    static bool backward = false;
+    static bool backward = true;
     coid::dynarray<test_result> results;
     results.add_uninit(tests.size());
 
@@ -927,7 +927,7 @@ int main()
         lua_State* L = lua_state->get_raw_state();
         const int stack_top_begin = lua_gettop(L);
      
-        //BREAK_ON_TEST(test, "events_109");
+        //BREAK_ON_TEST(test, "rebind_0");
         
         if (test._use_child_class)
         {
@@ -1012,12 +1012,12 @@ int main()
         }
         else 
         {
-            coidlog_none("", "Error:Result: FAILED");
+            coidlog_error("", "Result: FAILED");
         }
         
         if (!results[i]._error_message.is_empty())
         {
-            coidlog_none("", "Warning:Error message:" << results[i]._error_message);
+            coidlog_warning("", "Warning:Error message:" << results[i]._error_message);
         }
     }
 
@@ -1029,7 +1029,7 @@ int main()
     }
     else 
     {
-        coidlog_none("", "Error:TESTS FAILED!");
+        coidlog_error("", "TESTS FAILED!");
     }
 
     a::factory::shutdown();

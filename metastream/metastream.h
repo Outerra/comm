@@ -2805,7 +2805,7 @@ private:
     void before_exception_throw()
     {
         _fmtstreamrd->fmtstream_err(_err, true);
-        _fmtstreamrd->on_exception_thow();
+        _fmtstreamrd->on_exception_throw();
     }
 
     void warn_obsolete(const token& name);
