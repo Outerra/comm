@@ -333,6 +333,12 @@ public:
         resize(nitems, UMAX32);
     }
 
+    void reserve_virtual(uint nitems) {
+        DASSERT_RET(base::count() == 0); //must be empty for virtual reservation
+
+        base::reserve_virtual(nitems);
+    }
+
     void swap(slothash& other) {
         base::swap(other);
         std::swap(_shift, other._shift);

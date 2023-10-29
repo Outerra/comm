@@ -314,7 +314,7 @@ class data_manager
         };
 
         explicit cshash(uint id) : container(id, sizeof(storage<T>), container::type::hash) {
-            hash.reserve(1 << 23);
+            hash.reserve_virtual(1 << 23);
         }
         void* element(uint gid) override final { return (T*)hash.find_value(gid); }
         void* element_by_container_local_id(uint id) override final {
