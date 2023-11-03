@@ -26,11 +26,16 @@ public: // interfaces only
     ifc_class_var(a::b::parent_class_ifc, "ifc", _client);
 
     ifc_fnx(ifc_struct = a::b::c::d::data_ifc) a::b::c::d::data* get_data();
+    ifc_fnx(ifc_struct = a::b::c::d::data_ifc) a::b::c::d::data* get_data_w_params(int v0, int v1, int v2);
 
     ifc_fn static iref<parent_class> get_default();
     ifc_fn static iref<parent_class> get_value(int value);
     ifc_fn static iref<parent_class> _get(void* ptr);
     ifc_fn int return_some_value_parent();
+    ifc_fn void return_some_value_parent_multiret_0(ifc_out int& out_arg0);
+    ifc_fn int return_some_value_parent_multiret_1(ifc_out int& out_arg1);
+    ifc_fn int return_some_value_parent_multiret_2(ifc_out int& out_arg1, ifc_out int& out_arg2);
+
     
     ifc_event void some_event_default() ifc_default_body(return;);
     ifc_event void some_event();
@@ -80,11 +85,13 @@ public: // interfaces only
 
 
 public: // methods only
-    explicit parent_class(int some_value);
+    explicit parent_class(int some_value, int some_ohter_value, int some_another_value);
     static iref<parent_class> get_instance();
 protected: //members only
     static inline iref<parent_class> _instance = nullptr;
     int _some_value;
+    int _some_ohter_value;
+    int _some_another_value;
 };
 
 }; // end of namespace b

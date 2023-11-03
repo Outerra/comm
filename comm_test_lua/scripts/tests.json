@@ -1584,8 +1584,59 @@
 		"should_throw": false
 	},
 	{
+		"script_path": "class_method_ret_0.lua",
+		"int_result": 35,
+		"script_class_name": "parent_class_ifc",
+		"call_event_with_default_body": false,
+		"should_throw": false
+	},
+	{
+		"script_path": "class_method_multiret_0.lua",
+		"int_result": 42,
+		"script_class_name": "parent_class_ifc",
+		"call_event_with_default_body": false,
+		"should_throw": false
+	},
+	{
+		"script_path": "class_method_multiret_1.lua",
+		"int_result": 53,
+		"script_class_name": "parent_class_ifc",
+		"call_event_with_default_body": false,
+		"should_throw": false
+	},
+	{
+		"script_path": "class_method_multiret_2.lua",
+		"int_result": 35,
+		"script_class_name": "parent_class_ifc",
+		"call_event_with_default_body": false,
+		"should_throw": false
+	},
+	{
 		"script_path": "data_interface.lua",
 		"int_result": 9,
 		"call_event_with_default_body": false
+	},
+	{
+		"script_path": "data_method_multiret_0.lua",
+		"int_result": 42,
+		"script_class_name": "parent_class_ifc",
+		"call_event_with_default_body": false,
+		"should_throw": false
+	},
+	{
+		"script_path": "data_method_multiret_1.lua",
+		"int_result": 53,
+		"script_class_name": "parent_class_ifc",
+		"call_event_with_default_body": false,
+		"should_throw": false
+	},
+	{
+		"script_path": "data_method_multiret_2.lua",
+		"int_result": 35,
+		"script_class_name": "parent_class_ifc",
+		"call_event_with_default_body": false,
+		"should_throw": false
 	}
+
+
 ]

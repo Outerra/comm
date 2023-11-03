@@ -36,8 +36,8 @@ public: // methods only
     static void shutdown();
     void reset();
 
-    iref<a::b::parent_class> create_parent_item(int value);
-    iref<a::b::c::child_class> create_child_item(int value);
+    iref<a::b::parent_class> create_parent_item(int v0, int v1, int v2);
+    iref<a::b::c::child_class> create_child_item(int v0, int v1, int v2);
 
     uint get_items_count() const;
     iref<a::b::parent_class> get_item(uint index) const;

@@ -802,7 +802,14 @@ public:
         typedef iref<::lua::registry_handle>(*ifc_create_wrapper_fn)(T*, iref<lua::registry_handle>);
         auto& streamer = THREAD_SINGLETON(lua_streamer_context);
         
-        ::lua::wrap_interface(val.get(), streamer._context)->push_ref();
+        if (val.is_set())
+        {
+            ::lua::wrap_interface(val.get(), streamer._context)->push_ref();
+        }
+        else 
+        {
+            lua_pushnil(streamer.get_cur_state());
+        }
         //reinterpret_cast<ifc_create_wrapper_fn>(val->intergen_wrapper(T::IFC_BACKEND_LUA))(val.get(), context)->get_ref();
     };
 

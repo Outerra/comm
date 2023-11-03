@@ -206,17 +206,23 @@ __declspec(noinline) int $..name$_lua_dispatcher::lua_$name$$@order$_exc(lua_Sta
 {
     bool exception_caught = false;
 
+#ifdef _DEBUG
+    const int stack_top = lua_gettop(L);
+#endif
+
     try {
+         // the first argument must be valid "self" object
+        if (!lua_istable(L, 1) || !lua_hasfield(L, 1, ::lua::_lua_dispatcher_cptr_key)) {
+            coid::charstr tmp = "Caller is not valid object in ";
+            tmp << "$..name$.$name$";
+            tmp << "!(Maybe you called the method with 'self.$name$' instead of 'self:$name$ !')";
+            throw coid::exception(tmp);
+        }
+
         const int args_count = lua_gettop(L) - 1;
 
         if (args_count < $ninargs_nondef$ || args_count > $ninargs$) { //in/inout arguments
             coid::charstr tmp = "Wrong number of arguments in ";
-            tmp << "$..name$.$name$";
-            throw coid::exception(tmp);
-        }
-
-        if (!lua_istable(L, 1) || !lua_hasfield(L, 1, ::lua::_lua_dispatcher_cptr_key)) {
-            coid::charstr tmp = "Caller is not valid object in ";
             tmp << "$..name$.$name$";
             throw coid::exception(tmp);
         }
@@ -288,15 +294,27 @@ $-(if !return.type="void")$
 $-(/if)$
 $-[args ?outarg]$
   $-(if ?..multiout)$
-        to_lua($name$); $-(if ?multiout)$ lua_setfield(L, -2, "$name$");$(/if)$
+        to_lua($name$); lua_setfield(L, -2, "$name$");
   $-(elif)$        
         static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
         to_lua($name$);
   $-(/if)$
 $-[/args]$
 
-$-(/if)$
-        return $nalloutargs$;
+$-(/if)-$
+
+$-(if ?nalloutargs)$
+        constexpr int num_results = 1;
+$-(elif)$        
+        constexpr int num_results = 0;
+$-(/if)$  
+
+#ifdef _DEBUG
+    const int curr_stack_top = lua_gettop(L);
+    DASSERT(curr_stack_top == stack_top + num_results);
+#endif
+
+        return num_results;
     }
     catch (const coid::exception& e) {
         exception_caught = true;
@@ -1311,18 +1329,24 @@ $-[method !static !destroy !internal !operator]$
 __declspec(noinline) int $..name$_lua_dispatcher::lua_$name$$@order$_exc(lua_State * L)
 {
     bool exception_caught = false;
+#ifdef _DEBUG
+    const int stack_top = lua_gettop(L);
+#endif
 
     try {
+
+        // the first argument must be valid "self" object
+        if (!lua_istable(L, 1) || !lua_hasfield(L, 1, ::lua::_lua_dispatcher_cptr_key)) {
+            coid::charstr tmp = "Caller is not valid object in ";
+            tmp << "$..name$.$name$";
+            tmp << "!(Maybe you called the method with 'self.$name$' instead of 'self:$name$ !')";
+            throw coid::exception(tmp);
+        }
+
         const int args_count = lua_gettop(L) - 1;
 
         if (args_count < $ninargs_nondef$ || args_count > $ninargs$) { //in/inout arguments
             coid::charstr tmp = "Wrong number of arguments in ";
-            tmp << "$..name$.$name$";
-            throw coid::exception(tmp);
-        }
-
-        if (!lua_istable(L, 1) || !lua_hasfield(L, 1, ::lua::_lua_dispatcher_cptr_key)) {
-            coid::charstr tmp = "Caller is not valid object in ";
             tmp << "$..name$.$name$";
             throw coid::exception(tmp);
         }
@@ -1395,15 +1419,27 @@ $-(if !return.type="void")$
 $-(/if)$
 $-[args ?outarg]$
   $-(if ?..multiout)$
-        to_lua($name$); $-(if ?multiout)$ lua_setfield(L, -2, "$name$");$(/if)$
+        to_lua($name$); lua_setfield(L, -2, "$name$");
   $-(elif)$        
         static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
         to_lua($name$);
   $-(/if)$
 $-[/args]$
 
-$-(/if)$
-        return $nalloutargs$;
+$-(/if)-$
+
+$-(if ?nalloutargs)$
+        constexpr int num_results = 1;
+$-(elif)$        
+        constexpr int num_results = 0;
+$-(/if)$  
+
+#ifdef _DEBUG
+        const int curr_stack_top = lua_gettop(L);
+        DASSERT(curr_stack_top == stack_top + num_results);
+#endif
+    
+        return num_results;
     }
     catch (const coid::exception& e) {
         exception_caught = true;

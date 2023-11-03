@@ -314,13 +314,13 @@ void test_template(lua_State* L, coid::token test_path, const test_script& test,
 
         if constexpr (child)
         {
-            class_instance = factory_instance.create_child_item(35);
+            class_instance = factory_instance.create_child_item(35, 7, 11);
             class_instance_client =
                 a::b::c::lua::child_class_ifc::_get(L, sh, class_instance.get(), test._script_binding_variable_name, test._script_class_name, &context);
         }
         else 
         {
-            class_instance = factory_instance.create_parent_item(35);
+            class_instance = factory_instance.create_parent_item(35, 7, 11);
             class_instance_client =
                 a::b::lua::parent_class_ifc::_get(L, sh, class_instance.get(), test._script_binding_variable_name, test._script_class_name, &context);
         }

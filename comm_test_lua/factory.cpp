@@ -65,17 +65,17 @@ ifc_fnx(get_instance)iref<a::factory> a::factory::get_instance_ifc()
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-iref<a::b::parent_class> a::factory::create_parent_item(int value)
+iref<a::b::parent_class> a::factory::create_parent_item(int v0, int v1, int v2)
 {
-    iref<a::b::parent_class>* item_iref_ptr = _items.push(new b::parent_class(value));
+    iref<a::b::parent_class>* item_iref_ptr = _items.push(new b::parent_class(v0, v1, v2));
     return *item_iref_ptr;
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-iref<a::b::c::child_class> a::factory::create_child_item(int value)
+iref<a::b::c::child_class> a::factory::create_child_item(int v0, int v1, int v2)
 {
-    iref<a::b::c::child_class> result(new a::b::c::child_class(value));
+    iref<a::b::c::child_class> result(new a::b::c::child_class(v0, v1, v2));
     _items.push(result);
     return result;
 }
@@ -91,7 +91,7 @@ uint a::factory::get_items_count() const
 
 iref<a::b::parent_class_ifc> a::factory::create_parent_item_ifc(int value)
 {
-    iref<a::b::parent_class> item_iref_ptr = create_parent_item(value);
+    iref<a::b::parent_class> item_iref_ptr = create_parent_item(value, 0, 0);
     return a::b::parent_class_ifc::_get(item_iref_ptr.get());
 }
 
@@ -99,7 +99,7 @@ iref<a::b::parent_class_ifc> a::factory::create_parent_item_ifc(int value)
 
 iref<a::b::c::child_class_ifc> a::factory::create_child_item_ifc(int value)
 {
-    iref<a::b::c::child_class> item_iref_ptr = create_child_item(value);
+    iref<a::b::c::child_class> item_iref_ptr = create_child_item(value, 0, 0);
     return a::b::c::child_class_ifc::_get(item_iref_ptr.get());
 
 }

@@ -2,8 +2,8 @@
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-a::b::c::child_class::child_class(int value)
-    :parent_class(value)
+a::b::c::child_class::child_class(int some_value, int some_ohter_value, int some_another_value)
+    :parent_class(some_value, some_ohter_value, some_another_value)
 {
 
 }
