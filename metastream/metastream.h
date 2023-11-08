@@ -1167,7 +1167,7 @@ public:
     /// @param name variable name, used as a key in output formats
     /// @param v pointer to the first array element
     /// @param n element count (when streaming), max element count when declaring, [out] real element count
-    /// @param optional true if optional on input
+    /// @param optional true if optional on read and do not write empty
     /// @param nonmember non-member variable (no valid offset within the parent struct)
     /// @return true if value was read or written and no default was used, false in meta phase
     template<typename T>
