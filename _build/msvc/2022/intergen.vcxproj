@@ -106,7 +106,6 @@
     <IntDir>$(ProjectDir)out\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LinkIncremental>false</LinkIncremental>
     <OutDir>$(ProjectDir)..\..\..\bin\</OutDir>
     <IntDir>$(ProjectDir)out\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
     <LibraryPath>$(ProjectDir)bin;$(LibraryPath)</LibraryPath>
@@ -130,10 +129,10 @@
     <IntDir>$(ProjectDir)out\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LinkIncremental>false</LinkIncremental>
     <LibraryPath>$(ProjectDir)bin;$(LibraryPath)</LibraryPath>
     <OutDir>$(ProjectDir)..\..\..\bin\</OutDir>
     <IntDir>$(ProjectDir)out\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">
     <LibraryPath>$(ProjectDir)bin;$(LibraryPath)</LibraryPath>
