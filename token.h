@@ -2994,6 +2994,7 @@ public:
     zstring(const charstr& str);
 
     zstring(const zstring& s);
+    zstring(zstring&& s);
 
     ~zstring();
 

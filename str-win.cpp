@@ -220,6 +220,17 @@ zstring::zstring(const zstring& s)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+zstring::zstring(zstring&& s)
+    : _buf(0)
+    , _pool(s._pool)
+{
+    _buf = s._buf;
+    s._buf = 0;
+    _zptr = s._zptr;
+    _zend = s._zend;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 zstring::zstring()
     : _zptr(nullstring), _zend(nullstring), _buf(0)
     , _pool(0)
