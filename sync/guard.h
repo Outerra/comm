@@ -60,42 +60,44 @@ class comm_mutex_guard
     MXC* _mut;
 public:
 
-    comm_mutex_guard( MXC& mut ) : _mut(&mut)
+    comm_mutex_guard(MXC& mut) : _mut(&mut)
     {
-		DASSERT( _mut );
+        DASSERT(_mut);
         _mut->wr_lock();
     }
 
-    comm_mutex_guard( const MXC& mut ) : _mut(const_cast<MXC*>(&mut))
+    comm_mutex_guard(const MXC& mut) : _mut(const_cast<MXC*>(&mut))
     {
-		DASSERT( _mut );
+        DASSERT(_mut);
         _mut->rd_lock();
     }
 
-    comm_mutex_guard( MXC& mut, uint delaymsec ) : _mut(&mut)
+    comm_mutex_guard(MXC& mut, uint delaymsec) : _mut(&mut)
     {
-		DASSERT( _mut );
+        DASSERT(_mut);
         _mut->timed_wr_lock(delaymsec);
     }
 
-    comm_mutex_guard( const MXC& mut, uint delaymsec ) : _mut(const_cast<MXC*>(&mut))
+    comm_mutex_guard(const MXC& mut, uint delaymsec) : _mut(const_cast<MXC*>(&mut))
     {
-		DASSERT( _mut );
+        DASSERT(_mut);
         _mut->timed_rd_lock(delaymsec);
     }
 
-    explicit comm_mutex_guard( int noinit )
+    explicit comm_mutex_guard(int noinit)
     {
         _mut = 0;
     }
 
-    void inject( MXC& mut )
+    operator MXC& () { return *_mut; }
+
+    void inject(MXC& mut)
     {
         _mut = &mut;
         _mut->wr_lock();
     }
 
-    void inject( const MXC& mut )
+    void inject(const MXC& mut)
     {
         _mut = const_cast<MXC*>(&mut);
         _mut->rd_lock();
@@ -106,14 +108,14 @@ public:
 
     void unlock()
     {
-        if(_mut)
+        if (_mut)
             _mut->unlock();
         _mut = 0;
     }
 
-    ~comm_mutex_guard ()
+    ~comm_mutex_guard()
     {
-		unlock();
+        unlock();
     }
 };
 

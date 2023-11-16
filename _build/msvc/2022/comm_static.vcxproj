@@ -517,6 +517,7 @@
     <ClInclude Include="..\..\..\process.h" />
     <ClInclude Include="..\..\..\profiler\profiler.h" />
     <ClInclude Include="..\..\..\ref_helpers.h" />
+    <ClInclude Include="..\..\..\sync\condition_variable.h" />
     <ClInclude Include="..\..\..\sync\_mutex.h" />
     <ClInclude Include="..\..\..\sync\guard.h" />
     <ClInclude Include="..\..\..\sync\mutex.h" />
@@ -649,6 +650,7 @@
     </ClCompile>
     <ClCompile Include="..\..\..\process_win.cpp" />
     <ClCompile Include="..\..\..\profiler\profiler.cpp" />
+    <ClCompile Include="..\..\..\sync\condition_variable.cpp" />
     <ClCompile Include="..\..\..\taskmaster.cpp" />
     <ClCompile Include="..\..\..\timer.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>

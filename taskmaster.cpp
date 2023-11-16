@@ -7,7 +7,9 @@ COID_NAMESPACE_BEGIN
 const taskmaster::signal_handle taskmaster::invalid_signal = taskmaster::signal_handle(taskmaster::signal_handle::invalid);
 
 taskmaster::taskmaster(uint nthreads, uint nlowprio_threads)
-    : _qsize(0)
+    : _sync(500, false)
+    , _signal_sync(500, false)
+    , _qsize(0)
     , _hqsize(0)
     , _quitting(false)
     , _nlowprio_threads(nlowprio_threads)
@@ -34,7 +36,7 @@ taskmaster::~taskmaster() {
 
 void taskmaster::wait() {
     CPU_PROFILE_SCOPE_COLOR(taskmaster_wait, 0x80, 0, 0);
-    std::unique_lock<std::mutex> lock(_sync);
+    comm_mutex_guard<comm_mutex> lock(_sync);
     if (get_order() < _nlowprio_threads) {
         while (!_qsize) // handle spurious wake-ups
             _cv.wait(lock);
@@ -64,7 +66,7 @@ void taskmaster::run_task(invoker_base* task)
 
     const signal_handle handle = task->signal();
     if (handle.is_valid()) {
-        std::unique_lock<std::mutex> lock(_signal_sync);
+        comm_mutex_guard<comm_mutex> lock(_signal_sync);
         signal& s = _signal_pool[handle.index()];
         --s.ref;
         if (s.ref == 0) {
@@ -95,7 +97,7 @@ void* taskmaster::threadfunc( int order )
             const bool can_run = prio != (int)EPriority::LOW || order < _nlowprio_threads || order == -1;
             if (can_run && _ready_jobs[prio].pop(task)) {
                 {
-                    std::unique_lock<std::mutex> lock(_sync);
+                    comm_mutex_guard<comm_mutex> lock(_sync);
                     --_qsize;
                     if (prio != (int)EPriority::LOW) --_hqsize;
                 }
@@ -139,7 +141,7 @@ taskmaster::signal_handle taskmaster::alloc_signal()
 
 void taskmaster::increment(signal_handle* handle)
 {
-    std::unique_lock<std::mutex> lock(_signal_sync);
+    comm_mutex_guard<comm_mutex> lock(_signal_sync);
     if (!handle) return;
 
     if (handle->is_valid()) {
@@ -158,7 +160,7 @@ void taskmaster::increment(signal_handle* handle)
 
 void taskmaster::notify_all() {
     {
-        std::unique_lock<std::mutex> lock(_sync);
+        comm_mutex_guard<comm_mutex> lock(_sync);
         _qsize += (int)_threads.size();
         _hqsize += (int)_threads.size();
     }
@@ -181,7 +183,7 @@ void taskmaster::enter_critical_section(critical_section& critical_section, int 
             const bool can_run = prio != (int)EPriority::LOW || (order < _nlowprio_threads && order != -1);
             if (can_run && _ready_jobs[prio].pop(task)) {
                 {
-                    std::unique_lock<std::mutex> lock(_sync);
+                    comm_mutex_guard<comm_mutex> lock(_sync);
                     --_qsize;
                     if (prio != (int)EPriority::LOW) --_hqsize;
                 }
@@ -212,7 +214,7 @@ void taskmaster::wait(signal_handle signal)
             const bool can_run = prio != (int)EPriority::LOW || (order < _nlowprio_threads&& order != -1);
             if (can_run && _ready_jobs[prio].pop(task)) {
                 {
-                    std::unique_lock<std::mutex> lock(_sync);
+                    comm_mutex_guard<comm_mutex> lock(_sync);
                     --_qsize;
                     if (prio != (int)EPriority::LOW) --_hqsize;
                 }
@@ -244,7 +246,7 @@ void taskmaster::terminate(bool empty_queue)
 
 taskmaster::signal_handle taskmaster::create_signal()
 {
-    std::unique_lock<std::mutex> lock(_signal_sync);
+    comm_mutex_guard<comm_mutex> lock(_signal_sync);
 
     signal_handle handle;
     if (!_free_signals.pop(handle)) return invalid_signal;
@@ -257,7 +259,7 @@ taskmaster::signal_handle taskmaster::create_signal()
 
 void taskmaster::trigger_signal(signal_handle handle)
 {
-    std::unique_lock<std::mutex> lock(_signal_sync);
+    comm_mutex_guard<comm_mutex> lock(_signal_sync);
 
     signal& s = _signal_pool[handle.index()];
     --s.ref;

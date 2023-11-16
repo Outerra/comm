@@ -369,6 +369,9 @@
     <ClInclude Include="..\..\..\intergen\ifc.lua.h">
       <Filter>intergen</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\sync\condition_variable.h">
+      <Filter>sync</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\crypt\sha1.cpp">
@@ -478,6 +481,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\process_win.cpp">
       <Filter>cxx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\sync\condition_variable.cpp">
+      <Filter>sync</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

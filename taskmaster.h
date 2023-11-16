@@ -17,7 +17,7 @@
 *
 * The Initial Developer of the Original Code is
 * Outerra.
-* Portions created by the Initial Developer are Copyright (C) 2017
+* Portions created by the Initial Developer are Copyright (C) 2017-2023
 * the Initial Developer. All Rights Reserved.
 *
 * Contributor(s):
@@ -43,10 +43,10 @@
 #include "alloc/slotalloc.h"
 #include "bitrange.h"
 #include "sync/queue.h"
+#include "sync/mutex.h"
+#include "sync/condition_variable.h"
 #include "pthreadx.h"
 #include "log/logger.h"
-#include <mutex>
-#include <condition_variable>
 
 COID_NAMESPACE_BEGIN
 
@@ -151,7 +151,7 @@ public:
 
         {
             //lock to access allocator and semaphore
-            std::unique_lock<std::mutex> lock(_sync);
+            comm_mutex_guard<comm_mutex> lock(_sync);
 
             granule* p = alloc_data(sizeof(callfn));
             increment(signal);
@@ -183,7 +183,7 @@ public:
 
         {
             //lock to access allocator and semaphore
-            std::unique_lock<std::mutex> lock(_sync);
+            comm_mutex_guard<comm_mutex> lock(_sync);
 
             granule* p = alloc_data(sizeof(callfn));
             increment(signal);
@@ -215,7 +215,7 @@ public:
 
         {
             //lock to access allocator and semaphore
-            std::unique_lock<std::mutex> lock(_sync);
+            comm_mutex_guard<comm_mutex> lock(_sync);
 
             granule* p = alloc_data(sizeof(callfn));
             increment(signal);
@@ -461,10 +461,10 @@ private:
 
 private:
 
-    std::mutex _sync;
-    std::mutex _signal_sync;
-    std::condition_variable _cv;        //< for threads which can process low prio tasks
-    std::condition_variable _hcv;       //< for threads which can not process low prio tasks
+    comm_mutex _sync;
+    comm_mutex _signal_sync;
+    condition_variable _cv;             //< for threads which can process low prio tasks
+    condition_variable _hcv;            //< for threads which can not process low prio tasks
     std::atomic_int _qsize;             //< current queue size, used also as a semaphore
     std::atomic_int _hqsize;            //< current queue size without low prio tasks
     volatile bool _quitting;

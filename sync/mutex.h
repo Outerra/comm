@@ -61,31 +61,31 @@ COID_NAMESPACE_BEGIN
 class comm_mutex : public _comm_mutex
 {
 public:
-    void lock ();
-    void unlock ();
+    void lock();
+    void unlock();
 
     bool try_lock();
 
-//    bool timed_lock( uint msec );
+    //bool timed_lock( uint msec );
 
-    comm_mutex( uint spincount, bool recursive, const char * name=NULL );
-    explicit comm_mutex( NOINIT_t );
+    comm_mutex(uint spincount, bool recursive, const char* name = NULL);
+    explicit comm_mutex(NOINIT_t);
 
     ~comm_mutex();
 
-    void init( uint spincount, bool recursive );
+    void init(uint spincount, bool recursive);
 
-    void rd_lock()                      { lock(); }
-    void wr_lock()                      { lock(); }
+    void rd_lock() { lock(); }
+    void wr_lock() { lock(); }
 
-    bool try_rd_lock()                  { return try_lock(); }
-    bool try_wr_lock()                  { return try_lock(); }
+    bool try_rd_lock() { return try_lock(); }
+    bool try_wr_lock() { return try_lock(); }
 
     //bool timed_rd_lock( uint msec )     { return timed_lock(msec); }
     //bool timed_wr_lock( uint msec )     { return timed_lock(msec); }
 
 
-    static void get_abstime( uint delaymsec, timespec* out )
+    static void get_abstime(uint delaymsec, timespec* out)
     {
 #ifdef SYSTYPE_MSVC
         struct ::__timeb64 tb;
@@ -94,8 +94,8 @@ public:
         struct ::timeb tb;
         ftime(&tb);
 #endif
-        out->tv_sec = uint(delaymsec/1000 + tb.time);
-        out->tv_nsec = (delaymsec%1000 + tb.millitm) * 1000000;
+        out->tv_sec = uint(delaymsec / 1000 + tb.time);
+        out->tv_nsec = (delaymsec % 1000 + tb.millitm) * 1000000;
     }
 };
 

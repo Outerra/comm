@@ -1,3 +1,4 @@
+#pragma once
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -54,49 +55,6 @@ COID_NAMESPACE_BEGIN
 
 
 ////////////////////////////////////////////////////////////////////////////////
-class comm_fake_mutex
-{
-public:
-    void lock() {}
-    void unlock() {}
-
-    bool try_lock() {return false;}
-
-    bool timed_lock( uint msec ) {return false;}
-
-    comm_fake_mutex (bool recursive = true) {}
-    explicit comm_fake_mutex( NOINIT_t ) {}
-
-    ~comm_fake_mutex() {}
-
-    void init (bool recursive = true) {}
-
-    void rd_lock ()                     { lock(); }
-    void wr_lock ()                     { lock(); }
-
-    bool try_rd_lock()                  { return try_lock(); }
-    bool try_wr_lock()                  { return try_lock(); }
-
-    bool timed_rd_lock( uint msec )     { return timed_lock(msec); }
-    bool timed_wr_lock( uint msec )     { return timed_lock(msec); }
-
-    static void get_abstime( int delaymsec, timespec* out )
-    {
-#ifdef SYSTYPE_MSVC
-        struct ::__timeb64 tb;
-        _ftime64_s(&tb);
-#else
-        struct ::timeb tb;
-        ftime(&tb);
-#endif
-
-        out->tv_sec = uint(delaymsec/1000 + tb.time);
-        out->tv_nsec = (delaymsec%1000 + tb.millitm) * 1000000;
-    }
-};
-
-
-////////////////////////////////////////////////////////////////////////////////
 class _comm_mutex
 {
 public:
@@ -108,7 +66,6 @@ public:
 #else
         static const size_t CS_SIZE = 24;
 #endif
-
         uint8   _tmp[CS_SIZE];
     };
 #endif
