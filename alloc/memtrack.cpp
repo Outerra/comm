@@ -35,6 +35,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "memtrack.h"
+#include "memtrack_stacktrace.h"
 #include "../hash/hashkeyset.h"
 #include "../singleton.h"
 #include "../atomic/atomic.h"
@@ -74,49 +75,69 @@ static void name_filter(charstr& dst, token name)
             x.shift_end(1); //give space back
 
         dst.append(x);
-    }
-    while (name);
+    } while (name);
 }
 
-///
-struct memtrack_imp : memtrack {
-    bool operator == (size_t k) const {
-        return (size_t)name == k;
-    }
+/////
+//struct memtrack_imp : memtrack {
+//    bool operator == (size_t k) const {
+//        return (size_t)name == k;
+//    }
+//
+//    operator size_t() const {
+//        return (size_t)name;
+//    }
+//
+//    //don't track this
+//    void* operator new(size_t size) { return ::dlmalloc(size); }
+//    void operator delete(void* ptr) { ::dlfree(ptr); } \
+//};
+//
+/////
+//struct hash_memtrack {
+//    typedef size_t key_type;
+//    uint operator()(size_t x) const { return (uint)x; }
+//};
 
-    operator size_t() const {
-        return (size_t)name;
-    }
-
-    //don't track this
-    void* operator new(size_t size) { return ::dlmalloc(size); }
-    void operator delete(void* ptr) { ::dlfree(ptr); } \
+struct memtrack_key_extractor {
+    using ret_type = uint;
+    ret_type  operator()(const memtrack& m) const { return m.hash; }
 };
 
-///
-struct hash_memtrack {
-    typedef size_t key_type;
-    uint operator()(size_t x) const { return (uint)x; }
+/// @brief  dummy hasher just return uint as it as because memtrack key is already hash
+struct memtrack_key_hasher
+{
+    using key_type = uint;
+    uint operator()(const key_type& key) const { return key; }
+
 };
 
-typedef hash_keyset<memtrack_imp, _Select_Copy<memtrack_imp, size_t>, hash_memtrack>
+typedef hash_keyset<memtrack, memtrack_key_extractor, memtrack_key_hasher>
 memtrack_hash_t;
 
 ///
 struct memtrack_registrar
 {
+    inline static bool inside_alloc_in_progress = false;
+
     volatile bool running = false;
 
     memtrack_hash_t* hash = 0;
     comm_mutex* mux = 0;
 
+    coid::dynarray32<memtrack_stacktrace> stacktrace_records;
+    comm_mutex* stacktrace_mux = 0;
+
     bool enabled = default_enabled;
     bool ready = false;
+    bool enable_stacktrace_recording = false;
 
     memtrack_registrar()
     {
         mux = new comm_mutex(500, false);
         hash = new memtrack_hash_t;
+        
+        stacktrace_mux = new comm_mutex(500, false);
 
         ready = true;
     }
@@ -125,65 +146,23 @@ struct memtrack_registrar
 
     /// @note virtual methods to avoid breaking dlls when exe implementation changes
 
-    ///Track allocation
-    virtual void alloc(const std::type_info* tracking, size_t size)
+private: // these are depredicated methods after refactor from std::type_info to coid::type_info
+    // to keed the binary compability with dlls compiled with older comm version
+    // DO NOT MOVE!!!
+    virtual void alloc_depredicated(const std::type_info* tracking, size_t size)
     {
-        static bool inside = false;
-        if (inside)
-            return;     //avoid stack overlow from hashmap
-
-        const char* name = tracking ? tracking->name() : "unknown";
-
-        GUARDTHIS(*mux);
-        inside = true;
-        memtrack* val = hash->find_or_insert_value_slot((size_t)name);
-        inside = false;
-
-        val->name = name;
-
-        ++val->nallocs;
-        ++val->ncurallocs;
-        ++val->nlifeallocs;
-        val->size += size;
-        val->cursize += size;
-        val->lifesize += size;
     }
 
-    ///Track freeing
-    virtual void free(const std::type_info* tracking, size_t size)
+    virtual void free_depredicated(const std::type_info* tracking, size_t size)
     {
-        const char* name = tracking ? tracking->name() : "unknown";
-
-        GUARDTHIS(*mux);
-        memtrack_imp* val = const_cast<memtrack_imp*>(hash->find_value((size_t)name));
-
-        if (val) {
-            //val->size -= size;
-            val->cursize -= size;
-            --val->ncurallocs;
-        }
     }
 
-    virtual uint list(memtrack* dst, uint nmax, bool modified_only) const
+    virtual uint list_depredicated(memtrack* dst, uint nmax, bool modified_only) const
     {
-        GUARDTHIS(*mux);
-        memtrack_hash_t::iterator ib = hash->begin();
-        memtrack_hash_t::iterator ie = hash->end();
-
-        uint i = 0;
-        for (; ib != ie && i < nmax; ++ib) {
-            memtrack& p = *ib;
-            if (p.nallocs == 0 && modified_only)
-                continue;
-
-            dst[i++] = p;
-            p.nallocs = 0;
-            p.size = 0;
-        }
-
-        return i;
+        return 0;
     }
 
+public:
     virtual void dump(const char* file, bool diff) const
     {
         GUARDTHIS(*mux);
@@ -254,15 +233,103 @@ struct memtrack_registrar
     }
 
     virtual void reset() {
+        {
+            GUARDTHIS(*mux);
+            memtrack_hash_t::iterator ib = hash->begin();
+            memtrack_hash_t::iterator ie = hash->end();
+
+            for (; ib != ie; ++ib) {
+                memtrack& p = *ib;
+                p.nallocs = 0;
+                p.size = 0;
+            }
+        }
+        
+        {
+            GUARDTHIS(*stacktrace_mux);
+            stacktrace_records.reset();
+        }
+    }
+
+    ///Track allocation
+    virtual void alloc(const coid::type_info* tracking, size_t size)
+    {
+        if (inside_alloc_in_progress)
+            return;     //avoid stack overlow from hashmap and stacktrace add
+
+        constexpr token_literal unknown = "unknown"_T;
+        constexpr uint unknown_hash = unknown.hash();
+
+        GUARDTHIS(*mux);
+        inside_alloc_in_progress = true;
+        memtrack* val = hash->find_or_insert_value_slot(
+            tracking != nullptr ? tracking->hash : unknown_hash
+        );
+
+        val->name = tracking != nullptr ? tracking->name : unknown;
+        val->hash = tracking != nullptr ? tracking->hash : unknown_hash;
+
+        ++val->nallocs;
+        ++val->ncurallocs;
+        ++val->nlifeallocs;
+        val->size += size;
+        val->cursize += size;
+        val->lifesize += size;
+
+        if (enable_stacktrace_recording)
+        {
+            GUARDTHIS(*stacktrace_mux);
+
+            memtrack_stacktrace* memtrack_trace_ptr = stacktrace_records.add();
+            memtrack_trace_ptr->_name = val->name;
+            memtrack_trace_ptr->_size = size;
+            memtrack_trace_ptr->_stack_trace = stacktrace::get_current_stack_trace();
+        }
+
+        inside_alloc_in_progress = false;
+    }
+
+    ///Track freeing
+    virtual void free(const coid::type_info* tracking, size_t size)
+    {
+        constexpr token_literal unknown = "unknown"_T;
+        constexpr uint unknown_hash = unknown.hash();
+
+        GUARDTHIS(*mux);
+        if (inside_alloc_in_progress) // this must be from realloc of stacktrace_records from alloc method so don't record it
+        {
+            return;
+        }
+
+        memtrack* val = const_cast<memtrack*>(hash->find_value(
+            tracking != nullptr ? tracking->hash : unknown_hash
+        ));
+
+        if (val) {
+            //val->size -= size;
+            val->cursize -= size;
+            --val->ncurallocs;
+        }
+    }
+
+    virtual uint list(memtrack* dst, uint nmax, bool modified_only) const
+    {
         GUARDTHIS(*mux);
         memtrack_hash_t::iterator ib = hash->begin();
         memtrack_hash_t::iterator ie = hash->end();
 
-        for (; ib != ie; ++ib) {
+        uint i = 0;
+        for (; ib != ie && i < nmax; ++ib) {
             memtrack& p = *ib;
+            if (p.nallocs == 0 && modified_only)
+                continue;
+
+            dst[i++] = p;
             p.nallocs = 0;
             p.size = 0;
         }
+
+        return i;
     }
 };
 
@@ -300,7 +367,7 @@ void memtrack_shutdown()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void memtrack_alloc(const std::type_info* tracking, size_t size)
+void memtrack_alloc(const coid::type_info* tracking, size_t size)
 {
     memtrack_registrar* mtr = memtrack_register();
     if (!mtr || !mtr->running) return;
@@ -309,7 +376,7 @@ void memtrack_alloc(const std::type_info* tracking, size_t size)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void memtrack_free(const std::type_info* tracking, size_t size)
+void memtrack_free(const coid::type_info* tracking, size_t size)
 {
     memtrack_registrar* mtr = memtrack_register();
     if (!mtr || !mtr->running) return;
@@ -352,6 +419,54 @@ void memtrack_reset()
     memtrack_registrar* mtr = memtrack_register();
 
     mtr->reset();
+}
+////////////////////////////////////////////////////////////////////////////////
+void enable_record_memtrack_stacktrace(bool enable)
+{
+    memtrack_registrar* mtr = memtrack_register();
+    if (!mtr || !mtr->ready)
+        return;
+
+    mtr->enable_stacktrace_recording = enable;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+uint memtrack_stacktrace_list(memtrack_stacktrace* destionaion, uint max_count)
+{
+    memtrack_registrar* mtr = memtrack_register();
+    if (!mtr || !mtr->ready)
+        return 0;
+
+    GUARDTHIS(*mtr->stacktrace_mux);
+
+    const uint size = mtr->stacktrace_records.size();
+    for (uint i = 0; i < size && i < max_count; ++i)
+    {
+        *destionaion = std::move(mtr->stacktrace_records[i]);
+        ++destionaion;
+    }
+
+    if (max_count < size)
+    {
+        mtr->stacktrace_records.del(0, max_count);
+        return max_count;
+    }
+    else 
+    {
+        mtr->stacktrace_records.reset();
+        return size;
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+uint memtrack_stacktrace_count()
+{
+    memtrack_registrar* mtr = memtrack_register();
+    if (!mtr || !mtr->ready)
+        return 0;
+
+    GUARDTHIS(*mtr->stacktrace_mux);
+    return mtr->stacktrace_records.size();
 }
 
 } //namespace coid

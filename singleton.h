@@ -44,6 +44,7 @@
 #include "pthreadx.h"
 #include <type_traits>
 
+#include <typeinfo>
 #include <source_location>
 
 ///Retrieves module (current dll/exe) singleton object of given type T

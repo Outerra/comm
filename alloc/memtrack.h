@@ -39,29 +39,31 @@
 #define __COID_MEMTRACK__HEADER_FILE__
 
 #include "../namespace.h"
+#include "../type_info.h"
 #include "_malloc.h"
-#include <typeinfo>
+#include <new>
 #include <utility>
 
 namespace coid {
 
+
 #if defined(_DEBUG) || COID_USE_MEMTRACK
 
 //fwd
-void memtrack_alloc(const std::type_info* tracking, size_t size);
-void memtrack_free(const std::type_info* tracking, size_t size);
+void memtrack_alloc(const coid::type_info* tracking, size_t size);
+void memtrack_free(const coid::type_info* tracking, size_t size);
 
 template <class T>
-inline void dbg_memtrack_alloc(size_t size) { coid::memtrack_alloc(&typeid(T), size); }
+inline void dbg_memtrack_alloc(size_t size) { coid::memtrack_alloc(&coid::type_info::get<T>(), size); }
 
 template <class T>
-inline void dbg_memtrack_free(size_t size) { coid::memtrack_free(&typeid(T), size); }
+inline void dbg_memtrack_free(size_t size) { coid::memtrack_free(&coid::type_info::get<T>(), size); }
 
-inline void dbg_memtrack_alloc(const std::type_info* tracking, size_t size) {
+inline void dbg_memtrack_alloc(const coid::type_info* tracking, size_t size) {
     coid::memtrack_alloc(tracking, size);
 }
 
-inline void dbg_memtrack_free(const std::type_info* tracking, size_t size) {
+inline void dbg_memtrack_free(const coid::type_info* tracking, size_t size) {
     coid::memtrack_free(tracking, size);
 }
 
@@ -126,7 +128,8 @@ struct memtrack {
     unsigned int nallocs = 0;           //< number of allocations since the last memtrack_list call
     unsigned int ncurallocs = 0;        //< total current number of allocations
     unsigned int nlifeallocs = 0;       //< lifetime number of allocations
-    const char* name = 0;               //< class identifier
+    coid::token name = 0;               //< class identifier
+    unsigned int hash = 0;              //< class hash
 
     void swap(memtrack& m) {
         std::swap(size, m.size);
@@ -136,19 +139,19 @@ struct memtrack {
         std::swap(ncurallocs, m.ncurallocs);
         std::swap(nlifeallocs, m.nlifeallocs);
         std::swap(name, m.name);
+        std::swap(hash, m.hash);
     }
 };
-
 
 ///Track allocation request for name
 //@param name allocation name, unique pointer
 //@param size allocated size
-void memtrack_alloc( const std::type_info* tracking, size_t size );
+void memtrack_alloc( const coid::type_info* tracking, size_t size );
 
 ///Track allocation request for name
 //@param name allocation name, unique pointer
 //@param size freed size
-void memtrack_free( const std::type_info* tracking, size_t size );
+void memtrack_free( const coid::type_info* tracking, size_t size );
 
 ///List allocation request statistics since the last call
 //@param dst pointer to a buffer to receive the allocation lists
@@ -174,7 +177,7 @@ void memtrack_shutdown();
 
 
 ///Allocate tracked memory
-inline void* tracked_alloc(const std::type_info* tracking, size_t size)
+inline void* tracked_alloc(const coid::type_info* tracking, size_t size)
 {
     void* p = ::dlmalloc(size);
     if (p)
@@ -183,7 +186,7 @@ inline void* tracked_alloc(const std::type_info* tracking, size_t size)
 }
 
 ///Free tracked memory
-inline void tracked_free(const std::type_info* tracking, void* p)
+inline void tracked_free(const coid::type_info* tracking, void* p)
 {
     if (p)
         memtrack_free(tracking, dlmalloc_usable_size(p));

@@ -43,6 +43,9 @@
     <Filter Include="profiler">
       <UniqueIdentifier>{82620650-199e-46f7-ba92-19addc1fe835}</UniqueIdentifier>
     </Filter>
+    <Filter Include="stacktrace">
+      <UniqueIdentifier>{8fa45a6b-aca3-4149-bd79-8efe979e9103}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\atomic\atomic.cpp">
@@ -146,6 +149,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\profiler\profiler.cpp">
       <Filter>profiler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stacktrace\stacktrace_win.cpp">
+      <Filter>stacktrace</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stacktrace\stacktrace.cpp">
+      <Filter>stacktrace</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -410,6 +419,13 @@
     </ClInclude>
     <ClInclude Include="..\..\..\metastream\fmtstream_lua_capi.h">
       <Filter>metastream</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\type_info.h" />
+    <ClInclude Include="..\..\..\stacktrace\stacktrace.h">
+      <Filter>stacktrace</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\alloc\memtrack_stacktrace.h">
+      <Filter>alloc</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -500,6 +500,8 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <ClCompile Include="..\..\..\singleton.cpp" />
+    <ClCompile Include="..\..\..\stacktrace\stacktrace.cpp" />
+    <ClCompile Include="..\..\..\stacktrace\stacktrace_win.cpp" />
     <ClCompile Include="..\..\..\str-win.cpp" />
     <ClCompile Include="..\..\..\substring.cpp" />
     <ClCompile Include="..\..\..\sync\thread_mgr.cpp" />
@@ -568,6 +570,7 @@
     <ClCompile Include="..\..\..\txtconv.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\alloc\memtrack_stacktrace.h" />
     <ClInclude Include="..\..\..\alloc\slotalloc.h" />
     <ClInclude Include="..\..\..\alloc\slotalloc_tracker.h" />
     <ClInclude Include="..\..\..\atomic\atomic.h" />
@@ -635,6 +638,7 @@
     <ClInclude Include="..\..\..\alloc\commalloc.h" />
     <ClInclude Include="..\..\..\alloc\memtrack.h" />
     <ClInclude Include="..\..\..\profiler\profiler.h" />
+    <ClInclude Include="..\..\..\stacktrace\stacktrace.h" />
     <ClInclude Include="..\..\..\sync\_mutex.h" />
     <ClInclude Include="..\..\..\sync\guard.h" />
     <ClInclude Include="..\..\..\sync\mutex.h" />
@@ -681,6 +685,7 @@
     <ClInclude Include="..\..\..\trait.h" />
     <ClInclude Include="..\..\..\tutf8.h" />
     <ClInclude Include="..\..\..\txtconv.h" />
+    <ClInclude Include="..\..\..\type_info.h" />
     <ClInclude Include="..\..\..\version.h" />
   </ItemGroup>
   <ItemGroup>

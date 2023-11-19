@@ -432,6 +432,7 @@
     </Bscmake>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\alloc\memtrack_stacktrace.h" />
     <ClInclude Include="..\..\..\alloc\slotalloc.h" />
     <ClInclude Include="..\..\..\alloc\alloc2d.h" />
     <ClInclude Include="..\..\..\alloc\slotalloc_bmp.h" />
@@ -517,6 +518,7 @@
     <ClInclude Include="..\..\..\process.h" />
     <ClInclude Include="..\..\..\profiler\profiler.h" />
     <ClInclude Include="..\..\..\ref_helpers.h" />
+    <ClInclude Include="..\..\..\stacktrace\stacktrace.h" />
     <ClInclude Include="..\..\..\sync\condition_variable.h" />
     <ClInclude Include="..\..\..\sync\_mutex.h" />
     <ClInclude Include="..\..\..\sync\guard.h" />
@@ -574,6 +576,7 @@
     <ClInclude Include="..\..\..\txtconv.h" />
     <ClInclude Include="..\..\..\range.h" />
     <ClInclude Include="..\..\..\typeseq.h" />
+    <ClInclude Include="..\..\..\type_info.h" />
     <ClInclude Include="..\..\..\unique_ptr.h" />
     <ClInclude Include="..\..\..\version.h" />
   </ItemGroup>
@@ -650,6 +653,8 @@
     </ClCompile>
     <ClCompile Include="..\..\..\process_win.cpp" />
     <ClCompile Include="..\..\..\profiler\profiler.cpp" />
+    <ClCompile Include="..\..\..\stacktrace\stacktrace.cpp" />
+    <ClCompile Include="..\..\..\stacktrace\stacktrace_win.cpp" />
     <ClCompile Include="..\..\..\sync\condition_variable.cpp" />
     <ClCompile Include="..\..\..\taskmaster.cpp" />
     <ClCompile Include="..\..\..\timer.cpp">

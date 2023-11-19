@@ -97,7 +97,7 @@ struct comm_array_allocator
     ///Typed array reserve of virtual memory
     template<class T>
     static T* reserve_virtual(uints n, mspace m = 0) {
-        return (T*)reserve_virtual(n, sizeof(T), &typeid(T[]), m);
+        return (T*)reserve_virtual(n, sizeof(T), &coid::type_info::get<T[]>(), m);
     }
 
     ///Typed array reserve of virtual memory
@@ -109,7 +109,7 @@ struct comm_array_allocator
     ///Typed array alloc
     template<class T>
     static T* alloc(uints n, mspace m = 0) {
-        return (T*)alloc(n, sizeof(T), &typeid(T[]), m);
+        return (T*)alloc(n, sizeof(T), &coid::type_info::get<T[]>(), m);
     }
 
     ///Typed array realloc
@@ -122,20 +122,20 @@ struct comm_array_allocator
         uints vs = mspace_virtual_size((uints*)p - 1);
         if (vs > 0) {
             //reserved virtual memory, can be only reallocated in-place
-            T* pn = (T*)realloc_in_place(p, n, sizeof(T), &typeid(T[]));
+            T* pn = (T*)realloc_in_place(p, n, sizeof(T), &coid::type_info::get<T[]>());
             return pn;
         }
 
         mspace m = mspace_from_ptr((uints*)p - 1);
 
         if (has_trivial_rebase<T>::value) {
-            return (T*)realloc(p, n, sizeof(T), &typeid(T[]), m);
+            return (T*)realloc(p, n, sizeof(T), &coid::type_info::get<T[]>(), m);
         }
         else {
             //non-trivial rebase, needs to copy old array into new
-            T* pn = (T*)realloc_in_place(p, n, sizeof(T), &typeid(T[]));
+            T* pn = (T*)realloc_in_place(p, n, sizeof(T), &coid::type_info::get<T[]>());
             if (!pn) {
-                pn = (T*)alloc(n, sizeof(T), &typeid(T[]), m);
+                pn = (T*)alloc(n, sizeof(T), &coid::type_info::get<T[]>(), m);
                 uints co = count(p);
 
                 rebase<has_trivial_rebase<T>::value, T>::perform((T*)p, (T*)p + co, pn);
@@ -150,19 +150,19 @@ struct comm_array_allocator
     template<class T>
     static T* realloc_in_place(const T* p, uints n, mspace mn = 0)
     {
-        return (T*)realloc_in_place(p, n, sizeof(T), &typeid(T[]));
+        return (T*)realloc_in_place(p, n, sizeof(T), &coid::type_info::get<T[]>());
     }
 
     ///Typed array add
     template<class T>
     static T* add(const T* p, uints n) {
-        return (T*)add(p, n, sizeof(T), &typeid(T[]));
+        return (T*)add(p, n, sizeof(T), &coid::type_info::get<T[]>());
     }
 
     ///Typed array free
     template<class T>
     static void free(const T* p) {
-        return free(p, &typeid(T[]));
+        return free(p, &coid::type_info::get<T[]>());
     }
 
 
@@ -170,7 +170,7 @@ struct comm_array_allocator
     static void* reserve_virtual(
         uints n,
         uints elemsize,
-        const std::type_info* tracking = 0,
+        const coid::type_info* tracking = 0,
         mspace m = 0
     )
     {
@@ -206,7 +206,7 @@ struct comm_array_allocator
     static void* alloc(
         uints n,
         uints elemsize,
-        const std::type_info* tracking = 0,
+        const coid::type_info* tracking = 0,
         mspace m = 0
     )
     {
@@ -226,7 +226,7 @@ struct comm_array_allocator
         const void* p,
         uints n,
         uints elemsize,
-        const std::type_info* tracking = 0,
+        const coid::type_info* tracking = 0,
         mspace m = 0
     )
     {
@@ -252,7 +252,7 @@ struct comm_array_allocator
         const void* p,
         uints n,
         uints elemsize,
-        const std::type_info* tracking = 0
+        const coid::type_info* tracking = 0
     )
     {
         if (!p)
@@ -277,7 +277,7 @@ struct comm_array_allocator
     ///Untyped array free
     static void free(
         const void* p,
-        const std::type_info* tracking = 0
+        const coid::type_info* tracking = 0
     )
     {
         if (!p)  return;
@@ -292,7 +292,7 @@ struct comm_array_allocator
         const void* p,
         uints nitems,
         uints elemsize,
-        const std::type_info* tracking = 0,
+        const coid::type_info* tracking = 0,
         mspace m = 0)
     {
         uints n = count(p);

@@ -46,6 +46,7 @@
 #include "../range.h"
 #include "../str.h"
 #include "../commexception.h"
+#include "../type_info.h"
 
 #include "fmtstream.h"
 #include "fmtstreamnull.h"
@@ -1869,7 +1870,7 @@ public:
         }
         else {
             if (meta_decl_raw_pointer(
-                typeid(char*).name(),
+                coid::type_info::get<char*>().name,
                 true,
                 (ints)&a,
                 [](const void* a) -> const void* { return *static_cast<char const* const*>(a); },
@@ -1926,7 +1927,7 @@ public:
         }
         else {
             if (meta_decl_array(
-                typeid(a).name(),
+                coid::type_info::get<decltype(a)>().name,
                 (ints)&a.ptr_ref(),
                 sizeof(a),
                 false,

@@ -298,11 +298,11 @@ protected:
     struct zstd {};
 
     static void* _alloc(void* opaque, size_t size) {
-        return tracked_alloc(&typeid(zstd), size);
+        return tracked_alloc(&coid::type_info::get<zstd>(), size);
     }
 
     static void _free(void* opaque, void* address) {
-        return tracked_free(&typeid(zstd), address);
+        return tracked_free(&coid::type_info::get<zstd>(), address);
     }
 
 

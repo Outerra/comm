@@ -37,6 +37,8 @@
 * ***** END LICENSE BLOCK ***** */
 
 #include "trait.h"
+#include "alloc//memtrack.h"
+
 #include <tuple>
 
 COID_NAMESPACE_BEGIN
