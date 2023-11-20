@@ -118,24 +118,47 @@
     <MakeDir
       Directories="@(hppDirsToMake-&gt;'%(RootDir)%(Directory)')" />
   </Target>
+  
+  <UsingTask TaskName="ClearReadOnly" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll" >
+    <ParameterGroup>
+      <Files ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Code Type="Fragment" Language="cs">
+      <![CDATA[
+        foreach (var item in Files) {
+          string name = item.ItemSpec + "deps";
+          if (File.Exists(name))
+            File.SetAttributes(name, ~FileAttributes.ReadOnly & File.GetAttributes(name));
+          name = item.ItemSpec + "cpp";
+          if (File.Exists(name))
+            File.SetAttributes(name, ~FileAttributes.ReadOnly & File.GetAttributes(name));
+          name = item.ItemSpec + "js.cpp";
+          if (File.Exists(name))
+            File.SetAttributes(name, ~FileAttributes.ReadOnly & File.GetAttributes(name));
+          name = item.ItemSpec + "lua.cpp";
+          if (File.Exists(name))
+            File.SetAttributes(name, ~FileAttributes.ReadOnly & File.GetAttributes(name));
+        }
+      ]]>
+      </Code>
+    </Task>
+  </UsingTask>
 
   <Target
     Name = "Clean_hpp"
     Condition="'@(hpp)' != ''">
       <ItemGroup>
-          <FilesToDelete Include="%(hpp.RootDir)%(hpp.Directory)%(hpp.Filename).intergen."/>
+          <TmpNamesHpp Include="%(hpp.RootDir)%(hpp.Directory)%(hpp.Filename).intergen."/>
       </ItemGroup>
 
-      <!--<Delete Files="@(FilesToDelete)" TreatErrorsAsWarnings="true" />-->
-      <Exec Command="del /F /Q &quot;@(FilesToDelete,'deps&quot; &quot;')deps&quot;"/>
-      <Exec Command="del /F /Q &quot;@(FilesToDelete,'cpp&quot; &quot;')cpp&quot;"/>
-      <Exec Command="del /F /Q &quot;@(FilesToDelete,'js.cpp&quot; &quot;')js.cpp&quot;"/>
-      <!--<Exec Command="del /F /Q &quot;@(FilesToDelete,'jsc.cpp&quot; &quot;')jsc.cpp&quot;"/>-->
-      <Exec Command="del /F /Q &quot;@(FilesToDelete,'lua.cpp&quot; &quot;')lua.cpp&quot;"/>
-      <Exec Command="echo &quot;@(FilesToDelete,'cpp&quot; &quot;')cpp&quot;"/>
+      <!-- remove read-only flag from files so that CppClean can remove them -->
+      <ClearReadOnly Files="@(TmpNamesHpp)" />
   </Target>
-  <Target
-    Name = "Clean"
-    DependsOnTargets = "Clean_hpp">
-  </Target>
+  
+  <PropertyGroup>
+    <CleanDependsOn>
+      Clean_hpp;$(CleanDependsOn)
+    </CleanDependsOn>
+  </PropertyGroup>
 </Project>
