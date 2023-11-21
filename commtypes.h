@@ -130,6 +130,13 @@
 # define coid_constexpr_if
 #endif
 
+#if defined(__cpp_concepts) || _MSC_VER >= 1936
+#define REQUIRES(R) requires R
+#define COID_CONCEPTS
+#else 
+#define REQUIRES(R)
+#endif
+
 #if defined(__cpp_user_defined_literals) || _MSC_VER >= 1900
 # define COID_USER_DEFINED_LITERALS
 #endif
