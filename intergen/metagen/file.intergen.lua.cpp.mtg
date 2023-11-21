@@ -762,7 +762,7 @@ iref<::lua::registry_handle> $name$_lua_dispatcher::create_interface_object(cons
         lua_rawgeti(L, LUA_REGISTRYINDEX, ::lua::LUA_WEAK_IFC_METATABLE_INDEX);
         lua_setmetatable(L,-2);
         lua_pop(L, 1);
-        add_refcount();
+        increase_strong_counter();
     }
     else {
         obj = new ::lua::registry_handle(L);

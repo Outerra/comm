@@ -41,7 +41,7 @@
 
 #include "../range.h"
 #include "../str.h"
-#include "../ref.h"
+#include "../ref_i.h"
 #include "../global.h"
 #include "metastream.h"
 
