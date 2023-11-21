@@ -37,5 +37,33 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include "ref_s.h"
-#include "ref_i.h"
+#include "ref_policy_base.h"
+
+namespace coid
+{
+
+class ref_policy_intrusive : public ref_policy_base
+{
+public: // methods only
+    ref_policy_intrusive(const ref_policy_intrusive&) = delete;
+    ref_policy_intrusive& operator=(const ref_policy_intrusive&) = delete;
+    ref_policy_intrusive() = default;
+
+    /// @brief Method called when refcount drops to 0 and the object and the policy are destoryed
+    /// @param object_ptr - pointer to object this policy was countring references for 
+    virtual void on_destroy() override
+    {
+        delete this;
+    }
+
+    void* get_original_ptr() override
+    {
+        return this;
+    }
+
+protected: // methods only
+protected: // members only
+};
+
+
+}; // end of namespace coid

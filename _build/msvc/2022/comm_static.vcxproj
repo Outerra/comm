@@ -441,7 +441,6 @@
     <ClInclude Include="..\..\..\atomic\basic_pool.h" />
     <ClInclude Include="..\..\..\atomic\pool.h" />
     <ClInclude Include="..\..\..\atomic\pool_base.h" />
-    <ClInclude Include="..\..\..\atomic\queue.h" />
     <ClInclude Include="..\..\..\atomic\queue_base.h" />
     <ClInclude Include="..\..\..\atomic\stack.h" />
     <ClInclude Include="..\..\..\atomic\stack_base.h" />
@@ -518,7 +517,17 @@
     <ClInclude Include="..\..\..\alloc\memtrack.h" />
     <ClInclude Include="..\..\..\process.h" />
     <ClInclude Include="..\..\..\profiler\profiler.h" />
-    <ClInclude Include="..\..\..\ref_helpers.h" />
+    <ClInclude Include="..\..\..\ref.h" />
+    <ClInclude Include="..\..\..\ref\ref_default_policy.h" />
+    <ClInclude Include="..\..\..\ref\ref_intrusive.h" />
+    <ClInclude Include="..\..\..\ref\ref_policy_base.h" />
+    <ClInclude Include="..\..\..\ref\ref_policy_intrusive.h" />
+    <ClInclude Include="..\..\..\ref\ref_policy_pooled.h" />
+    <ClInclude Include="..\..\..\ref\ref_policy_shared.h" />
+    <ClInclude Include="..\..\..\ref\ref_pooled.h" />
+    <ClInclude Include="..\..\..\ref\ref_shared.h" />
+    <ClInclude Include="..\..\..\ref_i.h" />
+    <ClInclude Include="..\..\..\ref_s.h" />
     <ClInclude Include="..\..\..\stacktrace\stacktrace.h" />
     <ClInclude Include="..\..\..\sync\condition_variable.h" />
     <ClInclude Include="..\..\..\sync\_mutex.h" />
@@ -558,11 +567,6 @@
     <ClInclude Include="..\..\..\pthreadx.h" />
     <ClInclude Include="..\..\..\ptrowner.h" />
     <ClInclude Include="..\..\..\radix.h" />
-    <ClInclude Include="..\..\..\ref.h" />
-    <ClInclude Include="..\..\..\ref_base.h" />
-    <ClInclude Include="..\..\..\ref_i.h" />
-    <ClInclude Include="..\..\..\ref_s.h" />
-    <ClInclude Include="..\..\..\refs.h" />
     <ClInclude Include="..\..\..\regex.h" />
     <ClInclude Include="..\..\..\retcodes.h" />
     <ClInclude Include="..\..\..\rnd.h" />
@@ -583,7 +587,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\alloc\slotalloc_bmp.cpp" />
-    <ClCompile Include="..\..\..\atomic\atomic.cpp" />
     <ClCompile Include="..\..\..\binstream\stdstream.cpp" />
     <ClInclude Include="..\..\..\coder\bufpack_lz4.h" />
     <ClCompile Include="..\..\..\coder\lz4\lz4.c" />

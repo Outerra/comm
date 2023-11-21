@@ -43,6 +43,7 @@
 #include "commtypes.h"
 
 #include "binstream/container.h"
+#include <algorithm>
 
 #include <algorithm>
 

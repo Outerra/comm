@@ -43,6 +43,9 @@
     <Filter Include="profiler">
       <UniqueIdentifier>{59571774-70fb-4f8d-8590-e6f687794952}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ref">
+      <UniqueIdentifier>{553e50bb-968f-434d-af0e-61253417dc2b}</UniqueIdentifier>
+    </Filter>
     <Filter Include="stacktrace">
       <UniqueIdentifier>{7d15fbb8-a6aa-4aaa-a544-606a64fa6007}</UniqueIdentifier>
     </Filter>
@@ -52,9 +55,6 @@
       <Filter>atomic</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\atomic\pool.h">
-      <Filter>atomic</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\atomic\queue.h">
       <Filter>atomic</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\atomic\stack.h">
@@ -262,11 +262,6 @@
     <ClInclude Include="..\..\..\pthreadx.h" />
     <ClInclude Include="..\..\..\ptrowner.h" />
     <ClInclude Include="..\..\..\radix.h" />
-    <ClInclude Include="..\..\..\ref.h" />
-    <ClInclude Include="..\..\..\ref_base.h" />
-    <ClInclude Include="..\..\..\ref_i.h" />
-    <ClInclude Include="..\..\..\ref_s.h" />
-    <ClInclude Include="..\..\..\refs.h" />
     <ClInclude Include="..\..\..\regex.h" />
     <ClInclude Include="..\..\..\retcodes.h" />
     <ClInclude Include="..\..\..\rnd.h" />
@@ -291,7 +286,6 @@
     <ClInclude Include="..\..\..\atomic\stack_base.h">
       <Filter>atomic</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\ref_helpers.h" />
     <ClInclude Include="..\..\..\binstream\filestreamgz.h">
       <Filter>binstream</Filter>
     </ClInclude>
@@ -371,6 +365,33 @@
     <ClInclude Include="..\..\..\unique_ptr.h" />
     <ClInclude Include="..\..\..\intergen\ifc.lua.h">
       <Filter>intergen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ref.h" />
+    <ClInclude Include="..\..\..\ref_i.h" />
+    <ClInclude Include="..\..\..\ref_s.h" />
+    <ClInclude Include="..\..\..\ref\ref_policy_pooled.h">
+      <Filter>ref</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ref\ref_policy_shared.h">
+      <Filter>ref</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ref\ref_pooled.h">
+      <Filter>ref</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ref\ref_shared.h">
+      <Filter>ref</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ref\ref_intrusive.h">
+      <Filter>ref</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ref\ref_policy_base.h">
+      <Filter>ref</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ref\ref_policy_intrusive.h">
+      <Filter>ref</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ref\ref_default_policy.h">
+      <Filter>ref</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\sync\condition_variable.h">
       <Filter>sync</Filter>
@@ -452,9 +473,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\txtconv.cpp">
       <Filter>cxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\atomic\atomic.cpp">
-      <Filter>atomic</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\sync\thread_mgr.cpp">
       <Filter>sync</Filter>
