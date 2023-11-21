@@ -1,3 +1,4 @@
+#pragma once
 
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
@@ -15,9 +16,12 @@
  * The Original Code is COID/comm module.
  *
  * The Initial Developer of the Original Code is
- * Ladislav Hrabcak
- * Portions created by the Initial Developer are Copyright (C) 2007
+ * Outerra s.r.o
+ * Portions created by the Initial Developer are Copyright (C) 2023
  * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ * Cyril Gramblicka
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -33,45 +37,50 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef __COMM_LOGWRITTER_H__
-#define __COMM_LOGWRITTER_H__
+#include "ref_counter.h"
 
-#include "../sync/queue.h"
-#include "logger.h"
-//#include "../pthreadx.h"
-
-COID_NAMESPACE_BEGIN
-
-class log_writer
+namespace coid
 {
-protected:
-    coid::thread _thread;
-    coid::queue<logmsg_ref> _queue;
 
-public:
-    log_writer();
+/// @brief Base policy for reference counting.
+/// @note ref_policy_base instances are non copiable, non movable
+/// @note every derived ref_policy must contain static method for policy creation 
+/// @note static this_type* create(void* object_ptr)
+class ref_policy_base
+{
+    using this_type = ref_policy_base;
+public: // methods only
+    ref_policy_base(const ref_policy_base&) = delete;
+    ref_policy_base(const ref_policy_base&&) = delete;
+    const ref_policy_base& operator=(const ref_policy_base&) = delete;
 
-    ~log_writer();
-
-    static void* thread_run_fn( void* p ) {
-        return static_cast<log_writer*>(p)->thread_run();
+    /// @brief Creates policy from the pool
+    /// @param object_ptr - the pointer for the object the policy is counting the references for
+    /// @return policy pointer
+    static this_type* create(void* object_ptr)
+    {
+        return nullptr;
     }
 
-    void* thread_run();
+    /// @brief Method called when refcount drops to 0 and the object and the policy are destoryed
+    virtual void on_destroy() = 0;
 
-    void addmsg(logmsg_ref&& m) {
-        _queue.push(m.move());
-    }
+    /// @brief Get pointer of counted object
+    /// @return pointer of object
+    virtual void* get_original_ptr() = 0;
 
-    void flush();
+    /// @brief Default constructor
+    ref_policy_base() = default;
+    virtual ~ref_policy_base() = default;
 
-    void terminate();
-
-    bool is_empty() const {
-        return _queue.is_empty();
-    }
+protected: // methods only
+public: // members only
+    ref_counter _counter;
 };
 
-COID_NAMESPACE_END
+#ifdef COID_CONCEPTS
+template<typename Derived> 
+concept is_ref_policy = std::is_base_of<ref_policy_base, Derived>::value;
+#endif
 
-#endif // __COMM_LOGWRITTER_H__
+}; // end of namespace coid

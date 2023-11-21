@@ -322,10 +322,12 @@ struct slot : storage<L, Es...>
 
 void data_client_test();
 void binstring_test();
+void ref_tests();
 
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
 {
+    ref_tests();
     singleton_test();
     binstring_test();
     //compot();

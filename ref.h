@@ -1,4 +1,5 @@
 #pragma once
+
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -15,9 +16,12 @@
  * The Original Code is COID/comm module.
  *
  * The Initial Developer of the Original Code is
- * Ladislav Hrabcak
- * Portions created by the Initial Developer are Copyright (C) 2007
+ * Outerra s.r.o
+ * Portions created by the Initial Developer are Copyright (C) 2023
  * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ * Cyril Gramblicka
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -33,42 +37,5 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef __COID_REF_H__
-#define __COID_REF_H__
-
-//include non-intrusive and intrusive ref counted pointers
-
 #include "ref_s.h"
 #include "ref_i.h"
-#include "local.h"
-
-COID_NAMESPACE_BEGIN
-
-///Helper function for moving references or pointers without touching the ref.count
-template<class T>
-class ref_takeover {
-public:
-    void operator()(T& dst, T& src) {
-        dst = src;
-        src = 0;
-    }
-};
-
-
-template<class M>
-class ref_takeover< iref<M> > {
-public:
-    void operator()(iref<M>& dst, iref<M>& src) { dst.takeover(src); }
-};
-
-template<class M>
-class ref_takeover< ref<M> > {
-public:
-    void operator()(ref<M>& dst, ref<M>& src) { dst.takeover(src); }
-};
-
-
-COID_NAMESPACE_END
-
-
-#endif // __COID_REF_H__

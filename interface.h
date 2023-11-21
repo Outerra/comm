@@ -44,6 +44,7 @@
 #include "dynarray.h"
 #include "regex.h"
 #include "log/logger.h"
+#include "ref_i.h"
 #include "metastream/metastream.h"
 
 class intergen_interface;
@@ -209,7 +210,7 @@ public:
     static const charstr& root_path();
 
 
-    typedef ref<logmsg>(*fn_log_t)(log::level, const token&, const void*, log::target);
+    typedef logmsg_ref(*fn_log_t)(log::level, const token&, const void*, log::target);
     typedef bool(*fn_acc_t)(const token&);
     typedef logger*(*fn_getlog_t)();
 
@@ -308,7 +309,7 @@ public:
     /// @param ens list of unloaded entries
     static bool notify_module_unload(uints handle, binstring* bstr, dynarray<unload_entry>& ens);
 
-    static ref<logmsg> canlog(log::level type, const token& src, const void* inst, log::target target);
+    static logmsg_ref canlog(log::level type, const token& src, const void* inst, log::target target);
     static logger* getlog();
 
 #ifdef COID_VARIADIC_TEMPLATES
@@ -320,7 +321,7 @@ public:
     template<class ...Vs>
     static void print(log::level type, const token& from, const token& fmt, Vs&&... vs)
     {
-        ref<logmsg> msgr = canlog(type, from);
+        logmsg_ref msgr = canlog(type, from);
         if (!msgr)
             return;
 

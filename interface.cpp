@@ -517,7 +517,7 @@ void* interface_register::get_interface_creator(const token& ifcname)
 {
     interface_register_impl& reg = interface_register_impl::get();
     if (!reg.check_version(intergen_interface::VERSION)) {
-        ref<logmsg> msg = canlog(coid::log::level::error, "ifcreg"_T, 0, coid::log::target::primary_log);
+        logmsg_ref msg = canlog(coid::log::level::error, "ifcreg"_T, 0, coid::log::target::primary_log);
         msg->str() << "mismatched intergen version for " << ifcname << "(v" << intergen_interface::VERSION << ')';
         //print requires VS2015
         //print(coid::log::level::error, "ifcreg", "mismatched intergen version for {}", ifcname);
@@ -541,10 +541,10 @@ const charstr& interface_register::root_path()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-ref<logmsg> interface_register::canlog(log::level type, const token& src, const void* inst, log::target target)
+logmsg_ref interface_register::canlog(log::level type, const token& src, const void* inst, log::target target)
 {
     fn_log_t canlogfn = interface_register_impl::get().fn_log();
-    ref<logmsg> msg;
+    logmsg_ref msg;
 
     if (canlogfn)
         msg = canlogfn(type, src, inst, target);
@@ -702,7 +702,7 @@ bool interface_register::register_interface(const meta::class_interface& ifcmeta
 
     if (!reg.check_version(intergen_interface::VERSION)) {
         if (func) {
-            ref<logmsg> msg = canlog(coid::log::level::error, "ifcreg"_T, 0, coid::log::target::primary_log);
+            logmsg_ref msg = canlog(coid::log::level::error, "ifcreg"_T, 0, coid::log::target::primary_log);
             if (msg) {
                 charstr modpath = directory::get_module_path(func);
 
@@ -732,7 +732,7 @@ bool interface_register::register_interface_creator(const token& ifcname, void* 
 
     if (!reg.check_version(intergen_interface::VERSION)) {
         if (creator_ptr) {
-            ref<logmsg> msg = canlog(coid::log::level::error, "ifcreg"_T, 0, coid::log::target::primary_log);
+            logmsg_ref msg = canlog(coid::log::level::error, "ifcreg"_T, 0, coid::log::target::primary_log);
             if (msg) {
                 charstr modpath = directory::get_module_path(creator_ptr);
 

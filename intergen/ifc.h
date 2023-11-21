@@ -40,7 +40,7 @@
 #ifndef __INTERGEN_IFC_H__
 #define __INTERGEN_IFC_H__
 
-#include "../ref.h"
+#include "../ref_i.h"
 #include "../interface.h"
 #include "../typeseq.h"
 #include "../local.h"
@@ -189,7 +189,7 @@ namespace coid {
 ////////////////////////////////////////////////////////////////////////////////
 
 ///Call interface vtable method
-#define VT_CALL(R,F,I) ((*_host).*(reinterpret_cast<R(policy_intrusive_base::*)F>(_vtable[I])))
+#define VT_CALL(R,F,I) ((*_host).*(reinterpret_cast<R(coid::ref_intrusive_base::*)F>(_vtable[I])))
 
 #define DT_CALL(R,F,I) (this->*(reinterpret_cast<R(intergen_data_interface::*)F>(_fn_table[I])))
 
@@ -197,12 +197,12 @@ namespace coid {
 
 ///Base class for intergen interfaces
 class intergen_interface
-    : public policy_intrusive_base
+    : public coid::ref_intrusive_base
 {
 protected:
-    typedef void (policy_intrusive_base::* ifn_t)();
+    typedef void (coid::ref_intrusive_base::* ifn_t)();
 
-    iref<policy_intrusive_base> _host;
+    iref<coid::ref_intrusive_base> _host;
     ifn_t* _vtable = 0;
 
     virtual ~intergen_interface() {
@@ -217,7 +217,7 @@ public:
     typedef bool (*fn_unload_client)(const coid::token& client, const coid::token& module_name, coid::binstring* bstr);
 
     /// @return host class pointer
-    /// @note T derived from policy_intrusive_base
+    /// @note T derived from coid::ref_intrusive_base
     template<typename T>
     T* host() const { return static_cast<T*>(_host.get()); }
 

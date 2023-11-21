@@ -1,3 +1,4 @@
+#pragma once
 
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
@@ -15,9 +16,12 @@
  * The Original Code is COID/comm module.
  *
  * The Initial Developer of the Original Code is
- * Ladislav Hrabcak
- * Portions created by the Initial Developer are Copyright (C) 2007
+ * Outerra s.r.o
+ * Portions created by the Initial Developer are Copyright (C) 2023
  * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ * Cyril Gramblicka
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -33,6 +37,34 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include "atomic.h"
-#include "queue.h"
-
+//#include "ref_counter.h"
+//#include "ref_policy_base.h"
+//
+//namespace coid
+//{
+//
+//class ref_policy_intrusive : public ref_policy_base
+//{
+//public: // methods only
+//    ref_policy_intrusive(const ref_policy_intrusive&) = delete;
+//    ref_policy_intrusive& operator=(const ref_policy_intrusive&) = delete;
+//    ref_policy_intrusive() = default;
+//
+//    /// @brief Method called when refcount drops to 0 and the object and the policy are destoryed
+//    /// @param object_ptr - pointer to object this policy was countring references for 
+//    virtual void on_destroy() override
+//    {
+//        delete this;
+//    }
+//
+//    void* get_original_ptr() override
+//    {
+//        return this;
+//    }
+//
+//protected: // methods only
+//protected: // members only
+//};
+//
+//
+//}; // end of namespace coid
