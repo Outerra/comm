@@ -28,7 +28,7 @@ void a::factory::shutdown()
 {
     if (!_instance.is_empty())
     {
-        DASSERT(_instance.refcount() == 1);
+        RASSERT(_instance.get_strong_refcount() == 1);
         _instance.release();
     }
 }
@@ -67,7 +67,7 @@ ifc_fnx(get_instance)iref<a::factory> a::factory::get_instance_ifc()
 
 iref<a::b::parent_class> a::factory::create_parent_item(int v0, int v1, int v2)
 {
-    iref<a::b::parent_class>* item_iref_ptr = _items.push(new b::parent_class(v0, v1, v2));
+    iref<a::b::parent_class>* item_iref_ptr = _items.push(iref<b::parent_class>(new b::parent_class(v0, v1, v2)));
     return *item_iref_ptr;
 }
 

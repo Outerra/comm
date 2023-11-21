@@ -819,7 +819,7 @@ public:
 
         if (val.is_set())
         {
-            ::lua::wrap_interface(val.get(), streamer._context)->push_ref();
+            ::lua::wrap_interface(val.get(), iref<::lua::registry_handle>(streamer._context))->push_ref();
         }
         else
         {
@@ -845,7 +845,7 @@ public:
     {
         auto& streamer = THREAD_SINGLETON(lua_streamer_context);
 
-        ::lua::wrap_data_interface(val, token::clean_type_name<T>(), streamer._context)->push_ref();
+        ::lua::wrap_data_interface(val, token::clean_type_name<T>(), iref<::lua::registry_handle>(streamer._context))->push_ref();
         //TODO
     };
 

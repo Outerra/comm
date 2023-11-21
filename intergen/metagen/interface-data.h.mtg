@@ -103,7 +103,7 @@ $(if !comments.empty)$$[comments]-$
     $@value$
 $[/comments]$$(/if)-$
 inline $return.type$ $..name$::$name$($[args rest=", "]$$ifckwds after=" "$$type$ $(if ?fnarg)$( $-memfnclass after="::"-$ *$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if ?const)$ const$(/if)$
-{ return DT_CALL($return.type$,($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$) $-(if ?const)$ const$(/if)$,$index$)($[args rest=","]$ $-(if ?xref)$std::forward<$basetype$>($(/if)-$ $name$ $-(if ?xref)$)$(/if)-$ $[/args]$); }
+{ return $(if !return.ref !return.type="void")$std::move($(/if)-$ DT_CALL($return.type$,($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$) $-(if ?const)$ const$(/if)$,$index$)($[args rest=","]$ $-(if ?xref)$std::forward<$basetype$>($(/if)-$ $name$ $-(if ?xref)$)$(/if)-$ $[/args]$) $-(if !return.ref !return.type="void")$)$(/if)$; }
 $[/method]-$
 
 #pragma warning(pop)

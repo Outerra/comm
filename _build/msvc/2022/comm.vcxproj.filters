@@ -51,9 +51,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\atomic\atomic.cpp">
-      <Filter>atomic</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\crypt\sha1.cpp">
       <Filter>crypt</Filter>
     </ClCompile>
@@ -162,9 +159,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\atomic\atomic.h">
-      <Filter>atomic</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\atomic\queue.h">
       <Filter>atomic</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\binstream\binstream.h">
@@ -315,7 +309,6 @@
     <ClInclude Include="..\..\..\pthreadx.h" />
     <ClInclude Include="..\..\..\ptrowner.h" />
     <ClInclude Include="..\..\..\radix.h" />
-    <ClInclude Include="..\..\..\ref.h" />
     <ClInclude Include="..\..\..\regex.h" />
     <ClInclude Include="..\..\..\retcodes.h" />
     <ClInclude Include="..\..\..\rnd.h" />

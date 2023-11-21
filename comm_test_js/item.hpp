@@ -1,15 +1,15 @@
 #pragma once
-#include <comm/ref.h>
+#include <comm/ref_i.h>
 #include <comm/intergen/ifc.h>
 #include <comm/dynarray.h>
 #include <comm/binstream/stdstream.h>
 
-class item : public policy_intrusive_base
+class item : public coid::ref_intrusive_base
 {
 public:
     ifc_class_var(item_interface, "ifc", _client);
     ifc_fn static iref<item> _get(void* ptr);
-
+    ifc_fn static item* _create_dummy();
     ifc_event int return_something() ifc_default_body(return 0;);
 
     ifc_fn int enumerate(int a, const coid::callback<void(int, const coid::token&)>& fn)
@@ -33,7 +33,7 @@ public:
     enum class enumo {
         zero,           //< blah
         one,            //< ooo
-    };
+};
     //}ifc
 
     ifc_fn void enum_param(enumo o) {}

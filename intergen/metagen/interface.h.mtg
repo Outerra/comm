@@ -225,6 +225,16 @@ $-(/if)$
         return 0;
     }
 
+    $-(if !destroy.name.empty)$
+
+    ~$name$() {
+        VT_CALL($destroy.return.type$,($[destroy.args rest=","]$$type$$[/destroy.args]$),0)($[destroy.args rest=","]$$name$$[/destroy.args]$);
+    $-(if ?varname)$
+        if (_cleaner)
+            _cleaner(this, 0);
+    $-(/if)$
+    }
+    $-(/if)$
 protected:
 $-(if ?varname)$
 
@@ -244,17 +254,7 @@ $-(if ?varname)$
     cleanup_fn _cleaner = 0;
 $-(/if)$
 
-    bool set_host(policy_intrusive_base*, intergen_interface*, iref<$name$>* pout);
-$-(if !destroy.name.empty)$
-
-    ~$name$() {
-        VT_CALL($destroy.return.type$,($[destroy.args rest=","]$$type$$[/destroy.args]$),0)($[destroy.args rest=","]$$name$$[/destroy.args]$);
-$-(if ?varname)$
-        if (_cleaner)
-            _cleaner(this, 0);
-$-(/if)$
-    }
-$-(/if)$
+    bool set_host(coid::ref_intrusive_base*, intergen_interface*, iref<$name$>* pout);
 };
 $-[pasteafters]$
 
@@ -298,9 +298,9 @@ $-[/method]$
 
 $-[method !static !destroy !virtual]$
 $-(if ?return.ifc_type="none")$
-inline auto $..name$::$name$($[args rest=", "]$$ifckwds after=" "$$type$ $(if ?fnarg)$($-memfnclass after="::"-$ *$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if ?const)$ const$(/if)$ -> $return.type$ { return VT_CALL($return.type$,($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$) $-(if ?const)$ const$(/if)$,$index$)($[args rest=","]$ $-(if ?xref)$std::forward<$basetype$>($(/if)-$ $name$ $-(if ?xref)$)$(/if)-$ $[/args]$); }
+inline auto $..name$::$name$($[args rest=", "]$$ifckwds after=" "$$type$ $(if ?fnarg)$($-memfnclass after="::"-$ *$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if ?const)$ const$(/if)$ -> $return.type$ { return $(if !return.ref !return.type="void")$std::move($(/if)-$ VT_CALL($return.type$,($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$) $-(if ?const)$ const$(/if)$,$index$)($[args rest=","]$ $-(if ?xref)$std::forward<$basetype$>($(/if)-$ $name$ $-(if ?xref)$)$(/if)-$ $[/args]$) $-(if !return.ref !return.type="void")$)$(/if)$; }
 $-(elif)$
-inline auto $..name$::$name$($[args rest=", "]$$ifckwds after=" "$$type$ $(if ?fnarg)$($-memfnclass after="::"-$ *$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if ?const)$ const$(/if)$ -> $return.type$ { return ((*this).*(reinterpret_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$) $-(if ?const)$ const$(/if)$>(_vtable[$index$])))($[args rest=","]$ $-(if ?xref)$std::forward<$basetype$>($(/if)-$ $name$ $-(if ?xref)$)$(/if)-$ $[/args]$); }
+inline auto $..name$::$name$($[args rest=", "]$$ifckwds after=" "$$type$ $(if ?fnarg)$($-memfnclass after="::"-$ *$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if ?const)$ const$(/if)$ -> $return.type$ { return ((*this).*(reinterpret_cast<$return.type$(coid::ref_intrusive_base::*)($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$) $-(if ?const)$ const$(/if)$>(_vtable[$index$])))($[args rest=","]$ $-(if ?xref)$std::forward<$basetype$>($(/if)-$ $name$ $-(if ?xref)$)$(/if)-$ $[/args]$); }
 $-(/if)$
 $-[/method]$
 

@@ -5,7 +5,7 @@
 
 iref<factory> factory::get()
 {
-    static iref<factory> instance = new factory;
+    static iref<factory> instance(new factory);
     return instance;
 }
 

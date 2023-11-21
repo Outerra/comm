@@ -41,9 +41,11 @@
 #include "../token.h"
 #include "../dir.h"
 #include "../log.h"
+#include "../ref_i.h"
 #include "../metastream/metastream.h"
 #include "../binstream/filestream.h"
 #include "../binstream/binstreambuf.h"
+
 #include "../singleton.h"
 
 #include <luaJIT/lua.hpp>
@@ -445,8 +447,8 @@ inline int ctx_log(lua_State* L) {
 
 inline int lua_iref_release_callback(lua_State* L) {
     if (lua_isuserdata(L, -1)) {
-        policy_intrusive_base* obj = reinterpret_cast<policy_intrusive_base*>(*static_cast<size_t*>(lua_touserdata(L, -1)));
-        obj->release_refcount();
+        coid::ref_intrusive_base* obj = reinterpret_cast<coid::ref_intrusive_base*>(*static_cast<size_t*>(lua_touserdata(L, -1)));
+        obj->decrease_strong_counter();
     }
 
     return 0;
@@ -455,14 +457,14 @@ inline int lua_iref_release_callback(lua_State* L) {
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-class registry_handle :public policy_intrusive_base {
+class registry_handle :public coid::ref_intrusive_base {
 public:
     //static const iref<registry_handle>& get_empty() {
     //    static iref<registry_handle> empty = new registry_handle();
     //    return empty;
     //}
 
-    bool is_empty() {
+    bool is_empty() const{
         return _lua_handle == 0;
     }
 
@@ -485,7 +487,7 @@ public:
     }
 
     // push the referenced object onto top of the stack
-    virtual void push_ref() {
+    virtual void push_ref() const{
         if (!is_empty()) {
             lua_rawgeti(_L, LUA_REGISTRYINDEX, _lua_handle);
         }
@@ -533,7 +535,7 @@ public:
     }
 
     // push the referenced object onto top of the stack
-    virtual void push_ref() override {
+    virtual void push_ref() const override {
         if (!is_empty()) {
             lua_rawgeti(_L, LUA_REGISTRYINDEX, LUA_WEAK_REGISTRY_INDEX);
             lua_rawgeti(_L, -1, _lua_handle);
@@ -988,7 +990,7 @@ inline int ctx_include(lua_State* L) {
 
         coid::token script_path_arg = lua_totoken(L, -1);
 
-        iref<weak_registry_handle> context_weak = new ::lua::weak_registry_handle(L);
+        iref<weak_registry_handle> context_weak(new ::lua::weak_registry_handle(L));
         lua_pushvalue(L, LUA_ENVIRONINDEX);
         context_weak->set_ref();
 
@@ -1102,7 +1104,7 @@ struct script_handle
             return _context;
         }
 
-        iref<lua_context> context = new ::lua::lua_context(L);
+        iref<lua_context> context(new ::lua::lua_context(L));
 
 
         const coid::token url_tok = url();

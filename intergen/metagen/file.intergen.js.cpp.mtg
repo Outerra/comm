@@ -54,7 +54,7 @@ $-(/if)$
     {
         $name$_js_dispatcher* ifc = data.GetParameter();
         ifc->_object.Reset();
-        ifc->release_refcount();
+        ifc->decrease_strong_counter();
     }
 
 protected:
@@ -80,11 +80,10 @@ $-(/if)$
         _base.create(orig);
         _vtable = _base->vtable();
 
-        _host = _base->host<policy_intrusive_base>();
+        _host = _base->host<coid::ref_intrusive_base>();
     }
 
-    explicit $name$_js_dispatcher(policy_intrusive_base* host)$-(if ?event)$ : _bound_events(false)$(/if)$
-    {
+    explicit $name$_js_dispatcher(coid::ref_intrusive_base* host) $-(if ?event)$ : _bound_events(false)$(/if)$ {
         set_host(host, this, 0);
     }
 
@@ -743,7 +742,7 @@ $-(/if)$
         _object.Reset(iso, obj);
 
         _object.SetWeak(this, _js_release_callback, v8::WeakCallbackType::kParameter);
-        add_refcount();
+        increase_strong_counter();
     }
 
     return obj;
@@ -843,7 +842,7 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$(const ::js::script_h
         bool isscript = path.ends_with(".js");
 
         if (ispage && !isscript) {
-            typedef v8::Handle<v8::Context> (*fn_getctx)(const coid::token&, policy_intrusive_base*);
+            typedef v8::Handle<v8::Context> (*fn_getctx)(const coid::token&, coid::ref_intrusive_base*);
 
             fn_getctx ctxgetter = reinterpret_cast<fn_getctx>(
                     coid::interface_register::get_interface_creator("~html@system_context_getter2"));
@@ -1032,7 +1031,7 @@ v8::Handle<v8::Value> wrap_ifc_to_js_$name$(::$ns suffix="::"$$name$* orig_ifc, 
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Create JS interface from a host
-static iref<$ns suffix="::"$js::$name$_js_dispatcher> make_js_ifc_from_host_$name$(policy_intrusive_base* host, v8::Handle<v8::Context> context)
+static iref<$ns suffix="::"$js::$name$_js_dispatcher> make_js_ifc_from_host_$name$(coid::ref_intrusive_base* host, v8::Handle<v8::Context> context)
 {
     v8::Isolate* iso = context.IsEmpty() ? v8::Isolate::GetCurrent() : context->GetIsolate();
     if (context.IsEmpty())
@@ -1448,25 +1447,25 @@ v8::Handle<v8::Value> wrap_ifc_to_js_$name$(const coref<$name$>& orig_ifc, v8::H
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Create JS interface from a host
-static iref<$ns suffix="::"$js::$name$_js_dispatcher> make_js_ifc_from_host_$name$(::$..nsx$$..class$* host, v8::Handle<v8::Context> context)
-{
-    // check that the orig points to an object
-    v8::Isolate* iso = context.IsEmpty() ? v8::Isolate::GetCurrent() : context->GetIsolate();
-    if (!host)
-        return 0;
-
-    if (context.IsEmpty())
-        context = iso->GetCurrentContext();
-
-    v8::Context::Scope context_scope(context);
-    v8::HandleScope scope(iso);
-
-    // create interface object
-    $ns suffix="::"$js::$name$_js_dispatcher* difc = new $ns suffix="::"$js::$name$_js_dispatcher(host);
-
-    difc->_object.Reset(iso, difc->create_interface_object(context));
-    return difc;
-}
+//static iref<$ns suffix="::"$js::$name$_js_dispatcher> make_js_ifc_from_host_$name$(::$..nsx$$..class$* host, v8::Handle<v8::Context> context)
+//{
+//    // check that the orig points to an object
+//    v8::Isolate* iso = context.IsEmpty() ? v8::Isolate::GetCurrent() : context->GetIsolate();
+//    if (!host)
+//        return 0;
+//
+//    if (context.IsEmpty())
+//        context = iso->GetCurrentContext();
+//
+//    v8::Context::Scope context_scope(context);
+//    v8::HandleScope scope(iso);
+//
+//    // create interface object
+//    $ns suffix="::"$js::$name$_js_dispatcher* difc = new $ns suffix="::"$js::$name$_js_dispatcher(host);
+//
+//    difc->_object.Reset(iso, difc->create_interface_object(context));
+//    return difc;
+//}
 
 $-(/if)$
 ////////////////////////////////////////////////////////////////////////////////
@@ -1475,8 +1474,8 @@ static void register_binders_for_$name$(bool on)
     //script interface wrapper from data interface
     interface_register::register_interface_creator("$ns suffix="::"$$name$@dcwrapper.js", on ? (void*)&wrap_ifc_to_js_$name$ : nullptr, nullptr);
 
-    //script interface maker from data host
-    interface_register::register_interface_creator("$ns suffix="::"$$name$@dcmaker.js", on ? (void*)&make_js_ifc_from_host_$name$ : nullptr, nullptr);
+    ////script interface maker from data host
+    //interface_register::register_interface_creator("$ns suffix="::"$$name$@dcmaker.js", on ? (void*)&make_js_ifc_from_host_$name$ : nullptr, nullptr);
 }
 
 //auto-register the bind function

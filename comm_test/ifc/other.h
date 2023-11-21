@@ -146,7 +146,7 @@ public:
 
 protected:
 
-    bool set_host(policy_intrusive_base*, intergen_interface*, iref<other>* pout);
+    bool set_host(coid::ref_intrusive_base*, intergen_interface*, iref<other>* pout);
 };
 
 ////////////////////////////////////////////////////////////////////////////////

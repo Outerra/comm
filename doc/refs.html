@@ -1,0 +1,789 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+  <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
+  <title>Refs - reference counted smart pointers</title></head>
+
+<body>
+
+<h2>Refs</h2>
+
+&nbsp;&nbsp;&nbsp; Comm provides three smart pointers, called refs. A <a href="#policies">policy</a>
+does two jobs - it creates and destroys the object, and it holds the reference count - and the three
+refs differ in who holds the policy and in whether the counting functionality is used at all.<br>
+
+<br>
+
+<table style="text-align: left; width: 780px;" border="1" cellpadding="2" cellspacing="2">
+  <tbody>
+    <tr style="background-color: rgb(230, 230, 230);">
+      <td><b>alias</b></td>
+      <td><b>class</b></td>
+      <td><b>who holds the policy</b></td>
+      <td><b>use it for</b></td>
+    </tr>
+    <tr>
+      <td><code>ref&lt;T&gt;</code></td>
+      <td><code>coid::ref_shared</code></td>
+      <td>each ref instance</td>
+      <td>shared ownership - the default choice</td>
+    </tr>
+    <tr>
+      <td><code>iref&lt;T&gt;</code></td>
+      <td><code>coid::ref_intrusive</code></td>
+      <td>the object, through <code>ref_intrusive_base::_policy_ptr</code></td>
+      <td>shared ownership where a raw pointer must be re-adoptable</td>
+    </tr>
+    <tr>
+      <td><code>uref&lt;T&gt;</code></td>
+      <td><code>coid::ref_unique</code></td>
+      <td>the ref object, and only if the policy is explicitly used - it creates and destroys the
+        object, but never counts references</td>
+      <td>sole ownership, moved rather than copied</td>
+    </tr>
+  </tbody>
+</table>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; The aliases are declared in <code>ref_s.h</code>, <code>ref_i.h</code> and
+<code>ref_u.h</code> respectively - include the one you need. The classes live in namespace
+<code>coid</code>; the aliases are global.<br>
+
+<br>
+
+<h3>Choosing between them</h3>
+
+&nbsp;&nbsp;&nbsp; If the type derives from <code>coid::ref_intrusive_base</code>, use
+<code>iref</code>. Nothing else will work: <code>ref_shared</code> and <code>ref_unique</code>
+reject such types with a <code>static_assert</code>, because they would keep their own count
+alongside the object's own and neither owner would know about the other.<br>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; Otherwise, use <code>uref</code> when there is exactly one owner and it can be
+moved - it keeps no count, and unless you name a policy no policy is allocated either. When the
+object needs several owners, <b>prefer <code>ref</code></b>: it works with any type, and the object
+stays an ordinary object because the counting lives entirely in the ref and its policy.<br>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; Reach for <code>iref</code> deliberately rather than by default. It is the right
+choice when the object's identity has to outlive the refs pointing at it - most of all when a raw
+<code>T*</code>, <code>this</code> included, must be turned back into a counted reference, which is
+also why intergen requires it. <a href="#iref">ref_intrusive</a> below sets out the cases and what the base class costs.<br>
+
+<br>
+
+<h3><a name="policies"></a>Policies</h3>
+
+&nbsp;&nbsp;&nbsp; A policy does two separate things: it decides how the object is created and
+destroyed, and it carries the reference count. Every policy derives from
+<code>coid::ref_policy_base</code>, which holds the counter, and provides:<br>
+
+<br>
+
+<table style="text-align: left; width: 780px;" border="1" cellpadding="2" cellspacing="2">
+  <tbody>
+    <tr style="background-color: rgb(230, 230, 230);">
+      <td><b>member</b></td>
+      <td><b>what it does</b></td>
+    </tr>
+    <tr>
+      <td><code>using element_type = T;</code></td>
+      <td>names the type <code>get_original_ptr()</code> points at. <b>Required</b> - see
+        <a href="#adjust">pointer adjustment</a> below.</td>
+    </tr>
+    <tr>
+      <td><code>static this_type* create(...)</code></td>
+      <td>one or more overloads returning the derived policy type. The arguments are the policy's
+        own, so there is no fixed signature.</td>
+    </tr>
+    <tr>
+      <td><code>void on_destroy() override</code></td>
+      <td>called when the strong count reaches zero. Disposes of the object and of the policy.</td>
+    </tr>
+    <tr>
+      <td><code>void* get_original_ptr() override</code></td>
+      <td>the address of the object the policy counts.</td>
+    </tr>
+  </tbody>
+</table>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; Comm ships two:<br>
+
+<br>
+
+<ul>
+  <li><code>ref_policy_simple&lt;T&gt;</code> - <code>new</code> on create,
+    <code>delete</code> on destroy. The policy object itself is pooled.<br><br></li>
+  <li><code>ref_policy_pooled&lt;T&gt;</code> - takes the object from a <code>coid::pool&lt;T&gt;</code>
+    and returns it there instead of deleting it. Derives from <code>ref_policy_simple</code>.</li>
+</ul>
+
+<br>
+
+<h4>The default policy trait</h4>
+
+&nbsp;&nbsp;&nbsp; <code>coid::default_ref_policy_trait&lt;T&gt;::policy</code> selects the policy
+used when you do not name one. It is <code>ref_policy_simple&lt;T&gt;</code> unless overridden:<br>
+
+<br>
+
+<table style="text-align: left; width: 780px;" border="1" cellpadding="2" cellspacing="2">
+  <tbody>
+    <tr>
+      <td style="background-color: rgb(255, 255, 204);"><code>SET_DEFAULT_REF_POLICY_TRAIT(my_type,
+        coid::ref_policy_pooled);</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; Write it at namespace scope, outside any namespace - the macro opens
+<code>coid</code> itself. Afterwards <code>ref</code> and <code>iref</code> will pool that type
+whenever <code>create()</code> does not name a policy.<br>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; <b><code>uref</code> does not consult the trait at all.</b> Its
+<code>create()</code> is always a plain <code>new</code> and the resulting ref owns no policy; to
+pool a <code>uref</code> you name the policy - <code>create&lt;ref_policy_pooled&lt;T&gt;&gt;()</code>.
+See <a href="#uref">ref_unique</a> for why.<br>
+
+<br>
+
+<h3>Creating and adopting objects</h3>
+
+&nbsp;&nbsp;&nbsp; There are two distinct things a ref can do with an object: <b>create</b> it
+through a policy, or <b>adopt</b> one that already exists.<br>
+
+<br>
+
+<table style="text-align: left; width: 780px;" border="1" cellpadding="2" cellspacing="2">
+  <tbody>
+    <tr>
+      <td style="background-color: rgb(255, 255, 255);"><code>
+ref&lt;foo&gt; a;<br>
+a.create();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// through the default trait<br>
+a.create&lt;bar&gt;();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// a derived type, through bar's trait<br>
+a.create&lt;my_policy&gt;(args);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// a named policy, args are the policy's<br>
+a.create(new foo);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// adopt<br>
+ref&lt;foo&gt; b(new foo);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// adopt, at construction</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; <b>The arguments to <code>create()</code> are the policy's, not the object's.</b>
+<code>ref_policy_simple::create()</code> default-constructs; <code>ref_policy_pooled::create(pool*)</code>
+takes the pool to draw from. None of the policies forwards constructor arguments, and
+<code>ref_policy_pooled</code> never could - see <a href="#pooling">pooling</a>. To pass
+constructor arguments, build the object at the call site and adopt it:
+<code>create(new foo(args))</code>.<br>
+
+<br>
+
+<h4><a name="adopt"></a>Adopting a raw pointer</h4>
+
+&nbsp;&nbsp;&nbsp; All three refs have an <code>explicit</code> constructor from a raw pointer, as
+<code>std::shared_ptr</code> and <code>std::unique_ptr</code> do. So:<br>
+
+<br>
+
+<table style="text-align: left; width: 780px;" border="1" cellpadding="2" cellspacing="2">
+  <tbody>
+    <tr>
+      <td style="background-color: rgb(255, 255, 255);"><code>
+T* p;<br>
+iref&lt;T&gt; r;<br>
+iref&lt;T&gt; a(p);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// ok<br>
+r = p;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// ok - assignment stays implicit<br>
+r.create(p);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// ok<br>
+<br>
+iref&lt;T&gt; c = p;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// error - copy initialization<br>
+return p;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// error - from a function returning iref&lt;T&gt;<br>
+f(p);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// error - f takes an iref&lt;T&gt;<br>
+array.push(new T);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// error - container of iref&lt;T&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; Write the ref's own type in each failing case:
+<code>iref&lt;T&gt; c(p)</code>, <code>return iref&lt;T&gt;(p)</code>,
+<code>f(iref&lt;T&gt;(p))</code>, <code>array.push(iref&lt;T&gt;(new T))</code>.<br>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; <b>What this buys, and what it does not.</b> Assignment into a named ref stays
+implicit because there the target's type is visible at its declaration. At a call boundary it is
+not, so <code>explicit</code> makes the ownership transfer legible. It does <b>not</b> make the
+adoption safe: writing the explicit form and then carrying on with the raw pointer can lead to bugs,
+since ownership has moved into the ref and the pointer dangles once the ref dies. It
+catches the accident where nobody meant to transfer ownership; it says nothing about the mistake
+where someone did and then forgot.<br>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; One consequence worth knowing: adopting one raw pointer into two
+<code>ref</code>s or two <code>uref</code>s is a double free, because each adoption owns the object
+independently. Into two <code>iref</code>s it is harmless - the object already points at a
+policy, so the second adoption finds it and both share its count.<br>
+
+<br>
+
+<h4>Comparison</h4>
+
+&nbsp;&nbsp;&nbsp; Each ref declares a single <code>operator==</code> against
+<code>const Type*</code>, one against <code>nullptr_t</code>, and a same-type
+<code>operator&lt;</code>. There is deliberately <b>no</b> <code>operator!=</code> anywhere: C++20
+synthesizes the negation and the reversed operand order from <code>operator==</code>, so
+<code>r == p</code>, <code>r != p</code>, <code>p == r</code> and <code>p != r</code> all work.
+Declaring <code>operator!=</code> in the same scope <i>suppresses</i> both rewritings - MSVC reports
+that as <code>C7692</code> - so do not add one.<br>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; <code>operator&lt;</code> orders by object address. It is a total order but an
+arbitrary one, fine for keying a map or sorting a container, never for output that has to be
+reproducible.<br>
+
+<br>
+
+<h4><a name="swap"></a>Swapping</h4>
+
+&nbsp;&nbsp;&nbsp; Refs have no <code>swap()</code> of their own. Use <code>std::swap</code>, which
+works through the move constructor and the move assignment. Each step only moves pointers, so the
+two objects are exchanged and no reference count changes:<br>
+
+<br>
+
+<table style="text-align: left; width: 780px;" border="1" cellpadding="2" cellspacing="2">
+  <tbody>
+    <tr>
+      <td style="background-color: rgb(255, 255, 255);"><code>
+std::swap(a, b);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// ok<br>
+<br>
+using std::swap;<br>
+swap(a, b);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// ok - the usual form in generic code<br>
+<br>
+a.swap(b);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// error - there is no member swap<br>
+swap(a, b);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// error without 'using std::swap' - there is no<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// overload in coid for argument dependent lookup</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; <code>std::is_nothrow_swappable</code> is <code>false</code> for all three refs.
+Their move constructors are <code>noexcept</code> but their move assignments are not, because an
+assignment releases what the ref held, and releasing the last reference to a pooled object can
+allocate - see <a href="#pooling">pooling</a>. A swap itself never releases anything: every
+assignment inside <code>std::swap</code> lands on a ref that has just been moved from, and is
+therefore empty. Generic code that checks the trait will nevertheless treat swapping two refs as an
+operation that may throw.<br>
+
+<br>
+
+<h3><a name="adjust"></a>Pointer adjustment and multiple inheritance</h3>
+
+&nbsp;&nbsp;&nbsp; This is the subtlest part of the refs, and the reason policies must name
+<code>element_type</code>.<br>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; When a class has more than one base, a base subobject does not start at the
+address of the whole object. Converting between the two adjusts the pointer by that offset, and the
+compiler does it automatically - <i>as long as it knows both types</i>. A <code>void*</code>
+destroys that knowledge: casting a <code>void*</code> to a base pointer performs no adjustment, and
+the result silently points into the wrong subobject. Every member read through it is off by the
+offset.<br>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; <code>get_original_ptr()</code> returns exactly such a <code>void*</code>. So a
+policy has to declare what that pointer really is:<br>
+
+<br>
+
+<table style="text-align: left; width: 780px;" border="1" cellpadding="2" cellspacing="2">
+  <tbody>
+    <tr>
+      <td style="background-color: rgb(255, 255, 255);"><code>
+class my_policy : public coid::ref_policy_base<br>
+{<br>
+public:<br>
+&nbsp;&nbsp;&nbsp; using element_type = T;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// required<br>
+&nbsp;&nbsp;&nbsp; ...<br>
+};</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; The refs cast the <code>void*</code> back to <code>element_type*</code> first and
+let the ordinary implicit conversion adjust it. The
+<code>coid::is_ref_policy_for&lt;Policy, Type&gt;</code> concept enforces the typedef's presence, so
+a policy without it will not satisfy <code>create&lt;Policy&gt;()</code>.<br>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; The same adjustment shows up in three other places, and all of them handle it:<br>
+
+<br>
+
+<ul>
+  <li><code>ref&lt;base&gt;</code> and <code>ref&lt;derived&gt;</code> pointing at one object hold
+    <i>different</i> addresses, but compare equal, because
+    <code>operator==</code> converts before comparing.<br><br></li>
+  <li><code>downcast&lt;D&gt;()</code> casts from the ref's own object pointer, not from the
+    policy's <code>void*</code>.<br><br></li>
+  <li>For an intrusive type, <code>ref_intrusive_base</code> itself may sit at a non-zero offset -
+    <code>iref&lt;base&gt;</code> and <code>iref&lt;derived&gt;</code> then hold different addresses
+    while sharing one count. <code>ref_intrusive</code> adjusts through the object pointer before
+    touching the counter.</li>
+</ul>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; If you write a policy whose <code>element_type</code> is a <i>base</i> of the
+object actually created, the policy stores the base subobject's address, and only a virtual
+destructor makes the eventual <code>delete</code> correct. Prefer naming the concrete type.<br>
+
+<br>
+
+<h3><a name="pooling"></a>Pooling and recycling</h3>
+
+&nbsp;&nbsp;&nbsp; <code>ref_policy_pooled&lt;T&gt;</code> returns the object to a
+<code>coid::pool&lt;T&gt;</code> rather than deleting it. Two consequences follow from how
+<code>coid::pool</code> works:<br>
+
+<br>
+
+<ul>
+  <li><b>A pooled object is never destructed and never reconstructed.</b> Releasing it pushes it
+    back as it is; taking it again hands back a live object with its previous member values. Its
+    constructor runs exactly once, on first allocation. That is why no <code>create()</code> can
+    forward constructor arguments to a pooled type - there is nothing to forward them to. Reset
+    such an object yourself if it needs it.<br><br></li>
+  <li><b>Returning an object to a pool can allocate.</b> <code>pool::release_item()</code> pushes
+    onto a free stack whose nodes are allocated on demand, and comm's <code>operator new</code>
+    throws. So releasing the last reference to a pooled object can throw, which is why the refs'
+    move <i>assignment</i> operators are not <code>noexcept</code> while their move
+    <i>constructors</i> are.</li>
+</ul>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; For an intrusive type there is a third: the recycled object must let go of its
+policy, since the policy goes back to its own pool at the same moment and will be handed to a
+different object.
+<code>ref_intrusive_base::clear_policy_on_recycle()</code> does that, and
+<code>ref_policy_pooled::on_destroy()</code> calls it. Without it the next ref to adopt the
+recycled object would silently share some other object's count.<br>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; So an intrusive object's <code>_policy_ptr</code> is null before any ref adopts
+it and again after it is recycled. <code>ref_intrusive_base::has_policy()</code> reports that, and
+<code>get_strong_refcount()</code> answers 0 rather than crashing.<br>
+
+<br>
+
+<h3>Thread safety</h3>
+
+&nbsp;&nbsp;&nbsp; <b>The reference count is atomic. A ref object is not.</b> Same rule as
+<code>std::shared_ptr</code>, and worth stating in both directions:<br>
+
+<br>
+
+<table style="text-align: left; width: 780px;" border="1" cellpadding="2" cellspacing="2">
+  <tbody>
+    <tr style="background-color: rgb(230, 230, 230);">
+      <td><b>safe</b></td>
+      <td><b>not safe</b></td>
+    </tr>
+    <tr>
+      <td>two threads, each holding <i>its own</i> ref to the same object, copying and releasing
+        freely</td>
+      <td>two threads touching the <i>same</i> ref instance while either mutates it - for instance
+        copying from a global ref while another thread releases it</td>
+    </tr>
+  </tbody>
+</table>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; The unsafe case is a data race on the ref's own pointer member, and it is worse
+than a torn read: the copy can see the pointer as non-null, lose the race to the release that
+destroys the object, and then increment a counter that is already freed or back in its pool. No
+memory ordering fixes that, because it is a use after free rather than a visibility problem, and
+<code>try_increase_strong_counter()</code> cannot help either - the policy it would operate on may
+be gone. Give each thread its own ref, made while the object is guaranteed to be alive, or
+guard the shared one with a lock.<br>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; Within those rules the counter's ordering is: a plain relaxed increment, since
+the caller already holds a reference; a <i>release</i> decrement paired with an <i>acquire</i> fence
+on the thread that sees the count reach zero. That pairing is what stops the destructor from running
+against writes made through the references just given up. It costs nothing on x86, whose stores are
+already ordered, and matters on weakly ordered CPUs.<br>
+
+<br>
+
+<h3><a name="iref"></a>ref_intrusive</h3>
+
+&nbsp;&nbsp;&nbsp; What sets <code>iref</code> apart is not where the count is - that is in the
+policy, as for <code>ref</code> - but that the <i>object</i> holds the policy pointer, in its
+<code>ref_intrusive_base</code>. The policy is created lazily, by the first ref that adopts the
+object, and everything else follows from those two facts.<br>
+
+<h4>When to use it</h4>
+
+<ul>
+  <li><b>intergen interfaces require it.</b> A host class is generated with
+    <code>static_assert(std::is_base_of&lt;coid::ref_intrusive_base, T&gt;)</code> and the
+    dispatcher holds its host as <code>iref&lt;coid::ref_intrusive_base&gt;</code>. If the type is
+    an <code>ifc_class</code> host, the choice is already made.<br><br></li>
+  <li><b>The object has to survive a raw-pointer round trip.</b> Any API that hands you back a
+    <code>T*</code> - a C boundary, a script binding, a callback registry storing bare pointers -
+    can be turned back into an owning reference, because the adoption finds the policy the object
+    already points at. With <code>ref</code> that same round trip creates a <i>second, independent</i>
+    policy, and the first release destroys the object under the other.<br><br></li>
+  <li><b>Several unrelated code paths may adopt the same object.</b> They share one count rather
+    than each believing it is the only owner, so adopting twice cannot double free.<br><br></li>
+  <li><b>The object has to hand out a reference to itself.</b> A member function can return
+    <code>iref&lt;T&gt;(this)</code> and the result joins the count the object already has. With
+    <code>ref</code> this is impossible - see below.</li>
+</ul>
+
+<h4><a name="this"></a>Returning an iref from this</h4>
+
+&nbsp;&nbsp;&nbsp; A member function can give out a counted reference to its own object:<br>
+
+<br>
+
+<table style="text-align: left; width: 780px;" border="1" cellpadding="2" cellspacing="2">
+  <tbody>
+    <tr>
+      <td style="background-color: rgb(255, 255, 255);"><code>
+class node : public coid::ref_intrusive_base<br>
+{<br>
+public:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;iref&lt;node&gt; self() { return iref&lt;node&gt;(this); }<br>
+};<br>
+<br>
+iref&lt;node&gt; owner(new node);<br>
+iref&lt;node&gt; other = owner-&gt;self();&nbsp;&nbsp;&nbsp;// count is 2, one object</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; The adoption finds the policy the object already points at, so the returned
+ref joins the existing count, and the object outlives whichever of the two is released first. This
+is what <code>std::enable_shared_from_this</code> exists for; <code>iref</code> needs no such
+helper, because the object already knows its policy.<br>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; <b><code>ref</code> cannot do this.</b> <code>ref&lt;T&gt;(this)</code> builds a
+second, independent policy - the object ends up with two counts of one each, and the first release
+destroys it under the other ref. Comm has no <code>ref_shared</code> equivalent of
+<code>enable_shared_from_this</code>, so a type that needs to return a reference to itself is a type
+for <code>iref</code>.<br>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; Things to keep in mind:<br>
+
+<br>
+
+<ul>
+  <li><b>The object must already be owned by an <code>iref</code>.</b> Called on an object no
+    <code>iref</code> has adopted yet, <code>self()</code> makes the returned ref its only owner, and
+    if that ref is discarded the object is destroyed with it. So never call it from the
+    constructor - the temporary adopts the half-built object and deletes it there and then - and
+    never on an object that was not created with <code>new</code>, such as a local or a member.<br><br></li>
+  <li><b>The function cannot be <code>const</code>.</b> In a <code>const</code> member
+    <code>this</code> is <code>const T*</code>, and the constructor takes only <code>T*</code>, so
+    <code>iref&lt;T&gt;(this)</code> does not compile there.<br><br></li>
+  <li><b>Write the ref type out.</b> <code>return this;</code> does not compile, the constructor
+    being explicit - it has to be <code>return iref&lt;T&gt;(this);</code>.</li>
+</ul>
+
+<br>
+
+<h4>What the base class costs</h4>
+
+&nbsp;&nbsp;&nbsp; <code>ref_intrusive_base</code> is 16 bytes - a vptr and the policy pointer - and
+every instance of the type carries it whether or not it is ever reference counted. How much the type
+actually grows depends on whether it is polymorphic without the base:<br>
+
+<br>
+
+<table style="text-align: left; width: 560px;" border="1" cellpadding="2" cellspacing="2">
+  <tbody>
+    <tr style="background-color: rgb(230, 230, 230);">
+      <td><b>type</b></td>
+      <td><b>alone</b></td>
+      <td><b>deriving from ref_intrusive_base</b></td>
+    </tr>
+    <tr>
+      <td><code>struct { int; }</code></td>
+      <td>4</td>
+      <td>24&nbsp;&nbsp;(+20, the last 4 being padding)</td>
+    </tr>
+    <tr>
+      <td><code>struct { virtual ~; int; }</code></td>
+      <td>16</td>
+      <td>24&nbsp;&nbsp;(+8)</td>
+    </tr>
+  </tbody>
+</table>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; So the size is a small matter for a class that is already polymorphic - the vptr
+is shared and only the pointer is added. What is not small is the first row: a plain data type
+acquires a vtable, so it is not trivially copyable and cannot be memcpy'd or held in an array as
+raw bytes. That, rather than the byte count, is what can rule <code>iref</code> out for a
+type.<br>
+
+<br>
+
+<h3><a name="uref"></a>ref_unique</h3>
+
+&nbsp;&nbsp;&nbsp; A <code>uref</code> is a sole owner: move-only, and it never counts. It is the
+one ref that uses only the policy's create and destroy functionality. A policy it holds will have
+made the object and will destroy it again, but its counter is never touched and stays at zero for the
+ref's whole life; <code>release()</code> asserts as much.<br>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; And <b>the only way to get a policy here is to name one</b>.
+<code>create()</code> therefore has two forms:<br>
+
+<br>
+
+<table style="text-align: left; width: 780px;" border="1" cellpadding="2" cellspacing="2">
+  <tbody>
+    <tr style="background-color: rgb(230, 230, 230);">
+      <td><b>call</b></td>
+      <td><b>policy</b></td>
+      <td><b>what it does</b></td>
+    </tr>
+    <tr>
+      <td><code>uref&lt;T&gt;::create()</code></td>
+      <td>none</td>
+      <td>plain <code>new T</code>, deleted on release - whatever the trait says</td>
+    </tr>
+    <tr>
+      <td><code>uref&lt;T&gt;::create&lt;derived&gt;()</code></td>
+      <td>none</td>
+      <td>plain <code>new derived</code>. The stored pointer is the adjusted base one, so
+        <code>T</code> needs a virtual destructor - as with <code>create(new derived)</code></td>
+    </tr>
+    <tr>
+      <td><code>uref&lt;T&gt;::create(new T)</code></td>
+      <td>none</td>
+      <td>adopts an object you built yourself</td>
+    </tr>
+    <tr>
+      <td><code>uref&lt;T&gt;::create&lt;Policy&gt;(args)</code></td>
+      <td><b>yes</b></td>
+      <td>the only form that attaches one. <code>args</code> are the policy's</td>
+    </tr>
+  </tbody>
+</table>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; Keeping the trait out of <code>create()</code> means a call says what it does.
+Whether a <code>uref</code> owns a policy - and so whether <code>eject()</code> needs its out
+parameter - is decided at the call site, never by a <code>SET_DEFAULT_REF_POLICY_TRAIT</code> line
+in some other header. Two calls that read identically behave identically.<br>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; The cost is that a pooled type is <i>not</i> pooled through a plain
+<code>uref&lt;T&gt;::create()</code> - it is <code>new</code>ed and deleted, and moving such a ref
+into a <code>ref_shared</code> gives it a <code>ref_policy_simple</code> that deletes it. Name the
+policy where that matters.<br>
+
+<br>
+
+<h4><a name="eject"></a>eject()</h4>
+
+&nbsp;&nbsp;&nbsp; <code>eject()</code> gives up ownership and returns the object pointer. If a
+policy is attached it must be handed over too, because an object created through a policy has to go
+back through it - a pooled object belongs in its pool, not on <code>delete</code>:<br>
+
+<br>
+
+<table style="text-align: left; width: 780px;" border="1" cellpadding="2" cellspacing="2">
+  <tbody>
+    <tr>
+      <td style="background-color: rgb(255, 255, 255);"><code>
+coid::ref_policy_base* policy = nullptr;<br>
+foo* object = u.eject(&amp;policy);<br>
+...<br>
+if (policy)<br>
+&nbsp;&nbsp;&nbsp; policy-&gt;on_destroy();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// finishes the handover<br>
+else<br>
+&nbsp;&nbsp;&nbsp; delete object;</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; Calling <code>eject()</code> with no out parameter on a ref that owns a policy
+<b>aborts</b> - <code>RASSERT_FATALX</code>, so in release builds too. That is deliberate: the
+alternative is to keep the policy and return the object anyway, which leaks for every caller that
+does not think to check, and would be indistinguishable from ejecting an empty ref.<br>
+
+<br>
+
+<h3>Weak references</h3>
+
+&nbsp;&nbsp;&nbsp; Not implemented. <code>ref_counter</code> carries a weak counter member so the
+layout is already final, but its methods are commented out and nothing touches it. Implementing
+weak refs needs more than uncommenting them:<br>
+
+<br>
+
+<ul>
+  <li><code>on_destroy()</code> has to split in two - destroy the object when the strong count
+    reaches zero, destroy the policy only when the weak count does too, so the policy outlives the
+    object it counted. That changes <code>ref_policy_pooled</code> in particular, which currently
+    returns object and policy to their pools in one go.<br><br></li>
+  <li>The weak counter's memory ordering is a placeholder. What it has to pair with depends on how
+    <code>lock()</code> and the split destruction are written.<br><br></li>
+  <li><code>ref_intrusive_base</code> holds a bare policy pointer and has nowhere to record that its
+    object is gone while its policy is not.</li>
+</ul>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; <code>try_increase_strong_counter()</code> exists for the eventual
+<code>lock()</code>. Its only caller today is the <code>ref_shared</code> downcast helper, where the
+count provably cannot be zero.<br>
+
+<br>
+
+<h3>Writing your own policy</h3>
+
+<table style="text-align: left; width: 780px;" border="1" cellpadding="2" cellspacing="2">
+  <tbody>
+    <tr>
+      <td style="background-color: rgb(255, 255, 255);"><code>
+template&lt;class T&gt;<br>
+class ref_policy_nodelete : public coid::ref_policy_base<br>
+{<br>
+&nbsp;&nbsp;&nbsp; using this_type = ref_policy_nodelete&lt;T&gt;;<br>
+public:<br>
+&nbsp;&nbsp;&nbsp; using element_type = T;<br>
+<br>
+&nbsp;&nbsp;&nbsp; static this_type* create(T* object_ptr) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; this_type* p = new this_type;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; p-&gt;_object_ptr = object_ptr;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return p;<br>
+&nbsp;&nbsp;&nbsp; }<br>
+<br>
+&nbsp;&nbsp;&nbsp; void on_destroy() override { delete this; }&nbsp;&nbsp;&nbsp;&nbsp;// object outlives us<br>
+&nbsp;&nbsp;&nbsp; void* get_original_ptr() override { return _object_ptr; }<br>
+<br>
+protected:<br>
+&nbsp;&nbsp;&nbsp; T* _object_ptr = nullptr;<br>
+};</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<br>
+
+&nbsp;&nbsp;&nbsp; Points to keep in mind:<br>
+
+<br>
+
+<ul>
+  <li><code>element_type</code> is not optional, and <code>create()</code> must be your own -
+    <code>ref_policy_base</code> declares none, so a missing one is a compile error rather than a
+    null policy.<br><br></li>
+  <li><code>on_destroy()</code> is responsible for the policy as well as the object. Whatever it
+    does, the policy must not be left alive with nothing referring to it.<br><br></li>
+  <li>The counter is at zero when <code>on_destroy()</code> runs, and must stay there.</li>
+</ul>
+
+<br>
+
+<h3>Common errors</h3>
+
+<table style="text-align: left; width: 780px;" border="1" cellpadding="2" cellspacing="2">
+  <tbody>
+    <tr style="background-color: rgb(230, 230, 230);">
+      <td><b>symptom</b></td>
+      <td><b>cause</b></td>
+    </tr>
+    <tr>
+      <td><code>'create': no matching overloaded function found</code>, followed by a long list of
+        rejected overloads and finally <code>the concept 'is_ref_policy_for&lt;...&gt;' evaluated to
+        false</code> / <code>'element_type': is not a member of</code></td>
+      <td>your policy is missing <code>using element_type = T;</code>. Search the build log for
+        <code>element_type</code> rather than reading from the top - the first errors are red
+        herrings.</td>
+    </tr>
+    <tr>
+      <td><code>cannot convert from 'T *' to 'coid::ref_intrusive&lt;T&gt;'</code></td>
+      <td>copy initialization from a raw pointer. The constructor is explicit - write
+        <code>iref&lt;T&gt;(p)</code>.</td>
+    </tr>
+    <tr>
+      <td><code>'swap': is not a member of 'coid::ref_shared&lt;T&gt;'</code>, or
+        <code>'swap': identifier not found</code></td>
+      <td>refs have no <code>swap()</code>, member or free. Use <code>std::swap(a, b)</code>, or
+        <code>using std::swap;</code> before an unqualified call. See
+        <a href="#swap">Swapping</a>.</td>
+    </tr>
+    <tr>
+      <td><code>static_assert</code>: <i>Type is intrusively reference counted, use iref</i></td>
+      <td><code>ref</code> or <code>uref</code> of a type deriving from
+        <code>ref_intrusive_base</code>.</td>
+    </tr>
+    <tr>
+      <td>abort in <code>eject()</code></td>
+      <td>no out parameter, on a ref that owns a policy. See <a href="#eject">eject()</a> above.</td>
+    </tr>
+    <tr>
+      <td>a source ref is empty after being moved from</td>
+      <td>expected - moving always empties the source, including a cross-type move assignment such
+        as <code>iref&lt;base&gt; = std::move(iref&lt;derived&gt;)</code>. Read the destination
+        instead.</td>
+    </tr>
+  </tbody>
+</table>
+
+<br>
+
+<h3>Debugger support</h3>
+
+&nbsp;&nbsp;&nbsp; <code>doc/visualc-syntax/coid.natvis</code> visualizes all three refs, showing the
+object pointer, the strong and weak counts where there are any, and the policy. It is referenced
+directly by <code>comm.vcxproj</code>, <code>comm_static.vcxproj</code> and
+<code>comm_test.vcxproj</code>, so Visual Studio loads it without anything being copied. For a
+project that does not reference it, add the same <code>&lt;Natvis Include=...&gt;</code> item or copy
+the file into <code>%USERPROFILE%\Documents\Visual Studio 2022\Visualizers\</code>.<br>
+
+<br>
+
+</body></html>

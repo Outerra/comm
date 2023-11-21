@@ -4,7 +4,6 @@
 
 #include "atomic/basic_pool.h"
 #include "alloc/commalloc.h"
-#include "ref_helpers.h"
 
 #include <iterator>
 #include <algorithm>
@@ -144,17 +143,17 @@ public:
         explicit _list_const_reverse_iterator(const node* p) : _list_iterator_base(const_cast<node*>(p)) {}
     };
 
-    typedef _list_iterator iterator;
-    typedef _list_reverse_iterator reverse_iterator;
-    typedef _list_const_iterator const_iterator;
-    typedef _list_const_reverse_iterator const_reverse_iterator;
+    using iterator = _list_iterator;
+    using reverse_iterator = _list_reverse_iterator;
+    using const_iterator = _list_const_iterator;
+    using const_reverse_iterator = _list_const_reverse_iterator ;
 
 protected:
     ///
     atomic::basic_pool<node> _npool;
 
     ///
-    node _node;
+    node _head;
 
     // prev tail item_0 ---------- item_n head next
 
@@ -215,31 +214,42 @@ protected:
         return &nn->item();
     }
 
+    /// @brief Erases node pointed by iterator
+    /// @param it - iterator
+    void erase_internal(_list_iterator_base& it)
+    {
+        if (it._node != &_head) {
+            it._node->_prev->_next = it._node->_next;
+            it._node->_next->_prev = it._node->_prev;
+            delete_node(it._node);
+        }
+    }
+
 public:
 
     ///
-    list() : _npool(), _node(false) {}
+    list() : _npool(), _head(false) {}
 
     ///
     ~list() {}
 
     ///
-    void push_front(const T& item) { insert(_node._next, item); }
+    void push_front(const T& item) { insert(_head._next, item); }
 
     ///
-    void push_front(T&& item) { insert(_node._next, std::forward<T>(item)); }
+    void push_front(T&& item) { insert(_head._next, std::forward<T>(item)); }
 
     ///
-    T* push_front_uninit() { return insert_uninit(_node._next); }
+    T* push_front_uninit() { return insert_uninit(_head._next); }
 
     ///
-    void push_back(const T& item) { insert(&_node, item); }
+    void push_back(const T& item) { insert(&_head, item); }
 
     ///
-    void push_back(T&& item) { insert(&_node, std::forward<T>(item)); }
+    void push_back(T&& item) { insert(&_head, std::forward<T>(item)); }
 
     ///
-    T* push_back_uninit() { return insert_uninit(&_node); }
+    T* push_back_uninit() { return insert_uninit(&_head); }
 
     ///
     void insert(_list_iterator_base& it, const T& item) {
@@ -252,13 +262,29 @@ public:
         insert(it._node, item);
     }
 
-    ///
-    void erase(_list_iterator_base& it)
+    /// @brief Erase item held by iterator and sets iterator to the next item
+    /// @param it - forward iterator
+    void erase(iterator& it)
     {
-        if (it._node != &_node) {
+        if (it._node != &_head) {
             it._node->_prev->_next = it._node->_next;
             it._node->_next->_prev = it._node->_prev;
-            delete_node(it._node);
+            node* node_to_del_ptr = it._node;
+            it._node = it._node->_next;
+            delete_node(node_to_del_ptr);
+        }
+    }
+
+    /// @brief Erase item held by iterator and sets iterator to the prev item
+/// @param it - reverse iterator
+    void erase(reverse_iterator& it)
+    {
+        if (it._node != &_head) {
+            it._node->_prev->_next = it._node->_next;
+            it._node->_next->_prev = it._node->_prev;
+            node* node_to_del_ptr = it._node;
+            it._node = it._node->_prev;
+            delete_node(node_to_del_ptr);
         }
     }
 
@@ -267,7 +293,7 @@ public:
     {
         if (!is_empty()) {
             item = std::move(front());
-            iterator eit(_node._next);
+            iterator eit(_head._next);
             erase(eit);
             return true;
         }
@@ -279,7 +305,7 @@ public:
     {
         if (!is_empty()) {
             T* item = &front();
-            iterator eit(_node._next);
+            iterator eit(_head._next);
             erase(eit);
             return item;
         }
@@ -291,7 +317,7 @@ public:
     {
         if (!is_empty()) {
             item = std::move(back());
-            iterator eit(_node._prev);
+            iterator eit(_head._prev);
             erase(eit);
             return true;
         }
@@ -303,7 +329,7 @@ public:
     {
         if (!is_empty()) {
             T* item = &back();
-            iterator eit(_node._prev);
+            iterator eit(_head._prev);
             erase(eit);
             return item;
         }
@@ -313,31 +339,31 @@ public:
     ///
     void clear()
     {
-        node* n = _node._next;
-        _node._next = _node._prev = &_node;
-        while (n->_next != &_node) {
+        node* n = _head._next;
+        _head._next = _head._prev = &_head;
+        while (n->_next != &_head) {
             n = n->_next;
             delete_node(n->_prev);
         }
     }
 
     ///
-    bool is_empty() const { return _node._next == &_node; }
+    bool is_empty() const { return _head._next == &_head; }
 
-    T& front() const { DASSERTN(!is_empty()); return _node._next->item(); }
-    T& back() const { DASSERTN(!is_empty()); return _node._prev->item(); }
+    T& front() const { DASSERTN(!is_empty()); return _head._next->item(); }
+    T& back() const { DASSERTN(!is_empty()); return _head._prev->item(); }
 
-    iterator begin() { return iterator(_node._next); }
-    iterator end() { return iterator(&_node); }
+    iterator begin() { return iterator(_head._next); }
+    iterator end() { return iterator(&_head); }
 
-    const_iterator begin() const { return const_iterator(_node._next); }
-    const_iterator end() const { return const_iterator(&_node); }
+    const_iterator begin() const { return const_iterator(_head._next); }
+    const_iterator end() const { return const_iterator(&_head); }
 
-    reverse_iterator rbegin() { return reverse_iterator(_node._prev); }
-    reverse_iterator rend() { return reverse_iterator(&_node); }
+    reverse_iterator rbegin() { return reverse_iterator(_head._prev); }
+    reverse_iterator rend() { return reverse_iterator(&_head); }
 
-    const_reverse_iterator rbegin() const { return const_reverse_iterator(_node._prev); }
-    const_reverse_iterator rend() const { return const_reverse_iterator(&_node); }
+    const_reverse_iterator rbegin() const { return const_reverse_iterator(_head._prev); }
+    const_reverse_iterator rend() const { return const_reverse_iterator(&_head); }
 
     iterator find(const T& item)
     {
@@ -360,6 +386,131 @@ public:
             erase(i);
         return exists;
     }
+
+    bool del_item(const T& item)
+    {
+        return erase(item);
+    }
+
+
+    ///Remove each element for which the predicate returns true
+    /// @param fn functor as fn([const] T&)
+    template<typename Func>
+    void del_if(Func fn)
+    {
+        iterator it = begin();
+        const iterator it_e = end();
+        while (it != it_e)
+        {
+            T& v = *it;
+
+            if (fn(v)) 
+            {
+                erase(it);
+            }
+
+            ++it;
+        }
+    }
+
+    /// @brief Find element for which the predicate returns true 
+    /// @tparam Func - void(Func)(T&) 
+    /// @param fn - predicate function
+    /// @return element ptr or nullptr if not found
+    /// @note iterates in forward
+    template<typename Func>
+    T* find_if(Func fn)
+    {
+        iterator it = begin();
+        const iterator it_e = end();
+        while (it != it_e)
+        {
+            T& v = *it;
+
+            if (fn(v))
+            {
+                return &(*it);
+            }
+
+            ++it;
+        }
+
+        return nullptr;
+    }
+
+    /// @brief Find element for which the predicate returns true 
+    /// @tparam Func - void(Func)(T&) 
+    /// @param fn - predicate function
+    /// @return element ptr or nullptr if not found
+    /// @note iterates in forward
+    template<typename Func>
+    T* find_if_back(Func fn)
+    {
+        reverse_iterator it = rbegin();
+        const reverse_iterator it_e = rend();
+        while (it != it_e)
+        {
+            T& v = *it;
+
+            if (fn(v))
+            {
+                return &(*it);
+            }
+            ++it;
+        }
+
+        return nullptr;
+    }
+
+    /// @brief Find element for which the predicate returns true 
+    /// @tparam Func - void(Func)(const T&) 
+    /// @param fn - predicate function
+    /// @return element ptr or nullptr if not found
+    /// @note iterates in forward
+    template<typename Func>
+    const T* find_if(Func fn) const
+    {
+        const_iterator it = begin();
+        const const_iterator it_e = end();
+        while (it != it_e)
+        {
+            T& v = *it;
+
+            if (fn(v))
+            {
+                return &(*it);
+            }
+
+            ++it;
+        }
+
+        return nullptr;
+    }
+
+    /// @brief Find element for which the predicate returns true 
+    /// @tparam Func - void(Func)(const T&) 
+    /// @param fn - predicate function
+    /// @return element ptr or nullptr if not found
+    /// @note iterates in forward
+    template<typename Func>
+    const T* find_if_back(Func fn) const
+    {
+        const_reverse_iterator it = rbegin();
+        const const_reverse_iterator it_e = rend();
+        while (it != it_e)
+        {
+            T& v = *it;
+
+            if (fn(v))
+            {
+                return &(*it);
+            }
+            ++it;
+        }
+
+        return nullptr;
+    }
+
 };
 
 } //end of namespace coid

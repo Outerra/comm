@@ -63,20 +63,38 @@
     <DisplayString>size = {_count}</DisplayString>
 </Type>
 
-<Type Name="ref&lt;*&gt;">
-    <SmartPointer Usage="Minimal">_o</SmartPointer>
-    <DisplayString Condition="_o == 0">{{empty}}</DisplayString>
-    <DisplayString>{_o,x}</DisplayString>
+<!-- The refs. These used to match "ref<*>" and "iref<*>", which were the old global classes in
+     ref_s_old.h / ref_i_old.h, with their _o and _p members. ref and iref are now aliases for
+     the types below, and natvis matches the real type name and not the alias - so neither of
+     the old entries matched anything any more and both refs showed their raw members. -->
+
+<Type Name="coid::ref_shared&lt;*&gt;">
+    <SmartPointer Usage="Minimal">_object_ptr</SmartPointer>
+    <DisplayString Condition="_object_ptr == 0">{{empty}}</DisplayString>
+    <DisplayString Condition="_policy_ptr == 0">{_object_ptr,x} {{no policy}}</DisplayString>
+    <DisplayString>{_object_ptr,x} strong={_policy_ptr->_counter._strong_counter}</DisplayString>
     <Expand>
-        <Item Name="[object]" ExcludeView="simple" Condition="_o != 0"> _o </Item>
-        <Item Name="[refcount]" ExcludeView="simple" Condition="_p != 0"> _p->_count</Item>
+        <Item Name="[object]" ExcludeView="simple" Condition="_object_ptr != 0">_object_ptr</Item>
+        <Item Name="[strong count]" ExcludeView="simple" Condition="_policy_ptr != 0">_policy_ptr->_counter._strong_counter</Item>
+        <Item Name="[weak count]" ExcludeView="simple" Condition="_policy_ptr != 0">_policy_ptr->_counter._weak_counter</Item>
+        <Item Name="[policy]" ExcludeView="simple" Condition="_policy_ptr != 0">_policy_ptr</Item>
     </Expand>
 </Type>
 
-<Type Name="iref&lt;*&gt;">
-    <SmartPointer Usage="Minimal">_p</SmartPointer>
-    <DisplayString Condition="_p == 0">{{empty}}</DisplayString>
-    <DisplayString>{_p,x}</DisplayString>
+<!-- An intrusive ref keeps no policy of its own - the refcount lives in the object, in its
+     ref_intrusive_base subobject, which under multiple inheritance is not at offset zero. Going
+     through _object_ptr lets the debugger do that adjustment. -->
+<Type Name="coid::ref_intrusive&lt;*&gt;">
+    <SmartPointer Usage="Minimal">_object_ptr</SmartPointer>
+    <DisplayString Condition="_object_ptr == 0">{{empty}}</DisplayString>
+    <DisplayString Condition="_object_ptr->_policy_ptr == 0">{_object_ptr,x} {{no policy}}</DisplayString>
+    <DisplayString>{_object_ptr,x} strong={_object_ptr->_policy_ptr->_counter._strong_counter}</DisplayString>
+    <Expand>
+        <Item Name="[object]" ExcludeView="simple" Condition="_object_ptr != 0">_object_ptr</Item>
+        <Item Name="[strong count]" ExcludeView="simple" Condition="_object_ptr->_policy_ptr != 0">_object_ptr->_policy_ptr->_counter._strong_counter</Item>
+        <Item Name="[weak count]" ExcludeView="simple" Condition="_object_ptr->_policy_ptr != 0">_object_ptr->_policy_ptr->_counter._weak_counter</Item>
+        <Item Name="[policy]" ExcludeView="simple" Condition="_object_ptr->_policy_ptr != 0">_object_ptr->_policy_ptr</Item>
+    </Expand>
 </Type>
 
 <Type Name="vref&lt;*&gt;">
@@ -89,18 +107,22 @@
     </Expand>
 </Type>
 
-<Type Name="coid::local&lt;*&gt;">
-    <SmartPointer Usage="Minimal">_p</SmartPointer>
-    <DisplayString Condition="_p == 0">{{empty}}</DisplayString>
-    <DisplayString>{_p,x}</DisplayString>
+<!-- A ref_unique is the sole owner, so nothing ever counts it: the policy it may carry is only
+     there to say how the object gets disposed of, and that policy's counter stays at zero for
+     the ref's whole life - release() asserts as much. So no count is shown here. Whether a
+     policy is attached is worth seeing though, since a policy-less uref is deleted on release
+     and one with a pooled policy is recycled instead. -->
+<Type Name="coid::ref_unique&lt;*&gt;">
+    <SmartPointer Usage="Minimal">_object_ptr</SmartPointer>
+    <DisplayString Condition="_object_ptr == 0">{{empty}}</DisplayString>
+    <DisplayString Condition="_policy_ptr == 0">{_object_ptr,x} {{no policy}}</DisplayString>
+    <DisplayString>{_object_ptr,x} {{policy}}</DisplayString>
+    <Expand>
+        <Item Name="[object]" ExcludeView="simple" Condition="_object_ptr != 0">_object_ptr</Item>
+        <Item Name="[policy]" ExcludeView="simple" Condition="_policy_ptr != 0">_policy_ptr</Item>
+    </Expand>
 </Type>
 
-<Type Name="coid::unique_ptr&lt;*&gt;">
-    <SmartPointer Usage="Minimal">_p</SmartPointer>
-    <DisplayString Condition="_p == 0">{{empty}}</DisplayString>
-    <DisplayString>{_p,x}</DisplayString>
-</Type>	
-    
 <Type Name="coid::versionid">
   <DisplayString Condition="mark == 0">{{empty}}</DisplayString>
   <DisplayString Condition="mark != 0x5c">{{corrupt}}</DisplayString>

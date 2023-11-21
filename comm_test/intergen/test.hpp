@@ -32,34 +32,34 @@ namespace n2 {
 
 class zz;
 
-class virtual_thing : public policy_intrusive_base
+class virtual_thing : public coid::ref_intrusive_base
 {
 public:
 
     IFC_CLASS_VIRTUAL(basei, "ifc");
 
-    ifc_fn void xooo();
+    ifc_fn void xooo() {}
 };
 
 
-class empty_thing : public policy_intrusive_base
+class empty_thing : public coid::ref_intrusive_base
 {
 public:
 
     IFC_CLASS(ifc1::ifc2::emptyface, "ifc");
 
     ifc_fnx(get) static iref<n1::n2::empty_thing> _get_thing() {
-        return new empty_thing;
+        return iref<empty_thing>(new empty_thing);
     }
 
     ifc_fnx(get2) static iref<n1::n2::empty_thing> _get2(void* p) {
-        return static_cast<empty_thing*>(p);
+        return iref<empty_thing>(static_cast<empty_thing*>(p));
     }
 };
 
 
 
-class base_thing : public policy_intrusive_base
+class base_thing : public coid::ref_intrusive_base
 {
 protected:
     virtual coid::charstr strbody() { return "base"; }
@@ -80,12 +80,18 @@ public:
     IFC_CLASS(ifc1::ifc2::thingface : ifc::basething, "ifc", "");
 
     ifc_fnx(get) static iref<n1::n2::thing> get_thing() {
-        return new thing;
+        return iref<thing>(new thing);
     }
 
-    ifc_fnx(get2) static const iref<n1::n2::thing>& get_thing2();
+    ifc_fnx(get2) static const iref<n1::n2::thing>& get_thing2() {
+        static const iref<n1::n2::thing> empty;
+        return empty;
+    }
 
-    ifc_fnx(get3^ singleton) static const iref<n1::n2::thing>& get_thing3();
+    ifc_fnx(get3^ singleton) static const iref<n1::n2::thing>& get_thing3() {
+        static const iref<n1::n2::thing> empty;
+        return empty;
+    }
 
     /*ifc_fn*/  void createScenario(const coid::charstr& name);
 
@@ -98,7 +104,7 @@ public:
         return 0;
     }
 
-    ifc_fn void fn_with_callback(int a, const coid::callback<void(int jozo)>& c) const;
+    ifc_fn void fn_with_callback(int a, const coid::callback<void(int jozo)>& c) const {}
 
     //ifc{
     enum class enumo {
@@ -111,24 +117,24 @@ public:
 
     ifc_fn void noargs() {}
 
-    ifc_fnx(!) ref<test> noscript();
+    ifc_fnx(!) ref<test> noscript() { return ref<test>(); }
 
     ifc_fn coid::charstr fallo(bool b, const char* str) { return str; }
 
-    ifc_fn void loo(bool a, int b);
+    ifc_fn void loo(bool a, int b) {}
 
-    ifc_fn double operator()(const char* key) const;
-    ifc_fn void operator()(const char* key, double value);
+    ifc_fn double operator()(const char* key) const { return 0.0; }
+    ifc_fn void operator()(const char* key, double value) {}
 
-    ifc_fn void inout(ifc_inout test*& par);
+    ifc_fn void inout(ifc_inout test*& par) {}
 
     /// @brief return class interface
-    ifc_fnx(ifc_class=ifc1::ifc2::emptyface) empty_thing* ret_classifc();
+    ifc_fnx(ifc_class=ifc1::ifc2::emptyface) empty_thing* ret_classifc() { return nullptr; }
 
     /// @brief return struct interface
-    ifc_fnx(ifc_struct=component_ifc) component* ret_structifc();
+    ifc_fnx(ifc_struct=component_ifc) component* ret_structifc() { return nullptr; }
 
-    ifc_fnx(!) void nested(const coid::dynarray<bt::base>& stuff);
+    ifc_fnx(!) void nested(const coid::dynarray<bt::base>& stuff) {}
 
     ifc_event void boo(const char* key, int some);
 
@@ -141,7 +147,7 @@ public:
 
     IFC_CLASS(ns::ifc_int : ifc1::ifc2::thingface, "ifc");
 
-    ifc_fn void dummy();
+    ifc_fn void dummy() {}
 };
 
 /// @brief
@@ -152,10 +158,10 @@ public:
     //extension interface in a different class
     IFC_CLASS(ns::ifc_ext : ifc1::ifc2::thingface, "ifc", "");
 
-    ifc_fn void mummy();
+    ifc_fn void mummy() {}
 
     //override parent method
-    ifc_fn void loo(bool a, bool b);
+    ifc_fn void loo(bool a, bool b) {}
 
 
 
@@ -164,12 +170,12 @@ public:
     //extension of extension
     IFC_CLASS(ns::ifc_ext2 : ns::ifc_ext, "ifc");
 
-    ifc_fn void some1();
+    ifc_fn void some1() {}
 
     //override parent method
-    ifc_fnx(loo) void loo2(bool a, bool b);
+    ifc_fnx(loo) void loo2(bool a, bool b) {}
 
-    ifc_fn void some2();
+    ifc_fn void some2() {}
 
     //override base ifc method, change to event
     ifc_event bool noo();

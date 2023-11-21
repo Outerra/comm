@@ -130,11 +130,17 @@
 # define coid_constexpr_if
 #endif
 
-#if defined(__cpp_concepts) || _MSC_VER >= 1936
+// comm requires C++20 with concepts. The _MSC_VER >= 1936 arm this condition used to carry was
+// wrong: that macro is set by every VS 2022 17.6+ toolset regardless of /std:, so at /std:c++17
+// it emitted requires-clauses and concept definitions that the compiler rejects outright.
+// Letting COID_REQUIRES expand to nothing is not a usable fallback either - overloads across
+// comm are told apart only by their requires-clause, so erasing it makes those calls ambiguous
+// rather than degrading gracefully. Fail here with something readable instead.
+#if defined(__cpp_concepts)
 #define COID_REQUIRES(R) requires (R)
 #define COID_CONCEPTS
 #else
-#define COID_REQUIRES(R)
+#error "comm requires C++20 with concepts - build with /std:c++20 (MSVC) or -std=c++20 (gcc/clang)."
 #endif
 
 #if defined(__cpp_user_defined_literals) || _MSC_VER >= 1900

@@ -38,10 +38,6 @@
 #include "comm.h"
 #include "dynarray.h"
 #include "alloc/_malloc.h"
-#include "ref.h"
-
-create_me CREATE_ME;
-create_pooled CREATE_POOLED;
 
 COID_NAMESPACE_BEGIN
 

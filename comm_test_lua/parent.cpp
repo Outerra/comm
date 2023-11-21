@@ -36,7 +36,12 @@ iref<a::b::parent_class> a::b::parent_class::get_value(int value)
 
 iref<a::b::parent_class> a::b::parent_class::_get(void* ptr)
 {
-    return static_cast<parent_class*>(ptr);
+    return iref<parent_class>(static_cast<parent_class*>(ptr));
+}
+
+a::b::parent_class* a::b::parent_class::_create_dummy()
+{
+    return new parent_class(2,2,2);
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

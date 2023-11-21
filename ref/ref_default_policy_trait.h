@@ -1,3 +1,4 @@
+#pragma once
 
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
@@ -15,9 +16,12 @@
  * The Original Code is COID/comm module.
  *
  * The Initial Developer of the Original Code is
- * Ladislav Hrabcak
- * Portions created by the Initial Developer are Copyright (C) 2007
+ * Outerra s.r.o
+ * Portions created by the Initial Developer are Copyright (C) 2026
  * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ * Cyril Gramblicka
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -33,6 +37,25 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include "atomic.h"
-#include "queue.h"
+#include "ref_policy_simple.h"
 
+namespace coid
+{
+
+/// @brief Selects the policy a ref uses when create() does not name one
+/// @note ref_policy_simple unless overridden with SET_DEFAULT_REF_POLICY_TRAIT.
+template<typename T>
+struct default_ref_policy_trait
+{
+	using policy = ref_policy_simple<T>;
+};
+
+}; // end of namespace coid
+
+/// @brief Registers the policy that ref and iref use for a type when create() does not name one
+/// @param t - the type
+/// @param p - the policy template, applied to t - for example coid::ref_policy_pooled
+/// @note Write it at namespace scope, outside any namespace; the macro names coid itself.
+/// @note ref_unique does not consult the trait - it uses a policy only when one is named.
+#define SET_DEFAULT_REF_POLICY_TRAIT(t, p) \
+template<> struct coid::default_ref_policy_trait<t> { using policy = p<t>;};

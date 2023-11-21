@@ -214,7 +214,7 @@ protected:
     typedef void (*cleanup_fn)(client*, intergen_interface*);
     cleanup_fn _cleaner = 0;
 
-    bool set_host(policy_intrusive_base*, intergen_interface*, iref<client>* pout);
+    bool set_host(coid::ref_intrusive_base*, intergen_interface*, iref<client>* pout);
 };
 
 
@@ -249,11 +249,11 @@ inline iref<T> client::creator(T* _subclass_)
 
 inline auto client::set_def(const flags& flg) -> void { return VT_CALL(void,(const flags&),0)(flg); }
 inline auto client::set(const coid::token& par) -> void { return VT_CALL(void,(const coid::token&),1)(par); }
-inline auto client::get(ifc_out coid::charstr& par) -> int { return VT_CALL(int,(coid::charstr&),2)(par); }
-inline auto client::custom() -> sometype { return VT_CALL(sometype,(),3)(); }
-inline auto client::c_only_method(int k) -> const int* { return VT_CALL(const int*,(int),4)(k); }
+inline auto client::get(ifc_out coid::charstr& par) -> int { return std::move(VT_CALL(int,(coid::charstr&),2)(par)); }
+inline auto client::custom() -> sometype { return std::move(VT_CALL(sometype,(),3)()); }
+inline auto client::c_only_method(int k) -> const int* { return std::move(VT_CALL(const int*,(int),4)(k)); }
 inline auto client::set_array(const float ar[3]) -> void { return VT_CALL(void,(const float[3]),5)(ar); }
-inline auto client::overridable() -> bool { return VT_CALL(bool,(),6)(); }
+inline auto client::overridable() -> bool { return std::move(VT_CALL(bool,(),6)()); }
 inline auto client::callback(void (*cbk)(int, const coid::token&)) -> void { return VT_CALL(void,(void(*)(int, const coid::token&)),7)(cbk); }
 inline auto client::memfn_callback(coid::callback<void(int, void*)>&& fn) -> void { return VT_CALL(void,(coid::callback<void(int, void*)>&&),8)(std::forward<coid::callback<void(int, void*)>>(fn)); }
 

@@ -219,7 +219,7 @@ protected:
     typedef void (*cleanup_fn)(main*, intergen_interface*);
     cleanup_fn _cleaner = 0;
 
-    bool set_host(policy_intrusive_base*, intergen_interface*, iref<main>* pout);
+    bool set_host(coid::ref_intrusive_base*, intergen_interface*, iref<main>* pout);
 };
 
 ////////////////////////////////////////////////////////////////////////////////

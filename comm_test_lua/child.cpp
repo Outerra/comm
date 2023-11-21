@@ -10,5 +10,5 @@ a::b::c::child_class::child_class(int some_value, int some_ohter_value, int some
 
 ifc_fn iref<a::b::c::child_class > a::b::c::child_class::_get(void* ptr)
 {
-    return static_cast<child_class*>(ptr);
+    return iref<child_class>(static_cast<child_class*>(ptr));
 }

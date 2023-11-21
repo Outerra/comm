@@ -400,7 +400,6 @@
     <ClInclude Include="password.h" />
     <ClInclude Include="ptrowner.h" />
     <ClInclude Include="radix.h" />
-    <ClInclude Include="ref.h" />
     <ClInclude Include="refs.h" />
     <ClInclude Include="ref_base.h" />
     <ClInclude Include="ref_helpers.h" />

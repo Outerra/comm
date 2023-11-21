@@ -1,5 +1,5 @@
 #pragma once
-#include <comm/ref.h>
+#include <comm/ref_i.h>
 #include <comm/intergen/ifc.h>
 #include <comm/dynarray.h>
 
@@ -25,7 +25,7 @@ class child_class_ifc;
 
 }
 
-class factory : public policy_intrusive_base
+class factory : public coid::ref_intrusive_base
 {
 public: // methods only
     factory() = default;

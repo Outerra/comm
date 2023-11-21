@@ -1,6 +1,6 @@
 #pragma once
 #include <intergen/ifc.h>
-#include <comm/ref.h>
+#include <comm/ref_i.h>
 
 //ifc{
 #include "compound.h"
@@ -20,7 +20,7 @@ struct data;
 }; // end of namespace d
 }; // end of namespace c
 
-class parent_class : public policy_intrusive_base
+class parent_class : public coid::ref_intrusive_base
 {
 public: // interfaces only
     ifc_class_var(a::b::parent_class_ifc, "ifc", _client);
@@ -31,6 +31,7 @@ public: // interfaces only
     ifc_fn static iref<parent_class> get_default();
     ifc_fn static iref<parent_class> get_value(int value);
     ifc_fn static iref<parent_class> _get(void* ptr);
+    ifc_fn static parent_class* _create_dummy();
     ifc_fn int return_some_value_parent();
     ifc_fn void return_some_value_parent_multiret_0(ifc_out int& out_arg0);
     ifc_fn int return_some_value_parent_multiret_1(ifc_out int& out_arg1);

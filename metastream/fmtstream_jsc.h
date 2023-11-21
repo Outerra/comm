@@ -45,7 +45,7 @@
 
 #include "../range.h"
 #include "../str.h"
-#include "../ref.h"
+#include "../ref_i.h"
 #include "metastream.h"
 
 COID_NAMESPACE_BEGIN

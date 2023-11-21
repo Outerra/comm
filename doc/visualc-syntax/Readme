@@ -1,13 +1,10 @@
-Copy usertype.dat to \Microsoft Visual Studio 10.0\Common7\IDE\usertype.dat
+coid.natvis is referenced directly by comm.vcxproj, comm_static.vcxproj and
+comm_test.vcxproj as a <Natvis Include=...> item, so Visual Studio loads it
+automatically when debugging those projects and nothing has to be copied.
 
-For Visual Studio 2010:
-Copy autoexp.dat to \Microsoft Visual Studio 10\Common7\Packages\Debugger\autoexp.dat file.
+To use it from a project that does not reference it, either add the same item
+there, or copy the file into
+    %USERPROFILE%\Documents\Visual Studio 2022\Visualizers\nwhich applies to every solution you debug.
 
-For Visual Studio 2012:
-Copy coid.natvis into \Microsoft Visual Studio 11\Common7\Packages\Debugger\Visualizers\ directory.
-
-For Visual Studio 2013:
-Copy coid.natvis into \Microsoft Visual Studio 12\Common7\Packages\Debugger\Visualizers\ directory.
-
-For Visual Studio 2015:
-Copy coid.natvis into \Microsoft Visual Studio 14\Common7\Packages\Debugger\Visualizers\ directory.
+usertype.dat and autoexp.dat are for Visual Studio 2010 and are kept only for
+reference; comm requires C++20 and so a much newer toolset.

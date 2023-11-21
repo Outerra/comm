@@ -64,11 +64,11 @@ struct A
     }
 };
 
-// iref<> needs class/struct to be inherited from policy_intrusive_base which contains
+// iref<> needs class/struct to be inherited from coid::ref_intrusive_base which contains
 // reference counter
 // iref<> can be restored from pure B pointer which is not possible in ref<> case
 struct B
-    : public policy_intrusive_base
+    : public coid::ref_intrusive_base
 {
     int b;
 
@@ -95,13 +95,13 @@ void coid::test::example_ref_counting()
     iref<B> b2 = b;
 
     B * b_ptr = b2.get();
-    b_ptr->add_refcount(); // manually increase refcount, now pointer "hold" reference refcount = 3
+    b_ptr->add_refcount_legacy(); // manually increase refcount, now pointer "hold" reference refcount = 3
 
     a.release();
     b.release();
 
     b.create(b_ptr); // restored from pointer, reference count is increased back to 3
-    b_ptr->release_refcount(); // release reference count manually 2
+    b_ptr->release_refcount_legacy(); // release reference count manually 2
     b_ptr = 0;
 
     // refcount decreased to 1 and will be relase at the and of this scope

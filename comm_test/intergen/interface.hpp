@@ -62,7 +62,7 @@ namespace cd {
 
 
 
-class host : public policy_intrusive_base
+class host : public coid::ref_intrusive_base
 {
     coid::charstr _tmp;
     coid::versionid _eid;
@@ -74,7 +74,7 @@ public:
     /// @brief interface creator
     /// @return host class instance
     ifc_fn static iref<ab::cd::host> creator() {
-        return new host;
+        return iref<host>(new host);
     }
 
     ifc_fn void set_def(const flags& flg = {.a = 1, .b = 2})
@@ -139,7 +139,7 @@ public:
     ifc_fn void test() {}
 
     /// @return pointer to a data interface type (ifc_struct)
-    ifc_fnx(ifc_struct=component_ifc) component* get();
+    ifc_fnx(ifc_struct=component_ifc) component* get() { return nullptr; }
 };
 
 } // namespace ab

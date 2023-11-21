@@ -1,9 +1,9 @@
 #pragma once
-#include <comm/ref.h>
+#include <comm/ref_i.h>
 #include <comm/intergen/ifc.h>
 #include <comm/dynarray.h>
 
-class item : public policy_intrusive_base
+class item : public coid::ref_intrusive_base
 {
 public:
     ifc_class_var(item_interface, "ifc", _client);

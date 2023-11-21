@@ -188,7 +188,7 @@
       <DebugInformationFormat>FullDebug</DebugInformationFormat>
       <ExceptionHandling>Enabled</ExceptionHandling>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
@@ -270,7 +270,7 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <AdditionalOptions>/MP /permissive- %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -390,7 +390,6 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\comm_test\binstream.cpp" />
     <ClCompile Include="..\..\..\comm_test\binstring.cpp" />
-    <ClCompile Include="..\..\..\comm_test\comm\atomic-test.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\directory.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\bitfield.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\job.cpp" />
@@ -398,6 +397,7 @@
     <ClCompile Include="..\..\..\comm_test\comm\meta.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\meta2.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\meta3.cpp" />
+    <ClCompile Include="..\..\..\comm_test\comm\ref_tests.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\regex.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\singletons_test.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\stream.cpp" />
@@ -420,6 +420,9 @@
     <ClInclude Include="..\..\..\comm_test\intergen\ifc\client.h" />
     <ClInclude Include="..\..\..\comm_test\intergen\ifc\data_ifc.h" />
     <ClInclude Include="..\..\..\comm_test\intergen\ifc\thingface.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="..\..\..\doc\visualc-syntax\coid.natvis" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
