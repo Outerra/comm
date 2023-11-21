@@ -323,7 +323,7 @@ public:
             __debugbreak();
 #endif
             return UMAX32;
-        }
+    }
         return idx;
     }
 

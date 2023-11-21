@@ -37,5 +37,50 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include "ref_s.h"
-#include "ref_i.h"
+#include "ref_counter.h"
+
+namespace coid
+{
+
+/// @brief Base policy for reference counting.
+/// @note ref_policy_base instances are non copiable, non movable
+/// @note every derived ref_policy must contain static method for policy creation 
+/// @note static this_type* create(void* object_ptr)
+class ref_policy_base
+{
+    using this_type = ref_policy_base;
+public: // methods only
+    ref_policy_base(const ref_policy_base&) = delete;
+    ref_policy_base(const ref_policy_base&&) = delete;
+    const ref_policy_base& operator=(const ref_policy_base&) = delete;
+
+    /// @brief Creates policy from the pool
+    /// @param object_ptr - the pointer for the object the policy is counting the references for
+    /// @return policy pointer
+    static this_type* create(void* object_ptr)
+    {
+        return nullptr;
+    }
+
+    /// @brief Method called when refcount drops to 0 and the object and the policy are destoryed
+    virtual void on_destroy() = 0;
+
+    /// @brief Get pointer of counted object
+    /// @return pointer of object
+    virtual void* get_original_ptr() = 0;
+
+    /// @brief Default constructor
+    ref_policy_base() = default;
+    virtual ~ref_policy_base() = default;
+
+protected: // methods only
+public: // members only
+    ref_counter _counter;
+};
+
+#ifdef COID_CONCEPTS
+template<typename Derived> 
+concept is_ref_policy = std::is_base_of<ref_policy_base, Derived>::value;
+#endif
+
+}; // end of namespace coid

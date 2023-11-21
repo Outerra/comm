@@ -6164,6 +6164,7 @@ struct mallinfo mspace_mallinfo(mspace msp) {
 }
 #endif /* NO_MALLINFO */
 
+/// @return return usable size. For stack memory returns 0.
 size_t mspace_usable_size(const void* mem) {
   if (mem != 0) {
     mchunkptr p = mem2chunk(mem);

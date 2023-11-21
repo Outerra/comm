@@ -96,7 +96,7 @@ $(/if)-$
 
         set_context(context);
 
-        _host = _base->host<policy_intrusive_base>();
+        _host = _base->host<coid::ref_intrusive_base>();
 
 $-(if ?event)$
         init_event_registry();
@@ -104,7 +104,7 @@ $(/if)-$
     }
 
 
-    explicit $name$_lua_dispatcher(policy_intrusive_base* host) $ - (if ?event)$ : _bound_events(false)$(/ if)$
+    explicit $name$_lua_dispatcher(coid::ref_intrusive_base* host) $ - (if ?event)$ : _bound_events(false)$(/ if)$
     {
         set_host(host, this, 0);
     }
@@ -773,7 +773,7 @@ iref<::lua::registry_handle> $name$_lua_dispatcher::create_interface_object(cons
         lua_rawgeti(L, LUA_REGISTRYINDEX, ::lua::LUA_WEAK_IFC_METATABLE_INDEX);
         lua_setmetatable(L,-2);
         lua_pop(L, 1);
-        add_refcount();
+        increase_strong_counter();
     }
     else {
         obj = new ::lua::registry_handle(L);
@@ -1185,7 +1185,7 @@ iref <::lua::registry_handle> create_wrapper_$name$(::$ns rest = "::" after = ":
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Create LUA interface from a host
-static iref<$ns rest = "::" after = "::"$lua::$name$_lua_dispatcher> create_maker_$name$(policy_intrusive_base* host, iref<::lua::registry_handle> context)
+static iref<$ns rest = "::" after = "::"$lua::$name$_lua_dispatcher> create_maker_$name$(coid::ref_intrusive_base* host, iref<::lua::registry_handle> context)
 {
     // check that the orig points to an object
     if (!host)

@@ -453,7 +453,7 @@
     <ClInclude Include="..\..\..\atomic\basic_pool.h" />
     <ClInclude Include="..\..\..\atomic\pool.h" />
     <ClInclude Include="..\..\..\atomic\pool_base.h" />
-    <ClInclude Include="..\..\..\atomic\queue.h" />
+    <ClInclude Include="..\..\..\atomic\queue_base.h" />
     <ClInclude Include="..\..\..\atomic\stack.h" />
     <ClInclude Include="..\..\..\atomic\stack_base.h" />
     <ClInclude Include="..\..\..\binstream\binstream.h" />
@@ -515,7 +515,21 @@
     <ClInclude Include="..\..\..\alloc\memtrack.h" />
     <ClInclude Include="..\..\..\process.h" />
     <ClInclude Include="..\..\..\profiler\profiler.h" />
-    <ClInclude Include="..\..\..\ref_helpers.h" />
+    <ClInclude Include="..\..\..\ref.h" />
+    <ClInclude Include="..\..\..\ref\ref_counter.h" />
+    <ClInclude Include="..\..\..\ref\ref_default_policy_trait.h" />
+    <ClInclude Include="..\..\..\ref\ref_intrusive.h" />
+    <ClInclude Include="..\..\..\ref\ref_intrusive_base.h" />
+    <ClInclude Include="..\..\..\ref\ref_policy_base.h" />
+    <ClInclude Include="..\..\..\ref\ref_policy_intrusive.h" />
+    <ClInclude Include="..\..\..\ref\ref_policy_pooled.h" />
+    <ClInclude Include="..\..\..\ref\ref_policy_simple.h" />
+    <ClInclude Include="..\..\..\ref\ref_pooled.h" />
+    <ClInclude Include="..\..\..\ref\ref_shared.h" />
+    <ClInclude Include="..\..\..\ref\ref_unique.h" />
+    <ClInclude Include="..\..\..\ref_i.h" />
+    <ClInclude Include="..\..\..\ref_s.h" />
+    <ClInclude Include="..\..\..\ref_u.h" />
     <ClInclude Include="..\..\..\stacktrace\stacktrace.h" />
     <ClInclude Include="..\..\..\sync\condition_variable.h" />
     <ClInclude Include="..\..\..\sync\_mutex.h" />
@@ -555,11 +569,6 @@
     <ClInclude Include="..\..\..\pthreadx.h" />
     <ClInclude Include="..\..\..\ptrowner.h" />
     <ClInclude Include="..\..\..\radix.h" />
-    <ClInclude Include="..\..\..\ref.h" />
-    <ClInclude Include="..\..\..\ref_base.h" />
-    <ClInclude Include="..\..\..\ref_i.h" />
-    <ClInclude Include="..\..\..\ref_s.h" />
-    <ClInclude Include="..\..\..\refs.h" />
     <ClInclude Include="..\..\..\regex.h" />
     <ClInclude Include="..\..\..\retcodes.h" />
     <ClInclude Include="..\..\..\rnd.h" />
@@ -575,12 +584,10 @@
     <ClInclude Include="..\..\..\range.h" />
     <ClInclude Include="..\..\..\typeseq.h" />
     <ClInclude Include="..\..\..\type_info.h" />
-    <ClInclude Include="..\..\..\unique_ptr.h" />
     <ClInclude Include="..\..\..\utils\uid.h" />
     <ClInclude Include="..\..\..\version.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\atomic\atomic.cpp" />
     <ClCompile Include="..\..\..\binstream\stdstream.cpp" />
     <ClCompile Include="..\..\..\utils\uid.cpp" />
     <ClInclude Include="..\..\..\coder\bufpack_lz4.h" />

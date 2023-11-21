@@ -218,7 +218,7 @@ protected:
     typedef void (*cleanup_fn)(client*, intergen_interface*);
     cleanup_fn _cleaner = 0;
 
-    bool set_host(policy_intrusive_base*, intergen_interface*, iref<client>* pout);
+    bool set_host(coid::ref_intrusive_base*, intergen_interface*, iref<client>* pout);
 };
 
 // ***

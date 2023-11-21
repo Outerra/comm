@@ -89,10 +89,10 @@
     </Expand>
 </Type>
 
-<Type Name="coid::local&lt;*&gt;">
-    <SmartPointer Usage="Minimal">_p</SmartPointer>
-    <DisplayString Condition="_p == 0">{{empty}}</DisplayString>
-    <DisplayString>{_p,x}</DisplayString>
+<Type Name="coid::ref_unique&lt;*&gt;">
+    <SmartPointer Usage="Minimal">_object_ptr</SmartPointer>
+    <DisplayString Condition="_object_ptr == 0">{{empty}}</DisplayString>
+    <DisplayString>{_object_ptr,x}</DisplayString>
 </Type>
 
 <Type Name="coid::unique_ptr&lt;*&gt;">

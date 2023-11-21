@@ -46,7 +46,7 @@ class log_writer
 {
 protected:
     coid::thread _thread;
-    coid::queue<logmsg_ptr> _queue;
+    coid::queue<logmsg_ref> _queue;
 
 public:
     log_writer();
@@ -59,8 +59,8 @@ public:
 
     void* thread_run();
 
-    void addmsg(logmsg_ptr&& m) {
-        _queue.push(std::forward<logmsg_ptr>(m));
+    void addmsg(logmsg_ref&& m) {
+        _queue.push(m.move());
     }
 
     void flush();

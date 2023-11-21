@@ -64,7 +64,11 @@ inline void dbg_memtrack_alloc(const coid::type_info* tracking, size_t size) {
 }
 
 inline void dbg_memtrack_free(const coid::type_info* tracking, size_t size) {
-    coid::memtrack_free(tracking, size);
+    // the memory is from stack allocator the size is 0. Stack memory allocation are not tracked!
+    if (size > 0)
+    {
+        coid::memtrack_free(tracking, size);
+    }
 }
 
 #define MEMTRACK_ENABLED

@@ -35,9 +35,10 @@
 
 #include "../log.h"
 #include "../str.h"
-#include "../ref.h"
+#include "../ref_s.h"
 #include "../function.h"
 #include "../alloc/slotalloc.h"
+#include "../sync/mutex.h"
 
 COID_NAMESPACE_BEGIN
 
@@ -46,7 +47,7 @@ struct log_filter
 {
     /// @brief  Filter function that can alter the message and decide if the message should be written by logger
     /// @return true if the message should be passed to log writer
-    typedef function<bool(ref<logmsg>&)> filter_fun;
+    typedef function<bool(logmsg_ref&)> filter_fun;
     filter_fun _filter_fun;
     charstr _module;
     log::level _log_level;
@@ -112,7 +113,7 @@ public:
     ///Formatted log message
     template<class ...Vs>
     void print(const token& fmt, Vs&&... vs) {
-        ref<logmsg> msgr = create_msg(log::level::none, tokenhash());
+        logmsg_ref msgr = create_msg(log::level::none, tokenhash());
         if (!msgr)
             return;
 
@@ -124,7 +125,7 @@ public:
     template<class ...Vs>
     void print(log::level type, const tokenhash& hash, const void* inst, const token& fmt, Vs&&... vs)
     {
-        ref<logmsg> msgr = create_msg(type, hash, inst);
+        logmsg_ref msgr = create_msg(type, hash, inst);
         if (!msgr)
             return;
 
@@ -135,21 +136,21 @@ public:
 #endif
 
     /// @return logmsg, filling the prefix by the log type (e.g. ERROR: )
-    //ref<logmsg> operator()(log::level type = log::level::info, log::target target = log::target::primary_log, const tokenhash& hash = "");
+    //logmsg_ref operator()(log::level type = log::level::info, log::target target = log::target::primary_log, const tokenhash& hash = "");
 
     /// @return an empty logmsg object
-    //ref<logmsg> create_empty_msg(log::level type, log::target target, const tokenhash& hash);
+    //logmsg_ref create_empty_msg(log::level type, log::target target, const tokenhash& hash);
 
     ///Creates logmsg object if given log message type is enabled
     /// @param type log level
     /// @param hash tokenhash identifying the client (interface) name
     /// @param inst optional instance id
     /// @return logmsg reference or null if not enabled
-    ref<logmsg> create_msg(log::level type, log::target target, const tokenhash& hash, const void* inst);
+    logmsg_ref create_msg(log::level type, log::target target, const tokenhash& hash, const void* inst);
 
     const ref<logger_file>& file() const { return _logfile; }
 
-    virtual void enqueue(ref<logmsg>&& msg);
+    virtual void enqueue(logmsg_ref&& msg);
 
     void set_log_level(log::level minlevel = log::level::last, bool allow_perf = false);
 

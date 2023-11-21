@@ -37,5 +37,12 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include "ref_s.h"
-#include "ref_i.h"
+#include "ref_base.h"
+#include "ref_policy_pooled.h"
+
+/// @brief Specialization for reference counting of pooled objects
+/// @brief Object is authomatically returned to its pool after destruction.
+/// @brief Policy is aslo pooled and returned to global policy pool
+/// @tparam Type - type of reference counted 
+template <typename Type>
+using ref_pooled = coid::ref_base<Type, coid::ref_policy_pooled<Type>>;

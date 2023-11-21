@@ -188,7 +188,7 @@
       <DebugInformationFormat>FullDebug</DebugInformationFormat>
       <ExceptionHandling>Enabled</ExceptionHandling>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
@@ -270,7 +270,7 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <AdditionalOptions>/MP /permissive- %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -396,6 +396,7 @@
     <ClCompile Include="..\..\..\comm_test\comm\meta.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\meta2.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\meta3.cpp" />
+    <ClCompile Include="..\..\..\comm_test\comm\ref_tests.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\regex.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\singletons_test.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\stream.cpp" />
