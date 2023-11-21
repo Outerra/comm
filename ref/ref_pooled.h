@@ -1,3 +1,4 @@
+#pragma once
 
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
@@ -15,9 +16,12 @@
  * The Original Code is COID/comm module.
  *
  * The Initial Developer of the Original Code is
- * Ladislav Hrabcak
- * Portions created by the Initial Developer are Copyright (C) 2007
+ * Outerra s.r.o
+ * Portions created by the Initial Developer are Copyright (C) 2023
  * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ * Cyril Gramblicka
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -33,6 +37,12 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include "atomic.h"
-#include "queue.h"
+#include "ref_base.h"
+#include "ref_policy_pooled.h"
 
+/// @brief Specialization for reference counting of pooled objects
+/// @brief Object is authomatically returned to its pool after destruction.
+/// @brief Policy is aslo pooled and returned to global policy pool
+/// @tparam Type - type of reference counted 
+template <typename Type>
+using ref_pooled = coid::ref_base<Type, coid::ref_policy_pooled<Type>>;

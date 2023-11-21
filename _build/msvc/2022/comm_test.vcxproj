@@ -188,7 +188,7 @@
       <DebugInformationFormat>FullDebug</DebugInformationFormat>
       <ExceptionHandling>Enabled</ExceptionHandling>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
@@ -301,7 +301,7 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <AdditionalOptions>-mcx16 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -407,9 +407,9 @@
     <ClCompile Include="..\..\..\comm_test\meta.cpp" />
     <ClCompile Include="..\..\..\comm_test\meta2.cpp" />
     <ClCompile Include="..\..\..\comm_test\meta3.cpp" />
+    <ClCompile Include="..\..\..\comm_test\refs.cpp" />
     <ClCompile Include="..\..\..\comm_test\regex.cpp" />
     <ClCompile Include="..\..\..\comm_test\stream.cpp" />
-    <ClCompile Include="..\..\..\intergen\test\test.intergen.cpp" />
   </ItemGroup>
   <ItemGroup>
     <hpp Include="..\..\..\comm_test\intergen\data.hpp" />

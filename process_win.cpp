@@ -4,6 +4,7 @@
 
 #include "process.h"
 #include "net_ul.h"
+#include "commexception.h"
 
 constexpr uint wait_ms = 10;
 

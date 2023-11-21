@@ -37,7 +37,9 @@
 
 #pragma once
 
-#include "ref.h"
+#include "ref_s.h"
+#include "sync/mutex.h"
+#include "binstream/binstreambuf.h"
 
 COID_NAMESPACE_BEGIN
 

@@ -35,9 +35,10 @@
 
 #include "../log.h"
 #include "../str.h"
-#include "../ref.h"
+#include "../ref_s.h"
 #include "../function.h"
 #include "../alloc/slotalloc.h"
+#include "../sync/mutex.h"
 
 COID_NAMESPACE_BEGIN
 

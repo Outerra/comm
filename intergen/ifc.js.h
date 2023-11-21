@@ -45,6 +45,8 @@
 #include "../metastream/metastream.h"
 #include "../metastream/fmtstream_v8.h"
 #include "../binstream/filestream.h"
+#include "../binstream/binstreambuf.h"
+
 #include <v8/v8.h>
 
 namespace js {
