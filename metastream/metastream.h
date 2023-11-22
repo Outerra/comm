@@ -736,13 +736,12 @@ public:
     /// @param name variable name, used as a key in output formats
     /// @return true if value was read or written and no default was used, false in meta phase
     template<typename T>
-    bool member_optional(const token& name, T& v)
+    bool member_optional(const token& name, T& v, bool write = true)
     {
         bool used = false;
 
         if (_binw) {
-            *this || v;
-            used = true;
+            used = write_optional(write ? &v : nullptr);
         }
         else if (_binr) {
             used = read_optional(v);
@@ -753,12 +752,32 @@ public:
         return used;
     }
 
-    ///Define an optional variable, value doesn't get overwritten if it wasn't present in the input stream
+    ///Define an optional variable, not written if v.begin() == v.end(), value doesn't get overwritten if it wasn't present in the input stream
+    /// @param name variable name, used as a key in output formats
+    /// @return true if value was read or written and no default was used, false in meta phase
+    template<typename T>
+    bool member_optional_nowriteempty(const token& name, T& v)
+    {
+        bool used = false;
+
+        if (_binw) {
+            used = write_optional(!(v.begin() == v.end()) ? &v : nullptr);
+        }
+        else if (_binr) {
+            used = read_optional(v);
+        }
+        else
+            meta_variable_optional<T>(name, &v);
+
+        return used;
+    }
+
+    ///Define an optional variable, not written if equals the default, value doesn't get overwritten if it wasn't present in the input stream
     /// @param name variable name, used as a key in output formats
     /// @param defval default value for optional writing of values
     /// @return true if value was read or written and no default was used, false in meta phase
     template<typename T, typename D>
-    bool member_optional(const token& name, T& v, const D& defval)
+    bool member_optional_nowritedef(const token& name, T& v, const D& defval)
     {
         bool used = false;
 
