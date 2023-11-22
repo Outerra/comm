@@ -360,7 +360,7 @@ opcd directory::delete_directory(zstring src, bool recursive)
     opcd was_err;
 
     if (recursive) {
-        list_file_paths(src, "*", recursion_mode::dirs_enter, [&was_err](const charstr& path, list_entry type) {
+        list_file_paths(src, "*", recursion_mode::recursive_dirs_enter, [&was_err](const charstr& path, list_entry type) {
             opcd err = type != list_entry::file
                 ? delete_directory(path, false)
                 : delete_file(path);
@@ -426,7 +426,7 @@ opcd directory::copymove_directory(zstring src, zstring dst, bool move)
 
     uint dlen = dsts.len();
 
-    list_file_paths(src, "*", recursion_mode::dirs_enter_exit, [&](const charstr& path, list_entry isdir) {
+    list_file_paths(src, "*", recursion_mode::recursive_dirs_enter_exit, [&](const charstr& path, list_entry isdir) {
         token newpath = token(path.ptr() + slen, path.ptre());
 
         dsts.resize(dlen);
@@ -720,8 +720,11 @@ bool directory::list_file_paths(const token& path, const token& extension, recur
 
     while (dir.next())
     {
-        if (mode != recursion_mode::dirs_only && dir.is_entry_regular())
+        if (dir.is_entry_regular())
         {
+            if (mode == recursion_mode::immediate_dirs_only || mode == recursion_mode::recursive_dirs_only)
+                continue;
+
             bool valid = all_files;
             if (!all_files) {
                 token fname = dir.get_last_file_name_token();
@@ -736,17 +739,17 @@ bool directory::list_file_paths(const token& path, const token& extension, recur
         }
         else if (dir.is_entry_subdirectory())
         {
-            if (mode == recursion_mode::files_and_dirs || mode == recursion_mode::dirs_only) {
+            if (mode == recursion_mode::immediate_files_and_dirs || mode == recursion_mode::immediate_dirs_only) {
                 fn(dir.get_last_full_path(), list_entry::dir_enter);
             }
-            else if (mode != recursion_mode::files)
+            else if (mode != recursion_mode::immediate_files)
             {
-                if (int(mode) & int(recursion_mode::dirs_enter))
+                if (mode == recursion_mode::recursive_dirs_enter || mode == recursion_mode::recursive_dirs_enter_exit)
                     fn(dir.get_last_full_path(), list_entry::dir_enter);
 
                 directory::list_file_paths(dir.get_last_full_path(), extension, mode, fn);
 
-                if (int(mode) & int(recursion_mode::dirs_exit))
+                if (mode == recursion_mode::recursive_dirs_exit || mode == recursion_mode::recursive_dirs_enter_exit)
                     fn(dir.get_last_full_path(), list_entry::dir_exit);
             }
         }

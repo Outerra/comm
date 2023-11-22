@@ -45,7 +45,7 @@
 
 COID_NAMESPACE_BEGIN
 
-enum class direction {
+enum class iterator_direction {
     forward,
     backward,
 };
@@ -514,11 +514,11 @@ public:
     /// @param fn functor as fn([const] T&) or fn([const] T&, count_t index)
     /// @note handles the case when the current element is deleted from the array, or more elements are appended
     template<typename Func>
-    void for_each(Func fn, direction dir = direction::forward) const
+    void for_each(Func fn, iterator_direction dir = iterator_direction::forward) const
     {
         count_t n = size();
         for (count_t i = 0; i < n; ++i) {
-            count_t k = dir == direction::forward ? i : n - 1 - i;
+            count_t k = dir == iterator_direction::forward ? i : n - 1 - i;
             T& v = const_cast<T&>(_ptr[k]);
 #ifdef COID_CONSTEXPR_IF
             if constexpr (has_index<Func>::value)
@@ -530,7 +530,7 @@ public:
 #endif
 
             count_t nn = size();
-            if (dir == direction::forward && n > nn) {
+            if (dir == iterator_direction::forward && n > nn) {
                 //deleted element, ensure continuing with the next
                 --i;
             }
@@ -543,11 +543,11 @@ public:
     /// @param fn functor as fn([const] T&) or fn([const] T&, count_t index)
     /// @return pointer to the element or null
     template<typename Func>
-    T* find_if(Func fn, direction dir = direction::forward) const
+    T* find_if(Func fn, iterator_direction dir = iterator_direction::forward) const
     {
         count_t n = size();
         for (count_t i = 0; i < n; ++i) {
-            count_t k = dir == direction::forward ? i : n - 1 - i;
+            count_t k = dir == iterator_direction::forward ? i : n - 1 - i;
             T& v = const_cast<T&>(_ptr[k]);
             bool rv;
 #ifdef COID_CONSTEXPR_IF
