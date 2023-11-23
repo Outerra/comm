@@ -2477,7 +2477,7 @@ inline opcd binstream::read_key(charstr& key, int kmember, const token& expected
 {
     if (kmember > 0) {
         opcd e = read_separator();
-        if (e) return e;
+        if (e != NOERR) return e;
     }
 
     key.reset();

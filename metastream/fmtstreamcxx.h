@@ -170,7 +170,7 @@ public:
                         e = ersSYNTAX_ERROR "missing separator";
                 }
             }
-            if (e) return e;
+            if (e != NOERR) return e;
         }
 
         const lexer::lextoken& tk = _tokenizer.next();
@@ -187,7 +187,7 @@ public:
             ? opcd(0)
             : ersSYNTAX_ERROR "expected identifier";
 
-        if (!e) {
+        if (e == NOERR) {
             key = tok;
 
             tok = _tokenizer.next();
@@ -328,7 +328,7 @@ public:
                 t.set(e.error_code(), token::strnlen(e.error_code(), 5));
 
                 _bufw << "\"[" << t;
-                if (!e)  _bufw << "]\"";
+                if (e == NOERR)  _bufw << "]\"";
                 else {
                     _bufw << "] " << e.error_desc();
                     const char* text = e.text();
@@ -380,7 +380,7 @@ public:
                 e = tk == lexstr || tk == lexstre
                     ? opcd(0)
                     : ersSYNTAX_ERROR "expected string";
-                if (!e)
+                if (e == NOERR)
                     t.set_count(tok.len() / 2, p);
 
                 _tokenizer.push_back();
@@ -390,7 +390,7 @@ public:
                 e = tk == lexign || tk == lexstr || tk == lexstre
                     ? opcd(0)
                     : ersSYNTAX_ERROR "expected string";
-                if (!e)
+                if (e == NOERR)
                     t.set_count(tok.len(), p);
 
                 _tokenizer.push_back();
@@ -402,7 +402,7 @@ public:
                     e = tk == lexid
                     ? opcd(0)
                     : ersSYNTAX_ERROR "expected identifier";
-                if (!e)
+                if (e == NOERR)
                     t.set_count(tok.len(), p);
 
                 _tokenizer.push_back();
@@ -607,7 +607,7 @@ public:
                     return ersSYNTAX_ERROR "expected time";
 
                 e = tok.todate_local(*(timet*)p);
-                if (!e && !tok.is_empty())
+                if (e == NOERR && !tok.is_empty())
                     e = ersSYNTAX_ERROR "unexpected trailing characters";
             } break;
 
@@ -728,7 +728,7 @@ public:
                 _bufw.reset();
             }
 
-            if (!e)  *count = n;
+            if (e == NOERR)  *count = n;
         }
         else
             e = write_compound_array_content(c, count, m);

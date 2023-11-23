@@ -2578,7 +2578,7 @@ struct token
         struct tm tmm;
 
         opcd e = todate(tmm, token());
-        if (e)  return e;
+        if (e != NOERR)  return e;
 
 #ifdef SYSTYPE_MSVC
         dst = _mkgmtime(&tmm);
@@ -2595,7 +2595,7 @@ struct token
         struct tm tmm;
 
         opcd e = todate(tmm, "gmt");
-        if (e)  return e;
+        if (e != NOERR)  return e;
 
 #ifdef SYSTYPE_MSVC
         dst = _mkgmtime(&tmm);

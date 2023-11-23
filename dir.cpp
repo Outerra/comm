@@ -58,7 +58,7 @@ COID_NAMESPACE_BEGIN
 const char* directory::no_trail_sep(zstring& name)
 {
     char c = name.get_token().last_char();
-    if(c == '\\' || c == '/')
+    if (c == '\\' || c == '/')
         name.get_str().resize(-1);
 
     return name.c_str();
@@ -79,10 +79,10 @@ bool directory::is_valid_directory(zstring arg)
     bool dosdrive = tlen > 1 && tlen <= 3 && tok[1] == ':';
     bool lastsep = tok.last_char() == '\\' || tok.last_char() == '/';
 
-    if(!dosdrive && lastsep) {
+    if (!dosdrive && lastsep) {
         arg.get_str().resize(-1);
     }
-    else if(dosdrive && !lastsep) {
+    else if (dosdrive && !lastsep) {
         arg.get_str() << separator();
     }
 
@@ -114,11 +114,11 @@ charstr directory::create_tmp_dir(const token& prefix)
 ////////////////////////////////////////////////////////////////////////////////
 uint64 directory::file_size(zstring file)
 {
-    if(!file)
+    if (!file)
         return 0;
 
     xstat st;
-    if(xstat64(file.c_str(), &st) == 0 && is_regular(st.st_mode))
+    if (xstat64(file.c_str(), &st) == 0 && is_regular(st.st_mode))
         return st.st_size;
 
     return 0;
@@ -222,7 +222,7 @@ opcd directory::copy_file_from(const token& src, bool preserve_dates, const toke
 {
     _curpath.resize(_baselen);
 
-    if(name.is_empty())
+    if (name.is_empty())
     {
         //extract name from the source path
         token srct = src;
@@ -240,7 +240,7 @@ opcd directory::copy_file_to(const token& dst, bool preserve_dates, const token&
 {
     _curpath.resize(_baselen);
 
-    if(name.is_empty())
+    if (name.is_empty())
     {
         //extract name from the destination path
         token dstt = dst;
@@ -262,32 +262,32 @@ opcd directory::copy_current_file_to(const token& dst, bool preserve_dates)
 ////////////////////////////////////////////////////////////////////////////////
 opcd directory::copy_file(zstring src, zstring dst, bool preserve_dates)
 {
-    if(src.get_token() == dst.get_token())
+    if (src.get_token() == dst.get_token())
         return 0;
 
     fileiostream fsrc, fdst;
 
     opcd e = fsrc.open(src, "r");
-    if(e)
+    if (e != NOERR)
         return e;
 
     e = fdst.open(dst, "wct");
-    if(e)
+    if (e != NOERR)
         return e;
 
     char buf[8192];
-    for(;;)
+    for (;;)
     {
         uints len = 8192;
         opcd re = fsrc.read_raw(buf, len);
-        if(len < 8192)
+        if (len < 8192)
         {
             uints den = 8192 - len;
             fdst.write_raw(buf, den);
-            if(den > 0)
+            if (den > 0)
                 return ersIO_ERROR "write operation failed";
         }
-        else if(re == ersNO_MORE)
+        else if (re == ersNO_MORE)
             break;
         else
             return re;
@@ -307,7 +307,7 @@ opcd directory::move_file_from(zstring src, const token& name, bool replace_exis
 {
     _curpath.resize(_baselen);
 
-    if(name.is_empty())
+    if (name.is_empty())
     {
         //extract name from the source path
         token srct = src.get_token();
@@ -325,7 +325,7 @@ opcd directory::move_file_to(zstring dst, const token& name, bool replace_existi
 {
     _curpath.resize(_baselen);
 
-    if(name.is_empty())
+    if (name.is_empty())
     {
         //extract name from the destination path
         token dstt = dst.get_token();
@@ -365,11 +365,11 @@ opcd directory::delete_directory(zstring src, bool recursive)
                 ? delete_directory(path, false)
                 : delete_file(path);
 
-            if (!was_err && !err)
+            if (was_err == NOERR && err != NOERR)
                 was_err = err;
         });
 
-        if (was_err)
+        if (was_err != NOERR)
             return was_err;
     }
 
@@ -444,11 +444,11 @@ opcd directory::copymove_directory(zstring src, zstring dst, bool move)
         else
             err = copy_file(path, dsts, true);
 
-        if (!was_err && err)
+        if (was_err == NOERR && err != NOERR)
             was_err = err;
     });
 
-    if (!was_err && !sdir && move)
+    if (was_err == NOERR && !sdir && move)
         was_err = delete_directory(src, false);
 
     return was_err;
@@ -479,14 +479,14 @@ opcd directory::delete_files(token path_and_pattern)
 {
     directory dir;
     opcd e = dir.open(path_and_pattern);
-    if(e) return e;
+    if (e != NOERR) return e;
 
     while (dir.next()) {
         if (dir.get_last_file_name_token() == ".."_T)
             continue;
 
         opcd le = delete_file(dir.get_last_full_path());
-        if(le)
+        if (le != NOERR)
             e = le;
     }
 
@@ -505,9 +505,9 @@ opcd directory::mkdir_tree(token name, bool last_is_file, uint mode)
     zstring path = name;
     char* pc = (char*)path.c_str();
 
-    for(uint i = 0; i < name.len(); ++i)
+    for (uint i = 0; i < name.len(); ++i)
     {
-        if(name[i] == '/' || name[i] == '\\')
+        if (name[i] == '/' || name[i] == '\\')
         {
             char c = pc[i];
             pc[i] = 0;
@@ -515,7 +515,7 @@ opcd directory::mkdir_tree(token name, bool last_is_file, uint mode)
             opcd e = mkdir(pc, mode);
             pc[i] = c;
 
-            if(e)  return e;
+            if (e != NOERR)  return e;
         }
     }
 
@@ -599,7 +599,7 @@ bool directory::get_relative_path(token src, token dst, charstr& relout, bool la
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool directory::compact_path(charstr& dst, char tosep)
+bool directory::compact_path(charstr & dst, char tosep)
 {
     token dtok = dst;
 
@@ -624,8 +624,8 @@ bool directory::compact_path(charstr& dst, char tosep)
     }
 #else
     bool absp = dtok.first_char() == '/';
-    if(absp) {
-        if(tosep)
+    if (absp) {
+        if (tosep)
             dst[0] = tosep;
         dtok.shift_start(1);
     }
@@ -641,7 +641,7 @@ bool directory::compact_path(charstr& dst, char tosep)
         bool isup = seg == ".."_T;
 
         ints d = dtok.ptr() - seg.ptre();
-        if(d > 1) {
+        if (d > 1) {
             //remove extra path separators
             dst.del(int(seg.ptre() - dst.ptr()), uint(d - 1));
             dtok.shift_start(1 - d);
@@ -649,17 +649,17 @@ bool directory::compact_path(charstr& dst, char tosep)
         }
 
         //normalize path separator
-        if(d > 0 && tosep)
+        if (d > 0 && tosep)
             *(char*)seg.ptre() = tosep;
 
-        if(seg == '.') {
+        if (seg == '.') {
             int d = int(dtok.ptr() - seg.ptr());
             dst.del(int(seg.ptr() - dst.ptr()), d);
             dtok.shift_start(-d);
             dtok.shift_end(-d);
         }
-        else if(!isup) {
-            if(rem.len()) {
+        else if (!isup) {
+            if (rem.len()) {
                 int rlen = rem.len();
                 dst.del(int(rem.ptr() - dst.ptr()), rlen);
                 dtok.shift_start(-rlen);
@@ -671,7 +671,7 @@ bool directory::compact_path(charstr& dst, char tosep)
             ++nfwd;
             fwd._pte = dtok ? (dtok.ptr() - 1) : dtok.ptr();
         }
-        else if(nfwd) {
+        else if (nfwd) {
             //remove one token from fwd
             fwd.cut_right_group_back(DIR_SEPARATORS);
             rem.set(fwd.ptre(), dtok.first_char() ? (dtok.ptr() - 1) : dtok.ptr());
@@ -679,13 +679,13 @@ bool directory::compact_path(charstr& dst, char tosep)
         }
         else {
             //no more forward tokens, remove rem range
-            if(absp)
+            if (absp)
                 return false;
 
-            if(rem.len()) {
-                if(rem.ptr() > dst.ptr())
+            if (rem.len()) {
+                if (rem.ptr() > dst.ptr())
                     rem.shift_start(-1);
-                else if(rem.ptre() < dst.ptre())
+                else if (rem.ptre() < dst.ptre())
                     rem.shift_end(1);
 
                 int rlen = rem.len();
@@ -698,16 +698,17 @@ bool directory::compact_path(charstr& dst, char tosep)
 
             fwd._ptr = dtok.ptr();
         }
-    } while(dtok);
+    }
+    while (dtok);
 
-    if(rem.len())
+    if (rem.len())
         dst.del(int(rem.ptr() - dst.ptr()), rem.len());
 
     return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool directory::list_file_paths(const token& path, const token& extension, recursion_mode mode,
+bool directory::list_file_paths(const token & path, const token & extension, recursion_mode mode,
     const coid::function<void(const charstr&, list_entry)>& fn)
 {
     directory dir;

@@ -55,41 +55,41 @@ protected:
 
 public:
 
-    virtual uint binstream_attributes( bool in0out1 ) const
+    virtual uint binstream_attributes(bool in0out1) const
     {
         return fATTR_IO_FORMATTING | _cache.binstream_attributes(in0out1);
     }
 
     /// @param s specifies string that should be appended to output upon flush()
-    void set_flush_token( const token& s )
+    void set_flush_token(const token& s)
     {
         _flush = s;
     }
 
-    virtual opcd write( const void* p, type t )
+    virtual opcd write(const void* p, type t)
     {
         //does no special formatting of arrays
-        if( t.is_array_control_type() )
+        if (t.is_array_control_type())
             return 0;
 
         char buf[256];
 
-        switch( t.type )
+        switch (t.type)
         {
-        case type::T_BINARY:
+            case type::T_BINARY:
             {
-				uint bytes = t.get_size();
+                uint bytes = t.get_size();
                 const char* src = (const char*)p;
 
-                while( bytes > 0 )
+                while (bytes > 0)
                 {
                     char* dst = buf;
-                    uint n = int_min(256U/2, bytes);
+                    uint n = int_min(256U / 2, bytes);
 
-                    charstrconv::bin2hex( src, dst, 1, n, 0 );
-                    uints nd = n*2;
+                    charstrconv::bin2hex(src, dst, 1, n, 0);
+                    uints nd = n * 2;
                     opcd e = _cache.write_raw(buf, nd);
-                    if(e)
+                    if (e != NOERR)
                         return e;
 
                     src += n;
@@ -97,116 +97,116 @@ public:
                 }
                 break;
             }
-        case type::T_INT:
+            case type::T_INT:
             {
-                token tok = charstrconv::append_num_int( buf, 256, 10, p, t.get_size() );
+                token tok = charstrconv::append_num_int(buf, 256, 10, p, t.get_size());
 
                 return _cache.write_token_raw(tok);
             }
-        case type::T_UINT:
+            case type::T_UINT:
             {
-                token tok = charstrconv::append_num_uint( buf, 256, 10, p, t.get_size() );
+                token tok = charstrconv::append_num_uint(buf, 256, 10, p, t.get_size());
 
                 return _cache.write_token_raw(tok);
             }
-        case type::T_FLOAT:
+            case type::T_FLOAT:
             {
                 token tok;
 
-                switch( t.get_size() )
+                switch (t.get_size())
                 {
-                case 4:
-                    tok.set(buf, charstrconv::append_float(buf, buf+256, *(const float*)p, -1));
-                    break;
-                case 8:
-                    tok.set(buf, charstrconv::append_float( buf, buf+256, *(const double*)p, -2));
-                    break;
+                    case 4:
+                        tok.set(buf, charstrconv::append_float(buf, buf + 256, *(const float*)p, -1));
+                        break;
+                    case 8:
+                        tok.set(buf, charstrconv::append_float(buf, buf + 256, *(const double*)p, -2));
+                        break;
 
-                default:
-                    throw ersINVALID_TYPE "unsupported size";
+                    default:
+                        throw ersINVALID_TYPE "unsupported size";
                 }
 
                 return _cache.write_token_raw(tok);
                 break;
             }
-        case type::T_KEY:
-        case type::T_CHAR: {
-            uints size = t.get_size();
-            return _cache.write_raw( p, size );
-        }
+            case type::T_KEY:
+            case type::T_CHAR: {
+                uints size = t.get_size();
+                return _cache.write_raw(p, size);
+            }
 
-        case type::T_ERRCODE:
-            buf[0] = '[';
-            uints n = opcd_formatter((const opcd::errcode*)p).write(buf+1, 254) + 1;
-            buf[n] = ']';
-            ++n;
+            case type::T_ERRCODE:
+                buf[0] = '[';
+                uints n = opcd_formatter((const opcd::errcode*)p).write(buf + 1, 254) + 1;
+                buf[n] = ']';
+                ++n;
 
-            return _cache.write_raw( buf, n );
+                return _cache.write_raw(buf, n);
         }
 
         return 0;
     }
 
-    virtual opcd read( void* p, type t )
+    virtual opcd read(void* p, type t)
     {
         //does no special formatting of arrays
-        if( t.is_array_control_type() )
+        if (t.is_array_control_type())
             return 0;
 
         //since the text output is plain, without any additional marks that
         // can be used to determine the type, we can only read text
         //for anything more sophisticated use the fmtstream* classes instead
 
-        if( t.type == type::T_CHAR  ||  t.type == type::T_KEY )
-            return _cache.read( p, t );
+        if (t.type == type::T_CHAR || t.type == type::T_KEY)
+            return _cache.read(p, t);
         else
             return ersUNAVAILABLE;
     }
 
-    virtual opcd write_raw( const void* p, uints& len ) {
-        return _cache.write_raw( p, len );
+    virtual opcd write_raw(const void* p, uints& len) {
+        return _cache.write_raw(p, len);
     }
 
-    virtual opcd read_raw( void* p, uints& len ) {
-        return _cache.read_raw( p, len );
+    virtual opcd read_raw(void* p, uints& len) {
+        return _cache.read_raw(p, len);
     }
 
-    virtual opcd write_array_content( binstream_container_base& c, uints* count, metastream* m ) override
+    virtual opcd write_array_content(binstream_container_base& c, uints* count, metastream* m) override
     {
         type t = c._type;
         uints n = c.count();
 
         //types other than char and key must be written by elements
-        if( t.type != type::T_CHAR  &&  t.type != type::T_KEY )
+        if (t.type != type::T_CHAR && t.type != type::T_KEY)
             return write_compound_array_content(c, count, m);
 
-        if( c.is_continuous()  &&  n != UMAXS )
+        if (c.is_continuous() && n != UMAXS)
         {
             //n *= t.get_size();
             *count = n;
-            return write_raw( c.extract(n), n );
+            return write_raw(c.extract(n), n);
         }
         else
             return write_compound_array_content(c, count, m);
     }
 
-    virtual opcd read_array_content( binstream_container_base& c, uints n, uints* count, metastream* m ) override
+    virtual opcd read_array_content(binstream_container_base& c, uints n, uints* count, metastream* m) override
     {
         type t = c._type;
 
-        if( t.type != type::T_CHAR  &&  t.type != type::T_KEY )
+        if (t.type != type::T_CHAR && t.type != type::T_KEY)
             return ersUNAVAILABLE;
 
-        if( c.is_continuous()  &&  n != UMAXS )
+        if (c.is_continuous() && n != UMAXS)
         {
             *count = n;
-            return read_raw( c.insert(n, nullptr), n );
+            return read_raw(c.insert(n, nullptr), n);
         }
         else
         {
-            uints es=1, k=0;
+            uints es = 1, k = 0;
             char ch;
-            while( n-- > 0  &&  0 == read_raw( &ch, es ) ) {
+            while (n-- > 0 && 0 == read_raw(&ch, es)) {
                 *(char*)c.insert(1, nullptr) = ch;
                 es = 1;
                 ++k;
@@ -217,40 +217,40 @@ public:
         }
     }
 
-    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS )
+    virtual opcd read_until(const substring& ss, binstream* bout, uints max_size = UMAXS)
     {
-        return _cache.read_until( ss, bout, max_size );
+        return _cache.read_until(ss, bout, max_size);
     }
 
-    virtual opcd peek_read( uint timeout )  { return _cache.peek_read(timeout); }
-    virtual opcd peek_write( uint timeout ) { return _cache.peek_write(timeout); }
+    virtual opcd peek_read(uint timeout) { return _cache.peek_read(timeout); }
+    virtual opcd peek_write(uint timeout) { return _cache.peek_write(timeout); }
 
-    virtual opcd bind( binstream& bin, int io=0 )
+    virtual opcd bind(binstream& bin, int io = 0)
     {
-        return _cache.bind( bin, io );
+        return _cache.bind(bin, io);
     }
 
-    virtual opcd open( const zstring& name, const zstring& arg = zstring() )
+    virtual opcd open(const zstring& name, const zstring& arg = zstring())
     {
         return _cache.open(name, arg);
     }
 
-    virtual opcd close( bool linger=false )
+    virtual opcd close(bool linger = false)
     {
         return _cache.close(linger);
     }
 
-    virtual bool is_open() const    { return _cache.is_open (); }
+    virtual bool is_open() const { return _cache.is_open(); }
 
     virtual void flush()
     {
-        if( !_flush.is_empty() )
+        if (!_flush.is_empty())
             _cache.xwrite_token_raw(_flush);
 
         _cache.flush();
     }
 
-    virtual void acknowledge (bool eat=false)
+    virtual void acknowledge(bool eat = false)
     {
         return _cache.acknowledge(eat);
     }
@@ -266,11 +266,15 @@ public:
     }
 
 
-    txtcachestream( binstream& b ) : _cache(b)
-    {   _flush = ""; }
+    txtcachestream(binstream& b) : _cache(b)
+    {
+        _flush = "";
+    }
 
     txtcachestream()
-    {   _flush = ""; }
+    {
+        _flush = "";
+    }
 
     ~txtcachestream()
     {

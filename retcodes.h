@@ -167,7 +167,7 @@ struct opcd
         short _code;
         unsigned char _desc[6];
 
-		int code() const                { return _code; }
+        int code() const { return _code; }
     };
 
     typedef const errcode* perrcode_t;
@@ -179,8 +179,8 @@ struct opcd
     ////////////////////////////////////////////////////////////////////////////////
     opcd() : _ptr(0) {}
 
-    opcd( const opcd& e ) : _ptr(e._ptr) {}
-    opcd( const errcode* pe ) : _ptr(pe) {}
+    opcd(const opcd& e) : _ptr(e._ptr) {}
+    opcd(const errcode* pe) : _ptr(pe) {}
 
     opcd& operator = (const opcd e)
     {
@@ -196,49 +196,37 @@ struct opcd
 
 
     ///Set error by number
-    void set( uint e );
+    void set(uint e);
+
+    bool operator == (opcd c) const
+    {
+        return code() == c.code();
+    }
+
+    bool operator != (opcd c) const { return ! (*this == c); }
+
+    // returns true if right side is either parent or if both are equal
+    bool operator >= (opcd c) const
+    {
+        uint c1 = code();
+        uint c2 = c.code();
+        if (c1 == c2) return true;
+        return parent1_equal(c1, c2);
+    }
 
 
-    typedef perrcode_t opcd::* unspecified_bool_type;
-
-    ///Automatic cast to bool for checking nerror
-    operator unspecified_bool_type () const             { return _ptr ? &opcd::_ptr : 0; }
-    bool operator ! () const                            { return _ptr == NULL; }
-
-    bool operator == ( opcd c ) const
-	{
-		return code() == c.code();
-        //if( _ptr == c._ptr ) return true;
-        //if( _ptr == NULL || c._ptr == NULL ) return false;
-		//return _ptr->code() == c._ptr->code();
-	}
-
-    bool operator != ( opcd c ) const                   { return ! (*this == c); }
-
-	// returns true if right side is either parent or if both are equal
-    bool operator >= ( opcd c ) const
-	{
-		uint c1 = code();
-		uint c2 = c.code();
-		if( c1 == c2 ) return true;
-		return parent1_equal(c1,c2);
-	}
+    friend inline bool operator == (opcd c, int err) { return (int)c.code() == err; }
+    friend inline bool operator == (int err, opcd c) { return (int)c.code() == err; }
+    friend inline bool operator != (opcd c, int err) { return (int)c.code() != err; }
+    friend inline bool operator != (int err, opcd c) { return (int)c.code() != err; }
 
 
-    friend inline bool operator == (opcd c, int err)    { return (int) c.code() == err; }
-    friend inline bool operator == (int err, opcd c)    { return (int) c.code() == err; }
-    friend inline bool operator != (opcd c, int err)    { return (int) c.code() != err; }
-    friend inline bool operator != (int err, opcd c)    { return (int) c.code() != err; }
-//    friend inline bool operator >= (opcd c, int err)    { return c.actual() >= errcode(err); }
-//    friend inline bool operator >= (int err, opcd c)    { return errcode(err) >= c.actual(); }
-
-
-    ///Get specific error text
+        ///Get specific error text
     const char* text() const
-	{
-        if( !_ptr || !_ptr->_code ) return "";
-		return _ptr->_desc[5] ? (const char*)_ptr+7 : "";
-	}
+    {
+        if (!_ptr || !_ptr->_code) return "";
+        return _ptr->_desc[5] ? (const char*)_ptr + 7 : "";
+    }
 
     ///Get common error text
     const char* error_desc() const;
@@ -247,26 +235,26 @@ struct opcd
     ///Return error code, max 5 characters valid or until 0
     const char* error_code() const
     {
-        if( !_ptr || !_ptr->_code )  return "OK";
+        if (!_ptr || !_ptr->_code)  return "OK";
         return (const char*)_ptr->_desc;
     }
 
 
-    static uints find_code( const char* c, uints len );
+    static uints find_code(const char* c, uints len);
 
 
     uint code() const
     {
-        if(!_ptr) return 0;
-        if( _ptr->code() >= opcdERROR_COUNT ) return (ersUNKNOWN)._ptr->code();
-		///TODO: remove this check later:
-		//assert( _ptr->code() == opcd::opcdTABLE[_ptr->code()].code->code() );
+        if (!_ptr) return 0;
+        if (_ptr->code() >= opcdERROR_COUNT) return (ersUNKNOWN)._ptr->code();
+        ///TODO: remove this check later:
+        //assert( _ptr->code() == opcd::opcdTABLE[_ptr->code()].code->code() );
         return _ptr->code();
     }
 
 private:
 
-    static bool parent1_equal( uint c1, uint c2 );
+    static bool parent1_equal(uint c1, uint c2);
 };
 
 

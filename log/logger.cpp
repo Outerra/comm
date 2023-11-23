@@ -252,7 +252,7 @@ class logger_file
             reg->push(_logpath);
 
         opcd e = _logfile.open(_logpath, oldv ? "wc+" : "wct");
-        if (!e) {
+        if (e == NOERR) {
             _logfile.xwrite_token_raw(_logbuf);
             _logbuf.free();
         }

@@ -56,7 +56,7 @@ class enc_base64stream : public binstream
 
     binstream* _bin;            //< bound io binstream
 
-    uchar _wbuf[WBUFFER_SIZE+4];//< output buffer, last 4 bytes are for quotes and newline characters
+    uchar _wbuf[WBUFFER_SIZE + 4];//< output buffer, last 4 bytes are for quotes and newline characters
     uchar* _wptr;               //< current position in the output buffer
     union {
         uchar _wtar[4];         //< temp.output buffer
@@ -77,32 +77,32 @@ class enc_base64stream : public binstream
 
 public:
 
-    virtual uint binstream_attributes( bool in0out1 ) const
+    virtual uint binstream_attributes(bool in0out1) const
     {
         uint f = fATTR_IO_FORMATTING | fATTR_HANDSHAKING;
-        if(_bin)
+        if (_bin)
             f |= _bin->binstream_attributes(in0out1) & fATTR_READ_UNTIL;
         return f;
     }
 
-    virtual opcd write_raw( const void* p, uints& len )
+    virtual opcd write_raw(const void* p, uints& len)
     {
-        if( len == 0 )
+        if (len == 0)
             return 0;
 
-        try { encode( (const uint8*)p, len ); }
-        catch(opcd e) { return e; }
+        try { encode((const uint8*)p, len); }
+        catch (opcd e) { return e; }
 
         len = 0;
         return (opcd)0;
     }
 
-    virtual opcd read_raw( void* p, uints& len )
+    virtual opcd read_raw(void* p, uints& len)
     {
-        if( len == 0 )
+        if (len == 0)
             return 0;
 
-        len = decode( (uint8*)p, len );
+        len = decode((uint8*)p, len);
         return len ? ersNO_MORE : opcd(0);
     }
 
@@ -112,7 +112,7 @@ public:
         _bin->flush();
     }
 
-    virtual void acknowledge( bool eat=false )
+    virtual void acknowledge(bool eat = false)
     {
         acknowledge_local(eat);
         _bin->acknowledge(eat);
@@ -125,17 +125,17 @@ public:
         _rrem = 0;
     }
 
-    virtual opcd read_until( const substring& /*ss*/, binstream* /*bout*/, uints max_size=UMAXS ) {
+    virtual opcd read_until(const substring& /*ss*/, binstream* /*bout*/, uints max_size = UMAXS) {
         (void)max_size;
         return ersNOT_IMPLEMENTED; //_bin->read_until( ss, bout, max_size );
     }
 
-    virtual opcd peek_read( uint timeout ) {
-        if(timeout)  return ersINVALID_PARAMS;
-        return _rrem  ?  opcd(0) : ersNO_MORE;
+    virtual opcd peek_read(uint timeout) {
+        if (timeout)  return ersINVALID_PARAMS;
+        return _rrem ? opcd(0) : ersNO_MORE;
     }
 
-    virtual opcd peek_write( uint /*timeout*/ ) {
+    virtual opcd peek_write(uint /*timeout*/) {
         return 0;
     }
 
@@ -150,38 +150,38 @@ public:
         _rptr = _rbuf + RBUFFER_SIZE;
         _rrem = UMAX32;
 
-        if(_bin) _bin->reset_read();
+        if (_bin) _bin->reset_read();
     }
 
     virtual void reset_write()
     {
         _nreq = 3;
-        _wptr = _wbuf+1;
+        _wptr = _wbuf + 1;
 
-        if(_bin) _bin->reset_write();
+        if (_bin) _bin->reset_write();
     }
 
-    enc_base64stream( bool use_quotes=false )
+    enc_base64stream(bool use_quotes = false)
     {
         init(use_quotes);
     }
 
-    enc_base64stream( binstream& bin, bool use_quotes=false )
+    enc_base64stream(binstream& bin, bool use_quotes = false)
     {
         init(use_quotes);
 
         bind(bin);
     }
 
-    void init( bool use_quotes )
+    void init(bool use_quotes)
     {
         _use_quotes = use_quotes;
         _nreq = 3;
-        _wptr = _wbuf+1;
+        _wptr = _wbuf + 1;
 
         _wbuf[0] = '"';
-        uint n = WBUFFER_SIZE+1;
-        if(use_quotes)
+        uint n = WBUFFER_SIZE + 1;
+        if (use_quotes)
             _wbuf[n++] = '"';
         _wbuf[n++] = '\r';
         _wbuf[n++] = '\n';
@@ -191,9 +191,9 @@ public:
         _rrem = UMAX32;
     }
 
-    virtual opcd bind( binstream& bin, int io=0 )
+    virtual opcd bind(binstream& bin, int io = 0)
     {
-	(void)io;
+        (void)io;
         _bin = &bin;
         return 0;
     }
@@ -205,17 +205,17 @@ protected:
         encode_final();
     }
 
-    void acknowledge_local( bool eat )
+    void acknowledge_local(bool eat)
     {
-        if(!eat)
+        if (!eat)
         {
-            if( _rrem == UMAX32 )     //correct end cannot be decided, behave like if it was ok
+            if (_rrem == UMAX32)     //correct end cannot be decided, behave like if it was ok
                 _rrem = 0;
 
-            if( _rrem > 0 )
+            if (_rrem > 0)
                 throw ersIO_ERROR "data left in input buffer";
         }
-        
+
         _rrem = UMAX32;
         _rptr = _rbuf + RBUFFER_SIZE;
         _ndec = 0;
@@ -224,20 +224,20 @@ protected:
 
 private:
 
-    void encode( const uint8* p, uints len )
+    void encode(const uint8* p, uints len)
     {
-        for( ; _nreq>0 && len>0; --len )
+        for (; _nreq > 0 && len > 0; --len)
         {
             --_nreq;
             _wtar[_nreq] = *p++;
         }
 
-        if(_nreq)  return;       //not enough
+        if (_nreq)  return;       //not enough
 
         encode3();
         _nreq = 3;
 
-        while( len >= 3 )
+        while (len >= 3)
         {
             _wtar[2] = *p++;
             _wtar[1] = *p++;
@@ -248,13 +248,13 @@ private:
         }
 
         //here there is less than 3 bytes of input
-        switch(len) {
+        switch (len) {
             case 2: _wtar[--_nreq] = *p++;
             case 1: _wtar[--_nreq] = *p++;
         }
     }
 
-    static char enctable( uchar k )
+    static char enctable(uchar k)
     {
         static const char* table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
         return table[k];
@@ -262,74 +262,74 @@ private:
 
     void encode3()
     {
-        *_wptr++ = enctable( uchar((_wval>>18)&0x3f) );
-        *_wptr++ = enctable( uchar((_wval>>12)&0x3f) );
-        *_wptr++ = enctable( uchar((_wval>>6)&0x3f) );
-        *_wptr++ = enctable( uchar(_wval&0x3f) );
+        *_wptr++ = enctable(uchar((_wval >> 18) & 0x3f));
+        *_wptr++ = enctable(uchar((_wval >> 12) & 0x3f));
+        *_wptr++ = enctable(uchar((_wval >> 6) & 0x3f));
+        *_wptr++ = enctable(uchar(_wval & 0x3f));
 
-        if( _wptr >= _wbuf + 1 + WBUFFER_SIZE ) {
-            _wptr = _wbuf+1;
-            
-            if(_use_quotes)
-                _bin->xwrite_raw( _wbuf, WBUFFER_SIZE+4 );
+        if (_wptr >= _wbuf + 1 + WBUFFER_SIZE) {
+            _wptr = _wbuf + 1;
+
+            if (_use_quotes)
+                _bin->xwrite_raw(_wbuf, WBUFFER_SIZE + 4);
             else
-                _bin->xwrite_raw( _wbuf+1, WBUFFER_SIZE+2 );
+                _bin->xwrite_raw(_wbuf + 1, WBUFFER_SIZE + 2);
         }
     }
 
     void encode_final()
     {
-        if( _nreq == 2 )    //2 bytes missing
+        if (_nreq == 2)    //2 bytes missing
         {
             _wtar[1] = 0;
-            *_wptr++ = enctable( uchar((_wval>>18)&0x3f) );
-            *_wptr++ = enctable( uchar((_wval>>12)&0x3f) );
+            *_wptr++ = enctable(uchar((_wval >> 18) & 0x3f));
+            *_wptr++ = enctable(uchar((_wval >> 12) & 0x3f));
             *_wptr++ = '=';
             *_wptr++ = '=';
         }
-        else if( _nreq == 1 )
+        else if (_nreq == 1)
         {
             _wtar[0] = 0;
-            *_wptr++ = enctable( uchar((_wval>>18)&0x3f) );
-            *_wptr++ = enctable( uchar((_wval>>12)&0x3f) );
-            *_wptr++ = enctable( uchar((_wval>>6)&0x3f) );
+            *_wptr++ = enctable(uchar((_wval >> 18) & 0x3f));
+            *_wptr++ = enctable(uchar((_wval >> 12) & 0x3f));
+            *_wptr++ = enctable(uchar((_wval >> 6) & 0x3f));
             *_wptr++ = '=';
         }
 
-        if( _wptr > _wbuf ) {
-            if(_use_quotes) {
+        if (_wptr > _wbuf) {
+            if (_use_quotes) {
                 *_wptr++ = '"';
-                _bin->xwrite_raw( _wbuf, _wptr-_wbuf );
+                _bin->xwrite_raw(_wbuf, _wptr - _wbuf);
             }
             else
-                _bin->xwrite_raw( _wbuf+1, _wptr-_wbuf-1 );
-            
-            _wptr = _wbuf+1;
+                _bin->xwrite_raw(_wbuf + 1, _wptr - _wbuf - 1);
+
+            _wptr = _wbuf + 1;
         }
         _nreq = 3;
     }
-/*
-    bool encode_write( char* buf )
-    {
-        uints n=4;
-        _bin->write_raw( buf, n );
-        return n>0;
-    }
-*/
+    /*
+        bool encode_write( char* buf )
+        {
+            uints n=4;
+            _bin->write_raw( buf, n );
+            return n>0;
+        }
+    */
     /// @return bytes not read
-    uints decode( uint8* p, uints len )
+    uints decode(uint8* p, uints len)
     {
-        for( ; _ndec>0 && len>0 && _rrem>0; --len, --_rrem )
+        for (; _ndec > 0 && len > 0 && _rrem > 0; --len, --_rrem)
         {
             --_ndec;
             *p++ = _rtar[_ndec];
         }
 
-        if(_ndec)  return len;
+        if (_ndec)  return len;
 
-        while( len >= 3 )
+        while (len >= 3)
         {
-            if( !decode3() )
+            if (!decode3())
                 break;
 
             *p++ = _rtar[2];
@@ -339,15 +339,15 @@ private:
             _rrem -= 3;
         }
 
-        if(len)
+        if (len)
         {
-            if( len < 3 )
+            if (len < 3)
                 decode_prefetch();
 
             _ndec = 3;
 
             //here there is less than 3 bytes required
-            switch( uint_min((uint)len,_rrem) ) {
+            switch (uint_min((uint)len, _rrem)) {
                 case 2: *p++ = _rtar[--_ndec];  --len;  --_rrem;
                 case 1: *p++ = _rtar[--_ndec];  --len;  --_rrem;
             }
@@ -358,60 +358,60 @@ private:
 
     bool decode3()
     {
-        if(_rrem)  decode_prefetch();
+        if (_rrem)  decode_prefetch();
         return _rrem >= 3;
     }
 
-    bool decode_final( uint len )
+    bool decode_final(uint len)
     {
-        if(_rrem)  decode_prefetch();
+        if (_rrem)  decode_prefetch();
         return _rrem >= len;
     }
 
 
     /// @return remaining bytes
-    int decode_prefetch( uint n=4 )
+    int decode_prefetch(uint n = 4)
     {
-        if( _rptr >= _rbuf + RBUFFER_SIZE )
+        if (_rptr >= _rbuf + RBUFFER_SIZE)
         {
-            if( _rrem < RBUFFER_SIZE )
+            if (_rrem < RBUFFER_SIZE)
                 return _rrem;
             _rptr = _rbuf;
 
             uints np = RBUFFER_SIZE;
-            if( _bin->read_raw_full( _rbuf, np ) ) {
-                _rrem = uint(((RBUFFER_SIZE-np)/4)*3);
-                if( _rrem == 0 )
+            if (_bin->read_raw_full(_rbuf, np) != NOERR) {
+                _rrem = uint(((RBUFFER_SIZE - np) / 4) * 3);
+                if (_rrem == 0)
                     return _rrem;
             }
         }
 
         _rval = 0;
 
-        for( ; n>0 && _rptr<_rbuf+RBUFFER_SIZE; )
+        for (; n > 0 && _rptr < _rbuf + RBUFFER_SIZE; )
         {
             --n;
             char c = *_rptr++;
 
-            if( c >= 'A' && c <= 'Z' )      _rval |= (c-'A')<<(n*6);
-            else if( c >= 'a' && c <= 'z' ) _rval |= (c-'a'+26)<<(n*6);
-            else if( c >= '0' && c <= '9' ) _rval |= (c-'0'+2*26)<<(n*6);
-            else if( c == '+' ) _rval |= 62<<(n*6);
-            else if( c == '/' ) _rval |= 63<<(n*6);
-            else if( c == '=' )
+            if (c >= 'A' && c <= 'Z')      _rval |= (c - 'A') << (n * 6);
+            else if (c >= 'a' && c <= 'z') _rval |= (c - 'a' + 26) << (n * 6);
+            else if (c >= '0' && c <= '9') _rval |= (c - '0' + 2 * 26) << (n * 6);
+            else if (c == '+') _rval |= 62 << (n * 6);
+            else if (c == '/') _rval |= 63 << (n * 6);
+            else if (c == '=')
                 return decode_end(n);
             else
                 ++n;
         }
 
-        if(n)
+        if (n)
             return decode_prefetch(n);
         return _rrem;
     }
 
-    int decode_end( uint n )
+    int decode_end(uint n)
     {
-        if(!n)
+        if (!n)
             _rrem = 2;
         else
         {

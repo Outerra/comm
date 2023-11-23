@@ -1575,7 +1575,7 @@ inline token metagen::Varx::write_buf(metagen& mg, const dynarray<Attribute>* at
         t.set(e.error_code(), token::strnlen(e.error_code(), 5));
 
         buf << "\"[" << t;
-        if (!e)  buf << "]\"";
+        if (e == NOERR)  buf << "]\"";
         else {
             buf << "] " << e.error_desc();
             const char* text = e.text();

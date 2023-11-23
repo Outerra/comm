@@ -51,78 +51,78 @@ class enc_hexstream : public binstream
 {
 public:
 
-    virtual uint binstream_attributes( bool in0out1 ) const
+    virtual uint binstream_attributes(bool in0out1) const
     {
         uint f = fATTR_OUTPUT_FORMATTING;
-        if( _in )
+        if (_in)
             f |= _in->binstream_attributes(in0out1) & fATTR_READ_UNTIL;
         return f;
     }
 
     ///	format  "00112233"
-	/// before writing this stream somewhere be sure to call flush() (writes the trailing quotes ("))
-    virtual opcd write_raw( const void* p, uints& len )
+    /// before writing this stream somewhere be sure to call flush() (writes the trailing quotes ("))
+    virtual opcd write_raw(const void* p, uints& len)
     {
-        DASSERTX( _out!=0, "output stream not bound" );
+        DASSERTX(_out != 0, "output stream not bound");
 
-        if( _offs == 0 )
+        if (_offs == 0)
             ++_offs;
 
         opcd e;
-        uints lenb = len*2;
-        uints n = _offs-1;
-        if( n + lenb > _line )
+        uints lenb = len * 2;
+        uints n = _offs - 1;
+        if (n + lenb > _line)
         {
-            uints f = (_line - n)/2;
-            if(f) {
-                char* dst = (char*)_buf.ptr()+_offs;
-                charstrconv::bin2hex( p, dst, f, 1, 0 );
+            uints f = (_line - n) / 2;
+            if (f) {
+                char* dst = (char*)_buf.ptr() + _offs;
+                charstrconv::bin2hex(p, dst, f, 1, 0);
             }
 
             uints bn = _buf.len();
-            e = _out->write_raw( _buf.ptr(), bn );
-            if(e)  return e;
+            e = _out->write_raw(_buf.ptr(), bn);
+            if (e != NOERR)  return e;
 
             _offs = 0;
             len -= f;
-            return write_raw( (char*)p+f, len );
+            return write_raw((char*)p + f, len);
         }
 
-        char* dst = (char*)_buf.ptr()+_offs;
-        charstrconv::bin2hex( p, dst, len, 1, 0 );
+        char* dst = (char*)_buf.ptr() + _offs;
+        charstrconv::bin2hex(p, dst, len, 1, 0);
         _offs = dst - _buf.ptr();
 
         len = 0;
         return 0;
     }
 
-    virtual opcd read_raw( void* p, uints& len )
+    virtual opcd read_raw(void* p, uints& len)
     {
-        DASSERTX( _in!=0, "input stream not bound" );
+        DASSERTX(_in != 0, "input stream not bound");
 
         opcd e;
 
-        for( uints i=0; i<len; )
+        for (uints i = 0; i < len; )
         {
-            if( _ibuf.size() - _ioffs < 2 ) {
+            if (_ibuf.size() - _ioffs < 2) {
                 e = fill_ibuf();
-                if(e)  return e;
+                if (e != NOERR)  return e;
             }
 
             char c = _ibuf[_ioffs++];
-            if( c == '\"' || c == '\r' || c == '\n' || c == '\t' || c == ' ' )
+            if (c == '\"' || c == '\r' || c == '\n' || c == '\t' || c == ' ')
                 continue;
 
             uchar v;
-            if( c >= '0' && c <= '9' )      v = (c-'0')<<4;
-            else if( c >= 'a' && c <= 'f' ) v = (c-'a'+10)<<4;
-            else if( c >= 'A' && c <= 'F' ) v = (c-'A'+10)<<4;
+            if (c >= '0' && c <= '9')      v = (c - '0') << 4;
+            else if (c >= 'a' && c <= 'f') v = (c - 'a' + 10) << 4;
+            else if (c >= 'A' && c <= 'F') v = (c - 'A' + 10) << 4;
             else return ersINVALID_PARAMS;
 
             c = _ibuf[_ioffs++];
-            if( c >= '0' && c <= '9' )      v |= (c-'0');
-            else if( c >= 'a' && c <= 'f' ) v |= (c-'a'+10);
-            else if( c >= 'A' && c <= 'F' ) v |= (c-'A'+10);
+            if (c >= '0' && c <= '9')      v |= (c - '0');
+            else if (c >= 'a' && c <= 'f') v |= (c - 'a' + 10);
+            else if (c >= 'A' && c <= 'F') v |= (c - 'A' + 10);
             else return ersINVALID_PARAMS;
 
             ((uchar*)p)[i] = v;
@@ -133,57 +133,57 @@ public:
         return 0;
     }
 
-    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS )
+    virtual opcd read_until(const substring& ss, binstream* bout, uints max_size = UMAXS)
     {
-        return _in->read_until( ss, bout, max_size );
+        return _in->read_until(ss, bout, max_size);
     }
 
 
-    virtual opcd peek_read( uint timeout ) {
-        if(timeout)  return ersINVALID_PARAMS;
-        return _ibuf.size() > _ioffs  ?  opcd(0) : _in->peek_read(timeout);
+    virtual opcd peek_read(uint timeout) {
+        if (timeout)  return ersINVALID_PARAMS;
+        return _ibuf.size() > _ioffs ? opcd(0) : _in->peek_read(timeout);
     }
 
-    virtual opcd peek_write( uint timeout ) {
+    virtual opcd peek_write(uint timeout) {
         return 0;
     }
 
 
-    virtual opcd bind( binstream& bin, int io=0 )
+    virtual opcd bind(binstream& bin, int io = 0)
     {
-        if( io<0 )
+        if (io < 0)
             _in = &bin;
-        else if( io>0 )
+        else if (io > 0)
             _out = &bin;
         else
             _in = _out = &bin;
         return 0;
     }
 
-    virtual bool is_open() const        { return _in->is_open(); }
+    virtual bool is_open() const { return _in->is_open(); }
     virtual void flush()
     {
-        if(_offs)
+        if (_offs)
         {
             _buf[_offs++] = '"';
 
             uints bn = _offs;
-            opcd e = _out->write_raw( _buf.ptr(), bn );
-            if(e)  throw e;
+            opcd e = _out->write_raw(_buf.ptr(), bn);
+            if (e != NOERR)  throw e;
 
             _offs = 0;
         }
-		_out->flush();
-	}
-    
-    virtual void acknowledge( bool eat=false )
+        _out->flush();
+    }
+
+    virtual void acknowledge(bool eat = false)
     {
-        if(!eat)
+        if (!eat)
         {
-            for( ; _ioffs < _ibuf.size(); ++_ioffs )
+            for (; _ioffs < _ibuf.size(); ++_ioffs)
             {
                 char c = _ibuf[_ioffs];
-                if( c == '\"' || c == '\r' || c == '\n' || c == '\t' || c == ' ' )
+                if (c == '\"' || c == '\r' || c == '\n' || c == '\t' || c == ' ')
                     continue;
 
                 throw ersIO_ERROR;
@@ -196,7 +196,7 @@ public:
 
     virtual void reset_read()
     {
-        _ibuf.reserve(32,false);
+        _ibuf.reserve(32, false);
         _ioffs = 0;
 
         _in->reset_read();
@@ -214,7 +214,7 @@ public:
         setup(48);
     }
 
-    enc_hexstream( binstream* bin, binstream* bout )
+    enc_hexstream(binstream* bin, binstream* bout)
     {
         _in = bin;
         _out = bout;
@@ -222,9 +222,9 @@ public:
     }
 
 
-    void setup( uints line )
+    void setup(uints line)
     {
-        DASSERT( line>=4 );
+        DASSERT(line >= 4);
 
         _line = line & ~uints(1);
 #ifdef SYSTYPE_WIN
@@ -234,13 +234,13 @@ public:
 #endif
 
         _buf.reset();
-        _buf.get_append_buf(_line+2);
+        _buf.get_append_buf(_line + 2);
         _buf += nl;
         _buf[0] = '"';
-        _buf[1+_line] = '"';
+        _buf[1 + _line] = '"';
         _offs = 0;
 
-        _ibuf.reserve(32,false);
+        _ibuf.reserve(32, false);
         _ioffs = 0;
     }
 
@@ -248,16 +248,16 @@ protected:
     opcd fill_ibuf()
     {
         uints n = _ibuf.size() - _ioffs;
-        if(n)
-            xmemcpy( _ibuf.ptr(), _ibuf.ptre()-n, n );
+        if (n)
+            xmemcpy(_ibuf.ptr(), _ibuf.ptre() - n, n);
 
-        uints s = 32-n;
-        opcd e = _in->read_raw_full( _ibuf.ptr()+n, s );
-        if(e)  return e;
+        uints s = 32 - n;
+        opcd e = _in->read_raw_full(_ibuf.ptr() + n, s);
+        if (e != NOERR)  return e;
 
-        s = 32-n - s;
+        s = 32 - n - s;
 
-        _ibuf.set_size(n+s);
+        _ibuf.set_size(n + s);
         _ioffs = 0;
         return 0;
     }

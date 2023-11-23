@@ -53,33 +53,33 @@ public:
     virtual ~packstreambzip2()
     {
         close();
-        if(_rstate)  BZ2_bzDecompressEnd(&_strin);
-        if(_wstate)  BZ2_bzCompressEnd(&_strout);
+        if (_rstate)  BZ2_bzDecompressEnd(&_strin);
+        if (_wstate)  BZ2_bzCompressEnd(&_strout);
     }
 
-    virtual uint binstream_attributes( bool in0out1 ) const
+    virtual uint binstream_attributes(bool in0out1) const
     {
         return 0;
     }
 
-    virtual opcd peek_read( uint timeout ) {
-        if(timeout)  return ersINVALID_PARAMS;
-        
-        uints n=0;
-        return read_raw( 0, n );
+    virtual opcd peek_read(uint timeout) {
+        if (timeout)  return ersINVALID_PARAMS;
+
+        uints n = 0;
+        return read_raw(0, n);
     }
 
-    virtual opcd peek_write( uint timeout )     { return 0; }
+    virtual opcd peek_write(uint timeout) { return 0; }
 
-    virtual bool is_open() const                { return _in->is_open(); }
-    virtual void flush()                        { packed_flush(); }
-    virtual void acknowledge (bool eat=false)   { packed_ack(eat); }
+    virtual bool is_open() const { return _in->is_open(); }
+    virtual void flush() { packed_flush(); }
+    virtual void acknowledge(bool eat = false) { packed_ack(eat); }
 
-    virtual opcd close( bool linger=false )
+    virtual opcd close(bool linger = false)
     {
-        if( _rblockin.size() > 0 )
+        if (_rblockin.size() > 0)
             packed_ack(false);
-        if( _wblockout.size() > 0 )
+        if (_wblockout.size() > 0)
             packed_flush();
         return 0;
     }
@@ -90,12 +90,12 @@ public:
         init_streams();
     }
 
-    packstreambzip2( binstream* bin, binstream* bout ) : packstream(bin,bout)
+    packstreambzip2(binstream* bin, binstream* bout) : packstream(bin, bout)
     {
         init_streams();
     }
 
-    packstreambzip2( binstream& bin ) : packstream(bin)
+    packstreambzip2(binstream& bin) : packstream(bin)
     {
         init_streams();
     }
@@ -112,19 +112,19 @@ protected:
     }
 
     enum {
-        BUFFER_SIZE             = 4096,
+        BUFFER_SIZE = 4096,
     };
 
 public:
     ///
-    virtual opcd write_raw( const void* p, uints& len )
+    virtual opcd write_raw(const void* p, uints& len)
     {
-        if(!_wstate) {
-            BZ2_bzCompressInit( &_strout, 5, 0, 0 );
+        if (!_wstate) {
+            BZ2_bzCompressInit(&_strout, 5, 0, 0);
             _wstate = 1;
         }
 
-        if( _wblockout.size() == 0 )
+        if (_wblockout.size() == 0)
         {
             _wblockout.need_new(BUFFER_SIZE);
             _strout.avail_out = BUFFER_SIZE;
@@ -134,23 +134,23 @@ public:
         _strout.next_in = (char*)p;
         _strout.avail_in = (uint)len;
 
-        while(1)
+        while (1)
         {
-            int stt = BZ2_bzCompress( &_strout, BZ_RUN );
-            if( stt != BZ_RUN_OK )
+            int stt = BZ2_bzCompress(&_strout, BZ_RUN);
+            if (stt != BZ_RUN_OK)
                 return ersIO_ERROR;
 
             // flush
-            if( _strout.avail_out == 0 )
+            if (_strout.avail_out == 0)
             {
                 uints bs = BUFFER_SIZE;
-                opcd e = _out->write_raw( _wblockout.ptr(), bs );
-                if(e)  return e;
+                opcd e = _out->write_raw(_wblockout.ptr(), bs);
+                if (e != NOERR)  return e;
                 _strout.avail_out = BUFFER_SIZE;
                 _strout.next_out = _wblockout.ptr();
             }
 
-            if( _strout.avail_in == 0 )
+            if (_strout.avail_in == 0)
                 break;
         }
 
@@ -159,14 +159,14 @@ public:
     }
 
     ///
-    virtual opcd read_raw( void* p, uints& len )
+    virtual opcd read_raw(void* p, uints& len)
     {
-        if(!_rstate) {
-            BZ2_bzDecompressInit( &_strin, 0, 0 );
+        if (!_rstate) {
+            BZ2_bzDecompressInit(&_strin, 0, 0);
             _rstate = 1;
         }
 
-        if( _rblockin.size() == 0 )
+        if (_rblockin.size() == 0)
         {
             _rblockin.need_new(BUFFER_SIZE);
             _strin.avail_in = 0;
@@ -176,31 +176,31 @@ public:
         _strin.next_out = (char*)p;
         _strin.avail_out = (uint)len;
 
-        while(1)
+        while (1)
         {
             // read chunk if input buffer is empty
-            if( _strin.avail_in == 0 )
+            if (_strin.avail_in == 0)
             {
                 uints rl = BUFFER_SIZE;
-                opcd e = _in->read_raw_full( _rblockin.ptr(), rl );
-                if( e && e!=ersNO_MORE )  return e;
+                opcd e = _in->read_raw_full(_rblockin.ptr(), rl);
+                if (e != NOERR && e != ersNO_MORE)  return e;
                 _strin.avail_in = uint(BUFFER_SIZE - rl);
                 _strin.next_in = _rblockin.ptr();
             }
 
-            int stt = BZ2_bzDecompress( &_strin );
+            int stt = BZ2_bzDecompress(&_strin);
             len = _strin.avail_out;
 
-            if( stt == BZ_STREAM_END )
+            if (stt == BZ_STREAM_END)
             {
                 _rstate = -1;
-                if( _strin.avail_out != 0 )
+                if (_strin.avail_out != 0)
                     return ersNO_MORE "required more data than available";
                 break;
             }
-            else if( stt == BZ_OK )
+            else if (stt == BZ_OK)
             {
-                if( _strin.avail_out == 0 )
+                if (_strin.avail_out == 0)
                     break;
             }
             else
@@ -214,35 +214,35 @@ public:
     virtual void reset_read()
     {
         _rblockin.reset();
-        if(_rstate>0) {
-            BZ2_bzDecompressEnd( &_strin );
-            BZ2_bzDecompressInit( &_strin, 0, 0 );
+        if (_rstate > 0) {
+            BZ2_bzDecompressEnd(&_strin);
+            BZ2_bzDecompressInit(&_strin, 0, 0);
         }
-        else if(_rstate<0)
+        else if (_rstate < 0)
             _rstate = 1;
     }
 
     virtual void reset_write()
     {
         _wblockout.reset();
-        if(_wstate>0) {
-            BZ2_bzCompressEnd( &_strout );
-            BZ2_bzCompressInit( &_strout, 5, 0, 0 );
+        if (_wstate > 0) {
+            BZ2_bzCompressEnd(&_strout);
+            BZ2_bzCompressInit(&_strout, 5, 0, 0);
         }
-        else if(_wstate<0)
+        else if (_wstate < 0)
             _wstate = 1;
     }
 
 protected:
     void packed_flush()
     {
-        while(1)
+        while (1)
         {
-            int stt = BZ2_bzCompress( &_strout, BZ_FINISH );
-            RASSERTX( stt == BZ_FINISH_OK || stt == BZ_STREAM_END, "unexpected error" );
+            int stt = BZ2_bzCompress(&_strout, BZ_FINISH);
+            RASSERTX(stt == BZ_FINISH_OK || stt == BZ_STREAM_END, "unexpected error");
 
-            _out->xwrite_raw( _wblockout.ptr(), BUFFER_SIZE-_strout.avail_out );
-            if( stt == BZ_STREAM_END )
+            _out->xwrite_raw(_wblockout.ptr(), BUFFER_SIZE - _strout.avail_out);
+            if (stt == BZ_STREAM_END)
                 break;
             _strout.avail_out = BUFFER_SIZE;
             _strout.next_out = _wblockout.ptr();
@@ -252,12 +252,12 @@ protected:
         reset_write();
     }
 
-    void packed_ack( bool eat )
+    void packed_ack(bool eat)
     {
-        if( _rstate>0
-            &&  (_strin.avail_in > 0  ||  BZ_STREAM_END != BZ2_bzDecompress(&_strin)) )
+        if (_rstate > 0
+            && (_strin.avail_in > 0 || BZ_STREAM_END != BZ2_bzDecompress(&_strin)))
         {
-            if(!eat)
+            if (!eat)
                 throw ersIO_ERROR "data left in input buffer";
         }
 

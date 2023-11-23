@@ -1023,7 +1023,7 @@ public:
                 tok.set((const char*)c.extract(n), n);
             }
 
-            if (!e) {
+            if (e == NOERR) {
                 _top->value = v8::string_utf8(tok);
                 *count = n;
             }

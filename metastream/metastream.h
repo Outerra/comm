@@ -1236,7 +1236,7 @@ public:
     bool read_optional(T& val)
     {
         opcd e = movein_process_key(READ_MODE);
-        if (!e) {
+        if (e == NOERR) {
             *this || *(typename resolve_enum<T>::type*)&val;
             return true;
         }
@@ -1255,7 +1255,7 @@ public:
     T* read_optional()
     {
         opcd e = movein_process_key(READ_MODE);
-        if (!e) {
+        if (e == NOERR) {
             T* p = new T;
             *this || *p;
             return p;
@@ -1312,7 +1312,7 @@ public:
 
     metastream& _xthrow(opcd e)
     {
-        if (e)
+        if (e != NOERR)
         {
             before_exception_throw();
             throw exception(e);
@@ -1621,7 +1621,7 @@ public:
         opcd e;
         try {
             e = prepare_type_array(*(T*)0, n, name, false, READ_MODE);
-            if (e) return e;
+            if (e != NOERR) return e;
 
             _binr = true;
             read_container(C);
@@ -1668,7 +1668,7 @@ public:
         opcd e;
         try {
             e = prepare_type_array(*(T*)0, UMAXS, name, cache, WRITE_MODE);
-            if (e) return e;
+            if (e != NOERR) return e;
 
             if (!cache) {
                 _binw = true;
@@ -2893,7 +2893,7 @@ protected:
                 ? _fmtstreamrd->read_struct_open(nameless, &_curvar.var->desc->type_name)
                 : _fmtstreamwr->write_struct_open(nameless, &_curvar.var->desc->type_name);
 
-            if (e) {
+            if (e != NOERR) {
                 dump_stack(_err, 0);
                 _err << " - error " << (read ? "reading" : "writing") << " struct opening token\n";
                 if (read)
@@ -2946,7 +2946,7 @@ protected:
                 ? _fmtstreamrd->read_struct_close(nameless, &_curvar.var->desc->type_name)
                 : _fmtstreamwr->write_struct_close(nameless, &_curvar.var->desc->type_name);
 
-            if (e) {
+            if (e != NOERR) {
                 dump_stack(_err, 0);
                 _err << " - error " << (read ? "reading" : "writing") << " struct closing token";
                 if (read)
@@ -3043,7 +3043,7 @@ protected:
 
         if (!t.is_array_end()) {
             opcd e = movein_process_key(WRITE_MODE);
-            if (e) return e;
+            if (e != NOERR) return e;
         }
 
         return data_value((void*)p, t, WRITE_MODE);
@@ -3057,7 +3057,7 @@ protected:
 
         if (!t.is_array_end()) {
             opcd e = movein_process_key(READ_MODE);
-            if (e) return e;
+            if (e != NOERR) return e;
         }
 
         return data_value(p, t, READ_MODE);
@@ -3068,7 +3068,7 @@ protected:
     {
         //read value
         opcd e = fmts_or_cache(p, t, read);
-        if (e) {
+        if (e != NOERR) {
             dump_stack(_err, 0);
             _err << " - error " << (read ? "reading" : "writing") << " variable '" << _curvar.var->varname << "', error: " << opcd_formatter(e);
             before_exception_throw();
@@ -3087,7 +3087,7 @@ protected:
     {
         if (!t.is_array_end() && _beseparator) {
             opcd e = _fmtstreamwr->write_separator();
-            if (e) return e;
+            if (e != NOERR) return e;
         }
         else
             _sesopen = 1;
@@ -3103,7 +3103,7 @@ protected:
         if (!t.is_array_end() && _beseparator)
         {
             opcd e = _fmtstreamrd->read_separator();
-            if (e) {
+            if (e != NOERR) {
                 dump_stack(_err, 0);
                 _err << " - error reading separator: " << opcd_formatter(e);
                 before_exception_throw();
@@ -3211,7 +3211,7 @@ protected:
                     uints na = n * t.get_size();
                     e = data_write_raw(c.extract(n), na);
 
-                    if (!e)  *count = n;
+                    if (e == NOERR)  *count = n;
                 }
                 else
                     e = data_write_compound_array_content(c, count);
@@ -3239,7 +3239,7 @@ protected:
             if (!p)
                 break;
 
-            if (needpeek && (e = data_write_array_separator(tae, 0)))
+            if (needpeek && (e = data_write_array_separator(tae, 0)) != NOERR)
                 return e;
 
             push_var(false);
@@ -3251,7 +3251,7 @@ protected:
 
             pop_var();
 
-            if (e)
+            if (e != NOERR)
                 return e;
             ++k;
 
@@ -3261,7 +3261,7 @@ protected:
         if (needpeek)
             e = data_write_array_separator(tae, 1);
 
-        if (!e)
+        if (e == NOERR)
             *count = k;
 
         return e;
@@ -3350,7 +3350,7 @@ protected:
                     uints na = n * t.get_size();
                     e = data_read_raw_full(c.insert(n, _curvar.defval), na);
 
-                    if (!e)  *count = n;
+                    if (e == NOERR)  *count = n;
                 }
                 else
                     e = data_read_compound_array_content(c, n, count);
@@ -3376,7 +3376,7 @@ protected:
             --n;
 
             //peek if there's an element to read
-            if (needpeek && (e = data_read_array_separator(tae)))
+            if (needpeek && (e = data_read_array_separator(tae)) != NOERR)
                 break;
 
             void* p = c.insert(1, defitemval);
@@ -3392,7 +3392,7 @@ protected:
 
             pop_var();
 
-            if (e)
+            if (e != NOERR)
                 return e;
             ++k;
 
@@ -3440,7 +3440,7 @@ protected:
 
         opcd e = _fmtstreamwr->write_array_separator(t, end);
 
-        if (e) {
+        if (e != NOERR) {
             dump_stack(_err, 0);
             _err << " - error writing array separator: " << opcd_formatter(e);
             throw exception(_err);
@@ -3457,7 +3457,7 @@ protected:
         if (e == ersNO_MORE)
             return false;
 
-        if (e) {
+        if (e != NOERR) {
             dump_stack(_err, 0);
             _err << " - error reading array separator: " << opcd_formatter(e);
             before_exception_throw();
@@ -3591,7 +3591,7 @@ protected:
                 throw exception(_err);
             }
         }
-        else if (e) {
+        else if (e != NOERR) {
             dump_stack(_err, 0);
             _err << " - error while seeking for variable '" << _curvar.var->varname << "': " << opcd_formatter(e);
             before_exception_throw();
@@ -3621,7 +3621,7 @@ protected:
 
         do {
             e = fmts_read_key();
-            if (e) {
+            if (e != NOERR) {
                 //no more members under current compound
                 DASSERT(e == ersNO_MORE);
                 if (!_curvar.var->optional)
@@ -3650,7 +3650,7 @@ protected:
             return 0;
 
         opcd e = _fmtstreamwr->write_key(_curvar.var->varname, _curvar.kth);
-        if (e) {
+        if (e != NOERR) {
             dump_stack(_err, 0);
             _err << " - error while writing the variable name '" << _curvar.var->varname << "': " << opcd_formatter(e);
             throw exception(_err);

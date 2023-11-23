@@ -169,7 +169,7 @@ public:
 
             e = on_cache_flush(_cot.ptr(), _cot.size(), false);
             if (e == ersNOT_IMPLEMENTED)  e = 0;
-            if (e)
+            if (e != NOERR)
             {
                 //enlarge the cache instead
                 uints newsize = _cot.reserved_total();
@@ -183,7 +183,7 @@ public:
             uints n = _cot.size();
             e = _bin->write_raw(_cot.ptr(), n);
 
-            if (e)
+            if (e != NOERR)
                 return e;
 
             _tcotwritten += _cot.size();
@@ -371,7 +371,7 @@ public:
             if (size_written)        //update inside the loop to have a progress feedback
                 *size_written = n;
 
-            if (e || len > 0 || datasize == 0)
+            if (e != NOERR || len > 0 || datasize == 0)
                 break;
 
             read_cache_line();
@@ -531,7 +531,7 @@ private:
         _tcinread += _cinread;
         _cinread = 0;
 
-        if (e && e != ersRETRY)
+        if (e != NOERR && e != ersRETRY)
             eois = true;
 
         return e;
@@ -543,7 +543,7 @@ private:
             ? _bin->read_raw_any(p, size)
             : on_cache_fill(p, size);
 
-        if (e && e != ersRETRY)
+        if (e != NOERR && e != ersRETRY)
             eois = true;
 
         return e;

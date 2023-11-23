@@ -309,7 +309,7 @@ public:
             datasize -= d;
             n += d;
 
-            if (e || toread > 0 || datasize == 0)
+            if (e != NOERR || toread > 0 || datasize == 0)
                 break;
         }
 

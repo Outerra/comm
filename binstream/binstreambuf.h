@@ -234,7 +234,7 @@ public:
             n += oen - len;
             _bgi += oen - len;
 
-            if (e || len > 0)
+            if (e != NOERR || len > 0)
                 break;
         }
 
@@ -262,7 +262,7 @@ public:
             datasize -= d;
             n += d;
 
-            if (e || len > 0 || datasize == 0)
+            if (e != NOERR || len > 0 || datasize == 0)
                 break;
         }
 
@@ -416,7 +416,7 @@ public:
             bout->write_raw(_source, n);
 
         opcd e = n < _len ? opcd(0) : ersNOT_FOUND;
-        if (!e)
+        if (e == NOERR)
             n += ss.len();
 
         _source += n;

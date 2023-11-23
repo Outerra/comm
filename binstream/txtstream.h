@@ -104,7 +104,7 @@ public:
                 charstrconv::bin2hex(src, dst, 1, n, 0);
                 uints nd = uints(n) * 2;
                 opcd e = _binw->write_raw(buf, nd);
-                if (e)
+                if (e != NOERR)
                     return e;
 
                 src += n;
@@ -212,7 +212,7 @@ public:
             //n *= t.get_size();
             e = write_raw(pv, n);
 
-            if (!e) {
+            if (e == NOERR) {
                 *count = n;
                 if (bfl) flush();
             }
@@ -235,7 +235,7 @@ public:
         {
             e = read_raw(c.insert(n, 0), n);
 
-            if (!e)  *count = n;
+            if (e == NOERR)  *count = n;
         }
         else
         {

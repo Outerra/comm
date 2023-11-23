@@ -313,7 +313,7 @@ public:
     {
         ushort ec;
         opcd e = read(&ec, bstype::t_type<opcd>());
-        if (!e)
+        if (e == NOERR)
             e.set(ec);
         return e;
     }
@@ -369,8 +369,8 @@ public:
         return write_array(c);
     }
 
-    binstream& xwrite_token(const token& x) { opcd e = write_token(x);  if (e) throw e; return *this; }
-    binstream& xwrite_token(const char* p, uint len) { opcd e = write_token(p, len);  if (e) throw e; return *this; }
+    binstream& xwrite_token(const token& x) { opcd e = write_token(x);  if (e != NOERR) throw e; return *this; }
+    binstream& xwrite_token(const char* p, uint len) { opcd e = write_token(p, len);  if (e != NOERR) throw e; return *this; }
 
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -384,7 +384,7 @@ public:
     void xwrite_token_raw(const token& x)
     {
         opcd e = write_token_raw(x);
-        if (e) throw e;
+        if (e != NOERR) throw e;
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -409,10 +409,10 @@ public:
     }
 
     ///A write() wrapper throwing exception on error
-    binstream& xwrite(const void* p, type t) { opcd e = write(p, t);  if (e) throw e;  return *this; }
+    binstream& xwrite(const void* p, type t) { opcd e = write(p, t);  if (e != NOERR) throw e;  return *this; }
 
     ///A read() wrapper throwing exception on error
-    binstream& xread(void* p, type t) { opcd e = read(p, t);   if (e) throw e;  return *this; }
+    binstream& xread(void* p, type t) { opcd e = read(p, t);   if (e != NOERR) throw e;  return *this; }
 
 
     ///Write single primitive type deducing the argument type
@@ -556,7 +556,7 @@ public:
     uints xwrite_raw(const void* p, uints len)
     {
         opcd e = write_raw(p, len);
-        if (e)  throw e;
+        if (e != NOERR)  throw e;
         return len;
     }
 
@@ -565,7 +565,7 @@ public:
     uints xread_raw(void* p, uints len)
     {
         opcd e = read_raw_full(p, len);
-        if (e)  throw e;
+        if (e != NOERR)  throw e;
         return len;
     }
 
@@ -577,7 +577,7 @@ public:
             uints lb = len > 256 ? 256 : len;
             uints lo = lb;
             opcd e = read_raw_full(buf, lb);
-            if (e)  return e;
+            if (e != NOERR)  return e;
 
             len -= lo;
         }
@@ -587,7 +587,7 @@ public:
     uints xread_raw_scrap(uints len)
     {
         opcd e = read_raw_scrap(len);
-        if (e)  throw e;
+        if (e != NOERR)  throw e;
         return len;
     }
 
@@ -616,7 +616,7 @@ public:
             bin.write_raw(buf, alen);
 
             n += size - alen;
-            if (e || alen > 0 || dlen == 0)
+            if (e != NOERR || alen > 0 || dlen == 0)
                 break;
         }
 
@@ -660,7 +660,7 @@ public:
         COUNT any = COUNT(-1);
         COUNT cnt = COUNT(n);
         opcd e = write(&cnt, t.get_array_begin<COUNT>());
-        if (e)  return e;
+        if (e != NOERR)  return e;
 
         n = cnt == any ? UMAXS : cnt;
 
@@ -671,7 +671,7 @@ public:
         uints count = 0;
         e = write_array_content(c, &count, m);
 
-        if (!e)
+        if (e == NOERR)
             e = write(&count, t.get_array_end());
 
         return e;
@@ -687,7 +687,7 @@ public:
         COUNT any = COUNT(-1);
         COUNT cnt = any;
         opcd e = read(&cnt, t.get_array_begin<COUNT>());
-        if (e)  return e;
+        if (e != NOERR)  return e;
 
         uints n = cnt == any ? UMAXS : cnt;
 
@@ -698,7 +698,7 @@ public:
         e = read_array_content(c, n, &count, m);
 
         //read endarray
-        if (!e)
+        if (e == NOERR)
             e = read(&count, t.get_array_end());
 
         return e;
@@ -716,7 +716,7 @@ public:
         uchar m;
         uints ms = sizeof(uchar);
         opcd e = read_raw(&m, ms);
-        if (e)  return e;
+        if (e != NOERR)  return e;
         if (m)  return ersNO_MORE;
         return e;
     }
@@ -737,7 +737,7 @@ public:
             uints na = n * t.get_size();
             e = write_raw(c.extract(n), na);
 
-            if (!e)  *count = n;
+            if (e == NOERR)  *count = n;
         }
         else
             e = write_compound_array_content(c, count, m);
@@ -760,7 +760,7 @@ public:
             uints na = n * t.get_size();
             e = read_raw_full(c.insert(n, m), na);
 
-            if (!e)  *count = n;
+            if (e == NOERR)  *count = n;
         }
         else
             e = read_compound_array_content(c, n, count, m);
@@ -786,7 +786,7 @@ public:
             if (!p)
                 break;
 
-            if (needpeek && (e = write_array_separator(tae, 0)))
+            if (needpeek && (e = write_array_separator(tae, 0)) != NOERR)
                 return e;
 
             if (complextype)
@@ -794,7 +794,7 @@ public:
             else
                 e = write(p, tae);
 
-            if (e)
+            if (e != NOERR)
                 return e;
             ++k;
 
@@ -804,7 +804,7 @@ public:
         if (needpeek)
             e = write_array_separator(tae, 1);
 
-        if (!e)
+        if (e == NOERR)
             *count = k;
 
         return e;
@@ -827,7 +827,7 @@ public:
             --n;
 
             //peek if there's an element to read
-            if (needpeek && (e = read_array_separator(tae)))
+            if (needpeek && (e = read_array_separator(tae)) != NOERR)
                 break;
 
             void* p = c.insert(1, m);
@@ -839,7 +839,7 @@ public:
             else
                 e = read(p, tae);
 
-            if (e)
+            if (e != NOERR)
                 return e;
             ++k;
 
@@ -855,14 +855,18 @@ public:
     template<class COUNT>
     binstream& xwrite_array(binstream_container<COUNT>& s)
     {
-        opcd e = write_array(s);  if (e) throw e;  return *this;
+        opcd e = write_array(s);
+        if (e != NOERR) throw e;
+        return *this;
     }
 
     ///A read_array() wrapper throwing exception on error
     template<class COUNT>
     binstream& xread_array(binstream_container<COUNT>& s)
     {
-        opcd e = read_array(s);  if (e) throw e;  return *this;
+        opcd e = read_array(s);
+        if (e != NOERR) throw e;
+        return *this;
     }
 
 
