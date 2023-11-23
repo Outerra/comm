@@ -77,8 +77,8 @@ inline void dbg_memtrack_alloc(size_t size) {}
 template <class T>
 inline void dbg_memtrack_free(size_t size) {}
 
-inline void dbg_memtrack_alloc(const std::type_info* tracking, size_t size) {}
-inline void dbg_memtrack_free(const std::type_info* tracking, size_t size) {}
+inline void dbg_memtrack_alloc(const coid::type_info* tracking, size_t size) {}
+inline void dbg_memtrack_free(const coid::type_info* tracking, size_t size) {}
 
 #endif
 
