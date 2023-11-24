@@ -114,7 +114,7 @@
 #error this compiler does not support constexpr
 #endif
 
-//handle VS2015 incomplete constexpr support
+ //handle VS2015 incomplete constexpr support
 #if defined(_MSC_VER) && _MSC_VER < 1910
 #define coid_constexpr_for
 #else
@@ -131,10 +131,10 @@
 #endif
 
 #if defined(__cpp_concepts) || _MSC_VER >= 1936
-#define REQUIRES(R) requires R
+#define COID_REQUIRES(R) requires R
 #define COID_CONCEPTS
 #else 
-#define REQUIRES(R)
+#define COID_REQUIRES(R)
 #endif
 
 #if defined(__cpp_user_defined_literals) || _MSC_VER >= 1900
@@ -156,6 +156,8 @@
 # endif
 #endif
 
+namespace coid {
+
 #if defined(__cpp_lib_endian)
 #include <bit>
 using endian = std::endian;
@@ -163,6 +165,7 @@ using endian = std::endian;
 enum class endian { little = 0, big = 1, native = little };
 #endif
 
+} //namespace coid
 
 
 #ifdef SYSTYPE_MSVC
@@ -175,17 +178,16 @@ enum class endian { little = 0, big = 1, native = little };
 
 ///Static constant, adjustable in debug, const & optimized in release builds
 #ifdef _DEBUG
-#define STATIC_DBG static
+#define COID_STATIC_DBG static
 #else
-#define STATIC_DBG static const
+#define COID_STATIC_DBG static const
 #endif
 
-#include <cstddef>
 #include <cstdint>
 
 /// Operator new for preallocated storage
-inline void * operator new (size_t, const void *p) { return (void*)p; }
-inline void operator delete (void *, const void *) {}
+inline void* operator new (size_t, const void* p) { return (void*)p; }
+inline void operator delete (void*, const void*) {}
 
 
 namespace coid {
@@ -360,19 +362,19 @@ struct NOINIT_t
 ////////////////////////////////////////////////////////////////////////////////
 ///Shift pointer address in bytes
 template <class T>
-T* ptr_byteshift( T* p, ints b )
+T* ptr_byteshift(T* p, ints b)
 {
-    return (T*) ((char*)p + b);
+    return (T*)((char*)p + b);
 }
 
 template<class T>
-inline T* ptr_advance( T* p, ints i ) { return p+i; }
+inline T* ptr_advance(T* p, ints i) { return p + i; }
 
 template<>
-inline void* ptr_advance( void* p, ints i ) { return (uint8*)p + i; }
+inline void* ptr_advance(void* p, ints i) { return (uint8*)p + i; }
 
 template<>
-inline const void* ptr_advance( const void* p, ints i ) { return (const uint8*)p + i; }
+inline const void* ptr_advance(const void* p, ints i) { return (const uint8*)p + i; }
 
 ///Helper for taking address of a temporary for passing optional arguments
 template <class T>
@@ -392,7 +394,7 @@ COID_NAMESPACE_END
 
 
 #ifdef SYSTYPE_MSVC
-    #define COMM_ALIGNAS(k) __declspec( align(k) )
+#define COMM_ALIGNAS(k) __declspec( align(k) )
 #else
-    #define COMM_ALIGNAS(k) __attribute__((__aligned__(k)))
+#define COMM_ALIGNAS(k) __attribute__((__aligned__(k)))
 #endif

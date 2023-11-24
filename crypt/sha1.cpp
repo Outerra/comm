@@ -36,6 +36,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#include "../commtypes.h"
 #include <cstring>
 
 #include "sha1.h"
@@ -86,7 +87,7 @@ sha1_step(struct sha1_ctxt* ctxt)
     size_t t, s;
     uint32	tmp;
 
-    if constexpr (std::endian::native == std::endian::little)
+    if constexpr (coid::endian::native == coid::endian::little)
     {
         struct sha1_ctxt tctxt;
         //bcopy(&ctxt->m.b8[0], &tctxt.m.b8[0], 64);
@@ -204,7 +205,7 @@ sha1_pad(struct sha1_ctxt* ctxt)
     COUNT += (uint8)(padlen - 8);
     COUNT %= 64;
 
-    if constexpr (std::endian::native == std::endian::big)
+    if constexpr (coid::endian::native == coid::endian::big)
     {
         PUTPAD(ctxt->c.b8[0]); PUTPAD(ctxt->c.b8[1]);
         PUTPAD(ctxt->c.b8[2]); PUTPAD(ctxt->c.b8[3]);
@@ -262,9 +263,10 @@ sha1_result(
     digest = (uint8*)digest0;
     sha1_pad(ctxt);
 
-    if constexpr (std::endian::native == std::endian::big)
+    if constexpr (coid::endian::native == coid::endian::big) {
         //bcopy(&ctxt->h.b8[0], digest, 20);
         xmemcpy(digest, &ctxt->h.b8[0], 20);
+    }
     else
     {
         digest[0] = ctxt->h.b8[3]; digest[1] = ctxt->h.b8[2];

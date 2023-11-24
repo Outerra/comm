@@ -1044,7 +1044,7 @@ public:
         case 2: *(uint16*)dst = *(uint16*)src;  break;
         case 4: *(uint32*)dst = *(uint32*)src;  break;
         case 8: *(uint64*)dst = *(uint64*)src;  break;
-        default:  xmemcpy(dst, src, count);
+        default: xmemcpy(dst, src, count);
         }
         return dst;
     }
@@ -1071,7 +1071,7 @@ struct opcd_formatter
 
         token et = e.text();
         if (size <= n + 3 + et.len()) {
-            ::memcpy(buf + n, " : ", 3);
+            xmemcpy(buf + n, " : ", 3);
             et.copy_to(buf + n + 3, size - 3 - n);
             n += 3 + et.lens();
         }

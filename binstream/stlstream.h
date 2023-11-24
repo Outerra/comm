@@ -40,18 +40,17 @@
 
 #include "../namespace.h"
 
+#include "binstream.h"
+#include "../metastream/metastream.h"
+#include "../str.h"
+
 #include <string>
 #include <vector>
 #include <list>
 #include <deque>
 #include <set>
 #include <map>
-
 #include <iterator>
-
-#include "binstream.h"
-#include "../metastream/metastream.h"
-#include "../str.h"
 
 
 COID_NAMESPACE_BEGIN
@@ -96,7 +95,7 @@ protected:
     typename StlContainer::const_iterator inpi, endi;
 };
 
-///Container for inserting to stl containers 
+///Container for inserting to stl containers
 template<class StlContainer>
 struct binstream_container_stl_insert_iterator : binstream_container<uints>
 {
@@ -146,7 +145,7 @@ protected:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-///Container for inserting to stl associative containers 
+///Container for inserting to stl associative containers
 template<class StlContainer>
 struct binstream_container_stl_assoc_iterator : binstream_container<uints>
 {
@@ -206,7 +205,7 @@ template<class T, class A> inline binstream& operator >> (binstream& out, CONT<T
 {   v.clear(); \
     binstream_container_stl_insert_iterator< CONT<T,A> > c(v); \
     out.xread_array(c); \
-	return out; } \
+    return out; } \
 template<class T, class A> inline metastream& operator || (metastream& m, CONT<T,A>& v ) \
 {\
     if(m.stream_reading()) {\
@@ -231,12 +230,12 @@ PAIRUP_CONTAINERS_READABLE2( CONT, binstream_container_stl_input_iterator )
 template<class T, class A> inline binstream& operator << (binstream& out, const CONT<T,A>& v) \
 {   binstream_container_stl_input_iterator< CONT<T,A> > c(v); \
     out.xwrite_array(c); \
-	return out; } \
+    return out; } \
 template<class T, class A> inline binstream& operator >> (binstream& out, CONT<T,A>& v) \
 {   v.clear(); \
     binstream_container_stl_assoc_iterator< CONT<T,A> > c(v); \
     out.xread_array(c); \
-	return out; } \
+    return out; } \
 template<class T, class A> inline metastream& operator || (metastream& m, CONT<T,A>& v ) \
 {\
     if(m.stream_reading()) {\
@@ -317,7 +316,7 @@ template<class T, class A> inline binstream& operator << (binstream& out, const 
 {
     binstream_container_fixed_array<T,uints> c( v.empty() ? 0 : &v[0], v.size() );
     out.xwrite_array(c);
-	return out;
+    return out;
 }
 
 template<class T, class A> inline binstream& operator >> (binstream& in, std::vector<T,A>& v)
@@ -363,15 +362,15 @@ inline binstream& operator << (binstream& out, const std::string& p)
 {
     binstream_container_fixed_array<char,uint> c((char*)p.c_str(), p.size());
     out.xwrite_array(c);
-	return out;
+    return out;
 }
 
 inline binstream& operator >> (binstream& in, std::string& p)
 {
-	charstr t;
-	in >> t;
+    charstr t;
+    in >> t;
     p = t.ptr() ? t.ptr() : "";
-	return in;
+    return in;
 }
 
 inline metastream& operator || (metastream& meta, std::string& p)
@@ -405,18 +404,18 @@ inline metastream& operator || (metastream& meta, std::string& p)
 ////////////////////////////////////////////////////////////////////////////////
 template <class F, class S> inline binstream& operator << (binstream& out, const std::pair<F,S>& p)
 {
-	return out << p.first << p.second;
+    return out << p.first << p.second;
 }
 
 template <class F, class S> inline binstream& operator >> (binstream& in, std::pair<F,S>& p)
 {
-	return in >> p.first >> p.second;
+    return in >> p.first >> p.second;
 }
 
 //workaround for std::map
 template <class F, class S> inline binstream& operator >> (binstream& in, std::pair<const F,S>& p)
 {
-	return in >> (F&)p.first >> p.second;
+    return in >> (F&)p.first >> p.second;
 }
 
 template <class F, class S>
