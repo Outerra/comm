@@ -229,7 +229,7 @@ public:
         else if (t.is_array_end())
         {
             if (t.type == type::T_KEY)
-                _bufw << "\" : ";
+                _bufw << "\" :";
             else if (t.type == type::T_CHAR || t.type == type::T_BINARY)
                 _bufw << char('\"');
             else

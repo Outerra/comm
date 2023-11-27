@@ -396,6 +396,30 @@ public:
         return used;
     }
 
+    ///Define a member variable (a container), not written if v.begin() == v.end(), calls clear() on container if data not present in stream
+    /// @param name variable name, used as a key in output formats
+    /// @param v variable to read/write to
+    /// @return true if value was read or written and no default was used, false in meta phase
+    template<typename T>
+    bool member_nowriteempty(const token& name, T& v)
+    {
+        bool used = false;
+
+        if (_binw) {
+            used = write_optional(!cache_prepared() && (v.begin() == v.end())
+                ? 0 : (typename resolve_enum<T>::type*) & v);
+        }
+        else if (_binr) {
+            used = read_optional(v);
+            if (!used)
+                v.clear();
+        }
+        else
+            meta_variable_optional<T>(name, &v);
+
+        return used;
+    }
+
     ///Define a fixed size array member variable
     /// @param name variable name, used as a key in output formats
     /// @param v variable to read/write to
@@ -929,7 +953,7 @@ public:
     ///Define an obsolete member - not present in the object, ignored on output, but doesn't fail when present in the input stream
     /// @param name variable name, used as a key in output formats
     /// @param v optional pointer to the read value, not written if not found in stream
-    /// @return true if value was read or written and no default was used, false in meta phase
+    /// @return true if value was read, false if it wasn't present during reading. Also false in meta and writing phases
     template<typename T>
     bool member_obsolete(const token& name, T* v = nullptr)
     {
