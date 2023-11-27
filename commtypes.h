@@ -156,16 +156,16 @@
 # endif
 #endif
 
-namespace coid {
-
 #if defined(__cpp_lib_endian)
 #include <bit>
-using endian = std::endian;
-#else
-enum class endian { little = 0, big = 1, native = little };
-#endif
-
+namespace coid {
+    using endian = std::endian;
 } //namespace coid
+#else
+namespace coid {
+    enum class endian { little = 0, big = 1, native = little };
+} //namespace coid
+#endif
 
 
 #ifdef SYSTYPE_MSVC
