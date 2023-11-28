@@ -452,7 +452,7 @@ private:
     }
 
     void* threadfunc(int order);
-    void run_task(invoker_base* task);
+    void run_task(invoker_base* task, bool waiter);
     bool is_signaled(signal_handle handle, bool lock);
     signal_handle alloc_signal();
     void increment(signal_handle* handle);

@@ -47,21 +47,23 @@ void taskmaster::wait() {
     }
 }
 
-void taskmaster::run_task(invoker_base* task)
+void taskmaster::run_task(invoker_base* task, bool waiter)
 {
     CPU_PROFILE_FUNCTION();
     uints id = _taskdata.get_item_id((granule*)task);
     //coidlog_devdbg("taskmaster", "thread " << order << " processing task id " << id);
 
 #ifdef _DEBUG
-    thread::set_name("<unknown task>"_T);
+    if (!waiter)
+        thread::set_name("<unknown task>"_T);
 #endif
 
     DASSERT_RET(_taskdata.is_valid_id(id));
     task->invoke();
 
 #ifdef _DEBUG
-    thread::set_name("<no task>"_T);
+    if (!waiter)
+        thread::set_name("<no task>"_T);
 #endif
 
     const signal_handle handle = task->signal();
@@ -101,7 +103,7 @@ void* taskmaster::threadfunc( int order )
                     --_qsize;
                     if (prio != (int)EPriority::LOW) --_hqsize;
                 }
-                run_task(task);
+                run_task(task, false);
                 break;
             }
         }
@@ -187,7 +189,7 @@ void taskmaster::enter_critical_section(critical_section& critical_section, int 
                     --_qsize;
                     if (prio != (int)EPriority::LOW) --_hqsize;
                 }
-                run_task(task);
+                run_task(task, true);
                 break;
             }
         }
@@ -218,7 +220,7 @@ void taskmaster::wait(signal_handle signal)
                     --_qsize;
                     if (prio != (int)EPriority::LOW) --_hqsize;
                 }
-                run_task(task);
+                run_task(task, true);
                 break;
             }
         }
