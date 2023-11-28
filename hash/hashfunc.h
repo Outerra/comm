@@ -42,7 +42,7 @@
 #include "../namespace.h"
 #include "../commtypes.h"
 #include <ctype.h>
-
+#include <type_traits>
 
 COID_NAMESPACE_BEGIN
 
