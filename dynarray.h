@@ -1107,9 +1107,9 @@ public:
 
     ///Save transposed array data
     ///Destination buffer will contain 1st bytes of every array element, followed by 2nd bytes and so on
-    void transpose_to(dynarray<uint8>& buf) const
+    void append_transpose_to(dynarray<uint8>& buf) const
     {
-        uint8* dst = buf.alloc(byte_size());
+        uint8* dst = buf.add(byte_size());
 
         auto b = ptr();
         auto e = ptre();
@@ -1124,9 +1124,9 @@ public:
 
     ///Save transposed and differentiated array data
     ///Destination buffer will contain 1st bytes of every array element, followed by 2nd bytes and so on
-    void transpose_diff_to(dynarray<int8>& buf) const
+    void append_transpose_diff_to(dynarray<int8>& buf) const
     {
-        int8* dst = buf.alloc(byte_size());
+        int8* dst = buf.add(byte_size());
 
         auto b = ptr();
         auto e = ptre();
@@ -1142,20 +1142,23 @@ public:
         }
     }
 
-    ///Load transposed array data
+    ///Append transposed array data
     ///Source data contain 1st bytes of every array element, followed by 2nd bytes and so on
-    T* transpose_from(const uint8* src, uints size)
+    /// @param data pointer to the transposed source data buffer
+    /// @param byte_size total size of data in bytes
+    T* append_transpose_from(const void* data, uints byte_size)
     {
-        uints stride = size / sizeof(T);
-        alloc(stride);
+        uints nitems = byte_size / sizeof(T);
+        DASSERT(byte_size == nitems * sizeof(T)); //there should be no remainder
+        T* p = add(nitems);
 
-        auto p = ptr();
-        auto e = ptre();
+        const uint8* src = static_cast<const uint8*>(data);
+        T* e = ptre();
         for (; p != e; ++p) {
             uint8* bytes = reinterpret_cast<uint8*>(p);
 
             for (int i = 0; i < sizeof(T); ++i)
-                bytes[i] = src[stride*i];
+                bytes[i] = src[nitems*i];
 
             src++;
         }
@@ -1163,15 +1166,18 @@ public:
         return ptr();
     }
 
-    ///Load transposed and differentiated array data
+    ///Append transposed and differentiated array data
     ///Source data contain 1st bytes of every array element, followed by 2nd bytes and so on
-    T* transpose_diff_from(const int8* src, uints size)
+    /// @param data pointer to the transposed source data buffer
+    /// @param byte_size total size in bytes, should be multiple of sizeof(T)
+    T* append_transpose_diff_from(const int8* data, uints byte_size)
     {
-        uints stride = size / sizeof(T);
-        alloc(stride);
+        uints nitems = byte_size / sizeof(T);
+        DASSERT(byte_size == nitems * sizeof(T)); //there should be no remainder
+        T* b = add(nitems);
 
-        auto b = ptr();
-        auto e = ptre();
+        const uint8* src = static_cast<const uint8*>(data);
+        T* e = ptre();
 
         for (int i = 0; i < sizeof(T); ++i)
         {
