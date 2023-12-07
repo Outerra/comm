@@ -52,80 +52,80 @@ class inoutstream : public binstream
     binstream* _in;
     binstream* _out;
 
-    void CHK_O() { DASSERTX( _out!=0, "output stream not bound" ); }
-    void CHK_I() { DASSERTX( _in!=0, "input stream not bound" ); }
+    void CHK_O() { DASSERTX(_out != 0, "output stream not bound"); }
+    void CHK_I() { DASSERTX(_in != 0, "input stream not bound"); }
 
 public:
 
-    virtual uint binstream_attributes( bool in0out1 ) const
+    virtual uint binstream_attributes(bool in0out1) const override
     {
-        if( in0out1 )
+        if (in0out1)
         {
-            if( _out == 0 )  return fATTR_NO_OUTPUT_FUNCTION;
+            if (_out == 0)  return fATTR_NO_OUTPUT_FUNCTION;
             return _out->binstream_attributes(in0out1);
         }
         else
         {
-            if( _in == 0 )  return fATTR_NO_INPUT_FUNCTION;
+            if (_in == 0)  return fATTR_NO_INPUT_FUNCTION;
             return _in->binstream_attributes(in0out1);
         }
     }
 
-    virtual opcd write_raw( const void* p, uints& len )                 { CHK_O(); return _out->write_raw( p, len ); }
-    virtual opcd read_raw( void* p, uints& len )                        { CHK_I(); return _in->read_raw( p, len ); }
+    virtual opcd write_raw(const void* p, uints& len) override { CHK_O(); return _out->write_raw(p, len); }
+    virtual opcd read_raw(void* p, uints& len) override { CHK_I(); return _in->read_raw(p, len); }
 
-    virtual opcd write( const void* p, type t )                         { CHK_O(); return _out->write( p, t ); }
-    virtual opcd read( void* p, type t )                                { CHK_I(); return _in->read( p, t ); }
+    virtual opcd write(const void* p, type t) override { CHK_O(); return _out->write(p, t); }
+    virtual opcd read(void* p, type t) override { CHK_I(); return _in->read(p, t); }
 
-    virtual opcd write_array_separator( type t, uchar end )             { CHK_O(); return _out->write_array_separator( t, end ); }
-    virtual opcd read_array_separator( type t )                         { CHK_I(); return _in->read_array_separator(t); }
+    virtual opcd write_array_separator(type t, uchar end) override { CHK_O(); return _out->write_array_separator(t, end); }
+    virtual opcd read_array_separator(type t) override { CHK_I(); return _in->read_array_separator(t); }
 
-    virtual opcd write_array_content( binstream_container_base& c, uints* count ) {
+    virtual opcd write_array_content(binstream_container_base& c, uints* count) override {
         CHK_O();
-        return _out->write_array_content(c,count);
+        return _out->write_array_content(c, count);
     }
-    virtual opcd read_array_content( binstream_container_base& c, uints n, uints* count ) {
+    virtual opcd read_array_content(binstream_container_base& c, uints n, uints* count) override {
         CHK_I();
-        return _in->read_array_content(c,n,count);
+        return _in->read_array_content(c, n, count);
     }
 
-    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS )
+    virtual opcd read_until(const substring& ss, binstream* bout, uints max_size = UMAXS) override
     {
         CHK_I();
-        return _in->read_until( ss, bout, max_size );
+        return _in->read_until(ss, bout, max_size);
     }
 
-    virtual opcd peek_read( uint timeout )  { return _in->peek_read(timeout); }
-    virtual opcd peek_write( uint timeout ) { return _out->peek_write(timeout); }
+    virtual opcd peek_read(uint timeout) override { return _in->peek_read(timeout); }
+    virtual opcd peek_write(uint timeout) override { return _out->peek_write(timeout); }
 
 
-    virtual opcd bind( binstream& bin, int io )
+    virtual opcd bind(binstream& bin, int io) override
     {
-        if( io<0 )
+        if (io < 0)
             _in = &bin;
-        else if( io>0 )
+        else if (io > 0)
             _out = &bin;
         else
             _in = _out = &bin;
         return 0;
     }
 
-    virtual bool is_open() const            { return _in->is_open(); }
-    virtual void flush()                    { _out->flush(); }
-    virtual void acknowledge (bool eat=false)   { _in->acknowledge(eat); }
+    virtual bool is_open() const override { return _in->is_open(); }
+    virtual void flush() override { _out->flush(); }
+    virtual void acknowledge(bool eat = false) override { _in->acknowledge(eat); }
 
-    virtual void reset_read()
+    virtual void reset_read() override
     {
         _in->reset_read();
     }
 
-    virtual void reset_write()
+    virtual void reset_write() override
     {
         _out->reset_write();
     }
 
-    inoutstream() : _in(0),_out(0)      { }
-    inoutstream( binstream* bin, binstream* bout )
+    inoutstream() : _in(0), _out(0) { }
+    inoutstream(binstream* bin, binstream* bout)
     {
         _in = bin;
         _out = bout;
