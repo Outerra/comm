@@ -56,9 +56,9 @@ void compot()
 
     type_sequencer<void> idr;
 
-    int id0 = idr.id<transform>();
-    int id1 = idr.id<jozo<transform>>();
-    int id0x = idr.id<transform>();
+    int id0 = idr.type_id<transform>();
+    int id1 = idr.type_id<jozo<transform>>();
+    int id0x = idr.type_id<transform>();
 }
 
 

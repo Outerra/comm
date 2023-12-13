@@ -428,7 +428,7 @@ struct FooBBB
         {
             m.member_optional("b", s.b, false);
             m.member_optional("c", s.c, false);
-            m.member_optional("a", s.a, FooAAA());
+            m.member_optional_nowritedef("a", s.a, FooAAA());
         });
     }
 
