@@ -97,6 +97,9 @@ COID_NAMESPACE_END
 //@{ Runtime assertions
 #define RASSERT(expr)               XASSERTCOND(expr) coid::__rassert(0,__FILE__,std::source_location::current().line(),__FUNCTION__,#expr,true); XASSERT_BREAK; } while(0)
 #define RASSERTX(expr,txt)          XASSERTCOND(expr) coid::__rassert(coid::opt_string() << txt,__FILE__,std::source_location::current().line(),__FUNCTION__,#expr,true); XASSERT_BREAK; } while(0)
+
+#define RASSERT_FATAL(expr)         XASSERTCOND(expr) coid::__rassert(0,__FILE__,std::source_location::current().line(),__FUNCTION__,#expr,true); XASSERT_BREAK; std::abort(); } while(0)
+#define RASSERT_FATALX(expr,txt)    XASSERTCOND(expr) coid::__rassert(coid::opt_string() << txt,__FILE__,std::source_location::current().line(),__FUNCTION__,#expr,true); XASSERT_BREAK; std::abort(); } while(0)
 //@}
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -128,6 +131,7 @@ COID_NAMESPACE_END
 #define DASSERTX(expr,txt)
 #define DASSERT_ONCE(expr)
 #define DASSERT_FATAL(expr)
+#define DASSERT_FATALX(expr,txt)
 
 #define DASSERT_RET(expr, ...)      do{ if(expr) break; coid::__retassert(); return __VA_ARGS__; } while(0)
 #define DASSERT_RETX(expr,txt, ...) do{ if(expr) break; coid::__retassert(); return __VA_ARGS__; } while(0)
