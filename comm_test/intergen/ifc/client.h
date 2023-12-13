@@ -7,6 +7,7 @@
 //See LICENSE file for copyright and license information
 
 //host class ab::cd::host
+//source file interface.hpp
 
 #include <comm/commexception.h>
 #include <comm/intergen/ifc.h>
