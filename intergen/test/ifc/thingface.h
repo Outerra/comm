@@ -7,6 +7,7 @@
 //See LICENSE file for copyright and license information
 
 //host class n1::n2::thing
+//source file test.hpp
 
 //begin auto forward declarations
 namespace ifc1::ifc2 { class emptyface; }

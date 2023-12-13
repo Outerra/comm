@@ -1,7 +1,7 @@
 #include "factory.hpp"
 #include "item.hpp"
 #include "ifc/item_interface.h"
-#include "ifc/factory_interface.js.h"
+#include "ifc/js/factory_interface.h"
 
 iref<factory> factory::get()
 {
