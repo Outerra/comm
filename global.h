@@ -106,8 +106,6 @@ class data_manager
     struct erecord
     {
         uint16 version;
-        uint16 combo;
-        uint32 id;
     };
 
     struct sequencer : type_sequencer
@@ -176,6 +174,7 @@ class data_manager
             DASSERT_RET(id < _entities.size(), false);
 
             if (clear_bit(id)) {
+                ++_entities[id].version;
                 --_count;
                 return true;
             }
