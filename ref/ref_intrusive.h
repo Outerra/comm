@@ -60,6 +60,11 @@ public: // methods only
         takeover_internal(std::forward<this_type>(rhs));
     }
 
+    ~ref_intrusive()
+    {
+        release();
+    }
+
     /// @brief Constructor from pointer of derived type
     /// @tparam DerivedType - type derived form Type
     template<class DerivedType>
@@ -122,7 +127,10 @@ public: // methods only
     void release() {
         if (_object_ptr)
         {
-            reinterpret_cast<ref_policy_intrusive*>(_object_ptr)->decrease_strong_counter();
+            if (reinterpret_cast<ref_policy_intrusive*>(_object_ptr)->decrease_strong_counter())
+            {
+                reinterpret_cast<ref_policy_intrusive*>(_object_ptr)->on_destroy();
+            }
         }
         _object_ptr = 0;
     }
