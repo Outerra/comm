@@ -1847,28 +1847,25 @@ protected:
         using bitmask_value_type = typename storage_t::value_type;
         constexpr int mask_bits = (int)constexpr_int_high_pow2(BITMASK_BITS);
         constexpr uint bitmask_value_mask = (1 << mask_bits) - 1;
-        uint bit = index & bitmask_value_mask;
-        uints slot = index >> mask_bits;
 
-        bitmask_value_type mask = _allocated[slot];
-        ++bit;
-        mask >>= bit;
-        do {
-            while (mask) {
-                if (mask & 1)
-                    return (slot << mask_bits) + bit;
-                ++bit;
-                mask >>= 1;
+        uints id = index;
+        ++id;
+        uint bit = id & bitmask_value_mask;
+        uints slot = id >> mask_bits;
+
+        uints count = _allocated.size();
+        while (slot < count) {
+            bitmask_value_type mask = _allocated[slot];
+            mask >>= bit;
+
+            if (mask) {
+                bit += lsb_bit_set(mask);
+                return (slot << mask_bits) + bit;
             }
 
-            ++slot;
-            if (slot >= _allocated.size())
-                break;
-
-            mask = _allocated[slot];
             bit = 0;
+            ++slot;
         }
-        while (true);
 
         return -1;
     }
