@@ -564,10 +564,10 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 if (m->bcreator && m->args.size() == 0 && lastifc->default_creator.is_empty())
                     lastifc->default_creator = m->name;
 
-                if (!lastifc->bnoscript && !m->bstatic && !binternal && !m->boperator) {
+                if (!lastifc->bnoscript && !m->bstatic && !m->binternal && !m->boperator) {
                     //check if another public method with the same name exists
                     MethodIG* mdup = lastifc->method.find_if([&](const MethodIG& mi) {
-                        return !mi.bstatic && mi.name == m->name;
+                        return !mi.bstatic && !mi.binternal && mi.name == m->name;
                     });
                     if (mdup != m) {
                         out << (lex.prepare_exception() << "error: overloaded methods not supported for scripting interfaces\n");
