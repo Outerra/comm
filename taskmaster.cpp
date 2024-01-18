@@ -96,7 +96,7 @@ void* taskmaster::threadfunc( int order )
         // TODO there are 3 locks here: wait, _ready_jobs.pop and lock(_sync), they can be merged into one
         invoker_base* task = 0;
         for (int prio = 0; prio < (int)EPriority::COUNT; ++prio) {
-            const bool can_run = prio != (int)EPriority::LOW || order < _nlowprio_threads || order == -1;
+            const bool can_run = prio != (int)EPriority::LOW || (order < _nlowprio_threads && order != -1);
             if (can_run && _ready_jobs[prio].pop(task)) {
                 {
                     comm_mutex_guard<comm_mutex> lock(_sync);
@@ -213,7 +213,7 @@ void taskmaster::wait(signal_handle signal)
     while (!is_signaled(signal, true)) {
         invoker_base* task = 0;
         for (int prio = 0; prio < (int)EPriority::COUNT; ++prio) {
-            const bool can_run = prio != (int)EPriority::LOW || (order < _nlowprio_threads&& order != -1);
+            const bool can_run = prio != (int)EPriority::LOW || (order < _nlowprio_threads && order != -1);
             if (can_run && _ready_jobs[prio].pop(task)) {
                 {
                     comm_mutex_guard<comm_mutex> lock(_sync);
