@@ -135,6 +135,7 @@ public: // methods only
 
     /// @brief Default constructor
     ref_policy_base() = default;
+    virtual ~ref_policy_base() = default;
 
 protected: // methods only
 protected: // members only
