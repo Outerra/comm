@@ -98,6 +98,11 @@ public:
         return *this;
     }
 
+    binstring& write_fixed_string(const token& tok) {
+        ::memcpy(_tstr.add(tok.len()), tok.ptr(), tok.len());
+        return *this;
+    }
+
     binstring& write_varstring(const token& tok) {
         uints len = tok.len();
         write_varint(len);
@@ -287,6 +292,18 @@ public:
         const uint8* p = _tstr.ptr() + _offset;
         _offset += size;
         return token((const char*)p, size);
+    }
+
+    /// @brief ensure a fixed string follows in the stream
+    /// @param str string to check
+    /// @return true if found, if false, offset is not advanced
+    bool fixed_string(const token& str) {
+        if (_tstr.size() - _offset < str.len())
+            return false;
+        if (str != token((const char*)_tstr.ptr() + _offset, str.len()))
+            return false;
+        _offset += str.len();
+        return true;
     }
 
     ///Read/append data from binstream
