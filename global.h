@@ -801,7 +801,7 @@ public:
     /// @brief Enumerate through entities with given component
     /// @tparam C data type
     /// @tparam Fn
-    /// @param fn
+    /// @param fn - void fn(C& component, uint id)
     template <class C, class Fn>
     static void enumerate(const Fn& fn)
     {
