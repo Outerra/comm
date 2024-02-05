@@ -5326,12 +5326,13 @@ void* dlrealloc(void* oldmem, size_t bytes) {
 #endif /* FOOTERS */
     if (!PREACTION(m)) {
       mchunkptr newp = try_realloc_chunk(m, oldp, nb, 1);
-      POSTACTION(m);
       if (newp != 0) {
         check_inuse_chunk(m, newp);
+        POSTACTION(m);
         mem = chunk2mem(newp);
       }
       else {
+        POSTACTION(m);
         mem = internal_malloc(m, bytes);
         if (mem != 0) {
           size_t oc = chunksize(oldp) - overhead_for(oldp);
@@ -5365,11 +5366,11 @@ void* dlrealloc_in_place(void* oldmem, size_t bytes) {
 #endif /* FOOTERS */
       if (!PREACTION(m)) {
         mchunkptr newp = try_realloc_chunk(m, oldp, nb, 0);
-        POSTACTION(m);
         if (newp == oldp) {
           check_inuse_chunk(m, newp);
           mem = oldmem;
         }
+        POSTACTION(m);
       }
     }
   }
@@ -5931,12 +5932,13 @@ void* mspace_realloc(mspace msp, void* oldmem, size_t bytes) {
 #endif /* FOOTERS */
     if (!PREACTION(m)) {
       mchunkptr newp = try_realloc_chunk(m, oldp, nb, 1);
-      POSTACTION(m);
       if (newp != 0) {
         check_inuse_chunk(m, newp);
+        POSTACTION(m);
         mem = chunk2mem(newp);
       }
       else {
+        POSTACTION(m);
         mem = mspace_malloc(m, bytes);
         if (mem != 0) {
           size_t oc = chunksize(oldp) - overhead_for(oldp);
