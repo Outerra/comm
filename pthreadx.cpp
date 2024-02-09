@@ -177,14 +177,28 @@ bool thread::cancel_and_wait( uint mstimeout )
 void thread::join( thread_t tid )
 {
     //this is a cancellation point too
-    while(1)
+    //while(1)
+    //{
+    //    if( !SINGLETON(thread_manager).thread_exists(tid) )
+    //        return;
+    //
+    //    self_test_cancel(0);
+    //    sysMilliSecondSleep(20);
+    //}
+#ifdef SYSTYPE_WIN
+    HANDLE thread_handle = OpenThread(THREAD_ALL_ACCESS, true, tid);
+    if (thread_handle != NULL)
     {
-        if( !SINGLETON(thread_manager).thread_exists(tid) )
-            return;
-
-        self_test_cancel(0);
-        sysMilliSecondSleep(20);
+        WaitForSingleObject(thread_handle, INFINITE);
     }
+#else
+    int result = pthread_join(tid);
+    if (result != 0)
+    {
+        DASSERT(0 && "error!");
+    }
+#endif
+   
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -199,13 +213,7 @@ bool thread::exists( thread_t tid )
     return SINGLETON(thread_manager).thread_exists(tid);
 }
 
-
-
-
-
-
-
-
+////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 thread_key::thread_key()
 {
