@@ -75,28 +75,7 @@ public:
         volatile int32 value = 0;
     };
 
-    struct signal_handle
-    {
-        enum
-        {
-            invalid = 0xffFFffFF,
-            index_mask = 0x0000ffFF,
-            version_shift = 16
-        };
-
-        static signal_handle make(uint version, uint index) { return signal_handle((version << version_shift) | (index & index_mask)); }
-
-        signal_handle() : value(invalid) {}
-        explicit signal_handle(uint32 value) : value(value) {}
-
-        bool is_valid() const { return value != invalid; }
-        uint index() const { return value & index_mask; }
-        uint version() const { return value >> version_shift; }
-
-        uint32 value = invalid;
-    };
-
-    static const signal_handle invalid_signal;
+    using wait_counter = std::atomic<uint>;
 
     enum class EPriority {
         HIGH,
@@ -120,12 +99,12 @@ public:
     /// @param fn function(index) to run
     template <typename Index, typename Fn>
     void parallel_for(Index first, Index last, const Fn& fn) {
-        signal_handle signal;
+        wait_counter counter;
         for (; first != last; ++first) {
-            push(EPriority::HIGH, &signal, fn, first);
+            push(EPriority::HIGH, &counter, fn, first);
         }
 
-        wait(signal);
+        wait(counter);
     }
 
     ///Push task (functor, e.g. lamda) into queue for processing by worker threads
@@ -133,9 +112,9 @@ public:
     /// @param signal signal to trigger when the task finishes
     /// @param fn functor to run
     template <typename Fn>
-    void push_functor(EPriority priority, signal_handle* signal, const Fn& fn)
+    void push_functor(EPriority priority, wait_counter* wait_counter_ptr, const Fn& fn)
     {
-        push(priority, signal, [](const Fn& fn) {
+        push(priority, wait_counter_ptr, [](const Fn& fn) {
             fn();
             }, fn);
     }
@@ -146,17 +125,20 @@ public:
     /// @param fn function to run
     /// @param args arguments needed to invoke the function
     template <typename Fn, typename ...Args>
-    void push(EPriority priority, signal_handle* signal, const Fn& fn, Args&& ...args)
+    void push(EPriority priority, wait_counter* wait_counter_ptr, const Fn& fn, Args&& ...args)
     {
         using callfn = invoker<Fn, Args...>;
 
         {
             //lock to access allocator and semaphore
-            comm_mutex_guard<comm_mutex> lock(_sync);
+            comm_mutex_guard<comm_mutex> lock(_task_sync);
 
             granule* p = alloc_data(sizeof(callfn));
-            increment(signal);
-            auto task = new(p) callfn(signal ? *signal : invalid_signal, fn, std::forward<Args>(args)...);
+            if (wait_counter_ptr)
+            {
+                wait_counter_ptr->fetch_add(1, std::memory_order_relaxed);
+            }
+            auto task = new(p) callfn(wait_counter_ptr, fn, std::forward<Args>(args)...);
 
             _ready_jobs[(int)priority].push_front(task);
 
@@ -176,7 +158,7 @@ public:
     /// @param obj object pointer to run the member function on
     /// @param args arguments needed to invoke the function
     template <typename Fn, typename C, typename ...Args>
-    void push_memberfn(EPriority priority, signal_handle* signal, Fn fn, C* obj, Args&& ...args)
+    void push_memberfn(EPriority priority, wait_counter* wait_counter_ptr, Fn fn, C* obj, Args&& ...args)
     {
         static_assert(std::is_member_function_pointer<Fn>::value, "fn must be a function that can be invoked as ((*obj).*fn)(args)");
 
@@ -184,11 +166,14 @@ public:
 
         {
             //lock to access allocator and semaphore
-            comm_mutex_guard<comm_mutex> lock(_sync);
+            comm_mutex_guard<comm_mutex> lock(_task_sync);
 
             granule* p = alloc_data(sizeof(callfn));
-            increment(signal);
-            auto task = new(p) callfn(signal ? *signal : invalid_signal, fn, obj, std::forward<Args>(args)...);
+            if (wait_counter_ptr)
+            {
+                wait_counter_ptr->fetch_add(1, std::memory_order_relaxed);
+            }
+            auto task = new(p) callfn(wait_counter_ptr, fn, obj, std::forward<Args>(args)...);
 
             _ready_jobs[(int)priority].push_front(task);
 
@@ -208,7 +193,7 @@ public:
     /// @param obj object reference to run the member function on. Can be a smart ptr type which resolves to the object with * operator
     /// @param args arguments needed to invoke the function
     template <typename Fn, typename C, typename ...Args>
-    void push_memberfn(EPriority priority, signal_handle* signal, Fn fn, const C& obj, Args&& ...args)
+    void push_memberfn(EPriority priority, wait_counter* wait_counter_ptr, Fn fn, const C& obj, Args&& ...args)
     {
         static_assert(std::is_member_function_pointer<Fn>::value, "fn must be a function that can be invoked as ((*obj).*fn)(args)");
 
@@ -216,11 +201,14 @@ public:
 
         {
             //lock to access allocator and semaphore
-            comm_mutex_guard<comm_mutex> lock(_sync);
+            comm_mutex_guard<comm_mutex> lock(_task_sync);
 
             granule* p = alloc_data(sizeof(callfn));
-            increment(signal);
-            auto task = new(p) callfn(signal ? *signal : invalid_signal, fn, obj, std::forward<Args>(args)...);
+            if (wait_counter_ptr)
+            {
+                wait_counter_ptr->fetch_add(1, std::memory_order_relaxed);
+            }
+            auto task = new(p) callfn(wait_counter_ptr, fn, obj, std::forward<Args>(args)...);
 
             _ready_jobs[(int)priority].push_front(task);
 
@@ -249,21 +237,11 @@ public:
     /// @note each time a task is pushed to queue and has a signal associated, it increments the signal's counter.
     // When the task finishes it decrements the counter. Once the counter == 0, the signal is in signaled state.
     // Multiple tasks can use the same signal.
-    void wait(signal_handle signal);
+    void wait(const std::atomic<uint32>& wait_counter);
 
     ///Terminate all task threads
     /// @param empty_queue if true, wait until the task queue empties, false finish only currently processed tasks
     void terminate(bool empty_queue);
-
-    ///Create standalone signal not associated with any task. It can be used to wait for any arbitrary stuff.
-    /// @note The signal's counter is initialized = 1 -> wait(signal) will wait untill counter == 0)
-    // use taskmaster::trigger_signal(signal) do decrement the counter
-    // if you just want to wait until some task finishes, you do not need to use this, see "Basic usage"
-    signal_handle create_signal();
-
-    ///Manually decrements signal's counter. When the counter reaches 0, the signal is in signaled state
-    ///and waiting entities can progress further.
-    void trigger_signal(signal_handle handle);
 
 protected:
 
@@ -306,25 +284,25 @@ protected:
         virtual void invoke() = 0;
         virtual size_t size() const = 0;
 
-        invoker_base(signal_handle signal)
-            : _signal(signal)
+        invoker_base(wait_counter* wait_counter_ptr)
+            : _wait_counter_ptr(wait_counter_ptr)
             , _tid(thread::self())
         {}
 
-        signal_handle signal() const {
-            return _signal;
+        std::atomic<uint>* get_wait_counter() const {
+            return _wait_counter_ptr;
         }
 
     protected:
-        signal_handle _signal;
+        std::atomic<uint32>* _wait_counter_ptr;
         thread_t _tid;
     };
 
     template <typename Fn, typename ...Args>
     struct invoker_common : invoker_base
     {
-        invoker_common(signal_handle signal, const Fn& fn, Args&& ...args)
-            : invoker_base(signal)
+        invoker_common(wait_counter* wait_counter_ptr, const Fn& fn, Args&& ...args)
+            : invoker_base(wait_counter_ptr)
             , _fn(fn)
             , _tuple(std::forward<Args>(args)...)
         {}
@@ -353,8 +331,8 @@ protected:
     template <typename Fn, typename ...Args>
     struct invoker : invoker_common<Fn, Args...>
     {
-        invoker(signal_handle signal, const Fn& fn, Args&& ...args)
-            : invoker_common<Fn, Args...>(signal, fn, std::forward<Args>(args)...)
+        invoker(wait_counter* wait_counter_ptr, const Fn& fn, Args&& ...args)
+            : invoker_common<Fn, Args...>(wait_counter_ptr, fn, std::forward<Args>(args)...)
         {}
 
         void invoke() override final {
@@ -370,13 +348,13 @@ protected:
     template <typename Fn, typename C, typename ...Args>
     struct invoker_memberfn : invoker_common<Fn, Args...>
     {
-        invoker_memberfn(signal_handle signal, Fn fn, const C& obj, Args&&... args)
-            : invoker_common<Fn, Args...>(signal, fn, std::forward<Args>(args)...)
+        invoker_memberfn(wait_counter* wait_counter_ptr, Fn fn, const C& obj, Args&&... args)
+            : invoker_common<Fn, Args...>(wait_counter_ptr, fn, std::forward<Args>(args)...)
             , _obj(obj)
         {}
 
-        invoker_memberfn(signal_handle signal, Fn fn, C&& obj, Args&&... args)
-            : invoker_common<Fn, Args...>(signal, fn, std::forward<Args>(args)...)
+        invoker_memberfn(wait_counter* wait_counter_ptr, Fn fn, C&& obj, Args&&... args)
+            : invoker_common<Fn, Args...>(wait_counter_ptr, fn, std::forward<Args>(args)...)
             , _obj(std::forward<C>(obj))
         {}
 
@@ -397,8 +375,8 @@ protected:
     template <typename Fn, typename C, typename ...Args>
     struct invoker_memberfn<Fn, C*, Args...> : invoker_common<Fn, Args...>
     {
-        invoker_memberfn(signal_handle signal, Fn fn, C* obj, Args&&... args)
-            : invoker_common<Fn, Args...>(signal, fn, std::forward<Args>(args)...)
+        invoker_memberfn(wait_counter* wait_counter_ptr, Fn fn, C* obj, Args&&... args)
+            : invoker_common<Fn, Args...>(wait_counter_ptr, fn, std::forward<Args>(args)...)
             , _obj(obj)
         {}
 
@@ -419,8 +397,8 @@ protected:
     template <typename Fn, typename C, typename ...Args>
     struct invoker_memberfn<Fn, iref<C>, Args...> : invoker_common<Fn, Args...>
     {
-        invoker_memberfn(signal_handle signal, Fn fn, const iref<C>& obj, Args&&... args)
-            : invoker_common<Fn, Args...>(signal, fn, std::forward<Args>(args)...)
+        invoker_memberfn(wait_counter* wait_counter_ptr, Fn fn, const iref<C>& obj, Args&&... args)
+            : invoker_common<Fn, Args...>(wait_counter_ptr, fn, std::forward<Args>(args)...)
             , _obj(obj)
         {}
 
@@ -437,12 +415,6 @@ protected:
         iref<C> _obj;
     };
 
-    struct signal
-    {
-        volatile int ref;
-        uint32 version;
-    };
-
 private:
 
     taskmaster(const taskmaster&);
@@ -454,16 +426,13 @@ private:
 
     void* threadfunc(int order);
     void run_task(invoker_base* task, bool waiter);
-    bool is_signaled(signal_handle handle, bool lock);
-    signal_handle alloc_signal();
-    void increment(signal_handle* handle);
     void notify_all();
-    void wait();
+    void wait_internal();
 
 private:
 
-    comm_mutex _sync;
-    comm_mutex _signal_sync;
+    comm_mutex _task_sync;              //< mutex for queuing and dequeuing the tasks from queue
+    comm_mutex _wait_sync;              //< mutex for waiting on condition variable
     condition_variable _cv;             //< for threads which can process low prio tasks
     condition_variable _hcv;            //< for threads which can not process low prio tasks
     std::atomic_int _qsize;             //< current queue size, used also as a semaphore
@@ -475,8 +444,6 @@ private:
     dynarray<threadinfo> _threads;
     volatile int _nlowprio_threads;
 
-    dynarray<signal> _signal_pool;
-    dynarray<signal_handle> _free_signals;
     queue<invoker_base*> _ready_jobs[(int)EPriority::COUNT];
 };
 

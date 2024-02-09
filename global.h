@@ -130,8 +130,6 @@ class data_manager
     struct erecord
     {
         uint16 version;
-        uint16 combo;
-        uint32 id;
     };
 
     struct sequencer : type_sequencer<OwnT>
@@ -200,6 +198,7 @@ class data_manager
             DASSERT_RET(id < _entities.size(), false);
 
             if (clear_bit(id)) {
+                ++_entities[id].version;
                 --_count;
                 return true;
             }
@@ -802,7 +801,7 @@ public:
     /// @brief Enumerate through entities with given component
     /// @tparam C data type
     /// @tparam Fn
-    /// @param fn
+    /// @param fn - void fn(C& component, uint id)
     template <class C, class Fn>
     static void enumerate(const Fn& fn)
     {

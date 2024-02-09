@@ -53,6 +53,40 @@
 
 COID_NAMESPACE_BEGIN
 
+/// Condition variable is used to put to sleep one or more threads until they are awakened
+/// (notified) by some other thread when some condition is met. Must be used along 
+/// with locked mutex when putting the thread to sleep. The mutex unlocked when the
+/// thread put to sleep and the lock is acquired again when the thread is awaken.
+/// 
+/// Example:
+/// 
+/// mutex comsumer;
+/// mutex producer;
+/// uint8 data[8];
+/// atomic_bool data_ready = false;
+/// condition_variable cv;
+/// 
+/// void producer_routine
+/// {
+///     producer.lock();
+///     prepare_data();
+///     data_ready = true;
+///     producer.unlock()
+///     cv.notify_one();
+/// }
+/// 
+/// void comsumer_routine()
+/// {
+///     consumer.lock();
+///     while(!data_ready)
+///         cv.wait(consumer)
+/// 
+///     process_data();
+/// }
+/// 
+/// Note that 'data_ready' is also under the lock and the notify call must be made after 
+/// the given mutext is unlocked to the 'data_ready' value change propagate correctly to
+/// the consumer thread
 
 ////////////////////////////////////////////////////////////////////////////////
 class condition_variable
@@ -78,9 +112,14 @@ private:
 #endif
 
 public:
+
+    /// @brief Notifies one of the waiting thread
     void notify_one();
+    /// @brief Notifies all of the waithing threads
     void notify_all();
 
+    /// @brief Put the thread to sleep
+    /// @param mx Locked mutex 
     void wait(_comm_mutex& mx);
     bool wait_for(_comm_mutex& mx, uint ms);
 
