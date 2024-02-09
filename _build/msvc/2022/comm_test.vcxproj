@@ -382,49 +382,34 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\comm_test\atomic-test.cpp" />
-    <ClCompile Include="..\..\..\comm_test\intergen\data.intergen.cpp" />
-    <ClCompile Include="..\..\..\comm_test\intergen\data.intergen.js.cpp" />
-    <ClCompile Include="..\..\..\comm_test\intergen\data.intergen.lua.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-clang|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="..\..\..\comm_test\intergen\data_client_test.cpp" />
-    <ClCompile Include="..\..\..\comm_test\intergen\interface.intergen.cpp" />
+    <ProjectReference Include="comm_static.vcxproj">
+      <Project>{d2f47060-00c0-4a3c-9888-cf663f14d44d}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\comm_test\comm\atomic-test.cpp" />
+    <ClCompile Include="..\..\..\comm_test\comm\job.cpp" />
+    <ClCompile Include="..\..\..\comm_test\comm\malloc.cpp" />
+    <ClCompile Include="..\..\..\comm_test\comm\meta.cpp" />
+    <ClCompile Include="..\..\..\comm_test\comm\meta2.cpp" />
+    <ClCompile Include="..\..\..\comm_test\comm\meta3.cpp" />
+    <ClCompile Include="..\..\..\comm_test\comm\regex.cpp" />
+    <ClCompile Include="..\..\..\comm_test\comm\singletons_test.cpp" />
+    <ClCompile Include="..\..\..\comm_test\comm\stream.cpp" />
     <ClCompile Include="..\..\..\comm_test\intergen\client_test.cpp" />
-    <ClCompile Include="..\..\..\comm_test\intergen\interface.intergen.js.cpp" />
-    <ClCompile Include="..\..\..\comm_test\intergen\interface.intergen.lua.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-clang|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="..\..\..\comm_test\job.cpp" />
+    <ClCompile Include="..\..\..\comm_test\intergen\data_client_test.cpp" />
     <ClCompile Include="..\..\..\comm_test\main.cpp" />
-    <ClCompile Include="..\..\..\comm_test\malloc.cpp" />
-    <ClCompile Include="..\..\..\comm_test\meta.cpp" />
-    <ClCompile Include="..\..\..\comm_test\meta2.cpp" />
-    <ClCompile Include="..\..\..\comm_test\meta3.cpp" />
-    <ClCompile Include="..\..\..\comm_test\regex.cpp" />
-    <ClCompile Include="..\..\..\comm_test\stream.cpp" />
-    <ClCompile Include="..\..\..\intergen\test\test.intergen.cpp" />
   </ItemGroup>
   <ItemGroup>
     <hpp Include="..\..\..\comm_test\intergen\data.hpp" />
     <hpp Include="..\..\..\comm_test\intergen\interface.hpp" />
-    <hpp Include="..\..\..\intergen\test\test.hpp" />
+    <hpp Include="..\..\..\comm_test\intergen\test.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\comm_test\comm\ig_test.h" />
     <ClInclude Include="..\..\..\comm_test\intergen\ifc\client.h" />
-    <ClInclude Include="..\..\..\comm_test\intergen\ifc\client2.h" />
     <ClInclude Include="..\..\..\comm_test\intergen\ifc\data_ifc.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="comm_static.vcxproj">
-      <Project>{d2f47060-00c0-4a3c-9888-cf663f14d44d}</Project>
-    </ProjectReference>
+    <ClInclude Include="..\..\..\comm_test\intergen\ifc\thingface.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

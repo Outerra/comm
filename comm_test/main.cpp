@@ -77,13 +77,8 @@ struct value {
 
 
 ////////////////////////////////////////////////////////////////////////////////
-void singleton_test()
-{
-    LOCAL_SINGLETON_DEF(dynarray<int>) sa = new dynarray<int>(100);
-    LOCAL_SINGLETON_DEF(dynarray<int>) sb = new dynarray<int>(100);
+void singleton_test();
 
-    DASSERT(sa->ptr() != sb->ptr());
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 void lambda_test()
@@ -323,10 +318,10 @@ void data_client_test();
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
 {
+    singleton_test();
     //compot();
     data_client_test();
 
-    singleton_test();
 
     charstr test1 = "literal";
     charstr test2; test2 = "literal";

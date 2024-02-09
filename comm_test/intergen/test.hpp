@@ -2,8 +2,8 @@
 #ifndef __INTERGEN_TEST__HPP__
 #define __INTERGEN_TEST__HPP__
 
-#include "../ifc.h"
-#include "../../str.h"
+#include "intergen/ifc.h"
+#include "str.h"
 
 //ifc{
 struct test;

@@ -1,11 +1,11 @@
-#include "../atomic/atomic.h"
-#include "../atomic/queue.h"
-#include "../atomic/stack.h"
-#include "../ref.h"
-#include "../str.h"
-#include "../pthreadx.h"
-#include "../timer.h"
-#include "../binstream/stdstream.h"
+#include "atomic/atomic.h"
+#include "atomic/queue.h"
+#include "atomic/stack.h"
+#include "ref.h"
+#include "str.h"
+#include "pthreadx.h"
+#include "timer.h"
+#include "binstream/stdstream.h"
 //#include <stdio.h>
 
 using namespace coid;
