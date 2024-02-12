@@ -2237,13 +2237,13 @@ public:
 
 
 
-    token get_after_substring(const substring& sub) const
+    token get_after_substring(const class substring& sub) const
     {
         token s = *this;
         return s.get_after_substring(sub);
     }
 
-    token get_before_substring(const substring& sub) const
+    token get_before_substring(const class substring& sub) const
     {
         token s = *this;
         return s.get_before_substring(sub);
