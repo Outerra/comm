@@ -42,8 +42,7 @@
 
 #include "bstype.h"
 #include "../alloc/_malloc.h"
- //#include "../commexception.h"
-
+ 
 COID_NAMESPACE_BEGIN
 
 class binstream;
@@ -129,39 +128,12 @@ struct binstream_container : binstream_container_base
     {}
 };
 
-/*
-///Structure with streaming functions for abstract type
-template<class T>
-struct binstream_streamfunc
-{
-    static opcd stream_in( binstream& bin, void* p, binstream_container_base& )
-    {
-        try { bin >> *(T*)p; }
-        catch( opcd e ) { return e; }
-        return 0;
-    }
-
-    static opcd stream_out( binstream& bin, void* p, binstream_container_base& )
-    {
-        try { bin << *(const T*)p; }
-        catch( opcd e ) { return e; }
-        return 0;
-    }
-};*/
-
 ////////////////////////////////////////////////////////////////////////////////
+///Forward declaration, definition in metastream.h
 template<class T>
 struct type_streamer {
     static void fn(metastream* m, void* p, binstream_container_base*);
 };
-/*
-template<>
-struct type_streamer<bstype::key> {
-    static void fn( metastream* m, void* p, binstream_container_base& ) {
-        *m || *static_cast<char*>(p);
-    }
-};*/
-
 
 ///Templatized base container
 //@param T type held by the container
@@ -173,9 +145,7 @@ struct binstream_containerT : binstream_container<COUNT>
     typedef binstream_container_base::fnc_stream    fnc_stream;
 
     binstream_containerT()
-        : binstream_container<COUNT>(bstype::t_type<T>(),
-            &type_streamer<T>::fn,
-            &type_streamer<T>::fn)
+        : binstream_container<COUNT>(bstype::t_type<T>(), &type_streamer<T>::fn, &type_streamer<T>::fn)
     {}
 
     binstream_containerT(fnc_stream fout, fnc_stream fin)
@@ -303,16 +273,6 @@ struct binstream_dereferencing_containerRefT
 
 protected:
     binstream_container<COUNT>& _bc;
-};
-
-////////////////////////////////////////////////////////////////////////////////
-///Primitive abstract base container
-template<class COUNT>
-struct binstream_container_primitive : binstream_container<COUNT>
-{
-    binstream_container_primitive(bstype::kind t)
-        : binstream_container<COUNT>(t, 0, 0)
-    {}
 };
 
 ////////////////////////////////////////////////////////////////////////////////

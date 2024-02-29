@@ -40,12 +40,10 @@
 
 #include "namespace.h"
 
-#include "binstream/bstype.h"
-#include "hash/hashfunc.h"
-
 #include <cstring>
 #include <ctime>
 
+#include "hash/hashfunc.h"
 #include "token.h"
 #include "dynarray.h"
 #include "mathf.h"
@@ -663,20 +661,9 @@ public:
         return *this;
     }
 
-    friend charstr& operator << (charstr& out, const opcd_formatter& f)
-    {
-        out << f.e.error_desc();
-        /*if( f._e.subcode() ) {
-            char tmp[2] = "\0";
-            *tmp = (char) f._e.subcode();
-            out << " (code: " << tmp << ")";
-        }*/
-
-        if (f.e.text() && f.e.text()[0])
-            out << " : " << f.e.text();
-        return out;
+    charstr& operator << (const opcd_formatter& f) {
+        return f.text(*this);
     }
-
 
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -1651,6 +1638,13 @@ public:
         return *this;
     }
 
+    /// @brief Append the content of the file
+    /// @param path file path
+    /// @return true if opened and read succesfully
+    bool append_from_file(const token& path);
+    bool append_from_file(const char* path);
+    bool append_from_file(const charstr& path) { return append_from_file(path.c_str()); }
+
     ///Append string from binstream (without resetting previous content)
     binstream& append_from_stream(binstream& bin);
 
@@ -2434,64 +2428,6 @@ struct threadcached<const char*> : public threadcached_charstr<const char*>
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-inline binstream& operator >> (binstream& bin, charstr& x)
-{
-    x._tstr.reset();
-    dynarray<char, uint>::dynarray_binstream_container c(x._tstr);
-
-    bin.xread_array(c);
-    if (x._tstr.size())
-        *x._tstr.add() = 0;
-    return bin;
-}
-
-inline binstream& charstr::append_from_stream(binstream& bin)
-{
-    dynarray<char, uint>::dynarray_binstream_container c(_tstr);
-
-    bin.xread_array(c);
-    if (_tstr.size())
-        *_tstr.add() = 0;
-    return bin;
-}
-
-inline binstream& operator << (binstream& out, const charstr& x)
-{
-    return out.xwrite_token(x.ptr(), x.len());
-}
-
-inline binstream& operator << (binstream& out, const token& x)
-{
-    return out.xwrite_token(x);
-}
-
-inline binstream& operator >> (binstream& out, token& x)
-{
-    //this should not be called ever
-    RASSERT(0);
-    return out;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-inline opcd binstream::read_key(charstr& key, int kmember, const token& expected_key)
-{
-    if (kmember > 0) {
-        opcd e = read_separator();
-        if (e != NOERR) return e;
-    }
-
-    key.reset();
-    dynarray<bstype::key, uint>::dynarray_binstream_container
-        c(reinterpret_cast<dynarray<bstype::key, uint>&>(key.dynarray_ref()));
-
-    opcd e = read_array(c);
-    if (key.lent())
-        key.appendn_uninitialized(1);
-
-    return e;
-}
-
-////////////////////////////////////////////////////////////////////////////////
 ///Hasher for charstr
 template<bool INSENSITIVE> struct hasher<charstr, INSENSITIVE>
 {
@@ -2527,17 +2463,6 @@ struct equal_to_insensitive
         return _Left.cmpeqi(_Right);
     }
 };
-
-////////////////////////////////////////////////////////////////////////////////
-inline charstr& opcd_formatter::text(charstr& dst) const
-{
-    dst << e.error_desc();
-
-    if (e.text() && e.text()[0])
-        dst << " : " << e.text();
-    return dst;
-}
-
 
 COID_NAMESPACE_END
 

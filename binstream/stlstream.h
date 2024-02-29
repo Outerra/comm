@@ -377,7 +377,7 @@ inline metastream& operator || (metastream& meta, std::string& p)
 {
     if(meta.stream_reading()) {
         dynarray<char,uint> tmp;
-        dynarray<char,uint>::dynarray_binstream_container c(tmp);
+        dynarray_binstream_container<char, uint> c(tmp);
         meta.read_container(c);
 
         p.assign(tmp.ptr(), tmp.size());

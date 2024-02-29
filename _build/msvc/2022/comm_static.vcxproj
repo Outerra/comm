@@ -452,6 +452,7 @@
     <ClInclude Include="..\..\..\binstream\cachestream.h" />
     <ClInclude Include="..\..\..\binstream\circularstreambuf.h" />
     <ClInclude Include="..\..\..\binstream\container.h" />
+    <ClInclude Include="..\..\..\binstream\container_dynarray.h" />
     <ClInclude Include="..\..\..\binstream\container_linear.h" />
     <ClInclude Include="..\..\..\binstream\enc_base64stream.h" />
     <ClInclude Include="..\..\..\binstream\enc_hexstream.h" />
@@ -655,6 +656,7 @@
     <ClCompile Include="..\..\..\profiler\profiler.cpp" />
     <ClCompile Include="..\..\..\stacktrace\stacktrace.cpp" />
     <ClCompile Include="..\..\..\stacktrace\stacktrace_win.cpp" />
+    <ClCompile Include="..\..\..\str.cpp" />
     <ClCompile Include="..\..\..\sync\condition_variable.cpp" />
     <ClCompile Include="..\..\..\taskmaster.cpp" />
     <ClCompile Include="..\..\..\timer.cpp">

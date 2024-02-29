@@ -48,6 +48,7 @@
 #include "../commexception.h"
 #include "../type_info.h"
 
+#include "../binstream/container_dynarray.h"
 #include "fmtstream.h"
 #include "fmtstreamnull.h"
 #include "metavar.h"
@@ -1959,7 +1960,7 @@ public:
         if (_binr) {
             auto& dyn = a.dynarray_ref();
             dyn.reset();
-            dynarray<char, uint>::dynarray_binstream_container c(dyn);
+            dynarray_binstream_container<char, uint> c(dyn);
             read_container(c);
 
             if (dyn.size())
@@ -3968,11 +3969,11 @@ metastream& operator || (metastream& m, dynarray<T, COUNT, A>& a)
 {
     if (m.stream_reading()) {
         a.reset();
-        typename dynarray<T, COUNT, A>::dynarray_binstream_container c(a);
+        dynarray_binstream_container<T, COUNT, A> c(a);
         m.read_container(c);
     }
     else if (m.stream_writing()) {
-        typename dynarray<T, COUNT, A>::dynarray_binstream_container c(a);
+        dynarray_binstream_container<T, COUNT, A> c(a);
         m.write_container(c);
     }
     else {
