@@ -65,20 +65,20 @@ directory::directory()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-char directory::separator()             { return '/'; }
-const char* directory::separator_str()  { return "/"; }
+char directory::separator() { return '/'; }
+const char* directory::separator_str() { return "/"; }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::open( const token& path, const token& filter )
+opcd directory::open(const token& path, const token& filter)
 {
     close();
 
     _curpath = path;
-    if( _curpath.last_char() == '/' )
+    if (_curpath.last_char() == '/')
         _curpath.resize(-1);
 
-    _dir = opendir( _curpath.ptr() );
-    if(!_dir)
+    _dir = opendir(_curpath.ptr());
+    if (!_dir)
         return ersFAILED;
 
     _curpath << '/';
@@ -93,7 +93,7 @@ opcd directory::open( const token& path, const token& filter )
 ////////////////////////////////////////////////////////////////////////////////
 void directory::close()
 {
-    if(_dir)
+    if (_dir)
         closedir(_dir);
     _dir = 0;
 }
@@ -117,13 +117,13 @@ bool directory::is_entry_regular() const
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool directory::is_directory( ushort mode )
+bool directory::is_directory(ushort mode)
 {
     return S_ISDIR(mode);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool directory::is_regular( ushort mode )
+bool directory::is_regular(ushort mode)
 {
     return S_ISREG(mode);
 }
@@ -140,7 +140,7 @@ int directory::is_valid(zstring path)
 ////////////////////////////////////////////////////////////////////////////////
 bool directory::is_valid_file(zstring arg)
 {
-    if(!arg)
+    if (!arg)
         return false;
 
     xstat st;
@@ -171,10 +171,10 @@ bool directory::subpath(token root, token& path)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::mkdir( zstring name, mode_t mode )
+opcd directory::mkdir(zstring name, mode_t mode)
 {
-    if(!::mkdir(name.c_str(), mode))  return 0;
-    if( errno == EEXIST )  return 0;
+    if (!::mkdir(name.c_str(), mode))  return 0;
+    if (errno == EEXIST)  return 0;
     return ersFAILED;
 }
 
@@ -182,7 +182,7 @@ opcd directory::mkdir( zstring name, mode_t mode )
 opcd directory::move_file(zstring src, zstring dst, bool replace_existing)
 {
     //TODO directories
-    if(0 == ::rename(src.c_str(), dst.c_str()))
+    if (0 == ::rename(src.c_str(), dst.c_str()))
         return 0;
     return ersIO_ERROR;
 }
@@ -232,7 +232,7 @@ uints directory::get_module_path_func(const void* fn, charstr& dst, bool append)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int directory::chdir( zstring name )
+int directory::chdir(zstring name)
 {
     return ::chdir(name.c_str());
 }
@@ -241,14 +241,14 @@ int directory::chdir( zstring name )
 const directory::xstat* directory::next()
 {
     dirent* dire = readdir(_dir);
-    if(!dire)
+    if (!dire)
         return 0;
 
-    if( 0 == fnmatch(_pattern.ptr(), dire->d_name, 0) )
+    if (0 == fnmatch(_pattern.ptr(), dire->d_name, 0))
     {
-        _curpath.resize( _baselen );
+        _curpath.resize(_baselen);
         _curpath << dire->d_name;
-        if(stat64(_curpath.ptr(), &_st) == 0)
+        if (stat64(_curpath.ptr(), &_st) == 0)
             return &_st;
     }
 
@@ -262,7 +262,7 @@ charstr directory::get_home_dir()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-opcd directory::truncate( zstring fname, uint64 size )
+opcd directory::truncate(zstring fname, uint64 size)
 {
     return truncate(fname.c_str(), (off_t)size) == 0
         ? 0

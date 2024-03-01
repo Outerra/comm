@@ -137,9 +137,9 @@ public:
             replacement_char != forbidden_chars[8]);
 
         coid::token tok = coid::token(filename);
-        const char * s = tok._ptr;
-        const char * e = tok._pte;
-        for (const char * i = s; i != e; i++) {
+        const char* s = tok._ptr;
+        const char* e = tok._pte;
+        for (const char* i = s; i != e; i++) {
             if (*i == forbidden_chars[0] ||
                 *i == forbidden_chars[1] ||
                 *i == forbidden_chars[2] ||
@@ -311,11 +311,11 @@ public:
 
     /// @return true if path is under or equals root
     /// @note paths must be compact
-    static bool is_subpath( token root, token path );
+    static bool is_subpath(token root, token path);
 
     /// @return true if path is under or equals root, if true path is modified to contain the relative path
     /// @note paths must be compact
-    static bool subpath( token root, token& path );
+    static bool subpath(token root, token& path);
 
     ///Remove nested ../ chunks, remove extra path separator characters
     /// @param tosep replace separators with given character (usually '/' or '\\')
@@ -371,10 +371,10 @@ public:
         time_t      _last_modified;     //< unix time
         uint        _flags;             //< windows only! always 0 in gcc build
 
-        enum flags{
-            readonly  = 0x00000001,
-            hidden    = 0x00000002,
-            system    = 0x00000004,
+        enum flags {
+            readonly = 0x00000001,
+            hidden = 0x00000002,
+            system = 0x00000004,
             directory = 0x00000010,
             encrypted = 0x00004000
         };
@@ -403,7 +403,7 @@ protected:
     static void dummy_func() {
     }
 
-    static const char* no_trail_sep( zstring& name );
+    static const char* no_trail_sep(zstring& name);
 
     /// @return handle of module where fn resides
     static uints get_module_handle_func(const void* fn);
@@ -413,15 +413,15 @@ protected:
     static uints get_module_path_func(const void* fn, charstr& dst, bool append);
 
 private:
-    charstr     _curpath;
-    uint        _baselen;
-    xstat 		_st;
-    charstr     _pattern;
+    charstr _curpath;
+    charstr _pattern;
+    xstat _st;
+    uint _baselen = 0;
 
 #ifdef SYSTYPE_MSVC
-    ints        _handle;
+    ints _handle = 0;
 #else
-    DIR*        _dir;
+    DIR* _dir = 0;
 #endif
 
 };
