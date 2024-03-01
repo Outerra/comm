@@ -84,8 +84,8 @@ bool charstr::append_from_file(const char* path)
 {
     FILE* fp = fopen(path, "rb");
     if (fp) {
-        constexpr int bufsize = 8192;
-        size_t rs, total = 0;
+        constexpr int bufsize = 4096;
+        size_t rs, total = 0, old = len();
 
         do {
             char* dst = alloc_append_buf(bufsize);
@@ -94,7 +94,7 @@ bool charstr::append_from_file(const char* path)
         }
         while (rs == bufsize);
 
-        resize(total);
+        resize(old + total);
         return true;
     }
 
