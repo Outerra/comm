@@ -2083,7 +2083,7 @@ protected:
 
         DASSERTN(len <= UMAX32);
 
-        char* p = _tstr.alloc(len + 1);
+        char* p = _tstr.realloc(len + 1);
         termzero();
 
         return p;
