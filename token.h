@@ -61,6 +61,11 @@ namespace coid {
     class token_literal;
 }
 
+#ifdef _T
+#pragma message("_T macro will conflict with token string literal")
+#undef _T
+#endif
+
 constexpr coid::token_literal operator "" _T(const char* s, size_t len);
 
 COID_NAMESPACE_BEGIN
@@ -226,10 +231,7 @@ struct token
     constexpr token(const token& src) : _ptr(src._ptr), _pte(src._pte)
     {}
 
-    constexpr token(token&& src) {
-        _ptr = src._ptr;
-        _pte = src._pte;
-    }
+    constexpr token(token&& src) : _ptr(src._ptr), _pte(src._pte) {}
 
     /// create token from a subset of another token
     /// @param src source token
@@ -2968,11 +2970,6 @@ public:
 
 #ifdef COID_USER_DEFINED_LITERALS
 COID_NAMESPACE_END
-
-#ifdef _T
-#pragma message("_T macro will conflict with token string literal")
-#undef _T
-#endif
 
 ///String literal returning token (_T suffix)
 inline constexpr coid::token_literal operator "" _T(const char* s, size_t len)
