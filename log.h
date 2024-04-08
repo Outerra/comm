@@ -40,24 +40,24 @@
 
  ////////////////////////////////////////////////////////////////////////////////
  //@{ Log message with specified severity
-#define coidlog_exc(src, msg)     do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::exception, src); if (q) {q->str() << msg; }} while(0)
-#define coidlog_error(src, msg)   do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::error, src); if (q) {q->str() << msg; }} while(0)
-#define coidlog_warning(src, msg) do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::warning, src); if (q) {q->str() << msg; }} while(0)
-#define coidlog_msg(src, msg)     do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::highlight, src); if (q) {q->str() << msg; }} while(0)
-#define coidlog_info(src, msg)    do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::info, src); if (q) {q->str() << msg; }} while(0)
-#define coidlog_debug(src, msg)   do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::debug, src); if (q) {q->str() << msg; }} while(0)
-#define coidlog_perf(src, msg)    do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::perf, src); if (q) {q->str() << msg; }} while(0)
-#define coidlog_none(src, msg)    do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::none, src); if (q) {q->str() << msg; }} while(0)
+#define coidlog_exc(src, msg)     do{ coid::ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::exception, src); if (q) {q->str() << msg; }} while(0)
+#define coidlog_error(src, msg)   do{ coid::ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::error, src); if (q) {q->str() << msg; }} while(0)
+#define coidlog_warning(src, msg) do{ coid::ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::warning, src); if (q) {q->str() << msg; }} while(0)
+#define coidlog_msg(src, msg)     do{ coid::ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::highlight, src); if (q) {q->str() << msg; }} while(0)
+#define coidlog_info(src, msg)    do{ coid::ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::info, src); if (q) {q->str() << msg; }} while(0)
+#define coidlog_debug(src, msg)   do{ coid::ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::debug, src); if (q) {q->str() << msg; }} while(0)
+#define coidlog_perf(src, msg)    do{ coid::ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::perf, src); if (q) {q->str() << msg; }} while(0)
+#define coidlog_none(src, msg)    do{ coid::ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::none, src); if (q) {q->str() << msg; }} while(0)
 
-#define coidlog_loglevel(level, src, msg) do{ ref<coid::logmsg> q = coid::log::openmsg(level, src); if (q) {q->str() << msg; }} while(0)
+#define coidlog_loglevel(level, src, msg) do{ coid::ref<coid::logmsg> q = coid::log::openmsg(level, src); if (q) {q->str() << msg; }} while(0)
 //@}
 
 ///Log into file. The file is trucated initially and multiple messages are appended to it during the process duration
 //@param file file name/path
-#define coidlog_file(file, msg)   do{ ref<coid::logmsg> q = coid::log::filemsg(coid::log::level::info, file); if (q) {q->str() << msg; }} while(0)
+#define coidlog_file(file, msg)   do{ coid::ref<coid::logmsg> q = coid::log::filemsg(coid::log::level::info, file); if (q) {q->str() << msg; }} while(0)
 
 ///Post fading message (if fading handler is attached in the logger)
-#define coidlog_fade(level, msg) do{ ref<coid::logmsg> q = coid::log::fademsg(level, ""); if (q) {q->str() << msg; }} while(0)
+#define coidlog_fade(level, msg) do{ coid::ref<coid::logmsg> q = coid::log::fademsg(level, ""); if (q) {q->str() << msg; }} while(0)
 
 ///Log message with severity specified at the beginning of msg
 /// @param src source module
@@ -67,11 +67,11 @@ void coidlog_text(const coid::token& src, coid::token msg);
 
 ///Create a perf object that logs the time while the scope exists
 #define coidlog_perf_scope(src, msg) \
-   ref<coid::logmsg> perf##line = coid::log::openmsg(coid::log::level::perf, src); if (perf##line) perf##line->str() << msg
+   coid::ref<coid::logmsg> perf##line = coid::log::openmsg(coid::log::level::perf, src); if (perf##line) perf##line->str() << msg
 
 ///Log fatal error and throw exception with the same message
 #define coidlog_exception(src, msg)\
-    do { ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::exception, src); if (q) {q->str() << msg; throw coid::exception() << msg; }} while(0)
+    do { coid::ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::exception, src); if (q) {q->str() << msg; throw coid::exception() << msg; }} while(0)
 
 //@{ Log error if condition fails
 #define coidlog_assert(test, src, msg)\
@@ -83,7 +83,7 @@ void coidlog_text(const coid::token& src, coid::token msg);
 
 ///Debug message existing only in debug builds
 #ifdef _DEBUG
-#define coidlog_devdbg(src, msg)  do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::debug, src); if (q) {q->str() << msg; }} while(0)
+#define coidlog_devdbg(src, msg)  do{ coid::ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::debug, src); if (q) {q->str() << msg; }} while(0)
 #else
 #define coidlog_devdbg(src, msg)
 #endif
@@ -125,13 +125,13 @@ namespace log {
     const char* name(level t);
 
     //@return logmsg object if given log type and source is currently allowed to log
-    ref<logmsg> openmsg(level type, const tokenhash& hash = tokenhash(), const void* inst = 0);
+    coid::ref<logmsg> openmsg(level type, const tokenhash& hash = tokenhash(), const void* inst = 0);
 
     /// @brief Register file message
-    ref<logmsg> filemsg(level type, const tokenhash& file, const void* inst = 0);
+    coid::ref<logmsg> filemsg(level type, const tokenhash& file, const void* inst = 0);
 
     /// @brief Register fading message
-    ref<logmsg> fademsg(level type, const tokenhash& hash = tokenhash(), const void* inst = 0);
+    coid::ref<logmsg> fademsg(level type, const tokenhash& hash = tokenhash(), const void* inst = 0);
 
     void flush();
 
@@ -173,7 +173,7 @@ protected:
     friend class policy_msg;
 
     logger* _logger = 0;
-    ref<logger_file> _logger_file;
+    coid::ref<logger_file> _logger_file;
 
     tokenhash _hash;
     log::level _type = log::level::none;
@@ -273,7 +273,7 @@ protected:
     void finalize(policy_msg* p);
 };
 
-typedef ref<logmsg> logmsg_ptr;
+typedef coid::ref<logmsg> logmsg_ptr;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -286,7 +286,7 @@ typedef ref<logmsg> logmsg_ptr;
 template<class ...Vs>
 inline void printlog(log::level type, const tokenhash& hash, const token& fmt, Vs&&... vs)
 {
-    ref<logmsg> msgr = log::openmsg(type, hash);
+    coid::ref<logmsg> msgr = log::openmsg(type, hash);
     if (!msgr)
         return;
 
