@@ -124,7 +124,7 @@ $-(elif)$
         }
 $-(/if)$
 
-        virtual coid::token_literal command_name() const override { return "cmd_$name$$overload$"; }
+        virtual coid::token_literal command_name() const override { return "$name$$overload$"; }
 
         virtual void onCommand(renderer* const r__) override {
             $(if ?..class="renderer")$r__->$(elif !static)$_obj->$(/if)-$$..class$::$name$(
