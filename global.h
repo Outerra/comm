@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Outerra.
- * Portions created by the Initial Developer are Copyright (C) 2021-2023
+ * Portions created by the Initial Developer are Copyright (C) 2021-2024
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -210,11 +210,7 @@ class data_manager
         bool del(versionid vid)
         {
             DASSERT_RET(get_bit(vid.id) && _entities[vid.id].version == vid.version, false);
-            if (clear_bit(vid.id)) {
-                --_count;
-                return true;
-            }
-            return false;
+            return del(vid.id);
         }
 
         bool is_valid(uint id) const {
