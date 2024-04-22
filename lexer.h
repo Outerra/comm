@@ -371,7 +371,6 @@ public:
     void bind(const token& tok)
     {
         reset();
-
         _tok = tok;
 
         static const token BOM = "\xEF\xBB\xBF";
@@ -420,6 +419,59 @@ public:
         _lines = 0;
         _lines_processed = _lines_last = 0;
         _lines_oldchar = 0;
+
+        //resolve nested rules, delayed until all rules are defined
+        for (sequence* seq : _stbary) {
+            if (!seq->is_block())
+                continue;
+
+            block_rule* br = static_cast<block_rule*>(seq);
+            if (br->nested_rules_set)
+                continue;
+
+            token nested = br->nested;
+            for (;;)
+            {
+                token ne = nested.cut_left(' ');
+                if (ne.is_empty())  break;
+
+                if (ne == "*.") {
+                    //enable all global rules
+                    br->stbenabled = UMAX64;
+                    br->stbignored = _root.stbignored;
+                    continue;
+                }
+                if (ne == '*') {
+                    //inherit all global rules
+                    br->stbenabled = _root.stbenabled;
+                    br->stbignored = _root.stbignored;
+                    continue;
+                }
+
+                bool ignn, enbn;
+                get_flags(ne, &ignn, &enbn);
+
+                if (ne.char_is_number(0))
+                {
+                    token net = ne;
+
+                    //special case for cross-linked blocks, id of future block rule instead of the name
+                    int rn = ne.touint_and_shift();
+                    if (ne.len())
+                        __throw_different_exists(net);
+
+                    br->enable(rn, enbn);
+                    br->ignore(rn, ignn);
+                }
+                else
+                {
+                    enable_in_block(br, ne, enbn);
+                    ignore_in_block(br, ne, ignn);
+                }
+            }
+
+            br->nested_rules_set = true;
+        }
 
         return 0;
     }
@@ -712,45 +764,7 @@ public:
         _root.ignore(br->id, ign);
         _root.enable(br->id, enb);
 
-        for (;;)
-        {
-            token ne = nested.cut_left(' ');
-            if (ne.is_empty())  break;
-
-            if (ne == "*.") {
-                //enable all global rules
-                br->stbenabled = UMAX64;
-                br->stbignored = _root.stbignored;
-                continue;
-            }
-            if (ne == '*') {
-                //inherit all global rules
-                br->stbenabled = _root.stbenabled;
-                br->stbignored = _root.stbignored;
-                continue;
-            }
-
-            bool ignn, enbn;
-            get_flags(ne, &ignn, &enbn);
-
-            if (ne.char_is_number(0))
-            {
-                token net = ne;
-
-                //special case for cross-linked blocks, id of future block rule instead of the name
-                int rn = ne.touint_and_shift();
-                if (ne.len())
-                    __throw_different_exists(net);
-
-                br->enable(rn, enbn);
-                br->ignore(rn, ignn);
-            }
-            else
-            {
-                enable_in_block(br, ne, enbn);
-                ignore_in_block(br, ne, ignn);
-            }
-        }
+        br->nested = nested;
 
         br->leading = leading;
         add_trailing(br, trailing);
@@ -2511,6 +2525,9 @@ protected:
         uint64 stbenabled;              //< bit map with sequences allowed to nest (enabled)
         uint64 stbignored;              //< bit map with sequences skipped (ignored)
 
+        charstr nested;
+        bool nested_rules_set = false;
+
         ///Make the specified S/S/B enabled or disabled within this block.
         ///If this very same block is enabled it means that it can nest in itself.
         /// @return previous state
@@ -3289,8 +3306,10 @@ protected:
 
         uint nc = (uint)seq->leading.len();
         uint i;
-        for (i = 0; i < dseq.size(); ++i)
-            if (dseq[i]->leading.len() < nc)  break;
+        for (i = 0; i < dseq.size(); ++i) {
+            if (dseq[i]->leading.len() < nc)
+                break;
+        }
 
         *dseq.ins(i) = seq;
     }
