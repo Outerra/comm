@@ -630,11 +630,9 @@ struct token
     void set_empty(const char* p) { _ptr = _pte = p; }
     void set_null() { _ptr = _pte = 0; }
 
-    typedef const char* token::*unspecified_bool_type;
-
     ///Automatic cast to bool for checking emptiness
-    operator unspecified_bool_type () const {
-        return _ptr == _pte ? 0 : &token::_ptr;
+    explicit operator bool () const {
+        return _ptr != _pte;
     }
 
 
@@ -3044,10 +3042,8 @@ public:
         a.swap(b);
     }
 
-    typedef const char* zstring::*unspecified_bool_type;
-
     ///Automatic cast to bool for checking emptiness
-    operator unspecified_bool_type () const;
+    explicit operator bool () const;
 
     ///Get zero terminated string
     const char* c_str() const;

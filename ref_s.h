@@ -249,12 +249,8 @@ public:
     bool is_empty() const { return _o == 0; }
     bool is_set() const { return _o != 0; }
 
-    typedef T* ref<T>::* unspecified_bool_type;
-
     ///Automatic cast to unconvertible bool for checking via if
-    operator unspecified_bool_type () const {
-        return _o ? &ref<T>::_o : 0;
-    }
+    explicit operator bool () const { return _o != 0; }
 
     void forget() { _p = 0; _o = 0; }
 

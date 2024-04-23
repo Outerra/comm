@@ -255,9 +255,7 @@ public:
     typedef const char* range::*unspecified_bool_type;
 
     ///Automatic cast to bool for checking emptiness
-    operator unspecified_bool_type () const {
-        return _ptr == _pte ? 0 : &range::_ptr;
-    }
+    explicit operator bool () const { return _ptr != _pte; }
 
     range& operator = (const range& t)
     {

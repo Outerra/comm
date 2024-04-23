@@ -1985,12 +1985,8 @@ public:
     /// @return true if the string is non-empty
     bool is_set() const { return _tstr.size() > 1; }
 
-    typedef dynarray<char, uint> charstr::* unspecified_bool_type;
-
     ///Automatic cast to bool for checking emptiness
-    operator unspecified_bool_type () const {
-        return len() == 0 ? 0 : &charstr::_tstr;
-    }
+    explicit operator bool () const { return lent() > 1; }
 
 
 

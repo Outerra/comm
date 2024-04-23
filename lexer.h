@@ -199,10 +199,7 @@ public:
         operator token() const { return val; }
 
 
-        typedef int lextoken::* unspecified_bool_type;
-        operator unspecified_bool_type() const {
-            return id == 0 ? 0 : &lextoken::id;
-        }
+        explicit operator bool () const { return id != 0; }
 
         /// @return true if value token doesn't come from the input stream (a processed string or alias)
         bool noninput_value() const {

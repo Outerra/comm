@@ -553,7 +553,7 @@ class metagen
         {
             //tag content
             // <name> (attribute)*
-            if (0 == lex.next())
+            if (lex.next() == nullptr)
                 return false;
 
             const lextoken& tok = lex.last();

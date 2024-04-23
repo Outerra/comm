@@ -217,8 +217,6 @@ public:
     bool is_empty() const { return _p == 0; }
     bool is_set() const { return _p != 0; }
 
-    typedef T* iref<T>::* unspecified_bool_type;
-
     ///Discard without decrementing refcount
     void forget() { _p = 0; }
 
@@ -242,9 +240,7 @@ public:
     coid::int32 refcount() const { return _p ? _p->refcount() : 0; }
 
     ///Automatic cast to unconvertible bool for checking via if
-    operator unspecified_bool_type () const {
-        return _p ? &iref<T>::_p : 0;
-    }
+    explicit operator bool () const { return _p != 0; }
 
     friend bool operator == (const iref<T>& a, const iref<T>& b) {
         return a._p == b._p;

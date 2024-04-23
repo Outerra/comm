@@ -230,10 +230,8 @@ struct closure_traits_base
             return (*c)(std::forward<Args>(args)...);
         }
 
-        typedef callbase* function::*unspecified_bool_type;
-
         ///Automatic cast to unconvertible bool for checking via if
-        operator unspecified_bool_type() const { return c ? &function::c : 0; }
+        explicit operator bool () const { return c != 0; }
 
         callbase* eject() {
             callbase* r = c;
@@ -539,10 +537,7 @@ public:
         return _caller(_fn, const_cast<void*>(this__), std::forward<Args>(args)...);
     }
 
-    ///Automatic cast to unconvertible bool for checking via if
-    typedef hybrid callback::* unspecified_bool_type;
-
-    operator unspecified_bool_type() const { return _fn.ptr ? &callback::_fn : 0; }
+    explicit operator bool () const { return _fn.ptr != 0; }
 
 private:
 

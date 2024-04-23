@@ -111,12 +111,8 @@ public:
     clean_ptr() : _p(0) {}
     clean_ptr(const T* p) { _p = p; }
 
-    typedef T* clean_ptr<T>::*unspecified_bool_type;
-
     ///Automatic cast to unconvertible bool for checking via if
-    operator unspecified_bool_type () const {
-        return _p ? &clean_ptr<T>::_p : 0;
-    }
+    explicit operator bool () const { return _p != 0; }
 
     int operator==(const T* ptr) const { return ptr == _p; }
 
