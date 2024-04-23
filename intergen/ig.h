@@ -290,7 +290,8 @@ struct MethodIG
     int index = -1;
 
     bool bstatic = false;               //< a static (creator) method
-    bool bcreator = false;
+    bool bcreator = false;              //< interface creator method
+    bool bsingleton = false;            //< interface creator method caching the interface in a local singleton
     bool bptr = false;                  //< ptr instead of ref
     bool biref = true;                  //< iref instead of ref
     bool bretifc = false;               //< method marked as returning an interface
@@ -369,6 +370,7 @@ struct MethodIG
             m.member("capture", p.bcapture);
             m.member("static", p.bstatic);
             m.member("creator", p.bcreator);
+            m.member("singleton", p.bsingleton);
             m.member("ptr", p.bptr);
             m.member("iref", p.biref);
             m.member("retifc", p.bretifc);

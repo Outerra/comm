@@ -1,10 +1,10 @@
 
-#include "../str.h"
-#include "../radix.h"
-#include "../trait.h"
-#include "../hash/slothash.h"
-#include "../function.h"
-#include "../global.h"
+#include <comm/str.h>
+#include <comm/radix.h>
+#include <comm/trait.h>
+#include <comm/hash/slothash.h>
+#include <comm/function.h>
+#include <comm/global.h>
 #include "intergen/ifc/client.h"
 
 namespace coid {

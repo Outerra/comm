@@ -2,8 +2,8 @@
 #ifndef __INTERGEN_TEST__HPP__
 #define __INTERGEN_TEST__HPP__
 
-#include "intergen/ifc.h"
-#include "str.h"
+#include <comm/intergen/ifc.h>
+#include <comm/str.h>
 
 //ifc{
 struct test;
@@ -79,6 +79,14 @@ public:
     IFC_CLASS(ifc1::ifc2::thingface : ifc::basething, "ifc", "");
 
     ifc_fnx(get) static iref<n1::n2::thing> get_thing() {
+        return new thing;
+    }
+
+    ifc_fnx(get2) static const iref<n1::n2::thing>& get_thing() {
+        return new thing;
+    }
+
+    ifc_fnx(get3 ^singleton) static const iref<n1::n2::thing>& get_thing() {
         return new thing;
     }
 

@@ -47,16 +47,16 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
         if (ret.bptr && ret.type == ((tmp = host) << '*')) {
             (ret.type = "iref<") << ns << host << '>';
         }
-        else if (ret.type == ((tmp = "iref<") << host << '>')) {
+        else if (ret.basetype == ((tmp = "iref<") << host << '>')) {
             biref = true;
             (ret.type = "iref<") << ns << host << '>';
         }
-        else if (ret.type == ((tmp = "iref<") << ns << host << '>')) {
+        else if (ret.basetype == ((tmp = "iref<") << ns << host << '>')) {
             biref = true;
         }
         else {
             out << (lex.prepare_exception()
-                << "error: invalid return type for static interface creator method\n  should be iref<" << host << ">");
+                << "error: invalid return type for static interface creator method, should be iref<" << host << ">\n");
             lex.clear_err();
             ++ncontinuable_errors;
         }
