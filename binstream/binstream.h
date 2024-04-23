@@ -50,6 +50,8 @@
 COID_NAMESPACE_BEGIN
 
 class metastream;
+struct token;
+class charstr;
 
 void* dynarray_new(void* p, uints nitems, uints itemsize, uints ralign = 0);
 
@@ -171,6 +173,8 @@ public:
     binstream& operator << (const char* x) { return xwrite_token(x); }
     binstream& operator << (const unsigned char* x) { return xwrite_token((const char*)x); }
     binstream& operator << (const signed char* x) { return xwrite_token((const char*)x); }
+
+    binstream& operator << (const token& tok) { return xwrite_token(tok); }
 
     binstream& operator << (uint8 x) { return xwrite(&x, bstype::t_type<uint8>()); }
     binstream& operator << (int8 x) { return xwrite(&x, bstype::t_type<int8>()); }
