@@ -112,13 +112,13 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 ///
 template<class T>
-class policy_pooled_i
+class policy_intrusive_pooled
     : public policy_base
 {
 public:
-    COIDNEWDELETE(policy_pooled_i);
+    COIDNEWDELETE(policy_intrusive_pooled);
 
-    typedef policy_pooled_i<T> this_type;
+    typedef policy_intrusive_pooled<T> this_type;
     typedef pool<this_type> pool_type;
 
 protected:
@@ -127,7 +127,7 @@ protected:
 public:
 
     ///
-    policy_pooled_i()
+    policy_intrusive_pooled()
         : policy_base()
         , _pool(&default_pool())
     {}

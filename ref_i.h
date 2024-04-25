@@ -58,7 +58,7 @@ private:
     T* _p;
 
     typedef iref<T> iref_t;
-    typedef coid::pool< coid::policy_pooled_i<T>* > pool_type_t;
+    typedef coid::pool< coid::policy_intrusive_pooled<T>* > pool_type_t;
 
 public:
 
@@ -128,7 +128,7 @@ public:
 
     // special constructor from default policy
     explicit iref(const create_pooled&)
-        : _p(coid::policy_pooled_i<T>::create())
+        : _p(coid::policy_intrusive_pooled<T>::create())
     {}
 
     ~iref() { release(); }
@@ -160,7 +160,7 @@ public:
     }
 
     T* create_pooled() {
-        T* p = coid::policy_pooled_i<T>::create();
+        T* p = coid::policy_intrusive_pooled<T>::create();
         DASSERT_RET(p != _p, _p);
         release();
         _p = p;
@@ -168,7 +168,7 @@ public:
     }
 
     T* create_pooled(pool_type_t* po) {
-        T* p = coid::policy_pooled_i<T>::create(po);
+        T* p = coid::policy_intrusive_pooled<T>::create(po);
         DASSERT_RET(p != _p, _p);
         release();
         _p = p;
