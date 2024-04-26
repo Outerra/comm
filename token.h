@@ -164,11 +164,11 @@ struct token
 #ifdef SYSTYPE_MSVC
         char const* p = __FUNCSIG__;
         while (*p != 0 && *p != '<') ++p;
-        ++p;
+        if (*p) ++p;
         const char* pe = p;
         int count = 1;
-        for (;; ++pe) {
-            if (*pe != 0 && *pe == '>') {
+        for (; *pe; ++pe) {
+            if (*pe == '>') {
                 if (--count == 0)
                     break;
             }

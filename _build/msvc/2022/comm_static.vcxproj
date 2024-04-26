@@ -265,7 +265,7 @@
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <PrecompiledHeaderOutputFile>$(IntDir)comm_static.pch</PrecompiledHeaderOutputFile>
       <AdditionalOptions>-mcx16 %(AdditionalOptions)</AdditionalOptions>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <WarningLevel>Level3</WarningLevel>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
