@@ -198,8 +198,9 @@ struct resolve_enum {
 template<typename T>
 struct resolve_enum {
     enum dummy {};
-    typedef typename std::conditional<std::is_enum<T>::value, T, dummy>::type enum_type;
-    typedef typename std::conditional<std::is_enum<T>::value, typename std::underlying_type<enum_type>::type, T>::type type;
+    typedef typename std::remove_const_t<T> ncT;
+    typedef typename std::conditional<std::is_enum<ncT>::value, ncT, dummy>::type enum_type;
+    typedef typename std::conditional<std::is_enum<ncT>::value, typename std::underlying_type<enum_type>::type, ncT>::type type;
 };
 #endif
 
