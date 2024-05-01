@@ -44,7 +44,9 @@ COID_NAMESPACE_BEGIN
 
 struct log_filter
 {
-    typedef function<void(ref<logmsg>&)> filter_fun;
+    /// @brief  Filter function that can alter the message and decide if the message should be written by logger
+    /// @return true if the message should be passed to log writer
+    typedef function<bool(ref<logmsg>&)> filter_fun;
     filter_fun _filter_fun;
     charstr _module;
     log::level _log_level;
@@ -151,8 +153,8 @@ public:
 
     static void enable_debug_out(bool en);
 
-    uints register_filter(log_filter&& filter);
-    void unregister_filter(uints pos);
+    virtual uints register_filter(log_filter&& filter);
+    virtual void unregister_filter(uints pos);
 
     void flush();
 };
