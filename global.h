@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Outerra.
- * Portions created by the Initial Developer are Copyright (C) 2021-2023
+ * Portions created by the Initial Developer are Copyright (C) 2021-2024
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -137,8 +137,8 @@ class data_manager
         static constexpr int BITMASK_BITS = 8 * sizeof(uints);
 
         sequencer()
-            : _allocated(coid::abyss_dynarray_size, coid::reserve_mode::virtual_space)
-            , _entities(coid::abyss_dynarray_size, coid::reserve_mode::virtual_space)
+            : _allocated(coid::abyss_dynarray_size, reserve_mode::virtual_space)
+            , _entities(coid::abyss_dynarray_size, reserve_mode::virtual_space)
         {}
 
         bool set_bit(uints k) { return _allocated.set_bit(k); }
@@ -210,11 +210,7 @@ class data_manager
         bool del(versionid vid)
         {
             DASSERT_RET(get_bit(vid.id) && _entities[vid.id].version == vid.version, false);
-            if (clear_bit(vid.id)) {
-                --_count;
-                return true;
-            }
-            return false;
+            return del(vid.id);
         }
 
         bool is_valid(uint id) const {
@@ -438,16 +434,16 @@ private:
     template <class M>
     struct base_handler {
         virtual ~base_handler() {}
-        virtual void invoke(M*, void*, uint) = 0;
+        virtual void invoke(M*, void*, versionid) = 0;
     };
 
     template <class M, class C>
     struct handler : base_handler<M>
     {
-        using handler_t = void (*)(M*, C&, uint, handler_data*);
+        using handler_t = void (*)(M*, C&, versionid, handler_data*);
 
-        virtual void invoke(M* m, void* c, uint gid) override {
-            return fn(m, *(C*)c, gid, data);
+        virtual void invoke(M* m, void* c, versionid vid) override {
+            return fn(m, *(C*)c, vid, data);
         }
 
         handler(handler_t&& fn, handler_data* data) {
@@ -468,7 +464,7 @@ private:
     template <class M>
     struct manipulator {
         virtual ~manipulator() {}
-        coid::dynarray32<base_handler<M>*> component_handlers;
+        dynarray32<base_handler<M>*> component_handlers;
     };
 
 public:
@@ -555,13 +551,13 @@ public:
         return c ? static_cast<C*>(c->element_by_container_local_id(id)) : nullptr;
     }
 
-    static void* get_data(uint gid, uint c)
+    static void* get_data(versionid vid, uint c)
     {
         container* co = data_containers().get_safe(c, nullptr);
-        if (!co)
-            return 0;
+        if (!co || !co->seq->is_valid(vid))
+            return nullptr;
 
-        return co->element(gid);
+        return co->element(vid.id);
     }
 
     /// @brief Create entity
@@ -872,7 +868,7 @@ public:
     /// @tparam C data/component type
     /// @param fn function callback
     template <class M, class C>
-    static void set_handler(void (*fn)(M*, C&, uint gid, handler_data*), handler_data* data = nullptr)
+    static void set_handler(void (*fn)(M*, C&, versionid gid, handler_data*), handler_data* data = nullptr)
     {
         manipulator<M>*& mm = handlers().component<manipulator<M>>();
         if (!mm)
@@ -892,9 +888,9 @@ public:
     /// @param m manipulator context
     /// @param gid global entity id
     template <class M, class C>
-    static void invoke_component_handler(M* m, uint gid)
+    static void invoke_component_handler(M* m, versionid vid)
     {
-        C* c = get<C>(gid);
+        C* c = get<C>(vid);
         if (!c)
             return;
 
@@ -908,7 +904,7 @@ public:
         if (!h)
             return;
 
-        h->invoke(m, *c, gid);
+        h->invoke(m, *c, vid);
     }
 
     /// @brief Invoke handlers of given manipulator for all data existing for given entity
@@ -917,7 +913,7 @@ public:
     /// @param gid entity id
     /// @param fn optional callback to invoke before invoking a handler, identifying the data type processed
     template <class M>
-    static void invoke_all_component_handlers(M* m, uint gid, void (*default_fn)(const coid::token& type) = 0)
+    static void invoke_all_component_handlers(M* m, versionid vid, void (*default_fn)(const token& type) = 0)
     {
         manipulator<M>* mm = handlers().component<manipulator<M>>();
         if (!mm)
@@ -928,13 +924,13 @@ public:
 
         for (uint i = 0; i < n; ++i)
         {
-            void* c = get_data(gid, i);
+            void* c = get_data(vid, i);
             if (!c)
                 continue;
 
             base_handler<M>* h = i >= handler_count ? nullptr : mm->component_handlers[i];
             if (h) {
-                h->invoke(m, c, gid);
+                h->invoke(m, c, vid);
             }
             else {
                 if (default_fn) {
@@ -946,9 +942,10 @@ public:
     }
 
     /// @brief Invoke given function for every component type, create component if fn returns true
-    static void iterate_all_components(uint gid, bool (*fn)(const coid::token& type, bool entity_has_component) = 0)
+    static void iterate_all_components(versionid vid, bool (*fn)(const token& type, bool entity_has_component) = 0)
     {
-        if (fn == nullptr) return;
+        if (fn == nullptr)
+            return;
 
         uint n = data_containers().size();
 
@@ -958,12 +955,12 @@ public:
             if (!c)
                 continue;
 
-            void* d = get_data(gid, i);
+            void* d = get_data(vid, i);
             bool has_component = d != nullptr;
 
             auto td = tsq().type(i);
             if (fn(td->type_name, has_component))
-                c->create_default(gid);
+                c->create_default(vid.id);
         }
     }
 
@@ -1007,7 +1004,7 @@ protected:
     struct containers
     {
         dynarray32<container*> _dc;
-        coid::context_holder<OwnT> _hs;
+        context_holder<OwnT> _hs;
 
         static containers& get() {
             LOCAL_FUNCTION_PROCWIDE_SINGLETON_DEF(containers) _cs = new containers;
@@ -1015,7 +1012,7 @@ protected:
         }
     };
 
-    static coid::context_holder<OwnT>& handlers() {
+    static context_holder<OwnT>& handlers() {
         return containers::get()._hs;
     }
 

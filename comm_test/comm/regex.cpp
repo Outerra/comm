@@ -1,7 +1,7 @@
 
-#include "../regex.h"
-#include "../dynarray.h"
-#include "../commassert.h"
+#include <comm/regex.h>
+#include <comm/dynarray.h>
+#include <comm/commassert.h>
 
 using namespace coid;
 

@@ -66,6 +66,10 @@
     <SmartPointer Usage="Minimal">_o</SmartPointer>
     <DisplayString Condition="_o == 0">{{empty}}</DisplayString>
     <DisplayString>{_o,x}</DisplayString>
+    <Expand>
+        <Item Name="[object]" ExcludeView="simple" Condition="_o != 0"> _o </Item>
+        <Item Name="[refcount]" ExcludeView="simple" Condition="_p != 0"> _p->_count</Item>
+    </Expand>
 </Type>
 
 <Type Name="iref&lt;*&gt;">

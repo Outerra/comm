@@ -43,13 +43,14 @@
 #include "metastream/metastream.h"
 
 
-namespace coid {
-template<class T> class policy_pooled;
-}
-
 namespace atomic {
 template<class T> class queue_ng;
 }
+
+
+COID_NAMESPACE_BEGIN
+
+template<class T> class policy_pooled;
 
 template<class T>
 class ref
@@ -96,7 +97,7 @@ public:
 
     // special constructor from default policy
     explicit ref(const create_me&) {
-        typename policy_trait<T>::policy *p = policy_trait<T>::policy::create();
+        typename policy_trait<T>::policy* p = policy_trait<T>::policy::create();
         _p = p;
         _p->add_refcount();
         _o = p->get();
@@ -104,7 +105,7 @@ public:
 
     // special constructor from default policy
     explicit ref(const create_pooled&) {
-        policy_pooled_t *p = policy_pooled_t::create();
+        policy_pooled_t* p = policy_pooled_t::create();
         _p = p;
         _p->add_refcount();
         _o = p->get();
@@ -119,8 +120,8 @@ public:
     }*/
 
     // special constructor from default policy
-    explicit ref(const create_pooled&, pool_type_t *po) {
-        policy_pooled_t *p = policy_pooled_t::create(po);
+    explicit ref(const create_pooled&, pool_type_t* po) {
+        policy_pooled_t* p = policy_pooled_t::create(po);
         _p = p;
         _p->add_refcount();
         _o = p->get();
@@ -137,12 +138,12 @@ public:
 
     // constructor from inherited object
     template< class T2 >
-    requires std::is_convertible_v<T2*, T*>
+        requires std::is_convertible_v<T2*, T*>
     explicit ref(const ref<T2>& p)
         : _p(p.add_refcount())
         , _o(static_cast<T*>(p.get())) {}
 
-    void create(policy_shared<T> * const p) {
+    void create(policy_shared<T>* const p) {
         release();
         _p = p;
         _p->add_refcount();
@@ -151,7 +152,7 @@ public:
 
     void create() {
         release();
-        typename policy_trait<T>::policy *p = policy_trait<T>::policy::create();
+        typename policy_trait<T>::policy* p = policy_trait<T>::policy::create();
         _p = p;
         _p->add_refcount();
         _o = p->get();
@@ -160,18 +161,18 @@ public:
     bool create_pooled() {
         release();
         bool isnew;
-        policy_pooled_t *p = policy_pooled_t::create(&isnew);
+        policy_pooled_t* p = policy_pooled_t::create(&isnew);
         _p = p;
         _p->add_refcount();
         _o = p->get();
         return isnew;
     }
 
-    bool create_pooled(pool_type_t *po, bool nonew = false) {
+    bool create_pooled(pool_type_t* po, bool nonew = false) {
         release();
         bool isnew;
-        policy_pooled_t *p = policy_pooled_t::create(po, nonew, &isnew);
-        if(p) {
+        policy_pooled_t* p = policy_pooled_t::create(po, nonew, &isnew);
+        if (p) {
             _p = static_cast<policy*>(p);
             _p->add_refcount();
             _o = p->get();
@@ -217,13 +218,13 @@ public:
         return p && p->can_add_refcount() ? p : nullptr;
     }
 
-    T * operator->() const { DASSERT(_o != 0 && "unitialized reference"); return _o; }
+    T* operator->() const { DASSERT(_o != 0 && "unitialized reference"); return _o; }
 
-    T * operator->() { DASSERT(_o != 0 && "unitialized reference"); return _o; }
+    T* operator->() { DASSERT(_o != 0 && "unitialized reference"); return _o; }
 
-    T & operator*() const { return *_o; }
+    T& operator*() const { return *_o; }
 
-    friend void swap( ref_t& a, ref_t& b ) {
+    friend void swap(ref_t& a, ref_t& b) {
         std::swap(a._p, b._p);
         std::swap(a._o, b._o);
     }
@@ -243,17 +244,13 @@ public:
 
     T* get() const { return _o; }
 
-    T* const & get_ref() const { return _o; }
+    T* const& get_ref() const { return _o; }
 
     bool is_empty() const { return _o == 0; }
     bool is_set() const { return _o != 0; }
 
-    typedef T* ref<T>::*unspecified_bool_type;
-
     ///Automatic cast to unconvertible bool for checking via if
-    operator unspecified_bool_type () const {
-        return _o ? &ref<T>::_o : 0;
-    }
+    explicit operator bool () const { return _o != 0; }
 
     void forget() { _p = 0; _o = 0; }
 
@@ -312,17 +309,19 @@ public:
 
 
 private:
-    policy *_p;
-    T *_o;
+    policy* _p;
+    T* _o;
 };
 
+COID_NAMESPACE_END
+
 template<class T>
-inline bool operator==(const ref<T>& a, const ref<T>& b) {
+inline bool operator==(const coid::ref<T>& a, const coid::ref<T>& b) {
     return a.get() == b.get();
 }
 
 template<class T>
-inline bool operator!=(const ref<T>& a, const ref<T>& b) {
+inline bool operator!=(const coid::ref<T>& a, const coid::ref<T>& b) {
     return !operator==(a, b);
 }
 
@@ -336,6 +335,10 @@ template<typename T> struct hasher<ref<T>> {
 };
 
 } //namespace coid
+
+#ifndef COID_COMMTYPES_IN_NAMESPACE
+using coid::ref;
+#endif
 
 
 #endif // __COMM_REF_S_H__

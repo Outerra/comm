@@ -12,7 +12,7 @@
 
 //debug string:
 // [inputs] $(ProjectDir)..\..\..\intergen\metagen
-// $(ProjectDir)..\..\..\intergen\test\test.hpp $(ProjectDir)..\..\..\intergen\metagen
+// $(ProjectDir)..\..\..\comm_test\intergen\test.hpp $(ProjectDir)..\..\..\intergen\metagen
 
 stdoutstream out;
 
@@ -451,7 +451,7 @@ int main(int argc, char* argv[])
     File cgf;
 
     //parse
-    int rv = cgf.parse(argv[1], 0, 0);
+    int rv = cgf.parse(argv[1], "intergen.cpp", __LINE__);
     if (rv)
         return rv;
 
@@ -551,10 +551,12 @@ int File::parse(token path, const char* ref_file, int ref_line)
 
     bifstream bif;
     if (!directory::stat(path, &st) || bif.open(path) != 0) {
+        charstr compact_path = path;
+        directory::compact_path(compact_path, '/');
         if (ref_file)
-            out << ref_file << '(' << ref_line << "): error: can't open the file " << path << "\n";
+            out << ref_file << '(' << ref_line << "): error: can't open file '" << compact_path << "'\n";
         else
-            out << "error: can't open the file " << path << "\n";
+            out << "error: can't open file '" << compact_path << "'\n";
         return -2;
     }
 

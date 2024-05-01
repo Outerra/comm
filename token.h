@@ -61,6 +61,11 @@ namespace coid {
     class token_literal;
 }
 
+#ifdef _T
+#pragma message("_T macro will conflict with token string literal")
+#undef _T
+#endif
+
 constexpr coid::token_literal operator "" _T(const char* s, size_t len);
 
 COID_NAMESPACE_BEGIN
@@ -159,11 +164,11 @@ struct token
 #ifdef SYSTYPE_MSVC
         char const* p = __FUNCSIG__;
         while (*p != 0 && *p != '<') ++p;
-        ++p;
+        if (*p) ++p;
         const char* pe = p;
         int count = 1;
-        for (;; ++pe) {
-            if (*pe != 0 && *pe == '>') {
+        for (; *pe; ++pe) {
+            if (*pe == '>') {
                 if (--count == 0)
                     break;
             }
@@ -226,10 +231,7 @@ struct token
     constexpr token(const token& src) : _ptr(src._ptr), _pte(src._pte)
     {}
 
-    constexpr token(token&& src) {
-        _ptr = src._ptr;
-        _pte = src._pte;
-    }
+    constexpr token(token&& src) : _ptr(src._ptr), _pte(src._pte) {}
 
     /// create token from a subset of another token
     /// @param src source token
@@ -628,11 +630,9 @@ struct token
     void set_empty(const char* p) { _ptr = _pte = p; }
     void set_null() { _ptr = _pte = 0; }
 
-    typedef const char* token::*unspecified_bool_type;
-
     ///Automatic cast to bool for checking emptiness
-    operator unspecified_bool_type () const {
-        return _ptr == _pte ? 0 : &token::_ptr;
+    explicit operator bool () const {
+        return _ptr != _pte;
     }
 
 
@@ -2969,11 +2969,6 @@ public:
 #ifdef COID_USER_DEFINED_LITERALS
 COID_NAMESPACE_END
 
-#ifdef _T
-#pragma message("_T macro will conflict with token string literal")
-#undef _T
-#endif
-
 ///String literal returning token (_T suffix)
 inline constexpr coid::token_literal operator "" _T(const char* s, size_t len)
 {
@@ -3047,10 +3042,8 @@ public:
         a.swap(b);
     }
 
-    typedef const char* zstring::*unspecified_bool_type;
-
     ///Automatic cast to bool for checking emptiness
-    operator unspecified_bool_type () const;
+    explicit operator bool () const;
 
     ///Get zero terminated string
     const char* c_str() const;

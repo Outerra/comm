@@ -58,7 +58,7 @@ private:
     T* _p;
 
     typedef iref<T> iref_t;
-    typedef coid::pool< coid::policy_pooled_i<T>* > pool_type_t;
+    typedef coid::pool< coid::policy_intrusive_pooled<T>* > pool_type_t;
 
 public:
 
@@ -128,7 +128,7 @@ public:
 
     // special constructor from default policy
     explicit iref(const create_pooled&)
-        : _p(coid::policy_pooled_i<T>::create())
+        : _p(coid::policy_intrusive_pooled<T>::create())
     {}
 
     ~iref() { release(); }
@@ -160,7 +160,7 @@ public:
     }
 
     T* create_pooled() {
-        T* p = coid::policy_pooled_i<T>::create();
+        T* p = coid::policy_intrusive_pooled<T>::create();
         DASSERT_RET(p != _p, _p);
         release();
         _p = p;
@@ -168,7 +168,7 @@ public:
     }
 
     T* create_pooled(pool_type_t* po) {
-        T* p = coid::policy_pooled_i<T>::create(po);
+        T* p = coid::policy_intrusive_pooled<T>::create(po);
         DASSERT_RET(p != _p, _p);
         release();
         _p = p;
@@ -217,8 +217,6 @@ public:
     bool is_empty() const { return _p == 0; }
     bool is_set() const { return _p != 0; }
 
-    typedef T* iref<T>::* unspecified_bool_type;
-
     ///Discard without decrementing refcount
     void forget() { _p = 0; }
 
@@ -242,9 +240,7 @@ public:
     coid::int32 refcount() const { return _p ? _p->refcount() : 0; }
 
     ///Automatic cast to unconvertible bool for checking via if
-    operator unspecified_bool_type () const {
-        return _p ? &iref<T>::_p : 0;
-    }
+    explicit operator bool () const { return _p != 0; }
 
     friend bool operator == (const iref<T>& a, const iref<T>& b) {
         return a._p == b._p;

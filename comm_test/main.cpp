@@ -1,10 +1,10 @@
 
-#include "../str.h"
-#include "../radix.h"
-#include "../trait.h"
-#include "../hash/slothash.h"
-#include "../function.h"
-#include "../global.h"
+#include <comm/str.h>
+#include <comm/radix.h>
+#include <comm/trait.h>
+#include <comm/hash/slothash.h>
+#include <comm/function.h>
+#include <comm/global.h>
 #include "intergen/ifc/client.h"
 
 namespace coid {
@@ -158,7 +158,11 @@ void lambda_slotalloc_test()
 
 struct something
 {
-    static int funs(void*, int, void*) {
+    static int funs(int, void*) {
+        return 0;
+    }
+
+    static int funsc(coid::callback_context&, int, void*) {
         return 0;
     }
 
@@ -194,15 +198,15 @@ struct virthing : something
     }
 };
 
-typedef function<void(float)> fn_axis_handler;
-typedef coid::function<void(void*, const something&)> fn_action_handler;
+typedef function<void(float)> fn_x_handler;
+typedef coid::function<void(const something&)> fn_a_handler;
 
-fn_action_handler hh;
+fn_a_handler hh;
 
-void fnlambda_test(const fn_axis_handler& fn) {
-    hh = [fn](void* obj, const something& act) {
+void fnlambda_test(const fn_x_handler& fn) {
+    hh = [fn](const something& act) {
         fn(float(act.value));
-        };
+    };
 }
 
 void fntest(void(*pfn)(charstr&))
@@ -214,13 +218,15 @@ void fntest(void(*pfn)(charstr&))
             //whatevs
         });
 
-    hh(nullptr, something());
+    hh(something());
 
     int z = 2;
     callback<int(int, void*)> fns = &something::funs;
     callback<int(int, void*)> fnm = &something::funm;
-    callback<int(int, void*)> fnl = [](void*, int, void*) { return -1; };
-    callback<int(int, void*)> fnz = [z](void*, int, void*) { return z; };
+    callback<int(int, void*)> fnl1 = [](int, void*) { return -1; };
+    callback<int(int, void*)> fnl2 = [](coid::callback_context& ctx, int a, void* b) { return static_cast<something*>(ctx.this__)->funm(a, b); };
+    callback<int(int, void*)> fnz1 = [z](int, void*) { return z; };
+    callback<int(int, void*)> fnz2 = [z](coid::callback_context&, int, void*) { return z; };
     callback<int(int, void*)> fn2 = &anything::funm2;
     callback<int(int, void*)> fm3 = &multithing::funm3;
     callback<int(int, void*)> fn3 = &multithing::funn3;
@@ -230,20 +236,22 @@ void fntest(void(*pfn)(charstr&))
     multithing m;
     virthing v;
 
-    DASSERT(fns(&s, 1, 0) == 0);
-    DASSERT(fnm(&s, 1, 0) == 1);
-    DASSERT(fnl(&s, 1, 0) == -1);
-    DASSERT(fnz(&s, 1, 0) == 2);
-    DASSERT(fn2(&s, 1, 0) == 1);
-    DASSERT(fm3(&m, 1, 0) == 1);
-    DASSERT(fn3(&m, 1, 0) == 1);
-    DASSERT(fnv(&v, 1, 0) == 1);
+    DASSERT(fns(1, 0) == 0);
+    DASSERT(fnm.invoke_with_this(&s, 1, 0) == 1);
+    DASSERT(fnl1(1, 0) == -1);
+    DASSERT(fnl2.invoke_with_this(&s, 1, 0) == -1);
+    DASSERT(fnz1(1, 0) == 2);
+    DASSERT(fnz2(1, 0) == 2);
+    DASSERT(fn2.invoke_with_this(&s, 1, 0) == 1);
+    DASSERT(fm3.invoke_with_this(&m, 1, 0) == 1);
+    DASSERT(fn3.invoke_with_this(&m, 1, 0) == 1);
+    DASSERT(fnv.invoke_with_this(&v, 1, 0) == 1);
 }
 
 
 void reftest(callback<int(int, void*)>&& fn) {
     function<void(int)> x1 = [](int) {};
-    auto s = [fn = std::move(fn)](int) { fn(0, 1, nullptr); };
+    auto s = [fn = std::move(fn)](int) { fn(1, nullptr); };
     function<void(int)> x2 = std::move(s);
 }
 

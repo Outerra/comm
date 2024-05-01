@@ -3932,14 +3932,16 @@ struct type_holder {
 };
 
 template<class T>
-inline type_holder<T> get_type_holder(T*) {
+inline type_holder<T> get_type_holder(T*)
+{
     return type_holder<T>();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 template<class T>
-void type_streamer<T>::fn(metastream* m, void* p, binstream_container_base*) {
+void type_streamer<T>::fn(metastream* m, void* p, binstream_container_base*)
+{
     *m || *static_cast<typename resolve_enum<T>::type*>(p);
 }
 
@@ -4017,7 +4019,7 @@ metastream& operator || (metastream& m, range<T>& a)
             0,
             [](const void* a, uints& i) -> const void* { return static_cast<const range<T>*>(a)->ptr() + i++; }
         ))
-            m || *(T*)0;
+            m || *(typename std::remove_const<T>::type*)0;
     }
     return m;
 }

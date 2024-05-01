@@ -1,6 +1,6 @@
 
-#include "../dynarray.h"
-#include "../str.h"
+#include <comm/dynarray.h>
+#include <comm/str.h>
 
 using namespace coid;
 

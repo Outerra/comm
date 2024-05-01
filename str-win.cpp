@@ -358,11 +358,11 @@ zstring& zstring::operator << (const zstring& s)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-zstring::operator zstring::unspecified_bool_type () const {
+zstring::operator bool () const {
     bool empty = _buf
         ? _buf->is_empty()
         : (_zend ? _zend==_zptr : _zptr[0]==0);
-    return empty ? 0 : &zstring::_zptr;
+    return !empty;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

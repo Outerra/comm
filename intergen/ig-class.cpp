@@ -147,14 +147,18 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
 
             bool extfn_struct = false;
             bool extfn_class = false;
-            bool extfn = tok == "ifc_fnx"_T || extfn_struct || extfn_class;
+            bool extfn = tok == "ifc_fnx"_T;
             bool extev = tok == "ifc_eventx"_T;
             bool bimplicit = false;
             bool bdestroy = false;
             bool bpure = false;
-            int8 binternal = 0;
-            int8 bnocapture = 0;
-            int8 bcapture = 0;
+            bool bsingleton = false;
+
+            //{ keep the order
+            int8 binternal = 0;     // !
+            int8 bnocapture = 0;    // -
+            int8 bcapture = 0;      // +
+            //}
 
             charstr extifcname;
             charstr extname;
@@ -186,8 +190,9 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                     }
 
                     bimplicit = lex.matches('@');
-
                     lex.matches(lex.IDENT, extname);
+
+                    bsingleton = lex.matches('^') && lex.matches("singleton");
 
                     bpure = extev && lex.matches('=') && lex.matches('0');
                 }
@@ -431,6 +436,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 m->bduplicate = duplicate != 0;
                 m->bimplicit = bimplicit;
                 m->classname << namespc << classname;
+                m->bsingleton = bsingleton;
 
                 m->bretifc = extfn_class || extfn_struct;
                 if (m->bretifc)

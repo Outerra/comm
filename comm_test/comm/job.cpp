@@ -1,6 +1,6 @@
 
-#include "../taskmaster.h"
-#include "../log/logger.h"
+#include <comm/taskmaster.h>
+#include <comm/log/logger.h>
 
 struct jobtest
 {

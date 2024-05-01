@@ -74,6 +74,16 @@ $-(if !comments.empty)$
 $[comments]$
     $@value$
 $-[/comments]$$(/if)$
+$-(if singleton)$
+    static const iref<$..name$>& $name$(
+        $-[args rest=", "]$$type$ $name$$size$ $-(if ?defval)$ = $defval$$(/if)$$[/args]$) {
+        LOCAL_SINGLETON_DEF(iref<$..name$>) ref = iref<$..name$>($name$<$..name$>(0$[args]$, $name$$[/args]$));
+        return *ref;
+    }
+
+    template<class T>
+    static const iref<T>& $name$(T* _subclass_$[args]$, $type$ $name$$size$ $-(if ?defval)$ = $defval$$(/if)$$[/args]$);
+$-(elif)$
     static iref<$..name$> $name$(
         $-[args rest=", "]$$type$ $name$$size$ $-(if ?defval)$ = $defval$$(/if)$$[/args]$) {
         return $name$<$..name$>(0$[args]$, $name$$[/args]$);
@@ -81,6 +91,7 @@ $-[/comments]$$(/if)$
 
     template<class T>
     static iref<T> $name$(T* _subclass_$[args]$, $type$ $name$$size$ $-(if ?defval)$ = $defval$$(/if)$$[/args]$);
+$-(/if)$
 $-[/method]$
 
     // --- interface methods ---
@@ -248,9 +259,14 @@ $-[/pasteafters]$
 $-[method ?creator]$
 ////////////////////////////////////////////////////////////////////////////////
 template<class T>
-inline iref<T> $..name$::$name$(T* _subclass_
+inline $(if singleton)$const iref<T>&$(elif)$iref<T>$(/if)$ $..name$::$name$(T* _subclass_
     $-[args]$, $type$ $name$$size$$[/args]$)
 {
+$-(if singleton)$
+    LOCAL_SINGLETON_DEF(iref<T>) ref;
+    if (*ref) return *ref;
+
+$-(/if)$
     typedef iref<T> (*fn_creator)($..name$*$[args]$, $type$$[/args]$);
 
     static fn_creator create = 0;
@@ -262,10 +278,15 @@ inline iref<T> $..name$::$name$(T* _subclass_
 
     if (!create) {
         log_mismatch("$..name$"_T, "$..ns suffix="::"$$..name$.$name$"_T, "@$..hash$"_T);
-        return 0;
+        return $(if singleton)$*ref$(elif)$0$(/if)$;
     }
 
+$-(if singleton)$
+    *ref = create(_subclass_$[args]$, $name$$[/args]$);
+    return *ref;
+$-(elif)$
     return create(_subclass_$[args]$, $name$$[/args]$);
+$-(/if)$
 }
 
 $-[/method]$

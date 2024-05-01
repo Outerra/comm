@@ -45,7 +45,13 @@
 #include <type_traits>
 
 #include <typeinfo>
+
+#if __cplusplus < 202002L && !defined(_HAS_CXX20)
+#error C++20 required
+#endif
+
 #include <source_location>
+
 
 ///Retrieves module (current dll/exe) singleton object of given type T
 #define SINGLETON(...) \

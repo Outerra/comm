@@ -99,8 +99,9 @@ namespace coid {
 /// @note ifc_fnx(+) or ifc_fnx(+name) marks an interface method that is captured by an interceptor (for net replication etc) if default was off
 /// @note ifc_fnx(@connect) marks a method that gets called upon successfull interface connection
 /// @note ifc_fnx(@unload) marks a static method called when a registered client of given interface is unloading
-/// @note ifc_fnx(class=...) marks a method that returns ifc_class type interface
-/// @note ifc_fnx(struct=...) marks a method that returns ifc_struct type interface
+/// @note ifc_fnx(ifc_class=...) marks a method that returns ifc_class type interface
+/// @note ifc_fnx(ifc_struct=...) marks a method that returns ifc_struct type interface
+/// @note ifc_fnx(... %singleton) marks a creator method that returns ifc_class type interface cached in local singleton
 /// @example ifc_fnx(get) void get_internal();
 #define ifc_fnx(extname)
 
