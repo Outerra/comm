@@ -32,9 +32,12 @@ public: // methods only
         {
             result = new this_type(object_ptr);
         }
+        else 
+        {
+            result->_original_ptr = object_ptr;
+        }
 
-        result->_original_ptr = static_cast<Type*>(object_ptr);
-        result->_strong_counter.store(1, std::memory_order::memory_order_relaxed);
+        result->_strong_counter.store(1, std::memory_order::memory_order_release);
 
         return result;
     }
@@ -51,7 +54,7 @@ public: // methods only
         }
 
         result->_original_ptr = object_ptr;
-        result->_strong_counter.store(1, std::memory_order::memory_order_relaxed);
+        result->_strong_counter.store(1, std::memory_order::memory_order_release);
 
         return result;
     }

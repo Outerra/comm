@@ -599,7 +599,7 @@ bool directory::get_relative_path(token src, token dst, charstr& relout, bool la
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool directory::compact_path(charstr & dst, char tosep)
+bool directory::compact_path(charstr& dst, char tosep)
 {
     token dtok = dst;
 
@@ -708,12 +708,12 @@ bool directory::compact_path(charstr & dst, char tosep)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool directory::list_file_paths(const token & path, const token & extension, recursion_mode mode,
+bool directory::list_file_paths(const token& path, const token& extension, recursion_mode mode,
     const coid::function<void(const charstr&, list_entry)>& fn)
 {
     directory dir;
 
-    if (dir.open(path, "*.*") != ersNOERR)
+    if (dir.open(path, "*") != ersNOERR)
         return false;
 
     bool all_files = extension.is_empty() || extension == '*';
@@ -730,8 +730,7 @@ bool directory::list_file_paths(const token & path, const token & extension, rec
             if (!all_files) {
                 token fname = dir.get_last_file_name_token();
 
-                if (fname.ends_with_icase(extension)
-                    && (ext_with_dot || fname.nth_char(-1 - ints(extension.len())) == '.'))
+                if (fname.ends_with_icase(extension) && (ext_with_dot || fname.nth_char(-1 - ints(extension.len())) == '.'))
                     valid = true;
             }
 

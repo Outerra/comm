@@ -49,6 +49,8 @@
 
 COID_NAMESPACE_BEGIN
 
+class metastream;
+
 void* dynarray_new(void* p, uints nitems, uints itemsize, uints ralign = 0);
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -334,11 +336,8 @@ public:
         if (kmember > 0)
             write_separator();
 
-        binstream_container_fixed_array<bstype::key, uint> c(
-            (bstype::key*)key.ptr(),
-            key.len(),
-            &type_streamer<char>::fn,
-            &type_streamer<char>::fn);
+        auto fn = &type_streamer<char>::fn;
+        binstream_container_fixed_array<bstype::key, uint> c((bstype::key*)key.ptr(), key.len(), fn, fn);
         return write_array(c);
     }
 
@@ -1051,43 +1050,14 @@ public:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-struct opcd_formatter
+inline binstream& operator << (binstream& out, const opcd_formatter& f)
 {
-    opcd e;
+    out << f.e.error_desc();
 
-    opcd_formatter(opcd e) : e(e) { }
-
-    charstr& text(charstr& dst) const;
-
-    uints write(char* buf, uints size)
-    {
-        uints n = 0;
-
-        token ed = e.error_desc();
-        if (size <= ed.len()) {
-            ed.copy_to(buf, size);
-            n = ed.len();
-        }
-
-        token et = e.text();
-        if (size <= n + 3 + et.len()) {
-            xmemcpy(buf + n, " : ", 3);
-            et.copy_to(buf + n + 3, size - 3 - n);
-            n += 3 + et.lens();
-        }
-
-        return n;
-    }
-
-    friend binstream& operator << (binstream& out, const opcd_formatter& f)
-    {
-        out << f.e.error_desc();
-
-        if (f.e.text() && f.e.text()[0])
-            out << " : " << f.e.text();
-        return out;
-    }
-};
+    if (f.e.text() && f.e.text()[0])
+        out << " : " << f.e.text();
+    return out;
+}
 
 COID_NAMESPACE_END
 

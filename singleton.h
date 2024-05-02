@@ -78,15 +78,15 @@
 #define THREAD_SINGLETON(...) \
     coid::thread_singleton<__VA_ARGS__>::instance(true)
 
-///Returns a global thread singleton instance
-#define THREAD_GLOBAL_SINGLETON(...) \
+///Returns a procwide thread singleton instance
+#define THREAD_PROCWIDE_SINGLETON(...) \
     coid::thread_singleton<__VA_ARGS__>::instance(false)
 
 ///Used for function-local thread singleton objects
 /// usage:
 /// THREAD_LOCAL_SINGLETON_DEF(class) name = new class;
 #define THREAD_LOCAL_SINGLETON_DEF(...) \
-    static coid::thread_singleton<__VA_ARGS__, __FUNCSIG__, std::source_location::current().line()>
+    __declspec(thread) static coid::thread_singleton<__VA_ARGS__, __FUNCSIG__, std::source_location::current().line()>
 
 
 ///Same as LOCAL_FUNCTION_SINGLETON_DEF (compatibility)
@@ -285,35 +285,40 @@ public:
     static T& instance(bool module_local)
     {
         thread_key& tk = get_key();
-        return *thread_instance(tk, module_local);
+        return *thread_instance(tk, module_local, nullptr);
     }
 
     ///Local thread singleton constructor, use through LOCAL_THREAD_SINGLETON macro
     thread_singleton() {
-        thread_instance(_tkey, true);
+        thread_instance(_tkey, true, nullptr);
     }
 
     ///Local thread singleton constructor, use through LOCAL_THREAD_SINGLETON macro
     thread_singleton(T* obj) {
-        DASSERT(!obj);  //can't have global initialization
-        thread_instance(_tkey, true);
+        thread_instance(_tkey, true, obj);
     }
 
 
-    T* operator -> () { return thread_instance(_tkey, true); }
+    T* operator -> () { return thread_instance(_tkey, true, nullptr); }
 
-    T& operator * () { return *thread_instance(_tkey, true); }
+    T& operator * () { return *thread_instance(_tkey, true, nullptr); }
 
-    T* get() { return thread_instance(_tkey, true); }
+    T* get() { return thread_instance(_tkey, true, nullptr); }
 
 private:
 
-    static T* thread_instance(thread_key& tk, bool module_local) {
+    static T* thread_instance(thread_key& tk, bool module_local, T* obj) {
         T* p = reinterpret_cast<T*>(tk.get());
         if (!p) {
             p = (T*)singleton_register_instance(
-                &create, &destroy, &singleton<T>::init_module,
-                typeid(T).name(), "", Line, module_local, Function_signature.value);
+                obj==nullptr? &create : singleton_local_creator(obj),
+                &destroy, 
+                &singleton<T>::init_module,
+                typeid(T).name(), 
+                "", 
+                Line, 
+                module_local, 
+                Function_signature.value);
             tk.set(p);
         }
         return p;

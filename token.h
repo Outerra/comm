@@ -788,6 +788,34 @@ struct token
         return r;
     }
 
+    /// @brief return substring of count characters from left or right side of string
+    /// @param count number of characters from left (count >= 0) or right (count < 0) of the string
+    constexpr token substring(ints count) const {
+        return count < 0
+            ? token(_pte + count < _ptr ? _ptr : _pte + count, _pte)
+            : token(_ptr, _ptr + count > _pte ? _pte : _ptr + count);
+    }
+
+    /// @brief return substring of count characters from given offset
+    /// @param count number of characters from left side (count < 0) or right side (count >= 0) of the offset marker
+    /// @param offs offset from start (offs > 0) of from end (offs < 0). For offs == 0, marker is at the beginning (if count >= 0) or at the end (if count < 0)
+    constexpr token substring(ints count, ints offs) const {
+        if (count < 0) {
+            //characters to the left of offset marker
+            const char* end = offs <= 0
+                ? (_pte + offs < _ptr ? _ptr : _pte + count)
+                : (_ptr + offs > _pte ? _pte : _ptr + count);
+
+            return token(end + count < _ptr ? _ptr : end + count, end);
+        }
+        else {
+            const char* start = offs < 0
+                ? (_pte + offs < _ptr ? _ptr : _pte + count)
+                : (_ptr + offs > _pte ? _pte : _ptr + count);
+
+            return token(start, start + count > _pte ? _pte : start + count);
+        }
+    }
 
 
     ///Flags for cut_xxx methods concerning the treating of separator
@@ -1059,7 +1087,7 @@ struct token
     }
 
     ///Cut left token up to the substring
-    token cut_left(const substring& ss, cut_trait ctr = cut_trait_remove_sep_default_full())
+    token cut_left(const class substring& ss, cut_trait ctr = cut_trait_remove_sep_default_full())
     {
         token r;
         const char* p = _ptr + count_until_substring(ss);
@@ -1165,7 +1193,7 @@ struct token
     }
 
     ///Cut left token, searching for a substring separator backwards
-    token cut_left_back(const substring& ss, cut_trait ctr = cut_trait_remove_sep_default_full())
+    token cut_left_back(const class substring& ss, cut_trait ctr = cut_trait_remove_sep_default_full())
     {
         token r;
         uints off = 0;
@@ -1223,7 +1251,7 @@ struct token
     }
 
     ///Cut right token up to the specified substring
-    token cut_right(const substring& ss, cut_trait ctr = cut_trait_remove_sep_default_full())
+    token cut_right(const class substring& ss, cut_trait ctr = cut_trait_remove_sep_default_full())
     {
         return cut_left(ss, ctr.make_swap());
     }
@@ -1258,7 +1286,7 @@ struct token
     }
 
     ///Cut right substring, searching for separator backwards
-    token cut_right_back(const substring& ss, cut_trait ctr = cut_trait_remove_sep_default_full())
+    token cut_right_back(const class substring& ss, cut_trait ctr = cut_trait_remove_sep_default_full())
     {
         return cut_left_back(ss, ctr.make_swap());
     }
@@ -1562,7 +1590,7 @@ struct token
     }
 
     ///Count characters up to specified substring
-    uints count_until_substring(const substring& sub, uints off = 0) const
+    uints count_until_substring(const class substring& sub, uints off = 0) const
     {
         if (off >= lens())  return len();
 
@@ -1572,7 +1600,7 @@ struct token
 
     ///Return position where the substring is located
     /// @return substring position, len() if not found
-    const char* contains(const substring& sub, uints off = 0) const {
+    const char* contains(const class substring& sub, uints off = 0) const {
         uints k = count_until_substring(sub, off);
         return k < len() ? _ptr + k : 0;
     }
@@ -1806,7 +1834,7 @@ struct token
         return *this;
     }
 
-    token& skip_until_substring(const substring& ss, uints off = 0)
+    token& skip_until_substring(const class substring& ss, uints off = 0)
     {
         uints n = count_until_substring(ss, off);
         _ptr += n;
@@ -2108,7 +2136,7 @@ struct token
     }
 
     /// @return part of the token after a substring
-    [[nodiscard]] token get_after_substring(const substring& sub) const
+    [[nodiscard]] token get_after_substring(const class substring& sub) const
     {
         uints n = count_until_substring(sub);
 
@@ -2122,7 +2150,7 @@ struct token
     }
 
     /// @return part of the token before a substring
-    [[nodiscard]] token get_before_substring(const substring& sub) const
+    [[nodiscard]] token get_before_substring(const class substring& sub) const
     {
         uints n = count_until_substring(sub);
         return token(_ptr, n);

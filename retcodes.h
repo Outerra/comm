@@ -221,7 +221,7 @@ struct opcd
     friend inline bool operator != (int err, opcd c) { return (int)c.code() != err; }
 
 
-        ///Get specific error text
+    ///Get specific error text
     const char* text() const
     {
         if (!_ptr || !_ptr->_code) return "";
@@ -255,6 +255,21 @@ struct opcd
 private:
 
     static bool parent1_equal(uint c1, uint c2);
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+class charstr;
+
+struct opcd_formatter
+{
+    opcd_formatter(opcd e) : e(e) { }
+
+    charstr& text(charstr& dst) const;
+
+    uints write(char* buf, uints size);
+
+    opcd e;
 };
 
 

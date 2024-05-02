@@ -403,6 +403,9 @@
     <ClInclude Include="..\..\..\alloc\memtrack_stacktrace.h">
       <Filter>alloc</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\binstream\container_dynarray.h">
+      <Filter>binstream</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\crypt\sha1.cpp">
@@ -518,6 +521,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\stacktrace\stacktrace.cpp">
       <Filter>stacktrace</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\str.cpp">
+      <Filter>cxx</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

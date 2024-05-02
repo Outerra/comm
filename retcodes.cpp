@@ -47,8 +47,8 @@ COID_NAMESPACE_BEGIN
 struct errorTABLE
 {
     const opcd::errcode* code;
-	short parent;
-	const char* desc;
+    short parent;
+    const char* desc;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -56,7 +56,7 @@ struct errorTABLE
 /// if parent is not set, its value is unique and less than zero (so it's easy to find out if parents are the same)
 static errorTABLE opcdTABLE[opcdERROR_COUNT] =
 {
-	{(MKERR1("\0", "\0"))._ptr, 0, "OK"},	/// leave first entry empty
+    {(MKERR1("\0", "\0"))._ptr, 0, "OK"},	/// leave first entry empty
 
     {(ersUNKNOWN)._ptr, -1, "unknown error"},
     {(ersFRAMEWORK_ERROR)._ptr, -2, "framework error"}, /// 1
@@ -128,13 +128,13 @@ static errorTABLE opcdTABLE[opcdERROR_COUNT] =
 
 
 ////////////////////////////////////////////////////////////////////////////////
-uints opcd::find_code( const char* c, uints len )
+uints opcd::find_code(const char* c, uints len)
 {
-    if( 0 == strncmp(c,"OK",len) )  return 0;
+    if (0 == strncmp(c, "OK", len))  return 0;
 
-    if( len>6 )  len=6;
-    for( uints i=0; i<opcdERROR_COUNT; ++i )
-        if( 0 == strncmp(c,(const char*)opcdTABLE[i].code->_desc,len) )  return i;
+    if (len > 6)  len = 6;
+    for (uints i = 0; i < opcdERROR_COUNT; ++i)
+        if (0 == strncmp(c, (const char*)opcdTABLE[i].code->_desc, len))  return i;
 
     return 1;   //ersUNKNOWN
 }
@@ -146,19 +146,48 @@ const char* opcd::error_desc() const
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool opcd::parent1_equal( uint c1, uint c2 )
+bool opcd::parent1_equal(uint c1, uint c2)
 {
     return uint(opcdTABLE[c1].parent) == c2;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void opcd::set( uint e )
+void opcd::set(uint e)
 {
-	if(!e)  _ptr = 0;
-	else if( e < opcdERROR_COUNT ) _ptr = opcdTABLE[e].code;
-	else _ptr = (ersUNKNOWN)._ptr;
+    if (!e)  _ptr = 0;
+    else if (e < opcdERROR_COUNT) _ptr = opcdTABLE[e].code;
+    else _ptr = (ersUNKNOWN)._ptr;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+charstr& opcd_formatter::text(charstr& dst) const
+{
+    dst << e.error_desc();
+
+    if (e.text() && e.text()[0])
+        dst << " : " << e.text();
+    return dst;
+}
+
+uints opcd_formatter::write(char* buf, uints size)
+{
+    uints n = 0;
+
+    token ed = e.error_desc();
+    if (size <= ed.len()) {
+        ed.copy_to(buf, size);
+        n = ed.len();
+    }
+
+    token et = e.text();
+    if (size <= n + 3 + et.len()) {
+        xmemcpy(buf + n, " : ", 3);
+        et.copy_to(buf + n + 3, size - 3 - n);
+        n += 3 + et.lens();
+    }
+
+    return n;
+}
 
 
 COID_NAMESPACE_END

@@ -564,11 +564,18 @@ public:
         return co->element(gid);
     }
 
+    /// @brief Create entity
+    /// @return newely created entity id
     static versionid allocate()
     {
         static sequencer& seq = tsq();
         uint id;
         erecord* er = seq.add(&id);
+
+        for (container* c : data_containers()) {
+            if (c && c->storage_type == container::type::array)
+                c->create_default(id);
+        }
 
         return versionid(id, er->version);
     }
@@ -833,6 +840,8 @@ public:
     template <class C>
     static void preallocate_array_container()
     {
+        static sequencer& seq = tsq();
+        DASSERT(seq._count == 0);
         carray<C>* cont = static_cast<carray<C>*>(&get_or_create_container<C, carray<C>>());
         //TODO: this function just ensures that container of type C exists, refactor candidate
         //cont->reserve(reserve_count);
