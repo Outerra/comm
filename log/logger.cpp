@@ -38,7 +38,10 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "logwriter.h"
- //#include "../atomic/pool.h"
+
+#include "../ref/ref_policy_pooled.h"
+
+
 #include "../atomic/pool_base.h"
 
 #include "../binstream/filestream.h"
@@ -169,62 +172,56 @@ void flush()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class policy_msg : public policy_base
+class policy_msg : public coid::ref_policy_shared<logmsg>
 {
 public:
     COIDNEWDELETE(policy_msg);
 
-    typedef pool<policy_msg> pool_type;
-
-protected:
-
-    pool_type* _pool;
-    logmsg* _obj;
-
+    using parent_type = coid::ref_policy_shared<logmsg>;
+    using policy_pool_type = coid::pool<policy_msg>;
+    using logmsg_pool_type = coid::pool<logmsg>;
 protected:
 
     ///
-    explicit policy_msg(logmsg* const obj, pool_type* const p = 0)
-        : _pool(p)
-        , _obj(obj)
-    {}
+    explicit policy_msg(logmsg* msg) 
+        : parent_type(msg)
+    {};
 
 public:
 
-    logmsg* get() const { return _obj; }
+    logmsg* get() const { return this->_original_ptr; }
 
-    virtual void _destroy() override
+    virtual void on_destroy() override
     {
-        DASSERT(_pool != 0);
 
-        if (_obj->_logger) {
+        if (this->_original_ptr->_logger) {
             //first destroy just queues the message
-            logger* x = _obj->_logger;
-            _obj->finalize(this);
+            logger* x = this->_original_ptr->_logger;
+            this->_original_ptr->finalize(this);
         }
         else {
             //back to the pool
             policy_msg* t = this;
-            _pool->release_item(t);
+            pool_singleton().release_item(t);
         }
     }
 
     ///
     static policy_msg* create()
     {
-        pool_type& pool = pool_singleton();
-        policy_msg* p = pool.get_item();
+        policy_pool_type& policy_pool = pool_singleton();
+        policy_msg* p = policy_pool.get_item();
 
         if (!p)
-            p = new policy_msg(new logmsg, &pool);
+            p = new policy_msg(new logmsg);
         else
             p->get()->reset();
 
         return p;
     }
 
-    static pool_type& pool_singleton() {
-        LOCAL_FUNCTION_PROCWIDE_SINGLETON_DEF(pool_type) pool;
+    static policy_pool_type& pool_singleton() {
+        LOCAL_FUNCTION_PROCWIDE_SINGLETON_DEF(policy_pool_type) pool;
         return *pool;
     }
 };

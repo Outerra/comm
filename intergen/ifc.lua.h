@@ -43,6 +43,8 @@
 #include "../log.h"
 #include "../metastream/metastream.h"
 #include "../binstream/filestream.h"
+#include "../binstream/binstreambuf.h"
+
 #include "../singleton.h"
 
 #include <luaJIT/lua.hpp>
@@ -445,7 +447,7 @@ inline int ctx_log(lua_State* L) {
 inline int lua_iref_release_callback(lua_State* L) {
     if (lua_isuserdata(L, -1)) {
         policy_intrusive_base* obj = reinterpret_cast<policy_intrusive_base*>(*static_cast<size_t*>(lua_touserdata(L, -1)));
-        obj->release_refcount();
+        obj->decrease_strong_counter();
     }
 
     return 0;

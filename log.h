@@ -36,7 +36,7 @@
 #define __COMM_LOG_H__
 
 #include "str.h"
-#include "ref.h"
+#include "ref_s.h"
 
  ////////////////////////////////////////////////////////////////////////////////
  //@{ Log message with specified severity

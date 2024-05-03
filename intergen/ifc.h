@@ -40,7 +40,7 @@
 #ifndef __INTERGEN_IFC_H__
 #define __INTERGEN_IFC_H__
 
-#include "../ref.h"
+#include "../ref_i.h"
 #include "../interface.h"
 #include "../typeseq.h"
 #include "../local.h"

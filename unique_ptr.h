@@ -45,8 +45,8 @@ public:
         return unique_ptr<T>(new T(static_cast<Args&&>(args)...));
     }
 
-    T* ptr() const { return _p; }
-    T*& ptr_ref() { return _p; }
+    T* get_ptr() const { return _p; }
+    T*& get_ptr_ref() { return _p; }
 
     explicit operator bool() const { return _p != 0; }
 
@@ -55,17 +55,12 @@ public:
     int operator ==(const T* ptr) const { return ptr == _p; }
     int operator !=(const T* ptr) const { return ptr != _p; }
 
-    T& operator *(void) { return *_p; }
-    const T& operator *(void) const { return *_p; }
+    T& operator *(void) {DASSERT(_p != nullptr); return *_p; }
+    const T& operator *(void) const { DASSERT(_p != nullptr); return *_p; }
+  
+    T* operator ->(void) { DASSERT(_p != nullptr); return _p; }
+    const T* operator ->(void) const { DASSERT(_p != nullptr); return _p; }
 
-    #ifdef SYSTYPE_MSVC
-    #pragma warning (disable : 4284)
-    #endif //SYSTYPE_MSVC
-    T* operator ->(void) { return _p; }
-    const T* operator ->(void) const { return _p; }
-    #ifdef SYSTYPE_MSVC
-    #pragma warning (default : 4284)
-    #endif //SYSTYPE_MSVC
 
     unique_ptr& operator = (T* p) {
         if (_p) delete _p;

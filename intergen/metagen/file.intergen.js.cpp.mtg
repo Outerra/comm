@@ -54,7 +54,7 @@ $-(/if)$
     {
         $name$_js_dispatcher* ifc = data.GetParameter();
         ifc->_object.Reset();
-        ifc->release_refcount();
+        ifc->decrease_strong_counter();
     }
 
 protected:
@@ -625,7 +625,7 @@ $-(/if)$
         _object.Reset(iso, obj);
 
         _object.SetWeak(this, _js_release_callback, v8::WeakCallbackType::kParameter);
-        add_refcount();
+        increase_strong_counter();
     }
 
     return obj;

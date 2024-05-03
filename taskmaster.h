@@ -46,6 +46,7 @@
 #include "sync/mutex.h"
 #include "sync/condition_variable.h"
 #include "pthreadx.h"
+#include "ref_i.h"
 #include "log/logger.h"
 
 COID_NAMESPACE_BEGIN
