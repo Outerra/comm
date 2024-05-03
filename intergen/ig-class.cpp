@@ -343,42 +343,42 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                     m->ret.ifc_type = extfn_class ? meta::arg::ifc_type::ifc_class : meta::arg::ifc_type::ifc_struct;
 
                 if (!m->parse(lex, classname, namespc, extifcname, lastifc->fwds, true))
-                        ++ncontinuable_errors;
+                    ++ncontinuable_errors;
 
-                    const MethodIG* old = lastifc->method.find_if([m](const MethodIG& o) {
-                        return &o != m && o.name == m->name && m->matches_args(o);
-                    });
+                const MethodIG* old = lastifc->method.find_if([m](const MethodIG& o) {
+                    return &o != m && o.name == m->name && m->matches_args(o);
+                });
 
-                    if (old) {
-                        charstr relpath;
-                        directory::get_relative_path(m->file, old->file, relpath, true);
-                        out << (lex.prepare_exception() << "method already declared in " << relpath << "(" << old->line << "): " << m->name << "\n");
-                        lex.clear_err();
-                        ++ncontinuable_errors;
-                    }
+                if (old) {
+                    charstr relpath;
+                    directory::get_relative_path(m->file, old->file, relpath, true);
+                    out << (lex.prepare_exception() << "method already declared in " << relpath << "(" << old->line << "): " << m->name << "\n");
+                    lex.clear_err();
+                    ++ncontinuable_errors;
+                }
 
-                    if (duplicate == 2) {
-                        lex.match(';');
-                        lex.match("*/");
-                    }
-                    else if (lastifc->varname.is_empty() && !lastifc->bextend_ext) {
-                        lex.ignore(lex.MLCOM, mlcom);
-                    }
+                if (duplicate == 2) {
+                    lex.match(';');
+                    lex.match("*/");
+                }
+                else if (lastifc->varname.is_empty() && !lastifc->bextend_ext) {
+                    lex.ignore(lex.MLCOM, mlcom);
+                }
 
-                    if (extname) {
-                        m->intname.takeover(m->name);
-                        m->name.takeover(extname);
-                    }
-                    else
-                        m->intname = m->name;
+                if (extname) {
+                    m->intname.takeover(m->name);
+                    m->name.takeover(extname);
+                }
+                else
+                    m->intname = m->name;
 
-                    m->basename = m->name;
+                m->basename = m->name;
 
-                    if (m->bstatic) {
-                        out << (lex.prepare_exception() << "error: interface event cannot be static\n");
-                        lex.clear_err();
-                        ++ncontinuable_errors;
-                    }
+                if (m->bstatic) {
+                    out << (lex.prepare_exception() << "error: interface event cannot be static\n");
+                    lex.clear_err();
+                    ++ncontinuable_errors;
+                }
 
                 if (m->bimplicit) {
                     //lex.match(';', "error: implicit events must not be declared");
