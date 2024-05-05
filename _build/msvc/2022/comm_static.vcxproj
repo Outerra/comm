@@ -536,8 +536,10 @@
     <ClInclude Include="..\..\..\ref\ref_policy_shared.h" />
     <ClInclude Include="..\..\..\ref\ref_pooled.h" />
     <ClInclude Include="..\..\..\ref\ref_shared.h" />
+    <ClInclude Include="..\..\..\ref\ref_unique.h" />
     <ClInclude Include="..\..\..\ref_i.h" />
     <ClInclude Include="..\..\..\ref_s.h" />
+    <ClInclude Include="..\..\..\ref_u.h" />
     <ClInclude Include="..\..\..\stacktrace\stacktrace.h" />
     <ClInclude Include="..\..\..\sync\condition_variable.h" />
     <ClInclude Include="..\..\..\sync\_mutex.h" />
@@ -592,7 +594,6 @@
     <ClInclude Include="..\..\..\range.h" />
     <ClInclude Include="..\..\..\typeseq.h" />
     <ClInclude Include="..\..\..\type_info.h" />
-    <ClInclude Include="..\..\..\unique_ptr.h" />
     <ClInclude Include="..\..\..\version.h" />
   </ItemGroup>
   <ItemGroup>

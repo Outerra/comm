@@ -362,7 +362,6 @@
     <ClInclude Include="..\..\..\international.h" />
     <ClInclude Include="..\..\..\process.h" />
     <ClInclude Include="..\..\..\log.h" />
-    <ClInclude Include="..\..\..\unique_ptr.h" />
     <ClInclude Include="..\..\..\intergen\ifc.lua.h">
       <Filter>intergen</Filter>
     </ClInclude>
@@ -405,6 +404,10 @@
     </ClInclude>
     <ClInclude Include="..\..\..\binstream\container_dynarray.h">
       <Filter>binstream</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ref_u.h" />
+    <ClInclude Include="..\..\..\ref\ref_unique.h">
+      <Filter>ref</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
