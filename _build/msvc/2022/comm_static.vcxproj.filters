@@ -409,6 +409,12 @@
     <ClInclude Include="..\..\..\ref\ref_unique.h">
       <Filter>ref</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\ref\ref_counter.h">
+      <Filter>ref</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ref\ref_intrusive_base.h">
+      <Filter>ref</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\crypt\sha1.cpp">

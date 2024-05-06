@@ -37,6 +37,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#include "ref_counter.h"
 #include "ref_policy_base.h"
 
 namespace coid

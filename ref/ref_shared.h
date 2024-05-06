@@ -37,6 +37,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#include "ref_counter.h"
 #include "ref_policy_base.h"
 #include "ref_policy_shared.h"
 #include "ref_default_policy.h"
@@ -67,8 +68,10 @@ public: //methods only
     template<typename Policy = ref_policy_shared<Type>, typename... PolicyArguments>
     explicit ref_shared(Type* object_ptr, PolicyArguments&&... policy_arguments)
     {
+        create_counter_internal();
         _policy_ptr = static_cast<ref_policy_base*>(Policy::create(object_ptr, std::forward<PolicyArguments>(policy_arguments)...));
         _object_ptr = object_ptr;
+        _counter_ptr->increase_strong_counter();
     }
 
     /// @brief Constructor for ref_shared object from object pointer of type DerivedType
@@ -77,8 +80,10 @@ public: //methods only
     COID_REQUIRES((std::is_base_of_v<Type, DerivedType>))
     explicit ref_shared(DerivedType* object_ptr, PolicyArguments&&... policy_arguments)
     {
+        create_counter_internal();
         _policy_ptr = static_cast<ref_policy_base*>(Policy::create(object_ptr, std::forward<PolicyArguments>(policy_arguments)...));
         _object_ptr = object_ptr;
+        _counter_ptr->increase_strong_counter();
     }
 
     // toto potom refactornut a vymazat lebo to je podla mna hovadina
@@ -88,15 +93,17 @@ public: //methods only
         : _policy_ptr(existing_policy)
         , _object_ptr(static_cast<Type*>(existing_policy->get_original_ptr()))
     {
-        _policy_ptr->increase_strong_counter();
+        create_counter_internal();
+        _counter_ptr->increase_strong_counter();
     }
-
 
     /// @brief  Move construcotr
     ref_shared(ref_shared&& rhs) noexcept
     {
+        _counter_ptr = rhs._counter_ptr;
         _policy_ptr = rhs._policy_ptr;
         _object_ptr = rhs._object_ptr;
+        rhs._counter_ptr = nullptr;
         rhs._policy_ptr = nullptr;
         rhs._object_ptr = nullptr;
     }
@@ -106,12 +113,13 @@ public: //methods only
     {
         if (rhs.is_set())
         {
-            const bool increased = rhs._policy_ptr->try_increase_strong_counter();
+            const bool increased = rhs._counter_ptr->try_increase_strong_counter();
 
             if (increased)
             {
                 _policy_ptr = rhs._policy_ptr;
                 _object_ptr = rhs._object_ptr;
+                _counter_ptr = rhs._counter_ptr;
             }
         }
     }
@@ -124,12 +132,13 @@ public: //methods only
     {
         if (rhs.is_set())
         {
-            const bool increased = rhs._policy_ptr->try_increase_strong_counter();
+            const bool increased = rhs._counter_ptr->try_increase_strong_counter();
 
             if (increased)
             {
                 _policy_ptr = rhs._policy_ptr;
                 _object_ptr = static_cast<Type*>(rhs._object_ptr);
+                _counter_ptr = rhs._counter_ptr;
             }
         }
     }
@@ -143,11 +152,12 @@ public: //methods only
 
             if (rhs.is_set())
             {
-                const bool increased = rhs._policy_ptr->try_increase_strong_counter();
+                const bool increased = rhs._counter_ptr->try_increase_strong_counter();
                 if (increased)
                 {
                     _object_ptr = rhs._object_ptr;
                     _policy_ptr = rhs._policy_ptr;
+                    _counter_ptr = rhs._counter_ptr;
                 }
             }
         }
@@ -165,11 +175,12 @@ public: //methods only
 
         if (rhs.is_set())
         {
-            const bool increased = rhs._policy_ptr->try_increase_strong_counter();
+            const bool increased = rhs._counter_ptr->try_increase_strong_counter();
             if (increased)
             {
                 _policy_ptr = rhs._policy_ptr;
                 _object_ptr = static_cast<Type*>(rhs._object_ptr);
+                _counter_ptr = rhs->_counter_ptr;
             }
         }
 
@@ -181,8 +192,11 @@ public: //methods only
     void create_default()
     {
         release();
+
+        create_counter_internal();
         _policy_ptr = static_cast<ref_policy_base*>(default_ref_policy<Type>::policy::create());
         _object_ptr = static_cast<Type*>(_policy_ptr->get_original_ptr());
+        _counter_ptr->increase_strong_counter();
     }
 
     /// @brief Create method with default object consturction determined by used policy
@@ -193,8 +207,11 @@ public: //methods only
     void create(PolicyArguments&&... policy_arguments)
     {
         release();
+
+        create_counter_internal();
         _policy_ptr = static_cast<ref_policy_base*>(Policy::create(std::forward<PolicyArguments>(policy_arguments)...));
         _object_ptr = static_cast<Type*>(_policy_ptr->get_original_ptr());
+        _counter_ptr->increase_strong_counter();
     }
 
     /// @brief Create method form object pointer of type Type 
@@ -207,8 +224,11 @@ public: //methods only
     void create(Type* object_ptr, PolicyArguments&&... policy_arguments)
     {
         release();
+        
+        create_counter_internal();
         _policy_ptr = static_cast<ref_policy_base*>(Policy::create(object_ptr, std::forward<PolicyArguments>(policy_arguments)...));
         _object_ptr = object_ptr;
+        _counter_ptr->increase_strong_counter();
     }
 
     /// @brief Create method form object pointer of type DerivedType 
@@ -222,8 +242,11 @@ public: //methods only
     void create(DerivedType* object_ptr, PolicyArguments&&... policy_arguments)
     {
         release();
+
+        create_counter_internal();
         _policy_ptr = static_cast<ref_policy_base*>(Policy::create(object_ptr, std::forward<PolicyArguments>(policy_arguments)...));
         _object_ptr = object_ptr;
+        _counter_ptr->increase_strong_counter();
     }
 
 
@@ -233,7 +256,7 @@ public: //methods only
     COID_REQUIRES((std::is_base_of<Type, DerivedType>::value))
     ref_shared<DerivedType> downcast() const
     {
-        ref_shared<DerivedType> result(static_cast<DerivedType*>(_object_ptr), _policy_ptr);
+        ref_shared<DerivedType> result(static_cast<DerivedType*>(_object_ptr), _policy_ptr, _counter_ptr);
         return result;
     }
 
@@ -273,8 +296,10 @@ public: //methods only
     void takeover(ref_shared<Type>& other_ref)
     {
         release();
+        _counter_ptr = other_ref._counter_ptr;
         _policy_ptr = other_ref._policy_ptr;
         _object_ptr = other_ref._object_ptr;
+        other_ref._counter_ptr = nullptr;
         other_ref._policy_ptr = nullptr;
         other_ref._object_ptr = nullptr;
     }
@@ -284,11 +309,12 @@ public: //methods only
     {
         if (_policy_ptr != nullptr)
         {
-            if (_policy_ptr->decrease_strong_counter())
+            if (_counter_ptr->decrease_strong_counter())
             {
                 _policy_ptr->on_destroy();
             }
 
+            destroy_counter_internal();
             _policy_ptr = nullptr;
             _object_ptr = nullptr;
         }
@@ -311,14 +337,18 @@ public: //methods only
 
     /// @brief  Get current strong reference count
     /// @return strong reference count
-    uint32 get_strong_refcount() const { return _policy_ptr->get_strong_counter_value(); }
+    uint32 get_strong_refcount() const { return _counter_ptr->get_strong_counter_value(); }
 
-    friend void swap(ref_shared<Type>& a, ref_shared<Type>& b) {
+    friend void swap(ref_shared<Type>& a, ref_shared<Type>& b) 
+    {
+        std::swap(a._counter_ptr, b._counter_ptr);
         std::swap(a._policy_ptr, b._policy_ptr);
         std::swap(a._object_ptr, b._object_ptr);
     }
 
-    void swap(ref_shared<Type>& rhs) {
+    void swap(ref_shared<Type>& rhs) 
+    {
+        std::swap(_counter_ptr, rhs._counter_ptr);
         std::swap(_policy_ptr, rhs._policy_ptr);
         std::swap(_object_ptr, rhs._object_ptr);
     }
@@ -360,18 +390,29 @@ protected: //methods only
     /// @param object_ptr - object pointer of type "Type" to be reference counted 
     /// @param policy_ptr - pointer to existing policy
     /// @note Used only for downcasts
-    explicit ref_shared(Type* object_ptr, ref_policy_base* policy_ptr)
+    explicit ref_shared(Type* object_ptr, ref_policy_base* policy_ptr, ref_counter* counter_ptr)
     {
-        bool increased = policy_ptr->try_increase_strong_counter();
+        bool increased = _counter_ptr->try_increase_strong_counter();
         DASSERT(increased); // This should never happen because this constructor is only used in down cast method 
         // so the counter can never drop to zero while performing this action
-        
+     
+        _counter_ptr = counter_ptr;
         _policy_ptr = policy_ptr;
         _object_ptr = object_ptr;   
     }
 
+    void create_counter_internal() 
+    {
+        ref_counter::create(_counter_ptr);
+    }
+
+    void destroy_counter_internal()
+    {
+        ref_counter::destroy( _counter_ptr);
+    }
 protected: // members only
     ref_policy_base* _policy_ptr = nullptr;
+    ref_counter* _counter_ptr = nullptr;
     Type* _object_ptr = nullptr;
 };
 }; // end of namespace coid

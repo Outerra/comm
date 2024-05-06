@@ -37,8 +37,6 @@ public: // methods only
             result->_original_ptr = object_ptr;
         }
 
-        result->_strong_counter.store(1, std::memory_order::memory_order_release);
-
         return result;
     }
 
@@ -54,7 +52,6 @@ public: // methods only
         }
 
         result->_original_ptr = object_ptr;
-        result->_strong_counter.store(1, std::memory_order::memory_order_release);
 
         return result;
     }

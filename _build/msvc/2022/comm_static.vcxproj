@@ -528,8 +528,10 @@
     <ClInclude Include="..\..\..\process.h" />
     <ClInclude Include="..\..\..\profiler\profiler.h" />
     <ClInclude Include="..\..\..\ref.h" />
+    <ClInclude Include="..\..\..\ref\ref_counter.h" />
     <ClInclude Include="..\..\..\ref\ref_default_policy.h" />
     <ClInclude Include="..\..\..\ref\ref_intrusive.h" />
+    <ClInclude Include="..\..\..\ref\ref_intrusive_base.h" />
     <ClInclude Include="..\..\..\ref\ref_policy_base.h" />
     <ClInclude Include="..\..\..\ref\ref_policy_intrusive.h" />
     <ClInclude Include="..\..\..\ref\ref_policy_pooled.h" />
