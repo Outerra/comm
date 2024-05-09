@@ -53,6 +53,10 @@ COID_NAMESPACE_BEGIN
 #error Please enable C++17 language standard (/std:c++17) in project settings for VS2017+ projects
 #endif
 
+#ifndef COID_CONCEPTS
+#error Please enable C++20 language standard (/std:c++20) in project settings for VS2017+ projects
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////
 /**
 @brief Allocator for efficient slot allocation/deletion of objects.
@@ -285,8 +289,11 @@ public:
     /// @return pointer to the newly inserted object
     T* push(const T& v)
     {
+        uints id = -1;
         bool isold = _count < created();
-        T* p = isold ? alloc(0) : append<false>();
+        T* p = isold ? alloc(&id) : append<false>(&id);
+
+        extarray_construct_default(id, isold);
 
         return copy_object(p, isold, v);
     }
@@ -295,8 +302,11 @@ public:
     /// @return pointer to the newly inserted object
     T* push(T&& v)
     {
+        uints id = -1;
         bool isold = _count < created();
-        T* p = isold ? alloc(0) : append<false>();
+        T* p = isold ? alloc(&id) : append<false>(&id);
+
+        extarray_construct_default(id, isold);
 
         return this->copy_object(p, isold, std::forward<T>(v));
     }
@@ -305,8 +315,11 @@ public:
     template<class...Ps>
     T* push_construct(Ps&&... ps)
     {
+        uints id = -1;
         bool isold = _count < created();
-        T* p = isold ? alloc(0) : append<false>();
+        T* p = isold ? alloc(&id) : append<false>(&id);
+
+        extarray_construct_default(id, isold);
 
         return construct_object(p, isold, std::forward<Ps>(ps)...);
     }
@@ -314,33 +327,66 @@ public:
     ///Add new object initialized with default constructor, or reuse one in pool mode
     T* add(uints* pid = 0)
     {
+        uints id = -1;
         bool isold = _count < created();
-        T* p = isold ? alloc(pid) : append<false>(pid);
+        T* p = isold ? alloc(&id) : append<false>(&id);
 
+        if (pid)
+            *pid = id;
+
+        extarray_construct_default(id, isold);
+        
         return construct_default(p, isold);
     }
 
     ///Add completely new object, ignoring any unused ones
     T* add_new(uints* pid = 0)
     {
-        T* p = append<false>(pid);
+        uints id = -1;
+        T* p = append<false>(&id);
+
+        if (pid)
+            *pid = id;
+
+
+        extarray_construct_default(get_item_id(p), false);
+
         return construct_default(p, false);
     }
 
     ///Add new object or reuse one from pool if predicate returns true
     template <typename Func>
-    T* add_if(Func fn, uints* pid = 0)
+    T* add_if(Func fn, uints* pid = 0) COID_REQUIRES((POOL))
     {
         bool isold = _count < created();
 
         if (!isold)
-            return new(append<false>(pid)) T;
+        {
+            uints id = -1;
+            T* result = new(append<false>(&id)) T;
+            extarray_construct_default(id, false);
+            if (pid)
+                *pid = id;
 
-        uints id = find_unused(fn);
+            return result;
+        }
 
-        return id != UMAXS
-            ? alloc_item(pid ? (*pid = id) : id)
-            : new(append<false>(pid)) T;
+        uints unused_id = find_unused(fn);
+
+        if (unused_id != UMAXS)
+        {
+            return alloc_item(pid ? (*pid = unused_id) : unused_id);
+        }
+        else 
+        {
+            uints id = -1;
+            T* result = new(append<false>(&id)) T;
+            extarray_construct_default(id, false);
+            if (pid)
+                *pid = id;
+
+            return result;
+        }
     }
 
     ///Add new object, uninitialized (no constructor invoked on the object)
@@ -364,6 +410,7 @@ public:
 
     ///Add range of objects initialized with default constructors
     /// @return id to the beginning of the allocated range
+    /// @note The range is can be non contiguous in case of paged slotalloc (the range can cross the page boundary)
     uints add_range(uints n)
     {
         if (n == 0)
@@ -377,8 +424,9 @@ public:
         uints nold;
         uints id = alloc_range<false>(n, &nold);
 
-        for_range_unchecked(id, n, [&](T* p) {
+        for_range_unchecked(id, n, [&](T* p, uints id) {
             construct_default(p, nold > 0);
+            extarray_construct_default(id, nold > 0);
             if (nold)
                 nold--;
             });
@@ -386,44 +434,8 @@ public:
         return id;
     }
 
-    ///Add range of objects, uninitialized (no constructor invoked on the objects)
-    /// @param nreused optional variable receiving the number of objects that were reused from the pool and are constructed already
-    /// @note if nreused == 0 within the pool mode and thus no way to indicate the item has been reused, the reused objects have destructors called
-    /// @return id to the beginning of the allocated range
-    uints add_range_uninit(uints n, uints* nreused = 0)
-    {
-        if (n == 0)
-            return UMAXS;
-        if (n == 1) {
-            bool newitem;
-            uints id;
-            T* p = add_uninit(&newitem, &id);
-            if (nreused)
-                *nreused = newitem ? 0 : 1;
-            else if coid_constexpr_if(POOL) {
-                if (!newitem)
-                    destroy(*p);
-            }
-            return id;
-        }
-
-        uints nold;
-        uints id = alloc_range<true>(n, &nold);
-
-        if coid_constexpr_if(POOL) {
-            if (nreused == 0) {
-                for_range_unchecked(id, nold, [](T* p) { destroy(*p); });
-            }
-        }
-
-        if (nreused)
-            *nreused = POOL ? nold : 0;
-
-        return id;
-    }
-
-    ///Add range of objects initialized with default constructors
-    /// @return id to the beginning of the allocated range
+    ///Add contiguous range of objects initialized with default constructors
+    /// @return pointer to the first item or nullptr if contiguous can't be allocated
     T* add_contiguous_range(uints n)
     {
         if coid_constexpr_if (!LINEAR) {
@@ -439,8 +451,9 @@ public:
         uints nold;
         uints id = alloc_range_contiguous<false>(n, &nold);
 
-        for_range_unchecked(id, n, [&](T* p) {
+        for_range_unchecked(id, n, [&](T* p, uints id) {
             construct_default(p, nold > 0);
+            extarray_construct_default(id, nold > 0);
             if (nold)
                 nold--;
             });
@@ -448,100 +461,22 @@ public:
         return ptr(id);
     }
 
-    ///Add range of objects, uninitialized (no constructor invoked on the objects)
-    /// @param nreused optional variable receiving the number of objects that were reused from the pool and are constructed already
-    /// @note if nreused == 0 within the pool mode and thus no way to indicate the item has been reused, the reused objects have destructors called
-    /// @return id to the beginning of the allocated range
-    T* add_contiguous_range_uninit(uints n, uints* nreused = 0)
-    {
-        if coid_constexpr_if (!LINEAR) {
-            if (n > storage_t::page::ITEMS)
-                return 0;
-        }
-
-        if (n == 0)
-            return 0;
-        if (n == 1) {
-            bool newitem;
-            T* p = add_uninit(&newitem);
-            if (nreused)
-                *nreused = newitem ? 0 : 1;
-            else if coid_constexpr_if(POOL) {
-                if (!newitem)
-                    destroy(*p);
-            }
-            return p;
-        }
-
-        uints nold;
-        uints id = alloc_range_contiguous<true>(n, &nold);
-
-        if coid_constexpr_if(POOL) {
-            if (nreused == 0)
-                for_range_unchecked(id, nold, [](T* p) { destroy(*p); });
-        }
-
-        if (nreused)
-            *nreused = POOL ? nold : 0;
-
-        return ptr(id);
-    }
-
-    ///Delete object in the container
-    void del(uints item_id) {
-        del(get_item(item_id));
-    }
-
     ///Delete object by pointer
-    void del(T* p)
-    {
-        uints id = get_item_id(p);
-        if (id >= created())
-            throw exception("attempting to delete an invalid object ") << id;
-
-        DASSERT_RET(get_bit(id));
-
-        this->set_modified(id);
-
-        //bump version on deletion, but not for pooled items that may be resurrected yet
-        if coid_constexpr_if(!POOL)
-            this->bump_version(id);
-
-        if (clear_bit(id))
-            --_count;
-        else
-            DASSERTN(0);
-
-        if coid_constexpr_if(!POOL)
-            p->~T();
+    void del_item(T* p)
+    {        
+        del_item_internal(p, get_item_id(p));
     }
 
     ///Delete object by id
     void del_item(uints id)
     {
         DASSERT_RET(id < created());
-
-        this->set_modified(id);
-
-        //bump version on deletion, but not for pooled items that may be resurrected yet
-        if coid_constexpr_if(!POOL)
-            this->bump_version(id);
-
-        if (clear_bit(id))
-            --_count;
-        else
-            DASSERTN(0);
-
-        if coid_constexpr_if(!POOL) {
-            T* p = ptr(id);
-            p->~T();
-        }
+        del_item_internal(ptr(id), id);
     }
 
 
     ///Delete object by versionid
-    template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
-    void del_item(versionid vid)
+    void del_item(versionid vid) COID_REQUIRES((VERSIONING))
     {
         DASSERT_RET(this->check_versionid(vid));
 
@@ -550,7 +485,7 @@ public:
 
     /// @return previously deleted but still valid item
     /// @note only works in POOL mode
-    T* undel_item(uints id)
+    T* undel_item(uints id) COID_REQUIRES((POOL))
     {
         static_assert(POOL, "only available in pool mode");
 
@@ -570,8 +505,7 @@ public:
 
     /// @return previously deleted but still valid item with correct version
     /// @note only works in POOL mode
-    template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
-    T* undel_item(versionid vid)
+    T* undel_item(versionid vid) COID_REQUIRES((VERSIONING && POOL))
     {
         static_assert(POOL, "only available in pool mode");
 
@@ -616,7 +550,7 @@ public:
         if (n == 0)
             return;
         if (n == 1)
-            return del(item_id);
+            return del_item(item_id);
 
         uints idk = item_id;
 
@@ -626,7 +560,10 @@ public:
 
             for (; b < e; ++b) {
                 if coid_constexpr_if(!POOL)
+                {
                     b->~T();
+                    extarray_destruct(idk);
+                }
                 this->bump_version(idk++);
             }
         }
@@ -644,8 +581,11 @@ public:
                 T* e = b + na;
 
                 for (; b < e; ++b) {
-                    if coid_constexpr_if(!POOL)
+                    if coid_constexpr_if(!POOL) 
+                    {
                         b->~T();
+                        extarray_destruct(idk);
+                    }
                     this->bump_version(idk++);
                 }
 
@@ -682,8 +622,7 @@ public:
 
     ///Return an item given id
     /// @param id id of the item
-    template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
-    const T* get_item(versionid vid) const
+    const T* get_item(versionid vid) const COID_REQUIRES((VERSIONING))
     {
         DASSERT_RET(vid.id < created() && this->check_versionid(vid) && get_bit(vid.id), 0);
         return ptr(vid.id);
@@ -692,8 +631,7 @@ public:
     ///Return an item given id
     /// @param id id of the item
     /// @note non-const operator [] disabled on tracking allocators, use explicit get_mutable_item to indicate the element will be modified
-    template <bool T1 = VERSIONING && !TRACKING, typename = std::enable_if_t<T1>>
-    T* get_item(versionid vid)
+    T* get_item(versionid vid) COID_REQUIRES((VERSIONING))
     {
         DASSERT_RET(vid.id < created() && this->check_versionid(vid) && get_bit(vid.id), 0);
         return ptr(vid.id);
@@ -701,8 +639,7 @@ public:
 
     ///Return an item given id
     /// @param id id of the item
-    template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
-    T* get_mutable_item(versionid vid)
+    T* get_mutable_item(versionid vid) COID_REQUIRES((VERSIONING))
     {
         DASSERT_RET(vid.id < created() && this->check_versionid(vid) && get_bit(vid.id), 0);
         this->set_modified(vid.id);
@@ -710,14 +647,14 @@ public:
         return ptr(vid.id);
     }
 
-    template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
-    const T& operator [] (versionid vid) const {
+    const T& operator [] (versionid vid) const COID_REQUIRES((VERSIONING))
+    {
         return *get_item(vid);
     }
 
     /// @note non-const operator [] disabled on tracking allocators, use explicit get_mutable_item to indicate the element will be modified
-    template <bool T1 = VERSIONING && !TRACKING, typename = std::enable_if_t<T1>>
-    T& operator [] (versionid vid) {
+    T& operator [] (versionid vid) COID_REQUIRES((VERSIONING && !TRACKING))
+    {
         return *get_mutable_item(vid);
     }
 
@@ -735,8 +672,7 @@ public:
     ///Return an item given id
     /// @param id id of the item
     /// @note non-const operator [] disabled on tracking allocators, use explicit get_mutable_item to indicate the element will be modified
-    template <bool T1 = TRACKING, typename = std::enable_if_t<!T1>>
-    T* get_item(uints id)
+    T* get_item(uints id) COID_REQUIRES((!TRACKING))
     {
         DASSERT_RET(id < created() && get_bit(id), 0);
         return ptr(id);
@@ -757,8 +693,8 @@ public:
     }
 
     /// @note non-const operator [] disabled on tracking allocators, use explicit get_mutable_item to indicate the element will be modified
-    template <bool T1 = TRACKING, typename = std::enable_if_t<!T1>>
-    T& operator [] (uints id) {
+    T& operator [] (uints id) COID_REQUIRES((!TRACKING))
+    {
         return *get_mutable_item(id);
     }
 
@@ -886,8 +822,8 @@ public:
     }
 
     /// @return if of given item in ext array or UMAXS if the item is not managed here
-    template<int V, class K, bool T1 = VERSIONING, typename = std::enable_if_t<!T1>>
-    uints get_array_item_id(const K* p) const
+    template<int V, class K>
+    uints get_array_item_id(const K* p) const COID_REQUIRES((VERSIONING))
     {
         auto& array = value_array<V>();
         uints id = p - array.ptr();
@@ -897,8 +833,7 @@ public:
     }
 
     /// @return versionid of given item
-    template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
-    versionid get_item_versionid(const T* p) const
+    versionid get_item_versionid(const T* p) const COID_REQUIRES((VERSIONING))
     {
         uints id = get_item_id(p);
         return id == UMAXS
@@ -907,8 +842,7 @@ public:
     }
 
     /// @return versionid of given slot_id if valid
-    template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
-    versionid get_item_versionid(uints slot_id) const
+    versionid get_item_versionid(uints slot_id) const COID_REQUIRES((VERSIONING))
     {
         return is_valid_id(slot_id)
             ? this->get_versionid(slot_id)
@@ -921,8 +855,8 @@ public:
     }
 
     /// @return true if item with id is valid
-    template <bool T1 = VERSIONING, typename = std::enable_if_t<T1>>
-    bool is_valid_id(versionid vid) const {
+    bool is_valid_id(versionid vid) const COID_REQUIRES((VERSIONING))
+    {
         return this->check_versionid(vid) && get_bit(vid.id);
     }
 
@@ -992,7 +926,6 @@ public:
 protected:
 
     /// @{ versioning functions
-
     versionid get_versionid(uints id) const {
         DASSERT_RET(id <= versionid::max_id, versionid());
         if coid_constexpr_if (VERSIONING) {
@@ -1109,6 +1042,21 @@ protected:
     }
 
 protected:
+    template <class Te>
+    static Te* construct_default_extarray_value(Te * p, bool isold) {
+        if coid_constexpr_if(POOL) {
+            return isold
+                ? p
+                : new(p) Te;
+        }
+
+        return new(p) Te;
+    }
+
+    template <class Te>
+    static void destruct_extarray_value(Te* p) {
+        p->~Te();
+    }
 
     void destruct()
     {
@@ -1399,8 +1347,8 @@ public:
     /// @note const version doesn't handle array insertions/deletions during iteration
     /// @param bitplane_mask changeset bitplane mask (slotalloc_detail::changeset::bitplane_mask)
     /// @param f functor with ([const] T* ptr) or ([const] T* ptr, size_t index) arguments; ptr can be null if item was deleted
-    template<typename Func, bool T1 = TRACKING, typename = std::enable_if_t<T1>>
-    void for_each_modified(uint bitplane_mask, Func f) const
+    template<typename Func>
+    void for_each_modified(uint bitplane_mask, Func f) const COID_REQUIRES((TRACKING))
     {
         const bool all_modified = bitplane_mask > slotalloc_detail::changeset::BITPLANE_MASK;
 
@@ -1462,7 +1410,7 @@ public:
         }
     }
 
-    ///Run f(T*) on a range of items
+    ///Run f(T*, [uints]) on a range of items
     /// @note this function ignores whether the items in range are allocated or not
     template<typename Func>
     void for_range_unchecked(uints id, uints count, Func f)
@@ -1476,7 +1424,7 @@ public:
                 n = id + count;
 
             for (uints i = 0; i < count; ++i)
-                funccallp(f, p + i, i);
+                funccallp(f, p + i, id + i);
         }
         else {
             //using page = typename storage_t::page;
@@ -1484,14 +1432,15 @@ public:
 
             uint pg = uint(id / page::ITEMS);
             uint s = uint(id % page::ITEMS);
-
+            uints i = id;
+            
             while (count > 0) {
                 T* b = this->_pages[pg++].ptr() + s;
                 uints na = stdmin(page::ITEMS - s, count);
                 T* e = b + na;
 
-                for (; b < e; ++b)
-                    f(b);
+                for (; b < e; ++b, ++i)
+                    funccallp(f, b, i);
 
                 count -= na;
                 s = 0;
@@ -1587,7 +1536,7 @@ public:
     /// @param f functor with ([const] T&) or ([const] T&, size_t index) arguments
     /// @return true if some item was deleted otherwise false
     template<typename Func>
-    bool del_if(Func f)
+    bool del_item_if(Func f)
     {
         bool found = false;
         bitmask_type const* bm = const_cast<bitmask_type const*>(_allocated.ptr());
@@ -1607,7 +1556,7 @@ public:
                         uints id = base + i;
                         if (funccall(f, pd0[id], base + i))
                         {
-                            del(pd0 + id);
+                            del_item(pd0 + id);
                             found = true;
                         }
 
@@ -1651,7 +1600,7 @@ public:
                         if (*pm & m) {
                             if (funccall_if(f, data[pbase + i], gbase + pbase + i))
                             {
-                                del(const_cast<T*>(data) + (pbase + i));
+                                del_item(const_cast<T*>(data) + (pbase + i));
                                 found = true;
                             }
 
@@ -1903,6 +1852,31 @@ protected:
         }
     }
 
+    void del_item_internal(T* p, uints id)
+    {
+        if (id >= created())
+            throw exception("attempting to delete an invalid object ") << id;
+
+        DASSERT_RET(get_bit(id));
+
+        this->set_modified(id);
+
+        //bump version on deletion, but not for pooled items that may be resurrected yet
+        if coid_constexpr_if(!POOL)
+            this->bump_version(id);
+
+        if (clear_bit(id))
+            --_count;
+        else
+            DASSERTN(0);
+
+        if coid_constexpr_if(!POOL)
+        {
+            p->~T();
+            extarray_destruct(id);
+        }
+    }
+
 private:
 
     dynarray<bitmask_type> _allocated;      //< bit mask for allocated/free items
@@ -2003,6 +1977,26 @@ private:
     template<typename F>
     void extarray_iterate(F fn) {
         extarray_iterate_(make_index_sequence<tracker_t::extarray_size>(), fn);
+    }
+
+    ///Helper to iterate over all ext arrays
+    template<size_t... Index>
+    void extarray_construct_default_(index_sequence<Index...>, uints id, bool is_old) {
+        int dummy[] = { 0, (construct_default_extarray_value(std::get<Index>(this->_exts).ptr() + id, is_old), 0)...};
+    }
+
+    void extarray_construct_default(uints id, bool is_old) {
+        extarray_construct_default_(make_index_sequence<tracker_t::extarray_size>(), id, is_old);
+    }
+
+    ///Helper to iterate over all ext arrays
+    template<size_t... Index>
+    void extarray_destruct_(index_sequence<Index...>, uints id) {
+        int dummy[] = { 0, (destruct_extarray_value(std::get<Index>(this->_exts).ptr() + id), 0)... };
+    }
+
+    void extarray_destruct(uints id) {
+        extarray_destruct_(make_index_sequence<tracker_t::extarray_size>(), id);
     }
 
 #ifdef __clang__
@@ -2230,6 +2224,16 @@ private:
             }
 
             this->_created += n;
+        }
+
+        // Expand ext arrays 
+        if coid_constexpr_if(UNINIT)
+        {
+            extarray_expand_uninit(n);
+        }
+        else
+        {
+            extarray_expand(n);
         }
 
         //in POOL mode the unallocated items in between the valid ones are assumed to be constructed

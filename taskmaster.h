@@ -272,7 +272,7 @@ protected:
     granule* alloc_data(uints size)
     {
         uints n = align_to_chunks(size, sizeof(granule));
-        granule* p = _taskdata.add_contiguous_range_uninit(n);
+        granule* p = _taskdata.add_contiguous_range(n);
 
         //coidlog_devdbg("taskmaster", "pushed task id " << _taskdata.get_item_id(p));
         return p;

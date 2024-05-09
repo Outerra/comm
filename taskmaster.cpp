@@ -65,7 +65,7 @@ void taskmaster::run_task(invoker_base* task, bool waiter)
         wait_counter_ptr->fetch_sub(1, std::memory_order_relaxed);
     }
 
-    _taskdata.del_range((granule*)task, align_to_chunks(task->size(), sizeof(granule)));
+    _taskdata.del_range(id, align_to_chunks(task->size(), sizeof(granule)));
 }
 
 void* taskmaster::threadfunc( int order )

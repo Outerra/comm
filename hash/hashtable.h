@@ -90,7 +90,7 @@ template<class T>
 struct AllocSlot {
     T* alloc() { return _slots.add(); }
     T* alloc_uninit() { return _slots.add_uninit(); }
-    void free(T* p) { _slots.del(p); }
+    void free(T* p) { _slots.del_item(p); }
 
     uints index(const T* p) const { return _slots.get_item_id(p); }
     T* pointer(uints id) const { return (T*)_slots.get_item(id); }

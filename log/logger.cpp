@@ -369,7 +369,7 @@ uints logger::register_filter(log_filter&& filter)
 void logger::unregister_filter(uints pos)
 {
     GUARDTHIS(_mutex);
-    _filters.del(pos);
+    _filters.del_item(pos);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
