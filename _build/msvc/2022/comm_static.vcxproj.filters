@@ -285,9 +285,6 @@
     <ClInclude Include="..\..\..\atomic\basic_pool.h">
       <Filter>atomic</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\atomic\queue_base.h">
-      <Filter>atomic</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\atomic\stack_base.h">
       <Filter>atomic</Filter>
     </ClInclude>

@@ -452,7 +452,6 @@
     <ClInclude Include="..\..\..\atomic\pool.h" />
     <ClInclude Include="..\..\..\atomic\pool_base.h" />
     <ClInclude Include="..\..\..\atomic\queue.h" />
-    <ClInclude Include="..\..\..\atomic\queue_base.h" />
     <ClInclude Include="..\..\..\atomic\stack.h" />
     <ClInclude Include="..\..\..\atomic\stack_base.h" />
     <ClInclude Include="..\..\..\binstream\binstream.h" />

@@ -102,7 +102,8 @@
   </Expand>
 </Type>
 
-<Type Name="coid::typed_versionid&lt;*,*&gt;">
+<Type Name="coid::typed_versionid&lt;*&gt;">
+  <DisplayString Condition="value == (uint64_t)-1">{{invalid}}</DisplayString>
   <DisplayString>id = {id}</DisplayString>
   <Expand>
     <Item Name="[id]" ExcludeView="simple">id</Item>
