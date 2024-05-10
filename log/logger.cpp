@@ -39,6 +39,7 @@
 
 #include "logwriter.h"
 
+#include "../ref/ref_policy_simple.h"
 #include "../ref/ref_policy_pooled.h"
 
 
@@ -148,17 +149,17 @@ const char* name(level t)
 }
 
 
-ref<logmsg> openmsg(level type, const tokenhash& hash, const void* inst)
+logmsg_ref openmsg(level type, const tokenhash& hash, const void* inst)
 {
     return interface_register::canlog(type, hash, inst, target::primary_log);
 }
 
-ref<logmsg> filemsg(level type, const tokenhash& file, const void* inst)
+logmsg_ref filemsg(level type, const tokenhash& file, const void* inst)
 {
     return interface_register::canlog(type, file, inst, target::file);
 }
 
-ref<logmsg> fademsg(level type, const tokenhash& hash, const void* inst)
+logmsg_ref fademsg(level type, const tokenhash& hash, const void* inst)
 {
     return interface_register::canlog(type, hash, inst, target::fade);
 }
@@ -172,60 +173,47 @@ void flush()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class policy_msg : public coid::ref_policy_shared<logmsg>
+class logger_message_ref_policy : public coid::ref_policy_simple<logmsg>
 {
-public:
-    COIDNEWDELETE(policy_msg);
-
-    using parent_type = coid::ref_policy_shared<logmsg>;
-    using policy_pool_type = coid::pool<policy_msg>;
+    using policy_pool_type = coid::pool<logger_message_ref_policy>;
     using logmsg_pool_type = coid::pool<logmsg>;
-protected:
-
-    ///
-    explicit policy_msg(logmsg* msg) 
-        : parent_type(msg)
-    {};
-
 public:
+    COIDNEWDELETE(logger_message_ref_policy);
 
-    logmsg* get() const { return this->_original_ptr; }
-
-    virtual void on_destroy() override
+    static logger_message_ref_policy* create()
     {
-
-        if (this->_original_ptr->_logger) {
-            //first destroy just queues the message
-            logger* x = this->_original_ptr->_logger;
-            this->_original_ptr->finalize(this);
-        }
-        else {
-            //back to the pool
-            policy_msg* t = this;
-            pool_singleton().release_item(t);
-        }
-    }
-
-    ///
-    static policy_msg* create()
-    {
-        policy_pool_type& policy_pool = pool_singleton();
-        policy_msg* p = policy_pool.get_item();
-
-        if (!p)
-            p = new policy_msg(new logmsg);
-        else
-            p->get()->reset();
+        logger_message_ref_policy* p = policy_pool_singleton().create_item();   
+        p->_original_ptr = logmsg_pool_singleton().create_item();
+        p->_original_ptr->reset();
 
         return p;
     }
 
-    static policy_pool_type& pool_singleton() {
+    virtual void on_destroy() override
+    {
+        _original_ptr->finalize();
+        logmsg_ref logmsg_ref;
+        logmsg_ref.create<ref_policy_pooled<logmsg>>(_original_ptr, &logmsg_pool_singleton());
+        _original_ptr->_logger->enqueue(logmsg_ref.move());
+        _original_ptr = nullptr;
+
+        logger_message_ref_policy* this_ = this;
+        policy_pool_singleton().release_item(this_);
+    }
+        
+    static policy_pool_type& policy_pool_singleton() {
         LOCAL_FUNCTION_PROCWIDE_SINGLETON_DEF(policy_pool_type) pool;
         return *pool;
     }
+
+    static logmsg_pool_type& logmsg_pool_singleton() {
+        LOCAL_FUNCTION_PROCWIDE_SINGLETON_DEF(logmsg_pool_type) pool;
+        return *pool;
+    }
+
 };
 
+template<>struct default_ref_policy_trait<logmsg> { using policy = logger_message_ref_policy; };
 
 ////////////////////////////////////////////////////////////////////////////////
 class logger_file
@@ -304,7 +292,7 @@ void logmsg::write()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void logmsg::finalize(policy_msg* p)
+void logmsg::finalize()
 {
     if (_type == log::level::perf) {
         int64 ns = nsec_timer::current_time_ns() - _time;
@@ -324,8 +312,6 @@ void logmsg::finalize(policy_msg* p)
         _logger_file.create(new logger_file(_hash, false));
     else if (_target != log::target::fade)
         _logger_file = _logger->file();
-
-    _logger->enqueue(ref<logmsg>(p));
 }
 
 
@@ -339,7 +325,7 @@ logger::logger(bool std_out, bool cache_msgs)
     SINGLETON(log_writer);
 
     if (cache_msgs)
-        _logfile = ref<logger_file>(new logger_file(std_out));
+        _logfile.create(new logger_file(std_out));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -377,13 +363,14 @@ void logger::set_log_level(log::level minlevel, bool allow_perf)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-ref<logmsg> logger::create_msg(log::level type, log::target target, const tokenhash& hash, const void* inst)
+logmsg_ref logger::create_msg(log::level type, log::target target, const tokenhash& hash, const void* inst)
 {
     //TODO check hash, inst
     if (type > _minlevel && (!_allow_perf || type != log::level::perf))
-        return ref<logmsg>();
+        return logmsg_ref();
 
-    ref<logmsg> msg = ref<logmsg>(policy_msg::create());
+    logmsg_ref msg;
+    msg.create<logger_message_ref_policy>();
     msg->set_type(type);
     msg->set_hash(hash);
     msg->set_target(target);
@@ -399,7 +386,7 @@ ref<logmsg> logger::create_msg(log::level type, log::target target, const tokenh
         str.append(' ');
     }
 
-    //ref<logmsg> msg = create_empty_msg(type, target, hash);
+    //logmsg_ref msg = create_empty_msg(type, target, hash);
     if (!msg)
         return msg;
 
@@ -408,7 +395,7 @@ ref<logmsg> logger::create_msg(log::level type, log::target target, const tokenh
         str << logmsg::type2tok(type);
     }
 
-    //ref<logmsg> rmsg = operator()(type, target, hash);
+    //logmsg_ref rmsg = operator()(type, target, hash);
     if (hash)
         msg->str() << '[' << hash << "] ";
 
@@ -416,9 +403,9 @@ ref<logmsg> logger::create_msg(log::level type, log::target target, const tokenh
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-/*ref<logmsg> logger::operator()(log::level type, log::target target, const tokenhash& hash)
+/*logmsg_ref logger::operator()(log::level type, log::target target, const tokenhash& hash)
 {
-    ref<logmsg> msg = create_empty_msg(type, target, hash);
+    logmsg_ref msg = create_empty_msg(type, target, hash);
     if (!msg)
         return msg;
 
@@ -431,12 +418,12 @@ ref<logmsg> logger::create_msg(log::level type, log::target target, const tokenh
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-ref<logmsg> logger::create_empty_msg(log::level type, log::target target, const tokenhash& hash)
+logmsg_ref logger::create_empty_msg(log::level type, log::target target, const tokenhash& hash)
 {
     if (type > _minlevel && (!_allow_perf || type != log::level::perf))
-        return ref<logmsg>();
+        return logmsg_ref();
 
-    ref<logmsg> msg = ref<logmsg>(policy_msg::create());
+    logmsg_ref msg = logmsg_ref(policy_msg::create());
     msg->set_type(type);
     msg->set_hash(hash);
     msg->set_target(target);
@@ -456,7 +443,7 @@ ref<logmsg> logger::create_empty_msg(log::level type, log::target target, const 
 }*/
 
 ////////////////////////////////////////////////////////////////////////////////
-void logger::enqueue(ref<logmsg>&& msg)
+void logger::enqueue(logmsg_ref&& msg)
 {
     bool write_message = true;
 
@@ -472,7 +459,7 @@ void logger::enqueue(ref<logmsg>&& msg)
 
     if (write_message)
     {
-        SINGLETON(log_writer).addmsg(std::forward<ref<logmsg>>(msg));
+        SINGLETON(log_writer).addmsg(msg.move());
     }
     
 }
@@ -483,7 +470,7 @@ void logger::post(const token& txt, const token& from, const void* inst)
     token msg = txt;
     log::level type = logmsg::consume_type(msg);
 
-    ref<logmsg> msgr = interface_register::canlog(type, from, inst, log::target::primary_log);
+    logmsg_ref msgr = interface_register::canlog(type, from, inst, log::target::primary_log);
     if (msgr)
         msgr->str() << msg;
 }
@@ -492,7 +479,7 @@ void logger::post(const token& txt, const token& from, const void* inst)
 void logger::open(const token& filename)
 {
     if (!_logfile)
-        _logfile = ref<logger_file>(new logger_file(_stdout));
+        _logfile.create(new logger_file(_stdout));
 
     _logfile->open(filename, _stdout);
 }
@@ -510,10 +497,6 @@ log_writer::log_writer()
     : _thread()
     , _queue()
 {
-    //make sure the dependent singleton gets created
-    policy_msg::pool_singleton();
-    //policy_pooled<logmsg>::default_pool();
-
     _thread.create(thread_run_fn, this, 0, "log_writer");
 }
 
@@ -546,7 +529,7 @@ void* log_writer::thread_run()
 ////////////////////////////////////////////////////////////////////////////////
 void log_writer::flush()
 {
-    ref<logmsg> m;
+    logmsg_ref m;
 
     //int maxloop = 3000 / 20;
 

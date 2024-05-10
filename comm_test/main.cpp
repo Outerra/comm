@@ -322,10 +322,12 @@ struct slot : storage<L, Es...>
 #endif
 
 void data_client_test();
+void ref_tests();
 
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
 {
+    ref_tests();
     singleton_test();
     //compot();
     data_client_test();

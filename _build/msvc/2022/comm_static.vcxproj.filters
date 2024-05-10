@@ -371,9 +371,6 @@
     <ClInclude Include="..\..\..\ref\ref_policy_pooled.h">
       <Filter>ref</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\ref\ref_policy_shared.h">
-      <Filter>ref</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\ref\ref_pooled.h">
       <Filter>ref</Filter>
     </ClInclude>
@@ -387,9 +384,6 @@
       <Filter>ref</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\ref\ref_policy_intrusive.h">
-      <Filter>ref</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\ref\ref_default_policy.h">
       <Filter>ref</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\sync\condition_variable.h">
@@ -413,6 +407,12 @@
       <Filter>ref</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\ref\ref_intrusive_base.h">
+      <Filter>ref</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ref\ref_default_policy_trait.h">
+      <Filter>ref</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ref\ref_policy_simple.h">
       <Filter>ref</Filter>
     </ClInclude>
   </ItemGroup>

@@ -2,37 +2,36 @@
 
 #include "ref_counter.h"
 #include "ref_policy_base.h"
-#include "ref_policy_shared.h"
+#include "ref_policy_simple.h"
 
 namespace coid
 {
 
 class ref_intrusive_base
 {
-    template<typename> friend class ref_intrusive;          // make all template instances friends
+    template<typename Type> friend class ref_intrusive;          // make all template instances friends
 public: // methods only
+    virtual ~ref_intrusive_base() = default;
+
+    void decrease_strong_counter()
+    {
+        _policy_ptr->_counter.decrease_strong_counter();
+    }
+
+    void increase_strong_counter()
+    {
+        _policy_ptr->_counter.increase_strong_counter();
+    }
 protected: // methods only
 
     ref_intrusive_base()
     {
-        create_counter_internal();
-        _policy_ptr = ref_policy_shared<ref_intrusive_base>::create(this);
+        _policy_ptr = ref_policy_simple<ref_intrusive_base>::create(this);
     }
 
     ref_intrusive_base(const ref_intrusive_base&) = delete;
     ref_intrusive_base& operator=(const ref_intrusive_base&) = delete;
-
-    void create_counter_internal()
-    {
-        ref_counter::create(_counter_ptr);
-    }
-
-    void destroy_counter_internal()
-    {
-        ref_counter::destroy(_counter_ptr);
-    }
 protected: // members only
-    ref_counter* _counter_ptr = nullptr;
     ref_policy_base* _policy_ptr = nullptr;
 };
 

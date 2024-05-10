@@ -1,5 +1,4 @@
 #include <comm/atomic/atomic.h>
-#include <comm/atomic/queue.h>
 #include <comm/atomic/stack.h>
 #include <comm/ref.h>
 #include <comm/str.h>

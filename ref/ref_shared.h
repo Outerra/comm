@@ -37,22 +37,21 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include "ref_counter.h"
 #include "ref_policy_base.h"
-#include "ref_policy_shared.h"
-#include "ref_default_policy.h"
+#include "ref_default_policy_trait.h"
+#include "ref_unique.h"
 
 #include "../metastream/metastream.h"
 
 namespace coid
 {
 
-/// @brief Base class for counted references with external counter
-/// @tparam Type - type of reference counted object
+/// @brief Template class for strong reference counted object with policy for creation/destruction of the object.
+/// @tparam Type - type of referenced counted object
 template<typename Type>
 class ref_shared
 {
-   template<typename> friend class ref_shared;                         // make all template instances friends
+   template<typename> friend class ref_shared;      // make all template instances friends
 public: //methods only
     /// @brief nullptr constructor
     explicit ref_shared(nullptr_t)
@@ -62,69 +61,76 @@ public: //methods only
     /// @brief default constructor
     ref_shared() = default;
 
-    /// @brief Constructor for ref_shared object from object pointer of type "Type"
-    /// @tparam ...PolicyArguments  - variadic arguments for policy creation function
+
+    /// @brief Constructor for ref_shared object from object pointer of type "Type" with policy from from default_ref_policy_trait<Type>
     /// @param object_ptr - object pointer of type "Type" to be reference counted 
-    template<typename Policy = ref_policy_shared<Type>, typename... PolicyArguments>
-    explicit ref_shared(Type* object_ptr, PolicyArguments&&... policy_arguments)
+    //template<typename... PolicyArguments>
+    //explicit ref_shared(Type* object_ptr, PolicyArguments&&... policy_arguments)
+    //{
+    //    _policy_ptr = static_cast<ref_policy_base*>(default_ref_policy_trait<Type>::policy::create(object_ptr, std::forward<PolicyArguments>(policy_arguments)...));
+    //    _object_ptr = object_ptr;
+    //    _policy_ptr->_counter.increase_strong_counter();
+    //}
+
+    /// @brief Constructor for ref_shared object from object pointer of base or derived type with policy from from default_ref_policy_trait<BaseOrDerivedType>
+    /// @param object_ptr - object pointer of base or derived type
+    template<typename BaseOrDerivedType, typename... PolicyArguments>
+    COID_REQUIRES((std::is_base_of_v<Type, BaseOrDerivedType>))
+    explicit ref_shared(BaseOrDerivedType* object_ptr, PolicyArguments&&... policy_arguments)
     {
-        create_counter_internal();
-        _policy_ptr = static_cast<ref_policy_base*>(Policy::create(object_ptr, std::forward<PolicyArguments>(policy_arguments)...));
+        _policy_ptr = static_cast<ref_policy_base*>(default_ref_policy_trait<BaseOrDerivedType>::policy::create(object_ptr, std::forward<PolicyArguments>(policy_arguments)...));
         _object_ptr = object_ptr;
-        _counter_ptr->increase_strong_counter();
+        _policy_ptr->_counter.increase_strong_counter();
     }
 
-    /// @brief Constructor for ref_shared object from object pointer of type DerivedType
-    /// @param object_ptr - object pointer of type "DerivedType" to be reference counted 
-    template<typename DerivedType, typename Policy = ref_policy_shared<Type>, typename... PolicyArguments>
-    COID_REQUIRES((std::is_base_of_v<Type, DerivedType>))
-    explicit ref_shared(DerivedType* object_ptr, PolicyArguments&&... policy_arguments)
+    /// @brief  Move constructor from other ref_shared of base or derived type
+    template<typename BaseOrDerivedType>
+    COID_REQUIRES((std::is_base_of_v<Type, BaseOrDerivedType>))
+    ref_shared(ref_shared<BaseOrDerivedType>&& rhs) noexcept
     {
-        create_counter_internal();
-        _policy_ptr = static_cast<ref_policy_base*>(Policy::create(object_ptr, std::forward<PolicyArguments>(policy_arguments)...));
-        _object_ptr = object_ptr;
-        _counter_ptr->increase_strong_counter();
-    }
-
-    // toto potom refactornut a vymazat lebo to je podla mna hovadina
-    template<typename Policy>
-    COID_REQUIRES((std::is_base_of_v<ref_policy_base, Policy>))
-    explicit ref_shared(Policy* existing_policy)
-        : _policy_ptr(existing_policy)
-        , _object_ptr(static_cast<Type*>(existing_policy->get_original_ptr()))
-    {
-        create_counter_internal();
-        _counter_ptr->increase_strong_counter();
-    }
-
-    /// @brief  Move construcotr
-    ref_shared(ref_shared&& rhs) noexcept
-    {
-        _counter_ptr = rhs._counter_ptr;
         _policy_ptr = rhs._policy_ptr;
         _object_ptr = rhs._object_ptr;
-        rhs._counter_ptr = nullptr;
         rhs._policy_ptr = nullptr;
         rhs._object_ptr = nullptr;
     }
 
-    /// @brief  Copy constructor
-    ref_shared(const ref_shared& rhs)
+    /// @brief  Move constructor from ref_unique of base or derived type
+    template<typename BaseOrDerivedType>
+    COID_REQUIRES((std::is_base_of_v<Type, BaseOrDerivedType>))
+    ref_shared(ref_unique<BaseOrDerivedType>&& rhs) noexcept
+    {
+        if (rhs._policy_ptr == nullptr)
+        {
+            _policy_ptr = static_cast<ref_policy_base*>(ref_policy_simple<BaseOrDerivedType>::create(rhs._object_ptr));
+        }
+        else 
+        {
+            _policy_ptr = rhs._policy_ptr;
+        }
+        
+        _object_ptr = rhs._object_ptr;
+        rhs._policy_ptr = nullptr;
+        rhs._object_ptr = nullptr;
+
+        _policy_ptr->_counter.increase_strong_counter();
+    }
+
+    ///// @brief  Copy constructor
+    ref_shared(const ref_shared& rhs) 
     {
         if (rhs.is_set())
         {
-            const bool increased = rhs._counter_ptr->try_increase_strong_counter();
+            const bool increased = rhs._policy_ptr->_counter.try_increase_strong_counter();
 
             if (increased)
             {
                 _policy_ptr = rhs._policy_ptr;
                 _object_ptr = rhs._object_ptr;
-                _counter_ptr = rhs._counter_ptr;
             }
         }
     }
 
-    /// @brief  Copy constructor from derived type
+    /// @brief  Copy constructor from base or derived type
     /// @tparam DerivedType - type derived from Type
     template<typename DerivedType>
     COID_REQUIRES((std::is_base_of_v<Type, DerivedType>))
@@ -132,103 +138,130 @@ public: //methods only
     {
         if (rhs.is_set())
         {
-            const bool increased = rhs._counter_ptr->try_increase_strong_counter();
+            const bool increased = rhs._policy_ptr->_counter.try_increase_strong_counter();
 
             if (increased)
             {
                 _policy_ptr = rhs._policy_ptr;
                 _object_ptr = static_cast<Type*>(rhs._object_ptr);
-                _counter_ptr = rhs._counter_ptr;
             }
         }
     }
 
     /// @brief Assignment operator
-    const ref_shared& operator=(const ref_shared& rhs)
+    //const ref_shared& operator=(const ref_shared& rhs)
+    //{
+    //    if (this != &rhs)
+    //    {
+    //        release();
+
+    //        if (rhs.is_set())
+    //        {
+    //            const bool increased = rhs._policy_ptr->_counter.try_increase_strong_counter();
+    //            if (increased)
+    //            {
+    //                _object_ptr = rhs._object_ptr;
+    //                _policy_ptr = rhs._policy_ptr;
+    //            }
+    //        }
+    //    }
+
+    //    return *this;
+    //}
+
+    /// @brief Assignment operator for ref_shader<DerivedType>
+    /// @tparam DerivedType - type derived from Type
+    template<typename BaseOrDerivedType>
+    COID_REQUIRES((std::is_base_of_v<Type, BaseOrDerivedType>))
+        const ref_shared& operator=(const ref_shared<BaseOrDerivedType>& rhs)
     {
         if (this != &rhs)
         {
             release();
-
             if (rhs.is_set())
             {
-                const bool increased = rhs._counter_ptr->try_increase_strong_counter();
+                const bool increased = rhs._policy_ptr->_counter.try_increase_strong_counter();
                 if (increased)
                 {
-                    _object_ptr = rhs._object_ptr;
                     _policy_ptr = rhs._policy_ptr;
-                    _counter_ptr = rhs._counter_ptr;
+                    _object_ptr = static_cast<Type*>(rhs._object_ptr);
                 }
             }
         }
-
         return *this;
     }
 
-    /// @brief Assignment operator for ref_shader<DerivedType>
-    /// @tparam DerivedType - type derived from Type
-    template<typename DerivedType>
-    COID_REQUIRES((std::is_base_of_v<Type, DerivedType>))
-    const ref_shared& operator=(const ref_shared<DerivedType>& rhs)
+    ///// @brief Create method with object construction determined by default policy trait
+    ///// @note default policy trait is specified by SET_DEFAULT_REF_POLICY_TRAIT macro in ref_default_policy_trait.h
+    void create()
     {
         release();
 
-        if (rhs.is_set())
-        {
-            const bool increased = rhs._counter_ptr->try_increase_strong_counter();
-            if (increased)
-            {
-                _policy_ptr = rhs._policy_ptr;
-                _object_ptr = static_cast<Type*>(rhs._object_ptr);
-                _counter_ptr = rhs->_counter_ptr;
-            }
-        }
-
-        return *this;
-    }
-
-    /// @brief Create method with default object construction determined by default policy
-    /// @note default policy is specified by DEFAULT_REF_POLICY macro in ref_default_policy.h
-    void create_default()
-    {
-        release();
-
-        create_counter_internal();
-        _policy_ptr = static_cast<ref_policy_base*>(default_ref_policy<Type>::policy::create());
+        _policy_ptr = static_cast<ref_policy_base*>(default_ref_policy_trait<Type>::policy::create());
         _object_ptr = static_cast<Type*>(_policy_ptr->get_original_ptr());
-        _counter_ptr->increase_strong_counter();
+        _policy_ptr->_counter.increase_strong_counter();
     }
 
-    /// @brief Create method with default object consturction determined by used policy
+    /// @brief Create method with object consturction determined by used policy
     /// @tparam Policy - reference counting policy(must be base of ref_policy_base)
     /// @tparam ...PolicyArguments  - variadic arguments for policy creation function
-    template<typename Policy = ref_policy_shared<Type>, typename... PolicyArguments>
+    template<typename Policy, typename... PolicyArguments>
     COID_REQUIRES((is_ref_policy<Policy>))
     void create(PolicyArguments&&... policy_arguments)
     {
         release();
-
-        create_counter_internal();
+    
         _policy_ptr = static_cast<ref_policy_base*>(Policy::create(std::forward<PolicyArguments>(policy_arguments)...));
         _object_ptr = static_cast<Type*>(_policy_ptr->get_original_ptr());
-        _counter_ptr->increase_strong_counter();
+        _policy_ptr->_counter.increase_strong_counter();
     }
+
+    /// @brief Create method form object pointer of type Type with policy from default_ref_policy_trait<Type>
+    /// @tparam ...PolicyArguments  - variadic arguments for policy creation function
+    /// @param object_ptr - object pointer of type "Type" to be reference counted 
+    /// @node If ref_shared object is already set, it is released first
+    template<typename... PolicyArguments>
+    void create(Type* object_ptr, PolicyArguments&&... policy_arguments)
+    {
+        release();
+
+        _policy_ptr = static_cast<ref_policy_base*>(default_ref_policy_trait<Type>::policy::create(object_ptr, std::forward<PolicyArguments>(policy_arguments)...));
+        _object_ptr = object_ptr;
+        _policy_ptr->_counter.increase_strong_counter();
+    }
+
 
     /// @brief Create method form object pointer of type Type 
     /// @tparam Policy - reference counting policy(must be base of ref_policy_base)
     /// @tparam ...PolicyArguments  - variadic arguments for policy creation function
     /// @param object_ptr - object pointer of type "Type" to be reference counted 
     /// @node If ref_shared object is already set, it is released first
-    template<typename Policy = ref_policy_shared<Type>, typename... PolicyArguments>
+    template<typename Policy, typename... PolicyArguments>
     COID_REQUIRES((is_ref_policy<Policy>))
     void create(Type* object_ptr, PolicyArguments&&... policy_arguments)
     {
         release();
         
-        create_counter_internal();
         _policy_ptr = static_cast<ref_policy_base*>(Policy::create(object_ptr, std::forward<PolicyArguments>(policy_arguments)...));
         _object_ptr = object_ptr;
-        _counter_ptr->increase_strong_counter();
+        _policy_ptr->_counter.increase_strong_counter();
+    }
+
+    /// @brief Create method form object pointer of type DerivedType with policy from default_ref_policy_trait<DerivedType>
+    /// @tparam DerivedType - type derived from Type
+    /// @tparam ...PolicyArguments  - variadic arguments for policy creation function
+    /// @param object_ptr - object pointer of type "DerivedType" to be reference counted 
+    /// @note DerivedType must be derived from Type
+    /// @note If ref_shared object is already set, it is released first
+    template<typename DerivedType, typename... PolicyArguments>
+    COID_REQUIRES((std::is_base_of<Type, DerivedType>::value && is_ref_policy<Policy>))
+        void create(DerivedType* object_ptr, PolicyArguments&&... policy_arguments)
+    {
+        release();
+
+        _policy_ptr = static_cast<ref_policy_base*>(default_ref_policy_trait<DerivedType>::policy::create(object_ptr, std::forward<PolicyArguments>(policy_arguments)...));
+        _object_ptr = object_ptr;
+        _policy_ptr->_counter.increase_strong_counter();
     }
 
     /// @brief Create method form object pointer of type DerivedType 
@@ -237,16 +270,15 @@ public: //methods only
     /// @param object_ptr - object pointer of type "DerivedType" to be reference counted 
     /// @note DerivedType must be derived from Type
     /// @note If ref_shared object is already set, it is released first
-    template<typename DerivedType, typename Policy = ref_policy_shared<Type>, typename... PolicyArguments>
-    COID_REQUIRES((std::is_base_of<Type, DerivedType>::value&& is_ref_policy<Policy>))
+    template<typename DerivedType, typename Policy, typename... PolicyArguments>
+    COID_REQUIRES((std::is_base_of<Type, DerivedType>::value && is_ref_policy<Policy>))
     void create(DerivedType* object_ptr, PolicyArguments&&... policy_arguments)
     {
         release();
-
-        create_counter_internal();
+    
         _policy_ptr = static_cast<ref_policy_base*>(Policy::create(object_ptr, std::forward<PolicyArguments>(policy_arguments)...));
         _object_ptr = object_ptr;
-        _counter_ptr->increase_strong_counter();
+        _policy_ptr->_counter.increase_strong_counter();
     }
 
 
@@ -256,7 +288,7 @@ public: //methods only
     COID_REQUIRES((std::is_base_of<Type, DerivedType>::value))
     ref_shared<DerivedType> downcast() const
     {
-        ref_shared<DerivedType> result(static_cast<DerivedType*>(_object_ptr), _policy_ptr, _counter_ptr);
+        ref_shared<DerivedType> result(static_cast<DerivedType*>(_object_ptr), _policy_ptr);
         return result;
     }
 
@@ -296,10 +328,8 @@ public: //methods only
     void takeover(ref_shared<Type>& other_ref)
     {
         release();
-        _counter_ptr = other_ref._counter_ptr;
         _policy_ptr = other_ref._policy_ptr;
         _object_ptr = other_ref._object_ptr;
-        other_ref._counter_ptr = nullptr;
         other_ref._policy_ptr = nullptr;
         other_ref._object_ptr = nullptr;
     }
@@ -309,12 +339,11 @@ public: //methods only
     {
         if (_policy_ptr != nullptr)
         {
-            if (_counter_ptr->decrease_strong_counter())
+            if (_policy_ptr->_counter.decrease_strong_counter())
             {
                 _policy_ptr->on_destroy();
             }
 
-            destroy_counter_internal();
             _policy_ptr = nullptr;
             _object_ptr = nullptr;
         }
@@ -337,18 +366,16 @@ public: //methods only
 
     /// @brief  Get current strong reference count
     /// @return strong reference count
-    uint32 get_strong_refcount() const { return _counter_ptr->get_strong_counter_value(); }
+    uint32 get_strong_refcount() const { return _policy_ptr->_counter.get_strong_counter_value(); }
 
     friend void swap(ref_shared<Type>& a, ref_shared<Type>& b) 
     {
-        std::swap(a._counter_ptr, b._counter_ptr);
         std::swap(a._policy_ptr, b._policy_ptr);
         std::swap(a._object_ptr, b._object_ptr);
     }
 
     void swap(ref_shared<Type>& rhs) 
     {
-        std::swap(_counter_ptr, rhs._counter_ptr);
         std::swap(_policy_ptr, rhs._policy_ptr);
         std::swap(_object_ptr, rhs._object_ptr);
     }
@@ -390,29 +417,17 @@ protected: //methods only
     /// @param object_ptr - object pointer of type "Type" to be reference counted 
     /// @param policy_ptr - pointer to existing policy
     /// @note Used only for downcasts
-    explicit ref_shared(Type* object_ptr, ref_policy_base* policy_ptr, ref_counter* counter_ptr)
+    explicit ref_shared(Type* object_ptr, ref_policy_base* policy_ptr)
     {
-        bool increased = _counter_ptr->try_increase_strong_counter();
+        bool increased = policy_ptr->_counter.try_increase_strong_counter();
         DASSERT(increased); // This should never happen because this constructor is only used in down cast method 
         // so the counter can never drop to zero while performing this action
-     
-        _counter_ptr = counter_ptr;
+
         _policy_ptr = policy_ptr;
-        _object_ptr = object_ptr;   
-    }
-
-    void create_counter_internal() 
-    {
-        ref_counter::create(_counter_ptr);
-    }
-
-    void destroy_counter_internal()
-    {
-        ref_counter::destroy( _counter_ptr);
+        _object_ptr = object_ptr;
     }
 protected: // members only
     ref_policy_base* _policy_ptr = nullptr;
-    ref_counter* _counter_ptr = nullptr;
     Type* _object_ptr = nullptr;
 };
 }; // end of namespace coid

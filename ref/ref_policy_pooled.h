@@ -38,16 +38,18 @@
  * ***** END LICENSE BLOCK ***** */
 
 
-#include "ref_policy_shared.h"
+#include "ref_policy_simple.h"
 
 namespace coid
 {
 
-/// @brief Policy for pooled reference counted object
+/// @brief Pooled policy is using getting object from pool on create and returing the object back to the pool od destroy
 /// @tparam Type - type of reference counted object
 /// @note policy object is pooled, non copyable, non movable
+/// @note The pool can by specified by additional ref create function argument. The type must by coid::pool
+/// @note If the pool is not specified, the global pool is used.
 template <typename Type>
-class ref_policy_pooled : public ref_policy_shared<Type>
+class ref_policy_pooled : public ref_policy_simple<Type>
 {
     using this_type = ref_policy_pooled<Type>;
     using policy_pool_type = coid::pool<ref_policy_pooled<Type>>;
@@ -64,6 +66,14 @@ public: // methods only
         return create(&type_pool::global());
     }
 
+    /// @brief Staic create method of the policy, the object is returned to the global pool
+    /// @param object_ptr - the pointer for the object the policy is counting the references for
+    /// @return policy instance pointer
+    static ref_policy_pooled<Type>* create(Type* object_ptr)
+    {
+        return create(object_ptr, &type_pool::global());
+    }
+
     /// @brief Creates policy instance along with Type object instance form pool passed in type_pool_ptr argument
     /// @param type_pool_ptr - pointer to pool from which the object instance will be created
     /// @return policy instance pointer
@@ -74,7 +84,6 @@ public: // methods only
         return create(object_ptr, type_pool_ptr);
     }
 
-
     /// @brief Staic create method of the policy
     /// @param object_ptr - the pointer for the object the policy is counting the references for
     /// @param type_pool_ptr - pointer to pool of object of type Type where the object will be returned after deletition
@@ -84,7 +93,6 @@ public: // methods only
     {
         ref_policy_pooled<Type>* result_ptr = policy_pool_type::global().create_item();
         result_ptr->_type_pool_ptr = type_pool_ptr;
-        result_ptr->_strong_counter.store(1, std::memory_order::relaxed);
         result_ptr->_original_ptr = object_ptr;
         return result_ptr;
     }

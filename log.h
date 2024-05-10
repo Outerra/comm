@@ -36,6 +36,7 @@
 #define __COMM_LOG_H__
 
 #include "str.h"
+#include "ref_u.h"
 #include "ref_s.h"
 
  ////////////////////////////////////////////////////////////////////////////////
@@ -83,7 +84,7 @@ void coidlog_text(const coid::token& src, coid::token msg);
 
 ///Debug message existing only in debug builds
 #ifdef _DEBUG
-#define coidlog_devdbg(src, msg)  do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::debug, src); if (q) {q->str() << msg; }} while(0)
+#define coidlog_devdbg(src, msg)  do{ ref<logmsg> q = coid::log::openmsg(coid::log::level::debug, src); if (q) {q->str() << msg; }} while(0)
 #else
 #define coidlog_devdbg(src, msg)
 #endif
@@ -92,6 +93,7 @@ void coidlog_text(const coid::token& src, coid::token msg);
 COID_NAMESPACE_BEGIN
 
 class logmsg;
+using logmsg_ref = ref<logmsg>;
 
 namespace log {
 
@@ -125,13 +127,13 @@ namespace log {
     const char* name(level t);
 
     //@return logmsg object if given log type and source is currently allowed to log
-    ref<logmsg> openmsg(level type, const tokenhash& hash = tokenhash(), const void* inst = 0);
+    logmsg_ref openmsg(level type, const tokenhash& hash = tokenhash(), const void* inst = 0);
 
     /// @brief Register file message
-    ref<logmsg> filemsg(level type, const tokenhash& file, const void* inst = 0);
+    logmsg_ref filemsg(level type, const tokenhash& file, const void* inst = 0);
 
     /// @brief Register fading message
-    ref<logmsg> fademsg(level type, const tokenhash& hash = tokenhash(), const void* inst = 0);
+    logmsg_ref fademsg(level type, const tokenhash& hash = tokenhash(), const void* inst = 0);
 
     void flush();
 
@@ -143,7 +145,7 @@ class policy_msg;
 
 /// @brief Return logging object for multi-line logging, ex: auto log = filelog("path"); log->str() << "bla" << 1;
 /// @param file file name/path
-inline ref<logmsg> filelog(log::level type, const tokenhash& file) {
+inline logmsg_ref filelog(log::level type, const tokenhash& file) {
     return log::filemsg(type, file);
 }
 
@@ -166,11 +168,10 @@ void printlog(log::level type, const tokenhash& hash, const token& fmt, Vs&&... 
  * with policy policy_log.
  */
 class logmsg
-    //: public policy_pooled<logmsg>
 {
 protected:
 
-    friend class policy_msg;
+    friend class logger_message_ref_policy;
 
     logger* _logger = 0;
     ref<logger_file> _logger_file;
@@ -270,10 +271,9 @@ public:
 
 protected:
 
-    void finalize(policy_msg* p);
+    void finalize();
 };
 
-typedef ref<logmsg> logmsg_ptr;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -286,7 +286,7 @@ typedef ref<logmsg> logmsg_ptr;
 template<class ...Vs>
 inline void printlog(log::level type, const tokenhash& hash, const token& fmt, Vs&&... vs)
 {
-    ref<logmsg> msgr = log::openmsg(type, hash);
+    logmsg_ref msgr = log::openmsg(type, hash);
     if (!msgr)
         return;
 

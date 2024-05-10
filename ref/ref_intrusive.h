@@ -73,7 +73,7 @@ public: // methods only
         : _object_ptr(object_ptr) 
     {
         if (_object_ptr)
-            reinterpret_cast<ref_intrusive_base*>(_object_ptr)->_counter_ptr->increase_strong_counter();
+            reinterpret_cast<ref_intrusive_base*>(_object_ptr)->_policy_ptr->_counter.increase_strong_counter();
     }
 
     /// @brief Copy constructor from derived type
@@ -91,7 +91,7 @@ public: // methods only
         _object_ptr = static_cast<Type*>(rhs.get());
         if (_object_ptr)
         {
-            _object_ptr->_counter_ptr->increase_strong_counter();
+            _object_ptr->_policy_ptr->_counter.increase_strong_counter();
         }
     }
 
@@ -127,7 +127,7 @@ public: // methods only
     void release() {
         if (_object_ptr)
         {
-            if (reinterpret_cast<ref_intrusive_base*>(_object_ptr)->_counter_ptr->decrease_strong_counter())
+            if (reinterpret_cast<ref_intrusive_base*>(_object_ptr)->_policy_ptr->_counter.decrease_strong_counter())
             {
                 reinterpret_cast<ref_intrusive_base*>(_object_ptr)->_policy_ptr->on_destroy();
             }
@@ -138,7 +138,7 @@ public: // methods only
     void create(Type* object_ptr)
     {
         DASSERT_RET(object_ptr != _object_ptr);
-        object_ptr->_counter_ptr->increase_strong_counter();
+        object_ptr->_policy_ptr->_counter.increase_strong_counter();
         release();
         _object_ptr = object_ptr;
     }
@@ -171,7 +171,7 @@ public: // methods only
 
     /// @brief  Get current reference count
     /// @return current count of references
-    uint32 get_strong_refcount() const { return _object_ptr->_counter_ptr->get_strong_counter_value(); }
+    uint32 get_strong_refcount() const { return _object_ptr->_policy_ptr->_counter.get_strong_counter_value(); }
 
     /// @brief Downcasts this ref to the ref of derived type
     /// @tparam DerivedType - type derived from Type
@@ -217,7 +217,7 @@ protected: // methods only
     {
         if (_object_ptr)
         {
-            reinterpret_cast<ref_intrusive_base*>(_object_ptr)->_counter_ptr->increase_strong_counter();
+            reinterpret_cast<ref_intrusive_base*>(_object_ptr)->_policy_ptr->_counter.increase_strong_counter();
         }
         
         return _object_ptr;

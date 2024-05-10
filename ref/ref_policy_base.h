@@ -37,10 +37,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include "../commtypes.h"
-#include "../atomic/pool.h"
-
-#include <atomic>
+#include "ref_counter.h"
 
 namespace coid
 {
@@ -77,7 +74,8 @@ public: // methods only
     virtual ~ref_policy_base() = default;
 
 protected: // methods only
-protected: // members only
+public: // members only
+    ref_counter _counter;
 };
 
 #ifdef COID_CONCEPTS

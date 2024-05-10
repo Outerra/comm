@@ -77,6 +77,16 @@ public:
         stack_t::push(o);
         o = 0;
     }
+    /// @brief  Reset the pool and delete all of its content
+    void reset()
+    {
+        T* object_ptr = stack_t::pop();
+        while (object_ptr != nullptr) 
+        {
+            delete object_ptr;
+            object_ptr = stack_t::pop();
+        }
+    }
 };
 
 }; // end of namespace coid

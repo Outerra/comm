@@ -1,8 +1,6 @@
 #pragma once
 
 #include "../commtypes.h"
-#include "../atomic/pool.h"
-#include "../alloc/memtrack.h"
 
 #include <atomic>
 
@@ -10,34 +8,33 @@ namespace coid
 {
 
 /// @brief Basic reference counting class containt counter for weak and strong referenced.
-///        The instances are always pooled. To create/destroy instance use static function.
 class ref_counter
 {
 public: // methods only
-    COIDNEWDELETE(ref_counter);
+    ref_counter() = default;
 
-    /// @brief Creates counter from the global pool
-    /// @param instance - reference to instance pointer
-    static void create(ref_counter*& instance)
-    {
-        if (instance == nullptr)
-        {
-            instance = SINGLETON(coid::pool<ref_counter>).get_item();
-        }
-        else 
-        {
-            DASSERT(0); // this shouldn't happen
-        }
-    }
-    /// @brief Returns the counter back to global the pool and clear the counter variable
-    /// @param instance - reference to instance pointer
-    static void destroy(ref_counter*& instance)
-    {
-        if (instance != nullptr)
-        {
-            SINGLETON(coid::pool<ref_counter>).release_item(instance);
-        }
-    }
+    ///// @brief Creates counter from the global pool
+    ///// @param instance - reference to instance pointer
+    //static void create(ref_counter*& instance)
+    //{
+    //    if (instance == nullptr)
+    //    {
+    //        instance = SINGLETON(coid::pool<ref_counter>).get_item();
+    //    }
+    //    else 
+    //    {
+    //        DASSERT(0); // this shouldn't happen
+    //    }
+    //}
+    ///// @brief Returns the counter back to global the pool and clear the counter variable
+    ///// @param instance - reference to instance pointer
+    //static void destroy(ref_counter*& instance)
+    //{
+    //    if (instance != nullptr)
+    //    {
+    //        SINGLETON(coid::pool<ref_counter>).release_item(instance);
+    //    }
+    //}
 
     /// @brief Increase strong counter
     void increase_strong_counter()
@@ -101,7 +98,6 @@ public: // methods only
     }
 
 protected: // methods only
-    ref_counter() = default;
     ref_counter(const ref_counter&) = delete;
     ref_counter& operator=(const ref_counter&) = delete;
 protected: // members only
