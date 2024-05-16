@@ -1584,6 +1584,12 @@
 		"should_throw": false
 	},
 	{
+		"script_path": "class_method_1.lua",
+		"int_result": 9,
+		"call_event_with_default_body": false,
+		"should_throw": false
+	},
+	{
 		"script_path": "class_method_ret_0.lua",
 		"int_result": 35,
 		"script_class_name": "parent_class_ifc",
@@ -1636,7 +1642,16 @@
 		"script_class_name": "parent_class_ifc",
 		"call_event_with_default_body": false,
 		"should_throw": false
-	}
-
-
+	},
+	{
+		"script_path": "call_event_as_method_0.lua",
+		"int_result": 10,
+		"script_class_name": "my_class",
+		"call_event_with_default_body": true
+	},
+	{
+		"script_path": "call_event_as_method_1.lua",
+		"int_result": 10,
+		"call_event_with_default_body": true
+	},
 ]

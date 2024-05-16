@@ -700,7 +700,7 @@ iref<::lua::registry_handle> $name$_lua_dispatcher::create_interface_object(cons
         {
             lua_pop(L, 1); // pop context table
             coid::exception e("");
-            e << "Given contex doesn't contain object binding variable with name " << script_class_or_bind_var << "!";
+            e << "Given context doesn't contain object binding variable with name " << script_class_or_bind_var << "!";
             throw e;
         }
 
@@ -736,7 +736,7 @@ iref<::lua::registry_handle> $name$_lua_dispatcher::create_interface_object(cons
         {
             lua_pop(L, 2); // pop context and object table
             coid::exception e("");
-            e << "Given contex doesn't contain script class with name " << script_class_or_bind_var << "!";
+            e << "Given contetx doesn't contain script class with name " << script_class_or_bind_var << "!";
             throw e;
         }
 
@@ -744,13 +744,20 @@ iref<::lua::registry_handle> $name$_lua_dispatcher::create_interface_object(cons
     }
     else
     {
-        lua_rawgeti(L, LUA_REGISTRYINDEX, ::lua::LUA_INTERFACE_METATABLE_REGISTER_INDEX); // push interface metatable register table
-        if (!contains_interface_class_table_internal(L, true))
+        // first check context if the class is registered (implemented) there
+        lua_pushvalue(L, -2); // push context table to to top
+        if (!contains_interface_class_table_internal(L, true)) 
         {
-            register_interface_$name$(L, true);
-        }
+            // check the interface metatable register if the class is registered there and register it if necessary
+            lua_rawgeti(L, LUA_REGISTRYINDEX, ::lua::LUA_INTERFACE_METATABLE_REGISTER_INDEX); // push interface metatable register table
+            if (!contains_interface_class_table_internal(L, true))
+            {
+                register_interface_$name$(L, true);
+            }
 
-        lua_remove(L, -2); // remove interface metatable register table
+            lua_remove(L, -2); // remove interface metatable register table
+        }
+        lua_remove(L, -2); // remove the context table
     }
     lua_setfield(L, -2, ::lua::_lua_parent_index_key);
 
