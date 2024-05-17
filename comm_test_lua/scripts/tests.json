@@ -1654,4 +1654,17 @@
 		"int_result": 10,
 		"call_event_with_default_body": true
 	},
+	{
+		"script_path": "class_member_0.lua",
+		"int_result": 11,
+		"call_event_with_default_body": false,
+		"should_throw": false
+	},
+	{
+		"script_path": "class_member_1.lua",
+		"int_result": 11,
+		"call_event_with_default_body": false,
+		"script_class_name": "my_class",
+		"should_throw": false
+	},
 ]
