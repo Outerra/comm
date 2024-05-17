@@ -77,7 +77,7 @@ public:
     /// @note if script_class_or_bind_var is empty and is_bind_var is false created interface object is creted from empty table
     iref<::lua::registry_handle> create_interface_object(const iref<::lua::registry_handle>& context, bool make_weak, const coid::token& script_class_or_bind_var, bool is_bind_var);
 $-(if ?event)$
-    void bind_events_internal(lua_State * L, bool clear) const;
+    void bind_events_internal(lua_State * L, bool clear, bool rebind) const;
     void bind_events(bool force, const coid::token& script_class_name) const;
 $-(/if)$
 
@@ -600,7 +600,7 @@ $-(if ?event)$
                 ifc->assign_safe(ifc, nullptr);
             }
 
-            ifc->bind_events_internal(L, false);
+            ifc->bind_events_internal(L, false, true);
          }
     }
     catch (coid::exception e) {
@@ -794,7 +794,7 @@ iref<::lua::registry_handle> $name$_lua_dispatcher::create_interface_object(cons
 
 $-(if !event.empty)$
 
-void $name$_lua_dispatcher::bind_events_internal(lua_State * L,  bool clear) const
+void $name$_lua_dispatcher::bind_events_internal(lua_State * L,  bool clear, bool rebind) const
 {
 #ifdef _DEBUG
     const int stack_top = lua_gettop(L);
@@ -812,10 +812,24 @@ $-[/event]$
             if (clear) {
                 continue;
             }
+
             lua_getfield(L, -1, names[i]);
             if (!lua_isfunction(L, -1)) {
                 lua_pop(L, 1);
-                continue;
+
+                // if not rebinding, check also if some function in the context match like in JS script
+                if(!rebind)
+                {
+                    lua_getfield(L, -2, names[i]);
+                    if (!lua_isfunction(L, -1)) {
+                        lua_pop(L, 1);
+                        continue;    
+                    }
+                }
+                else
+                {
+                    continue;
+                }
             }
 
             _events[i]->set_ref();
@@ -865,7 +879,7 @@ void $name$_lua_dispatcher::bind_events(bool force, const coid::token& script_cl
         lua_getfield(L, -1, script_class_name); // push script class table on the top of the stack
     }
 
-    bind_events_internal(L, false);
+    bind_events_internal(L, false, false);
 
     lua_pop(L, 3); // interface object, context and script class table
 

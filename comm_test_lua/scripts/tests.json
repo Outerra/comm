@@ -1667,4 +1667,9 @@
 		"script_class_name": "my_class",
 		"should_throw": false
 	},
+	{
+		"script_path": "events_from_context_0.lua",
+		"int_result": 7,
+		"call_event_with_default_body": true
+	}
 ]
