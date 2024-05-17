@@ -40,6 +40,7 @@
 #include "../commtypes.h"
 #include "../commassert.h"
 #include "ref_intrusive_base.h"
+#include "ref_default_policy_trait.h"
 
 namespace coid
 {
@@ -48,14 +49,56 @@ template <typename Type>
 class ref_intrusive
 {
     using this_type = ref_intrusive<Type>;
+    template<typename> friend class ref_intrusive; // make all template instances friends
 public: // methods only
-    ref_intrusive() : _object_ptr(0) {}
+    ref_intrusive() COID_REQUIRES((std::is_base_of_v<ref_intrusive_base, Type>))
+        : _object_ptr(nullptr) 
+    {}
 
-    ref_intrusive(nullptr_t) : _object_ptr(0) {}
+    ref_intrusive(nullptr_t) COID_REQUIRES((std::is_base_of_v<ref_intrusive_base, Type>))
+        : _object_ptr(nullptr) 
+    {}
 
-    ref_intrusive(const this_type& rhs) : _object_ptr(rhs.add_refcount_and_fetch_ptr_internal()) {}
+    /// @brief Constructor for ref_intrusive object from object pointer of base or derived type with policy from from default_ref_policy_trait<BaseOrDerivedType>
+    /// @tparam BaseOrDerivedType - base or derived type
+    /// @tparem PolicyArguments - argumes for default policy creation
+    /// @param object_ptr - object pointer of base or derived type
+    template<typename BaseOrDerivedType, typename... PolicyArguments>
+    COID_REQUIRES((std::is_base_of_v<Type, BaseOrDerivedType>))
+        explicit ref_intrusive(BaseOrDerivedType* object_ptr, PolicyArguments&&... policy_arguments)
+        : _object_ptr(static_cast<Type*>(object_ptr))
+    {
+        if (_object_ptr)
+        {
+            ref_intrusive_base* base_ptr = static_cast<ref_intrusive_base*>(_object_ptr);
 
-    ref_intrusive(this_type&& rhs) noexcept
+            if (base_ptr->_policy_ptr == nullptr)
+            {
+                base_ptr->_policy_ptr = static_cast<ref_policy_base*>(default_ref_policy_trait<BaseOrDerivedType>::policy::create(object_ptr, std::forward<PolicyArguments>(policy_arguments)...));
+
+            }
+
+            base_ptr->_policy_ptr->_counter.increase_strong_counter();
+        }
+    }
+
+    /// @brief Copy constructor from base type
+    /// @param  rhs - right hand side
+    ref_intrusive(const ref_intrusive& rhs) COID_REQUIRES((std::is_base_of_v<ref_intrusive_base, Type>))
+        : _object_ptr(rhs.add_refcount_and_fetch_ptr_internal()) 
+    {}
+
+    /// @brief Copy constructor from derived type
+   /// @tparam DerivedType - type derived form Type
+    template<class DerivedType>
+    COID_REQUIRES((std::is_base_of_v<ref_intrusive_base, Type> && std::is_base_of_v<Type, DerivedType>))
+    ref_intrusive(const ref_intrusive<DerivedType>& rhs)
+        : _object_ptr(static_cast<Type*>(rhs.add_refcount_and_fetch_ptr_internal()))
+    {
+    }
+
+
+    ref_intrusive(this_type&& rhs) noexcept COID_REQUIRES((std::is_base_of_v<ref_intrusive_base, Type>))
     {
         takeover_internal(std::forward<this_type>(rhs));
     }
@@ -65,71 +108,40 @@ public: // methods only
         release();
     }
 
-    /// @brief Constructor from pointer of derived type
-    /// @tparam DerivedType - type derived form Type
-    template<class DerivedType>
-    COID_REQUIRES((std::is_base_of_v<Type, DerivedType>))
-    ref_intrusive(DerivedType* object_ptr, typename std::remove_const<DerivedType>::type* = 0)
-        : _object_ptr(object_ptr) 
-    {
-        if (_object_ptr)
-            reinterpret_cast<ref_intrusive_base*>(_object_ptr)->_policy_ptr->_counter.increase_strong_counter();
-    }
-
-    /// @brief Copy constructor from derived type
-    /// @tparam DerivedType - type derived form Type
-#if defined(COID_CONCEPTS)
-    template<class DerivedType>
-    COID_REQUIRES((std::is_base_of_v<Type, DerivedType>))
-#elif SYSTYPE_MSVC && _MSC_VER >= 1800
-    template<class DerivedType, class = typename std::enable_if<std::is_base_of_v<Type, DerivedType>>::type>
-#else
-    template<class DerivedType>
-#endif
-    ref_intrusive(const ref_intrusive<DerivedType>& rhs) : _object_ptr() 
-    {
-        _object_ptr = static_cast<Type*>(rhs.get());
-        if (_object_ptr)
-        {
-            _object_ptr->_policy_ptr->_counter.increase_strong_counter();
-        }
-    }
+   
 
     /// @brief Move constructor from derived type
     /// @tparam DerivedType - type derived form Type
-#if defined(COID_CONCEPTS)
     template<class DerivedType>
     COID_REQUIRES((std::is_base_of_v<Type, DerivedType>))
-#elif SYSTYPE_MSVC && _MSC_VER >= 1800
-    template<class DerivedType, class = typename std::enable_if<std::is_base_of_v<Type, DerivedType>>::type>
-#else
-    template<class DerivedType>
-#endif
-    ref_intrusive(ref_intrusive<DerivedType>&& rhs) : _object_ptr(0) {
+    ref_intrusive(ref_intrusive<DerivedType>&& rhs) : _object_ptr(0) 
+    {
         takeover_internal(std::forward<this_type>(rhs));
     }
 
     /// @brief Assignment operator 
     /// @param rhs - right hand side term 
     /// @return this
-    this_type& operator= (const this_type& rhs) {
+    this_type& operator= (const this_type& rhs) 
+    {
         Type* object_ptr = rhs.add_refcount_and_fetch_ptr_internal();
         release();
         _object_ptr = object_ptr;
         return *this;
     }
 
-
-    friend bool operator == (const ref_intrusive<Type>& lhs, const ref_intrusive<Type>& rhs) {
+    friend bool operator== (const ref_intrusive<Type>& lhs, const ref_intrusive<Type>& rhs) 
+    {
         return lhs._object_ptr == rhs._object_ptr;
     }
 
     void release() {
         if (_object_ptr)
         {
-            if (reinterpret_cast<ref_intrusive_base*>(_object_ptr)->_policy_ptr->_counter.decrease_strong_counter())
+            ref_intrusive_base* base_ptr = static_cast<ref_intrusive_base*>(_object_ptr);
+            if (base_ptr->_policy_ptr->_counter.decrease_strong_counter())
             {
-                reinterpret_cast<ref_intrusive_base*>(_object_ptr)->_policy_ptr->on_destroy();
+                base_ptr->_policy_ptr->on_destroy();
             }
         }
         _object_ptr = 0;
@@ -217,7 +229,7 @@ protected: // methods only
     {
         if (_object_ptr)
         {
-            reinterpret_cast<ref_intrusive_base*>(_object_ptr)->_policy_ptr->_counter.increase_strong_counter();
+            static_cast<ref_intrusive_base*>(_object_ptr)->_policy_ptr->_counter.increase_strong_counter();
         }
         
         return _object_ptr;

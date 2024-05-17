@@ -5,14 +5,6 @@
 #include "ref_policy_base.h"
 
 namespace coid {
-//Forward declarations
-template<class Type> class ref_unique;
-template<class Type> binstream& operator << (binstream&, const ref_unique<Type>&);
-template<class Type> binstream& operator >> (binstream&, ref_unique<Type>&);
-
-template<typename BaseType, typename DerivedType>
-concept is_base_or_derived = std::is_same_v<BaseType, DerivedType> || std::is_base_of_v<BaseType, DerivedType>;
-
 /// @brief Template class for uniquely owned object with policy for creation/destruction of the object.
 /// @tparam Type type of referenced object
 /// @note The policy is optional. Only move operation is permitted. Can be moved to ref_shared.
@@ -66,7 +58,7 @@ public: // methods only
 
     ///// @brief Create object with default constructor without policy
     template<typename BaseOrDerivedType = Type>
-    COID_REQUIRES((is_base_or_derived<Type, BaseOrDerivedType>))
+    COID_REQUIRES((std::is_base_of_v<Type, BaseOrDerivedType>))
     void create()
     {
         _object_ptr = new BaseOrDerivedType();
@@ -96,7 +88,7 @@ public: // methods only
         release();
 
         _policy_ptr = static_cast<ref_policy_base*>(Policy::create(std::forward<PolicyArguments>(policy_arguments)...));
-        _object_ptr = static_cast<Type*>(_policy_ptr->get_original_ptr());
+        _object_ptr = static_cast<Type*>(static_cast<BaseOrDerivedType*>(_policy_ptr->get_original_ptr()));
     }
 
     /// @brief Get pointer of referenced object
@@ -128,14 +120,35 @@ public: // methods only
         return *this;
     }
 
-    /// @brief Move operator
-    /// @param object_ptr 
-    /// @return 
-    ref_unique& operator=(ref_unique&& object_ptr)
+    /// @brief Move assignment operator for base type
+    /// @param rhs - right hand side
+    ref_unique& operator=(ref_unique&& rhs)
+    {
+        if (&rhs != this)
+        {
+            release();
+            _policy_ptr = rhs._policy_ptr;
+            _object_ptr = rhs._object_ptr;
+            rhs._policy_ptr = nullptr;
+            rhs._object_ptr = nullptr;
+        }
+
+        return *this;
+    }
+
+    /// @brief Move assignment operator for derived type
+    /// @tparam DerivedType - type derived from Type
+    /// @param rhs - right hand side
+    template<typename DerivedType>
+    COID_REQUIRES((std::is_base_of_v<Type, DerivedType>))
+    ref_unique& operator=(ref_unique<DerivedType>&& rhs)
     {
         release();
 
-        swap(object_ptr);
+        _policy_ptr = rhs._policy_ptr;
+        _object_ptr = static_cast<Type*>(rhs._object_ptr);
+        rhs._policy_ptr = nullptr;
+        rhs._object_ptr = nullptr;
         return *this;
     }
 

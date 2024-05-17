@@ -194,7 +194,7 @@ public:
         _logger = other._logger;
         other._logger = 0;
 
-        _logger_file.takeover(other._logger_file);
+        _logger_file = other._logger_file.move();
         _str.takeover(other._str);
     }
 
