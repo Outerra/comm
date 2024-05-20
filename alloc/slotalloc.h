@@ -736,8 +736,7 @@ public:
         //extra space needed
         uints n = id + 1 - created();
 
-        extarray_expand(n);
-        expand<false>(n);
+        expand<false, false>(n);
 
         this->set_modified(id);
 
@@ -782,8 +781,7 @@ public:
         //extra space needed
         uints n = id + 1 - created();
 
-        extarray_expand_uninit(n);
-        expand<true>(n);
+        expand<true, true>(n);
 
         this->set_modified(id);
 
@@ -2089,7 +2087,7 @@ private:
         uints ncr = created();
         uints nadd = id + n > ncr ? id + n - ncr : 0;
         if (nadd)
-            expand<UNINIT>(nadd);
+            expand<UNINIT, UNINIT>(nadd);
         *old = n - nadd;
 
         _count += n;
@@ -2159,7 +2157,7 @@ private:
         uints ncr = created();
         uints nadd = id + n > ncr ? id + n - ncr : 0;
         if (nadd)
-            expand<UNINIT>(nadd);
+            expand<UNINIT,UNINIT>(nadd);
         *old = n - nadd;
 
         _count += n;
@@ -2177,27 +2175,17 @@ private:
         //DASSERT(_count <= count);   //count may be lower with other threads deleting, but not higher (single producer)
         set_bit(count);
 
-        if coid_constexpr_if(EXT_UNINIT)
-        {
-            extarray_expand_uninit(1);
-            if coid_constexpr_if(VERSIONING)
-            {
-                tracker_t::version_array()[count] = 0;
-            }
-        }
-        else
-            extarray_expand(1);
-
         if (pid)
             *pid = count;
         ++_count;
 
+        T* result = expand<true, EXT_UNINIT>(1);
         this->set_modified(count);
 
-        return expand<true>(1);
+        return result;
     }
 
-    template <bool UNINIT>
+    template <bool UNINIT, bool EXT_UNINIT>
     T* expand(uints n)
     {
         uints base = created();
@@ -2230,6 +2218,13 @@ private:
         if coid_constexpr_if(UNINIT)
         {
             extarray_expand_uninit(n);
+            if coid_constexpr_if(VERSIONING)
+            {
+                // always set zeros to version arrays even on uninit expand
+                auto& version_arr = tracker_t::version_array();
+                constexpr static uint8 version_type_byte_size = sizeof(std::remove_reference_t<decltype(version_arr)>::value_type);
+                version_arr.memset(version_arr.ptre() - n, 0, n * version_type_byte_size);
+            }
         }
         else
         {
