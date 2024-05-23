@@ -181,7 +181,7 @@ struct has_singleton_initialize_module_method
 ////////////////////////////////////////////////////////////////////////////////
 ///Class for global and local singletons
 //@tparam T - type of singleton
-//@tparam Unique_identidier - signature of function when LOCAL_FUNCTION_SINGLETON used, file path when LOCAL_FILE_SINGLETON used
+//@tparam Unique_identifier - signature of function when LOCAL_FUNCTION_SINGLETON used, file path when LOCAL_FILE_SINGLETON used
 //@tparam Line - line in file form where the singleton was created(0 for global singletons)
 //@tparam Module true if locally created singletons should be unique in each module (dll), false if process-wide
 
@@ -197,7 +197,7 @@ struct string_literal
 };
 }
 
-template <class T, detail::string_literal Unique_identidier = "", int Line = 0, bool Module = true>
+template <class T, detail::string_literal Unique_identifier = "", int Line = 0, bool Module = true>
 class singleton
 {
 public:
@@ -239,20 +239,20 @@ public:
         static_assert(std::is_default_constructible<T>::value, "type is not default constructible");
 #endif
 
-        _p = (T*)singleton_register_instance(&create, &destroy, &init_module, typeid(T).name(), "", Line, Module, Unique_identidier.value);
+        _p = (T*)singleton_register_instance(&create, &destroy, &init_module, typeid(T).name(), "", Line, Module, Unique_identifier.value);
     }
 
     ///Local singleton constructor, use through LOCAL_SINGLETON macro
     singleton(T* obj) {
         _p = (T*)singleton_register_instance(
             singleton_local_creator(obj), &destroy, &init_module,
-            typeid(T).name(), "", Line, Module, Unique_identidier.value);
+            typeid(T).name(), "", Line, Module, Unique_identifier.value);
     }
 
     singleton(T&& obj) {
         _p = (T*)singleton_register_instance(
             singleton_local_creator(new T(std::forward<T>(obj))), &destroy, &init_module,
-            typeid(T).name(), "", Line, Module, Unique_identidier.value);
+            typeid(T).name(), "", Line, Module, Unique_identifier.value);
     }
 
     ~singleton() {
