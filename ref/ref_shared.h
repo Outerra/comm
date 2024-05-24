@@ -226,15 +226,22 @@ public: //methods only
         return *this;
     }
 
+    template<typename BaseOrDerivedType>
+    COID_REQUIRES((std::is_base_of_v<Type, BaseOrDerivedType>))
+    friend bool operator==(const ref_shared& lhs, const ref_shared<BaseOrDerivedType>& rhs)
+    {
+        return lhs.get() == static_cast<Type*>(rhs.get());
+    }
+
     /// @brief Create method with object construction determined by default policy trait
     /// @note for more info about default policy trait see ref_default_policy_trait.h
-    template<typename BaseOrDerivedType = Type>
+    template<typename BaseOrDerivedType = Type, typename... PolicyArguments>
     COID_REQUIRES((std::is_base_of_v<Type, BaseOrDerivedType>))
-    void create()
+    void create(PolicyArguments&&... policy_arguments)
     {
         release();
 
-        _policy_ptr = static_cast<ref_policy_base*>(default_ref_policy_trait<BaseOrDerivedType>::policy::create());
+        _policy_ptr = static_cast<ref_policy_base*>(default_ref_policy_trait<BaseOrDerivedType>::policy::create(std::forward<PolicyArguments>(policy_arguments)...));
         _object_ptr = static_cast<Type*>(static_cast<BaseOrDerivedType*>(_policy_ptr->get_original_ptr()));
         _policy_ptr->_counter.increase_strong_counter();
     }
@@ -257,7 +264,7 @@ public: //methods only
     /// @tparam Policy - reference counting policy(must be base of ref_policy_base)
     /// @tparam ...PolicyArguments  - variadic arguments for policy creation function
     template<typename DerivedType, typename Policy, typename... PolicyArguments>
-    COID_REQUIRES((std::is_base_of_v<Type, DerivedType> &&  is_ref_policy<Policy>))
+    COID_REQUIRES((std::negation_v<std::is_same<Type, DerivedType>> && std::is_base_of_v<Type, DerivedType> && is_ref_policy<Policy>))
     void create(PolicyArguments&&... policy_arguments)
     {
         release();
@@ -267,30 +274,30 @@ public: //methods only
         _policy_ptr->_counter.increase_strong_counter();
     }
 
-    /// @brief Create method form Type object pointer with policy from default_ref_policy_trait<Type>
-    /// @tparam ...PolicyArguments  - variadic arguments for policy creation function
-    /// @param object_ptr - object pointer of type "Type" to be reference counted 
-    template<typename... PolicyArguments>
-    void create(Type* object_ptr, PolicyArguments&&... policy_arguments)
-    {
-        release();
-
-        _policy_ptr = static_cast<ref_policy_base*>(default_ref_policy_trait<Type>::policy::create(object_ptr, std::forward<PolicyArguments>(policy_arguments)...));
-        _object_ptr = object_ptr;
-        _policy_ptr->_counter.increase_strong_counter();
-    }
+    ///// @brief Create method form Type object pointer with policy from default_ref_policy_trait<Type>
+    ///// @tparam ...PolicyArguments  - variadic arguments for policy creation function
+    ///// @param object_ptr - object pointer of type "Type" to be reference counted 
+    //template<typename... PolicyArguments>
+    //void create(Type* object_ptr, PolicyArguments&&... policy_arguments)
+    //{
+    //    release();
+    //
+    //    _policy_ptr = static_cast<ref_policy_base*>(default_ref_policy_trait<Type>::policy::create(object_ptr, std::forward<PolicyArguments>(policy_arguments)...));
+    //    _object_ptr = object_ptr;
+    //    _policy_ptr->_counter.increase_strong_counter();
+    //}
 
     /// @brief Create method form DerivedType object pointer with policy from default_ref_policy_trait<DerivedType>
     /// @tparam DerivedType - type derived from Type
     /// @tparam ...PolicyArguments  - variadic arguments for policy creation function
     /// @param object_ptr - object pointer of type "DerivedType" to be reference counted 
-    template<typename DerivedType, typename... PolicyArguments>
-    COID_REQUIRES((std::is_base_of_v<Type, DerivedType>))
-    void create(DerivedType* object_ptr, PolicyArguments&&... policy_arguments)
+    template<typename BaseOrDerivedType, typename... PolicyArguments>
+    COID_REQUIRES((std::is_base_of_v<Type, BaseOrDerivedType>))
+    void create(BaseOrDerivedType* object_ptr, PolicyArguments&&... policy_arguments)
     {
         release();
 
-        _policy_ptr = static_cast<ref_policy_base*>(default_ref_policy_trait<DerivedType>::policy::create(object_ptr, std::forward<PolicyArguments>(policy_arguments)...));
+        _policy_ptr = static_cast<ref_policy_base*>(default_ref_policy_trait<BaseOrDerivedType>::policy::create(object_ptr, std::forward<PolicyArguments>(policy_arguments)...));
         _object_ptr = object_ptr;
         _policy_ptr->_counter.increase_strong_counter();
     }
@@ -315,11 +322,11 @@ public: //methods only
     /// @tparam ...PolicyArguments  - variadic arguments for policy creation function
     /// @param object_ptr - object pointer of type "DerivedType" to be reference counted 
     template<typename DerivedType, typename Policy, typename... PolicyArguments>
-    COID_REQUIRES((std::is_base_of<Type, DerivedType>::value && is_ref_policy<Policy>))
+    COID_REQUIRES((std::negation_v<std::is_same<Type, DerivedType>>&& std::is_base_of_v<Type, DerivedType>&& is_ref_policy<Policy>))
     void create(DerivedType* object_ptr, PolicyArguments&&... policy_arguments)
     {
         release();
-    
+
         _policy_ptr = static_cast<ref_policy_base*>(Policy::create(object_ptr, std::forward<PolicyArguments>(policy_arguments)...));
         _object_ptr = object_ptr;
         _policy_ptr->_counter.increase_strong_counter();
@@ -344,25 +351,10 @@ public: //methods only
 
     /// @brief Get pointer of reference counted object
     /// @return object ptr
-    Type* get() const
-    {
-        return _object_ptr;
-    }
+    Type* get() const { return _object_ptr; }
+    Type& operator*() const { DASSERT(is_set()); return *get(); }
+    Type* operator->() const { DASSERT(is_set()); return get(); }
 
-    Type& operator*() const
-    {
-        DASSERT(is_set());
-        return *get();
-    }
-
-    Type* operator->() const
-    {
-        DASSERT(is_set());
-        return get();
-    }
-
-
-   
     /// @brief operator bool for testing if this ref_shared object is set
     explicit operator bool() const { return is_set(); }
 
