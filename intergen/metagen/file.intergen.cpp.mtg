@@ -157,12 +157,7 @@ $-[/event]$
 
 protected:
 
-    COIDNEWDELETE($name$_dispatcher);
-
     $name$_dispatcher() {
-    }
-
-    virtual ~$name$_dispatcher() {
     }
 
     bool intergen_bind_capture(coid::binstring* capture, uint instid) override
@@ -239,6 +234,11 @@ $-(if !virtual)$
 $-(/if)$
 
 public:
+
+    COIDNEWDELETE($name$_dispatcher);
+
+    virtual ~$name$_dispatcher() {
+    }
 
     // creator methods
 
@@ -425,10 +425,7 @@ $-[/event]$
 
 protected:
 
-    COIDNEWDELETE($name$_data_dispatcher);
-
     $name$_data_dispatcher() = default;
-    ~$name$_data_dispatcher() = default;
 
     static coref<$name$> _host_connector(::$..nsx$$..class$* host)
     {
@@ -437,6 +434,9 @@ protected:
     }
 
 public:
+    COIDNEWDELETE($name$_data_dispatcher);
+
+   ~$name$_data_dispatcher() = default;
 
     static void register_interfaces(bool on)
     {
