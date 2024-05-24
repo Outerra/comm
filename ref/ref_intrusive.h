@@ -64,7 +64,7 @@ public: // methods only
     /// @param object_ptr - object pointer of base or derived type
     template<typename BaseOrDerivedType, typename... PolicyArguments>
     COID_REQUIRES((std::is_base_of_v<Type, BaseOrDerivedType>))
-        explicit ref_intrusive(BaseOrDerivedType* object_ptr, PolicyArguments&&... policy_arguments)
+    ref_intrusive(BaseOrDerivedType* object_ptr, PolicyArguments&&... policy_arguments)
         : _object_ptr(static_cast<Type*>(object_ptr))
     {
         if (_object_ptr)
@@ -107,11 +107,30 @@ public: // methods only
     /// @brief Move constructor from base or derived type
     /// @tparam DerivedType - type derived form Type
     template<class BaseOrDerivedType>
-    COID_REQUIRES((std::is_base_of_v<Type, BaseOrDerivedType>))
-        ref_intrusive(ref_intrusive<BaseOrDerivedType>&& rhs) noexcept
+    //COID_REQUIRES((std::is_base_of_v<Type, BaseOrDerivedType>))
+    ref_intrusive(ref_intrusive<BaseOrDerivedType>&& rhs) noexcept
     {
         _object_ptr = static_cast<Type*>(rhs.get());
         rhs._object_ptr = nullptr;
+    }
+
+
+    /// @brief Assignment operator from base or derived class object pointer
+    /// @node default policy of BaseOrDerived class will be used if given object has no policy set
+    template<typename BaseOrDerivedType>
+    COID_REQUIRES((std::is_base_of_v<Type, BaseOrDerivedType>))
+    ref_intrusive& operator=(BaseOrDerivedType* rhs) COID_REQUIRES((std::is_base_of_v<ref_intrusive_base, Type>))
+    {
+        if (rhs->_policy_ptr == nullptr)
+        {
+            rhs->_policy_ptr = static_cast<ref_policy_base*>(default_ref_policy_trait<BaseOrDerivedType>::policy::create(rhs));
+        }
+
+        _object_ptr = static_cast<Type*>(rhs);
+        _object_ptr->_policy_ptr = rhs->_policy_ptr;
+        _object_ptr->_policy_ptr->_counter.increase_strong_counter();
+
+        return *this;
     }
 
     /// @brief Assignment operator from base class
@@ -172,7 +191,8 @@ public: // methods only
     }
 
     /// @brief  Releases reference counted object
-    void release() {
+    void release() COID_REQUIRES((std::is_base_of_v<ref_intrusive_base, Type>))
+    {
         if (_object_ptr != nullptr)
         {
             ref_intrusive_base* base_ptr = static_cast<ref_intrusive_base*>(_object_ptr);

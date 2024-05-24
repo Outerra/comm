@@ -993,6 +993,36 @@ void ref_intrusive_tests()
         delete ptr;
     }
 
+    // template<typename BaseOrDerivedType> ref_intrusive& operator=(BaseOrDerivedType * rhs) assignment from pointer of base (simple policy)
+    {
+        reset();
+        iref<ifoo> instance;
+        instance = new ifoo;
+        DASSERT(instance.is_set());
+        DASSERT(instance.get_strong_refcount() == 1);
+        instance.release();
+        DASSERT(instance.is_empty());
+        DASSERT(ifoo::destructor_called);
+    }
+
+    // template<typename BaseOrDerivedType> ref_intrusive& operator=(BaseOrDerivedType * rhs) assignment from pointer of derived (pooled policy - global)
+    {
+        reset();
+        iref<ifoo> instance;
+        instance = new ibar;
+        instance->_member = "return to global pool";
+        DASSERT(instance.is_set());
+        DASSERT(instance.get_strong_refcount() == 1);
+        instance.release();
+        DASSERT(instance.is_empty());
+        DASSERT(ibar::destructor_called == false);
+        ibar* ptr = ibar_pool::global().get_item();
+        DASSERT(ptr != nullptr);
+        DASSERT(ptr->_member.cmpeq("return to global pool"));
+        DASSERT(ibar_pool::global().get_item() == nullptr);
+        delete ptr;
+    }
+
     //  ref_intrusive& operator= (const ref_intrusive& rhs) assignment operator base to base
     {
         reset();
