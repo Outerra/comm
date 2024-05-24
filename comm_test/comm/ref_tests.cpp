@@ -9,6 +9,10 @@
 #include <comm/commassert.h>
 #include <comm/atomic/pool.h>
 
+uint32 get_ref_intrusive_base_strong_refcount(coid::ref_intrusive_base* ptr)
+{
+    return (*reinterpret_cast<coid::ref_policy_base**>(reinterpret_cast<char*>(ptr) + sizeof(ptr)))->_counter.get_strong_counter_value();
+}
 
 struct boo 
 {
@@ -114,15 +118,15 @@ using ibar_pool = coid::pool<ibar>;
 
 void reset()
 {
+    foo_pool::global().reset();
+    bar_pool::global().reset();
+    ifoo_pool::global().reset();
+    ibar_pool::global().reset();
     boo::destructor_called = false;
     foo::destructor_called = false;
     bar::destructor_called = false;
     ifoo::destructor_called = false;
     ibar::destructor_called = false;
-    foo_pool::global().reset();
-    bar_pool::global().reset();
-    ifoo_pool::global().reset();
-    ibar_pool::global().reset();
 }
 
 
@@ -275,6 +279,7 @@ void ref_unique_tests()
         DASSERT(ptr != nullptr);
         DASSERT(ptr->_member.cmpeq("foo from global pool"));
         DASSERT(foo_pool::global().get_item() == nullptr);
+        delete ptr;
     }
 
     // template<typename Policy, typename... PolicyArguments> void create(PolicyArguments&&... policy_arguments) test with custom pool
@@ -291,6 +296,7 @@ void ref_unique_tests()
         DASSERT(ptr != nullptr);
         DASSERT(ptr->_member.cmpeq("from pool"));
         DASSERT(pool.get_item() == nullptr);
+        delete ptr;
     }
 
     // template<typename DerivedType,typename Policy, typename... PolicyArguments void create(PolicyArguments&&... policy_arguments) test with global pool
@@ -307,6 +313,7 @@ void ref_unique_tests()
         DASSERT(ptr != nullptr);
         DASSERT(ptr->_member.cmpeq("bar from global pool"));
         DASSERT(bar_pool::global().get_item() == nullptr);
+        delete ptr;
     }
 
     // template<typename DerivedType,typename Policy, typename... PolicyArguments>  void create(PolicyArguments&&... policy_arguments) test with custom pool
@@ -324,6 +331,7 @@ void ref_unique_tests()
         DASSERT(ptr != nullptr);
         DASSERT(ptr->_member.cmpeq("from pool"));
         DASSERT(pool.get_item() == nullptr);
+        delete ptr;
     }
 
 
@@ -475,6 +483,7 @@ void ref_shared_tests()
         DASSERT(ptr != nullptr);
         DASSERT(ptr->_member.cmpeq("return to global bar pool"));
         DASSERT(bar_pool::global().get_item() == nullptr);
+        delete ptr;
     }
 
     // ref_shared& operator=(const ref_shared& rhs) assignment base to base 
@@ -534,6 +543,7 @@ void ref_shared_tests()
         DASSERT(ptr != nullptr);
         DASSERT(ptr->_member.cmpeq("return to global bar pool"));
         DASSERT(bar_pool::global().get_item() == nullptr);
+        delete ptr;
     }
 
     //const ref_shared& operator=(const ref_shared<DerivedType>& rhs) assignment derived to base with simple policy
@@ -612,9 +622,20 @@ void ref_shared_tests()
         DASSERT(ptr != nullptr);
         DASSERT(ptr->_member.cmpeq("return to global bar pool"));
         DASSERT(bar_pool::global().get_item() == nullptr);
+        delete ptr;        
     }
 
-    // void create() with foo, policy form default_ref_policy_trait (simple)
+    // template<typename BaseOrDerivedType> bool operator==(const ref_intrusive<Type>& rhs) 
+    {
+        reset();
+        ref<bar> first(new bar);
+        ref<foo> second(first);
+        DASSERT(first == first);
+        DASSERT(first == second);
+        DASSERT(second == first);
+    }
+
+    // template<typename BaseOrDerivedType = Type, typename... PolicyArguments> void create(PolicyArguments&&... policy_arguments) with base class
     {
         reset();
         ref<foo> r;
@@ -627,7 +648,7 @@ void ref_shared_tests()
         DASSERT(foo::destructor_called);
     }
 
-    // void create() with bar, policy form default_ref_policy_trait (pooled)
+    // template<typename BaseOrDerivedType = Type, typename... PolicyArguments> void create(PolicyArguments&&... policy_arguments) with derived class (global pool)
     {
         reset();
         ref<foo> r;
@@ -643,6 +664,27 @@ void ref_shared_tests()
         DASSERT(ptr != nullptr);
         DASSERT(ptr->_member.cmpeq("return to global bar pool"));
         DASSERT(bar_pool::global().get_item() == nullptr);
+        delete ptr;
+    }
+
+    // template<typename BaseOrDerivedType = Type, typename... PolicyArguments> void create(PolicyArguments&&... policy_arguments) with derived class (local pool)
+    {
+        reset();
+        bar_pool pool;
+        ref<foo> r;
+        r.create<bar>(&pool);
+        r->_member = "return to local bar pool";
+        DASSERT(r.is_set());
+        DASSERT(r.get_strong_refcount() == 1);
+        DASSERT(bar::destructor_called == false);
+        r.release();
+        DASSERT(r.is_empty());
+        DASSERT(bar::destructor_called == false);
+        bar* ptr = pool.get_item();
+        DASSERT(ptr != nullptr);
+        DASSERT(ptr->_member.cmpeq("return to local bar pool"));
+        DASSERT(pool.get_item() == nullptr);
+        delete ptr;
     }
 
     // template<typename Policy, typename... PolicyArguments> void create(PolicyArguments&&... policy_arguments) with pooled policy and global pool
@@ -660,6 +702,7 @@ void ref_shared_tests()
         foo* ptr = foo_pool::global().get_item();
         DASSERT(ptr->_member.cmpeq("return to global foo pool"));
         DASSERT(foo_pool::global().get_item() == nullptr);
+        delete ptr;
     }
 
     // template<typename Policy, typename... PolicyArguments> void create(PolicyArguments&&... policy_arguments) with pooled policy and local pool
@@ -678,6 +721,7 @@ void ref_shared_tests()
         foo* ptr = local_pool.get_item();
         DASSERT(ptr->_member.cmpeq("return to local foo pool"));
         DASSERT(local_pool.get_item() == nullptr);
+        delete ptr;
     }
 
     // template<typename DerivedType, typename Policy, typename... PolicyArguments> void create(PolicyArguments&&... policy_arguments) with simple policy and bar type
@@ -697,7 +741,7 @@ void ref_shared_tests()
         DASSERT(bar::destructor_called);
     }
 
-    // template<typename... PolicyArguments> void create(Type* object_ptr, PolicyArguments&&... policy_arguments) default policy trait (simple policy)
+    // template<typename BaseOrDerivedType, typename... PolicyArguments> void create(BaseOrDerivedType* object_ptr, PolicyArguments&&... policy_arguments) default policy trait with foo
     {
         reset();
         ref<foo> r;
@@ -710,7 +754,7 @@ void ref_shared_tests()
         DASSERT(foo::destructor_called);
     }
 
-    // template<typename DerivedType, typename... PolicyArguments> void create(DerivedType* object_ptr, PolicyArguments&&... policy_arguments) default policy trait and derived type(pooled and bar) - global pool
+    // template<typename BaseOrDerivedType, typename... PolicyArguments> void create(BaseOrDerivedType* object_ptr, PolicyArguments&&... policy_arguments) default policy trait with derived - global pool
     {
         reset();
         ref<foo> r;
@@ -727,6 +771,7 @@ void ref_shared_tests()
         foo* ptr = bar_pool::global().get_item();
         DASSERT(ptr->_member.cmpeq("return to global bar pool"));
         DASSERT(bar_pool::global().get_item() == nullptr);
+        delete ptr;
     }
 
     // template<typename DerivedType, typename... PolicyArguments> void create(DerivedType* object_ptr, PolicyArguments&&... policy_arguments) default policy trait and derived type(pooled and bar) - local pool
@@ -747,6 +792,7 @@ void ref_shared_tests()
         foo* ptr = local_pool.get_item();
         DASSERT(ptr->_member.cmpeq("return to local bar pool"));
         DASSERT(local_pool.get_item() == nullptr);
+        delete ptr;
     }
 
 
@@ -765,6 +811,7 @@ void ref_shared_tests()
         foo* ptr = foo_pool::global().get_item();
         DASSERT(ptr->_member.cmpeq("return to global foo pool"));
         DASSERT(foo_pool::global().get_item() == nullptr);
+        delete ptr;
     }
 
     // template<typename Policy, typename... PolicyArguments> void create(Type* object_ptr, PolicyArguments&&... policy_arguments)  with pooled policy and local pool
@@ -783,6 +830,7 @@ void ref_shared_tests()
         foo* ptr = local_pool.get_item();
         DASSERT(ptr->_member.cmpeq("return to local foo pool"));
         DASSERT(local_pool.get_item() == nullptr);
+        delete ptr;
     }
 
     // template<typename DerivedType, typename Policy, typename... PolicyArguments> void create(DerivedType* object_ptr, PolicyArguments&&... policy_arguments) with simple policy and bar type
@@ -847,6 +895,7 @@ void ref_intrusive_tests()
         ibar* ptr = ibar_pool::global().get_item();
         DASSERT(ptr->_member.cmpeq("returned to global pool"));
         DASSERT(ibar_pool::global().get_item() == nullptr);
+        delete ptr;
     }
 
     // explicit ref_intrusive(BaseOrDerivedType * object_ptr, PolicyArguments&&... policy_arguments) with ibar type and local pool
@@ -863,6 +912,7 @@ void ref_intrusive_tests()
         ibar* ptr = pool.get_item();
         DASSERT(ptr->_member.cmpeq("returned to local pool"));
         DASSERT(pool.get_item() == nullptr);
+        delete ptr;
     }
 
     //  ref_intrusive(const ref_intrusive& rhs) copy consturctor base to base
@@ -906,9 +956,373 @@ void ref_intrusive_tests()
         DASSERT(ptr != nullptr);
         DASSERT(ptr->_member.cmpeq("returned to global pool"));
         DASSERT(ibar_pool::global().get_item() == nullptr);
+        delete ptr;
+    }
+
+    //  ref_intrusive(ref_intrusive&& rhs) move consturctor base to base
+    {
+        reset();
+        iref<ifoo> first(new ifoo);
+        iref<ifoo> second(first.move());
+        DASSERT(first.is_empty());
+        DASSERT(second.is_set());
+        DASSERT(second.get_strong_refcount() == 1);
+        DASSERT(ifoo::destructor_called == false);
+        second.release();
+        DASSERT(second.is_empty());
+        DASSERT(ifoo::destructor_called);
+    }
+
+    //  ref_intrusive(ref_intrusive&& rhs) move consturctor derived to base
+    {
+        reset();
+        iref<ibar> first(new ibar);
+        first->_member = "returned to global pool";
+        iref<ifoo> second(first.move());
+        DASSERT(first.is_empty());
+        DASSERT(second.is_set());
+        DASSERT(second.get_strong_refcount() == 1);
+        DASSERT(ifoo::destructor_called == false);
+        second.release();
+        DASSERT(second.is_empty());
+        DASSERT(ifoo::destructor_called == false);
+        ibar* ptr = ibar_pool::global().get_item();
+        DASSERT(ptr != nullptr);
+        DASSERT(ptr->_member.cmpeq("returned to global pool"));
+        DASSERT(ibar_pool::global().get_item() == nullptr);
+        delete ptr;
+    }
+
+    //  ref_intrusive& operator= (const ref_intrusive& rhs) assignment operator base to base
+    {
+        reset();
+        iref<ifoo> first(new ifoo);
+        iref<ifoo> second;
+        second = first;
+        DASSERT(first.is_set());
+        DASSERT(second.is_set());
+        DASSERT(first.get_strong_refcount() == 2);
+        DASSERT(second.get_strong_refcount() == 2);
+        first.release();
+        DASSERT(first.is_empty());
+        DASSERT(ifoo::destructor_called == false);
+        DASSERT(second.is_set());
+        DASSERT(second.get_strong_refcount() == 1);
+        second.release();
+        DASSERT(second.is_empty());
+        DASSERT(ifoo::destructor_called);
+    }
+
+    //  ref_intrusive& operator= (const ref_intrusive& rhs) assignment operator base to base with same object_ptr
+    {
+        reset();
+        iref<ifoo> first(new ifoo);
+        iref<ifoo> second(first);
+        second = first;
+        DASSERT(first.is_set());
+        DASSERT(second.is_set());
+        DASSERT(first.get_strong_refcount() == 2);
+        DASSERT(second.get_strong_refcount() == 2);
+        first.release();
+        DASSERT(first.is_empty());
+        DASSERT(ifoo::destructor_called == false);
+        DASSERT(second.is_set());
+        DASSERT(second.get_strong_refcount() == 1);
+        second.release();
+        DASSERT(second.is_empty());
+        DASSERT(ifoo::destructor_called);
+    }
+
+    //  ref_intrusive& operator= (const ref_intrusive& rhs) assignment operator base self to self
+    {
+        reset();
+        iref<ifoo> first(new ifoo);
+        first = first;
+        DASSERT(first.is_set());
+        DASSERT(first.get_strong_refcount() == 1);
+        first.release();
+        DASSERT(first.is_empty());
+        DASSERT(ifoo::destructor_called);
     }
 
 
+    //  ref_intrusive& operator= (const ref_intrusive<DerivedType>& rhs) assignment operator derived to base
+    {
+        reset();
+        iref<ibar> first(new ibar);
+        first->_member = "returned to global pool";
+        iref<ifoo> second;
+        second = first;
+        DASSERT(first.is_set());
+        DASSERT(second.is_set());
+        DASSERT(first.get_strong_refcount() == 2);
+        DASSERT(second.get_strong_refcount() == 2);
+        first.release();
+        DASSERT(first.is_empty());
+        DASSERT(ifoo::destructor_called == false);
+        DASSERT(second.is_set());
+        DASSERT(second.get_strong_refcount() == 1);
+        second.release();
+        DASSERT(second.is_empty());
+        DASSERT(ifoo::destructor_called == false);
+        ibar* ptr = ibar_pool::global().get_item();
+        DASSERT(ptr != nullptr);
+        DASSERT(ptr->_member.cmpeq("returned to global pool"));
+        DASSERT(ibar_pool::global().get_item() == nullptr);
+        delete ptr;
+    }
+
+    // template<typename BaseOrDerivedType> bool operator==(const ref_intrusive<Type>& rhs)
+    {
+        reset();
+        iref<ibar> first(new ibar);
+        iref<ifoo> second(first);
+        DASSERT(first == first);
+        DASSERT(first == second);
+        DASSERT(second == first);
+    }
+
+    // template<typename BaseOrDerivedType = Type, typename... PolicyArguments> void create(PolicyArguments&&... policy_arguments) void create() with base class
+    {
+        reset();
+        iref<ifoo> instance;
+        DASSERT(instance.is_empty());
+        instance.create();
+        DASSERT(instance.is_set());
+        DASSERT(instance.get_strong_refcount() == 1);
+        DASSERT(ifoo::destructor_called == false);
+        instance.release();
+        DASSERT(instance.is_empty());
+        DASSERT(ifoo::destructor_called);
+    }
+
+    // template<typename BaseOrDerivedType = Type, typename... PolicyArguments> void create(PolicyArguments&&... policy_arguments) with derived class and global pool
+    {
+        reset();
+        iref<ifoo> instance;
+        DASSERT(instance.is_empty());
+        instance.create<ibar>();
+        instance->_member = "returned to global pool";
+        DASSERT(instance.is_set());
+        DASSERT(instance.get_strong_refcount() == 1);
+        DASSERT(ifoo::destructor_called == false);
+        instance.release();
+        DASSERT(instance.is_empty());
+        DASSERT(ifoo::destructor_called == false);
+        ibar* ptr = ibar_pool::global().get_item();
+        DASSERT(ptr != nullptr);
+        DASSERT(ptr->_member.cmpeq("returned to global pool"));
+        DASSERT(get_ref_intrusive_base_strong_refcount(ptr) == 0);
+        delete ptr;
+    }
+
+    // template<typename BaseOrDerivedType = Type, typename... PolicyArguments> void create(PolicyArguments&&... policy_arguments) with derived class and local pool
+    {
+        reset();
+        ibar_pool pool;
+        iref<ifoo> instance;
+        DASSERT(instance.is_empty());
+        instance.create<ibar>(&pool);
+        instance->_member = "returned to local pool";
+        DASSERT(instance.is_set());
+        DASSERT(instance.get_strong_refcount() == 1);
+        DASSERT(ifoo::destructor_called == false);
+        instance.release();
+        DASSERT(instance.is_empty());
+        DASSERT(ifoo::destructor_called == false);
+        ibar* ptr = pool.get_item();
+        DASSERT(ptr != nullptr);
+        DASSERT(ptr->_member.cmpeq("returned to local pool"));
+        DASSERT(get_ref_intrusive_base_strong_refcount(ptr) == 0);
+        delete ptr;
+    }
+
+    // template<typename Policy, typename... PolicyArguments> void create(PolicyArguments&&... policy_arguments) pooled policy with base class and global pool
+    {
+        reset();
+        iref<ifoo> instance;
+        DASSERT(instance.is_empty());
+        instance.create<coid::ref_policy_pooled<ifoo>>();
+        instance->_member = "returned to global pool";
+        DASSERT(instance.is_set());
+        DASSERT(instance.get_strong_refcount() == 1);
+        DASSERT(ifoo::destructor_called == false);
+        instance.release();
+        DASSERT(instance.is_empty());
+        DASSERT(ifoo::destructor_called == false);
+        ifoo* ptr = ifoo_pool::global().get_item();
+        DASSERT(ptr != nullptr);
+        DASSERT(ptr->_member.cmpeq("returned to global pool"));
+        DASSERT(get_ref_intrusive_base_strong_refcount(ptr) == 0);
+        delete ptr;
+    }
+
+    // template<typename Policy, typename... PolicyArguments> void create(PolicyArguments&&... policy_arguments) pooled policy with base class and local pool
+    {
+        reset();
+        ifoo_pool pool;
+        iref<ifoo> instance;
+        DASSERT(instance.is_empty());
+        instance.create<coid::ref_policy_pooled<ifoo>>(&pool);
+        instance->_member = "returned to local pool";
+        DASSERT(instance.is_set());
+        DASSERT(instance.get_strong_refcount() == 1);
+        DASSERT(ifoo::destructor_called == false);
+        instance.release();
+        DASSERT(instance.is_empty());
+        DASSERT(ifoo::destructor_called == false);
+        ifoo* ptr = pool.get_item();
+        DASSERT(ptr != nullptr);
+        DASSERT(ptr->_member.cmpeq("returned to local pool"));
+        DASSERT(get_ref_intrusive_base_strong_refcount(ptr) == 0);
+        delete ptr;
+    }
+
+    //template<typename DerivedType, typename Policy, typename... PolicyArguments> void create(PolicyArguments&&... policy_arguments) simple policy with derived class
+    {
+        reset();
+        iref<ifoo> instance;
+        DASSERT(instance.is_empty());
+        instance.create<ibar, coid::ref_policy_simple<ibar>>();
+        DASSERT(instance.is_set());
+        DASSERT(instance.get_strong_refcount() == 1);
+        DASSERT(ifoo::destructor_called == false);
+        instance.release();
+        DASSERT(instance.is_empty());
+        DASSERT(ifoo::destructor_called == true);
+    }
+
+
+    // template<typename BaseOrDerivedType, typename... PolicyArguments> void create(BaseOrDerivedType* object_ptr, PolicyArguments&&... policy_arguments) with base class
+    {
+        reset();
+        iref<ifoo> instance;
+        DASSERT(instance.is_empty());
+        instance.create(new ifoo);
+        DASSERT(instance.is_set());
+        DASSERT(instance.get_strong_refcount() == 1);
+        DASSERT(ifoo::destructor_called == false);
+        instance.release();
+        DASSERT(instance.is_empty());
+        DASSERT(ifoo::destructor_called);
+    }
+
+    // template<typename BaseOrDerivedType = Type, typename... PolicyArguments> void create(PolicyArguments&&... policy_arguments) with derived class and global pool
+    {
+        reset();
+        iref<ifoo> instance;
+        DASSERT(instance.is_empty());
+        instance.create(new ibar());
+        instance->_member = "returned to global pool";
+        DASSERT(instance.is_set());
+        DASSERT(instance.get_strong_refcount() == 1);
+        DASSERT(ifoo::destructor_called == false);
+        instance.release();
+        DASSERT(instance.is_empty());
+        DASSERT(ifoo::destructor_called == false);
+        ibar* ptr = ibar_pool::global().get_item();
+        DASSERT(ptr != nullptr);
+        DASSERT(ptr->_member.cmpeq("returned to global pool"));
+        DASSERT(get_ref_intrusive_base_strong_refcount(ptr) == 0);
+        delete ptr;
+    }
+
+    // template<typename BaseOrDerivedType = Type, typename... PolicyArguments> void create(PolicyArguments&&... policy_arguments) with derived class and local pool
+    {
+        reset();
+        ibar_pool pool;
+        iref<ifoo> instance;
+        DASSERT(instance.is_empty());
+        instance.create(new ibar(), &pool);
+        instance->_member = "returned to local pool";
+        DASSERT(instance.is_set());
+        DASSERT(instance.get_strong_refcount() == 1);
+        DASSERT(ifoo::destructor_called == false);
+        instance.release();
+        DASSERT(instance.is_empty());
+        DASSERT(ifoo::destructor_called == false);
+        ibar* ptr = pool.get_item();
+        DASSERT(ptr != nullptr);
+        DASSERT(ptr->_member.cmpeq("returned to local pool"));
+        DASSERT(get_ref_intrusive_base_strong_refcount(ptr) == 0);
+        delete ptr;
+    }
+
+    // template<typename Policy, typename... PolicyArguments> void create(Type* object_ptr, PolicyArguments&&... policy_arguments) pooled policy with base class and global pool
+    {
+        reset();
+        iref<ifoo> instance;
+        DASSERT(instance.is_empty());
+        instance.create<coid::ref_policy_pooled<ifoo>>(new ifoo);
+        instance->_member = "returned to global pool";
+        DASSERT(instance.is_set());
+        DASSERT(instance.get_strong_refcount() == 1);
+        DASSERT(ifoo::destructor_called == false);
+        instance.release();
+        DASSERT(instance.is_empty());
+        DASSERT(ifoo::destructor_called == false);
+        ifoo* ptr = ifoo_pool::global().get_item();
+        DASSERT(ptr != nullptr);
+        DASSERT(ptr->_member.cmpeq("returned to global pool"));
+        DASSERT(get_ref_intrusive_base_strong_refcount(ptr) == 0);
+        delete ptr;
+    }
+
+    // template<typename Policy, typename... PolicyArguments> void create(PolicyArguments&&... policy_arguments) pooled policy with base class and local pool
+    {
+        reset();
+        ifoo_pool pool;
+        iref<ifoo> instance;
+        DASSERT(instance.is_empty());
+        instance.create<coid::ref_policy_pooled<ifoo>>(new ifoo, &pool);
+        instance->_member = "returned to local pool";
+        DASSERT(instance.is_set());
+        DASSERT(instance.get_strong_refcount() == 1);
+        DASSERT(ifoo::destructor_called == false);
+        instance.release();
+        DASSERT(instance.is_empty());
+        DASSERT(ifoo::destructor_called == false);
+        ifoo* ptr = pool.get_item();
+        DASSERT(ptr != nullptr);
+        DASSERT(ptr->_member.cmpeq("returned to local pool"));
+        DASSERT(get_ref_intrusive_base_strong_refcount(ptr) == 0);
+        delete ptr;
+    }
+
+    // template<typename DerivedType, typename Policy, typename... PolicyArguments> void create(DerivedType* object_ptr, PolicyArguments&&... policy_arguments) simple policy with derived class
+    {
+        reset();
+        iref<ifoo> instance;
+        DASSERT(instance.is_empty());
+        instance.create<ibar, coid::ref_policy_simple<ibar>>(new ibar);
+        DASSERT(instance.is_set());
+        DASSERT(instance.get_strong_refcount() == 1);
+        DASSERT(ifoo::destructor_called == false);
+        instance.release();
+        DASSERT(instance.is_empty());
+        DASSERT(ifoo::destructor_called == true);
+    }
+
+    // template<typename DerivedType, typename Policy, typename... PolicyArguments> void create(DerivedType* object_ptr, PolicyArguments&&... policy_arguments)  explicit pooled policy with derived class and local pool
+    {
+        reset();
+        ibar_pool pool;
+        iref<ibar> instance;
+        DASSERT(instance.is_empty());
+        instance.create<coid::ref_policy_pooled<ibar>>(new ibar, &pool);
+        instance->_member = "returned to local pool";
+        DASSERT(instance.is_set());
+        DASSERT(instance.get_strong_refcount() == 1);
+        DASSERT(ibar::destructor_called == false);
+        instance.release();
+        DASSERT(instance.is_empty());
+        DASSERT(ibar::destructor_called == false);
+        ibar* ptr = pool.get_item();
+        DASSERT(ptr != nullptr);
+        DASSERT(ptr->_member.cmpeq("returned to local pool"));
+        DASSERT(get_ref_intrusive_base_strong_refcount(ptr) == 0);
+        delete ptr;
+    }
 }
 void ref_tests() 
 {
