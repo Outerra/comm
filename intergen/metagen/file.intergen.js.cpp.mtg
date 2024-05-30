@@ -701,11 +701,11 @@ $-(/if)$
 
 $-[method ?creator]$
 ////////////////////////////////////////////////////////////////////////////////
-iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$(const ::js::script_handle& script
+iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$(const ::js::script_handle& script__
         $-[args]$, $type$ $name$$size$$[/args]$, const coid::token& bindname, v8::Handle<v8::Context>* ctx)
 {
-    v8::Isolate* iso = script.has_context()
-        ? script.context()->GetIsolate()
+    v8::Isolate* iso = script__.has_context()
+        ? script__.context()->GetIsolate()
         : v8::Isolate::GetCurrent();
 
     v8::EscapableHandleScope handle_scope__(iso);
@@ -717,8 +717,8 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$(const ::js::script_h
         throw coid::exception() << "failed to create interface object";
 
     // check if an external context provider is required
-    if (script.is_path()) {
-        coid::token path = script.str();
+    if (script__.is_path()) {
+        coid::token path = script__.str();
         path.cut_right('?', coid::token::cut_trait_remove_sep_default_empty());
 
         bool ispage = path.begins_with("http://") || path.begins_with("https://") || path.ends_with(".html");
@@ -733,7 +733,7 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$(const ::js::script_h
             if (!ctxgetter)
                 throw coid::exception() << "unable to acquire the system context creator interface";
 
-            context = ctxgetter(script.str(), ifc.get());
+            context = ctxgetter(script__.str(), ifc.get());
             if (context.IsEmpty())
                 throw coid::exception() << "unable to create context";
         }
@@ -742,8 +742,8 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$(const ::js::script_h
     bool extctx = !context.IsEmpty();
 
     if (!extctx) {
-        if (script.has_context())
-            context = script.context();
+        if (script__.has_context())
+            context = script__.context();
         else {
             context = v8::Context::New(iso);
             v8::Context::Scope context_scope(context);
@@ -757,16 +757,16 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$(const ::js::script_h
 
     v8::Context::Scope context_scope(context);
 
-    if (!extctx && !script.is_context())
+    if (!extctx && !script__.is_context())
     {
         coid::token script_tok;
         coid::charstr script_tmp;
-        if (script.is_path()) {
-            coid::bifstream bif (script.str());
+        if (script__.is_path()) {
+            coid::bifstream bif (script__.str());
             if (!bif.is_open())
-                throw coid::exception() << script.str() << " not found";
+                throw coid::exception() << script__.str() << " not found";
 
-            script_tmp = script.prefix();
+            script_tmp = script__.prefix();
 
             coid::binstreambuf buf;
             buf.swap(script_tmp);
@@ -775,19 +775,19 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$(const ::js::script_h
 
             script_tok = script_tmp;
         }
-        else if (script.prefix()) {
-            script_tmp << script.prefix() << script.str();
+        else if (script__.prefix()) {
+            script_tmp << script__.prefix() << script__.str();
             script_tok = script_tmp;
         }
         else {
-            script_tok = script.str();
+            script_tok = script__.str();
         }
 
         ifc->_object.Reset(iso, ifc->create_interface_object(context, false));
         if (bindname)
             context->Global()->Set(context, v8::symbol(bindname, iso), ifc->_object.Get(iso));
 
-        v8::Handle<v8::Script> compiled_script = load_script(script_tok, script.url());
+        v8::Handle<v8::Script> compiled_script = load_script(script_tok, script__.url());
     }
     else {
         ifc->_object.Reset(iso, ifc->create_interface_object(context, false));

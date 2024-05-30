@@ -133,7 +133,7 @@ $-[method ?creator]$
 $(if !comments.empty)$$[comments]-$
     $@value$
 $[/comments]$$(/if)-$
-    static iref<$..name$_lua_dispatcher> $name$(lua_State * L, const ::lua::script_handle& scriptpath
+    static iref<$..name$_lua_dispatcher> $name$(lua_State* L, const ::lua::script_handle& scriptpath
         $-[args]$, $type$ $name$$size$$[/args]$, const coid::token& bind_variable_name, const coid::token& script_class_name, iref<::lua::registry_handle>*);
 
     $-(if !internal)$
@@ -295,7 +295,7 @@ $-(/if)$
 $-[args ?outarg]$
   $-(if ?..multiout)$
         to_lua($name$); lua_setfield(L, -2, "$name$");
-  $-(elif)$        
+  $-(elif)$
         static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
         to_lua($name$);
   $-(/if)$
@@ -305,9 +305,9 @@ $-(/if)-$
 
 $-(if ?nalloutargs)$
         constexpr int num_results = 1;
-$-(elif)$        
+$-(elif)$
         constexpr int num_results = 0;
-$-(/if)$  
+$-(/if)$
 
 #ifdef _DEBUG
     const int curr_stack_top = lua_gettop(L);
@@ -746,7 +746,7 @@ iref<::lua::registry_handle> $name$_lua_dispatcher::create_interface_object(cons
     {
         // first check context if the class is registered (implemented) there
         lua_pushvalue(L, -2); // push context table to to top
-        if (!contains_interface_class_table_internal(L, true)) 
+        if (!contains_interface_class_table_internal(L, true))
         {
             // check the interface metatable register if the class is registered there and register it if necessary
             lua_rawgeti(L, LUA_REGISTRYINDEX, ::lua::LUA_INTERFACE_METATABLE_REGISTER_INDEX); // push interface metatable register table
@@ -823,7 +823,7 @@ $-[/event]$
                     lua_getfield(L, -2, names[i]);
                     if (!lua_isfunction(L, -1)) {
                         lua_pop(L, 1);
-                        continue;    
+                        continue;
                     }
                 }
                 else
@@ -994,7 +994,7 @@ $[/event]-$
 
 $-[method ?creator]$
 ////////////////////////////////////////////////////////////////////////////////
-iref<$..name$_lua_dispatcher> $..name$_lua_dispatcher::$name$(lua_State * L, const ::lua::script_handle& script
+iref<$..name$_lua_dispatcher> $..name$_lua_dispatcher::$name$(lua_State* L__, const ::lua::script_handle& script__
         $-[args]$, $type$ $name$$size$$[/args]$, const coid::token& bind_variable_name, const coid::token& script_class_name, iref<::lua::registry_handle>* ctx)
 {
 
@@ -1004,12 +1004,12 @@ iref<$..name$_lua_dispatcher> $..name$_lua_dispatcher::$name$(lua_State * L, con
         throw coid::exception() << "failed to create interface object";
 
 #ifdef _DEBUG
-    const int stack_top = lua_gettop(L);
+    const int stack_top = lua_gettop(L__);
 #endif
 
     try
     {
-        iref<::lua::registry_handle> context = script.load_script(L);
+        iref<::lua::registry_handle> context = script__.load_script(L__);
 
         if (ctx)
             *ctx = context;
@@ -1029,7 +1029,7 @@ $-(/if)$
     }
 
 #ifdef _DEBUG
-    const int current_stack_top = lua_gettop(L);
+    const int current_stack_top = lua_gettop(L__);
     DASSERT(current_stack_top == stack_top);
 #endif
     return ifc;
@@ -1135,7 +1135,7 @@ $-(if ?noutargs)$
         lua_setfield(L, -2, "$name$");
     $[/args]-$
 $-(elif)$
-    if (nifc) 
+    if (nifc)
     {
         nifc->set_context(context);
         nifc->create_interface_object(context, true, "", false)->push_ref();
@@ -1441,7 +1441,7 @@ $-(/if)$
 $-[args ?outarg]$
   $-(if ?..multiout)$
         to_lua($name$); lua_setfield(L, -2, "$name$");
-  $-(elif)$        
+  $-(elif)$
         static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
         to_lua($name$);
   $-(/if)$
@@ -1451,15 +1451,15 @@ $-(/if)-$
 
 $-(if ?nalloutargs)$
         constexpr int num_results = 1;
-$-(elif)$        
+$-(elif)$
         constexpr int num_results = 0;
-$-(/if)$  
+$-(/if)$
 
 #ifdef _DEBUG
         const int curr_stack_top = lua_gettop(L);
         DASSERT(curr_stack_top == stack_top + num_results);
 #endif
-    
+
         return num_results;
     }
     catch (const coid::exception& e) {
@@ -1494,7 +1494,7 @@ iref<::lua::registry_handle> $name$_lua_dispatcher::create_interface_object(cons
 #endif
 
     context->push_ref();
-    
+
     lua_createtable(L, 0, 3);
     // get metatable
     lua_pushvalue(L, -1);
@@ -1525,7 +1525,7 @@ iref<::lua::registry_handle> $name$_lua_dispatcher::create_interface_object(cons
     }
 
     lua_remove(L, -2); // remove interface metatable register table
- 
+
     lua_setfield(L, -2, ::lua::_lua_parent_index_key);
 
     iref<::lua::registry_handle> obj;
@@ -1558,7 +1558,7 @@ iref<::lua::registry_handle> wrap_ifc_to_lua_$name$(const coref<$name$>& orig_if
     {
         return nullptr;
     }
-    
+
     // create interface object
     $ns suffix="::"$lua::$name$_lua_dispatcher* difc = new $ns suffix="::"$lua::$name$_lua_dispatcher(orig_ifc);
 

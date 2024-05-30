@@ -25,7 +25,7 @@ $(if !comments.empty)$$[comments]-$
     $@value$
 $[/comments]$$(/if)-$
     /// @param scriptpath path to js script to bind to
-    static iref<$..ns rest="::"$::$..name$> $name$( const ::js::script_handle& script
+    static iref<$..ns rest="::"$::$..name$> $name$( const ::js::script_handle& script__
         $-[args]$, $type$ $name$$size$ $-(if ?defval)$ = $defval$$(/if)$$[/args]$, const coid::token& bindvar = coid::token(), v8::Handle<v8::Context>* ctx=0 )
     {
         typedef iref<$..ns rest="::"$::$..name$> (*fn_bind)(const ::js::script_handle&$[args]$, $type$$[/args]$, const coid::token&, v8::Handle<v8::Context>*);
@@ -39,7 +39,7 @@ $[/comments]$$(/if)-$
         if (!binder)
             throw coid::exception("interface binder inaccessible: ") << ifckey;
 
-        return binder(script$[args]$, $name$$[/args]$, bindvar, ctx);
+        return binder(script__$[args]$, $name$$[/args]$, bindvar, ctx);
     }
 $-[/method]$
 };
