@@ -18,6 +18,9 @@ public: // methods only
     /// @brief  Default constructor creates empty ref_unique
     ref_unique() = default;
     
+    ref_unique(nullptr_t)
+    {};
+
     /// @brief  Destructor
     ~ref_unique() 
     { 

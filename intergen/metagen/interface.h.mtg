@@ -220,6 +220,16 @@ $-(/if)$
         return 0;
     }
 
+    $-(if !destroy.name.empty)$
+
+    ~$name$() {
+        VT_CALL($destroy.return.type$,($[destroy.args rest=","]$$type$$[/destroy.args]$),0)($[destroy.args rest=","]$$name$$[/destroy.args]$);
+    $-(if ?varname)$
+        if (_cleaner)
+            _cleaner(this, 0);
+    $-(/if)$
+    }
+    $-(/if)$
 protected:
 $-(if ?varname)$
 
@@ -240,16 +250,6 @@ $-(if ?varname)$
 $-(/if)$
 
     bool set_host(coid::ref_intrusive_base*, intergen_interface*, iref<$name$>* pout);
-$-(if !destroy.name.empty)$
-
-    ~$name$() {
-        VT_CALL($destroy.return.type$,($[destroy.args rest=","]$$type$$[/destroy.args]$),0)($[destroy.args rest=","]$$name$$[/destroy.args]$);
-$-(if ?varname)$
-        if (_cleaner)
-            _cleaner(this, 0);
-$-(/if)$
-    }
-$-(/if)$
 };
 $-[pasteafters]$
 
