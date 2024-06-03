@@ -175,6 +175,7 @@ inline uints nearest_high_pow2( uints x ) {
 ////////////////////////////////////////////////////////////////////////////////
 
 //@return count of bits set to 1
+inline uint8 population_count(uint8 val) { return uint8(__popcnt16(uint16(val))); }
 inline uint8 population_count(uint16 val) { return uint8(__popcnt16(val)); }
 inline uint8 population_count(uint32 val) { return uint8(__popcnt(val)); }
 inline uint8 population_count(uint64 val) { return uint8(__popcnt64(val)); }
