@@ -119,15 +119,24 @@ public: // methods only
     COID_REQUIRES((std::is_base_of_v<Type, BaseOrDerivedType>))
     ref_intrusive& operator=(BaseOrDerivedType* rhs) COID_REQUIRES((std::is_base_of_v<ref_intrusive_base, Type>))
     {
-        if (rhs->_policy_ptr == nullptr)
+        if (_object_ptr == rhs)
         {
-            rhs->_policy_ptr = static_cast<ref_policy_base*>(default_ref_policy_trait<BaseOrDerivedType>::policy::create(rhs));
+            return *this;
         }
 
-        _object_ptr = static_cast<Type*>(rhs);
-        _object_ptr->_policy_ptr = rhs->_policy_ptr;
-        _object_ptr->_policy_ptr->_counter.increase_strong_counter();
+        release();
 
+        if (rhs != nullptr)
+        {
+            if (rhs->_policy_ptr == nullptr)
+            {
+                rhs->_policy_ptr = static_cast<ref_policy_base*>(default_ref_policy_trait<BaseOrDerivedType>::policy::create(rhs));
+            }
+
+            _object_ptr = static_cast<Type*>(rhs);
+            _object_ptr->_policy_ptr = rhs->_policy_ptr;
+            _object_ptr->_policy_ptr->_counter.increase_strong_counter();
+        }
         return *this;
     }
 
@@ -244,7 +253,7 @@ public: // methods only
         _object_ptr->_policy_ptr = policy_ptr;
     }
 
-    /// @brief Create method form BaseOrDerivedType object pointer with policy from default_ref_policy_trait<DerivedType>
+    /// @brief Create method form BaseOrDerivedType object pointer with policy from default_ref_policy_trait<DerivedType> or use policy from intrusive base if exists
     /// @tparam DerivedType - type derived from Type
     /// @tparam ...PolicyArguments  - variadic arguments for policy creation function
     /// @param object_ptr - object pointer of type "DerivedType" to be reference counted 
@@ -254,21 +263,35 @@ public: // methods only
     {
         release();
 
-        ref_policy_base* policy_ptr = static_cast<ref_policy_base*>(default_ref_policy_trait<BaseOrDerivedType>::policy::create(object_ptr, std::forward<PolicyArguments>(policy_arguments)...));
-        _object_ptr = static_cast<Type*>(static_cast<BaseOrDerivedType*>(policy_ptr->get_original_ptr()));
-        policy_ptr->_counter.increase_strong_counter();
-        _object_ptr->_policy_ptr = policy_ptr;
+        DASSERT_RET(object_ptr != nullptr);
+
+        if (object_ptr->_policy_ptr == nullptr)
+        {
+            ref_policy_base* policy_ptr = static_cast<ref_policy_base*>(default_ref_policy_trait<BaseOrDerivedType>::policy::create(object_ptr, std::forward<PolicyArguments>(policy_arguments)...));
+            _object_ptr = static_cast<Type*>(static_cast<BaseOrDerivedType*>(policy_ptr->get_original_ptr()));
+            _object_ptr->_policy_ptr = policy_ptr;
+        }
+        else 
+        {
+            _object_ptr = static_cast<Type*>(static_cast<BaseOrDerivedType*>(object_ptr->_policy_ptr->get_original_ptr()));
+        }
+
+        _object_ptr->_policy_ptr->_counter.increase_strong_counter();
     }
 
     /// @brief Create method form object pointer of type Type 
     /// @tparam Policy - reference counting policy(must be base of ref_policy_base)
     /// @tparam ...PolicyArguments  - variadic arguments for policy creation function
     /// @param object_ptr - object pointer of type "Type" to be reference counted 
+    /// @note Intrusive base policy ptr should be nullptr
     template<typename Policy, typename... PolicyArguments>
     COID_REQUIRES((is_ref_policy<Policy>))
     void create(Type* object_ptr, PolicyArguments&&... policy_arguments)
     {
         release();
+
+        DASSERT_RET(object_ptr != nullptr);
+        DASSERT_RET(object_ptr->_policy_ptr == nullptr);
 
         ref_policy_base* policy_ptr = static_cast<ref_policy_base*>(Policy::create(object_ptr, std::forward<PolicyArguments>(policy_arguments)...));
         _object_ptr = static_cast<Type*>(static_cast<Type*>(policy_ptr->get_original_ptr()));
@@ -280,6 +303,7 @@ public: // methods only
     /// @tparam DerivedType - type derived from Type
     /// @tparam ...PolicyArguments  - variadic arguments for policy creation function
     /// @param object_ptr - object pointer of type "DerivedType" to be reference counted 
+    /// @note Intrusive base policy ptr should be nullptr
     template<typename DerivedType, typename Policy, typename... PolicyArguments>
     COID_REQUIRES((std::negation_v<std::is_same<Type, DerivedType>>&& std::is_base_of_v<Type, DerivedType>&& is_ref_policy<Policy>))
     void create(DerivedType* object_ptr, PolicyArguments&&... policy_arguments)
