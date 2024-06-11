@@ -291,15 +291,15 @@ struct versionid
         uint64 value = UMAX64;
     };
 
-    versionid()
+    constexpr versionid()
     {}
 
-    versionid(uint64 id, uint16 version) : id(id), version(version)
+    constexpr versionid(uint64 id, uint16 version) : id(id), version(version)
     {
         //DASSERT(id <= max_id);
     }
 
-    static versionid invalid() { return versionid(); }
+    static constexpr versionid invalid_value() { return versionid(); }
 
     void reset() {
         id = max_id;
