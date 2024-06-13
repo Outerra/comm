@@ -1558,9 +1558,9 @@ public:
         {
             m = (i + j) >> 1;
             if (_ptr[m] < key)
-                i = m + 1;
-            else
                 j = m;
+            else
+                i = m + 1;
         }
         return (count_t)i;
     }

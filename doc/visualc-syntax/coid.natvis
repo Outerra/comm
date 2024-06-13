@@ -2,16 +2,16 @@
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
 <Type Name="coid::charstr">
-    <DisplayString Condition="_tstr._ptr == 0">size = 0 "" (null)</DisplayString>
-    <DisplayString Condition="((size_t*)_tstr._ptr)[-1] == 0">size = 0 ""</DisplayString>
-    <DisplayString>size = {((size_t*)_tstr._ptr)[-1] - 1} {_tstr._ptr,s8}</DisplayString>
+    <DisplayString Condition="_tstr._ptr == 0">"" (null)</DisplayString>
+    <DisplayString Condition="((size_t*)_tstr._ptr)[-1] == 0">"" (size=0)</DisplayString>
+    <DisplayString>{_tstr._ptr,s8} (size={((size_t*)_tstr._ptr)[-1] - 1})</DisplayString>
     <StringView>_tstr._ptr,s8</StringView>
 </Type>
 
 <Type Name="coid::token">
-    <DisplayString Condition="_ptr == 0">size = 0 "" (null)</DisplayString>
-    <DisplayString Condition="_ptr == _pte">size = 0 ""</DisplayString>
-    <DisplayString>size = {_pte-_ptr} {_ptr,[_pte-_ptr]s8}</DisplayString>
+    <DisplayString Condition="_ptr == 0">"" (null)</DisplayString>
+    <DisplayString Condition="_ptr == _pte">"" (size=0)</DisplayString>
+    <DisplayString>{_ptr,[_pte-_ptr]s8} (size={_pte-_ptr})</DisplayString>
 </Type>
 
 <Type Name="coid::zstring">
