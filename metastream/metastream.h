@@ -1778,13 +1778,13 @@ public:
     }
 
     template<class T>
-    void xstream_out(T& x, const token& name = token())
+    void xstream_out(const T& x, const token& name = token())
     {
         xstream_or_cache_out(x, false, name);
     }
 
     template<class T>
-    void xcache_out(T& x, const token& name = token())
+    void xcache_out(const T& x, const token& name = token())
     {
         xstream_or_cache_out(x, true, name);
     }
