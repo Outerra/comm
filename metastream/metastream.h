@@ -338,7 +338,7 @@ public:
     bool member(const token& name, T& v)
     {
         if (streaming()) {
-            *this || *(typename resolve_enum<T>::type*)&v;
+            *this || *(typename resolve_enum<T>::type*) & v;
             return true;
         }
 
@@ -357,7 +357,7 @@ public:
         bool used = false;
 
         if (_binw) {
-            *this || *(typename resolve_enum<T>::type*)&v;
+            *this || *(typename resolve_enum<T>::type*) & v;
             used = true;
         }
         else if (_binr) {
@@ -384,7 +384,7 @@ public:
 
         if (_binw) {
             used = write_optional(!cache_prepared() && !write_default && v == static_cast<const T&>(defval)
-                ? 0 : (typename resolve_enum<T>::type*)&v);
+                ? 0 : (typename resolve_enum<T>::type*) & v);
         }
         else if (_binr) {
             used = read_optional(v);
@@ -991,7 +991,7 @@ public:
     bool nonmember(const token& name, T& v)
     {
         if (streaming()) {
-            *this || *(typename resolve_enum<T>::type*)&v;
+            *this || *(typename resolve_enum<T>::type*) & v;
             return true;
         }
 
@@ -1010,7 +1010,7 @@ public:
         bool used = false;
 
         if (_binw) {
-            *this || *(typename resolve_enum<T>::type*)&v;
+            *this || *(typename resolve_enum<T>::type*) & v;
             used = true;
         }
         else if (_binr) {
@@ -1037,7 +1037,7 @@ public:
 
         if (_binw) {
             used = write_optional(!cache_prepared() && !write_default && v == defval
-                ? 0 : (typename resolve_enum<T>::type*)&v);
+                ? 0 : (typename resolve_enum<T>::type*) & v);
         }
         else if (_binr) {
             used = read_optional(v);
@@ -1262,7 +1262,7 @@ public:
     {
         opcd e = movein_process_key(READ_MODE);
         if (e == NOERR) {
-            *this || *(typename resolve_enum<T>::type*)&val;
+            *this || *(typename resolve_enum<T>::type*) & val;
             return true;
         }
         else {
@@ -1548,6 +1548,20 @@ protected:
         return prepare_type_final(name, cache, read);
     }
 
+    template<class T>
+    opcd prepare_type_fn(T&, const token& name, bool cache, bool read, metastream& (*fn)(metastream&, T&))
+    {
+        //reset on unnamed properties - assumed root property streaming
+        stream_reset(name.is_empty(), cache);
+
+        if (!prepare_type_common(read))  return 0;
+
+        typename resolve_enum<T>::type* p = 0;
+        fn(*this, *p);     // build description
+
+        return prepare_type_final(name, cache, read);
+    }
+
     opcd prepare_named_type(const token& type, const token& name, bool cache, bool read)
     {
         //reset on unnamed properties - assumed root property streaming
@@ -1787,6 +1801,42 @@ public:
     void xcache_out(const T& x, const token& name = token())
     {
         xstream_or_cache_out(x, true, name);
+    }
+
+
+
+    template<class T>
+    void xstream_in_fn(T& x, metastream& (*fn)(metastream&, T&), const token& name = token())
+    {
+        _xthrow(prepare_type_fn(x, name, false, READ_MODE, fn));
+
+        _binr = true;
+        fn(*this, x);
+        _binr = false;
+    }
+
+    template<class T>
+    void xstream_or_cache_out_fn(const T& x, bool cache, metastream& (*fn)(metastream&, T&), const token& name = token())
+    {
+        _xthrow(prepare_type_fn((typename resolve_enum<T>::type&)x, name, cache, WRITE_MODE, fn));
+
+        if (!cache) {
+            _binw = true;
+            fn(*this, const_cast<T&>(x));
+            _binw = false;
+        }
+    }
+
+    template<class T>
+    void xstream_out_fn(const T& x, metastream& (*fn)(metastream&, T&), const token& name = token())
+    {
+        xstream_or_cache_out_fn(x, false, fn, name);
+    }
+
+    template<class T>
+    void xcache_out_fn(const T& x, metastream& (*fn)(metastream&, T&), const token& name = token())
+    {
+        xstream_or_cache_out_fn(x, true, fn, name);
     }
 
 
@@ -4029,18 +4079,18 @@ metastream& operator || (metastream& m, range<T>& a)
 /// Usage: has_metastream_operator<T>::value
 
 namespace check {
-    template<typename T> char operator || (coid::metastream&, T&);
+template<typename T> char operator || (coid::metastream&, T&);
 
-    template <typename T>
-    struct helper {
-        typedef typename std::remove_reference<T>::type B;
-        typedef typename std::remove_pointer<T>::type C;
-        typedef typename std::remove_const<C>::type X;
+template <typename T>
+struct helper {
+    typedef typename std::remove_reference<T>::type B;
+    typedef typename std::remove_pointer<T>::type C;
+    typedef typename std::remove_const<C>::type X;
 
-        enum {
-            value = std::is_enum<X>::value || (sizeof(*(metastream*)(0) || *(X*)(0)) != sizeof(char))
-        };
+    enum {
+        value = std::is_enum<X>::value || (sizeof(*(metastream*)(0) || *(X*)(0)) != sizeof(char))
     };
+};
 }
 
 template <typename T>

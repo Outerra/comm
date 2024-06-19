@@ -32,7 +32,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-/** @file */
+ /** @file */
 
 
 #ifndef __COID_COMM_METAVAR__HEADER_FILE__
@@ -68,24 +68,24 @@ struct MetaDesc
         bool optional = false;          //< variable is optional
         bool singleref = false;         //< desc refers to a pointer type pointing to a single object, not an array
 
-        MetaDesc* stream_desc() const   { DASSERT(desc->streaming_type); return desc->streaming_type; }
+        MetaDesc* stream_desc() const { DASSERT(desc->streaming_type); return desc->streaming_type; }
 
-        bool is_array_element() const   { return varname.is_empty() && !nameless_root; }
-        bool skipped() const            { return obsolete; }
-        bool has_default() const        { return defval.size() > 0; }
+        bool is_array_element() const { return varname.is_empty() && !nameless_root; }
+        bool skipped() const { return obsolete; }
+        bool has_default() const { return defval.size() > 0; }
 
         Var* stream_element() const {
             DASSERT(stream_desc()->is_array());
             return stream_desc()->first_child(true);
         }
 
-        charstr& dump( charstr& dst ) const
+        charstr& dump(charstr& dst) const
         {
-            if( !varname.is_empty() )
+            if (!varname.is_empty())
                 dst << char('.') << varname;
 
-            if( desc->is_array() ) {
-                if( desc->array_size == UMAXS )
+            if (desc->is_array()) {
+                if (desc->array_size == UMAXS)
                     dst << "[]";
                 else
                     dst << char('[') << desc->array_size << char(']');
@@ -96,11 +96,11 @@ struct MetaDesc
             return dst;
         }
 
-        charstr& type_string( charstr& dst ) const {
+        charstr& type_string(charstr& dst) const {
             return desc->type_string(dst);
         }
 
-        Var* add_child( MetaDesc* d, const token& n, int offset ) {
+        Var* add_child(MetaDesc* d, const token& n, int offset) {
             DASSERT(!desc->is_array() || desc->children.size() == 0);
             return desc->add_desc_var(d, n, offset);
         }
@@ -127,7 +127,7 @@ struct MetaDesc
     typedef const void* (*fn_ptr)(const void*);
 
     /// @return count of items in container or -1 if unknown
-    typedef uints (*fn_count)(const void*);
+    typedef uints(*fn_count)(const void*);
 
     /// @return ptr to back-inserted item
     /// @param iter reference to an iterator value returned from first item and passed to remaining items
@@ -148,65 +148,65 @@ struct MetaDesc
 
 
 
-    bool is_array() const               { return is_array_type; }
-    bool is_primitive() const           { return btype.is_primitive(); }
-    bool is_compound() const            { return !btype.is_primitive() && !is_array(); }
+    bool is_array() const { return is_array_type; }
+    bool is_primitive() const { return btype.is_primitive(); }
+    bool is_compound() const { return !btype.is_primitive() && !is_array(); }
 
 
-    uints num_children() const          { return children.size(); }
+    uints num_children() const { return children.size(); }
 
-    type array_type() const             { return children[0].desc->btype; }
+    type array_type() const { return children[0].desc->btype; }
 
     ///Get byte size of primitive element
-    ushort get_size() const             { return btype.get_size(); }
+    ushort get_size() const { return btype.get_size(); }
 
     ///Get first member
-    Var* first_child( bool read ) const
+    Var* first_child(bool read) const
     {
         Var* c = (Var*)children.ptr();
         Var* l = children.last();
-        if(!read) while(c<=l && c->skipped())
+        if (!read) while (c <= l && c->skipped())
             ++c;
 
-        return c>l ? 0 : c;
+        return c > l ? 0 : c;
     }
 
     ///Get next member from given one
-    Var* next_child( Var* c, bool read ) const
+    Var* next_child(Var* c, bool read) const
     {
-        if(!c)  return 0;
+        if (!c)  return 0;
 
         Var* l = children.last();
 
-        DASSERT( c>=children.ptr() && c<=l );
-        if( !c || c >= l )  return 0;
+        DASSERT(c >= children.ptr() && c <= l);
+        if (!c || c >= l)  return 0;
 
         ++c;
-        if(!read) while(c<=l && c->skipped())
+        if (!read) while (c <= l && c->skipped())
             ++c;
 
-        return c>l ? 0 : c;
+        return c > l ? 0 : c;
     }
 
     ///Linear search for specified member
-    Var* find_child( const token& name ) const
+    Var* find_child(const token& name) const
     {
         uints n = children.size();
-        for( uints i=0; i<n; ++i )
-            if( children[i].varname == name )  return (Var*)&children[i];
+        for (uints i = 0; i < n; ++i)
+            if (children[i].varname == name)  return (Var*)&children[i];
         return 0;
     }
 
     ///Linear search for specified member
-    int find_child_pos( const token& name ) const
+    int find_child_pos(const token& name) const
     {
         uints n = children.size();
-        for( uints i=0; i<n; ++i )
-            if( children[i].varname == name )  return (int)i;
+        for (uints i = 0; i < n; ++i)
+            if (children[i].varname == name)  return (int)i;
         return -1;
     }
 
-    uints get_child_pos( Var* v ) const { return uints(v-children.ptr()); }
+    uints get_child_pos(Var* v) const { return uints(v - children.ptr()); }
 
 
     charstr& type_string(charstr& dst) const
@@ -224,13 +224,13 @@ struct MetaDesc
         return dst;
     }
 
-    operator const token&() const       { return type_name; }
+    operator const token& () const { return type_name; }
 
 
     MetaDesc() {}
-    MetaDesc( const token& n ) : type_name(n) {}
+    MetaDesc(const token& n) : type_name(n) {}
 
-    Var* add_desc_var( MetaDesc* d, const token& n, int offset )
+    Var* add_desc_var(MetaDesc* d, const token& n, int offset)
     {
         Var* c = children.add();
         c->desc = d;
