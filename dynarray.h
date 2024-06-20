@@ -1430,12 +1430,12 @@ public:
     }
     /// @}
 
-    ///Find or push element into a array
+    ///Find or add empty element into an array
     /// @param key key to search for
     /// @param isnew [out] set to true if value was newly created
     /// @note there must exist < operator able to do (T < K) comparison
     template<class K>
-    T* find_or_push(const K& key, bool* isnew) {
+    T* find_or_add(const K& key, bool* isnew) {
         T* value = contains(key);
 
         if (isnew)
@@ -1447,13 +1447,13 @@ public:
         return value;
     }
 
-    ///Find or push element into a array
+    ///Find or add empty element into an array
     /// @param key key to search for
     /// @param fn a functor as fn([const] T&, const K&)
     /// @param isnew [out] set to true if value was newly created
     /// @note there must exist < operator able to do (T < K) comparison
     template<class K, class FUNC>
-    T* find_or_push(const K& key, const FUNC& fn, bool* isnew) {
+    T* find_or_add(const K& key, const FUNC& fn, bool* isnew) {
         T* value = contains(key, fn);
 
         if (isnew)
@@ -1465,7 +1465,7 @@ public:
         return value;
     }
 
-    ///Find or insert element into a sorted array
+    ///Find or insert empty element into a sorted array
     /// @param key key to search for
     /// @param isnew [out] set to true if value was newly created
     /// @note there must exist < operator able to do (T < K) comparison
