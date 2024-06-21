@@ -1667,11 +1667,12 @@ public:
     }
 
     ///Delete elements from given positiond
-    /** @param pos position from what to delete
-        @param nitems number of items to delete */
-    void del(uints pos, uints nitems = 1) {
+    /// @param pos position from what to delete
+    /// @param nitems number of items to delete
+    /// @return true if deleted, false if invalid params
+    bool del(uints pos, uints nitems = 1) {
         if (uints(pos) + nitems > _count())
-            return;
+            return false;
 
         uints i = nitems;
         if coid_constexpr_if (!std::is_trivially_destructible<T>::value)
@@ -1679,6 +1680,7 @@ public:
 
         __del(_ptr, pos, _count(), nitems);
         _set_count(_count() - nitems);
+        return true;
     }
 
     ///Linear search for given element \a key and delete it
