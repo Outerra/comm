@@ -293,7 +293,7 @@ public:
                     _bufw.append_float(*(const float*)p, 6);
                     break;
                 case 8:
-                    _bufw.append_float(*(const double*)p, 10);
+                    _bufw.append_double(*(const double*)p, 10);
                     break;
 
                 default: throw ersSYNTAX_ERROR "unknown type"; break;

@@ -79,46 +79,47 @@ char* append_float(char* dst, char* dste, double d, int nfrac)
     double l;
     int anfrac = nfrac < 0 ? -nfrac : nfrac;
     int dfrac = anfrac ? 1 + anfrac : 0;
-    int e = 0;
+    int ne = 0, pe = 0;
     bool expform = false;
 
     if (d != 0.0)
     {
         l = log10(d);
-        e = int(floor(l));
+        ne = int(floor(l));
+        pe = int(ceil(l));
 
         int roundshift;
-        if (e < 0)
+        if (ne < 0)
         {
             //fractional numbers
             if (nfrac <= 0) {
                 roundshift = anfrac;
             }
-            else if (nch + e < anfrac)     //won't have nfrac digits, convert to exponential form
+            else if (nch + ne < anfrac)     //won't have nfrac digits, convert to exponential form
             {
                 expform = true;
 
-                int naddc = 3 + (-e < 10 ? 1 : (-e < 100 ? 2 : 3));   //additional chars: dot, e, - and exponent
+                int naddc = 3 + (-ne < 10 ? 1 : (-ne < 100 ? 2 : 3));   //additional chars: dot, e, - and exponent
                 if (anfrac > nch - naddc) {
                     anfrac = nch - naddc;
                     dfrac = anfrac ? 1 + anfrac : 0;
                 }
-                roundshift = anfrac - e - 1;
+                roundshift = anfrac - ne - 1;
             }
             else
-                roundshift = anfrac - e - 1;
+                roundshift = anfrac - ne - 1;
         }
-        else if (e + 1 + dfrac > nch)    //won't fit into the buffer with the desired number of fractional digits
+        else if (pe + dfrac > nch)      //won't fit into the buffer with the desired number of fractional digits
         {
-            if (e + 1 > nch)   //won't fit into the buffer as a whole number, convert to exponential form
+            if (pe > nch)  //won't fit into the buffer as a whole number, convert to exponential form
             {
                 expform = true;
 
-                int naddc = 2 + (e + 1 < 10 ? 1 : (e + 1 < 100 ? 2 : 3));   //additional chars: dot, e and exponent
+                int naddc = 2 + (pe < 10 ? 1 : (pe < 100 ? 2 : 3));   //additional chars: dot, e and exponent
                 anfrac = dfrac = 0;
-                roundshift = (nch - naddc) - e - 1;
+                roundshift = (nch - naddc) - pe;
             }
-            else if (e + 1 == nch)     //a whole number without dot
+            else if (pe == nch || pe + 1 == nch)    //whole number without a dot, at least one decimal point
             {
                 anfrac = 0;
                 dfrac = 0;
@@ -126,13 +127,14 @@ char* append_float(char* dst, char* dste, double d, int nfrac)
             }
             else
             {
-                anfrac = nch - e - 1 - 1;   //remaining space minus dot
+                anfrac = nch - pe - 1;   //remaining space minus dot
                 roundshift = anfrac;
             }
         }
-        else
+        else {
             //will fit into the buffer
             roundshift = anfrac;
+        }
         /*
                 if(anfrac < 0) {
                     ::memset(dst, '?', dste-p);
@@ -143,13 +145,15 @@ char* append_float(char* dst, char* dste, double d, int nfrac)
 
         if (d != 0) {
             l = log10(d);
-            e = int(floor(l));
+            ne = int(floor(l));
+            pe = int(ceil(l));
         }
-        else
-            e = 0;
+        else {
+            ne = pe = 0;
+        }
     }
 
-    if (e < 0 && nfrac < 0)
+    if (ne < 0 && nfrac < 0)
     {
         //fractional numbers with nfrac<0 always as fraction even when below the resolution
         if (p < dste) *p++ = '0';
@@ -162,12 +166,12 @@ char* append_float(char* dst, char* dste, double d, int nfrac)
         //number doesn't fit into the space in unnormalized form
         //
 
-        double mantissa = pow(10.0, l - double(e)); //>= 1 < 10
+        int eabs = ne < 0 ? -ne : pe;
+        double mantissa = pow(10.0, l - double(ne)); //>= 1 < 10
 
         //part required for the exponent
-        int eabs = e < 0 ? -e : e;
         int nexp = eabs >= 100 ? 4 : (eabs >= 10 ? 3 : 2);    //eXX
-        if (e < 0) ++nexp; //e-XX
+        if (ne < 0) ++nexp; //e-XX
 
         //if there's no space for the first number and dot ..
         if (p + nexp + 2 > dste) {
@@ -186,7 +190,7 @@ char* append_float(char* dst, char* dste, double d, int nfrac)
         }
 
         *p++ = 'e';
-        if (e < 0)
+        if (ne < 0)
             *p++ = '-';
         if (eabs >= 10) {
             *p++ = char('0' + eabs / 10);
@@ -196,7 +200,7 @@ char* append_float(char* dst, char* dste, double d, int nfrac)
     }
     else    //req.number of characters fits in
     {
-        if (e >= 0) {
+        if (ne >= 0) {
             //the whole num
             token t = num_formatter<int64>::u_insert(p, dste - p, (int64)d, 10, 0, 0, ALIGN_NUM_LEFT);
             p += t.len();
@@ -209,11 +213,10 @@ char* append_float(char* dst, char* dste, double d, int nfrac)
                 *p++ = '0';
         }
 
-        if (p < dste && nfrac != 0) {
+        if (p + 1 < dste && nfrac != 0) {
             *p++ = '.';
+            p = append_fraction(p, dste, d, nfrac, false);
         }
-
-        p = append_fraction(p, dste, d, nfrac, false);
     }
 
     return p;

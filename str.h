@@ -458,7 +458,7 @@ public:
     template<int WIDTH, int ALIGN>
     charstr& operator = (const float_fmt<WIDTH, ALIGN>& v) {
         if (WIDTH == 0)
-            append_float(v.value, v.nfrac);
+            append_double(v.value, v.nfrac);
         else {
             char* buf = get_buf(WIDTH);
             charstrconv::append_fixed(buf, buf + WIDTH, v.value, v.nfrac, (EAlignNum)ALIGN);
@@ -564,7 +564,7 @@ public:
 #endif
 
     charstr& operator += (float d) { append_float(d, 6); return *this; }
-    charstr& operator += (double d) { append_float(d, 10); return *this; }
+    charstr& operator += (double d) { append_double(d, 10); return *this; }
 
     ///Formatted numbers - int/uint
     template<int WIDTH, uint BASE, int ALIGN, class NUM>
@@ -577,7 +577,7 @@ public:
     template<int WIDTH, int ALIGN>
     charstr& operator += (const float_fmt<WIDTH, ALIGN>& v) {
         if (WIDTH == 0)
-            append_float(v.value, v.nfrac);
+            append_double(v.value, v.nfrac);
         else {
             char* buf = get_append_buf(WIDTH);
             charstrconv::append_fixed(buf, buf + WIDTH, v.value, v.nfrac, (EAlignNum)ALIGN);
@@ -637,7 +637,7 @@ public:
     template<int WIDTH, int ALIGN>
     charstr& operator << (const float_fmt<WIDTH, ALIGN>& v) {
         if (WIDTH == 0)
-            append_float(v.value, v.nfrac);
+            append_double(v.value, v.nfrac);
         else {
             char* buf = get_append_buf(WIDTH);
             charstrconv::append_fixed(buf, buf + WIDTH, v.value, v.nfrac, (EAlignNum)ALIGN);
@@ -892,10 +892,22 @@ public:
 
     ///Append floating point number
     /// @param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
-    void append_float(double d, int nfrac, uints maxsize = 0)
+    void append_double(double d, int nfrac, uints maxsize = 0)
     {
         if (!maxsize)
-            maxsize = std::abs(ints(nfrac)) + 4;
+            maxsize = 16;
+        char* buf = get_append_buf(maxsize);
+        char* end = charstrconv::append_float(buf, buf + maxsize, d, nfrac);
+
+        resize(end - ptr());
+    }
+
+    ///Append floating point number
+    /// @param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
+    void append_float(float d, int nfrac, uints maxsize = 0)
+    {
+        if (!maxsize)
+            maxsize = 10;
         char* buf = get_append_buf(maxsize);
         char* end = charstrconv::append_float(buf, buf + maxsize, d, nfrac);
 
