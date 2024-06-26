@@ -125,11 +125,20 @@ public:
     }
 
     ///Write data
-    /// @return position in buffer
+    /// @return new position in buffer
     template<class T>
     uints write(const T& v) {
         T* p = pad_alloc<T>();
         *p = v;
+        return (uint8*)p - _tstr.ptr();
+    }
+
+    ///Write array of elements
+    /// @return new position in buffer
+    template<class T>
+    uints write_array(const T* v, uints n) {
+        T* p = pad_alloc<T>(n);
+        for (uints i = 0; i < n; ++i) p[i] = v[i];
         return (uint8*)p - _tstr.ptr();
     }
 
