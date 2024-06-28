@@ -257,8 +257,8 @@ public:
     /// @return pointer to the first item
     template <class T>
     const T* fetch_varray(uints& nread) {
-        uints n = varint<uints>();
-        return fetch_raw_array<T>(n);
+        nread = varint<uints>();
+        return fetch_raw_array<T>(nread);
     }
 
     template <class T, class COUNT=uints>
