@@ -142,17 +142,17 @@ public:
         return (uint8*)p - _tstr.ptr();
     }
 
+    ///Write typed array prefixed with count
     template <class T>
-    uints write_varray(const T* v, uints n) {
+    uints write_varray(const T* p, uints n) {
         write_varint(n);
-        return write_raw_array(v, n);
+        return write_raw_array(p, n);
     }
 
+    ///Write typed array prefixed with count
     template <class T, class COUNT=uints>
     uints write_varray(const dynarray<T, COUNT>& v) {
-        uints n = v.size();
-        write_varint(n);
-        return write_raw_array(v.ptr(), n);
+        return write_varray(v.ptr(), v.sizes());
     }
 
     ///Allocate space for an array of n elements, padding for type T
