@@ -129,6 +129,10 @@ template<> class to_v8<T> { public: \
 }; \
 template<> class from_v8<T> { public: \
     static bool write( v8::Handle<v8::Value> src, T& res ) {\
+        if(src->IsArray() || src->IsObject() || src->IsUndefined() || src->IsNull() || src->IsFunction())\
+        {\
+            return false;\
+        }\
         auto mv = src->V8T##Value(v8::Isolate::GetCurrent()->GetCurrentContext()); \
         if (mv.IsJust()) res = (T)mv.FromJust(); \
         return mv.IsJust(); } \

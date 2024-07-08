@@ -112,50 +112,72 @@ public:
     }
 
 #ifdef COID_VARIADIC_TEMPLATES
-    template<class T, class...Ps>
+    template <class T, class...Ps>
     T& push(Ps&&... ps) {
         return *new(pad_alloc<T>()) T(std::forward<Ps>(ps)...);
     }
 #endif //COID_VARIADIC_TEMPLATES
 
-    template<class T>
+    template <class T>
     binstring& operator << (const T& v) {
         *pad_alloc<T>() = v;
         return *this;
     }
 
     ///Write data
-    /// @return position in buffer
-    template<class T>
+    /// @return new position in buffer
+    template <class T>
     uints write(const T& v) {
         T* p = pad_alloc<T>();
         *p = v;
         return (uint8*)p - _tstr.ptr();
     }
 
+    ///Write raw array of elements
+    /// @return new position in buffer
+    template <class T>
+    uints write_raw_array(const T* v, uints n) {
+        T* p = pad_alloc<T>(n);
+        for (uints i = 0; i < n; ++i) p[i] = v[i];
+        return (uint8*)p - _tstr.ptr();
+    }
+
+    ///Write typed array prefixed with count
+    template <class T>
+    uints write_varray(const T* p, uints n) {
+        write_varint(n);
+        return write_raw_array(p, n);
+    }
+
+    ///Write typed array prefixed with count
+    template <class T, class COUNT=uints>
+    uints write_varray(const dynarray<T, COUNT>& v) {
+        return write_varray(v.ptr(), v.sizes());
+    }
+
     ///Allocate space for an array of n elements, padding for type T
     /// @return pointer to the allocated buffer
     /// @note for n=0 applies only the padding
-    template<class T>
+    template <class T>
     T* alloc_array(uints n) {
         return pad_alloc<T>(n);
     }
 
     ///Write padding needed if T was written afterwards
-    template<class T>
+    template <class T>
     uints write_padding() {
         T* p = pad_alloc<T>(0);
         return (uint8*)p - _tstr.ptr();
     }
 
-    template<class T>
+    template <class T>
     void write_to_offset(uints offset, const T& v) {
         DASSERTN(offset + sizeof(T) <= _tstr.size());
         *(T*)(_tstr.ptr() + offset) = v;
     }
 
     ///Append string with optionally specified size type (uint8, uint16, uint32 ...)
-    template<class SIZE COID_DEFAULT_OPT(uint)>
+    template <class SIZE COID_DEFAULT_OPT(uint)>
     binstring& append_string(const token& tok) {
         uints size = write_size<SIZE>(tok.len());
         _tstr.add_bin_from((const uint8*)tok.ptr(), size);
@@ -163,7 +185,7 @@ public:
     }
 
     ///Append string with optionally specified size type (uint8, uint16, uint32 ...)
-    template<class SIZE COID_DEFAULT_OPT(uint)>
+    template <class SIZE COID_DEFAULT_OPT(uint)>
     binstring& append_string(const char* czstr) {
         token tok(czstr);
         uints size = write_size<SIZE>(tok.len());
@@ -172,7 +194,7 @@ public:
     }
 
     ///Append string with optionally specified size type (uint8, uint16, uint32 ...)
-    template<class SIZE COID_DEFAULT_OPT(uint)>
+    template <class SIZE COID_DEFAULT_OPT(uint)>
     binstring& append_string(const charstr& str) {
         uints size = write_size<SIZE>(str.len());
         _tstr.add_bin_from((const uint8*)str.ptr(), size);
@@ -189,7 +211,7 @@ public:
     }
 
     ///Write number as a varint
-    template<class T>
+    template <class T>
     binstring& write_varint(T num) {
         uint8 buf[(8 * sizeof(T)) / 7 + 1];
         uint8* pb = buf;
@@ -218,19 +240,36 @@ public:
     }
 
     ///Fetch reference to a typed value from the binary stream
-    template<class T>
+    template <class T>
     const T& fetch() {
         return *seek<std::remove_reference_t<T>>(_offset);
     }
 
-    ///Fetch pointer to a typed array
-    template<class T>
-    const T* fetch_array(uints n) {
+    ///Fetch pointer to a raw typed array with n items
+    /// @return pointer to the first item
+    template <class T>
+    const T* fetch_raw_array(uints n) {
         return seek<std::remove_reference_t<T>>(_offset, n);
     }
 
+    /// @brief Fetch pointer to a typed array that is prefixed with count
+    /// @param n [out] receives number of items
+    /// @return pointer to the first item
+    template <class T>
+    const T* fetch_varray(uints& nread) {
+        nread = varint<uints>();
+        return fetch_raw_array<T>(nread);
+    }
+
+    template <class T, class COUNT=uints>
+    void read_varray(dynarray<T, COUNT>& a) {
+        uints n = 0;
+        const T* p = fetch_varray<T>(n);
+        a.copy_bin_from(p, n);
+    }
+
     ///Read (copy) data into target variable
-    template<class T>
+    template <class T>
     T& read(T& dst) {
         return dst = fetch<T>();
     }
@@ -243,8 +282,8 @@ public:
     }
 
     ///Fetch google protobuf varint from the binary stream
-    template<class T>
-    T varint()
+    template <class T>
+    T read_varint()
     {
         const uint8* buffer = _tstr.ptr() + _offset;
 
@@ -266,14 +305,16 @@ public:
             : T((result >> 1) ^ -int64(result & 1));
     }
 
+    template <class T> T varint() { return read_varint<T>(); }
+
     ///Return pointer to data of given type, given a starting offset in buffer
-    template<class T>
+    template <class T>
     T* data(uints offset) {
         return seek<T>(offset);
     }
 
     ///Fetch string from the binary stream
-    template<class SIZE COID_DEFAULT_OPT(uint)>
+    template <class SIZE COID_DEFAULT_OPT(uint)>
     token string() {
         const SIZE& size = fetch<SIZE>();
         if (_tstr.size() - _offset < size)
@@ -344,7 +385,7 @@ public:
         _tstr.swap(ref._tstr);
     }
 
-    template<class COUNT>
+    template <class COUNT>
     binstring& swap(dynarray<char, COUNT>& ref)
     {
         _tstr.swap(reinterpret_cast<dynarray<uint8, COUNT>&>(ref));
@@ -352,7 +393,7 @@ public:
         return *this;
     }
 
-    template<class COUNT>
+    template <class COUNT>
     binstring& swap(dynarray<uchar, COUNT>& ref)
     {
         _tstr.swap(ref);
@@ -434,7 +475,7 @@ public:
 
 protected:
 
-    template<class S>
+    template <class S>
     uints write_size(uints size) {
         static_assert(std::is_unsigned<S>::value, "unsigned type expected");
         DASSERTN(size <= std::numeric_limits<S>::max());
@@ -443,7 +484,7 @@ protected:
         return size;
     }
 
-    template<class T>
+    template <class T>
     T* pad_alloc(uints n = 1) {
         uints size = _tstr.size();
         uints align = align_value_up(size, _packing < alignof(T) ? _packing : alignof(T)) - size;
@@ -451,7 +492,7 @@ protected:
         return reinterpret_cast<T*>(_tstr.add(align + n * sizeof(T)) + align);
     }
 
-    template<class T>
+    template <class T>
     T* seek(uints& offset, uints count = 1) {
         uints off = align_value_up(offset, _packing < alignof(T) ? _packing : alignof(T));
         uints size = count * sizeof(T);
