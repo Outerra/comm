@@ -635,6 +635,9 @@ public:
         return c;
     }
 
+    /// @brief Get range containing all elements equivalent to key
+    /// @param k - key
+    /// @return Pair of interator to [first, last] or [end, end] if key not found 
     std::pair<iterator, iterator> equal_range(const LOOKUP& k)
     {
         uints slot;
@@ -788,7 +791,7 @@ public:
     iterator insert_equal(const VAL& v)
     {
         adjust(1);
-        return iterator(*_copy_insert_equal(v), *this);
+        return iterator(*__insert_equal(v), *this);
     }
 
     void insert_unique(const VAL* f, const VAL* l)
@@ -796,7 +799,7 @@ public:
         size_t n = l - f;
         adjust(n);
         for (; n > 0; --n, ++f)
-            _copy_insert_unique(*f);
+            __insert_unique(*f);
     }
 
     void insert_equal(const VAL* f, const VAL* l)
@@ -804,7 +807,7 @@ public:
         size_t n = l - f;
         adjust(n);
         for (; n > 0; --n, ++f)
-            _copy_insert_equal(*f);
+            __insert_equal(*f);
     }
 
     void insert_unique(const_iterator f, const_iterator l)
@@ -814,7 +817,7 @@ public:
         adjust(n);
 
         for (; n > 0; --n, ++f)
-            _copy_insert_unique(*f);
+            __insert_unique(*f);
     }
 
     void insert_equal(const_iterator f, const_iterator l)
@@ -824,7 +827,7 @@ public:
         adjust(n);
 
         for (; n > 0; --n, ++f)
-            _copy_insert_equal(*f);
+            __insert_equal(*f);
     }
 
 
