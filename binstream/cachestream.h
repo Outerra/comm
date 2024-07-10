@@ -94,7 +94,7 @@ public:
         std::swap(eois, b.eois);
     }
 
-    virtual uint binstream_attributes(bool in0out1) const
+    virtual uint binstream_attributes(bool in0out1) const override
     {
         return _bin->binstream_attributes(in0out1) | fATTR_READ_UNTIL;
     }
@@ -147,7 +147,7 @@ public:
     }
 
 
-    virtual opcd write_raw(const void* p, uints& len)
+    virtual opcd write_raw(const void* p, uints& len) override
     {
         if (_cot.reserved_total() == 0)
             _cot.reserve(DEFAULT_CACHE_SIZE, false);
@@ -195,7 +195,7 @@ public:
         return e;
     }
 
-    virtual opcd read_raw(void* p, uints& len)
+    virtual opcd read_raw(void* p, uints& len) override
     {
         opcd e;
 
@@ -279,12 +279,12 @@ public:
             _bin->flush();
     }
 
-    virtual void flush()
+    virtual void flush() override
     {
         flush_cache(true);
     }
 
-    virtual void acknowledge(bool eat = false)
+    virtual void acknowledge(bool eat = false) override
     {
         if (!eat)
         {
@@ -298,7 +298,7 @@ public:
         eois = false;
     }
 
-    virtual void reset_read()
+    virtual void reset_read() override
     {
         _cinread = _tcinread = 0;
         _cin.reset();
@@ -307,7 +307,7 @@ public:
         if (_bin) _bin->reset_read();
     }
 
-    virtual void reset_write()
+    virtual void reset_write() override
     {
         _cot.reset();
         _tcotwritten = 0;

@@ -52,42 +52,44 @@ class packstream : public binstream
 public:
     virtual ~packstream() { }
 
-    virtual uint binstream_attributes( bool in0out1 ) const
+    virtual uint binstream_attributes(bool in0out1) const override
     {
         return 0;
     }
 
-    virtual opcd write_raw( const void* p, uints& len ) = 0;
-    virtual opcd read_raw( void* p, uints& len ) = 0;
+    virtual opcd write_raw(const void* p, uints& len) = 0;
+    virtual opcd read_raw(void* p, uints& len) = 0;
 
-    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS )
-    {   return ersUNAVAILABLE; }
-
-    virtual opcd bind( binstream& bin, int io=0 )
+    virtual opcd read_until(const substring& ss, binstream* bout, uints max_size = UMAXS) override
     {
-        if( io<0 )
+        return ersUNAVAILABLE;
+    }
+
+    virtual opcd bind(binstream& bin, int io = 0) override
+    {
+        if (io < 0)
             _in = &bin;
-        else if( io>0 )
+        else if (io > 0)
             _out = &bin;
         else
             _in = _out = &bin;
         return 0;
     }
 
-    virtual bool is_open() const        { return _in->is_open(); }
-    virtual void flush()                = 0;
-    virtual void acknowledge (bool eat=false) = 0;
+    virtual bool is_open() const override { return _in->is_open(); }
+    virtual void flush() = 0;
+    virtual void acknowledge(bool eat = false) = 0;
 
-    virtual opcd close( bool linger=false ) = 0;
+    virtual opcd close(bool linger = false) = 0;
 
-    packstream() : _in(0),_out(0)       { }
-    packstream( binstream* bin, binstream* bout )
+    packstream() : _in(0), _out(0) { }
+    packstream(binstream* bin, binstream* bout)
     {
         _in = bin;
         _out = bout;
     }
 
-    packstream( binstream& bin )
+    packstream(binstream& bin)
     {
         _in = _out = &bin;
     }

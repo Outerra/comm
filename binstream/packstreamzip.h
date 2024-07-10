@@ -57,25 +57,25 @@ public:
         deflateEnd(&_strout);
     }
 
-    virtual uint binstream_attributes(bool in0out1) const
+    virtual uint binstream_attributes(bool in0out1) const override
     {
         return 0;
     }
 
-    virtual opcd peek_read(uint timeout) {
+    virtual opcd peek_read(uint timeout) override {
         if (timeout)  return ersINVALID_PARAMS;
 
         uints n = 0;
         return read_raw(0, n);
     }
 
-    virtual opcd peek_write(uint timeout) { return 0; }
+    virtual opcd peek_write(uint timeout) override { return 0; }
 
-    virtual bool is_open() const { return _in->is_open(); }
-    virtual void flush() { packed_flush(); _out->flush(); }
-    virtual void acknowledge(bool eat = false) { packed_ack(eat); _in->acknowledge(eat); }
+    virtual bool is_open() const override { return _in->is_open(); }
+    virtual void flush() override { packed_flush(); _out->flush(); }
+    virtual void acknowledge(bool eat = false) override { packed_ack(eat); _in->acknowledge(eat); }
 
-    virtual opcd close(bool linger = false)
+    virtual opcd close(bool linger = false) override
     {
         if (_rblockin.size() > 0)
             packed_ack(false);
@@ -134,7 +134,7 @@ protected:
 
 public:
     ///
-    virtual opcd write_raw(const void* p, uints& len)
+    virtual opcd write_raw(const void* p, uints& len) override
     {
         if (len == 0)
             return 0;
@@ -181,7 +181,7 @@ public:
     }
 
     ///
-    virtual opcd read_raw(void* p, uints& len)
+    virtual opcd read_raw(void* p, uints& len) override
     {
         if (len == 0)
             return 0;
@@ -232,13 +232,13 @@ public:
     }
 
 
-    virtual void reset_read()
+    virtual void reset_read() override
     {
         _rblockin.reset();
         inflateReset(&_strin);
     }
 
-    virtual void reset_write()
+    virtual void reset_write() override
     {
         _wblockout.reset();
         deflateReset(&_strout);

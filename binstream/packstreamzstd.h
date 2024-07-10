@@ -57,31 +57,31 @@ public:
         close();
     }
 
-    virtual uint binstream_attributes(bool in0out1) const
+    virtual uint binstream_attributes(bool in0out1) const override
     {
         return 0;
     }
 
-    virtual opcd peek_read(uint timeout) {
+    virtual opcd peek_read(uint timeout) override {
         if (timeout)  return ersINVALID_PARAMS;
 
         uints n = 0;
         return read_raw(0, n);
     }
 
-    virtual opcd peek_write(uint timeout) { return 0; }
+    virtual opcd peek_write(uint timeout) override { return 0; }
 
-    virtual bool is_open() const { return _in->is_open(); }
-    virtual void flush() {
+    virtual bool is_open() const override { return _in->is_open(); }
+    virtual void flush() override {
         packed_flush();
         _out->flush();
     }
-    virtual void acknowledge(bool eat = false) {
+    virtual void acknowledge(bool eat = false) override {
         packed_ack(eat);
         _in->acknowledge(eat);
     }
 
-    virtual opcd close(bool linger = false)
+    virtual opcd close(bool linger = false) override
     {
         if (_in)
             packed_ack(true);
@@ -101,7 +101,7 @@ public:
     {}
 
     ///
-    virtual opcd write_raw(const void* p, uints& len)
+    virtual opcd write_raw(const void* p, uints& len) override
     {
         if (len == 0)
             return 0;
@@ -110,12 +110,12 @@ public:
         if (size < 0)
             return ersFAILED;
         len -= size;
-        
+
         return 0;
     }
 
     ///
-    virtual opcd read_raw(void* p, uints& len)
+    virtual opcd read_raw(void* p, uints& len) override
     {
         if (len == 0)
             return 0;
@@ -129,12 +129,12 @@ public:
     }
 
 
-    virtual void reset_read()
+    virtual void reset_read() override
     {
         _zstd.reset_read();
     }
 
-    virtual void reset_write()
+    virtual void reset_write() override
     {
         _zstd.reset_write();
     }

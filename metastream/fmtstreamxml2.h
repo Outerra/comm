@@ -159,7 +159,7 @@ public:
 
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
-    opcd write(const void* p, type t)
+    opcd write(const void* p, type t) override
     {
         if (!_sesinitw)
         {
@@ -353,7 +353,7 @@ public:
 
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
-    opcd read(void* p, type t)
+    opcd read(void* p, type t) override
     {
         if (!_sesinitr)
         {
@@ -886,4 +886,4 @@ protected:
 COID_NAMESPACE_END
 
 
-#endif  // ! __COID_COMM_FMTSTREAMXML2__HEADER_FILE__ 
+#endif  // ! __COID_COMM_FMTSTREAMXML2__HEADER_FILE__

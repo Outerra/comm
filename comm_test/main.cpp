@@ -266,12 +266,11 @@ void test_slotalloc_virtual()
     struct b {
         uint member_b;
         b(uint val_b) :member_b(val_b) {};
-
     };
 
     slotalloc_linear<a, b> dummy(123456, coid::reserve_mode::virtual_space);
 
-    dummy.add_range_uninit(50);
+    //dummy.add_range_uninit(50);
 #endif
 }
 

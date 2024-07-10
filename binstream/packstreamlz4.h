@@ -43,7 +43,7 @@
 
 extern "C" {
 #include "../coder/lz4/lz4.h"
-//#include "../coder/lz4/lz4hc.h"
+    //#include "../coder/lz4/lz4hc.h"
 }
 
 COID_NAMESPACE_BEGIN
@@ -52,50 +52,50 @@ COID_NAMESPACE_BEGIN
 ///
 class packstreamlz4 : public packstream
 {
-    static const int BLOCKSIZE = 1024*1024;
+    static const int BLOCKSIZE = 1024 * 1024;
 
 public:
     virtual ~packstreamlz4()
     {
-        if(_outbuf.size())
+        if (_outbuf.size())
             flush();
     }
 
-    virtual uint binstream_attributes( bool in0out1 ) const
+    virtual uint binstream_attributes(bool in0out1) const override
     {
         return 0;
     }
 
-    virtual opcd peek_read( uint timeout ) override {
+    virtual opcd peek_read(uint timeout) override {
         return ersNO_MORE;
     }
 
-    virtual opcd peek_write( uint timeout ) override {
+    virtual opcd peek_write(uint timeout) override {
         return 0;
     }
 
-    virtual void reset_read() {}
-    virtual void reset_write()
+    virtual void reset_read() override {}
+    virtual void reset_write() override
     {
         _out->reset_write();
         _outbuf.reset();
     }
 
-    virtual bool is_open() const        { return _in && _in->is_open(); }
+    virtual bool is_open() const override { return _in && _in->is_open(); }
 
-    virtual void flush()
+    virtual void flush() override
     {
-        if(_outbuf.size())
+        if (_outbuf.size())
             _out->xwrite_raw(_outbuf.ptr(), _outbuf.byte_size());
         _outbuf.reset();
 
         _out->flush();
     }
-    virtual void acknowledge (bool eat=false)
+    virtual void acknowledge(bool eat = false) override
     {
     }
 
-    virtual opcd close( bool linger=false )
+    virtual opcd close(bool linger = false) override
     {
         flush();
         return 0;
@@ -105,22 +105,22 @@ public:
     {
         LZ4_resetStream(&_stream);
     }
-    packstreamlz4( binstream* bin, binstream* bout )
-        : packstream(bin,bout)
+    packstreamlz4(binstream* bin, binstream* bout)
+        : packstream(bin, bout)
     {
         LZ4_resetStream(&_stream);
     }
 
     ///
-    virtual opcd write_raw( const void* p, uints& len )
+    virtual opcd write_raw(const void* p, uints& len) override
     {
-        if(len == 0)
+        if (len == 0)
             return 0;
 
-        if(_outbuf.size() == 0)
+        if (_outbuf.size() == 0)
             init_wstream();
 
-        while(len > INT_MAX) {
+        while (len > INT_MAX) {
             int n = INT_MAX;
             write_block(p, n);
             p = (uint8*)p + n;
@@ -132,7 +132,7 @@ public:
     }
 
     ///
-    virtual opcd read_raw( void* p, uints& len )
+    virtual opcd read_raw(void* p, uints& len) override
     {
         return ersNOT_IMPLEMENTED;
     }
@@ -144,17 +144,18 @@ protected:
         LZ4_resetStream(&_stream);
     }
 
-    void write_block( const void* data, int size )
+    void write_block(const void* data, int size)
     {
         int bs = LZ4_compressBound(size);
         _outbuf.add(bs);
-        
-        int written = LZ4_compress_continue(&_stream,
+
+        int written = LZ4_compress_fast_continue(&_stream,
             (const char*)data,
             (char*)_outbuf.ptr(),
-            size);
+            size,
+            LZ4_compressBound(size), 1);
 
-        _outbuf.resize(written-bs);
+        _outbuf.resize(written - bs);
     }
 
     void read_block()

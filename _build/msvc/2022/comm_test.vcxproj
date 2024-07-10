@@ -263,7 +263,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\..\include;$(ProjectDir)..\..\..\..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\..\include;$(ProjectDir)..\..\..\..\;$(ProjectDir)..\..\..\..\zlib;$(ProjectDir)..\..\..\..\zstd\lib;$(ProjectDir)..\..\..\..\bzip2;$(ProjectDir)..\..\..\..\minilzo</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -293,7 +293,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\..\include;$(ProjectDir)..\..\..\..\;$(ProjectDir)..\..\..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\..\include;$(ProjectDir)..\..\..\..\;$(ProjectDir)..\..\..\..\zlib;$(ProjectDir)..\..\..\..\zstd\lib;$(ProjectDir)..\..\..\..\bzip2;$(ProjectDir)..\..\..\..\minilzo</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -324,7 +324,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\..\include;$(ProjectDir)..\..\..\..\;$(ProjectDir)..\..\..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\..\include;$(ProjectDir)..\..\..\..\;$(ProjectDir)..\..\..\..\zlib;$(ProjectDir)..\..\..\..\zstd\lib;$(ProjectDir)..\..\..\..\bzip2;$(ProjectDir)..\..\..\..\minilzo</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -354,7 +354,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\..\include;$(ProjectDir)..\..\..\..\;$(ProjectDir)..\..\..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\..\include;$(ProjectDir)..\..\..\..\;$(ProjectDir)..\..\..\..\zlib;$(ProjectDir)..\..\..\..\zstd\lib;$(ProjectDir)..\..\..\..\bzip2;$(ProjectDir)..\..\..\..\minilzo</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -388,6 +388,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\comm_test\binstream.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\atomic-test.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\job.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\malloc.cpp" />

@@ -66,16 +66,10 @@
     <ClInclude Include="..\..\..\binstream\binstreambuf.h">
       <Filter>binstream</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\binstream\binstreamsegbuf.h">
-      <Filter>binstream</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\binstream\bstype.h">
       <Filter>binstream</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\binstream\cachestream.h">
-      <Filter>binstream</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\binstream\circularstreambuf.h">
       <Filter>binstream</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\binstream\container.h">
@@ -90,43 +84,10 @@
     <ClInclude Include="..\..\..\binstream\enc_hexstream.h">
       <Filter>binstream</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\binstream\exestream.h">
-      <Filter>binstream</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\binstream\filestream.h">
       <Filter>binstream</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\binstream\forkstream.h">
-      <Filter>binstream</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\binstream\httpstream.h">
-      <Filter>binstream</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\binstream\httpstreamcoid.h">
-      <Filter>binstream</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\binstream\httpstreamtunnel.h">
-      <Filter>binstream</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\binstream\inoutstream.h">
-      <Filter>binstream</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\binstream\netstream.h">
-      <Filter>binstream</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\binstream\netstreamcoid.h">
-      <Filter>binstream</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\binstream\netstreamhttp.h">
-      <Filter>binstream</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\binstream\netstreamtcp.h">
-      <Filter>binstream</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\binstream\netstreamudp.h">
-      <Filter>binstream</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\binstream\netstreamudpbuf.h">
       <Filter>binstream</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\binstream\nullstream.h">
@@ -147,13 +108,7 @@
     <ClInclude Include="..\..\..\binstream\stlstream.h">
       <Filter>binstream</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\binstream\txtcachestream.h">
-      <Filter>binstream</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\binstream\txtstream.h">
-      <Filter>binstream</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\binstream\txtstreamhtml.h">
       <Filter>binstream</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\crypt\sha1.h">
@@ -169,9 +124,6 @@
       <Filter>metastream</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\metastream\fmtstreamjson.h">
-      <Filter>metastream</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\metastream\fmtstreamxml.h">
       <Filter>metastream</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\metastream\fmtstreamxml2.h">
@@ -380,6 +332,9 @@
       <Filter>alloc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\binstream\container_dynarray.h">
+      <Filter>binstream</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\binstream\filestreamzstd.h">
       <Filter>binstream</Filter>
     </ClInclude>
   </ItemGroup>
