@@ -2634,8 +2634,8 @@ private:
     const char* _container_default_value_type = 0;
 
     token _cur_variable_name;
-    MetaDesc::stream_func _cur_stream_fn;
-    int _cur_variable_offset;
+    MetaDesc::stream_func _cur_stream_fn = 0;
+    int _cur_variable_offset = 0;
 
     int _sesopen = 0;                   //< flush(>0) or ack(<0) session currently open
 
