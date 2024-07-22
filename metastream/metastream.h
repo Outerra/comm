@@ -432,18 +432,6 @@ public:
         return member_fixed_size_array(name, v, optional, false);
     }
 
-    ///Define a member variable referenced by a pointer (non-streamable) except const char*
-    /// @param name variable name, used as a key in output formats
-    /// @param v pointer to variable to read/write to
-    /// @param streamed false variable should not be streamed, just a part of meta description, can point to 1..N items (default)
-    /// @param          true variable is indirectly referenced to by a pointer
-    /// @note use member_optional or member_type for special handling when the pointer has to be allocated etc.
-    template<typename T, typename = std::enable_if_t<!std::is_same<const char*, T*>::value>>
-    bool member(const token& name, T*& v, bool streamed = false)
-    {
-        return member_ptr(name, v, streamed);
-    }
-
     ///Define a member variable referenced by a pointer, assumed to be already allocated when streaming to/from
     /// @param name variable name, used as a key in output formats
     /// @param v pointer to variable to read/write to
@@ -466,11 +454,12 @@ public:
         return false;
     }
 
-    ///Define a raw pointer member variable to 1..N objects
+    ///Define a member variable referenced by a pointer (non-streamable) except const char*
     /// @param name variable name, used as a key in output formats
     /// @param v pointer to variable to read/write to
-    /// @param streamed false if variable should not be streamed, just a part of meta description
-    /// @return true if value was read or written and no default was used, false in meta phase
+    /// @param streamed false variable should not be streamed, just a part of meta description, can point to 1..N items (default)
+    /// @param          true variable is indirectly referenced to by a pointer
+    /// @note use member_optional or member_type for special handling when the pointer has to be allocated etc.
     template<typename T>
     bool member_ptr(const token& name, T*& v, bool streamed)
     {
@@ -1060,19 +1049,6 @@ public:
         return member_fixed_size_array(name, v, optional, true);
     }
 
-    ///Define a non-member variable referenced by a pointer (non-streamable), except const char*
-    /// @param name variable name, used as a key in output formats
-    /// @param v pointer to variable to read/write to
-    /// @param streamed false variable should not be streamed, just a part of meta description, can point to 1..N items (default)
-    /// @param          true variable is indirectly referenced to by a pointer
-    /// @return true if value was read or written and no default was used, false in meta phase
-    /// @note use member_optional or member_type for special handling when the pointer has to be allocated etc.
-    template<typename T, typename = std::enable_if_t<!std::is_same<const char*, T*>::value>>
-    bool nonmember(const token& name, T*& v, bool streamed = false)
-    {
-        return nonmember_ptr(name, v, streamed);
-    }
-
     ///Define an optional non-member variable, doesn't get read if it wasn't present in the input stream
     /// @param name variable name, used as a key in output formats
     /// @return true if value was read or written and no default was used, false in meta phase
@@ -1134,11 +1110,13 @@ public:
         return *this;
     }
 
-    ///Define a raw pointer non-member variable to 1..N objects
+    ///Define a non-member variable referenced by a pointer (non-streamable), except const char*
     /// @param name variable name, used as a key in output formats
     /// @param v pointer to variable to read/write to
-    /// @param streamed false if variable should not be streamed, just a part of meta description
+    /// @param streamed false variable should not be streamed, just a part of meta description, can point to 1..N items (default)
+    /// @param          true variable is indirectly referenced to by a pointer
     /// @return true if value was read or written and no default was used, false in meta phase
+    /// @note use member_optional or member_type for special handling when the pointer has to be allocated etc.
     template<typename T>
     bool nonmember_ptr(const token& name, T*& v, bool streamed)
     {
