@@ -1530,7 +1530,7 @@ public:
         return *this;
     }
 
-protected:
+private:
 
     ////////////////////////////////////////////////////////////////////////////////
     /// @{ methods to physically stream the data utilizing the metastream
@@ -1934,7 +1934,7 @@ public:
 
     /// @}
 
-        ///Reset cache and lead it into an active or inactive state
+    ///Reset cache and lead it into an active or inactive state
     void cache_reset(bool open)
     {
         _cache.reset();
@@ -2150,7 +2150,7 @@ public:
 
     ////////////////////////////////////////////////////////////////////////////////
     /// @{ meta_* functions deal with building the description tree
-protected:
+private:
 
     MetaDesc::Var* meta_fill_parent_variable(MetaDesc* d)
     {
@@ -2943,7 +2943,7 @@ private:
     void warn_obsolete(const token& name);
 
     ////////////////////////////////////////////////////////////////////////////////
-protected:
+private:
 
     static const bool READ_MODE = true;
     static const bool WRITE_MODE = false;
