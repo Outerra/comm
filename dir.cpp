@@ -94,7 +94,7 @@ charstr directory::create_tmp_dir(const token& prefix)
 {
     charstr tmpdir = get_tmp_dir();
 
-    directory::treat_trailing_separator(tmpdir, true);
+    directory::treat_trailing_separator(tmpdir, separator());
 
     timet now = timet::now();
     int offs = now & 0xffffffff;

@@ -327,7 +327,7 @@ public:
     {
         if (!_root_path) {
             _root_path = path;
-            directory::treat_trailing_separator(_root_path, true);
+            directory::treat_trailing_separator(_root_path, directory::separator());
         }
 
         if (logfn)

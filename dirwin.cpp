@@ -250,7 +250,7 @@ charstr directory::get_cwd()
     }
     buf.correct_size();
 
-    treat_trailing_separator(buf, true);
+    treat_trailing_separator(buf, separator());
     return buf;
 }
 
@@ -355,7 +355,7 @@ charstr directory::get_home_dir()
     CloseHandle(hToken);
 
     path.correct_size();
-    treat_trailing_separator(path, true);
+    treat_trailing_separator(path, separator());
     return path;
 }
 

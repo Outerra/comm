@@ -2311,6 +2311,18 @@ inline token token::rebased(const charstr& from, const charstr& to) const
     return token(to.ptr() + offset, len());
 }
 
+inline token token::rebased(const token& from, const charstr& to) const
+{
+    if (is_null())
+        return *this;
+
+    DASSERT(_ptr >= from.ptr() && _pte <= from.ptre());
+    uints offset = _ptr - from.ptr();
+    DASSERT(offset + len() <= to.len());
+
+    return token(to.ptr() + offset, len());
+}
+
 inline token token::rebased(const char* from, const char* to) const
 {
     if (is_null())

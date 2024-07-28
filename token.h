@@ -269,7 +269,10 @@ struct token
     uint replace(const token& from, const token& to, charstr& dst, bool icase = false) const;
 
     ///Return a rebased token pointing into one string to point into the same region in another string
+    /// @param from original string base storage location
+    /// @param to new string storage base location
     [[nodiscard]] token rebased(const charstr& from, const charstr& to) const;
+    [[nodiscard]] token rebased(const token& from, const charstr& to) const;
     [[nodiscard]] token rebased(const char* from, const char* to) const;
 
     token& rebase(const charstr& from, const charstr& to) { return *this = rebased(from, to); }

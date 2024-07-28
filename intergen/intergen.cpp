@@ -246,10 +246,10 @@ bool generate_ifc(File& file, Class& cls, Interface& ifc, timet mtime, charstr& 
 ////////////////////////////////////////////////////////////////////////////////
 void generate_ig(File& file, charstr& tdir, charstr& fdir)
 {
-    directory::treat_trailing_separator(tdir, true);
+    directory::treat_trailing_separator(tdir, directory::separator());
     uint tlen = tdir.len();
 
-    directory::treat_trailing_separator(fdir, true);
+    directory::treat_trailing_separator(fdir, directory::separator());
     uint flen = fdir.len();
 
     //find the date of the oldest mtg file
@@ -444,7 +444,7 @@ int main(int argc, char* argv[])
         out << "invalid template path\n";
         return -2;
     }
-    directory::treat_trailing_separator(tdir, true);
+    directory::treat_trailing_separator(tdir, directory::separator());
 
     charstr fdir = token(argv[1]).cut_left_group_back("\\/", token::cut_trait_return_with_sep_default_empty());
 
