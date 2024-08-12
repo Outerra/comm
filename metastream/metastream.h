@@ -752,7 +752,7 @@ public:
     /// @param write false if value should not be written
     /// @return true if value was read or written, always false in meta phase
     template<typename T>
-    bool member_override(const token& name, T& v, bool write = true)
+    bool member_optional(const token& name, T& v, bool write = true)
     {
         bool used = false;
 
@@ -772,7 +772,7 @@ public:
     /// @param name variable name, used as a key in output formats
     /// @return true if value was read or written, always false in meta phase
     template<typename T>
-    bool member_ooverride_nowriteempty(const token& name, T& v)
+    bool member_optional_nowriteempty(const token& name, T& v)
     {
         bool used = false;
 
@@ -793,7 +793,7 @@ public:
     /// @param defval default value for optional writing of values
     /// @return true if value was read or written and no default was used, always false in meta phase
     template<typename T, typename D>
-    bool member_override_nowritedef(const token& name, T& v, const D& defval)
+    bool member_optional_nowritedef(const token& name, T& v, const D& defval)
     {
         bool used = false;
 
@@ -816,7 +816,7 @@ public:
     /// @param get [const AsType& | AsType] function(T&) returning object to stream
     /// @return true if value was read or written, always false in meta phase
     template<typename AsType, typename T, typename FnIn, typename FnOut>
-    bool member_override_as_type(const token& name, T& v, FnIn set, FnOut get)
+    bool member_optional_as_type(const token& name, T& v, FnIn set, FnOut get)
     {
         bool used = false;
 
@@ -858,7 +858,7 @@ public:
     /// @param defval used to suppress writing the default value
     /// @return true if value was read or written and no default was used, always false in meta phase
     template<typename AsType, typename T, typename FnIn, typename FnOut>
-    bool member_override_as_type(const token& name, T& v, FnIn set, FnOut get, const T& defval)
+    bool member_optional_as_type(const token& name, T& v, FnIn set, FnOut get, const T& defval)
     {
         bool used = false;
 
@@ -895,44 +895,6 @@ public:
 
         return used;
     }
-
-
-    //@{ obsolete names, use member_override
-
-    ///Define an optional variable. On read, value doesn't get overwritten if it wasn't present in the input stream
-    /// @param name variable name, used as a key in output formats
-    /// @param write false if value should not be written
-    /// @return true if value was read or written, always false in meta phase
-    template<typename T>
-    bool member_optional(const token& name, T& v, bool write = true) { return member_override(name, v, write); }
-
-    ///Define an optional variable, not written if v.begin() == v.end(). On read, value doesn't get overwritten if it wasn't present in the input stream
-    /// @param name variable name, used as a key in output formats
-    /// @return true if value was read or written, always false in meta phase
-    template<typename T>
-    bool member_optional_nowriteempty(const token& name, T& v) { return member_override_nowriteempty(name, v); }
-
-    ///Define an optional variable, not written if equals the default. On read, value doesn't get overwritten if it wasn't present in the input stream
-    /// @param name variable name, used as a key in output formats
-    /// @param defval default value for optional writing of values
-    /// @return true if value was read or written and no default was used, always false in meta phase
-    template<typename T, typename D>
-    bool member_optional_nowritedef(const token& name, T& v, const D& defval) { return member_override_nowritedef(name, v, defval); }
-
-    /// Define an optional variable. On read, value doesn't get overwritten if it wasn't present in the input stream.
-    /// @note Streamed as a different type, with explicit set/get functors, not writing variable to output if equals the default
-    /// @param name variable name, used as a key in output formats
-    /// @param set void function(AsType&&, T&) receiving object from stream
-    /// @param get [const AsType& | AsType] function(T&) returning object to stream
-    /// @param defval used to suppress writing the default value
-    /// @return true if value was read or written and no default was used, always false in meta phase
-    template<typename AsType, typename T, typename FnIn, typename FnOut>
-    bool member_optional_as_type(const token& name, T& v, FnIn set, FnOut get) { return member_override_as_type<AsType>(name, v, set, get); }
-
-    template<typename AsType, typename T, typename FnIn, typename FnOut>
-    bool member_optional_as_type(const token& name, T& v, FnIn set, FnOut get, const T& defval) { return member_override_as_type<AsType>(name, v, set, get, defval); }
-
-    //@}
 
 
     ///Define a variable that can have a finite set of values, mapped to strings in output stream
@@ -1094,7 +1056,7 @@ public:
     /// @param name variable name, used as a key in output formats
     /// @return true if value was read or written, always false in meta phase
     template<typename T>
-    bool nonmember_override(const token& name, T& v)
+    bool nonmember_optional(const token& name, T& v)
     {
         bool used = false;
 
@@ -1116,7 +1078,7 @@ public:
     /// @param defval default value for optional writing of values
     /// @return true if value was read or written and no default was used, always false in meta phase
     template<typename T, typename D>
-    bool nonmember_override(const token& name, T& v, const D& defval)
+    bool nonmember_optional(const token& name, T& v, const D& defval)
     {
         bool used = false;
 
@@ -1131,24 +1093,6 @@ public:
 
         return used;
     }
-
-    //@{ obsolete names, use nonmeber_override
-
-    ///Define an optional non-member variable, doesn't get read if it wasn't present in the input stream
-    /// @param name variable name, used as a key in output formats
-    /// @return true if value was read or written, always false in meta phase
-    template<typename T>
-    bool nonmember_optional(const token& name, T& v) { return nonmember_override(name, v); }
-
-    ///Define an optional non-member variable, doesn't get read if it wasn't present in the input stream
-    /// @param name variable name, used as a key in output formats
-    /// @param defval default value for optional writing of values
-    /// @return true if value was read or written and no default was used, always false in meta phase
-    template<typename T, typename D>
-    bool nonmember_optional(const token& name, T& v, const D& defval) { return nonmember_override(name, v, defval); }
-
-    //@}
-
 
     ///Define a non-member variable referenced by a pointer, assumed to be already allocated when streaming to/from
     /// @param name variable name, used as a key in output formats
