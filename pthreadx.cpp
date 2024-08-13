@@ -195,7 +195,7 @@ void thread::join( thread_t tid )
     int result = pthread_join(tid);
     if (result != 0)
     {
-        DASSERT(0 && "error!");
+        DASSERT(0);
     }
 #endif
    

@@ -350,17 +350,17 @@ ref<coid::process> coid::process::create_process(const coid::charstr& process_ex
 
             if (!CreatePipe(&std_out_read_handle, &std_out_write_handle, &pipe_security_atttibs, pipe_buffer_size))
             {
-                throw coid::exception() << "Can't create pipe!" << "(Error: " << GetLastError() << ")";
+                throw coid::exception() << "Can't create pipe (Error: " << GetLastError() << ")";
             }
 
             if (!CreatePipe(&std_err_read_handle, &std_err_write_handle, &pipe_security_atttibs, pipe_buffer_size))
             {
-                throw coid::exception() << "Can't create pipe!" << "(Error: " << GetLastError() << ")";
+                throw coid::exception() << "Can't create pipe (Error: " << GetLastError() << ")";
             }
 
             if (!CreatePipe(&std_in_read_handle, &std_in_write_handle, &pipe_security_atttibs, pipe_buffer_size))
             {
-                throw coid::exception() << "Can't create pipe!" << "(Error: " << GetLastError() << ")";
+                throw coid::exception() << "Can't create pipe (Error: " << GetLastError() << ")";
             }
         }
 
@@ -410,7 +410,7 @@ ref<coid::process> coid::process::create_process(const coid::charstr& process_ex
             &proc_info))
         {
 
-            throw coid::exception() << "Can't create process \"" << process_executable_path << " \"!" << "(Error: " << GetLastError() << ")";
+            throw coid::exception() << "Can't create process \"" << process_executable_path << "\" (Error: " << GetLastError() << ")";
         }
     }
     catch (const coid::exception& e)

@@ -142,7 +142,7 @@ void* thread_manager::def_thread(void* pinfo)
         throw;
     }
     /*catch(...) {
-        DASSERT(false && "unknown exception thrown!");
+        DASSERT(false && "unknown exception thrown");
         res = 0;
     }*/
 

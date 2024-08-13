@@ -64,7 +64,7 @@ struct simple_counter
 	static void inc(volatile coid::int32* ptr) { ++(*ptr); }
 	static coid::int32 add(volatile coid::int32* ptr,const coid::int32 v) { return (*ptr)+=v; }
 	static coid::int32 dec(volatile coid::int32* ptr) { return --(*ptr); }
-	static bool b_cas(volatile coid::int32 * ptr,const coid::int32 val,const coid::int32 cmp) { DASSERT(false && "should not be used!"); }
+	static bool b_cas(volatile coid::int32 * ptr,const coid::int32 val,const coid::int32 cmp) { DASSERT(false && "should not be used"); }
 };
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -235,9 +235,9 @@ public:
 		return *this;
 	}
 
-	T * operator->() const { DASSERT( _p!=0 && "You are trying to use not uninitialized REF!" ); return _o; }
+	T * operator->() const { DASSERT( _p!=0 && "You are trying to use not uninitialized REF" ); return _o; }
 
-	T * operator->() { DASSERT( _p!=0 && "You are trying to use not initialized REF!" ); return _o; }
+	T * operator->() { DASSERT( _p!=0 && "You are trying to use not initialized REF" ); return _o; }
 
 	T & operator*() const	{ return *_o; }
 

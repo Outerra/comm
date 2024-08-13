@@ -500,7 +500,7 @@ $-(elif)$
     if (!lua_istable(L,-1))
     {
         lua_pop(L, 2); // out param value and pcall error handler;
-        throw ::lua::lua_event_exception("Multiple return values expected!");
+        throw ::lua::lua_event_exception("Multiple return values expected");
     }
 
     $-(if !return.type="void")$
@@ -513,7 +513,7 @@ $-(elif)$
     try
     {
         if(!lua_hasfield(L, -1, "_ret")) {
-            throw ::lua::lua_event_exception("Return value with name '_ret' not found in result table!");
+            throw ::lua::lua_event_exception("Return value with name '_ret' not found in result table");
         }
         lua_getfield(L, -1, "_ret");
         from_lua(_rval_);
@@ -529,7 +529,7 @@ $-(elif)$
     $-[args ?outarg rest="\n" first="\n"]$
         // get and set "$name$" out param value
         if(!lua_hasfield(L, -1, "$name$")) {
-            throw ::lua::lua_event_exception("Return value with name ""$name$"" not found in result table!");
+            throw ::lua::lua_event_exception("Return value with name ""$name$"" not found in result table");
         }
         lua_getfield(L,-1,"$name$");
       $-(if ?ptr)$
@@ -700,7 +700,7 @@ iref<::lua::registry_handle> $name$_lua_dispatcher::create_interface_object(cons
         {
             lua_pop(L, 1); // pop context table
             coid::exception e("");
-            e << "Given context doesn't contain object binding variable with name " << script_class_or_bind_var << "!";
+            e << "Given context doesn't contain object binding variable with name " << script_class_or_bind_var << '"';
             throw e;
         }
 
@@ -736,7 +736,7 @@ iref<::lua::registry_handle> $name$_lua_dispatcher::create_interface_object(cons
         {
             lua_pop(L, 2); // pop context and object table
             coid::exception e("");
-            e << "Given contetx doesn't contain script class with name " << script_class_or_bind_var << "!";
+            e << "Given contetx doesn't contain script class with name " << script_class_or_bind_var << '"';
             throw e;
         }
 
@@ -862,7 +862,7 @@ void $name$_lua_dispatcher::bind_events(bool force, const coid::token& script_cl
         {
             lua_pop(L, 2); // pop interface object and context table
             coid::exception e("");
-            e << "Script doesn't implements this class '" << "$ns rest ="." after ="."$$name$" << "'!";
+            e << "Script doesn't implements this class '" << "$ns rest ="." after ="."$$name$" << "'";
             throw e;
 
         }
@@ -872,7 +872,7 @@ void $name$_lua_dispatcher::bind_events(bool force, const coid::token& script_cl
         if (!lua_hasfield(L, -1, script_class_name)) {
             lua_pop(L, 2); // pop interface object and context table
             coid::exception e("Script doesn't implements this class '");
-            e << script_class_name << "'!";
+            e << script_class_name << "'";
             throw e;
         }
 
