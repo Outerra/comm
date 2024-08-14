@@ -396,23 +396,23 @@ ref<logmsg> logger::create_msg(log::level type, log::target target, const tokenh
         msg->set_time(nsec_timer::current_time_ns());
 
     if (target != log::target::fade) {
+        //add time
         int64 ms = nsec_timer::day_time_ns() / 1000000;
         charstr& str = msg->str();
         str.append_time_formatted(ms, true, 3);
         str.append(' ');
     }
 
-    //ref<logmsg> msg = create_empty_msg(type, target, hash);
     if (!msg)
         return msg;
 
-    if (target != log::target::fade) {
+    if (target == log::target::primary_log) {
         charstr& str = msg->str();
         str << logmsg::type2tok(type);
     }
 
     //ref<logmsg> rmsg = operator()(type, target, hash);
-    if (hash)
+    if (hash && target != log::target::file)
         msg->str() << '[' << hash << "] ";
 
     return msg;
