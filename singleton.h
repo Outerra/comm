@@ -43,7 +43,6 @@
 
 #include "pthreadx.h"
 #include <type_traits>
-
 #include <typeinfo>
 
 #if __cplusplus < 202002L && !defined(_HAS_CXX20)
@@ -191,7 +190,7 @@ template<uints N>
 struct string_literal
 {
     constexpr string_literal(const char(&str)[N]) {
-        std::copy_n(str, N, value);
+        for (uints i = 0; i < N; ++i) value[i] = str[i];
     }
     char value[N];
 };
