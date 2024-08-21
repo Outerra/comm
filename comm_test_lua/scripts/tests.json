@@ -1671,5 +1671,26 @@
 		"script_path": "events_from_context_0.lua",
 		"int_result": 7,
 		"call_event_with_default_body": true
+	},
+	{
+		"script_path": "versionid_0.lua",
+		"versionid_result": 7,
+		"versionid_inarg": 7,
+		"has_inarg": true,
+		"call_event_with_default_body": false
+	},
+	{
+		"script_path": "versionid_0.lua",
+		"versionid_result": 0x0001000000000001,
+		"versionid_inarg": 0x0001000000000001,
+		"has_inarg": true,
+		"call_event_with_default_body": false
+	},
+	{
+		"script_path": "versionid_0.lua",
+		"versionid_result": 0xffffffffffffffff,
+		"versionid_inarg": 0xffffffffffffffff,
+		"has_inarg": true,
+		"call_event_with_default_body": false
 	}
 ]

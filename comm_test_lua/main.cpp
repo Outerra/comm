@@ -26,7 +26,8 @@ public:
         float_type,
         string_type,
         int_array_type,
-        compound_type
+        compound_type,
+        versionid_type
     };
 
     coid::charstr _script_path;
@@ -40,10 +41,9 @@ public:
     bool _test_non_equal = false;
     bool _use_child_class = false;
     uint _num_outargs;
+    bool _has_inarg = false;
    
-
-    result_type _type;
-    union {
+    union inout_type {
         bool _exception;
         bool _bool;
         int _int;
@@ -51,50 +51,64 @@ public:
         coid::charstr* _string_ptr;
         coid::dynarray<int>* _int_array_ptr;
         c::d::compound* _compound_ptr;
-    } _expected_value;
+        coid::versionid _version_id;
 
-    template <typename T> const T& get_result_value() const
-    {
-        DASSERT(0);
-    }
+        uint64 _value;
 
-    using void_ptr = void*;
+        inout_type() : _value(-1) {}
 
-    template<> const void_ptr& get_result_value<>() const
-    {
-        static void_ptr dummy = nullptr;
-        return dummy;
-    }
+        template <typename T> const T& get_value() const
+        {
+            DASSERT(0);
+        }
 
-    template<> const int& get_result_value<>() const
-    {
-        return _expected_value._int;
-    }
+        using void_ptr = void*;
 
-    template<> const bool& get_result_value<>() const
-    {
-        return _expected_value._bool;
-    }
+        template<> const void_ptr& get_value<>() const
+        {
+            static void_ptr dummy = nullptr;
+            return dummy;
+        }
 
-    template<> const float& get_result_value<>() const
-    {
-        return _expected_value._float;
-    }
+        template<> const int& get_value<>() const
+        {
+            return _int;
+        }
 
-    template<> const coid::charstr& get_result_value<>() const
-    {
-        return *_expected_value._string_ptr;
-    }
+        template<> const bool& get_value<>() const
+        {
+            return _bool;
+        }
 
-    template<> const coid::dynarray<int>& get_result_value<>() const
-    {
-        return *_expected_value._int_array_ptr;
-    }
-    
-    template<> const c::d::compound& get_result_value<>() const
-    {
-        return *_expected_value._compound_ptr;
-    }
+        template<> const float& get_value<>() const
+        {
+            return _float;
+        }
+
+        template<> const coid::charstr& get_value<>() const
+        {
+            return *_string_ptr;
+        }
+
+        template<> const coid::dynarray<int>& get_value<>() const
+        {
+            return *_int_array_ptr;
+        }
+
+        template<> const c::d::compound& get_value<>() const
+        {
+            return *_compound_ptr;
+        }
+
+        template<> const coid::versionid& get_value<>() const
+        {
+            return _version_id;
+        }
+    };
+
+    result_type _type;
+    inout_type _expected_value;
+    inout_type _inarg0;
 
     ~test_script()
     {
@@ -125,6 +139,8 @@ public:
             m.member_optional("is_retvoid", script._is_retvoid, false);
 
             m.member_optional("use_child_class", script._use_child_class, false);
+
+            m.member_optional("has_inarg", script._has_inarg, false);
 
             m.member_optional("num_outargs", script._num_outargs);
 
@@ -168,6 +184,14 @@ public:
                 script,
                 &compound_setter,
                 &compound_getter);
+
+            m.member_optional_as_type<coid::versionid>("versionid_result",
+                script,
+                &versionid_setter,
+                &versionid_getter);
+
+
+            m.member_optional("versionid_inarg", script._inarg0._version_id, false);
 
             m.member_optional("exception_result", script._expected_value._exception);
 
@@ -271,6 +295,17 @@ public:
         {
             throw coid::exception("read only structure");
             return c::d::compound();
+        }
+
+        static void versionid_setter(const coid::versionid& val, test_script& dst)
+        {
+            dst._expected_value._version_id = val;
+            dst._type = result_type::versionid_type;
+        }
+
+        static coid::versionid versionid_getter(const test_script& src)
+        {
+            return src._inarg0._version_id;
         }
 };
 
@@ -423,12 +458,27 @@ void test_template(lua_State* L, coid::token test_path, const test_script& test,
                 RASSERT(0 && "not implemented");
             }
             
-            result._passed &= (res == test.get_result_value<T>()) != test._test_non_equal;
+            result._passed &= (res == test._expected_value.get_value<T>()) != test._test_non_equal;
             
         }
         else
         {
-            if (test._is_retvoid)
+            if (test._has_inarg)
+            {
+                T in_param0 = test._inarg0.get_value<T>();
+                T res = T();
+                if constexpr (std::is_same<T, coid::versionid>::value)
+                {
+                    res = factory_instance.get_last_item()->some_event_versionid_in_out(in_param0);
+                }
+                else
+                {
+                    RASSERT(0 && "not implemented");
+                }
+
+                result._passed &= (res == test._expected_value.get_value<T>()) != test._test_non_equal;
+            }
+            else if (test._is_retvoid)
             {
                 if (test._num_outargs == 1)
                 {
@@ -504,7 +554,7 @@ void test_template(lua_State* L, coid::token test_path, const test_script& test,
                         RASSERT(0 && "not implemented");
                     }
 
-                    result._passed &= (out_param0 == test.get_result_value<T>()) != test._test_non_equal;
+                    result._passed &= (out_param0 == test._expected_value.get_value<T>()) != test._test_non_equal;
                 }
                 else if (test._num_outargs == 2)
                 {
@@ -581,8 +631,8 @@ void test_template(lua_State* L, coid::token test_path, const test_script& test,
                         RASSERT(0 && "not implemented");
                     }
                     
-                    result._passed &= (out_param0 == test.get_result_value<T>()) != test._test_non_equal;
-                    result._passed &= (out_param1 == test.get_result_value<T>()) != test._test_non_equal;
+                    result._passed &= (out_param0 == test._expected_value.get_value<T>()) != test._test_non_equal;
+                    result._passed &= (out_param1 == test._expected_value.get_value<T>()) != test._test_non_equal;
                 }
                 else
                 {
@@ -671,7 +721,7 @@ void test_template(lua_State* L, coid::token test_path, const test_script& test,
                         RASSERT(0 && "not implemented");
                     }
 
-                    result._passed &= (res == test.get_result_value<T>()) != test._test_non_equal;
+                    result._passed &= (res == test._expected_value.get_value<T>()) != test._test_non_equal;
                     
                 }
                 else if (test._num_outargs == 1)
@@ -748,8 +798,8 @@ void test_template(lua_State* L, coid::token test_path, const test_script& test,
                         RASSERT(0 && "not implemented");
                     }
 
-                    result._passed &= (res == test.get_result_value<T>()) != test._test_non_equal;
-                    result._passed &= (out_param0 == test.get_result_value<T>()) != test._test_non_equal;
+                    result._passed &= (res == test._expected_value.get_value<T>()) != test._test_non_equal;
+                    result._passed &= (out_param0 == test._expected_value.get_value<T>()) != test._test_non_equal;
                 }
                 else if (test._num_outargs == 2)
                 {
@@ -826,9 +876,9 @@ void test_template(lua_State* L, coid::token test_path, const test_script& test,
                         RASSERT(0 && "not implemented");
                     }
 
-                    result._passed &= (res == test.get_result_value<T>()) != test._test_non_equal;
-                    result._passed &= (out_param0 == test.get_result_value<T>()) != test._test_non_equal;
-                    result._passed &= (out_param1 == test.get_result_value<T>()) != test._test_non_equal;                    
+                    result._passed &= (res == test._expected_value.get_value<T>()) != test._test_non_equal;
+                    result._passed &= (out_param0 == test._expected_value.get_value<T>()) != test._test_non_equal;
+                    result._passed &= (out_param1 == test._expected_value.get_value<T>()) != test._test_non_equal;                    
                 }
                 else
                 {
@@ -993,6 +1043,10 @@ int main()
             if (test._type == test_script::result_type::compound_type)
             {
                 test_template<c::d::compound, false>(L, test_path, test, *result);
+            }
+            if (test._type == test_script::result_type::versionid_type)
+            {
+                test_template<coid::versionid, false>(L, test_path, test, *result);
             }
         }
     }

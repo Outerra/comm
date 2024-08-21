@@ -82,7 +82,7 @@ public: // interfaces only
     ifc_event ::c::d::compound some_event_compound_out1(ifc_inout ::c::d::compound& out_arg1);
     ifc_event ::c::d::compound some_event_compound_out2(ifc_inout ::c::d::compound&out_arg1, ifc_inout ::c::d::compound&out_arg2);
 
-
+    ifc_event coid::versionid some_event_versionid_in_out(coid::versionid in_arg1);
 
 public: // methods only
     explicit parent_class(int some_value, int some_ohter_value, int some_another_value);
