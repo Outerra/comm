@@ -95,7 +95,9 @@
 </Type>
 
 <Type Name="coid::versionid">
-  <DisplayString>id = {id}</DisplayString>
+  <DisplayString Condition="mark == 7">{{empty}}</DisplayString>
+  <DisplayString Condition="mark != 2">{{corrupt}}</DisplayString>
+  <DisplayString>id = {id,x}</DisplayString>
   <Expand>
     <Item Name="[id]" ExcludeView="simple">id</Item>
     <Item Name="[version]" ExcludeView="simple" >version</Item>
@@ -103,8 +105,9 @@
 </Type>
 
 <Type Name="coid::typed_versionid&lt;*&gt;">
-  <DisplayString Condition="value == (uint64_t)-1">{{invalid}}</DisplayString>
-  <DisplayString>id = {id}</DisplayString>
+  <DisplayString Condition="mark == 7">{{empty}}</DisplayString>
+  <DisplayString Condition="mark != 2">{{corrupt}}</DisplayString>
+  <DisplayString>id = {id,x}</DisplayString>
   <Expand>
     <Item Name="[id]" ExcludeView="simple">id</Item>
     <Item Name="[version]" ExcludeView="simple" >version</Item>

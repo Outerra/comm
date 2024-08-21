@@ -281,32 +281,35 @@ COID_NAMESPACE_BEGIN
 //@note static cast to uint64 is safe, but must be called explicitly
 struct versionid
 {
-    static constexpr uint64 max_id = 0x0000ffffffffffffull;
+private:
+
+    static constexpr uint64 NOVAL = 0xffffffffffffffffull;
 
     union {
         struct {
-            uint64 id : 48;
-            uint64 version : 16;
+            uint64 id : 45;                 //< id
+            uint64 version : 16;            //< version counter
+            uint64 mark : 3;                //< constant mark 010, also used to avoid NaN/Inf/DND if used in scripting languages with double
         };
-        uint64 value = UMAX64;
+        uint64 value = NOVAL;
     };
 
-    constexpr versionid()
-    {}
+public:
 
-    constexpr versionid(uint64 id, uint16 version) : id(id), version(version)
-    {
-        //DASSERT(id <= max_id);
-    }
+    constexpr versionid() = default;
+    constexpr versionid(uint64 id, uint16 version) : id(id), version(version), mark(2) {}
 
+    static constexpr uint64 max_id = 0x00001fffffffffffull;
     static constexpr versionid invalid_value() { return versionid(); }
 
     void reset() {
-        id = max_id;
-        version = 0xffffull;
+        value = NOVAL;
     }
 
-    bool is_valid() const { return value != UMAX64; }
+    bool is_valid() const {
+        if (!(mark == 2 || mark == 7)) __debugbreak();
+        return mark == 2;
+    }
 
     bool operator == (const versionid& rhs) const {
         return value == rhs.value;
@@ -320,28 +323,22 @@ struct versionid
         return value < rhs.value;
     }
 
-    explicit operator uint64() const {
-        return value;
-    }
+    explicit operator uint64() const { return value; }
 };
+
 
 template<typename T>
 struct typed_versionid : coid::versionid
 {
+    typed_versionid() = default;
+
     typed_versionid(coid::versionid& vid)
         : coid::versionid(vid)
-    {
-    }
+    {}
 
     typed_versionid(coid::versionid&& vid)
         : coid::versionid(vid)
-    {
-    }
-
-    typed_versionid()
-        : coid::versionid()
-    {
-    }
+    {}
 };
 
 ////////////////////////////////////////////////////////////////////////////////
