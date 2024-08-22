@@ -209,8 +209,8 @@ class data_manager
 
         bool del(versionid vid)
         {
-            DASSERT_RET(get_bit(vid.id) && _entities[vid.id].version == vid.version, false);
-            return del(vid.id);
+            DASSERT_RET(get_bit(vid.idx) && _entities[vid.idx].version == vid.version, false);
+            return del(vid.idx);
         }
 
         bool is_valid(uint id) const {
@@ -218,7 +218,7 @@ class data_manager
         }
 
         bool is_valid(versionid v) const {
-            return get_bit(v.id) && _entities[v.id].version == v.version;
+            return get_bit(v.idx) && _entities[v.idx].version == v.version;
         }
 
         versionid get_versionid(uint gid) const {
@@ -491,7 +491,7 @@ public:
         if (!c || !c->seq->is_valid(vid))
             return nullptr;
 
-        return c->element(vid.id);
+        return c->element(vid.idx);
     }
 
 
@@ -522,7 +522,7 @@ public:
         if (!c || !c->seq->is_valid(vid))
             return nullptr;
 
-        return static_cast<C*>(c->element(vid.id));
+        return static_cast<C*>(c->element(vid.idx));
     }
 
     template <class C>
@@ -531,9 +531,10 @@ public:
         static container* c = 0;
         if (!c) c = &get_or_create_container<C>();
 
-        C* el = static_cast<C*>(c->element(vid.id));
+        uint id = vid.id();
+        C* el = static_cast<C*>(c->element(id));
         if (!el)
-            el = static_cast<C*>(c->create_default(vid.id));
+            el = static_cast<C*>(c->create_default(id));
 
         return *el;
     }
@@ -557,7 +558,7 @@ public:
         if (!co || !co->seq->is_valid(vid))
             return nullptr;
 
-        return co->element(vid.id);
+        return co->element(vid.idx);
     }
 
     /// @brief Create entity
@@ -582,7 +583,7 @@ public:
         if (seq.del(vid)) {
             for (container* c : data_containers()) {
                 if (c && c->storage_type == container::type::hash)
-                    c->remove(vid.id);
+                    c->remove(vid.idx);
             }
         }
     }
@@ -639,9 +640,9 @@ public:
         DASSERT_RET(c, nullptr);
         DASSERT_RET(c->seq->is_valid(vid), nullptr);
 
-        C* d = static_cast<C*>(c->create_default(vid.id));
+        C* d = static_cast<C*>(c->create_default(vid.id()));
         *d = std::move(v);
-        DASSERT(c->storage_type != container::type::hash || static_cast<storage<C>*>(d)->eid == vid.id);
+        DASSERT(c->storage_type != container::type::hash || static_cast<storage<C>*>(d)->eid == vid.idx);
 
         return d;
     }
@@ -657,7 +658,7 @@ public:
         DASSERT_RET(c, nullptr);
         DASSERT_RET(c->seq->is_valid(vid), nullptr);
 
-        return static_cast<C*>(c->create_default(vid.id));
+        return static_cast<C*>(c->create_default(vid.idx));
     }
 
     /// @brief Insert uninitialized data, to be in-place constructed
@@ -669,9 +670,9 @@ public:
     {
         static container* c = &get_or_create_container<C, cshash<C>>();
         DASSERT_RET(c, nullptr);
-        DASSERT_RET(c->seq->is_valid(vid.id), nullptr);
+        DASSERT_RET(c->seq->is_valid(vid), nullptr);
 
-        void* p = c->create_uninit(vid.id);
+        void* p = c->create_uninit(vid.idx);
         DASSERT(p);
         return new (p) C(std::forward<Ps>(ps)...);
     }
@@ -714,7 +715,7 @@ public:
         DASSERT_RET(c);
 
         DASSERT_RET(c->seq->is_valid(vid));
-        c->remove(vid.id);
+        c->remove(vid.idx);
     }
 
     /// @brief Get container id of element of given type
@@ -745,7 +746,7 @@ public:
         DASSERT_RET(c, -1);
         DASSERT_RET(c->seq->is_valid(vid), -1);
 
-        return c->get_container_local_item_id(coid::down_cast<uint>(vid.id));
+        return c->get_container_local_item_id(vid.idx);
     }
 
 
@@ -960,7 +961,7 @@ public:
 
             auto td = tsq().type(i);
             if (fn(td->type_name, has_component))
-                c->create_default(vid.id);
+                c->create_default(vid.idx);
         }
     }
 

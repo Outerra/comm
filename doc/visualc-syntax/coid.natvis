@@ -95,21 +95,21 @@
 </Type>
 
 <Type Name="coid::versionid">
-  <DisplayString Condition="mark == 7">{{empty}}</DisplayString>
+  <DisplayString Condition="mark == 0">{{empty}}</DisplayString>
   <DisplayString Condition="mark != 2">{{corrupt}}</DisplayString>
-  <DisplayString>id = {id,x}</DisplayString>
+  <DisplayString>id = {idx,x}</DisplayString>
   <Expand>
-    <Item Name="[id]" ExcludeView="simple">id</Item>
+    <Item Name="[id]" ExcludeView="simple">idx</Item>
     <Item Name="[version]" ExcludeView="simple" >version</Item>
   </Expand>
 </Type>
 
 <Type Name="coid::typed_versionid&lt;*&gt;">
-  <DisplayString Condition="mark == 7">{{empty}}</DisplayString>
+  <DisplayString Condition="mark == 0">{{empty}}</DisplayString>
   <DisplayString Condition="mark != 2">{{corrupt}}</DisplayString>
-  <DisplayString>id = {id,x}</DisplayString>
+  <DisplayString>id = {idx,x}</DisplayString>
   <Expand>
-    <Item Name="[id]" ExcludeView="simple">id</Item>
+    <Item Name="[id]" ExcludeView="simple">idx</Item>
     <Item Name="[version]" ExcludeView="simple" >version</Item>
   </Expand>
 </Type>

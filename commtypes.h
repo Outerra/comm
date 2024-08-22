@@ -283,13 +283,16 @@ struct versionid
 {
 private:
 
-    static constexpr uint64 NOVAL = 0xffffffffffffffffull;
+    static constexpr uint64 NOVAL = 0;
+    static constexpr uint8 MAGIC_MARK = 0x5c;
 
     union {
         struct {
-            uint64 id : 45;                 //< id
-            uint64 version : 16;            //< version counter
-            uint64 mark : 3;                //< constant mark 010, also used to avoid NaN/Inf/DND if used in scripting languages with double
+            uint32 idx;
+
+            uint16 version;                 //< version counter
+            uint8 reserved;
+            uint8 mark;                     //< constant mark 01011100 (0x5c), also used to avoid NaN/Inf/DND if used in scripting languages with double
         };
         uint64 value = NOVAL;
     };
@@ -297,9 +300,9 @@ private:
 public:
 
     constexpr versionid() = default;
-    constexpr versionid(uint64 id, uint16 version) : id(id), version(version), mark(2) {}
+    constexpr versionid(uint id, uint version) : idx(id), version(version), mark(MAGIC_MARK) {}
 
-    static constexpr uint64 max_id = 0x00001fffffffffffull;
+    static constexpr uint32 max_id = UMAX32;
     static constexpr versionid invalid_value() { return versionid(); }
 
     void reset() {
@@ -307,8 +310,10 @@ public:
     }
 
     bool is_valid() const {
-        if (!(mark == 2 || mark == 7)) __debugbreak();
-        return mark == 2;
+#ifdef _DEBUG
+        if (!(mark == MAGIC_MARK || value == 0)) __debugbreak();
+#endif
+        return mark == MAGIC_MARK;
     }
 
     bool operator == (const versionid& rhs) const {
@@ -321,6 +326,15 @@ public:
 
     bool operator < (const versionid& rhs) const {
         return value < rhs.value;
+    }
+
+    //@return 32-bit id if valid, else -1
+    uint id() const {
+        if (!is_valid()) {
+            __debugbreak();
+            return UMAX32;
+        }
+        return idx;
     }
 
     explicit operator uint64() const { return value; }

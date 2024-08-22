@@ -335,7 +335,7 @@ public:
             *pid = id;
 
         extarray_construct_default(id, isold);
-        
+
         return construct_default(p, isold);
     }
 
@@ -377,7 +377,7 @@ public:
         {
             return alloc_item(pid ? (*pid = unused_id) : unused_id);
         }
-        else 
+        else
         {
             uints id = -1;
             T* result = new(append<false>(&id)) T;
@@ -463,7 +463,7 @@ public:
 
     ///Delete object by pointer
     void del_item(T* p)
-    {        
+    {
         del_item_internal(p, get_item_id(p));
     }
 
@@ -480,7 +480,7 @@ public:
     {
         DASSERT_RET(this->check_versionid(vid));
 
-        return del_item(vid.id);
+        return del_item(vid.idx);
     }
 
     /// @return previously deleted but still valid item
@@ -508,10 +508,11 @@ public:
     T* undel_item(versionid vid) COID_REQUIRES((VERSIONING && POOL))
     {
         static_assert(POOL, "only available in pool mode");
+        uint64 id = vid.id();
 
-        if (POOL && vid.id < this->_created) {
+        if (POOL && id < this->_created) {
             if (this->check_versionid(vid)) {
-                if (!set_bit(vid.id))
+                if (!set_bit(id))
                     ++_count;
                 else {
                     DASSERTN(0);
@@ -519,7 +520,7 @@ public:
                 }
             }
 
-            return ptr(vid.id);
+            return ptr(id);
         }
 
         return 0;
@@ -581,7 +582,7 @@ public:
                 T* e = b + na;
 
                 for (; b < e; ++b) {
-                    if coid_constexpr_if(!POOL) 
+                    if coid_constexpr_if(!POOL)
                     {
                         b->~T();
                         extarray_destruct(idk);
@@ -624,8 +625,8 @@ public:
     /// @param id id of the item
     const T* get_item(versionid vid) const COID_REQUIRES((VERSIONING))
     {
-        DASSERT_RET(vid.id < created() && this->check_versionid(vid) && get_bit(vid.id), 0);
-        return ptr(vid.id);
+        DASSERT_RET(this->check_versionid(vid) && get_bit(vid.idx), 0);
+        return ptr(vid.idx);
     }
 
     ///Return an item given id
@@ -633,18 +634,18 @@ public:
     /// @note non-const operator [] disabled on tracking allocators, use explicit get_mutable_item to indicate the element will be modified
     T* get_item(versionid vid) COID_REQUIRES((VERSIONING))
     {
-        DASSERT_RET(vid.id < created() && this->check_versionid(vid) && get_bit(vid.id), 0);
-        return ptr(vid.id);
+        DASSERT_RET(this->check_versionid(vid) && get_bit(vid.idx), 0);
+        return ptr(vid.idx);
     }
 
     ///Return an item given id
     /// @param id id of the item
     T* get_mutable_item(versionid vid) COID_REQUIRES((VERSIONING))
     {
-        DASSERT_RET(vid.id < created() && this->check_versionid(vid) && get_bit(vid.id), 0);
-        this->set_modified(vid.id);
+        DASSERT_RET(this->check_versionid(vid) && get_bit(vid.idx), 0);
+        this->set_modified(vid.idx);
 
-        return ptr(vid.id);
+        return ptr(vid.idx);
     }
 
     const T& operator [] (versionid vid) const COID_REQUIRES((VERSIONING))
@@ -855,7 +856,7 @@ public:
     /// @return true if item with id is valid
     bool is_valid_id(versionid vid) const COID_REQUIRES((VERSIONING))
     {
-        return this->check_versionid(vid) && get_bit(vid.id);
+        return this->check_versionid(vid) && get_bit(vid.idx);
     }
 
     /// @return true if item is valid
@@ -927,18 +928,18 @@ protected:
     versionid get_versionid(uints id) const {
         DASSERT_RET(id <= versionid::max_id, versionid());
         if coid_constexpr_if (VERSIONING) {
-            return versionid(id, tracker_t::version_array()[id]);
+            return versionid(uint(id), tracker_t::version_array()[id]);
         }
         else {
-            return versionid(id, 0);
+            return versionid(uint(id), 0);
         }
     }
 
     bool check_versionid(versionid vid) const {
         if coid_constexpr_if (VERSIONING) {
-            if (vid.id >= created())
+            if (!vid.is_valid() || vid.idx >= created())
                 return false;
-            uint8 ver = tracker_t::version_array()[vid.id];
+            uint8 ver = tracker_t::version_array()[vid.idx];
             return vid.version == ver;
         }
         else
@@ -1431,7 +1432,7 @@ public:
             uint pg = uint(id / page::ITEMS);
             uint s = uint(id % page::ITEMS);
             uints i = id;
-            
+
             while (count > 0) {
                 T* b = this->_pages[pg++].ptr() + s;
                 uints na = stdmin(page::ITEMS - s, count);
@@ -2214,7 +2215,7 @@ private:
             this->_created += n;
         }
 
-        // Expand ext arrays 
+        // Expand ext arrays
         if coid_constexpr_if(UNINIT)
         {
             extarray_expand_uninit(n);
