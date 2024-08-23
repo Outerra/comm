@@ -508,7 +508,7 @@ public:
     T* undel_item(versionid vid) COID_REQUIRES((VERSIONING && POOL))
     {
         static_assert(POOL, "only available in pool mode");
-        uint64 id = vid.id();
+        uint id = uint(vid);
 
         if (POOL && id < this->_created) {
             if (this->check_versionid(vid)) {

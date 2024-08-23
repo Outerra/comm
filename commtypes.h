@@ -133,7 +133,7 @@
 #if defined(__cpp_concepts) || _MSC_VER >= 1936
 #define COID_REQUIRES(R) requires R
 #define COID_CONCEPTS
-#else 
+#else
 #define COID_REQUIRES(R)
 #endif
 
@@ -278,7 +278,7 @@ using coid::ushort;
 COID_NAMESPACE_BEGIN
 
 ///Versioned item id for slot allocators
-//@note static cast to uint64 is safe, but must be called explicitly
+/// @note static cast to uint64 is safe, but must be called explicitly
 struct versionid
 {
 private:
@@ -315,26 +315,24 @@ public:
         return mark == MAGIC_MARK;
     }
 
-    bool operator == (const versionid& rhs) const {
-        return value == rhs.value;
-    }
-
-    bool operator != (const versionid& rhs) const {
-        return value != rhs.value;
-    }
-
-    bool operator < (const versionid& rhs) const {
-        return value < rhs.value;
-    }
-
-    //@return 32-bit id if valid, else -1
+    /// @return 32-bit id if valid, else -1
+    /// @note debug assertion if invalid
     uint id() const {
         if (!is_valid()) {
+#ifdef _DEBUG
             __debugbreak();
+#endif
             return UMAX32;
         }
         return idx;
     }
+
+    bool operator == (const versionid& rhs) const { return value == rhs.value; }
+    bool operator != (const versionid& rhs) const { return value != rhs.value; }
+    bool operator < (const versionid& rhs) const { return value < rhs.value; }
+
+    /// @return 32-bit id if valid, else -1
+    explicit operator uint() const { return is_valid() ? idx : UMAX32; }
 
     explicit operator uint64() const { return value; }
 };
