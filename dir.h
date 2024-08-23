@@ -274,7 +274,7 @@ public:
         return buf;
     }
 
-    /// @brief Get module path
+    /// @brief Get module path (from function address or current)
     /// @param dst target path
     /// @param append true append to dst, false set to dst
     /// @param func optional function pointer to get the module handle for
@@ -283,9 +283,11 @@ public:
         return get_module_path_func(func ? func : (const void*)&dummy_func, dst, append);
     }
 
-    static uints get_module_handle() {
-        return get_module_handle_func((const void*)&dummy_func);
+    ///Get current module handle, or module handle where given function resides
+    static uints get_module_handle(const void* func = 0) {
+        return get_module_handle_func(func ? func : (const void*)&dummy_func);
     }
+
 
     ///Get temp directory
     static charstr get_tmp_dir();
