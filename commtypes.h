@@ -290,9 +290,8 @@ private:
         struct {
             uint32 idx;
 
-            uint16 version;                 //< version counter
-            uint8 reserved;
-            uint8 mark;                     //< constant mark 01011100 (0x5c), also used to avoid NaN/Inf/DND if used in scripting languages with double
+            uint32 version : 24;             //< version counter
+            uint32 mark : 8;                 //< constant mark 01011100 (0x5c), also used to avoid NaN/Inf/DND if used in scripting languages with double
         };
         uint64 value = NOVAL;
     };
