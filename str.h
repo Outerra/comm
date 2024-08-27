@@ -248,6 +248,11 @@ public:
     explicit charstr(float d) { operator += (d); }
     explicit charstr(double d) { operator += (d); }
 
+    static charstr from_c_str(const char* czstr) {
+        charstr str;
+        str.set_from_c_str(czstr);
+        return str;
+    }
 
     charstr& set(const token& tok)
     {
@@ -275,6 +280,12 @@ public:
         return czstr + slen;
     }
 
+    const char* set_from_c_str(const char* czstr) {
+        uints len = czstr ? ::strlen(czstr) : 0;
+        assign(czstr, len);
+        return czstr + len;
+    }
+
     const char* set_from_range(const char* strbgn, const char* strend)
     {
         return set_from(strbgn, strend - strbgn);
@@ -298,6 +309,13 @@ public:
 
         DASSERTN(slen <= UMAX32);
 
+        _append(czstr, slen);
+        _tstr[len()] = 0;
+        return czstr + slen;
+    }
+
+    const char* add_from_c_str(const char* czstr) {
+        uints slen = czstr ? ::strlen(czstr) : 0;
         _append(czstr, slen);
         _tstr[len()] = 0;
         return czstr + slen;
