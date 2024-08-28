@@ -96,7 +96,7 @@
 
 <Type Name="coid::versionid">
   <DisplayString Condition="mark == 0">{{empty}}</DisplayString>
-  <DisplayString Condition="mark != 2">{{corrupt}}</DisplayString>
+  <DisplayString Condition="mark != 0x5c">{{corrupt}}</DisplayString>
   <DisplayString>id = {idx,x}</DisplayString>
   <Expand>
     <Item Name="[id]" ExcludeView="simple">idx</Item>
@@ -106,7 +106,7 @@
 
 <Type Name="coid::typed_versionid&lt;*&gt;">
   <DisplayString Condition="mark == 0">{{empty}}</DisplayString>
-  <DisplayString Condition="mark != 2">{{corrupt}}</DisplayString>
+  <DisplayString Condition="mark != 0x5c">{{corrupt}}</DisplayString>
   <DisplayString>id = {idx,x}</DisplayString>
   <Expand>
     <Item Name="[id]" ExcludeView="simple">idx</Item>
