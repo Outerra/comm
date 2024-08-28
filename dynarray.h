@@ -374,7 +374,7 @@ protected:
     /// @{Helper functions for for_each to allow calling with optional index argument
     ///Functor argument type reference or pointer
     template<class Fn>
-    using has_index = std::integral_constant<bool, !(closure_traits<Fn>::arity::value <= 1)>;
+    using has_index_param = std::integral_constant<bool, !(closure_traits<Fn>::arity::value <= 1)>;
 
 #ifndef COID_CONSTEXPR_IF
     template<class Fn>
@@ -394,28 +394,28 @@ protected:
     using result_type = typename closure_traits<Fn>::result_type;
 
     ///fnc(const T&) const
-    template<typename Fn, typename = std::enable_if_t<is_const<Fn>::value && !has_index<Fn>::value>>
+    template<typename Fn, typename = std::enable_if_t<is_const<Fn>::value && !has_index_param<Fn>::value>>
     result_type<Fn> funccall(const Fn& fn, arg0constref<Fn> v, count_t& index) const
     {
         return fn(v);
     }
 
     ///fnc(T&)
-    template<typename Fn, typename = std::enable_if_t<!is_const<Fn>::value && !has_index<Fn>::value>>
+    template<typename Fn, typename = std::enable_if_t<!is_const<Fn>::value && !has_index_param<Fn>::value>>
     result_type<Fn> funccall(const Fn& fn, arg0ref<Fn> v, const count_t& index) const
     {
         return fn(v);
     }
 
     ///fnc(const T&, index) const
-    template<typename Fn, typename = std::enable_if_t<is_const<Fn>::value && has_index<Fn>::value>>
+    template<typename Fn, typename = std::enable_if_t<is_const<Fn>::value && has_index_param<Fn>::value>>
     result_type<Fn> funccall(const Fn& fn, arg0constref<Fn> v, count_t index) const
     {
         return fn(v, index);
     }
 
     ///fnc(T&, index)
-    template<typename Fn, typename = std::enable_if_t<!is_const<Fn>::value && has_index<Fn>::value>>
+    template<typename Fn, typename = std::enable_if_t<!is_const<Fn>::value && has_index_param<Fn>::value>>
     result_type<Fn> funccall(const Fn& fn, arg0ref<Fn> v, const count_t index) const
     {
         return fn(v, index);
@@ -436,7 +436,7 @@ public:
             count_t k = dir == iterator_direction::forward ? i : n - 1 - i;
             T& v = const_cast<T&>(_ptr[k]);
 #ifdef COID_CONSTEXPR_IF
-            if constexpr (has_index<Func>::value)
+            if constexpr (has_index_param<Func>::value)
                 fn(v, k);
             else
                 fn(v);
@@ -466,7 +466,7 @@ public:
             T& v = const_cast<T&>(_ptr[k]);
             bool rv;
 #ifdef COID_CONSTEXPR_IF
-            if constexpr (has_index<Func>::value)
+            if constexpr (has_index_param<Func>::value)
                 rv = fn(v, k);
             else
                 rv = fn(v);
@@ -489,7 +489,7 @@ public:
             T& v = const_cast<T&>(_ptr[i - 1]);
             bool rv;
 #ifdef COID_CONSTEXPR_IF
-            if constexpr (has_index<Func>::value)
+            if constexpr (has_index_param<Func>::value)
                 rv = fn(v, i - 1);
             else
                 rv = fn(v);
@@ -1264,6 +1264,18 @@ public:
         _ptr[i] = val;
     }
 
+    ///Set value at specified index, enlarging the array if index is out of range
+    void set_safe(uints i, T&& val)
+    {
+        if (i >= _count())
+            realloc(i + 1);
+        _ptr[i] = std::move(val);
+    }
+
+    /// @return true if element at given index exists
+    bool has_index(uints i) const {
+        return i < _count();
+    }
 
     ///Linear search whether array contains element comparable with \a key
     /// @return -1 if not contained, otherwise index
