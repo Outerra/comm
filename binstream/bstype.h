@@ -127,14 +127,13 @@ struct kind
         T_ERRCODE,                      //< error codes
         T_TIME,                         //< time values
         T_ANGLE,                        //< angles (lat/long etc)
+        T_VERSIONID,                    //< version id or typed version id 
         T_OPTIONAL,                     //< marking of optional data (streaming pointer members that can be null)
 
-        T_KEY,                          //< unformatted characters (used in formatting streams)
+        T_KEY = 0x80,                          //< unformatted characters (used in formatting streams)
         T_STRUCTBGN,                    //< opening struct tag (used in formatting streams)
         T_STRUCTEND,                    //< closing struct tag (used in formatting streams)
         T_SEPARATOR,                    //< member separator (used in formatting streams)
-
-        COUNT,
 
         T_COMPOUND              = 0xff,
     };
@@ -269,6 +268,9 @@ struct kind
 
             case T_TIME:
                 val = *(timet*)data; break;
+
+            case T_VERSIONID:
+                val = *static_cast<const int64*>(data); break;
         }
         return val;
     }
@@ -323,9 +325,9 @@ DEF_TYPE2(  STRUCT_CLOSE,       T_STRUCTEND, 0);
 //DEF_TYPE(   SEPARATOR,          T_SEPARATOR);
 
 
-DEF_TYPE(   versionid,          T_UINT);
+DEF_TYPE(   versionid,          T_VERSIONID);
 
-template< typename T > struct t_type<typed_versionid<T>> : kind { t_type() : kind(kind::T_UINT, sizeof(typed_versionid<T>)) {} };
+template< typename T > struct t_type<typed_versionid<T>> : kind { t_type() : kind(kind::T_VERSIONID, sizeof(typed_versionid<T>)) {} };
 
 
 ////////////////////////////////////////////////////////////////////////////////

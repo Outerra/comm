@@ -215,6 +215,10 @@ public:
                 }
                 break;
 
+            case type::T_VERSIONID:
+                lua_pushnumber(_state, lua_Number(*reinterpret_cast<const double*>(p)));
+                break;
+
             case type::T_CHAR: {
 
                 if (!t.is_array_element()) {
@@ -366,6 +370,7 @@ public:
             }
             break;
 
+            case type::T_VERSIONID:
             case type::T_UINT:
             {
                 if (lua_isnumber(_state, -1)) {
@@ -732,20 +737,24 @@ public:
             std::is_same<T, uint64>::value ||
             std::is_same<T, long>::value ||
             std::is_same<T, ulong>::value
-        )
+            )
         {
             lua_pushinteger(L, static_cast<lua_Integer>(val));
         }
         else if constexpr (
             std::is_same<T, float>::value ||
             std::is_same<T, double>::value
-        )
+            )
         {
             lua_pushnumber(L, static_cast<lua_Number>(val));
         }
         else if constexpr (std::is_same<T, bool>::value)
         {
             lua_pushboolean(L, val);
+        }
+        else if constexpr (std::is_base_of_v<coid::versionid, T>)
+        {
+            lua_pushnumber(L, static_cast<lua_Number>(*reinterpret_cast<const double*>(&val)));
         }
         else
         {
@@ -785,6 +794,12 @@ public:
         {
             check_type_and_throw<T>(L);
             val = lua_toboolean(L, -1) != 0;
+        }
+        else if constexpr (std::is_base_of_v<coid::versionid, T>)
+        {
+            check_type_and_throw<double>(L);
+            const lua_Number lval = static_cast<double>(lua_tonumber(L, -1));
+            val =  *reinterpret_cast<const T*>(&lval);
         }
         else
         {

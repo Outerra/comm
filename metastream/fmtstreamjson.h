@@ -257,6 +257,7 @@ public:
                 _bufw.append_num_int(10, p, t.get_size());
                 break;
 
+            case type::T_VERSIONID:
             case type::T_UINT:
                 _bufw.append_num_uint(10, p, t.get_size());
                 break;
@@ -523,6 +524,7 @@ public:
             }
             break;
 
+            case type::T_VERSIONID:
             case type::T_UINT:
             {
                 token::tonum<uint64> conv;

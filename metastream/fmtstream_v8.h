@@ -176,7 +176,10 @@ V8_FAST_STREAMER_BOOL(bool, Boolean, bool);
 //#define V8_FAST_STREAMER(T,V8T,CT)
 template<> class to_v8<coid::versionid> {
 public:
-    static v8::Handle<v8::Value> read(const coid::versionid& v) { return v8::new_object<v8::Number>(*reinterpret_cast<const double*>(&v)); }
+    static v8::Handle<v8::Value> read(const coid::versionid& v) 
+    {
+        return v8::new_object<v8::Number>(*reinterpret_cast<const double*>(&v)); 
+    }
 };
 
 template<> class from_v8<coid::versionid> {
@@ -191,6 +194,29 @@ public:
         return mv.IsJust();
     }
 };
+
+template<typename T> class to_v8<coid::typed_versionid<T>> {
+public:
+    static v8::Handle<v8::Value> read(const coid::typed_versionid<T>& v) 
+    { 
+        return v8::new_object<v8::Number>(*reinterpret_cast<const double*>(&v)); 
+    }
+};
+
+template<typename T> class from_v8<coid::typed_versionid<T>> {
+public:
+    static bool write(v8::Handle<v8::Value> src, coid::typed_versionid<T>& res) {
+        auto mv = src->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext());
+        if (mv.IsJust()) {
+            const double tmp = mv.FromJust();
+            res = *reinterpret_cast<const coid::typed_versionid<T>*>(&tmp);
+        };
+
+        return mv.IsJust();
+    }
+};
+
+
 
 ///Date/time
 template<> class to_v8<timet> {
@@ -720,6 +746,10 @@ public:
                 }
                 break;
 
+            case type::T_VERSIONID:
+                _top->value = to_v8<double>().read(*(reinterpret_cast<const double*>(p)));
+                break;
+
             case type::T_CHAR: {
 
                 if (!t.is_array_element()) {
@@ -855,6 +885,7 @@ public:
             }
             break;
 
+            case type::T_VERSIONID:
             case type::T_UINT:
             {
                 try {

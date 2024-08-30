@@ -465,6 +465,13 @@ void test_template(lua_State* L, coid::token test_path, const test_script& test,
         {
             if (test._has_inarg)
             {
+                double one_d = 1.0;
+                uint64 one_d_i = *reinterpret_cast<uint64*>(&one_d);
+
+                
+                uint64 denorm = 0x0008000000000000;
+                double denorm_d = *reinterpret_cast<double*>(&denorm);
+
                 T in_param0 = test._inarg0.get_value<T>();
                 T res = T();
                 if constexpr (std::is_same<T, coid::versionid>::value)

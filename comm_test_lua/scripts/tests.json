@@ -1681,15 +1681,50 @@
 	},
 	{
 		"script_path": "versionid_0.lua",
-		"versionid_result": 0x0001000000000001,
-		"versionid_inarg": 0x0001000000000001,
+		"versionid_result": "0x0001000000000001",
+		"versionid_inarg": "0x0001000000000001",
 		"has_inarg": true,
 		"call_event_with_default_body": false
 	},
 	{
 		"script_path": "versionid_0.lua",
-		"versionid_result": 0xffffffffffffffff,
-		"versionid_inarg": 0xffffffffffffffff,
+		"versionid_result": "0xfff8000000000000",
+		"versionid_inarg": "0xffffffffffffffff",
+		"has_inarg": true,
+		"call_event_with_default_body": false
+	},
+	{
+		"script_path": "versionid_0.lua",
+		"versionid_result": "0x5c01000000000004",
+		"versionid_inarg": "0x5c01000000000004",
+		"has_inarg": true,
+		"call_event_with_default_body": false
+	},
+	{
+		"script_path": "versionid_0.lua",
+		"versionid_result": "0x7FF0000000000000",
+		"versionid_inarg": "0x7FF0000000000000",
+		"has_inarg": true,
+		"call_event_with_default_body": false
+	},
+	{
+		"script_path": "versionid_0.lua",
+		"versionid_result": "0x7FEFFFFFFFFFFFFF",
+		"versionid_inarg": "0x7FEFFFFFFFFFFFFF",
+		"has_inarg": true,
+		"call_event_with_default_body": false
+	},
+	{
+		"script_path": "versionid_0.lua",
+		"versionid_result": "0xFFF8000000000000",
+		"versionid_inarg": "0x7FFFFFFFFFFFFFFF",
+		"has_inarg": true,
+		"call_event_with_default_body": false
+	},
+	{
+		"script_path": "versionid_0.lua",
+		"versionid_result": "0x0008000000000000",
+		"versionid_inarg": "0x0008000000000000",
 		"has_inarg": true,
 		"call_event_with_default_body": false
 	}
