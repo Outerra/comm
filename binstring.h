@@ -15,7 +15,7 @@
  *
  * The Initial Developer of the Original Code is
  * Outerra.
- * Portions created by the Initial Developer are Copyright (C) 2013-2021
+ * Portions created by the Initial Developer are Copyright (C) 2013-2024
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -60,7 +60,10 @@ public:
 
     COIDNEWDELETE(binstring);
 
-    binstring()
+    binstring() = default;
+
+    explicit binstring(uints reserve_size, reserve_mode mode = reserve_mode::memory)
+        : _tstr(reserve_size, mode)
     {}
 
     binstring(binstring&& other) noexcept
@@ -131,6 +134,19 @@ public:
         T* p = pad_alloc<T>();
         *p = v;
         return (uint8*)p - _tstr.ptr();
+    }
+
+    ///Overwrite previously written data
+    /// @param offs offset previously returned by a write function
+    /// @param v value to write
+    /// @return false if offset is invalid
+    template <class T>
+    bool write_at_offset(uints offs, const T& v) {
+        if (offs + sizeof(T) > _tstr.byte_size())
+            return false;
+
+        *reinterpret_cast<T*>(_tstr.ptr() + offs) = v;
+        return true;
     }
 
     ///Write raw array of elements
@@ -213,10 +229,11 @@ public:
     ///Write number as a varint
     template <class T>
     binstring& write_varint(T num) {
-        uint8 buf[(8 * sizeof(T)) / 7 + 1];
+        constexpr uint vsize = (8 * sizeof(T)) / 7 + 1;
+        uint8 buf[vsize];
         uint8* pb = buf;
 
-        while (num & ~0x7f) {
+        while (num & ~T(0x7f)) {
             uint8 b = num & 0xff;
             *pb++ = b | 0x80;
             num >>= 7;
@@ -225,10 +242,12 @@ public:
         uints len = pb - buf;
         DASSERT(len <= sizeof(buf));
 
-        uints size = _tstr.size();
-        uints align = align_value_up(size, _packing < alignof(T) ? _packing : alignof(T)) - size;
+        uints offs = _tstr.size();
+        uints align = align_value_up(offs, _packing < alignof(T) ? _packing : alignof(T)) - offs;
 
-        ::memcpy(_tstr.add(align + len) + align, buf, len);
+        uint8* dst = _tstr.add(align + len) + align;
+        for (uints i = 0; i < len; ++i)
+            dst[i] = buf[i];
         return *this;
     }
 

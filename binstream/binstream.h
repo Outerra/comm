@@ -600,7 +600,7 @@ public:
     {
         opcd e;
         uints n = 0;
-        const uints BLOCKSIZE = 32768;
+        const uints BLOCKSIZE = 8192;
         uchar buf[BLOCKSIZE];
 
         if (blocksize > BLOCKSIZE)
