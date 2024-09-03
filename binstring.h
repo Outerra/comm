@@ -158,6 +158,15 @@ public:
         return (uint8*)p - _tstr.ptr();
     }
 
+    ///Write raw array of elements
+    /// @return new position in buffer
+    template <class T, int N>
+    uints write_raw_array(const T(&v)[N]) {
+        T* p = pad_alloc<T>(N);
+        for (uints i = 0; i < N; ++i) p[i] = v[i];
+        return (uint8*)p - _tstr.ptr();
+    }
+
     ///Write typed array prefixed with count
     template <class T>
     uints write_varray(const T* p, uints n) {
