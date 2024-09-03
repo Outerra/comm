@@ -2044,23 +2044,35 @@ public:
     void free() { _tstr.discard(); }
     void discard() { _tstr.discard(); }
 
-    ///Reserve memory for the string buffer
+    ///Reserve memory for string buffer, keeping the original content
     /// @param len min size for string to reserve (incl. term zero)
     /// @param m [optional] memory space to use
     char* reserve(uints len, mspace m = 0) {
-        return _tstr.reserve(len, true, m);
+        bool clear = _tstr.ptr() == nullptr;
+        char* p = _tstr.reserve(len, true, m);
+        if (clear)
+            *p = 0;
+        return p;
     }
 
-    ///Reserve virtual memory for the string buffer
+    ///Reserve virtual memory for string buffer
     /// @param len min size for string to reserve (incl. term zero)
     char* reserve_virtual(uints len) {
-        return _tstr.reserve_virtual(len);
+        bool clear = _tstr.ptr() == nullptr;
+        char* p = _tstr.reserve_virtual(len);
+        if (clear)
+            *p = 0;
+        return p;
     }
 
-    ///Reserve stack memory for the string buffer
+    ///Reserve stack memory for string buffer
     /// @param len min size for string to reserve (incl. term zero)
     char* reserve_stack(const stack_buffer<char>& sb) {
-        return _tstr.reserve_stack(sb);
+        bool clear = _tstr.ptr() == nullptr;
+        char* p = _tstr.reserve_stack(sb);
+        if (clear)
+            *p = 0;
+        return p;
     }
 
     /// @return number of reserved bytes
