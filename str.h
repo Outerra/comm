@@ -2075,8 +2075,10 @@ public:
         return p;
     }
 
-    /// @return number of reserved bytes
-    uints reserved() const { return _tstr.reserved_total(); }
+    /// @return number of reserved characters (incl. term zero)
+    uints reserved() const {
+        return _tstr.reserved_total();
+    }
 
     ///Reset string to empty but keep the memory
     charstr& reset() {
