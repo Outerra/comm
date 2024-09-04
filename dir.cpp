@@ -345,6 +345,18 @@ opcd directory::move_current_file_to(zstring dst, bool replace_existing)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+opcd directory::rename_file(zstring src, zstring dst, bool replace_existing)
+{
+    if (!is_absolute_path(dst)) {
+        zstring target = src.get_token().cut_left_group_back(DIR_SEPARATOR_STRING, token::cut_trait_keep_sep_default_full());
+        append_path(target.get_str(), dst);
+        dst.swap(target);
+    }
+
+    return move_file(src, dst, replace_existing);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 opcd directory::delete_file(zstring src)
 {
 #ifdef SYSTYPE_MSVC
