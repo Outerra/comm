@@ -2049,7 +2049,7 @@ public:
     /// @param m [optional] memory space to use
     char* reserve(uints len, mspace m = 0) {
         bool clear = _tstr.ptr() == nullptr;
-        char* p = _tstr.reserve(len, true, m);
+        char* p = _tstr.reserve(len > 0 ? len : 1, true, m);
         if (clear)
             *p = 0;
         return p;
@@ -2057,12 +2057,8 @@ public:
 
     ///Reserve virtual memory for string buffer
     /// @param len min size for string to reserve (incl. term zero)
-    char* reserve_virtual(uints len) {
-        bool clear = _tstr.ptr() == nullptr;
-        char* p = _tstr.reserve_virtual(len);
-        if (clear)
-            *p = 0;
-        return p;
+    void reserve_virtual(uints len) {
+        _tstr.reserve_virtual(len);
     }
 
     ///Reserve stack memory for string buffer

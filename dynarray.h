@@ -1189,14 +1189,12 @@ public:
     ///Reserve address space for \a nitems of elements in virtual memory
     /** @param nitems number of items to reserve
         @return pointer to the first item of the array */
-    T* reserve_virtual(uints nitems)
+    void reserve_virtual(uints nitems)
     {
         discard();
 
         _ptr = A::template reserve_virtual<T>(nitems);
         _set_count(0);
-
-        return _ptr;
     }
 
     ///Reserve stack memory for \a nitems of elements using _alloca
