@@ -1,10 +1,10 @@
-#include "ifc/data_ifc.h"
+#include "ifc/component_ifc.h"
 
 
 void data_client_test()
 {
-    data_ifc* pd = data_ifc::creator();
-    DASSERT(pd);
+    component_ifc* pd = component_ifc::creator();
+    DASSERT_RET(pd);
 
     int v = 0;
     pd->set_a(33);

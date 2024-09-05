@@ -462,7 +462,7 @@ public:
     }
 
     ///Delete object by pointer
-    void del_item(T* p)
+    void del_item_by_ptr(T* p)
     {
         del_item_internal(p, get_item_id(p));
     }
@@ -1599,7 +1599,7 @@ public:
                         if (*pm & m) {
                             if (funccall_if(f, data[pbase + i], gbase + pbase + i))
                             {
-                                del_item(const_cast<T*>(data) + (pbase + i));
+                                del_item_by_ptr(const_cast<T*>(data) + (pbase + i));
                                 found = true;
                             }
 

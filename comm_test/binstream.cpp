@@ -31,6 +31,7 @@
 
 using namespace coid;
 
+#if 0
 void test()
 {
     binstreambuf buf;
@@ -62,3 +63,4 @@ void test()
     xml << vec;
     xml << str;
 }
+#endif

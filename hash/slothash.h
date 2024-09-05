@@ -286,7 +286,7 @@ public:
         DASSERT_RET(id != UMAX32);
 
         T* p = destroy_value_(id);
-        base::del_item(p);
+        base::del_item_by_ptr(p);
     }
 
 
