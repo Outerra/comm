@@ -237,19 +237,24 @@ public:
 
     ///Write number as a varint
     template <class T>
-    binstring& write_varint(T num) {
-        constexpr uint vsize = (8 * sizeof(T)) / 7 + 1;
-        uint8 buf[vsize];
+    binstring& write_varint(T num)
+    {
+        using U = std::make_unsigned_t<T>;
+        constexpr uint bitcount = uint(8 * sizeof(T));
+        constexpr uint bufsize = (bitcount + 6) / 7;
+        U val = std::is_unsigned<T>::value ? num : U((num << 1) ^ (num >> (bitcount - 1)));
+
+        uint8 buf[bufsize];
         uint8* pb = buf;
 
-        while (num & ~T(0x7f)) {
-            uint8 b = num & 0xff;
+        while (val & ~U(0x7f)) {
+            uint8 b = uint8(val);
             *pb++ = b | 0x80;
-            num >>= 7;
+            val >>= 7;
         }
-        *pb++ = uint8(num);
+        *pb++ = uint8(val);
         uints len = pb - buf;
-        DASSERT(len <= sizeof(buf));
+        DASSERT(len <= bufsize);
 
         uints offs = _tstr.size();
         uints align = align_value_up(offs, _packing < alignof(T) ? _packing : alignof(T)) - offs;
@@ -313,6 +318,8 @@ public:
     template <class T>
     T read_varint()
     {
+        constexpr uint bitcount = uint(8 * sizeof(T));
+        constexpr uint bufsize = (bitcount + 6) / 7;
         const uint8* buffer = _tstr.ptr() + _offset;
 
         uint64 result = 0;
@@ -324,7 +331,8 @@ public:
             result |= uint64(b & 0x7F) << (7 * count);
             ++count;
         }
-        while ((b & 0x80) && (count < (sizeof(T) * 8 + 6) / 7));
+        while ((b & 0x80) && count < bufsize);
+        DASSERT((b & 0x80) == 0);
 
         _offset += count;
 
