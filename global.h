@@ -602,6 +602,19 @@ public:
     /// @brief Run destructor on component
     /// @tparam OwnT
     template <class C>
+    static void destruct(versionid vid) {
+        DASSERT_RET(vid.is_valid());
+        static container* c = 0;
+        if (!c) c = get_container<C>();
+        DASSERT_RET(c);
+        C* co = static_cast<C*>(c->element(vid.idx));
+        if (co)
+            co->~C();
+    }
+
+    /// @brief Run destructor on component
+    /// @tparam OwnT
+    template <class C>
     static void destruct(uint gid) {
         static container* c = 0;
         if (!c) c = get_container<C>();
