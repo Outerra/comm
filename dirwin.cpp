@@ -90,7 +90,10 @@ opcd directory::open(const token& path, const token& filter)
         }
     }
     else {
-        if (end == '\\' || end == '/') {
+        if (_pattern.is_empty()) {
+            _pattern = ".\\";
+        }
+        else if (end == '\\' || end == '/') {
             _pattern.resize(-1);
         }
         else {
