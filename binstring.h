@@ -43,13 +43,14 @@
 #include "token.h"
 #include "str.h"
 #include "dynarray.h"
-#include "binstream/binstream.h"
 #include "commexception.h"
 
 #include <limits>
 #include <type_traits>
 
 COID_NAMESPACE_BEGIN
+
+class binstream;
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Binary string class. Written values are aligned by their size and specified packing value.
@@ -101,8 +102,28 @@ public:
         return *this;
     }
 
-    binstring& write_fixed_string(const token& tok) {
-        ::memcpy(_tstr.add(tok.len()), tok.ptr(), tok.len());
+    ///Append string with optionally specified size type (uint8, uint16, uint32 ...)
+    template <class SIZE COID_DEFAULT_OPT(uint)>
+    binstring& write_string(const token& tok) {
+        uints size = write_size<SIZE>(tok.len());
+        _tstr.add_bin_from((const uint8*)tok.ptr(), size);
+        return *this;
+    }
+
+    ///Append string with optionally specified size type (uint8, uint16, uint32 ...)
+    template <class SIZE COID_DEFAULT_OPT(uint)>
+    binstring& write_string(const char* czstr) {
+        token tok(czstr);
+        uints size = write_size<SIZE>(tok.len());
+        _tstr.add_bin_from((const uint8*)tok.ptr(), size);
+        return *this;
+    }
+
+    ///Append string with optionally specified size type (uint8, uint16, uint32 ...)
+    template <class SIZE COID_DEFAULT_OPT(uint)>
+    binstring& write_string(const charstr& str) {
+        uints size = write_size<SIZE>(str.len());
+        _tstr.add_bin_from((const uint8*)str.ptr(), size);
         return *this;
     }
 
@@ -111,6 +132,11 @@ public:
         write_varint(len);
         if (len)
             ::memcpy(_tstr.add(len), tok.ptr(), len);
+        return *this;
+    }
+
+    binstring& write_fixed_string(const token& tok) {
+        ::memcpy(_tstr.add(tok.len()), tok.ptr(), tok.len());
         return *this;
     }
 
@@ -147,6 +173,14 @@ public:
 
         *reinterpret_cast<T*>(_tstr.ptr() + offs) = v;
         return true;
+    }
+
+    ///Write raw array of elements
+    /// @return new position in buffer
+    uints write_raw_data(const void* v, uints size) {
+        uint8* p = _tstr.add(size);
+        memcpy(p, v, size);
+        return p - _tstr.ptr();
     }
 
     ///Write raw array of elements
@@ -201,31 +235,6 @@ public:
         *(T*)(_tstr.ptr() + offset) = v;
     }
 
-    ///Append string with optionally specified size type (uint8, uint16, uint32 ...)
-    template <class SIZE COID_DEFAULT_OPT(uint)>
-    binstring& append_string(const token& tok) {
-        uints size = write_size<SIZE>(tok.len());
-        _tstr.add_bin_from((const uint8*)tok.ptr(), size);
-        return *this;
-    }
-
-    ///Append string with optionally specified size type (uint8, uint16, uint32 ...)
-    template <class SIZE COID_DEFAULT_OPT(uint)>
-    binstring& append_string(const char* czstr) {
-        token tok(czstr);
-        uints size = write_size<SIZE>(tok.len());
-        _tstr.add_bin_from((const uint8*)tok.ptr(), size);
-        return *this;
-    }
-
-    ///Append string with optionally specified size type (uint8, uint16, uint32 ...)
-    template <class SIZE COID_DEFAULT_OPT(uint)>
-    binstring& append_string(const charstr& str) {
-        uints size = write_size<SIZE>(str.len());
-        _tstr.add_bin_from((const uint8*)str.ptr(), size);
-        return *this;
-    }
-
     ///Add buffer with specified leading alignment
     binstring& append_buffer(const void* p, uints len, uint alignment = 1) {
         uints size = _tstr.size();
@@ -276,6 +285,14 @@ public:
     template <class T>
     const T& fetch() {
         return *seek<std::remove_reference_t<T>>(_offset);
+    }
+
+    ///Fetch pointer to raw data
+    /// @return pointer to the first item
+    const void* fetch_raw_data(uints size) {
+        const void* p = _tstr.ptr() + _offset;
+        _offset += size;
+        return p;
     }
 
     ///Fetch pointer to a raw typed array with n items
@@ -385,32 +402,13 @@ public:
 
     ///Read/append data from binstream
     /// @return size read
-    uints load_from_binstream(binstream& bin, uints datasize = UMAXS)
-    {
-        uints old = _tstr.size();
-        uints n = 0;
+    uints load_from_binstream(binstream& bin, uints datasize = UMAXS);
 
-        while (1)
-        {
-            static const uints packet = 4096;
-            const uints len = datasize < packet ? datasize : packet;
-            uint8* ptr = _tstr.add(len);
+    ///Read/append data from file
+    /// @return size read
+    uints load_from_file(const coid::token& path, uints datasize = UMAXS);
 
-            uints toread = len;
-            opcd e = bin.read_raw_full(ptr, toread);
-
-            uints d = len - toread;
-            datasize -= d;
-            n += d;
-
-            if (e != NOERR || toread > 0 || datasize == 0)
-                break;
-        }
-
-        _tstr.resize(old + n);
-        return n;
-    }
-
+    uints save_to_file(const coid::token& path, uints datasize = UMAXS);
 
     friend void swap(binstring& a, binstring& b) {
         a._tstr.swap(b._tstr);
@@ -505,6 +503,11 @@ public:
     void reset() {
         _tstr.reset();
         _offset = 0;
+    }
+
+    binstring& reset_read() {
+        _offset = 0;
+        return *this;
     }
 
     ~binstring() {}

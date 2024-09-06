@@ -15,7 +15,7 @@
  *
  * The Initial Developer of the Original Code is
  * Outerra.
- * Portions created by the Initial Developer are Copyright (C) 2023 
+ * Portions created by the Initial Developer are Copyright (C) 2023=2024
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -38,6 +38,7 @@
 #pragma once
 
 #include "ref.h"
+#include "binstream/binstreambuf.h"
 
 COID_NAMESPACE_BEGIN
 

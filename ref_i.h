@@ -39,8 +39,6 @@
 #include "ref_base.h"
 #include "sync/mutex.h"
 #include "hash/hashfunc.h"
-#include "binstream/binstreambuf.h"
-#include "metastream/metastream.h"
 #include "atomic/pool_base.h"
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -262,7 +260,7 @@ public:
         s.create(new T); return bin >> *s.get();
     }
 
-    friend coid::metastream& operator || (coid::metastream& m, iref_t& s)
+    /*friend coid::metastream& operator || (coid::metastream& m, iref_t& s)
     {
         if (m.stream_writing())
             m.write_optional(s.get());
@@ -281,7 +279,7 @@ public:
                 m || *s._p;
         }
         return m;
-    }
+    }*/
 };
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

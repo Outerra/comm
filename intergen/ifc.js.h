@@ -17,7 +17,7 @@
  *
  * The Initial Developer of the Original Code is
  * Outerra.
- * Portions created by the Initial Developer are Copyright (C) 2013-2023
+ * Portions created by the Initial Developer are Copyright (C) 2013-2024
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -45,6 +45,7 @@
 #include "../metastream/metastream.h"
 #include "../metastream/fmtstream_v8.h"
 #include "../binstream/filestream.h"
+#include "../binstream/binstreambuf.h"
 #include <v8/v8.h>
 
 namespace js {

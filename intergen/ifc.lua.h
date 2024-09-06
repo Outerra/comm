@@ -15,7 +15,7 @@
  *
  * The Initial Developer of the Original Code is
  * Outerra.
- * Portions created by the Initial Developer are Copyright (C) 2013-2023
+ * Portions created by the Initial Developer are Copyright (C) 2013-2024
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -43,6 +43,7 @@
 #include "../log.h"
 #include "../metastream/metastream.h"
 #include "../binstream/filestream.h"
+#include "../binstream/binstreambuf.h"
 #include "../singleton.h"
 
 #include <luaJIT/lua.hpp>
@@ -674,7 +675,7 @@ inline bool is_context_table(lua_State* L, int index)
     bool result = lua_istable(L, index);
     result &= lua_hasfield(L, index, _lua_context_script_dir_key);
     result &= lua_hasfield(L, index, _lua_context_script_path_key);
-    
+
     return result;
 }
 
@@ -1270,7 +1271,7 @@ inline iref<registry_handle> wrap_data_object(T* data, const coid::token& ifcnam
 
     if (fn)
         return fn(data, context);
-    
+
     return nullptr;
 }
 
