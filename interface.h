@@ -44,6 +44,7 @@
 #include "dynarray.h"
 #include "regex.h"
 #include "log/logger.h"
+#include "metastream/metastream.h"
 
 class intergen_interface;
 

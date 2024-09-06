@@ -251,35 +251,6 @@ public:
     friend bool operator < (const iref<T>& a, const iref<T>& b) {
         return a._p < b._p;
     }
-
-    friend coid::binstream& operator << (coid::binstream& bin, const iref_t& s) {
-        return bin << *s.get();
-    }
-
-    friend coid::binstream& operator >> (coid::binstream& bin, iref_t& s) {
-        s.create(new T); return bin >> *s.get();
-    }
-
-    /*friend coid::metastream& operator || (coid::metastream& m, iref_t& s)
-    {
-        if (m.stream_writing())
-            m.write_optional(s.get());
-        else if (m.stream_reading())
-            s.create(m.read_optional<T>());
-        else {
-            if (m.meta_decl_raw_pointer(
-                typeid(s).name(),
-                false,
-                0,
-                [](const void* a) -> const void* { return static_cast<const iref_t*>(a)->_p; },
-                [](const void* a) -> uints { return static_cast<const iref_t*>(a)->is_empty() ? 0 : 1; },
-                [](void* a, uints& i) -> void* { return static_cast<iref*>(a)->_p; },
-                [](const void* a, uints& i) -> const void* { return static_cast<const iref_t*>(a)->_p; }
-            ))
-                m || *s._p;
-        }
-        return m;
-    }*/
 };
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

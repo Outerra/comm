@@ -39,8 +39,6 @@
 #include "ref_base.h"
 #include "atomic/pool_base.h"
 #include "hash/hashfunc.h"
-#include "binstream/binstream.h"
-#include "metastream/metastream.h"
 
 
 namespace atomic {
@@ -277,36 +275,6 @@ public:
     friend bool operator < (const ref<T>& a, const ref<T>& b) {
         return a._o < b._o;
     }
-
-    friend coid::binstream& operator<<(coid::binstream& bin, const ref<T>& s) {
-        return bin << (*s._o);
-    }
-
-    friend coid::binstream& operator >> (coid::binstream& bin, ref<T>& s) {
-        s.create(); return bin >> (*s._o);
-    }
-
-    friend coid::metastream& operator || (coid::metastream& m, ref<T>& s)
-    {
-        if (m.stream_writing())
-            m.write_optional(s.get());
-        else if (m.stream_reading())
-            s.create(m.read_optional<T>());
-        else {
-            if (m.meta_decl_raw_pointer(
-                typeid(s).name(),
-                false,
-                0,
-                [](const void* a) -> const void* { return static_cast<const ref<T>*>(a)->_o; },
-                [](const void* a) -> uints { return static_cast<const ref<T>*>(a)->is_empty() ? 0 : 1; },
-                [](void* a, uints& i) -> void* { return static_cast<ref<T>*>(a)->_o; },
-                [](const void* a, uints& i) -> const void* { return static_cast<const ref<T>*>(a)->_o; }
-            ))
-                m || *s._o;
-        }
-        return m;
-    }
-
 
 private:
     policy* _p;

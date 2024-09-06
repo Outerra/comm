@@ -40,6 +40,7 @@
 #include "../namespace.h"
 #include "../dynarray.h"
 #include "../commexception.h"
+#include "../binstream/binstream.h"
 
 #define ZSTD_STATIC_LINKING_ONLY
 #include <zstd.h>
