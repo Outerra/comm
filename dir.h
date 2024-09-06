@@ -196,7 +196,17 @@ public:
 
     static opcd copy_file(zstring src, zstring dst, bool preserve_dates);
 
+    /// @brief Move file
+    /// @param src source path (absolute or relative to the working dir)
+    /// @param dst target path (absolute or relative to the working dir)
+    /// @param replace_existing true if an existing target should be replaced
     static opcd move_file(zstring src, zstring dst, bool replace_existing);
+
+    /// @brief Rename file, target is relative to the source path
+    /// @param src source path (absolute or relative to the working dir)
+    /// @param dst target path (absolute or relative to the source path)
+    /// @param replace_existing true if an existing target should be replaced
+    static opcd rename_file(zstring src, zstring dst, bool replace_existing);
 
     static opcd delete_file(zstring src);
 

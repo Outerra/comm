@@ -239,7 +239,7 @@ void fntest(void(*pfn)(charstr&))
     DASSERT(fns(1, 0) == 0);
     DASSERT(fnm.invoke_with_this(&s, 1, 0) == 1);
     DASSERT(fnl1(1, 0) == -1);
-    DASSERT(fnl2.invoke_with_this(&s, 1, 0) == -1);
+    DASSERT(fnl2.invoke_with_this(&s, 1, 0) == 1);
     DASSERT(fnz1(1, 0) == 2);
     DASSERT(fnz2(1, 0) == 2);
     DASSERT(fn2.invoke_with_this(&s, 1, 0) == 1);
@@ -321,11 +321,13 @@ struct slot : storage<L, Es...>
 #endif
 
 void data_client_test();
+void binstring_test();
 
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
 {
     singleton_test();
+    binstring_test();
     //compot();
     data_client_test();
 

@@ -34,7 +34,8 @@
     <DisplayString Condition="_ptr == 0">size = 0</DisplayString>
     <DisplayString>size = {((size_t*)_ptr)[-1]}</DisplayString>
     <Expand>
-        <Item Name="[size]" ExcludeView="simple">_ptr ? ((size_t*)_ptr)[-1] : 0</Item>
+        <Item Name="[size]" ExcludeView="simple" Condition="_ptr">((size_t*)_ptr)[-1]</Item>
+        <Item Name="[size]" ExcludeView="simple" Condition="!_ptr">0</Item>
         <Item Name="[capacity]" ExcludeView="simple">_ptr ? ((size_t*)_ptr)[-2] : 0/sizeof(*_ptr)</Item>
         <ArrayItems>
             <Size>_ptr ? ((size_t*)_ptr)[-1] : 0</Size>

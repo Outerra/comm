@@ -400,6 +400,7 @@
     <ClCompile Include="..\..\..\comm_test\comm\singletons_test.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\stream.cpp" />
     <ClCompile Include="..\..\..\comm_test\intergen\client_test.cpp" />
+    <ClCompile Include="..\..\..\comm_test\intergen\data.intergen.cpp" />
     <ClCompile Include="..\..\..\comm_test\intergen\data_client_test.cpp" />
     <ClCompile Include="..\..\..\comm_test\main.cpp" />
   </ItemGroup>
