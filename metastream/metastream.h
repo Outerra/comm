@@ -974,6 +974,38 @@ public:
         return used;
     }
 
+    ///Define an obsolete member - not present in the object, ignored on output, but doesn't fail when present in the input stream
+    /// @param name variable name, used as a key in output formats
+    /// @param set void function(T&&) receiving object from stream (if exists)
+    /// @return true if value was read, false if it wasn't present during reading. Always false in meta and writing phases
+    template<typename T, typename FnIn>
+    bool member_obsolete(const token& name, FnIn set)
+    {
+        bool used = false;
+
+        if (!streaming()) {
+            meta_variable_obsolete<T>(name);
+        }
+        else if (stream_reading()) {
+            if (cache_prepared()) {
+                _current->offs += sizeof(uints);
+                moveto_expected_target(true);
+            }
+            else {
+                T temp;
+                used = read_optional(temp);
+
+                if (used) {
+                    set(std::forward<T>(temp));
+                    warn_obsolete(name);
+                }
+            }
+        }
+        else if (cache_prepared())
+            _current->offs += sizeof(uints);
+
+        return used;
+    }
 
     ///Define a non-member variable (no valid offset within the parent struct)
     /// @param name variable name, used as a key in output formats
