@@ -77,14 +77,14 @@ opcd directory::open(const token& path, const token& filter)
     if (_curpath.last_char() == '/')
         _curpath.resize(-1);
 
-    _dir = opendir(_curpath.ptr());
+    _dir = opendir(_curpath.c_str());
     if (!_dir)
         return ersFAILED;
 
     _curpath << '/';
     _baselen = _curpath.len();
 
-    stat64(_curpath.ptr(), &_st);
+    stat64(_curpath.c_str(), &_st);
 
     _pattern = filter ? filter : token("*");
     return 0;
@@ -244,11 +244,11 @@ const directory::xstat* directory::next()
     if (!dire)
         return 0;
 
-    if (0 == fnmatch(_pattern.ptr(), dire->d_name, 0))
+    if (0 == fnmatch(_pattern.c_str(), dire->d_name, 0))
     {
         _curpath.resize(_baselen);
         _curpath << dire->d_name;
-        if (stat64(_curpath.ptr(), &_st) == 0)
+        if (stat64(_curpath.c_str(), &_st) == 0)
             return &_st;
     }
 

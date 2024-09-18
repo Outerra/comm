@@ -98,7 +98,8 @@ opcd directory::open(const token& path, const token& filter)
             end = '\\';
             const char* pe = _pattern.ptre();
             const char* pb = _pattern.ptr();
-            while (--pe >= pb) {
+            while (pe > pb) {
+                --pe;
                 if (*pe == '\\' || *pe == '/') {
                     end = *pe;
                     break;
@@ -109,7 +110,10 @@ opcd directory::open(const token& path, const token& filter)
         }
     }
 
-    if (_stat64(_pattern.ptr(), &_st) != 0 || (_st.st_mode & _S_IFDIR) == 0)
+    if (_pattern.is_empty())
+        _pattern << '.';
+
+    if (_stat64(_pattern.c_str(), &_st) != 0 || (_st.st_mode & _S_IFDIR) == 0)
         return ersFAILED;
 
     if (!drive)
@@ -320,7 +324,7 @@ const directory::xstat* directory::next()
 
     if (_handle == -1)
     {
-        _handle = _findfirst(_pattern.ptr(), &dir);
+        _handle = _findfirst(_pattern.c_str(), &dir);
         if (_handle == -1)
             return 0;
     }
@@ -332,7 +336,7 @@ const directory::xstat* directory::next()
 
     _curpath.resize(_baselen);
     _curpath << token::from_cstring(dir.name);
-    if (_stat64(_curpath.ptr(), &_st) == 0)
+    if (_stat64(_curpath.c_str(), &_st) == 0)
         return &_st;
 
     return next();
@@ -452,7 +456,7 @@ void directory::find_files(
 
     //*** init search using wildcard
     append_path(buffer, "*");
-    HANDLE hFind = FindFirstFileExA(buffer.ptr(), FindExInfoBasic, &win32_file, FindExSearchNameMatch, NULL, 0);
+    HANDLE hFind = FindFirstFileExA(buffer.c_str(), FindExInfoBasic, &win32_file, FindExSearchNameMatch, NULL, 0);
 
     if (hFind == INVALID_HANDLE_VALUE)
         return;
