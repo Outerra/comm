@@ -149,6 +149,8 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
             bool extfn_class = false;
             bool extfn = tok == "ifc_fnx"_T;
             bool extev = tok == "ifc_eventx"_T;
+            bool extcreator = tok == "ifc_creatorx"_T;
+            bool iscreator = extcreator || tok == "ifc_creator"_T;
             bool bimplicit = false;
             bool bdestroy = false;
             bool bpure = false;
@@ -342,7 +344,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 if (m->bretifc)
                     m->ret.ifc_type = extfn_class ? meta::arg::ifc_type::ifc_class : meta::arg::ifc_type::ifc_struct;
 
-                if (!m->parse(lex, classname, namespc, extifcname, lastifc->fwds, true))
+                if (!m->parse(lex, classname, namespc, extifcname, lastifc->fwds, true, false))
                     ++ncontinuable_errors;
 
                 const MethodIG* old = lastifc->method.find_if([m](const MethodIG& o) {
@@ -414,7 +416,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
 
                 m->parse_docs();
             }
-            else if (extfn || tok == "ifc_fn"_T)
+            else if (iscreator || extfn || tok == "ifc_fn"_T)
             {
                 //method declaration may be commented out if the method is a duplicate (with multiple interfaces)
                 bool slcom = lex.enable(lex.SLCOM, false);
@@ -442,7 +444,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 if (m->bretifc)
                     m->ret.ifc_type = extfn_class ? meta::arg::ifc_type::ifc_class : meta::arg::ifc_type::ifc_struct;
 
-                if (!m->parse(lex, classname, namespc, extifcname, lastifc->fwds, false))
+                if (!m->parse(lex, classname, namespc, extifcname, lastifc->fwds, false, iscreator))
                     ++ncontinuable_errors;
 
                 const MethodIG* old = lastifc->method.find_if([m](const MethodIG& o) {

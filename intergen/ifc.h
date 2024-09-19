@@ -86,6 +86,13 @@ namespace coid {
 #define IFC_STRUCT(ifc_name, dst_path)
 
 
+///Interface creator function (static)
+/// @note should have format: static iref<class> name(...)  - for ifc_class interfaces
+/// @note                 or: static class* name(...)       - for ifc_struct interfaces
+/// @note a creator can be also declared using ifc_fn static iref<class> name(...) for backward compatibility
+#define ifc_creator
+#define ifc_creatorx(extname)
+
 ///Interface function decoration keyword: such decorated method will be added into the interface
 /// @example ifc_fn void fn(int a, ifc_out int& b);
 #define ifc_fn
@@ -454,50 +461,6 @@ private:
 };
 
 COID_NAMESPACE_END
-
-////////////////////////////////////////////////////////////////////////////////
-///Helper class for interface methods to return a derived class of interface client, when
-/// the interface contains events that can/should be overriden by the client
-/**
-    Usage, host class:
-        ifc_fnx(!) void get_client( ifc_creator<someinterface>&& res );
-
-    client:
-        class extclient : public someinterface { ... }
-
-        iref<extclient> nc;
-        host->get_client(nc);
-**/
-template<class T>
-class ifc_creator
-{
-public:
-    T* create() {
-        _target.create(_create());
-        return _target.get();
-    }
-
-    iref<T>& get_ref() { return _target; }
-    const iref<T>& get_ref() const { return _target; }
-
-    template<class S>
-    ifc_creator(iref<S>& s)
-        : _create(reinterpret_cast<T* (*)()>(&creator_helper<S>::create))
-        , _target(reinterpret_cast<iref<T>&>(s))
-    {
-        static_assert(std::is_base_of<T, S>::value, "unrelated types");
-    }
-
-protected:
-
-    template<class S>
-    struct creator_helper {
-        static S* create() { return new S; }
-    };
-
-    T* (*_create)();
-    iref<T>& _target;
-};
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Helper struct for interface registration

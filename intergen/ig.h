@@ -328,7 +328,7 @@ struct MethodIG
     //    ret.fix_copy(src.ret);
     //}
 
-    bool parse(iglexer& lex, const charstr& host, const charstr& ns, const charstr& extifc, dynarray<forward>& fwds, bool isevent);
+    bool parse(iglexer& lex, const charstr& host, const charstr& ns, const charstr& extifc, dynarray<forward>& fwds, bool isevent, bool iscreator);
 
     void parse_docs();
 

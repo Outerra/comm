@@ -3,7 +3,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Parse function declaration after ifc_fn
-bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const charstr& extifc, dynarray<forward>& fwds, bool isevent)
+bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const charstr& extifc, dynarray<forward>& fwds, bool isevent, bool iscreator)
 {
     file = lex.get_current_file();
     line = lex.current_line();
@@ -40,21 +40,23 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
     biref = bptr = false;
     int ncontinuable_errors = 0;
 
-    if (bstatic && !bimplicit) {
+    if (iscreator || (bstatic && !bimplicit)) {
         charstr tmp;
-        bcreator = true;
 
         if (ret.bptr && ret.type == ((tmp = host) << '*')) {
             (ret.type = "iref<") << ns << host << '>';
+            bcreator = true;
         }
         else if (ret.basetype == ((tmp = "iref<") << host << '>')) {
-            biref = true;
             (ret.type = "iref<") << ns << host << '>';
+            biref = true;
+            bcreator = true;
         }
         else if (ret.basetype == ((tmp = "iref<") << ns << host << '>')) {
             biref = true;
+            bcreator = true;
         }
-        else {
+        else if (iscreator) {
             out << (lex.prepare_exception()
                 << "error: invalid return type for static interface creator method, should be iref<" << host << ">\n");
             lex.clear_err();
