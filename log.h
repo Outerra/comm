@@ -65,6 +65,13 @@
 /// @param msg text message to log, containing a severity prefix (error: err: warning: warn: info: msg: debug: perf:
 void coidlog_text(const coid::token& src, coid::token msg);
 
+#define coidlog_perf_eval(src, call, threshold_ms, name, logcond)\
+    do {uint64 t0=timer::current_time_ns(); (call);\
+        double ms = (timer::current_time_ns()-t0) * 1e-6;\
+        if((logcond) && ms > threshold_ms) {\
+            coid::logmsg_ref q = coid::log::openmsg(coid::log::level::perf, src); if (q) {q->str() << name << " blocked for " << coid::float_nfrac(ms, 2) << "ms";}}}\
+    while(0)
+
 
 ///Create a perf object that logs the time while the scope exists
 #define coidlog_perf_scope(src, msg) \
