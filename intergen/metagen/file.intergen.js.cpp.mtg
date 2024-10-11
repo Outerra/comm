@@ -113,6 +113,15 @@ $-(/if)$
     {
         _real()->intergen_capture_dispatch(mid, bin);
     }
+$-(if ?callback)$
+
+    // --- callback declarations ---
+
+$-[callback]$
+    using $name$ = $return.type$ (*)($[args rest=", "]$$type$ $(if ?fnarg)$( $-memfnclass after="::"-$ *$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$);
+$-[/callback]$
+
+$-(/if ?callback)$
 
     // --- creators ---
 
@@ -1014,6 +1023,15 @@ public:
 
     ~$name$_js_dispatcher()
     {}
+$-(if ?callback)$
+
+    // --- callback declarations ---
+
+$-[callback]$
+    using $name$ = $return.type$ (*)($[args rest=", "]$$type$ $(if ?fnarg)$( $-memfnclass after="::"-$ *$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$);
+$-[/callback]$
+
+$-(/if ?callback)$
 
     // --- creators ---
 

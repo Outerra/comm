@@ -38,6 +38,15 @@ $-[pasteinners]$
 
 $@value$
 $-[/pasteinners]$
+$-(if ?callback)$
+
+    // --- callback declarations ---
+
+$-[callback]$
+    using $name$ = $return.type$ (*)($[args rest=", "]$$type$ $(if ?fnarg)$( $-memfnclass after="::"-$ *$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$);
+$-[/callback]$
+
+$-(/if ?callback)$
 
     // --- interface methods ---
 

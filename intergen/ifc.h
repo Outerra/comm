@@ -139,6 +139,8 @@ namespace coid {
 /// of the (event) call or limited
 #define ifc_volatile
 
+#define ifc_callback(name, format) using name = format
+
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wcomment"

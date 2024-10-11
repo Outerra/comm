@@ -28,6 +28,7 @@ struct File
 
     dynarray<Class> classes;
     dynarray<File> dependencies;
+    dynarray<MethodIG> callbacks;
     dynarray<paste_block> pasters;
     dynarray<forward> fwds;
     dynarray<charstr> pastedefers;          //< pasted before the generated class definition
@@ -159,9 +160,15 @@ int generate_rl(const File& cgf, charstr& patfile, const token& outfile)
 ////////////////////////////////////////////////////////////////////////////////
 bool generate_ifc(File& file, Class& cls, Interface& ifc, timet mtime, charstr& tdir, charstr& fdir)
 {
-    if (ifc.event.size() > 0 && ifc.varname.is_empty()) {
-        out << "error: interface " << ifc.name << " has ifc_event methods and can be used only with bi-directional interfaces (ifc_class_var)\n";
-        return false;
+    if (ifc.event.size() > 0) {
+        if (ifc.bdataifc) {
+            out << "error: data interfaces cannot have event methods\n";
+            return false;
+        }
+        else if (ifc.varname.is_empty()) {
+            out << "error: interface " << ifc.name << " has ifc_event methods and can be used only with bi-directional interfaces (ifc_class_var)\n";
+            return false;
+        }
     }
 
 
@@ -502,6 +509,10 @@ bool File::find_class(iglexer& lex, dynarray<charstr>& namespc, charstr& templar
             namespc.pop();
         }
 
+        if (tok == "ifc_callback") {
+
+        }
+
         if (tok != lex.IDENT)  continue;
 
         if (tok == lex.NAMESPC) {
@@ -595,6 +606,7 @@ int File::parse(token path, const char* ref_file, int ref_line)
         for (; 0 != (mt = find_class(lex, namespc, templarg));)
         {
             Class* pc = classes.add();
+            pc->file = this;
             pc->classorstruct = lex.last();
 
             if (!pc->parse(lex, templarg, namespc, &pasters) || (pc->method.size() == 0 && pc->iface_refc.size() == 0 && pc->iface_data.size() == 0)) {

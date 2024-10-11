@@ -211,6 +211,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 //parse interface declaration
                 lastifc = lastifaces->add();
                 Interface* ifc = lastifc;
+                ifc->class_ptr = this;
 
                 ifc->file = lex.get_current_file();
                 ifc->line = lex.current_line();
@@ -344,10 +345,10 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 if (m->bretifc)
                     m->ret.ifc_type = extfn_class ? meta::arg::ifc_type::ifc_class : meta::arg::ifc_type::ifc_struct;
 
-                if (!m->parse(lex, classname, namespc, extifcname, lastifc->fwds, true, false))
+                if (!m->parse(lex, classname, namespc, extifcname, lastifc, MethodIG::method_type::event))
                     ++ncontinuable_errors;
 
-                const MethodIG* old = lastifc->method.find_if([m](const MethodIG& o) {
+                const MethodIG* old = lastifc->event.find_if([m](const MethodIG& o) {
                     return &o != m && o.name == m->name && m->matches_args(o);
                 });
 
@@ -444,7 +445,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 if (m->bretifc)
                     m->ret.ifc_type = extfn_class ? meta::arg::ifc_type::ifc_class : meta::arg::ifc_type::ifc_struct;
 
-                if (!m->parse(lex, classname, namespc, extifcname, lastifc->fwds, false, iscreator))
+                if (!m->parse(lex, classname, namespc, extifcname, lastifc, iscreator ? MethodIG::method_type::creator : MethodIG::method_type::method))
                     ++ncontinuable_errors;
 
                 const MethodIG* old = lastifc->method.find_if([m](const MethodIG& o) {
@@ -598,6 +599,12 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                         out << (lex.prepare_exception() << "warning: a matching duplicate method " << m->name << " not found in previous interfaces\n");
                         lex.clear_err();
                     }
+                }
+            }
+            else if (tok == "ifc_callback")
+            {
+                if (!MethodIG::parse_callback(lex, namespc, callback)) {
+                    ++ncontinuable_errors;
                 }
             }
             else {

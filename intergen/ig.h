@@ -15,6 +15,8 @@ using namespace coid;
 extern stdoutstream out;
 
 struct Class;
+struct Interface;
+struct File;
 
 ////////////////////////////////////////////////////////////////////////////////
 struct paste_block {
@@ -231,13 +233,15 @@ struct MethodIG
         bool tokenpar = false;          //< input argument that accepts token (token or charstr)
         bool bnoscript = false;         //< not used in scripts, use default val
         bool bfnarg = false;            //< function type arg
+        bool bcallback = false;         //< previously declared ifc_callback
 
 
         bool operator == (const Arg& a) const {
             return type == a.type && arsize == a.arsize;
         }
-
-        bool parse(iglexer& lex, bool argname);
+        /// @param argname 1 must be, 0 must not be, -1 optional
+        /// @param no_fn_arg function-type argument supported
+        bool parse(iglexer& lex, int8 argname, bool no_fn_arg);
 
         static charstr& match_type(iglexer& lex, charstr& dst);
 
@@ -300,7 +304,7 @@ struct MethodIG
     bool boperator = false;
     bool binternal = false;             //< internal method, invisible to scripts (starts with an underscore or ifc_fn(!))
     bool bcapture = false;              //< method captured when interface is in capturing mode
-    bool bimplicit = false;             //< an implicit event/method
+    bool bimplicit = false;             //< an implicit event/method (@connect etc)
     bool bdestroy = false;              //< a method to call on interface destroy
     bool bnoevbody = false;             //< mandatory event
     bool bpure = false;                 //< pure virtual on client
@@ -328,7 +332,16 @@ struct MethodIG
     //    ret.fix_copy(src.ret);
     //}
 
-    bool parse(iglexer& lex, const charstr& host, const charstr& ns, const charstr& extifc, dynarray<forward>& fwds, bool isevent, bool iscreator);
+    enum class method_type {
+        method,
+        event,
+        creator,
+        callback
+    };
+
+    bool parse(iglexer& lex, const charstr& host, const charstr& ns, const charstr& extifc, Interface* ifc, method_type mtype);
+
+    static bool parse_callback(iglexer& lex, const charstr& namespc, dynarray<MethodIG>& callbacks);
 
     void parse_docs();
 
@@ -402,6 +415,7 @@ struct Interface
     charstr file;
     uint line = 0;
     Interface* base_ifc = 0;
+    Class* class_ptr = 0;
 
     dynarray<charstr> nss;
     charstr name;
@@ -536,6 +550,7 @@ struct Interface
             //m.member("nifcmethods", p.nifc_methods);
             m.member("varname", p.varname);
             m.member("event", p.event);
+            //m.member("callback", p.callback);
             m.member("destroy", p.destroy);
             m.member("hash", p.hash);
             //m.member("inhmask", p.inhmask);
@@ -569,6 +584,8 @@ struct Class
     Class() = default;
     Class(const Class&) = delete;
 
+    File* file = 0;
+
     charstr classorstruct;
     charstr classname;
     charstr templarg;
@@ -580,6 +597,7 @@ struct Class
 
     dynarray<charstr> namespaces;
     dynarray<Method> method;
+    dynarray<MethodIG> callback;
     dynarray<Interface> iface_refc;
     dynarray<Interface> iface_data;
 

@@ -1,9 +1,11 @@
 
 #include "ig.h"
 
+#include "../dir.h"
+
 ////////////////////////////////////////////////////////////////////////////////
 ///Parse function declaration after ifc_fn
-bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const charstr& extifc, dynarray<forward>& fwds, bool isevent, bool iscreator)
+bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const charstr& extifc, Interface* ifc, method_type mtype)
 {
     file = lex.get_current_file();
     line = lex.current_line();
@@ -11,9 +13,11 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
     bstatic = lex.matches("static");
     bvirtual = lex.matches("virtual");
 
+    bool is_callback = mtype == method_type::callback;
+
     //rettype fncname '(' ...
 
-    if (!ret.parse(lex, false))
+    if (!ret.parse(lex, 0, is_callback))
         throw lex.exc();
 
     ret.name = "return";
@@ -32,10 +36,11 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
         fwd.type = ret.ifc_type;
         fwd.parse(extifc);
 
-        if (!fwds.contains(fwd))
-            fwds.push(std::move(fwd));
+        if (!ifc->fwds.contains(fwd))
+            ifc->fwds.push(std::move(fwd));
     }
 
+    bool iscreator = mtype == method_type::creator;
 
     biref = bptr = false;
     int ncontinuable_errors = 0;
@@ -66,16 +71,26 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
         storage = ret.type;
     }
 
-    lex.match(lex.IDENT, name, "expected method name");
-
-    boperator = name == "operator";
-    if (boperator) {
-        lex.match('(');
-        lex.match(')');
-        name << "()";
+    if (is_callback) {
+        if (!lex.matches('(') || !lex.matches('*') || !lex.matches(')')) {
+            out << (lex.prepare_exception()
+                << "error: expected `return_type (*)(...)' style callback declaration\n");
+            lex.clear_err();
+            ++ncontinuable_errors;
+        }
     }
+    else {
+        lex.match(lex.IDENT, name, "expected method name");
 
-    binternal = binternal || name.first_char() == '_';
+        boperator = name == "operator";
+        if (boperator) {
+            lex.match('(');
+            lex.match(')');
+            name << "()";
+        }
+
+        binternal = binternal || name.first_char() == '_';
+    }
 
     lex.match('(');
 
@@ -83,7 +98,7 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
 
     if (!lex.matches(')')) {
         do {
-            if (!args.add()->parse(lex, true))
+            if (!args.add()->parse(lex, is_callback ? -1 : 1, false))
                 throw lex.exc();
 
             Arg* arg = args.last();
@@ -131,8 +146,64 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
 
     bnoevbody = !evbody && nalloutargs > 0;
 
+    for (Arg& arg : args) {
+        const MethodIG* callback = ifc->class_ptr->callback.contains(arg.basetype, [](const MethodIG& m, const charstr& type) {
+            return m.name == type;
+        });
+
+        if (callback)
+            arg.bcallback = true;
+    }
+
     //declaration parsed successfully
     return lex.no_err() && ncontinuable_errors == 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+bool MethodIG::parse_callback(iglexer& lex, const charstr& namespc, dynarray<MethodIG>& callbacks)
+{
+    int ncontinuable_errors = 0;
+    charstr extname;
+
+    lex.match('(');
+    lex.match(lex.IDENT, extname);
+    lex.match(',');
+
+    MethodIG* m = callbacks.add();
+
+    //m->comments.takeover(commlist);
+    //m->classname << namespc << classname;
+
+    //m->bretifc = extfn_class || extfn_struct;
+    //if (m->bretifc)
+    //    m->ret.ifc_type = extfn_class ? meta::arg::ifc_type::ifc_class : meta::arg::ifc_type::ifc_struct;
+
+    if (!m->parse(lex, "", namespc, "", nullptr, MethodIG::method_type::callback))
+        ++ncontinuable_errors;
+
+    const MethodIG* old = callbacks.find_if([m](const MethodIG& o) {
+        return &o != m && o.name == m->name && m->matches_args(o);
+    });
+
+    if (old) {
+        charstr relpath;
+        directory::get_relative_path(m->file, old->file, relpath, true);
+        out << (lex.prepare_exception() << "callback already declared in " << relpath << "(" << old->line << "): " << m->name << "\n");
+        lex.clear_err();
+        ++ncontinuable_errors;
+    }
+
+    if (extname) {
+        m->intname.takeover(m->name);
+        m->name.takeover(extname);
+    }
+    else
+        m->intname = m->name;
+
+    m->basename = m->name;
+
+    m->parse_docs();
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -26,7 +26,7 @@ charstr& MethodIG::Arg::match_type(iglexer& lex, charstr& type)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool MethodIG::Arg::parse(iglexer& lex, bool argname)
+bool MethodIG::Arg::parse(iglexer& lex, int8 argname, bool no_fn_arg)
 {
     //arg: [ifc_in|ifc_out|ifc_inout|] [const] type
     //type: [class[<templarg>]::]* type[<templarg>] [[*|&] [const]]*
@@ -112,7 +112,7 @@ bool MethodIG::Arg::parse(iglexer& lex, bool argname)
     }
 
 
-    if (lex.matches('(')) {
+    if (!no_fn_arg && lex.matches('(')) {
         //a function argument [type] (*name)(arg1[,arg2]*)
         if (!lex.matches('*')) {
             //possibly a member fn
@@ -129,8 +129,12 @@ bool MethodIG::Arg::parse(iglexer& lex, bool argname)
         fnargs = lex.match_block(lex.ROUND, true);
         bfnarg = true;
     }
-    else if (argname)
+    else if (argname > 0) {
         lex.match(lex.IDENT, name, "expecting argument name");
+    }
+    else if (argname < 0) {
+        argname = lex.matches(lex.IDENT, name) ? 1 : 0;
+    }
 
     //match array
     if (argname && lex.matches('[')) {

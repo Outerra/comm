@@ -59,6 +59,8 @@ struct stream_op {
     static void fn(metastream& m, void* v) {
         if constexpr (std::is_enum_v<T>)
             m || *(std::underlying_type_t<T>*)v;
+        else if constexpr (std::is_function_v<std::remove_pointer_t<T>>)
+            ;
         else if constexpr (!has_metastream_operator<T>::value)
             ;
         else
