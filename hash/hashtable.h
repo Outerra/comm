@@ -42,8 +42,8 @@
 
 #include "../namespace.h"
 #include "../dynarray.h"
-#include "../metastream/metastream.h"
 #include "../bitrange.h"
+#include "../binstream/container.h"
 #include <algorithm>
 
 #include "hashfunc.h"
@@ -490,7 +490,7 @@ protected:
     ////////////////////////////////////////////////////////////////////////////////
 public:
 
-    binstream& stream_out(binstream& bin) const
+    /*binstream& stream_out(binstream& bin) const
     {
         hashtable_binstream_container bc(*this);
         bin.xwrite_array(bc);
@@ -520,7 +520,7 @@ public:
         m.read_container(bc);
 
         return m;
-    }
+    }*/
 
 
     ///
@@ -637,7 +637,7 @@ public:
 
     /// @brief Get range containing all elements equivalent to key
     /// @param k - key
-    /// @return Pair of interator to [first, last] or [end, end] if key not found 
+    /// @return Pair of interator to [first, last] or [end, end] if key not found
     std::pair<iterator, iterator> equal_range(const LOOKUP& k)
     {
         uints slot;

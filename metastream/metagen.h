@@ -44,6 +44,7 @@
 #include "../local.h"
 #include "../lexer.h"
 
+#include "metastream.h"
 #include "metavar.h"
 #include "fmtstreamcxx.h"   //temporary
 

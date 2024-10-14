@@ -337,6 +337,9 @@
     <ClInclude Include="..\..\..\binstream\filestreamzstd.h">
       <Filter>binstream</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\hash\hashkeyset_meta.h">
+      <Filter>hash</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\crypt\sha1.cpp">

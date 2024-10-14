@@ -488,6 +488,7 @@
     <ClInclude Include="..\..\..\dbg_location.h" />
     <ClInclude Include="..\..\..\function.h" />
     <ClInclude Include="..\..\..\global.h" />
+    <ClInclude Include="..\..\..\hash\hashkeyset_meta.h" />
     <ClInclude Include="..\..\..\hash\slothash.h" />
     <ClInclude Include="..\..\..\interface.h" />
     <ClInclude Include="..\..\..\intergen\ifc.h" />
