@@ -49,6 +49,7 @@ COID_NAMESPACE_BEGIN
 /// The assigned ID is cached in a static variable of a template specialization for the type, so repeated
 /// queries are fast. First time initialization and first time request from a different dll module uses
 /// a mutex to ensure a correct registration
+template<typename OWNER>
 class type_sequencer
 {
     template <class T>
@@ -71,12 +72,12 @@ public:
         int id = -1;
     };
 
-    /// @brief Get assigned id for type T
+    /// @brief Get or assign an id for type T
     /// @tparam T
     /// @return cached or assigned id
     /// @note IDs are generated sequentially, 0-based index
     template <class T>
-    int id()
+    int type_id()
     {
         int& rid = id_holder<T>::slot;
         if (rid >= 0)

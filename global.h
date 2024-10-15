@@ -59,8 +59,8 @@ public:
     template <class T>
     T*& component(int* pid = 0)
     {
-        type_sequencer& sq = tsq();
-        int id = sq.id<T>();
+        type_sequencer<OwnT>& sq = tsq();
+        int id = sq.type_id<T>();
         if (pid)
             *pid = id;
         void*& ctx = _components.get_or_addc(id);
@@ -72,8 +72,8 @@ public:
     template <class T>
     const T* component(int* pid = 0) const
     {
-        type_sequencer& sq = tsq();
-        int id = sq.id<T>();
+        type_sequencer<OwnT>& sq = tsq();
+        int id = sq.type_id<T>();
         if (pid)
             *pid = id;
         void* const& ctx = _components.get_safe(id, nullptr);
@@ -83,18 +83,29 @@ public:
     /// @return component id (sequential by order of registration)
     template <class T>
     int component_id() {
-        type_sequencer& sq = tsq();
-        return sq.id<T>();
+        type_sequencer<OwnT>& sq = tsq();
+        return sq.type_id<T>();
     }
 
     void* component_data(int cid) const {
         return cid < (int)_components.size() ? _components[cid] : nullptr;
     }
 
+    void iterate_all_components(void (*fn)(void* component_ptr, uint component_id))
+    {
+        for (uint i = 0, e = _components.size(); i < e; ++i)
+        {
+            if (_components[i] != nullptr)
+            {
+                fn(_components[i], i);
+            }
+        }
+    }
+
 private:
 
-    static type_sequencer& tsq() {
-        LOCAL_PROCWIDE_SINGLETON_DEF(type_sequencer) _tsq = new type_sequencer;
+    static type_sequencer<OwnT>& tsq() {
+        LOCAL_PROCWIDE_SINGLETON_DEF(type_sequencer<OwnT>) _tsq = new type_sequencer<OwnT>;
         return *_tsq;
     }
 
@@ -121,13 +132,13 @@ class data_manager
         uint16 version;
     };
 
-    struct sequencer : type_sequencer
+    struct sequencer : type_sequencer<OwnT>
     {
         static constexpr int BITMASK_BITS = 8 * sizeof(uints);
 
         sequencer()
-            : _allocated(coid::abyss_dynarray_size, coid::reserve_mode::virtual_space)
-            , _entities(coid::abyss_dynarray_size, coid::reserve_mode::virtual_space)
+            : _allocated(coid::abyss_dynarray_size, reserve_mode::virtual_space)
+            , _entities(coid::abyss_dynarray_size, reserve_mode::virtual_space)
         {}
 
         bool set_bit(uints k) { return _allocated.set_bit(k); }
@@ -200,7 +211,7 @@ class data_manager
         {
             DASSERT_RET(get_bit(vid.id) && _entities[vid.id].version == vid.version, false);
             return del(vid.id);
-            }
+        }
 
         bool is_valid(uint id) const {
             return get_bit(id);
@@ -210,9 +221,9 @@ class data_manager
             return get_bit(v.id) && _entities[v.id].version == v.version;
         }
 
-        versionid get_versionid(uint eid) const {
-            DASSERT_RET(get_bit(eid), versionid());
-            return versionid(eid, _entities[eid].version);
+        versionid get_versionid(uint gid) const {
+            DASSERT_RET(get_bit(gid), versionid());
+            return versionid(gid, _entities[gid].version);
         }
 
         dynarray32<uints> _allocated;
@@ -230,31 +241,39 @@ class data_manager
     struct container
     {
         size_t element_size;
+        sequencer* seq = 0;
 
-        enum class type {
+        uint16 container_id = -1;
+
+        enum class type : uint8 {
             array,
             hash,
         } storage_type;
 
-        sequencer* seq = 0;
 
-        container(uint size, enum class type t) : element_size(size), storage_type(t) {
+        container(uint id, uint size, enum class type t) : element_size(size), container_id(id), storage_type(t) {
             seq = &tsq();
         }
         virtual ~container() = default;
 
         /// @brief Fetch element from container
-        virtual void* element(uint eid) = 0;
+        virtual void* element(uint gid) = 0;
 
-        /// @brief  Fetch element by container id, not element_id
-        /// @param id container id
-        virtual void* element_by_container_id(uint id) = 0;
+        /// @brief  Fetch element by container local id (not a global one)
+        /// @param id container local id
+        virtual void* element_by_container_local_id(uint id) = 0;
+
+        /// @brief Return global id from a pointer to element
+        /// @param p pointer to container element data
+        /// @return global id
+        virtual uint element_id(const void* p) const = 0;
 
         /// @brief Create element
-        virtual void* create_default(uint eid) = 0;
-        virtual void* create_uninit(uint eid) = 0;
+        /// @return nullptr if element already exists
+        virtual void* create_default(uint gid) = 0;
+        virtual void* create_uninit(uint gid) = 0;
 
-        virtual void remove(uint eid) = 0;
+        virtual void remove(uint gid) = 0;
 
         /// @return pointer to a dynarray with linear storage
         virtual const void* linear_array_ptr() const = 0;
@@ -264,8 +283,10 @@ class data_manager
         virtual void reserve(uint count) = 0;
 
         virtual versionid allocate() = 0;
-    
-        virtual uint get_container_item_id(uint eid) const = 0;
+
+        /// @param gid global entity id
+        /// @return local id of element in given container
+        virtual uint get_container_local_item_id(uint gid) const = 0;
 
         virtual uint get_used_count() const = 0;
     };
@@ -278,32 +299,46 @@ class data_manager
     /// @brief slothash type container for sparse data
     /// @tparam T
     template <class T>
-    struct cshash : container {
+    struct cshash : container
+    {
+        static constexpr container::type specific_type = container::type::hash;
+
         struct extractor {
             using value_type = storage<T>;
             uint operator()(const storage<T>& s) const { return s.eid; }
         };
 
-        cshash() : container(sizeof(storage<T>), container::type::hash)
-        {}
-        void* element(uint eid) override final { return (T*)hash.find_value(eid); }
-        void* element_by_container_id(uint id) override final {
+        explicit cshash(uint id) : container(id, sizeof(storage<T>), container::type::hash) {
+            hash.reserve_virtual(1 << 23);
+        }
+        void* element(uint gid) override final { return (T*)hash.find_value(gid); }
+        void* element_by_container_local_id(uint id) override final {
             return hash.get_item(id);
         }
-        
-        void* create_default(uint eid) override {
-            return new (create_uninit(eid)) T;
+
+        uint element_id(const void* p) const {
+            DASSERT(hash.is_valid(static_cast<const storage<T>*>(p)));
+            return static_cast<const storage<T>*>(p)->eid;
         }
-        void* create_uninit(uint eid) override {
+
+        void* create_default(uint gid) override final {
+            if constexpr (std::is_default_constructible_v<T>) {
+                void* p = create_uninit(gid);
+                return p ? new (p) T : nullptr;
+            }
+
+            __assume(false);
+        }
+        void* create_uninit(uint gid) override final {
             bool is_new;
-            storage<T>* item = hash.find_or_insert_value_slot_uninit(eid, &is_new);
+            storage<T>* item = hash.find_or_insert_value_slot_uninit(gid, &is_new);
             if (!is_new)
-                item->~storage<T>();
-            item->eid = eid;
+                return nullptr;
+            item->eid = gid;
             return item;
         }
-        void remove(uint eid) override final {
-            hash.erase(eid);
+        void remove(uint gid) override final {
+            hash.erase(gid);
         }
         const void* linear_array_ptr() const override final {
             return 0;   //not supported
@@ -316,9 +351,9 @@ class data_manager
             return versionid();
         }
 
-        uint get_container_item_id(uint eid) const override final
+        uint get_container_local_item_id(uint gid) const override final
         {
-            return coid::down_cast<uint>(hash.get_item_id(hash.find_value(eid)));
+            return coid::down_cast<uint>(hash.get_item_id(hash.find_value(gid)));
         }
 
         uint get_used_count() const override final
@@ -332,20 +367,39 @@ class data_manager
     /// @brief linear array container
     /// @tparam T
     template <class T>
-    struct carray : container {
-        carray() : container(sizeof(T), container::type::array)
-        {}
-        void* element(uint eid) override final { return eid < data.size() ? &data[eid] : nullptr; }
-        void* element_by_container_id(uint id) override final {
+    struct carray : container
+    {
+        static constexpr container::type specific_type = container::type::array;
+
+        explicit carray(uint id) : container(id, sizeof(T), container::type::array) {
+            data.reserve(1 << 23);
+        }
+        void* element(uint gid) override final { return gid < data.size() ? &data[gid] : nullptr; }
+        void* element_by_container_local_id(uint id) override final {
             return element(id);
         }
-        void* create_default(uint eid) override {
-            return new (create_uninit(eid)) T;
+        uint element_id(const void* p) const {
+            const T* pt = static_cast<const T*>(p);
+            DASSERT(pt >= data.ptr() && pt < data.ptre());
+            return uint(pt - data.ptr());
         }
-        void* create_uninit(uint eid) override {
-            return &data.get_or_add(eid);
+
+        void* create_default(uint gid) override final {
+            if constexpr (std::is_default_constructible_v<T>)
+                return &data.get_or_add(gid);
+
+            __assume(false);
         }
-        void remove(uint eid) override final {
+        void* create_uninit(uint gid) override final {
+            uint n = data.size();
+            if (gid < n) {
+                //DASSERT(0);
+                return &data[gid];  //not uninitialized but we can't call destructor
+            }
+            T* p = data.add_uninit(gid + 1 - n);
+            return data.ptr() + gid;
+        }
+        void remove(uint gid) override final {
             DASSERT(0);
         }
         const void* linear_array_ptr() const override final {
@@ -359,19 +413,15 @@ class data_manager
             return versionid();
         }
 
-        uint get_container_item_id(uint eid) const override final
-        {
-            return eid;
+        uint get_container_local_item_id(uint gid) const override final {
+            //array uses global ids
+            return gid;
         }
 
-        uint get_used_count() const override final
-        {
-            return data.size();
-        }
+        uint get_used_count() const override final { return data.size(); }
 
         dynarray32<T> data;
     };
-
 
     // manipulators for the data
 
@@ -384,16 +434,16 @@ private:
     template <class M>
     struct base_handler {
         virtual ~base_handler() {}
-        virtual void invoke(M*, void*, uint) = 0;
+        virtual void invoke(M*, void*, versionid) = 0;
     };
 
     template <class M, class C>
     struct handler : base_handler<M>
     {
-        using handler_t = void (*)(M*, C&, uint, handler_data*);
+        using handler_t = void (*)(M*, C&, versionid, handler_data*);
 
-        virtual void invoke(M* m, void* c, uint eid) override {
-            return fn(m, *(C*)c, eid, data);
+        virtual void invoke(M* m, void* c, versionid vid) override {
+            return fn(m, *(C*)c, vid, data);
         }
 
         handler(handler_t&& fn, handler_data* data) {
@@ -414,27 +464,54 @@ private:
     template <class M>
     struct manipulator {
         virtual ~manipulator() {}
-        coid::dynarray32<base_handler<M>*> component_handlers;
+        dynarray32<base_handler<M>*> component_handlers;
     };
 
 public:
 
+    /// @brief Get container id assigned to the type (also assigns on first use)
+    /// @return -0-based type index
+    template <class C>
+    static int get_container_id()
+    {
+        return tsq().type_id<C>();
+    }
+
+
     /// @brief Retrieve data of given type
     /// @tparam C data type
-    /// @param eid entity id
+    /// @param vid versioned entity id
+    /// @return data pointer
+    static void* get_by_container_id(versionid vid, uint cid)
+    {
+        dynarray32<container*>& conts = data_containers();
+        DASSERT_RET(cid < conts.size(), 0);
+
+        container* c = conts[cid];
+        if (!c || !c->seq->is_valid(vid))
+            return nullptr;
+
+        return c->element(vid.id);
+    }
+
+
+
+    /// @brief Retrieve data of given type
+    /// @tparam C data type
+    /// @param gid global entity id
     /// @return data pointer
     template <class C>
-    static C* get(uint eid)
+    static C* get(uint gid)
     {
         static container* c = 0;
         if (!c) c = get_container<C>();
 
-        return c ? static_cast<C*>(c->element(eid)) : nullptr;
+        return c ? static_cast<C*>(c->element(gid)) : nullptr;
     }
 
     /// @brief Retrieve data of given type
     /// @tparam C data type
-    /// @param eid entity id
+    /// @param vid versioned entity id
     /// @return data pointer
     template <class C>
     static C* get(versionid vid)
@@ -448,33 +525,54 @@ public:
         return static_cast<C*>(c->element(vid.id));
     }
 
+    template <class C>
+    static C& get_or_create(versionid vid)
+    {
+        static container* c = 0;
+        if (!c) c = &get_or_create_container<C>();
+
+        uint id = vid.id();
+        C* el = static_cast<C*>(c->element(id));
+        if (!el)
+            el = static_cast<C*>(c->create_default(id));
+
+        return *el;
+    }
+
     /// @brief Retrieve data of given type
     /// @tparam C data type
     /// @param id container item id
     /// @return data pointer
     template <class C>
-    static C* get_by_container_id(uint id)
+    static C* get_by_container_local_id(uint id)
     {
         static container* c = 0;
         if (!c) c = get_container<C>();
 
-        return c ? static_cast<C*>(c->element_by_container_id(id)) : nullptr;
+        return c ? static_cast<C*>(c->element_by_container_local_id(id)) : nullptr;
     }
 
-    static void* get_data(uint eid, uint c)
+    static void* get_data(versionid vid, uint c)
     {
         container* co = data_containers().get_safe(c, nullptr);
-        if (!co)
-            return 0;
+        if (!co || !co->seq->is_valid(vid))
+            return nullptr;
 
-        return co->element(eid);
+        return co->element(vid.id);
     }
 
+    /// @brief Create entity
+    /// @return newely created entity id
     static versionid allocate()
     {
         static sequencer& seq = tsq();
         uint id;
         erecord* er = seq.add(&id);
+
+        for (container* c : data_containers()) {
+            if (c && c->storage_type == container::type::array)
+                c->create_default(id);
+        }
 
         return versionid(id, er->version);
     }
@@ -491,12 +589,12 @@ public:
     }
 
     /// @brief Free entity
-    static void free(uint eid) {
+    static void free(uint gid) {
         static sequencer& seq = tsq();
-        if (seq.del(eid)) {
+        if (seq.del(gid)) {
             for (container* c : data_containers()) {
                 if (c && c->storage_type == container::type::hash)
-                    c->remove(eid);
+                    c->remove(gid);
             }
         }
     }
@@ -504,18 +602,31 @@ public:
     /// @brief Run destructor on component
     /// @tparam OwnT
     template <class C>
-    static void destruct(uint eid) {
+    static void destruct(versionid vid) {
+        DASSERT_RET(vid.valid());
         static container* c = 0;
         if (!c) c = get_container<C>();
         DASSERT_RET(c);
-        C* co = static_cast<C*>(c->element(eid));
+        C* co = static_cast<C*>(c->element(vid.id));
         if (co)
             co->~C();
     }
 
-    static bool is_valid(uint eid) {
+    /// @brief Run destructor on component
+    /// @tparam OwnT
+    template <class C>
+    static void destruct(uint gid) {
+        static container* c = 0;
+        if (!c) c = get_container<C>();
+        DASSERT_RET(c);
+        C* co = static_cast<C*>(c->element(gid));
+        if (co)
+            co->~C();
+    }
+
+    static bool is_valid(uint gid) {
         static sequencer& seq = tsq();
-        return seq.is_valid(eid);
+        return seq.is_valid(gid);
     }
 
     static bool is_valid(versionid vid) {
@@ -523,71 +634,92 @@ public:
         return seq.is_valid(vid);
     }
 
-    static versionid get_versionid(uint eid) {
+    /// @param gid global id (non-versioned)
+    /// @return versioned id from given global id
+    static versionid get_versionid(uint gid) {
         static sequencer& seq = tsq();
-        return seq.get_versionid(eid);
+        return seq.get_versionid(gid);
     }
 
     /// @brief Insert data of given type under the entity id
     /// @tparam C data type
-    /// @param eid entity id
+    /// @param vid entity handle
     /// @param v data value to move from
     /// @return pointer to the inserted data
     template <class C>
-    static C* push(uint eid, C&& v)
+    static C* push(versionid vid, C&& v)
     {
-        static container* c = get_or_create_container<C, cshash<C>>();
-        DASSERT_RET(c, 0);
+        static container* c = &get_or_create_container<C, cshash<C>>();
+        DASSERT_RET(c, nullptr);
+        DASSERT_RET(c->seq->is_valid(vid), nullptr);
 
-        C* d = static_cast<C*>(c->create_default(eid));
+        C* d = static_cast<C*>(c->create_default(vid.id));
         *d = std::move(v);
-        DASSERT(c->storage_type != container::type::hash || static_cast<storage<C>*>(d)->eid == eid);
+        DASSERT(c->storage_type != container::type::hash || static_cast<storage<C>*>(d)->eid == vid.id);
 
         return d;
     }
 
     /// @brief Insert default constructed data
     /// @tparam C data type
-    /// @param eid entity id
+    /// @param vid entity handle
     /// @return pointer to the uninitialized data
     template <class C>
-    static C* push_default(uint eid)
+    static C* push_default(versionid vid)
     {
-        static container* c = get_or_create_container<C, cshash<C>>();
-        DASSERT_RET(c, 0);
+        static container* c = &get_or_create_container<C, cshash<C>>();
+        DASSERT_RET(c, nullptr);
+        DASSERT_RET(c->seq->is_valid(vid), nullptr);
 
-        return static_cast<C*>(c->create_default(eid));
+        return static_cast<C*>(c->create_default(vid.id));
     }
 
     /// @brief Insert uninitialized data, to be in-place constructed
     /// @tparam C data type
-    /// @param eid entity id
+    /// @param vid entity handle
     /// @return pointer to the uninitialized data
     template <class C, class...Ps>
-    static C* emplace(uint eid, Ps&&... ps)
+    static C* emplace(versionid vid, Ps&&... ps)
     {
-        static container* c = get_or_create_container<C, cshash<C>>();
-        DASSERT_RET(c, 0);
+        static container* c = &get_or_create_container<C, cshash<C>>();
+        DASSERT_RET(c, nullptr);
+        DASSERT_RET(c->seq->is_valid(vid), nullptr);
 
-        return new (c->create_uninit(eid)) C(std::forward<Ps>(ps)...);
+        void* p = c->create_uninit(vid.id);
+        DASSERT(p);
+        return new (p) C(std::forward<Ps>(ps)...);
     }
 
     /// @brief Remove component from entity
     /// @tparam C data type
-    /// @param eid entity id
+    /// @param gid global entity id
     template <class C>
-    static void remove(uint eid)
+    static void remove(uint gid)
     {
         static container* c = 0;
         if (!c) c = get_container<C>();
         DASSERT_RET(c);
 
-        c->remove(eid);
+        c->remove(gid);
     }
 
     /// @brief Remove component from entity
     /// @tparam C data type
-    /// @param eid entity id
+    /// @param p pointer to component
+    template <class C>
+    static void remove(C* p)
+    {
+        static container* c = 0;
+        if (!c) c = get_container<C>();
+        DASSERT_RET(c);
+
+        uint gid = c->element_id(p);
+        c->remove(gid);
+    }
+
+    /// @brief Remove component from entity
+    /// @tparam C data type
+    /// @param vid versioned entity id
     template <class C>
     static void remove(versionid vid)
     {
@@ -601,34 +733,73 @@ public:
 
     /// @brief Get container id of element of given type
     /// @tparam C Type of element
-    /// @param eid element id
+    /// @param gid global element id
     /// @return container id of given element
-    /// @note Container id is internal id of element in underlying container type( eg. index for arrays, slot_id for slothash)
+    /// @note Container local id is internal id of element in underlying container type( eg. index for arrays, slot_id for slothash)
     template <class C>
-    static uint get_container_id(uint eid) 
+    static uint get_container_local_id(uint gid)
     {
         static container* c = 0;
         if (!c) c = get_container<C>();
         DASSERT_RET(c, -1);
-        
-        return c->get_container_item_id(eid);
+
+        return c->get_container_local_item_id(gid);
     }
 
     /// @brief Get container id of element of given type
     /// @tparam C Type of element
     /// @param vid element version id
     /// @return container id of given element
-    /// @note Container id is internal id of element in underlying container type( eg. index for arrays, slot_id for slothash)
+    /// @note Container local id is internal id of element in underlying container type( eg. index for arrays, slot_id for slothash)
     template <class C>
-    static uint get_container_id(versionid vid)
+    static uint get_container_local_id(versionid vid)
     {
         static container* c = 0;
         if (!c) c = get_container<C>();
         DASSERT_RET(c, -1);
-
         DASSERT_RET(c->seq->is_valid(vid), -1);
 
-        return c->get_container_item_id(coid::down_cast<uint>(vid.id));
+        return c->get_container_local_item_id(vid.id);
+    }
+
+
+    /// @brief Get local id of container element
+    /// @tparam Type of element
+    /// @param p pointer to container element
+    /// @return local id
+    template <class C>
+    static uint get_container_local_id(const C* p)
+    {
+        static container* c = 0;
+        if (!c) c = get_container<C>();
+        DASSERT_RET(c, -1);
+        return c->get_container_local_item_id(c->element_id(p));
+    }
+
+    /// @brief Get global id of container element
+    /// @tparam C Type of element
+    /// @param p pointer to container element
+    /// @return global id
+    template <class C>
+    static uint get_gid(const C* p) {
+        static container* c = 0;
+        if (!c) c = get_container<C>();
+        DASSERT_RET(c, -1);
+
+        return c->element_id(p);
+    }
+
+    /// @brief Get global id of container element
+    /// @tparam C Type of element
+    /// @param p pointer to container element
+    /// @return global id
+    template <class C>
+    static versionid get_versionid(const C* p) {
+        static container* c = 0;
+        if (!c) c = get_container<C>();
+        DASSERT_RET(c, versionid());
+
+        return get_versionid(c->element_id(p));
     }
 
     /// @brief Get count of elements of type C
@@ -647,7 +818,7 @@ public:
     /// @brief Enumerate through entities with given component
     /// @tparam C data type
     /// @tparam Fn
-    /// @param fn
+    /// @param fn - void fn(C& component, uint id)
     template <class C, class Fn>
     static void enumerate(const Fn& fn)
     {
@@ -671,33 +842,27 @@ public:
         }
     }
 
-    /// @brief Get order id assigned to the type (also assigns on first use)
-    /// @tparam C
-    /// @return -1 if type was not registered
-    template <class C>
-    static int data_order()
-    {
-        int id = tsq().id<C>();
-        return id < 0 ? -1 - id : id;
-    }
-
     /// @brief Define a primary data type, that will be stored in a linear array indexed directly
     /// @tparam C data type
     /// @param reserve_count number of elements to reserve initial memory for
     /// @return container id
     /// @note container id 0 is created as a slotalloc to keep track of existing and deleted objects
     template <class C>
-    static void preallocate_array_container(uint reserve_count = 1 << 23)
+    static void preallocate_array_container()
     {
-        carray<C>* cont = get_or_create_container<C, carray<C>>();
-        cont->reserve(reserve_count);
+        static sequencer& seq = tsq();
+        DASSERT(seq._count == 0);
+        carray<C>* cont = static_cast<carray<C>*>(&get_or_create_container<C, carray<C>>());
+        //TODO: this function just ensures that container of type C exists, refactor candidate
+        //cont->reserve(reserve_count);
     }
 
     template <class C>
-    static void preallocate_hash_container(uint reserve_count = 1 << 23)
+    static void preallocate_hash_container()
     {
-        cshash<C>* cont = get_or_create_container<C, cshash<C>>();
-        cont->reserve(reserve_count);
+        cshash<C>* cont = static_cast<cshash<C>*>(&get_or_create_container<C, cshash<C>>());
+        //TODO: this function just ensures that container of type C exists, refactor candidate
+        //cont->reserve(reserve_count);
     }
 
     /// @brief Retrieve container for primary data
@@ -706,37 +871,24 @@ public:
     template <class C>
     static const dynarray32<C>& get_array()
     {
-        static const dynarray32<C>* c = static_cast<const dynarray32<C>*>(get_or_create_container<C, carray<C>>()->linear_array_ptr());
+        static const dynarray32<C>* c = static_cast<const dynarray32<C>*>(get_or_create_container<C, carray<C>>().linear_array_ptr());
         RASSERT(c != nullptr);
 
         return *c;
     }
-
-    template <class C>
-    static uint get_id_in_array(const C* p)
-    {
-        return uint(p - get_array<C>().ptr());
-    }
-
-    template <class C>
-    static versionid get_versionid_in_array(const C* p)
-    {
-        return get_versionid(uint(p - get_array<C>().ptr()));
-    }
-
 
     /// @brief Set invokable handler for given manipulator type and given data type
     /// @tparam M manipulator type (a distinct type allowing for multiple different handlers)
     /// @tparam C data/component type
     /// @param fn function callback
     template <class M, class C>
-    static void set_handler(void (*fn)(M*, C&, uint eid, handler_data*), handler_data* data = nullptr)
+    static void set_handler(void (*fn)(M*, C&, versionid gid, handler_data*), handler_data* data = nullptr)
     {
         manipulator<M>*& mm = handlers().component<manipulator<M>>();
         if (!mm)
             mm = new manipulator<M>;
 
-        int cid = data_order<C>();
+        int cid = get_container_id<C>();
 
         using handler_t = typename handler<M, C>::handler_t;
         base_handler<M>*& h = mm->component_handlers.get_or_addc(cid);
@@ -748,11 +900,11 @@ public:
     /// @tparam M manipulator type (a distinct type allowing for multiple different handlers)
     /// @tparam C data/component type
     /// @param m manipulator context
-    /// @param eid entity id
+    /// @param gid global entity id
     template <class M, class C>
-    static void invoke_component_handler(M* m, uint eid)
+    static void invoke_component_handler(M* m, versionid vid)
     {
-        C* c = get<C>(eid);
+        C* c = get<C>(vid);
         if (!c)
             return;
 
@@ -760,22 +912,22 @@ public:
         if (!mm)
             return;
 
-        int cid = data_order<C>();
+        int cid = get_container_id<C>();
 
         base_handler<M>* h = mm->component_handlers.get_safe(cid, nullptr);
         if (!h)
             return;
 
-        h->invoke(m, *c, eid);
+        h->invoke(m, *c, vid);
     }
 
     /// @brief Invoke handlers of given manipulator for all data existing for given entity
     /// @tparam M manipulator type (a distinct type allowing for multiple different handlers)
     /// @param m manipulator context
-    /// @param eid entity id
+    /// @param gid entity id
     /// @param fn optional callback to invoke before invoking a handler, identifying the data type processed
     template <class M>
-    static void invoke_all_component_handlers(M* m, uint eid, void (*default_fn)(const coid::token& type) = 0)
+    static void invoke_all_component_handlers(M* m, versionid vid, void (*default_fn)(const token& type) = 0)
     {
         manipulator<M>* mm = handlers().component<manipulator<M>>();
         if (!mm)
@@ -786,13 +938,13 @@ public:
 
         for (uint i = 0; i < n; ++i)
         {
-            void* c = get_data(eid, i);
+            void* c = get_data(vid, i);
             if (!c)
                 continue;
 
             base_handler<M>* h = i >= handler_count ? nullptr : mm->component_handlers[i];
             if (h) {
-                h->invoke(m, c, eid);
+                h->invoke(m, c, vid);
             }
             else {
                 if (default_fn) {
@@ -804,9 +956,10 @@ public:
     }
 
     /// @brief Invoke given function for every component type, create component if fn returns true
-    static void iterate_all_components(uint eid, bool (*fn)(const coid::token& type, bool entity_has_component) = 0)
+    static void iterate_all_components(versionid vid, bool (*fn)(const token& type, bool entity_has_component) = 0)
     {
-        if (fn == nullptr) return;
+        if (fn == nullptr)
+            return;
 
         uint n = data_containers().size();
 
@@ -816,12 +969,12 @@ public:
             if (!c)
                 continue;
 
-            void* d = get_data(eid, i);
+            void* d = get_data(vid, i);
             bool has_component = d != nullptr;
 
             auto td = tsq().type(i);
             if (fn(td->type_name, has_component))
-                c->create_default(eid);
+                c->create_default(vid.id);
         }
     }
 
@@ -830,7 +983,7 @@ private:
     template <class C>
     static container* get_container()
     {
-        static uint cid = tsq().id<C>();
+        static uint cid = tsq().type_id<C>();
         dynarray32<container*>& co = data_containers();
         return cid < co.size() ? co[cid] : nullptr;
     }
@@ -845,13 +998,19 @@ private:
     /// @brief get existing container or create a new (def.hashed) one
     /// @tparam C component type
     /// @param cid container id
-    template <class C, class ContDefault = cshash<C>>
-    static ContDefault* get_or_create_container()
+    template <class C, class DefaultContainer = cshash<C>>
+    static container& get_or_create_container()
     {
-        static uint cid = tsq().id<C>();
+        static uint cid = tsq().type_id<C>();
         dynarray32<container*>& co = data_containers();
-        return static_cast<ContDefault*>(
-            cid < co.size() && co[cid] != nullptr ? co[cid] : (co.get_or_addc(cid) = new ContDefault()));
+        if constexpr (DefaultContainer::specific_type != container::type::hash) {
+            //mismatch between previously created container type
+            DASSERT(cid >= co.size() || !co[cid] || co[cid]->storage_type == DefaultContainer::specific_type);
+        }
+
+        return  cid < co.size() && co[cid] != nullptr
+            ? *co[cid]
+            : *(co.get_or_addc(cid) = new DefaultContainer(cid));
     }
 
 protected:
@@ -859,7 +1018,7 @@ protected:
     struct containers
     {
         dynarray32<container*> _dc;
-        coid::context_holder<OwnT> _hs;
+        context_holder<OwnT> _hs;
 
         static containers& get() {
             LOCAL_PROCWIDE_SINGLETON_DEF(containers) _cs = new containers;
@@ -867,7 +1026,7 @@ protected:
         }
     };
 
-    static coid::context_holder<OwnT>& handlers() {
+    static context_holder<OwnT>& handlers() {
         return containers::get()._hs;
     }
 
@@ -877,3 +1036,92 @@ protected:
 };
 
 COID_NAMESPACE_END
+
+////////////////////////////////////////////////////////////////////////////////
+class entman : public coid::data_manager<entman>
+{
+public:
+
+    /// @brief current frame, determines the lifetime of references to components
+    inline static uint frame = 0;
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+/// @brief Wrapper for managed data interfaces
+/// @tparam T data interface type
+template <class T>
+class coref
+{
+public:
+
+    coref() = default;
+    coref(const coref&) = default;
+    coref(coref&&) = default;
+
+    coref(nullptr_t) {}
+
+    /// @brief constructor from host data type
+    explicit coref(T* host)
+    {
+        _entity_id = entman::get_versionid<T>(host);
+        _cached_object = host;
+        _ready_frame = entman::frame;
+        _cid = entman::get_container_id<T>();
+    }
+
+    /// @brief Construct interface object (T) from host object
+    /// @tparam HostType
+    /// @param host host object pointer
+    template <typename HostType>
+    static coref<T> from_host(HostType* host)
+    {
+        coref<T> x;
+        x._entity_id = entman::get_versionid<HostType>(host);
+        x._cached_object = nullptr; //to be obtained in the first call, ensuring initialization
+        x._ready_frame = -1;
+        x._cid = entman::get_container_id<HostType>();
+        return x;
+    }
+
+    /// @return component reference valid for current frame, nullptr if object no longer exists
+    T* ready()
+    {
+        //obtain a valid reference once per frame
+        uint gframe = entman::frame;
+        if (_cached_object && _ready_frame == gframe)
+            return _cached_object;
+
+        T::get_data_ifc_descriptor();
+
+        _cached_object = static_cast<T*>(entman::get_by_container_id(_entity_id, _cid));
+        _ready_frame = gframe;
+        return _cached_object;
+    }
+
+    /// @return true if this doesn't refer to any entity
+    bool is_empty() const { return !_entity_id.is_valid(); }
+
+    /// @return true if this refers to an entity
+    /// @note only checks if this has been set up with a valid entity, but not if the entity is still valid - call ready() for that
+    bool is_set() const { return _entity_id.is_valid(); }
+
+    /// @return true if this refers to an entity
+    /// @note only checks if this has been set up with a valid entity, but not if the entity is still valid - call ready() for that
+    explicit operator bool() const { return _entity_id.is_valid(); }
+
+    coref<T>& operator = (const coref<T>&) = default;
+
+    T* operator -> () {
+        T* p = ready();
+        if (!p) throw coid::exception() << "dead object";
+        return p;
+    }
+
+private:
+
+    coid::versionid _entity_id;         //< id of the connected entity
+    T* _cached_object = 0;              //< cached connected object
+    uint _ready_frame = 0;              //< frame when the connected object was valid
+    int _cid = -1;                      //< container id (from sequencer)
+};
