@@ -190,6 +190,21 @@ public: // methods only
         _object_ptr = nullptr;
     }
 
+    Type* eject()
+    {
+        if (_policy_ptr != nullptr)
+        {
+            return nullptr;
+        }
+        else 
+        {
+            Type* result = _object_ptr;
+            _object_ptr = nullptr;
+            return result;
+        }
+        
+    }
+
     /// @brief Swaps content with given ref_unique
     /// @param other - ref_unique to swap with
     void swap(ref_unique& other)
