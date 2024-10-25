@@ -65,7 +65,7 @@ static void write_console_text(const logmsg& msg)
     static HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
 
     if (type != log::level::info) {
-        uint flg;
+        uint16 flg;
 
         switch (type) {
         case log::level::exception: flg = FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY; break;
@@ -471,13 +471,13 @@ void logger::enqueue(ref<logmsg>&& msg)
                 write_message &= f._filter_fun(msg);
         });
     }
-    msg->set_logger(nullptr);    
+    msg->set_logger(nullptr);
 
     if (write_message)
     {
         SINGLETON(log_writer).addmsg(std::forward<ref<logmsg>>(msg));
     }
-    
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////

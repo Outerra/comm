@@ -65,11 +65,11 @@ template<
     class T,
     class INT_IDX = uints,
     class INT_DAT = INT_IDX,
-    class GETINT = T_GET_INT<INT_DAT,T>
+    class GETINT = T_GET_INT<INT_DAT, T>
 >
 class radixi
 {
-    static const int NB = sizeof(INT_DAT);
+    static const uint8 NB = sizeof(INT_DAT);
 
     uints _aucnts[NB][256];
     uint8 _min[NB], _max[NB];
@@ -81,14 +81,14 @@ class radixi
 
 public:
     radixi() {
-        memset(_aucnts, 0, sizeof(_aucnts) );
+        memset(_aucnts, 0, sizeof(_aucnts));
     }
 
-    radixi( const GETINT& gi ) : _getint(gi) {
-        memset(_aucnts, 0, sizeof(_aucnts) );
+    radixi(const GETINT& gi) : _getint(gi) {
+        memset(_aucnts, 0, sizeof(_aucnts));
     }
 
-    void set_getint( const GETINT& gi ) {
+    void set_getint(const GETINT& gi) {
         _getint = gi;
     }
 
@@ -110,21 +110,21 @@ public:
     /// @param useindex true if the current index should be used (preserves partial order in the index)
     /// @param stride byte size of an array element
     template<class CONTAINER>
-    INT_IDX* sort( bool ascending, const CONTAINER& psort, uints nitems, bool useindex = false )
+    INT_IDX* sort(bool ascending, const CONTAINER& psort, uints nitems, bool useindex = false)
     {
-        if(!useindex) {
-            _puidx.realloc( nitems<<1 );
+        if (!useindex) {
+            _puidx.realloc(nitems << 1);
             _puidxa = _puidx.ptr();
             _puidxb = _puidxa + nitems;
         }
 
         count_frequency(psort);
 
-        for(int b=0; b<NB; ++b)
-            useindex |= _sort(psort, 8*b, ascending, useindex);
+        for (int b = 0; b < NB; ++b)
+            useindex |= _sort(psort, 8 * b, ascending, useindex);
 
-        if(!useindex) {
-            for( uint i=0; i<nitems; ++i ) 
+        if (!useindex) {
+            for (uint i = 0; i < nitems; ++i)
                 _puidxa[i] = (INT_IDX)i;
         }
 
@@ -138,66 +138,66 @@ public:
         const T& val,
         const LESS& less = std::less<T>(),
         const EQUAL& equal = std::equal<T>()
-        ) const
+    ) const
     {
         uints i, j, m;
         i = 0;
         j = _puidx.size() >> 1;
 
-        for(;j>i;) {
-            m = (i+j)>>1;
+        for (; j > i;) {
+            m = (i + j) >> 1;
 
             const T* v = psort[_puidxa[m]];
 
-            if( equal(*v, val) )
+            if (equal(*v, val))
                 return v;
 
-            if( less(*v, val) )
-                i = m+1;
+            if (less(*v, val))
+                i = m + 1;
             else
                 j = m;
         }
         return 0;
     }
 
-    const T* bin_search_a( const T* psort, INT_DAT ufind, uints stride = sizeof(T) ) const {
+    const T* bin_search_a(const T* psort, INT_DAT ufind, uints stride = sizeof(T)) const {
         uints i, j, m;
         i = 0;
         j = _puidx.size() >> 1;
 
-        for(;j>i;) {
-            m = (i+j)>>1;
+        for (; j > i;) {
+            m = (i + j) >> 1;
 
-            const T* v = ptr_byteshift(psort, _puidxa[m]*stride);
+            const T* v = ptr_byteshift(psort, _puidxa[m] * stride);
 
-            if( *(INT_DAT*)(v) == ufind )
-                return psort+_puidxa[m];
+            if (*(INT_DAT*)(v) == ufind)
+                return psort + _puidxa[m];
 
-            if( *(INT_DAT*)(v) > ufind )
+            if (*(INT_DAT*)(v) > ufind)
                 j = m;
             else
-                i = m+1;
+                i = m + 1;
         }
         return 0;
     }
 
-    const T* bin_search_d( const T* psort, INT_DAT ufind, uints stride = sizeof(T) ) const {
+    const T* bin_search_d(const T* psort, INT_DAT ufind, uints stride = sizeof(T)) const {
         uints i, j, m;
         i = 0;
         j = _puidx.size() >> 1;
 
-        for(;j>i;) {
-            m = (i+j)>>1;
+        for (; j > i;) {
+            m = (i + j) >> 1;
 
-            const T* v = ptr_byteshift(psort, _puidxa[m]*stride);
+            const T* v = ptr_byteshift(psort, _puidxa[m] * stride);
 
-            if( *(INT_DAT*)(v) == ufind )
-                return psort+_puidxa[m];
+            if (*(INT_DAT*)(v) == ufind)
+                return psort + _puidxa[m];
 
-            if( *(INT_DAT*)(v) > ufind )
-                i=m+1;
+            if (*(INT_DAT*)(v) > ufind)
+                i = m + 1;
             else
-                j=m;
+                j = m;
         }
         return 0;
     }
@@ -205,28 +205,28 @@ public:
 private:
 
     template<class CONTAINER>
-    bool _sort( const CONTAINER& psrc, uints uoffs, bool ascending, bool useindex )
+    bool _sort(const CONTAINER& psrc, uints uoffs, bool ascending, bool useindex)
     {
         uint8 vmin = _min[uoffs >> 3];
         uint8 vmax = _max[uoffs >> 3];
         uints* count = _aucnts[uoffs >> 3];
 
-        if( vmin == vmax ) { //nothing to do
+        if (vmin == vmax) { //nothing to do
             count[vmin] = 0;
             return false;
         }
 
         uints audsti[256];
 
-        if(ascending) {
-            for( ints j=0, i=vmin; i<=vmax; ++i ) {
+        if (ascending) {
+            for (ints j = 0, i = vmin; i <= vmax; ++i) {
                 audsti[i] = j;
                 j += count[i];
                 count[i] = 0;
             }
         }
         else {
-            for( ints j=0, i=vmax; i>=(int)vmin; --i ) {
+            for (ints j = 0, i = vmax; i >= (int)vmin; --i) {
                 audsti[i] = j;
                 j += count[i];
                 count[i] = 0;
@@ -235,17 +235,17 @@ private:
 
         uints nit = _puidx.size() >> 1;
 
-        if(useindex) {
-            for( uints i=0; i<nit; ++i ) {
-                uint8 k = (_getint( psrc[_puidxa[i]] )
+        if (useindex) {
+            for (uints i = 0; i < nit; ++i) {
+                uint8 k = (_getint(psrc[_puidxa[i]])
                     >> uoffs) & 0xff;
                 _puidxb[audsti[k]] = _puidxa[i];
                 ++audsti[k];
             }
         }
         else {
-            for( uints i=0; i<nit; ++i ) {
-                uint8 k = (_getint( psrc[i] )
+            for (uints i = 0; i < nit; ++i) {
+                uint8 k = (_getint(psrc[i])
                     >> uoffs) & 0xff;
                 _puidxb[audsti[k]] = (INT_IDX)i;
                 ++audsti[k];
@@ -257,23 +257,23 @@ private:
     }
 
     template<class CONTAINER>
-    void count_frequency( const CONTAINER& psrc )
+    void count_frequency(const CONTAINER& psrc)
     {
         uints nit = _puidx.size() >> 1;
 
         ::memset(_min, 255, sizeof(_min));
-        ::memset(_max,   0, sizeof(_max));
+        ::memset(_max, 0, sizeof(_max));
 
-        for( uints i=0; i<nit; ++i )
+        for (uints i = 0; i < nit; ++i)
         {
-            INT_DAT v = _getint( psrc[i] );
+            INT_DAT v = _getint(psrc[i]);
 
-            for(int b=0; b<NB; ++b)
-                count_val(b, uint8(v>>(8*b)));
+            for (uint8 b = 0; b < NB; ++b)
+                count_val(b, uint8(v >> (8 * b)));
         }
     }
 
-    void count_val( uint8 i, uint8 v ) {
+    void count_val(uint8 i, uint8 v) {
         ++_aucnts[i][v];
         _min[i] = uint_min(_min[i], v);
         _max[i] = uint_max(_max[i], v);
@@ -289,7 +289,7 @@ class radix {
     dynarray<T> _ptemp;
 
 public:
-    radix() {memset(_aucnts, 0, sizeof(_aucnts));}
+    radix() { memset(_aucnts, 0, sizeof(_aucnts)); }
 
     void sort(T* psort, uints nitems) {
         _ptemp.alloc(nitems);
@@ -301,15 +301,15 @@ public:
 
     uints size() const { return _ptemp._nused; }
 
-    T* bin_search(const T* psort, uints ufind, uints ufirst=0, uints ulast=UMAXS) const {
+    T* bin_search(const T* psort, uints ufind, uints ufirst = 0, uints ulast = UMAXS) const {
         uints i, j, m;
-        i= ufirst;
-        j= ulast==UMAXS ? _ptemp.size() : ulast;
-        for(;j>i;) {
-            m= (i+j)>>1;
-            if(*(uints*)(psort+m) == ufind)  return (T*)psort+m;
-            if(*(uints*)(psort+m) < ufind) i=m+1;
-            else j=m;
+        i = ufirst;
+        j = ulast == UMAXS ? _ptemp.size() : ulast;
+        for (; j > i;) {
+            m = (i + j) >> 1;
+            if (*(uints*)(psort + m) == ufind)  return (T*)psort + m;
+            if (*(uints*)(psort + m) < ufind) i = m + 1;
+            else j = m;
         }
         return 0;
     }
@@ -319,18 +319,18 @@ private:
         uints i, j, nit;
         T* apdst[256];
 
-        nit= _ptemp.size ();
-        for(i=0; i<nit; ++i)  ++_aucnts[((*(uints*)(psrc+i)) >> uoffs) & 0xff];
+        nit = _ptemp.size();
+        for (i = 0; i < nit; ++i)  ++_aucnts[((*(uints*)(psrc + i)) >> uoffs) & 0xff];
 
-        for(j=0, i=0; i<256; ++i) {
-            apdst[i]= pdst +j;
-            j+= _aucnts[i];
-            _aucnts[i]= 0;
+        for (j = 0, i = 0; i < 256; ++i) {
+            apdst[i] = pdst + j;
+            j += _aucnts[i];
+            _aucnts[i] = 0;
         }
 
-        for(i=0; i<nit; ++i) {
-            j= ((*(uints*)(psrc+i)) >> uoffs) & 0xff;
-            *apdst[j]= psrc[i];
+        for (i = 0; i < nit; ++i) {
+            j = ((*(uints*)(psrc + i)) >> uoffs) & 0xff;
+            *apdst[j] = psrc[i];
             ++apdst[j];
         }
     }
@@ -344,7 +344,7 @@ class radix_index
 
 public:
     void set(const T* p) {
-        _p= p;
+        _p = p;
     }
 
     const T* get() const {

@@ -40,14 +40,14 @@ namespace coid {
 ////////////////////////////////////////////////////////////////////////////////
 substring::~substring()
 {
-    if(_shf)
+    if (_shf)
         dlfree(_shf);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void substring::set( const char* subs, uints len, bool icase )
+void substring::set(const char* subs, uints len, bool icase)
 {
-    if(len == 1)
+    if (len == 1)
         return set(*subs, icase);
 
     _icase = icase;
@@ -63,37 +63,37 @@ void substring::set( const char* subs, uints len, bool icase )
     uints dist[256];
     dist[_to] = len;
 
-    for( uints i=1; i<len; ++i,++subs ) {
+    for (uints i = 1; i < len; ++i, ++subs) {
         uchar c = *subs;
-        if(_icase) c = ::tolower(c);
+        if (_icase) c = (char)::tolower(c);
 
-        if( c < _from ) {
-            ::memset( dist+c+1, 0, (_from-c-1)*sizeof(uints) );
+        if (c < _from) {
+            ::memset(dist + c + 1, 0, (_from - c - 1) * sizeof(uints));
             _from = c;
         }
-        if( c > _to ) {
-            ::memset( dist+_to+1, 0, (c-_to-1)*sizeof(uints) );
+        if (c > _to) {
+            ::memset(dist + _to + 1, 0, (c - _to - 1) * sizeof(uints));
             _to = c;
         }
 
         dist[c] = len - i;
     }
 
-    if(_shf)
+    if (_shf)
         delete[] _shf;
 
-    uints n = (uints)_to+1 - (uints)_from;
+    uints n = (uints)_to + 1 - (uints)_from;
     _shf = (uints*)dlmalloc(n * sizeof(uints));//new uints[n];
-    ::memcpy(_shf, dist+_from, n*sizeof(uints));
+    ::memcpy(_shf, dist + _from, n * sizeof(uints));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void substring::set( char k, bool icase )
+void substring::set(char k, bool icase)
 {
     _icase = icase;
-    _from = _to = _icase ? ::tolower(k) : k;
+    _from = _to = _icase ? (char)::tolower(k) : k;
 
-    if(_shf)
+    if (_shf)
         dlfree(_shf);
     _shf = 0;
 

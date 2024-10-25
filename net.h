@@ -51,13 +51,13 @@ COID_NAMESPACE_BEGIN
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int netInit ( int* argc = 0, char** argv = 0 ) ;
+int netInit(int* argc = 0, char** argv = 0);
 //const char* netFormat ( const char* fmt, ... ) ;
 
 
 struct netSubsystem
 {
-    static netSubsystem& instance ()
+    static netSubsystem& instance()
     {
         static netSubsystem ns;
 
@@ -70,13 +70,13 @@ struct netSubsystem
         return ns;
     }
 
-    ~netSubsystem()   { }
+    ~netSubsystem() { }
 
 private:
-    netSubsystem() : _count(0)  { }
+    netSubsystem() : _count(0) { }
 
 protected:
-    void init()    { netInit(); }
+    void init() { netInit(); }
     uint _count;     // ref. count
 };
 
@@ -87,10 +87,10 @@ protected:
 class netAddress
 {
 public:
-  	int16   sin_family;
-  	uint16  sin_port;
-  	uint32  sin_addr;
-	char 	__pad[8];
+    int16   sin_family;
+    uint16  sin_port;
+    uint32  sin_addr;
+    char 	__pad[8];
 
     const substring& protocol() {
         static substring _protocol("://", false);
@@ -98,14 +98,14 @@ public:
     }
 
 public:
-    netAddress() ;
-    netAddress( const token& host, int port, bool portoverride ) ;
-/*
-    static uint16 ntohs( uint16 );
-    static uint16 htons( uint16 );
-    static uint32 ntohl( uint32 );
-    static uint32 htonl( uint32 );
-*/
+    netAddress();
+    netAddress(const token& host, uint16 port, bool portoverride);
+    /*
+        static uint16 ntohs( uint16 );
+        static uint16 htons( uint16 );
+        static uint32 ntohl( uint32 );
+        static uint32 htonl( uint32 );
+    */
     ///Set up the network address from string
     /// @param host address in the format [proto://]server[:port]
     /// @param port port number to use
@@ -113,9 +113,9 @@ public:
     ///       value when it's not specified in the \a host argument.
     ///       If true, the port number specified in the \a port argument 
     ///       overrides any potential port number specified in the \a host.
-    void set( const token& host, int port, bool portoverride ) ;
+    void set(const token& host, uint16 port, bool portoverride);
 
-    void set(uint addr, int port);
+    void set(uint addr, uint16 port);
 
     bool isLocalHost() const;
     bool isAddrAny() const;
@@ -124,79 +124,79 @@ public:
 
     int operator == (const netAddress& addr) const
     {
-      return sin_family == addr.sin_family
-          && sin_port == addr.sin_port
-          && sin_addr == addr.sin_addr;
+        return sin_family == addr.sin_family
+            && sin_port == addr.sin_port
+            && sin_addr == addr.sin_addr;
     }
 
     int operator != (const netAddress& addr) const
     {
-      return sin_family != addr.sin_family
-          || sin_port != addr.sin_port
-          || sin_addr != addr.sin_addr;
+        return sin_family != addr.sin_family
+            || sin_port != addr.sin_port
+            || sin_addr != addr.sin_addr;
     }
 
-    bool equal( const netAddress& addr ) const
+    bool equal(const netAddress& addr) const
     {
-      return sin_family == addr.sin_family
-          && sin_addr == addr.sin_addr;
+        return sin_family == addr.sin_family
+            && sin_addr == addr.sin_addr;
     }
 
-    charstr& getHost (charstr& buf, bool useport) const;
-    charstr& getHostName (charstr& buf, bool useport) const ;
+    charstr& getHost(charstr& buf, bool useport) const;
+    charstr& getHostName(charstr& buf, bool useport) const;
 
-    int getPort() const ;
-    void setPort( int port ) ;
+    uint16 getPort() const;
+    void setPort(uint16 port);
 
     static const char* getLocalHost();
-    static netAddress* getLocalHost( netAddress* adrto );
-    static charstr& getLocalHostName( charstr& buf );
+    static netAddress* getLocalHost(netAddress* adrto);
+    static charstr& getLocalHostName(charstr& buf);
 
-    void setBroadcast () ;
-    bool getBroadcast () const ;
+    void setBroadcast();
+    bool getBroadcast() const;
 };
 
-inline binstream& operator << ( binstream& bin, const netAddress& a )
+inline binstream& operator << (binstream& bin, const netAddress& a)
 {
     charstr buf;
-    a.getHost( buf, true );
+    a.getHost(buf, true);
     bin << buf;
     return bin;
 }
 
-inline binstream& operator >> ( binstream& bin, netAddress& a )
+inline binstream& operator >> (binstream& bin, netAddress& a)
 {
     charstr buf;
     bin >> buf;
-    a.set( buf, 0, false );
+    a.set(buf, 0, false);
     return bin;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 struct netaddr
 {
-	ulong  address;
+    ulong  address;
     ushort rsvd;
-	ushort port;
+    ushort port;
 
     void set_port(ushort p);
 
-    friend binstream& operator << (binstream& out, const netaddr& a)  { return out << a.address << a.port; }
-    friend binstream& operator >> (binstream& in, netaddr& a)         { return in >> a.address >> a.port; }
+    friend binstream& operator << (binstream& out, const netaddr& a) { return out << a.address << a.port; }
+    friend binstream& operator >> (binstream& in, netaddr& a) { return in >> a.address >> a.port; }
 };
 
 inline void NetAddress2netaddr(const netAddress* nla, netaddr* ba)
 {
-	ba->address = nla->sin_addr;
-	ba->port    = nla->sin_port;
+    ba->address = nla->sin_addr;
+    ba->port = nla->sin_port;
 }
 
 inline void netaddr2NetAddress(netAddress* nla, const netaddr* ba)
 {
     nla->sin_family = 2;               //AF_INET constant from winsock.h, it comes IP adress
-	nla->sin_addr = ba->address;
-	nla->sin_port = ba->port;
-    memset( nla->__pad, 0, sizeof( nla->__pad ) );
+    nla->sin_addr = ba->address;
+    nla->sin_port = ba->port;
+    memset(nla->__pad, 0, sizeof(nla->__pad));
 }
 /*
 inline void String2netaddr(const char* _astr, netaddr* ba)
@@ -241,53 +241,53 @@ class netSocket
 public:
 
     netSocket();
-    netSocket( uints handle_ ) : handle(handle_) { }
+    netSocket(uints handle_) : handle(handle_) { }
 
     ~netSocket();
 
-    ints getHandle () const { return handle; }
-    void setHandle (uints handle) ;
-    void setHandleInvalid () ;
+    ints getHandle() const { return handle; }
+    void setHandle(uints handle);
+    void setHandleInvalid();
 
-    void takeover( netSocket& socket ) {
+    void takeover(netSocket& socket) {
         handle = socket.handle;
         socket.handle = UMAXS;
     }
 
-    bool isValid () const     { return handle != UMAXS; }
+    bool isValid() const { return handle != UMAXS; }
 
-    bool  open        ( bool stream=true ) ;
-    void  close       ( void ) ;
+    bool  open(bool stream = true);
+    void  close(void);
     void  lingering_close();
-    int   bind        ( const char* host, int port ) ;
-    int   listen      ( int backlog ) ;
-    uints accept      ( netAddress* addr ) ;
-    int   connect     ( const token& host, int port, bool portoverride ) ;
-    int   connect     ( const netAddress& addr ) ;
-    int   send        ( const void* buffer, int size, int flags = 0 ) ;
-    int   sendto      ( const void* buffer, int size, int flags, const netAddress* to ) ;
-    int   recv        ( void* buffer, int size, int flags = 0 ) ;
-    int   recvfrom    ( void* buffer, int size, int flags, netAddress* from ) ;
+    int   bind(const char* host, uint16 port);
+    int   listen(int backlog);
+    uints accept(netAddress* addr);
+    int   connect(const token& host, uint16 port, bool portoverride);
+    int   connect(const netAddress& addr);
+    int   send(const void* buffer, int size, int flags = 0);
+    int   sendto(const void* buffer, int size, int flags, const netAddress* to);
+    int   recv(void* buffer, int size, int flags = 0);
+    int   recvfrom(void* buffer, int size, int flags, netAddress* from);
 
     /// @return 1 if connected, 0 if unknow yet, -1 if connection failed
     int   connected() const;
 
-    netAddress* getLocalAddress (netAddress* adrrto) const;	/// local IP
-    netAddress* getRemoteAddress (netAddress* adrrto) const;	/// remote IP
+    netAddress* getLocalAddress(netAddress* adrrto) const;	/// local IP
+    netAddress* getRemoteAddress(netAddress* adrrto) const;	/// remote IP
 
-    void setBuffers( uint rsize, uint wsize );
+    void setBuffers(uint rsize, uint wsize);
 
-    void setBlocking  ( bool blocking ) ;
-    void setBroadcast ( bool broadcast ) ;
-    void setNoDelay   ( bool nodelay ) ;
-    void setReuseAddr ( bool reuse ) ;
-    void setLinger    ( bool linger, ushort sec );
+    void setBlocking(bool blocking);
+    void setBroadcast(bool broadcast);
+    void setNoDelay(bool nodelay);
+    void setReuseAddr(bool reuse);
+    void setLinger(bool linger, ushort sec);
 
-    static bool isNonBlockingError () ;
-    static int select ( netSocket** reads, netSocket** writes, int timeout ) ;
+    static bool isNonBlockingError();
+    static int select(netSocket** reads, netSocket** writes, int timeout);
 
-    int wait_read( int timeout );
-    int wait_write( int timeout );
+    int wait_read(int timeout);
+    int wait_write(int timeout);
 };
 
 

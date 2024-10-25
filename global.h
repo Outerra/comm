@@ -243,7 +243,7 @@ class data_manager
         size_t element_size;
         sequencer* seq = 0;
 
-        uint16 container_id = -1;
+        uint container_id = -1;
 
         enum class type : uint8 {
             array,

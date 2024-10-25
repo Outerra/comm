@@ -1576,7 +1576,7 @@ public:
             }
 
             if (n == 0) {
-                *buf++ = r >> 16;
+                *buf++ = char(r >> 16);
                 *buf++ = (r >> 8) & 0xff;
                 *buf++ = r & 0xff;
                 n = 4;

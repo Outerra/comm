@@ -340,7 +340,7 @@ public:
 
         for (uint i = 0; i < _abmap.size(); ++i) {
             _abmap[i] = GROUP_UNASSIGNED;
-            _casemap[i] = icase ? tolower(i) : i;
+            _casemap[i] = char(icase ? tolower(i) : i);
         }
 
         _last.icase = icase;
@@ -498,7 +498,7 @@ public:
         if (!process_set(set, msk, &lexer::fn_group))  return 0;
         if (!trailset.is_empty())
         {
-            gr->bitmap = _ntrails;
+            gr->bitmap = down_cast<short>(_ntrails);
             _trail.crealloc(_abmap.size());
             if (!process_set(trailset, 1 << _ntrails++, &lexer::fn_trail))  return 0;
         }
@@ -841,7 +841,7 @@ public:
                 tok.shift_start(off);
             }
             else {
-                uints off = count_intable(tok, lt.hash, lt.id - 1, 1);
+                uints off = count_intable(tok, lt.hash, down_cast<uint8>(lt.id - 1), 1);
                 lt.intok.set(tok.ptr(), off);
                 tok.shift_start(off);
             }
@@ -1091,7 +1091,7 @@ public:
 
         //skip characters from the ignored group
         if (ignoregrp) {
-            token tok = scan_group(ignoregrp - 1, true);
+            token tok = scan_group(down_cast<uint8>(ignoregrp - 1), true);
             if (tok.ptr() == 0)
                 set_end();
             else
@@ -1140,7 +1140,7 @@ public:
 
         //skip characters from the ignored group
         if (ignoregrp) {
-            token tok = scan_group(abs(ignoregrp) - 1, true);
+            token tok = scan_group(down_cast<uint8>(abs(ignoregrp) - 1), true);
             if (tok.ptr() == 0)
                 return set_end();
             else
@@ -1261,7 +1261,7 @@ public:
 
         if (ignoregrp < 0) {
             _last.id = -ignoregrp;
-            _last.intok = scan_notgroup(-ignoregrp - 1, false);
+            _last.intok = scan_notgroup(down_cast<uint8>(-ignoregrp - 1), false);
             _last.val = _last.intok;
             return _last;
         }
@@ -1293,7 +1293,7 @@ public:
         if (x & fGROUP_TRAILSET)
             _last.intok = scan_mask(1 << _grpary[_last.id - 1]->bitmap, false, 1);
         else
-            _last.intok = scan_group(_last.id - 1, false, 1);
+            _last.intok = scan_group(down_cast<uint8>(_last.id - 1), false, 1);
 
         _last.outok = _last.intok;
 
@@ -1313,7 +1313,7 @@ public:
         uints skip = 0;
 
         if (ignore) {
-            token white = scan_group(ignore - 1, true);
+            token white = scan_group(down_cast<uint8>(ignore - 1), true);
             _tok.shift_start(-(int)white.len());
 
             if (white.ptr() == 0)
@@ -1335,7 +1335,7 @@ public:
         uints skip = 0;
 
         if (ignore) {
-            token white = scan_group(ignore - 1, true);
+            token white = scan_group(down_cast<uint8>(ignore - 1), true);
             _tok.shift_start(-(int)white.len());
 
             if (white.ptr() == 0)
@@ -1964,7 +1964,7 @@ public:
         else if (x & fGROUP_TRAILSET)
             n = (uint)count_inmask_nohash(t, 1 << _grpary[gid - 1]->bitmap, 1);
         else
-            n = (uint)count_intable_nohash(t, gid - 1, 1);
+            n = (uint)count_intable_nohash(t, down_cast<uint8>(gid - 1), 1);
 
         return n < t.len() ? 0 : gid;
     }
@@ -2674,7 +2674,7 @@ protected:
     /// @param s the set definition, characters and ranges
     /// @param fnval parameter for the callback function
     /// @param fn callback
-    bool process_set(token s, uchar fnval, void (lexer::* fn)(uchar, uchar))
+    bool process_set(token s, uchar fnval, void (lexer::* fn)(int, uchar))
     {
         uchar k, kprev = 0;
         for (; !s.is_empty(); kprev = k)
@@ -2704,14 +2704,14 @@ protected:
     }
 
     ///Callback for process_set(), add character to leading bitmap detector of a group
-    void fn_group(uchar i, uchar val)
+    void fn_group(int i, uchar val)
     {
         _abmap[i] &= ~xGROUP;
         _abmap[i] |= val;
     }
 
     ///Callback for process_set(), add character to trailing bitmap detector of a group
-    void fn_trail(uchar i, uchar val) {
+    void fn_trail(int i, uchar val) {
         _trail[i] |= val;
     }
 
