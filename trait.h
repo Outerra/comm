@@ -301,8 +301,11 @@ inline constexpr INT signed_min() {
 template<class INT, class INTFROM>
 inline INT saturate_cast(INTFROM a) {
     static_assert(std::is_integral<INT>::value, "integral type required");
-    INT minv = std::is_signed<INT>::value ? signed_min<INT>() : 0;
-    INT maxv = std::is_signed<INT>::value ? signed_max<INT>() : INT(-1);
+    INT minv = 0, maxv = INT(-1);
+    if constexpr (std::is_signed<INT>::value) {
+        minv = INT(-1) << (sizeof(INT) * 8 - 1);
+        maxv = ~minv;
+    }
     return a > maxv ? maxv : (a < minv ? minv : INT(a));
 }
 
