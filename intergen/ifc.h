@@ -495,9 +495,14 @@ private:
 #define FORCE_REGISTER_BINDER_INTERFACE(ns,ifc,script) \
     namespace ns { namespace script { void* force_register_##ifc(); static void* autoregger_##ifc = force_register_##ifc(); }}
 
+
+/// Do not call these. They purpose is only to expand __COUNTER__ value
+#define IFC_REGISTER_CLIENT_Y(client, ord) \
+    static int _autoregger_##ord = client::register_client<client>();
+#define IFC_REGISTER_CLIENT_X(client, ord) IFC_REGISTER_CLIENT_Y(client, ord) 
+
 ///Register a derived client interface class
-#define IFC_REGISTER_CLIENT(client) \
-    static int _autoregger = client::register_client<client>();
+#define IFC_REGISTER_CLIENT(client) IFC_REGISTER_CLIENT_X(client, __COUNTER__)
 
 ///Handler not implemented message
 #ifdef _DEBUG
