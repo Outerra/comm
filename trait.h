@@ -299,7 +299,7 @@ inline constexpr INT signed_min() {
 }
 
 template<class INT, class INTFROM>
-inline INT saturate_cast(INTFROM a) {
+inline constexpr INT saturate_cast(INTFROM a) {
     static_assert(std::is_integral<INT>::value, "integral type required");
     INT minv = 0, maxv = INT(-1);
     if constexpr (std::is_signed<INT>::value) {
