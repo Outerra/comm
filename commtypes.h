@@ -317,7 +317,7 @@ public:
 
     /// @return 32-bit id if valid, else -1
     /// @note debug assertion if invalid
-    uint id() const {
+    uint id32() const {
         if (!is_valid()) {
 #ifdef _DEBUG
             __debugbreak();

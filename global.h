@@ -209,7 +209,7 @@ class data_manager
 
         bool del(versionid vid)
         {
-            DASSERT_RET(get_bit(vid.idx) && _entities[vid.idx].version == vid.version, false);
+            DASSERT_RET(vid.is_valid() && get_bit(vid.idx) && _entities[vid.idx].version == vid.version, false);
             return del(vid.idx);
         }
 
@@ -217,8 +217,8 @@ class data_manager
             return get_bit(id);
         }
 
-        bool is_valid(versionid v) const {
-            return get_bit(v.idx) && _entities[v.idx].version == v.version;
+        bool is_valid(versionid vid) const {
+            return vid.is_valid() && get_bit(vid.idx) && _entities[vid.idx].version == vid.version;
         }
 
         versionid get_versionid(uint gid) const {
@@ -528,10 +528,11 @@ public:
     template <class C>
     static C& get_or_create(versionid vid)
     {
+        DASSERT_FATAL(vid.is_valid());
         static container* c = 0;
         if (!c) c = &get_or_create_container<C>();
 
-        uint id = vid.id();
+        uint id = vid.id32();
         C* el = static_cast<C*>(c->element(id));
         if (!el)
             el = static_cast<C*>(c->create_default(id));
@@ -653,7 +654,7 @@ public:
         DASSERT_RET(c, nullptr);
         DASSERT_RET(c->seq->is_valid(vid), nullptr);
 
-        C* d = static_cast<C*>(c->create_default(vid.id()));
+        C* d = static_cast<C*>(c->create_default(vid.id32()));
         *d = std::move(v);
         DASSERT(c->storage_type != container::type::hash || static_cast<storage<C>*>(d)->eid == vid.idx);
 
