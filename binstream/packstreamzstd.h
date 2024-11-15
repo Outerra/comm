@@ -120,7 +120,7 @@ public:
         if (len == 0)
             return 0;
 
-        ints size = _zstd.unpack_stream(*_in, p, len);
+        ints size = _zstd.unpack_stream(*_in, p, len, false);
         if (size < 0)
             return ersFAILED;
         len -= size;

@@ -60,6 +60,10 @@ struct packer_zstd
             ZSTD_freeDStream(_dstream);
             _dstream = 0;
         }
+        if (_cstream) {
+            ZSTD_freeCStream(_cstream);
+            _cstream = 0;
+        }
     }
 
     ///Pack block of data
@@ -85,7 +89,7 @@ struct packer_zstd
     ///Unpack block of data
     /// @param src src data
     /// @param size available input size
-    /// @param dst target buffer
+    /// @param dst target buffer (does not reset, appends)
     /// @return consumed size or UMAXS on error
     template <class COUNT>
     uints unpack(const void* src, uints size, dynarray<uint8, COUNT>& dst)
@@ -142,14 +146,13 @@ struct packer_zstd
     }
 
     ///Pack data in streaming mode
-    /// @param src data to pack, 0 to flush
+    /// @param src data to pack, 0 to flush/end
     /// @param size byt size of data
     /// @param bon output binstream to write to
     /// @param ZSTD complevel compression level
     uints pack_stream(const void* src, uints size, binstream& bon, int complevel = ZSTD_CLEVEL_DEFAULT)
     {
-        if (!src && (!_cstream || _buf.size() == 0))
-            return 0;
+        DASSERT_RET(src || (_cstream && _buf.size() != 0), 0);
 
         if (!_cstream) {
             ZSTD_customMem cmem = {&_alloc, &_free, 0};
@@ -211,15 +214,21 @@ struct packer_zstd
     /// @param bin binstream to read from
     /// @param dst destination buffer to write to
     /// @param size size of dest buffer
+    /// @param reset reset decompressor (in first unpack)
     /// @return unpacked size, can be less than size argument if there's no more data
-    ints unpack_stream(binstream& bin, void* dst, uints size)
+    ints unpack_stream(binstream& bin, void* dst, uints size, bool reset)
     {
         if (!_dstream) {
             ZSTD_customMem cmem = {&_alloc, &_free, 0};
             _dstream = ZSTD_createDStream_advanced(cmem);
+            reset = true;
+        }
+
+        if (reset) {
             ZSTD_initDStream(_dstream);
 
             _buf.reserve(ZSTD_DStreamInSize(), false);
+            _offset = 0;
             _eof = false;
         }
 
@@ -271,6 +280,91 @@ struct packer_zstd
         return zot.pos;
     }
 
+    ///Unpack data in streaming mode
+    /// @param bin binstream to read from
+    /// @param dst target buffer (doesn't reset, appends)
+    /// @param reset reset decompressor (in first unpack)
+    /// @return unpacked size, can be less than size argument if there's no more data
+    template <class COUNT>
+    ints unpack_stream(binstream& bin, dynarray<uint8, COUNT>& dst, bool reset)
+    {
+        if (!_dstream) {
+            ZSTD_customMem cmem = {&_alloc, &_free, 0};
+            _dstream = ZSTD_createDStream_advanced(cmem);
+            reset = true;
+        }
+
+        if (reset) {
+            ZSTD_initDStream(_dstream);
+
+            _buf.reserve(ZSTD_DStreamInSize(), false);
+            _offset = 0;
+            _eof = false;
+        }
+
+        uints srclen = _buf.reserved_total();
+        bin.read_raw(_buf.ptr(), srclen);
+        srclen = _buf.reserved_total() - srclen;
+        _buf.set_size(srclen);
+
+        const uints origsize = dst.size();
+        const uints outblocksize = ZSTD_DStreamOutSize();
+
+        ZSTD_inBuffer zin;
+        zin.pos = _offset;
+        zin.size = _buf.size();
+        zin.src = _buf.ptr();
+
+        ZSTD_outBuffer zot;
+        zot.pos = 0;
+        zot.size = 0;
+        zot.dst = nullptr;
+        bool isend = false;
+
+        while (!isend) {
+            if (zin.pos >= zin.size && !isend) {
+                //read next chunk of input
+                uints tot = _buf.reserved_total();
+                uints rlen = tot;
+                bin.read_raw(_buf.ptr(), rlen);
+
+                uints read = tot - rlen;
+                if (read > 0) {
+                    zin.size = read;
+                    _buf.set_size(read);
+
+                    zin.pos = 0;
+                }
+                else
+                    isend = true;
+
+                _offset = 0;
+            }
+
+            if (zot.pos == zot.size) {
+                //needs more out space
+                dst.add(outblocksize);
+                zot.size = dst.size() - origsize;
+                zot.dst = dst.ptr() + origsize;
+            }
+
+            uints rem = ZSTD_decompressStream(_dstream, &zot, &zin);
+            if (rem == 0) { //fully read stream
+                _eof = true;
+                break;
+            }
+            if (ZSTD_isError(rem))
+                return -1;
+            if (isend) //not enough data
+                break;
+        }
+
+        _offset = zin.pos;
+        dst.resize(zot.pos);
+
+        return zot.pos;
+    }
+
     void reset_read() {
         if (_dstream)
             ZSTD_DCtx_reset(_dstream, ZSTD_reset_session_only);
@@ -309,11 +403,11 @@ protected:
 
 private:
 
-    ZSTD_CStream* _cstream;
-    ZSTD_DStream* _dstream;
+    ZSTD_CStream* _cstream = 0;
+    ZSTD_DStream* _dstream = 0;
     dynarray<uint8> _buf;
-    uints _offset;
-    bool _eof;
+    uints _offset = 0;              //< read buffer offset
+    bool _eof = false;
 };
 
 COID_NAMESPACE_END
