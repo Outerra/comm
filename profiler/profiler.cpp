@@ -129,9 +129,24 @@ void end()
         g_backend->end();
 }
 
-void set_backend(backend* backend)
+static backend*& procwide_backend()
 {
-    g_backend = backend;
+    LOCAL_PROCWIDE_SINGLETON_DEF(backend*) gg_backend;
+    return *gg_backend;
+}
+
+void set_backend(backend* bck)
+{
+    g_backend = bck;
+    procwide_backend() = bck;
+}
+
+void init_backend_in_module()
+{
+    if (g_backend) return;
+
+    backend*& gg = procwide_backend();
+    g_backend = gg;
 }
 
 } // namespace profiler

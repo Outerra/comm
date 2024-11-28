@@ -75,9 +75,15 @@
 
 ///Used for file-local singleton objects, unique for each module (dll)
 /// usage:
-/// LOCAL_FUNCTION_SINGLETON_DEF(class) name = new class;
+/// LOCAL_FILE_SINGLETON_DEF(class) name = new class;
 #define LOCAL_FILE_SINGLETON_DEF(...)\
     static coid::singleton<__VA_ARGS__, __FILE__, std::source_location::current().line()>
+
+///Used for file-local singleton objects, returning process-wide singleton
+/// usage:
+/// LOCAL_FILE_PROCWIDE_SINGLETON_DEF(class) name = new class;
+#define LOCAL_FILE_PROCWIDE_SINGLETON_DEF(...)\
+    static coid::singleton<__VA_ARGS__, __FILE__, std::source_location::current().line(), false>
 
 ///Returns thread singleton instance (the same one when called from different code within module)
 #define THREAD_SINGLETON(...) \
@@ -317,12 +323,12 @@ private:
         if (!p) {
             p = (T*)singleton_register_instance(
                 obj==nullptr? &create : singleton_local_creator(obj),
-                &destroy, 
+                &destroy,
                 &singleton<T>::init_module,
-                typeid(T).name(), 
-                "", 
-                Line, 
-                module_local, 
+                typeid(T).name(),
+                "",
+                Line,
+                module_local,
                 Function_signature.value);
             tk.set(p);
         }

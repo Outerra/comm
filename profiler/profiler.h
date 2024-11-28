@@ -60,6 +60,7 @@ public:
 };
 
 void set_backend(backend* backend);
+void init_backend_in_module();
 
 void frame();
 void gpu_frame();

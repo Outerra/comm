@@ -51,6 +51,11 @@ namespace coid {
     class binstring;
 }
 
+//for profiler initialization in modules
+namespace profiler {
+    extern void init_backend_in_module();
+}
+
 ///Interface class decoration keyword.
 /// @param ifc_name desired name of the interface class, optionally with (virtual) base interface [ns::]name [: [ns::]baseifc] [ final]
 /// @param dst_path relative path (and optional file name) where to generate the interface header file
@@ -496,13 +501,13 @@ private:
     namespace ns { namespace script { void* force_register_##ifc(); static void* autoregger_##ifc = force_register_##ifc(); }}
 
 
-/// Do not call these. They purpose is only to expand __COUNTER__ value
+/// Do not call these. Their purpose is only to expand __COUNTER__ value
 #define IFC_REGISTER_CLIENT_Y(client, ord) \
-    static int _autoregger_##ord = client::register_client<client>();
-#define IFC_REGISTER_CLIENT_X(client, ord) IFC_REGISTER_CLIENT_Y(client, ord) 
+    static int _autoregger_##ord = client::register_client<client>()
+#define IFC_REGISTER_CLIENT_X(client, ord) IFC_REGISTER_CLIENT_Y(client, ord)
 
 ///Register a derived client interface class
-#define IFC_REGISTER_CLIENT(client) IFC_REGISTER_CLIENT_X(client, __COUNTER__)
+#define IFC_REGISTER_CLIENT(client) IFC_REGISTER_CLIENT_X(client, __COUNTER__);
 
 ///Handler not implemented message
 #ifdef _DEBUG
