@@ -105,6 +105,8 @@ public:
 
     static void post(const token& msg, const token& from = token(), const void* inst = 0);
 
+    bool is_running();
+
 #ifdef COID_VARIADIC_TEMPLATES
 
     ///Formatted log message

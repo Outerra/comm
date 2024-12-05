@@ -70,6 +70,11 @@ public:
     bool is_empty() const {
         return _queue.is_empty();
     }
+
+    bool is_running() 
+    {
+        return _thread.exists();
+    }
 };
 
 COID_NAMESPACE_END
