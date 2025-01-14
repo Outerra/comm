@@ -130,8 +130,8 @@ COID_NAMESPACE_END
 #define DASSERT(expr)
 #define DASSERTX(expr,txt)
 #define DASSERT_ONCE(expr)
-#define DASSERT_FATAL(expr)
-#define DASSERT_FATALX(expr,txt)
+#define DASSERT_FATAL(expr)         do{ if(expr) break; std::abort(); } while(0)
+#define DASSERT_FATALX(expr,txt)    do{ if(expr) break; std::abort(); } while(0)
 
 #define DASSERT_RET(expr, ...)      do{ if(expr) break; coid::__retassert(); return __VA_ARGS__; } while(0)
 #define DASSERT_RETX(expr,txt, ...) do{ if(expr) break; coid::__retassert(); return __VA_ARGS__; } while(0)
