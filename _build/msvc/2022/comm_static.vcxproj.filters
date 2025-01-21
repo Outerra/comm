@@ -46,6 +46,9 @@
     <Filter Include="stacktrace">
       <UniqueIdentifier>{7d15fbb8-a6aa-4aaa-a544-606a64fa6007}</UniqueIdentifier>
     </Filter>
+    <Filter Include="utils">
+      <UniqueIdentifier>{21e0e3d5-3672-4393-8329-023e494a02cc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\atomic\atomic.h">
@@ -340,6 +343,9 @@
     <ClInclude Include="..\..\..\hash\hashkeyset_meta.h">
       <Filter>hash</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\utils\uid.h">
+      <Filter>utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\crypt\sha1.cpp">
@@ -464,6 +470,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\binstring.cpp">
       <Filter>cxx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\utils\uid.cpp">
+      <Filter>utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

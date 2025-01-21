@@ -577,12 +577,14 @@
     <ClInclude Include="..\..\..\typeseq.h" />
     <ClInclude Include="..\..\..\type_info.h" />
     <ClInclude Include="..\..\..\unique_ptr.h" />
+    <ClInclude Include="..\..\..\utils\uid.h" />
     <ClInclude Include="..\..\..\version.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\alloc\slotalloc_bmp.cpp" />
     <ClCompile Include="..\..\..\atomic\atomic.cpp" />
     <ClCompile Include="..\..\..\binstream\stdstream.cpp" />
+    <ClCompile Include="..\..\..\utils\uid.cpp" />
     <ClInclude Include="..\..\..\coder\bufpack_lz4.h" />
     <ClCompile Include="..\..\..\binstring.cpp" />
     <ClCompile Include="..\..\..\coder\lz4\lz4.c" />
