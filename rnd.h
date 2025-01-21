@@ -171,10 +171,11 @@ class rnd_strong {
 public:
 
     ///initializing with a NONZERO seed
-    void seed(uint seed)
+    void seed(uint64 seed)
     {
-        _mt[0] = seed;
-        for (_mti = 1; _mti<N; ++_mti) {
+        _mt[0] = uint32(seed);
+        _mt[1] = 1812433253UL * (_mt[0] ^ (_mt[0] >> 30)) + uint32(seed >> 32) + 1;  // + 1 used for compability with original uint32 seed 
+        for (_mti = 2; _mti<N; ++_mti) {
             _mt[_mti] =
                 (1812433253UL * (_mt[_mti-1] ^ (_mt[_mti-1] >> 30)) + _mti);
             /* See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. */
@@ -182,18 +183,6 @@ public:
             /* only MSBs of the array mt[].                        */
             /* 2002/01/09 modified by Makoto Matsumoto             */
         }
-    }
-
-    ///initializing with a NONZERO seed
-    /// @note obsolete, compatibility
-    void seed_old(uint seed) {
-        // setting initial seeds to _mt[N] using
-        // the generator Line 25 of Table 1 in
-        // [KNUTH 1981, The Art of Computer Programming
-        //    Vol. 2 (2nd Ed.), pp102]
-        _mt[0] = seed;
-        for (_mti = 1; _mti<N; ++_mti)
-            _mt[_mti] = 69069 * _mt[_mti-1];
     }
 
     uint rand()
@@ -265,7 +254,7 @@ public:
         }
     }
 
-    rnd_strong(uint seedi = 1)
+    rnd_strong(uint64 seedi = 1)
     {
         seed(seedi);
     };
