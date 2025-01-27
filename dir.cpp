@@ -770,4 +770,21 @@ bool directory::list_file_paths(const token& path, const token& extension, recur
     return true;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+uint64 directory::calculate_directory_size(const coid::token& path)
+{
+    if (!coid::directory::is_valid_directory(path))
+    {
+        return 0;
+    }
+
+    uint64 result = 0;
+
+    list_file_paths(path, "", coid::directory::recursion_mode::recursive_files, [&result](const coid::charstr& path, coid::directory::list_entry){
+        result += coid::directory::file_size(path);
+    });
+
+    return result;
+}
+
 COID_NAMESPACE_END

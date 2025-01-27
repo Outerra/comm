@@ -337,6 +337,10 @@ public:
     uint64 file_size() const { return _st.st_size; }
     static uint64 file_size(zstring file);
 
+    uint64 calculate_directory_size() { return calculate_directory_size(_curpath); }
+    static uint64 calculate_directory_size(const coid::token& path);
+
+
     ///Get next entry in the directory
     const xstat* next();
 
