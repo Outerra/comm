@@ -361,26 +361,22 @@ public:
     ///Cut to specified length, negative numbers cut abs(len) from the end
     charstr& resize(ints length)
     {
+        uints ts = lens();
         if (length < 0)
         {
-            if ((uints)-length >= lens())
+            if ((uints)-length >= ts) {
                 reset();
+            }
             else {
-                _tstr.realloc(lens() + length + 1);
+                _tstr.realloc(ts + length + 1);
                 termzero();
             }
         }
         else {
-            uints ts = lens();
             DASSERTN(ts + length <= UMAX32);
 
-            if ((uints)length < ts)
-            {
-                _tstr.realloc(length + 1);
-                _tstr.ptr()[length] = 0;
-            }
-            else if (_tstr.size() > 0)
-                termzero();
+            _tstr.realloc(length + 1);
+            _tstr.ptr()[length] = 0;
         }
 
         return *this;
