@@ -183,7 +183,11 @@ public:
         static_assert(std::is_base_of<client, C>::value, "not a base class");
 
         typedef intergen_interface* (*fn_client)();
-        fn_client cc = []() -> intergen_interface* { return new C; };
+        fn_client cc = []() -> intergen_interface* {
+            //also init profiler backend for clients from a different module
+            profiler::init_backend_in_module();
+            return new C;
+        };
 
         coid::token type = typeid(C).name();
         type.consume("class ");
@@ -193,6 +197,7 @@ public:
         tmp << "@client-1781368982"_T << '.' << type;
 
         coid::interface_register::register_interface_creator(tmp, cc, nullptr);
+
         return 0;
     }
 

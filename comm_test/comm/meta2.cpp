@@ -2,6 +2,7 @@
 #include <comm/metastream/metastream.h>
 #include <comm/metastream/fmtstreamjson.h>
 #include <comm/hash/hashkeyset.h>
+#include <comm/hash/hashkeyset_meta.h>
 #include <comm/binstream/binstream.h>
 #include <comm/binstream/filestream.h>
 #include <comm/str.h>

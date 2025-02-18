@@ -928,13 +928,93 @@ public:
                 int i = 0;
                 while (names[i] != 0 && _convbuf != names[i])
                     ++i;
-                if (names[i])
+                if (names[i]) {
                     v = values[i];
-                else
+                }
+                else {
+                    DASSERT(0); //enum name not found
                     v = defval;
+                }
             }
-            else
+            else {
                 v = defval;
+            }
+        }
+        else {
+            meta_variable_optional<charstr>(name, (const charstr*)&v);
+        }
+
+        return used;
+    }
+
+    ///Define a variable that can have a finite set of values, mapped to multiple strings in output stream, or-ed together
+    /// @param name variable name, used as a key in output formats
+    /// @param v variable to read/write to
+    /// @param values array of possible values; put compound ones at the front if flag groups are to be matched first
+    /// @param names array of names corresponding to the values array, terminated by nullptr
+    /// @param defval value to use if there's input string mismatch
+    /// @param write_default if false, does not write value that equals the defval into output stream
+    /// @note if written value is not present in the list, nothing is written out
+    /// @note if read string doesn't match any string from the set, it's ignored
+    /// @note allowed separators on input are " ,;|", output will use space
+    /// @return true if value was read or written and no default was used, always false in meta phase
+    template<typename T>
+    bool member_enum_flags(const token& name, T& v, const T values[], const char* const names[], const T& defval, bool write_default = true)
+    {
+        bool used = false;
+
+        if (_binw) {
+            if (!cache_prepared() && !write_default && v == defval)
+                used = write_optional((const char**)0);
+            else {
+                T rest = v;
+                _convbuf.reset();
+                while (rest != T(0)) {
+                    int i = 0;
+                    while (names[i] != 0 && T(values[i] & v) != values[i])
+                        ++i;
+                    if (names[i]) {
+                        if (_convbuf) _convbuf << ' ';
+                        _convbuf << names[i];
+                        rest &= ~values[i];
+                    }
+                    else {
+                        //still some bits set but no flags matching, write value as a number
+                        DASSERT(0);
+                        (_convbuf << "0b").append_num(2, (typename resolve_enum<T>::type)v);
+                    }
+                }
+                used = write_optional(_convbuf ? &_convbuf : 0);
+            }
+        }
+        else if (_binr) {
+            used = read_optional(_convbuf);
+            if (used) {
+                if (_convbuf.char_is_number(0)) {
+                    //a numeric value for flags
+                    v = T(_convbuf.xtouint());
+                }
+                else {
+                    v = T(0);
+                    token input = _convbuf;
+                    input.trim();
+                    while (input) {
+                        token name = input.cut_left_group(" ,;|");
+                        int i = 0;
+                        while (names[i] != 0 && name != names[i])
+                            ++i;
+                        if (names[i]) {
+                            v |= values[i];
+                        }
+                        else {
+                            DASSERT(0); //enum name not found, ignored
+                        }
+                    }
+                }
+            }
+            else {
+                v = defval;
+            }
         }
         else
             meta_variable_optional<charstr>(name, (const charstr*)&v);

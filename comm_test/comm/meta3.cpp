@@ -431,7 +431,6 @@ struct FooBBB
             m.member_optional_nowritedef("a", s.a, FooAAA());
         });
     }
-
 };
 
 void test_nested_compound()
@@ -447,7 +446,59 @@ void test_nested_compound()
 
     meta.stream_in(bs);
     meta.stream_acknowledge();
+}
 
+
+enum class flags : uint32
+{
+    none = 0,
+    axis = 1,
+    event = 2,
+    any = axis | event,
+};
+
+constexpr uint32 operator & (const flags& lhs, const flags& rhs) { return uint32(lhs) & uint32(rhs); }
+constexpr flags operator | (const flags& lhs, const flags& rhs) { return flags(uint32(lhs) | uint32(rhs)); }
+constexpr flags operator ^ (const flags& lhs, const flags& rhs) { return flags(uint32(lhs) ^ uint32(rhs)); }
+constexpr flags operator ~ (const flags& value) { return flags(~uint32(value)); }
+constexpr flags& operator &= (flags& lhs, const flags& rhs) { lhs = flags(uint32(lhs) & uint32(rhs)); return lhs; }
+constexpr flags& operator |= (flags& lhs, const flags& rhs) { lhs = flags(uint32(lhs) | uint32(rhs)); return lhs; }
+constexpr flags& operator ^= (flags& lhs, const flags& rhs) { lhs = flags(uint32(lhs) ^ uint32(rhs)); return lhs; }
+
+struct FooEnum
+{
+    flags f = flags::none;
+
+    friend metastream& operator || (metastream& m, FooEnum& s)
+    {
+        return m.compound_type(s, [&]()
+        {
+            const flags values[] = {flags::any, flags::axis, flags::event, flags::none};
+            const char* names[] = {"any", "axis", "event", "none", 0};
+            m.member_enum_flags("f", s.f, values, names, flags::none);
+        });
+    }
+};
+
+flags test_enum_read(const token& text)
+{
+    binstreamconstbuf txt(text);
+    fmtstreamcxx fmt(txt, false);
+    metastream meta(fmt);
+
+    FooEnum v;
+    meta.xstream_in(v);
+    return v.f;
+}
+
+void test_enum()
+{
+    DASSERT(test_enum_read("f = \"axis\"") == flags::axis);
+    DASSERT(test_enum_read("f = \"axis event\"") == (flags::axis | flags::event));
+    DASSERT(test_enum_read("f = \"any\"") == flags::any);
+    DASSERT(test_enum_read("f = \"any event\"") == flags::any);
+    DASSERT(test_enum_read("f = \"0b11\"") == (flags::axis | flags::event));
+    DASSERT(test_enum_read("f = \"none\"") == flags::none);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -461,7 +512,10 @@ void metastream_test3()
 
     test_as_type();
 
+    test_enum();
+
     test_nested_compound();
+
 /*
     dynarray<ref<FooA>> ar;
     ar.add()->create(new FooA(1, 2));
