@@ -932,6 +932,7 @@ public:
                     v = values[i];
                 }
                 else {
+                    error_enum_name(_convbuf);
                     DASSERT(0); //enum name not found
                     v = defval;
                 }
@@ -2997,6 +2998,7 @@ private:
     }
 
     void warn_obsolete(const token& name);
+    void error_enum_name(const token& name);
 
     ////////////////////////////////////////////////////////////////////////////////
 private:

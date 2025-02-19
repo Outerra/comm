@@ -51,6 +51,14 @@ void metastream::warn_obsolete(const token& name)
     coidlog_warning("metastream", _err);
 }
 
+void metastream::error_enum_name(const token& name)
+{
+    _err.reset();
+    dump_stack(_err, 0);
+    _err << " - error: enum '" << name << "' name notfound";
+    coidlog_error("metastream", _err);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 struct SMReg {
