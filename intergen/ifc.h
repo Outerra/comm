@@ -487,6 +487,8 @@ private:
     register_fn _fn;
 };
 
+// OBSOLETE: use UseLibraryDependencyInputs on project reference to force linking interface registrations
+
 ///Force registration of an interface declared in a statically-linked library
 #define FORCE_REGISTER_LIBRARY_INTERFACE(ns,ifc) \
     namespace ns { void* force_register_##ifc(); static void* autoregger_##ifc = force_register_##ifc(); }
