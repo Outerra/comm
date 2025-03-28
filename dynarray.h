@@ -790,6 +790,13 @@ public:
     /// @}
 
 
+    count_t get_item_index(const T* item_ptr) const 
+    {
+        uints result = item_ptr - _ptr;
+        DYNARRAY_CHECK_BOUNDS_U(result);
+        return count_t(result);
+    }
+
     ///Append an empty element to the end
     /// @return pointer to the last element (the one appended)
     T* push() {

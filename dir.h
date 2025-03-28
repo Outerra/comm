@@ -123,36 +123,38 @@ public:
         return path;
     }
 
-    static charstr& validate_filename(charstr& filename, char replacement_char = '_') {
-        static char forbidden_chars[] = {'\\','/',':', '*', '?','\"','<', '>', '|'};
+    /// @brief Check if name is valid file or directory name
+    /// @param name - name to check
+    /// @return true if the name is valid
+    static bool is_valid_name(const coid::token& name);
 
-        DASSERT(replacement_char != forbidden_chars[0] &&
-            replacement_char != forbidden_chars[1] &&
-            replacement_char != forbidden_chars[2] &&
-            replacement_char != forbidden_chars[3] &&
-            replacement_char != forbidden_chars[4] &&
-            replacement_char != forbidden_chars[5] &&
-            replacement_char != forbidden_chars[6] &&
-            replacement_char != forbidden_chars[7] &&
-            replacement_char != forbidden_chars[8]);
+    /// @brief Validates filename
+    /// @param filename(in/out) - name to validate 
+    /// @param replacement_char - replacement character for the invalid characters found in the filename
+    /// @return validated name
+    static charstr& validate_filename(charstr& filename, char replacement_char = '_') {
+        if (!is_valid_name_char(replacement_char))
+        {
+            DASSERTX(0, "replacement character invalid");
+            replacement_char = '_';
+        }
 
         coid::token tok = coid::token(filename);
         const char* s = tok._ptr;
         const char* e = tok._pte;
         for (const char* i = s; i != e; i++) {
-            if (*i == forbidden_chars[0] ||
-                *i == forbidden_chars[1] ||
-                *i == forbidden_chars[2] ||
-                *i == forbidden_chars[3] ||
-                *i == forbidden_chars[4] ||
-                *i == forbidden_chars[5] ||
-                *i == forbidden_chars[6] ||
-                *i == forbidden_chars[7] ||
-                *i == forbidden_chars[8])
+            if (!is_valid_name_char(*i))
             {
                 filename[i - s] = replacement_char;
             }
         }
+
+        if (tok.char_is_whitespace(tok.len() - 1) || tok.last_char() == '.')
+        {
+            filename[tok.len() - 1] = replacement_char;
+        }
+
+        DASSERT(is_valid_name(filename));
 
         return filename;
     }
@@ -193,6 +195,8 @@ public:
     static opcd copy_directory(zstring src, zstring dst) {
         return copymove_directory(src, dst, false);
     }
+
+    static opcd rename_directory(zstring path, zstring new_name);
 
     static opcd copy_file(zstring src, zstring dst, bool preserve_dates);
 
@@ -411,6 +415,21 @@ public:
         const coid::function<void(const find_result& file_info)>& fn);
 
 protected:
+    static bool is_valid_name_char(char c)
+    {
+        static char forbidden_chars[] = { '\\','/',':', '*', '?','\"','<', '>', '|' };
+        
+        return c != forbidden_chars[0] &&
+            c != forbidden_chars[1] &&
+            c != forbidden_chars[2] &&
+            c != forbidden_chars[3] &&
+            c != forbidden_chars[4] &&
+            c != forbidden_chars[5] &&
+            c != forbidden_chars[6] &&
+            c != forbidden_chars[7] &&
+            c != forbidden_chars[8];
+    }
+
 
     static opcd copymove_directory(zstring src, zstring dst, bool move);
 

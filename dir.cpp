@@ -89,6 +89,30 @@ bool directory::is_valid_directory(zstring arg)
     return is_valid_dir(arg.c_str());
 }
 
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+bool directory::is_valid_name(const coid::token& name)
+{
+    // valid name can't contain any forbidden chars  -> see is_valid_name_char function
+    // can't end with '.' and whitespaces
+    // can't be empty
+
+    if (name.is_empty() || name.last_char() == '.' || name.char_is_whitespace(name.len() - 1))
+    {
+        return false;
+    }
+
+    for (const char* c_ptr = name._ptr;c_ptr != name._pte; ++c_ptr)
+    {
+        if (!is_valid_name_char(*c_ptr))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 charstr directory::create_tmp_dir(const token& prefix)
 {
@@ -257,6 +281,28 @@ opcd directory::copy_file_to(const token& dst, bool preserve_dates, const token&
 opcd directory::copy_current_file_to(const token& dst, bool preserve_dates)
 {
     return copy_file(_curpath, dst, preserve_dates);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+opcd directory::rename_directory(zstring path, zstring new_name)
+{
+    if (!is_valid_directory(path) || !is_valid_name(new_name))
+    {
+        return ersFAILED;
+    }
+
+    coid::token path_tok = path;
+    if (is_separator(path_tok.last_char()))
+    {
+        path_tok.shift_end(-1);
+    }
+    
+    path_tok.cut_right_group_back(DIR_SEPARATORS, coid::token::cut_trait_keep_sep_default_empty());
+
+    new_name.get_str().ins(0, path_tok);
+
+    return rename_file(path, new_name, false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
