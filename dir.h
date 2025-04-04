@@ -187,13 +187,56 @@ public:
 
     ///Move directories or files, also works across drives
     /// @note will fail if src file already exists in dst
-    static opcd move_directory(zstring src, zstring dst) {
-        return copymove_directory(src, dst, true);
+    static opcd move_directory(zstring source, zstring destination) 
+    {
+        if (!is_valid_directory(source) || !is_valid_directory(destination))
+        {
+            return ersINVALID_PARAMS;
+        }
+        
+        return copymove_directory(source, destination, true);
     }
 
-    /// @note will fail if src file already exists in dst
-    static opcd copy_directory(zstring src, zstring dst) {
-        return copymove_directory(src, dst, false);
+    enum class copy_directory_mode_enum
+    {
+        contents_only,  //< copies only the inner contents of the source directory
+        whole_directory //< copies the entire directory, including the source folder itself
+    };
+
+    
+    /// @brief Copies source dirctory to destination directory
+    /// @param source - source directory path
+    /// @param destination - destination directory path
+    /// @param mode - see directory_copy_mode_enum 
+    /// @return error code 
+    /// @note will fail if source directory or file already exists in destination directory
+    static opcd copy_directory(zstring source, zstring destination, copy_directory_mode_enum mode)
+    {
+        if (!is_valid_directory(source) || !is_valid_directory(destination))
+        {
+            return ersINVALID_PARAMS;
+        }
+        
+
+        coid::charstr& src_str = source.get_str();
+        coid::charstr& dst_str = destination.get_str();
+        treat_trailing_separator(src_str, false);
+        
+        if (mode == copy_directory_mode_enum::whole_directory)
+        {
+            treat_trailing_separator(dst_str, '/');
+
+        }
+        else if (mode == copy_directory_mode_enum::contents_only)
+        {
+            treat_trailing_separator(dst_str, false);
+        }
+        else 
+        {
+            DASSERT_RETX(0, "Not implemented. New copy_directory_mode_enum value added?", ersFAILED_ASSERTION);
+        }
+
+        return copymove_directory(source, destination, false);
     }
 
     static opcd rename_directory(zstring path, zstring new_name);
@@ -413,6 +456,11 @@ public:
         bool recursive,
         bool return_also_folders,
         const coid::function<void(const find_result& file_info)>& fn);
+
+    /// @brief Check if directory is empty
+    /// @param directory_path - path (absolute or relative to the working directory)
+    /// @return true when valid and empty directory, false otherwise
+    static bool is_directory_empty(const coid::token& directory_path);
 
 protected:
     static bool is_valid_name_char(char c)

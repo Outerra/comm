@@ -450,7 +450,7 @@ void directory::find_files(
     const coid::function<void(const find_result& file_info)>& fn)
 {
     //*** constant that needs to be constructed just once
-    static const coid::token dotdot("..");
+    static constexpr coid::token_literal dotdot(".."_T);
 
     //*** allocate memory that will be reused
     WIN32_FIND_DATA win32_file;
@@ -502,6 +502,44 @@ void directory::find_files(
 
     //the reason that FindNextFile returned 0 must be that there are no more files
     DASSERT(GetLastError() == ERROR_NO_MORE_FILES);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+bool directory::is_directory_empty(const coid::token& directory_path)
+{
+    THREAD_LOCAL_SINGLETON_DEF(coid::charstr) buffer_singleton;
+    coid::charstr& buf = *buffer_singleton;
+    buf = directory_path;
+    if (!is_separator(buf.last_char()))
+    {
+        buf << DIR_SEPARATOR_STRING << "*"_T;
+    }
+    
+    buf << "*"_T;
+
+    WIN32_FIND_DATA win32_file;
+    HANDLE find_handle = INVALID_HANDLE_VALUE;
+
+    find_handle = FindFirstFile(buf.c_str(), &win32_file);
+    if (find_handle == INVALID_HANDLE_VALUE) 
+    {
+        return false;
+    }
+
+    bool result = true;
+    do {
+        coid::token file_name(win32_file.cFileName);
+
+        if (!file_name.cmpeqi("."_T) && !file_name.cmpeqi(".."_T))
+        {
+            result = false;
+            break;
+        }
+    } while (FindNextFile(find_handle, &win32_file) != 0);
+
+    FindClose(find_handle);
+
+    return result;
 }
 
 

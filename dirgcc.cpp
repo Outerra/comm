@@ -332,6 +332,14 @@ void directory::find_files(
     }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+bool directory::is_directory_empty(const coid::token& directory_path)
+{
+    DASSERTX(0, "not implemented!");
+
+    return false;
+}
+
 COID_NAMESPACE_END
 
 

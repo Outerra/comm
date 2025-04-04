@@ -474,8 +474,11 @@ opcd directory::copymove_directory(zstring src, zstring dst, bool move)
             token folder = src.get_token().cut_right_group_back("\\/"_T);
             dsts << folder;
         }
-        else if (!is_valid(dsts))
+        
+        if (!is_valid_directory(dsts))
+        {
             mkdir(dsts);
+        }
 
         dsts << '/';
     }
