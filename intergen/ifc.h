@@ -491,25 +491,25 @@ private:
 
 ///Force registration of an interface declared in a statically-linked library
 #define FORCE_REGISTER_LIBRARY_INTERFACE(ns,ifc) \
-    namespace ns { void* force_register_##ifc(); static void* autoregger_##ifc = force_register_##ifc(); }
+    namespace ns { [[deprecated("use UseLibraryDependencyInputs to force linking library interface registrations")]] void* force_register_##ifc(); static void* autoregger_##ifc = force_register_##ifc(); }
 
 ///Force registration of an interface declared in a statically-linked library
 #define FORCE_REGISTER_LIBRARY_INTERFACE2(ifc) \
-    void* force_register_##ifc(); static void* autoregger_##ifc = force_register_##ifc()
+     [[deprecated("use UseLibraryDependencyInputs to force linking library interface registrations")]] void* force_register_##ifc(); static void* autoregger_##ifc = force_register_##ifc()
 
 
 ///Force registration of a script binder in a statically-linked library
 #define FORCE_REGISTER_BINDER_INTERFACE(ns,ifc,script) \
-    namespace ns { namespace script { void* force_register_##ifc(); static void* autoregger_##ifc = force_register_##ifc(); }}
+    namespace ns { namespace script { [[deprecated("use UseLibraryDependencyInputs to force linking library interface registrations")]] void* force_register_##ifc(); static void* autoregger_##ifc = force_register_##ifc(); }}
 
 
 /// Do not call these. Their purpose is only to expand __COUNTER__ value
-#define IFC_REGISTER_CLIENT_Y(client, ord) \
+#define IFC_REGISTER_CLIENT_Y__(client, ord) \
     static int _autoregger_##ord = client::register_client<client>()
-#define IFC_REGISTER_CLIENT_X(client, ord) IFC_REGISTER_CLIENT_Y(client, ord)
+#define IFC_REGISTER_CLIENT_X__(client, ord) IFC_REGISTER_CLIENT_Y__(client, ord)
 
 ///Register a derived client interface class
-#define IFC_REGISTER_CLIENT(client) IFC_REGISTER_CLIENT_X(client, __COUNTER__);
+#define IFC_REGISTER_CLIENT(client) IFC_REGISTER_CLIENT_X__(client, __COUNTER__);
 
 ///Handler not implemented message
 #ifdef _DEBUG
