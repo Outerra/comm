@@ -542,6 +542,59 @@ bool directory::is_directory_empty(const coid::token& directory_path)
     return result;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+directory::verify_path_syntax_result_enum directory::verify_path_syntax(const coid::token& path)
+{
+    if (path.is_empty())
+    {
+        return verify_path_syntax_result_enum::invalid;
+    }
+
+    coid::token cut;
+    token tok = path;
+
+    const uint tlen = tok.len();
+    const bool is_abosolute = tlen >= 3 && tok[1] == ':';
+    const bool lastsep = is_separator(tok.last_char());
+
+    if (is_abosolute)
+    {
+        coid::token cut = tok.cut_left_group(DIR_SEPARATORS);
+        const char drive_char = cut.first_char();
+        if (cut.len() != 2 || ((drive_char < 'c' || drive_char > 'z') &&
+            (drive_char < 'C' || drive_char > 'Z')))
+        {
+            return verify_path_syntax_result_enum::invalid;
+        }
+    }
+
+    cut = tok;
+
+    while (cut.is_set())
+    {
+        cut = tok.cut_left_group(DIR_SEPARATORS, coid::token::cut_trait_remove_sep_default_empty());
+
+        if (cut.is_set() && !cut.cmpeq("."_T) && !cut.cmpeq(".."_T) && !is_valid_name(cut))
+        {
+            return verify_path_syntax_result_enum::invalid;
+        }
+    }
+
+    if (lastsep)
+    {
+        return is_abosolute ? verify_path_syntax_result_enum::valid_absolue_directory_path : verify_path_syntax_result_enum::valid_relative_directory_path;
+    }
+    else
+    {
+        if (!is_valid_name(tok))
+        {
+            return verify_path_syntax_result_enum::invalid;
+        }
+
+        return is_abosolute ? verify_path_syntax_result_enum::valid_absolute_file_path : verify_path_syntax_result_enum::valid_relative_file_path;
+    }
+}
+
 
 COID_NAMESPACE_END
 

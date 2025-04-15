@@ -89,8 +89,7 @@ bool directory::is_valid_directory(zstring arg)
     return is_valid_dir(arg.c_str());
 }
 
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
+////////////////////////////////////////////////////////////////////////////////
 bool directory::is_valid_name(const coid::token& name)
 {
     // valid name can't contain any forbidden chars  -> see is_valid_name_char function
@@ -112,6 +111,7 @@ bool directory::is_valid_name(const coid::token& name)
 
     return true;
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 charstr directory::create_tmp_dir(const token& prefix)

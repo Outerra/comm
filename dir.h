@@ -159,17 +159,51 @@ public:
         return filename;
     }
 
+    enum class verify_path_syntax_result_enum : uint8
+    {
+        invalid = 0,
+        valid_relative_directory_path,
+        valid_absolue_directory_path,
+        valid_relative_file_path,
+        valid_absolute_file_path,
+    };
+    
+    /// @brief Checks whether the given path is syntactically valid (i.e., uses only allowed characters, format, etc.).
+    /// @param path The path to validate.
+    /// @return One of the following:
+    ///         - `invalid`: The path is not syntactically valid.
+    ///         - `valid_relative_directory_path`: A valid relative path to a directory.
+    ///         - `valid_absolute_directory_path`: A valid absolute path to a directory.
+    ///         - `valid_relative_file_path`: A valid relative path to a file.
+    ///         - `valid_absolute_file_path`: A valid absolute path to a file.
+    /// @note This function only verifies the path's syntax; it does not check if the file or directory exists on the device.
+    static verify_path_syntax_result_enum verify_path_syntax(const coid::token& path);
+
     bool is_entry_open() const;
     bool is_entry_directory() const;
     bool is_entry_subdirectory() const;     //< a directory, but not . or ..
     bool is_entry_regular() const;
 
-    /// @return 0 is path is invalid, 1 if file, 2 directory
-    static int is_valid(zstring path);
+    /// @brief Checks whether the given path exists on the physical device and determines its type.
+    /// @param path The path to the file or directory to validate.
+    /// @return 
+    ///         - `0` if the path does not exist on the device (invalid),
+    ///         - `1` if the path exists and points to a file,
+    ///         - `2` if the path exists and points to a directory.
+    /// @note Unlike the syntax check, this function verifies the actual existence of the path on the file system.
+     static int is_valid(zstring path);
 
-    /// @return true if path is a directory
+     /// @brief Checks whether the given directory path exists
+     /// @param path The path to the directory to validate.
+     /// @return true if exists, false otherwise
+    /// @note Unlike the syntax check, this function verifies the actual existence of the path on the file system.
+
     static bool is_valid_directory(zstring arg);
 
+    /// @brief Checks whether the given file path exists
+    /// @param path The path to the file to validate.
+    /// @return true if exists, false otherwise
+    /// @note Unlike the syntax check, this function verifies the actual existence of the path on the file system.
     static bool is_valid_file(zstring arg);
 
     static bool is_directory(ushort mode);

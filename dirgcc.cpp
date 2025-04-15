@@ -340,6 +340,23 @@ bool directory::is_directory_empty(const coid::token& directory_path)
     return false;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+bool directory::is_valid_name(const coid::token& file_name)
+{
+    DASSERTX(0, "not implemented!");
+
+    return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+bool directory::is_valid_path(const coid::token& path)
+{
+    DASSERTX(0, "not implemented!");
+
+    return false;
+}
+
+
 COID_NAMESPACE_END
 
 
