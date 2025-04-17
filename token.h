@@ -1759,6 +1759,18 @@ struct token
         return *this;
     }
 
+    token& trim_ingroup(const token& sep, uints off = 0)
+    {
+        uints n = count_ingroup_back(sep, off);
+        _pte = _ptr + n;
+        return *this;
+    }
+
+    token& trim_any_of(const token& sep) {
+        return trim_ingroup(sep, 0);
+    }
+
+
 
     token& skip_ingroup(const token& sep, uints off = 0)
     {
@@ -1985,6 +1997,10 @@ struct token
         return first_char() == c;
     }
 
+    bool begins_with_any_of(const token& set) const {
+        return set.contains(first_char()) != nullptr;
+    }
+
     bool begins_with_icase(const token& tok, uints off = 0) const
     {
         if (tok.lens() + off > lens())
@@ -2023,6 +2039,10 @@ struct token
         return last_char() == c;
     }
 
+    bool ends_with_any_of(const token& set) const {
+        return set.contains(last_char()) != nullptr;
+    }
+
     bool ends_with_icase(const token& tok) const
     {
         if (tok.lens() > lens())
@@ -2051,15 +2071,14 @@ struct token
         return 0;
     }
 
-    ///Consume leading character if matches any one from the given string, returning position+1, otherwise return 0
-    ints consume_char(const token& ct) {
-        char c = first_char();
-        if (!c) return 0;
-        const char* p = ct.strchr(c);
-        if (!p) return 0;
-
-        ++_ptr;
-        return p - ct.ptr() + 1;
+    ///Consume leading character if matches any one from the given string, returning set position +1, otherwise return 0
+    int consume_any_of(const token& set)
+    {
+        if (const char* p = set.contains(first_char())) {
+            ++_ptr;
+            return int(p - set.ptr()) + 1;
+        }
+        return 0;
     }
 
     ///Consume leading substring if matches
@@ -2084,11 +2103,20 @@ struct token
         return false;
     }
 
-    ///Consume leading character if matches the given one, returning 1, otherwise return 0
+    ///Consume trailing character if matches the given one, returning 1, otherwise return 0
     int consume_end_char(char c) {
         if (ends_with(c)) {
             --_pte;
             return 1;
+        }
+        return 0;
+    }
+
+    ///Consume trailing character if matches any one from given set, returning set position +1, otherwise return 0
+    int consume_end_any_of(const token& set) {
+        if (const char* p = set.contains(last_char())) {
+            --_pte;
+            return int(p - set.ptr()) + 1;
         }
         return 0;
     }
@@ -2720,7 +2748,7 @@ struct token
     /// formats: 49°42'32.91"N, +49°42.5485', +49.7091416667°
     double toangle()
     {
-        ints sgn = consume_char("+-");
+        int sgn = consume_any_of("+-");
         int deg = touint_and_shift();
 
         static const token deg_utf8 = "\xc2\xb0";   //degree sign in utf-8
@@ -2733,9 +2761,9 @@ struct token
         if (c == '.') {
             //decimal degrees
             dec = todouble_and_shift();
-            consume(deg_utf8) || consume(ord_utf8) || consume_char("°");
+            consume(deg_utf8) || consume(ord_utf8);
         }
-        else if (consume(deg_utf8) || consume(ord_utf8) || consume_char("°*, "))
+        else if (consume(deg_utf8) || consume(ord_utf8) || consume_any_of("*, "))
         {
             skip_space();
             int mnt = touint_and_shift();
@@ -2747,7 +2775,7 @@ struct token
                 dec += todouble_and_shift() / 60.0;
                 consume(min_utf8) || consume_char('\'');
             }
-            else if (consume(min_utf8) || consume_char("\' "))
+            else if (consume(min_utf8) || consume_any_of("\' "))
             {
                 skip_space();
                 dec += todouble_and_shift() / 3600.0;
@@ -2758,7 +2786,7 @@ struct token
         bool minus = sgn == 2;
 
         skip_space();
-        ints wos = consume_char("NSEWnsew");
+        int wos = consume_any_of("NSEWnsew");
         if (wos) {
             //world side overrides the sign, if any
             minus = minus != ((wos & 1) == 0);

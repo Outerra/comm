@@ -1003,7 +1003,7 @@ class metagen
                 uint nl = tout.eat_left;
                 while (nl--) {
                     token& stext = (*sequence.last())->stext;
-                    stext.truncate(stext.count_ingroup_back(" \t"));
+                    stext.trim_space();
 
                     uints len = stext.len();
                     stext.trim_newline();
