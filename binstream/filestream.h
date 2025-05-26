@@ -67,76 +67,80 @@ public:
 
     COIDNEWDELETE(filestream);
 
-    virtual uint binstream_attributes( bool in0out1 ) const override
+    virtual uint binstream_attributes(bool in0out1) const override
     {
         return 0;
     }
 
-    virtual opcd write_raw( const void* p, uints& len ) override
+    virtual opcd write_raw(const void* p, uints& len) override
     {
-        DASSERT( _handle != -1 );
+        DASSERT(_handle != -1);
 
-        if(_op>0 )
+        if (_op > 0)
             upd_rpos();
 
 #ifdef SYSTYPE_MSVC
-        uint k = ::_write( _handle, p, (uint)len );
+        uint k = ::_write(_handle, p, (uint)len);
 #else
-        uint k = ::write( _handle, p, (uint)len );
+        uint k = ::write(_handle, p, (uint)len);
 #endif
         _wpos += k;
         len -= k;
         return 0;
     }
 
-    virtual opcd read_raw( void* p, uints& len ) override
+    virtual opcd read_raw(void* p, uints& len) override
     {
-        DASSERT( _handle != -1 );
+        DASSERT(_handle != -1);
 
-        if(_op<0)
+        if (_op < 0)
             upd_wpos();
 
 #ifdef SYSTYPE_MSVC
-        uint k = ::_read( _handle, p, (uint)len );
+        uint k = ::_read(_handle, p, (uint)len);
 #else
-        uint k = ::read( _handle, p, (uint)len );
+        uint k = ::read(_handle, p, (uint)len);
 #endif
         _rpos += k;
         len -= k;
-        if( len > 0 )
+        if (len > 0)
             return ersNO_MORE "required more data than available";
         return 0;
     }
 
-    virtual opcd read_until( const substring& ss, binstream* bout, uints max_size=UMAXS ) override
-    {   return ersUNAVAILABLE; }
-
-    virtual opcd peek_read( uint timeout ) override {
-        if(timeout)  return ersINVALID_PARAMS;
-        return (uint64)_rpos < get_size()  ?  opcd(0) : ersNO_MORE;
+    virtual opcd read_until(const substring& ss, binstream* bout, uints max_size = UMAXS) override
+    {
+        return ersUNAVAILABLE;
     }
 
-    virtual opcd peek_write( uint timeout ) override {
+    virtual opcd peek_read(uint timeout) override {
+        if (timeout)  return ersINVALID_PARAMS;
+        return (uint64)_rpos < get_size() ? opcd(0) : ersNO_MORE;
+    }
+
+    virtual opcd peek_write(uint timeout) override {
         return 0;
     }
 
 
     virtual bool is_open() const        override { return _handle != -1; }
-    virtual void flush()                override { }
-    virtual void acknowledge( bool eat=false ) override { }
+    virtual void flush()                override {}
+    virtual void acknowledge(bool eat = false) override {}
 
     virtual void reset_read() override
     {
         _rpos = 0;
-        if(_op>0 && _handle!=-1)
+        if (_op > 0 && _handle != -1)
             setpos(_rpos);
     }
 
     virtual void reset_write() override
     {
         _wpos = 0;
-        if(_op<0 && _handle!=-1)
+        if (_op < 0 && _handle != -1) {
             setpos(_wpos);
+            _chsize(_handle, 0);
+        }
     }
 
     /// @{ Get and set current reading and writing position
@@ -239,9 +243,9 @@ public:
 #endif
     }
 
-    virtual opcd close( bool linger=false ) override
+    virtual opcd close(bool linger = false) override
     {
-        if( _handle != -1 ) {
+        if (_handle != -1) {
 #ifdef SYSTYPE_MSVC
             ::_close(_handle);
 #else
@@ -256,9 +260,9 @@ public:
     }
 
     ///Duplicate filestream
-    opcd dup( filestream& dst ) const
+    opcd dup(filestream& dst) const
     {
-        if( _handle == -1 )
+        if (_handle == -1)
             return ersIMPROPER_STATE;
 
         dst.close();
@@ -270,17 +274,17 @@ public:
         return 0;
     }
 
-    virtual opcd seek( int type, int64 pos ) override
+    virtual opcd seek(int type, int64 pos) override
     {
-        if( type & fSEEK_CURRENT )
+        if (type & fSEEK_CURRENT)
             pos += (type & fSEEK_READ) ? _rpos : _wpos;
 
-        int op = (type&fSEEK_READ) ? 1 : -1;
+        int op = (type & fSEEK_READ) ? 1 : -1;
 
-        if( op == _op  &&  !setpos(pos) )
+        if (op == _op && !setpos(pos))
             return ersFAILED;
 
-        if(op<0)
+        if (op < 0)
             _wpos = pos;
         else
             _rpos = pos;
@@ -293,11 +297,11 @@ public:
     {
 #ifdef SYSTYPE_MSVC
         struct _stat64 s;
-        if( 0 == ::_fstat64(_handle, &s) )
+        if (0 == ::_fstat64(_handle, &s))
             return s.st_size;
 #else
         struct stat64 s;
-        if( 0 == ::fstat64(_handle, &s) )
+        if (0 == ::fstat64(_handle, &s))
             return s.st_size;
 #endif
         return 0;
@@ -305,7 +309,7 @@ public:
 
     filestream() { _handle = -1; _wpos = _rpos = 0; _op = 1; }
 
-    explicit filestream( const token& s )
+    explicit filestream(const token& s)
     {
         _handle = -1;
         _rpos = _wpos = 0;
@@ -313,7 +317,7 @@ public:
         open(s);
     }
 
-    filestream( const token& s, const token& attr )
+    filestream(const token& s, const token& attr)
     {
         _handle = -1;
         _rpos = _wpos = 0;
@@ -321,7 +325,7 @@ public:
         open(s, attr);
     }
 
-    filestream( const char* s, const token& attr )
+    filestream(const char* s, const token& attr)
     {
         _handle = -1;
         _rpos = _wpos = 0;
@@ -338,21 +342,21 @@ private:
     int   _op;                          //< >0 reading, <0 writing
     int64 _rpos, _wpos;
 
-    bool setpos( int64 pos )
+    bool setpos(int64 pos)
     {
 #ifdef SYSTYPE_MSVC
-        return -1 != _lseeki64( _handle, pos, SEEK_SET );
+        return -1 != _lseeki64(_handle, pos, SEEK_SET);
 #else
-        return pos == lseek64( _handle, pos, SEEK_SET );
+        return pos == lseek64(_handle, pos, SEEK_SET);
 #endif
     }
 
     int64 getpos() const
     {
 #ifdef SYSTYPE_MSVC
-        return _telli64( _handle );
+        return _telli64(_handle);
 #else
-        return lseek64( _handle, 0, SEEK_CUR );
+        return lseek64(_handle, 0, SEEK_CUR);
 #endif
     }
 
@@ -380,47 +384,47 @@ class bofstream : public filestream
 {
 public:
 
-    virtual uint binstream_attributes( bool in0out1 ) const override
+    virtual uint binstream_attributes(bool in0out1) const override
     {
         return in0out1 ? 0 : fATTR_NO_INPUT_FUNCTION;
     }
 
-    virtual opcd open( const zstring& name, const token& attr = "wct" ) override
+    virtual opcd open(const zstring& name, const token& attr = "wct") override
     {
         return filestream::open(name, attr);
     }
 
-    bofstream() { }
-    explicit bofstream( const zstring& name, const token& attr = "wct" )
+    bofstream() {}
+    explicit bofstream(const zstring& name, const token& attr = "wct")
     {
         open(name, attr);
     }
 
-    ~bofstream() { }
+    ~bofstream() {}
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 class bifstream : public filestream
 {
 public:
-    virtual uint binstream_attributes( bool in0out1 ) const override
+    virtual uint binstream_attributes(bool in0out1) const override
     {
         return in0out1 ? 0 : fATTR_NO_OUTPUT_FUNCTION;
     }
 
-    virtual opcd open( const zstring& name, const token& attr = "r" ) override
+    virtual opcd open(const zstring& name, const token& attr = "r") override
     {
         return filestream::open(name, attr);
     }
 
 
-    bifstream() { }
-    explicit bifstream( const zstring& name, const token& attr = "r" )
+    bifstream() {}
+    explicit bifstream(const zstring& name, const token& attr = "r")
     {
         open(name, attr);
     }
 
-    ~bifstream() { }
+    ~bifstream() {}
 };
 
 COID_NAMESPACE_END
