@@ -142,13 +142,14 @@ public:
 protected:
     void packed_flush()
     {
-        _zstd.pack_stream(0, 0, *_out);
+        if (_zstd.has_write_stream())
+            _zstd.pack_stream(0, 0, *_out);
         _zstd.reset_write();
     }
 
     void packed_ack(bool eat)
     {
-        if (!eat && !_zstd.eof())
+        if (!eat && _zstd.has_read_stream() && !_zstd.eof())
             throw ersIO_ERROR "data left in input buffer";
 
         _zstd.reset_read();
