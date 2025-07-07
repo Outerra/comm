@@ -48,6 +48,8 @@ protected:
     coid::thread _thread;
     coid::queue<logmsg_ptr> _queue;
 
+    bool log_stderr();
+
 public:
     log_writer();
 
@@ -67,14 +69,8 @@ public:
 
     void terminate();
 
-    bool is_empty() const {
-        return _queue.is_empty();
-    }
-
-    bool is_running() 
-    {
-        return _thread.exists();
-    }
+    bool is_empty() const { return _queue.is_empty(); }
+    bool is_running() const { return _thread.exists(); }
 };
 
 COID_NAMESPACE_END
