@@ -231,7 +231,9 @@ struct closure_traits_base
         }
 
         ///Automatic cast to unconvertible bool for checking via if
-        explicit operator bool() const { return c != 0; }
+        explicit operator bool() const { return is_set(); }
+
+        bool is_set() const { return c != 0; }
 
         callbase* eject() {
             callbase* r = c;
@@ -699,7 +701,9 @@ public:
         return _caller(_fn, ctx, std::forward<Args>(args)...);
     }
 
-    explicit operator bool() const { return _fn.ptr != 0; }
+    explicit operator bool() const { return is_set(); }
+
+    bool is_set() const { return _fn.ptr != nullptr; }
 
     bool operator == (const callback& other) const { return _caller == other._caller && _fn.ptr == other._fn.ptr; }
 

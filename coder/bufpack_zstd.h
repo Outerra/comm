@@ -388,6 +388,9 @@ struct packer_zstd
         return _eof;
     }
 
+    bool has_write_stream() const { return _cstream != nullptr; }
+    bool has_read_stream() const { return _dstream != nullptr; }
+
 protected:
 
     struct zstd {};
