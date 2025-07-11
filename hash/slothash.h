@@ -277,7 +277,7 @@ public:
         DASSERT_RET(id != UMAXS);
 
         destroy_value_(id);
-        base::del_item(p);
+        base::del_item_by_ptr(p);
     }
 
     ///Delete object by id
