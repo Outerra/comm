@@ -51,21 +51,25 @@
 COID_NAMESPACE_BEGIN
 
 /**
-    Taskmaster runs a set of worker threads and a queue of tasks that are processed by the worker threads.
+    Taskmaster manages a pool of worker threads and a queue of tasks to be executed by them.
 
-    Tasks with higher priorities are processed before tasks with lower priorities. LOW priority tasks can
-    run on a limited number of worker threads. Each job can be associated with a signal and user can wait
-    for this signal. Several jobs can share single signal, but single job can not trigger multiple signals.
+    Tasks are processed according to their priority: higher-priority tasks are executed before
+    lower-priority ones. LOW-priority tasks may be restricted to a limited subset of worker threads.
 
-    When a thread is waiting for a signal it processes other tasks in queue.
+    Each job can be associated with a wait counter, which allows the user to wait until all jobs
+    linked to that counter have completed. Multiple jobs may share the same wait counter, but a
+    single job cannot be associated with more than one wait counter.
 
-    Basic usage:
-        coid::taskmaster::signal_handle signal;
+    While a thread is waiting on a wait counter, it will continue processing other tasks in the queue.
+
+    Basic usage example:
+        coid::taskmaster::wait_counter wait_counter;
         for (int i = 0; i < 10; ++i) {
-            taskmaster->push(coid::taskmaster::EPriority::NORMAL, &signal, [i](){ foo(i); });
+            taskmaster->push(coid::taskmaster::EPriority::NORMAL, &wait_counter, [i]() { foo(i); });
         }
-        taskmaster->wait(signal);
+        taskmaster->wait(wait_counter);
 **/
+
 class taskmaster
 {
 public:
@@ -74,7 +78,7 @@ public:
         volatile int32 value = 0;
     };
 
-    using wait_counter = std::atomic<uint>;
+    using wait_counter = std::atomic<uint32>; 
 
     enum class EPriority {
         HIGH,
@@ -84,15 +88,15 @@ public:
         COUNT
     };
 
-    /// @param nthreads total number of job threads to spawn
-    /// @param nlong_threads number of low-prio job threads (<= nthreads)
-    taskmaster(uint nthreads, uint nlowprio_threads);
+    /// @param nthreads       Total number of job threads to spawn.
+    /// @param nlong_threads  Number of low-priority job threads (must be <= nthreads).
+   taskmaster(uint nthreads, uint nlowprio_threads);
 
     ~taskmaster();
 
     uints get_workers_count() const { return _threads.size(); }
 
-    ///Run fn(index) in parallel in task level 0
+    /// @brief Run fn(index) in parallel in task level 0
     /// @param first begin index value
     /// @param last end index value
     /// @param fn function(index) to run
@@ -106,10 +110,10 @@ public:
         wait(counter);
     }
 
-    ///Push task (functor, e.g. lamda) into queue for processing by worker threads
-    /// @param priority task priority, higher priority tasks are processed before lower priority
-    /// @param signal signal to trigger when the task finishes
-    /// @param fn functor to run
+    /// @brief Pushes a task (functor, e.g., lambda) into the queue for processing by worker threads.
+    /// @param priority     Task priority. Higher-priority tasks are processed before lower-priority ones.
+    /// @param wait_counter Optional wait counter associated with this task. Can be nullptr if no synchronization is required.
+    /// @param fn           Functor to execute.
     template <typename Fn>
     void push_functor(EPriority priority, wait_counter* wait_counter_ptr, const Fn& fn)
     {
@@ -118,11 +122,11 @@ public:
             }, fn);
     }
 
-    ///Push task (function and its arguments) into queue for processing by worker threads
-    /// @param priority task priority, higher priority tasks are processed before lower priority
-    /// @param signal signal to trigger when the task finishes
-    /// @param fn function to run
-    /// @param args arguments needed to invoke the function
+    /// @brief Pushes a task (function and its arguments) into the queue for processing by worker threads.
+    /// @param priority     Task priority. Higher-priority tasks are processed before lower-priority ones.
+    /// @param wait_counter Optional wait counter associated with this task. Can be nullptr if no synchronization is required.
+    /// @param fn           Function to execute.
+    /// @param args         Arguments to pass to the function.
     template <typename Fn, typename ...Args>
     void push(EPriority priority, wait_counter* wait_counter_ptr, const Fn& fn, Args&& ...args)
     {
@@ -150,12 +154,12 @@ public:
         }
     }
 
-    ///Push task (function and its arguments) into queue for processing by worker threads
-    /// @param priority task priority, higher priority tasks are processed before lower priority
-    /// @param signal signal to trigger when the task finishes
-    /// @param fn member function to run
-    /// @param obj object pointer to run the member function on
-    /// @param args arguments needed to invoke the function
+    /// @brief Pushes a task (function and its arguments) into the queue for processing by worker threads.
+    /// @param priority     Task priority. Higher-priority tasks are processed before lower-priority ones.
+    /// @param wait_counter Optional wait counter associated with this task. Can be nullptr if no synchronization is required.
+    /// @param fn           Member function to execute.
+    /// @param obj          Pointer to the object on which to invoke the member function.
+    /// @param args         Arguments to pass to the function.
     template <typename Fn, typename C, typename ...Args>
     void push_memberfn(EPriority priority, wait_counter* wait_counter_ptr, Fn fn, C* obj, Args&& ...args)
     {
@@ -185,12 +189,13 @@ public:
         }
     }
 
-    ///Push task (function and its arguments) into queue for processing by worker threads
-    /// @param priority task priority, higher priority tasks are processed before lower priority
-    /// @param signal signal to trigger when the task finishes
-    /// @param fn member function to run
-    /// @param obj object reference to run the member function on. Can be a smart ptr type which resolves to the object with * operator
-    /// @param args arguments needed to invoke the function
+    /// @brief Pushes a task (function and its arguments) into the queue for processing by worker threads.
+    /// @param priority     Task priority. Higher-priority tasks are processed before lower-priority ones.
+    /// @param wait_counter Optional wait counter associated with this task. Can be nullptr if no synchronization is required.
+    /// @param fn           Member function to execute.
+    /// @param obj          Reference to the object on which to invoke the member function. Can also be a smart pointer type 
+    ///                     that resolves to the object via the * operator.
+    /// @param args         Arguments to pass to the member function.
     template <typename Fn, typename C, typename ...Args>
     void push_memberfn(EPriority priority, wait_counter* wait_counter_ptr, Fn fn, const C& obj, Args&& ...args)
     {
@@ -220,26 +225,28 @@ public:
         }
     }
 
-    /// Enter critical section; no two threads can be in the same critical section at the same time
-    /// other threads process other tasks while waiting to enter critical section
-    /// @param spin_count number of spins before trying to process other tasks
-    /// @note never call enter(A) enter(B) exit(A) exit(B) in that order, since it can cause
-    // deadlock thanks to taskmaster's nature
+    /// @brief Enters a critical section; ensures that no two threads are in the same critical section simultaneously.
+    ///        While waiting to enter, the thread may continue process other enqueued tasks.
+    /// @param spin_count Number of spins before attempting to process other tasks while waiting.
+    /// @note Avoid calling enter(A), enter(B), exit(A), exit(B) in that order, as it can cause a deadlock
+    ///       due to the Taskmaster's scheduling behavior.
     void enter_critical_section(critical_section& critical_section, int spin_count = 1024);
 
-    /// Leave critical section
-    /// @note only thread which entered the critical section can leave it
+    /// @brief Leaves a critical section.
+    /// @note Only the thread that entered the critical section may leave it.
     void leave_critical_section(critical_section& critical_section);
 
-    ///Wait for signal to become signaled
-    /// @param signal signal to wait for
-    /// @note each time a task is pushed to queue and has a signal associated, it increments the signal's counter.
-    // When the task finishes it decrements the counter. Once the counter == 0, the signal is in signaled state.
-    // Multiple tasks can use the same signal.
-    void wait(const std::atomic<uint32>& wait_counter);
+    /// @brief Waits until the specified wait_counter reaches the signaled state.
+    /// @param wait_counter  The counter to wait for.
+    /// @note Each time a task is pushed to the queue with an associated wait_counter,
+    ///       the counter is incremented. When the task finishes, the counter is decremented.
+    ///       Once the counter reaches zero, the wait_counter is considered signaled.
+    ///       Multiple tasks can be associated with the same wait_counter.
+    void wait(const wait_counter& wait_counter);
 
-    ///Terminate all task threads
-    /// @param empty_queue if true, wait until the task queue empties, false finish only currently processed tasks
+    /// @brief Terminates all task threads.
+    /// @param empty_queue If true, waits until the task queue is empty before terminating;
+    ///                    if false, only currently executing tasks are finished.
     void terminate(bool empty_queue);
 
 protected:
