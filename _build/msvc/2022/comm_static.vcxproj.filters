@@ -284,9 +284,6 @@
     <ClInclude Include="..\..\..\alloc\alloc2d.h">
       <Filter>alloc</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\alloc\slotalloc_bmp.h">
-      <Filter>alloc</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\binstream\hash_xxhashstream.h">
       <Filter>binstream</Filter>
     </ClInclude>
@@ -440,9 +437,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\binstream\stdstream.cpp">
       <Filter>cxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\alloc\slotalloc_bmp.cpp">
-      <Filter>alloc</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\commassert.cpp">
       <Filter>cxx</Filter>
