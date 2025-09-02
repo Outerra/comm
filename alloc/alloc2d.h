@@ -32,21 +32,22 @@ public: // internal definitions only
 
     class node;
     using vec2d_t = vec2d_type;
+    using value_type = vec2d_type::value_type;
 
 public: // method only
 
     /// @brief Constructor for alloc_2d.
     /// @param size Length of a side of the rectangular allocation area.
     /// @param initial_split_size Size of the initial subdivision of the area. (TODO: clarify)
-    alloc_2d(const vec2d_type::value_type size, const vec2d_type::value_type initial_split_size)
+    alloc_2d(const value_type size, const value_type initial_split_size)
         : _node_pool()
         , _root(_node_pool.new_node(vec2d_type(0, 0), vec2d_type(size), handle()))
         , _initial_split_size(initial_split_size)
         , _size(size)
     {
-        if (initial_split_size > 0) {
+        if (_initial_split_size > 0) {
             int depth = 0;
-            node::divide(_root, vec2d_type(initial_split_size, initial_split_size), _node_pool, depth);
+            node::divide(_root, vec2d_type(_initial_split_size, _initial_split_size), _node_pool, depth);
         }
     }
 
@@ -265,8 +266,8 @@ private: // internal definitions only
 private: // members only
     node_pool _node_pool;
     handle _root;
-    const vec2d_type::value_type _initial_split_size;
-    const vec2d_type::value_type _size;
+    const value_type _initial_split_size;
+    const value_type _size;
 
 };
 
