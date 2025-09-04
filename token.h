@@ -265,6 +265,10 @@ struct token
         return __coid_hash_string(ptr(), len());
     }
 
+    coid_constexpr_for uint hash_insensitive() const {
+        return __coid_hash_string_insensitive(ptr(), len());
+    }
+
     ///Replace all occurrences of substring with another
     uint replace(const token& from, const token& to, charstr& dst, bool icase = false) const;
 
@@ -2899,14 +2903,30 @@ inline token substring::get() const
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-template<> struct hasher<token>
+///Hasher for token
+template<bool INSENSITIVE> struct hasher<token, INSENSITIVE>
 {
     typedef token key_type;
 
-    uint operator() (const token& tok) const {
-        return tok.hash();
+    uint operator() (const token& tok) const 
+    {
+        return INSENSITIVE
+            ? tok.hash_insensitive() 
+            : tok.hash();
     }
 };
+
+// Case - insensitive equality operators for hashes with token keys
+struct token_equal_to_insesitive
+{
+    using key_type = token;
+
+    bool operator()(const token& lhs, const token& rhs) const
+    {
+        return lhs.cmpeqi(rhs);
+    }
+};
+
 
 inline uint string_hash(const token& tok) {
     return __coid_hash_string(tok.ptr(), tok.len());
