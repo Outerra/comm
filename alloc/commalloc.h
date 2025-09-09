@@ -126,7 +126,8 @@ struct comm_array_allocator
             return pn;
         }
 
-        mspace m = mspace_from_ptr((uints*)p - 1);
+        uints ss = mspace_stack_size((uints*)p - 1);
+        mspace m = ss ? 0 : mspace_from_ptr((uints*)p - 1);
 
         if (has_trivial_rebase<T>::value) {
             return (T*)realloc(p, n, sizeof(T), &coid::type_info::get<T[]>(), m);
@@ -239,7 +240,8 @@ struct comm_array_allocator
             m ? m : SINGLETON(comm_array_mspace).msp,
             p ? (uints*)p - 1 : 0,
             sizeof(uints) + n * elemsize);
-        if (!pn) throw std::bad_alloc();
+        if (!pn)
+            throw std::bad_alloc();
 
         dbg_memtrack_alloc(tracking, ::mspace_usable_size(pn));
 

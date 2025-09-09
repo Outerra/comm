@@ -5918,7 +5918,18 @@ void* mspace_realloc(mspace msp, void* oldmem, size_t bytes) {
 
     if (flag4inuse(oldp)) {
       /* virtual or stack mmap block */
-      return mspace_realloc_in_place(oldmem, bytes);
+      if (!pinuse(oldp)) {
+        /* virtual memory, only in-place realloc possible */
+        return mspace_realloc_in_place(oldmem, bytes);
+      }
+      /* stack memory */
+      mem = mspace_malloc(msp, bytes);
+      if (mem != 0) {
+        size_t oc = chunksize(oldp) - overhead_for(oldp);
+        memcpy(mem, oldmem, (oc < bytes) ? oc : bytes);
+        mspace_free(oldmem);
+      }
+      return mem;
     }
 
 #if ! FOOTERS
@@ -5943,7 +5954,7 @@ void* mspace_realloc(mspace msp, void* oldmem, size_t bytes) {
         if (mem != 0) {
           size_t oc = chunksize(oldp) - overhead_for(oldp);
           memcpy(mem, oldmem, (oc < bytes)? oc : bytes);
-          mspace_free(/*m,*/ oldmem);
+          mspace_free(oldmem);
         }
       }
     }
@@ -6191,7 +6202,13 @@ size_t mspace_stack_size(const void* mem) {
 mspace mspace_from_ptr(const void* mem) {
     if (mem) {
         mchunkptr p  = mem2chunk(mem);
-        return get_mstate_for(p);
+        mstate ms = get_mstate_for(p);
+#ifdef _DEBUG
+        if (!ok_magic(ms)) {
+            USAGE_ERROR_ACTION(ms, ms);
+        }
+#endif
+        return ms;
     }
     return 0;
 }
