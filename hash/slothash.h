@@ -83,6 +83,7 @@ template<
     slotalloc_mode MODE = slotalloc_mode::base,
     class EXTRACTOR = extractor<T, KEY>,
     class HASHFUNC = hasher<KEY>,
+    class EQFUNC = equal_to<KEY, typename HASHFUNC::key_type>,
     class...Es
 >
 class slothash
@@ -300,7 +301,7 @@ public:
 
         uint* n = find_object_entry(b, key);
         while (*n != UMAX32) {
-            if (!(_EXTRACTOR(*base::get_mutable_item(*n)) == key))
+            if (!_EQFUNC(_EXTRACTOR(*base::get_mutable_item(*n)), key))
                 break;
 
             uint id = *n;
@@ -373,7 +374,7 @@ protected:
         uint n = _buckets[bucket];
         while (n != UMAX32)
         {
-            if (_EXTRACTOR(*base::get_item(n)) == k)
+            if (_EQFUNC(_EXTRACTOR(*base::get_item(n)), k))
                 return n;
             n = seqtable()[n];
         }
@@ -396,7 +397,7 @@ protected:
 
         do
         {
-            if (_EXTRACTOR(*base::get_item(id)) == k)
+            if (_EQFUNC(_EXTRACTOR(*base::get_item(id)), k))
                 return n;
             n = &seq[id];
             id = *n;
@@ -550,6 +551,7 @@ private:
 
     EXTRACTOR _EXTRACTOR;
     HASHFUNC _HASHFUNC;
+    EQFUNC _EQFUNC;
 
     coid::dynarray32<uint> _buckets;    //< table with ids of first objects belonging to the given hash socket
     uint _shift = 64;
