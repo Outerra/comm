@@ -95,6 +95,12 @@
     <DisplayString>{_p,x}</DisplayString>
 </Type>
 
+<Type Name="coid::unique_ptr&lt;*&gt;">
+    <SmartPointer Usage="Minimal">_p</SmartPointer>
+    <DisplayString Condition="_p == 0">{{empty}}</DisplayString>
+    <DisplayString>{_p,x}</DisplayString>
+</Type>	
+	
 <Type Name="coid::versionid">
   <DisplayString Condition="mark == 0">{{empty}}</DisplayString>
   <DisplayString Condition="mark != 0x5c">{{corrupt}}</DisplayString>
