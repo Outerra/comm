@@ -24,6 +24,7 @@ $-(/if)$
         $type$
         $-ref-$
         $-ptr-$
+        $-(if ?rvalue)$&&$(/if)-$
         $-(if ?const)$ const$(/if)$ $name$
         $-(if ?size)$[$size$]$(/if)$
         $-(if ?defval)$ = $defval$$(/if)$
@@ -31,14 +32,14 @@ $-(/if)$
     {
 $-(if ?name="create")$
         ref<$..class$> obj = new $..class$;
-        new(rl.get()) cmd_$name$$overload$$templsub$(__file__,__line__,obj$[args !retarg !sizearg]$, $name$$[/args]$);
+        new(rl.get()) cmd_$name$$overload$$templsub$(__file__,__line__,obj$[args !retarg !sizearg]$, $(if ?rvalue)$std::move($name$)$(elif)$$name$$(/if)$$[/args]$);
         return obj;
 $-(elif !static)$
         new(rl.get()) cmd_$name$$overload$$templsub$(__file__,__line__,
         $-(if ?ptr)-$this$(elif ?iref)$this$(elif)$that$(/if)-$
-        $-[args !retarg !sizearg]$, $name$$[/args]$);
+        $-[args !retarg !sizearg]$, $(if ?rvalue)$std::move($name$)$(elif)$$name$$(/if)$$[/args]$);
 $-(elif)$
-        new(rl.get()) cmd_$name$$overload$$templsub$(__file__,__line__$[args !retarg !sizearg]$, $name$$[/args]$);
+        new(rl.get()) cmd_$name$$overload$$templsub$(__file__,__line__$[args !retarg !sizearg]$, $(if ?rvalue)$std::move($name$)$(elif)$$name$$(/if)$$[/args]$);
 $-(/if)$
 $(if ?retexpr !sizearg)$
         return ($rettype$)rl->add_raw($retexpr$);
@@ -106,17 +107,17 @@ $-(if !static)$,
             const ref<$..class$>& obj
   $-(/if)$
             $-[args !retarg !sizearg]-$,
-            $type$$ptr$$ref$ $-(if ?const)$ const$(/if)$ $name$ $-(if ?size)$[$size$]$(/if)$ $-[/args]$)
+            $type$$ptr$$ref$ $-(if ?rvalue)$&&$(/if)$ $-(if ?const)$ const$(/if)$ $name$ $-(if ?size)$[$size$]$(/if)$ $-[/args]$)
             : __file__(__file__), __line__(__line__), _obj(obj) $-[args !retarg !sizearg !size]$
-            , _$name$($name$) $-[/args]$ {
+            , _$name$($(if ?rvalue)$std::move($name$)$(elif)$$name$$(/if)$) $-[/args]$ {
   $-[args ?size]$
             {for (uint n=($size$),i=0; i<n; ++i) _$name$[i] = $name$[i];}
   $-[/args]$
         }
 $-(elif)$
             $-[args !retarg !sizearg]$,
-            $type$$ptr$$ref$ $-(if ?const)$ const$(/if)$ $name$ $-(if ?size)$[$size$]$(/if)$ $-[/args]$)
-            : __file__(__file__), __line__(__line__)$[args !retarg !sizearg !size]$, _$name$($name$)
+            $type$$ptr$$ref$ $-(if ?rvalue)$&&$(/if)$ $-(if ?const)$ const$(/if)$ $name$ $-(if ?size)$[$size$]$(/if)$ $-[/args]$)
+            : __file__(__file__), __line__(__line__)$[args !retarg !sizearg !size]$, _$name$($(if ?rvalue)$std::move($name$)$(elif)$$name$$(/if)$)
             $[/args]${
   $-[args ?size]$
             {for (uint n=($size$),i=0; i<n; ++i)  _$name$[i] = $name$[i];}
@@ -131,7 +132,7 @@ $-(/if)$
             $-[args rest=", "]-$
 $-(if ?retarg)-$(const $..rettype$)data_ptr(this)
 $-(elif ?sizearg)-$data_size(this)
-$-(elif)-$_$name$
+$-(elif)-$$(if ?rvalue)$std::move(_$name$)$(elif)$_$name$$(/if)$
 $-(/if)-$
             $-[/args]$);
         }
