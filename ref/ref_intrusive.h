@@ -238,7 +238,7 @@ public: // methods only
         _object_ptr->_policy_ptr = policy_ptr;
     }
 
-    /// @brief Create method with DerivedType object consturction determined by used policy
+    /// @brief Create method with DerivedType object construction determined by used policy
     /// @tparam Policy - reference counting policy(must be base of ref_policy_base)
     /// @tparam ...PolicyArguments  - variadic arguments for policy creation function
     template<typename DerivedType, typename Policy, typename... PolicyArguments>

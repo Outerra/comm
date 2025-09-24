@@ -67,7 +67,7 @@ public: // methods only
         _object_ptr = new BaseOrDerivedType();
     }
 
-    /// @brief Create method with default object consturction determined by used policy
+    /// @brief Create method with default object construction determined by used policy
     /// @tparam Policy - must be base of ref_policy_base
     /// @tparam ...PolicyArguments  - variadic arguments for policy creation function
     template<typename Policy, typename... PolicyArguments>
@@ -80,7 +80,7 @@ public: // methods only
         _object_ptr = static_cast<Type*>(_policy_ptr->get_original_ptr());
     }
 
-    /// @brief Create method with default object consturction determined by used policy
+    /// @brief Create method with default object construction determined by used policy
     /// @tparam DerivedType - type derived from Type
     /// @tparam Policy - must be base of ref_policy_base
     /// @tparam ...PolicyArguments  - variadic arguments for policy creation function

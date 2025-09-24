@@ -91,7 +91,7 @@ void coidlog_text(const coid::token& src, coid::token msg);
 
 ///Debug message existing only in debug builds
 #ifdef _DEBUG
-#define coidlog_devdbg(src, msg)  do{ ref<logmsg> q = coid::log::openmsg(coid::log::level::debug, src); if (q) {q->str() << msg; }} while(0)
+#define coidlog_devdbg(src, msg)  do{ ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::debug, src); if (q) {q->str() << msg; }} while(0)
 #else
 #define coidlog_devdbg(src, msg)
 #endif
