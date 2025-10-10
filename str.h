@@ -854,7 +854,7 @@ public:
     /// @param align alignment
     /// @param space space character between number and unit prefix, 0 for none
     /// @return offset past the last non-padding character
-     
+
     enum class unit_system_enum
     {
         metric,
@@ -2418,6 +2418,11 @@ inline token token::rebased(const char* from, const char* to) const
     uints offset = _ptr - from;
 
     return token(to + offset, len());
+}
+
+inline bool token::belongs_to(const charstr& to) const
+{
+    return _ptr >= to.ptr() && _pte <= ptre();
 }
 
 inline uint token::replace(const token& from, const token& to, charstr& dst, bool icase) const

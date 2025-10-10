@@ -282,6 +282,9 @@ struct token
     token& rebase(const charstr& from, const charstr& to) { return *this = rebased(from, to); }
     token& rebase(const char* from, const char* to) { return *this = rebased(from, to); }
 
+    /// @return true if token refers to a substring of given charstr
+    bool belongs_to(const charstr& to) const;
+
     constexpr const char* ptr() const { return _ptr; }
     constexpr const char* ptre() const { return _pte; }
 
@@ -2908,10 +2911,10 @@ template<bool INSENSITIVE> struct hasher<token, INSENSITIVE>
 {
     typedef token key_type;
 
-    uint operator() (const token& tok) const 
+    uint operator() (const token& tok) const
     {
         return INSENSITIVE
-            ? tok.hash_insensitive() 
+            ? tok.hash_insensitive()
             : tok.hash();
     }
 };
