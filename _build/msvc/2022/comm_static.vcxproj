@@ -486,6 +486,7 @@
     <ClInclude Include="..\..\..\coder\lz4\lz4.h" />
     <ClInclude Include="..\..\..\coder\lz4\lz4hc.h" />
     <ClInclude Include="..\..\..\coder\lz4\xxhash.h" />
+    <ClInclude Include="..\..\..\containers\circular_queue.h" />
     <ClInclude Include="..\..\..\crypt\sha1.h" />
     <ClInclude Include="..\..\..\dbg_location.h" />
     <ClInclude Include="..\..\..\function.h" />

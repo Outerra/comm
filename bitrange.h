@@ -171,6 +171,11 @@ inline uints nearest_high_pow2( uints x ) {
     return uints(1) << int_high_pow2(x);
 }
 
+//@return nearest equal or higher power of 2 value
+inline constexpr uints constexpr_nearest_high_pow2(uints x) {
+    return uints(1) << constexpr_int_high_pow2(x);
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 

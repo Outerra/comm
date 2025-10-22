@@ -49,6 +49,9 @@
     <Filter Include="utils">
       <UniqueIdentifier>{21e0e3d5-3672-4393-8329-023e494a02cc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="containers">
+      <UniqueIdentifier>{c5a69b67-cdd2-43ec-94f7-00a5d484ff91}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\atomic\atomic.h">
@@ -342,6 +345,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\utils\uid.h">
       <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\containers\circular_queue.h">
+      <Filter>containers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

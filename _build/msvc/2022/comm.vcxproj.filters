@@ -46,6 +46,9 @@
     <Filter Include="stacktrace">
       <UniqueIdentifier>{8fa45a6b-aca3-4149-bd79-8efe979e9103}</UniqueIdentifier>
     </Filter>
+    <Filter Include="containers">
+      <UniqueIdentifier>{432e26fd-9557-43ef-b66c-56c81644acd1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\atomic\atomic.cpp">
@@ -399,6 +402,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\binstream\packstreamzstd.h">
       <Filter>binstream</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\containers\circular_queue.h">
+      <Filter>containers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
