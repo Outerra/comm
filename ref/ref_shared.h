@@ -75,7 +75,7 @@ public: //methods only
     /// @brief Constructor for ref_shared object from object pointer of base or derived type with policy from from default_ref_policy_trait<BaseOrDerivedType>
     /// @param object_ptr - object pointer of base or derived type
     template<typename BaseOrDerivedType, typename... PolicyArguments>
-    COID_REQUIRES((std::is_convertible_v<Type*, BaseOrDerivedType*>))
+    COID_REQUIRES((std::is_convertible_v<BaseOrDerivedType*, Type*>))
     explicit ref_shared(BaseOrDerivedType* object_ptr, PolicyArguments&&... policy_arguments)
     {
         _policy_ptr = static_cast<ref_policy_base*>(default_ref_policy_trait<BaseOrDerivedType>::policy::create(object_ptr, std::forward<PolicyArguments>(policy_arguments)...));
