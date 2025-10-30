@@ -10,7 +10,7 @@ coid::charstr coid::generate_unique_id()
     rnd.nrand(4, val);
 
     coid::charstr result;
-    constexpr coid::token_literal table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"_T;
+    constexpr coid::token_literal table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-"_T;
 
     for (uint v : val)
     {
