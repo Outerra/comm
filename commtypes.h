@@ -343,7 +343,7 @@ struct typed_versionid : coid::versionid
 {
     typed_versionid() = default;
 
-    typed_versionid(coid::versionid& vid)
+    typed_versionid(const coid::versionid& vid)
         : coid::versionid(vid)
     {}
 

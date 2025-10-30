@@ -77,7 +77,7 @@ public:
     /// @note if script_class_or_bind_var is empty and is_bind_var is false created interface object is creted from empty table
     iref<::lua::registry_handle> create_interface_object(const iref<::lua::registry_handle>& context, bool make_weak, const coid::token& script_class_or_bind_var, bool is_bind_var);
 $-(if ?event)$
-    void bind_events_internal(lua_State * L, bool clear, bool rebind) const;
+    void bind_events_internal(lua_State* L, bool clear, bool rebind) const;
     void bind_events(bool force, const coid::token& script_class_name) const;
 $-(/if)$
 
@@ -124,8 +124,8 @@ $(/if)-$
     }
 
     // --- registrar ---
-    static int register_interface_$name$(lua_State * L, bool push);
-    static int register_implementation_$name$(lua_State * L, const coid::token& implementation_script_class_name);
+    static int register_interface_$name$(lua_State* L, bool push);
+    static int register_implementation_$name$(lua_State* L, const coid::token& implementation_script_class_name);
 
     // --- creators ---
 
@@ -137,19 +137,19 @@ $[/comments]$$(/if)-$
         $-[args]$, $type$ $name$$size$$[/args]$, const coid::token& bind_variable_name, const coid::token& script_class_name, iref<::lua::registry_handle>*);
 
     $-(if !internal)$
-    static int luacreator_$name$$@order$(lua_State * L, ::lua::interface_context* ifc);
+    static int luacreator_$name$$@order$(lua_State* L, ::lua::interface_context* ifc);
     $-(/if)$
 $-[/method]$
 
-    static int luarebind_events_exc(lua_State * L);
-    static int luarebind_events(lua_State * L);
+    static int luarebind_events_exc(lua_State* L);
+    static int luarebind_events(lua_State* L);
 
 
     // --- method wrappers ---
 
 $-[method !static !destroy !internal !operator]$
-    static int lua_$name$$@order$_exc(lua_State * L);
-    static int lua_$name$$@order$(lua_State * L);
+    static int lua_$name$$@order$_exc(lua_State* L);
+    static int lua_$name$$@order$(lua_State* L);
     static bool can_use_ffi_$name$$@order$();
     static void get_ffi_inject_$name$$@order$(coid::token& header, coid::token& body);
     static $return.type$ lua_$name$$@order$_ffi(void * ifc_this $-[args]$, $type$ $name$$size$$[/ args]$);
@@ -192,7 +192,7 @@ private:
 
     //event wrappers for event invocation from lua
 $-[event]$
-    static int lua_evback_$name$$@order$(lua_State * L);
+    static int lua_evback_$name$$@order$(lua_State* L);
 $-[/event]$
 $-(/if)$
 };
@@ -202,11 +202,11 @@ $-[method !static !destroy !internal !operator]$
 //
 //  $return.type$ $..ns suffix="::"$$..name$::$name$($[args rest=","]$ $type$ $name$$[/args]$)
 //
-__declspec(noinline) int $..name$_lua_dispatcher::lua_$name$$@order$_exc(lua_State * L)
+__declspec(noinline) int $..name$_lua_dispatcher::lua_$name$$@order$_exc(lua_State* L)
 {
     bool exception_caught = false;
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
     const int stack_top = lua_gettop(L);
 #endif
 
@@ -309,9 +309,9 @@ $-(elif)$
         constexpr int num_results = 0;
 $-(/if)$
 
-#ifdef _DEBUG
-    const int curr_stack_top = lua_gettop(L);
-    DASSERT(curr_stack_top == stack_top + num_results);
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
+        const int curr_stack_top = lua_gettop(L);
+        DASSERT(curr_stack_top == stack_top + num_results);
 #endif
 
         return num_results;
@@ -328,7 +328,8 @@ $-(/if)$
     return -1;
 }
 
-int $..name$_lua_dispatcher::lua_$name$$@order$(lua_State * L){
+int $..name$_lua_dispatcher::lua_$name$$@order$(lua_State* L)
+{
     int res = lua_$name$$@order$_exc(L);
     if (res == -1) {
         lua_error(L);
@@ -337,13 +338,15 @@ int $..name$_lua_dispatcher::lua_$name$$@order$(lua_State * L){
     return res;
 }
 
-bool $..name$_lua_dispatcher::can_use_ffi_$name$$@order$(){
+bool $..name$_lua_dispatcher::can_use_ffi_$name$$@order$()
+{
     const MetaDesc * dsc = nullptr;
 
     return false;
 }
 
-void $..name$_lua_dispatcher::get_ffi_inject_$name$$@order$(coid::token& header, coid::token& body){
+void $..name$_lua_dispatcher::get_ffi_inject_$name$$@order$(coid::token& header, coid::token& body)
+{
     static const coid::token h = "typedef $return.type$ (*$..name$_$name$$@order$_fun)(void * ifc_this $-[args]$, $type$ $name$$size$$[/args]$)\n";
     header = h;
     static const coid::token b =
@@ -368,7 +371,7 @@ $-(if ?internal)$
 $-(elif)$
     DASSERT(_bound_events);
     //bind_events(false, ::lua::registry_handle::get_empty());
-    lua_State * L = _context->get_state();
+    lua_State* L = _context->get_state();
     iref<::lua::weak_registry_handle> ev__ = _events[$@order$];
 
     if (ev__->is_empty())
@@ -391,7 +394,7 @@ $-[args ?inarg !iref]$
     static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
 $ - [/ args]$
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
     const int stack_top = lua_gettop(L);
 #endif
 
@@ -444,7 +447,7 @@ $-[/args]$
         }
 
         lua_remove(L, -2); // pop pcall error handler
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
         const int current_stack_top = lua_gettop(L);
         DASSERT(current_stack_top == stack_top + 1); // +1 because error message is on the stack
 #endif
@@ -560,7 +563,7 @@ $-(elif)$
 $-(/if)$
 
     lua_pop(L, 1); // pop pcall error handler
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
     const int current_stack_top = lua_gettop(L);
     DASSERT(current_stack_top == stack_top);
 #endif
@@ -575,7 +578,7 @@ $-[/event]$
 
 
 ////////////////////////////////////////////////////////////////////////////////
-_declspec(noinline) int $name$_lua_dispatcher::luarebind_events_exc(lua_State * L)
+_declspec(noinline) int $name$_lua_dispatcher::luarebind_events_exc(lua_State* L)
 {
 $-(if ?event)$
     try {
@@ -614,7 +617,8 @@ $-(elif)$
 $-(/if)$
 }
 
-int $name$_lua_dispatcher::luarebind_events(lua_State * L) {
+int $name$_lua_dispatcher::luarebind_events(lua_State* L)
+{
     int res = luarebind_events_exc(L);
     if (res == -1) {
         lua_error(L);
@@ -625,9 +629,9 @@ int $name$_lua_dispatcher::luarebind_events(lua_State * L) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool $name$_lua_dispatcher::contains_interface_class_table_internal(lua_State * L, bool push_on_top)
+bool $name$_lua_dispatcher::contains_interface_class_table_internal(lua_State* L, bool push_on_top)
 {
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
     const int stack_top = lua_gettop(L);
 #endif
 
@@ -660,7 +664,7 @@ $-[/ns]$
 
 void $name$_lua_dispatcher::get_interface_class_table_internal(lua_State* L)
 {
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
     const int stack_top = lua_gettop(L);
 #endif
 
@@ -681,9 +685,9 @@ $-[/ns]$
 ////////////////////////////////////////////////////////////////////////////////
 iref<::lua::registry_handle> $name$_lua_dispatcher::create_interface_object(const iref<::lua::registry_handle>& context, bool make_weak, const coid::token& script_class_or_bind_var, bool is_bind_var)
 {
-    lua_State * L = context->get_state();
+    lua_State* L = context->get_state();
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
     const int stack_top = lua_gettop(L);
 #endif
 
@@ -779,7 +783,7 @@ iref<::lua::registry_handle> $name$_lua_dispatcher::create_interface_object(cons
 
     lua_pop(L, 1); // pop context table
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
     {
         const int current_stack_top = lua_gettop(L);
         DASSERT(stack_top == current_stack_top);
@@ -794,9 +798,9 @@ iref<::lua::registry_handle> $name$_lua_dispatcher::create_interface_object(cons
 
 $-(if !event.empty)$
 
-void $name$_lua_dispatcher::bind_events_internal(lua_State * L,  bool clear, bool rebind) const
+void $name$_lua_dispatcher::bind_events_internal(lua_State* L,  bool clear, bool rebind) const
 {
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
     const int stack_top = lua_gettop(L);
 #endif
     static token names[] = {
@@ -837,7 +841,7 @@ $-[/event]$
 
         _bound_events = true;
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
         const int current_stack_top = lua_gettop(L);
         DASSERT(current_stack_top == stack_top);
 #endif
@@ -849,8 +853,8 @@ void $name$_lua_dispatcher::bind_events(bool force, const coid::token& script_cl
     if (!force && _bound_events)
         return;
 
-    lua_State * L = _context->get_state();
-#ifdef _DEBUG
+    lua_State* L = _context->get_state();
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
     const int stack_top = lua_gettop(L);
 #endif
     _object->push_ref();  // push interface object table
@@ -883,7 +887,7 @@ void $name$_lua_dispatcher::bind_events(bool force, const coid::token& script_cl
 
     lua_pop(L, 3); // interface object, context and script class table
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
     const int current_stack_top = lua_gettop(L);
     DASSERT(current_stack_top == stack_top);
 #endif
@@ -892,8 +896,9 @@ void $name$_lua_dispatcher::bind_events(bool force, const coid::token& script_cl
 $-(/if)$
 
 // --- registrar ---
-int $name$_lua_dispatcher::register_interface_$name$(lua_State * L, bool push) {
-#ifdef _DEBUG
+int $name$_lua_dispatcher::register_interface_$name$(lua_State* L, bool push)
+{
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
     const int stack_top = lua_gettop(L);
 #endif
 
@@ -929,7 +934,7 @@ $-(/if)$
     lua_setfield(L, -2, "$name$");
     lua_pop(L, 1); // pop namespace or interface metatable register table
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
     {
         const int current_stack_top = lua_gettop(L);
         DASSERT(current_stack_top == (push ? stack_top + 1 : stack_top)); // ensure we left the stack in the initial state
@@ -939,9 +944,9 @@ $-(/if)$
     return 0;
 }
 
-int $name$_lua_dispatcher::register_implementation_$name$(lua_State * L, const coid::token& implementation_script_class_name)
+int $name$_lua_dispatcher::register_implementation_$name$(lua_State* L, const coid::token& implementation_script_class_name)
 {
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
     const int stack_top = lua_gettop(L);
 #endif
 
@@ -982,7 +987,7 @@ $[/event]-$
     lua_setfield(L, -2, implementation_script_class_name.is_empty()? "$name$" : implementation_script_class_name);
     lua_pop(L, 1); // pop namespace or script context table
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
     DASSERT(lua_gettop(L) == stack_top); // ensure we left the stack in the initial state
 #endif
 
@@ -997,13 +1002,12 @@ $-[method ?creator]$
 iref<$..name$_lua_dispatcher> $..name$_lua_dispatcher::$name$(lua_State* L__, const ::lua::script_handle& script__
         $-[args]$, $type$ $name$$size$$[/args]$, const coid::token& bind_variable_name, const coid::token& script_class_name, iref<::lua::registry_handle>* ctx)
 {
-
     // create interface object
     iref<$..name$_lua_dispatcher> ifc = $..ns suffix="::"$$..name$::$name$(new $..name$_lua_dispatcher$[args]$, $name$$[/args]$);
     if (!ifc)
         throw coid::exception() << "failed to create interface object";
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
     const int stack_top = lua_gettop(L__);
 #endif
 
@@ -1028,7 +1032,7 @@ $-(/if)$
         throw e;
     }
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
     const int current_stack_top = lua_gettop(L__);
     DASSERT(current_stack_top == stack_top);
 #endif
@@ -1042,9 +1046,9 @@ $-(if !internal)$
 ///  iref<$..ns suffix="::"$$..name$> $..ns suffix="::"$$..name$::$name$($[args rest=","]$ $type$ $name$$[/args]$)
 ///
 
-int $..name$_lua_dispatcher::luacreator_$name$$@order$(lua_State * L, ::lua::interface_context* ifc)
+int $..name$_lua_dispatcher::luacreator_$name$$@order$(lua_State* L, ::lua::interface_context* ifc)
 {
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
     const int stack_top = lua_gettop(L);
 #endif
 
@@ -1145,7 +1149,7 @@ $-(elif)$
     }
 $-(/if)$
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
     const int current_stack_top = lua_gettop(L);
     DASSERT(current_stack_top == stack_top + 1); // starting top + number of results
 #endif
@@ -1284,14 +1288,14 @@ $[/comments]$$(/if)-$
         $-[args]$, $type$ $name$$size$$[/args]$, const coid::token& bindname);
 
     $-(if !internal)$
-        static int luacreator_$name$$@order$(lua_State * L, ::lua::interface_context* ifc);
+        static int luacreator_$name$$@order$(lua_State* L, ::lua::interface_context* ifc);
 
     $-(/if)$
 $-[/method]$
     // --- method wrappers ---
 
 $-[method !static !destroy !internal !operator]$
-    static int lua_$name$$@order$_exc(lua_State * L);
+    static int lua_$name$$@order$_exc(lua_State* L);
     static int lua_$name$$@order$(lua_State* L);
 $-[/method]$
 
@@ -1301,7 +1305,7 @@ protected:
     //@return - true if this class table including namespace tables are contained in the table on the top of the stack
     static bool contains_interface_class_table_internal(lua_State* L, bool push_on_top);
 
-    static int register_interface_$name$(lua_State * L, bool push);
+    static int register_interface_$name$(lua_State* L, bool push);
 
 private:
 
@@ -1311,9 +1315,9 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool $name$_lua_dispatcher::contains_interface_class_table_internal(lua_State * L, bool push_on_top)
+bool $name$_lua_dispatcher::contains_interface_class_table_internal(lua_State* L, bool push_on_top)
 {
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
     const int stack_top = lua_gettop(L);
 #endif
 
@@ -1347,10 +1351,10 @@ $-[method !static !destroy !internal !operator]$
 //
 //  $return.type$ $..ns suffix="::"$$..name$::$name$($[args rest=","]$ $type$ $name$$[/args]$)
 //
-__declspec(noinline) int $..name$_lua_dispatcher::lua_$name$$@order$_exc(lua_State * L)
+__declspec(noinline) int $..name$_lua_dispatcher::lua_$name$$@order$_exc(lua_State* L)
 {
     bool exception_caught = false;
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
     const int stack_top = lua_gettop(L);
 #endif
 
@@ -1455,7 +1459,7 @@ $-(elif)$
         constexpr int num_results = 0;
 $-(/if)$
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
         const int curr_stack_top = lua_gettop(L);
         DASSERT(curr_stack_top == stack_top + num_results);
 #endif
@@ -1474,7 +1478,8 @@ $-(/if)$
     return -1;
 }
 
-int $..name$_lua_dispatcher::lua_$name$$@order$(lua_State * L){
+int $..name$_lua_dispatcher::lua_$name$$@order$(lua_State* L)
+{
     int res = lua_$name$$@order$_exc(L);
     if (res == -1) {
         lua_error(L);
@@ -1487,9 +1492,9 @@ $-[/method]$
 ////////////////////////////////////////////////////////////////////////////////
 iref<::lua::registry_handle> $name$_lua_dispatcher::create_interface_object(const iref<::lua::registry_handle>& context)
 {
-   lua_State * L = context->get_state();
+   lua_State* L = context->get_state();
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
     const int stack_top = lua_gettop(L);
 #endif
 
@@ -1534,7 +1539,7 @@ iref<::lua::registry_handle> $name$_lua_dispatcher::create_interface_object(cons
 
     lua_pop(L, 1); // pop context table
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
     {
         const int current_stack_top = lua_gettop(L);
         DASSERT(stack_top == current_stack_top);
@@ -1584,8 +1589,9 @@ $-(/if)$
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int $name$_lua_dispatcher::register_interface_$name$(lua_State * L, bool push) {
-#ifdef _DEBUG
+int $name$_lua_dispatcher::register_interface_$name$(lua_State* L, bool push)
+{
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
     const int stack_top = lua_gettop(L);
 #endif
 
@@ -1621,7 +1627,7 @@ $-(/if)$
     lua_setfield(L, -2, "$name$");
     lua_pop(L, 1); // pop namespace or interface metatable register table
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
     {
         const int current_stack_top = lua_gettop(L);
         DASSERT(current_stack_top == (push ? stack_top + 1 : stack_top)); // ensure we left the stack in the initial state

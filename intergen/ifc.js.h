@@ -414,7 +414,7 @@ public:
     }
 
     ///Query interface from JS
-    static  void query_interface(const v8::ARGUMENTS& args)
+    static void query_interface(const v8::ARGUMENTS& args)
     {
         v8::Isolate* iso = args.GetIsolate();
 
@@ -429,11 +429,8 @@ public:
         fn_get get = reinterpret_cast<fn_get>(
             coid::interface_register::get_interface_creator(tokey));
 
-        if (!get) {
-            coid::charstr tmp = "interface creator ";
-            tmp << tokey << " not found";
-            return v8::queue_js_exception(iso, v8::Exception::Error, tmp);
-        }
+        if (!get)
+            return;
 
         args.GetReturnValue().Set(get(args));
     }

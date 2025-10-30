@@ -848,6 +848,68 @@ public:
         }
     }
 
+  /*  ///Append number with metric suffix
+    /// @param num value to append
+    /// @param minsize min char size to append, includes padding
+    /// @param align alignment
+    /// @param space space character between number and unit prefix, 0 for none
+    /// @return offset past the last non-padding character
+
+    enum class unit_system_enum
+    {
+        metric,
+        binary
+    };
+
+    uint append_num_unit(uint64 num, coid::token_literal unit, unit_system_enum system = unit_system_enum::metric, uint minsize = 0, EAlignNum align = ALIGN_NUM_RIGHT, char space = ' ')
+    {
+        const bool is_metric = system == unit_system_enum::metric;
+
+        double v = double(num);
+        int ndigits = num > 0
+            ? 1 + (int)log10(v)
+            : 0;
+
+        const uint unit_space = minsize && align >= ALIGN_NUM_RIGHT ? 1 : 0;
+        const uint pad_space = space ? 1 : 0;
+        const uint lowsize = 5 + 1 + pad_space;
+        if (minsize != 0 && minsize < lowsize)
+            minsize = lowsize;
+
+        const char* metric_prefixes = " kMGTPEZY";      // SI have kilo as 'k'
+        const char* binary_prefixes = " KMGTPEZY";      // binary have kilo as 'K'
+
+        int ngroup = ndigits / 3;
+        char prefix = metric_prefixes[ngroup];
+
+        //reduce to 3 digits
+        if (ndigits > 3) {
+            v /= is_metric ? pow(10.0, 3 * ngroup) : pow(2.0, 10 * ngroup);
+            uint res = align >= ALIGN_NUM_RIGHT ? 1 + pad_space : 0;
+            uint offs = append_fixed(v, minsize ? minsize - res : 5, (ndigits - 3 * ngroup) - 3, align);
+            if (res)
+                appendn(res, ' ');
+            char* p = _tstr.ptr() + offs;
+            if (space)
+                *p++ = space;
+            *p = prefix;
+            return offs + 1 + pad_space;
+        }
+        else {
+            uint res = align >= ALIGN_NUM_RIGHT ? unit_space + pad_space : 0;
+            uint offs = append_num(10, num, minsize ? minsize - res : 0, align);
+            if (res)
+                appendn(res, ' ');
+            char* p = _tstr.ptr() + offs;
+            if (space)
+                *p++ = space;
+            if (unit_space)
+                *p = prefix;
+            return offs + unit_space + pad_space;
+        }
+    }*/
+
+
     ///Append time duration
     /// @param n seconds, or miliseconds if msec==true
     /// @param msec true if given time is in miliseconds, else seconds
@@ -2356,6 +2418,11 @@ inline token token::rebased(const char* from, const char* to) const
     uints offset = _ptr - from;
 
     return token(to + offset, len());
+}
+
+inline bool token::belongs_to(const charstr& to) const
+{
+    return _ptr >= to.ptr() && _pte <= ptre();
 }
 
 inline uint token::replace(const token& from, const token& to, charstr& dst, bool icase) const

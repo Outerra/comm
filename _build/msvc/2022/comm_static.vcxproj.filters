@@ -49,6 +49,9 @@
     <Filter Include="utils">
       <UniqueIdentifier>{21e0e3d5-3672-4393-8329-023e494a02cc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="containers">
+      <UniqueIdentifier>{c5a69b67-cdd2-43ec-94f7-00a5d484ff91}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\atomic\atomic.h">
@@ -284,9 +287,6 @@
     <ClInclude Include="..\..\..\alloc\alloc2d.h">
       <Filter>alloc</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\alloc\slotalloc_bmp.h">
-      <Filter>alloc</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\binstream\hash_xxhashstream.h">
       <Filter>binstream</Filter>
     </ClInclude>
@@ -345,6 +345,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\utils\uid.h">
       <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\containers\circular_queue.h">
+      <Filter>containers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -440,9 +443,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\binstream\stdstream.cpp">
       <Filter>cxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\alloc\slotalloc_bmp.cpp">
-      <Filter>alloc</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\commassert.cpp">
       <Filter>cxx</Filter>

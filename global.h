@@ -1077,6 +1077,8 @@ public:
     template <typename HostType>
     static coref<T> from_host(HostType* host)
     {
+        DASSERT_RETX(host != nullptr, "Called with invalid host!", coref<T>(nullptr));
+
         coref<T> x;
         x._entity_id = entman::get_versionid<HostType>(host);
         x._cached_object = nullptr; //to be obtained in the first call, ensuring initialization

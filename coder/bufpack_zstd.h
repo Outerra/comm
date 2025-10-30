@@ -214,9 +214,9 @@ struct packer_zstd
     /// @param bin binstream to read from
     /// @param dst destination buffer to write to
     /// @param size size of dest buffer
-    /// @param reset reset decompressor (in first unpack)
+    /// @param reset force reset decompressor
     /// @return unpacked size, can be less than size argument if there's no more data
-    ints unpack_stream(binstream& bin, void* dst, uints size, bool reset)
+    ints unpack_stream(binstream& bin, void* dst, uints size, bool reset = false)
     {
         if (!_dstream) {
             ZSTD_customMem cmem = {&_alloc, &_free, 0};
@@ -283,7 +283,7 @@ struct packer_zstd
     ///Unpack data in streaming mode
     /// @param bin binstream to read from
     /// @param dst target buffer (doesn't reset, appends)
-    /// @param reset reset decompressor (in first unpack)
+    /// @param reset force reset decompressor
     /// @return unpacked size, can be less than size argument if there's no more data
     template <class COUNT>
     ints unpack_stream(binstream& bin, dynarray<uint8, COUNT>& dst, bool reset)

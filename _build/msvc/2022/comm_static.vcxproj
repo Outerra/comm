@@ -448,7 +448,6 @@
     <ClInclude Include="..\..\..\alloc\memtrack_stacktrace.h" />
     <ClInclude Include="..\..\..\alloc\slotalloc.h" />
     <ClInclude Include="..\..\..\alloc\alloc2d.h" />
-    <ClInclude Include="..\..\..\alloc\slotalloc_bmp.h" />
     <ClInclude Include="..\..\..\alloc\slotalloc_tracker.h" />
     <ClInclude Include="..\..\..\atomic\atomic.h" />
     <ClInclude Include="..\..\..\atomic\basic_pool.h" />
@@ -487,6 +486,7 @@
     <ClInclude Include="..\..\..\coder\lz4\lz4.h" />
     <ClInclude Include="..\..\..\coder\lz4\lz4hc.h" />
     <ClInclude Include="..\..\..\coder\lz4\xxhash.h" />
+    <ClInclude Include="..\..\..\containers\circular_queue.h" />
     <ClInclude Include="..\..\..\crypt\sha1.h" />
     <ClInclude Include="..\..\..\dbg_location.h" />
     <ClInclude Include="..\..\..\function.h" />
@@ -581,7 +581,6 @@
     <ClInclude Include="..\..\..\version.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\alloc\slotalloc_bmp.cpp" />
     <ClCompile Include="..\..\..\atomic\atomic.cpp" />
     <ClCompile Include="..\..\..\binstream\stdstream.cpp" />
     <ClCompile Include="..\..\..\utils\uid.cpp" />

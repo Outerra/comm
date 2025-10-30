@@ -131,6 +131,7 @@ struct Method
         charstr defval;
         char bptr;                      //< '*' if the type was pointer-type
         char bref;                      //< '&' if the type is a reference
+        bool brvalue;
         bool bretarg;                   //< true if this is the return argument
         bool bsizearg;                  //< true if this is the size argument
         bool bconst;                    //< true if the type had const qualifier
@@ -149,6 +150,7 @@ struct Method
                 m.member("const", p.bconst);
                 m.member("ptr", p.bptr);
                 m.member("ref", p.bref);
+                m.member("rvalue", p.brvalue);
                 m.member("retarg", p.bretarg);
                 m.member("sizearg", p.bsizearg);
             });

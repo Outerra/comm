@@ -4169,6 +4169,42 @@ metastream& operator || (metastream& m, range<T>& a)
     return m;
 }
 
+/// @brief Compound array-range for reading into array and writing from range
+template <class T, class COUNT = uints, class A = comm_array_allocator>
+struct dynarray_in_range_out
+{
+    dynarray<T, COUNT, A> in;
+    range<T> out;
+};
+
+template <class T, class COUNT, class A>
+metastream& operator || (metastream& m, dynarray_in_range_out<T, COUNT, A>& a)
+{
+    if (m.stream_reading()) {
+        a.in.reset();
+        dynarray_binstream_container<T, COUNT, A> c(a.in);
+        m.read_container(c);
+    }
+    else if (m.stream_writing()) {
+        typename range<T>::range_binstream_container c(a.out);
+        m.write_container(c);
+    }
+    else {
+        if (m.meta_decl_array(
+            typeid(a).name(),
+            -1,
+            sizeof(a),
+            false,
+            [](const void* a) -> const void* { return static_cast<const dynarray_in_range_out<T, COUNT, A>*>(a)->in.ptr(); },
+            [](const void* a) -> uints { return static_cast<const dynarray_in_range_out<T, COUNT, A>*>(a)->out.size(); },
+            0,
+            [](const void* a, uints& i) -> const void* { return static_cast<const dynarray_in_range_out<T>*>(a)->in.ptr() + i++; }
+        ))
+            m || *(typename std::remove_const<T>::type*)0;
+    }
+    return m;
+}
+
 
 ///A helper to check if a type has metastream operator defined
 /// Usage: has_metastream_operator<T>::value
