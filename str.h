@@ -916,7 +916,7 @@ public:
     /// @param maxlev max time unit to show: 0 msec, 1 sec, 2 min, 3 hours, 4 days
     /// @note for maxlev==3 (hours but no days), the whole number of hours will be printed
     /// @note for maxlev<3 only the fractional number of minutes/seconds will be printed
-    void append_time_formatted(uint64 n, bool msec = false, int maxlev = 3)
+    charstr& append_time_formatted(uint64 n, bool msec = false, int maxlev = 3)
     {
         uint ms;
         if (msec) {
@@ -954,6 +954,7 @@ public:
             append('.');
             append_num(10, ms, 3, ALIGN_NUM_RIGHT_FILL_ZEROS);
         }
+        return *this;
     }
 
     ///Append floating point number with fixed number of characters
@@ -968,26 +969,26 @@ public:
 
     ///Append floating point number
     /// @param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
-    void append_double(double d, int nfrac, uints maxsize = 0)
+    charstr& append_double(double d, int nfrac, uints maxsize = 0)
     {
         if (!maxsize)
             maxsize = 16;
         char* buf = get_append_buf(maxsize);
         char* end = charstrconv::append_float(buf, buf + maxsize, d, nfrac);
 
-        resize(end - ptr());
+        return resize(end - ptr());
     }
 
     ///Append floating point number
     /// @param nfrac number of decimal places: >0 maximum, <0 precisely -nfrac places
-    void append_float(float d, int nfrac, uints maxsize = 0)
+    charstr& append_float(float d, int nfrac, uints maxsize = 0)
     {
         if (!maxsize)
             maxsize = 10;
         char* buf = get_append_buf(maxsize);
         char* end = charstrconv::append_float(buf, buf + maxsize, d, nfrac);
 
-        resize(end - ptr());
+        return resize(end - ptr());
     }
     /*
         /// @param ndig number of decimal places: >0 maximum, <0 precisely -ndig places

@@ -112,8 +112,8 @@ public:
     {}
 
     ///Constructor, reserve memory (non-virtual, will rebase when overflows)
-    /// @param reserve_items number of items to reserve memory for
-    /// @param bvirtual true for virtual address space reservation, false for physical reservation (will rebase if crossed)
+    /// @param nitems number of items to reserve memory for
+    /// @param mode virtual address space reservation (constant pointers, reserve large address space, cannot rebase) or physical reservation (will rebase if crossed)
     slotalloc_base(uints nitems, reserve_mode mode)
     {
         if (mode == reserve_mode::virtual_space)

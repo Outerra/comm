@@ -790,7 +790,7 @@ public:
     /// @}
 
 
-    count_t get_item_index(const T* item_ptr) const 
+    count_t get_item_index(const T* item_ptr) const
     {
         uints result = item_ptr - _ptr;
         DYNARRAY_CHECK_BOUNDS_U(result);
