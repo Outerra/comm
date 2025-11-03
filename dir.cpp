@@ -450,9 +450,9 @@ opcd directory::copymove_directory(zstring src, zstring dst, bool move)
 
     bool ddir = directory::is_separator(dst.get_token().last_char());
 
-    // src/ to dst or dst/ - copy content of src into dst/
-    // src to dst/ - move src dir into dst/src
-    // src to dst  - rename src to dst
+    //< src/ to dst or dst/ - move/copy content of src/ into dst/
+    //< src to dst/ - move/copy src dir into dst/src
+    //< src to dst  - rename src to dst
 
     charstr& dsts = dst.get_str();
 

@@ -254,7 +254,7 @@ public:
 
         coid::charstr& src_str = source.get_str();
         coid::charstr& dst_str = destination.get_str();
-        treat_trailing_separator(src_str, false);
+        treat_trailing_separator(src_str, true);
         
         if (mode == copy_directory_mode_enum::whole_directory)
         {
