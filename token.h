@@ -1384,6 +1384,18 @@ struct token
         return uint(p - _ptr);
     }
 
+    uint count_notchar_icase(char sep, uints off = 0) const
+    {
+        sep = (char)tolower(sep);
+        const char* p = _ptr + off;
+        for (; p < _pte; ++p)
+        {
+            if (tolower(*p) == sep)
+                break;
+        }
+        return uint(p - _ptr);
+    }
+
     uint count_notchars(char sep1, char sep2, uints off = 0) const
     {
         const char* p = _ptr + off;
@@ -1528,6 +1540,21 @@ struct token
         return uint(p - _ptr);
     }
 
+    uint count_notchar_icase_back(char sep, uints off = 0) const
+    {
+        sep = (char)tolower(sep);
+        const char* p = _pte;
+        const char* po = _ptr + off;
+
+        for (; p > po; )
+        {
+            --p;
+            if (tolower(*p) == sep)
+                return uint(p - _ptr + 1);
+        }
+        return uint(p - _ptr);
+    }
+
     uint count_notchars_back(char sep1, char sep2, uints off = 0) const
     {
         const char* p = _pte;
@@ -1607,6 +1634,29 @@ struct token
         return sub.find(_ptr + off, lens() - off) + off;
     }
 
+    /// @return Index of first occurence of given character, or -1
+    ints index(char c) const {
+        uints k = count_notchar(c);
+        return k < len() ? ints(k) : -1;
+    }
+
+    /// @return Index of first occurence of given case-insensitive character, or -1
+    ints index_icase(char c) const {
+        uints k = count_notchar_icase(c);
+        return k < len() ? ints(k) : -1;
+    }
+
+    /// @return Index of last occurence of given character, or -1
+    ints index_back(char c) const {
+        uints k = count_notchar_back(c);
+        return k != -1 ? ints(k) : -1;
+    }
+
+    /// @return Index of last occurence of given case-insensitive character, or -1
+    ints index_icase_back(char c) const {
+        uints k = count_notchar_icase_back(c);
+        return k != -1 ? ints(k) : -1;
+    }
 
     ///Return position where the substring is located
     /// @return substring position, len() if not found
@@ -1635,6 +1685,12 @@ struct token
         return 0;
     }
 
+    ///Return position where the case-insensitive character is located
+    const char* contains_icase(char c, uints off = 0) const {
+        uints k = count_notchar_icase(c, off);
+        return k < len() ? _ptr + k : 0;
+    }
+
     const char* contains_icase(const token& str, uints off = 0) const {
         if (len() < str.len())
             return 0;
@@ -1654,6 +1710,15 @@ struct token
     const char* contains_back(char c, uints off = 0) const
     {
         uint n = count_notchar_back(c, off);
+        return (n > off)
+            ? _ptr + n - 1
+            : 0;
+    }
+
+    ///Return position where the character is located, searching from end
+    const char* contains_icase_back(char c, uints off = 0) const
+    {
+        uint n = count_notchar_icase_back(c, off);
         return (n > off)
             ? _ptr + n - 1
             : 0;
@@ -2004,8 +2069,20 @@ struct token
         return first_char() == c;
     }
 
-    bool begins_with_any_of(const token& set) const {
-        return set.contains(first_char()) != nullptr;
+    /// @brief Check if token begins with any of given characters
+    /// @param set set of characters
+    /// @return >0 if token begins with a character from the set (returns position in the set + 1), otherwise 0
+    uint begins_with_any_of(const token& set) const {
+        const char* p = set.contains(first_char());
+        return p ? uint(p - set.ptr()) + 1 : 0;
+    }
+
+    /// @brief Check if token begins with any of given characters
+    /// @param set set of characters
+    /// @return >0 if token begins with a character from the set (returns position in the set + 1), otherwise 0
+    uint begins_with_any_of_icase(const token& set) const {
+        const char* p = set.contains_icase(first_char());
+        return p ? uint(p - set.ptr()) + 1 : 0;
     }
 
     bool begins_with_icase(const token& tok, uints off = 0) const
