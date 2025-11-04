@@ -55,6 +55,8 @@ template<class T>
 struct range
 {
 private:
+    static constexpr bool IS_CONST = std::is_const_v<T>;
+
     T* _ptr = 0;
     T* _pte = 0;
 
@@ -68,6 +70,9 @@ public:
 
     template<class COUNT, class A>
     range(const dynarray<T, COUNT, A>& str);
+
+    template<class COUNT, class A>
+    range(const dynarray<std::remove_const_t<T>, COUNT, A>& str) COID_REQUIRES(IS_CONST);
 
     range(T* ptr, uints len)
         : _ptr(ptr), _pte(ptr + len)
@@ -90,6 +95,10 @@ public:
             _ptr = src._ptr + offs, _pte = src._ptr + len;
     }
 
+    range(const range<std::remove_const_t<T>>& src) COID_REQUIRES((IS_CONST)) : _ptr(src._ptr), _pte(src._pte)
+    {
+    }
+
     friend void swap(range& a, range& b)
     {
         a.swap(b);
@@ -100,8 +109,8 @@ public:
         std::swap(_pte, other._pte);
     }
 
-    const T* ptr() const { return _ptr; }
-    const T* ptre() const { return _pte; }
+    T* ptr() const { return _ptr; }
+    T* ptre() const { return _pte; }
 
     /// @return length of range
     uints size() const { return _pte - _ptr; }
@@ -267,6 +276,9 @@ public:
     template<class COUNT, class A>
     range& operator = (const dynarray<T, COUNT, A>& t);
 
+    template<class COUNT, class A>
+    range& operator = (const dynarray<std::remove_const_t<T>, COUNT, A>& t) COID_REQUIRES(IS_CONST);
+
     ///Set range from ptr and length.
     /// @note use set_empty(ptr) to avoid conflict with overloads when len==0
     /// @return pointer past the end
@@ -286,11 +298,11 @@ public:
     }
 
 
-    T* begin() { return _ptr; }
-    T* end() { return _pte; }
-
     const T* begin() const { return _ptr; }
     const T* end() const { return _pte; }
+
+    T* begin() COID_REQUIRES(!IS_CONST) { return _ptr; }
+    T* end() COID_REQUIRES(!IS_CONST) { return _pte; }
 
 private:
 
@@ -697,7 +709,22 @@ range<T>::range(const dynarray<T, COUNT, A>& a)
 
 template<class T>
 template<class COUNT, class A>
+range<T>::range(const dynarray<std::remove_const_t<T>, COUNT, A>& a) COID_REQUIRES(IS_CONST)
+    : range<T>(const_cast<T*>(a.ptr()), const_cast<T*>(a.ptre()))
+{
+}
+
+template<class T>
+template<class COUNT, class A>
 range<T>& range<T>::operator = (const dynarray<T, COUNT, A>& a)
+{
+    _ptr = const_cast<T*>(a.ptr());
+    _pte = const_cast<T*>(a.ptre());
+}
+
+template<class T>
+template<class COUNT, class A>
+range<T>& range<T>::operator = (const dynarray<std::remove_const_t<T>, COUNT, A>& a) COID_REQUIRES(IS_CONST)
 {
     _ptr = const_cast<T*>(a.ptr());
     _pte = const_cast<T*>(a.ptre());
