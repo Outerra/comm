@@ -139,9 +139,15 @@ protected:
 
 public:
 
-    typedef T                   value_type;
-    typedef COUNT               count_t;
-    typedef A                   allocator_type;
+    using value_type = T;
+    using reference = T&;
+    using const_reference = const T&;
+    using pointer = T*;
+    using const_pointer = const T*;
+    using difference_type = ptrdiff_t;
+    using size_type = size_t;
+    using count_t = COUNT;
+    using allocator_type = A;
 
     COIDNEWDELETE(dynarray);
 
@@ -819,6 +825,12 @@ public:
         return ptr;
     };
 
+    /// @brief Append element. Compatibility with std
+    void push_back(const T& v) { push(v); }
+
+    /// @brief Append element. Compatibility with std
+    void push_back(T&& v) { push(std::move(v)); }
+
     ///Push item into array if it doesn't exist
     /// @return item reference
     T& push_unique(const T& v) {
@@ -954,6 +966,9 @@ public:
 
         return last();
     }
+
+    /// @brief delete last element, compatibility with std
+    void pop_back() { pop(); }
 
     ///Pop n elements from the array
     void popn(uints n)
@@ -1601,6 +1616,15 @@ public:
         return (count_t)i;
     }
 
+    T& front() {
+        DASSERT_FATAL(_count() > 0);
+        return _ptr[0];
+    }
+    const T& front() const {
+        DASSERT_FATAL(_count() > 0);
+        return _ptr[0];
+    }
+
     ///Return ptr to last member or null if empty
     T* last() const
     {
@@ -1825,6 +1849,9 @@ public:
     void compact() {
         _ptr = A::template realloc<T>(_ptr, size(), 0);
     }
+
+    /// @return true if array has 0 elements
+    bool empty() const { return !_ptr || _count() == 0; }
 
     ///Get number of elements in the array
     count_t size() const { return (count_t)_count(); }

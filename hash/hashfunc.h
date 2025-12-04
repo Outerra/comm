@@ -64,7 +64,7 @@ struct equal_to
 ////////////////////////////////////////////////////////////////////////////////
 template<class KEY, bool INSENSITIVE = false> struct hasher
 {
-    typedef KEY     key_type;
+    using key_type = KEY;
 
     template<class FKEY>
     auto operator()(const FKEY& k) const -> decltype(hash(k)) {
@@ -73,6 +73,15 @@ template<class KEY, bool INSENSITIVE = false> struct hasher
 };
 
 ///FNV-1a hash
+inline coid_constexpr_for uint __coid_hash_bytes(const void* p, uints len, uint seed = 2166136261u)
+{
+    const uint8* s = static_cast<const uint8*>(p);
+    for (; len > 0; --len, ++s)
+        seed = (seed ^ *s) * 16777619u;
+
+    return seed;
+}
+
 inline coid_constexpr_for uint __coid_hash_c_string(const char* s, uint seed = 2166136261u)
 {
     for (; *s; ++s)
@@ -122,7 +131,7 @@ inline constexpr uint __coid_hash_string(char c, uint seed = 2166136261u)
 ////////////////////////////////////////////////////////////////////////////////
 template<bool INSENSITIVE> struct hasher<char*, INSENSITIVE>
 {
-    typedef char* key_type;
+    using key_type = char*;
     constexpr uint operator()(const char* s) const {
         return INSENSITIVE
             ? __coid_hash_c_string_insensitive(s)
@@ -132,7 +141,7 @@ template<bool INSENSITIVE> struct hasher<char*, INSENSITIVE>
 
 template<bool INSENSITIVE> struct hasher<const char*, INSENSITIVE>
 {
-    typedef const char* key_type;
+    using key_type = const char*;
     constexpr uint operator()(const char* s) const {
         return INSENSITIVE
             ? __coid_hash_c_string_insensitive(s)
@@ -140,12 +149,28 @@ template<bool INSENSITIVE> struct hasher<const char*, INSENSITIVE>
     }
 };
 
+// hash maps use fibonacci hash over the hasher provided value, so we can return direct mapping for integral types here
+
+template <typename T>
+struct hasher<T*> {
+    using key_type = T*;
+    using index_type = size_t;
+    constexpr index_type operator()(T* key) const { return size_t(key); }
+};
+
+template <typename T>
+struct hasher<const T*> {
+    using key_type = const T*;
+    using index_type = size_t;
+    constexpr index_type operator()(const T* key) const { return size_t(key); }
+};
+
 #define DIRECT_HASH_FUNC(TYPE) template<> struct hasher<TYPE> {\
-    typedef TYPE key_type;\
-    typedef typename std::conditional<(sizeof(TYPE) > sizeof(uint)), uint64, uint>::type index_type;\
+    using key_type = TYPE;\
+    using index_type = typename std::conditional<(sizeof(TYPE) > sizeof(uint)), uint64, uint>::type;\
     constexpr index_type operator()(TYPE x) const { return (index_type)x; } }
 
-DIRECT_HASH_FUNC(bool);
+//DIRECT_HASH_FUNC(bool);
 DIRECT_HASH_FUNC(uint8);
 DIRECT_HASH_FUNC(int8);
 DIRECT_HASH_FUNC(int16);

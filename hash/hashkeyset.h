@@ -108,8 +108,8 @@ struct _Select_DeRef
 template <
     class VAL,
     class EXTRACTKEY,
-    class HASHFUNC = hasher<typename type_base<typename EXTRACTKEY::ret_type>::type>,
-    class EQFUNC = equal_to<typename type_base<typename EXTRACTKEY::ret_type>::type, typename HASHFUNC::key_type>,
+    class HASHFUNC = hasher<typename EXTRACTKEY::ret_type>,
+    class EQFUNC = equal_to<typename EXTRACTKEY::ret_type, typename HASHFUNC::key_type>,
     template<class> class ALLOC = AllocStd
 >
 class hash_keyset

@@ -90,9 +90,6 @@ class slothash
     : public slotalloc_base<T, MODE, Es..., uint>
 {
     using base = slotalloc_base<T, MODE, Es..., uint>;
-    using extract_value_type = typename EXTRACTOR::value_type;
-
-    //static constexpr int SEQTABLE_ID = sizeof...(Es);
 
     /// @return table with ids pointing to the next object in hash socket chain
     dynarray<uint>& seqtable() {
