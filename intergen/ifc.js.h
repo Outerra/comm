@@ -432,7 +432,13 @@ public:
         if (!get)
             return;
 
-        args.GetReturnValue().Set(get(args));
+        //get may throw an exception when streaming params
+        try {
+            args.GetReturnValue().Set(get(args));
+        }
+        catch (const std::exception& e) {
+            coidlog_error("js", e.what());
+        }
     }
 
     static void register_global_context_methods(v8::Handle<v8::Object> gobj, v8::Isolate* iso) {
