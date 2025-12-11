@@ -1231,24 +1231,18 @@ public:
     }
 
     ///Append local time zone date string constructed by the flags set
-    /// @note default format: Tue, 15 Nov 1994 08:12:31 GMT
+    /// @note default format: Tue, 15 Nov 1994 08:12:31
     charstr& append_date_local(const timet t, uint flg = DATE_DEFAULT)
     {
 #ifdef SYSTYPE_MSVC
         struct tm tm;
         localtime_s(&tm, &t.t);
-        char tzbuf[32];
-        if (flg & DATE_TZ) {
-            uints sz;
-            _get_tzname(&sz, tzbuf, 32, 0);
-        }
-        else
-            tzbuf[0] = 0;
-        return append_time(tm, flg, tzbuf);
+        
+        return append_time(tm, flg&(~DATE_TZ), coid::token());
 #else
         time_t tv = (time_t)t.t;
         struct tm const& tm = *localtime(&tv);
-        return append_time(tm, flg, tzname[0]);
+        return append_time(tm, flg&(~DATE_TZ), coid::token());
 #endif
     }
 

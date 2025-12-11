@@ -310,7 +310,7 @@ public:
                 /////////////////////////////////////////////////////////////////////////////////////
             case type::T_TIME: {
                 _bufw.append('"');
-                _bufw.append_date_local(*(const timet*)p);
+                _bufw.append_date_gmt(*(const timet*)p);
                 _bufw.append('"');
             } break;
 
@@ -608,7 +608,7 @@ public:
                 if (tk != lexstr && tk != lexstre)
                     return ersSYNTAX_ERROR "expected time";
 
-                e = tok.todate_local(*(timet*)p);
+                e = tok.todate_gmt(*(timet*)p);
                 if (e == NOERR && !tok.is_empty())
                     e = ersSYNTAX_ERROR "unexpected trailing characters";
             } break;

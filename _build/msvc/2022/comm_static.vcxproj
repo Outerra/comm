@@ -448,6 +448,7 @@
     <ClInclude Include="..\..\..\alloc\memtrack_stacktrace.h" />
     <ClInclude Include="..\..\..\alloc\slotalloc.h" />
     <ClInclude Include="..\..\..\alloc\alloc2d.h" />
+    <ClInclude Include="..\..\..\alloc\slotalloc_meta.h" />
     <ClInclude Include="..\..\..\alloc\slotalloc_tracker.h" />
     <ClInclude Include="..\..\..\atomic\atomic.h" />
     <ClInclude Include="..\..\..\atomic\basic_pool.h" />

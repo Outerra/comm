@@ -836,4 +836,56 @@ uint64 directory::calculate_directory_size(const coid::token& path)
     return result;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+coid::token directory::get_path_component(const coid::token& path, int32 component)
+{
+
+    const uint path_len = path.len();
+    
+    if (path_len < 2)
+    {
+        return coid::token();
+    }
+    
+    const bool is_dos_drive = path_len > 1 && path_len <= 3 && path[1] == ':';
+    const bool is_last_sep = (path_len > 2) && (path.last_char() == '\\' || path.last_char() == '/');
+    
+    if (is_dos_drive)
+    {
+        if (path_len == 2)
+        {
+            return path;
+        }
+        else if (is_last_sep)
+        {
+            return path.shifted_end(-1);
+        }
+        else // invalid -> seems like drive but with unexpected 3rd char (should be dir separator)
+        {
+            return coid::token();
+        }
+    }
+    else
+    {
+        const bool reverse = component < 0;
+
+        if (reverse)
+        {
+            component = -(component + 1);
+        }
+
+        coid::token tok(is_last_sep ? path.shifted_end(-1) : path);
+        coid::token result;
+
+         while (tok.is_set() && component >= 0)
+         {
+             result = reverse ? tok.cut_right_group_back(DIR_SEPARATORS) : tok.cut_left_group(DIR_SEPARATORS);
+             --component;
+         }
+        return result;
+    }
+
+}
+
 COID_NAMESPACE_END
