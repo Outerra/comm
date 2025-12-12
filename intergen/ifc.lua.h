@@ -463,7 +463,7 @@ public:
     //    return empty;
     //}
 
-    bool is_empty() {
+    bool is_empty() const{
         return _lua_handle == 0;
     }
 
@@ -486,7 +486,7 @@ public:
     }
 
     // push the referenced object onto top of the stack
-    virtual void push_ref() {
+    virtual void push_ref() const{
         if (!is_empty()) {
             lua_rawgeti(_L, LUA_REGISTRYINDEX, _lua_handle);
         }
@@ -534,7 +534,7 @@ public:
     }
 
     // push the referenced object onto top of the stack
-    virtual void push_ref() override {
+    virtual void push_ref() const override {
         if (!is_empty()) {
             lua_rawgeti(_L, LUA_REGISTRYINDEX, LUA_WEAK_REGISTRY_INDEX);
             lua_rawgeti(_L, -1, _lua_handle);
