@@ -1302,7 +1302,6 @@ public:
     /// @return True if the pointer is valid array item.
     bool has_item(const T* item_ptr) const
     {
-        DASSERTX((ptrdiff_t(item_ptr) - ptrdiff_t(_ptr)) % sizeof(T), "item_ptr not aligned to item type boundary size");
         return has_index(item_ptr - _ptr);
     }
 
