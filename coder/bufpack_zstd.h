@@ -152,11 +152,14 @@ struct packer_zstd
     /// @param ZSTD complevel compression level
     uints pack_stream(const void* src, uints size, binstream& bon, int complevel = ZSTD_CLEVEL_DEFAULT)
     {
-        DASSERT_RET(src || (_cstream && _buf.size() != 0), 0);
+        DASSERT_RET(src || _cstream, 0);
 
         if (!_cstream) {
             ZSTD_customMem cmem = {&_alloc, &_free, 0};
             _cstream = ZSTD_createCStream_advanced(cmem);
+        }
+        else if (!src && _buf.size() == 0) {
+            return 0;
         }
 
         if (_buf.size() == 0) {
