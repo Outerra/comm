@@ -1297,6 +1297,14 @@ public:
         return i < _count();
     }
 
+    /// @brief Checks whether the given pointer refers to the valid item within the array.
+    /// @param item_ptr Pointer to the item to check.
+    /// @return True if the pointer is valid array item.
+    bool has_item(const T* item_ptr) const
+    {
+        return has_index(item_ptr - _ptr);
+    }
+
     ///Linear search whether array contains element comparable with \a key
     /// @return -1 if not contained, otherwise index
     template<class K>

@@ -350,6 +350,9 @@
       <Filter>containers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\tagged_ptr.h" />
+    <ClInclude Include="..\..\..\alloc\slotalloc_meta.h">
+      <Filter>alloc</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\crypt\sha1.cpp">

@@ -243,7 +243,7 @@ public:
     /// @param destination - destination directory path
     /// @param mode - see directory_copy_mode_enum 
     /// @return error code 
-    /// @note will fail if source directory or file already exists in destination directory
+    /// @note Will fail if source directory already exists in destination directory
     static opcd copy_directory(zstring source, zstring destination, copy_directory_mode_enum mode)
     {
         if (!is_valid_directory(source) || !is_valid_directory(destination))
@@ -254,16 +254,17 @@ public:
 
         coid::charstr& src_str = source.get_str();
         coid::charstr& dst_str = destination.get_str();
-        treat_trailing_separator(src_str, true);
+        treat_trailing_separator(dst_str, '/');
         
+
         if (mode == copy_directory_mode_enum::whole_directory)
         {
-            treat_trailing_separator(dst_str, '/');
+            treat_trailing_separator(src_str, false);
 
         }
         else if (mode == copy_directory_mode_enum::contents_only)
         {
-            treat_trailing_separator(dst_str, false);
+            treat_trailing_separator(src_str, '/');
         }
         else 
         {
@@ -495,6 +496,11 @@ public:
     /// @param directory_path - path (absolute or relative to the working directory)
     /// @return true when valid and empty directory, false otherwise
     static bool is_directory_empty(const coid::token& directory_path);
+
+    /// @brief Get's the last component of the path
+    /// @param path 
+    /// @return 
+    static coid::token get_path_component(const coid::token& path, int32 component = -1);
 
 protected:
     static bool is_valid_name_char(char c)

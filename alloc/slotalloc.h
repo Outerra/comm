@@ -133,6 +133,22 @@ public:
         copy(s);
     }
 
+    slotalloc_base& operator=(const slotalloc_base& s)
+    {
+        copy(s);
+        return *this;
+    }
+
+    slotalloc_base(slotalloc_base&& s) {
+        swap(s);
+    }
+
+    slotalloc_base& operator=(slotalloc_base&& s)
+    {
+        swap(s);
+        return *this;
+    }
+
     void copy(const slotalloc_base& o)
     {
         _allocated = o._allocated;
@@ -178,6 +194,8 @@ public:
         }
 
         extarray_copy(o);
+
+        _count = o._count;
     }
 
     /// @return value from ext array associated with given main array object
