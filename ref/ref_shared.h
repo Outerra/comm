@@ -54,7 +54,7 @@ class ref_shared
    template<typename> friend class ref_shared;      // make all template instances friends
 public: //methods only
     /// @brief nullptr constructor
-    explicit ref_shared(nullptr_t)
+    ref_shared(nullptr_t)
     {
     }
 

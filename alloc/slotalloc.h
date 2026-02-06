@@ -480,9 +480,10 @@ public:
     }
 
     ///Delete object by pointer
-    void del_item_by_ptr(T* p)
+    void del_item_by_ptr(const T* p)
     {
-        del_item_internal(p, get_item_id(p));
+        const uints id = get_item_id(p);
+        del_item_internal(ptr(id), id);
     }
 
     ///Delete object by id

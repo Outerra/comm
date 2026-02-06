@@ -273,6 +273,21 @@ inline T down_cast_saturate(S v) {
     }
 }
 
+template<class I, class F>
+inline I integral_float_cast(F value)
+{
+    static_assert(std::is_integral_v<I>);
+    static_assert(std::is_floating_point_v<F>);
+
+    constexpr I vmin = std::numeric_limits<I>::min();
+    constexpr I vmax = std::numeric_limits<I>::max();
+
+    DASSERTX(value <= vmax, "Integral type overflow");
+    DASSERTX(value >= vmin, "Integral type overflow");
+
+    return static_cast<I>(value);
+}
+
 
 COID_NAMESPACE_END
 

@@ -63,6 +63,7 @@ public: // methods only
     /// @tparem PolicyArguments - argumes for default policy creation
     /// @param object_ptr - object pointer of base or derived type
     template<typename BaseOrDerivedType, typename... PolicyArguments>
+    //COID_REQUIRES((std::is_convertible_v<BaseOrDerivedType, ref_intrusive_base>))
     ref_intrusive(BaseOrDerivedType* object_ptr, PolicyArguments&&... policy_arguments)
         : _object_ptr(reinterpret_cast<Type*>(object_ptr))
     {
