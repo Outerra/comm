@@ -149,12 +149,12 @@ public:
 
     virtual opcd write_raw(const void* p, uints& len) override
     {
-        if (_cot.reserved_total() == 0)
+        if (_cot.reserved_total_byte_size() == 0)
             _cot.reserve(DEFAULT_CACHE_SIZE, false);
 
         opcd e = 0;
 
-        uints rm = _cot.reserved_remaining();
+        uints rm = _cot.reserved_remaining_byte_size();
         if (rm >= len)
         {
             _cot.add_bin_from((const uchar*)p, len);
@@ -172,7 +172,7 @@ public:
             if (e != NOERR)
             {
                 //enlarge the cache instead
-                uints newsize = _cot.reserved_total();
+                uints newsize = _cot.reserved_total_byte_size();
                 if (newsize < _cot.size() + len)
                     newsize = nearest_high_pow2(_cot.size() + len);
 
@@ -223,7 +223,7 @@ public:
             if (eois)
                 return ersNO_MORE;
 
-            if (len >= _cin.reserved_total())
+            if (len >= _cin.reserved_total_byte_size())
             {
                 //direct read
                 uints olen = len;
@@ -506,7 +506,7 @@ public:
 
             if (cs == 0)
                 break;
-            if (cs < _cin.reserved_total())
+            if (cs < _cin.reserved_total_byte_size())
                 bexit = true;
 
             t.set((const char*)_cin.ptr(), cs);
@@ -521,13 +521,13 @@ private:
 
     opcd read_cache_line()
     {
-        if (_cin.reserved_total() == 0)
+        if (_cin.reserved_total_byte_size() == 0)
             _cin.reserve(DEFAULT_CACHE_SIZE, false);
 
-        uints cs = _cin.reserved_total();
+        uints cs = _cin.reserved_total_byte_size();
         opcd e = _bin->read_raw_any(_cin.ptr(), cs);
 
-        _cin.set_size(_cin.reserved_total() - cs);
+        _cin.set_count(_cin.reserved_total_byte_size() - cs);
         _tcinread += _cinread;
         _cinread = 0;
 
@@ -562,13 +562,13 @@ private:
     ///Fetch byte \a offs away from current position, without discarding any data
     uints fetch_forward(uints offs)
     {
-        if (_cin.reserved_total() == 0)
+        if (_cin.reserved_total_byte_size() == 0)
             _cin.reserve(DEFAULT_CACHE_SIZE, false);
 
         uints rm = _cin.size() - _cinread;
         if (rm >= offs)
             return rm;
-        else if (offs <= _cin.reserved_total())
+        else if (offs <= _cin.reserved_total_byte_size())
         {
             //compacting the cache would suffice
             _cin.del(0, _cinread);
@@ -587,11 +587,11 @@ private:
         _tcinread += _cinread;
         _cinread = 0;
 
-        uints ts = _cin.reserved_remaining();
+        uints ts = _cin.reserved_remaining_byte_size();
         opcd e = fill_cache_line(_cin.ptr() + _cin.size(), ts);
 
-        uints n = _cin.size() + _cin.reserved_remaining() - ts;
-        _cin.set_size(n);
+        uints n = _cin.size() + _cin.reserved_remaining_byte_size() - ts;
+        _cin.set_count(n);
 
         return n;
     }

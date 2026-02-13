@@ -403,7 +403,7 @@ protected:
 
         //make sure rebase won't break the returned pointer
         if coid_constexpr_if(!base::LINEAR) {
-            if (seq.reserved_remaining() < sizeof(uint)) {
+            if (seq.reserved_remaining_byte_size() < sizeof(uint)) {
                 uints offs = n - seq.ptr();
                 uint* ps = seq.reserve(seq.size() + 1, true);
                 n = ps + offs;

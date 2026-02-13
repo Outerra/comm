@@ -169,7 +169,7 @@ struct packer_zstd
 
         ZSTD_outBuffer zout;
         zout.pos = _offset;
-        zout.size = _buf.reserved_total();
+        zout.size = _buf.reserved_total_byte_size();
         zout.dst = _buf.ptr();
 
         if (src == 0) {
@@ -247,14 +247,14 @@ struct packer_zstd
         while (zot.pos < zot.size) {
             if (zin.pos >= zin.size && !isend) {
                 //read next chunk of input
-                uints tot = _buf.reserved_total();
+                uints tot = _buf.reserved_total_byte_size();
                 uints rlen = tot;
                 bin.read_raw(_buf.ptr(), rlen);
 
                 uints read = tot - rlen;
                 if (read > 0) {
                     zin.size = read;
-                    _buf.set_size(read);
+                    _buf.set_count(read);
 
                     zin.pos = 0;
                 }
@@ -302,10 +302,10 @@ struct packer_zstd
             _eof = false;
         }
 
-        uints srclen = _buf.reserved_total();
+        uints srclen = _buf.reserved_total_byte_size();
         bin.read_raw(_buf.ptr(), srclen);
-        srclen = _buf.reserved_total() - srclen;
-        _buf.set_size(srclen);
+        srclen = _buf.reserved_total_byte_size() - srclen;
+        _buf.set_count(srclen);
 
         const uints origsize = dst.size();
         const uints outblocksize = ZSTD_DStreamOutSize();
@@ -324,14 +324,14 @@ struct packer_zstd
         while (!isend) {
             if (zin.pos >= zin.size && !isend) {
                 //read next chunk of input
-                uints tot = _buf.reserved_total();
+                uints tot = _buf.reserved_total_byte_size();
                 uints rlen = tot;
                 bin.read_raw(_buf.ptr(), rlen);
 
                 uints read = tot - rlen;
                 if (read > 0) {
                     zin.size = read;
-                    _buf.set_size(read);
+                    _buf.set_count(read);
 
                     zin.pos = 0;
                 }

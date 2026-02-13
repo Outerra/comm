@@ -257,7 +257,7 @@ protected:
 
         s = 32 - n - s;
 
-        _ibuf.set_size(n + s);
+        _ibuf.set_count(n + s);
         _ioffs = 0;
         return 0;
     }

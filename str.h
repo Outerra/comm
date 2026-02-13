@@ -1170,8 +1170,8 @@ public:
     /// @return number of bytes appended
     uint append_wchar_buf(const wchar_t* src, uints nchars)
     {
-        uints nold = lens();
-        _tstr.set_size(nold);
+        uint nold = len();
+        _tstr.set_count(nold);
 
         for (; *src != 0 && nchars > 0; ++src, --nchars)
         {
@@ -1179,16 +1179,16 @@ public:
                 *_tstr.add() = (char)*src;
             else
             {
-                uints old = _tstr.size();
+                uint old = _tstr.count();
                 char* p = _tstr.add(6);
-                uints n = write_utf8_seq(*src, p);
-                _tstr.set_size(old + n);
+                uint n = write_utf8_seq(*src, p);
+                _tstr.set_count(old + n);
             }
         }
         if (_tstr.size())
             *_tstr.add() = 0;
 
-        return uint(lens() - nold);
+        return uint(len() - nold);
     }
 
 #ifdef SYSTYPE_WIN
@@ -2132,7 +2132,7 @@ public:
 
     /// @return number of reserved characters (incl. term zero)
     uints reserved() const {
-        return _tstr.reserved_total();
+        return _tstr.reserved_total_byte_size();
     }
 
     ///Reset string to empty but keep the memory
@@ -2192,7 +2192,7 @@ protected:
 
     void termzero()
     {
-        uints len = _tstr.sizes();
+        uint len = _tstr.count();
         _tstr[len - 1] = 0;
     }
 

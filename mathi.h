@@ -114,11 +114,15 @@ inline T* align_ptr(T * ptr, const uints align = 0x10)
         reinterpret_cast<const uchar*>(ptr)+align - (uints(ptr) & (align - 1))));
 }
 
-/// Aligns value to given chunk size (enlarges to next chunk boundary)
+/// @brief Aligns a value up to the next chunk boundary and returns the required chunk count.
+/// @param value       Value to align.
+/// @param chunk_size  Size of a single chunk.
+/// @return Number of chunks of size @p chunk_size required to cover @p value.
+/// @note Equivalent to ceil(value / chunk_size) for unsigned integers.
 template<class UINT>
-inline constexpr UINT align_to_chunks( UINT uval, uints usize )
+inline constexpr UINT align_to_chunks( UINT value, uints chunk_size )
 {
-    return UINT((uval + usize - 1) / usize);
+    return UINT((value + chunk_size - 1) / chunk_size);
 }
 
 

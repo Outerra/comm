@@ -614,7 +614,7 @@ public:
     /// @return number of currently preallocated items
     uints preallocated_count() const {
         if coid_constexpr_if (LINEAR)
-            return this->_array.reserved_total() / sizeof(T);
+            return this->_array.reserved_total_count();
         else
             return this->_pages.size() * storage_t::page::ITEMS;
     }
@@ -897,7 +897,7 @@ public:
 
         _count = 0;
 
-        _allocated.set_size(0);
+        _allocated.set_count(0);
     }
 
     ///Discard content. Also destroys pooled objects and frees memory
@@ -1062,7 +1062,7 @@ protected:
         for_each([](T& v) { destroy(v); });
 
         if coid_constexpr_if (LINEAR)
-            this->_array.set_size(0);
+            this->_array.set_count(0);
         else
             this->_created = 0;
     }
@@ -1829,11 +1829,11 @@ protected:
     template <class Te, class bitmask_type>
     static void copy_array_with_bitmask(const dynarray<Te>& src, dynarray<Te>& dst, const dynarray<bitmask_type>& mask)
     {
-        uints rsv = src.reserved_virtual();
+        uints rsv = src.reserved_virtual_byte_size();
         if (rsv > 0)
             dst.reserve(rsv, reserve_mode::virtual_space);
         else
-            dst.reserve(src.reserved_total(), reserve_mode::memory);
+            dst.reserve(src.reserved_total_byte_size(), reserve_mode::memory);
         Te* dd = dst.add_uninit(src.size());
         const Te* sd = src.ptr();
         constexpr int n = sizeof(bitmask_type) * 8;
@@ -1920,7 +1920,7 @@ private:
     ///Helper to set_count(0) all ext arrays
     template<size_t... Index>
     void extarray_reset_count_(index_sequence<Index...>) {
-        int dummy[] = {0, ((void)std::get<Index>(this->_exts).set_size(0), 0)...};
+        int dummy[] = {0, ((void)std::get<Index>(this->_exts).set_count(0), 0)...};
     }
 
     void extarray_reset_count() {
@@ -2173,7 +2173,7 @@ private:
     {
         uints count = created();
 
-        //DASSERT(_count <= count);   //count may be lower with other threads deleting, but not higher (single producer)
+        //DASSERT(_mesh_sort_info_count <= count);   //count may be lower with other threads deleting, but not higher (single producer)
         set_bit(count);
 
         if (pid)

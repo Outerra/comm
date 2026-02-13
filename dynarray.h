@@ -258,7 +258,7 @@ public:
     dynarray& takeover(dynarray<T, COUNT2>& src)
     {
         discard();
-        uints stack_size = src.reserved_stack();
+        uints stack_size = src.reserved_stack_byte_size();
         if (stack_size > 0) {
             //stack memory cannot be moved, needs to be a copy
             if coid_constexpr_if(std::is_copy_assignable_v<T>) {
@@ -1169,11 +1169,11 @@ public:
     /// @}
 
 
-    ///Reserve \a nitems of elements
-    /** @param nitems number of items to reserve
-        @param ikeep keep existing elements (true) or discard them (false)
-        @param m [optional] memory space to use (fresh alloc only)
-        @return pointer to the first item of the array */
+    /// @brief Reserve storage for at least `nitems` elements
+    /// @param nitems  Minimum number of elements to allocate capacity for
+    /// @param ikeep   If true, preserve existing elements; if false, discard current contents
+    /// @param m       Optional memory space to use for fresh allocation
+    /// @return Pointer to the first element of the underlying storage (may change after reallocation)
     T* reserve(uints nitems, bool ikeep = true, mspace m = 0)
     {
         uints n = _count();
@@ -1190,20 +1190,21 @@ public:
         return _ptr;
     }
 
-    /// @brief Reserve \a nitems of elements
-    /// @param count number of items to reserve
-    /// @param mode reservation mode
-    /// @return pointer to the first item of the array
-    T* reserve(uints count, reserve_mode mode) {
+    /// @brief Reserve storage for at least `nitems` elements
+    /// @param nitems  Minimum number of elements to allocate capacity for
+    /// @param mode Reservation mode used(@see reserve_mode)
+    /// @return Pointer to the first element of the underlying storage (may change after reallocation)
+    T* reserve(uints nitems, reserve_mode mode)
+    {
         discard();
 
         if (mode == reserve_mode::virtual_space) {
-            _ptr = A::template reserve_virtual<T>(count);
+            _ptr = A::template reserve_virtual<T>(nitems);
             _set_count(0);
         }
         else {
             _ptr = 0;
-            reserve(count, false);
+            reserve(nitems, false);
         }
         return _ptr;
     }
@@ -1857,29 +1858,63 @@ public:
     count_t size() const { return (count_t)_count(); }
     uints sizes() const { return _count(); }
 
+    /// @brief Get the logical number of elements in the array
+    /// @return Number of valid elements currently stored (not capacity)
+    count_t count() const { return (count_t)_count(); }
+
     ///Hard set number of elements
     /// @warn Doesn't execute either destructors for the removed elements or constructors for added ones.
+    [[deprecated("Call set_count")]]
     uints set_size(uints n)
     {
         DASSERTN(n <= count_t(-1));
-        DASSERT(n * sizeof(T) <= _size());
+        const uints expected_size = n * sizeof(T);
+        const uints current_size = _size();
+        DASSERTX( expected_size <= current_size, "You need to alloc more space.");
 
         if (_ptr) _set_count(n);
         return n;
     }
 
+    /// @brief Force-set the element count without touching storage
+    /// @param new_count New logical number of elements
+    /// @return The new element count
+    ///
+    /// @warning This function does NOT:
+    ///   - allocate or reallocate memory
+    ///   - call constructors or destructors
+    ///   - initialize or destroy elements
+    ///
+    /// @note The caller must guarantee that:
+    ///   - enough storage is already allocated for `new_count` elements
+    ///   - elements are already constructed when increasing the count
+    ///   - elements are manually destroyed when decreasing the count (if required)
+    ///
+    /// @note Intended for low-level internal use (e.g., bulk deserialization, custom allocators,
+    ///       trivially constructible types). Misuse results in undefined behavior.
+    count_t set_count(count_t new_count)
+    {
+        const uints expected_size = new_count * sizeof(T);
+        const uints current_size = _size();
+        DASSERT_RETX(expected_size <= current_size, "You need to alloc more space.", count());
+
+        _set_count(new_count);
+        return new_count;
+    }
+
     uints byte_size() const { return _count() * sizeof(T); }
 
     ///Return number of remaining reserved bytes
-    uints reserved_remaining() const { return _size() - sizeof(T) * _count(); }
-    uints reserved_total() const { return _size(); }
+    uints reserved_remaining_byte_size() const { return _size() - sizeof(T) * _count(); }
+    uints reserved_total_byte_size() const { return _size(); }
 
     /// @return reserved virtual size in bytes, if the memory was allocaded by reserve_virtual, otherwise 0
-    uints reserved_virtual() const { return A::reserved_virtual_size(_ptr); }
+    uints reserved_virtual_byte_size() const { return A::reserved_virtual_size(_ptr); }
 
     /// @return reserved stack size in bytes, if the memory was allocaded by reserve_stack, otherwise 0
-    uints reserved_stack() const { return A::reserved_stack_size(_ptr); }
+    uints reserved_stack_byte_size() const { return A::reserved_stack_size(_ptr); }
 
+    count_t reserved_total_count() const { return count_t(_size() / sizeof(T)); }
 
     typedef T*                          iterator;
     typedef const T*                    const_iterator;
