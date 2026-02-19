@@ -41,6 +41,7 @@
 #include "trait.h"
 #include "bitrange.h"
 #include "alloc/commalloc.h"
+#include "range.h"
 
 COID_NAMESPACE_BEGIN
 
@@ -1925,6 +1926,12 @@ public:
     const T* begin() const { return _ptr; }
     const T* end() const { return _ptr + _count(); }
 
+    range<T> get_range(count_t from_index, count_t item_count)
+    {
+        DASSERT_RETX(from_index + item_count <= count(), "Invalid range", range<T>(nullptr));
+
+        return range<T>(_ptr + from_index, _ptr + from_index + item_count);
+    }
 private:
     void _destroy() {
 #if defined(_DEBUG) && defined(DYNARRAY_CHECK_PTR)
@@ -2016,6 +2023,39 @@ private:
     void* _p;
     void** _a;
 };
+
+/// coid::range constructors and operators that takes dynarray
+template<class T>
+template<class COUNT, class A>
+range<T>::range(const dynarray<T, COUNT, A>& a)
+    : range<T>(const_cast<T*>(a.ptr()), const_cast<T*>(a.ptre()))
+{
+}
+
+template<class T>
+template<class COUNT, class A>
+range<T>::range(const dynarray<std::remove_const_t<T>, COUNT, A>& a) COID_REQUIRES(IS_CONST)
+    : range<T>(const_cast<T*>(a.ptr()), const_cast<T*>(a.ptre()))
+{
+}
+
+template<class T>
+template<class COUNT, class A>
+range<T>& range<T>::operator = (const dynarray<T, COUNT, A>& a)
+{
+    _ptr = const_cast<T*>(a.ptr());
+    _pte = const_cast<T*>(a.ptre());
+}
+
+template<class T>
+template<class COUNT, class A>
+range<T>& range<T>::operator = (const dynarray<std::remove_const_t<T>, COUNT, A>& a) COID_REQUIRES(IS_CONST)
+{
+    _ptr = const_cast<T*>(a.ptr());
+    _pte = const_cast<T*>(a.ptre());
+}
+
+
 
 ///Alias with 32 bit sizes
 template< class T, class A = comm_array_allocator>
