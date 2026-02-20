@@ -112,7 +112,7 @@ public:
     ///Formatted log message
     template<class ...Vs>
     void print(const token& fmt, Vs&&... vs) {
-        ref<logmsg> msgr = create_msg(log::level::none, tokenhash());
+        ref<logmsg> msgr = create_msg(log::level::none, log::target::primary_log, tokenhash(), nullptr);
         if (!msgr)
             return;
 
@@ -124,7 +124,7 @@ public:
     template<class ...Vs>
     void print(log::level type, const tokenhash& hash, const void* inst, const token& fmt, Vs&&... vs)
     {
-        ref<logmsg> msgr = create_msg(type, hash, inst);
+        ref<logmsg> msgr = create_msg(type, log::target::primary_log, hash, inst);
         if (!msgr)
             return;
 

@@ -137,13 +137,19 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">
     <ExtensionsToDeleteOnClean>*.intergen.cpp;*.intergen.js.cpp;*.intergen.lua.cpp;$(ExtensionsToDeleteOnClean)</ExtensionsToDeleteOnClean>
+    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
+    <ClangTidyChecks>readability-implicit-bool-conversion;modernize-use-override;bugprone-use-after-move;bugprone-argument-comment;bugprone-infinite-loop;performance-for-range-copy;performance-unnecessary-value-param;performance-move-const-arg</ClangTidyChecks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ExtensionsToDeleteOnClean>*.intergen.cpp;*.intergen.js.cpp;*.intergen.lua.cpp;$(ExtensionsToDeleteOnClean)</ExtensionsToDeleteOnClean>
+    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
+    <ClangTidyChecks>readability-implicit-bool-conversion;modernize-use-override;bugprone-use-after-move;bugprone-argument-comment;bugprone-infinite-loop;performance-for-range-copy;performance-unnecessary-value-param;performance-move-const-arg</ClangTidyChecks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ExtensionsToDeleteOnClean>*.intergen.cpp;*.intergen.js.cpp;*.intergen.lua.cpp;$(ExtensionsToDeleteOnClean)</ExtensionsToDeleteOnClean>
     <IncludePath>$(UniversalCRT_IncludePath);$(IncludePath)</IncludePath>
+    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
+    <ClangTidyChecks>readability-implicit-bool-conversion;modernize-use-override;bugprone-use-after-move;bugprone-argument-comment;bugprone-infinite-loop;performance-for-range-copy;performance-unnecessary-value-param;performance-move-const-arg</ClangTidyChecks>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

@@ -25,7 +25,7 @@ protected:
         };
 
         int _array_index;
-        
+
         union
         {
             struct {
@@ -73,7 +73,7 @@ public:
     ~fmtstream_lua_capi() {
     };
 
-    void reset(lua_State * L) { 
+    void reset(lua_State * L) {
         DASSERT(L);
         _state = L;
         _init_stack_size = lua_gettop(_state);
@@ -135,7 +135,7 @@ public:
     {
         lua_pushtoken(_state, expected_key);
         lua_gettable(_state, -2);
-        
+
         if(0)
         {
             ::lua::debug_print_stack(_state);
@@ -286,7 +286,7 @@ public:
             }
             else if (t.type == type::T_CHAR) {
                 token tok = lua_totoken(_state, -1);
-                
+
                 if (tok.ptr() == nullptr)
                 {
                     e = ersSYNTAX_ERROR "expected string";
@@ -306,8 +306,8 @@ public:
                     new (_stack.add_uninit()) stack_entry(0, stack_entry::operation_enum::read_array_bit);
                     size_t len = lua_objlen(_state, -1);
                     t.set_count(len, p);
-                } 
-                else 
+                }
+                else
                 {
                     e = ersSYNTAX_ERROR "expected array";
                 }
@@ -339,15 +339,15 @@ public:
             }
         }
         else if (t.type == type::T_STRUCTBGN)
-        {   
+        {
             if (lua_istable(_state, -1))
             {
                 new (_stack.add_uninit()) stack_entry(-1, stack_entry::operation_enum::read_struct_bit);
             }
-            else 
+            else
             {
                 e = ersSYNTAX_ERROR "expected object";
-            } 
+            }
         }
         else
         {
@@ -532,11 +532,11 @@ public:
             lua_pop(_state, 1);
             return ersNO_MORE;
         }
-        else 
+        else
         {
             new (_stack.add_uninit())stack_entry(-1, stack_entry::operation_enum::read_key_val_bit);
         }
-       
+
         return 0;
     }
 
@@ -568,11 +568,11 @@ public:
                 tok.set((const char*)c.extract(n), n);
             }
 
-            if (e == ersNOERR) 
+            if (e == ersNOERR)
             {
                 lua_pushtoken(_state, tok);
 
-                if (_stack.last() && _stack.last()->_write_struct) 
+                if (_stack.last() && _stack.last()->_write_struct)
                 {
                     lua_settable(_state, -3);
                 }
@@ -583,7 +583,7 @@ public:
             e = ersNOT_IMPLEMENTED;
         }
 
-   
+
         return e;
     }
 
@@ -603,12 +603,12 @@ public:
 
             return read_compound_array_content(c, n, count, m);
         }
-        
+
         if (0)
         {
             ::lua::debug_print_stack(_state);
         }
-        
+
         token tok = lua_totoken(_state, -1);
 
         if (t.type == type::T_BINARY)
@@ -633,7 +633,7 @@ public:
                 *count = nc;
             }
         }
-        
+
         return e;
     }
 };
@@ -697,7 +697,7 @@ void check_type_and_throw(lua_State* L)
     {
         result = lua_isboolean(L, -1);
     }
-    else 
+    else
     {
         DASSERT(0 && "not primitive type souldn't get here!!");
     }
@@ -816,12 +816,12 @@ public:
     {
         typedef iref<::lua::registry_handle>(*ifc_create_wrapper_fn)(T*, iref<lua::registry_handle>);
         auto& streamer = THREAD_SINGLETON(lua_streamer_context);
-        
+
         if (val.is_set())
         {
             ::lua::wrap_interface(val.get(), streamer._context)->push_ref();
         }
-        else 
+        else
         {
             lua_pushnil(streamer.get_cur_state());
         }
@@ -844,7 +844,7 @@ public:
     static void to_lua(const coref<T>& val)
     {
         auto& streamer = THREAD_SINGLETON(lua_streamer_context);
-        
+
         ::lua::wrap_data_interface(val, token::clean_type_name<T>(), streamer._context)->push_ref();
         //TODO
     };
@@ -889,7 +889,7 @@ public:
 //        }                                                                                                   \
 //        val = static_cast<CTYPE>(lua_to##LTOPREFIX(L,-1));                                                  \
 //    }                                                                                                       \
-//}                                                                                                           
+//}
 //
 //LUA_FAST_STREAMER(int8, integer, Integer);
 //LUA_FAST_STREAMER(int16, integer, Integer);
@@ -907,17 +907,17 @@ public:
 //LUA_FAST_STREAMER(float, number, Number);
 //LUA_FAST_STREAMER(double, number, Number);
 //
-//template<> 
+//template<>
 //class lua_streamer<bool> {
 //public:
 //    static void to_lua(const bool val) {
-//        auto& streamer = THREAD_SINGLETON(lua_streamer_context); 
-//            lua_State * L = streamer.get_cur_state(); 
-//            lua_pushboolean(L, static_cast<lua_Integer>(val)); 
+//        auto& streamer = THREAD_SINGLETON(lua_streamer_context);
+//            lua_State * L = streamer.get_cur_state();
+//            lua_pushboolean(L, static_cast<lua_Integer>(val));
 //    }
 //    static void to_lua(const bool* val) {
-//        auto& streamer = THREAD_SINGLETON(lua_streamer_context); 
-//        lua_State * L = streamer.get_cur_state(); 
+//        auto& streamer = THREAD_SINGLETON(lua_streamer_context);
+//        lua_State * L = streamer.get_cur_state();
 //        if (val) lua_pushboolean(L, static_cast<lua_Integer>(*val));
 //        else lua_pushnil(L);
 //    }
@@ -926,12 +926,12 @@ public:
 //        lua_State* L = streamer.get_cur_state();
 //        if (!lua_isboolean(L, -1))
 //        {
-//            if (lua_isnoneornil(L, -1))                                                                     
-//            {                                                                                               
-//                throw coid::exception("Nil on the top of the stack!(Undefined variable as argument used?)"); 
-//            }                                                                                               
-//            else                                                                                            
-//            {                                                                                               
+//            if (lua_isnoneornil(L, -1))
+//            {
+//                throw coid::exception("Nil on the top of the stack!(Undefined variable as argument used?)");
+//            }
+//            else
+//            {
 //                throw coid::exception("Value of wrong type on the top of the lua stack! Can't convert to boolean!");
 //            }
 //        }
@@ -950,7 +950,7 @@ inline void from_lua (threadcached<T>& tc) {
     lua_streamer<typename threadcached<T>::storage_type>::from_lua(*tc);
 }
 
-template<class T> 
+template<class T>
 inline void to_lua(const T& v) {
     lua_streamer<T>::to_lua(v);
 }

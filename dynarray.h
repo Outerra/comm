@@ -1107,7 +1107,7 @@ public:
     ///Source data contain 1st bytes of every array element, followed by 2nd bytes and so on
     /// @param data pointer to the transposed source data buffer
     /// @param byte_size total size in bytes, should be multiple of sizeof(T)
-    T* append_transpose_diff_from(const int8* data, uints byte_size)
+    T* append_transpose_diff_from(const uint8* data, uints byte_size)
     {
         uints nitems = byte_size / sizeof(T);
         DASSERT(byte_size == nitems * sizeof(T)); //there should be no remainder

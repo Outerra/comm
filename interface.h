@@ -320,7 +320,7 @@ public:
     template<class ...Vs>
     static void print(log::level type, const token& from, const token& fmt, Vs&&... vs)
     {
-        ref<logmsg> msgr = canlog(type, from);
+        ref<logmsg> msgr = canlog(type, from, nullptr, log::target::primary_log);
         if (!msgr)
             return;
 

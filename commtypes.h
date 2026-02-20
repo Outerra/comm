@@ -131,7 +131,7 @@
 #endif
 
 #if defined(__cpp_concepts) || _MSC_VER >= 1936
-#define COID_REQUIRES(R) requires R
+#define COID_REQUIRES(R) requires (R)
 #define COID_CONCEPTS
 #else
 #define COID_REQUIRES(R)
@@ -308,24 +308,26 @@ public:
         value = NOVAL;
     }
 
+    /// @return true if given id is valid (valid magic header and not undefined)
     bool is_valid() const {
 #ifdef _DEBUG
-        if (!(mark == MAGIC_MARK || value == 0)) __debugbreak();
-#endif
-        return mark == MAGIC_MARK;
-    }
-
-    /// @return 32-bit id if valid, else -1
-    /// @note debug assertion if invalid
-    uint id32() const {
-        if (!is_valid()) {
-#ifdef _DEBUG
+        if (!(value == 0 || mark == MAGIC_MARK))
             __debugbreak();
 #endif
-            return UMAX32;
-        }
+        return value != 0 && mark == MAGIC_MARK;
+    }
+
+    /// @return 32-bit id
+    /// @note debug assertion if invalid
+    uint id32() const {
+#ifdef _DEBUG
+        if (!(mark == MAGIC_MARK || value == 0))
+            __debugbreak();
+#endif
         return idx;
     }
+
+    uint ver32() const { return version; }
 
     bool operator == (const versionid& rhs) const { return value == rhs.value; }
     bool operator != (const versionid& rhs) const { return value != rhs.value; }
