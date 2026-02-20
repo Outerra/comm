@@ -508,10 +508,9 @@ public:
             {
             case type::T_INT:
             {
-                token::tonum<int64> conv;
-                int64 v = conv.xtoint_and_shift(tok);
+                int64 v;
 
-                if (conv.failed())
+                if (!token::tonum<int64>::xtoint_and_shift(tok, v))
                     return ersSYNTAX_ERROR " expected number";
 
                 if (!tok.is_empty())
@@ -533,10 +532,9 @@ public:
             case type::T_VERSIONID:
             case type::T_UINT:
             {
-                token::tonum<uint64> conv;
-                uint64 v = conv.xtouint_and_shift(tok);
+                uint64 v;
 
-                if (conv.failed())
+                if (!token::tonum<uint64>::xtouint_and_shift(tok, v))
                     return ersSYNTAX_ERROR " expected number";
 
                 if (!tok.is_empty())
