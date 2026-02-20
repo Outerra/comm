@@ -703,9 +703,11 @@ public:
 
         char* p = get_append_buf(i + fc);
 
-        char* end;
-        char* zt = charstrconv::num_formatter<uint64>::produce(p, buf, i, fc, sgn, align, &end);
-        *zt = 0;
+        char* end = p;
+        if (p) {
+            char* zt = charstrconv::num_formatter<uint64>::produce(p, buf, i, fc, sgn, align, &end);
+            *zt = 0;
+        }
 
         return uint(end - ptr());
     }
@@ -1237,7 +1239,7 @@ public:
 #ifdef SYSTYPE_MSVC
         struct tm tm;
         localtime_s(&tm, &t.t);
-        
+
         return append_time(tm, flg&(~DATE_TZ), coid::token());
 #else
         time_t tv = (time_t)t.t;

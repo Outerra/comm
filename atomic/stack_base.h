@@ -68,9 +68,6 @@ private:
 #else
         typedef coid::uint32 tag_t;
 #endif
-        ptr_t() : _ptr(0), _pops(0) {}
-
-        ptr_t(node* const ptr, const tag_t pops) : _ptr(ptr), _pops(pops) {}
 
         union {
             struct {
@@ -84,6 +81,11 @@ private:
 #endif
             };
         };
+
+
+        ptr_t() : _ptr(0), _pops(0) {}
+
+        ptr_t(node* const ptr, const tag_t pops) : _ptr(ptr), _pops(pops) {}
 
         ptr_t(const ptr_t& p) { *this = p; }
 

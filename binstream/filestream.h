@@ -333,7 +333,7 @@ public:
         open(s, attr);
     }
 
-    ~filestream() { close(); }
+    ~filestream() { filestream::close(); }
 
 
 private:
@@ -394,13 +394,18 @@ public:
         return filestream::open(name, attr);
     }
 
+    virtual opcd close(bool linger = false) override
+    {
+        return filestream::close(linger);
+    }
+
     bofstream() {}
     explicit bofstream(const zstring& name, const token& attr = "wct")
     {
-        open(name, attr);
+        bofstream::open(name, attr);
     }
 
-    ~bofstream() {}
+    ~bofstream() { bofstream::close(); }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -417,14 +422,18 @@ public:
         return filestream::open(name, attr);
     }
 
+    virtual opcd close(bool linger = false) override
+    {
+        return filestream::close(linger);
+    }
 
     bifstream() {}
     explicit bifstream(const zstring& name, const token& attr = "r")
     {
-        open(name, attr);
+        bifstream::open(name, attr);
     }
 
-    ~bifstream() {}
+    ~bifstream() { bifstream::close(); }
 };
 
 COID_NAMESPACE_END

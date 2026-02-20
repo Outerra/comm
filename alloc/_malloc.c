@@ -521,6 +521,8 @@ MAX_RELEASE_CHECK_RATE   default: 4095 unless not HAVE_MMAP
   improvement at the expense of carrying around more memory.
 */
 
+// NOLINTBEGIN
+
 //<COID:
 //#define USE_DL_PREFIX
 //#define MSPACES 1
@@ -5477,7 +5479,7 @@ size_t dlmalloc_set_footprint_limit(size_t bytes) {
   size_t result;  /* invert sense of 0 */
   if (bytes == 0)
     result = granularity_align(1); /* Use minimal size */
-  if (bytes == MAX_SIZE_T)
+  else if (bytes == MAX_SIZE_T)
     result = 0;                    /* disable */
   else
     result = granularity_align(bytes);
@@ -6536,3 +6538,5 @@ void abort_routine()
     __debugbreak();
     abort();
 }
+
+// NOLINTEND

@@ -157,7 +157,7 @@ $-[/event]$
         return !_events[id].IsEmpty() && !_events[id].Get(iso)->IsUndefined();
     }
 
-    virtual void force_bind_script_events() {
+    virtual void force_bind_script_events() override {
         v8::Isolate* iso = v8::Isolate::GetCurrent();
         v8::HandleScope handle_scope__(iso);
         v8::TryCatch js_trycatch(iso);

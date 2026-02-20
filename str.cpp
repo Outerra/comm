@@ -95,10 +95,9 @@ bool charstr::append_from_file(const char* path)
         while (rs == bufsize);
 
         resize(old + total);
-        return true;
+        fclose(fp);
     }
-
-    return false;
+    return fp != 0;
 }
 
 } //namespace coid

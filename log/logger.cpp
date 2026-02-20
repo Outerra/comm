@@ -199,7 +199,6 @@ public:
 
         if (_obj->_logger) {
             //first destroy just queues the message
-            logger* x = _obj->_logger;
             _obj->finalize(this);
         }
         else {

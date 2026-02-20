@@ -340,8 +340,6 @@ int $..name$_lua_dispatcher::lua_$name$$@order$(lua_State* L)
 
 bool $..name$_lua_dispatcher::can_use_ffi_$name$$@order$()
 {
-    const MetaDesc * dsc = nullptr;
-
     return false;
 }
 
