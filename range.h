@@ -114,6 +114,7 @@ public:
 
     /// @return length of range
     uints size() const { return _pte - _ptr; }
+    uints count() const { return _pte - _ptr; }
 
     uints byte_size() const { return size() * sizeof(T); }
 
@@ -653,6 +654,15 @@ public:
             return 0;
 
         return _ptr + s - 1;
+    }
+
+    T* first() const
+    {
+        uints s = size();
+        if (s == 0)
+            return nullptr;
+
+        return _ptr;
     }
 
     void reset() {
