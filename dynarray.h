@@ -2045,6 +2045,8 @@ range<T>& range<T>::operator = (const dynarray<T, COUNT, A>& a)
 {
     _ptr = const_cast<T*>(a.ptr());
     _pte = const_cast<T*>(a.ptre());
+
+    return *this;
 }
 
 template<class T>
@@ -2053,6 +2055,8 @@ range<T>& range<T>::operator = (const dynarray<std::remove_const_t<T>, COUNT, A>
 {
     _ptr = const_cast<T*>(a.ptr());
     _pte = const_cast<T*>(a.ptre());
+
+    return *this;
 }
 
 
