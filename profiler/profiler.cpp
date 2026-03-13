@@ -51,7 +51,7 @@ uint64 now()
     return coid::nsec_timer::current_time_ns();
 }
 
-void set_thread_name(const char* name)
+void set_thread_name(const coid::token_literal& name)
 {
     if (g_backend)
         g_backend->set_thread_name(name);
@@ -75,13 +75,13 @@ void push_link(uint64 link)
         g_backend->push_link(link);
 }
 
-void push_number(const char* label, uint value)
+void push_number(const coid::token& label, uint value)
 {
     if (g_backend)
         g_backend->push_number(label, value);
 }
 
-void push_string(const char* string)
+void push_string(const coid::token& string)
 {
     if (g_backend)
         g_backend->push_string(string);
@@ -117,7 +117,7 @@ void begin(const coid::token_literal& name, uint8 r, uint8 g, uint8 b)
         g_backend->begin(name, r, g, b);
 }
 
-void begin_slow(const char* name, uint8 r, uint8 g, uint8 b)
+void begin_slow(const coid::token_literal& name, uint8 r, uint8 g, uint8 b)
 {
     if (g_backend)
         g_backend->begin_slow(name, r, g, b);

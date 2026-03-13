@@ -49,13 +49,13 @@ public:
     virtual void gpu_frame() = 0;
 
     virtual void begin(const coid::token_literal& token, uint8 r, uint8 g, uint8 b) = 0;
-    virtual void begin_slow(const char* token, uint8 r, uint8 g, uint8 b) = 0;
+    virtual void begin_slow(const coid::token_literal& token, uint8 r, uint8 g, uint8 b) = 0;
     virtual void end() = 0;
     virtual void begin_gpu(const coid::token_literal& name, uint64 timestamp, uint order) = 0;
     virtual void end_gpu(const coid::token_literal& name, uint64 timestamp, uint order) = 0;
-    virtual void set_thread_name(const char* name) = 0;
-    virtual void push_string(const char* string) = 0;
-    virtual void push_number(const char* label, uint value) = 0;
+    virtual void set_thread_name(const coid::token& name) = 0;
+    virtual void push_string(const coid::token& string) = 0;
+    virtual void push_number(const coid::token& label, uint value) = 0;
     virtual void push_link(uint64 link) = 0;
 };
 
@@ -66,12 +66,12 @@ void frame();
 void gpu_frame();
 
 void begin(const coid::token_literal& name, uint8 r = 0xa0, uint8 g = 0xa0, uint8 b = 0xa0);
-void begin_slow(const char* name, uint8 r = 0xa0, uint8 g = 0xa0, uint8 b = 0xa0);
-void push_string(const char* string);
-void push_number(const char* label, uint value);
+void begin_slow(const coid::token_literal& name, uint8 r = 0xa0, uint8 g = 0xa0, uint8 b = 0xa0);
+void push_string(const coid::token& string);
+void push_number(const coid::token& label, uint value);
 void push_link(uint64 link);
 void end();
-void set_thread_name(const char* name);
+void set_thread_name(const coid::token_literal& name);
 void begin_gpu(const coid::token_literal& name, uint64 timestamp, uint order);
 void end_gpu(const coid::token_literal& name, uint64 timestamp, uint order);
 
