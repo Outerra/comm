@@ -350,6 +350,7 @@
       <Filter>containers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\tagged_ptr.h" />
+    <ClInclude Include="..\..\..\bitfield.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\crypt\sha1.cpp">

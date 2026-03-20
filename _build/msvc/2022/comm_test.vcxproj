@@ -263,7 +263,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\..\include;$(ProjectDir)..\..\..\..\;$(ProjectDir)..\..\..\..\zlib;$(ProjectDir)..\..\..\..\zstd\lib;$(ProjectDir)..\..\..\..\bzip2;$(ProjectDir)..\..\..\..\minilzo</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\include;$(ProjectDir)..\..\..\..\;$(ProjectDir)..\..\..\..\zlib;$(ProjectDir)..\..\..\..\zstd\lib;$(ProjectDir)..\..\..\..\bzip2;$(ProjectDir)..\..\..\..\minilzo</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -403,6 +403,7 @@
     <ClCompile Include="..\..\..\comm_test\intergen\data.intergen.cpp" />
     <ClCompile Include="..\..\..\comm_test\intergen\data_client_test.cpp" />
     <ClCompile Include="..\..\..\comm_test\main.cpp" />
+    <ClCompile Include="bitfield.cpp" />
   </ItemGroup>
   <ItemGroup>
     <hpp Include="..\..\..\comm_test\intergen\data.hpp" />

@@ -44,7 +44,7 @@ static void test_miki()
 dynarray<uint> test_return_stack()
 {
     dynarray<uint> buf = STACK_RESERVE(uint, 250);
-    DASSERT(buf.reserved_stack() >= 250 * sizeof(uint));
+    DASSERT(buf.reserved_stack_byte_size() >= 250 * sizeof(uint));
 
     buf.push(9);
 
@@ -96,10 +96,10 @@ void test_malloc()
 
     dynarray<uint8> edge_test;
     edge_test.reserve_virtual(0x10000 - 4 * sizeof(size_t));    //should allocate just one page
-    DASSERT(edge_test.reserved_virtual() == 0x10000 - 4 * sizeof(size_t));
+    DASSERT(edge_test.reserved_virtual_byte_size() == 0x10000 - 4 * sizeof(size_t));
 
     dynarray<uint8> stack_test(STACK_RESERVE(uint8, 250));
-    DASSERT(stack_test.reserved_stack() >= 250);
+    DASSERT(stack_test.reserved_stack_byte_size() >= 250);
 
     //test if returned stack memory gets converted to heap on return
     //dynarray<uint> nonstack = test_return_stack();
@@ -110,7 +110,7 @@ void test_malloc()
 
     buf.reserve_virtual(s);
 
-    size_t rs = buf.reserved_virtual();
+    size_t rs = buf.reserved_virtual_byte_size();
     DASSERT(rs >= 1000000);
 
     uint8* p = buf.add(4000);

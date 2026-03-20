@@ -406,6 +406,7 @@
     <ClInclude Include="..\..\..\containers\circular_queue.h">
       <Filter>containers</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\bitfield.h" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="..\..\..\doc\visualc-syntax\coid.natvis" />

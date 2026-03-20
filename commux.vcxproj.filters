@@ -431,5 +431,6 @@
     <ClInclude Include="metastream\fmtstream_lua_capi.h">
       <Filter>metastream</Filter>
     </ClInclude>
+    <ClInclude Include="bitfield.h" />
   </ItemGroup>
 </Project>

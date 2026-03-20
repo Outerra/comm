@@ -323,9 +323,13 @@ struct slot : storage<L, Es...>
 void data_client_test();
 void binstring_test();
 
+void bitfield_tests();
+
+
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
 {
+    bitfield_tests();
     singleton_test();
     binstring_test();
     //compot();

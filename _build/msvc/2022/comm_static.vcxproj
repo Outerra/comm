@@ -481,6 +481,7 @@
     <ClInclude Include="..\..\..\binstream\stlstream.h" />
     <ClInclude Include="..\..\..\binstream\txtstream.h" />
     <ClInclude Include="..\..\..\binstring.h" />
+    <ClInclude Include="..\..\..\bitfield.h" />
     <ClInclude Include="..\..\..\bitrange.h" />
     <ClInclude Include="..\..\..\coder\bufpack_zstd.h" />
     <ClInclude Include="..\..\..\coder\lz4\lz4.h" />
