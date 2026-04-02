@@ -2071,30 +2071,6 @@ public:
         return *this;
     }
 
-    template<typename T>
-    metastream& operator || (T*& a)
-    {
-        if (_binr) {
-            throw exception("unsupported");
-        }
-        else if (_binw) {
-            write_optional(a);
-        }
-        else {
-            if (meta_decl_raw_pointer(
-                typeid(T*).name(),
-                true,
-                (ints)&a,
-                [](const void* a) -> const void* { return *static_cast<T* const*>(a); },
-                [](const void* a) -> uints { return 0; },
-                [](void* a, uints& i) -> void* { return static_cast<T**>(a) + i++; },
-                [](const void* a, uints& i) -> const void* { return *static_cast<T const* const*>(a) + i++; }
-            ))
-                *this || *(T*)0;
-        }
-        return *this;
-    }
-
     metastream& operator || (timet& a) { return meta_base_type("time", a); }
 
     metastream& operator || (opcd& a) { return meta_base_type("opcd", a); }
