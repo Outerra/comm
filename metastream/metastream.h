@@ -183,17 +183,17 @@ public:
     ///Define a compound type that streams as a different (possibly plain) type
     /// @param set void function(T&, Tstream&&) receiving object from stream
     /// @param get [const Tstream& | Tstream] function(T&) returning object to stream
-    template<typename Tstream, typename T, typename Fn, typename FnIn, typename FnOut>
+    template<typename AsType, typename T, typename Fn, typename FnIn, typename FnOut>
     metastream& compound_type_stream_as_type(T& v, Fn fn, FnIn set, FnOut get)
     {
         if (_binw) {
-            const Tstream& val = get(v);
-            *this || const_cast<Tstream&>(val);
+            const AsType& val = get(v);
+            *this || const_cast<AsType&>(val);
         }
         else if (_binr) {
-            Tstream val;
+            AsType val;
             *this || val;
-            set(v, std::forward<Tstream>(val));
+            set(v, std::forward<AsType>(val));
         }
         else {
             MetaDesc* md = meta_insert(typeid(T).name(), sizeof(T), false);
@@ -217,7 +217,7 @@ public:
             var.desc = &desc;
             _current_var = &var;
 
-            *this || *(Tstream*)0;
+            *this || *(AsType*)0;
 
             md->streaming_type = desc.children[0].desc;
             _current_var = oldvar;
@@ -2150,20 +2150,23 @@ public:
 
     ///Used for types that stream using a translation to a different type
     /// @param set void function(S&&) receiving object from stream
-    /// @param get [const S& | S] function() returning object to stream
+    /// @param get [const T& | T] function() returning object to stream
     template <typename T, typename FnIn, typename FnOut>
     metastream& operator_indirect(T& a, FnIn set, FnOut get) {
         using S = std::remove_const_t<std::remove_reference_t<decltype(get())>>;
 
         if (stream_writing()) {
-            *this || const_cast<S&>(get());
+            //stream as the type returned from get()
+            decltype(auto) result = get();
+            using base_t = std::remove_const_t<std::remove_reference_t<decltype(result)>>;
+            *this || const_cast<base_t&>(result);
         }
         else if (stream_reading()) {
             if coid_constexpr_if(std::is_same_v<token, S>) {
                 //special handling for tokens that are normally not readable from stream
                 charstr val;
                 *this || val;
-                set(token(val));
+                set(token(val)); //TODO: handle case when set() accepts charstr&& argument?
             }
             else {
                 S val;
