@@ -81,10 +81,35 @@ inline void _BitScanReverse64(ulong* idx, uint64 v) {
 //@{
 //@return position of the lowest or highest bit set
 //@note return value is undefined when the input is 0
-inline uint8 lsb_bit_set(uint32 v)  { DASSERTN(v); unsigned long idx; _BitScanForward(&idx, v);   return uint8(idx); }
-inline uint8 lsb_bit_set(uint64 v)  { DASSERTN(v); unsigned long idx; _BitScanForward64(&idx, v); return uint8(idx); }
-inline uint8 msb_bit_set(uint32 v)  { DASSERTN(v); unsigned long idx; _BitScanReverse(&idx, v);   return uint8(idx); }
-inline uint8 msb_bit_set(uint64 v)  { DASSERTN(v); unsigned long idx; _BitScanReverse64(&idx, v); return uint8(idx); }
+template<typename T>
+COID_REQUIRES((std::is_unsigned_v<T>))
+inline uint8 lsb_bit_set(T value) 
+{ 
+    DASSERTN(value); 
+    unsigned long bit_index; 
+   
+    if coid_constexpr_if(std::is_same_v<uint64, T>) 
+        _BitScanForward64(&bit_index, value);
+    else 
+        _BitScanForward(&bit_index, value);
+    
+    return uint8(bit_index);
+}
+
+template<typename T>
+COID_REQUIRES((std::is_unsigned_v<T>))
+inline uint8 msb_bit_set(T value)  
+{ 
+    DASSERTN(value);
+    unsigned long bit_index;
+
+    if coid_constexpr_if(std::is_same_v<uint64,T>)
+        _BitScanReverse64(&bit_index, value);
+    else
+        _BitScanReverse(&bit_index, value);
+    
+    return uint8(bit_index);
+}
 //@}
 
 #ifdef SYSTYPE_32
@@ -336,6 +361,33 @@ uint clear_bitrange( uints from, uints n, T* ptr )
     }
 
     return count;
+}
+
+
+template<typename T>
+COID_REQUIRES((std::is_integral_v<T>))
+T make_bitmask(uints from, uints count, uints* bits_left = nullptr) 
+{
+    constexpr uint32 type_bitsize= sizeof(T) * 8;
+
+    DASSERT_RETX(from < type_bitsize, "From must be < type_bitsize", T(0));
+    DASSERT_RETX(count > 0, "Count must be > 0", T(0));
+    const uints to = from + count;
+    const uints valid_count = to > type_bitsize? type_bitsize - from : count;
+
+    if (valid_count == type_bitsize)
+    {
+        return T(-1);
+    }
+
+    const T ones = (T(1) << valid_count) - 1;
+
+    if (bits_left)
+    {
+        *bits_left = count - valid_count;
+    }
+
+    return ones << from;
 }
 
 #endif
