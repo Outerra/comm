@@ -391,6 +391,7 @@
     <ClCompile Include="..\..\..\comm_test\binstream.cpp" />
     <ClCompile Include="..\..\..\comm_test\binstring.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\atomic-test.cpp" />
+    <ClCompile Include="..\..\..\comm_test\comm\bitfield.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\job.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\malloc.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\meta.cpp" />
@@ -403,7 +404,6 @@
     <ClCompile Include="..\..\..\comm_test\intergen\data.intergen.cpp" />
     <ClCompile Include="..\..\..\comm_test\intergen\data_client_test.cpp" />
     <ClCompile Include="..\..\..\comm_test\main.cpp" />
-    <ClCompile Include="bitfield.cpp" />
   </ItemGroup>
   <ItemGroup>
     <hpp Include="..\..\..\comm_test\intergen\data.hpp" />

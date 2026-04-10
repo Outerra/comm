@@ -136,12 +136,12 @@ public:
             //lock to access allocator and semaphore
             comm_mutex_guard<comm_mutex> lock(_task_sync);
 
-            granule* p = alloc_data(sizeof(callfn));
+            range<granule> data = alloc_data(sizeof(callfn));
             if (wait_counter_ptr)
             {
                 wait_counter_ptr->fetch_add(1, std::memory_order_relaxed);
             }
-            auto task = new(p) callfn(wait_counter_ptr, fn, std::forward<Args>(args)...);
+            auto task = new(data.ptr()) callfn(wait_counter_ptr, fn, std::forward<Args>(args)...);
 
             _ready_jobs[(int)priority].push_front(task);
 
@@ -171,12 +171,12 @@ public:
             //lock to access allocator and semaphore
             comm_mutex_guard<comm_mutex> lock(_task_sync);
 
-            granule* p = alloc_data(sizeof(callfn));
+            coid::range<granule> data = alloc_data(sizeof(callfn));
             if (wait_counter_ptr)
             {
                 wait_counter_ptr->fetch_add(1, std::memory_order_relaxed);
             }
-            auto task = new(p) callfn(wait_counter_ptr, fn, obj, std::forward<Args>(args)...);
+            auto task = new(data.ptr()) callfn(wait_counter_ptr, fn, obj, std::forward<Args>(args)...);
 
             _ready_jobs[(int)priority].push_front(task);
 
@@ -276,13 +276,13 @@ protected:
         return order;
     }
 
-    granule* alloc_data(uints size)
+    range<granule> alloc_data(uints size)
     {
         uints n = align_to_chunks(size, sizeof(granule));
-        granule* p = _taskdata.add_contiguous_range(n);
+        coid::range<granule> data = _taskdata.add_contiguous_range(n);
 
         //coidlog_devdbg("taskmaster", "pushed task id " << _taskdata.get_item_id(p));
-        return p;
+        return data;
     }
 
     ///

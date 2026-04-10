@@ -832,22 +832,54 @@ public:
     /// @brief Append element. Compatibility with std
     void push_back(T&& v) { push(std::move(v)); }
 
-    ///Push item into array if it doesn't exist
-    /// @return item reference
+    /// @brief Pushes a value into the array only if it does not already exist and returns its index.
+    /// @param value The value to insert if unique.
+    /// @return The reference of the item with value in the array, whether pre-existing or newly inserted.
+    /// @note Complexity: O(n) for the uniqueness scan.
     T& push_unique(const T& v) {
-        ints id = index_of(v);
-        return id < 0
-            ? *push(v)
-            : _ptr[(uints)id];
+        return _ptr[push_unique_index(v)];
     }
 
-    ///Push item into array if it doesn't exist
-    /// @return item reference
+    /// @brief Pushes a value into the array only if it does not already exist and returns its index.
+    /// @param value The value to insert if unique.
+    /// @return The reference of the item with value in the array, whether pre-existing or newly inserted.
+    /// @note Complexity: O(n) for the uniqueness scan.
     T& push_unique(T&& v) {
+        return _ptr[push_unique_index(std::forward<T>(v))];
+    }
+
+    /// @brief Pushes a value into the array only if it does not already exist and returns its index.
+    /// @param value The value to insert if unique.
+    /// @return The index of value in the array, whether pre-existing or newly inserted.
+    /// @note Complexity: O(n) for the uniqueness scan.
+    count_t push_unique_index(const T& v)
+    {
         ints id = index_of(v);
-        return id < 0
-            ? *push(std::forward<T>(v))
-            : _ptr[(uints)id];
+
+        if (id < 0)
+        {
+            push(v);
+            return count() - 1;
+        }
+
+        return coid::down_cast<count_t>(id);
+    }
+
+    /// @brief Pushes a value into the array only if it does not already exist and returns its index.
+    /// @param value The value to insert if unique.
+    /// @return The index of value in the array, whether pre-existing or newly inserted.
+    /// @note Complexity: O(n) for the uniqueness scan.
+    count_t push_unique_index(T&& v)
+    {
+        ints id = index_of(v);
+
+        if (id < 0)
+        {
+            push(std::forward<T>(v));
+            return count() - 1;
+        }
+
+        return coid::down_cast<count_t>(id);
     }
 
 
@@ -890,6 +922,7 @@ public:
 
     ///Push element into array if it's not already there, linear search
     /// @return 0 if already exists, pointer to the new item at the end otherwise
+    [[deprecated("Use push_unique")]]
     T* push_key(T&& v)
     {
         uints c = _count();

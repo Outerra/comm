@@ -434,9 +434,9 @@ public:
         return id;
     }
 
-    ///Add contiguous range of objects initialized with default constructors
-    /// @return pointer to the first item or nullptr if contiguous can't be allocated
-    T* add_contiguous_range(uints n)
+    /// @brief Add contiguous range of objects initialized with default constructors
+    /// @return range of items or empty range if contiguous can't be allocated
+    range<T> add_contiguous_range(uints n)
     {
         if coid_constexpr_if (!LINEAR) {
             if (n > storage_t::page::ITEMS)
@@ -444,9 +444,9 @@ public:
         }
 
         if (n == 0)
-            return 0;
+            return range<T>();
         if (n == 1)
-            return add();
+            return range<T>(add(), 1);
 
         uints nold;
         uints id = alloc_range_contiguous<false>(n, &nold);
@@ -458,7 +458,7 @@ public:
                 nold--;
             });
 
-        return ptr(id);
+        return range<T>(ptr(id), n);
     }
 
     ///Delete object by pointer
