@@ -216,6 +216,9 @@ bool directory::subpath(token root, token& path)
         token r = root.cut_left_group(DIR_SEPARATORS);
         token p = path.cut_left_group(DIR_SEPARATORS);
 
+        //was compacted?
+        DASSERT_RET(r != ".."_T && p != ".."_T && r != '.' && p != '.', false);
+
         if (!r.cmpeqi(p)) {
             path._ptr = p._ptr;
             return false;
@@ -516,14 +519,14 @@ bool directory::is_directory_empty(const coid::token& directory_path)
     {
         buf << DIR_SEPARATOR_STRING << "*"_T;
     }
-    
+
     buf << "*"_T;
 
     WIN32_FIND_DATA win32_file;
     HANDLE find_handle = INVALID_HANDLE_VALUE;
 
     find_handle = FindFirstFile(buf.c_str(), &win32_file);
-    if (find_handle == INVALID_HANDLE_VALUE) 
+    if (find_handle == INVALID_HANDLE_VALUE)
     {
         return false;
     }
@@ -629,9 +632,9 @@ directory::verify_path_syntax_result_enum directory::verify_path_syntax(const co
         if (tok.is_empty())
         {
             return verify_path_syntax_result_enum::valid_absolue_directory_path;
-        }
     }
-    
+    }
+
     cut = tok;
 
     while (cut.is_set())

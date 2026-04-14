@@ -161,6 +161,9 @@ bool directory::subpath(token root, token& path)
         token r = root.cut_left(DIR_SEPARATORS);
         token p = path.cut_left(DIR_SEPARATORS);
 
+        //was compacted?
+        DASSERT_RET(r != ".."_T && p != ".."_T && r != '.' && p != '.', false);
+
         if (r != p) {
             path._ptr = p._ptr;
             return false;

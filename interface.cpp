@@ -348,19 +348,20 @@ public:
     /// @param curpath current directory
     /// @param incpath path to include/append to the current dir
     /// @param dst [out] output path (absolute)
-    /// @param relpath [out] gets relative path from root
+    /// @param relpath [inout] non-null indicates rel paths must lie below curpath, gets relative path from root
     /// @note if relpath is null, relative incpath can only refer to a sub-path below curpath
-    /// @note relpath is set to a null token when incpath was relative to curpath and bellow it
+    /// @note relpath is set to a null token when incpath was relative to curpath but not under the root path
     virtual bool include_path(const token& curpath, const token& incpath, charstr& dst, token* relpath)
     {
         bool slash = incpath.first_char() == '/' || incpath.first_char() == '\\';
         DASSERT(!_root_path.is_empty());
 
         bool relative = !slash && !directory::is_absolute_path(incpath);
-        bool relsub = false;
+        bool is_rel_subpath = false;
 
         if (relative)
         {
+            //relative paths (can be also outside the root path)
             if (!current_dir(curpath, dst) || !directory::compact_path(dst, '/'))
                 return false;
 
@@ -369,10 +370,10 @@ public:
                 return false;
 
             //a relative include is trusted, it is not run through the access check
-            relsub = true;
+                is_rel_subpath = true;
         }
         else {
-            //absolute
+            //absolute paths (must be below the root path)
             dst = _root_path;
 
             token append = incpath;
@@ -385,8 +386,8 @@ public:
 
         token rpath = dst;
 
-        if (relsub) {
-            //path was relative, no access check but still try returning relpath
+        if (is_rel_subpath) {
+            //path was relative, no access check but still try returning relpath (to root)
             if (relpath) {
                 if (directory::subpath(_root_path, rpath))
                     *relpath = rpath;
