@@ -100,7 +100,7 @@
     <DisplayString Condition="_p == 0">{{empty}}</DisplayString>
     <DisplayString>{_p,x}</DisplayString>
 </Type>	
-	
+    
 <Type Name="coid::versionid">
   <DisplayString Condition="mark == 0">{{empty}}</DisplayString>
   <DisplayString Condition="mark != 0x5c">{{corrupt}}</DisplayString>
@@ -118,6 +118,29 @@
   <Expand>
     <Item Name="[id]" ExcludeView="simple">idx</Item>
     <Item Name="[version]" ExcludeView="simple" >version</Item>
+  </Expand>
+</Type>
+<Type Name="coid::bitfield&lt;*,*,*&gt;">
+  <DisplayString>Bits count: {$T1}</DisplayString>
+  <Expand>
+    <CustomListItems>
+      <Variable Name="bit_index" InitialValue="0" />
+      <Variable Name="word_index" InitialValue="0" />
+      <Variable Name="bit_in_word" InitialValue="0" />
+      <Variable Name="bits_per_word" InitialValue="sizeof($T2) * 8"/>
+      <Loop>
+        <Break Condition="bit_index >= $T1" />
+
+        <Exec>word_index = bit_index / bits_per_word</Exec>
+        <Exec>bit_in_word = bit_index % bits_per_word</Exec>
+
+        <If Condition="(_bits[word_index] &amp; (1 &lt;&lt; bit_in_word)) != 0">
+          <Item>($T3)bit_index</Item>
+        </If>
+
+        <Exec>bit_index++</Exec>
+      </Loop>
+    </CustomListItems>
   </Expand>
 </Type>
 
