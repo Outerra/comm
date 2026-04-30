@@ -44,22 +44,45 @@
 
 COID_NAMESPACE_BEGIN
 
-template <uint32 bit_count, typename word_type = uints, typename bit_index_type = uint8>
+namespace detail
+{
+    template<uint32 bit_size>
+    using bits_to_uint_type =
+        std::conditional_t<(bit_size <= 8), uint8,
+        std::conditional_t<(bit_size <= 16), uint16,
+        std::conditional_t<(bit_size <= 32), uint32, uint64>>>;
+
+    template<uint32 max_value>
+    using max_value_to_uint_type =
+        std::conditional_t<(max_value <= 0xff), uint8,
+        std::conditional_t<(max_value <= 0xffff), uint16,
+        std::conditional_t<(max_value <= 0xffffffff), uint32, uint64>>>;
+
+
+
+}; // end of namespace detail
+
+
+template <uint32 bit_size, typename bit_index_type = detail::max_value_to_uint_type<bit_size>>
 class bitfield
 {
 protected: // inner definitions only
+    using word_type = detail::bits_to_uint_type<bit_size>;
+    using bit_index_uint_type = detail::bits_to_uint_type<sizeof(bit_index_type) << 3>;
     static constexpr uint8 word_size = sizeof(word_type);
-    static constexpr uint8 word_bit_count = sizeof(word_type) << 3;
-    static constexpr uint8 word_bit_index_mask = word_bit_count - 1;
+    static constexpr uint8 word_bit_size = sizeof(word_type) << 3;
+    static constexpr bit_index_uint_type word_bit_index_mask = word_bit_size - 1;
     static constexpr uint8 bit_index_to_word_index_shift = word_size == 8 ? 6 : word_size == 4 ? 5 : word_size == 2 ? 4 : word_size == 1 ? 3 : -1;
     
     static_assert(bit_index_to_word_index_shift != -1);
 
-    static constexpr uint32 word_count = coid::align_to_chunks(bit_count, word_bit_count);
+    static constexpr uint32 word_count = coid::align_to_chunks(bit_size, word_bit_size);
 
     static constexpr uints byte_size = word_size * word_count;
 
 public:
+
+    static constexpr bit_index_type invalid_bit_index = bit_index_type(-1);
 
     /// @brief Get set bit count
     /// @return Count of the bits set
@@ -78,7 +101,7 @@ public:
     /// @return Count of the bits unset
     uint32 get_unset_bit_count() const
     {
-        return bit_count - get_set_bit_count();
+        return bit_size - get_set_bit_count();
     }
 
     /// @brief Checks all bits are unset
@@ -113,22 +136,22 @@ public:
 
     /// @brief Get index of the next set bit starting from given bit index
     /// @tparam noassert - When true the check and assert on bit index validity is disabled
-    /// @param bit_index - starting bit index or -1 for the start from the first index
+    /// @param bit_index - starting bit index or invalid_bit_index for the start from the first index
     /// @return Index of the first set bit with higher index than bit_index
     template<bool noassert = false>
     bit_index_type get_next_set_bit_index(bit_index_type bit_index) const
     {
-        const uint32 next_bit_index = static_cast<uint32>(bit_index) + 1;
+        const bit_index_uint_type next_bit_index = static_cast<bit_index_uint_type>(bit_index) + 1;
         if coid_constexpr_if(!noassert)
         {
-            DASSERT_RETX(next_bit_index >= 0 && next_bit_index <= bit_count, "Invalid bit index", -1);
+            DASSERT_RETX(next_bit_index >= 0 && next_bit_index <= bit_size, "Invalid bit index", -1);
         }
 
         uint32 word_index = next_bit_index >> bit_index_to_word_index_shift;
 
         if (word_index < word_count)
         {
-            const uint32 word_bit_index = next_bit_index & word_bit_index_mask;
+            const bit_index_uint_type word_bit_index = next_bit_index & word_bit_index_mask;
             word_type word = _bits[word_index] & (static_cast<word_type>(-1) << word_bit_index);
 
             do
@@ -142,20 +165,20 @@ public:
             } while (word_index < word_count);
         }
 
-        return bit_index_type(-1);
+        return invalid_bit_index;
     }
 
     /// @brief Get index of the previous set bit starting from given bit index
     /// @tparam noassert - When true the check and assert on bit index validity is disabled
-    /// @param bit_index - starting bit index or bit_count for the start from the last index
+    /// @param bit_index - starting bit index or bit_size for the start from the last index
     /// @return Index of the first set bit with lesser index than bit_index
     template<bool noassert = false>
     bit_index_type get_prev_set_bit_index(bit_index_type bit_index) const
     {
-        const uint32 next_bit_index = static_cast<uint32>(bit_index) - 1;
+        const bit_index_uint_type next_bit_index = static_cast<bit_index_uint_type>(bit_index) - 1;
         if coid_constexpr_if(!noassert)
         {
-            DASSERT_RETX(bit_index > 0 && next_bit_index <= bit_count, "Invalid bit index", -1);
+            DASSERT_RETX(bit_index > 0 && next_bit_index <= bit_size, "Invalid bit index", -1);
         }
 
         uint32 word_index = next_bit_index >> bit_index_to_word_index_shift;
@@ -163,7 +186,7 @@ public:
         if (word_index < word_count)
         {
             const uint32 word_bit_index = next_bit_index & word_bit_index_mask;
-            word_type word = _bits[word_index] & (static_cast<word_type>(-1) >> (word_bit_count - word_bit_index - 1));
+            word_type word = _bits[word_index] & (static_cast<word_type>(-1) >> (word_bit_size - word_bit_index - 1));
             
             do
             {
@@ -176,7 +199,7 @@ public:
             } while (word_index < word_count);
         }
 
-        return bit_index_type(-1);
+        return invalid_bit_index;
     }
 
     /// @brief Get the index of the first bit that is set
@@ -190,7 +213,7 @@ public:
     /// @return Index of the last bit set or -1 if none
     bit_index_type get_last_set_bit_index() const
     {
-        return get_prev_set_bit_index<true>(bit_count);
+        return get_prev_set_bit_index<true>(bit_size);
     }
 
     /// @brief Checks if bit on provided index is set
@@ -198,7 +221,7 @@ public:
     /// @return true if the bit on provided index is set
     bool is_bit_set(bit_index_type bit_index) const
     {
-        DASSERT_RETX(static_cast<uint32>(bit_index) < bit_count, "Invalid bit index", false);
+        DASSERT_RETX(static_cast<uint32>(bit_index) < bit_size, "Invalid bit index", false);
 
         const word_type bit_mask = word_type(1) << (static_cast<uint32>(bit_index) & word_bit_index_mask);
         return _bits[static_cast<uint32>(bit_index) >> bit_index_to_word_index_shift] & bit_mask;
@@ -208,7 +231,7 @@ public:
     /// @param bit_index - index of the bit to set
     void set_bit(bit_index_type bit_index)
     {
-        DASSERT_RETX(static_cast<uint32>(bit_index) < bit_count, "Invalid bit index");
+        DASSERT_RETX(static_cast<uint32>(bit_index) < bit_size, "Invalid bit index");
 
         const word_type bit_mask = word_type(1) << (static_cast<uint32>(bit_index) & word_bit_index_mask);
         _bits[static_cast<uint32>(bit_index) >> bit_index_to_word_index_shift] |= bit_mask;
@@ -218,7 +241,7 @@ public:
     /// @param bit_index - index of the bit to unset
     void unset_bit(bit_index_type bit_index)
     {
-        DASSERT_RETX(static_cast<uint32>(bit_index) < bit_count, "Invalid bit index");
+        DASSERT_RETX(static_cast<uint32>(bit_index) < bit_size, "Invalid bit index");
 
         const word_type bit_mask = word_type(1) << (static_cast<uint32>(bit_index) & word_bit_index_mask);
         _bits[static_cast<uint32>(bit_index) >> bit_index_to_word_index_shift] &= ~bit_mask;
@@ -241,10 +264,56 @@ public:
     /// @param bit_index - index of the bit to flip
     void flip_bit(bit_index_type bit_index)
     {
-        DASSERT_RETX(static_cast<uint32>(bit_index) < bit_count, "Invalid bit index");
+        DASSERT_RETX(static_cast<uint32>(bit_index) < bit_size, "Invalid bit index");
 
         const word_type bit_mask = word_type(1) << (static_cast<uint32>(bit_index) & word_bit_index_mask);
         _bits[static_cast<uint32>(bit_index) >> bit_index_to_word_index_shift] ^= bit_mask;
+    }
+
+    template<typename T>
+    void insert_bits(const T& value, uint32 bit_count, uint32 write_bit_offset, uint32 read_bit_offset = 0)
+    {
+        DASSERT_RETX(bit_count > 0, "Must be > 0");
+        DASSERT_RETX(write_bit_offset + bit_count < bit_size, "Bits out of bounds");
+        DASSERT_RETX(read_bit_offset + bit_count < sizeof(T) << 3, "Bits out of bounds");
+
+        do
+        {
+            const uint32 source_word_index = read_bit_offset >> bit_index_to_word_index_shift;
+            const uint32 destination_word_index = write_bit_offset >> bit_index_to_word_index_shift;
+            const word_type* source_word_ptr = reinterpret_cast<const word_type*>(&value) + source_word_index;
+            word_type* destination_word_ptr = reinterpret_cast<word_type*>(&_bits) + destination_word_index;
+
+            const bit_index_uint_type source_word_bit_offset = read_bit_offset & word_bit_index_mask;
+            const bit_index_uint_type destination_word_bit_offset = write_bit_offset & word_bit_index_mask;
+            bit_index_uint_type bits_to_process_count = source_word_bit_offset > destination_word_bit_offset ? word_bit_size - source_word_bit_offset : word_bit_size - destination_word_bit_offset;
+            if (bits_to_process_count > bit_count)
+            {
+                bits_to_process_count = bit_count;
+            }
+
+            const word_type mask_base = bits_to_process_count == word_bit_size ? word_type(-1) : ((word_type(1) << bits_to_process_count) - 1);
+            const word_type read_mask = mask_base << source_word_bit_offset;
+            const word_type write_mask = mask_base << destination_word_bit_offset;
+
+            // clear the bit section in the destination word
+            *destination_word_ptr &= ~(write_mask);
+            const word_type word_to_write = (*source_word_ptr) & read_mask;
+
+            if (source_word_bit_offset < destination_word_bit_offset)
+            {
+                *destination_word_ptr |= word_to_write << (destination_word_bit_offset - source_word_bit_offset);
+            }
+            else
+            {
+                *destination_word_ptr |= word_to_write >> (source_word_bit_offset - destination_word_bit_offset);
+            }
+
+            write_bit_offset += bits_to_process_count;
+            read_bit_offset += bits_to_process_count;
+            bit_count -= bits_to_process_count;
+        } 
+        while (bit_count > 0);
     }
 
     /// @brief Resets all the bits to 0
@@ -276,6 +345,9 @@ public:
         }
     }
 
+    /// @brief Bitwise "AND" operator with bitfield operand
+    /// @param rhs - bitfield value to perform operation with
+    /// @return Bitfield resulting from "AND" operation between operands
     bitfield operator&(const bitfield& rhs) const
     {
         bitfield result;
@@ -287,11 +359,26 @@ public:
         return result;
     }
 
+    /// @brief 	Unary complement operator
+    /// @return Bit inverted bitfield
+    bitfield operator~() const
+    {
+        bitfield result;
+        for (uint32 i = 0; i < word_count; ++i)
+        {
+            result._bits[i] = ~_bits[i];
+        }
+
+        return result;
+    }
+
+    /// @brief Check if if the bit on the bit index is set
+    /// @param bit_index - index to check
+    /// @return True when the bit is set
     bool operator&(bit_index_type bit_index) const
     {
         return is_bit_set(bit_index);
     }
-
 
     bitfield(const coid::range<uint8>& bytes)
     {
@@ -317,21 +404,9 @@ protected: // members only
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-namespace detail
-{
-    template<uint32 bit_count>
-    using bits_to_uint_type =
-        std::conditional_t<(bit_count <= 8), uint8,
-        std::conditional_t<(bit_count <= 16), uint16,
-        std::conditional_t<(bit_count <= 32), uint32,
-        std::conditional_t<(bit_count <= 64), uint64, void>>>>;
-
-}; // end of namespace detail
-
-
 template<typename T, T count_value>
 COID_REQUIRES((std::is_enum_v<T>))
-using enum_bitfield = bitfield<static_cast<uint32>(count_value), detail::bits_to_uint_type<static_cast<uint32>(count_value)>, T>;
+using enum_bitfield = bitfield<static_cast<uint32>(count_value), T>;
 
 
 COID_NAMESPACE_END

@@ -293,7 +293,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\..\include;$(ProjectDir)..\..\..\..\;$(ProjectDir)..\..\..\..\zlib;$(ProjectDir)..\..\..\..\zstd\lib;$(ProjectDir)..\..\..\..\bzip2;$(ProjectDir)..\..\..\..\minilzo</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\include;$(ProjectDir)..\..\..\..\;$(ProjectDir)..\..\..\..\zlib;$(ProjectDir)..\..\..\..\zstd\lib;$(ProjectDir)..\..\..\..\bzip2;$(ProjectDir)..\..\..\..\minilzo</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -324,7 +324,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\..\include;$(ProjectDir)..\..\..\..\;$(ProjectDir)..\..\..\..\zlib;$(ProjectDir)..\..\..\..\zstd\lib;$(ProjectDir)..\..\..\..\bzip2;$(ProjectDir)..\..\..\..\minilzo</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\include;$(ProjectDir)..\..\..\..\;$(ProjectDir)..\..\..\..\zlib;$(ProjectDir)..\..\..\..\zstd\lib;$(ProjectDir)..\..\..\..\bzip2;$(ProjectDir)..\..\..\..\minilzo</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -354,7 +354,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\..\include;$(ProjectDir)..\..\..\..\;$(ProjectDir)..\..\..\..\zlib;$(ProjectDir)..\..\..\..\zstd\lib;$(ProjectDir)..\..\..\..\bzip2;$(ProjectDir)..\..\..\..\minilzo</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\include;$(ProjectDir)..\..\..\..\;$(ProjectDir)..\..\..\..\zlib;$(ProjectDir)..\..\..\..\zstd\lib;$(ProjectDir)..\..\..\..\bzip2;$(ProjectDir)..\..\..\..\minilzo</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
