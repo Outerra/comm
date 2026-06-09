@@ -35,6 +35,8 @@ void float_test()
     }
 }
 
+void execute_directory_tests();
+
 using namespace coid;
 
 
@@ -326,6 +328,7 @@ void binstring_test();
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
 {
+    execute_directory_tests();
     singleton_test();
     binstring_test();
     //compot();

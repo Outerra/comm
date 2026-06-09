@@ -573,7 +573,7 @@ int File::parse(token path, const char* ref_file, int ref_line)
     out << "processing " << cpath << " file ...\n";
 
     token name = cpath;
-    name.cut_left_group_back("\\/", token::cut_trait_remove_sep_default_empty());
+    name.cut_left_group_back(DIR_SEPARATORS, token::cut_trait_remove_sep_default_empty());
 
     fpath = directory::get_cwd();
     directory::append_path(fpath, cpath);

@@ -199,7 +199,7 @@ struct container {
 
 struct aaa {
     int x;
-    char* salama;
+    //char* salama;
     int16 bordel[7];
 
     container c;
@@ -210,7 +210,7 @@ struct aaa {
     friend metastream& operator || (metastream& m, aaa& v) {
         return m.compound_type(v, [&]() {
             m.member("x", v.x);
-            m.member("salama", v.salama);
+            //m.member("salama", v.salama);
             m.member("bordel", v.bordel);
             m.member("c", v.c);
             m.member("str", v.string);

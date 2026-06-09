@@ -154,9 +154,8 @@ bool directory::is_entry_subdirectory() const
 {
     if (!is_entry_directory()) return false;
 
-    static token up = "..";
     token name = get_last_file_name_token();
-    return name != '.' && name != up;
+    return name != CURRENT_DIR_SEGMENT && name != PARENT_DIR_SEGMENT;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -450,7 +449,6 @@ void directory::find_files(
     const coid::function<void(const find_result& file_info)>& fn)
 {
     //*** constant that needs to be constructed just once
-    static constexpr coid::token_literal dotdot(".."_T);
 
     //*** allocate memory that will be reused
     WIN32_FIND_DATA win32_file;
@@ -468,7 +466,7 @@ void directory::find_files(
     {
         const coid::token name(win32_file.cFileName);
 
-        if (name == '.' || name == dotdot)
+        if (name == CURRENT_DIR_SEGMENT || name == PARENT_DIR_SEGMENT)
             continue;
 
         const bool this_is_folder = (win32_file.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
@@ -530,7 +528,7 @@ bool directory::is_directory_empty(const coid::token& directory_path)
     do {
         coid::token file_name(win32_file.cFileName);
 
-        if (!file_name.cmpeqi("."_T) && !file_name.cmpeqi(".."_T))
+        if (!file_name.cmpeqi(CURRENT_DIR_SEGMENT) && !file_name.cmpeqi(PARENT_DIR_SEGMENT))
         {
             result = false;
             break;
@@ -540,6 +538,30 @@ bool directory::is_directory_empty(const coid::token& directory_path)
     FindClose(find_handle);
 
     return result;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+bool directory::is_directory_writable(const coid::token& directory_path)
+{
+    coid::token_literal probe_name = "probe.tst"_T;
+    coid::charstr probe_path(STACK_STRING(directory_path.len() + probe_name.len() + 2));  //< + 2 because of zero terinator and one '/'
+
+    probe_path = directory_path;
+    treat_trailing_separator(probe_path, '/');
+    probe_path << probe_name;
+
+    HANDLE h = CreateFile(probe_path.c_str(), GENERIC_WRITE, 0, 0, CREATE_ALWAYS,
+        FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE, 0);
+
+    if (h != INVALID_HANDLE_VALUE) 
+    {
+        CloseHandle(h);
+
+        return true;
+    }
+    
+    return false;
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -572,9 +594,9 @@ directory::verify_path_syntax_result_enum directory::verify_path_syntax(const co
 
     while (cut.is_set())
     {
-        cut = tok.cut_left_group(DIR_SEPARATORS, coid::token::cut_trait_remove_sep_default_empty());
+        cut = tok.cut_left_group(DIR_SEPARATORS, coid::token::cut_trait_remove_all_default_empty());
 
-        if (cut.is_set() && !cut.cmpeq("."_T) && !cut.cmpeq(".."_T) && !is_valid_name(cut))
+        if (cut.is_set() && !cut.cmpeq(CURRENT_DIR_SEGMENT) && !cut.cmpeq(PARENT_DIR_SEGMENT) && !is_valid_name(cut))
         {
             return verify_path_syntax_result_enum::invalid;
         }
@@ -594,7 +616,6 @@ directory::verify_path_syntax_result_enum directory::verify_path_syntax(const co
         return is_abosolute ? verify_path_syntax_result_enum::valid_absolute_file_path : verify_path_syntax_result_enum::valid_relative_file_path;
     }
 }
-
 
 COID_NAMESPACE_END
 

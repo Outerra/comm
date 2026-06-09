@@ -112,6 +112,59 @@ bool directory::is_valid_name(const coid::token& name)
     return true;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+bool directory::is_same_path(coid::token arg0, coid::token arg1)
+{
+    if (arg0.last_char() == '/' || arg0.last_char() == '\\')
+    {
+        arg0.shift_end(-1);
+    }
+
+    if (arg1.last_char() == '/' || arg1.last_char() == '\\')
+    {
+        arg1.shift_end(-1);
+    }
+
+    coid::token tok0, tok1;
+
+    auto get_next_segment_back = [](coid::token& src_in_out, coid::token& segment)
+        {
+            uint32 seg_count = 1;
+            do
+            {
+                segment = src_in_out.cut_right_group_back(DIR_SEPARATORS, coid::token::cut_trait_remove_all_default_full());
+
+                if (segment == PARENT_DIR_SEGMENT)
+                {
+                    ++seg_count;
+                }
+                else if (segment != CURRENT_DIR_SEGMENT)
+                {
+                    --seg_count;
+                }
+            } while (seg_count > 0 && src_in_out.is_set());
+        };
+
+    while (arg0.is_set() && arg1.is_set())
+    {
+        get_next_segment_back(arg0, tok0);
+        get_next_segment_back(arg1, tok1);
+
+#ifdef SYSTYPE_WIN
+        if (!tok0.cmpeqi(tok1))
+        {
+            return false;
+        }
+#else // SYSTYPE_WIN
+        if (!tok0.cmpeq(tok1))
+        {
+            return false;
+        }
+#endif
+    }
+
+    return arg0.is_empty() && arg1.is_empty();
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 charstr directory::create_tmp_dir(const token& prefix)
@@ -185,7 +238,7 @@ int directory::append_path(charstr& dst, token path, bool keep_below)
 
         bool is_below = true;
 
-        while (path.begins_with(".."_T))
+        while (path.begins_with(PARENT_DIR_SEGMENT))
         {
             if (keep_below)
                 is_below = false;
@@ -217,8 +270,8 @@ int directory::append_path(charstr& dst, token path, bool keep_below)
             token rp = path;
             while (token v = rp.cut_left_group(DIR_SEPARATORS))
             {
-                if (v == '.');
-                else if (v == ".."_T)
+                if (v == CURRENT_DIR_SEGMENT);
+                else if (v == PARENT_DIR_SEGMENT)
                     rdepth--;
                 else
                     rdepth++;
@@ -543,7 +596,7 @@ opcd directory::delete_files(token path_and_pattern)
     if (e != NOERR) return e;
 
     while (dir.next()) {
-        if (dir.get_last_file_name_token() == ".."_T)
+        if (dir.get_last_file_name_token() == PARENT_DIR_SEGMENT)
             continue;
 
         opcd le = delete_file(dir.get_last_full_path());
@@ -635,7 +688,7 @@ bool directory::get_relative_path(token src, token dst, charstr& relout, bool la
     while (src) {
         token rt = src.cut_left_group(DIR_SEPARATORS);
 
-        if (rt == ".."_T) {
+        if (rt == PARENT_DIR_SEGMENT) {
             if (relout) {
                 token r2 = relout;
                 r2--;
@@ -651,7 +704,7 @@ bool directory::get_relative_path(token src, token dst, charstr& relout, bool la
                 return false;
         }
         else if (src || !last_src_is_file) {
-            relout << ".."_T;
+            relout << PARENT_DIR_SEGMENT;
             relout << separator();
         }
     }
@@ -699,7 +752,7 @@ bool directory::compact_path(charstr& dst, char tosep)
 
     do {
         token seg = dtok.cut_left_group(DIR_SEPARATORS);
-        bool isup = seg == ".."_T;
+        bool isup = seg == PARENT_DIR_SEGMENT;
 
         ints d = dtok.ptr() - seg.ptre();
         if (d > 1) {
@@ -713,7 +766,7 @@ bool directory::compact_path(charstr& dst, char tosep)
         if (d > 0 && tosep)
             *(char*)seg.ptre() = tosep;
 
-        if (seg == '.') {
+        if (seg == CURRENT_DIR_SEGMENT) {
             int d = int(dtok.ptr() - seg.ptr());
             dst.del(int(seg.ptr() - dst.ptr()), d);
             dtok.shift_start(-d);

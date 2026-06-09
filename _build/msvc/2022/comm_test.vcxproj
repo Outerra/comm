@@ -391,6 +391,7 @@
     <ClCompile Include="..\..\..\comm_test\binstream.cpp" />
     <ClCompile Include="..\..\..\comm_test\binstring.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\atomic-test.cpp" />
+    <ClCompile Include="..\..\..\comm_test\comm\directory.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\job.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\malloc.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\meta.cpp" />

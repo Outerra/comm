@@ -81,7 +81,7 @@ public:
     ///Open directory for iterating files using the filter
     opcd open(token path_and_pattern) {
         token pattern = path_and_pattern;
-        token path = pattern.cut_left_group_back("\\/", token::cut_trait_remove_sep_default_empty());
+        token path = pattern.cut_left_group_back(DIR_SEPARATORS, token::cut_trait_remove_all_default_empty());
         return open(path, pattern);
     }
 
@@ -394,11 +394,18 @@ public:
     ///Get relative path from src to dst
     static bool get_relative_path(token src, token dst, charstr& relout, bool last_src_is_file = false);
 
-    ///Append \a path to the destination buffer
-    /// @param dst path to append to, also receives the result
-    /// @param path relative path to append; an absolute path replaces the content of dst
-    /// @param keep_below if true, only allows relative paths that cannot get out of the input path
-    /// @return >0 ok, 0 error, <0 if path is ok but possibly outside of input directory
+    /// @brief Appends a relative or absolute path to a destination buffer.
+    /// @param[in,out] dst  The destination path buffer; receives the resolved result.
+    /// @param[in]     path The path component (relative or absolute) to append or apply.
+    /// @param[in]     keep_below If true, restricts the operation to prevent the resulting 
+    ///                           path from escaping the initial directory scope of @p dst.
+    ///
+    /// @return An integer status code indicating the outcome:
+    ///         @retval  1 Success. The path was safely appended or replaced.
+    ///         @retval  0 Error. The operation failed (e.g., buffer overflow, invalid path).
+    ///         @retval -1 Warning/Success. The path is well-formed but escapes the original 
+    ///                    directory scope of @p dst (only possible if @p keep_below is false).
+    /// @note If @p path is absolute, it completely replaces the contents of @p dst.
     static int append_path(charstr& dst, token path, bool keep_below = false);
 
     static bool is_absolute_path(const token& path);
@@ -406,6 +413,8 @@ public:
     /// @return true if path is under or equals root
     /// @note paths must be compact
     static bool is_subpath(token root, token path);
+
+    static bool is_same_path(coid::token arg0, coid::token arg1);
 
     /// @return true if path is under or equals root, if true path is modified to contain the relative path
     /// @note paths must be compact
@@ -497,6 +506,12 @@ public:
     /// @return true when valid and empty directory, false otherwise
     static bool is_directory_empty(const coid::token& directory_path);
 
+    /// @brief Check if directory is writable
+    /// @param directory_path - path (absolute or relative to the working directory)
+    /// @return true when path is valid and writable directory, false otherwise
+    static bool is_directory_writable(const coid::token& directory_path);
+
+
     /// @brief Get's the last component of the path
     /// @param path 
     /// @return 
@@ -535,6 +550,9 @@ protected:
     /// @return handle of module where fn resides
     static uints get_module_path_func(const void* fn, charstr& dst, bool append);
 
+private:
+    static constexpr token_literal CURRENT_DIR_SEGMENT = "."_T;
+    static constexpr token_literal PARENT_DIR_SEGMENT = ".."_T;
 private:
     charstr _curpath;
     charstr _pattern;
