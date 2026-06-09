@@ -201,6 +201,8 @@ $-(if !virtual)$
     static iref<$name$> _host_connector(::$..nsx$$..class$* host, $name$* __here__)
     {
         iref<$name$> rval;
+        if (!host)
+            return rval;
 
         $--(if ?varname)$
         //an active interface (with events)
