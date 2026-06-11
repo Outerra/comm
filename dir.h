@@ -81,7 +81,7 @@ public:
     ///Open directory for iterating files using the filter
     opcd open(token path_and_pattern) {
         token pattern = path_and_pattern;
-        token path = pattern.cut_left_group_back(DIR_SEPARATORS, token::cut_trait_remove_all_default_empty());
+        token path = pattern.cut_left_group_back(DIR_SEPARATORS, token::cut_trait_remove_sep_all_default_empty());
         return open(path, pattern);
     }
 

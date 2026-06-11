@@ -283,7 +283,7 @@ public:
     virtual dynarray<interface_register::creator>& get_interface_clients(const token& iface, uint hash, dynarray<interface_register::creator>& dst)
     {
         token ns = iface;
-        token classname = ns.cut_right_group_back("::"_T);
+        token classname = ns.cut_right_back("::"_T);
 
         GUARDTHIS(_mx);
 

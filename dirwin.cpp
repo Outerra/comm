@@ -594,7 +594,7 @@ directory::verify_path_syntax_result_enum directory::verify_path_syntax(const co
 
     while (cut.is_set())
     {
-        cut = tok.cut_left_group(DIR_SEPARATORS, coid::token::cut_trait_remove_all_default_empty());
+        cut = tok.cut_left_group(DIR_SEPARATORS, coid::token::cut_trait_remove_sep_all_default_empty());
 
         if (cut.is_set() && !cut.cmpeq(CURRENT_DIR_SEGMENT) && !cut.cmpeq(PARENT_DIR_SEGMENT) && !is_valid_name(cut))
         {

@@ -1110,7 +1110,7 @@ struct script_handle
         coid::token script_dir;
         script_dir = url_tok;
         if (script_dir.contains_back('\\') || script_dir.contains_back('/')) {
-            script_dir.cut_right_group_back(coid::DIR_SEPARATORS, coid::token::cut_trait_keep_sep_default_empty());
+            script_dir.cut_right_group_back(coid::DIR_SEPARATORS, coid::token::cut_trait_keep_sep_with_source_default_empty());
         }
 
         context->push_ref();

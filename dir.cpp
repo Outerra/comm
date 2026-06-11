@@ -132,7 +132,7 @@ bool directory::is_same_path(coid::token arg0, coid::token arg1)
             uint32 seg_count = 1;
             do
             {
-                segment = src_in_out.cut_right_group_back(DIR_SEPARATORS, coid::token::cut_trait_remove_all_default_full());
+                segment = src_in_out.cut_right_group_back(DIR_SEPARATORS, coid::token::cut_trait_remove_sep_all_default_full());
 
                 if (segment == PARENT_DIR_SEGMENT)
                 {
@@ -351,7 +351,7 @@ opcd directory::rename_directory(zstring path, zstring new_name)
         path_tok.shift_end(-1);
     }
     
-    path_tok.cut_right_group_back(DIR_SEPARATORS, coid::token::cut_trait_keep_sep_default_empty());
+    path_tok.cut_right_group_back(DIR_SEPARATORS, coid::token::cut_trait_keep_sep_with_source_default_empty());
 
     new_name.get_str().ins(0, path_tok);
 
@@ -447,7 +447,7 @@ opcd directory::move_current_file_to(zstring dst, bool replace_existing)
 opcd directory::rename_file(zstring src, zstring dst, bool replace_existing)
 {
     if (!is_absolute_path(dst)) {
-        zstring target = src.get_token().cut_left_group_back(DIR_SEPARATOR_STRING, token::cut_trait_keep_sep_default_full());
+        zstring target = src.get_token().cut_left_group_back(DIR_SEPARATOR_STRING, token::cut_trait_keep_sep_with_source_default_full());
         append_path(target.get_str(), dst);
         dst.swap(target);
     }

@@ -186,7 +186,7 @@ bool generate_ifc(File& file, Class& cls, Interface& ifc, timet mtime, charstr& 
     directory::compact_path(ifc.relpath);
     ifc.relpath.replace('\\', '/');
 
-    token reldir = token(ifc.relpath).cut_left_group_back("\\/", token::cut_trait_return_with_sep_default_empty());
+    token reldir = token(ifc.relpath).cut_left_group_back(DIR_SEPARATORS, token::cut_trait_keep_sep_with_returned_default_empty());
 
     ifc.relpathjs = reldir;
     ifc.relpathjs << "js/" << ifc.name << ".h";
@@ -446,7 +446,7 @@ int main(int argc, char* argv[])
     }
     directory::treat_trailing_separator(tdir, directory::separator());
 
-    charstr fdir = token(argv[1]).cut_left_group_back("\\/", token::cut_trait_return_with_sep_default_empty());
+    charstr fdir = token(argv[1]).cut_left_group_back(coid::DIR_SEPARATORS, token::cut_trait_keep_sep_with_returned_default_empty());
 
     File cgf;
 

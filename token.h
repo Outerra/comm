@@ -842,12 +842,12 @@ struct token
 
     ///Flags for cut_xxx methods concerning the treating of separator
     enum ESeparatorTreat {
-        fKEEP_SEPARATOR         = 0,    //< do not remove the separator if found
-        fREMOVE_SEPARATOR       = 1,    //< remove the separator from source token after the cutting
-        fREMOVE_ALL_SEPARATORS  = 3,    //< remove all continuous separators from the source token
-        fRETURN_SEPARATOR       = 4,    //< if neither fREMOVE_SEPARATOR nor fREMOVE_ALL_SEPARATORS is set, return the separator with the cut token, otherwise keep with the source
-        fON_FAIL_RETURN_EMPTY   = 8,    //< if the separator is not found, return an empty token. If not set, whole source token is cut and returned.
-        fSWAP                   = 16,   //< swap resulting source and destination tokens. Note fRETURN_SEPARATOR and fON_FAIL_RETURN_EMPTY flags concern the actual returned value, i.e. after swap.
+        fKEEP_SEPARATOR                     = 0,    //< do not remove the separator if found
+        fREMOVE_SEPARATOR                   = 1,    //< remove the separator from source token after the cutting
+        fRETURN_SEPARATOR                   = 2,    //< if neither fREMOVE_SEPARATOR nor fREMOVE_ALL_SEPARATORS is set, return the separator with the cut token, otherwise keep with the source
+        fON_FAIL_RETURN_EMPTY               = 4,    //< if the separator is not found, return an empty token. If not set, whole source token is cut and returned.
+        fSWAP                               = 8,    //< swap resulting source and destination tokens. Note fRETURN_SEPARATOR and fON_FAIL_RETURN_EMPTY flags concern the actual returned value, i.e. after swap.
+        fAFFECT_CONSECUTIVE_SEPARATORS      = 16,   //< Treat consecutive separators as a single operator. Supported only for group cuts, not substrings!
     };
 
     ///Behavior of the cut operation. Constructed using ESeparatorTreat flags or-ed.
@@ -860,7 +860,7 @@ struct token
 
         /// @return true if all continuous separators should be consumed
         bool consume_other_separators() const {
-            return (flags & fREMOVE_ALL_SEPARATORS) != 0;
+            return (flags & fAFFECT_CONSECUTIVE_SEPARATORS) != 0;
         }
 
         ///Duplicate cut_trait object but with fSWAP flag set
@@ -909,9 +909,35 @@ struct token
     };
 
     /// @{ Most used traits
+    
+    ///Keep the separator with the source string, return the whole string if no separator found
+    [[deprecated("Use cut_trait_keep_sep_with_source_default_full()")]] static constexpr cut_trait cut_trait_keep_sep_default_full() {
+        return cut_trait(fKEEP_SEPARATOR);
+    }
+
+    ///Return the separator with the returned string, return the whole string if no separator found
+    [[deprecated("Use cut_trait_keep_sep_with_returned_default_full")]] static constexpr cut_trait cut_trait_return_with_sep_default_full() {
+        return cut_trait(fRETURN_SEPARATOR);
+    }
+
+    ///Keep the separator with the source string, return an empty string if no separator found
+    [[deprecated("Use cut_trait_keep_sep_with_source_default_empty")]] static constexpr cut_trait cut_trait_keep_sep_default_empty() {
+        return cut_trait(fKEEP_SEPARATOR | fON_FAIL_RETURN_EMPTY);
+    }
+
+    ///Return the separator with the returned string, return an empty string if no separator found
+    [[deprecated("Use cut_trait_keep_sep_with_returned_default_empty")]] static constexpr cut_trait cut_trait_return_with_sep_default_empty() {
+        return cut_trait(fRETURN_SEPARATOR | fON_FAIL_RETURN_EMPTY);
+    }
+     
     ///Keep the separator with the source string, return the whole string if no separator found
     static constexpr cut_trait cut_trait_keep_sep_with_source_default_full() {
         return cut_trait(fKEEP_SEPARATOR);
+    }
+
+    ///Keep all consecutive separators with the source string, return the whole string if no separator found
+    static constexpr cut_trait cut_trait_keep_sep_all_with_source_default_full() {
+        return cut_trait(fKEEP_SEPARATOR | fAFFECT_CONSECUTIVE_SEPARATORS);
     }
 
     ///Return the separator with the returned string, return the whole string if no separator found
@@ -919,14 +945,9 @@ struct token
         return cut_trait(fRETURN_SEPARATOR);
     }
 
-    ///Keep the separator with the source string, return the whole string if no separator found
-    static constexpr cut_trait cut_trait_keep_sep_default_full() {
-        return cut_trait(fKEEP_SEPARATOR);
-    }
-
-    ///Return the separator with the returned string, return the whole string if no separator found
-    static constexpr cut_trait cut_trait_return_with_sep_default_full() {
-        return cut_trait(fRETURN_SEPARATOR);
+    ///Return all consecutive separators with the returned string, return the whole string if no separator found
+    static constexpr cut_trait cut_trait_keep_sep_all_with_returned_default_full() {
+        return cut_trait(fRETURN_SEPARATOR | fAFFECT_CONSECUTIVE_SEPARATORS);
     }
 
     ///Remove the separator from both the source and the returned string, return the whole string if no separator found
@@ -934,19 +955,29 @@ struct token
         return cut_trait(fREMOVE_SEPARATOR);
     }
 
-    ///Remove all contiguous separators from both the source and the returned string, return the whole string if no separator found
-    static constexpr cut_trait cut_trait_remove_all_default_full() {
-        return cut_trait(fREMOVE_ALL_SEPARATORS);
+    ///Remove all consecutive separators from both the source and the returned string, return the whole string if no separator found
+    static constexpr cut_trait cut_trait_remove_sep_all_default_full() {
+        return cut_trait(fREMOVE_SEPARATOR | fAFFECT_CONSECUTIVE_SEPARATORS);
     }
 
     ///Keep the separator with the source string, return an empty string if no separator found
-    static constexpr cut_trait cut_trait_keep_sep_default_empty() {
+    static constexpr cut_trait cut_trait_keep_sep_with_source_default_empty() {
         return cut_trait(fKEEP_SEPARATOR | fON_FAIL_RETURN_EMPTY);
     }
 
+    ///Keep all consecutive separators with the source string, return an empty string if no separator found
+    static constexpr cut_trait cut_trait_keep_sep_all_with_source_default_empty() {
+        return cut_trait(fKEEP_SEPARATOR | fAFFECT_CONSECUTIVE_SEPARATORS | fON_FAIL_RETURN_EMPTY);
+    }
+
     ///Return the separator with the returned string, return an empty string if no separator found
-    static constexpr cut_trait cut_trait_return_with_sep_default_empty() {
+    static constexpr cut_trait cut_trait_keep_sep_with_returned_default_empty() {
         return cut_trait(fRETURN_SEPARATOR | fON_FAIL_RETURN_EMPTY);
+    }
+
+    ///Return all consecutive separators with the returned string, return an empty string if no separator found
+    static constexpr cut_trait cut_trait_keep_sep_all_with_returned_default_empty() {
+        return cut_trait(fRETURN_SEPARATOR | fAFFECT_CONSECUTIVE_SEPARATORS | fON_FAIL_RETURN_EMPTY);
     }
 
     ///Remove the separator from both the source and the returned string, return an empty string if no separator found
@@ -954,10 +985,11 @@ struct token
         return cut_trait(fREMOVE_SEPARATOR | fON_FAIL_RETURN_EMPTY);
     }
 
-    ///Remove all contiguous separators from both the source and the returned string, return an empty string if no separator found
-    static constexpr cut_trait cut_trait_remove_all_default_empty() {
-        return cut_trait(fREMOVE_ALL_SEPARATORS | fON_FAIL_RETURN_EMPTY);
+    ///Remove all consecutive separators from both the source and the returned string, return an empty string if no separator found
+    static constexpr cut_trait cut_trait_remove_sep_all_default_empty() {
+        return cut_trait(fREMOVE_SEPARATOR | fAFFECT_CONSECUTIVE_SEPARATORS | fON_FAIL_RETURN_EMPTY);
     }
+
     /// @}
 
 
