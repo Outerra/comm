@@ -424,6 +424,16 @@ public:
     /// @param tosep replace separators with given character (usually '/' or '\\')
     static bool compact_path(charstr& dst, char tosep = 0);
 
+    /// @brief Normalizes a path by resolving relative components and fixing separators.
+    /// @details Removes redundant path separators (e.g., `//` -> `/`) and resolves 
+    /// nested relative segments (e.g., `dir/../`).
+    /// @param path The input path string to compact.
+    /// @param to_sep The target separator character to normalize to (typically '/' or '\\'). 
+    /// Pass `0` to keep the original separators.
+    /// @return The compacted path string, or an empty string if the path is invalid or 
+    /// escapes the root directory (e.g., `../../` from a root drive).
+    static coid::charstr create_compact_path(const coid::token& path, char to_sep = 0);
+
 
     uint64 file_size() const { return _st.st_size; }
     static uint64 file_size(zstring file);

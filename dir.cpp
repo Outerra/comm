@@ -822,6 +822,19 @@ bool directory::compact_path(charstr& dst, char tosep)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+coid::charstr directory::create_compact_path(const coid::token& path, char to_sep)
+{
+    coid::charstr result = path;
+
+    if (!compact_path(result, to_sep))
+    {
+        return "";
+    }
+
+    return result;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 bool directory::list_file_paths(const token& path, const token& extension, recursion_mode mode,
     const coid::function<void(const charstr&, list_entry)>& fn)
 {
