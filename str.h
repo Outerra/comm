@@ -1314,9 +1314,9 @@ public:
             else {
                 int t;
 #ifdef SYSTYPE_MSVC
-                long tz;
-                _get_timezone(&tz);
-                t = -tz;
+                long tzi;
+                _get_timezone(&tzi);
+                t = -tzi;
 #elif defined(SYSTYPE_MINGW)
                 t = -_timezone;
 #else

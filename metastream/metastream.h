@@ -3351,7 +3351,6 @@ private:
             else
             {
                 type t = c._type;
-                uints n = c.count();
 
                 if (t.is_primitive() && c.is_continuous() && n != UMAXS)
                 {
